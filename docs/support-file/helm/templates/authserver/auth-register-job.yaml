@@ -1,0 +1,52 @@
+{{- if .Values.authRegister.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-auth-register-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "bk-hcm.serviceAccountName" . }}
+      initContainers:
+        {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-authserver" (include "bk-hcm.fullname" .)) (include "bk-hcm.authserver-pod-selector" .)) | nindent 8 }}
+      containers:
+        - name: auth-register
+          image: {{ default .Values.global.imageRegistry .Values.image.registry}}/{{ .Values.authRegister.image.repository }}:v{{ default .Values.image.tag .Values.authRegister.image.tag }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.image.pullPolicy | quote }}
+          command:
+            - sh
+            - "-c"
+            - |
+              /bin/bash <<'EOF'
+              RID=$(cat /proc/sys/kernel/random/uuid)
+              echo "Generated Request ID: $RID"
+              res=$(curl -s -X POST \
+              -H 'Content-Type:application/json' \
+              -H 'X-Bkapi-User-Name:{{ .Values.authRegister.userName }}' \
+              -H 'X-Bkapi-App-Code:{{ .Values.appCode }}' \
+              -H "X-Bkapi-Request-Id:$RID" \
+              -H 'X-Bk-Tenant-Id:{{ template "bk-hcm.tenantID" . }}' \
+              --data '{"host": "{{ template "authserverIngressHost" . }}"}' \
+              "http://{{ template "bk-hcm.authserver" . }}/api/v1/auth/init/authcenter"
+              )
+              echo "$res"
+              if ! [[ $(echo "$res" | jq -r .code) = "0" ]]; then
+                echo "auth center migration failed."
+                exit 1
+              fi
+              EOF
+          resources: {{ toYaml .Values.authRegister.resources | nindent 12 }}
+      restartPolicy: OnFailure
+  backoffLimit: 20
+{{- end }}

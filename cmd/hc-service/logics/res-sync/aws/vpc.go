@@ -96,11 +96,13 @@ func (cli *client) Vpc(kt *kit.Kit, params *SyncBaseParams, opt *SyncVpcOption) 
 	return nil, nil
 }
 
+// deleteVpc delete vpc from db, before delete, validate vpc not exist in cloud.
 func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete vpc, cloudIDs is required")
 	}
 
+	// validate vpc not exist in cloud, before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -131,6 +133,7 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCl
 	return nil
 }
 
+// updateVpc update vpc in db
 func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string]types.AwsVpc) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update vpc, vpcs is required")
@@ -183,6 +186,7 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 	return nil
 }
 
+// createVpc create vpc in db
 func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpcs []types.AwsVpc) error {
 	if len(addVpcs) == 0 {
 		return fmt.Errorf("create vpc, vpcs is required")
@@ -238,6 +242,7 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpcs []types.AwsV
 	return nil
 }
 
+// isAwsVpcChange check if vpc data changed
 func isAwsVpcChange(item types.AwsVpc, info cloudcore.Vpc[cloudcore.AwsVpcExtension]) bool {
 	if info.Name != item.Name {
 		return true
@@ -356,6 +361,7 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
+// listRemoveVpcID ...
 func (cli *client) listRemoveVpcID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -393,6 +399,7 @@ func (cli *client) listRemoveVpcID(kt *kit.Kit, params *SyncBaseParams) ([]strin
 	return delCloudIDs, nil
 }
 
+// listVpcFromCloud list vpc from cloud
 func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.AwsVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -416,6 +423,7 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
+// listVpcFromDB list vpc from db
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.AwsVpcExtension], error) {
 

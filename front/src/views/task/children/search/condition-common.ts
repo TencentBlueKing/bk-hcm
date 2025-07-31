@@ -1,22 +1,16 @@
 import { ResourceTypeEnum } from '@/common/resource-constant';
-import accountProperties from '@/model/account/properties';
-import taskProperties from '@/model/task/properties';
-
-const conditionFieldIds = new Map<ResourceTypeEnum, string[]>();
-const baseFieldIds = ['account_id', 'operations', 'state', 'source', 'created_at', 'creator'];
-const clbFieldIds = [...baseFieldIds];
-conditionFieldIds.set(ResourceTypeEnum.CLB, clbFieldIds);
-
-const taskViewProperties = [...accountProperties, ...taskProperties];
-
-export const getConditionFieldIds = (resourceType: ResourceTypeEnum) => {
-  return conditionFieldIds.get(resourceType);
-};
+import { getModel } from '@/model/manager';
+import { SearchClbView } from '@/model/task/search.view';
 
 const getConditionField = (type: ResourceTypeEnum) => {
-  const fieldIds = getConditionFieldIds(type);
-  const fields = fieldIds.map((id) => taskViewProperties.find((item) => item.id === id));
-  return fields;
+  if (type === ResourceTypeEnum.CLB) {
+    return getClbConditionField();
+  }
+};
+
+const getClbConditionField = () => {
+  const properties = getModel(SearchClbView).getProperties();
+  return properties.filter((item) => item.id !== 'resource');
 };
 
 const factory = {

@@ -87,9 +87,9 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	bizIDs := make([]int64, 0, len(relResp.Details))
+	usageBizIDs := make([]int64, 0, len(relResp.Details))
 	for _, rel := range relResp.Details {
-		bizIDs = append(bizIDs, rel.BkBizID)
+		usageBizIDs = append(usageBizIDs, rel.BkBizID)
 	}
 
 	// 组装响应数据 - 账号基本信息
@@ -103,7 +103,8 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		Price:              dbAccount.Price,
 		PriceUnit:          dbAccount.PriceUnit,
 		Memo:               dbAccount.Memo,
-		BkBizIDs:           bizIDs,
+		BkBizID:            dbAccount.BkBizID,
+		UsageBizIDs:        usageBizIDs,
 		RecycleReserveTime: dbAccount.RecycleReserveTime,
 		Revision: core.Revision{
 			Creator:   dbAccount.Creator,
@@ -178,6 +179,7 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 			PriceUnit:          account.PriceUnit,
 			Memo:               account.Memo,
 			RecycleReserveTime: account.RecycleReserveTime,
+			BkBizID:            account.BkBizID,
 			Revision: core.Revision{
 				Creator:   account.Creator,
 				Reviser:   account.Reviser,
@@ -194,7 +196,7 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	for _, one := range details {
-		one.BkBizIDs = accountBizMap[one.ID]
+		one.UsageBizIDs = accountBizMap[one.ID]
 	}
 
 	return &protocloud.AccountListResult{Details: details}, nil
@@ -296,7 +298,7 @@ func (svc *service) ListAccountWithBiz(kt *kit.Kit, ids []string) ([]types.Accou
 				Memo:               one.Memo,
 				RecycleReserveTime: one.RecycleReserveTime,
 			},
-			BkBizIDs: accountBizMap[one.ID],
+			UsageBizIDs: accountBizMap[one.ID],
 		})
 	}
 
@@ -379,6 +381,7 @@ func (svc *service) ListAccountWithExtension(cts *rest.Contexts) (interface{}, e
 				PriceUnit:          account.PriceUnit,
 				Memo:               account.Memo,
 				RecycleReserveTime: account.RecycleReserveTime,
+				BkBizID:            account.BkBizID,
 				Revision: core.Revision{
 					Creator:   account.Creator,
 					Reviser:   account.Reviser,
@@ -397,7 +400,7 @@ func (svc *service) ListAccountWithExtension(cts *rest.Contexts) (interface{}, e
 	}
 
 	for _, one := range details {
-		one.BkBizIDs = accountBizMap[one.ID]
+		one.UsageBizIDs = accountBizMap[one.ID]
 	}
 
 	return &protocloud.AccountWithExtensionListResult{Details: details}, nil

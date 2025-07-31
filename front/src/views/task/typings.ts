@@ -27,6 +27,7 @@ export enum TaskStatus {
 export enum TaskSource {
   SOPS = 'sops',
   EXCEL = 'excel',
+  API = 'api',
 }
 
 export enum TaskDetailStatus {
@@ -63,4 +64,5 @@ export interface IActionListProps {
   list: ITaskDetailItem[];
   detail: Partial<ITaskItem>;
   pagination: PaginationType;
+  selectable?: boolean;
 }

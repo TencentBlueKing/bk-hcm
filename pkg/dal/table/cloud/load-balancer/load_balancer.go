@@ -57,10 +57,13 @@ var LoadBalancerColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "public_ipv6_addresses", NamedC: "public_ipv6_addresses", Type: enumor.Json},
 	{Column: "domain", NamedC: "domain", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
+	{Column: "isp", NamedC: "isp", Type: enumor.String},
+	{Column: "band_width", NamedC: "band_width", Type: enumor.Numeric},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_status_time", NamedC: "cloud_status_time", Type: enumor.String},
 	{Column: "cloud_expired_time", NamedC: "cloud_expired_time", Type: enumor.String},
+	{Column: "sync_time", NamedC: "sync_time", Type: enumor.String},
 	{Column: "tags", NamedC: "tags", Type: enumor.Json},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 
@@ -97,6 +100,7 @@ type LoadBalancerTable struct {
 	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudStatusTime      string            `db:"cloud_status_time" json:"cloud_status_time"`
 	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`
+	SyncTime             string            `db:"sync_time" json:"sync_time"`
 	Tags                 types.StringMap   `db:"tags" json:"tags"`
 	Extension            types.JsonField   `db:"extension" json:"extension"`
 
@@ -105,7 +109,9 @@ type LoadBalancerTable struct {
 	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
 	// TenantID 租户ID
-	TenantID string `db:"tenant_id" json:"tenant_id"`
+	TenantID  string `db:"tenant_id" json:"tenant_id"`
+	BandWidth int64  `db:"band_width" json:"band_width"` // 带宽
+	Isp       string `db:"isp" json:"isp"`               // 运营商
 }
 
 // TableName return load_balancer table name.

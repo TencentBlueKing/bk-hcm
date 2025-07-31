@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 const securityGroupStore = useSecurityGroupStore();
 
-const { accountBizList } = useAccountBusiness(props.detail.account_id);
+const { accountBizList } = useAccountBusiness(ref(props.detail.account_id));
 
 const formData = reactive({
   mgmt_type: SecurityGroupManageType.PLATFORM,

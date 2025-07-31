@@ -45,6 +45,7 @@ import (
 type SyncSGRuleOption struct {
 }
 
+// SGMapData ...
 type SGMapData struct {
 	ID     string
 	Region string
@@ -113,6 +114,7 @@ func (opt syncSGRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// securityGroupRule sync security group rule
 func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncResult, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -160,6 +162,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	return new(SyncResult), nil
 }
 
+// createSGRule create security group rule
 func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	addSlice []securitygrouprule.AzureSGRule) error {
 
@@ -191,6 +194,7 @@ func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genAddRuleList generate add rule list
 func (cli *client) genAddRuleList(rules []securitygrouprule.AzureSGRule,
 	opt *syncSGRuleOption) ([]protocloud.AzureSGRuleBatchCreate, error) {
 
@@ -254,6 +258,7 @@ func (cli *client) genAddRuleList(rules []securitygrouprule.AzureSGRule,
 	return list, nil
 }
 
+// updateSGRule update security group rule
 func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	updateMap map[string]securitygrouprule.AzureSGRule) error {
 
@@ -285,6 +290,7 @@ func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genUpdateRulesList generate update rules list
 func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.AzureSGRule,
 	opt *syncSGRuleOption) ([]protocloud.AzureSGRuleUpdate, error) {
 
@@ -349,6 +355,7 @@ func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.Azu
 	return list, nil
 }
 
+// deleteSGRule delete security group rule
 func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sgRule delCloudIDs is <= 0, not delete")
@@ -358,6 +365,7 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 		return fmt.Errorf("cloud_sgid: %s can not find hcm sgid", opt.CloudSGID)
 	}
 
+	// validate if the sgRule exist in cloud before delete
 	delSGRuleFromCloud, err := cli.listSGRuleFromCloud(kt, opt)
 	if err != nil {
 		return err
@@ -399,6 +407,7 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 	return nil
 }
 
+// listSGRuleFromCloud list security group rule from cloud
 func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]securitygrouprule.AzureSGRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -424,6 +433,7 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]se
 	return results, nil
 }
 
+// listSGFromDB list security group from database
 func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corecloud.AzureSecurityGroupRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -459,6 +469,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corec
 	return rules, nil
 }
 
+// isSGRuleChange checks if the security group rule has changed
 func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 	db corecloud.AzureSecurityGroupRule) bool {
 
@@ -474,43 +485,11 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.DestinationAddressPrefix, cloud.DestinationAddressPrefix) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.DestinationAddressPrefixes) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.DestinationPortRange, cloud.DestinationPortRange) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.DestinationPortRanges) {
-		return true
-	}
-
 	if db.Protocol != string(converter.PtrToVal(cloud.Protocol)) {
 		return true
 	}
 
 	if db.ProvisioningState != string(converter.PtrToVal(cloud.ProvisioningState)) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.SourceAddressPrefix, cloud.SourceAddressPrefix) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.SourceAddressPrefixes) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.SourcePortRange, cloud.SourcePortRange) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.SourcePortRanges) {
 		return true
 	}
 
@@ -544,5 +523,57 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
+	if isSGRuleSourceInfoChange(cloud, db) {
+		return true
+	}
+
+	if isSGRuleDestinationInfoChange(cloud, db) {
+		return true
+	}
+
+	return false
+}
+
+// isSGRuleSourceInfoChange checks if the source information of the security group rule has changed
+func isSGRuleSourceInfoChange(cloud securitygrouprule.AzureSGRule,
+	db corecloud.AzureSecurityGroupRule) bool {
+
+	if !assert.IsPtrStringEqual(db.SourceAddressPrefix, cloud.SourceAddressPrefix) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.SourceAddressPrefixes) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(db.SourcePortRange, cloud.SourcePortRange) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.SourcePortRanges) {
+		return true
+	}
+	return false
+}
+
+// isSGRuleDestinationInfoChange checks if the destination information of the security group rule has changed
+func isSGRuleDestinationInfoChange(cloud securitygrouprule.AzureSGRule,
+	db corecloud.AzureSecurityGroupRule) bool {
+
+	if !assert.IsPtrStringEqual(db.DestinationAddressPrefix, cloud.DestinationAddressPrefix) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.DestinationAddressPrefixes) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(db.DestinationPortRange, cloud.DestinationPortRange) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.DestinationPortRanges) {
+		return true
+	}
 	return false
 }

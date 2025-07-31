@@ -332,7 +332,6 @@ func (svc *cvmSvc) BatchStopHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	syncClient := synchuawei.NewClient(svc.dataCli, client)
-
 	params := &synchuawei.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
@@ -452,6 +451,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	// 云上删除成功后，删除数据库中的记录
 	delReq := &dataproto.CvmBatchDeleteReq{
 		Filter: tools.ContainersExpression("id", req.IDs),
 	}
@@ -482,6 +482,7 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 
 // syncCvmRelEip sync cvm rel eip
 func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
+	// 查询云主机和弹性公网IP关联关系
 	listEipRel := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),
@@ -537,6 +538,7 @@ func (svc cvmSvc) syncCvmRelEip(kt *kit.Kit, accountID, region string, cvmIDs []
 
 // syncCvmRelDisk sync cvm rel disk
 func (svc cvmSvc) syncCvmRelDisk(kt *kit.Kit, accountID, region string, cvmIDs []string) error {
+	// 查询主机和硬盘关联关系
 	listEipRel := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
 		Page:   core.NewDefaultBasePage(),

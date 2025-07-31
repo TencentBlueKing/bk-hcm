@@ -1,49 +1,37 @@
-import { ModelProperty } from '@/model/typings';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Model, Column } from '@/decorator';
+import { VendorEnum, VendorMap } from '@/common/constant';
+import { type TaskType, TaskStatus, TaskSource } from '@/views/task/typings';
 import { TASK_TYPE_NAME, TASK_SOURCE_NAME, TASK_STATUS_NAME } from '@/views/task/constants';
-import { QueryRuleOPEnum } from '@/typings';
 
-export default [
-  {
-    id: 'created_at',
-    name: '操作时间',
-    type: 'datetime',
-    index: 1,
-  },
-  {
-    id: 'operations',
-    name: '任务类型',
-    type: 'enum',
-    index: 1,
-    option: TASK_TYPE_NAME,
-    meta: {
-      search: {
-        op: QueryRuleOPEnum.JSON_OVERLAPS,
-      },
-    },
-  },
-  {
-    id: 'source',
-    name: '任务来源',
-    type: 'enum',
-    index: 1,
-    option: TASK_SOURCE_NAME,
-  },
-  {
-    id: 'creator',
-    name: '操作人',
-    type: 'user',
-    index: 1,
-  },
-  {
-    id: 'state',
+@Model('task/properties')
+export class Properties {
+  @Column('account', { name: '云账号', sort: true })
+  account_ids: string;
+
+  @Column('enum', { name: '云厂商', option: VendorMap, sort: true })
+  vendors: VendorEnum;
+
+  @Column('datetime', { name: '操作时间', sort: true })
+  created_at: string;
+
+  @Column('enum', { name: '任务类型', option: TASK_TYPE_NAME, sort: true })
+  operations: TaskType;
+
+  @Column('enum', { name: '任务来源', option: TASK_SOURCE_NAME, sort: true })
+  source: TaskSource;
+
+  @Column('user', { name: '操作人' })
+  creator: string;
+
+  @Column('enum', {
     name: '任务状态',
-    type: 'enum',
-    index: 1,
     option: TASK_STATUS_NAME,
     meta: {
       display: {
         appearance: 'status',
       },
     },
-  },
-] as ModelProperty[];
+  })
+  state: TaskStatus;
+}

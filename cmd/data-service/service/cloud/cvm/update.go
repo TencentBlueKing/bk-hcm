@@ -90,40 +90,11 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		models := make([]*tablecvm.Table, 0, len(req.Cvms))
 
 		for _, one := range req.Cvms {
-			update := &tablecvm.Table{
-				Name:                 one.Name,
-				BkBizID:              one.BkBizID,
-				BkHostID:             one.BkHostID,
-				CloudVpcIDs:          one.CloudVpcIDs,
-				CloudSubnetIDs:       one.CloudSubnetIDs,
-				CloudImageID:         one.CloudImageID,
-				ImageID:              one.ImageID,
-				Memo:                 one.Memo,
-				Status:               one.Status,
-				PrivateIPv4Addresses: one.PrivateIPv4Addresses,
-				PrivateIPv6Addresses: one.PrivateIPv6Addresses,
-				PublicIPv4Addresses:  one.PublicIPv4Addresses,
-				PublicIPv6Addresses:  one.PublicIPv6Addresses,
-				CloudLaunchedTime:    one.CloudLaunchedTime,
-				CloudExpiredTime:     one.CloudExpiredTime,
-				Reviser:              cts.Kit.User,
-				VpcIDs:               one.VpcIDs,
-				SubnetIDs:            one.SubnetIDs,
-				// 升降配可能会修改机型
-				MachineType: one.MachineType,
-				// 重装可能修改操作系统名称
-				OsName: one.OsName,
-			}
-
-			if one.BkCloudID != nil {
-				update.BkCloudID = one.BkCloudID
-			}
-
+			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, cts.Kit.User)
 			existCvm, exist := existCvmMap[one.ID]
 			if !exist {
 				continue
 			}
-
 			if one.Extension != nil {
 				merge, err := json.UpdateMerge(one.Extension, string(existCvm.Extension))
 				if err != nil {
@@ -140,23 +111,18 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 			if update.BkCloudID == nil {
 				update.BkCloudID = existCvm.BkCloudID
 			}
-
 			if len(update.PrivateIPv4Addresses) == 0 {
 				update.PrivateIPv4Addresses = existCvm.PrivateIPv4Addresses
 			}
-
 			if len(update.PrivateIPv6Addresses) == 0 {
 				update.PrivateIPv6Addresses = existCvm.PrivateIPv6Addresses
 			}
-
 			if len(update.PublicIPv4Addresses) == 0 {
 				update.PublicIPv4Addresses = existCvm.PublicIPv4Addresses
 			}
-
 			if len(update.PublicIPv6Addresses) == 0 {
 				update.PublicIPv6Addresses = existCvm.PublicIPv6Addresses
 			}
-
 			update.CloudID = existCvm.CloudID
 			update.BkBizID = existCvm.BkBizID
 			models = append(models, update)
@@ -168,14 +134,43 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 			logs.Errorf("upsert cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, nil
 		}
-
 		return nil, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-
 	return nil, nil
+}
+
+func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *tablecvm.Table {
+	update := &tablecvm.Table{
+		Name:                 one.Name,
+		BkBizID:              one.BkBizID,
+		BkHostID:             one.BkHostID,
+		CloudVpcIDs:          one.CloudVpcIDs,
+		CloudSubnetIDs:       one.CloudSubnetIDs,
+		CloudImageID:         one.CloudImageID,
+		ImageID:              one.ImageID,
+		Memo:                 one.Memo,
+		Status:               one.Status,
+		PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+		PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+		PublicIPv4Addresses:  one.PublicIPv4Addresses,
+		PublicIPv6Addresses:  one.PublicIPv6Addresses,
+		CloudLaunchedTime:    one.CloudLaunchedTime,
+		CloudExpiredTime:     one.CloudExpiredTime,
+		Reviser:              user,
+		VpcIDs:               one.VpcIDs,
+		SubnetIDs:            one.SubnetIDs,
+		// 升降配可能会修改机型
+		MachineType: one.MachineType,
+		// 重装可能修改操作系统名称
+		OsName: one.OsName,
+	}
+	if one.BkCloudID != nil {
+		update.BkCloudID = one.BkCloudID
+	}
+	return update
 }
 
 func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {

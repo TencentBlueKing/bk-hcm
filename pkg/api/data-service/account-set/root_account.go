@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package accountset
+// Package accountset ...
 package accountset
 
 import (

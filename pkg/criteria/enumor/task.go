@@ -39,13 +39,24 @@ const (
 	TaskManagementCancel TaskManagementState = "cancel"
 )
 
+// Validate ...
+func (t TaskManagementState) Validate() error {
+	switch t {
+	case TaskManagementRunning, TaskManagementSuccess, TaskManagementFailed, TaskManagementDeliverPartial,
+		TaskManagementCancel:
+		return nil
+	default:
+		return fmt.Errorf("invalid task management state: %s", t)
+	}
+}
+
 // TaskManagementSource is task management source.
 type TaskManagementSource string
 
 // Validate ...
 func (t TaskManagementSource) Validate() error {
 	switch t {
-	case TaskManagementSourceSops, TaskManagementSourceExcel:
+	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI:
 		return nil
 	default:
 		return fmt.Errorf("invalid task management source: %s", t)
@@ -57,6 +68,8 @@ const (
 	TaskManagementSourceSops TaskManagementSource = "sops"
 	// TaskManagementSourceExcel is a source indicating that excel.
 	TaskManagementSourceExcel TaskManagementSource = "excel"
+	// TaskManagementSourceAPI is a source indicating that api.
+	TaskManagementSourceAPI TaskManagementSource = "api"
 )
 
 // TaskManagementResource is task management resource.
@@ -65,7 +78,19 @@ type TaskManagementResource string
 const (
 	// TaskManagementResClb is a resource indicating that clb.
 	TaskManagementResClb TaskManagementResource = "clb"
+	// TaskManagementResCVM is a resource indicating that cvm.
+	TaskManagementResCVM TaskManagementResource = "cvm"
 )
+
+// Validate ...
+func (t TaskManagementResource) Validate() error {
+	switch t {
+	case TaskManagementResClb, TaskManagementResCVM:
+		return nil
+	default:
+		return fmt.Errorf("invalid task management resource: %s", t)
+	}
+}
 
 // TaskDetailState is task detail state.
 type TaskDetailState string
@@ -102,11 +127,15 @@ const (
 	// TaskCreateLayer7Rule is a task indicating that create layer7 rule.
 	TaskCreateLayer7Rule TaskOperation = "create_layer7_rule"
 
-	// TaskUnbindListenerRs is a task indicating that unbind listener and rs.
-	TaskUnbindListenerRs TaskOperation = "listener_unbind_rs"
+	// TaskUnbindListenerLayer4Rs is a task indicating that unbind listener layer4 rs.
+	TaskUnbindListenerLayer4Rs TaskOperation = "listener_layer4_unbind_rs"
+	// TaskUnbindListenerLayer7Rs is a task indicating that unbind listener layer4 rs.
+	TaskUnbindListenerLayer7Rs TaskOperation = "listener_layer7_unbind_rs"
 
-	// TaskModifyListenerRsWeight is a task indicating that modify listener rs weight.
-	TaskModifyListenerRsWeight TaskOperation = "listener_rs_weight"
+	// TaskModifyListenerLayer4RsWeight is a task indicating that modify listener layer4 rs weight.
+	TaskModifyListenerLayer4RsWeight TaskOperation = "listener_layer4_rs_weight"
+	// TaskModifyListenerLayer7RsWeight is a task indicating that modify listener layer7 rs weight.
+	TaskModifyListenerLayer7RsWeight TaskOperation = "listener_layer7_rs_weight"
 
 	// TaskDeleteListener is a task indicating that delete listener.
 	TaskDeleteListener TaskOperation = "listener_delete"

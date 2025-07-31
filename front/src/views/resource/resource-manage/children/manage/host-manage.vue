@@ -5,7 +5,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { Button, Dropdown, Message, Checkbox, bkTooltips } from 'bkui-vue';
-import { PropType, h, inject, reactive, ref, withDirectives } from 'vue';
+import { PropType, Ref, h, inject, reactive, ref, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
@@ -59,7 +59,7 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, generateColumnsSettings } = useColumns('cvms');
 const resourceStore = useResourceStore();
 
-const isOtherVendor = inject<boolean>('isOtherVendor');
+const isOtherVendor = inject<Ref<boolean>>('isOtherVendor');
 
 const currentOperateRowIndex = ref(-1);
 

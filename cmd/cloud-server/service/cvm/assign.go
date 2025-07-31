@@ -175,7 +175,7 @@ func (svc *cvmSvc) ListAssignedCvmMatchHost(cts *rest.Contexts) (interface{}, er
 	}
 
 	details := make([]proto.ListAssignedCvmMatchHostDetail, 0)
-	for _, bizID := range resp.Details[0].BkBizIDs {
+	for _, bizID := range resp.Details[0].UsageBizIDs {
 		hostIDs, ok := ccBizHostIDsMap[bizID]
 		if !ok || len(hostIDs) == 0 {
 			continue

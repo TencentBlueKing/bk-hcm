@@ -102,6 +102,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
+// updateDisk update disk in db.
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.AwsDisk) error {
 
 	if len(updateMap) <= 0 {
@@ -167,6 +168,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
+// createDisk create disk in db.
 func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addSlice []adaptordisk.AwsDisk) error {
 
 	if len(addSlice) <= 0 {
@@ -236,6 +238,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addS
 	return nil
 }
 
+// deleteDisk delete disk in db.
 func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("delCloudIDs is <= 0, not delete")
@@ -272,6 +275,7 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	return nil
 }
 
+// listDiskFromCloud list disk from cloud.
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]adaptordisk.AwsDisk, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -294,46 +298,6 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 	}
 
 	return result, nil
-}
-
-func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]*coredisk.Disk[coredisk.AwsExtension], error) {
-
-	if err := params.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	req := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.Equal.Factory(),
-					Value: params.AccountID,
-				},
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.In.Factory(),
-					Value: params.CloudIDs,
-				},
-				&filter.AtomRule{
-					Field: "region",
-					Op:    filter.Equal.Factory(),
-					Value: params.Region,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := cli.dbCli.Aws.ListDisk(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("[%s] list disk from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Aws,
-			err, params.AccountID, req, kt.Rid)
-		return nil, err
-	}
-
-	return result.Details, nil
 }
 
 // RemoveDiskDeleteFromCloud ...
@@ -398,6 +362,7 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, regi
 	return nil
 }
 
+// listRemoveDiskID ...
 func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -435,6 +400,7 @@ func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]stri
 	return delCloudIDs, nil
 }
 
+// isDiskChange check disk is change.
 func isDiskChange(cloud adaptordisk.AwsDisk, db *coredisk.Disk[coredisk.AwsExtension]) bool {
 
 	if converter.PtrToVal(cloud.State) != db.Status {

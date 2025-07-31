@@ -11,7 +11,8 @@ export interface ProjectModel {
   account?: number | string;
   subAccountId?: number | string;
   subAccountName?: number | string;
-  bk_biz_ids?: number[]; // 使用业务
+  usage_biz_ids?: number[]; // 使用业务
+  bk_biz_id?: number; // 管理业务
   mainAccount?: number | string; // 主账号
   subAccount?: number | string; // 子账号
   secretId?: string; // secretId

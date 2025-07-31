@@ -126,6 +126,7 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	return new(SyncResult), nil
 }
 
+// syncRoute 同步路由表的路由规则
 func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	existRT, err := cli.listRouteTableFromDB(kt, params)
 	if err != nil {
@@ -151,6 +152,7 @@ func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	return nil
 }
 
+// createRouteTable 创建路由表
 func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []typesroutetable.HuaWeiRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -202,6 +204,7 @@ func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// updateRouteTalbe 更新路由表
 func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]typesroutetable.HuaWeiRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -246,11 +249,13 @@ func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// deleteRouteTable 删除路由表
 func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("routeTable delCloudIDs is <= 0, not delete")
 	}
 
+	// 检查云上路由表是否存在
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -261,6 +266,7 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 		return err
 	}
 
+	// 如果云上路由表存在，说明数据不一致，不能删除
 	if len(delRouteTableFromCloud) > 0 {
 		logs.Errorf("[%s] validate routeTable not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
 			enumor.HuaWei, checkParams, len(delRouteTableFromCloud), kt.Rid)
@@ -271,7 +277,8 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.RouteTable.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s",
+			enumor.HuaWei, err, kt.Rid)
 		return err
 	}
 
@@ -281,6 +288,7 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 	return nil
 }
 
+// listRouteTableFromCloud 列出云上路由表
 func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesroutetable.HuaWeiRouteTable, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -304,6 +312,7 @@ func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) 
 	return routeTables, nil
 }
 
+// listRouteTableFromDB 列出数据库中的路由表
 func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]routetable.HuaWeiRouteTable, error) {
 
@@ -427,6 +436,7 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 	return nil
 }
 
+// isRouteTableChange 判断云上路由表和数据库中的路由表是否有变化
 func isRouteTableChange(cloud typesroutetable.HuaWeiRouteTable,
 	db routetable.HuaWeiRouteTable) bool {
 

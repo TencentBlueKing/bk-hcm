@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Select, Table } from 'bkui-vue';
+import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Table } from 'bkui-vue';
 import { PropType, defineComponent, onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
@@ -15,7 +15,6 @@ import { useAccountStore, useUserStore } from '@/store';
 import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 
 const { FormItem } = Form;
-const { Option } = Select;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const VENDORS_INFO = [
@@ -75,7 +74,8 @@ export default defineComponent({
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
       memo: '', // 备注
       extension: {}, // 不同云的secretKey\id
-      bk_biz_ids: [], // 业务ID
+      usage_biz_ids: [], // 使用业务ID
+      bk_biz_id: 0, // 管理业务ID
     });
     const infoFormInstance = ref(null);
     const businessList = ref([]);
@@ -124,7 +124,6 @@ export default defineComponent({
       (model) => {
         props.changeSubmitData({
           ...model,
-          bk_biz_ids: [model.bk_biz_ids],
         });
         props.changeValidateForm(() => infoFormInstance.value.validate());
       },
@@ -154,6 +153,29 @@ export default defineComponent({
       const res = await accountStore.getBizList();
       businessList.value = res?.data || [];
     });
+
+    const handleChangeManage = (val: number) => {
+      const usageVal = formModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
+        formModel.usage_biz_ids.push(val);
+      }
+    };
+
+    const handleChangeUse = (val: number[]) => {
+      const [firstVal] = val;
+      // 取消全选 val是空数组[]
+      if (!firstVal) {
+        formModel.usage_biz_ids = [formModel.bk_biz_id];
+        return;
+      }
+      // 如果有值，且val里面不包含管理业务，则把管理业务加进去
+      if (firstVal !== -1 && !val.includes(formModel.bk_biz_id)) {
+        formModel.usage_biz_ids.push(formModel.bk_biz_id);
+      }
+    };
 
     return () => (
       <div class={'account-form'}>
@@ -317,14 +339,27 @@ export default defineComponent({
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <hcm-form-user v-model={formModel.managers} />
               </FormItem>
-              <FormItem label='使用业务' property='bk_biz_ids' required>
-                <Select filterable placeholder='请选择使用业务' v-model={formModel.bk_biz_ids}>
-                  {businessList.value.map(({ id, name }) => (
-                    <Option key={id} value={id} label={name}>
-                      {name}
-                    </Option>
-                  ))}
-                </Select>
+              <FormItem label='管理业务' property='bk_biz_id' required>
+                <hcm-form-business
+                  data={businessList.value}
+                  clearable={true}
+                  placeholder={'请选择管理业务'}
+                  v-model={formModel.bk_biz_id}
+                  onChange={handleChangeManage}
+                />
+              </FormItem>
+              <FormItem label='使用业务' property='usage_biz_ids' required>
+                <hcm-form-business
+                  tag-clearable={false}
+                  placeholder={'请选择使用业务'}
+                  multiple
+                  data={businessList.value}
+                  v-model={formModel.usage_biz_ids}
+                  show-all={true}
+                  all-option-id={-1}
+                  disabled={!formModel.bk_biz_id}
+                  onChange={handleChangeUse}
+                />
               </FormItem>
               <FormItem label='备注'>
                 <Input type={'textarea'} v-model={formModel.memo} maxlength={255} resize={false} />

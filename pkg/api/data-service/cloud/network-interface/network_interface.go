@@ -193,7 +193,7 @@ type NetVirtualIP struct {
 	ElasticityIP string `json:"elasticity_ip,omitempty"`
 }
 
-// ServerInterfaceFixedIp
+// ServerInterfaceFixedIp ...
 type ServerInterfaceFixedIp struct {
 	// IpAddress 网卡私网IP信息。
 	IpAddress *string `json:"ip_address,omitempty"`

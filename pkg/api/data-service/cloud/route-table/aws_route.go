@@ -103,6 +103,7 @@ type AwsRouteListReq struct {
 	RouteTableID  string `json:"route_table_id"`
 }
 
+// Validate ...
 func (r AwsRouteListReq) Validate() error {
 	if r.ListReq == nil {
 		return errf.New(errf.InvalidParameter, "list request is required")

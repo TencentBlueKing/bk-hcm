@@ -32,67 +32,70 @@ import (
 	"hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
-
-	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 func (a *accountSvc) awsCondSyncRes(cts *rest.Contexts, accountID string, resType enumor.CloudResourceType) (
 	any, error) {
 
-	req, syncFunc, err := a.decodeAwsCondSyncRequest(cts, resType)
+	req, syncFunc, err := a.decodeAwsCondSyncRequest(cts, accountID, resType)
 	if err != nil {
 		return nil, err
 	}
 
-	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
+	resLockKey := lock.Key(fmt.Sprintf("%s", accountID))
+	leaseID, err := lock.Manager.TryLock(resLockKey)
 	if err != nil {
-		if err == lock.ErrLockFailed {
-			return nil, errors.New("synchronization is in progress")
+		if errors.Is(err, lock.ErrLockFailed) {
+			return nil, errf.New(errf.SyncRepeatLockError, "synchronization is in progress")
 		}
 		return nil, err
 	}
-	logs.Infof("lock account sync key: %s, rid: %s", lock.Key(accountID), cts.Kit.Rid)
+
+	defer func() {
+		if err = lock.Manager.UnLock(leaseID); err != nil {
+			// 锁已经超时释放了
+			if strings.Contains(err.Error(), "requested lease not found") {
+				return
+			}
+
+			logs.Errorf("[%s]: unlock account sync lock for cond sync failed, err: %v, account: %s, leaseID: %d, "+
+				"resType: %s, rid: %s", constant.AccountSyncFailed, err, accountID, leaseID, resType, cts.Kit.Rid)
+		}
+		logs.Infof("unlock account sync key: %s, resType: %s, rid: %s", resLockKey, resType, cts.Kit.Rid)
+	}()
+
+	logs.Infof("lock account sync key: %s, resType: %s, rid: %s", resLockKey, resType, cts.Kit.Rid)
 	syncParams := &aws.CondSyncParams{
 		AccountID: accountID,
 		Regions:   req.Regions,
+		CloudIDs:  req.CloudIDs,
 	}
+
 	startAt := time.Now()
-	go func(leaseID etcd3.LeaseID) {
-		defer func() {
-			if err := lock.Manager.UnLock(leaseID); err != nil {
-				// 锁已经超时释放了
-				if strings.Contains(err.Error(), "requested lease not found") {
-					return
-				}
+	kt := cts.Kit.NewSubKit()
+	// 设置超时控制
+	cancel := kt.CtxWithTimeoutMS(int(AccountSyncDefaultTimeout / time.Millisecond))
+	defer cancel()
+	err = syncFunc(kt, a.client, syncParams)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, "+
+			"cost: %s, rid: %s", enumor.Aws, resType, err, accountID, req, time.Since(startAt), cts.Kit.Rid)
+		return nil, err
+	}
+	logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, resType: %s, "+
+		"cost: %s, rid: %s", enumor.Aws, resType, accountID, req, resType, time.Since(startAt), cts.Kit.Rid)
 
-				logs.Errorf("[%s]: unlock account sync lock for cond sync failed, "+
-					"err: %v, account: %s, leaseID: %d, rid: %s",
-					constant.AccountSyncFailed, err, accountID, leaseID, cts.Kit.Rid)
-			}
-			logs.Infof("unlock account sync key: %s, rid: %s", lock.Key(accountID), cts.Kit.Rid)
-
-		}()
-
-		err = syncFunc(cts.Kit, a.client, syncParams)
-		if err != nil {
-			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, "+
-				"cost: %s, rid: %s", err, enumor.Aws, resType, accountID, req, time.Since(startAt), cts.Kit.Rid)
-			return
-		}
-		logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, cost: %s, rid: %s",
-			enumor.Aws, resType, accountID, req, time.Since(startAt), cts.Kit.Rid)
-	}(leaseID)
-
-	return "started", nil
+	return nil, nil
 }
 
-func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, resType enumor.CloudResourceType) (
-	*cloudaccount.ResCondSyncReq, aws.CondSyncFunc, error) {
+func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID string,
+	resType enumor.CloudResourceType) (*cloudaccount.ResCondSyncReq, aws.CondSyncFunc, error) {
 
 	req := new(cloudaccount.ResCondSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -108,6 +111,7 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, resType enumor
 	}
 
 	var rules []*filter.AtomRule
+	rules = append(rules, tools.RuleEqual("account_id", accountID))
 	if len(req.Regions) > 0 {
 		rules = append(rules, tools.RuleIn("region_id", req.Regions))
 	}

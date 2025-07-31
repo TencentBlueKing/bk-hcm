@@ -43,7 +43,8 @@ func (svc *service) GetRootAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 
 	dbAccount, err := getRootAccountFromTable(accountID, svc, cts)
 	if err != nil {
-		logs.Errorf("GetRootAccountBasicInfo getRootAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
+		logs.Errorf("GetRootAccountBasicInfo getRootAccountFromTable accountID: %s, error: %s, rid: %s",
+			accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -81,7 +82,8 @@ func (svc *service) GetRootAccount(cts *rest.Contexts) (interface{}, error) {
 
 	dbAccount, err := getRootAccountFromTable(accountID, svc, cts)
 	if err != nil {
-		logs.Errorf("GetRootAccount getRootAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
+		logs.Errorf("GetRootAccount getRootAccountFromTable accountID: %s, error: %s, rid: %s",
+			accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -108,17 +110,23 @@ func (svc *service) GetRootAccount(cts *rest.Contexts) (interface{}, error) {
 	var account interface{}
 	switch vendor {
 	case enumor.Aws:
-		account, err = convertToRootAccountResult[protocore.AwsRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.AwsRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.Gcp:
-		account, err = convertToRootAccountResult[protocore.GcpRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.GcpRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.HuaWei:
-		account, err = convertToRootAccountResult[protocore.HuaWeiRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.HuaWeiRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.Azure:
-		account, err = convertToRootAccountResult[protocore.AzureRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.AzureRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.Zenlayer:
-		account, err = convertToRootAccountResult[protocore.ZenlayerRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.ZenlayerRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.Kaopu:
-		account, err = convertToRootAccountResult[protocore.KaopuRootAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToRootAccountResult[protocore.KaopuRootAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	}
 
 	if err != nil {

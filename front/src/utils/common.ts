@@ -130,6 +130,34 @@ const buildVIPFilterRules = (value: string | string[]): RulesItem => {
   return { op: QueryRuleOPEnum.OR, rules: [...privateIpResult.rules, ...publicIpResult.rules] };
 };
 
+/**
+ * 构建多值查询条件(精确查询)，如：多ID
+ */
+const buildMultipleValueRulesItem = (field: string, value: string) => {
+  const rulesItem: RulesItem = { field, op: QueryRuleOPEnum.EQ, value: '' };
+
+  if (value) {
+    const splitValue = value
+      .trim()
+      .split(/\n|;|；|,|，|\|/)
+      .reduce((prev, curr) => {
+        if (curr.trim()) {
+          prev.push(curr.trim());
+        }
+        return prev;
+      }, []);
+
+    if (!splitValue.length) {
+      // 如果没有分割值，直接使用原始值进行搜索
+      Object.assign(rulesItem, { value });
+    } else {
+      Object.assign(rulesItem, { op: QueryRuleOPEnum.IN, value: splitValue });
+    }
+  }
+
+  return rulesItem;
+};
+
 // 将值进行btoa编码
 const encodeValueByBtoa = (v: any) => btoa(JSON.stringify(v));
 // 获取atob解码后的值
@@ -278,6 +306,7 @@ export {
   parseIP,
   buildIPFilterRules,
   buildVIPFilterRules,
+  buildMultipleValueRulesItem,
   encodeValueByBtoa,
   decodeValueByAtob,
   analysisIP,

@@ -103,6 +103,8 @@ export interface ApplyClbModel {
   backup_zones?: string;
   // ip版本: IPV4, IPV6(ipv6 nat64), IPv6FullChain(ipv6)
   address_ip_version?: 'IPV4' | 'IPv6FullChain' | 'IPV6';
+  // 安全组放通模式
+  load_balancer_pass_to_target: boolean;
   // 云VpcID
   cloud_vpc_id: string;
   // 云子网ID, 内网型必填

@@ -93,11 +93,13 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
+// deleteDisk delete disk
 func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("delCloudIDs is <= 0, not delete")
 	}
 
+	// Validate that the disks to be deleted do not exist in the cloud
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -129,6 +131,7 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	return nil
 }
 
+// updateDisk update disk
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]typesdisk.TCloudDisk) error {
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("updateMap is <= 0, not update")
@@ -177,6 +180,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
+// createDisk create disk
 func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 	addSlice []typesdisk.TCloudDisk) error {
 
@@ -235,6 +239,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// listDiskFromCloud list disk from cloud
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesdisk.TCloudDisk, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -258,6 +263,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typ
 	return result, nil
 }
 
+// listDiskFromDB list disk from db
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]*coredisk.Disk[coredisk.TCloudExtension], error) {
 
@@ -298,6 +304,7 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// isDiskChange check the disk whether changed
 func isDiskChange(cloud typesdisk.TCloudDisk, db *coredisk.Disk[coredisk.TCloudExtension]) bool {
 
 	if converter.PtrToVal(cloud.DiskState) != db.Status {

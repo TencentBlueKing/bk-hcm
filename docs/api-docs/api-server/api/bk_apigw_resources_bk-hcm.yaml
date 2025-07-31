@@ -7,6 +7,81 @@ info:
 schemes:
   - http
 paths:
+  /api/v1/cloud/cos/buckets/create:
+    post:
+      operationId: create_cos_bucket
+      description: 创建存储桶代理接口
+      tags:
+        - Cos
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/cos/buckets/create
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/cos/buckets/delete:
+    delete:
+      operationId: delete_cos_bucket
+      description: 删除存储桶代理接口
+      tags:
+        - Cos
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: delete
+          path: /api/v1/cloud/cos/buckets/delete
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/cos/buckets/list:
+    post:
+      operationId: list_cos_bucket
+      description: 查询存储桶代理接口
+      tags:
+        - Cos
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/cos/buckets/list
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
   /api/v1/cloud/accounts/extensions/list:
     post:
       operationId: list_account_with_extension
@@ -17,15 +92,15 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: false
+        isPublic: true
+        allowApplyPermission: true
         matchSubpath: false
         backend:
           type: HTTP
           method: post
           path: /{env.url_path_prefix}api/v1/cloud/accounts/extensions/list
           matchSubpath: false
-          timeout: 0
+          timeout: 30
           upstreams: {}
           transformHeaders: {}
         authConfig:
@@ -42,15 +117,15 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: false
+        isPublic: true
+        allowApplyPermission: true
         matchSubpath: false
         backend:
           type: HTTP
           method: post
           path: /api/v1/cloud/accounts/list
           matchSubpath: false
-          timeout: 0
+          timeout: 30
           upstreams: {}
           transformHeaders: {}
         authConfig:
@@ -67,15 +142,15 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: false
+        isPublic: true
+        allowApplyPermission: true
         matchSubpath: false
         backend:
           type: HTTP
           method: post
           path: /{env.url_path_prefix}api/v1/cloud/accounts/secrets/list
           matchSubpath: false
-          timeout: 0
+          timeout: 30
           upstreams: {}
           transformHeaders: {}
         authConfig:
@@ -92,15 +167,65 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: false
-        allowApplyPermission: false
+        isPublic: true
+        allowApplyPermission: true
         matchSubpath: false
         backend:
           type: HTTP
           method: post
           path: /api/v1/cloud/vendors/{vendor}/bills/list
           matchSubpath: false
-          timeout: 0
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond:
+    post:
+      operationId: list_biz_task_management_by_cond
+      description: 查询指定条件的任务管理列表
+      tags:
+        - TaskManage
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/task_details/list_by_cond:
+    post:
+      operationId: list_biz_task_detail_by_cond
+      description: 查询指定条件的任务详情
+      tags:
+        - TaskManage
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/task_details/list_by_cond
+          matchSubpath: false
+          timeout: 30
           upstreams: {}
           transformHeaders: {}
         authConfig:

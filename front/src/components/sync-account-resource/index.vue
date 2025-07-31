@@ -59,6 +59,7 @@ interface IProps {
   multipleRegion?: boolean;
   multipleResourceGroup?: boolean;
   initialModel?: IModel;
+  errorHandler?: (error: any) => void; // 业务报错catch
 }
 
 interface IModel {
@@ -124,8 +125,15 @@ const handleConfirm = async () => {
 
   await syncForm.value.validate();
   loading.value = true;
+  const requestConfig = props.errorHandler ? { globalError: false } : {};
   try {
-    await resourceStore.syncResource(vendor, accountId, resourceName, buildRequestBody());
+    const res = await resourceStore.syncResource(vendor, accountId, resourceName, buildRequestBody(), requestConfig);
+
+    if (res.code !== 0 && props.errorHandler) {
+      props.errorHandler(res);
+      return;
+    }
+
     Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
     handleClosed();
     emit('success');
