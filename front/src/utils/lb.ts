@@ -4,6 +4,7 @@
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { MENU_BUSINESS_OPERATION_LOG, MENU_BUSINESS_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
+import { Message } from 'bkui-vue';
 
 /**
  * 异步加载负载均衡的监听器数量
@@ -68,7 +69,7 @@ const goAsyncTaskDetail = async (
     return;
   }
   // 1. 点击后, 先查询到 audit_id
-  const { data } = await api(
+  const res = await api(
     {
       page: { limit: 1, start: 0, count: false },
       filter: {
@@ -79,18 +80,35 @@ const goAsyncTaskDetail = async (
     'audits',
     { globalError: false }, // 业务方处理错误
   );
-  const { id, res_name: name, res_id: resId, bk_biz_id: businessId } = data.details?.[0];
-  // 2. 新开页面查看异步任务详情
-  routerAction.open({
-    name: MENU_BUSINESS_OPERATION_LOG_DETAILS,
-    query: {
-      record_id: id,
-      name,
-      res_id: resId,
-      bizs: businessId,
-      flow: flowId,
-    },
-  });
+
+  if (res.code === 0) {
+    const { id, res_name: name, res_id: resId, bk_biz_id: businessId } = res.data?.details?.[0];
+    // 2. 新开页面查看异步任务详情
+    routerAction.open({
+      name: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+      query: {
+        record_id: id,
+        name,
+        res_id: resId,
+        bizs: businessId,
+        flow: flowId,
+      },
+    });
+  } else {
+    Message({ theme: 'error', message: res.message });
+  }
 };
 
-export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail };
+// 格式化带宽，单位 Mbps
+const formatBandwidth = (bandwidth: number) => {
+  if (bandwidth === undefined || bandwidth === null) return '--';
+
+  if (bandwidth >= 1024) {
+    const gbpsValue = (bandwidth / 1024).toFixed(2);
+    return `${gbpsValue.replace(/\.00$/, '')} Gbps`;
+  }
+
+  return `${bandwidth} Mbps`;
+};
+
+export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail, formatBandwidth };

@@ -128,6 +128,7 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	return new(SyncResult), nil
 }
 
+// syncRoute synchronizes the route table rules in the database with the cloud.
 func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	existRT, err := cli.listRouteTableFromDB(kt, params)
 	if err != nil {
@@ -153,6 +154,7 @@ func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	return nil
 }
 
+// createRouteTable creates route tables in the database
 func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []typesroutetable.TCloudRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -203,6 +205,7 @@ func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// updateRouteTalbe updates route tables in the database
 func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]typesroutetable.TCloudRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -248,6 +251,7 @@ func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// deleteRouteTable deletes route tables from the database after validating that they do not exist in the cloud.
 func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("routeTable delCloudIDs is <= 0, not delete")
@@ -273,7 +277,8 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.RouteTable.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s", enumor.TCloud, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
 		return err
 	}
 
@@ -283,6 +288,7 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 	return nil
 }
 
+// listRouteTableFromCloud lists route tables from the cloud based on the provided parameters.
 func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesroutetable.TCloudRouteTable, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -310,6 +316,7 @@ func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) 
 	return result.Details, nil
 }
 
+// listRouteTableFromDB lists route tables from the database based on the provided parameters.
 func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]routetable.TCloudRouteTable, error) {
 
@@ -424,6 +431,7 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 	return nil
 }
 
+// listRemoveRouteTableID checks if the route table IDs in the cloud exist.
 func (cli *client) listRemoveRouteTableID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -450,6 +458,7 @@ func (cli *client) listRemoveRouteTableID(kt *kit.Kit, params *SyncBaseParams) (
 	return delCloudIDs, nil
 }
 
+// isRouteTableChange checks if the cloud route table has changed compared to the database version.
 func isRouteTableChange(cloud typesroutetable.TCloudRouteTable,
 	db routetable.TCloudRouteTable) bool {
 

@@ -23,6 +23,8 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits(['change']);
+
 const localModel = computed({
   get() {
     if (props.multiple && model.value && !Array.isArray(model.value)) {
@@ -34,6 +36,9 @@ const localModel = computed({
     model.value = val;
   },
 });
+const handleChange = (val: number | number[]) => {
+  emit('change', val);
+};
 
 const attrs = useAttrs();
 </script>
@@ -46,6 +51,7 @@ const attrs = useAttrs();
     :filterable="filterable"
     :collapse-tags="collapseTags"
     :option-disabled="optionDisabled"
+    @change="handleChange"
     v-bind="attrs"
   />
 </template>

@@ -44,10 +44,14 @@ const (
 	Layer4ListenerBindRs = OperationType(enumor.TaskBindingLayer4RS)
 	// Layer7ListenerBindRs 七层监听器绑定RS
 	Layer7ListenerBindRs = OperationType(enumor.TaskBindingLayer7RS)
-	// LayerListenerUnbindRs 监听器批量解绑RS-TCP/UDP
-	LayerListenerUnbindRs = OperationType(enumor.TaskUnbindListenerRs)
-	// LayerListenerRsWeight 监听器批量调整RS权重
-	LayerListenerRsWeight = OperationType(enumor.TaskModifyListenerRsWeight)
+	// Layer4ListenerUnbindRs 四层监听器批量解绑RS
+	Layer4ListenerUnbindRs = OperationType(enumor.TaskUnbindListenerLayer4Rs)
+	// Layer7ListenerUnbindRs 七层监听器批量解绑RS
+	Layer7ListenerUnbindRs = OperationType(enumor.TaskUnbindListenerLayer7Rs)
+	// Layer4ListenerRsWeight 四层监听器批量调整RS权重
+	Layer4ListenerRsWeight = OperationType(enumor.TaskModifyListenerLayer4RsWeight)
+	// Layer7ListenerRsWeight 七层监听器批量调整RS权重
+	Layer7ListenerRsWeight = OperationType(enumor.TaskModifyListenerLayer7RsWeight)
 	// ListenerDelete 监听器删除
 	ListenerDelete = OperationType(enumor.TaskDeleteListener)
 )

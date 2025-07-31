@@ -81,7 +81,9 @@ export const useResourceStore = defineStore({
      * @return {*}
      */
     list(data: any, type: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/list`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/list`, data, {
+        cancelPrevious: true,
+      });
     },
     detail(type: string, id: number | string, vendor?: string) {
       if (vendor) {
@@ -291,10 +293,11 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
     },
     // 同步拉取资源
-    syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams) {
+    syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams, config?: any) {
       return http.post(
         `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
         params,
+        config,
       );
     },
   },

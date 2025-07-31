@@ -6,11 +6,13 @@ import usePage from '@/hooks/use-page';
 import useTableSelection from '@/hooks/use-table-selection';
 import { ITaskDetailItem } from '@/store';
 import columnFactory from './column-factory';
-const { getColumns } = columnFactory();
-
-const props = withDefaults(defineProps<IActionListProps>(), {});
+const props = withDefaults(defineProps<IActionListProps>(), {
+  selectable: true,
+});
 
 const emit = defineEmits<(e: 'select', data: any[]) => void>();
+
+const { getColumns } = columnFactory();
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
@@ -61,7 +63,7 @@ watch(
     @selection-change="handleSelectChange"
     row-key="id"
   >
-    <bk-table-column type="selection" align="center" min-width="30"></bk-table-column>
+    <bk-table-column type="selection" align="center" min-width="30" v-if="selectable"></bk-table-column>
     <bk-table-column
       v-for="(column, index) in columns"
       :key="index"
@@ -71,7 +73,12 @@ watch(
       :render="column.render"
     >
       <template #default="{ row }">
-        <display-value :property="column" :value="get(row, column.id)" :display="column?.meta?.display" />
+        <display-value
+          :property="column"
+          :value="get(row, column.id)"
+          :display="column?.meta?.display"
+          :vendor="row?.param?.vendor"
+        />
       </template>
     </bk-table-column>
   </bk-table>

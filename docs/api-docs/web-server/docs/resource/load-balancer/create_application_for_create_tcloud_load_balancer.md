@@ -31,12 +31,13 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
 | internet_max_bandwidth_out | int64        | 否  | 最大出带宽，单位Mbps                                                  |
 | bandwidthpkg_sub_type      | string       | 否  | 带宽包的类型，如SINGLEISP（单线）、BGP（多线）。                                |
 | bandwidth_package_id       | string       | 否  | 带宽包id，计费模式为带宽包计费时必填                                           |
-| egress                     | string       | 否  | 网络出口                                 |
+| egress                     | string       | 否  | 网络出口                                                          |
 | sla_type                   | string       | 否  | 性能容量型规格, 留空为共享型                                               |
 | auto_renew                 | boolean      | 否  | 按月付费自动续费                                                      |
 | require_count	             | int          | 是  | 购买数量                                                          |
 | memo                       | string       | 否  | 备注                                                            |
 | remark                     | string       | 否  | 单据备注                                                          |
+| load_balancer_pass_to_target | boolean      | 是  | 1次校验-仅校验CLB上的安全组,传入true; 2次校验-同时校验CLB和RS上的安全组, 传入false        |
 
 #### 网络计费模式取值范围：
 
@@ -76,7 +77,8 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "internet_max_bandwidth_out": 10,
   "auto_renew": true,
   "required_count": 1,
-  "memo": ""
+  "memo": "",
+  "load_balancer_pass_to_target": true,
 }
 ```
 

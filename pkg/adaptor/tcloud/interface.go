@@ -78,7 +78,7 @@ type TCloud interface {
 	SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error
 	SecurityGroupCvmBatchAssociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
 	SecurityGroupCvmBatchDisassociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
-	DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+	DescribeSGAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
 		[]securitygroup.TCloudSecurityGroupAssociationStatistic, error)
 
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)

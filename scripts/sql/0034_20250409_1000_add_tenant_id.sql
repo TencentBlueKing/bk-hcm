@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0034,HCMVER=v1.8.2
 
     Notes:
     1. 在需要支持多租户的数据表中，新增租户ID
@@ -280,6 +280,6 @@ alter table `task_management`
     add index `idx_tenant_id`(`tenant_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9990' as `sql_ver`;
+SELECT 'v1.8.2' as `hcm_ver`, '0034' as `sql_ver`;
 
 COMMIT;

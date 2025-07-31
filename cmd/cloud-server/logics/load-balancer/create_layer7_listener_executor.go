@@ -22,6 +22,7 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
@@ -37,6 +38,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
@@ -73,7 +75,10 @@ type createLayer7ListenerTaskDetail struct {
 	*CreateLayer7ListenerDetail
 }
 
-// Execute 导入执行器的唯一入口
+// Execute is the main entry point.
+// It orchestrates the entire process of creating layer-7 listeners based on the provided raw details.
+// The process includes: unmarshalling data, validation, filtering, building task management entries,
+// creating asynchronous task flows, and updating task management details.
 func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
 	rawDetails json.RawMessage) (taskID string, err error) {
 
@@ -181,6 +186,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
@@ -276,24 +282,36 @@ func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *CreateLayer7ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil
 	}
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
-	for _, detail := range c.taskDetails {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:            detail.taskDetailID,
-			FlowID:        detail.flowID,
-			TaskActionIDs: []string{detail.actionID},
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		return err
+	// group by flowID and actionID
+	classifySlice := classifier.ClassifySlice(c.taskDetails, func(detail *createLayer7ListenerTaskDetail) string {
+		return fmt.Sprintf("%s/%s", detail.flowID, detail.actionID)
+	})
+	for key, details := range classifySlice {
+		split := strings.Split(key, "/")
+		if len(split) != 2 {
+			return fmt.Errorf("invalid key: %s", key)
+		}
+		flowID, actionID := split[0], split[1]
+		for _, batch := range slice.Split(details, constant.BatchOperationMaxLimit) {
+			ids := slice.Map(batch, func(detail *createLayer7ListenerTaskDetail) string {
+				return detail.taskDetailID
+			})
+			updateDetailsReq := &task.BatchUpdateTaskDetailReq{
+				IDs:           ids,
+				FlowID:        flowID,
+				TaskActionIDs: []string{actionID},
+			}
+			err := c.dataServiceCli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
+			if err != nil {
+				logs.Errorf("update task details failed, err: %v, req: %+v, rid: %s", err, updateDetailsReq, kt.Rid)
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -353,8 +371,14 @@ func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 		managementDetailIDs := make([]string, 0, len(taskDetails))
 		listeners := make([]*hclb.TCloudListenerCreateReq, 0, len(taskDetails))
 		for _, detail := range taskDetails {
+			// 监听器名称
+			listenerName := fmt.Sprintf("%s-%d", detail.Protocol, detail.ListenerPorts[0])
+			if len(detail.Name) > 0 {
+				listenerName = detail.Name
+			}
+
 			req := &hclb.TCloudListenerCreateReq{
-				Name:        fmt.Sprintf("%s-%d", detail.Protocol, detail.ListenerPorts[0]),
+				Name:        listenerName,
 				BkBizID:     c.bkBizID,
 				LbID:        lbID,
 				Protocol:    detail.Protocol,
@@ -442,24 +466,4 @@ func (c *CreateLayer7ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 	}
 
 	return flowID, nil
-}
-
-func (c *CreateLayer7ListenerExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
-	taskDetails []*createLayer7ListenerTaskDetail) error {
-
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(taskDetails))
-	for _, detail := range taskDetails {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:    detail.taskDetailID,
-			State: state,
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		return err
-	}
-	return nil
 }

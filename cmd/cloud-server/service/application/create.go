@@ -46,6 +46,7 @@ import (
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
@@ -86,54 +87,29 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	if err := handler.CheckReq(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	// 预处理数据
 	if err := handler.PrepareReq(); err != nil {
 		return nil, err
 	}
-
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
-	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
-	if err != nil {
-		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
-	}
-
-	// 生成ITSM的回调地址
-	callbackUrl := a.getCallbackUrl()
-
-	// 渲染ITSM单据标题
-	itsmTitle, err := handler.RenderItsmTitle()
-	if err != nil {
-		return nil, fmt.Errorf("render itsm ticket title error: %w", err)
-	}
-
-	// 渲染ITSM单据申请内容
-	itsmForm, err := handler.RenderItsmForm()
-	if err != nil {
-		return nil, fmt.Errorf("render itsm ticket form error: %w", err)
-	}
-
-	// 获取ITSM单据涉及到的各个节点审批人
-	approvers := handler.GetItsmApprover(managers)
 
 	// 调用ITSM创建单据
-	sn, err := a.itsmCli.CreateTicket(
-		cts.Kit,
-		&itsm.CreateTicketParams{
-			ServiceID:      serviceID,
-			Creator:        cts.Kit.User,
-			CallbackURL:    callbackUrl,
-			Title:          itsmTitle,
-			ContentDisplay: itsmForm,
-			// ITSM流程里使用变量引用的方式设置各个节点审批人
-			VariableApprovers: approvers,
-		},
-	)
+	sn, err := a.createItsmTicket(cts, handler, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
+	result, err := a.createApplication(cts, req, handler, sn, applicationType)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// createApplicationRequest ...
+func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult, error) {
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -146,11 +122,11 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	// 主机、硬盘、VPC、负载均衡需要记录业务ID
 	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
-		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer {
+		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
+		applicationType == enumor.AddAccount {
 		bkBizIDs = handler.GetBkBizIDs()
 	}
-
-	result, err := a.client.DataService().Global.Application.CreateApplication(
+	return a.client.DataService().Global.Application.CreateApplication(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
@@ -165,11 +141,50 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 			Memo:           req.Remark,
 		},
 	)
+}
+
+// createItsmTicket 调用ITSM创建单据
+func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
+	applicationType enumor.ApplicationType) (string, error) {
+	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("get approval process service id and managers failed, err: %v", err)
 	}
 
-	return result, nil
+	// 生成ITSM的回调地址
+	callbackUrl := a.getCallbackUrl()
+
+	// 渲染ITSM单据标题
+	itsmTitle, err := handler.RenderItsmTitle()
+	if err != nil {
+		return "", fmt.Errorf("render itsm ticket title error: %w", err)
+	}
+
+	// 渲染ITSM单据申请内容
+	itsmForm, err := handler.RenderItsmForm()
+	if err != nil {
+		return "", fmt.Errorf("render itsm ticket form error: %w", err)
+	}
+
+	// 获取ITSM单据涉及到的各个节点审批人
+	approvers := handler.GetItsmApprover(managers)
+
+	sn, err := a.itsmCli.CreateTicket(
+		cts.Kit,
+		&itsm.CreateTicketParams{
+			ServiceID:      serviceID,
+			Creator:        cts.Kit.User,
+			CallbackURL:    callbackUrl,
+			Title:          itsmTitle,
+			ContentDisplay: itsmForm,
+			// ITSM流程里使用变量引用的方式设置各个节点审批人
+			VariableApprovers: approvers,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("call itsm create ticket api failed, err: %w", err)
+	}
+	return sn, nil
 }
 
 func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {

@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2024 THL A29 Limited,
+ * Copyright (C) 2022 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-/*
-    SQLVER=9999,HCMVER=v9.9.9
+// Package azure ...
+package azure
 
-    Notes:
-    1. 修改`async_flow`表，增加`tenant_id`字段
-    2. 修改`async_flow_task`表，增加`tenant_id`字段
-*/
+import (
+	ccinfo "hcm/cmd/hc-service/logics/res-sync/cc-info"
+	"hcm/pkg/api/core/cloud/cvm"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+)
 
-START TRANSACTION;
+// SyncCvmCCInfoParams ...
+type SyncCvmCCInfoParams struct {
+	Cvms []cvm.BaseCvm
+}
 
-alter table async_flow
-    add tenant_id varchar(64) not null default '' after worker;
+// CvmCCInfo ...
+func (cli *client) CvmCCInfo(kt *kit.Kit, params *SyncCvmCCInfoParams) error {
+	mgr := ccinfo.NewCvmCCInfoRelManager(cli.dbCli)
 
-alter table async_flow_task
-    add tenant_id varchar(64) not null default '' after result;
+	if err := mgr.SyncCvmCCInfo(kt, params.Cvms); err != nil {
+		logs.Errorf("sync azure cvm cc info failed, err: %v, cvms: %+v, rid: %s", err, params.Cvms, kt.Rid)
+		return err
+	}
 
-CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
-
-COMMIT;
+	return nil
+}

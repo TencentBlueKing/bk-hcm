@@ -69,3 +69,34 @@ Returns http port for service
 {{- end -}}
 {{- print $value }}
 {{- end -}}
+
+{{- define "bk-hcm.authserver" -}}
+  {{- printf "%s-authserver" (include "bk-hcm.fullname" .) -}}
+{{- end -}}
+
+{{/*
+Returns ingress host URL for authserver.
+*/}}
+{{- define "authserverIngressHost" -}}
+{{- $authserverIngressHost := "http://" }}
+{{- if .Values.ingress.shareDomainEnable }}
+{{- $authserverIngressHost = printf "%s%s/auth" $authserverIngressHost .Values.ingress.host }}
+{{- else }}
+{{- $authserverIngressHost = printf "%s%s" $authserverIngressHost .Values.ingress.authserver.host }}
+{{- end }}
+{{- $authserverIngressHost -}}
+{{- end -}}
+
+{{/*
+Returns label selector for authserver pod
+*/}}
+{{- define "bk-hcm.authserver-pod-selector" -}}
+{{- printf "-l app.kubernetes.io/name=%s, app.kubernetes.io/instance=%s, component=authserver" .Chart.Name .Chart.Name -}}
+{{- end -}}
+
+{{/*
+Returns tenantID.
+*/}}
+{{- define "bk-hcm.tenantID" -}}
+{{- print (.Values.tenant.enabled | ternary "system" "default") -}}
+{{- end -}}

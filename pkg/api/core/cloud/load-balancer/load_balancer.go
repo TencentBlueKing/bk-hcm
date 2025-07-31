@@ -80,9 +80,12 @@ type BaseLoadBalancer struct {
 	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
 	Domain               string   `json:"domain"`
 	Status               string   `json:"status"`
+	BandWidth            int64    `json:"bandwidth"` // 带宽，单位Mbps
+	Isp                  string   `json:"isp"`       // 运营商
 	CloudCreatedTime     string   `json:"cloud_created_time"`
 	CloudStatusTime      string   `json:"cloud_status_time"`
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	SyncTime             string   `json:"sync_time"`
 
 	Tags core.TagMap `json:"tags"`
 

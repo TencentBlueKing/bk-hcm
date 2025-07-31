@@ -45,6 +45,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("UpdateTaskDetail", http.MethodPatch, "/task_details/update", svc.UpdateTaskDetail)
 	h.Add("DeleteTaskDetail", http.MethodDelete, "/task_details/delete", svc.DeleteTaskDetail)
 	h.Add("ListTaskDetail", http.MethodPost, "/task_details/list", svc.ListTaskDetail)
+	h.Add("BatchUpdateTaskDetail", http.MethodPatch, "/task_details/update/batch", svc.BatchUpdateTaskDetail)
 
 	h.Load(cap.WebService)
 }

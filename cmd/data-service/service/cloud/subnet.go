@@ -25,7 +25,6 @@ import (
 
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/api/core"
-	protocore "hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -36,10 +35,8 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -318,134 +315,6 @@ func (svc *subnetSvc) BatchUpdateSubnetBaseInfo(cts *rest.Contexts) (interface{}
 	return nil, nil
 }
 
-// GetSubnet get subnet details.
-func (svc *subnetSvc) GetSubnet(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	subnetID := cts.PathParameter("id").String()
-
-	dbSubnet, err := getSubnetFromTable(cts.Kit, svc.dao, subnetID)
-	if err != nil {
-		return nil, err
-	}
-
-	base := convertBaseSubnet(dbSubnet)
-
-	switch vendor {
-	case enumor.TCloud:
-		return convertToSubnetResult[protocore.TCloudSubnetExtension](base, dbSubnet.Extension)
-	case enumor.Aws:
-		return convertToSubnetResult[protocore.AwsSubnetExtension](base, dbSubnet.Extension)
-	case enumor.Gcp:
-		return convertToSubnetResult[protocore.GcpSubnetExtension](base, dbSubnet.Extension)
-	case enumor.HuaWei:
-		return convertToSubnetResult[protocore.HuaWeiSubnetExtension](base, dbSubnet.Extension)
-	case enumor.Azure:
-		return convertToSubnetResult[protocore.AzureSubnetExtension](base, dbSubnet.Extension)
-	}
-
-	return nil, nil
-}
-
-func convertToSubnetResult[T protocore.SubnetExtension](baseSubnet *protocore.BaseSubnet, dbExtension tabletype.JsonField) (
-	*protocore.Subnet[T], error) {
-
-	extension := new(T)
-	err := json.UnmarshalFromString(string(dbExtension), extension)
-	if err != nil {
-		return nil, fmt.Errorf("UnmarshalFromString db extension failed, err: %v", err)
-	}
-	return &protocore.Subnet[T]{
-		BaseSubnet: *baseSubnet,
-		Extension:  extension,
-	}, nil
-}
-
-func getSubnetFromTable(kt *kit.Kit, dao dao.Set, subnetID string) (*tablecloud.SubnetTable, error) {
-	opt := &types.ListOption{
-		Filter: tools.EqualExpression("id", subnetID),
-		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
-	}
-	res, err := dao.Subnet().List(kt, opt)
-	if err != nil {
-		logs.Errorf("list subnet failed, err: %v, rid: %s", kt.Rid)
-		return nil, fmt.Errorf("list subnet failed, err: %v", err)
-	}
-
-	details := res.Details
-	if len(details) != 1 {
-		return nil, fmt.Errorf("list subnet failed, account(id=%s) doesn't exist", subnetID)
-	}
-
-	return &details[0], nil
-}
-
-// ListSubnet list subnets.
-func (svc *subnetSvc) ListSubnet(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   req.Page,
-		Fields: req.Fields,
-	}
-	daoSubnetResp, err := svc.dao.Subnet().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list subnet failed, err: %v", err)
-	}
-	if req.Page.Count {
-		return &protocloud.SubnetListResult{Count: daoSubnetResp.Count}, nil
-	}
-
-	details := make([]protocore.BaseSubnet, 0, len(daoSubnetResp.Details))
-	for _, subnet := range daoSubnetResp.Details {
-		details = append(details, converter.PtrToVal(convertBaseSubnet(&subnet)))
-	}
-
-	return &protocloud.SubnetListResult{Details: details}, nil
-}
-
-func convertBaseSubnet(dbSubnet *tablecloud.SubnetTable) *protocore.BaseSubnet {
-	if dbSubnet == nil {
-		return nil
-	}
-
-	return &protocore.BaseSubnet{
-		ID:                dbSubnet.ID,
-		Vendor:            dbSubnet.Vendor,
-		AccountID:         dbSubnet.AccountID,
-		CloudVpcID:        dbSubnet.CloudVpcID,
-		CloudRouteTableID: converter.PtrToVal(dbSubnet.CloudRouteTableID),
-		CloudID:           dbSubnet.CloudID,
-		Name:              converter.PtrToVal(dbSubnet.Name),
-		Region:            dbSubnet.Region,
-		Zone:              dbSubnet.Zone,
-		Ipv4Cidr:          dbSubnet.Ipv4Cidr,
-		Ipv6Cidr:          dbSubnet.Ipv6Cidr,
-		Memo:              dbSubnet.Memo,
-		VpcID:             dbSubnet.VpcID,
-		RouteTableID:      converter.PtrToVal(dbSubnet.RouteTableID),
-		BkBizID:           dbSubnet.BkBizID,
-		Revision: &core.Revision{
-			Creator:   dbSubnet.Creator,
-			Reviser:   dbSubnet.Reviser,
-			CreatedAt: dbSubnet.CreatedAt.String(),
-			UpdatedAt: dbSubnet.UpdatedAt.String(),
-		},
-	}
-}
-
 // BatchDeleteSubnet batch delete subnets.
 func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
@@ -493,69 +362,4 @@ func (svc *subnetSvc) BatchDeleteSubnet(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
-}
-
-// ListSubnetExt ...
-func (svc *subnetSvc) ListSubnetExt(cts *rest.Contexts) (interface{}, error) {
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   req.Page,
-		Fields: req.Fields,
-	}
-	listResp, err := svc.dao.Subnet().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list subnet failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	switch vendor {
-	case enumor.TCloud:
-		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp.Details)
-	case enumor.Aws:
-		return conSubnetExtListResult[protocore.AwsSubnetExtension](listResp.Details)
-	case enumor.Azure:
-		return conSubnetExtListResult[protocore.AzureSubnetExtension](listResp.Details)
-	case enumor.HuaWei:
-		return conSubnetExtListResult[protocore.HuaWeiSubnetExtension](listResp.Details)
-	case enumor.Gcp:
-		return conSubnetExtListResult[protocore.GcpSubnetExtension](listResp.Details)
-	default:
-		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
-	}
-}
-
-func conSubnetExtListResult[T protocore.SubnetExtension](tables []tablecloud.SubnetTable) (
-	*protocloud.SubnetExtListResult[T], error) {
-
-	details := make([]protocore.Subnet[T], 0, len(tables))
-	for _, one := range tables {
-		extension := new(T)
-		err := json.UnmarshalFromString(string(one.Extension), &extension)
-		if err != nil {
-			return nil, fmt.Errorf("UnmarshalFromString vpc json extension failed, err: %v", err)
-		}
-
-		details = append(details, protocore.Subnet[T]{
-			BaseSubnet: *convertBaseSubnet(&one),
-			Extension:  extension,
-		})
-	}
-
-	return &protocloud.SubnetExtListResult[T]{
-		Details: details,
-	}, nil
 }

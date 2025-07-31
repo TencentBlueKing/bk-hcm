@@ -51,8 +51,8 @@ func (a *service) UpdateAccountBizRel(cts *rest.Contexts) (interface{}, error) {
 			return nil, fmt.Errorf("delete account_biz_rels failed, err: %v", err)
 		}
 
-		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
-		for index, bizID := range req.BkBizIDs {
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.UsageBizIDs))
+		for index, bizID := range req.UsageBizIDs {
 			rels[index] = &tablecloud.AccountBizRelTable{
 				BkBizID:   bizID,
 				AccountID: accountID,

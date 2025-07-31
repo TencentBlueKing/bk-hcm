@@ -93,6 +93,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			Type:               string(req.Type),
 			Site:               string(req.Site),
 			Memo:               req.Memo,
+			BkBizID:            req.BkBizID,
 			Extension:          tabletype.JsonField(extensionJson),
 			RecycleReserveTime: constant.UnsetRecycleTime,
 			Creator:            cts.Kit.User,
@@ -104,8 +105,8 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			return nil, fmt.Errorf("create account failed, err: %v", err)
 		}
 
-		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
-		for index, bizID := range req.BkBizIDs {
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.UsageBizIDs))
+		for index, bizID := range req.UsageBizIDs {
 			rels[index] = &tablecloud.AccountBizRelTable{
 				BkBizID:   bizID,
 				AccountID: accountID,

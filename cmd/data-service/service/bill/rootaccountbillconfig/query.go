@@ -102,15 +102,15 @@ func (svc *rootBillConfigSvc) ListRootAccountBillConfigExt(cts *rest.Contexts) (
 
 	switch vendor {
 	case enumor.Aws:
-		return convertAccountBillConfigExtListResult[billcore.AwsBillConfigExtension](listResp.Details)
+		return cvtAccountBillConfigExtListResult[billcore.AwsBillConfigExtension](listResp.Details)
 	case enumor.Gcp:
-		return convertAccountBillConfigExtListResult[billcore.GcpBillConfigExtension](listResp.Details)
+		return cvtAccountBillConfigExtListResult[billcore.GcpBillConfigExtension](listResp.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func convertAccountBillConfigExtListResult[T billcore.RootAccountBillConfigExtension](
+func cvtAccountBillConfigExtListResult[T billcore.RootAccountBillConfigExtension](
 	tables []tablebill.RootAccountBillConfigTable) (*dsbill.RootAccountBillConfigExtListResult[T], error) {
 
 	details := make([]billcore.RootAccountBillConfig[T], 0, len(tables))
@@ -183,9 +183,9 @@ func (svc *rootBillConfigSvc) GetRootAccountBillConfig(cts *rest.Contexts) (inte
 	base := convertBaseAccountBillConfig(dbDetail)
 	switch vendor {
 	case enumor.Aws:
-		return convertToRootAccountBillConfigResult[billcore.AwsBillConfigExtension](base, dbDetail.Extension)
+		return cvtToRootAccountBillConfigResult[billcore.AwsBillConfigExtension](base, dbDetail.Extension)
 	case enumor.Gcp:
-		return convertToRootAccountBillConfigResult[billcore.GcpBillConfigExtension](base, dbDetail.Extension)
+		return cvtToRootAccountBillConfigResult[billcore.GcpBillConfigExtension](base, dbDetail.Extension)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
@@ -212,7 +212,7 @@ func getRootAccountBillConfigFromTable(kt *kit.Kit, dao dao.Set, billID string) 
 	return &details[0], nil
 }
 
-func convertToRootAccountBillConfigResult[T billcore.RootAccountBillConfigExtension](
+func cvtToRootAccountBillConfigResult[T billcore.RootAccountBillConfigExtension](
 	baseNI *billcore.BaseRootAccountBillConfig,
 	dbExtension tabletype.JsonField) (
 	*billcore.RootAccountBillConfig[T], error) {

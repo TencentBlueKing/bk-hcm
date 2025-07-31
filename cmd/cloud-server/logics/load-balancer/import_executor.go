@@ -31,10 +31,12 @@ import (
 	"hcm/pkg/async/action"
 	dataservice "hcm/pkg/client/data-service"
 	taskserver "hcm/pkg/client/task-server"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // ImportExecutor 导入执行器
@@ -73,10 +75,12 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 		return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case Layer7ListenerBindRs:
 		return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	case LayerListenerUnbindRs:
-		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	case LayerListenerRsWeight:
-		return newBatchListenerModifyRsWeightExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer4ListenerUnbindRs, Layer7ListenerUnbindRs:
+		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs,
+			operationType), nil
+	case Layer4ListenerRsWeight, Layer7ListenerRsWeight:
+		return newBatchListenerModifyRsWeightExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs,
+			operationType), nil
 	case ListenerDelete:
 		return newBatchDeleteListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	default:
@@ -162,21 +166,17 @@ func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.Ta
 	if len(ids) == 0 {
 		return nil
 	}
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
-	for _, id := range ids {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:     id,
+	for _, batch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
+		updateDetailsReq := &task.BatchUpdateTaskDetailReq{
+			IDs:    batch,
 			State:  state,
 			Reason: reason,
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := cli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		logs.Errorf("update task detail state failed, req: %v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
-		return err
+		}
+		err := cli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
+		if err != nil {
+			logs.Errorf("update task detail state failed, req: %v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
+			return err
+		}
 	}
 	return nil
 }

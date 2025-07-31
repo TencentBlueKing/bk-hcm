@@ -39,12 +39,10 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		err := fmt.Errorf("complete request is nil cannot complete this application")
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	// 验证complete request
 	if err := a.completeReq.Validate(); err != nil {
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	// 验证complete request的vendor和create request的vendor是否匹配
 	if a.completeReq.Vendor != a.req.Vendor {
 		err := fmt.Errorf("complete request's vendor and create request's vendor not match")
@@ -62,16 +60,13 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 	// 校验site是否匹配
-	if enumor.MainAccountSiteType(rootAccount.Site) != a.req.Site {
+	if rootAccount.Site != a.req.Site {
 		err := fmt.Errorf("root account's site(%s) not match main account's site (%s)",
 			rootAccount.Site, a.req.Site)
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
-	var (
-		accountID string
-	)
-
+	var accountID string
 	switch a.req.Vendor {
 	case enumor.Aws:
 		accountID, err = a.createForAws(&rootAccount.BaseRootAccount)
@@ -98,7 +93,6 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 			"but get main account basic info failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	req := &meta.RegisterResCreatorActionInst{
 		Type: string(sys.MainAccount),
 		ID:   accountID,
@@ -110,7 +104,6 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		logs.Errorf(err.Error())
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
-
 	//  异步发送邮件通知用户
 	go a.sendMail(account)
 
@@ -119,6 +112,7 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		"cloud_account_id": account.CloudID}, nil
 }
 
+// createForAws creates a main account for AWS vendor.
 func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 
@@ -167,6 +161,7 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 	return result.ID, nil
 }
 
+// createForGcp creates a main account for GCP vendor.
 func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 
@@ -229,6 +224,7 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 	return result.ID, nil
 }
 
+// createForAzure create main account for azure vendor.
 func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -267,6 +263,7 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 	return result.ID, nil
 }
 
+// createForHuaWei creates a main account for Huawei Cloud.
 func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -305,6 +302,7 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 	return result.ID, nil
 }
 
+// createForZenlayer creates a Zenlayer main account.
 func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -343,6 +341,7 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 	return result.ID, nil
 }
 
+// createForKaopu creates a main account for Kaopu vendor.
 func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq

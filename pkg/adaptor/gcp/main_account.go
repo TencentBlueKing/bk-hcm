@@ -139,7 +139,8 @@ func (g *Gcp) UpdateBillingInfo(kt *kit.Kit, projectId string, billingAccountNam
 		},
 	).Context(kt.Ctx).Do()
 	if err != nil {
-		logs.Errorf("update billing info error: %s, projectId: %s, billingAccountName: %s, rid: %s", err.Error(), projectId, billingAccountName, kt.Rid)
+		logs.Errorf("update billing info error: %v, projectId: %s, billingAccountName: %s, rid: %s",
+			err, projectId, billingAccountName, kt.Rid)
 		return err
 	}
 
@@ -185,7 +186,8 @@ func (g *Gcp) BindingProjectEditor(kt *kit.Kit, projectId, email string) error {
 		iamReq,
 	).Context(kt.Ctx).Do()
 	if err != nil {
-		logs.Errorf("project create success, but binding project owner error: %s, projectId: %s, email: %s, rid: %s", err.Error(), projectId, email, kt.Rid)
+		logs.Errorf("project create success, but binding project owner error: %s, projectId: %s, email: %s, rid: %s",
+			err.Error(), projectId, email, kt.Rid)
 		return err
 	}
 

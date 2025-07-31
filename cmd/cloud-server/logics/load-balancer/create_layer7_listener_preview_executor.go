@@ -26,11 +26,13 @@ import (
 
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -153,29 +155,36 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	for _, detail := range c.details {
-		lb, ok := lbMap[detail.CloudClbID]
-		if !ok {
-			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
-		}
-		if _, ok = c.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, c.regionIDMap)
-		}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, c.details,
+		func(detail *CreateLayer7ListenerDetail) error {
 
-		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
-		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb.vip(%s) not match", detail.ClbVipDomain))
-		}
-		detail.RegionID = lb.Region
+			lb, ok := lbMap[detail.CloudClbID]
+			if !ok {
+				return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
+			}
+			if _, ok = c.regionIDMap[lb.Region]; !ok {
+				return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, c.regionIDMap)
+			}
 
-		if err = c.validateListener(kt, detail); err != nil {
-			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv4Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
+			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb.vip(%s) not match", detail.ClbVipDomain))
+			}
+			detail.RegionID = lb.Region
+
+			if err = c.validateListener(kt, detail); err != nil {
+				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return concurrentErr
 	}
 	return nil
 }
@@ -333,7 +342,8 @@ func (c *CreateLayer7ListenerPreviewExecutor) getTCloudListenersByPort(kt *kit.K
 	return nil, nil
 }
 
-// CreateLayer7ListenerDetail 创建七层监听器预览记录
+// CreateLayer7ListenerDetail 创建七层监听器预览记录.
+// convertDataToPreview 会依赖这个字段的声明顺序, 所以修改时需要与excel表格的字段顺序保持一致
 type CreateLayer7ListenerDetail struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 	CloudClbID   string `json:"cloud_clb_id"`
@@ -349,9 +359,16 @@ type CreateLayer7ListenerDetail struct {
 	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
+	Name     string `json:"name"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
+	// 验证监听器名称，校验规则同"CLB名称"
+	if len(c.Name) > 60 {
+		c.Status.SetNotExecutable()
+		c.ValidateResult = append(c.ValidateResult, "The length of the listener name should not exceed 60")
+	}
+
 	err := validatePort(c.ListenerPorts)
 	if err != nil {
 		c.Status.SetNotExecutable()

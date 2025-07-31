@@ -45,10 +45,12 @@ import (
 )
 
 func newBatchListenerUnbindRsExecutor(cli *dataservice.Client, taskCli *taskserver.Client,
-	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) *BatchListenerUnbindRsExecutor {
+	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string,
+	operationType OperationType) *BatchListenerUnbindRsExecutor {
 
 	return &BatchListenerUnbindRsExecutor{
 		taskType:            enumor.ListenerUnbindRsTaskType,
+		operationType:       enumor.TaskOperation(operationType),
 		taskCli:             taskCli,
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
@@ -58,11 +60,12 @@ func newBatchListenerUnbindRsExecutor(cli *dataservice.Client, taskCli *taskserv
 type BatchListenerUnbindRsExecutor struct {
 	*basePreviewExecutor
 
-	taskType    enumor.TaskType
-	taskCli     *taskserver.Client
-	params      *dataproto.ListListenerWithTargetsReq
-	details     []*dataproto.ListBatchListenerResult
-	taskDetails []*batchListenerUnbindRsTaskDetail
+	taskType      enumor.TaskType
+	operationType enumor.TaskOperation
+	taskCli       *taskserver.Client
+	params        *dataproto.ListListenerWithTargetsReq
+	details       []*dataproto.ListBatchListenerResult
+	taskDetails   []*batchListenerUnbindRsTaskDetail
 }
 
 // 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
@@ -105,8 +108,31 @@ func (c *BatchListenerUnbindRsExecutor) Execute(kt *kit.Kit, source enumor.TaskM
 		return enumor.NoMatchTaskManageResult, nil
 	}
 
+	// 把RS列表拆分成单个任务(每个RS对应一个TaskDetail)
+	details := make([]*dataproto.ListBatchListenerResult, 0)
+	for _, detail := range lblResp.Details {
+		for _, rsItem := range detail.RsList {
+			detailItem := &dataproto.ListBatchListenerResult{
+				ClbID:        detail.ClbID,
+				CloudClbID:   detail.CloudClbID,
+				ClbVipDomain: detail.ClbVipDomain,
+				BkBizID:      detail.BkBizID,
+				Region:       detail.Region,
+				Vendor:       detail.Vendor,
+				LblID:        detail.LblID,
+				CloudLblID:   detail.CloudLblID,
+				Protocol:     detail.Protocol,
+				Port:         detail.Port,
+				RsList:       make([]*dataproto.LoadBalancerTargetRsList, 0),
+				NewRsWeight:  detail.NewRsWeight,
+			}
+			detailItem.RsList = append(detailItem.RsList, rsItem)
+			details = append(details, detailItem)
+		}
+	}
+
 	// 把符合条件的监听器列表赋值给details
-	c.details = lblResp.Details
+	c.details = details
 
 	taskID, err := c.Run(kt, source)
 	if err != nil {
@@ -206,6 +232,7 @@ func (c *BatchListenerUnbindRsExecutor) buildFlows(kt *kit.Kit) ([]string, error
 	return flowIDs, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *BatchListenerUnbindRsExecutor) buildTaskManagementAndDetails(
 	kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
 
@@ -237,7 +264,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskManagement(
 				AccountIDs: []string{c.accountID},
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning, // 默认:执行中
-				Operations: []enumor.TaskOperation{enumor.TaskUnbindListenerRs},
+				Operations: []enumor.TaskOperation{c.operationType},
 				Extension: &coretask.ManagementExt{
 					LblTargetsReq: c.params,
 				},
@@ -265,7 +292,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID st
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
-			Operation:        enumor.TaskUnbindListenerRs,
+			Operation:        c.operationType,
 			State:            enumor.TaskDetailInit,
 			Param:            detail,
 		})
@@ -279,7 +306,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID st
 
 	if len(result.IDs) != len(c.details) {
 		return fmt.Errorf("create task details failed, operation: %s, expect created[%d] task details, but got [%d]",
-			enumor.TaskUnbindListenerRs, len(c.details), len(result.IDs))
+			c.operationType, len(c.details), len(result.IDs))
 	}
 
 	for i := range result.IDs {
@@ -449,6 +476,7 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskManagementAndDetails(kt *kit.K
 	return nil
 }
 
+// updateTaskManagement 更新task_management的flow_id
 func (c *BatchListenerUnbindRsExecutor) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs []string) error {
 	updateItem := task.UpdateTaskManagementField{
 		ID:      taskID,
@@ -467,6 +495,7 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskManagement(kt *kit.Kit, taskID
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *BatchListenerUnbindRsExecutor) updateTaskDetails(kt *kit.Kit) error {
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {
@@ -481,7 +510,7 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskDetails(kt *kit.Kit) error {
 	}
 	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
-		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task details failed, err: %v, req: %+v, rid: %s", err, updateDetailsReq, kt.Rid)
 		return err
 	}
 

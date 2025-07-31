@@ -37,7 +37,8 @@ GET /api/v1/cloud/accounts/{account_id}
     "price": "",
     "price_unit": "",
     "memo": "account create",
-    "bk_biz_ids": [],
+    "bk_biz_id": 13,
+    "usage_biz_ids": [],
     "creator": "Jim",
     "reviser": "Jim",
     "created_at": "2022-12-25T23:42:15Z",
@@ -72,7 +73,9 @@ GET /api/v1/cloud/accounts/{account_id}
 | price                | string       | 余额                                                               |
 | price_unit           | string       | 余额单位                                                             |
 | memo                 | string       | 备注                                                               |
-| bk_biz_ids           | int64 array  | 账号关联的业务ID列表                                                      |
+| bk_biz_id            | int64        | 管理业务                                                             |
+| usage_biz_ids        | int64 array  | 使用业务                                                             |
+| bk_biz_ids           | int64 array  | 旧的业务字段，用于兼容旧的api，值与使用业务的完全相同，不推荐使用                               |
 | recycle_reserve_time | int          | 回收站资源的保留时长，单位小时                                                  |
 | sync_status          | string       | 资源同步状态                                                           |
 | sync_failed_reason   | string       | 资源同步失败原因                                                         |
