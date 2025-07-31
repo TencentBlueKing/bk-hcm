@@ -670,7 +670,7 @@ type ListenerQueryLine struct {
 	ClbVipDomains []string            `json:"clb_vip_domains" validate:"required,min=1,max=50"`
 	CloudLbIDs    []string            `json:"cloud_lb_ids" validate:"required,min=1,max=50"`
 	RsIPs         []string            `json:"rs_ips" validate:"omitempty,max=500"`
-	RsPorts       []int64             `json:"rs_ports" validate:"omitempty"`
+	RsPorts       []int64             `json:"rs_ports" validate:"omitempty,max=500"`
 }
 
 // Validate request.
@@ -693,10 +693,23 @@ func (req *ListenerQueryLine) Validate() error {
 		return errors.New("rs_ips num must be less than 500")
 	}
 
+	// 传入的RsPort数量不能超过500个
+	if len(req.RsPorts) > 500 {
+		return errors.New("rs_ports num must be less than 500")
+	}
+
 	return validator.Validate.Struct(req)
 }
 
 // ListListenerByCondResp define list listener by cond resp.
 type ListListenerByCondResp struct {
 	Details []*ListBatchListenerResult `json:"details"`
+}
+
+// ListListenerQueryReq define list listener query req.
+type ListListenerQueryReq struct {
+	BkBizID           int64             `json:"bk_biz_id" validate:"omitempty"`
+	Vendor            enumor.Vendor     `json:"vendor" validate:"required,min=1"`
+	AccountID         string            `json:"account_id" validate:"required,min=1"`
+	ListenerQueryItem ListenerQueryItem `json:"rule_query_item" validate:"required"`
 }

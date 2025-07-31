@@ -474,20 +474,10 @@ func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler
 
 // ListBizListenerByCond list biz listener by cond.
 func (svc *lbSvc) ListBizListenerByCond(cts *rest.Contexts) (any, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	if bkBizID <= 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id: %d is invalid", bkBizID)
-	}
-
-	return svc.listListenerByCond(cts, handler.ListBizAuthRes, bkBizID)
+	return svc.listListenerByCond(cts, handler.ListBizAuthRes)
 }
 
-func (svc *lbSvc) listListenerByCond(cts *rest.Contexts, authHandler handler.ListAuthResHandler,
-	bkBizID int64) (any, error) {
-
+func (svc *lbSvc) listListenerByCond(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
 	req := new(dataproto.ListListenerByCondReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -509,7 +499,7 @@ func (svc *lbSvc) listListenerByCond(cts *rest.Contexts, authHandler handler.Lis
 	resList := &dataproto.ListListenerByCondResp{Details: make([]*dataproto.ListBatchListenerResult, 0)}
 	if noPermFlag {
 		logs.Errorf("list listener no perm auth, noPermFlag: %v, req: %+v, rid: %s", noPermFlag, req, cts.Kit.Rid)
-		return resList, nil
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener by cond")
 	}
 
 	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
@@ -519,10 +509,15 @@ func (svc *lbSvc) listListenerByCond(cts *rest.Contexts, authHandler handler.Lis
 		return nil, fmt.Errorf("get account basic info failed, err: %v", err)
 	}
 
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
 	req.BkBizID = bkBizID
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		resList, err = svc.client.DataService().Global.LoadBalancer.ListLoadBalancerListenerByCond(cts.Kit, req)
+		resList, err = svc.client.DataService().Global.LoadBalancer.ListListenerByCond(cts.Kit, req)
 		if err != nil {
 			logs.Errorf("tcloud list listener by cond failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 			return nil, err

@@ -235,8 +235,8 @@ func (cli *LoadBalancerClient) ListBatchListeners(kt *kit.Kit, req *dataproto.Ba
 		rest.POST, kt, req, "/load_balancers/listeners/batch/list")
 }
 
-// ListLoadBalancerListenerByCond list load balancer listener by cond.
-func (cli *LoadBalancerClient) ListLoadBalancerListenerByCond(kt *kit.Kit,
+// ListListenerByCond list listener by cond.
+func (cli *LoadBalancerClient) ListListenerByCond(kt *kit.Kit,
 	req *dataproto.ListListenerByCondReq) (*dataproto.ListListenerByCondResp, error) {
 
 	return common.Request[dataproto.ListListenerByCondReq, dataproto.ListListenerByCondResp](cli.client,
