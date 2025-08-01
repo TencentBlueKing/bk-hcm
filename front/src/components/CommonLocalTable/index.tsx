@@ -79,8 +79,8 @@ export default defineComponent({
       const resultData = props.tableData
         .filter((item) => Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)))
         .sort((prev, next) => {
-          if (type === 'asc') return prev[key].localeCompare(next[key]);
-          return next[key].localeCompare(prev[key]);
+          if (type === 'asc') return String(prev[key]).localeCompare(String(next[key]));
+          return String(next[key]).localeCompare(String(prev[key]));
         });
       // 更新分页器
       pagination.count = resultData.length;
