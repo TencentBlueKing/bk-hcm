@@ -1,0 +1,38 @@
+.infobox-stats {
+  color: #313238;
+
+  em {
+    color: #3a84ff;
+    font-style: normal;
+    font-weight: 700;
+    padding: 0.2em;
+  }
+}
+
+.infobox-stats-error {
+  em {
+    color: #ea3636;
+  }
+}
+
+.infobox-tips {
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 2px;
+}
+
+.infobox-content {
+  display: grid;
+  flex-direction: column;
+  gap: 16px;
+  color: #4d4f56;
+  font-size: 14px;
+}
+
+.infobox-content-error {
+  .infobox-stats {
+    em {
+      color: #ea3636;
+    }
+  }
+}

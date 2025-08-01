@@ -21,13 +21,15 @@ import { asyncGetListenerCount, buildMultipleValueRulesItem, parseIP } from '@/u
 // import types
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
-import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { LB_ISP, ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { useRegionStore } from '@/store/region';
+import BatchExportButton from '@/views/business/load-balancer/clb-view/components/export/batch-button.vue';
+import SingleExportButton from '@/views/business/load-balancer/clb-view/components/export/single-button.vue';
+import classes from './index.module.scss';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -147,34 +149,38 @@ export default defineComponent({
           ...columns,
           {
             label: '操作',
-            width: 120,
+            width: 130,
             fixed: 'right',
+            showOverflowTooltip: false,
             render: ({ data }: { data: any }) => {
               return (
-                <Button
-                  text
-                  theme='primary'
-                  class={{
-                    'hcm-no-permision-text-btn': !authVerifyData?.value?.permissionAction?.[deleteClbActionName.value],
-                  }}
-                  disabled={
-                    authVerifyData?.value?.permissionAction?.[deleteClbActionName.value] &&
-                    (data.listenerNum > 0 || data.delete_protect)
-                  }
-                  v-bk-tooltips={
-                    data.listenerNum > 0
-                      ? { content: '该负载均衡已绑定监听器, 不可删除', disabled: !(data.listenerNum > 0) }
-                      : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
-                  }
-                  onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.[deleteClbActionName.value]) {
-                      handleAuth(deleteClbActionName.value);
-                      globalPermissionDialogStore.setShow(true);
-                    } else handleDelete(data);
-                  }}
-                >
-                  删除
-                </Button>
+                <div class={classes['operation-cell']}>
+                  <SingleExportButton data={data} />
+                  <Button
+                    text
+                    theme='primary'
+                    class={{
+                      'hcm-no-permision-text-btn':
+                        !authVerifyData?.value?.permissionAction?.[deleteClbActionName.value],
+                    }}
+                    disabled={
+                      authVerifyData?.value?.permissionAction?.[deleteClbActionName.value] &&
+                      (data.listenerNum > 0 || data.delete_protect)
+                    }
+                    v-bk-tooltips={
+                      data.listenerNum > 0
+                        ? { content: '该负载均衡已绑定监听器, 不可删除', disabled: !(data.listenerNum > 0) }
+                        : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
+                    }
+                    onClick={() => {
+                      if (!authVerifyData?.value?.permissionAction?.[deleteClbActionName.value]) {
+                        handleAuth(deleteClbActionName.value);
+                        globalPermissionDialogStore.setShow(true);
+                      } else handleDelete(data);
+                    }}>
+                    删除
+                  </Button>
+                </div>
               );
             },
           },
@@ -223,7 +229,7 @@ export default defineComponent({
           minWidth: 50,
           render: ({ data }: any) => (
             <Button text onClick={() => handleRemoveSelection(data.id)}>
-              <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
+              <i class={['hcm-icon bkhcm-icon-minus-circle-shape', classes['icon-minus-circle-shape']]}></i>
             </Button>
           ),
         },
@@ -268,8 +274,7 @@ export default defineComponent({
                       handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleApply();
-                  }}
-                >
+                  }}>
                   购买
                 </Button>
                 <Button
@@ -285,12 +290,12 @@ export default defineComponent({
                     }
                     handleClickBatchDelete();
                   }}
-                  disabled={selections.value.length === 0}
-                >
+                  disabled={selections.value.length === 0}>
                   批量删除
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
+                <BatchExportButton selections={selections.value} />
                 <bk-button disabled={selections.value.length > 0} onClick={handleSync}>
                   同步负载均衡
                 </bk-button>
@@ -301,7 +306,6 @@ export default defineComponent({
         </CommonTable>
         {/* 批量删除负载均衡 */}
         <BatchOperationDialog
-          class='batch-delete-lb-dialog'
           v-model:isShow={isBatchDeleteDialogShow.value}
           title={t('批量删除负载均衡')}
           theme='danger'
@@ -310,8 +314,7 @@ export default defineComponent({
           isSubmitDisabled={isSubmitDisabled.value}
           tableProps={tableProps}
           list={computedListenersList.value}
-          onHandleConfirm={handleBatchDeleteSubmit}
-        >
+          onHandleConfirm={handleBatchDeleteSubmit}>
           {{
             tips: () => (
               <>

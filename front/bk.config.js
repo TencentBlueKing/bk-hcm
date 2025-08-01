@@ -50,6 +50,8 @@ const getConfig = (custom = {}) => ({
         },
       },
       devServer: {
+        hot: true,
+        liveReload: false,
         server: custom.server && custom.server,
       },
     };

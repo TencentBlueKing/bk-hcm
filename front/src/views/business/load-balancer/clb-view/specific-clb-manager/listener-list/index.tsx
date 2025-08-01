@@ -22,6 +22,7 @@ import bus from '@/common/bus';
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
 import { TARGET_GROUP_PROTOCOLS } from '@/common/constant';
+import ListenerBatchExportButton from '@/views/business/load-balancer/clb-view/components/export/listener-batch-button.vue';
 
 export default defineComponent({
   props: { id: String },
@@ -210,6 +211,7 @@ export default defineComponent({
                 <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
                   {t('批量删除')}
                 </Button>
+                <ListenerBatchExportButton selections={selections.value} />
                 <Button onClick={handlePullResource} class={'mr8'}>
                   {t('同步刷新')}
                 </Button>
