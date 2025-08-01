@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	loadbalancer "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -43,46 +44,46 @@ func (l *listenerExporter) exportTCloud(kt *kit.Kit, zipOperator zip.OperatorI) 
 
 	layer4ListenerMap, layer7ListenerMap, err := l.getTCloudListeners(kt)
 	if err != nil {
-		logs.Errorf("get tcloud listeners failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get listeners failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 	layer4RuleMap, layer7RuleMap, err := l.getTCloudRules(kt)
 	if err != nil {
-		logs.Errorf("get tcloud rules failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 
 	if err = l.writeTCloudLayer4Listener(kt, zipOperator, lbMap, layer4ListenerMap, layer4RuleMap); err != nil {
-		logs.Errorf("build tcloud layer4 listener excel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build layer4 listener excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 	if err = l.writeTCloudLayer7Listener(kt, zipOperator, lbMap, layer7ListenerMap); err != nil {
-		logs.Errorf("build tcloud layer7 listener excel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build layer7 listener excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 	if err = l.writeTCloudRule(kt, zipOperator, lbMap, layer7ListenerMap, layer7RuleMap); err != nil {
-		logs.Errorf("build tcloud rule excel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build rule excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 
 	layer4TgLblRel, layer7TgLblRel, err := l.getTgLblRelClassifyProtocol(kt)
 	if err != nil {
-		logs.Errorf("get tcloud target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get target group listener rel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 	layer4Rs, layer7Rs, err := l.getRsClassifyProtocol(kt, layer4TgLblRel, layer7TgLblRel)
 	if err != nil {
-		logs.Errorf("get tcloud rs failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get rs failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 
 	if err = l.writeTCloudLayer4Rs(kt, zipOperator, lbMap, layer4ListenerMap, layer4TgLblRel, layer4Rs); err != nil {
-		logs.Errorf("build tcloud layer4 rs excel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build layer4 rs excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 	err = l.writeTCloudLayer7Rs(kt, zipOperator, lbMap, layer7ListenerMap, layer7RuleMap, layer7TgLblRel, layer7Rs)
 	if err != nil {
-		logs.Errorf("build tcloud layer7 rs excel failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build layer7 rs excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return err
 	}
 
@@ -96,13 +97,13 @@ func (l *listenerExporter) getTCloudListeners(kt *kit.Kit) (map[string]loadbalan
 
 	layer4ListenerMap, err := l.getTCloudListenersByProtocol(kt, lbIDs, lblIDs, enumor.GetLayer4Protocol())
 	if err != nil {
-		logs.Errorf("get tcloud layer4 listener failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get layer4 listener failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return nil, nil, err
 	}
 
 	layer7ListenerMap, err := l.getTCloudListenersByProtocol(kt, lbIDs, lblIDs, enumor.GetLayer7Protocol())
 	if err != nil {
-		logs.Errorf("get tcloud layer7 listener failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get layer7 listener failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return nil, nil, err
 	}
 
@@ -128,10 +129,18 @@ func (l *listenerExporter) getTCloudListenersByProtocol(kt *kit.Kit, lbIDs []str
 				Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("protocol", protocols)),
 				Page:   core.NewDefaultBasePage(),
 			}
-			resp, err := l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-			if err != nil {
-				logs.Errorf("get listener by lb id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-				return nil, err
+			resp := &cloud.TCloudListenerListResult{}
+			var err error
+			switch l.vendor {
+			case enumor.TCloud:
+				resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
+				if err != nil {
+					logs.Errorf("get listener by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
+						req, kt.Rid)
+					return nil, err
+				}
+			default:
+				return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
 			}
 			for _, detail := range resp.Details {
 				result[detail.ID] = detail
@@ -150,10 +159,18 @@ func (l *listenerExporter) getTCloudListenersByProtocol(kt *kit.Kit, lbIDs []str
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", lblIDs), tools.RuleIn("protocol", protocols)),
 			Page:   core.NewDefaultBasePage(),
 		}
-		resp, err := l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-		if err != nil {
-			logs.Errorf("get listener by listener id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return nil, err
+		resp := &cloud.TCloudListenerListResult{}
+		var err error
+		switch l.vendor {
+		case enumor.TCloud:
+			resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
+			if err != nil {
+				logs.Errorf("get listener by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
+					req, kt.Rid)
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
 		}
 		for _, detail := range resp.Details {
 			result[detail.ID] = detail
@@ -188,9 +205,10 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 
 		layer4Rule, ok := lblIDLayer4RuleMap[listener.ID]
 		if !ok {
-			logs.Errorf("can not get tcloud layer4 rule by listener id, listener id: %s, rid: %s", listener.ID,
-				kt.Rid)
-			return fmt.Errorf("can not get tcloud layer4 rule by listener id, listener id: %s", listener.ID)
+			logs.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s, rid: %s", l.vendor,
+				listener.ID, kt.Rid)
+			return fmt.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s", l.vendor,
+				listener.ID)
 		}
 
 		healthCheck := enumor.DisableListenerHealthCheck
@@ -225,13 +243,13 @@ func (l *listenerExporter) getTCloudRules(kt *kit.Kit) (map[string]loadbalancer.
 
 	layer4RuleMap, err := l.getTCloudRulesByRuleType(kt, lbIDs, lblIDs, enumor.Layer4RuleType)
 	if err != nil {
-		logs.Errorf("get tcloud layer4 rules failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get layer4 rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return nil, nil, err
 	}
 
 	layer7RuleMap, err := l.getTCloudRulesByRuleType(kt, lbIDs, lblIDs, enumor.Layer7RuleType)
 	if err != nil {
-		logs.Errorf("get tcloud layer7 rules failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get layer7 rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
 		return nil, nil, err
 	}
 
@@ -257,10 +275,18 @@ func (l *listenerExporter) getTCloudRulesByRuleType(kt *kit.Kit, lbIDs []string,
 				Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleEqual("rule_type", ruleType)),
 				Page:   core.NewDefaultBasePage(),
 			}
-			resp, err := l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-			if err != nil {
-				logs.Errorf("get rule by lb id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-				return nil, err
+			resp := &cloud.TCloudURLRuleListResult{}
+			var err error
+			switch l.vendor {
+			case enumor.TCloud:
+				resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
+				if err != nil {
+					logs.Errorf("get rule by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req,
+						kt.Rid)
+					return nil, err
+				}
+			default:
+				return nil, fmt.Errorf("not support vendor: %s", l.vendor)
 			}
 			for _, detail := range resp.Details {
 				result[detail.ID] = detail
@@ -279,10 +305,18 @@ func (l *listenerExporter) getTCloudRulesByRuleType(kt *kit.Kit, lbIDs []string,
 			Filter: tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs), tools.RuleEqual("rule_type", ruleType)),
 			Page:   core.NewDefaultBasePage(),
 		}
-		resp, err := l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-		if err != nil {
-			logs.Errorf("get rule by listener id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return nil, err
+		resp := &cloud.TCloudURLRuleListResult{}
+		var err error
+		switch l.vendor {
+		case enumor.TCloud:
+			resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
+			if err != nil {
+				logs.Errorf("get rule by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
+					req, kt.Rid)
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("not support vendor: %s", l.vendor)
 		}
 		for _, detail := range resp.Details {
 			result[detail.ID] = detail
