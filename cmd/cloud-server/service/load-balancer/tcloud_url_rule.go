@@ -107,24 +107,16 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 	}
 
 	lbIDs := make([]string, 0)
-	lblIDs := make([]string, 0)
 	targetIDs := make([]string, 0)
 	resList := &cslb.ListLbUrlRuleResult{Count: urlRuleList.Count, Details: make([]cslb.ListLbUrlRuleBase, 0)}
 	for _, ruleItem := range urlRuleList.Details {
 		lbIDs = append(lbIDs, ruleItem.LbID)
-		lblIDs = append(lblIDs, ruleItem.LblID)
 		targetIDs = append(targetIDs, ruleItem.TargetGroupID)
 		resList.Details = append(resList.Details, cslb.ListLbUrlRuleBase{TCloudLbUrlRule: ruleItem})
 	}
 
 	// 批量获取lb信息
 	lbMap, err := lblogic.ListLoadBalancerMap(kt, svc.client.DataService(), lbIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	// 批量获取listener信息
-	listenerMap, err := svc.listListenerMap(kt, lblIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -151,10 +143,6 @@ func (svc *lbSvc) fillRuleRelatedRes(kt *kit.Kit, urlRuleList *dataproto.TCloudU
 		resList.Details[idx].PublicIPv6Addresses = lbMap[ruleItem.LbID].PublicIPv6Addresses
 
 		resList.Details[idx].VpcName = vpcMap[tmpVpcID].Name
-
-		resList.Details[idx].LblName = listenerMap[ruleItem.LblID].Name
-		resList.Details[idx].Protocol = listenerMap[ruleItem.LblID].Protocol
-		resList.Details[idx].Port = listenerMap[ruleItem.LblID].Port
 
 	}
 

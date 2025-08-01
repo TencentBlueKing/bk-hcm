@@ -194,6 +194,10 @@ type TCloudLbUrlRule struct {
 	HealthCheck   *TCloudHealthCheckInfo `json:"health_check"`
 	Certificate   *TCloudCertificateInfo `json:"certificate"`
 
+	LblName  string              `json:"lbl_name"`
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Port     int64               `json:"port"`
+
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
 }

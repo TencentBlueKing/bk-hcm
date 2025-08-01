@@ -179,18 +179,16 @@ type ListLbUrlRuleResult = core.ListResultT[ListLbUrlRuleBase]
 // ListLbUrlRuleBase define list lb url rule base.
 type ListLbUrlRuleBase struct {
 	corelb.TCloudLbUrlRule
-	LblName              string              `json:"lbl_name"`
-	LbName               string              `json:"lb_name"`
-	PrivateIPv4Addresses []string            `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses []string            `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  []string            `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  []string            `json:"public_ipv6_addresses"`
-	Protocol             enumor.ProtocolType `json:"protocol"`
-	Port                 int64               `json:"port"`
-	VpcID                string              `json:"vpc_id"`
-	VpcName              string              `json:"vpc_name"`
-	CloudVpcID           string              `json:"cloud_vpc_id"`
-	InstType             enumor.InstType     `json:"inst_type"`
+	LbName               string   `json:"lb_name"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+
+	VpcID      string          `json:"vpc_id"`
+	VpcName    string          `json:"vpc_name"`
+	CloudVpcID string          `json:"cloud_vpc_id"`
+	InstType   enumor.InstType `json:"inst_type"`
 }
 
 // -------------------------- List TargetGroup --------------------------

@@ -280,7 +280,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
+	result, err := svc.dao.LoadBalancerTCloudUrlRule().ListJoinListener(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list tcloud lb url rule failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list tcloud lb url rule failed, err: %v", err)
@@ -303,7 +303,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 }
 
 // convTableToBaseTCloudLbURLRule convert TCloudLbUrlRuleTable to TCloudLbUrlRule.
-func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
+func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleWithListener) (
 	*corelb.TCloudLbUrlRule, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
@@ -340,6 +340,9 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTab
 		HealthCheck:        healthCheck,
 		Certificate:        certInfo,
 		Memo:               one.Memo,
+		LblName:            one.LblName,
+		Protocol:           enumor.ProtocolType(one.Protocol),
+		Port:               int64(one.Port),
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
