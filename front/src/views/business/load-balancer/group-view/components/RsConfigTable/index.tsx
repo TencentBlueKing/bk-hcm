@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch, PropType, reactive, onBeforeUnmount, onMounted } from 'vue';
+import { computed, defineComponent, ref, watch, PropType, onMounted } from 'vue';
 // import components
 import { SearchSelect, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
@@ -13,7 +13,7 @@ import bus from '@/common/bus';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
 import { TargetGroupOperationScene } from '@/constants';
-import interval from '@/utils/interval';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 
 const { FormItem } = Form;
 
@@ -37,11 +37,6 @@ export default defineComponent({
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
-    const timeInterval = reactive({
-      set: null,
-      clear: null,
-    });
-
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const regionsStore = useRegionsStore();
@@ -311,22 +306,16 @@ export default defineComponent({
     );
 
     onMounted(() => {
-      if (!timeInterval.set) {
-        const { clearTimeInterval, setTimeInterval } = interval(
-          () => props.getTargetGroupDetail(props.id),
-          30000,
-          1800000,
-        );
-        timeInterval.set = setTimeInterval;
-        timeInterval.clear = clearTimeInterval;
-      }
-      timeInterval.clear();
-      timeInterval.set();
+      refresh.resume();
     });
 
-    onBeforeUnmount(() => {
-      timeInterval?.clear();
-    });
+    const refresh = useTimeoutPoll(
+      () => {
+        props.getTargetGroupDetail(props.id);
+      },
+      30000,
+      { max: 60 },
+    );
 
     const searchData = computed(() => {
       const tmpArr = [
