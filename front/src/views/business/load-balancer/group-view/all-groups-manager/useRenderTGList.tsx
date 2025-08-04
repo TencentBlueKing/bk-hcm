@@ -61,7 +61,8 @@ export default () => {
             v-bk-tooltips={{
               content: t('已绑定了监听器的目标组不可删除'),
               disabled: data.listener_num === 0,
-            }}>
+            }}
+          >
             <Button
               text
               theme={'primary'}
@@ -69,7 +70,8 @@ export default () => {
               class={'ml16'}
               onClick={() => {
                 handleDeleteTargetGroup(data.id, data.name);
-              }}>
+              }}
+            >
               {t('删除')}
             </Button>
           </span>
@@ -81,6 +83,17 @@ export default () => {
   const { CommonTable, getListData } = useTable({
     searchOptions: {
       searchData,
+      extra: {
+        valueBehavior: 'all',
+        validateValues: async (item: { id: string }, values: { id: string }[]) => {
+          if (!item) return '请选择条件';
+          if (item.id === 'port') {
+            const port = parseInt(values[0].id, 10);
+            return port >= 1 && port <= 65535 ? true : '端口范围1-65535';
+          }
+          return true;
+        },
+      },
     },
     tableOptions: {
       columns: tableColumns,

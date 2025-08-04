@@ -301,7 +301,7 @@ export const useTable = (props: IProp) => {
       case 'binding_status':
         return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] || value };
       case 'port':
-        return { field, op, value: Number(value) || 0 };
+        return { field, op, value: Number(value) };
       default:
         return { field, op, value };
     }

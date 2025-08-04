@@ -75,14 +75,29 @@ export default defineComponent({
             return rule.values[0].id;
         }
       });
+
+      const getCompareValue = (item: any, field: string) => {
+        const config: { [key]: any } = {
+          lb_vip: ['private_ipv4_addresses', 'public_ipv4_addresses'],
+        };
+        if (Object.hasOwn(item, field)) return item[field];
+        if (Object.hasOwn(config, field)) {
+          return config[field].reduce((acc: any[], cur: string) => {
+            const value = Array.isArray(item[cur]) ? item[cur] : [item[cur]];
+            acc.push(...value);
+            return acc;
+          }, []);
+        }
+        return [];
+      };
       const { key, type } = tableSort.value;
       const resultData = (
         Object.keys(filterConditions).length
           ? props.tableData.filter((item) => {
-              item.lb_vip = [...item.private_ipv4_addresses, ...item.public_ipv4_addresses];
               return Object.keys(filterConditions).every((key) => {
-                if (Array.isArray(item[key])) return item[key].some((data) => filterConditions[key].includes(data));
-                return filterConditions[key].includes(item[key]);
+                const values = getCompareValue(item, key);
+                if (Array.isArray(values)) return values.some((data) => filterConditions[key].includes(data));
+                return filterConditions[key].includes(values);
               });
             })
           : [...props.tableData]
