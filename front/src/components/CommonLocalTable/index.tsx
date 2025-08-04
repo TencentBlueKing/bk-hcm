@@ -64,7 +64,7 @@ export default defineComponent({
 
     // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
     const renderTableData = computed(() => {
-      const filterConditions = getLocalFilterConditions(searchValue.value, (rule) => {
+      const filterConditions: { [key]: any } = getLocalFilterConditions(searchValue.value, (rule) => {
         switch (rule.id) {
           // 负载均衡规格类型需要映射
           case 'SpecType':
@@ -76,12 +76,20 @@ export default defineComponent({
         }
       });
       const { key, type } = tableSort.value;
-      const resultData = props.tableData
-        .filter((item) => Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)))
-        .sort((prev, next) => {
-          if (type === 'asc') return String(prev[key]).localeCompare(String(next[key]));
-          return String(next[key]).localeCompare(String(prev[key]));
-        });
+      const resultData = (
+        Object.keys(filterConditions).length
+          ? props.tableData.filter((item) => {
+              item.lb_vip = [...item.private_ipv4_addresses, ...item.public_ipv4_addresses];
+              return Object.keys(filterConditions).every((key) => {
+                if (Array.isArray(item[key])) return item[key].some((data) => filterConditions[key].includes(data));
+                return filterConditions[key].includes(item[key]);
+              });
+            })
+          : [...props.tableData]
+      ).sort((prev, next) => {
+        if (type === 'asc') return String(prev[key]).localeCompare(String(next[key]));
+        return String(next[key]).localeCompare(String(prev[key]));
+      });
       // 更新分页器
       pagination.count = resultData.length;
       return resultData;

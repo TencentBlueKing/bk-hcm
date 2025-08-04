@@ -31,6 +31,7 @@ export default defineComponent({
       {
         label: '健康探测源IP',
         value: () => {
+          if (!isOpen.value) return '-';
           if (props.detail.health_check?.source_ip_type === 1) return '云专用探测 IP 段';
           if (props.detail.health_check?.source_ip_type === 0) return '负载均衡 VIP';
           return '-';
