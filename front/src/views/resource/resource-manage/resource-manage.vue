@@ -28,6 +28,13 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routeQuery from '@/router/utils/query';
+import {
+  MENU_RESOURCE_LOAD_BALANCER_APPLY,
+  MENU_RESOURCE_DISK_APPLY,
+  MENU_RESOURCE_HOST_APPLY,
+  MENU_RESOURCE_SUBNET_APPLY,
+  MENU_RESOURCE_VPC_APPLY,
+} from '@/constants/menu-symbol';
 
 // use hooks
 const { t } = useI18n();
@@ -94,7 +101,7 @@ const headerExtensionMap = computed(() => {
 
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
-const accountId = ref('');
+const accountId = ref((route.query.accountId as string) || '');
 const status = ref('all');
 const op = ref('eq');
 const accountFilter = ref<FilterType>({
@@ -176,6 +183,9 @@ const tabs = computed(() => {
   });
 });
 const activeTab = ref((route.query.type as string) || tabs.value[0].type);
+const handleActiveTabChange = (value: string) => {
+  router.replace({ query: { type: value, accountId: accountId.value || undefined } });
+};
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -218,34 +228,19 @@ const handleAdd = () => {
   }
   switch (activeTab.value) {
     case 'host':
-      router.push({
-        path: '/resource/service-apply/cvm',
-        query: route.query,
-      });
+      router.push({ name: MENU_RESOURCE_HOST_APPLY, query: route.query });
       break;
     case 'vpc':
-      router.push({
-        path: '/resource/service-apply/vpc',
-        query: route.query,
-      });
+      router.push({ name: MENU_RESOURCE_VPC_APPLY, query: route.query });
       break;
     case 'drive':
-      router.push({
-        path: '/resource/service-apply/disk',
-        query: route.query,
-      });
+      router.push({ name: MENU_RESOURCE_DISK_APPLY, query: route.query });
       break;
     case 'subnet':
-      router.push({
-        path: '/resource/service-apply/subnet',
-        query: route.query,
-      });
+      router.push({ name: MENU_RESOURCE_SUBNET_APPLY, query: route.query });
       break;
     case 'clb':
-      router.push({
-        path: '/resource/service-apply/clb',
-        query: route.query,
-      });
+      router.push({ name: MENU_RESOURCE_LOAD_BALANCER_APPLY, query: route.query });
       break;
     default:
       isShowSideSlider.value = true;
@@ -322,29 +317,12 @@ watch(
   },
 );
 
-// 状态保持，accountId数据更新是后置的，需要监听确保为最新数据
-watch([activeTab, accountId], ([tab, account]) => {
-  router.replace({
-    query: {
-      type: tab,
-      accountId: account || undefined,
-    },
-  });
-});
-
-// 选择账号时，会触发useResourceAccount中的getAccountDetail，成功则会设置resourceAccount
+// 选择账号时，会触发selectedAccountId重新计算，优先使用账号列表中已有的list数据，其次再使用details数据
 // 在这里设置accountId会触发watch accountId改变filter.value
 // 最后触发use-query-list中的triggerApi
 watch(
-  () => resourceAccountStore.resourceAccount,
-  (resourceAccount: any) => {
-    if (resourceAccount?.id) accountId.value = resourceAccount.id;
-    else accountId.value = '';
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
+  () => resourceAccountStore.selectedAccountId,
+  (id: string) => (accountId.value = id),
 );
 
 // 选择账号或云厂商时，会设置currentVendor
@@ -479,7 +457,12 @@ onMounted(() => {
           {{ resourceAccountStore?.resourceAccount?.sync_failed_reason }}
         </template>
       </bk-alert>
-      <bk-tab v-model:active="activeTab" type="card-grid" class="resource-main g-scroller">
+      <bk-tab
+        v-model:active="activeTab"
+        type="card-grid"
+        class="resource-main g-scroller"
+        @change="handleActiveTabChange"
+      >
         <template #setting>
           <div style="margin: 0 10px">
             <bk-select v-model="status" :clearable="false" :filterable="false" class="w80">

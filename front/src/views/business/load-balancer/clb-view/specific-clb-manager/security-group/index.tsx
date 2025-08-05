@@ -17,6 +17,7 @@ import { VueDraggable } from 'vue-draggable-plus';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import DraggableItem from './draggable-item';
 import { cloneDeep } from 'lodash';
+import { LOAD_BALANCER_PASS_TO_TARGET_LIST } from '@/constants';
 
 export enum SecurityRuleDirection {
   in = 'ingress',
@@ -244,21 +245,17 @@ export default defineComponent({
     return () => (
       <div>
         <div class={'config-res-wrapper mb24'}>
-          {!isPassToTarget.value ? (
-            <div>
-              <Tag theme='warning' class={'mr16'}>
-                2 次检测
-              </Tag>
-              <span>依次经过负载均衡和RS的安全组 2 次检测</span>
-            </div>
-          ) : (
-            <div>
-              <Tag theme='warning' class={'mr16'}>
-                1 次检测
-              </Tag>
-              <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
-            </div>
-          )}
+          {(function () {
+            const { label, description } = LOAD_BALANCER_PASS_TO_TARGET_LIST.find(
+              (item) => item.value === isPassToTarget.value,
+            );
+            return (
+              <div>
+                <Tag theme='warning'>{label}</Tag>
+                <span class='ml16'>{description}</span>
+              </div>
+            );
+          })()}
           <EditLine
             onClick={() => (isConfigDialogShow.value = true)}
             class={'ml12 edit-icon'}
@@ -290,20 +287,16 @@ export default defineComponent({
                   style='fill: #979BA5; margin-right: 8px;'
                   viewBox='0 0 64 64'
                   version='1.1'
-                  xmlns='http://www.w3.org/2000/svg'
-                >
+                  xmlns='http://www.w3.org/2000/svg'>
                   <path
                     fill='#979BA5'
-                    d='M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z'
-                  ></path>
+                    d='M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z'></path>
                   <path
                     fill='#979BA5'
-                    d='M49.6,17.2l-2.8-2.8L38,23.2l0-5.2h-4v12h12v-4h-5.2L49.6,17.2z M38,26L38,26L38,26L38,26z'
-                  ></path>
+                    d='M49.6,17.2l-2.8-2.8L38,23.2l0-5.2h-4v12h12v-4h-5.2L49.6,17.2z M38,26L38,26L38,26L38,26z'></path>
                   <path
                     fill='#979BA5'
-                    d='M14.4,46.8l2.8,2.8l8.8-8.8l0,5.2h4V34H18v4h5.2L14.4,46.8z M26,38L26,38L26,38L26,38z'
-                  ></path>
+                    d='M14.4,46.8l2.8,2.8l8.8-8.8l0,5.2h4V34H18v4h5.2L14.4,46.8z M26,38L26,38L26,38L26,38z'></path>
                 </svg>
                 全部收起
               </Button>
@@ -316,20 +309,16 @@ export default defineComponent({
                   style='fill: #979BA5; margin-right: 8px;'
                   viewBox='0 0 64 64'
                   version='1.1'
-                  xmlns='http://www.w3.org/2000/svg'
-                >
+                  xmlns='http://www.w3.org/2000/svg'>
                   <path
                     fill='#979BA5'
-                    d='M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z'
-                  ></path>
+                    d='M56,6H8C6.9,6,6,6.9,6,8v48c0,1.1,0.9,2,2,2h48c1.1,0,2-0.9,2-2V8C58,6.9,57.1,6,56,6z M54,54H10V10	h44V54z'></path>
                   <path
                     fill='#979BA5'
-                    d='M34,27.2l2.8,2.8l8.8-8.8v5.2h4v-12h-12v4h5.2L34,27.2z M45.6,18.4L45.6,18.4L45.6,18.4L45.6,18.4z'
-                  ></path>
+                    d='M34,27.2l2.8,2.8l8.8-8.8v5.2h4v-12h-12v4h5.2L34,27.2z M45.6,18.4L45.6,18.4L45.6,18.4L45.6,18.4z'></path>
                   <path
                     fill='#979BA5'
-                    d='M30,36.8L27.2,34l-8.8,8.8v-5.2h-4v12h12v-4h-5.2L30,36.8z M18.4,45.6L18.4,45.6L18.4,45.6	L18.4,45.6z'
-                  ></path>
+                    d='M30,36.8L27.2,34l-8.8,8.8v-5.2h-4v12h12v-4h-5.2L30,36.8z M18.4,45.6L18.4,45.6L18.4,45.6	L18.4,45.6z'></path>
                 </svg>
                 全部展开
               </Button>
@@ -371,8 +360,7 @@ export default defineComponent({
             selectedSecuirtyGroupsSet.value = new Set();
             securityGroups.value = cloneDeep(bindedSecurityGroups.value);
           }}
-          onHandleSubmit={hanldeSubmit}
-        >
+          onHandleSubmit={hanldeSubmit}>
           {securityGroups.value.length > 5 ? (
             <Alert
               theme='danger'
@@ -439,8 +427,7 @@ export default defineComponent({
                   onClick={() => {
                     handleBind();
                     isDialogShow.value = false;
-                  }}
-                >
+                  }}>
                   确定
                 </Button>
                 <Button onClick={() => (isDialogShow.value = false)}>取消</Button>
@@ -451,52 +438,30 @@ export default defineComponent({
         <Dialog
           title='检测配置'
           isShow={isConfigDialogShow.value}
-          width={720}
-          onClosed={() => (isConfigDialogShow.value = false)}
-        >
+          width={960}
+          onClosed={() => (isConfigDialogShow.value = false)}>
           {{
             default: () => (
               <div class={'rs-check-selector-container'}>
-                <div
-                  class={[
-                    'rs-check-selector',
-                    { 'rs-check-selector-active': !tmpIsPassToTarget.value, 'disabled-button': isUpdating.value },
-                  ]}
-                  onClick={async () => {
-                    if (!tmpIsPassToTarget.value || isUpdating.value) return;
-                    tmpIsPassToTarget.value = false;
-                  }}
-                >
-                  <Tag theme='warning'>2 次检测</Tag>
-                  <span>依次经过负载均衡和RS的安全组 2 次检测</span>
-                  <Success
-                    v-show={!tmpIsPassToTarget.value}
-                    width={14}
-                    height={14}
-                    fill='#3A84FF'
-                    class={'rs-check-icon'}
-                  />
-                </div>
-                <div
-                  class={[
-                    'rs-check-selector',
-                    { 'rs-check-selector-active': tmpIsPassToTarget.value, 'disabled-button': isUpdating.value },
-                  ]}
-                  onClick={() => {
-                    if (tmpIsPassToTarget.value || isUpdating.value) return;
-                    tmpIsPassToTarget.value = true;
-                  }}
-                >
-                  <Tag theme='warning'>1 次检测</Tag>
-                  <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
-                  <Success
-                    v-show={tmpIsPassToTarget.value}
-                    width={14}
-                    height={14}
-                    fill='#3A84FF'
-                    class={'rs-check-icon'}
-                  />
-                </div>
+                {LOAD_BALANCER_PASS_TO_TARGET_LIST.map(({ label, description, value }) => {
+                  const active = value === tmpIsPassToTarget.value;
+                  const disabled = isUpdating.value;
+                  const handleClick = () => {
+                    if (disabled) return;
+                    tmpIsPassToTarget.value = value;
+                  };
+                  return (
+                    <div
+                      class={['rs-check-selector', { 'rs-check-selector-active': active, 'disabled-button': disabled }]}
+                      onClick={handleClick}>
+                      <span class='label-tag'>
+                        <Tag theme='warning'>{label}</Tag>
+                      </span>
+                      <span>{description}</span>
+                      <Success v-show={active} width={14} height={14} fill='#3A84FF' class={'rs-check-icon'} />
+                    </div>
+                  );
+                })}
               </div>
             ),
             footer: () => (
@@ -508,15 +473,12 @@ export default defineComponent({
                   onClick={async () => {
                     isUpdating.value = true;
                     try {
-                      await props.updateLb({
-                        load_balancer_pass_to_target: tmpIsPassToTarget.value,
-                      });
+                      await props.updateLb({ load_balancer_pass_to_target: tmpIsPassToTarget.value });
                       isConfigDialogShow.value = false;
                     } finally {
                       isUpdating.value = false;
                     }
-                  }}
-                >
+                  }}>
                   确认
                 </Button>
                 <Button onClick={() => (isConfigDialogShow.value = false)}>取消</Button>
