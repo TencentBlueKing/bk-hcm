@@ -61,6 +61,17 @@ export default defineComponent({
           },
           { name: '端口', id: 'port' },
         ],
+        extra: {
+          valueBehavior: 'all',
+          validateValues: async (item: { id: string }, values: { id: string }[]) => {
+            if (!item) return '请选择条件';
+            if (item.id === 'port') {
+              const port = parseInt(values[0].id, 10);
+              return port >= 1 && port <= 65535 ? true : '端口范围1-65535';
+            }
+            return true;
+          },
+        },
       },
       tableOptions: {
         columns: [
@@ -82,7 +93,8 @@ export default defineComponent({
                     content: t('监听器RS的权重不为0，不可删除'),
                     disabled: data.non_zero_weight_count === 0,
                   }}
-                  onClick={() => handleDeleteListener(data)}>
+                  onClick={() => handleDeleteListener(data)}
+                >
                   {t('删除')}
                 </Button>
               </div>
@@ -233,7 +245,8 @@ export default defineComponent({
           submitDisabledTooltipsOption={submitDisabledTooltipsOption.value}
           tableProps={tableProps}
           list={computedListenersList.value}
-          onHandleConfirm={handleBatchDeleteSubmit}>
+          onHandleConfirm={handleBatchDeleteSubmit}
+        >
           {{
             tips: () => (
               <>

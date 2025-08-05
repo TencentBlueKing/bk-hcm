@@ -124,6 +124,14 @@ export default defineComponent({
         props.rsList.filter((item) => item.id !== id),
       );
     };
+    const handleValidate = async (item: { id: string }, values: { id: string }[]) => {
+      if (!item) return '请选择条件';
+      if (item.id === 'port') {
+        const port = parseInt(values[0].id, 10);
+        return port >= 1 && port <= 65535 ? true : '端口范围1-65535';
+      }
+      return true;
+    };
 
     const rsTableColumns = [
       ...columns,
@@ -376,7 +384,12 @@ export default defineComponent({
           )}
           {props.noSearch ? null : (
             <div class='search-wrap'>
-              <SearchSelect class='table-search-select' v-model={searchValue.value} data={searchData.value} />
+              <SearchSelect
+                class='table-search-select'
+                v-model={searchValue.value}
+                data={searchData.value}
+                validateValues={handleValidate}
+              />
             </div>
           )}
         </div>

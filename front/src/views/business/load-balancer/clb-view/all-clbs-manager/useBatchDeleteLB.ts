@@ -4,6 +4,7 @@ import { Column } from 'bkui-vue/lib/table/props';
 import { useResourceStore } from '@/store';
 import { Message } from 'bkui-vue';
 import bus from '@/common/bus';
+import { LB_NETWORK_TYPE_MAP } from '@/constants';
 
 export default (columns: Array<Column>, selections: Ref<any[]>, getListData: (...args: any) => any) => {
   const resourceStore = useResourceStore();
@@ -14,7 +15,20 @@ export default (columns: Array<Column>, selections: Ref<any[]>, getListData: (..
   const tableProps = reactive({
     columns,
     data: [],
-    searchData: [],
+    searchData: [
+      { id: 'name', name: '负载均衡名称' },
+      { id: 'cloud_id', name: '负载均衡ID' },
+      { id: 'domain', name: '负载均衡域名' },
+      { id: 'lb_vip', name: '负载均衡VIP' },
+      {
+        id: 'lb_type',
+        name: '网络类型',
+        children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
+          id: lbType,
+          name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
+        })),
+      },
+    ],
   });
 
   const computedListenersList = computed(() => {

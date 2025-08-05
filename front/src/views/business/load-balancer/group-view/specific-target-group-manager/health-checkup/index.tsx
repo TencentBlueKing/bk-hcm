@@ -1,5 +1,5 @@
 import { computed, defineComponent, reactive, ref, useTemplateRef, watch } from 'vue';
-import { Container, Button, Switcher, Form, Tag, Input, Select } from 'bkui-vue';
+import { Container, Button, Switcher, Form, Tag, Input, Select, Message } from 'bkui-vue';
 import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import CommonSideslider from '@/components/common-sideslider';
@@ -31,6 +31,7 @@ export default defineComponent({
       {
         label: '健康探测源IP',
         value: () => {
+          if (!isOpen.value) return '-';
           if (props.detail.health_check?.source_ip_type === 1) return '云专用探测 IP 段';
           if (props.detail.health_check?.source_ip_type === 0) return '负载均衡 VIP';
           return '-';
@@ -327,12 +328,13 @@ export default defineComponent({
           'interval_time',
           'un_health_num',
           'health_num',
+          'source_ip_type',
         ];
 
         resetFormData();
 
         for (const key of keys) {
-          formData[key] = detail.health_check?.[key] || formData[key];
+          formData[key] = detail.health_check?.[key] ?? formData[key];
         }
 
         formData.health_switch = isOpen.value;
@@ -365,6 +367,7 @@ export default defineComponent({
         isHealthCheckupConfigShow.value = false;
         resetFormData();
         props.getTargetGroupDetail?.(loadbalancerStore.targetGroupId);
+        Message({ theme: 'success', message: '编辑成功' });
       } finally {
         isSubmitLoading.value = false;
       }
@@ -376,7 +379,8 @@ export default defineComponent({
           class='fixed-operate-btn'
           outline
           theme='primary'
-          onClick={() => (isHealthCheckupConfigShow.value = true)}>
+          onClick={() => (isHealthCheckupConfigShow.value = true)}
+        >
           配置
         </Button>
         <div class='detail-info-container'>
@@ -418,7 +422,8 @@ export default defineComponent({
           onUpdate:isShow={(isShow) => {
             if (!isShow) resetFormData();
           }}
-          width='640'>
+          width='640'
+        >
           <Form ref='form' formType='vertical' model={formData}>
             <Container margin={0}>
               {formData.health_switch ? (
