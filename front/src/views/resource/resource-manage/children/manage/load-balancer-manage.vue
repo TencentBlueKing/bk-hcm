@@ -51,38 +51,15 @@
       row-key="id"
     />
   </Loading>
-  <!-- 批量删除负载均衡 -->
-  <BatchOperationDialog
-    class="batch-delete-lb-dialog"
-    v-model:is-show="isBatchDeleteDialogShow"
-    :title="t('批量删除负载均衡')"
-    theme="danger"
-    confirm-text="删除"
-    :is-submit-loading="isSubmitLoading"
-    :is-submit-disabled="isSubmitDisabled"
-    :table-props="tableProps"
-    :list="computedListenersList"
-    @handle-confirm="handleBatchDeleteSubmit"
-  >
-    <template #tips>
-      已选择
-      <span class="blue">{{ tableProps.data.length }}</span>
-      个负载均衡，其中
-      <span class="red">{{ tableProps.data.filter(({ listenerNum }) => listenerNum > 0).length }}</span>
-      个存在监听器、
-      <span class="red">
-        <!-- eslint-disable-next-line vue/camelcase -->
-        {{ tableProps.data.filter(({ delete_protect }) => delete_protect).length }}
-      </span>
-      个负载均衡开启了删除保护，不可删除。
-    </template>
-    <template #tab>
-      <BkRadioGroup v-model="radioGroupValue">
-        <BkRadioButton :label="true">{{ t('可删除') }}</BkRadioButton>
-        <BkRadioButton :label="false">{{ t('不可删除') }}</BkRadioButton>
-      </BkRadioGroup>
-    </template>
-  </BatchOperationDialog>
+
+  <template v-if="!batchDeleteDialogState.isHidden">
+    <batch-delete-dialog
+      v-model="batchDeleteDialogState.isShow"
+      :selections="selections"
+      @confirm-success="handleBatchDeleteSuccess"
+      @hidden="batchDeleteDialogState.isHidden = true"
+    />
+  </template>
 
   <!-- 单个负载均衡分配业务 -->
   <bk-dialog
@@ -120,9 +97,8 @@
 <script setup lang="ts">
 import { PropType, h, withDirectives, ref, reactive, computed } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
-import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
-import BatchOperationDialog from '@/components/batch-operation-dialog';
+import BatchDeleteDialog from '@/views/load-balancer/clb/children/batch-delete-dialog.vue';
 import Confirm from '@/components/confirm';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import type { DoublePlainObject, FilterType } from '@/typings/resource';
@@ -130,17 +106,17 @@ import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useBatchDeleteLB from '@/views/business/load-balancer/clb-view/all-clbs-manager/useBatchDeleteLB';
 import { useI18n } from 'vue-i18n';
-import { asyncGetListenerCount, buildVIPFilterRules } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
-import { useResourceStore, useBusinessStore } from '@/store';
+import { useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 import { useRegionStore } from '@/store/region';
+import { buildVIPFilterRules } from '@/utils/search';
+import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
 const props = defineProps({
   filter: {
@@ -162,8 +138,8 @@ const { searchValue, filter } = useFilter(props, {
 });
 
 const resourceStore = useResourceStore();
-const businessStore = useBusinessStore();
 const resourceAccountStore = useResourceAccountStore();
+const loadBalancerClbStore = useLoadBalancerClbStore();
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
@@ -171,8 +147,23 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   null,
   'list',
   {},
-  (dataList: any) => asyncGetListenerCount(businessStore.asyncGetListenerCount, dataList),
+  (dataList: any) => asyncQueryListenerCount(dataList),
 );
+const asyncQueryListenerCount = async (list: ILoadBalancerWithDeleteProtectionItem[]) => {
+  if (!list || list.length === 0) return;
+  const ids = list.map((item) => item.id);
+  const listenerCountDetails = await loadBalancerClbStore.getListenerCountByLoadBalancerIds(ids);
+  return list.map((lb) => {
+    const listenerCountDetail = listenerCountDetails.find((item) => item.lb_id === lb.id);
+    if (listenerCountDetail) {
+      lb.listener_count = listenerCountDetail.num;
+    } else {
+      lb.listener_count = 0;
+    }
+    return lb;
+  });
+};
+
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, settings } = useColumns('lb');
 const renderColumns = [
@@ -204,7 +195,7 @@ const renderColumns = [
               class: 'mr10',
               text: true,
               theme: 'primary',
-              disabled: data.bk_biz_id !== -1 || data.listenerNum > 0 || data.delete_protect,
+              disabled: data.bk_biz_id !== -1 || data.listener_count > 0 || data.delete_protect,
               onClick: () => handleDelete(data),
             },
             '删除',
@@ -216,8 +207,8 @@ const renderColumns = [
                 if (data.bk_biz_id !== -1) {
                   return { content: t('该负载均衡仅可在业务下操作'), disabled: !(data.bk_biz_id !== -1) };
                 }
-                if (data.listenerNum > 0) {
-                  return { content: t('该负载均衡已绑定监听器, 不可删除'), disabled: !(data.listenerNum > 0) };
+                if (data.listener_count > 0) {
+                  return { content: t('该负载均衡已绑定监听器, 不可删除'), disabled: !(data.listener_count > 0) };
                 }
                 if (data.delete_protect) {
                   return { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect };
@@ -300,34 +291,14 @@ const isCurRowSelectEnable = (row: any) => {
   }
 };
 // 批量删除负载均衡
-const {
-  isBatchDeleteDialogShow,
-  isSubmitLoading,
-  isSubmitDisabled,
-  radioGroupValue,
-  tableProps,
-  handleRemoveSelection,
-  handleClickBatchDelete,
-  handleBatchDeleteSubmit,
-  computedListenersList,
-} = useBatchDeleteLB(
-  [
-    ...columns.slice(1, 8),
-    {
-      label: '',
-      width: 50,
-      minWidth: 50,
-      render: ({ data }: any) =>
-        h(
-          Button,
-          { text: true, onClick: () => handleRemoveSelection(data.id) },
-          h('i', { class: 'hcm-icon bkhcm-icon-minus-circle-shape' }),
-        ),
-    },
-  ],
-  selections,
-  triggerApi,
-);
+const batchDeleteDialogState = reactive({ isShow: false, isHidden: true });
+const handleClickBatchDelete = () => {
+  batchDeleteDialogState.isShow = true;
+  batchDeleteDialogState.isHidden = false;
+};
+const handleBatchDeleteSuccess = () => {
+  triggerApi();
+};
 
 // 删除单个负载均衡
 const handleDelete = (data: any) => {
@@ -374,9 +345,9 @@ const handleSync = (inTable: boolean, data?: any) => {
   syncDialogState.isShow = true;
   syncDialogState.isHidden = false;
   if (inTable) {
-    const { account_id: accountId, vendor, region, cloud_id: cloudId } = data;
+    const { name, account_id: accountId, vendor, region, cloud_id: cloudId } = data;
     // TODO: azure支持负载均衡后，需要补充resource_group_names
-    syncDialogState.initialModel = { account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
+    syncDialogState.initialModel = { name, account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
   } else {
     const { id, vendor } = data;
     syncDialogState.initialModel = { account_id: id, vendor };
@@ -393,12 +364,5 @@ const handleSync = (inTable: boolean, data?: any) => {
 
 .search-selector-container {
   margin-left: auto;
-}
-
-.batch-delete-lb-dialog {
-  :deep(.bkhcm-icon-minus-circle-shape) {
-    font-size: 14px;
-    color: #c4c6cc;
-  }
 }
 </style>

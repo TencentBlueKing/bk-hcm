@@ -15,6 +15,7 @@
           v-model="formModel.account_id"
           :biz-id="businessId"
           :resource-type="resourceType"
+          :disabled="globalDisabled"
           @change="handleAccountChange"
         />
       </bk-form-item>
@@ -29,17 +30,26 @@
           :account-id="formModel.account_id"
           :vendor="formModel.vendor"
           :multiple="multipleResourceGroup"
+          :disabled="globalDisabled"
         />
       </bk-form-item>
       <bk-form-item v-else :label="t('云地域')" property="regions" required>
-        <region-selector v-model="formModel.regions" :vendor="formModel.vendor" :multiple="multipleRegion" />
+        <region-selector
+          v-model="formModel.regions"
+          :vendor="formModel.vendor"
+          :multiple="multipleRegion"
+          :disabled="globalDisabled"
+        />
+      </bk-form-item>
+      <bk-form-item v-if="globalDisabled" :label="t('名称')">
+        <bk-input :value="initialModel.name" disabled />
       </bk-form-item>
     </bk-form>
   </bk-dialog>
 </template>
 
 <script setup lang="ts">
-import { nextTick, reactive, ref, useTemplateRef, watchEffect } from 'vue';
+import { computed, nextTick, reactive, ref, useTemplateRef, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useResourceStore } from '@/store';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
@@ -63,6 +73,7 @@ interface IProps {
 }
 
 interface IModel {
+  name?: string;
   account_id: string;
   vendor: string;
   regions?: string | string[]; // 指定资源同步地域，最少1，最大5
@@ -76,6 +87,8 @@ const emit = defineEmits<{ success: []; hidden: [] }>();
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
+
+const globalDisabled = computed(() => Boolean(props.initialModel?.cloud_ids?.length));
 
 const syncForm = useTemplateRef<typeof Form>('sync-form');
 const rules = {
@@ -99,8 +112,11 @@ const rules = {
 const formModel = reactive<IModel>({ account_id: '', vendor: '' });
 const handleAccountChange = (resource: IAccountItem) => {
   formModel.vendor = resource?.vendor;
-  formModel.regions = props.multipleRegion ? [] : '';
-  formModel.resource_group_names = props.multipleResourceGroup ? [] : '';
+  // 如果不是全局禁用，则清空地域和资源组
+  if (!globalDisabled.value) {
+    formModel.regions = props.multipleRegion ? [] : '';
+    formModel.resource_group_names = props.multipleResourceGroup ? [] : '';
+  }
   nextTick(() => syncForm.value.clearValidate());
 };
 watchEffect(() => {
@@ -134,7 +150,7 @@ const handleConfirm = async () => {
       return;
     }
 
-    Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+    Message({ theme: 'success', message: t('已同步成功') });
     handleClosed();
     emit('success');
   } catch (error) {

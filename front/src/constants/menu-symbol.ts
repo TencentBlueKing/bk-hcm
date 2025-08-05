@@ -21,7 +21,12 @@ export const MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT = 'menu_business_routeing_t
 
 export const MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT = 'menu_business_security_group_management';
 
-export const MENU_BUSINESS_LOAD_BALANCER_MANAGEMENT = 'menu_business_load_balancer_management';
+export const MENU_BUSINESS_LOAD_BALANCER = 'menu_business_load_balancer';
+export const MENU_BUSINESS_LOAD_BALANCER_OVERVIEW = 'menu_business_load_balancer_overview';
+export const MENU_BUSINESS_LOAD_BALANCER_DETAILS = 'menu_business_load_balancer_details';
+export const MENU_BUSINESS_TARGET_GROUP_OVERVIEW = 'menu_business_target_group_overview';
+export const MENU_BUSINESS_TARGET_GROUP_DETAILS = 'menu_business_target_group_details';
+export const MENU_BUSINESS_LOAD_BALANCER_APPLY = 'menu_business_load_balancer_apply';
 
 export const MENU_BUSINESS_CERT_MANAGEMENT = 'menu_business_cert_management';
 
@@ -47,3 +52,5 @@ export const MENU_RESOURCE_LOAD_BALANCER_APPLY = 'menu_resource_load_balancer_ap
 
 export const MENU_RESOURCE_OPERATION_LOG = 'menu_resource_operation_log';
 export const MENU_RESOURCE_OPERATION_LOG_DETAILS = 'menu_resource_operation_log_details';
+
+export const MENU_RESOURCE_LOAD_BALANCER = 'menu_resource_load_balancer';
