@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch, PropType, onMounted } from 'vue';
 // import components
 import { SearchSelect, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
@@ -13,12 +13,14 @@ import bus from '@/common/bus';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
 import { TargetGroupOperationScene } from '@/constants';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 
 const { FormItem } = Form;
 
 export default defineComponent({
   name: 'RsConfigTable',
   props: {
+    id: String,
     rsList: Array<any>,
     deletedRsList: Array<any>,
     accountId: String,
@@ -29,6 +31,9 @@ export default defineComponent({
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
     lbDetail: Object,
     loading: Boolean,
+    getTargetGroupDetail: {
+      type: Function as PropType<(...args: any) => any>,
+    },
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -306,6 +311,18 @@ export default defineComponent({
         immediate: true,
         deep: true,
       },
+    );
+
+    onMounted(() => {
+      refresh.resume();
+    });
+
+    const refresh = useTimeoutPoll(
+      () => {
+        props.getTargetGroupDetail(props.id);
+      },
+      30000,
+      { max: 60 },
     );
 
     const searchData = computed(() => {
