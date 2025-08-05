@@ -84,6 +84,7 @@ export interface IProp {
 }
 
 export const useTable = (props: IProp) => {
+  let lastType: string = props.requestOption.type;
   defaults(props, { requestOption: {} });
   defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
 
@@ -109,7 +110,6 @@ export const useTable = (props: IProp) => {
 
   const { pagination, handlePageLimitChange, handlePageValueChange } = usePagination(() => getListData());
 
-  const setUrl = (url: string) => (props.requestOption.type = url);
   // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
     sort.value = column.field;
@@ -130,10 +130,12 @@ export const useTable = (props: IProp) => {
    */
   const getListData = async (
     customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
-    type?: string,
+    type = lastType,
     isInvidual = false,
     differenceFields?: Array<string>,
   ) => {
+    if (type) lastType = type;
+
     buildFilter({
       rules: typeof customRules === 'function' ? customRules() : customRules,
       isInvidual,
@@ -458,6 +460,5 @@ export const useTable = (props: IProp) => {
     isLoading,
     filter,
     clearFilter,
-    setUrl,
   };
 };

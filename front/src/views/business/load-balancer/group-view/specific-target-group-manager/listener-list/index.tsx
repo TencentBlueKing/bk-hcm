@@ -81,7 +81,7 @@ export default defineComponent({
       });
     };
 
-    const { CommonTable, getListData, setUrl } = useTable({
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         disabled: true,
       },
@@ -103,9 +103,7 @@ export default defineComponent({
       () => loadBalancerStore.targetGroupId,
       (val) => {
         if (!val) return;
-        const url = `vendors/${route.query.vendor}/target_groups/${val}/rules`;
-        getListData([], url);
-        setUrl(url);
+        getListData([], `vendors/${route.query.vendor}/target_groups/${val}/rules`);
       },
     );
 
