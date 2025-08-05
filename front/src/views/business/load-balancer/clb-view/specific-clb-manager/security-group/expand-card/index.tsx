@@ -7,6 +7,7 @@ import http from '@/http';
 import { VendorEnum } from '@/common/constant';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { SecurityRuleDirection } from '..';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -42,8 +43,10 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const { getBusinessApiPath } = useWhereAmI();
     const isExpand = ref(true);
     const tableData = ref([]);
+
     watch(
       () => props.isAllExpand,
       (isAllExpand) => {
@@ -54,18 +57,11 @@ export default defineComponent({
     const getSecurityRules = async () => {
       if (!props.direction) return;
       const res = await http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${props.id}/rules/list`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${
+          props.id
+        }/rules/list`,
         {
-          filter: {
-            op: 'and',
-            rules: [
-              {
-                field: 'type',
-                op: 'eq',
-                value: props.direction,
-              },
-            ],
-          },
+          filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: props.direction }] },
           page: { count: false, start: 0, limit: 500 },
         },
       );
