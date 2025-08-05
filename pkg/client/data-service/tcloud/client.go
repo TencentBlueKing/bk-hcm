@@ -36,6 +36,7 @@ type Client struct {
 	RouteTable    *RouteTableClient
 	SubAccount    *SubAccountClient
 	LoadBalancer  *LoadBalancerClient
+	Cos           *CosClient
 }
 
 type restClient struct {
@@ -56,5 +57,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		RouteTable:    NewRouteTableClient(client),
 		SubAccount:    NewSubAccountClient(client),
 		LoadBalancer:  NewLoadBalancerClient(client),
+		Cos:           NewCosClient(client),
 	}
 }

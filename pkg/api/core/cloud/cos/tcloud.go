@@ -17,26 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cos ...
+// Package cos tcloud cos.
 package cos
 
-import (
-	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
-	"hcm/cmd/hc-service/service/capability"
-	dataservice "hcm/pkg/client/data-service"
-)
+// TCloudCos tcloud cos.
+type TCloudCos = Cos[TCloudCosExtension]
 
-// InitCosService initial cos service.
-func InitCosService(cap *capability.Capability) {
-	svc := &cosSvc{
-		ad:      cap.CloudAdaptor,
-		dataCli: cap.ClientSet.DataService(),
-	}
-
-	svc.initTCloudCosService(cap)
-}
-
-type cosSvc struct {
-	ad      *cloudadaptor.CloudAdaptorClient
-	dataCli *dataservice.Client
+// TCloudCosExtension tcloud cos extension.
+type TCloudCosExtension struct {
 }

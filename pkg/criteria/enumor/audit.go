@@ -50,6 +50,7 @@ const (
 	UrlRuleDomainAuditResType     AuditResourceType = "url_rule_domain"
 	MainAccountAuditResType       AuditResourceType = "main_account"
 	RootAccountAuditResType       AuditResourceType = "root_account"
+	CosAuditResType               AuditResourceType = "cos"
 )
 
 // AuditResourceTypeEnums resource type map.

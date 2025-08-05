@@ -88,6 +88,7 @@ type Interface interface {
 	Listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption) (*SyncResult, error)
 	RemoveListenerDeleteFromCloud(kt *kit.Kit, params *ListenerSyncRemovedParams) error
 	RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, param *SyncRemovedParams, allCloudIDMap map[string]struct{}) error
+	Cos(kt *kit.Kit, params *SyncBaseParams, opt *SyncCosOption) (*SyncResult, error)
 }
 
 var _ Interface = new(client)

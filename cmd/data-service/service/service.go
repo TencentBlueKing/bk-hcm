@@ -72,6 +72,7 @@ import (
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
 	sync "hcm/cmd/data-service/service/cloud/sync"
 	"hcm/cmd/data-service/service/cloud/zone"
+	cloudcos "hcm/cmd/data-service/service/cloud/cos"
 	"hcm/cmd/data-service/service/cos"
 	globalconfig "hcm/cmd/data-service/service/global-config"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
@@ -277,6 +278,7 @@ func (s *Service) apiSet() *restful.Container {
 	tenant.InitService(capability)
 
 	resusagebizrel.InitService(capability)
+	cloudcos.InitSvc(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

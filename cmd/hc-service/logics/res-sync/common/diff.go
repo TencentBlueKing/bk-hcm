@@ -54,6 +54,8 @@ import (
 	corerecyclerecord "hcm/pkg/api/core/recycle-record"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	corecos "hcm/pkg/api/core/cloud/cos"
+	typescos "hcm/pkg/adaptor/types/cos"
 )
 
 // CloudResType 云资源类型
@@ -157,7 +159,10 @@ type CloudResType interface {
 		typeslb.TCloudClb |
 		typeslb.TCloudListener |
 		typeslb.TCloudUrlRule |
-		typeslb.Backend
+		typeslb.Backend |
+
+		typescos.TCloudBucketListResult |
+		typescos.Bucket
 }
 
 // TestCloudRes 测试云资源类型
@@ -264,7 +269,9 @@ type DBResType interface {
 		corelb.TCloudLoadBalancer |
 		corelb.TCloudLbUrlRule |
 		corelb.TCloudListener |
-		corelb.BaseTarget
+		corelb.BaseTarget |
+
+		corecos.TCloudCos
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。
