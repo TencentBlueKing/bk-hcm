@@ -9,7 +9,7 @@ import { LB_TYPE_NAME, LoadBalancerType } from '../../constants';
 import { ConditionKeyType, SearchConditionFactory } from '../../children/search/condition-factory';
 import usePage from '@/hooks/use-page';
 import { cloneDeep } from 'lodash';
-import { getInstVip } from '@/utils';
+import { getInstVip, parseIP } from '@/utils';
 import { getLocalFilterFnBySearchSelect } from '@/utils/search';
 
 import { Message, Tag } from 'bkui-vue';
@@ -65,7 +65,7 @@ const datalistColumns = displayFieldIds.map((id) => {
 });
 
 const conditionProperties = SearchConditionFactory.createModel(ConditionKeyType.CLB).getProperties();
-const conditionIds = ['name', 'cloud_id', 'domain', 'lb_type'];
+const conditionIds = ['name', 'cloud_id', 'domain', 'lb_vip', 'lb_type'];
 const searchFields = conditionIds.map((id) => conditionProperties.find((item) => item.id === id));
 
 const list = ref(cloneDeep(props.selections));
@@ -79,7 +79,28 @@ const active = ref(props.selections.every(canDeletePredicate));
 const localSearchFilter = ref<(item: ILoadBalancerWithDeleteProtectionItem) => boolean>(() => true);
 const sort = ref<SortType>();
 const handleSearch = (searchValue: ISearchSelectValue) => {
-  localSearchFilter.value = getLocalFilterFnBySearchSelect(searchValue);
+  localSearchFilter.value = getLocalFilterFnBySearchSelect(searchValue, [
+    {
+      field: 'lb_vip',
+      checker: (_key, values, item) => {
+        const ipv4 = [...item.private_ipv4_addresses, ...item.public_ipv4_addresses];
+        const ipv6 = [...item.private_ipv6_addresses, ...item.public_ipv6_addresses];
+
+        const ipv4Set = new Set<string>();
+        const ipv6Set = new Set<string>();
+        values.forEach((item) => {
+          const { IPv4List, IPv6List } = parseIP(item);
+          IPv4List.forEach((item) => ipv4Set.add(item));
+          IPv6List.forEach((item) => ipv6Set.add(item));
+        });
+
+        const hasIPv4Intersection = ipv4.some((ip) => ipv4Set.has(ip));
+        const hasIPv6Intersection = ipv6.some((ip) => ipv6Set.has(ip));
+
+        return hasIPv4Intersection || hasIPv6Intersection;
+      },
+    },
+  ]);
 };
 const handleSort = (sortType: SortType) => {
   sort.value = sortType;
@@ -96,6 +117,7 @@ const displayList = computed(() => {
   result = result.filter(localSearchFilter.value);
 
   // 第三步：如果有排序，则进行排序
+  // TODO: 排序可以做成通用的
   if (!sort.value || sort.value.type === 'null') {
     return filterResult;
   }

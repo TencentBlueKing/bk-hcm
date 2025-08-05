@@ -179,13 +179,13 @@ export const transformFlatCondition = (condition: Record<string, any>, propertie
 // 获取简单搜索条件 - search-select
 export const getSimpleConditionBySearchSelect = (
   searchValue: ISearchSelectValue,
-  options: Array<{ field: string; formatter: Function }> = [],
+  options: Array<{ field: string; formatter?: Function }> = [], // TODO: options可以设计成 Record
 ) => {
   // 非数组，直接返回空
   if (!Array.isArray(searchValue)) return null;
 
   const applyFormatters = (value: string, field: string) =>
-    options.find((opt) => opt.field === field)?.formatter(value) ?? value;
+    options.find((opt) => opt.field === field)?.formatter?.(value) ?? value;
 
   // 将搜索值转换为 rules，rule之间为AND关系，rule.values之间为OR关系
   return Object.fromEntries(
@@ -200,7 +200,11 @@ export const getSimpleConditionBySearchSelect = (
 // 处理本地搜索，返回一个filterFn - search-select
 export const getLocalFilterFnBySearchSelect = (
   searchValue: ISearchSelectValue,
-  options: Array<{ field: string; formatter: Function }> = [],
+  options: Array<{
+    field: string;
+    formatter?: Function;
+    checker?: (key: string, values: string[], item: any) => boolean;
+  }> = [],
 ) => {
   // 非数组，直接返回空函数，不过滤
   if (!Array.isArray(searchValue)) return () => true;
@@ -210,12 +214,14 @@ export const getLocalFilterFnBySearchSelect = (
 
   // 构建过滤函数
   return (item: any) =>
-    rules.every(
-      ({ key, values }) =>
-        // 将itemValues转为字符串，这样既可以比较数字，又可以比较字符串和字符串数组
-        // TODO: 这里不能简单处理，应该还是要往convertValue去靠
-        item[key] && values.some((v) => String(item[key]).includes(v)),
-    );
+    rules.every(({ key, values }) => {
+      const checker = options.find((opt) => opt.field === key)?.checker;
+      if (checker) return checker(key, values, item);
+
+      // 将itemValues转为字符串，这样既可以比较数字，又可以比较字符串和字符串数组
+      // TODO: 这里不能简单处理，应该还是要往convertValue去靠
+      return item[key] && values.some((v) => String(item[key]).includes(v));
+    });
 };
 
 export const enableCount = (params = {}, enable = false) => {
