@@ -27,6 +27,7 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	apits "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
@@ -187,6 +188,20 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 	}
 
 	if len(tasks) == 0 {
+		// 目标组没有绑定RS
+		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementSuccess); err != nil {
+			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+			return err
+		}
+
+		req := &cloud.TGListenerRelStatusUpdateReq{BindingStatus: enumor.SuccessBindingStatus}
+		err = svc.client.DataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, tgID, req)
+		if err != nil {
+			logs.Errorf("fail to update listener rule rel status by tgID, err: %v, tgID: %s, rid: %s",
+				err, tgID, kt.Rid)
+			return err
+		}
 		return nil
 	}
 	return svc.createApplyTGFlow(kt, tgID, taskManagementID, lblInfo, tasks, taskDetails)
