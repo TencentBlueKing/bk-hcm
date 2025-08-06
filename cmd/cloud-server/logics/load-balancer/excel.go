@@ -22,6 +22,7 @@ package lblogic
 import (
 	"fmt"
 
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	loadbalancer "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -200,26 +201,28 @@ func getFirstRow(vendor enumor.Vendor) ([]string, error) {
 }
 
 // getLbVipOrDomain 当域名存在时，则返回域名，否则返回vip
-func getLbVipOrDomain(lb loadbalancer.BaseLoadBalancer) string {
+func getLbVipOrDomain(lb loadbalancer.BaseLoadBalancer) (string, error) {
 	if lb.Domain != "" {
-		return lb.Domain
+		return lb.Domain, nil
 	}
 
-	if len(lb.PrivateIPv4Addresses) != 0 {
-		return lb.PrivateIPv4Addresses[0]
+	switch typeslb.TCloudLoadBalancerType(lb.LoadBalancerType) {
+	case typeslb.InternalLoadBalancerType:
+		if lb.IPVersion == enumor.Ipv4 && len(lb.PrivateIPv4Addresses) != 0 {
+			return lb.PrivateIPv4Addresses[0], nil
+		}
+		if len(lb.PrivateIPv6Addresses) != 0 {
+			return lb.PrivateIPv6Addresses[0], nil
+		}
+	case typeslb.OpenLoadBalancerType:
+		if lb.IPVersion == enumor.Ipv4 && len(lb.PublicIPv4Addresses) != 0 {
+			return lb.PublicIPv4Addresses[0], nil
+		}
+		if len(lb.PublicIPv6Addresses) != 0 {
+			return lb.PublicIPv6Addresses[0], nil
+		}
 	}
 
-	if len(lb.PublicIPv4Addresses) != 0 {
-		return lb.PublicIPv4Addresses[0]
-	}
-
-	if len(lb.PrivateIPv6Addresses) != 0 {
-		return lb.PrivateIPv6Addresses[0]
-	}
-
-	if len(lb.PublicIPv6Addresses) != 0 {
-		return lb.PublicIPv6Addresses[0]
-	}
-
-	return ""
+	return "", fmt.Errorf("unsupported lb, cloud id: %s, type: %s, ip version: %s", lb.CloudID, lb.LoadBalancerType,
+		lb.IPVersion)
 }

@@ -104,7 +104,7 @@ func (s *service) ExportMainAccountSummary(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	for _, header := range export.BillSummaryMainTableHeader {
+	for _, header := range export.BillSummaryMainTableHeaders {
 		if err = writer.Write(header); err != nil {
 			logs.Errorf("write header failed: %v, header: %v, rid: %s", err, header, cts.Kit.Rid)
 			return nil, err

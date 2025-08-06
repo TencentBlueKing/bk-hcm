@@ -135,6 +135,8 @@ func (o *Operator) Save() error {
 	return nil
 }
 
+const fourMB = 4 * 1024 * 1024
+
 // addToZip 添加文件到zip
 func addToZip(zipWriter *zip.Writer, filePath string) error {
 	file, err := os.Open(filePath)
@@ -161,7 +163,7 @@ func addToZip(zipWriter *zip.Writer, filePath string) error {
 	}
 
 	// 使用缓冲区流式复制（避免大文件内存溢出）
-	buf := make([]byte, 4*1024*1024) // 4MB缓冲区
+	buf := make([]byte, fourMB)
 	_, err = io.CopyBuffer(writer, file, buf)
 	return err
 }

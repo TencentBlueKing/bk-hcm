@@ -216,7 +216,11 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 			healthCheck = enumor.EnableListenerHealthCheck
 		}
 		listenerPortStr := getListenerPortStr(listener)
-		clbVipDomain := getLbVipOrDomain(lb)
+		clbVipDomain, err := getLbVipOrDomain(lb)
+		if err != nil {
+			logs.Errorf("get clb vip or domain failed, err: %v, lb id: %s, rid: %s", err, lbID, kt.Rid)
+			return err
+		}
 
 		clbListenerMap[clbVipDomain] = append(clbListenerMap[clbVipDomain], Layer4ListenerDetail{
 			ClbVipDomain:    clbVipDomain,
@@ -229,7 +233,7 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 		})
 	}
 
-	if err := l.writerLayer4Listeners(kt, zipOperator, clbListenerMap); err != nil {
+	if err := l.writeLayer4Listeners(kt, zipOperator, clbListenerMap); err != nil {
 		return err
 	}
 
@@ -338,8 +342,8 @@ func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zi
 		lbID := listener.LbID
 		lb, ok := lbMap[lbID]
 		if !ok {
-			logs.Errorf("can not get clb by lb id failed, lb id: %s, rid: %s", lbID, kt.Rid)
-			return fmt.Errorf("can not get clb by lb id failed, lb id: %s", lbID)
+			logs.Errorf("can not get clb by lb id, lb id: %s, rid: %s", lbID, kt.Rid)
+			return fmt.Errorf("can not get clb by lb id, lb id: %s", lbID)
 		}
 		listenerPortStr := getListenerPortStr(listener)
 		var sslMode, certCloudID, caCloudID string
@@ -354,7 +358,11 @@ func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zi
 
 			caCloudID = converter.PtrToVal(listener.Extension.Certificate.CaCloudID)
 		}
-		clbVipDomain := getLbVipOrDomain(lb)
+		clbVipDomain, err := getLbVipOrDomain(lb)
+		if err != nil {
+			logs.Errorf("get clb vip or domain failed, err: %v, lb id: %s, rid: %s", err, lbID, kt.Rid)
+			return err
+		}
 
 		clbListenerMap[clbVipDomain] = append(clbListenerMap[clbVipDomain], Layer7ListenerDetail{
 			ClbVipDomain:    clbVipDomain,
@@ -367,7 +375,7 @@ func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zi
 		})
 	}
 
-	if err := l.writerLayer7Listeners(kt, zipOperator, clbListenerMap); err != nil {
+	if err := l.writeLayer7Listeners(kt, zipOperator, clbListenerMap); err != nil {
 		return err
 	}
 
@@ -394,8 +402,8 @@ func (l *listenerExporter) writeTCloudRule(kt *kit.Kit, zipOperator zip.Operator
 		listenerID := rule.LblID
 		listener, ok := layer7ListenerMap[listenerID]
 		if !ok {
-			logs.Errorf("can not get listener by listener id, listener id: %s, rid: %s", listener.ID, kt.Rid)
-			return fmt.Errorf("can not get listener by listener id, listener id: %s", listener.ID)
+			logs.Errorf("can not get listener by listener id, listener id: %s, rid: %s", listenerID, kt.Rid)
+			return fmt.Errorf("can not get listener by listener id, listener id: %s", listenerID)
 		}
 
 		healthCheck := enumor.DisableListenerHealthCheck
@@ -407,7 +415,11 @@ func (l *listenerExporter) writeTCloudRule(kt *kit.Kit, zipOperator zip.Operator
 		if rule.Domain == listener.DefaultDomain {
 			isDefaultDomain = true
 		}
-		clbVipDomain := getLbVipOrDomain(lb)
+		clbVipDomain, err := getLbVipOrDomain(lb)
+		if err != nil {
+			logs.Errorf("get clb vip or domain failed, err: %v, lb id: %s, rid: %s", err, lbID, kt.Rid)
+			return err
+		}
 
 		clbRuleMap[clbVipDomain] = append(clbRuleMap[clbVipDomain], RuleDetail{
 			ClbVipDomain:    clbVipDomain,
@@ -423,7 +435,7 @@ func (l *listenerExporter) writeTCloudRule(kt *kit.Kit, zipOperator zip.Operator
 		})
 	}
 
-	if err := l.writerRules(kt, zipOperator, clbRuleMap); err != nil {
+	if err := l.writeRules(kt, zipOperator, clbRuleMap); err != nil {
 		return err
 	}
 
@@ -464,7 +476,11 @@ func (l *listenerExporter) writeTCloudLayer4Rs(kt *kit.Kit, zipOperator zip.Oper
 		}
 		listenerPortStr := getListenerPortStr(listener)
 		rsPortStr := getRsPortStr(listener, rs)
-		clbVipDomain := getLbVipOrDomain(lb)
+		clbVipDomain, err := getLbVipOrDomain(lb)
+		if err != nil {
+			logs.Errorf("get clb vip or domain failed, err: %v, lb id: %s, rid: %s", err, lbID, kt.Rid)
+			return err
+		}
 
 		clbRsMap[clbVipDomain] = append(clbRsMap[clbVipDomain], Layer4RsDetail{
 			ClbVipDomain:    clbVipDomain,
@@ -478,7 +494,7 @@ func (l *listenerExporter) writeTCloudLayer4Rs(kt *kit.Kit, zipOperator zip.Oper
 		})
 	}
 
-	if err := l.writerLayer4Rs(kt, zipOperator, clbRsMap); err != nil {
+	if err := l.writeLayer4Rs(kt, zipOperator, clbRsMap); err != nil {
 		return err
 	}
 
@@ -532,7 +548,11 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 		}
 		listenerPortStr := getListenerPortStr(listener)
 		rsPortStr := getRsPortStr(listener, rs)
-		clbVipDomain := getLbVipOrDomain(lb)
+		clbVipDomain, err := getLbVipOrDomain(lb)
+		if err != nil {
+			logs.Errorf("get clb vip or domain failed, err: %v, lb id: %s, rid: %s", err, lbID, kt.Rid)
+			return err
+		}
 
 		clbRsMap[clbVipDomain] = append(clbRsMap[clbVipDomain], Layer7RsDetail{
 			ClbVipDomain:    clbVipDomain,
@@ -548,7 +568,7 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 		})
 	}
 
-	if err := l.writerLayer7Rs(kt, zipOperator, clbRsMap); err != nil {
+	if err := l.writeLayer7Rs(kt, zipOperator, clbRsMap); err != nil {
 		return err
 	}
 

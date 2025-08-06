@@ -87,7 +87,7 @@ func (s *service) ExportBizSummary(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	for _, header := range export.BillSummaryBizTableHeader {
+	for _, header := range export.BillSummaryBizTableHeaders {
 		if err = writer.Write(header); err != nil {
 			logs.Errorf("write header failed, err: %v, header: %v, rid: %s", err, header, cts.Kit.Rid)
 			return nil, err

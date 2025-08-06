@@ -102,7 +102,7 @@ func (b *billAdjustmentSvc) ExportBillAdjustmentItem(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	for _, header := range export.BillAdjustmentTableHeader {
+	for _, header := range export.BillAdjustmentTableHeaders {
 		if err = writer.Write(header); err != nil {
 			logs.Errorf("write header failed: %v, val: %v, rid: %s", err, header, cts.Kit.Rid)
 			return nil, err

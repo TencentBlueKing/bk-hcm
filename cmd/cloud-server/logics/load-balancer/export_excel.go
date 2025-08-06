@@ -21,7 +21,6 @@ package lblogic
 
 import (
 	"fmt"
-	"path/filepath"
 
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -35,10 +34,12 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/table"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/zip"
 	"hcm/pkg/zip/excel"
+	"path/filepath"
 )
 
 // Exporter ...
@@ -128,9 +129,7 @@ func (l *listenerExporter) checkClbListenerRel(kt *kit.Kit) error {
 }
 
 func (l *listenerExporter) checkListenerCount(kt *kit.Kit) error {
-	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
-
-	layer4Count, err := l.getListenerCount(kt, lbIDs, lblIDs, enumor.GetLayer4Protocol())
+	layer4Count, err := l.getListenerCount(kt, enumor.GetLayer4Protocol())
 	if err != nil {
 		return err
 	}
@@ -138,7 +137,7 @@ func (l *listenerExporter) checkListenerCount(kt *kit.Kit) error {
 		return fmt.Errorf("导出的4层监听器数量为：%d, 超过限制：%d", layer4Count, constant.ExportLayer4ListenerLimit)
 	}
 
-	layer7Count, err := l.getListenerCount(kt, lbIDs, lblIDs, enumor.GetLayer7Protocol())
+	layer7Count, err := l.getListenerCount(kt, enumor.GetLayer7Protocol())
 	if err != nil {
 		return err
 	}
@@ -149,46 +148,45 @@ func (l *listenerExporter) checkListenerCount(kt *kit.Kit) error {
 	return nil
 }
 
-func (l *listenerExporter) getListenerCount(kt *kit.Kit, lbIDs []string, lblIDs []string,
-	protocols []enumor.ProtocolType) (uint64, error) {
-
-	if len(lbIDs) > int(core.DefaultMaxPageLimit) {
-		return 0, fmt.Errorf("lb id length must less than %d", core.DefaultMaxPageLimit)
+func (l *listenerExporter) getListenerCount(kt *kit.Kit, protocols []enumor.ProtocolType) (uint64, error) {
+	req := core.ListReq{
+		Filter: &filter.Expression{
+			Op:    filter.And,
+			Rules: l.getListenerCountRule(protocols),
+		},
+		Page: core.NewCountPage(),
+	}
+	resp, err := l.client.DataService().Global.LoadBalancer.ListListener(kt, &req)
+	if err != nil {
+		logs.Errorf("get listener count failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return 0, err
 	}
 
-	if len(lblIDs) > int(core.DefaultMaxPageLimit) {
-		return 0, fmt.Errorf("lbl id length must less than %d", core.DefaultMaxPageLimit)
-	}
+	return resp.Count, nil
+}
 
-	var count uint64
+func (l *listenerExporter) getListenerCountRule(protocols []enumor.ProtocolType) []filter.RuleFactory {
+	rules := make([]filter.RuleFactory, 0)
+	rules = append(rules, tools.RuleIn("protocol", protocols))
+
+	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
+
+	if len(lbIDs) != 0 && len(lblIDs) != 0 {
+		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("id", lblIDs)))
+		return rules
+	}
 
 	if len(lbIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewCountPage(),
-		}
-		resp, err := l.client.DataService().Global.LoadBalancer.ListListener(kt, &req)
-		if err != nil {
-			logs.Errorf("get listener count by lb id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return 0, err
-		}
-		count += resp.Count
+		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs)))
+		return rules
 	}
 
 	if len(lblIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("id", lblIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewCountPage(),
-		}
-		resp, err := l.client.DataService().Global.LoadBalancer.ListListener(kt, &req)
-		if err != nil {
-			logs.Errorf("get listener count by listener id failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return 0, err
-		}
-		count += resp.Count
+		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("id", lblIDs)))
+		return rules
 	}
 
-	return count, nil
+	return rules
 }
 
 func (l *listenerExporter) checkRuleCount(kt *kit.Kit) error {
@@ -237,20 +235,18 @@ func (l *listenerExporter) getRuleCount(kt *kit.Kit, rule *filter.AtomRule) (uin
 }
 
 func (l *listenerExporter) checkRsCount(kt *kit.Kit) error {
-	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
-
-	layer4Count, err := l.getRsCount(kt, lbIDs, lblIDs, enumor.Layer4RuleType)
+	layer4Count, err := l.getRsCount(kt, enumor.Layer4RuleType)
 	if err != nil {
-		logs.Errorf("get layer4 rs count failed, err: %v, lbIDs: %+v, lblIDs: %+v, rid: %s", err, lbIDs, lblIDs, kt.Rid)
+		logs.Errorf("get layer4 rs count failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	if layer4Count > constant.ExportLayer4RsLimit {
 		return fmt.Errorf("导出4层RS数量超过限制，当前数量: %d, 限制数量: %d", layer4Count, constant.ExportLayer4RsLimit)
 	}
 
-	layer7Count, err := l.getRsCount(kt, lbIDs, lblIDs, enumor.Layer7RuleType)
+	layer7Count, err := l.getRsCount(kt, enumor.Layer7RuleType)
 	if err != nil {
-		logs.Errorf("get layer7 rs count failed, err: %v, lbIDs: %+v, lblIDs: %+v, rid: %s", err, lbIDs, lblIDs, kt.Rid)
+		logs.Errorf("get layer7 rs count failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	if layer7Count > constant.ExportLayer7RsLimit {
@@ -260,34 +256,11 @@ func (l *listenerExporter) checkRsCount(kt *kit.Kit) error {
 	return nil
 }
 
-func (l *listenerExporter) getRsCount(kt *kit.Kit, lbIDs []string, lblIDs []string, ruleType enumor.RuleType) (uint64,
-	error) {
-
-	if len(lbIDs) > int(core.DefaultMaxPageLimit) {
-		return 0, fmt.Errorf("lb id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	if len(lblIDs) > int(core.DefaultMaxPageLimit) {
-		return 0, fmt.Errorf("lbl id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	rules := make([]filter.RuleFactory, 0)
-	rules = append(rules, tools.RuleEqual("listener_rule_type", ruleType))
-
-	if len(lbIDs) != 0 && len(lblIDs) != 0 {
-		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("lbl_id", lblIDs)))
-	}
-	if len(lbIDs) != 0 {
-		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs)))
-	}
-	if len(lblIDs) != 0 {
-		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs)))
-	}
-
+func (l *listenerExporter) getRsCount(kt *kit.Kit, ruleType enumor.RuleType) (uint64, error) {
 	relReq := core.ListReq{
 		Filter: &filter.Expression{
 			Op:    filter.And,
-			Rules: rules,
+			Rules: l.getRsCountRule(ruleType),
 		},
 		Page: core.NewDefaultBasePage(),
 	}
@@ -325,6 +298,30 @@ func (l *listenerExporter) getRsCount(kt *kit.Kit, lbIDs []string, lblIDs []stri
 	return count, nil
 }
 
+func (l *listenerExporter) getRsCountRule(ruleType enumor.RuleType) []filter.RuleFactory {
+	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
+	rules := make([]filter.RuleFactory, 0)
+
+	rules = append(rules, tools.RuleEqual("listener_rule_type", ruleType))
+
+	if len(lbIDs) != 0 && len(lblIDs) != 0 {
+		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("lbl_id", lblIDs)))
+		return rules
+	}
+
+	if len(lbIDs) != 0 {
+		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs)))
+		return rules
+	}
+
+	if len(lblIDs) != 0 {
+		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs)))
+		return rules
+	}
+
+	return rules
+}
+
 // Export ...
 func (l *listenerExporter) Export(kt *kit.Kit) (string, error) {
 	fileName := zip.GenFileName(constant.CLBFilePrefix)
@@ -333,7 +330,11 @@ func (l *listenerExporter) Export(kt *kit.Kit) (string, error) {
 		logs.Errorf("create zip operator failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
-	defer zipOperator.Close()
+	defer func(zipOperator zip.OperatorI) {
+		if err = zipOperator.Close(); err != nil {
+			logs.Errorf("close zip operator failed, err: %v, rid: %s", err, kt.Rid)
+		}
+	}(zipOperator)
 
 	switch l.vendor {
 	case enumor.TCloud:
@@ -362,8 +363,6 @@ func (l *listenerExporter) getLbs(kt *kit.Kit) (map[string]corelb.BaseLoadBalanc
 		req := core.ListReq{
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", split)),
 			Page:   core.NewDefaultBasePage(),
-			Fields: []string{"id", "cloud_id", "private_ipv4_addresses", "private_ipv6_addresses",
-				"public_ipv4_addresses", "public_ipv6_addresses", "domain"},
 		}
 		resp, err := l.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, &req)
 		if err != nil {
@@ -499,164 +498,55 @@ func (l *listenerExporter) getRsClassifyProtocol(kt *kit.Kit, layer4TgLblRel,
 	return layer4Rs, layer7Rs, nil
 }
 
-func (l *listenerExporter) writerLayer4Listeners(kt *kit.Kit, zipOperator zip.OperatorI,
+func (l *listenerExporter) writeLayer4Listeners(kt *kit.Kit, zipOperator zip.OperatorI,
 	clbListenerMap map[string][]Layer4ListenerDetail) error {
 
-	firstRow, err := getFirstRow(l.vendor)
-	if err != nil {
-		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	for clbFlag, listeners := range clbListenerMap {
-		for i, batch := range slice.Split(listeners, constant.ExportClbOneFileRowLimit) {
-			data := make([][]string, 0)
-			data = append(data, firstRow)
-			data = append(data, layer4ListenerHeaders...)
-
-			for _, one := range batch {
-				row, err := one.GetValuesByHeader()
-				if err != nil {
-					logs.Errorf("get values by header failed, err: %v, data: %v, rid: %s", err, one, kt.Rid)
-					return err
-				}
-				data = append(data, row)
-			}
-
-			fileName := fmt.Sprintf("%s-%s-%d.xlsx", constant.Layer4ListenerFilePrefix, clbFlag, i+1)
-			name := excel.CombineFileNameAndSheet(fileName, constant.Layer4ListenerSheetName)
-			if err := zipOperator.Write(name, data); err != nil {
-				logs.Errorf("write excel failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-		}
-	}
-
-	return nil
+	return write[Layer4ListenerDetail](kt, l.vendor, zipOperator, clbListenerMap, layer4ListenerHeaders,
+		constant.Layer4ListenerFilePrefix, constant.Layer4ListenerSheetName)
 }
 
-func (l *listenerExporter) writerLayer7Listeners(kt *kit.Kit, zipOperator zip.OperatorI,
+func (l *listenerExporter) writeLayer7Listeners(kt *kit.Kit, zipOperator zip.OperatorI,
 	clbListenerMap map[string][]Layer7ListenerDetail) error {
 
-	firstRow, err := getFirstRow(l.vendor)
-	if err != nil {
-		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	for clbFlag, listeners := range clbListenerMap {
-		for i, batch := range slice.Split(listeners, constant.ExportClbOneFileRowLimit) {
-			data := make([][]string, 0)
-			data = append(data, firstRow)
-			data = append(data, layer7ListenerHeaders...)
-
-			for _, one := range batch {
-				row, err := one.GetValuesByHeader()
-				if err != nil {
-					logs.Errorf("get values by header failed, err: %v, data: %v, rid: %s", err, one, kt.Rid)
-					return err
-				}
-				data = append(data, row)
-			}
-
-			fileName := fmt.Sprintf("%s-%s-%d.xlsx", constant.Layer7ListenerFilePrefix, clbFlag, i+1)
-			name := excel.CombineFileNameAndSheet(fileName, constant.Layer7ListenerSheetName)
-			if err := zipOperator.Write(name, data); err != nil {
-				logs.Errorf("write excel failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-		}
-	}
-
-	return nil
+	return write[Layer7ListenerDetail](kt, l.vendor, zipOperator, clbListenerMap, layer7ListenerHeaders,
+		constant.Layer7ListenerFilePrefix, constant.Layer7ListenerSheetName)
 }
 
-func (l *listenerExporter) writerRules(kt *kit.Kit, zipOperator zip.OperatorI,
+func (l *listenerExporter) writeRules(kt *kit.Kit, zipOperator zip.OperatorI,
 	clbRuleMap map[string][]RuleDetail) error {
 
-	firstRow, err := getFirstRow(l.vendor)
-	if err != nil {
-		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	for clbFlag, rules := range clbRuleMap {
-		for i, batch := range slice.Split(rules, constant.ExportClbOneFileRowLimit) {
-			data := make([][]string, 0)
-			data = append(data, firstRow)
-			data = append(data, ruleHeaders...)
-
-			for _, one := range batch {
-				row, err := one.GetValuesByHeader()
-				if err != nil {
-					logs.Errorf("get values by header failed, err: %v, data: %v, rid: %s", err, one, kt.Rid)
-					return err
-				}
-				data = append(data, row)
-			}
-
-			fileName := fmt.Sprintf("%s-%s-%d.xlsx", constant.RuleFilePrefix, clbFlag, i+1)
-			name := excel.CombineFileNameAndSheet(fileName, constant.RuleSheetName)
-			if err := zipOperator.Write(name, data); err != nil {
-				logs.Errorf("write excel failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-		}
-	}
-
-	return nil
+	return write[RuleDetail](kt, l.vendor, zipOperator, clbRuleMap, ruleHeaders, constant.RuleFilePrefix,
+		constant.RuleSheetName)
 }
 
-func (l *listenerExporter) writerLayer4Rs(kt *kit.Kit, zipOperator zip.OperatorI,
+func (l *listenerExporter) writeLayer4Rs(kt *kit.Kit, zipOperator zip.OperatorI,
 	clbRsMap map[string][]Layer4RsDetail) error {
 
-	firstRow, err := getFirstRow(l.vendor)
-	if err != nil {
-		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	for clbFlag, rs := range clbRsMap {
-		for i, batch := range slice.Split(rs, constant.ExportClbOneFileRowLimit) {
-			data := make([][]string, 0)
-			data = append(data, firstRow)
-			data = append(data, layer4RsHeaders...)
-
-			for _, one := range batch {
-				row, err := one.GetValuesByHeader()
-				if err != nil {
-					logs.Errorf("get values by header failed, err: %v, data: %v, rid: %s", err, one, kt.Rid)
-					return err
-				}
-				data = append(data, row)
-			}
-
-			fileName := fmt.Sprintf("%s-%s-%d.xlsx", constant.Layer4RsFilePrefix, clbFlag, i+1)
-			name := excel.CombineFileNameAndSheet(fileName, constant.Layer4RsSheetName)
-			if err := zipOperator.Write(name, data); err != nil {
-				logs.Errorf("write excel failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-		}
-	}
-
-	return nil
+	return write[Layer4RsDetail](kt, l.vendor, zipOperator, clbRsMap, layer4RsHeaders, constant.Layer4RsFilePrefix,
+		constant.Layer4RsSheetName)
 }
 
-func (l *listenerExporter) writerLayer7Rs(kt *kit.Kit, zipOperator zip.OperatorI,
+func (l *listenerExporter) writeLayer7Rs(kt *kit.Kit, zipOperator zip.OperatorI,
 	clbRsMap map[string][]Layer7RsDetail) error {
 
-	firstRow, err := getFirstRow(l.vendor)
+	return write[Layer7RsDetail](kt, l.vendor, zipOperator, clbRsMap, layer7RsHeaders, constant.Layer7RsFilePrefix,
+		constant.Layer7RsSheetName)
+}
+
+func write[T table.Table](kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI, infos map[string][]T,
+	headers [][]string, filePrefix string, sheetName string) error {
+
+	firstRow, err := getFirstRow(vendor)
 	if err != nil {
-		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
+		logs.Errorf("get first row failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 		return err
 	}
 
-	for clbFlag, rs := range clbRsMap {
-		for i, batch := range slice.Split(rs, constant.ExportClbOneFileRowLimit) {
+	for clbFlag, info := range infos {
+		for i, batch := range slice.Split(info, constant.ExportClbOneFileRowLimit) {
 			data := make([][]string, 0)
 			data = append(data, firstRow)
-			data = append(data, layer7RsHeaders...)
+			data = append(data, headers...)
 
 			for _, one := range batch {
 				row, err := one.GetValuesByHeader()
@@ -667,14 +557,13 @@ func (l *listenerExporter) writerLayer7Rs(kt *kit.Kit, zipOperator zip.OperatorI
 				data = append(data, row)
 			}
 
-			fileName := fmt.Sprintf("%s-%s-%d.xlsx", constant.Layer7RsFilePrefix, clbFlag, i+1)
-			name := excel.CombineFileNameAndSheet(fileName, constant.Layer7RsSheetName)
-			if err := zipOperator.Write(name, data); err != nil {
+			fileName := fmt.Sprintf("%s-%s-%d.xlsx", filePrefix, clbFlag, i+1)
+			name := excel.CombineFileNameAndSheet(fileName, sheetName)
+			if err = zipOperator.Write(name, data); err != nil {
 				logs.Errorf("write excel failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 		}
 	}
-
 	return nil
 }

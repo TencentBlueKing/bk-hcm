@@ -24,14 +24,14 @@ import (
 	"hcm/pkg/table"
 )
 
-// BillAdjustmentTableHeader 账单调整导出表头
-var BillAdjustmentTableHeader [][]string
+// BillAdjustmentTableHeaders 账单调整导出表头
+var BillAdjustmentTableHeaders [][]string
 
 var _ table.Table = (*BillAdjustmentTable)(nil)
 
 func init() {
 	var err error
-	BillAdjustmentTableHeader, err = BillAdjustmentTable{}.GetHeaders()
+	BillAdjustmentTableHeaders, err = BillAdjustmentTable{}.GetHeaders()
 	if err != nil {
 		logs.Errorf("bill adjustment table header init failed: %v", err)
 	}
