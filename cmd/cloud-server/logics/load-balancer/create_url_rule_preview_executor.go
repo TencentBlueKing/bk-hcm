@@ -52,8 +52,8 @@ type CreateUrlRulePreviewExecutor struct {
 }
 
 // Execute ...
-func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,14 @@ func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 
 const createURLRuleExcelTableLen = 10
 
-func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// createURLRuleExcelTableHeaderLen 表头长度
+const createURLRuleExcelTableHeaderLen = 12
+
+func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createURLRuleExcelTableHeaderLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			createURLRuleExcelTableHeaderLen, len(headers), headers)
+	}
 	for i, data := range rawData {
 		if len(data) < createURLRuleExcelTableLen {
 			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",

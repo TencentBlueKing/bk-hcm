@@ -54,8 +54,8 @@ type CreateLayer4ListenerPreviewExecutor struct {
 }
 
 // Execute 执行
-func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +71,18 @@ func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 const (
 	createLayer4ListenerExcelTableLen = 7
+	// excel表格表头长度
+	createLayer4ListenerExcelTableHeaderLen = 10
 	// excel表格行号偏移量, clb数据从第四行开始
 	excelTableLineNumberOffset = 4
 )
 
-func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createLayer4ListenerExcelTableHeaderLen {
+		return fmt.Errorf("table headers length less than %d, got: %d, headers: %v",
+			createLayer4ListenerExcelTableHeaderLen, len(headers), headers)
+	}
+
 	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < createLayer4ListenerExcelTableLen {

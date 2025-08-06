@@ -53,8 +53,8 @@ type CreateLayer7ListenerPreviewExecutor struct {
 }
 
 // Execute 导入执行器的唯一入口
-func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		logs.Errorf("convert create listener layer7 data failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -73,7 +73,15 @@ var createLayer7ListenerDetailRefType = reflect.TypeOf(CreateLayer7ListenerDetai
 // createLayer7ListenerExcelTableLen excel表格最小应填的列数, clbIP, clbCloudID, protocol, listenerPorts
 const createLayer7ListenerExcelTableLen = 4
 
-func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// createLayer7ListenerExcelTableHeadersLen excel表格表头长度
+const createLayer7ListenerExcelTableHeadersLen = 10
+
+func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createLayer7ListenerExcelTableHeadersLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			createLayer7ListenerExcelTableHeadersLen, len(headers), headers)
+
+	}
 	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < createLayer7ListenerExcelTableLen {

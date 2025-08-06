@@ -29,19 +29,25 @@ import (
 
 func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 	type args struct {
-		i [][]string
+		rawData [][]string
+		headers []string
 	}
 	tests := []struct {
-		name string
-		args args
-		want CreateLayer7ListenerDetail
+		name      string
+		args      args
+		want      CreateLayer7ListenerDetail
+		wantError assert.ErrorAssertionFunc
 	}{
 		{
 			name: "HTTPs test",
-			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1",
-					"https", "8888", "MUTUAL", "[9GXQ9dV2,DQq54hR3]", "Bw0pFuKG", "", "用户的备注"},
-			}},
+			args: args{
+				rawData: [][]string{
+					{"127.0.0.1", "lb-xxxxx1",
+						"https", "8888", "MUTUAL", "[9GXQ9dV2,DQq54hR3]", "Bw0pFuKG", "", "用户的备注"},
+				},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "证书认证方式",
+					"服务器证书", "客户端证书", "监听器名称(可选)", "用户备注(可选)", "导出备注(可选)"},
+			},
 			want: CreateLayer7ListenerDetail{
 				ClbVipDomain:  "127.0.0.1",
 				CloudClbID:    "lb-xxxxx1",
@@ -56,12 +62,17 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 				Status:         "",
 				ValidateResult: []string{},
 			},
+			wantError: assert.NoError,
 		},
 		{
 			name: "HTTP test",
-			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "http", "8888"},
-			}},
+			args: args{
+				rawData: [][]string{
+					{"127.0.0.1", "lb-xxxxx1", "http", "8888"},
+				},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "证书认证方式",
+					"服务器证书", "客户端证书", "监听器名称(可选)", "用户备注(可选)", "导出备注(可选)"},
+			},
 			want: CreateLayer7ListenerDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
@@ -75,14 +86,42 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 				Status:         "",
 				ValidateResult: []string{},
 			},
+			wantError: assert.NoError,
+		},
+		{
+			name: "表头错误",
+			args: args{
+				rawData: [][]string{
+					{"127.0.0.1", "lb-xxxxx1", "http", "8888"},
+				},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "证书认证方式",
+					"服务器证书", "客户端证书", "用户备注(可选)", "导出备注(可选)"},
+			},
+			want: CreateLayer7ListenerDetail{
+				ClbVipDomain:   "127.0.0.1",
+				CloudClbID:     "lb-xxxxx1",
+				Protocol:       enumor.HttpProtocol,
+				ListenerPorts:  []int{8888},
+				SSLMode:        "",
+				CertCloudIDs:   nil,
+				CACloudID:      "",
+				Name:           "",
+				UserRemark:     "",
+				Status:         "",
+				ValidateResult: []string{},
+			},
+			wantError: assert.Error,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			executor := &CreateLayer7ListenerPreviewExecutor{}
-			_ = executor.convertDataToPreview(tt.args.i)
-			assert.Equal(t, tt.want, *executor.details[0])
+			err := executor.convertDataToPreview(tt.args.rawData, tt.args.headers)
+			tt.wantError(t, err)
+			if len(executor.details) > 0 {
+				assert.Equal(t, tt.want, *executor.details[0])
+			}
 		})
 	}
 }
