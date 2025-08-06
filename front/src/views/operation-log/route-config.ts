@@ -35,7 +35,7 @@ const operationLogBiz: RouteRecordRaw[] = [
       ...new Meta({
         title: '操作记录详情',
         notMenu: true,
-        activeKey: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+        activeKey: MENU_BUSINESS_OPERATION_LOG,
         isShowBreadcrumb: false,
         menu: {
           relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,

@@ -190,7 +190,7 @@ func (req *AzureAccountExtensionCreateReq) IsFull() bool {
 // AccountCommonInfoCreateReq ...
 type AccountCommonInfoCreateReq struct {
 	Vendor      enumor.Vendor          `json:"vendor" validate:"required"`
-	Name        string                 `json:"name" validate:"required,min=3,max=64"`
+	Name        string                 `json:"name" validate:"required,min=3,max=255"`
 	Managers    []string               `json:"managers" validate:"required,max=5"`
 	Type        enumor.AccountType     `json:"type" validate:"required"`
 	Site        enumor.AccountSiteType `json:"site" validate:"required"`

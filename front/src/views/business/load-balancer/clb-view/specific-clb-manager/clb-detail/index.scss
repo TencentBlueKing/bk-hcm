@@ -1,21 +1,30 @@
 .clb-detail-continer {
+  height: 100%;
+  padding: 0 24px 16px;
+  overflow: hidden auto;
+
   .mr5 {
     margin-right: 5px;
   }
+
   .mb32 {
     margin-bottom: 32px;
   }
+
   .ml60 {
     margin-left: 60px;
   }
+
   .ml10 {
     margin-left: 10px;
   }
+
   .clb-detail-info-title {
     font-weight: 700;
     font-size: 14px;
     color: #313238;
   }
+
   .status-wrapper {
     display: flex;
     align-items: center;
@@ -40,6 +49,7 @@
         margin: 0 10px 0 5px;
       }
     }
+
     .cors-config-item-content {
       color: #313238;
     }
@@ -52,6 +62,7 @@
 
       .top-bar {
         margin-bottom: 16px;
+
         .desc {
           margin-left: 16px;
           font-size: 12px;
@@ -64,6 +75,7 @@
   .ml10 {
     margin-left: 10px;
   }
+
   .mr10 {
     margin-right: 10px;
   }

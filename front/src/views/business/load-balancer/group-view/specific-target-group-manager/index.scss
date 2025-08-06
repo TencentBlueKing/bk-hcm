@@ -1,3 +1,9 @@
+.specific-target-group-manager {
+  height: 100%;
+  padding: 24px;
+  background: #f5f7fa;
+}
+
 .manager-tab-wrap {
   height: 100%;
 
@@ -5,15 +11,10 @@
   .bk-tab-header .bk-tab-header-item {
     padding: 0 24px;
   }
-  .bk-tab-content {
-    padding: 0;
-    overflow-y: auto;
-  }
 
-  .fixed-operate-btn {
-    position: fixed;
-    right: 51px;
-    min-width: 64px;
+  .bk-tab-content {
+    padding: 16px 24px;
+    overflow-y: auto;
   }
 
   .detail-info-container {
@@ -62,15 +63,13 @@
         color: #3a84ff;
       }
     }
+
     .detail-info-wrap:first-child {
       margin-bottom: 32px;
     }
+
     &:not(:last-child) {
       margin-bottom: 32px;
     }
   }
-}
-
-.specific-target-group-manager {
-  height: 100%;
 }

@@ -1,5 +1,11 @@
 .health-checkup-page {
   height: 100%;
+
+  .fixed-operate-btn {
+    position: fixed !important;
+    right: 44px;
+    min-width: 64px;
+  }
 }
 
 .health-checkup-config-sideslider {
@@ -40,6 +46,7 @@
         font-size: 14px;
         color: #313238;
       }
+
       .item-desc {
         font-size: 12px;
         color: #979ba5;

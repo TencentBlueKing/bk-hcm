@@ -3,13 +3,18 @@ import { useBusinessStore } from '@/store';
 import { cloneDeep, isEqual, uniqBy } from 'lodash';
 import { VendorEnum } from '@/common/constant';
 import { reqResourceListOfCurrentRegion } from '@/api/load_balancers/apply-clb';
-import type { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/types';
+import type { ApplyClbModel, SpecAvailability, ZoneResource } from '@/api/load_balancers/apply-clb/types';
 import type { ClbQuota } from '@/typings';
 import { BGP_VIP_ISP_TYPES } from '@/constants';
 
 // 类型别名，提高代码可读性
 type ResourceMap = Record<string, ResourceMapItem>;
-type IspEntry = { Isp: string; TypeSet: Array<{ Type: string; Availability: string }> };
+type IspEntry = {
+  Isp: string;
+  Type?: string;
+  Availability?: string;
+  TypeSet?: Array<{ Type: string; Availability: string }>;
+};
 type SpecAvailabilityList = SpecAvailability[];
 
 interface ResourceMapItem {
@@ -116,7 +121,7 @@ export default (formModel: ApplyClbModel) => {
       isResourceListLoading.value = false;
     }
   };
-  const buildZoneMapping = (ZoneResourceSet: any[]) => {
+  const buildZoneMapping = (ZoneResourceSet: ZoneResource[]) => {
     const zoneMapping: Record<string, string[]> = {};
     ZoneResourceSet.forEach(({ MasterZone, SlaveZone }) => {
       if (!zoneMapping[MasterZone]) {
@@ -128,7 +133,7 @@ export default (formModel: ApplyClbModel) => {
     });
     return zoneMapping;
   };
-  const processResourceSet = (item: any, zoneMapping: Record<string, string[]>) => {
+  const processResourceSet = (item: ZoneResource, zoneMapping: Record<string, string[]>) => {
     const { MasterZone, SlaveZone, ResourceSet } = item;
     const key = `${MasterZone}|${SlaveZone || ''}`.toLowerCase();
 
@@ -140,10 +145,11 @@ export default (formModel: ApplyClbModel) => {
       withoutIsp: [],
     };
 
-    ResourceSet?.forEach(({ Isp, TypeSet, AvailabilitySet }: any) => {
-      const ispEntries = AvailabilitySet
-        ? AvailabilitySet.map((curr: any) => ({ Isp, ...curr })) // 如果有AvailabilitySet, 则Isp可用性取决于它
-        : [{ Isp, Availability: 'Available' }]; // 如果没有AvailabilitySet, 则默认Isp可用
+    ResourceSet?.forEach(({ Isp, Type, TypeSet, AvailabilitySet }) => {
+      const ispEntries = Type.map((type) => {
+        const availability = AvailabilitySet?.find((curr) => curr.Type === type);
+        return { Isp, Type: type, Availability: availability?.Availability || 'Available' };
+      });
 
       resource.ispList.push(...ispEntries);
 
@@ -151,8 +157,8 @@ export default (formModel: ApplyClbModel) => {
       if (!resource[Isp]) resource[Isp] = [];
 
       // 处理性能容量型资源
-      TypeSet?.forEach(({ SpecAvailabilitySet }: any) => {
-        const filteredSpecs = SpecAvailabilitySet.filter((spec: SpecAvailability) => spec.SpecType !== 'clb.c1.small');
+      TypeSet?.forEach(({ SpecAvailabilitySet }) => {
+        const filteredSpecs = SpecAvailabilitySet.filter((spec) => spec.SpecType !== 'clb.c1.small');
         resource[Isp].push(...filteredSpecs);
         // 内网下无ISP资源，这里单独存储一份
         resource.withoutIsp.push(...filteredSpecs);
@@ -162,9 +168,9 @@ export default (formModel: ApplyClbModel) => {
     resource.withoutIsp = resolveSpecListBySpecType(resource.withoutIsp); // 去重
     currentResourceListMap.value[key] = resource;
   };
-  const resolveIspList = (ispList: any[]): IspEntry[] => {
+  const resolveIspList = (ispList: IspEntry[]) => {
     return ispList
-      .reduce((acc: IspEntry[], { Isp, Type = Isp, Availability = 'Available' }: any) => {
+      .reduce((acc, { Isp, Type, Availability }) => {
         const typeObj = { Type, Availability };
         const existing = acc.find((item) => item.Isp === Isp);
 
@@ -199,12 +205,9 @@ export default (formModel: ApplyClbModel) => {
 
     // 特殊处理ispList
     if (resourceMapItem.ispList) {
-      resourceMapItem.ispList = uniqBy(resourceMapItem.ispList, 'Isp').map((isp: any) => ({
+      resourceMapItem.ispList = uniqBy(resourceMapItem.ispList, 'Isp').map((isp) => ({
         ...isp,
-        TypeSet: isp.TypeSet.map((type: any) => ({
-          ...type,
-          Availability: 'Available',
-        })),
+        TypeSet: isp.TypeSet.map((type) => ({ ...type, Availability: 'Available' })),
       }));
     }
 
@@ -212,7 +215,7 @@ export default (formModel: ApplyClbModel) => {
     Object.keys(resourceMapItem)
       .filter((key) => key !== 'ispList')
       .forEach((key) => {
-        resourceMapItem[key] = uniqBy(resourceMapItem[key], 'SpecType').map((specType: any) => ({
+        resourceMapItem[key] = uniqBy(resourceMapItem[key], 'SpecType').map((specType) => ({
           ...specType,
           Availability: 'Available',
         }));

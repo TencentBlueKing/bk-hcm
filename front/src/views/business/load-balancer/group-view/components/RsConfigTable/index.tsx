@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch, PropType, onMounted } from 'vue';
 // import components
 import { SearchSelect, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
@@ -13,12 +13,15 @@ import bus from '@/common/bus';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
 import { TargetGroupOperationScene } from '@/constants';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
+import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 const { FormItem } = Form;
 
 export default defineComponent({
   name: 'RsConfigTable',
   props: {
+    id: String,
     rsList: Array<any>,
     deletedRsList: Array<any>,
     accountId: String,
@@ -29,6 +32,9 @@ export default defineComponent({
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
     lbDetail: Object,
     loading: Boolean,
+    getTargetGroupDetail: {
+      type: Function as PropType<(...args: any) => any>,
+    },
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -124,6 +130,14 @@ export default defineComponent({
         props.rsList.filter((item) => item.id !== id),
       );
     };
+    const handleValidate: ValidateValuesFunc = async (item, values) => {
+      if (!item) return '请选择条件';
+      if (item.id === 'port') {
+        const port = parseInt(values[0].id, 10);
+        return port >= 1 && port <= 65535 ? true : '端口范围为1-65535';
+      }
+      return true;
+    };
 
     const rsTableColumns = [
       ...columns,
@@ -175,8 +189,7 @@ export default defineComponent({
               required
               rules={[
                 { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
-              ]}
-            >
+              ]}>
               <Input
                 type='number'
                 modelValue={port}
@@ -235,8 +248,7 @@ export default defineComponent({
               property={`rs_list.${index}.weight`}
               errorDisplayType='tooltips'
               required
-              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}
-            >
+              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}>
               <Input
                 modelValue={cell}
                 onChange={(v) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT, data.id)}
@@ -298,6 +310,18 @@ export default defineComponent({
         immediate: true,
         deep: true,
       },
+    );
+
+    onMounted(() => {
+      refresh.resume();
+    });
+
+    const refresh = useTimeoutPoll(
+      () => {
+        props.getTargetGroupDetail(props.id);
+      },
+      30000,
+      { max: 60 },
     );
 
     const searchData = computed(() => {
@@ -368,15 +392,19 @@ export default defineComponent({
                 content: '目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更',
                 disabled: isInitialState.value || isAddRs.value,
               }}
-              disabled={!isInitialState.value && !isAddRs.value}
-            >
+              disabled={!isInitialState.value && !isAddRs.value}>
               <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
               <span>添加 RS</span>
             </Button>
           )}
           {props.noSearch ? null : (
             <div class='search-wrap'>
-              <SearchSelect class='table-search-select' v-model={searchValue.value} data={searchData.value} />
+              <SearchSelect
+                class='table-search-select'
+                v-model={searchValue.value}
+                data={searchData.value}
+                validateValues={handleValidate}
+              />
             </div>
           )}
         </div>
@@ -387,8 +415,7 @@ export default defineComponent({
           settings={settings.value}
           showOverflowTooltip
           minHeight={200}
-          maxHeight={420}
-        >
+          maxHeight={420}>
           {{
             empty: () => {
               if (props.loading) return null;

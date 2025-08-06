@@ -21,16 +21,15 @@ import http from '@/http';
 import { Message } from 'bkui-vue';
 import search from '../search/index.vue';
 import dataList from '../data-list/index.vue';
-import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   textButton?: boolean;
   tabActive: SecurityGroupRelatedResourceName;
   detail: ISecurityGroupDetail;
 }>();
 const emit = defineEmits(['success']);
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const { getBusinessApiPath } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
@@ -178,7 +177,7 @@ defineExpose({ handleClosed });
     </bk-resize-layout>
 
     <template #footer>
-      <dialog-footer
+      <modal-footer
         :disabled="!selected.length"
         :loading="securityGroupStore.isBatchAssociateCvmsLoading"
         @confirm="handleConfirm"
@@ -193,10 +192,12 @@ defineExpose({ handleClosed });
   :deep(.bk-modal-header) {
     display: none;
   }
+
   :deep(.bk-dialog-content) {
     margin: 0;
     padding: 0;
   }
+
   .bind-dialog-content {
     max-height: 80vh;
   }
@@ -255,7 +256,7 @@ defineExpose({ handleClosed });
         align-items: center;
         justify-content: space-between;
         height: 32px;
-        background: #ffffff;
+        background: #fff;
         border-radius: 2px;
         font-size: 12px;
         color: #313238;
@@ -264,6 +265,7 @@ defineExpose({ handleClosed });
           box-shadow: 0 2px 4px 0 #0000001a, 0 2px 4px 0 #1919290d;
         }
       }
+
       .close-btn {
         font-size: 14px;
         cursor: pointer;

@@ -1,5 +1,5 @@
 import type { VNode } from 'vue';
-import type { Column as TableColumn } from 'bkui-vue/lib/table/props';
+import type { IFilterPropShape, Column as TableColumn } from 'bkui-vue/lib/table/props';
 import { RulesItem, QueryRuleOPEnum, QueryRuleOPEnumLegacy } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
 
@@ -54,6 +54,8 @@ export type PropertyColumnConfig = {
   minWidth?: number | string;
   defaultHidden?: boolean;
   showOverflowTooltip?: boolean;
+  fixed?: 'left' | 'right';
+  filter?: IFilterPropShape;
 };
 
 export type PropertyFormConfig = {
@@ -71,6 +73,8 @@ export type PropertySearchConfig = {
 export type PropertyDisplayConfig = {
   appearance?: string;
   format?: (value: any) => any;
+  render?: (value: any) => VNode | string;
+  showOverflowTooltip?: boolean;
 };
 
 // 与列展示场景相关，联合列的配置属性

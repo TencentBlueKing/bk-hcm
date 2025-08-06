@@ -1,9 +1,11 @@
-import { computed, defineComponent, reactive, ref, useTemplateRef, watch } from 'vue';
-import { Container, Button, Switcher, Form, Tag, Input, Select } from 'bkui-vue';
-import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
-import './index.scss';
-import CommonSideslider from '@/components/common-sideslider';
+import { computed, ComputedRef, defineComponent, inject, reactive, ref, useTemplateRef, watch } from 'vue';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { IAuthSign } from '@/common/auth-service';
+
+import { Container, Button, Switcher, Form, Tag, Input, Select, Message } from 'bkui-vue';
+import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
+import CommonSideslider from '@/components/common-sideslider';
+import './index.scss';
 
 const { Row, Col } = Container;
 const { FormItem } = Form;
@@ -19,6 +21,7 @@ export default defineComponent({
     getTargetGroupDetail: Function,
   },
   setup(props) {
+    const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
     const isOpen = ref(false);
     const loadbalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
@@ -31,14 +34,15 @@ export default defineComponent({
       {
         label: '健康探测源IP',
         value: () => {
+          if (!isOpen.value) return '--';
           if (props.detail.health_check?.source_ip_type === 1) return '云专用探测 IP 段';
           if (props.detail.health_check?.source_ip_type === 0) return '负载均衡 VIP';
-          return '-';
+          return '--';
         },
       },
       {
         label: '检查方式',
-        value: props.detail.health_check?.check_type || '-',
+        value: props.detail.health_check?.check_type || '--',
       },
       {
         label: '检查端口',
@@ -327,12 +331,13 @@ export default defineComponent({
           'interval_time',
           'un_health_num',
           'health_num',
+          'source_ip_type',
         ];
 
         resetFormData();
 
         for (const key of keys) {
-          formData[key] = detail.health_check?.[key] || formData[key];
+          formData[key] = detail.health_check?.[key] ?? formData[key];
         }
 
         formData.health_switch = isOpen.value;
@@ -365,6 +370,7 @@ export default defineComponent({
         isHealthCheckupConfigShow.value = false;
         resetFormData();
         props.getTargetGroupDetail?.(loadbalancerStore.targetGroupId);
+        Message({ theme: 'success', message: '编辑成功' });
       } finally {
         isSubmitLoading.value = false;
       }
@@ -372,13 +378,20 @@ export default defineComponent({
 
     return () => (
       <div class='health-checkup-page'>
-        <Button
-          class='fixed-operate-btn'
-          outline
-          theme='primary'
-          onClick={() => (isHealthCheckupConfigShow.value = true)}>
-          配置
-        </Button>
+        <hcm-auth class='fixed-operate-btn' sign={clbOperationAuthSign.value}>
+          {{
+            default: ({ noPerm }: { noPerm: boolean }) => (
+              <Button
+                outline
+                theme='primary'
+                disabled={noPerm}
+                onClick={() => (isHealthCheckupConfigShow.value = true)}>
+                配置
+              </Button>
+            ),
+          }}
+        </hcm-auth>
+
         <div class='detail-info-container'>
           {healthDetailInfo.value.map(({ label, value }) => {
             let valueVNode = null;
@@ -397,7 +410,7 @@ export default defineComponent({
                   valueVNode = value;
                 }
               } else {
-                valueVNode = '-';
+                valueVNode = '--';
               }
             }
             return (

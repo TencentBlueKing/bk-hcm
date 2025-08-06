@@ -1,62 +1,44 @@
-    .security-rule-table-container {
-      margin-bottom: 16px;
-      border: 1px solid #EAEBF0;
+.security-rule-table-container {
+  margin-bottom: 16px;
+  border: 1px solid #eaebf0;
+  border-radius: 2px;
+
+  .security-rule-table-header {
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    background: #f0f1f5;
+    border-radius: 2px 2px 0 0;
+    font-size: 12px;
+    cursor: pointer;
+
+    .config-security-item-idx {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 8px;
+      padding: 0 8px;
+      height: 16px;
+      background: #fff;
+      color: #979ba5;
       border-radius: 2px;
-
-      .security-rule-table-header {
-        display: flex;
-        align-items: center;
-        height: 32px;
-        background: #F0F1F5;
-        border-radius: 2px 2px 0 0;
-        padding: 0 6px;
-
-        .header-icon {
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          :hover {
-            color: #3a84ff;
-          }
-        }
-
-        .config-security-item-idx {
-          margin-right: 11px;
-          min-width: 21.76px;
-          min-height: 16px;
-          background: #FFFFFF;
-          border-radius: 2px;
-          text-align: center;
-          color: #979BA5;
-        }
-
-        .config-security-item-name {
-          font-size: 14px;
-          color: #313238;
-          line-height: 22px;
-        }
-
-        .config-security-item-id {
-          margin-left: 8px;
-          font-size: 12px;
-          color: #979BA5;
-          letter-spacing: 0;
-          line-height: 20px;
-        }
-
-        .config-security-item-btn {
-          margin-left: auto;
-          color: #3A84FF;
-          display: flex;
-          align-items: center;
-          font-size: 12px;
-        }
-
-      }
-
-      .security-rule-table-panel {}
-
-      .exception-wrap-item .bk-exception-img {
-        width: 200px;
-      }
     }
+
+    .config-security-item-name {
+      color: #313238;
+    }
+
+    .config-security-item-id {
+      margin-left: 8px;
+      color: #979ba5;
+    }
+
+    .config-security-item-btn {
+      margin-left: auto;
+    }
+  }
+
+  .exception-wrap-item .bk-exception-img {
+    width: 200px;
+  }
+}
