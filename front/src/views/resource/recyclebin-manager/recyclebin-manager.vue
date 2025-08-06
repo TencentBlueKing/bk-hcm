@@ -73,6 +73,7 @@
             row-key="id"
             :is-row-select-enable="isRowSelectEnable"
             show-overflow-tooltip
+            @column-sort="handleSort"
           >
             <bk-table-column width="30" min-width="30" type="selection" />
             <bk-table-column :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`" prop="cloud_res_id" sort>
@@ -349,10 +350,8 @@ export default defineComponent({
       }));
 
     // hooks
-    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, getList } = useQueryCommonList(
-      { filter: state.filter as FilterType },
-      fetchUrl,
-    );
+    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, getList, handleSort } =
+      useQueryCommonList({ filter: state.filter as FilterType }, fetchUrl);
 
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
@@ -675,6 +674,7 @@ export default defineComponent({
       whereAmI,
       Senarios,
       isCurRowSelectEnable,
+      handleSort,
     };
   },
 });
