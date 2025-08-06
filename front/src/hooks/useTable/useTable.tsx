@@ -84,6 +84,7 @@ export interface IProp {
 }
 
 export const useTable = (props: IProp) => {
+  let lastType: string = props.requestOption.type;
   defaults(props, { requestOption: {} });
   defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
 
@@ -129,10 +130,12 @@ export const useTable = (props: IProp) => {
    */
   const getListData = async (
     customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
-    type?: string,
+    type = lastType,
     isInvidual = false,
     differenceFields?: Array<string>,
   ) => {
+    if (type) lastType = type;
+
     buildFilter({
       rules: typeof customRules === 'function' ? customRules() : customRules,
       isInvidual,
