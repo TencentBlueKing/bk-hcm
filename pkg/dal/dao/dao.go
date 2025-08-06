@@ -38,6 +38,7 @@ import (
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	cloudbill "hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
+	"hcm/pkg/dal/dao/cloud/cos"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -145,6 +146,7 @@ type Set interface {
 	GlobalConfig() globalconfig.Interface
 	ResUsageBizRel() cloud.ResUsageBizRel
 	Tenant() tenant.Tenant
+	Cos() cos.CosInterface
 
 	Txn() *Txn
 }
@@ -786,5 +788,12 @@ func (s *set) GlobalConfig() globalconfig.Interface {
 func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
 	return &cloud.ResUsageBizRelDao{
 		Orm: s.orm,
+	}
+}
+
+func (s *set) Cos() cos.CosInterface {
+	return &cos.CosDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }

@@ -209,6 +209,9 @@ const (
 
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
+
+	// CosTable is cos table's name.
+	CosTable Name = "cos"
 )
 
 // Validate whether the table name is valid or not.

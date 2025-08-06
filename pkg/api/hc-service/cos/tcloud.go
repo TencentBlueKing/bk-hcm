@@ -30,6 +30,7 @@ type TCloudCreateBucketReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	Name      string `json:"name" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id"`
 
 	XCosACL                   string                     `json:"x_cos_acl" validate:"omitempty"`
 	XCosGrantRead             string                     `json:"x_cos_grant_read" validate:"omitempty"`
