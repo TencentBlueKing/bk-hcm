@@ -54,7 +54,7 @@ type MainAccountSummaryActionOption struct {
 }
 
 // String ...
-func (opt *MainAccountSummaryActionOption) String() string {
+func (opt MainAccountSummaryActionOption) String() string {
 
 	return fmt.Sprintf("{%s/%s/%s %d-%02d}",
 		opt.Vendor, opt.RootAccountID, opt.MainAccountID, opt.BillYear, opt.BillMonth)
@@ -69,7 +69,7 @@ func (opt *MainAccountSummaryActionOption) Validate() error {
 type MainAccountSummaryAction struct{}
 
 // ParameterNew return request params.
-func (act *MainAccountSummaryAction) ParameterNew() interface{} {
+func (act MainAccountSummaryAction) ParameterNew() interface{} {
 	return new(MainAccountSummaryActionOption)
 }
 
