@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0040,HCMVER=v1.8.5
 
     Notes:
     1. 修改`tcloud_lb_url_rule`表，增加索引
@@ -34,6 +34,6 @@ ALTER TABLE tcloud_lb_url_rule
 );
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.5' as `hcm_ver`, '0040' as `sql_ver`;
 
 COMMIT;
