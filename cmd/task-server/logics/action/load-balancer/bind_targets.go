@@ -43,6 +43,7 @@ type ListenerRuleAddTargetAction struct{}
 type ListenerRuleAddTargetOption struct {
 	LoadBalancerID                     string `json:"lb_id" validate:"required"`
 	*hclb.BatchRegisterTCloudTargetReq `json:",inline"`
+	ManagementDetailIDs                []string `json:"management_detail_ids" validate:"required,min=1"`
 }
 
 // Validate validate option.
@@ -68,6 +69,16 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	// detail 状态检查
+	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
+		return reason, err
+	}
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
+	}
+
 	info, err := actcli.GetDataService().Global.Cloud.GetResBasicInfo(kt.Kit(), enumor.LoadBalancerCloudResType,
 		opt.LoadBalancerID, "vendor")
 	if err != nil {
@@ -76,15 +87,26 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 		return nil, err
 	}
 
+	taskDetailState := enumor.TaskDetailSuccess
+	defer func() {
+		// 更新任务状态
+		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+			nil, err); err != nil {
+			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		}
+	}()
 	switch info.Vendor {
 	case enumor.TCloud:
 		if err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(kt.Kit(), opt.LoadBalancerID,
 			opt.BatchRegisterTCloudTargetReq); err != nil {
+			taskDetailState = enumor.TaskDetailFailed
 			logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
 			return nil, err
 		}
 	default:
-		return nil, errf.New(errf.InvalidParameter, "vendor is not supported")
+		taskDetailState = enumor.TaskDetailFailed
+		err = errf.Newf(errf.InvalidParameter, "vendor(%s) not supported for listener rule add target", info.Vendor)
+		return nil, err
 	}
 
 	return nil, err

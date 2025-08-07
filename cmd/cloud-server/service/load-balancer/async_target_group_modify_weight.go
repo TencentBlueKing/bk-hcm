@@ -25,11 +25,11 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	actionflow "hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -57,6 +57,11 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts, authHandler handle
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
 	}
 
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		logs.Errorf("batch modify target weight request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -80,14 +85,14 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts, authHandler handle
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID)
+		return svc.buildModifyTCloudTargetWeight(cts.Kit, req.Data, tgID, baseInfo.AccountID, bizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessage,
-	tgID, accountID string) (*core.FlowStateResult, error) {
+	tgID, accountID string, bkBizID int64) (*core.FlowStateResult, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetWeightReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -120,7 +125,7 @@ func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessag
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
+	return svc.buildModifyTCloudTargetTasksWeight(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
 }
 
 func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq) error {
@@ -155,7 +160,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, req *cslb.TCloudBatchMo
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
-	lbID, tgID, accountID string) (*core.FlowStateResult, error) {
+	lbID, tgID, accountID string, bkBizID int64) (*core.FlowStateResult, error) {
 
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
@@ -165,7 +170,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowModifyTargetWeight(kt, req, lbID, tgID, accountID)
+	flowID, err := svc.initFlowModifyTargetWeight(kt, req, lbID, tgID, accountID, bkBizID)
 	if err != nil {
 		logs.Errorf("init flow batch modify target weigh failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -182,23 +187,94 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 }
 
 func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
-	lbID, tgID, accountID string) (string, error) {
+	lbID, tgID, accountID string, bkBizID int64) (string, error) {
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, enumor.TCloud, accountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyWeight)
+	if err != nil {
+		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	var taskDetails []*taskManagementDetail
+	defer func() {
+		if err == nil {
+			return
+		}
+		// update task management state to failed
+		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); err != nil {
+			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+		}
+		// update task details state to failed
+		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
+			return item.taskDetailID
+		})
+		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+		}
+	}()
+
+	tasks, taskDetails, err := svc.buildModifyWeightFlowTasks(kt, req, lbID, tgID, accountID, taskManagementID, bkBizID)
+	if err != nil {
+		return "", err
+	}
+
+	shareData := tableasync.NewShareData(map[string]string{
+		"lb_id": lbID,
+	})
+	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupModifyWeight, shareData, tasks)
+	if err != nil {
+		return "", err
+	}
+	for _, detail := range taskDetails {
+		detail.flowID = flowID
+	}
+
+	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
+		return "", err
+	}
+	if err = svc.updateTaskManagement(kt, taskManagementID, flowID); err != nil {
+		logs.Errorf("update task management failed, err: %v, taskManagementID: %s, rid: %s",
+			err, taskManagementID, kt.Rid)
+		return "", err
+	}
+
+	if err = svc.buildSubFlow(kt, flowID, lbID, []string{tgID}, enumor.TargetGroupCloudResType,
+		enumor.ModifyWeightTaskType); err != nil {
+		return "", err
+	}
+	return flowID, nil
+}
+
+func (svc *lbSvc) buildModifyWeightFlowTasks(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq, lbID, tgID,
+	accountID, taskManagementID string, bkBizID int64) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 	elems := slice.Split(req.TargetIDs, constant.BatchModifyTargetWeightCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
 	var lastActionID action.ActIDType
+	taskDetails := make([]*taskManagementDetail, 0)
 	for _, parts := range elems {
 		rsWeightParams, err := svc.convTCloudOperateTargetReq(kt, parts, lbID, tgID, accountID, nil, req.NewWeight)
 		if err != nil {
-			return "", err
+			return nil, nil, err
 		}
+		details, err := svc.createTargetGroupModifyWeightTaskDetails(kt, taskManagementID, bkBizID, rsWeightParams)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		actionID := action.ActIDType(getActionID())
 		tmpTask := ts.CustomFlowTask{
 			ActionID:   actionID,
 			ActionName: enumor.ActionTargetGroupModifyWeight,
 			Params: &actionlb.OperateRsOption{
-				Vendor:                      enumor.TCloud,
+				Vendor: enumor.TCloud,
+				ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+					return item.taskDetailID
+				}),
 				TCloudBatchOperateTargetReq: *rsWeightParams,
 			},
 			Retry: &tableasync.Retry{
@@ -214,42 +290,28 @@ func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchM
 		}
 		tasks = append(tasks, tmpTask)
 		lastActionID = actionID
+		for _, detail := range details {
+			detail.actionID = string(actionID)
+		}
+		taskDetails = append(taskDetails, details...)
 	}
-	rsWeightReq := &ts.AddCustomFlowReq{
-		Name: enumor.FlowTargetGroupModifyWeight,
-		ShareData: tableasync.NewShareData(map[string]string{
-			"lb_id": lbID,
-		}),
-		Tasks:       tasks,
-		IsInitState: true,
-	}
-	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
-	if err != nil {
-		logs.Errorf("call taskserver to batch modify target weight custom flow failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
+	return tasks, taskDetails, nil
+}
 
-	flowID := result.ID
-	// 从Flow，负责监听主Flow的状态
-	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowLoadBalancerOperateWatch,
-		Tasks: []ts.TemplateFlowTask{{
-			ActionID: "1",
-			Params: &actionflow.LoadBalancerOperateWatchOption{
-				FlowID:     flowID,
-				ResID:      lbID,
-				ResType:    enumor.LoadBalancerCloudResType,
-				SubResIDs:  []string{tgID},
-				SubResType: enumor.TargetGroupCloudResType,
-				TaskType:   enumor.ModifyWeightTaskType,
-			},
-		}},
+func (svc *lbSvc) createTargetGroupModifyWeightTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
+	addRsParams *hcproto.TCloudBatchOperateTargetReq) ([]*taskManagementDetail, error) {
+
+	details := make([]*taskManagementDetail, 0)
+	for _, one := range addRsParams.RsList {
+		details = append(details, &taskManagementDetail{
+			param: one,
+		})
 	}
-	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
-	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
-			err, flowID, kt.Rid)
-		return "", err
+	if err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskTargetGroupModifyWeight, details); err != nil {
+		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
+			taskManagementID, bkBizID, kt.Rid)
+		return nil, err
 	}
-	return flowID, nil
+	return details, nil
 }

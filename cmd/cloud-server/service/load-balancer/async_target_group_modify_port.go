@@ -25,11 +25,11 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	actionflow "hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -60,6 +60,11 @@ func (svc *lbSvc) batchModifyTargetPort(cts *rest.Contexts,
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
 	}
 
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		logs.Errorf("batch modify target port request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -83,14 +88,14 @@ func (svc *lbSvc) batchModifyTargetPort(cts *rest.Contexts,
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyTCloudTargetPort(cts.Kit, req.Data, tgID, baseInfo.AccountID)
+		return svc.buildModifyTCloudTargetPort(cts.Kit, req.Data, tgID, baseInfo.AccountID, bkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", baseInfo.Vendor)
 	}
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
-	tgID, accountID string) (interface{}, error) {
+	tgID, accountID string, bkBizID int64) (interface{}, error) {
 
 	req := new(cslb.TCloudBatchModifyTargetPortReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -120,7 +125,7 @@ func (svc *lbSvc) buildModifyTCloudTargetPort(kt *kit.Kit, body json.RawMessage,
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil
 	}
 
-	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID)
+	return svc.buildModifyTCloudTargetTasksPort(kt, req, ruleRelList.Details[0].LbID, tgID, accountID, bkBizID)
 }
 
 func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq) error {
@@ -155,7 +160,7 @@ func (svc *lbSvc) batchUpdateTargetPortDb(kt *kit.Kit, req *cslb.TCloudBatchModi
 }
 
 func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq, lbID, tgID,
-	accountID string) (interface{}, error) {
+	accountID string, bkBizID int64) (interface{}, error) {
 
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
@@ -164,7 +169,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowTargetPort(kt, req, lbID, tgID, accountID)
+	flowID, err := svc.initFlowTargetPort(kt, req, lbID, tgID, accountID, bkBizID)
 	if err != nil {
 		return nil, err
 	}
@@ -179,17 +184,86 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 }
 
 func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq,
-	lbID, tgID, accountID string) (string, error) {
+	lbID, tgID, accountID string, bkBizID int64) (string, error) {
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, enumor.TCloud, accountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyPort)
+	if err != nil {
+		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	var taskDetails []*taskManagementDetail
+	defer func() {
+		if err == nil {
+			return
+		}
+		// update task management state to failed
+		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); err != nil {
+			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+		}
+		// update task details state to failed
+		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
+			return item.taskDetailID
+		})
+		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+		}
+	}()
+
+	tasks, taskDetails, err := svc.buildModifyPortFlowTasks(kt, req, lbID, tgID, accountID, taskManagementID, bkBizID)
+	if err != nil {
+		logs.Errorf("build modify port flow tasks failed, err: %v, lbID: %s, tgID: %s, accountID: %s, "+
+			"taskManagementID: %s, bkBizID: %d, req: %+v, rid: %s", err, lbID, tgID, accountID, taskManagementID,
+			bkBizID, req, kt.Rid)
+		return "", err
+	}
+
+	shareData := tableasync.NewShareData(map[string]string{
+		"lb_id": lbID,
+	})
+	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupModifyPort, shareData, tasks)
+	if err != nil {
+		return "", err
+	}
+	for _, detail := range taskDetails {
+		detail.flowID = flowID
+	}
+	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
+		return "", err
+	}
+	if err = svc.updateTaskManagement(kt, taskManagementID, flowID); err != nil {
+		logs.Errorf("update task management failed, err: %v, taskManagementID: %s, rid: %s",
+			err, taskManagementID, kt.Rid)
+		return "", err
+	}
+
+	if err = svc.buildSubFlow(kt, flowID, lbID, []string{tgID}, enumor.TargetGroupCloudResType,
+		enumor.ModifyPortTaskType); err != nil {
+		return "", err
+	}
+	return flowID, nil
+}
+
+func (svc *lbSvc) buildModifyPortFlowTasks(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetPortReq, lbID, tgID,
+	accountID, taskManagementID string, bkBizID int64) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 	elems := slice.Split(req.TargetIDs, constant.BatchModifyTargetPortCloudMaxLimit)
 	getActionID := counter.NewNumStringCounter(1, 10)
 	var lastActionID action.ActIDType
+	taskDetails := make([]*taskManagementDetail, 0)
 	for _, parts := range elems {
 		rsPortParams, err := svc.convTCloudOperateTargetReq(kt, parts, lbID, tgID, accountID,
 			cvt.ValToPtr(req.NewPort), nil)
 		if err != nil {
-			return "", err
+			return nil, nil, err
+		}
+		details, err := svc.createTargetGroupModifyPortTaskDetails(kt, taskManagementID, bkBizID, rsPortParams)
+		if err != nil {
+			return nil, nil, err
 		}
 		actionID := action.ActIDType(getActionID())
 		tmpTask := ts.CustomFlowTask{
@@ -198,6 +272,9 @@ func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTar
 			Params: &actionlb.OperateRsOption{
 				Vendor:                      enumor.TCloud,
 				TCloudBatchOperateTargetReq: *rsPortParams,
+				ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+					return item.taskDetailID
+				}),
 			},
 			Retry: &tableasync.Retry{
 				Enable: true,
@@ -212,42 +289,29 @@ func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTar
 		}
 		tasks = append(tasks, tmpTask)
 		lastActionID = actionID
-	}
-	portReq := &ts.AddCustomFlowReq{
-		Name: enumor.FlowTargetGroupModifyPort,
-		ShareData: tableasync.NewShareData(map[string]string{
-			"lb_id": lbID,
-		}),
-		Tasks:       tasks,
-		IsInitState: true,
-	}
-	result, err := svc.client.TaskServer().CreateCustomFlow(kt, portReq)
-	if err != nil {
-		logs.Errorf("call taskserver to batch modify target port custom flow failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
+		for _, detail := range details {
+			detail.actionID = string(actionID)
+		}
+		taskDetails = append(taskDetails, details...)
 	}
 
-	flowID := result.ID
-	// 从Flow，负责监听主Flow的状态
-	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowLoadBalancerOperateWatch,
-		Tasks: []ts.TemplateFlowTask{{
-			ActionID: "1",
-			Params: &actionflow.LoadBalancerOperateWatchOption{
-				FlowID:     flowID,
-				ResID:      lbID,
-				ResType:    enumor.LoadBalancerCloudResType,
-				SubResIDs:  []string{tgID},
-				SubResType: enumor.TargetGroupCloudResType,
-				TaskType:   enumor.ModifyPortTaskType,
-			},
-		}},
+	return tasks, taskDetails, nil
+}
+
+func (svc *lbSvc) createTargetGroupModifyPortTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
+	addRsParams *hcproto.TCloudBatchOperateTargetReq) ([]*taskManagementDetail, error) {
+
+	details := make([]*taskManagementDetail, 0)
+	for _, one := range addRsParams.RsList {
+		details = append(details, &taskManagementDetail{
+			param: one,
+		})
 	}
-	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
-	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
-			err, flowID, kt.Rid)
-		return "", err
+	if err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskTargetGroupModifyPort, details); err != nil {
+		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
+			taskManagementID, bkBizID, kt.Rid)
+		return nil, err
 	}
-	return flowID, nil
+	return details, nil
 }
