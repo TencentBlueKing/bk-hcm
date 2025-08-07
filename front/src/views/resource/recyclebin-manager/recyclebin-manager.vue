@@ -278,12 +278,6 @@ export default defineComponent({
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
     const { whereAmI } = useWhereAmI();
     const searchVal = ref([]);
-    const searchData = [
-      {
-        name: 'ID',
-        id: 'res_id',
-      },
-    ];
     const isRowSelectEnable = ({ row, isCheckAll }: any) => {
       if (isCheckAll) return true;
       // if (whereAmI.value === Senarios.resource && row.id) {
@@ -337,6 +331,13 @@ export default defineComponent({
       vendor: '',
       detail: {},
     });
+
+    const searchData = computed(() => [
+      {
+        name: `${state.selectedType === 'cvm' ? '主机' : '硬盘'}ID`,
+        id: 'cloud_res_id',
+      },
+    ]);
 
     const isSettingDialogShow = ref(false);
     const isSettingDialogLoading = ref(false);
@@ -427,7 +428,7 @@ export default defineComponent({
         }
         searchVal.value = [
           {
-            id: 'res_id',
+            id: 'cloud_res_id',
             name: 'ID',
             values: [
               {
@@ -446,7 +447,7 @@ export default defineComponent({
     watch(
       () => searchVal.value,
       (vals) => {
-        const idx = state.filter.rules.findIndex(({ field }) => field === 'res_id');
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'cloud_res_id');
         if (idx !== -1) state.filter.rules.splice(idx, 1);
         if (!vals.length) return;
         state.filter.rules = state.filter.rules.concat(
@@ -496,6 +497,7 @@ export default defineComponent({
           },
         });
         resetSelections();
+        searchVal.value = [];
       },
       {
         immediate: true,
