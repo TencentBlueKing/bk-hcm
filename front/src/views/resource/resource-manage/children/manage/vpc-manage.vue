@@ -108,11 +108,13 @@ defineExpose({ fetchComponentsData });
 .w100 {
   width: 100px;
 }
+
 .toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .search-selector-container {
   margin-left: auto;
 }
