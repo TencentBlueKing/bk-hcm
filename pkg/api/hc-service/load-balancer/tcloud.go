@@ -105,6 +105,8 @@ type BatchCreateResult struct {
 	SuccessCloudIDs []string `json:"success_cloud_ids"`
 	FailedCloudIDs  []string `json:"failed_cloud_ids"`
 	FailedMessage   string   `json:"failed_message"`
+
+	SuccessIDs []string `json:"success_ids"`
 }
 
 // -------------------------- List Clb--------------------------

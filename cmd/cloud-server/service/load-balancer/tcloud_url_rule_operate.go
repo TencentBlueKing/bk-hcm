@@ -74,7 +74,7 @@ func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByID(cts, vendor, bizID, lblID)
+	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
 	if err != nil {
 		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
 			bizID, lblID, err, cts.Kit.Rid)
