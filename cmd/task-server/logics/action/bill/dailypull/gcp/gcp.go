@@ -67,8 +67,8 @@ func (gcp *GcpPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption)
 		currency = tmpResult.Currency
 		cost = cost.Add(tmpResult.Cost)
 		count += uint64(itemLen)
-		logs.Infof("get raw bill item %d / total %d, cost: %s, of puller %+v", itemLen, tmpResult.Count,
-			tmpResult.Cost.String(), opt)
+		logs.Infof("get raw bill item %d / total %d, cost: %s, of puller %+v, rid: %s", itemLen, tmpResult.Count,
+			tmpResult.Cost.String(), opt, kt.Kit().Rid)
 		if uint64(itemLen) < limit {
 			break
 		}
