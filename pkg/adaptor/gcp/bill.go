@@ -144,10 +144,10 @@ const (
 		"ANY_VALUE(cost_type) as cost_type," +
 		"SUM(IFNULL((SELECT sum(CAST(amount*1000000 AS int64)) AS credit FROM UNNEST(credits)),0)/1000000) as return_cost," +
 		// 将promotion类型保存起来
-		`ARRAY_CONCAT_AGG(ARRAY(select AS STRUCT * from  UNNEST(credits) where type='PROMOTION')) as  credit_infos,` +
+		`ARRAY_CONCAT_AGG(ARRAY(select AS STRUCT * from UNNEST(credits) where type='PROMOTION')) as  credit_infos,` +
 		"ANY_VALUE(currency_conversion_rate) as currency_conversion_rate"
 	// RootAccountQueryBillSQL 查询云账单的SQL
-	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id"
+	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id ORDER BY sku.id"
 	// RootAccountQueryBillTotalSQL 查询云账单总数量的SQL
 	RootAccountQueryBillTotalSQL = "SELECT COUNT(*) FROM (SELECT DISTINCT sku.id, project.id FROM %s.%s %s " +
 		"GROUP BY sku.id, project.id)"
