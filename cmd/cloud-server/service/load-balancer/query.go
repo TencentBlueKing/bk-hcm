@@ -435,7 +435,7 @@ func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler han
 	}
 }
 
-// getListenerByIDAndBiz get listener by id.
+// getListenerByIDAndBiz get listener by id and bizID.
 func (svc *lbSvc) getListenerByIDAndBiz(kt *kit.Kit, vendor enumor.Vendor, bizID int64, lblID string) (
 	*corelb.BaseListener, *types.CloudResourceBasicInfo, error) {
 
