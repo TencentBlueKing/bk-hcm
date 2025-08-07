@@ -25,7 +25,6 @@ import (
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -359,25 +358,6 @@ func (svc *lbSvc) GetBizUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	return urlRuleList.Details[0], nil
-}
-
-func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoadBalancer, error) {
-	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("id", lbID),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
-	if err != nil {
-		logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
-		return nil, err
-	}
-	if len(resp.Details) == 0 {
-		logs.Errorf("load balancer not found, id: %s, rid: %s", lbID, kt.Rid)
-		return nil, errf.New(errf.RecordNotFound, "load balancer not found, id: "+lbID)
-	}
-	return &resp.Details[0], nil
 }
 
 // ListRuleBindingStatus 获取规则绑定目标组状态
