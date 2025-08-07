@@ -55,8 +55,8 @@ type Layer7ListenerBindRSPreviewExecutor struct {
 }
 
 // Execute ...
-func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := l.convertDataToPreview(rawData)
+func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := l.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,14 @@ func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 const layer7listenerBindRSExcelTableLen = 10
 
-func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// layer7listenerBindRSExcelTableHeaderLen 表头长度
+const layer7listenerBindRSExcelTableHeaderLen = 12
+
+func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < layer7listenerBindRSExcelTableHeaderLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			layer7listenerBindRSExcelTableHeaderLen, len(headers), headers)
+	}
 	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < layer7listenerBindRSExcelTableLen {

@@ -30,19 +30,25 @@ import (
 
 func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 	type args struct {
-		i [][]string
+		rawData [][]string
+		headers []string
 	}
 	tests := []struct {
-		name string
-		args args
-		want Layer7ListenerBindRSDetail
+		name    string
+		args    args
+		want    Layer7ListenerBindRSDetail
+		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "test",
-			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "tencent.com", "/",
-					"CVM", "127.0.0.1", "8000", "50", "用户的备注"},
-			}},
+			args: args{
+				rawData: [][]string{
+					{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "tencent.com", "/",
+						"CVM", "127.0.0.1", "8000", "50", "用户的备注"},
+				},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "url路径", "后端类型",
+					"rs_ip", "rs_port", "权重(0-100)", "用户备注(可选)", "导出备注(可选)"},
+			},
 			want: Layer7ListenerBindRSDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
@@ -58,13 +64,17 @@ func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 				Status:         "",
 				ValidateResult: []string{},
 			},
+			wantErr: assert.NoError,
 		},
 		{
 			name: "end_port",
-			args: args{i: [][]string{
+			args: args{rawData: [][]string{
 				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "tencent.com", "/",
 					"CVM", "127.0.0.1   ", "[8888, 8889]", "50"},
-			}},
+			},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "url路径", "后端类型",
+					"rs_ip", "rs_port", "权重(0-100)", "用户备注(可选)", "导出备注(可选)"},
+			},
 			want: Layer7ListenerBindRSDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
@@ -80,14 +90,44 @@ func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 				Status:         "",
 				ValidateResult: []string{},
 			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "表头缺失",
+			args: args{rawData: [][]string{
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "tencent.com", "/",
+					"CVM", "127.0.0.1   ", "[8888, 8889]", "50"},
+			},
+				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "url路径", "后端类型",
+					"rs_ip", "rs_port", "权重(0-100)", "导出备注(可选)"},
+			},
+			want: Layer7ListenerBindRSDetail{
+				ClbVipDomain:   "127.0.0.1",
+				CloudClbID:     "lb-xxxxx1",
+				Protocol:       enumor.TcpProtocol,
+				ListenerPort:   []int{8888, 8889},
+				Domain:         "tencent.com",
+				URLPath:        "/",
+				InstType:       enumor.CvmInstType,
+				RsIp:           "127.0.0.1",
+				RsPort:         []int{8888, 8889},
+				Weight:         cvt.ValToPtr(50),
+				UserRemark:     "",
+				Status:         "",
+				ValidateResult: []string{},
+			},
+			wantErr: assert.Error,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			executor := &Layer7ListenerBindRSPreviewExecutor{}
-			_ = executor.convertDataToPreview(tt.args.i)
-			assert.Equal(t, tt.want, *executor.details[0])
+			err := executor.convertDataToPreview(tt.args.rawData, tt.args.headers)
+			tt.wantErr(t, err)
+			if len(executor.details) > 0 {
+				assert.Equal(t, tt.want, *executor.details[0])
+			}
 		})
 	}
 }
