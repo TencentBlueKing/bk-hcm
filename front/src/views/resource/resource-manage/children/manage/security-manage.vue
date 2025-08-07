@@ -228,7 +228,9 @@ const selectSearchData = computed(() => {
         },
       },
     },
-    ...searchData.value,
+    ...searchData.value.filter(
+      (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
+    ),
   ];
 
   return [...baseSearchData, ...map[activeType.value].searchData];
