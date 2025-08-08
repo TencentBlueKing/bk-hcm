@@ -124,8 +124,8 @@ type RuleDetail struct {
 	Scheduler       enumor.Scheduler              `json:"scheduler" header:"scheduler;均衡方式"`
 	Session         int                           `json:"session" header:"session(0=disable);会话保持（0为不开启）"`
 	HealthCheckStr  enumor.ListenerHealthCheckStr `json:"health_check" header:"health_check;健康检查"`
-	UserRemark      string                        `json:"user_remark" header:"user_remark;用户备注"`
-	ExportInfo      string                        `json:"export_info" header:"export_info;导出备注"`
+	UserRemark      string                        `json:"user_remark" header:"user_remark;用户备注(可选)"`
+	ExportInfo      string                        `json:"export_info" header:"export_info;导出备注(可选)"`
 }
 
 // GetHeaders 获取表头列
@@ -148,8 +148,8 @@ type Layer4RsDetail struct {
 	RsIp            string              `json:"rs_ip" header:"rs_ip;rs_ip"`
 	RsPortStr       string              `json:"rs_port_str" header:"rs_port;rs_port"`
 	Weight          *int64              `json:"weight" header:"weight(0-100);权重(0-100)"`
-	UserRemark      string              `json:"user_remark" header:"user_remark;用户备注"`
-	ExportInfo      string              `json:"export_info" header:"export_info;导出备注"`
+	UserRemark      string              `json:"user_remark" header:"user_remark;用户备注(可选)"`
+	ExportInfo      string              `json:"export_info" header:"export_info;导出备注(可选)"`
 }
 
 // GetHeaders 获取表头列
@@ -174,8 +174,8 @@ type Layer7RsDetail struct {
 	RsIp            string              `json:"rs_ip" header:"rs_ip;rs_ip"`
 	RsPortStr       string              `json:"rs_port_str" header:"rs_port;rs_port"`
 	Weight          *int64              `json:"weight" header:"weight(0-100);权重(0-100)"`
-	UserRemark      string              `json:"user_remark" header:"user_remark;用户备注"`
-	ExportInfo      string              `json:"export_info" header:"export_info;导出备注"`
+	UserRemark      string              `json:"user_remark" header:"user_remark;用户备注(可选)"`
+	ExportInfo      string              `json:"export_info" header:"export_info;导出备注(可选)"`
 }
 
 // GetHeaders 获取表头列
