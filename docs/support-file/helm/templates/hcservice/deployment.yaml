@@ -53,7 +53,7 @@ spec:
             - --config-file=/data/hcm/etc/config.yaml
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /alivez
               port: {{ .Values.hcservice.port }}
             initialDelaySeconds: 30
             periodSeconds: 10

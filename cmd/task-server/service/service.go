@@ -167,6 +167,7 @@ func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
 	root.HandleFunc("/", s.apiSet().ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
+	root.HandleFunc("/alivez", s.Alivez)
 	handler.SetCommonHandler(root)
 
 	network := cc.TaskServer().Network
@@ -253,5 +254,19 @@ func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "healthy"))
+	return
+}
+
+// Alivez simply returns OK to indicate the service is alive.
+func (s *Service) Alivez(w http.ResponseWriter, r *http.Request) {
+	if shutdown.IsShuttingDown() {
+		logs.Errorf("service %s alivez check failed, current service is shutting down", cc.ServiceName())
+		w.WriteHeader(http.StatusServiceUnavailable)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy,
+			fmt.Sprintf("service %s is shutting down", cc.ServiceName())))
+		return
+	}
+
+	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "alive"))
 	return
 }
