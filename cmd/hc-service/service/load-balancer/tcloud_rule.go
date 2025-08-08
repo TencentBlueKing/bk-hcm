@@ -154,7 +154,7 @@ func convRuleCreate(r protolb.TCloudRuleCreate, protocol enumor.ProtocolType) *t
 		Quic:              r.Quic,
 	}
 	// 7层不支持设置健康检查端口
-	if protocol.IsLayer7Protocol() && r.HealthCheck.CheckPort != nil {
+	if protocol.IsLayer7Protocol() && r.HealthCheck != nil && r.HealthCheck.CheckPort != nil {
 		ruleInfo.HealthCheck.CheckPort = nil
 	}
 	if len(r.Domains) == 1 {
