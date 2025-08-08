@@ -52,7 +52,6 @@ func (s *service) ExportMainAccountSummary(cts *rest.Contexts) (interface{}, err
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
 	if err != nil {
@@ -76,7 +75,6 @@ func (s *service) ExportMainAccountSummary(cts *rest.Contexts) (interface{}, err
 	mainAccountIDs := converter.MapKeyToSlice(mainAccountIDMap)
 	rootAccountIDs := converter.MapKeyToSlice(rootAccountIDMap)
 	bizIDs := converter.MapKeyToSlice(bizIDMap)
-
 	mainAccountMap, err := s.listMainAccount(cts.Kit, mainAccountIDs)
 	if err != nil {
 		logs.Errorf("list main account error: %v, rid: %s", err, cts.Kit.Rid)
@@ -103,10 +101,11 @@ func (s *service) ExportMainAccountSummary(cts *rest.Contexts) (interface{}, err
 		logs.Errorf("create writer failed: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	if err := writer.Write(export.BillSummaryMainTableHeader); err != nil {
-		logs.Errorf("write header failed: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	for _, header := range export.BillSummaryMainTableHeaders {
+		if err = writer.Write(header); err != nil {
+			logs.Errorf("write header failed: %v, header: %v, rid: %s", err, header, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 
 	table, err := toRawData(cts.Kit, result, mainAccountMap, rootAccountMap, bizMap)
@@ -118,7 +117,6 @@ func (s *service) ExportMainAccountSummary(cts *rest.Contexts) (interface{}, err
 		logs.Errorf("write data failed: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	return &asbillapi.FileDownloadResp{
 		ContentTypeStr:        "application/octet-stream",
 		ContentDispositionStr: fmt.Sprintf(`attachment; filename="%s"`, filename),
@@ -205,7 +203,7 @@ func toRawData(kt *kit.Kit, details []*dsbillapi.BillSummaryMain, mainAccountMap
 			CurrentMonthRMBCost:       detail.CurrentMonthRMBCost.String(),
 			CurrentMonthCost:          detail.CurrentMonthCost.String(),
 		}
-		fields, err := table.GetHeaderValues()
+		fields, err := table.GetValuesByHeader()
 		if err != nil {
 			logs.Errorf("get header fields failed: %v, rid: %s", err, kt.Rid)
 			return nil, err

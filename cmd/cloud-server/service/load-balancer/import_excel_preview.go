@@ -142,7 +142,7 @@ func parseExcelStr(reader io.Reader) (vendor enumor.Vendor, rawData [][]string, 
 }
 
 var supportVendorMap = map[string]enumor.Vendor{
-	"tencent_cloud_public(腾讯云-公有云)": enumor.TCloud,
+	constant.CLBExcelHeaderTCloud: enumor.TCloud,
 }
 
 func parseVendor(columns []string) (enumor.Vendor, error) {

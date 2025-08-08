@@ -56,7 +56,8 @@ type CreateLayer4ListenerPreviewExecutor struct {
 }
 
 // Execute 执行
-func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{},
+	error) {
 	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
@@ -184,7 +185,8 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
 			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
 				detail.Status.SetNotExecutable()
-				detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
 			}
 			detail.RegionID = lb.Region
 
@@ -274,20 +276,12 @@ func (c *CreateLayer4ListenerPreviewExecutor) getURLRule(kt *kit.Kit, lbID, list
 
 // CreateLayer4ListenerDetail 创建四层监听器预览记录
 type CreateLayer4ListenerDetail struct {
-	ClbVipDomain string `json:"clb_vip_domain"`
-	CloudClbID   string `json:"cloud_clb_id"`
-
-	Name           string              `json:"name"`
-	Protocol       enumor.ProtocolType `json:"protocol"`
-	ListenerPorts  []int               `json:"listener_port"`
-	Scheduler      enumor.Scheduler    `json:"scheduler"`
-	Session        int                 `json:"session"`
-	HealthCheck    bool                `json:"health_check"`
-	UserRemark     string              `json:"user_remark"`
-	Status         ImportStatus        `json:"status"`
-	ValidateResult []string            `json:"validate_result"`
-
-	RegionID string `json:"region_id"`
+	Layer4ListenerDetail `json:",inline"`
+	ListenerPorts        []int        `json:"listener_port"`
+	HealthCheck          bool         `json:"health_check"`
+	Status               ImportStatus `json:"status"`
+	ValidateResult       []string     `json:"validate_result"`
+	RegionID             string       `json:"region_id"`
 }
 
 func (c *CreateLayer4ListenerDetail) validate() {

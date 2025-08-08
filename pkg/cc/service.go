@@ -142,6 +142,7 @@ type CloudServerSetting struct {
 	Cmdb             ApiGateway       `yaml:"cmdb"`
 	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
 	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
+	TmpFileDir       string           `yaml:"tmpFileDir"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -155,6 +156,9 @@ func (s *CloudServerSetting) trySetDefault() {
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
 	s.ConcurrentConfig.trySetDefault()
+	if s.TmpFileDir == "" {
+		s.TmpFileDir = "/tmp"
+	}
 
 	return
 }

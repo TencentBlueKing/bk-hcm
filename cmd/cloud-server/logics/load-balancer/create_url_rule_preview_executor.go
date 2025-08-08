@@ -98,7 +98,8 @@ func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string, 
 		detail.ListenerPort = ports
 		detail.Domain = data[4]
 
-		switch data[5] {
+		isDefaultDomain := strings.ToUpper(data[5])
+		switch isDefaultDomain {
 		case "TRUE":
 			detail.DefaultDomain = true
 		case "FALSE":
@@ -347,17 +348,9 @@ func decodeClassifyKey(key string) (string, enumor.ProtocolType, int, error) {
 
 // CreateUrlRuleDetail ...
 type CreateUrlRuleDetail struct {
-	ClbVipDomain string              `json:"clb_vip_domain"`
-	CloudClbID   string              `json:"cloud_clb_id"`
-	Protocol     enumor.ProtocolType `json:"protocol"`
-	ListenerPort []int               `json:"listener_port"`
-
-	Domain        string           `json:"domain"`
-	DefaultDomain bool             `json:"default_domain"`
-	UrlPath       string           `json:"url_path"`
-	Scheduler     enumor.Scheduler `json:"scheduler"`
-	Session       int              `json:"session"`
-	HealthCheck   bool             `json:"health_check"`
+	RuleDetail   `json:",inline"`
+	ListenerPort []int `json:"listener_port"`
+	HealthCheck  bool  `json:"health_check"`
 
 	UserRemark     string       `json:"user_remark"`
 	Status         ImportStatus `json:"status"`
