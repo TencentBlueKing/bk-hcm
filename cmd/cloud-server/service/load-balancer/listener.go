@@ -471,3 +471,60 @@ func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler
 			"listTargetReq: %+v", accountInfo.Vendor, req)
 	}
 }
+
+// ListBizListenerByCond list biz listener by cond.
+func (svc *lbSvc) ListBizListenerByCond(cts *rest.Contexts) (any, error) {
+	return svc.listListenerByCond(cts, handler.ListBizAuthRes)
+}
+
+func (svc *lbSvc) listListenerByCond(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
+	req := new(dataproto.ListListenerByCondReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Find})
+	if err != nil {
+		logs.Errorf("list listener by cond auth failed, noPermFlag: %v, err: %v, rid: %s",
+			noPermFlag, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resList := &dataproto.ListListenerByCondResp{Details: make([]*dataproto.ListBatchListenerResult, 0)}
+	if noPermFlag {
+		logs.Errorf("list listener no perm auth, noPermFlag: %v, req: %+v, rid: %s", noPermFlag, req, cts.Kit.Rid)
+		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener by cond")
+	}
+
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, fmt.Errorf("get account basic info failed, err: %v", err)
+	}
+
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	req.BkBizID = bkBizID
+	switch accountInfo.Vendor {
+	case enumor.TCloud:
+		resList, err = svc.client.DataService().Global.LoadBalancer.ListListenerByCond(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("tcloud list listener by cond failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, err
+		}
+		return resList, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "list listener by cond failed, vendor: %s not support, req: %+v",
+			accountInfo.Vendor, req)
+	}
+}

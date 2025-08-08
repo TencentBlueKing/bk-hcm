@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -101,23 +100,25 @@ func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTar
 }
 
 // listTargetByCond 根据账号ID、RsIP查询绑定的目标组列表
-func (svc *lbSvc) listTargetByCond(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem, cloudTargetGroupIDs []string) ([]corelb.BaseTarget, error) {
+func (svc *lbSvc) listTargetByCond(kt *kit.Kit, lblReq protocloud.ListListenerQueryReq, cloudTargetGroupIDs []string) (
+	[]corelb.BaseTarget, error) {
 
 	targetList := make([]corelb.BaseTarget, 0)
 	for _, partCloudTargetGroupIDs := range slice.Split(cloudTargetGroupIDs, int(filter.DefaultMaxInLimit)) {
 		targetFilter := make([]*filter.AtomRule, 0)
-		targetFilter = append(targetFilter, tools.RuleEqual("account_id", req.AccountID))
-		targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.InstType))
+		targetFilter = append(targetFilter, tools.RuleEqual("account_id", lblReq.AccountID))
 		targetFilter = append(targetFilter, tools.RuleIn("cloud_target_group_id", partCloudTargetGroupIDs))
-		if len(lblReq.RsIPs) > 0 {
-			targetFilter = append(targetFilter, tools.RuleIn("ip", lblReq.RsIPs))
+		if len(lblReq.ListenerQueryItem.InstType) > 0 {
+			targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.ListenerQueryItem.InstType))
 		}
-		if len(lblReq.RsPorts) > 0 {
-			targetFilter = append(targetFilter, tools.RuleIn("port", lblReq.RsPorts))
+		if len(lblReq.ListenerQueryItem.RsIPs) > 0 {
+			targetFilter = append(targetFilter, tools.RuleIn("ip", lblReq.ListenerQueryItem.RsIPs))
 		}
-		if len(lblReq.RsWeights) > 0 {
-			targetFilter = append(targetFilter, tools.RuleIn("weight", lblReq.RsWeights))
+		if len(lblReq.ListenerQueryItem.RsPorts) > 0 {
+			targetFilter = append(targetFilter, tools.RuleIn("port", lblReq.ListenerQueryItem.RsPorts))
+		}
+		if len(lblReq.ListenerQueryItem.RsWeights) > 0 {
+			targetFilter = append(targetFilter, tools.RuleIn("weight", lblReq.ListenerQueryItem.RsWeights))
 		}
 		opt := &types.ListOption{
 			Filter: tools.ExpressionAnd(targetFilter...),
@@ -126,7 +127,7 @@ func (svc *lbSvc) listTargetByCond(kt *kit.Kit, req *protocloud.ListListenerWith
 		loopTargetList, err := svc.dao.LoadBalancerTarget().List(kt, opt)
 		if err != nil {
 			logs.Errorf("list load balancer target failed, err: %v, req: %+v, rid: %s",
-				err, cvt.PtrToVal(req), kt.Rid)
+				err, lblReq, kt.Rid)
 			return nil, fmt.Errorf("list load balancer target failed, err: %v", err)
 		}
 
