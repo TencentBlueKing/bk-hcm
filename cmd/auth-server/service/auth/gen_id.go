@@ -641,7 +641,55 @@ func genBizLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []c
 
 // genListenerResource generate clb listener related iam resource.
 func genListenerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	return genLoadBalancerRelatedResources(a)
+}
+
+// genLoadBalancerRelatedResources 生成负载均衡下属资源的权限点
+func genLoadBalancerRelatedResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	if a.BizID > 0 {
+		return genBizLoadBalancerRelatedResources(a)
+	}
+	switch a.Basic.Action {
+	case meta.Find:
+		return genCloudResResource(a)
+	case meta.Create, meta.Update, meta.Delete:
+		// update resource is related to hcm account resource
+		return sys.CLBResOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genBizLoadBalancerRelatedResources 生成业务下负载均衡下属资源的权限点
+func genBizLoadBalancerRelatedResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+	}
+
+	// compatible for authorize any
+	if a.BizID > 0 {
+		res.ID = strconv.FormatInt(a.BizID, 10)
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizCLBResOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
 }
 
 // genTargetGroupResource generate target group related iam resource.
@@ -665,17 +713,17 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizCLBResOperate, []client.Resource{bizRes}, nil
 		}
 		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
-		return genIaaSResourceResource(a)
+		return genLoadBalancerRelatedResources(a)
 	}
 }
 
 // genUrlRuleResource generate clb listener related iam resource.
 func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return genIaaSResourceResource(a)
+	return genLoadBalancerRelatedResources(a)
 }
 
 func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
