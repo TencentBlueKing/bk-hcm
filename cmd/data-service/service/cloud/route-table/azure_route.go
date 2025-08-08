@@ -50,7 +50,7 @@ func initAzureRouteService(svc *routeTableSvc, cap *capability.Capability) {
 	h.Add("BatchCreateAzureRoute", "POST", "/batch/create", svc.BatchCreateAzureRoute)
 	h.Add("BatchUpdateAzureRoute", "PATCH", "/batch", svc.BatchUpdateAzureRoute)
 	h.Add("ListAzureRoute", "POST", "/list", svc.ListAzureRoute)
-	h.Add("ListAzureRoute", "POST", "/list/all", svc.ListAllAzureRoute)
+	h.Add("ListAllAzureRoute", "POST", "/list/all", svc.ListAllAzureRoute)
 	h.Add("BatchDeleteAzureRoute", "DELETE", "/batch", svc.BatchDeleteAzureRoute)
 
 	h.Load(cap.WebService)
