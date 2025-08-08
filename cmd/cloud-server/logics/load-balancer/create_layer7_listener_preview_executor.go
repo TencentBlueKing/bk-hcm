@@ -368,7 +368,6 @@ type CreateLayer7ListenerDetail struct {
 	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
-	Name     string `json:"name"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
