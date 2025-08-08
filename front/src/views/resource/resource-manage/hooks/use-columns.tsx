@@ -12,7 +12,6 @@ import { CLOUD_HOST_STATUS, LB_ISP, GLOBAL_BIZS_KEY, VendorEnum, VendorMap } fro
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
@@ -70,7 +69,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
   const { getRegionName } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
-  const cloudAreaStore = useCloudAreaStore();
   const getLinkField = (options: LinkFieldOptions) => {
     // 设置options的默认值
     defaults(options, {
@@ -845,7 +843,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       render({ cell }: { cell: number }) {
         if (cell !== -1) {
-          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
+          return <display-value value={cell} property={{ type: 'cloud-area' }} showId />;
         }
         return '--';
       },
