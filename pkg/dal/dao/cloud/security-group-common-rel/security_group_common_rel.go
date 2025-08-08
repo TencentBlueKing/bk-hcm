@@ -51,6 +51,8 @@ type Interface interface {
 	ListJoinCVM(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (*types.ListSGCommonRelJoinCVMDetails, error)
 	ListJoinLoadBalancer(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (
 		*types.ListSGCommonRelJoinLBDetails, error)
+	CountCVMRelatedResGroupByBiz(kt *kit.Kit, sgID string) ([]types.CountResult, error)
+	CountLoadBalancerRelatedResGroupByBiz(kt *kit.Kit, sgID string) ([]types.CountResult, error)
 }
 
 var _ Interface = new(Dao)
@@ -308,4 +310,52 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) e
 	}
 
 	return nil
+}
+
+// CountCVMRelatedResGroupByBiz ...
+func (dao Dao) CountCVMRelatedResGroupByBiz(kt *kit.Kit, sgID string) ([]types.CountResult, error) {
+	localFilter := tools.ExpressionAnd(
+		tools.RuleEqual("security_group_id", sgID),
+		tools.RuleEqual("res_type", enumor.CvmCloudResType),
+	)
+
+	whereExpr, whereValue, err := localFilter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT bk_biz_id as group_field, COUNT(*) as count FROM %s AS rel
+                                                   LEFT JOIN %s AS t ON rel.res_id = t.id %s GROUP BY bk_biz_id`,
+		table.SecurityGroupCommonRelTable, table.CvmTable, whereExpr)
+
+	counts := make([]types.CountResult, 0)
+	err = dao.Orm.Do().Select(kt.Ctx, &counts, sql, whereValue)
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
+}
+
+// CountLoadBalancerRelatedResGroupByBiz ...
+func (dao Dao) CountLoadBalancerRelatedResGroupByBiz(kt *kit.Kit, sgID string) ([]types.CountResult, error) {
+	localFilter := tools.ExpressionAnd(
+		tools.RuleEqual("security_group_id", sgID),
+		tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
+	)
+
+	whereExpr, whereValue, err := localFilter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT bk_biz_id as group_field, COUNT(*) as count FROM %s AS rel
+                                                   LEFT JOIN %s AS t ON rel.res_id = t.id %s GROUP BY bk_biz_id`,
+		table.SecurityGroupCommonRelTable, table.LoadBalancerTable, whereExpr)
+
+	counts := make([]types.CountResult, 0)
+	err = dao.Orm.Do().Select(kt.Ctx, &counts, sql, whereValue)
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
 }
