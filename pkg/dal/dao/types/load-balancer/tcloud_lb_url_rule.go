@@ -26,3 +26,9 @@ type ListLbUrlRuleDetails struct {
 	Count   uint64                         `json:"count,omitempty"`
 	Details []tablelb.TCloudLbUrlRuleTable `json:"details,omitempty"`
 }
+
+// ListLbUrlRuleWithListenerDetails list lb url rule with listener details.
+type ListLbUrlRuleWithListenerDetails struct {
+	Count   uint64                                `json:"count,omitempty"`
+	Details []tablelb.TCloudLbUrlRuleWithListener `json:"details,omitempty"`
+}
