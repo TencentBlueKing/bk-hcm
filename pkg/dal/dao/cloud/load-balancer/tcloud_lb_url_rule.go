@@ -286,9 +286,9 @@ func (dao LbTCloudUrlRuleDao) ListJoinListener(kt *kit.Kit, opt *types.ListOptio
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT count(*)	FROM %s AS rule LEFT JOIN
-		 (select id as listener_id,name as lbl_name, protocol, port from load_balancer_listener) AS t 
-		ON rule.id = t.listener_id %s`,
-			table.TCloudLbUrlRuleTable, whereExpr)
+		 (select id as listener_id,name as lbl_name, protocol, port from %s) AS t 
+		ON rule.lbl_id = t.listener_id %s`,
+			table.TCloudLbUrlRuleTable, table.LoadBalancerListenerTable, whereExpr)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -305,10 +305,10 @@ func (dao LbTCloudUrlRuleDao) ListJoinListener(kt *kit.Kit, opt *types.ListOptio
 	}
 
 	sql := fmt.Sprintf(`SELECT %s, lbl_name, protocol, port FROM %s AS rule LEFT JOIN
-		 (select id as listener_id,name as lbl_name, protocol, port from load_balancer_listener) AS t 
+		 (select id as listener_id,name as lbl_name, protocol, port from %s) AS t 
 		ON rule.lbl_id = t.listener_id %s %s`,
 		tablelb.TCloudLbUrlRuleColumns.FieldsNamedExpr(opt.Fields),
-		table.TCloudLbUrlRuleTable, whereExpr, pageExpr)
+		table.TCloudLbUrlRuleTable, table.LoadBalancerListenerTable, whereExpr, pageExpr)
 
 	details := make([]tablelb.TCloudLbUrlRuleWithListener, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
