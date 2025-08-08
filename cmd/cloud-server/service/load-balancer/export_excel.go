@@ -109,11 +109,11 @@ func (svc *lbSvc) ExportBizListener(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 	if err = exporter.PreCheck(cts.Kit); err != nil {
-		return err, nil
+		return nil, err
 	}
 	filePath, err := exporter.Export(cts.Kit)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	return &rest.FileResp{
