@@ -41,7 +41,10 @@ const handleDropdownItemClick = (action: ActionItemType) => {
       <template #content>
         <bk-dropdown-menu class="dropdown-menu" @click="isDropdownMenuShow = false">
           <template v-for="childAction in action.children" :key="childAction.value">
-            <hcm-auth v-if="childAction.authSign" :sign="childAction.authSign()" v-slot="{ noPerm }">
+            <bk-dropdown-item v-if="childAction.render" class="dropdown-item">
+              <component :is="childAction.render()" :is-in-dropdown="true" @click="isDropdownMenuShow = false" />
+            </bk-dropdown-item>
+            <hcm-auth v-else-if="childAction.authSign" :sign="childAction.authSign()" v-slot="{ noPerm }">
               <bk-dropdown-item class="dropdown-item">
                 <bk-button
                   class="button"

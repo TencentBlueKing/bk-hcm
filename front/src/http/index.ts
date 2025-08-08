@@ -58,7 +58,7 @@ const http: HttpApi = {
   cancelCache: (requestId: string) => http.cache.delete(requestId),
   cancel: (requestId: string) => Promise.all([http.cancelRequest(requestId), http.cancelCache(requestId)]),
   download: async (config: CombinedRequestConfig) => {
-    defaults(config, { method: 'post', responseType: 'blob', originalResponse: true });
+    defaults(config, { method: 'post', responseType: 'blob', originalResponse: true, globalError: true });
     // 设置请求配置默认值
     try {
       const { data, headers } = await axiosInstance(config);
@@ -86,8 +86,10 @@ const http: HttpApi = {
         throw new Error(`unknown Content-Type: ${headers['content-type']}`);
       }
     } catch (error) {
-      console.error(error);
-      Message({ theme: 'error', message: (error as Error).message });
+      if (config.globalError) {
+        Message({ theme: 'error', message: (error as Error).message });
+      }
+      return Promise.reject(error);
     }
   },
   setHeader: (key: string, value: string) => {

@@ -36,6 +36,8 @@ import Search from '../children/search/search.vue';
 import DataList from '../children/display/data-list.vue';
 import BatchDeleteDialog from './children/batch-delete-dialog.vue';
 import BatchImportSideslider from './children/batch-import/index.vue';
+import BatchExportButton from '../children/export/batch-button.vue';
+import SingleExportButton from '../children/export/single-button.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import HoverCopy from '@/components/copy-to-clipboard/hover-copy.vue';
@@ -108,6 +110,10 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     value: LoadBalancerActionType.COPY,
     render: () => h(BatchCopy, { selections: selections.value }),
   },
+  [LoadBalancerActionType.BATCH_EXPORT]: {
+    value: LoadBalancerActionType.BATCH_EXPORT,
+    render: () => h(BatchExportButton, { selections: selections.value }),
+  },
 };
 const loadBalancerActionList = computed<ActionItemType[]>(() => {
   const list: ActionItemType[] = [
@@ -132,6 +138,9 @@ const loadBalancerActionList = computed<ActionItemType[]>(() => {
         {
           value: LoadBalancerActionType.BIND_RS,
           authSign: () => getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB),
+        },
+        {
+          value: LoadBalancerActionType.BATCH_EXPORT,
         },
         {
           value: LoadBalancerActionType.REMOVE,
@@ -401,23 +410,25 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
         @selection-change="handleSelectChange"
       >
         <template #action>
-          <bk-table-column :label="t('操作')" width="120" fixed="right">
+          <bk-table-column :label="t('操作')" width="120" fixed="right" :show-overflow-tooltip="false">
             <template #default="{ row }">
-              <hcm-auth
-                :sign="getAuthSignByBusinessId(currentGlobalBusinessId, AUTH_DELETE_CLB, AUTH_BIZ_DELETE_CLB)"
-                v-slot="{ noPerm }"
-              >
-                <bk-button
-                  class="ml8"
-                  theme="primary"
-                  text
-                  :disabled="noPerm || row.listener_count > 0 || row.delete_protect"
-                  v-bk-tooltips="getSingleDeleteDisabledTooltips(row, noPerm)"
-                  @click="handleSingleDelete(row)"
+              <div class="operation-cell">
+                <single-export-button :data="row" />
+                <hcm-auth
+                  :sign="getAuthSignByBusinessId(currentGlobalBusinessId, AUTH_DELETE_CLB, AUTH_BIZ_DELETE_CLB)"
+                  v-slot="{ noPerm }"
                 >
-                  {{ t('删除') }}
-                </bk-button>
-              </hcm-auth>
+                  <bk-button
+                    theme="primary"
+                    text
+                    :disabled="noPerm || row.listener_count > 0 || row.delete_protect"
+                    v-bk-tooltips="getSingleDeleteDisabledTooltips(row, noPerm)"
+                    @click="handleSingleDelete(row)"
+                  >
+                    {{ t('删除') }}
+                  </bk-button>
+                </hcm-auth>
+              </div>
             </template>
           </bk-table-column>
         </template>
@@ -492,6 +503,12 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
       &.is-internal {
         background-color: #fff2c9;
       }
+    }
+
+    .operation-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
   }
 }
