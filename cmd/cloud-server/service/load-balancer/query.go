@@ -266,21 +266,19 @@ func (svc *lbSvc) ListBizTargetsHealthByTGID(cts *rest.Contexts) (interface{}, e
 // listTargetsHealthByTGID 目标组绑定的负载均衡下的RS端口健康信息
 func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
-
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
 	}
-
 	req := new(hcproto.TCloudTargetHealthReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
+	req.Region = ""
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
+	//获取目标组的基本信息
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.TargetGroupCloudResType, tgID)
 	if err != nil {
@@ -300,21 +298,19 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(cts.Kit, tgID, req.CloudLbIDs)
+		tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(cts.Kit, tgID, nil)
 		if err != nil {
 			return nil, err
 		}
-		// 查询对应负载均衡信息
+		// 第一步：先查询负载均衡列表（不限制地域）
 		lbReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("cloud_id", newCloudLbIDs),
-				tools.RuleEqual("region", tgInfo.Region),
 				tools.RuleEqual("vendor", tgInfo.Vendor),
 				tools.RuleEqual("account_id", tgInfo.AccountID),
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-
 		lbResp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(cts.Kit, lbReq)
 		if err != nil {
 			logs.Errorf("fail to find load balancer(%v) for target group health, err: %v, rid: %s",
@@ -324,18 +320,17 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 		if len(lbResp.Details) != len(newCloudLbIDs) {
 			return nil, errors.New("some of given load balancer can not be found")
 		}
-		req.Region = ""
-		req.AccountID = tgInfo.AccountID
-		req.CloudLbIDs = newCloudLbIDs
-		for _, detail := range lbResp.Details {
-			if req.Region == "" {
-				req.Region = detail.Region
-				continue
-			}
-			if req.Region != detail.Region {
+		//第二步：提取并验证负载均衡的地域（使用第一个CLB的地域）//验证所有负载均衡是否在同一区域
+		req.Region = lbResp.Details[0].Region //直接使用CLB自身地域
+		for i, detail := range lbResp.Details {
+			logs.Infof("CLB:%d: cloud_id=%s,region=%s,rid:%s", i, detail.CloudID, detail.Region, cts.Kit.Rid)
+			if detail.Region != req.Region {
 				return nil, fmt.Errorf("load balancers have different regions: %s,%s", req.Region, detail.Region)
 			}
 		}
+		//第三步：设置请求参数（使用CLB地域）
+		req.AccountID = tgInfo.AccountID
+		req.CloudLbIDs = newCloudLbIDs
 		return svc.client.HCService().TCloud.Clb.ListTargetHealth(cts.Kit, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", tgID, basicInfo.Vendor)
@@ -360,7 +355,7 @@ func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbI
 	ruleRelReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("target_group_id", tgID),
-			tools.RuleIn("cloud_lb_id", cloudLbIDs),
+			//tools.RuleIn("cloud_lb_id", cloudLbIDs),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
@@ -378,6 +373,7 @@ func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbI
 	newCloudLbIDs := slice.Map(ruleRelList.Details, func(one corelb.BaseTargetListenerRuleRel) string {
 		return one.CloudLbID
 	})
+	newCloudLbIDs = slice.Unique(newCloudLbIDs) // 去重，避免重复ID
 	return tgInfo, newCloudLbIDs, nil
 }
 
