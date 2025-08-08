@@ -78,9 +78,9 @@ const (
 	// RuleSheetName 规则sheet名
 	RuleSheetName = "批量创建URL规则-HTTP-HTTPS"
 	// Layer4RsSheetName 四层RS sheet名
-	Layer4RsSheetName = "Sheet1"
+	Layer4RsSheetName = "绑定RS-TCP-UDP"
 	// Layer7RsSheetName 七层RS sheet名
-	Layer7RsSheetName = "Sheet1"
+	Layer7RsSheetName = "绑定RS-HTTP-HTTPS"
 
 	// CLBExcelHeaderVendor excel表头云厂商字段值
 	CLBExcelHeaderVendor = "vendor(云厂商)"

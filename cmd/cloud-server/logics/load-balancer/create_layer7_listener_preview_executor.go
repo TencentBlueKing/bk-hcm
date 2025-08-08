@@ -81,7 +81,8 @@ const (
 	createLayer7ListenerSSLModeIdx    = 4
 	createLayer7ListenerCertIDIdx     = 5
 	createLayer7ListenerCaCloudIDIdx  = 6
-	createLayer7ListenerUserRemarkIdx = 7
+	createLayer7ListenerNameIdx       = 7
+	createLayer7ListenerUserRemarkIdx = 8
 )
 
 func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
@@ -123,6 +124,9 @@ func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		}
 		if len(data) >= createLayer7ListenerCaCloudIDIdx+1 {
 			detail.CACloudID = data[createLayer7ListenerCaCloudIDIdx]
+		}
+		if len(data) >= createLayer7ListenerNameIdx+1 {
+			detail.Name = data[createLayer7ListenerNameIdx]
 		}
 		if len(data) >= createLayer7ListenerUserRemarkIdx+1 {
 			detail.UserRemark = data[createLayer7ListenerUserRemarkIdx]
@@ -364,7 +368,6 @@ type CreateLayer7ListenerDetail struct {
 	Layer7ListenerDetail `json:",inline"`
 	ListenerPorts        []int    `json:"listener_port"`
 	CertCloudIDs         []string `json:"cert_cloud_ids"`
-	Name          string              `json:"name"`
 
 	Status         ImportStatus `json:"status"`
 	ValidateResult []string     `json:"validate_result"`

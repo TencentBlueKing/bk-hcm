@@ -56,7 +56,8 @@ type CreateLayer4ListenerPreviewExecutor struct {
 }
 
 // Execute 执行
-func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{},
+	error) {
 	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
@@ -278,7 +279,6 @@ type CreateLayer4ListenerDetail struct {
 	Layer4ListenerDetail `json:",inline"`
 	ListenerPorts        []int        `json:"listener_port"`
 	HealthCheck          bool         `json:"health_check"`
-	Name                 string       `json:"name"`
 	Status               ImportStatus `json:"status"`
 	ValidateResult       []string     `json:"validate_result"`
 	RegionID             string       `json:"region_id"`

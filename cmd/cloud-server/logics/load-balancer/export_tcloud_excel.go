@@ -230,6 +230,7 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 			Scheduler:       enumor.Scheduler(layer4Rule.Scheduler),
 			Session:         int(layer4Rule.SessionExpire),
 			HealthCheckStr:  healthCheck,
+			Name:            listener.Name,
 		})
 	}
 
@@ -372,6 +373,7 @@ func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zi
 			SSLMode:         sslMode,
 			CertCloudID:     certCloudID,
 			CACloudID:       caCloudID,
+			Name:            listener.Name,
 		})
 	}
 
