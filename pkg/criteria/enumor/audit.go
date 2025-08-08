@@ -107,6 +107,8 @@ const (
 	Stop AuditAction = "stop"
 	// ResetPwd 重置密码
 	ResetPwd AuditAction = "reset_pwd"
+	// ResetSystem 重装系统
+	ResetSystem AuditAction = "reset_system"
 	// Associate 资源关联操作
 	Associate AuditAction = "associate"
 	// Disassociate 资源解关联操作
@@ -129,6 +131,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	Start:        {},
 	Stop:         {},
 	ResetPwd:     {},
+	ResetSystem:  {},
 	Associate:    {},
 	Disassociate: {},
 	Bind:         {},

@@ -21,6 +21,7 @@
 package cvm
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
@@ -28,8 +29,12 @@ import (
 	"hcm/cmd/cloud-server/logics/disk"
 	"hcm/cmd/cloud-server/logics/eip"
 	"hcm/cmd/cloud-server/service/capability"
+	"hcm/pkg/api/core"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
@@ -77,6 +82,10 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("QueryBizCvmRelatedRes", http.MethodPost, "/bizs/{bk_biz_id}/cvms/rel_res/batch", svc.QueryBizCvmRelatedRes)
 	h.Add("ListCvmSecurityGroupRules", http.MethodPost,
 		"/bizs/{bk_biz_id}/cvms/{cvm_id}/security_groups/{security_group_id}/rules/list", svc.ListCvmSecurityGroupRules)
+	h.Add("BatchResetAsyncBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reset_async",
+		svc.BatchResetAsyncBizCvm)
+	h.Add("ListBizCvmOperateStatus", http.MethodPost, "/bizs/{bk_biz_id}/cvms/list/operate/status",
+		svc.ListBizCvmOperateStatus)
 
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
@@ -103,4 +112,32 @@ type cvmSvc struct {
 	cvmLgc     cvm.Interface
 	eipLgc     eip.Interface
 	cmdbCli    cmdb.Client
+}
+
+// batchListCvmByIDs 批量获取CVM列表
+func (svc *cvmSvc) batchListCvmByIDs(kt *kit.Kit, ids []string) ([]corecvm.BaseCvm, error) {
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("ids is empty")
+	}
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", ids),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	list := make([]corecvm.BaseCvm, 0)
+	for {
+		cvmResp, err := svc.client.DataService().Global.Cvm.ListCvm(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, cvmResp.Details...)
+		if len(cvmResp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+	return list, nil
 }

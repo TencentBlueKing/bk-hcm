@@ -28,7 +28,7 @@ type ActionName string
 func (v ActionName) Validate() error {
 	switch v {
 	case ActionAssignCvm, ActionStartCvm, ActionStopCvm, ActionRebootCvm, ActionDeleteCvm, ActionCreateCvm,
-		ActionCreateAwsCvm, ActionCreateHuaWeiCvm, ActionCreateGcpCvm, ActionCreateAzureCvm:
+		ActionCreateAwsCvm, ActionCreateHuaWeiCvm, ActionCreateGcpCvm, ActionCreateAzureCvm, ActionResetCvm:
 
 	case ActionDeleteFirewallRule:
 
@@ -68,6 +68,7 @@ const (
 	ActionCreateHuaWeiCvm ActionName = "create_huawei_cvm"
 	ActionCreateGcpCvm    ActionName = "create_gcp_cvm"
 	ActionCreateAzureCvm  ActionName = "create_azure_cvm"
+	ActionResetCvm        ActionName = "reset_cvm"
 )
 
 // 防火墙相关Action

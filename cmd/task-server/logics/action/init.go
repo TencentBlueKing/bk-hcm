@@ -54,6 +54,7 @@ func register() {
 	action.RegisterAction(actioncvm.NewDeleteAction())
 	action.RegisterAction(actioncvm.CreateCvmAction{})
 	action.RegisterAction(actioncvm.AssignCvmAction{})
+	action.RegisterAction(actioncvm.BatchTaskCvmResetAction{})
 
 	action.RegisterAction(actionfirewall.DeleteAction{})
 

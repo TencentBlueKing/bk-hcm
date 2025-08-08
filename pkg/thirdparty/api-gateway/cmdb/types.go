@@ -347,6 +347,9 @@ type ModuleInfo struct {
 	BkSetID      int64  `json:"bk_set_id"`
 	BkModuleName string `json:"bk_module_name"`
 	Default      int64  `json:"default"`
+
+	BkModuleId int64 `json:"bk_module_id"`
+	Bs3NameID  int   `json:"bs3_name_id"`
 }
 
 // CloudVendor defines cmdb cloud vendor type.
@@ -641,3 +644,19 @@ type ListResourcePoolHostsResult struct {
 	Count int64  `json:"count"`
 	Info  []Host `json:"info"`
 }
+
+// SvrSourceTypeID 服务器来源类型
+type SvrSourceTypeID string
+
+const (
+	// SvrSourceTypeIDOwn 服务器来源类型ID-自有, 物理机
+	SvrSourceTypeIDOwn SvrSourceTypeID = "1"
+	// SvrSourceTypeIDHosting 服务器来源类型ID-托管, 物理机
+	SvrSourceTypeIDHosting SvrSourceTypeID = "2"
+	// SvrSourceTypeIDRent 服务器来源类型ID-租用, 物理机
+	SvrSourceTypeIDRent SvrSourceTypeID = "3"
+	// SvrSourceTypeIDCVM 服务器来源类型ID-虚拟机
+	SvrSourceTypeIDCVM SvrSourceTypeID = "4"
+	// SvrSourceTypeIDContainer 服务器来源类型ID-容器
+	SvrSourceTypeIDContainer SvrSourceTypeID = "5"
+)

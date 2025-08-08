@@ -46,6 +46,7 @@ var defaultFlowNameMap = map[FlowName]struct{}{
 	FlowRebootCvm:              {},
 	FlowDeleteCvm:              {},
 	FlowCreateCvm:              {},
+	FlowResetCvm:               {},
 	FlowDeleteFirewallRule:     {},
 	FlowDeleteSubnet:           {},
 	FlowNormalTest:             {},
@@ -72,19 +73,19 @@ func (v FlowName) ValidateDefault() error {
 
 // 负载均衡相关的FlowName
 var loadBalancerFlowNameMap = map[FlowName]struct{}{
-	FlowTargetGroupAddRS:               {},
-	FlowTargetGroupRemoveRS:            {},
-	FlowTargetGroupModifyPort:          {},
-	FlowTargetGroupModifyWeight:        {},
-	FlowLoadBalancerOperateWatch:       {},
-	FlowApplyTargetGroupToListenerRule: {},
-	FlowDeleteLoadBalancer:             {},
-	FlowLoadBalancerDeleteRule:         {},
-	FlowLoadBalancerCreateListener:     {},
-	FlowLoadBalancerCreateUrlRule:      {},
-	FlowBatchTaskListenerUnBindTarget:  {},
+	FlowTargetGroupAddRS:                {},
+	FlowTargetGroupRemoveRS:             {},
+	FlowTargetGroupModifyPort:           {},
+	FlowTargetGroupModifyWeight:         {},
+	FlowLoadBalancerOperateWatch:        {},
+	FlowApplyTargetGroupToListenerRule:  {},
+	FlowDeleteLoadBalancer:              {},
+	FlowLoadBalancerDeleteRule:          {},
+	FlowLoadBalancerCreateListener:      {},
+	FlowLoadBalancerCreateUrlRule:       {},
+	FlowBatchTaskListenerUnBindTarget:   {},
 	FlowBatchTaskListenerModifyRsWeight: {},
-	FlowBatchTaskDeleteListener:        {},
+	FlowBatchTaskDeleteListener:         {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -103,6 +104,7 @@ const (
 	FlowRebootCvm FlowName = "reboot_cvm"
 	FlowDeleteCvm FlowName = "delete_cvm"
 	FlowCreateCvm FlowName = "create_cvm"
+	FlowResetCvm  FlowName = "reset_cvm"
 )
 
 // 防火墙相关Flow

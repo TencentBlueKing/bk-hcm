@@ -59,6 +59,8 @@ const (
 	Reboot Action = "reboot"
 	// ResetPwd operation's hcm auth action type
 	ResetPwd Action = "reset_pwd"
+	// ResetSystem operation's hcm auth action type
+	ResetSystem Action = "reset_system"
 	// Import operation's hcm auth action type
 	Import Action = "import"
 	// Associate operation's hcm auth action type

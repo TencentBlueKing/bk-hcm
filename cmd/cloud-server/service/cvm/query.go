@@ -244,3 +244,72 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 	})
 	return relatedInfos, nil
 }
+
+// ListCvmOperateStatus list cvm operate status.
+func (svc *cvmSvc) ListCvmOperateStatus(cts *rest.Contexts) (interface{}, error) {
+	return svc.listCvmOperateStatus(cts, handler.ListResourceAuthRes)
+}
+
+// ListBizCvmOperateStatus list biz cvm operate status.
+func (svc *cvmSvc) ListBizCvmOperateStatus(cts *rest.Contexts) (interface{}, error) {
+	return svc.listCvmOperateStatus(cts, handler.ListBizAuthRes)
+}
+
+// listCvmResetStatus 获取业务下云主机是否可开关机、重启的状态列表
+func (svc *cvmSvc) listCvmOperateStatus(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
+	req := new(cscvm.ListCvmBatchOperateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	// 校验业务权限
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer, ResType: meta.Cvm, Action: meta.Find})
+	if err != nil {
+		logs.Errorf("auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if noPermFlag {
+		return cscvm.ListCvmBatchOperateResp{Details: make([]cscvm.CvmBatchOperateHostInfo, 0)}, nil
+	}
+
+	cvmResp, err := svc.batchListCvmByIDs(cts.Kit, req.IDs)
+	if err != nil {
+		logs.Errorf("batch list cvm failed, err: %v, cvm_ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	vendorIDMap := make(map[enumor.Vendor][]string)
+	for _, item := range cvmResp {
+		vendorIDMap[item.Vendor] = append(vendorIDMap[item.Vendor], item.ID)
+	}
+
+	hosts := make([]cscvm.CvmBatchOperateHostInfo, 0)
+	for vendor, cvmIDs := range vendorIDMap {
+		switch vendor {
+		case enumor.TCloud:
+			validateFunc, err := chooseTCloudValidateFunc(req.OperateType)
+			if err != nil {
+				logs.Errorf("choose validate func failed, err: %v, vendor: %s, operate_type: %s, rid: %s",
+					err, vendor, req.OperateType, cts.Kit.Rid)
+				return nil, err
+			}
+
+			vendorHosts, err := svc.listTCloudCvmOperateHost(cts.Kit, cvmIDs, validateFunc)
+			if err != nil {
+				logs.Errorf("list cvm operate failed, err: %v, vendor: %s, cvm_ids: %v, rid: %s",
+					err, vendor, cvmIDs, cts.Kit.Rid)
+				return nil, err
+			}
+			hosts = append(hosts, vendorHosts...)
+		default:
+			logs.Errorf("list cvm operate invalid vendor: %s", vendor)
+			return nil, errf.NewFromErr(errf.InvalidParameter,
+				fmt.Errorf("list cvm operate invalid vendor: %s", vendor))
+		}
+	}
+
+	return cscvm.ListCvmBatchOperateResp{Details: hosts}, nil
+}

@@ -137,6 +137,8 @@ func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
 		return enumor.Reboot, nil
 	case ResetPwd:
 		return enumor.ResetPwd, nil
+	case ResetSystem:
+		return enumor.ResetSystem, nil
 	case Associate:
 		return enumor.Associate, nil
 	case Disassociate:
@@ -149,10 +151,11 @@ func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
 
 // OperationAction 操作动作
 const (
-	Start    OperationAction = "start"
-	Stop     OperationAction = "stop"
-	Reboot   OperationAction = "reboot"
-	ResetPwd OperationAction = "reset_pwd"
+	Start       OperationAction = "start"
+	Stop        OperationAction = "stop"
+	Reboot      OperationAction = "reboot"
+	ResetPwd    OperationAction = "reset_pwd"
+	ResetSystem OperationAction = "reset_system"
 	// Associate 绑定、挂载等操作
 	Associate OperationAction = "associate"
 	// Disassociate 解绑、解挂载等操作

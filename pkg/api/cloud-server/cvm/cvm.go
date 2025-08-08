@@ -27,6 +27,7 @@ import (
 	rr "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -240,6 +241,91 @@ type CvmRelatedInfo struct {
 	DiskCount int      `json:"disk_count"`
 	EipCount  int      `json:"eip_count"`
 	Eip       []string `json:"eip"`
+}
+
+// ListCvmBatchOperateReq define list cvm batch operate req.
+type ListCvmBatchOperateReq struct {
+	IDs         []string              `json:"ids" validate:"required,min=1,max=500"`
+	OperateType enumor.CvmOperateType `json:"operate_type" validate:"required"`
+}
+
+// Validate validate.
+func (req *ListCvmBatchOperateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CvmBatchOperateHostInfo define cvm batch operate host info.
+type CvmBatchOperateHostInfo struct {
+	ID                   string                  `json:"id"`
+	Vendor               enumor.Vendor           `json:"vendor"`
+	AccountID            string                  `json:"account_id"`
+	Name                 string                  `json:"name"`
+	BkHostID             int64                   `json:"bk_host_id"`
+	BkHostName           string                  `json:"bk_host_name"`
+	CloudID              string                  `json:"cloud_id"`
+	PrivateIPv4Addresses []string                `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string                `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string                `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string                `json:"public_ipv6_addresses"`
+	CloudVpcIDs          []string                `json:"cloud_vpc_ids"`
+	CloudSubnetIDs       []string                `json:"cloud_subnet_ids"`
+	Operator             string                  `json:"operator"`
+	BkBakOperator        string                  `json:"bak_operator"`
+	DeviceType           string                  `json:"device_type"`
+	Region               string                  `json:"region"`
+	Zone                 string                  `json:"zone"`
+	BkOSName             string                  `json:"bk_os_name"`
+	TopoModule           string                  `json:"topo_module"`
+	Status               string                  `json:"status"`
+	SrvStatus            string                  `json:"srv_status"`
+	OperateStatus        enumor.CvmOperateStatus `json:"operate_status"`
+}
+
+// ListCvmBatchOperateResp define list cvm batch operate response.
+type ListCvmBatchOperateResp struct {
+	Details []CvmBatchOperateHostInfo `json:"details"`
+}
+
+// BatchCvmHostItem batch cvm host item.
+type BatchCvmHostItem struct {
+	ID           string `json:"id" validate:"required"`
+	DeviceType   string `json:"device_type" validate:"required"`
+	ImageNameOld string `json:"image_name_old" validate:"required"`
+	CloudImageID string `json:"cloud_image_id" validate:"required"`
+	ImageName    string `json:"image_name" validate:"required"`
+}
+
+// Validate batch reset cvm request.
+func (req *BatchCvmHostItem) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BatchResetCvmReq batch reset cvm req.
+type BatchResetCvmReq struct {
+	Hosts      []BatchCvmHostItem `json:"hosts" validate:"required,min=1,max=500"`
+	Pwd        string             `json:"pwd" validate:"required,min=12,max=20"`
+	PwdConfirm string             `json:"pwd_confirm" validate:"required,min=12,max=20"`
+}
+
+// Validate batch reset cvm request.
+func (req *BatchResetCvmReq) Validate() error {
+	for _, host := range req.Hosts {
+		if err := host.Validate(); err != nil {
+			return err
+		}
+	}
+	if req.Pwd != req.PwdConfirm {
+		return errf.Newf(errf.InvalidParameter, "pwd and pwd_confirm require the same value")
+	}
+	return validator.Validate.Struct(req)
+}
+
+// BatchCvmOperateResp batch cvm operate response, return task management id.
+type BatchCvmOperateResp struct {
+	TaskManagementID string `json:"task_management_id"`
 }
 
 // BatchAssociateSecurityGroupsReq ...

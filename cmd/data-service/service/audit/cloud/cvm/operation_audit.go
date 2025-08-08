@@ -37,7 +37,7 @@ func (c *Cvm) CvmOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudR
 	assOperations := make([]protoaudit.CloudResourceOperationInfo, 0)
 	for _, operation := range operations {
 		switch operation.Action {
-		case protoaudit.Start, protoaudit.Stop, protoaudit.Reboot, protoaudit.ResetPwd:
+		case protoaudit.Start, protoaudit.Stop, protoaudit.Reboot, protoaudit.ResetPwd, protoaudit.ResetSystem:
 			baseOperations = append(baseOperations, operation)
 		case protoaudit.Associate, protoaudit.Disassociate:
 			assOperations = append(assOperations, operation)
