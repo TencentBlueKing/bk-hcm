@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0039,HCMVER=v1.8.2
+    SQLVER=0041,HCMVER=v1.8.5
 
     Notes:
     1. 证书表新增tags字段
@@ -31,6 +31,6 @@ alter table ssl_cert
     add tags JSON null after memo;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.5' as `hcm_ver`, '0041' as `sql_ver`;
 
 COMMIT;
