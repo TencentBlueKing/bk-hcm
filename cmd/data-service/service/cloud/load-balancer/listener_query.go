@@ -221,7 +221,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	lblReq protocloud.ListenerQueryItem) ([]*protocloud.ListBatchListenerResult, error) {
 
 	// 查询符合条件的负载均衡列表
-	cloudClbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
+	cloudClbIDs, clbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
 	if err != nil {
 		return nil, err
 	}
@@ -243,18 +243,18 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	}
 
 	// 获取监听器绑定的目标组ID列表
-	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, req, lblReq, cloudLblIDs)
+	targetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, req, lblReq, cloudLblIDs, clbIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// 根据RSIP获取绑定的目标组ID列表
-	targetGroupRsList, targetGroupIDs, err := svc.listListenerWithTarget(kt, req, lblReq, cloudTargetGroupIDs)
+	targetGroupRsList, rsTargetGroupIDs, err := svc.listListenerWithTarget(kt, req, lblReq, targetGroupIDs)
 	if err != nil {
 		return nil, err
 	}
-	// 未查询到符合的监听器列表
-	if len(targetGroupIDs) == 0 {
+	// 未查询到符合的目标组列表
+	if len(rsTargetGroupIDs) == 0 {
 		logs.Errorf("list load balancer target with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
 		return nil, nil
 	}
@@ -264,7 +264,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	switch req.Vendor {
 	case enumor.TCloud:
 		lblUrlRuleList, err = svc.listTCloudLBUrlRuleByTgIDs(kt, lblReq, cloudClbIDs,
-			cloudLblIDs, targetGroupIDs)
+			cloudLblIDs, rsTargetGroupIDs)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "batch query listener with targets failed, invalid vendor: %s",
 			req.Vendor)
@@ -276,7 +276,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	if len(lblUrlRuleList) == 0 {
 		logs.Errorf("[%s]list load balancer url rule empty, req: %+v, cloudClbIDs: %v, cloudLblIDs: %v, "+
 			"targetGroupIDs: %v, rid: %s", req.Vendor, cvt.PtrToVal(req), cloudClbIDs,
-			cloudLblIDs, targetGroupIDs, kt.Rid)
+			cloudLblIDs, rsTargetGroupIDs, kt.Rid)
 		return nil, nil
 	}
 
@@ -438,7 +438,7 @@ func (svc *lbSvc) batchQueryListeners(kt *kit.Kit, req *protocloud.BatchDeleteLi
 		Protocol:      lblReq.Protocol,
 		Ports:         lblReq.Ports,
 	}
-	cloudClbIDs, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
+	cloudClbIDs, _, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
 	if err != nil {
 		return nil, err
 	}
@@ -551,10 +551,10 @@ func (svc *lbSvc) listTCloudLBUrlRuleByTgIDs(kt *kit.Kit,
 
 // listListenerWithTarget 根据账号ID、RsIP查询绑定的目标组列表
 func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem, cloudTargetGroupIDs []string) (
+	lblReq protocloud.ListenerQueryItem, targetGroupIDs []string) (
 	map[string][]protocloud.LoadBalancerTargetRsList, []string, error) {
 
-	targetList, err := svc.listTargetByCond(kt, req, lblReq, cloudTargetGroupIDs)
+	targetList, err := svc.listTargetByCond(kt, req, lblReq, targetGroupIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -569,11 +569,11 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, req *protocloud.ListListen
 
 	// 统计每个目标组有多少RS
 	targetGroupRsList := make(map[string][]protocloud.LoadBalancerTargetRsList)
-	targetGroupIDs := make([]string, 0)
+	rsTargetGroupIDs := make([]string, 0)
 	for _, item := range targetList {
 		// 不符合的数据需要过滤掉
 		if _, ok := targetIPPortMap[fmt.Sprintf("%s_%s_%d", item.InstType, item.IP, item.Port)]; !ok &&
-			len(lblReq.RsPorts) > 0 {
+			len(lblReq.RsIPs) > 0 && len(lblReq.RsPorts) > 0 {
 			logs.Warnf("list load balancer target rsip[%s] port[%d] is not found, rid: %s", item.IP, item.Port, kt.Rid)
 			continue
 		}
@@ -581,13 +581,13 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, req *protocloud.ListListen
 		if _, ok := targetGroupRsList[item.TargetGroupID]; !ok {
 			targetGroupRsList[item.TargetGroupID] = make([]protocloud.LoadBalancerTargetRsList, 0)
 		}
-		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
+		rsTargetGroupIDs = append(rsTargetGroupIDs, item.TargetGroupID)
 		targetGroupRsList[item.TargetGroupID] = append(targetGroupRsList[item.TargetGroupID],
 			protocloud.LoadBalancerTargetRsList{
 				BaseTarget: item,
 			})
 	}
-	return targetGroupRsList, slice.Unique(targetGroupIDs), nil
+	return targetGroupRsList, slice.Unique(rsTargetGroupIDs), nil
 }
 
 // listBizListenerByLbIDs 获取业务下指定账号、负载均衡ID列表下的监听器列表

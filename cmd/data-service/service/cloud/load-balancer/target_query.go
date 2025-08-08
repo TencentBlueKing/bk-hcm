@@ -102,14 +102,16 @@ func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTar
 
 // listTargetByCond 根据账号ID、RsIP查询绑定的目标组列表
 func (svc *lbSvc) listTargetByCond(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem, cloudTargetGroupIDs []string) ([]corelb.BaseTarget, error) {
+	lblReq protocloud.ListenerQueryItem, targetGroupIDs []string) ([]corelb.BaseTarget, error) {
 
 	targetList := make([]corelb.BaseTarget, 0)
-	for _, partCloudTargetGroupIDs := range slice.Split(cloudTargetGroupIDs, int(filter.DefaultMaxInLimit)) {
+	for _, partTargetGroupIDs := range slice.Split(targetGroupIDs, int(filter.DefaultMaxInLimit)) {
 		targetFilter := make([]*filter.AtomRule, 0)
 		targetFilter = append(targetFilter, tools.RuleEqual("account_id", req.AccountID))
-		targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.InstType))
-		targetFilter = append(targetFilter, tools.RuleIn("cloud_target_group_id", partCloudTargetGroupIDs))
+		targetFilter = append(targetFilter, tools.RuleIn("target_group_id", partTargetGroupIDs))
+		if len(lblReq.InstType) > 0 {
+			targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.InstType))
+		}
 		if len(lblReq.RsIPs) > 0 {
 			targetFilter = append(targetFilter, tools.RuleIn("ip", lblReq.RsIPs))
 		}
