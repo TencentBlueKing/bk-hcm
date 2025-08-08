@@ -142,6 +142,8 @@ type CloudServerSetting struct {
 	Cmdb             ApiGateway       `yaml:"cmdb"`
 	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
 	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
+	UserMgr        ApiGateway     `yaml:"userMgr"`
+	OrgTopoConfig  BillConfig     `yaml:"orgTopoConfig"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

@@ -85,3 +85,17 @@ func ParseDateTime(layout, t string) (time.Time, error) {
 
 	return pdTime, nil
 }
+
+// GetTomorrowStartTime 获取明日开始时间戳
+func GetTomorrowStartTime() int64 {
+	tomorrow := time.Now().AddDate(0, 0, 1)
+	endTime := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+	return endTime.Unix()
+}
+
+// GetTodayRemainDuration 获取今天剩余的时间戳
+func GetTodayRemainDuration() int64 {
+	// 获取明日开始时间戳
+	tomorrowTimestamp := GetTomorrowStartTime()
+	return min(0, tomorrowTimestamp-time.Now().Unix())
+}

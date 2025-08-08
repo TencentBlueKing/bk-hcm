@@ -17,37 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package orgtopo ...
+package orgtopo
 
 import (
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/usermgr"
-	"hcm/pkg/thirdparty/esb"
+	"time"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/api/core"
+	"hcm/pkg/client"
+	"hcm/pkg/logs"
+	"hcm/pkg/serviced"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
-	CmdbCli    cmdb.Client
-	UserMgrCli usermgr.Client
+// OrgTopoTiming timing sync org topo.
+func OrgTopoTiming(c *client.ClientSet, state serviced.State, intervalMin time.Duration) {
+	r := &orgTopoSvc{
+		client: c,
+		state:  state,
+	}
+
+	go r.orgTopoTiming(intervalMin)
+}
+
+func (ots *orgTopoSvc) orgTopoTiming(intervalMin time.Duration) {
+	for {
+		time.Sleep(intervalMin * time.Minute)
+
+		kt := core.NewBackendKit()
+		if !ots.state.IsMaster() {
+			logs.Infof("sync org topo timing, but is not master, skip, rid: %s", kt.Rid)
+			time.Sleep(10 * time.Minute)
+			continue
+		}
+
+		err := ots.SyncOrgTopo(kt)
+		if err != nil {
+			logs.Errorf("sync org topo timing failed, err: %+v, rid: %s", err, kt.Rid)
+			time.Sleep(10 * time.Minute)
+			continue
+		}
+	}
 }

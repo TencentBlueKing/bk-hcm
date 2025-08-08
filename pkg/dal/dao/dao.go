@@ -61,6 +61,7 @@ import (
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
+	orgtopo "hcm/pkg/dal/dao/org-topo"
 	"hcm/pkg/dal/dao/task"
 	"hcm/pkg/dal/dao/tenant"
 	daouser "hcm/pkg/dal/dao/user"
@@ -145,6 +146,7 @@ type Set interface {
 	GlobalConfig() globalconfig.Interface
 	ResUsageBizRel() cloud.ResUsageBizRel
 	Tenant() tenant.Tenant
+	OrgTopo() orgtopo.Interface
 
 	Txn() *Txn
 }
@@ -787,4 +789,9 @@ func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
 	return &cloud.ResUsageBizRelDao{
 		Orm: s.orm,
 	}
+}
+
+// OrgTopo returns orgtopo dao.
+func (s *set) OrgTopo() orgtopo.Interface {
+	return orgtopo.New(s.orm, s.idGen)
 }
