@@ -257,15 +257,20 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID, tgRegion s
 	})
 	addSlice, updateMap, delLocalIDs := diff[typeslb.Backend, corelb.BaseTarget](cloudRsList, dbRsList, isRsChange)
 
-	if err = cli.deleteRs(kt, delLocalIDs); err != nil {
-		return err
+	if len(delLocalIDs) != 0 {
+		if err = cli.deleteRs(kt, delLocalIDs); err != nil {
+			return err
+		}
 	}
-
-	if err = cli.updateRs(kt, tgRegion, updateMap); err != nil {
-		return err
+	if len(updateMap) != 0 {
+		if err = cli.updateRs(kt, tgRegion, updateMap); err != nil {
+			return err
+		}
 	}
-	if _, err = cli.createRs(kt, accountID, tgID, tgRegion, addSlice); err != nil {
-		return err
+	if len(addSlice) != 0 {
+		if _, err = cli.createRs(kt, accountID, tgID, tgRegion, addSlice); err != nil {
+			return err
+		}
 	}
 
 	return nil
