@@ -25,6 +25,7 @@ import (
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud/cvm"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
@@ -260,4 +261,34 @@ func (cli *CvmClient) SyncCCInfo(kt *kit.Kit, req *sync.TCloudSyncReq) error {
 func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) error {
 	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
 		"/cvms/cc_info/by_condition/sync")
+}
+
+// ResetCvm 重装CVM
+func (cli *CvmClient) ResetCvm(kt *kit.Kit, request *protocvm.TCloudBatchResetCvmReq) error {
+	resp := new(rest.BaseResp)
+
+	err := cli.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/cvms/reset").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// QueryTCloudCVM  查询云上cvm
+func (cli *CvmClient) QueryTCloudCVM(kt *kit.Kit, request *cvm.QueryCloudCvmReq) (
+	*core.ListResultT[cvm.Cvm[cvm.TCloudCvmExtension]], error) {
+
+	return common.Request[cvm.QueryCloudCvmReq, core.ListResultT[cvm.Cvm[cvm.TCloudCvmExtension]]](cli.client,
+		rest.POST, kt, request, "/cvms/query")
 }

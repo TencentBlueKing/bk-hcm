@@ -19,6 +19,12 @@
 
 package cvm
 
+import (
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
+)
+
 // TCloudCvmExtension cvm extension.
 type TCloudCvmExtension struct {
 	Placement *TCloudPlacement `json:"placement,omitempty"`
@@ -152,4 +158,20 @@ type TCloudVirtualPrivateCloud struct {
 		- FALSE：表示不作为公网网关
 	*/
 	AsVpcGateway *bool `json:"as_vpc_gateway,omitempty"`
+}
+
+// QueryCloudCvmReq 查询云上cvm信息
+type QueryCloudCvmReq struct {
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID string        `json:"account_id" validate:"required"`
+	Region    string        `json:"region" validate:"required"`
+	CvmIDs    []string      `json:"cvm_ids"`
+	// 安全组id
+	SGIDs []string       `json:"security_groups_ids"`
+	Page  *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (r QueryCloudCvmReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

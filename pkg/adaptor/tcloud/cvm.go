@@ -772,6 +772,7 @@ func (t *TCloudImpl) ResetCvmInstance(kt *kit.Kit, opt *typecvm.ResetInstanceOpt
 		return nil, err
 	}
 
+	reqID := cvt.PtrToVal(resp.Response.RequestId)
 	handler := &resetCvmInstancePollingHandler{
 		opt.Region,
 	}
@@ -780,11 +781,18 @@ func (t *TCloudImpl) ResetCvmInstance(kt *kit.Kit, opt *typecvm.ResetInstanceOpt
 	result, err := respPoller.PollUntilDone(t, kt, cloudIDs, types.NewBatchResetCvmPollerOption())
 	if err != nil {
 		logs.Errorf("tcloud reset cvm instance query failed, err: %v, opt: %+v, tid: %s, rid: %s",
-			err, cvt.PtrToVal(opt), cvt.PtrToVal(resp.Response.RequestId), kt.Rid)
+			err, cvt.PtrToVal(opt), reqID, kt.Rid)
 		return nil, err
 	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return nil, errf.Newf(errf.CloudVendorError, "no any cvm system being updated, "+
+			"failedCloudIDs: %v, failedMessage: %s, unknownCloudIDs: %v, TencentCloudSDK RequestId: %s",
+			result.FailedCloudIDs, result.FailedMessage, result.UnknownCloudIDs, reqID)
+	}
+
 	logs.Infof("tcloud reset cvm instance success, opt: %+v, result: %+v, tid: %s, rid: %s",
-		cvt.PtrToVal(opt), result, cvt.PtrToVal(resp.Response.RequestId), kt.Rid)
+		cvt.PtrToVal(opt), result, reqID, kt.Rid)
 
 	return result, nil
 }

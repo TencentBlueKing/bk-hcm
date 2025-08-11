@@ -28,7 +28,7 @@ const (
 	OtherOsType   OsType = "Other"
 )
 
-// TCloudImageTypeImageType 镜像
+// TCloudImageType 镜像
 type TCloudImageType string
 
 const (

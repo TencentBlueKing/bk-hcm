@@ -139,4 +139,13 @@ const (
 
 	// TaskDeleteListener is a task indicating that delete listener.
 	TaskDeleteListener TaskOperation = "listener_delete"
+
+	// TaskStartCvm is a task indicating that start cvm.
+	TaskStartCvm TaskOperation = "start_cvm"
+	// TaskStopCvm is a task indicating that stop cvm.
+	TaskStopCvm TaskOperation = "stop_cvm"
+	// TaskRebootCvm is a task indicating that reboot cvm.
+	TaskRebootCvm TaskOperation = "reboot_cvm"
+	// TaskCvmResetSystem is a task indicating that cvm reset system.
+	TaskCvmResetSystem TaskOperation = "cvm_reset_system"
 )

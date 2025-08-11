@@ -43,6 +43,9 @@ type Interface interface {
 	RecyclePreCheck(kt *kit.Kit, infoMap map[string]types.CloudResourceBasicInfo) error
 	BatchFinalizeRelRecord(kt *kit.Kit, resType enumor.CloudResourceType,
 		status enumor.RecycleRecordStatus, resIds []string) error
+	GetHostTopoInfo(kt *kit.Kit, hostIds []int64) ([]cmdb.HostTopoRelation, error)
+	GetModuleInfo(kit *kit.Kit, bkBizID int64, moduleIds []int64) ([]*cmdb.ModuleInfo, error)
+	CvmResetSystem(kt *kit.Kit, params *TaskManageBaseReq) (string, error)
 }
 
 type cvm struct {

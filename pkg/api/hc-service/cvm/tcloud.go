@@ -24,6 +24,7 @@ import (
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -186,5 +187,22 @@ type TCloudCvmBatchAssociateSecurityGroupReq struct {
 
 // Validate associate security group to cvm request.
 func (opt TCloudCvmBatchAssociateSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudBatchResetCvmReq defines options to reset cvm request.
+type TCloudBatchResetCvmReq struct {
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	AccountID string        `json:"account_id" validate:"required"`
+	Region    string        `json:"region" validate:"required"`
+	CloudIDs  []string      `json:"cloud_ids" validate:"required"`
+	ImageID   string        `json:"image_id" validate:"required"`
+	ImageName string        `json:"image_name" validate:"required"`
+	Password  string        `json:"password" validate:"required,min=12,max=30"`
+	IPs       []string      `json:"ips" validate:"required"`
+}
+
+// Validate batch reset cvm request.
+func (opt TCloudBatchResetCvmReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
