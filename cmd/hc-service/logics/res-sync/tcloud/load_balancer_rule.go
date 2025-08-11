@@ -38,7 +38,8 @@ import (
 )
 
 // LoadBalancerRule 规则同步
-func (cli *client) loadBalancerRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption, cloudListeners []typeslb.TCloudListener) (any, error) {
+func (cli *client) loadBalancerRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption,
+	cloudListeners []typeslb.TCloudListener) (any, error) {
 
 	var l4Listeners, l7Listeners []typeslb.TCloudListener
 	for _, listener := range cloudListeners {
@@ -142,16 +143,20 @@ func (cli *client) ListenerLayer7Rule(kt *kit.Kit, params *SyncBaseParams, opt *
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudUrlRule, corelb.TCloudLbUrlRule](
 		cloudRules, dbRules, isLayer7RuleChange)
 
-	if err = cli.deleteLayer7Rule(kt, params.Region, delCloudIDs); err != nil {
-		return nil, err
+	if len(delCloudIDs) != 0 {
+		if err = cli.deleteLayer7Rule(kt, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
 	}
-
-	if err = cli.updateLayer7Rule(kt, params.Region, updateMap); err != nil {
-		return nil, err
+	if len(updateMap) != 0 {
+		if err = cli.updateLayer7Rule(kt, params.Region, updateMap); err != nil {
+			return nil, err
+		}
 	}
-
-	if _, err = cli.createLayer7Rule(kt, params.Region, opt, addSlice); err != nil {
-		return nil, err
+	if len(addSlice) != 0 {
+		if _, err = cli.createLayer7Rule(kt, params.Region, opt, addSlice); err != nil {
+			return nil, err
+		}
 	}
 	return nil, nil
 }
