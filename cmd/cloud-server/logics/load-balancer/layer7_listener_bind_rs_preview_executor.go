@@ -278,7 +278,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return nil
 	}
 
-	isCrossRegionV1, isCrossRegionV2, _, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
+	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
 		lb.Extension)
 	if err != nil {
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
@@ -286,7 +286,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 	}
 
 	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
-		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
+		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
