@@ -266,21 +266,17 @@ func (svc *lbSvc) ListBizTargetsHealthByTGID(cts *rest.Contexts) (interface{}, e
 // listTargetsHealthByTGID 目标组绑定的负载均衡下的RS端口健康信息
 func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
-
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "target_group_id is required")
 	}
-
 	req := new(hcproto.TCloudTargetHealthReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.TargetGroupCloudResType, tgID)
 	if err != nil {
@@ -308,13 +304,11 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 		lbReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("cloud_id", newCloudLbIDs),
-				tools.RuleEqual("region", tgInfo.Region),
 				tools.RuleEqual("vendor", tgInfo.Vendor),
 				tools.RuleEqual("account_id", tgInfo.AccountID),
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-
 		lbResp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(cts.Kit, lbReq)
 		if err != nil {
 			logs.Errorf("fail to find load balancer(%v) for target group health, err: %v, rid: %s",
@@ -378,6 +372,7 @@ func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbI
 	newCloudLbIDs := slice.Map(ruleRelList.Details, func(one corelb.BaseTargetListenerRuleRel) string {
 		return one.CloudLbID
 	})
+	newCloudLbIDs = slice.Unique(newCloudLbIDs) //去重，避免重复ID
 	return tgInfo, newCloudLbIDs, nil
 }
 
