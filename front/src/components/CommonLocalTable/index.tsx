@@ -156,8 +156,7 @@ export default defineComponent({
             pagination={pagination}
             show-overflow-tooltip
             onColumnSort={handleSortBy}
-            {...(props.tableOptions.extra || {})}
-          >
+            {...(props.tableOptions.extra || {})}>
             {{
               empty: () => {
                 if (props.loading || renderTableData.value?.length) return null;
