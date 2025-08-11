@@ -372,7 +372,7 @@ func (svc *lbSvc) checkBindGetTargetGroupInfo(kt *kit.Kit, tgID string, cloudLbI
 	newCloudLbIDs := slice.Map(ruleRelList.Details, func(one corelb.BaseTargetListenerRuleRel) string {
 		return one.CloudLbID
 	})
-	newCloudLbIDs = slice.Unique(newCloudLbIDs) // 去重，避免重复ID
+	newCloudLbIDs = slice.Unique(newCloudLbIDs) //去重，避免重复ID
 	return tgInfo, newCloudLbIDs, nil
 }
 
