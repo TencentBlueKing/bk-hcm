@@ -274,11 +274,9 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-	req.Region = ""
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	//获取目标组的基本信息
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.TargetGroupCloudResType, tgID)
 	if err != nil {
@@ -298,11 +296,11 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(cts.Kit, tgID, nil)
+		tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(cts.Kit, tgID, req.CloudLbIDs)
 		if err != nil {
 			return nil, err
 		}
-		// 第一步：先查询负载均衡列表（不限制地域）
+		// 查询对应负载均衡信息
 		lbReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("cloud_id", newCloudLbIDs),
@@ -320,17 +318,18 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 		if len(lbResp.Details) != len(newCloudLbIDs) {
 			return nil, errors.New("some of given load balancer can not be found")
 		}
-		//第二步：提取并验证负载均衡的地域（使用第一个CLB的地域）//验证所有负载均衡是否在同一区域
-		req.Region = lbResp.Details[0].Region //直接使用CLB自身地域
-		for i, detail := range lbResp.Details {
-			logs.Infof("CLB:%d: cloud_id=%s,region=%s,rid:%s", i, detail.CloudID, detail.Region, cts.Kit.Rid)
-			if detail.Region != req.Region {
+		req.Region = ""
+		req.AccountID = tgInfo.AccountID
+		req.CloudLbIDs = newCloudLbIDs
+		for _, detail := range lbResp.Details {
+			if req.Region == "" {
+				req.Region = detail.Region
+				continue
+			}
+			if req.Region != detail.Region {
 				return nil, fmt.Errorf("load balancers have different regions: %s,%s", req.Region, detail.Region)
 			}
 		}
-		//第三步：设置请求参数（使用CLB地域）
-		req.AccountID = tgInfo.AccountID
-		req.CloudLbIDs = newCloudLbIDs
 		return svc.client.HCService().TCloud.Clb.ListTargetHealth(cts.Kit, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", tgID, basicInfo.Vendor)
