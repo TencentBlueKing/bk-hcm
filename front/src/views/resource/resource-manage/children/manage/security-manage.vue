@@ -233,7 +233,9 @@ const selectSearchData = computed(() => {
         },
       },
     },
-    ...searchData.value,
+    ...searchData.value.filter(
+      (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
+    ),
   ];
 
   return [...baseSearchData, ...map[activeType.value].searchData];
@@ -732,7 +734,6 @@ const gcpColumns = [
   {
     label: t('云厂商'),
     field: 'vendor',
-    sort: true,
     isDefaultShow: true,
     render() {
       return h('span', {}, [t('谷歌云')]);
@@ -775,7 +776,6 @@ const gcpColumns = [
   {
     label: t('协议/端口'),
     field: 'allowed_denied',
-    sort: true,
     isDefaultShow: true,
     render({ data }: any) {
       return h(

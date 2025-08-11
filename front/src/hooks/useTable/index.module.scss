@@ -21,7 +21,7 @@
 
     .table-search-selector {
       margin-left: auto;
-      min-width: 500px;
+      width: 500px;
     }
 
     .operation-bar-end {
@@ -44,7 +44,7 @@
   }
 
   :global(.table-new-row) {
-     td {
+    td {
       background-color: #f2fff4 !important;
     }
   }
