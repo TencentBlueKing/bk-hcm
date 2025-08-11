@@ -106,7 +106,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]s
 			return err
 		}
 		detail.RsPort = rsPort
-		weight, err := strconv.Atoi(strings.TrimSpace(data[9]))
+		weight, err := strconv.ParseInt(strings.TrimSpace(data[9]), 10, 64)
 		if err != nil {
 			return err
 		}
@@ -258,7 +258,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 		return nil
 	}
 
-	if int(converter.PtrToVal(target.Weight)) != converter.PtrToVal(detail.Weight) {
+	if converter.PtrToVal(target.Weight) != converter.PtrToVal(detail.Weight) {
 		detail.Status.SetNotExecutable()
 		detail.ValidateResult = append(detail.ValidateResult,
 			fmt.Sprintf("RS is already bound, and the weights are inconsistent."))
@@ -384,20 +384,12 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateURLRule(kt *kit.Kit, lbClo
 
 // Layer7ListenerBindRSDetail ...
 type Layer7ListenerBindRSDetail struct {
-	ClbVipDomain string              `json:"clb_vip_domain"`
-	CloudClbID   string              `json:"cloud_clb_id"`
-	Protocol     enumor.ProtocolType `json:"protocol"`
-	ListenerPort []int               `json:"listener_port"`
-	Domain       string              `json:"domain"`
-	URLPath      string              `json:"url_path"`
+	Layer7RsDetail `json:",inline"`
+	ListenerPort   []int `json:"listener_port"`
+	RsPort         []int `json:"rs_port"`
 
-	InstType       enumor.InstType `json:"inst_type"`
-	RsIp           string          `json:"rs_ip"`
-	RsPort         []int           `json:"rs_port"`
-	Weight         *int            `json:"weight"`
-	UserRemark     string          `json:"user_remark"`
-	Status         ImportStatus    `json:"status"`
-	ValidateResult []string        `json:"validate_result"`
+	Status         ImportStatus `json:"status"`
+	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
 

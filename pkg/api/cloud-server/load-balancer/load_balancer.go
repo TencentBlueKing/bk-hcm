@@ -32,6 +32,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchBindLbSecurityGroupReq batch bind lb security group req.
@@ -867,4 +869,82 @@ type ListenerTargetsStat struct {
 	NonZeroWeightCount int `json:"non_zero_weight_count"`
 	ZeroWeightCount    int `json:"zero_weight_count"`
 	TotalCount         int `json:"total_count"`
+}
+
+// ExportListenerReq 导出业务下监听器及其下面的资源
+type ExportListenerReq struct {
+	Listeners []ExportListener `json:"listeners"`
+}
+
+// Validate ...
+func (r *ExportListenerReq) Validate() error {
+	if len(r.Listeners) == 0 {
+		return errors.New("listeners required")
+	}
+	if len(r.Listeners) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("listeners count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	for _, l := range r.Listeners {
+		if err := l.Validate(); err != nil {
+			return err
+		}
+	}
+
+	_, lblIDs := r.GetPartLbAndLblIDs()
+	if len(lblIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("lbl_ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
+// GetAllLbIDs 获取所有负载均衡id
+func (r *ExportListenerReq) GetAllLbIDs() []string {
+	lbIDMap := make(map[string]struct{})
+	for _, l := range r.Listeners {
+		lbIDMap[l.LbID] = struct{}{}
+	}
+
+	return maps.Keys(lbIDMap)
+}
+
+// GetPartLbAndLblIDs 获取负载均衡id和监听器id，当参数传了监听器id, 不返回对应的负载均衡的id
+func (r *ExportListenerReq) GetPartLbAndLblIDs() ([]string, []string) {
+	lbIDs := make([]string, 0)
+	lblIDs := make([]string, 0)
+	for _, l := range r.Listeners {
+		if len(l.LblIDs) != 0 {
+			lblIDs = append(lblIDs, l.LblIDs...)
+			continue
+		}
+		lbIDs = append(lbIDs, l.LbID)
+	}
+
+	return slice.Unique(lbIDs), slice.Unique(lblIDs)
+}
+
+// ExportListener ...
+type ExportListener struct {
+	LbID   string   `json:"lb_id"`
+	LblIDs []string `json:"lbl_ids"`
+}
+
+// Validate ...
+func (r *ExportListener) Validate() error {
+	if len(r.LbID) == 0 {
+		return errors.New("lb_id required")
+	}
+
+	if len(r.LblIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("lbl_ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	return nil
+}
+
+// ExportListenerResp ...
+type ExportListenerResp struct {
+	Pass   bool   `json:"pass"`
+	Reason string `json:"reason"`
 }
