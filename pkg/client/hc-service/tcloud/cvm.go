@@ -261,3 +261,11 @@ func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) 
 	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
 		"/cvms/cc_info/by_condition/sync")
 }
+
+// ListInstanceConfig list instance config.
+func (cli *CvmClient) ListInstanceConfig(kt *kit.Kit, req *protocvm.TCloudInstanceConfigListOption) (
+	*typecvm.TCloudInstanceConfigListResult, error) {
+
+	return common.Request[protocvm.TCloudInstanceConfigListOption, typecvm.TCloudInstanceConfigListResult](
+		cli.client, "POST", kt, req, "/instances/config/list")
+}

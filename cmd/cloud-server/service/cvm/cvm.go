@@ -60,6 +60,10 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopCvm", http.MethodPost, "/cvms/batch/stop", svc.BatchStopCvm)
 	h.Add("BatchRebootCvm", http.MethodPost, "/cvms/batch/reboot", svc.BatchRebootCvm)
 	h.Add("QueryCvmRelatedRes", http.MethodPost, "/cvms/rel_res/batch", svc.QueryCvmRelatedRes)
+	h.Add("ListInstanceConfig", http.MethodPost,
+		"/vendors/{vendor}/instances/config/query_from_cloud", svc.ListInstanceConfig)
+	h.Add("ListBizInstanceConfig", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/instances/config/query_from_cloud", svc.ListBizInstanceConfig)
 
 	// 资源下回收相关接口
 	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)
