@@ -16,12 +16,14 @@ export enum LoadBalancerActionType {
   REMOVE = 'remove',
   SYNC = 'sync',
   COPY = 'copy',
+  BATCH_EXPORT = 'batch_export',
 }
 
 export enum ListenerActionType {
   ADD = 'add',
   REMOVE = 'remove',
   SYNC = 'sync',
+  BATCH_EXPORT = 'batch_export',
 }
 
 export type ResourceActionType = LoadBalancerActionType | ListenerActionType;

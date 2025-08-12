@@ -59,10 +59,10 @@ const (
 // ImportPreviewExecutor 导入预览执行器
 type ImportPreviewExecutor interface {
 	// Execute 预览执行器的唯一入口, 内部分别调用 convertDataToPreview 和 validate 方法
-	Execute(*kit.Kit, [][]string) (interface{}, error)
+	Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error)
 
 	// convertDataToPreview 将原始的excel表二维数据转换成预览数据, 预览的结构由实现类决定, 此处仅定义Executor的行为
-	convertDataToPreview([][]string) error
+	convertDataToPreview(rawData [][]string, headers []string) error
 	// validate 校验预览数据, 包含格式校验和数据合法校验
 	validate(*kit.Kit) error
 }

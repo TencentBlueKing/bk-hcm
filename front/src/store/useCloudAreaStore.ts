@@ -13,6 +13,7 @@ export const useCloudAreaStore = defineStore('useCloudAreaStore', () => {
     for (const { id, name } of cloudAreaList.value) {
       cloudAreaMap.value.set(id, name);
     }
+    return cloudAreaList.value;
   };
 
   const getNameFromCloudAreaMap = (id: number) => {

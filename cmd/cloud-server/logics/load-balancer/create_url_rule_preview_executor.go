@@ -54,8 +54,8 @@ type CreateUrlRulePreviewExecutor struct {
 }
 
 // Execute ...
-func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,14 @@ func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 
 const createURLRuleExcelTableLen = 10
 
-func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// createURLRuleExcelTableHeaderLen 表头长度
+const createURLRuleExcelTableHeaderLen = 12
+
+func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createURLRuleExcelTableHeaderLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			createURLRuleExcelTableHeaderLen, len(headers), headers)
+	}
 	for i, data := range rawData {
 		if len(data) < createURLRuleExcelTableLen {
 			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
@@ -91,7 +98,8 @@ func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) 
 		detail.ListenerPort = ports
 		detail.Domain = data[4]
 
-		switch data[5] {
+		isDefaultDomain := strings.ToUpper(data[5])
+		switch isDefaultDomain {
 		case "TRUE":
 			detail.DefaultDomain = true
 		case "FALSE":
@@ -340,17 +348,9 @@ func decodeClassifyKey(key string) (string, enumor.ProtocolType, int, error) {
 
 // CreateUrlRuleDetail ...
 type CreateUrlRuleDetail struct {
-	ClbVipDomain string              `json:"clb_vip_domain"`
-	CloudClbID   string              `json:"cloud_clb_id"`
-	Protocol     enumor.ProtocolType `json:"protocol"`
-	ListenerPort []int               `json:"listener_port"`
-
-	Domain        string           `json:"domain"`
-	DefaultDomain bool             `json:"default_domain"`
-	UrlPath       string           `json:"url_path"`
-	Scheduler     enumor.Scheduler `json:"scheduler"`
-	Session       int              `json:"session"`
-	HealthCheck   bool             `json:"health_check"`
+	RuleDetail   `json:",inline"`
+	ListenerPort []int `json:"listener_port"`
+	HealthCheck  bool  `json:"health_check"`
 
 	UserRemark     string       `json:"user_remark"`
 	Status         ImportStatus `json:"status"`

@@ -5,6 +5,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 16px;
+    gap: 12px;
 
     .operate-btn-groups {
       display: flex;
@@ -21,7 +22,7 @@
 
     .table-search-selector {
       margin-left: auto;
-      min-width: 500px;
+      width: 500px;
     }
 
     .operation-bar-end {
@@ -44,7 +45,7 @@
   }
 
   :global(.table-new-row) {
-     td {
+    td {
       background-color: #f2fff4 !important;
     }
   }

@@ -67,7 +67,8 @@ func (gcp *GcpPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption)
 		currency = tmpResult.Currency
 		cost = cost.Add(tmpResult.Cost)
 		count += uint64(itemLen)
-		logs.Infof("get raw bill item %d / total %d of puller %+v", itemLen, tmpResult.Count, opt)
+		logs.Infof("get raw bill item %d / total %d, cost: %s, of puller %+v, rid: %s", itemLen, tmpResult.Count,
+			tmpResult.Cost.String(), opt, kt.Kit().Rid)
 		if uint64(itemLen) < limit {
 			break
 		}
@@ -114,7 +115,7 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 		if record.Currency != nil {
 			newBillItem.BillCurrency = enumor.CurrencyCode(*record.Currency)
 		}
-		if record.Cost != nil {
+		if record.TotalCost != nil {
 			// use original cost with non promotion cost
 			newBillItem.BillCost = *record.TotalCost
 		}

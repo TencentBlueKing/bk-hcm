@@ -197,6 +197,11 @@ const selectSearchData = computed(() => {
           async: true,
           children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
           placeholder: '请输入地域名',
+          option: asyncRegionChildren.value.reduce((acc, cur) => {
+            acc[cur['id']] = cur.name;
+            return acc;
+          }, {}),
+          onlyRecommendChildren: true,
           meta: {
             search: {
               filterRules(value: string | string[]) {
@@ -228,7 +233,9 @@ const selectSearchData = computed(() => {
         },
       },
     },
-    ...searchData.value,
+    ...searchData.value.filter(
+      (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
+    ),
   ];
 
   return [...baseSearchData, ...map[activeType.value].searchData];
@@ -727,7 +734,6 @@ const gcpColumns = [
   {
     label: t('云厂商'),
     field: 'vendor',
-    sort: true,
     isDefaultShow: true,
     render() {
       return h('span', {}, [t('谷歌云')]);
@@ -770,7 +776,6 @@ const gcpColumns = [
   {
     label: t('协议/端口'),
     field: 'allowed_denied',
-    sort: true,
     isDefaultShow: true,
     render({ data }: any) {
       return h(
