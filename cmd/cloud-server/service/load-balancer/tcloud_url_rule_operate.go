@@ -212,7 +212,6 @@ func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskMa
 	listRsReq := &core.ListReq{
 		Filter: tools.EqualExpression("target_group_id", tgID),
 		Page: &core.BasePage{
-			Count: false,
 			Start: 0,
 			Limit: constant.BatchAddRSCloudMaxLimit,
 		},
@@ -232,7 +231,6 @@ func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskMa
 		return nil, nil, err
 	}
 	tasks := []apits.CustomFlowTask{updateTask}
-	// 按目标组数量拆分任务批次
 	for {
 		rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
 		if err != nil {
@@ -251,16 +249,7 @@ func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskMa
 			Targets:         make([]*hcproto.RegisterTarget, 0, len(rsResp.Details)),
 		}
 		for _, target := range rsResp.Details {
-			rsReq.Targets = append(rsReq.Targets, &hcproto.RegisterTarget{
-				CloudInstID:      target.CloudInstID,
-				TargetType:       target.InstType,
-				Port:             target.Port,
-				Weight:           target.Weight,
-				Zone:             target.Zone,
-				InstName:         target.InstName,
-				PrivateIPAddress: target.PrivateIPAddress,
-				PublicIPAddress:  target.PublicIPAddress,
-			})
+			rsReq.Targets = append(rsReq.Targets, buildRegisterTarget(target))
 		}
 		details, err := svc.createListenerAddRsTaskDetails(kt, taskManagementID, bkBizID, rsReq.Targets)
 		if err != nil {
@@ -298,6 +287,19 @@ func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskMa
 	tasks = append(tasks,
 		buildSyncClbFlowTask(lblInfo.Vendor, lblInfo.CloudLbID, lblInfo.AccountID, lblInfo.Region, getNextID))
 	return tasks, taskDetails, nil
+}
+
+func buildRegisterTarget(target corelb.BaseTarget) *hcproto.RegisterTarget {
+	return &hcproto.RegisterTarget{
+		CloudInstID:      target.CloudInstID,
+		TargetType:       target.InstType,
+		Port:             target.Port,
+		Weight:           target.Weight,
+		Zone:             target.Zone,
+		InstName:         target.InstName,
+		PrivateIPAddress: target.PrivateIPAddress,
+		PublicIPAddress:  target.PublicIPAddress,
+	}
 }
 
 func (svc *lbSvc) createListenerAddRsTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
@@ -642,7 +644,7 @@ func (svc *lbSvc) tcloudUrlBindTargetGroup(cts *rest.Contexts, bizID int64, req 
 		return "", errf.Newf(errf.InvalidParameter, "url rule(%s) is not layer7 rule", req.UrlRuleID)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByID(cts.Kit, enumor.TCloud, bizID, rule.LblID)
+	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, enumor.TCloud, bizID, rule.LblID)
 	if err != nil {
 		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
 			bizID, rule.LblID, err, cts.Kit.Rid)
@@ -703,7 +705,7 @@ func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByID(cts.Kit, vendor, bizID, lblID)
+	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
 	if err != nil {
 		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
 			bizID, lblID, err, cts.Kit.Rid)
