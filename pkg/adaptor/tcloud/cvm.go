@@ -853,3 +853,79 @@ func (h *resetCvmInstancePollingHandler) Done(cvms []*cvm.Instance) (bool, *poll
 
 	return flag, result
 }
+
+// ListInstanceConfig 获取可用区机型配置信息
+// reference: https://cloud.tencent.com/document/api/213/17378
+func (t *TCloudImpl) ListInstanceConfig(kt *kit.Kit,
+	opt typecvm.TCloudInstanceConfigListOption) (*typecvm.TCloudInstanceConfigListResult, error) {
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := cvm.NewDescribeZoneInstanceConfigInfosRequest()
+	if len(opt.Filters) != 0 {
+		for _, filter := range opt.Filters {
+			req.Filters = append(req.Filters, filter.ToPtrFilter())
+		}
+	}
+
+	resp, err := client.DescribeZoneInstanceConfigInfosWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list tcloud instance config failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+		return nil, fmt.Errorf("list tcloud instance config failed, err: %v", err)
+	}
+
+	instanceConfigs := make([]typecvm.TCloudInstanceConfig, 0)
+	for _, item := range resp.Response.InstanceTypeQuotaSet {
+		instanceConfig := typecvm.TCloudInstanceConfig{
+			Zone:               cvt.PtrToVal(item.Zone),
+			InstanceType:       cvt.PtrToVal(item.InstanceType),
+			InstanceChargeType: cvt.PtrToVal(item.InstanceChargeType),
+			NetworkCard:        cvt.PtrToVal(item.NetworkCard),
+			Cpu:                cvt.PtrToVal(item.Cpu),
+			Memory:             cvt.PtrToVal(item.Memory),
+			InstanceFamily:     cvt.PtrToVal(item.InstanceFamily),
+			TypeName:           cvt.PtrToVal(item.TypeName),
+			Status:             cvt.PtrToVal(item.Status),
+			InstanceBandwidth:  cvt.PtrToVal(item.InstanceBandwidth),
+			InstancePps:        cvt.PtrToVal(item.InstancePps),
+			StorageBlockAmount: cvt.PtrToVal(item.StorageBlockAmount),
+			CpuType:            cvt.PtrToVal(item.CpuType),
+			Gpu:                cvt.PtrToVal(item.Gpu),
+			Fpga:               cvt.PtrToVal(item.Fpga),
+			Remark:             cvt.PtrToVal(item.Remark),
+			GpuCount:           cvt.PtrToVal(item.GpuCount),
+			Frequency:          cvt.PtrToVal(item.Frequency),
+			StatusCategory:     cvt.PtrToVal(item.StatusCategory),
+		}
+		if item.Externals != nil {
+			if item.Externals.ReleaseAddress != nil {
+				instanceConfig.Externals.ReleaseAddress = cvt.PtrToVal(item.Externals.ReleaseAddress)
+			}
+			if item.Externals.UnsupportNetworks != nil {
+				instanceConfig.Externals.UnsupportNetworks = cvt.PtrToSlice(item.Externals.UnsupportNetworks)
+			}
+			if item.Externals.StorageBlockAttr != nil {
+				instanceConfig.Externals.StorageBlockAttr = typecvm.StorageBlock{
+					Type:    cvt.PtrToVal(item.Externals.StorageBlockAttr.Type),
+					MinSize: cvt.PtrToVal(item.Externals.StorageBlockAttr.MinSize),
+					MaxSize: cvt.PtrToVal(item.Externals.StorageBlockAttr.MaxSize),
+				}
+			}
+		}
+		for _, ldItem := range item.LocalDiskTypeList {
+			instanceConfig.LocalDiskTypeList = append(instanceConfig.LocalDiskTypeList, typecvm.LocalDiskType{
+				Type:          cvt.PtrToVal(ldItem.Type),
+				PartitionType: cvt.PtrToVal(ldItem.PartitionType),
+				MinSize:       cvt.PtrToVal(ldItem.MinSize),
+				MaxSize:       cvt.PtrToVal(ldItem.MaxSize),
+				Required:      cvt.PtrToVal(ldItem.Required),
+			})
+		}
+		instanceConfigs = append(instanceConfigs, instanceConfig)
+	}
+
+	return &typecvm.TCloudInstanceConfigListResult{Details: instanceConfigs}, nil
+}

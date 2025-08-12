@@ -22,11 +22,14 @@ package cvm
 import (
 	"fmt"
 
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -243,4 +246,107 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 		}
 	})
 	return relatedInfos, nil
+}
+
+// ListInstanceConfig ...
+func (svc *cvmSvc) ListInstanceConfig(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.ListTCloudInstanceConfig(cts)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter,
+			fmt.Errorf("list instance config no support vendor: %s", vendor))
+	}
+}
+
+// ListTCloudInstanceConfig ...
+func (svc *cvmSvc) ListTCloudInstanceConfig(cts *rest.Contexts) (interface{}, error) {
+	req, err := svc.decodeAndValidateTCloudInstanceConfigListOpt(cts)
+	if err != nil {
+		logs.Errorf("decode and validate tcloud instance config list option failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return svc.listTCloudInstanceConfig(cts, req, constant.UnassignedBiz, handler.ResOperateAuth)
+}
+
+// ListBizInstanceConfig ...
+func (svc *cvmSvc) ListBizInstanceConfig(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.ListTCloudBizInstanceConfig(cts)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter,
+			fmt.Errorf("list biz instance config no support vendor: %s", vendor))
+	}
+}
+
+// ListTCloudBizInstanceConfig ...
+func (svc *cvmSvc) ListTCloudBizInstanceConfig(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := svc.decodeAndValidateTCloudInstanceConfigListOpt(cts)
+	if err != nil {
+		logs.Errorf("decode and validate tcloud instance list option failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	accountBizReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bizID),
+			tools.RuleEqual("account_id", req.AccountID),
+		),
+		Page: core.NewCountPage(),
+	}
+	result, err := svc.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(),
+		accountBizReq)
+	if err != nil {
+		logs.Errorf("list account biz rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if result.Count == 0 {
+		return nil, errf.New(errf.PermissionDenied, "no permission")
+	}
+
+	return svc.listTCloudInstanceConfig(cts, req, bizID, handler.BizOperateAuth)
+}
+
+func (svc *cvmSvc) decodeAndValidateTCloudInstanceConfigListOpt(cts *rest.Contexts) (
+	*protocvm.TCloudInstanceConfigListOption, error) {
+
+	req := new(protocvm.TCloudInstanceConfigListOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	return req, nil
+}
+
+func (svc *cvmSvc) listTCloudInstanceConfig(cts *rest.Contexts, req *protocvm.TCloudInstanceConfigListOption,
+	bizID int64, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
+	// validate biz and authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, BasicInfo: common.GetCloudResourceBasicInfo(req.AccountID, bizID)})
+	if err != nil {
+		logs.Errorf("validate tcloud instance config failed, bizID: %d, err: %+v, rid: %s", bizID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return svc.client.HCService().TCloud.Cvm.ListInstanceConfig(cts.Kit, req)
 }

@@ -188,3 +188,17 @@ type TCloudCvmBatchAssociateSecurityGroupReq struct {
 func (opt TCloudCvmBatchAssociateSecurityGroupReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudInstanceConfigListOption ...
+type TCloudInstanceConfigListOption struct {
+	AccountID                              string `json:"account_id" validate:"required"`
+	typecvm.TCloudInstanceConfigListOption `json:",inline"`
+}
+
+// Validate instance config list option.
+func (opt *TCloudInstanceConfigListOption) Validate() error {
+	if err := opt.TCloudInstanceConfigListOption.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(opt)
+}

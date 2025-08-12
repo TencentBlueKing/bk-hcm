@@ -378,3 +378,96 @@ type TCloudAssociateSecurityGroupsOption struct {
 func (opt TCloudAssociateSecurityGroupsOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudInstanceConfigListOption define tcloud instance config list option.
+type TCloudInstanceConfigListOption struct {
+	Region  string               `json:"region" validate:"required"`
+	Filters []TCloudCommonFilter `json:"filters" validate:"omitempty,max=10"`
+}
+
+// Validate tcloud instance config list option.
+func (opt TCloudInstanceConfigListOption) Validate() error {
+	for _, filter := range opt.Filters {
+		if err := filter.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudCommonFilter ...
+type TCloudCommonFilter struct {
+	Name   string    `json:"name" validate:"required"`
+	Values []*string `json:"values" validate:"omitempty,max=100"`
+}
+
+// Validate tcloud common filter.
+func (t TCloudCommonFilter) Validate() error {
+	if err := validator.Validate.Struct(t); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ToPtrFilter ...
+func (t TCloudCommonFilter) ToPtrFilter() *tcvm.Filter {
+	return &tcvm.Filter{
+		Name:   converter.ValToPtr(t.Name),
+		Values: t.Values,
+	}
+}
+
+// TCloudInstanceConfigListResult ...
+type TCloudInstanceConfigListResult struct {
+	Details []TCloudInstanceConfig `json:"details"`
+}
+
+// TCloudInstanceConfig ...
+type TCloudInstanceConfig struct {
+	Zone               string            `json:"zone"`                 // 可用区 示例值：ap-guangzhou-2
+	InstanceType       string            `json:"instance_type"`        // 实例机型 示例值：S5.LARGE4
+	InstanceChargeType string            `json:"instance_charge_type"` // 实例计费模式。取值范围：PREPAID、POSTPAID_BY_HOUR
+	NetworkCard        int64             `json:"network_card"`         // 网卡类型，例如：25代表25G网卡
+	Externals          InstanceExternals `json:"externals"`
+	Cpu                int64             `json:"cpu"`             // 实例的CPU核数，单位：核
+	Memory             int64             `json:"memory"`          // 实例内存容量，单位：GB
+	InstanceFamily     string            `json:"instance_family"` // 实例机型系列 示例值：S5
+	TypeName           string            `json:"type_name"`       // 机型名称 示例值：标准型S5
+	// 本地磁盘规格列表。当该参数返回为空值时，表示当前情况下无法创建本地盘。
+	LocalDiskTypeList  []LocalDiskType `json:"local_disk_type_list"`
+	Status             string          `json:"status"`               // 实例是否售卖
+	InstanceBandwidth  float64         `json:"instance_bandwidth"`   // 内网带宽，单位Gbps
+	InstancePps        int64           `json:"instance_pps"`         // 网络收发包能力，单位万PPS
+	StorageBlockAmount int64           `json:"storage_block_amount"` // 本地存储块数量
+	CpuType            string          `json:"cpu_type"`             // 处理器型号
+	Gpu                int64           `json:"gpu"`                  // 实例的GPU数量
+	Fpga               int64           `json:"fpga"`                 // 实例的FPGA数量
+	Remark             string          `json:"remark"`               // 实例备注信息
+	GpuCount           float64         `json:"gpu_count"`            // 实例机型映射的物理GPU卡数，单位：卡
+	Frequency          string          `json:"frequency"`            // 实例的CPU主频信息
+	StatusCategory     string          `json:"status_category"`      // 描述库存情况
+}
+
+// InstanceExternals ...
+type InstanceExternals struct {
+	ReleaseAddress    bool         `json:"release_address"`    // 释放地址
+	UnsupportNetworks []string     `json:"unsupport_networks"` // 不支持的网络类型(BASIC：基础网络 VPC1.0：私有网络1.0)
+	StorageBlockAttr  StorageBlock `json:"storage_block_attr"` // HDD本地存储属性
+}
+
+// StorageBlock ...
+type StorageBlock struct {
+	Type    string `json:"type"`     // HDD本地存储类型，值为：LOCAL_PRO
+	MinSize int64  `json:"min_size"` // HDD本地存储的最小容量。单位：GiB
+	MaxSize int64  `json:"max_size"` // HDD本地存储的最大容量。单位：GiB
+}
+
+// LocalDiskType ...
+type LocalDiskType struct {
+	Type          string `json:"type"`           // 本地磁盘类型
+	PartitionType string `json:"partition_type"` // 本地磁盘属性
+	MinSize       int64  `json:"min_size"`       // 本地磁盘最小值
+	MaxSize       int64  `json:"max_size"`       // 本地磁盘最大值
+	Required      string `json:"required"`       // 购买时本地盘是否为必选。取值范围：REQUIRED：表示必选 OPTIONAL：表示可选。
+}

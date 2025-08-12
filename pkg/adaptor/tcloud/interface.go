@@ -212,4 +212,6 @@ type TCloud interface {
 	CreateBucket(kt *kit.Kit, opt *typescos.TCloudBucketCreateOption) error
 	DeleteBucket(kt *kit.Kit, opt *typescos.TCloudBucketDeleteOption) error
 	ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOption) (*typescos.TCloudBucketListResult, error)
+
+	ListInstanceConfig(kt *kit.Kit, opt cvm.TCloudInstanceConfigListOption) (*cvm.TCloudInstanceConfigListResult, error)
 }
