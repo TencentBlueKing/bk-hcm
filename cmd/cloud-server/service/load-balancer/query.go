@@ -296,6 +296,7 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
+
 		return svc.getTargetHealth(cts.Kit, tgID, req,
 			svc.client.HCService().TCloud.Clb.ListTargetHealth)
 	default:
