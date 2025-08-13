@@ -64,6 +64,8 @@ func InitService(cap *capability.Capability) {
 		"/load_balancers/listeners/bizs/batch/update", svc.BatchUpdateListenerBizInfo)
 	h.Add("ListListenerWithTargets", http.MethodPost, "/load_balancers/listeners/with/targets/list",
 		svc.ListListenerWithTargets)
+	h.Add("ListListenerByCond", http.MethodPost, "/load_balancers/listeners/list_by_cond",
+		svc.ListListenerByCond)
 	h.Add("ListBatchListeners", http.MethodPost, "/load_balancers/listeners/batch/list", svc.ListBatchListeners)
 
 	// url规则
