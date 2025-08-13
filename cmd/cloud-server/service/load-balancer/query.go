@@ -297,24 +297,22 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
 
-		return svc.getTargetHealth(cts.Kit, tgID, req,
+		return svc.getTCloudTargetHealth(cts.Kit, tgID, req,
 			svc.client.HCService().TCloud.Clb.ListTargetHealth)
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", tgID, basicInfo.Vendor)
 	}
 }
 
-// getTargetHealth 统一目标组关联的负载均衡器后端服务器的健康状态信息
-func (svc *lbSvc) getTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloudTargetHealthReq,
+// getTCloudTargetHealth 处理目标组绑定的负载均衡的健康状态查询
+func (svc *lbSvc) getTCloudTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloudTargetHealthReq,
 	healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp, error)) (*hcproto.TCloudTargetHealthResp, error) {
 
-	// 公共逻辑：检查绑定并获取目标组信息
 	tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(kit, tgID, req.CloudLbIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 公共逻辑：查询对应负载均衡信息
 	lbReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("cloud_id", newCloudLbIDs),
@@ -331,12 +329,10 @@ func (svc *lbSvc) getTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloud
 		return nil, err
 	}
 
-	// 公共逻辑：验证负载均衡数量
 	if len(lbResp.Details) != len(newCloudLbIDs) {
 		return nil, errors.New("some of given load balancer can not be found")
 	}
 
-	// 公共逻辑：设置请求参数并验证区域
 	req.Region = ""
 	req.AccountID = tgInfo.AccountID
 	req.CloudLbIDs = newCloudLbIDs
@@ -350,7 +346,6 @@ func (svc *lbSvc) getTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloud
 		}
 	}
 
-	// 调用差异化处理函数
 	return healthFunc(kit, req)
 }
 
