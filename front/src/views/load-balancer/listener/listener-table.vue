@@ -28,6 +28,7 @@ import DataList from '../children/display/data-list.vue';
 import BindingStatus from './children/binding-status.vue';
 import AddListenerSideslider from './add.vue';
 import BatchDeleteDialog from './children/batch-delete-dialog.vue';
+import ListenerBatchExportButton from '../children/export/listener-batch-button.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import DetailsSideslider from './details.vue';
@@ -56,6 +57,10 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
       addSidesliderState.isShow = true;
     },
   },
+  [ListenerActionType.BATCH_EXPORT]: {
+    value: ListenerActionType.BATCH_EXPORT,
+    render: () => h(ListenerBatchExportButton, { selections: selections.value }),
+  },
   [ListenerActionType.REMOVE]: {
     type: 'button',
     label: t('批量删除'),
@@ -79,7 +84,12 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
   },
 };
 const listenerActionList = computed<ActionItemType[]>(() => {
-  return [{ value: ListenerActionType.ADD }, { value: ListenerActionType.REMOVE }, { value: ListenerActionType.SYNC }];
+  return [
+    { value: ListenerActionType.ADD },
+    { value: ListenerActionType.BATCH_EXPORT },
+    { value: ListenerActionType.REMOVE },
+    { value: ListenerActionType.SYNC },
+  ];
 });
 const actionList = computed<ActionItemType[]>(() => {
   return listenerActionList.value.reduce((prev, curr) => {

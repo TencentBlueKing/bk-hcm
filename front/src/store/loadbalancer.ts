@@ -2,7 +2,7 @@ import { VendorEnum } from '@/common/constant';
 import { TargetGroupOperationScene } from '@/constants';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
-import { IListResData } from '@/typings';
+import { IListResData, IQueryResData } from '@/typings';
 import { defineStore } from 'pinia';
 import { reactive, Ref, ref } from 'vue';
 
@@ -123,6 +123,42 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     }
   };
 
+  const exportPreCheck = async (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }>) => {
+    try {
+      const res: IQueryResData<{ pass: boolean; reason: string }> = await http.post(
+        `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export/pre_check`,
+        {
+          listeners: params,
+        },
+      );
+      return res.data;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+
+  const exportClb = (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }>) => {
+    try {
+      const controller = new AbortController();
+      const download = () =>
+        http.download({
+          url: `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`,
+          data: {
+            listeners: params,
+          },
+          signal: controller.signal,
+          globalError: false,
+        });
+
+      return {
+        download,
+        cancelDownload: () => controller.abort(),
+      };
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+
   return {
     targetGroupId,
     setTargetGroupId,
@@ -143,5 +179,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setListenerDetailWithTargetGroup,
     queryRulesBindingStatusListLoading,
     queryRulesBindingStatusList,
+    exportPreCheck,
+    exportClb,
   };
 });

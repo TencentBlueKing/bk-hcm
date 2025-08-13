@@ -132,3 +132,11 @@ func (tlbur TCloudLbUrlRuleTable) UpdateValidate() error {
 
 	return nil
 }
+
+// TCloudLbUrlRuleWithListener define tcloud_lb_url_rule with listener.
+type TCloudLbUrlRuleWithListener struct {
+	TCloudLbUrlRuleTable `json:",inline"`
+	LblName              string `db:"lbl_name" json:"lbl_name"`
+	Protocol             string `db:"protocol" json:"protocol"`
+	Port                 int    `db:"port" json:"port"`
+}

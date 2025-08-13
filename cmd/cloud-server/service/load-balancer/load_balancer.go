@@ -64,6 +64,7 @@ func InitService(c *capability.Capability) {
 	bizService(bizH, svc)
 	bizURLRuleService(bizH, svc)
 	bizSopService(bizH, svc)
+	bizExportService(bizH, svc)
 
 	h.Load(c.WebService)
 	bizH.Load(c.WebService)
@@ -181,6 +182,12 @@ func bizSopService(h *rest.Handler, svc *lbSvc) {
 		"/sops/rule/online", svc.BatchBizRuleOnline)
 	h.Add("BatchBizRuleOffline", http.MethodDelete,
 		"/sops/rule/offline", svc.BatchBizRuleOffline)
+}
+
+func bizExportService(h *rest.Handler, svc *lbSvc) {
+	h.Add("ExportBizListenerPreCheck", http.MethodPost,
+		"/vendors/{vendor}/listeners/export/pre_check", svc.PreCheckExportBizListener)
+	h.Add("ExportBizListener", http.MethodPost, "/vendors/{vendor}/listeners/export", svc.ExportBizListener)
 }
 
 type lbSvc struct {

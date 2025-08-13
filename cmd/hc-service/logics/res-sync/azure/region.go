@@ -99,6 +99,7 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 		return errors.New("region addSlice is <= 0, not create")
 	}
 
+	// 底层单次操作，最大支持100个地域
 	list := make([]dataregion.AzureRegionBatchCreate, 0, len(addSlice))
 	for _, one := range addSlice {
 		regionOne := dataregion.AzureRegionBatchCreate{
@@ -111,15 +112,18 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 		list = append(list, regionOne)
 	}
 
-	createReq := &dataregion.AzureRegionBatchCreateReq{
-		Regions: list,
-	}
-	_, err := cli.dbCli.Azure.Region.BatchCreateRegion(kt.Ctx, kt.Header(),
-		createReq)
-	if err != nil {
-		logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
-			err, opt.AccountID, opt, kt.Rid)
-		return err
+	elems := slice.Split(list, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		createReq := &dataregion.AzureRegionBatchCreateReq{
+			Regions: parts,
+		}
+		_, err := cli.dbCli.Azure.Region.BatchCreateRegion(kt.Ctx, kt.Header(),
+			createReq)
+		if err != nil {
+			logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
+				err, opt.AccountID, opt, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to create region success, accountID: %s, count: %d, rid: %s", enumor.Azure,
@@ -145,13 +149,17 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 		list = append(list, regionOne)
 	}
 
-	updateReq := &dataregion.AzureRegionBatchUpdateReq{
-		Regions: list,
-	}
-	if err := cli.dbCli.Azure.Region.BatchUpdateRegion(kt.Ctx, kt.Header(), updateReq); err != nil {
-		logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
-			err, opt.AccountID, opt, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(list, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		updateReq := &dataregion.AzureRegionBatchUpdateReq{
+			Regions: parts,
+		}
+		if err := cli.dbCli.Azure.Region.BatchUpdateRegion(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
+				err, opt.AccountID, opt, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to update region success, accountID: %s, count: %d, rid: %s", enumor.Azure,

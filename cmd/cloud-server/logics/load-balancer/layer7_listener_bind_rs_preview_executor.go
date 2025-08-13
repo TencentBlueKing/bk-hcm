@@ -55,8 +55,8 @@ type Layer7ListenerBindRSPreviewExecutor struct {
 }
 
 // Execute ...
-func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := l.convertDataToPreview(rawData)
+func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := l.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,14 @@ func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 const layer7listenerBindRSExcelTableLen = 10
 
-func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// layer7listenerBindRSExcelTableHeaderLen 表头长度
+const layer7listenerBindRSExcelTableHeaderLen = 12
+
+func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < layer7listenerBindRSExcelTableHeaderLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			layer7listenerBindRSExcelTableHeaderLen, len(headers), headers)
+	}
 	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < layer7listenerBindRSExcelTableLen {
@@ -99,7 +106,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]s
 			return err
 		}
 		detail.RsPort = rsPort
-		weight, err := strconv.Atoi(strings.TrimSpace(data[9]))
+		weight, err := strconv.ParseInt(strings.TrimSpace(data[9]), 10, 64)
 		if err != nil {
 			return err
 		}
@@ -251,7 +258,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 		return nil
 	}
 
-	if int(converter.PtrToVal(target.Weight)) != converter.PtrToVal(detail.Weight) {
+	if converter.PtrToVal(target.Weight) != converter.PtrToVal(detail.Weight) {
 		detail.Status.SetNotExecutable()
 		detail.ValidateResult = append(detail.ValidateResult,
 			fmt.Sprintf("RS is already bound, and the weights are inconsistent."))
@@ -271,7 +278,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return nil
 	}
 
-	isCrossRegionV1, isCrossRegionV2, _, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
+	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
 		lb.Extension)
 	if err != nil {
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
@@ -279,7 +286,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 	}
 
 	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
-		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
+		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
@@ -377,20 +384,12 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateURLRule(kt *kit.Kit, lbClo
 
 // Layer7ListenerBindRSDetail ...
 type Layer7ListenerBindRSDetail struct {
-	ClbVipDomain string              `json:"clb_vip_domain"`
-	CloudClbID   string              `json:"cloud_clb_id"`
-	Protocol     enumor.ProtocolType `json:"protocol"`
-	ListenerPort []int               `json:"listener_port"`
-	Domain       string              `json:"domain"`
-	URLPath      string              `json:"url_path"`
+	Layer7RsDetail `json:",inline"`
+	ListenerPort   []int `json:"listener_port"`
+	RsPort         []int `json:"rs_port"`
 
-	InstType       enumor.InstType `json:"inst_type"`
-	RsIp           string          `json:"rs_ip"`
-	RsPort         []int           `json:"rs_port"`
-	Weight         *int            `json:"weight"`
-	UserRemark     string          `json:"user_remark"`
-	Status         ImportStatus    `json:"status"`
-	ValidateResult []string        `json:"validate_result"`
+	Status         ImportStatus `json:"status"`
+	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
 
