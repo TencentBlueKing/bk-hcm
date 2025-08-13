@@ -294,16 +294,13 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 
-	// 声明健康检查处理函数变量
-	var healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp, error)
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		healthFunc = svc.client.HCService().TCloud.Clb.ListTargetHealth
+		return svc.getTargetHealth(cts.Kit, tgID, req,
+			svc.client.HCService().TCloud.Clb.ListTargetHealth)
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", tgID, basicInfo.Vendor)
 	}
-	// 调用公共逻辑函数，传入处理函数
-	return svc.getTargetHealth(cts.Kit, tgID, req, healthFunc)
 }
 
 // getTargetHealth 统一目标组关联的负载均衡器后端服务器的健康状态信息
