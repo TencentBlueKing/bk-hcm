@@ -21,8 +21,12 @@ import useSearchQs from '@/hooks/use-search-qs';
 import useTableSelection from '@/hooks/use-table-selection';
 import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { formatBandwidth, getAuthSignByBusinessId, getInstVip, parseIP } from '@/utils';
-import { ISearchCondition, ISearchSelectValue } from '@/typings';
-import { buildMultipleValueRulesItem, transformSimpleCondition } from '@/utils/search';
+import { ISearchSelectValue } from '@/typings';
+import {
+  buildMultipleValueRulesItem,
+  getSimpleConditionBySearchSelect,
+  transformSimpleCondition,
+} from '@/utils/search';
 import { GLOBAL_BIZS_KEY, ResourceTypeEnum } from '@/common/constant';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import routerAction from '@/router/utils/action';
@@ -320,8 +324,8 @@ const validateValues: ValidateValuesFunc = async (item, values) => {
   return true;
 };
 
-const handleSearch = (_vals: ISearchSelectValue, condition: ISearchCondition) => {
-  searchQs.set(condition);
+const handleSearch = (val: ISearchSelectValue) => {
+  searchQs.set(getSimpleConditionBySearchSelect(val));
 };
 
 const isLoading = ref(false);

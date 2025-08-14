@@ -5,8 +5,8 @@ import { LocationQueryRaw, useRoute } from 'vue-router';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ConditionKeyType, SearchConditionFactory } from '../children/search/condition-factory';
-import { ISearchCondition, ISearchSelectValue } from '@/typings';
-import { transformSimpleCondition } from '@/utils/search';
+import { ISearchSelectValue } from '@/typings';
+import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
@@ -43,8 +43,8 @@ const validateValues: ValidateValuesFunc = async (item, values) => {
   return true;
 };
 
-const handleSearch = (_val: ISearchSelectValue, cond: ISearchCondition) => {
-  condition.value = cond;
+const handleSearch = (val: ISearchSelectValue) => {
+  condition.value = getSimpleConditionBySearchSelect(val);
 };
 
 const isLoading = ref(false);

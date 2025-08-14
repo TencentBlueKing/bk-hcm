@@ -12,8 +12,8 @@ import { ConditionKeyType, SearchConditionFactory } from '../children/search/con
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import useTableSelection from '@/hooks/use-table-selection';
-import { ISearchCondition, ISearchSelectValue } from '@/typings';
-import { transformSimpleCondition } from '@/utils/search';
+import { ISearchSelectValue } from '@/typings';
+import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { ResourceTypeEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
 import routerAction from '@/router/utils/action';
@@ -222,8 +222,8 @@ watch(
   () => props.lbId,
   () => searchRef.value?.clear(false),
 );
-const handleSearch = (_vals: ISearchSelectValue, condition: ISearchCondition) => {
-  searchQs.set(condition);
+const handleSearch = (val: ISearchSelectValue) => {
+  searchQs.set(getSimpleConditionBySearchSelect(val));
 };
 
 const loading = ref(false);
