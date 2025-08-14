@@ -390,7 +390,10 @@ func (cli *client) createListener(kt *kit.Kit, accountID, region string, syncOpt
 
 func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenerWithRuleCreateReq {
-
+	var endport *int64
+	if cvt.PtrToVal(lbl.EndPort) > 0 {
+		endport = lbl.EndPort
+	}
 	db := dataproto.ListenerWithRuleCreateReq{
 		CloudID:       lbl.GetCloudID(),
 		Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -409,7 +412,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 		SessionExpire: cvt.PtrToVal(lbl.SessionExpireTime),
 		SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
 		Certificate:   convCert(lbl.Certificate),
-		EndPort:       lbl.EndPort,
+		EndPort:       endport,
 	}
 	// for unnamed listener, use its id as default name
 	if len(db.Name) == 0 {
@@ -420,7 +423,10 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 
 func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenersCreateReq[corelb.TCloudListenerExtension] {
-
+	var endport *int64
+	if cvt.PtrToVal(lbl.EndPort) > 0 {
+		endport = lbl.EndPort
+	}
 	// for layer 7 only create listeners itself
 	db := dataproto.ListenersCreateReq[corelb.TCloudListenerExtension]{
 		CloudID:       lbl.GetCloudID(),
@@ -436,7 +442,7 @@ func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 		Region:        region,
 		Extension: &corelb.TCloudListenerExtension{
 			Certificate: convCert(lbl.Certificate),
-			EndPort:     lbl.EndPort,
+			EndPort:     endport,
 		}}
 	// for unnamed listener, use its id as default name
 	if len(db.Name) == 0 {
@@ -454,7 +460,10 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, region string,
 	updates := make([]*dataproto.TCloudListenerUpdate, 0, len(updateMap))
 
 	for id, lbl := range updateMap {
-
+		var endport *int64
+		if cvt.PtrToVal(lbl.EndPort) > 0 {
+			endport = lbl.EndPort
+		}
 		updates = append(updates, &dataproto.TCloudListenerUpdate{
 			ID:            id,
 			Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -464,7 +473,7 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, region string,
 			Region:        region,
 			Extension: &corelb.TCloudListenerExtension{
 				Certificate: convCert(lbl.Certificate),
-				EndPort:     lbl.EndPort,
+				EndPort:     endport,
 			},
 		})
 	}
