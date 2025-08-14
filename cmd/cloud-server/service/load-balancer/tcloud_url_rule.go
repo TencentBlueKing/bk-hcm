@@ -405,7 +405,8 @@ func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
 	for _, ruleID := range req.RuleIDs {
 		bindStatus, ok := ruleBindingStatusMap[ruleID]
 		if !ok {
-			return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("rule %s not found", ruleID))
+			// 没有 rule和 target group的关联关系, 会走到这个逻辑, 默认返回未绑定状态
+			bindStatus = enumor.UnBindingStatus
 		}
 
 		resp.Details = append(resp.Details, cslb.RuleBindingStatus{
