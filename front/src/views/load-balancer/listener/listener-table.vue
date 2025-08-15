@@ -139,7 +139,7 @@ const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   },
   binding_status: {
     render: ({ row, cell }) => {
-      return h(BindingStatus, { value: cell, protocol: row.protocol });
+      return h(BindingStatus, { value: cell, type: 'listener', protocol: row.protocol });
     },
   },
 };
@@ -340,6 +340,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
       </div>
       <search
         class="search"
+        ref="search"
         :fields="searchFields"
         :condition="condition"
         :validate-values="validateValues"

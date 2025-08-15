@@ -20,6 +20,7 @@ import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { merge } from 'lodash';
 import routerAction from '@/router/utils/action';
 import { IAuthSign } from '@/common/auth-service';
+import { BindingStatusType } from '../../constants';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -69,12 +70,13 @@ const fieldIds = ['url', 'scheduler', 'target_group_id', 'rs_num', 'binding_stat
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.Rule).getProperties();
 const fieldConfig: Record<string, Partial<ModelPropertyDisplay>> = {
   binding_status: {
-    render: ({ row, cell }) => {
-      return h(BindingStatus, { value: cell, protocol: row.protocol });
+    render: ({ cell }) => {
+      return h(BindingStatus, { value: cell, type: 'url' });
     },
   },
   target_group_id: {
     render: ({ cell }) => {
+      if (!cell) return '--';
       return h('div', { class: 'target-group-cell' }, [
         cell,
         h(
@@ -106,8 +108,12 @@ const order = ref('DESC');
 const setRsNum = async (list: IListenerRuleItem[] = []) => {
   if (!list.length) return;
 
+  // unbinding状态没有目标组
+  const requestIds = list.map((item) => item.target_group_id).filter((item) => !!item);
+  if (!requestIds.length) return;
+
   const targetsWeightStatList = await loadBalancerTargetGroupStore.getTargetsWeightStat(
-    list.map((item) => item.target_group_id),
+    requestIds,
     currentGlobalBusinessId.value,
   );
 
@@ -120,7 +126,7 @@ const setRsNum = async (list: IListenerRuleItem[] = []) => {
 const setBindingStatus = async (list: IListenerRuleItem[] = []) => {
   if (!list.length) return;
 
-  const requestIds = list.filter((item) => item.binding_status !== 'success').map((i) => i.id);
+  const requestIds = list.filter((item) => item.binding_status === BindingStatusType.BINDING).map((i) => i.id);
   if (!requestIds.length) return;
 
   const { id, vendor } = props.listenerRowData;
@@ -138,7 +144,7 @@ const setBindingStatus = async (list: IListenerRuleItem[] = []) => {
     }
   });
 
-  if (statusList.every((item) => item.binding_status === 'success')) {
+  if (statusList.every((item) => item.binding_status !== BindingStatusType.BINDING)) {
     taskPoll.pause();
   }
 };
@@ -333,7 +339,15 @@ const handleRsPreviewDialogHidden = () => {
             <bk-table-column label="操作" :show-overflow-tooltip="false" :width="180" fixed="right">
               <template #default="{ row }">
                 <div class="action-cell">
-                  <bk-button theme="primary" text @click="handleShowRsPreview(row)">预览RS信息</bk-button>
+                  <bk-button
+                    theme="primary"
+                    text
+                    :disabled="!row.target_group_id"
+                    v-bk-tooltips="{ content: '未绑定目标组，不支持预览', disabled: row.target_group_id }"
+                    @click="handleShowRsPreview(row)"
+                  >
+                    预览RS信息
+                  </bk-button>
                   <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
                     <bk-button theme="primary" text :disabled="noPerm" @click="handleEditUrl(row)">编辑</bk-button>
                   </hcm-auth>
