@@ -139,7 +139,7 @@ const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   },
   binding_status: {
     render: ({ row, cell }) => {
-      return h(BindingStatus, { value: cell, protocol: row.protocol });
+      return h(BindingStatus, { value: cell, type: 'listener', protocol: row.protocol });
     },
   },
 };

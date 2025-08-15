@@ -3,7 +3,7 @@ import { computed, h, inject, reactive, Ref } from 'vue';
 import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerDetails, IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { ModelPropertyDisplay } from '@/model/typings';
-import { BindingStatus, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol, SESSION_TYPE_NAME } from '../../constants';
+import { BindingStatusType, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol, SESSION_TYPE_NAME } from '../../constants';
 import { DisplayFieldType, DisplayFieldFactory } from '../../children/display/field-factory';
 import { cloneDeep } from 'lodash';
 import routerAction from '@/router/utils/action';
@@ -134,7 +134,7 @@ const openTargetGroupHealthCheckPage = () => {
       <bk-button
         theme="primary"
         outline
-        :disabled="noPerm || props.listenerRowData.binding_status === BindingStatus.BINDING"
+        :disabled="noPerm || props.listenerRowData.binding_status === BindingStatusType.BINDING"
         @click="handleEditListener"
       >
         编辑

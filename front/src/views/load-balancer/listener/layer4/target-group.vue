@@ -2,7 +2,7 @@
 import { computed, inject, onMounted, Ref, ref } from 'vue';
 import { IListenerItem } from '@/store/load-balancer/listener';
 import { ITargetGroupDetails, useLoadBalancerTargetGroupStore } from '@/store/load-balancer/target-group';
-import { BindingStatus } from '../../constants';
+import { BindingStatusType } from '../../constants';
 import routerAction from '@/router/utils/action';
 
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
@@ -36,7 +36,7 @@ const displaySimpleInfo = computed(() => {
 const isDisplaySimpleInfoLoading = computed(
   () =>
     loadBalancerTargetGroupStore.targetGroupDetailsLoading ||
-    props.listenerRowData.binding_status === BindingStatus.BINDING,
+    props.listenerRowData.binding_status === BindingStatusType.BINDING,
 );
 
 const jumpToTargetGroupDetails = () => {

@@ -110,15 +110,17 @@ export const SCHEDULER_NAME = {
 };
 export const SCHEDULER_LIST = [Scheduler.WRR, Scheduler.LEAST_CONN, Scheduler.IP_HASH];
 
-export enum BindingStatus {
+export enum BindingStatusType {
   BINDING = 'binding',
   SUCCESS = 'success',
   FAILED = 'failed',
+  UNBINDING = 'unbinding',
 }
 export const BINDING_STATUS_NAME = {
-  [BindingStatus.BINDING]: '绑定中',
-  [BindingStatus.SUCCESS]: '已绑定',
-  [BindingStatus.FAILED]: '未绑定',
+  [BindingStatusType.BINDING]: '绑定中',
+  [BindingStatusType.SUCCESS]: '已绑定',
+  [BindingStatusType.FAILED]: '绑定失败',
+  [BindingStatusType.UNBINDING]: '未绑定',
 };
 
 export enum SessionType {
