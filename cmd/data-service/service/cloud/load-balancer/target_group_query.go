@@ -213,14 +213,14 @@ func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRe
 
 // listTargetGroupIDsByRelCond 根据监听器查询条件，查询目标组ID列表
 func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem, cloudLblIDs []string) ([]string, error) {
+	lblReq protocloud.ListenerQueryItem, cloudLblIDs, clbIDs []string) ([]string, error) {
 
-	cloudTargetGroupIDs := make([]string, 0)
+	targetGroupIDs := make([]string, 0)
 	for _, partCloudLblIDs := range slice.Split(cloudLblIDs, int(filter.DefaultMaxInLimit)) {
 		ruleRelFilter := make([]*filter.AtomRule, 0)
-		ruleRelFilter = append(ruleRelFilter, tools.RuleEqual("vendor", req.Vendor))
-		ruleRelFilter = append(ruleRelFilter, tools.RuleIn("cloud_lb_id", lblReq.CloudLbIDs))
+		ruleRelFilter = append(ruleRelFilter, tools.RuleIn("lb_id", clbIDs))
 		ruleRelFilter = append(ruleRelFilter, tools.RuleIn("cloud_lbl_id", partCloudLblIDs))
+		ruleRelFilter = append(ruleRelFilter, tools.RuleEqual("vendor", req.Vendor))
 		ruleRelFilter = append(ruleRelFilter, tools.RuleEqual("listener_rule_type", lblReq.RuleType))
 		ruleRelFilter = append(ruleRelFilter, tools.RuleEqual("binding_status", enumor.SuccessBindingStatus))
 		opt := &types.ListOption{
@@ -234,8 +234,8 @@ func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, req *protocloud.ListL
 			return nil, fmt.Errorf("list target group listener rule rel failed, err: %v", err)
 		}
 		for _, item := range targetGroupRelList.Details {
-			cloudTargetGroupIDs = append(cloudTargetGroupIDs, item.CloudTargetGroupID)
+			targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
 		}
 	}
-	return slice.Unique(cloudTargetGroupIDs), nil
+	return slice.Unique(targetGroupIDs), nil
 }
