@@ -65,6 +65,9 @@ const (
 
 	// CloudApiSubSys defines all cloud api related subsystem
 	CloudApiSubSys = "cloudapi"
+
+	// AsyncSubSys defines all the async flow or task related sub system.
+	AsyncSubSys = "async"
 )
 
 // labels

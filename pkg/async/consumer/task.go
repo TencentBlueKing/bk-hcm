@@ -38,8 +38,8 @@ import (
 // Task 异步任务执行体，包含了任务运行流程、回滚流程。
 type Task struct {
 	model.Task `json:",inline"`
-
-	Kit *kit.Kit `json:"-"`
+	Kit        *kit.Kit `json:"-"`
+	ExecTime   float64
 
 	ExecuteKit run.ExecuteKit `json:"-"`
 	Patch      func(taskKit *kit.Kit, task *model.Task) error
