@@ -188,8 +188,16 @@ type Parser struct {
 
 // Executor 公共组件，负责执行异步任务
 type Executor struct {
-	WorkerNumber       uint `yaml:"workerNumber"`
-	TaskExecTimeoutSec uint `yaml:"taskExecTimeoutSec"`
+	WorkerNumber          uint    `yaml:"workerNumber"`
+	TaskExecTimeoutSec    uint    `yaml:"taskExecTimeoutSec"`
+	InitQueueCapacity     uint    `yaml:"initQueueCapacity"`
+	FastTaskWorkerRatio   float64 `yaml:"fastTaskWorkerRatio"`
+	FastTaskThreshold     uint    `yaml:"fastTaskThreshold"`
+	FastTaskThresholdSec  float64 `yaml:"fastTaskThresholdSec"`
+	TimeWindowCapacity    uint    `yaml:"timeWindowCapacity"`
+	TimeWindowDurationMin uint    `yaml:"timeWindowDurationMin"`
+	FastTaskQueueCapacity uint    `yaml:"fastTaskQueueCapacity"`
+	SlowTaskQueueCapacity uint    `yaml:"slowTaskQueueCapacity"`
 }
 
 // Dispatcher 主节点组件，负责派发任务
