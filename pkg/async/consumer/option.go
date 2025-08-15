@@ -53,8 +53,15 @@ func (opt SchedulerOption) Validate() error {
 
 // ExecutorOption 公共组件，负责执行异步任务
 type ExecutorOption struct {
-	WorkerNumber       uint `json:"worker_number" validate:"required"`
-	TaskExecTimeoutSec uint `json:"task_exec_timeout_sec" validate:"required"`
+	WorkerNumber          uint    `json:"worker_number" validate:"required"`
+	TaskExecTimeoutSec    uint    `json:"task_exec_timeout_sec" validate:"required"`
+	InitQueueCapacity     uint    `json:"init_queue_capacity" validate:"required"`
+	FastTaskWorkerRatio   float64 `json:"fast_task_worker_ratio" validate:"required,min=0,max=1"`
+	FastTaskThresholdSec  float64 `json:"fast_task_threshold_sec" validate:"required"`
+	TimeWindowCapacity    uint    `json:"time_window_capacity" validate:"required"`
+	TimeWindowDurationMin uint    `json:"time_window_duration_min" validate:"required"`
+	FastTaskQueueCapacity uint    `json:"fast_task_queue_capacity" validate:"required"`
+	SlowTaskQueueCapacity uint    `json:"slow_task_queue_capacity" validate:"required"`
 }
 
 // Validate ExecutorOption

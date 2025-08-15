@@ -34,6 +34,7 @@ import (
 	dtypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"reflect"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -52,7 +53,7 @@ func (svc *service) BatchCreateGlobalConfigs(cts *rest.Contexts) (interface{}, e
 	}
 
 	// create
-	ids, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+	cfgIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		globalConfigs := make([]tablegconf.GlobalConfigTable, len(req.Configs))
 		for index, config := range req.Configs {
 			globalConfigs[index] = tablegconf.GlobalConfigTable{
@@ -78,7 +79,13 @@ func (svc *service) BatchCreateGlobalConfigs(cts *rest.Contexts) (interface{}, e
 		return nil, errf.NewFromErr(errf.Aborted, err)
 	}
 
-	return ids, nil
+	ids, ok := cfgIDs.([]string)
+	if !ok {
+		return nil, fmt.Errorf("create task detail but return id type not string, id type: %v",
+			reflect.TypeOf(ids).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // ListGlobalConfigs ...

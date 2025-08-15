@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/async/consumer/leader"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
@@ -91,7 +92,7 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 	}
 
 	logicsaction.Init(apiClientSet, dao)
-	async, err := createAndStartAsync(sd, dao, shutdownWaitTimeSec)
+	async, err := createAndStartAsync(sd, apiClientSet.DataService().Global.GlobalConfig, dao, shutdownWaitTimeSec)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +106,7 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 	return svr, nil
 }
 
-func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set, shutdownWaitTimeSec int) (async.Async, error) {
+func createAndStartAsync(sd serviced.ServiceDiscover, globalCfgCli *global.GlobalConfigsClient, dao dao.Set, shutdownWaitTimeSec int) (async.Async, error) {
 	// 创建async框架使用的backend
 	bd, err := backend.Factory(enumor.BackendMysql, dao)
 	if err != nil {
@@ -124,8 +125,15 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set, shutdownWaitT
 				CanceledFlowFetcherConcurrency:  cfg.Scheduler.CanceledFlowFetcherConcurrency,
 			},
 			Executor: &consumer.ExecutorOption{
-				WorkerNumber:       cfg.Executor.WorkerNumber,
-				TaskExecTimeoutSec: cfg.Executor.TaskExecTimeoutSec,
+				WorkerNumber:          cfg.Executor.WorkerNumber,
+				TaskExecTimeoutSec:    cfg.Executor.TaskExecTimeoutSec,
+				InitQueueCapacity:     cfg.Executor.InitQueueCapacity,
+				FastTaskWorkerRatio:   cfg.Executor.FastTaskWorkerRatio,
+				FastTaskThresholdSec:  cfg.Executor.FastTaskThresholdSec,
+				TimeWindowCapacity:    cfg.Executor.TimeWindowCapacity,
+				TimeWindowDurationMin: cfg.Executor.TimeWindowDurationMin,
+				FastTaskQueueCapacity: cfg.Executor.FastTaskQueueCapacity,
+				SlowTaskQueueCapacity: cfg.Executor.SlowTaskQueueCapacity,
 			},
 			Dispatcher: &consumer.DispatcherOption{
 				WatchIntervalSec:              cfg.Dispatcher.WatchIntervalSec,
@@ -155,7 +163,7 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set, shutdownWaitT
 		}
 	}()
 
-	if err = async.GetConsumer().Start(); err != nil {
+	if err = async.GetConsumer().Start(globalCfgCli); err != nil {
 		return nil, err
 	}
 
