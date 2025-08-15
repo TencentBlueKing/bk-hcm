@@ -340,6 +340,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
       </div>
       <search
         class="search"
+        ref="search"
         :fields="searchFields"
         :condition="condition"
         :validate-values="validateValues"
