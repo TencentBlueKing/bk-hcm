@@ -139,4 +139,17 @@ const (
 
 	// TaskDeleteListener is a task indicating that delete listener.
 	TaskDeleteListener TaskOperation = "listener_delete"
+
+	// TaskTargetGroupAddRS is a task indicating that add rs to target group.
+	TaskTargetGroupAddRS TaskOperation = "target_group_add_rs"
+	// TaskTargetGroupRemoveRS is a task indicating that remove rs from target group.
+	TaskTargetGroupRemoveRS TaskOperation = "target_group_remove_rs"
+	// TaskDeleteURLRule is a task indicating that delete url rule.
+	TaskDeleteURLRule TaskOperation = "delete_url_rule"
+	// TaskTargetGroupModifyPort is a task indicating that modify target group port.
+	TaskTargetGroupModifyPort TaskOperation = "target_group_modify_port"
+	// TaskTargetGroupModifyWeight is a task indicating that modify target group weight.
+	TaskTargetGroupModifyWeight TaskOperation = "target_group_modify_weight"
+	// TaskListenerAddTarget is a task indicating that add target to listener rule.
+	TaskListenerAddTarget TaskOperation = "listener_add_target"
 )
