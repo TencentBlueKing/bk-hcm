@@ -1,26 +1,27 @@
 ### 描述
 
-- 该接口提供版本：v1.5.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：负载均衡操作。
-- 该接口功能描述：业务下批量修改RS权重。
+- 该接口功能描述：业务下批量修改RS权重, 支持跨CLB, 但不支持跨账号。
 
 ### URL
 
-PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/weight
+PATCH /api/v1/cloud/bizs/{bk_biz_id}/targets/weight
 
 ### 输入参数
 
-| 参数名称          | 参数类型       | 必选 | 描述                    |
-|------------------|--------------|------|------------------------|
-| bk_biz_id        | int          | 是   | 业务ID                  |
-| target_group_id  | string       | 是   | 目标组ID                |
-| target_ids       | string array | 是   | 目标ID数组，单次最多100个  |
-| new_weight       | int          | 是   | 新权重,取值范围：[0, 100] |
+| 参数名称       | 参数类型         | 必选 | 描述                     |
+|------------|--------------|----|------------------------|
+| bk_biz_id  | int          | 是  | 业务ID                   |
+| account_id | string       | 是  | 账号ID                   |
+| target_ids | string array | 是  | rs ID数组, 最大限制传入5000个rs |
+| new_weight | int          | 是  | 新权重,取值范围：[0, 100]      |
 
 ### 调用示例
 
 ```json
 {
+  "account_id": "00000001",
   "target_ids": ["00000001"],
   "new_weight": 10
 }
@@ -33,22 +34,22 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/target_groups/{target_group_id}/targets/wei
   "code": 0,
   "message": "ok",
   "data": {
-    "flow_id": "xxxxxxxx"
+    "task_management_id": "xxxxxx"
   }
 }
 ```
 
 ### 响应参数说明
 
-| 参数名称  | 参数类型  | 描述    |
-|---------|----------|---------|
-| code    | int      | 状态码   |
-| message | string   | 请求信息 |
-| data    | object   | 响应数据 |
+| 参数名称 | 参数类型 | 描述    |
+|---------|--------|---------|
+| code    | int    | 状态码   |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
-#### data
 
-| 参数名称  | 参数类型 | 描述    |
-|----------|--------|---------|
-| flow_id  | string | 任务id   |
+#### data参数说明
 
+| 参数名称    | 参数类型   | 描述     |
+|---------|--------|--------|
+| task_management_id | string | 任务管理id |
