@@ -130,12 +130,14 @@ func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *Sche
 	}
 	result, err := globalCfgCli.List(kt, req)
 	if err != nil {
-		panic(fmt.Sprintf("failed to get flow type priority from global config, err: %v", err))
+		logs.Errorf("failed to get flow type priority from global config, err: %v", err)
+		return sch
 	}
 	for _, one := range result.Details {
 		priority, err := strconv.Atoi(string(one.ConfigValue))
 		if err != nil {
-			panic(fmt.Sprintf("failed to parse flow type priority, err: %v, config_value: %v", err, one.ConfigValue))
+			logs.Errorf("failed to parse flow type priority, err: %v, config_value: %v", err, one.ConfigValue)
+			return sch
 		}
 		sch.flowTypePriorityMap.Store(one.ConfigKey, priority)
 	}
@@ -694,7 +696,7 @@ func (sch *scheduler) caculateFlowTypeScore(flow model.Flow) float64 {
 	norRunningNum := 1 - float64(runningNum)/float64(runningNumMax)
 	norWaitTime := float64(waitTime) / (float64(waitTime) + 1)
 
-	score := norPriority + norExecTime + norRunningNum + norWaitTime
+	score := 2*norPriority + norExecTime + norRunningNum + norWaitTime
 	return score
 }
 
