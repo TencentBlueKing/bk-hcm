@@ -506,7 +506,6 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 	}
 	return vpcMap, nil
 }
-
 func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoadBalancer, error) {
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -520,8 +519,9 @@ func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoa
 		return nil, err
 	}
 	if len(resp.Details) == 0 {
-		logs.Errorf("load balancer not found, id: %s, rid: %s", lbID, kt.Rid)
-		return nil, errf.New(errf.RecordNotFound, "load balancer not found, id: "+lbID)
+		err = fmt.Errorf("load balancer not found, id: %s", lbID)
+		logs.Errorf("load balancer not found, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 	return &resp.Details[0], nil
 }

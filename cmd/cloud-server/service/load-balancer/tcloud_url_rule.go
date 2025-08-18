@@ -348,8 +348,8 @@ func (svc *lbSvc) GetBizUrlRule(cts *rest.Contexts) (any, error) {
 	return urlRuleList.Details[0], nil
 }
 
-// ListRuleBindingStatus 获取规则绑定目标组状态
-func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
+// ListBizRuleBindingStatus 获取规则绑定目标组状态
+func (svc *lbSvc) ListBizRuleBindingStatus(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

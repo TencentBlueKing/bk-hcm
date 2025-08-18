@@ -58,7 +58,6 @@ func (svc *lbSvc) createTaskManagement(kt *kit.Kit, bkBizID int64, vendor enumor
 }
 
 func (svc *lbSvc) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs ...string) error {
-
 	if len(flowIDs) == 0 {
 		return nil
 	}
@@ -78,7 +77,6 @@ func (svc *lbSvc) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs ...st
 }
 
 func (svc *lbSvc) updateTaskDetailState(kt *kit.Kit, state enumor.TaskDetailState, ids []string, reason string) error {
-
 	if len(ids) == 0 {
 		return nil
 	}
@@ -125,9 +123,10 @@ type taskManagementDetail struct {
 }
 
 func (svc *lbSvc) createTaskDetails(kt *kit.Kit, taskID string, bkBizID int64, operation enumor.TaskOperation,
-	details []*taskManagementDetail) error {
+	details []*taskManagementDetail) ([]*taskManagementDetail, error) {
+
 	if len(details) == 0 {
-		return nil
+		return details, nil
 	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range details {
@@ -142,17 +141,17 @@ func (svc *lbSvc) createTaskDetails(kt *kit.Kit, taskID string, bkBizID int64, o
 
 	result, err := svc.client.DataService().Global.TaskDetail.Create(kt, taskDetailsCreateReq)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(result.IDs) != len(details) {
-		return fmt.Errorf("create task details failed, expect created %d task details, but got %d",
+		return nil, fmt.Errorf("create task details failed, expect created %d task details, but got %d",
 			len(details), len(result.IDs))
 	}
 
 	for i := range result.IDs {
 		details[i].taskDetailID = result.IDs[i]
 	}
-	return nil
+	return details, nil
 }
 
 // updateTaskDetails 更新task_detail的flow_id和task_action_id

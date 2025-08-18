@@ -20,8 +20,11 @@
 package loadbalancer
 
 import (
+	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
+	"hcm/pkg/api/hc-service/sync"
 	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
@@ -70,4 +73,27 @@ func (svc *lbSvc) buildSubFlow(kt *kit.Kit, flowID, lbID string,
 		return err
 	}
 	return nil
+}
+
+func buildSyncClbFlowTask(vendor enumor.Vendor, lbCloudID, accountID, region string,
+	generator func() (cur string, prev string)) ts.CustomFlowTask {
+
+	cur, prev := generator()
+	tmpTask := ts.CustomFlowTask{
+		ActionID:   action.ActIDType(cur),
+		ActionName: enumor.ActionSyncTCloudLoadBalancer,
+		Params: &actionlb.SyncTCloudLoadBalancerOption{
+			Vendor: vendor,
+			TCloudSyncReq: &sync.TCloudSyncReq{
+				AccountID: accountID,
+				Region:    region,
+				CloudIDs:  []string{lbCloudID},
+			},
+		},
+		Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+	}
+	if prev != "" {
+		tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
+	}
+	return tmpTask
 }

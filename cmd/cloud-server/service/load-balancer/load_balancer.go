@@ -164,10 +164,10 @@ func bizURLRuleService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/{vendor}/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizUrlRule)
 	h.Add("BatchDeleteBizUrlRuleByDomain", http.MethodDelete,
 		"/vendors/{vendor}/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizUrlRuleByDomain)
-	h.Add("ListRuleBindingStatus", http.MethodPost,
-		"/vendors/{vendor}/listeners/{lbl_id}/rules/binding_status/list", svc.ListRuleBindingStatus)
-	h.Add("UrlRuleBindTargetGroup", http.MethodPost,
-		"/vendors/{vendor}/rules/target_group/bind", svc.UrlRuleBindTargetGroup)
+	h.Add("ListBizRuleBindingStatus", http.MethodPost,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/binding_status/list", svc.ListBizRuleBindingStatus)
+	h.Add("BizUrlRuleBindTargetGroup", http.MethodPost,
+		"/vendors/{vendor}/rules/target_group/bind", svc.BizUrlRuleBindTargetGroup)
 	h.Add("CreateBizUrlRuleWithoutBinding", http.MethodPost,
 		"/vendors/{vendor}/listeners/{lbl_id}/rule/create", svc.CreateBizUrlRuleWithoutBinding)
 }

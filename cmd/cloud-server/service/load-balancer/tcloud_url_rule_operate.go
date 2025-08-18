@@ -29,7 +29,6 @@ import (
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
-	"hcm/pkg/api/hc-service/sync"
 	apits "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -50,15 +49,15 @@ import (
 // CreateBizUrlRule 业务下新建url规则 TODO: 改成一次只创建一个规则
 func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
-	if bizID < 0 {
-		return nil, errf.New(errf.InvalidParameter, "bk_biz_id id is required")
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id is required")
 	}
 
 	lblID := cts.PathParameter("lbl_id").String()
@@ -76,26 +75,8 @@ func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
+	lblInfo, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
 	if err != nil {
-		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
-			bizID, lblID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// if SNI Switch is off, certificates can only be set in listener not its rule
-	if lblInfo.SniSwitch == enumor.SniTypeClose && req.Certificate != nil {
-		return nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
-	}
-
-	// 业务校验、鉴权
-	valOpt := &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer,
-		ResType:    meta.UrlRuleAuditResType,
-		Action:     meta.Create,
-		BasicInfo:  lblBasicInfo,
-	}
-	if err = handler.BizOperateAuth(cts, valOpt); err != nil {
 		return nil, err
 	}
 
@@ -201,6 +182,8 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 	}
 
 	if err := svc.createApplyTGFlow(kt, tgID, taskManagementID, lblInfo, tasks, taskDetails); err != nil {
+		logs.Errorf("fail to create apply target group flow, err: %v, tgID: %s, taskManagementID: %s, tasks: %+v, rid: %s",
+			err, tgID, taskManagementID, tasks, kt.Rid)
 		return "", err
 	}
 	return taskManagementID, nil
@@ -312,8 +295,10 @@ func (svc *lbSvc) createListenerAddRsTaskDetails(kt *kit.Kit, taskManagementID s
 		}
 		details = append(details, detail)
 	}
-	if err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
-		enumor.TaskListenerAddTarget, details); err != nil {
+	var err error
+	details, err = svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskListenerAddTarget, details)
+	if err != nil {
 		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
 			taskManagementID, bkBizID, kt.Rid)
 		return nil, err
@@ -321,6 +306,7 @@ func (svc *lbSvc) createListenerAddRsTaskDetails(kt *kit.Kit, taskManagementID s
 	return details, nil
 }
 
+// createApplyTGFlow create a custom flow to apply target group to listener rule
 func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID, taskManagementID string, lblInfo *corelb.BaseListener,
 	tasks []apits.CustomFlowTask, taskDetails []*taskManagementDetail) error {
 
@@ -419,8 +405,8 @@ func (svc *lbSvc) targetGroupBindCheck(kt *kit.Kit, bizID int64, tgId string) (*
 // UpdateBizUrlRule 更新规则
 func (svc *lbSvc) UpdateBizUrlRule(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
@@ -482,8 +468,8 @@ func (svc *lbSvc) UpdateBizUrlRule(cts *rest.Contexts) (any, error) {
 // BatchDeleteBizUrlRule 批量删除规则
 func (svc *lbSvc) BatchDeleteBizUrlRule(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
@@ -532,8 +518,8 @@ func (svc *lbSvc) BatchDeleteBizUrlRule(cts *rest.Contexts) (any, error) {
 // BatchDeleteBizUrlRuleByDomain 批量按域名删除规则
 func (svc *lbSvc) BatchDeleteBizUrlRuleByDomain(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
@@ -580,18 +566,18 @@ func (svc *lbSvc) BatchDeleteBizUrlRuleByDomain(cts *rest.Contexts) (any, error)
 	}
 }
 
-// UrlRuleBindTargetGroup UrlRule 绑定目标组
-func (svc *lbSvc) UrlRuleBindTargetGroup(cts *rest.Contexts) (any, error) {
+// BizUrlRuleBindTargetGroup ...
+func (svc *lbSvc) BizUrlRuleBindTargetGroup(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
-	if bizID < 0 {
-		return nil, errf.New(errf.InvalidParameter, "bk_biz_id id is required")
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id is required")
 	}
 
 	req := new(cslb.TCloudRuleBindTargetGroup)
@@ -605,8 +591,8 @@ func (svc *lbSvc) UrlRuleBindTargetGroup(cts *rest.Contexts) (any, error) {
 
 	_, err = svc.targetGroupBindCheck(cts.Kit, bizID, req.TargetGroupID)
 	if err != nil {
-		logs.Errorf("fail to check target group bind, bizID: %d, targetGroupID: %s, err: %v, rid: %s", bizID,
-			req.TargetGroupID, err, cts.Kit.Rid)
+		logs.Errorf("fail to check target group bind, err: %v, bizID: %d, targetGroupID: %s, rid: %s", err, bizID,
+			req.TargetGroupID, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -680,15 +666,15 @@ func (svc *lbSvc) tcloudUrlBindTargetGroup(cts *rest.Contexts, bizID int64, req 
 // CreateBizUrlRuleWithoutBinding 业务下新建url规则, 区别于 CreateBizUrlRule 的地方在于不绑定目标组
 func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
-	if bizID < 0 {
-		return nil, errf.New(errf.InvalidParameter, "bk_biz_id id is required")
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id is required")
 	}
 
 	lblID := cts.PathParameter("lbl_id").String()
@@ -705,26 +691,8 @@ func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
+	lblInfo, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
 	if err != nil {
-		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
-			bizID, lblID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// if SNI Switch is off, certificates can only be set in listener not its rule
-	if lblInfo.SniSwitch == enumor.SniTypeClose && req.Certificate != nil {
-		return nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
-	}
-
-	// 业务校验、鉴权
-	valOpt := &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer,
-		ResType:    meta.UrlRuleAuditResType,
-		Action:     meta.Create,
-		BasicInfo:  lblBasicInfo,
-	}
-	if err = handler.BizOperateAuth(cts, valOpt); err != nil {
 		return nil, err
 	}
 
@@ -743,7 +711,35 @@ func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error
 	return createResp, nil
 }
 
-// batchCreateUrlRule 批量创建url规则
+func (svc *lbSvc) validateListenerCertAndAuth(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string,
+	certificate *corelb.TCloudCertificateInfo) (*corelb.BaseListener, error) {
+
+	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
+	if err != nil {
+		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
+			bizID, lblID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// if SNI Switch is off, certificates can only be set in listener not its rule
+	if lblInfo.SniSwitch == enumor.SniTypeClose && certificate != nil {
+		return nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
+	}
+
+	// 业务校验、鉴权
+	valOpt := &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.UrlRuleAuditResType,
+		Action:     meta.Create,
+		BasicInfo:  lblBasicInfo,
+	}
+	if err = handler.BizOperateAuth(cts, valOpt); err != nil {
+		return nil, err
+	}
+	return lblInfo, nil
+}
+
+// batchCreateUrlRuleWithoutTG 仅批量创建url规则, 不创建目标组
 func (svc *lbSvc) batchCreateUrlRuleWithoutTG(kt *kit.Kit, vendor enumor.Vendor, lblID string,
 	req *cslb.TCloudRuleCreateWithoutBinding) (*hcproto.BatchCreateResult, error) {
 
@@ -804,27 +800,4 @@ func (svc *lbSvc) buildUpdateUrlRuleHealthCheckTask(kt *kit.Kit, lblID, ruleClou
 		Retry: tableasync.NewRetryWithPolicy(10, 100, 500),
 	}
 	return tmp, nil
-}
-
-func buildSyncClbFlowTask(vendor enumor.Vendor, lbCloudID, accountID, region string,
-	generator func() (cur string, prev string)) apits.CustomFlowTask {
-
-	cur, prev := generator()
-	tmpTask := apits.CustomFlowTask{
-		ActionID:   action.ActIDType(cur),
-		ActionName: enumor.ActionSyncTCloudLoadBalancer,
-		Params: &actionlb.SyncTCloudLoadBalancerOption{
-			Vendor: vendor,
-			TCloudSyncReq: &sync.TCloudSyncReq{
-				AccountID: accountID,
-				Region:    region,
-				CloudIDs:  []string{lbCloudID},
-			},
-		},
-		Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
-	}
-	if prev != "" {
-		tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
-	}
-	return tmpTask
 }

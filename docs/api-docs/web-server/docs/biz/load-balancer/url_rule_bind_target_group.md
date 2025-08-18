@@ -10,12 +10,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/rules/target_group/bind
 
 ### 输入参数
 
-| 参数名称            | 参数类型   | 必选              | 描述      |
-|-----------------|--------|-----------------|---------|
-| bk_biz_id       | int64  | 是               | 业务ID    |
-| vendor          | string | 供应商（枚举值：tcloud） |
-| url_rule_id     | string | 是               | 监听器规则ID |
-| target_group_id | string | 是               | 目标组id   |
+| 参数名称            | 参数类型   | 必选 | 描述              |
+|-----------------|--------|----|-----------------|
+| bk_biz_id       | int64  | 是  | 业务ID            |
+| vendor          | string | 是  | 供应商（枚举值：tcloud） |
+| url_rule_id     | string | 是  | 监听器规则ID         |
+| target_group_id | string | 是  | 目标组id           |
 
 ### 调用示例
 

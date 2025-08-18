@@ -301,7 +301,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 			err, cloudRule.LocationId, listener.ListenerId, kt.Rid)
 		return fmt.Errorf("rule of listener can not be found by id(%+v)", cloudRule.LocationId)
 	}
-	// TODO 待验证 如果urlRule没有绑定RS，那么先不创建目标组
+	// 如果urlRule没有绑定RS，不自动创建目标组，允许有未绑定目标组状态
 	if len(cloudRule.Targets) == 0 {
 		logs.Infof("no targets found for rule %s, skip creating target group, rid: %s", cloudRule.LocationId, kt.Rid)
 		return nil
