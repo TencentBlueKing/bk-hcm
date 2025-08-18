@@ -21,7 +21,8 @@ package consumer
 
 import (
 	"fmt"
-	
+	"hcm/pkg/tools/converter"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
@@ -66,7 +67,7 @@ type Flow struct {
 // SetFlowTypePriorityOption 设置优先级，Persistent为false时仅在内存临时生效，否则会持久化到db的global_config表
 type SetFlowTypePriorityOption struct {
 	FlowType   enumor.FlowName `json:"flow_type" validate:"required"`
-	Priority   int             `json:"priority" validate:"required,min=0"`
+	Priority   *int            `json:"priority" validate:"required"`
 	Persistent bool            `json:"persistent" validate:"required"`
 }
 
@@ -81,7 +82,7 @@ func (opt *SetFlowTypePriorityOption) Validate() error {
 		return err
 	}
 
-	if opt.Priority > FlowTypeMinPriority {
+	if converter.PtrToVal(opt.Priority) > FlowTypeMinPriority {
 		return fmt.Errorf("priority should be less than or equal to %d", FlowTypeMinPriority)
 	}
 	return nil

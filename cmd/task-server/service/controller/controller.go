@@ -23,6 +23,7 @@ package controller
 
 import (
 	"fmt"
+	"hcm/pkg/tools/converter"
 	"net/http"
 
 	"hcm/cmd/task-server/service/capability"
@@ -137,7 +138,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 1、先统一修改内存map中flowtype的优先级
-	p.csm.SetFlowTypePriority(opt.FlowType, opt.Priority)
+	p.csm.SetFlowTypePriority(opt.FlowType, converter.PtrToVal(opt.Priority))
 	if !opt.Persistent {
 		return nil, nil
 	}
