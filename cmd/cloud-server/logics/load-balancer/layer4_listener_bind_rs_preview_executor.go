@@ -236,9 +236,9 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit)
 func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 	detail *Layer4ListenerBindRSDetail, ruleCloudIDsToTGIDMap map[string]string) error {
 
-	if detail.listenerCloudID == "" || detail.cvm == nil {
+	if detail.listenerCloudID == "" {
 		detail.Status.SetNotExecutable()
-		detail.ValidateResult = append(detail.ValidateResult, "listener not found or rs not found")
+		detail.ValidateResult = append(detail.ValidateResult, "listener not found")
 		return nil
 	}
 	tgID, ok := ruleCloudIDsToTGIDMap[detail.listenerCloudID]
@@ -246,6 +246,10 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 		return fmt.Errorf("target group not found for listener cloud id: %s", detail.listenerCloudID)
 	}
 	detail.targetGroupID = tgID
+	if detail.cvm == nil {
+		// rsType 为 ENI，会导致cvm为空
+		return nil
+	}
 	target, err := getTarget(kt, l.dataServiceCli, tgID, detail.cvm.CloudID, detail.RsPort[0])
 	if err != nil {
 		return err
@@ -270,6 +274,10 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail,
 	lb corelb.LoadBalancerRaw) error {
 
+	if curDetail.InstType == enumor.EniInstType {
+		// ENI 不做校验
+		return nil
+	}
 	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
 		lb.Extension)
 	if err != nil {
@@ -341,7 +349,7 @@ type Layer4ListenerBindRSDetail struct {
 	listenerCloudID string
 
 	// cvm 在 validateRS 阶段填充, 在validateTarget和submit阶段会使用,
-	// 如果为空, 代表了rs not found
+	// RSType为ENI时, 该值会为空, 否则为空, 代表了rs not found
 	cvm *cvmInfo
 }
 
