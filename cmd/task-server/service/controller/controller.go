@@ -162,7 +162,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 				{
 					ConfigType:  constant.FlowTypePriority,
 					ConfigKey:   string(opt.FlowType),
-					ConfigValue: opt.Priority,
+					ConfigValue: converter.PtrToVal(opt.Priority),
 				},
 			},
 		})
@@ -172,7 +172,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 		Configs: []gccore.GlobalConfigT[any]{
 			{
 				ID:          result.Details[0].ID,
-				ConfigValue: opt.Priority,
+				ConfigValue: converter.PtrToVal(opt.Priority),
 			},
 		},
 	}), nil
