@@ -390,7 +390,6 @@ func (cli *client) createListener(kt *kit.Kit, accountID, region string, syncOpt
 
 func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenerWithRuleCreateReq {
-
 	var endport *int64
 	if cvt.PtrToVal(lbl.EndPort) > 0 {
 		endport = lbl.EndPort
@@ -424,7 +423,6 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 
 func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenersCreateReq[corelb.TCloudListenerExtension] {
-
 	var endport *int64
 	if cvt.PtrToVal(lbl.EndPort) > 0 {
 		endport = lbl.EndPort
