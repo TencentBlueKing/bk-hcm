@@ -1,0 +1,93 @@
+.account-apply-detail-container {
+  .card-wrapper {
+    padding: 20px 30px;
+    border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 1px 2px 0 rgb(49 50 56 / 10%);
+
+    .approval-process-wrapper {
+      margin-left: auto;
+      font-size: 14px;
+      color: #3a84ff;
+      cursor: pointer;
+
+      &:hover {
+        color: #699df4;
+      }
+    }
+
+    .title {
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #63656e;
+      font-weight: bold;
+    }
+
+    .item {
+      display: flex;
+      justify-content: flex-start;
+      line-height: 24px;
+      font-size: 12px;
+      color: #63656e;
+
+      .label {
+        display: inline-block;
+        flex: 0 0 75px;
+        color: #979ba5;
+        text-align: left;
+      }
+
+      .content {
+        display: inline-block;
+        max-width: calc(100% - 60px);
+        word-wrap: break-word;
+        word-break: normal;
+      }
+    }
+  }
+
+  .create-account-btn {
+    font-size: 12px;
+  }
+
+  .status {
+    padding: 1px 8px;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 12px;
+    background: #367ff9;
+
+    &.pending {
+      background: #367ff9;
+    }
+
+    &.rejected {
+      background: #ea3636;
+    }
+
+    &.completed {
+      background: #27be78;
+    }
+
+    &.cancelled {
+      background: #aaa;
+    }
+
+    &.deliver_error {
+      background-color: #ea3636;
+    }
+
+    &.delivering {
+      background: #367ff9;
+    }
+  }
+
+  .error-text {
+    color: #ea3636;
+  }
+}
+
+.add-account-tip {
+  color: #7d7e84;
+  font-size: 12px;
+}

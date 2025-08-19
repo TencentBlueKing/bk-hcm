@@ -6,11 +6,11 @@ import {
   RouteLocationNormalized,
 } from 'vue-router';
 import { MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT } from '@/constants/menu-symbol';
-import { businessViews } from '@/views';
+import { businessViews, serviceViews } from '@/views';
 import common from './module/common';
 import resource from './module/resource';
 import resourceInside from './module/resource-inside';
-import service from './module/service';
+// import service from './module/service';
 import serviceInside from './module/service-inside';
 // import business from './module/business';
 import scheme from './module/scheme';
@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
   ...common,
   ...resource,
   ...resourceInside,
-  ...service,
+  // ...service,
   ...serviceInside,
   ...scheme,
   ...bill,
@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
     name: MENU_BUSINESS,
     path: '/business',
     children: businessViews,
+  },
+  {
+    name: 'menu_service',
+    path: '/service',
+    children: serviceViews,
   },
 ];
 
