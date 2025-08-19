@@ -56,6 +56,8 @@ const (
 	ExportLayer4RsLimit = 5000
 	// ExportClbOneFileRowLimit 导出文件行数限制
 	ExportClbOneFileRowLimit = 5000
+	// ExportListenerParamLimit 导出监听器参数限制
+	ExportListenerParamLimit = 5000
 )
 
 const (

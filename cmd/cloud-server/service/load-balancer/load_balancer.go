@@ -176,6 +176,7 @@ func bizExportService(h *rest.Handler, svc *lbSvc) {
 	h.Add("ExportBizListenerPreCheck", http.MethodPost,
 		"/vendors/{vendor}/listeners/export/pre_check", svc.PreCheckExportBizListener)
 	h.Add("ExportBizListener", http.MethodPost, "/vendors/{vendor}/listeners/export", svc.ExportBizListener)
+	h.Add("ExportBizTarget", http.MethodPost, "/vendors/{vendor}/targets/export", svc.ExportBizTarget)
 }
 
 type lbSvc struct {

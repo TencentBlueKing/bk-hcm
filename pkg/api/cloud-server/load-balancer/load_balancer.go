@@ -882,7 +882,8 @@ type ListenerTargetsStat struct {
 
 // ExportListenerReq 导出业务下监听器及其下面的资源
 type ExportListenerReq struct {
-	Listeners []ExportListener `json:"listeners"`
+	Listeners          []ExportListener `json:"listeners"`
+	OnlyExportListener bool             `json:"only_export_listener"`
 }
 
 // Validate ...
@@ -890,8 +891,8 @@ func (r *ExportListenerReq) Validate() error {
 	if len(r.Listeners) == 0 {
 		return errors.New("listeners required")
 	}
-	if len(r.Listeners) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("listeners count should <= %d", constant.BatchOperationMaxLimit)
+	if len(r.Listeners) > constant.ExportListenerParamLimit {
+		return fmt.Errorf("listeners count should <= %d", constant.ExportListenerParamLimit)
 	}
 
 	for _, l := range r.Listeners {
@@ -901,8 +902,8 @@ func (r *ExportListenerReq) Validate() error {
 	}
 
 	_, lblIDs := r.GetPartLbAndLblIDs()
-	if len(lblIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("lbl_ids count should <= %d", constant.BatchOperationMaxLimit)
+	if len(lblIDs) > constant.ExportListenerParamLimit {
+		return fmt.Errorf("lbl_ids count should <= %d", constant.ExportListenerParamLimit)
 	}
 
 	return nil
@@ -967,4 +968,14 @@ type TCloudRuleBindTargetGroup struct {
 // Validate request.
 func (req *TCloudRuleBindTargetGroup) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ExportTargetReq 导出业务下RS
+type ExportTargetReq struct {
+	TargetIDs []string `json:"target_ids" validate:"min=1,max=5000"`
+}
+
+// Validate ...
+func (e *ExportTargetReq) Validate() error {
+	return validator.Validate.Struct(e)
 }
