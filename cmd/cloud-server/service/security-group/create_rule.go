@@ -92,6 +92,7 @@ func (svc *securityGroupSvc) createSGRule(cts *rest.Contexts, validHandler handl
 	}
 }
 
+// createTCloudSGRule create tcloud security group rule.
 func (svc *securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
@@ -154,6 +155,7 @@ func (svc *securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *
 	return result, nil
 }
 
+// createAwsSGRule create aws security group rule.
 func (svc *securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
@@ -208,6 +210,7 @@ func (svc *securityGroupSvc) createAwsSGRule(cts *rest.Contexts, sgBaseInfo *typ
 	return result, nil
 }
 
+// createHuaWeiSGRule create huawei security group rule.
 func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 
@@ -253,15 +256,19 @@ func (svc *securityGroupSvc) createHuaWeiSGRule(cts *rest.Contexts, sgBaseInfo *
 	return result, nil
 }
 
+// convSGEgressRuleReq and convSGIngressRuleReq convert security group rule request for egress and ingress rules.
 func convSGEgressRuleReq(sgBaseInfo *types.CloudResourceBasicInfo,
 	rule proto.HuaWeiSecurityGroupRule) *actionsg.CreateHuaweiSGRuleOption {
 	return convSGRuleReq(sgBaseInfo, rule, true)
 }
+
+// convSGIngressRuleReq convert security group ingress rule request to Huawei SG rule option.
 func convSGIngressRuleReq(sgBaseInfo *types.CloudResourceBasicInfo,
 	rule proto.HuaWeiSecurityGroupRule) *actionsg.CreateHuaweiSGRuleOption {
 	return convSGRuleReq(sgBaseInfo, rule, false)
 }
 
+// convSGRuleReq convert security group rule request to Huawei SG rule option.
 func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSecurityGroupRule,
 	isEgress bool) *actionsg.CreateHuaweiSGRuleOption {
 
@@ -290,6 +297,7 @@ func convSGRuleReq(sgBaseInfo *types.CloudResourceBasicInfo, rule proto.HuaWeiSe
 	return actionOpt
 }
 
+// createAzureSGRule create azure security group rule.
 func (svc *securityGroupSvc) createAzureSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
 	interface{}, error) {
 

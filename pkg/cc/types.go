@@ -156,11 +156,11 @@ func (lm Limiter) validate() error {
 // trySetDefault try set the default value of limiter
 func (lm *Limiter) trySetDefault() {
 	if lm.QPS == 0 {
-		lm.QPS = 500
+		lm.QPS = 1500
 	}
 
 	if lm.Burst == 0 {
-		lm.Burst = 500
+		lm.Burst = 2000
 	}
 }
 
@@ -269,6 +269,7 @@ type ResourceDB struct {
 	MaxOpenConn       uint      `yaml:"maxOpenConn"`
 	MaxIdleConn       uint      `yaml:"maxIdleConn"`
 	TLS               TLSConfig `yaml:"tls"`
+	TimeZone          string    `yaml:"timeZone"`
 }
 
 // trySetDefault set the database's default value if user not configured.
@@ -295,6 +296,9 @@ func (ds *ResourceDB) trySetDefault() {
 
 	if ds.MaxIdleConn == 0 {
 		ds.MaxIdleConn = 5
+	}
+	if len(ds.TimeZone) == 0 {
+		ds.TimeZone = "UTC"
 	}
 }
 
@@ -1144,4 +1148,15 @@ func (r *SyncConcurrentRule) Validate() error {
 // TenantConfig tenant config
 type TenantConfig struct {
 	Enabled bool `yaml:"enabled"`
+}
+
+// ConcurrentConfig CLB import config
+type ConcurrentConfig struct {
+	CLBImportCount int `yaml:"clbImportCount"`
+}
+
+func (c *ConcurrentConfig) trySetDefault() {
+	if c.CLBImportCount == 0 {
+		c.CLBImportCount = 10
+	}
 }

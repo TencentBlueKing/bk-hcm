@@ -19,7 +19,13 @@ import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
+import {
+  LOAD_BALANCER_TYPE,
+  ADDRESS_IP_VERSION,
+  ZONE_TYPE,
+  INTERNET_CHARGE_TYPE,
+  LOAD_BALANCER_PASS_TO_TARGET_LIST,
+} from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -308,6 +314,27 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           ),
         },
         {
+          label: '安全组放通模式',
+          required: true,
+          property: 'load_balancer_pass_to_target',
+          description:
+            '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n一、1次校验-仅校验CLB上的安全组，忽略后端RS的安全组，仅关注CLB上的安全组配置即可\n二、2次校验-同时校验CLB和RS上的安全组，需同时关注CLB和RS这2处绑定的安全组',
+          content: () => (
+            <bk-select
+              v-model={formModel.load_balancer_pass_to_target}
+              allowEmptyValues={[false]}
+              disabled={formModel.address_ip_version === 'IPv6FullChain'}
+              v-bk-tooltips={{
+                content: 'IPv6类型负载均衡，不允许修改安全组的放通模式',
+                disabled: formModel.address_ip_version !== 'IPv6FullChain',
+              }}>
+              {LOAD_BALANCER_PASS_TO_TARGET_LIST.map(({ label, description, value }) => (
+                <bk-option key={value} id={value} name={`${label}（${description}）`} />
+              ))}
+            </bk-select>
+          ),
+        },
+        {
           label: '运营商类型',
           required: true,
           property: 'vip_isp',
@@ -333,61 +360,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             );
           },
         },
-        [
-          {
-            label: '负载均衡规格类型',
-            required: true,
-            property: 'slaType',
-            description:
-              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
-            hidden: isIntranet.value,
-            content: () => {
-              const tooltips = { content: t('请选择运营商类型'), disabled: !!formModel.vip_isp, boundary: 'parent' };
-              if (!ispList.value.length) {
-                Object.assign(tooltips, {
-                  content: t('当前地域/可用区无可用的运营商'),
-                  disabled: ispList.value.length,
-                  boundary: 'parent',
-                });
-              }
-              return (
-                <Select
-                  v-model={formModel.slaType}
-                  filterable={false}
-                  clearable={false}
-                  class='w220'
-                  onChange={handleSlaTypeChange}>
-                  <Option id='0' name={t('共享型')} />
-                  <Option id='1' name={t('性能容量型')} disabled={!formModel.vip_isp} v-bk-tooltips={tooltips} />
-                </Select>
-              );
-            },
-          },
-          {
-            label: '实例规格',
-            required: true,
-            property: 'sla_type',
-            hidden: formModel.slaType !== '1',
-            content: () => {
-              const handleClick = () => {
-                lbSpecTypeDialogState.isHidden = false;
-                lbSpecTypeDialogState.isShow = true;
-              };
-              if (formModel.sla_type !== 'shared') {
-                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
-              }
-              return (
-                <Button
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
-                  disabled={!formModel.vip_isp}
-                  onClick={handleClick}>
-                  <Plus class='f24' />
-                  {t('选择实例规格')}
-                </Button>
-              );
-            },
-          },
-        ],
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
@@ -416,6 +388,49 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             );
           },
         },
+        [
+          {
+            label: '负载均衡规格类型',
+            required: true,
+            property: 'slaType',
+            description:
+              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
+            content: () => {
+              return (
+                <Select
+                  v-model={formModel.slaType}
+                  filterable={false}
+                  clearable={false}
+                  class='w220'
+                  onChange={handleSlaTypeChange}>
+                  <Option id='0' name={t('共享型')} />
+                  <Option id='1' name={t('性能容量型')} />
+                </Select>
+              );
+            },
+          },
+          {
+            label: '实例规格',
+            required: true,
+            property: 'sla_type',
+            hidden: formModel.slaType !== '1',
+            content: () => {
+              const handleClick = () => {
+                lbSpecTypeDialogState.isHidden = false;
+                lbSpecTypeDialogState.isShow = true;
+              };
+              if (formModel.sla_type !== 'shared') {
+                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
+              }
+              return (
+                <Button onClick={handleClick}>
+                  <Plus class='f24' />
+                  {t('选择实例规格')}
+                </Button>
+              );
+            },
+          },
+        ],
       ],
     },
     {
@@ -465,7 +480,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '共享带宽包',
           required: true,
           property: 'bandwidth_package_id',
-          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE',
+          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE' || isIntranet.value,
           content: () => (
             <BandwidthPackageSelector
               v-model={formModel.bandwidth_package_id}
@@ -482,7 +497,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '带宽上限（Mbps）',
           required: true,
           property: 'internet_max_bandwidth_out',
-          hidden: (!isIntranet.value && formModel.account_type === 'LEGACY') || isIntranet.value,
+          hidden: !isIntranet.value && formModel.account_type === 'LEGACY',
           content: () => (
             <div class='slider-wrap'>
               <Slider
@@ -638,19 +653,19 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   // 清除校验结果
   const handleClearValidate = () => {
     nextTick(() => {
-      formRef.value.clearValidate();
+      formRef.value?.clearValidate();
     });
   };
 
-  watch(
-    () => formModel.account_id,
-    (val) => {
-      // 当云账号变更时, 查询用户网络类型
-      reqAccountNetworkType(formModel.vendor, val).then(({ data: { NetworkAccountType } }) => {
-        formModel.account_type = NetworkAccountType;
-      });
-    },
-  );
+  watch([() => formModel.account_id, () => formModel.vendor], ([accountId, vendor]) => {
+    // 当云账号变更时, 查询用户网络类型
+    if (!accountId || !vendor) {
+      return;
+    }
+    reqAccountNetworkType(vendor, accountId).then(({ data: { NetworkAccountType } }) => {
+      formModel.account_type = NetworkAccountType;
+    });
+  });
 
   watch([() => formModel.account_id, () => formModel.region], () => {
     // 当 account_id 或 region 改变时, 恢复默认状态
@@ -686,9 +701,13 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   watch(
     () => formModel.address_ip_version,
-    () => {
+    (ipVersion) => {
       resetParams(['zones', 'backup_zones', 'vip_isp']);
       handleClearValidate();
+      // IPv6安全组放通模式默认是关闭的，不允许修改
+      if (ipVersion === 'IPv6FullChain') {
+        formModel.load_balancer_pass_to_target = false;
+      }
     },
   );
 
@@ -710,15 +729,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   );
 
   // 这个需要放到watch之后，避免数据清空之前就触发了effect
-  const {
-    ispList,
-    isResourceListLoading,
-    quotas,
-    isInquiryPrices,
-    isInquiryPricesLoading,
-    currentResourceListMap,
-    specAvailabilitySet,
-  } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas, currentResourceListMap, specAvailabilitySet } =
+    useFilterResource(formModel);
 
   return {
     vpcData,
@@ -726,7 +738,5 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     isSubnetPreviewDialogShow,
     ApplyClbForm,
     formRef,
-    isInquiryPrices,
-    isInquiryPricesLoading,
   };
 };

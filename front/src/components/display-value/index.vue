@@ -13,6 +13,7 @@ import RegionValue from './region-value.vue';
 import BusinessValue from './business-value.vue';
 import UserValue from './user-value.vue';
 import CloudAreaValue from './cloud-area-value.vue';
+import JsonValue from './json-value.vue';
 import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
@@ -33,8 +34,9 @@ const props = withDefaults(
 const valueComps: Record<
   ModelPropertyType,
   | typeof EnumValue
-  | typeof StringValue
   | typeof DatetimeValue
+  | typeof NumberValue
+  | typeof StringValue
   | typeof ArrayValue
   | typeof BoolValue
   | typeof CertValue
@@ -43,19 +45,21 @@ const valueComps: Record<
   | typeof BusinessValue
   | typeof UserValue
   | typeof CloudAreaValue
+  | typeof JsonValue
 > = {
   enum: EnumValue,
   datetime: DatetimeValue,
   number: NumberValue,
   string: StringValue,
   account: StringValue,
-  user: UserValue,
   array: ArrayValue,
   bool: BoolValue,
   cert: CertValue,
   ca: CaValue,
   region: RegionValue,
   business: BusinessValue,
+  json: JsonValue,
+  user: UserValue,
   'cloud-area': CloudAreaValue,
 };
 
@@ -71,5 +75,5 @@ const attrs = useAttrs();
     :display="props.display"
     v-bind="attrs"
   />
-  <span v-else>unknow type</span>
+  <span v-else>unknown type</span>
 </template>

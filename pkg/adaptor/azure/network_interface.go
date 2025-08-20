@@ -436,14 +436,14 @@ func (az *Azure) ListIP(kt *kit.Kit, opt *core.AzureListOption) ([]*coreni.Inter
 		}
 
 		for _, item := range page.Value {
-			details = append(details, convertCloudNetworkInterfaceIPConfig(item))
+			details = append(details, convertCloudNIIPConfig(item))
 		}
 	}
 
 	return details, nil
 }
 
-func convertCloudNetworkInterfaceIPConfig(data *armnetwork.InterfaceIPConfiguration) *coreni.InterfaceIPConfiguration {
+func convertCloudNIIPConfig(data *armnetwork.InterfaceIPConfiguration) *coreni.InterfaceIPConfiguration {
 	if data == nil {
 		return nil
 	}

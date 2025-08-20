@@ -13,7 +13,7 @@ import useDiskFormData from '../hooks/use-disk-form-data';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -28,6 +28,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
+    const route = useRoute();
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -230,15 +231,17 @@ export default defineComponent({
       },
     ]);
 
-    const formRules = {};
+    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
+      return { query: { ...route.query } };
+    });
 
     return () => (
       <div>
-        <DetailHeader>
+        <DetailHeader fromConfig={fromConfig.value}>
           <p class={'purchase-dish-header-title'}>购买硬盘</p>
         </DetailHeader>
         <div class='create-form-container disk-wrap' style={isResourcePage && { padding: 0 }}>
-          <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
+          <Form model={formData} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.DISK}
               bizs={cond.bizId}

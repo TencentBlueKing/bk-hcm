@@ -42,3 +42,48 @@ const (
 	// TCLBDeleteProtect 腾讯云负载均衡删除保护
 	TCLBDeleteProtect = "DeleteProtect"
 )
+
+const (
+	// ExportLayer7ListenerLimit 导出七层监听器数量限制
+	ExportLayer7ListenerLimit = 5000
+	// ExportLayer4ListenerLimit 导出四层监听器数量限制
+	ExportLayer4ListenerLimit = 5000
+	// ExportRuleLimit 导出规则数量限制
+	ExportRuleLimit = 5000
+	// ExportLayer7RsLimit 导出七层RS数量限制
+	ExportLayer7RsLimit = 5000
+	// ExportLayer4RsLimit 导出四层RS数量限制
+	ExportLayer4RsLimit = 5000
+	// ExportClbOneFileRowLimit 导出文件行数限制
+	ExportClbOneFileRowLimit = 5000
+)
+
+const (
+	// CLBFilePrefix 负载均衡文件名前缀
+	CLBFilePrefix = "hcm-clb"
+	// Layer4ListenerFilePrefix 四层监听器文件名前缀
+	Layer4ListenerFilePrefix = "tcp_udp监听器"
+	// Layer7ListenerFilePrefix 七层监听器文件名前缀
+	Layer7ListenerFilePrefix = "http_https监听器"
+	// RuleFilePrefix 规则文件名前缀
+	RuleFilePrefix = "http_https规则URL"
+	// Layer4RsFilePrefix 四层RS文件名前缀
+	Layer4RsFilePrefix = "tcp_udp绑定的RS"
+	// Layer7RsFilePrefix 七层RS文件名前缀
+	Layer7RsFilePrefix = "http_https绑定的RS"
+	// Layer4ListenerSheetName 四层监听器sheet名
+	Layer4ListenerSheetName = "批量创建监听器-TCP-UDP"
+	// Layer7ListenerSheetName 七层监听器sheet名
+	Layer7ListenerSheetName = "批量创建监听器-HTTP-HTTPS"
+	// RuleSheetName 规则sheet名
+	RuleSheetName = "批量创建URL规则-HTTP-HTTPS"
+	// Layer4RsSheetName 四层RS sheet名
+	Layer4RsSheetName = "绑定RS-TCP-UDP"
+	// Layer7RsSheetName 七层RS sheet名
+	Layer7RsSheetName = "绑定RS-HTTP-HTTPS"
+
+	// CLBExcelHeaderVendor excel表头云厂商字段值
+	CLBExcelHeaderVendor = "vendor(云厂商)"
+	// CLBExcelHeaderTCloud excel表头腾讯云字段值
+	CLBExcelHeaderTCloud = "tencent_cloud_public(腾讯云-公有云)"
+)

@@ -9,8 +9,8 @@ import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { useUserStore, useTaskStore, ITaskStatusItem, ITaskCountItem, ITaskItem } from '@/store';
 import routerAction from '@/router/utils/action';
 import { TaskStatus, type ISearchCondition } from '@/views/task/typings';
-import accountProperties from '@/model/account/properties';
-import taskProperties from '@/model/task/properties';
+import { SearchClbView } from '@/model/task/search.view';
+import { getModel } from '@/model/manager';
 import { transformSimpleCondition, getDateRange } from '@/utils/search';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 
@@ -22,9 +22,9 @@ const userStore = useUserStore();
 const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
 
-const taskViewProperties = [...accountProperties, ...taskProperties];
+const properties = getModel(SearchClbView).getProperties();
 
-const searchQs = useSearchQs({ key: 'filter', properties: taskViewProperties });
+const searchQs = useSearchQs({ key: 'filter', properties });
 const { pagination, getPageParams } = usePage();
 
 const taskList = ref<ITaskItem[]>([]);
@@ -69,6 +69,7 @@ watch(
       created_at: getDateRange('last7d'),
       creator: userStore.username,
     });
+    condition.value.resource = ResourceTypeEnum.CLB;
 
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
@@ -78,7 +79,7 @@ watch(
 
     const { list, count } = await taskStore.getTaskList({
       bk_biz_id: getBizsId(),
-      filter: transformSimpleCondition(condition.value, taskViewProperties),
+      filter: transformSimpleCondition(condition.value, properties),
       page: getPageParams(pagination, { sort, order }),
     });
 
@@ -96,7 +97,7 @@ watch(
 const taskStatusPoll = useTimeoutPoll(() => {
   const ids = taskList.value.filter((item) => [TaskStatus.RUNNING].includes(item.state)).map((item) => item.id);
   fetchCountAndStatus(ids);
-}, 5000);
+}, 10000);
 
 const handleSearch = (vals: ISearchCondition) => {
   searchQs.set(vals);
@@ -110,7 +111,7 @@ const handleViewDetails = (id: string) => {
   routerAction.redirect(
     {
       name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
-      params: { id, resourceType: ResourceTypeEnum.CLB },
+      params: { resourceType: ResourceTypeEnum.CLB, id },
       query: { bizs: getBizsId() },
     },
     {

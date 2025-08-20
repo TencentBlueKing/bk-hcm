@@ -355,6 +355,31 @@ func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*p
 		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
 
+	req := newRunInstancesRequest(opt)
+	resp, err := client.RunInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("run tencent cloud cvm instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 参数预校验不生产资源
+	if opt.DryRun {
+		return new(poller.BaseDoneResult), nil
+	}
+
+	handler := &createCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, types.NewBatchCreateCvmPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func newRunInstancesRequest(opt *typecvm.TCloudCreateOption) *cvm.RunInstancesRequest {
 	req := cvm.NewRunInstancesRequest()
 	req.Placement = &cvm.Placement{
 		Zone: common.StringPtr(opt.Zone),
@@ -415,28 +440,7 @@ func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*p
 			req.InstanceChargePrepaid.RenewFlag = common.StringPtr(string(opt.InstanceChargePrepaid.RenewFlag))
 		}
 	}
-
-	resp, err := client.RunInstancesWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("run tencent cloud cvm instance failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	// 参数预校验不生产资源
-	if opt.DryRun {
-		return new(poller.BaseDoneResult), nil
-	}
-
-	handler := &createCvmPollingHandler{
-		opt.Region,
-	}
-	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(t, kt, resp.Response.InstanceIdSet, types.NewBatchCreateCvmPollerOption())
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return req
 }
 
 // BatchCvmAssociateSecurityGroups Cvm批量绑定安全组
@@ -486,6 +490,34 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 		return nil, fmt.Errorf("init tencent cloud client failed, err: %v", err)
 	}
 
+	req := newInquiryPriceRunInstancesRequest(opt)
+	resp, err := client.InquiryPriceRunInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("inquiry price run instance failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result := new(typecvm.InquiryPriceResult)
+	switch opt.InstanceChargeType {
+	case typecvm.Prepaid:
+		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.OriginalPrice)
+		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.DiscountPrice)
+	case typecvm.PostpaidByHour, typecvm.Spotpaid:
+		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPrice)
+		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPriceDiscount)
+
+	default:
+		return nil, fmt.Errorf("charge type: %s not support", opt.InstanceChargeType)
+	}
+
+	return result, nil
+}
+
+func newInquiryPriceRunInstancesRequest(opt *typecvm.TCloudCreateOption) *cvm.InquiryPriceRunInstancesRequest {
 	req := cvm.NewInquiryPriceRunInstancesRequest()
 	req.Placement = &cvm.Placement{
 		Zone: common.StringPtr(opt.Zone),
@@ -544,31 +576,7 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 			req.InstanceChargePrepaid.RenewFlag = common.StringPtr(string(opt.InstanceChargePrepaid.RenewFlag))
 		}
 	}
-
-	resp, err := client.InquiryPriceRunInstancesWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("inquiry price run instance failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	result := new(typecvm.InquiryPriceResult)
-	switch opt.InstanceChargeType {
-	case typecvm.Prepaid:
-		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice) +
-			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.OriginalPrice)
-		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice) +
-			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.DiscountPrice)
-	case typecvm.PostpaidByHour, typecvm.Spotpaid:
-		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice) +
-			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPrice)
-		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount) +
-			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPriceDiscount)
-
-	default:
-		return nil, fmt.Errorf("charge type: %s not support", opt.InstanceChargeType)
-	}
-
-	return result, nil
+	return req
 }
 
 type startCvmPollingHandler struct {

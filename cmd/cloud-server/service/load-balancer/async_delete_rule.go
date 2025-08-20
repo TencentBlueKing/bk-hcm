@@ -243,50 +243,13 @@ func (svc *lbSvc) buildDeleteRuleTasks(kt *kit.Kit, lbRuleMap map[string]cslb.Tc
 	return flowStateResults, nil
 }
 
-func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs, vendor enumor.Vendor) (string, error) {
-	tasks := make([]ts.CustomFlowTask, 0)
-	getActionID := counter.NewNumStringCounter(1, 10)
+func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs,
+	vendor enumor.Vendor) (string, error) {
 
-	var lastActionID action.ActIDType
-	elems := slice.Split(ruleIDs.URLRuleIDs, constant.BatchDeleteUrlRuleCloudMaxLimit)
-	for _, parts := range elems {
-		actionID := action.ActIDType(getActionID())
-		tmpTask := ts.CustomFlowTask{
-			ActionID:   actionID,
-			ActionName: enumor.ActionLoadBalancerDeleteUrlRule,
-			Params: &actionlb.DeleteURLRuleOption{
-				Vendor:     vendor,
-				LbID:       lbID,
-				URLRuleIDs: parts,
-			},
-			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
-		}
-		if len(lastActionID) > 0 {
-			tmpTask.DependOn = []action.ActIDType{lastActionID}
-		}
-		tasks = append(tasks, tmpTask)
-		lastActionID = actionID
-	}
-
-	elems = slice.Split(ruleIDs.ListenerIDs, constant.BatchDeleteListenerCloudMaxLimit)
-	for _, parts := range elems {
-		actionID := action.ActIDType(getActionID())
-		tmpTask := ts.CustomFlowTask{
-			ActionID:   actionID,
-			ActionName: enumor.ActionLoadBalancerDeleteListener,
-			Params: actionlb.DeleteListenerOption{
-				Vendor:      vendor,
-				LbID:        lbID,
-				ListenerIDs: parts,
-			},
-			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
-		}
-		if len(lastActionID) > 0 {
-			tmpTask.DependOn = []action.ActIDType{lastActionID}
-		}
-		tasks = append(tasks, tmpTask)
-		lastActionID = actionID
-	}
+	getActionID := counter.NewNumberCounterWithPrev(1, 10)
+	tasks := buildDeleteUrlRuleTasks(vendor, lbID, getActionID, ruleIDs.URLRuleIDs)
+	deleteListenerTasks := buildDeleteListenerTasks(vendor, lbID, getActionID, ruleIDs.ListenerIDs)
+	tasks = append(tasks, deleteListenerTasks...)
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowLoadBalancerDeleteRule,
@@ -298,7 +261,8 @@ func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.Tclo
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
 	if err != nil {
-		logs.Errorf("call taskserver to batch delete load balancer rule custom flow failed, err: %v, req: %+v, rid: %s", converter.PtrToVal(addReq), err, kt.Rid)
+		logs.Errorf("call taskserver to batch delete load balancer rule custom flow failed, err: %v, req: %+v, rid: %s",
+			err, converter.PtrToVal(addReq), kt.Rid)
 		return "", err
 	}
 	flowID := result.ID
@@ -320,10 +284,59 @@ func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.Tclo
 	}
 	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
 	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, lbID: %s, tastType: %s, flowID: %s, rid: %s",
-			err, lbID, enumor.DeleteRuleTaskType, flowID, kt.Rid)
+		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, lbID: %s,"+
+			" tastType: %s, flowID: %s, rid: %s", err, lbID, enumor.DeleteRuleTaskType, flowID, kt.Rid)
 		return "", err
 	}
-
 	return flowID, nil
+}
+
+func buildDeleteListenerTasks(vendor enumor.Vendor, lbID string, getActionID func() (cur string, prev string),
+	listenerIDs []string) []ts.CustomFlowTask {
+
+	tasks := make([]ts.CustomFlowTask, 0)
+	for _, parts := range slice.Split(listenerIDs, constant.BatchDeleteListenerCloudMaxLimit) {
+		cur, prev := getActionID()
+		actionID := action.ActIDType(cur)
+		tmpTask := ts.CustomFlowTask{
+			ActionID:   actionID,
+			ActionName: enumor.ActionLoadBalancerDeleteListener,
+			Params: actionlb.DeleteListenerOption{
+				Vendor:      vendor,
+				LbID:        lbID,
+				ListenerIDs: parts,
+			},
+			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+		}
+		if len(prev) > 0 {
+			tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
+		}
+		tasks = append(tasks, tmpTask)
+	}
+	return tasks
+}
+
+func buildDeleteUrlRuleTasks(vendor enumor.Vendor, lbID string, getActionID func() (cur string, prev string),
+	urlRuleIDs []string) []ts.CustomFlowTask {
+
+	tasks := make([]ts.CustomFlowTask, 0)
+	for _, parts := range slice.Split(urlRuleIDs, constant.BatchDeleteUrlRuleCloudMaxLimit) {
+		cur, prev := getActionID()
+		actionID := action.ActIDType(cur)
+		tmpTask := ts.CustomFlowTask{
+			ActionID:   actionID,
+			ActionName: enumor.ActionLoadBalancerDeleteUrlRule,
+			Params: &actionlb.DeleteURLRuleOption{
+				Vendor:     vendor,
+				LbID:       lbID,
+				URLRuleIDs: parts,
+			},
+			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+		}
+		if len(prev) > 0 {
+			tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
+		}
+		tasks = append(tasks, tmpTask)
+	}
+	return tasks
 }

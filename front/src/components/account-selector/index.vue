@@ -22,6 +22,10 @@ const props = defineProps({
   type: String as PropType<string>,
   mustBiz: Boolean as PropType<boolean>,
   disabled: Boolean,
+  optionDisabled: {
+    type: Function as PropType<(accountItem?: any) => boolean>,
+    default: () => false,
+  },
 });
 const emit = defineEmits(['input', 'change']);
 
@@ -128,6 +132,12 @@ defineExpose({
     v-bind="attrs"
     :disabled="props.disabled"
   >
-    <bk-option v-for="(item, index) in accountList" :key="index" :value="item.id" :label="item.name" />
+    <bk-option
+      v-for="(item, index) in accountList"
+      :disabled="optionDisabled(item)"
+      :key="index"
+      :value="item.id"
+      :label="item.name"
+    />
   </bk-select>
 </template>

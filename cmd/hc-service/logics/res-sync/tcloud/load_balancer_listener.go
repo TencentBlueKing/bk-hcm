@@ -244,18 +244,23 @@ func (cli *client) listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListen
 		cloudListeners, dbListeners, isListenerChange)
 
 	// 删除云上已经删除的监听器实例
-	if err = cli.deleteListener(kt, params.Region, delCloudIDs); err != nil {
-		return err
+	if len(delCloudIDs) != 0 {
+		if err = cli.deleteListener(kt, params.Region, delCloudIDs); err != nil {
+			return err
+		}
 	}
-
 	// 创建云上新增监听器实例， 对于四层规则一起创建对应的规则
-	_, err = cli.createListener(kt, params.AccountID, params.Region, opt, addSlice)
-	if err != nil {
-		return err
+	if len(addSlice) != 0 {
+		_, err = cli.createListener(kt, params.AccountID, params.Region, opt, addSlice)
+		if err != nil {
+			return err
+		}
 	}
 	// 更新变更监听器，不更新对应四层/七层 规则
-	if err = cli.updateListener(kt, opt.BizID, params.Region, updateMap); err != nil {
-		return err
+	if len(updateMap) != 0 {
+		if err = cli.updateListener(kt, opt.BizID, params.Region, updateMap); err != nil {
+			return err
+		}
 	}
 
 	// 同步监听器下的四层/七层规则

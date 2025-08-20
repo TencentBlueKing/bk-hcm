@@ -102,9 +102,11 @@ func (b *billAdjustmentSvc) ExportBillAdjustmentItem(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	if err := writer.Write(export.BillAdjustmentTableHeader); err != nil {
-		logs.Errorf("write header failed: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	for _, header := range export.BillAdjustmentTableHeaders {
+		if err = writer.Write(header); err != nil {
+			logs.Errorf("write header failed: %v, val: %v, rid: %s", err, header, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 
 	table, err := toRawData(cts.Kit, result, mainAccountMap, bizMap)
@@ -211,7 +213,7 @@ func toRawData(kt *kit.Kit, details []*billcore.AdjustmentItem, mainAccountMap m
 			Currency:        string(detail.Currency),
 			AdjustStatus:    enumor.BillAdjustmentStateNameMap[detail.State],
 		}
-		values, err := table.GetHeaderValues()
+		values, err := table.GetValuesByHeader()
 		if err != nil {
 			logs.Errorf("get header fields failed, table: %v, error: %v, rid: %s", table, err, kt.Rid)
 			return nil, err

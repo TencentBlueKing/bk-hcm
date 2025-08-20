@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package accountset
+// Package accountset ...
 package accountset
 
 import (
@@ -152,7 +152,8 @@ func (u *MainAccountUpdateReq) Validate() error {
 }
 
 // -------------------------- Get --------------------------
-// MainAccountGetBaseResult
+
+// MainAccountGetBaseResult ...
 type MainAccountGetBaseResult struct {
 	protocore.BaseMainAccount `json:",inline"`
 }

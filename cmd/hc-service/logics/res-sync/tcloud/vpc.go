@@ -164,11 +164,13 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
+// deleteVpc deletes vpc from db, before delete, it will double check whether the vpc exist in cloud
 func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete vpc, cloudIDs is required")
 	}
 
+	// double check, ensure vpc not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -199,6 +201,7 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCl
 	return nil
 }
 
+// updateVpc updates vpc in db
 func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string]types.TCloudVpc) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update vpc, vpcs is required")
@@ -250,6 +253,7 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 	return nil
 }
 
+// createVpc creates vpc in db
 func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.TCloudVpc) error {
 	if len(addVpc) == 0 {
 		return fmt.Errorf("create vpc, vpcs is required")
@@ -302,6 +306,7 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.TClou
 	return nil
 }
 
+// listVpcFromCloud lists vpc from cloud
 func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.TCloudVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -325,6 +330,7 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
+// listVpcFromDB lists vpc from db
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.TCloudVpcExtension], error) {
 
@@ -365,6 +371,7 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// isTCloudVpcChange checks if the vpc item has changed compared to the info from db
 func isTCloudVpcChange(item types.TCloudVpc, info cloudcore.Vpc[cloudcore.TCloudVpcExtension]) bool {
 	if info.Name != item.Name {
 		return true

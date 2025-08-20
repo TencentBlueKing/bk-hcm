@@ -92,23 +92,15 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 	}
 	vpcCreated := listRes.Details[0]
 
-	// create hcm vpc
-	createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
-		Vpcs: []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{convertGcpVpcCreateReq(req, &vpcCreated)},
-	}
-	vpcResult, err := v.cs.DataService().Gcp.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	vpcCreatedID, err := v.createGcpVpcForDB(cts.Kit, &vpcCreated, req)
 	if err != nil {
-		logs.Errorf("vpc created on cloud, but fail to BatchCreate vpc on db, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("create gcp vpc for db failed, err: %v, vpcID: %s, rid: %s", err, vpcCreated.CloudID, cts.Kit.Rid)
 		return nil, err
-	}
-
-	if len(vpcResult.IDs) != 1 {
-		return nil, errf.New(errf.Aborted, "create vpcResult is invalid")
 	}
 
 	// create gcp subnets
 	if len(req.Extension.Subnets) == 0 {
-		return core.CreateResult{ID: vpcResult.IDs[0]}, nil
+		return core.CreateResult{ID: vpcCreatedID}, nil
 	}
 
 	regionSubnetMap := make(map[string][]subnetproto.SubnetCreateReq[subnetproto.GcpSubnetCreateExt])
@@ -129,7 +121,26 @@ func (v vpc) GcpVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("create gcp vpc and subnet success, but create route fail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return core.CreateResult{ID: vpcResult.IDs[0]}, nil
+	return core.CreateResult{ID: vpcCreatedID}, nil
+}
+
+func (v vpc) createGcpVpcForDB(kt *kit.Kit, vpcCreated *types.GcpVpc,
+	req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateExt]) (string, error) {
+
+	// create hcm vpc
+	createReq := &cloud.VpcBatchCreateReq[cloud.GcpVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.GcpVpcCreateExt]{convertGcpVpcCreateReq(req, vpcCreated)},
+	}
+	vpcResult, err := v.cs.DataService().Gcp.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		logs.Errorf("vpc created on cloud, but fail to BatchCreate vpc on db, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	if len(vpcResult.IDs) != 1 {
+		return "", errf.New(errf.Aborted, "create vpcResult is invalid")
+	}
+	return vpcResult.IDs[0], nil
 }
 
 const maxRetryCount = 10

@@ -93,6 +93,7 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 	return new(SyncResult), nil
 }
 
+// updateImage updates the image in the database.
 func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 	updateMap map[string]typesimage.AwsImage) error {
 
@@ -124,6 +125,7 @@ func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// createImage creates new images in the database.
 func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 	addSlice []typesimage.AwsImage) error {
 
@@ -163,11 +165,13 @@ func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// deleteImage deletes images from the database after validating that they do not exist in the cloud.
 func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("image delCloudIDs is <= 0, not delete")
 	}
 
+	// Validate that the images to be deleted do not exist in the cloud.
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -198,6 +202,7 @@ func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, del
 	return nil
 }
 
+// listImageFromCloud lists images from the cloud based on the provided parameters.
 func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesimage.AwsImage, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -221,6 +226,7 @@ func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ty
 	return result.Details, nil
 }
 
+// listImageFromDB retrieves images from the database based on the provided parameters.
 func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]coreimage.Image[coreimage.AwsExtension], error) {
 
@@ -266,6 +272,7 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return results, nil
 }
 
+// RemoveImageDeleteFromCloud removes images that are no longer present in the cloud.
 func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -326,6 +333,7 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 	return nil
 }
 
+// listRemoveImageID lists image IDs that are no longer present in the cloud.
 func (cli *client) listRemoveImageID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -348,6 +356,7 @@ func (cli *client) listRemoveImageID(kt *kit.Kit, params *SyncBaseParams) ([]str
 	return delCloudIDs, nil
 }
 
+// isImageChange checks if there are changes in the image properties between the cloud and database versions.
 func isImageChange(cloud typesimage.AwsImage, db coreimage.Image[coreimage.AwsExtension]) bool {
 
 	if cloud.State != db.State {

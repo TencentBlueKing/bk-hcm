@@ -115,7 +115,6 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -126,25 +125,23 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	}
 
 	createOpt := &typelb.TCloudCreateClbOption{
-		Region:           req.Region,
-		LoadBalancerType: req.LoadBalancerType,
-		LoadBalancerName: req.Name,
-		VpcID:            req.CloudVpcID,
-		SubnetID:         req.CloudSubnetID,
-		Vip:              req.Vip,
-		VipIsp:           req.VipIsp,
-
-		InternetChargeType:      req.InternetChargeType,
-		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
-
-		BandwidthPackageID: req.BandwidthPackageID,
-		SlaType:            req.SlaType,
-		Number:             req.RequireCount,
-		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
-		Egress:             req.Egress,
-
-		BandwidthpkgSubType: req.BandwidthpkgSubType,
-		Tags:                req.Tags,
+		Region:                   req.Region,
+		LoadBalancerType:         req.LoadBalancerType,
+		LoadBalancerName:         req.Name,
+		VpcID:                    req.CloudVpcID,
+		SubnetID:                 req.CloudSubnetID,
+		Vip:                      req.Vip,
+		VipIsp:                   req.VipIsp,
+		InternetChargeType:       req.InternetChargeType,
+		InternetMaxBandwidthOut:  req.InternetMaxBandwidthOut,
+		BandwidthPackageID:       req.BandwidthPackageID,
+		SlaType:                  req.SlaType,
+		Number:                   req.RequireCount,
+		ClientToken:              cvt.StrNilPtr(cts.Kit.Rid),
+		Egress:                   req.Egress,
+		BandwidthpkgSubType:      req.BandwidthpkgSubType,
+		Tags:                     req.Tags,
+		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
 	}
 
 	if cvt.PtrToVal(req.CloudEipID) != "" {
@@ -183,14 +180,12 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		FailedCloudIDs:  result.FailedCloudIDs,
 		FailedMessage:   result.FailedMessage,
 	}
-
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
 
 	// 数据库创建失败也继续同步
 	_ = svc.createTCloudDBLoadBalancer(cts, req, result.SuccessCloudIDs)
-
 	if err := svc.lbSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
 		return nil, err
 	}
@@ -463,42 +458,11 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 		return "", "", err
 	}
 
-	lblOpt := &typelb.TCloudCreateListenerOption{
-		Region:            lbInfo.Region,
-		LoadBalancerId:    lbInfo.CloudID,
-		ListenerName:      req.Name,
-		Protocol:          req.Protocol,
-		Port:              req.Port,
-		SessionExpireTime: req.SessionExpire,
-		Scheduler:         req.Scheduler,
-		SniSwitch:         req.SniSwitch,
-		SessionType:       cvt.ValToPtr(req.SessionType),
-		Certificate:       req.Certificate,
+	lblOpt, err := buildCreateListenerOption(req, lbInfo, tgInfo)
+	if err != nil {
+		logs.Errorf("build create tcloud listener option failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return "", "", err
 	}
-	if req.Protocol.IsLayer4Protocol() {
-		lblOpt.HealthCheck = &corelb.TCloudHealthCheckInfo{}
-		if tgInfo.HealthCheck != nil {
-			lblOpt.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
-		} else {
-			lblOpt.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
-		}
-	}
-
-	// 7层监听器，不管SNI开启还是关闭，都需要传入证书参数
-	// 7层监听器并且SNI开启时，创建监听器接口，不需要证书
-	if req.Protocol == enumor.HttpsProtocol {
-		if req.Certificate == nil {
-			return "", "", errf.New(errf.InvalidParameter, "certificate is required when layer 7 listener")
-		}
-		if cvt.PtrToVal(req.Certificate.CaCloudID) == "" && len(req.Certificate.CertCloudIDs) == 0 {
-			return "", "", errf.New(errf.InvalidParameter,
-				"certificate.ca_cloud_id and certificate.cert_cloud_ids is required")
-		}
-		if req.SniSwitch == enumor.SniTypeOpen {
-			lblOpt.Certificate = nil
-		}
-	}
-
 	result, err := tcloudAdpt.CreateListener(kt, lblOpt)
 	if err != nil {
 		logs.Errorf("create tcloud listener api failed, err: %v, lblOpt: %+v, cert: %+v, rid: %s",
@@ -547,6 +511,48 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 	}
 
 	return cloudLblID, cloudRuleID, nil
+}
+
+func buildCreateListenerOption(req *protolb.ListenerWithRuleCreateReq, lbInfo corelb.BaseLoadBalancer,
+	tgInfo corelb.BaseTargetGroup) (*typelb.TCloudCreateListenerOption, error) {
+
+	lblOpt := &typelb.TCloudCreateListenerOption{
+		Region:            lbInfo.Region,
+		LoadBalancerId:    lbInfo.CloudID,
+		ListenerName:      req.Name,
+		Protocol:          req.Protocol,
+		Port:              req.Port,
+		SessionExpireTime: req.SessionExpire,
+		Scheduler:         req.Scheduler,
+		SniSwitch:         req.SniSwitch,
+		SessionType:       cvt.ValToPtr(req.SessionType),
+		Certificate:       req.Certificate,
+	}
+	if req.Protocol.IsLayer4Protocol() {
+		lblOpt.HealthCheck = &corelb.TCloudHealthCheckInfo{}
+		if tgInfo.HealthCheck != nil {
+			lblOpt.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
+		} else {
+			lblOpt.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
+		}
+	}
+
+	// 7层监听器，不管SNI开启还是关闭，都需要传入证书参数
+	// 7层监听器并且SNI开启时，创建监听器接口，不需要证书
+	if req.Protocol == enumor.HttpsProtocol {
+		if req.Certificate == nil {
+			return nil, errf.New(errf.InvalidParameter, "certificate is required when layer 7 listener")
+		}
+		if cvt.PtrToVal(req.Certificate.CaCloudID) == "" && len(req.Certificate.CertCloudIDs) == 0 {
+			return nil, errf.New(errf.InvalidParameter,
+				"certificate.ca_cloud_id and certificate.cert_cloud_ids is required")
+		}
+		if req.SniSwitch == enumor.SniTypeOpen {
+			lblOpt.Certificate = nil
+		}
+	}
+
+	return lblOpt, nil
 }
 
 func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWithRuleCreateReq,

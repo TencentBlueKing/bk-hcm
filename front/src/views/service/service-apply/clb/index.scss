@@ -3,12 +3,14 @@
     font-size: 16px;
     color: #313238;
   }
+
   .apply-clb-form-container {
     margin-top: 52px;
     padding: 24px !important;
 
     .form-card-container {
       margin-bottom: 16px;
+
       &:last-of-type {
         margin-bottom: 52px;
       }
@@ -41,9 +43,11 @@
       .label {
         margin-right: 5px;
       }
+
       .value {
         margin-left: 10px;
       }
+
       .bkhcm-icon-prompt {
         margin-left: 7px;
         color: #c4c6cc;
@@ -56,8 +60,10 @@
 
       .bk-slider {
         width: 50vw;
+
         .bk-slider-runway {
           left: 4px;
+
           .bk-slider-button {
             z-index: 1;
           }
@@ -65,6 +71,7 @@
 
         .bk-slider-input {
           margin-left: 45px;
+
           .input-item {
             width: 120px;
           }
@@ -90,6 +97,7 @@
       display: flex;
       align-items: center;
       border-right: none;
+
       .input-suffix-select {
         width: 50px;
       }
@@ -105,6 +113,7 @@
       }
     }
   }
+
   .apply-clb-bottom-bar {
     position: fixed;
     bottom: 0;
@@ -124,14 +133,16 @@
       padding: 0 24px;
       display: flex;
       align-items: center;
-      
+
       .label {
         margin-right: 5px;
+
         &.has-tips {
           border-bottom: 1px dashed #979ba5;
           cursor: pointer;
         }
       }
+
       .value {
         margin-left: 5px;
         color: #ff9c01;
@@ -146,6 +157,7 @@
           font-size: 18px;
         }
       }
+
       &:not(:first-of-type)::before {
         content: '';
         position: absolute;
@@ -161,9 +173,6 @@
     .operation-btn-wrap {
       .bk-button {
         width: 88px;
-        &:not(:last-of-type) {
-          margin-right: 8px;
-        }
       }
     }
   }
@@ -171,6 +180,7 @@
   .bk-card {
     cursor: default;
   }
+
   .bk-radio-button-label {
     padding: 0 !important;
   }
@@ -179,24 +189,31 @@
 .w88 {
   width: 88px;
 }
+
 .w110 {
   width: 110px;
 }
+
 .w220 {
   width: 220px;
 }
+
 .w240 {
   width: 240px;
 }
+
 .w500 {
   width: 500px;
 }
+
 .f24 {
   font-size: 24px;
 }
+
 .ml24 {
   margin-left: 32px;
 }
+
 .image-selector-selected-block-container {
   display: flex;
   align-items: center;

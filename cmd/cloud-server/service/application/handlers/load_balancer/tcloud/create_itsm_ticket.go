@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	cvt "hcm/pkg/tools/converter"
 )
 
@@ -144,7 +145,15 @@ func (a *ApplicationOfCreateTCloudLB) renderBaseInfo() ([]formItem, error) {
 	if req.VipIsp != nil {
 		isp = *req.VipIsp
 	}
+	if req.LoadBalancerType == loadbalancer.InternalLoadBalancerType {
+		isp = "内网流量"
+	}
 	formItems = append(formItems, formItem{Label: "运营商", Value: isp})
+
+	if req.InternetMaxBandwidthOut != nil {
+		formItems = append(formItems,
+			formItem{Label: "带宽", Value: fmt.Sprintf("%dMbps", cvt.PtrToVal(req.InternetMaxBandwidthOut))})
+	}
 
 	return formItems, nil
 }

@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud/route-table"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -100,10 +101,22 @@ func (svc *routeTableSvc) BatchCreateAwsRoute(cts *rest.Contexts) (interface{}, 
 		return nil, errf.New(errf.RecordNotFound, "route table not exists")
 	}
 
+	ids, err := svc.addAwsRoute(cts.Kit, tableID, cloudTableID, req.AwsRoutes)
+	if err != nil {
+		logs.Errorf("create aws route failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// addAwsRoute add aws route to the database.
+func (svc *routeTableSvc) addAwsRoute(kt *kit.Kit, tableID string, cloudTableID string,
+	createReqs []protocloud.AwsRouteCreateReq) ([]string, error) {
+
 	// add routes
-	routeIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		routes := make([]tablecloud.AwsRouteTable, 0, len(req.AwsRoutes))
-		for _, createReq := range req.AwsRoutes {
+	routeIDs, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		routes := make([]tablecloud.AwsRouteTable, 0, len(createReqs))
+		for _, createReq := range createReqs {
 			route := tablecloud.AwsRouteTable{
 				RouteTableID:                     tableID,
 				CloudRouteTableID:                cloudTableID,
@@ -123,19 +136,18 @@ func (svc *routeTableSvc) BatchCreateAwsRoute(cts *rest.Contexts) (interface{}, 
 				CloudVpcPeeringConnectionID:      createReq.CloudVpcPeeringConnectionID,
 				State:                            createReq.State,
 				Propagated:                       &createReq.Propagated,
-				Creator:                          cts.Kit.User,
-				Reviser:                          cts.Kit.User,
+				Creator:                          kt.User,
+				Reviser:                          kt.User,
 			}
 
 			routes = append(routes, route)
 		}
-
-		routeID, err := svc.dao.Route().Aws().BatchCreateWithTx(cts.Kit, txn, routes)
+		routeIDs, err := svc.dao.Route().Aws().BatchCreateWithTx(kt, txn, routes)
 		if err != nil {
 			return nil, fmt.Errorf("create aws route failed, err: %v", err)
 		}
 
-		return routeID, nil
+		return routeIDs, nil
 	})
 
 	if err != nil {
@@ -147,8 +159,7 @@ func (svc *routeTableSvc) BatchCreateAwsRoute(cts *rest.Contexts) (interface{}, 
 		return nil, fmt.Errorf("create aws route but return ids type %s is not string array",
 			reflect.TypeOf(routeIDs).String())
 	}
-
-	return &core.BatchCreateResult{IDs: ids}, nil
+	return ids, nil
 }
 
 // BatchUpdateAwsRoute batch update route.

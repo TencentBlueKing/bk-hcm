@@ -42,6 +42,7 @@ import (
 	"hcm/pkg/rest"
 )
 
+// SyncHuaWeiOption ...
 type SyncHuaWeiOption struct {
 	AccountID  string   `json:"account_id" validate:"required"`
 	Region     string   `json:"region" validate:"required"`

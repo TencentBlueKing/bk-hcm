@@ -22,14 +22,19 @@ package account
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"hcm/cmd/cloud-server/logics/account"
 	"hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
+
+// AccountSyncDefaultTimeout 账号同步的默认超时时间
+const AccountSyncDefaultTimeout = time.Minute * 10
 
 // SyncCloudResource ...
 func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) {
@@ -73,7 +78,7 @@ func (a *accountSvc) SyncCloudResourceByCond(cts *rest.Contexts) (any, error) {
 		return nil, errf.Newf(errf.InvalidParameter, "account not found by vendor: %s", vendor)
 	}
 
-	if err := vendor.Validate(); err != nil {
+	if err = vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -115,7 +120,12 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 	}
 
 	// 查询该账号对应的Vendor
-	bizRelReq := &cloud.AccountBizRelWithAccountListReq{BkBizIDs: []int64{bkBizId}}
+	usageBizIDs := []int64{bkBizId}
+	// 关联了所有使用业务的账号也应该被查出来
+	if bkBizId != constant.AttachedAllBiz {
+		usageBizIDs = append(usageBizIDs, constant.AttachedAllBiz)
+	}
+	bizRelReq := &cloud.AccountBizRelWithAccountListReq{UsageBizIDs: usageBizIDs}
 	accountBizList, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, bizRelReq)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

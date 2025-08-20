@@ -55,7 +55,7 @@ func AssignTCloud(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int6
 	}
 
 	// 校验负载均衡关联资源信息
-	if err := ValidateLoadBalancerRelatedBeforeAssign(kt, cli, lblIds, tgIDs); err != nil {
+	if err := ValidateLBRelatedBeforeAssign(kt, cli, lblIds, tgIDs); err != nil {
 		return err
 	}
 
@@ -139,8 +139,8 @@ func GetLoadBalancerRelateResIDs(kt *kit.Kit, cli *dataservice.Client, lbIds []s
 	return lblIds, tgIDs, nil
 }
 
-// ValidateLoadBalancerRelatedBeforeAssign 在分配前校验lb关联资源信息
-func ValidateLoadBalancerRelatedBeforeAssign(kt *kit.Kit, cli *dataservice.Client, lblIds []string,
+// ValidateLBRelatedBeforeAssign 在分配前校验lb关联资源信息
+func ValidateLBRelatedBeforeAssign(kt *kit.Kit, cli *dataservice.Client, lblIds []string,
 	tgIds []string) error {
 
 	// 目前都是以负载均衡粒度分配到业务，因此暂不做关联资源分配校验

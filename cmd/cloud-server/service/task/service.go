@@ -39,12 +39,16 @@ func InitService(c *capability.Capability) {
 
 	h.Add("ListBizTaskManagement", http.MethodPost, "/bizs/{bk_biz_id}/task_managements/list",
 		svc.ListBizTaskManagement)
+	h.Add("ListBizTaskManagementByCond", http.MethodPost, "/bizs/{bk_biz_id}/task_managements/list_by_cond",
+		svc.ListBizTaskManagementByCond)
 	h.Add("CancelBizTaskManagement", http.MethodPost, "/bizs/{bk_biz_id}/task_managements/cancel",
 		svc.CancelBizTaskManagement)
 	h.Add("ListBizTaskManagementState", http.MethodPost, "/bizs/{bk_biz_id}/task_managements/state/list",
 		svc.ListBizTaskManagementState)
 
 	h.Add("ListBizTaskDetail", http.MethodPost, "/bizs/{bk_biz_id}/task_details/list", svc.ListBizTaskDetail)
+	h.Add("ListBizTaskDetailByCond", http.MethodPost, "/bizs/{bk_biz_id}/task_details/list_by_cond",
+		svc.ListBizTaskDetailByCond)
 	h.Add("CountBizTaskDetailState", http.MethodPost, "/bizs/{bk_biz_id}/task_details/state/count",
 		svc.CountBizTaskDetailState)
 

@@ -47,7 +47,7 @@ func (opt SyncBaseParams) Validate() error {
 type SyncResult struct {
 }
 
-// CloudData
+// CloudData ...
 type CloudData struct {
 	CloudSubnetIDs       []string
 	PrivateIPv4Addresses []string

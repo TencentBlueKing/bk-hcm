@@ -81,6 +81,19 @@ export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute'
 }
 
 /**
+ * 格式化当前时间与传入时间差值
+ *  @param val 待比较的时间
+ * @returns 几秒前，几分钟前，几小时前，几天前
+ */
+export function parseTimeFromNow(val: string) {
+  const value = timeFromNow(val, 'second');
+  if (value < 60) return `${value}秒前`;
+  if (value < 3600) return `${Math.floor(value / 60)}分钟前`;
+  if (value < 86400) return `${Math.floor(value / 3600)}小时前`;
+  return `${Math.floor(value / 86400)}天前`;
+}
+
+/**
  * 为表格设置new标识(配合useTable使用)
  * @returns 'row-class': ({ created_at }: { created_at: string }) => string
  */
@@ -300,4 +313,8 @@ export const formatTags = (data: { [k: string]: any }) => {
       .map((item) => item.join(':'))
       .join(';') || '--'
   );
+};
+
+export const resolveApiPathByBusinessId = (prefix: string, suffix: string, businessId?: number) => {
+  return businessId ? `${prefix}/bizs/${businessId}/${suffix}` : `${prefix}/${suffix}`;
 };

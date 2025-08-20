@@ -60,6 +60,14 @@ func (t *TCloudImpl) CreateCert(kt *kit.Kit, opt *typecert.TCloudCreateOption) (
 	req.CertificatePublicKey = common.StringPtr(opt.PublicKey)
 	req.CertificatePrivateKey = common.StringPtr(opt.PrivateKey)
 	req.Repeatable = common.BoolPtr(opt.Repeatable)
+	for _, tag := range opt.Tags {
+		sslTag := &ssl.Tags{
+			TagKey:   converter.ValToPtr(tag.Key),
+			TagValue: converter.ValToPtr(tag.Value),
+		}
+		req.Tags = append(req.Tags, sslTag)
+	}
+
 	resp, err := client.UploadCertificateWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("run tencent cloud cert instance failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)

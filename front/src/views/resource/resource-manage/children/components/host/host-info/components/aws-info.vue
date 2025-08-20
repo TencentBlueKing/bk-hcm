@@ -7,14 +7,15 @@ import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
-
-const { getRegionName } = useRegionsStore();
+import { isNil } from 'lodash';
 
 const props = defineProps({
   data: {
     type: Object as PropType<any>,
   },
 });
+
+const { getRegionName } = useRegionsStore();
 
 const cvmInfo: FieldList = [
   {
@@ -142,7 +143,7 @@ const settingInfo: FieldList = [
   {
     name: 'CPU',
     render() {
-      return `${props?.data?.cpu_options?.core_count}核`;
+      return isNil(props?.data?.cpu_options?.core_count) ? '--' : `${props.data.cpu_options.core_count} 核`;
     },
   },
   {

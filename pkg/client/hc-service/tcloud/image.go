@@ -68,8 +68,9 @@ func (cli *ImageClient) SyncImage(ctx context.Context, h http.Header,
 }
 
 // ListImage list image.
-func (cli *ImageClient) ListImage(kt *kit.Kit, req *image.TCloudImageListOption) (
-	*typesimage.TCloudImageListResult, error) {
+func (cli *ImageClient) ListImage(kt *kit.Kit, req *image.TCloudImageListOption) (*typesimage.TCloudImageListResult,
+	error) {
 
-	return common.Request[image.TCloudImageListOption, typesimage.TCloudImageListResult](cli.client, "POST", kt, req, "/images/list")
+	return common.Request[image.TCloudImageListOption, typesimage.TCloudImageListResult](
+		cli.client, "POST", kt, req, "/images/list")
 }

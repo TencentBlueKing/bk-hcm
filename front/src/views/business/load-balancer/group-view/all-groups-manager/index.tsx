@@ -1,5 +1,13 @@
-import { computed, ComputedRef, defineComponent, inject } from 'vue';
-// import components
+import { computed, ComputedRef, defineComponent, inject, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import useRenderTRList from './useRenderTGList';
+import useBatchDeleteTR from './useBatchDeleteTR';
+import useBatchDeleteRs from './useBatchDeleteRs';
+import { TargetGroupOperationScene } from '@/constants';
+import { IAuthSign } from '@/common/auth-service';
+import bus from '@/common/bus';
+
 import { Button, Checkbox, Dropdown, Loading, SearchSelect, Table } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
 import { Plus, AngleDown } from 'bkui-vue/lib/icon';
@@ -7,19 +15,7 @@ import AddOrUpdateTGSideslider from '../components/AddOrUpdateTGSideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import AddRsDialog from '../components/AddRsDialog';
 import BatchAddRsSideslider from './BatchAddRsSideslider';
-// import stores
-import { useBusinessStore, useLoadBalancerStore } from '@/store';
-// import custom hooks
-import useRenderTRList from './useRenderTGList';
-import useBatchDeleteTR from './useBatchDeleteTR';
-import useBatchDeleteRs from './useBatchDeleteRs';
-import { useI18n } from 'vue-i18n';
-// import utils
-import bus from '@/common/bus';
 import './index.scss';
-import { useVerify } from '@/hooks';
-import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
-import { TargetGroupOperationScene } from '@/constants';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -28,16 +24,17 @@ export default defineComponent({
   setup() {
     // use hooks
     const { t } = useI18n();
-    const { authVerifyData, handleAuth } = useVerify();
-    const globalPermissionDialogStore = useGlobalPermissionDialog();
-    const createClbActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> =
-      inject('createClbActionName');
+    const clbCreateAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbCreateAuthSign');
+    const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
+    const clbDeleteAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbDeleteAuthSign');
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
 
     // 目标组list
     const { searchData, selections, CommonTable, getListData } = useRenderTRList();
+
+    const isDropdownShow = ref(false);
 
     // 批量删除目标组
     const {
@@ -119,83 +116,110 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='common-card-wrap'>
-        {/* 目标组list */}
-        <CommonTable>
-          {{
-            operation: () => (
-              <>
-                <Button
-                  theme='primary'
-                  onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
-                      handleAuth(createClbActionName.value);
-                      globalPermissionDialogStore.setShow(true);
-                    } else bus.$emit('addTargetGroup');
-                  }}
-                  class={[
-                    'mr8',
-                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
-                  ]}
-                >
-                  <Plus class='f20' />
-                  {t('新建')}
-                </Button>
-                <Dropdown trigger='click' placement='bottom-start'>
-                  {{
-                    default: () => (
-                      <Button disabled={!selections.value.length}>
-                        {t('批量操作')} <AngleDown class='f20' />
-                      </Button>
-                    ),
-                    content: () => (
-                      <DropdownMenu>
-                        <DropdownItem>
-                          <Button text onClick={handleBatchDeleteTG}>
-                            {t('批量移除目标组')}
-                          </Button>
-                        </DropdownItem>
-                        <DropdownItem>
-                          <Button
-                            text
-                            onClick={handleBatchDeleteRs}
-                            disabled={!isSelectionsBelongSameAccountAndLB.value}
-                            v-bk-tooltips={{
-                              content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
-                              disabled: isSelectionsBelongSameAccountAndLB.value,
+      <div class='target-group-overview'>
+        <div class='panel'>
+          {/* 目标组list */}
+          <CommonTable>
+            {{
+              operation: () => (
+                <>
+                  <hcm-auth sign={clbCreateAuthSign.value}>
+                    {{
+                      default: ({ noPerm }: { noPerm: boolean }) => (
+                        <Button
+                          class='mr8'
+                          theme='primary'
+                          disabled={noPerm}
+                          onClick={() => bus.$emit('addTargetGroup')}>
+                          <Plus class='f22' />
+                          {t('新建')}
+                        </Button>
+                      ),
+                    }}
+                  </hcm-auth>
+                  <Dropdown
+                    isShow={isDropdownShow.value}
+                    trigger='manual'
+                    placement='bottom-start'
+                    popoverOptions={{ forceClickoutside: true }}
+                    onHide={() => (isDropdownShow.value = false)}>
+                    {{
+                      default: () => (
+                        <Button disabled={!selections.value.length} onClick={() => (isDropdownShow.value = true)}>
+                          {t('批量操作')} <AngleDown class='f22' />
+                        </Button>
+                      ),
+                      content: () => (
+                        <DropdownMenu
+                          class='target-group-batch-operation-menu'
+                          onClick={() => (isDropdownShow.value = false)}>
+                          <hcm-auth sign={clbDeleteAuthSign.value}>
+                            {{
+                              default: ({ noPerm }: { noPerm: boolean }) => (
+                                <DropdownItem>
+                                  <Button text disabled={noPerm} onClick={handleBatchDeleteTG}>
+                                    {t('批量移除目标组')}
+                                  </Button>
+                                </DropdownItem>
+                              ),
                             }}
-                          >
-                            {t('批量移除 RS')}
-                          </Button>
-                        </DropdownItem>
-                        <DropdownItem>
-                          <Button
-                            text
-                            onClick={handleBatchAddRs}
-                            disabled={!isSelectionsBelongSameAccountAndLB.value || !isSelectionsBelongSameVpc.value}
-                            v-bk-tooltips={
-                              !isSelectionsBelongSameAccountAndLB.value
-                                ? {
-                                    content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
-                                    disabled: isSelectionsBelongSameAccountAndLB.value,
-                                  }
-                                : {
-                                    content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
-                                    disabled: isSelectionsBelongSameVpc.value,
-                                  }
-                            }
-                          >
-                            {t('批量添加 RS')}
-                          </Button>
-                        </DropdownItem>
-                      </DropdownMenu>
-                    ),
-                  }}
-                </Dropdown>
-              </>
-            ),
-          }}
-        </CommonTable>
+                          </hcm-auth>
+                          <hcm-auth sign={clbOperationAuthSign.value}>
+                            {{
+                              default: ({ noPerm }: { noPerm: boolean }) => (
+                                <DropdownItem>
+                                  <Button
+                                    text
+                                    disabled={noPerm || !isSelectionsBelongSameAccountAndLB.value}
+                                    v-bk-tooltips={{
+                                      content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
+                                      disabled: isSelectionsBelongSameAccountAndLB.value,
+                                    }}
+                                    onClick={handleBatchDeleteRs}>
+                                    {t('批量移除 RS')}
+                                  </Button>
+                                </DropdownItem>
+                              ),
+                            }}
+                          </hcm-auth>
+                          <hcm-auth sign={clbOperationAuthSign.value}>
+                            {{
+                              default: ({ noPerm }: { noPerm: boolean }) => (
+                                <DropdownItem>
+                                  <Button
+                                    text
+                                    disabled={
+                                      noPerm ||
+                                      !isSelectionsBelongSameAccountAndLB.value ||
+                                      !isSelectionsBelongSameVpc.value
+                                    }
+                                    v-bk-tooltips={
+                                      !isSelectionsBelongSameAccountAndLB.value
+                                        ? {
+                                            content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
+                                            disabled: isSelectionsBelongSameAccountAndLB.value,
+                                          }
+                                        : {
+                                            content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
+                                            disabled: isSelectionsBelongSameVpc.value,
+                                          }
+                                    }
+                                    onClick={handleBatchAddRs}>
+                                    {t('批量添加 RS')}
+                                  </Button>
+                                </DropdownItem>
+                              ),
+                            }}
+                          </hcm-auth>
+                        </DropdownMenu>
+                      ),
+                    }}
+                  </Dropdown>
+                </>
+              ),
+            }}
+          </CommonTable>
+        </div>
         {/* 新增/编辑目标组 */}
         <AddOrUpdateTGSideslider origin='list' getListData={getListData} />
         {/* 添加RS */}
@@ -210,8 +234,7 @@ export default defineComponent({
           confirmText='删除'
           tableProps={batchDeleteTargetGroupTableProps}
           list={computedListenersList.value}
-          onHandleConfirm={batchDeleteTargetGroup}
-        >
+          onHandleConfirm={batchDeleteTargetGroup}>
           {{
             tips: () => (
               <>
@@ -239,8 +262,7 @@ export default defineComponent({
           theme='danger'
           confirmText='移除 RS'
           custom
-          onHandleConfirm={batchDeleteRs}
-        >
+          onHandleConfirm={batchDeleteRs}>
           <div class='top-area'>
             <div class='tips'>
               已选择<span class='blue'>{selections.value.length}</span>

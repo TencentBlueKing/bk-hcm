@@ -180,7 +180,7 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 		vendor := enumor.Vendor(arr[0])
 
 		accountID, region := arr[1], arr[2]
-		listFunc, err := svc.chooseListSecurityGroupStatisticFunc(vendor)
+		listFunc, err := svc.chooseListSGStatisticFunc(vendor)
 		if err != nil {
 			logs.Errorf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -230,7 +230,7 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 type callListSecurityGroupStatisticFunc func(kt *kit.Kit, req *hcservice.ListSecurityGroupStatisticReq) (
 	*hcservice.ListSecurityGroupStatisticResp, error)
 
-func (svc *securityGroupSvc) chooseListSecurityGroupStatisticFunc(vendor enumor.Vendor) (
+func (svc *securityGroupSvc) chooseListSGStatisticFunc(vendor enumor.Vendor) (
 	callListSecurityGroupStatisticFunc, error) {
 
 	switch vendor {

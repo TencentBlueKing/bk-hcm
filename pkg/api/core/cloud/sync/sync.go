@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/dal/table/types"
 )
 
+// AccountSyncDetailTable ...
 type AccountSyncDetailTable struct {
 	ID              string          `json:"id"`
 	Vendor          enumor.Vendor   `json:"vendor"`

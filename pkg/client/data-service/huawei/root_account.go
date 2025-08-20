@@ -46,8 +46,8 @@ func (a *RootAccountClient) Create(kt *kit.Kit,
 	*core.CreateResult, error,
 ) {
 
-	return common.Request[dataproto.RootAccountCreateReq[dataproto.HuaWeiRootAccountExtensionCreateReq], core.CreateResult](
-		a.client, rest.POST, kt, request, "/root_accounts/create")
+	return common.Request[dataproto.RootAccountCreateReq[dataproto.HuaWeiRootAccountExtensionCreateReq],
+		core.CreateResult](a.client, rest.POST, kt, request, "/root_accounts/create")
 }
 
 // Get huawei account detail.

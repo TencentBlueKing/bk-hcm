@@ -12,7 +12,9 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.8.1
+  tag: 1.8.5
+
+apigwReleaseVersion: 1.0.0
 
 serviceAccount:
   create: true
@@ -281,6 +283,8 @@ cloudserver:
         targetPort: 80
         nodePort:
   port: 80
+  concurrentConfig:
+    clbImportCount: 10
 
 dataservice:
   ## 镜像
@@ -649,25 +653,51 @@ crypto:
     ##
     nonce:
 
-## APIGateway Sync
-apigwSync:
-  enabled: true
+## 网关自动注册配置
+apigwRegister:
+  enabled: false
   image:
-    repository: blueking/bk-hcm-apigwsync
-    tag: 1.0.2
+    repository: blueking/bk-hcm-apigwregister
+    tag:
   ## 需注册的网关名
   apigwName: "bk-hcm"
   ## 蓝鲸 APIGateway url模板
   bkApiUrlTmpl: "http://bkapi.example.com/api/{api_name}"
   ## 网关负责人，多个使用英文逗号分隔
-  bkApigwManagers: "admin"
+  maintainer: "admin"
+  stageName: "prod"
+  stageDescription: "正式环境"
+  stageDescriptionEn: "Production Environment"
+  releaseTitle: "title"
+  releaseComment: "comment"
+  apiUrlPathPrefix: ""
+  extraEnv:
+  # ENV_1: "value1"
+  # ENV_2: "value2"
   ## Pod
   resources:
     limits:
       cpu: 200m
-      memory: 1024Mi
-    requests:
       memory: 512Mi
+    requests:
+      memory: 20Mi
+      cpu: 200m
+
+# 权限中心自动注册配置
+authRegister:
+  # 是否启用权限中心自动注册job
+  enabled: false
+  # job的镜像参数配置
+  image:
+    repository: blueking/bk-hcm-authregister
+    tag:
+  userName: "bk-hcm"
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      memory: 20Mi
       cpu: 200m
 
 ## Migrate DB
@@ -734,6 +764,8 @@ dbConnConfig:
   maxIdleConn: 100
   limiterQps: 500
   limiterBurst: 500
+  timeZone: UTC
+
 ## 内置Etcd
 ##
 etcd:

@@ -32,22 +32,22 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// ListSecurityGroupRulesByCloudTargetSGID list security group rules by cloud target security group id.
+// ListSGRulesByCloudTargetSGID list security group rules by cloud target security group id.
 // return map[cloudSecurityGroupID][]securityGroupRuleID
-func ListSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client,
+func ListSGRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client,
 	vendor enumor.Vendor, sgID string) (map[string][]string, error) {
 
 	var cloudSGToSgRulesMap map[string][]string
 	var err error
 	switch vendor {
 	case enumor.TCloud:
-		cloudSGToSgRulesMap, err = listTCloudSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
+		cloudSGToSgRulesMap, err = listTCloudSGRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.Aws:
-		cloudSGToSgRulesMap, err = listAwsSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
+		cloudSGToSgRulesMap, err = listAwsSGRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.Azure:
-		cloudSGToSgRulesMap, err = listAzureSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
+		cloudSGToSgRulesMap, err = listAzureSGRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.HuaWei:
-		cloudSGToSgRulesMap, err = listHuaweiSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
+		cloudSGToSgRulesMap, err = listHuaweiSGRulesByCloudTargetSGID(kt, cli, sgID)
 	default:
 		return nil, fmt.Errorf("unsupported vendor %s for validateSecurityGroupRuleRel", vendor)
 	}
@@ -59,9 +59,9 @@ func ListSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Clien
 	return cloudSGToSgRulesMap, nil
 }
 
-// listTCloudSecurityGroupRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
+// listTCloudSGRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
 // 返回 map[安全组ID]安全组规则ID列表
-func listTCloudSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
+func listTCloudSGRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
 	map[string][]string, error) {
 
 	sgCloudIDToRuleIDs := make(map[string][]string)
@@ -89,9 +89,9 @@ func listTCloudSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice
 	return sgCloudIDToRuleIDs, nil
 }
 
-// listAwsSecurityGroupRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
+// listAwsSGRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
 // 返回 map[安全组ID]安全组规则ID列表
-func listAwsSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
+func listAwsSGRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
 	map[string][]string, error) {
 
 	sgCloudIDToRuleIDs := make(map[string][]string)
@@ -119,9 +119,9 @@ func listAwsSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Cl
 	return sgCloudIDToRuleIDs, nil
 }
 
-// listAzureSecurityGroupRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
+// listAzureSGRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
 // 返回 map[安全组ID]安全组规则ID列表
-func listAzureSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
+func listAzureSGRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
 	map[string][]string, error) {
 
 	sgCloudIDToRuleIDs := make(map[string][]string)
@@ -150,9 +150,9 @@ func listAzureSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.
 	return sgCloudIDToRuleIDs, nil
 }
 
-// listHuaweiSecurityGroupRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
+// listHuaweiSGRulesByCloudTargetSGID 查询来源为安全组的 安全组规则,
 // 返回 map[安全组ID]安全组规则ID列表
-func listHuaweiSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
+func listHuaweiSGRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client, sgID string) (
 	map[string][]string, error) {
 
 	sgCloudIDToRuleIDs := make(map[string][]string)

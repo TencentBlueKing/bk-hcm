@@ -23,6 +23,7 @@ package tcloud
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typecore "hcm/pkg/adaptor/types/core"
@@ -41,6 +42,7 @@ import (
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
@@ -113,17 +115,27 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		lbFromCloud, lbFromDB, isLBChange)
 
 	// 删除云上已经删除的负载均衡实例
-	if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
-		return nil, err
+	if len(delCloudIDs) != 0 {
+		if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			return nil, err
+		}
 	}
-
 	// 创建云上新增负载均衡实例
-	_, err = cli.createLoadBalancer(kt, params.AccountID, params.Region, addSlice)
-	if err != nil {
-		return nil, err
+	if len(addSlice) != 0 {
+		_, err = cli.createLoadBalancer(kt, params.AccountID, params.Region, addSlice)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// 更新变更负载均衡
-	if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
+	if len(updateMap) != 0 {
+		if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
+			return nil, err
+		}
+	}
+	ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
+	if err = cli.updateLoadBalancerSyncTime(kt, ids); err != nil {
+		logs.Errorf("update load balancer sync time failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 	return new(SyncResult), nil
@@ -481,6 +493,25 @@ func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]corelb.T
 	return result.Details, nil
 }
 
+func (cli *client) updateLoadBalancerSyncTime(kt *kit.Kit, ids []string) error {
+	var updateReq protocloud.TCloudClbBatchUpdateReq
+	syncTime := times.ConvStdTimeFormat(time.Now())
+
+	for _, id := range ids {
+		lb := &protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
+			ID:       id,
+			SyncTime: syncTime,
+		}
+		updateReq.Lbs = append(updateReq.Lbs, lb)
+	}
+	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
+		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
 func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,
 	subnetMap map[string]string) protocloud.LbBatchCreate[corelb.TCloudClbExtension] {
 
@@ -506,7 +537,12 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
 		Tags:             cloud.GetTagMap(),
 		// 备注字段云上没有
-		Memo: nil,
+		Memo:     nil,
+		Isp:      cvt.PtrToVal(cloud.VipIsp),
+		SyncTime: times.ConvStdTimeFormat(time.Now()),
+	}
+	if cloud.NetworkAttributes != nil {
+		lb.BandWidth = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
 	}
 
 	// IP地址判断
@@ -600,6 +636,10 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudSubnetID:    cloudSubnetID,
 		Tags:             cloud.GetTagMap(),
 		Extension:        convertTCloudExtension(cloud, region),
+		Isp:              cvt.PtrToVal(cloud.VipIsp),
+	}
+	if cloud.NetworkAttributes != nil {
+		lb.BandWidth = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
 	}
 	if len(cloud.LoadBalancerVips) != 0 {
 		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
@@ -648,6 +688,9 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 	if db.CloudSubnetID != cvt.PtrToVal(cloud.SubnetId) {
 		return true
 	}
+	if db.Isp != cvt.PtrToVal(cloud.VipIsp) {
+		return true
+	}
 
 	if len(cloud.LoadBalancerVips) != 0 {
 		var dbIPList []string
@@ -691,6 +734,9 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	if cloud.NetworkAttributes != nil {
 		if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
 			cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+			return true
+		}
+		if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
 			return true
 		}
 		if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {

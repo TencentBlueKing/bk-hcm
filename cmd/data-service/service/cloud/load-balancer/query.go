@@ -22,7 +22,6 @@ package loadbalancer
 import (
 	rawjson "encoding/json"
 	"fmt"
-	"strings"
 
 	"hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
@@ -37,7 +36,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/cidr"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
@@ -117,6 +115,7 @@ func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
 	return &protocloud.LbRawListResult{Details: details}, nil
 }
 
+// convTableToBaseLB convert LoadBalancerTable to BaseLoadBalancer.
 func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
 
 	return &corelb.BaseLoadBalancer{
@@ -144,6 +143,7 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudStatusTime:      one.CloudStatusTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
+		SyncTime:             one.SyncTime,
 		Tags:                 core.TagMap(one.Tags),
 		Memo:                 one.Memo,
 		Revision: &core.Revision{
@@ -152,6 +152,8 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 			CreatedAt: one.CreatedAt.String(),
 			UpdatedAt: one.UpdatedAt.String(),
 		},
+		BandWidth: one.BandWidth,
+		Isp:       one.Isp,
 	}
 }
 
@@ -238,6 +240,7 @@ func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTa
 	}, nil
 }
 
+// convLbListResult convert load balancer list result to extended type.
 func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 	*protocloud.LbExtListResult[T], error) {
 
@@ -258,120 +261,6 @@ func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 
 	return &protocloud.LbExtListResult[T]{
 		Details: details,
-	}, nil
-}
-
-// ListListener list listener.
-func (svc *lbSvc) ListListener(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &types.ListOption{
-		Fields: req.Fields,
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list listener failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list listener failed, err: %v", err)
-	}
-
-	if req.Page.Count {
-		return &protocloud.ListenerListResult{Count: result.Count}, nil
-	}
-
-	details := make([]corelb.BaseListener, 0, len(result.Details))
-	for _, one := range result.Details {
-		tmpOne := convTableToBaseListener(&one)
-		details = append(details, *tmpOne)
-	}
-
-	return &protocloud.ListenerListResult{Details: details}, nil
-}
-
-// ListListenerExt list listener with extension.
-func (svc *lbSvc) ListListenerExt(cts *rest.Contexts) (any, error) {
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	opt := &types.ListOption{
-		Fields: req.Fields,
-		Filter: req.Filter,
-		Page:   req.Page,
-	}
-	result, err := svc.dao.LoadBalancerListener().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("list listener failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list listener failed, err: %v", err)
-	}
-
-	if req.Page.Count {
-		return &protocloud.ListenerListResult{Count: result.Count}, nil
-	}
-
-	details := make([]corelb.Listener[corelb.TCloudListenerExtension], 0, len(result.Details))
-	for _, one := range result.Details {
-		tmpOne, err := convTableToListener[corelb.TCloudListenerExtension](&one)
-		if err != nil {
-			logs.Errorf("fail to conv listener with extension, err: %v, rid: %s", err, cts.Kit.Rid)
-		}
-		details = append(details, *tmpOne)
-	}
-
-	return &protocloud.TCloudListenerListResult{Details: details}, nil
-}
-
-func convTableToBaseListener(one *tablelb.LoadBalancerListenerTable) *corelb.BaseListener {
-	return &corelb.BaseListener{
-		ID:            one.ID,
-		CloudID:       one.CloudID,
-		Name:          one.Name,
-		Vendor:        one.Vendor,
-		AccountID:     one.AccountID,
-		BkBizID:       one.BkBizID,
-		LbID:          one.LBID,
-		CloudLbID:     one.CloudLBID,
-		Protocol:      one.Protocol,
-		Port:          one.Port,
-		DefaultDomain: one.DefaultDomain,
-		Region:        one.Region,
-		Zones:         one.Zones,
-		Memo:          one.Memo,
-		SniSwitch:     one.SniSwitch,
-		Revision: &core.Revision{
-			Creator:   one.Creator,
-			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt.String(),
-			UpdatedAt: one.UpdatedAt.String(),
-		},
-	}
-}
-
-func convTableToListener[T corelb.ListenerExtension](table *tablelb.LoadBalancerListenerTable) (
-	*corelb.Listener[T], error) {
-	base := convTableToBaseListener(table)
-	extension := new(T)
-	if table.Extension != "" {
-		if err := json.UnmarshalFromString(string(table.Extension), extension); err != nil {
-			return nil, fmt.Errorf("fail unmarshal listener extension, err: %v", err)
-		}
-	}
-	return &corelb.Listener[T]{
-		BaseListener: base,
-		Extension:    extension,
 	}, nil
 }
 
@@ -397,7 +286,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		),
 		Page: req.Page,
 	}
-	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
+	result, err := svc.dao.LoadBalancerTCloudUrlRule().ListJoinListener(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list tcloud lb url rule failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list tcloud lb url rule failed, err: %v", err)
@@ -419,7 +308,8 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return &protocloud.TCloudURLRuleListResult{Details: details}, nil
 }
 
-func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
+// convTableToBaseTCloudLbURLRule convert TCloudLbUrlRuleTable to TCloudLbUrlRule.
+func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleWithListener) (
 	*corelb.TCloudLbUrlRule, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
@@ -458,6 +348,9 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTab
 		HealthCheck:        healthCheck,
 		Certificate:        certInfo,
 		Memo:               one.Memo,
+		LblName:            one.LblName,
+		Protocol:           enumor.ProtocolType(one.Protocol),
+		Port:               int64(one.Port),
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
@@ -844,210 +737,6 @@ func (svc *lbSvc) CountListenerByLbIDs(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	return svc.dao.LoadBalancerListener().CountListenerByLbIDs(cts.Kit, req.LbIDs)
-}
-
-// ListListenerWithTargets list listener with target.
-func (svc *lbSvc) ListListenerWithTargets(cts *rest.Contexts) (any, error) {
-	req := new(protocloud.ListListenerWithTargetsReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	listenerList := &protocloud.ListListenerWithTargetsResp{}
-	for _, item := range req.ListenerQueryList {
-		lblRsIPList, err := svc.queryListenerWithTargets(cts.Kit, req, item)
-		if err != nil {
-			return nil, err
-		}
-		listenerList.Details = append(listenerList.Details, lblRsIPList...)
-	}
-	return listenerList, nil
-}
-
-func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem) ([]*protocloud.ListBatchListenerResult, error) {
-
-	// 查询符合条件的负载均衡列表
-	cloudClbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
-	if err != nil {
-		return nil, err
-	}
-	// 未查询到符合条件的负载均衡列表
-	if len(cloudClbIDs) == 0 {
-		logs.Errorf("check list load balancer with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
-		return nil, nil
-	}
-
-	// 查询符合条件的监听器列表
-	lblMap, cloudLblIDs, _, err := svc.listBizListenerByLbIDs(kt, req, lblReq, cloudClbIDs)
-	if err != nil {
-		return nil, err
-	}
-	// 未查询到符合的监听器列表
-	if len(cloudLblIDs) == 0 {
-		logs.Errorf("list biz listener with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
-		return nil, nil
-	}
-
-	// 获取监听器绑定的目标组ID列表
-	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, req, lblReq, cloudLblIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	// 根据RSIP获取绑定的目标组ID列表
-	targetGroupRsList, targetGroupIDs, err := svc.listListenerWithTarget(kt, req, lblReq, cloudTargetGroupIDs)
-	if err != nil {
-		return nil, err
-	}
-	// 未查询到符合的监听器列表
-	if len(targetGroupIDs) == 0 {
-		logs.Errorf("list load balancer target with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
-		return nil, nil
-	}
-
-	// 根据负载均衡ID、监听器ID、目标组ID，获取监听器与目标组的绑定关系列表
-	lblUrlRuleList := make([]protocloud.LoadBalancerUrlRuleResult, 0)
-	switch req.Vendor {
-	case enumor.TCloud:
-		lblUrlRuleList, err = svc.listTCloudLoadBalancerUrlRuleByTgIDs(kt, lblReq, cloudClbIDs,
-			cloudLblIDs, targetGroupIDs)
-	default:
-		return nil, errf.Newf(errf.InvalidParameter, "batch query listener with targets failed, invalid vendor: %s",
-			req.Vendor)
-	}
-	if err != nil {
-		return nil, err
-	}
-	// 未查询到符合的监听器与目标组绑定关系的列表
-	if len(lblUrlRuleList) == 0 {
-		logs.Errorf("[%s]list load balancer url rule empty, req: %+v, cloudClbIDs: %v, cloudLblIDs: %v, "+
-			"targetGroupIDs: %v, rid: %s", req.Vendor, cvt.PtrToVal(req), cloudClbIDs,
-			cloudLblIDs, targetGroupIDs, kt.Rid)
-		return nil, nil
-	}
-
-	return svc.convertListListenerWithTargets(lbMap, lblUrlRuleList, lblMap, targetGroupRsList)
-}
-
-func (svc *lbSvc) convertListListenerWithTargets(lbMap map[string]tablelb.LoadBalancerTable,
-	lblUrlRuleList []protocloud.LoadBalancerUrlRuleResult, lblMap map[string]tablelb.LoadBalancerListenerTable,
-	targetGroupRsList map[string][]protocloud.LoadBalancerTargetRsList) (
-	[]*protocloud.ListBatchListenerResult, error) {
-
-	lblResult := make([]*protocloud.ListBatchListenerResult, 0)
-	lblRsMap := make(map[string]*protocloud.ListBatchListenerResult)
-	lblExist := make(map[string]struct{})
-	for _, item := range lblUrlRuleList {
-		// 遍历UrlRule列表，如果有多个监听器需要根据目标组ID，汇总RS列表
-		if _, ok := lblExist[item.CloudLblID]; ok {
-			lblRsMap = svc.getRsListByTargetGroupIDs(item, targetGroupRsList, lblRsMap)
-			continue
-		}
-		lblExist[item.CloudLblID] = struct{}{}
-		// 检查监听器是否存在
-		lblInfo, ok := lblMap[item.CloudLblID]
-		if !ok {
-			continue
-		}
-		// 检查负载均衡是否存在
-		lbInfo, ok := lbMap[item.CloudClbID]
-		if !ok {
-			continue
-		}
-		// 获取VIP/域名
-		vipDomain, err := svc.getClbVipDomain(lbInfo)
-		if err != nil {
-			return nil, err
-		}
-		lblRsMap[item.CloudLblID] = &protocloud.ListBatchListenerResult{
-			ClbID:        lbInfo.ID,
-			CloudClbID:   item.CloudClbID,
-			ClbVipDomain: strings.Join(vipDomain, ","),
-			BkBizID:      lblInfo.BkBizID,
-			Region:       lbInfo.Region,
-			Vendor:       lbInfo.Vendor,
-			LblID:        lblInfo.ID,
-			CloudLblID:   item.CloudLblID,
-			Protocol:     lblInfo.Protocol,
-			Port:         lblInfo.Port,
-			RsList:       make([]*protocloud.LoadBalancerTargetRsList, 0),
-		}
-		lblRsMap = svc.getRsListByTargetGroupIDs(item, targetGroupRsList, lblRsMap)
-	}
-
-	for _, item := range lblRsMap {
-		lblResult = append(lblResult, &protocloud.ListBatchListenerResult{
-			ClbID:        item.ClbID,
-			CloudClbID:   item.CloudClbID,
-			ClbVipDomain: item.ClbVipDomain,
-			BkBizID:      item.BkBizID,
-			Region:       item.Region,
-			Vendor:       item.Vendor,
-			LblID:        item.LblID,
-			CloudLblID:   item.CloudLblID,
-			Protocol:     item.Protocol,
-			Port:         item.Port,
-			RsList:       item.RsList,
-		})
-	}
-
-	return lblResult, nil
-}
-
-func (svc *lbSvc) getRsListByTargetGroupIDs(item protocloud.LoadBalancerUrlRuleResult,
-	targetGroupRsList map[string][]protocloud.LoadBalancerTargetRsList,
-	lblRsMap map[string]*protocloud.ListBatchListenerResult) map[string]*protocloud.ListBatchListenerResult {
-
-	if len(item.TargetGroupIDs) == 0 {
-		return nil
-	}
-
-	for _, targetGroupID := range item.TargetGroupIDs {
-		for _, targetGroupItem := range targetGroupRsList[targetGroupID] {
-			lblRsMap[item.CloudLblID].RsList = append(lblRsMap[item.CloudLblID].RsList,
-				&protocloud.LoadBalancerTargetRsList{
-					BaseTarget:  targetGroupItem.BaseTarget,
-					RuleID:      item.TargetGrouRuleMap[targetGroupID].RuleID,
-					CloudRuleID: item.TargetGrouRuleMap[targetGroupID].CloudRuleID,
-					RuleType:    item.TargetGrouRuleMap[targetGroupID].RuleType,
-					Domain:      item.TargetGrouRuleMap[targetGroupID].Domain,
-					Url:         item.TargetGrouRuleMap[targetGroupID].Url,
-				})
-		}
-	}
-	return lblRsMap
-}
-
-func (svc *lbSvc) getClbVipDomain(lbInfo tablelb.LoadBalancerTable) ([]string, error) {
-	vipDomains := make([]string, 0)
-	switch loadbalancer.TCloudLoadBalancerType(lbInfo.LBType) {
-	case loadbalancer.InternalLoadBalancerType:
-		if lbInfo.IPVersion == string(enumor.Ipv4) {
-			vipDomains = append(vipDomains, lbInfo.PrivateIPv4Addresses...)
-		} else {
-			vipDomains = append(vipDomains, lbInfo.PrivateIPv6Addresses...)
-		}
-	case loadbalancer.OpenLoadBalancerType:
-		if lbInfo.IPVersion == string(enumor.Ipv4) {
-			vipDomains = append(vipDomains, lbInfo.PublicIPv4Addresses...)
-		} else {
-			vipDomains = append(vipDomains, lbInfo.PublicIPv6Addresses...)
-		}
-	default:
-		return nil, fmt.Errorf("unsupported lb_type: %s(%s)", lbInfo.LBType, lbInfo.CloudID)
-	}
-
-	// 如果IP为空则获取负载均衡域名
-	if len(vipDomains) == 0 && len(lbInfo.Domain) > 0 {
-		vipDomains = append(vipDomains, lbInfo.Domain)
-	}
-
-	return vipDomains, nil
 }
 
 // listLoadBalancerListCheckVip 获取负载均衡列表并检查VIP、域名是否匹配
@@ -1483,3 +1172,4 @@ func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, req *protocloud.ListL
 	}
 	return slice.Unique(cloudTargetGroupIDs), nil
 }
+

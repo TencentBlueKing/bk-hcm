@@ -48,3 +48,13 @@ type DetailStateSummary struct {
 	Cancel  int    `json:"cancel"`
 	Total   int    `json:"total"`
 }
+
+// DetailListByCondReq list task detail request.
+type DetailListByCondReq struct {
+	TaskManagementIDs []string `json:"task_management_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate DetailListByCondReq.
+func (r DetailListByCondReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

@@ -21,6 +21,7 @@ package cert
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
@@ -66,11 +67,12 @@ func (opt TCloudDeleteOption) Validate() error {
 
 // TCloudCreateOption defines options to create aws cert instances.
 type TCloudCreateOption struct {
-	Name       string `json:"name" validate:"required"`
-	CertType   string `json:"cert_type" validate:"required"`
-	PublicKey  string `json:"public_key" validate:"required"`
-	PrivateKey string `json:"private_key" validate:"omitempty"`
-	Repeatable bool   `json:"repeatable" validate:"omitempty"`
+	Name       string            `json:"name" validate:"required"`
+	CertType   string            `json:"cert_type" validate:"required"`
+	PublicKey  string            `json:"public_key" validate:"required"`
+	PrivateKey string            `json:"private_key" validate:"omitempty"`
+	Repeatable bool              `json:"repeatable" validate:"omitempty"`
+	Tags       []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate tcloud cert operation option.

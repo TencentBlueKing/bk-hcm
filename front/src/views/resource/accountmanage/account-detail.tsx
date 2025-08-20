@@ -1,4 +1,4 @@
-import { Form, Dialog, Input, Message, Button, Alert, Select } from 'bkui-vue';
+import { Form, Dialog, Input, Message, Button, Alert } from 'bkui-vue';
 import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
 import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
 import { useI18n } from 'vue-i18n';
@@ -16,10 +16,10 @@ import {
   useSecretExtension,
 } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { VendorEnum } from '@/common/constant';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
 import { timeFormatter } from '@/common/util';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
-const { Option } = Select;
 
 // const { Option } = Select;
 export default defineComponent({
@@ -43,7 +43,8 @@ export default defineComponent({
       secretId: '', // 密钥id
       secretKey: '', // 密钥key
       managers: [], // 责任人
-      bk_biz_ids: [], // 使用业务
+      usage_biz_ids: [], // 使用业务
+      bk_biz_id: 0, // 管理业务
       memo: '', // 备注
       price: 0,
       extension: {}, // 特殊信息
@@ -56,7 +57,8 @@ export default defineComponent({
     const accountFormModel = reactive({
       managers: [],
       memo: '',
-      bk_biz_ids: [],
+      bk_biz_id: 0,
+      usage_biz_ids: [],
     });
     const accountForm = ref(null);
 
@@ -66,6 +68,8 @@ export default defineComponent({
         display_name: name,
       })),
     );
+
+    const isResourceAccount = computed(() => projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE);
 
     const resourceAccountStore = useResourceAccountStore();
 
@@ -342,14 +346,14 @@ export default defineComponent({
     };
 
     const check = (val: any): boolean => {
-      return /^[a-z][a-z-z0-9_-]*$/.test(val);
+      return /^[a-zA-Z][a-zA-Z0-9-_]{1,62}[a-zA-Z0-9]$/.test(val);
     };
 
     const formRules = {
       name: [
         {
           trigger: 'blur',
-          message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾',
+          message: '名称必须以小写字母开头，后面最多可跟 63个小写字母、数字或连字符，但不能以连字符结尾',
           validator: check,
         },
       ],
@@ -475,7 +479,8 @@ export default defineComponent({
       Object.assign(accountFormModel, {
         managers: projectModel.managers,
         memo: projectModel.memo,
-        bk_biz_ids: projectModel.bk_biz_ids,
+        usage_biz_ids: projectModel.usage_biz_ids,
+        bk_biz_id: projectModel.bk_biz_id,
       });
     };
 
@@ -486,9 +491,10 @@ export default defineComponent({
       await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
         managers: accountFormModel.managers,
         memo: accountFormModel.memo,
-        bk_biz_ids: Array.isArray(accountFormModel.bk_biz_ids)
-          ? accountFormModel.bk_biz_ids
-          : [accountFormModel.bk_biz_ids],
+        bk_biz_id: isResourceAccount.value ? accountFormModel.bk_biz_id : undefined,
+        usage_biz_ids: Array.isArray(accountFormModel.usage_biz_ids)
+          ? accountFormModel.usage_biz_ids
+          : [accountFormModel.usage_biz_ids],
       });
       isAccountDialogLoading.value = false;
       isShowModifyAccountDialog.value = false;
@@ -626,10 +632,29 @@ export default defineComponent({
             property: 'bk_biz_ids',
             isEdit: false,
             component() {
-              if (projectModel.bk_biz_ids?.[0] === -1) return '全部业务';
+              if (projectModel.usage_biz_ids?.[0] === -1) return '全部业务';
               return (
                 <RenderDetailEdit
-                  v-model={projectModel.bk_biz_ids}
+                  v-model={projectModel.usage_biz_ids}
+                  fromKey={this.property}
+                  hideEdit={true}
+                  selectData={businessList.list}
+                  fromType='select'
+                  isEdit={this.isEdit}
+                />
+              );
+            },
+          },
+          {
+            label: t('管理业务'),
+            required: false,
+            property: 'bk_biz_id',
+            isEdit: false,
+            isHidden: () => !isResourceAccount.value,
+            component() {
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.bk_biz_id}
                   fromKey={this.property}
                   hideEdit={true}
                   selectData={businessList.list}
@@ -656,6 +681,28 @@ export default defineComponent({
       } catch (error) {
       } finally {
         isSyncLoading.value = false;
+      }
+    };
+
+    const handleChangeManage = (val: number) => {
+      const usageVal = accountFormModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
+        accountFormModel.usage_biz_ids.push(val);
+      }
+    };
+    const handleChangeUse = (val: number[]) => {
+      const [firstVal] = val;
+      // 取消全选 val是空数组[]
+      if (!firstVal) {
+        accountFormModel.usage_biz_ids = [accountFormModel.bk_biz_id];
+        return;
+      }
+      // 如果有值，且val里面不包含管理业务，则把管理业务加进去
+      if (firstVal !== -1 && !val.includes(accountFormModel.bk_biz_id)) {
+        accountFormModel.usage_biz_ids.push(accountFormModel.bk_biz_id);
       }
     };
 
@@ -705,17 +752,19 @@ export default defineComponent({
                   ''
                 )}
               </div>
-              <Form model={projectModel} labelWidth={190} rules={formRules} ref={formRef}>
+              <Form model={projectModel} labelWidth={190} rules={formRules} ref={index === 0 ? formRef : null}>
                 <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
-                  {baseItem.data.map((formItem) => (
-                    <FormItem
-                      class='formItem-cls info-value'
-                      label={`${formItem.label} ：`}
-                      required={formItem.required}
-                      property={formItem.property}>
-                      {formItem.component()}
-                    </FormItem>
-                  ))}
+                  {baseItem.data
+                    .filter((item) => !item?.isHidden?.())
+                    .map((formItem) => (
+                      <FormItem
+                        class='formItem-cls info-value'
+                        label={`${formItem.label} ：`}
+                        required={formItem.required}
+                        property={formItem.property}>
+                        {formItem.component()}
+                      </FormItem>
+                    ))}
                 </div>
               </Form>
             </div>
@@ -795,14 +844,28 @@ export default defineComponent({
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
               </FormItem>
-              <FormItem label='业务' class={'api-secret-selector'} required property='bk_biz_ids'>
-                <Select filterable placeholder='请选择使用业务' v-model={accountFormModel.bk_biz_ids}>
-                  {businessList.list.map(({ id, name }) => (
-                    <Option key={id} value={id} label={name}>
-                      {name}
-                    </Option>
-                  ))}
-                </Select>
+              {isResourceAccount.value && (
+                <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>
+                  <hcm-form-business
+                    data={businessList.list}
+                    clearable={true}
+                    placeholder={'请选择管理业务'}
+                    v-model={accountFormModel.bk_biz_id}
+                    onChange={handleChangeManage}
+                  />
+                </FormItem>
+              )}
+              <FormItem label='使用业务' class={'api-secret-selector'} required property='usage_biz_ids'>
+                <hcm-form-business
+                  multiple={projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE}
+                  data={businessList.list}
+                  v-model={accountFormModel.usage_biz_ids}
+                  show-all={true}
+                  all-option-id={-1}
+                  tag-clearable={false}
+                  disabled={isResourceAccount.value && !accountFormModel.bk_biz_id}
+                  onChange={handleChangeUse}
+                />
               </FormItem>
               <FormItem label='备注'>
                 <Input type={'textarea'} v-model={accountFormModel.memo} maxlength={256} resize={false} />

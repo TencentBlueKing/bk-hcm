@@ -45,6 +45,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
+// initAwsCvmService 初始化 AWS CVM 相关的服务路由。
 func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
@@ -63,7 +64,7 @@ func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// BatchAssociateAwsSecurityGroup batch associate aws security group.
+// BatchAssociateAwsSecurityGroup 批量关联 AWS 安全组到 CVM。
 func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface{}, error) {
 
 	req := new(protocvm.AwsCvmBatchAssociateSecurityGroupReq)
@@ -131,6 +132,8 @@ func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface
 	return nil, nil
 }
 
+// syncAwsCvmWithRelRes 同步 AWS CVM 及其关联资源。
+// 调用 res-sync 模块的 CvmWithRelRes 方法执行同步操作。
 func (svc *cvmSvc) syncAwsCvmWithRelRes(kt *kit.Kit, awsCli *aws.Aws, accountID, region string,
 	cloudIDs []string) error {
 
@@ -149,6 +152,10 @@ func (svc *cvmSvc) syncAwsCvmWithRelRes(kt *kit.Kit, awsCli *aws.Aws, accountID,
 	return nil
 }
 
+// createSGCommonRelsForAws 为 AWS CVM 创建安全组关联关系。
+// 1. 从云上查询 CVM 最新的安全组信息。
+// 2. 根据安全组 CloudID 查询对应的 HCM 内部安全组 ID。
+// 3. 创建 CVM 与安全组的关联记录。
 func (svc *cvmSvc) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region string, cvm corecvm.BaseCvm) error {
 
 	awsCvms, err := svc.listAwsCvmFromCloud(kt, client, region, cvm)
@@ -189,6 +196,7 @@ func (svc *cvmSvc) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region
 	return nil
 }
 
+// listAwsCvmFromCloud 从 AWS 云上查询指定的 CVM 信息。
 func (svc *cvmSvc) listAwsCvmFromCloud(kt *kit.Kit, client *aws.Aws, region string, cvm corecvm.BaseCvm) (
 	[]typecvm.AwsCvm, error) {
 
@@ -208,7 +216,7 @@ func (svc *cvmSvc) listAwsCvmFromCloud(kt *kit.Kit, client *aws.Aws, region stri
 	return awsCvms, nil
 }
 
-// BatchCreateAwsCvm ...
+// BatchCreateAwsCvm 批量创建 AWS CVM。
 func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -265,7 +273,7 @@ func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	return respData, nil
 }
 
-// BatchStartAwsCvm ...
+// BatchStartAwsCvm 批量启动 AWS CVM。
 func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchStartReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -323,7 +331,7 @@ func (svc *cvmSvc) BatchStartAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// BatchStopAwsCvm ...
+// BatchStopAwsCvm 批量停止 AWS CVM。
 func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchStopReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -383,7 +391,7 @@ func (svc *cvmSvc) BatchStopAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// BatchRebootAwsCvm ...
+// BatchRebootAwsCvm 批量重启 AWS CVM。
 func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchRebootReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -441,7 +449,12 @@ func (svc *cvmSvc) BatchRebootAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// BatchDeleteAwsCvm ...
+// BatchDeleteAwsCvm 批量删除 AWS CVM。
+// 1. 解码并校验请求参数。
+// 2. 根据 HCM CVM ID 查询对应的 CloudID。
+// 3. 初始化 AWS 客户端。
+// 4. 调用 AWS SDK 删除 CVM。
+// 5. 从 HCM DB 中删除对应的 CVM 记录。
 func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -493,7 +506,10 @@ func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// ListAwsCvmNetworkInterface 返回一个map，key为cvmID，value为cvm的网卡信息 ListCvmNetworkInterfaceResp
+// ListAwsCvmNetworkInterface 列出 AWS CVM 的网络接口信息。
+// 1. 解码并校验请求参数。
+// 2. 根据 HCM CVM ID 查询 CVM 基础信息，并建立 CloudID 到 HCM ID 的映射。
+// 3. 调用内部函数从 AWS 云上获取网络接口信息。
 func (svc *cvmSvc) ListAwsCvmNetworkInterface(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.ListCvmNetworkInterfaceReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -521,6 +537,8 @@ func (svc *cvmSvc) ListAwsCvmNetworkInterface(cts *rest.Contexts) (interface{}, 
 	return result, nil
 }
 
+// listAwsCvmNetworkInterfaceFromCloud 从 AWS 云上获取指定 CVM 的网络接口信息。
+// 使用分页查询方式获取所有网络接口，并按 CVM ID 组织返回结果。
 func (svc *cvmSvc) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, accountID string,
 	cloudIDToIDMap map[string]string) (map[string]*protocvm.ListCvmNetworkInterfaceRespItem, error) {
 

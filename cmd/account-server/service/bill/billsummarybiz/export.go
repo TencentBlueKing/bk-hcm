@@ -86,9 +86,12 @@ func (s *service) ExportBizSummary(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("create writer failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := writer.Write(export.BillSummaryBizTableHeader); err != nil {
-		logs.Errorf("write header failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+
+	for _, header := range export.BillSummaryBizTableHeaders {
+		if err = writer.Write(header); err != nil {
+			logs.Errorf("write header failed, err: %v, header: %v, rid: %s", err, header, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 
 	table, err := toRawData(cts.Kit, result, bizMap)
@@ -123,7 +126,7 @@ func toRawData(kt *kit.Kit, details []*billproto.BillSummaryBizResult, bizMap ma
 			CurrentMonthRMBCost:       detail.CurrentMonthRMBCost.String(),
 			CurrentMonthCost:          detail.CurrentMonthCost.String(),
 		}
-		fields, err := table.GetHeaderValues()
+		fields, err := table.GetValuesByHeader()
 		if err != nil {
 			logs.Errorf("get header fields failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err

@@ -65,6 +65,8 @@ type TCloudLoadBalancerCreateReq struct {
 	Memo         string  `json:"memo" validate:"omitempty"`
 
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
+	// LoadBalancerPassToTarget 安全组放通模式
+	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target" validate:"required"`
 
 	Tags []apicore.TagPair `json:"tags,omitempty"`
 }
@@ -93,6 +95,10 @@ func (req *TCloudLoadBalancerCreateReq) Validate(bizRequired bool) error {
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
 	}
+	// ipv6模式下, 不允许修改安全组的放通模式, 默认为关闭
+	if req.AddressIPVersion == typelb.IPV6FullChainIPVersion && converter.PtrToVal(req.LoadBalancerPassToTarget) {
+		return fmt.Errorf("ipv6 mode does not support load_balancer_pass_to_target")
+	}
 
 	return validator.Validate.Struct(req)
 }
@@ -103,6 +109,8 @@ type BatchCreateResult struct {
 	SuccessCloudIDs []string `json:"success_cloud_ids"`
 	FailedCloudIDs  []string `json:"failed_cloud_ids"`
 	FailedMessage   string   `json:"failed_message"`
+
+	SuccessIDs []string `json:"success_ids"`
 }
 
 // -------------------------- List Clb--------------------------

@@ -38,8 +38,8 @@ export const useBusinessStore = defineStore({
     list(data: any, type: string, config = {}) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data, config);
     },
-    getCommonList(data: any, url: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
+    getCommonList(data: any, url: string, config = {}) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data, config);
     },
     /**
      * 根据id获取对应资源详情信息

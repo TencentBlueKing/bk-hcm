@@ -126,9 +126,10 @@ func (hd *routeTableHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *routeTableHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveRouteTableDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName); err != nil {
-		logs.Errorf("remove routeTable delete from cloud failed, err: %v, accountID: %s, resGroupName: %s, rid: %s", err,
-			hd.request.AccountID, hd.request.ResourceGroupName, kt.Rid)
+	err := hd.syncCli.RemoveRouteTableDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName)
+	if err != nil {
+		logs.Errorf("remove routeTable delete from cloud failed, err: %v, accountID: %s, resGroupName: %s, rid: %s",
+			err, hd.request.AccountID, hd.request.ResourceGroupName, kt.Rid)
 		return err
 	}
 

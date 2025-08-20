@@ -25,11 +25,13 @@ import (
 	"strconv"
 	"strings"
 
+	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/classifier"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -52,8 +54,8 @@ type CreateUrlRulePreviewExecutor struct {
 }
 
 // Execute ...
-func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +70,14 @@ func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 
 const createURLRuleExcelTableLen = 10
 
-func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) error {
+// createURLRuleExcelTableHeaderLen 表头长度
+const createURLRuleExcelTableHeaderLen = 12
+
+func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createURLRuleExcelTableHeaderLen {
+		return fmt.Errorf("headers length less than %d, got: %d, headers: %v",
+			createURLRuleExcelTableHeaderLen, len(headers), headers)
+	}
 	for i, data := range rawData {
 		if len(data) < createURLRuleExcelTableLen {
 			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
@@ -89,7 +98,8 @@ func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) 
 		detail.ListenerPort = ports
 		detail.Domain = data[4]
 
-		switch data[5] {
+		isDefaultDomain := strings.ToUpper(data[5])
+		switch isDefaultDomain {
 		case "TRUE":
 			detail.DefaultDomain = true
 		case "FALSE":
@@ -161,29 +171,36 @@ func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 		return err
 	}
 
-	for _, detail := range c.details {
-		lb, ok := lbMap[detail.CloudClbID]
-		if !ok {
-			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
-		}
-		if _, ok = c.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %+v", lb.Region, c.regionIDMap)
-		}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, c.details,
+		func(detail *CreateUrlRuleDetail) error {
 
-		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
-		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb vip(%s) not match", detail.ClbVipDomain))
-		}
-		detail.RegionID = lb.Region
+			lb, ok := lbMap[detail.CloudClbID]
+			if !ok {
+				return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
+			}
+			if _, ok = c.regionIDMap[lb.Region]; !ok {
+				return fmt.Errorf("clb region not match, clb.region: %s, input: %+v", lb.Region, c.regionIDMap)
+			}
 
-		if err = c.validateListener(kt, detail); err != nil {
-			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv4Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
+			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb vip(%s) not match", detail.ClbVipDomain))
+			}
+			detail.RegionID = lb.Region
+
+			if err = c.validateListener(kt, detail); err != nil {
+				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return concurrentErr
 	}
 	if err = c.validateDefaultDomain(kt); err != nil {
 		logs.Errorf("validate default domain failed, err: %v, rid: %s", err, kt.Rid)
@@ -207,6 +224,8 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 				curDetail.CloudClbID, curDetail.ListenerPort[0]))
 		return nil
 	}
+	curDetail.listenerID = listener.ID
+	curDetail.listenerDefaultDomain = listener.DefaultDomain
 
 	rule, err := getURLRule(kt, c.dataServiceCli, c.vendor,
 		curDetail.CloudClbID, listener.CloudID, curDetail.Domain, curDetail.UrlPath)
@@ -248,31 +267,26 @@ const (
 )
 
 func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error {
-	classifySlice := classifier.ClassifySlice(c.details, classifyFunc)
-	for key, details := range classifySlice {
-		cloudClbID, protocol, listenerPort, err := decodeClassifyKey(key)
-		if err != nil {
-			logs.Errorf("decode classify key failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-		listener, err := getListener(kt, c.dataServiceCli, c.accountID,
-			cloudClbID, protocol, listenerPort, c.bkBizID, c.vendor)
-		if err != nil {
-			logs.Errorf("get listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-		if listener == nil {
-			continue
-		}
 
+	// group by listener
+	classifySlice := classifier.ClassifySlice(c.details, classifyFunc)
+	for _, details := range classifySlice {
+		listenerDefaultDomain := ""
+		listenerID := ""
 		newDefaultDomain := ""
 		for _, detail := range details {
-			if listener.DefaultDomain != "" {
-				if detail.DefaultDomain && detail.Domain != listener.DefaultDomain {
+			if len(detail.listenerID) == 0 {
+				// listener not found, skip this detail
+				continue
+			}
+			listenerID = detail.listenerID
+			if detail.listenerDefaultDomain != "" {
+				listenerDefaultDomain = detail.listenerDefaultDomain
+				if detail.DefaultDomain && detail.Domain != detail.listenerDefaultDomain {
 					detail.Status.SetNotExecutable()
 					detail.ValidateResult = append(detail.ValidateResult,
 						fmt.Sprintf("listener(%s) default domain: %s, but got: %s",
-							listener.ID, listener.DefaultDomain, detail.Domain))
+							detail.listenerID, detail.listenerDefaultDomain, detail.Domain))
 				}
 				continue
 			}
@@ -287,17 +301,21 @@ func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error 
 					detail.Status.SetNotExecutable()
 					detail.ValidateResult = append(detail.ValidateResult,
 						fmt.Sprintf("listener(%s) multiple records have been set as default domain, current: %s, previous: %s",
-							listener.ID, detail.Domain, newDefaultDomain),
+							detail.listenerID, detail.Domain, newDefaultDomain),
 					)
 				}
 			}
 		}
-		if listener.DefaultDomain == "" && newDefaultDomain == "" {
+		if listenerID == "" {
+			// listener not found, skip these details
+			continue
+		}
+		if listenerDefaultDomain == "" && newDefaultDomain == "" {
 			for _, detail := range details {
 				detail.Status.SetNotExecutable()
 				detail.ValidateResult = append(detail.ValidateResult,
 					fmt.Sprintf("listener(%s) does not have a default domain, and no default domain is set",
-						listener.ID),
+						listenerID),
 				)
 			}
 		}
@@ -330,23 +348,21 @@ func decodeClassifyKey(key string) (string, enumor.ProtocolType, int, error) {
 
 // CreateUrlRuleDetail ...
 type CreateUrlRuleDetail struct {
-	ClbVipDomain string              `json:"clb_vip_domain"`
-	CloudClbID   string              `json:"cloud_clb_id"`
-	Protocol     enumor.ProtocolType `json:"protocol"`
-	ListenerPort []int               `json:"listener_port"`
-
-	Domain        string           `json:"domain"`
-	DefaultDomain bool             `json:"default_domain"`
-	UrlPath       string           `json:"url_path"`
-	Scheduler     enumor.Scheduler `json:"scheduler"`
-	Session       int              `json:"session"`
-	HealthCheck   bool             `json:"health_check"`
+	RuleDetail   `json:",inline"`
+	ListenerPort []int `json:"listener_port"`
+	HealthCheck  bool  `json:"health_check"`
 
 	UserRemark     string       `json:"user_remark"`
 	Status         ImportStatus `json:"status"`
 	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
+
+	// listenerID 在 validateListener 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的监听器条件无法匹配到对应的listener, 可以认为listener not found
+	listenerID string
+	// listenerDefaultDomain 的填充逻辑和 listenerID 一样, 但 listener.DefaultDomain 会有为空的可能
+	listenerDefaultDomain string
 }
 
 func (c *CreateUrlRuleDetail) validate() {

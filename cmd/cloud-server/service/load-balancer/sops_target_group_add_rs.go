@@ -545,7 +545,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRsOnline(kt *kit.Kit, accountID string
 
 		// 优化逻辑
 		// 1.Protocol、Domain、URL筛选出一批TargetGroup
-		protoDomainUrlTgIDs, err := svc.parseSOpsProtocolAndDomainAndUrlForTgIDs(
+		protoDomainUrlTgIDs, err := svc.cvtSOpsInfoForTgIDs(
 			kt, accountID, vendor, item.Protocol, item.Domain, item.Url)
 		if err != nil {
 			logs.Errorf("parse protocol and domain and url for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
@@ -593,8 +593,8 @@ func (svc *lbSvc) parseSOpsTargetParamsForRsOnline(kt *kit.Kit, accountID string
 	return tgIDsMap, nil
 }
 
-// parseSOpsProtocolAndDomainAndUrlForTgIDs 根据Protocol、Domain、URL查询UrlRule，获取对应的目标组ID
-func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountID string, vendor enumor.Vendor,
+// cvtSOpsInfoForTgIDs 根据Protocol、Domain、URL查询UrlRule，获取对应的目标组ID
+func (svc *lbSvc) cvtSOpsInfoForTgIDs(kt *kit.Kit, accountID string, vendor enumor.Vendor,
 	protocol enumor.ProtocolType, domain, url []string) ([]string, error) {
 	// 查询账号对应的Listener
 	lbIDs := make([]string, 0)

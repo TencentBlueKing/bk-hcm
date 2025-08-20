@@ -80,9 +80,12 @@ type BaseLoadBalancer struct {
 	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
 	Domain               string   `json:"domain"`
 	Status               string   `json:"status"`
+	BandWidth            int64    `json:"bandwidth"` // 带宽，单位Mbps
+	Isp                  string   `json:"isp"`       // 运营商
 	CloudCreatedTime     string   `json:"cloud_created_time"`
 	CloudStatusTime      string   `json:"cloud_status_time"`
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	SyncTime             string   `json:"sync_time"`
 
 	Tags core.TagMap `json:"tags"`
 
@@ -192,6 +195,11 @@ type TCloudLbUrlRule struct {
 	SessionExpire int64                  `json:"session_expire"`
 	HealthCheck   *TCloudHealthCheckInfo `json:"health_check"`
 	Certificate   *TCloudCertificateInfo `json:"certificate"`
+
+	// 以下三个字段 都来自 监听器表，通过join的方式查询出来
+	LblName  string              `json:"lbl_name"`
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Port     int64               `json:"port"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`

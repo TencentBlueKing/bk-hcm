@@ -26,7 +26,8 @@ export const TASK_STATUS_NAME = {
 
 export const TASK_SOURCE_NAME = {
   [TaskSource.SOPS]: '标准运维',
-  [TaskSource.EXCEL]: '页面操作',
+  [TaskSource.EXCEL]: 'Excel导入',
+  [TaskSource.API]: '页面操作',
 };
 
 export const TASK_DETAIL_STATUS_NAME = {

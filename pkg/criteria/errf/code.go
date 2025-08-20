@@ -72,4 +72,6 @@ const (
 	BillItemImportDataError int32 = 2000016
 	// BillItemImportEmptyDataError 账单导入空列表
 	BillItemImportEmptyDataError int32 = 2000017
+	// SyncRepeatLockError CLB、安全组重复同步
+	SyncRepeatLockError int32 = 2000024
 )

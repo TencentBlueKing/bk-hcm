@@ -1,5 +1,5 @@
 import { Button, Checkbox, Dialog, Loading, Message, bkTooltips } from 'bkui-vue';
-import { PropType, computed, defineComponent, inject, reactive, ref, watch, withDirectives } from 'vue';
+import { PropType, Ref, computed, defineComponent, inject, reactive, ref, watch, withDirectives } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
@@ -107,7 +107,7 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const resourceAccountStore = useResourceAccountStore();
 
-    const isOtherVendor = inject<boolean>('isOtherVendor');
+    const isOtherVendor = inject<Ref<boolean>>('isOtherVendor');
 
     const isDialogShow = computed(() => {
       return operationType.value !== OperationActions.NONE;
@@ -195,8 +195,7 @@ export default defineComponent({
                 onChange={(isChecked) => {
                   if (isChecked) withDiskSet.value.add(data.id);
                   else withDiskSet.value.delete(data.id);
-                }}
-              >
+                }}>
                 {cvmRelResMap.value.get(data.id)?.disk_count - 1} 个数据盘
               </Checkbox>
             </div>
@@ -211,8 +210,7 @@ export default defineComponent({
               onChange={(isChecked) => {
                 if (isChecked) withEipSet.value.add(data.id);
                 else withEipSet.value.delete(data.id);
-              }}
-            >
+              }}>
               {cvmRelResMap.value.get(data.id)?.eip?.join(',') || '--'}
             </Checkbox>
           ),
@@ -382,7 +380,9 @@ export default defineComponent({
         <HcmAuth sign={{ type: AUTH_UPDATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }}>
           {{
             default: ({ noPerm }: { noPerm: boolean }) => (
-              <HcmDropdown ref={dropdownOperationRef} disabled={noPerm || isOtherVendor || operationsDisabled.value}>
+              <HcmDropdown
+                ref={dropdownOperationRef}
+                disabled={noPerm || isOtherVendor.value || operationsDisabled.value}>
                 {{
                   default: () => (
                     <>
@@ -399,8 +399,7 @@ export default defineComponent({
                           return withDirectives(
                             <BkDropdownItem
                               onClick={clickHandler}
-                              extCls={`more-action-item${disabled ? ' disabled' : ''}`}
-                            >
+                              extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
                               批量{opData.label}
                             </BkDropdownItem>,
                             [[bkTooltips, tooltips]],
@@ -449,8 +448,7 @@ export default defineComponent({
           ref={dialogRef}
           width={1500}
           closeIcon={!isLoading.value}
-          onClosed={() => (operationType.value = OperationActions.NONE)}
-        >
+          onClosed={() => (operationType.value = OperationActions.NONE)}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
@@ -460,8 +458,7 @@ export default defineComponent({
                     data={tableData.value}
                     columns={computedColumns.value}
                     changeData={(data) => (tableData.value = data)}
-                    searchData={searchData}
-                  >
+                    searchData={searchData}>
                     <BkButtonGroup>
                       <Button onClick={() => handleSwitch(true)} selected={selected.value === 'target'}>
                         可{operationMap[operationType.value].label}
@@ -480,15 +477,13 @@ export default defineComponent({
                   onClick={handleConfirm}
                   theme='primary'
                   disabled={isConfirmDisabled.value}
-                  loading={isLoading.value}
-                >
+                  loading={isLoading.value}>
                   {operationMap[operationType.value].label}
                 </Button>
                 <Button
                   onClick={() => (operationType.value = OperationActions.NONE)}
                   class='ml10'
-                  disabled={isLoading.value}
-                >
+                  disabled={isLoading.value}>
                   取消
                 </Button>
               </>

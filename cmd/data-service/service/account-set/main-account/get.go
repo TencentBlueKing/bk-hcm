@@ -43,7 +43,8 @@ func (svc *service) GetMainAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 
 	dbAccount, err := getMainAccountFromTable(accountID, svc, cts)
 	if err != nil {
-		logs.Errorf("GetMainAccountBasicInfo getMainAccountFromTable accountID:%s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
+		logs.Errorf("GetMainAccountBasicInfo getMainAccountFromTable accountID:%s, error: %s, rid: %s",
+			accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -87,7 +88,8 @@ func (svc *service) GetMainAccount(cts *rest.Contexts) (interface{}, error) {
 
 	dbAccount, err := getMainAccountFromTable(accountID, svc, cts)
 	if err != nil {
-		logs.Errorf("GetMainAccount getMainAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
+		logs.Errorf("GetMainAccount getMainAccountFromTable accountID: %s, error: %s, rid: %s",
+			accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -128,7 +130,8 @@ func (svc *service) GetMainAccount(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		account, err = convertToMainAccountResult[protocore.AzureMainAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.Zenlayer:
-		account, err = convertToMainAccountResult[protocore.ZenlayerMainAccountExtension](baseAccount, dbAccount.Extension, svc)
+		account, err = convertToMainAccountResult[protocore.ZenlayerMainAccountExtension](
+			baseAccount, dbAccount.Extension, svc)
 	case enumor.Kaopu:
 		account, err = convertToMainAccountResult[protocore.KaopuMainAccountExtension](baseAccount, dbAccount.Extension, svc)
 	}

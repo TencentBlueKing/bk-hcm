@@ -1,22 +1,7 @@
 import { NetworkAccountType } from '@/api/load_balancers/apply-clb/types';
 import { ConstantMapRecord } from '@/typings';
 
-// 负载均衡-路由组件名称
-export enum LBRouteName {
-  allLbs = 'all-lbs-manager',
-  lb = 'specific-lb-manager',
-  listener = 'specific-listener-manager',
-  domain = 'specific-domain-manager',
-  allTgs = 'all-tgs-manager',
-  tg = 'specific-tg-manager',
-}
-// 负载均衡-路由组件名称映射
-export const LB_ROUTE_NAME_MAP: ConstantMapRecord = {
-  all: 'all-lbs-manager',
-  lb: 'specific-lb-manager',
-  listener: 'specific-listener-manager',
-  domain: 'specific-domain-manager',
-};
+export const BGP_VIP_ISP_TYPES: string[] = ['BGP'];
 
 // 网络类型
 export const LOAD_BALANCER_TYPE = [
@@ -70,13 +55,13 @@ export const INTERNET_CHARGE_TYPE = [
   {
     label: '按流量',
     value: 'TRAFFIC_POSTPAID_BY_HOUR',
-    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    isDisabled: (vipIsp: string) => !BGP_VIP_ISP_TYPES.includes(vipIsp),
     tipsContent: '仅支持BGP线路',
   },
   {
     label: '按带宽',
     value: 'BANDWIDTH_POSTPAID_BY_HOUR',
-    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    isDisabled: (vipIsp: string) => !BGP_VIP_ISP_TYPES.includes(vipIsp),
     tipsContent: '仅支持BGP线路',
   },
   {
@@ -87,7 +72,7 @@ export const INTERNET_CHARGE_TYPE = [
 ];
 
 // 支持IPv6 NAT64的地域
-export const WHITE_LIST_REGION_IPV6_NAT64 = ['ap-beijing', 'ap-shanghai', 'ap-guangzhou'];
+export const WHITE_LIST_REGION_IPV6_NAT64 = ['ap-beijing', 'ap-shanghai'];
 // 支持主备可用区的地域
 export const WHITE_LIST_REGION_PRIMARY_STAND_ZONE = [
   'ap-guangzhou',
@@ -104,29 +89,12 @@ export const SESSION_TYPE_MAP: ConstantMapRecord = {
   QUIC_CID: '基于源端口',
 };
 
-// 证书认证方式映射
-export const SSL_MODE_MAP: ConstantMapRecord = {
-  UNIDIRECTIONAL: '单向认证',
-  MUTUAL: '双向认证',
-};
-
-// 均衡方式映射
-export const SCHEDULER_MAP: ConstantMapRecord = {
-  WRR: '按权重轮询',
-  LEAST_CONN: '最小连接数',
-  IP_HASH: 'IP Hash',
-};
 // 均衡方式映射 - 反向映射
 export const SCHEDULER_REVERSE_MAP: ConstantMapRecord = {
   按权重轮询: 'WRR',
   最小连接数: 'LEAST_CONN',
   IP_HASH: 'IP_HASH',
 };
-
-// 传输层协议, 如 TCP, UDP
-export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
-// 应用层协议, 如 HTTP, HTTPS
-export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
 
 // 负载均衡网络类型映射
 export const LB_NETWORK_TYPE_MAP: ConstantMapRecord = {
@@ -262,6 +230,20 @@ export const IP_VERSION_MAP: ConstantMapRecord = {
 // 运营商类型
 export const ISP_TYPES = ['BGP', 'CTCC', 'CUCC', 'CMCC'];
 
+// 安全组放通模式
+export const LOAD_BALANCER_PASS_TO_TARGET_LIST = [
+  {
+    label: '启用默认放通',
+    description: '启用后，CLB 和 CVM 之间默认放通，来自 CLB 的流量，仅通过 CLB 上安全组的校验',
+    value: true,
+  },
+  {
+    label: '不启用默认放通',
+    description: '不启用，来自 CLB 的流量，需同时通过 CLB 和 CVM 上安全组的校验',
+    value: false,
+  },
+];
+
 // 带宽包状态
 export enum BANDWIDTH_PACKAGE_STATUS {
   CREATING = 'CREATING',
@@ -297,9 +279,3 @@ export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, st
   CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
   CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };
-
-export enum ListenerPanelEnum {
-  LIST = 'list',
-  DETAIL = 'detail',
-  TARGET_GROUP = 'target_group',
-}

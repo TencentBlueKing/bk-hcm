@@ -63,6 +63,8 @@ type VendorInfo struct {
 	MainAccountIDField string
 	// secret key field, use to remove sensitive info
 	SecretKeyField string
+	// IsPublic 是否是公共云厂商
+	IsPublicCloud bool
 }
 
 var (
@@ -72,48 +74,56 @@ var (
 			NameZh:             "腾讯云",
 			MainAccountIDField: "cloud_main_account_id",
 			SecretKeyField:     "cloud_secret_key",
+			IsPublicCloud:      true,
 		},
 		Aws: {
 			NameEn:             "Amazon Web Services",
 			NameZh:             "亚马逊云",
 			MainAccountIDField: "cloud_account_id",
 			SecretKeyField:     "cloud_secret_key",
+			IsPublicCloud:      true,
 		},
 		HuaWei: {
 			NameEn:             "Huawei Cloud",
 			NameZh:             "华为云",
 			MainAccountIDField: "cloud_sub_account_id",
 			SecretKeyField:     "cloud_secret_key",
+			IsPublicCloud:      true,
 		},
 		Gcp: {
 			NameEn:             "Google Cloud",
 			NameZh:             "谷歌云",
 			MainAccountIDField: "cloud_project_id",
 			SecretKeyField:     "cloud_service_secret_key",
+			IsPublicCloud:      true,
 		},
 		Azure: {
 			NameEn:             "Microsoft Azure",
 			NameZh:             "微软云",
 			MainAccountIDField: "cloud_subscription_id",
 			SecretKeyField:     "cloud_client_secret_key",
+			IsPublicCloud:      true,
 		},
 		Zenlayer: {
 			NameEn:             "Zenlayer",
 			NameZh:             "Zenlayer",
 			MainAccountIDField: "cloud_main_account_id",
 			SecretKeyField:     "cloud_secret_key",
+			IsPublicCloud:      true,
 		},
 		Kaopu: {
 			NameEn:             "Kaopu",
 			NameZh:             "靠谱云",
 			MainAccountIDField: "cloud_main_account_id",
 			SecretKeyField:     "cloud_secret_key",
+			IsPublicCloud:      true,
 		},
 		Other: {
 			NameEn:             "Other",
 			NameZh:             "其他云厂商",
 			MainAccountIDField: "cloud_id",
 			SecretKeyField:     "cloud_sec_key",
+			IsPublicCloud:      false,
 		},
 	}
 )
@@ -153,4 +163,9 @@ func GetMainAccountIDFields() []string {
 		fields = append(fields, info.MainAccountIDField)
 	}
 	return fields
+}
+
+// IsPublicCloud 是否是公共云厂商
+func (v Vendor) IsPublicCloud() bool {
+	return vendorInfoMap[v].IsPublicCloud
 }

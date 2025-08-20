@@ -474,9 +474,9 @@ func (az *Azure) SecurityGroupSubnetDisassociate(kt *kit.Kit, opt *securitygroup
 	return nil
 }
 
-// SecurityGroupNetworkInterfaceAssociate associate network interface.
+// SGNetworkInterfaceAssociate associate network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=Go
-func (az *Azure) SecurityGroupNetworkInterfaceAssociate(kt *kit.Kit,
+func (az *Azure) SGNetworkInterfaceAssociate(kt *kit.Kit,
 	opt *securitygroup.AzureAssociateNetworkInterfaceOption) error {
 
 	if opt == nil {
@@ -541,9 +541,9 @@ func (az *Azure) SecurityGroupNetworkInterfaceAssociate(kt *kit.Kit,
 	return nil
 }
 
-// SecurityGroupNetworkInterfaceDisassociate disassociate network interface.
+// SGNetworkInterfaceDisassociate disassociate network interface.
 // reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/subnets/create-or-update?tabs=Go
-func (az *Azure) SecurityGroupNetworkInterfaceDisassociate(kt *kit.Kit,
+func (az *Azure) SGNetworkInterfaceDisassociate(kt *kit.Kit,
 	opt *securitygroup.AzureAssociateNetworkInterfaceOption) error {
 
 	if opt == nil {

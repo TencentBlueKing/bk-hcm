@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/service/sync/handler"
 	adazure "hcm/pkg/adaptor/azure"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
@@ -82,6 +83,21 @@ func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
+	if len(hd.request.CloudIDs) > 0 {
+		opt := &typescore.AzureListByIDOption{
+			ResourceGroupName: hd.request.ResourceGroupName,
+			CloudIDs:          hd.request.CloudIDs,
+		}
+		result, err := hd.syncCli.CloudCli().ListSecurityGroupByID(kt, opt)
+		if err != nil {
+			logs.Errorf("[%s] list sg from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
+				err, hd.request.AccountID, opt, kt.Rid)
+			return nil, err
+		}
+		return slice.Map(result, func(item *securitygroup.AzureSecurityGroup) string {
+			return converter.PtrToVal(item.ID)
+		}), nil
+	}
 	if !hd.pager.More() {
 		return nil, nil
 	}
@@ -126,7 +142,8 @@ func (hd *sgHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *sgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveSecurityGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName); err != nil {
+	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName)
+	if err != nil {
 		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, resGroupName: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.ResourceGroupName, kt.Rid)
 		return err

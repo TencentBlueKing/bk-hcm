@@ -23,17 +23,13 @@ import (
 	"fmt"
 	"strings"
 
-	adazure "hcm/pkg/adaptor/azure"
-	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	protoni "hcm/pkg/api/data-service/cloud/network-interface"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -178,238 +174,6 @@ func (g *securityGroup) UpdateAzureSecurityGroup(cts *rest.Contexts) (interface{
 	return nil, nil
 }
 
-// AzureSecurityGroupAssociateSubnet ...
-func (g *securityGroup) AzureSecurityGroupAssociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AzureSecurityGroupAssociateSubnetReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req.SecurityGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	subnet, err := g.dataCli.Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), req.SubnetID)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := g.ad.Azure(cts.Kit, sg.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	opt := &securitygroup.AzureAssociateSubnetOption{
-		Region:               sg.Region,
-		CloudSecurityGroupID: sg.CloudID,
-		ResourceGroupName:    sg.Extension.ResourceGroupName,
-		CloudVpcID:           subnet.CloudVpcID,
-		CloudSubnetID:        subnet.CloudID,
-	}
-	if err = client.SecurityGroupSubnetAssociate(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to azure security group associate subnet failed, err: %v, opt: %v, rid: %s",
-			err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	updateReq := &protocloud.SubnetBatchUpdateReq[protocloud.AzureSubnetUpdateExt]{
-		Subnets: []protocloud.SubnetUpdateReq[protocloud.AzureSubnetUpdateExt]{
-			{
-				ID: req.SubnetID,
-				Extension: &protocloud.AzureSubnetUpdateExt{
-					CloudSecurityGroupID: converter.ValToPtr(opt.CloudSecurityGroupID),
-					SecurityGroupID:      converter.ValToPtr(req.SecurityGroupID),
-				},
-			},
-		},
-	}
-	if err = g.dataCli.Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-		logs.Errorf("request dataservice update subnet failed, err: %v, req: %+v, rid: %s", err, updateReq, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// AzureSecurityGroupDisassociateSubnet ...
-func (g *securityGroup) AzureSecurityGroupDisassociateSubnet(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AzureSecurityGroupAssociateSubnetReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req.SecurityGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	subnet, err := g.dataCli.Azure.Subnet.Get(cts.Kit.Ctx, cts.Kit.Header(), req.SubnetID)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := g.ad.Azure(cts.Kit, sg.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	opt := &securitygroup.AzureAssociateSubnetOption{
-		Region:               sg.Region,
-		CloudSecurityGroupID: sg.CloudID,
-		ResourceGroupName:    sg.Extension.ResourceGroupName,
-		CloudVpcID:           subnet.CloudVpcID,
-		CloudSubnetID:        subnet.CloudID,
-	}
-	if err = client.SecurityGroupSubnetDisassociate(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to azure security group disassociate subnet failed, err: %v, opt: %v, rid: %s",
-			err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	updateReq := &protocloud.SubnetBatchUpdateReq[protocloud.AzureSubnetUpdateExt]{
-		Subnets: []protocloud.SubnetUpdateReq[protocloud.AzureSubnetUpdateExt]{
-			{
-				ID: req.SubnetID,
-				Extension: &protocloud.AzureSubnetUpdateExt{
-					CloudSecurityGroupID: nil,
-					SecurityGroupID:      nil,
-				},
-			},
-		},
-	}
-	if err = g.dataCli.Azure.Subnet.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-		logs.Errorf("request dataservice update subnet failed, err: %v, req: %+v, rid: %s", err, updateReq, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// AzureSecurityGroupAssociateNI ...
-func (g *securityGroup) AzureSecurityGroupAssociateNI(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AzureSecurityGroupAssociateNIReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req.SecurityGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	ni, err := g.dataCli.Azure.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), req.NetworkInterfaceID)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := g.ad.Azure(cts.Kit, sg.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	opt := &securitygroup.AzureAssociateNetworkInterfaceOption{
-		Region:                  sg.Region,
-		CloudSecurityGroupID:    sg.CloudID,
-		ResourceGroupName:       sg.Extension.ResourceGroupName,
-		CloudNetworkInterfaceID: ni.CloudID,
-	}
-	if err = client.SecurityGroupNetworkInterfaceAssociate(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to azure security group associate network interface failed,"+
-			" err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	updateReq := &protoni.NetworkInterfaceBatchUpdateReq[protoni.AzureNICreateExt]{
-		NetworkInterfaces: []protoni.NetworkInterfaceUpdateReq[protoni.AzureNICreateExt]{
-			{
-				ID: req.NetworkInterfaceID,
-				Extension: &protoni.AzureNICreateExt{
-					CloudSecurityGroupID: converter.ValToPtr(opt.CloudSecurityGroupID),
-					SecurityGroupID:      converter.ValToPtr(req.SecurityGroupID),
-				},
-			},
-		},
-	}
-	if err = g.dataCli.Azure.NetworkInterface.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-		logs.Errorf("request dataservice update network interface failed, err: %v, req: %+v, rid: %s",
-			err, updateReq, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// AzureSecurityGroupDisassociateNI ...
-func (g *securityGroup) AzureSecurityGroupDisassociateNI(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AzureSecurityGroupAssociateNIReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	sg, err := g.dataCli.Azure.SecurityGroup.GetSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), req.SecurityGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	ni, err := g.dataCli.Azure.NetworkInterface.Get(cts.Kit.Ctx, cts.Kit.Header(), req.NetworkInterfaceID)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := g.ad.Azure(cts.Kit, sg.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	opt := &securitygroup.AzureAssociateNetworkInterfaceOption{
-		Region:                  sg.Region,
-		CloudSecurityGroupID:    sg.CloudID,
-		ResourceGroupName:       sg.Extension.ResourceGroupName,
-		CloudNetworkInterfaceID: ni.CloudID,
-	}
-	if err = client.SecurityGroupNetworkInterfaceDisassociate(cts.Kit, opt); err != nil {
-		logs.Errorf("request adaptor to azure security group disassociate network interface failed,"+
-			" err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
-		return nil, err
-	}
-
-	updateReq := &protoni.NetworkInterfaceBatchUpdateReq[protoni.AzureNICreateExt]{
-		NetworkInterfaces: []protoni.NetworkInterfaceUpdateReq[protoni.AzureNICreateExt]{
-			{
-				ID: req.NetworkInterfaceID,
-				Extension: &protoni.AzureNICreateExt{
-					CloudSecurityGroupID: nil,
-					SecurityGroupID:      nil,
-				},
-			},
-		},
-	}
-	if err = g.dataCli.Azure.NetworkInterface.BatchUpdate(cts.Kit.Ctx, cts.Kit.Header(), updateReq); err != nil {
-		logs.Errorf("request dataservice update network interface failed, err: %v, req: %+v, rid: %s",
-			err, updateReq, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
 // AzureListSecurityGroupStatistic ...
 func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
 	req := new(proto.ListSecurityGroupStatisticReq)
@@ -487,40 +251,23 @@ func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.S
 	return nil
 }
 
-func (g *securityGroup) listAzureSecurityGroupFromCloud(kt *kit.Kit, client *adazure.Azure, resourceGroupName string,
-	cloudIDs []string) ([]*armnetwork.SecurityGroup, error) {
+func (g *securityGroup) getAzureSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
+	AzureSecurityGroupRule, error) {
 
-	opt := &typescore.AzureListByIDOption{
-		ResourceGroupName: resourceGroupName,
-		CloudIDs:          cloudIDs,
-	}
-	resp, err := client.ListRawSecurityGroupByID(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to list azure security group by id failed, err: %v, opt: %v, rid: %s",
-			err, opt, kt.Rid)
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (g *securityGroup) getAzureSecurityGroupMap(kt *kit.Kit, sgIDs []string) (
-	map[string]corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension], error) {
-
-	sgReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", sgIDs),
+	listReq := &protocloud.AzureSGRuleListReq{
+		Filter: tools.EqualExpression("id", id),
 		Page:   core.NewDefaultBasePage(),
 	}
-	sgResult, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), sgReq)
+	listResp, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupRule(cts.Kit.Ctx, cts.Kit.Header(), listReq, sgID)
 	if err != nil {
-		logs.Errorf("request dataservice list tcloud security group failed, err: %v, ids: %v, rid: %s",
-			err, sgIDs, kt.Rid)
+		logs.Errorf("request dataservice get azure security group failed, id: %s, err: %v, rid: %s", id, err,
+			cts.Kit.Rid)
 		return nil, err
 	}
 
-	sgMap := make(map[string]corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension], len(sgResult.Details))
-	for _, sg := range sgResult.Details {
-		sgMap[sg.ID] = sg
+	if len(listResp.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "security group rule: %s not found", id)
 	}
 
-	return sgMap, nil
+	return &listResp.Details[0], nil
 }

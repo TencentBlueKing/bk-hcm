@@ -21,7 +21,6 @@
 package loadbalancer
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -61,6 +60,7 @@ func (svc *lbSvc) BatchUpdateLoadBalancer(cts *rest.Contexts) (any, error) {
 
 }
 
+// batchUpdateLoadBalancer 批量更新负载均衡
 func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc) (any, error) {
 
 	req := new(dataproto.LbExtBatchUpdateReq[T])
@@ -95,10 +95,13 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				PrivateIPv6Addresses: lb.PrivateIPv6Addresses,
 				PublicIPv4Addresses:  lb.PublicIPv4Addresses,
 				PublicIPv6Addresses:  lb.PublicIPv6Addresses,
+				BandWidth:            lb.BandWidth,
+				Isp:                  lb.Isp,
 
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
 				CloudExpiredTime: lb.CloudExpiredTime,
+				SyncTime:         lb.SyncTime,
 				Tags:             tabletype.StringMap(lb.Tags),
 				Memo:             lb.Memo,
 				Reviser:          cts.Kit.User,
@@ -187,159 +190,6 @@ func (svc *lbSvc) BatchUpdateTargetGroupBizInfo(cts *rest.Contexts) (any, error)
 	return nil, svc.dao.LoadBalancerTargetGroup().Update(cts.Kit, updateFilter, updateField)
 }
 
-// BatchUpdateListenerBizInfo 批量更新监听器业务信息
-func (svc *lbSvc) BatchUpdateListenerBizInfo(cts *rest.Contexts) (any, error) {
-	req := new(dataproto.BizBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	updateFilter := tools.ContainersExpression("id", req.IDs)
-	updateField := &tablelb.LoadBalancerListenerTable{
-		BkBizID: req.BkBizID,
-		Reviser: cts.Kit.User,
-	}
-	return nil, svc.dao.LoadBalancerListener().Update(cts.Kit, updateFilter, updateField)
-}
-
-// UpdateTargetGroup batch update argument template
-func (svc *lbSvc) UpdateTargetGroup(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.TargetGroupUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	if len(req.IDs) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "ids is empty")
-	}
-
-	tgReq := &types.ListOption{
-		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   &core.BasePage{Limit: 1},
-	}
-	tgList, err := svc.dao.LoadBalancerTargetGroup().List(cts.Kit, tgReq)
-	if err != nil {
-		return nil, err
-	}
-	if len(tgList.Details) != len(req.IDs) {
-		return nil, errors.New("not all target groups can be found")
-	}
-	updateDataList := make([]*tablelb.LoadBalancerTargetGroupTable, 0, len(req.IDs))
-	for _, oldTg := range tgList.Details {
-
-		updateData := &tablelb.LoadBalancerTargetGroupTable{
-			ID:              oldTg.ID,
-			Name:            req.Name,
-			BkBizID:         req.BkBizID,
-			TargetGroupType: req.TargetGroupType,
-			Region:          req.Region,
-			Protocol:        req.Protocol,
-			Port:            req.Port,
-			Weight:          req.Weight,
-			Reviser:         cts.Kit.User,
-		}
-
-		if len(req.CloudVpcID) > 0 {
-			// 根据cloudVpcID查询VPC信息，如查不到vpcInfo则报错
-			vpcInfoMap, err := getVpcMapByIDs(cts.Kit, []string{req.CloudVpcID})
-			if err != nil {
-				return nil, err
-			}
-			vpcInfo, ok := vpcInfoMap[req.CloudVpcID]
-			if !ok {
-				return nil, errf.Newf(errf.RecordNotFound, "vpcID[%s] not found", req.VpcID)
-			}
-			updateData.VpcID = vpcInfo.ID
-			updateData.CloudVpcID = vpcInfo.CloudID
-		}
-		if req.HealthCheck != nil {
-			mergedHealth, err := json.UpdateMerge(req.HealthCheck, string(oldTg.HealthCheck))
-			if err != nil {
-				return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
-			}
-			updateData.HealthCheck = tabletype.JsonField(mergedHealth)
-		}
-		updateDataList = append(updateDataList, updateData)
-	}
-	if err := svc.dao.LoadBalancerTargetGroup().UpdateBatch(cts.Kit, updateDataList); err != nil {
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// BatchUpdateTCloudUrlRule ..
-func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
-	req := new(dataproto.TCloudUrlRuleBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	ruleIds := slice.Map(req.UrlRules, func(one *dataproto.TCloudUrlRuleUpdate) string { return one.ID })
-
-	healthCertMap, err := svc.listRuleHealthAndCert(cts.Kit, ruleIds)
-	if err != nil {
-		logs.Errorf("fail to list health and cert of tcloud url rule, err: %s, ruleIds: %v, rid: %s",
-			err, ruleIds, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		for _, rule := range req.UrlRules {
-			update := &tablelb.TCloudLbUrlRuleTable{
-				Name:               rule.Name,
-				Region:             rule.Region,
-				Domain:             rule.Domain,
-				URL:                rule.URL,
-				TargetGroupID:      rule.TargetGroupID,
-				CloudTargetGroupID: rule.CloudTargetGroupID,
-				Scheduler:          rule.Scheduler,
-				SessionExpire:      converter.PtrToVal(rule.SessionExpire),
-				SessionType:        rule.SessionType,
-				Memo:               rule.Memo,
-				Reviser:            cts.Kit.User,
-			}
-
-			if rule.HealthCheck != nil {
-				hc := healthCertMap[rule.ID]
-				mergedHealth, err := json.UpdateMerge(rule.HealthCheck, string(hc.Health))
-				if err != nil {
-					return nil, fmt.Errorf("json UpdateMerge rule health check failed, err: %v", err)
-				}
-				update.HealthCheck = tabletype.JsonField(mergedHealth)
-
-			}
-			if rule.Certificate != nil {
-				hc := healthCertMap[rule.ID]
-				mergedCert, err := json.UpdateMerge(rule.Certificate, string(hc.Cert))
-				if err != nil {
-					return nil, fmt.Errorf("json UpdateMerge rule cert failed, err: %v", err)
-				}
-				update.Certificate = tabletype.JsonField(mergedCert)
-			}
-
-			if err = svc.dao.LoadBalancerTCloudUrlRule().UpdateByIDWithTx(cts.Kit, txn, rule.ID, update); err != nil {
-				logs.Errorf("update tcloud rule by id failed, err: %v, id: %s, rid: %s", err, rule.ID, cts.Kit.Rid)
-				return nil, fmt.Errorf("update rule failed, err: %v", err)
-			}
-		}
-
-		return nil, nil
-	})
-}
-
 // 更新目标组健康检查
 func (svc *lbSvc) updateTGHealth(kt *kit.Kit, txn *sqlx.Tx, tgID string, health tabletype.JsonField) error {
 	if len(tgID) == 0 {
@@ -357,6 +207,7 @@ type tcloudHealthCert struct {
 	Health tabletype.JsonField
 	Cert   tabletype.JsonField
 }
+
 
 func (svc *lbSvc) listRuleHealthAndCert(kt *kit.Kit, ruleIds []string) (map[string]tcloudHealthCert, error) {
 	accountID, _ := kt.Ctx.Value("account_id").(string)
@@ -542,3 +393,4 @@ func (svc *lbSvc) BatchUpdateListenerRuleRelStatusByTGID(cts *rest.Contexts) (an
 		return nil, nil
 	})
 }
+

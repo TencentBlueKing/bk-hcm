@@ -155,7 +155,8 @@ export default defineComponent({
               multiple-mode='tag'
               placeholder={props.fromPlaceholder}
               onChange={handleChange}
-              onBlur={() => handleBlur(props.fromKey)}>
+              onBlur={() => handleBlur(props.fromKey)}
+            >
               {props.selectData.map((item: any) => (
                 <Option key={item.id} id={item.id} name={item.name}>
                   {item.name}
@@ -186,20 +187,14 @@ export default defineComponent({
         case 'select':
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;
-          if (Array.isArray(props.modelValue)) {
-            selectModelValue = props.selectData.filter((e: any) => props.modelValue.includes(e.id));
-          } else {
-            selectModelValue = props.selectData.filter((e: any) => e.id === props.modelValue);
-          }
+          // eslint-disable-next-line no-case-declarations
+          const value = Array.isArray(props.modelValue) ? props.modelValue : [props.modelValue];
+          selectModelValue = props.selectData.filter((e: any) => value.includes(e.id));
           if (selectModelValue.length) {
             selectModelValue = selectModelValue.map((e: any) => e.name);
           }
           // eslint-disable-next-line no-nested-ternary
-          return selectModelValue.length
-            ? selectModelValue.join(',')
-            : props.modelValue.join(',') === '-1'
-            ? '未分配'
-            : '暂无';
+          return selectModelValue.length ? selectModelValue.join(',') : value.join(',') === '-1' ? '未分配' : '暂无';
         default:
           return props.modelValue;
       }

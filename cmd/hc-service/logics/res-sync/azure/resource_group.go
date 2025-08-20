@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// SyncResourceGroupOption ...
+// SyncRGOption ...
 type SyncRGOption struct {
 	AccountID string `json:"account_id" validate:"required"`
 }

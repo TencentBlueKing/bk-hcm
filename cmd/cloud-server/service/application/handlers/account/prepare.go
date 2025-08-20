@@ -32,7 +32,6 @@ func (a *ApplicationOfAddAccount) PrepareReq() error {
 	// 密钥加密
 	secretKeyField := a.req.Vendor.GetSecretField()
 	a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(conv.ToString(a.req.Extension[secretKeyField]))
-
 	return nil
 }
 
@@ -66,5 +65,5 @@ func (a *ApplicationOfAddAccount) GetItsmApprover(managers []string) []itsm.Vari
 
 // GetBkBizIDs 获取当前的业务IDs
 func (a *ApplicationOfAddAccount) GetBkBizIDs() []int64 {
-	return a.req.BkBizIDs
+	return a.req.UsageBizIDs
 }

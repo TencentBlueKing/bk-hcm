@@ -37,24 +37,10 @@ try {
 app.get('*', (req, res) => {
   // 检查请求路径是否是静态资源路径
   if (req.path.startsWith('/static') || req.path.startsWith('/assets')) {
-    // eslint-disable-next-line
-    console.log('Static resource requested:', req.path);
     return res.status(404).send('Not Found');
   }
 
   try {
-    // 简单路由分析
-    const routeInfo = {
-      path: req.path,
-      method: req.method,
-      timestamp: new Date().toISOString(),
-      userAgent: req.get('User-Agent'),
-      clientIP: req.ip,
-    };
-
-    // eslint-disable-next-line
-    console.log(`Serving SPA for: ${routeInfo.path}`);
-
     // 返回index.html内容
     res.send(indexContent);
   } catch (error) {

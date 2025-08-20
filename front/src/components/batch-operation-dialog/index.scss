@@ -1,5 +1,9 @@
 .batch-operation-dialog {
-  .bk-modal-content .batch-operation-dialog-content {
+  .bk-modal-content{
+    height: 500px;
+    overflow-y: auto;
+  }
+  .batch-operation-dialog-content {
     .tips {
       margin-bottom: 12px;
       font-size: 14px;

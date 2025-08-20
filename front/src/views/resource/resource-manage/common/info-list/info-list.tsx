@@ -154,6 +154,34 @@ export default defineComponent({
           const itemMaxWidth = `calc(100% - ${this.itemMaxWidthBaseDecrement}px)`;
           const valueMaxWidth = `calc(100% - ${parseFloat(this.labelWidth) + operationBtnWidth}px)`;
 
+          const editIconRender = () => {
+            if (!edit) return null;
+
+            if (typeof field.getAuthSign === 'function') {
+              return (
+                <hcm-auth sign={field.getAuthSign()}>
+                  {{
+                    default: ({ noPerm }: { noPerm: boolean }) => (
+                      <bk-button class='ml10' text disabled={noPerm} onClick={() => this.handleEdit(name)}>
+                        <i class={['icon hcm-icon bkhcm-icon-bianji']} />
+                      </bk-button>
+                    ),
+                  }}
+                </hcm-auth>
+              );
+            }
+
+            return (
+              <i
+                class={[
+                  'icon hcm-icon bkhcm-icon-bianji edit-icon',
+                  { 'hcm-no-permision-text-btn': this.isAuth === false },
+                ]}
+                onClick={() => this.handleEdit(name)}
+              />
+            );
+          };
+
           return (
             <li class='info-list-item' style={{ maxWidth: itemMaxWidth }}>
               {tipsContent ? (
@@ -176,17 +204,7 @@ export default defineComponent({
                   <div class='full-width'>{renderField(field)}</div>
                 )}
               </div>
-              {edit && (
-                <i
-                  onClick={() => this.handleEdit(name)}
-                  class={[
-                    'icon hcm-icon bkhcm-icon-bianji edit-icon',
-                    {
-                      'hcm-no-permision-text-btn': this.isAuth === false,
-                    },
-                  ]}
-                />
-              )}
+              {editIconRender()}
               {resultCopyable && <CopyToClipboard class='copy-btn' content={resultCopyContent} />}
             </li>
           );

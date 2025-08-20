@@ -19,7 +19,7 @@
 
 package eip
 
-// GcpEipExtensionCreateReq
+// GcpEipExtensionCreateReq ...
 type GcpEipExtensionCreateReq struct {
 	AddressType  string   `json:"address_type"`
 	Description  string   `json:"description"`

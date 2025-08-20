@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cert ...
 package cert
 
 import (
@@ -43,7 +44,8 @@ type BaseCert struct {
 			6：订单取消中，7：已取消，8：已提交资料， 待上传确认函，9：证书吊销中，10：已吊销，11：重颁发中，12：待上传吊销确认函
 			13：免费证书待提交资料状态，14：已退款。
 	*/
-	CertStatus string `json:"cert_status"`
+	CertStatus string      `json:"cert_status"`
+	Tags       core.TagMap `json:"tags"`
 
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`

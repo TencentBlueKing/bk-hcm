@@ -88,10 +88,13 @@ func (s *service) ExportRootAccountSummary(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	if err := writer.Write(export.BillSummaryRootTableHeader); err != nil {
-		logs.Errorf("write header failed: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	for _, header := range export.BillSummaryRootTableHeaders {
+		if err = writer.Write(header); err != nil {
+			logs.Errorf("write header failed: %v, val: %v, rid: %s", err, header, cts.Kit.Rid)
+			return nil, err
+		}
 	}
+
 	table, err := toRawData(cts.Kit, result, rootAccountMap)
 	if err != nil {
 		logs.Errorf("convert to raw data failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -181,7 +184,7 @@ func toRawData(kt *kit.Kit, details []*billcore.SummaryRoot,
 			AdjustRMBCost:             detail.AdjustmentRMBCost.String(),
 			AdjustCost:                detail.AdjustmentCost.String(),
 		}
-		fields, err := table.GetHeaderValues()
+		fields, err := table.GetValuesByHeader()
 		if err != nil {
 			logs.Errorf("get header fields failed: %v, rid: %s", err, kt.Rid)
 			return nil, err

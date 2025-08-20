@@ -27,11 +27,13 @@ import (
 
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -54,8 +56,9 @@ type CreateLayer4ListenerPreviewExecutor struct {
 }
 
 // Execute 执行
-func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
-	err := c.convertDataToPreview(rawData)
+func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{},
+	error) {
+	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		return nil, err
 	}
@@ -71,11 +74,18 @@ func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 const (
 	createLayer4ListenerExcelTableLen = 7
+	// excel表格表头长度
+	createLayer4ListenerExcelTableHeaderLen = 10
 	// excel表格行号偏移量, clb数据从第四行开始
 	excelTableLineNumberOffset = 4
 )
 
-func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
+	if len(headers) < createLayer4ListenerExcelTableHeaderLen {
+		return fmt.Errorf("table headers length less than %d, got: %d, headers: %v",
+			createLayer4ListenerExcelTableHeaderLen, len(headers), headers)
+	}
+
 	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < createLayer4ListenerExcelTableLen {
@@ -108,8 +118,12 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		default:
 			return fmt.Errorf("HealthCheck: invalid input: %s", data[6])
 		}
+		// 监听器名称和用户备注是可选的
 		if len(data) > createLayer4ListenerExcelTableLen {
-			detail.UserRemark = data[7]
+			detail.Name = data[7]
+			if len(data) > createLayer4ListenerExcelTableLen+1 {
+				detail.UserRemark = data[8]
+			}
 		}
 		c.details = append(c.details, detail)
 	}
@@ -155,28 +169,36 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	for _, detail := range c.details {
-		lb, ok := lbMap[detail.CloudClbID]
-		if !ok {
-			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
-		}
-		if _, ok = c.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, c.regionIDMap)
-		}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, c.details,
+		func(detail *CreateLayer4ListenerDetail) error {
 
-		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
-		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
-		}
-		detail.RegionID = lb.Region
+			lb, ok := lbMap[detail.CloudClbID]
+			if !ok {
+				return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
+			}
+			if _, ok = c.regionIDMap[lb.Region]; !ok {
+				return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, c.regionIDMap)
+			}
 
-		if err = c.validateListener(kt, detail); err != nil {
-			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv4Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
+			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
+			}
+			detail.RegionID = lb.Region
+
+			if err = c.validateListener(kt, detail); err != nil {
+				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return concurrentErr
 	}
 	return nil
 }
@@ -254,19 +276,12 @@ func (c *CreateLayer4ListenerPreviewExecutor) getURLRule(kt *kit.Kit, lbID, list
 
 // CreateLayer4ListenerDetail 创建四层监听器预览记录
 type CreateLayer4ListenerDetail struct {
-	ClbVipDomain string `json:"clb_vip_domain"`
-	CloudClbID   string `json:"cloud_clb_id"`
-
-	Protocol       enumor.ProtocolType `json:"protocol"`
-	ListenerPorts  []int               `json:"listener_port"`
-	Scheduler      enumor.Scheduler    `json:"scheduler"`
-	Session        int                 `json:"session"`
-	HealthCheck    bool                `json:"health_check"`
-	UserRemark     string              `json:"user_remark"`
-	Status         ImportStatus        `json:"status"`
-	ValidateResult []string            `json:"validate_result"`
-
-	RegionID string `json:"region_id"`
+	Layer4ListenerDetail `json:",inline"`
+	ListenerPorts        []int        `json:"listener_port"`
+	HealthCheck          bool         `json:"health_check"`
+	Status               ImportStatus `json:"status"`
+	ValidateResult       []string     `json:"validate_result"`
+	RegionID             string       `json:"region_id"`
 }
 
 func (c *CreateLayer4ListenerDetail) validate() {
@@ -279,6 +294,12 @@ func (c *CreateLayer4ListenerDetail) validate() {
 		}
 		c.Status.SetExecutable()
 	}()
+
+	// 验证监听器名称，校验规则同"CLB名称"
+	if len(c.Name) > 60 {
+		err = fmt.Errorf("the length of the listener name should not exceed 60")
+		return
+	}
 	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
 		err = fmt.Errorf("unsupport listener protocol type: %s", c.Protocol)
 		return

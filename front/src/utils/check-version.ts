@@ -105,14 +105,17 @@ const removeVisibilityChangeListener = () => {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
 };
 
-window.addEventListener('beforeunload', () => {
-  hideDialog();
-  removeVisibilityChangeListener();
-  checkVersionPoll.reset();
-  checkVersionChannel.close();
-});
+const addBeforeunloadListener = () => {
+  window.addEventListener('beforeunload', () => {
+    hideDialog();
+    removeVisibilityChangeListener();
+    checkVersionPoll.reset();
+    checkVersionChannel.close();
+  });
+};
 
 export const watchVersion = () => {
   checkVersionPoll = useTimeoutPoll(checkVersion, 5 * 60 * 1000, { immediate: true, max: -1 });
   addVisibilityChangeListener();
+  addBeforeunloadListener();
 };
