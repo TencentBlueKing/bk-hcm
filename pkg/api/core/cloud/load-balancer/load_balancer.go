@@ -177,6 +177,8 @@ type TCloudLbUrlRule struct {
 	RuleType           enumor.RuleType `json:"rule_type"`
 	LbID               string          `json:"lb_id"`
 	CloudLbID          string          `json:"cloud_lb_id"`
+	BkBizID            int64           `json:"bk_biz_id"`
+	AccountID          string          `json:"account_id"`
 	LblID              string          `json:"lbl_id"`
 	CloudLBLID         string          `json:"cloud_lbl_id"`
 	TargetGroupID      string          `json:"target_group_id"`
@@ -208,6 +210,7 @@ func (r TCloudLbUrlRule) GetCloudID() string {
 // BaseLoadBalancerTarget define base load balancer target.
 type BaseLoadBalancerTarget struct {
 	ID                 string            `json:"id"`
+	BkBizID            int64             `json:"bk_biz_id"`
 	AccountID          string            `json:"account_id"`
 	InstType           enumor.InstType   `json:"inst_type"`
 	InstID             string            `json:"inst_id"`

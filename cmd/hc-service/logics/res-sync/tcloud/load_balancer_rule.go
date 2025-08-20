@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+	"strconv"
 
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
@@ -157,12 +158,18 @@ func (cli *client) ListenerLayer7Rule(kt *kit.Kit, params *SyncBaseParams, opt *
 }
 
 func (cli *client) listL4RuleFromDB(kt *kit.Kit, lbID string) ([]corelb.TCloudLbUrlRule, error) {
-
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
 			tools.RuleEqual("rule_type", enumor.Layer4RuleType)),
 		Page: core.NewDefaultBasePage(),
+	}
+
+	lbResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+	if err != nil {
+		logs.Warnf("fail to list load balancer for sync rules, err: %v, lbID: %s, rid: %s, will query without biz id", err, lbID, kt.Rid)
+	} else if len(lbResp.Details) > 0 && lbResp.Details[0].BkBizID != 0 {
+		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleEqual("bk_biz_id", lbResp.Details[0].BkBizID))
 	}
 
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
@@ -182,6 +189,13 @@ func (cli *client) listL7RuleFromDB(kt *kit.Kit, listenerID string) ([]corelb.TC
 		Page: core.NewDefaultBasePage(),
 	}
 
+	lbResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+	if err != nil {
+		logs.Warnf("fail to get listener for sync rules, err: %v, listenerID: %s, rid: %s, will query without biz id", err, listenerID, kt.Rid)
+	} else if len(lbResp.Details) > 0 && lbResp.Details[0].BkBizID != 0 {
+		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleEqual("bk_biz_id", lbResp.Details[0].BkBizID))
+	}
+
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
 		logs.Errorf("fail to list rule of lbl(%s) for sync, err: %v, rid: %s", listenerID, err, kt.Rid)
@@ -195,11 +209,40 @@ func (cli *client) updateLayer4Rule(kt *kit.Kit, updateMap map[string]typeslb.TC
 	if len(updateMap) == 0 {
 		return nil
 	}
+
+	ids := make([]string, 0, len(updateMap))
+	for id := range updateMap {
+		ids = append(ids, id)
+	}
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", ids),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	rules, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+	if err != nil {
+		logs.Errorf("fail to list rules for update, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+		return err
+	}
+
+	idToBizID := make(map[string]int64)
+	for _, rule := range rules.Details {
+		idToBizID[rule.ID] = rule.BkBizID
+	}
+
 	updateReq := &dataproto.TCloudUrlRuleBatchUpdateReq{}
 	urlRules := make([]*dataproto.TCloudUrlRuleUpdate, 0, len(updateMap))
 	for id, listener := range updateMap {
+		bizID := idToBizID[id]
+		if bizID == 0 {
+			logs.Warnf("skip updating rule with no business ID, id: %s, rid: %s", id, kt.Rid)
+			continue
+		}
 		urlRules = append(urlRules, &dataproto.TCloudUrlRuleUpdate{
 			ID:            id,
+			BkBizID:       bizID,
 			Region:        listener.Region,
 			Scheduler:     cvt.PtrToVal(listener.Scheduler),
 			SessionType:   cvt.PtrToVal(listener.SessionType),
@@ -210,7 +253,7 @@ func (cli *client) updateLayer4Rule(kt *kit.Kit, updateMap map[string]typeslb.TC
 	}
 	for _, updateBatch := range slice.Split(urlRules, constant.BatchOperationMaxLimit) {
 		updateReq.UrlRules = updateBatch
-		err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt, updateReq)
+		err = cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt, updateReq)
 		if err != nil {
 			logs.Errorf("fail to update tcloud url rule, err: %v, rid: %s", err, kt.Rid)
 			return err
@@ -226,13 +269,37 @@ func (cli *client) deleteLayer7Rule(kt *kit.Kit, region string, cloudIds []strin
 		return nil
 	}
 	for _, cloudIdsBatch := range slice.Split(cloudIds, constant.BatchOperationMaxLimit) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", cloudIdsBatch),
+				tools.RuleEqual("region", region),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		rules, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to list rules for delete, err: %v, cloudIds: %v, rid: %s", err, cloudIdsBatch, kt.Rid)
+			return err
+		}
+
+		bizIDs := make([]string, 0)
+		for _, rule := range rules.Details {
+			if rule.BkBizID != 0 {
+				bizIDs = append(bizIDs, strconv.FormatInt(rule.BkBizID, 10))
+			}
+		}
+
 		delReq := &dataproto.LoadBalancerBatchDeleteReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("cloud_id", cloudIdsBatch),
 				tools.RuleEqual("region", region),
 			),
 		}
-		err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
+
+		if len(bizIDs) > 0 {
+			delReq.Filter.Rules = append(delReq.Filter.Rules, tools.RuleIn("bk_biz_id", bizIDs))
+		}
+		err = cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
 		if err != nil {
 			logs.Errorf("fail to delete listeners while sync, err: %v, ids:%v, rid: %s",
 				cloudIdsBatch, err, kt.Rid)
@@ -255,8 +322,36 @@ func (cli *client) createLayer7Rule(kt *kit.Kit, region string, opt *SyncLayer7R
 	for _, addSliceBatch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
 		dbRules = dbRules[:0]
 		for _, cloud := range addSliceBatch {
+			lbListReq := &core.ListReq{
+				Filter: tools.ExpressionAnd(
+					tools.RuleEqual("id", opt.LBID),
+				),
+				Page: core.NewDefaultBasePage(),
+			}
+
+			lbResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, lbListReq)
+			if err != nil {
+				logs.Errorf("fail to get load balancer for create rules, err: %v, lbID: %s, rid: %s", err, opt.LBID, kt.Rid)
+				return nil, err
+			}
+
+			var bizID int64 = 0
+			var accountId string
+			if len(lbResp.Details) > 0 {
+				bizID = lbResp.Details[0].BkBizID
+				accountId = lbResp.Details[0].AccountID
+				if bizID == 0 {
+					logs.Warnf("load balancer has no valid business ID, lbID: %s, bk_biz_id: %s, rid: %s",
+						opt.LBID, bizID, kt.Rid)
+				}
+			} else {
+				logs.Warnf("load balancer not found, lbID: %s, rid: %s", opt.LBID, kt.Rid)
+			}
+
 			dbRules = append(dbRules, dataproto.TCloudUrlRuleCreate{
 				Vendor:     enumor.TCloud,
+				BkBizID:    bizID,
+				AccountID:  accountId,
 				LbID:       opt.LBID,
 				CloudLbID:  opt.CloudLBID,
 				LblID:      opt.ListenerID,
@@ -293,12 +388,45 @@ func (cli *client) updateLayer7Rule(kt *kit.Kit, region string, updateMap map[st
 	if len(updateMap) == 0 {
 		return nil
 	}
+
+	ids := make([]string, 0, len(updateMap))
+	for id := range updateMap {
+		ids = append(ids, id)
+	}
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", ids),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	rules, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+	if err != nil {
+		logs.Errorf("fail to list rules for update, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+		return err
+	}
+
+	idToBizID := make(map[string]int64)
+	for _, rule := range rules.Details {
+		idToBizID[rule.ID] = rule.BkBizID
+	}
+	idToAccountID := make(map[string]string)
+	for _, rule := range rules.Details {
+		idToAccountID[rule.ID] = rule.AccountID
+	}
 	updates := make([]*dataproto.TCloudUrlRuleUpdate, 0, len(updateMap))
 
 	for id, rule := range updateMap {
+		bizID := idToBizID[id]
+		if bizID == 0 {
+			logs.Warnf("skip updating rule with no business ID, id: %s, rid: %s", id, kt.Rid)
+			continue
+		}
 
 		updates = append(updates, &dataproto.TCloudUrlRuleUpdate{
 			ID:            id,
+			BkBizID:       bizID,
+			AccountID:     idToAccountID[id],
 			Region:        region,
 			Domain:        cvt.PtrToVal(rule.Domain),
 			URL:           cvt.PtrToVal(rule.Url),

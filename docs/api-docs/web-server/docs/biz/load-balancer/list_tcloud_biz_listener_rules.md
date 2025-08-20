@@ -10,12 +10,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选 | 描述     |
-|-----------|--------|----|--------|
-| bk_biz_id | int64  | 是  | 业务ID   |
-| lbl_id    | string | 是  | 监听器id  |
-| filter    | object | 是  | 查询过滤条件 |
-| page      | object | 是  | 分页设置   |
+| 参数名称       | 参数类型   | 必选 | 描述     |
+|------------|--------|----|--------|
+| bk_biz_id  | int64  | 是  | 业务ID   |
+| account_id | string | 是  | 账号ID   |
+| lbl_id     | string | 是  | 监听器id  |
+| filter     | object | 是  | 查询过滤条件 |
+| page       | object | 是  | 分页设置   |
 
 #### filter
 
@@ -105,6 +106,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 | cloud_lb_id    | string | 云上负载均衡id                       |
 | lbl_id         | string | 所属监听器id                        |
 | cloud_lbl_id   | string | 所属监听器云上id                      |
+| bk_biz_id      | int64  | 业务ID                           |
+| account_id     | int64  | 账户ID                           |
 | domain         | string | 监听的域名                          |
 | url            | string | 监听的url                         |
 | scheduler      | string | 均衡方式                           |
@@ -116,7 +119,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 | created_at     | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
 | updated_at     | string | 修改时间，标准格式：2006-01-02T15:04:05Z |
 
-接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
 ### 调用示例
 
@@ -185,6 +187,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
         "cloud_lb_id": "lb-123456",
         "lbl_id": "00000002",
         "cloud_lbl_id": "lbl-xyz",
+        "bk_biz_id": 123456,
+        "account_id": 123456,
         "target_group_id": "00000003",
         "cloud_target_group_id": "lbtg-xxxx",
         "domain": "www.qq.com",
@@ -241,6 +245,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/list
 | cloud_lb_id    | string | 云上负载均衡id                       |
 | lbl_id         | string | 所属监听器id                        |
 | cloud_lbl_id   | string | 所属监听器云上id                      |
+| bk_biz_id      | int64  | 业务ID                           |
+| account_id     | int64  | 账号ID                           |
 | domain         | string | 监听的域名                          |
 | url            | string | 监听的url                         |
 | scheduler      | string | 调度器                            |

@@ -386,10 +386,16 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	accountID, _ := cts.Kit.Ctx.Value("account_id").(string)
+	bizID, _ := cts.Kit.Ctx.Value("bk_biz_id").(string)
+
 	opt := &types.ListOption{
 		Fields: req.Fields,
-		Filter: req.Filter,
-		Page:   req.Page,
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bizID),
+			tools.RuleEqual("account_id", accountID),
+		),
+		Page: req.Page,
 	}
 	result, err := svc.dao.LoadBalancerTCloudUrlRule().List(cts.Kit, opt)
 	if err != nil {
@@ -437,6 +443,8 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTab
 		RuleType:           one.RuleType,
 		LbID:               one.LbID,
 		CloudLbID:          one.CloudLbID,
+		BkBizID:            one.BkBizID,
+		AccountID:          one.AccountID,
 		LblID:              one.LblID,
 		CloudLBLID:         one.CloudLBLID,
 		TargetGroupID:      one.TargetGroupID,
@@ -709,7 +717,7 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 }
 
 func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRelTable) *corelb.
-BaseTargetListenerRuleRel {
+	BaseTargetListenerRuleRel {
 
 	return &corelb.BaseTargetListenerRuleRel{
 		ID:                  one.ID,
@@ -1294,6 +1302,10 @@ func (svc *lbSvc) listTCloudLoadBalancerUrlRuleByTgIDs(kt *kit.Kit,
 	lblReq protocloud.ListenerQueryItem, cloudClbIDs, cloudLblIDs, targetGroupIDs []string) (
 	[]protocloud.LoadBalancerUrlRuleResult, error) {
 
+	// 从上下文中获取account_id和业务ID
+	accountID, _ := kt.Ctx.Value("account_id").(string)
+	bizID, _ := kt.Ctx.Value("bk_biz_id").(string)
+
 	lblTargetFilter := make([]*filter.AtomRule, 0)
 	lblTargetFilter = append(lblTargetFilter, tools.RuleIn("cloud_lb_id", cloudClbIDs))
 	lblTargetFilter = append(lblTargetFilter, tools.RuleIn("cloud_lbl_id", cloudLblIDs))
@@ -1311,6 +1323,11 @@ func (svc *lbSvc) listTCloudLoadBalancerUrlRuleByTgIDs(kt *kit.Kit,
 			}
 		}
 	}
+
+	// 添加业务ID和account_id过滤条件
+	lblTargetFilter = append(lblTargetFilter, tools.RuleEqual("bk_biz_id", bizID))
+	lblTargetFilter = append(lblTargetFilter, tools.RuleEqual("account_id", accountID))
+
 	opt := &types.ListOption{
 		Filter: tools.ExpressionAnd(lblTargetFilter...),
 		Page:   core.NewDefaultBasePage(),

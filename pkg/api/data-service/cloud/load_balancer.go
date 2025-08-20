@@ -252,6 +252,8 @@ type TCloudUrlRuleCreate struct {
 	CloudLbID  string `json:"cloud_lb_id" validate:"required,lte=255"`
 	LblID      string `json:"lbl_id" validate:"required,lte=255"`
 	CloudLBLID string `json:"cloud_lbl_id" validate:"required,lte=255"`
+	BkBizID    int64  `json:"bk_biz_id"`
+	AccountID  string `json:"account_id"`
 
 	CloudID            string                        `json:"cloud_id" validate:"required,lte=255"`
 	Name               string                        `json:"name" validate:"lte=255"`
@@ -289,7 +291,9 @@ func (r *TCloudUrlRuleBatchUpdateReq) Validate() error {
 
 // TCloudUrlRuleUpdate tcloud url rule update.
 type TCloudUrlRuleUpdate struct {
-	ID string `json:"id" validate:"required,lte=255"`
+	ID        string `json:"id" validate:"required,lte=255"`
+	BkBizID   int64  `json:"bk_biz_id"`
+	AccountID string `json:"account_id"`
 
 	Name               string                        `json:"name" validate:"lte=255"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty,lte=255"`

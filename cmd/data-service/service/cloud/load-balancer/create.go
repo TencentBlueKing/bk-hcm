@@ -536,6 +536,12 @@ func (svc *lbSvc) convRule(kt *kit.Kit, rule dataproto.TCloudUrlRuleCreate) (
 		Creator: kt.User,
 		Reviser: kt.User,
 	}
+
+	if len(ruleModel.AccountID) == 0 {
+		if accountID, ok := kt.Ctx.Value("account_id").(string); ok {
+			ruleModel.AccountID = accountID
+		}
+	}
 	healthCheckJson, err := json.MarshalToString(rule.HealthCheck)
 	if err != nil {
 		logs.Errorf("fail to marshal health check into json, err: %v, healthcheck: %+v, rid: %s",
@@ -759,9 +765,15 @@ func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item datapro
 		return "", "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 从上下文中获取account_id和业务ID
+	accountID, _ := kt.Ctx.Value("account_id").(string)
+	bizID, _ := kt.Ctx.Value("bk_biz_id").(int64)
+
 	ruleModels := []*tablelb.TCloudLbUrlRuleTable{{
 		CloudID:            item.CloudRuleID,
 		RuleType:           item.RuleType,
+		BkBizID:            bizID,
+		AccountID:          accountID,
 		LbID:               item.LbID,
 		CloudLbID:          item.CloudLbID,
 		LblID:              lblIDs[0],

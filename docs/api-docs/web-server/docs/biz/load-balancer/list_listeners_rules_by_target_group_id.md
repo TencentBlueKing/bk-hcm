@@ -99,6 +99,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/target_groups/{target_group_i
 | 参数名称         | 参数类型   | 描述                             |
 |--------------|--------|--------------------------------|
 | id           | string | 资源ID                           |
+| bk_biz_id    | int    | 业务ID                           |
+| account_id   | int    | 账户ID                           |
 | cloud_id     | string | 云资源ID                          |
 | name         | string | 资源名称                           |
 | lbl_id       | string | 监听器ID                          |
@@ -112,7 +114,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/target_groups/{target_group_i
 | created_at   | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
 | updated_at   | string | 修改时间，标准格式：2006-01-02T15:04:05Z |
 
-接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
 ### 调用示例
 

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -113,6 +114,7 @@ func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLo
 		Vendor:             lb.Vendor,
 		LbID:               lb.ID,
 		CloudLbID:          lb.CloudID,
+		BkBizID:            lb.BkBizID,
 		LblID:              listener.ID,
 		CloudLBLID:         listener.CloudID,
 		CloudID:            cloudID,
@@ -212,6 +214,21 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to update rule, err: %v, id: %s, rid: %s", err, ruleID, cts.Kit.Rid)
 		return nil, err
 	}
+
+	updateReq := &cloud.TCloudUrlRuleBatchUpdateReq{
+		UrlRules: []*cloud.TCloudUrlRuleUpdate{
+			{
+				ID:      ruleID,
+				BkBizID: lb.BkBizID,
+			},
+		},
+	}
+
+	if err = svc.dataCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(cts.Kit, updateReq); err != nil {
+		logs.Errorf("fail to update tcloud url rule in database, err: %v, id: %s, rid: %s", err, ruleID, cts.Kit.Rid)
+		return nil, err
+	}
+
 	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{rules[0].CloudLBLID}); err != nil {
 		logs.Errorf("fail to sync listener for update rule(%s), rid: %s", ruleID, cts.Kit.Rid)
 		return nil, err
@@ -297,6 +314,17 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
+	deleteReq := &protocloud.LoadBalancerBatchDeleteReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", req.RuleIDs),
+			tools.RuleEqual("bk_biz_id", lb.BkBizID),
+		),
+	}
+	if err := svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, deleteReq); err != nil {
+		logs.Errorf("fail to delete tcloud url rule in database, err: %v, ids: %v, rid: %s", err, req.RuleIDs, cts.Kit.Rid)
+		return nil, err
+	}
+
 	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{rules[0].CloudLBLID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for delete rule, req: %+v, rid: %s", req, cts.Kit.Rid)
@@ -346,9 +374,21 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, er
 	for _, domain := range req.Domains {
 		ruleOption.Domain = cvt.ValToPtr(domain)
 		if err = tcloudAdpt.DeleteRule(cts.Kit, &ruleOption); err != nil {
-			logs.Errorf("fail to delete rule, err: %v, ids: %v, rid: %s", err, domain, cts.Kit.Rid)
+			logs.Errorf("fail to delete rule, err: %v, domain: %v, rid: %s", err, domain, cts.Kit.Rid)
 			return nil, err
 		}
+	}
+
+	deleteReq := &protocloud.LoadBalancerBatchDeleteReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lbl_id", listener.ID),
+			tools.RuleIn("domain", req.Domains),
+			tools.RuleEqual("bk_biz_id", lb.BkBizID),
+		),
+	}
+	if err := svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, deleteReq); err != nil {
+		logs.Errorf("fail to delete tcloud url rule in database, err: %v, domains: %v, rid: %s", err, req.Domains, cts.Kit.Rid)
+		return nil, err
 	}
 
 	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{listener.CloudID}); err != nil {

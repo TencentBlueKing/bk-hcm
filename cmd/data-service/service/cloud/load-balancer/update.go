@@ -359,9 +359,16 @@ type tcloudHealthCert struct {
 }
 
 func (svc *lbSvc) listRuleHealthAndCert(kt *kit.Kit, ruleIds []string) (map[string]tcloudHealthCert, error) {
+	accountID, _ := kt.Ctx.Value("account_id").(string)
+	bizID, _ := kt.Ctx.Value("bk_biz_id").(string)
+
 	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ruleIds),
-		Page:   &core.BasePage{Limit: core.DefaultMaxPageLimit},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bizID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleIn("id", ruleIds),
+		),
+		Page: &core.BasePage{Limit: core.DefaultMaxPageLimit},
 	}
 
 	resp, err := svc.dao.LoadBalancerTCloudUrlRule().List(kt, opt)

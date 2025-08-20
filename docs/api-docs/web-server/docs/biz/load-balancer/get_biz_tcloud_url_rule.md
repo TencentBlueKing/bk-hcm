@@ -10,10 +10,11 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/{rule
 
 ### 输入参数
 
-| 参数名称      | 参数类型   | 必选 | 描述     |
-|-----------|--------|----|--------|
-| bk_biz_id | int64  | 是  | 业务ID   |
-| lbl_id    | string | 是  | 监听器id  |
+| 参数名称       | 参数类型   | 必选 | 描述    |
+|------------|--------|----|-------|
+| bk_biz_id  | int64  | 是  | 业务ID  |
+| account_id | string | 是  | 账号ID  |
+| lbl_id     | string | 是  | 监听器id |
 
 ### 调用示例
 ```json
@@ -30,6 +31,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/{rule
   "message": "",
   "data": {
     "id": "00000005",
+    "bk_biz_id": 2,
+    "account_id": "admin",
     "cloud_id": "loc-abcde",
     "name": "loc-005",
     "rule_type": "layer_7",
@@ -66,6 +69,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/{rule
 | 参数名称           | 参数类型   | 描述                             |
 |----------------|--------|--------------------------------|
 | id             | string | 资源ID                           |
+| bk_biz_id      | int64  | 业务ID                           |
+| account_id     | string | 账号ID                           |
 | cloud_id       | string | 云资源ID                          |
 | name           | string | 名称                             |
 | lb_id          | string | 负载均衡id                         |

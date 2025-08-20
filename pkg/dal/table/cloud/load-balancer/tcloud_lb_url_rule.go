@@ -21,7 +21,6 @@ package tablelb
 
 import (
 	"errors"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
@@ -38,6 +37,8 @@ var TCloudLbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "rule_type", NamedC: "rule_type", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 
 	{Column: "lb_id", NamedC: "lb_id", Type: enumor.String},
 	{Column: "cloud_lb_id", NamedC: "cloud_lb_id", Type: enumor.String},
@@ -63,10 +64,12 @@ var TCloudLbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 
 // TCloudLbUrlRuleTable 腾讯云负载均衡四层/七层规则表
 type TCloudLbUrlRuleTable struct {
-	ID       string          `db:"id" validate:"lte=64" json:"id"`
-	CloudID  string          `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
-	Name     string          `db:"name" validate:"lte=255" json:"name"`
-	RuleType enumor.RuleType `db:"rule_type" validate:"lte=64" json:"rule_type"`
+	ID        string          `db:"id" validate:"lte=64" json:"id"`
+	CloudID   string          `db:"cloud_id" validate:"lte=255" json:"cloud_id"`
+	Name      string          `db:"name" validate:"lte=255" json:"name"`
+	RuleType  enumor.RuleType `db:"rule_type" validate:"lte=64" json:"rule_type"`
+	BkBizID   int64           `db:"bk_biz_id"  json:"bk_biz_id"`
+	AccountID string          `db:"account_id" validate:"lte=64" json:"account_id"`
 
 	LbID               string          `db:"lb_id" validate:"lte=255" json:"lb_id"`
 	CloudLbID          string          `db:"cloud_lb_id" validate:"lte=255" json:"cloud_lb_id"`

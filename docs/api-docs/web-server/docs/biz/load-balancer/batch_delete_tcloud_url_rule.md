@@ -10,11 +10,12 @@ DELETE /api/v1/cloud/vendors/tcloud/listeners/{lbl_id}/rules/batch
 
 ### 输入参数
 
-| 参数名称               | 参数类型         | 必选 | 描述                      |
-|--------------------|--------------|----|-------------------------|
-| bk_biz_id          | int          | 是  | 业务ID                    |
-| lbl_id             | string       | 是  | 监听器id                   |
-| rule_ids           | string array | 否  | URL规则ID数组               |
+| 参数名称       | 参数类型         | 必选 | 描述        |
+|------------|--------------|----|-----------|
+| bk_biz_id  | int          | 是  | 业务ID      |
+| account_id | string       | 是  | 账号ID      |
+| lbl_id     | string       | 是  | 监听器id     |
+| rule_ids   | string array | 否  | URL规则ID数组 |
 
 
 ### 调用示例

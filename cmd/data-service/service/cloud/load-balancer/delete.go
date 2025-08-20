@@ -21,7 +21,6 @@ package loadbalancer
 
 import (
 	"fmt"
-
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -131,9 +130,18 @@ func (svc *lbSvc) deleteListenerByLb(kt *kit.Kit, txn *sqlx.Tx, lbId string) err
 
 // 删除监听器关联规则
 func (svc *lbSvc) deleteRuleByListener(kt *kit.Kit, txn *sqlx.Tx, listenerID string) error {
+	accountID := ""
+	if aid, ok := kt.Ctx.Value("account_id").(string); ok {
+		accountID = aid
+	}
+
 	ruleResp, err := svc.dao.LoadBalancerTCloudUrlRule().List(kt, &types.ListOption{
-		Filter: tools.EqualExpression("lbl_id", listenerID),
-		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "lbl_id", "bk_biz_id", "account_id"},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lbl_id", listenerID),
+			tools.RuleEqual("account_id", accountID),
+		),
+		Page: core.NewDefaultBasePage(),
 	})
 	if err != nil {
 		logs.Errorf("fail to list load balancer rule of listener(%s), err: %v, rid: %s", listenerID, err, kt.Rid)
@@ -221,7 +229,7 @@ func (svc *lbSvc) BatchDeleteTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	opt := &types.ListOption{
-		Fields: []string{"id", "cloud_id"},
+		Fields: []string{"id", "cloud_id", "bk_biz_id", "account_id"},
 		Filter: req.Filter,
 		Page:   core.NewDefaultBasePage(),
 	}
