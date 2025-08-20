@@ -118,7 +118,7 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("BatchModifyBizTargetPort",
 		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
 	h.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
-		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
+		"/targets/weight", svc.BatchModifyBizTargetsWeight)
 
 	h.Add("CancelFlow", http.MethodPost, "/load_balancers/{lb_id}/async_flows/terminate", svc.BizTerminateFlow)
 	h.Add("RetryTask", http.MethodPost, "/load_balancers/{lb_id}/async_tasks/retry", svc.BizRetryTask)

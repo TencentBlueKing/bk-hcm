@@ -153,22 +153,6 @@ func (svc *lbSvc) getLbAndLblMapByTgIDs(kt *kit.Kit, targetGroupIDs []string) (m
 	return lbMap, tgLbMap, tgLblMap, nil
 }
 
-func (svc *lbSvc) listTGListenerRuleRelMapByTGIDs(kt *kit.Kit, tgIDs []string) (
-	[]corelb.BaseTargetListenerRuleRel, error) {
-
-	req := &core.ListReq{
-		Filter: tools.ContainersExpression("target_group_id", tgIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	list, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, req)
-	if err != nil {
-		logs.Errorf("list target group listener rel failed, tgIDs: %v, err: %v, rid: %s", tgIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	return list.Details, nil
-}
-
 // GetTargetGroup get target group.
 func (svc *lbSvc) GetTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	return svc.getTargetGroup(cts, handler.ListResourceAuthRes)
