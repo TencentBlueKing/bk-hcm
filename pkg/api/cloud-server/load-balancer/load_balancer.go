@@ -294,24 +294,8 @@ func (req *TCloudRuleBatchCreateReq) Validate() error {
 
 // TCloudRuleCreate 腾讯云url规则创建
 type TCloudRuleCreate struct {
-	Url string `json:"url,omitempty" validate:"required"`
-
-	TargetGroupID string `json:"target_group_id" validate:"required"`
-
-	Domains           []string `json:"domains,omitempty"`
-	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
-	Scheduler         *string  `json:"scheduler,omitempty"`
-	ForwardType       *string  `json:"forward_type,omitempty"`
-	DefaultServer     *bool    `json:"default_server,omitempty"`
-	Http2             *bool    `json:"http2,omitempty"`
-	TargetType        *string  `json:"target_type,omitempty"`
-	Quic              *bool    `json:"quic,omitempty"`
-	TrpcFunc          *string  `json:"trpc_func,omitempty"`
-	TrpcCallee        *string  `json:"trpc_callee,omitempty"`
-
-	Certificate *corelb.TCloudCertificateInfo `json:"certificate,omitempty"`
-
-	Memo *string `json:"memo,omitempty"`
+	TCloudRuleCreateWithoutBinding `json:",inline"`
+	TargetGroupID                  string `json:"target_group_id" validate:"required"`
 }
 
 // Validate request.
