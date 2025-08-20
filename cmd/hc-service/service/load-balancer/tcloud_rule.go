@@ -386,8 +386,9 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, er
 			tools.RuleEqual("bk_biz_id", lb.BkBizID),
 		),
 	}
-	if err := svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, deleteReq); err != nil {
-		logs.Errorf("fail to delete tcloud url rule in database, err: %v, domains: %v, rid: %s", err, req.Domains, cts.Kit.Rid)
+	if err = svc.dataCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(cts.Kit, deleteReq); err != nil {
+		logs.Errorf("fail to delete tcloud url rule in database, err: %v, domains: %v, rid: %s",
+			err, req.Domains, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -167,7 +167,9 @@ func (cli *client) listL4RuleFromDB(kt *kit.Kit, lbID string) ([]corelb.TCloudLb
 
 	lbResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
-		logs.Warnf("fail to list load balancer for sync rules, err: %v, lbID: %s, rid: %s, will query without biz id", err, lbID, kt.Rid)
+		logs.Warnf("fail to list load balancer for sync rules, err: %v, lbID: %s, rid: %s,"+
+			" will query without biz id",
+			err, lbID, kt.Rid)
 	} else if len(lbResp.Details) > 0 && lbResp.Details[0].BkBizID != 0 {
 		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleEqual("bk_biz_id", lbResp.Details[0].BkBizID))
 	}
@@ -191,7 +193,8 @@ func (cli *client) listL7RuleFromDB(kt *kit.Kit, listenerID string) ([]corelb.TC
 
 	lbResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
-		logs.Warnf("fail to get listener for sync rules, err: %v, listenerID: %s, rid: %s, will query without biz id", err, listenerID, kt.Rid)
+		logs.Warnf("fail to get listener for sync rules, err: %v, listenerID: %s, rid: %s,"+
+			" will query without biz id", err, listenerID, kt.Rid)
 	} else if len(lbResp.Details) > 0 && lbResp.Details[0].BkBizID != 0 {
 		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleEqual("bk_biz_id", lbResp.Details[0].BkBizID))
 	}
