@@ -306,12 +306,12 @@ func (svc *lbSvc) createListenerAddRsTaskDetails(kt *kit.Kit, taskManagementID s
 	return details, nil
 }
 
-// createApplyTGFlow create a custom flow to apply target group to listener rule
 func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID, taskManagementID string, lblInfo *corelb.BaseListener,
 	tasks []apits.CustomFlowTask, taskDetails []*taskManagementDetail) error {
 
 	flowID, err := svc.buildFlow(kt, enumor.FlowApplyTargetGroupToListenerRule, nil, tasks)
 	if err != nil {
+		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	for _, detail := range taskDetails {
