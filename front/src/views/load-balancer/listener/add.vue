@@ -14,6 +14,7 @@ import {
   SessionType,
   SSL_MODE_NAME,
   SSLMode,
+  DOMAIN_REGEX,
 } from '../constants';
 import { goAsyncTaskDetail } from '@/utils';
 import routerAction from '@/router/utils/action';
@@ -63,7 +64,7 @@ const rules = {
   ],
   domain: [
     {
-      validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
+      validator: (value: string) => DOMAIN_REGEX.test(value),
       message: '域名不符合规范',
       trigger: 'change',
     },
