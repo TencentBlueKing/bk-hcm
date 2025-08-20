@@ -39,5 +39,5 @@ type ListSubAccountDetails struct {
 // Account ...
 type Account struct {
 	cloud.AccountTable `json:",inline"`
-	BkBizIDs           []int64 `db:"bk_biz_ids" json:"bk_biz_ids"`
+	UsageBizIDs        []int64 `db:"usage_biz_ids" json:"usage_biz_ids"`
 }

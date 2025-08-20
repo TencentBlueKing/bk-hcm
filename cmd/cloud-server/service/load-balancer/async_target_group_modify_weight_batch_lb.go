@@ -90,7 +90,7 @@ func (svc *lbSvc) buildBatchModifyTCloudTargetWeight(kt *kit.Kit, tgTargetsMap m
 			}
 			tgAndReqSlice = append(tgAndReqSlice, tgAndReq)
 		}
-		flowStateResult, err := svc.buildBatchModifyTCloudTargetTasksWeight(kt, accountID, lbID, tgAndReqSlice)
+		flowStateResult, err := svc.buildModifyTCloudTargetWeightFlow(kt, accountID, lbID, tgAndReqSlice)
 		if err != nil {
 			logs.Errorf("build batch modify tcloud target weight tasks failed, err: %v, "+
 				"accountID: %s, lbID: %s, tgAndReqSlice: %+v, rid: %s",
@@ -103,7 +103,7 @@ func (svc *lbSvc) buildBatchModifyTCloudTargetWeight(kt *kit.Kit, tgTargetsMap m
 	return flowStateResults, nil
 }
 
-func (svc *lbSvc) buildBatchModifyTCloudTargetTasksWeight(kt *kit.Kit, accountID string,
+func (svc *lbSvc) buildModifyTCloudTargetWeightFlow(kt *kit.Kit, accountID string,
 	lbID string, tgAndReqSlice []cslb.TgIDAndTCloudBatchModifyTargetWeightReq) (*core.FlowStateResult, error) {
 
 	// 预检测

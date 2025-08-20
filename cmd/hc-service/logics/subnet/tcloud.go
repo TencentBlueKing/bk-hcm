@@ -159,6 +159,7 @@ func convertTCloudSubnetCreateReq(data *adtysubnet.TCloudSubnet, accountID strin
 	return subnetReq
 }
 
+// BatchCreateTCloudSubnet ...
 func BatchCreateTCloudSubnet(kt *kit.Kit, createResources []cloud.SubnetCreateReq[cloud.TCloudSubnetCreateExt],
 	dataCli *dataclient.Client, adaptor *cloudclient.CloudAdaptorClient, req *SyncTCloudOption) (
 	*core.BatchCreateResult, error) {

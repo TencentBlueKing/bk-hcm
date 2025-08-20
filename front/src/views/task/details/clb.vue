@@ -17,7 +17,7 @@ import Rerun from './children/rerun/rerun.vue';
 import Cancel from './children/cancel/cancel.vue';
 
 import { TASK_CLB_TYPE_NAME } from '../constants';
-import { TaskClbType, TaskDetailStatus } from '../typings';
+import { TaskClbType, TaskStatus, TaskDetailStatus } from '../typings';
 
 interface ArrayDataItem {
   domain: string[];
@@ -70,7 +70,9 @@ const status = ref<ITaskStatusItem>();
 const counts = ref<ITaskCountItem>();
 
 const statusPoolIds = computed(() => {
-  return taskDetailList.value.filter((item) => [TaskDetailStatus.RUNNING].includes(item.state)).map((item) => item.id);
+  return taskDetailList.value
+    .filter((item) => [TaskDetailStatus.INIT, TaskDetailStatus.RUNNING].includes(item.state))
+    .map((item) => item.id);
 });
 
 const fetchCountAndStatus = async () => {
@@ -94,19 +96,21 @@ const fetchCountAndStatus = async () => {
   // 更新本任务的状态与统计数据
   [counts.value] = countList;
   [status.value] = statusList;
+  taskDetails.value.state = status.value?.state;
 
   // 更新当前任务详情列表中数据的状态
   taskDetailList.value.forEach((row) => {
     const foundState = detailStatusList.find((item) => item?.id === row.id);
     if (foundState) {
       row.state = foundState.state;
+      row.reason = foundState.reason;
     }
   });
 };
 
 const taskStatusPoll = useTimeoutPoll(() => {
   fetchCountAndStatus();
-}, 5000);
+}, 10000);
 
 watch(
   () => route.query,
@@ -128,24 +132,25 @@ watch(
       page: getPageParams(pagination, { sort, order }),
     });
 
-    // TODO: 按任务类型展示不同字段来优化列表数据
+    const hasRsListTaskClbTypes = [
+      TaskClbType.UNBIND_LAYER4_RS,
+      TaskClbType.MODIFY_LAYER4_RS_WEIGHT,
+      TaskClbType.MODIFY_LAYER7_RS_WEIGHT,
+    ];
     list.forEach((item) => {
-      const arrayData: ArrayDataItem = {
-        domain: [],
-        url: [],
-        ip: [],
-        weight: [],
-      };
-      item.param.rs_list?.forEach((rs_item: any) => {
-        arrayData.domain.push(rs_item?.domain);
-        arrayData.url.push(rs_item?.url);
-        arrayData.ip.push(rs_item?.ip);
-        arrayData.weight.push(rs_item?.weight);
-      });
-      item.param.ip = arrayData.ip.join(',');
-      item.param.url = arrayData.url.join(',');
-      item.param.domain = arrayData.domain.join(',');
-      item.param.weight = arrayData.weight.join(',');
+      if (hasRsListTaskClbTypes.includes(item.operation as TaskClbType)) {
+        const arrayData: ArrayDataItem = { domain: [], url: [], ip: [], weight: [] };
+        item.param.rs_list?.forEach((rs_item: any) => {
+          arrayData.domain.push(rs_item?.domain);
+          arrayData.url.push(rs_item?.url);
+          arrayData.ip.push(rs_item?.ip);
+          arrayData.weight.push(rs_item?.weight);
+        });
+        item.param.ip = arrayData.ip.join(',');
+        item.param.url = arrayData.url.join(',');
+        item.param.domain = arrayData.domain.join(',');
+        item.param.weight = arrayData.weight.join(',');
+      }
     });
 
     taskDetailList.value = list;
@@ -155,6 +160,13 @@ watch(
   },
   { immediate: true },
 );
+
+watch(status, (newStatus) => {
+  // 大任务的状态不是运行中，暂停轮询
+  if (newStatus.state !== TaskStatus.RUNNING) {
+    taskStatusPoll.pause();
+  }
+});
 
 watchEffect(async () => {
   const operations = taskDetails.value?.operations ?? [];

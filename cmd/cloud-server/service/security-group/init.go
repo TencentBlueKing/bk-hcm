@@ -78,7 +78,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
 		svc.GetAzureDefaultSGRule)
 
-	h.Add("ListBizSecurityGroupsByResID", http.MethodGet,
+	h.Add("ListSecurityGroupsByResID", http.MethodGet,
 		"/security_groups/res/{res_type}/{res_id}", svc.ListSecurityGroupsByResID)
 	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
@@ -122,14 +122,14 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
 	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
 		svc.UpdateBizSecurityGroup)
-	h.Add("UpdateSecurityGroupMgmtAttr", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}/mgmt_attrs",
+	h.Add("UpdateBizSGMgmtAttr", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}/mgmt_attrs",
 		svc.UpdateBizSGMgmtAttr)
 	h.Add("BatchDeleteBizSecurityGroup", http.MethodDelete, "/bizs/{bk_biz_id}/security_groups/batch",
 		svc.BatchDeleteBizSecurityGroup)
 	h.Add("ListBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/list", svc.ListBizSecurityGroup)
 
 	h.Add("AssociateBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/cvms", svc.AssociateBizCvm)
-	h.Add("DisassociateCvm", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/cvms",
+	h.Add("DisassociateBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/disassociate/cvms",
 		svc.DisassociateBizCvm)
 	h.Add("AssociateBizSubnet", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/associate/subnets",
 		svc.AssociateBizSubnet)

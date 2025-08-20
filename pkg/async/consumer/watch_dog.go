@@ -42,9 +42,10 @@ import (
 
 /*
 WatchDog （看门狗）:
- 1. 处理超时任务
- 2. 处理处于Scheduled状态，但执行节点已经挂掉的任务流
- 3. 处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
+
+	1.处理超时任务
+	2.处理处于Scheduled状态，但执行节点已经挂掉的任务流
+	3.处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
 */
 type WatchDog interface {
 	compctrl.Closer

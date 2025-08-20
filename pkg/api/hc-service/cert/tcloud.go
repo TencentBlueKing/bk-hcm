@@ -22,6 +22,7 @@ package hccert
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -45,14 +46,15 @@ func (req *TCloudDeleteReq) Validate() error {
 
 // TCloudCreateReq tcloud create req.
 type TCloudCreateReq struct {
-	BkBizID    int64           `json:"bk_biz_id" validate:"omitempty"`
-	AccountID  string          `json:"account_id" validate:"required"`
-	Vendor     string          `json:"vendor" validate:"required"`
-	Name       string          `json:"name" validate:"required"`
-	CertType   enumor.CertType `json:"cert_type" validate:"required"`
-	PublicKey  string          `json:"public_key" validate:"required"`
-	PrivateKey string          `json:"private_key" validate:"omitempty"`
-	Memo       string          `json:"memo"`
+	BkBizID    int64             `json:"bk_biz_id" validate:"omitempty"`
+	AccountID  string            `json:"account_id" validate:"required"`
+	Vendor     string            `json:"vendor" validate:"required"`
+	Name       string            `json:"name" validate:"required"`
+	CertType   enumor.CertType   `json:"cert_type" validate:"required"`
+	PublicKey  string            `json:"public_key" validate:"required"`
+	PrivateKey string            `json:"private_key" validate:"omitempty"`
+	Memo       string            `json:"memo"`
+	Tags       []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate request.

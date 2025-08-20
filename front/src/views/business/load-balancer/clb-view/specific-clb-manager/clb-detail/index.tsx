@@ -4,30 +4,34 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import CorsConfigDialog from './CorsConfigDialog';
 import AddSnatIpDialog from './AddSnatIpDialog';
 import Confirm from '@/components/confirm';
-import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
+import { useRouteLinkBtn, TypeEnum } from '@/hooks/useRouteLinkBtn';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { timeFormatter, formatTags } from '@/common/util';
+import { timeFormatter, formatTags, parseTimeFromNow } from '@/common/util';
 import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
 import { useBusinessStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { IP_VERSION_MAP } from '@/constants';
 import { QueryRuleOPEnum } from '@/typings';
 import { useI18n } from 'vue-i18n';
-import { getInstVip } from '@/utils';
+import { formatBandwidth, getInstVip } from '@/utils';
 import './index.scss';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
+import { useLoadBalancerClbStore, ILoadBalancerDetails } from '@/store/load-balancer/clb';
+import { IAuthSign } from '@/common/auth-service';
 
 export default defineComponent({
   props: {
-    detail: Object as PropType<IDetail>,
+    detail: Object as PropType<ILoadBalancerDetails>,
     getDetails: Function,
-    updateLb: Function,
     id: String,
+    currentGlobalBusinessId: Number,
+    clbOperationAuthSign: Object as PropType<IAuthSign | IAuthSign[]>,
   },
   setup(props) {
     const { t } = useI18n();
     const businessStore = useBusinessStore();
+    const loadBalancerClbStore = useLoadBalancerClbStore();
 
     const isReloadLoading = ref(false);
     const regionStore = useRegionsStore();
@@ -37,50 +41,46 @@ export default defineComponent({
     const vpcDetail = ref(null);
     const targetVpcDetail = ref(null);
     const resourceFields: FieldList = [
-      {
-        name: '名称',
-        prop: 'name',
-        edit: true,
-      },
+      { name: '名称', prop: 'name', edit: true, getAuthSign: () => props.clbOperationAuthSign },
       {
         name: '所属网络',
         prop: 'cloud_vpc_id',
         render() {
-          return useRouteLinkBtn(props.detail, {
-            id: 'vpc_id',
-            name: 'cloud_vpc_id',
-            type: TypeEnum.VPC,
-          });
+          return useRouteLinkBtn(props.detail, { id: 'vpc_id', name: 'cloud_vpc_id', type: TypeEnum.VPC });
         },
-        copyContent: props.detail?.cloud_vpc_id || '--',
+        copyContent: props.detail.cloud_vpc_id || '--',
       },
-      {
-        name: 'ID',
-        prop: 'cloud_id',
-      },
+      { name: 'ID', prop: 'cloud_id' },
       {
         name: '删除保护',
         render: () => (
-          <div>
-            <Switcher
-              theme='primary'
-              class={'mr5'}
-              modelValue={isProtected.value}
-              disabled={isLoading.value}
-              onChange={async (val) => {
-                isLoading.value = true;
-                isProtected.value = val;
-                try {
-                  await props.updateLb({
-                    delete_protect: val,
-                  });
-                } catch (_e) {
-                  isProtected.value = !val;
-                } finally {
-                  isLoading.value = false;
-                }
+          <div class='flex-row align-items-center'>
+            <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Switcher
+                    theme='primary'
+                    modelValue={isProtected.value}
+                    disabled={noPerm || isLoading.value}
+                    onChange={async (val) => {
+                      isLoading.value = true;
+                      isProtected.value = val;
+                      try {
+                        await loadBalancerClbStore.updateLoadBalancer(
+                          props.detail.vendor,
+                          { id: props.id, delete_protect: val },
+                          props.currentGlobalBusinessId,
+                        );
+                      } catch (_e) {
+                        isProtected.value = !val;
+                      } finally {
+                        isLoading.value = false;
+                      }
+                    }}
+                  />
+                ),
               }}
-            />
+            </hcm-auth>
             <Tag theme={isProtected.value ? 'success' : ''}> {isProtected.value ? t('已开启') : t('未开启')} </Tag>
             <i
               class='hcm-icon bkhcm-icon-info-line ml10'
@@ -144,7 +144,7 @@ export default defineComponent({
           const backupsStr = backups
             ?.map((zone: string) => `${regionStore.getZoneName(zone, props.detail.vendor)}-(备)`)
             .join(',');
-          return `${mainsStr}${backupsStr?.length ? `,${backupsStr}` : ''}`;
+          return `${mainsStr}${backupsStr?.length ? `,${backupsStr}` : ''}` || '--';
         },
       },
       {
@@ -153,6 +153,11 @@ export default defineComponent({
         render(val) {
           return formatTags(val);
         },
+      },
+      {
+        name: '同步时间',
+        prop: 'sync_time',
+        render: () => `${timeFormatter(props.detail.sync_time)}(${parseTimeFromNow(props.detail.sync_time)})`,
       },
     ];
 
@@ -164,7 +169,7 @@ export default defineComponent({
       {
         name: '实例计费模式',
         render() {
-          return CHARGE_TYPE[props.detail?.extension?.charge_type] || '--';
+          return CHARGE_TYPE[props.detail.extension?.charge_type] || '--';
         },
       },
       {
@@ -176,56 +181,53 @@ export default defineComponent({
       {
         name: '带宽计费模式',
         render: () => {
-          return props.detail?.extension?.internet_charge_type || '--';
+          return props.detail.extension?.internet_charge_type || '--';
         },
       },
       {
         name: '规格类型',
         render: () => {
-          return CLB_SPECS[props.detail?.extension?.sla_type] || '--';
+          return CLB_SPECS[props.detail.extension?.sla_type] || '--';
         },
       },
       {
         name: '带宽上限',
-        render: () => {
-          return props.detail?.extension?.internet_max_bandwidth_out || '--';
-        },
+        render: () => formatBandwidth(props.detail.bandwidth),
       },
       {
         name: '运营商',
         render: () => {
-          return LB_ISP[props.detail?.extension?.vip_isp] || '--';
+          const displayValue = props.detail.isp ? LB_ISP[props.detail.isp] ?? props.detail.isp : '--';
+          return displayValue;
         },
       },
     ];
 
     watch(
       () => props.detail,
-      async () => {
+      async (details) => {
+        if (!details) return;
         // 当 lbInfo 信息变更时, 重新获取监听器数量, vpc 详情
-        const listenerNumRes = await businessStore.asyncGetListenerCount({ lb_ids: [props.detail?.id] });
-        const vpcDetailRes = await businessStore.detail('vpcs', props.detail?.vpc_id);
-        if (isCorsV1.value && props.detail.extension?.target_vpc) {
+        const listenerNumRes = await businessStore.asyncGetListenerCount({ lb_ids: [details.id] });
+        const vpcDetailRes = await businessStore.detail('vpcs', details.vpc_id);
+        if (isCorsV1.value && details.extension?.target_vpc) {
           // 通过cloud_id查list接口, 从而获取到target_vpc_name
           const res = await businessStore.list(
             {
               filter: {
                 op: QueryRuleOPEnum.AND,
-                rules: [{ field: 'cloud_id', op: QueryRuleOPEnum.EQ, value: props.detail.extension?.target_vpc }],
+                rules: [{ field: 'cloud_id', op: QueryRuleOPEnum.EQ, value: details.extension?.target_vpc }],
               },
               page: { count: false, start: 0, limit: 1 },
             },
-            `vendors/${props.detail?.vendor}/vpcs`,
+            `vendors/${details.vendor}/vpcs`,
           );
           [targetVpcDetail.value] = res.data.details;
         }
         listenerNum.value = listenerNumRes.data.details[0]?.num;
         vpcDetail.value = vpcDetailRes.data;
       },
-      {
-        deep: true,
-        immediate: true,
-      },
+      { deep: true, immediate: true },
     );
 
     // 重新加载负载均衡详情
@@ -260,9 +262,15 @@ export default defineComponent({
         label: '操作',
         render({ data }: any) {
           return (
-            <Button text theme='primary' onClick={() => handleDeleteSnatIp(data)}>
-              {t('删除')}
-            </Button>
+            <hcm-auth sign={props.clbOperationAuthSign}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Button text theme='primary' disabled={noPerm} onClick={() => handleDeleteSnatIp(data)}>
+                    {t('删除')}
+                  </Button>
+                ),
+              }}
+            </hcm-auth>
           );
         },
       },
@@ -293,7 +301,11 @@ export default defineComponent({
       isSnatproChange.value = true;
       isSnatproOpen.value = snat_pro;
       try {
-        await businessStore.updateLbDetail(props.detail.vendor, { id: props.id, snat_pro });
+        await loadBalancerClbStore.updateLoadBalancer(
+          props.detail.vendor,
+          { id: props.id, snat_pro },
+          props.currentGlobalBusinessId,
+        );
         Message({ theme: 'success', message: '修改成功' });
         await props.getDetails(props.id);
       } catch (error) {
@@ -306,13 +318,10 @@ export default defineComponent({
     watch(
       () => props.detail.extension,
       (extension) => {
-        isProtected.value = extension.delete_protect || false;
-        isSnatproOpen.value = extension.snat_pro || false;
+        isProtected.value = extension?.delete_protect || false;
+        isSnatproOpen.value = extension?.snat_pro || false;
       },
-      {
-        deep: true,
-        immediate: true,
-      },
+      { deep: true, immediate: true },
     );
 
     return () => (
@@ -323,13 +332,17 @@ export default defineComponent({
             fields={resourceFields}
             detail={props.detail}
             onChange={async (payload) => {
-              await props.updateLb(payload);
+              await loadBalancerClbStore.updateLoadBalancer(
+                props.detail.vendor,
+                { id: props.detail.id, ...payload },
+                props.currentGlobalBusinessId,
+              );
               await props.getDetails(props.id);
             }}
             globalCopyable
           />
         </div>
-        <div>
+        <div class='mb32'>
           <p class={'clb-detail-info-title'}>{t('配置信息')}</p>
           <DetailInfo fields={configFields} detail={props.detail} globalCopyable />
         </div>
@@ -363,29 +376,45 @@ export default defineComponent({
                 <div class='cors-config-item'>
                   <div class='cors-config-item-title'>{t('跨地域绑定2.0')}</div>
                   <div class='cors-config-item-content'>
-                    <div>
-                      <Switcher
-                        class='mr10'
-                        modelValue={isSnatproOpen.value}
-                        theme='primary'
-                        onChange={handleChangeSnatPro}
-                        disabled={props.detail?.extension?.snat_ips?.length > 0 || isSnatproChange.value}
-                        v-bk-tooltips={{
-                          content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
-                          disabled: props.detail?.extension?.snat_ips?.length === 0,
+                    <div class='flex-row align-items-center'>
+                      <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+                        {{
+                          default: ({ noPerm }: { noPerm: boolean }) => (
+                            <Switcher
+                              class='mr10'
+                              modelValue={isSnatproOpen.value}
+                              theme='primary'
+                              onChange={handleChangeSnatPro}
+                              disabled={noPerm || props.detail.extension?.snat_ips?.length > 0 || isSnatproChange.value}
+                              v-bk-tooltips={{
+                                content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
+                                disabled: props.detail.extension?.snat_ips?.length === 0,
+                              }}
+                            />
+                          ),
                         }}
-                      />
+                      </hcm-auth>
                       {t('跨多个地域，绑定多个非本VPC内的IP，以及云下IDC内部的IP')}
                     </div>
                     <div class='snat-ip-container'>
                       <div class='top-bar'>
-                        <Button text theme='primary' onClick={() => (isShowAddSnatIp.value = true)}>
-                          <i class='hcm-icon bkhcm-icon-plus-circle-shape mr5'></i>
-                          {t('新增 SNAT 的 IP')}
-                        </Button>
-                        <span class='desc'>{t('绑定IDC内部的IP，则需要添加SNAT IP。云上IP，则无需增加。')}</span>
+                        <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+                          {{
+                            default: ({ noPerm }: { noPerm: boolean }) => (
+                              <Button
+                                text
+                                theme='primary'
+                                disabled={noPerm}
+                                onClick={() => (isShowAddSnatIp.value = true)}>
+                                <i class='hcm-icon bkhcm-icon-plus-circle-shape mr5'></i>
+                                {t('新增 SNAT 的 IP')}
+                              </Button>
+                            ),
+                          }}
+                        </hcm-auth>
+                        <span class='desc'>{t('CLB 可以绑定云上多 VPC、云下 IDC 内 的IP。RS类型请选择为ENI类型')}</span>
                       </div>
-                      <Table columns={corsColumns} data={props.detail?.extension?.snat_ips}></Table>
+                      <Table columns={corsColumns} data={props.detail.extension?.snat_ips}></Table>
                     </div>
                   </div>
                 </div>

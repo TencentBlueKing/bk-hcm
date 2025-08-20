@@ -176,25 +176,43 @@ type ZenlayerBillItemExtension struct {
 
 // ZenlayerRawBillItem bill item from zenlayer
 type ZenlayerRawBillItem struct {
-	BillID         *string          `json:"bill_id"`         // 账单ID
-	ZenlayerOrder  *string          `json:"zenlayer_order"`  // Zenlayer订单编号
-	CID            *string          `json:"cid"`             // CID
-	GroupID        *string          `json:"group_id"`        // GROUP ID
-	Currency       *string          `json:"currency"`        // 币种
-	City           *string          `json:"city"`            // 城市
-	PayContent     *string          `json:"pay_content"`     // 付费内容
-	Type           *string          `json:"type"`            // 类型
-	AcceptanceNum  *decimal.Decimal `json:"acceptance_num"`  // 验收数量
-	PayNum         *decimal.Decimal `json:"pay_num"`         // 付费数量
-	UnitPriceUSD   *decimal.Decimal `json:"unit_price_usd"`  // 单价USD
-	TotalPayable   *decimal.Decimal `json:"total_payable"`   // 应付USD
-	BillingPeriod  *string          `json:"billing_period"`  // 账期
-	ContractPeriod *string          `json:"contract_period"` // 合约周期
-	Remarks        *string          `json:"remarks"`         // 备注
-	BusinessGroup  *string          `json:"business_group"`  // 业务组
-	CPU            *string          `json:"cpu"`             // CPU
-	Disk           *string          `json:"disk"`            // 硬盘
-	Memory         *string          `json:"memory"`          // 内存
+	// 账单ID
+	BillID *string `json:"bill_id"`
+	// Zenlayer订单编号
+	ZenlayerOrder *string `json:"zenlayer_order"`
+	// CID
+	CID     *string `json:"cid"`
+	GroupID *string `json:"group_id"`
+	// 币种
+	Currency *string `json:"currency"`
+	// 城市
+	City *string `json:"city"`
+	// 付费内容
+	PayContent *string `json:"pay_content"`
+	// 类型
+	Type *string `json:"type"`
+	// 验收数量
+	AcceptanceNum *decimal.Decimal `json:"acceptance_num"`
+	// 付费数量
+	PayNum *decimal.Decimal `json:"pay_num"`
+	// 单价USD
+	UnitPriceUSD *decimal.Decimal `json:"unit_price_usd"`
+	// 应付USD
+	TotalPayable *decimal.Decimal `json:"total_payable"`
+	// 账期
+	BillingPeriod *string `json:"billing_period"`
+	// 合约周期
+	ContractPeriod *string `json:"contract_period"`
+	// 备注
+	Remarks *string `json:"remarks"`
+	// 业务组
+	BusinessGroup *string `json:"business_group"`
+	// CPU
+	CPU *string `json:"cpu"`
+	// 硬盘
+	Disk *string `json:"disk"`
+	// 内存
+	Memory *string `json:"memory"`
 }
 
 // AwsRawBillItem Aws 原始账单结构

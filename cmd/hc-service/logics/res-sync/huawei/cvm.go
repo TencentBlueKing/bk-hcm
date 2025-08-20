@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/api/core/cloud/cvm"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -133,7 +132,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
 	}
 
-	lists := make([]dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension], 0)
+	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.HuaWeiCvmExtension], 0)
 
 	cloudVpcIDs := make([]string, 0)
 	cloudImageIDs := make([]string, 0)
@@ -162,24 +161,26 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			imageID = id
 		}
 
-		cvm := dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension]{
-			ID:                   id,
-			Name:                 one.Name,
-			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
-			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
-			CloudSubnetIDs:       one.CloudSubnetIDs,
-			SubnetIDs:            one.SubnetIDs,
-			CloudImageID:         one.Image.Id,
-			ImageID:              imageID,
-			Memo:                 one.Description,
-			Status:               one.Status,
-			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
-			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
-			PublicIPv4Addresses:  one.PublicIPv4Addresses,
-			PublicIPv6Addresses:  one.PublicIPv6Addresses,
-			CloudLaunchedTime:    one.CloudLaunchedTime,
-			CloudExpiredTime:     one.AutoTerminateTime,
-			Extension:            convHuaweiCvmExtension(one),
+		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.HuaWeiCvmExtension]{
+			CvmBatchUpdate: dataproto.CvmBatchUpdate{
+				ID:                   id,
+				Name:                 one.Name,
+				CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
+				VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
+				CloudSubnetIDs:       one.CloudSubnetIDs,
+				SubnetIDs:            one.SubnetIDs,
+				CloudImageID:         one.Image.Id,
+				ImageID:              imageID,
+				Memo:                 one.Description,
+				Status:               one.Status,
+				PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+				PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+				PublicIPv4Addresses:  one.PublicIPv4Addresses,
+				PublicIPv6Addresses:  one.PublicIPv6Addresses,
+				CloudLaunchedTime:    one.CloudLaunchedTime,
+				CloudExpiredTime:     one.AutoTerminateTime,
+			},
+			Extension: convHuaweiCvmExtension(one),
 		}
 
 		lists = append(lists, cvm)
@@ -492,7 +493,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &protocloud.CvmListReq{
+	req := &dataproto.CvmListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -527,7 +528,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 
 // RemoveCvmDeleteFromCloud 删除从云上删除已经删除的cvm
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
-	req := &protocloud.CvmListReq{
+	req := &dataproto.CvmListReq{
 		Field: []string{"id", "cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,

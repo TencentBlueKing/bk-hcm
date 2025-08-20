@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -178,4 +179,15 @@ func (cli *CvmClient) CreateCvm(kt *kit.Kit, request *protocvm.AzureCreateReq) (
 	}
 
 	return resp.Data, nil
+}
+
+// SyncCCInfo ...
+func (cli *CvmClient) SyncCCInfo(kt *kit.Kit, req *sync.AzureSyncReq) error {
+	return common.RequestNoResp[sync.AzureSyncReq](cli.client, rest.POST, kt, req, "/cvms/cc_info/sync")
+}
+
+// SyncCCInfoByCond ...
+func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) error {
+	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
+		"/cvms/cc_info/by_condition/sync")
 }

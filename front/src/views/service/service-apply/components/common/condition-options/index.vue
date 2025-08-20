@@ -1,20 +1,17 @@
 <script setup lang="ts">
-import AccountSelector from '@/components/account-selector/index-new.vue';
+import AccountSelector, { IAccountOption } from '@/components/account-selector/index-new.vue';
 import RegionSelector from '../region-selector.vue';
 import ResourceGroupSelector from '../resource-group-selector.vue';
 import { IAccountItem } from '@/typings';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
-import { PropType, computed, watch } from 'vue';
+import { PropType, computed, useTemplateRef, watch } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { Form } from 'bkui-vue';
-import { accountFilter } from './account-filter.plugin';
-
-const { FormItem } = Form;
 
 const props = defineProps({
-  type: String as PropType<string>,
+  type: String as PropType<ResourceTypeEnum>,
   bizs: Number as PropType<number>,
   cloudAccountId: String as PropType<string>,
   vendor: String as PropType<string>,
@@ -30,6 +27,10 @@ const emit = defineEmits([
   'update:resourceGroup',
 ]);
 
+const { FormItem } = Form;
+
+const accountSelectorRef = useTemplateRef<typeof AccountSelector>('account-selector');
+
 const selectedCloudAccountId = computed({
   get() {
     return props.cloudAccountId;
@@ -37,8 +38,8 @@ const selectedCloudAccountId = computed({
   set(val) {
     val && emit('update:cloudAccountId', val);
 
-    selectedVendor.value = '';
-    selectedRegion.value = '';
+    const account = accountSelectorRef.value?.currentDisplayList.find((item: IAccountOption) => item.id === val);
+    handleChangeAccount(account);
   },
 });
 
@@ -82,6 +83,7 @@ const handleChangeAccount = (account: IAccountItem) => {
 const { isResourcePage } = useWhereAmI();
 const resourceAccountStore = useResourceAccountStore();
 
+// TODO: 这里是一个副作用，需要优化
 watch(
   () => resourceAccountStore.resourceAccount?.id,
   (id) => {
@@ -102,9 +104,10 @@ watch(
       :property="[ResourceTypeEnum.SUBNET, ResourceTypeEnum.CLB].includes(type) ? 'account_id' : 'cloudAccountId'"
     >
       <account-selector
+        ref="account-selector"
         v-model="selectedCloudAccountId"
         :biz-id="isResourcePage ? undefined : props.bizs"
-        :filter="accountFilter"
+        :resource-type="type"
         :disabled="isResourcePage"
         :placeholder="isResourcePage ? '请在左侧选择账号' : undefined"
         @change="handleChangeAccount"

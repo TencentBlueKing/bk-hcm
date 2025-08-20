@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-func toProtoNetworkInterfaceExtWithCvmIDs[T coreni.NetworkInterfaceExtension](
+func toProtoNIExtWithCvmIDs[T coreni.NetworkInterfaceExtension](
 	data *reltypes.ListCvmRelsJoinNetworkInterfaceDetails) ([]*cloud.NetworkInterfaceExtWithCvmID[T], error) {
 
 	details := make([]*cloud.NetworkInterfaceExtWithCvmID[T], len(data.Details))

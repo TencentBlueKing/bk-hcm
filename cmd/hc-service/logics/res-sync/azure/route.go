@@ -150,6 +150,7 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	return new(SyncResult), nil
 }
 
+// createRoute create route in db
 func (cli *client) createRoute(kt *kit.Kit, accountID string, resGroupName string, routeTableID string,
 	addSlice []typesroutetable.AzureRoute) error {
 
@@ -187,6 +188,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, resGroupName strin
 	return nil
 }
 
+// updateRoute update route in db
 func (cli *client) updateRoute(kt *kit.Kit, accountID, resGroupName, routeTableID string,
 	updateMap map[string]typesroutetable.AzureRoute) error {
 
@@ -222,6 +224,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, resGroupName, routeTableI
 	return nil
 }
 
+// deleteRoute delete route in db
 func (cli *client) deleteRoute(kt *kit.Kit, accountID, resGroupName, cloudRTID, rtID string,
 	delCloudIDs []string) error {
 
@@ -263,6 +266,7 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID, resGroupName, cloudRTID, 
 	return nil
 }
 
+// listRouteTableFromCloud list route table from cloud
 func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]typesroutetable.AzureRoute, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -288,6 +292,7 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 	return results, nil
 }
 
+// listRouteTableFromDB list route table from db
 func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID string) ([]routetable.AzureRoute, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -314,6 +319,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID strin
 	return routes, nil
 }
 
+// isRouteChange checks if the route has changed between cloud and db
 func isRouteChange(cloud typesroutetable.AzureRoute,
 	db routetable.AzureRoute) bool {
 

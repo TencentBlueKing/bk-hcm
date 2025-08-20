@@ -167,7 +167,6 @@ func (exec *executor) subWorkerQueue() {
 
 // 任务执行体
 func (exec *executor) workerDo(task *Task) (err error) {
-
 	// cancelMap清理执行成功/失败的任务
 	defer exec.cancelMap.Delete(task.ID)
 	// 无论任务成功还是失败，都需要交给scheduler分析任务流的状态
@@ -185,7 +184,6 @@ func (exec *executor) workerDo(task *Task) (err error) {
 	if err := task.ValidateBeforeExec(act); err != nil {
 		return err
 	}
-
 	logs.Infof("start execute task %s, action: %s, flow: %s, rid: %s",
 		task.ID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
@@ -223,7 +221,6 @@ func (exec *executor) workerDo(task *Task) (err error) {
 		_, failedRet, runErr = exec.runTaskOnce(task, act)
 		return
 	}
-
 	if task.State == enumor.TaskRollback && task.Reason.RollbackCount >= task.Retry.Policy.Count {
 		// 超过指定重试次数，置为失败
 		runErr = fmt.Errorf("too many retries: %w", errors.New(task.Reason.Message))
@@ -246,10 +243,8 @@ func (exec *executor) workerDo(task *Task) (err error) {
 				err, patchErr)
 			return false, failRet, e
 		}
-
 		return false, nil, nil
 	})
-
 	return nil
 }
 

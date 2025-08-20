@@ -1,21 +1,19 @@
-import { defineComponent, reactive } from 'vue';
-// import components
+import { computed, defineComponent, reactive } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-// import custom hooks
+import BottomBar from './children/bottom-bar';
 import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
-import useBottomBar from './hooks/useBottomBar';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-// import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
-// import utils
 import { useI18n } from 'vue-i18n';
 import './index.scss';
+import { RouteLocationRaw, useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'ApplyLoadBalancer',
   setup() {
+    const route = useRoute();
     // use hooks
     const { t } = useI18n();
     const { getBizsId, whereAmI } = useWhereAmI();
@@ -30,6 +28,7 @@ export default defineComponent({
       zoneType: '0',
       zones: '',
       backup_zones: '',
+      load_balancer_pass_to_target: undefined,
       vip_isp: '',
       sla_type: 'shared',
       internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
@@ -42,15 +41,17 @@ export default defineComponent({
     });
 
     // use custom hooks
-    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef, isInquiryPrices, isInquiryPricesLoading } =
-      useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
-    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef, isInquiryPrices, isInquiryPricesLoading);
+
+    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
+      return { query: { ...route.query } };
+    });
 
     return () => (
       <div class='apply-clb-page'>
         {/* header */}
-        <DetailHeader>
+        <DetailHeader fromConfig={fromConfig.value}>
           <p class='apply-clb-header-title'>{t('购买负载均衡')}</p>
         </DetailHeader>
 
@@ -58,7 +59,7 @@ export default defineComponent({
         <ApplyClbForm />
 
         {/* bottom */}
-        <ApplyClbBottomBar />
+        <BottomBar formModel={formModel} formRef={formRef.value} />
 
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}

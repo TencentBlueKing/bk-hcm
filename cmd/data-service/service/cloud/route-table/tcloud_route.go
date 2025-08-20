@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud/route-table"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -81,23 +82,8 @@ func (svc *routeTableSvc) BatchCreateTCloudRoute(cts *rest.Contexts) (interface{
 		}
 	}
 
-	tableOpt := &types.ListOption{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: tableID},
-				filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudTableID},
-			},
-		},
-		Page: &core.BasePage{Count: true},
-	}
-	tableRes, err := svc.dao.RouteTable().List(cts.Kit, tableOpt)
-	if err != nil {
-		logs.Errorf("validate route table(%s/%s) failed, err: %v, rid: %s", tableID, cloudTableID, err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	if tableRes.Count != 1 {
-		return nil, errf.New(errf.RecordNotFound, "route table not exists")
+	if err := svc.validateTCloudRouteTable(cts.Kit, tableID, cloudTableID); err != nil {
+		return nil, err
 	}
 
 	// add routes
@@ -142,6 +128,28 @@ func (svc *routeTableSvc) BatchCreateTCloudRoute(cts *rest.Contexts) (interface{
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func (svc *routeTableSvc) validateTCloudRouteTable(kt *kit.Kit, tableID string, cloudTableID string) error {
+	tableOpt := &types.ListOption{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: tableID},
+				filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudTableID},
+			},
+		},
+		Page: &core.BasePage{Count: true},
+	}
+	tableRes, err := svc.dao.RouteTable().List(kt, tableOpt)
+	if err != nil {
+		logs.Errorf("validate route table(%s/%s) failed, err: %v, rid: %s", tableID, cloudTableID, err, kt.Rid)
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if tableRes.Count != 1 {
+		return errf.New(errf.RecordNotFound, "route table not exists")
+	}
+	return nil
 }
 
 // BatchUpdateTCloudRoute batch update route.

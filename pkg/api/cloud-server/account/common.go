@@ -27,13 +27,14 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 )
 
 var (
-	validAccountNameRegex   = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-_]{1,62}[a-zA-Z0-9]$")
+	validAccountNameRegex   = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-_]{1,253}[a-zA-Z0-9]$")
 	accountNameInvalidError = errors.New("invalid account name: name should begin with a letter(a-zA-Z), " +
 		"contains letters, numbers(0-9) or hyphen(-), underline(_),end with a letter or number, " +
-		"length should be 3 to 64 letters")
+		"length should be 3 to 255 letters")
 	secretEmptyError = errors.New("SecretID/SecretKey can not be empty")
 	allBizError      = errors.New("can't choose specific biz when choose all biz")
 )
@@ -47,29 +48,43 @@ func validateAccountName(name string) error {
 	return nil
 }
 
-func validateBkBizIDs(bkBizIDs []int64) error {
-	for _, bizID := range bkBizIDs {
+func validateUsageBizIDs(usageBizIDs []int64) error {
+	uniqueMap := make(map[int64]bool)
+	for _, usageBizID := range usageBizIDs {
+		// 校验使用业务是否重复
+		if uniqueMap[usageBizID] {
+			return fmt.Errorf("duplicate usageBizID: %d", usageBizID)
+		}
+		uniqueMap[usageBizID] = true
+
 		// 非全业务时，校验是否非法业务ID
-		if bizID != constant.AttachedAllBiz && bizID <= 0 {
-			return fmt.Errorf("invalid biz id: %d", bizID)
+		if usageBizID != constant.AttachedAllBiz && usageBizID <= 0 {
+			return fmt.Errorf("invalid usageBizID: %d", usageBizID)
 		}
 		// 选择全业务时，不可选择其他具体业务，即全业务时业务数量只能是1
-		if bizID == constant.AttachedAllBiz && len(bkBizIDs) != 1 {
+		if usageBizID == constant.AttachedAllBiz && len(usageBizIDs) != 1 {
 			return allBizError
 		}
 	}
 	return nil
 }
 
-func validateResAccountBkBizIDs(bkBizIDs []int64) error {
-	if len(bkBizIDs) <= 0 {
-		return fmt.Errorf("invalid res account have no bizIDs")
+// validateBizIDInUsageBizIDs checks if bizID is in usageBizIDs or if usageBizIDs contains AttachedAllBiz.
+func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
+	if slice.IsItemInSlice(usageBizIDs, bizID) || (len(usageBizIDs) == 1 && usageBizIDs[0] == constant.AttachedAllBiz) {
+		return nil
 	}
+	return fmt.Errorf("bk_biz_id %d is not in usage_biz_ids", bizID)
+}
 
-	if len(bkBizIDs) == 1 && bkBizIDs[0] == -1 {
-		return fmt.Errorf("invalid res account not assigned bizIDs")
+// validateNonResAccountBizIDs 非资源账号的管理业务必须为空，使用业务数组长度只能为1
+func validateNonResAccountBizIDs(bizID int64, usageBizIDs []int64) error {
+	if bizID != 0 {
+		return fmt.Errorf("bk_biz_id must be empty for non-resource account")
 	}
-
+	if len(usageBizIDs) > 1 {
+		return fmt.Errorf("usage_biz_ids must have at most one item for non-resource account")
+	}
 	return nil
 }
 

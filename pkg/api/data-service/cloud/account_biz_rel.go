@@ -30,7 +30,7 @@ import (
 
 // AccountBizRelUpdateReq ...
 type AccountBizRelUpdateReq struct {
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"required"`
+	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -42,7 +42,7 @@ func (req *AccountBizRelUpdateReq) Validate() error {
 
 // AccountBizRelWithAccountListReq ...
 type AccountBizRelWithAccountListReq struct {
-	BkBizIDs    []int64 `json:"bk_biz_ids" validate:"required"`
+	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required"`
 	AccountType string  `json:"account_type" validate:"omitempty"`
 }
 
@@ -61,14 +61,16 @@ func (req *AccountBizRelWithAccountListReq) Validate() error {
 	return nil
 }
 
+// AccountBizRelWithAccountListResp list account biz relation with account response
 type AccountBizRelWithAccountListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AccountBizRelWithAccount `json:"data"`
 }
 
+// AccountBizRelWithAccount account biz relation with account
 type AccountBizRelWithAccount struct {
 	corecloud.BaseAccount `json:",inline"`
-	BkBizID               int64  `json:"bk_biz_id"`
+	RelUsageBizID         int64  `json:"rel_usage_biz_id"`
 	RelCreator            string `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt          string `db:"rel_created_at" json:"rel_created_at"`
 }

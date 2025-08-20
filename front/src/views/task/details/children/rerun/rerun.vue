@@ -8,9 +8,8 @@ import {
   type ITaskRerunParams,
   useTaskStore,
 } from '@/store';
-import accountProperties from '@/model/account/properties';
-import taskProperties from '@/model/task/properties';
-import regionProperties from '@/model/region/properties';
+import { getModel } from '@/model/manager';
+import { RerunView } from '@/model/task/rerun.view';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import routerAction from '@/router/utils/action';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -20,12 +19,11 @@ import GridContainer from '@/components/layout/grid-container/grid-container.vue
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import columnFactory from '@/views/task/details/children/action-list/column-factory';
 
+const model = defineModel<boolean>({ default: false });
 const props = defineProps<{ resource: ResourceTypeEnum; info: Partial<ITaskItem>; selected: ITaskDetailItem[] }>();
-const model = defineModel({ default: false });
+const properties = getModel(RerunView).getProperties();
 
-const taskViewProperties = [...accountProperties, ...taskProperties, ...regionProperties];
-
-const fields = ['vendor', 'region_id', 'operations'].map((id) => taskViewProperties.find((item) => item.id === id));
+const fields = ['vendors', 'region_id', 'operations'].map((id) => properties.find((item) => item.id === id));
 
 const { getRerunColumns } = columnFactory(props.info.vendor as any);
 const columns = getRerunColumns(props.resource, props.info.operations);
@@ -116,10 +114,10 @@ const handelDone = async (row: ITaskDetailItem) => {
 const handleValidate = async () => {
   const params: ITaskRerunParams = {
     bk_biz_id: props.info.bk_biz_id,
-    vendor: props.info.vendor,
+    vendor: props.info.vendors?.[0],
     operation_type: props.info.operations?.[0],
     data: {
-      account_id: props.info.account_id,
+      account_id: props.info.account_ids?.[0],
       region_ids: regionIds.value,
       details: [],
     },
@@ -174,7 +172,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <bk-sideslider v-model:isShow="model" title="失败任务重试" width="60vw">
+  <bk-sideslider v-model:is-show="model" title="失败任务重试" width="60vw">
     <template #default>
       <grid-container :column="1" :label-width="110" class="info-content">
         <grid-item v-for="field in fields" :key="field.id" :label="field.name">
@@ -182,7 +180,7 @@ const handleCancel = () => {
             :property="field"
             :value="baseInfo[field.id]"
             :display="{ ...field.meta?.display, on: 'info' }"
-            :vendor="baseInfo?.vendor"
+            :vendor="baseInfo?.vendors?.[0]"
           />
         </grid-item>
       </grid-container>
@@ -275,17 +273,21 @@ const handleCancel = () => {
 .info-content {
   margin-top: 12px;
 }
+
 .params-content {
   margin-top: 12px;
   padding: 0 32px;
 }
+
 .contnet-footer {
   display: flex;
   gap: 8px;
+
   .bk-button {
     min-width: 86px;
   }
 }
+
 .text-cell {
   max-width: 100%;
   padding: 1px 0 1px 16px;

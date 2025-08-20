@@ -5,6 +5,8 @@ import { type IBusinessItem } from '@/store/business-global';
 
 defineOptions({ name: 'hcm-form-business' });
 
+const model = defineModel<number | number[]>();
+
 const props = withDefaults(
   defineProps<{
     multiple?: boolean;
@@ -21,7 +23,7 @@ const props = withDefaults(
   },
 );
 
-const model = defineModel<number | number[]>();
+const emit = defineEmits(['change']);
 
 const localModel = computed({
   get() {
@@ -34,6 +36,9 @@ const localModel = computed({
     model.value = val;
   },
 });
+const handleChange = (val: number | number[]) => {
+  emit('change', val);
+};
 
 const attrs = useAttrs();
 </script>
@@ -46,6 +51,7 @@ const attrs = useAttrs();
     :filterable="filterable"
     :collapse-tags="collapseTags"
     :option-disabled="optionDisabled"
+    @change="handleChange"
     v-bind="attrs"
   />
 </template>

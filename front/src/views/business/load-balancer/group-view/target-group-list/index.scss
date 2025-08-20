@@ -1,15 +1,18 @@
 .target-group-list {
   height: 100%;
+
   .search-wrap {
-    padding: 12px 16px;
+    padding: 12px 24px;
 
     // 覆盖组件样式
     .bk-input {
-      border: none;
+      border-color: #fff;
 
       .bk-input--text {
+        padding: 0 12px;
         background-color: #f0f1f5;
       }
+
       .bk-input--suffix-icon {
         background-color: #f0f1f5 !important;
       }
@@ -80,6 +83,7 @@
       .count {
         opacity: 0;
       }
+
       .more-action {
         background-color: #dcdee5;
         opacity: 1;
@@ -115,7 +119,7 @@
     }
 
     .all-groups-wrap {
-      box-shadow: 0 -1px 0 0 #eaebf0, 0 1px 0 0 #eaebf0;
+      border: 1px solid #dcdee5;
     }
 
     .group-list {

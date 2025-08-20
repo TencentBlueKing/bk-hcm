@@ -1,0 +1,69 @@
+{{- if .Values.apigwRegister.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-apigw-register-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: apigw-register
+          image: {{ default .Values.global.imageRegistry .Values.image.registry }}/{{ .Values.apigwRegister.image.repository }}:v{{ default .Values.image.tag .Values.apigwRegister.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command: ["/data/bin/apigw-register.sh"]
+          env:
+            - name: BK_APIGW_NAME
+              value: {{ .Values.apigwRegister.apigwName }}
+            - name: BK_API_URL_TMPL
+              value: {{ .Values.apigwRegister.bkApiUrlTmpl | required ".Values.apigwRegister.bkApiUrlTmpl is required" }}
+            - name: BK_APP_CODE
+              value: {{ .Values.appCode }}
+            - name: BK_APP_SECRET
+              value: {{ .Values.appSecret }}
+            - name: BK_APP_TENANT_ID
+              value: {{ include "bk-hcm.tenantID" . }}
+            - name: BK_HCM_STAGE_NAME
+              value: {{ .Values.apigwRegister.stageName }}
+            - name: BK_HCM_STAGE_DESCRIPTION
+              value: {{ .Values.apigwRegister.stageDescription }}
+            - name: BK_HCM_STAGE_DESCRIPTION_EN
+              value: {{ .Values.apigwRegister.stageDescriptionEn }}
+            - name: BK_HCM_RELEASE_VERSION
+              value: {{ default .Values.image.tag .Values.apigwReleaseVersion }}
+            - name: BK_HCM_RELEASE_TITLE
+              value: {{ .Values.apigwRegister.releaseTitle }}
+            - name: BK_HCM_RELEASE_COMMENT
+              value: {{ .Values.apigwRegister.releaseComment }}
+            {{- if .Values.ingress.shareDomainEnable }}
+            - name: BK_HCM_HOST
+              value: {{ printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.host }}
+            - name: BK_HCM_API_URL_PATH_PREFIX
+              value: {{ .Values.apigwRegister.apiUrlPathPrefix }}
+            {{- else}}
+            - name: BK_HCM_HOST
+              value: {{ printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.apiserver.host }}
+            - name: BK_HCM_API_URL_PATH_PREFIX
+              value: ""
+            {{- end }}
+            - name: BK_HCM_MAINTAINER
+              value: "{{ .Values.apigwRegister.maintainer }}"
+            {{- if .Values.apigwRegister.extraEnv }}
+            {{- range $key, $value := .Values.apigwRegister.extraEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
+          resources: {{ toYaml .Values.apigwRegister.resources | nindent 12 }}
+{{- end }}

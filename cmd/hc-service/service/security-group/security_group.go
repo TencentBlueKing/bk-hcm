@@ -71,8 +71,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.AzureSecurityGroupAssociateSubnet)
 	h.Add("AzureSecurityGroupAssociateNI", "POST", "/vendors/azure/security_groups/associate/network_interfaces",
 		sg.AzureSecurityGroupAssociateNI)
-	h.Add("AzureSecurityGroupDisassociateSubnet", "POST", "/vendors/azure/security_groups/disassociate/subnets",
-		sg.AzureSecurityGroupDisassociateSubnet)
+	h.Add("AzureSGDisassociateSubnet", "POST", "/vendors/azure/security_groups/disassociate/subnets",
+		sg.AzureSGDisassociateSubnet)
 	h.Add("AzureSecurityGroupDisassociateNI", "POST", "/vendors/azure/security_groups/disassociate/network_interfaces",
 		sg.AzureSecurityGroupDisassociateNI)
 	h.Add("CreateAzureSecurityGroup", "POST", "/vendors/azure/security_groups/create", sg.CreateAzureSecurityGroup)
@@ -88,10 +88,10 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.AzureListSecurityGroupStatistic)
 
 	// CLB负载均衡
-	h.Add("TCloudSecurityGroupAssociateLoadBalancer", "POST",
-		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSecurityGroupAssociateLoadBalancer)
-	h.Add("TCloudSecurityGroupDisassociateLoadBalancer", "POST",
-		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSecurityGroupDisassociateLoadBalancer)
+	h.Add("TCloudSGAssociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSGAssociateLoadBalancer)
+	h.Add("TCloudSGDisassociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSGDisassociateLoadBalancer)
 
 	initSecurityGroupServiceHooks(sg, h)
 

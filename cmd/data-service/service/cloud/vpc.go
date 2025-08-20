@@ -336,6 +336,7 @@ func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
+// convertToVpcResult converts the base VPC and its extension from the database into a VPC result.
 func convertToVpcResult[T protocore.VpcExtension](baseVpc *protocore.BaseVpc, dbExtension tabletype.JsonField) (
 	*protocore.Vpc[T], error) {
 
@@ -350,6 +351,7 @@ func convertToVpcResult[T protocore.VpcExtension](baseVpc *protocore.BaseVpc, db
 	}, nil
 }
 
+// getVpcFromTable retrieves a VPC from the database by its ID.
 func getVpcFromTable(kt *kit.Kit, dao dao.Set, vpcID string) (*tablecloud.VpcTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", vpcID),
@@ -465,6 +467,7 @@ func (svc *vpcSvc) BatchDeleteVpc(cts *rest.Contexts) (interface{}, error) {
 			return nil, err
 		}
 
+		// delete vpc relations
 		delSubnetFilter := tools.ContainersExpression("vpc_id", delVpcIDs)
 		if err := svc.dao.Subnet().BatchDeleteWithTx(cts.Kit, txn, delSubnetFilter); err != nil {
 			return nil, err
@@ -523,6 +526,7 @@ func (svc *vpcSvc) ListVpcExt(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
+// conVpcExtListResult converts the list of VPC tables to a VPC extension list result.
 func conVpcExtListResult[T protocore.VpcExtension](tables []tablecloud.VpcTable) (
 	*protocloud.VpcExtListResult[T], error) {
 

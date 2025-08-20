@@ -22,8 +22,6 @@ package securitygroup
 import (
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
-
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -35,6 +33,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // BatchCreateAwsSGRule batch create aws security group rule.
@@ -104,6 +104,7 @@ func (g *securityGroup) BatchCreateAwsSGRule(cts *rest.Contexts) (interface{}, e
 	return result, nil
 }
 
+// convAwsDSReq convert aws security group rule to data service request.
 func convAwsDSReq(rules []*ec2.SecurityGroupRule, accountID, sgID, region string) *protocloud.AwsSGRuleCreateReq {
 	list := make([]protocloud.AwsSGRuleBatchCreate, 0, len(rules))
 	for _, rule := range rules {
@@ -143,6 +144,7 @@ func convAwsDSReq(rules []*ec2.SecurityGroupRule, accountID, sgID, region string
 	return createReq
 }
 
+// convAwsRule convert aws security group rule create request to adaptor request.
 func convAwsRule(rule proto.AwsSGRuleCreate) securitygrouprule.AwsCreate {
 	return securitygrouprule.AwsCreate{
 		IPv4Cidr:                   rule.IPv4Cidr,
@@ -238,6 +240,7 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
+// getAwsSGRuleByID get aws security group rule by id.
 func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
 	AwsSecurityGroupRule, error) {
 

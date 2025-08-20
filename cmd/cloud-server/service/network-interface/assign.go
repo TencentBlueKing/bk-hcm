@@ -21,6 +21,7 @@ package networkinterface
 
 import (
 	logicsni "hcm/cmd/cloud-server/logics/network-interface"
+	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -41,7 +42,13 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := svc.authorizeNICAssignOp(cts.Kit, req.NetworkInterfaceIDs, req.BkBizID)
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.NetworkInterfaceCloudResType,
+		req.NetworkInterfaceIDs, req.BkBizID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = svc.authorizeNICAssignOp(cts.Kit, req.NetworkInterfaceIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}

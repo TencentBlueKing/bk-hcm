@@ -14,16 +14,15 @@ import { ISearchSelectValue } from '@/typings';
 import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import search from '../search/index.vue';
-import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   selections: SecurityGroupRelResourceByBizItem[];
   tabActive: SecurityGroupRelatedResourceName;
   detail: ISecurityGroupDetail;
 }>();
 const emit = defineEmits(['success']);
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const securityGroupStore = useSecurityGroupStore();
 const { getBusinessIds } = useBusinessGlobalStore();
@@ -133,7 +132,7 @@ const handleClosed = () => {
     </bk-table>
 
     <template #footer>
-      <dialog-footer
+      <modal-footer
         :disabled="!listMap.target.length"
         :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
         :confirm-text="t('解绑')"
@@ -155,9 +154,11 @@ const handleClosed = () => {
     &.primary {
       color: #3a84ff;
     }
+
     &.success {
       color: #299e56;
     }
+
     &.danger {
       color: #ea3636;
     }
@@ -168,6 +169,7 @@ const handleClosed = () => {
   margin: 16px 0;
   display: flex;
   align-items: center;
+
   .tips {
     margin-left: 16px;
     font-size: 12px;
@@ -178,6 +180,7 @@ const handleClosed = () => {
       font-size: 14px;
     }
   }
+
   .search {
     margin-left: auto;
     width: 400px;

@@ -27,9 +27,9 @@ import (
 
 /*
 	NormalTpl: 正常任务流模版测试
-                   |--> Produce |
-   create_factory -|            | --> Assemble
-                   |--> Produce |
+					|--> Produce |
+	create_factory -|            | --> Assemble
+					|--> Produce |
 */
 // define test template.
 var NormalTpl = action.FlowTemplate{

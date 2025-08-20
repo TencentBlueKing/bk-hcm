@@ -110,11 +110,14 @@ POST /api/v1/cloud/load_balancers/list
 | lb_type            | string | 负载均衡类型                               |
 | ip_version         | string | 负载均衡网络版本                             |
 | memo               | string | 备注                                   |
+| band_width         | int    | 带宽，单位Mbps                            |
+| isp                | string | 运营商类型（枚举值：BGP、CMCC、CUCC、CTCC）        |
 | status             | string | 状态                                   |
 | domain             | string | 域名                                   |
 | cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
 | cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
+| sync_time          | string | 数据同步时间，标准格式：2006-01-02T15:04:05Z     |
 | creator            | string | 创建者                                  |
 | reviser            | string | 修改者                                  |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -200,6 +203,8 @@ POST /api/v1/cloud/load_balancers/list
         "network_type": "ipv4",
         "domain": "",
         "memo": "lb test",
+        "band_width": 0,
+        "isp": "BGP",
         "status": "init",
         "private_ipv4_addresses": [
           "127.0.0.1"
@@ -212,6 +217,7 @@ POST /api/v1/cloud/load_balancers/list
         "cloud_created_time": "2023-02-12T14:47:39Z",
         "cloud_status_time": "2023-02-12T14:47:39Z",
         "cloud_expired_time": "2023-02-12T14:47:39Z",
+        "sync_time": "2025-06-30T09:03:06Z",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
@@ -267,6 +273,8 @@ POST /api/v1/cloud/load_balancers/list
 | lb_type                | string       | 负载均衡类型                               |
 | ip_version             | string       | 负载均衡网络版本                             |
 | memo                   | string       | 备注                                   |
+| band_width             | int          | 带宽，单位Mbps                            |
+| isp                    | string       | 运营商类型（枚举值：BGP、CMCC、CUCC、CTCC）        |
 | status                 | string       | 状态                                   |
 | domain                 | string       | 域名                                   |
 | private_ipv4_addresses | string array | 内网ipv4地址                             |
@@ -276,6 +284,7 @@ POST /api/v1/cloud/load_balancers/list
 | cloud_created_time     | string       | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_status_time      | string       | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
 | cloud_expired_time     | string       | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
+| sync_time              | string       | 数据同步时间，标准格式：2006-01-02T15:04:05Z     |
 | creator                | string       | 创建者                                  |
 | reviser                | string       | 修改者                                  |
 | created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |

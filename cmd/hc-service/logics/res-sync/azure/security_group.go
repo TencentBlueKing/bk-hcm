@@ -49,6 +49,7 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup synchronizes security groups from Azure cloud to the database.
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -68,7 +69,8 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[securitygroup.AzureSecurityGroup, cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]](
+	addSlice, updateMap, delCloudIDs := common.Diff[
+		securitygroup.AzureSecurityGroup, cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]](
 		sgFromCloud, sgFromDB, isSGChange)
 
 	if len(delCloudIDs) > 0 {
@@ -116,6 +118,7 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	return new(SyncResult), nil
 }
 
+// createSG creates security groups in the database
 func (cli *client) createSG(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []securitygroup.AzureSecurityGroup) ([]string, error) {
 
@@ -160,6 +163,7 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, resGroupName string,
 	return results.IDs, nil
 }
 
+// updateSG updates security groups in the database
 func (cli *client) updateSG(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]securitygroup.AzureSecurityGroup) error {
 
@@ -200,6 +204,7 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string, resGroupName string,
 	return nil
 }
 
+// deleteSG deletes security groups in the database
 func (cli *client) deleteSG(kt *kit.Kit, accountID string, resGroupName string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sg delCloudIDs is <= 0, not delete")
@@ -236,6 +241,7 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, resGroupName string, 
 	return nil
 }
 
+// listSGFromCloud lists security groups from Azure cloud
 func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]securitygroup.AzureSecurityGroup, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -260,6 +266,7 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 	return sgs, nil
 }
 
+// listSGFromDB lists security groups from the database
 func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension], error) {
 
@@ -300,6 +307,7 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloud removes security groups that have been deleted from the cloud.
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, resGroupName string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -374,6 +382,7 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 	return nil
 }
 
+// isSGChange checks if the security group from the cloud has changed compared to the database.
 func isSGChange(cloud securitygroup.AzureSecurityGroup,
 	db cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]) bool {
 

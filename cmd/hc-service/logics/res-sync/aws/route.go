@@ -91,6 +91,7 @@ func (opt syncRouteOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// route 同步路由表
 func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -152,6 +153,7 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	return new(SyncResult), nil
 }
 
+// createRoute 批量创建路由
 func (cli *client) createRoute(kt *kit.Kit, accountID string, region string, routeTableID string,
 	addSlice []typesroutetable.AwsRoute) error {
 
@@ -199,6 +201,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, region string, rou
 	return nil
 }
 
+// updateRoute 批量更新路由
 func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID string,
 	updateMap map[string]typesroutetable.AwsRoute) error {
 
@@ -243,6 +246,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID stri
 	return nil
 }
 
+// deleteRoute 批量删除路由
 func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID string,
 	delCloudIDs []string, routeFromDB []routetable.AwsRoute) error {
 
@@ -290,6 +294,7 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID s
 	return nil
 }
 
+// listRouteTableFromDB 从数据库中获取路由表
 func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]typesroutetable.AwsRoute, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -321,6 +326,7 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 	return results, nil
 }
 
+// listRouteTableFromDB 从数据库中获取路由表
 func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID string) ([]routetable.AwsRoute, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -347,6 +353,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, rtID strin
 	return routes, nil
 }
 
+// isRouteChange 判断云端路由和数据库路由是否有变化
 func isRouteChange(cloud typesroutetable.AwsRoute,
 	db routetable.AwsRoute) bool {
 

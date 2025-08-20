@@ -3,6 +3,7 @@ import merge from 'lodash/merge';
 import { ModelPropertyGeneric, ModelPropertySearch, ModelPropertyType } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import {
+  ISearchCondition,
   ISearchSelectValue,
   QueryFilterType,
   QueryFilterTypeLegacy,
@@ -12,7 +13,8 @@ import {
 } from '@/typings';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { parseIP } from './common';
+import { isString } from 'lodash';
 
 dayjs.extend(isoWeek);
 
@@ -24,7 +26,7 @@ type RuleItemOpVal = Omit<RulesItem, 'field'>;
 type GetDefaultRule = (property: ModelPropertySearch, custom?: RuleItemOpVal) => RuleItemOpVal;
 
 export const getDefaultRule: GetDefaultRule = (property, custom) => {
-  const { EQ, AND, IN } = QueryRuleOPEnum;
+  const { EQ, AND, IN, JSON_EQ } = QueryRuleOPEnum;
   const searchOp = property.op || property?.meta?.search?.op;
 
   const defaultMap: Record<ModelPropertyType, RuleItemOpVal> = {
@@ -40,6 +42,7 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
     ca: { op: searchOp || EQ, value: '' },
     region: { op: searchOp || IN, value: [] },
     business: { op: searchOp || IN, value: [] },
+    json: { op: searchOp || JSON_EQ, value: '' },
     'cloud-area': { op: searchOp || IN, value: [] },
   };
 
@@ -176,13 +179,13 @@ export const transformFlatCondition = (condition: Record<string, any>, propertie
 // 获取简单搜索条件 - search-select
 export const getSimpleConditionBySearchSelect = (
   searchValue: ISearchSelectValue,
-  options: Array<{ field: string; formatter: Function }> = [],
+  options: Array<{ field: string; formatter?: Function }> = [], // TODO: options可以设计成 Record
 ) => {
   // 非数组，直接返回空
   if (!Array.isArray(searchValue)) return null;
 
   const applyFormatters = (value: string, field: string) =>
-    options.find((opt) => opt.field === field)?.formatter(value) || value;
+    options.find((opt) => opt.field === field)?.formatter?.(value) ?? value;
 
   // 将搜索值转换为 rules，rule之间为AND关系，rule.values之间为OR关系
   return Object.fromEntries(
@@ -197,7 +200,11 @@ export const getSimpleConditionBySearchSelect = (
 // 处理本地搜索，返回一个filterFn - search-select
 export const getLocalFilterFnBySearchSelect = (
   searchValue: ISearchSelectValue,
-  options: Array<{ field: string; formatter: Function }> = [],
+  options: Array<{
+    field: string;
+    formatter?: Function;
+    checker?: (key: string, values: string[], item: any) => boolean;
+  }> = [],
 ) => {
   // 非数组，直接返回空函数，不过滤
   if (!Array.isArray(searchValue)) return () => true;
@@ -207,11 +214,14 @@ export const getLocalFilterFnBySearchSelect = (
 
   // 构建过滤函数
   return (item: any) =>
-    rules.every(
-      ({ key, values }) =>
-        // 将itemValues转为字符串，这样既可以比较数字，又可以比较字符串和字符串数组
-        item[key] && values.some((v) => String(item[key]).includes(v)),
-    );
+    rules.every(({ key, values }) => {
+      const checker = options.find((opt) => opt.field === key)?.checker;
+      if (checker) return checker(key, values, item);
+
+      // 将itemValues转为字符串，这样既可以比较数字，又可以比较字符串和字符串数组
+      // TODO: 这里不能简单处理，应该还是要往convertValue去靠
+      return item[key] && values.some((v) => String(item[key]).includes(v));
+    });
 };
 
 export const enableCount = (params = {}, enable = false) => {
@@ -301,55 +311,123 @@ export const convertDateRangeToObject = (dateRange: Date[]) => {
   };
 };
 
-const findSearchData = (id: ISearchItem['id'], searchData: ISearchItem[], key?: keyof ISearchItem) => {
-  // 先按默认的规则找
-  let found = searchData.find((data) => data.id === id);
-
-  // 找不到同时指定了key则再根据key再找一次
-  if (!found && key) {
-    found = searchData.find((data) => data[key] === id);
-  }
-
-  return found;
+/**
+ * @param condition search-qs构建的查询条件
+ * @returns search-select组件的model值
+ */
+export const buildSearchSelectValueBySearchQsCondition = (
+  condition: ISearchCondition = {},
+  properties: ModelPropertySearch[] = [],
+) => {
+  const searchValue: ISearchSelectValue = [];
+  Object.entries(condition).forEach(([id, value]) => {
+    const property = properties.find((property) => property.id === id);
+    const getDisplayName = (value: any, property: ModelPropertySearch) => {
+      const { option } = property;
+      return option?.[value] ?? value;
+    };
+    const values = Array.isArray(value)
+      ? value.map((v) => ({ id: v, name: getDisplayName(v, property) }))
+      : [{ id: value, name: getDisplayName(value, property) }];
+    searchValue.push({ id, name: property.name, values });
+  });
+  return searchValue;
 };
 
-export const buildSearchValue = (searchDataConfig: ISearchItem[], condition: Record<string, any>) => {
-  // 获取值的显示名称，优先从children中查找，找不到则返回原值
-  const getDisplayName = (value: any, children: ISearchItem['children']) => {
-    return children?.find((item) => item.id === value)?.name || value;
+/**
+ * @param value search-select组件的model值
+ * @param field 字段名
+ * @param op 查询操作符
+ * @returns {RulesItem} 构建search-select场景下的filter-rules，一般用于解决CS、JSON_CONTAINS等查询，保证value的准确性
+ */
+export const buildFilterRulesWithSearchSelect = (value: string | string[], field: string, op: QueryRuleOPEnum) => {
+  let filterRules: RulesItem = { field, op, value };
+  if (Array.isArray(value) && value.length > 1) {
+    filterRules = { op: QueryRuleOPEnum.OR, rules: value.map((val) => ({ field, op, value: val })) };
+  }
+  if (Array.isArray(value) && value.length === 1) {
+    filterRules = { field, op, value: value[0] };
+  }
+  return filterRules;
+};
+
+/**
+ * @param value ip字符串 | ip字符串数组
+ * @param networkType 网络类型 public | private
+ * @returns {RulesItem} ip查询条件
+ */
+export const buildIPFilterRules = (value: string | string[], networkType: 'public' | 'private'): RulesItem => {
+  const IPResult: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
+  const IPv4Set = new Set<string>();
+  const IPv6Set = new Set<string>();
+
+  const processIP = (ip: string) => {
+    const { IPv4List, IPv6List } = parseIP(ip);
+    IPv4List.forEach((ip) => IPv4Set.add(ip));
+    IPv6List.forEach((ip) => IPv6Set.add(ip));
   };
 
-  const searchValue: ISearchSelectValue = [];
+  if (isString(value)) {
+    processIP(value);
+  } else if (Array.isArray(value)) {
+    value.forEach(processIP);
+  }
 
-  for (const [id, val] of Object.entries(condition)) {
-    const searchData = findSearchData(id, searchDataConfig);
-    if (!searchData) continue;
+  if (IPv4Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv4_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv4Set),
+    });
+  }
+  if (IPv6Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv6_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv6Set),
+    });
+  }
 
-    const { name, multiple, children } = searchData;
+  return IPResult;
+};
 
-    if (Array.isArray(val)) {
-      if (multiple) {
-        // 处理多选数组情况
-        searchValue.push({
-          id,
-          name,
-          values: val.map((item) => ({ id: item, name: getDisplayName(item, children) })),
-        });
-      } else {
-        // 处理单选数组情况(展开为多个搜索项)
-        searchValue.push(
-          ...val.map((item: any) => ({
-            id,
-            name,
-            values: [{ id: item, name: getDisplayName(item, children) }],
-          })),
-        );
-      }
+/**
+ * 构建VIP查询条件
+ * @param value ip字符串 | ip字符串数组
+ * @returns {RulesItem} ip查询条件
+ */
+export const buildVIPFilterRules = (value: string | string[]): RulesItem => {
+  // 无法辨别value是私有还是公网，因此都要作为条件来查询
+  const privateIpResult = buildIPFilterRules(value, 'private');
+  const publicIpResult = buildIPFilterRules(value, 'public');
+
+  return { op: QueryRuleOPEnum.OR, rules: [...privateIpResult.rules, ...publicIpResult.rules] };
+};
+
+/**
+ * 构建多值查询条件(精确查询)，如：多ID
+ */
+export const buildMultipleValueRulesItem = (field: string, value: string) => {
+  const rulesItem: RulesItem = { field, op: QueryRuleOPEnum.EQ, value: '' };
+
+  if (value) {
+    const splitValue = value
+      .trim()
+      .split(/\n|;|；|,|，|\|/)
+      .reduce((prev, curr) => {
+        if (curr.trim()) {
+          prev.push(curr.trim());
+        }
+        return prev;
+      }, []);
+
+    if (!splitValue.length) {
+      // 如果没有分割值，直接使用原始值进行搜索
+      Object.assign(rulesItem, { value });
     } else {
-      // 处理单值情况
-      searchValue.push({ id, name, values: [{ id: val, name: getDisplayName(val, children) }] });
+      Object.assign(rulesItem, { op: QueryRuleOPEnum.IN, value: splitValue });
     }
   }
 
-  return searchValue;
+  return rulesItem;
 };

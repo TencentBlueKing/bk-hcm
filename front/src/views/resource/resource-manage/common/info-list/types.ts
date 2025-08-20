@@ -1,3 +1,4 @@
+import { IAuthSign } from '@/common/auth-service';
 import { JSX } from 'vue/jsx-runtime';
 
 type StringCell = string | ((cell: string) => string); // 字符串或者返回字符串的函数
@@ -15,6 +16,7 @@ type BaseField = {
   tipsContent?: string;
   txtBtn?: (cell: string) => void;
   showOverflowTips?: boolean;
+  getAuthSign?: () => IAuthSign | IAuthSign[];
 };
 type FieldWithRenderString = BaseField & {
   render: (value: BaseField['value']) => string | number;

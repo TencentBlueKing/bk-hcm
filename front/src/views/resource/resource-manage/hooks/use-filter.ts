@@ -34,7 +34,12 @@ export enum ResourceManageSenario {
   image = 'image',
 }
 
-const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (value: any) => any>) => {
+interface IUseFilterConfig {
+  convertValueCallbacks?: Record<string, (value: any) => any>;
+  conditionFormatterMapper?: Record<string, (...args: any) => RulesItem>;
+}
+
+const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   const searchData = ref([]);
   const searchValue = ref([]);
   const filter = ref<any>(cloneDeep(props.filter));
@@ -43,6 +48,8 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
   const route = useRoute();
   const resourceAccountStore = useResourceAccountStore();
   const regionStore = useRegionsStore();
+
+  const { convertValueCallbacks, conditionFormatterMapper } = config;
 
   const saveQueryInSearch = () => {
     let params = [] as typeof searchValue.value;
@@ -65,6 +72,9 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
     });
     searchValue.value = params;
   };
+
+  // 是否是镜像资源
+  const isImage = () => props.whereAmI === ResourceManageSenario.image;
 
   onMounted(() => {
     saveQueryInSearch();
@@ -91,12 +101,14 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
     (val) => {
       if (!val) return;
       val.length &&
-        FILTER_DATA.forEach((e) => {
-          if (e.id === 'account_id') {
-            e.children = val;
-          }
-        });
-      searchData.value = FILTER_DATA;
+        (searchData.value = FILTER_DATA.filter((item) => !isImage() || (isImage() && 'account_id' !== item.id)).map(
+          (e) => {
+            if (e.id === 'account_id') {
+              e.children = val;
+            }
+            return e;
+          },
+        ));
     },
     {
       deep: true,
@@ -145,18 +157,23 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
       // 处理每个搜索项
       val.forEach(({ id: field, values }) => {
         // 跳过禁用字段
-        if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) return;
+        if (isImage() && ['account_id', 'bk_biz_id'].includes(field)) return;
 
         // 构建条件对象
+        let condition: RulesItem;
         const conditionValue = getConditionValue(
           field,
           values.map((e: any) => e.id),
         );
-        const condition: RulesItem = {
-          field,
-          value: conditionValue,
-          op: getQueryOperator(field, conditionValue),
-        };
+        if (conditionFormatterMapper?.[field]) {
+          condition = conditionFormatterMapper[field](conditionValue);
+        } else {
+          condition = {
+            field,
+            value: conditionValue,
+            op: getQueryOperator(field, conditionValue),
+          };
+        }
 
         // 分组处理相同字段条件
         if (fieldIndexMap.has(field)) {

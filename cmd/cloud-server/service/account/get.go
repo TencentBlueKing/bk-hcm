@@ -199,7 +199,7 @@ func (a *accountSvc) checkGetAccountPermission(cts *rest.Contexts, accountID str
 			},
 		},
 	}
-	for _, bkBizID := range accounts.Details[0].BkBizIDs {
+	for _, bkBizID := range accounts.Details[0].UsageBizIDs {
 		resources = append(resources, meta.ResourceAttribute{
 			Basic: &meta.Basic{
 				Type:       meta.Biz,

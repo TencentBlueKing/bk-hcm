@@ -136,6 +136,7 @@ func (g *Gcp) ListNetworkInterfaceByCvmID(kt *kit.Kit, opt *typesniproto.GcpList
 	return result, nil
 }
 
+// ConvertNetworkInterface ...
 func (g *Gcp) ConvertNetworkInterface(data *compute.Instance, niItem *compute.NetworkInterface) *typesniproto.GcpNI {
 	// @see https://www.googleapis.com/compute/v1/projects/xxxx/zones/us-central1-a
 	zone := data.Zone[(strings.LastIndex(data.Zone, "/") + 1):]

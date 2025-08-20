@@ -116,13 +116,17 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 		createResources = append(createResources, tmpRes)
 	}
 
-	createReq := &dataregion.AwsRegionCreateReq{
-		Regions: createResources,
-	}
-	if _, err := cli.dbCli.Aws.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
-			err, opt.AccountID, opt, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(createResources, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		createReq := &dataregion.AwsRegionCreateReq{
+			Regions: parts,
+		}
+		if _, err := cli.dbCli.Aws.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+			logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
+				err, opt.AccountID, opt, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to create region success, accountID: %s, count: %d, rid: %s", enumor.Aws,
@@ -152,13 +156,17 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 		updateResources = append(updateResources, tmpRes)
 	}
 
-	updateReq := &dataregion.AwsRegionBatchUpdateReq{
-		Regions: updateResources,
-	}
-	if err := cli.dbCli.Aws.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-		logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
-			err, opt.AccountID, opt, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(updateResources, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		updateReq := &dataregion.AwsRegionBatchUpdateReq{
+			Regions: parts,
+		}
+		if err := cli.dbCli.Aws.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws,
+				err, opt.AccountID, opt, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to update region success, accountID: %s, count: %d, rid: %s", enumor.Aws,

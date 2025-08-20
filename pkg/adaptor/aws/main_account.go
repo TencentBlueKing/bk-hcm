@@ -45,7 +45,7 @@ const (
 	AccountCreateErrorMessageAccountAlreadyExists = "EMAIL_ALREADY_EXISTS"
 )
 
-// CreateAccount
+// CreateAccount ...
 // reference: https://docs.aws.amazon.com/organizations/latest/APIReference/API_CreateAccount.html
 func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*proto.CreateAwsMainAccountResp, error) {
 	// get aws client
@@ -69,7 +69,8 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 	}
 
 	handler := &createMainAccountPollingHandler{}
-	resPoller := poller.Poller[*Aws, *organizations.CreateAccountStatus, organizations.CreateAccountStatus]{Handler: handler}
+	resPoller := poller.Poller[*Aws, *organizations.CreateAccountStatus, organizations.CreateAccountStatus]{
+		Handler: handler}
 	result, err := resPoller.PollUntilDone(a, kt, []*string{output.CreateAccountStatus.Id},
 		types.NewCreateMainAccountPollerOption())
 	if err != nil {

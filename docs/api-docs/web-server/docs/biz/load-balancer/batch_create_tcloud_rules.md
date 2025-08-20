@@ -79,7 +79,15 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/crea
 {
   "code": 0,
   "message": "",
-  "data": null
+  "data": {
+    "unknown_cloud_ids": [],
+    "success_cloud_ids": [
+      "loc-oxanwx1q"
+    ],
+    "failed_cloud_ids": [],
+    "failed_message": "",
+    "success_ids": [""]
+  }
 }
 ```
 
@@ -90,3 +98,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/listeners/{lbl_id}/rules/crea
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
 | data    | object | 响应数据 |
+
+#### data
+
+| 参数名称              | 参数类型         | 描述      |
+|-------------------|--------------|---------|
+| unknown_cloud_ids | string array | 未知云id列表 |
+| success_cloud_ids | string array | 成功云id列表 |
+| failed_cloud_ids  | string array | 失败云id列表 |
+| failed_message    | string       | 失败信息    |
+| success_ids       | string array | 成功id列表  |

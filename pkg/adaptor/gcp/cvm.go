@@ -297,6 +297,36 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 		return nil, err
 	}
 
+	req := buildCreateCvmReq(opt, script)
+
+	resp := new(compute.Operation)
+	if len(opt.RequestID) != 0 {
+		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
+			RequestId(opt.RequestID).Context(kt.Ctx).Do()
+	} else {
+		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).Context(kt.Ctx).Do()
+	}
+	if err != nil {
+		logs.Errorf("create instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
+		return nil, err
+	}
+
+	handler := &createCvmPollingHandler{
+		opt.Zone,
+	}
+	respPoller := poller.Poller[*Gcp, []*compute.Operation, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)},
+		types.NewBatchCreateCvmPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	g.deleteCvmMetadataStartScript(kt, client, opt.Zone, result.SuccessCloudIDs)
+
+	return result, nil
+}
+
+func buildCreateCvmReq(opt *typecvm.GcpCreateOption, script string) *compute.BulkInsertInstanceResource {
 	req := &compute.BulkInsertInstanceResource{
 		Count: opt.RequiredCount,
 		InstanceProperties: &compute.InstanceProperties{
@@ -361,32 +391,7 @@ func (g *Gcp) CreateCvm(kt *kit.Kit, opt *typecvm.GcpCreateOption) (*poller.Base
 			})
 		}
 	}
-
-	resp := new(compute.Operation)
-	if len(opt.RequestID) != 0 {
-		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).
-			RequestId(opt.RequestID).Context(kt.Ctx).Do()
-	} else {
-		resp, err = client.Instances.BulkInsert(g.CloudProjectID(), opt.Zone, req).Context(kt.Ctx).Do()
-	}
-	if err != nil {
-		logs.Errorf("create instance failed, err: %v, opt: %v, rid: %s", err, opt, kt.Rid)
-		return nil, err
-	}
-
-	handler := &createCvmPollingHandler{
-		opt.Zone,
-	}
-	respPoller := poller.Poller[*Gcp, []*compute.Operation, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(g, kt, []*string{to.Ptr(resp.OperationGroupId)},
-		types.NewBatchCreateCvmPollerOption())
-	if err != nil {
-		return nil, err
-	}
-
-	g.deleteCvmMetadataStartScript(kt, client, opt.Zone, result.SuccessCloudIDs)
-
-	return result, nil
+	return req
 }
 
 func (g *Gcp) deleteCvmMetadataStartScript(kt *kit.Kit, client *compute.Service, zone string, ids []string) {
@@ -499,6 +504,7 @@ type createCvmPollingHandler struct {
 	zone string
 }
 
+// Done ...
 func (h *createCvmPollingHandler) Done(items []*compute.Operation) (bool, *poller.BaseDoneResult) {
 
 	result := &poller.BaseDoneResult{

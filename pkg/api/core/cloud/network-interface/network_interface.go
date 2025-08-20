@@ -102,12 +102,13 @@ type AzureNIExtension struct {
 
 // InterfaceDNSSettings - DNS settings of a network interface.
 type InterfaceDNSSettings struct {
-	// List of DNS servers IP addresses. Use 'AzureProvidedDNS' to switch to azure provided DNS resolution. 'AzureProvidedDNS'
-	// value cannot be combined with other IPs, it must be the only value in dnsServers
+	// List of DNS servers IP addresses. Use 'AzureProvidedDNS' to switch to azure provided DNS resolution.
+	//'AzureProvidedDNS' value cannot be combined with other IPs, it must be the only value in dnsServers
 	// collection.
 	DNSServers []*string `json:"dns_servers,omitempty"`
 
-	// READ-ONLY; If the VM that uses this NIC is part of an Availability Set, then this list will have the union of all DNS servers
+	// READ-ONLY; If the VM that uses this NIC is part of an Availability Set,
+	//then this list will have the union of all DNS servers
 	// from all NICs that are part of the Availability Set. This property is what is
 	// configured on each of those VMs.
 	AppliedDNSServers []*string `json:"applied_dns_servers,omitempty" azure:"ro"`
@@ -316,7 +317,8 @@ type SubnetPropertiesFormat struct {
 	// READ-ONLY; The provisioning state of the subnet resource.
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
 
-	// READ-ONLY; A read-only string identifying the intention of use for this subnet based on delegations and other user-defined
+	// READ-ONLY; A read-only string identifying the intention of use for this subnet based on
+	// delegations and other user-defined
 	// properties.
 	Purpose *string `json:"purpose,omitempty" azure:"ro"`
 
@@ -393,7 +395,8 @@ type ServiceAssociationLinkPropertiesFormat struct {
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
 }
 
-// ApplicationGatewayIPConfiguration - IP configuration of an application gateway. Currently 1 public and 1 private IP configuration
+// ApplicationGatewayIPConfiguration - IP configuration of an application gateway.
+// Currently, 1 public and 1 private IP configuration
 // is allowed.
 type ApplicationGatewayIPConfiguration struct {
 	// CloudID Cloud ID.
@@ -451,10 +454,12 @@ type ServiceDelegationPropertiesFormat struct {
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
 }
 
-// VirtualNetworkPrivateEndpointNetworkPolicies - Enable or Disable apply network policies on private end point in the subnet.
+// VirtualNetworkPrivateEndpointNetworkPolicies - Enable or Disable apply network policies on private end point
+// in the subnet.
 type VirtualNetworkPrivateEndpointNetworkPolicies string
 
-// VirtualNetworkPrivateLinkServiceNetworkPolicies - Enable or Disable apply network policies on private link service in the subnet.
+// VirtualNetworkPrivateLinkServiceNetworkPolicies - Enable or Disable apply network policies on private link service
+// in the subnet.
 type VirtualNetworkPrivateLinkServiceNetworkPolicies string
 
 // ServiceEndpointPolicy - Service End point policy resource.
@@ -589,7 +594,8 @@ type IPConfigurationProfilePropertiesFormat struct {
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
 }
 
-// ExtendedLocationTypes - The supported ExtendedLocation types. Currently only EdgeZone is supported in Microsoft.Network
+// ExtendedLocationTypes - The supported ExtendedLocation types. Currently only EdgeZone is supported
+// in Microsoft.Network
 // resources.
 type ExtendedLocationTypes string
 
@@ -718,7 +724,8 @@ type RoutePropertiesFormat struct {
 	// A value indicating whether this route overrides overlapping BGP routes regardless of LPM.
 	HasBgpOverride *bool `json:"has_bgp_override,omitempty"`
 
-	// The IP address packets should be forwarded to. Next hop values are only allowed in routes where the next hop type is VirtualAppliance.
+	// The IP address packets should be forwarded to. Next hop values are only allowed in routes
+	// where the next hop type is VirtualAppliance.
 	NextHopIPAddress *string `json:"next_hop_ip_address,omitempty"`
 
 	// READ-ONLY; The provisioning state of the route resource.
@@ -790,7 +797,7 @@ type NetVirtualIP struct {
 	ElasticityIP string `json:"elasticity_ip,omitempty"`
 }
 
-// ServerInterfaceFixedIp
+// ServerInterfaceFixedIp ...
 type ServerInterfaceFixedIp struct {
 	// IpAddress 网卡私网IP信息。
 	IpAddress *string `json:"ip_address,omitempty"`
@@ -809,7 +816,7 @@ type GcpNIExtension struct {
 	SubnetSelfLink    string          `json:"subnet_self_link,omitempty"`
 }
 
-// AccessConfig: An access configuration attached to an instance's
+// AccessConfig An access configuration attached to an instance's
 // network interface. Only one access config per instance is supported.
 type AccessConfig struct {
 	// Name: The name of this access configuration. The default and

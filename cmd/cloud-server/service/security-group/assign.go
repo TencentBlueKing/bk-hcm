@@ -170,8 +170,8 @@ func (svc *securityGroupSvc) checkSecurityGroupAssignable(kt *kit.Kit, sgInfos [
 			logs.Errorf("validateSecurityGroupRuleRel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
-		validateSecurityGroupManagerAndBakManager(sg, item)
-		validateSecurityGroupManagementTypeAndBizID(sg, item)
+		validateSGManagerAndBakManager(sg, item)
+		validateSGManagementTypeAndBizID(sg, item)
 		resultList = append(resultList, item)
 	}
 
@@ -239,7 +239,7 @@ func (svc *securityGroupSvc) listSecurityGroupsByCloudID(kt *kit.Kit, vendor enu
 	return result, nil
 }
 
-func validateSecurityGroupManagementTypeAndBizID(securityGroup cloud.BaseSecurityGroup,
+func validateSGManagementTypeAndBizID(securityGroup cloud.BaseSecurityGroup,
 	preview *proto.AssignBizPreviewResp) {
 
 	if securityGroup.MgmtType != enumor.MgmtTypeBiz {
@@ -256,7 +256,7 @@ func validateSecurityGroupManagementTypeAndBizID(securityGroup cloud.BaseSecurit
 	}
 }
 
-func validateSecurityGroupManagerAndBakManager(securityGroup cloud.BaseSecurityGroup,
+func validateSGManagerAndBakManager(securityGroup cloud.BaseSecurityGroup,
 	preview *proto.AssignBizPreviewResp) {
 
 	if len(securityGroup.Manager) == 0 || len(securityGroup.BakManager) == 0 {
@@ -268,7 +268,7 @@ func validateSecurityGroupManagerAndBakManager(securityGroup cloud.BaseSecurityG
 func (svc *securityGroupSvc) validateSecurityGroupRuleRel(kt *kit.Kit, sg cloud.BaseSecurityGroup,
 	preview *proto.AssignBizPreviewResp) error {
 
-	cloudSGToSgRulesMap, err := sglogic.ListSecurityGroupRulesByCloudTargetSGID(kt,
+	cloudSGToSgRulesMap, err := sglogic.ListSGRulesByCloudTargetSGID(kt,
 		svc.client.DataService(), sg.Vendor, sg.ID)
 	if err != nil {
 		logs.Errorf("listSecurityGroupRulesByCloudTargetSGID failed, err: %v, rid: %s", err, kt.Rid)

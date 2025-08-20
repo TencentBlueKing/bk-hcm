@@ -144,41 +144,42 @@ const (
 		"ANY_VALUE(cost_type) as cost_type," +
 		"SUM(IFNULL((SELECT sum(CAST(amount*1000000 AS int64)) AS credit FROM UNNEST(credits)),0)/1000000) as return_cost," +
 		// 将promotion类型保存起来
-		`ARRAY_CONCAT_AGG(ARRAY(select AS STRUCT * from  UNNEST(credits) where type='PROMOTION')) as  credit_infos,` +
+		`ARRAY_CONCAT_AGG(ARRAY(select AS STRUCT * from UNNEST(credits) where type='PROMOTION')) as  credit_infos,` +
 		"ANY_VALUE(currency_conversion_rate) as currency_conversion_rate"
 	// RootAccountQueryBillSQL 查询云账单的SQL
-	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id"
+	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id ORDER BY sku.id"
 	// RootAccountQueryBillTotalSQL 查询云账单总数量的SQL
-	RootAccountQueryBillTotalSQL = "SELECT COUNT(*) FROM (SELECT DISTINCT sku.id, project.id FROM %s.%s %s GROUP BY sku.id, project.id)"
+	RootAccountQueryBillTotalSQL = "SELECT COUNT(*) FROM (SELECT DISTINCT sku.id, project.id FROM %s.%s %s " +
+		"GROUP BY sku.id, project.id)"
 
 	// RootCreditQuerySQL credit 查询sql
 	RootCreditQuerySQL = `SELECT * EXCEPT(credits_agg),
-  ARRAY((
-    SELECT AS STRUCT id AS id, name, type, full_name, CAST( SUM (amount) AS string) AS amount
-    FROM UNNEST(credits_agg)
-    GROUP BY  id, name, type, full_name)) AS credits
+ARRAY((
+SELECT AS STRUCT id AS id, name, type, full_name, CAST( SUM (amount) AS string) AS amount
+FROM UNNEST(credits_agg)
+GROUP BY  id, name, type, full_name)) AS credits
 FROM (
-  SELECT
-    ANY_VALUE(billing_account_id) AS billing_account_id,
-    project.id AS project_id,
-	ANY_VALUE(project.name) as project_name,
-	ANY_VALUE(project.number) as project_number,
-	ANY_VALUE(currency) as currency,
-	ANY_VALUE(invoice.month) as month,
-	ANY_VALUE(currency_conversion_rate) as currency_conversion_rate,
-    CAST(SUM(IFNULL((
-        SELECT SUM(CAST(amount AS DECIMAL)) AS credit
-        FROM  UNNEST(credits)
-        WHERE type = 'PROMOTION'),0)) AS STRING)  AS promotion_credit,
-    ARRAY_CONCAT_AGG(ARRAY(
-      SELECT AS STRUCT id,type,name,full_name,SUM(CAST(amount AS DECIMAL)) AS amount
-      FROM UNNEST(credits)
-      WHERE type='PROMOTION'
-      GROUP BY id,type,name,full_name )) AS credits_agg,
-  FROM
-    %s.%s
-   %s  
-  GROUP BY project.id )
+	SELECT
+		ANY_VALUE(billing_account_id) AS billing_account_id,
+		project.id AS project_id,
+		ANY_VALUE(project.name) as project_name,
+		ANY_VALUE(project.number) as project_number,
+		ANY_VALUE(currency) as currency,
+		ANY_VALUE(invoice.month) as month,
+		ANY_VALUE(currency_conversion_rate) as currency_conversion_rate,
+		CAST(SUM(IFNULL((
+			SELECT SUM(CAST(amount AS DECIMAL)) AS credit
+			FROM  UNNEST(credits)
+			WHERE type = 'PROMOTION'),0)) AS STRING)  AS promotion_credit,
+		ARRAY_CONCAT_AGG(ARRAY(
+			SELECT AS STRUCT id,type,name,full_name,SUM(CAST(amount AS DECIMAL)) AS amount
+			FROM UNNEST(credits)
+			WHERE type='PROMOTION'
+			GROUP BY id,type,name,full_name )) AS credits_agg,
+	FROM
+		%s.%s
+		%s  
+	GROUP BY project.id )
 `
 )
 
@@ -264,6 +265,7 @@ func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountB
 	return list, total, err
 }
 
+// GetBigQuery ...
 func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Value, int64, error) {
 	client, err := g.clientSet.bigQueryClient(kt)
 	if err != nil {

@@ -98,6 +98,7 @@ func convTableToBaseCert(one *tablecert.SslCertTable) (*corecert.BaseCert, error
 		CloudCreatedTime: one.CloudCreatedTime,
 		CloudExpiredTime: one.CloudExpiredTime,
 		Memo:             one.Memo,
+		Tags:             core.TagMap(one.Tags),
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,

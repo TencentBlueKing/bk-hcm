@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -88,22 +89,15 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.Newf(errf.Aborted, "get created vpc detail, but result count is invalid")
 	}
 
-	// create hcm vpc
-	createReq := &cloud.VpcBatchCreateReq[cloud.HuaWeiVpcCreateExt]{
-		Vpcs: []cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{convertHuaWeiVpcCreateReq(req, &listRes.Details[0])},
-	}
-	result, err := v.cs.DataService().HuaWei.Vpc.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+	vpcCreatedID, err := v.createHuaWeiVpcForDB(cts.Kit, req, listRes.Details[0])
 	if err != nil {
+		logs.Errorf("create huawei vpc for db failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-
-	if len(result.IDs) != 1 {
-		return nil, errf.New(errf.Aborted, "create result is invalid")
 	}
 
 	// create huawei subnets
 	if len(req.Extension.Subnets) == 0 {
-		return core.CreateResult{ID: result.IDs[0]}, nil
+		return core.CreateResult{ID: vpcCreatedID}, nil
 	}
 
 	subnetCreateOpt := &subnet.SubnetCreateOptions[subnetproto.HuaWeiSubnetCreateExt]{
@@ -118,26 +112,53 @@ func (v vpc) HuaWeiVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	syncCli, err := v.syncCli.HuaWei(cts.Kit, req.AccountID)
+	err = v.syncHuaweiRouteTable(cts, req.AccountID, req.Extension.Region)
 	if err != nil {
 		return nil, err
+	}
+
+	return core.CreateResult{ID: vpcCreatedID}, nil
+}
+
+func (v vpc) syncHuaweiRouteTable(cts *rest.Contexts, accountID, region string) error {
+
+	syncCli, err := v.syncCli.HuaWei(cts.Kit, accountID)
+	if err != nil {
+		return err
 	}
 
 	err = handler.ResourceSync(cts, &logicsrt.HuaWeiRouteTableHandler{
 		DisablePrepare: true,
 		Cli:            v.syncCli,
 		Request: &sync.HuaWeiSyncReq{
-			AccountID: req.AccountID,
-			Region:    req.Extension.Region,
+			AccountID: accountID,
+			Region:    region,
 		},
 		SyncCli: syncCli,
 	})
 	if err != nil {
 		logs.Errorf("route table sync failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return err
+	}
+	return nil
+}
+
+func (v vpc) createHuaWeiVpcForDB(kt *kit.Kit, req *hcservice.VpcCreateReq[hcservice.HuaWeiVpcCreateExt],
+	huaweiVpc types.HuaWeiVpc) (string, error) {
+
+	// create hcm vpc
+	createReq := &cloud.VpcBatchCreateReq[cloud.HuaWeiVpcCreateExt]{
+		Vpcs: []cloud.VpcCreateReq[cloud.HuaWeiVpcCreateExt]{convertHuaWeiVpcCreateReq(req, &huaweiVpc)},
+	}
+	result, err := v.cs.DataService().HuaWei.Vpc.BatchCreate(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		return "", err
 	}
 
-	return core.CreateResult{ID: result.IDs[0]}, nil
+	if len(result.IDs) != 1 {
+		return "", errf.New(errf.Aborted, "create result is invalid")
+	}
+	return result.IDs[0], nil
 }
 
 func convertHuaWeiVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.HuaWeiVpcCreateExt],

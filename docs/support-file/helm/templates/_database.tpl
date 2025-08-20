@@ -35,6 +35,7 @@ maxOpenConn: {{ .Values.dbConnConfig.maxOpenConn }}
 maxIdleConn: {{ .Values.dbConnConfig.maxIdleConn }}
 limiterQps: {{ .Values.dbConnConfig.limiterQps }}
 limiterBurst: {{ .Values.dbConnConfig.limiterBurst }}
+timeZone: {{ .Values.dbConnConfig.timeZone }}
 
 {{- end -}}
 
@@ -52,6 +53,7 @@ resource:
   maxIdleTimeoutMin: {{ $cfg.maxIdleTimeoutMin }}
   maxOpenConn: {{ $cfg.maxOpenConn }}
   maxIdleConn: {{ $cfg.maxIdleConn }}
+  timeZone: {{ $cfg.timeZone }}
   tls:
     insecureSkipVerify:
     certFile:

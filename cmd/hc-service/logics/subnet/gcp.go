@@ -29,6 +29,7 @@ import (
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/subnet"
 	"hcm/pkg/api/core"
+	apicloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
 	dataclient "hcm/pkg/client/data-service"
@@ -52,20 +53,10 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 		return nil, err
 	}
 
-	// get gcp vpc self link by cloud id
-	vpcReq := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", opt.CloudVpcID),
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"extension"},
-	}
-	vpcRes, err := s.client.DataService().Gcp.Vpc.ListVpcExt(kt, vpcReq)
+	vpcRes, err := s.getGcpVpcByCloudID(kt, opt.CloudVpcID)
 	if err != nil {
-		logs.Errorf("get vpc by cloud id %s failed, err: %v, rid: %s", opt.CloudVpcID, err, kt.Rid)
+		logs.Errorf("get gcp vpc by cloud id %s failed, err: %v, rid: %s", opt.CloudVpcID, err, kt.Rid)
 		return nil, err
-	}
-
-	if len(vpcRes.Details) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "gcp vpc(cloud id: %s) not exists", opt.CloudVpcID)
 	}
 
 	// create gcp subnets
@@ -74,7 +65,7 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 		gcpCreateOpt := &adtysubnet.GcpSubnetCreateOption{
 			Name:       req.Name,
 			Memo:       req.Memo,
-			CloudVpcID: vpcRes.Details[0].Extension.SelfLink,
+			CloudVpcID: vpcRes.Extension.SelfLink,
 			Extension: &adtysubnet.GcpSubnetCreateExt{
 				Region:                req.Extension.Region,
 				IPv4Cidr:              req.Extension.IPv4Cidr,
@@ -125,6 +116,25 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 	}
 
 	return res, nil
+}
+
+func (s *Subnet) getGcpVpcByCloudID(kt *kit.Kit, cloudVpcID string) (*apicloud.Vpc[apicloud.GcpVpcExtension], error) {
+	// get gcp vpc self link by cloud id
+	vpcReq := &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"extension"},
+	}
+	vpcRes, err := s.client.DataService().Gcp.Vpc.ListVpcExt(kt, vpcReq)
+	if err != nil {
+		logs.Errorf("get vpc by cloud id %s failed, err: %v, rid: %s", cloudVpcID, err, kt.Rid)
+		return nil, err
+	}
+
+	if len(vpcRes.Details) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "gcp vpc(cloud id: %s) not exists", cloudVpcID)
+	}
+	return &vpcRes.Details[0], nil
 }
 
 func convertGcpSubnetCreateReq(data *adtysubnet.GcpSubnet, accountID, cloudVpcID string,

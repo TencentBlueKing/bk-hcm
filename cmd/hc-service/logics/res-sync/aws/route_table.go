@@ -128,6 +128,7 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	return new(SyncResult), nil
 }
 
+// syncCloud 同步云上路由表
 func (cli *client) syncCloud(kt *kit.Kit, params *SyncBaseParams) error {
 	existRT, err := cli.listRouteTableFromDB(kt, params)
 	if err != nil {
@@ -153,6 +154,7 @@ func (cli *client) syncCloud(kt *kit.Kit, params *SyncBaseParams) error {
 	return nil
 }
 
+// createRouteTable create route table
 func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []typesroutetable.AwsRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -203,6 +205,7 @@ func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// updateRouteTalbe update route table
 func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]typesroutetable.AwsRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -248,6 +251,7 @@ func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
+// deleteRouteTable delete route table
 func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("routeTable delCloudIDs is <= 0, not delete")
@@ -283,6 +287,7 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 	return nil
 }
 
+// listRouteTableFromCloud list route table from cloud
 func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesroutetable.AwsRouteTable, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -308,6 +313,7 @@ func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) 
 	return result.Details, nil
 }
 
+// listRouteTableFromDB list route table from db
 func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]routetable.AwsRouteTable, error) {
 
@@ -424,6 +430,7 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 	return nil
 }
 
+// listRemoveRouteTableID list route table ID that need to be removed
 func (cli *client) listRemoveRouteTableID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -448,6 +455,7 @@ func (cli *client) listRemoveRouteTableID(kt *kit.Kit, params *SyncBaseParams) (
 	return delCloudIDs, nil
 }
 
+// isRouteTableChange 判断云上路由表和DB路由表是否有变化
 func isRouteTableChange(cloud typesroutetable.AwsRouteTable,
 	db routetable.AwsRouteTable) bool {
 

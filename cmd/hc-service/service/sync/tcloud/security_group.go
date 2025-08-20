@@ -50,12 +50,32 @@ var _ handler.HandlerV2[securitygroup.TCloudSG] = new(sgHandler)
 
 // Next ...
 func (hd *sgHandler) Next(kt *kit.Kit) ([]securitygroup.TCloudSG, error) {
+	if len(hd.request.CloudIDs) > 0 {
+		// 指定id只处理一次
+		listOpt := &securitygroup.TCloudListOption{
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
+			Page: &typecore.TCloudPage{
+				Limit: typecore.TCloudQueryLimit,
+			},
+			TagFilters: hd.request.TagFilters,
+		}
+		sgResult, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list tcloud security group failed, err: %v, opt: %+v, rid: %s",
+				err, listOpt, kt.Rid)
+			return nil, err
+		}
+		return sgResult, nil
+	}
+
 	listOpt := &securitygroup.TCloudListOption{
 		Region: hd.request.Region,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
 		},
+		TagFilters: hd.request.TagFilters,
 	}
 
 	sgResult, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
@@ -100,7 +120,13 @@ func (hd *sgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 
 // RemoveDeletedFromCloud ...
 func (hd *sgHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
-	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloudV2(kt, hd.request.AccountID, hd.request.Region, allCloudIDMap)
+	params := &tcloud.SyncRemovedParams{
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   hd.request.CloudIDs,
+		TagFilters: hd.request.TagFilters,
+	}
+	err := hd.syncCli.RemoveSGDeleteFromCloudV2(kt, params, allCloudIDMap)
 	if err != nil {
 		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)

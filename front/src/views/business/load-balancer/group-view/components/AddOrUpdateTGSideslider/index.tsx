@@ -3,7 +3,7 @@ import { defineComponent, onMounted, onUnmounted, ref, PropType, reactive, compu
 import { Alert, Button, Form, Message } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
-import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useAddOrUpdateTGForm from './useAddOrUpdateTGForm';
 import useChangeScene from './useChangeScene';
@@ -23,7 +23,6 @@ export default defineComponent({
   },
   setup(props) {
     // use stores
-    const accountStore = useAccountStore();
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
 
@@ -50,7 +49,6 @@ export default defineComponent({
     // 表单相关
     const getDefaultFormData = () => ({
       id: '',
-      bk_biz_id: accountStore.bizs,
       account_id: '',
       name: '',
       protocol: '',
@@ -69,8 +67,15 @@ export default defineComponent({
     };
     const formData = reactive<Record<string, any>>(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList, regionVpcSelectorRef } =
-      useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
+    const {
+      formItemOptions,
+      canUpdateRegionOrVpc,
+      formRef,
+      rules,
+      deletedRsList,
+      regionVpcSelectorRef,
+      currentGlobalBusinessId,
+    } = useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -79,8 +84,6 @@ export default defineComponent({
       isShow.value = true;
       isEdit.value = false;
       nextTick(async () => {
-        // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
-        await regionVpcSelectorRef.value.handleRefresh();
         formRef.value.clearValidate();
       });
     };
@@ -134,7 +137,7 @@ export default defineComponent({
 
     // 处理参数 - add
     const resolveFormDataForAdd = () => ({
-      bk_biz_id: formData.bk_biz_id,
+      bk_biz_id: currentGlobalBusinessId.value,
       account_id: formData.account_id,
       name: formData.name,
       protocol: formData.protocol,
@@ -156,7 +159,7 @@ export default defineComponent({
     // 处理参数 - edit
     const resolveFormDataForEdit = () => ({
       id: formData.id,
-      bk_biz_id: formData.bk_biz_id,
+      bk_biz_id: currentGlobalBusinessId.value,
       account_id: formData.account_id,
       name: formData.name,
       protocol: formData.protocol,
@@ -295,8 +298,7 @@ export default defineComponent({
                   class='ml4'
                   text
                   theme='primary'
-                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}
-                >
+                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, currentGlobalBusinessId.value)}>
                   查看当前任务
                 </Button>
               </>
@@ -370,8 +372,7 @@ export default defineComponent({
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
-        handleClose={handleClose}
-      >
+        handleClose={handleClose}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}
@@ -390,8 +391,7 @@ export default defineComponent({
                     <Button
                       text
                       theme='primary'
-                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
-                    >
+                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, currentGlobalBusinessId.value)}>
                       查看任务
                     </Button>
                     。
@@ -404,8 +404,7 @@ export default defineComponent({
                   <Button
                     text
                     theme='primary'
-                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
-                  >
+                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, currentGlobalBusinessId.value)}>
                     查看任务
                   </Button>
                   。

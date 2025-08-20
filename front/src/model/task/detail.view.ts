@@ -53,14 +53,9 @@ export default [
     type: 'string',
   },
   {
-    id: 'param.clb_vip_domains',
-    name: 'CLB VIP/域名',
-    type: 'array',
-  },
-  {
-    id: 'param.cloud_lb_ids',
+    id: 'param.cloud_lb_id',
     name: 'CLB ID',
-    type: 'array',
+    type: 'string',
   },
   {
     id: 'param.protocol',
@@ -73,9 +68,9 @@ export default [
     type: 'array',
   },
   {
-    id: 'param.ports',
+    id: 'param.port',
     name: '监听器端口',
-    type: 'array',
+    type: 'string',
   },
   {
     id: 'param.domain',
@@ -162,7 +157,7 @@ export default [
   {
     id: 'param.rs_list',
     name: 'rs信息',
-    type: 'string',
+    type: 'json',
   },
   {
     id: 'param.ip',
@@ -172,21 +167,16 @@ export default [
   {
     id: 'param.weight',
     name: '原权重',
-    type: 'string',
+    type: 'number',
   },
   {
     id: 'param.new_rs_weight',
     name: '新权重',
-    type: 'string',
+    type: 'number',
   },
   {
     id: 'param.url',
     name: 'URL',
-    type: 'string',
-  },
-  {
-    id: 'param.domain',
-    name: '域名',
     type: 'string',
   },
 ] as ModelProperty[];

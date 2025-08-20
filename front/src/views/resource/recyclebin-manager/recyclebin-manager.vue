@@ -73,6 +73,7 @@
             row-key="id"
             :is-row-select-enable="isRowSelectEnable"
             show-overflow-tooltip
+            @column-sort="handleSort"
           >
             <bk-table-column width="30" min-width="30" type="selection" />
             <bk-table-column :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`" prop="cloud_res_id" sort>
@@ -277,12 +278,6 @@ export default defineComponent({
     const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
     const { whereAmI } = useWhereAmI();
     const searchVal = ref([]);
-    const searchData = [
-      {
-        name: 'ID',
-        id: 'res_id',
-      },
-    ];
     const isRowSelectEnable = ({ row, isCheckAll }: any) => {
       if (isCheckAll) return true;
       // if (whereAmI.value === Senarios.resource && row.id) {
@@ -337,6 +332,13 @@ export default defineComponent({
       detail: {},
     });
 
+    const searchData = computed(() => [
+      {
+        name: `${state.selectedType === 'cvm' ? '主机' : '硬盘'}ID`,
+        id: 'cloud_res_id',
+      },
+    ]);
+
     const isSettingDialogShow = ref(false);
     const isSettingDialogLoading = ref(false);
     const recycleReserveTime = ref(48);
@@ -349,10 +351,8 @@ export default defineComponent({
       }));
 
     // hooks
-    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, getList } = useQueryCommonList(
-      { filter: state.filter as FilterType },
-      fetchUrl,
-    );
+    const { datas, isLoading, pagination, handlePageSizeChange, handlePageChange, getList, handleSort } =
+      useQueryCommonList({ filter: state.filter as FilterType }, fetchUrl);
 
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
@@ -428,7 +428,7 @@ export default defineComponent({
         }
         searchVal.value = [
           {
-            id: 'res_id',
+            id: 'cloud_res_id',
             name: 'ID',
             values: [
               {
@@ -447,7 +447,7 @@ export default defineComponent({
     watch(
       () => searchVal.value,
       (vals) => {
-        const idx = state.filter.rules.findIndex(({ field }) => field === 'res_id');
+        const idx = state.filter.rules.findIndex(({ field }) => field === 'cloud_res_id');
         if (idx !== -1) state.filter.rules.splice(idx, 1);
         if (!vals.length) return;
         state.filter.rules = state.filter.rules.concat(
@@ -497,6 +497,7 @@ export default defineComponent({
           },
         });
         resetSelections();
+        searchVal.value = [];
       },
       {
         immediate: true,
@@ -675,6 +676,7 @@ export default defineComponent({
       whereAmI,
       Senarios,
       isCurRowSelectEnable,
+      handleSort,
     };
   },
 });

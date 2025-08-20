@@ -166,6 +166,13 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 		req.Limit = common.StringPtr(strconv.FormatInt(int64(opt.Page.Limit), 10))
 	}
 
+	for k, v := range opt.TagFilters {
+		req.Filters = append(req.Filters, &vpc.Filter{
+			Name:   getTagFilterKey(k),
+			Values: cvt.SliceToPtr(v),
+		})
+	}
+
 	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -331,9 +338,9 @@ func (t *TCloudImpl) SecurityGroupCvmBatchDisassociate(kt *kit.Kit,
 	return nil
 }
 
-// DescribeSecurityGroupAssociationStatistics describe security group association statistics.
+// DescribeSGAssociationStatistics describe security group association statistics.
 // reference: https://cloud.tencent.com/document/api/215/17799
-func (t *TCloudImpl) DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+func (t *TCloudImpl) DescribeSGAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
 	[]securitygroup.TCloudSecurityGroupAssociationStatistic, error) {
 
 	client, err := t.clientSet.VpcClient(opt.Region)

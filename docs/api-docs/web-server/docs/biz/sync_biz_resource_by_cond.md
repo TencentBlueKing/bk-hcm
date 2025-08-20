@@ -30,12 +30,14 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 | 参数名称        | 参数类型                | 必选 | 描述               |
 |-------------|---------------------|----|------------------|
 | regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
+| cloud_ids   | []string            | 否  | 资源id，数量上限20      |
 
 #### vendor=azure
 
 | 参数名称                 | 参数类型     | 必选 | 描述                 |
 |----------------------|----------|----|--------------------|
 | resource_group_names | []string | 是  | 指定资源同步的资源组，最少1，最大5 |
+| cloud_ids            | []string | 否  | 资源id，数量上限20        |
 
 
 #### vendor=aws
@@ -43,6 +45,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 | 参数名称        | 参数类型                | 必选 | 描述               |
 |-------------|---------------------|----|------------------|
 | regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
+| cloud_ids   | []string            | 否  | 资源id，数量上限20      |
+
 
 
 ### 调用示例

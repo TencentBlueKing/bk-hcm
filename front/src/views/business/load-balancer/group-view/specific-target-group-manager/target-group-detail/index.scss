@@ -1,3 +1,9 @@
 .target-group-detail-page {
   height: 100%;
+
+  .fixed-operate-btn {
+    position: fixed !important;
+    right: 44px;
+    min-width: 64px;
+  }
 }

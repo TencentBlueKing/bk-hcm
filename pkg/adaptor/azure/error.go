@@ -38,11 +38,11 @@ RESPONSE 409: 409 Conflict
 ERROR CODE: OperationNotAllowed
 --------------------------------------------------------------------------------
 {
-  "error": {
-    "code": "OperationNotAllowed",
-    "message": "Managed disk storage account type change through Virtual Machine 'xx' is not allowed.",
-    "target": "osDisk.managedDisk.storageAccountType"
-  }
+	"error": {
+		"code": "OperationNotAllowed",
+		"message": "Managed disk storage account type change through Virtual Machine 'xx' is not allowed.",
+		"target": "osDisk.managedDisk.storageAccountType"
+	}
 }
 --------------------------------------------------------------------------------
 */
