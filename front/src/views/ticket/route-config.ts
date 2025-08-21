@@ -4,12 +4,20 @@ import i18n from '@/language/i18n';
 const { t } = i18n.global;
 
 export const ticketRoutes: RouteRecordRaw[] = [
+  // 兼容老路由
   {
     path: '/service/my-apply',
     redirect: '/service/ticket',
     // meta是必要的，如果不想在侧边栏显示，需要设置notMenu为true
     meta: {
-      // activeKey: 'menu_ticket_manage',
+      notMenu: true,
+    },
+  },
+  {
+    path: '/service/my-apply/detail',
+    redirect: '/service/ticket/detail',
+    // meta是必要的，如果不想在侧边栏显示，需要设置notMenu为true
+    meta: {
       notMenu: true,
     },
   },

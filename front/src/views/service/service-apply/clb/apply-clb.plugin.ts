@@ -6,7 +6,7 @@ export const applyClbSuccessHandler = (isBusinessPage: boolean, goBack: () => vo
   const { id } = args || {};
   if (isBusinessPage && id) {
     // 业务下购买CLB, 跳转至单据详情
-    routerAction.redirect({ path: '/service/my-apply/detail', query: { id } });
+    routerAction.redirect({ path: '/service/ticket/detail', query: { id } });
   } else {
     goBack();
   }

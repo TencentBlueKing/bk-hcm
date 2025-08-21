@@ -5,4 +5,5 @@ export interface ApplicationsType {
   name: string;
   Component: any;
   rules?: RulesItem[];
+  props?: any;
 }

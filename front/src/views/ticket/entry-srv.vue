@@ -2,7 +2,12 @@
   <div class="tab-container">
     <bk-tab type="card-grid" v-model:active="applyType" class="header-tab" @update:active="saveActiveType">
       <bk-tab-panel v-for="(item, index) in tabList" :name="item.name" :label="item.label" :key="index">
-        <component v-if="item.name === applyType" :is="item.Component" :rules="item.rules"></component>
+        <component
+          v-if="item.name === applyType"
+          :is="item.Component"
+          :rules="item.rules"
+          v-bind="item.props"
+        ></component>
       </bk-tab-panel>
     </bk-tab>
   </div>

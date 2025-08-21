@@ -45,7 +45,7 @@ const columns = [
           theme: 'primary',
           onClick: () => {
             router.push({
-              path: '/service/my-apply/detail',
+              path: '/service/ticket/detail',
               query: {
                 ...route.query,
                 id: data.id,

@@ -59,7 +59,7 @@ export default defineComponent({
               theme='primary'
               text
               onClick={() => {
-                window.open(`/#/service/my-apply/detail?id=${data.id}`);
+                window.open(`/#/service/ticket/detail?id=${data.id}`);
               }}>
               链接
             </Button>
@@ -68,7 +68,7 @@ export default defineComponent({
         theme: 'success',
       });
       // router.push({
-      //   path: '/service/my-apply/detail',
+      //   path: '/service/ticket/detail',
       //   query: {
       //     ...route.query,
       //     id: data.id,
