@@ -40,3 +40,17 @@ func (b *BatchModifyTargetWeightReq) Validate() error {
 	}
 	return validator.Validate.Struct(b)
 }
+
+// BatchRemoveTargetReq ...
+type BatchRemoveTargetReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	TargetIDs []string `json:"target_ids" validate:"min=1"`
+}
+
+// Validate ...
+func (b *BatchRemoveTargetReq) Validate() error {
+	if len(b.TargetIDs) > constant.BatchOperateModifyTargetWeightLimit {
+		return fmt.Errorf("the number of target IDs cannot exceed %d", removeTargetLimit)
+	}
+	return validator.Validate.Struct(b)
+}

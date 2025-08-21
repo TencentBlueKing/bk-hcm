@@ -186,8 +186,11 @@ func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTar
 	getActionID := counter.NewNumStringCounter(1, 10)
 	var lastActionID action.ActIDType
 	for _, parts := range elems {
-		rsPortParams, err := svc.convTCloudOperateTargetReq(kt, parts, lbID, tgID, accountID,
-			cvt.ValToPtr(req.NewPort), nil)
+		targets, err := svc.listTargetsByIDs(kt, parts)
+		if err != nil {
+			return "", err
+		}
+		rsPortParams, err := svc.convTCloudOperateTargetReq(targets, lbID, tgID, accountID, cvt.ValToPtr(req.NewPort), nil)
 		if err != nil {
 			return "", err
 		}
