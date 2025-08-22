@@ -59,8 +59,7 @@ type ListUrlRulesByTopologyReq struct {
 
 // ListUrlRulesByTopologyResp list url rules by topology resp.
 type ListUrlRulesByTopologyResp struct {
-	Count int `json:"count"`
-
+	Count   int             `json:"count"`
 	Details []UrlRuleDetail `json:"details"`
 }
 

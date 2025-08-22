@@ -147,6 +147,7 @@ func (svc *lbSvc) addLoadBalancerConditions(kt *kit.Kit, req *cslb.ListUrlRulesB
 
 // addListenerConditions 添加监听器相关条件
 func (svc *lbSvc) addListenerConditions(req *cslb.ListUrlRulesByTopologyReq, conditions []*filter.AtomRule) error {
+
 	if len(req.LblProtocols) > 0 {
 		conditions = append(conditions, tools.RuleIn("protocol", req.LblProtocols))
 	}
@@ -227,7 +228,7 @@ func (svc *lbSvc) queryLoadBalancerIDsByConditions(kt *kit.Kit, req *cslb.ListUr
 
 // queryTargetGroupIDsByTargetConditions 根据目标条件查询目标组ID
 func (svc *lbSvc) queryTargetGroupIDsByTargetConditions(kt *kit.Kit, req *cslb.ListUrlRulesByTopologyReq) ([]string, error) {
-	// 复用现有的目标查询方法
+
 	targetConditions := []*filter.AtomRule{
 		tools.RuleEqual("vendor", req.Vendor),
 		tools.RuleEqual("account_id", req.AccountID),
@@ -339,7 +340,7 @@ func (svc *lbSvc) buildUrlRuleResponse(kt *kit.Kit,
 	return result, nil
 }
 
-// buildUrlRuleDetail 构建单个URL规则详情
+// buildUrlRuleDetail URL规则详情
 func (svc *lbSvc) buildUrlRuleDetail(rule corelb.TCloudLbUrlRule,
 	lbMap map[string]*corelb.BaseLoadBalancer,
 	listenerMap map[string]*corelb.BaseListener,
@@ -380,7 +381,7 @@ func (svc *lbSvc) buildUrlRuleDetail(rule corelb.TCloudLbUrlRule,
 	return detail
 }
 
-// batchGetLoadBalancerInfo 批量获取负载均衡器信息
+// batchGetLoadBalancerInfo 获取负载均衡器信息
 func (svc *lbSvc) batchGetLoadBalancerInfo(kt *kit.Kit, lbIDs []string) (map[string]*corelb.BaseLoadBalancer, error) {
 	if len(lbIDs) == 0 {
 		return make(map[string]*corelb.BaseLoadBalancer), nil
@@ -399,7 +400,7 @@ func (svc *lbSvc) batchGetLoadBalancerInfo(kt *kit.Kit, lbIDs []string) (map[str
 	return result, nil
 }
 
-// batchGetListenerInfo 批量获取监听器信息
+// batchGetListenerInfo 获取监听器信息
 func (svc *lbSvc) batchGetListenerInfo(kt *kit.Kit, listenerIDs []string) (map[string]*corelb.BaseListener, error) {
 	if len(listenerIDs) == 0 {
 		return make(map[string]*corelb.BaseListener), nil
@@ -423,7 +424,7 @@ func (svc *lbSvc) batchGetListenerInfo(kt *kit.Kit, listenerIDs []string) (map[s
 	return listenerMap, nil
 }
 
-// batchGetTargetGroupInfo 批量获取目标组信息
+// batchGetTargetGroupInfo 获取目标组信息
 func (svc *lbSvc) batchGetTargetGroupInfo(kt *kit.Kit, targetGroupIDs []string) (map[string]*corelb.BaseTargetGroup, error) {
 	if len(targetGroupIDs) == 0 {
 		return make(map[string]*corelb.BaseTargetGroup), nil
