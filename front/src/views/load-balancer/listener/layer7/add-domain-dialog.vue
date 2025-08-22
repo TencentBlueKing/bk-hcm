@@ -9,7 +9,14 @@ import {
   IListenerRuleModel,
   useLoadBalancerListenerStore,
 } from '@/store/load-balancer/listener';
-import { ListenerProtocol, SCHEDULER_LIST, SCHEDULER_NAME, SSL_MODE_NAME, SSLMode } from '../../constants';
+import {
+  ListenerProtocol,
+  SCHEDULER_LIST,
+  SCHEDULER_NAME,
+  SSL_MODE_NAME,
+  SSLMode,
+  DOMAIN_REGEX,
+} from '../../constants';
 
 import { Form, Message, Tag } from 'bkui-vue';
 import GridDetails from '../../children/display/grid-details.vue';
@@ -61,7 +68,7 @@ const formRef = useTemplateRef<typeof Form>('form');
 const rules = {
   domain: [
     {
-      validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
+      validator: (value: string) => DOMAIN_REGEX.test(value),
       message: '域名不符合规范',
       trigger: 'change',
     },

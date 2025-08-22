@@ -348,8 +348,8 @@ func (svc *lbSvc) GetBizUrlRule(cts *rest.Contexts) (any, error) {
 	return urlRuleList.Details[0], nil
 }
 
-// ListRuleBindingStatus 获取规则绑定目标组状态
-func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
+// ListBizRuleBindingStatus 获取规则绑定目标组状态
+func (svc *lbSvc) ListBizRuleBindingStatus(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -405,7 +405,8 @@ func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
 	for _, ruleID := range req.RuleIDs {
 		bindStatus, ok := ruleBindingStatusMap[ruleID]
 		if !ok {
-			return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("rule %s not found", ruleID))
+			// 没有 rule和 target group的关联关系, 会走到这个逻辑, 默认返回未绑定状态
+			bindStatus = enumor.UnBindingStatus
 		}
 
 		resp.Details = append(resp.Details, cslb.RuleBindingStatus{

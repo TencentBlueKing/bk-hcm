@@ -66,6 +66,8 @@ const (
 	FailedBindingStatus BindingStatus = "failed"
 	// PartialFailedBindingStatus 部分失败
 	PartialFailedBindingStatus BindingStatus = "partial_failed"
+	// UnBindingStatus 未绑定
+	UnBindingStatus BindingStatus = "unbinding"
 )
 
 // ProtocolType 协议类型

@@ -294,9 +294,18 @@ func (req *TCloudRuleBatchCreateReq) Validate() error {
 
 // TCloudRuleCreate 腾讯云url规则创建
 type TCloudRuleCreate struct {
-	Url string `json:"url,omitempty" validate:"required"`
+	TCloudRuleCreateWithoutBinding `json:",inline"`
+	TargetGroupID                  string `json:"target_group_id" validate:"required"`
+}
 
-	TargetGroupID string `json:"target_group_id" validate:"required"`
+// Validate request.
+func (req *TCloudRuleCreate) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudRuleCreateWithoutBinding 腾讯云url规则创建
+type TCloudRuleCreateWithoutBinding struct {
+	Url string `json:"url,omitempty" validate:"required"`
 
 	Domains           []string `json:"domains,omitempty"`
 	SessionExpireTime *int64   `json:"session_expire_time,omitempty"`
@@ -315,7 +324,7 @@ type TCloudRuleCreate struct {
 }
 
 // Validate request.
-func (req *TCloudRuleCreate) Validate() error {
+func (req *TCloudRuleCreateWithoutBinding) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -947,4 +956,15 @@ func (r *ExportListener) Validate() error {
 type ExportListenerResp struct {
 	Pass   bool   `json:"pass"`
 	Reason string `json:"reason"`
+}
+
+// TCloudRuleBindTargetGroup 腾讯云url规则创建
+type TCloudRuleBindTargetGroup struct {
+	UrlRuleID     string `json:"url_rule_id" validate:"required"` // 七层规则ID
+	TargetGroupID string `json:"target_group_id" validate:"required"`
+}
+
+// Validate request.
+func (req *TCloudRuleBindTargetGroup) Validate() error {
+	return validator.Validate.Struct(req)
 }

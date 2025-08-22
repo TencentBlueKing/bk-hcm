@@ -63,7 +63,6 @@ func InitService(c *capability.Capability) {
 	bizH.Path("/bizs/{bk_biz_id}")
 	bizService(bizH, svc)
 	bizURLRuleService(bizH, svc)
-	bizSopService(bizH, svc)
 	bizExportService(bizH, svc)
 
 	h.Load(c.WebService)
@@ -120,7 +119,6 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
 	h.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
 		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
-	h.Add("BatchDeleteBizRule", http.MethodDelete, "/rule/batch", svc.BatchDeleteBizRule)
 
 	h.Add("CancelFlow", http.MethodPost, "/load_balancers/{lb_id}/async_flows/terminate", svc.BizTerminateFlow)
 	h.Add("RetryTask", http.MethodPost, "/load_balancers/{lb_id}/async_tasks/retry", svc.BizRetryTask)
@@ -184,6 +182,13 @@ func bizSopService(h *rest.Handler, svc *lbSvc) {
 		"/sops/rule/online", svc.BatchBizRuleOnline)
 	h.Add("BatchBizRuleOffline", http.MethodDelete,
 		"/sops/rule/offline", svc.BatchBizRuleOffline)
+
+	h.Add("ListBizRuleBindingStatus", http.MethodPost,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/binding_status/list", svc.ListBizRuleBindingStatus)
+	h.Add("BizUrlRuleBindTargetGroup", http.MethodPost,
+		"/vendors/{vendor}/rules/target_group/bind", svc.BizUrlRuleBindTargetGroup)
+	h.Add("CreateBizUrlRuleWithoutBinding", http.MethodPost,
+		"/vendors/{vendor}/listeners/{lbl_id}/rule/create", svc.CreateBizUrlRuleWithoutBinding)
 }
 
 func bizExportService(h *rest.Handler, svc *lbSvc) {
