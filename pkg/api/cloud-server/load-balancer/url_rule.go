@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
+// ListUrlRulesByTopologyReq list url rules by topology.
 type ListUrlRulesByTopologyReq struct {
 	Vendor enumor.Vendor `json:"vendor" validate:"required"`
 
@@ -56,12 +57,14 @@ type ListUrlRulesByTopologyReq struct {
 	Page *core.BasePage `json:"page" validate:"required"`
 }
 
+// ListUrlRulesByTopologyResp list url rules by topology resp.
 type ListUrlRulesByTopologyResp struct {
 	Count int `json:"count"`
 
 	Details []UrlRuleDetail `json:"details"`
 }
 
+// UrlRuleDetail url rule detail.
 type UrlRuleDetail struct {
 	ID           string `json:"id"`
 	Ip           string `json:"ip"`
@@ -73,6 +76,7 @@ type UrlRuleDetail struct {
 	ListenerID   string `json:"listener_id"`
 }
 
+// TargetDetail target detail.
 type TargetDetail struct {
 	ID      string `json:"id"`
 	CloudID string `json:"cloud_id"`
