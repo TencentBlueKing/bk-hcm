@@ -2,6 +2,7 @@ import { Column, Model } from '@/decorator';
 import { LISTENER_PROTOCOL_NAME } from '../../constants';
 import { QueryRuleOPEnum } from '@/typings';
 import { buildFilterRulesWithSearchSelect } from '@/utils/search';
+import { toArray } from '@/common/util';
 
 @Model('load-balancer/listener-condition')
 export class SearchConditionListener {
@@ -26,6 +27,12 @@ export class SearchConditionListener {
   @Column('enum', { name: '协议', option: LISTENER_PROTOCOL_NAME })
   protocol: string;
 
-  @Column('number', { name: '端口' })
-  port: number;
+  @Column('array', {
+    name: '端口',
+    format: (value) => {
+      const values = toArray(value).map((val: string) => Number(val));
+      return values.filter((val: number) => !isNaN(val));
+    },
+  })
+  port: number[];
 }

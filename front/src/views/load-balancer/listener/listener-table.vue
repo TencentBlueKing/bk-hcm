@@ -223,7 +223,16 @@ watch(
   () => searchRef.value?.clear(false),
 );
 const handleSearch = (val: ISearchSelectValue) => {
-  searchQs.set(getSimpleConditionBySearchSelect(val));
+  searchQs.set(
+    getSimpleConditionBySearchSelect(val, [
+      {
+        field: 'port',
+        // 使用 buildSearchSelectValueBySearchQsCondition 处理后回填的值为数组 [1, 2]，在调用formatter时这里接收的是每一个元素的值，是number类型
+        // 手动输入时这里接收的是原始值是string类型 '1 | 2'，所以这里根据不同的值类型来处理，目前整个数据流加工的数据如此这是局部的解决方式
+        formatter: (value: string | number) => (typeof value === 'string' ? value?.split(' | ') : value),
+      },
+    ]),
+  );
 };
 
 const loading = ref(false);

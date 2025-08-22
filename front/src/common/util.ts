@@ -315,6 +315,14 @@ export const formatTags = (data: { [k: string]: any }) => {
   );
 };
 
+// 单个值转换为数组形式
+export function toArray<T>(value: T | T[]): T[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return Array.of(value);
+}
+
 export const resolveApiPathByBusinessId = (prefix: string, suffix: string, businessId?: number) => {
   return businessId ? `${prefix}/bizs/${businessId}/${suffix}` : `${prefix}/${suffix}`;
 };
