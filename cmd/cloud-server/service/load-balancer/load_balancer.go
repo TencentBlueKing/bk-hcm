@@ -168,6 +168,8 @@ func bizURLRuleService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/{vendor}/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizUrlRuleByDomain)
 	h.Add("ListRuleBindingStatus", http.MethodPost,
 		"/vendors/{vendor}/listeners/{lbl_id}/rules/binding_status/list", svc.ListRuleBindingStatus)
+	h.Add("ListClbByRuleURLs", http.MethodPost,
+		"/vendors/{vendor}/targets/by_rule_urls/list", svc.ListUrlRulesByTopology)
 }
 
 func bizSopService(h *rest.Handler, svc *lbSvc) {
