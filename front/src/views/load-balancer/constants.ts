@@ -145,3 +145,5 @@ export enum RsInstType {
   CVM = 'CVM',
   ENI = 'ENI',
 }
+
+export const DOMAIN_REGEX = /^([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
