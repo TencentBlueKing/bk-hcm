@@ -13,7 +13,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
 | 参数名称             | 参数类型         | 必选 | 描述                                                       |
 |------------------|--------------|----|----------------------------------------------------------|
 | bk_biz_id        | string       | 是  | 业务id                                                     |
-| vendor           | string       | 是  | 云厂商                                                      |
+| vendor           | string       | 是  | 云厂商(枚举值：tcloud)                                          |
 | account_id       | string       | 是  | 云账号ID                                                    |
 | lb_regions       | string array | 否  | CLB所在地域列表，长度限制500                                        |
 | lb_network_types | string array | 否  | 负载均衡网络类型列表，"OPEN"(公网)，"INTERNAL"(内网)                     |
@@ -26,6 +26,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
 | rule_domains     | string array | 否  | 规则域名列表，长度限制500                                           |
 | rule_urls        | string array | 否  | 规则url列表，长度限制500                                          |
 | target_ips       | string array | 否  | rs ip列表，长度限制5000                                         |
+| target_ports     | int array    | 否  | rs port列表，长度限制500                                        |
 | page             |  object      | 是  | 分页设置                                                     |
 
 
@@ -57,6 +58,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
   "rule_domains": ["www.xxx.com"],
   "rule_urls": ["/xxx"],
   "target_ips": ["127.0.0.1"],
+  "target_ports": [80],
   "page": {
     "count": false,
     "start": 0,
@@ -81,6 +83,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
   "rule_domains": ["www.xxx.com"],
   "rule_urls": ["/xxx"],
   "target_ips": ["127.0.0.1"],
+  "target_ports": [80],
   "page": {
     "count": true
   }
@@ -108,6 +111,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
         "cloud_lb_id": "xxxx",
         "protocol": "https",
         "port": 80,
+        "end_port": 0,
         "default_domain": "www.qq.com",
         "region": "ap-xxx",
         "zones": [
@@ -115,7 +119,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
         ],
         "sni_switch": 0,
         "memo": "cvm test",
-        "lb_vip": "127.0.0.1",
+        "lb_vips": ["127.0.0.1"],
+        "lb_domain": "www.xxx.com",
+        "lb_region": "ap-xxx",
         "lb_network_type": "OPEN",
         "rule_domain_count": 1,
         "url_count": 1,
@@ -164,19 +170,22 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
 | id                | string       | 资源ID                                 |
 | cloud_id          | string       | 云资源ID                                |
 | name              | string       | 名称                                   |
-| vendor            | string       | 供应商（枚举值：tcloud）                      |
+| vendor            | string       | 供应商                                  |
 | account_id        | string       | 账号ID                                 |
 | bk_biz_id         | int          | 业务ID                                 |
 | lb_id             | string       | 负载均衡ID                               |
 | cloud_lb_id       | string       | 云负载均衡ID                              |
 | protocol          | string       | 协议                                   |
-| port              | string       | 端口                                   |
+| port              | int          | 端口                                   |
+| end_port          | int          | 如果该字段不为0，代表监听器端口为端口段，该值为端口段末尾值       |
 | default_domain    | string       | 默认域名                                 |
 | region            | string       | 地域                                   |
 | zones             | string array | 可用区数组                                |
 | sni_switch        | int          | 是否开启SNI特性(0:关闭 1:开启)，当协议为HTTPS时必传    |
 | memo              | string       | 备注                                   |
-| lb_vip            | string       | 负载均衡VIP                              |
+| lb_vips           | string array | 负载均衡VIP                              |
+| lb_domain         | string       | 负载均衡域名                               |
+| lb_region         | string       | 负载均衡地域                               |
 | lb_network_type   | string       | 负载均衡网络类型列表，"OPEN"(公网)，"INTERNAL"(内网) |
 | rule_domain_count | int          | 规则域名数量                               |
 | url_count         | int          | 规则url数量                              |
