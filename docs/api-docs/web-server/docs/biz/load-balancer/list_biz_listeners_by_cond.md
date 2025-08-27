@@ -10,23 +10,23 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/listeners/list_by_cond
 
 ### 输入参数
 
-| 参数名称         | 参数类型       | 必选 | 描述      |
-|-----------------|--------------|-----|-----------|
-| bk_biz_id       | int          | 是  | 业务ID     |
-| vendor          | string       | 是  | 云厂商     |
-| account_id      | string       | 是  | 账号ID     |
+| 参数名称            | 参数类型         | 必选 | 描述               |
+|-----------------|--------------|----|------------------|
+| bk_biz_id       | int          | 是  | 业务ID             |
+| vendor          | string       | 是  | 云厂商（枚举值：tcloud）  |
+| account_id      | string       | 是  | 账号ID             |
 | rule_query_list | object array | 是  | 规则查询条件数组，最大支持50个 |
 
 #### rule_query_list
 
-| 参数名称         | 参数类型       | 必选 | 描述                            |
-|-----------------|--------------|------|--------------------------------|
-| protocol        | string       | 否   | 协议                            |
-| region          | string       | 是   | 地域                            |
-| clb_vip_domains | string array | 是   | 负载均衡VIP或域名数组，最大支持50个 |
-| cloud_lb_ids    | string array | 是   | 负载均衡云ID数组，最大支持50个      |
-| rs_ips          | string array | 是   | RSIP数组，最大支持500个           |
-| rs_ports        | int  array   | 否   | RS端口数组，最大支持500个          |
+| 参数名称            | 参数类型         | 必选 | 描述                   |
+|-----------------|--------------|----|----------------------|
+| protocol        | string       | 是  | 协议                   |
+| region          | string       | 是  | 地域                   |
+| clb_vip_domains | string array | 是  | 负载均衡VIP或域名数组，最大支持50个 |
+| cloud_lb_ids    | string array | 是  | 负载均衡云ID数组，最大支持50个    |
+| rs_ips          | string array | 是  | RSIP数组，最大支持500个      |
+| rs_ports        | int  array   | 否  | RS端口数组，最大支持500个      |
 
 ### 调用示例
 
