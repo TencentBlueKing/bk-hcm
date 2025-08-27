@@ -64,6 +64,9 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 		logs.Errorf("batch remove target request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	if err = req.Validate(); err != nil {
+		return nil, err
+	}
 
 	// authorized instances
 	basicInfo := &types.CloudResourceBasicInfo{
@@ -125,10 +128,8 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 	tgToTargetsMap := classifier.ClassifySlice(targets, func(v corelb.BaseTarget) string {
 		return v.TargetGroupID
 	})
+	tgIDs := cvt.MapKeyToSlice(tgToTargetsMap)
 
-	tgIDs := slice.Unique(slice.Map(targets, func(target corelb.BaseTarget) string {
-		return target.TargetGroupID
-	}))
 	relsMap, err := svc.listTGListenerRuleRelMapByTGIDs(kt, tgIDs)
 	if err != nil {
 		return "", err
@@ -155,7 +156,7 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 		}
 		flowID, err := svc.buildRemoveTCloudTargetTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap)
 		if err != nil {
-			logs.Errorf("build modify tcloud target tasks weight failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("build remove tcloud target tasks failed, err: %v, rid: %s", err, kt.Rid)
 			return "", err
 		}
 		flowIDs = append(flowIDs, flowID)
@@ -178,8 +179,7 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManageme
 		})
 		rsIDs = append(rsIDs, one.ID)
 	}
-	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
-		enumor.TaskTargetGroupRemoveRS, details)
+	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID, enumor.TaskTargetGroupRemoveRS, details)
 	if err != nil {
 		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
 			taskManagementID, bkBizID, kt.Rid)
@@ -252,7 +252,8 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 			return item.taskDetailID
 		})
 		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s", err,
+				taskDetails, kt.Rid)
 		}
 	}()
 
@@ -346,8 +347,7 @@ func (svc *lbSvc) createTargetGroupRemoveRsTaskDetails(kt *kit.Kit, taskManageme
 			param: one,
 		})
 	}
-	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
-		enumor.TaskTargetGroupRemoveRS, details)
+	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID, enumor.TaskTargetGroupRemoveRS, details)
 	if err != nil {
 		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
 			taskManagementID, bkBizID, kt.Rid)
