@@ -146,6 +146,15 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/{vendor}/load_balancers/operations/{operation_type}/submit", svc.ImportSubmit)
 	h.Add("ImportValidate", http.MethodPost,
 		"/vendors/{vendor}/load_balancers/operations/{operation_type}/validate", svc.ImportValidate)
+
+	// 高级检索
+	h.Add("ListTargetByTopo", http.MethodPost,
+		"/vendors/{vendor}/targets/by_topo/list", svc.ListTargetByTopo)
+	h.Add("CountTargetByTopo", http.MethodPost,
+		"/vendors/{vendor}/targets/by_topo/count", svc.CountTargetByTopo)
+	h.Add("ListListenerByTopo", http.MethodPost,
+		"/vendors/{vendor}/listeners/by_topo/list", svc.ListListenerByTopo)
+
 }
 
 func bizURLRuleService(h *rest.Handler, svc *lbSvc) {

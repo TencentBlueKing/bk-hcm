@@ -88,4 +88,7 @@ const (
 	CLBExcelHeaderVendor = "vendor(云厂商)"
 	// CLBExcelHeaderTCloud excel表头腾讯云字段值
 	CLBExcelHeaderTCloud = "tencent_cloud_public(腾讯云-公有云)"
+
+	// CLBTopoFindInLimit 负载均衡各级拓扑in查询数量限制
+	CLBTopoFindInLimit = 10000
 )

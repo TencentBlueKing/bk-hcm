@@ -31,6 +31,9 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/table/types"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
@@ -978,4 +981,182 @@ type ExportTargetReq struct {
 // Validate ...
 func (e *ExportTargetReq) Validate() error {
 	return validator.Validate.Struct(e)
+}
+
+// LbTopoCond lb topo condition
+type LbTopoCond struct {
+	AccountID      string                                `json:"account_id" validate:"required"`
+	LbRegions      []string                              `json:"lb_regions" validate:"max=500"`
+	LbNetworkTypes []loadbalancer.TCloudLoadBalancerType `json:"lb_network_types" validate:"max=500"`
+	LbIpVersions   []enumor.IPAddressType                `json:"lb_ip_versions" validate:"max=500"`
+	CloudLbIDs     []string                              `json:"cloud_lb_ids" validate:"max=500"`
+	LbVips         []string                              `json:"lb_vips" validate:"max=500"`
+	LbDomains      []string                              `json:"lb_domains" validate:"max=500"`
+	LblProtocols   []enumor.ProtocolType                 `json:"lbl_protocols" validate:"max=500"`
+	LblPorts       []int64                               `json:"lbl_ports" validate:"max=1000"`
+	RuleDomains    []string                              `json:"rule_domains" validate:"max=500"`
+	RuleUrls       []string                              `json:"rule_urls" validate:"max=500"`
+	TargetIPs      []string                              `json:"target_ips" validate:"max=5000"`
+	TargetPorts    []int64                               `json:"target_ports" validate:"max=500"`
+}
+
+// Validate ...
+func (l *LbTopoCond) Validate() error {
+	return validator.Validate.Struct(l)
+}
+
+// GetLbCond get lb condition
+func (l *LbTopoCond) GetLbCond() []filter.RuleFactory {
+	rules := make([]filter.RuleFactory, 0)
+
+	if len(l.LbRegions) != 0 {
+		rules = append(rules, tools.RuleIn("region", l.LbRegions))
+	}
+
+	if len(l.LbNetworkTypes) != 0 {
+		rules = append(rules, tools.RuleIn("lb_type", l.LbNetworkTypes))
+	}
+
+	if len(l.LbIpVersions) != 0 {
+		rules = append(rules, tools.RuleIn("ip_version", l.LbIpVersions))
+	}
+
+	if len(l.CloudLbIDs) != 0 {
+		rules = append(rules, tools.RuleIn("cloud_id", l.CloudLbIDs))
+	}
+
+	if len(l.LbVips) != 0 {
+		rules = append(rules, tools.ExpressionOr(
+			tools.RuleJsonOverlaps("private_ipv4_addresses", l.LbVips),
+			tools.RuleJsonOverlaps("private_ipv6_addresses", l.LbVips),
+			tools.RuleJsonOverlaps("public_ipv4_addresses", l.LbVips),
+			tools.RuleJsonOverlaps("public_ipv6_addresses", l.LbVips),
+		))
+	}
+
+	if len(l.LbDomains) != 0 {
+		rules = append(rules, tools.RuleIn("domain", l.LbDomains))
+	}
+
+	return rules
+}
+
+// GetLblCond get listener condition
+func (l *LbTopoCond) GetLblCond() []filter.RuleFactory {
+	rules := make([]filter.RuleFactory, 0)
+
+	if len(l.LblProtocols) != 0 {
+		rules = append(rules, tools.RuleIn("protocol", l.LblProtocols))
+	}
+
+	if len(l.LblPorts) != 0 {
+		rules = append(rules, tools.RuleIn("port", l.LblPorts))
+	}
+
+	return rules
+}
+
+// GetRuleCond get rule condition
+func (l *LbTopoCond) GetRuleCond() []filter.RuleFactory {
+	rules := make([]filter.RuleFactory, 0)
+
+	if len(l.RuleDomains) != 0 {
+		rules = append(rules, tools.RuleIn("domain", l.RuleDomains))
+	}
+
+	if len(l.RuleUrls) != 0 {
+		rules = append(rules, tools.RuleIn("url", l.RuleUrls))
+	}
+
+	return rules
+}
+
+// GetTargetCond get target condition
+func (l *LbTopoCond) GetTargetCond() []filter.RuleFactory {
+	rules := make([]filter.RuleFactory, 0)
+
+	if len(l.TargetIPs) != 0 {
+		rules = append(rules, tools.RuleIn("ip", l.TargetIPs))
+	}
+
+	if len(l.TargetPorts) != 0 {
+		rules = append(rules, tools.RuleIn("port", l.TargetPorts))
+	}
+
+	return rules
+}
+
+// LbTopoReq lb topo request
+type LbTopoReq struct {
+	LbTopoCond `json:",inline" validate:"required,dive,required"`
+	Page       *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (l *LbTopoReq) Validate() error {
+	return validator.Validate.Struct(l)
+}
+
+// InstWithTargets instance with targets
+type InstWithTargets struct {
+	InstID      string            `json:"inst_id"`
+	InstType    enumor.InstType   `json:"inst_type"`
+	InstName    string            `json:"inst_name"`
+	IP          string            `json:"ip"`
+	Zone        string            `json:"zone"`
+	CloudVpcIDs types.StringArray `json:"cloud_vpc_ids"`
+	Targets     []TargetWithTopo  `json:"targets"`
+}
+
+// TargetWithTopo target with topo
+type TargetWithTopo struct {
+	corelb.BaseTarget `json:",inline"`
+	TargetGroupName   string                              `json:"target_group_name"`
+	LbID              string                              `json:"lb_id"`
+	CloudLbID         string                              `json:"cloud_lb_id"`
+	LbVips            []string                            `json:"lb_vips"`
+	LbDomain          string                              `json:"lb_domain"`
+	LbRegion          string                              `json:"lb_region"`
+	LbNetworkType     loadbalancer.TCloudLoadBalancerType `json:"lb_network_type"`
+	LblID             string                              `json:"lbl_id"`
+	LblPort           int64                               `json:"lbl_port"`
+	LblEndPort        *int64                              `json:"lbl_end_port"`
+	LblName           string                              `json:"lbl_name"`
+	LblProtocol       enumor.ProtocolType                 `json:"lbl_protocol"`
+	RuleID            string                              `json:"rule_id"`
+	RuleUrl           string                              `json:"rule_url"`
+	RuleDomain        string                              `json:"rule_domain"`
+}
+
+// TargetTopoInfo target topo info
+type TargetTopoInfo struct {
+	Match    bool
+	LbMap    map[string]corelb.BaseLoadBalancer
+	LblMap   map[string]corelb.TCloudListener
+	RuleMap  map[string]corelb.TCloudLbUrlRule
+	TgLbRels []corelb.BaseTargetListenerRuleRel
+	TgMap    map[string]corelb.BaseTargetGroup
+}
+
+// ListenerWithTopo listener with topo
+type ListenerWithTopo struct {
+	corelb.BaseListener      `json:",inline"`
+	EndPort                  *int64                              `json:"end_port"`
+	Scheduler                string                              `json:"scheduler"`
+	LbVips                   []string                            `json:"lb_vips"`
+	LbDomain                 string                              `json:"lb_domain"`
+	LbRegion                 string                              `json:"lb_region"`
+	LbNetworkType            loadbalancer.TCloudLoadBalancerType `json:"lb_network_type"`
+	RuleDomainCount          int                                 `json:"rule_domain_count"`
+	UrlCount                 int                                 `json:"url_count"`
+	TargetCount              int                                 `json:"target_count"`
+	NonZeroWeightTargetCount int                                 `json:"non_zero_weight_target_count"`
+	TargetGroupID            string                              `json:"target_group_id"`
+}
+
+// LblTopoInfo listener topo info
+type LblTopoInfo struct {
+	Match   bool
+	LbMap   map[string]corelb.BaseLoadBalancer
+	LblCond []filter.RuleFactory
 }
