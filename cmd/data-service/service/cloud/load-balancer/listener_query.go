@@ -682,6 +682,7 @@ func (svc *lbSvc) ListListenerByCond(cts *rest.Contexts) (any, error) {
 				Region:        item.Region,
 				CloudLbIDs:    item.CloudLbIDs,
 				ClbVipDomains: item.ClbVipDomains,
+				Ports:         item.Ports,
 				RuleType:      ruleType,
 				RsIPs:         item.RsIPs,
 				RsPorts:       item.RsPorts,

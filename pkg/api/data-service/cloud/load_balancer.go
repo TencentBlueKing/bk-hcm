@@ -669,6 +669,7 @@ type ListenerQueryLine struct {
 	Region        string              `json:"region" validate:"required,min=1"`
 	ClbVipDomains []string            `json:"clb_vip_domains" validate:"required,min=1,max=50"`
 	CloudLbIDs    []string            `json:"cloud_lb_ids" validate:"required,min=1,max=50"`
+	Ports         []int64             `json:"ports" validate:"omitempty,max=500"`
 	RsIPs         []string            `json:"rs_ips" validate:"omitempty,max=500"`
 	RsPorts       []int64             `json:"rs_ports" validate:"omitempty,max=500"`
 }

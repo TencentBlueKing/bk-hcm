@@ -25,6 +25,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/listeners/list_by_cond
 | region          | string       | 是  | 地域                   |
 | clb_vip_domains | string array | 是  | 负载均衡VIP或域名数组，最大支持50个 |
 | cloud_lb_ids    | string array | 是  | 负载均衡云ID数组，最大支持50个    |
+| ports           | int array    | 否  | 监听器端口，最大支持500个       |
 | rs_ips          | string array | 是  | RSIP数组，最大支持500个      |
 | rs_ports        | int  array   | 否  | RS端口数组，最大支持500个      |
 
@@ -43,6 +44,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/listeners/list_by_cond
       "region": "ap-nanjing",
       "clb_vip_domains": ["1.1.1.1"],
       "cloud_lb_ids": ["lb-xxxxxx"],
+      "ports": [1000],
       "rs_ips": ["1.1.1.2"],
       "rs_ports": [101]
     }
