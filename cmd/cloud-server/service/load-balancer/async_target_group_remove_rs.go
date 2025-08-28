@@ -25,6 +25,7 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/cloud-server/task"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
@@ -107,11 +108,7 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 	if err != nil {
 		return nil, err
 	}
-	return struct {
-		TaskManagementID string `json:"task_management_id"`
-	}{
-		TaskManagementID: taskManagementID,
-	}, nil
+	return task.CreateTaskManagementResp{TaskManagementID: taskManagementID}, nil
 }
 
 // buildRemoveTargetManagement builds the task management for removing targets.
