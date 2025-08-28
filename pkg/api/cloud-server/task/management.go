@@ -88,3 +88,8 @@ func (r ManagementListByCondReq) Validate() error {
 
 	return validator.Validate.Struct(r)
 }
+
+// CreateTaskManagementResp defines task management response.
+type CreateTaskManagementResp struct {
+	TaskManagementID string `json:"task_management_id"`
+}

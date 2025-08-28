@@ -24,6 +24,7 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/cloud-server/task"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -99,7 +100,7 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 	if err != nil {
 		return nil, err
 	}
-	return taskManagementID, nil
+	return task.CreateTaskManagementResp{TaskManagementID: taskManagementID}, nil
 }
 
 func (svc *lbSvc) createTaskManagementForDeleteListener(kt *kit.Kit, bkBizID int64, accountID string) (
