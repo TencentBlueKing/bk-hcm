@@ -125,28 +125,32 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 		return "", err
 	}
 
-	tgToTargetsMap := classifier.ClassifySlice(targets, func(v corelb.BaseTarget) string {
-		return v.TargetGroupID
-	})
+	tgToTargetsMap := classifier.ClassifySlice(targets, corelb.BaseTarget.GetTargetGroupID)
+
 	tgIDs := cvt.MapKeyToSlice(tgToTargetsMap)
 
 	relsMap, err := svc.listTGListenerRuleRelMapByTGIDs(kt, tgIDs)
 	if err != nil {
 		return "", err
 	}
+
+	tgRelatedInfo, err := svc.listTGRelatedInfoByRels(kt, vendor, cvt.MapValueToSlice(relsMap))
+	if err != nil {
+		logs.Errorf("list target group related info by rels failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
 	for tgID, targetList := range tgToTargetsMap {
 		_, ok := relsMap[tgID]
 		if !ok {
-			err := svc.batchDeleteTargetDb(kt, accountID, tgID, taskManagementID, bkBizID, targetList)
+			err := svc.batchDeleteTargetDb(kt, accountID, tgID, taskManagementID, bkBizID, targetList,
+				tgRelatedInfo[tgID])
 			if err != nil {
 				return "", err
 			}
 		}
 	}
 
-	lbToRelsMap := classifier.ClassifyMap(relsMap, func(rel corelb.BaseTargetListenerRuleRel) string {
-		return rel.LbID
-	})
+	lbToRelsMap := classifier.ClassifyMap(relsMap, corelb.BaseTargetListenerRuleRel.GetLbID)
 	flowIDs := make([]string, 0, len(lbToRelsMap))
 	for lbID, targetGroups := range lbToRelsMap {
 		// 一个clb一个flow
@@ -154,7 +158,8 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 		for _, tg := range targetGroups {
 			tgMap[tg.TargetGroupID] = append(tgMap[tg.TargetGroupID], tgToTargetsMap[tg.TargetGroupID]...)
 		}
-		flowID, err := svc.buildRemoveTCloudTargetTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap)
+		flowID, err := svc.buildRemoveTCloudTargetTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID,
+			tgMap, tgRelatedInfo)
 		if err != nil {
 			logs.Errorf("build remove tcloud target tasks failed, err: %v, rid: %s", err, kt.Rid)
 			return "", err
@@ -169,13 +174,21 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 	return taskManagementID, nil
 }
 
-func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManagementID string, bkBizID int64, targets []corelb.BaseTarget) error {
+func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManagementID string, bkBizID int64,
+	targets []corelb.BaseTarget, info TGRelatedInfo) error {
 
 	rsIDs := make([]string, 0, len(targets))
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range targets {
+		param := struct {
+			TGRelatedInfo     `json:",inline"`
+			corelb.BaseTarget `json:",inline"`
+		}{
+			TGRelatedInfo: info,
+			BaseTarget:    one,
+		}
 		details = append(details, &taskManagementDetail{
-			param: one.ID,
+			param: param,
 		})
 		rsIDs = append(rsIDs, one.ID)
 	}
@@ -212,7 +225,8 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManageme
 }
 
 func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, taskManagementID string,
-	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget) (string, error) {
+	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
+	string, error) {
 
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
@@ -222,7 +236,8 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, tas
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap)
+	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap,
+		tgRelatedInfo)
 	if err != nil {
 		logs.Errorf("init flow batch remove target failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -239,7 +254,8 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, tas
 }
 
 func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskManagementID string,
-	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget) (string, error) {
+	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
+	string, error) {
 
 	var taskDetails []*taskManagementDetail
 	var err error
@@ -257,7 +273,8 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 		}
 	}()
 
-	tasks, taskDetails, err := svc.buildRemoveRSTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap)
+	tasks, taskDetails, err := svc.buildRemoveRSTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID,
+		tgMap, tgRelatedInfo)
 	if err != nil {
 		logs.Errorf("build remove target tasks failed, err: %v, accountID: %s, lbID: %s, bkBizID: %d, rid: %s", err,
 			accountID, lbID, bkBizID, kt.Rid)
@@ -289,7 +306,8 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 }
 
 func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagementID string, vendor enumor.Vendor,
-	bkBizID int64, tgMap map[string][]corelb.BaseTarget) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
+	bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
+	[]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
@@ -301,7 +319,8 @@ func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagemen
 			if err != nil {
 				return nil, nil, err
 			}
-			details, err := svc.createTargetGroupRemoveRsTaskDetails(kt, taskManagementID, bkBizID, removeRsParams)
+			details, err := svc.createTargetGroupRemoveRsTaskDetails(kt, taskManagementID, bkBizID, removeRsParams,
+				tgRelatedInfo[tgID])
 			if err != nil {
 				return nil, nil, err
 			}
@@ -338,13 +357,21 @@ func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagemen
 	return tasks, taskDetails, nil
 }
 
+type tgRemoveRSTaskDetailParam struct {
+	TGRelatedInfo            `json:",inline"`
+	*dataproto.TargetBaseReq `json:",inline"`
+}
+
 func (svc *lbSvc) createTargetGroupRemoveRsTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
-	addRsParams *hcproto.TCloudBatchOperateTargetReq) ([]*taskManagementDetail, error) {
+	addRsParams *hcproto.TCloudBatchOperateTargetReq, info TGRelatedInfo) ([]*taskManagementDetail, error) {
 
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range addRsParams.RsList {
 		details = append(details, &taskManagementDetail{
-			param: one,
+			param: tgRemoveRSTaskDetailParam{
+				TGRelatedInfo: info,
+				TargetBaseReq: one,
+			},
 		})
 	}
 	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID, enumor.TaskTargetGroupRemoveRS, details)
