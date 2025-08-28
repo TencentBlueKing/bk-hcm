@@ -23,7 +23,9 @@ package loadbalancer
 import (
 	"errors"
 	"fmt"
+	"strings"
 
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	proto "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -594,4 +596,161 @@ func (svc *lbSvc) listTGListenerRuleRelMapByTGIDs(kt *kit.Kit, tgIDs []string) (
 		}
 	}
 	return result, nil
+}
+
+func (svc *lbSvc) listLoadBalancerMapByIDs(kt *kit.Kit, lbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
+	result := make(map[string]corelb.BaseLoadBalancer, len(lbIDs))
+	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result[detail.ID] = detail
+		}
+	}
+	return result, nil
+}
+
+type urlRuleInfo struct {
+	domain     string
+	url        string
+	lblID      string
+	cloudLblID string
+	cloudLBID  string
+}
+
+// listUrlRuleMapByIDs 根据url rule id获取url rule信息
+func (svc *lbSvc) listUrlRuleMapByIDs(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
+	map[string]urlRuleInfo, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.listUrlRuleMapByIDsForTCloud(kt, ids)
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s for listUrlRuleMapByIDs", vendor)
+	}
+}
+
+func (svc *lbSvc) listUrlRuleMapByIDsForTCloud(kt *kit.Kit, ids []string) (map[string]urlRuleInfo, error) {
+	result := make(map[string]urlRuleInfo, 0)
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result[detail.ID] = urlRuleInfo{
+				domain:     detail.Domain,
+				url:        detail.URL,
+				lblID:      detail.LblID,
+				cloudLblID: detail.CloudLBLID,
+				cloudLBID:  detail.CloudLbID,
+			}
+		}
+	}
+	return result, nil
+}
+
+// TGRelatedInfo tg关联信息，包括lb, listener, url rule
+type TGRelatedInfo struct {
+	CloudLBID    string `json:"cloud_lb_id"`
+	ClbVipDomain string `json:"clb_vip_domain"`
+
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Port     int64               `json:"port"`
+
+	Domain string `json:"domain"`
+	URL    string `json:"url"`
+}
+
+// listTGRelatedInfoByRels 根据tg rel获取tg关联信息, 返回值 map[TGID]TGRelatedInfo
+func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rels []corelb.BaseTargetListenerRuleRel) (map[string]TGRelatedInfo, error) {
+
+	lbMap, err := svc.listLoadBalancerMapByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLbID))
+	if err != nil {
+		return nil, err
+	}
+
+	lblMap, err := svc.listListenerMap(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLblID))
+	if err != nil {
+		return nil, err
+	}
+
+	ruleMap, err := svc.listUrlRuleMapByIDs(kt, vendor, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetListenerRuleID))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]TGRelatedInfo, len(rels))
+	for _, rel := range rels {
+		lb, ok := lbMap[rel.LbID]
+		if !ok {
+			logs.Errorf("lb not found: %s, rel: %+v, rid: %s", rel.LbID, rel, kt.Rid)
+			return nil, fmt.Errorf("lb not found: %s", rel.LbID)
+		}
+		vipDomain, err := getClbVipDomain(lb)
+		if err != nil {
+			return nil, err
+		}
+
+		lbl, ok := lblMap[rel.LblID]
+		if !ok {
+			logs.Errorf("listener not found: %s, rel: %+v, rid: %s", rel.LblID, rel, kt.Rid)
+			return nil, fmt.Errorf("listener not found: %s", rel.LblID)
+		}
+
+		rule, ok := ruleMap[rel.ListenerRuleID]
+		if !ok {
+			logs.Errorf("url rule not found: %s, rel: %+v, rid: %s", rel.ListenerRuleID, rel, kt.Rid)
+			return nil, fmt.Errorf("url rule not found: %s", rel.ListenerRuleID)
+		}
+
+		item := TGRelatedInfo{
+			CloudLBID:    lb.CloudID,
+			ClbVipDomain: strings.Join(vipDomain, ","),
+			Protocol:     lbl.Protocol,
+			Port:         lbl.Port,
+			Domain:       rule.domain,
+			URL:          rule.url,
+		}
+		result[rel.TargetGroupID] = item
+	}
+	return result, nil
+}
+
+func getClbVipDomain(lbInfo corelb.BaseLoadBalancer) ([]string, error) {
+	vipDomains := make([]string, 0)
+	switch lbInfo.LoadBalancerType {
+	case string(typeslb.InternalLoadBalancerType):
+		if lbInfo.IPVersion == enumor.Ipv4 {
+			vipDomains = append(vipDomains, lbInfo.PrivateIPv4Addresses...)
+		} else {
+			vipDomains = append(vipDomains, lbInfo.PrivateIPv6Addresses...)
+		}
+	case string(typeslb.OpenLoadBalancerType):
+		if lbInfo.IPVersion == enumor.Ipv4 {
+			vipDomains = append(vipDomains, lbInfo.PublicIPv4Addresses...)
+		} else {
+			vipDomains = append(vipDomains, lbInfo.PublicIPv6Addresses...)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported lb_type: %s(%s)", lbInfo.LoadBalancerType, lbInfo.CloudID)
+	}
+
+	// 如果IP为空则获取负载均衡域名
+	if len(vipDomains) == 0 && len(lbInfo.Domain) > 0 {
+		vipDomains = append(vipDomains, lbInfo.Domain)
+	}
+
+	return vipDomains, nil
 }
