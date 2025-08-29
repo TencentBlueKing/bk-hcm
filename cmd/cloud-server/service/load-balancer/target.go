@@ -30,12 +30,11 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/runtime/filter"
-
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/cidr"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
@@ -50,7 +49,7 @@ func (svc *lbSvc) ListBizTargetByCond(cts *rest.Contexts) (any, error) {
 func (svc *lbSvc) listTargetByCond(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
 	req := new(cslb.ListTargetByCondReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	if err := req.Validate(); err != nil {
@@ -80,7 +79,7 @@ func (svc *lbSvc) listTargetByCond(cts *rest.Contexts, authHandler handler.ListA
 
 	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
-		return nil, err
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	resList := &cslb.ListTargetByCondResp{Details: make([]*cslb.ListTargetByCondResult, 0)}
