@@ -184,6 +184,7 @@ esb:
     password:
 
 bkHcmUrl: "http://hcm.bk.com"
+bkApigwHCMUrl: "http://hcm.bk.com"
 
 # cloudResource cloud resource relation settings.
 cloudResource:

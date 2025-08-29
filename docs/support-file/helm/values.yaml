@@ -629,6 +629,8 @@ bkLoginCookieName: ""
 bkItsmUrl: http://itsm.bk.com
 # HCM 地址
 bkHCMUrl: http://hcm.bk.com
+# HCM 网关地址
+bkApigwHCMUrl: http://hcm.bk.com
 # 中英文持久化设置cookie使用，一般设置为 .域名
 bkDomain: .bk.com
 # 蓝鲸配置平台创建业务页面跳转链接

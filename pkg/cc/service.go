@@ -131,6 +131,7 @@ type CloudServerSetting struct {
 	Crypto           Crypto           `yaml:"crypto"`
 	Esb              Esb              `yaml:"esb"`
 	BkHcmUrl         string           `yaml:"bkHcmUrl"`
+	BkApigwHCMURL    string           `yaml:"bkApigwHCMUrl"`
 	CloudResource    CloudResource    `yaml:"cloudResource"`
 	Recycle          Recycle          `yaml:"recycle"`
 	BillConfig       BillConfig       `yaml:"billConfig"`
@@ -187,6 +188,10 @@ func (s CloudServerSetting) Validate() error {
 
 	if s.BkHcmUrl == "" {
 		return fmt.Errorf("bkHcmUrl should not be empty")
+	}
+
+	if s.BkApigwHCMURL == "" {
+		return fmt.Errorf("bkApigwHCMUrl should not be empty")
 	}
 
 	if err := s.CloudResource.validate(); err != nil {
