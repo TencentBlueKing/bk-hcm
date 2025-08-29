@@ -112,6 +112,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
         "protocol": "https",
         "port": 80,
         "end_port": 0,
+        "scheduler": "WRR", 
         "default_domain": "www.qq.com",
         "region": "ap-xxx",
         "zones": [
@@ -166,33 +167,34 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
 
 #### data.details[n]
 
-| 参数名称                         | 参数类型         | 描述                                   |
-|------------------------------|--------------|--------------------------------------|
-| id                           | string       | 资源ID                                 |
-| cloud_id                     | string       | 云资源ID                                |
-| name                         | string       | 名称                                   |
-| vendor                       | string       | 供应商                                  |
-| account_id                   | string       | 账号ID                                 |
-| bk_biz_id                    | int          | 业务ID                                 |
-| lb_id                        | string       | 负载均衡ID                               |
-| cloud_lb_id                  | string       | 云负载均衡ID                              |
-| protocol                     | string       | 协议                                   |
-| port                         | int          | 端口                                   |
-| end_port                     | int          | 如果该字段不为0，代表监听器端口为端口段，该值为端口段末尾值       |
-| default_domain               | string       | 默认域名                                 |
-| region                       | string       | 地域                                   |
-| zones                        | string array | 可用区数组                                |
-| sni_switch                   | int          | 是否开启SNI特性(0:关闭 1:开启)，当协议为HTTPS时必传    |
-| memo                         | string       | 备注                                   |
-| lb_vips                      | string array | 负载均衡VIP                              |
-| lb_domain                    | string       | 负载均衡域名                               |
-| lb_region                    | string       | 负载均衡地域                               |
-| lb_network_type              | string       | 负载均衡网络类型列表，"OPEN"(公网)，"INTERNAL"(内网) |
-| rule_domain_count            | int          | 规则域名数量                               |
-| url_count                    | int          | 规则url数量                              |
-| target_count                 | int          | rs数量                                 |
-| non_zero_weight_target_count | int          | 权重不为0的rs数量                           |
-| creator                      | string       | 创建者                                  |
-| reviser                      | string       | 修改者                                  |
-| created_at                   | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at                   | string       | 修改时间，标准格式：2006-01-02T15:04:05Z       |
+| 参数名称                         | 参数类型         | 描述                                               |
+|------------------------------|--------------|--------------------------------------------------|
+| id                           | string       | 资源ID                                             |
+| cloud_id                     | string       | 云资源ID                                            |
+| name                         | string       | 名称                                               |
+| vendor                       | string       | 供应商                                              |
+| account_id                   | string       | 账号ID                                             |
+| bk_biz_id                    | int          | 业务ID                                             |
+| lb_id                        | string       | 负载均衡ID                                           |
+| cloud_lb_id                  | string       | 云负载均衡ID                                          |
+| protocol                     | string       | 协议                                               |
+| port                         | int          | 端口                                               |
+| end_port                     | int          | 如果该字段不为0，代表监听器端口为端口段，该值为端口段末尾值                   |
+| scheduler                    | string       | 均衡方式(WRR:按权重轮询 LEAST_CONN:最小连接数、IP_HASH:IP Hash) |
+| default_domain               | string       | 默认域名                                             |
+| region                       | string       | 地域                                               |
+| zones                        | string array | 可用区数组                                            |
+| sni_switch                   | int          | 是否开启SNI特性(0:关闭 1:开启)，当协议为HTTPS时必传                |
+| memo                         | string       | 备注                                               |
+| lb_vips                      | string array | 负载均衡VIP                                          |
+| lb_domain                    | string       | 负载均衡域名                                           |
+| lb_region                    | string       | 负载均衡地域                                           |
+| lb_network_type              | string       | 负载均衡网络类型列表，"OPEN"(公网)，"INTERNAL"(内网)             |
+| rule_domain_count            | int          | 规则域名数量                                           |
+| url_count                    | int          | 规则url数量                                          |
+| target_count                 | int          | rs数量                                             |
+| non_zero_weight_target_count | int          | 权重不为0的rs数量                                       |
+| creator                      | string       | 创建者                                              |
+| reviser                      | string       | 修改者                                              |
+| created_at                   | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                   |
+| updated_at                   | string       | 修改时间，标准格式：2006-01-02T15:04:05Z                   |
