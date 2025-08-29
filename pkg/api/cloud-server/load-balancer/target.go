@@ -22,12 +22,11 @@ package cslb
 import (
 	"fmt"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
-const (
-	modifyTargetWeightLimit = 5000
-)
+const ()
 
 // BatchModifyTargetWeightReq ...
 type BatchModifyTargetWeightReq struct {
@@ -38,8 +37,8 @@ type BatchModifyTargetWeightReq struct {
 
 // Validate ...
 func (b *BatchModifyTargetWeightReq) Validate() error {
-	if len(b.TargetIDs) > modifyTargetWeightLimit {
-		return fmt.Errorf("target_ids length count should <= %d", modifyTargetWeightLimit)
+	if len(b.TargetIDs) > constant.BatchOperateModifyTargetWeightLimit {
+		return fmt.Errorf("target_ids length count should <= %d", constant.BatchOperateModifyTargetWeightLimit)
 	}
 	return validator.Validate.Struct(b)
 }

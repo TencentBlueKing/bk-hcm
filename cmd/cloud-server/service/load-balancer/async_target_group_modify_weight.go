@@ -137,11 +137,11 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 	lbToRelsMap := classifier.ClassifyMap(relsMap, loadbalancer.BaseTargetListenerRuleRel.GetLbID)
 
 	flowIDs := make([]string, 0, len(lbToRelsMap))
-	for lbID, targetGroups := range lbToRelsMap {
+	for lbID, rels := range lbToRelsMap {
 		// 一个clb一个flow
 		tgMap := make(map[string][]loadbalancer.BaseTarget)
-		for _, tg := range targetGroups {
-			tgMap[tg.TargetGroupID] = append(tgMap[tg.TargetGroupID], tgToTargetsMap[tg.TargetGroupID]...)
+		for _, rel := range rels {
+			tgMap[rel.TargetGroupID] = append(tgMap[rel.TargetGroupID], tgToTargetsMap[rel.TargetGroupID]...)
 		}
 		flowID, err := svc.buildModifyTargetWeightFlow(kt, lbID, req.AccountID, taskManagementID, accountInfo.Vendor,
 			bkBizID, req.NewWeight, tgMap, tgRelatedInfo)
@@ -200,8 +200,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 			param: param,
 		})
 	}
-	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
-		enumor.TaskTargetGroupModifyWeight, details)
+	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID, enumor.TaskTargetGroupModifyWeight, details)
 	if err != nil {
 		return err
 	}
@@ -394,8 +393,7 @@ func (svc *lbSvc) createTargetGroupModifyWeightTaskDetails(kt *kit.Kit, taskMana
 			},
 		})
 	}
-	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
-		enumor.TaskTargetGroupModifyWeight, details)
+	details, err := svc.createTaskDetails(kt, taskManagementID, bkBizID, enumor.TaskTargetGroupModifyWeight, details)
 	if err != nil {
 		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
 			taskManagementID, bkBizID, kt.Rid)

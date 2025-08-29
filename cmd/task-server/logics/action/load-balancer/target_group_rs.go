@@ -130,17 +130,21 @@ func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (in
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
 		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
-		return reason, err
+		return nil, err
 	}
+	if len(reason) > 0 {
+		return reason, nil
+	}
+
 	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
 
 	var result *hclb.BatchCreateResult
-	var err error
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
@@ -210,16 +214,19 @@ func (act RemoveTargetAction) Run(kt run.ExecuteKit, params interface{}) (interf
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
 		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
-		return reason, err
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
 	}
 	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
 	var result *hclb.BatchCreateResult
-	var err error
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
@@ -276,9 +283,13 @@ func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (in
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
-	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
 		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
-		return reason, err
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
 	}
 	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
@@ -286,7 +297,6 @@ func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (in
 	}
 
 	var result *hclb.BatchCreateResult
-	var err error
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
@@ -344,9 +354,13 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
 		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
-		return reason, err
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
 	}
 	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
@@ -354,7 +368,6 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 
 	var result *hclb.BatchCreateResult
-	var err error
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
