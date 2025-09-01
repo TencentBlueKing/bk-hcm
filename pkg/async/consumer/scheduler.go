@@ -459,6 +459,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) ([]*Task, er
 	// 存储任务流执行树
 	sch.taskTrees.Store(flow.ID, taskTree)
 
+	flow.State = enumor.FlowRunning
 	// 使用set减少内存开销
 	executableSet := make(map[string]struct{}, len(executableTaskNodes))
 	for _, taskID := range executableTaskNodes {
