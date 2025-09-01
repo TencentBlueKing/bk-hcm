@@ -639,6 +639,7 @@ func (sch *scheduler) getTopKFlows(allFlows []model.Flow, eachFlowTypeNum int, k
 				selected[flow.ID] = true
 			}
 		}
+		return flows, nil
 	}
 	result, err := sch.rankTopKFlows(flows, k)
 	if err != nil {
