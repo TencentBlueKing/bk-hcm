@@ -163,9 +163,12 @@ func (exec *executor) fastTaskWorker() {
 
 // sharedTaskWorker 优先从慢任务队列取任务，没有才从快任务队列取
 func (exec *executor) sharedTaskWorker() {
+	defer exec.workerWg.Done()
 	for {
 		// 第一步：通过非阻塞方式优先检查慢任务队列
 		select {
+		case <-exec.closeCh:
+			return
 		case task := <-exec.slowTaskQueue:
 			if err := exec.workerDo(task); err != nil {
 				// Task执行失败告警通知
@@ -178,6 +181,8 @@ func (exec *executor) sharedTaskWorker() {
 
 		// 第二步：慢任务为空，阻塞监听快慢两种任务的到来
 		select {
+		case <-exec.closeCh:
+			return
 		case task := <-exec.slowTaskQueue:
 			if err := exec.workerDo(task); err != nil {
 				// Task执行失败告警通知

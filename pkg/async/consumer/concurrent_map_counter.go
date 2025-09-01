@@ -20,44 +20,41 @@
 // Package consumer ...
 package consumer
 
-import (
-	"sync"
-	"sync/atomic"
-)
+import "sync"
 
-// ConcurrentMapCounter 并发安全的 map[string]int 计数器
+// ConcurrentMapCounter 并发安全的 map[string]int64 计数器
 type ConcurrentMapCounter struct {
-	m sync.Map // key -> *uint64
+	mu sync.Mutex
+	m  map[string]int64
 }
 
-// Inc 对 key 加 delta（可为负）
-func (c *ConcurrentMapCounter) Inc(key string, delta int64) uint64 {
-	// 第一次取不到就建指针
-	ptrI, _ := c.m.LoadOrStore(key, new(uint64))
-	ptr := ptrI.(*uint64)
-
-	// 原子加
-	newVal := atomic.AddUint64(ptr, uint64(delta))
-	return newVal
+// NewConcurrentMapCounter 预先创建好内部 map
+func NewConcurrentMapCounter() *ConcurrentMapCounter {
+	return &ConcurrentMapCounter{m: make(map[string]int64)}
 }
 
-// Get 返回 key 当前的计数值以及该 key 是否存在。若 key 不存在则返回 0
-func (c *ConcurrentMapCounter) Get(key string) uint64 {
-	ptrI, ok := c.m.Load(key)
-	if !ok {
-		return 0
-	}
-	return atomic.LoadUint64(ptrI.(*uint64))
+// Inc 对 key 加 delta（可为负）。若 key 不存在则视为 0。
+func (c *ConcurrentMapCounter) Inc(key string, delta int64) int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.m[key] += delta
+	return c.m[key]
 }
 
-// Snapshot 返回此刻 map 的完整快照 map[string]uint64。返回的 map 与内部数据已无任何共享，调用方可以随意读写。
-func (c *ConcurrentMapCounter) Snapshot() map[string]uint64 {
-	out := make(map[string]uint64)
-	c.m.Range(func(key, value any) bool {
-		k := key.(string)
-		v := atomic.LoadUint64(value.(*uint64))
+// Get 返回 key 当前值；若 key 不存在则返回 0。
+func (c *ConcurrentMapCounter) Get(key string) int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.m[key]
+}
+
+// Snapshot 返回此刻的完整副本。
+func (c *ConcurrentMapCounter) Snapshot() map[string]int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make(map[string]int64, len(c.m))
+	for k, v := range c.m {
 		out[k] = v
-		return true
-	})
+	}
 	return out
 }

@@ -112,7 +112,7 @@ func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *Sche
 		scheduledFlowFetcherConcurrency: opt.ScheduledFlowFetcherConcurrency,
 		canceledFlowFetcherConcurrency:  opt.CanceledFlowFetcherConcurrency,
 		flowTypeExecTimeMap:             &adaptormock.Store[enumor.FlowName, float64]{},
-		flowTypeRunningNumMap:           &ConcurrentMapCounter{}, // 新增初始化
+		flowTypeRunningNumMap:           NewConcurrentMapCounter(),
 		flowTypePriorityMap:             sync.Map{},
 		flowTypeMinPriority:             FlowTypeMinPriority,
 		flowtypeActualTime:              sync.Map{},
