@@ -240,7 +240,6 @@ func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 	// 根据task所属tasktype平均执行时间将任务推送到对应的队列，第一次执行的tasktype先放慢任务队列
 	if task.ExecTime >= exec.fastTaskThresholdSec {
 		exec.slowTaskQueue <- task
-		logs.Infof("task %s put in chan", task.ID)
 		return
 	}
 	exec.fastTaskQueue <- task

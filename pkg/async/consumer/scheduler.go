@@ -235,8 +235,8 @@ func (sch *scheduler) queryCurrNodeAllFlow(kt *kit.Kit, state enumor.FlowState) 
 		result, err := sch.backend.ListFlow(kt, &backend.ListInput{
 			Page: page,
 			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("state", state)),
-			//tools.RuleEqual("worker", sch.leader.CurrNode())),
+				tools.RuleEqual("state", state),
+				tools.RuleEqual("worker", sch.leader.CurrNode())),
 		})
 		if err != nil {
 			logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
@@ -310,6 +310,8 @@ func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) (working bool, err error) 
 
 		// 清空任务树，阻止继续调度
 		sch.DeleteFlowTaskTree(flow.ID)
+		sch.flowTypeRunningNumMap.Inc(string(flow.Name), -1)
+		sch.flowEntryTimeMap.Delete(flow.ID)
 		err = updateFlowToCancel(kt, sch.backend, flow.ID, cvt.PtrToVal(flow.Worker), enumor.FlowCancel)
 		if err != nil {
 			logs.Errorf("fail to update flow clear worker id, err: %v, flow id: %s rid: %s",
