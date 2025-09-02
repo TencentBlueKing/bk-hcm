@@ -21,13 +21,13 @@ package consumer
 
 import (
 	"fmt"
-	"hcm/pkg/tools/converter"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
+	"hcm/pkg/tools/converter"
 )
 
 // NewKit new async kit.
