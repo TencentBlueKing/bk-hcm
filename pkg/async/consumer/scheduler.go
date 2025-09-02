@@ -460,7 +460,6 @@ func (sch *scheduler) parseFlow(kt *kit.Kit, flow *Flow) ([]*Task, error) {
 	// 存储任务流执行树
 	sch.taskTrees.Store(flow.ID, taskTree)
 	flow.State = enumor.FlowRunning
-
 	executableSet := make(map[string]struct{}, len(executableTaskNodes))
 	for _, taskID := range executableTaskNodes {
 		executableSet[taskID] = struct{}{}
