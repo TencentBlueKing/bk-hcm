@@ -63,44 +63,56 @@ func (w *TimeWindow) Push(execTime float64) {
 }
 
 // GetAvg 计算时间窗口内的平均执行时间
+// 返回值：
+//   - avgExecTime: 平均执行时间（秒）
+//   - neverExec: 是否从未执行过任务
 func (w *TimeWindow) GetAvg() (avgExecTime float64, neverExec bool) {
 	w.Lock()
 	defer w.Unlock()
-	// 该任务类型在整个服务生命周期内从未被执行。一旦执行过后队列中将始终保留至少一条执行时间的记录
+
+	// 检查队列是否为空：该任务类型在整个服务生命周期内从未被执行
+	// 一旦执行过后队列中将始终保留至少一条执行时间的记录
 	if w.size == 0 {
 		return 0, true
 	}
 
-	// 计算时间窗口内执行时间
-	var insum float64
-	// 计算时间窗口外执行时间
-	var outsum float64
-	var inCount uint
-	var outCount uint
+	var inSum float64  // 时间窗口内的执行时间总和
+	var outSum float64 // 时间窗口外的执行时间总和
+	var inCount uint   // 时间窗口内的任务数量
+	var outCount uint  // 时间窗口外的任务数量
 	now := time.Now()
 
-	// 先遍历统计数据，因为是先进先出的队列，所以只有三种情况：
-	// 1、队头<-时间窗口外的数据，时间窗口内的数据<-队尾
-	// 2、队头<-时间窗口外的数据<-队尾
-	// 3、队头<-时间窗口内的数据<-队尾
+	// 遍历环形队列中的所有任务记录，按时间分类统计
+	// 由于是FIFO队列，数据分布只有三种情况：
+	// 1. 队头 <- [过期数据] <- [有效数据] <- 队尾
+	// 2. 队头 <- [过期数据] <- 队尾
+	// 3. 队头 <- [有效数据] <- 队尾
 	for i := uint(0); i < w.size; i++ {
 		idx := (w.head + i) % w.capacity
 		task := w.queue[idx]
+
+		// 判断任务记录是否在时间窗口内
 		if now.Sub(task.entryTime) <= w.duration {
-			insum += task.execTime
+			// 时间窗口内的数据
+			inSum += task.execTime
 			inCount++
 		} else {
-			outsum += task.execTime
+			// 时间窗口外的过期数据
+			outSum += task.execTime
 			outCount++
 		}
 	}
 
-	// 如果存在时间窗口内的数据，则返回前清理时间窗口外的数据
+	// 优先返回时间窗口内的平均值，并清理过期数据
 	if inCount > 0 {
+		// 移动队头指针，跳过已过期的数据
 		w.head = (w.head + outCount) % w.capacity
+		// 更新队列大小，只保留有效数据
 		w.size = inCount
-		return insum / float64(inCount), false
+		return inSum / float64(inCount), false
 	}
-	// 否则直接返回时间窗口外的数据并且保留
-	return outsum / float64(outCount), false
+
+	// 如果时间窗口内没有数据，返回过期数据的平均值作为参考
+	// 注意：这里保留过期数据不清理，作为历史参考
+	return outSum / float64(outCount), false
 }

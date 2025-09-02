@@ -65,14 +65,12 @@ func NewTaskInitQueue(capacity uint, mc *metric) *TaskInitQueue {
 	return q
 }
 
-// Push 添加元素到优先队列，队列满时阻塞入队协程，如果队列已关闭，会panic（类似channel的行为）
+// Push 添加元素到优先队列，队列满时阻塞入队协程
 func (s *TaskInitQueue) Push(payload *InitPayload) error {
 	s.Lock()
 	defer s.Unlock()
-
-	// 如果队列已关闭，panic（类似channel的行为）
 	if s.closed {
-		panic("send on closed task init queue")
+		return fmt.Errorf("send on closed task init queue")
 	}
 
 	if payload == nil || payload.flow == nil || payload.task == nil {
@@ -87,7 +85,7 @@ func (s *TaskInitQueue) Push(payload *InitPayload) error {
 
 	// 再次检查，防止在等待期间队列被关闭
 	if s.closed {
-		panic("send on closed task init queue")
+		return fmt.Errorf("send on closed task init queue")
 	}
 
 	// 入队
@@ -98,7 +96,7 @@ func (s *TaskInitQueue) Push(payload *InitPayload) error {
 	s.tail = (s.tail + 1) % s.capacity
 	s.size++
 	s.notEmpty.Signal()
-	s.mc.taskInitQueueSize.WithLabelValues("initqueue").Set(float64(s.size))
+	s.mc.taskInitQueueSize.WithLabelValues("init_queue").Set(float64(s.size))
 	return nil
 }
 
@@ -122,7 +120,7 @@ func (s *TaskInitQueue) Pop() (*InitPayload, bool) {
 	s.head = (s.head + 1) % s.capacity
 	s.size--
 	s.notFull.Signal()
-	s.mc.taskInitQueueSize.WithLabelValues("initqueue").Set(float64(s.size))
+	s.mc.taskInitQueueSize.WithLabelValues("init_queue").Set(float64(s.size))
 	return payload.InitPayload, true
 }
 

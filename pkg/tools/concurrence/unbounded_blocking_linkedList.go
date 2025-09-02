@@ -17,42 +17,47 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package consumer
+package concurrence
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+
+	"hcm/pkg/tools/linkedList"
+)
 
 // UnboundedBlockingLinkedList 无界阻塞pop链表
 type UnboundedBlockingLinkedList[T any] struct {
 	sync.Mutex
 	notEmpty *sync.Cond
-	list     *LinkedList[T]
+	list     *linkedList.LinkedList[T]
 	closed   bool
 }
 
 // NewUnboundedBlockingLinkedList 创建一个无界阻塞pop链表
 func NewUnboundedBlockingLinkedList[T any]() *UnboundedBlockingLinkedList[T] {
 	s := &UnboundedBlockingLinkedList[T]{
-		list:   &LinkedList[T]{},
+		list:   &linkedList.LinkedList[T]{},
 		closed: false,
 	}
 	s.notEmpty = sync.NewCond(s)
 	return s
 }
 
-// Push 永不阻塞
-func (s *UnboundedBlockingLinkedList[T]) Push(data T) {
+// Push 入队，永不阻塞
+func (s *UnboundedBlockingLinkedList[T]) Push(data T) error {
 	s.Lock()
 	defer s.Unlock()
-	// 如果队列已关闭，panic（类似channel的行为）
 	if s.closed {
-		panic("send on closed task init queue")
+		return fmt.Errorf("send on closed task init queue")
 	}
 
 	s.list.PushBack(data)
 	s.notEmpty.Signal() // 唤醒一个阻塞在 Pop 的 goroutine
+	return nil
 }
 
-// Pop 队列为空时阻塞当前 goroutine
+// Pop 弹出队列头部元素，如果队列为空则阻塞
 func (s *UnboundedBlockingLinkedList[T]) Pop() (T, bool) {
 	s.Lock()
 	defer s.Unlock()
@@ -74,7 +79,7 @@ func (s *UnboundedBlockingLinkedList[T]) IsEmpty() bool {
 	return s.list.IsEmpty()
 }
 
-// Len
+// Len ...
 func (s *UnboundedBlockingLinkedList[T]) Len() int {
 	s.Lock()
 	defer s.Unlock()

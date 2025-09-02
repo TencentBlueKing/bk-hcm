@@ -200,7 +200,7 @@ func (csm *consumer) CancelFlow(kt *kit.Kit, flowId string) error {
 	return nil
 }
 
-// SetFlowTypePriorityMap
+// SetFlowTypePriority 设置内存中指定flow类型的优先级
 func (csm *consumer) SetFlowTypePriority(flowType enumor.FlowName, priority int) {
 	csm.scheduler.SetFlowTypePriority(flowType, priority)
 }

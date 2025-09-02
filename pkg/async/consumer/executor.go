@@ -61,9 +61,6 @@ type Executor interface {
 
 	GetTaskTypeAvgExecTime(taskType enumor.ActionName) (float64, bool)
 	GetFastTaskThresholdSec() float64
-	GetInitQueueCapacity() uint
-	GetFastTaskQueueCapacity() uint
-	GetSlowTaskQueueCapacity() uint
 }
 
 var _ Executor = new(executor)
@@ -87,7 +84,7 @@ type executor struct {
 	ttTwMapMu             sync.RWMutex                      // 用于保护 taskTypeTimeWindowMap 的并发创建
 	timeWindowDurationMin uint                              // 表示回溯多久的历史数据，单位分钟
 	timeWindowCapacity    uint                              // TimeWindow 的容量，表示每一类tasktype最多存放的时间数据数量
-	fastTaskThresholdSec  float64                           // 快任务的阈值，执行时间小于这个值的任务为快任务，单位秒
+	fastTaskThresholdSec  float64                           // 快任务的阈值，执行时间小于这个值的任务为快任务，反之为慢，单位秒
 	fastTaskQueueCapacity uint                              // 快任务的队列容量
 	slowTaskQueueCapacity uint                              // 慢任务的队列容量
 	closeCh               chan struct{}
@@ -161,39 +158,49 @@ func (exec *executor) fastTaskWorker() {
 	exec.workerWg.Done()
 }
 
-// sharedTaskWorker 优先从慢任务队列取任务，没有才从快任务队列取
+// sharedTaskWorker 共享任务工作器，实现优先级调度策略
+// 设计思路：
+// 1. 优先处理慢任务队列中的任务，确保耗时较长的任务能够及时得到处理
+// 2. 当慢任务队列为空时，才处理快任务队列中的任务
+// 3. 采用两阶段select策略，避免快任务饥饿慢任务的情况
+//
+// 调度策略：
+// - 第一阶段：非阻塞检查慢任务队列，如果有任务立即处理
+// - 第二阶段：如果慢任务队列为空，则阻塞等待任意队列的任务到达
 func (exec *executor) sharedTaskWorker() {
 	defer exec.workerWg.Done()
 	for {
-		// 第一步：通过非阻塞方式优先检查慢任务队列
+		// 第一阶段：非阻塞优先检查慢任务队列
+		// 使用非阻塞select确保慢任务优先级，避免快任务抢占慢任务的执行机会
 		select {
 		case <-exec.closeCh:
 			return
 		case task := <-exec.slowTaskQueue:
+			// 慢任务队列有任务，立即处理
 			if err := exec.workerDo(task); err != nil {
-				// Task执行失败告警通知
-				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
-					constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
 			}
+			// 处理完成后继续下一轮循环，再次优先检查慢任务队列
 			continue
 		default:
+			// 慢任务队列为空，进入第二阶段
 		}
 
-		// 第二步：慢任务为空，阻塞监听快慢两种任务的到来
+		// 第二阶段：阻塞等待任意队列的任务到达
+		// 当慢任务队列为空时，公平地监听两个队列，哪个队列先来任务就先处理，处理完重新回到第一阶段
 		select {
 		case <-exec.closeCh:
 			return
 		case task := <-exec.slowTaskQueue:
 			if err := exec.workerDo(task); err != nil {
-				// Task执行失败告警通知
-				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
-					constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
 			}
 		case task := <-exec.fastTaskQueue:
 			if err := exec.workerDo(task); err != nil {
-				// Task执行失败告警通知
-				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
-					constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
 			}
 		}
 	}
@@ -264,8 +271,8 @@ func (exec *executor) workerDo(task *Task) (err error) {
 	if err := task.ValidateBeforeExec(act); err != nil {
 		return err
 	}
-	logs.Infof("start execute task %s, action: %s, flow: %s, rid: %s, actionID:%s",
-		task.ID, task.ActionName, task.FlowID, task.Kit.Rid, task.ActionID)
+	logs.Infof("start execute task %s, actionID:%s, action: %s, flow: %s, rid: %s",
+		task.ID, task.ActionID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
 		if fatalErr := recover(); fatalErr != nil {
 			logs.Errorf("[hcm server panic], taskID: %s, flowID: %s, err: %v, rid: %s, debug strace: %s",
@@ -530,22 +537,12 @@ func (exec *executor) UpdateTask(task *Task, state enumor.TaskState, reason stri
 	return nil
 }
 
+// GetTaskTypeAvgExecTime get task type avg exec time by corresponding timewindow
 func (exec *executor) GetTaskTypeAvgExecTime(taskType enumor.ActionName) (avgExecTime float64, neverExec bool) {
 	return exec.getOrCreateTimeWindow(taskType).GetAvg()
 }
 
+// GetFastTaskThresholdSec get fast task threshold.
 func (exec *executor) GetFastTaskThresholdSec() float64 {
 	return exec.fastTaskThresholdSec
-}
-
-func (exec *executor) GetInitQueueCapacity() uint {
-	return exec.initQueue.Capacity()
-}
-
-func (exec *executor) GetFastTaskQueueCapacity() uint {
-	return exec.fastTaskQueueCapacity
-}
-
-func (exec *executor) GetSlowTaskQueueCapacity() uint {
-	return exec.slowTaskQueueCapacity
 }

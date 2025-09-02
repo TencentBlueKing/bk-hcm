@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package consumer ...
-package consumer
+// Package concurrence ...
+package concurrence
 
 import "sync"
 
@@ -41,11 +41,22 @@ func (c *ConcurrentMapCounter) Inc(key string, delta int64) int64 {
 	return c.m[key]
 }
 
-// Get 返回 key 当前值；若 key 不存在则返回 0。
-func (c *ConcurrentMapCounter) Get(key string) int64 {
+// GetValue 返回 key 当前值；若 key 不存在则返回 0。
+func (c *ConcurrentMapCounter) GetValue(key string) int64 {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.m[key]
+}
+
+// GetValueAndSum 返回 key 当前值以及所有值之和；若 key 不存在则返回 0 和 0。
+func (c *ConcurrentMapCounter) GetValueAndSum(key string) (int64, int64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	sum := int64(0)
+	for _, val := range c.m {
+		sum += val
+	}
+	return c.m[key], sum
 }
 
 // Snapshot 返回此刻的完整副本。

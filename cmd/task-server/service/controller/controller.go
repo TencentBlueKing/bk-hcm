@@ -23,7 +23,6 @@ package controller
 
 import (
 	"fmt"
-	"hcm/pkg/tools/converter"
 	"net/http"
 
 	"hcm/cmd/task-server/service/capability"
@@ -38,6 +37,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 )
 
@@ -168,14 +168,14 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 		})
 	}
 
-	return p.cs.DataService().Global.GlobalConfig.BatchUpdate(cts.Kit, &datagconf.BatchUpdateReq{
+	return nil, p.cs.DataService().Global.GlobalConfig.BatchUpdate(cts.Kit, &datagconf.BatchUpdateReq{
 		Configs: []gccore.GlobalConfigT[any]{
 			{
 				ID:          result.Details[0].ID,
 				ConfigValue: converter.PtrToVal(opt.Priority),
 			},
 		},
-	}), nil
+	})
 }
 
 // ResetFlowTypePriority 恢复flowtype为默认优先级

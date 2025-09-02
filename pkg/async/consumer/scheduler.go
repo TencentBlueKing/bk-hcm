@@ -40,6 +40,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
@@ -62,7 +63,7 @@ type Scheduler interface {
 	Start()
 
 	// EntryTask 分析执行完的任务，并解析出当前任务的子任务去执行。
-	EntryTask(task *Task)
+	EntryTask(task *Task) error
 	// DeleteFlowTaskTree 清空任务树，阻止继续调度
 	DeleteFlowTaskTree(flowID string)
 	// SetFlowTypePriority 设置flowtype优先级
@@ -74,7 +75,7 @@ type scheduler struct {
 	workerNumber uint
 
 	taskTrees   sync.Map
-	workerQueue *UnboundedBlockingLinkedList[*Task]
+	workerQueue *concurrence.UnboundedBlockingLinkedList[*Task]
 	workerWg    sync.WaitGroup
 
 	backend  backend.Backend
@@ -88,7 +89,7 @@ type scheduler struct {
 	canceledFlowFetcherConcurrency  uint
 	// flowtype理论执行时间（关键路径），单位秒
 	flowTypeExecTimeMap   *adaptormock.Store[enumor.FlowName, float64]
-	flowTypeRunningNumMap *ConcurrentMapCounter
+	flowTypeRunningNumMap *concurrence.ConcurrentMapCounter
 	flowTypePriorityMap   sync.Map
 	flowTypeMinPriority   int
 	// flowtype实际执行时间，单位秒
@@ -103,7 +104,7 @@ func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *Sche
 	sch := &scheduler{
 		closeCh:                         make(chan struct{}),
 		workerWg:                        sync.WaitGroup{},
-		workerQueue:                     NewUnboundedBlockingLinkedList[*Task](),
+		workerQueue:                     concurrence.NewUnboundedBlockingLinkedList[*Task](),
 		workerNumber:                    opt.WorkerNumber,
 		sp:                              SleepPolicy{baseInterval: time.Duration(opt.WatchIntervalSec) * time.Second},
 		backend:                         bd,
@@ -112,7 +113,7 @@ func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *Sche
 		scheduledFlowFetcherConcurrency: opt.ScheduledFlowFetcherConcurrency,
 		canceledFlowFetcherConcurrency:  opt.CanceledFlowFetcherConcurrency,
 		flowTypeExecTimeMap:             &adaptormock.Store[enumor.FlowName, float64]{},
-		flowTypeRunningNumMap:           NewConcurrentMapCounter(),
+		flowTypeRunningNumMap:           concurrence.NewConcurrentMapCounter(),
 		flowTypePriorityMap:             sync.Map{},
 		flowTypeMinPriority:             FlowTypeMinPriority,
 		flowtypeActualTime:              sync.Map{},
@@ -397,8 +398,8 @@ func listTaskByIDs(kt *kit.Kit, bd backend.Backend, ids []string) ([]*Task, erro
 	return tasks, nil
 }
 
-// parseAndPushFlow 解析Flow并推送Flow下一批待执行的节点到执行器。
-func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) ([]*Task, error) {
+// parseAndPushFlow 解析Flow并返回Flow第一批可执行的节点。
+func (sch *scheduler) parseFlow(kt *kit.Kit, flow *Flow) ([]*Task, error) {
 	// 根据任务流ID获取对应的任务集合
 	tasks, err := listTaskByFlowID(kt, sch.backend, flow.ID)
 	if err != nil {
@@ -458,20 +459,21 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) ([]*Task, er
 
 	// 存储任务流执行树
 	sch.taskTrees.Store(flow.ID, taskTree)
-
 	flow.State = enumor.FlowRunning
-	// 使用set减少内存开销
+
 	executableSet := make(map[string]struct{}, len(executableTaskNodes))
 	for _, taskID := range executableTaskNodes {
 		executableSet[taskID] = struct{}{}
 	}
 
+	// 选出可执行的节点的task结构体并填充预估的执行时间
 	execTasks := make([]*Task, 0, len(executableTaskNodes))
 	for _, task := range tasks {
 		task.Flow = flow
 		if _, exists := executableSet[task.ID]; exists {
 			avgExecTime, neverExec := sch.executor.GetTaskTypeAvgExecTime(task.ActionName)
 			task.ExecTime = avgExecTime
+			// 如果该任务类型从未执行过，则当做慢任务处理，避免如果真的是慢任务会一直占着快任务worker
 			if neverExec {
 				task.ExecTime = sch.executor.GetFastTaskThresholdSec()
 			}
@@ -578,20 +580,16 @@ func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
 			return false, err
 		}
 
-		tasks, err := sch.parseFlowAndPushTask(flow.Kit, flow)
+		tasks, err := sch.parseFlow(flow.Kit, flow)
 		if err != nil {
 			logs.Errorf("parse flow and push task failed, err: %v, rid: %s", err, flow.Kit.Rid)
 			return false, err
 		}
 		allTasks = append(allTasks, tasks...)
 		sch.flowTypeRunningNumMap.Inc(string(flow.Name), 1)
+		// flowtype总数++
 		sch.flowEntryTimeMap.Store(flow.ID, time.Now())
 	}
-
-	// 根据任务的ExecTime属性进行排序，快任务在前面
-	sort.Slice(allTasks, func(i, j int) bool {
-		return allTasks[i].ExecTime < allTasks[j].ExecTime
-	})
 
 	for _, task := range allTasks {
 		sch.executor.Push(task.Flow, task)
@@ -680,12 +678,11 @@ func (sch *scheduler) rankTopKFlows(flows []model.Flow, k int) ([]model.Flow, er
 	return result, nil
 }
 
+// caculateFlowTypeScore 计算flow的分数，等待时间越长、执行时间越短、框架内同类flow执行数量越少、优先级越高，则分数越高
 func (sch *scheduler) caculateFlowTypeScore(flow model.Flow) float64 {
 	priority, _ := sch.flowTypePriorityMap.LoadOrStore(flow.Name, DefaultFlowTypePriority)
 	execTime, _ := sch.flowTypeExecTimeMap.Get(flow.Name)
-	runningNum := sch.flowTypeRunningNumMap.Get(string(flow.Name))
-	runningNumMax := sch.executor.GetFastTaskQueueCapacity() + sch.executor.GetFastTaskQueueCapacity() +
-		sch.executor.GetInitQueueCapacity()
+	runningNum, runningNumTotal := sch.flowTypeRunningNumMap.GetValueAndSum(string(flow.Name))
 	// UpdatedAt是flow变成scheduled态那一刻，
 	updatedTime, err := time.Parse(time.RFC3339, flow.UpdatedAt)
 	if err != nil {
@@ -696,7 +693,7 @@ func (sch *scheduler) caculateFlowTypeScore(flow model.Flow) float64 {
 
 	norPriority := 1 - float64(priority.(int))/float64(sch.flowTypeMinPriority)
 	norExecTime := 1 / (1 + execTime)
-	norRunningNum := 1 - float64(runningNum)/float64(runningNumMax)
+	norRunningNum := 1 - float64(runningNum)/float64(runningNumTotal)
 	norWaitTime := float64(waitTime) / (float64(waitTime) + 1)
 
 	score := 2*norPriority + norExecTime + norRunningNum + norWaitTime
@@ -824,8 +821,12 @@ func (sch *scheduler) getTaskTree(flowID string) (*TaskTree, bool) {
 }
 
 // EntryTask 任务写回到执行器用于获取下一批可执行的任务
-func (sch *scheduler) EntryTask(taskNode *Task) {
-	sch.workerQueue.Push(taskNode)
+func (sch *scheduler) EntryTask(taskNode *Task) error {
+	err := sch.workerQueue.Push(taskNode)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // 计算某个flowtype的关键路径执行时间。neverExec为true表示该flowtype在整个服务生命周期内从未被执行，无法计算其关键路径执行时间
