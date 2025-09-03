@@ -102,6 +102,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/targets/by_topo/list
       {
         "inst_id": "00000007",
         "inst_type": "CVM",
+        "inst_name": "inst-xxxx",
         "ip": "127.0.0.1",
         "target_count": 1,
         "zone": "ap-guangzhou-6",
@@ -185,6 +186,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/targets/by_topo/list
 |---------------|--------------|-----------------------------------------|
 | inst_id       | string       | 实例id                                    |
 | inst_type     | string       | 实例类型，"CVM"(云服务器)、"ENI"(弹性网卡)、"CCN"(云联网) |
+| inst_name     | string       | 实例名称                                    |
 | ip            | string       | ip                                      |
 | zone          | string       | 可用区                                     |
 | cloud_vpc_ids | string array | 云VpcID列表                                | 
