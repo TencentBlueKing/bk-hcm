@@ -407,8 +407,9 @@ type Layer7ListenerBindRSDetail struct {
 	// targetGroupID 在 validateTarget 阶段填充, 后续submit阶段会重复使用到,
 	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的targetGroup, 可以认为targetGroup not found
 	targetGroupID string
-	// cvm 在 validateRS 阶段填充, 在validateTarget和submit阶段会使用,
-	// RSType为ENI时, 该值会为空, 否则为空, 代表了rs not found
+	// cvm字段在validateRS阶段填充，在validateTarget和submit阶段使用。
+	// 当RSType为ENI时，该值为空
+	// 当RSType为CVM时，为空表示rs not found。
 	cvm *cvmInfo
 }
 
