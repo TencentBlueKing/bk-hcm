@@ -11,7 +11,7 @@ export const headRouteConfig = [
   {
     id: 'service',
     name: '服务请求',
-    path: '/service/my-apply',
+    path: '/service/ticket',
   },
   {
     id: 'resource',

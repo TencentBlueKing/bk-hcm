@@ -16,6 +16,7 @@ import { useRoute, useRouter } from 'vue-router';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import { PluginHandlerMailbox } from '@/plugin-handler/create-account-mail-suffix';
 import EmailInput from './create-section-email';
+import { MENU_TICKET_DETAIL } from '@/constants/menu-symbol';
 const { FormItem } = Form;
 export default defineComponent({
   setup() {
@@ -102,7 +103,7 @@ export default defineComponent({
           theme: 'success',
         });
         router.push({
-          path: '/service/ticket/detail',
+          name: MENU_TICKET_DETAIL,
           query: {
             ...route.query,
             id: data.id,

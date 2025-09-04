@@ -122,7 +122,7 @@ export default (cond: Cond) => {
   });
 
   const getSaveData = () => {
-    console.log(formData, '---formData');
+    // console.log(formData, '---formData');
     const { purchase_duration, auto_renew, ...saveFormData } = formData;
     const saveData: IDiskSaveData = {
       ...saveFormData,
@@ -185,7 +185,7 @@ export default (cond: Cond) => {
         });
       }
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     } finally {
       submitting.value = false;
     }

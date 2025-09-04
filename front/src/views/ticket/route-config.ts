@@ -1,5 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
+import Meta from '@/router/meta';
+import { MENU_TICKET_DETAIL, MENU_TICKET_MANAGE } from '@/constants/menu-symbol';
 
 const { t } = i18n.global;
 
@@ -8,38 +10,35 @@ export const ticketRoutes: RouteRecordRaw[] = [
   {
     path: '/service/my-apply',
     redirect: '/service/ticket',
-    // meta是必要的，如果不想在侧边栏显示，需要设置notMenu为true
-    meta: {
-      notMenu: true,
-    },
+    meta: { ...new Meta({ notMenu: true }) },
   },
   {
     path: '/service/my-apply/detail',
     redirect: '/service/ticket/detail',
-    // meta是必要的，如果不想在侧边栏显示，需要设置notMenu为true
-    meta: {
-      notMenu: true,
-    },
+    meta: { ...new Meta({ notMenu: true }) },
   },
   {
     path: 'ticket',
-    name: 'menu_ticket_manage',
+    name: MENU_TICKET_MANAGE,
     component: () => import('@/views/ticket/entry-srv.vue'),
     meta: {
-      activeKey: 'menu_ticket_manage',
-      title: t('单据管理'),
-      // breadcrumb: [t('服务'), t('我的申请')],
-      isShowBreadcrumb: true,
-      icon: 'hcm-icon bkhcm-icon-my-apply',
+      ...new Meta({
+        activeKey: MENU_TICKET_MANAGE,
+        title: t('单据管理'),
+        isShowBreadcrumb: true,
+        icon: 'hcm-icon bkhcm-icon-my-apply',
+      }),
     },
   },
   {
     path: 'ticket/detail',
-    name: 'menu_ticket_detail',
-    component: () => import('@/views/ticket/detail/apply-detail'),
+    name: MENU_TICKET_DETAIL,
+    component: () => import('@/views/ticket/children/apply-detail'),
     meta: {
-      activeKey: 'menu_ticket_manage',
-      notMenu: true,
+      ...new Meta({
+        activeKey: MENU_TICKET_MANAGE,
+        notMenu: true,
+      }),
     },
   },
 ];

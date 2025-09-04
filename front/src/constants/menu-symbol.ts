@@ -51,3 +51,9 @@ export const MENU_RESOURCE_DISK_APPLY = 'menu_resource_disk_apply';
 export const MENU_RESOURCE_SUBNET_APPLY = 'menu_resource_subnet_apply';
 export const MENU_RESOURCE_LOAD_BALANCER_APPLY = 'menu_resource_load_balancer_apply';
 export const MENU_RESOURCE_LOAD_BALANCER = 'menu_resource_load_balancer';
+
+/**
+ * 单据管理
+ */
+export const MENU_TICKET_MANAGE = 'menu_ticket_manage';
+export const MENU_TICKET_DETAIL = 'menu_ticket_detail';

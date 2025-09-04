@@ -333,7 +333,7 @@ export default defineComponent({
             default: () => (
               <>
                 {whereAmI.value === Senarios.resource ? null : <Breadcrumb></Breadcrumb>}
-                <div class={['/service/my-apply'].includes(curPath.value) ? 'view-warp no-padding' : 'view-warp'}>
+                <div class={['/service/ticket'].includes(curPath.value) ? 'view-warp no-padding' : 'view-warp'}>
                   {isRouterAlive.value ? renderRouterView() : null}
                 </div>
               </>

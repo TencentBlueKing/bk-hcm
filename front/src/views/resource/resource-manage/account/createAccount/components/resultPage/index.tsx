@@ -4,6 +4,7 @@ import './index.scss';
 import SuccessIcon from '@/assets/image/success.png';
 import FailureIcon from '@/assets/image/failure.png';
 import { useRoute, useRouter } from 'vue-router';
+import { MENU_TICKET_MANAGE } from '@/constants/menu-symbol';
 
 type ResultType = 'success' | 'failure';
 
@@ -43,7 +44,7 @@ export default defineComponent({
                     class={'result-page-success-btn'}
                     onClick={() => {
                       router.replace({
-                        path: '/service/my-apply',
+                        name: MENU_TICKET_MANAGE,
                         query: route.query,
                       });
                     }}>
