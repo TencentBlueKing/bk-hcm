@@ -250,6 +250,9 @@ func queryAndParseEndStateFlowByFlowID(kt *kit.Kit, cli *taskserver.Client, flow
 		result.SuccessCloudIDs = append(result.SuccessCloudIDs, tmp.SuccessCloudIDs...)
 		result.FailedCloudIDs = append(result.FailedCloudIDs, tmp.FailedCloudIDs...)
 		result.UnknownCloudIDs = append(result.UnknownCloudIDs, tmp.UnknownCloudIDs...)
+		if task.State == enumor.TaskFailed {
+			result.FailedMessage += task.Reason.Message
+		}
 	}
 
 	return flowResultMap, nil
