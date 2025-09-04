@@ -77,9 +77,14 @@ func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	}
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
+	unAssignIDs := make([]string, 0)
 	for id, info := range opt.BasicInfos {
 		if !checkBizMatch(bizID, info.BkBizID, info.UsageBizIDs) {
-			notMatchedIDs = append(notMatchedIDs, id)
+			if info.BkBizID == constant.UnassignedBiz {
+				unAssignIDs = append(unAssignIDs, id)
+			} else {
+				notMatchedIDs = append(notMatchedIDs, id)
+			}
 		}
 		if info.RecycleStatus == enumor.RecycleStatus {
 			recycledIDs = append(recycledIDs, id)
@@ -92,7 +97,10 @@ func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	}
 
 	if !opt.DisableBizIDEqual && len(notMatchedIDs) > 0 {
-		return errf.Newf(errf.InvalidParameter, "resources(ids: %+v) not matches url biz", notMatchedIDs)
+		return errf.Newf(errf.PermissionDenied, "resources(ids: %+v) not matches url biz", notMatchedIDs)
+	}
+	if len(unAssignIDs) > 0 {
+		return errf.Newf(errf.ResourceUnassigned, "resources(ids: %+v) are unassigned", unAssignIDs)
 	}
 
 	// 恢复或删除已回收资源, 要求资源必须在已回收状态下

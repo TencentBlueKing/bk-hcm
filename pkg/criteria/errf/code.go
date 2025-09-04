@@ -74,4 +74,6 @@ const (
 	BillItemImportEmptyDataError int32 = 2000017
 	// SyncRepeatLockError CLB、安全组重复同步
 	SyncRepeatLockError int32 = 2000024
+	// ResourceUnassigned 资源未分配
+	ResourceUnassigned int32 = 2000025
 )
