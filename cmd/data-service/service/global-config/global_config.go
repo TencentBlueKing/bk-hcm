@@ -23,6 +23,7 @@ package globalconfig
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	"hcm/pkg/api/core"
 	datagconf "hcm/pkg/api/data-service/global_config"
@@ -34,7 +35,6 @@ import (
 	dtypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"reflect"
 
 	"github.com/jmoiron/sqlx"
 )

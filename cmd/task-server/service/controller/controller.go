@@ -134,7 +134,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 	if err := opt.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	// 1、先统一修改内存map中flowtype的优先级

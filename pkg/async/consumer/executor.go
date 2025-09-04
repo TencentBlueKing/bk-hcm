@@ -373,7 +373,7 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 		}
 
 		// 只记录task执行成功的执行时间
-		exec.getOrCreateTimeWindow(task.ActionName).Push(time.Since(taskStartTime).Seconds())
+		exec.getTimeWindow(task.ActionName).Push(time.Since(taskStartTime).Seconds())
 
 		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
 		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。
@@ -385,8 +385,8 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 	return false, nil, nil
 }
 
-// getOrCreateTimeWindow 并发安全地获取或创建指定任务类型的 TimeWindow
-func (exec *executor) getOrCreateTimeWindow(taskType enumor.ActionName) *TimeWindow {
+// getTimeWindow 并发安全地获取或创建指定任务类型的 TimeWindow
+func (exec *executor) getTimeWindow(taskType enumor.ActionName) *TimeWindow {
 	// 只读
 	exec.ttTwMapMu.RLock()
 	tw, ok := exec.taskTypeTimeWindowMap[taskType]
@@ -539,7 +539,7 @@ func (exec *executor) UpdateTask(task *Task, state enumor.TaskState, reason stri
 
 // GetTaskTypeAvgExecTime get task type avg exec time by corresponding timewindow
 func (exec *executor) GetTaskTypeAvgExecTime(taskType enumor.ActionName) (avgExecTime float64, neverExec bool) {
-	return exec.getOrCreateTimeWindow(taskType).GetAvg()
+	return exec.getTimeWindow(taskType).GetAvg()
 }
 
 // GetFastTaskThresholdSec get fast task threshold.

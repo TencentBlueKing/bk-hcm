@@ -227,9 +227,7 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, lim
 }
 
 // queryCurrNodeAllFlow 查询主节点分配给当前节点所有处于 Scheduled 状态的任务流，没有limit上限。
-func (sch *scheduler) queryCurrNodeAllFlow(kt *kit.Kit, state enumor.FlowState) (
-	[]model.Flow, error) {
-
+func (sch *scheduler) queryCurrNodeAllFlow(kt *kit.Kit, state enumor.FlowState) ([]model.Flow, error) {
 	flows := make([]model.Flow, 0)
 	page := core.NewDefaultBasePage()
 	for {
@@ -585,8 +583,9 @@ func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
 			return false, err
 		}
 		allTasks = append(allTasks, tasks...)
+		// 更新flow type的running数量
 		sch.flowTypeRunningNumMap.Inc(string(flow.Name), 1)
-		// flowtype总数++
+		// 更新flow的entry time
 		sch.flowEntryTimeMap.Store(flow.ID, time.Now())
 	}
 

@@ -73,15 +73,12 @@ type SetFlowTypePriorityOption struct {
 
 // Validate AddTemplateFlowOption
 func (opt *SetFlowTypePriorityOption) Validate() error {
-
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
-
 	if err := opt.FlowType.Validate(); err != nil {
 		return err
 	}
-
 	if converter.PtrToVal(opt.Priority) > FlowTypeMinPriority {
 		return fmt.Errorf("priority should be less than or equal to %d", FlowTypeMinPriority)
 	}
@@ -95,14 +92,11 @@ type ResetFlowPriorityOption struct {
 
 // Validate AddTemplateFlowOption
 func (opt *ResetFlowPriorityOption) Validate() error {
-
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
-
 	if err := opt.FlowType.Validate(); err != nil {
 		return err
 	}
-
 	return nil
 }

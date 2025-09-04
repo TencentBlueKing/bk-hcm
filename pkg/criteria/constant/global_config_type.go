@@ -20,5 +20,6 @@
 package constant
 
 const (
+	// FlowTypePriority 不同类型flow的优先级配置
 	FlowTypePriority = "flow_type_priority"
 )
