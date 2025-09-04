@@ -38,6 +38,7 @@ import (
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	cloudbill "hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
+	"hcm/pkg/dal/dao/cloud/cfs"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -97,6 +98,7 @@ type Set interface {
 	AwsRegion() region.AwsRegion
 	GcpRegion() region.GcpRegion
 	Cvm() cvm.Interface
+	Cfs() cfs.Interface
 	RouteTable() routetable.RouteTable
 	Route() routetable.Route
 	Application() application.Application
@@ -444,6 +446,15 @@ func (s *set) AzureSGRule() securitygroup.AzureSGRule {
 // Cvm return cvm dao.
 func (s *set) Cvm() cvm.Interface {
 	return &cvm.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// Cfs return cfs dao.
+func (s *set) Cfs() cfs.Interface {
+	return &cfs.Dao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

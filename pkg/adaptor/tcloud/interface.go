@@ -28,6 +28,7 @@ import (
 	typeargstpl "hcm/pkg/adaptor/types/argument-template"
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/cert"
+	typescfs "hcm/pkg/adaptor/types/cfs"
 	"hcm/pkg/adaptor/types/core"
 	typescos "hcm/pkg/adaptor/types/cos"
 	"hcm/pkg/adaptor/types/cvm"
@@ -214,4 +215,13 @@ type TCloud interface {
 	ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOption) (*typescos.TCloudBucketListResult, error)
 
 	ListInstanceConfig(kt *kit.Kit, opt cvm.TCloudInstanceConfigListOption) (*cvm.TCloudInstanceConfigListResult, error)
+
+	// CreateStorage create tcloud cfs
+	CreateStorage(kt *kit.Kit, opt *typescfs.TCloudCreateStorageOption) (*typescfs.StorageInfo, error)
+	// DeleteStorage delete tcloud cfs
+	DeleteStorage(kt *kit.Kit, opt *typescfs.TCloudDeleteStorageOption) (*typescfs.TCloudDeleteStorageResult, error)
+	// ListStorages list tcloud cfs
+	ListStorages(kt *kit.Kit, opt *typescfs.TCloudListStorageOption) (*typescfs.TCloudListStorageResult, error)
+	// GetStorages get tcloud cfs
+	GetStorages(kt *kit.Kit, opt *typescfs.TCloudGetStorageOption) (*typescfs.StorageInfo, error)
 }

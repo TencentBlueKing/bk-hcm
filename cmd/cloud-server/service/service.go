@@ -43,6 +43,7 @@ import (
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"
+	"hcm/cmd/cloud-server/service/cfs"
 	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
 	"hcm/cmd/cloud-server/service/cos"
 	"hcm/cmd/cloud-server/service/cvm"
@@ -338,6 +339,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	task.InitService(c)
 
 	cos.InitService(c)
+	cfs.InitService(c)
 
 	admin.InitAdminService(c)
 

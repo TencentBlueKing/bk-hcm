@@ -202,6 +202,15 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: CosBucketDelete},
 				},
 			},
+			{
+				Name:   "CFS资源",
+				NameEn: "CFS Resource",
+				Actions: []client.ActionWithID{
+					{ID: CfsStorageCreate},
+					{ID: CfsStorageFind},
+					{ID: CfsStorageDelete},
+				},
+			},
 		},
 	}
 }

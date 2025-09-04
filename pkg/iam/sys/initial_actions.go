@@ -345,6 +345,7 @@ func genResourceAccessActions() []client.ResourceAction {
 		Version:              1,
 	}}...)
 	actions = append(actions, genCosResAccessActions()...)
+	actions = append(actions, genCfsResAccessActions()...)
 	return actions
 }
 
@@ -600,6 +601,36 @@ func genCosResAccessActions() []client.ResourceAction {
 			ID:                   CosBucketDelete,
 			Name:                 ActionIDNameMap[CosBucketDelete],
 			NameEn:               "COS Bucket Delete",
+			Type:                 Delete,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		},
+	}
+}
+
+func genCfsResAccessActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   CfsStorageCreate,
+			Name:                 ActionIDNameMap[CfsStorageCreate],
+			NameEn:               "CFS Storage Create",
+			Type:                 Create,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		}, {
+			ID:                   CfsStorageFind,
+			Name:                 ActionIDNameMap[CfsStorageFind],
+			NameEn:               "CFS Storage Find",
+			Type:                 View,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		}, {
+			ID:                   CfsStorageDelete,
+			Name:                 ActionIDNameMap[CfsStorageDelete],
+			NameEn:               "CFS Storage Delete",
 			Type:                 Delete,
 			RelatedResourceTypes: accountResource,
 			RelatedActions:       nil,

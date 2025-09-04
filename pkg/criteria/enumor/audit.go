@@ -36,6 +36,7 @@ const (
 	SubnetAuditResType            AuditResourceType = "subnet"
 	DiskAuditResType              AuditResourceType = "disk"
 	CvmAuditResType               AuditResourceType = "cvm"
+	CfsAuditResType               AuditResourceType = "cfs"
 	RouteTableAuditResType        AuditResourceType = "route_table"
 	RouteAuditResType             AuditResourceType = "route"
 	EipAuditResType               AuditResourceType = "eip"
@@ -62,6 +63,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	SubnetAuditResType:            {},
 	DiskAuditResType:              {},
 	CvmAuditResType:               {},
+	CfsAuditResType:               {},
 	RouteTableAuditResType:        {},
 	EipAuditResType:               {},
 	GcpFirewallRuleAuditResType:   {},
