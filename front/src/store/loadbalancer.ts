@@ -137,15 +137,29 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     }
   };
 
-  const exportClb = (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }>) => {
+  const exportClb = (
+    vendor: VendorEnum,
+    params: Array<{ lb_id: string; lbl_ids?: string[] }> | string[],
+    only_export_listener = false,
+    isRs = false,
+  ) => {
     try {
       const controller = new AbortController();
+      const url = isRs
+        ? `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/targets/export`
+        : `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`;
+      const data = isRs
+        ? {
+            target_ids: params,
+          }
+        : {
+            listeners: params,
+            only_export_listener,
+          };
       const download = () =>
         http.download({
-          url: `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`,
-          data: {
-            listeners: params,
-          },
+          url,
+          data,
           signal: controller.signal,
           globalError: false,
         });

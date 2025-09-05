@@ -78,4 +78,25 @@ export class DisplayFieldListener {
 
   @Column('string', { name: '负载均衡ID' })
   lb_cloud_id: string;
+
+  @Column('string', { name: '网络类型' })
+  lb_network_types: string;
+
+  @Column('string', { name: '负载均衡VIP' })
+  lb_vips: string;
+
+  @Column('string', { name: '负载均衡ID' })
+  lb_id: string;
+
+  @Column('string', { name: '网络类型' })
+  lb_network_type: string;
+
+  @Column('number', { name: 'RS数量', index: 0 })
+  target_count: number;
+
+  @Column('number', { name: '域名数量', index: 0 })
+  rule_domain_count: number;
+
+  @Column('number', { name: 'URL数量', index: 0 })
+  url_count: number;
 }

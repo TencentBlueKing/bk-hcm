@@ -11,6 +11,9 @@ import useChangeScene from './useChangeScene';
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
 import { TargetGroupOperationScene, TG_OPERATION_SCENE_MAP } from '@/constants';
+import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
+import { ResourceTypeEnum } from '@/common/constant';
+import routerAction from '@/router/utils/action';
 
 const { FormItem } = Form;
 
@@ -199,9 +202,11 @@ export default defineComponent({
     // 处理参数 - 批量修改端口/权重
     const resolveFormDataForBatchUpdateRs = () => {
       const type = TargetGroupOperationScene.BATCH_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      const account_id = type === 'weight' ? formData.account_id : undefined;
       return {
         target_ids: formData.rs_list.map(({ id }: any) => id),
         [`new_${type}`]: +formData.rs_list[0][type],
+        account_id,
       };
     };
     // 处理参数 - 批量移除rs
@@ -303,6 +308,12 @@ export default defineComponent({
                 </Button>
               </>
             ),
+          });
+        } else if (data?.task_management_id) {
+          routerAction.redirect({
+            name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
+            query: { bizs: currentGlobalBusinessId.value },
+            params: { resourceType: ResourceTypeEnum.CLB, id: data.task_management_id },
           });
         } else {
           Message({ theme: 'success', message });

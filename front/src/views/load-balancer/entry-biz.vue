@@ -2,7 +2,7 @@
 import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_RESOURCE_OVERVIEW, MENU_BUSINESS_DEVICE_SEARCH_OVERVIEW } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import {
   AUTH_BIZ_CREATE_CLB,
@@ -15,24 +15,24 @@ import {
 import { getAuthSignByBusinessId } from '@/utils';
 import routerAction from '@/router/utils/action';
 
-import LoadBalancerView from './clb/index.vue';
-import TargetGroupView from './target-group/index.vue';
+import ResourceView from './resource/index.vue';
+import DeviceSearchView from './device/index.vue';
 
 const route = useRoute();
 const { t } = useI18n();
 
 const LOAD_BALANCER_VIEW_LIST = [
   {
-    label: t('负载均衡视角'),
-    path: '/business/load-balancer/clb',
-    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
-    component: LoadBalancerView,
+    label: t('资源列表'),
+    path: '/business/load-balancer/resource',
+    name: MENU_BUSINESS_RESOURCE_OVERVIEW,
+    component: ResourceView,
   },
   {
-    label: t('目标组视角'),
-    path: '/business/load-balancer/target-group',
-    name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
-    component: TargetGroupView,
+    label: t('设备检索'),
+    path: '/business/load-balancer/device',
+    name: MENU_BUSINESS_DEVICE_SEARCH_OVERVIEW,
+    component: DeviceSearchView,
   },
 ];
 

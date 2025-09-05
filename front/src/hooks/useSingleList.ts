@@ -30,6 +30,8 @@ export function useSingleList<T>(options?: {
   pagination?: { start?: number; limit: number; count?: number };
   // 是否使用 rollRequest 一次拉取完
   rollRequestConfig?: { enabled: boolean; limit: number };
+  // 列表获取完成后
+  listLoaded?: Function;
 }) {
   // 设置 options 默认值
   defaults(options, {
@@ -41,6 +43,7 @@ export function useSingleList<T>(options?: {
     pagination: { start: 0, limit: 50, count: 0 },
     disableSort: false,
     rollRequestConfig: { enabled: false, limit: 500 },
+    listLoaded: () => ({}),
   });
 
   const getDefaultPagination = () => ({ ...options.pagination });
@@ -74,6 +77,7 @@ export function useSingleList<T>(options?: {
         );
 
         dataList.value = list;
+        options.listLoaded();
 
         return list;
       }

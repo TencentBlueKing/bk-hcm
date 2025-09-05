@@ -76,7 +76,10 @@ const handleSingleDelete = (row: IListenerItem) => {
 
 const handleConfirm = async () => {
   await loadBalancerListenerStore.batchDeleteListener(
-    { ids: list.value.filter(canDeletePredicate).map((item) => item.id) },
+    {
+      ids: list.value.filter(canDeletePredicate).map((item) => item.id),
+      account_id: list.value[0].account_id,
+    },
     currentGlobalBusinessId.value,
   );
   Message({ theme: 'success', message: '删除成功' });
