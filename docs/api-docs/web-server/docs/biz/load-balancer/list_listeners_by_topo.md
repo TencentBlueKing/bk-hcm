@@ -128,6 +128,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
         "url_count": 1,
         "target_count": 1,
         "non_zero_weight_target_count": 1,
+        "target_group_id": "0000001",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
@@ -194,6 +195,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/by_topo/list
 | url_count                    | int          | 规则url数量                                          |
 | target_count                 | int          | rs数量                                             |
 | non_zero_weight_target_count | int          | 权重不为0的rs数量                                       |
+| target_group_id              | string       | 目标组ID                                            |
 | creator                      | string       | 创建者                                              |
 | reviser                      | string       | 修改者                                              |
 | created_at                   | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                   |
