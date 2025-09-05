@@ -35,6 +35,8 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -44,9 +46,10 @@ import (
 // Init initial the async service
 func Init(cap *capability.Capability) {
 	svc := &service{
-		pro: cap.Async.GetProducer(),
-		csm: cap.Async.GetConsumer(),
-		cs:  cap.ApiClient,
+		pro:        cap.Async.GetProducer(),
+		csm:        cap.Async.GetConsumer(),
+		cs:         cap.ApiClient,
+		authorizer: cap.Authorizer,
 	}
 
 	h := rest.NewHandler()
@@ -65,9 +68,10 @@ func Init(cap *capability.Capability) {
 }
 
 type service struct {
-	pro producer.Producer
-	csm consumer.Consumer
-	cs  *client.ClientSet
+	pro        producer.Producer
+	csm        consumer.Consumer
+	cs         *client.ClientSet
+	authorizer auth.Authorizer
 }
 
 // UpdateCustomFlowState update custom flow state
@@ -137,6 +141,15 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	createAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Create,
+		ResourceID: ""}}
+	editAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Update,
+		ResourceID: ""}}
+	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, createAuth, editAuth); err != nil {
+		logs.Errorf("set flow type priority auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// 1、先统一修改内存map中flowtype的优先级
 	p.csm.SetFlowTypePriority(opt.FlowType, converter.PtrToVal(opt.Priority))
 	if !opt.Persistent {
@@ -188,6 +201,13 @@ func (p service) ResetFlowTypePriority(cts *rest.Contexts) (interface{}, error) 
 	}
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	deleteAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Delete,
+		ResourceID: ""}}
+	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, deleteAuth); err != nil {
+		logs.Errorf("set flow type priority auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	// 1、先统一修改内存map中flowtype的优先级

@@ -23,6 +23,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"hcm/pkg/iam/auth"
 	"net"
 	"net/http"
 	"strconv"
@@ -57,10 +58,11 @@ import (
 
 // Service do all the task server's work
 type Service struct {
-	client *client.ClientSet
-	dao    dao.Set
-	serve  *http.Server
-	async  async.Async
+	client     *client.ClientSet
+	dao        dao.Set
+	serve      *http.Server
+	async      async.Async
+	authorizer auth.Authorizer
 }
 
 // NewService create a service instance.
@@ -97,10 +99,13 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
+	// 鉴权
+	authorizer, err := auth.NewAuthorizer(sd, tls)
 	svr := &Service{
-		client: apiClientSet,
-		dao:    dao,
-		async:  async,
+		client:     apiClientSet,
+		dao:        dao,
+		async:      async,
+		authorizer: authorizer,
 	}
 
 	return svr, nil
@@ -236,6 +241,7 @@ func (s *Service) apiSet() *restful.Container {
 		ApiClient:  s.client,
 		Async:      s.async,
 		Dao:        s.dao,
+		Authorizer: s.authorizer,
 	}
 
 	producer.Init(c)

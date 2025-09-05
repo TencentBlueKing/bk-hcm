@@ -24,7 +24,7 @@ import "sync"
 
 // ConcurrentMapCounter 并发安全的 map[string]int64 计数器
 type ConcurrentMapCounter struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 	m  map[string]int64
 }
 
@@ -41,17 +41,10 @@ func (c *ConcurrentMapCounter) Inc(key string, delta int64) int64 {
 	return c.m[key]
 }
 
-// GetValue 返回 key 当前值；若 key 不存在则返回 0。
-func (c *ConcurrentMapCounter) GetValue(key string) int64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.m[key]
-}
-
 // GetValueAndSum 返回 key 当前值以及所有值之和；若 key 不存在则返回 0 和 0。
 func (c *ConcurrentMapCounter) GetValueAndSum(key string) (int64, int64) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	sum := int64(0)
 	for _, val := range c.m {
 		sum += val
@@ -61,8 +54,8 @@ func (c *ConcurrentMapCounter) GetValueAndSum(key string) (int64, int64) {
 
 // Snapshot 返回此刻的完整副本。
 func (c *ConcurrentMapCounter) Snapshot() map[string]int64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	out := make(map[string]int64, len(c.m))
 	for k, v := range c.m {
 		out[k] = v
