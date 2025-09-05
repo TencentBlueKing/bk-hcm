@@ -1,3 +1,22 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
 package consumer
 
 import (
@@ -82,6 +101,27 @@ func TestTimeWindow_Push(t *testing.T) {
 		if tw.tail != 1 {
 			t.Errorf("超容量后，tail应为1，实际 %d", tw.tail)
 		}
+
+		// 验证实际数据内容：应该保留2.0和3.0，丢弃1.0
+		avgTime, neverExec := tw.GetAvg()
+		if neverExec {
+			t.Error("有数据的队列不应该返回neverExec=true")
+		}
+		expectedAvg := (2.0 + 3.0) / 2.0
+		if avgTime != expectedAvg {
+			t.Errorf("超容量覆盖后平均值错误，期望 %f，实际 %f", expectedAvg, avgTime)
+		}
+
+		// 验证队列中的具体数据
+		tw.Lock()
+		// 有效数据从head开始：queue[1]=2.0, queue[0]=3.0
+		if tw.queue[1].execTime != 2.0 {
+			t.Errorf("队列位置1应为2.0，实际 %f", tw.queue[1].execTime)
+		}
+		if tw.queue[0].execTime != 3.0 {
+			t.Errorf("队列位置0应为3.0，实际 %f", tw.queue[0].execTime)
+		}
+		tw.Unlock()
 	})
 }
 
@@ -195,10 +235,32 @@ func TestTimeWindow_CircularBuffer(t *testing.T) {
 		t.Errorf("环形缓冲区size应为3，实际 %d", tw.size)
 	}
 
+	// 验证平均值计算
 	avgTime, _ := tw.GetAvg()
 	expectedAvg := (7.0 + 8.0 + 9.0) / 3.0 // 最后三个数据的平均值
 	if avgTime != expectedAvg {
 		t.Errorf("环形缓冲区平均时间计算错误，期望 %f，实际 %f", expectedAvg, avgTime)
+	}
+
+	// 验证队列内部数据的正确性
+	tw.Lock()
+	// 推入0-9，容量为3，最终应该保留7,8,9
+	// head应该指向最旧的有效数据，tail指向下一个写入位置
+	validData := make([]float64, 0, 3)
+	for i := 0; i < int(tw.size); i++ {
+		idx := (tw.head + uint(i)) % tw.capacity
+		validData = append(validData, tw.queue[idx].execTime)
+	}
+	tw.Unlock()
+
+	expectedData := []float64{7.0, 8.0, 9.0}
+	if len(validData) != len(expectedData) {
+		t.Errorf("有效数据数量错误，期望 %d，实际 %d", len(expectedData), len(validData))
+	}
+	for i, expected := range expectedData {
+		if i < len(validData) && validData[i] != expected {
+			t.Errorf("位置%d数据错误，期望 %f，实际 %f", i, expected, validData[i])
+		}
 	}
 }
 
@@ -297,6 +359,96 @@ func TestTimeWindow_ConcurrentSafety(t *testing.T) {
 
 	t.Logf("并发测试完成: 最终队列大小%d, 结构性错误%d个",
 		finalSize, len(structuralErrors))
+}
+
+func TestTimeWindow_DataCorrectness(t *testing.T) {
+	t.Run("验证Push和GetAvg的数据正确性", func(t *testing.T) {
+		tw := NewTimeWindow(4, 5)
+
+		// 测试序列：推入1.0, 2.0, 3.0, 4.0
+		values := []float64{1.0, 2.0, 3.0, 4.0}
+		for _, v := range values {
+			tw.Push(v)
+		}
+
+		// 验证平均值
+		avgTime, neverExec := tw.GetAvg()
+		if neverExec {
+			t.Error("有数据的队列不应该返回neverExec=true")
+		}
+		expectedAvg := (1.0 + 2.0 + 3.0 + 4.0) / 4.0
+		if avgTime != expectedAvg {
+			t.Errorf("平均值计算错误，期望 %f，实际 %f", expectedAvg, avgTime)
+		}
+
+		// 验证队列内部数据
+		tw.Lock()
+		for i := 0; i < int(tw.size); i++ {
+			idx := (tw.head + uint(i)) % tw.capacity
+			expectedValue := values[i]
+			actualValue := tw.queue[idx].execTime
+			if actualValue != expectedValue {
+				t.Errorf("队列位置%d数据错误，期望 %f，实际 %f", i, expectedValue, actualValue)
+			}
+		}
+		tw.Unlock()
+	})
+
+	t.Run("验证超容量时的数据覆盖正确性", func(t *testing.T) {
+		tw := NewTimeWindow(3, 5)
+
+		// 推入5个数据，应该只保留最后3个
+		values := []float64{10.0, 20.0, 30.0, 40.0, 50.0}
+		for _, v := range values {
+			tw.Push(v)
+		}
+
+		// 验证平均值（应该是30.0, 40.0, 50.0的平均值）
+		avgTime, neverExec := tw.GetAvg()
+		if neverExec {
+			t.Error("有数据的队列不应该返回neverExec=true")
+		}
+		expectedAvg := (30.0 + 40.0 + 50.0) / 3.0
+		if avgTime != expectedAvg {
+			t.Errorf("超容量后平均值计算错误，期望 %f，实际 %f", expectedAvg, avgTime)
+		}
+
+		// 验证队列内部数据
+		tw.Lock()
+		expectedValues := []float64{30.0, 40.0, 50.0}
+		for i := 0; i < int(tw.size); i++ {
+			idx := (tw.head + uint(i)) % tw.capacity
+			expectedValue := expectedValues[i]
+			actualValue := tw.queue[idx].execTime
+			if actualValue != expectedValue {
+				t.Errorf("超容量后队列位置%d数据错误，期望 %f，实际 %f", i, expectedValue, actualValue)
+			}
+		}
+		tw.Unlock()
+	})
+
+	t.Run("验证单个数据的正确性", func(t *testing.T) {
+		tw := NewTimeWindow(1, 5)
+
+		tw.Push(42.0)
+		avgTime, neverExec := tw.GetAvg()
+		if neverExec {
+			t.Error("有数据的队列不应该返回neverExec=true")
+		}
+		if avgTime != 42.0 {
+			t.Errorf("单个数据平均值错误，期望 42.0，实际 %f", avgTime)
+		}
+
+		// 覆盖数据
+		tw.Push(84.0)
+		avgTime, neverExec = tw.GetAvg()
+		if neverExec {
+			t.Error("有数据的队列不应该返回neverExec=true")
+		}
+		if avgTime != 84.0 {
+			t.Errorf("覆盖后单个数据平均值错误，期望 84.0，实际 %f", avgTime)
+		}
+	})
 }
 
 func TestTimeWindow_EdgeCases(t *testing.T) {

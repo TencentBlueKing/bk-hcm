@@ -850,11 +850,11 @@ func genCloudSelectionResource(*meta.ResourceAttribute) (client.ActionID, []clie
 func genGlobalConfigResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Create:
-		return sys.GlobalConfigurationCreate, make([]client.Resource, 0), nil
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
 	case meta.Update:
-		return sys.GlobalConfigurationEdit, make([]client.Resource, 0), nil
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
 	case meta.Delete:
-		return sys.GlobalConfigurationDelete, make([]client.Resource, 0), nil
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

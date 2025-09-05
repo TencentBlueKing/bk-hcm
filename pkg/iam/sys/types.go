@@ -174,12 +174,6 @@ const (
 
 	// GlobalConfiguration global configuration action id to register iam.
 	GlobalConfiguration client.ActionID = "global_configuration"
-	// GlobalConfigurationCreate global configuration create action id to register iam.
-	GlobalConfigurationCreate client.ActionID = "global_configuration_create"
-	// GlobalConfigurationEdit global configuration edit action id to register iam.
-	GlobalConfigurationEdit client.ActionID = "global_configuration_edit"
-	// GlobalConfigurationDelete global configuration delete action id to register iam.
-	GlobalConfigurationDelete client.ActionID = "global_configuration_delete"
 
 	// CloudSelectionRecommend 选型推荐
 	CloudSelectionRecommend client.ActionID = "cloud_selection_recommend"
