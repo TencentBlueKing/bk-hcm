@@ -668,7 +668,7 @@ func TestTimeWindow_RaceConditionDetection(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 
-			for j := 0; j < numOperations; j++ {
+			for j := 0; j <= numOperations; j++ {
 				// 随机选择操作类型
 				if j%3 == 0 {
 					// Push操作

@@ -143,9 +143,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 
 	createAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Create,
 		ResourceID: ""}}
-	editAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Update,
-		ResourceID: ""}}
-	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, createAuth, editAuth); err != nil {
+	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, createAuth); err != nil {
 		logs.Errorf("set flow type priority auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
