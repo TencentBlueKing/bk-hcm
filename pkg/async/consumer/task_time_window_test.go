@@ -299,14 +299,6 @@ func TestTimeWindow_ConcurrentSafety(t *testing.T) {
 		finalSize, len(structuralErrors))
 }
 
-// 辅助函数：计算浮点数绝对值
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 func TestTimeWindow_EdgeCases(t *testing.T) {
 	t.Run("容量为1的时间窗口", func(t *testing.T) {
 		tw := NewTimeWindow(1, 5)
