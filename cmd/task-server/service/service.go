@@ -23,7 +23,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"hcm/pkg/iam/auth"
 	"net"
 	"net/http"
 	"strconv"
@@ -45,6 +44,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/handler"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
