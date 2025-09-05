@@ -22,6 +22,8 @@ package consumer
 import (
 	"sync"
 	"time"
+
+	"hcm/pkg/logs"
 )
 
 // TimeWindow 使用环形缓冲区实现固定容量队列
@@ -53,6 +55,10 @@ func NewTimeWindow(capacity uint, duration uint) *TimeWindow {
 func (w *TimeWindow) Push(execTime float64) {
 	w.Lock()
 	defer w.Unlock()
+	if execTime < 0 {
+		logs.Errorf("execTime(%f) < 0", execTime)
+		return
+	}
 	if w.size == w.capacity {
 		w.head = (w.head + 1) % w.capacity // 覆盖最旧元素
 	} else {

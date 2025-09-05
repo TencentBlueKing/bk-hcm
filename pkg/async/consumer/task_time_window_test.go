@@ -481,21 +481,6 @@ func TestTimeWindow_EdgeCases(t *testing.T) {
 			t.Errorf("零执行时间的平均值应为0.0，实际 %f", avgTime)
 		}
 	})
-
-	t.Run("负执行时间", func(t *testing.T) {
-		tw := NewTimeWindow(5, 5)
-
-		tw.Push(-1.0)
-		tw.Push(1.0)
-
-		avgTime, neverExec := tw.GetAvg()
-		if neverExec {
-			t.Error("不应该返回neverExec=true")
-		}
-		if avgTime != 0.0 {
-			t.Errorf("负数和正数的平均值应为0.0，实际 %f", avgTime)
-		}
-	})
 }
 
 func TestTimeWindow_TimeWindowBoundary(t *testing.T) {
