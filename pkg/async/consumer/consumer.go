@@ -112,7 +112,7 @@ func (csm *consumer) Start(globalCfgCli *global.GlobalConfigsClient) error {
 	// kit of consumer, with node uuid as rid
 	kt := kit.New()
 	kt.Rid = csm.leader.CurrNode()
-	csm.initCommonComponent(kt, csm.opt, globalCfgCli, csm.mc)
+	csm.initCommonComponent(kt, csm.opt, globalCfgCli)
 	csm.initLeaderComponent(kt, csm.opt)
 
 	return nil
@@ -128,12 +128,12 @@ func (csm *consumer) initLeaderComponent(kt *kit.Kit, opt *Option) {
 }
 
 // initCommonComponent 初始化主从节点公共组件并启动，同时设置关闭函数
-func (csm *consumer) initCommonComponent(kt *kit.Kit, opt *Option, globalCfgCli *global.GlobalConfigsClient, mc *metric) {
+func (csm *consumer) initCommonComponent(kt *kit.Kit, opt *Option, globalCfgCli *global.GlobalConfigsClient) {
 	// 设置执行器
-	csm.executor = NewExecutor(kt, csm.backend, opt.Executor, mc)
+	csm.executor = NewExecutor(kt, csm.backend, opt.Executor, csm.mc)
 
 	// 设置调度器
-	csm.scheduler = NewScheduler(csm.backend, csm.executor, csm.leader, opt.Scheduler, globalCfgCli, mc)
+	csm.scheduler = NewScheduler(csm.backend, csm.executor, csm.leader, opt.Scheduler, globalCfgCli, csm.mc)
 
 	// 设置执行器获取调度器函数。
 	csm.executor.SetGetSchedulerFunc(func() Scheduler {
