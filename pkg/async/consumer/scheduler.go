@@ -752,7 +752,7 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 					logs.Errorf("entry time is not time, flowID: %s, rid: %s", task.FlowID, kt.Rid)
 					return fmt.Errorf("entry time is not time, flowID: %s", task.FlowID)
 				}
-				sch.mc.flowTypeExecTime.WithLabelValues(string(task.Flow.Name)).Set(time.Since(t).
+				sch.mc.flowTypeExecTime.WithLabelValues(string(task.Flow.Name)).Observe(time.Since(t).
 					Seconds())
 			}
 

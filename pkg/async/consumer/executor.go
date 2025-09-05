@@ -69,7 +69,6 @@ var _ Executor = new(executor)
 type executor struct {
 	kt *kit.Kit
 
-	workerNumber        uint
 	taskExecTimeoutSec  uint
 	fastTaskWorkerRatio float64
 
@@ -84,9 +83,9 @@ type executor struct {
 	ttTwMapMu             sync.RWMutex                      // 用于保护 taskTypeTimeWindowMap 的并发创建
 	timeWindowDurationMin uint                              // 表示回溯多久的历史数据，单位分钟
 	timeWindowCapacity    uint                              // TimeWindow 的容量，表示每一类tasktype最多存放的时间数据数量
+	fastTaskWorkerNum     uint                              // 快任务worker数量
+	sharedWorkerNum       uint                              // 共享worker数量
 	fastTaskThresholdSec  float64                           // 快任务的阈值，执行时间小于这个值的任务为快任务，反之为慢，单位秒
-	fastTaskQueueCapacity uint                              // 快任务的队列容量
-	slowTaskQueueCapacity uint                              // 慢任务的队列容量
 	closeCh               chan struct{}
 	mc                    *metric
 	GetSchedulerFunc      func() Scheduler
@@ -107,14 +106,13 @@ func NewExecutor(kt *kit.Kit, bd backend.Backend, opt *ExecutorOption, mc *metri
 		initQueue:             NewTaskInitQueue(opt.InitQueueCapacity, mc),
 		taskTypeTimeWindowMap: make(map[enumor.ActionName]*TimeWindow),
 		closeCh:               make(chan struct{}, 1),
-		workerNumber:          opt.WorkerNumber,
 		taskExecTimeoutSec:    opt.TaskExecTimeoutSec,
 		fastTaskWorkerRatio:   opt.FastTaskWorkerRatio,
+		fastTaskWorkerNum:     uint(float64(opt.WorkerNumber) * opt.FastTaskWorkerRatio),
+		sharedWorkerNum:       opt.WorkerNumber - uint(float64(opt.WorkerNumber)*opt.FastTaskWorkerRatio),
 		fastTaskThresholdSec:  opt.FastTaskThresholdSec,
 		timeWindowCapacity:    opt.TimeWindowCapacity,
 		timeWindowDurationMin: opt.TimeWindowDurationMin,
-		fastTaskQueueCapacity: opt.FastTaskQueueCapacity,
-		slowTaskQueueCapacity: opt.SlowTaskQueueCapacity,
 		fastTaskQueue:         make(chan *Task, opt.FastTaskQueueCapacity),
 		slowTaskQueue:         make(chan *Task, opt.SlowTaskQueueCapacity),
 		mc:                    mc,
@@ -123,24 +121,21 @@ func NewExecutor(kt *kit.Kit, bd backend.Backend, opt *ExecutorOption, mc *metri
 
 // Start 初始化执行器并启动执行
 func (exec *executor) Start() {
-	fastTaskWorkerNum := uint(float64(exec.workerNumber) * exec.fastTaskWorkerRatio)
-	sharedWorkerNum := exec.workerNumber - fastTaskWorkerNum
-
 	logs.Infof("executor start, total worker number: %d (fast task worker: %d, shared worker: %d)",
-		exec.workerNumber, fastTaskWorkerNum, sharedWorkerNum)
+		exec.fastTaskWorkerNum+exec.sharedWorkerNum, exec.fastTaskWorkerNum, exec.sharedWorkerNum)
 
 	// 待执行的任务预处理
 	exec.initWg.Add(1)
 	go exec.watchInitQueue()
 
 	// 启动fast task worker，只从快任务队列取任务
-	for i := 0; i < int(fastTaskWorkerNum); i++ {
+	for i := 0; i < int(exec.fastTaskWorkerNum); i++ {
 		exec.workerWg.Add(1)
 		go exec.fastTaskWorker()
 	}
 
 	// 启动shared worker，优先从慢任务队列取任务，没有才从快任务队列取
-	for i := 0; i < int(sharedWorkerNum); i++ {
+	for i := 0; i < int(exec.sharedWorkerNum); i++ {
 		exec.workerWg.Add(1)
 		go exec.sharedTaskWorker()
 	}

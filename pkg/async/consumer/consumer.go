@@ -39,7 +39,6 @@ import (
 
 /*
 Consumer 异步任务消费者。组件分为两类，公共组件、主节点组件。
-
 主节点组件：（会根据主从判断，自动启动或者关闭这部分组件）
 -dispatcher（派发器）: 负责将Pending状态的任务流，派发到指定节点去执行，并将Flow状态改为Scheduled。
 -watchDog（看门狗）:

@@ -54,14 +54,15 @@ func initMetric(register prometheus.Registerer) *metric {
 		[]string{"flowType"},
 	)
 	register.MustRegister(m.flowTypeRunningNum)
-	// 监控当前各flowType实际运行时间(包括了等待执行时间以及协程池阻塞情况)
-	m.flowTypeExecTime = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
+	// 监控各flowType实际运行时间(包括了等待执行时间以及协程池阻塞情况)
+	m.flowTypeExecTime = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
 			Namespace:   metrics.Namespace,
 			Subsystem:   metrics.AsyncSubSys,
-			Name:        "flow_type_exec_time",
-			Help:        "Actual execution time of flows by type",
+			Name:        "flow_type_exec_duration_milliseconds",
+			Help:        "Execution duration of flows by type in milliseconds",
 			ConstLabels: labels,
+			Buckets:     []float64{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 400, 800, 1000, 1500, 6000},
 		},
 		[]string{"flowType"},
 	)
@@ -72,5 +73,5 @@ func initMetric(register prometheus.Registerer) *metric {
 type metric struct {
 	taskInitQueueSize  *prometheus.GaugeVec
 	flowTypeRunningNum *prometheus.GaugeVec
-	flowTypeExecTime   *prometheus.GaugeVec
+	flowTypeExecTime   *prometheus.HistogramVec
 }

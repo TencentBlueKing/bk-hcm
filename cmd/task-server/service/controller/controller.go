@@ -57,9 +57,9 @@ func Init(cap *capability.Capability) {
 
 	// 控制各flowtype被消费的优先级
 	h.Add("SetFlowTypePriority", http.MethodPost,
-		"/flow_type/set_priority", svc.SetFlowTypePriority)
+		"/flows/flow_type/priority/set", svc.SetFlowTypePriority)
 	h.Add("ResetFlowTypePriority", http.MethodPost,
-		"/flow_type/reset_priority", svc.ResetFlowTypePriority)
+		"/flows/flow_type/priority/reset", svc.ResetFlowTypePriority)
 
 	h.Load(cap.WebService)
 }
@@ -157,7 +157,7 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 
 	// 2、如果该flowtype优先级记录不存在则创建
 	if len(result.Details) == 0 {
-		return p.cs.DataService().Global.GlobalConfig.BatchCreate(cts.Kit, &datagconf.BatchCreateReq{
+		configCreateReq := &datagconf.BatchCreateReq{
 			Configs: []gccore.GlobalConfigT[any]{
 				{
 					ConfigType:  constant.FlowTypePriority,
@@ -165,17 +165,19 @@ func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
 					ConfigValue: converter.PtrToVal(opt.Priority),
 				},
 			},
-		})
+		}
+		return p.cs.DataService().Global.GlobalConfig.BatchCreate(cts.Kit, configCreateReq)
 	}
 
-	return nil, p.cs.DataService().Global.GlobalConfig.BatchUpdate(cts.Kit, &datagconf.BatchUpdateReq{
+	configUpdateReq := &datagconf.BatchUpdateReq{
 		Configs: []gccore.GlobalConfigT[any]{
 			{
 				ID:          result.Details[0].ID,
 				ConfigValue: converter.PtrToVal(opt.Priority),
 			},
 		},
-	})
+	}
+	return nil, p.cs.DataService().Global.GlobalConfig.BatchUpdate(cts.Kit, configUpdateReq)
 }
 
 // ResetFlowTypePriority 恢复flowtype为默认优先级
