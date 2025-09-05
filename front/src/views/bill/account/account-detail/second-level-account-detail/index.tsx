@@ -8,8 +8,8 @@ import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { useVerify } from '@/hooks';
 import PermissionDialog from '@/components/permission-dialog';
-import { useRouter } from 'vue-router';
-import { MENU_TICKET_DETAIL } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_DETAIL } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
 
 export default defineComponent({
   props: {
@@ -61,13 +61,12 @@ export default defineComponent({
               theme='primary'
               text
               onClick={() => {
-                const routeData = useRouter().resolve({
-                  name: MENU_TICKET_DETAIL,
+                routerAction.open({
+                  name: MENU_SERVICE_TICKET_DETAIL,
                   query: {
                     id: data.id,
                   },
                 });
-                window.open(routeData.href, '_blank');
               }}>
               链接
             </Button>
