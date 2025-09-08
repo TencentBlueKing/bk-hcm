@@ -15,7 +15,7 @@ import { Spinner } from 'bkui-vue/lib/icon';
 import { timeFormatter } from '@/common/util';
 import { useTable } from '@/hooks/useTable/useTable';
 import type { RulesItem } from '@/typings';
-import { MENU_SERVICE_TICKET_DETAIL } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
 
 interface IProps {
   rules: RulesItem[];
@@ -46,7 +46,7 @@ const columns = [
           theme: 'primary',
           onClick: () => {
             router.push({
-              name: MENU_SERVICE_TICKET_DETAIL,
+              name: MENU_SERVICE_TICKET_DETAILS,
               query: {
                 ...route.query,
                 id: data.id,

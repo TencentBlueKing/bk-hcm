@@ -8,7 +8,7 @@ import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { useVerify } from '@/hooks';
 import PermissionDialog from '@/components/permission-dialog';
-import { MENU_SERVICE_TICKET_DETAIL } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 
 export default defineComponent({
@@ -62,7 +62,7 @@ export default defineComponent({
               text
               onClick={() => {
                 routerAction.open({
-                  name: MENU_SERVICE_TICKET_DETAIL,
+                  name: MENU_SERVICE_TICKET_DETAILS,
                   query: {
                     id: data.id,
                   },

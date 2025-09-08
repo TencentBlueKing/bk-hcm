@@ -56,5 +56,5 @@ export const MENU_RESOURCE_LOAD_BALANCER = 'menu_resource_load_balancer';
 /**
  * 单据管理
  */
-export const MENU_SERVICE_TICKET_MANAGE = 'menu_service_ticket_manage';
-export const MENU_SERVICE_TICKET_DETAIL = 'menu_service_ticket_detail';
+export const MENU_SERVICE_TICKET_MANAGEMENT = 'menu_service_ticket_management';
+export const MENU_SERVICE_TICKET_DETAILS = 'menu_service_ticket_details';
