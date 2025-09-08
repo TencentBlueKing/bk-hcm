@@ -39,14 +39,18 @@ export default defineComponent({
     const isLoading = ref(false);
     const listenerNum = ref(0);
     const vpcDetail = ref(null);
+    const vpcValid = ref(true); // 记录vpcs接口报错
     const targetVpcDetail = ref(null);
     const resourceFields: FieldList = [
       { name: '名称', prop: 'name', edit: true, getAuthSign: () => props.clbOperationAuthSign },
       {
         name: '所属网络',
         prop: 'cloud_vpc_id',
-        render() {
-          return useRouteLinkBtn(props.detail, { id: 'vpc_id', name: 'cloud_vpc_id', type: TypeEnum.VPC });
+        render(value) {
+          if (vpcValid.value) {
+            return useRouteLinkBtn(props.detail, { id: 'vpc_id', name: 'cloud_vpc_id', type: TypeEnum.VPC });
+          }
+          return value;
         },
         copyContent: props.detail.cloud_vpc_id || '--',
       },
@@ -206,10 +210,21 @@ export default defineComponent({
     watch(
       () => props.detail,
       async (details) => {
+        vpcValid.value = true; // 重置 vpcValid
         if (!details) return;
         // 当 lbInfo 信息变更时, 重新获取监听器数量, vpc 详情
         const listenerNumRes = await businessStore.asyncGetListenerCount({ lb_ids: [details.id] });
-        const vpcDetailRes = await businessStore.detail('vpcs', details.vpc_id);
+        const vpcDetailRes = await businessStore.detail('vpcs', details.vpc_id, { globalError: false });
+
+        if (vpcDetailRes?.code !== 0) {
+          // vpcs 接口错误
+          if ([2030403, 2000025].includes(vpcDetailRes?.code)) {
+            vpcValid.value = false;
+          } else {
+            Message({ theme: 'error', message: vpcDetailRes?.message });
+          }
+        }
+
         if (isCorsV1.value && details.extension?.target_vpc) {
           // 通过cloud_id查list接口, 从而获取到target_vpc_name
           const res = await businessStore.list(
@@ -225,7 +240,7 @@ export default defineComponent({
           [targetVpcDetail.value] = res.data.details;
         }
         listenerNum.value = listenerNumRes.data.details[0]?.num;
-        vpcDetail.value = vpcDetailRes.data;
+        vpcDetail.value = vpcDetailRes?.data;
       },
       { deep: true, immediate: true },
     );

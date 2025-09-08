@@ -47,8 +47,8 @@ export const useBusinessStore = defineStore({
      * @param id 资源id
      * @returns 资源详情信息
      */
-    detail(type: string, id: number | string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`);
+    detail(type: string, id: number | string, config = {}) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`, config);
     },
     /**
      * common-批量删除资源
