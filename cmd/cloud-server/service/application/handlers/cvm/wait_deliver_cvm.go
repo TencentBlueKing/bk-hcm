@@ -139,6 +139,10 @@ func handleDeliverCvm(kt *kit.Kit, dsCli *dataservice.Client, tsCli *taskserver.
 	detail := map[string]interface{}{
 		"result": result,
 	}
+	if len(result.FailedMessage) > 0 {
+		detail["error"] = result.FailedMessage
+	}
+
 	if len(result.SuccessCloudIDs) != 0 {
 		req := &core.ListReq{
 			Filter: tools.EqualWithOpExpression(filter.And, map[string]interface{}{
