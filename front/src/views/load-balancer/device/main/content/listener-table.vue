@@ -10,7 +10,7 @@ import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/chi
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSelection from '@/hooks/use-table-selection';
-import { LB_TYPE_MAP } from '@/common/constant';
+import { LB_TYPE_MAP, ResourceTypeEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
 import routerAction from '@/router/utils/action';
 
@@ -23,6 +23,7 @@ import ListenerBatchExportButton from '@/views/load-balancer/children/export/lis
 import Confirm from '@/components/confirm';
 import DetailsSideslider from '@/views/load-balancer/listener/details.vue';
 import BatchCopy from '@/views/load-balancer/device/main/children/batch-copy.vue';
+import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import { ILoadBalanceDeviceCondition } from '../../common';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
@@ -159,11 +160,19 @@ const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
 
 const handleSingleDelete = (row: any) => {
   Confirm('请确定删除监听器', `将删除监听器【${row.name}】`, async () => {
-    await loadBalancerListenerStore.batchDeleteListener(
+    const res = await loadBalancerListenerStore.batchDeleteListener(
       { ids: [row.id], account_id: row.account_id },
       currentGlobalBusinessId.value,
     );
-    Message({ theme: 'success', message: '删除成功' });
+    if (res.data?.task_management_id) {
+      routerAction.open({
+        name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
+        query: { bizs: currentGlobalBusinessId.value },
+        params: { resourceType: ResourceTypeEnum.CLB, id: res.data.task_management_id },
+      });
+    } else {
+      Message({ theme: 'success', message: t('删除成功') });
+    }
     getList(props.condition);
   });
 };
@@ -204,6 +213,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition) => {
     listenerList.value = [];
   } finally {
     loading.value = false;
+    handleClearSelection();
     emit('getList');
   }
 };

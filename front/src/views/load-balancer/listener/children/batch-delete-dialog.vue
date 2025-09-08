@@ -6,6 +6,9 @@ import { DisplayFieldFactory, DisplayFieldType } from '../../children/display/fi
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import { cloneDeep } from 'lodash';
+import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
+import { ResourceTypeEnum } from '@/common/constant';
+import routerAction from '@/router/utils/action';
 
 import { Message } from 'bkui-vue';
 import DataList from '../../children/display/data-list.vue';
@@ -75,14 +78,22 @@ const handleSingleDelete = (row: IListenerItem) => {
 };
 
 const handleConfirm = async () => {
-  await loadBalancerListenerStore.batchDeleteListener(
+  const res = await loadBalancerListenerStore.batchDeleteListener(
     {
       ids: list.value.filter(canDeletePredicate).map((item) => item.id),
       account_id: list.value[0].account_id,
     },
     currentGlobalBusinessId.value,
   );
-  Message({ theme: 'success', message: '删除成功' });
+  if (res.data?.task_management_id) {
+    routerAction.open({
+      name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
+      query: { bizs: currentGlobalBusinessId.value },
+      params: { resourceType: ResourceTypeEnum.CLB, id: res.data.task_management_id },
+    });
+  } else {
+    Message({ theme: 'success', message: '删除成功' });
+  }
   handleClosed();
   emit('confirm-success');
 };
