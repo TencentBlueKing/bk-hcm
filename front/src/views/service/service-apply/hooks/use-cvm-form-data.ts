@@ -6,7 +6,7 @@ import { Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { MENU_TICKET_MANAGE } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -252,7 +252,7 @@ export default (cond: Cond) => {
       if (isResourcePage) router.back();
       else {
         router.push({
-          name: MENU_TICKET_MANAGE,
+          name: MENU_SERVICE_TICKET_MANAGEMENT,
         });
       }
     } catch (err) {
