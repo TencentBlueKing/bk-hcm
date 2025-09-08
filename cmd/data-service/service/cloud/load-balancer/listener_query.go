@@ -575,8 +575,7 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, lblReq protocloud.ListList
 			return nil, nil, errors.New("rs_port and rs_ip num must be equal")
 		}
 		for idx, ip := range lblReq.ListenerQueryItem.RsIPs {
-			targetIPPortMap[fmt.Sprintf("%s_%s_%d", lblReq.ListenerQueryItem.InstType, ip,
-				lblReq.ListenerQueryItem.RsPorts[idx])] = struct{}{}
+			targetIPPortMap[fmt.Sprintf("%s_%d", ip, lblReq.ListenerQueryItem.RsPorts[idx])] = struct{}{}
 		}
 	}
 
@@ -585,7 +584,7 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, lblReq protocloud.ListList
 	targetGroupIDs := make([]string, 0)
 	for _, item := range targetList {
 		// 不符合的数据需要过滤掉
-		if _, ok := targetIPPortMap[fmt.Sprintf("%s_%s_%d", item.InstType, item.IP, item.Port)]; !ok &&
+		if _, ok := targetIPPortMap[fmt.Sprintf("%s_%d", item.IP, item.Port)]; !ok &&
 			len(lblReq.ListenerQueryItem.RsIPs) > 0 && len(lblReq.ListenerQueryItem.RsPorts) > 0 {
 			logs.Warnf("list load balancer target rsip[%s] port[%d] is not found, rid: %s", item.IP, item.Port, kt.Rid)
 			continue

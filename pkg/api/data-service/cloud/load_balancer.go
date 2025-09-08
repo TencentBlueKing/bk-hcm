@@ -482,8 +482,8 @@ type ListenerQueryItem struct {
 	RuleType      enumor.RuleType     `json:"rule_type" validate:"required,min=1"`
 	Domain        string              `json:"domain" validate:"omitempty"`
 	Url           string              `json:"url" validate:"omitempty"`
-	InstType      enumor.InstType     `json:"inst_type" validate:"required,min=1"`
-	RsIPs         []string            `json:"rs_ips" validate:"required,min=1"`
+	InstType      enumor.InstType     `json:"inst_type" validate:"omitempty"`
+	RsIPs         []string            `json:"rs_ips" validate:"omitempty"`
 	RsPorts       []int64             `json:"rs_ports" validate:"omitempty"`
 	RsWeights     []int64             `json:"rs_weights" validate:"omitempty"`
 }
