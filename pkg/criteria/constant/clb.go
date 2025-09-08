@@ -87,3 +87,10 @@ const (
 	// CLBExcelHeaderTCloud excel表头腾讯云字段值
 	CLBExcelHeaderTCloud = "tencent_cloud_public(腾讯云-公有云)"
 )
+
+const (
+	// BatchOperateModifyTargetWeightLimit 批量修改目标权重限制
+	BatchOperateModifyTargetWeightLimit = 5000
+	// BatchOperateDeleteListenerLimit 批量删除监听器数量限制
+	BatchOperateDeleteListenerLimit = 1000
+)

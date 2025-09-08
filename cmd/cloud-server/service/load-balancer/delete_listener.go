@@ -96,14 +96,14 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, err
 	}
 
-	taskManagementID, err := svc.buildDeleteListenerTaskManagement(cts.Kit, bizID, req)
+	taskManagementID, err := svc.createTaskManagementForDelLbl(cts.Kit, bizID, req)
 	if err != nil {
 		return nil, err
 	}
 	return task.CreateTaskManagementResp{TaskManagementID: taskManagementID}, nil
 }
 
-func (svc *lbSvc) createTaskManagementForDeleteListener(kt *kit.Kit, bkBizID int64, accountID string) (
+func (svc *lbSvc) buildDelLblTaskManagement(kt *kit.Kit, bkBizID int64, accountID string) (
 	string, enumor.Vendor, error) {
 
 	// 1. create task management
@@ -124,12 +124,8 @@ func (svc *lbSvc) createTaskManagementForDeleteListener(kt *kit.Kit, bkBizID int
 
 }
 
-func (svc *lbSvc) buildDeleteListenerTaskManagement(kt *kit.Kit, bkBizID int64, req *cslb.DeleteListenerReq) (string, error) {
-	// 1. create task management
-	taskManagementID, vendor, err := svc.createTaskManagementForDeleteListener(kt, bkBizID, req.AccountID)
-	if err != nil {
-		return "", err
-	}
+func (svc *lbSvc) createTaskManagementForDelLbl(kt *kit.Kit, bkBizID int64, req *cslb.DeleteListenerReq) (
+	string, error) {
 
 	// list listener
 	listeners, err := svc.listListenersByIDs(kt, req.IDs)
@@ -137,13 +133,27 @@ func (svc *lbSvc) buildDeleteListenerTaskManagement(kt *kit.Kit, bkBizID int64, 
 		logs.Errorf("list listener map failed, ids: %v, err: %v, rid: %s", req.IDs, err, kt.Rid)
 		return "", err
 	}
-	infoByLB := classifier.ClassifySlice(listeners, func(item corelb.BaseListener) string {
+	clbIDLblMap := classifier.ClassifySlice(listeners, func(item corelb.BaseListener) string {
 		return item.LbID
 	})
+	for _, lbID := range converter.MapKeyToSlice(clbIDLblMap) {
+		// 预检测-是否有执行中的负载均衡
+		_, err = svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			logs.Errorf("check res flow rel failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
+			return "", err
+		}
+	}
+
+	// create task management
+	taskManagementID, vendor, err := svc.buildDelLblTaskManagement(kt, bkBizID, req.AccountID)
+	if err != nil {
+		return "", err
+	}
 	flowIDs := make([]string, 0)
-	for lbID, infos := range infoByLB {
+	for lbID, listeners := range clbIDLblMap {
 		// 一个clb 对应一个flow
-		flowID, err := svc.buildDeleteListenerTask(kt, vendor, lbID, taskManagementID, bkBizID, infos)
+		flowID, err := svc.buildDeleteListenerTask(kt, vendor, lbID, taskManagementID, bkBizID, listeners)
 		if err != nil {
 			logs.Errorf("build delete listener task failed, lbID: %s, err: %v, rid: %s",
 				lbID, err, kt.Rid)
@@ -163,14 +173,8 @@ func (svc *lbSvc) buildDeleteListenerTaskManagement(kt *kit.Kit, bkBizID int64, 
 func (svc *lbSvc) buildDeleteListenerTask(kt *kit.Kit, vendor enumor.Vendor, lbID, taskManagementID string,
 	bkBizID int64, listeners []corelb.BaseListener) (string, error) {
 
-	// 预检测-是否有执行中的负载均衡
-	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
-	if err != nil {
-		logs.Errorf("check res flow rel failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
-		return "", err
-	}
-
 	var taskDetails []*taskManagementDetail
+	var err error
 	defer func() {
 		if err == nil {
 			return

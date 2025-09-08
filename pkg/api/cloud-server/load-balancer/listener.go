@@ -22,11 +22,8 @@ package cslb
 import (
 	"fmt"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
-)
-
-const (
-	deleteListenerLimit = 1000
 )
 
 // DeleteListenerReq ...
@@ -37,8 +34,8 @@ type DeleteListenerReq struct {
 
 // Validate ...
 func (req *DeleteListenerReq) Validate() error {
-	if len(req.IDs) > deleteListenerLimit {
-		return fmt.Errorf("delete listener ids count should <= %d", deleteListenerLimit)
+	if len(req.IDs) > constant.BatchOperateDeleteListenerLimit {
+		return fmt.Errorf("delete listener ids count should <= %d", constant.BatchOperateDeleteListenerLimit)
 	}
 	return validator.Validate.Struct(req)
 }
