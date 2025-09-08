@@ -26,8 +26,6 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
-const ()
-
 // BatchModifyTargetWeightReq ...
 type BatchModifyTargetWeightReq struct {
 	AccountID string   `json:"account_id" validate:"required"`

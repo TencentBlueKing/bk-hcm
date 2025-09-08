@@ -103,15 +103,7 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
-	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, req.AccountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyWeight)
-	if err != nil {
-		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
 	tgToTargetsMap := classifier.ClassifySlice(targets, loadbalancer.BaseTarget.GetTargetGroupID)
-
 	tgIDs := slice.Unique(slice.Map(targets, loadbalancer.BaseTarget.GetTargetGroupID))
 	relsMap, err := svc.listTGListenerRuleRelMapByTGIDs(kt, tgIDs)
 	if err != nil {
@@ -120,6 +112,23 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 	tgRelatedInfo, err := svc.listTGRelatedInfoByRels(kt, accountInfo.Vendor, converter.MapValueToSlice(relsMap))
 	if err != nil {
 		logs.Errorf("list target group related info by rels failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	lbToRelsMap := classifier.ClassifyMap(relsMap, loadbalancer.BaseTargetListenerRuleRel.GetLbID)
+	for _, lbID := range converter.MapKeyToSlice(lbToRelsMap) {
+		// 预检测
+		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+			return "", err
+		}
+	}
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, req.AccountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyWeight)
+	if err != nil {
+		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -133,8 +142,6 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 			}
 		}
 	}
-
-	lbToRelsMap := classifier.ClassifyMap(relsMap, loadbalancer.BaseTargetListenerRuleRel.GetLbID)
 
 	flowIDs := make([]string, 0, len(lbToRelsMap))
 	for lbID, rels := range lbToRelsMap {
@@ -240,13 +247,6 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 func (svc *lbSvc) buildModifyTargetWeightFlow(kt *kit.Kit, lbID, accountID, taskManagementID string,
 	vendor enumor.Vendor, bkBizID int64, newWeight *int64, tgToTargetsMap map[string][]loadbalancer.BaseTarget,
 	tgRelatedInfo map[string]TGRelatedInfo) (string, error) {
-
-	// 预检测
-	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
-	if err != nil {
-		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowModifyTargetWeight(kt, lbID, taskManagementID, accountID, vendor, bkBizID, newWeight,
