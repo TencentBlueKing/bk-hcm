@@ -49,8 +49,8 @@ type BatchRemoveTargetReq struct {
 
 // Validate ...
 func (b *BatchRemoveTargetReq) Validate() error {
-	if len(b.TargetIDs) > constant.BatchOperateModifyTargetWeightLimit {
-		return fmt.Errorf("the number of target IDs cannot exceed %d", removeTargetLimit)
+	if len(b.TargetIDs) > constant.BatchOperateRemoveTargetLimit {
+		return fmt.Errorf("the number of target IDs cannot exceed %d", constant.BatchOperateRemoveTargetLimit)
 	}
 	return validator.Validate.Struct(b)
 }

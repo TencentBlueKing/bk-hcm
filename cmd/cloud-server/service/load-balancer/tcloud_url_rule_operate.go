@@ -159,7 +159,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 			return item.taskDetailID
 		})
 		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s", err,
+			logs.Errorf("update task details state to failed, err: %v, taskDetails: %+v, rid: %s", err,
 				taskDetails, kt.Rid)
 		}
 	}()

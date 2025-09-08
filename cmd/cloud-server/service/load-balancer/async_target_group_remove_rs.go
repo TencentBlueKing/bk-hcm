@@ -115,19 +115,26 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor, accountID string, bkBizID int64,
 	targets []corelb.BaseTarget) (string, error) {
 
+	tgToTargetsMap := classifier.ClassifySlice(targets, corelb.BaseTarget.GetTargetGroupID)
+	tgIDs := cvt.MapKeyToSlice(tgToTargetsMap)
+	relsMap, err := svc.listTGListenerRuleRelMapByTGIDs(kt, tgIDs)
+	if err != nil {
+		return "", err
+	}
+
+	lbToRelsMap := classifier.ClassifyMap(relsMap, corelb.BaseTargetListenerRuleRel.GetLbID)
+	for _, lbID := range cvt.MapKeyToSlice(lbToRelsMap) {
+		// 预检测
+		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+			return "", err
+		}
+	}
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, vendor, accountID,
 		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupRemoveRS)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
-	tgToTargetsMap := classifier.ClassifySlice(targets, corelb.BaseTarget.GetTargetGroupID)
-
-	tgIDs := cvt.MapKeyToSlice(tgToTargetsMap)
-
-	relsMap, err := svc.listTGListenerRuleRelMapByTGIDs(kt, tgIDs)
-	if err != nil {
 		return "", err
 	}
 
@@ -146,14 +153,12 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 			}
 		}
 	}
-
-	lbToRelsMap := classifier.ClassifyMap(relsMap, corelb.BaseTargetListenerRuleRel.GetLbID)
 	flowIDs := make([]string, 0, len(lbToRelsMap))
-	for lbID, targetGroups := range lbToRelsMap {
+	for lbID, tgRuleRels := range lbToRelsMap {
 		// 一个clb一个flow
 		tgMap := make(map[string][]corelb.BaseTarget)
-		for _, tg := range targetGroups {
-			tgMap[tg.TargetGroupID] = append(tgMap[tg.TargetGroupID], tgToTargetsMap[tg.TargetGroupID]...)
+		for _, rel := range tgRuleRels {
+			tgMap[rel.TargetGroupID] = append(tgMap[rel.TargetGroupID], tgToTargetsMap[rel.TargetGroupID]...)
 		}
 		flowID, err := svc.buildRemoveTCloudTargetTasks(kt, accountID, lbID, taskManagementID, vendor, bkBizID,
 			tgMap, tgRelatedInfo)
@@ -225,13 +230,6 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, tas
 	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
 	string, error) {
 
-	// 预检测
-	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
-	if err != nil {
-		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap,
 		tgRelatedInfo)
@@ -265,7 +263,7 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 			return item.taskDetailID
 		})
 		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s", err,
+			logs.Errorf("update task details state to failed, err: %v, taskDetails: %+v, rid: %s", err,
 				taskDetails, kt.Rid)
 		}
 	}()

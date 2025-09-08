@@ -517,7 +517,7 @@ func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoa
 	}
 	resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
 	if err != nil {
-		logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("list load balancer failed, req: %v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 	if len(resp.Details) == 0 {
@@ -607,7 +607,7 @@ func (svc *lbSvc) listLoadBalancerMapByIDs(kt *kit.Kit, lbIDs []string) (map[str
 		}
 		resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
 		if err != nil {
-			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+			logs.Errorf("list load balancer failed, req: %v, err: %v, rid: %s", req, err, kt.Rid)
 			return nil, err
 		}
 		for _, detail := range resp.Details {
