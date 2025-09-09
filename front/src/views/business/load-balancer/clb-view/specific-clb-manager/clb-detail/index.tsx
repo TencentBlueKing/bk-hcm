@@ -39,7 +39,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const listenerNum = ref(0);
     const vpcDetail = ref(null);
-    const vpcValid = ref(true); // 记录vpcs接口报错
+    const vpcValid = ref(false); // 记录vpcs接口报错
     const targetVpcDetail = ref(null);
     const resourceFields: FieldList = [
       { name: '名称', prop: 'name', edit: true, getAuthSign: () => props.clbOperationAuthSign },
@@ -210,18 +210,21 @@ export default defineComponent({
     watch(
       () => props.detail,
       async (details) => {
-        vpcValid.value = true; // 重置 vpcValid
+        vpcValid.value = false; // 重置 vpcValid
         if (!details) return;
         // 当 lbInfo 信息变更时, 重新获取监听器数量, vpc 详情
         const listenerNumRes = await businessStore.asyncGetListenerCount({ lb_ids: [details.id] });
         const vpcDetailRes = await businessStore.detail('vpcs', details.vpc_id, { globalError: false });
 
-        if (vpcDetailRes?.code !== 0) {
+        if (vpcDetailRes?.code === 0) {
+          vpcValid.value = true;
+        } else {
           // vpcs 接口错误
           if ([2030403, 2000025].includes(vpcDetailRes?.code)) {
             vpcValid.value = false;
           } else {
             Message({ theme: 'error', message: vpcDetailRes?.message });
+            vpcValid.value = true;
           }
         }
 
