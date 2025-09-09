@@ -60,7 +60,7 @@ type ListUrlRulesByTopologyResp struct {
 type UrlRuleDetail struct {
 	ID           string `json:"id"`
 	Ip           string `json:"ip"`
-	CloudLbID    string `json:"cloud_lb_id"`
+	LbID         string `json:"lb_id"`
 	LblProtocols string `json:"lbl_protocols"`
 	LblPort      int    `json:"lbl_port"`
 	RuleUrl      string `json:"rule_url"`

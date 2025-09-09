@@ -501,7 +501,7 @@ func (svc *lbSvc) buildUrlRuleDetail(rule corelb.TCloudLbUrlRule,
 
 	if lb, exists := lbMap[rule.LbID]; exists {
 		detail.Ip = svc.getLoadBalancerVip(lb)
-		detail.CloudLbID = lb.CloudID
+		detail.LbID = lb.ID
 	}
 
 	if listener, exists := listenerMap[rule.LblID]; exists {
