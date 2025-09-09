@@ -150,14 +150,14 @@ func (t *targetExporter) exportTCloud(kt *kit.Kit, zipOperator zip.OperatorI) er
 	// 查询监听器
 	lblMap, err := t.getLblByIDs(kt, lblIDs)
 	if err != nil {
-		logs.Errorf("get lbl by ids failed, err: %v, ids: %v, rid: %s", err, lblIDs, kt.Rid)
+		logs.Errorf("get lbl by ids failed, err: %v, lblIDs: %v, rid: %s", err, lblIDs, kt.Rid)
 		return err
 	}
 
 	// 查询clb
 	lbMap, err := t.getLbByIDs(kt, lbIDs)
 	if err != nil {
-		logs.Errorf("get lb by ids failed, err: %v, ids: %v, rid: %s", err, lbIDs, kt.Rid)
+		logs.Errorf("get lb by ids failed, err: %v, lbIDs: %v, rid: %s", err, lbIDs, kt.Rid)
 		return err
 	}
 

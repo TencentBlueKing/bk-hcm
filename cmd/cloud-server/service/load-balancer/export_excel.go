@@ -53,8 +53,8 @@ func (svc *lbSvc) PreCheckExportBizListener(cts *rest.Contexts) (interface{}, er
 	}
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 
 	exporter, err := lblogic.NewListenerExporter(svc.client, vendor, req)
@@ -105,8 +105,8 @@ func (svc *lbSvc) ExportBizListener(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 
 	exporter, err := lblogic.NewListenerExporter(svc.client, vendor, req)

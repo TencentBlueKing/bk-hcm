@@ -304,6 +304,7 @@ func (l *listenerExporter) getRsCountRule(ruleType enumor.RuleType) []filter.Rul
 	rules := make([]filter.RuleFactory, 0)
 
 	rules = append(rules, tools.RuleEqual("listener_rule_type", ruleType))
+	rules = append(rules, tools.RuleEqual("binding_status", enumor.SuccessBindingStatus))
 
 	if len(lbIDs) != 0 && len(lblIDs) != 0 {
 		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("lbl_id", lblIDs)))
@@ -565,6 +566,7 @@ func (l *listenerExporter) getTgLblRelClassifyProtocol(kt *kit.Kit) ([]corelb.Ba
 func (l *listenerExporter) getTgLblRelRule() []filter.RuleFactory {
 	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
 	rules := make([]filter.RuleFactory, 0)
+	rules = append(rules, tools.RuleEqual("binding_status", enumor.SuccessBindingStatus))
 
 	if len(lbIDs) != 0 && len(lblIDs) != 0 {
 		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("lbl_id", lblIDs)))
