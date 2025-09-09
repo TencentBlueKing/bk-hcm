@@ -173,8 +173,8 @@ func bizURLRuleService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/{vendor}/rules/target_group/bind", svc.BizUrlRuleBindTargetGroup)
 	h.Add("CreateBizUrlRuleWithoutBinding", http.MethodPost,
 		"/vendors/{vendor}/listeners/{lbl_id}/rule/create", svc.CreateBizUrlRuleWithoutBinding)
-	h.Add("ListUrlRulesByTop", http.MethodPost,
-		"/vendors/{vendor}/url_rules/by_topo/list", svc.ListUrlRulesByTop)
+	h.Add("ListUrlRulesByTopo", http.MethodPost,
+		"/vendors/{vendor}/url_rules/by_topo/list", svc.ListUrlRulesByTopo)
 }
 
 func bizExportService(h *rest.Handler, svc *lbSvc) {

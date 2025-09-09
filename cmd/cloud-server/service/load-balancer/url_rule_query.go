@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
-
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -36,33 +35,35 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListUrlRulesByTop 查询URL规则信息
-func (svc *lbSvc) ListUrlRulesByTop(cts *rest.Contexts) (any, error) {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.New(errf.InvalidParameter, "bk_biz_id is required")
-	}
+// ListUrlRulesByTopo 查询URL规则信息
+func (svc *lbSvc) ListUrlRulesByTopo(cts *rest.Contexts) (any, error) {
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if err = vendor.Validate(); err != nil {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(cslb.ListUrlRulesByTopologyReq)
-	if err = cts.DecodeInto(req); err != nil {
+	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
-	// 业务权限校验
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{
-			Type:   meta.LoadBalancer,
-			Action: meta.Find,
-		},
-		BizID: bizID,
-	})
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	_, noPermFlag, err := handler.ListBizAuthRes(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Find})
+	if err != nil {
+		logs.Errorf("list url rules by topo failed, noPermFlag: %v, err: %v, rid: %s", noPermFlag, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if noPermFlag {
+		logs.Errorf("list url rules by topo no auth, req: %+v, rid: %s", noPermFlag, req, cts.Kit.Rid)
+		return &cslb.ListUrlRulesByTopologyResp{Count: 0, Details: make([]cslb.UrlRuleDetail, 0)}, nil
+	}
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
@@ -89,42 +90,47 @@ func (svc *lbSvc) ListUrlRulesByTop(cts *rest.Contexts) (any, error) {
 func (svc *lbSvc) buildUrlRuleQueryFilter(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
 	req *cslb.ListUrlRulesByTopologyReq) (*filter.Expression, error) {
 
-	hasRuleConditions := len(req.RuleDomains) > 0 || len(req.RuleUrls) > 0
-	hasListenerConditions := len(req.LblProtocols) > 0 || len(req.LblPorts) > 0
-	hasTargetConditions := len(req.TargetIps) > 0 || len(req.TargetPorts) > 0
-	hasLbConditions := len(req.LbRegions) > 0 || len(req.LbNetworkTypes) > 0 || len(req.LbIpVersions) > 0 ||
-		len(req.CloudLbIds) > 0 || len(req.LbVips) > 0 || len(req.LbDomains) > 0
+	lbIDs, err := svc.queryLoadBalancerIDsByUserConditions(kt, bizID, vendor, req)
+	if err != nil {
+		return nil, fmt.Errorf("query load balancer ids by user conditions failed, err: %v", err)
+	}
 
-	if !hasRuleConditions && !hasListenerConditions && !hasTargetConditions && !hasLbConditions {
-		return &filter.Expression{}, nil
+	if len(lbIDs) == 0 && req.HasLbConditions() {
+		return &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				tools.RuleEqual("id", "never_match_condition"),
+			},
+		}, nil
 	}
 
 	var listenerIDs []string
-	var err error
-
-	if hasListenerConditions {
-		listenerIDs, err = svc.queryListenerIDsByConditions(kt, bizID, vendor, req)
+	if req.HasListenerConditions() {
+		listenerIDs, err = svc.queryListenerIDsByLbIDs(kt, vendor, req, lbIDs)
 		if err != nil {
-			return nil, fmt.Errorf("query listener ids failed, err: %v", err)
+			return nil, fmt.Errorf("query listener ids by lb ids failed, err: %v", err)
 		}
-		// 有监听器条件但未查询到匹配的监听器，直接返回空结果
+
 		if len(listenerIDs) == 0 {
-			return &filter.Expression{}, nil
+			return &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					tools.RuleEqual("id", "never_match_condition"),
+				},
+			}, nil
 		}
 	}
 
 	conditions := []*filter.AtomRule{
 		tools.RuleIn("rule_type", []string{string(enumor.Layer4RuleType), string(enumor.Layer7RuleType)}),
-		tools.RuleEqual("bk_biz_id", bizID),
 	}
 
-	if hasListenerConditions {
+	if len(lbIDs) > 0 {
+		conditions = append(conditions, tools.RuleIn("lb_id", lbIDs))
+	}
+
+	if len(listenerIDs) > 0 {
 		conditions = append(conditions, tools.RuleIn("cloud_lbl_id", listenerIDs))
-	}
-
-	conditions, err = svc.addLoadBalancerConditions(kt, bizID, vendor, req, conditions)
-	if err != nil {
-		return nil, err
 	}
 
 	conditions = svc.addRuleConditions(req, conditions)
@@ -133,8 +139,8 @@ func (svc *lbSvc) buildUrlRuleQueryFilter(kt *kit.Kit, bizID int64, vendor enumo
 	if err != nil {
 		return nil, err
 	}
-
-	return tools.ExpressionAnd(conditions...), nil
+	finalFilter := tools.ExpressionAnd(conditions...)
+	return finalFilter, nil
 }
 
 // addLoadBalancerConditions 添加负载均衡器相关条件
@@ -152,7 +158,7 @@ func (svc *lbSvc) addLoadBalancerConditions(kt *kit.Kit, bizID int64, vendor enu
 		}
 
 		if len(lbIDs) == 0 {
-			return []*filter.AtomRule{}, nil
+			return conditions, nil
 		}
 
 		conditions = append(conditions, tools.RuleIn("lb_id", lbIDs))
@@ -164,12 +170,14 @@ func (svc *lbSvc) addLoadBalancerConditions(kt *kit.Kit, bizID int64, vendor enu
 // addRuleConditions 添加规则相关条件
 func (svc *lbSvc) addRuleConditions(req *cslb.ListUrlRulesByTopologyReq,
 	conditions []*filter.AtomRule) []*filter.AtomRule {
-	if len(req.RuleDomains) > 0 {
-		conditions = append(conditions, tools.RuleIn("domain", req.RuleDomains))
-	}
+	if req.HasRuleConditions() {
+		if len(req.RuleDomains) > 0 {
+			conditions = append(conditions, tools.RuleIn("domain", req.RuleDomains))
+		}
 
-	if len(req.RuleUrls) > 0 {
-		conditions = append(conditions, tools.RuleIn("url", req.RuleUrls))
+		if len(req.RuleUrls) > 0 {
+			conditions = append(conditions, tools.RuleIn("url", req.RuleUrls))
+		}
 	}
 
 	return conditions
@@ -178,7 +186,7 @@ func (svc *lbSvc) addRuleConditions(req *cslb.ListUrlRulesByTopologyReq,
 // addTargetConditions 添加目标相关条件，需要查询目标表
 func (svc *lbSvc) addTargetConditions(kt *kit.Kit, req *cslb.ListUrlRulesByTopologyReq,
 	conditions []*filter.AtomRule) ([]*filter.AtomRule, error) {
-	if len(req.TargetIps) == 0 && len(req.TargetPorts) == 0 {
+	if !req.HasTargetConditions() {
 		return conditions, nil
 	}
 
@@ -194,21 +202,20 @@ func (svc *lbSvc) addTargetConditions(kt *kit.Kit, req *cslb.ListUrlRulesByTopol
 	return conditions, nil
 }
 
-// queryLoadBalancerIDsByConditions 根据负载均衡器条件查询负载均衡器ID
-func (svc *lbSvc) queryLoadBalancerIDsByConditions(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
+// queryLoadBalancerIDsByUserConditions 根据用户输入的负载均衡器条件查询负载均衡器ID
+func (svc *lbSvc) queryLoadBalancerIDsByUserConditions(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
 	req *cslb.ListUrlRulesByTopologyReq) ([]string, error) {
 
 	lbFilter, err := svc.buildLoadBalancerFilter(bizID, vendor, req)
 	if err != nil {
 		return nil, err
 	}
-
 	return svc.queryLoadBalancerIDsByFilter(kt, lbFilter)
 }
 
-// buildLoadBalancerFilter 构建负载均衡器查询过滤器
-func (svc *lbSvc) buildLoadBalancerFilter(bizID int64, vendor enumor.Vendor,
-	req *cslb.ListUrlRulesByTopologyReq) (*filter.Expression, error) {
+// queryLoadBalancerIDsByConditions 根据基础条件查询负载均衡器ID
+func (svc *lbSvc) queryLoadBalancerIDsByConditions(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
+	req *cslb.ListUrlRulesByTopologyReq) ([]string, error) {
 
 	lbConditions := []*filter.AtomRule{
 		tools.RuleEqual("vendor", vendor),
@@ -216,76 +223,19 @@ func (svc *lbSvc) buildLoadBalancerFilter(bizID int64, vendor enumor.Vendor,
 		tools.RuleEqual("bk_biz_id", bizID),
 	}
 
-	if len(req.LbRegions) > 0 {
-		lbConditions = append(lbConditions, tools.RuleIn("region", req.LbRegions))
-	}
-	if len(req.LbNetworkTypes) > 0 {
-		lbConditions = append(lbConditions, tools.RuleIn("network_type", req.LbNetworkTypes))
-	}
-	if len(req.LbIpVersions) > 0 {
-		lbConditions = append(lbConditions, tools.RuleIn("ip_version", req.LbIpVersions))
-	}
-	if len(req.CloudLbIds) > 0 {
-		lbConditions = append(lbConditions, tools.RuleIn("cloud_id", req.CloudLbIds))
-	}
-	if len(req.LbDomains) > 0 {
-		lbConditions = append(lbConditions, tools.RuleIn("domain", req.LbDomains))
-	}
-
-	if len(req.LbVips) > 0 {
-		vipConditions := []*filter.AtomRule{
-			tools.RuleJsonOverlaps("private_ipv4_addresses", req.LbVips),
-			tools.RuleJsonOverlaps("private_ipv6_addresses", req.LbVips),
-			tools.RuleJsonOverlaps("public_ipv4_addresses", req.LbVips),
-			tools.RuleJsonOverlaps("public_ipv6_addresses", req.LbVips),
-		}
-		vipOrFilter := tools.ExpressionOr(vipConditions...)
-		return tools.And(tools.ExpressionAnd(lbConditions...), vipOrFilter)
-	}
-
-	return tools.ExpressionAnd(lbConditions...), nil
+	lbFilter := tools.ExpressionAnd(lbConditions...)
+	return svc.queryLoadBalancerIDsByFilter(kt, lbFilter)
 }
 
-// queryLoadBalancerIDsByFilter 根据过滤器查询负载均衡器ID
-func (svc *lbSvc) queryLoadBalancerIDsByFilter(kt *kit.Kit, filter *filter.Expression) ([]string, error) {
-	lbReq := &core.ListReq{Filter: filter, Page: core.NewDefaultBasePage()}
-	lbIDs := make([]string, 0)
-
-	for {
-		lbResp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, lb := range lbResp.Details {
-			lbIDs = append(lbIDs, lb.ID)
-		}
-
-		if uint(len(lbResp.Details)) < core.DefaultMaxPageLimit {
-			break
-		}
-		lbReq.Page.Start += uint32(core.DefaultMaxPageLimit)
-	}
-
-	return lbIDs, nil
-}
-
-// queryListenerIDsByConditions 根据条件查询监听器ID,先根据条件查clb，再根据clb的id查监听器
-func (svc *lbSvc) queryListenerIDsByConditions(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
-	req *cslb.ListUrlRulesByTopologyReq) ([]string, error) {
-	lbIDs, err := svc.queryLoadBalancerIDsByConditions(kt, bizID, vendor, req)
-	if err != nil {
-		return nil, fmt.Errorf("query load balancer ids failed, err: %v", err)
-	}
-
-	if len(lbIDs) == 0 {
-		return []string{}, nil
-	}
-
+// queryListenerIDsByLbIDs 根据CLB ID列表和监听器条件查询监听器ID
+func (svc *lbSvc) queryListenerIDsByLbIDs(kt *kit.Kit, vendor enumor.Vendor, req *cslb.ListUrlRulesByTopologyReq, lbIDs []string) ([]string, error) {
 	listenerConditions := []*filter.AtomRule{
 		tools.RuleEqual("vendor", vendor),
 		tools.RuleEqual("account_id", req.AccountID),
-		tools.RuleIn("lb_id", lbIDs),
+	}
+
+	if len(lbIDs) > 0 {
+		listenerConditions = append(listenerConditions, tools.RuleIn("lb_id", lbIDs))
 	}
 
 	if len(req.LblProtocols) > 0 {
@@ -312,8 +262,6 @@ func (svc *lbSvc) queryListenerIDsByConditions(kt *kit.Kit, bizID int64, vendor 
 
 		for _, listener := range listenerResp.Details {
 			listenerIDs = append(listenerIDs, listener.CloudID)
-			logs.Infof("queryListenerIDsByConditions: listener ID: %s, cloud_id: %s, account_id: %s, bk_biz_id: %d, lb_id: %s",
-				listener.ID, listener.CloudID, listener.AccountID, listener.BkBizID, listener.LbID)
 		}
 
 		if uint(len(listenerResp.Details)) < core.DefaultMaxPageLimit {
@@ -324,6 +272,103 @@ func (svc *lbSvc) queryListenerIDsByConditions(kt *kit.Kit, bizID int64, vendor 
 	}
 
 	return listenerIDs, nil
+}
+
+// buildLoadBalancerFilter 构建负载均衡器查询过滤器
+func (svc *lbSvc) buildLoadBalancerFilter(bizID int64, vendor enumor.Vendor,
+	req *cslb.ListUrlRulesByTopologyReq) (*filter.Expression, error) {
+
+	lbConditions := []*filter.AtomRule{
+		tools.RuleEqual("vendor", vendor),
+		tools.RuleEqual("account_id", req.AccountID),
+		tools.RuleEqual("bk_biz_id", bizID),
+	}
+
+	if req.HasLbConditions() {
+		if len(req.LbRegions) > 0 {
+			lbConditions = append(lbConditions, tools.RuleIn("region", req.LbRegions))
+		}
+	}
+	var networkTypeFilter *filter.Expression
+	if len(req.LbNetworkTypes) > 0 {
+		var networkTypeConditions []*filter.AtomRule
+		for _, networkType := range req.LbNetworkTypes {
+			switch networkType {
+			case "OPEN":
+				networkTypeConditions = append(networkTypeConditions,
+					tools.RuleGreaterThan("extension.internet_max_bandwidth_out", 0))
+			case "INTERNAL":
+				networkTypeConditions = append(networkTypeConditions,
+					tools.RuleEqual("extension.internet_max_bandwidth_out", 0))
+			}
+		}
+		if len(networkTypeConditions) > 0 {
+			networkTypeFilter = tools.ExpressionOr(networkTypeConditions...)
+		}
+	}
+	if len(req.LbIpVersions) > 0 {
+		lbConditions = append(lbConditions, tools.RuleIn("ip_version", req.LbIpVersions))
+	}
+	if len(req.CloudLbIds) > 0 {
+		lbConditions = append(lbConditions, tools.RuleIn("cloud_id", req.CloudLbIds))
+	}
+	if len(req.LbDomains) > 0 {
+		lbConditions = append(lbConditions, tools.RuleIn("domain", req.LbDomains))
+	}
+
+	baseFilter := tools.ExpressionAnd(lbConditions...)
+
+	filters := []*filter.Expression{baseFilter}
+
+	if networkTypeFilter != nil {
+		filters = append(filters, networkTypeFilter)
+	}
+
+	if len(req.LbVips) > 0 {
+		vipConditions := []*filter.AtomRule{
+			tools.RuleJsonOverlaps("private_ipv4_addresses", req.LbVips),
+			tools.RuleJsonOverlaps("private_ipv6_addresses", req.LbVips),
+			tools.RuleJsonOverlaps("public_ipv4_addresses", req.LbVips),
+			tools.RuleJsonOverlaps("public_ipv6_addresses", req.LbVips),
+		}
+		vipOrFilter := tools.ExpressionOr(vipConditions...)
+		filters = append(filters, vipOrFilter)
+	}
+	if len(filters) > 1 {
+		combinedFilter := &filter.Expression{
+			Op:    filter.And,
+			Rules: []filter.RuleFactory{},
+		}
+		for _, f := range filters {
+			combinedFilter.Rules = append(combinedFilter.Rules, f)
+		}
+		return combinedFilter, nil
+	}
+	return baseFilter, nil
+}
+
+// queryLoadBalancerIDsByFilter 根据过滤器查询负载均衡器ID
+func (svc *lbSvc) queryLoadBalancerIDsByFilter(kt *kit.Kit, filter *filter.Expression) ([]string, error) {
+	lbReq := &core.ListReq{Filter: filter, Page: core.NewDefaultBasePage()}
+	lbIDs := make([]string, 0)
+
+	for {
+		lbResp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, lb := range lbResp.Details {
+			lbIDs = append(lbIDs, lb.ID)
+		}
+
+		if uint(len(lbResp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		lbReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return lbIDs, nil
 }
 
 // queryTargetGroupIDsByTargetConditions 根据目标条件查询目标组ID
@@ -456,12 +501,13 @@ func (svc *lbSvc) buildUrlRuleDetail(rule corelb.TCloudLbUrlRule,
 
 	if lb, exists := lbMap[rule.LbID]; exists {
 		detail.Ip = svc.getLoadBalancerVip(lb)
+		detail.CloudLbID = lb.CloudID
 	}
 
 	if listener, exists := listenerMap[rule.LblID]; exists {
 		detail.LblProtocols = string(listener.Protocol)
 		detail.LblPort = int(listener.Port)
-		detail.ListenerID = listener.ID
+		detail.CloudLblID = listener.CloudID
 	}
 
 	if _, exists := targetGroupMap[rule.TargetGroupID]; exists {
