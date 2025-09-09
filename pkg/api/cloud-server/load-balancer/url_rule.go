@@ -13,7 +13,6 @@
  * specific language governing permissions and limitations under the License.
  *
  * We undertake not to change the open source license (MIT license) applicable
- *
  * to the current version of the project delivered to anyone in the future.
  */
 
@@ -23,51 +22,75 @@ import (
 	"hcm/pkg/api/core"
 )
 
-// ListUrlRulesByTopologyReq list url rules by topology.
+// ListUrlRulesByTopologyReq 查询URL规则请求
 type ListUrlRulesByTopologyReq struct {
-	AccountID string `json:"account_id" validate:"required"`
+	AccountID string `json:"account_id"`
+	Vendor    string `json:"vendor"`
 
-	LbRegions []string `json:"lb_regions" validate:"omitempty,max=500"`
+	// 负载均衡器相关条件
+	LbRegions      []string `json:"lb_regions"`
+	LbNetworkTypes []string `json:"lb_network_types"`
+	LbIpVersions   []string `json:"lb_ip_versions"`
+	CloudLbIds     []string `json:"cloud_lb_ids"`
+	LbVips         []string `json:"lb_vips"`
+	LbDomains      []string `json:"lb_domains"`
 
-	LbNetworkTypes []string `json:"lb_network_types" validate:"omitempty"`
+	// 监听器相关条件
+	LblProtocols []string `json:"lbl_protocols"`
+	LblPorts     []int    `json:"lbl_ports"`
 
-	LbIpVersions []string `json:"lb_ip_versions" validate:"omitempty"`
+	// 目标相关条件
+	TargetIps   []string `json:"target_ips"`
+	TargetPorts []int    `json:"target_ports"`
 
-	CloudLbIds []string `json:"cloud_lb_ids" validate:"omitempty,max=500"`
+	// 规则相关条件
+	RuleUrls    []string `json:"rule_urls"`
+	RuleDomains []string `json:"rule_domains"`
 
-	LbVips []string `json:"lb_vips" validate:"omitempty,max=500"`
-
-	LbDomains []string `json:"lb_domains" validate:"omitempty,max=500"`
-
-	LblProtocols []string `json:"lbl_protocols" validate:"omitempty"`
-
-	LblPorts []int `json:"lbl_ports" validate:"omitempty,max=1000"`
-
-	RuleDomains []string `json:"rule_domains" validate:"omitempty,max=500"`
-
-	RuleUrls []string `json:"rule_urls" validate:"omitempty,max=500"`
-
-	TargetIps []string `json:"target_ips" validate:"omitempty,max=5000"`
-
-	TargetPorts []int `json:"target_ports" validate:"omitempty,max=500"`
-
-	Page *core.BasePage `json:"page" validate:"required"`
+	Page *core.BasePage `json:"page"`
 }
 
-// ListUrlRulesByTopologyResp list url rules by topology resp.
+// ListUrlRulesByTopologyResp 查询URL规则响应
 type ListUrlRulesByTopologyResp struct {
 	Count   int             `json:"count"`
 	Details []UrlRuleDetail `json:"details"`
 }
 
-// UrlRuleDetail url rule detail.
+// UrlRuleDetail URL规则详情
 type UrlRuleDetail struct {
 	ID           string `json:"id"`
 	Ip           string `json:"ip"`
+	CloudLbID    string `json:"cloud_lb_id"`
 	LblProtocols string `json:"lbl_protocols"`
 	LblPort      int    `json:"lbl_port"`
 	RuleUrl      string `json:"rule_url"`
 	RuleDomain   string `json:"rule_domain"`
 	TargetCount  int    `json:"target_count"`
-	ListenerID   string `json:"listener_id"`
+	CloudLblID   string `json:"cloud_lbl_id"`
+}
+
+// HasLbConditions 是否有负载均衡器相关条件
+func (req *ListUrlRulesByTopologyReq) HasLbConditions() bool {
+	return len(req.LbRegions) > 0 || len(req.LbNetworkTypes) > 0 || len(req.LbIpVersions) > 0 ||
+		len(req.CloudLbIds) > 0 || len(req.LbVips) > 0 || len(req.LbDomains) > 0
+}
+
+// HasListenerConditions 是否有监听器相关条件
+func (req *ListUrlRulesByTopologyReq) HasListenerConditions() bool {
+	return len(req.LblProtocols) > 0 || len(req.LblPorts) > 0
+}
+
+// HasRuleConditions 是否有规则相关条件
+func (req *ListUrlRulesByTopologyReq) HasRuleConditions() bool {
+	return len(req.RuleUrls) > 0 || len(req.RuleDomains) > 0
+}
+
+// HasTargetConditions 是否有目标相关条件
+func (req *ListUrlRulesByTopologyReq) HasTargetConditions() bool {
+	return len(req.TargetIps) > 0 || len(req.TargetPorts) > 0
+}
+
+// Validate 验证请求参数
+func (req *ListUrlRulesByTopologyReq) Validate() error {
+	return nil
 }
