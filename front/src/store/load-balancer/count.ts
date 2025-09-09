@@ -16,7 +16,7 @@ export const useLoadBalancerCountStore = defineStore('load-balancer-count', () =
       `vendors/${vendor}/listeners/by_topo/list`,
       businessId,
     );
-    const url = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_rule_urls/list`, businessId);
+    const url = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/url_rules/by_topo/list`, businessId);
     const rs = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/count`, businessId);
     try {
       const res = await Promise.all<

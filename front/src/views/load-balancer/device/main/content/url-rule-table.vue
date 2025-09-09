@@ -8,6 +8,10 @@ import usePage from '@/hooks/use-page';
 import DataList from '@/views/load-balancer/children/display/data-list.vue';
 import { ILoadBalanceDeviceCondition } from '../../common';
 import { Share } from 'bkui-vue/lib/icon';
+import routerAction from '@/router/utils/action';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
+import qs from 'qs';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits(['getList']);
@@ -22,8 +26,30 @@ const displayFieldIds = ['ip', 'lbl_protocols', 'lbl_port', 'rule_url', 'rule_do
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.URL).getProperties();
 const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   lbl_port: {
-    render: ({ cell }) => {
-      const handleClick = () => {};
+    render: ({ row, cell }) => {
+      const handleClick = () => {
+        const filter = qs.stringify(
+          {
+            cloud_id: row.cloud_lbl_id,
+          },
+          {
+            arrayFormat: 'comma',
+            encode: false,
+            allowEmptyArrays: true,
+          },
+        );
+        routerAction.open({
+          name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
+          params: {
+            id: row.lb_id,
+          },
+          query: {
+            [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value,
+            filter,
+            detailShow: true,
+          },
+        });
+      };
       return h('div', { onClick: handleClick, class: 'port' }, [h('span', {}, cell), h(Share, { class: 'share' })]);
     },
   },

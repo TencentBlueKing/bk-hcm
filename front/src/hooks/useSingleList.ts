@@ -77,6 +77,7 @@ export function useSingleList<T>(options?: {
         );
 
         dataList.value = list;
+        pagination.count = list.length;
         options.listLoaded();
 
         return list;

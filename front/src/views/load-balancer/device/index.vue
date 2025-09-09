@@ -27,23 +27,29 @@ const loading = ref(false); // 条件框查询按钮loading态
 const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
   // 对数字类型转换
   Object.entries(newCondition).forEach(([label, value]) => {
-    if (numberField.includes(label)) newCondition[label] = Array.isArray(value) ? value.map(Number) : Number(value);
+    const isArray = Array.isArray(value);
+    if (numberField.includes(label)) newCondition[label] = isArray ? value.map(Number) : Number(value);
   });
-  // 先调总数接口
-  const { listenerCount, urlCount, rsCount } = await loadBalancerCountStore.getCount(
-    newCondition,
-    currentGlobalBusinessId.value,
-  );
-  count.value = {
-    listenerCount,
-    urlCount,
-    rsCount,
-  };
-  condition.value = newCondition;
   loading.value = true;
-  routeQuery.set({
-    _t: Date.now(),
-  });
+  try {
+    // 先调总数接口
+    const { listenerCount, urlCount, rsCount } = await loadBalancerCountStore.getCount(
+      newCondition,
+      currentGlobalBusinessId.value,
+    );
+    count.value = {
+      listenerCount,
+      urlCount,
+      rsCount,
+    };
+  } catch {
+    loading.value = false;
+  } finally {
+    condition.value = newCondition;
+    routeQuery.set({
+      _t: Date.now(),
+    });
+  }
 };
 const handleListDone = () => {
   loading.value = false;

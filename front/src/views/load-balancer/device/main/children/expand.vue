@@ -31,7 +31,17 @@
                 <RightShape v-else></RightShape>
               </div>
               <div class="info mr20 ml10">
-                <a class="ip" @click="() => handleIPClick(item.inst_id)">{{ item.ip }}</a>
+                <a
+                  :class="[
+                    'ip',
+                    {
+                      actived: allActiveIP.has(item.inst_id),
+                    },
+                  ]"
+                  @click="() => handleIPClick(item.inst_id)"
+                >
+                  {{ item.ip }}
+                </a>
                 <span class="name">({{ t(item?.inst_name ?? '') }})</span>
               </div>
               <div class="rs-num mr20">{{ t('RS数量：') }} {{ item.targets.length }}</div>
@@ -97,7 +107,7 @@ import { useI18n } from 'vue-i18n';
 import { Button } from 'bkui-vue';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
-import { AngleUpFill, RightShape, InfoLine } from 'bkui-vue/lib/icon';
+import { AngleUpFill, RightShape } from 'bkui-vue/lib/icon';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { RsDeviceType } from '@/views/load-balancer/constants';
@@ -148,9 +158,10 @@ const dataListColumns = displayFieldIds.map((id) => {
 const { t } = useI18n();
 const regionStore = useRegionsStore();
 
+const allActiveIP = new Set();
 const active = ref<string[]>([props.rsList[0]?.inst_id]);
 const count = ref<number>(0);
-const max = ref<number>(20);
+const max = ref<number>(5000);
 const tableRef = ref(null);
 const checkStatus = ref([]);
 
@@ -185,6 +196,7 @@ const handleClick = (id: string) => {
 };
 const handleIPClick = (id: string) => {
   handleClick(id);
+  allActiveIP.add(id);
   routerAction.open({
     name: 'hostBusinessDetail',
     query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, id, type: props.vendor },
@@ -303,8 +315,9 @@ defineExpose({ selections });
   .ip {
     color: #3a84ff;
     cursor: pointer;
+    display: inline-block;
 
-    &:visited {
+    &.actived {
       color: #8334f4;
       text-decoration: underline;
     }

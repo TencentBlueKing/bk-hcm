@@ -22,7 +22,7 @@ export const useLoadBalancerUrlRuleStore = defineStore('load-balancer-url-rule',
   const getUrlRuleList = async (condition: ILoadBalanceDeviceCondition, page: IPageQuery, businessId: number) => {
     urlRuleListLoading.value = true;
     const { vendor } = condition;
-    const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_rule_urls/list`, businessId);
+    const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/url_rules/by_topo/list`, businessId);
     try {
       const [listRes, countRes] = await Promise.all<
         [Promise<IListResData<IUrlRuleItem[]>>, Promise<IListResData<IUrlRuleItem[]>>]

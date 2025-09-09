@@ -24,6 +24,7 @@ const formModel = reactive<ILoadBalanceDeviceCondition>({ account_id: '', vendor
 const originFormModel: ILoadBalanceDeviceCondition = reactive(cloneDeep(formModel));
 const isShow = ref(false);
 const hasSaved = ref(false);
+const formRef = ref(null);
 
 const hasChange = computed(() => !isEqual(formModel, originFormModel));
 const disabled = computed(() => !hasSaved.value && !hasChange.value);
@@ -33,14 +34,15 @@ const handleAccountChange = (item: IAccountItem) => {
   formModel.lb_regions = [];
 };
 const handlePaste = (value: any) => value.split(/,|;|\n|\s/).map((tag: any) => ({ id: tag, name: tag }));
-const handleSave = () => {
+const handleSave = async () => {
   if (!hasChange.value) return;
+  await formRef.value.validate();
   Object.keys(formModel).forEach((key) => {
     originFormModel[key] = formModel[key];
   });
   hasSaved.value = true;
   isShow.value = false;
-  emit('save', originFormModel);
+  emit('save', cloneDeep(originFormModel));
 };
 const handleReset = () => {
   Object.keys(formModel).forEach((key) => {
@@ -76,7 +78,7 @@ watch(
   <div class="device-condition">
     <div class="header">{{ t('检索条件') }}</div>
     <div class="condition">
-      <bk-form ref="condition-form" class="condition-form g-expand" form-type="vertical" :model="formModel">
+      <bk-form ref="formRef" class="condition-form g-expand" form-type="vertical" :model="formModel">
         <bk-form-item :label="t('云账号')" property="account_id" required>
           <account-selector
             v-model="formModel.account_id"

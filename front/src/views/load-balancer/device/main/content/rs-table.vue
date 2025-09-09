@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { computed, ComputedRef, h, inject, reactive, ref, watch } from 'vue';
-// import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-// import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IRsItem, useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 import { RsDeviceType } from '@/views/load-balancer/constants';
 import { ActionItemType } from '@/views/load-balancer/typing';
-// import { ActiveQueryKey, ClbDetailsTabKey } from '@/views/load-balancer/constants';
-// import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
-// import { ModelPropertyColumn } from '@/model/typings';
-// import { ConditionKeyType, SearchConditionFactory } from '@/views/load-balancer/children/search/condition-factory';
 import usePage from '@/hooks/use-page';
-// import useSearchQs from '@/hooks/use-search-qs';
-// import DataList from '@/views/load-balancer/children/display/data-list.vue';
 import { ILoadBalanceDeviceCondition } from '../../common';
 import routeQuery from '@/router/utils/query';
 import { IAuthSign } from '@/common/auth-service';
@@ -40,7 +32,7 @@ const expandRef = ref(null);
 
 const selections = computed(() => expandRef.value?.selections ?? []);
 
-const batchOperationDialog = reactive({ isShow: false, isHidden: true, type: 'info' });
+const batchOperationDialog = reactive({ isShow: false, isHidden: true, type: RsDeviceType.INFO });
 const actionConfig: Record<RsDeviceType, ActionItemType> = {
   [RsDeviceType.ADJUST]: {
     type: 'button',
@@ -182,7 +174,6 @@ watch(
         :selections="selections"
         :vendor="condition.vendor"
         :type="batchOperationDialog.type"
-        @confirm-success="handleBatchOperationSuccess"
         @hidden="batchOperationDialog.isHidden = true"
       />
     </template>
