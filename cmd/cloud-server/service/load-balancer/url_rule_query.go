@@ -357,11 +357,9 @@ func (svc *lbSvc) queryLoadBalancerIDsByFilter(kt *kit.Kit, filter *filter.Expre
 		if err != nil {
 			return nil, err
 		}
-
 		for _, lb := range lbResp.Details {
 			lbIDs = append(lbIDs, lb.ID)
 		}
-
 		if uint(len(lbResp.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
@@ -399,36 +397,30 @@ func (svc *lbSvc) queryTargetGroupIDsByTargetConditions(kt *kit.Kit,
 		if err != nil {
 			return nil, err
 		}
-
 		for _, target := range targetResp.Details {
 			if target.TargetGroupID != "" {
 				targetGroupIDMap[target.TargetGroupID] = struct{}{}
 			}
 		}
-
 		if uint(len(targetResp.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
 		targetReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
-
 	targetGroupIDs := make([]string, 0, len(targetGroupIDMap))
 	for targetGroupID := range targetGroupIDMap {
 		targetGroupIDs = append(targetGroupIDs, targetGroupID)
 	}
-
 	return targetGroupIDs, nil
 }
 
 // queryUrlRulesByFilter 根据条件查询URL规则
 func (svc *lbSvc) queryUrlRulesByFilter(kt *kit.Kit, vendor enumor.Vendor,
 	filter *filter.Expression, page *core.BasePage) (*dataproto.TCloudURLRuleListResult, error) {
-
 	req := &core.ListReq{
 		Filter: filter,
 		Page:   page,
 	}
-
 	switch vendor {
 	case enumor.TCloud:
 		return svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, req)
@@ -438,12 +430,10 @@ func (svc *lbSvc) queryUrlRulesByFilter(kt *kit.Kit, vendor enumor.Vendor,
 }
 func (svc *lbSvc) buildUrlRuleResponse(kt *kit.Kit,
 	urlRuleList *dataproto.TCloudURLRuleListResult) (*cslb.ListUrlRulesByTopologyResp, error) {
-
 	result := &cslb.ListUrlRulesByTopologyResp{
 		Count:   int(urlRuleList.Count),
 		Details: make([]cslb.UrlRuleDetail, 0, len(urlRuleList.Details)),
 	}
-
 	if len(urlRuleList.Details) == 0 {
 		return result, nil
 	}
@@ -464,22 +454,18 @@ func (svc *lbSvc) buildUrlRuleResponse(kt *kit.Kit,
 	if err != nil {
 		logs.Errorf("batch get load balancer info failed, err: %v, rid: %s", err, kt.Rid)
 	}
-
 	listenerMap, err := svc.batchGetListenerInfo(kt, listenerIDs)
 	if err != nil {
 		logs.Errorf("batch get listener info failed, err: %v, rid: %s", err, kt.Rid)
 	}
-
 	targetGroupMap, err := svc.batchGetTargetGroupInfo(kt, targetGroupIDs)
 	if err != nil {
 		logs.Errorf("batch get target group info failed, err: %v, rid: %s", err, kt.Rid)
 	}
-
 	targetCountMap, err := svc.batchGetTargetCountByTargetGroupIDs(kt, targetGroupIDs)
 	if err != nil {
 		logs.Errorf("batch get target count failed, err: %v, rid: %s", err, kt.Rid)
 	}
-
 	for _, rule := range urlRuleList.Details {
 		detail := svc.buildUrlRuleDetail(rule, lbMap, listenerMap, targetGroupMap, targetCountMap)
 		result.Details = append(result.Details, detail)
