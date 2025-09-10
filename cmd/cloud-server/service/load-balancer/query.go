@@ -520,6 +520,7 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 	}
 	return vpcMap, nil
 }
+
 func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoadBalancer, error) {
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(

@@ -336,3 +336,12 @@ bkUser:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# ccHostPoolBiz cmdb host pool biz id
+ccHostPoolBiz: 1
+
+concurrentConfig:
+  clbImportCount: 10
+
+# tmp file dir, default: /tmp
+tmpFileDir: /tmp
