@@ -198,7 +198,7 @@ func (svc *lbSvc) buildDeleteListenerTask(kt *kit.Kit, vendor enumor.Vendor, lbI
 		"lb_id": lbID,
 	}), tasks)
 	if err != nil {
-		logs.Errorf("")
+		logs.Errorf("build flow failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
 		return "", err
 	}
 	for _, detail := range taskDetails {
