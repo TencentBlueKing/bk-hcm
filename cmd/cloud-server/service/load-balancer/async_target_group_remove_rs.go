@@ -123,7 +123,7 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 	}
 
 	lbToRelsMap := classifier.ClassifyMap(relsMap, corelb.BaseTargetListenerRuleRel.GetLbID)
-	for _, lbID := range cvt.MapKeyToSlice(lbToRelsMap) {
+	for lbID := range lbToRelsMap {
 		// 预检测
 		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 		if err != nil {
@@ -281,20 +281,23 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 	})
 	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupRemoveRS, shareData, tasks)
 	if err != nil {
+		logs.Errorf("build flow failed, err: %v, accountID: %s, lbID: %s, bkBizID: %d, rid: %s", err, accountID,
+			lbID, bkBizID, kt.Rid)
 		return "", err
 	}
 	for _, detail := range taskDetails {
 		detail.flowID = flowID
 	}
 
-	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+	if err := svc.updateTaskDetails(kt, taskDetails); err != nil {
 		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
 		return "", err
 	}
 
 	tgIDs := cvt.MapKeyToSlice(tgMap)
-	if err = svc.buildSubFlow(kt, flowID, lbID, tgIDs, enumor.TargetGroupCloudResType,
+	if err := svc.buildSubFlow(kt, flowID, lbID, tgIDs, enumor.TargetGroupCloudResType,
 		enumor.RemoveRSTaskType); err != nil {
+		logs.Errorf("build sub flow failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
 		return "", err
 	}
 	return flowID, nil
