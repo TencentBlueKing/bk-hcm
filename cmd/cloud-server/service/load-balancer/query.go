@@ -667,7 +667,7 @@ type TGRelatedInfo struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 
 	Protocol enumor.ProtocolType `json:"protocol"`
-	Port     int64               `json:"port"`
+	Port     int64               `json:"listener_port"`
 
 	Domain string `json:"domain"`
 	URL    string `json:"url"`
