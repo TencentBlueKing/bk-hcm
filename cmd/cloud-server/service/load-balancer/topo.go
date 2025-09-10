@@ -726,7 +726,7 @@ func (svc *lbSvc) getListenerRelInfo(kt *kit.Kit, vendor enumor.Vendor, listener
 		lblIDRulesMap[rule.LblID] = append(lblIDRulesMap[rule.LblID], rule)
 	}
 
-	// 查询监听器关联的target数量和权重不为0的target数量
+	// 获取监听器关联的target数量和权重不为0的target数量, 监听器关联的目标组
 	tgLbRels, err := svc.getTgLbRelByCond(kt, []filter.RuleFactory{tools.RuleIn("lbl_id", lblIDs)})
 	if err != nil {
 		logs.Errorf("get tg lb rel by cond failed, err: %v, lblIDs: %+v, rid: %s", err, lblIDs, kt.Rid)
