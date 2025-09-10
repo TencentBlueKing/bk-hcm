@@ -106,7 +106,7 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 func (svc *lbSvc) buildDelLblTaskManagement(kt *kit.Kit, bkBizID int64, accountID string) (
 	string, enumor.Vendor, error) {
 
-	// 1. create task management
+	// create task management
 	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(kt, enumor.AccountCloudResType, accountID)
 	if err != nil {
 		logs.Errorf("get account info failed, accountID: %s, err: %v, rid: %s", accountID, err, kt.Rid)
@@ -130,13 +130,13 @@ func (svc *lbSvc) createTaskManagementForDelLbl(kt *kit.Kit, bkBizID int64, req 
 	// list listener
 	listeners, err := svc.listListenersByIDs(kt, req.IDs)
 	if err != nil {
-		logs.Errorf("list listener map failed, ids: %v, err: %v, rid: %s", req.IDs, err, kt.Rid)
+		logs.Errorf("list listeners failed, ids: %v, err: %v, rid: %s", req.IDs, err, kt.Rid)
 		return "", err
 	}
 	clbIDLblMap := classifier.ClassifySlice(listeners, func(item corelb.BaseListener) string {
 		return item.LbID
 	})
-	for _, lbID := range converter.MapKeyToSlice(clbIDLblMap) {
+	for lbID := range clbIDLblMap {
 		// 预检测-是否有执行中的负载均衡
 		_, err = svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 		if err != nil {
@@ -148,6 +148,8 @@ func (svc *lbSvc) createTaskManagementForDelLbl(kt *kit.Kit, bkBizID int64, req 
 	// create task management
 	taskManagementID, vendor, err := svc.buildDelLblTaskManagement(kt, bkBizID, req.AccountID)
 	if err != nil {
+		logs.Errorf("build delete lbl task management failed, err: %v, bkBizID: %d, accountID: %s, rid: %s",
+			err, bkBizID, req.AccountID, kt.Rid)
 		return "", err
 	}
 	flowIDs := make([]string, 0)
@@ -189,30 +191,35 @@ func (svc *lbSvc) buildDeleteListenerTask(kt *kit.Kit, vendor enumor.Vendor, lbI
 
 	tasks, taskDetails, err := svc.generateFlowTasks(kt, listeners, vendor, lbID, taskManagementID, bkBizID)
 	if err != nil {
+		logs.Errorf("generate flow tasks failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
 		return "", err
 	}
 	flowID, err := svc.buildFlow(kt, enumor.FlowBatchTaskDeleteListener, tableasync.NewShareData(map[string]string{
 		"lb_id": lbID,
 	}), tasks)
 	if err != nil {
+		logs.Errorf("")
 		return "", err
 	}
 	for _, detail := range taskDetails {
 		detail.flowID = flowID
 	}
 	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, taskDetails: %+v, rid: %s", err, taskDetails, kt.Rid)
 		return "", err
 	}
 
 	// 下面的的代码如果执行出现error，不需要修改taskDetail的状态, 目前flow已经创建完毕，taskDetail由flowTask维护
-	if err := svc.buildSubFlow(kt, flowID, lbID, nil, enumor.ListenerCloudResType,
-		enumor.DeleteListenerTaskType); err != nil {
-		return "", err
+	if buildErr := svc.buildSubFlow(kt, flowID, lbID, nil, enumor.ListenerCloudResType,
+		enumor.DeleteListenerTaskType); buildErr != nil {
+		logs.Errorf("build sub flow failed, err: %v, lbID: %s, rid: %s", buildErr, lbID, kt.Rid)
+		return "", buildErr
 	}
 	// 锁定负载均衡跟Flow的状态
-	if err := svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID,
-		enumor.ApplyTargetGroupType); err != nil {
-		return "", err
+	if lockErr := svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID,
+		enumor.ApplyTargetGroupType); lockErr != nil {
+		logs.Errorf("lock res flow status failed, err: %v, lbID: %s, rid: %s", lockErr, lbID, kt.Rid)
+		return "", lockErr
 	}
 	return flowID, nil
 }
