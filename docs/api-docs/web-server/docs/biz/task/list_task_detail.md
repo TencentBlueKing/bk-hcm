@@ -258,6 +258,8 @@ param的内容和operation对应
   "protocol": "TCP",
   "inst_name": "hcm-cvm",
   "inst_type": "CVM",
+  "listener_port":80,
+  "port": 80,
   "account_id": "00000001",
   "new_weight": 100,
   "cloud_lb_id": "lb-xxxxx",
@@ -298,6 +300,8 @@ param的内容和operation对应
 | public_ip_address   | array string | 公网IP地址列表                  |
 | private_ip_address  | array string | 内网IP地址列表                  |
 | target_group_region | string       | 目标组地域                     |
+| listener_port       | int          | 监听器端口                     |
+| port                | int          | rs端口                      |
 
 ##### operation=target_group_remove_rs
 
@@ -312,6 +316,8 @@ param的内容和operation对应
   "protocol": "TCP",
   "inst_name": "hcm-cvm",
   "inst_type": "CVM",
+  "listener_port":80,
+  "port": 80,
   "account_id": "00000001",
   "cloud_lb_id": "lb-xxxxx",
   "cloud_inst_id": "ins-xxxxx",
@@ -350,3 +356,5 @@ param的内容和operation对应
 | public_ip_address   | array string | 公网IP地址列表                  |
 | private_ip_address  | array string | 内网IP地址列表                  |
 | target_group_region | string       | 目标组地域                     |
+| listener_port       | int          | 监听器端口                     |
+| port                | int          | rs端口                      |
