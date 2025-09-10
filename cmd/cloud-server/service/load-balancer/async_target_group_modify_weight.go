@@ -116,7 +116,7 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 	}
 
 	lbToRelsMap := classifier.ClassifyMap(relsMap, loadbalancer.BaseTargetListenerRuleRel.GetLbID)
-	for _, lbID := range converter.MapKeyToSlice(lbToRelsMap) {
+	for lbID := range lbToRelsMap {
 		// 预检测
 		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 		if err != nil {
@@ -288,6 +288,7 @@ func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, lbID, taskManagementID
 	tasks, taskDetails, err := svc.buildModifyWeightFlowTasks(kt, lbID, accountID, taskManagementID, vendor,
 		bkBizID, newWeight, tgToTargetsMap, tgRelatedInfo)
 	if err != nil {
+		logs.Errorf("build modify weight flow tasks failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -296,6 +297,7 @@ func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, lbID, taskManagementID
 	})
 	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupModifyWeight, shareData, tasks)
 	if err != nil {
+		logs.Errorf("build flow failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 	for _, detail := range taskDetails {
@@ -303,13 +305,14 @@ func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, lbID, taskManagementID
 	}
 
 	// 下面的的代码如果执行出现error，不需要修改taskDetail的状态, 目前flow已经创建完毕，taskDetail由flowTask维护
-	if err := svc.updateTaskDetails(kt, taskDetails); err != nil {
-		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
-		return "", err
+	if updateErr := svc.updateTaskDetails(kt, taskDetails); updateErr != nil {
+		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", updateErr, flowID, kt.Rid)
+		return "", updateErr
 	}
-	if err := svc.buildSubFlow(kt, flowID, lbID, converter.MapKeyToSlice(tgToTargetsMap), enumor.TargetGroupCloudResType,
-		enumor.ModifyWeightTaskType); err != nil {
-		return "", err
+	if buildErr := svc.buildSubFlow(kt, flowID, lbID, converter.MapKeyToSlice(tgToTargetsMap),
+		enumor.TargetGroupCloudResType, enumor.ModifyWeightTaskType); buildErr != nil {
+		logs.Errorf("build sub flow failed, err: %v, flowID: %s, rid: %s", buildErr, flowID, kt.Rid)
+		return "", buildErr
 	}
 	return flowID, nil
 }
