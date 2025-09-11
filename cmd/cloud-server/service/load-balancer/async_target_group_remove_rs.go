@@ -100,7 +100,8 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 	// validate targets
 	for _, target := range targets {
 		if target.AccountID != req.AccountID {
-			return nil, fmt.Errorf("target account_id: %s not match req account_id: %s", target.AccountID, req.AccountID)
+			return nil, fmt.Errorf("target account_id: %s not match req account_id: %s",
+				target.AccountID, req.AccountID)
 		}
 	}
 
