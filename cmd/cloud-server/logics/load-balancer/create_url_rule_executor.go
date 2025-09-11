@@ -208,7 +208,7 @@ func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.LoadBalancerRaw
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lb.ID, enumor.LoadBalancerCloudResType)
 	if err != nil {
-		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("check resource flow relation failed, err: %v, lbID: %s, rid: %s", err, lb.ID, kt.Rid)
 		return "", err
 	}
 	flowID, err := c.createFlowTask(kt, lb.ID, result)

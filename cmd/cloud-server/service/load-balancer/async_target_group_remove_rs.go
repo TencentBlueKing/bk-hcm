@@ -26,6 +26,7 @@ import (
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/cloud-server/task"
+	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
@@ -127,7 +128,7 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 		// 预检测
 		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 		if err != nil {
-			logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("check resource flow relation failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
 			return "", err
 		}
 	}
@@ -213,15 +214,17 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManageme
 		}
 	}()
 
-	delReq := &dataproto.LoadBalancerBatchDeleteReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", rsIDs),
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("target_group_id", tgID),
-		),
-	}
-	if err = svc.client.DataService().Global.LoadBalancer.BatchDeleteTarget(kt, delReq); err != nil {
-		return err
+	for _, batch := range slice.Split(rsIDs, int(core.DefaultMaxPageLimit)) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("target_group_id", tgID),
+			),
+		}
+		if err = svc.client.DataService().Global.LoadBalancer.BatchDeleteTarget(kt, delReq); err != nil {
+			return err
+		}
 	}
 	return nil
 }
