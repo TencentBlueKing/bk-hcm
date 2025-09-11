@@ -7,6 +7,7 @@ import { AngleDown } from 'bkui-vue/lib/icon';
 interface IProps {
   action: ActionItemType;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 defineProps<IProps>();
@@ -73,7 +74,14 @@ const handleDropdownItemClick = (action: ActionItemType) => {
       </template>
     </bk-dropdown>
     <!-- button -->
-    <bk-button v-else class="button" v-bind="action.displayProps" :disabled="disabled" @click="action.handleClick()">
+    <bk-button
+      v-else
+      class="button"
+      v-bind="action.displayProps"
+      :disabled="disabled"
+      :loading="loading"
+      @click="action.handleClick()"
+    >
       <component v-if="action.prefix" :is="action.prefix()" class="f26" />
       {{ action.label }}
     </bk-button>

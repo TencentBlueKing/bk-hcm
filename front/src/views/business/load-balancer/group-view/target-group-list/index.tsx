@@ -1,4 +1,4 @@
-import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore, ITargetGroupDetail } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -41,7 +41,19 @@ export default defineComponent({
       url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
       rules: () => rules.value,
       immediate: !loadBalancerStore.tgSearchTarget,
+      rollRequestConfig: { enabled: true, limit: 500 },
+      listLoaded: () => handleListLoaded(),
     });
+
+    const handleListLoaded = () => {
+      nextTick(() => {
+        const target = document.getElementsByClassName('selected')[0];
+        target.parentNode.scrollTo({
+          top: target.offsetTop - 200,
+          behavior: 'auto',
+        });
+      });
+    };
 
     // handler - 切换目标组
     const handleTypeChange = (targetGroup?: ITargetGroupDetail) => {
