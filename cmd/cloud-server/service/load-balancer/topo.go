@@ -239,7 +239,7 @@ func (svc *lbSvc) getTargetTopoInfoByReq(kt *kit.Kit, bizID int64, vendor enumor
 		return &cslb.TargetTopoInfo{Match: false}, nil
 	}
 
-	// 根据条件查询clb和目标组关系
+	// 根据条件查询clb和目标组关系, 注：tgLbRelCond中的vendor条件不能去掉，不同vendor的规则在不同表里，自增id不共用，不加的话可能串数据
 	ruleIDs := maps.Keys(ruleMap)
 	tgLbRelCond := []filter.RuleFactory{tools.RuleIn("listener_rule_id", ruleIDs), tools.RuleEqual("vendor", vendor),
 		tools.RuleEqual("binding_status", enumor.SuccessBindingStatus)}
@@ -827,7 +827,7 @@ func (svc *lbSvc) getLblTopoInfoByReq(kt *kit.Kit, bizID int64, vendor enumor.Ve
 			lblCond := []filter.RuleFactory{tools.RuleIn("id", lblIDs)}
 			return &cslb.LblTopoInfo{Match: true, LbMap: lbMap, LblCond: lblCond}, nil
 		}
-
+		// 注：tgLbRelCond中的vendor条件不能去掉，不同vendor的规则在不同表里，自增id不共用，不加的话可能串数据
 		tgLbRelCond = []filter.RuleFactory{tools.RuleIn("listener_rule_id", maps.Keys(ruleMap)),
 			tools.RuleEqual("vendor", vendor), tools.RuleEqual("binding_status", enumor.SuccessBindingStatus)}
 	}
