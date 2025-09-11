@@ -38,7 +38,6 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/maps"
 )
 
@@ -57,19 +56,20 @@ func (svc *lbSvc) ListTargetByTopo(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, noPermFlag, err := handler.ListBizAuthRes(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.LoadBalancer, Action: meta.Find})
-	if err != nil {
-		logs.Errorf("list target by topo failed, noPermFlag: %v, err: %v, rid: %s", noPermFlag, err, cts.Kit.Rid)
-		return nil, err
-	}
-	if noPermFlag {
-		logs.Errorf("list target by topo no auth, req: %+v, rid: %s", req, cts.Kit.Rid)
-		return nil, errf.New(errf.PermissionDenied, "no permission for list target by topo")
-	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
+	}
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	return svc.listTargetByTopo(cts.Kit, bizID, vendor, req)
@@ -90,19 +90,20 @@ func (svc *lbSvc) CountTargetByTopo(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, noPermFlag, err := handler.ListBizAuthRes(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.LoadBalancer, Action: meta.Find})
-	if err != nil {
-		logs.Errorf("count target by topo failed, noPermFlag: %v, err: %v, rid: %s", noPermFlag, err, cts.Kit.Rid)
-		return nil, err
-	}
-	if noPermFlag {
-		logs.Errorf("count target by topo no auth, req: %+v, rid: %s", req, cts.Kit.Rid)
-		return nil, errf.New(errf.PermissionDenied, "no permission for count target by topo")
-	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
+	}
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	info, err := svc.getTargetTopoInfoByReq(cts.Kit, bizID, vendor, req)
@@ -288,24 +289,24 @@ func buildInstWithTargetsInfo(kt *kit.Kit, clbTopoInfo *cslb.TargetTopoInfo, tar
 		tgID := target.TargetGroupID
 		targetGroup, ok := clbTopoInfo.TgMap[tgID]
 		if !ok {
-			logs.Errorf("tg id not found, tgID: %s, rid: %s", tgID, kt.Rid)
-			return nil, fmt.Errorf("tg not found, id: %s", tgID)
+			logs.Errorf("target group not found, tgID: %s, rid: %s", tgID, kt.Rid)
+			return nil, fmt.Errorf("target group not found, id: %s", tgID)
 		}
 		rel, ok := tgIDRelMap[tgID]
 		if !ok {
 			logs.Errorf("tg lb rel not found, tgID: %s, rid: %s", tgID, kt.Rid)
-			return nil, fmt.Errorf("tg lb rel not found, id: %s", tgID)
+			return nil, fmt.Errorf("target group loadBalancer relation not found, target group id: %s", tgID)
 		}
 
 		lb, ok := clbTopoInfo.LbMap[rel.LbID]
 		if !ok {
 			logs.Errorf("lb not found, lbID: %s, rid: %s", rel.LbID, kt.Rid)
-			return nil, fmt.Errorf("lb not found, id: %s", rel.LbID)
+			return nil, fmt.Errorf("loadBalancer not found, id: %s", rel.LbID)
 		}
 		lbl, ok := clbTopoInfo.LblMap[rel.LblID]
 		if !ok {
 			logs.Errorf("lbl not found, lblID: %s, rid: %s", rel.LblID, kt.Rid)
-			return nil, fmt.Errorf("lbl not found, id: %s", rel.LblID)
+			return nil, fmt.Errorf("listener not found, id: %s", rel.LblID)
 		}
 		var lblEndPort *int64
 		if lbl.Extension != nil {
@@ -580,19 +581,20 @@ func (svc *lbSvc) ListListenerByTopo(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	_, noPermFlag, err := handler.ListBizAuthRes(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
-		ResType: meta.LoadBalancer, Action: meta.Find})
-	if err != nil {
-		logs.Errorf("list listener by topo failed, noPermFlag: %v, err: %v, rid: %s", noPermFlag, err, cts.Kit.Rid)
-		return nil, err
-	}
-	if noPermFlag {
-		logs.Errorf("list listener by topo no auth, req: %+v, rid: %s", req, cts.Kit.Rid)
-		return nil, errf.New(errf.PermissionDenied, "no permission for list listener by topo")
-	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
+	}
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	return svc.listListenerByTopo(cts.Kit, bizID, vendor, req)
@@ -798,7 +800,7 @@ func (svc *lbSvc) getLblTopoInfoByReq(kt *kit.Kit, bizID int64, vendor enumor.Ve
 		return &cslb.LblTopoInfo{Match: true, LbMap: lbMap, LblCond: lblCond}, nil
 	}
 
-	tgLbRelCond := []filter.RuleFactory{tools.RuleIn("lb_id", lbIDs), tools.RuleEqual("vendor", vendor),
+	tgLbRelCond := []filter.RuleFactory{tools.RuleIn("lb_id", lbIDs),
 		tools.RuleEqual("binding_status", enumor.SuccessBindingStatus)}
 
 	// 如果请求中存在规则条件，那么需要根据条件查询规则，进一步得到匹配的监听器条件
@@ -881,8 +883,8 @@ func (svc *lbSvc) getLblCondByTargetCond(kt *kit.Kit, tgLbRelCond []filter.RuleF
 	for _, target := range targets {
 		lblID, ok := tgIDLblIDMap[target.TargetGroupID]
 		if !ok {
-			logs.Errorf("tg id not found, tgID: %s, rid: %s", target.TargetGroupID, kt.Rid)
-			return nil, fmt.Errorf("tg id not found, tgID: %s", target.TargetGroupID)
+			logs.Errorf("use target group id not found listener, tgID: %s, rid: %s", target.TargetGroupID, kt.Rid)
+			return nil, fmt.Errorf("use target group not found listener, tgID: %s", target.TargetGroupID)
 		}
 		lblIDMap[lblID] = struct{}{}
 	}

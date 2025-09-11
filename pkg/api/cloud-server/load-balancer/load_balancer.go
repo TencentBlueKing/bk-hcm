@@ -1002,6 +1002,24 @@ type LbTopoCond struct {
 
 // Validate ...
 func (l *LbTopoCond) Validate() error {
+	for _, lbNetworkType := range l.LbNetworkTypes {
+		if err := lbNetworkType.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, lbIpVersion := range l.LbIpVersions {
+		if err := lbIpVersion.Validate(); err != nil {
+			return err
+		}
+	}
+
+	for _, lblProtocols := range l.LblProtocols {
+		if err := lblProtocols.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return validator.Validate.Struct(l)
 }
 
@@ -1094,7 +1112,15 @@ type LbTopoReq struct {
 
 // Validate ...
 func (l *LbTopoReq) Validate() error {
-	return validator.Validate.Struct(l)
+	if err := validator.Validate.Struct(l); err != nil {
+		return err
+	}
+	if l.Page != nil {
+		if err := l.Page.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // InstWithTargets instance with targets
