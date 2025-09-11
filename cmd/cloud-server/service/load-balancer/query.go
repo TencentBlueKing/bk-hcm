@@ -674,19 +674,24 @@ type TGRelatedInfo struct {
 }
 
 // listTGRelatedInfoByRels 根据tg rel获取tg关联信息, 返回值 map[TGID]TGRelatedInfo
-func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rels []corelb.BaseTargetListenerRuleRel) (map[string]TGRelatedInfo, error) {
+func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rels []corelb.BaseTargetListenerRuleRel) (
+	map[string]TGRelatedInfo, error) {
 
 	lbMap, err := svc.listLoadBalancerMapByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLbID))
 	if err != nil {
 		return nil, err
 	}
 
-	lblMap, err := svc.listListenerMap(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLblID))
+	lbls, err := svc.listListenersByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLblID))
 	if err != nil {
 		return nil, err
 	}
+	lblMap := cvt.SliceToMap(lbls, func(item corelb.BaseListener) (string, corelb.BaseListener) {
+		return item.ID, item
+	})
 
-	ruleMap, err := svc.listUrlRuleMapByIDs(kt, vendor, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetListenerRuleID))
+	ruleMap, err := svc.listUrlRuleMapByIDs(kt, vendor,
+		slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetListenerRuleID))
 	if err != nil {
 		return nil, err
 	}
