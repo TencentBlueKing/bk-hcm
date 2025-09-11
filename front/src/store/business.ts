@@ -353,9 +353,13 @@ export const useBusinessStore = defineStore({
     batchUpdateRs(
       target_group_id: string,
       type: string,
-      data: { target_ids: string[]; new_port?: number; new_weight?: number },
+      data: { target_ids: string[]; new_port?: number; new_weight?: number; account_id?: string },
     ) {
-      return http.patch(`/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/${type}`, data);
+      const api =
+        type === 'weight'
+          ? `/api/v1/cloud/${getBusinessApiPath()}targets/${type}`
+          : `/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/${type}`;
+      return http.patch(api, data);
     },
     /**
      * 查询操作记录异步记录指定批次的子任务列表
@@ -415,10 +419,7 @@ export const useBusinessStore = defineStore({
      * 业务下给指定目标组移除RS
      * @param data
      */
-    batchDeleteTargets(data: {
-      account_id: string;
-      target_groups: { target_group_id: string; target_ids: string[] }[];
-    }) {
+    batchDeleteTargets(data: { account_id: string; target_ids: string[] }) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/batch`, {
         data,
       });
