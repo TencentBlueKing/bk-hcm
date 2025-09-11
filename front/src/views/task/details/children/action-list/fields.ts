@@ -100,6 +100,25 @@ const clbFieldIds = {
     'state',
     'reason',
   ],
+  [TaskClbType.TARGET_GROUP_MODIFY_WEIGHT]: [
+    ...clbSopsBaseFieldIds,
+    'param.domain',
+    'param.url',
+    'param.ip',
+    'param.weight',
+    'param.new_weight',
+    'state',
+    'reason',
+  ],
+  [TaskClbType.TARGET_GROUP_REMOVE_RS]: [
+    ...clbSopsBaseFieldIds,
+    'param.domain',
+    'param.url',
+    'param.ip',
+    'param.weight',
+    'state',
+    'reason',
+  ],
 };
 
 const clbBaseRerunParamFieldIds = {

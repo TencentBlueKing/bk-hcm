@@ -10,6 +10,8 @@ export const TASK_CLB_TYPE_NAME = {
   [TaskClbType.UNBIND_LAYER4_RS]: '解绑RS-TCP/UDP',
   [TaskClbType.MODIFY_LAYER4_RS_WEIGHT]: '权重调整-TCP/UDP',
   [TaskClbType.MODIFY_LAYER7_RS_WEIGHT]: '权重调整-HTTP/HTTPS',
+  [TaskClbType.TARGET_GROUP_MODIFY_WEIGHT]: '权重调整',
+  [TaskClbType.TARGET_GROUP_REMOVE_RS]: '解绑RS',
 };
 
 export const TASK_TYPE_NAME = {

@@ -170,6 +170,11 @@ export default [
     type: 'number',
   },
   {
+    id: 'param.new_weight',
+    name: '原权重',
+    type: 'number',
+  },
+  {
     id: 'param.new_rs_weight',
     name: '新权重',
     type: 'number',
