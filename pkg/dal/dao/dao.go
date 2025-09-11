@@ -173,6 +173,10 @@ func NewDaoSet(opt cc.DataBase) (Set, error) {
 
 // connect to mysql
 func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
+	if err := opt.TLS.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid TLS configuration: %v", err)
+	}
+
 	db, err := sqlx.Connect("mysql", uri(opt))
 	if err != nil {
 		return nil, fmt.Errorf("connect to mysql failed, err: %v", err)
@@ -182,12 +186,19 @@ func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
 	db.SetMaxIdleConns(int(opt.MaxIdleConn))
 	db.SetConnMaxLifetime(time.Duration(opt.MaxIdleTimeoutMin) * time.Minute)
 
+	if opt.TLS.Enable() {
+		if err := verifySSLConnection(db); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("SSL connection verification failed: %v", err)
+		}
+	}
+
 	return db, nil
 }
 
 // uri generate the standard db connection string format uri.
 func uri(opt cc.ResourceDB) string {
-	return fmt.Sprintf(
+	baseURI := fmt.Sprintf(
 		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s&loc=%s",
 		opt.User,
 		opt.Password,
@@ -199,6 +210,51 @@ func uri(opt cc.ResourceDB) string {
 		"utf8mb4",
 		url.PathEscape(opt.TimeZone),
 	)
+
+	// Add SSL/TLS parameters if configured
+	if opt.TLS.Enable() {
+		sslParams := make([]string, 0)
+
+		if opt.TLS.InsecureSkipVerify {
+			sslParams = append(sslParams, "ssl-mode=PREFERRED")
+		} else if opt.TLS.CAFile != "" {
+			sslParams = append(sslParams, "ssl-mode=VERIFY_CA")
+		} else {
+			sslParams = append(sslParams, "ssl-mode=REQUIRED")
+		}
+		// Add certificate files if specified
+		if opt.TLS.CAFile != "" {
+			sslParams = append(sslParams, "ssl-ca="+url.QueryEscape(opt.TLS.CAFile))
+		}
+		if opt.TLS.CertFile != "" {
+			sslParams = append(sslParams, "ssl-cert="+url.QueryEscape(opt.TLS.CertFile))
+		}
+		if opt.TLS.KeyFile != "" {
+			sslParams = append(sslParams, "ssl-key="+url.QueryEscape(opt.TLS.KeyFile))
+		}
+
+		if len(sslParams) > 0 {
+			baseURI += "&" + strings.Join(sslParams, "&")
+		}
+	}
+
+	return baseURI
+}
+
+// verifySSLConnection 验证MySQL连接是否使用了SSL加密
+func verifySSLConnection(db *sqlx.DB) error {
+	var variableName, value string
+	err := db.QueryRow("SHOW STATUS LIKE 'Ssl_cipher'").Scan(&variableName, &value)
+	if err != nil {
+		err = db.QueryRow("SHOW SESSION STATUS LIKE 'Ssl_cipher'").Scan(&variableName, &value)
+		if err != nil {
+			return fmt.Errorf("failed to check SSL status: %v", err)
+		}
+	}
+	if value == "" {
+		return fmt.Errorf("MySQL connection is not using SSL encryption")
+	}
+	return nil
 }
 
 type set struct {
