@@ -175,7 +175,7 @@ func NewInjectTenantIDOpt(tenantID string) *InjectTenantIDOpt {
 
 // enabled check is enabled.
 func (ito *InjectTenantIDOpt) enabled() bool {
-	return ito.enabledTenant && ito.tenantID != "" && ito.tenantID != constant.DefaultTenantID
+	return ito.enabledTenant && ito.tenantID != ""
 }
 
 // InjectInsertSQL Insert使用

@@ -165,8 +165,8 @@ func NewUserAuthenticateFilter(loginCli login.Client, bkLoginUrl, bkLoginCookieN
 			return
 		}
 		// request and response details landing log for monitoring and troubleshooting problem.
-		logs.Infof("uri: %s, method: %s, body: %s, appcode: %s, user: %s, remote addr: %s, "+
-			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User,
+		logs.Infof("uri: %s, method: %s, body: %s, appcode: %s, user: %s, tenant: %s, remote addr: %s, "+
+			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User, kt.TenantID,
 			req.Request.RemoteAddr, kt.Rid)
 
 		chain.ProcessFilter(req, resp)

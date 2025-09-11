@@ -76,13 +76,14 @@ func (svc *approvalProcessSvc) CreateApprovalProcesses(cts *rest.Contexts) (inte
 		Reviser:         cts.Kit.User,
 	}
 
-	approvalProcessID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		approvalProcessID, err := svc.dao.ApprovalProcess().CreateWithTx(cts.Kit, txn, process)
-		if err != nil {
-			return nil, fmt.Errorf("create approval process failed, err: %v", err)
-		}
-		return approvalProcessID, nil
-	})
+	approvalProcessID, err := svc.dao.Txn().AutoTxn(cts.Kit,
+		func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+			approvalProcessID, err := svc.dao.ApprovalProcess().CreateWithTx(cts.Kit, txn, process)
+			if err != nil {
+				return nil, fmt.Errorf("create approval process failed, err: %v", err)
+			}
+			return approvalProcessID, nil
+		})
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +130,7 @@ func (svc *approvalProcessSvc) convertToApprovalProcessResp(
 		ID:              approvalProcess.ID,
 		ApplicationType: enumor.ApplicationType(approvalProcess.ApplicationType),
 		ServiceID:       approvalProcess.ServiceID,
+		WorkflowKey:     approvalProcess.WorkflowKey,
 		Managers:        approvalProcess.Managers,
 		Revision: core.Revision{
 			Creator:   approvalProcess.Creator,

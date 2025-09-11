@@ -41,8 +41,8 @@ func InitService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("GetApprovalProcessServiceID", http.MethodGet, "/approval_processes/service_id",
-		svc.GetApprovalProcessServiceID)
+	h.Add("GetApprovalProcessWorkflowKey", http.MethodGet, "/approval_processes/workflow_key",
+		svc.GetApprovalProcessWorkflowKey)
 
 	h.Load(c.WebService)
 }
@@ -52,8 +52,8 @@ type service struct {
 	authorizer auth.Authorizer
 }
 
-// GetApprovalProcessServiceID 获取hcm itsm单据流程所在的服务目录ID列表
-func (svc *service) GetApprovalProcessServiceID(cts *rest.Contexts) (interface{}, error) {
+// GetApprovalProcessWorkflowKey 获取hcm itsm单据流程所在的workflow列表
+func (svc *service) GetApprovalProcessWorkflowKey(cts *rest.Contexts) (interface{}, error) {
 
 	req := &dataproto.ApprovalProcessListReq{
 		Filter: &filter.Expression{
@@ -70,14 +70,14 @@ func (svc *service) GetApprovalProcessServiceID(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 
-	serviceIdMap := make(map[int64]struct{})
-	serviceIds := make([]int64, 0)
+	workflowIDMap := make(map[string]struct{})
+	workflowIDs := make([]string, 0)
 	for _, one := range result.Details {
-		if _, exists := serviceIdMap[one.ServiceID]; !exists {
-			serviceIdMap[one.ServiceID] = struct{}{}
-			serviceIds = append(serviceIds, one.ServiceID)
+		if _, exists := workflowIDMap[one.WorkflowKey]; !exists {
+			workflowIDMap[one.WorkflowKey] = struct{}{}
+			workflowIDs = append(workflowIDs, one.WorkflowKey)
 		}
 	}
 
-	return serviceIds, nil
+	return workflowIDs, nil
 }

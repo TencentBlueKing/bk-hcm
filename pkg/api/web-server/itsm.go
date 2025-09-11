@@ -45,10 +45,11 @@ type ListMyApprovalTicketResp struct {
 
 // TicketApproveReq define ticket approval req.
 type TicketApproveReq struct {
-	Sn      string               `json:"sn" validate:"required"`
-	StateID int                  `json:"state_id" validate:"required"`
-	Action  TicketApprovalAction `json:"action" validate:"required"`
-	Memo    string               `json:"memo" validate:"omitempty"`
+	Sn     string `json:"sn" validate:"required"`
+	TaskID string `json:"task_id" validate:"required"`
+	// StateID int                  `json:"state_id" validate:"required"`
+	Action TicketApprovalAction `json:"action" validate:"required"`
+	Memo   string               `json:"memo" validate:"omitempty"`
 }
 
 // Validate TicketApproveReq.
@@ -83,9 +84,9 @@ func (action TicketApprovalAction) Validate() error {
 func (action TicketApprovalAction) ToItsmAction() string {
 	switch action {
 	case Pass:
-		return "true"
+		return "approve"
 	case Refuse:
-		return "false"
+		return "refuse"
 	default:
 		return ""
 	}

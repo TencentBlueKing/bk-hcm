@@ -25,13 +25,27 @@ import (
 
 // ItsmApproveResult ...
 type ItsmApproveResult struct {
-	SN            string `json:"sn" validate:"required"`
-	CurrentStatus string `json:"current_status" validate:"required"`
-	ApproveResult *bool  `json:"approve_result" validate:"required"`
-	Token         string `json:"token" validate:"required"`
+	CallbackToken string                  `json:"callback_token" validate:"required"`
+	Ticket        ItsmApproveTicketDetail `json:"ticket" validate:"required"`
 }
 
 // Validate ...
-func (req *ItsmApproveResult) Validate() error {
-	return validator.Validate.Struct(req)
+func (i *ItsmApproveResult) Validate() error {
+	return validator.Validate.Struct(i)
+}
+
+// ItsmApproveTicketDetail ...
+type ItsmApproveTicketDetail struct {
+	ID            string  `json:"id" validate:"required"`
+	SN            string  `json:"sn"`
+	Title         string  `json:"title" validate:"required"`
+	ApproveResult *bool   `json:"approve_result" validate:"required"`
+	EndAt         *string `json:"end_at"`
+	Status        string  `json:"status" validate:"required"`
+	WorkflowID    string  `json:"workflow_id" validate:"required"`
+}
+
+// Validate ...
+func (i *ItsmApproveTicketDetail) Validate() error {
+	return validator.Validate.Struct(i)
 }

@@ -29,7 +29,8 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
-	Source         enumor.ApplicationSource `json:"source" validate:"required"`
+	Source enumor.ApplicationSource `json:"source" validate:"required"`
+	// SN Notice：v4版本的SN和v3不是一个含义，虽然我们本地依然沿用SN的叫法，但是在v4版本中，SN并不使用，而是用ticket_id进行查询
 	SN             string                   `json:"sn" validate:"required"`
 	Type           enumor.ApplicationType   `json:"type" validate:"required"`
 	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
@@ -59,6 +60,7 @@ func (req *ApplicationUpdateReq) Validate() error {
 // ApplicationResp ...
 type ApplicationResp struct {
 	ID             string                   `json:"id"`
+	TenantID       string                   `json:"tenant_id"`
 	Source         enumor.ApplicationSource `json:"source"`
 	SN             string                   `json:"sn"`
 	Type           enumor.ApplicationType   `json:"type"`

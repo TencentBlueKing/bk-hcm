@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
+	itsmCli "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 )
 
@@ -41,7 +41,7 @@ type HandlerOption struct {
 	EsbClient esb.Client
 	Cipher    cryptography.Crypto
 	Audit     audit.Interface
-	ItsmCli   itsm2.Client
+	ItsmCli   itsmCli.Client
 	CmsiCli   cmsi.Client
 	CmdbCli   cmdb.Client
 }
@@ -100,9 +100,9 @@ func (a *BaseApplicationHandler) getPageOfOneLimit() *core.BasePage {
 
 // GetItsmPlatformAndAccountApprover get itsm platform and account approver.
 func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []string,
-	accountID string) []itsm2.VariableApprover {
+	accountID string) []itsmCli.VariableApprover {
 
-	allManagers := []itsm2.VariableApprover{
+	allManagers := []itsmCli.VariableApprover{
 		{
 			Variable:  "platform_manager",
 			Approvers: managers,
@@ -114,7 +114,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 		return allManagers
 	}
 
-	allManagers = append(allManagers, itsm2.VariableApprover{
+	allManagers = append(allManagers, itsmCli.VariableApprover{
 		Variable:  "account_manager",
 		Approvers: accountData.Managers,
 	})
@@ -123,6 +123,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 }
 
 // Complete complete the application by manual.
-func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error) {
+func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{},
+	err error) {
 	return enumor.DeliverError, map[string]interface{}{}, fmt.Errorf("not implemented")
 }

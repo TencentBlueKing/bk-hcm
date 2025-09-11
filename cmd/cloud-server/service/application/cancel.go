@@ -44,7 +44,8 @@ func (a *applicationSvc) CancelApplication(cts *rest.Contexts) (interface{}, err
 	}
 
 	// 根据SN调用ITSM接口撤销单据
-	err = a.itsmCli.WithdrawTicket(cts.Kit, application.SN, cts.Kit.User)
+	// 目前ITSM-v4撤销成功与否都会返回true，因此不处理返回值
+	_, err = a.itsmCli.WithdrawTicket(cts.Kit, application.SN, cts.Kit.User)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm cancel ticket api failed, err: %v", err)
 	}

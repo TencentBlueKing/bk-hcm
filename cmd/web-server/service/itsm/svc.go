@@ -24,11 +24,12 @@ import (
 
 	"hcm/cmd/web-server/service/capability"
 	webserver "hcm/pkg/api/web-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
+	itsmCli "hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // InitService initial the service
@@ -47,10 +48,10 @@ func InitService(c *capability.Capability) {
 
 type service struct {
 	client  *client.ClientSet
-	itsmCli itsm2.Client
+	itsmCli itsmCli.Client
 }
 
-// ListMyApprovalTicket 查询待我审批的单据。
+// Deprecated: ListMyApprovalTicket 查询待我审批的单据。
 func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error) {
 	req := new(webserver.ListMyApprovalTicketReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -61,9 +62,10 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	serviceIDs, err := svc.client.CloudServer().ApprovalProcess.GetApprovalProcessServiceID(cts.Kit)
+	workflowIDs, err := svc.client.CloudServer().ApprovalProcess.GetApprovalProcessWorkflowKey(cts.Kit)
 	if err != nil {
-		logs.Errorf("call cloud-server to get approval process service id failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("call cloud-server to get approval process service id failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -72,27 +74,27 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		Count:   0,
 		Details: nil,
 	}
-	for _, serviceID := range serviceIDs {
-		getReq := &itsm2.GetTicketsByUserReq{
-			ServiceID: serviceID,
-			User:      cts.Kit.User,
-			ViewType:  itsm2.MyApproval,
-			Page:      (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
-			PageSize:  int64(req.Page.Limit),
+	for _, workflowID := range workflowIDs {
+		getReq := &itsmCli.GetTicketsByUserReq{
+			WorkflowID: workflowID,
+			User:       cts.Kit.User,
+			Page:       (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
+			PageSize:   int64(req.Page.Limit),
 		}
 		resp, err := svc.itsmCli.GetTicketsByUser(cts.Kit, getReq)
 		if err != nil {
-			logs.Errorf("request itsm get tickets by user failed, err: %v, req: %v, rid: %s", err, getReq, cts.Kit.Rid)
+			logs.Errorf("request itsm get tickets by user failed, err: %v, req: %v, rid: %s", err, getReq,
+				cts.Kit.Rid)
 			return nil, err
 		}
-		result.Details = append(result.Details, resp.Items...)
+		result.Details = append(result.Details, resp.Results...)
 		result.Count += resp.Count
 	}
 
 	return result, nil
 }
 
-// TicketApprove 审批单据。
+// Deprecated: TicketApprove 审批单据。
 func (svc *service) TicketApprove(cts *rest.Contexts) (interface{}, error) {
 	req := new(webserver.TicketApproveReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -103,15 +105,19 @@ func (svc *service) TicketApprove(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	getReq := &itsm2.ApproveReq{
-		Sn:       req.Sn,
-		StateID:  req.StateID,
-		Approver: cts.Kit.User,
-		Action:   req.Action.ToItsmAction(),
-		Remark:   req.Memo,
+	approveReq := &itsmCli.HandleApproveReq{
+		SystemID:     cc.WebServer().Itsm.AppCode,
+		TicketID:     req.Sn,
+		TaskID:       req.TaskID,
+		OperatorType: itsmCli.OperatorUser,
+		Operator:     cts.Kit.User,
+		Action:       req.Action.ToItsmAction(),
 	}
-	if err := svc.itsmCli.Approve(cts.Kit, getReq); err != nil {
-		logs.Errorf("request itsm ticket approve failed, err: %v, req: %v, rid: %s", err, getReq, cts.Kit.Rid)
+
+	err := svc.itsmCli.Approve(cts.Kit, approveReq)
+	if err != nil {
+		logs.Errorf("request itsm ticket approve failed, err: %v, req: %+v, user: %s, rid: %s", err, req,
+			cts.Kit.User, cts.Kit.Rid)
 		return nil, err
 	}
 

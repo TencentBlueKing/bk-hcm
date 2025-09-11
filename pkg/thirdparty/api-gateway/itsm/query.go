@@ -24,49 +24,54 @@ import (
 
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // TicketResult ticket result.
 type TicketResult struct {
-	SN            string `json:"sn"`
-	TicketURL     string `json:"ticket_url"`
-	CurrentStatus string `json:"current_status"`
-	ApproveResult bool   `json:"approve_result"`
+	ID string `json:"id"`
+	// SN Notice：v4版本的SN和v3不是一个含义，虽然我们本地依然沿用SN的叫法，但是在v4版本中，SN并不使用，而是用ticket_id进行查询
+	SN            string  `json:"sn"`
+	FrontendURL   string  `json:"frontend_url"`
+	Title         string  `json:"title"`
+	ApproveResult *bool   `json:"approve_result"`
+	EndAt         *string `json:"end_at"`
+	Status        string  `json:"status"`
 }
 
-type queryTicketResp struct {
-	apigateway.BaseResponse `json:",inline"`
-	Data                    []TicketResult `json:"data"`
-}
+// batchQueryTicketResult 查询单据结果
+func (i *itsm) batchQueryTicketResult(kt *kit.Kit, ticketID string) (*TicketResult, error) {
+	params := map[string]string{
+		"id": ticketID,
+	}
+	code, msg, res, err := apigateway.ApiGatewayCallOriginalWithoutReq[TicketResult](i.client, i.bkUserCli,
+		i.config, rest.GET, kt, params, "/ticket/detail/")
 
-func (i *itsm) batchQueryTicketResult(kt *kit.Kit, sns []string) (results []TicketResult, err error) {
-	req := map[string]interface{}{"sn": sns}
-	resp := new(queryTicketResp)
-	err = i.client.Post().
-		SubResourcef("/ticket_approval_result/").
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Body(req).
-		Do().Into(resp)
 	if err != nil {
-		return results, err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return results, fmt.Errorf("query ticket result failed, code: %d, msg: %s", resp.Code, resp.Message)
+		return nil, err
 	}
 
-	return resp.Data, nil
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to query ticket result, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // GetTicketResult 查询单据结果
-func (i *itsm) GetTicketResult(kt *kit.Kit, sn string) (result TicketResult, err error) {
-	results, err := i.batchQueryTicketResult(kt, []string{sn})
+func (i *itsm) GetTicketResult(kt *kit.Kit, sn string) (result *TicketResult, err error) {
+	result, err = i.batchQueryTicketResult(kt, sn)
 	if err != nil {
-		return result, err
+		return nil, err
 	}
-	if len(results) == 0 {
+
+	if len(result.ID) == 0 {
 		return result, errf.New(errf.RecordNotFound, "itsm returns empty result")
 	}
-	return results[0], nil
+	return result, nil
 }

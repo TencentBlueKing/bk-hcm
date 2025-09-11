@@ -71,6 +71,8 @@ func (e ErrorF) Resp() *ErrorResp {
 
 // ErrorResp defines an error related http response.
 type ErrorResp struct {
+	// Result is always false in error cases
+	Result bool `json:"result"`
 	// Code is hcm errCode
 	Code int32 `json:"code"`
 	// Message is error detail

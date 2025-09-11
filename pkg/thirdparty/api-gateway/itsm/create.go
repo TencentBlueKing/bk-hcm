@@ -21,10 +21,11 @@ package itsm
 
 import (
 	"fmt"
-	"strings"
 
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
+	apigateway "hcm/pkg/thirdparty/api-gateway"
 )
 
 // VariableApprover 节点审批的引用变量审批人
@@ -36,59 +37,50 @@ type VariableApprover struct {
 
 // CreateTicketParams create ticket params.
 type CreateTicketParams struct {
-	ServiceID         int64
+	SystemID          string
+	WorkflowKey       string
 	Creator           string
 	CallbackURL       string
+	CallbackToken     string
 	Title             string
 	ContentDisplay    string
 	VariableApprovers []VariableApprover
 }
 
-type createTicketResult struct {
-	SN string `json:"sn"`
-}
-
-type createTicketResp struct {
-	apigateway.BaseResponse `json:",inline"`
-	Data                    *createTicketResult `json:"data"`
-}
-
 // CreateTicket 创建单据
-func (i *itsm) CreateTicket(kt *kit.Kit, params *CreateTicketParams) (string, error) {
-	// 提单表单
-	fields := []map[string]interface{}{
-		{"key": "title", "value": params.Title},
-		{"key": "application_content", "value": params.ContentDisplay},
+func (i *itsm) CreateTicket(kt *kit.Kit, params *CreateTicketParams) (*CreateTicketResult, error) {
+	req := &CreateTicketReq{
+		SystemID:      params.SystemID,
+		WorkflowKey:   params.WorkflowKey,
+		Operator:      params.Creator,
+		CallbackURL:   params.CallbackURL,
+		CallbackToken: params.CallbackToken,
 	}
+
+	// 提单表单
+	reqForm := make(map[string]interface{})
+	reqForm["ticket__title"] = params.Title
+	reqForm["application_content"] = params.ContentDisplay
+
 	// 引用变量的审批人
 	for _, v := range params.VariableApprovers {
-		fields = append(fields, map[string]interface{}{
-			"key":   v.Variable,
-			"value": strings.Join(v.Approvers, ","),
-		})
+		reqForm[v.Variable] = v.Approvers
 	}
+	req.FormData = reqForm
 
-	req := map[string]interface{}{
-		"service_id": params.ServiceID,
-		"creator":    params.Creator,
-		"meta":       map[string]string{"callback_url": params.CallbackURL},
-		"fields":     fields,
-	}
+	code, msg, res, err := apigateway.ApiGatewayCallOriginal[CreateTicketReq, CreateTicketResult](i.client,
+		i.bkUserCli, i.config, rest.POST, kt, req, "/ticket/create/")
 
-	resp := new(createTicketResp)
-
-	err := i.client.Post().
-		SubResourcef("/create_ticket/").
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Body(req).
-		Do().Into(resp)
 	if err != nil {
-		return "", err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return "", fmt.Errorf("create ticket failed, code: %d, msg: %s", resp.Code, resp.Message)
+		return nil, err
 	}
 
-	return resp.Data.SN, nil
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to create ticket, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
+		return nil, err
+	}
+
+	return res, nil
 }

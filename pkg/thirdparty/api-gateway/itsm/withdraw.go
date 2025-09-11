@@ -23,30 +23,31 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway"
 )
 
 // WithdrawTicket 撤销单据
-func (i *itsm) WithdrawTicket(kt *kit.Kit, sn string, operator string) error {
-	req := map[string]interface{}{
-		"sn":             sn,
-		"operator":       operator,
-		"action_type":    "WITHDRAW",
-		"action_message": "applicant withdraw ticket",
-	}
-	resp := new(apigateway.BaseResponse)
-	err := i.client.Post().
-		SubResourcef("/operate_ticket/").
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return err
-	}
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("withdraw ticket failed, code: %d, msg: %s", resp.Code, resp.Message)
+func (i *itsm) WithdrawTicket(kt *kit.Kit, ticketID string, operator string) (*RevokeTicketResult, error) {
+	req := &RevokeTicketReq{
+		SystemID: i.config.AppCode,
+		TicketID: ticketID,
 	}
 
-	return nil
+	code, msg, res, err := apigateway.ApiGatewayCallOriginal[RevokeTicketReq, RevokeTicketResult](i.client, i.bkUserCli,
+		i.config, rest.POST, kt, req, "/tickets/revoked/")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to withdraw ticket, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
+		return nil, err
+	}
+
+	return res, nil
 }

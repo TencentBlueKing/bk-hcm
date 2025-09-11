@@ -22,6 +22,7 @@
 
     Notes:
     1. 添加租户表 tenant
+    2. 调整itsm流程表
 */
 
 START TRANSACTION;
@@ -41,6 +42,10 @@ create table if not exists `tenant` (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_bin COMMENT='租户表';
+
+-- 2. itsm审批流程表
+alter table approval_process
+    add column `workflow_key` varchar(128)  NOT NULL after `system_id`;
 
 insert into id_generator(`resource`, `max_id`)
 values ('tenant', '0');
