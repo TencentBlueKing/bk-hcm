@@ -6,8 +6,8 @@ import AccountSelector from '@/components/account-selector/index-new.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 import { cloneDeep, isEqual } from 'lodash';
 import { Info } from 'bkui-vue/lib/icon';
-
-import { selectField, inputField, ILoadBalanceDeviceCondition } from '../common';
+import { isEmpty } from '@/common/util';
+import { ILoadBalanceDeviceCondition, conditionField } from '../common';
 import { VendorEnum, ResourceTypeEnum } from '@/common/constant';
 
 defineOptions({ name: 'device-condition' });
@@ -27,7 +27,13 @@ const hasSaved = ref(false);
 const formRef = ref(null);
 
 const hasChange = computed(() => !isEqual(formModel, originFormModel));
-const disabled = computed(() => !hasSaved.value && !hasChange.value);
+// 除了云账号是否有输入其他条件
+const hasAnyCondition = computed(
+  () =>
+    Object.entries(formModel).filter(([key, value]) => !['account_id', 'vendor'].includes(key) && !isEmpty(value))
+      .length,
+);
+const disabled = computed(() => (!hasSaved.value && !hasChange.value) || !hasAnyCondition.value);
 
 const handleAccountChange = (item: IAccountItem) => {
   formModel.vendor = item.vendor;
@@ -67,7 +73,7 @@ watch(
       clearTimeout(timeout);
       timeout = null;
     }
-    if (val) {
+    if (val && hasAnyCondition.value) {
       timeout = setTimeout(() => (isShow.value = true), 120000);
     }
   },
@@ -91,8 +97,9 @@ watch(
         <bk-form-item :label="t('地域')" property="lb_regions">
           <region-selector v-model="formModel.lb_regions" :vendor="formModel.vendor" multiple clearable collapse-tags />
         </bk-form-item>
-        <bk-form-item :label="t(item.name)" :property="item.id" v-for="item in selectField" :key="item.id">
+        <bk-form-item :label="t(item.name)" :property="item.id" v-for="item in conditionField" :key="item.id">
           <bk-select
+            v-if="item.type === 'select'"
             v-model="formModel[item.id]"
             :list="item.list"
             clearable
@@ -100,14 +107,14 @@ watch(
             multiple-mode="tag"
             collapse-tags
           />
-        </bk-form-item>
-        <bk-form-item :label="t(item.name)" :property="item.id" v-for="item in inputField" :key="item.id">
           <bk-tag-input
+            v-else
             v-model="formModel[item.id]"
             :paste-fn="handlePaste"
             placeholder="请输入"
             allow-create
             collapse-tags
+            :max-data="item.max || 500"
           />
         </bk-form-item>
       </bk-form>

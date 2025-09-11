@@ -8,7 +8,12 @@ import { VendorEnum } from '@/common/constant';
 const props = defineProps<{ selections: any[]; vendor: VendorEnum }>();
 const { t } = useI18n();
 
-const targetIds = computed(() => props.selections[0].targets.map((item) => item.id));
+const targetIds = computed(() =>
+  props.selections.reduce((prev, cur) => {
+    prev.push(...cur.targets.map((item) => item.id));
+    return prev;
+  }, []),
+);
 
 const handleExport = () => {
   const { invokeExport } = useExport({

@@ -15,18 +15,18 @@
         </span>
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </div>
-      <bk-collapse use-block-theme accordion class="rs-expand" v-model="active">
+      <bk-collapse use-block-theme class="rs-expand" v-model="active">
         <bk-collapse-panel class="rule-panel" v-for="(item, index) in rsList" :key="item.inst_id" :name="item.inst_id">
           <template #header>
-            <div class="header" :class="{ 'is-selected': isExpand(item.inst_id) }" @click.stop>
+            <div class="header" :class="{ 'is-selected': isExpand(item.inst_id) }">
               <bk-checkbox
                 v-if="hasSelection"
                 :checked="checkStatus[index]?.checked"
                 :indeterminate="checkStatus[index]?.indeterminate"
-                class="mr10"
+                class="mr10 checked"
                 @change="(val: boolean, event: any) => handleHeadChange(val, item.inst_id, event)"
               />
-              <div @click="() => handleClick(item.inst_id)">
+              <div>
                 <AngleUpFill v-if="isExpand(item.inst_id)"></AngleUpFill>
                 <RightShape v-else></RightShape>
               </div>
@@ -42,7 +42,9 @@
                 >
                   {{ item.ip }}
                 </a>
-                <span class="name">({{ t(item?.inst_name ?? '') }})</span>
+                (
+                <span class="name">{{ t(item?.inst_name ?? '') }}</span>
+                )
               </div>
               <div class="rs-num mr20">{{ t('RS数量：') }} {{ item.targets.length }}</div>
               <div class="region mr20">{{ t('可用区：') }} {{ regionStore.getZoneName(item.zone, vendor) }}</div>
@@ -180,7 +182,7 @@ const selections = computed(() => {
   return res;
 });
 
-const isExpand = (id: string) => active.value[0] === id;
+const isExpand = (id: string) => active.value.includes(id);
 const getLength = (index: number) => {
   const nowChecked = tableRef.value[index].getSelection();
   const { targets } = props.rsList[index];
@@ -191,11 +193,7 @@ const getLength = (index: number) => {
     targetLength,
   };
 };
-const handleClick = (id: string) => {
-  active.value = [id];
-};
 const handleIPClick = (id: string) => {
-  handleClick(id);
   allActiveIP.add(id);
   routerAction.open({
     name: 'hostBusinessDetail',
@@ -248,6 +246,7 @@ watch(
       indeterminate: false,
     }));
     active.value = [list[0]?.inst_id];
+    count.value = 0;
   },
   {
     deep: true,
@@ -296,6 +295,25 @@ defineExpose({ selections });
     line-height: 40px;
     padding: 0 12px;
 
+    .info {
+      width: 250px;
+
+      .name {
+        display: inline-block;
+        max-width: 140px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        line-height: 100%;
+      }
+    }
+    .rs-num {
+      width: 80px;
+    }
+    .region {
+      width: 150px;
+    }
+
     &.is-selected {
       background: #f0f5ff !important;
     }
@@ -331,6 +349,9 @@ defineExpose({ selections });
       .bk-checkbox {
         display: none;
       }
+    }
+    .bk-table-body {
+      max-height: 420px;
     }
   }
 

@@ -194,10 +194,11 @@ export default defineComponent({
     });
     const resolveFormDataForSingleUpdateRs = () => {
       const type = TargetGroupOperationScene.SINGLE_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      const account_id = type === 'weight' ? formData.account_id : undefined;
       const target = formData.rs_list.find(
         (item: any) => item.id === loadBalancerStore.targetGroupOperateLockState.singleUpdateRsId,
       );
-      return { target_ids: [target.id], [`new_${type}`]: +target[type] };
+      return { target_ids: [target.id], [`new_${type}`]: +target[type], account_id };
     };
     // 处理参数 - 批量修改端口/权重
     const resolveFormDataForBatchUpdateRs = () => {
@@ -212,7 +213,7 @@ export default defineComponent({
     // 处理参数 - 批量移除rs
     const resolveFormDataForBatchDeleteRs = () => ({
       account_id: formData.account_id,
-      target_groups: [{ target_group_id: formData.id, target_ids: deletedRsList.value.map((item) => item.id) }],
+      target_ids: deletedRsList.value.map((item) => item.id),
     });
 
     // check-status - 查询异步任务执行状态

@@ -419,10 +419,7 @@ export const useBusinessStore = defineStore({
      * 业务下给指定目标组移除RS
      * @param data
      */
-    batchDeleteTargets(data: {
-      account_id: string;
-      target_groups: { target_group_id: string; target_ids: string[] }[];
-    }) {
+    batchDeleteTargets(data: { account_id: string; target_ids: string[] }) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/batch`, {
         data,
       });

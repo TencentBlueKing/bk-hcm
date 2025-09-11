@@ -104,7 +104,7 @@ const displayFieldIds = [
 ];
 const convertFieldIds = {
   lb_vips: 'lb_vip',
-  lb_id: 'lb_cloud_id',
+  cloud_lb_id: 'lb_cloud_id',
   rule_domain_count: 'domain_num',
   url_count: 'url_num',
   target_count: 'rs_num',
