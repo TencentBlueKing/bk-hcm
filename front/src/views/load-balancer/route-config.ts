@@ -11,15 +11,21 @@ import {
 
 const loadBalancerBiz: RouteRecordRaw[] = [
   {
+    name: MENU_BUSINESS_LOAD_BALANCER,
     path: 'load-balancer',
+    redirect: {
+      name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
+    },
     component: () => import('@/views/load-balancer/entry-biz.vue'),
+    meta: {
+      ...new Meta({
+        title: '负载均衡',
+        activeKey: MENU_BUSINESS_LOAD_BALANCER,
+        menu: {},
+        icon: 'hcm-icon bkhcm-icon-loadbalancer',
+      }),
+    },
     children: [
-      {
-        path: '',
-        redirect: {
-          name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
-        },
-      },
       {
         // 默认展示全部负载均衡（概览）
         name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
@@ -28,7 +34,7 @@ const loadBalancerBiz: RouteRecordRaw[] = [
         meta: {
           ...new Meta({
             title: '全部负载均衡',
-            activeKey: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
+            activeKey: MENU_BUSINESS_LOAD_BALANCER,
             menu: {},
           }),
         },
@@ -75,18 +81,10 @@ const loadBalancerBiz: RouteRecordRaw[] = [
         },
       },
     ],
-    meta: {
-      ...new Meta({
-        title: '负载均衡',
-        activeKey: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
-        isShowBreadcrumb: true,
-        icon: 'hcm-icon bkhcm-icon-loadbalancer',
-      }),
-    },
   },
   {
     name: MENU_BUSINESS_LOAD_BALANCER_APPLY,
-    path: '/business/load-balancer/apply',
+    path: 'load-balancer/apply',
     component: () => import('@/views/load-balancer/clb/apply/index.vue'),
     meta: {
       ...new Meta({

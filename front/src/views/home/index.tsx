@@ -28,6 +28,7 @@ import logo from '@/assets/image/logo.png';
 import './index.scss';
 
 import {
+  MENU_BUSINESS_LOAD_BALANCER,
   MENU_BUSINESS_OPERATION_LOG,
   MENU_BUSINESS_TASK_MANAGEMENT,
   MENU_SERVICE_TICKET_MANAGEMENT,
@@ -79,9 +80,12 @@ export default defineComponent({
     // 过渡方式，最终希望所有路由通过name跳转
     const getRouteLinkParams = (config: any) => {
       if (
-        [MENU_BUSINESS_TASK_MANAGEMENT, MENU_SERVICE_TICKET_MANAGEMENT, MENU_BUSINESS_OPERATION_LOG].includes(
-          config.name,
-        )
+        [
+          MENU_BUSINESS_TASK_MANAGEMENT,
+          MENU_SERVICE_TICKET_MANAGEMENT,
+          MENU_BUSINESS_OPERATION_LOG,
+          MENU_BUSINESS_LOAD_BALANCER,
+        ].includes(config.name)
       ) {
         return { name: config.name };
       }
