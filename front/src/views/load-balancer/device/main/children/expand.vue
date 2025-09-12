@@ -79,6 +79,7 @@
                 :label="column.name"
                 :sort="column.sort"
                 :width="column.width"
+                :min-width="column.width"
                 :fixed="column.fixed"
                 :render="column.render"
                 :filter="column.filter"

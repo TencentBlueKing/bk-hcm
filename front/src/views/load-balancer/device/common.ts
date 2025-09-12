@@ -92,7 +92,7 @@ export const conditionField = [
     type: 'select',
   },
   {
-    id: 'ip_version',
+    id: 'lb_ip_versions',
     name: 'IP版本',
     list: [
       { value: 'ipv4', label: 'IPv4' },
