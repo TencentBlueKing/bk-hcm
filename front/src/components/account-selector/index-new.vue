@@ -48,10 +48,9 @@ const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   autoSelectSingle: true,
 });
 
-const emit =
-  defineEmits<
-    (e: 'change', val: IAccountItem, oldVal: IAccountItem, vendorAccountMap: Map<VendorEnum, IAccountOption[]>) => void
-  >();
+const emit = defineEmits<{
+  change: [val: IAccountItem, oldVal: IAccountItem, vendorAccountMap: Map<VendorEnum, IAccountOption[]>];
+}>();
 
 const { Option } = Select;
 

@@ -3,7 +3,7 @@ import { Button, Form, Input, Upload, Message } from 'bkui-vue';
 import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
-import { DoublePlainObject, FilterType, QueryRuleOPEnum } from '@/typings';
+import { DoublePlainObject, FilterType, IAccountItem, QueryRuleOPEnum } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useResourceStore } from '@/store';
@@ -170,6 +170,10 @@ export default defineComponent({
       private_key: uploadPrivateKeyErrorText,
     };
 
+    const handleAccountSelect = (account: IAccountItem) => {
+      formModel.vendor = account?.vendor;
+    };
+
     // 表单项配置
     const formItemOptions = computed(() => [
       {
@@ -177,7 +181,10 @@ export default defineComponent({
         property: 'account_id',
         required: true,
         content: () => (
-          <AccountSelector v-model={formModel.account_id} bizId={currentBusinessId.value}></AccountSelector>
+          <AccountSelector
+            v-model={formModel.account_id}
+            bizId={currentBusinessId.value}
+            onChange={handleAccountSelect}></AccountSelector>
         ),
       },
       {
