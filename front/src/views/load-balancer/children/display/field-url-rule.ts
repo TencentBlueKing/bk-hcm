@@ -6,7 +6,7 @@ export class DisplayFieldUrlRule {
   ip: string[];
 
   @Column('string', { name: '监听器协议' })
-  lbl_protocols: string;
+  lbl_protocol: string;
 
   @Column('number', { name: '监听器端口' })
   lbl_port: number;

@@ -22,7 +22,7 @@ const urlRuleListenerStore = useLoadBalancerUrlRuleStore();
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 
 // data-list
-const displayFieldIds = ['ip', 'lbl_protocols', 'lbl_port', 'rule_url', 'rule_domain', 'target_count'];
+const displayFieldIds = ['ip', 'lbl_protocol', 'lbl_port', 'rule_url', 'rule_domain', 'target_count'];
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.URL).getProperties();
 const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   lbl_port: {
