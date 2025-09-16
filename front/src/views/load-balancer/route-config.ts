@@ -7,13 +7,12 @@ import {
   MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
   MENU_BUSINESS_TARGET_GROUP_DETAILS,
   MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
-  MENU_BUSINESS_RESOURCE_OVERVIEW,
-  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH_OVERVIEW,
+  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
 } from '@/constants/menu-symbol';
 
 const loadBalancerBiz: RouteRecordRaw[] = [
   {
-    name: MENU_BUSINESS_RESOURCE_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER,
     path: '/business/load-balancer/resource',
     redirect: {
       name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
@@ -95,7 +94,7 @@ const loadBalancerBiz: RouteRecordRaw[] = [
         },
       },
       {
-        name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH_OVERVIEW,
+        name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
         path: '/business/load-balancer/device',
         component: () => import('@/views/load-balancer/device/index.vue'),
         meta: {

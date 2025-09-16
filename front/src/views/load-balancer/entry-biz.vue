@@ -3,8 +3,8 @@ import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
-  MENU_BUSINESS_RESOURCE_OVERVIEW,
-  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH_OVERVIEW,
+  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
+  MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
 } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import {
@@ -28,13 +28,13 @@ const LOAD_BALANCER_VIEW_LIST = [
   {
     label: t('资源列表'),
     path: '/business/load-balancer/resource',
-    name: MENU_BUSINESS_RESOURCE_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
     component: ResourceView,
   },
   {
     label: t('设备检索'),
     path: '/business/load-balancer/device',
-    name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
     component: DeviceSearchView,
   },
 ];
