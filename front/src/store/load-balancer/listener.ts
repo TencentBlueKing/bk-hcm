@@ -7,7 +7,7 @@ import http from '@/http';
 import { ListenerProtocol, Scheduler, SessionType, SSLMode } from '@/views/load-balancer/constants';
 import { VendorEnum } from '@/common/constant';
 import rollRequest from '@blueking/roll-request';
-import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/common';
+import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
 export interface IListenerModel {
   id: string;

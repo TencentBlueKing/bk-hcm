@@ -20,7 +20,7 @@ const handleExport = () => {
     target: 'rs',
     vendor: props.vendor,
     listeners: [],
-    target_ids: targetIds.value,
+    targetIds: targetIds.value,
     check: false,
   });
   invokeExport();

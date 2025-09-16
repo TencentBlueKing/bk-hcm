@@ -13,7 +13,6 @@ export interface IDataListProps {
   remotePagination?: boolean;
   hasSelection?: boolean;
   showSetting?: boolean;
-  acrossPage?: boolean;
 }
 
 const props = withDefaults(defineProps<IDataListProps>(), {
@@ -84,7 +83,6 @@ defineExpose({ clearSelection, getSelection });
       :width="40"
       :min-width="40"
       type="selection"
-      :across-page="acrossPage"
       :fixed="columns[0]?.fixed ?? undefined"
     />
     <bk-table-column

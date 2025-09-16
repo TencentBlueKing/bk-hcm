@@ -28,7 +28,7 @@ const handleExport = () => {
     target: 'listener',
     vendor: vendor.value,
     listeners: listeners.value,
-    only_export_listener: props.onlyExportListener,
+    onlyExportListener: props.onlyExportListener,
   });
   invokeExport();
 };

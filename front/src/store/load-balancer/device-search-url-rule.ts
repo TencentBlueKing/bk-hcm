@@ -4,7 +4,7 @@ import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
 import { enableCount } from '@/utils/search';
 import type { IListResData, IPageQuery } from '@/typings';
-import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/common';
+import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
 export interface IUrlRuleItem {
   id: string;

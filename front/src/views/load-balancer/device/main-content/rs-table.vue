@@ -5,13 +5,13 @@ import { IRsItem, useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 import { RsDeviceType } from '@/views/load-balancer/constants';
 import { ActionItemType } from '@/views/load-balancer/typing';
 import usePage from '@/hooks/use-page';
-import { ILoadBalanceDeviceCondition } from '../../common';
+import { ILoadBalanceDeviceCondition } from '../typing';
 import routeQuery from '@/router/utils/query';
 import { IAuthSign } from '@/common/auth-service';
 import { useRoute } from 'vue-router';
-import expand from '../children/expand.vue';
+import expand from './children/expand.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
-import BatchRsOperationDialog from '@/views/load-balancer/device/main/children/batch-rs-operation-dialog.vue';
+import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
 import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-button.vue';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();

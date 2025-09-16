@@ -4,6 +4,7 @@ import type { ModelProperty } from '@/model/typings';
 import type { DisplayType } from '../form/typings';
 defineOptions({ name: 'hcm-search-string' });
 
+const model = defineModel<string | string[]>();
 const props = withDefaults(
   defineProps<{ multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
   {
@@ -14,7 +15,6 @@ const props = withDefaults(
     }),
   },
 );
-const model = defineModel<string | string[]>();
 const attr = useAttrs();
 
 const appearance = computed(() => props.display?.appearance);

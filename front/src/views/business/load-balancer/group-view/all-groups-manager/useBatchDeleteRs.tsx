@@ -17,13 +17,13 @@ export default () => {
   const isBatchDeleteRsSubmitLoading = ref(false);
   // submit-handler
   const batchDeleteRs = async () => {
-    const target_ids: string[] = [];
+    const targetIds: string[] = [];
     for (const [, target_ids] of reqDataMap) {
-      target_ids.push(...target_ids);
+      targetIds.push(...target_ids);
     }
     try {
       isBatchDeleteRsSubmitLoading.value = true;
-      await businessStore.batchDeleteTargets({ account_id, target_ids });
+      await businessStore.batchDeleteTargets({ account_id, target_ids: targetIds });
       Message({ theme: 'success', message: '批量移除RS成功' });
       isBatchDeleteRsShow.value = false;
     } finally {

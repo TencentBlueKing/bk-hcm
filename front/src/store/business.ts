@@ -346,22 +346,6 @@ export const useBusinessStore = defineStore({
       );
     },
     /**
-     * 业务下批量修改RS port/weight
-     * @param target_group_id 目标组id
-     * @param type port | weight
-     */
-    batchUpdateRs(
-      target_group_id: string,
-      type: string,
-      data: { target_ids: string[]; new_port?: number; new_weight?: number; account_id?: string },
-    ) {
-      const api =
-        type === 'weight'
-          ? `/api/v1/cloud/${getBusinessApiPath()}targets/${type}`
-          : `/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/${type}`;
-      return http.patch(api, data);
-    },
-    /**
      * 查询操作记录异步记录指定批次的子任务列表
      * @param data
      * @returns

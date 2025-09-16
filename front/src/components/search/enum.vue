@@ -2,11 +2,11 @@
 import { ModelProperty } from '@/model/typings';
 defineOptions({ name: 'hcm-search-enum' });
 
+const model = defineModel<string | string[]>();
 withDefaults(defineProps<{ multiple: boolean; option: ModelProperty['option'] }>(), {
   multiple: true,
   option: () => ({}),
 });
-const model = defineModel<string | string[]>();
 </script>
 
 <template>

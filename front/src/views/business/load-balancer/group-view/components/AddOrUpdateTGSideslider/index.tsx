@@ -4,6 +4,7 @@ import { Alert, Button, Form, Message } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 // import custom hooks
 import useAddOrUpdateTGForm from './useAddOrUpdateTGForm';
 import useChangeScene from './useChangeScene';
@@ -28,6 +29,7 @@ export default defineComponent({
     // use stores
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
+    const loadBalancerRsStore = useLoadBalancerRsStore();
 
     const isShow = ref(false);
     const isSubmitLoading = ref(false);
@@ -259,22 +261,40 @@ export default defineComponent({
           asyncTaskMessage: 'RS添加异步任务已提交',
         },
         [TargetGroupOperationScene.SINGLE_UPDATE_PORT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForSingleUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdatePort(
+              formData.id,
+              resolveFormDataForSingleUpdateRs() as { target_ids: string[]; new_port: number; account_id?: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '修改单个端口成功',
           asyncTaskMessage: '修改单个端口异步任务已提交',
         },
         [TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForSingleUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdateWeight(
+              resolveFormDataForSingleUpdateRs() as { target_ids: string[]; new_weight: number; account_id: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '修改单个权重成功',
           asyncTaskMessage: '修改单个权重异步任务已提交',
         },
         [TargetGroupOperationScene.BATCH_UPDATE_PORT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForBatchUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdatePort(
+              formData.id,
+              resolveFormDataForBatchUpdateRs() as { target_ids: string[]; new_port: number; account_id?: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '批量修改端口成功',
           asyncTaskMessage: '批量修改端口异步任务已提交',
         },
         [TargetGroupOperationScene.BATCH_UPDATE_WEIGHT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForBatchUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdateWeight(
+              resolveFormDataForBatchUpdateRs() as { target_ids: string[]; new_weight: number; account_id: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '批量修改权重成功',
           asyncTaskMessage: '批量修改权重异步任务已提交',
         },

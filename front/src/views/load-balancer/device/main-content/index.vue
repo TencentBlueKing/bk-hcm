@@ -4,13 +4,13 @@ import { useI18n } from 'vue-i18n';
 import { InfoLine } from 'bkui-vue/lib/icon';
 import routeQuery from '@/router/utils/query';
 
-import { DeviceTabEnum, ILoadBalanceDeviceCondition, ICount } from '../common';
+import { DeviceTabEnum, ILoadBalanceDeviceCondition, ICount } from '../typing';
 
-import Empty from './empty.vue';
-import LargeData from './large-data.vue';
-import ListenerTable from './content/listener-table.vue';
-import RsTable from './content/rs-table.vue';
-import UrlRuleTable from './content/url-rule-table.vue';
+import Empty from './children/empty.vue';
+import LargeData from './children/large-data.vue';
+import ListenerTable from './listener-table.vue';
+import RsTable from './rs-table.vue';
+import UrlRuleTable from './url-rule-table.vue';
 
 defineOptions({ name: 'device-container' });
 

@@ -9,15 +9,15 @@ type UseExportParams = {
   vendor: VendorEnum;
   listeners: Array<{ lb_id: string; lbl_ids?: string[] }>;
   single?: { name: string };
-  only_export_listener?: boolean; // 是否只导出监听器信息
+  onlyExportListener?: boolean; // 是否只导出监听器信息
   check?: boolean; // 是否需要预检
-  target_ids?: string[]; // target为Rs时，此项必填
+  targetIds?: string[]; // target为Rs时，此项必填
 };
 
 const targetName: { lb: string; listener: string; rs: string } = {
   lb: '负载均衡',
   listener: '监听器',
-  rs: 'Rs',
+  rs: 'RS',
 };
 
 export const useExport = (params: UseExportParams) => {
@@ -25,9 +25,9 @@ export const useExport = (params: UseExportParams) => {
     vendor,
     target = 'lb',
     listeners = [],
-    target_ids = [],
+    targetIds = [],
     single,
-    only_export_listener = false,
+    onlyExportListener = false,
     check = true,
   } = params;
 
@@ -38,11 +38,11 @@ export const useExport = (params: UseExportParams) => {
   const lblIds = listeners.flatMap((item) => item.lbl_ids);
   const checkedLength = () => {
     if (isLb) return lbIds.length;
-    if (isRs) return target_ids.length;
+    if (isRs) return targetIds.length;
     return lblIds.length;
   };
 
-  const { exportPreCheck, exportClb } = useLoadBalancerStore();
+  const { exportPreCheck, exportClb, exportRS } = useLoadBalancerStore();
 
   const invokeExport = () => {
     const stats = () =>
@@ -56,7 +56,7 @@ export const useExport = (params: UseExportParams) => {
       h(
         'div',
         { class: classes['infobox-tips'] },
-        only_export_listener || isRs
+        onlyExportListener || isRs
           ? ['导出时间可能较长，点击导出按钮后开始导出']
           : ['导出数据包括', h('b', '监听器信息，URL规则信息(HTTP/HTTPS协议)，监听器绑定的RS信息。')],
       );
@@ -94,11 +94,11 @@ export const useExport = (params: UseExportParams) => {
             });
           } else {
             // 预检通过，开始导出
-            const { download, cancelDownload } = await exportClb(
+            const apiMethod = isRs ? exportRS : exportClb;
+            const { download, cancelDownload } = await apiMethod(
               vendor,
-              isRs ? target_ids : listeners,
-              only_export_listener,
-              isRs,
+              isRs ? targetIds : listeners,
+              onlyExportListener,
             );
 
             // 先显示loading

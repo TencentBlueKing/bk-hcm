@@ -2,22 +2,23 @@
 import { reactive, inject, Ref, watch, computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IAccountItem } from '@/typings';
-import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 import { cloneDeep, isEqual } from 'lodash';
 import { Info } from 'bkui-vue/lib/icon';
 import { isEmpty } from '@/common/util';
-import { ILoadBalanceDeviceCondition, conditionField } from '../common';
-import { VendorEnum, ResourceTypeEnum } from '@/common/constant';
+import { ILoadBalanceDeviceCondition } from '../typing';
+import { VendorEnum, ResourceTypeEnum, TARGET_GROUP_PROTOCOLS } from '@/common/constant';
+import { ModelPropertySearch } from '@/model/typings';
+import { LB_NETWORK_TYPE_MAP } from '@/constants';
 
 defineOptions({ name: 'device-condition' });
 defineProps<{ loading: Boolean }>();
 
 const emit = defineEmits(['save']);
 
+const businessId = inject<Ref<number>>('currentGlobalBusinessId');
+
 let timeout: string | number | NodeJS.Timeout = null;
 
-const businessId = inject<Ref<number>>('currentGlobalBusinessId');
 const { t } = useI18n();
 
 const formModel = reactive<ILoadBalanceDeviceCondition>({ account_id: '', vendor: VendorEnum.TCLOUD, lb_regions: [] });
@@ -78,6 +79,143 @@ watch(
     }
   },
 );
+
+const conditionField: ModelPropertySearch[] = [
+  {
+    id: 'account_id',
+    type: 'account',
+    name: '云账号',
+    props: {
+      bizId: businessId.value,
+      autoSelect: true,
+      resourceType: ResourceTypeEnum.CLB,
+      onChange: handleAccountChange,
+    },
+  },
+  {
+    id: 'lb_regions',
+    type: 'region',
+    name: '地域',
+    props: {
+      vendor: formModel.vendor,
+      multiple: true,
+      clearable: true,
+      collapseTags: true,
+    },
+  },
+  {
+    id: 'lb_vips',
+    name: '负载均衡 VIP',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'cloud_lb_ids',
+    name: '负载均衡 ID',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'lbl_protocols',
+    name: '监听器协议',
+    type: 'enum',
+    props: {
+      option: TARGET_GROUP_PROTOCOLS.reduce((prev: { [key: string]: any }, cur) => {
+        prev[cur] = cur;
+        return prev;
+      }, {}),
+    },
+  },
+  {
+    id: 'lbl_ports',
+    name: '监听器端口',
+    type: 'string',
+    props: {
+      maxData: 1000,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'target_ips',
+    name: 'RS IP',
+    type: 'string',
+    props: {
+      maxData: 5000,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'target_ports',
+    name: 'RS端口',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'rule_domains',
+    name: 'HTTP/HTTPS监听器域名',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'rule_urls',
+    name: 'URL路径',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+  {
+    id: 'lb_network_types',
+    name: '网络类型',
+    type: 'enum',
+    props: {
+      option: LB_NETWORK_TYPE_MAP,
+    },
+  },
+  {
+    id: 'lb_ip_versions',
+    name: 'IP版本',
+    type: 'enum',
+    props: {
+      option: {
+        ipv4: 'IPv4',
+        ipv6: 'IPv6',
+        ipv6_dual_stack: 'IPv6DualStack',
+        ipv6_nat64: 'IPv6Nat64',
+      },
+    },
+  },
+  {
+    id: 'lb_domains',
+    name: '负载均衡域名',
+    type: 'string',
+    props: {
+      maxData: 500,
+      collapseTags: true,
+      pasteFn: handlePaste,
+    },
+  },
+];
 </script>
 
 <template>
@@ -85,37 +223,14 @@ watch(
     <div class="header">{{ t('检索条件') }}</div>
     <div class="condition">
       <bk-form ref="formRef" class="condition-form g-expand" form-type="vertical" :model="formModel">
-        <bk-form-item :label="t('云账号')" property="account_id" required>
-          <account-selector
-            v-model="formModel.account_id"
-            :biz-id="businessId"
-            :auto-select="true"
-            :resource-type="ResourceTypeEnum.CLB"
-            @change="handleAccountChange"
-          />
-        </bk-form-item>
-        <bk-form-item :label="t('地域')" property="lb_regions">
-          <region-selector v-model="formModel.lb_regions" :vendor="formModel.vendor" multiple clearable collapse-tags />
-        </bk-form-item>
-        <bk-form-item :label="t(item.name)" :property="item.id" v-for="item in conditionField" :key="item.id">
-          <bk-select
-            v-if="item.type === 'select'"
-            v-model="formModel[item.id]"
-            :list="item.list"
-            clearable
-            multiple
-            multiple-mode="tag"
-            collapse-tags
-          />
-          <bk-tag-input
-            v-else
-            v-model="formModel[item.id]"
-            :paste-fn="handlePaste"
-            placeholder="请输入"
-            allow-create
-            collapse-tags
-            :max-data="item.max || 500"
-          />
+        <bk-form-item
+          :label="t(field.name)"
+          :property="field.id"
+          v-for="field in conditionField"
+          :key="field.id"
+          :required="field.id === 'account_id'"
+        >
+          <component :is="`hcm-search-${field.type}`" v-bind="field.props" v-model="formModel[field.id]" />
         </bk-form-item>
       </bk-form>
     </div>

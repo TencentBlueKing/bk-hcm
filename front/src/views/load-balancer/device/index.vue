@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { ref, ComputedRef, inject } from 'vue';
-import { ILoadBalanceDeviceCondition, ICount, numberField } from './common';
+import { ILoadBalanceDeviceCondition, ICount } from './typing';
 import { VendorEnum } from '@/common/constant';
-import DeviceCondition from './condition/index.vue';
-import MainContent from './main/index.vue';
+import DeviceCondition from './search/index.vue';
+import MainContent from './main-content/index.vue';
 import { useLoadBalancerCountStore } from '@/store/load-balancer/device-search-count';
 import routeQuery from '@/router/utils/query';
 
 defineOptions({ name: 'device-search' });
+
+const numberField = ['lbl_ports', 'target_ports'];
 
 const loadBalancerCountStore = useLoadBalancerCountStore();
 

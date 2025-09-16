@@ -140,22 +140,39 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   const exportClb = (
     vendor: VendorEnum,
     params: Array<{ lb_id: string; lbl_ids?: string[] }> | string[],
-    only_export_listener = false,
-    isRs = false,
+    onlyExportListener = false,
   ) => {
     try {
       const controller = new AbortController();
-      const url = isRs
-        ? `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/targets/export`
-        : `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`;
-      const data = isRs
-        ? {
-            target_ids: params,
-          }
-        : {
-            listeners: params,
-            only_export_listener,
-          };
+      const url = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`;
+      const data = {
+        listeners: params,
+        only_export_listener: onlyExportListener,
+      };
+      const download = () =>
+        http.download({
+          url,
+          data,
+          signal: controller.signal,
+          globalError: false,
+        });
+
+      return {
+        download,
+        cancelDownload: () => controller.abort(),
+      };
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+
+  const exportRS = (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }> | string[]) => {
+    try {
+      const controller = new AbortController();
+      const url = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/targets/export`;
+      const data = {
+        target_ids: params,
+      };
       const download = () =>
         http.download({
           url,
@@ -195,5 +212,6 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     queryRulesBindingStatusList,
     exportPreCheck,
     exportClb,
+    exportRS,
   };
 });

@@ -4,7 +4,7 @@ import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
 import { enableCount } from '@/utils/search';
 import type { IListResData, IPageQuery } from '@/typings';
-import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/common';
+import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 import { VendorEnum } from '@/common/constant';
 
 export interface IRsItem {
@@ -19,6 +19,7 @@ export interface IRsItem {
 
 export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
   const getListLoading = ref(false);
+  // 获取设备检索-RS列表
   const getRsList = async (condition: ILoadBalanceDeviceCondition, page: IPageQuery, businessId: number) => {
     getListLoading.value = true;
     const { vendor } = condition;
@@ -44,6 +45,7 @@ export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
   };
 
   const batchUpdateWeightLoading = ref(false);
+  // 单个/批量修改RS权重
   const batchUpdateWeight = async (
     params: { account_id: string; target_ids: string[]; new_weight: number },
     businessId: number,
@@ -58,6 +60,30 @@ export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
       return Promise.reject(error);
     } finally {
       batchUpdateWeightLoading.value = false;
+    }
+  };
+
+  const batchUpdatePortLoading = ref(false);
+  // 单个/批量修改RS端口
+  const batchUpdatePort = async (
+    target_group_id: string,
+    params: { target_ids: any[]; new_port: number },
+    businessId: number,
+  ) => {
+    batchUpdatePortLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `target_groups/${target_group_id}/targets/port`,
+      businessId,
+    );
+    try {
+      const res = await http.patch(api, params);
+      return res;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      batchUpdatePortLoading.value = false;
     }
   };
 
@@ -100,6 +126,8 @@ export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
     getRsList,
     batchUpdateWeightLoading,
     batchUpdateWeight,
+    batchUpdatePortLoading,
+    batchUpdatePort,
     batchUnbindLoading,
     batchUnbind,
     batchExportLoading,

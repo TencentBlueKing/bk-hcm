@@ -4,7 +4,7 @@ import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
 import { enableCount } from '@/utils/search';
 import type { IListResData } from '@/typings';
-import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/common';
+import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
 export const useLoadBalancerCountStore = defineStore('load-balancer-count', () => {
   const getCountLoading = ref(false);

@@ -31,7 +31,7 @@ export function useSingleList<T>(options?: {
   // 是否使用 rollRequest 一次拉取完
   rollRequestConfig?: { enabled: boolean; limit: number };
   // 列表获取完成后
-  listLoaded?: Function;
+  success?: () => void;
 }) {
   // 设置 options 默认值
   defaults(options, {
@@ -43,7 +43,6 @@ export function useSingleList<T>(options?: {
     pagination: { start: 0, limit: 50, count: 0 },
     disableSort: false,
     rollRequestConfig: { enabled: false, limit: 500 },
-    listLoaded: () => ({}),
   });
 
   const getDefaultPagination = () => ({ ...options.pagination });
@@ -78,7 +77,7 @@ export function useSingleList<T>(options?: {
 
         dataList.value = list;
         pagination.count = list.length;
-        options.listLoaded();
+        options?.success?.();
 
         return list;
       }
@@ -115,7 +114,7 @@ export function useSingleList<T>(options?: {
       } else {
         dataList.value = [...dataList.value, ...increment];
       }
-
+      options?.success?.();
       // 更新分页参数
       pagination.count = get(countRes.data, options.path.count, 0);
       // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理

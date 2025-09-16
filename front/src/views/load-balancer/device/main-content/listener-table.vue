@@ -22,9 +22,9 @@ import BatchDeleteDialog from '@/views/load-balancer/listener/children/batch-del
 import ListenerBatchExportButton from '@/views/load-balancer/children/export/listener-batch-button.vue';
 import Confirm from '@/components/confirm';
 import DetailsSideslider from '@/views/load-balancer/listener/details.vue';
-import BatchCopy from '@/views/load-balancer/device/main/children/batch-copy.vue';
+import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-copy.vue';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
-import { ILoadBalanceDeviceCondition } from '../../common';
+import { ILoadBalanceDeviceCondition } from '../typing';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits(['getList']);

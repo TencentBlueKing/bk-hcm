@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ComputedRef, h, inject, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { IUrlRuleItem, useLoadBalancerUrlRuleStore } from '@/store/load-balancer/url-rule';
+import { IUrlRuleItem, useLoadBalancerUrlRuleStore } from '@/store/load-balancer/device-search-url-rule';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import DataList from '@/views/load-balancer/children/display/data-list.vue';
-import { ILoadBalanceDeviceCondition } from '../../common';
+import { ILoadBalanceDeviceCondition } from '../typing';
 import { Share } from 'bkui-vue/lib/icon';
 import routerAction from '@/router/utils/action';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';

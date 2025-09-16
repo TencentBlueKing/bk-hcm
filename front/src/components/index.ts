@@ -8,6 +8,7 @@ import SearchDatetime from './search/datetime.vue';
 import SearchUser from './search/user.vue';
 import SearchBusiness from './search/business.vue';
 import SearchString from './search/string.vue';
+import SearchRegion from './search/region.vue';
 
 // 展示值组件
 import DisplayValue from './display-value/index.vue';
@@ -29,6 +30,7 @@ import Auth from './auth/auth.vue';
 const components = [
   PermissionDialog,
   SearchAccount,
+  SearchRegion,
   SearchEnum,
   SearchDatetime,
   SearchUser,

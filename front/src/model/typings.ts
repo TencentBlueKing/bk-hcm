@@ -68,6 +68,7 @@ export type PropertySearchConfig = {
   format?: (value: any) => any;
   converter?: (value: any) => Record<string, any>;
   enableEmpty?: boolean;
+  props?: Record<string, any>;
 };
 
 export type PropertyDisplayConfig = {
