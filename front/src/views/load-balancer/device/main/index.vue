@@ -41,6 +41,11 @@ const DEVICE_VIEW_LIST_COUNT = {
   [DeviceTabEnum.URL]: 'urlCount',
   [DeviceTabEnum.RS]: 'rsCount',
 };
+const DEVICE_VIEW_COUNT_TAB = {
+  [DEVICE_VIEW_LIST_COUNT[DeviceTabEnum.LISTENER]]: DeviceTabEnum.LISTENER,
+  [DEVICE_VIEW_LIST_COUNT[DeviceTabEnum.URL]]: DeviceTabEnum.URL,
+  [DEVICE_VIEW_LIST_COUNT[DeviceTabEnum.RS]]: DeviceTabEnum.RS,
+};
 
 const { t } = useI18n();
 
@@ -63,6 +68,16 @@ watch(
       page: undefined,
       _t: Date.now(),
     }),
+);
+watch(
+  () => props.count,
+  (val: ICount) => {
+    if (val[DEVICE_VIEW_LIST_COUNT[tabValue.value]] > 0) return;
+    for (const [key, count] of Object.entries(val)) {
+      if (count > 0) tabValue.value = DEVICE_VIEW_COUNT_TAB[key];
+    }
+  },
+  { deep: true },
 );
 </script>
 

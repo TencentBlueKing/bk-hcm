@@ -5,14 +5,26 @@
     <template #menus>
       <copy-to-clipboard
         type="dropdown-item"
-        :text="t('监听器ID')"
-        :content="selectedLoadBalancerIDs"
+        :text="t('监听器端口')"
+        :content="selectedLoadBalancerPorts"
         @success="handleSuccess"
       />
       <copy-to-clipboard
         type="dropdown-item"
-        :text="t('监听器端口')"
-        :content="selectedLoadBalancerPorts"
+        :text="t('监听器协议')"
+        :content="selectedLoadBalancerProtocols"
+        @success="handleSuccess"
+      />
+      <copy-to-clipboard
+        type="dropdown-item"
+        :text="t('负载均衡VIP')"
+        :content="selectedLoadBalancerVips"
+        @success="handleSuccess"
+      />
+      <copy-to-clipboard
+        type="dropdown-item"
+        :text="t('负载均衡ID')"
+        :content="selectedLoadBalancerIDs"
         @success="handleSuccess"
       />
     </template>
@@ -31,8 +43,10 @@ const props = defineProps<{ selections: any[] }>();
 const { t } = useI18n();
 const dropdownRef = useTemplateRef<typeof HcmDropdown>('dropdown');
 
-const selectedLoadBalancerIDs = computed(() => props.selections?.map((item) => item.id)?.join('\n'));
+const selectedLoadBalancerIDs = computed(() => props.selections?.map((item) => item.lb_cloud_id)?.join('\n'));
 const selectedLoadBalancerPorts = computed(() => props.selections?.map((item) => item.port)?.join('\n'));
+const selectedLoadBalancerProtocols = computed(() => props.selections?.map((item) => item.protocol)?.join('\n'));
+const selectedLoadBalancerVips = computed(() => props.selections?.map((item) => item.lb_vip)?.join('\n'));
 
 const handleSuccess = () => {
   dropdownRef.value?.hidePopover();

@@ -123,7 +123,7 @@ watch(
     <div class="footer">
       <bk-popover theme="light" :is-show="isShow" trigger="manual">
         <bk-button
-          class="mr10 save"
+          class="mr6 save"
           theme="primary"
           @click="handleSave"
           :loading="loading"
@@ -174,6 +174,10 @@ watch(
     border: 1px solid #dcdee5;
     padding-left: 24px;
     z-index: 999999;
+
+    .bk-button {
+      width: 88px;
+    }
   }
 }
 .tips {

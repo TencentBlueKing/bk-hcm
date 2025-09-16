@@ -4,7 +4,7 @@ import { ILoadBalanceDeviceCondition, ICount, numberField } from './common';
 import { VendorEnum } from '@/common/constant';
 import DeviceCondition from './condition/index.vue';
 import MainContent from './main/index.vue';
-import { useLoadBalancerCountStore } from '@/store/load-balancer/count';
+import { useLoadBalancerCountStore } from '@/store/load-balancer/device-search-count';
 import routeQuery from '@/router/utils/query';
 
 defineOptions({ name: 'device-search' });
@@ -57,7 +57,7 @@ const handleListDone = () => {
 </script>
 
 <template>
-  <bk-resize-layout class="device-search" :trigger-width="0" :initial-divide="320" :min="320">
+  <bk-resize-layout class="device-search" :initial-divide="320" :min="320" immediate>
     <template #aside>
       <device-condition @save="handleSave" :loading="loading"></device-condition>
     </template>

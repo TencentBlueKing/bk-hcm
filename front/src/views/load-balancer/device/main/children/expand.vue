@@ -5,7 +5,7 @@
         已选
         <span class="count">{{ count }}</span>
         个RS，可
-        <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
+        <bk-button text theme="primary" @click="handleClearSelection" class="mr14">{{ t('一键清空') }}</bk-button>
         <bk-button text theme="primary" @click="handleSelectAll">{{ t('全选所有IP') }}</bk-button>
       </div>
       <div v-if="moreData" class="rs-warning">
@@ -15,7 +15,7 @@
         </span>
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </div>
-      <bk-collapse use-block-theme class="rs-expand" v-model="active">
+      <bk-collapse use-block-theme class="rs-expand" v-model="active" accordion>
         <bk-collapse-panel class="rule-panel" v-for="(item, index) in rsList" :key="item.inst_id" :name="item.inst_id">
           <template #header>
             <div class="header" :class="{ 'is-selected': isExpand(item.inst_id) }">
@@ -26,7 +26,7 @@
                 class="mr10 checked"
                 @change="(val: boolean, event: any) => handleHeadChange(val, item.inst_id, event)"
               />
-              <div>
+              <div class="arrow">
                 <AngleUpFill v-if="isExpand(item.inst_id)"></AngleUpFill>
                 <RightShape v-else></RightShape>
               </div>
@@ -79,6 +79,7 @@
                 :label="column.name"
                 :sort="column.sort"
                 :width="column.width"
+                :min-width="column.width"
                 :fixed="column.fixed"
                 :render="column.render"
                 :filter="column.filter"
@@ -151,9 +152,24 @@ const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
       return h(Button, { theme: 'primary', text: true, onClick: handleClick }, cell);
     },
   },
+  weight: {
+    render: ({ cell }) => {
+      if (props.type === RsDeviceType.ADJUST) {
+        return h('div', { class: 'weight' }, cell);
+      }
+      return h('div', {}, cell);
+    },
+  },
 };
 const dataListColumns = displayFieldIds.map((id) => {
   const property = displayProperties.find((field) => field.id === id);
+  if (property.id === 'weight') {
+    if (props.type === RsDeviceType.ADJUST) {
+      property.name = 'RS原权重';
+    } else {
+      property.name = 'RS权重';
+    }
+  }
   return { ...property, ...displayConfig[id] };
 });
 
@@ -295,6 +311,10 @@ defineExpose({ selections });
     line-height: 40px;
     padding: 0 12px;
 
+    .arrow {
+      color: #979ba5;
+    }
+
     .info {
       width: 250px;
 
@@ -353,6 +373,19 @@ defineExpose({ selections });
     .bk-table-body {
       max-height: 420px;
     }
+
+    .weight {
+      background: rgb(253, 244, 232);
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+  }
+
+  :deep(.bk-collapse-item-active) {
+    + .bk-collapse-item {
+      box-shadow: -1px -8px 20px 0px rgba(0, 0, 0, 0.1);
+      opacity: 0.8;
+    }
   }
 
   :deep(.bk-collapse-item) {
@@ -361,6 +394,7 @@ defineExpose({ selections });
     .bk-collapse-content {
       padding-left: 0;
       padding-right: 0;
+      padding-top: 0;
     }
 
     &:nth-child(even) {
