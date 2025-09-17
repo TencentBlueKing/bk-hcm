@@ -174,7 +174,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 
 	if len(taskDetails) == 0 {
 		if err = svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementSuccess); err != nil {
-			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+			logs.Errorf("update task management state to success failed, err: %v, taskManagementID: %s, rid: %s",
 				err, taskManagementID, kt.Rid)
 		}
 		req := &cloud.TGListenerRelStatusUpdateReq{BindingStatus: enumor.SuccessBindingStatus}
