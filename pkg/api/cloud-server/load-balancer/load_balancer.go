@@ -1187,14 +1187,8 @@ type LblTopoInfo struct {
 	LblCond []filter.RuleFactory
 }
 
-// ListUrlRulesByTopologyResp list url rules by topology resp.
-type ListUrlRulesByTopologyResp struct {
-	Count   int             `json:"count"`
-	Details []UrlRuleDetail `json:"details"`
-}
-
-// UrlRuleDetail url rule detail.
-type UrlRuleDetail struct {
+// UrlRuleWithTopo url rule with topo
+type UrlRuleWithTopo struct {
 	ID          string   `json:"id"`
 	LbVips      []string `json:"lb_vips"`
 	LblProtocol string   `json:"lbl_protocol"`
@@ -1202,8 +1196,8 @@ type UrlRuleDetail struct {
 	RuleUrl     string   `json:"rule_url"`
 	RuleDomain  string   `json:"rule_domain"`
 	TargetCount int      `json:"target_count"`
+	LbID        string   `json:"lb_id"`
 	CloudLblID  string   `json:"cloud_lbl_id"`
-	CloudLbID   string   `json:"cloud_lb_id"`
 }
 
 // UrlRuleTopoInfo url rule topo info
