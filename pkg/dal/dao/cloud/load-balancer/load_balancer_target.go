@@ -249,9 +249,12 @@ func (dao TargetDao) ListInstInfo(kt *kit.Kit, opt *types.ListOption) (*typeslb.
 		return nil, err
 	}
 
+	subSql := fmt.Sprintf(`SELECT ip,inst_id,inst_type,inst_name,zone,cloud_vpc_ids FROM %s %s group by ip,inst_id,
+inst_type,inst_name,zone,cloud_vpc_ids`, table.LoadBalancerTargetTable, whereExpr)
+
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(Distinct(ip)) FROM %s %s`, table.LoadBalancerTargetTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM (%s) AS tmp`, subSql)
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -272,8 +275,7 @@ func (dao TargetDao) ListInstInfo(kt *kit.Kit, opt *types.ListOption) (*typeslb.
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT ip,inst_id,inst_type,inst_name,zone,cloud_vpc_ids FROM %s %s group by ip,inst_id,
-inst_type,inst_name,zone,cloud_vpc_ids %s`, table.LoadBalancerTargetTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`%s %s`, subSql, pageExpr)
 	details := make([]typeslb.ListInstInfo, 0)
 	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
