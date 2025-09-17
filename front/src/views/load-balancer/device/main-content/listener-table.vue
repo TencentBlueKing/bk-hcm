@@ -288,7 +288,7 @@ const handleClearSelection = () => {
       v-bkloading="{ loading }"
       :columns="dataListColumns"
       :list="listenerList"
-      :pagination="pagination"
+      :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
       has-selection
       :max-height="`calc(100% - ${moreData ? '96px' : '48px'})`"
       @select-all="handleSelectAll"

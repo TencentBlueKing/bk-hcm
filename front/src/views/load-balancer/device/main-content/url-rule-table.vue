@@ -107,7 +107,7 @@ watch(
       v-bkloading="{ loading }"
       :columns="dataListColumns"
       :list="ruleUrlList"
-      :pagination="pagination"
+      :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
       :max-height="`100%`"
     ></data-list>
   </div>
