@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { enableCount } from '@/utils/search';
 import { resolveApiPathByBusinessId } from '@/common/util';
-import type { IListResData, QueryBuilderType } from '@/typings';
+import type { IListResData, QueryBuilderType, IPageQuery } from '@/typings';
 import http from '@/http';
 import { ListenerProtocol, Scheduler, SessionType, SSLMode } from '@/views/load-balancer/constants';
 import { VendorEnum } from '@/common/constant';
@@ -63,6 +63,8 @@ export interface IListenerItem extends IListenerModel {
   rs_num: number;
   non_zero_weight_count: number;
   zero_weight_count: number;
+  non_zero_weight_target_count?: number;
+  target_count?: number;
 }
 
 export interface IListenersRsWeightStatItem {
@@ -183,19 +185,38 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
 
   // 设备检索监听器列表
   const deviceListenerListLoading = ref(false);
-  const getDeviceListenerList = async (condition: ILoadBalanceDeviceCondition, businessId: number) => {
+  const getDeviceListenerList = async (
+    condition: ILoadBalanceDeviceCondition,
+    page: IPageQuery,
+    businessId: number,
+    loadAll = false,
+  ) => {
     const { vendor } = condition;
     deviceListenerListLoading.value = true;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/listeners/by_topo/list`, businessId);
     try {
-      const list = (await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount(
-        api,
-        condition as any,
-        { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details },
-      )) as any[];
+      if (loadAll) {
+        const list = (await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount(
+          api,
+          condition as any,
+          { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details },
+        )) as any[];
 
-      const data = Object.assign({ list: [], count: 0 }, { list, count: list.length });
-      return data;
+        const data = Object.assign({ list: [], count: 0 }, { list, count: list.length });
+        return data;
+      }
+
+      const [listRes, countRes] = await Promise.all<
+        [Promise<IListResData<IListenerRuleItem[]>>, Promise<IListResData<IListenerRuleItem[]>>]
+      >([
+        http.post(api, enableCount({ ...condition, page }, false)),
+        http.post(api, enableCount({ ...condition, page }, true)),
+      ]);
+
+      const list = listRes?.data?.details ?? [];
+      const count = countRes?.data?.count ?? 0;
+
+      return { list, count };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
