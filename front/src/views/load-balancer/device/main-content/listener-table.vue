@@ -216,6 +216,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     if (list.length > 0) {
       asyncSetRsWeightStat(list);
     }
+    selections.value = [];
     listenerList.value = list;
     pagination.count = count;
   } catch (e) {
