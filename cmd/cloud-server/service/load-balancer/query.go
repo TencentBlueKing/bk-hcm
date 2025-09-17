@@ -759,3 +759,23 @@ func getClbVipDomain(lbInfo corelb.BaseLoadBalancer) ([]string, error) {
 
 	return vipDomains, nil
 }
+
+func (svc *lbSvc) getListenerByCloudID(kt *kit.Kit, cloudID string) (*corelb.BaseListener, error) {
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, req)
+	if err != nil {
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", cloudID, err, kt.Rid)
+		return nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "listener not found, id: "+cloudID)
+	}
+	lblInfo := &lblResp.Details[0]
+
+	return lblInfo, nil
+}
