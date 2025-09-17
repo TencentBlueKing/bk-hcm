@@ -279,7 +279,6 @@ func buildInstWithTargetsInfo(kt *kit.Kit, clbTopoInfo *cslb.TargetTopoInfo, tar
 	if clbTopoInfo == nil || len(targets) == 0 || len(instInfos) == 0 {
 		return make([]cslb.InstWithTargets, 0), nil
 	}
-
 	tgIDRelMap := make(map[string]corelb.BaseTargetListenerRuleRel)
 	for _, rel := range clbTopoInfo.TgLbRels {
 		tgIDRelMap[rel.TargetGroupID] = rel
@@ -297,7 +296,6 @@ func buildInstWithTargetsInfo(kt *kit.Kit, clbTopoInfo *cslb.TargetTopoInfo, tar
 			logs.Errorf("tg lb rel not found, tgID: %s, rid: %s", tgID, kt.Rid)
 			return nil, fmt.Errorf("target group loadBalancer relation not found, target group id: %s", tgID)
 		}
-
 		lb, ok := clbTopoInfo.LbMap[rel.LbID]
 		if !ok {
 			logs.Errorf("lb not found, lbID: %s, rid: %s", rel.LbID, kt.Rid)
@@ -312,13 +310,11 @@ func buildInstWithTargetsInfo(kt *kit.Kit, clbTopoInfo *cslb.TargetTopoInfo, tar
 		if lbl.Extension != nil {
 			lblEndPort = lbl.Extension.EndPort
 		}
-
 		rule, ok := clbTopoInfo.RuleMap[rel.ListenerRuleID]
 		if !ok {
 			logs.Errorf("rule not found, ruleID: %s, rid: %s", rel.ListenerRuleID, kt.Rid)
 			return nil, fmt.Errorf("rule not found, id: %s", rel.ListenerRuleID)
 		}
-
 		targetWithTopo := cslb.TargetWithTopo{
 			BaseTarget:      target,
 			TargetGroupName: targetGroup.Name,
@@ -356,7 +352,6 @@ func buildInstWithTargetsInfo(kt *kit.Kit, clbTopoInfo *cslb.TargetTopoInfo, tar
 		}
 		details = append(details, instWithTargets)
 	}
-
 	return details, nil
 }
 
