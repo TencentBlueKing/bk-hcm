@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, inject, Ref, watch, computed, ref } from 'vue';
+import { reactive, inject, Ref, watch, computed, ref, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IAccountItem } from '@/typings';
 import { cloneDeep, isEqual } from 'lodash';
@@ -42,7 +42,6 @@ const handleAccountChange = (item: IAccountItem) => {
 };
 const handlePaste = (value: any) => value.split(/,|;|\n|\s/).map((tag: any) => ({ id: tag, name: tag }));
 const handleSave = async () => {
-  if (!hasChange.value) return;
   await formRef.value.validate();
   Object.keys(formModel).forEach((key) => {
     originFormModel[key] = formModel[key];
@@ -69,11 +68,13 @@ watch(
 );
 watch(
   () => hasChange.value,
-  (val) => {
+  async (val) => {
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;
     }
+    // 放到下次循环，因为lb_regions在更换云账号时要清空
+    await nextTick();
     if (val && hasAnyCondition.value) {
       timeout = setTimeout(() => (isShow.value = true), 120000);
     }
