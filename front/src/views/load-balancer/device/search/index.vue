@@ -80,7 +80,7 @@ watch(
     // 放到下次循环，因为lb_regions在更换云账号时要清空
     await nextTick();
     if (val && hasAnyCondition.value) {
-      timeout = setTimeout(() => ((countChange.value = false), (isShow.value = true)), 1000);
+      timeout = setTimeout(() => ((countChange.value = false), (isShow.value = true)), 120000);
     }
   },
 );
