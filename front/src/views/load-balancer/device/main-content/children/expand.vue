@@ -35,7 +35,7 @@
                 <AngleUpFill v-if="isExpand(item.inst_id + item.ip)"></AngleUpFill>
                 <RightShape v-else></RightShape>
               </div>
-              <div class="info mr20 ml10">
+              <div class="info mr20 ml10" :title="`${item?.ip} ( ${item?.inst_name ?? '--'} ) `">
                 <a
                   :class="[
                     'ip',
@@ -45,15 +45,19 @@
                   ]"
                   @click="() => handleIPClick(item.inst_id + item.ip)"
                 >
-                  {{ item.ip }}
+                  {{ item?.ip ?? '--' }}
                 </a>
                 (
-                <span class="name">{{ t(item?.inst_name ?? '') }}</span>
+                <span class="name">{{ t(item?.inst_name ?? '--') }}</span>
                 )
               </div>
-              <div class="rs-num mr20">{{ t('RS数量：') }} {{ item.targets.length }}</div>
-              <div class="region mr20">{{ t('可用区：') }} {{ regionStore.getZoneName(item.zone, vendor) }}</div>
-              <div class="vpc">{{ t('所属vpc：') }} {{ item.cloud_vpc_ids.join(',') }}</div>
+              <div class="rs-num mr20" :title="item?.targets.length">{{ t('RS数量：') }} {{ item.targets.length }}</div>
+              <div class="region mr20" :title="regionStore.getZoneName(item.zone, vendor)">
+                {{ t('可用区：') }} {{ regionStore.getZoneName(item.zone, vendor) }}
+              </div>
+              <div class="vpc" :title="getVpc(item.cloud_vpc_ids)">
+                {{ t('所属vpc：') }} {{ getVpc(item.cloud_vpc_ids) }}
+              </div>
               <bk-button
                 text
                 class="single-delete-btn"
@@ -259,6 +263,10 @@ const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
   }
   return {};
 };
+const getVpc = (ids: string[]) => {
+  if (!ids.length) return '--';
+  return ids.join(',');
+};
 
 watch(
   () => props.rsList,
@@ -334,7 +342,7 @@ defineExpose({ selections });
       }
     }
     .rs-num {
-      width: 80px;
+      width: 110px;
     }
     .region {
       width: 150px;
