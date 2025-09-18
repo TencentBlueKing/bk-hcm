@@ -38,11 +38,6 @@ export const VENDORS_INFO = [
 
 export const BILL_VENDORS_INFO = [
   {
-    vendor: VendorEnum.AZURE,
-    name: '微软云',
-    icon: azureVendor,
-  },
-  {
     vendor: VendorEnum.GCP,
     name: '谷歌云',
     icon: gcpVendor,
@@ -56,6 +51,11 @@ export const BILL_VENDORS_INFO = [
     vendor: VendorEnum.AWS,
     name: '亚马逊云',
     icon: awsVendor,
+  },
+  {
+    vendor: VendorEnum.AZURE,
+    name: '微软云',
+    icon: azureVendor,
   },
   {
     vendor: VendorEnum.ZENLAYER,

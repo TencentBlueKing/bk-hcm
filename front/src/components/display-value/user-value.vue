@@ -17,7 +17,7 @@ const displayValue = computed(() => {
     // 每次从全局store中查询获取
     const user = userStore.userList.find((user) => user.username === username);
     if (!user) {
-      return '--';
+      return `${username}(--)`;
     }
     return `${user.username}(${user.display_name})`;
   });

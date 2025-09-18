@@ -33,6 +33,7 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
     string: { op: searchOp || EQ, value: [] },
     number: { op: searchOp || EQ, value: '' },
     enum: { op: searchOp || IN, value: [] },
+    list: { op: searchOp || IN, value: [] },
     datetime: { op: AND, value: [] },
     user: { op: searchOp || IN, value: [] },
     account: { op: searchOp || IN, value: [] },
@@ -234,6 +235,8 @@ export const enableCount = (params = {}, enable = false) => {
 export const onePageParams = () => ({ start: 0, limit: 1 });
 
 export const maxPageParams = (max = 500) => ({ start: 0, limit: max });
+
+export const resolveBizApiPath = (bizId?: number) => (bizId ? `bizs/${bizId}/` : '');
 
 export const getDateRange = (key: keyof DateRangeType, include?: boolean) => {
   const calculateRange = (days: number) => {

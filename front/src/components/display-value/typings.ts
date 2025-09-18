@@ -7,7 +7,8 @@ export type AppearanceType =
   | 'tag'
   | 'cvm-status'
   | 'clb-status'
-  | 'business-assign-tag';
+  | 'business-assign-tag'
+  | 'dynamic-status';
 
 export type DisplayType = {
   on?: 'cell' | 'info' | 'search';

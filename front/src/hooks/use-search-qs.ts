@@ -23,7 +23,6 @@ export default function useSearchQs({
     const queryVal = qs.stringify(value, {
       arrayFormat: 'comma',
       encode: false,
-      allowEmptyArrays: true,
     });
 
     const updateQuery = { [key]: queryVal };
@@ -38,9 +37,12 @@ export default function useSearchQs({
       return { ...defaults };
     }
     const condition: Record<string, any> = {};
-    const filter = qs.parse(query[key] as string, { comma: true, allowEmptyArrays: true });
+    const filter = qs.parse(query[key] as string, { comma: true });
     for (const [id, val] of Object.entries(filter)) {
       const property = findProperty(id, isRef(properties) ? properties.value : properties);
+      if (!property) {
+        continue;
+      }
       condition[id] = convertValue(val, property);
     }
     return condition;
