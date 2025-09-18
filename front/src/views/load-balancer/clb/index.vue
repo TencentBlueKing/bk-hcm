@@ -59,6 +59,9 @@ const getMemory = (type: string) => {
   const { query, params, name } = memory[type];
   return { query, name, params };
 };
+const handleDeleteListener = () => {
+  loadBalancerListRef.value?.getList();
+};
 
 watch(
   () => type.value,
@@ -90,7 +93,7 @@ watch(
       <load-balancer-list ref="load-balancer-list" v-else />
     </template>
     <template #main>
-      <router-view @details-show="handleDetailsShow" />
+      <router-view @details-show="handleDetailsShow" @delete-listener="handleDeleteListener" />
     </template>
   </bk-resize-layout>
 </template>
