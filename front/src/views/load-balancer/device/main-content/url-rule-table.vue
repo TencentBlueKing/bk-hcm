@@ -82,7 +82,10 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     pagination.count = 0;
   } finally {
     loading.value = false;
-    emit('getList');
+    emit('getList', {
+      type: 'urlCount',
+      count: pagination.count,
+    });
   }
 };
 

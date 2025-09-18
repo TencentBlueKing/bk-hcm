@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, h, inject, onMounted, reactive, ref, watch } from 'vue';
+import { computed, ComputedRef, h, inject, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
@@ -194,10 +194,6 @@ watch(
   },
 );
 
-onMounted(() => {
-  getList(props.condition);
-});
-
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
   if (!condition.account_id) return;
   try {
@@ -224,7 +220,10 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   } finally {
     loading.value = false;
     handleClearSelection();
-    emit('getList');
+    emit('getList', {
+      type: 'listenerCount',
+      count: pagination.count,
+    });
   }
 };
 // 新增/编辑监听器

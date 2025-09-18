@@ -22,9 +22,11 @@ const condition = ref<ILoadBalanceDeviceCondition>({
 const count = ref<ICount>({
   listenerCount: 0,
   urlCount: 0,
-  rsCount: 0,
+  rsCount: 0, // 总rs数
+  rsIPCount: 0, // rs下面ip数量
 });
 const loading = ref(false); // 条件框查询按钮loading态
+const countChange = ref(false); // 总数是否变化
 
 const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
   // 对数字类型转换
@@ -35,7 +37,7 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
   loading.value = true;
   try {
     // 先调总数接口
-    const { listenerCount, urlCount, rsCount } = await loadBalancerCountStore.getCount(
+    const { listenerCount, urlCount, rsCount, rsIPCount } = await loadBalancerCountStore.getCount(
       newCondition,
       currentGlobalBusinessId.value,
     );
@@ -43,6 +45,7 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
       listenerCount,
       urlCount,
       rsCount,
+      rsIPCount,
     };
   } catch {
     loading.value = false;
@@ -53,15 +56,19 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
     });
   }
 };
-const handleListDone = () => {
+const handleListDone = (params: { type: string; count: number }) => {
   loading.value = false;
+  const { type, count: nowCount } = params;
+  if (nowCount !== count.value[type]) {
+    countChange.value = true;
+  }
 };
 </script>
 
 <template>
   <bk-resize-layout class="device-search" :initial-divide="320" :min="320" immediate>
     <template #aside>
-      <device-condition @save="handleSave" :loading="loading"></device-condition>
+      <device-condition @save="handleSave" :loading="loading" v-model="countChange"></device-condition>
     </template>
     <template #main>
       <main-content :condition="condition" :count="count" @get-list="handleListDone" />

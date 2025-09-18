@@ -106,7 +106,10 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     pagination.count = 0;
   } finally {
     loading.value = false;
-    emit('getList');
+    emit('getList', {
+      type: 'rsIPCount',
+      count: pagination.count,
+    });
   }
 };
 const handlePageChange = (page: number) => {

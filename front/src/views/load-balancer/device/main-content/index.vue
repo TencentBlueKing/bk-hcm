@@ -57,8 +57,8 @@ const largeData = computed(() => props.count[DEVICE_VIEW_LIST_COUNT[tabValue.val
 const activeComponent = computed(() => (largeData.value ? LargeData : DEVICE_VIEW_LIST[tabValue.value]));
 
 const overCount = (num: number) => num > max.value;
-const handleListDone = () => {
-  emit('getList');
+const handleListDone = (params: { type: string; count: number }) => {
+  emit('getList', params);
 };
 
 watch(

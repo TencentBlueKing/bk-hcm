@@ -10,6 +10,7 @@ export interface ICount {
   listenerCount: number;
   urlCount: number;
   rsCount: number;
+  [key: string]: number;
 }
 
 // 条件类型

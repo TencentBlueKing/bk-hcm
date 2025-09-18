@@ -11,6 +11,9 @@ import { ModelPropertySearch } from '@/model/typings';
 import { LB_NETWORK_TYPE_MAP } from '@/constants';
 
 defineOptions({ name: 'device-condition' });
+
+const countChange = defineModel<boolean>();
+
 defineProps<{ loading: Boolean }>();
 
 const emit = defineEmits(['save']);
@@ -48,6 +51,7 @@ const handleSave = async () => {
   });
   hasSaved.value = true;
   isShow.value = false;
+  countChange.value = false;
   emit('save', cloneDeep(originFormModel));
 };
 const handleReset = () => {
@@ -76,7 +80,15 @@ watch(
     // 放到下次循环，因为lb_regions在更换云账号时要清空
     await nextTick();
     if (val && hasAnyCondition.value) {
-      timeout = setTimeout(() => (isShow.value = true), 120000);
+      timeout = setTimeout(() => ((countChange.value = false), (isShow.value = true)), 1000);
+    }
+  },
+);
+watch(
+  () => countChange.value,
+  async (val) => {
+    if (val) {
+      isShow.value = true;
     }
   },
 );
@@ -251,7 +263,13 @@ const conditionField: ModelPropertySearch[] = [
         <template #content>
           <div class="tips">
             <info class="warning" />
-            <div>{{ t('检索条件有更新，请点击下方查询按钮更新检索') }}</div>
+            <div>
+              {{
+                countChange
+                  ? t('后台数据已发生变化，请点击下方查询按钮更新检索')
+                  : t('检索条件有更新，请点击下方查询按钮更新检索')
+              }}
+            </div>
           </div>
         </template>
       </bk-popover>
