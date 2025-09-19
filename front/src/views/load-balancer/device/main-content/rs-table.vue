@@ -108,7 +108,9 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     loading.value = false;
     emit('list-data-loaded', DeviceTabEnum.RS, {
       type: 'rsIPCount',
-      count: pagination.count,
+      data: {
+        count: pagination.count,
+      },
     });
   }
 };

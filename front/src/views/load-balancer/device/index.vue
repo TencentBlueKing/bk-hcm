@@ -58,10 +58,13 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
 };
 const handleListDone = (
   from: DeviceTabEnum,
-  params: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; count: number },
+  params: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; data: Record<string, any> },
 ) => {
   loading.value = false;
-  const { type, count: nowCount } = params;
+  const {
+    type,
+    data: { count: nowCount },
+  } = params;
   if (nowCount !== count.value[type]) {
     countChange.value = true;
   }

@@ -222,7 +222,9 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     handleClearSelection();
     emit('list-data-loaded', DeviceTabEnum.LISTENER, {
       type: 'listenerCount',
-      count: pagination.count,
+      data: {
+        count: pagination.count,
+      },
     });
   }
 };

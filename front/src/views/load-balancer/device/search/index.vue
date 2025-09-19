@@ -12,7 +12,7 @@ import { LB_NETWORK_TYPE_MAP } from '@/constants';
 
 defineOptions({ name: 'device-condition' });
 
-const props = defineProps<{ loading: Boolean; countChange: Boolean }>();
+const props = defineProps<{ loading: boolean; countChange: boolean }>();
 
 const emit = defineEmits<{
   'count-change': [val: boolean];
