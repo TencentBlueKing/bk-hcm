@@ -31,3 +31,10 @@ export interface ILoadBalanceDeviceCondition {
   target_ports?: number[];
   [key: string]: any;
 }
+
+export interface IDeviceListDataLoadedEvent {
+  'list-data-loaded': [
+    from: DeviceTabEnum,
+    payload: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; count: number },
+  ];
+}

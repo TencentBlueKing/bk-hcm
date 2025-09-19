@@ -12,12 +12,12 @@ import { LB_NETWORK_TYPE_MAP } from '@/constants';
 
 defineOptions({ name: 'device-condition' });
 
-const countChange = defineModel<boolean>();
+const props = defineProps<{ loading: Boolean; countChange: Boolean }>();
 
-defineProps<{ loading: Boolean }>();
-
-const emit = defineEmits(['save']);
-
+const emit = defineEmits<{
+  'count-change': [val: boolean];
+  save: [newCondition: ILoadBalanceDeviceCondition];
+}>();
 const businessId = inject<Ref<number>>('currentGlobalBusinessId');
 
 let timeout: string | number | NodeJS.Timeout = null;
@@ -51,7 +51,7 @@ const handleSave = async () => {
   });
   hasSaved.value = true;
   isShow.value = false;
-  countChange.value = false;
+  emit('count-change', false);
   emit('save', cloneDeep(originFormModel));
 };
 const handleReset = () => {
@@ -80,12 +80,12 @@ watch(
     // 放到下次循环，因为lb_regions在更换云账号时要清空
     await nextTick();
     if (val && hasAnyCondition.value) {
-      timeout = setTimeout(() => ((countChange.value = false), (isShow.value = true)), 120000);
+      timeout = setTimeout(() => (emit('count-change', false), (isShow.value = true)), 120000);
     }
   },
 );
 watch(
-  () => countChange.value,
+  () => props.countChange,
   async (val) => {
     if (val) {
       isShow.value = true;

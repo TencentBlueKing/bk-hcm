@@ -24,10 +24,10 @@ import Confirm from '@/components/confirm';
 import DetailsSideslider from '@/views/load-balancer/listener/details.vue';
 import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-copy.vue';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
-import { ILoadBalanceDeviceCondition } from '../typing';
+import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum } from '../typing';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
-const emit = defineEmits(['getList']);
+const emit = defineEmits<IDeviceListDataLoadedEvent>();
 const details = ref<ILoadBalancerDetails>();
 const route = useRoute();
 const { t } = useI18n();
@@ -220,7 +220,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   } finally {
     loading.value = false;
     handleClearSelection();
-    emit('getList', {
+    emit('list-data-loaded', DeviceTabEnum.LISTENER, {
       type: 'listenerCount',
       count: pagination.count,
     });

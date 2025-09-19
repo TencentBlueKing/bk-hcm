@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { InfoLine } from 'bkui-vue/lib/icon';
 import routeQuery from '@/router/utils/query';
 
-import { DeviceTabEnum, ILoadBalanceDeviceCondition, ICount } from '../typing';
+import { DeviceTabEnum, ILoadBalanceDeviceCondition, ICount, IDeviceListDataLoadedEvent } from '../typing';
 
 import Empty from './children/empty.vue';
 import LargeData from './children/large-data.vue';
@@ -15,7 +15,7 @@ import UrlRuleTable from './url-rule-table.vue';
 defineOptions({ name: 'device-container' });
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition; count: ICount }>();
-const emit = defineEmits(['getList']);
+const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 const TAB_LIST = [
   {
@@ -57,8 +57,11 @@ const largeData = computed(() => props.count[DEVICE_VIEW_LIST_COUNT[tabValue.val
 const activeComponent = computed(() => (largeData.value ? LargeData : DEVICE_VIEW_LIST[tabValue.value]));
 
 const overCount = (num: number) => num > max.value;
-const handleListDone = (params: { type: string; count: number }) => {
-  emit('getList', params);
+const handleListDone = (
+  from: DeviceTabEnum,
+  params: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; count: number },
+) => {
+  emit('list-data-loaded', from, params);
 };
 
 watch(
@@ -100,7 +103,7 @@ watch(
       <empty v-if="!search" />
       <template v-else>
         <!-- <listener-table /> -->
-        <component :is="activeComponent" :condition="props.condition" @get-list="handleListDone" />
+        <component :is="activeComponent" :condition="props.condition" @list-data-loaded="handleListDone" />
       </template>
     </div>
   </div>

@@ -6,7 +6,7 @@ import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/chi
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import DataList from '@/views/load-balancer/children/display/data-list.vue';
-import { ILoadBalanceDeviceCondition } from '../typing';
+import { ILoadBalanceDeviceCondition, DeviceTabEnum, IDeviceListDataLoadedEvent } from '../typing';
 import { Share } from 'bkui-vue/lib/icon';
 import routerAction from '@/router/utils/action';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
@@ -14,7 +14,7 @@ import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 import qs from 'qs';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
-const emit = defineEmits(['getList']);
+const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 const route = useRoute();
 const urlRuleListenerStore = useLoadBalancerUrlRuleStore();
@@ -82,7 +82,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     pagination.count = 0;
   } finally {
     loading.value = false;
-    emit('getList', {
+    emit('list-data-loaded', DeviceTabEnum.URL, {
       type: 'urlCount',
       count: pagination.count,
     });

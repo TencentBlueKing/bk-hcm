@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, ComputedRef, inject } from 'vue';
-import { ILoadBalanceDeviceCondition, ICount } from './typing';
+import { ILoadBalanceDeviceCondition, ICount, DeviceTabEnum } from './typing';
 import { VendorEnum } from '@/common/constant';
 import DeviceCondition from './search/index.vue';
 import MainContent from './main-content/index.vue';
@@ -56,22 +56,33 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
     });
   }
 };
-const handleListDone = (params: { type: string; count: number }) => {
+const handleListDone = (
+  from: DeviceTabEnum,
+  params: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; count: number },
+) => {
   loading.value = false;
   const { type, count: nowCount } = params;
   if (nowCount !== count.value[type]) {
     countChange.value = true;
   }
 };
+const handleCountChange = (val: boolean) => {
+  countChange.value = val;
+};
 </script>
 
 <template>
   <bk-resize-layout class="device-search" :initial-divide="320" :min="320" immediate>
     <template #aside>
-      <device-condition @save="handleSave" :loading="loading" v-model="countChange"></device-condition>
+      <device-condition
+        @save="handleSave"
+        :loading="loading"
+        :count-change="countChange"
+        @count-change="handleCountChange"
+      ></device-condition>
     </template>
     <template #main>
-      <main-content :condition="condition" :count="count" @get-list="handleListDone" />
+      <main-content :condition="condition" :count="count" @list-data-loaded="handleListDone" />
     </template>
   </bk-resize-layout>
 </template>
