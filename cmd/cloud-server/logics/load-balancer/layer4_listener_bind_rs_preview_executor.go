@@ -195,7 +195,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		})
 	if concurrentErr != nil {
 		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
-		return err
+		return concurrentErr
 	}
 
 	if err = l.validateDetailsTarget(kt); err != nil {
@@ -227,7 +227,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit)
 		})
 	if concurrentErr != nil {
 		logs.Errorf("validate details target failed, err: %v, rid: %s", concurrentErr, kt.Rid)
-		return err
+		return concurrentErr
 	}
 	return nil
 }
