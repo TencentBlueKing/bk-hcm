@@ -23,7 +23,13 @@ const props = defineProps<IProps>();
 
 const { t } = useI18n();
 
-const info = {
+const info: {
+  [key: string]: {
+    title: string;
+    confirm: string;
+    checkText: string;
+  };
+} = {
   [RsDeviceType.ADJUST]: {
     title: t('批量调整 RS 权重'),
     confirm: t('确认并提交'),
@@ -46,7 +52,7 @@ const confirmCheck = ref(false);
 const formData = reactive<{ new_weight: number }>({ new_weight: '' as unknown as number });
 
 const IPLength = computed(() => list.value.length);
-const rsLenght = computed(() =>
+const rsLength = computed(() =>
   list.value.reduce((prev, cur) => {
     return prev + cur.targets.length;
   }, 0),
@@ -61,7 +67,7 @@ const handleBatchUnbind = async () => {
   const res = await loadBalancerRsStore.batchUnbind(
     {
       target_ids: list.value.reduce((prev, cur) => {
-        cur.targets.forEach((item) => prev.push(item.id));
+        cur.targets.forEach((item: { id: string }) => prev.push(item.id));
         return prev;
       }, []),
       account_id: list.value[0].targets[0].account_id,
@@ -74,7 +80,7 @@ const handleBatchAdjust = async () => {
   const res = await loadBalancerRsStore.batchUpdateWeight(
     {
       target_ids: list.value.reduce((prev, cur) => {
-        cur.targets.forEach((item) => prev.push(item.id));
+        cur.targets.forEach((item: { id: string }) => prev.push(item.id));
         return prev;
       }, []),
       account_id: list.value[0].targets[0].account_id,
@@ -122,7 +128,7 @@ const handleClosed = () => {
       已选
       <span class="ip-count">{{ IPLength }}</span>
       个IP, 共
-      <span class="rs-count">{{ rsLenght }}</span>
+      <span class="rs-count">{{ rsLength }}</span>
       个RS
     </div>
     <rs-ip-group :rs-list="list" :vendor="vendor" :type="type" class="rs-list" @delete="handleDelete" />
@@ -135,7 +141,7 @@ const handleClosed = () => {
       <modal-footer
         :confirm-text="info[type].confirm"
         :loading="loadBalancerRsStore.batchUpdateWeightLoading || loadBalancerRsStore.batchUnbindLoading"
-        :disabled="!confirmCheck || !rsLenght"
+        :disabled="!confirmCheck || !rsLength"
         @confirm="handleConfirm"
         @closed="handleClosed"
       />

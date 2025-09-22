@@ -3,16 +3,16 @@ import { LISTENER_PROTOCOL_NAME, SCHEDULER_NAME, SSL_MODE_NAME } from '../../con
 
 @Model('load-balancer/listener-display')
 export class DisplayFieldListener {
-  @Column('string', { name: '监听器名称', index: 0, width: 100 })
+  @Column('string', { name: '监听器名称', index: 0, width: 120 })
   name: string;
 
   @Column('string', { name: '监听器ID', index: 0 })
   cloud_id: string;
 
-  @Column('enum', { name: '协议', index: 0, option: LISTENER_PROTOCOL_NAME })
+  @Column('enum', { name: '协议', index: 0, option: LISTENER_PROTOCOL_NAME, width: 80 })
   protocol: string;
 
-  @Column('number', { name: '端口', index: 0, sort: true })
+  @Column('number', { name: '端口', index: 0, sort: true, width: 80 })
   port: number;
 
   @Column('enum', { name: '均衡方式', index: 0, option: SCHEDULER_NAME })
@@ -73,10 +73,10 @@ export class DisplayFieldListener {
   rs_weight_stat: object;
 
   // 负载均衡相关字段
-  @Column('string', { name: '负载均衡VIP', width: 100 })
+  @Column('string', { name: '负载均衡VIP', width: 120 })
   lb_vip: string;
 
-  @Column('string', { name: '负载均衡ID', width: 100 })
+  @Column('string', { name: '负载均衡ID', width: 120 })
   lb_cloud_id: string;
 
   @Column('string', { name: '网络类型' })

@@ -31,7 +31,7 @@ const dataListColumns: ModelPropertyColumn[] = [
     id: 'weight',
     name: props.type === RsDeviceType.ADJUST ? 'RS原权重' : 'RS权重',
     type: 'string',
-    width: 80,
+    width: props.type === RsDeviceType.ADJUST ? 90 : 80,
     fixed: 'left',
   },
   {
@@ -78,7 +78,7 @@ const dataListColumns: ModelPropertyColumn[] = [
     id: 'lb_vips',
     name: '所属负载均衡VIP',
     type: 'array',
-    width: 120,
+    width: 130,
   },
   {
     id: 'lb_region',
@@ -284,7 +284,13 @@ defineExpose({ selections, isExceeded });
               :selected-row-keys="selectedRsMap.get(item.rowKey)"
               @select-change="(value, ctx) => handleTableSelectChange(value, ctx, item.rowKey)"
             >
-              <table-column v-if="hasSelection" width="40" col-key="row-select" type="multiple"></table-column>
+              <table-column
+                v-if="hasSelection"
+                width="40"
+                col-key="row-select"
+                type="multiple"
+                fixed="left"
+              ></table-column>
               <template v-for="column in dataListColumns" :key="column.id">
                 <table-column
                   :col-key="column.id"
@@ -300,7 +306,15 @@ defineExpose({ selections, isExceeded });
                         {{ row.target_group_name }}
                       </bk-button>
                     </template>
-                    <template v-else-if="column.id === 'weight'">{{ row.weight }}</template>
+                    <template v-else-if="column.id === 'weight'">
+                      <div
+                        :class="{
+                          weight: props.type === RsDeviceType.ADJUST,
+                        }"
+                      >
+                        {{ row.weight }}
+                      </div>
+                    </template>
                     <display-value
                       v-else
                       :property="column"
@@ -436,8 +450,8 @@ defineExpose({ selections, isExceeded });
 
     .weight {
       background: rgb(253 244 232);
-      margin: 0 -16px;
-      padding: 0 16px;
+      margin: -10px -16px;
+      padding: 10px 16px;
     }
   }
 
