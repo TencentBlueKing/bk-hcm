@@ -9,7 +9,7 @@ import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum 
 import routeQuery from '@/router/utils/query';
 import { IAuthSign } from '@/common/auth-service';
 import { useRoute } from 'vue-router';
-import expand from './children/expand.vue';
+import RsIpGroup from './children/rs-ip-group.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
 import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-button.vue';
@@ -28,17 +28,18 @@ const { pagination, getPageParams } = usePage();
 
 const rsList = ref<IRsItem[]>([]);
 const loading = ref(false);
-const expandRef = ref(null);
+const rsIpGroupRef = ref(null);
 
-const selections = computed(() => expandRef.value?.selections ?? []);
+const selections = computed(() => rsIpGroupRef.value?.selections ?? []);
+const isExceeded = computed(() => rsIpGroupRef.value?.isExceeded);
 
 const batchOperationDialog = reactive({ isShow: false, isHidden: true, type: RsDeviceType.INFO });
-const actionConfig: Record<RsDeviceType, ActionItemType> = {
+const actionConfig: Partial<Record<RsDeviceType, ActionItemType>> = {
   [RsDeviceType.ADJUST]: {
     type: 'button',
     label: t('批量调整RS权重'),
     value: RsDeviceType.ADJUST,
-    disabled: () => selections.value.length === 0,
+    disabled: () => selections.value.length === 0 || isExceeded.value,
     authSign: () => clbOperationAuthSign.value,
     handleClick: () => {
       batchOperationDialog.isHidden = false;
@@ -50,7 +51,7 @@ const actionConfig: Record<RsDeviceType, ActionItemType> = {
     type: 'button',
     label: t('批量解绑RS'),
     value: RsDeviceType.UNBIND,
-    disabled: () => selections.value.length === 0,
+    disabled: () => selections.value.length === 0 || isExceeded.value,
     authSign: () => clbOperationAuthSign.value,
     handleClick: () => {
       batchOperationDialog.isHidden = false;
@@ -98,8 +99,15 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
       getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
     );
+
+    // 生成 rowKey
+    const newList = list.map((item, index) => ({
+      ...item,
+      rowKey: `${item.inst_id}-${item.ip}-${index}`,
+    }));
+
     pagination.count = count;
-    rsList.value = list;
+    rsList.value = newList;
   } catch (error) {
     console.error(error);
     rsList.value = [];
@@ -143,7 +151,7 @@ watch(
 </script>
 
 <template>
-  <div class="rs-table-container" v-bkloading="{ loading }">
+  <div class="rs-table-container" v-bkloading="{ loading, zIndex: 9999 }">
     <div class="toolbar">
       <div class="action-container">
         <template v-for="action in actionList" :key="action.value">
@@ -154,12 +162,12 @@ watch(
         </template>
       </div>
     </div>
-    <expand
+    <rs-ip-group
       :rs-list="rsList"
       :vendor="condition.vendor"
       :type="RsDeviceType.INFO"
       class="expand-table"
-      ref="expandRef"
+      ref="rsIpGroupRef"
     />
     <bk-pagination
       class="expand-pagination"
@@ -207,6 +215,7 @@ watch(
     overflow-y: auto;
     margin-bottom: 10px;
   }
+
   :deep(.expand-pagination) {
     .is-last {
       margin-left: auto;

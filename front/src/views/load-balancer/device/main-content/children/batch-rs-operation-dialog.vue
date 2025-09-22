@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { computed, inject, reactive, Ref, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { IListenerItem } from '@/store/load-balancer/listener';
 import { cloneDeep } from 'lodash';
 import routerAction from '@/router/utils/action';
 import { Message } from 'bkui-vue';
 import ModalFooter from '@/components/modal/modal-footer.vue';
 import { VendorEnum, ResourceTypeEnum } from '@/common/constant';
 import { RsDeviceType } from '@/views/load-balancer/constants';
-import expand from '../children/expand.vue';
+import RsIpGroup from '../children/rs-ip-group.vue';
 import { useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 
 interface IProps {
-  selections: IListenerItem[];
+  selections: any[];
   vendor: VendorEnum;
   type: RsDeviceType;
 }
@@ -97,8 +96,8 @@ const handleRes = (res: any, message: string) => {
   }
   handleClosed();
 };
-const handleDelete = (id: string) => {
-  const index = list.value.findIndex((item) => item.inst_id === id);
+const handleDelete = (rowKey: string) => {
+  const index = list.value.findIndex((item) => item.rowKey === rowKey);
   list.value.splice(index, 1);
 };
 const handleClosed = () => {
@@ -126,7 +125,7 @@ const handleClosed = () => {
       <span class="rs-count">{{ rsLenght }}</span>
       个RS
     </div>
-    <expand :rs-list="list" :vendor="vendor" :type="type" class="rs-list" @delete="handleDelete" />
+    <rs-ip-group :rs-list="list" :vendor="vendor" :type="type" class="rs-list" @delete="handleDelete" />
     <template #footer>
       <div class="confirm-check">
         <bk-checkbox v-model="confirmCheck">
@@ -153,6 +152,7 @@ const handleClosed = () => {
 
   .form {
     margin: 24px 0;
+
     .rs-weight-input {
       width: 400px;
     }
@@ -170,6 +170,7 @@ const handleClosed = () => {
     .ip-count {
       color: #3a84ff;
     }
+
     .rs-count {
       color: #f59500;
     }

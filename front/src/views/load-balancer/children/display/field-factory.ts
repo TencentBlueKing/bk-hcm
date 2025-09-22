@@ -4,7 +4,6 @@ import { DisplayFieldListener } from './field-listener';
 import { DisplayFieldRs } from './field-rs';
 import { DisplayFieldRule } from './field-rule';
 import { DisplayFieldUrlRule } from './field-url-rule';
-import { DisplayFieldDeviceRsRule } from './field-device-rs';
 
 export enum DisplayFieldType {
   CLB = 'clb',
@@ -28,8 +27,6 @@ export class DisplayFieldFactory {
         return getModel(DisplayFieldRule);
       case DisplayFieldType.URL:
         return getModel(DisplayFieldUrlRule);
-      case DisplayFieldType.DeviceRs:
-        return getModel(DisplayFieldDeviceRsRule);
     }
   }
 }
