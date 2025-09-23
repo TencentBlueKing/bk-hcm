@@ -23,13 +23,7 @@ const props = defineProps<IProps>();
 
 const { t } = useI18n();
 
-const info: {
-  [key: string]: {
-    title: string;
-    confirm: string;
-    checkText: string;
-  };
-} = {
+const info: Partial<Record<RsDeviceType, any>> = {
   [RsDeviceType.ADJUST]: {
     title: t('批量调整 RS 权重'),
     confirm: t('确认并提交'),
@@ -113,7 +107,7 @@ const handleClosed = () => {
 
 <template>
   <bk-dialog v-model:is-show="model" :title="info[type].title" width="80vw" class="batch-rs-operation-dialog">
-    <div class="rs-ajust" v-if="type === RsDeviceType.ADJUST">
+    <div v-if="type === RsDeviceType.ADJUST">
       <bk-alert
         theme="info"
         :title="t('此操作为将多个监听器中已绑定RS的权重，批量调整为同一个权重，请确认下面表格中所选的监听器是否正确')"
