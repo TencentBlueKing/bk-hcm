@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_doTableSharding_replaceFromJoinTableName(t *testing.T) {
+func Test_replaceFromJoinTableName(t *testing.T) {
 
 	tests := []struct {
 		name              string
@@ -96,7 +96,7 @@ func Test_doTableSharding_replaceFromJoinTableName(t *testing.T) {
 	}
 }
 
-func Test_doTableSharding_replaceInsertTableName(t *testing.T) {
+func Test_replaceInsertTableName(t *testing.T) {
 
 	tests := []struct {
 		name              string
@@ -125,7 +125,7 @@ func Test_doTableSharding_replaceInsertTableName(t *testing.T) {
 	}
 }
 
-func Test_doTableSharding_replaceUpdateTableName(t *testing.T) {
+func Test_replaceUpdateTableName(t *testing.T) {
 
 	tests := []struct {
 		name              string
@@ -246,7 +246,8 @@ func Test_TenantID_injectInsertTenantID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectInsertSQL(tt.origin, tt.args)
+			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectInsertSQL(tt.origin,
+				tt.args)
 			assert.Equal(t, tt.wantReplaced, gotReplaced)
 			assert.Equal(t, tt.wantArgs, gotArgs)
 		})
@@ -367,7 +368,8 @@ func Test_TenantID_InjectUpdateTenantID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectUpdateSQL(tt.origin, tt.args)
+			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectUpdateSQL(tt.origin,
+				tt.args)
 			assert.Equal(t, tt.wantReplaced, gotReplaced)
 			assert.Equal(t, tt.wantArgs, gotArgs)
 		})
@@ -452,7 +454,8 @@ func Test_TenantID_InjectDeleteTenantID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectDeleteSQL(tt.origin, tt.args)
+			gotReplaced, gotArgs := NewTestInjectTenantIDOpt(tt.tenantID, tt.enableTenant).InjectDeleteSQL(tt.origin,
+				tt.args)
 			assert.Equal(t, tt.wantReplaced, gotReplaced)
 			assert.Equal(t, tt.wantArgs, gotArgs)
 		})

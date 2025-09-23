@@ -271,32 +271,7 @@ func buildCvmCreateReqList(addSlice []typescvm.AzureCvm, vpcMap map[string]*comm
 			CloudLaunchedTime: "",
 			// 云上不支持该字段
 			CloudExpiredTime: "",
-			Extension: &corecvm.AzureCvmExtension{
-				ResourceGroupName: resGroupName,
-				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
-					HibernationEnabled: one.HibernationEnabled,
-					UltraSSDEnabled:    one.UltraSSDEnabled,
-				},
-				BillingProfile: &corecvm.AzureBillingProfile{
-					MaxPrice: one.MaxPrice,
-				},
-				EvictionPolicy: (*string)(one.EvictionPolicy),
-				HardwareProfile: &corecvm.AzureHardwareProfile{
-					VmSize: (*string)(one.VMSize),
-					VmSizeProperties: &corecvm.AzureVmSizeProperties{
-						VCPUsAvailable: one.VCPUsAvailable,
-						VCPUsPerCore:   one.VCPUsPerCore,
-					},
-				},
-				LicenseType:              one.LicenseType,
-				CloudNetworkInterfaceIDs: one.NetworkInterfaceIDs,
-				Priority:                 (*string)(one.Priority),
-				StorageProfile: &corecvm.AzureStorageProfile{
-					CloudDataDiskIDs: one.CloudDataDiskIDs,
-					CloudOsDiskID:    one.CloudOsDiskID,
-				},
-				Zones: converter.PtrToSlice(one.Zones),
-			},
+			Extension:        convertAzureCvmExtension(resGroupName, one),
 		}
 		lists = append(lists, cvm)
 	}
@@ -380,32 +355,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 				// 云上不支持该字段
 				CloudExpiredTime: "",
 			},
-			Extension: &corecvm.AzureCvmExtension{
-				ResourceGroupName: resGroupName,
-				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
-					HibernationEnabled: one.HibernationEnabled,
-					UltraSSDEnabled:    one.UltraSSDEnabled,
-				},
-				BillingProfile: &corecvm.AzureBillingProfile{
-					MaxPrice: one.MaxPrice,
-				},
-				EvictionPolicy: (*string)(one.EvictionPolicy),
-				HardwareProfile: &corecvm.AzureHardwareProfile{
-					VmSize: (*string)(one.VMSize),
-					VmSizeProperties: &corecvm.AzureVmSizeProperties{
-						VCPUsAvailable: one.VCPUsAvailable,
-						VCPUsPerCore:   one.VCPUsPerCore,
-					},
-				},
-				LicenseType:              one.LicenseType,
-				CloudNetworkInterfaceIDs: one.NetworkInterfaceIDs,
-				Priority:                 (*string)(one.Priority),
-				StorageProfile: &corecvm.AzureStorageProfile{
-					CloudDataDiskIDs: one.CloudDataDiskIDs,
-					CloudOsDiskID:    one.CloudOsDiskID,
-				},
-				Zones: converter.PtrToSlice(one.Zones),
-			},
+			Extension: convertAzureCvmExtension(resGroupName, one),
 		}
 
 		lists = append(lists, cvm)
@@ -652,4 +602,32 @@ func isCvmChange(cloud typescvm.AzureCvm, db corecvm.Cvm[cvm.AzureCvmExtension])
 		}
 	}
 	return false
+}
+func convertAzureCvmExtension(resGroupName string, one typescvm.AzureCvm) *corecvm.AzureCvmExtension {
+	return &corecvm.AzureCvmExtension{
+		ResourceGroupName: resGroupName,
+		AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
+			HibernationEnabled: one.HibernationEnabled,
+			UltraSSDEnabled:    one.UltraSSDEnabled,
+		},
+		BillingProfile: &corecvm.AzureBillingProfile{
+			MaxPrice: one.MaxPrice,
+		},
+		EvictionPolicy: (*string)(one.EvictionPolicy),
+		HardwareProfile: &corecvm.AzureHardwareProfile{
+			VmSize: (*string)(one.VMSize),
+			VmSizeProperties: &corecvm.AzureVmSizeProperties{
+				VCPUsAvailable: one.VCPUsAvailable,
+				VCPUsPerCore:   one.VCPUsPerCore,
+			},
+		},
+		LicenseType:              one.LicenseType,
+		CloudNetworkInterfaceIDs: one.NetworkInterfaceIDs,
+		Priority:                 (*string)(one.Priority),
+		StorageProfile: &corecvm.AzureStorageProfile{
+			CloudDataDiskIDs: one.CloudDataDiskIDs,
+			CloudOsDiskID:    one.CloudOsDiskID,
+		},
+		Zones: converter.PtrToSlice(one.Zones),
+	}
 }

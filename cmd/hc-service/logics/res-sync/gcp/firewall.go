@@ -49,6 +49,7 @@ func (opt SyncFirewallOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// Firewall ...
 func (cli *client) Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewallOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -92,8 +93,7 @@ func (cli *client) Firewall(kt *kit.Kit, params *SyncBaseParams, opt *SyncFirewa
 	return new(SyncResult), nil
 }
 
-func (cli *client) createFirewall(kt *kit.Kit, accountID string,
-	addSlice []firewallrule.GcpFirewall) error {
+func (cli *client) createFirewall(kt *kit.Kit, accountID string, addSlice []firewallrule.GcpFirewall) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("firewall addSlice is <= 0, not create")
@@ -141,25 +141,11 @@ func (cli *client) createFirewall(kt *kit.Kit, accountID string,
 		}
 
 		if len(one.Denied) != 0 {
-			sets := make([]cloudcore.GcpProtocolSet, 0, len(one.Denied))
-			for _, one := range one.Denied {
-				sets = append(sets, cloudcore.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Denied = sets
+			rule.Denied = firewallrule.ConvGcpDeniedProtoSets(one.Denied)
 		}
 
 		if len(one.Allowed) != 0 {
-			sets := make([]cloudcore.GcpProtocolSet, 0, len(one.Allowed))
-			for _, one := range one.Allowed {
-				sets = append(sets, cloudcore.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Allowed = sets
+			rule.Allowed = firewallrule.ConvGcpAllowedProtoSets(one.Allowed)
 		}
 
 		rulesCreate = append(rulesCreate, rule)
@@ -229,25 +215,11 @@ func (cli *client) updateFirewall(kt *kit.Kit, accountID string,
 		}
 
 		if len(one.Denied) != 0 {
-			sets := make([]cloudcore.GcpProtocolSet, 0, len(one.Denied))
-			for _, one := range one.Denied {
-				sets = append(sets, cloudcore.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Denied = sets
+			rule.Denied = firewallrule.ConvGcpDeniedProtoSets(one.Denied)
 		}
 
 		if len(one.Allowed) != 0 {
-			sets := make([]cloudcore.GcpProtocolSet, 0, len(one.Allowed))
-			for _, one := range one.Allowed {
-				sets = append(sets, cloudcore.GcpProtocolSet{
-					Protocol: one.IPProtocol,
-					Port:     one.Ports,
-				})
-			}
-			rule.Allowed = sets
+			rule.Allowed = firewallrule.ConvGcpAllowedProtoSets(one.Allowed)
 		}
 
 		rulesUpdate = append(rulesUpdate, rule)
@@ -355,6 +327,7 @@ func (cli *client) listFirewallFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveFirewallDeleteFromCloud remove delete from cloud
 func (cli *client) RemoveFirewallDeleteFromCloud(kt *kit.Kit, accountID string) error {
 	req := &cloud.GcpFirewallRuleListReq{
 		Field: []string{"id", "cloud_id"},

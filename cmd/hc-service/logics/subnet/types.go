@@ -187,19 +187,9 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 	}
 
 	sls := slice.Unique(selfLinks)
-	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: sls},
-			},
-		},
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"id", "cloud_id", "extension"},
-	}
-	result, err := dataCli.Gcp.Vpc.ListVpcExt(kt, listReq)
+	result, err := listGcpVpcBySelfLink(kt, dataCli, sls)
 	if err != nil {
-		logs.Errorf("list vpc from db failed, err: %v, selfLinks: %v, rid: %s", err, sls, kt.Rid)
+		logs.Errorf("fail to list gcp vpc, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -242,19 +232,9 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 	}
 
 	// 同步完，二次查询
-	listReq = &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: notExistSelfLink},
-			},
-		},
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"id", "cloud_id", "extension"},
-	}
-	notExistResult, err := dataCli.Gcp.Vpc.ListVpcExt(kt, listReq)
+	notExistResult, err := listGcpVpcBySelfLink(kt, dataCli, notExistSelfLink)
 	if err != nil {
-		logs.Errorf("list vpc from db failed, err: %v, cloudIDs: %v, rid: %s", err, notExistSelfLink, kt.Rid)
+		logs.Errorf("list vpc from db after sync failed, err: %v, cloudIDs: %v, rid: %s", err, notExistSelfLink, kt.Rid)
 		return nil, err
 	}
 
@@ -267,6 +247,27 @@ func QueryVpcIDsAndSyncForGcp(kt *kit.Kit, adaptor *cloudclient.CloudAdaptorClie
 	}
 
 	return existVpcMap, nil
+}
+
+func listGcpVpcBySelfLink(kt *kit.Kit, dataCli *dataclient.Client, selfLinks []string) (
+	*protocloud.VpcExtListResult[cloudcore.GcpVpcExtension], error) {
+
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				filter.AtomRule{Field: "extension.self_link", Op: filter.JSONIn.Factory(), Value: selfLinks},
+			},
+		},
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "cloud_id", "extension"},
+	}
+	result, err := dataCli.Gcp.Vpc.ListVpcExt(kt, listReq)
+	if err != nil {
+		logs.Errorf("list vpc from db failed, err: %v, selfLinks: %v, rid: %s", err, selfLinks, kt.Rid)
+		return nil, err
+	}
+	return result, nil
 }
 
 func convVpcSelfLinkMap(result *protocloud.VpcExtListResult[cloudcore.GcpVpcExtension]) map[string]vpcMeta {

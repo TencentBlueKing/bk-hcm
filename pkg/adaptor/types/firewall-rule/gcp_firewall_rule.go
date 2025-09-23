@@ -131,3 +131,27 @@ type GcpFirewall struct {
 func (firewall GcpFirewall) GetCloudID() string {
 	return fmt.Sprint(firewall.Id)
 }
+
+// ConvGcpAllowedProtoSets ...
+func ConvGcpAllowedProtoSets(allows []*compute.FirewallAllowed) []corecloud.GcpProtocolSet {
+	var result []corecloud.GcpProtocolSet
+	for _, allowed := range allows {
+		result = append(result, corecloud.GcpProtocolSet{
+			Protocol: allowed.IPProtocol,
+			Port:     allowed.Ports,
+		})
+	}
+	return result
+}
+
+// ConvGcpDeniedProtoSets ...
+func ConvGcpDeniedProtoSets(denies []*compute.FirewallDenied) []corecloud.GcpProtocolSet {
+	var result []corecloud.GcpProtocolSet
+	for _, denied := range denies {
+		result = append(result, corecloud.GcpProtocolSet{
+			Protocol: denied.IPProtocol,
+			Port:     denied.Ports,
+		})
+	}
+	return result
+}

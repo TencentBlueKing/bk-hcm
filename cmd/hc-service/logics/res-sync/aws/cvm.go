@@ -151,18 +151,7 @@ func buildCvmBatchCreateList(addSlice []typescvm.AwsCvm, accountID, region strin
 			return nil, fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
 		}
 
-		privateIPv4Addresses := make([]string, 0)
-		if one.PrivateIpAddress != nil {
-			privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))
-		}
-		publicIPv4Addresses := make([]string, 0)
-		if one.PublicIpAddress != nil {
-			publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(one.PublicIpAddress))
-		}
-		publicIPv6Addresses := make([]string, 0)
-		if one.Ipv6Address != nil {
-			publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(one.Ipv6Address))
-		}
+		privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses := getIPAddress(one)
 
 		sgIDs := make([]string, 0)
 		if len(one.SecurityGroups) > 0 {
@@ -234,34 +223,9 @@ func buildAwsCvmCreateReq(one typescvm.AwsCvm, accountID, region, vpcID, subnetI
 		CloudLaunchedTime: times.ConvStdTimeFormat(converter.PtrToVal(one.LaunchTime)),
 		// 云上不支持该字段
 		CloudExpiredTime: "",
-		Extension: &corecvm.AwsCvmExtension{
-			CpuOptions: &corecvm.AwsCpuOptions{
-				CoreCount:      one.CpuOptions.CoreCount,
-				ThreadsPerCore: one.CpuOptions.ThreadsPerCore,
-			},
-			Platform:              one.Platform,
-			DnsName:               one.PublicDnsName,
-			EbsOptimized:          one.EbsOptimized,
-			CloudSecurityGroupIDs: sgIDs,
-			PrivateDnsName:        one.PrivateDnsName,
-			PrivateDnsNameOptions: nil,
-			CloudRamDiskID:        one.RamdiskId,
-			RootDeviceName:        one.RootDeviceName,
-			RootDeviceType:        one.RootDeviceType,
-			SourceDestCheck:       one.SourceDestCheck,
-			SriovNetSupport:       one.SriovNetSupport,
-			VirtualizationType:    one.VirtualizationType,
-			BlockDeviceMapping:    awsBlockDeviceMapping,
-		},
+		Extension:        convAwsExtension(one, sgIDs, awsBlockDeviceMapping),
 	}
 
-	if one.PrivateDnsNameOptions != nil {
-		cvm.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
-			EnableResourceNameDnsAAAARecord: one.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
-			EnableResourceNameDnsARecord:    one.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
-			HostnameType:                    one.PrivateDnsNameOptions.HostnameType,
-		}
-	}
 	return cvm
 }
 
@@ -285,11 +249,11 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for id, one := range updateMap {
-		if _, exsit := vpcMap[converter.PtrToVal(one.VpcId)]; !exsit {
+		if _, exists := vpcMap[converter.PtrToVal(one.VpcId)]; !exists {
 			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
 		}
 
-		if _, exsit := subnetMap[converter.PtrToVal(one.SubnetId)]; !exsit {
+		if _, exists := subnetMap[converter.PtrToVal(one.SubnetId)]; !exists {
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
 		}
 
@@ -337,7 +301,7 @@ func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap ma
 		}
 	}
 	imageID := ""
-	if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+	if id, exists := imageMap[converter.PtrToVal(one.ImageId)]; exists {
 		imageID = id
 	}
 	privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses := parseIPInfo(one)
@@ -364,32 +328,7 @@ func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap ma
 			// 云上不支持该字段
 			CloudExpiredTime: "",
 		},
-		Extension: &corecvm.AwsCvmExtension{
-			CpuOptions: &corecvm.AwsCpuOptions{
-				CoreCount:      one.CpuOptions.CoreCount,
-				ThreadsPerCore: one.CpuOptions.ThreadsPerCore,
-			},
-			Platform:              one.Platform,
-			DnsName:               one.PublicDnsName,
-			EbsOptimized:          one.EbsOptimized,
-			CloudSecurityGroupIDs: sgIDs,
-			PrivateDnsName:        one.PrivateDnsName,
-			PrivateDnsNameOptions: nil,
-			CloudRamDiskID:        one.RamdiskId,
-			RootDeviceName:        one.RootDeviceName,
-			RootDeviceType:        one.RootDeviceType,
-			SourceDestCheck:       one.SourceDestCheck,
-			SriovNetSupport:       one.SriovNetSupport,
-			VirtualizationType:    one.VirtualizationType,
-			BlockDeviceMapping:    awsBlockDeviceMapping,
-		},
-	}
-	if one.PrivateDnsNameOptions != nil {
-		req.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
-			EnableResourceNameDnsAAAARecord: one.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
-			EnableResourceNameDnsARecord:    one.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
-			HostnameType:                    one.PrivateDnsNameOptions.HostnameType,
-		}
+		Extension: convAwsExtension(one, sgIDs, awsBlockDeviceMapping),
 	}
 	return req
 }
@@ -606,18 +545,7 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 		return true
 	}
 
-	privateIPv4Addresses := make([]string, 0)
-	if cloud.PrivateIpAddress != nil {
-		privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(cloud.PrivateIpAddress))
-	}
-	publicIPv4Addresses := make([]string, 0)
-	if cloud.PublicIpAddress != nil {
-		publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(cloud.PublicIpAddress))
-	}
-	publicIPv6Addresses := make([]string, 0)
-	if cloud.Ipv6Address != nil {
-		publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(cloud.Ipv6Address))
-	}
+	privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses := getIPAddress(cloud)
 
 	if !assert.IsStringSliceEqual(privateIPv4Addresses, db.PrivateIPv4Addresses) {
 		return true
@@ -639,69 +567,77 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.Platform, cloud.Platform) {
+	if isCvmExtensionChange(cloud, db.Extension) {
+		return false
+	}
+
+	return false
+}
+
+func isCvmExtensionChange(cloud typescvm.AwsCvm, dbExt *corecvm.AwsCvmExtension) bool {
+	if !assert.IsPtrStringEqual(dbExt.Platform, cloud.Platform) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.DnsName, cloud.PublicDnsName) {
+	if !assert.IsPtrStringEqual(dbExt.DnsName, cloud.PublicDnsName) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.EbsOptimized, cloud.EbsOptimized) {
+	if !assert.IsPtrBoolEqual(dbExt.EbsOptimized, cloud.EbsOptimized) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.PrivateDnsName, cloud.PrivateDnsName) {
+	if !assert.IsPtrStringEqual(dbExt.PrivateDnsName, cloud.PrivateDnsName) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.CloudRamDiskID, cloud.RamdiskId) {
+	if !assert.IsPtrStringEqual(dbExt.CloudRamDiskID, cloud.RamdiskId) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.RootDeviceName, cloud.RootDeviceName) {
+	if !assert.IsPtrStringEqual(dbExt.RootDeviceName, cloud.RootDeviceName) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.PrivateDnsName, cloud.PrivateDnsName) {
+	if !assert.IsPtrStringEqual(dbExt.PrivateDnsName, cloud.PrivateDnsName) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.RootDeviceType, cloud.RootDeviceType) {
+	if !assert.IsPtrStringEqual(dbExt.RootDeviceType, cloud.RootDeviceType) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.SourceDestCheck, cloud.SourceDestCheck) {
+	if !assert.IsPtrBoolEqual(dbExt.SourceDestCheck, cloud.SourceDestCheck) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.SriovNetSupport, cloud.SriovNetSupport) {
+	if !assert.IsPtrStringEqual(dbExt.SriovNetSupport, cloud.SriovNetSupport) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.VirtualizationType, cloud.VirtualizationType) {
+	if !assert.IsPtrStringEqual(dbExt.VirtualizationType, cloud.VirtualizationType) {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.CpuOptions.CoreCount, cloud.CpuOptions.CoreCount) {
+	if !assert.IsPtrInt64Equal(dbExt.CpuOptions.CoreCount, cloud.CpuOptions.CoreCount) {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.CpuOptions.ThreadsPerCore, cloud.CpuOptions.ThreadsPerCore) {
+	if !assert.IsPtrInt64Equal(dbExt.CpuOptions.ThreadsPerCore, cloud.CpuOptions.ThreadsPerCore) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
+	if !assert.IsPtrBoolEqual(dbExt.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
 		cloud.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+	if !assert.IsPtrBoolEqual(dbExt.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
 		cloud.PrivateDnsNameOptions.EnableResourceNameDnsARecord) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.PrivateDnsNameOptions.HostnameType,
+	if !assert.IsPtrStringEqual(dbExt.PrivateDnsNameOptions.HostnameType,
 		cloud.PrivateDnsNameOptions.HostnameType) {
 		return true
 	}
@@ -714,11 +650,11 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 			}
 		}
 	}
-	if !assert.IsStringSliceEqual(db.Extension.CloudSecurityGroupIDs, sgIDs) {
+	if !assert.IsStringSliceEqual(dbExt.CloudSecurityGroupIDs, sgIDs) {
 		return true
 	}
 
-	dbVolumeIDs := slice.Map(db.Extension.BlockDeviceMapping, func(one corecvm.AwsBlockDeviceMapping) *string {
+	dbVolumeIDs := slice.Map(dbExt.BlockDeviceMapping, func(one corecvm.AwsBlockDeviceMapping) *string {
 		return one.CloudVolumeID
 	})
 	cloudVolumeIDs := slice.Map(cloud.BlockDeviceMappings, func(one *ec2.InstanceBlockDeviceMapping) *string {
@@ -727,6 +663,54 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 	if !assert.IsPtrStringSliceEqual(dbVolumeIDs, cloudVolumeIDs) {
 		return true
 	}
-
 	return false
+}
+
+func convAwsExtension(one typescvm.AwsCvm, sgIDs []string,
+	awsBlockDeviceMapping []corecvm.AwsBlockDeviceMapping) *corecvm.AwsCvmExtension {
+
+	extension := &corecvm.AwsCvmExtension{
+		CpuOptions: &corecvm.AwsCpuOptions{
+			CoreCount:      one.CpuOptions.CoreCount,
+			ThreadsPerCore: one.CpuOptions.ThreadsPerCore,
+		},
+		Platform:              one.Platform,
+		DnsName:               one.PublicDnsName,
+		EbsOptimized:          one.EbsOptimized,
+		CloudSecurityGroupIDs: sgIDs,
+		PrivateDnsName:        one.PrivateDnsName,
+		PrivateDnsNameOptions: nil,
+		CloudRamDiskID:        one.RamdiskId,
+		RootDeviceName:        one.RootDeviceName,
+		RootDeviceType:        one.RootDeviceType,
+		SourceDestCheck:       one.SourceDestCheck,
+		SriovNetSupport:       one.SriovNetSupport,
+		VirtualizationType:    one.VirtualizationType,
+		BlockDeviceMapping:    awsBlockDeviceMapping,
+	}
+
+	if one.PrivateDnsNameOptions != nil {
+		extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
+			EnableResourceNameDnsAAAARecord: one.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
+			EnableResourceNameDnsARecord:    one.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+			HostnameType:                    one.PrivateDnsNameOptions.HostnameType,
+		}
+	}
+	return extension
+}
+
+func getIPAddress(one typescvm.AwsCvm) (privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses []string) {
+	privateIPv4Addresses = make([]string, 0)
+	if one.PrivateIpAddress != nil {
+		privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))
+	}
+	publicIPv4Addresses = make([]string, 0)
+	if one.PublicIpAddress != nil {
+		publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(one.PublicIpAddress))
+	}
+	publicIPv6Addresses = make([]string, 0)
+	if one.Ipv6Address != nil {
+		publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(one.Ipv6Address))
+	}
+	return privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses
 }

@@ -669,25 +669,22 @@ func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string, billInfo *
 		time.Sleep(duration)
 	}
 
-	if *qrop.QueryExecution.Status.State == "SUCCEEDED" {
-		return getRootAccountAwsAthenaQuerySuccessSituation(kt, result, client)
+	if *qrop.QueryExecution.Status.State != "SUCCEEDED" {
+		var errMsg = *qrop.QueryExecution.Status.State
+		if qrop.QueryExecution.Status.StateChangeReason != nil {
+			errMsg = *qrop.QueryExecution.Status.StateChangeReason
+		}
+		if strings.Contains(errMsg, fmt.Sprintf("%s does not exist", billInfo.CloudDatabaseName)) {
+			return nil, errf.Newf(
+				errf.RecordNotFound, "root accountID: %s bill record is not found", billInfo.RootAccountID)
+		}
+		return nil, errf.Newf(errf.DecodeRequestFailed, "Aws Athena Query Failed(%s)", errMsg)
 	}
-
-	var errMsg = *qrop.QueryExecution.Status.State
-	if qrop.QueryExecution.Status.StateChangeReason != nil {
-		errMsg = *qrop.QueryExecution.Status.StateChangeReason
-	}
-
-	if strings.Contains(errMsg, fmt.Sprintf("%s does not exist", billInfo.CloudDatabaseName)) {
-		return nil, errf.Newf(
-			errf.RecordNotFound, "root accountID: %s bill record is not found", billInfo.RootAccountID)
-	}
-
-	return nil, errf.Newf(errf.DecodeRequestFailed, "Aws Athena Query Failed(%s)", errMsg)
+	return parseAwsAthenaQueryResult(kt, result, client)
 }
 
-func getRootAccountAwsAthenaQuerySuccessSituation(kt *kit.Kit, result *athena.StartQueryExecutionOutput,
-	client *athena.Athena) ([]map[string]string, error) {
+func parseAwsAthenaQueryResult(kt *kit.Kit, result *athena.StartQueryExecutionOutput, client *athena.Athena) (
+	[]map[string]string, error) {
 
 	var ip athena.GetQueryResultsInput
 	ip.SetQueryExecutionId(*result.QueryExecutionId)

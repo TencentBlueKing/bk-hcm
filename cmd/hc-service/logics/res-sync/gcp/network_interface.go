@@ -212,24 +212,7 @@ func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateM
 			InstanceID:    converter.PtrToVal(item.InstanceID),
 		}
 		if item.Extension != nil {
-			tmpRes.Extension = &datani.GcpNICreateExt{
-				CanIpForward:   item.Extension.CanIpForward,
-				Status:         item.Extension.Status,
-				StackType:      item.Extension.StackType,
-				VpcSelfLink:    item.Extension.VpcSelfLink,
-				SubnetSelfLink: item.Extension.SubnetSelfLink,
-			}
-			// 网卡私网IP信息列表
-			var tmpAccConfigs []*datani.AccessConfig
-			for _, accConfigItem := range item.Extension.AccessConfigs {
-				tmpAccConfigs = append(tmpAccConfigs, &datani.AccessConfig{
-					Name:        accConfigItem.Name,
-					NatIP:       accConfigItem.NatIP,
-					NetworkTier: accConfigItem.NetworkTier,
-					Type:        accConfigItem.Type,
-				})
-			}
-			tmpRes.Extension.AccessConfigs = tmpAccConfigs
+			tmpRes.Extension = convertGcpNIExtension(item)
 		}
 
 		lists = append(lists, tmpRes)
@@ -375,24 +358,7 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *co
 		}
 		if item.Extension != nil {
 			if item.Extension != nil {
-				tmpRes.Extension = &datani.GcpNICreateExt{
-					CanIpForward:   item.Extension.CanIpForward,
-					Status:         item.Extension.Status,
-					StackType:      item.Extension.StackType,
-					VpcSelfLink:    item.Extension.VpcSelfLink,
-					SubnetSelfLink: item.Extension.SubnetSelfLink,
-				}
-				// 网卡私网IP信息列表
-				var tmpAccConfigs []*datani.AccessConfig
-				for _, accConfigItem := range item.Extension.AccessConfigs {
-					tmpAccConfigs = append(tmpAccConfigs, &datani.AccessConfig{
-						Name:        accConfigItem.Name,
-						NatIP:       accConfigItem.NatIP,
-						NetworkTier: accConfigItem.NetworkTier,
-						Type:        accConfigItem.Type,
-					})
-				}
-				tmpRes.Extension.AccessConfigs = tmpAccConfigs
+				tmpRes.Extension = convertGcpNIExtension(item)
 			}
 		}
 
@@ -431,6 +397,29 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *co
 		enumor.Gcp, accountID, len(addSlice), kt.Rid)
 
 	return nil
+}
+
+func convertGcpNIExtension(item typesni.GcpNI) *datani.GcpNICreateExt {
+
+	extension := &datani.GcpNICreateExt{
+		CanIpForward:   item.Extension.CanIpForward,
+		Status:         item.Extension.Status,
+		StackType:      item.Extension.StackType,
+		VpcSelfLink:    item.Extension.VpcSelfLink,
+		SubnetSelfLink: item.Extension.SubnetSelfLink,
+	}
+	// 网卡私网IP信息列表
+	var tmpAccConfigs []*datani.AccessConfig
+	for _, accConfigItem := range item.Extension.AccessConfigs {
+		tmpAccConfigs = append(tmpAccConfigs, &datani.AccessConfig{
+			Name:        accConfigItem.Name,
+			NatIP:       accConfigItem.NatIP,
+			NetworkTier: accConfigItem.NetworkTier,
+			Type:        accConfigItem.Type,
+		})
+	}
+	extension.AccessConfigs = tmpAccConfigs
+	return extension
 }
 
 // listNetworkInterfaceFromCloud 从云上获取网络接口列表

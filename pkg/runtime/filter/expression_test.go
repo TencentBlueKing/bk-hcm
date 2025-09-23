@@ -237,7 +237,7 @@ func TestExpressionValidateOption(t *testing.T) {
 	}
 }
 
-func TestWildcardExpressionValidateOption(t *testing.T) {
+func TestWildcardExpressionValidateOpt(t *testing.T) {
 	opt := &ExprOption{
 		RuleFields: map[string]enumor.ColumnType{
 			"extension.name":     enumor.String,

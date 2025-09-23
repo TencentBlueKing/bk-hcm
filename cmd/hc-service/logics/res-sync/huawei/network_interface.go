@@ -209,45 +209,7 @@ func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateM
 			InstanceID:    converter.PtrToVal(item.InstanceID),
 		}
 		if item.Extension != nil {
-			tmpRes.Extension = &datani.HuaWeiNICreateExt{
-				// MacAddr 网卡Mac地址信息。
-				MacAddr: item.Extension.MacAddr,
-				// NetId 网卡端口所属网络ID。
-				NetId: item.Extension.NetId,
-				// PortState 网卡端口状态。
-				PortState: item.Extension.PortState,
-				// DeleteOnTermination 卸载网卡时，是否删除网卡。
-				DeleteOnTermination: item.Extension.DeleteOnTermination,
-				// DriverMode 从guest os中，网卡的驱动类型。可选值为virtio和hinic，默认为virtio
-				DriverMode: item.Extension.DriverMode,
-				// MinRate 网卡带宽下限。
-				MinRate: item.Extension.MinRate,
-				// MultiqueueNum 网卡多队列个数。
-				MultiqueueNum: item.Extension.MultiqueueNum,
-				// PciAddress 弹性网卡在Linux GuestOS里的BDF号
-				PciAddress:            item.Extension.PciAddress,
-				IpV6:                  item.Extension.IpV6,
-				Addresses:             (*datani.EipNetwork)(item.Extension.Addresses),
-				CloudSecurityGroupIDs: slice.Unique(item.Extension.CloudSecurityGroupIDs),
-			}
-			// 网卡私网IP信息列表
-			var tmpFixIps []datani.ServerInterfaceFixedIp
-			for _, fixIpItem := range item.Extension.FixedIps {
-				tmpFixIps = append(tmpFixIps, datani.ServerInterfaceFixedIp{
-					IpAddress: fixIpItem.IpAddress,
-					SubnetId:  fixIpItem.SubnetId,
-				})
-			}
-			tmpRes.Extension.FixedIps = tmpFixIps
-
-			var tmpVirtualIps []datani.NetVirtualIP
-			for _, virtualIpItem := range item.Extension.VirtualIPList {
-				tmpVirtualIps = append(tmpVirtualIps, datani.NetVirtualIP{
-					IP:           virtualIpItem.IP,
-					ElasticityIP: virtualIpItem.ElasticityIP,
-				})
-			}
-			tmpRes.Extension.VirtualIPList = tmpVirtualIps
+			tmpRes.Extension = convertHuaweiNIExtension(item)
 		}
 
 		lists = append(lists, tmpRes)
@@ -377,45 +339,7 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *co
 			BkBizID:       cvm.BkBizID,
 		}
 		if item.Extension != nil {
-			tmpRes.Extension = &datani.HuaWeiNICreateExt{
-				// MacAddr 网卡Mac地址信息。
-				MacAddr: item.Extension.MacAddr,
-				// NetId 网卡端口所属网络ID。
-				NetId: item.Extension.NetId,
-				// PortState 网卡端口状态。
-				PortState: item.Extension.PortState,
-				// DeleteOnTermination 卸载网卡时，是否删除网卡。
-				DeleteOnTermination: item.Extension.DeleteOnTermination,
-				// DriverMode 从guest os中，网卡的驱动类型。可选值为virtio和hinic，默认为virtio
-				DriverMode: item.Extension.DriverMode,
-				// MinRate 网卡带宽下限。
-				MinRate: item.Extension.MinRate,
-				// MultiqueueNum 网卡多队列个数。
-				MultiqueueNum: item.Extension.MultiqueueNum,
-				// PciAddress 弹性网卡在Linux GuestOS里的BDF号
-				PciAddress:            item.Extension.PciAddress,
-				IpV6:                  item.Extension.IpV6,
-				Addresses:             (*datani.EipNetwork)(item.Extension.Addresses),
-				CloudSecurityGroupIDs: slice.Unique(item.Extension.CloudSecurityGroupIDs),
-			}
-			// 网卡私网IP信息列表
-			var tmpFixIps []datani.ServerInterfaceFixedIp
-			for _, fixIpItem := range item.Extension.FixedIps {
-				tmpFixIps = append(tmpFixIps, datani.ServerInterfaceFixedIp{
-					IpAddress: fixIpItem.IpAddress,
-					SubnetId:  fixIpItem.SubnetId,
-				})
-			}
-			tmpRes.Extension.FixedIps = tmpFixIps
-
-			var tmpVirtualIps []datani.NetVirtualIP
-			for _, virtualIpItem := range item.Extension.VirtualIPList {
-				tmpVirtualIps = append(tmpVirtualIps, datani.NetVirtualIP{
-					IP:           virtualIpItem.IP,
-					ElasticityIP: virtualIpItem.ElasticityIP,
-				})
-			}
-			tmpRes.Extension.VirtualIPList = tmpVirtualIps
+			tmpRes.Extension = convertHuaweiNIExtension(item)
 		}
 
 		lists = append(lists, tmpRes)
@@ -650,4 +574,47 @@ func isNIExtChange(item typesni.HuaWeiNI, dbInfo coreni.NetworkInterface[coreni.
 		}
 	}
 	return false
+}
+
+func convertHuaweiNIExtension(item typesni.HuaWeiNI) *datani.HuaWeiNICreateExt {
+	ext := &datani.HuaWeiNICreateExt{
+		// MacAddr 网卡Mac地址信息。
+		MacAddr: item.Extension.MacAddr,
+		// NetId 网卡端口所属网络ID。
+		NetId: item.Extension.NetId,
+		// PortState 网卡端口状态。
+		PortState: item.Extension.PortState,
+		// DeleteOnTermination 卸载网卡时，是否删除网卡。
+		DeleteOnTermination: item.Extension.DeleteOnTermination,
+		// DriverMode 从guest os中，网卡的驱动类型。可选值为virtio和hinic，默认为virtio
+		DriverMode: item.Extension.DriverMode,
+		// MinRate 网卡带宽下限。
+		MinRate: item.Extension.MinRate,
+		// MultiqueueNum 网卡多队列个数。
+		MultiqueueNum: item.Extension.MultiqueueNum,
+		// PciAddress 弹性网卡在Linux GuestOS里的BDF号
+		PciAddress:            item.Extension.PciAddress,
+		IpV6:                  item.Extension.IpV6,
+		Addresses:             (*datani.EipNetwork)(item.Extension.Addresses),
+		CloudSecurityGroupIDs: slice.Unique(item.Extension.CloudSecurityGroupIDs),
+	}
+	// 网卡私网IP信息列表
+	var tmpFixIps []datani.ServerInterfaceFixedIp
+	for _, fixIpItem := range item.Extension.FixedIps {
+		tmpFixIps = append(tmpFixIps, datani.ServerInterfaceFixedIp{
+			IpAddress: fixIpItem.IpAddress,
+			SubnetId:  fixIpItem.SubnetId,
+		})
+	}
+	ext.FixedIps = tmpFixIps
+
+	var tmpVirtualIps []datani.NetVirtualIP
+	for _, virtualIpItem := range item.Extension.VirtualIPList {
+		tmpVirtualIps = append(tmpVirtualIps, datani.NetVirtualIP{
+			IP:           virtualIpItem.IP,
+			ElasticityIP: virtualIpItem.ElasticityIP,
+		})
+	}
+	ext.VirtualIPList = tmpVirtualIps
+	return ext
 }
