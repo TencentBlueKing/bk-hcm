@@ -8,11 +8,25 @@ export const baseFieldIds = ['created_at', 'updated_at', 'state', 'reason'];
 export const baseColumnConfig: Record<string, PropertyColumnConfig> = {
   created_at: {
     sort: true,
+    minWidth: 150,
+    fixed: 'left',
   },
   updated_at: {
     sort: true,
+    minWidth: 150,
+    fixed: 'left',
+  },
+  'param.clb_vip_domain': {
+    minWidth: 110,
+  },
+  'param.cloud_lb_id': {
+    minWidth: 110,
+  },
+  'param.cloud_clb_id': {
+    minWidth: 110,
   },
   state: {
+    minWidth: 110,
     sort: true,
   },
 };
