@@ -35,6 +35,6 @@ export interface ILoadBalanceDeviceCondition {
 export interface IDeviceListDataLoadedEvent {
   'list-data-loaded': [
     from: DeviceTabEnum,
-    payload: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; data: Record<string, any> },
+    payload: { type: 'listenerCount' | 'urlCount' | 'rsCount'; data: Record<string, any> },
   ];
 }

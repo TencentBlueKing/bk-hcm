@@ -17,6 +17,7 @@ import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
+let nowRsCount = 0;
 const route = useRoute();
 const { t } = useI18n();
 const loadBalancerRsStore = useLoadBalancerRsStore();
@@ -94,7 +95,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   if (!condition.account_id) return;
   try {
     loading.value = true;
-    const { list, count } = await loadBalancerRsStore.getRsList(
+    const { list, count, rsCount } = await loadBalancerRsStore.getRsList(
       condition,
       getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
@@ -106,6 +107,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
       rowKey: `${item.inst_id}-${item.ip}-${index}`,
     }));
 
+    nowRsCount = rsCount;
     pagination.count = count;
     rsList.value = newList;
   } catch (error) {
@@ -115,9 +117,9 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   } finally {
     loading.value = false;
     emit('list-data-loaded', DeviceTabEnum.RS, {
-      type: 'rsIPCount',
+      type: 'rsCount',
       data: {
-        count: pagination.count,
+        count: nowRsCount,
       },
     });
   }

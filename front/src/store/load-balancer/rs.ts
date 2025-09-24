@@ -24,18 +24,21 @@ export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
     getListLoading.value = true;
     const { vendor } = condition;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/list`, businessId);
+    const rs = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/count`, businessId);
     try {
-      const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>]
+      const [listRes, countRes, rsCountRes] = await Promise.all<
+        [Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>]
       >([
         http.post(api, enableCount({ ...condition, page }, false)),
         http.post(api, enableCount({ ...condition, page }, true)),
+        http.post(rs, enableCount(condition, true)),
       ]);
 
       const list = listRes?.data?.details ?? [];
       const count = countRes?.data?.count ?? 0;
+      const rsCount = rsCountRes?.data?.count ?? 0;
 
-      return { list, count };
+      return { list, count, rsCount };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);

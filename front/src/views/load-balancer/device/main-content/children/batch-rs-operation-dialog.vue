@@ -23,7 +23,16 @@ const props = defineProps<IProps>();
 
 const { t } = useI18n();
 
-const info: Partial<Record<RsDeviceType, any>> = {
+const info: Partial<
+  Record<
+    RsDeviceType,
+    {
+      title: string;
+      confirm: string;
+      checkText: string;
+    }
+  >
+> = {
   [RsDeviceType.ADJUST]: {
     title: t('批量调整 RS 权重'),
     confirm: t('确认并提交'),

@@ -18,24 +18,17 @@ export const useLoadBalancerCountStore = defineStore('load-balancer-count', () =
     );
     const url = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/url_rules/by_topo/list`, businessId);
     const rs = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/count`, businessId);
-    const rsIP = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/list`, businessId);
     try {
       const res = await Promise.all<
-        [
-          Promise<IListResData<any[]>>,
-          Promise<IListResData<any[]>>,
-          Promise<IListResData<any[]>>,
-          Promise<IListResData<any[]>>,
-        ]
+        [Promise<IListResData<any[]>>, Promise<IListResData<any[]>>, Promise<IListResData<any[]>>]
       >([
         http.post(listener, enableCount(condition, true)),
         http.post(url, enableCount(condition, true)),
         http.post(rs, enableCount(condition, true)),
-        http.post(rsIP, enableCount(condition, true)),
       ]);
-      const [listenerCount, urlCount, rsCount, rsIPCount] = res.map((res) => res.data.count);
+      const [listenerCount, urlCount, rsCount] = res.map((res) => res.data.count);
 
-      return { listenerCount, urlCount, rsCount, rsIPCount };
+      return { listenerCount, urlCount, rsCount };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);

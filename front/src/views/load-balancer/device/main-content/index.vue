@@ -59,7 +59,7 @@ const activeComponent = computed(() => (largeData.value ? LargeData : DEVICE_VIE
 const overCount = (num: number) => num > max.value;
 const handleListDone = (
   from: DeviceTabEnum,
-  params: { type: 'listenerCount' | 'urlCount' | 'rsIPCount'; data: Record<string, any> },
+  params: { type: 'listenerCount' | 'urlCount' | 'rsCount'; data: Record<string, any> },
 ) => {
   emit('list-data-loaded', from, params);
 };
