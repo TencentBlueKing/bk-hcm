@@ -40,7 +40,7 @@ const hasAnyCondition = computed(
 const disabled = computed(() => (!hasSaved.value && !hasChange.value) || !hasAnyCondition.value);
 
 const handleAccountChange = (item: IAccountItem) => {
-  formModel.vendor = item.vendor;
+  formModel.vendor = item?.vendor;
   formModel.lb_regions = [];
 };
 const handlePaste = (value: any) => value.split(/,|;|\n|\s/).map((tag: any) => ({ id: tag, name: tag }));
@@ -281,7 +281,7 @@ const conditionField: ModelPropertySearch[] = [
 <style scoped lang="scss">
 .device-condition {
   height: 100%;
-  padding: 16px 0px 16px 24px;
+  padding: 16px 0 16px 24px;
   position: relative;
 
   .header {
@@ -289,6 +289,7 @@ const conditionField: ModelPropertySearch[] = [
     color: #313238;
     margin-bottom: 16px;
   }
+
   .condition {
     height: calc(100% - 64px);
     overflow-y: auto;
@@ -298,6 +299,7 @@ const conditionField: ModelPropertySearch[] = [
       padding-right: 24px;
     }
   }
+
   .footer {
     position: sticky;
     bottom: 0;
@@ -314,6 +316,7 @@ const conditionField: ModelPropertySearch[] = [
     }
   }
 }
+
 .tips {
   color: #4d4f56;
   display: flex;

@@ -56,7 +56,7 @@ const dataListColumns: ModelPropertyColumn[] = [
     width: 120,
   },
   {
-    id: 'lb_domain',
+    id: 'rule_domain',
     name: '所属监听器域名',
     type: 'string',
     width: 120,
