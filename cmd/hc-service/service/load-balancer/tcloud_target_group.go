@@ -405,10 +405,10 @@ func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBa
 		return err
 	}
 
-	rsOpt := &typelb.TCloudTargetPortUpdateOption{
-		Region: tgInfo.Region,
-	}
 	for _, ruleItem := range urlRuleList.Details {
+		rsOpt := &typelb.TCloudTargetPortUpdateOption{
+			Region: tgInfo.Region,
+		}
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
 		rsOpt.ListenerId = ruleItem.CloudLBLID
 		if ruleItem.RuleType == enumor.Layer7RuleType {
@@ -532,10 +532,10 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 		return err
 	}
 
-	rsOpt := &typelb.TCloudTargetWeightUpdateOption{
-		Region: tgInfo.Region,
-	}
 	for _, ruleItem := range urlRuleList.Details {
+		rsOpt := &typelb.TCloudTargetWeightUpdateOption{
+			Region: tgInfo.Region,
+		}
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
 		tmpWeightRule := &typelb.TargetWeightRule{
 			ListenerId: cvt.ValToPtr(ruleItem.CloudLBLID),
@@ -551,12 +551,13 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 			}
 			tmpRs = setTargetInstanceIDOrEniIP(rsItem.InstType, rsItem.CloudInstID, rsItem.IP, tmpRs)
 			tmpWeightRule.Targets = append(tmpWeightRule.Targets, tmpRs)
-			rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
 		}
+		rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
 		err = tcloudAdpt.ModifyTargetWeight(kt, rsOpt)
 		if err != nil {
-			logs.Errorf("batch modify tcloud target port api failed, err: %v, rsOpt: %+v, rid: %s", err, rsOpt, kt.Rid)
-			return errf.Newf(errf.PartialFailed, "batch modify tcloud target port api failed, err: %v", err)
+			logs.Errorf("batch modify tcloud target weight api failed, err: %v, rsOpt: %+v, rid: %s", err, rsOpt,
+				kt.Rid)
+			return errf.Newf(errf.PartialFailed, "batch modify tcloud target weight api failed, err: %v", err)
 		}
 	}
 
