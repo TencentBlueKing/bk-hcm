@@ -70,9 +70,13 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 	}
 
 	// detail 状态检查
-	if reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs); err != nil {
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
 		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
-		return reason, err
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
 	}
 	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)

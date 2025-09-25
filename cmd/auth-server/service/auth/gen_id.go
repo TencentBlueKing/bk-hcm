@@ -846,3 +846,16 @@ func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource
 func genCloudSelectionResource(*meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 }
+
+func genGlobalConfigResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Create:
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
+	case meta.Update:
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
+	case meta.Delete:
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

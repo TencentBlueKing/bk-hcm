@@ -42,6 +42,21 @@ const validateValues: ValidateValuesFunc = async (item, values) => {
   }
   return true;
 };
+const getList = async () => {
+  isLoading.value = true;
+  try {
+    const { list } = await loadBalancerClbStore.getLoadBalancerListWithDeleteProtection(
+      { filter: transformSimpleCondition(condition.value, conditionProperties) },
+      currentGlobalBusinessId.value,
+    );
+    loadBalancerList.value = list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  } catch (error) {
+    console.error(error);
+    loadBalancerList.value = [];
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const handleSearch = (val: ISearchSelectValue) => {
   condition.value = getSimpleConditionBySearchSelect(val);
@@ -50,20 +65,8 @@ const handleSearch = (val: ISearchSelectValue) => {
 const isLoading = ref(false);
 watch(
   condition,
-  async (condition) => {
-    isLoading.value = true;
-    try {
-      const { list } = await loadBalancerClbStore.getLoadBalancerListWithDeleteProtection(
-        { filter: transformSimpleCondition(condition, conditionProperties) },
-        currentGlobalBusinessId.value,
-      );
-      loadBalancerList.value = list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    } catch (error) {
-      console.error(error);
-      loadBalancerList.value = [];
-    } finally {
-      isLoading.value = false;
-    }
+  async () => {
+    getList();
   },
   { immediate: true, deep: true },
 );
@@ -91,6 +94,7 @@ const fixToActive = (id: string) => {
 
 defineExpose({
   fixToActive,
+  getList,
 });
 </script>
 

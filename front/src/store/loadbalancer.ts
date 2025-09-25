@@ -137,15 +137,46 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     }
   };
 
-  const exportClb = (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }>) => {
+  const exportClb = (
+    vendor: VendorEnum,
+    params: Array<{ lb_id: string; lbl_ids?: string[] }> | string[],
+    onlyExportListener = false,
+  ) => {
     try {
       const controller = new AbortController();
+      const url = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`;
+      const data = {
+        listeners: params,
+        only_export_listener: onlyExportListener,
+      };
       const download = () =>
         http.download({
-          url: `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/export`,
-          data: {
-            listeners: params,
-          },
+          url,
+          data,
+          signal: controller.signal,
+          globalError: false,
+        });
+
+      return {
+        download,
+        cancelDownload: () => controller.abort(),
+      };
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+
+  const exportRS = (vendor: VendorEnum, params: Array<{ lb_id: string; lbl_ids?: string[] }> | string[]) => {
+    try {
+      const controller = new AbortController();
+      const url = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/targets/export`;
+      const data = {
+        target_ids: params,
+      };
+      const download = () =>
+        http.download({
+          url,
+          data,
           signal: controller.signal,
           globalError: false,
         });
@@ -181,5 +212,6 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     queryRulesBindingStatusList,
     exportPreCheck,
     exportClb,
+    exportRS,
   };
 });

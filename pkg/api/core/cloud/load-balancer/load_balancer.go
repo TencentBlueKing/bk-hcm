@@ -188,6 +188,8 @@ type TCloudLbUrlRule struct {
 	Domain             string          `json:"domain"`
 	URL                string          `json:"url"`
 	Scheduler          string          `json:"scheduler"`
+	AccountID          string          `json:"account_id"`
+	BkBizID            int64           `json:"bk_biz_id"`
 
 	SessionType   string                 `json:"session_type"`
 	SessionExpire int64                  `json:"session_expire"`

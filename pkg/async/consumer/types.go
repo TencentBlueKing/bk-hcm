@@ -20,9 +20,14 @@
 package consumer
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/backend/model"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/kit"
+	"hcm/pkg/tools/converter"
 )
 
 // NewKit new async kit.
@@ -57,4 +62,41 @@ type Flow struct {
 	model.Flow `json:",inline"`
 
 	Kit *kit.Kit `json:"-"`
+}
+
+// SetFlowTypePriorityOption 设置优先级，Persistent为false时仅在内存临时生效，否则会持久化到db的global_config表
+type SetFlowTypePriorityOption struct {
+	FlowType   enumor.FlowName `json:"flow_type" validate:"required"`
+	Priority   *int            `json:"priority" validate:"required"`
+	Persistent bool            `json:"persistent" validate:"required"`
+}
+
+// Validate AddTemplateFlowOption
+func (opt *SetFlowTypePriorityOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+	if err := opt.FlowType.Validate(); err != nil {
+		return err
+	}
+	if converter.PtrToVal(opt.Priority) > FlowTypeMinPriority {
+		return fmt.Errorf("priority should be less than or equal to %d", FlowTypeMinPriority)
+	}
+	return nil
+}
+
+// ResetFlowPriorityOption 恢复默认优先级
+type ResetFlowPriorityOption struct {
+	FlowType enumor.FlowName `json:"flow_type" validate:"required"`
+}
+
+// Validate AddTemplateFlowOption
+func (opt *ResetFlowPriorityOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+	if err := opt.FlowType.Validate(); err != nil {
+		return err
+	}
+	return nil
 }

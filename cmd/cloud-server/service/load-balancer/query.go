@@ -23,6 +23,7 @@ package loadbalancer
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	proto "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
@@ -515,7 +516,7 @@ func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoa
 	}
 	resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
 	if err != nil {
-		logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("list load balancer failed, req: %v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 	if len(resp.Details) == 0 {
@@ -524,4 +525,221 @@ func (svc *lbSvc) getLoadBalancerByID(kt *kit.Kit, lbID string) (*corelb.BaseLoa
 		return nil, err
 	}
 	return &resp.Details[0], nil
+}
+
+func (svc *lbSvc) listListenersByIDs(kt *kit.Kit, lblIDs []string) ([]corelb.BaseListener, error) {
+	if len(lblIDs) == 0 {
+		return nil, nil
+	}
+
+	result := make([]corelb.BaseListener, 0, len(lblIDs))
+
+	for _, batch := range slice.Split(lblIDs, int(core.DefaultMaxPageLimit)) {
+		lblReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		listLblResult, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
+		if err != nil {
+			logs.Errorf("[clb] list clb listener failed, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, listLblResult.Details...)
+	}
+
+	return result, nil
+}
+
+func (svc *lbSvc) listTargetsByIDs(kt *kit.Kit, targetIDs []string) ([]corelb.BaseTarget, error) {
+	if len(targetIDs) == 0 {
+		return nil, nil
+	}
+
+	result := make([]corelb.BaseTarget, 0)
+	for _, batch := range slice.Split(targetIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		rsList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, req)
+		if err != nil {
+			logs.Errorf("list target failed, targetIDs: %v, err: %v, rid: %s", targetIDs, err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, rsList.Details...)
+	}
+
+	return result, nil
+}
+
+func (svc *lbSvc) listTGListenerRuleRelMapByTGIDs(kt *kit.Kit, tgIDs []string) (
+	map[string]corelb.BaseTargetListenerRuleRel, error) {
+
+	if len(tgIDs) == 0 {
+		return nil, nil
+	}
+
+	result := make(map[string]corelb.BaseTargetListenerRuleRel, 0)
+	for _, batch := range slice.Split(tgIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ContainersExpression("target_group_id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, req)
+		if err != nil {
+			logs.Errorf("list target group listener rel failed, tgIDs: %v, err: %v, rid: %s", tgIDs, err, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range list.Details {
+			result[detail.TargetGroupID] = detail
+		}
+	}
+	return result, nil
+}
+
+func (svc *lbSvc) listLoadBalancerMapByIDs(kt *kit.Kit, lbIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
+	result := make(map[string]corelb.BaseLoadBalancer, len(lbIDs))
+	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("list load balancer failed, req: %v, err: %v, rid: %s", req, err, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result[detail.ID] = detail
+		}
+	}
+	return result, nil
+}
+
+// listUrlRuleMapByIDs 根据url rule id获取url rule信息
+func (svc *lbSvc) listUrlRuleMapByIDs(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
+	map[string]urlRuleInfo, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.listUrlRuleMapByIDsForTCloud(kt, ids)
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s for listUrlRuleMapByIDs", vendor)
+	}
+}
+
+func (svc *lbSvc) listUrlRuleMapByIDsForTCloud(kt *kit.Kit, ids []string) (map[string]urlRuleInfo, error) {
+	result := make(map[string]urlRuleInfo, 0)
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result[detail.ID] = urlRuleInfo{
+				domain:     detail.Domain,
+				url:        detail.URL,
+				lblID:      detail.LblID,
+				cloudLblID: detail.CloudLBLID,
+				cloudLBID:  detail.CloudLbID,
+			}
+		}
+	}
+	return result, nil
+}
+
+// TGRelatedInfo tg关联信息，包括lb, listener, url rule
+type TGRelatedInfo struct {
+	CloudLBID    string `json:"cloud_lb_id"`
+	ClbVipDomain string `json:"clb_vip_domain"`
+
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Port     int64               `json:"listener_port"`
+
+	Domain string `json:"domain"`
+	URL    string `json:"url"`
+}
+
+// listTGRelatedInfoByRels 根据tg rel获取tg关联信息, 返回值 map[TGID]TGRelatedInfo
+func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rels []corelb.BaseTargetListenerRuleRel) (
+	map[string]TGRelatedInfo, error) {
+
+	lbMap, err := svc.listLoadBalancerMapByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLbID))
+	if err != nil {
+		return nil, err
+	}
+
+	lbls, err := svc.listListenersByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLblID))
+	if err != nil {
+		return nil, err
+	}
+	lblMap := cvt.SliceToMap(lbls, func(item corelb.BaseListener) (string, corelb.BaseListener) {
+		return item.ID, item
+	})
+
+	ruleMap, err := svc.listUrlRuleMapByIDs(kt, vendor,
+		slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetListenerRuleID))
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]TGRelatedInfo, len(rels))
+	for _, rel := range rels {
+		lb, ok := lbMap[rel.LbID]
+		if !ok {
+			logs.Errorf("lb not found: %s, rel: %+v, rid: %s", rel.LbID, rel, kt.Rid)
+			return nil, fmt.Errorf("lb not found: %s", rel.LbID)
+		}
+		vipDomain, err := getClbVipDomain(lb)
+		if err != nil {
+			return nil, err
+		}
+
+		lbl, ok := lblMap[rel.LblID]
+		if !ok {
+			logs.Errorf("listener not found: %s, rel: %+v, rid: %s", rel.LblID, rel, kt.Rid)
+			return nil, fmt.Errorf("listener not found: %s", rel.LblID)
+		}
+
+		rule, ok := ruleMap[rel.ListenerRuleID]
+		if !ok {
+			logs.Errorf("url rule not found: %s, rel: %+v, rid: %s", rel.ListenerRuleID, rel, kt.Rid)
+			return nil, fmt.Errorf("url rule not found: %s", rel.ListenerRuleID)
+		}
+
+		item := TGRelatedInfo{
+			CloudLBID:    lb.CloudID,
+			ClbVipDomain: strings.Join(vipDomain, ","),
+			Protocol:     lbl.Protocol,
+			Port:         lbl.Port,
+			Domain:       rule.domain,
+			URL:          rule.url,
+		}
+		result[rel.TargetGroupID] = item
+	}
+	return result, nil
+}
+
+func (svc *lbSvc) getListenerByCloudID(kt *kit.Kit, cloudID string) (*corelb.BaseListener, error) {
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, req)
+	if err != nil {
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", cloudID, err, kt.Rid)
+		return nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "listener not found, id: "+cloudID)
+	}
+	lblInfo := &lblResp.Details[0]
+
+	return lblInfo, nil
 }

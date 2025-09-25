@@ -23,6 +23,7 @@ package loadbalancer
 import (
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/cloud-server/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
@@ -67,9 +68,5 @@ func (svc *lbSvc) ImportSubmit(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return struct {
-		TaskManagementID string `json:"task_management_id"`
-	}{
-		TaskManagementID: taskID,
-	}, nil
+	return task.CreateTaskManagementResp{TaskManagementID: taskID}, nil
 }

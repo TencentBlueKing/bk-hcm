@@ -491,7 +491,7 @@ func (s *TaskServerSetting) trySetDefault() {
 	s.Service.trySetDefault()
 	s.Database.trySetDefault()
 	s.Log.trySetDefault()
-
+	s.Async.trySetDefault()
 	return
 }
 

@@ -272,8 +272,17 @@ func (svc *lbSvc) batchCreateTCloudListener(kt *kit.Kit, rawReq json.RawMessage,
 	}
 
 	// 构建异步任务将目标组中的RS绑定到对应规则上
-	lblInfo := &corelb.BaseListener{CloudID: createResp.CloudLblID, Protocol: req.Protocol, LbID: req.LbID}
-	_, err = svc.applyTargetToRule(kt, req.TargetGroupID, createResp.CloudRuleID, lblInfo, bkBizID)
+	lblInfo, err := svc.getListenerByCloudID(kt, createResp.CloudLblID)
+	if err != nil {
+		logs.Errorf("fail to get listener by cloud id, err: %v, req: %+v, createResp: %+v, rid: %s",
+			err, req, createResp, kt.Rid)
+		return nil, err
+	}
+	cloudRuleID := createResp.CloudRuleID
+	if lblInfo.Protocol.IsLayer4Protocol() {
+		cloudRuleID = lblInfo.CloudID
+	}
+	_, err = svc.applyTargetToRule(kt, req.TargetGroupID, cloudRuleID, lblInfo, bkBizID)
 	if err != nil {
 		logs.Errorf("fail to bind listener and target group register flow, err: %v, req: %+v, createResp: %+v, rid: %s",
 			err, req, createResp, kt.Rid)

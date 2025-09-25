@@ -22,19 +22,27 @@ package loadbalancer
 import (
 	"fmt"
 
+	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/cloud-server/task"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	apits "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
@@ -47,11 +55,15 @@ func (svc *lbSvc) DeleteBizListener(cts *rest.Contexts) (interface{}, error) {
 func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	req := new(core.BatchDeleteReq)
-	if err := cts.DecodeInto(req); err != nil {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
 		return nil, err
 	}
 
+	req := new(cslb.DeleteListenerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -84,31 +96,195 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 		return nil, err
 	}
 
-	infoByVendor := classifier.ClassifyMap(basicInfoMap, func(item types.CloudResourceBasicInfo) enumor.Vendor {
-		return item.Vendor
+	taskManagementID, err := svc.createTaskManagementForDelLbl(cts.Kit, bizID, req)
+	if err != nil {
+		return nil, err
+	}
+	return task.CreateTaskManagementResp{TaskManagementID: taskManagementID}, nil
+}
+
+func (svc *lbSvc) buildDelLblTaskManagement(kt *kit.Kit, bkBizID int64, accountID string) (
+	string, enumor.Vendor, error) {
+
+	// create task management
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(kt, enumor.AccountCloudResType, accountID)
+	if err != nil {
+		logs.Errorf("get account info failed, accountID: %s, err: %v, rid: %s", accountID, err, kt.Rid)
+		return "", "", err
+	}
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, accountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskDeleteListener)
+	if err != nil {
+		logs.Errorf("create task management failed, bkBizID: %d, accountID: %s, err: %v, rid: %s",
+			bkBizID, accountID, err, kt.Rid)
+		return "", "", err
+	}
+	return taskManagementID, accountInfo.Vendor, nil
+
+}
+
+func (svc *lbSvc) createTaskManagementForDelLbl(kt *kit.Kit, bkBizID int64, req *cslb.DeleteListenerReq) (
+	string, error) {
+
+	// list listener
+	listeners, err := svc.listListenersByIDs(kt, req.IDs)
+	if err != nil {
+		logs.Errorf("list listeners failed, ids: %v, err: %v, rid: %s", req.IDs, err, kt.Rid)
+		return "", err
+	}
+	clbIDLblMap := classifier.ClassifySlice(listeners, func(item corelb.BaseListener) string {
+		return item.LbID
 	})
-	for vendor, infos := range infoByVendor {
-		ids := slice.Map(infos, func(item types.CloudResourceBasicInfo) string {
-			return item.ID
-		})
-		deleteReq := &core.BatchDeleteReq{
-			IDs: ids,
-		}
-		switch vendor {
-		case enumor.TCloud:
-			err = svc.client.HCService().TCloud.Clb.DeleteListener(cts.Kit, deleteReq)
-			if err != nil {
-				logs.Errorf("[%s] request hcservice to delete listener failed, ids: %s, err: %v, rid: %s",
-					enumor.TCloud, req.IDs, err, cts.Kit.Rid)
-				return nil, err
-			}
-		default:
-			logs.Errorf("delete listener not support vendor: %s, ids: %v, rid: %s", vendor, req.IDs, cts.Kit.Rid)
-			return nil, fmt.Errorf("delete listener not support vendor: %s", vendor)
+	for lbID := range clbIDLblMap {
+		// 预检测-是否有执行中的负载均衡
+		_, err = svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			logs.Errorf("check res flow rel failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
+			return "", err
 		}
 	}
 
-	return nil, nil
+	// create task management
+	taskManagementID, vendor, err := svc.buildDelLblTaskManagement(kt, bkBizID, req.AccountID)
+	if err != nil {
+		logs.Errorf("build delete lbl task management failed, err: %v, bkBizID: %d, accountID: %s, rid: %s",
+			err, bkBizID, req.AccountID, kt.Rid)
+		return "", err
+	}
+	flowIDs := make([]string, 0)
+	for lbID, listeners := range clbIDLblMap {
+		// 一个clb 对应一个flow
+		flowID, err := svc.buildDeleteListenerTask(kt, vendor, lbID, taskManagementID, bkBizID, listeners)
+		if err != nil {
+			logs.Errorf("build delete listener task failed, lbID: %s, err: %v, rid: %s",
+				lbID, err, kt.Rid)
+			return "", err
+		}
+		flowIDs = append(flowIDs, flowID)
+	}
+	if err = svc.updateTaskManagement(kt, taskManagementID, flowIDs...); err != nil {
+		logs.Errorf("update task management failed, err: %v, taskManagementID: %s, flowIDs: %v, rid: %s",
+			err, taskManagementID, flowIDs, kt.Rid)
+		return "", err
+	}
+
+	return taskManagementID, nil
+}
+
+func (svc *lbSvc) buildDeleteListenerTask(kt *kit.Kit, vendor enumor.Vendor, lbID, taskManagementID string,
+	bkBizID int64, listeners []corelb.BaseListener) (string, error) {
+
+	var taskDetails []*taskManagementDetail
+	var err error
+	defer func() {
+		if err == nil {
+			return
+		}
+		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
+			return item.taskDetailID
+		})
+		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+		}
+	}()
+
+	tasks, taskDetails, err := svc.generateFlowTasks(kt, listeners, vendor, lbID, taskManagementID, bkBizID)
+	if err != nil {
+		logs.Errorf("generate flow tasks failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
+		return "", err
+	}
+	flowID, err := svc.buildFlow(kt, enumor.FlowBatchTaskDeleteListener, tableasync.NewShareData(map[string]string{
+		"lb_id": lbID,
+	}), tasks)
+	if err != nil {
+		logs.Errorf("build flow failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
+		return "", err
+	}
+	for _, detail := range taskDetails {
+		detail.flowID = flowID
+	}
+	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, taskDetails: %+v, rid: %s", err, taskDetails, kt.Rid)
+		return "", err
+	}
+
+	// 下面的的代码如果执行出现error，不需要修改taskDetail的状态, 目前flow已经创建完毕，taskDetail由flowTask维护
+	if buildErr := svc.buildSubFlow(kt, flowID, lbID, nil, enumor.ListenerCloudResType,
+		enumor.DeleteListenerTaskType); buildErr != nil {
+		logs.Errorf("build sub flow failed, err: %v, lbID: %s, rid: %s", buildErr, lbID, kt.Rid)
+		return "", buildErr
+	}
+	// 锁定负载均衡跟Flow的状态
+	if lockErr := svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID,
+		enumor.ApplyTargetGroupType); lockErr != nil {
+		logs.Errorf("lock res flow status failed, err: %v, lbID: %s, rid: %s", lockErr, lbID, kt.Rid)
+		return "", lockErr
+	}
+	return flowID, nil
+}
+
+// generateFlowTasks ...
+func (svc *lbSvc) generateFlowTasks(kt *kit.Kit, listeners []corelb.BaseListener, vendor enumor.Vendor, lbID,
+	taskManagementID string, bkBizID int64) ([]apits.CustomFlowTask, []*taskManagementDetail, error) {
+
+	var tasks []apits.CustomFlowTask
+	var taskDetails []*taskManagementDetail
+	getNextID := counter.NewNumberCounterWithPrev(1, 10)
+	for _, batch := range slice.Split(listeners, constant.BatchDeleteListenerCloudMaxLimit) {
+		details, err := svc.createDeleteListenerTaskDetails(kt, taskManagementID, bkBizID, batch)
+		if err != nil {
+			logs.Errorf("create delete listener task details failed, err: %v, lbID: %s, rid: %s",
+				err, lbID, kt.Rid)
+			return nil, nil, err
+		}
+		cur, prev := getNextID()
+		tmpTask := apits.CustomFlowTask{
+			ActionID:   action.ActIDType(cur),
+			ActionName: enumor.ActionBatchTaskDeleteListener,
+			Params: &actionlb.BatchTaskDeleteListenerOption{
+				Vendor:         vendor,
+				LoadBalancerID: lbID,
+				ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+					return item.taskDetailID
+				}),
+				BatchDeleteReq: &core.BatchDeleteReq{
+					IDs: slice.Map(batch, func(item corelb.BaseListener) string {
+						return item.ID
+					}),
+				},
+			},
+			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+		}
+		if prev != "" {
+			tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
+		}
+		for _, detail := range details {
+			detail.actionID = cur
+		}
+		tasks = append(tasks, tmpTask)
+		taskDetails = append(taskDetails, details...)
+	}
+	return tasks, taskDetails, nil
+}
+
+func (svc *lbSvc) createDeleteListenerTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
+	listeners []corelb.BaseListener) ([]*taskManagementDetail, error) {
+
+	details := make([]*taskManagementDetail, 0)
+	for _, listener := range listeners {
+		detail := &taskManagementDetail{
+			param: listener,
+		}
+		details = append(details, detail)
+	}
+	if _, err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskDeleteListener, details); err != nil {
+		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
+			taskManagementID, bkBizID, kt.Rid)
+		return nil, err
+	}
+	return details, nil
 }
 
 // validateListenerTargetWeight 校验监听器绑定的所有rs权重是否为0

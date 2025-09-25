@@ -368,11 +368,11 @@ func (svc *lbSvc) getRsListByTargetGroupIDs(item protocloud.LoadBalancerUrlRuleR
 			lblRsMap[item.CloudLblID].RsList = append(lblRsMap[item.CloudLblID].RsList,
 				&protocloud.LoadBalancerTargetRsList{
 					BaseTarget:  targetGroupItem.BaseTarget,
-					RuleID:      item.TargetGrouRuleMap[targetGroupID].RuleID,
-					CloudRuleID: item.TargetGrouRuleMap[targetGroupID].CloudRuleID,
-					RuleType:    item.TargetGrouRuleMap[targetGroupID].RuleType,
-					Domain:      item.TargetGrouRuleMap[targetGroupID].Domain,
-					Url:         item.TargetGrouRuleMap[targetGroupID].Url,
+					RuleID:      item.TargetGroupRuleMap[targetGroupID].RuleID,
+					CloudRuleID: item.TargetGroupRuleMap[targetGroupID].CloudRuleID,
+					RuleType:    item.TargetGroupRuleMap[targetGroupID].RuleType,
+					Domain:      item.TargetGroupRuleMap[targetGroupID].Domain,
+					Url:         item.TargetGroupRuleMap[targetGroupID].Url,
 				})
 		}
 	}
@@ -532,14 +532,14 @@ func (svc *lbSvc) listTCloudLBUrlRuleByTgIDs(kt *kit.Kit,
 
 			for _, item := range loopLblTargetList.Details {
 				urlRuleResult := protocloud.LoadBalancerUrlRuleResult{
-					LbID:              item.LbID,
-					CloudClbID:        item.CloudLbID,
-					LblID:             item.LblID,
-					CloudLblID:        item.CloudLBLID,
-					TargetGrouRuleMap: make(map[string]protocloud.DomainUrlRuleInfo),
+					LbID:               item.LbID,
+					CloudClbID:         item.CloudLbID,
+					LblID:              item.LblID,
+					CloudLblID:         item.CloudLBLID,
+					TargetGroupRuleMap: make(map[string]protocloud.DomainUrlRuleInfo),
 				}
 				urlRuleResult.TargetGroupIDs = append(urlRuleResult.TargetGroupIDs, item.TargetGroupID)
-				urlRuleResult.TargetGrouRuleMap[item.TargetGroupID] = protocloud.DomainUrlRuleInfo{
+				urlRuleResult.TargetGroupRuleMap[item.TargetGroupID] = protocloud.DomainUrlRuleInfo{
 					RuleID:      item.ID,
 					CloudRuleID: item.CloudID,
 					RuleType:    item.RuleType,

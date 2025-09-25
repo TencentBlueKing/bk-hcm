@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
@@ -102,6 +103,7 @@ func (dao LbTCloudUrlRuleDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models
 		if !ok {
 			return nil, fmt.Errorf("fail to find lb(%s) of rule(%s)", rule.LbID, rule.URL)
 		}
+
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:      rule.ID,
 			CloudResID: rule.CloudID,
@@ -206,8 +208,11 @@ func (dao LbTCloudUrlRuleDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes())),
-		core.NewDefaultPageOption()); err != nil {
+	expr := filter.NewExprOption(
+		filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes()),
+		filter.MaxInLimit(constant.CLBTopoFindInLimit),
+	)
+	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -273,8 +278,10 @@ func (dao LbTCloudUrlRuleDao) ListJoinListener(kt *kit.Kit, opt *types.ListOptio
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes())),
-		core.NewDefaultPageOption()); err != nil {
+	expr := filter.NewExprOption(
+		filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes()),
+	)
+	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

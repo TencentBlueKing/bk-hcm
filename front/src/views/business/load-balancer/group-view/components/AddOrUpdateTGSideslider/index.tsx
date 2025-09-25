@@ -4,6 +4,7 @@ import { Alert, Button, Form, Message } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 // import stores
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 // import custom hooks
 import useAddOrUpdateTGForm from './useAddOrUpdateTGForm';
 import useChangeScene from './useChangeScene';
@@ -11,6 +12,9 @@ import useChangeScene from './useChangeScene';
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
 import { TargetGroupOperationScene, TG_OPERATION_SCENE_MAP } from '@/constants';
+import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
+import { ResourceTypeEnum } from '@/common/constant';
+import routerAction from '@/router/utils/action';
 
 const { FormItem } = Form;
 
@@ -25,6 +29,7 @@ export default defineComponent({
     // use stores
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
+    const loadBalancerRsStore = useLoadBalancerRsStore();
 
     const isShow = ref(false);
     const isSubmitLoading = ref(false);
@@ -191,23 +196,26 @@ export default defineComponent({
     });
     const resolveFormDataForSingleUpdateRs = () => {
       const type = TargetGroupOperationScene.SINGLE_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      const account_id = type === 'weight' ? formData.account_id : undefined;
       const target = formData.rs_list.find(
         (item: any) => item.id === loadBalancerStore.targetGroupOperateLockState.singleUpdateRsId,
       );
-      return { target_ids: [target.id], [`new_${type}`]: +target[type] };
+      return { target_ids: [target.id], [`new_${type}`]: +target[type], account_id };
     };
     // 处理参数 - 批量修改端口/权重
     const resolveFormDataForBatchUpdateRs = () => {
       const type = TargetGroupOperationScene.BATCH_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      const account_id = type === 'weight' ? formData.account_id : undefined;
       return {
         target_ids: formData.rs_list.map(({ id }: any) => id),
         [`new_${type}`]: +formData.rs_list[0][type],
+        account_id,
       };
     };
     // 处理参数 - 批量移除rs
     const resolveFormDataForBatchDeleteRs = () => ({
       account_id: formData.account_id,
-      target_groups: [{ target_group_id: formData.id, target_ids: deletedRsList.value.map((item) => item.id) }],
+      target_ids: deletedRsList.value.map((item) => item.id),
     });
 
     // check-status - 查询异步任务执行状态
@@ -253,22 +261,40 @@ export default defineComponent({
           asyncTaskMessage: 'RS添加异步任务已提交',
         },
         [TargetGroupOperationScene.SINGLE_UPDATE_PORT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForSingleUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdatePort(
+              formData.id,
+              resolveFormDataForSingleUpdateRs() as { target_ids: string[]; new_port: number; account_id?: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '修改单个端口成功',
           asyncTaskMessage: '修改单个端口异步任务已提交',
         },
         [TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForSingleUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdateWeight(
+              resolveFormDataForSingleUpdateRs() as { target_ids: string[]; new_weight: number; account_id: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '修改单个权重成功',
           asyncTaskMessage: '修改单个权重异步任务已提交',
         },
         [TargetGroupOperationScene.BATCH_UPDATE_PORT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForBatchUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdatePort(
+              formData.id,
+              resolveFormDataForBatchUpdateRs() as { target_ids: string[]; new_port: number; account_id?: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '批量修改端口成功',
           asyncTaskMessage: '批量修改端口异步任务已提交',
         },
         [TargetGroupOperationScene.BATCH_UPDATE_WEIGHT]: {
-          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForBatchUpdateRs()),
+          promise: () =>
+            loadBalancerRsStore.batchUpdateWeight(
+              resolveFormDataForBatchUpdateRs() as { target_ids: string[]; new_weight: number; account_id: string },
+              currentGlobalBusinessId.value,
+            ),
           message: '批量修改权重成功',
           asyncTaskMessage: '批量修改权重异步任务已提交',
         },
@@ -303,6 +329,12 @@ export default defineComponent({
                 </Button>
               </>
             ),
+          });
+        } else if (data?.task_management_id) {
+          routerAction.redirect({
+            name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
+            query: { bizs: currentGlobalBusinessId.value },
+            params: { resourceType: ResourceTypeEnum.CLB, id: data.task_management_id },
           });
         } else {
           Message({ theme: 'success', message });

@@ -63,13 +63,15 @@ watch(
     @selection-change="handleSelectChange"
     row-key="id"
   >
-    <bk-table-column type="selection" align="center" min-width="30" v-if="selectable"></bk-table-column>
+    <bk-table-column type="selection" align="center" min-width="30" fixed="left" v-if="selectable"></bk-table-column>
     <bk-table-column
       v-for="(column, index) in columns"
       :key="index"
       :prop="column.id"
       :label="column.name"
       :sort="column.sort"
+      :min-width="column.minWidth"
+      :fixed="column.fixed"
       :render="column.render"
     >
       <template #default="{ row }">

@@ -24,10 +24,10 @@ const getColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']
 const getRerunColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']) => {
   const [operation] = operations || [];
   const fields = fieldRerunIdMap.get(type);
-  const opeartionFields = fields[operation as TaskType] || fieldRerunBaseIdMap;
+  const operationFields = fields[operation as TaskType] || fieldRerunBaseIdMap;
 
   const columns = [];
-  for (const [fieldId, setting] of Object.entries(opeartionFields)) {
+  for (const [fieldId, setting] of Object.entries(operationFields)) {
     const newSetting = setting;
     if (!Object.hasOwn(newSetting, 'display')) {
       newSetting.display = {};

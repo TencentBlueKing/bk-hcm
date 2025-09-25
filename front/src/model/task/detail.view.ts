@@ -165,8 +165,25 @@ export default [
     type: 'string',
   },
   {
+    id: 'param.target_group_modify_weight_rs_port',
+    name: 'RS端口',
+    type: 'string',
+    render: ({ row }: { row: ITaskDetailItem }) => row.param.port,
+  },
+  {
+    id: 'param.target_group_remove_rs_rs_port',
+    name: 'RS端口',
+    type: 'string',
+    render: ({ row }: { row: ITaskDetailItem }) => row.param.port,
+  },
+  {
     id: 'param.weight',
     name: '原权重',
+    type: 'number',
+  },
+  {
+    id: 'param.new_weight',
+    name: '新权重',
     type: 'number',
   },
   {

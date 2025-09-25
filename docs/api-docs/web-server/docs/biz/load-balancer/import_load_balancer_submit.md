@@ -92,4 +92,4 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 | 参数名称    | 参数类型   | 描述     |
 |---------|--------|--------|
-| task_id | string | 任务管理id |
+| task_management_id | string | 任务管理id |

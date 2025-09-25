@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/async/action"
@@ -57,6 +58,9 @@ type Executor interface {
 	// CancelTasks 关闭指定task_id的任务。
 	CancelTasks(taskIDs []string) error
 	CancelFlow(kt *kit.Kit, flowID string) error
+
+	GetTaskTypeAvgExecTime(taskType enumor.ActionName) (float64, bool)
+	GetFastTaskThresholdSec() float64
 }
 
 var _ Executor = new(executor)
@@ -65,19 +69,26 @@ var _ Executor = new(executor)
 type executor struct {
 	kt *kit.Kit
 
-	workerNumber       uint
-	taskExecTimeoutSec uint
+	taskExecTimeoutSec  uint
+	fastTaskWorkerRatio float64
 
-	cancelMap   sync.Map
-	workerWg    sync.WaitGroup
-	initWg      sync.WaitGroup
-	workerQueue chan *Task
-	initQueue   chan *initPayload
-	backend     backend.Backend
-
-	closeCh chan struct{}
-
-	GetSchedulerFunc func() Scheduler
+	cancelMap             sync.Map
+	workerWg              sync.WaitGroup
+	initWg                sync.WaitGroup
+	fastTaskQueue         chan *Task
+	slowTaskQueue         chan *Task
+	initQueue             *TaskInitQueue
+	backend               backend.Backend
+	taskTypeTimeWindowMap map[enumor.ActionName]*TimeWindow // 创建完成后这个map无锁，而是timewindow的细粒度锁
+	ttTwMapMu             sync.RWMutex                      // 用于保护 taskTypeTimeWindowMap 的并发创建
+	timeWindowDurationMin uint                              // 表示回溯多久的历史数据，单位分钟
+	timeWindowCapacity    uint                              // TimeWindow 的容量，表示每一类tasktype最多存放的时间数据数量
+	fastTaskWorkerNum     uint                              // 快任务worker数量
+	sharedWorkerNum       uint                              // 共享worker数量
+	fastTaskThresholdSec  float64                           // 快任务的阈值，执行时间小于这个值的任务为快任务，反之为慢，单位秒
+	closeCh               chan struct{}
+	mc                    *metric
+	GetSchedulerFunc      func() Scheduler
 }
 
 // SetGetSchedulerFunc 设置获取调度器函数，运行过程中，执行完的节点需要通过调度器获取子节点，且调度器会下发任务到执行器.
@@ -86,43 +97,122 @@ func (exec *executor) SetGetSchedulerFunc(f func() Scheduler) {
 }
 
 // NewExecutor 实例化任务执行器
-func NewExecutor(kt *kit.Kit, bd backend.Backend, opt *ExecutorOption) Executor {
+func NewExecutor(kt *kit.Kit, bd backend.Backend, opt *ExecutorOption, mc *metric) Executor {
 	return &executor{
-		kt:                 kt,
-		backend:            bd,
-		workerWg:           sync.WaitGroup{},
-		initWg:             sync.WaitGroup{},
-		workerQueue:        make(chan *Task, 10),
-		initQueue:          make(chan *initPayload),
-		closeCh:            make(chan struct{}, 1),
-		workerNumber:       opt.WorkerNumber,
-		taskExecTimeoutSec: opt.TaskExecTimeoutSec,
+		kt:                    kt,
+		backend:               bd,
+		workerWg:              sync.WaitGroup{},
+		initWg:                sync.WaitGroup{},
+		initQueue:             NewTaskInitQueue(opt.InitQueueCapacity, mc),
+		taskTypeTimeWindowMap: make(map[enumor.ActionName]*TimeWindow),
+		closeCh:               make(chan struct{}, 1),
+		taskExecTimeoutSec:    opt.TaskExecTimeoutSec,
+		fastTaskWorkerRatio:   opt.FastTaskWorkerRatio,
+		fastTaskWorkerNum:     uint(float64(opt.WorkerNumber) * opt.FastTaskWorkerRatio),
+		sharedWorkerNum:       opt.WorkerNumber - uint(float64(opt.WorkerNumber)*opt.FastTaskWorkerRatio),
+		fastTaskThresholdSec:  opt.FastTaskThresholdSec,
+		timeWindowCapacity:    opt.TimeWindowCapacity,
+		timeWindowDurationMin: opt.TimeWindowDurationMin,
+		fastTaskQueue:         make(chan *Task, opt.FastTaskQueueCapacity),
+		slowTaskQueue:         make(chan *Task, opt.SlowTaskQueueCapacity),
+		mc:                    mc,
 	}
 }
 
 // Start 初始化执行器并启动执行
 func (exec *executor) Start() {
-
-	logs.Infof("executor start, worker number: %d", exec.workerNumber)
+	logs.Infof("executor start, total worker number: %d (fast task worker: %d, shared worker: %d)",
+		exec.fastTaskWorkerNum+exec.sharedWorkerNum, exec.fastTaskWorkerNum, exec.sharedWorkerNum)
 
 	// 待执行的任务预处理
 	exec.initWg.Add(1)
 	go exec.watchInitQueue()
 
-	// 启动workerNumber个执行器执行任务
-	for i := 0; i < int(exec.workerNumber); i++ {
+	// 启动fast task worker，只从快任务队列取任务
+	for i := 0; i < int(exec.fastTaskWorkerNum); i++ {
 		exec.workerWg.Add(1)
-		go exec.subWorkerQueue()
+		go exec.fastTaskWorker()
+	}
+
+	// 启动shared worker，优先从慢任务队列取任务，没有才从快任务队列取
+	for i := 0; i < int(exec.sharedWorkerNum); i++ {
+		exec.workerWg.Add(1)
+		go exec.sharedTaskWorker()
 	}
 }
 
-// 从initQueue队列获取待执行的任务协程
-func (exec *executor) watchInitQueue() {
-	for p := range exec.initQueue {
-		exec.initWorkerTask(p.flow, p.task)
+// fastTaskWorker 只从快任务队列取任务
+func (exec *executor) fastTaskWorker() {
+	for task := range exec.fastTaskQueue {
+		if err := exec.workerDo(task); err != nil {
+			// Task执行失败告警通知
+			logs.Errorf("%s: executor fast task worker exec failed, err: %v, taskID: %s, action: %s, rid: %s",
+				constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+		}
 	}
+	exec.workerWg.Done()
+}
 
-	exec.initWg.Done()
+// sharedTaskWorker 共享任务工作器，实现优先级调度策略
+// 设计思路：
+// 1. 优先处理慢任务队列中的任务，确保耗时较长的任务能够及时得到处理
+// 2. 当慢任务队列为空时，才处理快任务队列中的任务
+// 3. 采用两阶段select策略，避免快任务饥饿慢任务的情况
+//
+// 调度策略：
+// - 第一阶段：非阻塞检查慢任务队列，如果有任务立即处理
+// - 第二阶段：如果慢任务队列为空，则阻塞等待任意队列的任务到达
+func (exec *executor) sharedTaskWorker() {
+	defer exec.workerWg.Done()
+	for {
+		// 第一阶段：非阻塞优先检查慢任务队列
+		// 使用非阻塞select确保慢任务优先级，避免快任务抢占慢任务的执行机会
+		select {
+		case <-exec.closeCh:
+			return
+		case task := <-exec.slowTaskQueue:
+			// 慢任务队列有任务，立即处理
+			if err := exec.workerDo(task); err != nil {
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+			}
+			// 处理完成后继续下一轮循环，再次优先检查慢任务队列
+			continue
+		default:
+			// 慢任务队列为空，进入第二阶段
+		}
+
+		// 第二阶段：阻塞等待任意队列的任务到达
+		// 当慢任务队列为空时，公平地监听两个队列，哪个队列先来任务就先处理，处理完重新回到第一阶段
+		select {
+		case <-exec.closeCh:
+			return
+		case task := <-exec.slowTaskQueue:
+			if err := exec.workerDo(task); err != nil {
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+			}
+		case task := <-exec.fastTaskQueue:
+			if err := exec.workerDo(task); err != nil {
+				logs.Errorf("%s: executor shared task worker workerDo exec failed, err: %v, taskID: %s, "+
+					"action: %s, rid: %s", constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
+			}
+		}
+	}
+}
+
+// 从initQueue优先队列获取待执行的任务协程
+func (exec *executor) watchInitQueue() {
+	for {
+		// 阻塞等待任务
+		payload, ok := exec.initQueue.Pop()
+		// initQueue关闭且为空，直接退出
+		if !ok {
+			exec.initWg.Done()
+			return
+		}
+		exec.initWorkerTask(payload.flow, payload.task)
+	}
 }
 
 // 待执行任务的预处理函数
@@ -148,21 +238,13 @@ func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 
 	// cancel存储到cancelMap中
 	exec.cancelMap.Store(task.ID, cancel)
-	// 任务写回workerQueue
-	exec.workerQueue <- task
-}
 
-// 任务实际执行协程
-func (exec *executor) subWorkerQueue() {
-	for task := range exec.workerQueue {
-		if err := exec.workerDo(task); err != nil {
-			// Task执行失败告警通知
-			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
-				constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
-		}
+	// 根据task所属tasktype平均执行时间将任务推送到对应的队列，第一次执行的tasktype先放慢任务队列
+	if task.ExecTime >= exec.fastTaskThresholdSec {
+		exec.slowTaskQueue <- task
+		return
 	}
-
-	exec.workerWg.Done()
+	exec.fastTaskQueue <- task
 }
 
 // 任务执行体
@@ -184,8 +266,8 @@ func (exec *executor) workerDo(task *Task) (err error) {
 	if err := task.ValidateBeforeExec(act); err != nil {
 		return err
 	}
-	logs.Infof("start execute task %s, action: %s, flow: %s, rid: %s",
-		task.ID, task.ActionName, task.FlowID, task.Kit.Rid)
+	logs.Infof("start execute task %s, actionID:%s, action: %s, flow: %s, rid: %s",
+		task.ID, task.ActionID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
 		if fatalErr := recover(); fatalErr != nil {
 			logs.Errorf("[hcm server panic], taskID: %s, flowID: %s, err: %v, rid: %s, debug strace: %s",
@@ -274,7 +356,7 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 		if err = exec.UpdateTaskState(task, enumor.TaskRunning); err != nil {
 			return false, nil, err
 		}
-
+		taskStartTime := time.Now()
 		result, err := act.Run(task.ExecuteKit, params)
 		if err != nil {
 			if errf.IsContextCanceled(err) {
@@ -285,6 +367,9 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				err, times.ConvStdTimeNow())
 		}
 
+		// 只记录task执行成功的执行时间
+		exec.getTimeWindow(task.ActionName).Push(time.Since(taskStartTime).Seconds())
+
 		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
 		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。
 		if err = exec.UpdateTaskStateResult(task, enumor.TaskSuccess, result); err != nil {
@@ -293,6 +378,29 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 	}
 
 	return false, nil, nil
+}
+
+// getTimeWindow 并发安全地获取或创建指定任务类型的 TimeWindow
+func (exec *executor) getTimeWindow(taskType enumor.ActionName) *TimeWindow {
+	// 只读
+	exec.ttTwMapMu.RLock()
+	tw, ok := exec.taskTypeTimeWindowMap[taskType]
+	exec.ttTwMapMu.RUnlock()
+	if ok {
+		return tw
+	}
+
+	// 创建新 TimeWindow（只有第一次创建会走到这里）
+	exec.ttTwMapMu.Lock()
+	defer exec.ttTwMapMu.Unlock()
+	// 再次检查，防止并发创建
+	if tw, ok = exec.taskTypeTimeWindowMap[taskType]; ok {
+		return tw
+	}
+	// 创建并写入
+	tw = NewTimeWindow(exec.timeWindowCapacity, exec.timeWindowDurationMin)
+	exec.taskTypeTimeWindowMap[taskType] = tw
+	return tw
 }
 
 // Push 任务写入到initQueue
@@ -308,15 +416,22 @@ func (exec *executor) Push(flow *Flow, task *Task) {
 	default:
 	}
 
-	exec.initQueue <- &initPayload{
-		flow: flow,
-		task: task,
+	err := exec.initQueue.Push(&InitPayload{
+		flow:      flow,
+		task:      task,
+		entryTime: time.Now(),
+	})
+	if err != nil {
+		logs.Errorf("fail to push InitPayload to task init queue, err: %v", err)
+		return
 	}
 }
 
-type initPayload struct {
-	flow *Flow
-	task *Task
+// InitPayload 任务初始化信息
+type InitPayload struct {
+	flow      *Flow
+	task      *Task
+	entryTime time.Time
 }
 
 // CancelTasks 停止指定id的任务
@@ -375,9 +490,10 @@ func (exec *executor) Close() {
 	defer close(exec.closeCh)
 	exec.closeCh <- struct{}{}
 
-	close(exec.initQueue)
+	exec.initQueue.Close()
 	exec.initWg.Wait()
-	close(exec.workerQueue)
+	close(exec.fastTaskQueue)
+	close(exec.slowTaskQueue)
 	exec.workerWg.Wait()
 
 	logs.Infof("executor close success")
@@ -414,4 +530,14 @@ func (exec *executor) UpdateTask(task *Task, state enumor.TaskState, reason stri
 	task.State = state
 
 	return nil
+}
+
+// GetTaskTypeAvgExecTime get task type avg exec time by corresponding timewindow
+func (exec *executor) GetTaskTypeAvgExecTime(taskType enumor.ActionName) (avgExecTime float64, neverExec bool) {
+	return exec.getTimeWindow(taskType).GetAvg()
+}
+
+// GetFastTaskThresholdSec get fast task threshold.
+func (exec *executor) GetFastTaskThresholdSec() float64 {
+	return exec.fastTaskThresholdSec
 }

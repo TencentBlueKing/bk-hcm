@@ -40,8 +40,9 @@ type TaskTree struct {
 
 // TaskNode task node
 type TaskNode struct {
-	TaskID string
-	State  enumor.TaskState
+	TaskID     string
+	State      enumor.TaskState
+	ActionName enumor.ActionName
 
 	children []*TaskNode
 	parents  []*TaskNode
@@ -50,8 +51,9 @@ type TaskNode struct {
 // NewTaskNode new task node
 func NewTaskNode(task *Task) *TaskNode {
 	return &TaskNode{
-		TaskID: task.ID,
-		State:  task.State,
+		TaskID:     task.ID,
+		State:      task.State,
+		ActionName: task.ActionName,
 	}
 }
 
@@ -336,4 +338,23 @@ func walkOneNode(curNode *TaskNode, stepInNode WalkCallbackFunc) (isStopWalk boo
 	}
 
 	return true
+}
+
+// GetAllPathsMaxTime 返回从当前节点到所有叶子节点的路径中最长路径的执行时间，即关键路径
+func (n *TaskNode) GetAllPathsMaxTime(taskTypeAvgExecTimeMap map[enumor.ActionName]float64) float64 {
+	// 如果是叶子节点，返回当前节点的执行时间
+	if len(n.children) == 0 {
+		return taskTypeAvgExecTimeMap[n.ActionName]
+	}
+
+	maxTime := 0.0
+	// 递归获取子节点的最长执行时间
+	for _, child := range n.children {
+		childMaxTime := child.GetAllPathsMaxTime(taskTypeAvgExecTimeMap)
+		currentPathTime := taskTypeAvgExecTimeMap[n.ActionName] + childMaxTime
+		// 更新最长执行时间
+		maxTime = max(maxTime, currentPathTime)
+	}
+
+	return maxTime
 }

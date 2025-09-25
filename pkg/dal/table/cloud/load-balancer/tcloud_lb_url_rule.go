@@ -54,6 +54,8 @@ var TCloudLbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "health_check", NamedC: "health_check", Type: enumor.Json},
 	{Column: "certificate", NamedC: "certificate", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
+	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -83,6 +85,8 @@ type TCloudLbUrlRuleTable struct {
 	HealthCheck        types.JsonField `db:"health_check" json:"health_check"`
 	Certificate        types.JsonField `db:"certificate" json:"certificate"`
 	Memo               *string         `db:"memo" json:"memo"`
+	BkBizID            int64           `db:"bk_biz_id" json:"bk_biz_id"`
+	AccountID          string          `db:"account_id" validate:"lte=64" json:"account_id"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`
@@ -112,7 +116,6 @@ func (tlbur TCloudLbUrlRuleTable) InsertValidate() error {
 	if len(tlbur.Creator) == 0 {
 		return errors.New("creator is required")
 	}
-
 	return nil
 }
 

@@ -264,6 +264,8 @@ func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item datapro
 		SessionType:        item.SessionType,
 		SessionExpire:      item.SessionExpire,
 		Certificate:        types.JsonField(certJSON),
+		BkBizID:            item.BkBizID,
+		AccountID:          item.AccountID,
 		Creator:            kt.User,
 		Reviser:            kt.User,
 	}}

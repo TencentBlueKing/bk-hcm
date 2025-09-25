@@ -130,14 +130,15 @@ func (svc *lbSvc) batchCreateUrlRule(kt *kit.Kit, vendor enumor.Vendor, lblID st
 }
 
 // 构建异步任务将目标组中的RS绑定到对应规则上
-func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblInfo *corelb.BaseListener, bkBizID int64) (string, error) {
+func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblInfo *corelb.BaseListener,
+	bkBizID int64) (string, error) {
 
 	lb, err := svc.getLoadBalancerByID(kt, lblInfo.LbID)
 	if err != nil {
 		logs.Errorf("fail to get load balancer by id, id: %s, err: %v, rid: %s", lblInfo.LbID, err, kt.Rid)
 		return "", err
 	}
-	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, lb.Vendor, lb.CloudID,
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, lb.Vendor, lb.AccountID,
 		enumor.TaskManagementSourceAPI, enumor.TaskListenerAddTarget)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
@@ -159,7 +160,8 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 			return item.taskDetailID
 		})
 		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+			logs.Errorf("update task details state to failed, err: %v, taskDetails: %+v, rid: %s", err,
+				taskDetails, kt.Rid)
 		}
 	}()
 
@@ -170,9 +172,13 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 		return "", err
 	}
 
-	if len(tasks) == 0 {
+	if len(taskDetails) == 0 {
+		if err = svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementSuccess); err != nil {
+			logs.Errorf("update task management state to success failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+		}
 		req := &cloud.TGListenerRelStatusUpdateReq{BindingStatus: enumor.SuccessBindingStatus}
-		err := svc.client.DataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, tgID, req)
+		err = svc.client.DataService().Global.LoadBalancer.BatchUpdateListenerRuleRelStatusByTGID(kt, tgID, req)
 		if err != nil {
 			logs.Errorf("fail to update listener rule rel status by tgID, err: %v, tgID: %s, rid: %s",
 				err, tgID, kt.Rid)

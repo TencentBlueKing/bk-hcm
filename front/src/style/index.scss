@@ -28,3 +28,19 @@
       transform: rotate(360deg);
   }
 }
+
+// 悬浮样式
+.g-expand {
+  position: absolute !important;
+  width: 100%;
+  z-index: 2;
+
+  .bk-tag-input-trigger, .bk-tag-input {
+    height: 32px !important;
+    width: 100%;
+    &.is-focus, &.active {
+        height: auto !important;
+        z-index: 9999;
+    }
+  }
+}

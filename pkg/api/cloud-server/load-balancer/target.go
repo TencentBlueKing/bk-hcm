@@ -21,8 +21,10 @@ package cslb
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -104,4 +106,33 @@ type ListTargetByCondResult struct {
 	RsIp         string              `json:"rs_ip"`
 	RsPort       int64               `json:"rs_port"`
 	RsWeight     int64               `json:"rs_weight"`
+}
+
+// BatchModifyTargetWeightReq ...
+type BatchModifyTargetWeightReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	TargetIDs []string `json:"target_ids" validate:"min=1"`
+	NewWeight *int64   `json:"new_weight" validate:"required,min=0,max=100"`
+}
+
+// Validate ...
+func (b *BatchModifyTargetWeightReq) Validate() error {
+	if len(b.TargetIDs) > constant.BatchOperateModifyTargetWeightLimit {
+		return fmt.Errorf("target_ids length count should <= %d", constant.BatchOperateModifyTargetWeightLimit)
+	}
+	return validator.Validate.Struct(b)
+}
+
+// BatchRemoveTargetReq ...
+type BatchRemoveTargetReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	TargetIDs []string `json:"target_ids" validate:"min=1"`
+}
+
+// Validate ...
+func (b *BatchRemoveTargetReq) Validate() error {
+	if len(b.TargetIDs) > constant.BatchOperateRemoveTargetLimit {
+		return fmt.Errorf("the number of target IDs cannot exceed %d", constant.BatchOperateRemoveTargetLimit)
+	}
+	return validator.Validate.Struct(b)
 }

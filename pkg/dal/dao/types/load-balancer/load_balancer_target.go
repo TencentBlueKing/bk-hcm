@@ -19,10 +19,30 @@
 
 package loadbalancer
 
-import tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+import (
+	"hcm/pkg/criteria/enumor"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+	"hcm/pkg/dal/table/types"
+)
 
 // ListLoadBalancerTargetDetails list load balancer target details.
 type ListLoadBalancerTargetDetails struct {
 	Count   uint64                            `json:"count,omitempty"`
 	Details []tablelb.LoadBalancerTargetTable `json:"details,omitempty"`
+}
+
+// ListInstInfoDetails list instance info details.
+type ListInstInfoDetails struct {
+	Count   uint64         `json:"count,omitempty"`
+	Details []ListInstInfo `json:"details,omitempty"`
+}
+
+// ListInstInfo list instance info.
+type ListInstInfo struct {
+	InstID      string            `db:"inst_id" json:"inst_id"`
+	InstType    enumor.InstType   `db:"inst_type" json:"inst_type"`
+	InstName    string            `db:"inst_name" json:"inst_name"`
+	IP          string            `db:"ip" json:"ip"`
+	Zone        string            `db:"zone" json:"zone"`
+	CloudVpcIDs types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
 }

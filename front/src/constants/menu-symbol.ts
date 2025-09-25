@@ -21,6 +21,8 @@ export const MENU_BUSINESS_LOAD_BALANCER_DETAILS = 'menu_business_load_balancer_
 export const MENU_BUSINESS_TARGET_GROUP_OVERVIEW = 'menu_business_target_group_overview';
 export const MENU_BUSINESS_TARGET_GROUP_DETAILS = 'menu_business_target_group_details';
 export const MENU_BUSINESS_LOAD_BALANCER_APPLY = 'menu_business_load_balancer_apply';
+export const MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH = 'menu_business_device_search';
+
 export const MENU_BUSINESS_CERT_MANAGEMENT = 'menu_business_cert_management';
 export const MENU_BUSINESS_HOST_APPLICATION = 'menu_business_host_application';
 export const MENU_BUSINESS_HOST_RECYCLE = 'menu_business_host_recycle';

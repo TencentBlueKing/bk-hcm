@@ -178,6 +178,31 @@ func (a Async) Validate() error {
 	return nil
 }
 
+// trySetDefault try set the default value of Async
+func (s *Async) trySetDefault() {
+	if s.Executor.InitQueueCapacity == 0 {
+		s.Executor.InitQueueCapacity = 25
+	}
+	if s.Executor.FastTaskWorkerRatio == 0 {
+		s.Executor.FastTaskWorkerRatio = 0.2
+	}
+	if s.Executor.FastTaskThresholdSec == 0 {
+		s.Executor.FastTaskThresholdSec = 10
+	}
+	if s.Executor.TimeWindowCapacity == 0 {
+		s.Executor.TimeWindowCapacity = 5
+	}
+	if s.Executor.TimeWindowDurationMin == 0 {
+		s.Executor.TimeWindowDurationMin = 30
+	}
+	if s.Executor.FastTaskQueueCapacity == 0 {
+		s.Executor.FastTaskQueueCapacity = 10
+	}
+	if s.Executor.SlowTaskQueueCapacity == 0 {
+		s.Executor.SlowTaskQueueCapacity = 10
+	}
+}
+
 // Parser 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
 type Parser struct {
 	WatchIntervalSec                uint `yaml:"watchIntervalSec"`
@@ -188,8 +213,16 @@ type Parser struct {
 
 // Executor 公共组件，负责执行异步任务
 type Executor struct {
-	WorkerNumber       uint `yaml:"workerNumber"`
-	TaskExecTimeoutSec uint `yaml:"taskExecTimeoutSec"`
+	WorkerNumber          uint    `yaml:"workerNumber"`
+	TaskExecTimeoutSec    uint    `yaml:"taskExecTimeoutSec"`
+	InitQueueCapacity     uint    `yaml:"initQueueCapacity"`
+	FastTaskWorkerRatio   float64 `yaml:"fastTaskWorkerRatio"`
+	FastTaskThreshold     uint    `yaml:"fastTaskThreshold"`
+	FastTaskThresholdSec  float64 `yaml:"fastTaskThresholdSec"`
+	TimeWindowCapacity    uint    `yaml:"timeWindowCapacity"`
+	TimeWindowDurationMin uint    `yaml:"timeWindowDurationMin"`
+	FastTaskQueueCapacity uint    `yaml:"fastTaskQueueCapacity"`
+	SlowTaskQueueCapacity uint    `yaml:"slowTaskQueueCapacity"`
 }
 
 // Dispatcher 主节点组件，负责派发任务

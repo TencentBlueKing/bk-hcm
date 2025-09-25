@@ -100,8 +100,22 @@ async:
   executor:
     # workerNumber 负责处理异步任务的协程数量，非零正整数值
     workerNumber: 5
-    # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。，非零正整数值
+    # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。非零正整数值
     taskExecTimeoutSec: 120
+    # initQueueCapacity 初始化队列容量，非零正整数值
+    initQueueCapacity: 25
+    # fastTaskWorkerRatio 快任务专用协程占workerNumber的比例，0~1的浮点数
+    fastTaskWorkerRatio: 0.2
+    # fastTaskThresholdSec 快任务阈值，执行时间小于该值的任务属于快任务，会被放入到快任务队列，单位秒
+    fastTaskThresholdSec: 10
+    # timeWindowCapacity 时间窗口容量，非零正整数值
+    timeWindowCapacity: 5
+    # timeWindowDurationMin 时间窗口持续时间，单位分钟，正整数
+    timeWindowDurationMin: 30
+    # fastTaskQueueCapacity 快任务队列容量，非零正整数值
+    fastTaskQueueCapacity: 10
+    # slowTaskQueueCapacity 慢任务队列容量，非零正整数值
+    slowTaskQueueCapacity: 10
   # dispatcher 主节点组件，负责派发任务
   dispatcher:
     # watchIntervalSec 查看是否有Pending状态任务的周期，单位秒，正整数

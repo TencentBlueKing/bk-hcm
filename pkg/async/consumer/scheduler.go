@@ -21,24 +21,34 @@ package consumer
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 	"sync"
 	"time"
 
+	adaptormock "hcm/pkg/adaptor/mock"
 	"hcm/pkg/api/core"
+	datagconf "hcm/pkg/api/data-service/global_config"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
+	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
 )
+
+// FlowTypeMinPriority flowtype的最小优先级（值越大优先级越低）
+const FlowTypeMinPriority = 10
+const DefaultFlowTypePriority = FlowTypeMinPriority / 2
 
 /*
 Scheduler （调度器）: TODO: 换为 捕获器、消费器，添加假死任务销毁逻辑
@@ -53,9 +63,11 @@ type Scheduler interface {
 	Start()
 
 	// EntryTask 分析执行完的任务，并解析出当前任务的子任务去执行。
-	EntryTask(task *Task)
+	EntryTask(task *Task) error
 	// DeleteFlowTaskTree 清空任务树，阻止继续调度
 	DeleteFlowTaskTree(flowID string)
+	// SetFlowTypePriority 设置flowtype优先级
+	SetFlowTypePriority(flowType enumor.FlowName, priority int)
 }
 
 // scheduler 定义任务流调度器
@@ -63,7 +75,7 @@ type scheduler struct {
 	workerNumber uint
 
 	taskTrees   sync.Map
-	workerQueue chan *Task
+	workerQueue *concurrence.UnboundedBlockingLinkedList[*Task]
 	workerWg    sync.WaitGroup
 
 	backend  backend.Backend
@@ -75,15 +87,24 @@ type scheduler struct {
 
 	scheduledFlowFetcherConcurrency uint
 	canceledFlowFetcherConcurrency  uint
+	// flowtype理论执行时间（关键路径），单位秒
+	flowTypeExecTimeMap   *adaptormock.Store[enumor.FlowName, float64]
+	flowTypeRunningNumMap *concurrence.ConcurrentMapCounter
+	flowTypePriorityMap   sync.Map
+	flowTypeMinPriority   int
+	// flowtype实际执行时间，单位秒
+	flowtypeActualTime sync.Map
+	// 记录每个flow从被选中开始的时间
+	flowEntryTimeMap sync.Map
+	mc               *metric
 }
 
 // NewScheduler 实例化任务流调度器
-func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *SchedulerOption) Scheduler {
-
-	return &scheduler{
+func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *SchedulerOption, globalCfgCli *global.GlobalConfigsClient, mc *metric) Scheduler {
+	sch := &scheduler{
 		closeCh:                         make(chan struct{}),
 		workerWg:                        sync.WaitGroup{},
-		workerQueue:                     make(chan *Task, 10),
+		workerQueue:                     concurrence.NewUnboundedBlockingLinkedList[*Task](),
 		workerNumber:                    opt.WorkerNumber,
 		sp:                              SleepPolicy{baseInterval: time.Duration(opt.WatchIntervalSec) * time.Second},
 		backend:                         bd,
@@ -91,7 +112,37 @@ func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *Sche
 		leader:                          ld,
 		scheduledFlowFetcherConcurrency: opt.ScheduledFlowFetcherConcurrency,
 		canceledFlowFetcherConcurrency:  opt.CanceledFlowFetcherConcurrency,
+		flowTypeExecTimeMap:             &adaptormock.Store[enumor.FlowName, float64]{},
+		flowTypeRunningNumMap:           concurrence.NewConcurrentMapCounter(),
+		flowTypePriorityMap:             sync.Map{},
+		flowTypeMinPriority:             FlowTypeMinPriority,
+		flowtypeActualTime:              sync.Map{},
+		flowEntryTimeMap:                sync.Map{},
+		mc:                              mc,
 	}
+	sch.flowTypeExecTimeMap.Init()
+
+	kt := NewKit()
+	req := &datagconf.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", constant.FlowTypePriority),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	result, err := globalCfgCli.List(kt, req)
+	if err != nil {
+		logs.Errorf("failed to get flow type priority from global config, err: %v", err)
+		return sch
+	}
+	for _, one := range result.Details {
+		priority, err := strconv.Atoi(string(one.ConfigValue))
+		if err != nil {
+			logs.Errorf("failed to parse flow type priority, err: %v, config_value: %v", err, one.ConfigValue)
+			return sch
+		}
+		sch.flowTypePriorityMap.Store(one.ConfigKey, priority)
+	}
+	return sch
 }
 
 // Start 初始化调度器并启动执行
@@ -104,7 +155,7 @@ func (sch *scheduler) Start() {
 	go sch.scheduledFlowWatcher()
 	go sch.canceledFlowWatcher()
 
-	// 启动workerNumber个协程进行任务流解析
+	// 启动workerNumber个协程进行后续可执行任务流的解析（第一批可执行节点之后的）
 	for i := 0; i < int(sch.workerNumber); i++ {
 		go sch.goWorker()
 	}
@@ -175,6 +226,32 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, lim
 	return result, nil
 }
 
+// queryCurrNodeAllFlow 查询主节点分配给当前节点所有处于 Scheduled 状态的任务流，没有limit上限。
+func (sch *scheduler) queryCurrNodeAllFlow(kt *kit.Kit, state enumor.FlowState) ([]model.Flow, error) {
+	flows := make([]model.Flow, 0)
+	page := core.NewDefaultBasePage()
+	for {
+		result, err := sch.backend.ListFlow(kt, &backend.ListInput{
+			Page: page,
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("state", state),
+				tools.RuleEqual("worker", sch.leader.CurrNode())),
+		})
+		if err != nil {
+			logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		flows = append(flows, result...)
+		// 如果当前页数据不足一页，说明后面没有更多数据了
+		if uint(len(result)) < page.Limit {
+			break
+		}
+		page.Start += uint32(page.Limit)
+	}
+	return flows, nil
+}
+
 // canceledFlowWatcher 查询当前节点上被取消的flow并执行task取消操作
 func (sch *scheduler) canceledFlowWatcher() {
 	// 初始化协程池
@@ -232,6 +309,8 @@ func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) (working bool, err error) 
 
 		// 清空任务树，阻止继续调度
 		sch.DeleteFlowTaskTree(flow.ID)
+		sch.flowTypeRunningNumMap.Inc(string(flow.Name), -1)
+		sch.flowEntryTimeMap.Delete(flow.ID)
 		err = updateFlowToCancel(kt, sch.backend, flow.ID, cvt.PtrToVal(flow.Worker), enumor.FlowCancel)
 		if err != nil {
 			logs.Errorf("fail to update flow clear worker id, err: %v, flow id: %s rid: %s",
@@ -317,8 +396,8 @@ func listTaskByIDs(kt *kit.Kit, bd backend.Backend, ids []string) ([]*Task, erro
 	return tasks, nil
 }
 
-// parseAndPushFlow 解析Flow并推送Flow下一批待执行的节点到执行器。
-func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
+// parseAndPushFlow 解析Flow并返回Flow第一批可执行的节点。
+func (sch *scheduler) parseFlow(kt *kit.Kit, flow *Flow) ([]*Task, error) {
 	// 根据任务流ID获取对应的任务集合
 	tasks, err := listTaskByFlowID(kt, sch.backend, flow.ID)
 	if err != nil {
@@ -330,7 +409,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 		}
 
 		logs.Errorf("list task by flow id failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	// 构造执行流树
@@ -344,7 +423,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 		}
 
 		logs.Errorf("build task root failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return nil, err
 	}
 
 	taskTree := &TaskTree{
@@ -360,7 +439,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 		if state == enumor.FlowSuccess {
 			if err = updateFlowState(kt, sch.backend, flow.ID, enumor.FlowRunning, state); err != nil {
 				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
-				return err
+				return nil, err
 			}
 		}
 
@@ -369,28 +448,36 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 				ErrSomeTaskExecFailed); err != nil {
 
 				logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
-				return err
+				return nil, err
 			}
 		}
 
-		return nil
+		return nil, nil
 	}
 
 	// 存储任务流执行树
 	sch.taskTrees.Store(flow.ID, taskTree)
-
-	taskIDMap := make(map[string]*Task, len(tasks))
-	for _, one := range tasks {
-		taskIDMap[one.ID] = one
-	}
-
-	// 所有可执行任务推送到执行器
 	flow.State = enumor.FlowRunning
+	executableSet := make(map[string]struct{}, len(executableTaskNodes))
 	for _, taskID := range executableTaskNodes {
-		sch.executor.Push(flow, taskIDMap[taskID])
+		executableSet[taskID] = struct{}{}
 	}
 
-	return nil
+	// 选出可执行的节点的task结构体并填充预估的执行时间
+	execTasks := make([]*Task, 0, len(executableTaskNodes))
+	for _, task := range tasks {
+		task.Flow = flow
+		if _, exists := executableSet[task.ID]; exists {
+			avgExecTime, neverExec := sch.executor.GetTaskTypeAvgExecTime(task.ActionName)
+			task.ExecTime = avgExecTime
+			// 如果该任务类型从未执行过，则当做慢任务处理，避免如果真的是慢任务会一直占着快任务worker
+			if neverExec {
+				task.ExecTime = sch.executor.GetFastTaskThresholdSec()
+			}
+			execTasks = append(execTasks, task)
+		}
+	}
+	return execTasks, nil
 }
 
 // updateFlowState 更新Flow状态，采用CAS加三次重试。source原状态，dest目标状态。
@@ -455,39 +542,55 @@ func updateFlowToCancel(kt *kit.Kit, bd backend.Backend, flowId, oldWorkerID str
 
 // watchScheduledFlow 查询主节点分配给当前节点的的flow，并执行
 func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
+	for flowType, count := range sch.flowTypeRunningNumMap.Snapshot() {
+		sch.mc.flowTypeRunningNum.WithLabelValues(flowType).Set(float64(count))
+	}
 
-	// 从DB中获取一批"待执行"的任务流并更新状态为"执行中"，开始对flow中的任务进行执行
-	flowList, err := sch.queryCurrNodeFlow(kt, enumor.FlowScheduled, listScheduledFlowLimit)
+	// 从DB中获取所有"待执行"的任务流并更新状态为"执行中"，开始对flow中的任务进行执行
+	allFlows, err := sch.queryCurrNodeAllFlow(kt, enumor.FlowScheduled)
 	if err != nil {
 		logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
 		return false, err
 	}
 
-	if len(flowList) == 0 {
+	if len(allFlows) == 0 {
 		logs.V(3).Infof("current node: %s not found scheduled flow to handleRunningFlow, rid: %s",
 			sch.leader.CurrNode(), kt.Rid)
 		return false, nil
 	}
 
+	topkFlows, _ := sch.getTopKFlows(allFlows, 0.75*listScheduledFlowLimit, listScheduledFlowLimit)
+
 	ids := make([]string, 0)
-	flows := slice.Map(flowList, func(one model.Flow) *Flow {
+	flows := slice.Map(topkFlows, func(one model.Flow) *Flow {
 		ids = append(ids, one.ID)
 		// Note: first sub kit, scheduler.watcher -> flow
 		return &Flow{Flow: one, Kit: kt.NewSubKit()}
 	})
 
-	logs.V(3).Infof("list %d flows, try to run them, ids: %v, rid: %s", len(flowList), ids, kt.Rid)
+	logs.V(3).Infof("list %d flows, try to run them, ids: %v, rid: %s", len(topkFlows), ids, kt.Rid)
 
+	allTasks := make([]*Task, 0)
 	for _, flow := range flows {
 		if err = updateFlowState(flow.Kit, sch.backend, flow.ID, enumor.FlowScheduled, enumor.FlowRunning); err != nil {
 			logs.Errorf("update flow state failed, err: %v, rid: %s", err, flow.Kit.Rid)
 			return false, err
 		}
 
-		if err = sch.parseFlowAndPushTask(flow.Kit, flow); err != nil {
+		tasks, err := sch.parseFlow(flow.Kit, flow)
+		if err != nil {
 			logs.Errorf("parse flow and push task failed, err: %v, rid: %s", err, flow.Kit.Rid)
 			return false, err
 		}
+		allTasks = append(allTasks, tasks...)
+		// 更新flow type的running数量
+		sch.flowTypeRunningNumMap.Inc(string(flow.Name), 1)
+		// 更新flow的entry time
+		sch.flowEntryTimeMap.Store(flow.ID, time.Now())
+	}
+
+	for _, task := range allTasks {
+		sch.executor.Push(task.Flow, task)
 	}
 
 	logs.V(3).Infof("update all the flows to running state success. rid: %s", kt.Rid)
@@ -495,11 +598,116 @@ func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
 	return true, nil
 }
 
+// getTopKFlows eachFlowTypeNum是每种flow最多可以取的数量，k是最终返回的flow总数上限
+// 如果每种flow各取eachFlowTypeNum个后加起来仍不足k个，则按照先来后到补足
+// 比如5个A类flow紧接着2个B类flow，k=5，eachFlowTypeNum=2，则返回A类3个，B类2个
+func (sch *scheduler) getTopKFlows(allFlows []model.Flow, eachFlowTypeNum int, k int) ([]model.Flow, error) {
+	if k <= 0 {
+		return nil, fmt.Errorf("k must be positive")
+	}
+
+	// 如果k大于等于所有flows数量，直接返回所有flows
+	if k >= len(allFlows) {
+		result := make([]model.Flow, len(allFlows))
+		copy(result, allFlows)
+		return result, nil
+	}
+
+	// 使用map记录每种flow已收集的数量
+	counts := make(map[enumor.FlowName]int)
+	selected := make(map[string]bool, len(allFlows))
+	flows := make([]model.Flow, 0, min(len(allFlows), k))
+
+	// 每种flow各取eachFlowTypeNum个
+	for _, flow := range allFlows {
+		if counts[flow.Name] < eachFlowTypeNum {
+			flows = append(flows, flow)
+			counts[flow.Name]++
+			selected[flow.ID] = true
+		}
+	}
+
+	// 如果每种flow各取eachFlowTypeNum个后加起来仍不足k个，则按照先来后到补足，allFlows中靠前的flow就是先到的
+	// 即某种flow其实有可能超过eachFlowTypeNum个
+	if len(flows) < k {
+		for _, flow := range allFlows {
+			if !selected[flow.ID] && len(flows) < k {
+				flows = append(flows, flow)
+				selected[flow.ID] = true
+			}
+		}
+		return flows, nil
+	}
+	result, err := sch.rankTopKFlows(flows, k)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (sch *scheduler) rankTopKFlows(flows []model.Flow, k int) ([]model.Flow, error) {
+	// 创建带分数的结构体用于排序
+	type scoredFlow struct {
+		flow  model.Flow
+		score float64
+	}
+
+	scoredFlows := make([]scoredFlow, 0, len(flows))
+
+	// 计算每个flow的分数
+	for _, flow := range flows {
+		scoredFlows = append(scoredFlows, scoredFlow{
+			flow:  flow,
+			score: sch.caculateFlowTypeScore(flow),
+		})
+	}
+
+	// 按分数降序排序
+	sort.Slice(scoredFlows, func(i, j int) bool {
+		return scoredFlows[i].score > scoredFlows[j].score
+	})
+
+	// 取前k个
+	result := make([]model.Flow, 0, min(len(scoredFlows), k))
+	for i := 0; i < len(scoredFlows) && i < k; i++ {
+		result = append(result, scoredFlows[i].flow)
+	}
+
+	return result, nil
+}
+
+// caculateFlowTypeScore 计算flow的分数，等待时间越长、执行时间越短、框架内同类flow执行数量越少、优先级越高，则分数越高
+func (sch *scheduler) caculateFlowTypeScore(flow model.Flow) float64 {
+	priority, _ := sch.flowTypePriorityMap.LoadOrStore(flow.Name, DefaultFlowTypePriority)
+	execTime, _ := sch.flowTypeExecTimeMap.Get(flow.Name)
+	runningNum, runningNumTotal := sch.flowTypeRunningNumMap.GetValueAndSum(string(flow.Name))
+	// UpdatedAt是flow变成scheduled态那一刻，
+	updatedTime, err := time.Parse(time.RFC3339, flow.UpdatedAt)
+	if err != nil {
+		logs.Infof("parse time %q failed: %v", flow.UpdatedAt, err)
+	}
+	// now-updatedTime=等待时间，单位秒
+	waitTime := time.Now().Unix() - updatedTime.Unix()
+
+	norPriority := 1 - float64(priority.(int))/float64(sch.flowTypeMinPriority)
+	norExecTime := 1 / (1 + execTime)
+	norRunningNum := 1 - float64(runningNum)/float64(runningNumTotal)
+	norWaitTime := float64(waitTime) / (float64(waitTime) + 1)
+
+	score := 2*norPriority + norExecTime + norRunningNum + norWaitTime
+	return score
+}
+
 // 任务流解析协程
 func (sch *scheduler) goWorker() {
 	sch.workerWg.Add(1)
 
-	for task := range sch.workerQueue {
+	for {
+		task, ok := sch.workerQueue.Pop()
+		if !ok {
+			break
+		}
+
 		if err := sch.executeNext(task.Flow.Kit, task); err != nil {
 			logs.Errorf("%s: scheduler exec executeNext failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
 				err, task.Kit.Rid)
@@ -532,8 +740,25 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 				logs.Errorf("update flow state to `%s` failed, err: %v, rid: %s", state, err, kt.Rid)
 				return err
 			}
+			// 只对执行成功的flow求关键路径执行时间以及实际执行时间
+			criticalPathExecTime, neverExec := sch.computeFlowTypeCriticalPath(task.Flow, tree)
+			if !neverExec {
+				sch.flowTypeExecTimeMap.Set(task.Flow.Name, criticalPathExecTime)
+			}
+			entryTime, exists := sch.flowEntryTimeMap.Load(task.FlowID)
+			if exists {
+				t, ok := entryTime.(time.Time)
+				if !ok {
+					logs.Errorf("entry time is not time, flowID: %s, rid: %s", task.FlowID, kt.Rid)
+					return fmt.Errorf("entry time is not time, flowID: %s", task.FlowID)
+				}
+				sch.mc.flowTypeExecTime.WithLabelValues(string(task.Flow.Name)).Observe(time.Since(t).
+					Seconds())
+			}
 
 			sch.DeleteFlowTaskTree(task.FlowID)
+			sch.flowTypeRunningNumMap.Inc(string(task.Flow.Name), -1)
+			sch.flowEntryTimeMap.Delete(task.FlowID)
 		case enumor.FlowFailed:
 			if err := updateFlowStateAndReason(kt, sch.backend, task.FlowID, enumor.FlowRunning, state,
 				ErrSomeTaskExecFailed); err != nil {
@@ -543,6 +768,8 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 			}
 
 			sch.DeleteFlowTaskTree(task.FlowID)
+			sch.flowTypeRunningNumMap.Inc(string(task.Flow.Name), -1)
+			sch.flowEntryTimeMap.Delete(task.FlowID)
 		case enumor.FlowCancel:
 			// task cancel 一般是由flow状态触发，因此这里不处理
 		}
@@ -560,6 +787,18 @@ func (sch *scheduler) pushTasks(kt *kit.Kit, flow *Flow, ids []string) error {
 		logs.Errorf("list task by ids failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return err
 	}
+
+	for _, task := range tasks {
+		avgExecTime, neverExec := sch.executor.GetTaskTypeAvgExecTime(task.ActionName)
+		task.ExecTime = avgExecTime
+		if neverExec {
+			task.ExecTime = sch.executor.GetFastTaskThresholdSec()
+		}
+	}
+	// 根据任务的ExecTime属性进行排序，快任务在前面
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].ExecTime < tasks[j].ExecTime
+	})
 
 	// 可执行任务推送到执行器
 	for _, one := range tasks {
@@ -580,8 +819,34 @@ func (sch *scheduler) getTaskTree(flowID string) (*TaskTree, bool) {
 }
 
 // EntryTask 任务写回到执行器用于获取下一批可执行的任务
-func (sch *scheduler) EntryTask(taskNode *Task) {
-	sch.workerQueue <- taskNode
+func (sch *scheduler) EntryTask(taskNode *Task) error {
+	err := sch.workerQueue.Push(taskNode)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 计算某个flowtype的关键路径执行时间。neverExec为true表示该flowtype在整个服务生命周期内从未被执行，无法计算其关键路径执行时间
+func (sch *scheduler) computeFlowTypeCriticalPath(flow *Flow, taskTree *TaskTree) (criticalPathExecTime float64, neverExec bool) {
+	taskTypeAvgExecTimeMap := make(map[enumor.ActionName]float64)
+	// 遍历flow中的所有任务，获取每个任务类型的平均执行时间
+	for _, t := range flow.Tasks {
+		_, exists := taskTypeAvgExecTimeMap[t.ActionName]
+		if exists {
+			continue
+		}
+		avgExecTime, neverExec := sch.executor.GetTaskTypeAvgExecTime(t.ActionName)
+		if neverExec {
+			return 0, true
+		}
+		taskTypeAvgExecTimeMap[t.ActionName] = avgExecTime
+	}
+
+	// 直接获取最大执行时间
+	maxTime := taskTree.Root.GetAllPathsMaxTime(taskTypeAvgExecTimeMap)
+
+	return maxTime, false
 }
 
 // Close 调度器关闭函数
@@ -597,7 +862,7 @@ func (sch *scheduler) Close() {
 	}
 
 	close(sch.closeCh)
-	close(sch.workerQueue)
+	sch.workerQueue.Close()
 
 	sch.workerWg.Wait()
 
@@ -609,4 +874,9 @@ func (sch *scheduler) Close() {
 func (sch *scheduler) DeleteFlowTaskTree(flowID string) {
 
 	sch.taskTrees.Delete(flowID)
+}
+
+// SetFlowTypePriorityMap 设置flowtype的优先级map
+func (sch *scheduler) SetFlowTypePriority(flowType enumor.FlowName, priority int) {
+	sch.flowTypePriorityMap.Store(flowType, priority)
 }

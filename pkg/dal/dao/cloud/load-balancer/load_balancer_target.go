@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	idgen "hcm/pkg/dal/dao/id-generator"
@@ -48,6 +49,7 @@ type TargetInterface interface {
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.LoadBalancerTargetTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoadBalancerTargetDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	ListInstInfo(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListInstInfoDetails, error)
 }
 
 var _ TargetInterface = new(TargetDao)
@@ -166,8 +168,11 @@ func (dao TargetDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLoad
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerTargetColumns.ColumnTypes())),
-		core.NewDefaultPageOption()); err != nil {
+	expr := filter.NewExprOption(
+		filter.RuleFields(tablelb.LoadBalancerTargetColumns.ColumnTypes()),
+		filter.MaxInLimit(constant.CLBTopoFindInLimit),
+	)
+	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 
@@ -223,4 +228,58 @@ func (dao TargetDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Express
 	}
 
 	return nil
+}
+
+// ListInstInfo list instance info.
+func (dao TargetDao) ListInstInfo(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListInstInfoDetails, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+
+	expr := filter.NewExprOption(
+		filter.RuleFields(tablelb.LoadBalancerTargetColumns.ColumnTypes()),
+		filter.MaxInLimit(constant.CLBTopoFindInLimit),
+	)
+	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	subSql := fmt.Sprintf(`SELECT ip,inst_id,inst_type,inst_name,zone,cloud_vpc_ids FROM %s %s group by ip,inst_id,
+inst_type,inst_name,zone,cloud_vpc_ids`, table.LoadBalancerTargetTable, whereExpr)
+
+	if opt.Page.Count {
+		// this is a count request, then do count operation only.
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM (%s) AS tmp`, subSql)
+
+		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.Errorf("count load balancer target inst info failed, err: %v, filter: %s, rid: %s", err, opt.Filter,
+				kt.Rid)
+			return nil, err
+		}
+
+		return &typeslb.ListInstInfoDetails{Count: count}, nil
+	}
+
+	if opt.Page.Sort == "" {
+		opt.Page.Sort = "ip"
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`%s %s`, subSql, pageExpr)
+	details := make([]typeslb.ListInstInfo, 0)
+	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &typeslb.ListInstInfoDetails{Details: details}, nil
 }

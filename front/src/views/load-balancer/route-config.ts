@@ -7,15 +7,17 @@ import {
   MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
   MENU_BUSINESS_TARGET_GROUP_DETAILS,
   MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
 } from '@/constants/menu-symbol';
 
 const loadBalancerBiz: RouteRecordRaw[] = [
   {
     name: MENU_BUSINESS_LOAD_BALANCER,
-    path: 'load-balancer',
+    path: 'load-balancer/resource',
     redirect: {
       name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
     },
+    alias: 'load-balancer',
     component: () => import('@/views/load-balancer/entry-biz.vue'),
     meta: {
       ...new Meta({
@@ -36,6 +38,9 @@ const loadBalancerBiz: RouteRecordRaw[] = [
             title: '全部负载均衡',
             activeKey: MENU_BUSINESS_LOAD_BALANCER,
             menu: {},
+            extra: {
+              type: 'clb',
+            },
           }),
         },
       },
@@ -50,6 +55,9 @@ const loadBalancerBiz: RouteRecordRaw[] = [
             menu: {
               relative: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
             },
+            extra: {
+              type: 'clb',
+            },
           }),
         },
       },
@@ -63,6 +71,9 @@ const loadBalancerBiz: RouteRecordRaw[] = [
             title: '全部目标组',
             activeKey: MENU_BUSINESS_LOAD_BALANCER,
             menu: {},
+            extra: {
+              type: 'target_group',
+            },
           }),
         },
       },
@@ -77,6 +88,21 @@ const loadBalancerBiz: RouteRecordRaw[] = [
             menu: {
               relative: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
             },
+            extra: {
+              type: 'target_group',
+            },
+          }),
+        },
+      },
+      {
+        name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
+        path: '/business/load-balancer/device',
+        component: () => import('@/views/load-balancer/device/index.vue'),
+        meta: {
+          ...new Meta({
+            title: '设备检索',
+            activeKey: MENU_BUSINESS_LOAD_BALANCER,
+            menu: {},
           }),
         },
       },

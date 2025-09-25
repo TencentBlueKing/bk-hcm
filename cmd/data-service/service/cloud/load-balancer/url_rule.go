@@ -146,6 +146,8 @@ func (svc *lbSvc) convRule(kt *kit.Kit, rule dataproto.TCloudUrlRuleCreate) (
 		SessionType:        rule.SessionType,
 		SessionExpire:      rule.SessionExpire,
 		Memo:               rule.Memo,
+		BkBizID:            rule.BkBizID,
+		AccountID:          rule.AccountID,
 
 		Creator: kt.User,
 		Reviser: kt.User,
@@ -200,6 +202,8 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 				SessionExpire:      converter.PtrToVal(rule.SessionExpire),
 				SessionType:        rule.SessionType,
 				Memo:               rule.Memo,
+				BkBizID:            rule.BkBizID,
+				AccountID:          rule.AccountID,
 				Reviser:            cts.Kit.User,
 			}
 

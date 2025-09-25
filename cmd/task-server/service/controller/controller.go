@@ -22,20 +22,34 @@
 package controller
 
 import (
+	"fmt"
+	"net/http"
+
 	"hcm/cmd/task-server/service/capability"
+	"hcm/pkg/api/core"
+	gccore "hcm/pkg/api/core/global-config"
+	datagconf "hcm/pkg/api/data-service/global_config"
 	"hcm/pkg/async/consumer"
 	"hcm/pkg/async/producer"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 )
 
 // Init initial the async service
 func Init(cap *capability.Capability) {
 	svc := &service{
-		pro: cap.Async.GetProducer(),
-		csm: cap.Async.GetConsumer(),
+		pro:        cap.Async.GetProducer(),
+		csm:        cap.Async.GetConsumer(),
+		cs:         cap.ApiClient,
+		authorizer: cap.Authorizer,
 	}
 
 	h := rest.NewHandler()
@@ -44,12 +58,20 @@ func Init(cap *capability.Capability) {
 	h.Add("RetryFlowTask", "PATCH", "/flows/{flow_id}/tasks/{task_id}/retry", svc.RetryFlowTask)
 	h.Add("CancelFlow", "POST", "/flows/{flow_id}/cancel", svc.CancelFlow)
 
+	// 控制各flowtype被消费的优先级
+	h.Add("SetFlowTypePriority", http.MethodPost,
+		"/flows/flow_type/priority/set", svc.SetFlowTypePriority)
+	h.Add("ResetFlowTypePriority", http.MethodPost,
+		"/flows/flow_type/priority/reset", svc.ResetFlowTypePriority)
+
 	h.Load(cap.WebService)
 }
 
 type service struct {
-	pro producer.Producer
-	csm consumer.Consumer
+	pro        producer.Producer
+	csm        consumer.Consumer
+	cs         *client.ClientSet
+	authorizer auth.Authorizer
 }
 
 // UpdateCustomFlowState update custom flow state
@@ -107,4 +129,107 @@ func (p service) CancelFlow(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// SetFlowTypePriority 设置flowtype优先级
+func (p service) SetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
+	opt := new(consumer.SetFlowTypePriorityOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		return nil, err
+	}
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	createAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Create,
+		ResourceID: ""}}
+	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, createAuth); err != nil {
+		logs.Errorf("set flow type priority auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 1、先统一修改内存map中flowtype的优先级
+	p.csm.SetFlowTypePriority(opt.FlowType, converter.PtrToVal(opt.Priority))
+	if !opt.Persistent {
+		return nil, nil
+	}
+
+	req := &datagconf.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", constant.FlowTypePriority),
+			tools.RuleEqual("config_key", string(opt.FlowType)),
+		),
+		Page: &core.BasePage{Limit: 1},
+	}
+	result, err := p.cs.DataService().Global.GlobalConfig.List(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2、如果该flowtype优先级记录不存在则创建
+	if len(result.Details) == 0 {
+		configCreateReq := &datagconf.BatchCreateReq{
+			Configs: []gccore.GlobalConfigT[any]{
+				{
+					ConfigType:  constant.FlowTypePriority,
+					ConfigKey:   string(opt.FlowType),
+					ConfigValue: converter.PtrToVal(opt.Priority),
+				},
+			},
+		}
+		return p.cs.DataService().Global.GlobalConfig.BatchCreate(cts.Kit, configCreateReq)
+	}
+
+	configUpdateReq := &datagconf.BatchUpdateReq{
+		Configs: []gccore.GlobalConfigT[any]{
+			{
+				ID:          result.Details[0].ID,
+				ConfigValue: converter.PtrToVal(opt.Priority),
+			},
+		},
+	}
+	return nil, p.cs.DataService().Global.GlobalConfig.BatchUpdate(cts.Kit, configUpdateReq)
+}
+
+// ResetFlowTypePriority 恢复flowtype为默认优先级
+func (p service) ResetFlowTypePriority(cts *rest.Contexts) (interface{}, error) {
+	opt := new(consumer.ResetFlowPriorityOption)
+	if err := cts.DecodeInto(opt); err != nil {
+		return nil, err
+	}
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	deleteAuth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Delete,
+		ResourceID: ""}}
+	if err := p.authorizer.AuthorizeWithPerm(cts.Kit, deleteAuth); err != nil {
+		logs.Errorf("set flow type priority auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 1、先统一修改内存map中flowtype的优先级
+	p.csm.SetFlowTypePriority(opt.FlowType, consumer.DefaultFlowTypePriority)
+
+	req := &datagconf.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", constant.FlowTypePriority),
+			tools.RuleEqual("config_key", string(opt.FlowType)),
+		),
+		Page: &core.BasePage{Limit: 1},
+	}
+	result, err := p.cs.DataService().Global.GlobalConfig.List(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.Details) == 0 {
+		return nil, fmt.Errorf("flow type %s has no priority configuration", opt.FlowType)
+	}
+
+	deleteReq := &datagconf.BatchDeleteReq{
+		BatchDeleteReq: core.BatchDeleteReq{
+			IDs: []string{result.Details[0].ID},
+		},
+	}
+	return nil, p.cs.DataService().Global.GlobalConfig.BatchDelete(cts.Kit, deleteReq)
 }

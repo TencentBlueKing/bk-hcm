@@ -135,6 +135,8 @@ func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLo
 		Certificate:        createReq.Certificates,
 		Memo:               createReq.Memo,
 		Region:             listener.Region,
+		BkBizID:            lb.BkBizID,
+		AccountID:          lb.AccountID,
 	}
 }
 

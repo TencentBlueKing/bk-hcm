@@ -100,6 +100,11 @@ func (rs BaseTarget) GetCloudID() string {
 	return fmt.Sprintf("%s-%d", rs.IP, rs.Port)
 }
 
+// GetTargetGroupID ...
+func (rs BaseTarget) GetTargetGroupID() string {
+	return rs.TargetGroupID
+}
+
 // BaseTargetListenerRuleRel define base target listener rule rel.
 type BaseTargetListenerRuleRel struct {
 	ID                  string          `json:"id"`
@@ -117,6 +122,21 @@ type BaseTargetListenerRuleRel struct {
 	BindingStatus  enumor.BindingStatus `json:"binding_status"`
 	Detail         types.JsonField      `json:"detail"`
 	*core.Revision `json:",inline"`
+}
+
+// GetLbID ...
+func (b BaseTargetListenerRuleRel) GetLbID() string {
+	return b.LbID
+}
+
+// GetLblID ...
+func (b BaseTargetListenerRuleRel) GetLblID() string {
+	return b.LblID
+}
+
+// GetListenerRuleID ...
+func (b BaseTargetListenerRuleRel) GetListenerRuleID() string {
+	return b.ListenerRuleID
 }
 
 // TargetOperateResult is a standard target operate result.

@@ -243,7 +243,7 @@ defineExpose({ currentDisplayList });
   >
     <template #tag>
       <div class="selected-title" v-if="selectedData">
-        <div class="selected-name">{{ selectedData.name }}</div>
+        <div class="selected-name" :title="selectedData.name">{{ selectedData.name }}</div>
         <div class="selected-vendor" :style="selectedVendorProperty?.style">
           <img class="vendor-icon" :src="selectedVendorProperty?.icon" />
           {{ VendorMap[selectedData.vendor] }}
@@ -327,6 +327,12 @@ defineExpose({ currentDisplayList });
     justify-content: space-between;
     align-items: center;
     width: 100%;
+
+    .selected-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
     .selected-vendor {
       display: flex;

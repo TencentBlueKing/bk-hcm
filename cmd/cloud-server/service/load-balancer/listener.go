@@ -213,36 +213,6 @@ func (svc *lbSvc) listTCloudRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
 	return lblRuleMap, nil
 }
 
-func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]corelb.BaseListener, error) {
-	if len(lblIDs) == 0 {
-		return nil, nil
-	}
-
-	lblMap := make(map[string]corelb.BaseListener, 0)
-	lblReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", lblIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	for {
-		listLblResult, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
-		if err != nil {
-			logs.Errorf("[clb] list clb listener failed, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
-			return nil, err
-		}
-		for _, listenerItem := range listLblResult.Details {
-			lblMap[listenerItem.ID] = listenerItem
-		}
-
-		if uint(len(listLblResult.Details)) < core.DefaultMaxPageLimit {
-			break
-		}
-
-		lblReq.Page.Start += uint32(core.DefaultMaxPageLimit)
-	}
-
-	return lblMap, nil
-}
-
 // GetListener get clb listener.
 func (svc *lbSvc) GetListener(cts *rest.Contexts) (interface{}, error) {
 	return svc.getListener(cts, handler.ListResourceAuthRes)

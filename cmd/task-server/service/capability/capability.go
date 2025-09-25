@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/async"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/iam/auth"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -34,4 +35,5 @@ type Capability struct {
 	ApiClient  *client.ClientSet
 	Async      async.Async
 	Dao        dao.Set
+	Authorizer auth.Authorizer
 }

@@ -24,44 +24,46 @@ import (
 	"errors"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
-	cvt "hcm/pkg/tools/converter"
-	// 注册Action和Template
-	_ "hcm/pkg/async/action"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/compctrl"
 	"hcm/pkg/async/consumer/leader"
+	"hcm/pkg/client/data-service/global"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 /*
 Consumer 异步任务消费者。组件分为两类，公共组件、主节点组件。
-
 主节点组件：（会根据主从判断，自动启动或者关闭这部分组件）
 -dispatcher（派发器）: 负责将Pending状态的任务流，派发到指定节点去执行，并将Flow状态改为Scheduled。
 -watchDog（看门狗）:
+
 	1.处理超时任务
 	2.处理处于Scheduled状态，但执行节点已经挂掉的任务流
 	3.处理处于Running状态，但执行节点正在Shutdown或者已经挂掉的任务流
 
 公共组件：
 -scheduler（调度器）:
+
 	1.获取分配给当前节点的处于Scheduled状态的任务流，构建任务流树，将待执行任务推送到执行器执行。
 	2.分析执行器执行完的任务，判断任务流树状态，如果任务流处理完，更新状态，否则将子节点推送到执行器执行。
 
 -executor（执行器）: 准备任务执行所需要的超时控制，共享数据等工具，并执行任务。
 -commander（指挥者）:
+
 	1.强制关闭处于执行中的任务
 */
 type Consumer interface {
 	compctrl.Closer
 	// Start 启动消费者，开始消费异步任务。
-	Start() error
+	Start(globalCfg *global.GlobalConfigsClient) error
 	CancelFlow(kit *kit.Kit, flowId string) error
+	SetFlowTypePriority(flowType enumor.FlowName, priority int)
 }
 
 var _ Consumer = new(consumer)
@@ -106,11 +108,11 @@ type consumer struct {
 }
 
 // Start 开启消费者消费功能，注：只有主节点进行异步任务消费。
-func (csm *consumer) Start() error {
+func (csm *consumer) Start(globalCfgCli *global.GlobalConfigsClient) error {
 	// kit of consumer, with node uuid as rid
 	kt := kit.New()
 	kt.Rid = csm.leader.CurrNode()
-	csm.initCommonComponent(kt, csm.opt)
+	csm.initCommonComponent(kt, csm.opt, globalCfgCli)
 	csm.initLeaderComponent(kt, csm.opt)
 
 	return nil
@@ -126,12 +128,12 @@ func (csm *consumer) initLeaderComponent(kt *kit.Kit, opt *Option) {
 }
 
 // initCommonComponent 初始化主从节点公共组件并启动，同时设置关闭函数
-func (csm *consumer) initCommonComponent(kt *kit.Kit, opt *Option) {
+func (csm *consumer) initCommonComponent(kt *kit.Kit, opt *Option, globalCfgCli *global.GlobalConfigsClient) {
 	// 设置执行器
-	csm.executor = NewExecutor(kt, csm.backend, opt.Executor)
+	csm.executor = NewExecutor(kt, csm.backend, opt.Executor, csm.mc)
 
 	// 设置调度器
-	csm.scheduler = NewScheduler(csm.backend, csm.executor, csm.leader, opt.Scheduler)
+	csm.scheduler = NewScheduler(csm.backend, csm.executor, csm.leader, opt.Scheduler, globalCfgCli, csm.mc)
 
 	// 设置执行器获取调度器函数。
 	csm.executor.SetGetSchedulerFunc(func() Scheduler {
@@ -195,4 +197,9 @@ func (csm *consumer) CancelFlow(kt *kit.Kit, flowId string) error {
 	}
 
 	return nil
+}
+
+// SetFlowTypePriority 设置内存中指定flow类型的优先级
+func (csm *consumer) SetFlowTypePriority(flowType enumor.FlowName, priority int) {
+	csm.scheduler.SetFlowTypePriority(flowType, priority)
 }

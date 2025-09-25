@@ -238,3 +238,123 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list
 | reviser            | string       | 修改者                                                            |
 | created_at         | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                                 |
 | updated_at         | string       | 修改时间，标准格式：2006-01-02T15:04:05Z                                 |
+
+
+#### detail.param 参数说明
+
+param的内容和operation对应
+
+##### operation=target_group_remove_rs
+
+示例数据
+```json
+{
+  "id": "00000001",
+  "ip": "127.0.0.1",
+  "url": "",
+  "zone": "ap-nanjing-3",
+  "domain": "",
+  "weight": 10,
+  "protocol": "TCP",
+  "inst_name": "hcm-cvm",
+  "inst_type": "CVM",
+  "listener_port":80,
+  "port": 80,
+  "account_id": "00000001",
+  "new_weight": 100,
+  "cloud_lb_id": "lb-xxxxx",
+  "cloud_inst_id": "ins-xxxxx",
+  "cloud_vpc_ids": [
+    "vpc-9xd34ofn"
+  ],
+  "clb_vip_domain": "127.0.0.1",
+  "target_group_id": "00000001",
+  "public_ip_address": [
+    "127.0.0.1"
+  ],
+  "private_ip_address": [
+    "127.0.0.1"
+  ],
+  "target_group_region": "ap-nanjing"
+}
+```
+
+| 参数名称                | 参数类型         | 描述                        |
+|---------------------|--------------|---------------------------|
+| id                  | string       | rs id                     |
+| ip                  | string       | IP地址                      |
+| url                 | string       | 资源的URL地址, 四层的监听器值为空       |
+| zone                | string       | 资源所属的可用区（如`ap-nanjing-3`） |
+| domain              | string       | 域名, 四层的监听器值为空             |
+| weight              | integer      | 原权重值                      |
+| protocol            | string       | 协议类型（如`TCP`）              |
+| inst_name           | string       | rs名称                      |
+| inst_type           | string       | rs类型, 枚举值 CVM、ENI         |
+| account_id          | string       | 账号ID                      |
+| new_weight          | integer      | 新的权重值                     |
+| cloud_lb_id         | string       | 云负载均衡ID（如`lb-xxxxx`）      |
+| cloud_inst_id       | string       | 云实例ID（如`ins-xxxxx`）       |
+| cloud_vpc_ids       | array string | 云VPC ID列表                 |
+| clb_vip_domain      | string       | 负载均衡VIP域名或IP地址            |
+| target_group_id     | string       | 目标组ID                     |
+| public_ip_address   | array string | 公网IP地址列表                  |
+| private_ip_address  | array string | 内网IP地址列表                  |
+| target_group_region | string       | 目标组地域                     |
+| listener_port       | int          | 监听器端口                     |
+| port                | int          | rs端口                      |
+
+##### operation=target_group_remove_rs
+
+```json
+{
+  "id": "00000001",
+  "ip": "127.0.0.1",
+  "url": "",
+  "zone": "ap-nanjing-3",
+  "domain": "",
+  "weight": 10,
+  "protocol": "TCP",
+  "inst_name": "hcm-cvm",
+  "inst_type": "CVM",
+  "listener_port":80,
+  "port": 80,
+  "account_id": "00000001",
+  "cloud_lb_id": "lb-xxxxx",
+  "cloud_inst_id": "ins-xxxxx",
+  "cloud_vpc_ids": [
+    "vpc-9xd34ofn"
+  ],
+  "clb_vip_domain": "127.0.0.1",
+  "target_group_id": "00000001",
+  "public_ip_address": [
+    "127.0.0.1"
+  ],
+  "private_ip_address": [
+    "127.0.0.1"
+  ],
+  "target_group_region": "ap-nanjing"
+}
+```
+
+| 参数名称                | 参数类型         | 描述                        |
+|---------------------|--------------|---------------------------|
+| id                  | string       | rs id                     |
+| ip                  | string       | IP地址                      |
+| url                 | string       | 资源的URL地址, 四层的监听器值为空       |
+| zone                | string       | 资源所属的可用区（如`ap-nanjing-3`） |
+| domain              | string       | 域名, 四层的监听器值为空             |
+| weight              | integer      | 原权重值                      |
+| protocol            | string       | 协议类型（如`TCP`）              |
+| inst_name           | string       | rs名称                      |
+| inst_type           | string       | rs类型, 枚举值 CVM、ENI         |
+| account_id          | string       | 账号ID                      |
+| cloud_lb_id         | string       | 云负载均衡ID（如`lb-xxxxx`）      |
+| cloud_inst_id       | string       | 云实例ID（如`ins-xxxxx`）       |
+| cloud_vpc_ids       | array string | 云VPC ID列表                 |
+| clb_vip_domain      | string       | 负载均衡VIP域名或IP地址            |
+| target_group_id     | string       | 目标组ID                     |
+| public_ip_address   | array string | 公网IP地址列表                  |
+| private_ip_address  | array string | 内网IP地址列表                  |
+| target_group_region | string       | 目标组地域                     |
+| listener_port       | int          | 监听器端口                     |
+| port                | int          | rs端口                      |

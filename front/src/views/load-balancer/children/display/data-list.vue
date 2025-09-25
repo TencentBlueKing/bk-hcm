@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { PaginationType, SortType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
@@ -11,16 +12,21 @@ export interface IDataListProps {
   pagination?: PaginationType;
   remotePagination?: boolean;
   hasSelection?: boolean;
+  showSetting?: boolean;
 }
 
 const props = withDefaults(defineProps<IDataListProps>(), {
   enableQuery: true,
   remotePagination: true,
+  showSetting: true,
 });
+
 const emit = defineEmits<{
   'column-sort': [sortType: SortType];
   'scroll-bottom': [];
 }>();
+
+const tableRef = ref(null);
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage(props.enableQuery, props.pagination);
 
@@ -45,15 +51,25 @@ const handleColumnSort = (sortType: SortType) => {
 const handleScrollBottom = () => {
   emit('scroll-bottom');
 };
+
+const clearSelection = () => {
+  tableRef.value?.clearSelection();
+};
+const getSelection = () => {
+  return tableRef.value?.getSelection();
+};
+
+defineExpose({ clearSelection, getSelection });
 </script>
 
 <template>
   <bk-table
+    ref="tableRef"
     row-key="id"
     row-hover="auto"
     :data="list"
     :pagination="pagination"
-    :settings="settings"
+    :settings="showSetting ? settings : undefined"
     :remote-pagination="remotePagination"
     show-overflow-tooltip
     @page-limit-change="handlePageSizeChange"
@@ -62,7 +78,13 @@ const handleScrollBottom = () => {
     @scroll-bottom="handleScrollBottom"
   >
     >
-    <bk-table-column v-if="hasSelection" :width="40" :min-width="40" type="selection" />
+    <bk-table-column
+      v-if="hasSelection"
+      :width="40"
+      :min-width="40"
+      type="selection"
+      :fixed="columns[0]?.fixed ?? undefined"
+    />
     <bk-table-column
       v-for="(column, index) in columns"
       :key="index"

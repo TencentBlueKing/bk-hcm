@@ -47,6 +47,10 @@ export default () => {
         { name: t('未开启'), id: 0 },
       ],
     },
+    {
+      id: 'id',
+      name: t('目标组ID'),
+    },
   ];
   const tableColumns = [
     ...columns,

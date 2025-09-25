@@ -220,7 +220,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
-		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("check resource flow relation failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
 		return nil, err
 	}
 

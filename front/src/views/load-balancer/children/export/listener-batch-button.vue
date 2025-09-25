@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { AUTH_BIZ_UPDATE_CLB } from '@/constants/auth-symbols';
 import { useExport } from './use-export';
 
-const props = defineProps<{ selections: any[] }>();
+const props = defineProps<{ selections: any[]; onlyExportListener?: boolean }>();
 const { t } = useI18n();
 
 const vendor = computed(() => props.selections[0].vendor);
@@ -28,6 +28,7 @@ const handleExport = () => {
     target: 'listener',
     vendor: vendor.value,
     listeners: listeners.value,
+    onlyExportListener: props.onlyExportListener,
   });
   invokeExport();
 };

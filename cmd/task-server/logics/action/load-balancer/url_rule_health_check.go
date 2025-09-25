@@ -107,13 +107,28 @@ func (act ListenerRuleUpdateHealthCheckAction) updateTCloudUrlRule(kt *kit.Kit,
 	}
 
 	rule := resp.Details[0]
-	req := &hclb.TCloudRuleUpdateReq{
-		HealthCheck: opt.HealthCheck,
-	}
-	err = actcli.GetHCService().TCloud.Clb.UpdateUrlRule(kt, opt.ListenerID, rule.ID, req)
-	if err != nil {
-		logs.Errorf("ListenerRuleUpdateHealthCheckAction update url rule failed, err: %v, params: %+v, rid: %s")
-		return err
+
+	switch rule.RuleType {
+	case enumor.Layer7RuleType:
+		req := &hclb.TCloudRuleUpdateReq{
+			HealthCheck: opt.HealthCheck,
+		}
+		err = actcli.GetHCService().TCloud.Clb.UpdateUrlRule(kt, rule.LblID, rule.ID, req)
+		if err != nil {
+			logs.Errorf("ListenerRuleUpdateHealthCheckAction update url rule failed, err: %v, params: %+v, rid: %s",
+				err, opt, kt.Rid)
+			return err
+		}
+	case enumor.Layer4RuleType:
+		req := &hclb.HealthCheckUpdateReq{
+			HealthCheck: opt.HealthCheck,
+		}
+		err = actcli.GetHCService().TCloud.Clb.UpdateListenerHealthCheck(kt, rule.LblID, req)
+		if err != nil {
+			logs.Errorf("ListenerRuleUpdateHealthCheckAction update url rule failed, err: %v, params: %+v, rid: %s",
+				err, opt, kt.Rid)
+			return err
+		}
 	}
 	return nil
 }

@@ -38,6 +38,18 @@ import (
 // TCloudLoadBalancerType 负载均衡实例的网络类型
 type TCloudLoadBalancerType string
 
+// Validate TCloudLoadBalancerType.
+func (t TCloudLoadBalancerType) Validate() error {
+	switch t {
+	case OpenLoadBalancerType:
+	case InternalLoadBalancerType:
+	default:
+		return fmt.Errorf("unsupported tcloud load balancer type: %s", t)
+	}
+
+	return nil
+}
+
 const (
 	// OpenLoadBalancerType 公网属性
 	OpenLoadBalancerType TCloudLoadBalancerType = "OPEN"

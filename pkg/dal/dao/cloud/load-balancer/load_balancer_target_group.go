@@ -25,6 +25,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
@@ -255,9 +256,11 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Lis
 	columnTypes["health_check.check_port"] = enumor.Numeric
 	columnTypes["health_check.check_type"] = enumor.String
 	columnTypes["health_check.http_check_path"] = enumor.String
-	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(columnTypes)),
-		core.NewDefaultPageOption()); err != nil {
+	expr := filter.NewExprOption(
+		filter.RuleFields(columnTypes),
+		filter.MaxInLimit(constant.CLBTopoFindInLimit),
+	)
+	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
 

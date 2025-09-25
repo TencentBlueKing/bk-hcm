@@ -50,6 +50,7 @@ type AddTargetToGroupAction struct{}
 // OperateRsOption define operate rs option.
 type OperateRsOption struct {
 	Vendor                           enumor.Vendor `json:"vendor" validate:"required"`
+	ManagementDetailIDs              []string      `json:"management_detail_ids" validate:"required,min=1"`
 	hclb.TCloudBatchOperateTargetReq `json:",inline"`
 }
 
@@ -61,9 +62,11 @@ func (opt OperateRsOption) MarshalJSON() ([]byte, error) {
 		req = struct {
 			Vendor                           enumor.Vendor `json:"vendor" validate:"required"`
 			hclb.TCloudBatchOperateTargetReq `json:",inline"`
+			ManagementDetailIDs              []string `json:"management_detail_ids" validate:"required,min=1"`
 		}{
 			Vendor:                      opt.Vendor,
 			TCloudBatchOperateTargetReq: opt.TCloudBatchOperateTargetReq,
+			ManagementDetailIDs:         opt.ManagementDetailIDs,
 		}
 
 	default:
@@ -76,6 +79,8 @@ func (opt OperateRsOption) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshal json.
 func (opt *OperateRsOption) UnmarshalJSON(raw []byte) (err error) {
 	opt.Vendor = enumor.Vendor(gjson.GetBytes(raw, "vendor").String())
+	// raw byte to []string array
+	err = json.Unmarshal([]byte(gjson.GetBytes(raw, "management_detail_ids").String()), &opt.ManagementDetailIDs)
 
 	switch opt.Vendor {
 	case enumor.TCloud:
@@ -125,26 +130,52 @@ func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (in
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
+		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
+	}
+
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
+	}
+
 	var result *hclb.BatchCreateResult
-	var err error
+	taskDetailState := enumor.TaskDetailSuccess
+	defer func() {
+		// 更新任务状态
+		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+			result, err); err != nil {
+			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		}
+	}()
 	switch opt.Vendor {
 	case enumor.TCloud:
 		result, err = actcli.GetHCService().TCloud.Clb.BatchAddRs(
 			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+		taskDetailState = enumor.TaskDetailFailed
+		err = fmt.Errorf("vendor: %s not support", opt.Vendor)
+		return nil, err
 	}
 	if err != nil {
+		taskDetailState = enumor.TaskDetailFailed
 		logs.Errorf("batch add rs failed, err: %v, result: %+v, rid: %s", err, result, kt.Kit().Rid)
 		return result, err
 	}
 
 	if len(result.FailedCloudIDs) != 0 {
+		taskDetailState = enumor.TaskDetailFailed
 		return result, errf.Newf(errf.PartialFailed, "batch add rs rs partially failed, failCloudIDs: %v",
 			result.FailedCloudIDs)
 	}
 
 	if err = kt.ShareData().AppendIDs(kt.Kit(), SaveRsCloudIDKey, result.SuccessCloudIDs...); err != nil {
+		taskDetailState = enumor.TaskDetailFailed
 		logs.Errorf("share data appendIDs failed, err: %v, rid: %s", err, kt.Kit().Rid)
 		return result, err
 	}
@@ -183,16 +214,38 @@ func (act RemoveTargetAction) Run(kt run.ExecuteKit, params interface{}) (interf
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
+		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
+	}
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
+	}
 	var result *hclb.BatchCreateResult
-	var err error
+	taskDetailState := enumor.TaskDetailSuccess
+	defer func() {
+		// 更新任务状态
+		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+			result, err); err != nil {
+			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		}
+	}()
 	switch opt.Vendor {
 	case enumor.TCloud:
-		_, err = actcli.GetHCService().TCloud.Clb.BatchRemoveTarget(
+		result, err = actcli.GetHCService().TCloud.Clb.BatchRemoveTarget(
 			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+		taskDetailState = enumor.TaskDetailFailed
+		err = fmt.Errorf("vendor: %s not support for remove target", opt.Vendor)
+		return nil, err
 	}
 	if err != nil {
+		taskDetailState = enumor.TaskDetailFailed
 		logs.Errorf("batch remove rs failed, err: %v, rid: %s", err, kt.Kit().Rid)
 		return result, err
 	}
@@ -230,17 +283,39 @@ func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (in
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
+		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
+	}
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
+	}
 
 	var result *hclb.BatchCreateResult
-	var err error
+	taskDetailState := enumor.TaskDetailSuccess
+	defer func() {
+		// 更新任务状态
+		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+			nil, err); err != nil {
+			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		}
+	}()
 	switch opt.Vendor {
 	case enumor.TCloud:
 		err = actcli.GetHCService().TCloud.Clb.BatchModifyTargetPort(
 			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+		taskDetailState = enumor.TaskDetailFailed
+		err = fmt.Errorf("vendor: %s not support for modify target port", opt.Vendor)
+		return nil, err
 	}
 	if err != nil {
+		taskDetailState = enumor.TaskDetailFailed
 		logs.Errorf("batch modify target port failed, err: %v, rid: %s", err, kt.Kit().Rid)
 		return result, err
 	}
@@ -279,17 +354,40 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	reason, err := validateDetailListStatus(kt.Kit(), opt.ManagementDetailIDs)
+	if err != nil {
+		logs.Errorf("validate detail list status failed, err: %v, reason: %s, rid: %s", err, reason, kt.Kit().Rid)
+		return nil, err
+	}
+	if len(reason) > 0 {
+		return reason, nil
+	}
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		return nil, err
+	}
+
 	var result *hclb.BatchCreateResult
-	var err error
+	taskDetailState := enumor.TaskDetailSuccess
+	defer func() {
+		// 更新任务状态
+		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+			nil, err); err != nil {
+			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
+		}
+	}()
 	switch opt.Vendor {
 	case enumor.TCloud:
 		err = actcli.GetHCService().TCloud.Clb.BatchModifyTargetWeight(
 			kt.Kit(), opt.TargetGroupID, &opt.TCloudBatchOperateTargetReq)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", opt.Vendor)
+		taskDetailState = enumor.TaskDetailFailed
+		err = fmt.Errorf("vendor: %s not support for modify target weight", opt.Vendor)
+		return nil, err
 	}
 	if err != nil {
 		logs.Errorf("batch modify target weight failed, err: %v, rid: %s", err, kt.Kit().Rid)
+		taskDetailState = enumor.TaskDetailFailed
 		return result, err
 	}
 

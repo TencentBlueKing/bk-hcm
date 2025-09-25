@@ -1,4 +1,4 @@
-import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore, ITargetGroupDetail } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
@@ -31,7 +31,7 @@ export default defineComponent({
 
     // 搜索相关
     const searchValue = ref('');
-
+    const targetGroupListRef = ref(null);
     const activeTargetGroupId = ref(''); // 当前选中的目标组id
     const allTargetGroupsItem = { type: 'all', isDropdownListShow: false }; // 全部目标组item
 
@@ -41,7 +41,19 @@ export default defineComponent({
       url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
       rules: () => rules.value,
       immediate: !loadBalancerStore.tgSearchTarget,
+      rollRequestConfig: { enabled: true, limit: 500 },
+      success: () => handleListLoaded(),
     });
+
+    const handleListLoaded = () => {
+      nextTick(() => {
+        const target = targetGroupListRef.value.getElementsByClassName('selected')[0];
+        target?.parentNode?.scrollTo({
+          top: target?.offsetTop - 200,
+          behavior: 'auto',
+        });
+      });
+    };
 
     // handler - 切换目标组
     const handleTypeChange = (targetGroup?: ITargetGroupDetail) => {
@@ -129,7 +141,7 @@ export default defineComponent({
     });
 
     return () => (
-      <div class='target-group-list'>
+      <div class='target-group-list' ref={targetGroupListRef}>
         <div class='search-wrap'>
           <Input
             v-model={searchValue.value}

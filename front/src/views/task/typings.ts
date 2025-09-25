@@ -12,6 +12,8 @@ export enum TaskClbType {
   UNBIND_LAYER4_RS = 'listener_layer4_unbind_rs',
   MODIFY_LAYER4_RS_WEIGHT = 'listener_layer4_rs_weight',
   MODIFY_LAYER7_RS_WEIGHT = 'listener_layer7_rs_weight',
+  TARGET_GROUP_MODIFY_WEIGHT = 'target_group_modify_weight',
+  TARGET_GROUP_REMOVE_RS = 'target_group_remove_rs',
 }
 
 export type TaskType = TaskClbType;

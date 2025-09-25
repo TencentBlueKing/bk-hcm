@@ -25,12 +25,17 @@ import (
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/maps"
+	"hcm/pkg/tools/slice"
 )
 
 // PreCheckExportBizListener 导出业务下监听器及其下面的资源预检
@@ -48,8 +53,8 @@ func (svc *lbSvc) PreCheckExportBizListener(cts *rest.Contexts) (interface{}, er
 	}
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 
 	exporter, err := lblogic.NewListenerExporter(svc.client, vendor, req)
@@ -100,8 +105,8 @@ func (svc *lbSvc) ExportBizListener(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, err
 	}
 
 	exporter, err := lblogic.NewListenerExporter(svc.client, vendor, req)
@@ -121,4 +126,86 @@ func (svc *lbSvc) ExportBizListener(cts *rest.Contexts) (interface{}, error) {
 		ContentDispositionStr: fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filePath)),
 		FilePath:              filePath,
 	}, nil
+}
+
+// ExportBizTarget 导出业务下RS
+func (svc *lbSvc) ExportBizTarget(cts *rest.Contexts) (interface{}, error) {
+	req := new(cslb.ExportTargetReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := svc.authExportBizTarget(cts, req); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, err
+	}
+
+	exporter, err := lblogic.NewTargetExporter(svc.client, vendor, req)
+	if err != nil {
+		return nil, err
+	}
+	if err = exporter.PreCheck(cts.Kit); err != nil {
+		return nil, err
+	}
+	filePath, err := exporter.Export(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rest.FileResp{
+		ContentTypeStr:        "application/octet-stream",
+		ContentDispositionStr: fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(filePath)),
+		FilePath:              filePath,
+	}, nil
+}
+
+func (svc *lbSvc) authExportBizTarget(cts *rest.Contexts, req *cslb.ExportTargetReq) error {
+	targetIDs := slice.Unique(req.TargetIDs)
+
+	targetCount := 0
+	tgIDMap := make(map[string]struct{})
+	for _, batch := range slice.Split(targetIDs, int(core.DefaultMaxPageLimit)) {
+		req := core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch)),
+			Fields: []string{"id", "target_group_id"},
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(cts.Kit, &req)
+		if err != nil {
+			logs.Errorf("list target failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return err
+		}
+
+		targetCount += len(resp.Details)
+		for _, target := range resp.Details {
+			tgIDMap[target.TargetGroupID] = struct{}{}
+		}
+	}
+
+	if len(targetIDs) != targetCount {
+		return errf.New(errf.InvalidParameter, "target_id is invalid")
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.TargetGroupCloudResType,
+		IDs:          maps.Keys(tgIDMap),
+	}
+	tgInfo, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	if err != nil {
+		return err
+	}
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Update, BasicInfos: tgInfo})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

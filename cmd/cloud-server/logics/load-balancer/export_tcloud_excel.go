@@ -23,11 +23,8 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/pkg/api/core"
 	loadbalancer "hcm/pkg/api/core/cloud/load-balancer"
-	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -35,152 +32,7 @@ import (
 	"hcm/pkg/zip"
 )
 
-func (l *listenerExporter) exportTCloud(kt *kit.Kit, zipOperator zip.OperatorI) error {
-	lbMap, err := l.getLbs(kt)
-	if err != nil {
-		logs.Errorf("get lbs failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	layer4ListenerMap, layer7ListenerMap, err := l.getTCloudListeners(kt)
-	if err != nil {
-		logs.Errorf("get listeners failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-	layer4RuleMap, layer7RuleMap, err := l.getTCloudRules(kt)
-	if err != nil {
-		logs.Errorf("get rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	if err = l.writeTCloudLayer4Listener(kt, zipOperator, lbMap, layer4ListenerMap, layer4RuleMap); err != nil {
-		logs.Errorf("build layer4 listener excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-	if err = l.writeTCloudLayer7Listener(kt, zipOperator, lbMap, layer7ListenerMap); err != nil {
-		logs.Errorf("build layer7 listener excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-	if err = l.writeTCloudRule(kt, zipOperator, lbMap, layer7ListenerMap, layer7RuleMap); err != nil {
-		logs.Errorf("build rule excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	layer4TgLblRel, layer7TgLblRel, err := l.getTgLblRelClassifyProtocol(kt)
-	if err != nil {
-		logs.Errorf("get target group listener rel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-	layer4Rs, layer7Rs, err := l.getRsClassifyProtocol(kt, layer4TgLblRel, layer7TgLblRel)
-	if err != nil {
-		logs.Errorf("get rs failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	if err = l.writeTCloudLayer4Rs(kt, zipOperator, lbMap, layer4ListenerMap, layer4TgLblRel, layer4Rs); err != nil {
-		logs.Errorf("build layer4 rs excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-	err = l.writeTCloudLayer7Rs(kt, zipOperator, lbMap, layer7ListenerMap, layer7RuleMap, layer7TgLblRel, layer7Rs)
-	if err != nil {
-		logs.Errorf("build layer7 rs excel failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-func (l *listenerExporter) getTCloudListeners(kt *kit.Kit) (map[string]loadbalancer.TCloudListener,
-	map[string]loadbalancer.TCloudListener, error) {
-
-	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
-
-	layer4ListenerMap, err := l.getTCloudListenersByProtocol(kt, lbIDs, lblIDs, enumor.GetLayer4Protocol())
-	if err != nil {
-		logs.Errorf("get layer4 listener failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return nil, nil, err
-	}
-
-	layer7ListenerMap, err := l.getTCloudListenersByProtocol(kt, lbIDs, lblIDs, enumor.GetLayer7Protocol())
-	if err != nil {
-		logs.Errorf("get layer7 listener failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return nil, nil, err
-	}
-
-	return layer4ListenerMap, layer7ListenerMap, nil
-}
-
-func (l *listenerExporter) getTCloudListenersByProtocol(kt *kit.Kit, lbIDs []string, lblIDs []string,
-	protocols []enumor.ProtocolType) (map[string]loadbalancer.TCloudListener, error) {
-
-	if len(lbIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, fmt.Errorf("lb id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	if len(lblIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, fmt.Errorf("lbl id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	result := make(map[string]loadbalancer.TCloudListener)
-
-	if len(lbIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		for {
-			resp := &cloud.TCloudListenerListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-				if err != nil {
-					logs.Errorf("get listener by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
-						req, kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
-		}
-	}
-
-	if len(lblIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("id", lblIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		resp := &cloud.TCloudListenerListResult{}
-		var err error
-		switch l.vendor {
-		case enumor.TCloud:
-			resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-			if err != nil {
-				logs.Errorf("get listener by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
-					req, kt.Rid)
-				return nil, err
-			}
-		default:
-			return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
-		}
-		for _, detail := range resp.Details {
-			result[detail.ID] = detail
-		}
-	}
-
-	return result, nil
-}
-
-func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zip.OperatorI,
+func writeTCloudLayer4Listener(kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI,
 	lbMap map[string]loadbalancer.BaseLoadBalancer, layer4ListenerMap map[string]loadbalancer.TCloudListener,
 	layer4RuleMap map[string]loadbalancer.TCloudLbUrlRule) error {
 
@@ -205,9 +57,9 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 
 		layer4Rule, ok := lblIDLayer4RuleMap[listener.ID]
 		if !ok {
-			logs.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s, rid: %s", l.vendor,
+			logs.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s, rid: %s", vendor,
 				listener.ID, kt.Rid)
-			return fmt.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s", l.vendor,
+			return fmt.Errorf("can not get layer4 rule by listener id, vendor: %s, listener id: %s", vendor,
 				listener.ID)
 		}
 
@@ -234,108 +86,14 @@ func (l *listenerExporter) writeTCloudLayer4Listener(kt *kit.Kit, zipOperator zi
 		})
 	}
 
-	if err := l.writeLayer4Listeners(kt, zipOperator, clbListenerMap); err != nil {
+	if err := writeLayer4Listeners(kt, vendor, zipOperator, clbListenerMap); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *listenerExporter) getTCloudRules(kt *kit.Kit) (map[string]loadbalancer.TCloudLbUrlRule,
-	map[string]loadbalancer.TCloudLbUrlRule, error) {
-
-	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
-
-	layer4RuleMap, err := l.getTCloudRulesByRuleType(kt, lbIDs, lblIDs, enumor.Layer4RuleType)
-	if err != nil {
-		logs.Errorf("get layer4 rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return nil, nil, err
-	}
-
-	layer7RuleMap, err := l.getTCloudRulesByRuleType(kt, lbIDs, lblIDs, enumor.Layer7RuleType)
-	if err != nil {
-		logs.Errorf("get layer7 rules failed, err: %v, vendor: %s, rid: %s", err, l.vendor, kt.Rid)
-		return nil, nil, err
-	}
-
-	return layer4RuleMap, layer7RuleMap, nil
-}
-
-func (l *listenerExporter) getTCloudRulesByRuleType(kt *kit.Kit, lbIDs []string, lblIDs []string,
-	ruleType enumor.RuleType) (map[string]loadbalancer.TCloudLbUrlRule, error) {
-
-	if len(lbIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, fmt.Errorf("lb id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	if len(lblIDs) > int(core.DefaultMaxPageLimit) {
-		return nil, fmt.Errorf("lbl id length must less than %d", core.DefaultMaxPageLimit)
-	}
-
-	result := make(map[string]loadbalancer.TCloudLbUrlRule)
-
-	if len(lbIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleEqual("rule_type", ruleType)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		for {
-			resp := &cloud.TCloudURLRuleListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-				if err != nil {
-					logs.Errorf("get rule by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req,
-						kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("not support vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
-		}
-	}
-
-	if len(lblIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs), tools.RuleEqual("rule_type", ruleType)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		for {
-			resp := &cloud.TCloudURLRuleListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-				if err != nil {
-					logs.Errorf("get rule by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
-						req, kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("not support vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
-		}
-	}
-
-	return result, nil
-}
-
-func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zip.OperatorI,
+func writeTCloudLayer7Listener(kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI,
 	lbMap map[string]loadbalancer.BaseLoadBalancer, layer7ListenerMap map[string]loadbalancer.TCloudListener) error {
 
 	if len(layer7ListenerMap) == 0 {
@@ -381,14 +139,14 @@ func (l *listenerExporter) writeTCloudLayer7Listener(kt *kit.Kit, zipOperator zi
 		})
 	}
 
-	if err := l.writeLayer7Listeners(kt, zipOperator, clbListenerMap); err != nil {
+	if err := writeLayer7Listeners(kt, vendor, zipOperator, clbListenerMap); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *listenerExporter) writeTCloudRule(kt *kit.Kit, zipOperator zip.OperatorI,
+func writeTCloudRule(kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI,
 	lbMap map[string]loadbalancer.BaseLoadBalancer, layer7ListenerMap map[string]loadbalancer.TCloudListener,
 	layer7RuleMap map[string]loadbalancer.TCloudLbUrlRule) error {
 
@@ -441,23 +199,23 @@ func (l *listenerExporter) writeTCloudRule(kt *kit.Kit, zipOperator zip.Operator
 		})
 	}
 
-	if err := l.writeRules(kt, zipOperator, clbRuleMap); err != nil {
+	if err := writeRules(kt, vendor, zipOperator, clbRuleMap); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *listenerExporter) writeTCloudLayer4Rs(kt *kit.Kit, zipOperator zip.OperatorI,
-	lbMap map[string]loadbalancer.BaseLoadBalancer, layer4ListenerMap map[string]loadbalancer.TCloudListener,
-	layer4TgLblRel []loadbalancer.BaseTargetListenerRuleRel, layer4Rs []loadbalancer.BaseTarget) error {
+func writeTCloudLayer4Rs(kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI,
+	lbMap map[string]loadbalancer.BaseLoadBalancer, listenerMap map[string]loadbalancer.TCloudListener,
+	tgLblRel []loadbalancer.BaseTargetListenerRuleRel, layer4Rs []loadbalancer.BaseTarget) error {
 
 	if len(layer4Rs) == 0 {
 		return nil
 	}
 
 	tgIDLblIDMap := make(map[string]string)
-	for _, tgLblRel := range layer4TgLblRel {
+	for _, tgLblRel := range tgLblRel {
 		tgIDLblIDMap[tgLblRel.TargetGroupID] = tgLblRel.LblID
 	}
 
@@ -469,7 +227,7 @@ func (l *listenerExporter) writeTCloudLayer4Rs(kt *kit.Kit, zipOperator zip.Oper
 			logs.Errorf("can not get lbl by tg id, tg id: %s, rid: %s", tgID, kt.Rid)
 			return fmt.Errorf("can not get lbl by tg id, tg id: %s", tgID)
 		}
-		listener, ok := layer4ListenerMap[lblID]
+		listener, ok := listenerMap[lblID]
 		if !ok {
 			logs.Errorf("can not get listener by lbl id, lbl id: %s, rid: %s", lblID, kt.Rid)
 			return fmt.Errorf("can not get listener by lbl id, lbl id: %s", lblID)
@@ -500,16 +258,16 @@ func (l *listenerExporter) writeTCloudLayer4Rs(kt *kit.Kit, zipOperator zip.Oper
 		})
 	}
 
-	if err := l.writeLayer4Rs(kt, zipOperator, clbRsMap); err != nil {
+	if err := writeLayer4Rs(kt, vendor, zipOperator, clbRsMap); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.OperatorI,
-	lbMap map[string]loadbalancer.BaseLoadBalancer, layer7ListenerMap map[string]loadbalancer.TCloudListener,
-	layer7RuleMap map[string]loadbalancer.TCloudLbUrlRule, layer7TgLblRel []loadbalancer.BaseTargetListenerRuleRel,
+func writeTCloudLayer7Rs(kt *kit.Kit, vendor enumor.Vendor, zipOperator zip.OperatorI,
+	lbMap map[string]loadbalancer.BaseLoadBalancer, listenerMap map[string]loadbalancer.TCloudListener,
+	ruleMap map[string]loadbalancer.TCloudLbUrlRule, tgLblRel []loadbalancer.BaseTargetListenerRuleRel,
 	layer7Rs []loadbalancer.BaseTarget) error {
 
 	if len(layer7Rs) == 0 {
@@ -518,7 +276,7 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 
 	tgIDLblIDMap := make(map[string]string)
 	tgIDRuleIDMap := make(map[string]string)
-	for _, tgLblRel := range layer7TgLblRel {
+	for _, tgLblRel := range tgLblRel {
 		tgIDLblIDMap[tgLblRel.TargetGroupID] = tgLblRel.LblID
 		tgIDRuleIDMap[tgLblRel.TargetGroupID] = tgLblRel.ListenerRuleID
 	}
@@ -531,7 +289,7 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 			logs.Errorf("can not get lbl by tg id, tg id: %s, rid: %s", tgID, kt.Rid)
 			return fmt.Errorf("can not get lbl by tg id, tg id: %s", tgID)
 		}
-		listener, ok := layer7ListenerMap[lblID]
+		listener, ok := listenerMap[lblID]
 		if !ok {
 			logs.Errorf("can not get listener by lbl id, lbl id: %s, rid: %s", lblID, kt.Rid)
 			return fmt.Errorf("can not get listener by lbl id, lbl id: %s", lblID)
@@ -547,7 +305,7 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 			logs.Errorf("can not get rule id by tg id, tg id: %s, rid: %s", tgID, kt.Rid)
 			return fmt.Errorf("can not get rule id by tg id, tg id: %s", tgID)
 		}
-		rule, ok := layer7RuleMap[ruleID]
+		rule, ok := ruleMap[ruleID]
 		if !ok {
 			logs.Errorf("can not get rule by rule id, rule id: %s, rid: %s", ruleID, kt.Rid)
 			return fmt.Errorf("can not get rule by rule id, rule id: %s", ruleID)
@@ -574,7 +332,7 @@ func (l *listenerExporter) writeTCloudLayer7Rs(kt *kit.Kit, zipOperator zip.Oper
 		})
 	}
 
-	if err := l.writeLayer7Rs(kt, zipOperator, clbRsMap); err != nil {
+	if err := writeLayer7Rs(kt, vendor, zipOperator, clbRsMap); err != nil {
 		return err
 	}
 

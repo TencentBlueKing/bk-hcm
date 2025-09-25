@@ -153,7 +153,7 @@ func getLoadBalancersMapByCloudID(kt *kit.Kit, cli *dataservice.Client, vendor e
 		}
 		resp, err := cli.Global.LoadBalancer.ListLoadBalancerRaw(kt, req)
 		if err != nil {
-			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+			logs.Errorf("list load balancer failed, req: %v, err: %v, rid: %s", req, err, kt.Rid)
 			return nil, err
 		}
 		for _, lb := range resp.Details {

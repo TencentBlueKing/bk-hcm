@@ -273,6 +273,8 @@ type TCloudUrlRuleCreate struct {
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"required"`
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"required"`
 	Memo               *string                       `json:"memo" validate:"lte=255"`
+	BkBizID            int64                         `json:"bk_biz_id" validate:"required"`
+	AccountID          string                        `json:"account_id" validate:"required"`
 }
 
 // Validate ...
@@ -309,6 +311,8 @@ type TCloudUrlRuleUpdate struct {
 	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"omitempty"`
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
 	Memo               *string                       `json:"memo" validate:"omitempty,lte=255"`
+	BkBizID            int64                         `json:"bk_biz_id" validate:"required"`
+	AccountID          string                        `json:"account_id" validate:"required"`
 }
 
 // Validate ...
@@ -548,12 +552,12 @@ type LoadBalancerTargetRsList struct {
 
 // LoadBalancerUrlRuleResult 负载均衡四层/七层规则信息
 type LoadBalancerUrlRuleResult struct {
-	LbID              string                       `json:"lb_id"`
-	CloudClbID        string                       `json:"cloud_lb_id"`
-	LblID             string                       `json:"lbl_id"`
-	CloudLblID        string                       `json:"cloud_lbl_id"`
-	TargetGroupIDs    []string                     `json:"target_group_ids"`
-	TargetGrouRuleMap map[string]DomainUrlRuleInfo `json:"target_group_rule_map"`
+	LbID               string                       `json:"lb_id"`
+	CloudClbID         string                       `json:"cloud_lb_id"`
+	LblID              string                       `json:"lbl_id"`
+	CloudLblID         string                       `json:"cloud_lbl_id"`
+	TargetGroupIDs     []string                     `json:"target_group_ids"`
+	TargetGroupRuleMap map[string]DomainUrlRuleInfo `json:"target_group_rule_map"`
 }
 
 // DomainUrlRuleInfo 负载均衡四层/七层规则信息

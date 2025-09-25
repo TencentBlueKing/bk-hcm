@@ -340,6 +340,8 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleWit
 		HealthCheck:        healthCheck,
 		Certificate:        certInfo,
 		Memo:               one.Memo,
+		BkBizID:            one.BkBizID,
+		AccountID:          one.AccountID,
 		LblName:            one.LblName,
 		Protocol:           enumor.ProtocolType(one.Protocol),
 		Port:               int64(one.Port),

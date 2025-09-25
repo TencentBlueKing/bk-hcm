@@ -48,6 +48,8 @@ import HoverCopy from '@/components/copy-to-clipboard/hover-copy.vue';
 
 defineOptions({ name: 'load-balancer-table' });
 
+const emit = defineEmits<(e: 'delete-listener') => void>();
+
 const route = useRoute();
 const { t } = useI18n();
 const { getAllVendorRegion } = useRegionStore();
@@ -295,6 +297,7 @@ const handleSingleDelete = (row: any) => {
     await loadBalancerClbStore.batchDeleteLoadBalancer({ ids: [row.id] }, currentGlobalBusinessId.value);
     Message({ message: '删除成功', theme: 'success' });
     routerAction.redirect({ query: { ...route.query, _t: Date.now() } });
+    emit('delete-listener');
   });
 };
 
