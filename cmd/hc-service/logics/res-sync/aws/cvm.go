@@ -637,11 +637,35 @@ func isCvmExtensionChange(cloud typescvm.AwsCvm, dbExt *corecvm.AwsCvmExtension)
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(dbExt.PrivateDnsNameOptions.HostnameType,
-		cloud.PrivateDnsNameOptions.HostnameType) {
+	if !assert.IsPtrStringEqual(dbExt.PrivateDnsNameOptions.HostnameType, cloud.PrivateDnsNameOptions.HostnameType) {
 		return true
 	}
 
+	if isCvmSecurityGroupChange(cloud, dbExt) {
+		return true
+	}
+
+	if isAwsVolumeChange(cloud.BlockDeviceMappings, dbExt.BlockDeviceMapping) {
+		return true
+	}
+
+	return false
+}
+
+func isAwsVolumeChange(cloud []*ec2.InstanceBlockDeviceMapping, db []corecvm.AwsBlockDeviceMapping) bool {
+
+	dbVolumeIDs := slice.Map(db, func(one corecvm.AwsBlockDeviceMapping) *string {
+		return one.CloudVolumeID
+	})
+	cloudVolumeIDs := slice.Map(cloud, func(one *ec2.InstanceBlockDeviceMapping) *string {
+		return one.Ebs.VolumeId
+	})
+	if !assert.IsPtrStringSliceEqual(dbVolumeIDs, cloudVolumeIDs) {
+		return true
+	}
+	return false
+}
+func isCvmSecurityGroupChange(cloud typescvm.AwsCvm, dbExt *corecvm.AwsCvmExtension) bool {
 	sgIDs := make([]string, 0)
 	if len(cloud.SecurityGroups) > 0 {
 		for _, sg := range cloud.SecurityGroups {
@@ -651,16 +675,6 @@ func isCvmExtensionChange(cloud typescvm.AwsCvm, dbExt *corecvm.AwsCvmExtension)
 		}
 	}
 	if !assert.IsStringSliceEqual(dbExt.CloudSecurityGroupIDs, sgIDs) {
-		return true
-	}
-
-	dbVolumeIDs := slice.Map(dbExt.BlockDeviceMapping, func(one corecvm.AwsBlockDeviceMapping) *string {
-		return one.CloudVolumeID
-	})
-	cloudVolumeIDs := slice.Map(cloud.BlockDeviceMappings, func(one *ec2.InstanceBlockDeviceMapping) *string {
-		return one.Ebs.VolumeId
-	})
-	if !assert.IsPtrStringSliceEqual(dbVolumeIDs, cloudVolumeIDs) {
 		return true
 	}
 	return false
