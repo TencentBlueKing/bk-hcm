@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -211,8 +212,10 @@ func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item datapro
 	lblID string, ruleID string, err error) {
 
 	ext := corelb.TCloudListenerExtension{
-		EndPort:     item.EndPort,
 		Certificate: nil,
+	}
+	if converter.PtrToVal(item.EndPort) > 0 {
+		ext.EndPort = item.EndPort
 	}
 	extRaw, err := json.MarshalToString(ext)
 	if err != nil {
