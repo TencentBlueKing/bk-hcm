@@ -145,16 +145,13 @@ func (req SGCommonRelListReq) Validate() error {
 
 // SGCommonRelCountBizInfoReq ...
 type SGCommonRelCountBizInfoReq struct {
-	SgID    string                   `json:"sg_ids" validate:"required,min=1"`
+	SgID    string                   `json:"sg_id" validate:"required"`
 	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
 }
 
 // Validate SGCommonRelCountBizInfo.
 func (req SGCommonRelCountBizInfoReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // ListSGRelBusinessItem item of list security group related business

@@ -20,7 +20,6 @@
 package sgcomrel
 
 import (
-	"fmt"
 	"strconv"
 
 	corecloud "hcm/pkg/api/core/cloud"
@@ -30,6 +29,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -167,15 +167,19 @@ func (svc *sgComRelSvc) CountSGRelatedResBizInfo(cts *rest.Contexts) (interface{
 	case enumor.CvmCloudResType:
 		resp, err := svc.dao.SGCommonRel().CountCVMRelatedResGroupByBiz(cts.Kit, req.SgID)
 		if err != nil {
+			logs.Errorf("count cvm related res group by biz failed, err: %v, sgID: %s, rid: %s",
+				err, req.SgID, cts.Kit.Rid)
 			return nil, err
 		}
-		return convertCountResult(resp)
+		return convertCountResult(cts.Kit, resp)
 	case enumor.LoadBalancerCloudResType:
 		resp, err := svc.dao.SGCommonRel().CountLoadBalancerRelatedResGroupByBiz(cts.Kit, req.SgID)
 		if err != nil {
+			logs.Errorf("count load balancer related res group by biz failed, err: %v, sgID: %s, rid: %s",
+				err, req.SgID, cts.Kit.Rid)
 			return nil, err
 		}
-		return convertCountResult(resp)
+		return convertCountResult(cts.Kit, resp)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter,
 			"unsupported resource type: %s for count sg related res biz info", req.ResType)
@@ -183,14 +187,14 @@ func (svc *sgComRelSvc) CountSGRelatedResBizInfo(cts *rest.Contexts) (interface{
 
 }
 
-func convertCountResult(items []types.CountResult) (protocloud.SGCommonRelCountBizInfoResp, error) {
-	result := protocloud.SGCommonRelCountBizInfoResp{}
+func convertCountResult(kt *kit.Kit, items []types.CountResult) (*protocloud.SGCommonRelCountBizInfoResp, error) {
+	result := &protocloud.SGCommonRelCountBizInfoResp{}
 	for _, item := range items {
-		bkBizID, err := toInt64(item.GroupField)
+		bkBizID, err := strconv.ParseInt(item.GroupField, 0, 64)
 		if err != nil {
-			logs.Errorf("toInt64 failed, err: %v, BkBizID: %s",
-				err, item.GroupField)
-			continue
+			logs.Errorf("parse int failed, err: %v, BkBizID: %s, rid: %s",
+				err, item.GroupField, kt.Rid)
+			return nil, err
 		}
 		result.Items = append(result.Items, protocloud.ListSGRelBusinessItem{
 			BkBizID:  bkBizID,
@@ -198,12 +202,4 @@ func convertCountResult(items []types.CountResult) (protocloud.SGCommonRelCountB
 		})
 	}
 	return result, nil
-}
-
-func toInt64(val string) (int64, error) {
-	v, err := strconv.ParseInt(val, 0, 64)
-	if err == nil {
-		return v, nil
-	}
-	return 0, fmt.Errorf("unable to cast %v to int64, %w", val, err)
 }
