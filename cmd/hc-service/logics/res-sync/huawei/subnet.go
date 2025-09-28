@@ -165,13 +165,11 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID, region, c
 	return nil
 }
 
-// deleteSubnet delete subnet from db
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region, cloudVpcID string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
-	// check subnet not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -203,7 +201,6 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region, cloudVpcID strin
 	return nil
 }
 
-// updateSubnet update subnet in db
 func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.HuaWeiSubnet) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
@@ -247,7 +244,6 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-// createSubnet create subnet in db
 func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID string,
 	addSubnet []adtysubnet.HuaWeiSubnet) error {
 	if len(addSubnet) == 0 {
@@ -309,7 +305,6 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region, cloudVpcID strin
 	return nil
 }
 
-// listSubnetFromCloud list subnet from cloud
 func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, cloudVpcID string) (
 	[]adtysubnet.HuaWeiSubnet, error) {
 
@@ -332,7 +327,6 @@ func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, clou
 	return result.Details, nil
 }
 
-// listSubnetFromDB list subnet from db
 func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVpcID string) (
 	[]cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension], error) {
 
@@ -362,7 +356,6 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 	return result.Details, nil
 }
 
-// isHuaWeiSubnetChange check if the subnet has changed
 func isHuaWeiSubnetChange(item adtysubnet.HuaWeiSubnet, info cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension]) bool {
 	if info.Region != item.Region {
 		return true

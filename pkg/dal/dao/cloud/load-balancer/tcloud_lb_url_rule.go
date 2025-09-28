@@ -50,7 +50,6 @@ type LbTCloudUrlRuleInterface interface {
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tablelb.TCloudLbUrlRuleTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbUrlRuleDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
-	ListJoinListener(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLbUrlRuleWithListenerDetails, error)
 }
 
 var _ LbTCloudUrlRuleInterface = new(LbTCloudUrlRuleDao)
@@ -263,57 +262,4 @@ func (dao LbTCloudUrlRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filte
 	}
 
 	return nil
-}
-
-// ListJoinListener lb url rule.
-func (dao LbTCloudUrlRuleDao) ListJoinListener(kt *kit.Kit, opt *types.ListOption) (
-	*typeslb.ListLbUrlRuleWithListenerDetails, error) {
-
-	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list options is nil")
-	}
-
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes())),
-		core.NewDefaultPageOption()); err != nil {
-		return nil, err
-	}
-
-	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
-	if err != nil {
-		return nil, err
-	}
-
-	if opt.Page.Count {
-		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT count(*)	FROM %s AS rule LEFT JOIN
-		 (select id as listener_id,name as lbl_name, protocol, port from %s) AS t 
-		ON rule.lbl_id = t.listener_id %s`,
-			table.TCloudLbUrlRuleTable, table.LoadBalancerListenerTable, whereExpr)
-
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
-		if err != nil {
-			logs.Errorf("count load balancer url rule failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
-			return nil, err
-		}
-
-		return &typeslb.ListLbUrlRuleWithListenerDetails{Count: count}, nil
-	}
-
-	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
-	if err != nil {
-		return nil, err
-	}
-
-	sql := fmt.Sprintf(`SELECT %s, lbl_name, protocol, port FROM %s AS rule LEFT JOIN
-		 (select id as listener_id,name as lbl_name, protocol, port from %s) AS t 
-		ON rule.lbl_id = t.listener_id %s %s`,
-		tablelb.TCloudLbUrlRuleColumns.FieldsNamedExpr(opt.Fields),
-		table.TCloudLbUrlRuleTable, table.LoadBalancerListenerTable, whereExpr, pageExpr)
-
-	details := make([]tablelb.TCloudLbUrlRuleWithListener, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
-		return nil, err
-	}
-
-	return &typeslb.ListLbUrlRuleWithListenerDetails{Details: details}, nil
 }

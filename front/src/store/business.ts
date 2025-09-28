@@ -38,8 +38,8 @@ export const useBusinessStore = defineStore({
     list(data: any, type: string, config = {}) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data, config);
     },
-    getCommonList(data: any, url: string, config = {}) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data, config);
+    getCommonList(data: any, url: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
     },
     /**
      * 根据id获取对应资源详情信息
@@ -47,8 +47,8 @@ export const useBusinessStore = defineStore({
      * @param id 资源id
      * @returns 资源详情信息
      */
-    detail(type: string, id: number | string, config = {}) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`, config);
+    detail(type: string, id: number | string) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`);
     },
     /**
      * common-批量删除资源

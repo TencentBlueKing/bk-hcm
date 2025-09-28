@@ -51,12 +51,6 @@ export const ACCOUNT_TYPE = [
   },
 ];
 
-export const ACCOUNT_TYPE_ENUM = {
-  RESOURCE: 'resource',
-  REGISTRATION: 'registration',
-  SECURITY_AUDIT: 'security_audit',
-};
-
 export const SITE_TYPE = [
   {
     label: '中国站',

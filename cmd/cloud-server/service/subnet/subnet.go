@@ -141,7 +141,6 @@ func (svc *subnetSvc) createSubnet(cts *rest.Contexts, bizID int64,
 	return nil, nil
 }
 
-// createTCloudSubnet create tcloud subnet.
 func (svc *subnetSvc) createTCloudSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
 	interface{}, error) {
 
@@ -176,7 +175,6 @@ func (svc *subnetSvc) createTCloudSubnet(kt *kit.Kit, bizID int64, data json.Raw
 	return core.CreateResult{ID: createRes.IDs[0]}, nil
 }
 
-// createAwsSubnet create aws subnet.
 func (svc *subnetSvc) createAwsSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
 	interface{}, error) {
 
@@ -206,7 +204,6 @@ func (svc *subnetSvc) createAwsSubnet(kt *kit.Kit, bizID int64, data json.RawMes
 	return createRes, nil
 }
 
-// createGcpSubnet create gcp subnet.
 func (svc *subnetSvc) createGcpSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
 	interface{}, error) {
 
@@ -236,7 +233,6 @@ func (svc *subnetSvc) createGcpSubnet(kt *kit.Kit, bizID int64, data json.RawMes
 	return createRes, nil
 }
 
-// createAzureSubnet create azure subnet.
 func (svc *subnetSvc) createAzureSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
 	interface{}, error) {
 
@@ -273,7 +269,6 @@ func (svc *subnetSvc) createAzureSubnet(kt *kit.Kit, bizID int64, data json.RawM
 	return createRes, nil
 }
 
-// createHuaWeiSubnet create huawei subnet.
 func (svc *subnetSvc) createHuaWeiSubnet(kt *kit.Kit, bizID int64, data json.RawMessage) (
 	interface{}, error) {
 
@@ -304,7 +299,6 @@ func (svc *subnetSvc) createHuaWeiSubnet(kt *kit.Kit, bizID int64, data json.Raw
 	return createRes, nil
 }
 
-// convertBaseSubnetCreateReq convert base subnet create request.
 func convertBaseSubnetCreateReq(bizID int64, req *cloudserver.BaseSubnetCreateReq) *hcservice.BaseSubnetCreateReq {
 	return &hcservice.BaseSubnetCreateReq{
 		AccountID:  req.AccountID,
@@ -573,12 +567,6 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.SubnetCloudResType, req.SubnetIDs,
-		req.BkBizID)
-	if err != nil {
-		return nil, err
 	}
 
 	// authorize

@@ -27,7 +27,6 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	disklgc "hcm/cmd/cloud-server/logics/disk"
-	"hcm/cmd/cloud-server/service/common"
 	cloudproto "hcm/pkg/api/cloud-server/disk"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
@@ -303,12 +302,6 @@ func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.DiskCloudResType, req.IDs,
-		int64(req.BkBizID))
-	if err != nil {
-		return nil, err
 	}
 
 	if err := svc.authorizeDiskAssignOp(cts.Kit, req.IDs); err != nil {

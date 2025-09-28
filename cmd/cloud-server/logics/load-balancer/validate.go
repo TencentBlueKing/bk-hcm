@@ -60,7 +60,7 @@ func validateInstType(instType enumor.InstType) error {
 	return nil
 }
 
-func validateWeight(weightPtr *int64) error {
+func validateWeight(weightPtr *int) error {
 	if weightPtr == nil {
 		return errors.New("invalid weight: nil")
 	}

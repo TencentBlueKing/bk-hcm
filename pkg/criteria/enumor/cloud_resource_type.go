@@ -90,5 +90,4 @@ const (
 	TCLoudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
 	// SecurityGroupUsageBizRelResType 安全组使用业务关联关系
 	SecurityGroupUsageBizRelResType CloudResourceType = "security_group_usage_biz_rel"
-	CvmCCInfoResType                CloudResourceType = "cvm_cc_info"
 )

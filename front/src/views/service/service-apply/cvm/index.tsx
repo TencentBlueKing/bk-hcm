@@ -28,7 +28,7 @@ import { useAccountStore } from '@/store';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import VpcPreviewDialog from './children/VpcPreviewDialog';
 import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog';
 import http from '@/http';
@@ -68,7 +68,6 @@ export default defineComponent({
     );
     const { t } = useI18n();
     const router = useRouter();
-    const route = useRoute();
     const isSubmitBtnLoading = ref(false);
     const usageNum = ref(0);
     const limitNum = ref(-1);
@@ -291,24 +290,28 @@ export default defineComponent({
                   <FormItem
                     property={`data_disk[${index}].disk_size_gb`}
                     rules={[dataDiskSizeRules(item)]}
-                    description={dataDiskSizeRules(item).message}>
+                    description={dataDiskSizeRules(item).message}
+                  >
                     <Input
                       type='number'
                       style={{ width: '160px' }}
                       v-model_number={item.disk_size_gb}
                       min={1}
                       suffix='GB'
-                      prefix='大小'></Input>
+                      prefix='大小'
+                    ></Input>
                   </FormItem>
                   <FormItem
                     property={`data_disk[${index}].disk_count`}
                     min={dataDiskCountRules.value.min}
-                    max={dataDiskCountRules.value.max}>
+                    max={dataDiskCountRules.value.max}
+                  >
                     <Input
                       style={{ width: '90px' }}
                       type='number'
                       v-model_number={item.disk_count}
-                      min={dataDiskCountRules.value.min}></Input>
+                      min={dataDiskCountRules.value.min}
+                    ></Input>
                   </FormItem>
                   <div class='btns'>
                     <Button class={'btn'} onClick={handleCreateGcpDataDisk}>
@@ -318,7 +321,8 @@ export default defineComponent({
                         viewBox='0 0 24 24'
                         version='1.1'
                         xmlns='http://www.w3.org/2000/svg'
-                        style='fill: #c4c6cc'>
+                        style='fill: #c4c6cc'
+                      >
                         <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                       </svg>
                     </Button>
@@ -329,7 +333,8 @@ export default defineComponent({
                         viewBox='0 0 24 24'
                         version='1.1'
                         xmlns='http://www.w3.org/2000/svg'
-                        style='fill: #c4c6cc'>
+                        style='fill: #c4c6cc'
+                      >
                         <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                       </svg>
                     </Button>
@@ -489,7 +494,8 @@ export default defineComponent({
                   style={{ marginRight: '-50px' }}
                   onClick={() => {
                     isVpcPreviewDialogShow.value = true;
-                  }}>
+                  }}
+                >
                   预览
                 </Button>
               </div>
@@ -524,7 +530,8 @@ export default defineComponent({
                     class={'subnet-selector-preview-btn'}
                     onClick={() => {
                       isSubnetPreviewDialogShow.value = true;
-                    }}>
+                    }}
+                  >
                     预览
                   </Button>
                 </div>
@@ -598,7 +605,8 @@ export default defineComponent({
             content: () => (
               <RadioGroup
                 v-model={formData.internet_charge_type}
-                onChange={() => (formData.internet_max_bandwidth_out = 1)}>
+                onChange={() => (formData.internet_max_bandwidth_out = 1)}
+              >
                 {internetChargeTypes.value.map((item) => (
                   <RadioButton label={item.id}>{item.name}</RadioButton>
                 ))}
@@ -646,7 +654,8 @@ export default defineComponent({
                       }
                 }
                 labelClick
-                showInput>
+                showInput
+              >
                 {{
                   end: () => <div class='slider-unit-suffix'>Mbps</div>,
                 }}
@@ -717,7 +726,8 @@ export default defineComponent({
                     v-model_number={formData.system_disk.disk_size_gb}
                     min={1}
                     suffix='GB'
-                    prefix='大小'></Input>
+                    prefix='大小'
+                  ></Input>
                 ),
               },
             ],
@@ -743,24 +753,28 @@ export default defineComponent({
                     <FormItem
                       property={`data_disk[${index}].disk_size_gb`}
                       rules={[dataDiskSizeRules(item)]}
-                      description={dataDiskSizeRules(item).message}>
+                      description={dataDiskSizeRules(item).message}
+                    >
                       <Input
                         type='number'
                         style={{ width: '160px' }}
                         v-model_number={item.disk_size_gb}
                         min={1}
                         suffix='GB'
-                        prefix='大小'></Input>
+                        prefix='大小'
+                      ></Input>
                     </FormItem>
                     <FormItem
                       property={`data_disk[${index}].disk_count`}
                       min={dataDiskCountRules.value.min}
-                      max={dataDiskCountRules.value.max}>
+                      max={dataDiskCountRules.value.max}
+                    >
                       <Input
                         style={{ width: '90px' }}
                         type='number'
                         v-model_number={item.disk_count}
-                        min={dataDiskCountRules.value.min}></Input>
+                        min={dataDiskCountRules.value.min}
+                      ></Input>
                     </FormItem>
                     <div class='btns'>
                       <Button class={'btn'} onClick={handleCreateDataDisk}>
@@ -770,7 +784,8 @@ export default defineComponent({
                           viewBox='0 0 24 24'
                           version='1.1'
                           xmlns='http://www.w3.org/2000/svg'
-                          style='fill: #c4c6cc'>
+                          style='fill: #c4c6cc'
+                        >
                           <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
@@ -781,7 +796,8 @@ export default defineComponent({
                           viewBox='0 0 24 24'
                           version='1.1'
                           xmlns='http://www.w3.org/2000/svg'
-                          style='fill: #c4c6cc'>
+                          style='fill: #c4c6cc'
+                        >
                           <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
@@ -827,7 +843,8 @@ export default defineComponent({
                     style={{ width: '420px' }}
                     type='password'
                     placeholder='确认密码'
-                    v-model={formData.confirmed_password}></Input>
+                    v-model={formData.confirmed_password}
+                  ></Input>
                 ),
               },
             ],
@@ -862,7 +879,8 @@ export default defineComponent({
                 rows={3}
                 maxlength={255}
                 resize={false}
-                v-model={formData.memo}></Input>
+                v-model={formData.memo}
+              ></Input>
             ),
           },
           {
@@ -875,7 +893,8 @@ export default defineComponent({
                 rows={3}
                 maxlength={255}
                 resize={false}
-                v-model={formData.remark}></Input>
+                v-model={formData.remark}
+              ></Input>
             ),
           },
         ],
@@ -916,7 +935,8 @@ export default defineComponent({
                                 'bkhcm-icon-circle-correct-filled success': isLengthValid,
                                 'bkhcm-icon-circle-wrong-filled error': !isLengthValid,
                               },
-                            ]}></i>
+                            ]}
+                          ></i>
                           <span class='pwd-tips-content-text'>密码长度不少于8位且不多于20位；</span>
                         </div>
                         <div class='pwd-tips-content-item'>
@@ -927,7 +947,8 @@ export default defineComponent({
                                 'bkhcm-icon-circle-correct-filled success': isComplexityValid,
                                 'bkhcm-icon-circle-wrong-filled error': !isComplexityValid,
                               },
-                            ]}></i>
+                            ]}
+                          ></i>
                           <span class='pwd-tips-content-text'>
                             {`至少包含一个小写字母、一个大写字母、一个数字和一个特殊符号（仅限@、# 、+、_、-、[、]、{、}）`}
                           </span>
@@ -1038,18 +1059,15 @@ export default defineComponent({
       { immediate: true },
     );
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
       <div>
-        <DetailHeader fromConfig={fromConfig.value}>
+        <DetailHeader>
           <p class={'purchase-cvm-header-title'}>购买主机</p>
         </DetailHeader>
         <div
           class='create-form-container cvm-wrap'
-          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
+          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}
+        >
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             {
               <AccountSelectorCard
@@ -1069,7 +1087,8 @@ export default defineComponent({
                   v-model:cloudAccountId={cond.cloudAccountId}
                   v-model:vendor={cond.vendor}
                   v-model:region={cond.region}
-                  v-model:resourceGroup={cond.resourceGroup}>
+                  v-model:resourceGroup={cond.resourceGroup}
+                >
                   {{
                     default: () => (
                       <FormItem label={'可用区'} required property='zone'>
@@ -1107,7 +1126,8 @@ export default defineComponent({
                             property={property}
                             rules={rules}
                             description={description}
-                            class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}>
+                            class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}
+                          >
                             {Array.isArray(content) ? (
                               <div class='flex-row'>
                                 {content
@@ -1119,7 +1139,8 @@ export default defineComponent({
                                       property={sub.property}
                                       rules={sub.rules}
                                       description={sub?.description}
-                                      class='sub-form-item-wrap'>
+                                      class='sub-form-item-wrap'
+                                    >
                                       {sub.content()}
                                       {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
                                     </FormItem>
@@ -1152,13 +1173,15 @@ export default defineComponent({
               <div class='purchase-cvm-bottom-bar-form-item-wrap'>
                 <FormItem
                   label='数量'
-                  class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
+                  class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}
+                >
                   <Input
                     style={{ width: '150px' }}
                     type='number'
                     min={0}
                     max={100}
-                    v-model_number={formData.required_count}></Input>
+                    v-model_number={formData.required_count}
+                  ></Input>
                 </FormItem>
 
                 {/* eslint-disable max-len */}
@@ -1168,7 +1191,8 @@ export default defineComponent({
                       <Input
                         style={{ width: '160px' }}
                         type='number'
-                        v-model_number={formData.purchase_duration.count}></Input>
+                        v-model_number={formData.purchase_duration.count}
+                      ></Input>
                       <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
                         {purchaseDurationUnits.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>
@@ -1214,7 +1238,8 @@ export default defineComponent({
                 loading={submitting.value || isSubmitBtnLoading.value}
                 disabled={submitDisabled.value}
                 onClick={handleFormSubmit}
-                class={'mr8'}>
+                class={'mr8'}
+              >
                 立即购买
               </Button>
               <Button onClick={() => router.back()}>{t('取消')}</Button>

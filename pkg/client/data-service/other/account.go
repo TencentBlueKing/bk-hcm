@@ -56,11 +56,3 @@ func (a *AccountClient) Get(kt *kit.Kit, accountID string) (
 	return common.Request[common.Empty, protocloud.AccountGetResult[cloud.OtherAccountExtension]](
 		a.client, rest.GET, kt, nil, "/accounts/%s", accountID)
 }
-
-// Update ...
-func (a *AccountClient) Update(kt *kit.Kit, accountID string,
-	request *protocloud.AccountUpdateReq[protocloud.OtherAccountExtensionUpdateReq]) (interface{}, error) {
-
-	return common.Request[protocloud.AccountUpdateReq[protocloud.OtherAccountExtensionUpdateReq], interface{}](
-		a.client, rest.PATCH, kt, request, "/accounts/%s", accountID)
-}

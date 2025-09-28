@@ -1,9 +1,11 @@
 import { defineComponent, watch } from 'vue';
 import { useRoute } from 'vue-router';
+// import hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+// import stores
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
-import { LAYER_7_LISTENER_PROTOCOL } from '@/views/load-balancer/constants';
+import { APPLICATION_LAYER_LIST } from '@/constants';
 import './index.scss';
 
 export default defineComponent({
@@ -41,7 +43,7 @@ export default defineComponent({
       res.data.details.forEach(({ cloud_lb_id, listeners }: any) => {
         listeners.forEach((listener: any) => {
           const { protocol, cloud_lbl_id, health_check } = listener;
-          if (LAYER_7_LISTENER_PROTOCOL.includes(protocol)) {
+          if (APPLICATION_LAYER_LIST.includes(protocol)) {
             // 七层
             const { rules } = listener;
             // 如果rules为null, 则表明监听器没有绑定rs, 没有端口数据

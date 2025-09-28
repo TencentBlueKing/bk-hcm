@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import type {
+  DoublePlainObject,
+  // PlainObject,
+  FilterType,
+} from '@/typings/resource';
+import { GcpTypeEnum } from '@/typings';
+import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
+import { useResourceStore, useAccountStore } from '@/store';
 import {
   ref,
   h,
@@ -13,35 +21,41 @@ import {
   Fragment,
   vShow,
   useTemplateRef,
-  onMounted,
 } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { storeToRefs } from 'pinia';
+
 import { useI18n } from 'vue-i18n';
-import { useBusinessGlobalStore } from '@/store/business-global';
-import { useResourceStore, useAccountStore } from '@/store';
+import { useRouter, useRoute } from 'vue-router';
+import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { useRegionStore } from '@/store/region';
+import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useSelection from '../../hooks/use-selection';
-import useSearchQs from '@/hooks/use-search-qs';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { cloneDeep } from 'lodash';
-import { timeFormatter } from '@/common/util';
-import {
-  buildMultipleValueRulesItem,
-  transformSimpleCondition,
-  buildSearchSelectValueBySearchQsCondition,
-} from '@/utils/search';
-import http from '@/http';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
 import { TemplateTypeMap } from '../dialog/template-dialog';
-import { ModelProperty } from '@/model/typings';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import http from '@/http';
+import { timeFormatter } from '@/common/util';
+import { storeToRefs } from 'pinia';
+
+import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
+import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
+import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
+import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
+import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
+import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { useBusinessGlobalStore } from '@/store/business-global';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
+import RefreshCell from '../components/security/refresh-cell/index.vue';
+import { showClone } from '../plugin/security-group/show-clone.plugin';
+import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
 import {
   AUTH_BIZ_CREATE_IAAS_RESOURCE,
   AUTH_BIZ_DELETE_IAAS_RESOURCE,
@@ -50,24 +64,8 @@ import {
   AUTH_DELETE_IAAS_RESOURCE,
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
-import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import type { DoublePlainObject, FilterType } from '@/typings/resource';
-import { GcpTypeEnum, QueryRuleOPEnum, RulesItem, ISearchCondition } from '@/typings';
-import { showClone } from '../plugin/security-group/show-clone.plugin';
-import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
-
-import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
 import HcmAuth from '@/components/auth/auth.vue';
-import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
-import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
-import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
-import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
-import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
-import SyncAccountResource from '@/components/sync-account-resource/index.vue';
-import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
-import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
-import RefreshCell from '../components/security/refresh-cell/index.vue';
+import { buildMultipleValueRulesItem } from '@/utils';
 
 const props = defineProps({
   filter: {
@@ -79,15 +77,12 @@ const props = defineProps({
   bkBizId: Number,
 });
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-done']);
-
-let firstTime = true;
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 
 // use hooks
 const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
-const { getAllVendorRegion } = useRegionStore();
 const securityGroupStore = useSecurityGroupStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
@@ -127,144 +122,32 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 });
 
 const templateData = ref([]);
-const searchData = ref([]);
-const searchValue = ref([]);
-const regionChildren = ref([]);
 
-const filter = reactive<any>(cloneDeep(props.filter));
-
-const selectSearchData = computed(() => {
-  const map: Record<string, { idName: string; searchData: ISearchItem[] & ModelProperty[] }> = {
-    group: {
-      idName: t('安全组ID'),
-      searchData: [
-        {
-          name: t('使用业务'),
-          id: 'usage_biz_id',
-          async: false,
-          type: 'business',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-          meta: {
-            search: {
-              filterRules(value: number | number[]) {
-                return getQueryOperator(value, 'usage_biz_id');
-              },
-            },
-          },
-        },
-        {
-          name: t('管理类型'),
-          id: 'mgmt_type',
-          async: false,
-          type: 'enum',
-          option: {
-            [SecurityGroupManageType.BIZ]: t('业务管理'),
-            [SecurityGroupManageType.PLATFORM]: t('平台管理'),
-            unknown: t('未确认'),
-          },
-          children: [
-            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
-            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: '', name: t('未确认') },
-          ],
-          multiple: true,
-          meta: {
-            search: {
-              filterRules(value: string | string[]) {
-                return getQueryOperator(value, 'mgmt_type');
-              },
-            },
-          },
-        },
-        {
-          name: t('管理业务'),
-          id: 'mgmt_biz_id',
-          async: false,
-          type: 'business',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-          meta: {
-            search: {
-              filterRules(value: number | number[]) {
-                return getQueryOperator(value, 'mgmt_biz_id');
-              },
-            },
-          },
-        },
-        {
-          name: t('地域'),
-          id: 'region',
-          type: 'string',
-          async: true,
-          children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
-          placeholder: '请输入地域名',
-          option: asyncRegionChildren.value.reduce((acc, cur) => {
-            acc[cur['id']] = cur.name;
-            return acc;
-          }, {}),
-          onlyRecommendChildren: true,
-          meta: {
-            search: {
-              filterRules(value: string | string[]) {
-                return getQueryOperator(value, 'region');
-              },
-            },
-          },
-        },
-      ],
+const { searchData, searchValue, filter } = useFilter(props, {
+  convertValueCallbacks: { mgmt_type: (value) => (value === 'unknown' ? '' : value) },
+  conditionFormatterMapper: {
+    cloud_id: (value: string) => {
+      return buildMultipleValueRulesItem('cloud_id', value);
     },
-    gcp: {
-      idName: t('防火墙ID'),
-      searchData: [],
-    },
-    template: {
-      idName: t('模板ID'),
-      searchData: [],
-    },
-  };
-  const baseSearchData = [
-    {
-      name: map[activeType.value].idName,
-      id: 'cloud_id',
-      meta: {
-        search: {
-          filterRules(value: string) {
-            return buildMultipleValueRulesItem('cloud_id', value);
-          },
-        },
-      },
-    },
-    ...searchData.value.filter(
-      (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
-    ),
-  ];
-
-  return [...baseSearchData, ...map[activeType.value].searchData];
+  },
 });
-const asyncRegionChildren = computed(() => regionChildren.value);
-
-const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
-  useQueryCommonList({ filter }, fetchUrl, {
-    asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
-      // 安全组需要异步加载一些关联资源数
-      if (activeType.value !== 'group' || !datalist.length) return [];
-
-      fetchSecurityGroupExtraFields(datalist, datalistRef);
+  useQueryCommonList(
+    {
+      ...props,
+      filter: filter.value,
     },
-  });
+    fetchUrl,
+    {
+      asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
+        // 安全组需要异步加载一些关联资源数
+        if (activeType.value !== 'group' || !datalist.length) return [];
 
-const getQueryOperator = (value: string | number | string[] | number[], field: string) => {
-  let op = QueryRuleOPEnum.CS;
-  const result: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
-  if (Array.isArray(value)) {
-    op = QueryRuleOPEnum.IN;
-  } else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) {
-    op = QueryRuleOPEnum.EQ;
-  }
-  result.rules = [{ op, value, field }];
-  return result;
-};
+        fetchSecurityGroupExtraFields(datalist, datalistRef);
+      },
+    },
+  );
 
 // 异步加载安全组字段：关联资源、规则数、负责人信息
 const fetchSecurityGroupExtraFields = async (
@@ -318,6 +201,48 @@ const fetchSecurityGroupRelatedResourcesCount = async (
     });
   });
 };
+
+const selectSearchData = computed(() => {
+  const map: Record<string, { idName: string; searchData: ISearchItem[] }> = {
+    group: {
+      idName: t('安全组ID'),
+      searchData: [
+        {
+          name: t('使用业务'),
+          id: 'usage_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+        {
+          name: t('管理类型'),
+          id: 'mgmt_type',
+          children: [
+            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
+            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
+            { id: 'unknown', name: t('未确认') },
+          ],
+          multiple: true,
+        },
+        {
+          name: t('管理业务'),
+          id: 'mgmt_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+      ],
+    },
+    gcp: {
+      idName: t('防火墙ID'),
+      searchData: [],
+    },
+    template: {
+      idName: t('模板ID'),
+      searchData: [],
+    },
+  };
+
+  const baseSearchData = [{ name: map[activeType.value].idName, id: 'cloud_id' }, ...searchData.value];
+
+  return [...baseSearchData, ...map[activeType.value].searchData];
+});
 
 watch(
   () => datas.value,
@@ -734,6 +659,7 @@ const gcpColumns = [
   {
     label: t('云厂商'),
     field: 'vendor',
+    sort: true,
     isDefaultShow: true,
     render() {
       return h('span', {}, [t('谷歌云')]);
@@ -776,6 +702,7 @@ const gcpColumns = [
   {
     label: t('协议/端口'),
     field: 'allowed_denied',
+    sort: true,
     isDefaultShow: true,
     render({ data }: any) {
       return h(
@@ -1079,7 +1006,8 @@ watch(
   () => activeType.value,
   (v) => {
     fetchUrl.value = URL_MAP[v] || '';
-    filter.rules = [];
+
+    searchValue.value = [];
     resetSelections();
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
@@ -1216,8 +1144,6 @@ const securityGroupAssignDialogState = reactive({
   isShow: false,
   isHidden: true,
 });
-
-const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
 const handleSecurityGroupAssign = () => {
   securityGroupAssignDialogState.isShow = true;
   securityGroupAssignDialogState.isHidden = false;
@@ -1265,45 +1191,7 @@ watch(
     handleClearSecurityGroupSelections();
   },
 );
-watch(
-  () => route.query,
-  async (query) => {
-    const value = searchQs.get(query);
-    // 是否有地域，存在的话需要查询一遍接口拿name值
-    const hasRegion = Object.hasOwn(value, 'region');
-    const { rules = [] } = transformSimpleCondition(value, selectSearchData.value);
-    if (hasRegion) {
-      regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
-    }
-    filter.rules = rules;
-    searchValue.value = buildSearchSelectValueBySearchQsCondition(value, selectSearchData.value);
-    if (firstTime) {
-      // 资源下业务切换资源tab时候，进行强制更新type
-      firstTime = false;
-      emit('route-done');
-    }
-  },
-  {
-    deep: true,
-  },
-);
-watch(
-  () => accountStore.accountList, // 设置云账号筛选所需数据
-  (val) => {
-    if (!val) return;
-    FILTER_DATA.forEach((e) => {
-      if (e.id === 'account_id') {
-        e.children = val;
-      }
-      e.meta.search.filterRules = (value: string | string[]) => getQueryOperator(value, e.id);
-    });
-    searchData.value = FILTER_DATA;
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+
 watch(
   searchValue,
   () => {
@@ -1312,25 +1200,6 @@ watch(
   },
   { deep: true },
 );
-
-// TODO: 后续请求改为 watch query 后，这里删掉，改为通过 searchQs.get 设置默认值
-onMounted(() => {
-  // 默认进来搜索是 管理类型：业务管理|未确认
-  const value = Object.keys(searchQs.get(route.query))?.length
-    ? searchQs.get(route.query)
-    : { mgmt_type: ['biz', 'unknown'] };
-  searchQs.set(value);
-});
-
-const handleUpdate = (val: [{ id: any; values: any }]) => {
-  const routeVal: ISearchCondition = {};
-  val.forEach((item: { id: any; values: any }) => {
-    const { id, values } = item;
-    if (!Object.hasOwn(routeVal, id)) routeVal[id] = [];
-    routeVal[id].push(...values.map(({ id }: { id: string | number }) => id));
-  });
-  searchQs.set(routeVal);
-};
 
 defineExpose({ fetchComponentsData });
 </script>
@@ -1389,9 +1258,7 @@ defineExpose({ fetchComponentsData });
         clearable
         :conditions="[]"
         :data="selectSearchData"
-        :model-value="searchValue"
-        @update:model-value="handleUpdate"
-        :get-menu-list="getMenuList"
+        v-model="searchValue"
         value-behavior="need-key"
       />
     </div>

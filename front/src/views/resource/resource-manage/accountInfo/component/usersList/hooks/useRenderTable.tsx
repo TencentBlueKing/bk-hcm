@@ -11,7 +11,6 @@ import { timeFormatter } from '@/common/util';
 import bus from '@/common/bus';
 // import constants
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
-import { buildMultipleValueRulesItem } from '@/utils/search';
 
 export default () => {
   // use hooks
@@ -86,11 +85,7 @@ export default () => {
   // use hooks
   const { CommonTable, getListData } = useTable({
     searchOptions: {
-      searchData: [{ name: '账号 ID', id: 'cloud_id', placeholder: '多个账号ID之间用逗号、分号或换行符隔开' }],
-      extra: { uniqueSelect: true },
-      conditionFormatterMapper: {
-        cloud_id: (value: string) => buildMultipleValueRulesItem('cloud_id', value),
-      },
+      searchData: [{ name: '账号 ID', id: 'id' }],
     },
     tableOptions: {
       columns: columns.value,

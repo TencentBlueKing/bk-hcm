@@ -40,7 +40,7 @@ func (v ActionName) Validate() error {
 	case ActionCreateFactoryTest, ActionProduceTest, ActionAssembleTest, ActionSleep:
 	case ActionTargetGroupAddRS, ActionTargetGroupRemoveRS, ActionTargetGroupModifyPort, ActionTargetGroupModifyWeight:
 	case ActionLoadBalancerOperateWatch:
-	case ActionListenerRuleAddTarget, ActionListenerRuleUpdateHealthCheck:
+	case ActionListenerRuleAddTarget:
 	case ActionDeleteLoadBalancer:
 	case ActionPullDailyRawBill, ActionMainAccountSummary, ActionRootAccountSummary,
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
@@ -119,8 +119,7 @@ const (
 	ActionLoadBalancerDeleteListener ActionName = "load_balancer_delete_listener"
 
 	// ActionListenerRuleAddTarget 直接将RS绑定到 监听器/规则 上
-	ActionListenerRuleAddTarget         ActionName = "listener_rule_add_target"
-	ActionListenerRuleUpdateHealthCheck ActionName = "listener_rule_update_health_check"
+	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"
 
 	ActionDeleteLoadBalancer = "delete_load_balancer"
 )

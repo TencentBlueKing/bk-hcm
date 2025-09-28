@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { $bkPopover } from 'bkui-vue';
-import { LAYER_4_LISTENER_PROTOCOL } from '@/views/load-balancer/constants';
+import { TRANSPORT_LAYER_LIST } from '@/constants';
 
 /**
  * more-action dropdown list render hooks
@@ -40,8 +40,7 @@ export default (typeMenuMap: any) => {
       content: (
         <div class='dropdown-list'>
           {typeMenuMap[node.type].map((item: any, index: number) => {
-            if (node.type === 'listener' && LAYER_4_LISTENER_PROTOCOL.includes(node.protocol) && index === 0)
-              return null;
+            if (node.type === 'listener' && TRANSPORT_LAYER_LIST.includes(node.protocol) && index === 0) return null;
             const disabled = typeof item.isDisabled === 'function' ? item.isDisabled(node) : false;
             const tooltips = typeof item.tooltips === 'function' ? item.tooltips(node) : { disabled: true };
             const hasPermission = typeof item.preAuth === 'function' ? item.preAuth() : true;

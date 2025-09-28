@@ -29,7 +29,7 @@ import (
 
 // SyncBaseParams ...
 type SyncBaseParams struct {
-	AccountID  string                `json:"account_id" validate:"omitempty"`
+	AccountID  string                `json:"account_id" validate:"required"`
 	Region     string                `json:"region" validate:"required"`
 	CloudIDs   []string              `json:"cloud_ids" validate:"required,min=1"`
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`

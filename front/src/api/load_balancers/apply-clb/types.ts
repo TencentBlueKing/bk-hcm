@@ -36,30 +36,11 @@ interface DescribeResourcesResponse {
   TotalCount: number;
   RequestId: string;
 }
-export interface ZoneResource {
+interface ZoneResource {
   // 主可用区
   MasterZone: string;
   // 资源列表
-  ResourceSet: {
-    // 运营商内具体资源信息，如"CMCC", "CUCC", "CTCC", "BGP", "INTERNAL"
-    Type: string[];
-    // 运营商信息，如"CMCC", "CUCC", "CTCC", "BGP", "INTERNAL"
-    Isp: string;
-    // 可用资源
-    AvailabilitySet?: {
-      // 运营商内具体资源信息，如"CMCC", "CUCC", "CTCC", "BGP"
-      Type: string;
-      // 资源可用性，"Available"：可用，"Unavailable"：不可用
-      Availability: string;
-    }[];
-    // 运营商类型信息
-    TypeSet?: {
-      // 运营商类型
-      Type: string;
-      // 规格可用性
-      SpecAvailabilitySet?: SpecAvailability[];
-    }[];
-  }[];
+  ResourceSet: Resource[];
   // 备可用区
   SlaveZone?: string;
   // ip版本（枚举值：IPv4，IPv6，IPv6_Nat）
@@ -74,6 +55,28 @@ export interface ZoneResource {
   EdgeZone: boolean;
   // 网络出口
   Egress: string;
+}
+interface Resource {
+  // 运营商内具体资源信息，如"CMCC", "CUCC", "CTCC", "BGP", "INTERNAL"
+  Type: string[];
+  // 运营商信息，如"CMCC", "CUCC", "CTCC", "BGP", "INTERNAL"
+  Isp: string;
+  // 可用资源
+  AvailabilitySet?: ResourceAvailability[];
+  // 运营商类型信息
+  TypeSet?: TypeInfo[];
+}
+interface ResourceAvailability {
+  // 运营商内具体资源信息，如"CMCC", "CUCC", "CTCC", "BGP"
+  Type: string;
+  // 资源可用性，"Available"：可用，"Unavailable"：不可用
+  Availability: string;
+}
+interface TypeInfo {
+  // 运营商类型
+  Type: string;
+  // 规格可用性
+  SpecAvailabilitySet?: SpecAvailability[];
 }
 export interface SpecAvailability {
   // 规格类型 clb.c2.medium（标准型）clb.c3.small（高阶型1）clb.c3.medium（高阶型2）clb.c4.small（超强型1）clb.c4.medium（超强型2）clb.c4.large（超强型3）clb.c4.xlarge（超强型4）shared（共享型）

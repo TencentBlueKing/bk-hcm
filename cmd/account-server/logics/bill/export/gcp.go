@@ -19,13 +19,10 @@
 
 package export
 
-import (
-	"hcm/pkg/logs"
-	"hcm/pkg/table"
-)
+import "hcm/pkg/logs"
 
 // GcpBillItemHeaders is the headers of GCP bill item.
-var GcpBillItemHeaders [][]string
+var GcpBillItemHeaders []string
 
 func init() {
 	var err error
@@ -35,7 +32,7 @@ func init() {
 	}
 }
 
-var _ table.Table = (*GcpBillItemTable)(nil)
+var _ Table = (*GcpBillItemTable)(nil)
 
 // GcpBillItemTable is the table structure of GCP bill item.
 type GcpBillItemTable struct {
@@ -63,12 +60,12 @@ type GcpBillItemTable struct {
 	RMBCost                    string `header:"人民币成本(元)"`
 }
 
-// GetValuesByHeader ...
-func (g GcpBillItemTable) GetValuesByHeader() ([]string, error) {
-	return table.GetValuesByHeader(g)
+// GetHeaderValues ...
+func (g GcpBillItemTable) GetHeaderValues() ([]string, error) {
+	return parseHeaderFields(g)
 }
 
 // GetHeaders ...
-func (g GcpBillItemTable) GetHeaders() ([][]string, error) {
-	return table.GetHeaders(g)
+func (g GcpBillItemTable) GetHeaders() ([]string, error) {
+	return parseHeader(g)
 }

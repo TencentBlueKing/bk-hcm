@@ -10,18 +10,17 @@ POST /api/v1/cloud/applications/types/add_account
 
 ### 输入参数
 
-| 参数名称          | 参数类型         | 必选 | 描述                                                               |
-|---------------|--------------|----|------------------------------------------------------------------|
-| vendor        | string       | 是  | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure）                             |
-| name          | string       | 是  | 名称                                                               |
-| managers      | string array | 是  | 账号管理者                                                            |
-| type          | string       | 是  | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
-| site          | string       | 是  | 站点（枚举值：china:中国站、international:国际站）                              |
-| memo          | string       | 否  | 备注                                                               |
-| bk_biz_id     | int64        | 是  | 管理业务，非资源账号不允许传递该参数                                                            |
-| usage_biz_ids | int64 array  | 是  | 使用业务，非资源账号的该字段长度必须为1                                             |
-| extension     | object       | 是  | 混合云差异字段                                                          |
-| remark        | string       | 否  | 单据备注                                                             |
+| 参数名称       | 参数类型         | 必选 | 描述                                                               |
+|------------|--------------|----|------------------------------------------------------------------|
+| vendor     | string       | 是  | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure）                             |
+| name       | string       | 是  | 名称                                                               |
+| managers   | string array | 是  | 账号管理者                                                            |
+| type       | string       | 是  | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
+| site       | string       | 是  | 站点（枚举值：china:中国站、international:国际站）                              |
+| memo       | string       | 否  | 备注                                                               |
+| bk_biz_ids | int64 array  | 否  | 账号关联的业务ID列表，账号类型为资源账号时必填                                         |
+| extension  | object       | 是  | 混合云差异字段                                                          |
+| remark     | string       | 否  | 单据备注                                                             |
 
 ##### extension[tcloud]
 
@@ -89,8 +88,7 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_id": 1010011010,
-  "usage_biz_ids": [
+  "bk_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -114,8 +112,7 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_id": 1010011010,
-  "usage_biz_ids": [
+  "bk_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -139,8 +136,7 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_id": 1010011010,
-  "usage_biz_ids": [
+  "bk_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -167,8 +163,7 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_id": 1010011010,
-  "usage_biz_ids": [
+  "bk_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -194,8 +189,7 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_id": 1010011010,
-  "usage_biz_ids": [
+  "bk_biz_ids": [
     1010011010
   ],
   "extension": {

@@ -60,13 +60,16 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 	// 校验site是否匹配
-	if rootAccount.Site != a.req.Site {
+	if enumor.MainAccountSiteType(rootAccount.Site) != a.req.Site {
 		err := fmt.Errorf("root account's site(%s) not match main account's site (%s)",
 			rootAccount.Site, a.req.Site)
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
-	var accountID string
+	var (
+		accountID string
+	)
+
 	switch a.req.Vendor {
 	case enumor.Aws:
 		accountID, err = a.createForAws(&rootAccount.BaseRootAccount)
@@ -112,7 +115,6 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		"cloud_account_id": account.CloudID}, nil
 }
 
-// createForAws creates a main account for AWS vendor.
 func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 
@@ -161,7 +163,6 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 	return result.ID, nil
 }
 
-// createForGcp creates a main account for GCP vendor.
 func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 
@@ -224,7 +225,6 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 	return result.ID, nil
 }
 
-// createForAzure create main account for azure vendor.
 func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -263,7 +263,6 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 	return result.ID, nil
 }
 
-// createForHuaWei creates a main account for Huawei Cloud.
 func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -302,7 +301,6 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 	return result.ID, nil
 }
 
-// createForZenlayer creates a Zenlayer main account.
 func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq
@@ -341,7 +339,6 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 	return result.ID, nil
 }
 
-// createForKaopu creates a main account for Kaopu vendor.
 func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
 	comReq := a.completeReq

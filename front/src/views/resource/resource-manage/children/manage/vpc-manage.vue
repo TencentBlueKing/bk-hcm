@@ -35,6 +35,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
 const fetchComponentsData = () => {
   handlePageChange(1);
 };
+defineExpose({ fetchComponentsData });
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
@@ -54,12 +55,14 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
+    {
+      name: '管控区域',
+      id: 'bk_cloud_id',
+    },
   ];
 });
 
 const renderColumns = [...columns];
-
-defineExpose({ fetchComponentsData });
 </script>
 
 <template>
@@ -108,13 +111,11 @@ defineExpose({ fetchComponentsData });
 .w100 {
   width: 100px;
 }
-
 .toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-
 .search-selector-container {
   margin-left: auto;
 }

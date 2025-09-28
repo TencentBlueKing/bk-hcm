@@ -53,7 +53,6 @@ type CertBatchCreate[Extension corecert.Extension] struct {
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 	Memo             *string         `json:"memo"`
-	Tags             core.TagMap     `json:"tags" validate:"omitempty"`
 	Extension        *Extension      `json:"extension"`
 }
 
@@ -82,7 +81,6 @@ type CertExtUpdateReq[T corecert.Extension] struct {
 	CloudCreatedTime string          `json:"cloud_created_time"`
 	CloudExpiredTime string          `json:"cloud_expired_time"`
 	Memo             *string         `json:"memo"`
-	Tags             core.TagMap     `json:"tags" validate:"omitempty"`
 	*core.Revision   `json:",inline"`
 	Extension        *T `json:"extension"`
 }

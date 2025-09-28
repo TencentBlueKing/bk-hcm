@@ -52,8 +52,6 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncRegion", "POST", "/regions/sync", v.SyncRegion)
 	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
 	h.Add("SyncSubAccount", "POST", "/sub_accounts/sync", v.SyncSubAccount)
-	h.Add("SyncCvmCCInfo", "POST", "/cvms/cc_info/sync", v.SyncCvmCCInfo)
-	h.Add("SyncCvmCCInfoByCond", "POST", "/cvms/cc_info/by_condition/sync", v.SyncCvmCCInfoByCond)
 
 	h.Load(cap.WebService)
 }

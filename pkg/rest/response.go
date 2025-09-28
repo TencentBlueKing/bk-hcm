@@ -74,30 +74,3 @@ type FileDownloadResp interface {
 	Filepath() string
 	IsDeleteFile() bool
 }
-
-// FileResp ...
-type FileResp struct {
-	ContentTypeStr        string
-	ContentDispositionStr string
-	FilePath              string
-}
-
-// ContentType ...
-func (f *FileResp) ContentType() string {
-	return f.ContentTypeStr
-}
-
-// ContentDisposition ...
-func (f *FileResp) ContentDisposition() string {
-	return f.ContentDispositionStr
-}
-
-// Filepath return file path.
-func (f *FileResp) Filepath() string {
-	return f.FilePath
-}
-
-// IsDeleteFile ...
-func (f *FileResp) IsDeleteFile() bool {
-	return false
-}

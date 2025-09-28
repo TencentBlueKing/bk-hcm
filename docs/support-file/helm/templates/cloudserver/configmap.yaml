@@ -36,7 +36,6 @@ data:
         key: {{ .Values.crypto.aesGcm.key }}
         nonce: {{ .Values.crypto.aesGcm.nonce }}
     bkHcmUrl: {{ .Values.bkHCMUrl }}
-    bkApigwHCMUrl: {{ .Values.bkApigwHCMUrl }}
     cloudResource:
       {{- toYaml .Values.cloudserver.cloudResource | nindent 6 }}
     recycle:
@@ -56,6 +55,4 @@ data:
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
     ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}
-    concurrentConfig:
-      {{- toYaml .Values.cloudserver.concurrentConfig | nindent 6 }}
-    tmpFileDir: {{ .Values.tmpFileDir }}
+

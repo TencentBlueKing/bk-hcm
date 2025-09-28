@@ -126,7 +126,6 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	return new(SyncResult), nil
 }
 
-// syncRoute 同步路由表的路由规则
 func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	existRT, err := cli.listRouteTableFromDB(kt, params)
 	if err != nil {
@@ -153,7 +152,6 @@ func (cli *client) syncRoute(kt *kit.Kit, params *SyncBaseParams) error {
 	return nil
 }
 
-// listRouteTableFromCloud 从云端获取路由表信息
 func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesroutetable.AzureRouteTable, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -173,7 +171,6 @@ func (cli *client) listRouteTableFromCloud(kt *kit.Kit, params *SyncBaseParams) 
 	return result.Details, nil
 }
 
-// listRouteTableFromDB 从数据库获取路由表信息
 func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]routetable.AzureRouteTable, error) {
 
@@ -219,7 +216,6 @@ func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return routeTables, nil
 }
 
-// createRouteTable 创建路由表
 func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName string,
 	addSlice []typesroutetable.AzureRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -270,7 +266,6 @@ func (cli *client) createRouteTable(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
-// updateRouteTalbe 更新路由表
 func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName string,
 	updateMap map[string]typesroutetable.AzureRouteTable) (map[string]dataproto.RouteTableSubnetReq, error) {
 
@@ -315,7 +310,6 @@ func (cli *client) updateRouteTalbe(kt *kit.Kit, accountID string, resGroupName 
 	return subnetMap, nil
 }
 
-// deleteRouteTable 删除路由表
 func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, resGroupName string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("routeTable delCloudIDs is <= 0, not delete")
@@ -430,7 +424,6 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 	return nil
 }
 
-// isRouteTableChange 判断云端和数据库的路由表是否有变化
 func isRouteTableChange(cloud typesroutetable.AzureRouteTable,
 	db routetable.AzureRouteTable) bool {
 

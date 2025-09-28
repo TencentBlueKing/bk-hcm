@@ -1,7 +1,7 @@
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { ModelProperty } from '@/model/typings';
 import { QueryRuleOPEnum } from '@/typings';
-import { buildIPFilterRules } from '@/utils/search';
+import { buildIPFilterRules } from '@/utils';
 
 export default [
   {

@@ -99,16 +99,4 @@ const goAsyncTaskDetail = async (
   }
 };
 
-// 格式化带宽，单位 Mbps
-const formatBandwidth = (bandwidth: number) => {
-  if (bandwidth === undefined || bandwidth === null) return '--';
-
-  if (bandwidth >= 1024) {
-    const gbpsValue = (bandwidth / 1024).toFixed(2);
-    return `${gbpsValue.replace(/\.00$/, '')} Gbps`;
-  }
-
-  return `${bandwidth} Mbps`;
-};
-
-export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail, formatBandwidth };
+export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail };

@@ -1,21 +1,3 @@
-.target-group-overview {
-  height: 100%;
-  padding: 24px;
-  background: #f5f7fa;
-
-  .panel {
-    height: 100%;
-    padding: 16px 24px;
-    background: #fff;
-    box-shadow: 0 2px 4px 0 #1919290d;
-    border-radius: 2px;
-  }
-
-  .f22 {
-    font-size: 22px;
-  }
-}
-
 .batch-delete-rs-dialog {
   .top-area {
     margin-bottom: 16px;
@@ -41,12 +23,10 @@
         justify-content: flex-end;
       }
     }
-
     &.bordered-row .bk-table-head,
     .bk-table-body {
       border-bottom: none;
     }
-
     // 展开/收起 row
     .i-expand-content {
       margin-left: 9px;
@@ -90,11 +70,5 @@
         }
       }
     }
-  }
-}
-
-.target-group-batch-operation-menu {
-  .hcm-auth {
-    display: block;
   }
 }

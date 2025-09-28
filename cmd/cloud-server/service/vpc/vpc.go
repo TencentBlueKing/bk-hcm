@@ -518,13 +518,8 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.VpcCloudResType, req.VpcIDs, req.BkBizID)
-	if err != nil {
-		return nil, err
-	}
-
 	// authorize
-	err = svc.authorizeVpcBatchOp(cts.Kit, meta.Assign, req.VpcIDs, req.BkBizID)
+	err := svc.authorizeVpcBatchOp(cts.Kit, meta.Assign, req.VpcIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}

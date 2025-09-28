@@ -125,14 +125,13 @@ func (req *AzureAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountCreateReq ...
 type AccountCreateReq[T AccountExtensionCreateReq] struct {
-	Name        string                 `json:"name" validate:"required"`
-	Managers    []string               `json:"managers" validate:"required"`
-	Type        enumor.AccountType     `json:"type" validate:"required"`
-	Site        enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo        *string                `json:"memo" validate:"required"`
-	Extension   *T                     `json:"extension" validate:"required"`
-	BkBizID     int64                  `json:"bk_biz_id" validate:"omitempty"`
-	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
+	Name      string                 `json:"name" validate:"required"`
+	Managers  []string               `json:"managers" validate:"required"`
+	Type      enumor.AccountType     `json:"type" validate:"required"`
+	Site      enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo      *string                `json:"memo" validate:"required"`
+	Extension *T                     `json:"extension" validate:"required"`
+	BkBizIDs  []int64                `json:"bk_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -146,7 +145,7 @@ func (c *AccountCreateReq[T]) Validate() error {
 // Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq |
-		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq | OtherAccountExtensionUpdateReq
+		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 // TCloudAccountExtensionUpdateReq ...
@@ -238,16 +237,6 @@ func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.
 	}
 }
 
-// OtherAccountExtensionUpdateReq ...
-type OtherAccountExtensionUpdateReq struct {
-	// placeholder
-	CloudID     string `json:"cloud_id" validate:"omitempty"`
-	CloudSecKey string `json:"cloud_sec_key" validate:"omitempty"`
-}
-
-// EncryptSecretKey ...
-func (req *OtherAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {}
-
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
 	Name               string   `json:"name" validate:"omitempty"`
@@ -256,7 +245,6 @@ type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
 	PriceUnit          string   `json:"price_unit" validate:"omitempty"`
 	Memo               *string  `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
-	BkBizID            int64    `json:"bk_biz_id" validate:"omitempty"`
 	Extension          *T       `json:"extension" validate:"omitempty"`
 }
 

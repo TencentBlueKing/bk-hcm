@@ -94,13 +94,11 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 	return new(SyncResult), nil
 }
 
-// deleteSubnet delete subnet from db
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
-	// check subnet not exist in cloud, before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -132,7 +130,6 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, de
 	return nil
 }
 
-// updateSubnet update subnet in db
 func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.TCloudSubnet) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
@@ -175,7 +172,6 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-// createSubnet create subnet in db
 func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string,
 	addSubnet []adtysubnet.TCloudSubnet) error {
 	if len(addSubnet) == 0 {
@@ -247,7 +243,6 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
-// isTCloudSubnetChange check if the subnet has changed
 func isTCloudSubnetChange(item adtysubnet.TCloudSubnet, info cloudcore.Subnet[cloudcore.TCloudSubnetExtension]) bool {
 	if info.Region != item.Region {
 		return true

@@ -23,7 +23,6 @@ package cloud
 import (
 	"errors"
 
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
@@ -60,7 +59,6 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "recycle_reserve_time", NamedC: "recycle_reserve_time", Type: enumor.Numeric},
-	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 }
 
 // AccountTable 云账号表
@@ -97,8 +95,6 @@ type AccountTable struct {
 	Memo *string `db:"memo" json:"memo"`
 	// RecycleReserveTime 回收站保留时长，单位: 小时
 	RecycleReserveTime int `db:"recycle_reserve_time" json:"recycle_reserve_time"`
-	// BkBizID 管理业务
-	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 }
 
 // TableName return account table name.
@@ -120,10 +116,6 @@ func (a AccountTable) InsertValidate() error {
 		return errors.New("updated_at can not set")
 	}
 
-	if a.BkBizID == constant.AttachedAllBiz {
-		return errors.New("bk_biz_id can not set all biz")
-	}
-
 	// TODO: 添加账号其他信息正则和长度校验。
 
 	return nil
@@ -137,10 +129,6 @@ func (a AccountTable) UpdateValidate() error {
 
 	if len(a.Creator) != 0 {
 		return errors.New("creator can not update")
-	}
-
-	if a.BkBizID == constant.AttachedAllBiz {
-		return errors.New("bk_biz_id can not set all biz")
 	}
 
 	// TODO: 添加账号无法更新字段的校验和可以更新字段的正则及长度校验。

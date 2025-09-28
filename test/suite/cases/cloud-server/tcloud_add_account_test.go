@@ -46,14 +46,13 @@ func TestAddAccount(t *testing.T) {
 	Convey("prepare TCloud account test ", t, func() {
 		kt := cases.GenApiKit()
 		addAccountReq := protocloud.AccountCreateReq[protocloud.TCloudAccountExtensionCreateReq]{
-			Name:        "tcloud-test-account",
-			Managers:    []string{constant.SuiteTestUserKey},
-			Type:        enumor.ResourceAccount,
-			Site:        enumor.ChinaSite,
-			Memo:        cvt.ValToPtr("suite test"),
-			BkBizID:     constant.SuiteTestBizID,
-			UsageBizIDs: []int64{constant.SuiteTestBizID},
-			Extension:   tcloudExt,
+			Name:      "tcloud-test-account",
+			Managers:  []string{constant.SuiteTestUserKey},
+			Type:      enumor.ResourceAccount,
+			Site:      enumor.ChinaSite,
+			Memo:      cvt.ValToPtr("suite test"),
+			BkBizIDs:  []int64{constant.SuiteTestBizID},
+			Extension: tcloudExt,
 		}
 		// TODO: test cloud server add account api
 		ret, err := cli.DataService().TCloud.Account.Create(kt.Ctx, kt.Header(), &addAccountReq)

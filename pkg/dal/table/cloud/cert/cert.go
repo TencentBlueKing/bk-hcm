@@ -47,7 +47,6 @@ var SslCertTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_expired_time", NamedC: "cloud_expired_time", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
-	{Column: "tags", NamedC: "tags", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.String},
@@ -82,8 +81,6 @@ type SslCertTable struct {
 	CloudExpiredTime string `db:"cloud_expired_time" json:"cloud_expired_time"`
 	// Memo 备注
 	Memo *string `db:"memo" json:"memo"`
-	// Tags 标签
-	Tags types.StringMap `db:"tags" json:"tags"`
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64" json:"creator"`
 	// Reviser 更新者

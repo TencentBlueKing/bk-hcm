@@ -8,8 +8,6 @@ import HcmFormBusiness from '@/components/form/business.vue';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
-const model = defineModel<boolean>();
-
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
 const emit = defineEmits<{
@@ -18,6 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
+
+const model = defineModel<boolean>();
 
 const updateValues = reactive<
   Record<
@@ -39,7 +39,7 @@ const displayList = computed(() =>
 
 const accountId = computed(() => list.value?.[0].account_id);
 
-const { accountBizList, isAccountDetailLoading } = useAccountBusiness(accountId);
+const { accountBizList, isAccountDetailLoading } = useAccountBusiness(accountId.value);
 
 const isUpdateValueValid = computed(() => {
   return list.value.every((item) => {

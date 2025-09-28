@@ -64,8 +64,6 @@ func InitService(cap *capability.Capability) {
 		"/load_balancers/listeners/bizs/batch/update", svc.BatchUpdateListenerBizInfo)
 	h.Add("ListListenerWithTargets", http.MethodPost, "/load_balancers/listeners/with/targets/list",
 		svc.ListListenerWithTargets)
-	h.Add("ListListenerByCond", http.MethodPost, "/load_balancers/listeners/list_by_cond",
-		svc.ListListenerByCond)
 	h.Add("ListBatchListeners", http.MethodPost, "/load_balancers/listeners/batch/list", svc.ListBatchListeners)
 
 	// url规则
@@ -86,7 +84,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListTargetGroup", http.MethodPost, "/load_balancers/target_groups/list", svc.ListTargetGroup)
 	h.Add("UpdateTargetGroup", http.MethodPatch, "/vendors/{vendor}/target_groups", svc.UpdateTargetGroup)
 	h.Add("BatchDeleteTargetGroup", http.MethodDelete, "/target_groups/batch", svc.BatchDeleteTargetGroup)
-	h.Add("BatchUpdateTargetGroupBizInfo", http.MethodPatch,
+	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
 		"/load_balancers/target_groups/bizs/batch/update", svc.BatchUpdateTargetGroupBizInfo)
 	// RS
 	h.Add("BatchDeleteTarget", http.MethodDelete, "/load_balancers/targets/batch", svc.BatchDeleteTarget)

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/errf"
 )
 
 // ConvStdTimeFormat 转为HCM标准时间格式
@@ -69,19 +68,4 @@ func GetMonthDays(year int, month time.Month) []int {
 		days[day-1] = day
 	}
 	return days
-}
-
-// ParseDateTime parse date time from string.
-func ParseDateTime(layout, t string) (time.Time, error) {
-	if len(t) == 0 {
-		return time.Time{}, errf.New(errf.InvalidParameter, "empty date time")
-	}
-
-	pdTime, err := time.Parse(layout, t)
-	if err != nil {
-		return time.Time{}, errf.Newf(errf.InvalidParameter, "invalid date time format, should be like %s, err: %v",
-			layout, err)
-	}
-
-	return pdTime, nil
 }

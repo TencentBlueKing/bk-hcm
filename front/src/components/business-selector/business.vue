@@ -19,10 +19,7 @@ export interface IBusinessSelectorProps {
   scope?: BusinessScopeType;
   data?: IBusinessItem[];
   optionDisabled?: (item: IBusinessItem) => boolean;
-  tagClearable?: boolean;
 }
-
-const model = defineModel<number | number[]>();
 
 const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   disabled: false,
@@ -34,10 +31,9 @@ const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   allOptionId: 0,
   emptySelectAll: false,
   scope: 'full',
-  tagClearable: true,
 });
 
-const emit = defineEmits(['change']);
+const model = defineModel<number | number[]>();
 
 const businessGlobalStore = useBusinessGlobalStore();
 
@@ -74,15 +70,10 @@ const localModel = computed({
     model.value = val;
   },
 });
-
-const handleChange = (val: number | number[]) => {
-  emit('change', val);
-};
 </script>
 
 <template>
   <bk-select
-    :class="{ 'hide-tag-close': !tagClearable }"
     v-model="localModel"
     :disabled="disabled"
     :multiple="multiple"
@@ -94,7 +85,6 @@ const handleChange = (val: number | number[]) => {
     :all-option-id="allOptionId"
     :show-select-all="showSelectAll"
     :multiple-mode="multipleMode ? multipleMode : multiple ? 'tag' : 'default'"
-    @change="handleChange"
   >
     <!-- fix “全部”回显 -->
     <template #tag v-if="showAll && (localModel as number[])?.[0] === allOptionId">
@@ -113,15 +103,5 @@ const handleChange = (val: number | number[]) => {
 <style lang="scss" scoped>
 .all-option-name {
   font-size: 12px;
-}
-
-.hide-tag-close {
-  :deep(.bk-select-trigger) {
-    .bk-tag-closable {
-      .bk-tag-close {
-        display: none !important;
-      }
-    }
-  }
 }
 </style>

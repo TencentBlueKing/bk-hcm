@@ -1,0 +1,40 @@
+.lb-breadcrumb {
+  margin: -8px 0 16px;
+  display: flex;
+  align-items: center;
+  line-height: 22px;
+
+  .text {
+    margin: 0 10px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #313238;
+    cursor: pointer;
+
+    .name {
+      max-width: 120px;
+    }
+
+    &:first-of-type {
+      margin-left: 0;
+    }
+
+    &:last-of-type {
+      color: #979ba5;
+      cursor: default;
+    }
+
+    &:not(:last-of-type) {
+      position: relative;
+
+      &::after {
+        position: absolute;
+        content: '/';
+        top: 0;
+        left: 100%;
+        margin-left: 8px;
+      }
+    }
+  }
+}

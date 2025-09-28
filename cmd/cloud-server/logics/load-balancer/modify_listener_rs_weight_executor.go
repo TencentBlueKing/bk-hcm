@@ -45,12 +45,10 @@ import (
 )
 
 func newBatchListenerModifyRsWeightExecutor(cli *dataservice.Client, taskCli *taskserver.Client,
-	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string,
-	operationType OperationType) *BatchListenerModifyRsWeightExecutor {
+	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) *BatchListenerModifyRsWeightExecutor {
 
 	return &BatchListenerModifyRsWeightExecutor{
 		taskType:            enumor.ListenerModifyRsWeightTaskType,
-		operationType:       enumor.TaskOperation(operationType),
 		taskCli:             taskCli,
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
@@ -60,12 +58,11 @@ func newBatchListenerModifyRsWeightExecutor(cli *dataservice.Client, taskCli *ta
 type BatchListenerModifyRsWeightExecutor struct {
 	*basePreviewExecutor
 
-	taskType      enumor.TaskType
-	operationType enumor.TaskOperation
-	taskCli       *taskserver.Client
-	params        *dataproto.ListListenerWithTargetsReq
-	details       []*dataproto.ListBatchListenerResult
-	taskDetails   []*batchListenerModifyRsWeightTaskDetail
+	taskType    enumor.TaskType
+	taskCli     *taskserver.Client
+	params      *dataproto.ListListenerWithTargetsReq
+	details     []*dataproto.ListBatchListenerResult
+	taskDetails []*batchListenerModifyRsWeightTaskDetail
 }
 
 // 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
@@ -131,27 +128,23 @@ func (c *BatchListenerModifyRsWeightExecutor) getNewListenerRsList(kt *kit.Kit) 
 	// 检查RS的最新权重是否已更新
 	newLblRsList := make([]*dataproto.ListBatchListenerResult, 0)
 	for _, item := range lblResp.Details {
-		tmpLblRs := &dataproto.ListBatchListenerResult{
-			ClbID:        item.ClbID,
-			CloudClbID:   item.CloudClbID,
-			ClbVipDomain: item.ClbVipDomain,
-			BkBizID:      item.BkBizID,
-			Region:       item.Region,
-			Vendor:       item.Vendor,
-			LblID:        item.LblID,
-			CloudLblID:   item.CloudLblID,
-			Protocol:     item.Protocol,
-			Port:         item.Port,
-			NewRsWeight:  c.params.NewRsWeight,
-		}
-
 		for _, rsItem := range item.RsList {
 			if cvt.PtrToVal(rsItem.Weight) != cvt.PtrToVal(c.params.NewRsWeight) {
-				tmpLblRs.RsList = append(tmpLblRs.RsList, rsItem)
+				newLblRsList = append(newLblRsList, &dataproto.ListBatchListenerResult{
+					ClbID:        item.ClbID,
+					CloudClbID:   item.CloudClbID,
+					ClbVipDomain: item.ClbVipDomain,
+					BkBizID:      item.BkBizID,
+					Region:       item.Region,
+					Vendor:       item.Vendor,
+					LblID:        item.LblID,
+					CloudLblID:   item.CloudLblID,
+					Protocol:     item.Protocol,
+					Port:         item.Port,
+					RsList:       item.RsList,
+					NewRsWeight:  c.params.NewRsWeight,
+				})
 			}
-		}
-		if len(tmpLblRs.RsList) > 0 {
-			newLblRsList = append(newLblRsList, tmpLblRs)
 		}
 	}
 	return newLblRsList, nil
@@ -285,7 +278,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskManagement(
 				AccountIDs: []string{c.accountID},
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning, // 默认:执行中
-				Operations: []enumor.TaskOperation{c.operationType},
+				Operations: []enumor.TaskOperation{enumor.TaskModifyListenerRsWeight},
 				Extension: &coretask.ManagementExt{
 					LblTargetsReq: c.params,
 				},
@@ -313,7 +306,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
-			Operation:        c.operationType,
+			Operation:        enumor.TaskModifyListenerRsWeight,
 			State:            enumor.TaskDetailInit,
 			Param:            detail,
 		})
@@ -327,7 +320,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 
 	if len(result.IDs) != len(c.details) {
 		return fmt.Errorf("create task details failed, operation: %s, expect created[%d] task details, but got [%d]",
-			c.operationType, len(c.details), len(result.IDs))
+			enumor.TaskModifyListenerRsWeight, len(c.details), len(result.IDs))
 	}
 
 	for i := range result.IDs {
@@ -531,7 +524,7 @@ func (c *BatchListenerModifyRsWeightExecutor) updateTaskDetails(kt *kit.Kit) err
 	}
 	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
-		logs.Errorf("update task details failed, err: %v, req: %+v, rid: %s", err, updateDetailsReq, kt.Rid)
+		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

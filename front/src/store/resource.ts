@@ -172,8 +172,8 @@ export const useResourceStore = defineStore({
         )}vendors/${type}/network_interfaces/cvms/${id}`,
       );
     },
-    getCommonList(data: any, url: string, config = {}) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data, config);
+    getCommonList(data: any, url: string) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
     },
     getNetworkList(type: string, id: string) {
       return http.get(

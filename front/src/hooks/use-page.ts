@@ -65,8 +65,8 @@ export default function usePage(enableQuery = true, pageRef?: Reactive<Paginatio
   };
 
   const handleSort = ({ column, type }: SortType) => {
-    const sort = type === 'null' ? undefined : column.field;
-    const order = type === 'null' ? undefined : (type.toUpperCase() as 'DESC' | 'ASC');
+    const sort = column.field;
+    const order = type === 'desc' ? 'DESC' : 'ASC';
     if (!enableQuery) {
       sorting.sort = sort;
       sorting.order = order;

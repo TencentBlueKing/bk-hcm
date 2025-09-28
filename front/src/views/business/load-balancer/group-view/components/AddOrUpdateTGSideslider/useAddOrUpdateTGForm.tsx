@@ -1,21 +1,23 @@
-import { ref, computed, watch, Ref, inject } from 'vue';
-import { useLoadBalancerStore } from '@/store';
-import { ResourceTypeEnum, TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
-import { TargetGroupOperationScene } from '@/constants';
-
+import { ref, computed, watch, Ref } from 'vue';
+// import components
 import { Input, Select } from 'bkui-vue';
-import AccountSelector from '@/components/account-selector/index-new.vue';
+import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 import RegionVpcSelector from '@/views/service/service-apply/components/common/RegionVpcSelector';
 import RsConfigTable from '../RsConfigTable';
+// import stores
+import { useAccountStore, useLoadBalancerStore } from '@/store';
+// import types and constants
+import { TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import { TargetGroupOperationScene } from '@/constants';
 
 const { Option } = Select;
 
 export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, lbDetail: Ref<any>) => {
   // use stores
+  const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
-
-  const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
 
   const curVendor = computed({
     get() {
@@ -34,6 +36,15 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
     },
   });
   const deletedRsList = ref([]);
+
+  const selectedBizId = computed({
+    get() {
+      return accountStore.bizs;
+    },
+    set(val) {
+      formData.bk_biz_id = val;
+    },
+  });
 
   const disabledEdit = computed(
     () => updateCount.value === 2 && loadBalancerStore.currentScene !== TargetGroupOperationScene.EDIT,
@@ -117,10 +128,10 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
       content: () => (
         <AccountSelector
           v-model={formData.account_id}
-          bizId={currentGlobalBusinessId.value}
-          resourceType={ResourceTypeEnum.CLB}
-          disabled={disabledEdit.value || !canUpdateAccount.value}
+          bizId={selectedBizId.value}
+          type='resource'
           onChange={(account: { vendor: VendorEnum }) => (curVendor.value = account?.vendor)}
+          disabled={disabledEdit.value || !canUpdateAccount.value}
         />
       ),
     },
@@ -229,6 +240,5 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
     canUpdateRegionOrVpc,
     deletedRsList,
     regionVpcSelectorRef,
-    currentGlobalBusinessId,
   };
 };

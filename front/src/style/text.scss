@@ -5,11 +5,9 @@
 .font-big {
   font-size: $font-size-big;
 }
-
 .font-medium {
   font-size: $font-size-medium;
 }
-
 .font-normal {
   font-size: $font-size-normal;
 }
@@ -23,7 +21,7 @@
 }
 
 .font-bold {
-  font-weight: 700;
+  font-weight: bold;
 }
 
 .line-height1 {
@@ -40,38 +38,27 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
 .text-left {
   text-align: left;
 }
-
 .text-center {
   text-align: center;
 }
-
 .text-right {
   text-align: right;
 }
-
 .nowrap {
   white-space: nowrap;
   word-break: keep-all;
 }
-
-.text-primary {
-  color: $primary-color;
-}
-
 .text-gray {
   color: #999;
 }
-
 .text-desc {
   color: #979ba5;
 }
-
 .text-light {
-  color: $font-light-color;
+  color: #c4c6cc;
 }
 
 .text-deep {

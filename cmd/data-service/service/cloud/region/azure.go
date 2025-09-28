@@ -39,7 +39,7 @@ import (
 
 // BatchUpdateAzureRegion update azure region.
 func (svc *regionSvc) BatchUpdateAzureRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.AzureRegionBatchUpdateReq)
+	req := new(protoregion.HuaWeiRegionBatchUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

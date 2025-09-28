@@ -16,14 +16,14 @@ import {
 import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
-import ModalFooter from '@/components/modal/modal-footer.vue';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const model = defineModel<boolean>();
 const props = defineProps<{
   row: SecurityGroupRelResourceByBizItem;
   detail: ISecurityGroupDetail;
   tabActive: SecurityGroupRelatedResourceName;
 }>();
+const model = defineModel<boolean>();
 const emit = defineEmits(['success']);
 
 const { t } = useI18n();
@@ -93,7 +93,7 @@ const handleClosed = () => {
         </div>
 
         <div class="operate-wrap">
-          <modal-footer
+          <dialog-footer
             :disabled="!info.security_groups || info.security_groups?.length <= 1"
             :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
             :confirm-text="t('解绑')"

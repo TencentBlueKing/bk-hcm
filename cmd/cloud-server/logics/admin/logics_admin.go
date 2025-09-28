@@ -77,7 +77,7 @@ func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccount
 			CloudID:     string(enumor.Other),
 			CloudSecKey: "",
 		},
-		UsageBizIDs: []int64{constant.AttachedAllBiz},
+		BkBizIDs: []int64{constant.AttachedAllBiz},
 	}
 	createResp, err := a.c.DataService().Other.Account.Create(kt, createReq)
 	if err != nil {

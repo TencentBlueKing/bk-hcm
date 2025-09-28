@@ -50,8 +50,6 @@ const getConfig = (custom = {}) => ({
         },
       },
       devServer: {
-        hot: true, // 启用热模块替换
-        liveReload: false, // 禁用整页刷新
         server: custom.server && custom.server,
       },
     };

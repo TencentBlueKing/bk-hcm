@@ -113,17 +113,13 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 		createResources = append(createResources, tmpRes)
 	}
 
-	// 底层单次操作，最大支持100个地域
-	elems := slice.Split(createResources, constant.BatchOperationMaxLimit)
-	for _, parts := range elems {
-		createReq := &dataregion.TCloudRegionCreateReq{
-			Regions: parts,
-		}
-		if _, err := cli.dbCli.TCloud.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
-				err, opt.AccountID, opt, kt.Rid)
-			return err
-		}
+	createReq := &dataregion.TCloudRegionCreateReq{
+		Regions: createResources,
+	}
+	if _, err := cli.dbCli.TCloud.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+		logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
+			err, opt.AccountID, opt, kt.Rid)
+		return err
 	}
 
 	logs.Infof("[%s] sync region to create region success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
@@ -151,17 +147,13 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 		updateResources = append(updateResources, tmpRes)
 	}
 
-	// 底层单次操作，最大支持100个地域
-	elems := slice.Split(updateResources, constant.BatchOperationMaxLimit)
-	for _, parts := range elems {
-		updateReq := &dataregion.TCloudRegionBatchUpdateReq{
-			Regions: parts,
-		}
-		if err := cli.dbCli.TCloud.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
-				err, opt.AccountID, opt, kt.Rid)
-			return err
-		}
+	updateReq := &dataregion.TCloudRegionBatchUpdateReq{
+		Regions: updateResources,
+	}
+	if err := cli.dbCli.TCloud.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+		logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
+			err, opt.AccountID, opt, kt.Rid)
+		return err
 	}
 
 	logs.Infof("[%s] sync region to update region success, accountID: %s, count: %d, rid: %s", enumor.TCloud,

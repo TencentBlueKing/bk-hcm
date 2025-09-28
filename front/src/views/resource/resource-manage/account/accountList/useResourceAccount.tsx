@@ -28,7 +28,7 @@ export const useResourceAccount = () => {
     let path = '/resource/resource/';
     if (accountId.value && WHITE_LIST_2.includes(route.path)) path = '';
     if (WHITE_LIST.includes(route.path)) path = '';
-    router.push({
+    router.replace({
       path,
       query: {
         ...route.query,

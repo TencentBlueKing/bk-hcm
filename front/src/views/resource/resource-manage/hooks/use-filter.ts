@@ -73,9 +73,6 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
     searchValue.value = params;
   };
 
-  // 是否是镜像资源
-  const isImage = () => props.whereAmI === ResourceManageSenario.image;
-
   onMounted(() => {
     saveQueryInSearch();
   });
@@ -101,14 +98,12 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
     (val) => {
       if (!val) return;
       val.length &&
-        (searchData.value = FILTER_DATA.filter((item) => !isImage() || (isImage() && 'account_id' !== item.id)).map(
-          (e) => {
-            if (e.id === 'account_id') {
-              e.children = val;
-            }
-            return e;
-          },
-        ));
+        FILTER_DATA.forEach((e) => {
+          if (e.id === 'account_id') {
+            e.children = val;
+          }
+        });
+      searchData.value = FILTER_DATA;
     },
     {
       deep: true,
@@ -157,7 +152,7 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
       // 处理每个搜索项
       val.forEach(({ id: field, values }) => {
         // 跳过禁用字段
-        if (isImage() && ['account_id', 'bk_biz_id'].includes(field)) return;
+        if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) return;
 
         // 构建条件对象
         let condition: RulesItem;

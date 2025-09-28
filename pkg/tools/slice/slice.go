@@ -20,8 +20,6 @@
 // Package slice ...
 package slice
 
-import "hcm/pkg/tools/maps"
-
 // Remove 移除首次匹配到的 item 元素
 func Remove[T comparable](l []T, item T) []T {
 	for i, other := range l {
@@ -101,16 +99,6 @@ func Map[IType any, OType any](source []IType, mapFunc func(IType) OType) []OTyp
 	return target
 }
 
-// FuncToMap 对slice里面的每个元素执行mapFunc函数，返回map
-func FuncToMap[IType any, OType any, Key comparable](source []IType, mapFunc func(IType) (Key, OType)) map[Key]OType {
-	target := make(map[Key]OType)
-	for _, v := range source {
-		key, val := mapFunc(v)
-		target[key] = val
-	}
-	return target
-}
-
 // Filter 通过给定的filter函数过滤出符合条件的子slice
 func Filter[V any](s []V, filter func(V) bool) []V {
 	subSlice := make([]V, 0, len(s))
@@ -131,72 +119,4 @@ func FilterMap[V any, O any](s []V, filter func(V) bool, mapFunc func(V) O) []O 
 		}
 	}
 	return subSlice
-}
-
-// NotIn get elements in slice B but not in slice A.
-func NotIn[S ~[]E, E comparable](sliceA, sliceB S) S {
-	diffs := make(map[E]struct{}, 0)
-	mapA := make(map[E]struct{})
-	// record elements in sliceA
-	for i := range sliceA {
-		mapA[sliceA[i]] = struct{}{}
-	}
-	for i := range sliceB {
-		if _, ok := mapA[sliceB[i]]; !ok {
-			diffs[sliceB[i]] = struct{}{}
-		}
-	}
-	return maps.Keys(diffs)
-}
-
-// TopKSort 实现部分排序，保证最大的k的元素在最后k个位置
-func TopKSort[T any, SL []T](k int, data SL, less func(a, b T) bool) {
-	n := len(data)
-	if n < 2 {
-		return
-	}
-	k = min(k, n)
-	k = max(k, 1)
-	t := n - k
-	p := partition(data, less)
-	if p == t {
-		return
-	}
-	if t < p {
-		TopKSort[T, SL](p-t, data[:p], less)
-	}
-	if p < t {
-		TopKSort[T, SL](k, data[p+1:], less)
-	}
-}
-
-func partition[T any, SL []T](data SL, less func(a, b T) bool) int {
-	n := len(data)
-	if n < 2 {
-		return 0
-	}
-	if n == 2 {
-		if less(data[1], data[0]) {
-			data[1], data[0] = data[0], data[1]
-		}
-		return 0
-	}
-	p := 0
-	l := 1
-	r := n - 1
-	for l < r {
-		// r>p
-		for r > p && !less(data[r], data[p]) {
-			r--
-		}
-		// l<p
-		for l < r && less(data[l], data[p]) {
-			l++
-		}
-		if l < r {
-			data[l], data[r] = data[r], data[l]
-		}
-	}
-	data[p], data[r] = data[r], data[p]
-	return r
 }

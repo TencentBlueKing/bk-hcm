@@ -84,10 +84,6 @@ const useFilterHost = (props: PropsType) => {
         op: QueryRuleOPEnum.JSON_OVERLAPS,
         value: [],
       },
-      bk_cloud_id: {
-        op: QueryRuleOPEnum.IN,
-        value: [],
-      },
     };
 
     const defaultRule = defaultRules[field] ?? {

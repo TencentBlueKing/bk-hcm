@@ -270,7 +270,6 @@ func (svc *routeTableSvc) GetRouteTable(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
-// convertToRouteTableResult converts the base route table and its extension from the database
 func convertToRouteTableResult[T protocore.RouteTableExtension](baseRouteTable *protocore.BaseRouteTable,
 	dbExtension tabletype.JsonField) (*protocore.RouteTable[T], error) {
 
@@ -285,7 +284,6 @@ func convertToRouteTableResult[T protocore.RouteTableExtension](baseRouteTable *
 	}, nil
 }
 
-// getRouteTableFromTable retrieves a route table from the database by its ID.
 func getRouteTableFromTable(kt *kit.Kit, dao dao.Set, routeTableID string) (*tablecloud.RouteTableTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", routeTableID),
@@ -338,7 +336,6 @@ func (svc *routeTableSvc) ListRouteTable(cts *rest.Contexts) (interface{}, error
 	return &protocloud.RouteTableListResult{Details: details}, nil
 }
 
-// convertBaseRouteTable converts a database route table to a base route table.
 func convertBaseRouteTable(dbRouteTable *tablecloud.RouteTableTable) *protocore.BaseRouteTable {
 	if dbRouteTable == nil {
 		return nil
@@ -438,7 +435,6 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 	return nil, nil
 }
 
-// listRouteTablesForDelete lists route tables for deletion based on the provided filter.
 func (svc *routeTableSvc) listRouteTablesForDelete(kt *kit.Kit, fil *filter.Expression) (
 	*types.RouteTableListResult, error) {
 
@@ -454,7 +450,6 @@ func (svc *routeTableSvc) listRouteTablesForDelete(kt *kit.Kit, fil *filter.Expr
 	return listResp, nil
 }
 
-// checkRouteTableBinding checks if the route tables are bound with any subnet.
 func (svc *routeTableSvc) checkRouteTableBinding(kt *kit.Kit, routeTableIDs []string) error {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("route_table_id", routeTableIDs),

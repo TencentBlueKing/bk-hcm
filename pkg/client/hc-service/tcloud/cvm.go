@@ -250,22 +250,3 @@ func (cli *CvmClient) ListCvmNetworkInterface(kt *kit.Kit, request *protocvm.Lis
 	return common.Request[protocvm.ListCvmNetworkInterfaceReq, map[string]*protocvm.ListCvmNetworkInterfaceRespItem](
 		cli.client, rest.POST, kt, request, "/cvms/network_interfaces/list")
 }
-
-// SyncCCInfo ...
-func (cli *CvmClient) SyncCCInfo(kt *kit.Kit, req *sync.TCloudSyncReq) error {
-	return common.RequestNoResp[sync.TCloudSyncReq](cli.client, rest.POST, kt, req, "/cvms/cc_info/sync")
-}
-
-// SyncCCInfoByCond ...
-func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) error {
-	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
-		"/cvms/cc_info/by_condition/sync")
-}
-
-// ListInstanceConfig list instance config.
-func (cli *CvmClient) ListInstanceConfig(kt *kit.Kit, req *protocvm.TCloudInstanceConfigListOption) (
-	*typecvm.TCloudInstanceConfigListResult, error) {
-
-	return common.Request[protocvm.TCloudInstanceConfigListOption, typecvm.TCloudInstanceConfigListResult](
-		cli.client, "POST", kt, req, "/instances/config/list")
-}

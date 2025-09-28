@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/core"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
-	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -177,15 +176,4 @@ func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.GcpBatchCrea
 	}
 
 	return resp.Data, nil
-}
-
-// SyncCCInfo ...
-func (cli *CvmClient) SyncCCInfo(kt *kit.Kit, req *sync.GcpSyncReq) error {
-	return common.RequestNoResp[sync.GcpSyncReq](cli.client, rest.POST, kt, req, "/cvms/cc_info/sync")
-}
-
-// SyncCCInfoByCond ...
-func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) error {
-	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
-		"/cvms/cc_info/by_condition/sync")
 }

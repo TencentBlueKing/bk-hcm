@@ -115,23 +115,18 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		lbFromCloud, lbFromDB, isLBChange)
 
 	// 删除云上已经删除的负载均衡实例
-	if len(delCloudIDs) != 0 {
-		if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
-			return nil, err
-		}
+	if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+		return nil, err
 	}
+
 	// 创建云上新增负载均衡实例
-	if len(addSlice) != 0 {
-		_, err = cli.createLoadBalancer(kt, params.AccountID, params.Region, addSlice)
-		if err != nil {
-			return nil, err
-		}
+	_, err = cli.createLoadBalancer(kt, params.AccountID, params.Region, addSlice)
+	if err != nil {
+		return nil, err
 	}
 	// 更新变更负载均衡
-	if len(updateMap) != 0 {
-		if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
-			return nil, err
-		}
+	if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
+		return nil, err
 	}
 	ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
 	if err = cli.updateLoadBalancerSyncTime(kt, ids); err != nil {
@@ -537,8 +532,8 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
 		Tags:             cloud.GetTagMap(),
 		// 备注字段云上没有
-		Memo:     nil,
-		Isp:      cvt.PtrToVal(cloud.VipIsp),
+		Memo: nil,
+		Isp:  cvt.PtrToVal(cloud.VipIsp),
 		SyncTime: times.ConvStdTimeFormat(time.Now()),
 	}
 	if cloud.NetworkAttributes != nil {
@@ -688,9 +683,6 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 	if db.CloudSubnetID != cvt.PtrToVal(cloud.SubnetId) {
 		return true
 	}
-	if db.Isp != cvt.PtrToVal(cloud.VipIsp) {
-		return true
-	}
 
 	if len(cloud.LoadBalancerVips) != 0 {
 		var dbIPList []string
@@ -734,9 +726,6 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	if cloud.NetworkAttributes != nil {
 		if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
 			cloud.NetworkAttributes.InternetMaxBandwidthOut) {
-			return true
-		}
-		if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
 			return true
 		}
 		if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {

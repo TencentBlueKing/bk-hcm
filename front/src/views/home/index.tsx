@@ -36,7 +36,8 @@ import i18n from '@/language/i18n';
 // import AddProjectDialog from '@/components/AddProjectDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
-const { VERSION, BK_COMPONENT_API_URL, BK_DOMAIN, ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } = window.PROJECT_CONFIG;
+const { VERSION, BK_COMPONENT_API_URL, BK_HCM_DOMAIN, ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } =
+  window.PROJECT_CONFIG;
 
 export default defineComponent({
   name: 'Home',
@@ -137,7 +138,7 @@ export default defineComponent({
     watch(
       () => language.value,
       async (val) => {
-        document.cookie = `blueking_language=${val}; domain=${BK_DOMAIN}`;
+        document.cookie = `blueking_language=${val}; domain=${BK_HCM_DOMAIN}`;
         await saveLanguage(val);
         location.reload();
       },
@@ -153,7 +154,8 @@ export default defineComponent({
           defaultOpen={isMenuOpen.value}
           needMenu={isNeedSideMenu.value}
           onToggle={handleToggle}
-          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}>
+          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}
+        >
           {{
             'side-header': () => (
               <div class='left-header flex-row justify-content-between align-items-center'>
@@ -181,7 +183,8 @@ export default defineComponent({
                         )}
                         key={id}
                         aria-current='page'
-                        onClick={() => handleHeaderMenuClick(id, path)}>
+                        onClick={() => handleHeaderMenuClick(id, path)}
+                      >
                         {t(name)}
                       </Button>
                     ))}
@@ -203,19 +206,23 @@ export default defineComponent({
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.zh_cn;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanzhongwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'中文'}
                           </DropdownItem>
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.en;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanyingwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'English'}
                           </DropdownItem>
                         </DropdownMenu>
@@ -251,7 +258,8 @@ export default defineComponent({
                   style={{ width: `${NAV_WIDTH}px` }}
                   uniqueOpen={false}
                   openedKeys={openedKeys}
-                  activeKey={route.meta.activeKey?.toString()}>
+                  activeKey={route.meta.activeKey?.toString()}
+                >
                   {menus.value
                     .map((menuItem) => {
                       // menuItem.children 是一个数组, 且没有配置 hasPageRoute(页面级子路由)
@@ -277,7 +285,8 @@ export default defineComponent({
                                     [GLOBAL_BIZS_KEY]:
                                       whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
                                   },
-                                }}>
+                                }}
+                              >
                                 <Menu.Item key={child.meta?.activeKey?.toString()}>
                                   {{
                                     icon: () => <i class={child.meta?.icon} />,

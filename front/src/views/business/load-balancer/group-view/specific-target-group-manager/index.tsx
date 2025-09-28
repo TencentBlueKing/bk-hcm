@@ -1,12 +1,13 @@
 import { defineComponent, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { ITargetGroupDetail, useBusinessStore, useLoadBalancerStore } from '@/store';
-import useActiveTab from '@/hooks/useActiveTab';
-
+// import components
 import { Tab } from 'bkui-vue';
 import ListenerList from './listener-list';
 import TargetGroupDetail from './target-group-detail';
 import HealthCheckupPage from './health-checkup';
+// import stores
+import { ITargetGroupDetail, useBusinessStore, useLoadBalancerStore } from '@/store';
+// import hooks
+import useActiveTab from '@/hooks/useActiveTab';
 import './index.scss';
 
 const { TabPanel } = Tab;
@@ -19,9 +20,8 @@ enum TabType {
 
 export default defineComponent({
   name: 'SpecificTargetGroupManager',
-  setup() {
-    const route = useRoute();
-
+  props: { id: String },
+  setup(props) {
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
     const tgDetail = ref<Partial<ITargetGroupDetail>>({});
@@ -59,13 +59,12 @@ export default defineComponent({
     };
 
     watch(
-      () => route.params.id,
+      () => props.id,
       async (id) => {
         if (!id) return;
         // 目标组id状态保持
-        const targetGroupId = id as string;
-        loadBalancerStore.setTargetGroupId(targetGroupId);
-        await getTargetGroupDetail(targetGroupId);
+        loadBalancerStore.setTargetGroupId(id);
+        await getTargetGroupDetail(id);
         await getListenerDetail();
       },
       {
@@ -82,11 +81,9 @@ export default defineComponent({
           onChange={handleActiveTabChange}>
           {tabList.map((tab) => (
             <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-              <tab.component
-                detail={tgDetail.value}
-                getTargetGroupDetail={getTargetGroupDetail}
-                id={route.params.id as string}
-              />
+              <div class='common-card-wrap'>
+                {<tab.component detail={tgDetail.value} getTargetGroupDetail={getTargetGroupDetail} />}
+              </div>
             </TabPanel>
           ))}
         </Tab>

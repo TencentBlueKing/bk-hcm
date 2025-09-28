@@ -19,19 +19,16 @@
 
 package export
 
-import (
-	"hcm/pkg/logs"
-	"hcm/pkg/table"
-)
+import "hcm/pkg/logs"
 
-// BillSummaryRootTableHeaders 账单调整导出表头
-var BillSummaryRootTableHeaders [][]string
+// BillSummaryRootTableHeader 账单调整导出表头
+var BillSummaryRootTableHeader []string
 
-var _ table.Table = (*BillSummaryRootTable)(nil)
+var _ Table = (*BillSummaryRootTable)(nil)
 
 func init() {
 	var err error
-	BillSummaryRootTableHeaders, err = BillSummaryRootTable{}.GetHeaders()
+	BillSummaryRootTableHeader, err = BillSummaryRootTable{}.GetHeaders()
 	if err != nil {
 		logs.Errorf("bill adjustment table header init failed: %v", err)
 	}
@@ -53,12 +50,12 @@ type BillSummaryRootTable struct {
 	AdjustCost                string `header:"调账美金（美元）"`
 }
 
-// GetValuesByHeader ...
-func (b BillSummaryRootTable) GetValuesByHeader() ([]string, error) {
-	return table.GetValuesByHeader(b)
+// GetHeaderValues ...
+func (b BillSummaryRootTable) GetHeaderValues() ([]string, error) {
+	return parseHeaderFields(b)
 }
 
 // GetHeaders ...
-func (b BillSummaryRootTable) GetHeaders() ([][]string, error) {
-	return table.GetHeaders(b)
+func (b BillSummaryRootTable) GetHeaders() ([]string, error) {
+	return parseHeader(b)
 }

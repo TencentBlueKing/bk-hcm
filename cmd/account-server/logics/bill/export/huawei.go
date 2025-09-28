@@ -19,13 +19,10 @@
 
 package export
 
-import (
-	"hcm/pkg/logs"
-	"hcm/pkg/table"
-)
+import "hcm/pkg/logs"
 
 // HuaweiBillItemHeaders is the headers of GCP bill item.
-var HuaweiBillItemHeaders [][]string
+var HuaweiBillItemHeaders []string
 
 func init() {
 	var err error
@@ -35,7 +32,7 @@ func init() {
 	}
 }
 
-var _ table.Table = (*HuaweiBillItemTable)(nil)
+var _ Table = (*HuaweiBillItemTable)(nil)
 
 // HuaweiBillItemTable huawei账单导出表结构
 type HuaweiBillItemTable struct {
@@ -70,11 +67,11 @@ type HuaweiBillItemTable struct {
 }
 
 // GetHeaders ...
-func (h HuaweiBillItemTable) GetHeaders() ([][]string, error) {
-	return table.GetHeaders(h)
+func (h HuaweiBillItemTable) GetHeaders() ([]string, error) {
+	return parseHeader(h)
 }
 
-// GetValuesByHeader ...
-func (h HuaweiBillItemTable) GetValuesByHeader() ([]string, error) {
-	return table.GetValuesByHeader(h)
+// GetHeaderValues ...
+func (h HuaweiBillItemTable) GetHeaderValues() ([]string, error) {
+	return parseHeaderFields(h)
 }

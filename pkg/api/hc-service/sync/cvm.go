@@ -67,14 +67,3 @@ type SyncAwsCvmReq struct {
 func (req SyncAwsCvmReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
-
-// SyncCvmByCondReq ..
-type SyncCvmByCondReq struct {
-	AccountID string  `json:"account_id" validate:"required"`
-	HostIDs   []int64 `json:"bk_host_ids" validate:"min=1,max=100"`
-}
-
-// Validate ...
-func (req SyncCvmByCondReq) Validate() error {
-	return validator.Validate.Struct(req)
-}

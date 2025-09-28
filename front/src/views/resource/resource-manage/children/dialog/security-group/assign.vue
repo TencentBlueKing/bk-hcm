@@ -6,8 +6,6 @@ import { Info } from 'bkui-vue/lib/icon';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
-const model = defineModel<boolean>();
-
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
 const emit = defineEmits<{
@@ -17,13 +15,15 @@ const emit = defineEmits<{
 
 const securityGroupStore = useSecurityGroupStore();
 
-const DataView = {
-  Assignable: 'assignable',
-  NonAssignable: 'nonAssignable',
-};
+const model = defineModel<boolean>();
+
+const enum DataView {
+  Assignable = 'assignable',
+  NonAssignable = 'nonAssignable',
+}
 
 const previewList = ref([]);
-const activeView = ref<string>(DataView.Assignable);
+const activeView = ref<DataView>(DataView.Assignable);
 const assignableList = ref([]);
 const nonAssignableList = ref([]);
 const displayList = ref([]);
@@ -122,19 +122,19 @@ const confirmButtonDisabled = computed(
   () => activeView.value !== DataView.Assignable || displayList.value.length === 0,
 );
 
-const getDisplayList = (view: string) => {
+const getDisplayList = (view: DataView) => {
   return view === DataView.Assignable
     ? assignableList.value.slice().filter((item) => item.visible)
     : nonAssignableList.value.slice();
 };
 
-const setCurrentView = (view: string) => {
+const setCurrentView = (view: DataView) => {
   activeView.value = view;
   displayList.value = getDisplayList(view);
   displayColumns.value = view === DataView.Assignable ? assignableColumns : nonAssignableColumns;
 };
 
-const handleChangeView = (view: string) => {
+const handleChangeView = (view: DataView) => {
   setCurrentView(view);
 };
 

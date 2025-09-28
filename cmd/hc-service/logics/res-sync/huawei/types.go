@@ -28,7 +28,7 @@ import (
 
 // SyncBaseParams ...
 type SyncBaseParams struct {
-	AccountID string `json:"account_id" validate:"omitempty"`
+	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	// CloudIDs ...
 	// Notes: 网络接口同步时，传入的是主机ID列表

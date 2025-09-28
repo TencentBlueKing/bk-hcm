@@ -164,13 +164,11 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
-// deleteVpc delete vpc from db, before delete, check vpc not exist in cloud
 func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete vpc, cloudIDs is required")
 	}
 
-	// check vpc not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -201,7 +199,6 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCl
 	return nil
 }
 
-// updateVpc update vpc in db
 func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string]types.HuaWeiVpc) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update vpc, vpcs is required")
@@ -250,7 +247,6 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 	return nil
 }
 
-// createVpc create vpc in db
 func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.HuaWeiVpc) error {
 	if len(addVpc) == 0 {
 		return fmt.Errorf("create vpc, vpcs is required")
@@ -275,7 +271,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.HuaWe
 		if one.Extension.Cidr != nil {
 			tmpCidrs := make([]cloud.HuaWeiCidr, 0, len(one.Extension.Cidr))
 			for _, cidrItem := range one.Extension.Cidr {
-
 				tmpCidrs = append(tmpCidrs, cloud.HuaWeiCidr{
 					Type: cidrItem.Type,
 					Cidr: cidrItem.Cidr,
@@ -301,7 +296,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.HuaWe
 	return nil
 }
 
-// listVpcFromCloud list vpc from cloud
 func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.HuaWeiVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -326,7 +320,6 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
-// listVpcFromDB list vpc from db
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.HuaWeiVpcExtension], error) {
 
@@ -338,6 +331,11 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: params.AccountID,
+				},
 				&filter.AtomRule{
 					Field: "cloud_id",
 					Op:    filter.In.Factory(),
@@ -352,10 +350,6 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-
-	if len(params.AccountID) > 0 {
-		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("account_id", params.AccountID))
-	}
 	result, err := cli.dbCli.HuaWei.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("[%s] list vpc from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.HuaWei, err,
@@ -366,7 +360,6 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// isHuaWeiVpcChange check if vpc has changed
 func isHuaWeiVpcChange(item types.HuaWeiVpc, info cloudcore.Vpc[cloudcore.HuaWeiVpcExtension]) bool {
 	if info.Name != item.Name {
 		return true

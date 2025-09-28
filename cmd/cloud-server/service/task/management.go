@@ -25,7 +25,6 @@ import (
 	cloudtask "hcm/pkg/api/cloud-server/task"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/task"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -33,13 +32,17 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
-	"hcm/pkg/tools/times"
 )
 
 // ListBizTaskManagement list biz task management.
 func (svc *service) ListBizTaskManagement(cts *rest.Contexts) (interface{}, error) {
+	return svc.listTaskManagement(cts, handler.ListBizAuthRes)
+}
+
+func (svc *service) listTaskManagement(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{},
+	error) {
+
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -48,12 +51,6 @@ func (svc *service) ListBizTaskManagement(cts *rest.Contexts) (interface{}, erro
 		logs.Errorf("req is invalid, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	return svc.listTaskManagement(cts, handler.ListBizAuthRes, req)
-}
-
-func (svc *service) listTaskManagement(cts *rest.Contexts, authHandler handler.ListAuthResHandler, req *core.ListReq) (
-	interface{}, error) {
 
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
 		Authorizer: svc.authorizer,
@@ -185,60 +182,4 @@ func (svc *service) listTaskManagementState(cts *rest.Contexts, authHandler hand
 	}
 
 	return &cloudtask.ManagementListStateResult{Details: details}, nil
-}
-
-// ListBizTaskManagementByCond list biz task management by cond.
-func (svc *service) ListBizTaskManagementByCond(cts *rest.Contexts) (interface{}, error) {
-	req := new(cloudtask.ManagementListByCondReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err := req.Validate(); err != nil {
-		logs.Errorf("list biz task management cond req is invalid, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	startTime, err := times.ParseDateTime(constant.DateTimeLayout, req.StartTime)
-	if err != nil {
-		logs.Errorf("conv StartTime to std time failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	startTimeStr := times.ConvStdTimeFormat(startTime)
-
-	endTime, err := times.ParseDateTime(constant.DateTimeLayout, req.EndTime)
-	if err != nil {
-		logs.Errorf("conv EndTime to std time failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	endTimeStr := times.ConvStdTimeFormat(endTime)
-
-	// 校验时间范围
-	if startTime.AddDate(0, 1, 0).Before(endTime) {
-		return nil, errf.Newf(errf.InvalidParameter, "the maximum supported range for start_time and end_time "+
-			"is one month")
-	}
-
-	var queryRules []*filter.AtomRule
-	queryRules = append(queryRules, tools.RuleEqual("resource", req.Resource))
-	queryRules = append(queryRules, tools.RuleGreaterThanEqual("created_at", startTimeStr))
-	queryRules = append(queryRules, tools.RuleLessThanEqual("created_at", endTimeStr))
-	if len(req.AccountIDs) > 0 {
-		queryRules = append(queryRules, tools.RuleJsonOverlaps("account_ids", req.AccountIDs))
-	}
-	if len(req.Operations) > 0 {
-		queryRules = append(queryRules, tools.RuleJsonOverlaps("operations", req.Operations))
-	}
-	if len(req.Source) > 0 {
-		queryRules = append(queryRules, tools.RuleEqual("source", req.Source))
-	}
-	if len(req.State) > 0 {
-		queryRules = append(queryRules, tools.RuleEqual("state", req.State))
-	}
-	if len(req.Creator) > 0 {
-		queryRules = append(queryRules, tools.RuleEqual("creator", req.Creator))
-	}
-
-	queryFilter := tools.ExpressionAnd(queryRules...)
-	queryReq := &core.ListReq{Filter: queryFilter, Page: req.Page}
-	return svc.listTaskManagement(cts, handler.ListBizAuthRes, queryReq)
 }

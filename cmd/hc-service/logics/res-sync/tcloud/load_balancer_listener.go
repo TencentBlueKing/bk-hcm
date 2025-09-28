@@ -23,6 +23,7 @@ package tcloud
 import (
 	"errors"
 	"fmt"
+
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
@@ -243,23 +244,18 @@ func (cli *client) listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListen
 		cloudListeners, dbListeners, isListenerChange)
 
 	// 删除云上已经删除的监听器实例
-	if len(delCloudIDs) != 0 {
-		if err = cli.deleteListener(kt, params.Region, delCloudIDs); err != nil {
-			return err
-		}
+	if err = cli.deleteListener(kt, params.Region, delCloudIDs); err != nil {
+		return err
 	}
+
 	// 创建云上新增监听器实例， 对于四层规则一起创建对应的规则
-	if len(addSlice) != 0 {
-		_, err = cli.createListener(kt, params.AccountID, params.Region, opt, addSlice)
-		if err != nil {
-			return err
-		}
+	_, err = cli.createListener(kt, params.AccountID, params.Region, opt, addSlice)
+	if err != nil {
+		return err
 	}
 	// 更新变更监听器，不更新对应四层/七层 规则
-	if len(updateMap) != 0 {
-		if err = cli.updateListener(kt, opt.BizID, params.Region, updateMap); err != nil {
-			return err
-		}
+	if err = cli.updateListener(kt, opt.BizID, params.Region, updateMap); err != nil {
+		return err
 	}
 
 	// 同步监听器下的四层/七层规则
@@ -394,10 +390,7 @@ func (cli *client) createListener(kt *kit.Kit, accountID, region string, syncOpt
 
 func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenerWithRuleCreateReq {
-	var endport *int64
-	if cvt.PtrToVal(lbl.EndPort) > 0 {
-		endport = lbl.EndPort
-	}
+
 	db := dataproto.ListenerWithRuleCreateReq{
 		CloudID:       lbl.GetCloudID(),
 		Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -416,7 +409,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 		SessionExpire: cvt.PtrToVal(lbl.SessionExpireTime),
 		SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
 		Certificate:   convCert(lbl.Certificate),
-		EndPort:       endport,
+		EndPort:       lbl.EndPort,
 	}
 	// for unnamed listener, use its id as default name
 	if len(db.Name) == 0 {
@@ -427,10 +420,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 
 func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenersCreateReq[corelb.TCloudListenerExtension] {
-	var endport *int64
-	if cvt.PtrToVal(lbl.EndPort) > 0 {
-		endport = lbl.EndPort
-	}
+
 	// for layer 7 only create listeners itself
 	db := dataproto.ListenersCreateReq[corelb.TCloudListenerExtension]{
 		CloudID:       lbl.GetCloudID(),
@@ -446,7 +436,7 @@ func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 		Region:        region,
 		Extension: &corelb.TCloudListenerExtension{
 			Certificate: convCert(lbl.Certificate),
-			EndPort:     endport,
+			EndPort:     lbl.EndPort,
 		}}
 	// for unnamed listener, use its id as default name
 	if len(db.Name) == 0 {
@@ -464,10 +454,7 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, region string,
 	updates := make([]*dataproto.TCloudListenerUpdate, 0, len(updateMap))
 
 	for id, lbl := range updateMap {
-		var endport *int64
-		if cvt.PtrToVal(lbl.EndPort) > 0 {
-			endport = lbl.EndPort
-		}
+
 		updates = append(updates, &dataproto.TCloudListenerUpdate{
 			ID:            id,
 			Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -477,7 +464,7 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, region string,
 			Region:        region,
 			Extension: &corelb.TCloudListenerExtension{
 				Certificate: convCert(lbl.Certificate),
-				EndPort:     endport,
+				EndPort:     lbl.EndPort,
 			},
 		})
 	}

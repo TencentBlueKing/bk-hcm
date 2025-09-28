@@ -184,7 +184,6 @@ esb:
     password:
 
 bkHcmUrl: "http://hcm.bk.com"
-bkApigwHCMUrl: "http://hcm.bk.com"
 
 # cloudResource cloud resource relation settings.
 cloudResource:
@@ -302,9 +301,3 @@ cmdb:
 
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
-
-concurrentConfig:
-  clbImportCount: 10
-
-# tmp file dir, default: /tmp
-tmpFileDir: /tmp

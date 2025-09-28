@@ -46,7 +46,6 @@ export default defineComponent({
     const editCompRefs = ref(new Map<string, any>());
     // 如果祖辈组件有 provide 预鉴权参数, 则需要对编辑操作进行预鉴权处理
     const handleEdit = (name: string) => {
-      if (!name) return;
       if (isAuth.value === false) {
         // 无权限, 展示权限申请弹窗
         const { authId, handleAuth } = authAction;
@@ -155,34 +154,6 @@ export default defineComponent({
           const itemMaxWidth = `calc(100% - ${this.itemMaxWidthBaseDecrement}px)`;
           const valueMaxWidth = `calc(100% - ${parseFloat(this.labelWidth) + operationBtnWidth}px)`;
 
-          const editIconRender = () => {
-            if (!edit) return null;
-
-            if (typeof field.getAuthSign === 'function') {
-              return (
-                <hcm-auth sign={field.getAuthSign()}>
-                  {{
-                    default: ({ noPerm }: { noPerm: boolean }) => (
-                      <bk-button class='ml10' text disabled={noPerm} onClick={() => this.handleEdit(name)}>
-                        <i class={['icon hcm-icon bkhcm-icon-bianji']} />
-                      </bk-button>
-                    ),
-                  }}
-                </hcm-auth>
-              );
-            }
-
-            return (
-              <i
-                class={[
-                  'icon hcm-icon bkhcm-icon-bianji edit-icon',
-                  { 'hcm-no-permision-text-btn': this.isAuth === false },
-                ]}
-                onClick={() => this.handleEdit(name)}
-              />
-            );
-          };
-
           return (
             <li class='info-list-item' style={{ maxWidth: itemMaxWidth }}>
               {tipsContent ? (
@@ -205,7 +176,17 @@ export default defineComponent({
                   <div class='full-width'>{renderField(field)}</div>
                 )}
               </div>
-              {editIconRender()}
+              {edit && (
+                <i
+                  onClick={() => this.handleEdit(name)}
+                  class={[
+                    'icon hcm-icon bkhcm-icon-bianji edit-icon',
+                    {
+                      'hcm-no-permision-text-btn': this.isAuth === false,
+                    },
+                  ]}
+                />
+              )}
               {resultCopyable && <CopyToClipboard class='copy-btn' content={resultCopyContent} />}
             </li>
           );

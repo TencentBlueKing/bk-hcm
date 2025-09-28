@@ -96,16 +96,10 @@ func (r *Handler) Load(ws *restful.WebService) {
 		panic("no actions has been added, can not load the handler")
 	}
 
-	aliasMap := make(map[string]string, len(r.actions))
 	for _, action := range r.actions {
 		path := action.Path
 		if r.rootPath != "" {
 			path = fmt.Sprintf("%s/%s", r.rootPath, strings.TrimLeft(action.Path, "/"))
-		}
-		if previousPath, exists := aliasMap[action.Alias]; exists {
-			logs.Errorf("duplicate handler alias %s for path: %s, previous: %s", action.Alias, path, previousPath)
-		} else {
-			aliasMap[action.Alias] = path
 		}
 
 		switch action.Verb {

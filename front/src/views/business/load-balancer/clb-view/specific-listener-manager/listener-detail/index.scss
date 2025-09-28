@@ -1,0 +1,76 @@
+.listener-detail-wrap {
+  margin-top: 8px;
+  position: relative;
+
+  .fixed-edit-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 64px;
+  }
+
+  .listener-detail-info-wrap {
+    .info-title {
+      margin-bottom: 16px;
+      font-weight: 700;
+
+      .status-tag {
+        margin: 0 0 0 8px;
+      }
+    }
+
+    .info-content {
+      .info-item {
+        margin-left: 14px;
+        display: flex;
+        line-height: 40px;
+
+        .info-item-label {
+          margin-right: 5px;
+          width: 100px;
+          text-align: right;
+        }
+
+        .info-item-content {
+          margin-left: 10px;
+          color: #313238;
+
+          &.multiline {
+            padding-top: 0.7em;
+            line-height: normal;
+          }
+        }
+
+        .copy-btn {
+          padding-left: 10px;
+          display: none;
+          line-height: normal;
+        }
+
+        &:hover .copy-btn {
+          display: block;
+          color: #3a84ff;
+        }
+      }
+    }
+
+    &:not(:last-of-type) {
+      margin-bottom: 32px;
+    }
+
+    &:last-of-type {
+      padding-bottom: 24px;
+    }
+  }
+
+  .target-group-wrap {
+    display: flex;
+    align-items: center;
+
+    .loading-icon {
+      margin-left: 10px;
+      width: 14px;
+      height: 14px;
+    }
+  }
+}

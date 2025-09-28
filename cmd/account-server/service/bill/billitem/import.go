@@ -105,7 +105,6 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	return nil, nil
 }
 
-// validateSummaryAccountState checks if the summary main account state is accounting
 func (b *billItemSvc) validateSummaryAccountState(kt *kit.Kit, mainAccountsIDs []string,
 	vendor enumor.Vendor, billYear, billMonth int) error {
 	summaryMains, err := b.listSummaryMainByMainAccountIDs(kt, vendor, mainAccountsIDs, billYear, billMonth)
@@ -123,7 +122,6 @@ func (b *billItemSvc) validateSummaryAccountState(kt *kit.Kit, mainAccountsIDs [
 	return nil
 }
 
-// createBillItems creates bill items in batch
 func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
 	req *bill.ImportBillItemReq) error {
 
@@ -146,7 +144,6 @@ func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
 	return nil
 }
 
-// deleteBillItemsByMainAccountIDs deletes bill items by main account IDs
 func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor enumor.Vendor, billYear, billMonth int,
 	mainAccountIDs []string) error {
 
@@ -178,7 +175,6 @@ func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor
 	return nil
 }
 
-// mapAccountIDToPullTaskList maps main account ID to daily pull task list
 func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSummaryMain) (
 	map[string][]*dsbill.BillDailyPullTaskResult, error) {
 
@@ -252,7 +248,6 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	return nil
 }
 
-// generateRemainingPullTask generates remaining pull tasks
 func generateRemainingPullTask(existBillDays []int,
 	summary *dsbill.BillSummaryMain) []*dsbill.BillDailyPullTaskCreateReq {
 
@@ -267,7 +262,6 @@ func generateRemainingPullTask(existBillDays []int,
 	return result
 }
 
-// newPullTaskCreateReqFromSummaryMain creates a new pull task create request from summary main
 func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMain,
 	day int) *dsbill.BillDailyPullTaskCreateReq {
 
@@ -289,7 +283,6 @@ func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMain,
 	}
 }
 
-// updateStateToSplitAndResetFlowID updates the pull task state to split and resets the daily summary flow ID
 func (b *billItemSvc) updateStateToSplitAndResetFlowID(kt *kit.Kit, taskID string) error {
 	emptyFlowID := ""
 	updateReq := &dsbill.BillDailyPullTaskUpdateReq{
@@ -304,7 +297,6 @@ func (b *billItemSvc) updateStateToSplitAndResetFlowID(kt *kit.Kit, taskID strin
 	return nil
 }
 
-// listSummaryMainByMainAccountIDs lists summary main by main account IDs
 func (b *billItemSvc) listSummaryMainByMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor, mainAccountIDs []string,
 	billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
 

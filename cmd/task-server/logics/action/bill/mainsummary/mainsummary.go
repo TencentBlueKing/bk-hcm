@@ -134,7 +134,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		}
 	}
 	// 计算调账成本
-	adjCost, err := act.getAdjustmentSummary(kt.Kit(), opt, currency)
+	adjCost, err := act.getAdjustmenSummary(kt.Kit(), opt, currency)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,6 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	return nil, nil
 }
 
-// calRMBCost calculate RMB cost based on exchange rate
 func calRMBCost(req *bill.BillSummaryMainUpdateReq, exchangeRate *decimal.Decimal) *bill.BillSummaryMainUpdateReq {
 	if exchangeRate == nil {
 		return req
@@ -192,7 +191,6 @@ func calRMBCost(req *bill.BillSummaryMainUpdateReq, exchangeRate *decimal.Decima
 	return req
 }
 
-// getExchangeRate get exchange rate from data service
 func (act *MainAccountSummaryAction) getExchangeRate(kt *kit.Kit, fromCurrency, toCurrency enumor.CurrencyCode,
 	billYear, billMonth int) (*decimal.Decimal, error) {
 
@@ -232,7 +230,6 @@ func (act *MainAccountSummaryAction) getExchangeRate(kt *kit.Kit, fromCurrency, 
 	return result.Details[0].ExchangeRate, nil
 }
 
-// calculateMonthTaskStatus calculate month task status and cost
 func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
 	summary *bill.BillSummaryMain, monthTaskTypes []enumor.MonthTaskType) (extraCost decimal.Decimal, isFinished bool,
 	err error) {
@@ -280,7 +277,6 @@ func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summa
 	return cost, true, nil
 }
 
-// getMonthTask retrieves month tasks for the given summary and task types
 func getMonthTask(kt *kit.Kit, summary *billcore.SummaryRoot, taskTypes []enumor.MonthTaskType) (
 	[]*billcore.MonthTask, error) {
 
@@ -304,7 +300,6 @@ func getMonthTask(kt *kit.Kit, summary *billcore.SummaryRoot, taskTypes []enumor
 	return result.Details, nil
 }
 
-// getDailyVersionCost retrieves the daily version cost for the given options
 func (act *MainAccountSummaryAction) getDailyVersionCost(kt *kit.Kit, opt *MainAccountSummaryActionOption,
 	versionID int) (total *decimal.Decimal, isAccounted bool, currencyCode enumor.CurrencyCode, err error) {
 
@@ -342,7 +337,6 @@ func (act *MainAccountSummaryAction) getDailyVersionCost(kt *kit.Kit, opt *MainA
 	return &totalCost, isAccounted, currencyCode, nil
 }
 
-// getLastMonthSyncedCost retrieves the last month's synced cost for the given options
 func (act *MainAccountSummaryAction) getLastMonthSyncedCost(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
 	*decimal.Decimal, *decimal.Decimal, error) {
 
@@ -378,8 +372,7 @@ func (act *MainAccountSummaryAction) getLastMonthSyncedCost(kt *kit.Kit, opt *Ma
 	return &lastMonthSummary.CurrentMonthCostSynced, &lastMonthSummary.CurrentMonthRMBCostSynced, nil
 }
 
-// getAdjustmentSummary ...
-func (act *MainAccountSummaryAction) getAdjustmentSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption,
+func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption,
 	currency enumor.CurrencyCode) (*decimal.Decimal, error) {
 
 	expressions := []*filter.AtomRule{
@@ -424,7 +417,6 @@ func (act *MainAccountSummaryAction) getAdjustmentSummary(kt *kit.Kit, opt *Main
 	return &cost, nil
 }
 
-// getRootSummary ...
 func (act *MainAccountSummaryAction) getRootSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
 	*billcore.SummaryRoot, *bill.BillSummaryMain, error) {
 

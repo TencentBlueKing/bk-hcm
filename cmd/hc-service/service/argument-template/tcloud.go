@@ -43,7 +43,6 @@ import (
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
-// initTCloudArgsTplService initializes the tcloud argument template service.
 func (svc *argsTplSvc) initTCloudArgsTplService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
@@ -121,102 +120,79 @@ func (svc *argsTplSvc) CreateTCloudArgsTpl(cts *rest.Contexts) (interface{}, err
 	return &argstpl.ArgsTplCreateResult{ID: newData.IDs[0]}, nil
 }
 
-// createTCloudCloud creates the tcloud argument template in the cloud.
 func (svc *argsTplSvc) createTCloudCloud(kt *kit.Kit, client tcloud.TCloud, req *protoargstpl.TCloudCreateReq) (
 	string, error) {
 
+	var cloudID string
 	switch req.Type {
 	case enumor.AddressType:
-		return svc.createTCloudAddressTpl(kt, client, req)
+		opt := &typeargstpl.TCloudCreateAddressOption{
+			TemplateName: req.Name,
+		}
+		for _, addr := range req.Templates {
+			opt.AddressesExtra = append(opt.AddressesExtra, &vpc.AddressInfo{
+				Address:     addr.Address,
+				Description: addr.Description,
+			})
+		}
+
+		resp, err := client.CreateArgsTplAddress(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to create tcloud argument template address failed, opt: %v, err: %v, rid: %s",
+				opt, err, kt.Rid)
+			return "", err
+		}
+		cloudID = converter.PtrToVal(resp.AddressTemplateId)
+
 	case enumor.AddressGroupType:
-		return svc.createTCloudAddressGroupTpl(kt, client, req)
+		opt := &typeargstpl.TCloudCreateAddressGroupOption{
+			TemplateGroupName: req.Name,
+			TemplateIDs:       req.GroupTemplates,
+		}
+		resp, err := client.CreateArgsTplAddressGroup(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to create tcloud argument template address group failed, opt: %v, "+
+				"err: %v, rid: %s", opt, err, kt.Rid)
+			return "", err
+		}
+		cloudID = converter.PtrToVal(resp.AddressTemplateGroupId)
+
 	case enumor.ServiceType:
-		return svc.createTCloudServiceTpl(kt, client, req)
+		opt := &typeargstpl.TCloudCreateServiceOption{
+			TemplateName: req.Name,
+		}
+		for _, addr := range req.Templates {
+			opt.ServicesExtra = append(opt.ServicesExtra, &vpc.ServicesInfo{
+				Service:     addr.Address,
+				Description: addr.Description,
+			})
+		}
+		resp, cErr := client.CreateArgsTplService(kt, opt)
+		if cErr != nil {
+			logs.Errorf("request adaptor to create tcloud argument template service failed, opt: %v, err: %v, rid: %s",
+				opt, cErr, kt.Rid)
+			return "", cErr
+		}
+		cloudID = converter.PtrToVal(resp.ServiceTemplateId)
+
 	case enumor.ServiceGroupType:
-		return svc.createTCloudServiceGroupTpl(kt, client, req)
+		opt := &typeargstpl.TCloudCreateServiceGroupOption{
+			TemplateGroupName: req.Name,
+			TemplateIDs:       req.GroupTemplates,
+		}
+		resp, cErr := client.CreateArgsTplServiceGroup(kt, opt)
+		if cErr != nil {
+			logs.Errorf("request adaptor to create tcloud argument template service group failed, opt: %v, "+
+				"err: %v, rid: %s", opt, cErr, kt.Rid)
+			return "", cErr
+		}
+		cloudID = converter.PtrToVal(resp.ServiceTemplateGroupId)
+
 	default:
 		return "", fmt.Errorf("unsupported template type: %s", req.Type)
 	}
-}
 
-// createTCloudAddressTpl creates the tcloud argument template address in the cloud.
-func (svc *argsTplSvc) createTCloudAddressTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudCreateReq) (string, error) {
-
-	opt := &typeargstpl.TCloudCreateAddressOption{
-		TemplateName: req.Name,
-	}
-	for _, addr := range req.Templates {
-		opt.AddressesExtra = append(opt.AddressesExtra, &vpc.AddressInfo{
-			Address:     addr.Address,
-			Description: addr.Description,
-		})
-	}
-
-	resp, err := client.CreateArgsTplAddress(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to create tcloud argument template address failed, opt: %v, err: %v, rid: %s",
-			opt, err, kt.Rid)
-		return "", err
-	}
-
-	return converter.PtrToVal(resp.AddressTemplateId), nil
-}
-
-// createTCloudAddressGroupTpl creates the tcloud argument template address group in the cloud.
-func (svc *argsTplSvc) createTCloudAddressGroupTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudCreateReq) (string, error) {
-
-	opt := &typeargstpl.TCloudCreateAddressGroupOption{
-		TemplateGroupName: req.Name,
-		TemplateIDs:       req.GroupTemplates,
-	}
-	resp, err := client.CreateArgsTplAddressGroup(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to create tcloud argument template address group failed, opt: %v, "+
-			"err: %v, rid: %s", opt, err, kt.Rid)
-		return "", err
-	}
-	return converter.PtrToVal(resp.AddressTemplateGroupId), nil
-}
-
-// createTCloudServiceTpl creates the tcloud argument template service in the cloud.
-func (svc *argsTplSvc) createTCloudServiceTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudCreateReq) (string, error) {
-
-	opt := &typeargstpl.TCloudCreateServiceOption{
-		TemplateName: req.Name,
-	}
-	for _, addr := range req.Templates {
-		opt.ServicesExtra = append(opt.ServicesExtra, &vpc.ServicesInfo{
-			Service:     addr.Address,
-			Description: addr.Description,
-		})
-	}
-	resp, cErr := client.CreateArgsTplService(kt, opt)
-	if cErr != nil {
-		logs.Errorf("request adaptor to create tcloud argument template service failed, opt: %v, err: %v, rid: %s",
-			opt, cErr, kt.Rid)
-		return "", cErr
-	}
-	return converter.PtrToVal(resp.ServiceTemplateId), nil
-}
-
-// createTCloudServiceGroupTpl creates the tcloud argument template service group in the cloud.
-func (svc *argsTplSvc) createTCloudServiceGroupTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudCreateReq) (string, error) {
-
-	opt := &typeargstpl.TCloudCreateServiceGroupOption{
-		TemplateGroupName: req.Name,
-		TemplateIDs:       req.GroupTemplates,
-	}
-	resp, cErr := client.CreateArgsTplServiceGroup(kt, opt)
-	if cErr != nil {
-		logs.Errorf("request adaptor to create tcloud argument template service group failed, opt: %v, "+
-			"err: %v, rid: %s", opt, cErr, kt.Rid)
-		return "", cErr
-	}
-	return converter.PtrToVal(resp.ServiceTemplateGroupId), nil
+	return cloudID, nil
 }
 
 // UpdateTCloudArgsTpl ...
@@ -290,124 +266,97 @@ func (svc *argsTplSvc) UpdateTCloudArgsTpl(cts *rest.Contexts) (interface{}, err
 	return nil, nil
 }
 
-// updateTCloudCloud updates the tcloud argument template in the cloud.
 func (svc *argsTplSvc) updateTCloudCloud(kt *kit.Kit, client tcloud.TCloud, req *protoargstpl.TCloudUpdateReq,
 	templateType enumor.TemplateType, cloudTemplateID string) error {
 
 	switch templateType {
 	case enumor.AddressType:
-		return svc.updateTCloudAddressTpl(kt, client, req, cloudTemplateID)
+		opt := &typeargstpl.TCloudUpdateAddressOption{
+			TemplateID:   cloudTemplateID,
+			TemplateName: req.Name,
+		}
+		for _, addr := range req.Templates {
+			opt.AddressesExtra = append(opt.AddressesExtra, &vpc.AddressInfo{
+				Address:     addr.Address,
+				Description: addr.Description,
+			})
+		}
+
+		resp, err := client.UpdateArgsTplAddress(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to update tcloud argument template address failed, opt: %v, err: %v, rid: %s",
+				opt, err, kt.Rid)
+			return err
+		}
+
+		if len(resp.FailedCloudIDs) > 0 {
+			return errf.Newf(errf.Aborted, "update tcloud argument template address failed, failedCloudIDs: %v",
+				resp.FailedCloudIDs)
+		}
+
 	case enumor.AddressGroupType:
-		return svc.updateTCloudAddressGroupTpl(kt, client, req, cloudTemplateID)
+		opt := &typeargstpl.TCloudUpdateAddressGroupOption{
+			TemplateGroupID:   cloudTemplateID,
+			TemplateGroupName: req.Name,
+			TemplateIDs:       req.GroupTemplates,
+		}
+		resp, err := client.UpdateArgsTplAddressGroup(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to update tcloud argument template address group failed, opt: %v, "+
+				"err: %v, rid: %s", opt, err, kt.Rid)
+			return err
+		}
+
+		if len(resp.FailedCloudIDs) > 0 {
+			return errf.Newf(errf.Aborted, "update tcloud argument template address group failed, "+
+				"failedCloudIDs: %v", resp.FailedCloudIDs)
+		}
+
 	case enumor.ServiceType:
-		return svc.updateTCloudServiceTpl(kt, client, req, cloudTemplateID)
+		opt := &typeargstpl.TCloudUpdateServiceOption{
+			TemplateID:   cloudTemplateID,
+			TemplateName: req.Name,
+		}
+		for _, addr := range req.Templates {
+			opt.ServicesExtra = append(opt.ServicesExtra, &vpc.ServicesInfo{
+				Service:     addr.Address,
+				Description: addr.Description,
+			})
+		}
+		resp, err := client.UpdateArgsTplService(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to create tcloud argument template service failed, opt: %v, err: %v, rid: %s",
+				opt, err, kt.Rid)
+			return err
+		}
+
+		if len(resp.FailedCloudIDs) > 0 {
+			return errf.Newf(errf.Aborted, "update tcloud argument template service failed, failedCloudIDs: %v",
+				resp.FailedCloudIDs)
+		}
+
 	case enumor.ServiceGroupType:
-		return svc.updateTCloudServiceGroupTpl(kt, client, req, cloudTemplateID)
+		opt := &typeargstpl.TCloudUpdateServiceGroupOption{
+			TemplateGroupID:   cloudTemplateID,
+			TemplateGroupName: req.Name,
+			TemplateIDs:       req.GroupTemplates,
+		}
+		resp, err := client.UpdateArgsTplServiceGroup(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to update tcloud argument template service group failed, opt: %v, "+
+				"err: %v, rid: %s", opt, err, kt.Rid)
+			return err
+		}
+
+		if len(resp.FailedCloudIDs) > 0 {
+			return errf.Newf(errf.Aborted, "update tcloud argument template service group failed, "+
+				"failedCloudIDs: %v", resp.FailedCloudIDs)
+		}
+
 	default:
 		return fmt.Errorf("unsupported template type: %s", templateType)
 	}
-}
 
-func (svc *argsTplSvc) updateTCloudAddressGroupTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudUpdateReq, cloudTemplateID string) error {
-
-	opt := &typeargstpl.TCloudUpdateAddressGroupOption{
-		TemplateGroupID:   cloudTemplateID,
-		TemplateGroupName: req.Name,
-		TemplateIDs:       req.GroupTemplates,
-	}
-	resp, err := client.UpdateArgsTplAddressGroup(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to update tcloud argument template address group failed, opt: %v, "+
-			"err: %v, rid: %s", opt, err, kt.Rid)
-		return err
-	}
-
-	if len(resp.FailedCloudIDs) > 0 {
-		return errf.Newf(errf.Aborted, "update tcloud argument template address group failed, "+
-			"failedCloudIDs: %v", resp.FailedCloudIDs)
-	}
-	return nil
-}
-
-// updateTCloudAddressTpl updates the tcloud argument template address in the cloud.
-func (svc *argsTplSvc) updateTCloudAddressTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudUpdateReq, cloudTemplateID string) error {
-
-	opt := &typeargstpl.TCloudUpdateAddressOption{
-		TemplateID:   cloudTemplateID,
-		TemplateName: req.Name,
-	}
-	for _, addr := range req.Templates {
-		opt.AddressesExtra = append(opt.AddressesExtra, &vpc.AddressInfo{
-			Address:     addr.Address,
-			Description: addr.Description,
-		})
-	}
-
-	resp, err := client.UpdateArgsTplAddress(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to update tcloud argument template address failed, opt: %v, err: %v, rid: %s",
-			opt, err, kt.Rid)
-		return err
-	}
-
-	if len(resp.FailedCloudIDs) > 0 {
-		return errf.Newf(errf.Aborted, "update tcloud argument template address failed, failedCloudIDs: %v",
-			resp.FailedCloudIDs)
-	}
-	return nil
-}
-
-// updateTCloudServiceTpl updates the tcloud argument template service in the cloud.
-func (svc *argsTplSvc) updateTCloudServiceTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudUpdateReq, cloudTemplateID string) error {
-
-	opt := &typeargstpl.TCloudUpdateServiceOption{
-		TemplateID:   cloudTemplateID,
-		TemplateName: req.Name,
-	}
-	for _, addr := range req.Templates {
-		opt.ServicesExtra = append(opt.ServicesExtra, &vpc.ServicesInfo{
-			Service:     addr.Address,
-			Description: addr.Description,
-		})
-	}
-	resp, err := client.UpdateArgsTplService(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to create tcloud argument template service failed, opt: %v, err: %v, rid: %s",
-			opt, err, kt.Rid)
-		return err
-	}
-
-	if len(resp.FailedCloudIDs) > 0 {
-		return errf.Newf(errf.Aborted, "update tcloud argument template service failed, failedCloudIDs: %v",
-			resp.FailedCloudIDs)
-	}
-
-	return nil
-}
-
-// updateTCloudServiceGroupTpl updates the tcloud argument template service group in the cloud.
-func (svc *argsTplSvc) updateTCloudServiceGroupTpl(kt *kit.Kit, client tcloud.TCloud,
-	req *protoargstpl.TCloudUpdateReq, cloudTemplateID string) error {
-
-	opt := &typeargstpl.TCloudUpdateServiceGroupOption{
-		TemplateGroupID:   cloudTemplateID,
-		TemplateGroupName: req.Name,
-		TemplateIDs:       req.GroupTemplates,
-	}
-	resp, err := client.UpdateArgsTplServiceGroup(kt, opt)
-	if err != nil {
-		logs.Errorf("request adaptor to update tcloud argument template service group failed, opt: %v, "+
-			"err: %v, rid: %s", opt, err, kt.Rid)
-		return err
-	}
-
-	if len(resp.FailedCloudIDs) > 0 {
-		return errf.Newf(errf.Aborted, "update tcloud argument template service group failed, "+
-			"failedCloudIDs: %v", resp.FailedCloudIDs)
-	}
 	return nil
 }
 

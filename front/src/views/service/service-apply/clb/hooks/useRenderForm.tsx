@@ -19,13 +19,7 @@ import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import {
-  LOAD_BALANCER_TYPE,
-  ADDRESS_IP_VERSION,
-  ZONE_TYPE,
-  INTERNET_CHARGE_TYPE,
-  LOAD_BALANCER_PASS_TO_TARGET_LIST,
-} from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -320,17 +314,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           description:
             '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n一、1次校验-仅校验CLB上的安全组，忽略后端RS的安全组，仅关注CLB上的安全组配置即可\n二、2次校验-同时校验CLB和RS上的安全组，需同时关注CLB和RS这2处绑定的安全组',
           content: () => (
-            <bk-select
-              v-model={formModel.load_balancer_pass_to_target}
-              allowEmptyValues={[false]}
-              disabled={formModel.address_ip_version === 'IPv6FullChain'}
-              v-bk-tooltips={{
-                content: 'IPv6类型负载均衡，不允许修改安全组的放通模式',
-                disabled: formModel.address_ip_version !== 'IPv6FullChain',
-              }}>
-              {LOAD_BALANCER_PASS_TO_TARGET_LIST.map(({ label, description, value }) => (
-                <bk-option key={value} id={value} name={`${label}（${description}）`} />
-              ))}
+            <bk-select v-model={formModel.load_balancer_pass_to_target} allowEmptyValues={[false]}>
+              <bk-option key={true} id={true} name='1次校验-仅校验CLB上的安全组' />
+              <bk-option key={false} id={false} name='2次校验-同时校验CLB和RS上的安全组' />
             </bk-select>
           ),
         },
@@ -657,15 +643,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     });
   };
 
-  watch([() => formModel.account_id, () => formModel.vendor], ([accountId, vendor]) => {
-    // 当云账号变更时, 查询用户网络类型
-    if (!accountId || !vendor) {
-      return;
-    }
-    reqAccountNetworkType(vendor, accountId).then(({ data: { NetworkAccountType } }) => {
-      formModel.account_type = NetworkAccountType;
-    });
-  });
+  watch(
+    () => formModel.account_id,
+    (val) => {
+      // 当云账号变更时, 查询用户网络类型
+      reqAccountNetworkType(formModel.vendor, val).then(({ data: { NetworkAccountType } }) => {
+        formModel.account_type = NetworkAccountType;
+      });
+    },
+  );
 
   watch([() => formModel.account_id, () => formModel.region], () => {
     // 当 account_id 或 region 改变时, 恢复默认状态
@@ -701,13 +687,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   watch(
     () => formModel.address_ip_version,
-    (ipVersion) => {
+    () => {
       resetParams(['zones', 'backup_zones', 'vip_isp']);
       handleClearValidate();
-      // IPv6安全组放通模式默认是关闭的，不允许修改
-      if (ipVersion === 'IPv6FullChain') {
-        formModel.load_balancer_pass_to_target = false;
-      }
     },
   );
 

@@ -22,7 +22,6 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
@@ -38,7 +37,6 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
@@ -78,9 +76,7 @@ type createUrlRuleTaskDetail struct {
 // It orchestrates the entire process of creating layer-7 listeners based on the provided raw details.
 // The process includes: unmarshalling data, validation, filtering, building task management entries,
 // creating asynchronous task flows, and updating task management details.
-func (c *CreateUrlRuleExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (
-	string, error) {
-
+func (c *CreateUrlRuleExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (string, error) {
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err
@@ -186,7 +182,7 @@ func (c *CreateUrlRuleExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
 	return flowIDs, nil
 }
 
-func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.LoadBalancerRaw,
+func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
 	details []*createUrlRuleTaskDetail) (string, error) {
 
 	listenerToDetails, err := c.mapByListener(kt, lb.CloudID, details)
@@ -234,11 +230,17 @@ func (c *CreateUrlRuleExecutor) mapByListener(kt *kit.Kit, lbCloudID string, det
 
 	listenerToDetails := make(map[string][]*createUrlRuleTaskDetail)
 	for _, detail := range details {
-		if len(detail.listenerID) == 0 {
-			logs.Errorf("clb(%s) listener(%d) not found, rid: %s", lbCloudID, detail.ListenerPort[0], kt.Rid)
+		listener, err := getListener(kt, c.dataServiceCli, c.accountID, lbCloudID, detail.Protocol,
+			detail.ListenerPort[0], c.bkBizID, c.vendor)
+		if err != nil {
+			logs.Errorf("get listener failed, lb(%s), port(%v),err: %v, rid: %s",
+				lbCloudID, detail.ListenerPort, err, kt.Rid)
+			return nil, err
+		}
+		if listener == nil {
 			return nil, fmt.Errorf("clb(%s) listener(%d) not found", lbCloudID, detail.ListenerPort[0])
 		}
-		listenerToDetails[detail.listenerID] = append(listenerToDetails[detail.listenerID], detail)
+		listenerToDetails[listener.ID] = append(listenerToDetails[listener.ID], detail)
 	}
 	return listenerToDetails, nil
 }
@@ -425,31 +427,21 @@ func (c *CreateUrlRuleExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil
 	}
-	// group by flowID and actionID
-	classifySlice := classifier.ClassifySlice(c.taskDetails, func(detail *createUrlRuleTaskDetail) string {
-		return fmt.Sprintf("%s/%s", detail.flowID, detail.actionID)
-	})
-	for key, details := range classifySlice {
-		split := strings.Split(key, "/")
-		if len(split) != 2 {
-			return fmt.Errorf("invalid key: %s", key)
-		}
-		flowID, actionID := split[0], split[1]
-		for _, batch := range slice.Split(details, constant.BatchOperationMaxLimit) {
-			ids := slice.Map(batch, func(detail *createUrlRuleTaskDetail) string {
-				return detail.taskDetailID
-			})
-			updateDetailsReq := &task.BatchUpdateTaskDetailReq{
-				IDs:           ids,
-				FlowID:        flowID,
-				TaskActionIDs: []string{actionID},
-			}
-			err := c.dataServiceCli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
-			if err != nil {
-				logs.Errorf("update task details failed, err: %v, req: %+v, rid: %s", err, updateDetailsReq, kt.Rid)
-				return err
-			}
-		}
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
+	for _, detail := range c.taskDetails {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:            detail.taskDetailID,
+			FlowID:        detail.flowID,
+			TaskActionIDs: []string{detail.actionID},
+		})
+	}
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
+	}
+	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
+	if err != nil {
+		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 	return nil
 }

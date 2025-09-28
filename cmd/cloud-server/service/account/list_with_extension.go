@@ -110,10 +110,6 @@ func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) 
 		}
 	}
 
-	// 兼容用户调用api查询账户信息时使用旧的业务字段
-	for _, one := range resp.Details {
-		one.BkBizIDs = one.UsageBizIDs
-	}
 	return resp, nil
 }
 

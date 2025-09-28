@@ -14,11 +14,6 @@ import SecurityGroupManagerSelector from '@/views/resource/resource-manage/child
 import BusinessSelector from '@/components/business-selector/business.vue';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
-const props = defineProps<{
-  isFormDataChanged: boolean;
-  show: boolean;
-}>();
-const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const { t } = useI18n();
 const useBusiness = useBusinessStore();
 const resourceAccountStore = useResourceAccountStore();
@@ -33,8 +28,13 @@ const submitLoading = ref(false);
 const filter = ref<any>({
   filter: { op: 'and', rules: [{ field: 'vendor', op: 'eq', value: 'aws' }] },
 });
-const usageBizList = ref<IBusinessItem[]>([]);
+let usageBizList = ref<IBusinessItem[]>([]);
 
+const props = defineProps<{
+  isFormDataChanged: boolean;
+  show: boolean;
+}>();
+const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const handleFormFilter = (value: BusinessFormFilter) => {
   formFilter.value = { ...value };
   type.value = value.vendor;
@@ -99,11 +99,11 @@ const submit = async () => {
   }
 };
 const getAccountList = () => {
-  const accountId = ref(resourceAccountStore.resourceAccount?.id ?? '');
-  if (!isResourcePage || !accountId.value) return;
+  const accountId = resourceAccountStore.resourceAccount?.id ?? '';
+  if (!isResourcePage || !accountId) return;
 
   const { accountBizList } = useAccountBusiness(accountId);
-  usageBizList.value = accountBizList.value;
+  usageBizList = accountBizList;
 
   // 默认填充后，清除表单校验结果
   nextTick(() => formRef.value.clearValidate());

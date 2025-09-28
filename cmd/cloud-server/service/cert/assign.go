@@ -22,7 +22,6 @@ package cert
 
 import (
 	"hcm/cmd/cloud-server/logics/cert"
-	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server/cert"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -40,11 +39,6 @@ func (svc *certSvc) AssignCertToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.CertCloudResType, req.CertIDs, req.BkBizID)
-	if err != nil {
-		return nil, err
 	}
 
 	// 权限校验

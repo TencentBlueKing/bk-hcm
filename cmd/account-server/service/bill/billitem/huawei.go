@@ -91,12 +91,9 @@ func (b *billItemSvc) exportHuaweiBillItems(kt *kit.Kit, req *bill.ExportBillIte
 		logs.Errorf("create writer failed: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-
-	for _, header := range export.HuaweiBillItemHeaders {
-		if err = writer.Write(header); err != nil {
-			logs.Errorf("csv write header failed: %v, val: %v, rid: %s", err, header, kt.Rid)
-			return nil, err
-		}
+	if err = writer.Write(export.HuaweiBillItemHeaders); err != nil {
+		logs.Errorf("csv write header failed: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	convFunc := func(items []*billapi.HuaweiBillItem) error {
@@ -179,7 +176,7 @@ func convertHuaweiBillItems(kt *kit.Kit, items []*billapi.HuaweiBillItem, bizNam
 			Cost:                 item.Cost.String(),
 			CostRMB:              item.Cost.Mul(*rate).String(),
 		}
-		values, err := table.GetValuesByHeader()
+		values, err := table.GetHeaderValues()
 		if err != nil {
 			logs.Errorf("get header fields failed, table: %v, error: %v, rid: %s", table, err, kt.Rid)
 			return nil, err

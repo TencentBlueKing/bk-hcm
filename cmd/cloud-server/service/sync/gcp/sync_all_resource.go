@@ -128,9 +128,5 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		return enumor.SubAccountCloudResType, hitErr
 	}
 
-	if hitErr = SyncCvmCCHostInfo(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
-		return enumor.CvmCCInfoResType, hitErr
-	}
-
 	return "", nil
 }

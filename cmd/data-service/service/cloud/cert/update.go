@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	tablecert "hcm/pkg/dal/table/cloud/cert"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
@@ -114,7 +113,6 @@ func batchUpdateCertExt[T corecert.Extension](cts *rest.Contexts, svc *certSvc) 
 				CertStatus:       item.CertStatus,
 				EncryptAlgorithm: item.EncryptAlgorithm,
 				CloudExpiredTime: item.CloudExpiredTime,
-				Tags:             types.StringMap(item.Tags),
 				Reviser:          cts.Kit.User,
 			}
 

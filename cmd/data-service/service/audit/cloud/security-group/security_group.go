@@ -184,7 +184,6 @@ func (s *SecurityGroup) SecurityGroupAssignAuditBuild(kt *kit.Kit, assigns []pro
 	return audits, nil
 }
 
-// listSecurityGroup lists security groups by their IDs.
 func (s *SecurityGroup) listSecurityGroup(kt *kit.Kit, ids []string) (map[string]tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),
@@ -273,7 +272,6 @@ func (s *SecurityGroup) OperationAuditBuild(kt *kit.Kit, operations []protoaudit
 	return audits, nil
 }
 
-// cvmAssOperationAuditBuild builds audit for security group associated with CVM.
 func (s *SecurityGroup) cvmAssOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
@@ -338,7 +336,6 @@ func (s *SecurityGroup) cvmAssOperationAuditBuild(kt *kit.Kit, operations []prot
 	return audits, nil
 }
 
-// cvmAssOperationAuditBuild builds audit for security group associated with CVM.
 func (s *SecurityGroup) subnetAssOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
@@ -407,7 +404,6 @@ func (s *SecurityGroup) subnetAssOperationAuditBuild(kt *kit.Kit, operations []p
 	return audits, nil
 }
 
-// niAssOperationAuditBuild builds audit for security group associated with network interface.
 func (s *SecurityGroup) niAssOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 
@@ -472,7 +468,6 @@ func (s *SecurityGroup) niAssOperationAuditBuild(kt *kit.Kit, operations []proto
 	return audits, nil
 }
 
-// clbAssOperationAuditBuild builds audit for security group associated with load balancer.
 func (s *SecurityGroup) clbAssOperationAuditBuild(kt *kit.Kit, operations []protoaudit.CloudResourceOperationInfo) (
 	[]*tableaudit.AuditTable, error) {
 

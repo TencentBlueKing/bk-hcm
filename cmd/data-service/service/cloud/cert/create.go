@@ -30,7 +30,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablecert "hcm/pkg/dal/table/cloud/cert"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -79,7 +78,6 @@ func batchCreateCert[T corecert.Extension](cts *rest.Contexts, svc *certSvc, ven
 				CloudCreatedTime: one.CloudCreatedTime,
 				CloudExpiredTime: one.CloudExpiredTime,
 				Memo:             one.Memo,
-				Tags:             types.StringMap(one.Tags),
 				Creator:          cts.Kit.User,
 				Reviser:          cts.Kit.User,
 			})

@@ -30,8 +30,7 @@ import (
 
 func TestCreateURLRuleExecutor_convertDataToPreview_validateFailed(t *testing.T) {
 	type args struct {
-		rawData [][]string
-		headers []string
+		i [][]string
 	}
 	tests := []struct {
 		name    string
@@ -40,24 +39,10 @@ func TestCreateURLRuleExecutor_convertDataToPreview_validateFailed(t *testing.T)
 	}{
 		{
 			name: "test",
-			args: args{
-				rawData: [][]string{
-					{"127.0.0.1", "lb-xxxxx1", "http", "8888",
-						"www.tencent.com", "是", "/", "WRR", "0", "enable", "用户的备注"},
-				},
-				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "是/否默认域名", "url路径",
-					"均衡方式", "会话保持(0为不开启)", "健康检查", "用户备注(可选)", "导出备注(可选)"},
-			},
-			wantErr: assert.Error,
-		},
-		{
-			name: "残缺的表头",
-			args: args{
-				rawData: [][]string{{"127.0.0.1", "lb-xxxxx1", "http", "8888",
-					"www.tencent.com", "TRUE", "/", "WRR", "0", "enable", "用户的备注"}},
-				headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "是/否默认域名", "url路径",
-					"均衡方式", "会话保持(0为不开启)", "用户备注(可选)", "导出备注(可选)"},
-			},
+			args: args{i: [][]string{
+				{"127.0.0.1", "lb-xxxxx1", "http", "8888",
+					"www.tencent.com", "是", "/", "WRR", "0", "enable", "用户的备注"},
+			}},
 			wantErr: assert.Error,
 		},
 	}
@@ -65,7 +50,7 @@ func TestCreateURLRuleExecutor_convertDataToPreview_validateFailed(t *testing.T)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			executor := &CreateUrlRulePreviewExecutor{}
-			err := executor.convertDataToPreview(tt.args.rawData, tt.args.headers)
+			err := executor.convertDataToPreview(tt.args.i)
 			tt.wantErr(t, err)
 		})
 	}
@@ -73,8 +58,7 @@ func TestCreateURLRuleExecutor_convertDataToPreview_validateFailed(t *testing.T)
 
 func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 	type args struct {
-		rawData [][]string
-		headers []string
+		i [][]string
 	}
 	tests := []struct {
 		name string
@@ -83,23 +67,20 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 	}{
 		{
 			name: "test",
-			args: args{rawData: [][]string{
+			args: args{i: [][]string{
 				{"127.0.0.1", "lb-xxxxx1", "http", "8888",
 					"www.tencent.com", "TRUE", "/", "WRR", "0", "enable", "用户的备注"},
-			}, headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "是/否默认域名", "url路径",
-				"均衡方式", "会话保持(0为不开启)", "健康检查", "用户备注(可选)", "导出备注(可选)"}},
+			}},
 			want: CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					ClbVipDomain:  "127.0.0.1",
-					CloudClbID:    "lb-xxxxx1",
-					Protocol:      enumor.HttpProtocol,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-					Scheduler:     "WRR",
-					Session:       0,
-				},
+				ClbVipDomain:   "127.0.0.1",
+				CloudClbID:     "lb-xxxxx1",
+				Protocol:       enumor.HttpProtocol,
 				ListenerPort:   []int{8888},
+				Domain:         "www.tencent.com",
+				DefaultDomain:  true,
+				UrlPath:        "/",
+				Scheduler:      "WRR",
+				Session:        0,
 				HealthCheck:    true,
 				UserRemark:     "用户的备注",
 				Status:         "",
@@ -108,22 +89,19 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 		},
 		{
 			name: "end_port",
-			args: args{rawData: [][]string{
+			args: args{i: [][]string{
 				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "www.tencent.com", "TRUE", "/", "WRR", "0", "disable"},
-			}, headers: []string{"负载均衡vip/域名", "负载均衡云ID", "监听器协议", "监听器端口", "域名", "是/否默认域名", "url路径",
-				"均衡方式", "会话保持(0为不开启)", "健康检查", "用户备注(可选)", "导出备注(可选)"}},
+			}},
 			want: CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					ClbVipDomain:  "127.0.0.1",
-					CloudClbID:    "lb-xxxxx1",
-					Protocol:      enumor.TcpProtocol,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-					Scheduler:     "WRR",
-					Session:       0,
-				},
+				ClbVipDomain:   "127.0.0.1",
+				CloudClbID:     "lb-xxxxx1",
+				Protocol:       enumor.TcpProtocol,
 				ListenerPort:   []int{8888, 8889},
+				Domain:         "www.tencent.com",
+				DefaultDomain:  true,
+				UrlPath:        "/",
+				Scheduler:      "WRR",
+				Session:        0,
 				HealthCheck:    false,
 				UserRemark:     "",
 				Status:         "",
@@ -135,7 +113,7 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			executor := &CreateUrlRulePreviewExecutor{}
-			_ = executor.convertDataToPreview(tt.args.rawData, tt.args.headers)
+			_ = executor.convertDataToPreview(tt.args.i)
 			assert.Equal(t, tt.want, *executor.details[0])
 		})
 	}
@@ -150,135 +128,117 @@ func TestCreateUrlRuleDetail_validate(t *testing.T) {
 		{
 			name: "validate protocol executable",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-					Scheduler:     "WRR",
-					Session:       30,
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
+				Scheduler:     "WRR",
+				Session:       30,
 			},
 			wantStatus: Executable,
 		},
 		{
 			name: "validate protocol not executable",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.QuicProtocol,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-					Scheduler:     "WRR",
-					Session:       30,
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.QuicProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
+				Scheduler:     "WRR",
+				Session:       30,
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate Scheduler normal",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpsProtocol,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-					Scheduler:     enumor.WRR,
-					Session:       30,
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.HttpsProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
+				Scheduler:     enumor.WRR,
+				Session:       30,
 			},
 			wantStatus: Executable,
 		},
 		{
 			name: "validate Scheduler wrong scheduler ",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR2",
-					Session:       30,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Scheduler:     "WRR2",
+				Session:       30,
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate session less than 30",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR",
-					Session:       10,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Scheduler:     "WRR",
+				Session:       10,
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate session normal",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR",
-					Session:       0,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888, 8889},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888, 8889},
+				Scheduler:     "WRR",
+				Session:       0,
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: Executable,
 		},
 		{
 			name: "validate port 3 ports",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR",
-					Session:       0,
-					Domain:        "www.tencent.com",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888, 8889, 9000},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888, 8889, 9000},
+				Scheduler:     "WRR",
+				Session:       0,
+				Domain:        "www.tencent.com",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate domain is empty",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR",
-					Session:       0,
-					Domain:        "",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888},
+				Scheduler:     "WRR",
+				Session:       0,
+				Domain:        "",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate url path is empty",
 			args: &CreateUrlRuleDetail{
-				RuleDetail: RuleDetail{
-					Protocol:      enumor.HttpProtocol,
-					Scheduler:     "WRR",
-					Session:       0,
-					Domain:        "",
-					DefaultDomain: true,
-					UrlPath:       "/",
-				},
-				ListenerPort: []int{8888},
+				Protocol:      enumor.HttpProtocol,
+				ListenerPort:  []int{8888},
+				Scheduler:     "WRR",
+				Session:       0,
+				Domain:        "",
+				DefaultDomain: true,
+				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},

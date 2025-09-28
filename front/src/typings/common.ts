@@ -137,7 +137,3 @@ export interface IBreadcrumb {
 }
 
 export type ISearchSelectValue = Array<{ id: string; name: string; values: { id: string; name: string }[] }>;
-
-export interface ISearchCondition {
-  [key: string]: any;
-}

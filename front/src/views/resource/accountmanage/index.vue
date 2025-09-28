@@ -68,20 +68,13 @@ const columns = reactive([
   { id: 'vendor', name: t('云厂商'), type: 'enum', option: VendorMap, width: 90 },
   { id: 'site', name: t('站点类型'), type: 'enum', option: SITE_TYPE_MAP, width: 90 },
   {
-    id: 'usage_biz_ids',
+    id: 'bk_biz_ids',
     name: t('所属业务'),
     type: 'array',
     render: ({ cell }: { cell: number[] }) =>
-      cell?.map((v: number) => (v === -1 ? '全部业务' : getNameFromBusinessMap(v)))?.join(',') ?? '--',
+      cell?.map((v: number) => (v === -1 ? '--' : getNameFromBusinessMap(v)))?.join(',') ?? '--',
     width: 120,
     filter: { list: [] },
-  },
-  {
-    id: 'bk_biz_id',
-    name: t('管理业务'),
-    type: 'string',
-    width: 120,
-    render: ({ cell }: { cell: number }) => (!cell ? '--' : getNameFromBusinessMap(cell)),
   },
   { id: 'managers', name: t('负责人'), type: 'user', width: 120 },
   { id: 'creator', name: t('创建人'), type: 'user', width: 120, defaultHidden: true },

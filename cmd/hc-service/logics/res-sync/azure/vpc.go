@@ -165,14 +165,12 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, resGr
 	return nil
 }
 
-// deleteVpc deletes vpcs from the database.
 func (cli *client) deleteVpc(kt *kit.Kit, accountID string, resGroupName string, delCloudIDs []string) error {
 
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete vpc, cloudIDs is required")
 	}
 
-	// check if vpc exists in cloud before deleting
 	checkParams := &SyncBaseParams{
 		AccountID:         accountID,
 		ResourceGroupName: resGroupName,
@@ -203,7 +201,6 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, resGroupName string,
 	return nil
 }
 
-// updateVpc updates vpcs in the database.
 func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string]types.AzureVpc) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update vpc, vpcs is required")
@@ -251,7 +248,6 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 	return nil
 }
 
-// createVpc creates vpcs in the database.
 func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.AzureVpc) error {
 
 	if len(addVpc) == 0 {
@@ -302,7 +298,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.Azure
 	return nil
 }
 
-// listVpcFromCloud lists vpcs from cloud by resource group name and cloud IDs.
 func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.AzureVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -322,7 +317,6 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
-// listVpcFromDB lists vpcs from database by resource group name and cloud IDs.
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.AzureVpcExtension], error) {
 
@@ -334,6 +328,11 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "account_id",
+					Op:    filter.Equal.Factory(),
+					Value: params.AccountID,
+				},
 				&filter.AtomRule{
 					Field: "cloud_id",
 					Op:    filter.In.Factory(),
@@ -348,10 +347,6 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-
-	if len(params.AccountID) > 0 {
-		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("account_id", params.AccountID))
-	}
 	result, err := cli.dbCli.Azure.Vpc.ListVpcExt(kt.Ctx, kt.Header(), req)
 	if err != nil {
 		logs.Errorf("[%s] list vpc from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Azure, err,
@@ -362,7 +357,6 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// isVpcChange checks if there are changes in the VPC details.
 func isVpcChange(item types.AzureVpc, info cloudcore.Vpc[cloudcore.AzureVpcExtension]) bool {
 	if info.Name != item.Name {
 		return true

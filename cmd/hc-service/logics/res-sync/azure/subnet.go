@@ -169,14 +169,12 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID, resGroupN
 	return nil
 }
 
-// deleteSubnet delete subnet from db, before delete, check if subnet exist in cloud
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID string, delCloudIDs []string) error {
 
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
-	// check if subnet exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID:         accountID,
 		ResourceGroupName: resGroupName,
@@ -208,7 +206,6 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 	return nil
 }
 
-// updateSubnet update subnet in db
 func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.AzureSubnet) error {
 
 	if len(updateMap) == 0 {
@@ -251,7 +248,6 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-// createSubnet create subnet in db
 func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID string,
 	addSubnet []adtysubnet.AzureSubnet) error {
 
@@ -314,7 +310,6 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 	return nil
 }
 
-// listSubnetFromCloud list subnet from cloud
 func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, cloudVpcId string) (
 	[]adtysubnet.AzureSubnet, error) {
 
@@ -339,7 +334,6 @@ func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, clou
 	return result.Details, nil
 }
 
-// listSubnetFromDB list subnet from db
 func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVpcID string) (
 	[]cloudcore.Subnet[cloudcore.AzureSubnetExtension], error) {
 
@@ -370,7 +364,6 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 	return result.Details, nil
 }
 
-// listSubnetFromDBForCvm list subnet from db for cvm
 func (cli *client) listSubnetFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Subnet[cloudcore.AzureSubnetExtension], error) {
 
@@ -400,7 +393,6 @@ func (cli *client) listSubnetFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// isSubnetChange check if subnet has changed
 func isSubnetChange(item adtysubnet.AzureSubnet, info cloudcore.Subnet[cloudcore.AzureSubnetExtension]) bool {
 
 	if info.CloudVpcID != item.CloudVpcID {

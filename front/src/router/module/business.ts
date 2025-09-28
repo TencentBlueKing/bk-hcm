@@ -1,22 +1,9 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
+import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
-import { loadBalancerBiz as loadBalancerBizRouteConfig } from '@/views/load-balancer/route-config';
 import taskRouteConfig from '@/views/task/route-config';
 import Meta from '../meta';
-import {
-  MENU_BUSINESS_CERT_MANAGEMENT,
-  MENU_BUSINESS_DISK_MANAGEMENT,
-  MENU_BUSINESS_EIP_MANAGEMENT,
-  MENU_BUSINESS_HOST_MANAGEMENT,
-  MENU_BUSINESS_IMAGE_MANAGEMENT,
-  MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
-  MENU_BUSINESS_RECYCLE_BIN_MANAGEMENT,
-  MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
-  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
-  MENU_BUSINESS_SUBNET_MANAGEMENT,
-  MENU_BUSINESS_VPC_MANAGEMENT,
-} from '@/constants/menu-symbol';
 
 const businessMenus: RouteRecordRaw[] = [
   {
@@ -24,24 +11,25 @@ const businessMenus: RouteRecordRaw[] = [
     children: [
       {
         path: '/business/host',
+        name: 'businessHost',
         alias: '',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_HOST_MANAGEMENT,
+            name: 'hostBusinessList',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
+              activeKey: 'businessHost',
+              // breadcrumb: ['资源', '主机'],
             },
           },
           {
             path: 'detail',
-            // TODO: details后续优化name，注意use-column里面的跳转
             name: 'hostBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
+                activeKey: 'businessHost',
                 layout: {
                   breadcrumbs: {
                     show: false,
@@ -52,11 +40,11 @@ const businessMenus: RouteRecordRaw[] = [
           },
           {
             path: 'recyclebin/:type',
-            name: MENU_BUSINESS_RECYCLE_BIN_MANAGEMENT,
+            name: 'hostBusinessRecyclebin',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
+                activeKey: 'businessHost',
                 isShowBreadcrumb: false,
               }),
             },
@@ -64,20 +52,23 @@ const businessMenus: RouteRecordRaw[] = [
         ],
         meta: {
           title: '主机',
-          activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
+          activeKey: 'businessHost',
+          // breadcrumb: ['资源', '主机'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-host',
         },
       },
       {
         path: '/business/drive',
+        name: 'businessDisk',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_DISK_MANAGEMENT,
+            name: 'businessDiskList',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
+              activeKey: 'businessDisk',
+              // breadcrumb: ['资源', '硬盘'],
             },
           },
           {
@@ -86,17 +77,18 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
+                activeKey: 'businessDisk',
                 isShowBreadcrumb: false,
               }),
             },
           },
           {
             path: 'recyclebin/:type',
+            name: 'diskBusinessRecyclebin',
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
+                activeKey: 'businessDisk',
                 isShowBreadcrumb: false,
               }),
             },
@@ -104,20 +96,21 @@ const businessMenus: RouteRecordRaw[] = [
         ],
         meta: {
           title: '硬盘',
-          activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
+          activeKey: 'businessDisk',
+          // breadcrumb: ['资源', '硬盘'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-disk',
         },
       },
       {
         path: '/business/image',
+        name: 'businessImage',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_IMAGE_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
+              activeKey: 'businessImage',
             },
           },
           {
@@ -125,26 +118,27 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'imageBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
+              activeKey: 'businessImage',
             },
           },
         ],
         meta: {
           title: '镜像',
-          activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
+          activeKey: 'businessImage',
+          // breadcrumb: ['资源', '镜像'],
           notMenu: true,
           icon: 'hcm-icon bkhcm-icon-image',
         },
       },
       {
         path: '/business/vpc',
+        name: 'businessVpc',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_VPC_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
+              activeKey: 'businessVpc',
             },
           },
           {
@@ -153,7 +147,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
+                activeKey: 'businessVpc',
                 isShowBreadcrumb: false,
               }),
             },
@@ -161,20 +155,22 @@ const businessMenus: RouteRecordRaw[] = [
         ],
         meta: {
           title: 'VPC',
-          activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
+          activeKey: 'businessVpc',
+          // breadcrumb: ['资源', 'VPC'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-vpc',
         },
       },
       {
         path: '/business/subnet',
+        name: 'businessSubnet',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_SUBNET_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
+              activeKey: 'businessSubnet',
+              // breadcrumb: ['资源', '子网'],
             },
           },
           {
@@ -183,28 +179,31 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
-                activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
+                activeKey: 'businessSubnet',
                 isShowBreadcrumb: false,
+                // breadcrumb: ['资源', '子网', '详情'],
               }),
             },
           },
         ],
         meta: {
           title: '子网',
-          activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
+          activeKey: 'businessSubnet',
+          // breadcrumb: ['资源', '子网'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-subnet',
         },
       },
       {
         path: '/business/ip',
+        name: 'businessElasticIP',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_EIP_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
+              activeKey: 'businessElasticIP',
+              // breadcrumb: ['资源', '弹性IP'],
             },
           },
           {
@@ -212,27 +211,30 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'eipsBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
+              activeKey: 'businessElasticIP',
               isShowBreadcrumb: false,
+              // breadcrumb: ['资源', '弹性IP', '详情'],
             },
           },
         ],
         meta: {
           title: '弹性IP',
-          activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
+          activeKey: 'businessElasticIP',
+          // breadcrumb: ['资源', '弹性IP'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-eip',
         },
       },
       {
         path: '/business/network-interface',
+        name: 'businessNetwork',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+              activeKey: 'businessNetwork',
+              // breadcrumb: ['资源', '网络接口'],
             },
           },
           {
@@ -240,27 +242,30 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'network-interfaceBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+              activeKey: 'businessNetwork',
               isShowBreadcrumb: false,
+              // breadcrumb: ['资源', '网络接口', '详情'],
             },
           },
         ],
         meta: {
           title: '网络接口',
-          activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+          activeKey: 'businessNetwork',
+          // breadcrumb: ['资源', '网络接口'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-network-interface',
         },
       },
       {
         path: '/business/routing',
+        name: 'businessRoutingTable',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
+              activeKey: 'businessRoutingTable',
+              // breadcrumb: ['资源', '路由表'],
             },
           },
           {
@@ -268,27 +273,30 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'routeBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
+              activeKey: 'businessRoutingTable',
               isShowBreadcrumb: false,
+              // breadcrumb: ['资源', '路由表', '详情'],
             },
           },
         ],
         meta: {
           title: '路由表',
-          activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
+          activeKey: 'businessRoutingTable',
+          // breadcrumb: ['资源', '路由表'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-route-table',
         },
       },
       {
         path: '/business/security',
+        name: 'businessSecurityGroup',
         children: [
           {
             path: '',
-            name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
             component: () => import('@/views/business/business-manage.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+              activeKey: 'businessSecurityGroup',
+              // breadcrumb: ['资源', '安全组'],
             },
           },
           {
@@ -296,14 +304,16 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'securityBusinessDetail',
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
-              activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+              activeKey: 'businessSecurityGroup',
               isShowBreadcrumb: false,
+              // breadcrumb: ['资源', '安全组', '详情'],
             },
           },
         ],
         meta: {
           title: '安全组',
-          activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+          activeKey: 'businessSecurityGroup',
+          // breadcrumb: ['资源', '安全组'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-security-group',
         },
@@ -313,7 +323,8 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'gcpBusinessDetail',
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
-          activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+          activeKey: 'businessSecurityGroup',
+          // breadcrumb: ['资源', 'gcp防火墙', '详情'],
           notMenu: true,
         },
       },
@@ -322,18 +333,116 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'templateBusinessDetail',
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
-          activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+          activeKey: 'businessSecurityGroup',
+          // breadcrumb: ['资源', '参数模板', '详情'],
           notMenu: true,
         },
       },
-      loadBalancerBizRouteConfig[0],
+      {
+        path: '/business/loadbalancer',
+        name: 'businessClb',
+        component: () => import('@/views/business/load-balancer/index'),
+        redirect: '/business/loadbalancer/clb-view',
+        children: [
+          {
+            path: 'clb-view',
+            name: 'loadbalancer-view',
+            component: () => import('@/views/business/load-balancer/clb-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.allLbs,
+                component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+                meta: {
+                  type: 'all',
+                  isFilterAccount: true,
+                },
+              },
+              {
+                path: 'lb/:id',
+                name: LBRouteName.lb,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-clb-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'lb',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
+                },
+              },
+              {
+                path: 'listener/:id',
+                name: LBRouteName.listener,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-listener-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'listener',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
+                },
+              },
+              {
+                path: 'domain/:id',
+                name: LBRouteName.domain,
+                component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  type: 'domain',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
+                },
+              },
+            ],
+          },
+          {
+            path: 'group-view',
+            name: 'target-group-view',
+            component: () => import('@/views/business/load-balancer/group-view/index'),
+            children: [
+              {
+                path: '',
+                name: LBRouteName.allTgs,
+                component: () => import('@/views/business/load-balancer/group-view/all-groups-manager/index'),
+                props(route) {
+                  return route.query;
+                },
+              },
+              {
+                path: ':id',
+                name: LBRouteName.tg,
+                component: () =>
+                  import('@/views/business/load-balancer/group-view/specific-target-group-manager/index'),
+                props(route) {
+                  return { ...route.params, ...route.query };
+                },
+                meta: {
+                  rootRoutePath: '/business/loadbalancer/group-view',
+                },
+              },
+            ],
+            meta: {
+              isFilterAccount: true,
+            },
+          },
+        ],
+        meta: {
+          title: '负载均衡',
+          activeKey: 'businessClb',
+          icon: 'hcm-icon bkhcm-icon-loadbalancer',
+        },
+      },
       {
         path: '/business/cert',
-        name: MENU_BUSINESS_CERT_MANAGEMENT,
+        name: 'businessCert',
         component: () => import('@/views/business/cert-manager/index'),
         meta: {
           title: '证书托管',
-          activeKey: MENU_BUSINESS_CERT_MANAGEMENT,
+          activeKey: 'businessCert',
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-cert',
           isFilterAccount: true,
@@ -361,6 +470,7 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '回收站',
           activeKey: 'businessRecyclebin',
+          // breadcrumb: ['业务', '回收站'],
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-recyclebin',
         },
@@ -370,13 +480,10 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'applyCvm',
         component: () => import('@/views/service/service-apply/cvm'),
         meta: {
-          ...new Meta({
-            activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
-            notMenu: true,
-            menu: {
-              relative: MENU_BUSINESS_HOST_MANAGEMENT,
-            },
-          }),
+          backRouter: -1,
+          activeKey: 'businessHost',
+          // breadcrumb: ['资源管理', '主机'],
+          notMenu: true,
         },
       },
       {
@@ -384,13 +491,10 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'applyVPC',
         component: () => import('@/views/service/service-apply/vpc'),
         meta: {
-          ...new Meta({
-            activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
-            notMenu: true,
-            menu: {
-              relative: MENU_BUSINESS_VPC_MANAGEMENT,
-            },
-          }),
+          backRouter: -1,
+          activeKey: 'businessVpc',
+          // breadcrumb: ['资源管理', 'VPC'],
+          notMenu: true,
         },
       },
       {
@@ -398,13 +502,10 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'applyDisk',
         component: () => import('@/views/service/service-apply/disk'),
         meta: {
-          ...new Meta({
-            activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
-            notMenu: true,
-            menu: {
-              relative: MENU_BUSINESS_DISK_MANAGEMENT,
-            },
-          }),
+          backRouter: -1,
+          activeKey: 'businessDisk',
+          // breadcrumb: ['资源管理', '云硬盘'],
+          notMenu: true,
         },
       },
       {
@@ -412,16 +513,24 @@ const businessMenus: RouteRecordRaw[] = [
         name: 'applySubnet',
         component: () => import('@/views/service/service-apply/subnet'),
         meta: {
-          ...new Meta({
-            activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
-            notMenu: true,
-            menu: {
-              relative: MENU_BUSINESS_SUBNET_MANAGEMENT,
-            },
-          }),
+          backRouter: -1,
+          activeKey: 'businessSubnet',
+          // breadcrumb: ['资源管理', '子网'],
+          notMenu: true,
         },
       },
-      loadBalancerBizRouteConfig[1],
+      {
+        path: '/business/service/service-apply/clb',
+        name: 'applyClb',
+        component: () => import('@/views/service/service-apply/clb'),
+        meta: {
+          backRouter: -1,
+          activeKey: 'businessClb',
+          // breadcrumb: ['资源管理', '负载均衡'],
+          notMenu: true,
+          isFilterAccount: true,
+        },
+      },
     ],
     meta: {
       groupTitle: '回收站',

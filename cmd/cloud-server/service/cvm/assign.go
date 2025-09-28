@@ -102,7 +102,7 @@ func (svc *cvmSvc) AssignCvmToBizPreview(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
-		ResType: meta.Cvm, Action: meta.Find, BasicInfos: basicInfoMap})
+		ResType: meta.Cvm, Action: meta.Assign, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (svc *cvmSvc) ListAssignedCvmMatchHost(cts *rest.Contexts) (interface{}, er
 	}
 
 	// 权限校验
-	auth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm, Action: meta.Find, ResourceID: req.AccountID}}
+	auth := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Cvm, Action: meta.Assign, ResourceID: req.AccountID}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, auth); err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (svc *cvmSvc) ListAssignedCvmMatchHost(cts *rest.Contexts) (interface{}, er
 	}
 
 	details := make([]proto.ListAssignedCvmMatchHostDetail, 0)
-	for _, bizID := range resp.Details[0].UsageBizIDs {
+	for _, bizID := range resp.Details[0].BkBizIDs {
 		hostIDs, ok := ccBizHostIDsMap[bizID]
 		if !ok || len(hostIDs) == 0 {
 			continue

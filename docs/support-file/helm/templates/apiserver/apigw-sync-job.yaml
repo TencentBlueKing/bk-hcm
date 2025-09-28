@@ -1,0 +1,44 @@
+{{- if .Values.apigwSync.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "common.names.fullname" . }}-apigw-sync-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  backoffLimit: 50
+  activeDeadlineSeconds: 7200
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: apigw-sync
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.apigwSync.image.repository }}:v{{ default .Values.global.imageTag .Values.apigwSync.image.tag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | quote }}
+          command: ["sync-apigateway"]
+          env:
+            - name: BK_APIGW_NAME
+              value: {{ .Values.apigwSync.apigwName }}
+            - name: BK_API_URL_TMPL
+              value: {{ .Values.apigwSync.bkApiUrlTmpl | required ".Values.apigwSync.bkApiUrlTmpl is required" }}
+            - name: BK_APP_CODE
+              value: {{ .Values.appCode }}
+            - name: BK_APP_SECRET
+              value: {{ .Values.appSecret }}
+            {{- if .Values.ingress.shareDomainEnable }}
+            - name: BK_HCM_API_HOST
+              value: {{ printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.host }}
+            - name: BK_HCM_API_URL_PATH_PREFIX
+              value: "apigw/"
+            {{- else}}
+            - name: BK_HCM_API_HOST
+              value: {{ printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.apiserver.host }}
+            - name: BK_HCM_API_URL_PATH_PREFIX
+              value: ""
+            {{- end }}
+            - name: BK_APIGW_MANAGERS
+              value: "{{ .Values.apigwSync.bkApigwManagers }}"
+          resources: {{ toYaml .Values.dataservice.resources | nindent 12 }}
+{{- end }}

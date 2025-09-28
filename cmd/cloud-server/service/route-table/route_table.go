@@ -24,7 +24,6 @@ import (
 
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
-	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud/route-table"
@@ -315,14 +314,8 @@ func (svc *routeTableSvc) AssignRouteTableToBiz(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.RouteTableCloudResType, req.RouteTableIDs,
-		req.BkBizID)
-	if err != nil {
-		return nil, err
-	}
-
 	// authorize
-	err = svc.authorizeRouteTableAssignOp(cts.Kit, req.RouteTableIDs, req.BkBizID)
+	err := svc.authorizeRouteTableAssignOp(cts.Kit, req.RouteTableIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}

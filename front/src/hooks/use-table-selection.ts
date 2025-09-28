@@ -7,7 +7,7 @@ type SelectionType = {
 };
 
 type UseTableSelectionParams = {
-  rowKey?: string;
+  rowKey: string;
   isRowSelectable: (args: { row: SelectionType['row'] }) => boolean;
 };
 

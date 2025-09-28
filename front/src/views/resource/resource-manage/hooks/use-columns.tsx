@@ -8,10 +8,11 @@ import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, LB_ISP, GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
@@ -21,29 +22,23 @@ import StatusFailure from '@/assets/image/failed-account.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
-import { formatTags, timeFormatter, parseTimeFromNow } from '@/common/util';
-import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass, formatBandwidth } from '@/utils';
+import { timeFormatter, formatTags, parseTimeFromNow } from '@/common/util';
+import {
+  APPLICATION_LAYER_LIST,
+  CLB_STATUS_MAP,
+  IP_VERSION_MAP,
+  LBRouteName,
+  LB_NETWORK_TYPE_MAP,
+  SCHEDULER_MAP,
+  TRANSPORT_LAYER_LIST,
+} from '@/constants/clb';
+import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
-import {
-  BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP,
-  BILL_TYPE__MAP_HW,
-  CURRENCY_MAP,
-  LB_NETWORK_TYPE_MAP,
-  LB_NETWORK_TYPE_REVERSE_MAP,
-} from '@/constants';
-import {
-  CLB_STATUS_NAME,
-  ClbStatusType,
-  IP_VERSION_DISPLAY_NAME,
-  IpVersionType,
-  LISTENER_PROTOCOL_LIST,
-} from '@/views/load-balancer/constants';
+import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
-import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import QueryString from 'qs';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -69,6 +64,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
   const { getRegionName } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
+  const cloudAreaStore = useCloudAreaStore();
   const getLinkField = (options: LinkFieldOptions) => {
     // 设置options的默认值
     defaults(options, {
@@ -185,7 +181,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -293,7 +290,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -477,7 +475,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -825,7 +824,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -843,7 +843,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       render({ cell }: { cell: number }) {
         if (cell !== -1) {
-          return <display-value value={cell} property={{ type: 'cloud-area' }} showId />;
+          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
         }
         return '--';
       },
@@ -1022,7 +1022,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1103,18 +1104,35 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
 
   const lbColumns = [
     { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
-    {
+    getLinkField({
+      type: 'lb',
       label: '负载均衡名称',
       field: 'name',
-      isDefaultShow: true,
+      linkable: () => whereAmI.value === Senarios.business,
       width: 200,
-      render: ({ cell }: any) => (
-        <div class='use-columns-copy-cell'>
-          <span>{cell}</span>
-          <CopyToClipboard content={cell} class='copy-icon ml4' />
-        </div>
+      render: (data) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.lb,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail' },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name, type: 'lb' });
+            },
+          )}
+        >
+          {data.name || '--'}
+        </Button>
       ),
-    },
+      renderSuffix: (data) => {
+        return <CopyToClipboard content={data.name} class='copy-icon ml4' />;
+      },
+      contentClass: 'use-columns-copy-cell',
+    }),
     {
       label: '负载均衡ID',
       field: 'cloud_id',
@@ -1168,15 +1186,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       width: 100,
       filter: {
         list: [
-          { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_REVERSE_MAP[LB_NETWORK_TYPE_MAP.OPEN] },
-          { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_REVERSE_MAP[LB_NETWORK_TYPE_MAP.INTERNAL] },
+          { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_MAP.OPEN },
+          { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_MAP.INTERNAL },
         ],
       },
       render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '--',
     },
     {
       label: '监听器数量',
-      field: 'listener_count',
+      field: 'listenerNum',
       isDefaultShow: true,
       width: 100,
       render: ({ cell }: { cell: number }) => cell || '0',
@@ -1193,7 +1211,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={cell === -1 ? false : 'success'}>
+          theme={cell === -1 ? false : 'success'}
+        >
           {cell === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1216,7 +1235,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'ip_version',
       isDefaultShow: true,
       width: 100,
-      render: ({ cell }: { cell: IpVersionType }) => IP_VERSION_DISPLAY_NAME[cell],
+      render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
       sort: true,
       filter: {
         list: [
@@ -1226,20 +1245,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           { value: 'ipv6_nat64', text: 'IPv6Nat64' },
         ],
       },
-    },
-    {
-      label: '运营商',
-      field: 'isp',
-      isDefaultShow: true,
-      width: 100,
-      render: ({ cell }: { cell: string }) => LB_ISP[cell] ?? (cell || '--'),
-    },
-    {
-      label: '带宽',
-      field: 'bandwidth',
-      isDefaultShow: true,
-      width: 100,
-      render: ({ cell }: { cell: number }) => formatBandwidth(cell),
     },
     {
       label: '数据同步时间',
@@ -1286,20 +1291,27 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'status',
       width: 120,
       sort: true,
-      render: ({ cell }: { cell: ClbStatusType }) => {
-        return (
-          <display-value
-            property={{ type: 'enum', option: CLB_STATUS_NAME }}
-            value={cell}
-            display={{ appearance: 'clb-status' }}
-          />
+      render: ({ cell }: { cell: string }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case '创建中':
+            icon = StatusLoading;
+            break;
+          case '正常运行':
+            icon = StatusSuccess;
+            break;
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_STATUS_MAP[cell]}</span>
+          </div>
+        ) : (
+          '--'
         );
       },
       filter: {
-        list: Object.keys(CLB_STATUS_NAME).map((key) => ({
-          value: key,
-          text: CLB_STATUS_NAME[key as unknown as ClbStatusType],
-        })),
+        list: Object.keys(CLB_STATUS_MAP).map((key) => ({ value: key, text: CLB_STATUS_MAP[key] })),
       },
     },
     {
@@ -1307,6 +1319,124 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'cloud_vpc_id',
       width: 120,
       sort: true,
+    },
+  ];
+
+  const listenerColumns = [
+    getLinkField({
+      type: 'listener',
+      label: '监听器名称',
+      field: 'name',
+      render: (data) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState(
+            {
+              name: LBRouteName.listener,
+              params: { id: data.id },
+              query: { ...route.query, type: 'detail', protocol: data.protocol },
+            },
+            () => {
+              loadBalancerStore.setLbTreeSearchTarget({
+                ...data,
+                searchK: 'listener_name',
+                searchV: data.name,
+                type: 'listener',
+              });
+            },
+          )}
+        >
+          {data.name || '--'}
+        </Button>
+      ),
+    }),
+    {
+      label: '监听器ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '协议',
+      field: 'protocol',
+      isDefaultShow: true,
+      filter: {
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
+          value: protocol,
+          text: protocol,
+        })),
+      },
+    },
+    {
+      label: '端口',
+      field: 'port',
+      isDefaultShow: true,
+      sort: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
+    },
+    {
+      label: '均衡方式',
+      field: 'scheduler',
+      isDefaultShow: true,
+      // sort: true,
+      filter: {
+        list: Object.keys(SCHEDULER_MAP).map((scheduler) => ({ value: scheduler, text: SCHEDULER_MAP[scheduler] })),
+      },
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+    },
+    {
+      label: '域名数量',
+      field: 'domain_num',
+      // sort: true,
+      isDefaultShow: true,
+    },
+    {
+      label: 'URL数量',
+      field: 'url_num',
+      // sort: true,
+      isDefaultShow: true,
+    },
+    {
+      label: '同步状态',
+      field: 'binding_status',
+      isDefaultShow: true,
+      // sort: true,
+      filter: {
+        list: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          value: bindingStatus,
+          text: CLB_BINDING_STATUS[bindingStatus],
+        })),
+      },
+      render: ({ cell, data }: { cell: string; data: any }) => {
+        let icon = StatusSuccess;
+        switch (cell) {
+          case 'binding':
+            icon = StatusLoading;
+            break;
+          case 'success':
+            icon = StatusSuccess;
+            break;
+        }
+        // 七层监听器，不在此处展示状态
+        if (APPLICATION_LAYER_LIST.includes(data.protocol)) {
+          return (
+            <>
+              <i
+                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
+                v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
+              />
+              <span>--</span>
+            </>
+          );
+        }
+        return cell ? (
+          <div class='status-column-cell'>
+            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
+            <span>{CLB_BINDING_STATUS[cell]}</span>
+          </div>
+        ) : (
+          '--'
+        );
+      },
     },
   ];
 
@@ -1325,14 +1455,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           theme='primary'
           onClick={renderFieldPushState(
             {
-              name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
+              name: LBRouteName.tg,
               params: { id },
               query: { ...route.query, type: 'detail', vendor },
             },
             () => {
               loadBalancerStore.setTgSearchTarget(name);
             },
-          )}>
+          )}
+        >
           {name}
         </Button>
       ),
@@ -1361,7 +1492,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       isDefaultShow: true,
       sort: true,
       filter: {
-        list: LISTENER_PROTOCOL_LIST.map((protocol) => ({
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
           value: protocol,
           text: protocol,
         })),
@@ -1492,34 +1623,61 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     },
   ];
 
+  const domainColumns = [
+    {
+      label: 'URL数量',
+      field: 'url_count',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '同步状态',
+      field: 'sync_status',
+      isDefaultShow: true,
+      sort: true,
+      filter: {
+        list: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          value: bindingStatus,
+          text: CLB_BINDING_STATUS[bindingStatus],
+        })),
+      },
+      render: () => {
+        return (
+          <>
+            <i
+              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
+              v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
+            />
+            <span>--</span>
+          </>
+        );
+      },
+    },
+  ];
+
   const targetGroupListenerColumns = [
     getLinkField({
       type: 'targetGroup',
       label: '绑定的监听器',
       field: 'lbl_name',
       width: 200,
-      sort: true,
-      render: (row: any) => {
-        return (
-          <Button
-            text
-            theme='primary'
-            onClick={renderFieldPushState({
-              name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
-              params: { id: row.lb_id },
-              query: {
-                [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
-                filter: QueryString.stringify(
-                  { cloud_id: row.cloud_lbl_id },
-                  { arrayFormat: 'comma', encode: false, allowEmptyArrays: true },
-                ),
-                _t: Date.now(),
-              },
-            })}>
-            {row.lbl_name}
-          </Button>
-        );
-      },
+      render: ({ lbl_id, lbl_name, protocol }: any) => (
+        <Button
+          text
+          theme='primary'
+          onClick={renderFieldPushState({
+            name: LBRouteName.listener,
+            params: { id: lbl_id },
+            query: {
+              ...route.query,
+              type: 'detail',
+              protocol,
+            },
+          })}
+        >
+          {lbl_name}
+        </Button>
+      ),
     }),
     {
       label: '关联的负载均衡',
@@ -1543,7 +1701,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'protocol',
       isDefaultShow: true,
       filter: {
-        list: LISTENER_PROTOCOL_LIST.map((protocol) => ({
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
           value: protocol,
           text: protocol,
         })),
@@ -1569,6 +1727,23 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           </div>
         );
       },
+    },
+  ];
+
+  const urlColumns = [
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
+    {
+      label: 'URL路径',
+      field: 'url',
+      isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '轮询方式',
+      field: 'scheduler',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
+      sort: true,
     },
   ];
 
@@ -1675,7 +1850,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -2479,8 +2655,11 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     eips: eipColumns,
     operationRecord: operationRecordColumns,
     lb: lbColumns,
+    listener: listenerColumns,
     targetGroup: targetGroupColumns,
     rsConfig: rsConfigColumns,
+    domain: domainColumns,
+    url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
     firstAccount: firstAccountColumns,

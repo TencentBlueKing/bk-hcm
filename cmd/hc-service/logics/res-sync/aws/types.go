@@ -28,7 +28,7 @@ import (
 
 // SyncBaseParams ...
 type SyncBaseParams struct {
-	AccountID string   `json:"account_id" validate:"omitempty"`
+	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1"`
 }

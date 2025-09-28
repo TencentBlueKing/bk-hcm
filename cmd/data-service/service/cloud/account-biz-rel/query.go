@@ -70,7 +70,7 @@ func (a *service) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.AccountBizRelListResult{Details: details}, nil
 }
 
-// ListWithAccount 根据使用业务查询关联的账号信息，返回的账号信息中的使用业务字段为空
+// ListWithAccount ...
 func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountBizRelWithAccountListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -81,10 +81,10 @@ func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	details, err := a.dao.AccountBizRel().ListJoinAccount(cts.Kit, req.UsageBizIDs)
+	details, err := a.dao.AccountBizRel().ListJoinAccount(cts.Kit, req.BkBizIDs)
 	if err != nil {
 		logs.Errorf("list account biz rels join account failed, err: %v, bkBizIds: %v, rid: %s", err,
-			req.UsageBizIDs, cts.Kit.Rid)
+			req.BkBizIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -106,7 +106,6 @@ func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 				Price:     one.Price,
 				PriceUnit: one.PriceUnit,
 				Memo:      one.Memo,
-				BkBizID:   one.BkBizID,
 				Revision: core.Revision{
 					Creator:   one.Creator,
 					Reviser:   one.Reviser,
@@ -114,9 +113,9 @@ func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 					UpdatedAt: one.UpdatedAt.String(),
 				},
 			},
-			RelUsageBizID: one.RelUsageBizID,
-			RelCreator:    one.RelCreator,
-			RelCreatedAt:  one.RelCreatedAt.String(),
+			BkBizID:      one.BkBizID,
+			RelCreator:   one.RelCreator,
+			RelCreatedAt: one.RelCreatedAt.String(),
 		})
 	}
 

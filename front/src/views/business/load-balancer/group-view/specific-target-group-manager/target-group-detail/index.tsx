@@ -1,20 +1,22 @@
-import { ComputedRef, PropType, computed, defineComponent, inject } from 'vue';
-import { useRegionsStore } from '@/store/useRegionsStore';
-import { useBusinessStore } from '@/store';
-import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
-import { QueryRuleOPEnum } from '@/typings';
-import { VendorEnum } from '@/common/constant';
-import { IAuthSign } from '@/common/auth-service';
-import { timeFormatter } from '@/common/util';
-import bus from '@/common/bus';
-
+import { PropType, computed, defineComponent } from 'vue';
+// import components
 import { Button, Link } from 'bkui-vue';
 import { Share } from 'bkui-vue/lib/icon';
 import RsConfigTable from '../../components/RsConfigTable';
 import AddOrUpdateTGSideslider from '../../components/AddOrUpdateTGSideslider';
 import AddRsDialog from '../../components/AddRsDialog';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
+// import stores
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { useBusinessStore } from '@/store';
+// import utils
+import bus from '@/common/bus';
+import { timeFormatter } from '@/common/util';
+// import constants
+import { VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
+import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
 
 export default defineComponent({
   name: 'TargetGroupDetail',
@@ -26,11 +28,8 @@ export default defineComponent({
     getTargetGroupDetail: {
       type: Function as PropType<(...args: any) => any>,
     },
-    id: String,
   },
   setup(props) {
-    const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
-
     // use stores
     const { getRegionName } = useRegionsStore();
     const businessStore = useBusinessStore();
@@ -84,14 +83,7 @@ export default defineComponent({
       },
       {
         title: 'RS 信息',
-        content: (
-          <RsConfigTable
-            onlyShow
-            rsList={props.detail.target_list}
-            getTargetGroupDetail={props.getTargetGroupDetail}
-            id={props.id}
-          />
-        ),
+        content: <RsConfigTable onlyShow rsList={props.detail.target_list} />,
       },
     ]);
 
@@ -116,20 +108,14 @@ export default defineComponent({
 
     return () => (
       <div class='target-group-detail-page'>
-        <hcm-auth class='fixed-operate-btn' sign={clbOperationAuthSign.value}>
-          {{
-            default: ({ noPerm }: { noPerm: boolean }) => (
-              <Button
-                style={{ top: calcTop.value }}
-                theme='primary'
-                outline
-                disabled={noPerm}
-                onClick={handleEditTargetGroup}>
-                编辑
-              </Button>
-            ),
-          }}
-        </hcm-auth>
+        <Button
+          class='fixed-operate-btn'
+          style={{ top: calcTop.value }}
+          outline
+          theme='primary'
+          onClick={handleEditTargetGroup}>
+          编辑
+        </Button>
         <div class='detail-info-container'>
           {targetGroupDetail.value.map(({ title, content }) => (
             <div class='detail-info-wrap'>

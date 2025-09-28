@@ -12,7 +12,7 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { SubnetInput } from '@/components/subnet-input';
 import { IP_RANGES } from './contansts';
 import { Info } from 'bkui-vue/lib/icon';
@@ -30,7 +30,6 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
-    const route = useRoute();
 
     const curIpRef = ref();
     const subIpRef = ref();
@@ -367,13 +366,9 @@ export default defineComponent({
       ],
     };
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
       <div>
-        <DetailHeader fromConfig={fromConfig.value}>
+        <DetailHeader>
           <p class={'purchase-vpc-header-title'}>购买VPC</p>
         </DetailHeader>
         <div class='create-form-container' style={isResourcePage && { padding: 0 }}>

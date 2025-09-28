@@ -22,7 +22,6 @@ package bkcc
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -175,196 +174,80 @@ func (w *Watcher) upsertHost(kt *kit.Kit, upsertHosts []cmdb.Host) error {
 		return nil
 	}
 
-	vendorSpaceHostIDsMap, err := w.classifyHost(kt, upsertHosts, false)
+	vendors := []enumor.Vendor{enumor.Other}
+	vendors = hooks.AdjustWatcherVendor(kt, vendors)
+	vendorAccountIDMap, err := w.getVendorAccountID(kt, vendors)
+	if err != nil {
+		logs.Errorf("get vendor account id failed, err: %v, vendors: %v, rid: %s", err, vendors, kt.Rid)
+		return err
+	}
+
+	bizIDVendorHostIDsMap, err := w.classifyHost(kt, upsertHosts, false)
 	if err != nil {
 		logs.Errorf("classify host failed, err: %v, hosts: %v, rid: %s", err, upsertHosts, kt.Rid)
 		return err
 	}
 
-	w.upsertHostByVendor(kt, vendorSpaceHostIDsMap)
+	for bizID, vendorHostIDsMap := range bizIDVendorHostIDsMap {
+		for vendor, hostIDs := range vendorHostIDsMap {
+			accountID, ok := vendorAccountIDMap[vendor]
+			if !ok {
+				logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
+				continue
+			}
+			switch vendor {
+			case enumor.Other:
+				for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
+					req := &sync.OtherSyncHostByCondReq{BizID: bizID, HostIDs: batch, AccountID: accountID}
+					err = w.CliSet.HCService().Other.Host.SyncHostWithRelResByCond(kt.Ctx, kt.Header(), req)
+					if err != nil {
+						logs.Errorf("upsert host failed, err: %v, hostIDs: %v, rid: %s", err, batch, kt.Rid)
+						continue
+					}
+				}
+			// todo add other case
+			default:
+				logs.Errorf("not support vendor: %s, hostIDs: %v, rid: %s", vendor, hostIDs, kt.Rid)
+			}
+		}
+	}
 
 	return nil
 }
 
-func (w *Watcher) upsertHostByVendor(kt *kit.Kit, vendorSpaceHostIDsMap map[enumor.Vendor]map[any][]int64) {
-	for vendor, spaceHostIDsMap := range vendorSpaceHostIDsMap {
-		w.upsertHostByDiffSpace(kt, vendor, spaceHostIDsMap)
-	}
-}
+const ignoreBizID int64 = 0
 
-func (w *Watcher) upsertHostByDiffSpace(kt *kit.Kit, vendor enumor.Vendor, spaceHostIDsMap map[any][]int64) {
-	for space, hostIDs := range spaceHostIDsMap {
-		switch vendor {
-		case enumor.Aws:
-			w.updateAwsHost(kt, space, hostIDs)
-		case enumor.Azure:
-			w.updateAzureHost(kt, space, hostIDs)
-		case enumor.Gcp:
-			w.updateGcpHost(kt, space, hostIDs)
-		case enumor.HuaWei:
-			w.updateHuaWeiHost(kt, space, hostIDs)
-		case enumor.TCloud:
-			w.updateTCloudHost(kt, space, hostIDs)
-		case enumor.Other:
-			w.upsertOtherHost(kt, space, hostIDs)
-		// todo add other case
-		default:
-			logs.Errorf("not support vendor: %s, ids: %v, rid: %s", vendor, hostIDs, kt.Rid)
-		}
-	}
-}
-
-func (w *Watcher) updateAwsHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.Aws
-	accountID, ok := space.(string)
-	if !ok {
-		logs.Errorf("convert space to string failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.SyncCvmByCondReq{AccountID: accountID, HostIDs: batch}
-		err := w.CliSet.HCService().Aws.Cvm.SyncCCInfoByCond(kt, req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, hostIDs: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			return
-		}
-	}
-}
-
-func (w *Watcher) updateAzureHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.Azure
-	accountID, ok := space.(string)
-	if !ok {
-		logs.Errorf("convert space to string failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.SyncCvmByCondReq{AccountID: accountID, HostIDs: batch}
-		err := w.CliSet.HCService().Azure.Cvm.SyncCCInfoByCond(kt, req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, hostIDs: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			return
-		}
-	}
-}
-
-func (w *Watcher) updateGcpHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.Gcp
-	accountID, ok := space.(string)
-	if !ok {
-		logs.Errorf("convert space to string failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.SyncCvmByCondReq{AccountID: accountID, HostIDs: batch}
-		err := w.CliSet.HCService().Gcp.Cvm.SyncCCInfoByCond(kt, req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, hostIDs: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			return
-		}
-	}
-}
-
-func (w *Watcher) updateHuaWeiHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.HuaWei
-	accountID, ok := space.(string)
-	if !ok {
-		logs.Errorf("convert space to string failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.SyncCvmByCondReq{AccountID: accountID, HostIDs: batch}
-		err := w.CliSet.HCService().HuaWei.Cvm.SyncCCInfoByCond(kt, req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, hostIDs: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			return
-		}
-	}
-}
-
-func (w *Watcher) updateTCloudHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.TCloud
-	accountID, ok := space.(string)
-	if !ok {
-		logs.Errorf("convert space to string failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.SyncCvmByCondReq{AccountID: accountID, HostIDs: batch}
-		err := w.CliSet.HCService().TCloud.Cvm.SyncCCInfoByCond(kt, req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, hostIDs: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			return
-		}
-	}
-}
-
-func (w *Watcher) upsertOtherHost(kt *kit.Kit, space any, hostIDs []int64) {
-	vendor := enumor.Other
-	vendorAccountIDMap, err := w.getVendorAccountID(kt, []enumor.Vendor{vendor})
-	if err != nil {
-		logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
-		return
-	}
-	accountID, ok := vendorAccountIDMap[vendor]
-	if !ok {
-		logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
-		return
-	}
-
-	bizID, ok := space.(int64)
-	if !ok {
-		logs.Errorf("convert space to int64 failed, space: %v, vendor: %s, rid: %s", space, vendor, kt.Rid)
-		return
-	}
-
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		req := &sync.OtherSyncHostByCondReq{BizID: bizID, HostIDs: batch, AccountID: accountID}
-		err := w.CliSet.HCService().Other.Host.SyncHostWithRelResByCond(kt.Ctx, kt.Header(), req)
-		if err != nil {
-			logs.Errorf("upsert host failed, err: %v, ids: %v, vendor: %s, rid: %s", err, batch, vendor, kt.Rid)
-			continue
-		}
-	}
-}
-
-var ignoreSpace any = 0
-
-func (w *Watcher) classifyHost(kt *kit.Kit, hosts []cmdb.Host, isIgnoreSpace bool) (
-	map[enumor.Vendor]map[any][]int64, error) {
+func (w *Watcher) classifyHost(kt *kit.Kit, hosts []cmdb.Host, isIgnoreBizID bool) (
+	map[int64]map[enumor.Vendor][]int64, error) {
 
 	hostIDs := make([]int64, 0, len(hosts))
 	for _, host := range hosts {
 		hostIDs = append(hostIDs, host.BkHostID)
 	}
-
 	hostBizIDMap := make(map[int64]int64)
-	dbHostBriefMsg := make(map[int64]hostBriefMsg)
-	if !isIgnoreSpace {
+	if !isIgnoreBizID {
 		var err error
 		hostBizIDMap, err = w.getHostBizID(kt, hostIDs)
 		if err != nil {
 			logs.Errorf("get host bizID map failed, err: %v, ids: %v, rid: %s", err, hostIDs, kt.Rid)
 			return nil, err
 		}
-
-		dbHostBriefMsg, err = w.getDBHostBriefMsg(kt, hostIDs)
-		if err != nil {
-			logs.Errorf("get host vendor map failed, err: %v, ids: %v, rid: %s", err, hostIDs, kt.Rid)
-			return nil, err
-		}
 	}
 
-	vendorSpaceHostIDsMap := make(map[enumor.Vendor]map[any][]int64)
+	bizIDVendorHostIDsMap := make(map[int64]map[enumor.Vendor][]int64)
 	for _, host := range hosts {
-		var space = ignoreSpace
-		if !isIgnoreSpace {
-			var err error
-			space, err = w.getHostSpace(kt, host, dbHostBriefMsg, hostBizIDMap)
-			if err != nil {
-				logs.Errorf("get host space failed, err: %v, host: %+v, rid: %s", err, host, kt.Rid)
+		bizID := ignoreBizID
+		if !isIgnoreBizID {
+			var ok bool
+			bizID, ok = hostBizIDMap[host.BkHostID]
+			if !ok {
+				logs.Errorf("get host bizID failed, hostID: %v, rid: %s", host.BkHostID, kt.Rid)
 				continue
 			}
+		}
+
+		if _, ok := bizIDVendorHostIDsMap[bizID]; !ok {
+			bizIDVendorHostIDsMap[bizID] = make(map[enumor.Vendor][]int64)
 		}
 
 		match, vendor, err := hooks.MatchWatcherUpsertHost(kt, host)
@@ -373,93 +256,20 @@ func (w *Watcher) classifyHost(kt *kit.Kit, hosts []cmdb.Host, isIgnoreSpace boo
 			continue
 		}
 		if match {
-			if _, ok := vendorSpaceHostIDsMap[vendor]; !ok {
-				vendorSpaceHostIDsMap[vendor] = make(map[any][]int64)
+			if _, ok := bizIDVendorHostIDsMap[bizID][vendor]; !ok {
+				bizIDVendorHostIDsMap[bizID][vendor] = make([]int64, 0)
 			}
-			if _, ok := vendorSpaceHostIDsMap[vendor][space]; !ok {
-				vendorSpaceHostIDsMap[vendor][space] = make([]int64, 0)
-			}
-			vendorSpaceHostIDsMap[vendor][space] = append(vendorSpaceHostIDsMap[vendor][space], host.BkHostID)
+			bizIDVendorHostIDsMap[bizID][vendor] = append(bizIDVendorHostIDsMap[bizID][vendor], host.BkHostID)
 			continue
 		}
 
-		vendor = enumor.Other
-		if msg, ok := dbHostBriefMsg[host.BkHostID]; ok {
-			vendor = msg.vendor
+		if _, ok := bizIDVendorHostIDsMap[bizID][enumor.Other]; !ok {
+			bizIDVendorHostIDsMap[bizID][enumor.Other] = make([]int64, 0)
 		}
-		if _, ok := vendorSpaceHostIDsMap[vendor]; !ok {
-			vendorSpaceHostIDsMap[vendor] = make(map[any][]int64)
-		}
-		if _, ok := vendorSpaceHostIDsMap[vendor][space]; !ok {
-			vendorSpaceHostIDsMap[vendor][space] = make([]int64, 0)
-		}
-		vendorSpaceHostIDsMap[vendor][space] = append(vendorSpaceHostIDsMap[vendor][space], host.BkHostID)
+		bizIDVendorHostIDsMap[bizID][enumor.Other] = append(bizIDVendorHostIDsMap[bizID][enumor.Other], host.BkHostID)
 	}
 
-	return vendorSpaceHostIDsMap, nil
-}
-
-// getHostSpace 获取主机的隔离空间，目前是业务 or 账号，公有云主机按照账号单元处理，other云厂商按照业务单元处理
-func (w *Watcher) getHostSpace(kt *kit.Kit, host cmdb.Host, dbHostBriefMsg map[int64]hostBriefMsg,
-	hostBizIDMap map[int64]int64) (any, error) {
-
-	msg, ok := dbHostBriefMsg[host.BkHostID]
-	if !ok {
-		// 如果主机不存在db, 则一定不是公有云厂商，应该按照业务纬度区分
-		bizID, ok := hostBizIDMap[host.BkHostID]
-		if !ok {
-			logs.Errorf("get host bizID failed, hostID: %d, rid: %s", host.BkHostID, kt.Rid)
-			return nil, fmt.Errorf("get host bizID failed, hostID: %d", host.BkHostID)
-		}
-		return bizID, nil
-	}
-
-	vendor := msg.vendor
-	if vendor.IsPublicCloud() {
-		return msg.accountID, nil
-	}
-
-	bizID, ok := hostBizIDMap[host.BkHostID]
-	if !ok {
-		logs.Errorf("get host bizID failed, hostID: %d, rid: %s", host.BkHostID, kt.Rid)
-		return nil, fmt.Errorf("get host bizID failed, hostID: %d", host.BkHostID)
-	}
-	return bizID, nil
-}
-
-type hostBriefMsg struct {
-	vendor    enumor.Vendor
-	accountID string
-}
-
-func (w *Watcher) getDBHostBriefMsg(kt *kit.Kit, hostIDs []int64) (map[int64]hostBriefMsg, error) {
-	if len(hostIDs) == 0 {
-		return make(map[int64]hostBriefMsg), nil
-	}
-	hostIDs = slice.Unique(hostIDs)
-
-	hostBriefMsgMap := make(map[int64]hostBriefMsg)
-	for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
-		listReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("bk_host_id", batch)),
-			Fields: []string{"bk_host_id", "vendor", "account_id"},
-			Page: &core.BasePage{
-				Start: 0,
-				Limit: constant.BatchOperationMaxLimit,
-			},
-		}
-		resp, err := w.CliSet.DataService().Global.Cvm.ListCvm(kt, listReq)
-		if err != nil {
-			logs.Errorf("list cvm failed, err: %v, hostIDs: %v, rid: %s", err, hostIDs, kt.Rid)
-			return nil, err
-		}
-
-		for _, detail := range resp.Details {
-			hostBriefMsgMap[detail.BkHostID] = hostBriefMsg{vendor: detail.Vendor, accountID: detail.AccountID}
-		}
-	}
-
-	return hostBriefMsgMap, nil
+	return bizIDVendorHostIDsMap, nil
 }
 
 func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
@@ -475,20 +285,18 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 		return err
 	}
 
-	vendorSpaceHostIDsMap, err := w.classifyHost(kt, deleteHosts, true)
+	bizIDVendorHostIDsMap, err := w.classifyHost(kt, deleteHosts, true)
 	if err != nil {
 		logs.Errorf("classify host failed, err: %v, hosts: %v, rid: %s", err, deleteHosts, kt.Rid)
 		return err
 	}
+	vendorHostIDsMap, ok := bizIDVendorHostIDsMap[ignoreBizID]
+	if !ok {
+		logs.Errorf("can not get vendor host ids map, map: %v, rid: %s", bizIDVendorHostIDsMap, kt.Rid)
+		return errors.New("can not get vendor host ids map")
+	}
 
-	for vendor, spaceHostIDsMap := range vendorSpaceHostIDsMap {
-		hostIDs, ok := spaceHostIDsMap[ignoreSpace]
-		if !ok {
-			logs.Errorf("can not get vendor host ids map, map: %v, vendor: %s, rid: %s", spaceHostIDsMap, vendor,
-				kt.Rid)
-			return errors.New("can not get vendor host ids map")
-		}
-
+	for vendor, hostIDs := range vendorHostIDsMap {
 		accountID, ok := vendorAccountIDMap[vendor]
 		if !ok {
 			logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
@@ -515,11 +323,8 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 
 func (w *Watcher) getVendorAccountID(kt *kit.Kit, vendors []enumor.Vendor) (map[enumor.Vendor]string, error) {
 	req := &cloud.AccountListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("vendor", vendors),
-			tools.RuleEqual("type", enumor.ResourceAccount),
-		),
-		Page: &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+		Filter: tools.ExpressionAnd(tools.RuleIn("vendor", vendors)),
+		Page:   &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
 	}
 
 	accounts, err := w.CliSet.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)

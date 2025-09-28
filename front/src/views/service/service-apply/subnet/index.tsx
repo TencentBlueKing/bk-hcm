@@ -3,13 +3,13 @@ import RouteTableSelector from '@/components/route-table-selector/index.vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import { Button, Form, Input, Select, Message } from 'bkui-vue';
 import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { useAccountStore, useBusinessStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import CommonCard from '@/components/CommonCard';
 
 const { FormItem } = Form;
@@ -18,8 +18,6 @@ const { Option } = Select;
 export default defineComponent({
   props: {},
   setup() {
-    const router = useRouter();
-    const route = useRoute();
     const { getBizsId, whereAmI, isResourcePage } = useWhereAmI();
     const formModel = reactive({
       biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
@@ -71,6 +69,7 @@ export default defineComponent({
     const cidr_host2 = ref('');
     const cidr_mask = ref('');
     const submitLoading = ref(false);
+    const router = useRouter();
 
     const resourceStore = useResourceStore();
     const businessStore = useBusinessStore();
@@ -156,13 +155,9 @@ export default defineComponent({
       },
     );
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
       <div>
-        <DetailHeader fromConfig={fromConfig.value}>
+        <DetailHeader>
           <span class={'subnet-title'}>新建子网</span>
         </DetailHeader>
         <div

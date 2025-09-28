@@ -82,23 +82,16 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("create tcloud url rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	result := &protolb.BatchCreateResult{
-		UnknownCloudIDs: creatResult.UnknownCloudIDs,
-		SuccessCloudIDs: creatResult.SuccessCloudIDs,
-		FailedCloudIDs:  creatResult.FailedCloudIDs,
-		FailedMessage:   creatResult.FailedMessage,
-	}
 
 	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
 	for i, cloudID := range creatResult.SuccessCloudIDs {
 		createReq.UrlRules = append(createReq.UrlRules, convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID))
 	}
-	resp, err := svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
+	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
 	if err != nil {
 		return nil, err
 	}
-	result.SuccessIDs = resp.IDs
 
 	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{listener.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
@@ -106,7 +99,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return result, nil
+	return creatResult, nil
 }
 
 func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLoadBalancer,
@@ -154,7 +147,7 @@ func convRuleCreate(r protolb.TCloudRuleCreate, protocol enumor.ProtocolType) *t
 		Quic:              r.Quic,
 	}
 	// 7层不支持设置健康检查端口
-	if protocol.IsLayer7Protocol() && r.HealthCheck != nil && r.HealthCheck.CheckPort != nil {
+	if protocol.IsLayer7Protocol() && r.HealthCheck.CheckPort != nil {
 		ruleInfo.HealthCheck.CheckPort = nil
 	}
 	if len(r.Domains) == 1 {

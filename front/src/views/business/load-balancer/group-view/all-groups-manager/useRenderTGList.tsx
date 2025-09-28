@@ -1,25 +1,24 @@
-import { ComputedRef, inject } from 'vue';
-import { useI18n } from 'vue-i18n';
+// import components
+import { Button, Message } from 'bkui-vue';
+import Confirm from '@/components/confirm';
+// import stores
 import { useAccountStore, useBusinessStore } from '@/store';
+// import custom hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useTable } from '@/hooks/useTable/useTable';
-import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
+// import types
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+// import utils
 import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { TARGET_GROUP_PROTOCOLS, VendorEnum, VendorMap } from '@/common/constant';
-import { IAuthSign } from '@/common/auth-service';
-
-import { Button, Message } from 'bkui-vue';
-import Confirm from '@/components/confirm';
+import { useI18n } from 'vue-i18n';
 
 /**
  * 渲染目标组list
  */
 export default () => {
-  const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
-  const clbDeleteAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbDeleteAuthSign');
-
   // use hooks
   const { t } = useI18n();
   const { columns, settings } = useColumns('targetGroup');
@@ -55,54 +54,33 @@ export default () => {
       fixed: 'right',
       render: ({ data }: any) => (
         <div>
-          <hcm-auth sign={clbOperationAuthSign.value}>
-            {{
-              default: ({ noPerm }: { noPerm: boolean }) => (
-                <Button text theme={'primary'} disabled={noPerm} onClick={() => handleEditTargetGroup(data)}>
-                  {t('编辑')}
-                </Button>
-              ),
-            }}
-          </hcm-auth>
-          <hcm-auth sign={clbDeleteAuthSign.value}>
-            {{
-              default: ({ noPerm }: { noPerm: boolean }) => (
-                <Button
-                  class={'ml16'}
-                  theme={'primary'}
-                  text
-                  disabled={noPerm || data.listener_num > 0}
-                  v-bk-tooltips={{
-                    content: t('已绑定了监听器的目标组不可删除'),
-                    disabled: noPerm || data.listener_num === 0,
-                  }}
-                  onClick={() => handleDeleteTargetGroup(data.id, data.name)}>
-                  {t('删除')}
-                </Button>
-              ),
-            }}
-          </hcm-auth>
+          <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data)}>
+            {t('编辑')}
+          </Button>
+          <span
+            v-bk-tooltips={{
+              content: t('已绑定了监听器的目标组不可删除'),
+              disabled: data.listener_num === 0,
+            }}>
+            <Button
+              text
+              theme={'primary'}
+              disabled={data.listener_num > 0}
+              class={'ml16'}
+              onClick={() => {
+                handleDeleteTargetGroup(data.id, data.name);
+              }}>
+              {t('删除')}
+            </Button>
+          </span>
         </div>
       ),
     },
   ];
 
-  const validateValues: ValidateValuesFunc = async (item, values) => {
-    if (!item) return '请选择条件';
-    if ('port' === item.id) {
-      const port = parseInt(values[0].id, 10);
-      return 1 >= port && port <= 65535 ? true : '端口范围1-65535';
-    }
-    return true;
-  };
-
   const { CommonTable, getListData } = useTable({
     searchOptions: {
       searchData,
-      extra: {
-        valueBehavior: 'all',
-        validateValues,
-      },
     },
     tableOptions: {
       columns: tableColumns,

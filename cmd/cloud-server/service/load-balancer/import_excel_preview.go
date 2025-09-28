@@ -67,7 +67,7 @@ func (svc *lbSvc) ImportPreview(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	curVendor, rawData, headers, err := parseExcelStr(file)
+	curVendor, rawData, err := parseExcelStr(file)
 	if err != nil {
 		logs.Errorf("parse excel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("parse excel failed, err: %v", err)
@@ -85,7 +85,7 @@ func (svc *lbSvc) ImportPreview(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("new import preview executor failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	result, err := executor.Execute(cts.Kit, rawData, headers)
+	result, err := executor.Execute(cts.Kit, rawData)
 	if err != nil {
 		logs.Errorf("execute import preview failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -95,41 +95,37 @@ func (svc *lbSvc) ImportPreview(cts *rest.Contexts) (interface{}, error) {
 	}, nil
 }
 
-func parseExcelStr(reader io.Reader) (vendor enumor.Vendor, rawData [][]string, headers []string, err error) {
+func parseExcelStr(reader io.Reader) (enumor.Vendor, [][]string, error) {
 	excel, err := excelize.OpenReader(reader)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, err
 	}
 	defer excel.Close()
 
 	rows, err := excel.Rows(excel.GetSheetName(0))
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, err
 	}
 	defer rows.Close()
 	rows.Next()
 	columns, err := rows.Columns()
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, err
 	}
-	vendor, err = parseVendor(columns)
+	vendor, err := parseVendor(columns)
 	if err != nil {
-		return "", nil, nil, err
+		return "", nil, err
 	}
 
 	// 跳过表头
 	for i := 0; i < 2; i++ {
 		rows.Next()
-		headers, err = rows.Columns()
-		if err != nil {
-			return "", nil, nil, err
-		}
 	}
 	result := make([][]string, 0)
 	for rows.Next() {
 		columns, err = rows.Columns()
 		if err != nil {
-			return "", nil, nil, err
+			return "", nil, err
 		}
 		if len(columns) == 0 {
 			continue
@@ -138,11 +134,11 @@ func parseExcelStr(reader io.Reader) (vendor enumor.Vendor, rawData [][]string, 
 		result = append(result, columns)
 	}
 
-	return vendor, result, headers, nil
+	return vendor, result, nil
 }
 
 var supportVendorMap = map[string]enumor.Vendor{
-	constant.CLBExcelHeaderTCloud: enumor.TCloud,
+	"tencent_cloud_public(腾讯云-公有云)": enumor.TCloud,
 }
 
 func parseVendor(columns []string) (enumor.Vendor, error) {

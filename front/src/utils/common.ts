@@ -1,16 +1,6 @@
 import isIP from 'validator/es/lib/isIP';
-import { AddressDescription } from '@/typings';
-import { IAuthSign } from '@/common/auth-service';
-
-const getAuthSignByBusinessId = (
-  businessId: number,
-  rscAuthSymbol: symbol,
-  bizAuthSymbol: symbol,
-): IAuthSign | IAuthSign[] => {
-  if (businessId) return { type: bizAuthSymbol, relation: [businessId] };
-  return { type: rscAuthSymbol };
-};
-
+import { AddressDescription, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { isString } from 'lodash';
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -24,7 +14,7 @@ const getInstVip = (inst: any) => {
     public_ipv6_addresses,
     private_ip_address,
     public_ip_address,
-  } = inst ?? {};
+  } = inst;
   if (private_ipv4_addresses || private_ipv6_addresses || public_ipv4_addresses || public_ipv6_addresses) {
     if (public_ipv4_addresses.length > 0) return public_ipv4_addresses.join(',');
     if (public_ipv6_addresses.length > 0) return public_ipv6_addresses.join(',');
@@ -85,6 +75,87 @@ const parseIP = (text: string) => {
     IPv4List,
     IPv6List,
   };
+};
+
+/**
+ * @param value ip字符串 | ip字符串数组
+ * @param networkType 网络类型 public | private
+ * @returns {RulesItem} ip查询条件
+ */
+const buildIPFilterRules = (value: string | string[], networkType: 'public' | 'private') => {
+  const IPResult: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
+  const IPv4Set = new Set<string>();
+  const IPv6Set = new Set<string>();
+
+  const processIP = (ip: string) => {
+    const { IPv4List, IPv6List } = parseIP(ip);
+    IPv4List.forEach((ip) => IPv4Set.add(ip));
+    IPv6List.forEach((ip) => IPv6Set.add(ip));
+  };
+
+  if (isString(value)) {
+    processIP(value);
+  } else if (Array.isArray(value)) {
+    value.forEach(processIP);
+  }
+
+  if (IPv4Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv4_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv4Set),
+    });
+  }
+  if (IPv6Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv6_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv6Set),
+    });
+  }
+
+  return IPResult;
+};
+
+/**
+ * 构建VIP查询条件
+ * @param value ip字符串 | ip字符串数组
+ * @returns {RulesItem} ip查询条件
+ */
+const buildVIPFilterRules = (value: string | string[]): RulesItem => {
+  // 无法辨别value是私有还是公网，因此都要作为条件来查询
+  const privateIpResult = buildIPFilterRules(value, 'private');
+  const publicIpResult = buildIPFilterRules(value, 'public');
+
+  return { op: QueryRuleOPEnum.OR, rules: [...privateIpResult.rules, ...publicIpResult.rules] };
+};
+
+/**
+ * 构建多值查询条件(精确查询)，如：多ID
+ */
+const buildMultipleValueRulesItem = (field: string, value: string) => {
+  const rulesItem: RulesItem = { field, op: QueryRuleOPEnum.EQ, value: '' };
+
+  if (value) {
+    const splitValue = value
+      .trim()
+      .split(/\n|;|；|,|，|\|/)
+      .reduce((prev, curr) => {
+        if (curr.trim()) {
+          prev.push(curr.trim());
+        }
+        return prev;
+      }, []);
+
+    if (!splitValue.length) {
+      // 如果没有分割值，直接使用原始值进行搜索
+      Object.assign(rulesItem, { value });
+    } else {
+      Object.assign(rulesItem, { op: QueryRuleOPEnum.IN, value: splitValue });
+    }
+  }
+
+  return rulesItem;
 };
 
 // 将值进行btoa编码
@@ -228,12 +299,14 @@ const isPortValid = (text: string) => {
   return true;
 };
 export {
-  getAuthSignByBusinessId,
   getInstVip,
   getPrivateIPs,
   getPublicIPs,
   splitIP,
   parseIP,
+  buildIPFilterRules,
+  buildVIPFilterRules,
+  buildMultipleValueRulesItem,
   encodeValueByBtoa,
   decodeValueByAtob,
   analysisIP,

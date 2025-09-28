@@ -57,11 +57,9 @@ func (b *billItemSvc) exportAwsBillItems(kt *kit.Kit, req *bill.ExportBillItemRe
 		return nil, err
 	}
 
-	for _, header := range export.AwsBillItemHeaders {
-		if err = writer.Write(header); err != nil {
-			logs.Errorf("csv write header failed: %v, val: %v, rid: %s", err, header, kt.Rid)
-			return nil, err
-		}
+	if err = writer.Write(export.AwsBillItemHeaders); err != nil {
+		logs.Errorf("csv write header failed: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	convFunc := func(items []*billapi.AwsBillItem) error {
@@ -146,7 +144,7 @@ func convertAwsBillItems(kt *kit.Kit, items []*billapi.AwsBillItem, bizNameMap m
 			RMBCost:             item.Cost.Mul(*rate).String(),
 			Rate:                rate.String(),
 		}
-		values, err := table.GetValuesByHeader()
+		values, err := table.GetHeaderValues()
 		if err != nil {
 			logs.Errorf("get header fields failed, table: %v, error: %v, rid: %s", table, err, kt.Rid)
 			return nil, err

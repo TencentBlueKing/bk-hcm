@@ -20,9 +20,7 @@
 package task
 
 import (
-	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -45,46 +43,4 @@ type ManagementListStateResult struct {
 type ManagementState struct {
 	ID    string                     `json:"id"`
 	State enumor.TaskManagementState `json:"state"`
-}
-
-// ManagementListByCondReq list task management request.
-type ManagementListByCondReq struct {
-	Resource   enumor.TaskManagementResource `json:"resource" validate:"required"`
-	StartTime  string                        `json:"start_time" validate:"required"`
-	EndTime    string                        `json:"end_time" validate:"required"`
-	Page       *core.BasePage                `json:"page" validate:"required"`
-	AccountIDs []string                      `json:"account_ids" validate:"omitempty,max=10"`
-	Operations []string                      `json:"operations" validate:"omitempty,max=10"`
-	Source     enumor.TaskManagementSource   `json:"source" validate:"omitempty"`
-	State      enumor.TaskManagementState    `json:"state" validate:"omitempty"`
-	Creator    string                        `json:"creator" validate:"omitempty"`
-}
-
-// Validate ManagementListByCondReq.
-func (r ManagementListByCondReq) Validate() error {
-	if err := r.Resource.Validate(); err != nil {
-		return err
-	}
-
-	if r.Page == nil {
-		return errf.Newf(errf.InvalidParameter, "page can't be nil")
-	}
-
-	if err := r.Page.Validate(); err != nil {
-		return err
-	}
-
-	if r.Source != "" {
-		if err := r.Source.Validate(); err != nil {
-			return err
-		}
-	}
-
-	if r.State != "" {
-		if err := r.State.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return validator.Validate.Struct(r)
 }

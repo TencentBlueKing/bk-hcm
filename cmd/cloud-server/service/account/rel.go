@@ -21,7 +21,6 @@ package account
 
 import (
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -30,9 +29,9 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListByUsageBizID ...
-func (a *accountSvc) ListByUsageBizID(cts *rest.Contexts) (interface{}, error) {
-	usageBizID, err := cts.PathParameter("bk_biz_id").Int64()
+// ListByBkBizID ...
+func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -44,37 +43,16 @@ func (a *accountSvc) ListByUsageBizID(cts *rest.Contexts) (interface{}, error) {
 		Action: meta.Access,
 		BasicInfo: &types.CloudResourceBasicInfo{
 			ResType: enumor.AccountCloudResType,
-			BkBizID: usageBizID,
+			BkBizID: bkBizID,
 		}}
 	err = handler.BizOperateAuth(cts, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	usageBizIDs := []int64{usageBizID}
-	// 关联了所有使用业务的账号也应该被查出来
-	if usageBizID != constant.AttachedAllBiz {
-		usageBizIDs = append(usageBizIDs, constant.AttachedAllBiz)
-	}
 	listReq := &protocloud.AccountBizRelWithAccountListReq{
-		UsageBizIDs: usageBizIDs,
+		BkBizIDs:    []int64{bkBizID},
 		AccountType: accountType,
 	}
-
-	accounts, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
-	if err != nil {
-		return nil, err
-	}
-	res := make([]*protocloud.AccountBizRelWithAccount, 0)
-
-	for _, one := range accounts {
-		// 仅能查询业务下可用于申请资源的帐号
-		if one.Vendor == enumor.Other {
-			continue
-		}
-		// 兼容旧接口的返回值
-		one.BkBizIDs = one.UsageBizIDs
-		res = append(res, one)
-	}
-	return res, nil
+	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
 }

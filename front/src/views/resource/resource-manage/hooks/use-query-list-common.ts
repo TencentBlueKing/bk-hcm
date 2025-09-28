@@ -55,9 +55,8 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
             filter: props.filter,
           },
           url.value,
-          { cancelPrevious: true },
         ),
-        method({ page: { count: true }, filter: props.filter }, url.value, { cancelPrevious: true }),
+        method({ page: { count: true }, filter: props.filter }, url.value),
       ]);
 
       const { details = [] } = listResult.data;

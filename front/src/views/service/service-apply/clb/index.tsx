@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive } from 'vue';
+import { defineComponent, reactive } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
 import BottomBar from './children/bottom-bar';
@@ -8,12 +8,10 @@ import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useI18n } from 'vue-i18n';
 import './index.scss';
-import { RouteLocationRaw, useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'ApplyLoadBalancer',
   setup() {
-    const route = useRoute();
     // use hooks
     const { t } = useI18n();
     const { getBizsId, whereAmI } = useWhereAmI();
@@ -44,14 +42,10 @@ export default defineComponent({
     const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
       <div class='apply-clb-page'>
         {/* header */}
-        <DetailHeader fromConfig={fromConfig.value}>
+        <DetailHeader>
           <p class='apply-clb-header-title'>{t('购买负载均衡')}</p>
         </DetailHeader>
 

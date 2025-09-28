@@ -97,7 +97,6 @@ func (opt syncNIOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// syncNetworkInterface 同步网络接口
 func (cli *client) syncNetworkInterface(kt *kit.Kit, opt *syncNIOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -141,7 +140,6 @@ func (cli *client) syncNetworkInterface(kt *kit.Kit, opt *syncNIOption) (*SyncRe
 	return nil, nil
 }
 
-// deleteNetworkInterface 删除网络接口
 func (cli *client) deleteNetworkInterface(kt *kit.Kit, delCloudIDs []string, opt *syncNIOption) error {
 
 	if err := opt.Validate(); err != nil {
@@ -181,7 +179,6 @@ func (cli *client) deleteNetworkInterface(kt *kit.Kit, delCloudIDs []string, opt
 	return nil
 }
 
-// updateNetworkInterface 更新网络接口
 func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateMap map[string]typesni.GcpNI) error {
 
 	if len(updateMap) <= 0 {
@@ -250,7 +247,6 @@ func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateM
 	return nil
 }
 
-// completeNetworkInterfaceUpdateInfo 补全网络接口更新信息
 func (cli *client) completeNetworkInterfaceUpdateInfo(kt *kit.Kit, niMap map[string]typesni.GcpNI) error {
 	subnetCloudIDMap := make(map[string]struct{}, 0)
 	for _, ni := range niMap {
@@ -285,7 +281,6 @@ func (cli *client) completeNetworkInterfaceUpdateInfo(kt *kit.Kit, niMap map[str
 	return nil
 }
 
-// completeNetworkInterfaceCreateInfo 补全网络接口创建信息
 func (cli *client) completeNetworkInterfaceCreateInfo(kt *kit.Kit, nis []typesni.GcpNI) error {
 	subnetCloudIDMap := make(map[string]struct{}, 0)
 	for _, ni := range nis {
@@ -318,7 +313,6 @@ func (cli *client) completeNetworkInterfaceCreateInfo(kt *kit.Kit, nis []typesni
 	return nil
 }
 
-// getSubnetMapByCloudID 根据云子网ID获取子网信息
 func (cli *client) getSubnetMapByCloudID(kt *kit.Kit, cloudIDs []string) (map[string]cloud.BaseSubnet, error) {
 	subnetMap := make(map[string]cloud.BaseSubnet, len(cloudIDs))
 	split := slice.Split(cloudIDs, int(core.DefaultMaxPageLimit))
@@ -340,7 +334,6 @@ func (cli *client) getSubnetMapByCloudID(kt *kit.Kit, cloudIDs []string) (map[st
 	return subnetMap, nil
 }
 
-// createNetworkInterface 创建网络接口
 func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *corecvm.BaseCvm,
 	addSlice []typesni.GcpNI) error {
 
@@ -433,7 +426,6 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *co
 	return nil
 }
 
-// listNetworkInterfaceFromCloud 从云上获取网络接口列表
 func (cli *client) listNetworkInterfaceFromCloud(kt *kit.Kit, zone, cloudCvmID string) ([]typesni.GcpNI, error) {
 
 	listOpt := &typesni.GcpListByCvmIDOption{
@@ -453,7 +445,6 @@ func (cli *client) listNetworkInterfaceFromCloud(kt *kit.Kit, zone, cloudCvmID s
 	return result[cloudCvmID], nil
 }
 
-// listNetworkInterfaceFromDB 从数据库获取网络接口列表
 func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 	[]coreni.NetworkInterface[coreni.GcpNIExtension], *corecvm.BaseCvm, error) {
 
@@ -528,7 +519,6 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 	return result.Details, &cvmResult.Details[0], nil
 }
 
-// isNIChange 判断网络接口是否有变更
 func isNIChange(item typesni.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
 
 	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
@@ -560,7 +550,6 @@ func isNIChange(item typesni.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIE
 	return false
 }
 
-// isNIExtChange 判断网络接口扩展信息是否有变更
 func isNIExtChange(item typesni.GcpNI, dbInfo coreni.NetworkInterface[coreni.GcpNIExtension]) bool {
 	if item.Extension.VpcSelfLink != dbInfo.Extension.VpcSelfLink {
 		return true

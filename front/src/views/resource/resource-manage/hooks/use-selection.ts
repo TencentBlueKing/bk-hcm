@@ -55,10 +55,7 @@ export default () => {
     }
     // 取消选择某一个
     if (!isAll && !selection.checked) {
-      // 没有rowKey的情况下，统一通过JSON转换后的对象比较，意图是确保比较结果符合预期
-      const index = selections.value.findIndex((item) =>
-        isEqual(JSON.parse(JSON.stringify(item)), JSON.parse(JSON.stringify(selection.row))),
-      );
+      const index = selections.value.findIndex((item) => isEqual(item, selection.row));
       if (index !== -1) {
         selections.value.splice(index, 1);
       }

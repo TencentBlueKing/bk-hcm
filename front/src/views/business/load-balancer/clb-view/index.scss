@@ -1,0 +1,31 @@
+.clb-view-page {
+  height: 100%;
+
+  .load-balancer-tree {
+    height: 100%;
+    box-shadow: 1px 0 0 0 #dcdee5;
+  }
+
+  .main-container {
+    height: 100%;
+    padding: 24px;
+    background-color: #f5f7fb;
+
+    .manager-tab-wrap {
+      height: 100%;
+
+      &.has-breadcrumb {
+        height: calc(100% - 30px);
+      }
+
+      // 覆盖组件默认样式
+      .bk-tab-header .bk-tab-header-item {
+        padding: 0 24px;
+      }
+      .bk-tab-content {
+        padding: 0;
+        overflow-y: auto;
+      }
+    }
+  }
+}

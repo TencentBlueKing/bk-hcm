@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/json"
 
@@ -300,23 +299,4 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 func (act ModifyTargetWeightAction) Rollback(kt run.ExecuteKit, params interface{}) error {
 	logs.Infof(" ----------- ModifyTargetWeightAction Rollback -----------, params: %s, rid: %s", params, kt.Kit().Rid)
 	return nil
-}
-
-func validateDetailListStatus(kt *kit.Kit, detailIDs []string) (string, error) {
-	// detail 状态检查
-	detailList, err := listTaskDetail(kt, detailIDs)
-	if err != nil {
-		return fmt.Sprintf("task detail query failed"), err
-	}
-	for _, detail := range detailList {
-		if detail.State == enumor.TaskDetailCancel {
-			// 任务被取消，跳过该批次
-			return fmt.Sprintf("task detail %s canceled", detail.ID), nil
-		}
-		if detail.State != enumor.TaskDetailInit {
-			return "", errf.Newf(errf.InvalidParameter, "task management detail(%s) status(%s) is not init",
-				detail.ID, detail.State)
-		}
-	}
-	return "", nil
 }

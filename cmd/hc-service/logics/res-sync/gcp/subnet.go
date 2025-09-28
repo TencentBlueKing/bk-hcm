@@ -164,13 +164,11 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID, region st
 	return nil
 }
 
-// deleteSubnet delete subnet from db
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
-	// validate subnet not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		CloudIDs:  delCloudIDs,
@@ -200,7 +198,6 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region string, delCloudI
 	return nil
 }
 
-// updateSubnet ...
 func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.GcpSubnet) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
@@ -244,7 +241,6 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
-// createSubnet ...
 func (cli *client) createSubnet(kt *kit.Kit, accountID string, addSubnet []adtysubnet.GcpSubnet) error {
 	if len(addSubnet) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
@@ -318,10 +314,8 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, addSubnet []adtys
 	return nil
 }
 
-// listSubnetFromCloud list subnet from cloud
 func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, region string) ([]adtysubnet.GcpSubnet,
 	error) {
-
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -345,7 +339,6 @@ func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams, regi
 	return result.Details, nil
 }
 
-// listSubnetFromDBBySelfLink list subnet from db by self link
 func (cli *client) listSubnetFromDBBySelfLink(kt *kit.Kit, params *ListSubnetBySelfLinkOption) (
 	[]cloudcore.Subnet[cloudcore.GcpSubnetExtension], error) {
 
@@ -374,7 +367,6 @@ func (cli *client) listSubnetFromDBBySelfLink(kt *kit.Kit, params *ListSubnetByS
 	return result.Details, nil
 }
 
-// listSubnetFromDB lists subnet from db
 func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, region string) (
 	[]cloudcore.Subnet[cloudcore.GcpSubnetExtension], error) {
 
@@ -402,8 +394,6 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, region 
 
 	return result.Details, nil
 }
-
-// isGcpSubnetChange checks if the GCP subnet has changed
 func isGcpSubnetChange(item adtysubnet.GcpSubnet, info cloudcore.Subnet[cloudcore.GcpSubnetExtension]) bool {
 	if info.Region != item.Region {
 		return true

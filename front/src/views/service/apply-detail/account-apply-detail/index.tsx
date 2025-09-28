@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, onMounted, ref, h } from 'vue';
+import { PropType, computed, defineComponent, onMounted, ref } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useStatus } from './useStatus';
@@ -12,7 +12,6 @@ import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
 import { useVerify } from '@/hooks';
 import { IApplicationDetail } from '../index';
-import BusinessValue from '@/components/display-value/business-value.vue';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -164,7 +163,6 @@ export default defineComponent({
               {
                 prop: 'op_product_id',
                 name: '业务',
-                render: (val: number) => h(BusinessValue, { value: val }),
               },
               {
                 prop: 'site',
@@ -287,8 +285,7 @@ export default defineComponent({
                     } finally {
                       isSubmitLoading.value = false;
                     }
-                  }}
-                >
+                  }}>
                   确定
                 </Button>
                 <Button
@@ -296,8 +293,7 @@ export default defineComponent({
                   loading={isSubmitLoading.value}
                   onClick={() => {
                     isDialogShow.value = false;
-                  }}
-                >
+                  }}>
                   取消
                 </Button>
               </div>

@@ -51,10 +51,6 @@ export default defineComponent({
     // 表格相关
     const tableRef = ref();
     const tableData = ref(props.tableData);
-    const tableSort = ref<{ key: string; type: string }>({
-      key: props.tableOptions.columns[0].field as string,
-      type: 'asc',
-    });
     const pagination = reactive({ limit: 10, count: props.tableData.length });
     const hasTopBar = computed(() => props.hasOperation && props.hasSearch);
 
@@ -64,7 +60,7 @@ export default defineComponent({
 
     // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
     const renderTableData = computed(() => {
-      const filterConditions: { [key]: any } = getLocalFilterConditions(searchValue.value, (rule) => {
+      const filterConditions = getLocalFilterConditions(searchValue.value, (rule) => {
         switch (rule.id) {
           // 负载均衡规格类型需要映射
           case 'SpecType':
@@ -75,36 +71,9 @@ export default defineComponent({
             return rule.values[0].id;
         }
       });
-
-      const getCompareValue = (item: any, field: string) => {
-        const config: { [key]: any } = {
-          lb_vip: ['private_ipv4_addresses', 'public_ipv4_addresses'],
-        };
-        if (Object.hasOwn(item, field)) return item[field];
-        if (Object.hasOwn(config, field)) {
-          return config[field].reduce((acc: any[], cur: string) => {
-            const value = Array.isArray(item[cur]) ? item[cur] : [item[cur]];
-            acc.push(...value);
-            return acc;
-          }, []);
-        }
-        return [];
-      };
-      const { key, type } = tableSort.value;
-      const resultData = (
-        Object.keys(filterConditions).length
-          ? props.tableData.filter((item) => {
-              return Object.keys(filterConditions).every((key) => {
-                const values = getCompareValue(item, key);
-                if (Array.isArray(values)) return values.some((data) => filterConditions[key].includes(data));
-                return filterConditions[key].includes(values);
-              });
-            })
-          : [...props.tableData]
-      ).sort((prev, next) => {
-        if (type === 'asc') return String(prev[key]).localeCompare(String(next[key]));
-        return String(next[key]).localeCompare(String(prev[key]));
-      });
+      const resultData = props.tableData.filter((item) =>
+        Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)),
+      );
       // 更新分页器
       pagination.count = resultData.length;
       return resultData;
@@ -118,13 +87,6 @@ export default defineComponent({
       },
       { deep: true },
     );
-
-    const handleSortBy = ({ column, type }: { column: any; type: string }) => {
-      tableSort.value = {
-        key: column.field,
-        type,
-      };
-    };
 
     expose({ clearSelection });
 
@@ -155,7 +117,6 @@ export default defineComponent({
             columns={props.tableOptions.columns}
             pagination={pagination}
             show-overflow-tooltip
-            onColumnSort={handleSortBy}
             {...(props.tableOptions.extra || {})}>
             {{
               empty: () => {

@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/api/core"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	dataregion "hcm/pkg/api/data-service/cloud/region"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -37,7 +36,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
 )
 
 // SyncRegionOption ...
@@ -112,19 +110,15 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 		list = append(list, regionOne)
 	}
 
-	// 底层单次操作，最大支持100个地域
-	elems := slice.Split(list, constant.BatchOperationMaxLimit)
-	for _, parts := range elems {
-		createReq := &dataregion.HuaWeiRegionBatchCreateReq{
-			Regions: parts,
-		}
-		_, err := cli.dbCli.HuaWei.Region.BatchCreateRegion(kt.Ctx, kt.Header(),
-			createReq)
-		if err != nil {
-			logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
-				err, opt.AccountID, opt, kt.Rid)
-			return err
-		}
+	createReq := &dataregion.HuaWeiRegionBatchCreateReq{
+		Regions: list,
+	}
+	_, err := cli.dbCli.HuaWei.Region.BatchCreateRegion(kt.Ctx, kt.Header(),
+		createReq)
+	if err != nil {
+		logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
+			err, opt.AccountID, opt, kt.Rid)
+		return err
 	}
 
 	logs.Infof("[%s] sync region to create region success, accountID: %s, count: %d, rid: %s", enumor.HuaWei,
@@ -151,17 +145,13 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 		list = append(list, regionOne)
 	}
 
-	// 底层单次操作，最大支持100个地域
-	elems := slice.Split(list, constant.BatchOperationMaxLimit)
-	for _, parts := range elems {
-		updateReq := &dataregion.HuaWeiRegionBatchUpdateReq{
-			Regions: parts,
-		}
-		if err := cli.dbCli.HuaWei.Region.BatchUpdateRegion(kt.Ctx, kt.Header(), updateReq); err != nil {
-			logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
-				err, opt.AccountID, opt, kt.Rid)
-			return err
-		}
+	updateReq := &dataregion.HuaWeiRegionBatchUpdateReq{
+		Regions: list,
+	}
+	if err := cli.dbCli.HuaWei.Region.BatchUpdateRegion(kt.Ctx, kt.Header(), updateReq); err != nil {
+		logs.Errorf("[%s] update region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.HuaWei,
+			err, opt.AccountID, opt, kt.Rid)
+		return err
 	}
 
 	logs.Infof("[%s] sync region to update region success, accountID: %s, count: %d, rid: %s", enumor.HuaWei,

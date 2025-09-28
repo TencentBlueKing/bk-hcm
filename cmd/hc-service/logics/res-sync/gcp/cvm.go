@@ -40,8 +40,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -100,7 +102,6 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	return new(SyncResult), nil
 }
 
-// createCvm creates cvm by addSlice
 func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone string,
 	addSlice []typescvm.GcpCvm) error {
 
@@ -136,7 +137,6 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 	return nil
 }
 
-// buildCvmCreateReqList builds cvm create request list
 func buildCvmCreateReqList(addSlice []typescvm.GcpCvm, accountID, region, zone string,
 	vpcMap map[string]*common.VpcDB, subnetMap map[string]*SubnetDB, diskMap map[string]string,
 	vpcSelfLinks []string, subnetSelfLinks []string, imageMap map[string]string) (
@@ -212,7 +212,6 @@ func buildCvmCreateReqList(addSlice []typescvm.GcpCvm, accountID, region, zone s
 	return lists, nil
 }
 
-// buildCvmCreateReq builds cvm create request
 func buildCvmCreateReq(one typescvm.GcpCvm, imageID, startTime, createTime, accountID, region, zone,
 	vpcCloudID, vpcID string, cloudSubIDs, subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
 	disks []corecvm.GcpAttachedDisk) protocloud.CvmBatchCreate[corecvm.GcpCvmExtension] {
@@ -283,7 +282,6 @@ func buildCvmCreateReq(one typescvm.GcpCvm, imageID, startTime, createTime, acco
 	return cvm
 }
 
-// updateCvm updates cvm by updateMap
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone string,
 	updateMap map[string]typescvm.GcpCvm) error {
 
@@ -322,7 +320,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 	return nil
 }
 
-// buildCvmUpdateReqList builds cvm update request list
 func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, vpcMap map[string]*common.VpcDB,
 	subnetMap map[string]*SubnetDB, diskMap map[string]string, vpcSelfLinks []string, subnetSelfLinks []string,
 	imageMap map[string]string) ([]protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension], error) {
@@ -390,7 +387,6 @@ func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, vpcMap map[stri
 	return lists, nil
 }
 
-// buildCvmUpdateReq builds cvm update request
 func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageID, startTime string, cloudSubIDs,
 	subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
 	disks []corecvm.GcpAttachedDisk) protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension] {
@@ -453,7 +449,156 @@ func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageI
 	return cvm
 }
 
-// deleteCvm deletes cvm by delCloudIDs
+func (cli *client) getNIAssResMapBySelfLinkFromNI(kt *kit.Kit, accountID string, region string, zone string,
+	cvmSlice []typescvm.GcpCvm) (map[string]*common.VpcDB, map[string]*SubnetDB,
+	map[string]string, []string, []string, map[string]string, error) {
+
+	vpcSelfLinks := make([]string, 0)
+	subnetSelfLinks := make([]string, 0)
+	diskSelfLinks := make([]string, 0)
+	imageSelfLinks := make([]string, 0)
+	for _, one := range cvmSlice {
+		if len(one.NetworkInterfaces) > 0 {
+			for _, networkInterface := range one.NetworkInterfaces {
+				if networkInterface != nil {
+					vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+					subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
+				}
+			}
+		}
+		for _, one := range one.Disks {
+			diskSelfLinks = append(diskSelfLinks, one.Source)
+		}
+		imageSelfLinks = append(imageSelfLinks, one.SourceMachineImage)
+	}
+
+	vpcMap, err := cli.getVpcMap(kt, accountID, vpcSelfLinks)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	subnetMap, err := cli.getSubnetMap(kt, accountID, region, subnetSelfLinks)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	diskMap, err := cli.getDiskMap(kt, accountID, zone, diskSelfLinks)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	imageMap, err := cli.getImageMap(kt, accountID, imageSelfLinks)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+
+	return vpcMap, subnetMap, diskMap, vpcSelfLinks, subnetSelfLinks, imageMap, nil
+}
+
+func (cli *client) getImageMap(kt *kit.Kit, accountID string,
+	cloudImageIDs []string) (map[string]string, error) {
+
+	imageMap := make(map[string]string)
+
+	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		imageParams := &ListBySelfLinkOption{
+			AccountID: accountID,
+			SelfLink:  parts,
+		}
+		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
+		if err != nil {
+			return imageMap, err
+		}
+
+		for _, image := range imageFromDB {
+			imageMap[image.CloudID] = image.ID
+		}
+	}
+
+	return imageMap, nil
+}
+
+func (cli *client) getVpcMap(kt *kit.Kit, accountID string, selfLink []string) (
+	map[string]*common.VpcDB, error) {
+
+	vpcMap := make(map[string]*common.VpcDB)
+
+	elems := slice.Split(selfLink, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		vpcParams := &ListBySelfLinkOption{
+			AccountID: accountID,
+			SelfLink:  parts,
+		}
+		vpcFromDB, err := cli.listVpcFromDBBySelfLink(kt, vpcParams)
+		if err != nil {
+			return vpcMap, err
+		}
+
+		for _, vpc := range vpcFromDB {
+			vpcMap[vpc.Extension.SelfLink] = &common.VpcDB{
+				VpcCloudID: vpc.CloudID,
+				VpcID:      vpc.ID,
+			}
+		}
+	}
+
+	return vpcMap, nil
+}
+
+func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, region string,
+	selfLink []string) (map[string]*SubnetDB, error) {
+
+	subnetMap := make(map[string]*SubnetDB)
+
+	elems := slice.Split(selfLink, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		subnetParams := &ListSubnetBySelfLinkOption{
+			AccountID: accountID,
+			Region:    region,
+			SelfLink:  parts,
+		}
+		subnetFromDB, err := cli.listSubnetFromDBBySelfLink(kt, subnetParams)
+		if err != nil {
+			return subnetMap, err
+		}
+
+		for _, subnet := range subnetFromDB {
+			subnetMap[subnet.Extension.SelfLink] = &SubnetDB{
+				SubnetCloudID: subnet.CloudID,
+				SubnetID:      subnet.ID,
+			}
+		}
+	}
+
+	return subnetMap, nil
+}
+
+func (cli *client) getDiskMap(kt *kit.Kit, accountID string, zone string,
+	selfLink []string) (map[string]string, error) {
+
+	diskMap := make(map[string]string)
+
+	elems := slice.Split(selfLink, constant.CloudResourceSyncMaxLimit)
+	for _, parts := range elems {
+		diskParams := &ListDiskBySelfLinkOption{
+			AccountID: accountID,
+			Zone:      zone,
+			SelfLink:  parts,
+		}
+		diskFromDB, err := cli.listDiskFromDBBySelfLink(kt, diskParams)
+		if err != nil {
+			return diskMap, err
+		}
+
+		for _, disk := range diskFromDB {
+			diskMap[disk.Extension.SelfLink] = disk.CloudID
+		}
+	}
+
+	return diskMap, nil
+}
+
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, zone string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("cvm delCloudIDs is <= 0, not delete")
@@ -489,7 +634,6 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, zone string, delClou
 	return nil
 }
 
-// listCvmFromCloud lists cvm from cloud by params
 func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams, option *SyncCvmOption) ([]typescvm.GcpCvm,
 	error) {
 	if err := params.Validate(); err != nil {
@@ -513,7 +657,6 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams, option 
 	return result, nil
 }
 
-// listCvmFromDB lists cvm from db by params
 func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams, zone string) (
 	[]corecvm.Cvm[cvm.GcpCvmExtension], error) {
 
@@ -619,4 +762,188 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, zone 
 	}
 
 	return nil
+}
+
+func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+
+	if db.CloudID != fmt.Sprintf("%d", cloud.Id) {
+		return true
+	}
+
+	if db.Name != cloud.Name {
+		return true
+	}
+
+	vpcSelfLinks := make([]string, 0)
+	subnetSelfLinks := make([]string, 0)
+	cloudNetWorkInterfaceIDs := make([]string, 0)
+	if len(cloud.NetworkInterfaces) > 0 {
+		for _, networkInterface := range cloud.NetworkInterfaces {
+			if networkInterface != nil {
+				cloudNetInterfaceID := fmt.Sprintf("%d", cloud.Id) + "_" + networkInterface.Name
+				cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
+				vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+				subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
+			}
+		}
+	}
+
+	if len(db.Extension.VpcSelfLinks) == 0 || len(vpcSelfLinks) == 0 ||
+		(db.Extension.VpcSelfLinks[0] != vpcSelfLinks[0]) {
+		return true
+	}
+
+	if len(db.Extension.SubnetSelfLinks) == 0 || len(subnetSelfLinks) == 0 ||
+		!assert.IsStringSliceEqual(db.Extension.SubnetSelfLinks, subnetSelfLinks) {
+		return true
+	}
+
+	if db.CloudImageID != cloud.SourceMachineImage {
+		return true
+	}
+
+	if db.Status != cloud.Status {
+		return true
+	}
+
+	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloud.NetworkInterfaces)
+
+	if !assert.IsStringSliceEqual(db.PrivateIPv4Addresses, priIPv4) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PublicIPv4Addresses, pubIPv4) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PrivateIPv6Addresses, priIPv6) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PublicIPv6Addresses, pubIPv6) {
+		return true
+	}
+
+	if db.MachineType != gcp.GetMachineType(cloud.MachineType) {
+		return true
+	}
+
+	createTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.CreationTimestamp)
+	if err != nil {
+		logs.Errorf("[%s] conv CreationTimestamp to std time failed, err: %v", enumor.Gcp, err)
+		return true
+	}
+
+	if db.CloudCreatedTime != createTime {
+		return true
+	}
+
+	startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.LastStartTimestamp)
+	if err != nil {
+		logs.Errorf("[%s] conv LastStartTimestamp to std time failed, err: %v", enumor.Gcp, err)
+		return true
+	}
+
+	if db.CloudLaunchedTime != startTime {
+		return true
+	}
+
+	if db.Extension.DeletionProtection != cloud.DeletionProtection {
+		return true
+	}
+
+	if db.Extension.CpuPlatform != cloud.CpuPlatform {
+		return true
+	}
+
+	if db.Extension.CanIpForward != cloud.CanIpForward {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.Extension.CloudNetworkInterfaceIDs, cloudNetWorkInterfaceIDs) {
+		return true
+	}
+
+	if db.Extension.SelfLink != cloud.SelfLink {
+		return true
+	}
+
+	if db.Extension.MinCpuPlatform != cloud.MinCpuPlatform {
+		return true
+	}
+
+	if db.Extension.StartRestricted != cloud.StartRestricted {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.Extension.ResourcePolicies, cloud.ResourcePolicies) {
+		return true
+	}
+
+	if db.Extension.Fingerprint != cloud.Fingerprint {
+		return true
+	}
+
+	if (db.Extension.ReservationAffinity == nil && cloud.ReservationAffinity != nil) ||
+		(db.Extension.ReservationAffinity != nil && cloud.ReservationAffinity == nil) {
+		return true
+	}
+
+	if db.Extension.ReservationAffinity != nil && cloud.ReservationAffinity != nil {
+		if db.Extension.ReservationAffinity.ConsumeReservationType != cloud.ReservationAffinity.ConsumeReservationType {
+			return true
+		}
+
+		if db.Extension.ReservationAffinity.Key != cloud.ReservationAffinity.Key {
+			return true
+		}
+
+		if !assert.IsStringSliceEqual(db.Extension.ReservationAffinity.Values, cloud.ReservationAffinity.Values) {
+			return true
+		}
+	}
+
+	if (db.Extension.AdvancedMachineFeatures != nil && cloud.AdvancedMachineFeatures == nil) ||
+		(db.Extension.AdvancedMachineFeatures == nil && cloud.AdvancedMachineFeatures != nil) {
+		return true
+	}
+
+	if db.Extension.AdvancedMachineFeatures != nil && cloud.AdvancedMachineFeatures != nil {
+		if db.Extension.AdvancedMachineFeatures.EnableNestedVirtualization !=
+			cloud.AdvancedMachineFeatures.EnableNestedVirtualization {
+			return true
+		}
+
+		if db.Extension.AdvancedMachineFeatures.EnableUefiNetworking != cloud.AdvancedMachineFeatures.EnableUefiNetworking {
+			return true
+		}
+
+		if db.Extension.AdvancedMachineFeatures.ThreadsPerCore != cloud.AdvancedMachineFeatures.ThreadsPerCore {
+			return true
+		}
+
+		if db.Extension.AdvancedMachineFeatures.VisibleCoreCount != cloud.AdvancedMachineFeatures.ThreadsPerCore {
+			return true
+		}
+	}
+
+	if !assert.IsStringMapEqual(db.Extension.Labels, cloud.Labels) {
+		return true
+	}
+
+	for _, dbValue := range db.Extension.Disks {
+		isEqual := false
+		for _, cloudValue := range cloud.Disks {
+			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index &&
+				dbValue.SelfLink == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
+				isEqual = true
+				break
+			}
+		}
+		if !isEqual {
+			return true
+		}
+	}
+
+	return false
 }

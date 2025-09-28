@@ -134,7 +134,6 @@ func (g *securityGroup) HuaWeiSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	// create security group cvm rels in db
 	err = g.createSGCommonRelsForHuawei(cts.Kit, client, sg.Region, cvm)
 	if err != nil {
 		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -253,7 +252,6 @@ func (g *securityGroup) HuaWeiSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	// delete security group cvm rels in db
 	deleteReq := buildSGCommonRelDeleteReq(
 		enumor.HuaWei, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
 	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
@@ -296,7 +294,6 @@ func (g *securityGroup) DeleteHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
-	// delete security group in db
 	req := &protocloud.SecurityGroupBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
@@ -406,11 +403,9 @@ func (g *securityGroup) HuaweiListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	// Convert the map to the response format
 	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
 }
 
-// countHuaweiSecurityGroupStatistic count huawei security group statistic.
 func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []model.Port,
 	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
 
@@ -432,7 +427,6 @@ func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []m
 	return sgIDToResourceCountMap, nil
 }
 
-// listHuaweiPorts list huawei ports by security group cloud IDs from cloud.
 func (g *securityGroup) listHuaweiPorts(kt *kit.Kit, region, accountID string, cloudIDToSgIDMap map[string]string) (
 	[]model.Port, error) {
 

@@ -66,12 +66,12 @@ func (a *accountSvc) BizGetAccountUsageBizs(cts *rest.Contexts) (any, error) {
 		return nil, fmt.Errorf("account not found: %s", accountID)
 	}
 	account := accounts.Details[0]
-	if !slice.IsItemInSlice(account.UsageBizIDs, bkBizID) &&
-		!slice.IsItemInSlice(account.UsageBizIDs, constant.AttachedAllBiz) {
+	if !slice.IsItemInSlice(account.BkBizIDs, bkBizID) &&
+		!slice.IsItemInSlice(account.BkBizIDs, constant.AttachedAllBiz) {
 		// 当前业务不在账号的使用业务内，且账号的使用业务非全业务
 		return nil, fmt.Errorf("biz %d is not in account %s usage biz list", bkBizID, accountID)
 	}
-	return account.UsageBizIDs, nil
+	return account.BkBizIDs, nil
 }
 
 // GetAccountUsageBizs 获取账号使用业务列表
@@ -105,5 +105,5 @@ func (a *accountSvc) GetAccountUsageBizs(cts *rest.Contexts) (any, error) {
 	if len(accounts.Details) == 0 {
 		return nil, fmt.Errorf("account not found: %s", accountID)
 	}
-	return accounts.Details[0].UsageBizIDs, nil
+	return accounts.Details[0].BkBizIDs, nil
 }

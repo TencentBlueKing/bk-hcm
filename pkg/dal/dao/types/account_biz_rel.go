@@ -40,7 +40,7 @@ type ListAccountBizRelJoinAccountDetails struct {
 // AccountWithBizID ...
 type AccountWithBizID struct {
 	cloud.AccountTable `db:",inline" json:",inline"`
-	RelUsageBizID      int64      `db:"rel_usage_biz_id" json:"rel_usage_biz_id"`
+	BkBizID            int64      `db:"bk_biz_id" json:"bk_biz_id"`
 	RelCreator         string     `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt       *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }
