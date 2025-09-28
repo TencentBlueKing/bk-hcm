@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed, ComputedRef, h, inject, reactive, ref, watch } from 'vue';
+import { computed, ComputedRef, h, inject, reactive, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IRsItem, useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 import { RsDeviceType } from '@/views/load-balancer/constants';
 import { ActionItemType } from '@/views/load-balancer/typing';
 import usePage from '@/hooks/use-page';
 import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum } from '../typing';
-import routeQuery from '@/router/utils/query';
 import { IAuthSign } from '@/common/auth-service';
-import { useRoute } from 'vue-router';
 import RsIpGroup from './children/rs-ip-group.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
@@ -18,7 +16,6 @@ const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 let nowRsCount = 0;
-const route = useRoute();
 const { t } = useI18n();
 const loadBalancerRsStore = useLoadBalancerRsStore();
 
@@ -99,6 +96,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
       condition,
       getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
+      true,
     );
 
     // 生成 rowKey
@@ -124,32 +122,9 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     });
   }
 };
-const handlePageChange = (page: number) => {
-  routeQuery.set({
-    page,
-    _t: Date.now(),
-  });
-};
-const handleLimitChange = (limit: number) => {
-  routeQuery.set({
-    limit,
-    page: 1,
-    _t: Date.now(),
-  });
-};
-
-watch(
-  () => route.query,
-  async (query) => {
-    pagination.current = Number(query.page) || 1;
-    pagination.limit = Number(query.limit) || pagination.limit;
-
-    const sort = (query.sort || '') as string;
-    const order = (query.order || 'DESC') as string;
-
-    getList(props.condition, { sort, order });
-  },
-);
+onMounted(() => {
+  getList(props.condition);
+});
 </script>
 
 <template>
@@ -170,18 +145,6 @@ watch(
       :type="RsDeviceType.INFO"
       class="expand-table"
       ref="rsIpGroupRef"
-    />
-    <bk-pagination
-      class="expand-pagination"
-      v-model="pagination.current"
-      :count="pagination.count"
-      :limit="pagination.limit"
-      size="small"
-      :layout="['total', 'limit', 'list']"
-      align="right"
-      :limit-list="[10, 20, 50, 100, 500]"
-      @change="handlePageChange"
-      @limit-change="handleLimitChange"
     />
 
     <template v-if="!batchOperationDialog.isHidden">
@@ -213,15 +176,9 @@ watch(
   }
 
   .expand-table {
-    height: calc(100% - 100px);
+    height: calc(100% - 50px);
     overflow-y: auto;
     margin-bottom: 10px;
-  }
-
-  :deep(.expand-pagination) {
-    .is-last {
-      margin-left: auto;
-    }
   }
 }
 </style>
