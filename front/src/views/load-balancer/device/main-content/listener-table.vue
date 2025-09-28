@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, h, inject, reactive, ref, watch } from 'vue';
+import { computed, ComputedRef, h, inject, watch, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
@@ -9,7 +9,6 @@ import { ActionItemType } from '@/views/load-balancer/typing';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
-import useTableSelection from '@/hooks/use-table-selection';
 import { LB_TYPE_MAP, ResourceTypeEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
 import routerAction from '@/router/utils/action';
@@ -25,7 +24,7 @@ import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum } from '../typing';
 import { useLoadBalancerDeviceSearchStore } from '@/store/load-balancer/device-search';
-import useTableSettings from '@/hooks/use-table-settings';
+import { PrimaryTable, TableColumn } from '@blueking/tdesign-ui';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
@@ -35,9 +34,59 @@ const { t } = useI18n();
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 const loadBalancerClbStore = useLoadBalancerClbStore();
 const loadBalancerDeviceSearchStore = useLoadBalancerDeviceSearchStore();
-const tableRef = ref(null);
-const max = 1000;
 
+const headCheckOptions = [
+  {
+    id: 'across',
+    name: t('跨页全选'),
+  },
+  {
+    id: 'current',
+    name: t('当页全选'),
+  },
+];
+const max = 1000;
+const LISTENER_ROW_KEY = 'id';
+
+// t组件分页属性
+const tablePageProps = ref<{
+  pageSize: number;
+  current: number;
+  total: number;
+  showPageNumber: boolean;
+  showPageSize: boolean;
+  showPreviousAndNextBtn: boolean;
+  totalContent: boolean;
+}>({
+  pageSize: 20,
+  current: 1,
+  total: 0,
+  showPageNumber: false,
+  showPageSize: false,
+  showPreviousAndNextBtn: false,
+  totalContent: false,
+});
+// 表头checkbox选择框状态
+const headCheckBox = reactive({
+  checked: false,
+  indeterminate: false,
+  onChange: (val: boolean) => handleHeadCheckBoxChange(val),
+});
+// 所有列表的复选框状态 id: boolean
+const checkStatus = ref<{ [key: string]: boolean }>({});
+
+const selections = computed(() => {
+  const values: IListenerItem[] = [];
+  Object.entries(checkStatus.value).forEach(([id, isCheck]) => {
+    if (isCheck) {
+      const item = listenerList.value.find((item) => item[LISTENER_ROW_KEY] === id);
+      if (item) {
+        values.push(item);
+      }
+    }
+  });
+  return values;
+});
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
@@ -135,22 +184,8 @@ const dataListColumns = displayFieldIds.map((id) => {
   return { ...property, ...displayConfig[id] };
 });
 
-const { settings } = useTableSettings(dataListColumns);
-
-const { pagination, getPageParams, handlePageChange, handlePageSizeChange } = usePage(false);
+const { pagination, getPageParams } = usePage(false);
 const listenerList = ref<IListenerItem[]>([]);
-
-const isCurRowSelectEnable = (row: any) => {
-  if (currentGlobalBusinessId.value) return true;
-  if (row.id) return row.bk_biz_id === -1;
-};
-const isRowSelectEnable = ({ row, isCheckAll }: any) => {
-  if (isCheckAll) return true;
-  return isCurRowSelectEnable(row);
-};
-const { selections, resetSelections, handleSelectAll, handleSelectChange } = useTableSelection({
-  isRowSelectable: isRowSelectEnable,
-});
 
 const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
   list.forEach((item) => {
@@ -189,14 +224,6 @@ watch(
   },
 );
 
-const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
-  const { id } = column;
-  if (id === 'region') {
-    return { vendor: row.vendor };
-  }
-  return {};
-};
-
 // 全量获取列表数据，内部会根据是否获取过直接返回缓存数据，分页参数理论上不再会用到暂时保留
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
   if (!condition.account_id) return;
@@ -210,13 +237,14 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
       Object.entries(convertFieldIds).forEach(([key, oldKey]) => {
         item[oldKey] = item[key];
       });
+      checkStatus.value[item[LISTENER_ROW_KEY]] = false;
     });
 
     if (list.length > 0) {
       asyncSetRsWeightStat(list);
     }
-    selections.value = [];
     listenerList.value = list;
+    tablePageProps.value.total = count;
     pagination.count = count;
   } catch (e) {
     listenerList.value = [];
@@ -262,9 +290,64 @@ const handleUpdateListenerSuccess = () => {
   getList(props.condition);
 };
 
+// 设置表头选择框状态
+const setHeadCheckStatus = () => {
+  const { current, pageSize, total } = tablePageProps.value;
+  let checkLength = 0;
+  for (let i = (current - 1) * pageSize, count = 0; count < pageSize; i++, count++) {
+    if (!listenerList.value[i]) break;
+    if (checkStatus.value[listenerList.value[i][LISTENER_ROW_KEY]]) {
+      checkLength = checkLength + 1;
+    }
+  }
+  if (checkLength === 0) {
+    headCheckBox.checked = false;
+    headCheckBox.indeterminate = false;
+  } else {
+    const lastPage = Math.ceil(total / pageSize);
+    const limit = current === lastPage ? total - pageSize * (lastPage - 1) : pageSize;
+    headCheckBox.checked = true;
+    if (checkLength < limit) headCheckBox.indeterminate = true;
+    else headCheckBox.indeterminate = false;
+  }
+};
 const handleClearSelection = () => {
-  resetSelections();
-  tableRef.value?.clearSelection();
+  listenerList.value.forEach((item) => {
+    checkStatus.value[item[LISTENER_ROW_KEY]] = false;
+  });
+  headCheckBox.checked = false;
+  headCheckBox.indeterminate = false;
+};
+const handlePageChange = (page: number) => {
+  tablePageProps.value.current = page;
+  setHeadCheckStatus();
+};
+const handleLimitChange = (limit: number) => {
+  tablePageProps.value.pageSize = limit;
+  setHeadCheckStatus();
+};
+// 选择跨页全选还是当页全选
+const handleSelectAcross = (id: string, value = true) => {
+  let list: IListenerItem[] = [...listenerList.value];
+  initAllCheckStatus();
+  if (id === 'current') {
+    const { current, pageSize } = tablePageProps.value;
+    list = list.splice((current - 1) * pageSize, pageSize);
+  }
+  list.forEach((item: IListenerItem) => {
+    checkStatus.value[item[LISTENER_ROW_KEY]] = value;
+  });
+  setHeadCheckStatus();
+};
+// 表头复选框val变化
+const handleHeadCheckBoxChange = (val: boolean) => {
+  handleSelectAcross('current', val);
+};
+// 初始化所有选择框的状态为未选择
+const initAllCheckStatus = () => {
+  listenerList.value.forEach((item) => {
+    checkStatus.value[item[LISTENER_ROW_KEY]] = false;
+  });
 };
 </script>
 
@@ -286,51 +369,46 @@ const handleClearSelection = () => {
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </template>
     </bk-alert>
-
-    <bk-table
-      ref="tableRef"
-      row-key="id"
-      row-hover="auto"
-      :data="listenerList"
-      :pagination="pagination"
-      :settings="settings"
-      :remote-pagination="false"
-      show-overflow-tooltip
-      :is-row-select-enable="isRowSelectEnable"
-      :max-height="`calc(100% - ${moreData ? '96px' : '48px'})`"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="
-        (page: number) => {
-          handlePageChange(page);
-          handleClearSelection();
-        }
-      "
-      @select-all="handleSelectAll"
-      @selection-change="handleSelectChange"
-    >
-      >
-      <bk-table-column :width="40" :min-width="40" type="selection" :fixed="dataListColumns[0]?.fixed ?? undefined" />
-      <bk-table-column
-        v-for="(column, index) in dataListColumns"
-        :key="index"
-        :prop="column.id"
-        :label="column.name"
-        :sort="column.sort"
-        :width="column.width"
-        :fixed="column.fixed"
-        :render="column.render"
-        :filter="column.filter"
-      >
-        <template #default="{ row }">
-          <display-value
-            :property="column"
-            :value="row[column.id]"
-            :display="column?.meta?.display"
-            v-bind="getDisplayCompProps(column, row)"
-          />
+    <primary-table :row-key="LISTENER_ROW_KEY" :data="listenerList" :pagination="{ ...tablePageProps }">
+      <table-column width="65" col-key="row-select">
+        <template #title>
+          <bk-dropdown
+            class="head-check"
+            :popover-options="{
+              clickContentAutoHide: true,
+              hideIgnoreReference: true,
+            }"
+          >
+            <bk-checkbox v-bind="{ ...headCheckBox }" :immediate-emit-change="false"></bk-checkbox>
+            <i class="hcm-icon bkhcm-icon-down-shape arrow-icon" />
+            <template #content>
+              <bk-dropdown-menu>
+                <bk-dropdown-item v-for="item in headCheckOptions" :key="item.id" @click="handleSelectAcross(item.id)">
+                  {{ item.name }}
+                </bk-dropdown-item>
+              </bk-dropdown-menu>
+            </template>
+          </bk-dropdown>
         </template>
-      </bk-table-column>
-      <bk-table-column :label="t('操作')" width="120" fixed="right">
+        <template #default="{ row }">
+          <bk-checkbox v-model="checkStatus[row[LISTENER_ROW_KEY]]" @change="setHeadCheckStatus"></bk-checkbox>
+        </template>
+      </table-column>
+      <template v-for="column in dataListColumns" :key="column.id">
+        <table-column
+          :col-key="column.id"
+          :title="column.name"
+          :sort="column.sort"
+          :width="column.width"
+          :fixed="column.fixed"
+          :ellipsis="column.ellipsis"
+        >
+          <template #default="{ row }">
+            <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
+          </template>
+        </table-column>
+      </template>
+      <table-column :title="t('操作')" width="120" fixed="right">
         <template #default="{ row }">
           <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
             <bk-button theme="primary" text :disabled="noPerm" @click="handleEditListener(row)">
@@ -353,9 +431,20 @@ const handleClearSelection = () => {
             </bk-button>
           </hcm-auth>
         </template>
-      </bk-table-column>
-    </bk-table>
-
+      </table-column>
+    </primary-table>
+    <bk-pagination
+      class="listener-pagination"
+      v-model="pagination.current"
+      :count="pagination.count"
+      :limit="pagination.limit"
+      size="small"
+      :layout="['total', 'limit', 'list']"
+      align="right"
+      :limit-list="[10, 20, 50, 100, 500]"
+      @change="handlePageChange"
+      @limit-change="handleLimitChange"
+    />
     <template v-if="!addSidesliderState.isHidden">
       <add-listener-sideslider
         v-model="addSidesliderState.isShow"
@@ -402,19 +491,31 @@ const handleClearSelection = () => {
       align-items: center;
       gap: 8px;
     }
+  }
 
-    .search {
+  :deep(.head-check) {
+    .bk-dropdown-reference {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+  }
+
+  :deep(.listener-pagination) {
+    .is-last {
       margin-left: auto;
-      width: 500px;
     }
   }
 
   :deep(.t-table) {
-    height: calc(100% - 50px);
+    height: calc(100% - 80px);
 
     .t-table__content {
-      height: calc(100% - 50px);
+      height: 100%;
       overflow-y: auto;
+    }
+    .t-table__pagination {
+      padding: 0;
     }
   }
 }
