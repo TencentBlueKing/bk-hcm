@@ -7,13 +7,12 @@ import { IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balanc
 import { ListenerDeviceType } from '@/views/load-balancer/constants';
 import { ActionItemType } from '@/views/load-balancer/typing';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
-import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import { LB_TYPE_MAP, ResourceTypeEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
 import routerAction from '@/router/utils/action';
 
-import { Button, Message } from 'bkui-vue';
+import { Message } from 'bkui-vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import AddListenerSideslider from '@/views/load-balancer/listener/add.vue';
 import BatchDeleteDialog from '@/views/load-balancer/listener/children/batch-delete-dialog.vue';
@@ -158,28 +157,9 @@ const convertFieldIds = {
   target_count: 'rs_num',
 };
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
-const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
-  name: {
-    render: ({ data, row }) => {
-      const handleClick = async () => {
-        details.value = await loadBalancerClbStore.getLoadBalancerDetails(row.lb_id, currentGlobalBusinessId.value);
-        detailsSidesliderState.isHidden = false;
-        detailsSidesliderState.isShow = true;
-        detailsSidesliderState.rowData = data;
-      };
-      return h(Button, { theme: 'primary', text: true, onClick: handleClick }, row.name);
-    },
-  },
-  port: {
-    render: ({ row, cell }) => `${cell}${row.end_port ? `-${row.end_port}` : ''}`,
-  },
-  lb_network_type: {
-    render: ({ cell }) => LB_TYPE_MAP[cell],
-  },
-};
 const dataListColumns = displayFieldIds.map((id) => {
   const property = displayProperties.find((field) => field.id === id);
-  return { ...property, ...displayConfig[id] };
+  return property;
 });
 
 const { pagination, getPageParams } = usePage();
@@ -310,6 +290,12 @@ const setHeadCheckStatus = () => {
     else headCheckBox.indeterminate = false;
   }
 };
+const handleClick = async (row: IListenerItem) => {
+  details.value = await loadBalancerClbStore.getLoadBalancerDetails(row.lb_id, currentGlobalBusinessId.value);
+  detailsSidesliderState.isHidden = false;
+  detailsSidesliderState.isShow = true;
+  detailsSidesliderState.rowData = row;
+};
 const handleClearSelection = () => {
   listenerList.value.forEach((item) => {
     checkStatus.value[item[LISTENER_ROW_KEY]] = false;
@@ -403,7 +389,18 @@ const initAllCheckStatus = () => {
           :ellipsis="column.ellipsis"
         >
           <template #default="{ row }">
-            <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
+            <template v-if="column.id === 'name'">
+              <bk-button theme="primary" text @click="() => handleClick(row)">
+                {{ row.name }}
+              </bk-button>
+            </template>
+            <template v-else-if="column.id === 'port'">
+              {{ `${row.port}${row.end_port ? `-${row.end_port}` : ''}` }}
+            </template>
+            <template v-else-if="column.id === 'lb_network_type'">
+              {{ LB_TYPE_MAP[row.lb_network_type] }}
+            </template>
+            <display-value v-else :property="column" :value="row[column.id]" :display="column?.meta?.display" />
           </template>
         </table-column>
       </template>
