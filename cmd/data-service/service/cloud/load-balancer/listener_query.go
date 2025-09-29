@@ -606,35 +606,37 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, lblReq protocloud.ListList
 func (svc *lbSvc) listBizListenerByLbIDs(kt *kit.Kit, lblReq protocloud.ListListenerQueryReq, cloudClbIDs []string) (
 	map[string]tablelb.LoadBalancerListenerTable, []string, []tablelb.LoadBalancerListenerTable, error) {
 
-	lblFilter := make([]*filter.AtomRule, 0)
-	lblFilter = append(lblFilter, tools.RuleEqual("vendor", lblReq.Vendor))
-	lblFilter = append(lblFilter, tools.RuleEqual("bk_biz_id", lblReq.BkBizID))
-	lblFilter = append(lblFilter, tools.RuleEqual("account_id", lblReq.AccountID))
-	lblFilter = append(lblFilter, tools.RuleIn("cloud_lb_id", cloudClbIDs))
-	lblFilter = append(lblFilter, tools.RuleEqual("protocol", lblReq.ListenerQueryItem.Protocol))
-	if len(lblReq.ListenerQueryItem.Ports) > 0 {
-		lblFilter = append(lblFilter, tools.RuleIn("port", lblReq.ListenerQueryItem.Ports))
-	}
-
 	lblList := make([]tablelb.LoadBalancerListenerTable, 0)
-	opt := &types.ListOption{
-		Filter: tools.ExpressionAnd(lblFilter...),
-		Page:   core.NewDefaultBasePage(),
-	}
-	for {
-		loopLblList, err := svc.dao.LoadBalancerListener().List(kt, opt)
-		if err != nil {
-			logs.Errorf("list biz listener by clbIDs failed, err: %v, req: %+v, rid: %s",
-				err, lblReq, kt.Rid)
-			return nil, nil, nil, fmt.Errorf("list biz listener by clbIDs failed, err: %v", err)
+	elems := slice.Split(cloudClbIDs, int(core.DefaultMaxPageLimit))
+	for _, cloudClbIDParts := range elems {
+		lblFilter := make([]*filter.AtomRule, 0)
+		lblFilter = append(lblFilter, tools.RuleEqual("vendor", lblReq.Vendor))
+		lblFilter = append(lblFilter, tools.RuleEqual("bk_biz_id", lblReq.BkBizID))
+		lblFilter = append(lblFilter, tools.RuleEqual("account_id", lblReq.AccountID))
+		lblFilter = append(lblFilter, tools.RuleIn("cloud_lb_id", cloudClbIDParts))
+		lblFilter = append(lblFilter, tools.RuleEqual("protocol", lblReq.ListenerQueryItem.Protocol))
+		if len(lblReq.ListenerQueryItem.Ports) > 0 {
+			lblFilter = append(lblFilter, tools.RuleIn("port", lblReq.ListenerQueryItem.Ports))
 		}
 
-		lblList = append(lblList, loopLblList.Details...)
-		if uint(len(loopLblList.Details)) < core.DefaultMaxPageLimit {
-			break
+		opt := &types.ListOption{
+			Filter: tools.ExpressionAnd(lblFilter...),
+			Page:   core.NewDefaultBasePage(),
 		}
+		for {
+			loopLblList, err := svc.dao.LoadBalancerListener().List(kt, opt)
+			if err != nil {
+				logs.Errorf("list biz listener by clbIDs failed, err: %v, req: %+v, rid: %s", err, lblReq, kt.Rid)
+				return nil, nil, nil, fmt.Errorf("list biz listener by clbIDs failed, err: %v", err)
+			}
 
-		opt.Page.Start += uint32(core.DefaultMaxPageLimit)
+			lblList = append(lblList, loopLblList.Details...)
+			if uint(len(loopLblList.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+
+			opt.Page.Start += uint32(core.DefaultMaxPageLimit)
+		}
 	}
 
 	lblProtocolPortMap := make(map[string]tablelb.LoadBalancerListenerTable, len(lblList))

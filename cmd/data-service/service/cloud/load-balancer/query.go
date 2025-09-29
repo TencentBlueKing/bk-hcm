@@ -372,18 +372,19 @@ func (svc *lbSvc) CountListenerByLbIDs(cts *rest.Contexts) (interface{}, error) 
 func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, lblReq protocloud.ListListenerQueryReq) (
 	[]string, []string, map[string]tablelb.LoadBalancerTable, error) {
 
-	lbOpt := &types.ListOption{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", lblReq.Vendor),
-			tools.RuleEqual("bk_biz_id", lblReq.BkBizID),
-			tools.RuleEqual("account_id", lblReq.AccountID),
-			tools.RuleEqual("region", lblReq.ListenerQueryItem.Region),
-			tools.RuleIn("cloud_id", lblReq.ListenerQueryItem.CloudLbIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
 	lbAllList := make([]tablelb.LoadBalancerTable, 0)
-	for {
+	elems := slice.Split(lblReq.ListenerQueryItem.CloudLbIDs, int(core.DefaultMaxPageLimit))
+	for _, cloudClbIDParts := range elems {
+		lbOpt := &types.ListOption{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", lblReq.Vendor),
+				tools.RuleEqual("bk_biz_id", lblReq.BkBizID),
+				tools.RuleEqual("account_id", lblReq.AccountID),
+				tools.RuleEqual("region", lblReq.ListenerQueryItem.Region),
+				tools.RuleIn("cloud_id", cloudClbIDParts),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
 		lbList, err := svc.dao.LoadBalancer().List(kt, lbOpt)
 		if err != nil {
 			logs.Errorf("check list load balancer failed, err: %v, req: %+v, rid: %s", err, lblReq, kt.Rid)
@@ -391,10 +392,6 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, lblReq protocloud.Li
 		}
 
 		lbAllList = append(lbAllList, lbList.Details...)
-		if len(lbList.Details) <= int(core.DefaultMaxPageLimit) {
-			break
-		}
-		lbOpt.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	// 检查ip地址/域名，是否在负载均衡的ip地址列表中

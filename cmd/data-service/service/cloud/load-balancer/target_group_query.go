@@ -229,8 +229,8 @@ func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, lblReq protocloud.Lis
 		}
 		targetGroupRelList, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().List(kt, opt)
 		if err != nil {
-			logs.Errorf("list target group listener rule rel failed, err: %v, req: %+v, lblReq: %+v, rid: %s",
-				err, lblReq, lblReq, kt.Rid)
+			logs.Errorf("list target group listener rule rel failed, err: %v, lblReq: %+v, ruleRelFilter: %+v, rid: %s",
+				err, lblReq, ruleRelFilter, kt.Rid)
 			return nil, fmt.Errorf("list target group listener rule rel failed, err: %v", err)
 		}
 		for _, item := range targetGroupRelList.Details {
