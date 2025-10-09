@@ -274,7 +274,8 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountInfo *types.CloudR
 			return item.taskDetailID
 		})
 		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s",
+				err, taskDetails, kt.Rid)
 		}
 	}()
 
