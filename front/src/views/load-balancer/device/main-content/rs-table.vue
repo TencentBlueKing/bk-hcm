@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, h, inject, reactive, ref, onMounted } from 'vue';
+import { computed, ComputedRef, h, inject, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { IRsItem, useLoadBalancerRsStore } from '@/store/load-balancer/rs';
 import { RsDeviceType } from '@/views/load-balancer/constants';
@@ -11,11 +11,13 @@ import RsIpGroup from './children/rs-ip-group.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
 import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-button.vue';
+import { useRoute } from 'vue-router';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 let nowRsCount = 0;
+const route = useRoute();
 const { t } = useI18n();
 const loadBalancerRsStore = useLoadBalancerRsStore();
 
@@ -24,6 +26,7 @@ const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOp
 
 const { pagination, getPageParams } = usePage();
 
+let allList: IRsItem[] = [];
 const rsList = ref<IRsItem[]>([]);
 const loading = ref(false);
 const rsIpGroupRef = ref(null);
@@ -107,7 +110,8 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
 
     nowRsCount = rsCount;
     pagination.count = count;
-    rsList.value = newList;
+    allList = [...newList];
+    setRsList();
   } catch (error) {
     console.error(error);
     rsList.value = [];
@@ -122,9 +126,30 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     });
   }
 };
-onMounted(() => {
-  getList(props.condition);
-});
+const setRsList = () => {
+  const { current, limit } = pagination;
+  const list: IRsItem[] = [];
+  const { length } = allList;
+  for (let i = (current - 1) * limit, j = 0; j < limit && i < length; j++, i++) {
+    list.push(allList[i]);
+  }
+  rsList.value = list;
+};
+const handlePageChange = (page: number) => {
+  pagination.current = page;
+  setRsList();
+};
+const handleLimitChange = (limit: number) => {
+  pagination.current = 1;
+  pagination.limit = limit;
+  setRsList();
+};
+watch(
+  () => route.query,
+  async () => {
+    getList(props.condition);
+  },
+);
 </script>
 
 <template>
@@ -141,10 +166,23 @@ onMounted(() => {
     </div>
     <rs-ip-group
       :rs-list="rsList"
+      :all-list="allList"
       :vendor="condition.vendor"
       :type="RsDeviceType.INFO"
       class="expand-table"
       ref="rsIpGroupRef"
+    />
+    <bk-pagination
+      class="rs-pagination"
+      v-model="pagination.current"
+      :count="pagination.count"
+      :limit="pagination.limit"
+      size="small"
+      :layout="['total', 'limit', 'list']"
+      align="right"
+      :limit-list="[10, 20, 50, 100, 500]"
+      @change="handlePageChange"
+      @limit-change="handleLimitChange"
     />
 
     <template v-if="!batchOperationDialog.isHidden">
@@ -161,7 +199,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .rs-table-container {
-  height: 100%;
+  height: calc(100% - 30px);
 
   .toolbar {
     margin-bottom: 16px;
@@ -176,9 +214,15 @@ onMounted(() => {
   }
 
   .expand-table {
-    height: calc(100% - 50px);
+    height: calc(100% - 60px);
     overflow-y: auto;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.rs-pagination) {
+    .is-last {
+      margin-left: auto;
+    }
   }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ComputedRef, h, inject, onMounted, reactive, ref } from 'vue';
+import { computed, ComputedRef, h, inject, watch, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
@@ -197,9 +197,12 @@ const handleSingleDelete = (row: any) => {
 
 const loading = ref(false);
 
-onMounted(() => {
-  getList(props.condition);
-});
+watch(
+  () => route.query,
+  () => {
+    getList(props.condition);
+  },
+);
 
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
   if (!condition.account_id) return;

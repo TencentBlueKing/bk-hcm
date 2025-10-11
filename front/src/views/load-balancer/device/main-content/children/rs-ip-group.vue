@@ -9,7 +9,7 @@ import { RsInstType, RsDeviceType } from '@/views/load-balancer/constants';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
 
-const props = defineProps<{ rsList: any[]; vendor: VendorEnum; type: RsDeviceType }>();
+const props = defineProps<{ rsList: any[]; allList: any[]; vendor: VendorEnum; type: RsDeviceType }>();
 
 const emit = defineEmits(['delete']);
 
@@ -96,6 +96,9 @@ const MAX_COUNT = 5000;
 
 const RS_ROW_KEY = 'id';
 
+// 所有IP的复选框状态 id: boolean
+const IPCheckStatus = ref<{ [key: string]: boolean }>({});
+
 // 选中RS，key为rsList的rowKey，value为该IP下选中的RS ID数组
 const selectedRsMap = ref<Map<string, string[]>>(new Map());
 
@@ -114,7 +117,7 @@ const selections = computed(() => {
     if (!value.length) {
       continue;
     }
-    const item = props.rsList.find((item) => item.rowKey === key);
+    const item = props.allList.find((item) => item.rowKey === key);
     result.push({
       ...item,
       targets: item.targets.filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
@@ -130,10 +133,8 @@ const isExceeded = computed(() => selectedCount.value > MAX_COUNT);
 watch(
   () => props.rsList,
   (list) => {
-    // 重置选中数据
-    selectedRsMap.value.clear();
     list.forEach((item) => {
-      selectedRsMap.value.set(item.rowKey, []);
+      selectedRsMap.value.set(item.rowKey, selectedRsMap.value.get(item.rowKey) || []);
     });
 
     // 默认展开第一个
@@ -141,11 +142,21 @@ watch(
   },
 );
 
+watch(
+  () => props.allList,
+  (list) => {
+    list.forEach((item) => {
+      selectedRsMap.value.set(item.rowKey, []);
+      IPCheckStatus.value[item.rowKey] = false;
+    });
+  },
+);
+
 const isExpand = (rowKey: string) => activeGroupKeys.value.includes(rowKey);
 
 // 获取IP下所有RS ID
 const getRowTargetIds = (rowKey: string) => {
-  const targets = props.rsList.find((item) => item.rowKey === rowKey)?.targets || [];
+  const targets = props.allList.find((item) => item.rowKey === rowKey)?.targets || [];
   return targets.map((rs: any) => rs[RS_ROW_KEY]);
 };
 
@@ -164,7 +175,10 @@ const getVpc = (ids: string[]) => {
 
 // 表格的选中状态变化，value每次为最新选中的RS ID数组
 const handleTableSelectChange = (value: TableProps['selectedRowKeys'], ctx: SelectOptions<any>, rowKey: string) => {
+  const { length } = value;
   selectedRsMap.value.set(rowKey, value as string[]);
+  if (length === 0) IPCheckStatus.value[rowKey] = false;
+  else IPCheckStatus.value[rowKey] = true;
 };
 
 const handleIPClick = (instId: string, rowKey: string) => {
@@ -178,12 +192,14 @@ const handleIPClick = (instId: string, rowKey: string) => {
 const handleSelectAll = () => {
   for (const key of selectedRsMap.value.keys()) {
     selectedRsMap.value.set(key, getRowTargetIds(key));
+    IPCheckStatus.value[key] = true;
   }
 };
 
 const handleClearSelection = () => {
   for (const key of selectedRsMap.value.keys()) {
     selectedRsMap.value.set(key, []);
+    IPCheckStatus.value[key] = false;
   }
 };
 
@@ -231,7 +247,8 @@ defineExpose({ selections, isExceeded });
             <div class="header" :class="{ 'is-expand': isExpand(item.rowKey) }">
               <bk-checkbox
                 v-if="hasSelection"
-                :checked="selectedRsMap.get(item.rowKey)?.length === item.targets.length && item.targets.length > 0"
+                :immediate-emit-change="false"
+                v-model="IPCheckStatus[item.rowKey]"
                 :indeterminate="
                   selectedRsMap.get(item.rowKey)?.length > 0 &&
                   selectedRsMap.get(item.rowKey)?.length < item.targets.length
