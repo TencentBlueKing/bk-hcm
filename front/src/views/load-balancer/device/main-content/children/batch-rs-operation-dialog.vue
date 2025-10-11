@@ -134,7 +134,14 @@ const handleClosed = () => {
       <span class="rs-count">{{ rsLength }}</span>
       个RS
     </div>
-    <rs-ip-group :rs-list="list" :vendor="vendor" :type="type" class="rs-list" @delete="handleDelete" />
+    <rs-ip-group
+      :rs-list="list"
+      :all-list="list"
+      :vendor="vendor"
+      :type="type"
+      class="rs-list"
+      @delete="handleDelete"
+    />
     <template #footer>
       <div class="confirm-check">
         <bk-checkbox v-model="confirmCheck">

@@ -27,6 +27,7 @@ const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOp
 
 const { pagination, getPageParams } = usePage();
 
+let allList: IRsItem[] = [];
 const rsList = ref<IRsItem[]>([]);
 const rsCurrentPageList = ref<IRsItem[]>([]);
 const rsIpGroupRef = ref(null);
@@ -107,6 +108,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition) => {
     pagination.count = count;
     rsList.value = newList;
     rsCurrentPageList.value = localPaginate(newList, getPageParams(pagination));
+    allList = [...newList];
   } catch (error) {
     console.error(error);
     rsList.value = [];
@@ -151,6 +153,7 @@ watch(
     </div>
     <rs-ip-group
       :rs-list="rsCurrentPageList"
+      :all-list="allList"
       :vendor="condition.vendor"
       :type="RsDeviceType.INFO"
       class="expand-table"
@@ -164,7 +167,7 @@ watch(
       size="small"
       :layout="['total', 'limit', 'list']"
       align="right"
-      :limit-list="[10, 20, 50, 100, 500]"
+      :limit-list="[1, 2, 10, 20, 50, 100, 500]"
       @change="handlePageChange"
       @limit-change="handleLimitChange"
     />
@@ -183,7 +186,7 @@ watch(
 
 <style scoped lang="scss">
 .rs-table-container {
-  height: 100%;
+  height: calc(100% - 30px);
 
   .toolbar {
     margin-bottom: 16px;
@@ -200,7 +203,13 @@ watch(
   .expand-table {
     height: calc(100% - 100px);
     overflow-y: auto;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.rs-pagination) {
+    .is-last {
+      margin-left: auto;
+    }
   }
 
   :deep(.expand-pagination) {
