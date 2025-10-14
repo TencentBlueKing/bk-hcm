@@ -208,6 +208,16 @@ func (svc *clbSvc) BatchRemoveTCloudTargets(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 检查CLB是否存在
+	clbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, req.LbID)
+	if err != nil {
+		logs.Errorf("get tcloud lb info failed, lbID: %s, err: %v, rid: %s", req.LbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if clbInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "get tcloud lb info empty, lbID: %s", req.LbID)
+	}
+
 	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID)
 	if err != nil {
 		return nil, err
@@ -248,12 +258,13 @@ func (svc *clbSvc) BatchRemoveTCloudTargets(cts *rest.Contexts) (any, error) {
 	}
 
 	// 调用云端批量解绑四七层后端服务接口
-	return nil, svc.batchUnRegisterTargetCloud(cts.Kit, req, tgList[0], urlRuleList)
+	return nil, svc.batchUnRegisterTargetCloud(cts.Kit, req, tgList[0], urlRuleList, clbInfo)
 }
 
 // batchUnRegisterTargetCloud 批量解绑RS
 func (svc *clbSvc) batchUnRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult,
+	clbInfo *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
 
 	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
@@ -262,7 +273,7 @@ func (svc *clbSvc) batchUnRegisterTargetCloud(kt *kit.Kit, req *protolb.TCloudBa
 
 	cloudLBExists := make(map[string]struct{}, 0)
 	rsOpt := &typelb.TCloudRegisterTargetsOption{
-		Region: tgInfo.Region,
+		Region: clbInfo.Region,
 	}
 	for _, ruleItem := range urlRuleList.Details {
 		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
@@ -353,6 +364,16 @@ func (svc *clbSvc) BatchModifyTCloudTargetsPort(cts *rest.Contexts) (any, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 检查CLB是否存在
+	clbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, req.LbID)
+	if err != nil {
+		logs.Errorf("get tcloud lb info failed, lbID: %s, err: %v, rid: %s", req.LbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if clbInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "get tcloud lb info empty, lbID: %s", req.LbID)
+	}
+
 	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID)
 	if err != nil {
 		return nil, err
@@ -393,12 +414,13 @@ func (svc *clbSvc) BatchModifyTCloudTargetsPort(cts *rest.Contexts) (any, error)
 	}
 
 	// 调用云端批量解绑四七层后端服务接口
-	return nil, svc.batchModifyTargetPortCloud(cts.Kit, req, tgList[0], urlRuleList)
+	return nil, svc.batchModifyTargetPortCloud(cts.Kit, req, tgList[0], urlRuleList, clbInfo)
 }
 
 // batchModifyTargetPortCloud 批量修改RS端口
 func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult,
+	clbInfo *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
 
 	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
@@ -407,7 +429,7 @@ func (svc *clbSvc) batchModifyTargetPortCloud(kt *kit.Kit, req *protolb.TCloudBa
 
 	for _, ruleItem := range urlRuleList.Details {
 		rsOpt := &typelb.TCloudTargetPortUpdateOption{
-			Region: tgInfo.Region,
+			Region: clbInfo.Region,
 		}
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
 		rsOpt.ListenerId = ruleItem.CloudLBLID
@@ -481,6 +503,16 @@ func (svc *clbSvc) BatchModifyTCloudTargetsWeight(cts *rest.Contexts) (any, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 检查CLB是否存在
+	clbInfo, err := svc.dataCli.TCloud.LoadBalancer.Get(cts.Kit, req.LbID)
+	if err != nil {
+		logs.Errorf("get tcloud lb info failed, lbID: %s, err: %v, rid: %s", req.LbID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if clbInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "get tcloud lb info empty, lbID: %s", req.LbID)
+	}
+
 	tgList, err := svc.getTargetGroupByID(cts.Kit, tgID)
 	if err != nil {
 		return nil, err
@@ -521,11 +553,12 @@ func (svc *clbSvc) BatchModifyTCloudTargetsWeight(cts *rest.Contexts) (any, erro
 	}
 
 	// 批量修改监听器绑定的后端机器的转发权重
-	return nil, svc.batchModifyTargetWeightCloud(cts.Kit, req, tgList[0], urlRuleList)
+	return nil, svc.batchModifyTargetWeightCloud(cts.Kit, req, tgList[0], urlRuleList, clbInfo)
 }
 
 func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) error {
+	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult,
+	clbInfo *corelb.LoadBalancer[corelb.TCloudClbExtension]) error {
 
 	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
 	if err != nil {
@@ -534,7 +567,7 @@ func (svc *clbSvc) batchModifyTargetWeightCloud(kt *kit.Kit, req *protolb.TCloud
 
 	for _, ruleItem := range urlRuleList.Details {
 		rsOpt := &typelb.TCloudTargetWeightUpdateOption{
-			Region: tgInfo.Region,
+			Region: clbInfo.Region,
 		}
 		rsOpt.LoadBalancerId = ruleItem.CloudLbID
 		tmpWeightRule := &typelb.TargetWeightRule{
