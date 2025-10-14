@@ -1114,6 +1114,9 @@ func (l *LbTopoReq) Validate() error {
 	if err := validator.Validate.Struct(l); err != nil {
 		return err
 	}
+	if err := validator.Validate.Struct(l.LbTopoCond); err != nil {
+		return err
+	}
 	return nil
 }
 
