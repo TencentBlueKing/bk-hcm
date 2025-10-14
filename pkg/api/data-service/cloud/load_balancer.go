@@ -614,8 +614,9 @@ func (req *ListenerDeleteReq) Validate() error {
 	if len(req.ClbVipDomains) != len(req.CloudLbIDs) {
 		return errors.New("clb_vip_domains and cloud_lb_ids num must be equal")
 	}
-	if len(req.CloudLbIDs) > 50 {
-		return errors.New("cloud_lb_ids num must be less than 50")
+	// 和平等业务的CLB较多，上限暂定为3000
+	if len(req.CloudLbIDs) > 3000 {
+		return errors.New("cloud_lb_ids num must be less than 3000")
 	}
 	if len(req.Ports) == 0 {
 		return fmt.Errorf("ports不能为空")
