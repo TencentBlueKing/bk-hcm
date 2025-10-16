@@ -181,26 +181,38 @@ func refreshTaskMgmtState(kt *kit.Kit, c *client.ClientSet, data coretask.Manage
 }
 
 func isFlowDone(kt *kit.Kit, c *client.ClientSet, flowIDs []string) (bool, error) {
-	isDone := true
 	for _, batch := range slice.Split(flowIDs, int(core.DefaultMaxPageLimit)) {
-		req := &core.ListReq{
+		flowReq := &core.ListReq{
 			Filter: tools.ContainersExpression("id", batch),
 			Fields: []string{"id", "state"},
 			Page:   core.NewDefaultBasePage(),
 		}
-
-		list, err := c.TaskServer().ListFlow(kt, req)
+		list, err := c.TaskServer().ListFlow(kt, flowReq)
 		if err != nil {
-			logs.Errorf("list flow failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			logs.Errorf("list flow failed, err: %v, req: %+v, rid: %s", err, flowReq, kt.Rid)
 			return false, err
 		}
 		for _, flow := range list.Details {
 			if flow.State != enumor.FlowCancel && flow.State != enumor.FlowSuccess && flow.State != enumor.FlowFailed {
-				isDone = false
-				break
+				return false, nil
 			}
+		}
+
+		lockReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("owner", batch),
+			),
+			Page: core.NewCountPage(),
+		}
+		resp, err := c.DataService().Global.LoadBalancer.ListResFlowLock(kt, lockReq)
+		if err != nil {
+			logs.Errorf("count res flow lock failed, err: %v, flowIDs: %v, rid: %s", err, batch, kt.Rid)
+			return false, err
+		}
+		if resp.Count != 0 {
+			return false, nil
 		}
 	}
 
-	return isDone, nil
+	return true, nil
 }
