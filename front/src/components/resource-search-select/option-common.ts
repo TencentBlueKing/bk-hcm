@@ -44,6 +44,10 @@ export const cvm: ISearchItem[] = [
     name: '主机ID',
     id: 'cloud_id',
   },
+  {
+    name: '固资号',
+    id: 'bk_asset_id',
+  },
   ...base,
   {
     name: '管控区域',

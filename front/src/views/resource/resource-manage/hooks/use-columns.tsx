@@ -757,6 +757,12 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       },
     },
     {
+      label: '固资号',
+      field: 'bk_asset_id',
+      isDefaultShow: true,
+      onlyShowOnList: true,
+    },
+    {
       label: '所属VPC',
       field: 'cloud_vpc_ids',
       isDefaultShow: true,
