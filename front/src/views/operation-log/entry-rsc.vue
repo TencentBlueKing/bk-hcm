@@ -9,6 +9,7 @@ import { IAuditItem, useAuditStore } from '@/store/audit';
 import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { OPERATION_LOG_RESOURCE_TYPE_NAME, CLB_RES_TYPES } from './constants';
 import { type ISearchCondition } from './typings';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
@@ -25,8 +26,10 @@ const { pagination, getPageParams } = usePage();
 
 const tabPanels = [
   { name: 'all', label: '全部' },
-  { name: ResourceTypeEnum.SECURITY_GROUP, label: '安全组' },
-  { name: ResourceTypeEnum.CLB, label: '负载均衡' },
+  ...Object.entries(OPERATION_LOG_RESOURCE_TYPE_NAME).map(([name, label]) => ({
+    name,
+    label,
+  })),
 ];
 
 const tabActive = computed({
@@ -98,10 +101,7 @@ const handleViewDetails = (row: IAuditItem) => {
   const { id, res_type, res_name, res_id } = row;
   const flowId = row.detail?.data?.res_flow?.flow_id;
 
-  // 负载均衡相关资源需要跳转路由
-  const clbResTypes = ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'];
-
-  if (clbResTypes.includes(res_type) && flowId) {
+  if (CLB_RES_TYPES.includes(res_type) && flowId) {
     routerAction.redirect(
       {
         name: MENU_RESOURCE_OPERATION_LOG_DETAILS,

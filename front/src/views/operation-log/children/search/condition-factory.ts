@@ -5,14 +5,14 @@ import { SearchConditionSecurityGroup } from './condition-security-group';
 import { SearchConditionClb } from './condition-clb';
 
 export class SearchConditionFactory {
-  static createModel(resourceType: ResourceTypeEnum) {
+  static createModel(resourceType: ResourceTypeEnum | 'all') {
     switch (resourceType) {
-      case ResourceTypeEnum.SECURITY_GROUP:
-        return getModel(SearchConditionSecurityGroup);
       case ResourceTypeEnum.CLB:
         return getModel(SearchConditionClb);
-      default:
+      case 'all':
         return getModel(SearchConditionAll);
+      default:
+        return getModel(SearchConditionSecurityGroup); // 除了CLB 与 全部，其余搜索列暂时跟安全组一样
     }
   }
 }
