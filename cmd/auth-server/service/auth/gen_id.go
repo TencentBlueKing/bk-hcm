@@ -843,6 +843,26 @@ func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource
 	}
 }
 
+// genCfsStorage 生成模型
+func genCfsStorage(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+		ID:     a.ResourceID,
+	}
+
+	switch a.Basic.Action {
+	case meta.Create:
+		return sys.CfsStorageCreate, []client.Resource{res}, nil
+	case meta.Find:
+		return sys.CfsStorageFind, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.CfsStorageDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
 func genCloudSelectionResource(*meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 }

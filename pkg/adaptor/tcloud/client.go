@@ -33,6 +33,7 @@ import (
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	cbs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs/v20170312"
+	cfs "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cfs/v20190719"
 	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -60,6 +61,8 @@ type ClientSet interface {
 	CertClient() (*ssl.Client, error)
 	TagClient() (*tag.Client, error)
 	CosClient(opt *typescos.ClientOpt) (*cos.Client, error)
+	// CfsClient tcloud cfs-sdk-client
+	CfsClient(region string) (*cfs.Client, error)
 }
 
 // clientSet to get tcloud sdk client set
@@ -200,5 +203,15 @@ func (c *clientSet) CosClient(opt *typescos.ClientOpt) (*cos.Client, error) {
 		},
 	)
 
+	return client, nil
+}
+
+// CfsClient tcloud cfs client
+func (c *clientSet) CfsClient(region string) (*cfs.Client, error) {
+	client, err := cfs.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 	return client, nil
 }

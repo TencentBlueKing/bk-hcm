@@ -112,6 +112,8 @@ const (
 	DiskCvmRelTableName Name = "disk_cvm_rel"
 	// EipCvmRelTableName is eip_cvm_rel's table name.
 	EipCvmRelTableName Name = "eip_cvm_rel"
+	// CfsTable is cfs table's name.
+	CfsTable Name = "cfs"
 
 	// AccountSyncDetailTable is account_sync_detail table's name.
 	AccountSyncDetailTable Name = "account_sync_detail"
@@ -265,6 +267,7 @@ var TableMap = map[Name]TableConfig{
 	GcpRouteTable:                {EnableTenant: true},
 	ZoneTable:                    {EnableTenant: true},
 	CvmTable:                     {EnableTenant: true},
+	CfsTable:                     {EnableTenant: true},
 	ApplicationTable:             {EnableTenant: true},
 	ApprovalProcessTable:         {EnableTenant: true},
 	NetworkInterfaceTable:        {EnableTenant: true},

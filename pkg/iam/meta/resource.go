@@ -114,6 +114,9 @@ const (
 	// CosBucket cos桶
 	CosBucket ResourceType = "cos_bucket"
 
+	// CfsStorage cfs存储
+	CfsStorage ResourceType = "cfs_storage"
+
 	// globalConfig 全局配置
 	GlobalConfig ResourceType = "global_config"
 )

@@ -35,6 +35,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.1096
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.1096
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cfs v1.0.1096
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.0.1096
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1096
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.1096
@@ -92,6 +93,8 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240415180920-8c6c420018be // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
 )
+
+require github.com/pkg/errors v0.9.1
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect

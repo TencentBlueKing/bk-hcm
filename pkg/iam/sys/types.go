@@ -210,6 +210,13 @@ const (
 	// CosBucketDelete cos bucket delete action id to register iam.
 	CosBucketDelete client.ActionID = "cos_bucket_delete"
 
+	// CfsStorageCreate cos storage create action id to register iam.
+	CfsStorageCreate client.ActionID = "cfs_storage_create"
+	// CfsStorageFind cos storage find action id to register iam.
+	CfsStorageFind client.ActionID = "cfs_storage_find"
+	// CfsStorageDelete cos storage delete action id to register iam.
+	CfsStorageDelete client.ActionID = "cfs_storage_delete"
+
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
 )
@@ -278,4 +285,9 @@ var ActionIDNameMap = map[client.ActionID]string{
 	CosBucketCreate: "COS桶创建",
 	CosBucketFind:   "COS桶查询",
 	CosBucketDelete: "COS桶删除",
+
+	// cfs相关权限
+	CfsStorageCreate: "CFS存储创建",
+	CfsStorageFind:   "CFS存储查询",
+	CfsStorageDelete: "CFS存储删除",
 }

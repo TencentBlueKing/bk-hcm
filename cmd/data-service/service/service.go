@@ -53,6 +53,7 @@ import (
 	argstpl "hcm/cmd/data-service/service/cloud/argument-template"
 	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cert"
+	"hcm/cmd/data-service/service/cloud/cfs"
 	"hcm/cmd/data-service/service/cloud/cvm"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
@@ -231,6 +232,7 @@ func (s *Service) apiSet() *restful.Container {
 	zone.InitZoneService(capability)
 	image.InitService(capability)
 	cvm.InitService(capability)
+	cfs.InitService(capability)
 	sgcvmrel.InitService(capability)
 	routetable.InitRouteTableService(capability)
 	application.InitApplicationService(capability)
