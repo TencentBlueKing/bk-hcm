@@ -44,7 +44,11 @@ const headCheckOptions = [
 ];
 const max = 1000;
 const LISTENER_ROW_KEY = 'id';
+let popHideTimerId: ReturnType<typeof setTimeout> | null = null;
+let popShowTimerId: ReturnType<typeof setTimeout> | null = null;
+let isMouseenter = false;
 
+const isShow = ref<boolean>(false);
 // t组件分页属性
 const tablePageProps = ref<{
   pageSize: number;
@@ -326,6 +330,7 @@ const handleSelectAcross = (id: string, value = true) => {
     checkStatus.value[item[LISTENER_ROW_KEY]] = value;
   });
   setHeadCheckStatus();
+  hidePopover();
 };
 // 表头复选框val变化
 const handleHeadCheckBoxChange = (val: boolean) => {
@@ -336,6 +341,44 @@ const initAllCheckStatus = () => {
   listenerList.value.forEach((item) => {
     checkStatus.value[item[LISTENER_ROW_KEY]] = false;
   });
+};
+
+const showPopover = () => {
+  popShowTimerId = setTimeout(() => {
+    if (popHideTimerId) {
+      clearTimeout(popHideTimerId);
+    }
+    isShow.value = true;
+  });
+};
+const hidePopover = () => {
+  isShow.value = false;
+};
+const handleMouseEnter = () => {
+  showPopover();
+};
+const handleMouseLeave = () => {
+  popHideTimerId = setTimeout(() => {
+    popShowTimerId && clearTimeout(popShowTimerId);
+    hidePopover();
+  }, 300);
+};
+const handleContentEnter = () => {
+  if (popHideTimerId) {
+    isMouseenter = true;
+    clearTimeout(popHideTimerId);
+    popHideTimerId = null;
+  }
+};
+const handleContentLeave = () => {
+  if (isMouseenter) {
+    hidePopover();
+    isMouseenter = false;
+  }
+};
+const handleToggleShow = () => {
+  if (isShow.value) return hidePopover();
+  return showPopover();
 };
 </script>
 
@@ -360,23 +403,33 @@ const initAllCheckStatus = () => {
     <primary-table :row-key="LISTENER_ROW_KEY" :data="listenerList" :pagination="{ ...tablePageProps }">
       <table-column width="65" col-key="row-select">
         <template #title>
-          <bk-dropdown
-            class="head-check"
-            :popover-options="{
-              clickContentAutoHide: true,
-              hideIgnoreReference: true,
-            }"
-          >
-            <bk-checkbox v-bind="{ ...headCheckBox }" :immediate-emit-change="false"></bk-checkbox>
-            <i class="hcm-icon bkhcm-icon-down-shape arrow-icon" />
-            <template #content>
-              <bk-dropdown-menu>
-                <bk-dropdown-item v-for="item in headCheckOptions" :key="item.id" @click="handleSelectAcross(item.id)">
-                  {{ item.name }}
-                </bk-dropdown-item>
-              </bk-dropdown-menu>
-            </template>
-          </bk-dropdown>
+          <div>
+            <bk-dropdown
+              class="head-check"
+              @mouseenter="handleMouseEnter"
+              @mouseleave="handleMouseLeave"
+              :popover-options="{
+                trigger: 'manual',
+                isShow: isShow,
+                clickContentAutoHide: true,
+                hideIgnoreReference: true,
+              }"
+            >
+              <bk-checkbox v-bind="{ ...headCheckBox }" :immediate-emit-change="false"></bk-checkbox>
+              <i class="hcm-icon bkhcm-icon-down-shape arrow-icon" @click="handleToggleShow" />
+              <template #content>
+                <bk-dropdown-menu @mouseenter="handleContentEnter" @mouseleave="handleContentLeave">
+                  <bk-dropdown-item
+                    v-for="item in headCheckOptions"
+                    :key="item.id"
+                    @click="handleSelectAcross(item.id)"
+                  >
+                    {{ item.name }}
+                  </bk-dropdown-item>
+                </bk-dropdown-menu>
+              </template>
+            </bk-dropdown>
+          </div>
         </template>
         <template #default="{ row }">
           <bk-checkbox v-model="checkStatus[row[LISTENER_ROW_KEY]]" @change="setHeadCheckStatus"></bk-checkbox>
