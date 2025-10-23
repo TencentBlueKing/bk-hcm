@@ -761,6 +761,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'bk_asset_id',
       isDefaultShow: true,
       onlyShowOnList: true,
+      render: ({ data }: { data: { bk_asset_id: string } }) => {
+        const text = data?.bk_asset_id || '--';
+        return (
+          <div class={'cell-public-ip'}>
+            <span>{text}</span>
+            <CopyToClipboard content={text} class={['copy-icon', 'ml4']} />
+          </div>
+        );
+      },
     },
     {
       label: '所属VPC',

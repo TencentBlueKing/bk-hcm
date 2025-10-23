@@ -88,6 +88,10 @@ const useFilterHost = (props: PropsType) => {
         op: QueryRuleOPEnum.IN,
         value: [],
       },
+      bk_asset_id: {
+        op: QueryRuleOPEnum.IN,
+        value: [],
+      },
     };
 
     const defaultRule = defaultRules[field] ?? {
