@@ -61,7 +61,7 @@ func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle, c
 	r := &recycle{
 		client: c,
 		state:  state,
-		logics: logics.NewLogics(c, cmdbClient, bkUserCli),
+		logics: logics.NewLogics(c, cmdbClient, bkUserCli, nil),
 	}
 
 	go r.recycleTiming(enumor.DiskCloudResType, r.recycleDiskWorker, conf)

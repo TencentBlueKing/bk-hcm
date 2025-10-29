@@ -36,7 +36,7 @@ func (i *itsm) getApproveTask(kt *kit.Kit, ticketID string, activityKey string) 
 	}
 
 	code, msg, res, err := apigateway.ApiGatewayCallOriginal[ApproveTasksReq, ApproveTasksResult](i.client,
-		i.bkUserCli, i.config, rest.POST, kt, req, "/approval_tasks/")
+		i.bkUserCli, i.config, rest.POST, kt, req, nil, "/approval_tasks/")
 
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (i *itsm) getApproveTask(kt *kit.Kit, ticketID string, activityKey string) 
 func (i *itsm) Approve(kt *kit.Kit, req *HandleApproveReq) error {
 
 	code, msg, _, err := apigateway.ApiGatewayCallOriginal[HandleApproveReq, HandleApproveResult](i.client,
-		i.bkUserCli, i.config, rest.POST, kt, req, "/handle_approval_node/")
+		i.bkUserCli, i.config, rest.POST, kt, req, nil, "/handle_approval_node/")
 
 	if err != nil {
 		return err

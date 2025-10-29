@@ -45,7 +45,7 @@ create table if not exists `tenant` (
 
 -- 2. itsm审批流程表
 alter table approval_process
-    add column `workflow_key` varchar(128)  NOT NULL after `system_id`;
+    add column `workflow_key` varchar(128)  NOT NULL after `service_id`;
 
 insert into id_generator(`resource`, `max_id`)
 values ('tenant', '0');

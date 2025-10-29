@@ -69,7 +69,7 @@ func (i *itsm) CreateTicket(kt *kit.Kit, params *CreateTicketParams) (*CreateTic
 	req.FormData = reqForm
 
 	code, msg, res, err := apigateway.ApiGatewayCallOriginal[CreateTicketReq, CreateTicketResult](i.client,
-		i.bkUserCli, i.config, rest.POST, kt, req, "/ticket/create/")
+		i.bkUserCli, i.config, rest.POST, kt, req, nil, "/ticket/create/")
 
 	if err != nil {
 		return nil, err

@@ -27,9 +27,11 @@ import (
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/service/capability"
 	apisysteminit "hcm/pkg/api/cloud-server/system-init"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -38,6 +40,7 @@ import (
 func InitAdminService(c *capability.Capability) {
 	svc := &adminService{
 		client:      c.ApiClient,
+		itsmCli:     c.ItsmCli,
 		adminLogics: c.Logics.Admin,
 	}
 
@@ -56,6 +59,7 @@ func (s *adminService) registerAdminService(c *restful.WebService) {
 
 type adminService struct {
 	client      *client.ClientSet
+	itsmCli     itsm.Client
 	adminLogics logicsadmin.Interface
 }
 
@@ -84,6 +88,13 @@ func (s *adminService) InitTenant(cts *rest.Contexts) (any, error) {
 	}
 
 	// other init processes...
+
+	// 1. ITSM流程初始化
+	err = s.adminLogics.InitItsmProcess(cts.Kit, cc.CloudServer().Itsm.AppCode)
+	if err != nil {
+		logs.Errorf("init itsm process failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("itsm process init error: %w", err)
+	}
 
 	// 租户表插入/更新租户数据
 	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)

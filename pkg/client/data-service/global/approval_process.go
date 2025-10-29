@@ -41,10 +41,34 @@ func NewApprovalProcessClient(client rest.ClientInterface) *ApprovalProcessClien
 	}
 }
 
+// BatchCreateApprovalProcesses ...
+func (a *ApprovalProcessClient) BatchCreateApprovalProcesses(ctx context.Context, h http.Header,
+	request *proto.ApprovalProcessBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	resp := new(core.BatchCreateResp)
+
+	err := a.client.Post().
+		WithContext(ctx).
+		Body(request).
+		SubResourcef("/approval_processes/batch/create").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
 // CreateApprovalProcesses ...
-func (a *ApprovalProcessClient) CreateApprovalProcesses(ctx context.Context, h http.Header, request *proto.ApplicationCreateReq) (
-	*core.CreateResult, error,
-) {
+func (a *ApprovalProcessClient) CreateApprovalProcesses(ctx context.Context, h http.Header,
+	request *proto.ApprovalProcessCreateReq) (*core.CreateResult, error) {
+
 	resp := new(core.CreateResp)
 
 	err := a.client.Post().
@@ -67,9 +91,8 @@ func (a *ApprovalProcessClient) CreateApprovalProcesses(ctx context.Context, h h
 
 // UpdateApprovalProcesses ...
 func (a *ApprovalProcessClient) UpdateApprovalProcesses(ctx context.Context, h http.Header,
-	approvalProcessID string, request *proto.ApprovalProcessUpdateReq) (
-	interface{}, error,
-) {
+	approvalProcessID string, request *proto.ApprovalProcessUpdateReq) (interface{}, error) {
+
 	resp := new(core.UpdateResp)
 
 	err := a.client.Patch().
@@ -91,9 +114,9 @@ func (a *ApprovalProcessClient) UpdateApprovalProcesses(ctx context.Context, h h
 }
 
 // ListApprovalProcesses ...
-func (a *ApprovalProcessClient) ListApprovalProcesses(ctx context.Context, h http.Header, request *proto.ApprovalProcessListReq) (
-	*proto.ApprovalProcessListResult, error,
-) {
+func (a *ApprovalProcessClient) ListApprovalProcesses(ctx context.Context, h http.Header,
+	request *proto.ApprovalProcessListReq) (*proto.ApprovalProcessListResult, error) {
+
 	resp := new(proto.ApprovalProcessListResp)
 
 	err := a.client.Post().

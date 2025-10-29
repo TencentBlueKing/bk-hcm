@@ -25,6 +25,7 @@ import (
 
 	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/api/core"
+	proto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/api/data-service/tenant"
 	"hcm/pkg/cc"
@@ -35,6 +36,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	cvt "hcm/pkg/tools/converter"
 )
 
@@ -43,16 +45,18 @@ type Interface interface {
 	InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResult, error)
 	GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error)
 	UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error)
+	InitItsmProcess(kt *kit.Kit, systemID string) error
 }
 
 type admin struct {
-	c      *client.ClientSet
-	bkUser bkuser.Client
+	c       *client.ClientSet
+	bkUser  bkuser.Client
+	itsmCli itsm.Client
 }
 
 // NewAdminLogic new admin logic
-func NewAdminLogic(c *client.ClientSet, userClient bkuser.Client) Interface {
-	return &admin{c: c, bkUser: userClient}
+func NewAdminLogic(c *client.ClientSet, userClient bkuser.Client, itsmCli itsm.Client) Interface {
+	return &admin{c: c, bkUser: userClient, itsmCli: itsmCli}
 }
 
 // InternalOtherVendorAccountName 内置账号名称
@@ -170,4 +174,54 @@ func (a *admin) GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error) {
 		return nil, fmt.Errorf("invalid tenant: %s", kt.TenantID)
 	}
 	return targetTenant, nil
+}
+
+// InitItsmProcess 初始化itsm流程
+func (a *admin) InitItsmProcess(kt *kit.Kit, systemID string) error {
+
+	// 单租户流程不会超过500个，不关心分页
+	req := &proto.ApprovalProcessListReq{
+		Filter: tools.AllExpression(),
+		Page:   core.NewDefaultBasePage(),
+	}
+	existProcess, err := a.c.DataService().Global.ApprovalProcess.ListApprovalProcesses(kt.Ctx, kt.Header(), req)
+	if err != nil {
+		logs.Errorf("fail to list approval process, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	// itsm系统无法多次初始化，如果租户已初始化过，直接返回
+	if len(existProcess.Details) > 0 {
+		logs.Infof("itsm process already init, tenant id: %s, rid: %s", kt.TenantID, kt.Rid)
+		return nil
+	}
+
+	// 创建ITSM流程
+	err = a.itsmCli.SystemMigrate(kt, systemID)
+	if err != nil {
+		logs.Errorf("init itsm process failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	// 创建本地process规则
+	createItems := make([]proto.ApprovalProcessCreateReq, 0, len(enumor.ApplicationWorkflow))
+	for applicationName := range enumor.ApplicationWorkflow {
+		createItems = append(createItems, proto.ApprovalProcessCreateReq{
+			ApplicationType: applicationName,
+			WorkflowKey:     applicationName.WorkflowKey(kt.TenantID),
+			// TODO 目前无法自动获取租户下的管理员bk_username
+			// Managers: "",
+		})
+	}
+	batchCreateReq := &proto.ApprovalProcessBatchCreateReq{
+		Items: createItems,
+	}
+	_, err = a.c.DataService().Global.ApprovalProcess.BatchCreateApprovalProcesses(kt.Ctx, kt.Header(), batchCreateReq)
+	if err != nil {
+		logs.Errorf("fail to batch create approval process, err: %v, tenant_id: %s, req: %+v, rid: %s", err,
+			kt.TenantID, batchCreateReq.Items, kt.Rid)
+		return err
+	}
+
+	return nil
 }

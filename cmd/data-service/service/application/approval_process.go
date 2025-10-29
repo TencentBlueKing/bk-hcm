@@ -46,6 +46,8 @@ func InitApprovalProcessService(cap *capability.Capability) {
 	}
 	h := rest.NewHandler()
 
+	h.Add("BatchCreateApprovalProcesses", "POST", "/approval_processes/batch/create",
+		svc.BatchCreateApprovalProcesses)
 	h.Add("CreateApprovalProcesses", "POST", "/approval_processes/create", svc.CreateApprovalProcesses)
 	h.Add("UpdateApprovalProcesses", "PATCH", "/approval_processes/{approval_process_id}",
 		svc.UpdateApprovalProcesses)
@@ -56,6 +58,51 @@ func InitApprovalProcessService(cap *capability.Capability) {
 
 type approvalProcessSvc struct {
 	dao dao.Set
+}
+
+// BatchCreateApprovalProcesses ...
+func (svc *approvalProcessSvc) BatchCreateApprovalProcesses(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.ApprovalProcessBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	approvalProcessIDs, err := svc.dao.Txn().AutoTxn(cts.Kit,
+		func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+
+			batchReq := make([]*tableapplication.ApprovalProcessTable, 0, len(req.Items))
+			for _, item := range req.Items {
+				batchReq = append(batchReq, &tableapplication.ApprovalProcessTable{
+					ApplicationType: string(item.ApplicationType),
+					ServiceID:       item.ServiceID,
+					WorkflowKey:     item.WorkflowKey,
+					Creator:         cts.Kit.User,
+					Reviser:         cts.Kit.User,
+					Managers:        item.Managers,
+				})
+			}
+
+			approvalProcessIDs, err := svc.dao.ApprovalProcess().BatchCreateWithTx(cts.Kit, txn, batchReq)
+			if err != nil {
+				return nil, fmt.Errorf("batch create approval process failed, err: %v", err)
+			}
+			return approvalProcessIDs, nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	ids, ok := approvalProcessIDs.([]string)
+	if !ok {
+		return nil, fmt.Errorf("create approval process but return ids type not string, ids type: %v",
+			reflect.TypeOf(approvalProcessIDs).String())
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // CreateApprovalProcesses ...
@@ -69,20 +116,23 @@ func (svc *approvalProcessSvc) CreateApprovalProcesses(cts *rest.Contexts) (inte
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	process := &tableapplication.ApprovalProcessTable{
+	batchReq := make([]*tableapplication.ApprovalProcessTable, 0)
+	batchReq = append(batchReq, &tableapplication.ApprovalProcessTable{
 		ApplicationType: string(req.ApplicationType),
 		ServiceID:       req.ServiceID,
+		WorkflowKey:     req.WorkflowKey,
 		Creator:         cts.Kit.User,
 		Reviser:         cts.Kit.User,
-	}
+		Managers:        req.Managers,
+	})
 
 	approvalProcessID, err := svc.dao.Txn().AutoTxn(cts.Kit,
 		func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-			approvalProcessID, err := svc.dao.ApprovalProcess().CreateWithTx(cts.Kit, txn, process)
+			approvalProcessIDs, err := svc.dao.ApprovalProcess().BatchCreateWithTx(cts.Kit, txn, batchReq)
 			if err != nil {
 				return nil, fmt.Errorf("create approval process failed, err: %v", err)
 			}
-			return approvalProcessID, nil
+			return approvalProcessIDs[0], nil
 		})
 	if err != nil {
 		return nil, err

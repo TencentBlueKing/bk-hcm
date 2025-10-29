@@ -304,7 +304,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 		Cipher:     s.cipher,
-		Logics:     logics.NewLogics(s.client, s.cmdbCli, s.bkUserCli),
+		Logics:     logics.NewLogics(s.client, s.cmdbCli, s.bkUserCli, s.itsmCli),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,

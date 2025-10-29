@@ -27,10 +27,28 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// ApprovalProcessBatchCreateReq ...
+type ApprovalProcessBatchCreateReq struct {
+	Items []ApprovalProcessCreateReq `json:"items" validate:"required,min=1,max=100,dive,required"`
+}
+
+// Validate ...
+func (req *ApprovalProcessBatchCreateReq) Validate() error {
+	for _, item := range req.Items {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
 // ApprovalProcessCreateReq ...
 type ApprovalProcessCreateReq struct {
 	ApplicationType enumor.ApplicationType `json:"application_type" validate:"required"`
-	ServiceID       int64                  `json:"service_id" validate:"required,min=1"`
+	ServiceID       int64                  `json:"service_id" validate:"omitempty,min=0"`
+	WorkflowKey     string                 `json:"workflow_key" validate:"required"`
+	Managers        string                 `json:"managers" validate:"max=50"`
 }
 
 // Validate ...

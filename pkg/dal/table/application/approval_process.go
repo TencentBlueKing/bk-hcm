@@ -52,7 +52,7 @@ type ApprovalProcessTable struct {
 	// ApplicationType 申请类型（新增账号、新增CVM等）
 	ApplicationType string `db:"application_type" json:"application_type" validate:"max=64"`
 	// ServiceID ITSM流程的服务ID
-	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=1"`
+	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=0"`
 	// WorkflowKey ITSM流程的key
 	WorkflowKey string `db:"workflow_key" json:"workflow_key" validate:"max=128"`
 	// TenantID 租户ID
@@ -100,9 +100,10 @@ func (a ApprovalProcessTable) InsertValidate() error {
 		return errors.New("reviser is required")
 	}
 
-	if len(a.Managers) == 0 {
-		return errors.New("managers is required")
-	}
+	// TODO 目前无法自动获取租户下的管理员bk_username
+	// if len(a.Managers) == 0 {
+	// 	return errors.New("managers is required")
+	// }
 
 	return nil
 }

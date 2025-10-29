@@ -91,6 +91,45 @@ const (
 	DeleteSecurityGroupRule ApplicationType = "delete_security_group_rule"
 )
 
+// ApplicationWorkflow 申请单对应的ITSM审批流程
+var ApplicationWorkflow = map[ApplicationType]WorkflowKey{
+	AddAccount:        AddAccountWorkflow,
+	CreateCvm:         CommonWorkflow,
+	CreateVpc:         CommonWorkflow,
+	CreateDisk:        CommonWorkflow,
+	CreateMainAccount: MainAccountWorkflow,
+	UpdateMainAccount: MainAccountWorkflow,
+
+	CreateLoadBalancer:        CommonWorkflow,
+	CreateSecurityGroup:       CommonWorkflow,
+	UpdateSecurityGroup:       CommonWorkflow,
+	DeleteSecurityGroup:       CommonWorkflow,
+	AssociateSecurityGroup:    CommonWorkflow,
+	DisassociateSecurityGroup: CommonWorkflow,
+
+	CreateSecurityGroupRule: CommonWorkflow,
+	UpdateSecurityGroupRule: CommonWorkflow,
+	DeleteSecurityGroupRule: CommonWorkflow,
+}
+
+// WorkflowKey 获取申请单对应的流程标识
+func (a ApplicationType) WorkflowKey(tenantID string) string {
+	// 通过变量指定租户名
+	return fmt.Sprintf("%s_hcm_%s", tenantID, ApplicationWorkflow[a])
+}
+
+// WorkflowKey 流程标识
+type WorkflowKey string
+
+const (
+	// AddAccountWorkflow 新增账号流程
+	AddAccountWorkflow WorkflowKey = "add_account"
+	// MainAccountWorkflow 账号登记流程
+	MainAccountWorkflow WorkflowKey = "main_account"
+	// CommonWorkflow 资源申请通用流程
+	CommonWorkflow WorkflowKey = "common"
+)
+
 // ApplicationStatus 单据状态
 type ApplicationStatus string
 

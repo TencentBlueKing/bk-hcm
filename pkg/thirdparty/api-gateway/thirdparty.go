@@ -32,6 +32,13 @@ import (
 	"hcm/pkg/tools/util"
 )
 
+// UploadFileReq is the request for upload file.
+type UploadFileReq struct {
+	FieldName string
+	FileName  string
+	FileBytes []byte
+}
+
 // BaseResponse is esb http base response.
 type BaseResponse struct {
 	Result  bool   `json:"result"`
@@ -163,17 +170,22 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, bkUse
 // ApiGatewayCallOriginal general call helper function for api gateway
 // 该方法不会处理接口返回的code，适用于code非标准的场景，在上层自行处理
 func ApiGatewayCallOriginal[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
-	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (int, string, *OT, error) {
+	method rest.VerbType, kt *kit.Kit, req *IT, uploadFile *UploadFileReq, url string, urlParams ...any) (
+	int, string, *OT, error) {
 
 	header := GetCommonHeader(kt, bkUserCli, cfg)
 	resp := new(ApiGatewayResp[*OT])
-	err := cli.Verb(method).
+	request := cli.Verb(method).
 		SubResourcef(url, urlParams...).
 		WithContext(kt.Ctx).
 		WithHeaders(header).
-		Body(req).
-		Do().Into(resp)
+		Body(req)
 
+	if uploadFile != nil {
+		request.UploadFile(uploadFile.FieldName, uploadFile.FileName, uploadFile.FileBytes)
+	}
+
+	err := request.Do().Into(resp)
 	if err != nil {
 		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
 		return 0, "", nil, err
@@ -190,7 +202,7 @@ func ApiGatewayCallOriginal[IT any, OT any](cli rest.ClientInterface, bkUserCli 
 	}
 
 	if !resp.Result {
-		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+		err := fmt.Errorf("failed to call api gateway, code: %v, msg: %s, bk_error_code: %d, bk_error_msg: %s",
 			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
 		return 0, "", nil, err

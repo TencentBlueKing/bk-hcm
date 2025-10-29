@@ -20,34 +20,57 @@
 package itsm
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/api-gateway"
+	apigateway "hcm/pkg/thirdparty/api-gateway"
 )
 
-// WithdrawTicket 撤销单据
-func (i *itsm) WithdrawTicket(kt *kit.Kit, ticketID string, operator string) (*RevokeTicketResult, error) {
-	req := &RevokeTicketReq{
-		SystemID: i.config.AppCode,
-		TicketID: ticketID,
+// SystemMigrate 系统流程导入
+func (i *itsm) SystemMigrate(kt *kit.Kit, systemID string) error {
+
+	tmpl, err := template.New("itsm_init_temp").Parse(processInitTemplate)
+	if err != nil {
+		logs.Errorf("failed to parse itsm init template, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
 
-	code, msg, res, err := apigateway.ApiGatewayCallOriginal[RevokeTicketReq, RevokeTicketResult](i.client, i.bkUserCli,
-		i.config, rest.POST, kt, req, nil, "/tickets/revoked/")
+	// 渲染模版中的租户ID
+	renderParams := map[string]string{
+		"systemID": systemID,
+		"tenantID": kt.TenantID,
+	}
+
+	var fileBytes bytes.Buffer
+	err = tmpl.Execute(&fileBytes, renderParams)
+	if err != nil {
+		logs.Errorf("failed to execute itsm init template, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	uploadFile := &apigateway.UploadFileReq{
+		FieldName: "file",
+		FileName:  "process_init.json",
+		FileBytes: fileBytes.Bytes(),
+	}
+
+	code, msg, res, err := apigateway.ApiGatewayCallOriginal[CreateTicketReq, CreateTicketResult](i.client,
+		i.bkUserCli, i.config, rest.POST, kt, nil, uploadFile, "/system/migrate/")
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// itsm成功时状态码为20000
 	if code != success {
-		err := fmt.Errorf("failed to call api gateway to withdraw ticket, code: %d, msg: %s", code, msg)
+		err := fmt.Errorf("failed to call api gateway to migrate system, code: %d, msg: %s", code, msg)
 		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
-		return nil, err
+		return err
 	}
 
-	return res, nil
+	return nil
 }
