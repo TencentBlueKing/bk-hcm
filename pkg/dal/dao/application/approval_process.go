@@ -40,7 +40,7 @@ import (
 
 // ApprovalProcess ...
 type ApprovalProcess interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*application.ApprovalProcessTable) ([]string, error)
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *application.ApprovalProcessTable) (string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *application.ApprovalProcessTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListApprovalProcessDetails, error)
 }
@@ -53,35 +53,31 @@ type ApprovalProcessDao struct {
 	IDGen idgenerator.IDGenInterface
 }
 
-// BatchCreateWithTx ...
-func (a *ApprovalProcessDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*application.ApprovalProcessTable,
-) ([]string, error) {
+// CreateWithTx ...
+func (a *ApprovalProcessDao) CreateWithTx(
+	kt *kit.Kit, tx *sqlx.Tx, model *application.ApprovalProcessTable,
+) (string, error) {
+	if err := model.InsertValidate(); err != nil {
+		return "", err
+	}
 
 	// generate approval process id
-	ids, err := a.IDGen.Batch(kt, table.ApprovalProcessTable, len(models))
+	id, err := a.IDGen.One(kt, table.ApprovalProcessTable)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-
-	for index, model := range models {
-		if err := model.InsertValidate(); err != nil {
-			return nil, err
-		}
-
-		model.ID = ids[index]
-	}
+	model.ID = id
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
-		table.ApprovalProcessTable, application.ApprovalProcessColumns.ColumnExpr(),
+		model.TableName(), application.ApprovalProcessColumns.ColumnExpr(),
 		application.ApprovalProcessColumns.ColonNameExpr(),
 	)
 
-	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.ApprovalProcessTable, err)
+		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
-
-	return ids, nil
+	return id, nil
 }
 
 // Update ...

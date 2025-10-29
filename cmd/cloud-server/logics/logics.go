@@ -30,7 +30,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // Logics defines cloud-server common logics.
@@ -44,7 +43,7 @@ type Logics struct {
 }
 
 // NewLogics create a new cloud server logics.
-func NewLogics(c *client.ClientSet, cmdbClient cmdb.Client, bkUserClient bkuser.Client, itsmCli itsm.Client) *Logics {
+func NewLogics(c *client.ClientSet, cmdbClient cmdb.Client, bkUserClient bkuser.Client) *Logics {
 	auditLogics := audit.NewAudit(c.DataService())
 	eipLogics := eip.NewEip(c, auditLogics)
 	diskLogics := disk.NewDisk(c, auditLogics)
@@ -54,6 +53,6 @@ func NewLogics(c *client.ClientSet, cmdbClient cmdb.Client, bkUserClient bkuser.
 		Cvm:           cvm.NewCvm(c, auditLogics, eipLogics, diskLogics, cmdbClient),
 		Eip:           eip.NewEip(c, auditLogics),
 		SecurityGroup: securitygroup.NewSecurityGroup(c, auditLogics),
-		Admin:         logicsadmin.NewAdminLogic(c, bkUserClient, itsmCli),
+		Admin:         logicsadmin.NewAdminLogic(c, bkUserClient),
 	}
 }

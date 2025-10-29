@@ -36,7 +36,7 @@ func (i *itsm) WithdrawTicket(kt *kit.Kit, ticketID string, operator string) (*R
 	}
 
 	code, msg, res, err := apigateway.ApiGatewayCallOriginal[RevokeTicketReq, RevokeTicketResult](i.client, i.bkUserCli,
-		i.config, rest.POST, kt, req, nil, "/tickets/revoked/")
+		i.config, rest.POST, kt, req, "/tickets/revoked/")
 
 	if err != nil {
 		return nil, err
