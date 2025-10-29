@@ -56,6 +56,7 @@
             v-model="searchVal"
             :data="searchData"
             value-behavior="need-key"
+            :placeholder="getSearchPlaceholder(searchData)"
           />
         </section>
         <bk-loading :loading="isLoading" opacity="1">
@@ -257,7 +258,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import moment from 'moment';
 import http from '@/http';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, getSearchPlaceholder } from '@/common/util';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -677,6 +678,7 @@ export default defineComponent({
       Senarios,
       isCurRowSelectEnable,
       handleSort,
+      getSearchPlaceholder,
     };
   },
 });

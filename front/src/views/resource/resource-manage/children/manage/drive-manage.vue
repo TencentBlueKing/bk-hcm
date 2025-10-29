@@ -14,6 +14,7 @@ import { VendorEnum } from '@/common/constant';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { AUTH_BIZ_DELETE_IAAS_RESOURCE, AUTH_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
+import { getSearchPlaceholder } from '@/common/util';
 
 const props = defineProps({
   filter: {
@@ -221,6 +222,7 @@ const isCurRowSelectEnable = (row: any) => {
           :data="selectSearchData"
           v-model="searchValue"
           value-behavior="need-key"
+          :placeholder="getSearchPlaceholder(selectSearchData)"
         />
         <slot name="recycleHistory"></slot>
       </div>

@@ -4,6 +4,7 @@ import { computed, ref, useAttrs, watch } from 'vue';
 import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
 import { buildSearchSelectValueBySearchQsCondition } from '@/utils/search';
+import { getSearchPlaceholder } from '@/common/util';
 
 const props = defineProps<{
   fields: ModelPropertySearch[];
@@ -43,5 +44,11 @@ defineExpose({ clear });
 </script>
 
 <template>
-  <bk-search-select v-model="searchValue" :data="searchData" :validate-values="validateValues" v-bind="attrs" />
+  <bk-search-select
+    v-model="searchValue"
+    :data="searchData"
+    :validate-values="validateValues"
+    :placeholder="getSearchPlaceholder(searchData)"
+    v-bind="attrs"
+  />
 </template>

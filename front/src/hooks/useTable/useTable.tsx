@@ -10,7 +10,7 @@ import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
-import { getDifferenceSet } from '@/common/util';
+import { getDifferenceSet, getSearchPlaceholder } from '@/common/util';
 import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
@@ -230,6 +230,7 @@ export const useTable = (props: IProp) => {
                   v-model={searchVal.value}
                   data={searchData.value}
                   valueBehavior='need-key'
+                  placeholder={getSearchPlaceholder(searchData.value)}
                   {...(props.searchOptions?.extra || {})}
                 />
               )}

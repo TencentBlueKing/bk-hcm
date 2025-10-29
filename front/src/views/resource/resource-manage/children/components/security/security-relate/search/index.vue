@@ -8,6 +8,7 @@ import { getLocalFilterFnBySearchSelect, getSimpleConditionBySearchSelect } from
 import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { parseIP } from '@/utils';
+import { getSearchPlaceholder } from '@/common/util';
 
 const props = defineProps<{
   resourceName: SecurityGroupRelatedResourceName;
@@ -77,7 +78,13 @@ defineExpose({ clear });
 </script>
 
 <template>
-  <bk-search-select v-model="searchValue" :data="searchData" :validate-values="validateValues" v-bind="attrs" />
+  <bk-search-select
+    v-model="searchValue"
+    :data="searchData"
+    :validate-values="validateValues"
+    :placeholder="getSearchPlaceholder(searchData)"
+    v-bind="attrs"
+  />
 </template>
 
 <style scoped lang="scss"></style>

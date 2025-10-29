@@ -4,6 +4,7 @@ import { SearchSelect } from 'bkui-vue';
 import type { ISearchValue, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import optionFactory from './option-factory';
+import { getSearchPlaceholder } from '@/common/util';
 
 defineOptions({ name: 'ResourceSearchSelect' });
 
@@ -46,6 +47,7 @@ const selectValue = computed({
     :unique-select="true"
     :value-behavior="valueBehavior"
     :validate-values="validateValues"
+    :placeholder="getSearchPlaceholder(searchOptions)"
   />
 </template>
 

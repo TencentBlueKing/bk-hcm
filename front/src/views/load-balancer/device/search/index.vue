@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { IAccountItem } from '@/typings';
 import { cloneDeep, isEqual } from 'lodash';
 import { Info } from 'bkui-vue/lib/icon';
-import { isEmpty } from '@/common/util';
+import { isEmpty, getSearchPlaceholder } from '@/common/util';
 import { ILoadBalanceDeviceCondition } from '../typing';
 import { VendorEnum, ResourceTypeEnum, TARGET_GROUP_PROTOCOLS } from '@/common/constant';
 import { ModelPropertySearch } from '@/model/typings';
@@ -243,7 +243,12 @@ const conditionField: ModelPropertySearch[] = [
           :key="field.id"
           :required="field.id === 'account_id'"
         >
-          <component :is="`hcm-search-${field.type}`" v-bind="field.props" v-model="formModel[field.id]" />
+          <component
+            :is="`hcm-search-${field.type}`"
+            v-bind="field.props"
+            v-model="formModel[field.id]"
+            :placeholder="getSearchPlaceholder([field])"
+          />
         </bk-form-item>
       </bk-form>
     </div>

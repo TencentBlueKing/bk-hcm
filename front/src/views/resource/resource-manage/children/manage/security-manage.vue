@@ -31,7 +31,7 @@ import useSelection from '../../hooks/use-selection';
 import useSearchQs from '@/hooks/use-search-qs';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { cloneDeep } from 'lodash';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, getSearchPlaceholder } from '@/common/util';
 import {
   buildMultipleValueRulesItem,
   transformSimpleCondition,
@@ -1393,6 +1393,7 @@ defineExpose({ fetchComponentsData });
         @update:model-value="handleUpdate"
         :get-menu-list="getMenuList"
         value-behavior="need-key"
+        :placeholder="getSearchPlaceholder(selectSearchData)"
       />
     </div>
 

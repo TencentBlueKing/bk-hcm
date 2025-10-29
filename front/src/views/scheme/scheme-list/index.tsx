@@ -12,6 +12,7 @@ import SchemeEditDialog from '../components/scheme-edit-dialog';
 import { useVerify } from '@/hooks';
 import ErrorPage from '@/views/error-pages/403';
 import moment from 'moment';
+import { getSearchPlaceholder } from '@/common/util';
 
 import './index.scss';
 import PermissionDialog from '@/components/permission-dialog';
@@ -556,7 +557,8 @@ export default defineComponent({
           <bk-search-select
             v-model={searchValue.value}
             class={'scheme-search-select'}
-            data={searchData.value}></bk-search-select>
+            data={searchData.value}
+            placeholder={getSearchPlaceholder(searchData.value)}></bk-search-select>
         </div>
         <div class='scheme-table-wrapper'>
           <bk-loading loading={tableListLoading.value}>

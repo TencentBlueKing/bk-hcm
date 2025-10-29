@@ -2,6 +2,7 @@ import { Loading, SearchSelect, Table } from 'bkui-vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { Column } from 'bkui-vue/lib/table/props';
 import { defineComponent, reactive, ref } from 'vue';
+import { getSearchPlaceholder } from '@/common/util';
 import './index.scss';
 
 export interface IProp {
@@ -24,7 +25,12 @@ export const useLocalTable = (props: IProp) => {
         <div class='local-table-container'>
           <section class='operation-wrap'>
             {slots.tab?.()}
-            <SearchSelect class='common-search-selector w400' v-model={searchVal.value} data={props.searchData} />
+            <SearchSelect
+              class='common-search-selector w400'
+              v-model={searchVal.value}
+              data={props.searchData}
+              placeholder={getSearchPlaceholder(props.searchData)}
+            />
           </section>
           <Loading loading={isLoading.value}>
             <Table data={props.data} columns={props.columns} pagination={pagination} />

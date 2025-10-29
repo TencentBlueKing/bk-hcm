@@ -5,6 +5,7 @@ import GridContainer from '@/components/layout/grid-container/grid-container.vue
 import GridItemFormElement from '@/components/layout/grid-container/grid-item-form-element.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import type { ISearchCondition } from '@/views/operation-log/typings';
+import { getSearchPlaceholder } from '@/common/util';
 
 interface ISearchProps {
   fields: ModelPropertySearch[];
@@ -76,7 +77,12 @@ watch(
   <div class="search">
     <grid-container layout="vertical" :column="4" :content-min-width="300" :gap="[16, 60]">
       <grid-item-form-element v-for="field in fields" :key="field.id" :label="field.name">
-        <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="formValues[field.id]" />
+        <component
+          :is="`hcm-search-${field.type}`"
+          v-bind="getSearchCompProps(field)"
+          v-model="formValues[field.id]"
+          :placeholder="getSearchPlaceholder([field])"
+        />
       </grid-item-form-element>
       <grid-item :span="4" class="row-action">
         <bk-button theme="primary" @click="handleSearch">查询</bk-button>

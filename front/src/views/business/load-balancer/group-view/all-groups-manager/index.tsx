@@ -15,6 +15,7 @@ import AddOrUpdateTGSideslider from '../components/AddOrUpdateTGSideslider';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import AddRsDialog from '../components/AddRsDialog';
 import BatchAddRsSideslider from './BatchAddRsSideslider';
+import { getSearchPlaceholder } from '@/common/util';
 import './index.scss';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -268,7 +269,11 @@ export default defineComponent({
               已选择<span class='blue'>{selections.value.length}</span>
               个目标组，可选择当前目标组内需要删除的IP进行移除。
             </div>
-            <SearchSelect class='w400' data={batchDeleteRsSearchData} />
+            <SearchSelect
+              class='w400'
+              data={batchDeleteRsSearchData}
+              placeholder={getSearchPlaceholder(batchDeleteRsSearchData)}
+            />
           </div>
           <Loading loading={isBatchDeleteRsTableLoading.value}>
             <Table data={batchDeleteRsTableData.value} columns={batchDeleteRsTableColumn} rowHeight={32} border='none'>

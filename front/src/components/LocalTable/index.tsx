@@ -3,6 +3,7 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { PropType, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { Column } from 'bkui-vue/lib/table/props';
+import { getSearchPlaceholder } from '@/common/util';
 
 export default defineComponent({
   props: {
@@ -61,7 +62,12 @@ export default defineComponent({
       <>
         <div class={'felx-row'}>
           {slots.default?.()}
-          <SearchSelect class='w500 common-search-selector' v-model={searchVal.value} data={props.searchData} />
+          <SearchSelect
+            class='w500 common-search-selector'
+            v-model={searchVal.value}
+            data={props.searchData}
+            placeholder={getSearchPlaceholder(props.searchData)}
+          />
         </div>
         <Loading loading={isLoading.value}>
           <Table data={localData.value} columns={props.columns} pagination={pagination} showOverflowTooltip />

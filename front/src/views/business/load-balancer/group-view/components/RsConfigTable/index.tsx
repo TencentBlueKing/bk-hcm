@@ -15,6 +15,7 @@ import './index.scss';
 import { TargetGroupOperationScene } from '@/constants';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
+import { getSearchPlaceholder } from '@/common/util';
 
 const { FormItem } = Form;
 
@@ -404,6 +405,7 @@ export default defineComponent({
                 v-model={searchValue.value}
                 data={searchData.value}
                 validateValues={handleValidate}
+                placeholder={getSearchPlaceholder(searchData.value)}
               />
             </div>
           )}

@@ -6,6 +6,7 @@ import { PropType, computed } from 'vue';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import { getSearchPlaceholder } from '@/common/util';
 
 const props = defineProps({
   filter: {
@@ -58,6 +59,7 @@ const selectSearchData = computed(() => {
       :data="selectSearchData"
       v-model="searchValue"
       value-behavior="need-key"
+      :placeholder="getSearchPlaceholder(selectSearchData)"
     />
     <bk-table
       :settings="settings"

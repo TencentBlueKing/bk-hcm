@@ -9,6 +9,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { getSearchPlaceholder } from '@/common/util';
 
 const props = defineProps({
   filter: {
@@ -236,6 +237,7 @@ defineExpose({ fetchComponentsData });
         :data="hostSearchData"
         v-model="searchValue"
         value-behavior="need-key"
+        :placeholder="getSearchPlaceholder(hostSearchData)"
       />
     </section>
 

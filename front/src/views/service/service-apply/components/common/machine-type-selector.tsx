@@ -2,7 +2,7 @@ import http from '@/http';
 import { computed, defineComponent, PropType, reactive, ref, watch, watchEffect } from 'vue';
 import { Button, Dialog, Form, Loading, Radio, SearchSelect, Table } from 'bkui-vue';
 import './machine-type-selector.scss';
-
+import { getSearchPlaceholder } from '@/common/util';
 // import { formatStorageSize } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -334,6 +334,7 @@ export default defineComponent({
                         class='w500 instance-type-search-seletor'
                         v-model={searchVal.value}
                         data={searchData}
+                        placeholder={getSearchPlaceholder(searchData)}
                       />
                     </div>
                   </FormItem>

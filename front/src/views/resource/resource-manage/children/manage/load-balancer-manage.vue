@@ -30,6 +30,7 @@
           :data="clbsSearchData"
           v-model="searchValue"
           value-behavior="need-key"
+          :placeholder="getSearchPlaceholder(clbsSearchData)"
         />
         <slot name="recycleHistory"></slot>
       </div>
@@ -107,7 +108,7 @@ import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import { useI18n } from 'vue-i18n';
-import { getTableNewRowClass } from '@/common/util';
+import { getTableNewRowClass, getSearchPlaceholder } from '@/common/util';
 import { useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';

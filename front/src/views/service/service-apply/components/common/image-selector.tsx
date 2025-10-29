@@ -6,6 +6,7 @@ import { VendorEnum } from '@/common/constant';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import './image-selector.scss';
+import { getSearchPlaceholder } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
@@ -325,7 +326,12 @@ export default defineComponent({
                       : '--'}
                   </div>
                 </div>
-                <SearchSelect class='w500 instance-type-search-seletor' v-model={searchVal.value} data={searchData} />
+                <SearchSelect
+                  class='w500 instance-type-search-seletor'
+                  v-model={searchVal.value}
+                  data={searchData}
+                  placeholder={getSearchPlaceholder(searchData)}
+                />
               </div>
             </FormItem>
           </Form>

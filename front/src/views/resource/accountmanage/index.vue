@@ -11,7 +11,7 @@ import { useVerify } from '@/hooks';
 import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/common/constant';
 import type { ModelPropertyColumn } from '@/model/typings';
 import type { FilterType, IAccountItem, IListResData } from '@/typings';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, getSearchPlaceholder } from '@/common/util';
 
 import { Button, Message } from 'bkui-vue';
 
@@ -218,7 +218,7 @@ const {
     <!-- search -->
     <div class="tools">
       <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
-      <bk-search-select v-model="searchVal" :data="searchData" />
+      <bk-search-select v-model="searchVal" :data="searchData" :placeholder="getSearchPlaceholder(searchData)" />
     </div>
     <!-- table -->
     <div class="table-wrap">

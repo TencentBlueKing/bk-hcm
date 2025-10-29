@@ -9,6 +9,7 @@ import { Column } from 'bkui-vue/lib/table/props';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
 import { VendorReverseMap } from '@/common/constant';
+import { getSearchPlaceholder } from '@/common/util';
 
 /**
  * 本地搜索. 本地分页 Table 组件
@@ -141,6 +142,7 @@ export default defineComponent({
               v-model={searchValue.value}
               data={props.searchOptions.searchData}
               valueBehavior='need-key'
+              placeholder={getSearchPlaceholder(props.searchOptions.searchData)}
               {...(props.searchOptions.extra || {})}
             />
           )}
