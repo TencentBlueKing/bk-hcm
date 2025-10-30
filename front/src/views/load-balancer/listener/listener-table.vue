@@ -60,7 +60,7 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
   },
   [ListenerActionType.BATCH_EXPORT]: {
     value: ListenerActionType.BATCH_EXPORT,
-    render: () => h(ListenerBatchExportButton, { selections: selections.value }),
+    render: () => h(ListenerBatchExportButton, { selections: selections.value, bizId: currentGlobalBusinessId.value }),
   },
   [ListenerActionType.REMOVE]: {
     type: 'button',

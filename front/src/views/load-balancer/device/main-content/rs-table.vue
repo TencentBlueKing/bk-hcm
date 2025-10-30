@@ -66,6 +66,7 @@ const actionConfig: Partial<Record<RsDeviceType, ActionItemType>> = {
       h(RsBatchExportButton, {
         selections: selections.value,
         vendor: props.condition.vendor,
+        bizId: currentGlobalBusinessId.value,
       }),
   },
 };

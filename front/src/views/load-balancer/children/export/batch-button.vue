@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { AUTH_BIZ_UPDATE_CLB } from '@/constants/auth-symbols';
+import { AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB } from '@/constants/auth-symbols';
+import { getAuthSignByBusinessId } from '@/utils';
 import { useExport } from './use-export';
 
-const props = defineProps<{ selections: any[]; isInDropdown?: boolean }>();
+const props = defineProps<{ selections: any[]; isInDropdown?: boolean; bizId?: number }>();
 const emit = defineEmits(['click']);
 
 const { t } = useI18n();
@@ -12,6 +13,8 @@ const { t } = useI18n();
 const ids = computed(() => props.selections.map((item) => item.id));
 const vendorSet = computed(() => new Set(props.selections.map((item) => item.vendor)));
 const vendor = computed(() => [...vendorSet.value][0]);
+
+const authSign = computed(() => getAuthSignByBusinessId(props.bizId, AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB));
 
 const handleExport = () => {
   const { invokeExport } = useExport({
@@ -26,7 +29,7 @@ const handleExport = () => {
 </script>
 
 <template>
-  <hcm-auth :sign="{ type: AUTH_BIZ_UPDATE_CLB }" v-slot="{ noPerm }" :class="{ 'is-in-dropdown': isInDropdown }">
+  <hcm-auth :sign="authSign" v-slot="{ noPerm }" :class="{ 'is-in-dropdown': isInDropdown }">
     <bk-button
       text
       class="button"

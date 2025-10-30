@@ -118,7 +118,7 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
   },
   [LoadBalancerActionType.BATCH_EXPORT]: {
     value: LoadBalancerActionType.BATCH_EXPORT,
-    render: () => h(BatchExportButton, { selections: selections.value }),
+    render: () => h(BatchExportButton, { selections: selections.value, bizId: currentGlobalBusinessId.value }),
   },
 };
 const loadBalancerActionList = computed<ActionItemType[]>(() => {
@@ -420,7 +420,7 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
           <bk-table-column :label="t('操作')" width="120" fixed="right" :show-overflow-tooltip="false">
             <template #default="{ row }">
               <div class="operation-cell">
-                <single-export-button :data="row" />
+                <single-export-button :data="row" :biz-id="currentGlobalBusinessId" />
                 <hcm-auth
                   :sign="getAuthSignByBusinessId(currentGlobalBusinessId, AUTH_DELETE_CLB, AUTH_BIZ_DELETE_CLB)"
                   v-slot="{ noPerm }"
