@@ -66,7 +66,7 @@ watchEffect(async () => {
   // 设置了 urlKey, 则自动选中上一次选中的业务
   if (props.urlKey) {
     let lastUrlBizs = route.query[props.urlKey] as string;
-    let lastLocalBizs = localStorageActions.get(props.urlKey, (value) => value);
+    let lastLocalBizs = localStorageActions.get(props.urlKey);
 
     if (props.base64Encode) {
       lastUrlBizs = lastUrlBizs && decodeValueByAtob(lastUrlBizs);
@@ -105,7 +105,7 @@ const selectedValue = computed({
     return props.multiple ? [] : null;
   },
   set(val) {
-    let selectedValue = val;
+    let selectedValue = parseVal(val);
     if (props.isShowAll) {
       if (props.multiple && Array.isArray(selectedValue)) {
         if (selectedValue[selectedValue.length - 1] === 'all') {
@@ -123,6 +123,14 @@ const selectedValue = computed({
   },
 });
 
+const parseVal = (val: string | number | (string | number)[]) => {
+  const reg = /^\d+$/;
+  if (Array.isArray(val)) {
+    return val.map((v: string | number) => (reg.test(String(v)) ? Number(v) : v));
+  }
+  return reg.test(String(val)) ? Number(val) : val;
+};
+
 // 记录业务id
 watch(
   selectedValue,
@@ -131,7 +139,6 @@ watch(
 
     const query = { ...route.query };
     const currentBizs = props.base64Encode ? encodeValueByBtoa(val) : val;
-
     // 多选
     if (props.multiple) {
       // 未选时, 不用存业务id

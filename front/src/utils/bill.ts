@@ -56,9 +56,9 @@ export class BillSearchRules {
     urlKey: string,
     field: string,
     op: QueryRuleOPEnum,
-    valueParser = (value: string) => value && decodeValueByAtob(value),
+    valueParser = (value: any) => value && decodeValueByAtob(value),
   ) {
-    const value = valueParser(route.query[urlKey] as string) || localStorageActions.get(urlKey, valueParser);
+    const value = valueParser(route.query[urlKey]) || localStorageActions.get(urlKey, valueParser);
     value && this.rules.push({ field, op, value });
     // 支持链式调用
     return this;

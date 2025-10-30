@@ -326,3 +326,7 @@ export function toArray<T>(value: T | T[]): T[] {
 export const resolveApiPathByBusinessId = (prefix: string, suffix: string, businessId?: number) => {
   return businessId ? `${prefix}/bizs/${businessId}/${suffix}` : `${prefix}/${suffix}`;
 };
+
+export const getSearchPlaceholder = (searchOptions: Array<{ id: string; name: string; [k: string]: any }>) => {
+  return `搜索 ${searchOptions.map(({ name }) => name).join('、')}`;
+};

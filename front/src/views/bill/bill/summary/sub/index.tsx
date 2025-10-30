@@ -54,6 +54,11 @@ export default defineComponent({
     });
 
     const reloadTable = (rules: RulesItem[]) => {
+      rules.forEach((rule) => {
+        if (rule.field === 'bk_biz_id') {
+          rule.value = (rule.value as string[]).map(Number);
+        }
+      });
       clearFilter();
       getListData(rules);
     };
@@ -70,7 +75,7 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      mountedCallback(route, reloadTable);
+      setTimeout(() => mountedCallback(route, reloadTable), 300);
     });
 
     return () => (

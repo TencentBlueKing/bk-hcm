@@ -90,7 +90,14 @@ const parseIP = (text: string) => {
 // 将值进行btoa编码
 const encodeValueByBtoa = (v: any) => btoa(JSON.stringify(v));
 // 获取atob解码后的值
-const decodeValueByAtob = (v: string) => JSON.parse(atob(v));
+const decodeValueByAtob = (v: any) => {
+  const val = String(v);
+  const regEx = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+  if (regEx.test(val)) {
+    return JSON.parse(atob(val));
+  }
+  return v;
+};
 
 /**
  * 从文本（单个IP、CIDR 网段、连续地址段）中解析出IP地址和备注
