@@ -46,8 +46,8 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
       rsCount,
     };
   } catch {
-    loading.value = false;
   } finally {
+    loading.value = false;
     condition.value = newCondition;
     routeQuery.set({
       _t: Date.now(),

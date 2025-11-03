@@ -1,5 +1,7 @@
 import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { RecycleScroller } from 'vue-virtual-scroller';
+import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore, ITargetGroupDetail } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 import { useSingleList } from '@/hooks/useSingleList';
@@ -37,7 +39,7 @@ export default defineComponent({
 
     // 获取目标组列表
     const rules = ref([]);
-    const { dataList, pagination, handleScrollEnd, handleRefresh, isDataLoad } = useSingleList({
+    const { dataList, pagination, handleRefresh, isDataLoad } = useSingleList({
       url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
       rules: () => rules.value,
       immediate: !loadBalancerStore.tgSearchTarget,
@@ -128,13 +130,6 @@ export default defineComponent({
       bus.$on('refreshTargetGroupList', handleRefresh);
     });
 
-    const handleScroll = ({ target }: Event) => {
-      const { scrollTop, scrollHeight, clientHeight } = target as HTMLDivElement;
-      if (!isDataLoad.value && scrollTop + clientHeight >= scrollHeight) {
-        handleScrollEnd();
-      }
-    };
-
     onUnmounted(() => {
       bus.$off('refreshTargetGroupList');
       loadBalancerStore.setTgSearchTarget('');
@@ -173,41 +168,39 @@ export default defineComponent({
               </hcm-auth>
             </div>
           </div>
-          <div class='group-list' onScroll={handleScroll}>
-            {dataList.value.map((item) => {
-              return (
-                <div
-                  key={item.id}
-                  class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
-                  onClick={() => handleTypeChange(item)}>
-                  <OverflowTitle type='tips' class='base-info'>
-                    <img src={mubiaoIcon} alt='' class='prefix-icon' />
-                    <span class='text'>{item.name}</span>
-                  </OverflowTitle>
-                  <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
-                    <div class='count'>{item.count}</div>
-                    <hcm-auth class='more-action' sign={clbOperationAuthSign.value}>
-                      {{
-                        default: ({ noPerm }: { noPerm: boolean }) => (
-                          <bk-button
-                            text
-                            disabled={noPerm}
-                            onClick={(e: Event) => showDropdownList(e, { type: 'specific', ...item })}>
-                            <i class='hcm-icon bkhcm-icon-more-fill'></i>
-                          </bk-button>
-                        ),
-                      }}
-                    </hcm-auth>
-                  </div>
+          <RecycleScroller
+            class='group-list'
+            items={dataList.value}
+            item-size={36}
+            key-field='id'
+            v-bkloading={{ loading: isDataLoad.value }}>
+            {({ item }: { item: any }) => (
+              <div
+                key={item.id}
+                class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
+                onClick={() => handleTypeChange(item)}>
+                <OverflowTitle type='tips' class='base-info'>
+                  <img src={mubiaoIcon} alt='' class='prefix-icon' />
+                  <span class='text'>{item.name}</span>
+                </OverflowTitle>
+                <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
+                  <div class='count'>{item.count}</div>
+                  <hcm-auth class='more-action' sign={clbOperationAuthSign.value}>
+                    {{
+                      default: ({ noPerm }: { noPerm: boolean }) => (
+                        <bk-button
+                          text
+                          disabled={noPerm}
+                          onClick={(e: Event) => showDropdownList(e, { type: 'specific', ...item })}>
+                          <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                        </bk-button>
+                      ),
+                    }}
+                  </hcm-auth>
                 </div>
-              );
-            })}
-            {isDataLoad.value && (
-              <bk-loading loading size='small'>
-                <div style='width: 100%; height: 36px' />
-              </bk-loading>
+              </div>
             )}
-          </div>
+          </RecycleScroller>
         </div>
       </div>
     );

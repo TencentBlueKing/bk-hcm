@@ -99,33 +99,36 @@ const RS_ROW_KEY = 'id';
 // 选中RS，key为rsList的rowKey，value为该IP下选中的RS ID数组
 const selectedRsMap = ref<Map<string, string[]>>(new Map());
 
-const selectedCount = computed(() => {
-  let count = 0;
-  for (const arr of selectedRsMap.value.values()) {
-    count += arr.length;
-  }
-  return count;
-});
+const selectedCount = ref(0);
 
-// 所有选中的RS，外部依赖与原rsList结构保持一致
-const selections = computed(() => {
-  const result: any[] = [];
-  for (const [key, value] of selectedRsMap.value) {
-    if (!value.length) {
-      continue;
-    }
-    const item = props.rsList.find((item) => item.rowKey === key);
-    result.push({
-      ...item,
-      targets: item.targets.filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
-    });
-  }
-  return result;
-});
+// 所有选中的RS，提供给外部使用，与原rsList结构保持一致
+const selections = ref<any[]>([]);
 
 const hasSelection = computed(() => props.type === RsDeviceType.INFO);
 
 const isExceeded = computed(() => selectedCount.value > MAX_COUNT);
+
+watch(
+  selectedRsMap,
+  (newSelectedRsMap) => {
+    const result: any[] = [];
+    let count = 0;
+    for (const [key, value] of newSelectedRsMap) {
+      if (!value.length) {
+        continue;
+      }
+      const item = props.rsList.find((item) => item.rowKey === key);
+      result.push({
+        ...item,
+        targets: item.targets.filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
+      });
+      count += value.length;
+    }
+    selections.value = result;
+    selectedCount.value = count;
+  },
+  { deep: true },
+);
 
 watch(
   () => props.rsList,
@@ -160,6 +163,17 @@ const getDisplayCompProps = (column: ModelPropertyColumn) => {
 const getVpc = (ids: string[]) => {
   if (!ids.length) return '--';
   return ids.join(',');
+};
+
+const isGroupChecked = (item: any) => {
+  const targetLength = item.targets.length;
+  return selectedRsMap.value.get(item.rowKey)?.length === targetLength && targetLength > 0;
+};
+
+const isGroupHalfChecked = (item: any) => {
+  const targetLength = item.targets.length;
+  const selectedLength = selectedRsMap.value.get(item.rowKey)?.length;
+  return selectedLength > 0 && selectedLength < targetLength;
 };
 
 // 表格的选中状态变化，value每次为最新选中的RS ID数组
@@ -226,16 +240,14 @@ defineExpose({ selections, isExceeded });
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </div>
       <bk-collapse use-block-theme class="rs-expand" v-model="activeGroupKeys" accordion>
-        <bk-collapse-panel v-for="item in rsList" :key="item.rowKey" :name="item.rowKey">
+        <bk-collapse-panel v-for="item in rsList" :key="item.rowKey" :name="item.rowKey" render-directive="if">
           <template #header>
             <div class="header" :class="{ 'is-expand': isExpand(item.rowKey) }">
               <bk-checkbox
                 v-if="hasSelection"
-                :checked="selectedRsMap.get(item.rowKey)?.length === item.targets.length && item.targets.length > 0"
-                :indeterminate="
-                  selectedRsMap.get(item.rowKey)?.length > 0 &&
-                  selectedRsMap.get(item.rowKey)?.length < item.targets.length
-                "
+                :checked="isGroupChecked(item)"
+                :indeterminate="isGroupHalfChecked(item)"
+                :immediate-emit-change="false"
                 class="mr10 checked"
                 @change="(checked: boolean) => handleGroupCheckedChange(checked, item.rowKey)"
               />

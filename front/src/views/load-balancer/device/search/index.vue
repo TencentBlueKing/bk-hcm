@@ -41,7 +41,9 @@ const disabled = computed(() => (!hasSaved.value && !hasChange.value) || !hasAny
 
 const handleAccountChange = (item: IAccountItem) => {
   formModel.vendor = item?.vendor;
-  formModel.lb_regions = [];
+  if (formModel.lb_regions?.length) {
+    formModel.lb_regions = [];
+  }
 };
 const handlePaste = (value: any) => value.split(/,|;|\n|\s/).map((tag: any) => ({ id: tag, name: tag }));
 const handleSave = async () => {
@@ -241,7 +243,7 @@ const conditionField = computed<ModelPropertySearch[]>(() => [
           :property="field.id"
           v-for="field in conditionField"
           :key="field.id"
-          :required="field.id === 'account_id'"
+          :required="field.id === 'account_id' || field.id === 'lb_regions'"
         >
           <component :is="`hcm-search-${field.type}`" v-bind="field.props" v-model="formModel[field.id]" />
         </bk-form-item>

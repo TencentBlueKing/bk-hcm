@@ -1,6 +1,6 @@
 import { reactive, ref, watch } from 'vue';
 import { defaults, get } from 'lodash';
-import { QueryRuleOPEnum, RulesItem } from '@/typings';
+import { IListResData, QueryRuleOPEnum, RulesItem } from '@/typings';
 import rollRequest from '@blueking/roll-request';
 import http from '@/http';
 
@@ -65,21 +65,30 @@ export function useSingleList<T>(options?: {
       // 使用 rollRequest 一次性拉取完
       if (options.rollRequestConfig.enabled) {
         isDataLoad.value = true;
-        const list = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<T>(
+        const listGen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
+          IListResData<T>
+        >(
           url,
           { filter, ...payload },
           {
             limit: options.rollRequestConfig.limit,
             countGetter: (res) => res.data.count,
             listGetter: (res) => res.data.details,
+            generator: true,
           },
+          true,
         );
 
-        dataList.value = list;
-        pagination.count = list.length;
-        options?.success?.();
+        // 串行迭代请求，避免一次性请求过多数据导致阻塞
+        for await (const res of listGen) {
+          dataList.value = [...dataList.value, ...(res.data?.details as any[])];
+          pagination.count = dataList.value.length;
 
-        return list;
+          // 完成了第1次请求即关闭 loading 效果，其余的请求静默处理
+          isDataLoad.value = false;
+        }
+        options?.success?.();
+        return dataList.value;
       }
 
       // 默认API方法
