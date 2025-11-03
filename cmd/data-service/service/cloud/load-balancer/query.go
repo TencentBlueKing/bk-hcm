@@ -307,17 +307,21 @@ func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleWit
 	*corelb.TCloudLbUrlRule, error) {
 
 	var healthCheck *corelb.TCloudHealthCheckInfo
-	err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
-	if err != nil {
-		logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
-		return nil, err
+	if len(one.HealthCheck) != 0 {
+		err := json.UnmarshalFromString(string(one.HealthCheck), &healthCheck)
+		if err != nil {
+			logs.Errorf("unmarshal healthCheck failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	var certInfo *corelb.TCloudCertificateInfo
-	err = json.UnmarshalFromString(string(one.Certificate), &certInfo)
-	if err != nil {
-		logs.Errorf("unmarshal certificate failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
-		return nil, err
+	if len(one.Certificate) != 0 {
+		err := json.UnmarshalFromString(string(one.Certificate), &certInfo)
+		if err != nil {
+			logs.Errorf("unmarshal certificate failed, one: %+v, err: %v, rid: %s", one, err, kt.Rid)
+			return nil, err
+		}
 	}
 
 	return &corelb.TCloudLbUrlRule{

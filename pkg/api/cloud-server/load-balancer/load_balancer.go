@@ -986,7 +986,7 @@ func (e *ExportTargetReq) Validate() error {
 // LbTopoCond lb topo condition
 type LbTopoCond struct {
 	AccountID      string                                `json:"account_id" validate:"required"`
-	LbRegions      []string                              `json:"lb_regions" validate:"max=500"`
+	LbRegions      []string                              `json:"lb_regions" validate:"required,min=1,max=500"`
 	LbNetworkTypes []loadbalancer.TCloudLoadBalancerType `json:"lb_network_types" validate:"max=500"`
 	LbIpVersions   []enumor.IPAddressType                `json:"lb_ip_versions" validate:"max=500"`
 	CloudLbIDs     []string                              `json:"cloud_lb_ids" validate:"max=500"`
@@ -1106,19 +1106,13 @@ func (l *LbTopoCond) GetTargetCond() []filter.RuleFactory {
 
 // LbTopoReq lb topo request
 type LbTopoReq struct {
-	LbTopoCond `json:",inline" validate:"required,dive,required"`
-	Page       *core.BasePage `json:"page" validate:"required"`
+	LbTopoCond `json:",inline" validate:"required"`
 }
 
 // Validate ...
 func (l *LbTopoReq) Validate() error {
 	if err := validator.Validate.Struct(l); err != nil {
 		return err
-	}
-	if l.Page != nil {
-		if err := l.Page.Validate(); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -1182,9 +1176,9 @@ type ListenerWithTopo struct {
 
 // LblTopoInfo listener topo info
 type LblTopoInfo struct {
-	Match   bool
-	LbMap   map[string]corelb.BaseLoadBalancer
-	LblCond []filter.RuleFactory
+	Match    bool
+	LbMap    map[string]corelb.BaseLoadBalancer
+	LblConds [][]filter.RuleFactory
 }
 
 // UrlRuleWithTopo url rule with topo
@@ -1202,8 +1196,8 @@ type UrlRuleWithTopo struct {
 
 // UrlRuleTopoInfo url rule topo info
 type UrlRuleTopoInfo struct {
-	Match    bool
-	LbMap    map[string]corelb.BaseLoadBalancer
-	LblMap   map[string]corelb.TCloudListener
-	RuleCond []filter.RuleFactory
+	Match     bool
+	LbMap     map[string]corelb.BaseLoadBalancer
+	LblMap    map[string]corelb.TCloudListener
+	RuleConds [][]filter.RuleFactory
 }

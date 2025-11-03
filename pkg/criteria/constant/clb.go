@@ -91,6 +91,10 @@ const (
 
 	// CLBTopoFindInLimit 负载均衡各级拓扑in查询数量限制
 	CLBTopoFindInLimit = 10000
+	// CLBTopoFindPageLimit 负载均衡查询分页数量限制
+	CLBTopoFindPageLimit = 100000
+	// CLBDataByTopoCondReturnLimit 根据负载均衡拓扑条件查询返回的详情数量限制
+	CLBDataByTopoCondReturnLimit = 10000
 )
 
 const (

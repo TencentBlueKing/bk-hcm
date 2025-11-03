@@ -260,7 +260,7 @@ func (dao TargetGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Lis
 		filter.RuleFields(columnTypes),
 		filter.MaxInLimit(constant.CLBTopoFindInLimit),
 	)
-	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
+	if err := opt.Validate(expr, &core.PageOption{MaxLimit: constant.CLBTopoFindPageLimit}); err != nil {
 		return nil, err
 	}
 

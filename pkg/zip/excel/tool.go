@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-const splitChar = "::"
+const splitChar = "[::]"
 
 // CombineFileNameAndSheet 将文件名和sheet名称合并为一个字符串
 func CombineFileNameAndSheet(fileName, sheet string) string {

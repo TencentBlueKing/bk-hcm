@@ -201,7 +201,7 @@ func (dao ListenerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.ListLo
 		filter.RuleFields(tablelb.LoadBalancerListenerColumns.ColumnTypes()),
 		filter.MaxInLimit(constant.CLBTopoFindInLimit),
 	)
-	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
+	if err := opt.Validate(expr, &core.PageOption{MaxLimit: constant.CLBTopoFindPageLimit}); err != nil {
 		return nil, err
 	}
 

@@ -177,7 +177,7 @@ func (dao TargetGroupListenerRuleRelDao) List(kt *kit.Kit, opt *types.ListOption
 		filter.RuleFields(tablelb.TargetGroupListenerRuleRelColumns.ColumnTypes()),
 		filter.MaxInLimit(constant.CLBTopoFindInLimit),
 	)
-	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
+	if err := opt.Validate(expr, &core.PageOption{MaxLimit: constant.CLBTopoFindPageLimit}); err != nil {
 		return nil, err
 	}
 

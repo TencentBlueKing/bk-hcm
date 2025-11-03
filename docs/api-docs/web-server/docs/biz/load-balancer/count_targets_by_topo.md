@@ -15,7 +15,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/targets/by_topo/count
 | bk_biz_id        | string       | 是  | 业务id                                                     |
 | vendor           | string       | 是  | 云厂商(枚举值：tcloud)                                          |
 | account_id       | string       | 是  | 云账号ID                                                    |
-| lb_regions       | string array | 否  | CLB所在地域列表，长度限制500                                        |
+| lb_regions       | string array | 是  | CLB所在地域列表，长度限制500                                        |
 | lb_network_types | string array | 否  | 负载均衡网络类型列表，"OPEN"(公网)，"INTERNAL"(内网)                     |
 | lb_ip_versions   | string array | 否  | 负载均衡IP版本列表，如"ipv4"、"ipv6"、"ipv6_nat64"、"ipv6_dual_stack" |
 | cloud_lb_ids     | string array | 否  | 云负载均衡ID列表，长度限制500                                        |

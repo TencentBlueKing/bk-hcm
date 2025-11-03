@@ -76,4 +76,7 @@ const (
 	SyncRepeatLockError int32 = 2000024
 	// ResourceUnassigned 资源未分配
 	ResourceUnassigned int32 = 2000025
+
+	// ClbTopoResExceedErr clb拓扑资源查询超限
+	ClbTopoResExceedErr int32 = 2000026
 )
