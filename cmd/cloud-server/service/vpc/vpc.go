@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -295,32 +296,34 @@ func (svc *vpcSvc) updateVpc(cts *rest.Contexts, validHandler handler.ValidWithA
 
 // GetVpc get vpc details.
 func (svc *vpcSvc) GetVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.getVpc(cts, handler.ResOperateAuth)
+	return svc.getVpc(cts, handler.ListResourceAuthRes)
 }
 
 // GetBizVpc get biz vpc details.
 func (svc *vpcSvc) GetBizVpc(cts *rest.Contexts) (interface{}, error) {
-	return svc.getVpc(cts, handler.BizOperateAuth)
+	return svc.getVpc(cts, handler.ListBizAuthRes)
 }
 
-func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *vpcSvc) getVpc(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	// validate biz and authorize
+	_, noPermFlag, err := validHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.Vpc, Action: meta.Find, Filter: tools.EqualExpression("id", id)})
+	if err != nil {
+		return nil, err
+	}
+	if noPermFlag {
+		return nil, errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("no permission"))
 	}
 
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.VpcCloudResType, id)
 	if err != nil {
 		return nil, err
 	}
-
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Vpc,
-		Action: meta.Find, BasicInfo: basicInfo})
-	if err != nil {
-		return nil, err
-	}
-
 	// get vpc detail info
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
@@ -518,7 +521,8 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.VpcCloudResType, req.VpcIDs, req.BkBizID)
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.VpcCloudResType, req.VpcIDs,
+		req.BkBizID)
 	if err != nil {
 		return nil, err
 	}
