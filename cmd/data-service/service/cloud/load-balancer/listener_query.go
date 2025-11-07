@@ -228,7 +228,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, lblReq protocloud.ListLi
 	[]*protocloud.ListBatchListenerResult, error) {
 
 	// 查询符合条件的负载均衡列表
-	cloudClbIDs, clbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, lblReq)
+	cloudClbIDs, _, lbMap, err := svc.listLoadBalancerListCheckVip(kt, lblReq)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, lblReq protocloud.ListLi
 	}
 
 	// 获取监听器绑定的目标组ID列表
-	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, lblReq, cloudLblIDs, clbIDs)
+	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, lblReq, cloudLblIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -270,8 +270,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, lblReq protocloud.ListLi
 	lblUrlRuleList := make([]protocloud.LoadBalancerUrlRuleResult, 0)
 	switch lblReq.Vendor {
 	case enumor.TCloud:
-		lblUrlRuleList, err = svc.listTCloudLBUrlRuleByTgIDs(kt, lblReq.ListenerQueryItem, cloudClbIDs,
-			cloudLblIDs, targetGroupIDs)
+		lblUrlRuleList, err = svc.listTCloudLBUrlRuleByTgIDs(kt, lblReq.ListenerQueryItem, targetGroupIDs)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "batch query listener with targets failed, invalid vendor: %s",
 			lblReq.Vendor)
@@ -497,17 +496,13 @@ func (svc *lbSvc) convertBatchListListener(lblList []tablelb.LoadBalancerListene
 }
 
 func (svc *lbSvc) listTCloudLBUrlRuleByTgIDs(kt *kit.Kit,
-	lblReq protocloud.ListenerQueryItem, cloudClbIDs, cloudLblIDs, targetGroupIDs []string) (
+	lblReq protocloud.ListenerQueryItem, targetGroupIDs []string) (
 	[]protocloud.LoadBalancerUrlRuleResult, error) {
 
 	lblTargetList := make([]protocloud.LoadBalancerUrlRuleResult, 0)
-	for _, partCloudLblIDs := range slice.Split(cloudLblIDs, int(filter.DefaultMaxInLimit)) {
+	for _, partTargetGroupIDs := range slice.Split(targetGroupIDs, int(filter.DefaultMaxInLimit)) {
 		lblTargetFilter := make([]*filter.AtomRule, 0)
-		lblTargetFilter = append(lblTargetFilter, tools.RuleIn("cloud_lb_id", cloudClbIDs))
-		lblTargetFilter = append(lblTargetFilter, tools.RuleIn("cloud_lbl_id", partCloudLblIDs))
-		if len(targetGroupIDs) > 0 {
-			lblTargetFilter = append(lblTargetFilter, tools.RuleIn("target_group_id", targetGroupIDs))
-		}
+		lblTargetFilter = append(lblTargetFilter, tools.RuleIn("target_group_id", partTargetGroupIDs))
 		if len(lblReq.RuleType) > 0 {
 			lblTargetFilter = append(lblTargetFilter, tools.RuleEqual("rule_type", lblReq.RuleType))
 			if lblReq.RuleType == enumor.Layer7RuleType {
