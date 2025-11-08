@@ -226,14 +226,21 @@ func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, lblReq protocloud.Lis
 			Filter: tools.ExpressionAnd(ruleRelFilter...),
 			Page:   core.NewDefaultBasePage(),
 		}
-		targetGroupRelList, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().List(kt, opt)
-		if err != nil {
-			logs.Errorf("list target group listener rule rel failed, err: %v, lblReq: %+v, ruleRelFilter: %+v, rid: %s",
-				err, lblReq, ruleRelFilter, kt.Rid)
-			return nil, fmt.Errorf("list target group listener rule rel failed, err: %v", err)
-		}
-		for _, item := range targetGroupRelList.Details {
-			cloudTargetGroupIDs = append(cloudTargetGroupIDs, item.CloudTargetGroupID)
+		for {
+			targetGroupRelList, err := svc.dao.LoadBalancerTargetGroupListenerRuleRel().List(kt, opt)
+			if err != nil {
+				logs.Errorf("list target group listener rule rel failed, err: %v, lblReq: %+v, ruleRelFilter: %+v, rid: %s",
+					err, lblReq, ruleRelFilter, kt.Rid)
+				return nil, fmt.Errorf("list target group listener rule rel failed, err: %v", err)
+			}
+			for _, item := range targetGroupRelList.Details {
+				cloudTargetGroupIDs = append(cloudTargetGroupIDs, item.CloudTargetGroupID)
+			}
+			if uint(len(targetGroupRelList.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+
+			opt.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
 	}
 	return slice.Unique(cloudTargetGroupIDs), nil

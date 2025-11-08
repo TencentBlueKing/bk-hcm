@@ -374,7 +374,7 @@ func (svc *lbSvc) CountListenerByLbIDs(cts *rest.Contexts) (interface{}, error) 
 
 // listLoadBalancerListCheckVip 获取负载均衡列表并检查VIP、域名是否匹配
 func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, lblReq protocloud.ListListenerQueryReq) (
-	[]string, []string, map[string]tablelb.LoadBalancerTable, error) {
+	protocloud.ListLoadBalancerIDsResult, map[string]tablelb.LoadBalancerTable, error) {
 
 	lbAllList := make([]tablelb.LoadBalancerTable, 0)
 	elems := slice.Split(lblReq.ListenerQueryItem.CloudLbIDs, int(core.DefaultMaxPageLimit))
@@ -392,71 +392,100 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, lblReq protocloud.Li
 		lbList, err := svc.dao.LoadBalancer().List(kt, lbOpt)
 		if err != nil {
 			logs.Errorf("check list load balancer failed, err: %v, req: %+v, rid: %s", err, lblReq, kt.Rid)
-			return nil, nil, nil, fmt.Errorf("list load balancer failed, err: %v", err)
+			return protocloud.ListLoadBalancerIDsResult{}, nil, fmt.Errorf("list load balancer failed, err: %v", err)
 		}
 
 		lbAllList = append(lbAllList, lbList.Details...)
 	}
 
 	// 检查ip地址/域名，是否在负载均衡的ip地址列表中
-	cloudClbIDs, clbIDs, lbMap, err := checkClbVipAndDomain(lbAllList, lblReq.ListenerQueryItem.CloudLbIDs,
-		lblReq.ListenerQueryItem.ClbVipDomains)
+	clbIDsResult, lbMap, err := checkClbVipAndDomain(
+		lbAllList, lblReq.ListenerQueryItem.CloudLbIDs, lblReq.ListenerQueryItem.ClbVipDomains)
 	if err != nil {
 		logs.Errorf("check list load balancer and ip domain match failed, err: %v, req: %+v, rid: %s",
 			err, lblReq, kt.Rid)
-		return nil, nil, nil, err
+		return protocloud.ListLoadBalancerIDsResult{}, nil, err
 	}
 
-	return cloudClbIDs, clbIDs, lbMap, nil
+	return clbIDsResult, lbMap, nil
 }
 
 func checkClbVipAndDomain(list []tablelb.LoadBalancerTable, paramClbIDs, clbVipDomains []string) (
-	[]string, []string, map[string]tablelb.LoadBalancerTable, error) {
+	protocloud.ListLoadBalancerIDsResult, map[string]tablelb.LoadBalancerTable, error) {
 
 	lbMap := cvt.SliceToMap(list, func(item tablelb.LoadBalancerTable) (string, tablelb.LoadBalancerTable) {
 		return item.CloudID, item
 	})
 
-	cloudClbIDs := make([]string, 0)
-	clbIDs := make([]string, 0)
+	clbIDsResult := protocloud.ListLoadBalancerIDsResult{}
 	for idx, cloudID := range paramClbIDs {
 		lbInfo, ok := lbMap[cloudID]
 		if !ok {
-			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] is not found", cloudID)
+			return clbIDsResult, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] is not found", cloudID)
 		}
 
 		// 检查对应的负载均衡VIP/域名是否匹配
 		vipDomain := clbVipDomains[idx]
 		if cidr.IsDomainName(vipDomain) && lbInfo.Domain != vipDomain {
-			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] domain is not match, "+
-				"paramDomain: %s, clbDomain: %s", cloudID, vipDomain, lbInfo.Domain)
+			return clbIDsResult, nil, errf.Newf(errf.InvalidParameter,
+				"load balancer[%s] domain is not match, paramDomain: %s, clbDomain: %s",
+				cloudID, vipDomain, lbInfo.Domain)
 		}
 
 		switch lbInfo.LBType {
 		case string(loadbalancer.InternalLoadBalancerType): // 内网
 			if cidr.IsIPv4(vipDomain) && !slice.IsItemInSlice(lbInfo.PrivateIPv4Addresses, vipDomain) {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv4 is not match, "+
-					"paramIPv4: %s, clbPrivateIPv4: %v", cloudID, vipDomain, lbInfo.PrivateIPv4Addresses)
+				return clbIDsResult, nil, errf.Newf(errf.InvalidParameter,
+					"load balancer[%s] privateIPv4 is not match, paramIPv4: %s, clbPrivateIPv4: %v",
+					cloudID, vipDomain, lbInfo.PrivateIPv4Addresses)
 			}
 			if cidr.IsIPv6(vipDomain) && !slice.IsItemInSlice(lbInfo.PrivateIPv6Addresses, vipDomain) {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv6 is not match, "+
-					"paramIPv6: %s, clbPrivateIPv6: %v", cloudID, vipDomain, lbInfo.PrivateIPv6Addresses)
+				return clbIDsResult, nil, errf.Newf(errf.InvalidParameter,
+					"load balancer[%s] privateIPv6 is not match, paramIPv6: %s, clbPrivateIPv6: %v",
+					cloudID, vipDomain, lbInfo.PrivateIPv6Addresses)
 			}
 		case string(loadbalancer.OpenLoadBalancerType): // 公网
 			if cidr.IsIPv4(vipDomain) && !slice.IsItemInSlice(lbInfo.PublicIPv4Addresses, vipDomain) {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv4 is not match, "+
-					"paramIPv4: %s, clbPublicIPv4: %v", cloudID, vipDomain, lbInfo.PublicIPv4Addresses)
+				return clbIDsResult, nil, errf.Newf(errf.InvalidParameter,
+					"load balancer[%s] publicIPv4 is not match, paramIPv4: %s, clbPublicIPv4: %v",
+					cloudID, vipDomain, lbInfo.PublicIPv4Addresses)
 			}
 			if cidr.IsIPv6(vipDomain) && !slice.IsItemInSlice(lbInfo.PublicIPv6Addresses, vipDomain) {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv6 is not match, "+
-					"paramIPv6: %s, clbPublicIPv6: %v", cloudID, vipDomain, lbInfo.PublicIPv6Addresses)
+				return clbIDsResult, nil, errf.Newf(errf.InvalidParameter,
+					"load balancer[%s] publicIPv6 is not match, paramIPv6: %s, clbPublicIPv6: %v",
+					cloudID, vipDomain, lbInfo.PublicIPv6Addresses)
 			}
 		default:
-			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "unsupported hcm lb type: %s", lbInfo.LBType)
+			return clbIDsResult, nil, errf.Newf(errf.InvalidParameter, "unsupported hcm lb type: %s", lbInfo.LBType)
 		}
-		cloudClbIDs = append(cloudClbIDs, cloudID)
-		clbIDs = append(clbIDs, lbInfo.ID)
+
+		// 根据不同云厂商检查特殊属性（如跨地域支持等）
+		switch lbInfo.Vendor {
+		case enumor.TCloud:
+			// 腾讯云：检查是否支持跨地域1.0
+			if lbInfo.Extension != "" {
+				extension := &corelb.TCloudClbExtension{}
+				err := json.UnmarshalFromString(string(lbInfo.Extension), extension)
+				if err != nil {
+					return clbIDsResult, nil, err
+				}
+				if extension.SupportCrossRegionV1() {
+					clbIDsResult.CloudClbIDsV1 = append(clbIDsResult.CloudClbIDsV1, cloudID)
+					clbIDsResult.ClbIDsV1 = append(clbIDsResult.ClbIDsV1, lbInfo.ID)
+				} else {
+					clbIDsResult.CloudClbIDsV2 = append(clbIDsResult.CloudClbIDsV2, cloudID)
+					clbIDsResult.ClbIDsV2 = append(clbIDsResult.ClbIDsV2, lbInfo.ID)
+				}
+			}
+		default:
+			// 其他云厂商暂无特殊处理逻辑
+			return clbIDsResult, nil, fmt.Errorf(
+				"check clb vip failed, lbID: %s, vendor: %s not supported", cloudID, lbInfo.Vendor)
+		}
 	}
 
-	return slice.Unique(cloudClbIDs), clbIDs, lbMap, nil
+	clbIDsResult.CloudClbIDsV1 = slice.Unique(clbIDsResult.CloudClbIDsV1)
+	clbIDsResult.CloudClbIDsV2 = slice.Unique(clbIDsResult.CloudClbIDsV2)
+
+	return clbIDsResult, lbMap, nil
 }
