@@ -10,13 +10,13 @@ import rollRequest from '@blueking/roll-request';
 
 export interface IRegionItem {
   id: string;
-  region_id: string;
-  region_name: string;
-  vendor: string;
+  region_id?: string;
+  region_name?: string;
+  vendor?: string;
 }
 
 export interface IRegionListParams {
-  vendor: string;
+  vendor: VendorEnum | string;
   resourceType?: ResourceTypeEnum.CVM | ResourceTypeEnum.VPC | ResourceTypeEnum.DISK | ResourceTypeEnum.SUBNET;
   rules?: Array<RulesItem>;
   limit?: number;
@@ -24,9 +24,8 @@ export interface IRegionListParams {
 
 export const useRegionStore = defineStore('region', () => {
   const regionListLoading = ref(false);
-  const cache = new Map();
-  const requestQueue = new Map();
-  const vendorRegionkeys = {
+
+  const vendorRegionKeys: Partial<Record<VendorEnum, { IdKey: string; NameKey: string }>> = {
     [VendorEnum.TCLOUD]: {
       IdKey: 'region_id',
       NameKey: isChinese ? 'region_name' : 'display_name',
@@ -49,22 +48,11 @@ export const useRegionStore = defineStore('region', () => {
     },
   };
 
-  const getRegionKey = (vendor: string) => vendorRegionkeys[vendor];
+  const getRegionKey = (vendor: VendorEnum) => vendorRegionKeys[vendor];
 
   const getRegionList = async (params: IRegionListParams) => {
     const { vendor, resourceType, rules = [], limit = 500 } = params;
-    const { IdKey, NameKey } = getRegionKey(vendor);
-    const key = JSON.stringify(params);
-
-    // 检查缓存
-    if (cache.has(key)) {
-      return cache.get(key);
-    }
-
-    // 如果已经有一个请求在进行中，则返回该请求的 Promise
-    if (requestQueue.has(key)) {
-      return requestQueue.get(key);
-    }
+    const { IdKey, NameKey } = getRegionKey(vendor as VendorEnum);
 
     const filter: QueryFilterType = { op: 'and', rules };
     switch (vendor) {
@@ -109,41 +97,32 @@ export const useRegionStore = defineStore('region', () => {
         break;
     }
 
-    // 创建一个新的请求并加入队列
     regionListLoading.value = true;
-    const requestPromise = new Promise(async (resolve, reject) => {
-      try {
-        const list = (
-          await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<IRegionItem>(
-            `/api/v1/cloud/vendors/${vendor}/regions/list`,
-            { filter },
-            { limit, listGetter: (res) => res.data.details, countGetter: (res) => res.data.count },
-          )
-        ).map((item: any) => ({
-          id: item[IdKey],
-          name: getRegionName(isChinese, vendor as VendorEnum, item[IdKey], item[NameKey]) || item[IdKey],
-        }));
 
-        // 更新缓存
-        cache.set(key, list);
-        resolve(list);
-      } catch (error) {
-        reject(error);
-      } finally {
-        requestQueue.delete(key);
-        regionListLoading.value = false;
-      }
-    });
+    try {
+      const list = (
+        await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<IRegionItem>(
+          `/api/v1/cloud/vendors/${vendor}/regions/list`,
+          { filter },
+          { limit, listGetter: (res) => res.data.details, countGetter: (res) => res.data.count },
+        )
+      ).map((item: any) => ({
+        id: item[IdKey],
+        name: getRegionName(isChinese, vendor as VendorEnum, item[IdKey], item[NameKey]) || item[IdKey],
+      }));
 
-    requestQueue.set(key, requestPromise);
-
-    return requestPromise;
+      return list;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      regionListLoading.value = false;
+    }
   };
 
   const getAllVendorRegion = async (value: string | string[], key: 'NameKey' | 'IdKey' = 'NameKey') => {
     if (!value) return [];
     const op = Array.isArray(value) ? QueryRuleOPEnum.IN : QueryRuleOPEnum.CS;
-    const cloudsRules: { [K in VendorEnum]?: RulesItem[] } = {
+    const cloudsRules: Partial<Record<VendorEnum, RulesItem[]>> = {
       [VendorEnum.TCLOUD]: [{ field: getRegionKey(VendorEnum.TCLOUD)[key], op, value }],
       [VendorEnum.HUAWEI]: [{ field: getRegionKey(VendorEnum.HUAWEI)[key], op, value }],
       [VendorEnum.AZURE]: [{ field: getRegionKey(VendorEnum.AZURE)[key], op, value }],
@@ -155,7 +134,7 @@ export const useRegionStore = defineStore('region', () => {
       await Promise.all(
         Object.entries(cloudsRules).map(([vendor, rules]) =>
           getRegionList({
-            vendor,
+            vendor: vendor as VendorEnum,
             rules,
             limit: 10,
           }),
