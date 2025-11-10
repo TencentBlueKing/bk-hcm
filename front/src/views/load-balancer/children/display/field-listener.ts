@@ -3,10 +3,10 @@ import { LISTENER_PROTOCOL_NAME, SCHEDULER_NAME, SSL_MODE_NAME } from '../../con
 
 @Model('load-balancer/listener-display')
 export class DisplayFieldListener {
-  @Column('string', { name: '监听器名称', index: 0, width: 120 })
+  @Column('string', { name: '监听器名称', index: 0, width: 150 })
   name: string;
 
-  @Column('string', { name: '监听器ID', index: 0 })
+  @Column('string', { name: '监听器ID', index: 0, width: 120 })
   cloud_id: string;
 
   @Column('enum', { name: '协议', index: 0, option: LISTENER_PROTOCOL_NAME, width: 80 })
@@ -15,61 +15,62 @@ export class DisplayFieldListener {
   @Column('number', { name: '端口', index: 0, sort: true, width: 80 })
   port: number;
 
-  @Column('enum', { name: '均衡方式', index: 0, option: SCHEDULER_NAME })
+  @Column('enum', { name: '均衡方式', index: 0, option: SCHEDULER_NAME, width: 120 })
   scheduler: string;
 
-  @Column('number', { name: 'SNI', index: 0 })
+  @Column('number', { name: 'SNI', index: 0, width: 80 })
   sni_switch: number;
 
-  @Column('number', { name: 'RS数量', index: 0 })
+  @Column('number', { name: 'RS数量', index: 0, width: 80 })
   rs_num: number;
 
-  @Column('number', { name: '域名数量', index: 0 })
+  @Column('number', { name: '域名数量', index: 0, width: 80 })
   domain_num: number;
 
-  @Column('number', { name: 'URL数量', index: 0 })
+  @Column('number', { name: 'URL数量', index: 0, width: 80 })
   url_num: number;
 
-  @Column('string', { name: '同步状态', index: 0 })
+  @Column('string', { name: '同步状态', index: 0, width: 120 })
   binding_status: string;
 
   // 详情展示字段
-  @Column('string', { name: '协议端口', index: 0 })
+  @Column('string', { name: '协议端口', index: 0, width: 80 })
   protocol_and_port: string;
 
-  @Column('datetime', { name: '创建时间', index: 0 })
+  @Column('datetime', { name: '创建时间', index: 0, width: 120 })
   created_at: string;
 
-  @Column('number', { name: '会话时间', index: 0 })
+  @Column('number', { name: '会话时间', index: 0, width: 120 })
   session_expire_time: number;
 
   @Column('string', {
     name: '健康探测源IP',
     index: 0,
     meta: { display: { format: (value) => (value === 0 ? '负载均衡 VIP' : '100.64.0.0/10网段') } },
+    width: 120,
   })
   'health_check.source_ip_type': string;
 
-  @Column('string', { name: '检查方式', index: 0 })
+  @Column('string', { name: '检查方式', index: 0, width: 120 })
   'health_check.check_type': string;
 
-  @Column('number', { name: '检查端口', index: 0 })
+  @Column('number', { name: '检查端口', index: 0, width: 80 })
   'health_check.check_port': number;
 
-  @Column('string', { name: '检查选型', index: 0 })
+  @Column('string', { name: '检查选型', index: 0, width: 120 })
   'health_check.check_scheme': string;
 
-  @Column('enum', { name: '认证方式', index: 0, option: SSL_MODE_NAME })
+  @Column('enum', { name: '认证方式', index: 0, option: SSL_MODE_NAME, width: 120 })
   'certificate.ssl_mode': string;
 
-  @Column('string', { name: '服务器证书', index: 0 })
+  @Column('string', { name: '服务器证书', index: 0, width: 120 })
   'certificate.ca_cloud_id': string;
 
-  @Column('array', { name: 'CA证书', index: 0 })
+  @Column('array', { name: 'CA证书', index: 0, width: 120 })
   'certificate.cert_cloud_ids': string[];
 
   // 组合字段
-  @Column('json', { name: 'RS权重不为0数 / RS总数' })
+  @Column('json', { name: 'RS权重不为0数 / RS总数', width: 120 })
   rs_weight_stat: object;
 
   // 负载均衡相关字段
@@ -79,24 +80,24 @@ export class DisplayFieldListener {
   @Column('string', { name: '负载均衡ID', width: 120 })
   lb_cloud_id: string;
 
-  @Column('string', { name: '网络类型' })
+  @Column('string', { name: '网络类型', width: 120 })
   lb_network_types: string;
 
-  @Column('string', { name: '负载均衡VIP' })
+  @Column('string', { name: '负载均衡VIP', width: 120 })
   lb_vips: string;
 
-  @Column('string', { name: '负载均衡ID' })
+  @Column('string', { name: '负载均衡ID', width: 120 })
   lb_id: string;
 
   @Column('string', { name: '网络类型', width: 90 })
   lb_network_type: string;
 
-  @Column('number', { name: 'RS数量', index: 0 })
+  @Column('number', { name: 'RS数量1', index: 0, width: 80 })
   target_count: number;
 
-  @Column('number', { name: '域名数量', index: 0 })
+  @Column('number', { name: '域名数量1', index: 0, width: 80 })
   rule_domain_count: number;
 
-  @Column('number', { name: 'URL数量', index: 0 })
+  @Column('number', { name: 'URL数量1', index: 0, width: 80 })
   url_count: number;
 }

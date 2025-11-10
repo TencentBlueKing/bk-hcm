@@ -32,7 +32,7 @@ const LOAD_BALANCER_VIEW_LIST = [
     component: ResourceView,
   },
   {
-    label: t('设备检索'),
+    label: t('配置检索'),
     path: '/business/load-balancer/device',
     name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
     component: DeviceSearchView,

@@ -26,7 +26,7 @@
     "@blueking/login-modal": "1.0.1",
     "@blueking/notice-component": "2.0.5",
     "@blueking/release-note": "0.0.1-beta.17",
-    "@blueking/roll-request": "1.0.0-alpha",
+    "@blueking/roll-request": "1.0.2",
     "@blueking/tdesign-ui": "0.0.1-beta.92",
     "axios": "1.10.0",
     "bkui-vue": "2.0.1-beta.34",

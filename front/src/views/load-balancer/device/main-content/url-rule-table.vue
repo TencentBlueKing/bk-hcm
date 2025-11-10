@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ComputedRef, h, inject, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { IUrlRuleItem, useLoadBalancerUrlRuleStore } from '@/store/load-balancer/device-search-url-rule';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
@@ -12,13 +11,13 @@ import routerAction from '@/router/utils/action';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 import qs from 'qs';
+import { useLoadBalancerDeviceSearchStore, type IUrlRuleItem } from '@/store/load-balancer/device-search';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 const route = useRoute();
-const urlRuleListenerStore = useLoadBalancerUrlRuleStore();
-
+const loadBalancerDeviceSearchStore = useLoadBalancerDeviceSearchStore();
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 
 // data-list
@@ -63,25 +62,21 @@ const { pagination, getPageParams } = usePage();
 
 const ruleUrlList = ref<IUrlRuleItem[]>([]);
 
-const loading = ref(false);
-
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: 'created_at', order: 'DESC' }) => {
   if (!condition.account_id) return;
   try {
-    loading.value = true;
-    const { list, count } = await urlRuleListenerStore.getUrlRuleList(
+    const { list, count } = await loadBalancerDeviceSearchStore.getUrlRuleList(
       condition,
       getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
     );
-    pagination.count = count;
     ruleUrlList.value = list;
+    pagination.count = count;
   } catch (error) {
     console.error(error);
     ruleUrlList.value = [];
     pagination.count = 0;
   } finally {
-    loading.value = false;
     emit('list-data-loaded', DeviceTabEnum.URL, {
       type: 'urlCount',
       data: {
@@ -109,11 +104,13 @@ watch(
   <div class="url-table-container">
     <data-list
       class="data-list"
-      v-bkloading="{ loading }"
+      v-bkloading="{ loading: loadBalancerDeviceSearchStore.urlRuleListLoading }"
       :columns="dataListColumns"
       :list="ruleUrlList"
       :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
       :max-height="`100%`"
+      :enable-query="false"
+      :remote-pagination="false"
     ></data-list>
   </div>
 </template>

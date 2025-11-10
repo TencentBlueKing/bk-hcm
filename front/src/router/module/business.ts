@@ -346,7 +346,7 @@ const businessMenus: RouteRecordRaw[] = [
   },
   {
     path: '/business',
-    children: [...operationLogBizRouteConfig, ...taskRouteConfig],
+    children: [...taskRouteConfig, ...operationLogBizRouteConfig],
     meta: {
       groupTitle: '其他',
     },

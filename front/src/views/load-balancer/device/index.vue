@@ -4,14 +4,14 @@ import { ILoadBalanceDeviceCondition, ICount, DeviceTabEnum } from './typing';
 import { VendorEnum } from '@/common/constant';
 import DeviceCondition from './search/index.vue';
 import MainContent from './main-content/index.vue';
-import { useLoadBalancerCountStore } from '@/store/load-balancer/device-search-count';
+import { useLoadBalancerDeviceSearchStore } from '@/store/load-balancer/device-search';
 import routeQuery from '@/router/utils/query';
 
 defineOptions({ name: 'device-search' });
 
 const numberField = ['lbl_ports', 'target_ports'];
 
-const loadBalancerCountStore = useLoadBalancerCountStore();
+const loadBalancerDeviceSearchStore = useLoadBalancerDeviceSearchStore();
 
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 
@@ -24,7 +24,7 @@ const count = ref<ICount>({
   urlCount: 0,
   rsCount: 0, // 总rs数
 });
-const loading = ref(false); // 条件框查询按钮loading态
+
 const countChange = ref(false); // 总数是否变化
 
 const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
@@ -33,10 +33,8 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
     const isArray = Array.isArray(value);
     if (numberField.includes(label)) newCondition[label] = isArray ? value.map(Number) : Number(value);
   });
-  loading.value = true;
   try {
-    // 先调总数接口
-    const { listenerCount, urlCount, rsCount } = await loadBalancerCountStore.getCount(
+    const { listenerCount, urlCount, rsCount } = await loadBalancerDeviceSearchStore.getOverviewList(
       newCondition,
       currentGlobalBusinessId.value,
     );
@@ -45,9 +43,9 @@ const handleSave = async (newCondition: ILoadBalanceDeviceCondition) => {
       urlCount,
       rsCount,
     };
-  } catch {
+  } catch (error) {
+    console.error(error);
   } finally {
-    loading.value = false;
     condition.value = newCondition;
     routeQuery.set({
       _t: Date.now(),
@@ -58,7 +56,6 @@ const handleListDone = (
   from: DeviceTabEnum,
   params: { type: 'listenerCount' | 'urlCount' | 'rsCount'; data: Record<string, any> },
 ) => {
-  loading.value = false;
   const {
     type,
     data: { count: nowCount },
@@ -77,7 +74,7 @@ const handleCountChange = (val: boolean) => {
     <template #aside>
       <device-condition
         @save="handleSave"
-        :loading="loading"
+        :loading="loadBalancerDeviceSearchStore.overviewListLoading"
         :count-change="countChange"
         @count-change="handleCountChange"
       ></device-condition>

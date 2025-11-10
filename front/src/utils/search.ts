@@ -3,6 +3,7 @@ import merge from 'lodash/merge';
 import { ModelPropertyGeneric, ModelPropertySearch, ModelPropertyType } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import {
+  IPageQuery,
   ISearchCondition,
   ISearchSelectValue,
   QueryFilterType,
@@ -10,6 +11,7 @@ import {
   QueryRuleOPEnum,
   QueryRuleOPEnumLegacy,
   RulesItem,
+  SortType,
 } from '@/typings';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -433,4 +435,57 @@ export const buildMultipleValueRulesItem = (field: string, value: string) => {
   }
 
   return rulesItem;
+};
+
+/**
+ * 本地分页方法
+ */
+export const localPaginate = (list: any[], page: IPageQuery) => list.slice(page.start, page.start + page.limit);
+
+/**
+ * 本地数组排序方法
+ */
+export const localSort = (arr: any[], sort: SortType, options = {}) => {
+  if (!Array.isArray(arr)) {
+    throw new TypeError('第一个参数必须是数组');
+  }
+
+  // 创建副本以避免修改原数组
+  const result = [...arr];
+
+  // 比较函数生成器
+  const getComparator = (field: string, type: string, options: any) => {
+    return (a: any, b: any) => {
+      const valueA = a[field];
+      const valueB = b[field];
+
+      // 处理undefined和null值
+      if (valueA === null && valueB === null) return 0;
+      if (valueA === null) return 1; // null值排在后面
+      if (valueB === null) return -1;
+
+      let comparison = 0;
+
+      // 根据数据类型进行比较
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        // 字符串比较（支持本地化）
+        comparison = valueA.localeCompare(valueB, options?.locale || 'zh-Hans-CN', {
+          sensitivity: options?.sensitivity || 'base',
+          numeric: options?.numeric || true,
+        });
+      } else if (typeof valueA === 'number' && typeof valueB === 'number') {
+        comparison = valueA - valueB;
+      } else if (valueA instanceof Date && valueB instanceof Date) {
+        comparison = valueA.getTime() - valueB.getTime();
+      } else {
+        // 默认比较
+        comparison = String(valueA).localeCompare(String(valueB));
+      }
+
+      // 处理排序类型
+      return type.toLowerCase() === 'desc' ? -comparison : comparison;
+    };
+  };
+
+  return result.sort(getComparator(sort.column.field, sort.type, options));
 };

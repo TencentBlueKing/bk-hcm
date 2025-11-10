@@ -16,7 +16,6 @@ import routerAction from '@/router/utils/action';
 
 import { Button, Message } from 'bkui-vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
-import DataList from '@/views/load-balancer/children/display/data-list.vue';
 import AddListenerSideslider from '@/views/load-balancer/listener/add.vue';
 import BatchDeleteDialog from '@/views/load-balancer/listener/children/batch-delete-dialog.vue';
 import ListenerBatchExportButton from '@/views/load-balancer/children/export/listener-batch-button.vue';
@@ -25,6 +24,8 @@ import DetailsSideslider from '@/views/load-balancer/listener/details.vue';
 import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-copy.vue';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum } from '../typing';
+import { useLoadBalancerDeviceSearchStore } from '@/store/load-balancer/device-search';
+import useTableSettings from '@/hooks/use-table-settings';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
@@ -33,8 +34,8 @@ const route = useRoute();
 const { t } = useI18n();
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 const loadBalancerClbStore = useLoadBalancerClbStore();
-
-const dataListRef = ref(null);
+const loadBalancerDeviceSearchStore = useLoadBalancerDeviceSearchStore();
+const tableRef = ref(null);
 const max = 1000;
 
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
@@ -88,7 +89,7 @@ const actionList = computed<ActionItemType[]>(() => {
     return prev;
   }, []);
 });
-const moreData = computed(() => dataListRef.value?.getSelection()?.length > max);
+const moreData = computed(() => selections.value.length > max);
 
 // data-list
 const displayFieldIds = [
@@ -134,7 +135,9 @@ const dataListColumns = displayFieldIds.map((id) => {
   return { ...property, ...displayConfig[id] };
 });
 
-const { pagination, getPageParams } = usePage();
+const { settings } = useTableSettings(dataListColumns);
+
+const { pagination, getPageParams, handlePageChange, handlePageSizeChange } = usePage(false);
 const listenerList = ref<IListenerItem[]>([]);
 
 const isCurRowSelectEnable = (row: any) => {
@@ -145,7 +148,7 @@ const isRowSelectEnable = ({ row, isCheckAll }: any) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);
 };
-const { selections, handleSelectAll, handleSelectChange } = useTableSelection({
+const { selections, resetSelections, handleSelectAll, handleSelectChange } = useTableSelection({
   isRowSelectable: isRowSelectEnable,
 });
 
@@ -179,26 +182,26 @@ const handleSingleDelete = (row: any) => {
   });
 };
 
-const loading = ref(false);
-
 watch(
   () => route.query,
-  async (query) => {
-    pagination.current = Number(query.page) || 1;
-    pagination.limit = Number(query.limit) || pagination.limit;
-
-    const sort = (query.sort || '') as string;
-    const order = (query.order || 'DESC') as string;
-
-    getList(props.condition, { sort, order });
+  () => {
+    getList(props.condition);
   },
 );
 
+const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
+  const { id } = column;
+  if (id === 'region') {
+    return { vendor: row.vendor };
+  }
+  return {};
+};
+
+// 全量获取列表数据，内部会根据是否获取过直接返回缓存数据，分页参数理论上不再会用到暂时保留
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
   if (!condition.account_id) return;
   try {
-    loading.value = true;
-    const { list, count } = await loadBalancerListenerStore.getDeviceListenerList(
+    const { list, count } = await loadBalancerDeviceSearchStore.getListenerList(
       condition,
       getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
@@ -218,7 +221,6 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   } catch (e) {
     listenerList.value = [];
   } finally {
-    loading.value = false;
     handleClearSelection();
     emit('list-data-loaded', DeviceTabEnum.LISTENER, {
       type: 'listenerCount',
@@ -261,7 +263,8 @@ const handleUpdateListenerSuccess = () => {
 };
 
 const handleClearSelection = () => {
-  dataListRef.value?.clearSelection();
+  resetSelections();
+  tableRef.value?.clearSelection();
 };
 </script>
 
@@ -283,45 +286,75 @@ const handleClearSelection = () => {
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </template>
     </bk-alert>
-    <data-list
-      class="data-list"
-      ref="dataListRef"
-      v-bkloading="{ loading }"
-      :columns="dataListColumns"
-      :list="listenerList"
-      :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
-      has-selection
+
+    <bk-table
+      ref="tableRef"
+      row-key="id"
+      row-hover="auto"
+      :data="listenerList"
+      :pagination="pagination"
+      :settings="settings"
+      :remote-pagination="false"
+      show-overflow-tooltip
+      :is-row-select-enable="isRowSelectEnable"
       :max-height="`calc(100% - ${moreData ? '96px' : '48px'})`"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="
+        (page: number) => {
+          handlePageChange(page);
+          handleClearSelection();
+        }
+      "
       @select-all="handleSelectAll"
       @selection-change="handleSelectChange"
     >
-      <template #action>
-        <bk-table-column :label="t('操作')" width="120" fixed="right">
-          <template #default="{ row }">
-            <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
-              <bk-button theme="primary" text :disabled="noPerm" @click="handleEditListener(row)">
-                {{ t('编辑') }}
-              </bk-button>
-            </hcm-auth>
-            <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
-              <bk-button
-                class="ml8"
-                theme="primary"
-                text
-                :disabled="noPerm || row.non_zero_weight_count !== 0"
-                v-bk-tooltips="{
-                  content: t('监听器RS的权重不为0，不可删除'),
-                  disabled: row.non_zero_weight_count === 0,
-                }"
-                @click="handleSingleDelete(row)"
-              >
-                {{ t('删除') }}
-              </bk-button>
-            </hcm-auth>
-          </template>
-        </bk-table-column>
-      </template>
-    </data-list>
+      >
+      <bk-table-column :width="40" :min-width="40" type="selection" :fixed="dataListColumns[0]?.fixed ?? undefined" />
+      <bk-table-column
+        v-for="(column, index) in dataListColumns"
+        :key="index"
+        :prop="column.id"
+        :label="column.name"
+        :sort="column.sort"
+        :width="column.width"
+        :fixed="column.fixed"
+        :render="column.render"
+        :filter="column.filter"
+      >
+        <template #default="{ row }">
+          <display-value
+            :property="column"
+            :value="row[column.id]"
+            :display="column?.meta?.display"
+            v-bind="getDisplayCompProps(column, row)"
+          />
+        </template>
+      </bk-table-column>
+      <bk-table-column :label="t('操作')" width="120" fixed="right">
+        <template #default="{ row }">
+          <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+            <bk-button theme="primary" text :disabled="noPerm" @click="handleEditListener(row)">
+              {{ t('编辑') }}
+            </bk-button>
+          </hcm-auth>
+          <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+            <bk-button
+              class="ml8"
+              theme="primary"
+              text
+              :disabled="noPerm || row.non_zero_weight_count !== 0"
+              v-bk-tooltips="{
+                content: t('监听器RS的权重不为0，不可删除'),
+                disabled: row.non_zero_weight_count === 0,
+              }"
+              @click="handleSingleDelete(row)"
+            >
+              {{ t('删除') }}
+            </bk-button>
+          </hcm-auth>
+        </template>
+      </bk-table-column>
+    </bk-table>
 
     <template v-if="!addSidesliderState.isHidden">
       <add-listener-sideslider

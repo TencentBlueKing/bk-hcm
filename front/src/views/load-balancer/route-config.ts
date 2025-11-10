@@ -100,7 +100,7 @@ const loadBalancerBiz: RouteRecordRaw[] = [
         component: () => import('@/views/load-balancer/device/index.vue'),
         meta: {
           ...new Meta({
-            title: '设备检索',
+            title: '配置检索',
             activeKey: MENU_BUSINESS_LOAD_BALANCER,
             menu: {},
           }),

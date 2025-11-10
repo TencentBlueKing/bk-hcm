@@ -27,7 +27,7 @@ Object.assign(pagination, { small: props.smallPagination, layout: ['total', 'lim
     :columns="columnProperties"
     :list="list"
     :enable-query="false"
-    :pagination="pagination"
+    :pagination="{ ...pagination }"
     :remote-pagination="false"
   />
 </template>

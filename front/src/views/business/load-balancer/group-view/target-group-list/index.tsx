@@ -1,10 +1,9 @@
-import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
+import { ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { RecycleScroller } from 'vue-virtual-scroller';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore, ITargetGroupDetail } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
-import { useSingleList } from '@/hooks/useSingleList';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { QueryRuleOPEnum } from '@/typings';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
@@ -16,6 +15,7 @@ import allIcon from '@/assets/image/all-lb.svg';
 import mubiaoIcon from '@/assets/image/mubiao.svg';
 import Confirm from '@/components/confirm';
 import './index.scss';
+import { useList } from './use-list';
 
 export default defineComponent({
   name: 'TargetGroupList',
@@ -36,26 +36,13 @@ export default defineComponent({
     const targetGroupListRef = ref(null);
     const activeTargetGroupId = ref(''); // 当前选中的目标组id
     const allTargetGroupsItem = { type: 'all', isDropdownListShow: false }; // 全部目标组item
+    const rules = ref([]); // 搜索条件
 
     // 获取目标组列表
-    const rules = ref([]);
-    const { dataList, pagination, handleRefresh, isDataLoad } = useSingleList({
-      url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
-      rules: () => rules.value,
-      immediate: !loadBalancerStore.tgSearchTarget,
-      rollRequestConfig: { enabled: true, limit: 500 },
-      success: () => handleListLoaded(),
-    });
-
-    const handleListLoaded = () => {
-      nextTick(() => {
-        const target = targetGroupListRef.value.getElementsByClassName('selected')[0];
-        target?.parentNode?.scrollTo({
-          top: target?.offsetTop - 200,
-          behavior: 'auto',
-        });
-      });
-    };
+    const { dataList, handleRefresh, isDataLoad, getNextData, totalCount, isScrollLoading } = useList(
+      `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
+      rules,
+    );
 
     // handler - 切换目标组
     const handleTypeChange = (targetGroup?: ITargetGroupDetail) => {
@@ -126,6 +113,10 @@ export default defineComponent({
       },
     );
 
+    const handleScrollEnd = () => {
+      getNextData();
+    };
+
     onMounted(() => {
       bus.$on('refreshTargetGroupList', handleRefresh);
     });
@@ -156,7 +147,7 @@ export default defineComponent({
               <span class='text'>全部目标组</span>
             </div>
             <div class='ext-info'>
-              <div class='count'>{pagination.count}</div>
+              <div class='count'>{totalCount.value}</div>
               <hcm-auth class='more-action' sign={clbCreateAuthSign.value}>
                 {{
                   default: ({ noPerm }: { noPerm: boolean }) => (
@@ -173,33 +164,42 @@ export default defineComponent({
             items={dataList.value}
             item-size={36}
             key-field='id'
-            v-bkloading={{ loading: isDataLoad.value }}>
-            {({ item }: { item: any }) => (
-              <div
-                key={item.id}
-                class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
-                onClick={() => handleTypeChange(item)}>
-                <OverflowTitle type='tips' class='base-info'>
-                  <img src={mubiaoIcon} alt='' class='prefix-icon' />
-                  <span class='text'>{item.name}</span>
-                </OverflowTitle>
-                <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
-                  <div class='count'>{item.count}</div>
-                  <hcm-auth class='more-action' sign={clbOperationAuthSign.value}>
-                    {{
-                      default: ({ noPerm }: { noPerm: boolean }) => (
-                        <bk-button
-                          text
-                          disabled={noPerm}
-                          onClick={(e: Event) => showDropdownList(e, { type: 'specific', ...item })}>
-                          <i class='hcm-icon bkhcm-icon-more-fill'></i>
-                        </bk-button>
-                      ),
-                    }}
-                  </hcm-auth>
+            v-bkloading={{ loading: isDataLoad.value }}
+            onScrollEnd={handleScrollEnd}>
+            {{
+              default: ({ item }: { item: any }) => (
+                <div
+                  key={item.id}
+                  class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
+                  onClick={() => handleTypeChange(item)}>
+                  <OverflowTitle type='tips' class='base-info'>
+                    <img src={mubiaoIcon} alt='' class='prefix-icon' />
+                    <span class='text'>{item.name}</span>
+                  </OverflowTitle>
+                  <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>
+                    <div class='count'>{item.count}</div>
+                    <hcm-auth class='more-action' sign={clbOperationAuthSign.value}>
+                      {{
+                        default: ({ noPerm }: { noPerm: boolean }) => (
+                          <bk-button
+                            text
+                            disabled={noPerm}
+                            onClick={(e: Event) => showDropdownList(e, { type: 'specific', ...item })}>
+                            <i class='hcm-icon bkhcm-icon-more-fill'></i>
+                          </bk-button>
+                        ),
+                      }}
+                    </hcm-auth>
+                  </div>
                 </div>
-              </div>
-            )}
+              ),
+              after: () =>
+                isScrollLoading.value && (
+                  <bk-loading loading size='small'>
+                    <div style='width: 100%; height: 36px' />
+                  </bk-loading>
+                ),
+            }}
           </RecycleScroller>
         </div>
       </div>

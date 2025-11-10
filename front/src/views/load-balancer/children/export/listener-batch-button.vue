@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ComputedRef, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB } from '@/constants/auth-symbols';
-import { getAuthSignByBusinessId } from '@/utils';
+import { IAuthSign } from '@/common/auth-service';
 import { useExport } from './use-export';
 
 const props = defineProps<{ selections: any[]; onlyExportListener?: boolean; bizId?: number }>();
@@ -24,7 +23,7 @@ const listeners = computed(() =>
   }, []),
 );
 
-const authSign = computed(() => getAuthSignByBusinessId(props.bizId, AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB));
+const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
 const handleExport = () => {
   const { invokeExport } = useExport({
@@ -38,7 +37,7 @@ const handleExport = () => {
 </script>
 
 <template>
-  <hcm-auth :sign="authSign" v-slot="{ noPerm }">
+  <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
     <bk-button :disabled="!selections.length || noPerm" @click="handleExport">
       {{ t('批量导出') }}
     </bk-button>

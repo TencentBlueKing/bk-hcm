@@ -65,6 +65,7 @@ export interface IListenerItem extends IListenerModel {
   zero_weight_count: number;
   non_zero_weight_target_count?: number;
   target_count?: number;
+  [key: string]: any;
 }
 
 export interface IListenersRsWeightStatItem {
@@ -129,6 +130,7 @@ export interface IListenerRuleItem {
   displayConfig?: {
     isNew?: boolean;
   };
+  [key: string]: any;
 }
 
 export interface IListenerRuleModel {

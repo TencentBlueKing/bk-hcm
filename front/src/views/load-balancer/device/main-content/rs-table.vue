@@ -6,13 +6,13 @@ import { RsDeviceType } from '@/views/load-balancer/constants';
 import { ActionItemType } from '@/views/load-balancer/typing';
 import usePage from '@/hooks/use-page';
 import { ILoadBalanceDeviceCondition, IDeviceListDataLoadedEvent, DeviceTabEnum } from '../typing';
-import routeQuery from '@/router/utils/query';
 import { IAuthSign } from '@/common/auth-service';
 import { useRoute } from 'vue-router';
 import RsIpGroup from './children/rs-ip-group.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
 import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-button.vue';
+import { localPaginate } from '@/utils/search';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
@@ -28,7 +28,7 @@ const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOp
 const { pagination, getPageParams } = usePage();
 
 const rsList = ref<IRsItem[]>([]);
-const loading = ref(false);
+const rsCurrentPageList = ref<IRsItem[]>([]);
 const rsIpGroupRef = ref(null);
 
 const selections = computed(() => rsIpGroupRef.value?.selections ?? []);
@@ -92,15 +92,10 @@ const actionList = computed<ActionItemType[]>(() => {
   }, []);
 });
 
-const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
+const getList = async (condition: ILoadBalanceDeviceCondition) => {
   if (!condition.account_id) return;
   try {
-    loading.value = true;
-    const { list, count, rsCount } = await loadBalancerRsStore.getRsList(
-      condition,
-      getPageParams(pagination, pageParams),
-      currentGlobalBusinessId.value,
-    );
+    const { list, count, rsCount } = await loadBalancerRsStore.getRsList(condition, currentGlobalBusinessId.value);
 
     // 生成 rowKey
     const newList = list.map((item, index) => ({
@@ -111,12 +106,12 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
     nowRsCount = rsCount;
     pagination.count = count;
     rsList.value = newList;
+    rsCurrentPageList.value = localPaginate(newList, getPageParams(pagination));
   } catch (error) {
     console.error(error);
     rsList.value = [];
     pagination.count = 0;
   } finally {
-    loading.value = false;
     emit('list-data-loaded', DeviceTabEnum.RS, {
       type: 'rsCount',
       data: {
@@ -126,35 +121,24 @@ const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { so
   }
 };
 const handlePageChange = (page: number) => {
-  routeQuery.set({
-    page,
-    _t: Date.now(),
-  });
+  pagination.current = page;
+  rsCurrentPageList.value = localPaginate(rsList.value, getPageParams(pagination));
 };
 const handleLimitChange = (limit: number) => {
-  routeQuery.set({
-    limit,
-    page: 1,
-    _t: Date.now(),
-  });
+  pagination.limit = limit;
+  rsCurrentPageList.value = localPaginate(rsList.value, getPageParams(pagination));
 };
 
 watch(
   () => route.query,
-  async (query) => {
-    pagination.current = Number(query.page) || 1;
-    pagination.limit = Number(query.limit) || pagination.limit;
-
-    const sort = (query.sort || '') as string;
-    const order = (query.order || 'DESC') as string;
-
-    getList(props.condition, { sort, order });
+  () => {
+    getList(props.condition);
   },
 );
 </script>
 
 <template>
-  <div class="rs-table-container" v-bkloading="{ loading, zIndex: 9999 }">
+  <div class="rs-table-container" v-bkloading="{ loading: loadBalancerRsStore.getListLoading, zIndex: 9999 }">
     <div class="toolbar">
       <div class="action-container">
         <template v-for="action in actionList" :key="action.value">
@@ -166,7 +150,7 @@ watch(
       </div>
     </div>
     <rs-ip-group
-      :rs-list="rsList"
+      :rs-list="rsCurrentPageList"
       :vendor="condition.vendor"
       :type="RsDeviceType.INFO"
       class="expand-table"
@@ -174,7 +158,7 @@ watch(
     />
     <bk-pagination
       class="expand-pagination"
-      v-model="pagination.current"
+      :model-value="pagination.current"
       :count="pagination.count"
       :limit="pagination.limit"
       size="small"

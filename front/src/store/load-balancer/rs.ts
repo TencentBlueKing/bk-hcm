@@ -2,8 +2,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
-import { enableCount } from '@/utils/search';
-import type { IListResData, IPageQuery } from '@/typings';
+import type { IListResData } from '@/typings';
 import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 import { VendorEnum } from '@/common/constant';
 
@@ -19,26 +18,27 @@ export interface IRsItem {
 
 export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
   const getListLoading = ref(false);
+
+  const rsList = ref<IRsItem[]>();
+  const rsListCount = ref(0);
+  const rsCount = ref(0);
+
   // 获取设备检索-RS列表
-  const getRsList = async (condition: ILoadBalanceDeviceCondition, page: IPageQuery, businessId: number) => {
+  const getRsList = async (condition: ILoadBalanceDeviceCondition, businessId: number) => {
     getListLoading.value = true;
     const { vendor } = condition;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/list`, businessId);
     const rs = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/count`, businessId);
     try {
-      const [listRes, countRes, rsCountRes] = await Promise.all<
-        [Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>]
-      >([
-        http.post(api, enableCount({ ...condition, page }, false)),
-        http.post(api, enableCount({ ...condition, page }, true)),
-        http.post(rs, enableCount(condition, true)),
-      ]);
+      const [rsRes, rsCountRes] = await Promise.all<
+        [Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>]
+      >([http.post(api, condition, { globalError: false }), http.post(rs, condition, { globalError: false })]);
 
-      const list = listRes?.data?.details ?? [];
-      const count = countRes?.data?.count ?? 0;
-      const rsCount = rsCountRes?.data?.count ?? 0;
+      rsList.value = rsRes?.data?.details ?? [];
+      rsListCount.value = rsRes?.data?.count ?? 0;
+      rsCount.value = rsCountRes?.data?.count ?? 0;
 
-      return { list, count, rsCount };
+      return { list: rsList.value, count: rsListCount.value, rsCount: rsCount.value };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
