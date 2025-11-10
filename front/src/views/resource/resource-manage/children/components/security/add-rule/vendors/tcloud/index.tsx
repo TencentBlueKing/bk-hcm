@@ -323,18 +323,16 @@ export const TcloudRenderRow = defineComponent({
             />
           </td>
           {!props.isEdit && (
-            <td>
-              <OperationColumn
-                showCopy
-                onAdd={handleAdd}
-                onRemove={handleRemove}
-                onCopy={handleCopy}
-                removable={props.removeable}
-                copyText='克隆入站规则'
-                addText='添加入站规则'
-                removeText='删除入站规则'
-              />
-            </td>
+            <OperationColumn
+              showCopy
+              onAdd={handleAdd}
+              onRemove={handleRemove}
+              onCopy={handleCopy}
+              removable={props.removeable}
+              copyText='克隆入站规则'
+              addText='添加入站规则'
+              removeText='删除入站规则'
+            />
           )}
         </tr>
       </>
