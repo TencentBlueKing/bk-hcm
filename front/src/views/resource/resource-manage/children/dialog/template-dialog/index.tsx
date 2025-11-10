@@ -1,13 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
-import AccountSelector from '@/components/account-selector/index.vue';
+import AccountSelector from '@/components/account-selector/index-new.vue';
 import { PropType, defineComponent, nextTick, ref, watch } from 'vue';
 import { analysisIP, analysisPort, isIpsValid, isPortValid } from '@/utils';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -63,7 +62,6 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
-    const { isBusinessPage } = useWhereAmI();
 
     const isLoading = ref(false);
     const basicForm = ref(null);
@@ -95,7 +93,7 @@ export default defineComponent({
     const ipGroupList = ref([]);
     const portGroupList = ref([]);
     const clearValidate = () => {
-      basicForm.value.clearValidate();
+      basicForm.value?.clearValidate();
       formInstance.value?.clearValidate();
     };
     const handleSubmit = async () => {
@@ -211,9 +209,9 @@ export default defineComponent({
       }
     };
     watch(
-      () => [formData.value.type, formData.value.account_id],
-      async ([type, accountID]) => {
-        if (!accountID) return;
+      () => [formData.value.type, formData.value.account_id, formData.value.vendor],
+      async ([type, accountID, vendor]) => {
+        if (!accountID || !vendor) return;
         isGroupLoading.value = true;
         const params = {
           filter: {
@@ -222,7 +220,7 @@ export default defineComponent({
               {
                 field: 'vendor',
                 op: 'eq',
-                value: 'tcloud',
+                value: vendor,
               },
               {
                 field: 'type',
@@ -232,7 +230,7 @@ export default defineComponent({
               {
                 field: 'account_id',
                 op: 'eq',
-                value: formData.value.account_id,
+                value: accountID,
               },
             ],
           },
@@ -262,6 +260,7 @@ export default defineComponent({
       },
       {
         immediate: true,
+        flush: 'post',
       },
     );
 
@@ -407,6 +406,7 @@ export default defineComponent({
 
     return () => (
       <Dialog
+        render-directive='if'
         isShow={props.isShow}
         title={props.isEdit ? '编辑参数模板' : '新建参数模板'}
         width={640}
@@ -422,9 +422,7 @@ export default defineComponent({
                   <AccountSelector
                     v-model={formData.value.account_id}
                     bizId={accountStore.bizs}
-                    mustBiz={isBusinessPage}
-                    type='resource'
-                    onChange={(account: any) => (formData.value.vendor = account.vendor)}
+                    onChange={(account: any) => (formData.value.vendor = account?.vendor || '')}
                   />
                 </FormItem>
                 <FormItem label='参数模板名称' property='name' required>
