@@ -88,6 +88,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				Vendor:               vendor,
 				BkBizID:              one.BkBizID,
 				BkHostID:             one.BkHostID,
+				BkAssetID:            one.BkAssetID,
 				BkCloudID:            &one.BkCloudID,
 				AccountID:            one.AccountID,
 				Region:               one.Region,

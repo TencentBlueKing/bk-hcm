@@ -147,6 +147,7 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		Name:                 one.Name,
 		BkBizID:              one.BkBizID,
 		BkHostID:             one.BkHostID,
+		BkAssetID:            one.BkAssetID,
 		CloudVpcIDs:          one.CloudVpcIDs,
 		CloudSubnetIDs:       one.CloudSubnetIDs,
 		CloudImageID:         one.CloudImageID,
