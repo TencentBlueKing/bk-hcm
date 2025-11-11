@@ -95,6 +95,8 @@ const (
 	MainAccount ResourceType = "main_account"
 	// RootAccount defines main cloud account resource's hcm auth resource type
 	RootAccount ResourceType = "root_account"
+	// Monitoring defines monitoring's hcm auth resource type
+	Monitoring ResourceType = "monitoring"
 
 	// AccountBill 云账单管理
 	AccountBill ResourceType = "account_bill"

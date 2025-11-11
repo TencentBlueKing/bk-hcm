@@ -63,6 +63,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.Cvm:                      genCvmResource,
 	meta.NetworkInterface:         genNetworkInterfaceResource,
 	meta.Eip:                      genEipResource,
+	meta.Monitoring:               genMonitoringResource,
 	meta.CloudResource:            genCloudResResource,
 	meta.Quota:                    genProxyResourceFind,
 	meta.InstanceType:             genProxyResourceFind,
