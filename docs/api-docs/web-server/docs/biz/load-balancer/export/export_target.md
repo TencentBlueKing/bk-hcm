@@ -10,10 +10,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/targets/export
 
 ### 输入参数
 
-| 参数名称       | 参数类型         | 必选 | 描述               |
-|------------|--------------|----|------------------|
-| bk_biz_id  | int64        | 是  | 业务ID             |
-| target_ids | string array | 是  | RS的id列表，长度限制5000 |
+| 参数名称       | 参数类型         | 必选 | 描述                |
+|------------|--------------|----|-------------------|
+| bk_biz_id  | int64        | 是  | 业务ID              |
+| target_ids | string array | 是  | RS的id列表，长度限制10000 |
 
 ### 调用示例
 

@@ -155,7 +155,7 @@ func (svc *lbSvc) listTargetByTopo(kt *kit.Kit, bizID int64, vendor enumor.Vendo
 
 	// 根据条件查询对应的instance、RS信息
 	tgIDs := maps.Keys(info.TgMap)
-	instInfos := make([]daotypeslb.ListInstInfo, 0)
+	instInfoMap := make(map[string]daotypeslb.ListInstInfo)
 	targets := make([]corelb.BaseTarget, 0)
 	for _, batch := range slice.Split(tgIDs, int(core.DefaultMaxPageLimit)) {
 		cond := make([]filter.RuleFactory, 0)
@@ -166,8 +166,10 @@ func (svc *lbSvc) listTargetByTopo(kt *kit.Kit, bizID int64, vendor enumor.Vendo
 			logs.Errorf("get target inst failed, err: %v, cond: %v, rid: %s", err, cond, kt.Rid)
 			return nil, err
 		}
-		instInfos = append(instInfos, instResult...)
-		if len(instInfos) > constant.CLBDataByTopoCondReturnLimit {
+		for _, inst := range instResult {
+			instInfoMap[inst.Key()] = inst
+		}
+		if len(instInfoMap) > constant.CLBDataByTopoCondReturnLimit {
 			return nil, errf.Newf(errf.ClbTopoResExceedErr, "instance count exceed limit, limit: %d",
 				constant.CLBDataByTopoCondReturnLimit)
 		}
@@ -183,6 +185,7 @@ func (svc *lbSvc) listTargetByTopo(kt *kit.Kit, bizID int64, vendor enumor.Vendo
 				constant.CLBDataByTopoCondReturnLimit)
 		}
 	}
+	instInfos := maps.Values(instInfoMap)
 	if len(instInfos) == 0 || len(targets) == 0 {
 		return core.ListResultT[cslb.InstWithTargets]{Details: make([]cslb.InstWithTargets, 0)}, nil
 	}

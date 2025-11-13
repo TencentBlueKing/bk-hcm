@@ -20,6 +20,10 @@
 package loadbalancer
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
 	"hcm/pkg/criteria/enumor"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/dal/table/types"
@@ -45,4 +49,12 @@ type ListInstInfo struct {
 	IP          string            `db:"ip" json:"ip"`
 	Zone        string            `db:"zone" json:"zone"`
 	CloudVpcIDs types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
+}
+
+// Key to key.
+func (l *ListInstInfo) Key() string {
+	vpcIDs := make([]string, len(l.CloudVpcIDs))
+	copy(vpcIDs, l.CloudVpcIDs)
+	sort.Strings(vpcIDs)
+	return fmt.Sprintf("%s|%s|%s|%s|%s|%s", l.InstID, l.InstType, l.InstName, l.IP, l.Zone, strings.Join(vpcIDs, ","))
 }
