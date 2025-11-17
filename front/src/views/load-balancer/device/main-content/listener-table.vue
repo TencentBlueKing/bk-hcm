@@ -166,7 +166,7 @@ const dataListColumns = displayFieldIds.map((id) => {
   return property;
 });
 
-const { pagination, getPageParams } = usePage();
+const { pagination } = usePage(false);
 const listenerList = ref<IListenerItem[]>([]);
 
 const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
@@ -208,17 +208,15 @@ watch(
   },
 );
 
-const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
+const getList = async (condition: ILoadBalanceDeviceCondition) => {
   if (!condition.account_id) return;
   try {
     loading.value = true;
     const { list, count } = await loadBalancerListenerStore.getDeviceListenerList(
       condition,
-      getPageParams(pagination, pageParams),
       currentGlobalBusinessId.value,
-      true,
     );
-    list.forEach((item) => {
+    list.forEach((item: { [x: string]: string | number }) => {
       Object.entries(convertFieldIds).forEach(([key, oldKey]) => {
         item[oldKey] = item[key];
       });

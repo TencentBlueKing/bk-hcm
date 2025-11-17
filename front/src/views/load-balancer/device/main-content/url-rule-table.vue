@@ -59,21 +59,17 @@ const dataListColumns = displayFieldIds.map((id) => {
   return { ...property, ...displayConfig[id] };
 });
 
-const { pagination, getPageParams } = usePage();
+const { pagination } = usePage(false);
 
 const ruleUrlList = ref<IUrlRuleItem[]>([]);
 
 const loading = ref(false);
 
-const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: 'created_at', order: 'DESC' }) => {
+const getList = async (condition: ILoadBalanceDeviceCondition) => {
   if (!condition.account_id) return;
   try {
     loading.value = true;
-    const { list, count } = await urlRuleListenerStore.getUrlRuleList(
-      condition,
-      getPageParams(pagination, pageParams),
-      currentGlobalBusinessId.value,
-    );
+    const { list, count } = await urlRuleListenerStore.getUrlRuleList(condition, currentGlobalBusinessId.value);
     pagination.count = count;
     ruleUrlList.value = list;
   } catch (error) {
@@ -97,10 +93,7 @@ watch(
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
 
-    const sort = (query.sort || 'created_at') as string;
-    const order = (query.order || 'DESC') as string;
-
-    getList(props.condition, { sort, order });
+    getList(props.condition);
   },
 );
 </script>
@@ -114,6 +107,8 @@ watch(
       :list="ruleUrlList"
       :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
       :max-height="`100%`"
+      :remote-pagination="false"
+      :enable-query="false"
     ></data-list>
   </div>
 </template>

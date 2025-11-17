@@ -3,10 +3,8 @@ import { defineStore } from 'pinia';
 import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
 import { enableCount } from '@/utils/search';
-import type { IListResData, IPageQuery } from '@/typings';
 import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 import { VendorEnum } from '@/common/constant';
-import rollRequest from '@blueking/roll-request';
 
 export interface IRsItem {
   inst_id: string;
@@ -21,12 +19,7 @@ export interface IRsItem {
 export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
   const getListLoading = ref(false);
   // 获取设备检索-RS列表
-  const getRsList = async (
-    condition: ILoadBalanceDeviceCondition,
-    page: IPageQuery,
-    businessId: number,
-    loadAll = false,
-  ) => {
+  const getRsList = async (condition: ILoadBalanceDeviceCondition, businessId: number) => {
     getListLoading.value = true;
     const { vendor } = condition;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/targets/by_topo/list`, businessId);
@@ -34,25 +27,11 @@ export const useLoadBalancerRsStore = defineStore('load-balancer-rs', () => {
     try {
       const rsCountRes = await http.post(rs, enableCount(condition, true));
       const rsCount = rsCountRes?.data?.count ?? 0;
-      if (loadAll) {
-        const list = (await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount(
-          api,
-          condition as any,
-          { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details },
-        )) as any[];
 
-        const data = Object.assign({ list: [], count: 0 }, { list, count: list.length, rsCount });
-        return data;
-      }
-      const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<IRsItem[]>>, Promise<IListResData<IRsItem[]>>]
-      >([
-        http.post(api, enableCount({ ...condition, page }, false)),
-        http.post(api, enableCount({ ...condition, page }, true)),
-      ]);
+      const res = await http.post(api, condition);
 
-      const list = listRes?.data?.details ?? [];
-      const count = countRes?.data?.count ?? 0;
+      const list = res?.data?.details ?? [];
+      const count = res?.data?.count ?? 0;
 
       return { list, count, rsCount };
     } catch (error) {

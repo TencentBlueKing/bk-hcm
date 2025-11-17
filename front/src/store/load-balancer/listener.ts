@@ -2,11 +2,10 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { enableCount } from '@/utils/search';
 import { resolveApiPathByBusinessId } from '@/common/util';
-import type { IListResData, QueryBuilderType, IPageQuery } from '@/typings';
+import type { IListResData, QueryBuilderType } from '@/typings';
 import http from '@/http';
 import { ListenerProtocol, Scheduler, SessionType, SSLMode } from '@/views/load-balancer/constants';
 import { VendorEnum } from '@/common/constant';
-import rollRequest from '@blueking/roll-request';
 import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
 export interface IListenerModel {
@@ -185,36 +184,15 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
 
   // 设备检索监听器列表
   const deviceListenerListLoading = ref(false);
-  const getDeviceListenerList = async (
-    condition: ILoadBalanceDeviceCondition,
-    page: IPageQuery,
-    businessId: number,
-    loadAll = false,
-  ) => {
+  const getDeviceListenerList = async (condition: ILoadBalanceDeviceCondition, businessId: number) => {
     const { vendor } = condition;
     deviceListenerListLoading.value = true;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/listeners/by_topo/list`, businessId);
     try {
-      if (loadAll) {
-        const list = (await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount(
-          api,
-          condition as any,
-          { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details },
-        )) as any[];
+      const res = await http.post(api, condition);
 
-        const data = Object.assign({ list: [], count: 0 }, { list, count: list.length });
-        return data;
-      }
-
-      const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<IListenerRuleItem[]>>, Promise<IListResData<IListenerRuleItem[]>>]
-      >([
-        http.post(api, enableCount({ ...condition, page }, false)),
-        http.post(api, enableCount({ ...condition, page }, true)),
-      ]);
-
-      const list = listRes?.data?.details ?? [];
-      const count = countRes?.data?.count ?? 0;
+      const list = res?.data?.details ?? [];
+      const count = res?.data?.count ?? 0;
 
       return { list, count };
     } catch (error) {

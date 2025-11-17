@@ -2,7 +2,6 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
-import { enableCount } from '@/utils/search';
 import type { IListResData } from '@/typings';
 import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
@@ -21,11 +20,7 @@ export const useLoadBalancerCountStore = defineStore('load-balancer-count', () =
     try {
       const res = await Promise.all<
         [Promise<IListResData<any[]>>, Promise<IListResData<any[]>>, Promise<IListResData<any[]>>]
-      >([
-        http.post(listener, enableCount(condition, true)),
-        http.post(url, enableCount(condition, true)),
-        http.post(rs, enableCount(condition, true)),
-      ]);
+      >([http.post(listener, condition), http.post(url, condition), http.post(rs, condition)]);
       const [listenerCount, urlCount, rsCount] = res.map((res) => res.data.count);
 
       return { listenerCount, urlCount, rsCount };

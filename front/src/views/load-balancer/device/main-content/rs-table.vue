@@ -24,7 +24,7 @@ const loadBalancerRsStore = useLoadBalancerRsStore();
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
-const { pagination, getPageParams } = usePage();
+const { pagination } = usePage(false);
 
 let allList: IRsItem[] = [];
 const rsList = ref<IRsItem[]>([]);
@@ -91,19 +91,14 @@ const actionList = computed<ActionItemType[]>(() => {
   }, []);
 });
 
-const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: '', order: 'DESC' }) => {
+const getList = async (condition: ILoadBalanceDeviceCondition) => {
   if (!condition.account_id) return;
   try {
     loading.value = true;
-    const { list, count, rsCount } = await loadBalancerRsStore.getRsList(
-      condition,
-      getPageParams(pagination, pageParams),
-      currentGlobalBusinessId.value,
-      true,
-    );
+    const { list, count, rsCount } = await loadBalancerRsStore.getRsList(condition, currentGlobalBusinessId.value);
 
     // 生成 rowKey
-    const newList = list.map((item, index) => ({
+    const newList = list.map((item: { inst_id: any; ip: any }, index: any) => ({
       ...item,
       rowKey: `${item.inst_id}-${item.ip}-${index}`,
     }));

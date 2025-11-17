@@ -2,8 +2,6 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { resolveApiPathByBusinessId } from '@/common/util';
 import http from '@/http';
-import { enableCount } from '@/utils/search';
-import type { IListResData, IPageQuery } from '@/typings';
 import { ILoadBalanceDeviceCondition } from '@/views/load-balancer/device/typing';
 
 export interface IUrlRuleItem {
@@ -19,20 +17,15 @@ export interface IUrlRuleItem {
 
 export const useLoadBalancerUrlRuleStore = defineStore('load-balancer-url-rule', () => {
   const urlRuleListLoading = ref(false);
-  const getUrlRuleList = async (condition: ILoadBalanceDeviceCondition, page: IPageQuery, businessId: number) => {
+  const getUrlRuleList = async (condition: ILoadBalanceDeviceCondition, businessId: number) => {
     urlRuleListLoading.value = true;
     const { vendor } = condition;
     const api = resolveApiPathByBusinessId('/api/v1/cloud', `vendors/${vendor}/url_rules/by_topo/list`, businessId);
     try {
-      const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<IUrlRuleItem[]>>, Promise<IListResData<IUrlRuleItem[]>>]
-      >([
-        http.post(api, enableCount({ ...condition, page }, false)),
-        http.post(api, enableCount({ ...condition, page }, true)),
-      ]);
+      const res = await http.post(api, condition);
 
-      const list = listRes?.data?.details ?? [];
-      const count = countRes?.data?.count ?? 0;
+      const list = res?.data?.details ?? [];
+      const count = res?.data?.count ?? 0;
 
       return { list, count };
     } catch (error) {
