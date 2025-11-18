@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0042,HCMVER=v1.8.8
     Notes:
     1. 添加bk_asset_id字段到cvm表
 */
@@ -30,6 +30,6 @@ ALTER TABLE cvm ADD COLUMN bk_asset_id VARCHAR(64) DEFAULT '' COMMENT '固资号
 
 -- 更新版本信息
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.8' as `hcm_ver`, '0042' as `sql_ver`;
 
 COMMIT;
