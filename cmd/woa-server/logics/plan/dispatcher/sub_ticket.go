@@ -203,7 +203,7 @@ func (d *Dispatcher) checkCrpTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInfo
 				continue
 			}
 		}
-		if planItem.Code != 1 && planItem.Code != 2 {
+		if planItem.Code != 1 && planItem.Code != 2 && planItem.Code != 6 {
 			logs.Errorf("%s: failed to query crp plan order, order status is incorrect, code: %d, data: %+v,"+
 				" crp_trace: %s, rid: %s",
 				constant.ResPlanTicketWatchFailed, planItem.Code, planItem.Data, resp.TraceId, kt.Rid)
@@ -408,7 +408,7 @@ func (d *Dispatcher) createSubTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) err
 
 	splitHelper := splitter.New(d.dao, d.client, d.crpCli, d.resFetcher, d.deviceTypesMap)
 	switch ticket.Type {
-	case enumor.RPTicketTypeDelete:
+	case enumor.RPTicketTypeDelete, enumor.RPTicketTypeAutomaticTransfer:
 		return splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.Demands, ticket.PlanProductName,
 			ticket.OpProductName)
 	case enumor.RPTicketTypeAdd:

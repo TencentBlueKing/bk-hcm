@@ -132,10 +132,9 @@ func (d *Dispatcher) dealTicket() error {
 		return nil
 	}
 
-	logs.Infof("ready to handle ticket %s", tkID)
-
 	// check the status of the ticket
 	kt := core.NewBackendKit()
+	logs.Infof("ready to handle ticket %s, rid: %s", tkID, kt.Rid)
 	tkInfo, err := d.resFetcher.GetTicketInfo(kt, tkID)
 	if err != nil {
 		logs.Errorf("failed to get ticket info, err: %v, id: %s, rid: %s", err, tkID, kt.Rid)
@@ -153,10 +152,19 @@ func (d *Dispatcher) dealTicket() error {
 		return errors.New("failed to handle ticket for itsm sn is empty")
 	}
 
-	checkSubTicket, err := d.checkItsmTicket(kt, tkInfo)
-	if err != nil {
-		logs.Errorf("failed to check itsm ticket, err: %v, id: %s, rid: %s", err, tkID, kt.Rid)
-		return err
+	checkSubTicket := false
+	if tkInfo.ItsmSN == constant.ResPlanItsmAuditSkip {
+		if err = d.createSubTicket(kt, tkInfo); err != nil {
+			logs.Errorf("failed to create sub ticket, err: %v, id: %s, rid: %s", err, tkID, kt.Rid)
+			return err
+		}
+		checkSubTicket = true
+	} else {
+		checkSubTicket, err = d.checkItsmTicket(kt, tkInfo)
+		if err != nil {
+			logs.Errorf("failed to check itsm ticket, err: %v, id: %s, rid: %s", err, tkID, kt.Rid)
+			return err
+		}
 	}
 
 	if checkSubTicket {
@@ -175,7 +183,6 @@ func (d *Dispatcher) dealTicket() error {
 
 func (d *Dispatcher) checkItsmTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) (bool, error) {
 	logs.Infof("ready to check itsm flow, sn: %s, id: %s, rid: %s", ticket.ItsmSN, ticket.ID, kt.Rid)
-
 	checkSubTicket := false
 	resp, err := d.itsmCli.GetTicketStatus(kt, ticket.ItsmSN)
 	if err != nil {

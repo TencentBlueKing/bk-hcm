@@ -35,6 +35,8 @@ const (
 	RollingServerReturnNotificationPushFailed WarnSign = "rolling_server_return_notification_push_failed"
 	// ResPlanRefreshTransferQuotaFailed res plan refresh transfer quota failed.
 	ResPlanRefreshTransferQuotaFailed WarnSign = "res_plan_refresh_transfer_quota_failed"
+	// ResPlanNearExpiredDemandTransferFailed 临期预测转移失败.
+	ResPlanNearExpiredDemandTransferFailed WarnSign = "res_plan_near_expired_demand_transfer_failed"
 
 	// CvmResetSystemUpdatePwdFailed cvm reset system update pwd failed.
 	CvmResetSystemUpdatePwdFailed WarnSign = "cvm_reset_system_update_pwd_failed"
@@ -46,5 +48,6 @@ const (
 	// CvmRecycleStuck 主机回收单据长时间未更新
 	CvmRecycleStuck WarnSign = "cvm_recycle_stuck"
 
+	// WaitAndCheckBPaasFailed 等待并检查BPaas失败
 	WaitAndCheckBPaasFailed WarnSign = "WaitAndCheckBPaasFailed"
 )

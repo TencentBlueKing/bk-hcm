@@ -377,6 +377,8 @@ resPlan:
     enable: false
     sendToBusiness: false
     defaultReceiver: ""
+  nearExpiredTransfer:
+    enable: false
   refreshTransferQuota:
     enable: false
     quota: 5000

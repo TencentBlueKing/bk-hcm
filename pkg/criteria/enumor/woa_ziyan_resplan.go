@@ -56,12 +56,16 @@ const (
 	// RPTicketTypeTransferOUT is resource plan ticket status transfer out.
 	// Will be modified to RPTicketTypeTransfer in sub_ticket create stage.
 	RPTicketTypeTransferOUT RPTicketType = "transfer_out"
+
+	// RPTicketTypeAutomaticTransfer is resource plan ticket type automatic transfer.
+	RPTicketTypeAutomaticTransfer RPTicketType = "automatic_transfer"
 )
 
 // Validate RPTicketType.
 func (t RPTicketType) Validate() error {
 	switch t {
-	case RPTicketTypeAdd, RPTicketTypeAdjust, RPTicketTypeDelay, RPTicketTypeDelete, RPTicketTypeTransfer:
+	case RPTicketTypeAdd, RPTicketTypeAdjust, RPTicketTypeDelay, RPTicketTypeDelete, RPTicketTypeTransfer,
+		RPTicketTypeAutomaticTransfer:
 	default:
 		return fmt.Errorf("unsupported resource plan type: %s", t)
 	}

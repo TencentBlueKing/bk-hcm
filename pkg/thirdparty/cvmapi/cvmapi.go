@@ -88,6 +88,9 @@ type CVMClientInterface interface {
 	// QueryOrderList 根据销毁单据查询预测返还信息
 	QueryOrderList(ctx context.Context, header http.Header, req *QueryOrderListReq) (
 		*QueryOrderListResp, error)
+	// CreateTransOrder 预测转移
+	CreateTransOrder(ctx context.Context, header http.Header, req *TransOrderReq) (
+		*TransOrderResp, error)
 }
 
 // NewCVMClientInterface creates a cvm api instance
@@ -642,6 +645,24 @@ func (c *cvmApi) QueryOrderList(ctx context.Context, header http.Header, req *Qu
 
 	subPath := "/yunti-demand/external"
 	resp := new(QueryOrderListResp)
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithParam(CvmApiKey, CvmApiKeyVal).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	return resp, err
+}
+
+// TransOrder 需求转移
+func (c *cvmApi) CreateTransOrder(ctx context.Context, header http.Header, req *TransOrderReq) (
+	*TransOrderResp, error) {
+
+	subPath := "/yunti-demand/external"
+	resp := new(TransOrderResp)
 	err := c.client.Post().
 		WithContext(ctx).
 		Body(req).

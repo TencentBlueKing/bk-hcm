@@ -123,21 +123,21 @@ func (c *CrpTicketCreator) createAddCrpTicket(kt *kit.Kit, subTicket *ptypes.Sub
 	}
 
 	if resp.Error.Code != 0 {
-		logs.Errorf("failed to add cvm & cbs plan order, code: %d, msg: %s, crp_trace: %s, "+
+		logs.Errorf("failed to create add plan order, code: %d, msg: %s, crp_trace: %s, "+
 			"sub_ticket_id: %s, rid: %s", resp.Error.Code, resp.Error.Message, resp.TraceId, subTicket.ID, kt.Rid)
 		if strings.Contains(resp.Error.Message, constant.CRPResPlanDemandIsOverLimit) {
 			return "", fmt.Errorf(constant.CRPResPlanDemandIsOverLimitMessage,
 				strings.Join(cc.WoaServer().ResPlan.CRPOverLimitContact, ","))
 		}
-		return "", fmt.Errorf("failed to create crp ticket, code: %d, msg: %s", resp.Error.Code,
+		return "", fmt.Errorf("failed to create add plan order, code: %d, msg: %s", resp.Error.Code,
 			resp.Error.Message)
 	}
 
 	sn := resp.Result.OrderId
 	if sn == "" {
-		logs.Errorf("failed to add cvm & cbs plan order, for return empty order id, crp_trace: %s, "+
+		logs.Errorf("failed to create add plan order, for return empty order id, crp_trace: %s, "+
 			"sub_ticket_id: %s, rid: %s", resp.TraceId, subTicket.ID, kt.Rid)
-		return "", errors.New("failed to create crp ticket, for return empty order id")
+		return "", errors.New("failed to create add plan order, for return empty order id")
 	}
 
 	return sn, nil

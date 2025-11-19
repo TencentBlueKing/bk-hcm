@@ -173,6 +173,8 @@ type Logics interface {
 
 	// ApplyDestroyOrderToResPlanDemand 将销毁单返还的预测预算保存到本地
 	ApplyDestroyOrderToResPlanDemand(kt *kit.Kit, destroyOrderID string) error
+	// AutoTransferBizResPlanDemandByID 根据业务ID和需求ID自动转移预测
+	AutoTransferBizResPlanDemandByID(kt *kit.Kit, bkBizID int64, demandIDs []string) ([]string, error)
 }
 
 // Controller motivates the resource plan ticket status flow.
@@ -294,6 +296,15 @@ func (c *Controller) Run() {
 		defer c.recoverLog(constant.ResPlanExpireNotificationPushFailed)
 
 		c.pushExpireNotificationsRegular(c.ctx, loc)
+	}()
+
+	// 临期预测转移
+	go func() {
+		if !c.resPlanCfg.NearExpiredTransfer.Enable {
+			return
+		}
+		defer c.recoverLog(constant.ResPlanNearExpiredDemandTransferFailed)
+		c.autoTransferNearExpireDemand(c.ctx, loc)
 	}()
 
 	select {

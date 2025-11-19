@@ -1216,6 +1216,8 @@ resPlan:
     audit_quota: 0
   adminAuditor: []
   crpOverLimitContact: []
+  nearExpiredTransfer:
+    enable: false
 
 # Alarm告警平台的配置
 alarm:

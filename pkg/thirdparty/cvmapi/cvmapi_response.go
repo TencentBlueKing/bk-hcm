@@ -898,3 +898,15 @@ type CvmData struct {
 	Value float64 `json:"value"`
 	Unit  string  `json:"unit"`
 }
+
+// TransOrderResp ...
+type TransOrderResp struct {
+	RespMeta `json:",inline"`
+	Result   OrderCreateRst `json:"result"`
+}
+
+// TransOrderRst ...
+type TransOrderRst struct {
+	OrderId string `json:"orderId"`
+	Status  int    `json:"status"`
+}

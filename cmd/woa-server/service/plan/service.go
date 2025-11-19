@@ -173,6 +173,8 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 		s.AdjustBizResPlanDemand)
 	h.Add("CancelBizResPlanDemand", http.MethodPost, "/plans/resources/demands/cancel",
 		s.CancelBizResPlanDemand)
+	h.Add("AutoTransferBizResPlanDemand", http.MethodPost, "/plans/resources/demands/auto_transfer",
+		s.AutoTransferBizResPlanDemand)
 
 	// resource plan transfer quota
 	h.Add("ListBizResPlanTransferQuotaSummary", http.MethodPost, "/plans/resources/transfer_quotas/summary",

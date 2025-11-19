@@ -670,3 +670,68 @@ type QueryOrderListParam struct {
 	DestroyReturnPlanOrderId []string `json:"destroyReturnPlanOrderId"`
 	UserName                 string   `json:"userName"`
 }
+
+// TransOrderReq ...
+type TransOrderReq struct {
+	ReqMeta `json:",inline"`
+	Params  *TransOrderParams `json:"params"`
+}
+
+// TransOrderParams ...
+type TransOrderParams struct {
+	BaseInfo           TransOrderBaseInfo `json:"baseInfo"`
+	TransferDetailList []TransOrderDetail `json:"transferDateilList"`
+}
+
+// TransOrderDetail ...
+type TransOrderDetail struct {
+	SliceId             string                     `json:"sliceId"`
+	CityId              int                        `json:"cityId"`
+	CityName            string                     `json:"cityName"`
+	ZoneId              int                        `json:"zoneId"`
+	ZoneName            string                     `json:"zoneName"`
+	InstanceType        string                     `json:"instanceType"`
+	InstanceModel       string                     `json:"instanceModel"`
+	CvmAmount           int                        `json:"cvmAmount"`
+	RamAmount           int                        `json:"ramAmount"`
+	CoreAmount          int                        `json:"coreAmount"`
+	InstanceIO          int                        `json:"instanceIO"`
+	DiskType            enumor.CRPDiskType         `json:"diskType"`
+	DiskTypeName        string                     `json:"diskTypeName"`
+	AllDiskAmount       int                        `json:"allDiskAmount"`
+	Desc                string                     `json:"desc"`
+	ProjectName         enumor.ObsProject          `json:"projectName"`
+	RequirementWeekType string                     `json:"requirementWeekType"`
+	Year                int                        `json:"year"`
+	Month               int                        `json:"month"`
+	UseTime             string                     `json:"useTime"`
+	BgId                int                        `json:"bgId"`
+	BgName              string                     `json:"bgName"`
+	DeptId              int                        `json:"deptId"`
+	DeptName            string                     `json:"deptName"`
+	PlanProductId       int                        `json:"planProductId"`
+	PlanProductName     string                     `json:"planProductName"`
+	ProductName         string                     `json:"productName"`
+	ReviewStatus        enumor.ResPlanReviewStatus `json:"reviewStatus"`
+	CoreType            int                        `json:"coreType"`
+	CoreTypeName        string                     `json:"coreTypeName"`
+}
+
+// TransOrderBaseInfo ...
+type TransOrderBaseInfo struct {
+	DeptId               int    `json:"deptId"`
+	DeptName             string `json:"deptName"`
+	PlanProductId        int64  `json:"planProductId"`
+	PlanProductName      string `json:"planProductName"`
+	ProductID            int64  `json:"productId"`
+	ProductName          string `json:"productName"`
+	BgName               string `json:"bgName"`
+	AfterDeptId          int    `json:"afterDeptId"`
+	AfterDeptName        string `json:"afterDeptName"`
+	AfterPlanProductId   int64  `json:"afterPlanProductId"`
+	AfterPlanProductName string `json:"afterPlanProductName"`
+	AfterProductID       int64  `json:"afterProductId"`
+	AfterProductName     string `json:"afterProductName"`
+	AfterBgName          string `json:"afterBgName"`
+	SkipTodo             bool   `json:"skipTodo"` //是否免审，只有IEGtoIEG才生效
+}

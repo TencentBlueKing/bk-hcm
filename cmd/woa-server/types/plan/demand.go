@@ -244,6 +244,9 @@ type ListResPlanDemandItem struct {
 	RemainedDiskSize int64                `json:"remained_disk_size"`
 	RegionID         string               `json:"region_id"`
 	RegionName       string               `json:"region_name"`
+	AreaID           string               `json:"area_id"`
+	AreaName         string               `json:"area_name"`
+	ResMode          enumor.ResModeCode   `json:"res_mode"`
 	ZoneID           string               `json:"zone_id"`
 	ZoneName         string               `json:"zone_name"`
 	PlanType         enumor.PlanType      `json:"plan_type"`
@@ -695,6 +698,27 @@ type DemandResource struct {
 	DeviceType string
 	CpuCore    int64
 	DiskSize   int64
+}
+
+// AutoTransferBizResPlanDemandReq is auto transfer biz res plan demand request.
+type AutoTransferBizResPlanDemandReq struct {
+	DemandIDs []string `json:"demand_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate whether AutoTransferBizResPlanDemandReq is valid.
+func (r AutoTransferBizResPlanDemandReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+	if len(r.DemandIDs) == 0 {
+		return errors.New("demand_ids is required")
+	}
+	return nil
+}
+
+// AutoTransferBizResPlanDemandResp is auto transfer biz res plan demand response.
+type AutoTransferBizResPlanDemandResp struct {
+	TicketIDs []string `json:"ticket_ids"`
 }
 
 // CrpOrderChangeInfo is response of crp order change info.

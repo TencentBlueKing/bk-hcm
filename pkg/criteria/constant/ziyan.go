@@ -109,3 +109,6 @@ const AdminAuditStepName = "管理员审批"
 
 // AdminHandler 管理员用户列表，兜底
 const AdminHandler = "dommyzhang;forestchen"
+
+// ResPlanItsmAuditSkip 资源预测itsm免审标志
+const ResPlanItsmAuditSkip string = "skip"

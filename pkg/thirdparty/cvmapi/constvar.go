@@ -174,6 +174,8 @@ const (
 	CvmCbsPlanPenaltyRatioReportMethod = "reportForecastPartition"
 	// CvmQueryOrderList 根据销毁单据查询预测返还信息
 	CvmQueryOrderList = "queryOrderList"
+	// CvmCbsPlanTransOrderMethod 需求转移接口
+	CvmCbsPlanTransOrderMethod = "transOrder"
 )
 
 // CVMCli yunti client options

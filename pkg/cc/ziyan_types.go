@@ -789,11 +789,17 @@ type RollingServerReturnNotice struct {
 
 // ResPlan 资源预测相关配置
 type ResPlan struct {
-	ReportPenaltyRatio   bool                 `yaml:"reportPenaltyRatio"`
-	ExpireNotification   ResPlanExpireNotice  `yaml:"expireNotification"`
-	RefreshTransferQuota ResPlanTransferQuota `yaml:"refreshTransferQuota"`
-	AdminAuditor         []string             `yaml:"adminAuditor"`
-	CRPOverLimitContact  []string             `yaml:"crpOverLimitContact"`
+	ReportPenaltyRatio   bool                       `yaml:"reportPenaltyRatio"`
+	ExpireNotification   ResPlanExpireNotice        `yaml:"expireNotification"`
+	NearExpiredTransfer  ResPlanNearExpiredTransfer `yaml:"nearExpiredTransfer"`
+	RefreshTransferQuota ResPlanTransferQuota       `yaml:"refreshTransferQuota"`
+	AdminAuditor         []string                   `yaml:"adminAuditor"`
+	CRPOverLimitContact  []string                   `yaml:"crpOverLimitContact"`
+}
+
+// ResPlanNearExpiredTransfer 资源预测临期转移配置
+type ResPlanNearExpiredTransfer struct {
+	Enable bool `yaml:"enable"`
 }
 
 // ResPlanExpireNotice 资源预测过期通知配置

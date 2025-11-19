@@ -75,14 +75,14 @@ func (r *CreateResPlanTicketReq) Validate() error {
 				return errors.New("updated demand of adjust ticket can not be empty")
 			}
 		}
-	case enumor.RPTicketTypeDelete:
+	case enumor.RPTicketTypeDelete, enumor.RPTicketTypeAutomaticTransfer:
 		for _, demand := range r.Demands {
 			if demand.Original == nil {
-				return errors.New("original demand of delete ticket can not be empty")
+				return fmt.Errorf("original demand of %s ticket can not be empty", r.TicketType)
 			}
 
 			if demand.Updated != nil {
-				return errors.New("updated demand of delete ticket should be empty")
+				return fmt.Errorf("updated demand of %s ticket should be empty", r.TicketType)
 			}
 		}
 	default:
