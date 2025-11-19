@@ -236,6 +236,30 @@ const (
 
 	// BKDBDesc the db operator to sort desc
 	BKDBDesc = -1
+
+	// BKDBAddFields the db operator to add fields
+	BKDBAddFields = "$addFields"
+
+	// BKDBAvg the db operator to average
+	BKDBAvg = "$avg"
+
+	// BKDBMin the db operator to min
+	BKDBMin = "$min"
+
+	// BKDBMax the db operator to max
+	BKDBMax = "$max"
+
+	// BKDBRound the db operator to round
+	BKDBRound = "$round"
+
+	// BKDBDivide the db operator to divide
+	BKDBDivide = "$divide"
+
+	// BKDBSubtract the db operator to subtract
+	BKDBSubtract = "$subtract"
+
+	// BKDBLookup the db operator to lookup
+	BKDBLookup = "$lookup"
 )
 
 const (

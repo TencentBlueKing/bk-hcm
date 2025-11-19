@@ -16,6 +16,7 @@ package model
 import (
 	"context"
 
+	daltypes "hcm/cmd/woa-server/storage/dal/types"
 	"hcm/cmd/woa-server/storage/driver/mongodb"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
@@ -86,4 +87,16 @@ func (g *generateRecord) UpdateGenerateRecord(ctx context.Context, filter *mapst
 // DeleteGenerateRecord deletes apply order generate record from db
 func (g *generateRecord) DeleteGenerateRecord() {
 
+}
+
+// AggregateAll generate record aggregate all operation
+func (g *generateRecord) AggregateAll(ctx context.Context, pipeline interface{}, result interface{},
+	opts ...*daltypes.AggregateOpts) error {
+
+	if err := mongodb.Client().Table(pkg.BKTableNameGenerateRecord).AggregateAll(ctx, pipeline, result,
+		opts...); err != nil {
+		return err
+	}
+
+	return nil
 }

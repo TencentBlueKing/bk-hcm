@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"hcm/pkg"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/querybuilder"
 )
 
@@ -158,4 +159,563 @@ type ApplyStat struct {
 	OsTotal         uint    `json:"os_total" bson:"os_total"`
 	OsSucc          uint    `json:"os_succ" bson:"os_succ"`
 	OsSuccRate      float64 `json:"os_succ_rate" bson:"os_succ_rate"`
+}
+
+// AverageTimeConsumptionReq request for average time consumption overview
+type AverageTimeConsumptionReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-01-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-01-31
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether AverageTimeConsumptionReq is valid
+func (req *AverageTimeConsumptionReq) Validate() (errKey string, err error) {
+	if len(req.StartTime) == 0 {
+		return "start_time", fmt.Errorf("start_time is not set")
+	}
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-01-01")
+	}
+
+	if len(req.EndTime) == 0 {
+		return "end_time", fmt.Errorf("end_time is not set")
+	}
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-01-31")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *AverageTimeConsumptionReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *AverageTimeConsumptionReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// AverageTimeConsumptionItem one month aggregated metrics for average time consumption
+type AverageTimeConsumptionItem struct {
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// AverageTimeConsumptionOverviewResp wraps overview list under details
+type AverageTimeConsumptionOverviewResp struct {
+	Details []AverageTimeConsumptionItem `json:"details"`
+}
+
+// AverageTimeConsumptionCompareReq request for average time consumption compare
+type AverageTimeConsumptionCompareReq struct {
+	// YearMonth format: YYYY-MM, e.g., 2025-10 for October 2025
+	CurrentDate string `json:"current_date" bson:"current_date"`
+	// YearMonth format: YYYY-MM, e.g., 2025-11 for November 2025
+	CompareDate string `json:"compare_date" bson:"compare_date"`
+}
+
+// Validate whether AverageTimeConsumptionCompareReq is valid
+func (req *AverageTimeConsumptionCompareReq) Validate() (errKey string, err error) {
+	if _, err := time.Parse(constant.YearMonthLayout, req.CurrentDate); err != nil {
+		return "current_date", fmt.Errorf("invalid current_date format, must be YYYY-MM (7 characters), e.g., 2025-10")
+	}
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CompareDate); err != nil {
+		return "compare_date", fmt.Errorf("invalid compare_date format, must be YYYY-MM (7 characters), e.g., 2025-11")
+	}
+	return "", nil
+}
+
+// GetCurrentRange converts current_date to time range (start and end of month)
+func (req *AverageTimeConsumptionCompareReq) GetCurrentRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CurrentDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid current_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// GetCompareRange converts compare_date to time range (start and end of month)
+func (req *AverageTimeConsumptionCompareReq) GetCompareRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CompareDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid compare_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// AverageTimeConsumptionCompareItem one month aggregated metrics by biz for average time consumption compare
+type AverageTimeConsumptionCompareItem struct {
+	BkBizID          int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	DoneOrders       int64   `json:"done_orders" bson:"done_orders"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// AverageTimeConsumptionCompareRst wraps compare result with current and compare arrays
+type AverageTimeConsumptionCompareRst struct {
+	Current []AverageTimeConsumptionCompareItem `json:"current"`
+	Compare []AverageTimeConsumptionCompareItem `json:"compare"`
+}
+
+// OrderTimeCostReq request for order time cost overview
+type OrderTimeCostReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-01-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-01-31
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether OrderTimeCostReq is valid
+func (req *OrderTimeCostReq) Validate() (errKey string, err error) {
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-01-01")
+	}
+
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-01-31")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *OrderTimeCostReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *OrderTimeCostReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// OrderTimeCostItem one month aggregated metrics for order time cost
+type OrderTimeCostItem struct {
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// OrderTimeCostOverviewResp wraps overview list under details
+type OrderTimeCostOverviewResp struct {
+	Details []OrderTimeCostItem `json:"details"`
+}
+
+// OrderTimeCostCompareReq request for order time cost compare
+type OrderTimeCostCompareReq struct {
+	// YearMonth format: YYYY-MM, e.g., 2025-10 for October 2025
+	CurrentDate string `json:"current_date" bson:"current_date"`
+	// YearMonth format: YYYY-MM, e.g., 2025-11 for November 2025
+	CompareDate string `json:"compare_date" bson:"compare_date"`
+}
+
+// Validate whether OrderTimeCostCompareReq is valid
+func (req *OrderTimeCostCompareReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CurrentDate); err != nil {
+		return "current_date", fmt.Errorf("invalid current_date format, must be YYYY-MM (7 characters), e.g., 2025-10")
+	}
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CompareDate); err != nil {
+		return "compare_date", fmt.Errorf("invalid compare_date format, must be YYYY-MM (7 characters), e.g., 2025-11")
+	}
+	return "", nil
+}
+
+// GetCurrentRange converts current_date to time range (start and end of month)
+func (req *OrderTimeCostCompareReq) GetCurrentRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CurrentDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid current_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// GetCompareRange converts compare_date to time range (start and end of month)
+func (req *OrderTimeCostCompareReq) GetCompareRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CompareDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid compare_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// OrderTimeCostCompareItem one month aggregated metrics by biz for order time cost compare
+type OrderTimeCostCompareItem struct {
+	BkBizID          int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	DoneOrders       int64   `json:"done_orders" bson:"done_orders"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// OrderTimeCostCompareRst wraps compare result with current and compare arrays
+type OrderTimeCostCompareRst struct {
+	Current []OrderTimeCostCompareItem `json:"current"`
+	Compare []OrderTimeCostCompareItem `json:"compare"`
+}
+
+// ProductionStageTimeCostReq request for production stage time cost overview
+type ProductionStageTimeCostReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-01-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-01-31
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether ProductionStageTimeCostReq is valid
+func (req *ProductionStageTimeCostReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-01-01")
+	}
+
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-01-31")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *ProductionStageTimeCostReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *ProductionStageTimeCostReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// ProductionStageTimeCostItem one month aggregated metrics for production stage time cost
+type ProductionStageTimeCostItem struct {
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// ProductionStageTimeCostOverviewResp wraps overview list under details
+type ProductionStageTimeCostOverviewResp struct {
+	Details []ProductionStageTimeCostItem `json:"details"`
+}
+
+// ProductionStageTimeCostCompareReq request for production stage time cost compare
+type ProductionStageTimeCostCompareReq struct {
+	// YearMonth format: YYYY-MM, e.g., 2025-10 for October 2025
+	CurrentDate string `json:"current_date" bson:"current_date"`
+	// YearMonth format: YYYY-MM, e.g., 2025-11 for November 2025
+	CompareDate string `json:"compare_date" bson:"compare_date"`
+}
+
+// Validate whether ProductionStageTimeCostCompareReq is valid
+func (req *ProductionStageTimeCostCompareReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CurrentDate); err != nil {
+		return "current_date", fmt.Errorf("invalid current_date format, must be YYYY-MM (7 characters), e.g., 2025-10")
+	}
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CompareDate); err != nil {
+		return "compare_date", fmt.Errorf("invalid compare_date format, must be YYYY-MM (7 characters), e.g., 2025-11")
+	}
+	return "", nil
+}
+
+// GetCurrentRange converts current_date to time range (start and end of month)
+func (req *ProductionStageTimeCostCompareReq) GetCurrentRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CurrentDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid current_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// GetCompareRange converts compare_date to time range (start and end of month)
+func (req *ProductionStageTimeCostCompareReq) GetCompareRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CompareDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid compare_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// ProductionStageTimeCostBizItem one month aggregated metrics by biz for production stage time cost compare
+type ProductionStageTimeCostBizItem struct {
+	BkBizID          int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	DoneOrders       int64   `json:"done_orders" bson:"done_orders"`
+	AvgDurationHours float64 `json:"avg_duration_hours" bson:"avg_duration_hours"`
+}
+
+// ProductionStageTimeCostCompareRst wraps compare result with current and compare arrays
+type ProductionStageTimeCostCompareRst struct {
+	Current []ProductionStageTimeCostBizItem `json:"current"`
+	Compare []ProductionStageTimeCostBizItem `json:"compare"`
+}
+
+// PercentileTimeConsumptionReq request for percentile time consumption overview
+type PercentileTimeConsumptionReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-01-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-01-31
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether PercentileTimeConsumptionReq is valid
+func (req *PercentileTimeConsumptionReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-01-01")
+	}
+
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-01-31")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *PercentileTimeConsumptionReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *PercentileTimeConsumptionReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// PercentileTimeConsumptionItem one month aggregated metrics for percentile time consumption
+type PercentileTimeConsumptionItem struct {
+	YearMonth string  `json:"year_month" bson:"year_month"`
+	P90Hours  float64 `json:"p90_hours" bson:"p90_hours"`
+	P95Hours  float64 `json:"p95_hours" bson:"p95_hours"`
+	P99Hours  float64 `json:"p99_hours" bson:"p99_hours"`
+}
+
+// PercentileTimeConsumptionOverviewResp wraps overview list under details
+type PercentileTimeConsumptionOverviewResp struct {
+	Details []PercentileTimeConsumptionItem `json:"details"`
+}
+
+// PercentileTimeConsumptionCompareReq request for percentile time consumption compare
+type PercentileTimeConsumptionCompareReq struct {
+	// YearMonth format: YYYY-MM, e.g., 2025-10 for October 2025
+	CurrentDate string `json:"current_date" bson:"current_date"`
+	// YearMonth format: YYYY-MM, e.g., 2025-11 for November 2025
+	CompareDate string `json:"compare_date" bson:"compare_date"`
+}
+
+// Validate whether PercentileTimeConsumptionCompareReq is valid
+func (req *PercentileTimeConsumptionCompareReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CurrentDate); err != nil {
+		return "current_date", fmt.Errorf("invalid current_date format, must be YYYY-MM (7 characters), e.g., 2025-10")
+	}
+
+	if _, err := time.Parse(constant.YearMonthLayout, req.CompareDate); err != nil {
+		return "compare_date", fmt.Errorf("invalid compare_date format, must be YYYY-MM (7 characters), e.g., 2025-11")
+	}
+	return "", nil
+}
+
+// GetCurrentRange converts current_date to time range (start and end of month)
+func (req *PercentileTimeConsumptionCompareReq) GetCurrentRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CurrentDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid current_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// GetCompareRange converts compare_date to time range (start and end of month)
+func (req *PercentileTimeConsumptionCompareReq) GetCompareRange() (start time.Time, end time.Time, err error) {
+	t, err := time.Parse(constant.YearMonthLayout, req.CompareDate)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("invalid compare_date format: %w", err)
+	}
+	start = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+	end = nextMonth.Add(-time.Nanosecond)
+	return start, end, nil
+}
+
+// PercentileTimeConsumptionCompareItem one month aggregated metrics by biz for percentile time consumption compare
+type PercentileTimeConsumptionCompareItem struct {
+	BkBizID    int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	YearMonth  string  `json:"year_month" bson:"year_month"`
+	DoneOrders int64   `json:"done_orders" bson:"done_orders"`
+	P90Hours   float64 `json:"p90_hours" bson:"p90_hours"`
+	P95Hours   float64 `json:"p95_hours" bson:"p95_hours"`
+	P99Hours   float64 `json:"p99_hours" bson:"p99_hours"`
+}
+
+// PercentileTimeConsumptionCompareRst wraps compare result with current and compare arrays
+type PercentileTimeConsumptionCompareRst struct {
+	Current []PercentileTimeConsumptionCompareItem `json:"current"`
+	Compare []PercentileTimeConsumptionCompareItem `json:"compare"`
+}
+
+// DeliveryRateStatisticsReq request for delivery rate statistics
+type DeliveryRateStatisticsReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-01-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-06-30
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether DeliveryRateStatisticsReq is valid
+func (req *DeliveryRateStatisticsReq) Validate() (errKey string, err error) {
+
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-01-01")
+	}
+
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-06-30")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *DeliveryRateStatisticsReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *DeliveryRateStatisticsReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// DeliveryRateStatisticsItem one month aggregated metrics for delivery rate statistics
+type DeliveryRateStatisticsItem struct {
+	YearMonth    string  `json:"year_month" bson:"year_month"`
+	DeliveryRate float64 `json:"delivery_rate" bson:"delivery_rate"`
+}
+
+// DeliveryRateStatisticsResp wraps statistics list under details
+type DeliveryRateStatisticsResp struct {
+	Details []DeliveryRateStatisticsItem `json:"details"`
+}
+
+// DeliveryRateDetailReq request for delivery rate detail
+type DeliveryRateDetailReq struct {
+	// Date format: YYYY-MM-DD, e.g., 2025-10-01
+	StartTime string `json:"start_time" bson:"start_time"`
+	// Date format: YYYY-MM-DD, e.g., 2025-10-31
+	EndTime string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether DeliveryRateDetailReq is valid
+func (req *DeliveryRateDetailReq) Validate() (errKey string, err error) {
+	if _, err := time.Parse(constant.DateLayout, req.StartTime); err != nil {
+		return "start_time", fmt.Errorf("invalid start_time format, must be YYYY-MM-DD, e.g., 2025-10-01")
+	}
+
+	if _, err := time.Parse(constant.DateLayout, req.EndTime); err != nil {
+		return "end_time", fmt.Errorf("invalid end_time format, must be YYYY-MM-DD, e.g., 2025-10-31")
+	}
+	return "", nil
+}
+
+// GetStartTime converts start_time string to time.Time
+func (req *DeliveryRateDetailReq) GetStartTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid start_time format: %w", err)
+	}
+	// Return the date at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC), nil
+}
+
+// GetEndTime converts end_time string to time.Time
+func (req *DeliveryRateDetailReq) GetEndTime() (time.Time, error) {
+	t, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid end_time format: %w", err)
+	}
+	// Return the next day at 00:00:00 UTC
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, time.UTC), nil
+}
+
+// DeliveryRateDetailItem one month aggregated metrics by biz for delivery rate detail
+type DeliveryRateDetailItem struct {
+	BkBizID          int64   `json:"bk_biz_id" bson:"bk_biz_id"`
+	YearMonth        string  `json:"year_month" bson:"year_month"`
+	TotalOrders      int64   `json:"total_orders" bson:"total_orders"`
+	DoneOrders       int64   `json:"done_orders" bson:"done_orders"`
+	TotalNumSum      int64   `json:"total_num_sum" bson:"total_num_sum"`
+	SuccessNumSum    int64   `json:"success_num_sum" bson:"success_num_sum"`
+	HostDeliveryRate float64 `json:"host_delivery_rate" bson:"host_delivery_rate"`
+}
+
+// DeliveryRateDetailResp wraps detail result with details array
+type DeliveryRateDetailResp struct {
+	Details []DeliveryRateDetailItem `json:"details"`
 }

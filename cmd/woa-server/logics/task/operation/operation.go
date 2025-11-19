@@ -1,13 +1,20 @@
 /*
- * Tencent is pleased to support the open source community by making 蓝鲸 available.
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
- * Licensed under the MIT License (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * http://opensource.org/licenses/MIT
- * Unless required by applicable law or agreed to in writing, software distributed under
- * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
  */
 
 // Package operation define the operation interface
@@ -16,8 +23,9 @@ package operation
 import (
 	"context"
 	"sort"
+	"time"
 
-	"hcm/cmd/woa-server/model/task"
+	model "hcm/cmd/woa-server/model/task"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/criteria/mapstr"
@@ -32,6 +40,26 @@ import (
 type Interface interface {
 	// GetApplyStatistics get resource apply operation statistics
 	GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatReq) (*types.GetApplyStatRst, error)
+	// GetAverageTimeConsumptionOverview get average time consumption overview
+	GetAverageTimeConsumptionOverview(kit *kit.Kit, param *types.AverageTimeConsumptionReq) ([]types.AverageTimeConsumptionItem, error)
+	// GetAverageTimeConsumptionCompare get average time consumption compare
+	GetAverageTimeConsumptionCompare(kit *kit.Kit, param *types.AverageTimeConsumptionCompareReq) (*types.AverageTimeConsumptionCompareRst, error)
+	// GetOrderTimeCostOverview get order time cost overview
+	GetOrderTimeCostOverview(kit *kit.Kit, param *types.OrderTimeCostReq) ([]types.OrderTimeCostItem, error)
+	// GetOrderTimeCostCompare get order time cost compare
+	GetOrderTimeCostCompare(kit *kit.Kit, param *types.OrderTimeCostCompareReq) (*types.OrderTimeCostCompareRst, error)
+	// GetProductionStageTimeCostOverview get production stage time cost overview
+	GetProductionStageTimeCostOverview(kit *kit.Kit, param *types.ProductionStageTimeCostReq) ([]types.ProductionStageTimeCostItem, error)
+	// GetProductionStageTimeCostCompare get production stage time cost compare
+	GetProductionStageTimeCostCompare(kit *kit.Kit, param *types.ProductionStageTimeCostCompareReq) (*types.ProductionStageTimeCostCompareRst, error)
+	// GetPercentileTimeConsumptionOverview get percentile time consumption overview
+	GetPercentileTimeConsumptionOverview(kit *kit.Kit, param *types.PercentileTimeConsumptionReq) ([]types.PercentileTimeConsumptionItem, error)
+	// GetPercentileTimeConsumptionCompare get percentile time consumption compare
+	GetPercentileTimeConsumptionCompare(kit *kit.Kit, param *types.PercentileTimeConsumptionCompareReq) (*types.PercentileTimeConsumptionCompareRst, error)
+	// GetDeliveryRateStatistics get delivery rate statistics
+	GetDeliveryRateStatistics(kit *kit.Kit, param *types.DeliveryRateStatisticsReq) ([]types.DeliveryRateStatisticsItem, error)
+	// GetDeliveryRateDetail get delivery rate detail
+	GetDeliveryRateDetail(kit *kit.Kit, param *types.DeliveryRateDetailReq) (*types.DeliveryRateDetailResp, error)
 }
 
 // operation provides operation statistics service
@@ -258,4 +286,14 @@ func (op *operation) getDateFormat(dimension types.TimeDimension) string {
 	}
 
 	return format
+}
+
+func (op *operation) getExcludeSuborderIDs(kt *kit.Kit, startDate, endDate time.Time) ([]string, error) {
+
+	// TODO 从配置表中，按指定的查询日期，读取需要排除的主机申请单号列表
+
+	// excludeList, err := op.getExcludeListFromConfig(ctx)
+	// return excludeList, err
+
+	return []string{}, nil
 }

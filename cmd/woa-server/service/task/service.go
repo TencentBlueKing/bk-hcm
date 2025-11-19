@@ -44,6 +44,7 @@ func InitService(c *capability.Capability) {
 	h.Path("/task")
 
 	s.initOperationService(h)
+	s.initDeliverAnalysisService(h)
 	s.initRecyclerService(h)
 	s.initSchedulerService(h)
 
@@ -70,6 +71,29 @@ type service struct {
 
 func (s *service) initOperationService(h *rest.Handler) {
 	h.Add("GetApplyStatistics", http.MethodPost, "/find/operation/apply/statistics", s.GetApplyStatistics)
+}
+
+func (s *service) initDeliverAnalysisService(h *rest.Handler) {
+	h.Add("GetAverageTimeConsumptionOverview", http.MethodPost, "/apply/analysis/average_time_consumption/overview",
+		s.GetAverageTimeConsumptionOverview)
+	h.Add("GetAverageTimeConsumptionCompare", http.MethodPost, "/apply/analysis/average_time_consumption/compare",
+		s.GetAverageTimeConsumptionCompare)
+	h.Add("GetOrderTimeCostOverview", http.MethodPost, "/apply/analysis/order_time_cost/overview",
+		s.GetOrderTimeCostOverview)
+	h.Add("GetOrderTimeCostCompare", http.MethodPost, "/apply/analysis/order_time_cost/compare",
+		s.GetOrderTimeCostCompare)
+	h.Add("GetProductionStageTimeCostOverview", http.MethodPost, "/apply/analysis/production_stage_time_cost/overview",
+		s.GetProductionStageTimeCostOverview)
+	h.Add("GetProductionStageTimeCostCompare", http.MethodPost, "/apply/analysis/production_stage_time_cost/compare",
+		s.GetProductionStageTimeCostCompare)
+	h.Add("GetPercentileTimeConsumptionOverview", http.MethodPost, "/apply/analysis/percentile_time_consumption/overview",
+		s.GetPercentileTimeConsumptionOverview)
+	h.Add("GetPercentileTimeConsumptionCompare", http.MethodPost, "/apply/analysis/percentile_time_consumption/compare",
+		s.GetPercentileTimeConsumptionCompare)
+	h.Add("GetDeliveryRateStatistics", http.MethodPost, "/apply/delivery-rate/statistics",
+		s.GetDeliveryRateStatistics)
+	h.Add("GetDeliveryRateDetail", http.MethodPost, "/apply/delivery-rate/detail",
+		s.GetDeliveryRateDetail)
 }
 
 func (s *service) initRecyclerService(h *rest.Handler) {

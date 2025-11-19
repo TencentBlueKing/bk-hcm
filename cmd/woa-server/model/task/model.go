@@ -131,6 +131,8 @@ type ApplyTicket interface {
 	UpdateApplyTicket(ctx context.Context, filter *mapstr.MapStr, doc interface{}) error
 	// DeleteApplyTicket deletes apply ticket from db
 	DeleteApplyTicket()
+	// AggregateAll apply ticket aggregate all operation
+	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*daltypes.AggregateOpts) error
 }
 
 // ApplyOrder apply order operation interface
@@ -189,6 +191,8 @@ type GenerateRecord interface {
 	UpdateGenerateRecord(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
 	// DeleteGenerateRecord deletes apply order generate record from db
 	DeleteGenerateRecord()
+	// AggregateAll generate record aggregate all operation
+	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*daltypes.AggregateOpts) error
 }
 
 // InitRecord apply init record operation interface
