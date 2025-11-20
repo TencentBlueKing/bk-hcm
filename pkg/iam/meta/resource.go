@@ -97,6 +97,8 @@ const (
 	MainAccount ResourceType = "main_account"
 	// RootAccount defines main cloud account resource's hcm auth resource type
 	RootAccount ResourceType = "root_account"
+	// Monitoring defines monitoring's hcm auth resource type
+	Monitoring ResourceType = "monitoring"
 	// ServiceResDissolve 服务请求-机房裁撤-菜单粒度
 	ServiceResDissolve ResourceType = "service_resource_dissolve"
 	// ZiyanCvmType 自研云资源-CVM机型-菜单粒度
