@@ -167,7 +167,7 @@ watch(
       size="small"
       :layout="['total', 'limit', 'list']"
       align="right"
-      :limit-list="[1, 2, 10, 20, 50, 100, 500]"
+      :limit-list="[10, 20, 50, 100, 500]"
       @change="handlePageChange"
       @limit-change="handleLimitChange"
     />
