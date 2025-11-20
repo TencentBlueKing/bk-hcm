@@ -101,6 +101,7 @@ POST /api/v1/woa/bizs/{bk_biz_id}/task/findmany/apply/device
         "resource_type":"QCLOUDCVM",
         "device_type":"S3ne.4XLARGE64",
         "zone_name":"上海-奉贤",
+        "owner_ip": "x.x.x.x",
         "create_at":"2022-04-24T02:29:32.511Z",
         "update_at":"2022-04-24T02:29:32.511Z"
       }
@@ -139,5 +140,6 @@ POST /api/v1/woa/bizs/{bk_biz_id}/task/findmany/apply/device
 | resource_type | string    | 资源类型。"QCLOUDCVM": 腾讯云虚拟机, "IDCPM": IDC物理机, "QCLOUDDVM": Qcloud富容器, "IDCDVM": IDC富容器 |
 | device_type   | string    | 机型           |
 | zone_name     | string    | 区域           |
+| owner_ip      | string    | 所属的母机IP    |
 | create_at     | timestamp | 记录创建时间    |
 | update_at     | timestamp | 记录更新时间    |

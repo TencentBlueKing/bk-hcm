@@ -457,6 +457,7 @@ type DeviceInfo struct {
 	DiskCheckTaskId   string    `json:"disk_check_task_id" bson:"disk_check_task_id"`
 	DiskCheckTaskLink string    `json:"disk_check_task_link" bson:"disk_check_task_link"`
 	IsManualMatched   bool      `json:"is_manual_matched" bson:"is_manual_matched"` // 是否手工匹配
+	OwnerIP           string    `json:"owner_ip" bson:"owner_ip"`                   // 所属的母机IP
 	CreateAt          time.Time `json:"create_at" bson:"create_at"`
 	UpdateAt          time.Time `json:"update_at" bson:"update_at"`
 }

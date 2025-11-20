@@ -101,6 +101,7 @@ POST /api/v1/woa/task/findmany/apply/device
         "resource_type": "QCLOUDCVM",
         "device_type": "S3ne.4XLARGE64",
         "zone_name": "上海-奉贤",
+        "owner_ip": "x.x.x.x",
         "create_at": "2022-04-24T02:29:32.511Z",
         "update_at": "2022-04-24T02:29:32.511Z"
       }
@@ -137,7 +138,8 @@ POST /api/v1/woa/task/findmany/apply/device
 | asset_id      | string    | 设备固资号                                                                               |
 | require_type  | int       | 需求类型。1: 常规项目; 2: 春节保障; 3: 机房裁撤; 6: 滚服项目; 7: 小额绿通                                    |
 | resource_type | string    | 资源类型。"QCLOUDCVM": 腾讯云虚拟机, "IDCPM": IDC物理机, "QCLOUDDVM": Qcloud富容器, "IDCDVM": IDC富容器 |
-| device_type   | string    | 机型                                                                                  |
-| zone_name     | string    | 区域                                                                                  |
+| device_type   | string    | 机型                                                                                     |
+| zone_name     | string    | 区域                                                                                     |
+| owner_ip      | string    | 所属的母机IP                                                                              |
 | create_at     | timestamp | 记录创建时间                                                                              |
 | update_at     | timestamp | 记录更新时间                                                                              |
