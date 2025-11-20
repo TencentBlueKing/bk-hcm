@@ -76,29 +76,10 @@ func (c *cvm) CvmIdleCheck(kt *kit.Kit, req *cscvm.BatchIdleCheckReq,
 		}
 	}()
 
-	assetIDs := make([]string, 0, len(cvmList))
-	ips := make([]string, 0, len(cvmList))
-	for _, one := range cvmList {
-		// 检查BkAssetID是否为空
-		if len(one.BkAssetID) == 0 {
-			logs.Errorf("BkAssetID is empty, cvm: %v, rid: %s", one, kt.Rid)
-			return "", "", fmt.Errorf("BkAssetID is empty")
-		}
-		// 检查PrivateIPv4Addresses是否为空
-		if len(one.BaseCvm.PrivateIPv4Addresses) == 0 {
-			logs.Errorf("PrivateIPv4Addresses is empty, cvm: %v, rid: %s", one, kt.Rid)
-			return "", "", fmt.Errorf("PrivateIPv4Addresses is empty")
-		}
-		assetIDs = append(assetIDs, one.BkAssetID)
-		ips = append(ips, one.BaseCvm.PrivateIPv4Addresses[0])
-	}
-
-	startReq := &woaserver.StartIdleCheckReq{
-		HostIDs:      req.BkHostIDs,
-		AssetIDs:     assetIDs,
-		IPs:          ips,
-		BkBizID:      req.BkBizID,
-		ExcludeSteps: req.ExcludeSteps,
+	startReq, err := buildStartIdleCheckReq(kt, baseCvms, req.BkBizID, req.ExcludeSteps)
+	if err != nil {
+		logs.Errorf("build start idle check req failed, err: %v, rid: %s", err, kt.Rid)
+		return "", "", err
 	}
 	result, err := c.client.WoaServer().Task.StartIdleCheck(kt, startReq)
 	if err != nil {
@@ -119,6 +100,43 @@ func (c *cvm) CvmIdleCheck(kt *kit.Kit, req *cscvm.BatchIdleCheckReq,
 		return "", "", err
 	}
 	return taskManagementID, result.SuborderID, nil
+}
+
+func buildStartIdleCheckReq(kt *kit.Kit, cvmList []corecvm.BaseCvm, bkBizID int64,
+	excludeSteps []table.DetectStepName) (*woaserver.StartIdleCheckReq, error) {
+
+	bkHostIDs := make([]int64, 0, len(cvmList))
+	assetIDs := make([]string, 0, len(cvmList))
+	ips := make([]string, 0, len(cvmList))
+	for _, one := range cvmList {
+		// 检查BkHostID是否为空
+		if one.BkHostID == 0 {
+			logs.Errorf("BkHostID is empty, cvm: %v, rid: %s", one, kt.Rid)
+			return nil, fmt.Errorf("BkHostID is empty")
+		}
+		// 检查BkAssetID是否为空
+		if len(one.BkAssetID) == 0 {
+			logs.Errorf("BkAssetID is empty, cvm: %v, rid: %s", one, kt.Rid)
+			return nil, fmt.Errorf("BkAssetID is empty")
+		}
+		// 检查PrivateIPv4Addresses是否为空
+		if len(one.PrivateIPv4Addresses) == 0 {
+			logs.Errorf("PrivateIPv4Addresses is empty, cvm: %v, rid: %s", one, kt.Rid)
+			return nil, fmt.Errorf("PrivateIPv4Addresses is empty")
+		}
+		bkHostIDs = append(bkHostIDs, one.BkHostID)
+		assetIDs = append(assetIDs, one.BkAssetID)
+		ips = append(ips, one.PrivateIPv4Addresses[0])
+	}
+
+	// Note: 参数中的hostID\assetID\ip顺序必须一致
+	return &woaserver.StartIdleCheckReq{
+		HostIDs:      bkHostIDs,
+		AssetIDs:     assetIDs,
+		IPs:          ips,
+		BkBizID:      bkBizID,
+		ExcludeSteps: excludeSteps,
+	}, nil
 }
 
 // createTaskDetailsForIdleCheck 创建任务详情
