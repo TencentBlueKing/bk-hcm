@@ -40,6 +40,7 @@ type Client struct {
 	NetworkInterface *NetworkInterfaceClient
 	Bill             *BillClient
 	MainAccount      *MainAccountClient
+	Monitoring       *MonitoringClient
 }
 
 // NewClient create a new gcp api client.
@@ -60,5 +61,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		NetworkInterface: NewNetworkInterfaceClient(client),
 		Bill:             NewBillClient(client),
 		MainAccount:      NewMainAccountClient(client),
+		Monitoring:       NewMonitoringClient(client),
 	}
 }

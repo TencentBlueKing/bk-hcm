@@ -54,6 +54,7 @@ import (
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
 	"hcm/cmd/cloud-server/service/moa"
+	"hcm/cmd/cloud-server/service/monitoring"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	"hcm/cmd/cloud-server/service/org-topo"
 	"hcm/cmd/cloud-server/service/recycle"
@@ -401,6 +402,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	region.InitRegionService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
+	monitoring.InitMonitoringService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 	subaccount.InitService(c)
 

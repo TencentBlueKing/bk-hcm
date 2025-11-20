@@ -76,6 +76,7 @@ require (
 	cloud.google.com/go/compute v1.24.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/longrunning v0.5.6 // indirect
+	cloud.google.com/go/monitoring v1.18.1
 	cloud.google.com/go/orgpolicy v1.12.2 // indirect
 	cloud.google.com/go/osconfig v1.12.6 // indirect
 	github.com/apache/arrow/go/v14 v14.0.2 // indirect

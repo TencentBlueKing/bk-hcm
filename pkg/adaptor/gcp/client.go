@@ -28,6 +28,7 @@ import (
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/bigquery"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"google.golang.org/api/cloudbilling/v1"
 	res "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/compute/v1"
@@ -112,4 +113,14 @@ func (c *clientSet) billingClient(kt *kit.Kit) (*cloudbilling.APIService, error)
 		return nil, err
 	}
 	return service, nil
+}
+
+func (c *clientSet) monitoringClient(kt *kit.Kit) (*monitoring.MetricClient, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	client, err := monitoring.NewMetricClient(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
