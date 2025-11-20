@@ -718,3 +718,11 @@ type ListListenerQueryReq struct {
 	AccountID         string            `json:"account_id" validate:"required,min=1"`
 	ListenerQueryItem ListenerQueryItem `json:"rule_query_item" validate:"required"`
 }
+
+// ListLoadBalancerIDsResult define list load balancer ids result.
+type ListLoadBalancerIDsResult struct {
+	CloudClbIDsV1 []string `json:"cloud_clb_ids_v1"`
+	ClbIDsV1      []string `json:"clb_ids_v1"`
+	CloudClbIDsV2 []string `json:"cloud_clb_ids_v2"`
+	ClbIDsV2      []string `json:"clb_ids_v2"`
+}
