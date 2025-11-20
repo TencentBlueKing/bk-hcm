@@ -44,6 +44,8 @@ type GlobalConfigResDissolveKey string
 const (
 	// GlobalConfigDissolveHostApplyTime resource dissolve host apply time
 	GlobalConfigDissolveHostApplyTime GlobalConfigResDissolveKey = "dissolve_host_apply_time"
+	// GlobalConfigDissolveApprovalLimit resource dissolve approval limit
+	GlobalConfigDissolveApprovalLimit GlobalConfigResDissolveKey = "dissolve_host_approval_limit"
 )
 
 // GlobalConfigKeyClbBandPkgRecommend resource global config key for clb bandwidth package recommend

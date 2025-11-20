@@ -40,6 +40,8 @@ import (
 type Config interface {
 	GetDissolveHostApplyTime(kt *kit.Kit) (*time.Time, error)
 	UpsertDissolveHostApplyTime(kt *kit.Kit, time *time.Time) error
+	GetApprovalLimit(kt *kit.Kit) (*float64, error)
+	UpsertApprovalLimit(kt *kit.Kit, approveLimit *float64) error
 }
 
 type logics struct {
@@ -55,7 +57,7 @@ func New(client *client.ClientSet) Config {
 
 // GetDissolveHostApplyTime get dissolve host apply time.
 func (l *logics) GetDissolveHostApplyTime(kt *kit.Kit) (*time.Time, error) {
-	config, exist, err := l.getDissolveHostApplyTimeConfig(kt)
+	config, exist, err := l.getDissolveConfigByKey(kt, enumor.GlobalConfigDissolveHostApplyTime)
 	if err != nil {
 		logs.Errorf("failed to get dissolve host apply time config, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -74,11 +76,13 @@ func (l *logics) GetDissolveHostApplyTime(kt *kit.Kit) (*time.Time, error) {
 	return applyTime, nil
 }
 
-func (l *logics) getDissolveHostApplyTimeConfig(kt *kit.Kit) (*globalconf.GlobalConfigTable, bool, error) {
+func (l *logics) getDissolveConfigByKey(kt *kit.Kit, key enumor.GlobalConfigResDissolveKey) (
+	*globalconf.GlobalConfigTable, bool, error) {
+
 	req := core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("config_type", enumor.GlobalConfigResDissolve),
-			tools.RuleJSONEqual("config_key", enumor.GlobalConfigDissolveHostApplyTime),
+			tools.RuleJSONEqual("config_key", key),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
@@ -96,27 +100,30 @@ func (l *logics) getDissolveHostApplyTimeConfig(kt *kit.Kit) (*globalconf.Global
 
 // UpsertDissolveHostApplyTime upsert dissolve host apply time.
 func (l *logics) UpsertDissolveHostApplyTime(kt *kit.Kit, time *time.Time) error {
-	if time == nil {
-		logs.Errorf("time is nil, rid: %s", kt.Rid)
-		return errors.New("time is nil")
+	return l.upsertDissolveConfig(kt, enumor.GlobalConfigDissolveHostApplyTime, time)
+}
+
+func (l *logics) upsertDissolveConfig(kt *kit.Kit, key enumor.GlobalConfigResDissolveKey, value interface{}) error {
+	if value == nil {
+		logs.Errorf("value is nil, key: %s, rid: %s", key, kt.Rid)
+		return errors.New("value is nil")
 	}
 
-	oldConf, exist, err := l.getDissolveHostApplyTimeConfig(kt)
+	oldConf, exist, err := l.getDissolveConfigByKey(kt, key)
 	if err != nil {
-		logs.Errorf("failed to get dissolve host apply time config, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("failed to get dissolve config, err: %v, key: %s, rid: %s", err, key, kt.Rid)
 		return err
 	}
 
 	conf := cgconf.GlobalConfigT[any]{
 		ConfigType:  string(enumor.GlobalConfigResDissolve),
-		ConfigKey:   string(enumor.GlobalConfigDissolveHostApplyTime),
-		ConfigValue: time,
+		ConfigKey:   string(key),
+		ConfigValue: value,
 	}
 	if !exist {
 		createReq := datagconf.BatchCreateReqT[any]{Configs: []cgconf.GlobalConfigT[any]{conf}}
 		if _, err = l.cliSet.DataService().Global.GlobalConfig.BatchCreate(kt, &createReq); err != nil {
-			logs.Errorf("failed to create dissolve host apply time global config, err: %v, req: %+v, rid: %s", err,
-				createReq, kt.Rid)
+			logs.Errorf("failed to create dissolve global config, err: %v, req: %+v, rid: %s", err, createReq, kt.Rid)
 			return err
 		}
 		return nil
@@ -125,10 +132,35 @@ func (l *logics) UpsertDissolveHostApplyTime(kt *kit.Kit, time *time.Time) error
 	conf.ID = oldConf.ID
 	updateReq := datagconf.BatchUpdateReq{Configs: []cgconf.GlobalConfigT[any]{conf}}
 	if err = l.cliSet.DataService().Global.GlobalConfig.BatchUpdate(kt, &updateReq); err != nil {
-		logs.Errorf("failed to update dissolve host apply time  global config, err: %v, req: %+v, rid: %s", err,
-			updateReq, kt.Rid)
+		logs.Errorf("failed to update dissolve global config, err: %v, req: %+v, rid: %s", err, updateReq, kt.Rid)
 		return err
 	}
 
 	return nil
+}
+
+// GetApprovalLimit get approval limit.
+func (l *logics) GetApprovalLimit(kt *kit.Kit) (*float64, error) {
+	config, exist, err := l.getDissolveConfigByKey(kt, enumor.GlobalConfigDissolveApprovalLimit)
+	if err != nil {
+		logs.Errorf("failed to get dissolve approval limit config, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if !exist {
+		logs.Errorf("dissolve approval limit config not exist, rid: %s", kt.Rid)
+		return nil, errors.New("dissolve approval limit config not exist")
+	}
+
+	approvalLimit := new(float64)
+	if err = json.Unmarshal([]byte(config.ConfigValue), &approvalLimit); err != nil {
+		logs.Errorf("failed to unmarshal config value, err: %v, value: %s, rid: %s", err, config.ConfigValue, kt.Rid)
+		return nil, err
+	}
+
+	return approvalLimit, nil
+}
+
+// UpsertApprovalLimit upsert approval limit.
+func (l *logics) UpsertApprovalLimit(kt *kit.Kit, approvalLimit *float64) error {
+	return l.upsertDissolveConfig(kt, enumor.GlobalConfigDissolveApprovalLimit, approvalLimit)
 }

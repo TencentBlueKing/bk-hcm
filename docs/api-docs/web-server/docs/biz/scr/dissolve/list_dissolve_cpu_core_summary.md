@@ -33,7 +33,8 @@ POST /api/v1/woa/bizs/{bk_biz_id}/dissolve/cpu_core/summary
   "message": "ok",
   "data": {
     "total_core": 100,
-    "delivered_core": 50
+    "delivered_core": 50,
+    "host_apply_time": "2024-09-01T12:00:00Z"
   }
 }
 ```
@@ -52,3 +53,4 @@ POST /api/v1/woa/bizs/{bk_biz_id}/dissolve/cpu_core/summary
 |--------------------|----------|---------------|
 | total_core           | int      | 裁撤cpu总核心数     |
 | delivered_core | int      | 裁撤cpu已交付的总核心数 |
+| host_apply_time | string  | 统计机房裁撤主机的开始时间  |

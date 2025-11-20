@@ -40,12 +40,17 @@ func (s *service) GetDissolveConfig(cts *rest.Contexts) (interface{}, error) {
 	time, err := s.logics.Config().GetDissolveHostApplyTime(cts.Kit)
 	if err != nil {
 		logs.Errorf("get dissolve host applyTime config failed, err: %v, rid: %s", err, cts.Kit.Rid)
-
+		return nil, err
+	}
+	approvalLimit, err := s.logics.Config().GetApprovalLimit(cts.Kit)
+	if err != nil {
+		logs.Errorf("get dissolve approval limit config failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	config := &model.Config{
-		HostApplyTime: converter.PtrToVal(time),
+		HostApplyTime: time,
+		ApprovalLimit: approvalLimit,
 	}
 
 	return config, nil
@@ -63,7 +68,7 @@ func (s *service) UpsertDissolveConfig(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Update}})
+		Basic: &meta.Basic{Type: meta.ZiyanResDissolveManage, Action: meta.Update}})
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +78,14 @@ func (s *service) UpsertDissolveConfig(cts *rest.Contexts) (interface{}, error) 
 		if err != nil {
 			logs.Errorf("upsert dissolve host apply time config failed, err: %v, val: %v, rid: %s", err,
 				converter.PtrToVal(req.HostApplyTime), cts.Kit.Rid)
+			return nil, err
+		}
+	}
+	if req.ApprovalLimit != nil {
+		err = s.logics.Config().UpsertApprovalLimit(cts.Kit, req.ApprovalLimit)
+		if err != nil {
+			logs.Errorf("upsert dissolve approval limit config failed, err: %v, val: %v, rid: %s", err,
+				converter.PtrToVal(req.ApprovalLimit), cts.Kit.Rid)
 			return nil, err
 		}
 	}

@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/es"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/querybuilder"
 	"hcm/pkg/tools/slice"
 )
@@ -484,21 +485,35 @@ func (l *ListDissolveCpuCoreSummaryReq) Validate() error {
 
 // CpuCoreSummary dissolve cpu core summary
 type CpuCoreSummary struct {
-	TotalCore     int64 `json:"total_core"`
-	DeliveredCore int64 `json:"delivered_core"`
+	TotalCore     int64     `json:"total_core"`
+	DeliveredCore int64     `json:"delivered_core"`
+	HostApplyTime time.Time `json:"host_apply_time"`
 }
 
 // Config dissolve config
 type Config struct {
-	HostApplyTime time.Time `json:"host_apply_time"`
+	HostApplyTime *time.Time `json:"host_apply_time"`
+	ApprovalLimit *float64   `json:"approval_limit"`
 }
 
 // UpsertConfigReq upsert config request
 type UpsertConfigReq struct {
-	HostApplyTime *time.Time `json:"host_apply_time" validate:"required"`
+	HostApplyTime *time.Time `json:"host_apply_time" validate:"omitempty"`
+	ApprovalLimit *float64   `json:"approval_limit" validate:"omitempty"`
 }
 
 // Validate ...
 func (u *UpsertConfigReq) Validate() error {
-	return validator.Validate.Struct(u)
+	if err := validator.Validate.Struct(u); err != nil {
+		return err
+	}
+
+	if u.ApprovalLimit == nil {
+		return nil
+	}
+	if cvt.PtrToVal(u.ApprovalLimit) < 0 || cvt.PtrToVal(u.ApprovalLimit) > 100 {
+		return errors.New("approval_limit must between 0 and 100")
+	}
+
+	return nil
 }

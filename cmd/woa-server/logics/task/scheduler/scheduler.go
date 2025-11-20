@@ -29,6 +29,7 @@ import (
 	"hcm/cmd/woa-server/dal/task/table"
 	"hcm/cmd/woa-server/logics/biz"
 	"hcm/cmd/woa-server/logics/config"
+	"hcm/cmd/woa-server/logics/dissolve"
 	greenchannel "hcm/cmd/woa-server/logics/green-channel"
 	"hcm/cmd/woa-server/logics/plan"
 	rollingserver "hcm/cmd/woa-server/logics/rolling-server"
@@ -171,26 +172,28 @@ type Interface interface {
 
 // scheduler provides resource apply service
 type scheduler struct {
-	lang          language.CCLanguageIf
-	itsm          itsm.Client
-	cc            cmdb.Client
-	dispatcher    *dispatcher.Dispatcher
-	generator     *generator.Generator
-	matcher       *matcher.Matcher
-	recommend     *recommender.Recommender
-	configLogics  config.Logics
-	rsLogics      rollingserver.Logics
-	srLogics      shortrental.Logics
-	gcLogics      greenchannel.Logics
-	crpCli        cvmapi.CVMClientInterface
-	bizLogic      biz.Logics
-	bkBotApproval bkbotapproval.Client
+	lang           language.CCLanguageIf
+	itsm           itsm.Client
+	cc             cmdb.Client
+	dispatcher     *dispatcher.Dispatcher
+	generator      *generator.Generator
+	matcher        *matcher.Matcher
+	recommend      *recommender.Recommender
+	configLogics   config.Logics
+	rsLogics       rollingserver.Logics
+	srLogics       shortrental.Logics
+	gcLogics       greenchannel.Logics
+	crpCli         cvmapi.CVMClientInterface
+	bizLogic       biz.Logics
+	bkBotApproval  bkbotapproval.Client
+	dissolveLogics dissolve.Logics
 }
 
 // New creates a scheduler
 func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrental.Logics, gcLogics greenchannel.Logics,
 	thirdCli *thirdparty.Client, cmdbCli cmdb.Client, informerIf informer.Interface, clientConf cc.ClientConfig,
-	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics) (*scheduler, error) {
+	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics, dissolveLogics dissolve.Logics) (
+	*scheduler, error) {
 
 	// new recommend module
 	recommend, err := recommender.New(ctx, thirdCli)
@@ -218,20 +221,21 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 	dispatch.SetGenerator(generate)
 
 	scheduler := &scheduler{
-		lang:          language.NewFromCtx(language.EmptyLanguageSetting),
-		itsm:          thirdCli.ITSM,
-		crpCli:        thirdCli.CVM,
-		cc:            cmdbCli,
-		dispatcher:    dispatch,
-		generator:     generate,
-		matcher:       match,
-		recommend:     recommend,
-		configLogics:  configLogics,
-		rsLogics:      rsLogics,
-		srLogics:      srLogics,
-		gcLogics:      gcLogics,
-		bizLogic:      bizLogic,
-		bkBotApproval: thirdCli.BkBotApproval,
+		lang:           language.NewFromCtx(language.EmptyLanguageSetting),
+		itsm:           thirdCli.ITSM,
+		crpCli:         thirdCli.CVM,
+		cc:             cmdbCli,
+		dispatcher:     dispatch,
+		generator:      generate,
+		matcher:        match,
+		recommend:      recommend,
+		configLogics:   configLogics,
+		rsLogics:       rsLogics,
+		srLogics:       srLogics,
+		gcLogics:       gcLogics,
+		bizLogic:       bizLogic,
+		bkBotApproval:  thirdCli.BkBotApproval,
+		dissolveLogics: dissolveLogics,
 	}
 
 	return scheduler, nil
@@ -745,8 +749,36 @@ func checkRequireType(s *scheduler, kit *kit.Kit, order *types.ApplyTicket) (str
 		return "", false, nil
 
 	case enumor.RequireTypeDissolve:
-		return "require type dissolve require approval", true, nil
-
+		approvalLimit, err := s.dissolveLogics.Config().GetApprovalLimit(kit)
+		if err != nil {
+			logs.Errorf("failed to get approval limit, err: %v, rid: %s", err, kit.Rid)
+			return "", false, err
+		}
+		if approvalLimit == nil {
+			logs.Errorf("approval limit not exist, rid: %s", kit.Rid)
+			return "", false, errors.New("approval limit not exist")
+		}
+		bizSummaryMap, err := s.dissolveLogics.Table().ListBizCpuCoreSummary(kit, []int64{order.BkBizId})
+		if err != nil {
+			logs.Errorf("list biz dissolve cpu core summary failed, err: %v, bizID: %d, rid: %s", err, order.BkBizId,
+				kit.Rid)
+			return "", false, err
+		}
+		summary, ok := bizSummaryMap[order.BkBizId]
+		if !ok {
+			logs.Errorf("can not find biz dissolve cpu core summary, bizID: %d, rid: %s", order.BkBizId, kit.Rid)
+			return "", false, fmt.Errorf("can not find biz dissolve cpu core summary, bizID: %d", order.BkBizId)
+		}
+		if summary.TotalCore == 0 {
+			logs.Errorf("total core is zero, bizID: %d, rid: %s", order.BkBizId, kit.Rid)
+			return "", false, fmt.Errorf("total core is zero, bizID: %d", order.BkBizId)
+		}
+		cur := float64(summary.DeliveredCore) / float64(summary.TotalCore) * 100
+		if cur >= cvt.PtrToVal(approvalLimit) {
+			return fmt.Sprintf("delivery percentage greater than limit, cur: %f, limit: %f", cur,
+				cvt.PtrToVal(approvalLimit)), true, nil
+		}
+		return "", false, nil
 	default:
 		return "", false, nil
 	}

@@ -526,7 +526,14 @@ func (l *logics) ListBizCpuCoreSummary(kt *kit.Kit, bizIDs []int64) (map[int64]d
 		return nil, err
 	}
 
-	// 4. 组装业务数据
+	// 4.获取统计机房裁撤主机的开始时间
+	hostApplyTime, err := l.dissolveConfig.GetDissolveHostApplyTime(kt)
+	if err != nil {
+		logs.Errorf("get host apply time failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 5. 组装业务数据
 	for _, bizID := range bizIDs {
 		totalCpuCore, ok := bizTotalCpuCoreMap[bizID]
 		if !ok {
@@ -543,6 +550,7 @@ func (l *logics) ListBizCpuCoreSummary(kt *kit.Kit, bizIDs []int64) (map[int64]d
 		bizCpuCoreSummaryMap[bizID] = dissolve.CpuCoreSummary{
 			TotalCore:     totalCpuCore,
 			DeliveredCore: deliveredCpuCore,
+			HostApplyTime: cvt.PtrToVal(hostApplyTime),
 		}
 	}
 
