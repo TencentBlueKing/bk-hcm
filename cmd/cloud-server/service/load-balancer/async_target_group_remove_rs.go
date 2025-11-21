@@ -179,14 +179,14 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 }
 
 func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManagementID string, bkBizID int64,
-	targets []corelb.BaseTarget, info TGRelatedInfo) error {
+	targets []corelb.BaseTarget, info cslb.TGRelatedInfo) error {
 
 	rsIDs := make([]string, 0, len(targets))
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range targets {
 		param := struct {
-			TGRelatedInfo     `json:",inline"`
-			corelb.BaseTarget `json:",inline"`
+			cslb.TGRelatedInfo `json:",inline"`
+			corelb.BaseTarget  `json:",inline"`
 		}{
 			TGRelatedInfo: info,
 			BaseTarget:    one,
@@ -231,8 +231,8 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID, taskManageme
 }
 
 func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, taskManagementID string,
-	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
-	string, error) {
+	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget,
+	tgRelatedInfo map[string]cslb.TGRelatedInfo) (string, error) {
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, taskManagementID, vendor, bkBizID, tgMap,
@@ -253,8 +253,8 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID, tas
 }
 
 func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskManagementID string,
-	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
-	string, error) {
+	vendor enumor.Vendor, bkBizID int64, tgMap map[string][]corelb.BaseTarget,
+	tgRelatedInfo map[string]cslb.TGRelatedInfo) (string, error) {
 
 	var taskDetails []*taskManagementDetail
 	var err error
@@ -308,7 +308,7 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID, taskM
 }
 
 func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagementID string, vendor enumor.Vendor,
-	bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) (
+	bkBizID int64, tgMap map[string][]corelb.BaseTarget, tgRelatedInfo map[string]cslb.TGRelatedInfo) (
 	[]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
@@ -360,12 +360,12 @@ func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagemen
 }
 
 type tgRemoveRSTaskDetailParam struct {
-	TGRelatedInfo            `json:",inline"`
+	cslb.TGRelatedInfo       `json:",inline"`
 	*dataproto.TargetBaseReq `json:",inline"`
 }
 
 func (svc *lbSvc) createTargetGroupRemoveRsTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
-	addRsParams *hcproto.TCloudBatchOperateTargetReq, info TGRelatedInfo) ([]*taskManagementDetail, error) {
+	addRsParams *hcproto.TCloudBatchOperateTargetReq, info cslb.TGRelatedInfo) ([]*taskManagementDetail, error) {
 
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range addRsParams.RsList {

@@ -306,7 +306,8 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 
 // getTCloudTargetHealth 查询目标组绑定的负载均衡的健康状态
 func (svc *lbSvc) getTCloudTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloudTargetHealthReq,
-	healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp, error)) (*hcproto.TCloudTargetHealthResp, error) {
+	healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp,
+		error)) (*hcproto.TCloudTargetHealthResp, error) {
 
 	tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(kit, tgID, req.CloudLbIDs)
 	if err != nil {
@@ -664,21 +665,9 @@ func (svc *lbSvc) listUrlRuleMapByIDsForTCloud(kt *kit.Kit, ids []string) (map[s
 	return result, nil
 }
 
-// TGRelatedInfo tg关联信息，包括lb, listener, url rule
-type TGRelatedInfo struct {
-	CloudLBID    string `json:"cloud_lb_id"`
-	ClbVipDomain string `json:"clb_vip_domain"`
-
-	Protocol enumor.ProtocolType `json:"protocol"`
-	Port     int64               `json:"listener_port"`
-
-	Domain string `json:"domain"`
-	URL    string `json:"url"`
-}
-
 // listTGRelatedInfoByRels 根据tg rel获取tg关联信息, 返回值 map[TGID]TGRelatedInfo
 func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rels []corelb.BaseTargetListenerRuleRel) (
-	map[string]TGRelatedInfo, error) {
+	map[string]cslb.TGRelatedInfo, error) {
 
 	lbMap, err := svc.listLoadBalancerMapByIDs(kt, slice.Map(rels, corelb.BaseTargetListenerRuleRel.GetLbID))
 	if err != nil {
@@ -699,7 +688,7 @@ func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rel
 		return nil, err
 	}
 
-	result := make(map[string]TGRelatedInfo, len(rels))
+	result := make(map[string]cslb.TGRelatedInfo, len(rels))
 	for _, rel := range rels {
 		lb, ok := lbMap[rel.LbID]
 		if !ok {
@@ -723,7 +712,7 @@ func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rel
 			return nil, fmt.Errorf("url rule not found: %s", rel.ListenerRuleID)
 		}
 
-		item := TGRelatedInfo{
+		item := cslb.TGRelatedInfo{
 			CloudLBID:    lb.CloudID,
 			ClbVipDomain: strings.Join(vipDomain, ","),
 			Protocol:     lbl.Protocol,
