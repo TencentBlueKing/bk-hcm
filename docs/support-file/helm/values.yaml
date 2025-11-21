@@ -1100,10 +1100,14 @@ egress:
 
 resourceDissolve:
   originDate: "20240105"
-  projectNames:
-    - "2025机房裁撤"
   projectIDs:
-    - 26
+    - 26 # 2025轻量云徙Q4
+    - 27 # 2025机房裁撤（国内）
+    - 28 # 2025机房裁撤（海外）
+  svrTypeNames:
+    - "Server"
+    - "QC_CVM"
+    - "Xen Virtual"
   syncDissolveHost: true
 
 elasticsearch:

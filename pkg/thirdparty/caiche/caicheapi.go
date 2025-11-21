@@ -158,7 +158,7 @@ func (c *caicheApi) ListDeviceV2(kt *kit.Kit, req *ListDeviceV2Req) (*DeviceList
 		return nil, err
 	}
 
-	subPath := "/openapi_gateway/abolish-backend/device/listDeviceOpenapiYunxi"
+	subPath := "/openapi_gateway/abolish-backend/device/listDeviceOpenapi"
 	header := kt.Header()
 	header.Set(authorizationHeader, token)
 

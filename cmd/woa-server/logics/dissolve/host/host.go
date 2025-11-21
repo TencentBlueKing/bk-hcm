@@ -55,17 +55,18 @@ type RecycledHost interface {
 type logics struct {
 	dao          dao.Set
 	thirdCli     *thirdparty.Client
-	projectNames []string
 	projectIDs   []int
+	svrTypeNames []string
 }
 
 // New create recycle host logics.
-func New(dao dao.Set, thirdCli *thirdparty.Client, projectNames []string, projectIDs []int) RecycledHost {
+func New(dao dao.Set, thirdCli *thirdparty.Client, projectIDs []int, svrTypeNames []string) RecycledHost {
+
 	return &logics{
 		dao:          dao,
 		thirdCli:     thirdCli,
-		projectNames: projectNames,
 		projectIDs:   projectIDs,
+		svrTypeNames: svrTypeNames,
 	}
 }
 
@@ -257,37 +258,6 @@ func (l *logics) getAllHostFromCaiChe(kt *kit.Kit) ([]define.RecycleHostTable, e
 	virtualDepartmentName := []string{"IEG_Global", "IEG技术运营部"}
 	abolishPhase := []enumor.AbolishPhase{enumor.Incomplete, enumor.Complete, enumor.BsiComplete}
 
-	req := &caiche.ListDeviceReq{
-		VirtualDepartmentName: virtualDepartmentName,
-		AbolishPhase:          abolishPhase,
-		ProjectName:           l.projectNames,
-		PageIndex:             1, // 裁撤系统这个api是从1开始的
-		PageSize:              core.DefaultMaxPageLimit,
-	}
-	start := time.Now()
-	logs.Infof("start sync recycle host v1, time: %v, rid: %s", start, kt.Rid)
-	for {
-		resp, err := l.thirdCli.CaiChe.ListDevice(kt, req)
-		if err != nil {
-			logs.Errorf("get recycle host failed, err: %v, req: %+v, rid: %s", err, converter.PtrToVal(req), kt.Rid)
-			return nil, err
-		}
-
-		hostMap, err = addHost(kt, hostMap, transferToHost(resp.DataList))
-		if err != nil {
-			logs.Errorf("add host failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-
-		if len(resp.DataList) < int(core.DefaultMaxPageLimit) {
-			break
-		}
-
-		req.PageIndex++
-	}
-	end := time.Now()
-	logs.Infof("end sync recycle host v1, time: %v, cost: %v, rid: %s", end, end.Sub(start), kt.Rid)
-
 	v2Req := &caiche.ListDeviceV2Req{
 		PageNo:   1, // 裁撤系统这个api是从1开始的
 		PageSize: core.DefaultMaxPageLimit,
@@ -295,9 +265,10 @@ func (l *logics) getAllHostFromCaiChe(kt *kit.Kit) ([]define.RecycleHostTable, e
 			"virtualDepartmentName": virtualDepartmentName,
 			"projectId":             l.projectIDs,
 			"abolishPhase":          abolishPhase,
+			"svrTypeName":           l.svrTypeNames,
 		},
 	}
-	start = time.Now()
+	start := time.Now()
 	logs.Infof("start sync recycle host v2, time: %v, rid: %s", start, kt.Rid)
 	for {
 		resp, err := l.thirdCli.CaiChe.ListDeviceV2(kt, v2Req)
@@ -319,7 +290,7 @@ func (l *logics) getAllHostFromCaiChe(kt *kit.Kit) ([]define.RecycleHostTable, e
 
 		v2Req.PageNo++
 	}
-	end = time.Now()
+	end := time.Now()
 	logs.Infof("end sync recycle host v2, time: %v, cost: %v, rid: %s", end, end.Sub(start), kt.Rid)
 
 	result := make([]define.RecycleHostTable, 0, len(hostMap))

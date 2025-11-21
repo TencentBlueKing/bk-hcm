@@ -312,16 +312,19 @@ bkchat:
 
 resourceDissolve:
   originDate: "20241219"
-  # 需要从裁撤系统同步对应项目名称的主机
-  projectNames:
-    - "2025机房裁撤（国内）"
-    - "2025机房裁撤（海外）"
   # 裁撤列表展示需要排除对应项目名称的主机
   listExcludedProjectNames:
     - "2025机房裁撤（海外）"
   # 新版裁撤/云徙列表查询对应的项目id
   projectIDs:
-    - 26
+    - 26 # 2025轻量云徙Q4
+    - 27 # 2025机房裁撤（国内）
+    - 28 # 2025机房裁撤（海外）
+  # 裁撤列表查询对应的服务器资源类型
+  svrTypeNames:
+    - "Server"
+    - "QC_CVM"
+    - "Xen Virtual"
   syncDissolveHost: true
 
 elasticsearch:

@@ -58,7 +58,7 @@ func New(dao dao.Set, cmdbCli cmdb.Client, esCli *esCli.EsCli, thirdCli *thirdpa
 	conf cc.WoaServerSetting, configLogics config.Logics, cliSet *client.ClientSet) Logics {
 
 	recycledModule := module.New(dao)
-	recycledHost := host.New(dao, thirdCli, conf.ResDissolve.ProjectNames, conf.ResDissolve.ProjectIDs)
+	recycledHost := host.New(dao, thirdCli, conf.ResDissolve.ProjectIDs, conf.ResDissolve.SvrTypeNames)
 	dissolveConfig := dissolveconfig.New(cliSet)
 	originDate := conf.ResDissolve.OriginDate
 	blacklist := conf.Blacklist
