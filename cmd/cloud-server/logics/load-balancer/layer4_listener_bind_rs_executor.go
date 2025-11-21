@@ -84,19 +84,25 @@ func (c *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
+		logs.Errorf("layer4ListenerBindRSExecutor:unmarshalData, error: %v, source: %s, rid: %s",
+			err, source, kt.Rid)
 		return "", err
 	}
 
 	err = c.validate(kt)
 	if err != nil {
+		logs.Errorf("layer4ListenerBindRSExecutor:validate failed, error: %v, source: %s, rid: %s", err, source, kt.Rid)
 		return "", err
 	}
 	c.filter()
 
 	taskID, err := c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
+		logs.Errorf("layer4ListenerBindRSExecutor:build task failed, error: %v, source: %s, rid: %s",
+			err, source, kt.Rid)
 		return "", err
 	}
+
 	flowIDs, err := c.buildFlows(kt)
 	if err != nil {
 		return "", err
@@ -124,12 +130,15 @@ func (c *Layer4ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 	}
 	err := executor.validate(kt)
 	if err != nil {
+		logs.Errorf("layer4ListenerBindRSExecutor:executor validate failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("layer4 listener bind rs failed, record is not executable: %+v", detail)
+			err = fmt.Errorf("layer4 listener bind rs failed, record is not executable: %+v", detail)
+			logs.Errorf("layer4ListenerBindRSExecutor:NotExecutable, err: %v, rid: %s", err, kt.Rid)
+			return err
 		}
 	}
 	return nil

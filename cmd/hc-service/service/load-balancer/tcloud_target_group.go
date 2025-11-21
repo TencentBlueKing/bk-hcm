@@ -907,14 +907,14 @@ func (svc *clbSvc) modifyTCloudListenerTargetsWeight(kt *kit.Kit, req *protolb.T
 
 	cloudRuleIDs := make([]string, 0)
 	updateRsList := make([]*dataproto.TargetBaseReq, 0)
-	rsOpt := &typelb.TCloudTargetWeightUpdateOption{
-		LoadBalancerId: req.LoadBalancerCloudId,
-		Region:         req.Region,
-		ModifyList:     make([]*typelb.TargetWeightRule, 0),
-	}
 	for _, item := range lblRsList {
+		rsOpt := &typelb.TCloudTargetWeightUpdateOption{
+			LoadBalancerId: req.LoadBalancerCloudId,
+			Region:         req.Region,
+			ModifyList:     make([]*typelb.TargetWeightRule, 0),
+		}
+		tmpWeightRule := &typelb.TargetWeightRule{ListenerId: cvt.ValToPtr(item.CloudLblID)}
 		for _, rsItem := range item.RsList {
-			tmpWeightRule := &typelb.TargetWeightRule{ListenerId: cvt.ValToPtr(item.CloudLblID)}
 			if rsItem.RuleType == enumor.Layer7RuleType {
 				tmpWeightRule.LocationId = cvt.ValToPtr(rsItem.CloudRuleID)
 			}
@@ -925,18 +925,18 @@ func (svc *clbSvc) modifyTCloudListenerTargetsWeight(kt *kit.Kit, req *protolb.T
 			}
 			tmpRs = setTargetInstanceIDOrEniIP(rsItem.InstType, rsItem.CloudInstID, rsItem.IP, tmpRs)
 			tmpWeightRule.Targets = append(tmpWeightRule.Targets, tmpRs)
-			rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
 			updateRsList = append(updateRsList, &dataproto.TargetBaseReq{
 				ID: rsItem.ID, NewWeight: req.NewRsWeight,
 			})
 			cloudRuleIDs = append(cloudRuleIDs, rsItem.CloudRuleID)
 		}
-	}
-	err = tcloudAdpt.ModifyTargetWeight(kt, rsOpt)
-	if err != nil {
-		logs.Errorf("modify listener rs weight tcloud api failed, err: %v, newWeight: %d, rsOpt: %+v, rid: %s",
-			err, req.NewRsWeight, rsOpt, kt.Rid)
-		return nil, nil, err
+		rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
+		err = tcloudAdpt.ModifyTargetWeight(kt, rsOpt)
+		if err != nil {
+			logs.Errorf("modify listener rs weight tcloud api failed, err: %v, newWeight: %d, rsOpt: %+v, rid: %s",
+				err, cvt.PtrToVal(req.NewRsWeight), rsOpt, kt.Rid)
+			return nil, nil, err
+		}
 	}
 	return cloudRuleIDs, updateRsList, nil
 }

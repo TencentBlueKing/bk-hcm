@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -88,9 +89,13 @@ func (d *DetailDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, details []task.Detail
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.TaskDetailTable, task.DetailColumns.ColumnExpr(),
 		task.DetailColumns.ColonNameExpr())
 
-	err = d.orm.Txn(tx).BulkInsert(kt.Ctx, sql, details)
-	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.TaskDetailTable, err)
+	// 分批插入以避免 MySQL prepared statement 占位符数量超限
+	// task_detail 表有 15 个字段，MySQL 占位符限制是 65535，为了安全起见，每批最多插入500条记录
+	for _, batch := range slice.Split(details, int(core.DefaultMaxPageLimit)) {
+		err = d.orm.Txn(tx).BulkInsert(kt.Ctx, sql, batch)
+		if err != nil {
+			return nil, fmt.Errorf("insert %s failed, err: %v", table.TaskDetailTable, err)
+		}
 	}
 
 	return ids, nil
