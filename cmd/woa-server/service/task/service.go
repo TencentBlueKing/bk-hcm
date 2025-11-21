@@ -189,5 +189,6 @@ func bizService(h *rest.Handler, s *service) {
 
 	// 升降配接口
 	h.Add("CreateBizUpgradeCRPOrder", http.MethodPost, "/create/upgrade/crp_order", s.CreateBizUpgradeCRPOrder)
-
+	// 亲和性检查接口
+	h.Add("GetAffinityMatchDetail", http.MethodPost, "/apply/match/check", s.GetAffinityMatchDetail)
 }

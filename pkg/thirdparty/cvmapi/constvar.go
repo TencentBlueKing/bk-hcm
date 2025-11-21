@@ -130,6 +130,10 @@ const (
 	QueryCvmInstanceType = "queryCvmInstanceType"
 	// GetApproveLogMethod 查询审批日志
 	GetApproveLogMethod = "getApproveLog"
+	// CvmMatchSwapGroupMethod 亲和性匹配请求方法
+	CvmMatchSwapGroupMethod = "matchSwapGroup"
+	// CvmQueryMatchTaskMethod 亲和性匹配任务查询方法
+	CvmQueryMatchTaskMethod = "queryMatchTask"
 
 	// CvmUpgradeMethod CVM升降配提单方法
 	CvmUpgradeMethod = "createUpgradeOrder"

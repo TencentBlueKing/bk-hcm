@@ -88,6 +88,10 @@ type CVMClientInterface interface {
 	// QueryOrderList 根据销毁单据查询预测返还信息
 	QueryOrderList(ctx context.Context, header http.Header, req *QueryOrderListReq) (
 		*QueryOrderListResp, error)
+	// MatchSwapGroup CRP亲合度可申领量匹配
+	MatchSwapGroup(ctx context.Context, header http.Header, req *MatchSwapGroupReq) (*MatchSwapGroupResp, error)
+	// QueryMatchTask CRP查询匹配单状态
+	QueryMatchTask(ctx context.Context, header http.Header, req *QueryMatchTaskReq) (*QueryMatchTaskResp, error)
 	// CreateTransOrder 预测转移
 	CreateTransOrder(ctx context.Context, header http.Header, req *TransOrderReq) (
 		*TransOrderResp, error)
@@ -673,4 +677,46 @@ func (c *cvmApi) CreateTransOrder(ctx context.Context, header http.Header, req *
 		Into(resp)
 
 	return resp, err
+}
+
+// MatchSwapGroup CRP亲合度可申领量匹配
+func (c *cvmApi) MatchSwapGroup(ctx context.Context, header http.Header, req *MatchSwapGroupReq) (*MatchSwapGroupResp, error) {
+	subPath := "/packer/api/"
+	resp := new(MatchSwapGroupResp)
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithParam(CvmApiKey, CvmApiKeyVal).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		logs.Errorf("cvm:match:swap:group:failed, err: %v, subPath: %s, req: %+v", err, subPath, req)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// QueryMatchTask CRP查询匹配单状态
+func (c *cvmApi) QueryMatchTask(ctx context.Context, header http.Header, req *QueryMatchTaskReq) (*QueryMatchTaskResp, error) {
+	subPath := "/packer/api/"
+	resp := new(QueryMatchTaskResp)
+	err := c.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithParam(CvmApiKey, CvmApiKeyVal).
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		logs.Errorf("cvm:query:match:task:failed, err: %v, subPath: %s, req: %+v", err, subPath, req)
+		return nil, err
+	}
+
+	return resp, nil
 }

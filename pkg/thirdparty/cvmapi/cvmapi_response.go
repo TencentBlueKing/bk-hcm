@@ -910,3 +910,55 @@ type TransOrderRst struct {
 	OrderId string `json:"orderId"`
 	Status  int    `json:"status"`
 }
+
+// MatchSwapGroupReq CRP匹配交换组请求
+type MatchSwapGroupReq struct {
+	ReqMeta `json:",inline"`
+	Params  MatchSwapGroupParams `json:"params"`
+}
+
+// MatchSwapGroupParams ...
+type MatchSwapGroupParams struct {
+	DeptID       int64  `json:"deptId"`       // 部门ID
+	ApplyNum     int    `json:"applyNum"`     // 申领量
+	Zone         string `json:"zone"`         // 可用区
+	InstanceType string `json:"instanceType"` // 机型
+}
+
+// MatchSwapGroupResp CRP匹配交换组响应
+type MatchSwapGroupResp struct {
+	RespMeta `json:",inline"`
+	Result   MatchSwapGroupResult `json:"result"`
+}
+
+// MatchSwapGroupResult ...
+type MatchSwapGroupResult struct {
+	MatchID string `json:"matchId"` // 匹配成功时的单号
+	Matched bool   `json:"matched"` // true: 匹配成功, false: 匹配失败
+	Msg     string `json:"msg"`     // 消息
+}
+
+// QueryMatchTaskReq CRP查询匹配任务请求
+type QueryMatchTaskReq struct {
+	ReqMeta `json:",inline"`
+	Params  QueryMatchTaskParams `json:"params"`
+}
+
+// QueryMatchTaskParams ...
+type QueryMatchTaskParams struct {
+	OrderID string `json:"orderId"` // 匹配单号
+}
+
+// QueryMatchTaskResp CRP查询匹配任务响应
+type QueryMatchTaskResp struct {
+	RespMeta `json:",inline"`
+	Result   QueryMatchTaskResult `json:"result"`
+}
+
+// QueryMatchTaskResult ...
+type QueryMatchTaskResult struct {
+	Status       bool     `json:"status"`       // 匹配状态
+	InstanceType string   `json:"instanceType"` // 规格
+	MaxCutNum    int      `json:"maxCutNum"`    // 最大切片数量
+	IPs          []string `json:"ips"`          // 母机IP列表
+}

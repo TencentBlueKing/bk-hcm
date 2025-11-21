@@ -95,6 +95,16 @@ func (t TaskManagementResource) Validate() error {
 // TaskDetailState is task detail state.
 type TaskDetailState string
 
+// AffinityStatus 表示 CRP 预检匹配状态
+type AffinityStatus int
+
+const (
+	// AffinityStatusHasData CRP预检有数据
+	AffinityStatusHasData AffinityStatus = 1
+	// AffinityStatusNoData CRP预检无数据
+	AffinityStatusNoData AffinityStatus = 2
+)
+
 const (
 	// TaskDetailInit is a state indicating that task detail init.
 	TaskDetailInit TaskDetailState = "init"

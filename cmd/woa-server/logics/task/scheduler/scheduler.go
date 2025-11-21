@@ -112,6 +112,8 @@ type Interface interface {
 	MatchDevice(kit *kit.Kit, param *types.MatchDeviceReq) error
 	// MatchPoolDevice execute resource apply match devices from resource pool
 	MatchPoolDevice(kit *kit.Kit, param *types.MatchPoolDeviceReq) error
+	// GetAffinityMatchDetail get affinity match detail
+	GetAffinityMatchDetail(kit *kit.Kit, param *types.AffinityMatchReq) (*types.AffinityMatchResp, error)
 	// PauseApplyOrder pauses resource apply order
 	PauseApplyOrder(kit *kit.Kit, param mapstr.MapStr) error
 	// ResumeApplyOrder resumes resource apply order
@@ -3589,4 +3591,14 @@ func validateConfirm(kt *kit.Kit, param *types.ConfirmApplyModifyReq, order *typ
 		return fmt.Errorf("CVM升降配暂不支持修改单据重试")
 	}
 	return nil
+}
+
+// GetAffinityMatchDetail 亲和性检查
+func (s *scheduler) GetAffinityMatchDetail(kit *kit.Kit, param *types.AffinityMatchReq) (*types.AffinityMatchResp, error) {
+	affinityService, err := NewAffinityService(s.configLogics, s.crpCli)
+	if err != nil {
+		logs.Errorf("failed to create affinity service, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+	return affinityService.GetAffinityMatchDetail(kit, param)
 }
