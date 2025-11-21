@@ -31,6 +31,7 @@ import (
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/client"
+	"hcm/pkg/condition"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
@@ -38,38 +39,52 @@ import (
 	"hcm/pkg/tools/language"
 	"hcm/pkg/tools/metadata"
 	"hcm/pkg/tools/util"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // Interface operation interface
 type Interface interface {
 	// GetApplyStatistics get resource apply operation statistics
-	GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatReq) (*types.GetApplyStatRst, error)
+	GetApplyStatistics(kt *kit.Kit, param *types.GetApplyStatReq) (*types.GetApplyStatRst, error)
 	// GetAverageTimeConsumptionOverview get average time consumption overview
-	GetAverageTimeConsumptionOverview(kit *kit.Kit, param *types.AverageTimeConsumptionReq) ([]types.AverageTimeConsumptionItem, error)
+	GetAverageTimeConsumptionOverview(kt *kit.Kit, param *types.AverageTimeConsumptionReq) (
+		[]types.AverageTimeConsumptionItem, error)
 	// GetAverageTimeConsumptionCompare get average time consumption compare
-	GetAverageTimeConsumptionCompare(kit *kit.Kit, param *types.AverageTimeConsumptionCompareReq) (*types.AverageTimeConsumptionCompareRst, error)
+	GetAverageTimeConsumptionCompare(kt *kit.Kit, param *types.AverageTimeConsumptionCompareReq) (
+		*types.AverageTimeConsumptionCompareRst, error)
 	// GetOrderTimeCostOverview get order time cost overview
-	GetOrderTimeCostOverview(kit *kit.Kit, param *types.OrderTimeCostReq) ([]types.OrderTimeCostItem, error)
+	GetOrderTimeCostOverview(kt *kit.Kit, param *types.OrderTimeCostReq) ([]types.OrderTimeCostItem, error)
 	// GetOrderTimeCostCompare get order time cost compare
-	GetOrderTimeCostCompare(kit *kit.Kit, param *types.OrderTimeCostCompareReq) (*types.OrderTimeCostCompareRst, error)
+	GetOrderTimeCostCompare(kt *kit.Kit, param *types.OrderTimeCostCompareReq) (*types.OrderTimeCostCompareRst, error)
 	// GetProductionStageTimeCostOverview get production stage time cost overview
-	GetProductionStageTimeCostOverview(kit *kit.Kit, param *types.ProductionStageTimeCostReq) ([]types.ProductionStageTimeCostItem, error)
+	GetProductionStageTimeCostOverview(kt *kit.Kit, param *types.ProductionStageTimeCostReq) (
+		[]types.ProductionStageTimeCostItem, error)
 	// GetProductionStageTimeCostCompare get production stage time cost compare
-	GetProductionStageTimeCostCompare(kit *kit.Kit, param *types.ProductionStageTimeCostCompareReq) (*types.ProductionStageTimeCostCompareRst, error)
+	GetProductionStageTimeCostCompare(kt *kit.Kit, param *types.ProductionStageTimeCostCompareReq) (
+		*types.ProductionStageTimeCostCompareRst, error)
 	// GetPercentileTimeConsumptionOverview get percentile time consumption overview
-	GetPercentileTimeConsumptionOverview(kit *kit.Kit, param *types.PercentileTimeConsumptionReq) ([]types.PercentileTimeConsumptionItem, error)
+	GetPercentileTimeConsumptionOverview(kt *kit.Kit, param *types.PercentileTimeConsumptionReq) (
+		[]types.PercentileTimeConsumptionItem, error)
 	// GetPercentileTimeConsumptionCompare get percentile time consumption compare
-	GetPercentileTimeConsumptionCompare(kit *kit.Kit, param *types.PercentileTimeConsumptionCompareReq) (*types.PercentileTimeConsumptionCompareRst, error)
+	GetPercentileTimeConsumptionCompare(kt *kit.Kit, param *types.PercentileTimeConsumptionCompareReq) (
+		*types.PercentileTimeConsumptionCompareRst, error)
 	// GetDeliveryRateStatistics get delivery rate statistics
-	GetDeliveryRateStatistics(kit *kit.Kit, param *types.DeliveryRateStatisticsReq) ([]types.DeliveryRateStatisticsItem, error)
+	GetDeliveryRateStatistics(kt *kit.Kit, param *types.DeliveryRateStatisticsReq) (
+		[]types.DeliveryRateStatisticsItem, error)
 	// GetDeliveryRateDetail get delivery rate detail
-	GetDeliveryRateDetail(kit *kit.Kit, param *types.DeliveryRateDetailReq) (*types.DeliveryRateDetailResp, error)
+	GetDeliveryRateDetail(kt *kit.Kit, param *types.DeliveryRateDetailReq) (*types.DeliveryRateDetailResp, error)
 	// GetCompletionRateStatistics get completion rate statistics
-	GetCompletionRateStatistics(kit *kit.Kit,
+	GetCompletionRateStatistics(kt *kit.Kit,
 		param *types.GetCompletionRateStatReq) (*types.GetCompletionRateStatRst, error)
 	// GetCompletionRateDetail 获取结单率详情统计
-	GetCompletionRateDetail(kit *kit.Kit,
+	GetCompletionRateDetail(kt *kit.Kit,
 		param *types.GetCompletionRateDetailReq) (*types.GetCompletionRateDetailRst, error)
+	// GetApplyBizHostsStatistics get apply biz hosts statistics
+	GetApplyBizHostsStatistics(kt *kit.Kit, startDate, endDate time.Time) (*types.ApplyBizHostsStatisticsResult, error)
+	// GetApplyBizCpuCoresStatistics get apply biz cpu cores statistics
+	GetApplyBizCpuCoresStatistics(kt *kit.Kit, startDate, endDate time.Time) (
+		*types.ApplyBizCpuCoresStatisticsResult, error)
 }
 
 // operation provides operation statistics service
@@ -92,16 +107,16 @@ func New(_ context.Context, clientSet *client.ClientSet) (*operation, error) {
 }
 
 // GetApplyStatistics get resource apply operation statistics
-func (op *operation) GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatReq) (*types.GetApplyStatRst, error) {
+func (op *operation) GetApplyStatistics(kt *kit.Kit, param *types.GetApplyStatReq) (*types.GetApplyStatRst, error) {
 	filter, err := param.GetFilter()
 	if err != nil {
-		logs.Errorf("failed to get resource apply operation statistics, for get filter err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply operation statistics, for get filter err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	orderTotalStats, err := op.getOrderStats(filter, param.Dimension)
 	if err != nil {
-		logs.Errorf("failed to get resource apply total order statistics, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply total order statistics, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -109,13 +124,13 @@ func (op *operation) GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatR
 	succOrderFilter["status"] = types.ApplyStatusDone
 	orderSuccStats, err := op.getOrderStats(succOrderFilter, param.Dimension)
 	if err != nil {
-		logs.Errorf("failed to get resource apply success order statistics, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply success order statistics, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	osTotalStats, err := op.getDeviceStats(filter, param.Dimension)
 	if err != nil {
-		logs.Errorf("failed to get resource apply total os statistics, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply total os statistics, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -130,7 +145,7 @@ func (op *operation) GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatR
 	}
 	orderManualStats, err := op.getOrderStats(manualOrderFilter, param.Dimension)
 	if err != nil {
-		logs.Errorf("failed to get resource apply manual order statistics, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply manual order statistics, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -139,9 +154,18 @@ func (op *operation) GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatR
 	succOsFilter["deliverer"] = "icr"
 	osSuccStats, err := op.getDeviceStats(succOsFilter, param.Dimension)
 	if err != nil {
-		logs.Errorf("failed to get resource apply success os statistics, err: %v, rid: %s", err, kit.Rid)
+		logs.Errorf("failed to get resource apply success os statistics, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
+
+	rst := getApplyStatRst(orderTotalStats, orderSuccStats, orderManualStats, osTotalStats, osSuccStats)
+	return rst, nil
+}
+
+func getApplyStatRst(orderTotalStats map[string]metadata.StringIDCount,
+	orderSuccStats map[string]metadata.StringIDCount, orderManualStats map[string]metadata.StringIDCount,
+	osTotalStats map[string]metadata.StringIDCount,
+	osSuccStats map[string]metadata.StringIDCount) *types.GetApplyStatRst {
 
 	// sort date keys
 	dateKeys := make([]string, 0)
@@ -205,8 +229,7 @@ func (op *operation) GetApplyStatistics(kit *kit.Kit, param *types.GetApplyStatR
 		}
 		rst.Info = append(rst.Info, applyStat)
 	}
-
-	return rst, nil
+	return rst
 }
 
 // getOrderStats get resource apply order operation statistics
@@ -318,12 +341,12 @@ func parseTimeRange(startTimeStr, endTimeStr string) (time.Time, time.Time, erro
 }
 
 // getExcludeSuborderIDs 获取排除的子单号列表
-func (op *operation) getExcludeSuborderIDs(kit *kit.Kit, startTime, endTime time.Time) ([]string, error) {
+func (op *operation) getExcludeSuborderIDs(kt *kit.Kit, startTime, endTime time.Time) ([]string, error) {
 	if op.statistics == nil {
 		return nil, nil
 	}
 
-	excludeSuborderIDs, err := op.statistics.ListExcludedSubOrderIDs(kit, startTime, endTime)
+	excludeSuborderIDs, err := op.statistics.ListExcludedSubOrderIDs(kt, startTime, endTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get exclude suborder ids: %w", err)
 	}
@@ -583,4 +606,112 @@ func (op *operation) GetCompletionRateDetail(kt *kit.Kit,
 	return &types.GetCompletionRateDetailRst{
 		Details: aggRst,
 	}, nil
+}
+
+// GetApplyBizHostsStatistics 按日期范围统计业务维度的申请主机数据
+// startDate: 开始日期字符串，格式：2025-11-01
+// endDate: 结束日期字符串，格式：2025-11-30
+func (op *operation) GetApplyBizHostsStatistics(kt *kit.Kit, startDate, endDate time.Time) (
+	*types.ApplyBizHostsStatisticsResult, error) {
+
+	// 构建基础过滤条件
+	baseFilter := bson.M{
+		"create_at": bson.M{condition.BKDBGTE: startDate, condition.BKDBLTE: endDate},
+		"stage":     types.TicketStageDone,
+		"status":    types.ApplyStatusDone,
+	}
+
+	// 获取需要排除的suborder_id列表（例如：手动处理的订单）
+	excludeSuborderIDs, err := op.getExcludeSuborderIDs(kt, startDate, endDate)
+	if err != nil {
+		logs.Errorf("failed to get exclude suborder ids, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 如果有需要排除的订单，添加到过滤条件中
+	if len(excludeSuborderIDs) > 0 {
+		logs.Infof("query biz host statistics exclude [%d] suborder_ids, rid: %s", len(excludeSuborderIDs), kt.Rid)
+		baseFilter["suborder_id"] = bson.M{condition.BKDBNIN: excludeSuborderIDs}
+	}
+
+	// 构建聚合管道
+	pipeline := bson.A{
+		// 第一步：过滤时间范围 + 排除特定订单
+		bson.M{pkg.BKDBMatch: baseFilter},
+		// 第二步：按业务ID分组，统计每个业务的申请成功的主机总数
+		bson.M{pkg.BKDBGroup: bson.M{
+			"_id":         "$bk_biz_id",
+			"order_count": bson.M{"$sum": 1},              // 申请单数量
+			"host_count":  bson.M{"$sum": "$success_num"}, // 成功交付的主机数
+		},
+		},
+		// 第三步：按成功交付主机总数降序排序
+		bson.M{pkg.BKDBSort: bson.M{"host_count": -1}},
+		// 第四步：格式化输出字段
+		bson.M{pkg.BKDBProject: bson.M{"_id": 0, "bk_biz_id": "$_id", "order_count": 1, "host_count": 1}},
+	}
+
+	var result []types.ApplyBizHostsStatisticsItem
+	err = model.Operation().ApplyOrder().AggregateAll(kt.Ctx, pipeline, &result)
+	if err != nil {
+		logs.Errorf("failed to aggregate apply biz hosts statistics by date range, startDate: %s, endDate: %s, "+
+			"err: %v, rid: %s", startDate, endDate, err, kt.Rid)
+		return nil, err
+	}
+
+	return &types.ApplyBizHostsStatisticsResult{Details: result}, nil
+}
+
+// GetApplyBizCpuCoresStatistics 按日期范围统计业务维度的申请核心数数据
+// startDate: 开始日期字符串，格式：2025-11-01
+// endDate: 结束日期字符串，格式：2025-11-30
+func (op *operation) GetApplyBizCpuCoresStatistics(kt *kit.Kit, startDate, endDate time.Time) (
+	*types.ApplyBizCpuCoresStatisticsResult, error) {
+
+	// 构建基础过滤条件
+	baseFilter := bson.M{
+		"create_at": bson.M{condition.BKDBGTE: startDate, condition.BKDBLTE: endDate},
+		"stage":     types.TicketStageDone,
+		"status":    types.ApplyStatusDone,
+	}
+
+	// 获取需要排除的suborder_id列表（例如：手动处理的订单）
+	excludeSuborderIDs, err := op.getExcludeSuborderIDs(kt, startDate, endDate)
+	if err != nil {
+		logs.Errorf("failed to get exclude suborder ids, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// 如果有需要排除的订单，添加到过滤条件中
+	if len(excludeSuborderIDs) > 0 {
+		logs.Infof("query biz cpu cores statistics exclude [%d] suborder_ids, rid: %s", len(excludeSuborderIDs), kt.Rid)
+		baseFilter["suborder_id"] = bson.M{condition.BKDBNIN: excludeSuborderIDs}
+	}
+
+	// 构建聚合管道
+	pipeline := bson.A{
+		// 第一步：过滤时间范围 + 排除特定订单
+		bson.M{pkg.BKDBMatch: baseFilter},
+		// 第二步：按业务ID分组，统计每个业务的申请成功的主机总数
+		bson.M{pkg.BKDBGroup: bson.M{
+			"_id":                  "$bk_biz_id",
+			"order_count":          bson.M{"$sum": 1},                 // 申请单数量
+			"delivered_core_count": bson.M{"$sum": "$delivered_core"}, // 成功交付的主机数
+		},
+		},
+		// 第三步：按成功交付主机总数降序排序
+		bson.M{pkg.BKDBSort: bson.M{"delivered_core_count": -1}},
+		// 第四步：格式化输出字段
+		bson.M{pkg.BKDBProject: bson.M{"_id": 0, "bk_biz_id": "$_id", "order_count": 1, "delivered_core_count": 1}},
+	}
+
+	var result []types.ApplyBizCpuCoresStatisticsItem
+	err = model.Operation().ApplyOrder().AggregateAll(kt.Ctx, pipeline, &result)
+	if err != nil {
+		logs.Errorf("failed to aggregate apply biz cpu core statistics by date range, startDate: %s, endDate: %s, "+
+			"err: %v, rid: %s", startDate, endDate, err, kt.Rid)
+		return nil, err
+	}
+
+	return &types.ApplyBizCpuCoresStatisticsResult{Details: result}, nil
 }

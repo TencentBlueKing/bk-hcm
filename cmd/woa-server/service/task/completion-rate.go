@@ -23,6 +23,7 @@ import (
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -40,6 +41,14 @@ func (s *service) GetCompletionRateStatistics(cts *rest.Contexts) (any, error) {
 		logs.Errorf("failed to get completion rate statistics, err: %v,rid: %s",
 			err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to get completion rate statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	rst, err := s.logics.Operation().GetCompletionRateStatistics(cts.Kit, input)
@@ -64,6 +73,14 @@ func (s *service) GetCompletionRateDetail(cts *rest.Contexts) (any, error) {
 		logs.Errorf("failed to get completion rate detail, err: %v, rid: %s",
 			err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to get completion rate detail, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	rst, err := s.logics.Operation().GetCompletionRateDetail(cts.Kit, input)

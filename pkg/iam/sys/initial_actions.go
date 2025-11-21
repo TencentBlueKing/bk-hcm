@@ -628,6 +628,15 @@ func genZiYanPlatformManageActions() []client.ResourceAction {
 		Version:              1,
 		Hidden:               true,
 	}, {
+		ID:                   ZiyanResDeliverAnalyze, // 交付分析-菜单粒度
+		Name:                 ActionIDNameMap[ZiyanResDeliverAnalyze],
+		NameEn:               "ZiYan Resource Deliver Analyze",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+		Hidden:               true,
+	}, {
 		ID:                   RootAccountManage,
 		Name:                 ActionIDNameMap[RootAccountManage],
 		NameEn:               "Root Account Manage",

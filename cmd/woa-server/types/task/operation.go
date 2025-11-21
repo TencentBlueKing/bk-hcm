@@ -15,11 +15,12 @@ package task
 
 import (
 	"fmt"
-
 	"time"
 
 	"hcm/pkg"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/querybuilder"
 )
 
@@ -811,3 +812,57 @@ type CompletionRateDetailItem struct {
 	DoneOrders     int     `json:"done_orders" bson:"done_orders"`         // 已完成单据数（stage=DONE）
 	CompletionRate float64 `json:"completion_rate" bson:"completion_rate"` // 结单率（百分比），保留2位小数
 }
+
+// GetApplyBizTopStatReq get apply biz top statistics request
+type GetApplyBizTopStatReq struct {
+	StartTime string `json:"start_time" validate:"required"`
+	EndTime   string `json:"end_time" validate:"required"`
+}
+
+// ParseAndValidate validate GetApplyBizTopStatReq
+func (req *GetApplyBizTopStatReq) ParseAndValidate() (time.Time, time.Time, error) {
+	if err := validator.Validate.Struct(req); err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+
+	start, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("date format should be like %s", constant.DateLayout)
+	}
+
+	if len(req.EndTime) == 0 {
+		return time.Time{}, time.Time{}, fmt.Errorf("end_time is not set")
+	}
+
+	end, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("date format should be like %s", constant.DateLayout)
+	}
+
+	// 开始时间、结束时间最长1年
+	if end.After(start.AddDate(1, 0, 0)) {
+		return time.Time{}, time.Time{}, fmt.Errorf("time range exceeds limit 1 year")
+	}
+
+	return start, end, nil
+}
+
+// ApplyBizHostsStatisticsItem 申请主机数-业务统计单项
+type ApplyBizHostsStatisticsItem struct {
+	BkBizID    int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	HostCount  uint  `json:"host_count" bson:"host_count"`
+	OrderCount int   `json:"order_count" bson:"order_count"`
+}
+
+// ApplyBizHostsStatisticsResult 申请主机数TOP10的业务统计结果
+type ApplyBizHostsStatisticsResult = core.ListResultT[ApplyBizHostsStatisticsItem]
+
+// ApplyBizCpuCoresStatisticsItem 申请核心数-业务统计单项
+type ApplyBizCpuCoresStatisticsItem struct {
+	BkBizID            int64 `json:"bk_biz_id" bson:"bk_biz_id"`
+	DeliveredCoreCount uint  `json:"delivered_core_count" bson:"delivered_core_count"`
+	OrderCount         int   `json:"order_count" bson:"order_count"`
+}
+
+// ApplyBizCpuCoresStatisticsResult 申请核心数TOP10的业务统计结果
+type ApplyBizCpuCoresStatisticsResult = core.ListResultT[ApplyBizCpuCoresStatisticsItem]

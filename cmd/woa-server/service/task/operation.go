@@ -17,6 +17,7 @@ import (
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -119,6 +120,70 @@ func (s *service) ListApplyOrderStatisticsYearMonths(cts *rest.Contexts) (any, e
 	rst, err := s.configLogics.ApplyOrderStatistics().ListYearMonths(cts.Kit)
 	if err != nil {
 		logs.Errorf("failed to list apply order statistics year months, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// GetApplyBizHostsStatistics get apply biz hosts statistics
+func (s *service) GetApplyBizHostsStatistics(cts *rest.Contexts) (any, error) {
+	input := new(types.GetApplyBizTopStatReq)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	startTime, endTime, err := input.ParseAndValidate()
+	if err != nil {
+		logs.Errorf("failed to validate apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rst, err := s.logics.Operation().GetApplyBizHostsStatistics(cts.Kit, startTime, endTime)
+	if err != nil {
+		logs.Errorf("failed to get apply biz hosts statistics, err: %v, startTime: %v, endTime: %v, rid: %s",
+			err, startTime, endTime, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// GetApplyBizCpuCoresStatistics get apply biz cpu cores statistics
+func (s *service) GetApplyBizCpuCoresStatistics(cts *rest.Contexts) (any, error) {
+	input := new(types.GetApplyBizTopStatReq)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	startTime, endTime, err := input.ParseAndValidate()
+	if err != nil {
+		logs.Errorf("failed to validate apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rst, err := s.logics.Operation().GetApplyBizCpuCoresStatistics(cts.Kit, startTime, endTime)
+	if err != nil {
+		logs.Errorf("failed to get apply biz cpu cores statistics, err: %v, startTime: %v, endTime: %v, rid: %s",
+			err, startTime, endTime, cts.Kit.Rid)
 		return nil, err
 	}
 

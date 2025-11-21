@@ -82,6 +82,10 @@ func (s *service) initOperationService(h *rest.Handler) {
 	h.Add("GetCompletionRateStatistics", http.MethodPost,
 		"/apply/completion-rate/statistics", s.GetCompletionRateStatistics)
 	h.Add("GetCompletionRateDetail", http.MethodPost, "/apply/completion-rate/detail", s.GetCompletionRateDetail)
+	h.Add("GetApplyBizHostsStatistics", http.MethodPost,
+		"/apply/findmany/bizs_hosts/statistics", s.GetApplyBizHostsStatistics)
+	h.Add("GetApplyBizCpuCoresStatistics", http.MethodPost,
+		"/apply/findmany/bizs_cpucores/statistics", s.GetApplyBizCpuCoresStatistics)
 }
 
 func (s *service) initDeliverAnalysisService(h *rest.Handler) {
