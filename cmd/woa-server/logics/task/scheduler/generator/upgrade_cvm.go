@@ -571,7 +571,7 @@ func (g *Generator) createUpgradeDeviceInfos(kt *kit.Kit, order *types.ApplyOrde
 		return err
 	}
 
-	devices := g.buildUpgradeDevicesInfo(items, order, generateID, mapAssetIDToHost, zoneRegionMap)
+	devices := g.buildUpgradeDevicesInfo(kt, items, order, generateID, mapAssetIDToHost, zoneRegionMap)
 	if err = model.Operation().DeviceInfo().CreateDeviceInfos(kt.Ctx, devices); err != nil {
 		logs.Errorf("failed to save device info to db, order id: %s, generateId: %d, err: %v, devicesNum: %d, "+
 			"devices: %+v, rid: %s", order.SubOrderId, generateID, err, len(devices), cvt.PtrToSlice(devices), kt.Rid)
@@ -584,7 +584,7 @@ func (g *Generator) createUpgradeDeviceInfos(kt *kit.Kit, order *types.ApplyOrde
 	return nil
 }
 
-func (g *Generator) buildUpgradeDevicesInfo(items []*types.DeviceInfo, order *types.ApplyOrder, generateID uint64,
+func (g *Generator) buildUpgradeDevicesInfo(kt *kit.Kit, items []*types.DeviceInfo, order *types.ApplyOrder, generateID uint64,
 	mapAssetIDToHost map[string]*cmdb.Host, zoneRegionMap map[string]string) []*types.DeviceInfo {
 
 	// save device info to db
@@ -647,6 +647,15 @@ func (g *Generator) buildUpgradeDevicesInfo(items []*types.DeviceInfo, order *ty
 			}
 			device.ModuleName = host.ModuleName
 			device.Equipment = host.RackId
+		}
+
+		// 获取母机IP
+		ownerIP, err := g.getOwnerIP(kt, item.AssetId)
+		if err != nil {
+			logs.Warnf("failed to get owner IP for assetID: %s, subOrderID: %s, err: %v, rid: %s",
+				item.AssetId, order.SubOrderId, err, kt.Rid)
+		} else {
+			device.OwnerIP = ownerIP
 		}
 
 		devices = append(devices, device)

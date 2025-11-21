@@ -1076,6 +1076,29 @@ type ModuleHost struct {
 	OwnerID  string `json:"bk_supplier_account,omitempty" bson:"bk_supplier_account"`
 }
 
+// FindManyHostsByAssetIDReq bkcc by_asset_id 请求
+type FindManyHostsByAssetIDReq struct {
+	BkAssetIDs []string `json:"bk_asset_ids" validate:"required,min=1"`
+	Fields     []string `json:"fields,omitempty"`
+}
+
+// Validate  FindManyHostsByAssetIDReq
+func (req *FindManyHostsByAssetIDReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// HostByAssetID by_asset_id 响应的主机信息
+type HostByAssetID struct {
+	BkAssetID     string `json:"bk_asset_id"`
+	BkHostInnerIP string `json:"bk_host_innerip"`
+}
+
+// FindManyHostsByAssetIDResp by_asset_id
+type FindManyHostsByAssetIDResp struct {
+	types.BaseResponse
+	Data []HostByAssetID `json:"data"`
+}
+
 // GetBizInternalModuleReq get business's internal module request
 type GetBizInternalModuleReq struct {
 	BkBizID int64 `json:"bk_biz_id"`

@@ -1591,12 +1591,23 @@ func (s *scheduler) GetApplyDevice(kit *kit.Kit, param *types.GetApplyDeviceReq)
 
 	count, err := model.Operation().DeviceInfo().CountDeviceInfo(kit.Ctx, filter)
 	if err != nil {
+		logs.Errorf("failed to count apply device, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
 		return nil, err
 	}
 
 	insts, err := model.Operation().DeviceInfo().FindManyDeviceInfo(kit.Ctx, param.Page, filter)
 	if err != nil {
+		logs.Errorf("failed to find apply device, filter: %+v, page: %+v, err: %v, rid: %s",
+			filter, param.Page, err, kit.Rid)
 		return nil, err
+	}
+
+	// 统计有母机IP的设备数量
+	ownerIPCount := 0
+	for _, inst := range insts {
+		if inst.OwnerIP != "" {
+			ownerIPCount++
+		}
 	}
 
 	rst := &types.GetApplyDeviceRst{

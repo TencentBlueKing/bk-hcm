@@ -57,6 +57,8 @@ type ZiyanCmdbClient interface {
 	GetHostInfoByHostID(kt *kit.Kit, bkHostID int64) (*Host, error)
 	// GetHostIDByAssetID gets host id by asset id in cc 3.0
 	GetHostIDByAssetID(kt *kit.Kit, assetID string) (int64, error)
+	// FindManyHostsByAssetID 通过固资号批量查询主机
+	FindManyHostsByAssetID(kt *kit.Kit, assetIDs []string) ([]HostByAssetID, error)
 
 	// write operation
 
@@ -353,4 +355,22 @@ func (c *cmdbApiGateWay) GetHostIDByAssetID(kt *kit.Kit, assetID string) (int64,
 			assetID, len(result.Info))
 	}
 	return result.Info[0].BkHostID, nil
+}
+
+// FindManyHostsByAssetID gets parent machine IP by asset id from bkcc
+func (c *cmdbApiGateWay) FindManyHostsByAssetID(kt *kit.Kit, assetIDs []string) ([]HostByAssetID, error) {
+	req := &FindManyHostsByAssetIDReq{BkAssetIDs: assetIDs, Fields: []string{"bk_host_innerip"}}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	resp, err := apigateway.ApiGatewayCall[FindManyHostsByAssetIDReq, []HostByAssetID](c.client, c.config,
+		rest.POST, kt, req, "/shipper/findmany/cmdb/hosts/by_asset_id")
+	if err != nil {
+		logs.Errorf("failed to find hosts by asset id from bkcc,assetIDs: %v, err: %v,rid:%s", assetIDs, err, kt.Rid)
+		return nil, err
+	}
+	if resp == nil {
+		return []HostByAssetID{}, nil
+	}
+	return *resp, nil
 }
