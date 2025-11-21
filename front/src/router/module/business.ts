@@ -438,7 +438,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/ziyanScr/hostApplication/components/application-detail/index'),
             meta: {
               ...new Meta({
-                activeKey: 'applications',
+                activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
                 notMenu: true,
                 menu: { relative: MENU_BUSINESS_TICKET_MANAGEMENT },
               }),
@@ -449,7 +449,7 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'HostApplicationsModify',
             component: () => import('@/views/ziyanScr/hostApplication/components/application-modify/index.vue'),
             meta: {
-              activeKey: 'applications',
+              activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
               notMenu: true,
             },
           },
@@ -467,7 +467,7 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'HostRecycleDocDetail',
             component: () => import('@/views/ziyanScr/host-recycle/bill-detail'),
             meta: {
-              activeKey: 'applications',
+              activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
               notMenu: true,
             },
           },

@@ -704,6 +704,7 @@ export default (type: string, isSimpleShow = false) => {
     { label: '资源类型', field: 'resource_type' },
     { label: '机型', field: 'device_type' },
     { label: '园区', field: 'zone_name' },
+    { label: '所在母机IP', field: 'owner_ip', render: ({ row }: any) => row.owner_ip || '--' },
     { label: '交付时间', field: 'update_at', width: 160, render: ({ cell }: any) => timeFormatter(cell) },
     { label: '申请时间', field: 'create_at', width: 160, render: ({ cell }: any) => timeFormatter(cell) },
     {

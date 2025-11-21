@@ -52,6 +52,8 @@ import ShortRentalTips from './host-apply-tips/short-rental-tips.vue';
 
 import type { ICvmDeviceTypeFormData } from '@/components/device-type-selector/typings';
 import { RequirementType } from '@/store/config/requirement';
+import { useAffinityCheck } from './affinity-check/use-affinity-check';
+import AffinityCheckResultDialog from './affinity-check/affinity-check-result-dialog.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -144,6 +146,13 @@ export default defineComponent({
         res_assign: undefined,
       },
     });
+
+    const {
+      affinityCheck,
+      affinityCheckResult,
+      isLoading: isAffinityCheckLoading,
+      isResultDialogShow: isAffinityCheckResultDialogShow,
+    } = useAffinityCheck();
 
     const formRef = ref();
     const IDCPMIndex = ref(-1);
@@ -907,6 +916,18 @@ export default defineComponent({
       }
     };
 
+    const handleAffinityCheck = () => {
+      affinityCheck({
+        bk_biz_id: !isSpringPool.value ? +computedBiz.value : 931,
+        specs: cloudTableData.value.map((item) => ({
+          region: item.spec.region,
+          zones: item.spec.zones,
+          device_type: item.spec.device_type,
+          replicas: item.spec.replicas,
+        })),
+      });
+    };
+
     const handleCancel = () => {
       if (props.isbusiness) {
         router.push({
@@ -948,6 +969,14 @@ export default defineComponent({
       cloudTableData.value = [];
       physicalTableData.value = [];
     };
+
+    const isOnlyPhysicalRequirements = computed(() => {
+      return cloudTableData.value.length === 0 && physicalTableData.value.length > 0;
+    });
+
+    const isRequirementsEmpty = computed(() => {
+      return !cloudTableData.value.length && !physicalTableData.value.length;
+    });
 
     // 需求核数
     const replicasCpuCores = computed(() =>
@@ -1013,7 +1042,7 @@ export default defineComponent({
     });
 
     const submitButtonDisabledState = computed(() => {
-      if (!physicalTableData.value.length && !cloudTableData.value.length) {
+      if (isRequirementsEmpty.value) {
         return { disabled: true, content: '资源需求不能为空' };
       }
       if ((isRollingServer.value || isGreenChannel.value || isDissolve.value) && isCpuCoreExceeded.value) {
@@ -1024,6 +1053,16 @@ export default defineComponent({
           name = '机房裁撤';
         }
         return { disabled: true, content: `当前所需的CPU总核数超过${name}CPU限额，请调整后再重试。` };
+      }
+      return { disabled: false, content: '' };
+    });
+
+    const affinityCheckButtonDisabledState = computed(() => {
+      if (isRequirementsEmpty.value) {
+        return { disabled: true, content: '资源需求不能为空' };
+      }
+      if (isOnlyPhysicalRequirements.value) {
+        return { disabled: true, content: '暂不支持物理机亲和性检查' };
       }
       return { disabled: false, content: '' };
     });
@@ -1338,9 +1377,27 @@ export default defineComponent({
                 </>
               )}
 
+              <Button
+                class='mr16'
+                loading={isAffinityCheckLoading.value}
+                disabled={affinityCheckButtonDisabledState.value.disabled}
+                v-bk-tooltips={{
+                  content: affinityCheckButtonDisabledState.value.content,
+                  disabled: !affinityCheckButtonDisabledState.value.disabled,
+                }}
+                onClick={handleAffinityCheck}>
+                亲和性检查
+              </Button>
+
               <Button onClick={handleCancel}>取消</Button>
             </bk-form-item>
           </bk-form>
+
+          {/* 亲和性检查结果 */}
+          <AffinityCheckResultDialog
+            v-model:isShow={isAffinityCheckResultDialogShow.value}
+            result={affinityCheckResult.value}
+          />
 
           {/* 增加/修改资源需求 */}
           <Sideslider

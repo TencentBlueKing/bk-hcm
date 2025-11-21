@@ -16,6 +16,9 @@ const localValue = computed(() => {
 
 const displayValue = computed(() => {
   const names = localValue.value.map((zone) => {
+    if (zone === 'all') {
+      return '全部可用区';
+    }
     return list.value.find((item) => item.zone === zone)?.zone_cn;
   });
   return names?.join?.(', ');
