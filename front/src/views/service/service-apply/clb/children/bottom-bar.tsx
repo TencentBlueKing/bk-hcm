@@ -18,6 +18,7 @@ export default defineComponent({
   props: {
     formModel: Object as PropType<ApplyClbModel>,
     formRef: Object as PropType<InstanceType<typeof Form>>,
+    showBuy: Boolean,
   },
   setup(props) {
     const router = useRouter();
@@ -234,24 +235,26 @@ export default defineComponent({
             <span class='unit'>{t('元/小时')}</span>
           </bk-loading>
         </div>
-        <div class='operation-btn-wrap'>
-          <hcm-auth sign={{ type: createClbAuthSymbol.value, relation: [computedBizId.value] }} class='mr8'>
-            {{
-              default: ({ noPerm }: { noPerm: boolean }) => (
-                <bk-button
-                  theme='primary'
-                  onClick={handleApplyClb}
-                  loading={applyLoading.value}
-                  disabled={isInquiryPricesLoading.value || noPerm}>
-                  {t('立即购买')}
-                </bk-button>
-              ),
-            }}
-          </hcm-auth>
-          <bk-button loading={applyLoading.value} onClick={goBack}>
-            {t('取消')}
-          </bk-button>
-        </div>
+        {props.showBuy ? (
+          <div class='operation-btn-wrap'>
+            <hcm-auth sign={{ type: createClbAuthSymbol.value, relation: [computedBizId.value] }} class='mr8'>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <bk-button
+                    theme='primary'
+                    onClick={handleApplyClb}
+                    loading={applyLoading.value}
+                    disabled={isInquiryPricesLoading.value || noPerm}>
+                    {t('立即购买')}
+                  </bk-button>
+                ),
+              }}
+            </hcm-auth>
+            <bk-button loading={applyLoading.value} onClick={goBack}>
+              {t('取消')}
+            </bk-button>
+          </div>
+        ) : undefined}
       </div>
     );
   },

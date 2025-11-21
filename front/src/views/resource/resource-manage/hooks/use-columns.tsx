@@ -8,7 +8,15 @@ import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, LB_ISP, GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import {
+  CLOUD_HOST_STATUS,
+  LB_ISP,
+  GLOBAL_BIZS_KEY,
+  VendorEnum,
+  VendorMap,
+  CLB_SPECS,
+  NET_CHARGE_MAP,
+} from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -2480,6 +2488,74 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     },
   ];
 
+  const configListColumns = [
+    {
+      label: '地域',
+      field: 'region',
+      width: 120,
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+    },
+    {
+      label: '可用区',
+      field: 'zones',
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    {
+      label: '网络类型',
+      field: 'load_balancer_type',
+      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '--',
+    },
+    {
+      label: '运营商类型',
+      field: 'vip_isp',
+      width: 100,
+      render: ({ cell }: { cell: string }) => LB_ISP[cell] ?? (cell || '--'),
+    },
+    {
+      label: '需求数量',
+      field: 'require_count',
+    },
+    {
+      label: 'IP版本',
+      field: 'address_ip_version',
+      width: 100,
+      render: ({ cell }: { cell: IpVersionType }) => IP_VERSION_DISPLAY_NAME[cell.toLowerCase() as IpVersionType],
+    },
+    {
+      label: '规格',
+      field: 'sla_type',
+      render: ({ cell }: { cell: any }) => CLB_SPECS[cell] ?? '--',
+    },
+    {
+      label: '带宽上限',
+      field: 'internet_max_bandwidth_out',
+      render: ({ cell }: { cell: any }) => (cell ? `${cell}（Mbps）` : '--'),
+    },
+    {
+      label: '带宽计费模式',
+      field: 'internet_charge_type',
+      render: ({ cell }: { cell: any }) => NET_CHARGE_MAP[cell],
+    },
+    {
+      label: '所属VPC',
+      field: 'cloud_vpc_id',
+      showOverflowTooltip: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    {
+      label: '所属子网',
+      showOverflowTooltip: true,
+      field: 'cloud_subnet_id',
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -2510,6 +2586,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     billDetailHuawei: billDetailHuaweiColumns,
     billDetailZenlayer: billDetailZenlayerColumns,
     billsSummaryOperationRecord: billsSummaryOperationRecordColumns,
+    configureList: configListColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

@@ -9,6 +9,7 @@ import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
 import ConditionOptions from '../../components/common/condition-options/index.vue';
+import ConfigureList from '../../components/common/configuration-list/index.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
@@ -35,6 +36,10 @@ import useFilterResource from './useFilterResource';
 import { CLB_QUOTA_NAME } from '@/typings';
 import { useBusinessStore, useResourceStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import RegionSelector from '../../components/common/region-selector.vue';
+import { cloneDeep } from 'lodash';
+import BottomBar from '../children/bottom-bar';
+import MultipleAddButton from '../children/multiple-add-button';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -46,8 +51,11 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   const { isBusinessPage } = useWhereAmI();
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
+  const originalFormModel = cloneDeep(formModel);
 
   // define data
+  const show = ref(false);
+  const configureList = reactive<ApplyClbModel[]>([]);
   const vpcId = ref('');
   const vpcData = ref(null); // 预览vpc
   const subnetData = ref(null); // 预览子网
@@ -146,6 +154,21 @@ export default (formModel: Reactive<ApplyClbModel>) => {
       id: 'config',
       title: '配置信息',
       children: [
+        [
+          {
+            label: '云地域',
+            required: true,
+            property: 'region',
+            content: () => (
+              <RegionSelector
+                v-model={formModel.region}
+                type={ResourceTypeEnum.CLB}
+                vendor={formModel.vendor}
+                account-id={formModel.account_id}
+              />
+            ),
+          },
+        ],
         [
           {
             label: '网络类型',
@@ -557,12 +580,37 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     },
   ]);
 
+  const resetFormModel = () => {
+    Object.entries(originalFormModel).forEach(([key, value]) => {
+      if (!['vendor', 'account_id', 'account_type'].includes(key)) {
+        formModel[key] = value;
+      }
+    });
+  };
+  const handleConfirm = async () => {
+    await formRef.value.validate();
+    configureList.push({ ...formModel, rowKey: new Date().getTime() });
+    handleClose();
+  };
+  const handleClone = (data: ApplyClbModel) => {
+    configureList.push({ ...data, rowKey: new Date().getTime() });
+  };
+  const handleRemove = (key: string) => {
+    const index = configureList.findIndex((item) => item.rowKey === key);
+    if (index > -1) {
+      configureList.splice(index, 1);
+    }
+  };
+  const handleClose = () => {
+    resetFormModel();
+    show.value = false;
+  };
   // define component
   const ApplyClbForm = defineComponent({
     setup() {
       return () => (
         <>
-          <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
+          <Form class='apply-clb-form-container' formType='vertical' model={formModel}>
             <ConditionOptions
               type={ResourceTypeEnum.CLB}
               bizs={formModel.bk_biz_id}
@@ -570,51 +618,92 @@ export default (formModel: Reactive<ApplyClbModel>) => {
               v-model:vendor={formModel.vendor}
               v-model:region={formModel.region}
             />
-            {formItemOptions.value.map(({ id, title, children }) => (
-              <CommonCard key={id} title={() => t(title)} class='form-card-container'>
-                {children.map((item) => {
-                  let contentVNode = null;
-                  if (Array.isArray(item)) {
-                    contentVNode = (
-                      <div class='flex-row'>
-                        {item.map(({ label, required, property, content, description, hidden }) => {
-                          if (hidden) return null;
-                          return (
-                            <FormItem
-                              key={property}
-                              label={t(label)}
-                              required={required}
-                              property={property}
-                              description={description}>
-                              {content()}
-                            </FormItem>
-                          );
-                        })}
-                      </div>
-                    );
-                  } else if (item.simpleShow) {
-                    contentVNode = item.content();
-                  } else {
-                    if (item.hidden) {
-                      contentVNode = null;
-                    } else {
-                      contentVNode = (
-                        <FormItem
-                          key={item.property}
-                          label={item.label}
-                          required={item.required}
-                          property={item.property}
-                          description={item.description}>
-                          {item.content()}
-                        </FormItem>
-                      );
-                    }
-                  }
-                  return contentVNode;
-                })}
-              </CommonCard>
-            ))}
+            <CommonCard
+              key={'configure-list'}
+              title={() => '配置清单'}
+              class='form-card-container configure-card-container'>
+              <ConfigureList
+                list={configureList}
+                vendor={formModel.vendor}
+                onShowConfigureSlider={() => (show.value = true)}
+                onCloneData={handleClone}
+                onRemoveData={handleRemove}
+              />
+            </CommonCard>
+            <MultipleAddButton list={configureList} />
           </Form>
+          <bk-sideslider
+            v-model:isShow={show.value}
+            title={'添加负载均衡'}
+            width='850'
+            class='add-clb-configure-sideslider'>
+            {{
+              default: () => (
+                <bk-form
+                  class='apply-clb-form-container'
+                  formType='vertical'
+                  model={formModel}
+                  ref={formRef}
+                  rules={rules}>
+                  {formItemOptions.value.map(({ id, title, children }) => (
+                    <CommonCard key={id} title={() => t(title)} class='form-card-container'>
+                      {children.map((item) => {
+                        let contentVNode = null;
+                        if (Array.isArray(item)) {
+                          contentVNode = (
+                            <div class='flex-row'>
+                              {item.map(({ label, required, property, content, description, hidden }) => {
+                                if (hidden) return null;
+                                return (
+                                  <FormItem
+                                    key={property}
+                                    label={t(label)}
+                                    required={required}
+                                    property={property}
+                                    description={description}>
+                                    {content()}
+                                  </FormItem>
+                                );
+                              })}
+                            </div>
+                          );
+                        } else if (item.simpleShow) {
+                          contentVNode = item.content();
+                        } else {
+                          if (item.hidden) {
+                            contentVNode = null;
+                          } else {
+                            contentVNode = (
+                              <FormItem
+                                key={item.property}
+                                label={item.label}
+                                required={item.required}
+                                property={item.property}
+                                description={item.description}>
+                                {item.content()}
+                              </FormItem>
+                            );
+                          }
+                        }
+                        return contentVNode;
+                      })}
+                    </CommonCard>
+                  ))}
+                </bk-form>
+              ),
+              footer: (
+                <>
+                  <div>
+                    <Button theme='primary' onClick={handleConfirm} class={'mr10'}>
+                      {t('保存')}
+                    </Button>
+                    <Button onClick={handleClose}>{t('取消')}</Button>
+                  </div>
+                  <BottomBar formModel={formModel} formRef={formRef.value} />
+                </>
+              ),
+            }}
+          </bk-sideslider>
           {/* 负载均衡规格类型选择弹框 */}
           {!lbSpecTypeDialogState.isHidden && (
             <LbSpecTypeDialog

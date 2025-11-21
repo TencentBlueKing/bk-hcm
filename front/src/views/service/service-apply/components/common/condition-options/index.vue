@@ -125,7 +125,7 @@ watch(
         :vendor="selectedVendor"
       />
     </FormItem>
-    <FormItem label="云地域" required property="region">
+    <FormItem label="云地域" required property="region" v-if="type !== ResourceTypeEnum.CLB">
       <region-selector
         v-model="selectedRegion"
         :type="type"

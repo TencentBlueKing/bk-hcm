@@ -1,7 +1,6 @@
 import { computed, defineComponent, reactive } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-import BottomBar from './children/bottom-bar';
 import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
@@ -41,7 +40,7 @@ export default defineComponent({
     });
 
     // use custom hooks
-    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
 
     const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
@@ -57,9 +56,6 @@ export default defineComponent({
 
         {/* form */}
         <ApplyClbForm />
-
-        {/* bottom */}
-        <BottomBar formModel={formModel} formRef={formRef.value} />
 
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}
