@@ -10,8 +10,9 @@ export default [
     meta: {
       ...new Meta({
         title: '交付分析',
-        icon: 'hcm-icon bkhcm-icon-bushu',
+        icon: 'hcm-icon bkhcm-icon-stats-menu',
         activeKey: MENU_STATS_DELIVERY,
+        checkAuth: 'ziyan_resource_deliver_analyze',
         menu: {
           relative: MENU_PLATFORM_MANAGEMENT,
         },

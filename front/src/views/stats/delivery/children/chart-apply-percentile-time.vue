@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import http from '@/http';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
@@ -50,6 +50,8 @@ echarts.use([
   CanvasRenderer,
 ]);
 
+const chartData = ref<any[]>([]);
+const loading = ref(false);
 let chartInstance: echarts.ECharts | null = null;
 const chartRef = ref<HTMLElement | null>(null);
 const option: ECOption = {
@@ -73,7 +75,12 @@ const option: ECOption = {
       show: false,
     },
   },
-  yAxis: {},
+  yAxis: {
+    type: 'value',
+    axisLabel: {
+      formatter: '{value} 小时',
+    },
+  },
   series: [
     {
       type: 'line',
@@ -85,15 +92,20 @@ const option: ECOption = {
 };
 
 const fetchChartData = async () => {
+  loading.value = true;
   const res = await http.post('/api/v1/woa/task/apply/analysis/percentile_time_consumption/overview', {
     start_time: getMonthRange(props.daterange[0]).startTime,
     end_time: getMonthRange(props.daterange[1]).endTime,
   });
-  const chartData = res.data?.details || [];
+  chartData.value = res.data?.details || [];
   chartInstance.setOption({
     dataset: {
-      source: chartData.map((item: any) => [item.year_month, item.p95_hours]),
+      source: chartData.value.map((item: any) => [item.year_month, item.p95_hours]),
     },
+  });
+  loading.value = false;
+  nextTick(() => {
+    handleChartResize();
   });
 };
 
@@ -124,12 +136,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="chart-apply-percentile-time" ref="chartRef"></div>
+  <div class="chart-container" v-bkloading="{ loading }">
+    <div ref="chartRef" class="chart-instance-container" v-show="chartData.length"></div>
+    <div class="empty-container" v-show="!chartData.length && !loading">
+      <i class="hcm-icon hcm-icon bkhcm-icon-chart-empty-line empty-icon"></i>
+      <div class="empty-text">暂无数据</div>
+    </div>
+  </div>
 </template>
 
-<style lang="scss" scoped>
-.chart-apply-percentile-time {
-  width: 100%;
-  height: 100%;
-}
-</style>
+<style lang="scss" scoped></style>

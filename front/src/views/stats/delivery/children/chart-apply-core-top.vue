@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import http from '@/http';
 import * as echarts from 'echarts/core';
 import { BarChart } from 'echarts/charts';
@@ -50,10 +50,15 @@ echarts.use([
   UniversalTransition,
   CanvasRenderer,
 ]);
-
+const businessGlobalStore = useBusinessGlobalStore();
+const chartData = ref<any[]>([]);
+const loading = ref(false);
 let chartInstance: echarts.ECharts | null = null;
 const chartRef = ref<HTMLElement | null>(null);
 const option: ECOption = {
+  tooltip: {
+    trigger: 'item',
+  },
   grid: {
     left: 10,
     right: 10,
@@ -77,25 +82,31 @@ const option: ECOption = {
       type: 'bar',
       label: { show: true, position: 'insideRight', color: '#fff' },
       color: '#F27051',
+      barMaxWidth: '20',
     },
   ],
 };
 
-const businessGlobalStore = useBusinessGlobalStore();
-
 const fetchChartData = async () => {
-  const res = await http.post('/api/v1/woa/task/apply/findmany/bizs/cpucores/statistics', {
+  loading.value = true;
+  const res = await http.post('/api/v1/woa/task/apply/findmany/bizs_cpucores/statistics', {
     start_time: getMonthRange(props.daterange[0]).startTime,
     end_time: getMonthRange(props.daterange[1]).endTime,
   });
-  const chartData = res.data?.details || [];
+  chartData.value = (res.data?.details || [])
+    .sort((a: any, b: any) => a.delivered_core_count - b.delivered_core_count)
+    .slice(0, 10);
   chartInstance.setOption({
     dataset: {
-      source: chartData.map((item: any) => [
+      source: chartData.value.map((item: any) => [
         businessGlobalStore.businessFullList.find((business) => business.id === item.bk_biz_id)?.name,
         item.delivered_core_count,
       ]),
     },
+  });
+  loading.value = false;
+  nextTick(() => {
+    handleChartResize();
   });
 };
 
@@ -120,15 +131,22 @@ onMounted(() => {
   window.addEventListener('resize', handleChartResize);
   handleChartResize();
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleChartResize);
+  chartInstance?.dispose();
+  chartInstance = null;
+});
 </script>
 
 <template>
-  <div class="chart-apply-core-top" ref="chartRef"></div>
+  <div class="chart-container" v-bkloading="{ loading }">
+    <div ref="chartRef" class="chart-instance-container" v-show="chartData.length"></div>
+    <div class="empty-container" v-show="!chartData.length && !loading">
+      <i class="hcm-icon bkhcm-icon-chart-empty-bar-top empty-icon"></i>
+      <div class="empty-text">暂无数据</div>
+    </div>
+  </div>
 </template>
 
-<style lang="scss" scoped>
-.chart-apply-core-top {
-  width: 100%;
-  height: 100%;
-}
-</style>
+<style lang="scss" scoped></style>

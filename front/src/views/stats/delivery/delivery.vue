@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { getRecentMonths } from '../utils';
+import dayjs from 'dayjs';
+import { Message } from 'bkui-vue';
+import { getPeriodRange, getRecentMonths } from '../utils';
 import ChartApplyHostTop from './children/chart-apply-host-top.vue';
 import ChartApplyCoreTop from './children/chart-apply-core-top.vue';
 import DetailApplyHostTop from './children/detail-apply-host-top.vue';
@@ -63,9 +65,10 @@ const detailSideSliderState = reactive({
 });
 
 const recentSixMonths = getRecentMonths(6);
+const periodRange = getPeriodRange(new Date(), new Date(), 'mom');
 const topDateRange = ref([recentSixMonths.startDate, recentSixMonths.endDate]);
-const detailCurrentDateTime = ref(new Date());
-const detailCompareDateTime = ref(new Date(new Date().setMonth(new Date().getMonth() - 1)));
+const detailCurrentDateTime = ref(periodRange.currentRange.start);
+const detailCompareDateTime = ref(periodRange.comparisonRange.start);
 
 const completionRateModel = ref<IComparePickerModel>({
   compareType: 'yoy',
@@ -80,6 +83,20 @@ const handleDetailSideSliderShow = (key: keyof typeof detailSlider) => {
 };
 
 const handleTopDateRangeChange = (date: Date[]) => {
+  if (!Array.isArray(date)) {
+    return;
+  }
+  const start = dayjs(date[0]);
+  const end = dayjs(date[1]);
+  const months = end.diff(start, 'month');
+  if (months > 11) {
+    Message({
+      theme: 'error',
+      message: '只支持选择12个月以内的时间范围',
+    });
+    return;
+  }
+  topDateRange.value = date;
   completionRateModel.value.daterange = date;
 };
 
@@ -216,7 +233,7 @@ const handleOrderConfig = () => {
       <bk-date-picker
         class="top-date-picker"
         type="monthrange"
-        v-model="topDateRange"
+        :model-value="topDateRange"
         :clearable="false"
         @change="handleTopDateRangeChange"
       />
@@ -253,7 +270,7 @@ const handleOrderConfig = () => {
 
   .group-content {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(500px, 1fr));
     gap: 16px;
   }
 }
@@ -286,6 +303,36 @@ const handleOrderConfig = () => {
     height: 300px;
     padding: 0 16px;
     margin: 16px 0;
+
+    :deep(.chart-container) {
+      width: 100%;
+      height: 100%;
+
+      .chart-instance-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      .empty-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+
+        .empty-icon {
+          font-size: 60px;
+          color: #dee0e3;
+        }
+
+        .empty-text {
+          font-size: 12px;
+          color: #979ba5;
+        }
+      }
+    }
   }
 }
 
@@ -311,6 +358,42 @@ const handleOrderConfig = () => {
 
 .detail-content {
   padding: 0 40px;
+
+  :deep(.detail-apply-table-container) {
+    min-height: 300px;
+  }
+
+  :deep(.detail-apply-table) {
+    .up {
+      color: #ea3636;
+
+      &::before {
+        content: '↑';
+        font-weight: 700;
+        margin-right: 4px;
+      }
+    }
+
+    .down {
+      color: #18c0a1;
+
+      &::before {
+        content: '↓';
+        font-weight: 700;
+        margin-right: 4px;
+      }
+    }
+
+    .flat {
+      color: #4d4f56;
+
+      &::before {
+        content: '-';
+        color: #c4c6cc;
+        margin-right: 4px;
+      }
+    }
+  }
 }
 
 .composed-date-picker {
