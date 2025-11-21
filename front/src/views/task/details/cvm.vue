@@ -16,9 +16,10 @@ import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import BasicInfo from './children/basic-info/basic-info.vue';
 import ActionList from './children/action-list/action-list.vue';
 import Cancel from './children/cancel/cancel.vue';
+import ExecuteRecord from '@/views/ziyanScr/host-recycle/execute-record/index.vue';
 
 import { TASK_TYPE_NAME } from '../constants';
-import { TaskDetailStatus } from '../typings';
+import { TaskCvmType, TaskDetailStatus } from '../typings';
 
 const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
@@ -117,7 +118,7 @@ watchEffect(async () => {
 });
 
 const getStatusIPs = async (status?: TaskDetailStatus) => {
-  const list = await taskStore.getTaskDetailListAll({
+  const list = (await taskStore.getTaskDetailListAll({
     bk_biz_id: bizId.value,
     filter: transformSimpleCondition(
       {
@@ -127,7 +128,7 @@ const getStatusIPs = async (status?: TaskDetailStatus) => {
       taskDetailsViewProperties,
     ),
     fields: ['param'],
-  });
+  })) as ITaskItem[];
 
   const ips = list.map((item) => getPrivateIPs(item.param)).join('\n');
 
@@ -138,6 +139,30 @@ const handleClickStatusCount = (status?: TaskDetailStatus) => {
   searchQs.set({
     state: status,
   });
+};
+
+const showActions = computed(() => {
+  return [TaskCvmType.IDLE_CHECK].includes(taskDetails.value?.operations[0] as TaskCvmType);
+});
+const executeDataInfo = ref({
+  ip: '',
+  suborderId: '',
+  page: {
+    start: 0,
+    limit: 20,
+  },
+});
+const openRecordDetail = ref(false);
+const handleIdelCheckDetail = (row: ITaskDetailItem) => {
+  executeDataInfo.value = {
+    ip: row.param?.ip,
+    suborderId: row.param?.sub_order_id,
+    page: {
+      start: 0,
+      limit: 20,
+    },
+  };
+  openRecordDetail.value = true;
 };
 
 onMounted(() => {
@@ -214,9 +239,14 @@ onMounted(() => {
       :detail="taskDetails"
       :pagination="pagination"
       :selectable="false"
-    />
+    >
+      <template v-if="showActions" #action="{ row }">
+        <bk-button theme="primary" text @click="handleIdelCheckDetail(row)">详情</bk-button>
+      </template>
+    </action-list>
   </common-card>
   <cancel :resource="ResourceTypeEnum.CVM" :info="taskDetails" :status="taskDetails?.state" />
+  <execute-record v-model="openRecordDetail" :data-info="executeDataInfo" />
 </template>
 
 <style lang="scss" scoped>

@@ -55,6 +55,7 @@ export interface ITaskDetailParam {
   session?: number;
   status?: 'executable' | 'not_executable' | 'existing';
   validate_result?: string;
+  ip: string;
   [k: string]: any;
 }
 

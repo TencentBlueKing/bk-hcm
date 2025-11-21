@@ -83,7 +83,11 @@ watch(
         />
       </template>
     </bk-table-column>
+
+    <bk-table-column v-if="$slots.action" label="操作" min-width="100" fixed="right">
+      <template #default="{ row }: { row: ITaskDetailItem }">
+        <slot name="action" :row="row" />
+      </template>
+    </bk-table-column>
   </bk-table>
 </template>
-
-<style lang="scss" scoped></style>

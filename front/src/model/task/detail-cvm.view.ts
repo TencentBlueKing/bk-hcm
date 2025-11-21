@@ -42,7 +42,7 @@ export class DetailCvmView {
 
   @Column('array', {
     name: '内网IP',
-    render: ({ data }) => getPrivateIPs(data.param),
+    render: ({ data }: { data: any }) => getPrivateIPs(data.param),
   })
   'param.private_ipv4_addresses': string[];
 
@@ -77,7 +77,7 @@ export class DetailCvmView {
   'param.ip': string;
 
   @Column('number', {
-    name: '已执行',
+    name: '已执行/总步骤',
     render: ({ row }: { row: any }) => {
       return `${row.param.success_num || '--'}/${row.param.total_num || '--'}`;
     },

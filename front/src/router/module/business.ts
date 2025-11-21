@@ -458,7 +458,7 @@ const businessMenus: RouteRecordRaw[] = [
             name: 'HostRecyclePreDetail',
             component: () => import('@/views/ziyanScr/host-recycle/pre-details'),
             meta: {
-              activeKey: 'applications',
+              activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
               notMenu: true,
             },
           },
