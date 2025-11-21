@@ -462,8 +462,8 @@ type TargetBatchUpdateReq struct {
 
 // Validate ...
 func (r *TargetBatchUpdateReq) Validate() error {
-	if len(r.Targets) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("targets length count should <= %d", constant.BatchOperationMaxLimit)
+	if len(r.Targets) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("targets length count should <= %d", int(core.DefaultMaxPageLimit))
 	}
 	return validator.Validate.Struct(r)
 }
