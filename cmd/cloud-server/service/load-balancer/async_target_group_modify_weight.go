@@ -78,7 +78,8 @@ func (svc *lbSvc) batchModifyTargetWeight(cts *rest.Contexts, authHandler handle
 	// validate targets
 	for _, target := range targets {
 		if target.AccountID != req.AccountID {
-			return nil, fmt.Errorf("target account_id: %s not match req account_id: %s", target.AccountID, req.AccountID)
+			return nil, fmt.Errorf("target account_id: %s not match req account_id: %s", target.AccountID,
+				req.AccountID)
 		}
 	}
 
@@ -192,12 +193,12 @@ func (svc *lbSvc) authBatchModifyTargetWeight(cts *rest.Contexts, targets []load
 }
 
 func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string, bkBizID int64, newWeight *int64,
-	targets []loadbalancer.BaseTarget, tgRelatedInfo map[string]TGRelatedInfo) error {
+	targets []loadbalancer.BaseTarget, tgRelatedInfo map[string]cslb.TGRelatedInfo) error {
 
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range targets {
 		param := struct {
-			TGRelatedInfo           `json:",inline"`
+			cslb.TGRelatedInfo      `json:",inline"`
 			loadbalancer.BaseTarget `json:",inline"`
 		}{
 			TGRelatedInfo: tgRelatedInfo[one.TargetGroupID],
@@ -246,7 +247,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 
 func (svc *lbSvc) buildModifyTargetWeightFlow(kt *kit.Kit, lbID, accountID, taskManagementID string,
 	vendor enumor.Vendor, bkBizID int64, newWeight *int64, tgToTargetsMap map[string][]loadbalancer.BaseTarget,
-	tgRelatedInfo map[string]TGRelatedInfo) (string, error) {
+	tgRelatedInfo map[string]cslb.TGRelatedInfo) (string, error) {
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowModifyTargetWeight(kt, lbID, taskManagementID, accountID, vendor, bkBizID, newWeight,
@@ -268,7 +269,7 @@ func (svc *lbSvc) buildModifyTargetWeightFlow(kt *kit.Kit, lbID, accountID, task
 
 func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, lbID, taskManagementID, accountID string,
 	vendor enumor.Vendor, bkBizID int64, newWeight *int64, tgToTargetsMap map[string][]loadbalancer.BaseTarget,
-	tgRelatedInfo map[string]TGRelatedInfo) (string, error) {
+	tgRelatedInfo map[string]cslb.TGRelatedInfo) (string, error) {
 
 	var taskDetails []*taskManagementDetail
 	var err error
@@ -320,7 +321,7 @@ func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, lbID, taskManagementID
 
 func (svc *lbSvc) buildModifyWeightFlowTasks(kt *kit.Kit, lbID, accountID, taskManagementID string,
 	vendor enumor.Vendor, bkBizID int64, newWeight *int64, tgToTargetsMap map[string][]loadbalancer.BaseTarget,
-	tgRelatedInfo map[string]TGRelatedInfo) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
+	tgRelatedInfo map[string]cslb.TGRelatedInfo) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 
@@ -377,18 +378,13 @@ func (svc *lbSvc) buildModifyWeightFlowTasks(kt *kit.Kit, lbID, accountID, taskM
 	return tasks, taskDetails, nil
 }
 
-type tgModifyWeightTaskDetailParam struct {
-	TGRelatedInfo            `json:",inline"`
-	*dataproto.TargetBaseReq `json:",inline"`
-}
-
 func (svc *lbSvc) createTargetGroupModifyWeightTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
-	addRsParams *hcproto.TCloudBatchOperateTargetReq, info TGRelatedInfo) ([]*taskManagementDetail, error) {
+	addRsParams *hcproto.TCloudBatchOperateTargetReq, info cslb.TGRelatedInfo) ([]*taskManagementDetail, error) {
 
 	details := make([]*taskManagementDetail, 0)
 	for _, one := range addRsParams.RsList {
 		details = append(details, &taskManagementDetail{
-			param: tgModifyWeightTaskDetailParam{
+			param: cslb.TgModifyWeightTaskDetailParam{
 				TGRelatedInfo: info,
 				TargetBaseReq: one,
 			},

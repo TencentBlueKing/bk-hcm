@@ -1204,3 +1204,21 @@ type UrlRuleTopoInfo struct {
 	LblMap    map[string]corelb.TCloudListener
 	RuleConds [][]filter.RuleFactory
 }
+
+// TGRelatedInfo tg关联信息，包括lb, listener, url rule
+type TGRelatedInfo struct {
+	CloudLBID    string `json:"cloud_lb_id"`
+	ClbVipDomain string `json:"clb_vip_domain"`
+
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Port     int64               `json:"listener_port"`
+
+	Domain string `json:"domain"`
+	URL    string `json:"url"`
+}
+
+// TgModifyWeightTaskDetailParam target group modify weight task detail param
+type TgModifyWeightTaskDetailParam struct {
+	TGRelatedInfo        `json:",inline"`
+	*cloud.TargetBaseReq `json:",inline"`
+}
