@@ -173,39 +173,43 @@ func (s *service) listCVMByInstanceIDANDBkHostID(kt *kit.Kit, bkHostIDs []int64,
 	listField := []string{"id", "cloud_id", "bk_biz_id", "bk_host_id", "machine_type", "region", "zone",
 		"private_ipv4_addresses", "private_ipv6_addresses", "extension"}
 
-	listReq := &protocloud.CvmListReq{
-		Filter: tools.ContainersExpression("bk_host_id", bkHostIDs),
-		Page:   core.NewDefaultBasePage(),
-		Field:  listField,
-	}
-	cvms, err := s.client.DataService().TCloudZiyan.Cvm.ListCvmExt(kt.Ctx, kt.Header(), listReq)
-	if err != nil {
-		logs.Errorf("failed to get instance details by bk_host_id, err: %v, bk_host_id: %v, rid: %s", err,
-			bkHostIDs, kt.Rid)
-		return nil, nil, err
-	}
 	bkHostIDDetails := make(map[int64]cvm.Cvm[cvm.TCloudZiyanHostExtension])
-	for _, item := range cvms.Details {
-		bkHostIDDetails[item.BkHostID] = item
+	for _, batch := range slice.Split(bkHostIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &protocloud.CvmListReq{
+			Filter: tools.ContainersExpression("bk_host_id", batch),
+			Page:   core.NewDefaultBasePage(),
+			Field:  listField,
+		}
+		cvms, err := s.client.DataService().TCloudZiyan.Cvm.ListCvmExt(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("failed to get instance details by bk_host_id, err: %v, bk_host_id: %v, rid: %s", err,
+				bkHostIDs, kt.Rid)
+			return nil, nil, err
+		}
+		for _, item := range cvms.Details {
+			bkHostIDDetails[item.BkHostID] = item
+		}
 	}
 
-	listReq2 := &protocloud.CvmListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", enumor.TCloudZiyan),
-			tools.RuleIn("cloud_id", instanceIDs),
-		),
-		Page:  core.NewDefaultBasePage(),
-		Field: listField,
-	}
-	cvms, err = s.client.DataService().TCloudZiyan.Cvm.ListCvmExt(kt.Ctx, kt.Header(), listReq2)
-	if err != nil {
-		logs.Errorf("failed to get instance details by cloud_id, err: %v, cloud_ids: %v, rid: %s", err,
-			instanceIDs, kt.Rid)
-		return nil, nil, err
-	}
 	instanceIDsDetails := make(map[string]cvm.Cvm[cvm.TCloudZiyanHostExtension])
-	for _, item := range cvms.Details {
-		instanceIDsDetails[item.CloudID] = item
+	for _, batch := range slice.Split(instanceIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &protocloud.CvmListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", enumor.TCloudZiyan),
+				tools.RuleIn("cloud_id", batch),
+			),
+			Page:  core.NewDefaultBasePage(),
+			Field: listField,
+		}
+		cvms, err := s.client.DataService().TCloudZiyan.Cvm.ListCvmExt(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("failed to get instance details by cloud_id, err: %v, cloud_ids: %v, rid: %s", err,
+				instanceIDs, kt.Rid)
+			return nil, nil, err
+		}
+		for _, item := range cvms.Details {
+			instanceIDsDetails[item.CloudID] = item
+		}
 	}
 
 	return bkHostIDDetails, instanceIDsDetails, nil

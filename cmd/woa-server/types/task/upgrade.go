@@ -44,6 +44,10 @@ type UpgradeCvmItem struct {
 
 // Validate whether CreateUpgradeCrpOrderReq is valid
 func (req CreateUpgradeCrpOrderReq) Validate() error {
+	if len(req.UpgradeCvmList) == 0 {
+		return fmt.Errorf("upgrade cvm list is required")
+	}
+
 	if len(req.UpgradeCvmList) > int(core.DefaultMaxPageLimit) {
 		return fmt.Errorf("upgrade cvm list length must be less than %d", core.DefaultMaxPageLimit)
 	}
