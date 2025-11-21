@@ -14,6 +14,7 @@ package config
 
 import (
 	"hcm/pkg/client"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/ziyan"
@@ -33,40 +34,43 @@ type Logics interface {
 	BatchCapacity() CapacityIf
 	LeftIP() LeftIPIf
 	Sg() ziyan.SgIf
+	ApplyOrderStatistics() ApplyOrderStatisticsIf
 }
 
 type logics struct {
-	requirement    RequirementIf
-	region         RegionIf
-	zone           ZoneIf
-	vpc            VpcIf
-	subnet         SubnetIf
-	deviceRestrict DeviceRestrictIf
-	cvmImage       CvmImageIf
-	device         DeviceIf
-	capacity       CapacityIf
-	batchCapacity  CapacityIf
-	leftIP         LeftIPIf
-	sg             ziyan.SgIf
+	requirement          RequirementIf
+	region               RegionIf
+	zone                 ZoneIf
+	vpc                  VpcIf
+	subnet               SubnetIf
+	deviceRestrict       DeviceRestrictIf
+	cvmImage             CvmImageIf
+	device               DeviceIf
+	capacity             CapacityIf
+	batchCapacity        CapacityIf
+	leftIP               LeftIPIf
+	sg                   ziyan.SgIf
+	applyOrderStatistics ApplyOrderStatisticsIf
 }
 
 // New create a logics manager
-func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) Logics {
+func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Client, daoSet dao.Set) Logics {
 	vpcOp := NewVpcOp(client, thirdCli)
 	capacityOp := NewCapacityOp(vpcOp, thirdCli, cmdbCli)
 	return &logics{
-		requirement:    NewRequirementOp(),
-		region:         NewRegionOp(),
-		zone:           NewZoneOp(),
-		vpc:            vpcOp,
-		subnet:         NewSubnetOp(thirdCli),
-		deviceRestrict: NewDeviceRestrictOp(),
-		cvmImage:       NewCvmImageOp(),
-		device:         NewDeviceOp(thirdCli),
-		capacity:       capacityOp,
-		batchCapacity:  capacityOp,
-		leftIP:         NewLeftIPOp(vpcOp, thirdCli),
-		sg:             ziyan.NewSgOp(client),
+		requirement:          NewRequirementOp(),
+		region:               NewRegionOp(),
+		zone:                 NewZoneOp(),
+		vpc:                  vpcOp,
+		subnet:               NewSubnetOp(thirdCli),
+		deviceRestrict:       NewDeviceRestrictOp(),
+		cvmImage:             NewCvmImageOp(),
+		device:               NewDeviceOp(thirdCli),
+		capacity:             capacityOp,
+		batchCapacity:        capacityOp,
+		leftIP:               NewLeftIPOp(vpcOp, thirdCli),
+		sg:                   ziyan.NewSgOp(client),
+		applyOrderStatistics: NewApplyOrderStatisticsOp(daoSet),
 	}
 }
 
@@ -128,4 +132,9 @@ func (l *logics) LeftIP() LeftIPIf {
 // Sg security group interface
 func (l *logics) Sg() ziyan.SgIf {
 	return l.sg
+}
+
+// ApplyOrderStatistics apply order statistics interface
+func (l *logics) ApplyOrderStatistics() ApplyOrderStatisticsIf {
+	return l.applyOrderStatistics
 }

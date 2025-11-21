@@ -15,6 +15,7 @@ package task
 
 import (
 	"fmt"
+
 	"time"
 
 	"hcm/pkg"
@@ -34,17 +35,9 @@ type GetApplyStatReq struct {
 // errKey: invalid key
 // err: detail reason why errKey is invalid
 func (req *GetApplyStatReq) Validate() (errKey string, err error) {
-	if len(req.Start) == 0 {
-		return "start", fmt.Errorf("start is not set")
-	}
-
 	start, err := time.Parse(dateLayout, req.Start)
 	if err != nil {
 		return "start", fmt.Errorf("date format should be like %s", dateLayout)
-	}
-
-	if len(req.End) == 0 {
-		return "end", fmt.Errorf("end is not set")
 	}
 
 	end, err := time.Parse(dateLayout, req.End)
@@ -718,4 +711,103 @@ type DeliveryRateDetailItem struct {
 // DeliveryRateDetailResp wraps detail result with details array
 type DeliveryRateDetailResp struct {
 	Details []DeliveryRateDetailItem `json:"details"`
+}
+
+// GetCompletionRateStatReq get completion rate statistics request
+type GetCompletionRateStatReq struct {
+	StartTime string `json:"start_time" bson:"start_time"`
+	EndTime   string `json:"end_time" bson:"end_time"`
+}
+
+// Validate whether GetCompletionRateStatReq is valid
+func (req *GetCompletionRateStatReq) Validate() error {
+	startTime, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return fmt.Errorf("invalid start_time, expected format %s", constant.DateLayout)
+	}
+
+	endTime, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return fmt.Errorf("invalid end_time, expected format %s", constant.DateLayout)
+	}
+
+	if endTime.Before(startTime) {
+		return fmt.Errorf("end_time must be after start_time")
+
+	}
+
+	return nil
+}
+
+// GetFilter get mgo filter
+func (req *GetCompletionRateStatReq) GetFilter() (map[string]interface{}, error) {
+	startTime, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid start_time, expected format %s", constant.DateLayout)
+	}
+
+	endTime, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return nil, fmt.Errorf("invalid end_time, expected format %s", constant.DateLayout)
+	}
+
+	filter := make(map[string]interface{})
+	timeCond := map[string]interface{}{
+		pkg.BKDBGTE: startTime,
+		// '%lte: 2006-01-02' means '%lt: 2006-01-03 00:00:00'
+		pkg.BKDBLT: endTime.AddDate(0, 0, 1),
+	}
+	filter["create_at"] = timeCond
+
+	return filter, nil
+}
+
+// GetCompletionRateStatRst get completion rate statistics result
+type GetCompletionRateStatRst struct {
+	Details []*CompletionRateStat `json:"details" bson:"details"`
+}
+
+// CompletionRateStat completion rate statistics
+type CompletionRateStat struct {
+	YearMonth      string  `json:"year_month" bson:"year_month"`
+	CompletionRate float64 `json:"completion_rate" bson:"completion_rate"`
+}
+
+// GetCompletionRateDetailReq 获取结单率详情统计请求
+type GetCompletionRateDetailReq struct {
+	StartTime string `json:"start_time" bson:"start_time"` // 开始时间，格式：YYYY-MM-DD
+	EndTime   string `json:"end_time" bson:"end_time"`     // 结束时间，格式：YYYY-MM-DD
+}
+
+// Validate 验证请求参数
+func (req *GetCompletionRateDetailReq) Validate() error {
+	startTime, err := time.Parse(constant.DateLayout, req.StartTime)
+	if err != nil {
+		return fmt.Errorf("invalid start_time, expected format %s", constant.DateLayout)
+	}
+
+	endTime, err := time.Parse(constant.DateLayout, req.EndTime)
+	if err != nil {
+		return fmt.Errorf("invalid end_time, expected format %s", constant.DateLayout)
+	}
+
+	if endTime.Before(startTime) {
+		return fmt.Errorf("end_time must be after start_time")
+	}
+
+	return nil
+}
+
+// GetCompletionRateDetailRst 获取结单率详情统计响应
+type GetCompletionRateDetailRst struct {
+	Details []*CompletionRateDetailItem `json:"details" bson:"details"`
+}
+
+// CompletionRateDetailItem 结单率详情统计项
+type CompletionRateDetailItem struct {
+	BkBizID        int64   `json:"bk_biz_id" bson:"bk_biz_id"`             // 业务ID
+	YearMonth      string  `json:"year_month" bson:"year_month"`           // 年月，格式：YYYY-MM
+	TotalOrders    int     `json:"total_orders" bson:"total_orders"`       // 总单据数
+	DoneOrders     int     `json:"done_orders" bson:"done_orders"`         // 已完成单据数（stage=DONE）
+	CompletionRate float64 `json:"completion_rate" bson:"completion_rate"` // 结单率（百分比），保留2位小数
 }
