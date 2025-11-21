@@ -349,7 +349,8 @@ func initMongoComponents(dis serviced.ServiceDiscover, clients *clientSet, logic
 
 	schedulerIf, err := scheduler.New(kt.Ctx, logics.rsLogics, logics.srLogics, logics.gcLogics,
 		clients.thirdCli, clients.cmdbCli, informerIf, cc.WoaServer().ClientConfig,
-		logics.planCtrl, logics.bizLogic, logics.configLogics, logics.dissolveLogics)
+		logics.planCtrl, logics.bizLogic, logics.configLogics, logics.dissolveLogics, clients.cmsiCli)
+
 	if err != nil {
 		logs.Errorf("new scheduler failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

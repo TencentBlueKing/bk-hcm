@@ -237,7 +237,7 @@ func (r *applyRecoverer) recoverInitOrder(kt *kit.Kit, generateRecord *types.Gen
 		}
 	}
 	// 执行订单最后的匹配数量，更新订单状态
-	return r.schedulerIf.FinalApplyStep(generateRecord, order)
+	return r.schedulerIf.FinalApplyStep(kt, generateRecord, order)
 }
 
 // recoverInitingRecord 初始化后更新初始化步骤状态，恢复转移等过程
@@ -253,7 +253,7 @@ func (r *applyRecoverer) deliverDevices(kt *kit.Kit, order *types.ApplyOrder,
 			return err
 		}
 	}
-	if err = r.schedulerIf.DeliverDevices(order, observeDevices); err != nil {
+	if err = r.schedulerIf.DeliverDevices(kt, order, observeDevices); err != nil {
 		logs.Errorf("failed to deliver devices, err: %v, subOrderId: %s, rid: %s", err, order.SubOrderId, kt.Rid)
 		return err
 	}

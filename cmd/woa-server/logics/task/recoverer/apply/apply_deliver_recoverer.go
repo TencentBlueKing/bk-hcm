@@ -75,7 +75,7 @@ func (r *applyRecoverer) recoverDeliverOrder(kt *kit.Kit, generateRecord *types.
 		return err
 	}
 
-	return r.schedulerIf.FinalApplyStep(generateRecord, order)
+	return r.schedulerIf.FinalApplyStep(kt, generateRecord, order)
 }
 
 // recoverDeliverStep 恢复deliverStep为initing及handling状态订单

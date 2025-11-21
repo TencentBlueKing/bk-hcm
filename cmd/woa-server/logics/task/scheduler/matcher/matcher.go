@@ -15,9 +15,13 @@ package matcher
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/url"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -28,8 +32,8 @@ import (
 	"hcm/cmd/woa-server/logics/task/scheduler/record"
 	"hcm/cmd/woa-server/logics/task/sops"
 	"hcm/cmd/woa-server/model/task"
-	cfgtype "hcm/cmd/woa-server/types/config"
 	daltypes "hcm/cmd/woa-server/storage/dal/types"
+	cfgtype "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/api/core"
@@ -42,6 +46,7 @@ import (
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/bkchatapi"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/sopsapi"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
@@ -64,14 +69,15 @@ type Matcher struct {
 	sopsOpt      cc.SopsCli
 	cc           cmdb.Client
 	bkchat       bkchatapi.BkChatClientInterface
+	cmsiClient   cmsi.Client
 	ctx          context.Context
 	kt           *kit.Kit
 }
 
 // New create a matcher
 func New(ctx context.Context, rsLogics rollingserver.Logics, thirdCli *thirdparty.Client, cmdbCli cmdb.Client,
-	clientConf cc.ClientConfig, informer informer.Interface, planLogics plan.Logics, configLogics config.Logics) (
-	*Matcher, error) {
+	clientConf cc.ClientConfig, informer informer.Interface, planLogics plan.Logics, configLogics config.Logics,
+	cmsiCli cmsi.Client) (*Matcher, error) {
 
 	matcher := &Matcher{
 		rsLogics:     rsLogics,
@@ -82,6 +88,7 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, thirdCli *thirdpart
 		sopsOpt:      clientConf.Sops,
 		cc:           cmdbCli,
 		bkchat:       thirdCli.BkChat,
+		cmsiClient:   cmsiCli,
 		ctx:          ctx,
 		kt:           &kit.Kit{Ctx: ctx, Rid: uuid.UUID()},
 	}
@@ -130,63 +137,70 @@ func (m *Matcher) runWorker() error {
 		return nil
 	}
 
+	// 为匹配任务创建后台操作的 kt
+	kt := core.NewBackendKit()
+
 	// deal match device
-	if err := m.matchHandler(generateRecord); err != nil {
-		logs.Errorf("failed to match device, order id: %s, err: %v", generateRecord.SubOrderId, err)
+	if err := m.matchHandler(kt, generateRecord); err != nil {
+		logs.Errorf("failed to match device, order id: %s, err: %v, rid: %s", generateRecord.SubOrderId, err, kt.Rid)
 		return err
 	}
 
-	logs.Infof("match done, generate id: %d, order id: %s", generateId, generateRecord.SubOrderId)
+	logs.Infof("match done, generate id: %d, order id: %s, rid: %s", generateId, generateRecord.SubOrderId, kt.Rid)
 
 	return nil
 }
 
 // FinalApplyStep after deliver device, check order result to regenerate device or reinit
-func (m *Matcher) FinalApplyStep(genRecord *types.GenerateRecord, order *types.ApplyOrder) error {
+func (m *Matcher) FinalApplyStep(kt *kit.Kit, genRecord *types.GenerateRecord, order *types.ApplyOrder) error {
 	// set generate record matched
 	if err := m.setGenerateRecordMatched(genRecord.GenerateId); err != nil {
-		logs.Errorf("failed to update generate record, err: %v, schedule id: %d", err, genRecord.GenerateId)
+		logs.Errorf("failed to update generate record, err: %v, schedule id: %d, rid: %s", err, genRecord.GenerateId, kt.Rid)
 		return err
 	}
 
 	// update apply order status
 	if err := m.UpdateApplyOrderStatus(order); err != nil {
-		logs.Errorf("failed to update apply order status, order id: %s, err: %v", genRecord.SubOrderId, err)
+		logs.Errorf("failed to update apply order status, order id: %s, err: %v, rid: %s", genRecord.SubOrderId, err, kt.Rid)
 		return err
 	}
 
 	// send ticket done notification
 	if err := m.notifyApplyDone(order.OrderId); err != nil {
-		logs.Warnf("failed to send apply done notification, order id: %s, err: %v", genRecord.SubOrderId, err)
-		return nil
+		logs.Warnf("failed to send apply done notification, order id: %s, err: %v, rid: %s",
+			genRecord.SubOrderId, err, kt.Rid)
+	}
+
+	if err := m.checkAndNotifyDelivery(kt, order.OrderId); err != nil {
+		logs.Warnf("check delivery notification failed, orderId: %d, err: %v, rid: %s", order.OrderId, err, kt.Rid)
 	}
 	return nil
 }
 
 // matchHandler apply order match handler
-func (m *Matcher) matchHandler(genRecord *types.GenerateRecord) error {
+func (m *Matcher) matchHandler(kt *kit.Kit, genRecord *types.GenerateRecord) error {
 	// get apply order by key
 	applyOrder, err := m.getApplyOrder(genRecord.SubOrderId)
 	if err != nil {
-		logs.Errorf("get apply order by key %s failed, err: %v", genRecord.SubOrderId, err)
+		logs.Errorf("get apply order by key %s failed, err: %v, rid: %s", genRecord.SubOrderId, err, kt.Rid)
 		return err
 	}
 
 	// check order status
 	if applyOrder.Status != types.ApplyStatusMatching && applyOrder.Status != types.ApplyStatusGracefulTerminate {
-		logs.Infof("apply order %s cannot match for status not Matching, status: %s", genRecord.SubOrderId,
-			applyOrder.Status)
+		logs.Infof("apply order %s cannot match for status not Matching, status: %s, rid: %s", genRecord.SubOrderId,
+			applyOrder.Status, kt.Rid)
 		return fmt.Errorf("apply order %s cannot match for status not Matching, status: %s", genRecord.SubOrderId,
 			applyOrder.Status)
 	}
 
 	// match device
-	if err := m.matchDevice(applyOrder, genRecord.GenerateId); err != nil {
-		logs.Errorf("failed to match device, order id: %s, err: %v", genRecord.SubOrderId, err)
+	if err := m.matchDevice(kt, applyOrder, genRecord.GenerateId); err != nil {
+		logs.Errorf("failed to match device, order id: %s, err: %v, rid: %s", genRecord.SubOrderId, err, kt.Rid)
 		return err
 	}
 
-	return m.FinalApplyStep(genRecord, applyOrder)
+	return m.FinalApplyStep(kt, genRecord, applyOrder)
 }
 
 // getApplyOrder gets apply order from db by order id
@@ -578,10 +592,10 @@ func (m *Matcher) InitDevices(order *types.ApplyOrder, unreleased []*types.Devic
 }
 
 // DeliverDevices deliver devices to business
-func (m *Matcher) DeliverDevices(order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error {
+func (m *Matcher) DeliverDevices(kt *kit.Kit, order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error {
 	// start deliver step
 	if err := record.StartStep(order.SubOrderId, types.StepNameDeliver); err != nil {
-		logs.Errorf("failed to start deliver step, order id: %s, err: %v", order.SubOrderId, err)
+		logs.Errorf("failed to start deliver step, order id: %s, err: %v, rid: %s", order.SubOrderId, err, kt.Rid)
 		return err
 	}
 
@@ -589,15 +603,21 @@ func (m *Matcher) DeliverDevices(order *types.ApplyOrder, observeDevices []*type
 	// TODO: batch processing
 	for _, device := range observeDevices {
 		if err := m.DeliverDevice(device, order); err != nil {
-			logs.Errorf("failed to deliver device, subOrderId: %s, ip: %s, err: %v", order.SubOrderId, device.Ip, err)
+			logs.Errorf("failed to deliver device, subOrderId: %s, ip: %s, err: %v, rid: %s", order.SubOrderId,
+				device.Ip, err, kt.Rid)
 			continue
 		}
 	}
 
 	// update deliver step
 	if err := record.UpdateDeliverStep(order.SubOrderId, order.TotalNum); err != nil {
-		logs.Errorf("failed to update init step, subOrderId: %s, err: %v", order.SubOrderId, err)
+		logs.Errorf("failed to update init step, subOrderId: %s, err: %v, rid: %s", order.SubOrderId, err, kt.Rid)
 		return err
+	}
+
+	// 检查并触发邮件通知
+	if err := m.checkAndNotifyDelivery(kt, order.OrderId); err != nil {
+		logs.Warnf("check delivery notification failed, orderId: %d, err: %v, rid: %s", order.OrderId, err, kt.Rid)
 	}
 	return nil
 }
@@ -668,11 +688,11 @@ func (m *Matcher) ProcessInitStep(devices []*types.DeviceInfo) (map[int]*types.D
 }
 
 // matchDevice deal match device tasks
-func (m *Matcher) matchDevice(order *types.ApplyOrder, genId uint64) error {
+func (m *Matcher) matchDevice(kt *kit.Kit, order *types.ApplyOrder, genId uint64) error {
 	// 1. get unreleased devices from db
 	unreleased, err := m.getGeneratedDevice(genId)
 	if err != nil {
-		logs.Errorf("failed to get unreleased device, order id: %s, err: %v", order.SubOrderId, err)
+		logs.Errorf("failed to get unreleased device, order id: %s, err: %v, rid: %s", order.SubOrderId, err, kt.Rid)
 		return err
 	}
 
@@ -681,12 +701,12 @@ func (m *Matcher) matchDevice(order *types.ApplyOrder, genId uint64) error {
 	if order.EnableDiskCheck {
 		observeDevices, err = m.RunDiskCheck(order, observeDevices)
 		if err != nil {
-			logs.Errorf("failed to run disk check task, order id: %s, err: %v", order.SubOrderId, err)
+			logs.Errorf("failed to run disk check task, order id: %s, err: %v, rid: %s", order.SubOrderId, err, kt.Rid)
 			return err
 		}
 	}
 
-	return m.DeliverDevices(order, observeDevices)
+	return m.DeliverDevices(kt, order, observeDevices)
 }
 
 // getGeneratedDevice gets generated devices bindings to generate record
@@ -1024,8 +1044,9 @@ func (m *Matcher) notifyApplyDone(orderId uint64) error {
 	if len(ticket.Suborders) > 0 && ticket.Suborders[0] != nil {
 		resType = ticket.Suborders[0].ResourceType
 	}
+	bkHcmURL := cc.WoaServer().BkHcmURL
 	content := fmt.Sprintf(noticeFmt, orderId, orderId, ticket.User, bizName, requireName, createTime, ticket.Remark,
-		orderId, ticket.BkBizId, resType)
+		bkHcmURL, ticket.OrderId, ticket.BkBizId, ticket.BkBizId, resType)
 
 	for _, user := range users {
 		resp, err := m.bkchat.SendApplyDoneMsg(nil, nil, user, content)
@@ -1041,6 +1062,321 @@ func (m *Matcher) notifyApplyDone(orderId uint64) error {
 	}
 
 	return nil
+}
+
+// checkAndNotifyDelivery 检查并触发邮件通知
+func (m *Matcher) checkAndNotifyDelivery(kt *kit.Kit, orderId uint64) error {
+	// 检查所有子单是否都已完成
+	filter := map[string]interface{}{
+		"order_id": orderId,
+		"status": map[string]interface{}{
+			pkg.BKDBNE: types.ApplyStatusDone,
+		},
+	}
+
+	cnt, err := model.Operation().ApplyOrder().CountApplyOrder(kt.Ctx, filter)
+	if err != nil {
+		logs.Errorf("count apply order failed, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+	if cnt > 0 {
+		// 还有子单未完成，主单未完成，不触发通知
+		logs.Infof("skip notify: main order not done, orderId:%d, not_done:%d, rid: %s", orderId, cnt, kt.Rid)
+		return nil
+	}
+
+	//检查是否有已交付的设备
+	devices, err := m.getDeliveryDevices(kt, int64(orderId))
+	if err != nil {
+		logs.Errorf("failed to get delivery devices, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+
+	if len(devices) == 0 {
+		// 没有已交付的设备，不触发通知
+		logs.Infof("skip notify: no delivered devices, orderId:%d, rid: %s", orderId, kt.Rid)
+		return nil
+	}
+
+	// 获取申请票据
+	filterTicket := &mapstr.MapStr{
+		"order_id": orderId,
+	}
+
+	ticket, err := model.Operation().ApplyTicket().GetApplyTicket(kt.Ctx, filterTicket)
+	if err != nil {
+		logs.Errorf("failed to get apply ticket, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+	if ticket == nil {
+		logs.Warnf("apply ticket not found, orderId: %d, rid: %s", orderId, kt.Rid)
+		return nil
+	}
+
+	// 主单已完成，且有已交付的设备，触发邮件通知
+	if err := m.sendDeliveryNotification(kt, int64(orderId), ticket, devices); err != nil {
+		logs.Errorf("failed to send delivery notification, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// sendDeliveryNotification 发送主机申请交付通知
+func (m *Matcher) sendDeliveryNotification(kt *kit.Kit, orderId int64, ticket *types.ApplyTicket, devices []*types.DeviceInfo) error {
+
+	if len(devices) == 0 {
+		logs.Warnf("skip notify: no delivered devices, orderId:%d, rid: %s", orderId, kt.Rid)
+		return nil
+	}
+
+	// 当前仅通知提单人
+	receivers := []string{ticket.User}
+
+	if len(receivers) == 0 {
+		logs.Warnf("skip notify: no receivers, orderId:%d, user:%s, rid: %s", orderId, ticket.User, kt.Rid)
+		return nil
+	}
+
+	// 发送邮件通知
+	emailErr := m.sendDeliveryEmailNotification(kt, ticket, devices, receivers)
+	if emailErr != nil {
+		logs.Errorf("send email failed, orderId:%d, err:%v, rid: %s", orderId, emailErr, kt.Rid)
+	}
+
+	// 发送企业微信通知
+	wecomErr := m.sendDeliveryWeComNotification(kt, ticket, receivers)
+	if wecomErr != nil {
+		logs.Errorf("send wecom failed, orderId:%d, err:%v, rid: %s", orderId, wecomErr, kt.Rid)
+	}
+
+	if emailErr != nil && wecomErr != nil {
+		return fmt.Errorf("email and wecom notifications failed for orderId:%d", orderId)
+	}
+	if emailErr != nil {
+		return emailErr
+	}
+	if wecomErr != nil {
+		return wecomErr
+	}
+
+	return nil
+}
+
+// sendDeliveryEmailNotification 发送交付邮件通知
+func (m *Matcher) sendDeliveryEmailNotification(kt *kit.Kit, ticket *types.ApplyTicket, devices []*types.DeviceInfo,
+	receivers []string) error {
+	// 生成邮件内容
+	title, content, err := m.generateDeliveryEmailContent(kt, ticket, devices)
+	if err != nil {
+		return err
+	}
+
+	// 发送邮件
+	mail := &cmsi.CmsiMail{
+		Title:            title,
+		Content:          content,
+		ReceiverUserName: strings.Join(receivers, ","),
+	}
+
+	if err := m.cmsiClient.SendMail(kt, mail); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// getDeliveryDevices 获取交付设备信息
+func (m *Matcher) getDeliveryDevices(kt *kit.Kit, orderId int64) ([]*types.DeviceInfo, error) {
+	filter := map[string]interface{}{
+		"order_id":     orderId,
+		"is_delivered": true,
+	}
+
+	page := metadata.BasePage{
+		Start: 0,
+		Limit: pkg.BKNoLimit,
+	}
+
+	devices, err := model.Operation().DeviceInfo().FindManyDeviceInfo(kt.Ctx, page, filter)
+	if err != nil {
+		logs.Errorf("failed to query delivery devices, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return nil, err
+	}
+
+	return devices, nil
+}
+
+// sendDeliveryWeComNotification 发送交付企业微信通知
+func (m *Matcher) sendDeliveryWeComNotification(kt *kit.Kit, ticket *types.ApplyTicket, receivers []string) error {
+	// 生成企业微信通知内容
+	content, err := m.generateDeliveryWeComContent(kt, ticket)
+	if err != nil {
+		return err
+	}
+
+	// 发送给所有接收者
+	failedUsers := make([]string, 0)
+	for _, user := range receivers {
+		resp, err := m.bkchat.SendApplyDoneMsg(kt.Ctx, kt.Header(), user, content)
+		if err != nil {
+			logs.Warnf("failed to send delivery WeCom notification, orderId: %d, user: %s, err: %v, rid: %s",
+				ticket.OrderId, user, err, kt.Rid)
+			failedUsers = append(failedUsers, user)
+			continue
+		}
+		if resp.Code != 0 {
+			logs.Errorf("failed to send delivery WeCom notification, orderId: %d, user: %s, code: %d, msg: %s, rid: %s",
+				ticket.OrderId, user, resp.Code, resp.Msg, kt.Rid)
+			failedUsers = append(failedUsers, user)
+			continue
+		}
+	}
+
+	if len(failedUsers) > 0 {
+		return fmt.Errorf("failed to send delivery WeCom notification to users: %v", failedUsers)
+	}
+
+	return nil
+}
+
+// generateDeliveryWeComContent 生成交付企业微信通知内容
+func (m *Matcher) generateDeliveryWeComContent(kt *kit.Kit, ticket *types.ApplyTicket) (string, error) {
+	bizName := m.getBizName(ticket.BkBizId)
+	createTime := ticket.CreateAt.Local().Format(constant.DateTimeLayout)
+	if locName := cc.WoaServer().LocalTimezone; locName != "" {
+		if location, err := time.LoadLocation(locName); err != nil {
+			logs.Warnf("get location time zone: %s failed, err: %v, rid: %s", locName, err, kt.Rid)
+		} else {
+			createTime = ticket.CreateAt.In(location).Format(constant.DateTimeLayout)
+		}
+	}
+	requireType := ticket.RequireType.GetName()
+	bkHcmURL := cc.WoaServer().BkHcmURL
+	content := fmt.Sprintf(constant.HostDeliveryNoticeWeComContentTemplate,
+		ticket.OrderId, ticket.OrderId, ticket.User, bizName, requireType, createTime, ticket.Remark,
+		bkHcmURL, ticket.OrderId, ticket.BkBizId, ticket.BkBizId)
+	return content, nil
+}
+
+// generateDeliveryEmailContent 生成交付邮件通知内容
+func (m *Matcher) generateDeliveryEmailContent(kt *kit.Kit, ticket *types.ApplyTicket,
+	devices []*types.DeviceInfo) (string, string, error) {
+	// 邮件标题
+	title := fmt.Sprintf(constant.HostDeliveryNoticeTitle, m.getBizName(ticket.BkBizId), ticket.OrderId)
+	// 查询子单所属园区
+	regionMap := m.fetchRegionMapBySubOrder(ticket.OrderId)
+	// 构建表格内容
+	tableContent := buildDeliveryEmailTable(regionMap, devices)
+
+	// 整体内容
+	bkHcmURL := cc.WoaServer().BkHcmURL
+	createTime := ticket.CreateAt.Local().Format(constant.DateTimeLayout)
+	if locName := cc.WoaServer().LocalTimezone; locName != "" {
+		if location, err := time.LoadLocation(locName); err != nil {
+			logs.Warnf("get location time zone: %s failed, err: %v, rid: %s", locName, err, kt.Rid)
+		} else {
+			createTime = ticket.CreateAt.In(location).Format(constant.DateTimeLayout)
+		}
+	}
+	// 生成设备视角链接的 Base64 编码参数
+	deviceRulesEncoded, err := encodeHostApplyDeviceRules(int64(ticket.OrderId))
+	if err != nil {
+		logs.Errorf("failed to encode device rules, orderId: %d, err: %v, rid: %s", ticket.OrderId, err, kt.Rid)
+		return "", "", err
+	}
+
+	content := fmt.Sprintf(constant.HostDeliveryNoticeEmailContentTemplate,
+		title, bkHcmURL, bkHcmURL, title, m.getBizName(ticket.BkBizId), createTime, len(devices),
+		int64(ticket.OrderId), tableContent, bkHcmURL, ticket.BkBizId, deviceRulesEncoded)
+
+	return title, content, nil
+}
+
+func (m *Matcher) fetchRegionMapBySubOrder(orderID uint64) map[string]string {
+	result := make(map[string]string)
+	filter := map[string]interface{}{
+		"order_id": orderID,
+	}
+	page := metadata.BasePage{
+		Start: 0,
+		Limit: pkg.BKNoLimit,
+	}
+	orders, err := model.Operation().ApplyOrder().FindManyApplyOrder(context.Background(), page, filter)
+	if err != nil {
+		logs.Warnf("failed to query apply orders for region info, orderId: %d, err: %v", orderID, err)
+		return result
+	}
+	for _, order := range orders {
+		if order.Spec != nil && order.Spec.Region != "" {
+			result[order.SubOrderId] = order.Spec.Region
+		}
+	}
+	return result
+}
+
+func buildDeliveryEmailTable(regionMap map[string]string, devices []*types.DeviceInfo) string {
+	type comboKey struct {
+		deviceType string
+		region     string
+		zone       string
+	}
+	type comboStat struct {
+		totalCount  int
+		parentCount int
+	}
+
+	stats := make(map[comboKey]*comboStat)
+	for _, device := range devices {
+		key := comboKey{
+			deviceType: device.DeviceType,
+			region:     regionMap[device.SubOrderId],
+			zone:       device.ZoneName,
+		}
+		if stats[key] == nil {
+			stats[key] = &comboStat{}
+		}
+		stats[key].totalCount++
+		if device.OwnerIP != "" {
+			stats[key].parentCount++
+		}
+	}
+
+	keys := make([]comboKey, 0, len(stats))
+	for k := range stats {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i].deviceType != keys[j].deviceType {
+			return keys[i].deviceType < keys[j].deviceType
+		}
+		if keys[i].region != keys[j].region {
+			return keys[i].region < keys[j].region
+		}
+		return keys[i].zone < keys[j].zone
+	})
+
+	var builder strings.Builder
+	for _, key := range keys {
+		stat := stats[key]
+		parentCountStr := "-"
+		if stat.parentCount == stat.totalCount {
+			parentCountStr = fmt.Sprintf("%d", stat.parentCount)
+		}
+		builder.WriteString(fmt.Sprintf(constant.HostDeliveryNoticeEmailTableTemplate,
+			key.deviceType, stat.totalCount, key.region, key.zone, parentCountStr))
+	}
+	return builder.String()
+}
+
+// encodeHostApplyDeviceRules 生成设备视角链接的 Base64 编码参数
+func encodeHostApplyDeviceRules(orderId int64) (string, error) {
+	deviceRulesJSON := fmt.Sprintf(`{"orderId":%d,"bkUsername":[],"dateRange":[]}`, orderId)
+	// 先进行 URL 编码
+	urlEncoded := url.QueryEscape(deviceRulesJSON)
+	// 再进行 Base64 编码
+	deviceRulesEncoded := base64.StdEncoding.EncodeToString([]byte(urlEncoded))
+	return deviceRulesEncoded, nil
 }
 
 // RunDiskCheck 执行磁盘检查

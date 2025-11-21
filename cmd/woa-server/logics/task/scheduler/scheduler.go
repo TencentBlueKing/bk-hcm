@@ -58,6 +58,7 @@ import (
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/bkbotapproval"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
@@ -149,9 +150,9 @@ type Interface interface {
 	// RunDiskCheck run disk check
 	RunDiskCheck(order *types.ApplyOrder, devices []*types.DeviceInfo) ([]*types.DeviceInfo, error)
 	// DeliverDevices deliver devices to business
-	DeliverDevices(order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error
+	DeliverDevices(kt *kit.Kit, order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error
 	// FinalApplyStep after deliver device, update generate record status and order status
-	FinalApplyStep(genRecord *types.GenerateRecord, order *types.ApplyOrder) error
+	FinalApplyStep(kt *kit.Kit, genRecord *types.GenerateRecord, order *types.ApplyOrder) error
 	// GetMatcher get matcher
 	GetMatcher() *matcher.Matcher
 	// GetGenerator get generator
@@ -189,13 +190,14 @@ type scheduler struct {
 	bizLogic       biz.Logics
 	bkBotApproval  bkbotapproval.Client
 	dissolveLogics dissolve.Logics
+	cmsiClient     cmsi.Client
 }
 
 // New creates a scheduler
 func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrental.Logics, gcLogics greenchannel.Logics,
 	thirdCli *thirdparty.Client, cmdbCli cmdb.Client, informerIf informer.Interface, clientConf cc.ClientConfig,
-	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics, dissolveLogics dissolve.Logics) (
-	*scheduler, error) {
+	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics, dissolveLogics dissolve.Logics,
+	cmsiCli cmsi.Client) (*scheduler, error) {
 
 	// new recommend module
 	recommend, err := recommender.New(ctx, thirdCli)
@@ -204,7 +206,7 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 	}
 
 	// new matcher
-	match, err := matcher.New(ctx, rsLogics, thirdCli, cmdbCli, clientConf, informerIf, planLogics, configLogics)
+	match, err := matcher.New(ctx, rsLogics, thirdCli, cmdbCli, clientConf, informerIf, planLogics, configLogics, cmsiCli)
 	if err != nil {
 		return nil, err
 	}
@@ -2847,13 +2849,13 @@ func (s *scheduler) RunDiskCheck(order *types.ApplyOrder, devices []*types.Devic
 }
 
 // DeliverDevices delivers devices to order biz
-func (s *scheduler) DeliverDevices(order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error {
-	return s.matcher.DeliverDevices(order, observeDevices)
+func (s *scheduler) DeliverDevices(kt *kit.Kit, order *types.ApplyOrder, observeDevices []*types.DeviceInfo) error {
+	return s.matcher.DeliverDevices(kt, order, observeDevices)
 }
 
 // FinalApplyStep checks whether the record is updated
-func (s *scheduler) FinalApplyStep(genRecord *types.GenerateRecord, order *types.ApplyOrder) error {
-	return s.matcher.FinalApplyStep(genRecord, order)
+func (s *scheduler) FinalApplyStep(kt *kit.Kit, genRecord *types.GenerateRecord, order *types.ApplyOrder) error {
+	return s.matcher.FinalApplyStep(kt, genRecord, order)
 }
 
 // GetGenerateRecords get generate record by order id

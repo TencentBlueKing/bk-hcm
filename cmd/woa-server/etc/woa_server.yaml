@@ -308,7 +308,7 @@ bkchat:
      需求类型：%s
      创建时间：%s
      备注：%s
-     资源申请单链接：http://scrtest.ied.com/#/cr/service/apply/records/%d
+     资源申请单链接：%s/#/business/applications/host-application/detail/%d?bizs=%d&bkBizId=%d&resource_type=%s
 
 resourceDissolve:
   originDate: "20241219"
