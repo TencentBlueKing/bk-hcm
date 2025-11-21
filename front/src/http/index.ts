@@ -15,6 +15,15 @@ import RequestQueue from './request-queue';
 import { useAccountStore } from '@/store';
 
 interface HttpApi {
+  cancelRequest: (requestId: string) => void;
+  cancelCache: (requestId: string) => void;
+  cancel: (requestId: string) => Promise<any>;
+  download: (config: CombinedRequestConfig) => Promise<void>;
+  get<T = any>(url: string, config?: object): Promise<T>;
+  post<T = any>(url: string, data?: object, config?: object): Promise<T>;
+  put<T = any>(url: string, data?: object, config?: object): Promise<T>;
+  patch<T = any>(url: string, data?: object, config?: object): Promise<T>;
+  delete<T = any>(url: string, data?: object, config?: object): Promise<T>;
   [key: string]: any;
 }
 

@@ -18,6 +18,7 @@ import ChartApplyProdTime from './children/chart-apply-prod-time.vue';
 import ChartApplyCompletionRate from './children/chart-apply-completion-rate.vue';
 import ChartApplyDeliveryRate from './children/chart-apply-delivery-rate.vue';
 import ComparePicker from './children/compare-picker.vue';
+import OrderConfigSlider from './children/order-config/order-config-slider.vue';
 import type { IComparePickerModel } from '../typings';
 
 const detailSlider = {
@@ -80,6 +81,11 @@ const handleDetailSideSliderShow = (key: keyof typeof detailSlider) => {
 
 const handleTopDateRangeChange = (date: Date[]) => {
   completionRateModel.value.daterange = date;
+};
+
+const showOrderConfigSlider = ref(false);
+const handleOrderConfig = () => {
+  showOrderConfigSlider.value = true;
 };
 </script>
 
@@ -216,12 +222,13 @@ const handleTopDateRangeChange = (date: Date[]) => {
       />
     </teleport>
     <teleport to="#breadcrumbExtra">
-      <bk-button class="config-button">
+      <bk-button class="config-button" @click="handleOrderConfig">
         <i class="icon hcm-icon bkhcm-icon-shezhi"></i>
         单据配置
       </bk-button>
     </teleport>
   </div>
+  <order-config-slider v-model="showOrderConfigSlider" />
 </template>
 
 <style lang="scss" scoped>
