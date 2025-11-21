@@ -2,23 +2,30 @@
 import { computed, useAttrs } from 'vue';
 import { getDateShortcutRange } from '@/utils/search';
 import type { DatePickerValueType } from 'bkui-vue/lib/date-picker/interface';
+import dayjs from 'dayjs';
+
+interface IProps {
+  format?: string;
+  type?: 'date' | 'daterange' | 'datetime' | 'datetimerange' | 'month' | 'monthrange' | 'year';
+  valueFormat?: string; // 返回值的格式 如：yyyy-MM-dd HH:mm:ss
+  valueFormatter?: (val: any) => any;
+}
+
+interface IEmits {
+  change: [val: DatePickerValueType | string | string[], originVal: any];
+}
 
 defineOptions({ name: 'hcm-form-datetime' });
+const model = defineModel<DatePickerValueType | string | string[]>();
+const props = withDefaults(defineProps<IProps>(), {
+  format: 'yyyy-MM-dd HH:mm:ss',
+  type: 'date',
+});
 
-const props = withDefaults(
-  defineProps<{
-    format: string;
-    type: 'date' | 'daterange' | 'datetime' | 'datetimerange' | 'month' | 'monthrange' | 'year';
-  }>(),
-  {
-    format: 'yyyy-MM-dd HH:mm:ss',
-  },
-);
+const emits = defineEmits<IEmits>();
 
 const rangeType = computed(() => ['daterange', 'datetimerange'].includes(props.type));
 const shortcutsRange = computed(() => (rangeType.value ? getDateShortcutRange(props.type !== 'daterange') : []));
-
-const model = defineModel<DatePickerValueType>();
 
 const localModel = computed({
   get: () => {
@@ -43,13 +50,38 @@ const localModel = computed({
     return model.value;
   },
   set: (val: DatePickerValueType) => {
-    model.value = val;
+    model.value = formatValue(val);
   },
 });
 
 const attrs = useAttrs();
+
+// 用于外部获取格式化后的值
+const formatValue = (val: DatePickerValueType | string | string[]) => {
+  if (props.valueFormat) {
+    if (Array.isArray(val)) {
+      return val.map((item) => dayjs(item).format(props.valueFormat));
+    }
+    return dayjs(val).format(props.valueFormat);
+  }
+  if (props.valueFormatter) {
+    return props.valueFormatter(val);
+  }
+  return val;
+};
+
+const handleChange = (val: DatePickerValueType | string | string[]) => {
+  emits('change', formatValue(val), val);
+};
 </script>
 
 <template>
-  <bk-date-picker v-model="localModel" v-bind="attrs" :type="type" :shortcuts="shortcutsRange" :format="format" />
+  <bk-date-picker
+    v-model="localModel"
+    v-bind="attrs"
+    :type="type"
+    :shortcuts="shortcutsRange"
+    :format="format"
+    @change="handleChange"
+  />
 </template>

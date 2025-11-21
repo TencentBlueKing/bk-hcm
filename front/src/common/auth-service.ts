@@ -28,7 +28,8 @@ export type AuthResourceType =
   | 'root_account'
   | 'main_account'
   | 'account_bill'
-  | 'load_balancer';
+  | 'load_balancer'
+  | 'ziyan_resource_dissolve_manage';
 
 // 权限校验参数
 export interface IVerifyResourceItem {
@@ -296,5 +297,15 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     action: 'delete',
     resourceType: 'load_balancer',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_FIND_DISSOLVE]: {
+    id: 'ziyan_resource_dissolve_manage',
+    action: 'find',
+    resourceType: 'ziyan_resource_dissolve_manage',
+  },
+  [authSymbol.AUTH_UPDATE_DISSOLVE]: {
+    id: 'ziyan_resource_dissolve_manage',
+    action: 'update',
+    resourceType: 'ziyan_resource_dissolve_manage',
   },
 });

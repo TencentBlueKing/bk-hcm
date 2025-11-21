@@ -11,6 +11,9 @@ export interface ICpuCoreSummary {
 
 export const useDissolveQuotaStore = defineStore('dissolve-quota', () => {
   const cpuCoreSummaryLoading = ref(false);
+  const dissolveConfigLoading = ref(false);
+  const upsertDissolveConfigLoading = ref(false);
+
   const getCpuCoreSummary = async (bizId: number, params: { bk_biz_id?: number } = {}) => {
     cpuCoreSummaryLoading.value = true;
     try {
@@ -25,8 +28,40 @@ export const useDissolveQuotaStore = defineStore('dissolve-quota', () => {
     }
   };
 
+  const getDissolveConfig = async () => {
+    dissolveConfigLoading.value = true;
+    try {
+      const api = '/api/v1/woa/dissolve/config';
+      const res: IQueryResData<{ host_apply_time: string; approval_limit: string }> = await http.get(api);
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      dissolveConfigLoading.value = false;
+    }
+  };
+
+  const upsertDissolveConfig = async (params: { host_apply_time?: string; approval_limit?: string }) => {
+    upsertDissolveConfigLoading.value = true;
+    try {
+      const api = '/api/v1/woa/dissolve/config/upsert';
+      const res: IQueryResData<null> = await http.put(api, params);
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      upsertDissolveConfigLoading.value = false;
+    }
+  };
+
   return {
     cpuCoreSummaryLoading,
+    dissolveConfigLoading,
+    upsertDissolveConfigLoading,
     getCpuCoreSummary,
+    getDissolveConfig,
+    upsertDissolveConfig,
   };
 });
