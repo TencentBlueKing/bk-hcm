@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import http from '@/http';
+import dayjs from 'dayjs';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {
@@ -26,7 +27,6 @@ import type {
   DatasetComponentOption,
 } from 'echarts/components';
 import type { ComposeOption } from 'echarts/core';
-import type { OptionDataValue } from 'echarts/types/src/util/types';
 import { getPeriodRange } from '../../utils';
 import type { IChartCompareProps } from '../../typings';
 
@@ -88,7 +88,11 @@ const option: ECOption = {
       name: '当前结单率',
       color: '#699DF4',
       tooltip: {
-        valueFormatter: (value: OptionDataValue | OptionDataValue[]) => `${value}%`,
+        formatter: (params: any) => {
+          return `${params.seriesName}<br/>${params.marker}${dayjs(params.value[params.encode.x[0]]).format(
+            'YYYY-MM',
+          )}<b style="margin-left: 16px;">${params.value[params.encode.y[0]]}%</b>`;
+        },
       },
     },
     {
@@ -96,7 +100,11 @@ const option: ECOption = {
       name: '对比结单率',
       color: '#F27051',
       tooltip: {
-        valueFormatter: (value: OptionDataValue | OptionDataValue[]) => `${value}%`,
+        formatter: (params: any) => {
+          return `${params.seriesName}<br/>${params.marker}${dayjs(params.value[params.encode.x[0]])
+            .subtract(1, props.option.compareType === 'yoy' ? 'year' : 'month')
+            .format('YYYY-MM')}<b style="margin-left: 16px;">${params.value[params.encode.y[0]]}%</b>`;
+        },
       },
     },
   ],

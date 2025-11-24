@@ -97,17 +97,17 @@ export function getPeriodRange(startDate: Date, endDate: Date, period: 'yoy' | '
   const currentEnd = dayjs(endDate);
 
   // 计算同比期：减一年或一个月
-  const comparisonStart = currentStart.subtract(1, period === 'yoy' ? 'year' : 'month').format(format);
-  const comparisonEnd = currentEnd.subtract(1, period === 'yoy' ? 'year' : 'month').format(format);
+  const comparisonStart = currentStart.subtract(1, period === 'yoy' ? 'year' : 'month');
+  const comparisonEnd = currentEnd.subtract(1, period === 'yoy' ? 'year' : 'month');
 
   return {
     currentRange: {
-      start: currentStart.format(format),
-      end: currentEnd.format(format),
+      start: currentStart.startOf('month').format(format),
+      end: currentEnd.endOf('month').format(format),
     },
     comparisonRange: {
-      start: comparisonStart,
-      end: comparisonEnd,
+      start: comparisonStart.startOf('month').format(format),
+      end: comparisonEnd.endOf('month').format(format),
     },
   };
 }
