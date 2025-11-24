@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
+    SQLVER=0058,HCMVER=v1.8.7.9
 
     Notes:
     1. 修改`res_plan_demand`表，新增`ticket_id`字段
@@ -30,6 +30,6 @@ ALTER TABLE `res_plan_demand`
     ADD COLUMN `ticket_id` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '单据ID' AFTER `technical_class`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.7.9' as `hcm_ver`, '0058' as `sql_ver`;
 
 COMMIT;

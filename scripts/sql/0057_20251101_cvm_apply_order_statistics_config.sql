@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
+    SQLVER=0057,HCMVER=v1.8.7.9
 
     Notes:
     1. 添加CVM申请单统计配置表 cvm_apply_order_statistics_config
@@ -49,6 +49,6 @@ insert into id_generator(`resource`, `max_id`)
 values ('cvm_apply_order_statistics_config', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.7.9' as `hcm_ver`, '0057' as `sql_ver`;
 
 COMMIT;
