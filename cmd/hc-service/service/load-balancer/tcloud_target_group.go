@@ -484,7 +484,17 @@ func (svc *clbSvc) batchUpdateTargetPortWeightDb(kt *kit.Kit, req *protolb.TClou
 		return nil
 	}
 
-	return svc.dataCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
+	// 分批更新，每批最多500个，避免超过API限制
+	for _, targetBatch := range slice.Split(updateReq.Targets, int(core.DefaultMaxPageLimit)) {
+		batchReq := &dataproto.TargetBatchUpdateReq{
+			Targets: targetBatch,
+		}
+		if err := svc.dataCli.Global.LoadBalancer.BatchUpdateTarget(kt, batchReq); err != nil {
+			logs.Errorf("fail to batch update targets port and weight, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 // BatchModifyTCloudTargetsWeight 批量修改RS权重
