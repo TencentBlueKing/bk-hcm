@@ -100,6 +100,14 @@ export const useCommonStore = defineStore({
         id: 'green_channel',
         path: /^\/platform\/green-channel/,
       },
+
+      // 交付分析
+      {
+        type: 'ziyan_resource_deliver_analyze',
+        action: 'find',
+        id: 'ziyan_resource_deliver_analyze',
+        path: /^\/platform\/stats\/delivery/,
+      },
     ],
     isNoticeAlert: false, // 消息通知的显示状态
   }),

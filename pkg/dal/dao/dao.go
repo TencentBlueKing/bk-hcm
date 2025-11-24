@@ -57,6 +57,7 @@ import (
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
 	daosync "hcm/pkg/dal/dao/cloud/sync"
 	"hcm/pkg/dal/dao/cloud/zone"
+	daoapplystat "hcm/pkg/dal/dao/cvm-apply-order-statistics-config"
 	"hcm/pkg/dal/dao/dissolve/host"
 	"hcm/pkg/dal/dao/dissolve/module"
 	globalconfig "hcm/pkg/dal/dao/global-config"
@@ -187,6 +188,7 @@ type Set interface {
 	TaskDetail() task.Detail
 	TaskManagement() task.Management
 	GlobalConfig() globalconfig.Interface
+	CvmApplyOrderStatisticsConfig() daoapplystat.Interface
 	OrgTopo() orgtopo.Interface
 
 	ResUsageBizRel() cloud.ResUsageBizRel
@@ -1117,6 +1119,14 @@ func (s *set) Tenant() tenant.Tenant {
 // GlobalConfig return dao.
 func (s *set) GlobalConfig() globalconfig.Interface {
 	return &globalconfig.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// CvmApplyOrderStatisticsConfig return dao.
+func (s *set) CvmApplyOrderStatisticsConfig() daoapplystat.Interface {
+	return &daoapplystat.Dao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

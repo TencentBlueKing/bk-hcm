@@ -18,6 +18,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/operation"
 	"hcm/cmd/woa-server/logics/task/recycler"
 	"hcm/cmd/woa-server/logics/task/scheduler"
+	"hcm/cmd/woa-server/logics/task/statistics"
 )
 
 // Logics provides management interface for operations of model and instance and related resources like association
@@ -25,24 +26,28 @@ type Logics interface {
 	Scheduler() scheduler.Interface
 	Recycler() recycler.Interface
 	Operation() operation.Interface
+	Statistics() statistics.Interface
 }
 
 type logics struct {
-	scheduler scheduler.Interface
-	recycler  recycler.Interface
-	informer  informer.Interface
-	operation operation.Interface
+	scheduler  scheduler.Interface
+	recycler   recycler.Interface
+	informer   informer.Interface
+	operation  operation.Interface
+	statistics statistics.Interface
 }
 
 // New create a logics manager
 func New(schedulerIf scheduler.Interface, recyclerIf recycler.Interface,
-	informerIf informer.Interface, operationIf operation.Interface) Logics {
+	informerIf informer.Interface, operationIf operation.Interface,
+	statisticsIf statistics.Interface) Logics {
 
 	return &logics{
-		scheduler: schedulerIf,
-		recycler:  recyclerIf,
-		informer:  informerIf,
-		operation: operationIf,
+		scheduler:  schedulerIf,
+		recycler:   recyclerIf,
+		informer:   informerIf,
+		operation:  operationIf,
+		statistics: statisticsIf,
 	}
 }
 
@@ -59,4 +64,9 @@ func (l *logics) Recycler() recycler.Interface {
 // Operation operation interface
 func (l *logics) Operation() operation.Interface {
 	return l.operation
+}
+
+// Statistics statistics interface
+func (l *logics) Statistics() statistics.Interface {
+	return l.statistics
 }

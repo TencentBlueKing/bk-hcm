@@ -13,9 +13,11 @@
 package task
 
 import (
+	configtypes "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -38,6 +40,150 @@ func (s *service) GetApplyStatistics(cts *rest.Contexts) (any, error) {
 	rst, err := s.logics.Operation().GetApplyStatistics(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to get resource apply operation statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// CreateApplyOrderStatisticsConfig 创建申请单统计配置
+func (s *service) CreateApplyOrderStatisticsConfig(cts *rest.Contexts) (any, error) {
+	input := new(configtypes.CreateApplyOrderStatisticsConfigParam)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode create apply order statistics config request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := input.Validate(); err != nil {
+		logs.Errorf("invalid create apply order statistics config request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	rst, err := s.configLogics.ApplyOrderStatistics().CreateConfig(cts.Kit, input)
+	if err != nil {
+		logs.Errorf("failed to create apply order statistics config, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// UpdateApplyOrderStatisticsConfig 更新申请单统计配置
+func (s *service) UpdateApplyOrderStatisticsConfig(cts *rest.Contexts) (any, error) {
+	input := new(configtypes.UpdateApplyOrderStatisticsConfigParam)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode update apply order statistics config request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := input.Validate(); err != nil {
+		logs.Errorf("invalid update apply order statistics config request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	err := s.configLogics.ApplyOrderStatistics().UpdateConfig(cts.Kit, input)
+	if err != nil {
+		logs.Errorf("failed to update apply order statistics config, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// ListApplyOrderStatisticsConfig 查询指定月份的配置列表
+func (s *service) ListApplyOrderStatisticsConfig(cts *rest.Contexts) (any, error) {
+	input := new(configtypes.ListApplyOrderStatisticsConfigParam)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode list apply order statistics config request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := input.Validate(); err != nil {
+		logs.Errorf("invalid list apply order statistics config request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	rst, err := s.configLogics.ApplyOrderStatistics().ListConfig(cts.Kit, input)
+	if err != nil {
+		logs.Errorf("failed to list apply order statistics config, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// ListApplyOrderStatisticsYearMonths 查询配置表中的月份列表
+func (s *service) ListApplyOrderStatisticsYearMonths(cts *rest.Contexts) (any, error) {
+	rst, err := s.configLogics.ApplyOrderStatistics().ListYearMonths(cts.Kit)
+	if err != nil {
+		logs.Errorf("failed to list apply order statistics year months, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// GetApplyBizHostsStatistics get apply biz hosts statistics
+func (s *service) GetApplyBizHostsStatistics(cts *rest.Contexts) (any, error) {
+	input := new(types.GetApplyBizTopStatReq)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	startTime, endTime, err := input.ParseAndValidate()
+	if err != nil {
+		logs.Errorf("failed to validate apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to apply biz hosts statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rst, err := s.logics.Operation().GetApplyBizHostsStatistics(cts.Kit, startTime, endTime)
+	if err != nil {
+		logs.Errorf("failed to get apply biz hosts statistics, err: %v, startTime: %v, endTime: %v, rid: %s",
+			err, startTime, endTime, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// GetApplyBizCpuCoresStatistics get apply biz cpu cores statistics
+func (s *service) GetApplyBizCpuCoresStatistics(cts *rest.Contexts) (any, error) {
+	input := new(types.GetApplyBizTopStatReq)
+	if err := cts.DecodeInto(input); err != nil {
+		logs.Errorf("failed to decode apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	startTime, endTime, err := input.ParseAndValidate()
+	if err != nil {
+		logs.Errorf("failed to validate apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiyanResDeliverAnalyze, Action: meta.Find},
+	})
+	if err != nil {
+		logs.Errorf("no permission to apply biz cpu cores statistics, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rst, err := s.logics.Operation().GetApplyBizCpuCoresStatistics(cts.Kit, startTime, endTime)
+	if err != nil {
+		logs.Errorf("failed to get apply biz cpu cores statistics, err: %v, startTime: %v, endTime: %v, rid: %s",
+			err, startTime, endTime, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -33,7 +33,7 @@ export type ModelPropertyMeta = {
 // 模型的基础字段，与业务场景无关
 export type ModelProperty = {
   id: string;
-  name: string;
+  name: string | Function | VNode;
   type: ModelPropertyType;
   resource?: ResourceTypeEnum;
   option?: Record<string | number, any> | (() => Promise<Record<string | number, any>>);

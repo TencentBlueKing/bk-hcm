@@ -29,7 +29,7 @@ import (
 
 // InitService initial the service
 func InitService(c *capability.Capability) {
-	logics := taskLogics.New(c.SchedulerIf, c.RecyclerIf, c.InformerIf, c.OperationIf)
+	logics := taskLogics.New(c.SchedulerIf, c.RecyclerIf, c.InformerIf, c.OperationIf, c.TaskStatistics)
 	s := &service{
 		client:         c.Client,
 		logics:         logics,
@@ -44,6 +44,7 @@ func InitService(c *capability.Capability) {
 	h.Path("/task")
 
 	s.initOperationService(h)
+	s.initDeliverAnalysisService(h)
 	s.initRecyclerService(h)
 	s.initSchedulerService(h)
 
@@ -70,6 +71,44 @@ type service struct {
 
 func (s *service) initOperationService(h *rest.Handler) {
 	h.Add("GetApplyStatistics", http.MethodPost, "/find/operation/apply/statistics", s.GetApplyStatistics)
+	h.Add("CreateApplyOrderStatisticsConfig", http.MethodPost, "/config/create/apply/order/statistics",
+		s.CreateApplyOrderStatisticsConfig)
+	h.Add("UpdateApplyOrderStatisticsConfig", http.MethodPut, "/config/update/apply/order/statistics",
+		s.UpdateApplyOrderStatisticsConfig)
+	h.Add("ListApplyOrderStatisticsConfig", http.MethodPost, "/config/findmany/apply/order/statistics",
+		s.ListApplyOrderStatisticsConfig)
+	h.Add("ListApplyOrderStatisticsYearMonths", http.MethodPost, "/config/findmany/apply/order/statistics/year_months",
+		s.ListApplyOrderStatisticsYearMonths)
+	h.Add("GetCompletionRateStatistics", http.MethodPost,
+		"/apply/completion-rate/statistics", s.GetCompletionRateStatistics)
+	h.Add("GetCompletionRateDetail", http.MethodPost, "/apply/completion-rate/detail", s.GetCompletionRateDetail)
+	h.Add("GetApplyBizHostsStatistics", http.MethodPost,
+		"/apply/findmany/bizs_hosts/statistics", s.GetApplyBizHostsStatistics)
+	h.Add("GetApplyBizCpuCoresStatistics", http.MethodPost,
+		"/apply/findmany/bizs_cpucores/statistics", s.GetApplyBizCpuCoresStatistics)
+}
+
+func (s *service) initDeliverAnalysisService(h *rest.Handler) {
+	h.Add("GetAverageTimeConsumptionOverview", http.MethodPost, "/apply/analysis/average_time_consumption/overview",
+		s.GetAverageTimeConsumptionOverview)
+	h.Add("GetAverageTimeConsumptionCompare", http.MethodPost, "/apply/analysis/average_time_consumption/compare",
+		s.GetAverageTimeConsumptionCompare)
+	h.Add("GetOrderTimeCostOverview", http.MethodPost, "/apply/analysis/order_time_cost/overview",
+		s.GetOrderTimeCostOverview)
+	h.Add("GetOrderTimeCostCompare", http.MethodPost, "/apply/analysis/order_time_cost/compare",
+		s.GetOrderTimeCostCompare)
+	h.Add("GetProductionStageTimeCostOverview", http.MethodPost, "/apply/analysis/production_stage_time_cost/overview",
+		s.GetProductionStageTimeCostOverview)
+	h.Add("GetProductionStageTimeCostCompare", http.MethodPost, "/apply/analysis/production_stage_time_cost/compare",
+		s.GetProductionStageTimeCostCompare)
+	h.Add("GetPercentileTimeConsumptionOverview", http.MethodPost, "/apply/analysis/percentile_time_consumption/overview",
+		s.GetPercentileTimeConsumptionOverview)
+	h.Add("GetPercentileTimeConsumptionCompare", http.MethodPost, "/apply/analysis/percentile_time_consumption/compare",
+		s.GetPercentileTimeConsumptionCompare)
+	h.Add("GetDeliveryRateStatistics", http.MethodPost, "/apply/delivery-rate/statistics",
+		s.GetDeliveryRateStatistics)
+	h.Add("GetDeliveryRateDetail", http.MethodPost, "/apply/delivery-rate/detail",
+		s.GetDeliveryRateDetail)
 }
 
 func (s *service) initRecyclerService(h *rest.Handler) {

@@ -10,6 +10,7 @@ export const provideBreadcrumb = () => {
   const data = reactive<IBreadcrumb>({
     title: '',
     display: false,
+    back: true,
   });
 
   watch(
@@ -20,6 +21,7 @@ export const provideBreadcrumb = () => {
       if (!isEqual(meta, oldMeta)) {
         data.title = meta.title;
         data.display = meta?.layout?.breadcrumbs?.show ?? meta.isShowBreadcrumb;
+        data.back = meta?.layout?.breadcrumbs?.back ?? true;
       }
     },
     { deep: true },

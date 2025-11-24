@@ -17,6 +17,7 @@ import SearchRegion from './search/region.vue';
 
 // 展示值组件
 import DisplayValue from './display-value/index.vue';
+import DataListTable from './data-list-table/index.vue';
 
 // 表单元素组件
 import FormBool from './form/bool.vue';
@@ -50,6 +51,7 @@ const components = [
   SearchReqStage,
   SearchList,
   DisplayValue,
+  DataListTable,
   FormBool,
   FormEnum,
   FormDatetime,

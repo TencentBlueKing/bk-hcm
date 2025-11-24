@@ -279,6 +279,8 @@ const (
 	TaskManagementTable = "task_management"
 	//	GlobalConfigTable 全局配置表
 	GlobalConfigTable = "global_config"
+	//	CvmApplyOrderStatisticsConfigTable CVM申请单统计配置表
+	CvmApplyOrderStatisticsConfigTable = "cvm_apply_order_statistics_config"
 	//	OrgTopoTable 组织拓扑表
 	OrgTopoTable = "org_topo"
 
@@ -433,8 +435,9 @@ var TableMap = map[Name]TableConfig{
 	TaskDetailTable:     {},
 	TenantTable:         {},
 
-	GlobalConfigTable: {},
-	OrgTopoTable:      {},
+	GlobalConfigTable:                  {},
+	CvmApplyOrderStatisticsConfigTable: {},
+	OrgTopoTable:                       {},
 
 	ResUsageBizRelTable: {},
 }

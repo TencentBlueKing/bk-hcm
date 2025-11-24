@@ -197,6 +197,8 @@ const (
 	ZiyanResCreate client.ActionID = "ziyan_resource_create"
 	// ZiyanResRecycle 主机回收-业务粒度
 	ZiyanResRecycle client.ActionID = "ziyan_resource_recycle"
+	// ZiyanResDeliverAnalyze 交付分析-菜单粒度
+	ZiyanResDeliverAnalyze client.ActionID = "ziyan_resource_deliver_analyze"
 
 	// GlobalConfiguration global configuration action id to register iam.
 	GlobalConfiguration client.ActionID = "global_configuration"
@@ -313,6 +315,7 @@ var ActionIDNameMap = map[client.ActionID]string{
 	ZiyanResInventory:      "主机库存",
 	ZiyanResCreate:         "主机申领",
 	ZiyanResRecycle:        "主机回收",
+	ZiyanResDeliverAnalyze: "交付分析",
 	GlobalConfiguration:    "平台-全局配置",
 	RootAccountManage:      "云账号-一级账号管理",
 	AccountBillManage:      "云账单-云账单管理",

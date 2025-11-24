@@ -90,3 +90,8 @@ export const MENU_BUSINESS_TICKET_MANAGEMENT = 'menu_business_ticket_management'
 export const MENU_BUSINESS_TICKET_DETAILS = 'menu_business_ticket_details';
 export const MENU_SERVICE_TICKET_RESOURCE_PLAN_DETAILS = 'menu_service_ticket_resource_plan_details';
 export const MENU_BUSINESS_TICKET_RESOURCE_PLAN_DETAILS = 'menu_business_ticket_resource_plan_details';
+
+/**
+ * 统计分析
+ */
+export const MENU_STATS_DELIVERY = 'menu_stats_delivery';

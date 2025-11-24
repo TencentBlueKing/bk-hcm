@@ -34,6 +34,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/operation"
 	"hcm/cmd/woa-server/logics/task/recycler"
 	"hcm/cmd/woa-server/logics/task/scheduler"
+	taskStatistics "hcm/cmd/woa-server/logics/task/statistics"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao"
@@ -67,5 +68,6 @@ type Capability struct {
 	ResSyncLogic   ressync.Logics
 	ConfigLogics   config.Logics
 	TaskLogic      taskLogics.Logics
+	TaskStatistics taskStatistics.Interface
 	CvmLogic       cvmlogic.Logics
 }

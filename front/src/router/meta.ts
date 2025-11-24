@@ -42,6 +42,7 @@ export interface RouteMetaConfig {
   isShowBreadcrumb?: boolean;
   icon?: string;
   hasPageRoute?: boolean;
+  checkAuth?: string;
 }
 
 export default class Meta {

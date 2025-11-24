@@ -44,6 +44,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/recoverer"
 	"hcm/cmd/woa-server/logics/task/recycler"
 	"hcm/cmd/woa-server/logics/task/scheduler"
+	taskStatistics "hcm/cmd/woa-server/logics/task/statistics"
 	"hcm/cmd/woa-server/service/capability"
 	"hcm/cmd/woa-server/service/config"
 	"hcm/cmd/woa-server/service/cvm"
@@ -94,23 +95,24 @@ type Service struct {
 	cmdbCli        cmdb.Client
 	itsmCli        itsm.Client
 	// authorizer 鉴权所需接口集合
-	authorizer    auth.Authorizer
-	thirdCli      *thirdparty.Client
-	clientConf    cc.WoaServerSetting
-	schedulerIf   scheduler.Interface
-	informerIf    informer.Interface
-	recyclerIf    recycler.Interface
-	operationIf   operation.Interface
-	esCli         *es.EsCli
-	rsLogic       rslogics.Logics
-	srLogic       srlogics.Logics
-	gcLogic       gclogics.Logics
-	bizLogic      biz.Logics
-	dissolveLogic disLogics.Logics
-	resSyncLogic  ressynclogics.Logics
-	configLogics  configlogic.Logics
-	taskLogic     taskLogics.Logics
-	cvmLogic      cvmlogic.Logics
+	authorizer     auth.Authorizer
+	thirdCli       *thirdparty.Client
+	clientConf     cc.WoaServerSetting
+	schedulerIf    scheduler.Interface
+	informerIf     informer.Interface
+	recyclerIf     recycler.Interface
+	operationIf    operation.Interface
+	esCli          *es.EsCli
+	rsLogic        rslogics.Logics
+	srLogic        srlogics.Logics
+	gcLogic        gclogics.Logics
+	bizLogic       biz.Logics
+	dissolveLogic  disLogics.Logics
+	resSyncLogic   ressynclogics.Logics
+	configLogics   configlogic.Logics
+	taskLogic      taskLogics.Logics
+	taskStatistics taskStatistics.Interface
+	cvmLogic       cvmlogic.Logics
 }
 
 // NewService create a service instance.
@@ -271,7 +273,7 @@ func initLogics(sd serviced.State, apiClientSet *client.ClientSet, clients *clie
 	logics := &logicSet{}
 
 	// new config logic
-	logics.configLogics = conflogics.New(apiClientSet, clients.thirdCli, clients.cmdbCli)
+	logics.configLogics = conflogics.New(apiClientSet, clients.thirdCli, clients.cmdbCli, clients.daoSet)
 
 	// new green channel logic
 	gcLogics, err := gclogics.New(apiClientSet, logics.configLogics)
@@ -443,13 +445,16 @@ func newOtherClient(kt *kit.Kit, service *Service, itsmCli itsm.Client, sd servi
 		recyclerIf.StartStuckCheckLoop(kt.NewSubKit())
 	}()
 
-	operationIf, err := operation.New(kt.Ctx)
+	operationIf, err := operation.New(kt.Ctx, service.client)
 	if err != nil {
 		logs.Errorf("new operation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	taskLogic := taskLogics.New(service.schedulerIf, recyclerIf, service.informerIf, operationIf)
+	statisticsIf := taskStatistics.New(service.client)
+	service.taskStatistics = statisticsIf
+
+	taskLogic := taskLogics.New(service.schedulerIf, recyclerIf, service.informerIf, operationIf, statisticsIf)
 	service.taskLogic = taskLogic
 
 	cvmLogic := cvmlogic.New(service.thirdCli, service.clientConf.ClientConfig,
@@ -558,6 +563,7 @@ func (s *Service) apiSet() *restful.Container {
 		ResSyncLogic:   s.resSyncLogic,
 		ConfigLogics:   s.configLogics,
 		TaskLogic:      s.taskLogic,
+		TaskStatistics: s.taskStatistics,
 		CvmLogic:       s.cvmLogic,
 	}
 
