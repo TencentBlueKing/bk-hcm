@@ -789,8 +789,8 @@ func (t *TCloudImpl) ResetCvmInstance(kt *kit.Kit, opt *typecvm.ResetInstanceOpt
 	}
 
 	if len(result.SuccessCloudIDs) == 0 {
-		return nil, errf.Newf(errf.CloudVendorError, "no any cvm system being updated, TencentCloudSDK RequestId: %s",
-			reqID)
+		return nil, errf.Newf(errf.CloudVendorError, "当前主机不允许重装，可能原因有主机处于\"重装中\"、\"故障中\"等。"+
+			"云接口报错信息：no any cvm system being updated, TencentCloudSDK RequestId: %s", reqID)
 	}
 
 	logs.Infof("tcloud reset cvm instance success, opt: %+v, result: %+v, tid: %s, rid: %s",
