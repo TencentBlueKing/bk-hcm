@@ -25,15 +25,20 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
+	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
+	dataproto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // TCloudSGAssociateLoadBalancer ...
@@ -247,7 +252,7 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	opt := &securitygroup.TCloudBatchAssociateCvmOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
-		CloudCvmIDs:          converter.MapKeyToSlice(cvmCloudIDToIDMap),
+		CloudCvmIDs:          cvt.MapKeyToSlice(cvmCloudIDToIDMap),
 	}
 	if err = client.SecurityGroupCvmBatchAssociate(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group associate cvm failed, err: %v, opt: %v, rid: %s",
@@ -427,4 +432,235 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 	}
 
 	return nil, nil
+}
+
+// TCloudSGBatchAssociateLoadBalancers 绑定一个安全组到多个负载均衡实例
+func (g *securityGroup) TCloudSGBatchAssociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	req := new(proto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, clbCloudIDs, sgComReq, err := g.getSecurityGroupIDRelReq(cts.Kit, req, sg, securitygroup.AddSGOperationType)
+	if err != nil {
+		logs.Errorf("get security group id rel rel failed, sgID: %s, err: %v, rid: %s",
+			req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 绑定或解绑一个安全组到多个负载均衡实例
+	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
+		Region:          sg.Region,
+		SecurityGroup:   sg.CloudID,
+		OperationType:   securitygroup.AddSGOperationType,
+		LoadBalancerIDs: clbCloudIDs,
+	}
+	if _, err = client.SetSecurityGroupForLoadbalancers(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate clbs failed, err: %v, vendor: %s, opt: %+v, "+
+			"rid: %s", err, sg.Vendor, cvt.PtrToVal(opt), cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(sgComReq.Rels) > 0 {
+		if err = g.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(cts.Kit, sgComReq); err != nil {
+			logs.Errorf("request dataservice upsert security group clb rels failed, err: %v, vendor: %s, "+
+				"req: %+v, rid: %s", err, sg.Vendor, sgComReq, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// TCloudSGBatchDisassociateLoadBalancers 解绑一个安全组到多个负载均衡实例
+func (g *securityGroup) TCloudSGBatchDisassociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	req := new(proto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	clbIDs, clbCloudIDs, _, err := g.getSecurityGroupIDRelReq(cts.Kit, req, sg, securitygroup.DelSGOperationType)
+	if err != nil {
+		logs.Errorf("get security group id rel rel failed, sgID: %s, err: %v, rid: %s",
+			req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 绑定或解绑一个安全组到多个负载均衡实例
+	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
+		Region:          sg.Region,
+		SecurityGroup:   sg.CloudID,
+		OperationType:   securitygroup.DelSGOperationType,
+		LoadBalancerIDs: clbCloudIDs,
+	}
+	if _, err = client.SetSecurityGroupForLoadbalancers(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate clbs failed, err: %v, vendor: %s, opt: %+v, "+
+			"rid: %s", err, sg.Vendor, cvt.PtrToVal(opt), cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(clbIDs) > 0 {
+		deleteReq := buildSGCommonRelDeleteClbsReq(
+			sg.Vendor, req.SecurityGroupID, clbIDs, enumor.LoadBalancerCloudResType)
+		if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
+			logs.Errorf("request dataservice delete security group lb rels failed, err: %v, vendor: %s, "+
+				"req: %+v, rid: %s", err, sg.Vendor, deleteReq, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+func (g *securityGroup) getSecurityGroupIDRelReq(kt *kit.Kit, req *proto.SecurityGroupBatchOperateLoadBalancerReq,
+	sg cloud.BaseSecurityGroup, operationType securitygroup.SecurityGroupOperationType) (
+	[]string, []string, *protocloud.SGCommonRelBatchUpsertReq, error) {
+
+	// 查询CLB目前绑定的安全组列表
+	sgCommonRelList := make([]cloud.SecurityGroupCommonRel, 0)
+	sgCommonRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_vendor", sg.Vendor),
+			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
+			tools.RuleIn("res_id", req.LoadBalancerIDs),
+		),
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit, Sort: "priority,id", Order: core.Ascending},
+	}
+	for {
+		tmpList, err := g.dataCli.Global.SGCommonRel.ListSgCommonRels(kt, sgCommonRelReq)
+		if err != nil {
+			logs.Errorf("call dataserver to list sg common rel failed, sgID: %s, err: %v, rid: %s", sg.ID, err, kt.Rid)
+			return nil, nil, nil, err
+		}
+
+		sgCommonRelList = append(sgCommonRelList, tmpList.Details...)
+		if len(tmpList.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		sgCommonRelReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	// 构建新的CLB云ID列表（包含原有的和新增的）
+	clbIDs := make([]string, 0)
+	clbCloudIDs := make([]string, 0)
+	lbRelSgIDs := make(map[string]map[string]int64)
+	lbPriorityMap := make(map[string]int64)
+	for _, rel := range sgCommonRelList {
+		if _, ok := lbRelSgIDs[rel.ResID]; !ok {
+			lbRelSgIDs[rel.ResID] = make(map[string]int64)
+		}
+		lbRelSgIDs[rel.ResID][rel.SecurityGroupID] += 1
+		if existPriority, ok := lbPriorityMap[rel.ResID]; !ok || rel.Priority > existPriority {
+			lbPriorityMap[rel.ResID] = rel.Priority
+		}
+	}
+
+	lbList, err := g.getLoadBalancers(kt, req.LoadBalancerIDs)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	lbCloudIDToIDMap := make(map[string]string, len(req.LoadBalancerIDs))
+	for _, baseLb := range lbList {
+		lbCloudIDToIDMap[baseLb.CloudID] = baseLb.ID
+	}
+
+	sgComReq := &protocloud.SGCommonRelBatchUpsertReq{Rels: make([]protocloud.SGCommonRelCreate, 0)}
+	for lbCloudID, lbID := range lbCloudIDToIDMap {
+		// 需要添加或删除的CLB
+		clbIDs = append(clbIDs, lbID)
+		clbCloudIDs = append(clbCloudIDs, lbCloudID)
+
+		// 不是绑定CLB，跳过
+		if operationType != securitygroup.AddSGOperationType {
+			continue
+		}
+
+		// 如果是绑定CLB，且已经关联了该安全组，跳过
+		if sgMap, ok := lbRelSgIDs[lbID]; ok && sgMap[sg.ID] > 0 {
+			continue
+		}
+
+		tmpPriority := 0
+		if priority, ok := lbPriorityMap[lbID]; ok {
+			tmpPriority = int(priority)
+		}
+
+		// 创建关联关系
+		sgComReq.Rels = append(sgComReq.Rels, protocloud.SGCommonRelCreate{
+			SecurityGroupID: req.SecurityGroupID,
+			ResVendor:       sg.Vendor,
+			ResID:           lbID,
+			ResType:         enumor.LoadBalancerCloudResType,
+			Priority:        int64(tmpPriority + 1),
+		})
+	}
+	return clbIDs, clbCloudIDs, sgComReq, nil
+}
+
+func buildSGCommonRelDeleteClbsReq(vendor enumor.Vendor, sgID string, resIDs []string,
+	resType enumor.CloudResourceType) *dataproto.BatchDeleteReq {
+
+	return &dataproto.BatchDeleteReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "res_vendor",
+					Op:    filter.Equal.Factory(),
+					Value: vendor,
+				},
+				&filter.AtomRule{
+					Field: "res_type",
+					Op:    filter.Equal.Factory(),
+					Value: resType,
+				},
+				&filter.AtomRule{
+					Field: "res_id",
+					Op:    filter.In.Factory(),
+					Value: resIDs,
+				},
+				&filter.AtomRule{
+					Field: "security_group_id",
+					Op:    filter.Equal.Factory(),
+					Value: sgID,
+				},
+			},
+		},
+	}
 }

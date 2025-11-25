@@ -151,3 +151,14 @@ type TCloudListSecurityGroupStatisticItem struct {
 
 	ID string `json:"id"`
 }
+
+// SecurityGroupBatchOperateLoadBalancerReq define security group operate load balancer option.
+type SecurityGroupBatchOperateLoadBalancerReq struct {
+	SecurityGroupID string   `json:"security_group_id" validate:"required"`
+	LoadBalancerIDs []string `json:"load_balancer_ids" validate:"required,max=20"`
+}
+
+// Validate security group load balancer operate option.
+func (opt SecurityGroupBatchOperateLoadBalancerReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}

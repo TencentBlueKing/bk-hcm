@@ -92,6 +92,10 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSGAssociateLoadBalancer)
 	h.Add("TCloudSGDisassociateLoadBalancer", "POST",
 		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSGDisassociateLoadBalancer)
+	h.Add("TCloudSGBatchAssociateLoadBalancers", "POST",
+		"/vendors/tcloud/security_groups/associate/load_balancers/batch", sg.TCloudSGBatchAssociateLoadBalancers)
+	h.Add("TCloudSGBatchDisassociateLoadBalancers", "POST",
+		"/vendors/tcloud/security_groups/disassociate/load_balancers/batch", sg.TCloudSGBatchDisassociateLoadBalancers)
 
 	initSecurityGroupServiceHooks(sg, h)
 
