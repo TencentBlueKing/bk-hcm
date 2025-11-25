@@ -11,6 +11,7 @@
     row-hover="auto"
     :stripe="true"
     show-overflow-tooltip
+    :settings="settings"
   />
 </template>
 
@@ -36,7 +37,7 @@ export interface IConfigurationListProps {
   vendor: string;
 }
 
-const ruleColumns = useColumns('configureList', false, props.vendor).columns;
+const { columns: ruleColumns, settings } = useColumns('configureList', false, props.vendor);
 ruleColumns.push({
   label: '操作',
   width: 120,

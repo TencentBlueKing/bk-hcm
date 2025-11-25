@@ -590,7 +590,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   const handleConfirm = async () => {
     await formRef.value.validate();
     configureList.push({ ...formModel, rowKey: new Date().getTime() });
-    handleClose();
+    show.value = false;
   };
   const handleClone = (data: ApplyClbModel) => {
     configureList.push({ ...data, rowKey: new Date().getTime() });

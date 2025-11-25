@@ -2493,11 +2493,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '地域',
       field: 'region',
       width: 120,
+      isDefaultShow: true,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
     },
     {
       label: '可用区',
       field: 'zones',
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
@@ -2505,16 +2507,19 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '网络类型',
       field: 'load_balancer_type',
+      isDefaultShow: true,
       render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '--',
     },
     {
       label: '运营商类型',
       field: 'vip_isp',
       width: 100,
+      isDefaultShow: true,
       render: ({ cell }: { cell: string }) => LB_ISP[cell] ?? (cell || '--'),
     },
     {
       label: '需求数量',
+      isDefaultShow: true,
       field: 'require_count',
     },
     {
@@ -2526,22 +2531,33 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '规格',
       field: 'sla_type',
+      isDefaultShow: true,
       render: ({ cell }: { cell: any }) => CLB_SPECS[cell] ?? '--',
     },
     {
       label: '带宽上限',
       field: 'internet_max_bandwidth_out',
+      isDefaultShow: true,
       render: ({ cell }: { cell: any }) => (cell ? `${cell}（Mbps）` : '--'),
+    },
+    {
+      label: '安全组模式',
+      field: 'load_balancer_pass_to_target',
+      showOverflowTooltip: true,
+      isDefaultShow: true,
+      render: ({ cell }: { cell: boolean }) => (cell ? '默认放通' : '不启用默认放通'),
     },
     {
       label: '带宽计费模式',
       field: 'internet_charge_type',
+      isDefaultShow: true,
       render: ({ cell }: { cell: any }) => NET_CHARGE_MAP[cell],
     },
     {
       label: '所属VPC',
       field: 'cloud_vpc_id',
       showOverflowTooltip: true,
+      isDefaultShow: true,
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },
@@ -2550,6 +2566,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '所属子网',
       showOverflowTooltip: true,
       field: 'cloud_subnet_id',
+      isDefaultShow: true,
+      render({ cell }: { cell: string }) {
+        return h('span', [cell || '--']);
+      },
+    },
+    {
+      label: '实例名称',
+      showOverflowTooltip: true,
+      field: 'name',
       render({ cell }: { cell: string }) {
         return h('span', [cell || '--']);
       },

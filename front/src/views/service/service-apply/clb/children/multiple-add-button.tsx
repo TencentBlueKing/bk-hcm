@@ -1,10 +1,9 @@
 import { computed, defineComponent, PropType, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_CREATE_CLB, AUTH_CREATE_CLB } from '@/constants/auth-symbols';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import http from '@/http';
 import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
@@ -15,7 +14,6 @@ export default defineComponent({
   },
   setup(props) {
     const router = useRouter();
-    const route = useRoute();
     const { t } = useI18n();
     const { whereAmI, isBusinessPage, getBizsId } = useWhereAmI();
 
@@ -110,12 +108,7 @@ export default defineComponent({
       }
     };
     const goBack = () => {
-      const path =
-        whereAmI.value === Senarios.business
-          ? `/business/loadbalancer/clb-view?bizs=${route.query[GLOBAL_BIZS_KEY]}`
-          : '/resource/resource?type=clb';
-
-      router.replace({ path, query: { ...route.query } });
+      router.go(-1);
     };
 
     return () => (
