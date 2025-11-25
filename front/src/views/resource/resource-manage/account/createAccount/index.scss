@@ -1,11 +1,12 @@
 .create-account-dialog-container {
   background: #f5f7fa;
+
   .create-account-dialog-tools {
     position: relative;
     z-index: 999;
     width: 100%;
     min-height: 52px;
-    background: #ffffff;
+    background: #fff;
     box-shadow: 0 1px 0 0 #dcdee5, 0 3px 4px 0 #4070cb0f;
     border: 1px;
     text-align: center;
@@ -14,35 +15,50 @@
     font-size: 16px;
     color: #313238;
   }
+
   .bk-modal-header {
     .bk-dialog-header {
       height: 56px;
-      background: #ffffff;
-      border: 1px solid #4070cb0f!important;
+      background: #fff;
+      border: 1px solid #4070cb0f !important;
       display: flex;
       align-items: center;
       padding-bottom: 15px;
+
       .bk-dialog-title {
         text-align: center !important;
       }
     }
   }
+
+  .bk-dialog-footer {
+    width: 100%;
+  }
+
   .create-account-dialog-footer {
     display: flex;
     flex-direction: row;
     justify-content: start;
-    padding: 0 300px 0 300px;
+    min-width: 900px;
+    max-width: 1900px;
+    margin: 0 auto;
+    padding: 0 60px;
 
     .bk-button {
       min-width: 88px;
     }
   }
+
   .mr8 {
     margin-right: 8px;
   }
+
   .create-account-dialog-content {
-    padding: 0 300px;
+    min-width: 900px;
+    max-width: 1900px;
     margin: 0 auto;
+    padding: 0 60px;
+
     .create-account-dialog-steps {
       position: fixed;
       top: 52px;
@@ -55,9 +71,11 @@
       height: 72px;
     }
   }
+
   .bk-modal-wrapper {
     margin-top: 52px;
     height: calc(100% - 52px);
+
     .bk-modal-body {
       padding-bottom: 0 !important;
       background: #f5f7fa !important;

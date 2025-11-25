@@ -34,7 +34,7 @@ import apiService from '@/api/scrApi';
 import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { VerifyStatus, VerifyStatusMap } from './constants';
 import { ChargeType } from '@/typings/plan';
-import { cloneDeep, isEqual } from 'lodash';
+import { cloneDeep } from 'lodash';
 import { timeFormatter, expectedDeliveryTime } from '@/common/util';
 import http from '@/http';
 
@@ -176,12 +176,25 @@ export default defineComponent({
     const isRollingServerLike = computed(() => isRollingServer.value || isSpringPool.value);
     const isSpecialRequirement = computed(() => isRollingServer.value || isGreenChannel.value);
 
-    const handleDeviceTypeChange = (data: Partial<ICvmDeviceTypeFormData>, from: 'confirm' | 'auto') => {
+    const handleDeviceTypeChange = (
+      data: Partial<ICvmDeviceTypeFormData>,
+      from: 'confirm' | 'auto',
+      changed?: { zones: boolean },
+    ) => {
       if (from === 'confirm') {
         const { deviceTypeList, inheritInstanceId, inheritAssetId } = data;
         QCLOUDCVMForm.value.spec.cpu = deviceTypeList?.[0]?.cpu_amount;
         QCLOUDCVMForm.value.spec.inherit_instance_id = inheritInstanceId;
         resourceForm.value.bk_asset_id = inheritAssetId;
+
+        // zones有变更
+        if (changed?.zones) {
+          QCLOUDCVMForm.value.spec.subnet = '';
+          // 选择了多个可用区
+          if (data.zones?.length !== 1 || data.zones?.[0] === 'all') {
+            QCLOUDCVMForm.value.spec.vpc = '';
+          }
+        }
       }
     };
 
@@ -421,20 +434,6 @@ export default defineComponent({
         IDCPMlist();
       }
     };
-
-    // 监听cvm的zones
-    watch(
-      () => resourceForm.value.zones,
-      (value, oldValue) => {
-        if (!isEqual(oldValue, value)) {
-          QCLOUDCVMForm.value.spec.subnet = '';
-          // 选择了多个可用区
-          if (value?.length !== 1 || value?.[0] === 'all') {
-            QCLOUDCVMForm.value.spec.vpc = '';
-          }
-        }
-      },
-    );
 
     // 监听物理机机型变化
     watch(

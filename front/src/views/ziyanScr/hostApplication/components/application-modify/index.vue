@@ -6,7 +6,6 @@ import usePlanStore from '@/store/usePlanStore';
 import { GLOBAL_BIZS_KEY, INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { ModelPropertyDisplay } from '@/model/typings';
 import isNil from 'lodash/isNil';
-import isEqual from 'lodash/isEqual';
 import type { IApplyOrderItem } from '@/typings/ziyanScr';
 import type { IDemandVerification } from '@/typings/plan';
 import { MENU_SERVICE_HOST_APPLICATION, MENU_BUSINESS_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
@@ -63,6 +62,7 @@ onBeforeMount(async () => {
     vpc,
     subnet,
   });
+  setNetworkInfoDisabled(formModel.zones);
 });
 
 const RESOURCE_TYPE_NAME_MAP: Record<string, string> = {
@@ -147,8 +147,20 @@ const productionFields: ModelPropertyDisplay[] = [
   },
 ];
 
+const setNetworkInfoDisabled = (zones: string[]) => {
+  networkInfoDisabled.value = zones?.length !== 1 || zones?.[0] === 'all';
+};
+
 const selectedDeviceType = ref<ICvmDeviceTypeFormData['deviceTypeList'][number]>();
-const handleDeviceTypeChange = (data: Partial<ICvmDeviceTypeFormData>) => {
+const handleDeviceTypeChange = (
+  data: Partial<ICvmDeviceTypeFormData>,
+  from: 'confirm' | 'auto',
+  changed?: { zones: boolean },
+) => {
+  if (changed?.zones) {
+    formModel.subnet = '';
+    setNetworkInfoDisabled(data.zones);
+  }
   selectedDeviceType.value = data?.deviceTypeList?.[0];
 };
 
@@ -194,16 +206,6 @@ const handleVerify = async () => {
 watch(formModel, () => {
   verifyResult.value = null;
 });
-
-watch(
-  () => formModel.zones,
-  (value, oldValue) => {
-    if (!isEqual(oldValue, value)) {
-      formModel.subnet = '';
-      networkInfoDisabled.value = value?.length !== 1 || value?.[0] === 'all';
-    }
-  },
-);
 
 watch(networkInfoDisabled, (disabled) => {
   if (disabled) {

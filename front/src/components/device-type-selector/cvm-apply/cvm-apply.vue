@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, reactive, ref, watch, toRefs, watchEffect } from 'vue';
+import isEqual from 'lodash/isEqual';
 import { useFormItem } from 'bkui-vue/lib/shared';
 import { VendorEnum } from '@/common/constant';
 import { RequirementType } from '@/store/config/requirement';
@@ -36,7 +37,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  change: [value: Partial<ICvmDeviceTypeFormData>, from: 'confirm' | 'auto'];
+  change: [value: Partial<ICvmDeviceTypeFormData>, from: 'confirm' | 'auto', changed?: { zones: boolean }];
   'update-selected': [value: ICvmDeviceTypeFormData['deviceTypeList']];
 }>();
 
@@ -138,6 +139,7 @@ const handleEdit = () => {
 };
 
 const handleConfirm = (data: ICvmDeviceTypeFormData) => {
+  const changed = { zones: !isEqual(zones.value, data.zones) };
   // 机型目前仅支持单选，为了减少消费数据时的适配，这里只返回单个值
   deviceType.value = data.deviceTypes?.[0];
   zones.value = data.zones;
@@ -148,7 +150,7 @@ const handleConfirm = (data: ICvmDeviceTypeFormData) => {
   inheritAssetId.value = data.inheritAssetId;
   inheritInstanceId.value = data.inheritInstanceId;
   isInfoMode.value = true;
-  emit('change', data, 'confirm');
+  emit('change', data, 'confirm', changed);
   formItem?.validate('change');
 };
 
