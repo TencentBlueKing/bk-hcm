@@ -7,12 +7,15 @@ import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useI18n } from 'vue-i18n';
 import './index.scss';
-import { RouteLocationRaw, useRoute } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import BottomBar from './children/bottom-bar';
+import http from '@/http';
 
 export default defineComponent({
   name: 'ApplyLoadBalancer',
   setup() {
     const route = useRoute();
+    const router = useRouter();
     // use hooks
     const { t } = useI18n();
     const { getBizsId, whereAmI } = useWhereAmI();
@@ -40,12 +43,21 @@ export default defineComponent({
     });
 
     // use custom hooks
-    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm } = useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, configureList } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
 
     const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
       return { query: { ...route.query } };
     });
+
+    const goBack = () => {
+      router.go(-1);
+    };
+
+    const handleApplyClb = async (params: ApplyClbModel[], url: string) => {
+      const allApi = params.map((item: ApplyClbModel) => http.post(url, item));
+      await Promise.any(allApi);
+    };
 
     return () => (
       <div class='apply-clb-page'>
@@ -56,6 +68,9 @@ export default defineComponent({
 
         {/* form */}
         <ApplyClbForm />
+
+        {/* bottom */}
+        <BottomBar list={configureList} onConfirm={handleApplyClb} onCancel={goBack} />
 
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}

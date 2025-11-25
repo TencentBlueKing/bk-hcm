@@ -38,8 +38,8 @@ import { useBusinessStore, useResourceStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import RegionSelector from '../../components/common/region-selector.vue';
 import { cloneDeep } from 'lodash';
-import BottomBar from '../children/bottom-bar';
-import MultipleAddButton from '../children/multiple-add-button';
+import CalcPrice from '../children/calc-price';
+import cssModule from '../index.module.scss';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -217,7 +217,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           required: true,
           property: 'cloud_vpc_id',
           content: () => (
-            <div class='component-with-preview'>
+            <div class={cssModule.componentWithPreview}>
               <RegionVpcSelector
                 class='flex-1'
                 v-model={formModel.cloud_vpc_id}
@@ -236,7 +236,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
           hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
           content: () => (
-            <div class='flex-row'>
+            <div class={cssModule.flexRow}>
               {!isIntranet.value && (
                 <Select v-model={formModel.zoneType} clearable={false} filterable={false} class='w220'>
                   {ZONE_TYPE.map(({ label, value, isDisabled }) => {
@@ -308,7 +308,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           property: 'cloud_subnet_id',
           hidden: !isIntranet.value && formModel.address_ip_version !== 'IPv6FullChain',
           content: () => (
-            <div class='component-with-preview'>
+            <div class={cssModule.componentWithPreview}>
               <SubnetSelector
                 class='flex-1'
                 v-model={formModel.cloud_subnet_id}
@@ -324,7 +324,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 handleChange={handleSubnetDataChange}
               />
               <Button
-                class='preview-btn'
+                class={cssModule.previewBtn}
                 text
                 theme='primary'
                 disabled={!formModel.cloud_subnet_id}
@@ -464,11 +464,12 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '实例计费模式',
           simpleShow: true,
           content: () => (
-            <div class='simple-show-container'>
-              <span class='label'>{t('实例计费模式')}</span>:<span class='value'>{t('按量计费')}</span>
+            <div class={cssModule.simpleShowContainer}>
+              <span class={cssModule.label}>{t('实例计费模式')}</span>:
+              <span class={cssModule.value}>{t('按量计费')}</span>
               <i
                 v-bk-tooltips={{ content: t('本期只支持按量计费'), placement: 'right' }}
-                class='hcm-icon bkhcm-icon-prompt'></i>
+                class={[cssModule['hcm-icon'], cssModule['bkhcm-icon-prompt']]}></i>
             </div>
           ),
         },
@@ -522,7 +523,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           property: 'internet_max_bandwidth_out',
           hidden: !isIntranet.value && formModel.account_type === 'LEGACY',
           content: () => (
-            <div class='slider-wrap'>
+            <div class={cssModule.sliderWrap}>
               <Slider
                 v-model={formModel.internet_max_bandwidth_out}
                 minValue={internetMaxBandwidthOutConfig.value.min}
@@ -531,7 +532,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 showInput
                 labelClick>
                 {{
-                  end: () => <div class='slider-unit-suffix'>Mbps</div>,
+                  end: () => <div class={cssModule.sliderUnitSuffix}>Mbps</div>,
                 }}
               </Slider>
             </div>
@@ -630,28 +631,27 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 onRemoveData={handleRemove}
               />
             </CommonCard>
-            <MultipleAddButton list={configureList} />
           </Form>
           <bk-sideslider
             v-model:isShow={show.value}
             title={'添加负载均衡'}
             width='850'
-            class='add-clb-configure-sideslider'>
+            class={cssModule.addClbConfigureSideslider}>
             {{
               default: () => (
                 <bk-form
-                  class='apply-clb-form-container'
+                  class={cssModule.applyClbFormContainer}
                   formType='vertical'
                   model={formModel}
                   ref={formRef}
                   rules={rules}>
                   {formItemOptions.value.map(({ id, title, children }) => (
-                    <CommonCard key={id} title={() => t(title)} class='form-card-container'>
+                    <CommonCard key={id} title={() => t(title)} class={cssModule.formCardContainer}>
                       {children.map((item) => {
                         let contentVNode = null;
                         if (Array.isArray(item)) {
                           contentVNode = (
-                            <div class='flex-row'>
+                            <div class={cssModule.flexRow}>
                               {item.map(({ label, required, property, content, description, hidden }) => {
                                 if (hidden) return null;
                                 return (
@@ -699,7 +699,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                     </Button>
                     <Button onClick={handleClose}>{t('取消')}</Button>
                   </div>
-                  <BottomBar formModel={formModel} formRef={formRef.value} />
+                  <CalcPrice formModel={formModel} formRef={formRef.value} />
                 </>
               ),
             }}
@@ -827,5 +827,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     isSubnetPreviewDialogShow,
     ApplyClbForm,
     formRef,
+    configureList,
   };
 };

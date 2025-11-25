@@ -1,4 +1,4 @@
-.apply-clb-page, .add-clb-configure-sideslider {
+.apply-clb-page {
   .apply-clb-header-title {
     font-size: 16px;
     color: #313238;
@@ -232,67 +232,5 @@
 .form-card-container {
   .common-card-content {
     width: 100% !important;
-  }
-}
-
-.add-clb-configure-sideslider {
-  .apply-clb-form-container {
-    background-color: #f5f7fa;
-    margin-top: 0;
-  }
-
-  .bk-sideslider-footer {
-    justify-content: space-between;
-
-    .apply-clb-bottom-bar {
-      position: static;
-      padding: 0;
-      width: auto;
-      height: auto;
-      display: inline-block;
-      border-top: 0px solid #dcdee5;
-    }
-
-    .info-wrap {
-      position: relative;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-
-      .label {
-        margin-right: 5px;
-
-        &.has-tips {
-          border-bottom: 1px dashed #979ba5;
-          cursor: pointer;
-        }
-      }
-
-      .value {
-        margin-left: 5px;
-        color: #ff9c01;
-        font-weight: 700;
-
-        .unit {
-          margin-left: 5px;
-          font-size: 14px;
-        }
-
-        .number {
-          font-size: 18px;
-        }
-      }
-
-      &:not(:first-of-type)::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        width: 1px;
-        height: 16px;
-        transform: translateY(-50%);
-        background-color: #dcdee5;
-      }
-    }
   }
 }
