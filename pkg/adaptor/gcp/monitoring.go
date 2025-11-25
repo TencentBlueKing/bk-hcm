@@ -66,11 +66,22 @@ func (g *Gcp) ListMonitorTimeSeries(kt *kit.Kit, projectID string, opt *typesMon
 		return nil, err
 	}
 
-	// Call API
+	// Call API - ListTimeSeries returns an iterator
+	// The iterator will make HTTP request on first Next() call
+	// and iter.Response will contain the full ListTimeSeriesResponse with all TimeSeries in that page
 	iter := client.ListTimeSeries(kt.Ctx, req)
 
-	// Collect and convert results
-	return g.collectTimeSeriesResults(kt, iter, opt.PageToken, opt.PageSize)
+	// Trigger the API call by calling Next() once
+	// This will populate iter.Response with the complete response for the current page
+	// Note: Next() returns a single TimeSeries, but iter.Response contains the full page
+	if _, err := iter.Next(); err != nil && !errors.Is(err, iterator.Done) {
+		logs.Errorf("call list time series API failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	// Extract the full response from iterator
+	// iter.Response is populated after the first Next() call and contains the complete page
+	return g.collectTimeSeriesResults(kt, iter)
 }
 
 // buildListTimeSeriesRequest builds the ListTimeSeriesRequest from options.
@@ -86,11 +97,11 @@ func (g *Gcp) buildListTimeSeriesRequest(kt *kit.Kit, projectID string, opt *typ
 
 	// Build request
 	req := &monitoringpb.ListTimeSeriesRequest{
-		Name:     fmt.Sprintf("projects/%s", projectID),
-		Filter:   opt.Filter,
-		Interval: interval,
-		PageSize: int32(opt.PageSize),
-		// page token is not set here, it is managed by the NewPager
+		Name:      fmt.Sprintf("projects/%s", projectID),
+		Filter:    opt.Filter,
+		Interval:  interval,
+		PageSize:  int32(opt.PageSize),
+		PageToken: opt.PageToken,
 	}
 
 	// Set view
@@ -124,40 +135,41 @@ func (g *Gcp) buildListTimeSeriesRequest(kt *kit.Kit, projectID string, opt *typ
 	return req, nil
 }
 
-// collectTimeSeriesResults collects time series results for a single page and converts to BK-HCM format.
-func (g *Gcp) collectTimeSeriesResults(kt *kit.Kit, iter *monitoring.TimeSeriesIterator, startToken string,
-	pageSize int) (*typesMonitoring.GcpListTimeSeriesResult, error) {
+// collectTimeSeriesResults collects time series results directly from iterator response
+// and converts to BK-HCM format. This avoids using iterator.NewPager which may cause pagination issues.
+func (g *Gcp) collectTimeSeriesResults(kt *kit.Kit, iter *monitoring.TimeSeriesIterator) (
+	*typesMonitoring.GcpListTimeSeriesResult, error) {
 
 	timeSeries := make([]*typesMonitoring.GcpTimeSeries, 0)
 	executionErrors := make([]*typesMonitoring.GcpExecutionError, 0)
 	unit := ""
+	nextPageToken := ""
 
-	pager := iterator.NewPager(iter, pageSize, startToken)
-
-	timeSeriesPage := make([]*monitoringpb.TimeSeries, 0)
-	nextPageToken, err := pager.NextPage(&timeSeriesPage)
-	if err != nil {
-		logs.Errorf("fetch time series page failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	// Convert protobuf TimeSeries to BK-HCM format
-	for _, ts := range timeSeriesPage {
-		converted := convertMonitorTimeSeriesFromProto(ts)
-		timeSeries = append(timeSeries, converted)
-	}
-
-	// Extract metadata from the response
+	// Extract data directly from iterator's Response
+	// The Response is populated after the first Next() call
 	if iter.Response != nil {
 		if resp, ok := iter.Response.(*monitoringpb.ListTimeSeriesResponse); ok {
+			// Get all time series from response
+			for _, ts := range resp.TimeSeries {
+				converted := convertMonitorTimeSeriesFromProto(ts)
+				timeSeries = append(timeSeries, converted)
+			}
+
+			// Extract metadata
 			unit = resp.Unit
+			nextPageToken = resp.NextPageToken
 			for _, err := range resp.ExecutionErrors {
 				executionErrors = append(executionErrors, &typesMonitoring.GcpExecutionError{
 					Code:    err.Code,
 					Message: err.Message,
 				})
 			}
+		} else {
+			logs.Warnf("iterator response is not ListTimeSeriesResponse type, actual type: %T, rid: %s",
+				iter.Response, kt.Rid)
 		}
+	} else {
+		logs.Warnf("iterator response is nil, rid: %s", kt.Rid)
 	}
 
 	return &typesMonitoring.GcpListTimeSeriesResult{
