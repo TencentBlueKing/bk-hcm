@@ -54,7 +54,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   const originalFormModel = cloneDeep(formModel);
 
   // define data
-  const show = ref(false);
+  const sideSliderOptions = ref<{
+    show: boolean;
+    type: 'add' | 'edit';
+    key: string;
+  }>({
+    show: false,
+    type: 'add',
+    key: '',
+  });
   const configureList = reactive<ApplyClbModel[]>([]);
   const vpcId = ref('');
   const vpcData = ref(null); // 预览vpc
@@ -588,13 +596,44 @@ export default (formModel: Reactive<ApplyClbModel>) => {
       }
     });
   };
+  const closeSideslider = () => {
+    sideSliderOptions.value = {
+      type: 'add',
+      show: false,
+      key: '',
+    };
+  };
   const handleConfirm = async () => {
     await formRef.value.validate();
-    configureList.push({ ...formModel, rowKey: new Date().getTime() });
-    show.value = false;
+    if (sideSliderOptions.value.type === 'add') {
+      configureList.push({ ...formModel, rowKey: new Date().getTime() });
+    } else {
+      const index = configureList.findIndex((item) => item.rowKey === sideSliderOptions.value.key);
+      if (index > -1) {
+        configureList[index] = {
+          ...configureList[index],
+          ...formModel,
+        };
+      }
+    }
+    closeSideslider();
   };
   const handleClone = (data: ApplyClbModel) => {
     configureList.push({ ...data, rowKey: new Date().getTime() });
+  };
+  const handleEdit = (key: string) => {
+    const data = configureList.filter((item) => item.rowKey === key);
+    if (!data.length) return;
+    Object.entries(data[0]).forEach(([key, value]) => {
+      if (!['vendor', 'account_id', 'account_type'].includes(key)) {
+        formModel[key] = value;
+      }
+    });
+    sideSliderOptions.value = {
+      type: 'edit',
+      show: true,
+      key,
+    };
   };
   const handleRemove = (key: string) => {
     const index = configureList.findIndex((item) => item.rowKey === key);
@@ -604,7 +643,14 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   };
   const handleClose = () => {
     resetFormModel();
-    show.value = false;
+    closeSideslider();
+  };
+  const handleShowSideSlider = () => {
+    sideSliderOptions.value = {
+      type: 'add',
+      show: true,
+      key: '',
+    };
   };
   // define component
   const ApplyClbForm = defineComponent({
@@ -626,14 +672,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
               <ConfigureList
                 list={configureList}
                 vendor={formModel.vendor}
-                onShowConfigureSlider={() => (show.value = true)}
+                onShowConfigureSlider={handleShowSideSlider}
                 onCloneData={handleClone}
+                onEditData={handleEdit}
                 onRemoveData={handleRemove}
               />
             </CommonCard>
           </Form>
           <bk-sideslider
-            v-model:isShow={show.value}
+            v-model:isShow={sideSliderOptions.value.show}
             title={'添加负载均衡'}
             width='850'
             class={cssModule.addClbConfigureSideslider}>

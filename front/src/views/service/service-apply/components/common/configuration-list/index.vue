@@ -13,12 +13,16 @@
     show-overflow-tooltip
     :settings="settings"
   />
+  <div class="dropdown-menu" ref="menu" v-if="isShow">
+    <div class="list" @click="() => handleEdit(actionData.rowKey)">编辑</div>
+    <div class="list" @click="() => handleRemove(actionData.rowKey)">移除</div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
-import { Button } from 'bkui-vue';
+import { Button, $bkPopover } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import { useI18n } from 'vue-i18n';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -33,7 +37,7 @@ withDefaults(defineProps<IConfigurationListProps>(), {
   vendor: '',
 });
 
-const emit = defineEmits(['showConfigureSlider', 'cloneData', 'removeData']);
+const emit = defineEmits(['showConfigureSlider', 'cloneData', 'removeData', 'editData']);
 
 const { t } = useI18n();
 const { getRegionName } = useRegionsStore();
@@ -156,11 +160,73 @@ const generateColumnsSettings = (columns: any) => {
 };
 
 const settings = generateColumnsSettings(configListColumns);
+
+const popInstance = ref(null);
+const menu = ref(null);
+const isShow = ref(false);
+const actionData = ref<ApplyClbModel>({
+  bk_biz_id: 0,
+  account_id: '',
+  region: '',
+  load_balancer_type: 'OPEN',
+  name: '',
+  zones: '',
+  load_balancer_pass_to_target: false,
+  cloud_vpc_id: '',
+  require_count: 0,
+  zoneType: '0',
+  vendor: VendorEnum.TCLOUD,
+  account_type: 'STANDARD',
+  slaType: '0',
+});
+
+// 初始化popover, 并显示
+const showDropdownList = (e: any, data: ApplyClbModel) => {
+  popInstance.value?.close();
+  actionData.value = data;
+  isShow.value = true;
+
+  popInstance.value = $bkPopover({
+    isShow: isShow.value,
+    trigger: 'manual',
+    forceClickoutside: true,
+    theme: 'light',
+    renderType: 'shown',
+    placement: 'bottom',
+    arrow: false,
+    allowHtml: true,
+    extCls: 'more-action-dropdown-menu',
+    target: e,
+    content: menu,
+    width: '',
+    always: false,
+    disabled: false,
+    height: '',
+    maxWidth: '',
+    maxHeight: '',
+    padding: 0,
+    offset: 10,
+    zIndex: 0,
+    disableTeleport: false,
+    autoPlacement: false,
+    autoVisibility: false,
+    disableOutsideClick: false,
+    disableTransform: false,
+    modifiers: [],
+    popoverDelay: 0,
+    componentEventDelay: 0,
+    immediate: false,
+  });
+  popInstance.value?.show();
+  popInstance.value?.update(e.target);
+  popInstance.value?.show();
+};
+
 configListColumns.push({
   label: '操作',
   width: 120,
   showOverflowTooltip: false,
-  render: ({ data }: { data: any }) => {
+  render: ({ data }: { data: any; index: number }) => {
     return h('div', { class: 'operation-column' }, [
       h(
         Button,
@@ -173,14 +239,12 @@ configListColumns.push({
         '克隆',
       ),
       h(
-        Button,
+        'div',
         {
-          text: true,
-          theme: 'primary',
-          class: 'mr10',
-          onClick: () => handleRemove(data.rowKey),
+          class: ['more-action'],
+          onClick: (e) => showDropdownList(e, data),
         },
-        '移除',
+        h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
       ),
     ]);
   },
@@ -194,7 +258,85 @@ const handleClone = (data: ApplyClbModel) => {
   emit('cloneData', data);
 };
 
+const handleEdit = (key: string) => {
+  isShow.value = false;
+  popInstance.value?.hide();
+  emit('editData', key);
+};
+
 const handleRemove = (key: string) => {
+  isShow.value = false;
+  popInstance.value?.hide();
   emit('removeData', key);
 };
 </script>
+
+<style lang="scss" scoped>
+:deep(.operation-column) {
+  height: 100%;
+  display: flex;
+  align-items: center;
+
+  .more-action {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+
+    & > i {
+      position: absolute;
+    }
+
+    &:hover {
+      background-color: #f0f1f5;
+    }
+
+    &.current-operate-row {
+      background-color: #f0f1f5;
+    }
+
+    &.disabled {
+      background-color: #fff;
+      color: #dcdee5;
+      cursor: not-allowed;
+    }
+  }
+}
+</style>
+
+<style lang="scss">
+.more-action-dropdown-menu {
+  padding: 0 !important;
+  background: red !important;
+
+  .dropdown-menu {
+    background: #fff;
+    border: 1px solid #dcdee5;
+    border-radius: 2px;
+    box-sizing: border-box;
+    margin: 0;
+    min-width: 100%;
+    padding: 5px 0;
+
+    .list {
+      color: #63656e;
+      cursor: pointer;
+      display: block;
+      font-size: 12px;
+      height: 32px;
+      line-height: 33px;
+      list-style: none;
+      padding: 0 16px;
+      white-space: nowrap;
+
+      &:hover {
+        background: #f5f7fa;
+      }
+    }
+  }
+}
+</style>
