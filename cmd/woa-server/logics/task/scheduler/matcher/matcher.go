@@ -615,10 +615,6 @@ func (m *Matcher) DeliverDevices(kt *kit.Kit, order *types.ApplyOrder, observeDe
 		return err
 	}
 
-	// 检查并触发邮件通知
-	if err := m.checkAndNotifyDelivery(kt, order.OrderId); err != nil {
-		logs.Warnf("check delivery notification failed, orderId: %d, err: %v, rid: %s", order.OrderId, err, kt.Rid)
-	}
 	return nil
 }
 
