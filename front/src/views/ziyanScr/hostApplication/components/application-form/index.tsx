@@ -727,6 +727,7 @@ export default defineComponent({
         enable_disk_check,
         anti_affinity_level: QCLOUDCVMForm.value.spec.anti_affinity_level,
         replicas: +QCLOUDCVMForm.value.spec.replicas,
+        source: 'business',
         spec: {
           ...QCLOUDCVMForm.value.spec,
           region,
@@ -743,6 +744,7 @@ export default defineComponent({
         remark: resourceForm.value.remark,
         anti_affinity_level: pmForm.value.spec.anti_affinity_level,
         replicas: +pmForm.value.spec.replicas,
+        source: 'business',
         spec: {
           region: resourceForm.value.region,
           zone: resourceForm.value.zone,

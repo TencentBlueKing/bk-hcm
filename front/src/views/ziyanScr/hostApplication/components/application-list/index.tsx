@@ -477,6 +477,11 @@ export default defineComponent({
           cacheKey: serviceShareBizSelectedKey,
         };
       }
+      if (field.type === 'enum') {
+        return {
+          option: field.option,
+        };
+      }
       if (field.id === 'create_at') {
         return {
           type: 'daterange',

@@ -93,4 +93,14 @@ export class HostApplySearchNonBusiness extends HostApplySearch {
     index: 0,
   })
   bk_biz_id: number;
+
+  @Column('enum', {
+    name: '单据来源',
+    option: {
+      business: '业务单据',
+      purchase_to_resource_pool: '资源池采购',
+    },
+    index: 1,
+  })
+  source: string;
 }
