@@ -137,16 +137,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     currentLbQuota.value?.quota_limit ? quotaMax.value - formModel.require_count : 0,
   );
 
-  const rules = {
-    name: [
-      {
-        validator: (value: string) => /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(value),
-        message: '60个字符，字母、数字、“-”，且必须以字母、数字开头和结尾。',
-        trigger: 'change',
-      },
-    ],
-  };
-
   // change-handle - 更新 sla_type
   const handleSlaTypeChange = (v: '0' | '1') => {
     if (v === '0') formModel.sla_type = 'shared';
@@ -686,12 +676,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             class={cssModule.addClbConfigureSideslider}>
             {{
               default: () => (
-                <bk-form
-                  class={cssModule.applyClbFormContainer}
-                  formType='vertical'
-                  model={formModel}
-                  ref={formRef}
-                  rules={rules}>
+                <bk-form class={cssModule.applyClbFormContainer} formType='vertical' model={formModel} ref={formRef}>
                   {formItemOptions.value.map(({ id, title, children }) => (
                     <CommonCard key={id} title={() => t(title)} class={cssModule.formCardContainer}>
                       {children.map((item) => {
