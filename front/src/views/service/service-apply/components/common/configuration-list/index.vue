@@ -1,5 +1,15 @@
 <template>
-  <Button class="mb10" theme="primary" outline :disabled="!vendor" @click="showConfigureSlider">
+  <Button
+    class="mb10"
+    theme="primary"
+    outline
+    :disabled="!vendor || overLength"
+    @click="showConfigureSlider"
+    v-bk-tooltips="{
+      content: disabledTip,
+      disabled: tooltipsDisabled,
+    }"
+  >
     <Plus />
     {{ t('添加') }}
   </Button>
@@ -20,9 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue';
+import { computed, h, ref, withDirectives } from 'vue';
 import type { Ref } from 'vue';
-import { Button, $bkPopover } from 'bkui-vue';
+import { Button, $bkPopover, bkTooltips } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import { useI18n } from 'vue-i18n';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -32,15 +42,34 @@ import { LB_NETWORK_TYPE_MAP } from '@/constants';
 import { IP_VERSION_DISPLAY_NAME, IpVersionType } from '@/views/load-balancer/constants';
 import { type Settings } from 'bkui-vue/lib/table/props';
 
-withDefaults(defineProps<IConfigurationListProps>(), {
+const props = withDefaults(defineProps<IConfigurationListProps>(), {
   list: () => [],
   vendor: '',
 });
 
 const emit = defineEmits(['showConfigureSlider', 'cloneData', 'removeData', 'editData']);
 
+const maxNum = 5; // 每次最大提交
+
+const popInstance = ref(null);
+const menu = ref(null);
+const isShow = ref(false);
+
 const { t } = useI18n();
 const { getRegionName } = useRegionsStore();
+
+const disabledTip = computed(() => {
+  if (overLength.value) {
+    return t(`一次性最大只能添加${maxNum}个`);
+  }
+  return t(`请先选择云账户`);
+});
+const tooltipsDisabled = computed(() => {
+  if (!props.vendor) return false;
+  if (overLength.value) return false;
+  return true;
+});
+const overLength = computed(() => props.list.length >= maxNum);
 
 export interface IConfigurationListProps {
   list: ApplyClbModel[];
@@ -161,9 +190,6 @@ const generateColumnsSettings = (columns: any) => {
 
 const settings = generateColumnsSettings(configListColumns);
 
-const popInstance = ref(null);
-const menu = ref(null);
-const isShow = ref(false);
 const actionData = ref<ApplyClbModel>({
   bk_biz_id: 0,
   account_id: '',
@@ -228,15 +254,27 @@ configListColumns.push({
   showOverflowTooltip: false,
   render: ({ data }: { data: any; index: number }) => {
     return h('div', { class: 'operation-column' }, [
-      h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          class: 'mr10',
-          onClick: () => handleClone(data),
-        },
-        '克隆',
+      withDirectives(
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            class: 'mr10',
+            onClick: () => handleClone(data),
+            disabled: overLength.value,
+          },
+          '克隆',
+        ),
+        [
+          [
+            bkTooltips,
+            {
+              content: disabledTip.value,
+              disabled: tooltipsDisabled.value,
+            },
+          ],
+        ],
       ),
       h(
         'div',
