@@ -23,6 +23,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"hcm/pkg/tools/maps"
 	"strconv"
 	"time"
 
@@ -571,7 +572,12 @@ func (g *Generator) createUpgradeDeviceInfos(kt *kit.Kit, order *types.ApplyOrde
 		return err
 	}
 
-	devices := g.buildUpgradeDevicesInfo(kt, items, order, generateID, mapAssetIDToHost, zoneRegionMap)
+	devices, err := g.buildUpgradeDevicesInfo(kt, items, order, generateID, mapAssetIDToHost, zoneRegionMap)
+	if err != nil {
+		logs.Errorf("failed to build upgrade devices info, subOrderId: %s, generateId: %d, err: %v, rid: %s",
+			order.SubOrderId, generateID, err, kt.Rid)
+		return err
+	}
 	if err = model.Operation().DeviceInfo().CreateDeviceInfos(kt.Ctx, devices); err != nil {
 		logs.Errorf("failed to save device info to db, order id: %s, generateId: %d, err: %v, devicesNum: %d, "+
 			"devices: %+v, rid: %s", order.SubOrderId, generateID, err, len(devices), cvt.PtrToSlice(devices), kt.Rid)
@@ -585,10 +591,8 @@ func (g *Generator) createUpgradeDeviceInfos(kt *kit.Kit, order *types.ApplyOrde
 }
 
 func (g *Generator) buildUpgradeDevicesInfo(kt *kit.Kit, items []*types.DeviceInfo, order *types.ApplyOrder, generateID uint64,
-	mapAssetIDToHost map[string]*cmdb.Host, zoneRegionMap map[string]string) []*types.DeviceInfo {
+	mapAssetIDToHost map[string]*cmdb.Host, zoneRegionMap map[string]string) ([]*types.DeviceInfo, error) {
 
-	// save device info to db
-	now := time.Now()
 	var devices []*types.DeviceInfo
 
 	for _, item := range items {
@@ -596,69 +600,127 @@ func (g *Generator) buildUpgradeDevicesInfo(kt *kit.Kit, items []*types.DeviceIn
 			logs.Warnf("duplicate host for order id: %s, ip: %s, assetId: %s", order.SubOrderId, item.Ip, item.AssetId)
 			continue
 		}
-		device := &types.DeviceInfo{
-			OrderId:      order.OrderId,
-			SubOrderId:   order.SubOrderId,
-			GenerateId:   generateID,
-			BkBizId:      int(order.BkBizId),
-			User:         order.User,
-			InstanceID:   item.InstanceID,
-			AssetId:      item.AssetId,
-			Ip:           item.Ip,
-			RequireType:  order.RequireType,
-			ResourceType: order.ResourceType,
-			// set device type according to order specification by default
-			DeviceType:  item.DeviceType,
-			Description: order.Description,
-			Remark:      order.Remark,
-			// 升降配机器目前不需要init和deliver，直接设置为true
-			IsInited:          true,
-			IsDelivered:       true,
-			IsChecked:         false,
-			IsMatched:         false,
-			IsDiskChecked:     false,
-			GenerateTaskId:    item.GenerateTaskId,
-			GenerateTaskLink:  item.GenerateTaskLink,
-			InitTaskId:        item.InitTaskId,
-			InitTaskLink:      item.InitTaskLink,
-			DiskCheckTaskId:   item.DiskCheckTaskId,
-			DiskCheckTaskLink: item.DiskCheckTaskLink,
-			Deliverer:         item.Deliverer,
-			IsManualMatched:   item.IsManualMatched,
-			CloudZone:         item.CloudZone,
-			CloudRegion:       zoneRegionMap[item.CloudZone],
-			CreateAt:          now,
-			UpdateAt:          now,
-		}
-		// add device detail info from cc
-		if host, ok := mapAssetIDToHost[item.AssetId]; !ok {
+
+		device := buildUpgradeDeviceBase(item, order, generateID, zoneRegionMap)
+		if host, ok := mapAssetIDToHost[item.AssetId]; ok {
+			enrichUpgradeDeviceWithHost(device, host)
+		} else {
 			logs.Warnf("failed to get host detail info in cc, subOrderID: %s, assetID: %s", order.SubOrderId,
 				item.AssetId)
-		} else {
-			// update device type from cc
-			// device.DeviceType = host.SvrDeviceClass
-			device.ZoneName = host.SubZone
-			zoneId, err := strconv.Atoi(host.SubZoneId)
-			if err != nil {
-				logs.Warnf("failed to convert sub zone id %s to int", host.SubZoneId)
-				device.ZoneID = 0
-			} else {
-				device.ZoneID = zoneId
-			}
-			device.ModuleName = host.ModuleName
-			device.Equipment = host.RackId
-		}
-
-		// 获取母机IP
-		ownerIP, err := g.getOwnerIP(kt, item.AssetId)
-		if err != nil {
-			logs.Warnf("failed to get owner IP for assetID: %s, subOrderID: %s, err: %v, rid: %s",
-				item.AssetId, order.SubOrderId, err, kt.Rid)
-		} else {
-			device.OwnerIP = ownerIP
 		}
 
 		devices = append(devices, device)
 	}
-	return devices
+
+	// 设备数组构造完成后，统一处理母机IP赋值
+	if err := g.fillOwnerIPsToDevices(kt, devices, order, mapAssetIDToHost); err != nil {
+		logs.Warnf("failed to fill owner IPs for upgrade devices, subOrderID: %s, err: %v, rid: %s",
+			order.SubOrderId, err, kt.Rid)
+		return nil, err
+	}
+
+	return devices, nil
+}
+
+func buildUpgradeDeviceBase(item *types.DeviceInfo, order *types.ApplyOrder, generateID uint64,
+	zoneRegionMap map[string]string) *types.DeviceInfo {
+	return &types.DeviceInfo{
+		OrderId:      order.OrderId,
+		SubOrderId:   order.SubOrderId,
+		GenerateId:   generateID,
+		BkBizId:      int(order.BkBizId),
+		User:         order.User,
+		InstanceID:   item.InstanceID,
+		AssetId:      item.AssetId,
+		Ip:           item.Ip,
+		RequireType:  order.RequireType,
+		ResourceType: order.ResourceType,
+		// set device type according to order specification by default
+		DeviceType:  item.DeviceType,
+		Description: order.Description,
+		Remark:      order.Remark,
+		// 升降配机器目前不需要init和deliver，直接设置为true
+		IsInited:          true,
+		IsDelivered:       true,
+		IsChecked:         false,
+		IsMatched:         false,
+		IsDiskChecked:     false,
+		GenerateTaskId:    item.GenerateTaskId,
+		GenerateTaskLink:  item.GenerateTaskLink,
+		InitTaskId:        item.InitTaskId,
+		InitTaskLink:      item.InitTaskLink,
+		DiskCheckTaskId:   item.DiskCheckTaskId,
+		DiskCheckTaskLink: item.DiskCheckTaskLink,
+		Deliverer:         item.Deliverer,
+		IsManualMatched:   item.IsManualMatched,
+		CloudZone:         item.CloudZone,
+		CloudRegion:       zoneRegionMap[item.CloudZone],
+		CreateAt:          time.Now(),
+		UpdateAt:          time.Now(),
+	}
+}
+
+func enrichUpgradeDeviceWithHost(device *types.DeviceInfo, host *cmdb.Host) {
+	device.ZoneName = host.SubZone
+	zoneID, err := strconv.Atoi(host.SubZoneId)
+	if err != nil {
+		logs.Warnf("failed to convert sub zone id %s to int", host.SubZoneId)
+		device.ZoneID = 0
+	} else {
+		device.ZoneID = zoneID
+	}
+	device.ModuleName = host.ModuleName
+	device.Equipment = host.RackId
+}
+
+// fillOwnerIPsToDevices 批量查询母机IP并赋值到设备数组
+func (g *Generator) fillOwnerIPsToDevices(kt *kit.Kit, devices []*types.DeviceInfo, order *types.ApplyOrder,
+	mapAssetIDToHost map[string]*cmdb.Host) error {
+	ownerAssetIDSet := make(map[string]struct{})
+	for _, device := range devices {
+		// 通过设备固资号获取主机信息，进而获取母机固资号
+		if host, ok := mapAssetIDToHost[device.AssetId]; ok && host.BKSvrOwnerAssetID != "" {
+			ownerAssetIDSet[host.BKSvrOwnerAssetID] = struct{}{}
+		}
+	}
+
+	ownerAssetIDs := maps.Keys(ownerAssetIDSet)
+
+	if len(ownerAssetIDs) == 0 {
+		logs.Infof("no owner asset IDs to query for subOrderID: %s, rid: %s", order.SubOrderId, kt.Rid)
+		return nil
+	}
+
+	//批量查询母机IP
+	ownerIPMap, err := g.getOwnerIPs(kt, ownerAssetIDs)
+	if err != nil {
+		return fmt.Errorf("batch get owner IPs failed: %w", err)
+	}
+
+	// 为设备赋值母机IP
+	for _, device := range devices {
+		host, ok := mapAssetIDToHost[device.AssetId]
+		if !ok {
+			logs.Warnf("failed to get host detail info in cc when filling owner IP, subOrderID: %s, assetID: %s, rid: %s",
+				order.SubOrderId, device.AssetId, kt.Rid)
+			continue
+		}
+
+		ownerAssetID := host.BKSvrOwnerAssetID
+		if ownerAssetID == "" {
+			logs.Warnf("host has no owner asset ID, subOrderID: %s, hostAssetID: %s, rid: %s",
+				order.SubOrderId, device.AssetId, kt.Rid)
+			continue
+		}
+
+		ownerIP, ipExists := ownerIPMap[ownerAssetID]
+		if !ipExists {
+			logs.Warnf("owner IP not found for ownerAssetID: %s, hostAssetID: %s, subOrderID: %s, rid: %s",
+				ownerAssetID, device.AssetId, order.SubOrderId, kt.Rid)
+			continue
+		}
+		device.OwnerIP = ownerIP
+	}
+
+	return nil
 }

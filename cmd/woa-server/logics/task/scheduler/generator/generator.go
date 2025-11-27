@@ -43,6 +43,7 @@ import (
 	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/thirdparty/dvmapi"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/metadata"
 	"hcm/pkg/tools/querybuilder"
 	"hcm/pkg/tools/slice"
@@ -1347,53 +1348,82 @@ func (g *Generator) buildDevicesInfo(kt *kit.Kit, items []*types.DeviceInfo, ord
 	mapAssetIDToHost map[string]*cmdb.Host) []*types.DeviceInfo {
 
 	now := time.Now()
-	ownerIPMap := g.batchQueryOwnerIPs(kt, items, order.SubOrderId)
+	ownerIPMap := g.batchQueryOwnerIPs(kt, items, order.SubOrderId, mapAssetIDToHost)
 	devices := g.buildDeviceInfoList(kt, items, order, generateId, mapAssetIDToHost, ownerIPMap, now)
 	return devices
 }
 
 // batchQueryOwnerIPs 批量查询母机IP
-func (g *Generator) batchQueryOwnerIPs(kt *kit.Kit, items []*types.DeviceInfo, subOrderID string) map[string]string {
-	// 收集需要查询的assetID
-	assetIDs := make([]string, 0, len(items))
+func (g *Generator) batchQueryOwnerIPs(kt *kit.Kit, items []*types.DeviceInfo, subOrderID string,
+	mapAssetIDToHost map[string]*cmdb.Host) map[string]string {
+	// 收集需要查询的母机固资号
+	ownerAssetIDs := make([]string, 0)
+	hostAssetIDToOwnerAssetID := make(map[string]string) // 主机固资号 -> 母机固资号映射
+
 	for _, item := range items {
-		if item.AssetId != "" {
-			assetIDs = append(assetIDs, item.AssetId)
+		if item.AssetId == "" {
+			continue
+		}
+		// 从CC主机信息中获取母机固资号
+		host, ok := mapAssetIDToHost[item.AssetId]
+		if !ok {
+			logs.Warnf("[OWNER_IP] failed to get host info for assetID: %s, subOrderID: %s, rid: %s",
+				item.AssetId, subOrderID, kt.Rid)
+			continue
+		}
+		// 获取母机固资号
+		if host.BKSvrOwnerAssetID == "" {
+			logs.Warnf("[OWNER_IP] owner assetID is empty for host assetID: %s, subOrderID: %s, rid: %s",
+				item.AssetId, subOrderID, kt.Rid)
+			continue
+		}
+		// 去重收集母机固资号
+		if _, exists := hostAssetIDToOwnerAssetID[item.AssetId]; !exists {
+			ownerAssetIDs = append(ownerAssetIDs, host.BKSvrOwnerAssetID)
+			hostAssetIDToOwnerAssetID[item.AssetId] = host.BKSvrOwnerAssetID
 		}
 	}
 
 	ownerIPMap := make(map[string]string)
-	if len(assetIDs) == 0 {
-		logs.Warnf("[OWNER_IP] no assetID to query owner IP, subOrderID: %s, totalItems: %d, rid: %s",
+	if len(ownerAssetIDs) == 0 {
+		logs.Warnf("[OWNER_IP] no owner assetID to query owner IP, subOrderID: %s, totalItems: %d, rid: %s",
 			subOrderID, len(items), kt.Rid)
 		return ownerIPMap
 	}
 
+	// 批量查询母机IP
 	batchSize := 200
-	totalBatches := (len(assetIDs) + batchSize - 1) / batchSize
-	for i := 0; i < len(assetIDs); i += batchSize {
-		end := i + batchSize
-		if end > len(assetIDs) {
-			end = len(assetIDs)
-		}
-		batch := assetIDs[i:end]
-		batchNum := i/batchSize + 1
+	batches := slice.Split(ownerAssetIDs, batchSize)
+	ownerAssetIDToIP := make(map[string]string) // 母机固资号 -> 母机IP映射
+
+	for idx, batch := range batches {
 		hosts, err := g.cc.FindManyHostsByAssetID(kt, batch)
 		if err != nil {
 			logs.Warnf("[OWNER_IP] failed to batch get owner IP from bkcc, subOrderID: %s, batchNum: %d/%d, "+
-				"assetIDs: %v, err: %v, rid: %s", subOrderID, batchNum, totalBatches, batch, err, kt.Rid)
+				"ownerAssetIDs: %v, err: %v, rid: %s", subOrderID, idx+1, len(batches), batch, err, kt.Rid)
 			continue
 		}
 
 		for _, host := range hosts {
-			if host.BkHostInnerIP != "" {
-				ownerIPMap[host.BkAssetID] = host.BkHostInnerIP
-			} else {
-				logs.Warnf("[OWNER_IP] owner IP is empty from bkcc, subOrderID: %s, assetID: %s, rid: %s",
+			if host.BkHostInnerIP == "" {
+				logs.Warnf("[OWNER_IP] owner IP is empty from bkcc, subOrderID: %s, ownerAssetID: %s, rid: %s",
 					subOrderID, host.BkAssetID, kt.Rid)
+				continue
 			}
+			ownerAssetIDToIP[host.BkAssetID] = host.BkHostInnerIP
 		}
 	}
+
+	for hostAssetID, ownerAssetID := range hostAssetIDToOwnerAssetID {
+		ownerIP, ok := ownerAssetIDToIP[ownerAssetID]
+		if !ok {
+			logs.Warnf("[OWNER_IP] failed to get owner IP for ownerAssetID: %s, hostAssetID: %s, subOrderID: %s, rid: %s",
+				ownerAssetID, hostAssetID, subOrderID, kt.Rid)
+			continue
+		}
+		ownerIPMap[hostAssetID] = ownerIP
+	}
+
 	return ownerIPMap
 }
 
@@ -1494,21 +1524,47 @@ func (g *Generator) setOwnerIP(kt *kit.Kit, device *types.DeviceInfo, item *type
 	}
 }
 
-// getOwnerIP 获取母机IP
-func (g *Generator) getOwnerIP(kt *kit.Kit, assetID string) (string, error) {
-	hosts, err := g.cc.FindManyHostsByAssetID(kt, []string{assetID})
-	if err != nil {
-		return "", fmt.Errorf("failed to get parent machine IP from bkcc, assetID: %s, err: %v", assetID, err)
+// getOwnerIPs 批量获取母机IP
+func (g *Generator) getOwnerIPs(kt *kit.Kit, ownerAssetIDs []string) (map[string]string, error) {
+	ownerIPMap := make(map[string]string)
+	if len(ownerAssetIDs) == 0 {
+		return ownerIPMap, nil
 	}
-	if len(hosts) == 0 {
-		return "", fmt.Errorf("no parent machine found for assetID: %s", assetID)
+
+	assetIDMap := make(map[string]struct{}, len(ownerAssetIDs))
+	for _, id := range ownerAssetIDs {
+		if id == "" {
+			continue
+		}
+		assetIDMap[id] = struct{}{}
 	}
-	for _, h := range hosts {
-		if h.BkAssetID == assetID {
-			return h.BkHostInnerIP, nil
+
+	uniqueOwnerAssetIDs := maps.Keys(assetIDMap)
+	if len(uniqueOwnerAssetIDs) == 0 {
+		return ownerIPMap, nil
+	}
+
+	batchSize := 200
+	batches := slice.Split(uniqueOwnerAssetIDs, batchSize)
+
+	for idx, batch := range batches {
+		hosts, err := g.cc.FindManyHostsByAssetID(kt, batch)
+		if err != nil {
+			logs.Warnf("[OWNER_IP] failed to batch get owner IP from bkcc, batchNum: %d/%d, ownerAssetIDs: %v, "+
+				"err: %v, rid: %s", idx+1, len(batches), batch, err, kt.Rid)
+			return nil, err
+		}
+
+		for _, host := range hosts {
+			if host.BkHostInnerIP == "" {
+				logs.Warnf("[OWNER_IP] owner IP is empty from bkcc, ownerAssetID: %s, rid: %s", host.BkAssetID, kt.Rid)
+				continue
+			}
+			ownerIPMap[host.BkAssetID] = host.BkHostInnerIP
 		}
 	}
-	return "", fmt.Errorf("no parent machine IP found for assetID: %s", assetID)
+
+	return ownerIPMap, nil
 }
 
 func (g *Generator) isDuplicateHost(suborderID, assetID string) (bool, error) {
@@ -1570,6 +1626,8 @@ func (g *Generator) getHostDetail(bizID int64, bkModuleIDs []int64, assetIds []s
 			"logic_domain",
 			"raid_name",
 			"svr_input_time",
+			// 母机固资号
+			"bk_svr_owner_asset_id",
 		},
 		Page: &cmdb.BasePage{
 			Start: 0,
