@@ -1,4 +1,4 @@
-import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount } from 'vue';
+import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import './index.scss';
 
@@ -29,6 +29,7 @@ import ApprovalStatus from './approval-status.vue';
 import { ScrResourceType } from '@/constants';
 import UpgradeCvmTable from './upgrade-cvm-table.vue';
 import { RequirementType } from '@/store/config/requirement';
+import ModifySuborder from './modify-suborder.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -117,6 +118,9 @@ export default defineComponent({
 
     // 给云主机添加num字段
     cloudColumns.splice(3, 0, ...numColumns);
+
+    // 将 cloudColumns 变量 provide给子组件
+    provide('cloudColumns', cloudColumns);
 
     const hostColumns = [
       ...cloudColumns,
@@ -263,6 +267,7 @@ export default defineComponent({
 
     // 获取单据详情
     const getOrderDetail = async (orderId: string) => {
+      orderId = orderId || (route.params.id as string);
       const { data } = await http.post(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/${getBusinessApiPath()}task/get/apply/ticket`,
         { order_id: +orderId },
@@ -361,6 +366,8 @@ export default defineComponent({
       }
     });
 
+    const showEditTable = ref(false);
+
     onUnmounted(() => {
       // 清除定时任务
       clearTimeout(demandDetailTimer.id);
@@ -368,7 +375,7 @@ export default defineComponent({
 
     return () => (
       <div class={'application-detail-container'}>
-        <DetailHeader useRouterAction>
+        <DetailHeader>
           {{
             default: () => '单据详情',
             right: () =>
@@ -446,6 +453,15 @@ export default defineComponent({
                     disabled={selections.value.length === 0}>
                     批量复制IP
                   </Button>
+                  {!isBusinessPage ? (
+                    <Button
+                      class={'mr8'}
+                      disabled={itsmTicketAuditOptions?.data?.status !== 'RUNNING'}
+                      onClick={() => (showEditTable.value = true)}>
+                      修改需求
+                    </Button>
+                  ) : null}
+
                   {isDissolve.value && !dissolveQuotaStore.cpuCoreSummaryLoading && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: '24px' }}>
                       <div>
@@ -506,6 +522,11 @@ export default defineComponent({
           </Panel>
         </div>
         <ModifyRecord v-model={showRecordSlider.value} showObj={recordParams.value} />
+        <ModifySuborder
+          v-model={showEditTable.value}
+          tableData={cloudMachineList.value}
+          onUpdate:table={getOrderDetail}
+        />
       </div>
     );
   },

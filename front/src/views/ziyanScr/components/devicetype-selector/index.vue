@@ -4,6 +4,7 @@ import { Select, Popover } from 'bkui-vue';
 import http from '@/http';
 import isEqual from 'lodash/isEqual';
 import type { CvmDeviceType, IProps, OptionsType, SelectionType } from './types';
+import { SelectColumn } from '@blueking/ediatable';
 
 defineOptions({ name: 'DeviceTypeSelector' });
 
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<IProps>(), {
   optionDisabled: () => false,
   placeholder: '请选择',
   sort: () => 0,
+  editable: false,
 });
 
 const emit = defineEmits<(e: 'change', result: SelectionType) => void>();
@@ -133,11 +135,16 @@ watch(
   { immediate: true },
 );
 
+const comp = computed(() => {
+  return props.editable ? SelectColumn : Select;
+});
+
 defineExpose({ handleSort });
 </script>
 
 <template>
-  <Select
+  <component
+    :is="comp"
     v-model="selected"
     clearable
     filterable
@@ -145,6 +152,10 @@ defineExpose({ handleSort });
     :disabled="disabled"
     :loading="loading || isLoading"
     :placeholder="placeholder"
+    :list="editable ? options[resourceType] : []"
+    id-key="device_type"
+    display-key="device_type"
+    v-bind="$attrs"
   >
     <!-- 遍历 options 数据 -->
     <template v-for="option in options[resourceType]" :key="option.device_type">
@@ -174,7 +185,7 @@ defineExpose({ handleSort });
         <template v-else>{{ option.device_type }}</template>
       </Option>
     </template>
-  </Select>
+  </component>
 </template>
 
 <style scoped></style>

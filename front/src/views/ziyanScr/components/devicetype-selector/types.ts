@@ -21,6 +21,7 @@ export interface IProps {
   optionDisabledTipsContent?: (option: DeviceType) => string;
   placeholder?: string;
   sort?: (a: DeviceType, b: DeviceType) => number;
+  editable?: boolean;
 }
 
 // 云主机
