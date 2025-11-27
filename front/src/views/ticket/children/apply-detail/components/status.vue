@@ -1,16 +1,42 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ApplicationStatus, IApplicationDetail } from '../index';
-
+import { LocationQueryRaw } from 'vue-router';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import share from 'bkui-vue/lib/icon/share';
 import copyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { APPLICATION_STATUS_MAP } from '@/views/ticket/constants';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import qs from 'qs';
 
 const props = defineProps<{ applicationDetail: IApplicationDetail }>();
 
 const status = computed(() => props.applicationDetail?.status ?? '');
 const message = computed(() => props.applicationDetail?.delivery_detail ?? '');
+
+const toClbList = () => {
+  const { delivery_detail, content } = props.applicationDetail;
+  const { load_balancer_id } = JSON.parse(delivery_detail);
+  const { bk_biz_id } = JSON.parse(content);
+  if (!load_balancer_id || !bk_biz_id) return;
+
+  const query: LocationQueryRaw = {
+    [GLOBAL_BIZS_KEY]: bk_biz_id,
+    filter: qs.stringify(
+      {
+        cloud_id: Array.isArray(load_balancer_id) ? load_balancer_id[0] : load_balancer_id,
+      },
+      {
+        arrayFormat: 'comma',
+        encode: false,
+        allowEmptyArrays: true,
+      },
+    ),
+  };
+  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+};
 </script>
 
 <template>
@@ -29,6 +55,10 @@ const message = computed(() => props.applicationDetail?.delivery_detail ?? '');
     <img v-else :src="StatusUnknown" :style="{ width: '22px' }" />
     <!-- name -->
     <span class="status-name">{{ APPLICATION_STATUS_MAP[status] }}</span>
+    <!-- link -->
+    <template v-if="['pass', 'completed'].includes(status)">
+      <share class="font-small ml8 to-clb-list" fill="#3a84ff" @click="toClbList" />
+    </template>
     <!-- message -->
     <template v-if="status === ApplicationStatus.deliver_error">
       <bk-overflow-title type="tips" class="message">
@@ -82,6 +112,10 @@ const message = computed(() => props.applicationDetail?.delivery_detail ?? '');
   .link {
     margin-left: auto;
     flex-shrink: 0;
+  }
+
+  .to-clb-list {
+    cursor: pointer;
   }
 }
 </style>
