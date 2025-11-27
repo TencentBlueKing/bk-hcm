@@ -31,6 +31,9 @@ import UpgradeCvmTable from './upgrade-cvm-table.vue';
 import { RequirementType } from '@/store/config/requirement';
 import ModifySuborder from './modify-suborder.vue';
 
+// 资源利用率
+import ResourceUsageRateCard from '@/components/resource-usage-rate/resource-usage-rate-card.vue';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -397,6 +400,8 @@ export default defineComponent({
           {!isUpgradeCvm.value && (
             <>
               <ApprovalStatus class='mb24' ticketAuditDetail={itsmTicketAuditOptions.data} />
+
+              <ResourceUsageRateCard class='mb24' bizId={detail.value.bk_biz_id} />
 
               <Panel title='审批信息'>
                 <ItsmTicketAudit

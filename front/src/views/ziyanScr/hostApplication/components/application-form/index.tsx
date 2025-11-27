@@ -55,6 +55,9 @@ import { RequirementType } from '@/store/config/requirement';
 import { useAffinityCheck } from './affinity-check/use-affinity-check';
 import AffinityCheckResultDialog from './affinity-check/affinity-check-result-dialog.vue';
 
+// 资源利用率
+import ResourceUsageRateCard from '@/components/resource-usage-rate/resource-usage-rate-card.vue';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -1176,6 +1179,9 @@ export default defineComponent({
                 </bk-form-item>
               </div>
             </CommonCard>
+
+            <ResourceUsageRateCard class='mb12' bizId={computedBiz.value} />
+
             <CommonCard
               title={() => (
                 <div class='flex-row align-items-center'>
