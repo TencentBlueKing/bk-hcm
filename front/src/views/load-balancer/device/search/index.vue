@@ -48,13 +48,15 @@ const handleAccountChange = (item: IAccountItem) => {
 const handlePaste = (value: any) => value.split(/,|;|\n|\s/).map((tag: any) => ({ id: tag, name: tag }));
 const handleSave = async () => {
   await formRef.value.validate();
-  Object.keys(formModel).forEach((key) => {
-    originFormModel[key] = formModel[key];
-  });
-  hasSaved.value = true;
-  isShow.value = false;
-  emit('count-change', false);
-  emit('save', cloneDeep(originFormModel));
+  setTimeout(() => {
+    Object.keys(formModel).forEach((key) => {
+      originFormModel[key] = formModel[key];
+    });
+    hasSaved.value = true;
+    isShow.value = false;
+    emit('count-change', false);
+    emit('save', cloneDeep(originFormModel));
+  }, 300);
 };
 const handleReset = () => {
   Object.keys(formModel).forEach((key) => {
