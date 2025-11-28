@@ -341,6 +341,7 @@ type DeviceTypeItem struct {
 	RamAmount       float64                  `json:"ram_amount"`        // 内存容量
 	CoreType        int                      `json:"core_type"`         // 1.2.3 分别标识，小核心，中核心，大核心
 	DeviceClass     string                   `json:"device_class"`      // 实例类型
+	TechnicalClass  string                   `json:"technical_class"`   // 技术分类
 }
 
 // DeviceTypeInfo cvm device type info
@@ -367,7 +368,8 @@ type CreateManyDeviceParam struct {
 	Mem             int64                    `json:"mem" validate:"required,min=1"`
 	Remark          string                   `json:"remark"`
 	// ForceCreate 当机型在CRP中不存在时是否仍然创建
-	ForceCreate bool `json:"force_create" validate:"omitempty"`
+	ForceCreate    bool   `json:"force_create" validate:"omitempty"`
+	TechnicalClass string `json:"technical_class"` // 技术分类
 }
 
 // Validate whether GetDeviceParam is valid
@@ -682,10 +684,11 @@ var Description = map[string]string{
 
 // DeviceTypeCpuItem device type cpu item
 type DeviceTypeCpuItem struct {
-	DeviceType  string          `json:"device_type"`  // 机型
-	CPUAmount   int64           `json:"cpu_amount"`   // CPU数量
-	DeviceGroup string          `json:"device_group"` // 机型族
-	CoreType    enumor.CoreType `json:"core_type"`    // 机型核心类型
+	DeviceType     string          `json:"device_type"`     // 机型
+	CPUAmount      int64           `json:"cpu_amount"`      // CPU数量
+	DeviceGroup    string          `json:"device_group"`    // 机型族
+	CoreType       enumor.CoreType `json:"core_type"`       // 机型核心类型
+	TechnicalClass string          `json:"technical_class"` // 技术分类
 }
 
 // UpsertRegionDftVpcReq upsert region default vpc request.
@@ -768,4 +771,10 @@ func (req RegionDftSg) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// DeviceFuzzyMatchInfo 设备模糊匹配信息
+type DeviceFuzzyMatchInfo struct {
+	TechnicalClass string          `json:"technical_class"` // 技术分类
+	CoreType       enumor.CoreType `json:"core_type"`       // 机型核心类型
 }

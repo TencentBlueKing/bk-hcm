@@ -30,6 +30,7 @@ POST /api/v1/woa/task/create/apply
 | anti_affinity_level | string | 否	 | 反亲和策略，默认值为"ANTI_NONE"。 "ANTI_NONE": 无要求, "ANTI_CAMPUS": 分Campus, "ANTI_MODULE": 分Module, "ANTI_RACK": 分机架 |
 | enable_disk_check	  | bool   | 否  | 交付前是否执行本地盘压测，默认值为false                                                                                    |
 | remark	             | string | 否	 | 备注                                                                                                        |
+| source              | string | 否  | 枚举类型，"business"（业务单据）、"purchase_to_resource_pool"(资源池采购)，默认值为"business"                                   |
 | spec	               | object | 是	 | 资源需求声明                                                                                                    |
 
 #### spec for QCLOUDCVM
@@ -123,6 +124,7 @@ POST /api/v1/woa/task/create/apply
       "anti_affinity_level": "ANTI_NONE",
       "enable_disk_check": false,
       "remark": "",
+      "source": "business",
       "spec": {
         "region": "ap-shanghai",
         "device_type": "S3.LARGE8",
@@ -143,7 +145,7 @@ POST /api/v1/woa/task/create/apply
         "data_disk": [{
         "disk_type": "CLOUD_PREMIUM",
         "disk_size": 100,
-        "disk_num": 1,
+        "disk_num": 1
         }],
         "zones": [
           "ap-nanjing-1",

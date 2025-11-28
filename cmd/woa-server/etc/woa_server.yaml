@@ -516,3 +516,12 @@ finops:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# defines apply ticket config related settings.
+applyTicketConfig:
+  # defines purchase to resource pool related settings.
+  purchaseToResourcePool:
+    # user define purchase to resource pool user
+    user:
+    # bizID is the business id of the resource pool
+    bizID:

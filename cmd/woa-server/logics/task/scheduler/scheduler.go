@@ -40,7 +40,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/scheduler/matcher"
 	"hcm/cmd/woa-server/logics/task/scheduler/recommender"
 	"hcm/cmd/woa-server/logics/task/scheduler/record"
-	"hcm/cmd/woa-server/model/task"
+	model "hcm/cmd/woa-server/model/task"
 	configtypes "hcm/cmd/woa-server/types/config"
 	rstypes "hcm/cmd/woa-server/types/rolling-server"
 	types "hcm/cmd/woa-server/types/task"
@@ -63,6 +63,7 @@ import (
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/language"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/metadata"
 	"hcm/pkg/tools/querybuilder"
 	"hcm/pkg/tools/slice"
@@ -171,6 +172,8 @@ type Interface interface {
 
 	// CreateUpgradeTicketANDOrder create upgrade ticket and order
 	CreateUpgradeTicketANDOrder(kt *kit.Kit, param *types.ApplyReq) (*types.CreateUpgradeCrpOrderResult, error)
+	// UpdateApplyTicketDemand update apply ticket demand
+	UpdateApplyTicketDemand(kt *kit.Kit, param *types.ApplyTicket) error
 }
 
 // scheduler provides resource apply service
@@ -206,7 +209,8 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 	}
 
 	// new matcher
-	match, err := matcher.New(ctx, rsLogics, thirdCli, cmdbCli, clientConf, informerIf, planLogics, configLogics, cmsiCli)
+	match, err := matcher.New(ctx, rsLogics, thirdCli, cmdbCli, clientConf, informerIf, planLogics, configLogics,
+		cmsiCli)
 	if err != nil {
 		return nil, err
 	}
@@ -270,6 +274,11 @@ func (s *scheduler) createApplyTicket(kt *kit.Kit, param *types.ApplyReq,
 		return nil, errf.Newf(pkg.CCErrObjectDBOpErrno, err.Error())
 	}
 
+	for _, suborder := range param.Suborders {
+		if suborder.Source == "" {
+			suborder.Source = enumor.ApplyTicketSrcBusiness
+		}
+	}
 	now := time.Now()
 	ticket := &types.ApplyTicket{
 		OrderId:      orderId,
@@ -859,9 +868,25 @@ func (s *scheduler) createSubOrders(kt *kit.Kit, orderId uint64) error {
 		return err
 	}
 
+	// 将资源池采购的子单放到最后创建，防止业务看到的子单号不连续
+	subOrders := make([]*types.Suborder, 0)
+	purchaseToResPoolSuborders := make([]*types.Suborder, 0)
+	for _, suborder := range ticket.Suborders {
+		if suborder.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+			purchaseToResPoolSuborders = append(purchaseToResPoolSuborders, suborder)
+			continue
+		}
+		if suborder.Source == "" {
+			suborder.Source = enumor.ApplyTicketSrcBusiness
+		}
+		subOrders = append(subOrders, suborder)
+	}
+	subOrders = append(subOrders, purchaseToResPoolSuborders...)
+
 	now := time.Now()
-	suborders := make([]*types.ApplyOrder, len(ticket.Suborders))
-	for index, suborder := range ticket.Suborders {
+	suborders := make([]*types.ApplyOrder, len(subOrders))
+	purchaseToResPoolUser := cc.WoaServer().ApplyTicketConfig.PurchaseToResourcePool.User
+	for index, suborder := range subOrders {
 		// TODO: delete debug log
 		logs.V(5).Infof("suborder data: %+v", suborder)
 
@@ -875,6 +900,7 @@ func (s *scheduler) createSubOrders(kt *kit.Kit, orderId uint64) error {
 			RequireType:       ticket.RequireType,
 			ExpectTime:        ticket.ExpectTime,
 			ResourceType:      suborder.ResourceType,
+			Source:            suborder.Source,
 			Spec:              suborder.Spec,
 			AntiAffinityLevel: suborder.AntiAffinityLevel,
 			EnableDiskCheck:   suborder.EnableDiskCheck,
@@ -892,6 +918,10 @@ func (s *scheduler) createSubOrders(kt *kit.Kit, orderId uint64) error {
 			ModifyTime:        0,
 			CreateAt:          now,
 			UpdateAt:          now,
+		}
+		if suborder.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+			subOrder.Stage = types.TicketStageUncommit
+			subOrder.User = purchaseToResPoolUser
 		}
 		logs.V(4).Infof("suborder data: %+v", subOrder)
 
@@ -1440,6 +1470,7 @@ func (s *scheduler) orderToUnifyOrder(kt *kit.Kit, orders []*types.ApplyOrder, g
 			PendingNum:        order.PendingNum,
 			ProductNum:        productNum,
 			ModifyTime:        order.ModifyTime,
+			Source:            order.Source,
 			CreateAt:          order.CreateAt,
 			UpdateAt:          order.UpdateAt,
 		}
@@ -2192,6 +2223,11 @@ func (s *scheduler) ModifyApplyOrder(kt *kit.Kit, param *types.ModifyApplyReq) e
 	if err != nil {
 		logs.Errorf("failed to get apply order, err: %v, rid: %s", err, kt.Rid)
 		return err
+	}
+
+	if order.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+		logs.Errorf("cannot modify order %s, for its source is %s, rid: %s", order.SubOrderId, order.Source, kt.Rid)
+		return fmt.Errorf("cannot modify order %s, for its source is %s", order.SubOrderId, order.Source)
 	}
 
 	// cannot modify apply order if its stage is not SUSPEND
@@ -3607,11 +3643,190 @@ func validateConfirm(kt *kit.Kit, param *types.ConfirmApplyModifyReq, order *typ
 }
 
 // GetAffinityMatchDetail 亲和性检查
-func (s *scheduler) GetAffinityMatchDetail(kit *kit.Kit, param *types.AffinityMatchReq) (*types.AffinityMatchResp, error) {
+func (s *scheduler) GetAffinityMatchDetail(kit *kit.Kit, param *types.AffinityMatchReq) (*types.AffinityMatchResp,
+	error) {
 	affinityService, err := NewAffinityService(s.configLogics, s.crpCli)
 	if err != nil {
 		logs.Errorf("failed to create affinity service, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
 	return affinityService.GetAffinityMatchDetail(kit, param)
+}
+
+// UpdateApplyTicketDemand update apply ticket demand
+func (s *scheduler) UpdateApplyTicketDemand(kt *kit.Kit, param *types.ApplyTicket) error {
+	if err := s.validateUpdateApplyTicketDemand(kt, param); err != nil {
+		logs.Errorf("validate update apply ticket demand failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId,
+			kt.Rid)
+		return err
+	}
+
+	filter := mapstr.MapStr{
+		"order_id": param.OrderId,
+	}
+	update := mapstr.MapStr{
+		"suborders":     param.Suborders,
+		"old_suborders": param.OldSuborders,
+		"update_at":     time.Now(),
+	}
+	if err := model.Operation().ApplyTicket().UpdateApplyTicket(kt.Ctx, &filter, &update); err != nil {
+		logs.Errorf("failed to update apply ticket, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (s *scheduler) validateUpdateApplyTicketDemand(kt *kit.Kit, param *types.ApplyTicket) error {
+	if param.Stage != types.TicketStageAudit {
+		logs.Errorf("failed to update apply ticket demand, for invalid stage: %s != %s, ticket id: %d, rid: %s",
+			param.Stage, types.TicketStageAudit, param.OrderId, kt.Rid)
+		return fmt.Errorf("invalid ticket stage:%s != %s", param.Stage, types.TicketStageAudit)
+	}
+	if len(param.OldSuborders) == 0 {
+		logs.Errorf("old suborders length is 0, ticket id: %d, rid: %s", param.OrderId, kt.Rid)
+		return fmt.Errorf("old suborders length is 0")
+	}
+	if len(param.Suborders) == 0 {
+		logs.Errorf("suborders length is 0, ticket id: %d, rid: %s", param.OrderId, kt.Rid)
+		return fmt.Errorf("suborders length is 0")
+	}
+
+	deviceTypeInfoMap, err := s.getDeviceTypeInfo(kt, param)
+	if err != nil {
+		logs.Errorf("get device type info failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	if err = s.validateTicketBaseInfo(kt, param, deviceTypeInfoMap); err != nil {
+		logs.Errorf("validate ticket base info failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	if err = s.validateFuzzyMatchDemand(kt, param, deviceTypeInfoMap); err != nil {
+		logs.Errorf("validate fuzzy match demand failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (s *scheduler) validateTicketBaseInfo(kt *kit.Kit, param *types.ApplyTicket,
+	deviceTypeInfoMap map[string]configtypes.DeviceTypeCpuItem) error {
+
+	for index, subOrder := range param.Suborders {
+		if subOrder.Spec == nil {
+			logs.Errorf("suborder spec is nil, suborder index: %d, rid: %s", index, kt.Rid)
+			return fmt.Errorf("suborder spec is nil, suborder index: %d", index)
+		}
+
+		deviceTypeInfo, ok := deviceTypeInfoMap[subOrder.Spec.DeviceType]
+		if !ok {
+			logs.Errorf("device type info not found, device type: %s, rid: %s", subOrder.Spec.DeviceType, kt.Rid)
+			return fmt.Errorf("device type info not found, device type: %s", subOrder.Spec.DeviceType)
+		}
+
+		subOrderCpuTotal := subOrder.Replicas * uint(deviceTypeInfo.CPUAmount)
+		if subOrderCpuTotal != subOrder.AppliedCore {
+			logs.Errorf("suborder applied core is not equal to suborder cpu total, suborder index: %d, "+
+				"applied core: %d, cpu total: %d, rid: %s", index, subOrder.AppliedCore, subOrderCpuTotal, kt.Rid)
+			return fmt.Errorf("suborder applied core is not equal to suborder cpu total, suborder index: %d, "+
+				"applied core: %d, cpu total: %d", index, subOrder.AppliedCore, subOrderCpuTotal)
+		}
+	}
+
+	return nil
+}
+
+// validateFuzzyMatchDemand 模糊匹配需求校验
+func (s *scheduler) validateFuzzyMatchDemand(kt *kit.Kit, param *types.ApplyTicket,
+	deviceTypeInfoMap map[string]configtypes.DeviceTypeCpuItem) error {
+
+	curDeviceDemandMap, err := s.buildSubOrderDemandMap(kt, deviceTypeInfoMap, param.Suborders)
+	if err != nil {
+		logs.Errorf("build suborder demand map failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	oldDeviceDemandMap, err := s.buildSubOrderDemandMap(kt, deviceTypeInfoMap, param.OldSuborders)
+	if err != nil {
+		logs.Errorf("build old suborder demand map failed, err: %v, ticket id: %d, rid: %s", err, param.OrderId, kt.Rid)
+		return err
+	}
+
+	for deviceInfo, replicas := range curDeviceDemandMap {
+		oldReplicas, ok := oldDeviceDemandMap[deviceInfo]
+		if !ok {
+			logs.Errorf("old device demand map not found, device info: %+v, rid: %s", deviceInfo, kt.Rid)
+			return fmt.Errorf("old device demand map not found, device info: %+v", deviceInfo)
+		}
+		if oldReplicas < replicas {
+			logs.Errorf("old device demand is less than cur device demand, device info: %+v, old replicas: %d, "+
+				"cur replicas: %d, ticket id: %d, rid: %s", deviceInfo, oldReplicas, replicas, param.OrderId, kt.Rid)
+			return fmt.Errorf("old device demand is less than cur device demand, device info: %+v, old replicas: %d"+
+				", cur replicas: %d", deviceInfo, oldReplicas, replicas)
+		}
+	}
+
+	return nil
+}
+
+func (s *scheduler) getDeviceTypeInfo(kt *kit.Kit, param *types.ApplyTicket) (map[string]configtypes.DeviceTypeCpuItem,
+	error) {
+
+	deviceTypeMap := make(map[string]struct{})
+	for index, suborder := range param.Suborders {
+		if suborder.Spec == nil {
+			logs.Errorf("suborder spec is nil, ticket id: %d, suborder index: %d, rid: %s", param.OrderId, index,
+				kt.Rid)
+			return nil, fmt.Errorf("suborder spec is nil, ticket id: %d, suborder index: %d", param.OrderId, index)
+		}
+		deviceTypeMap[suborder.Spec.DeviceType] = struct{}{}
+	}
+	for index, suborder := range param.OldSuborders {
+		if suborder.Spec == nil {
+			logs.Errorf("old suborder spec is nil, ticket id: %d, suborder index: %d, rid: %s", param.OrderId, index,
+				kt.Rid)
+			return nil, fmt.Errorf("old suborder spec is nil, ticket id: %d, suborder index: %d", param.OrderId, index)
+		}
+		deviceTypeMap[suborder.Spec.DeviceType] = struct{}{}
+	}
+	deviceTypeInfoMap, err := s.configLogics.Device().ListCvmInstanceInfoByDeviceTypes(kt, maps.Keys(deviceTypeMap))
+	if err != nil {
+		logs.Errorf("list cvm instance info by device types failed, err: %v, device types: %v, rid: %s", err,
+			maps.Keys(deviceTypeMap), kt.Rid)
+		return nil, err
+	}
+
+	return deviceTypeInfoMap, nil
+}
+
+func (s *scheduler) buildSubOrderDemandMap(kt *kit.Kit, deviceTypeInfoMap map[string]configtypes.DeviceTypeCpuItem,
+	suborders []*types.Suborder) (map[configtypes.DeviceFuzzyMatchInfo]uint, error) {
+
+	deviceDemandMap := make(map[configtypes.DeviceFuzzyMatchInfo]uint)
+	for index, suborder := range suborders {
+		if suborder.Spec == nil {
+			logs.Errorf("suborder spec is nil, suborder index: %d, rid: %s", index, kt.Rid)
+			return nil, fmt.Errorf("suborder spec is nil, suborder index: %d", index)
+		}
+
+		deviceTypeInfo, ok := deviceTypeInfoMap[suborder.Spec.DeviceType]
+		if !ok {
+			logs.Errorf("device type info not found, device type: %s, rid: %s", suborder.Spec.DeviceType, kt.Rid)
+			return nil, fmt.Errorf("device type info not found, device type: %s", suborder.Spec.DeviceType)
+		}
+		deviceFuzzyMatchInfo := configtypes.DeviceFuzzyMatchInfo{
+			TechnicalClass: deviceTypeInfo.TechnicalClass,
+			CoreType:       deviceTypeInfo.CoreType,
+		}
+		if _, ok = deviceDemandMap[deviceFuzzyMatchInfo]; !ok {
+			deviceDemandMap[deviceFuzzyMatchInfo] = 0
+		}
+
+		subOrderCpuTotal := suborder.Replicas * uint(deviceTypeInfo.CPUAmount)
+		deviceDemandMap[deviceFuzzyMatchInfo] += subOrderCpuTotal
+	}
+
+	return deviceDemandMap, nil
 }

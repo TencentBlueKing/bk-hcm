@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"hcm/cmd/woa-server/model/task"
+	model "hcm/cmd/woa-server/model/task"
 	"hcm/cmd/woa-server/types/config"
 	gctypes "hcm/cmd/woa-server/types/green-channel"
 	types "hcm/cmd/woa-server/types/task"
@@ -811,6 +811,10 @@ func (s *service) GetApplyOrder(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		logs.Errorf("failed to get apply order, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)
 		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
+	}
+
+	if len(input.Source) == 0 {
+		input.Source = enumor.GetAllApplyTicketSource()
 	}
 
 	return s.getApplyOrder(cts.Kit, input)
@@ -2372,4 +2376,58 @@ func (s *service) getRunningSubOrderInfo(kt *kit.Kit, createTime *time.Time) (ma
 	}
 
 	return subOrderMap, crpIDSubOrderIDMap, nil
+}
+
+// UpdateApplyTicketDemand update apply ticket demand
+func (s *service) UpdateApplyTicketDemand(cts *rest.Contexts) (any, error) {
+	req := new(types.UpdateApplyTicketDemandReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	ticket, err := s.logics.Scheduler().GetApplyTicket(cts.Kit, &types.GetApplyTicketReq{OrderId: req.TicketID})
+	if err != nil {
+		logs.Errorf("failed to get apply ticket, err: %v, ticket id: %d, rid: %s", err, req.TicketID, cts.Kit.Rid)
+		return nil, err
+	}
+	if ticket == nil || ticket.ApplyTicket == nil {
+		logs.Errorf("can not find apply ticket, ticket id: %d, rid: %s", req.TicketID, cts.Kit.Rid)
+		return nil, fmt.Errorf("can not find apply ticket, ticket id: %d", req.TicketID)
+	}
+
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.ZiYanResource, Action: meta.Create}, BizID: ticket.BkBizId,
+	}); err != nil {
+		logs.Errorf("no permission to update apply ticket demand, bizID: %d, err: %v, rid: %s", ticket.BkBizId,
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if ticket.Stage != types.TicketStageAudit {
+		logs.Errorf("failed to update apply ticket demand, for invalid stage: %s != %s, ticket id: %d, rid: %s",
+			ticket.Stage, types.TicketStageAudit, req.TicketID, cts.Kit.Rid)
+		return nil, fmt.Errorf("invalid ticket stage:%s != %s", ticket.Stage, types.TicketStageAudit)
+	}
+
+	for index, suborder := range req.Suborders {
+		if suborder.ResourceType != types.ResourceTypeCvm {
+			return nil, fmt.Errorf("resource type is not cvm, ticket id: %d, suborder index: %d", req.TicketID, index)
+		}
+	}
+
+	// 如果oldSuborders为空，代表第一次更新需求，需要记录原始需求
+	if ticket.OldSuborders == nil {
+		ticket.OldSuborders = ticket.Suborders
+	}
+	ticket.Suborders = req.Suborders
+
+	if err := s.logics.Scheduler().UpdateApplyTicketDemand(cts.Kit, ticket.ApplyTicket); err != nil {
+		logs.Errorf("failed to update apply ticket demand, err: %v, ticket id: %d, rid: %s", err, req.TicketID,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
 }

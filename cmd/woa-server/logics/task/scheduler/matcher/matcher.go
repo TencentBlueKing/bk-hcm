@@ -31,7 +31,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/informer"
 	"hcm/cmd/woa-server/logics/task/scheduler/record"
 	"hcm/cmd/woa-server/logics/task/sops"
-	"hcm/cmd/woa-server/model/task"
+	model "hcm/cmd/woa-server/model/task"
 	daltypes "hcm/cmd/woa-server/storage/dal/types"
 	cfgtype "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/task"
@@ -155,14 +155,21 @@ func (m *Matcher) runWorker() error {
 func (m *Matcher) FinalApplyStep(kt *kit.Kit, genRecord *types.GenerateRecord, order *types.ApplyOrder) error {
 	// set generate record matched
 	if err := m.setGenerateRecordMatched(genRecord.GenerateId); err != nil {
-		logs.Errorf("failed to update generate record, err: %v, schedule id: %d, rid: %s", err, genRecord.GenerateId, kt.Rid)
+		logs.Errorf("failed to update generate record, err: %v, schedule id: %d, rid: %s", err, genRecord.GenerateId,
+			kt.Rid)
 		return err
 	}
 
 	// update apply order status
 	if err := m.UpdateApplyOrderStatus(order); err != nil {
-		logs.Errorf("failed to update apply order status, order id: %s, err: %v, rid: %s", genRecord.SubOrderId, err, kt.Rid)
+		logs.Errorf("failed to update apply order status, order id: %s, err: %v, rid: %s", genRecord.SubOrderId, err,
+			kt.Rid)
 		return err
+	}
+
+	// 采购到资源池的子单，不需要通知以及更新采购资源池子单状态等逻辑
+	if order.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+		return nil
 	}
 
 	// send ticket done notification
@@ -174,6 +181,13 @@ func (m *Matcher) FinalApplyStep(kt *kit.Kit, genRecord *types.GenerateRecord, o
 	if err := m.checkAndNotifyDelivery(kt, order.OrderId); err != nil {
 		logs.Warnf("check delivery notification failed, orderId: %d, err: %v, rid: %s", order.OrderId, err, kt.Rid)
 	}
+
+	if err := m.updatePurchaseToResPoolSuborderRunning(kt, order); err != nil {
+		logs.Errorf("failed to update purchase to resource pool suborder running, err: %v, orderId: %s, rid: %s",
+			err, order.OrderId, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -996,6 +1010,9 @@ func (m *Matcher) notifyApplyDone(orderId uint64) error {
 		"status": map[string]interface{}{
 			pkg.BKDBNE: types.ApplyStatusDone,
 		},
+		"source": map[string]interface{}{
+			pkg.BKDBNE: enumor.ApplyTicketSrcPurchaseToResPool,
+		},
 	}
 
 	cnt, err := model.Operation().ApplyOrder().CountApplyOrder(context.Background(), filter)
@@ -1072,6 +1089,9 @@ func (m *Matcher) checkAndNotifyDelivery(kt *kit.Kit, orderId uint64) error {
 		"status": map[string]interface{}{
 			pkg.BKDBNE: types.ApplyStatusDone,
 		},
+		"source": map[string]interface{}{
+			pkg.BKDBNE: enumor.ApplyTicketSrcPurchaseToResPool,
+		},
 	}
 
 	cnt, err := model.Operation().ApplyOrder().CountApplyOrder(kt.Ctx, filter)
@@ -1123,7 +1143,8 @@ func (m *Matcher) checkAndNotifyDelivery(kt *kit.Kit, orderId uint64) error {
 }
 
 // sendDeliveryNotification 发送主机申请交付通知
-func (m *Matcher) sendDeliveryNotification(kt *kit.Kit, orderId int64, ticket *types.ApplyTicket, devices []*types.DeviceInfo) error {
+func (m *Matcher) sendDeliveryNotification(kt *kit.Kit, orderId int64, ticket *types.ApplyTicket,
+	devices []*types.DeviceInfo) error {
 
 	if len(devices) == 0 {
 		logs.Warnf("skip notify: no delivered devices, orderId:%d, rid: %s", orderId, kt.Rid)
@@ -1434,4 +1455,56 @@ func (m *Matcher) RunDiskCheck(order *types.ApplyOrder, devices []*types.DeviceI
 	}
 
 	return observeDevices, nil
+}
+
+func (m *Matcher) updatePurchaseToResPoolSuborderRunning(kt *kit.Kit, order *types.ApplyOrder) error {
+	if order.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+		return nil
+	}
+
+	orderId := order.OrderId
+	filter := mapstr.MapStr{
+		"order_id": orderId,
+		"status": map[string]interface{}{
+			pkg.BKDBNE: types.ApplyStatusDone,
+		},
+		"source": map[string]interface{}{
+			pkg.BKDBNE: enumor.ApplyTicketSrcPurchaseToResPool,
+		},
+	}
+	cnt, err := model.Operation().ApplyOrder().CountApplyOrder(kt.Ctx, filter)
+	if err != nil {
+		logs.Errorf("count apply order failed, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+	if cnt > 0 {
+		logs.Infof("skip update purchase to resource pool suborder running: main order not done, orderId: %d, "+
+			"not_done: %d, rid: %s", orderId, cnt, kt.Rid)
+		return nil
+	}
+
+	filter = mapstr.MapStr{
+		"order_id": orderId,
+		"stage":    types.TicketStageUncommit,
+		"source":   enumor.ApplyTicketSrcPurchaseToResPool,
+	}
+	cnt, err = model.Operation().ApplyOrder().CountApplyOrder(kt.Ctx, filter)
+	if err != nil {
+		logs.Errorf("count apply order failed, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)
+		return err
+	}
+	if cnt == 0 {
+		return nil
+	}
+
+	update := &mapstr.MapStr{
+		"stage": types.TicketStageRunning,
+	}
+	if err := model.Operation().ApplyOrder().UpdateApplyOrder(kt.Ctx, &filter, update); err != nil {
+		logs.Errorf("failed to update purchase to resource pool suborder running, err: %v, orderId: %d, rid: %s",
+			err, orderId, kt.Rid)
+		return err
+	}
+
+	return nil
 }

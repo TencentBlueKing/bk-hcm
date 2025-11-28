@@ -224,6 +224,7 @@ func (d *device) GetDeviceType(kt *kit.Kit, input *types.GetDeviceParam) (*types
 			RamAmount:       item.RamAmount,
 			CoreType:        item.CoreType,
 			DeviceClass:     item.InstanceClassDesc,
+			TechnicalClass:  item.CvmInstanceTypeClass,
 		})
 	}
 
@@ -344,8 +345,9 @@ func (d *device) CreateManyDevice(kt *kit.Kit, input *types.CreateManyDevicePara
 			Disk:   100,
 			Remark: input.Remark,
 			Label: mapstr.MapStr{
-				"device_group": input.DeviceGroup,
-				"device_size":  input.DeviceSize,
+				"device_group":    input.DeviceGroup,
+				"device_size":     input.DeviceSize,
+				"technical_class": input.TechnicalClass,
 			},
 			EnableCapacity:  true,
 			EnableApply:     true,
@@ -607,11 +609,19 @@ func (d *device) ListCvmInstanceInfoByDeviceTypes(kt *kit.Kit, deviceTypes []str
 			return nil, errors.New("get invalid non-string device size")
 		}
 
+		// 技术分类
+		technicalClass, ok := deviceItem.Label["technical_class"].(string)
+		if !ok {
+			// TODO 由于存量的机型可能没有技术分类，所以这里只打印错误日志，防止影响上层调用逻辑
+			logs.Errorf("get invalid technical class, deviceType: %s, rid: %s", deviceType, kt.Rid)
+		}
+
 		deviceTypeMap[deviceType] = types.DeviceTypeCpuItem{
-			DeviceType:  deviceItem.DeviceType,
-			CPUAmount:   deviceItem.Cpu,
-			DeviceGroup: deviceGroupStr,
-			CoreType:    enumor.CoreType(deviceSizeStr),
+			DeviceType:     deviceItem.DeviceType,
+			CPUAmount:      deviceItem.Cpu,
+			DeviceGroup:    deviceGroupStr,
+			CoreType:       enumor.CoreType(deviceSizeStr),
+			TechnicalClass: technicalClass,
 		}
 		existDeviceTypes = append(existDeviceTypes, deviceType)
 	}
