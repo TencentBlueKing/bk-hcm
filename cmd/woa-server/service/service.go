@@ -79,6 +79,7 @@ import (
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
+	"hcm/pkg/thirdparty/api-gateway/finops"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/es"
 	"hcm/pkg/tools/ssl"
@@ -93,6 +94,7 @@ type Service struct {
 	planController planctrl.Logics
 	cmdbCli        cmdb.Client
 	itsmCli        itsm.Client
+	finOpsCli      finops.Client
 	// authorizer 鉴权所需接口集合
 	authorizer    auth.Authorizer
 	thirdCli      *thirdparty.Client
@@ -175,6 +177,7 @@ type clientSet struct {
 	esCli      *es.EsCli
 	cmdbCli    cmdb.Client
 	itsmCli    itsm.Client
+	finOpsCli  finops.Client
 	cmsiCli    cmsi.Client
 	authorizer auth.Authorizer
 	thirdCli   *thirdparty.Client
@@ -205,6 +208,15 @@ func initClients(apiClientSet *client.ClientSet, dis serviced.ServiceDiscover) (
 		return nil, err
 	}
 	clients.itsmCli = itsmCli
+
+	// init FinOps client
+	finOpsCfg := cc.WoaServer().FinOps
+	finOpsCli, err := finops.NewClient(&finOpsCfg, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create finops client, err: %v", err)
+		return nil, err
+	}
+	clients.finOpsCli = finOpsCli
 
 	// 创建调用第三方平台Client
 	thirdCli, err := thirdparty.NewClient(cc.WoaServer().ClientConfig, metrics.Register())
@@ -369,6 +381,8 @@ func assembleService(apiClientSet *client.ClientSet, clients *clientSet, logics 
 		client:         apiClientSet,
 		dao:            clients.daoSet,
 		cmdbCli:        clients.cmdbCli,
+		itsmCli:        clients.itsmCli,
+		finOpsCli:      clients.finOpsCli,
 		authorizer:     clients.authorizer,
 		thirdCli:       clients.thirdCli,
 		clientConf:     cc.WoaServer(),
@@ -543,6 +557,7 @@ func (s *Service) apiSet() *restful.Container {
 		Authorizer:     s.authorizer,
 		PlanController: s.planController,
 		CmdbCli:        s.cmdbCli,
+		FinOpsCli:      s.finOpsCli,
 		ThirdCli:       s.thirdCli,
 		Conf:           s.clientConf,
 		SchedulerIf:    s.schedulerIf,

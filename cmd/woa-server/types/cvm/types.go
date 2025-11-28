@@ -326,6 +326,91 @@ type CvmOrderReq struct {
 	OrderId int64 `json:"order_id"`
 }
 
+// GetDeviceLoadUsageReq 查询设备负载利用率请求参数
+type GetDeviceLoadUsageReq struct {
+	Date string `json:"date" validate:"required"`
+}
+
+// Validate 校验 GetDeviceLoadUsageReq 参数
+func (req *GetDeviceLoadUsageReq) Validate() error {
+	// 验证日期格式，格式应为 "2006-01-02"
+	_, err := time.Parse(constant.DateLayout, req.Date)
+	if err != nil {
+		return fmt.Errorf("date format is invalid, expected format: YYYY-MM-DD")
+	}
+	return nil
+}
+
+// GetDeviceLoadUsageResp 查询设备负载利用率响应结果
+type GetDeviceLoadUsageResp struct {
+	Threshold        int64   `json:"threshold"`
+	CPUUsage         float64 `json:"cpu_usage"`
+	AchievedKPI      bool    `json:"achieved_kpi"`
+	EmptyLoadCPUCore float64 `json:"empty_load_cpu_core"`
+	EmptyLoadOS      float64 `json:"empty_load_os"`
+	LowLoadCPUCore   float64 `json:"low_load_cpu_core"`
+	LowLoadOS        float64 `json:"low_load_os"`
+}
+
+// ListDeviceCPUUsageTrendReq 查询设备CPU利用率趋势请求参数
+type ListDeviceCPUUsageTrendReq struct {
+	TimeGranularity enumor.LoadUsageTimeGranularity `json:"time_granularity" validate:"required"`
+	DateRange       *DateRange                      `json:"date_range" validate:"required"`
+}
+
+// DateRange 时间范围
+type DateRange struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
+}
+
+// Validate 校验 ListDeviceCPUUsageTrendReq 参数
+func (req *ListDeviceCPUUsageTrendReq) Validate() error {
+	// 验证时间粒度枚举值
+	if err := req.TimeGranularity.Validate(); err != nil {
+		return err
+	}
+
+	if req.DateRange == nil {
+		return fmt.Errorf("date_range parameter is required")
+	}
+
+	if req.DateRange.Start == "" {
+		return fmt.Errorf("date_range.start parameter is required")
+	}
+	if req.DateRange.End == "" {
+		return fmt.Errorf("date_range.end parameter is required")
+	}
+
+	// 验证日期格式
+	startTime, err := time.Parse(constant.DateLayout, req.DateRange.Start)
+	if err != nil {
+		return fmt.Errorf("date_range.start format is invalid, expected format: YYYY-MM-DD")
+	}
+	endTime, err := time.Parse(constant.DateLayout, req.DateRange.End)
+	if err != nil {
+		return fmt.Errorf("date_range.end format is invalid, expected format: YYYY-MM-DD")
+	}
+
+	// 验证结束时间不能晚于当前日期
+	now := time.Now()
+	if endTime.After(now) {
+		return fmt.Errorf("date_range.end cannot be later than current date")
+	}
+	// 验证开始时间不能晚于结束时间
+	if startTime.After(endTime) {
+		return fmt.Errorf("date_range.start cannot be later than date_range.end")
+	}
+
+	return nil
+}
+
+// CPUUsageTrendData CPU利用率趋势数据
+type CPUUsageTrendData struct {
+	Date     string  `json:"date"`
+	CPUUsage float64 `json:"cpu_usage"`
+}
+
 // CvmOrderResult cvm apply order query result
 type CvmOrderResult struct {
 	Count int64         `json:"count"`

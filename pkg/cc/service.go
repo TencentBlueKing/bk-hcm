@@ -586,6 +586,7 @@ type WoaServerSetting struct {
 	Database        DataBase   `yaml:"database"`
 	Log             LogOption  `yaml:"log"`
 	Cmdb            ApiGateway `yaml:"cmdb"`
+	FinOps          ApiGateway `yaml:"finops"`
 	BkHcmURL        string     `yaml:"bkHcmUrl"`
 	BkApigwHCMURL   string     `yaml:"bkApigwHCMUrl"`
 	MongoDB         MongoDB    `yaml:"mongodb"`
@@ -635,6 +636,10 @@ func (s WoaServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.FinOps.validate(); err != nil {
 		return err
 	}
 

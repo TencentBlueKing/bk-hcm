@@ -26,8 +26,10 @@ import (
 	"hcm/cmd/woa-server/logics/cvm"
 	gclogics "hcm/cmd/woa-server/logics/green-channel"
 	"hcm/cmd/woa-server/service/capability"
+	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/finops"
 )
 
 // InitService initial the service
@@ -37,12 +39,21 @@ func InitService(c *capability.Capability) {
 		logics:       c.CvmLogic,
 		configLogics: c.ConfigLogics,
 		gcLogics:     c.GcLogic,
+		finOpsCli:    c.FinOpsCli,
+		client:       c.Client,
 	}
 	h := rest.NewHandler()
 
 	s.initCvmService(h)
 
 	h.Load(c.WebService)
+
+	// 业务下的接口
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, s)
+
+	bizH.Load(c.WebService)
 }
 
 type service struct {
@@ -50,6 +61,8 @@ type service struct {
 	configLogics config.Logics
 	authorizer   auth.Authorizer
 	gcLogics     gclogics.Logics
+	finOpsCli    finops.Client
+	client       *client.ClientSet
 }
 
 func (s *service) initCvmService(h *rest.Handler) {
@@ -60,4 +73,10 @@ func (s *service) initCvmService(h *rest.Handler) {
 	h.Add("GetCapacity", http.MethodPost, "/cvm/find/capacity", s.GetCapacity)
 
 	h.Add("GetApplyStatusCfg", http.MethodGet, "/cvm/find/config/apply/status", s.GetApplyStatusCfg)
+}
+
+// bizService 业务下的接口
+func bizService(h *rest.Handler, s *service) {
+	h.Add("GetDeviceLoadUsage", http.MethodPost, "/device/load_usage", s.GetDeviceLoadUsage)
+	h.Add("ListDeviceCPUUsageTrend", http.MethodPost, "/device/cpu_usage/trend", s.ListDeviceCPUUsageTrend)
 }
