@@ -71,7 +71,7 @@ const option: ECOption = {
     show: true,
     data: [
       {
-        name: '平均耗时',
+        name: '需求交付率',
         textStyle: {
           color: '#4D4F56',
         },
@@ -101,7 +101,7 @@ const option: ECOption = {
   series: [
     {
       type: 'line',
-      name: '平均耗时',
+      name: '需求交付率',
       color: '#699DF4',
       symbol: 'none',
     },

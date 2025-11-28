@@ -63,7 +63,7 @@ const props = defineProps<{ result: IAffinityCheckResultItem[] }>();
           <QcloudZoneValue :value="row.zone" />
         </template>
       </bk-table-column>
-      <bk-table-column label="预测状态" prop="status" width="150px">
+      <bk-table-column label="预检状态" prop="status" width="150px">
         <template #default="{ row }">
           <bk-tag radius="10px" theme="success" v-if="row.status === 1">从CRP预检有数据</bk-tag>
           <bk-tag radius="10px" theme="danger" v-else-if="row.status === 2">从CRP预检无数据</bk-tag>

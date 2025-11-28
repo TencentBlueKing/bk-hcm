@@ -94,7 +94,7 @@ const fetchChartData = async () => {
     end_time: getMonthRange(props.daterange[1]).endTime,
   });
   chartData.value = (res.data?.details || [])
-    .sort((a: any, b: any) => a.delivered_core_count - b.delivered_core_count)
+    .sort((a: any, b: any) => b.delivered_core_count - a.delivered_core_count)
     .slice(0, 10);
   chartInstance.setOption({
     dataset: {

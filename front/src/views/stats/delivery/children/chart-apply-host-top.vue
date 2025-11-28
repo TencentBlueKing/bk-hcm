@@ -95,7 +95,7 @@ const fetchChartData = async () => {
     start_time: getMonthRange(props.daterange[0]).startTime,
     end_time: getMonthRange(props.daterange[1]).endTime,
   });
-  chartData.value = (res.data?.details || []).sort((a: any, b: any) => a.host_count - b.host_count).slice(0, 10);
+  chartData.value = (res.data?.details || []).sort((a: any, b: any) => b.host_count - a.host_count).slice(0, 10);
   chartInstance.setOption({
     dataset: {
       source: chartData.value.map((item: any) => [
