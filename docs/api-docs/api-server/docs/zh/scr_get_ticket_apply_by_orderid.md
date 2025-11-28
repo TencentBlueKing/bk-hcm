@@ -49,6 +49,7 @@ POST /api/v1/woa/task/get/apply/ticket
         "replicas": 2,
         "anti_affinity_level": "ANTI_NONE",
         "remark": "",
+        "source": "business",
         "spec": {
           "region": "ap-shanghai",
           "zone": "ap-shanghai-2",
@@ -76,6 +77,7 @@ POST /api/v1/woa/task/get/apply/ticket
         "replicas": 2,
         "anti_affinity_level": "ANTI_NONE",
         "remark": "",
+        "source": "business",
         "spec": {
           "region": "东莞",
           "zone": "东莞-大朗",
@@ -91,6 +93,7 @@ POST /api/v1/woa/task/get/apply/ticket
         "replicas": 2,
         "anti_affinity_level": "ANTI_NONE",
         "remark": "",
+        "source": "business",
         "spec": {
           "region": "ap-shanghai",
           "zone": "ap-shanghai-2",
@@ -107,6 +110,7 @@ POST /api/v1/woa/task/get/apply/ticket
         "replicas": 2,
         "anti_affinity_level": "ANTI_NONE",
         "remark": "",
+        "source": "business",
         "spec": {
           "region": "上海",
           "zone": "上海-青浦",
@@ -134,18 +138,19 @@ POST /api/v1/woa/task/get/apply/ticket
 
 #### data
 
-| 参数名称           | 参数类型         | 描述                                                                |
-|----------------|--------------|-------------------------------------------------------------------|
-| order_id       | int	         | 若order_id传值且非0，则更新order_id对应的申请单据草稿；若order_id未传值或为0，则创建申请单据草稿     |
-| stage	         | string	      | 单据执行阶段。"UNCOMMIT": 未提交, "AUDIT": 审核中, "RUNNING": 生产中, "DONE": 已完成 |
-| bk_biz_id      | int	         | CC业务ID                                                            |
-| bk_username    | string       | 资源申请提单人                                                           |
-| follower	      | string       | 关注人，如果有多人，以","分隔，如："name1,name2"                                  |
-| enable_notice	 | bool	        | 是否通知用户单据完成，默认为false                                               |
-| require_type   | int	         | 需求类型。1: 常规项目; 2: 春节保障; 3: 机房裁撤                                    |
-| expect_time    | string       | 期望交付时间                                                            |
-| remark	        | string       | 备注                                                                |
-| suborders	     | object array | 资源申请子需求单信息                                                        |
+| 参数名称           | 参数类型       | 描述                                                               |
+|----------------|------------|------------------------------------------------------------------|
+| order_id       | int	       | 若order_id传值且非0，则更新order_id对应的申请单据草稿；若order_id未传值或为0，则创建申请单据草稿    |
+| stage	         | string	    | 单据执行阶段。"UNCOMMIT": 未提交, "AUDIT": 审核中, "RUNNING": 生产中, "DONE": 已完成 |
+| bk_biz_id      | int	       | CC业务ID                                                           |
+| bk_username    | string     | 资源申请提单人                                                          |
+| follower	      | string     | 关注人，如果有多人，以","分隔，如："name1,name2"                                 |
+| enable_notice	 | bool	      | 是否通知用户单据完成，默认为false                                              |
+| require_type   | int	       | 需求类型。1: 常规项目; 2: 春节保障; 3: 机房裁撤                                   |
+| expect_time    | string     | 期望交付时间                                                           |
+| remark	        | string     | 备注                                                               |
+| source              | string  | 枚举类型，"business"（业务单据）、"purchase_to_resource_pool"(资源池采购)，默认值为"business"    |
+| suborders	     | object array | 资源申请子需求单信息                                                       |
 
 #### data.suborders
 

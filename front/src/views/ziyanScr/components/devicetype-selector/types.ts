@@ -9,6 +9,7 @@ interface CvmDeviceTypeReqParams {
   disk?: number | string;
   enable_capacity?: boolean | string;
   enable_apply?: boolean | string;
+  technical_class?: string;
 }
 
 export interface IProps {
@@ -21,6 +22,7 @@ export interface IProps {
   optionDisabledTipsContent?: (option: DeviceType) => string;
   placeholder?: string;
   sort?: (a: DeviceType, b: DeviceType) => number;
+  editable?: boolean;
 }
 
 // 云主机
@@ -30,6 +32,7 @@ export interface CvmDeviceType {
   cpu_amount: number; // cpu核数
   device_group: string; // 机型族
   ram_amount: number; // 内容容量
+  technical_class: string; // 技术分类
 }
 export type CvmDeviceTypeList = Array<CvmDeviceType>;
 

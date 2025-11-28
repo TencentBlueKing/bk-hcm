@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	types "hcm/cmd/woa-server/types/task"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
@@ -45,7 +46,11 @@ func (m *Matcher) transferHostAndSetOperator(info *types.DeviceInfo, order *type
 		return nil
 	}
 
-	if err := m.transferHost(info, hostId, order.BkBizId); err != nil {
+	targetBizID := order.BkBizId
+	if order.Source == enumor.ApplyTicketSrcPurchaseToResPool {
+		targetBizID = cc.WoaServer().ApplyTicketConfig.PurchaseToResourcePool.BizID
+	}
+	if err := m.transferHost(info, hostId, targetBizID); err != nil {
 		logs.Errorf("failed to transfer host, ip: %s, err: %v", info.Ip, err)
 		return err
 	}

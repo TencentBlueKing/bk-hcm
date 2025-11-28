@@ -34,16 +34,17 @@ import (
 
 // ApplyOrder resource apply order
 type ApplyOrder struct {
-	OrderId      uint64             `json:"order_id" bson:"order_id"`
-	SubOrderId   string             `json:"suborder_id" bson:"suborder_id"`
-	BkBizId      int64              `json:"bk_biz_id" bson:"bk_biz_id"`
-	User         string             `json:"bk_username" bson:"bk_username"`
-	Follower     []string           `json:"follower" bson:"follower"`
-	Auditor      string             `json:"auditor" bson:"auditor"`
-	RequireType  enumor.RequireType `json:"require_type" bson:"require_type"`
-	ExpectTime   string             `json:"expect_time" bson:"expect_time"`
-	ResourceType ResourceType       `json:"resource_type" bson:"resource_type"`
-	Spec         *ResourceSpec      `json:"spec" bson:"spec"`
+	OrderId      uint64                   `json:"order_id" bson:"order_id"`
+	SubOrderId   string                   `json:"suborder_id" bson:"suborder_id"`
+	BkBizId      int64                    `json:"bk_biz_id" bson:"bk_biz_id"`
+	User         string                   `json:"bk_username" bson:"bk_username"`
+	Follower     []string                 `json:"follower" bson:"follower"`
+	Auditor      string                   `json:"auditor" bson:"auditor"`
+	RequireType  enumor.RequireType       `json:"require_type" bson:"require_type"`
+	ExpectTime   string                   `json:"expect_time" bson:"expect_time"`
+	ResourceType ResourceType             `json:"resource_type" bson:"resource_type"`
+	Source       enumor.ApplyTicketSource `json:"source" bson:"source"`
+	Spec         *ResourceSpec            `json:"spec" bson:"spec"`
 	// UpgradeCVMList cvm升降配列表
 	UpgradeCVMList    []*UpgradeCVMSpec `json:"upgrade_cvm_list" bson:"upgrade_cvm_list"`
 	AntiAffinityLevel string            `json:"anti_affinity_level" bson:"anti_affinity_level"`
@@ -475,6 +476,7 @@ type ApplyTicket struct {
 	ExpectTime   string             `json:"expect_time" bson:"expect_time"`
 	Remark       string             `json:"remark" bson:"remark"`
 	Suborders    []*Suborder        `json:"suborders" bson:"suborders"`
+	OldSuborders []*Suborder        `json:"old_suborders" bson:"old_suborders"`
 	CreateAt     time.Time          `json:"create_at" bson:"create_at"`
 	UpdateAt     time.Time          `json:"update_at" bson:"update_at"`
 }
@@ -711,6 +713,7 @@ type ApplyReq struct {
 	ExpectTime   string             `json:"expect_time" bson:"expect_time"`
 	Remark       string             `json:"remark" bson:"remark"`
 	Suborders    []*Suborder        `json:"suborders" bson:"suborders"`
+	OldSuborders *[]*Suborder       `json:"old_suborders" bson:"old_suborders"`
 }
 
 // Validate whether ApplyRequest is valid
@@ -780,13 +783,14 @@ func (req *ApplyReq) validateAsRollingServer() error {
 
 // Suborder resource apply suborder info
 type Suborder struct {
-	ResourceType      ResourceType  `json:"resource_type" bson:"resource_type"`
-	Replicas          uint          `json:"replicas" bson:"replicas"`
-	AntiAffinityLevel string        `json:"anti_affinity_level" bson:"anti_affinity_level"`
-	EnableDiskCheck   bool          `json:"enable_disk_check" bson:"enable_disk_check"`
-	Remark            string        `json:"remark" bson:"remark"`
-	Spec              *ResourceSpec `json:"spec" bson:"spec"`
-	AppliedCore       uint          `json:"applied_core" bson:"applied_core,omitempty"`
+	ResourceType      ResourceType             `json:"resource_type" bson:"resource_type"`
+	Replicas          uint                     `json:"replicas" bson:"replicas"`
+	AntiAffinityLevel string                   `json:"anti_affinity_level" bson:"anti_affinity_level"`
+	EnableDiskCheck   bool                     `json:"enable_disk_check" bson:"enable_disk_check"`
+	Remark            string                   `json:"remark" bson:"remark"`
+	Source            enumor.ApplyTicketSource `json:"source" bson:"source"`
+	Spec              *ResourceSpec            `json:"spec" bson:"spec"`
+	AppliedCore       uint                     `json:"applied_core" bson:"applied_core,omitempty"`
 	// UpgradeCVMList cvm升降配列表
 	UpgradeCVMList []*UpgradeCVMSpec `json:"upgrade_cvm_list" bson:"upgrade_cvm_list"`
 }
@@ -1009,42 +1013,44 @@ func (m UnifyOrderList) Less(i, j int) bool {
 
 // UnifyOrder get apply order result object, including apply ticket and order
 type UnifyOrder struct {
-	OrderId           uint64             `json:"order_id" bson:"order_id"`
-	SubOrderId        string             `json:"suborder_id" bson:"suborder_id"`
-	BkBizId           int64              `json:"bk_biz_id" bson:"bk_biz_id"`
-	User              string             `json:"bk_username" bson:"bk_username"`
-	RequireType       enumor.RequireType `json:"require_type" bson:"require_type"`
-	ResourceType      ResourceType       `json:"resource_type" bson:"resource_type"`
-	ExpectTime        string             `json:"expect_time" bson:"expect_time"`
-	Description       string             `json:"description" bson:"description"`
-	Remark            string             `json:"remark" bson:"remark"`
-	Spec              *ResourceSpec      `json:"spec" bson:"spec"`
-	AntiAffinityLevel string             `json:"anti_affinity_level" bson:"anti_affinity_level"`
-	EnableDiskCheck   bool               `json:"enable_disk_check" bson:"enable_disk_check"`
-	Stage             TicketStage        `json:"stage" bson:"stage"`
-	Status            ApplyStatus        `json:"status" bson:"status"`
-	OriginNum         uint               `json:"origin_num" bson:"origin_num"` // 原始需求总数量，不会修改
-	TotalNum          uint               `json:"total_num" bson:"total_num"`   // 需要交付的总数量，业务会修改
-	SuccessNum        uint               `json:"success_num" bson:"success_num"`
-	PendingNum        uint               `json:"pending_num" bson:"pending_num"`
-	ProductNum        uint               `json:"product_num" bson:"product_num"` // 实际生产成功的总数量
-	ModifyTime        uint               `json:"modify_time" bson:"modify_time"`
-	CreateAt          time.Time          `json:"create_at" bson:"create_at"`
-	UpdateAt          time.Time          `json:"update_at" bson:"update_at"`
+	OrderId           uint64                   `json:"order_id" bson:"order_id"`
+	SubOrderId        string                   `json:"suborder_id" bson:"suborder_id"`
+	BkBizId           int64                    `json:"bk_biz_id" bson:"bk_biz_id"`
+	User              string                   `json:"bk_username" bson:"bk_username"`
+	RequireType       enumor.RequireType       `json:"require_type" bson:"require_type"`
+	ResourceType      ResourceType             `json:"resource_type" bson:"resource_type"`
+	ExpectTime        string                   `json:"expect_time" bson:"expect_time"`
+	Description       string                   `json:"description" bson:"description"`
+	Remark            string                   `json:"remark" bson:"remark"`
+	Spec              *ResourceSpec            `json:"spec" bson:"spec"`
+	AntiAffinityLevel string                   `json:"anti_affinity_level" bson:"anti_affinity_level"`
+	EnableDiskCheck   bool                     `json:"enable_disk_check" bson:"enable_disk_check"`
+	Stage             TicketStage              `json:"stage" bson:"stage"`
+	Status            ApplyStatus              `json:"status" bson:"status"`
+	OriginNum         uint                     `json:"origin_num" bson:"origin_num"` // 原始需求总数量，不会修改
+	TotalNum          uint                     `json:"total_num" bson:"total_num"`   // 需要交付的总数量，业务会修改
+	SuccessNum        uint                     `json:"success_num" bson:"success_num"`
+	PendingNum        uint                     `json:"pending_num" bson:"pending_num"`
+	ProductNum        uint                     `json:"product_num" bson:"product_num"` // 实际生产成功的总数量
+	ModifyTime        uint                     `json:"modify_time" bson:"modify_time"`
+	Source            enumor.ApplyTicketSource `json:"source" bson:"source"`
+	CreateAt          time.Time                `json:"create_at" bson:"create_at"`
+	UpdateAt          time.Time                `json:"update_at" bson:"update_at"`
 }
 
 // GetApplyParam get apply order request parameter
 type GetApplyParam struct {
-	BkBizID     []int64           `json:"bk_biz_id" bson:"bk_biz_id"`
-	OrderID     []uint64          `json:"order_id" bson:"order_id"`
-	SuborderID  []string          `json:"suborder_id" bson:"suborder_id"`
-	User        []string          `json:"bk_username" bson:"bk_username"`
-	RequireType []int64           `json:"require_type" bson:"require_type"`
-	Stage       []TicketStage     `json:"stage" bson:"stage"`
-	Start       string            `json:"start" bson:"start"`
-	End         string            `json:"end" bson:"end"`
-	Page        metadata.BasePage `json:"page" bson:"page"`
-	GetProduct  bool              `json:"get_product" bson:"get_product"` // 是否获取CVM生产数据
+	BkBizID     []int64                    `json:"bk_biz_id" bson:"bk_biz_id"`
+	OrderID     []uint64                   `json:"order_id" bson:"order_id"`
+	SuborderID  []string                   `json:"suborder_id" bson:"suborder_id"`
+	User        []string                   `json:"bk_username" bson:"bk_username"`
+	RequireType []int64                    `json:"require_type" bson:"require_type"`
+	Stage       []TicketStage              `json:"stage" bson:"stage"`
+	Start       string                     `json:"start" bson:"start"`
+	End         string                     `json:"end" bson:"end"`
+	Page        metadata.BasePage          `json:"page" bson:"page"`
+	GetProduct  bool                       `json:"get_product" bson:"get_product"` // 是否获取CVM生产数据
+	Source      []enumor.ApplyTicketSource `json:"source" bson:"source"`
 }
 
 // Validate whether GetApplyParam is valid
@@ -1089,29 +1095,19 @@ const (
 func (param *GetApplyParam) GetFilter(isTicket bool) map[string]interface{} {
 	filter := make(map[string]interface{})
 	if len(param.BkBizID) > 0 {
-		filter["bk_biz_id"] = mapstr.MapStr{
-			pkg.BKDBIN: param.BkBizID,
-		}
+		filter["bk_biz_id"] = mapstr.MapStr{pkg.BKDBIN: param.BkBizID}
 	}
 	if len(param.OrderID) > 0 {
-		filter["order_id"] = mapstr.MapStr{
-			pkg.BKDBIN: param.OrderID,
-		}
+		filter["order_id"] = mapstr.MapStr{pkg.BKDBIN: param.OrderID}
 	}
 	if len(param.SuborderID) > 0 {
-		filter["suborder_id"] = mapstr.MapStr{
-			pkg.BKDBIN: param.SuborderID,
-		}
+		filter["suborder_id"] = mapstr.MapStr{pkg.BKDBIN: param.SuborderID}
 	}
 	if len(param.User) > 0 {
-		filter["bk_username"] = mapstr.MapStr{
-			pkg.BKDBIN: param.User,
-		}
+		filter["bk_username"] = mapstr.MapStr{pkg.BKDBIN: param.User}
 	}
 	if len(param.RequireType) > 0 {
-		filter["require_type"] = mapstr.MapStr{
-			pkg.BKDBIN: param.RequireType,
-		}
+		filter["require_type"] = mapstr.MapStr{pkg.BKDBIN: param.RequireType}
 	}
 	if isTicket {
 		// get UNCOMMIT and AUDIT tickets only
@@ -1125,14 +1121,15 @@ func (param *GetApplyParam) GetFilter(isTicket bool) map[string]interface{} {
 		if util.InArray(TicketStageTerminate, param.Stage) || len(param.Stage) == 0 {
 			ticketStageList = append(ticketStageList, TicketStageTerminate)
 		}
-		filter["stage"] = mapstr.MapStr{
-			pkg.BKDBIN: ticketStageList,
-		}
+		filter["stage"] = mapstr.MapStr{pkg.BKDBIN: ticketStageList}
 	} else {
 		if len(param.Stage) > 0 {
-			filter["stage"] = mapstr.MapStr{
-				pkg.BKDBIN: param.Stage,
-			}
+			filter["stage"] = mapstr.MapStr{pkg.BKDBIN: param.Stage}
+		}
+
+		filter["source"] = mapstr.MapStr{pkg.BKDBIN: param.Source}
+		if len(param.Source) == 0 {
+			filter["source"] = mapstr.MapStr{pkg.BKDBNE: enumor.ApplyTicketSrcPurchaseToResPool}
 		}
 	}
 	timeCond := make(map[string]interface{})
@@ -1834,4 +1831,25 @@ type HostApplyCrpTicket struct {
 	User          string               `json:"user"`
 	ApprovalState enumor.ApprovalState `json:"approval_state"`
 	CreateTime    time.Time            `json:"create_time"`
+}
+
+// UpdateApplyTicketDemandReq update apply ticket demand request
+type UpdateApplyTicketDemandReq struct {
+	TicketID  uint64      `json:"ticket_id" validate:"required"`
+	Suborders []*Suborder `json:"suborders" validate:"required"`
+}
+
+// Validate validate update apply ticket demand request
+func (u *UpdateApplyTicketDemandReq) Validate() error {
+	if err := validator.Validate.Struct(u); err != nil {
+		return err
+	}
+
+	for _, suborder := range u.Suborders {
+		if err := suborder.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

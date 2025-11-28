@@ -36,6 +36,8 @@ const (
 	// GlobalConfigTypeBs2ToBkBizIDMap 二级业务配置映射
 	// config_value 格式为 JSON 数组，包含完整的业务信息
 	GlobalConfigTypeBs2ToBkBizIDMap GlobalConfigType = "bs2_to_bk_biz_id_map"
+	// GlobalConfigTypeDeviceLoad 设备负载查询相关配置
+	GlobalConfigTypeDeviceLoad GlobalConfigType = "device_load"
 )
 
 // GlobalConfigResDissolveKey resource dissolve global config key
@@ -62,4 +64,12 @@ type GlobalConfigKeyBs2Biz string
 const (
 	// GlobalConfigKeyBs2BizMapping 二级业务配置的固定 config_key
 	GlobalConfigKeyBs2BizMapping GlobalConfigKeyBs2Biz = "bs2_biz_mapping"
+)
+
+// GlobalConfigDeviceLoadKey global config key
+type GlobalConfigDeviceLoadKey string
+
+const (
+	// GlobalConfigDeviceLoadThreshold 设备负载达标阈值
+	GlobalConfigDeviceLoadThreshold GlobalConfigDeviceLoadKey = "device_load_threshold"
 )

@@ -2,6 +2,9 @@ import { defineComponent, ref, watch, PropType, computed } from 'vue';
 import apiService from '../../../../api/scrApi';
 import isEqual from 'lodash/isEqual';
 import isEmpty from 'lodash/isEmpty';
+import { Select } from 'bkui-vue';
+import { SelectColumn } from '@blueking/ediatable';
+
 export default defineComponent({
   name: 'ZoneSelector',
   props: {
@@ -21,6 +24,10 @@ export default defineComponent({
     separateCampus: {
       type: Boolean,
       default: true,
+    },
+    editable: {
+      type: Boolean,
+      default: false,
     },
   },
   emits: ['change'],
@@ -106,13 +113,17 @@ export default defineComponent({
       },
       { immediate: true },
     );
-    return () => (
-      <bk-select v-bind={attrs} filterable default-first-option v-model={props.value} onChange={handleSelectorChange}>
-        {options.value.map((item) => (
-          <bk-option key={item.value} value={item.value} label={item.label}></bk-option>
-        ))}
-        {props.separateCampus && !regionsIsEmpty.value && <bk-option label='分Campus' value='cvm_separate_campus' />}
-      </bk-select>
-    );
+
+    return () =>
+      !props.editable ? (
+        <Select v-bind={attrs} filterable default-first-option v-model={props.value} onChange={handleSelectorChange}>
+          {options.value.map((item) => (
+            <bk-option key={item.value} value={item.value} label={item.label}></bk-option>
+          ))}
+          {props.separateCampus && !regionsIsEmpty.value && <bk-option label='分Campus' value='cvm_separate_campus' />}
+        </Select>
+      ) : (
+        <SelectColumn v-bind={attrs} default-first-option v-model={props.value} list={options.value} />
+      );
   },
 });

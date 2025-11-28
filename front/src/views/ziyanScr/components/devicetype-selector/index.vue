@@ -4,6 +4,7 @@ import { Select, Popover } from 'bkui-vue';
 import http from '@/http';
 import isEqual from 'lodash/isEqual';
 import type { CvmDeviceType, IProps, OptionsType, SelectionType } from './types';
+import { SelectColumn } from '@blueking/ediatable';
 
 defineOptions({ name: 'DeviceTypeSelector' });
 
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<IProps>(), {
   optionDisabled: () => false,
   placeholder: '请选择',
   sort: () => 0,
+  editable: false,
 });
 
 const emit = defineEmits<(e: 'change', result: SelectionType) => void>();
@@ -54,8 +56,19 @@ const loading = ref(false);
 const getOptions = async () => {
   if (props.disabled) return;
   const { resourceType, params, sort } = props;
-  const { require_type, region, zone, device_group, device_size, cpu, mem, disk, enable_capacity, enable_apply } =
-    params;
+  const {
+    require_type,
+    region,
+    zone,
+    device_group,
+    device_size,
+    cpu,
+    mem,
+    disk,
+    enable_capacity,
+    enable_apply,
+    technical_class,
+  } = params;
 
   // 小额与春保资源池时使用常规需求类型，require_type可能是多选，这里暂仅考虑主机申请与修改场景单选
   const requireType = [7, 8].includes(require_type as number) ? 1 : require_type;
@@ -84,6 +97,7 @@ const getOptions = async () => {
     { field: 'disk', value: disk },
     { field: 'enable_capacity', value: enable_capacity },
     { field: 'enable_apply', value: enable_apply },
+    { field: 'label.technical_class', value: technical_class },
   ]);
 
   const filter = rules.length ? { condition: 'AND', rules } : undefined;
@@ -133,11 +147,16 @@ watch(
   { immediate: true },
 );
 
+const comp = computed(() => {
+  return props.editable ? SelectColumn : Select;
+});
+
 defineExpose({ handleSort });
 </script>
 
 <template>
-  <Select
+  <component
+    :is="comp"
     v-model="selected"
     clearable
     filterable
@@ -145,6 +164,10 @@ defineExpose({ handleSort });
     :disabled="disabled"
     :loading="loading || isLoading"
     :placeholder="placeholder"
+    :list="editable ? options[resourceType] : []"
+    id-key="device_type"
+    display-key="device_type"
+    v-bind="$attrs"
   >
     <!-- 遍历 options 数据 -->
     <template v-for="option in options[resourceType]" :key="option.device_type">
@@ -174,7 +197,7 @@ defineExpose({ handleSort });
         <template v-else>{{ option.device_type }}</template>
       </Option>
     </template>
-  </Select>
+  </component>
 </template>
 
 <style scoped></style>

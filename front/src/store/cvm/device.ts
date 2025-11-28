@@ -69,6 +69,12 @@ export interface IManyCvmCapacityItem {
   max_info: { key: string; value: number }[];
 }
 
+export const CoreTypeMap = {
+  1: '小核心',
+  2: '中核心',
+  3: '大核心',
+} as const;
+
 export const useCvmDeviceStore = defineStore('cvm-device', () => {
   const deviceListLoading = ref(false);
 

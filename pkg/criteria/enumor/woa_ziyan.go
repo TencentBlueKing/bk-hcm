@@ -629,3 +629,18 @@ var hostApplyItsmStepNameApproveStateMap = map[HostApplyItsmStepName]ApprovalSta
 func (h HostApplyItsmStepName) GetApprovalState() ApprovalState {
 	return hostApplyItsmStepNameApproveStateMap[h]
 }
+
+// ApplyTicketSource apply ticket source
+type ApplyTicketSource string
+
+const (
+	// ApplyTicketSrcBusiness business
+	ApplyTicketSrcBusiness ApplyTicketSource = "business"
+	// ApplyTicketSrcPurchaseToResPool purchase to resource pool
+	ApplyTicketSrcPurchaseToResPool ApplyTicketSource = "purchase_to_resource_pool"
+)
+
+// GetAllApplyTicketSource get all apply ticket source
+func GetAllApplyTicketSource() []ApplyTicketSource {
+	return []ApplyTicketSource{ApplyTicketSrcBusiness, ApplyTicketSrcPurchaseToResPool}
+}

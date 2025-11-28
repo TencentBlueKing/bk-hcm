@@ -1,9 +1,10 @@
-import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount } from 'vue';
+import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount, provide, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import './index.scss';
 
 import { isEqual } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useCvmDeviceStore, type ICvmDevicetypeItem } from '@/store/cvm/device';
 import { useRequireTypes } from '@/views/ziyanScr/hooks/use-require-types';
 import useColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -24,11 +25,15 @@ import { useDissolveQuotaStore, type ICpuCoreSummary } from '@/store/dissolve/qu
 
 import ModifyRecord from './modify-record';
 import ItsmTicketAudit, { type IItsmTicketAudit } from './itsm-ticket-audit.vue';
-import type { IQueryResData } from '@/typings';
+import { QueryRuleOPEnumLegacy, type IQueryResData } from '@/typings';
 import ApprovalStatus from './approval-status.vue';
 import { ScrResourceType } from '@/constants';
 import UpgradeCvmTable from './upgrade-cvm-table.vue';
 import { RequirementType } from '@/store/config/requirement';
+import ModifySuborder from './modify-suborder.vue';
+
+// 资源利用率
+import ResourceUsageRateCard from '@/components/resource-usage-rate/resource-usage-rate-card.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -44,6 +49,8 @@ export default defineComponent({
     const dissolveQuotaStore = useDissolveQuotaStore();
 
     const { whereAmI, getBusinessApiPath, getBizsId, isBusinessPage } = useWhereAmI();
+
+    const cvmDeviceStore = useCvmDeviceStore();
 
     const backRoute = computed(() => {
       if (whereAmI.value === Senarios.business) {
@@ -74,7 +81,7 @@ export default defineComponent({
       {
         label: '总数',
         field: 'total_num',
-        width: 120,
+        width: 110,
         showOverflowTooltip: false,
         render: ({ row, cell }: any) => {
           let totalNum = cell;
@@ -117,6 +124,9 @@ export default defineComponent({
 
     // 给云主机添加num字段
     cloudColumns.splice(3, 0, ...numColumns);
+
+    // 将 cloudColumns 变量 provide给子组件
+    provide('cloudColumns', cloudColumns);
 
     const hostColumns = [
       ...cloudColumns,
@@ -227,6 +237,38 @@ export default defineComponent({
         });
     });
 
+    // 子单cvm机型完整数据列表
+    const cvmDeviceTypeList = ref<ICvmDevicetypeItem[]>([]);
+
+    // 所有子单cvm机型
+    const cvmDeviceTypes = computed(() => {
+      return cloudMachineList.value.map((item) => item.spec.device_type);
+    });
+
+    // 查询子单cvm对应的机型完整数据列表
+    watch(cvmDeviceTypes, async (newVal: string[], oldVal: string[]) => {
+      if (isEqual(newVal, oldVal) || !newVal.length) {
+        return;
+      }
+      const requireType = detail.value.require_type;
+      const isGreenChannelOrSpringPool =
+        requireType === RequirementType.GreenChannel || requireType === RequirementType.SpringResPool;
+      const { list } = await cvmDeviceStore.getDeviceTypeFullList({
+        filter: {
+          condition: 'AND',
+          rules: [
+            { field: 'device_type', operator: QueryRuleOPEnumLegacy.IN, value: [...new Set(newVal)] },
+            {
+              field: 'require_type',
+              operator: QueryRuleOPEnumLegacy.EQ,
+              value: isGreenChannelOrSpringPool ? RequirementType.Regular : requireType,
+            },
+          ],
+        },
+      });
+      cvmDeviceTypeList.value = list;
+    });
+
     const demandDetailTimer: any = { id: null, count: 0 };
     // 获取需求子单
     const getDemandDetail = async () => {
@@ -263,6 +305,7 @@ export default defineComponent({
 
     // 获取单据详情
     const getOrderDetail = async (orderId: string) => {
+      orderId = orderId || (route.params.id as string);
       const { data } = await http.post(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/${getBusinessApiPath()}task/get/apply/ticket`,
         { order_id: +orderId },
@@ -361,6 +404,8 @@ export default defineComponent({
       }
     });
 
+    const showEditTable = ref(false);
+
     onUnmounted(() => {
       // 清除定时任务
       clearTimeout(demandDetailTimer.id);
@@ -368,7 +413,7 @@ export default defineComponent({
 
     return () => (
       <div class={'application-detail-container'}>
-        <DetailHeader useRouterAction>
+        <DetailHeader>
           {{
             default: () => '单据详情',
             right: () =>
@@ -390,6 +435,8 @@ export default defineComponent({
           {!isUpgradeCvm.value && (
             <>
               <ApprovalStatus class='mb24' ticketAuditDetail={itsmTicketAuditOptions.data} />
+
+              <ResourceUsageRateCard class='mb24' bizId={detail.value.bk_biz_id} />
 
               <Panel title='审批信息'>
                 <ItsmTicketAudit
@@ -446,6 +493,15 @@ export default defineComponent({
                     disabled={selections.value.length === 0}>
                     批量复制IP
                   </Button>
+                  {!isBusinessPage && cloudMachineList.value.length ? (
+                    <Button
+                      class={'mr8'}
+                      disabled={itsmTicketAuditOptions?.data?.status !== 'RUNNING'}
+                      onClick={() => (showEditTable.value = true)}>
+                      修改需求
+                    </Button>
+                  ) : null}
+
                   {isDissolve.value && !dissolveQuotaStore.cpuCoreSummaryLoading && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: '24px' }}>
                       <div>
@@ -506,6 +562,12 @@ export default defineComponent({
           </Panel>
         </div>
         <ModifyRecord v-model={showRecordSlider.value} showObj={recordParams.value} />
+        <ModifySuborder
+          v-model={showEditTable.value}
+          tableData={cloudMachineList.value}
+          deviceTypeList={cvmDeviceTypeList.value}
+          onUpdate:table={getOrderDetail}
+        />
       </div>
     );
   },

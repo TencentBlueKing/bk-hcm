@@ -489,3 +489,39 @@ bkbotapproval:
     # the password to decrypt the certificate.
     password:
 
+# defines finops related settings.
+finops:
+  # endpoints is a seed list of host:port addresses of finops api gateway nodes.
+  endpoints:
+    - http://127.0.0.1
+  # appCode is the BlueKing app code of hcm to request finops api gateway.
+  appCode: test
+  # appSecret is the BlueKing app secret of hcm to request finops api gateway.
+  appSecret: test
+  # user is the BlueKing user of hcm to request finops api gateway.
+  user: admin
+  # bkTicket is the BlueKing access ticket of hcm to request finops api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request finops api gateway.
+  bkToken:
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+
+# defines apply ticket config related settings.
+applyTicketConfig:
+  # defines purchase to resource pool related settings.
+  purchaseToResourcePool:
+    # user define purchase to resource pool user
+    user:
+    # bizID is the business id of the resource pool
+    bizID:

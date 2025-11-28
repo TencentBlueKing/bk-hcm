@@ -159,6 +159,11 @@ export default defineComponent({
                   <div>
                     <p>{data.suborder_id || '无'}</p>
                   </div>
+                  {data.source === 'purchase_to_resource_pool' && (
+                    <div>
+                      <bk-tag theme='info'>资源池</bk-tag>
+                    </div>
+                  )}
                 </div>
               );
             },
@@ -277,7 +282,7 @@ export default defineComponent({
             render: ({ data }: any) => {
               const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
               return (
-                <div style={{ lineHeight: '30px' }}>
+                <div>
                   <div>资源类型：{data?.resource_type ? getResourceTypeName(data?.resource_type) : '--'}</div>
                   {/* 机型配置调整不展示机型、园区 */}
                   {!isUpgradeCvm && (
@@ -447,6 +452,7 @@ export default defineComponent({
           onRowMouseEnter: (e, row) => {
             handleCellMouseEnter(row);
           },
+          rowHeight: 24,
         },
       },
       requestOption: {
@@ -475,6 +481,11 @@ export default defineComponent({
           showAll: true,
           emptySelectAll: true,
           cacheKey: serviceShareBizSelectedKey,
+        };
+      }
+      if (field.type === 'enum') {
+        return {
+          option: field.option,
         };
       }
       if (field.id === 'create_at') {

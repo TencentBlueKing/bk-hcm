@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/finops"
 	"hcm/pkg/thirdparty/es"
 
 	"github.com/emicklei/go-restful/v3"
@@ -54,6 +55,7 @@ type Capability struct {
 	PlanController plan.Logics
 	CmdbCli        cmdb.Client
 	ThirdCli       *thirdparty.Client
+	FinOpsCli      finops.Client
 	Authorizer     auth.Authorizer
 	Conf           cc.WoaServerSetting
 	SchedulerIf    scheduler.Interface

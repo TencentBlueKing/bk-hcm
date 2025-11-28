@@ -159,6 +159,9 @@
 .bkhcm-icon-shezhi:before {
   content: '\e121';
 }
+.bkhcm-icon-trend:before {
+	content: "\e185";
+}
 .bkhcm-icon-cuo:before {
   content: '\e119';
 }
@@ -389,4 +392,25 @@
 }
 .bkhcm-icon-chart-empty-bar-top:before {
   content: '\e184';
+}
+.bkhcm-icon-stats-menu:before {
+	content: "\e17e";
+}
+.bkhcm-icon-chart-empty-bar:before {
+	content: "\e17f";
+}
+.bkhcm-icon-chart-empty-other:before {
+	content: "\e180";
+}
+.bkhcm-icon-chart-empty-line:before {
+	content: "\e181";
+}
+.bkhcm-icon-chart-empty-pie:before {
+	content: "\e182";
+}
+.bkhcm-icon-chart-empty-table:before {
+	content: "\e183";
+}
+.bkhcm-icon-chart-empty-bar-top:before {
+	content: "\e184";
 }

@@ -586,6 +586,7 @@ type WoaServerSetting struct {
 	Database        DataBase   `yaml:"database"`
 	Log             LogOption  `yaml:"log"`
 	Cmdb            ApiGateway `yaml:"cmdb"`
+	FinOps          ApiGateway `yaml:"finops"`
 	BkHcmURL        string     `yaml:"bkHcmUrl"`
 	BkApigwHCMURL   string     `yaml:"bkApigwHCMUrl"`
 	MongoDB         MongoDB    `yaml:"mongodb"`
@@ -605,6 +606,7 @@ type WoaServerSetting struct {
 	ResourceSync    ResourceSync     `yaml:"resourceSync"`
 	Cmsi            CMSI             `yaml:"cmsi"`
 	StuckCheck      StuckCheck       `yaml:"stuckCheck"`
+	ApplyTicketConfig ApplyTicketConfig `yaml:"applyTicketConfig"`
 
 	Tenant TenantConfig `yaml:"tenant"`
 }
@@ -635,6 +637,10 @@ func (s WoaServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.FinOps.validate(); err != nil {
 		return err
 	}
 
@@ -678,6 +684,10 @@ func (s WoaServerSetting) Validate() error {
 	}
 
 	if err := s.ResourceSync.Validate(); err != nil {
+		return err
+	}
+
+	if err := s.ApplyTicketConfig.validate(); err != nil {
 		return err
 	}
 
@@ -778,4 +788,35 @@ func (c *ChangeLogPath) trySetDefault() {
 	if c.English == "" {
 		c.English = "changelog/en"
 	}
+}
+
+// ApplyTicketConfig defines apply ticket config related settings.
+type ApplyTicketConfig struct {
+	PurchaseToResourcePool PurchaseToResourcePool `yaml:"purchaseToResourcePool"`
+}
+
+func (s *ApplyTicketConfig) validate() error {
+	if err := s.PurchaseToResourcePool.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// PurchaseToResourcePool defines purchase to resource pool related settings.
+type PurchaseToResourcePool struct {
+	User  string `yaml:"user"`
+	BizID int64  `yaml:"bizID"`
+}
+
+func (s *PurchaseToResourcePool) validate() error {
+	if s.User == "" {
+		return fmt.Errorf("user should not be empty")
+	}
+
+	if s.BizID <= 0 {
+		return fmt.Errorf("bizID should not be empty")
+	}
+
+	return nil
 }

@@ -183,6 +183,7 @@ func (s *service) CreateManyDevice(cts *rest.Contexts) (interface{}, error) {
 				input, crpDeviceInfo)
 		}
 		input.DeviceTypeClass = crpDeviceInfo.InstanceTypeClass
+		input.TechnicalClass = crpDeviceInfo.CvmInstanceTypeClass
 	}
 	if err = s.logics.Device().CreateManyDevice(cts.Kit, input); err != nil {
 		logs.Errorf("failed to create device in batch, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)

@@ -55,6 +55,9 @@ import { RequirementType } from '@/store/config/requirement';
 import { useAffinityCheck } from './affinity-check/use-affinity-check';
 import AffinityCheckResultDialog from './affinity-check/affinity-check-result-dialog.vue';
 
+// 资源利用率
+import ResourceUsageRateCard from '@/components/resource-usage-rate/resource-usage-rate-card.vue';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -726,6 +729,7 @@ export default defineComponent({
         enable_disk_check,
         anti_affinity_level: QCLOUDCVMForm.value.spec.anti_affinity_level,
         replicas: +QCLOUDCVMForm.value.spec.replicas,
+        source: 'business',
         spec: {
           ...QCLOUDCVMForm.value.spec,
           region,
@@ -742,6 +746,7 @@ export default defineComponent({
         remark: resourceForm.value.remark,
         anti_affinity_level: pmForm.value.spec.anti_affinity_level,
         replicas: +pmForm.value.spec.replicas,
+        source: 'business',
         spec: {
           region: resourceForm.value.region,
           zone: resourceForm.value.zone,
@@ -1102,7 +1107,7 @@ export default defineComponent({
 
     return () => (
       <div class='host-application-form-wrapper'>
-        {!props.isbusiness && <DetailHeader useRouterAction>新增申请</DetailHeader>}
+        {!props.isbusiness && <DetailHeader>新增申请</DetailHeader>}
         <div class={props.isbusiness ? '' : 'apply-form-wrapper'}>
           {/* 申请单据表单 */}
           <bk-form
@@ -1173,6 +1178,9 @@ export default defineComponent({
                 </bk-form-item>
               </div>
             </CommonCard>
+
+            <ResourceUsageRateCard class='mb12' bizId={computedBiz.value} />
+
             <CommonCard
               title={() => (
                 <div class='flex-row align-items-center'>

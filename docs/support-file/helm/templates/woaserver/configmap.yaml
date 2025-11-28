@@ -108,3 +108,7 @@ data:
       {{- toYaml .Values.cmdb | nindent 6 }}
     bkbotapproval:
       {{- toYaml .Values.bkbotapproval | nindent 6 }}
+    finops:
+      {{- toYaml .Values.finops | nindent 6 }}
+    applyTicketConifg:
+      {{- toYaml .Values.applyTicketConfig | nindent 6 }}

@@ -207,7 +207,7 @@ export default (type: string, isSimpleShow = false) => {
     {
       label: '机型',
       field: 'spec.device_type',
-      width: 140,
+      width: 200,
       showOverflowTooltip: false,
       render: ({ row }: any) => (
         <div style={{ display: 'flex', width: '100%', gap: '4px' }}>
@@ -223,6 +223,11 @@ export default (type: string, isSimpleShow = false) => {
             style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {row.spec.device_type}
           </OverflowTitle>
+          {Senarios.service === whereAmI.value && row.source === 'purchase_to_resource_pool' && (
+            <div>
+              <bk-tag theme='info'>资源池</bk-tag>
+            </div>
+          )}
         </div>
       ),
     },
@@ -242,6 +247,7 @@ export default (type: string, isSimpleShow = false) => {
     {
       label: '状态',
       field: 'stage',
+      width: 120,
       render: ({ row }: any) => transformApplyStages(row.stage),
     },
     {

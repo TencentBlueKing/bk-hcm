@@ -10,18 +10,19 @@ POST /api/v1/woa/task/findmany/apply
 
 ### 输入参数
 
-| 参数名称         | 参数类型    | 必选 | 描述                                                               |
-|--------------|--------------|----|---------------------------------------------------------------------|
-| bk_biz_id    | int array    | 否  | 业务ID                                                              |
-| order_id	   | int array    | 否  | 资源申请单号，数量上限20个                                                          |
-| suborder_id  | string array | 否  | 资源申请子单号，数量上限20个                                                        |
-| bk_username  | string	array | 否  | 提单人，数量上限20个                                                               |
-| require_type | int array    | 否  | 需求类型。1: 常规项目; 2: 春节保障; 3: 机房裁撤; 6: 滚服项目; 7: 小额绿通，数量上限20个    |
+| 参数名称         | 参数类型         | 必选 | 描述                                                                                             |
+|--------------|--------------|----|------------------------------------------------------------------------------------------------|
+| bk_biz_id    | int array    | 否  | 业务ID                                                                                           |
+| order_id	    | int array    | 否  | 资源申请单号，数量上限20个                                                                                 |
+| suborder_id  | string array | 否  | 资源申请子单号，数量上限20个                                                                                |
+| bk_username  | string	array | 否  | 提单人，数量上限20个                                                                                    |
+| require_type | int array    | 否  | 需求类型。1: 常规项目; 2: 春节保障; 3: 机房裁撤; 6: 滚服项目; 7: 小额绿通，数量上限20个                                       |
 | stage        | string array | 否  | 单据执行阶段。"UNCOMMIT": 未提交, "AUDIT": 审核中, "RUNNING": 生产中, "DONE": 已完成, "CONFIRMING": 待用户确认，数量上限20个 |
-| start        | string	      | 否  | 单据创建时间过滤条件起点日期，格式如"2022-05-01"                          |
-| end          | string	      | 否  | 单据创建时间过滤条件终点日期，格式如"2022-05-01"                          |
-| page         | object	      | 否  | 分页信息                                                              |
-| get_product  | bool         | 否  | 是否获取CVM生产数据                                                    |
+| start        | string	      | 否  | 单据创建时间过滤条件起点日期，格式如"2022-05-01"                                                                 |
+| end          | string	      | 否  | 单据创建时间过滤条件终点日期，格式如"2022-05-01"                                                                 |
+| page         | object	      | 否  | 分页信息                                                                                           |
+| get_product  | bool         | 否  | 是否获取CVM生产数据                                                                                    |
+| source       | string array | 否  | 枚举类型，"business"（业务单据）、"purchase_to_resource_pool"(资源池采购)，不传时默认值为所有类型的单据                        |
 
 #### page
 
@@ -56,7 +57,8 @@ POST /api/v1/woa/task/findmany/apply
     "start": 0,
     "limit": 20
   },
-  "get_product": false
+  "get_product": false,
+  "source": ["business"]
 }
 ```
 
@@ -99,6 +101,7 @@ POST /api/v1/woa/task/findmany/apply
         "success_num": 5,
         "pending_num": 5,
         "product_num": 5,
+        "source": "business",
         "create_at": "2022-01-02T15:04:05.004Z",
         "update_at": "2022-01-02T15:04:05.004Z"
       }
@@ -149,22 +152,23 @@ POST /api/v1/woa/task/findmany/apply
 
 #### spec
 
-| 参数名称         | 参数类型    | 描述                                                  |
-|--------------|---------|-----------------------------------------------------|
-| region       | string	 | 地域                                                  |
-| zone         | string	 | 可用区                                                 |
-| device_group | string	 | 机型类别                                                |
-| device_type  | string	 | 机型                                                  |
-| image_id     | string  | 镜像ID                                                |
-| image        | string  | 镜像名                                                 |
-| disk_size    | int     | 数据盘磁盘大小，单位G                                         |
-| disk_type	   | string	 | 数据盘磁盘类型。"CLOUD_SSD": SSD云硬盘, "CLOUD_PREMIUM": 高性能云盘 |
-| network_type | string	 | 网络类型。"ONETHOUSAND": 千兆, "TENTHOUSAND": 万兆           |
-| vpc	         | string  | 私有网络，默认为空                                           |
-| subnet       | string  | 私有子网，默认为空                                           |
-| os_type	     | string	 | 操作系统                                                |
-| raid_type	   | string	 | RAID类型                                              |
-| isp	         | string	 | 外网运营商                                               |
-| mount_path   | string	 | 数据盘挂载点                                              |
-| cpu_provider | string	 | CPU类型                                               |
-| kernel	      | string	 | 内核                                                  |
+| 参数名称      | 参数类型     | 描述                                                |
+|-----------|----------|---------------------------------------------------|
+| region    | string	  | 地域                                                |
+| zone      | string	  | 可用区                                               |
+| device_group | string	  | 机型类别                                              |
+| device_type | string	  | 机型                                                |
+| image_id  | string   | 镜像ID                                              |
+| image     | string   | 镜像名                                               |
+| disk_size | int      | 数据盘磁盘大小，单位G                                       |
+| disk_type	 | string	  | 数据盘磁盘类型。"CLOUD_SSD": SSD云硬盘, "CLOUD_PREMIUM": 高性能云盘 |
+| network_type | string	  | 网络类型。"ONETHOUSAND": 千兆, "TENTHOUSAND": 万兆         |
+| vpc	      | string   | 私有网络，默认为空                                         |
+| subnet    | string   | 私有子网，默认为空                                         |
+| os_type	  | string	  | 操作系统                                              |
+| raid_type	 | string	  | RAID类型                                            |
+| isp	      | string	  | 外网运营商                                             |
+| mount_path | string	  | 数据盘挂载点                                            |
+| cpu_provider | string	  | CPU类型                                             |
+| kernel	   | string	  | 内核                                                |
+| source    | string   | 枚举类型，"business"（业务单据）、"purchase_to_resource_pool"(资源池采购)     |

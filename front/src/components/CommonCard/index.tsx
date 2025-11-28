@@ -6,7 +6,6 @@ export default defineComponent({
   props: {
     title: {
       type: Function as PropType<() => string | HTMLElement | VNode>,
-      required: true,
     },
     layout: {
       type: String as PropType<'flow' | 'grid'>,
@@ -16,7 +15,7 @@ export default defineComponent({
   setup(props, { slots }) {
     return () => (
       <Card class={'common-card'} border={false} showHeader={false} showFooter={false}>
-        <p class={'common-card-title'}>{props.title?.()}</p>
+        <p class={'common-card-title'}>{props.title?.() || slots.title?.()}</p>
         <div class={`common-card-content ${props.layout === 'grid' ? 'common-card-content-grid-layout' : ''}`}>
           {slots.default?.()}
         </div>

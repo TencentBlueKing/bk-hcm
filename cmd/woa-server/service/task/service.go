@@ -185,6 +185,8 @@ func (s *service) initSchedulerService(h *rest.Handler) {
 
 	h.Add("ListHostApplyItsmTicket", http.MethodPost, "/apply/itsm/ticket/list", s.ListHostApplyItsmTicket)
 	h.Add("ListHostApplyCrpTicket", http.MethodPost, "/apply/crp/ticket/list", s.ListHostApplyCrpTicket)
+
+	h.Add("UpdateApplyTicketDemand", http.MethodPost, "/apply/ticket/demand/update", s.UpdateApplyTicketDemand)
 }
 
 // bizService 业务下的接口
