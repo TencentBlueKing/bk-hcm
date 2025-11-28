@@ -27,6 +27,20 @@ watchEffect(async () => {
   }
 });
 
+const numberToFixed = (value: number, digits = 2) => {
+  if (isNaN(value) || !isFinite(value)) {
+    return '--';
+  }
+  return value.toFixed(digits);
+};
+
+const numberCeil = (value: number) => {
+  if (isNaN(value) || !isFinite(value)) {
+    return '--';
+  }
+  return Math.ceil(value);
+};
+
 const handleViewTrend = () => {
   trendDialogState.show = true;
 };
@@ -65,7 +79,7 @@ const handleViewTrend = () => {
           </dt>
           <dd class="content-item-value">
             <span :class="['rate-num', deviceLoadUsage.achieved_kpi ? 'qualified' : 'unqualified']">
-              {{ deviceLoadUsage.cpu_usage }}
+              {{ numberToFixed(deviceLoadUsage.cpu_usage) }}
             </span>
             %
           </dd>
@@ -81,15 +95,15 @@ const handleViewTrend = () => {
         <dl class="content-item current-empty-load">
           <dt class="content-item-title">当前空负载</dt>
           <dd class="content-item-value">
-            <span class="num">{{ deviceLoadUsage.empty_load_cpu_core }} 核</span>
-            （{{ deviceLoadUsage.empty_load_os }}个OS）
+            <span class="num">{{ numberCeil(deviceLoadUsage.empty_load_cpu_core) }} 核</span>
+            （{{ numberCeil(deviceLoadUsage.empty_load_os) }}个OS）
           </dd>
         </dl>
         <dl class="content-item current-low-load">
           <dt class="content-item-title">当前低负载</dt>
           <dd class="content-item-value">
-            <span class="num">{{ deviceLoadUsage.low_load_cpu_core }} 核</span>
-            （{{ deviceLoadUsage.low_load_os }}个OS）
+            <span class="num">{{ numberCeil(deviceLoadUsage.low_load_cpu_core) }} 核</span>
+            （{{ numberCeil(deviceLoadUsage.low_load_os) }}个OS）
           </dd>
         </dl>
         <a :href="`https://finops.woa.com/${bizId}/device-load-analysis`" target="_blank" class="view-detail-link">
