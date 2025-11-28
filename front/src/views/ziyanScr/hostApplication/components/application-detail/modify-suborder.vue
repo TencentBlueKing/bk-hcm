@@ -6,9 +6,10 @@ import ZoneSelector from '@/views/ziyanScr/hostApplication/components/ZoneSelect
 import http from '@/http';
 import { useRoute } from 'vue-router';
 import { Message } from 'bkui-vue';
+import { type ICvmDevicetypeItem, CoreTypeMap } from '@/store/cvm/device';
 
 const model = defineModel<boolean>();
-const props = defineProps<{ tableData: any[] }>();
+const props = defineProps<{ tableData: any[]; deviceTypeList: ICvmDevicetypeItem[] }>();
 const emit = defineEmits(['update:table']);
 const route = useRoute();
 const cloudColumns = inject<any[]>('cloudColumns', []);
@@ -47,11 +48,11 @@ const resourceFilterColumns = [
 ];
 
 const columns = mapColumns(filterColumns);
-const resouceColumns = mapColumns(resourceFilterColumns, (_, idx) => (idx <= 1 ? { render: null } : {}));
+const resourceColumns = mapColumns(resourceFilterColumns, (_, idx) => (idx <= 1 ? { render: null } : {}));
 
 // 数据处理
 const modifyTableData = ref([]);
-const resouceTableData = ref([]);
+const resourceTableData = ref([]);
 
 // 初始化修改表格数据
 const initModifyTableData = () => {
@@ -63,17 +64,22 @@ const initModifyTableData = () => {
 };
 watch(() => props.tableData, initModifyTableData, { immediate: true });
 watch(
-  modifyTableData,
-  () => {
-    resouceTableData.value = JSON.parse(JSON.stringify(modifyTableData.value))
+  [modifyTableData, () => props.deviceTypeList],
+  ([modifyData, deviceTypeList]) => {
+    resourceTableData.value = JSON.parse(JSON.stringify(modifyData))
       .filter((item: any) => item.modify_num)
       .map((item: any) => {
         const num = item.replicas || item.total_num;
+        const deviceType = deviceTypeList.find((v) => v.device_type === item.spec.device_type);
+        const remainder = Number(num) - Number(item.modify_num);
         return {
           ...item,
-          replicas: Number(num) - Number(item.modify_num),
-          remainderCPUAmount: Math.floor(item.applied_core / num) * (num - Number(item.modify_num)),
+          replicas: remainder,
           source: 'purchase_to_resource_pool',
+          pageData: {
+            remainderCPUAmount: deviceType.cpu_amount * remainder,
+            deviceType,
+          },
         };
       });
   },
@@ -94,7 +100,8 @@ const removeUnchangeItem = () => {
   modifyTableData.value = modifyTableData.value.filter((item) => item.modify_num);
 };
 const handleDevicetypeChange = (device: any, row: any, index: number) => {
-  row.replicas = Math.floor(row.remainderCPUAmount / device.cpu_amount);
+  row.replicas = Math.floor(row.pageData.remainderCPUAmount / device.cpu_amount);
+  row.pageData.deviceType = device;
   nextTick(() => replicasValidArr.value[index].value?.getValue());
 };
 
@@ -102,8 +109,10 @@ const handleDevicetypeChange = (device: any, row: any, index: number) => {
 const hasInvalidModifyNum = computed(() =>
   modifyTableData.value.some((item) => !item.modify_num || item.modify_num === 0),
 );
-const hasInvalidReplicas = computed(() => resouceTableData.value.some((item) => !item.replicas || item.replicas === 0));
-const hasInvalidZones = computed(() => resouceTableData.value.some((item) => !item.spec?.zones?.length));
+const hasInvalidReplicas = computed(() =>
+  resourceTableData.value.some((item) => !item.replicas || item.replicas === 0),
+);
+const hasInvalidZones = computed(() => resourceTableData.value.some((item) => !item.spec?.zones?.length));
 const submitDisabled = computed(
   () =>
     !modifyTableData.value.length ||
@@ -111,15 +120,30 @@ const submitDisabled = computed(
     (retainSource.value && (hasInvalidReplicas.value || hasInvalidZones.value)),
 );
 
+const isSubmitting = ref(false);
+
 // 提交处理
 const handleSubmit = async () => {
   const orderId = Number(route.params.id);
   const mData = props.tableData.map((item, idx) => {
     const { modify_num, id, ...rest } = modifyTableData.value.find((v) => v.id === idx) ?? {};
-    return modify_num ? { ...rest, replicas: Number(modify_num) } : { ...item, source: 'business' };
+    const deviceType = props.deviceTypeList.find((v) => v.device_type === rest?.spec?.device_type);
+    return modify_num
+      ? {
+          ...rest,
+          replicas: Number(modify_num),
+          applied_core: deviceType?.cpu_amount * Number(modify_num),
+        }
+      : { ...item, source: 'business' };
   });
-  const rData = retainSource.value ? resouceTableData.value.map(({ remainderCPUAmount, ...rest }) => rest) : [];
+  const rData = retainSource.value
+    ? resourceTableData.value.map(({ pageData, ...rest }) => ({
+        ...rest,
+        applied_core: pageData.deviceType.cpu_amount * rest.replicas,
+      }))
+    : [];
 
+  isSubmitting.value = true;
   try {
     await http.post('/api/v1/woa/task/apply/ticket/demand/update', {
       ticket_id: orderId,
@@ -130,6 +154,8 @@ const handleSubmit = async () => {
     emit('update:table');
   } catch {
     Message({ theme: 'error', message: '修改失败' });
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -182,9 +208,9 @@ const handleCancel = () => {
       <!-- 资源池资源分配 -->
       <template v-if="retainSource">
         <div class="title mt24">
-          <h4>资源池资源分配</h4>
+          <h4>采购到资源池</h4>
         </div>
-        <data-list-table :settings="false" :columns="resouceColumns" :list="resouceTableData">
+        <data-list-table :settings="false" :columns="resourceColumns" :list="resourceTableData">
           <template #spec.device_type="{ row, index }">
             <div class="modify-column" v-if="row?.spec">
               <devicetype-selector
@@ -194,7 +220,8 @@ const handleCancel = () => {
                 :params="{
                   require_type: row.require_type,
                   region: row.spec.region,
-                  device_group: row.spec.device_group,
+                  device_size: CoreTypeMap[row.pageData.deviceType.core_type as keyof typeof CoreTypeMap],
+                  technical_class: row.pageData.deviceType.technical_class,
                 }"
                 :editable="true"
                 :rules="rules.deviceType"
@@ -231,16 +258,27 @@ const handleCancel = () => {
     </div>
 
     <template #footer>
-      <bk-button
-        style="width: 88px"
-        theme="primary"
-        :disabled="submitDisabled"
-        v-bk-tooltips="{ content: '请移除未修改项后提交', disabled: !hasInvalidModifyNum }"
-        @click="handleSubmit"
+      <bk-pop-confirm
+        width="260"
+        :popover-options="{
+          hideIgnoreReference: true,
+        }"
+        content="请确认配置参数是否正确"
+        title="确认提交？"
+        trigger="click"
+        @confirm="handleSubmit"
       >
-        提交
-      </bk-button>
-      <bk-button style="margin-left: 8px; width: 88px" @click="handleCancel">取消</bk-button>
+        <bk-button
+          style="width: 88px"
+          theme="primary"
+          :disabled="submitDisabled"
+          :loading="isSubmitting"
+          v-bk-tooltips="{ content: '请移除未修改项后提交', disabled: !hasInvalidModifyNum }"
+        >
+          提交
+        </bk-button>
+        <bk-button style="margin-left: 8px; width: 88px" @click="handleCancel">取消</bk-button>
+      </bk-pop-confirm>
     </template>
   </bk-sideslider>
 </template>
@@ -248,6 +286,9 @@ const handleCancel = () => {
 <style scoped lang="scss">
 .container {
   padding: 28px 40px 0;
+
+  // 使用footer吸底
+  min-height: calc(100vh - 100px);
 }
 
 .title {

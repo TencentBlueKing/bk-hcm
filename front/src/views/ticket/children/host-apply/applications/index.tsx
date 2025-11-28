@@ -342,7 +342,7 @@ export default defineComponent({
             render: ({ data }: any) => {
               const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
               return (
-                <div style={{ lineHeight: '30px' }}>
+                <div>
                   <div>
                     {t('资源类型')}：{data?.resource_type ? getResourceTypeName(data?.resource_type) : '--'}
                   </div>
@@ -493,6 +493,7 @@ export default defineComponent({
           onRowMouseEnter: (e: any, row: any) => {
             handleCellMouseEnter(row);
           },
+          rowHeight: 24,
         },
       },
       requestOption: {

@@ -1,9 +1,10 @@
-import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount, provide } from 'vue';
+import { Ref, defineComponent, ref, computed, onUnmounted, reactive, onBeforeMount, provide, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import './index.scss';
 
 import { isEqual } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useCvmDeviceStore, type ICvmDevicetypeItem } from '@/store/cvm/device';
 import { useRequireTypes } from '@/views/ziyanScr/hooks/use-require-types';
 import useColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -24,7 +25,7 @@ import { useDissolveQuotaStore, type ICpuCoreSummary } from '@/store/dissolve/qu
 
 import ModifyRecord from './modify-record';
 import ItsmTicketAudit, { type IItsmTicketAudit } from './itsm-ticket-audit.vue';
-import type { IQueryResData } from '@/typings';
+import { QueryRuleOPEnumLegacy, type IQueryResData } from '@/typings';
 import ApprovalStatus from './approval-status.vue';
 import { ScrResourceType } from '@/constants';
 import UpgradeCvmTable from './upgrade-cvm-table.vue';
@@ -48,6 +49,8 @@ export default defineComponent({
     const dissolveQuotaStore = useDissolveQuotaStore();
 
     const { whereAmI, getBusinessApiPath, getBizsId, isBusinessPage } = useWhereAmI();
+
+    const cvmDeviceStore = useCvmDeviceStore();
 
     const backRoute = computed(() => {
       if (whereAmI.value === Senarios.business) {
@@ -78,7 +81,7 @@ export default defineComponent({
       {
         label: '总数',
         field: 'total_num',
-        width: 120,
+        width: 110,
         showOverflowTooltip: false,
         render: ({ row, cell }: any) => {
           let totalNum = cell;
@@ -232,6 +235,38 @@ export default defineComponent({
             original,
           };
         });
+    });
+
+    // 子单cvm机型完整数据列表
+    const cvmDeviceTypeList = ref<ICvmDevicetypeItem[]>([]);
+
+    // 所有子单cvm机型
+    const cvmDeviceTypes = computed(() => {
+      return cloudMachineList.value.map((item) => item.spec.device_type);
+    });
+
+    // 查询子单cvm对应的机型完整数据列表
+    watch(cvmDeviceTypes, async (newVal: string[], oldVal: string[]) => {
+      if (isEqual(newVal, oldVal) || !newVal.length) {
+        return;
+      }
+      const requireType = detail.value.require_type;
+      const isGreenChannelOrSpringPool =
+        requireType === RequirementType.GreenChannel || requireType === RequirementType.SpringResPool;
+      const { list } = await cvmDeviceStore.getDeviceTypeFullList({
+        filter: {
+          condition: 'AND',
+          rules: [
+            { field: 'device_type', operator: QueryRuleOPEnumLegacy.IN, value: [...new Set(newVal)] },
+            {
+              field: 'require_type',
+              operator: QueryRuleOPEnumLegacy.EQ,
+              value: isGreenChannelOrSpringPool ? RequirementType.Regular : requireType,
+            },
+          ],
+        },
+      });
+      cvmDeviceTypeList.value = list;
     });
 
     const demandDetailTimer: any = { id: null, count: 0 };
@@ -458,7 +493,7 @@ export default defineComponent({
                     disabled={selections.value.length === 0}>
                     批量复制IP
                   </Button>
-                  {!isBusinessPage ? (
+                  {!isBusinessPage && cloudMachineList.value.length ? (
                     <Button
                       class={'mr8'}
                       disabled={itsmTicketAuditOptions?.data?.status !== 'RUNNING'}
@@ -530,6 +565,7 @@ export default defineComponent({
         <ModifySuborder
           v-model={showEditTable.value}
           tableData={cloudMachineList.value}
+          deviceTypeList={cvmDeviceTypeList.value}
           onUpdate:table={getOrderDetail}
         />
       </div>
