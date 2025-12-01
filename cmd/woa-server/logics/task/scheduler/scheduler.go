@@ -48,11 +48,13 @@ import (
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/dal"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty"
@@ -194,13 +196,14 @@ type scheduler struct {
 	bkBotApproval  bkbotapproval.Client
 	dissolveLogics dissolve.Logics
 	cmsiClient     cmsi.Client
+	apiClientSet   *client.ClientSet
 }
 
 // New creates a scheduler
 func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrental.Logics, gcLogics greenchannel.Logics,
 	thirdCli *thirdparty.Client, cmdbCli cmdb.Client, informerIf informer.Interface, clientConf cc.ClientConfig,
 	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics, dissolveLogics dissolve.Logics,
-	cmsiCli cmsi.Client) (*scheduler, error) {
+	cmsiCli cmsi.Client, apiClientSet *client.ClientSet) (*scheduler, error) {
 
 	// new recommend module
 	recommend, err := recommender.New(ctx, thirdCli)
@@ -244,6 +247,7 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 		bizLogic:       bizLogic,
 		bkBotApproval:  thirdCli.BkBotApproval,
 		dissolveLogics: dissolveLogics,
+		apiClientSet:   apiClientSet,
 	}
 
 	return scheduler, nil
@@ -728,19 +732,62 @@ func (s *scheduler) AutoAuditTicket(kit *kit.Kit, param *types.ApplyAutoAuditReq
 const auditThresholdDevice = uint(50)
 
 // checkTotalDevice check total device number
-func checkTotalDevice(_ *scheduler, _ *kit.Kit, order *types.ApplyTicket) (string, bool, error) {
+func checkTotalDevice(s *scheduler, kt *kit.Kit, order *types.ApplyTicket) (string, bool, error) {
 	totalDevice := uint(0)
 	for _, suborder := range order.Suborders {
 		totalDevice += suborder.Replicas
 	}
 
-	if totalDevice > auditThresholdDevice {
-		reason := fmt.Sprintf("order %d apply device number %d exceed auto audit threshold %d",
-			order.OrderId, totalDevice, auditThresholdDevice)
+	threshold, err := getAutoAuditDeviceThreshold(s, kt)
+	if err != nil {
+		logs.Warnf("failed to get auto audit device threshold from global_config, err: %v, rid: %s", err, kt.Rid)
+		// 如果查询失败，使用默认值
+		threshold = auditThresholdDevice
+	}
+	logs.Infof("auto audit device threshold: %d, rid: %s", threshold, kt.Rid)
+
+	if totalDevice > threshold {
+		reason := fmt.Sprintf("order %d apply device number %d exceed auto audit threshold %d", order.OrderId,
+			totalDevice, threshold)
 		return reason, true, nil
 	}
 
 	return "", false, nil
+}
+
+// getAutoAuditDeviceThreshold 从 global_config 表获取自动审批设备阈值
+func getAutoAuditDeviceThreshold(s *scheduler, kt *kit.Kit) (uint, error) {
+	req := core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", enumor.GlobalConfigTypeAutoAudit),
+			tools.RuleEqual("config_key", enumor.GlobalConfigAutoAuditDeviceThreshold),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+
+	cfgResp, err := s.apiClientSet.DataService().Global.GlobalConfig.List(kt, &req)
+	if err != nil {
+		logs.Errorf("failed to list global config, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return 0, err
+	}
+
+	if len(cfgResp.Details) == 0 {
+		return 0, errors.New("auto audit device threshold config not found")
+	}
+
+	// 解析 config_value，期望是int64
+	threshold, err := util.GetInt64ByInterface(cfgResp.Details[0].ConfigValue)
+	if err != nil {
+		logs.Errorf("failed to convert auto audit device threshold, err: %v, value: %v, rid: %s", err,
+			cfgResp.Details[0].ConfigValue, kt.Rid)
+		return 0, err
+	}
+
+	if threshold < 0 {
+		return 0, errors.New("auto audit device must be greater than or equal to 0")
+	}
+
+	return uint(threshold), nil
 }
 
 // checkRequireType check require type

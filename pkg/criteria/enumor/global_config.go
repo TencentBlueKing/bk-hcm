@@ -38,6 +38,8 @@ const (
 	GlobalConfigTypeBs2ToBkBizIDMap GlobalConfigType = "bs2_to_bk_biz_id_map"
 	// GlobalConfigTypeDeviceLoad 设备负载查询相关配置
 	GlobalConfigTypeDeviceLoad GlobalConfigType = "device_load"
+	// GlobalConfigTypeAutoAudit 自动审批相关配置
+	GlobalConfigTypeAutoAudit GlobalConfigType = "auto_audit"
 )
 
 // GlobalConfigResDissolveKey resource dissolve global config key
@@ -72,4 +74,12 @@ type GlobalConfigDeviceLoadKey string
 const (
 	// GlobalConfigDeviceLoadThreshold 设备负载达标阈值
 	GlobalConfigDeviceLoadThreshold GlobalConfigDeviceLoadKey = "device_load_threshold"
+)
+
+// GlobalConfigAutoAuditKey global config auto audit key
+type GlobalConfigAutoAuditKey string
+
+const (
+	// GlobalConfigAutoAuditDeviceThreshold 自动审批设备阈值
+	GlobalConfigAutoAuditDeviceThreshold GlobalConfigAutoAuditKey = "auto_audit_device_threshold"
 )

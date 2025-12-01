@@ -139,7 +139,7 @@ func NewService(dis serviced.ServiceDiscover, sd serviced.State) (*Service, erro
 		return nil, err
 	}
 
-	mongoComponents, err := initMongoComponents(dis, clients, logics)
+	mongoComponents, err := initMongoComponents(dis, clients, apiClientSet, logics)
 	if err != nil {
 		return nil, err
 	}
@@ -343,8 +343,9 @@ type mongoComponentSet struct {
 }
 
 // initMongoComponents 初始化涉及MongoDB的逻辑
-func initMongoComponents(dis serviced.ServiceDiscover, clients *clientSet, logics *logicSet) (*mongoComponentSet,
-	error) {
+func initMongoComponents(dis serviced.ServiceDiscover, clients *clientSet, apiClientSet *client.ClientSet,
+	logics *logicSet) (*mongoComponentSet, error) {
+
 	if !cc.WoaServer().UseMongo {
 		return &mongoComponentSet{}, nil
 	}
@@ -363,7 +364,7 @@ func initMongoComponents(dis serviced.ServiceDiscover, clients *clientSet, logic
 
 	schedulerIf, err := scheduler.New(kt.Ctx, logics.rsLogics, logics.srLogics, logics.gcLogics,
 		clients.thirdCli, clients.cmdbCli, informerIf, cc.WoaServer().ClientConfig,
-		logics.planCtrl, logics.bizLogic, logics.configLogics, logics.dissolveLogics, clients.cmsiCli)
+		logics.planCtrl, logics.bizLogic, logics.configLogics, logics.dissolveLogics, clients.cmsiCli, apiClientSet)
 
 	if err != nil {
 		logs.Errorf("new scheduler failed, err: %v, rid: %s", err, kt.Rid)
