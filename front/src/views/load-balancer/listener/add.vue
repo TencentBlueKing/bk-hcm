@@ -324,6 +324,9 @@ const { beforeClose } = useSideslider(formModel);
       </bk-form-item>
       <bk-form-item label="监听端口" required property="port_segment">
         <bk-input v-model="formModel.port_segment" :disabled="isEdit" />
+        <div class="form-control-tips" v-if="!isEdit">
+          支持单个端口输入，端口范围为1到65535；支持端口段的输入，格式为 20001-20005
+        </div>
       </bk-form-item>
       <template v-if="ListenerProtocol.HTTPS === formModel.protocol">
         <div class="flex-row justify-content-between">
