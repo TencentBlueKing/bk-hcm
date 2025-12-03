@@ -127,12 +127,6 @@ func (c *CrpTicketCreator) CreateCRPTicket(kt *kit.Kit, subTicket *ptypes.SubTic
 			subTicket.DemandClass, kt.Rid)
 	}
 
-	if subTicket.Type == enumor.RPTicketTypeTransfer && subTicket.Demands[0].Original != nil {
-		// 转出单 单独走转出流程（免审）
-		logs.Infof("create transfer out crp ticket, ticketID: %s, rid: %s", subTicket.ID, kt.Rid)
-		return c.createTransferOutCrpTicket(kt, subTicket, srcData)
-	}
-
 	resp := new(cvmapi.CvmCbsPlanAdjustResp)
 	rangeMS := [2]uint{CreateCrpTicketDefaultRetryDelayMinMS, CreateCrpTicketDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
