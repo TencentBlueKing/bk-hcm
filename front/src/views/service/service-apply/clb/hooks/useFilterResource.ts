@@ -36,6 +36,7 @@ export default (formModel: ApplyClbModel) => {
   const ispList = ref<IspEntry[]>([]);
   const specAvailabilitySet = ref<SpecAvailabilityList>([]);
   const quotas = ref<ClbQuota[]>([]);
+  const noResetParams = ref(false);
 
   // 前端IP版本映射
   const ipVersionMap = {
@@ -78,7 +79,7 @@ export default (formModel: ApplyClbModel) => {
         return;
       }
 
-      if (!newRegion) return;
+      if (!newRegion || noResetParams.value) return;
 
       let master_zone;
       if (newZones) master_zone = Array.isArray(newZones) ? newZones : [newZones];
@@ -240,6 +241,7 @@ export default (formModel: ApplyClbModel) => {
   watch(
     [currentResourceListMap, () => formModel.backup_zones],
     ([map, backupZones]) => {
+      if (noResetParams.value) return;
       const { zones, address_ip_version, region } = formModel;
       if (!zones && !backupZones) {
         // 只选择地域
@@ -259,6 +261,7 @@ export default (formModel: ApplyClbModel) => {
   watch(
     ispList,
     (val) => {
+      if (noResetParams.value) return;
       // 优先选择BGP，否则选择第一个可用的ISP
       const availableBGP = val.some(
         ({ Isp, TypeSet }) => Isp === 'BGP' && TypeSet?.some(({ Availability }) => Availability === 'Available'),
@@ -277,6 +280,7 @@ export default (formModel: ApplyClbModel) => {
 
   // 监听vip_isp变化，更新负载均衡规格类型列表，计费模式
   watch([() => formModel.vip_isp, () => formModel.load_balancer_type], ([vipIsp, loadBalancerType]) => {
+    if (noResetParams.value) return;
     if (!vipIsp) {
       formModel.sla_type = 'shared';
       return;
@@ -301,7 +305,7 @@ export default (formModel: ApplyClbModel) => {
     const specTypeKeyPath = loadBalancerType === 'OPEN' ? isp : 'withoutIsp';
     if (!zones && !backup_zones) {
       // 只选择地域
-      specAvailabilitySet.value = currentResourceListMap.value.withoutZone[specTypeKeyPath] || [];
+      specAvailabilitySet.value = currentResourceListMap.value.withoutZone?.[specTypeKeyPath] || [];
     } else {
       const zonesRule = address_ip_version !== 'IPV4' ? region : zones;
       const key = `${zonesRule || ''}|${backup_zones || ''}`.toLowerCase();
@@ -314,6 +318,7 @@ export default (formModel: ApplyClbModel) => {
   watch(
     specAvailabilitySet,
     () => {
+      if (noResetParams.value) return;
       formModel.slaType = '0';
       formModel.sla_type = 'shared';
     },
@@ -326,5 +331,6 @@ export default (formModel: ApplyClbModel) => {
     quotas,
     currentResourceListMap,
     specAvailabilitySet,
+    noResetParams,
   };
 };

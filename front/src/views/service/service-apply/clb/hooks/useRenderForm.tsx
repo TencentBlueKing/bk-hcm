@@ -74,6 +74,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   // define handler function
   const handleVpcChange = async (vpc: any) => {
+    if (noResetParams.value) return;
     if (vpc) {
       // 获取 vpc 详情用于预览
       const detailApi = isBusinessPage ? businessStore.detail : resourceStore.detail;
@@ -579,8 +580,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     },
   ]);
 
-  const resetFormModel = () => {
-    Object.entries(originalFormModel).forEach(([key, value]) => {
+  const resetFormModel = (data: ApplyClbModel) => {
+    noResetParams.value = true;
+    Object.entries(data).forEach(([key, value]) => {
       if (!['vendor', 'account_id', 'account_type'].includes(key)) {
         formModel[key] = value;
       }
@@ -614,16 +616,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   const handleEdit = (key: string) => {
     const data = configureList.filter((item) => item.rowKey === key);
     if (!data.length) return;
-    Object.entries(data[0]).forEach(([key, value]) => {
-      if (!['vendor', 'account_id', 'account_type'].includes(key)) {
-        formModel[key] = value;
-      }
+    resetParams();
+    resetFormModel(data[0]);
+    nextTick(() => {
+      sideSliderOptions.value = {
+        type: 'edit',
+        show: true,
+        key,
+      };
     });
-    sideSliderOptions.value = {
-      type: 'edit',
-      show: true,
-      key,
-    };
   };
   const handleRemove = (key: string) => {
     const index = configureList.findIndex((item) => item.rowKey === key);
@@ -632,7 +633,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     }
   };
   const handleClose = () => {
-    resetFormModel();
+    resetFormModel(originalFormModel);
     closeSideslider();
   };
   const handleShowSideSlider = () => {
@@ -753,8 +754,17 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   // 重置参数
   const resetParams = (
-    keys: string[] = ['zones', 'backup_zones', 'cloud_vpc_id', 'cloud_subnet_id', 'vip_isp', 'cloud_eip_id'],
+    keys: string[] = [
+      'zones',
+      'backup_zones',
+      'cloud_vpc_id',
+      'cloud_subnet_id',
+      'vip_isp',
+      'cloud_eip_id',
+      'internet_max_bandwidth_out',
+    ],
   ) => {
+    if (noResetParams.value) return;
     keys.forEach((key) => {
       switch (typeof formModel[key]) {
         case 'number':
@@ -778,6 +788,13 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     });
   };
 
+  watch(
+    () => sideSliderOptions.value.show,
+    () => {
+      nextTick(() => (noResetParams.value = false));
+    },
+  );
+
   watch([() => formModel.account_id, () => formModel.vendor], ([accountId, vendor]) => {
     // 当云账号变更时, 查询用户网络类型
     if (!accountId || !vendor) {
@@ -790,6 +807,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   watch([() => formModel.account_id, () => formModel.region], () => {
     // 当 account_id 或 region 改变时, 恢复默认状态
+    if (noResetParams.value) return;
     resetParams();
     Object.assign(formModel, {
       address_ip_version: 'IPV4',
@@ -803,6 +821,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   watch(
     () => formModel.load_balancer_type,
     (val) => {
+      if (noResetParams.value) return;
       // 重置通用参数
       resetParams();
       if (val === 'INTERNAL') {
@@ -850,7 +869,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   );
 
   // 这个需要放到watch之后，避免数据清空之前就触发了effect
-  const { ispList, isResourceListLoading, quotas, currentResourceListMap, specAvailabilitySet } =
+  const { ispList, isResourceListLoading, quotas, currentResourceListMap, specAvailabilitySet, noResetParams } =
     useFilterResource(formModel);
 
   return {
