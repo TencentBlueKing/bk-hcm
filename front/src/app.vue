@@ -5,6 +5,7 @@ import { providePermissionDialog } from '@/hooks/use-permission-dialog';
 import Home from '@/views/home';
 import Notice from '@/views/notice/index.vue';
 import PermissionApplyDialog from '@/components/permission/apply-dialog.vue';
+import { useChromeNotice } from '@/utils/chrome-notice';
 
 const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
 
@@ -18,6 +19,7 @@ const permissionDialogRef = useTemplateRef<InstanceType<typeof PermissionApplyDi
 
 onMounted(() => {
   window.hcmPermissionDialog = permissionDialogRef.value;
+  useChromeNotice();
 });
 </script>
 
