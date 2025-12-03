@@ -19,6 +19,8 @@ import {
 } from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 
 const { FormItem } = Form;
+const EMAIL_REGEXP =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 export default defineComponent({
   setup() {
@@ -123,6 +125,13 @@ export default defineComponent({
                     validator: (val: string) => {
                       return /^[a-z][a-z0-9]{5,19}$/.test(val);
                     },
+                  },
+                ],
+                email: [
+                  {
+                    trigger: 'change',
+                    message: '请输入正确格式的邮箱',
+                    validator: (val: string) => EMAIL_REGEXP.test(`${val}@tencent.com`),
                   },
                 ],
               }}>
