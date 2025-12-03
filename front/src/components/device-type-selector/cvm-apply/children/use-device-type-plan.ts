@@ -31,6 +31,8 @@ export const useDeviceTypePlan = (params: {
       return;
     }
 
+    availableDeviceTypeMap.value.clear();
+
     const { list } = await cvmDeviceStore.getChargeTypeDeviceTypeList({
       bk_biz_id: Number(params.bizId.value),
       require_type: params.requireType.value,

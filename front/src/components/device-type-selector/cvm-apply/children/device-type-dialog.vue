@@ -282,6 +282,11 @@ const pagination: TableProps['pagination'] = shallowReactive({
   size: 'small',
 });
 
+// 选中全部并且只有少于或等于一个可用区
+const isSingleCheckedAllZone = computed(() => {
+  return zoneList.value.length <= 1 && zoneChecked.value?.[0] === ZONE_ALL;
+});
+
 const resAssignTypeDisabled = computed(() => {
   return (zoneChecked.value.length === 1 && zoneChecked.value[0] !== ZONE_ALL) || zoneList.value.length <= 1;
 });
@@ -297,12 +302,6 @@ const confirmDisabled = computed(() => {
 watch(displayDeviceTypeList, () => {
   pagination.current = 1;
   pagination.total = displayDeviceTypeList.value.length;
-});
-
-watch(resAssignTypeDisabled, () => {
-  if (resAssignTypeDisabled.value) {
-    applyData.resAssignType = undefined;
-  }
 });
 
 const getOptions = async () => {
@@ -427,6 +426,10 @@ const handleZoneCheckChange = (checked: boolean, zone: string) => {
   } else if (index !== -1) {
     zoneChecked.value.splice(index, 1);
   }
+
+  if (resAssignTypeDisabled.value) {
+    applyData.resAssignType = undefined;
+  }
 };
 
 const handleZoneSelect = (zone: string) => {
@@ -491,6 +494,7 @@ const handleConfirm = () => {
     zones: zoneChecked.value,
     deviceTypes: selectedRowKeys.value,
     deviceTypeList: selectedDeviceTypeList.value,
+    resAssignType: isSingleCheckedAllZone.value ? RES_ASSIGN_TYPE[1].value : applyData.resAssignType,
   });
   closeDialog();
 };
@@ -696,10 +700,7 @@ provide('requireType', props.requireType);
             :with-validate="false"
             :disabled="resAssignTypeDisabled"
             v-bk-tooltips="{
-              content:
-                zoneList.length <= 1 && zoneChecked?.[0] === ZONE_ALL
-                  ? '只有一个可用区时，不支持勾选'
-                  : '选择一个可用区时，不支持勾选',
+              content: isSingleCheckedAllZone ? '只有一个可用区时，不支持勾选' : '选择一个可用区时，不支持勾选',
               disabled: !resAssignTypeDisabled,
             }"
           >

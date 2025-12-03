@@ -197,6 +197,16 @@ watch(
   },
 );
 
+watch(
+  () => props.region,
+  (newRegion, oldRegion) => {
+    // 新建模式下，地域变化时，切回到添加态
+    if (!props.editMode && oldRegion !== undefined && newRegion !== oldRegion) {
+      isInfoMode.value = false;
+    }
+  },
+);
+
 provide('isRollingServer', isRollingServer);
 provide('isGreenChannel', isGreenChannel);
 provide('isSpringPool', isSpringPool);
