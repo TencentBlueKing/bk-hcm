@@ -25,6 +25,7 @@ import (
 	model "hcm/cmd/woa-server/model/task"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -269,9 +270,18 @@ func buildFilterExcludedSubordersStage(excludeSuborderIDs []string) map[string]i
 					"input": "$suborders",
 					"as":    "suborder",
 					"cond": map[string]interface{}{
-						pkg.BKDBNot: []interface{}{
+						pkg.BKDBAND: []interface{}{
+							// 排除手动配置的订单
 							map[string]interface{}{
-								pkg.BKDBIN: []interface{}{"$$suborder.suborder_id", excludeSuborderIDs},
+								pkg.BKDBNot: []interface{}{
+									map[string]interface{}{
+										pkg.BKDBIN: []interface{}{"$$suborder.suborder_id", excludeSuborderIDs},
+									},
+								},
+							},
+							// 排除采购到资源池的订单
+							map[string]interface{}{
+								pkg.BKDBNE: []interface{}{"$$suborder.source", enumor.ApplyTicketSrcPurchaseToResPool},
 							},
 						},
 					},
