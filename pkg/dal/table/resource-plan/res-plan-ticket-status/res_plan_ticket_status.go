@@ -60,7 +60,7 @@ type ResPlanTicketStatusTable struct {
 	// CrpURL 关联的CRP单据链接
 	CrpURL string `db:"crp_url" json:"crp_url" validate:"lte=64"`
 	// Message 单据失败信息
-	Message string `db:"message" json:"message" validate:"lte=255"`
+	Message string `db:"message" json:"message"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间

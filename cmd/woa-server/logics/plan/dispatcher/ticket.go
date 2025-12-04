@@ -307,11 +307,6 @@ func (d *Dispatcher) updateTicketStatusFailed(kt *kit.Kit, ticket *ptypes.Ticket
 		Message:  msg,
 	}
 
-	if len(msg) > 255 {
-		logs.Warnf("failure message is truncated to 255, origin message: %s, rid: %s", msg, kt.Rid)
-		update.Message = msg[:255]
-	}
-
 	if err := d.updateTicketStatus(kt, update); err != nil {
 		logs.Errorf("failed to update resource plan ticket status, err: %v, rid: %s", err, kt.Rid)
 		return err

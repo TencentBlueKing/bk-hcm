@@ -464,11 +464,6 @@ func (d *Dispatcher) updateSubTicketStatus(kt *kit.Kit, subTicket *ptypes.SubTic
 
 // updateSubTicketStatusFailed update ticket status to failed.
 func (d *Dispatcher) updateSubTicketStatusFailed(kt *kit.Kit, subTicket *ptypes.SubTicketInfo, msg string) error {
-	if len(msg) > 255 {
-		logs.Warnf("failure message is truncated to 255, origin message: %s, rid: %s", msg, kt.Rid)
-		msg = msg[:255]
-	}
-
 	if err := d.updateSubTicketStatus(kt, subTicket, enumor.RPSubTicketStatusFailed, &msg); err != nil {
 		logs.Errorf("failed to update resource plan sub ticket status, err: %v, rid: %s", err, kt.Rid)
 		return err

@@ -99,7 +99,7 @@ type ResPlanSubTicketTable struct {
 	// Status 子单据状态
 	Status enumor.RPSubTicketStatus `db:"status" json:"status" validate:"lte=64"`
 	// Message 子单据失败信息
-	Message *string `db:"message" json:"message" validate:"omitempty,lte=255"`
+	Message *string `db:"message" json:"message" validate:"omitempty"`
 	// Stage 子单据审批阶段
 	Stage enumor.RPSubTicketStage `db:"stage" json:"stage" validate:"lte=64"`
 	// AdminAuditStatus 管理员审批结果
