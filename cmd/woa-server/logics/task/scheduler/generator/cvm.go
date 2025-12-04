@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"sort"
 	"strconv"
@@ -507,7 +508,6 @@ func (g *Generator) buildApplyOrderVpcZones(kt *kit.Kit, req *types.CVM, order *
 func (g *Generator) buildSubnetFuzzyZone(kt *kit.Kit, req *types.CVM, order *types.ApplyOrder,
 	orderZones []string, replicas uint, excludeSubnetIDMap map[string]struct{}) ([]cvmapi.FuzzyZoneItem, error) {
 
-	// 根据多可用区，批量获取子网列表
 	zoneSubnetMap, err := g.batchGetSubnetListByZones(kt, orderZones, req.VPCId, order)
 	if err != nil {
 		logs.Errorf("failed to get available subnet, subOrderID: %s, err: %v, region: %s, zones: %v, vpcID: %s, "+
@@ -517,6 +517,7 @@ func (g *Generator) buildSubnetFuzzyZone(kt *kit.Kit, req *types.CVM, order *typ
 
 	fuzzyZones := make([]cvmapi.FuzzyZoneItem, 0)
 	excludeZoneMap := make(map[string]struct{})
+OuterZoneLoop:
 	for _, zone := range orderZones {
 		subnetList, ok := zoneSubnetMap[zone]
 		if !ok {
@@ -527,6 +528,10 @@ func (g *Generator) buildSubnetFuzzyZone(kt *kit.Kit, req *types.CVM, order *typ
 		// 按照子网的剩余IP数量从多到少排序，剩余IP数量相同的情况下按ID从大到小排序，这样可以优先选择剩余IP数量最多的子网
 		sort.Sort(sort.Reverse(subnetList))
 		for _, subnet := range subnetList {
+			// CRP接口限制最多10个子网
+			if len(fuzzyZones) >= constant.CrpCvmApplySubnetMaxNum {
+				break OuterZoneLoop
+			}
 			if _, ok = excludeSubnetIDMap[subnet.Id]; ok {
 				logs.Warnf("exclude subnet id: %s, subOrderID: %s, rid: %s", subnet.Id, order.SubOrderId, kt.Rid)
 				continue
@@ -567,18 +572,20 @@ func (g *Generator) buildSubnetFuzzyZone(kt *kit.Kit, req *types.CVM, order *typ
 				excludeZoneMap[zone] = struct{}{}
 			}
 
-			// 记录日志，方便排查线上资源申请问题
 			subnetListRemain, err := json.Marshal(subnetList)
-			if err != nil {
-				logs.Warnf("buildCvmReq:get subnet info json marshal failed, err: %+v, rid: %s", err, kt.Rid)
-			}
-			// 记录日志，方便排查线上资源申请问题
 			logs.Infof("buildCvmReq:get loop subnet capacity info success, subOrderID: %s, zone: %s, "+
-				"subnetNum: %d, reqVpcID: %s, maxNum: %d, replicas: %d, subnet: %+v, subnetList: %s, "+
-				"capacity: %+v, rid: %s", order.SubOrderId, zone, len(subnetList), req.VPCId, maxNum, replicas,
+				"subnetNum: %d, reqVpcID: %s, maxNum: %d, replicas: %d, err: %+v, subnet: %+v, subnetList: %s, "+
+				"capacity: %+v, rid: %s", order.SubOrderId, zone, len(subnetList), req.VPCId, maxNum, replicas, err,
 				cvt.PtrToVal(subnet), subnetListRemain, capacity, kt.Rid)
 		}
 	}
+	// 随机打乱 fuzzyZones 顺序，避免总是使用相同的可用区和子网
+	rand.Shuffle(len(fuzzyZones), func(i, j int) {
+		fuzzyZones[i], fuzzyZones[j] = fuzzyZones[j], fuzzyZones[i]
+	})
+	logs.Infof("buildCvmReq:shuffle fuzzyZones success, subOrderID: %s, replicas: %d, applyNumber: %d, "+
+		"fuzzyZones: %+v, rid: %s", order.SubOrderId, replicas, req.ApplyNumber, fuzzyZones, kt.Rid)
+
 	return fuzzyZones, nil
 }
 
