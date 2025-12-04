@@ -73,6 +73,11 @@ export default [
     type: 'string',
   },
   {
+    id: 'param.name',
+    name: '监听器名称',
+    type: 'string',
+  },
+  {
     id: 'param.domain',
     name: '域名',
     type: 'string',

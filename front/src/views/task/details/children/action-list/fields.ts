@@ -94,7 +94,7 @@ const clbFieldIds = {
     'state',
     'reason',
   ],
-  [TaskClbType.DELETE_LISTENER]: [...clbSopsBaseFieldIds, 'state', 'reason'],
+  [TaskClbType.DELETE_LISTENER]: [...clbSopsBaseFieldIds, 'param.name', 'state', 'reason'],
   [TaskClbType.UNBIND_LAYER4_RS]: [...clbSopsBaseFieldIds, 'param.rs_list', 'state', 'reason'],
   [TaskClbType.MODIFY_LAYER4_RS_WEIGHT]: [
     ...clbSopsBaseFieldIds,
