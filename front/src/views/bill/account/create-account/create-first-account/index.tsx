@@ -13,14 +13,13 @@ import useBillStore from '@/store/useBillStore';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import isEmail from 'validator/lib/isEmail';
 import {
   ValidateStatus,
   useSecretExtension,
 } from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 
 const { FormItem } = Form;
-const EMAIL_REGEXP =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 export default defineComponent({
   setup() {
@@ -131,7 +130,7 @@ export default defineComponent({
                   {
                     trigger: 'change',
                     message: '请输入正确格式的邮箱',
-                    validator: (val: string) => EMAIL_REGEXP.test(`${val}@tencent.com`),
+                    validator: (val: string) => isEmail(`${val}@tencent.com`),
                   },
                 ],
               }}>
