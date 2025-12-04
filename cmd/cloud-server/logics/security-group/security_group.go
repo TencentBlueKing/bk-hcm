@@ -189,8 +189,8 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID 
 	}, nil
 }
 
-func (s *securityGroup) listRelBizs(kt *kit.Kit, currentBizID int64, sgID string, resourceType enumor.CloudResourceType) (
-	[]proto.ListSGRelBusinessItem, error) {
+func (s *securityGroup) listRelBizs(kt *kit.Kit, currentBizID int64, sgID string,
+	resourceType enumor.CloudResourceType) ([]proto.ListSGRelBusinessItem, error) {
 
 	req := &dataproto.SGCommonRelCountBizInfoReq{
 		SgID:    sgID,
@@ -207,15 +207,15 @@ func (s *securityGroup) listRelBizs(kt *kit.Kit, currentBizID int64, sgID string
 func tidySGRelBusiness(currentBizID int64,
 	relBizList []dataproto.ListSGRelBusinessItem) []proto.ListSGRelBusinessItem {
 
-	// 当前业务必须在列表的第一个
 	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizList)+1)
+	currentDetail := proto.ListSGRelBusinessItem{
+		BkBizID:  currentBizID,
+		ResCount: 0,
+	}
+
 	for _, item := range relBizList {
-		if currentBizID != constant.UnassignedBiz && item.BkBizID == currentBizID {
-			currentDetail := proto.ListSGRelBusinessItem{
-				BkBizID:  item.BkBizID,
-				ResCount: item.ResCount,
-			}
-			relBizs = append([]proto.ListSGRelBusinessItem{currentDetail}, relBizs...)
+		if item.BkBizID == currentBizID {
+			currentDetail.ResCount = item.ResCount
 			continue
 		}
 
@@ -223,6 +223,12 @@ func tidySGRelBusiness(currentBizID int64,
 			BkBizID:  item.BkBizID,
 			ResCount: item.ResCount,
 		})
+	}
+
+	// 当前业务必须在列表的第一个
+	// 如果关联资源中没有当前业务，需默认添加到列表开头
+	if currentBizID != constant.UnassignedBiz {
+		relBizs = append([]proto.ListSGRelBusinessItem{currentDetail}, relBizs...)
 	}
 
 	return relBizs
