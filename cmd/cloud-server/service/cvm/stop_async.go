@@ -33,21 +33,6 @@ import (
 
 // BatchAsyncStopCvm batch stop cvm.
 func (svc *cvmSvc) BatchAsyncStopCvm(cts *rest.Contexts) (interface{}, error) {
-	return svc.batchAsyncStopCvmSvc(cts, constant.UnassignedBiz, handler.ResOperateAuth)
-}
-
-// BatchAsyncStopBizCvm batch stop biz cvm.
-func (svc *cvmSvc) BatchAsyncStopBizCvm(cts *rest.Contexts) (interface{}, error) {
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
-	return svc.batchAsyncStopCvmSvc(cts, bizID, handler.BizOperateAuth)
-}
-
-func (svc *cvmSvc) batchAsyncStopCvmSvc(cts *rest.Contexts, bkBizID int64, validHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
-
 	req := new(proto.BatchCvmPowerOperateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -56,14 +41,40 @@ func (svc *cvmSvc) batchAsyncStopCvmSvc(cts *rest.Contexts, bkBizID int64, valid
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	return svc.batchAsyncStopCvmSvc(cts, constant.UnassignedBiz, handler.ResOperateAuth, req, true)
+}
+
+// BatchAsyncStopBizCvm batch stop biz cvm.
+func (svc *cvmSvc) BatchAsyncStopBizCvm(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(proto.BatchCvmPowerOperateReq)
+	if err = cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err = req.Validate(true); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.batchAsyncStopCvmSvc(cts, bizID, handler.BizOperateAuth, req, true)
+}
+
+func (svc *cvmSvc) batchAsyncStopCvmSvc(cts *rest.Contexts, bkBizID int64, validHandler handler.ValidWithAuthHandler,
+	req *proto.BatchCvmPowerOperateReq, verifyMoa bool) (interface{}, error) {
+
 	if err := svc.validateAuthorize(cts, req.IDs, meta.Stop, validHandler); err != nil {
 		logs.Errorf("validate authorize and create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if err := svc.validateMOAResult(cts.Kit, enumor.MoaSceneCVMStop, req.SessionID); err != nil {
-		logs.Errorf("validate moa result failed, err: %v, sessionID: %s, rid: %s", err, req.SessionID, cts.Kit.Rid)
-		return nil, err
+	if verifyMoa {
+		if err := svc.validateMOAResult(cts.Kit, enumor.MoaSceneCVMStop, req.SessionID); err != nil {
+			logs.Errorf("validate moa result failed, err: %v, sessionID: %s, rid: %s", err, req.SessionID, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 	if err := svc.createAudit(cts, audit.Stop, req.IDs); err != nil {
 		logs.Errorf("create audit for %s failed, err: %v, rid: %s", audit.Stop, err, cts.Kit.Rid)
@@ -98,4 +109,23 @@ func (svc *cvmSvc) batchAsyncStopCvmSvc(cts *rest.Contexts, bkBizID int64, valid
 	return proto.BatchCvmOperateResp{
 		TaskManagementID: taskManagementID,
 	}, nil
+}
+
+// BatchSopsAsyncStopBizCvm batch stop biz cvm for sops.
+func (svc *cvmSvc) BatchSopsAsyncStopBizCvm(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(proto.BatchCvmPowerOperateReq)
+	if err = cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err = req.Validate(false); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.batchAsyncStopCvmSvc(cts, bizID, handler.BizOperateAuth, req, false)
 }

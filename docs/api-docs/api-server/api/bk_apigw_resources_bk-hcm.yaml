@@ -669,6 +669,31 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/cvms/sops/batch/stop_async:
+    post:
+      operationId: batch_biz_stop_cvm
+      description: 批量关闭虚拟机,异步接口&支持任务管理
+      tags:
+        - Cvm
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/cvms/sops/batch/stop_async
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
   /api/v1/cloud/bizs/{bk_biz_id}/cvms/unverify/batch/reset_async:
     post:
       operationId: batch_unverify_biz_reset_cvm

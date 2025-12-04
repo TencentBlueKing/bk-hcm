@@ -108,6 +108,8 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchAsyncStartBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/start_async",
 		svc.BatchAsyncStartBizCvm)
 	h.Add("BatchAsyncStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop_async", svc.BatchAsyncStopBizCvm)
+	h.Add("BatchSopsAsyncStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/sops/batch/stop_async",
+		svc.BatchSopsAsyncStopBizCvm)
 	h.Add("BatchAsyncRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot_async",
 		svc.BatchAsyncRebootBizCvm)
 	h.Add("BatchSopsAsyncRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/sops/batch/reboot_async",
