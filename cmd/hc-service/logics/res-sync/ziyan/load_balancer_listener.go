@@ -216,26 +216,91 @@ func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID, region string, cloud
 		}
 	}
 
-	// 清理未被删除的七层规则
-	dbRule, err := cli.listL4RuleFromDB(kt, lbID, nil)
+	// 清理未被删除的四层规则
+	dblayer4Rule, err := cli.listL4RuleFromDB(kt, lbID, nil)
 	if err != nil {
 		return err
 	}
-	delRuleCloudID := make([]string, 0)
-	for i := range dbRule {
-		rule := dbRule[i]
+	delLayer4RuleCloudIDs := make([]string, 0)
+	for _, rule := range dblayer4Rule {
 		if _, exists := allCloudIDMap[rule.CloudLBLID]; !exists {
-			delRuleCloudID = append(delRuleCloudID, rule.CloudID)
+			delLayer4RuleCloudIDs = append(delLayer4RuleCloudIDs, rule.CloudID)
 		}
 	}
-	if len(delRuleCloudID) > 0 {
-		err := cli.deleteLayer4Rule(kt, lbID, delRuleCloudID)
+	if len(delLayer4RuleCloudIDs) > 0 {
+		err := cli.deleteLayer4Rule(kt, lbID, delLayer4RuleCloudIDs)
 		if err != nil {
-			logs.Errorf("fail to clean l4 rule, err: %v, cloud id: %v, rid: %s", err, delRuleCloudID, kt.Rid)
+			logs.Errorf("fail to clean l4 rule, err: %v, cloud id: %v, rid: %s", err, delLayer4RuleCloudIDs, kt.Rid)
 			return err
 		}
 	}
 
+	// 清理未被删除的️七层规则
+	dblayer7Rule, err := cli.listL7RuleFromDBByLbID(kt, lbID)
+	if err != nil {
+		return err
+	}
+	delLayer7RuleCloudIDs := make([]string, 0)
+	for _, rule := range dblayer7Rule {
+		if _, exists := allCloudIDMap[rule.CloudLBLID]; !exists {
+			delLayer7RuleCloudIDs = append(delLayer7RuleCloudIDs, rule.CloudID)
+		}
+	}
+	if len(delLayer7RuleCloudIDs) > 0 {
+		err := cli.deleteLayer7RuleByLbIDAndCloudIDs(kt, lbID, delLayer7RuleCloudIDs)
+		if err != nil {
+			logs.Errorf("fail to clean l7 rule, err: %v, cloud id: %v, rid: %s", err, delLayer7RuleCloudIDs, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (cli *client) listL7RuleFromDBByLbID(kt *kit.Kit, lbID string) ([]corelb.TCloudLbUrlRule, error) {
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+
+	var rules []corelb.TCloudLbUrlRule
+	for {
+		ruleResp, err := cli.dbCli.TCloudZiyan.LoadBalancer.ListUrlRule(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to list l7 rule, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
+			return nil, err
+		}
+		rules = append(rules, ruleResp.Details...)
+		if len(ruleResp.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return rules, nil
+}
+
+func (cli *client) deleteLayer7RuleByLbIDAndCloudIDs(kt *kit.Kit, lbID string, cloudIDs []string) error {
+	if len(cloudIDs) == 0 {
+		return nil
+	}
+	for _, batch := range slice.Split(cloudIDs, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", batch),
+				tools.RuleEqual("lb_id", lbID),
+			),
+		}
+		err := cli.dbCli.TCloudZiyan.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
+		if err != nil {
+			logs.Errorf("fail to delete l7 rule, err: %v, lbID: %s, cloud ids: %v, rid: %s", err, lbID, batch,
+				kt.Rid)
+			return err
+		}
+	}
 	return nil
 }
 

@@ -749,25 +749,34 @@ func (svc *clbSvc) getListenerWithRuleInZiyan(kt *kit.Kit, req *core.BatchDelete
 	}
 
 	// 查询监听器规则列表
-	ruleReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("lbl_id", lblIDs),
-			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	lblRuleList, err := svc.dataCli.TCloudZiyan.LoadBalancer.ListUrlRule(kt, ruleReq)
-	if err != nil {
-		logs.Errorf("fail to list tcloud listeners url rule, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
-		return nil, nil, nil, nil, err
-	}
-
 	ruleMap := make(map[string][]string)
-	for _, ruleItem := range lblRuleList.Details {
-		if _, ok := ruleMap[ruleItem.CloudLBLID]; !ok {
-			ruleMap[ruleItem.CloudLBLID] = make([]string, 0)
+	page := core.NewDefaultBasePage()
+	for {
+		ruleReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("lbl_id", lblIDs),
+				tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+			),
+			Page: page,
 		}
-		ruleMap[ruleItem.CloudLBLID] = append(ruleMap[ruleItem.CloudLBLID], ruleItem.CloudID)
+		lblRuleList, err := svc.dataCli.TCloudZiyan.LoadBalancer.ListUrlRule(kt, ruleReq)
+		if err != nil {
+			logs.Errorf("fail to list tcloud ziyan listeners url rule, lblIDs: %v, err: %v, rid: %s", lblIDs, err,
+				kt.Rid)
+			return nil, nil, nil, nil, err
+		}
+
+		for _, ruleItem := range lblRuleList.Details {
+			if _, ok := ruleMap[ruleItem.CloudLBLID]; !ok {
+				ruleMap[ruleItem.CloudLBLID] = make([]string, 0)
+			}
+			ruleMap[ruleItem.CloudLBLID] = append(ruleMap[ruleItem.CloudLBLID], ruleItem.CloudID)
+		}
+
+		if len(lblRuleList.Details) < int(page.Limit) {
+			break
+		}
+		page.Start += uint32(page.Limit)
 	}
 
 	return lblIDs, lblCloudIDs, lbList, ruleMap, nil

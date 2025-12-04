@@ -147,15 +147,23 @@ func (svc *lbSvc) deleteRuleByListener(kt *kit.Kit, txn *sqlx.Tx, listenerID str
 		logs.Errorf("fail to delete target rule rel of listener(%s), err: %v, rid: %s", listenerID, err, kt.Rid)
 		return err
 	}
-	ruleIDFilter := tools.ContainersExpression("id", ruleIDs)
-	switch vendor {
-	case enumor.TCloud:
-		return svc.dao.LoadBalancerTCloudUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
-	case enumor.TCloudZiyan:
-		return svc.dao.LoadBalancerTCloudZiyanUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
-	default:
-		return fmt.Errorf("unsupported vendor: %s for delete rule by listener", vendor)
+	for _, batch := range slice.Split(ruleIDs, int(core.DefaultMaxPageLimit)) {
+		ruleIDFilter := tools.ContainersExpression("id", batch)
+		switch vendor {
+		case enumor.TCloud:
+			err = svc.dao.LoadBalancerTCloudUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
+		case enumor.TCloudZiyan:
+			err = svc.dao.LoadBalancerTCloudZiyanUrlRule().DeleteWithTx(kt, txn, ruleIDFilter)
+		default:
+			return fmt.Errorf("unsupported vendor: %s for delete rule by listener", vendor)
+		}
+		if err != nil {
+			logs.Errorf("fail to delete load balancer rule, err: %v, vendor: %s, ids: %v, rid: %s", err, vendor, batch,
+				kt.Rid)
+			return err
+		}
 	}
+	return nil
 }
 
 func (svc *lbSvc) listRuleIDsByListener(kt *kit.Kit, listenerID string, vendor enumor.Vendor) ([]string, error) {
@@ -164,24 +172,46 @@ func (svc *lbSvc) listRuleIDsByListener(kt *kit.Kit, listenerID string, vendor e
 		Page:   core.NewDefaultBasePage(),
 	}
 
+	var listFunc func(*kit.Kit, *types.ListOption) ([]string, error)
 	switch vendor {
 	case enumor.TCloud:
-		ruleResp, err := svc.dao.LoadBalancerTCloudUrlRule().List(kt, listReq)
-		if err != nil {
-			logs.Errorf("fail to list load balancer rule of listener(%s), err: %v, rid: %s", listenerID, err, kt.Rid)
-			return nil, err
+		listFunc = func(kt *kit.Kit, opt *types.ListOption) ([]string, error) {
+			ruleResp, err := svc.dao.LoadBalancerTCloudUrlRule().List(kt, opt)
+			if err != nil {
+				logs.Errorf("fail to list load balancer rule of listener(%s), err: %v, rid: %s", listenerID, err,
+					kt.Rid)
+				return nil, err
+			}
+			return slice.Map(ruleResp.Details, func(r tablelb.TCloudLbUrlRuleTable) string { return r.ID }), nil
 		}
-		return slice.Map(ruleResp.Details, func(r tablelb.TCloudLbUrlRuleTable) string { return r.ID }), nil
 	case enumor.TCloudZiyan:
-		ruleResp, err := svc.dao.LoadBalancerTCloudZiyanUrlRule().List(kt, listReq)
-		if err != nil {
-			logs.Errorf("fail to list load balancer rule of listener(%s), err: %v, rid: %s", listenerID, err, kt.Rid)
-			return nil, err
+		listFunc = func(kt *kit.Kit, opt *types.ListOption) ([]string, error) {
+			ruleResp, err := svc.dao.LoadBalancerTCloudZiyanUrlRule().List(kt, opt)
+			if err != nil {
+				logs.Errorf("fail to list load balancer rule of listener(%s), err: %v, rid: %s", listenerID, err,
+					kt.Rid)
+				return nil, err
+			}
+			return slice.Map(ruleResp.Details, func(r *tablelb.TCloudZiyanLbUrlRuleTable) string { return r.ID }), nil
 		}
-		return slice.Map(ruleResp.Details, func(r *tablelb.TCloudZiyanLbUrlRuleTable) string { return r.ID }), nil
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s for list ruleIDs by listener", vendor)
 	}
+
+	ruleIDs := make([]string, 0)
+	for {
+		subRuleIDs, err := listFunc(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+		ruleIDs = append(ruleIDs, subRuleIDs...)
+		if len(subRuleIDs) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return ruleIDs, nil
 }
 
 // BatchDeleteTargetGroup batch delete target group.
