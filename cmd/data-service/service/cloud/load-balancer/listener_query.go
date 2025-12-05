@@ -326,7 +326,7 @@ func (svc *lbSvc) processListenerTargets(kt *kit.Kit, lblReq protocloud.ListList
 	}
 
 	// 根据负载均衡ID、监听器ID、目标组ID，获取监听器与目标组的绑定关系列表
-	lblUrlRuleList := make([]protocloud.LoadBalancerUrlRuleResult, 0)
+	var lblUrlRuleList []protocloud.LoadBalancerUrlRuleResult
 	switch lblReq.Vendor {
 	case enumor.TCloud:
 		lblUrlRuleList, err = svc.listTCloudLBUrlRuleByTgIDs(kt, lblReq.ListenerQueryItem, targetGroupIDs)

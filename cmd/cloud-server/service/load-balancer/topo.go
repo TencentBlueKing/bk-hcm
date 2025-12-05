@@ -887,7 +887,6 @@ func (svc *lbSvc) getListenerRelInfo(kt *kit.Kit, vendor enumor.Vendor, listener
 			lblNonZeroWeightTargetCountMap[lblID]++
 		}
 	}
-
 	return lblIDRulesMap, lblTargetCountMap, lblNonZeroWeightTargetCountMap, lblIDTgIDMap, nil
 }
 
@@ -1180,7 +1179,6 @@ func (svc *lbSvc) getUrlRuleTopoInfoByReq(kt *kit.Kit, bizID int64, vendor enumo
 		if len(lblMap) == 0 {
 			return &cslb.UrlRuleTopoInfo{Match: false}, nil
 		}
-
 		if len(reqTargetCond) == 0 {
 			ruleConds := make([][]filter.RuleFactory, 0)
 			for _, batch := range slice.Split(maps.Keys(lblMap), int(core.DefaultMaxPageLimit)) {
@@ -1331,9 +1329,8 @@ func (svc *lbSvc) buildUrlRuleWithTopoInfo(kt *kit.Kit, vendor enumor.Vendor, in
 }
 
 // getUrlRuleTargetCount 获取规则的RS数量
-func (svc *lbSvc) getUrlRuleTargetCount(kt *kit.Kit, vendor enumor.Vendor, rules []corelb.TCloudLbUrlRule) (
-	map[string]int, error) {
-
+func (svc *lbSvc) getUrlRuleTargetCount(kt *kit.Kit, vendor enumor.Vendor,
+	rules []corelb.TCloudLbUrlRule) (map[string]int, error) {
 	if len(rules) == 0 {
 		return make(map[string]int), nil
 	}

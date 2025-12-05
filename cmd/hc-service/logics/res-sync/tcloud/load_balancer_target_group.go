@@ -74,8 +74,7 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 		return err
 	}
 	for _, tg := range tgList {
-
-		if !isHealthCheckChange(tgCloudHealthMap[tg.CloudID], tg.HealthCheck, false) {
+		if !isTargetGroupChanged(tg, opt, tgCloudHealthMap) {
 			continue
 		}
 
@@ -83,13 +82,13 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 		updateReq := &dataproto.TargetGroupUpdateReq{
 			IDs:         []string{tg.ID},
 			HealthCheck: convHealthCheck(tgCloudHealthMap[tg.CloudID]),
+			BkBizID:     opt.BizID,
 		}
 		err = cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudTargetGroup(kt, updateReq)
 		if err != nil {
 			logs.Errorf("fail to update target group health check during sync, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
-
 	}
 	return nil
 }
@@ -750,4 +749,17 @@ func genExists[T comparable]() (exists func(T) bool) {
 		return false
 	}
 	return exists
+}
+func isTargetGroupChanged(tg corelb.BaseTargetGroup, opt *SyncListenerOption,
+	tgCloudHealthMap map[string]*tclb.HealthCheck) bool {
+
+	if tg.BkBizID != opt.BizID {
+		return true
+	}
+
+	if isHealthCheckChange(tgCloudHealthMap[tg.CloudID], tg.HealthCheck, false) {
+		return true
+	}
+
+	return false
 }
