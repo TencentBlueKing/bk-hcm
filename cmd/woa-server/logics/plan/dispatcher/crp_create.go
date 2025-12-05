@@ -53,6 +53,11 @@ func (d *Dispatcher) createCrpTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInf
 		logs.Errorf("failed to create crp ticket, sub ticket is nil, rid: %s", kt.Rid)
 		return errors.New("sub ticket is nil")
 	}
+	if len(subTicket.Demands) == 0 {
+		logs.Errorf("failed to create crp ticket, sub ticket has no demand, sub_ticket_id: %s, rid: %s",
+			subTicket.ID, kt.Rid)
+		return errors.New("sub ticket has no demand")
+	}
 
 	// call crp api to create crp ticket.
 	crpCreator := NewCrpTicketCreator(d.resFetcher, d.crpCli)

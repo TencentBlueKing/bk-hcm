@@ -225,8 +225,11 @@ func (r ResPlanDemandTable) InsertValidate() error {
 		return errors.New("device type can not be empty")
 	}
 
-	if err := r.DiskType.Validate(); err != nil {
-		return err
+	// NOTE: disk type can be empty.
+	if len(r.DiskType) > 0 {
+		if err := r.DiskType.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if err := r.resourceInsertValidate(); err != nil {

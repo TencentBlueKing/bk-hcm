@@ -661,7 +661,7 @@ func (c *cvmApi) QueryOrderList(ctx context.Context, header http.Header, req *Qu
 	return resp, err
 }
 
-// TransOrder 需求转移
+// CreateTransOrder 需求转移
 func (c *cvmApi) CreateTransOrder(ctx context.Context, header http.Header, req *TransOrderReq) (
 	*TransOrderResp, error) {
 
@@ -680,7 +680,8 @@ func (c *cvmApi) CreateTransOrder(ctx context.Context, header http.Header, req *
 }
 
 // MatchSwapGroup CRP亲合度可申领量匹配
-func (c *cvmApi) MatchSwapGroup(ctx context.Context, header http.Header, req *MatchSwapGroupReq) (*MatchSwapGroupResp, error) {
+func (c *cvmApi) MatchSwapGroup(ctx context.Context, header http.Header, req *MatchSwapGroupReq) (*MatchSwapGroupResp,
+	error) {
 	subPath := "/packer/api/"
 	resp := new(MatchSwapGroupResp)
 	err := c.client.Post().
@@ -701,7 +702,8 @@ func (c *cvmApi) MatchSwapGroup(ctx context.Context, header http.Header, req *Ma
 }
 
 // QueryMatchTask CRP查询匹配单状态
-func (c *cvmApi) QueryMatchTask(ctx context.Context, header http.Header, req *QueryMatchTaskReq) (*QueryMatchTaskResp, error) {
+func (c *cvmApi) QueryMatchTask(ctx context.Context, header http.Header, req *QueryMatchTaskReq) (*QueryMatchTaskResp,
+	error) {
 	subPath := "/packer/api/"
 	resp := new(QueryMatchTaskResp)
 	err := c.client.Post().

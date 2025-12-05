@@ -371,8 +371,11 @@ func (r *CreateResPlanDemandReq) cbsValidate() error {
 		return errors.New("demand includes cbs, cbs should not be nil")
 	}
 
-	if err := r.Cbs.DiskType.Validate(); err != nil {
-		return err
+	// Note: DiskType can be empty
+	if len(r.Cbs.DiskType) > 0 {
+		if err := r.Cbs.DiskType.Validate(); err != nil {
+			return err
+		}
 	}
 
 	if *r.Cbs.DiskIo < 0 {

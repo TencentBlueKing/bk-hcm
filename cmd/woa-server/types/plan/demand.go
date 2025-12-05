@@ -782,6 +782,7 @@ func (c *CrpOrderChangeInfo) SetRegionAreaAndZoneID(zoneNameMap map[string]strin
 }
 
 // GetKey get key of crp order change info.
+// 只能用于追加预测场景，修改场景使用默认diskType可能产生预期外行为
 func (c *CrpOrderChangeInfo) GetKey(bkBizID int64, demandClass enumor.DemandClass) ResPlanDemandKey {
 	key := ResPlanDemandKey{
 		BkBizID:       bkBizID,
@@ -794,9 +795,9 @@ func (c *CrpOrderChangeInfo) GetKey(bkBizID int64, demandClass enumor.DemandClas
 		RegionID:      c.RegionID,
 		ZoneID:        c.ZoneID,
 		DeviceType:    c.DeviceType,
-		DiskType:      c.DiskType,
 		DiskIO:        c.DiskIO,
 	}
+	key.DiskType = key.DiskType.GetWithDefault()
 
 	return key
 }

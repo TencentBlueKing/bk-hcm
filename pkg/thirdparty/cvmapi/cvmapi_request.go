@@ -333,6 +333,43 @@ type AddCvmCbsPlanParam struct {
 	Items      []*AddPlanItem `json:"items"`
 }
 
+// ToTransOrderDetail convert AdjustSrcData to TransOrderDetail
+func (a *AdjustSrcData) ToTransOrderDetail() *TransOrderDetail {
+	return &TransOrderDetail{
+		SliceId:             a.SliceId,
+		CityId:              a.CityId,
+		CityName:            a.CityName,
+		ZoneId:              a.ZoneId,
+		ZoneName:            a.ZoneName,
+		InstanceType:        a.InstanceType,
+		InstanceModel:       a.InstanceModel,
+		InstanceIO:          a.InstanceIO,
+		DiskType:            a.DiskType,
+		DiskTypeName:        a.DiskTypeName,
+		AllDiskAmount:       a.AllDiskAmount,
+		Desc:                "", // 需要从其他字段获取或留空
+		ProjectName:         a.ProjectName,
+		RequirementWeekType: a.RequirementWeekType,
+		Year:                a.Year,
+		Month:               a.Month,
+		UseTime:             a.UseTime,
+		BgId:                a.BgId,
+		BgName:              a.BgName,
+		DeptId:              a.DeptId,
+		DeptName:            a.DeptName,
+		PlanProductId:       a.PlanProductId,
+		PlanProductName:     a.PlanProductName,
+		ProductName:         a.ProductName,
+		ReviewStatus:        a.ReviewStatus,
+		CoreType:            a.CoreType,
+		CoreTypeName:        a.CoreTypeName,
+		InPlan:              a.InPlan,
+		PlanWeek:            a.PlanWeek,
+		ExpeditedPostponed:  a.ExpeditedPostponed,
+		VagueStatus:         a.VagueStatus,
+	}
+}
+
 /*
 {
     "id":"1",
@@ -537,7 +574,7 @@ type ReturnParam struct {
 	Force bool `json:"force"`
 	// 选填，是否接受成本分摊。true是，false否。默认：false
 	AcceptCostShare bool `json:"acceptCostShare"`
-	//选填，是否返还预测，默认0；0-不处理，1-返还预测，2-不返还预测
+	// 选填，是否返还预测，默认0；0-不处理，1-返还预测，2-不返还预测
 	ReturnForecast int `json:"returnForecast"`
 	// 选填，期望返回预测时间，不能早于当天/不能晚于当年最后一天，格式是：YYYY-MM-DD .
 	ReturnForecastTime string `json:"returnForecastTime,omitempty"`
@@ -679,8 +716,8 @@ type TransOrderReq struct {
 
 // TransOrderParams ...
 type TransOrderParams struct {
-	BaseInfo           TransOrderBaseInfo `json:"baseInfo"`
-	TransferDetailList []TransOrderDetail `json:"transferDateilList"`
+	BaseInfo           TransOrderBaseInfo  `json:"baseInfo"`
+	TransferDetailList []*TransOrderDetail `json:"transferDateilList"`
 }
 
 // TransOrderDetail ...
@@ -692,13 +729,15 @@ type TransOrderDetail struct {
 	ZoneName            string                     `json:"zoneName"`
 	InstanceType        string                     `json:"instanceType"`
 	InstanceModel       string                     `json:"instanceModel"`
-	CvmAmount           int                        `json:"cvmAmount"`
-	RamAmount           int                        `json:"ramAmount"`
-	CoreAmount          int                        `json:"coreAmount"`
+	CvmAmount           float64                    `json:"cvmAmount"`
+	RamAmount           int64                      `json:"ramAmount"`
+	CoreAmount          int64                      `json:"coreAmount"`
+	CoreAmountNew       int64                      `json:"coreAmountNew"` // 转出的核心数，部分转移时使用
+	CvmAmountNew        float64                    `json:"cvmAmountNew"`  // 转出的cvm数，部分转移时使用
 	InstanceIO          int                        `json:"instanceIO"`
 	DiskType            enumor.CRPDiskType         `json:"diskType"`
 	DiskTypeName        string                     `json:"diskTypeName"`
-	AllDiskAmount       int                        `json:"allDiskAmount"`
+	AllDiskAmount       int64                      `json:"allDiskAmount"`
 	Desc                string                     `json:"desc"`
 	ProjectName         enumor.ObsProject          `json:"projectName"`
 	RequirementWeekType string                     `json:"requirementWeekType"`
@@ -715,6 +754,10 @@ type TransOrderDetail struct {
 	ReviewStatus        enumor.ResPlanReviewStatus `json:"reviewStatus"`
 	CoreType            int                        `json:"coreType"`
 	CoreTypeName        string                     `json:"coreTypeName"`
+	InPlan              string                     `json:"inPlan"`
+	PlanWeek            int                        `json:"planWeek"`
+	ExpeditedPostponed  string                     `json:"expeditedPostponed"`
+	VagueStatus         int                        `json:"vagueStatus"`
 }
 
 // TransOrderBaseInfo ...
@@ -733,5 +776,5 @@ type TransOrderBaseInfo struct {
 	AfterProductID       int64  `json:"afterProductId"`
 	AfterProductName     string `json:"afterProductName"`
 	AfterBgName          string `json:"afterBgName"`
-	SkipTodo             bool   `json:"skipTodo"` //是否免审，只有IEGtoIEG才生效
+	SkipTodo             bool   `json:"skipTodo"` // 是否免审，只有IEGtoIEG才生效
 }

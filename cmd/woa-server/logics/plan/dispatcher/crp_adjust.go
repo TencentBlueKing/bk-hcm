@@ -127,6 +127,11 @@ func (c *CrpTicketCreator) CreateCRPTicket(kt *kit.Kit, subTicket *ptypes.SubTic
 			subTicket.DemandClass, kt.Rid)
 	}
 
+	if subTicket.Type == enumor.RPTicketTypeTransfer && subTicket.Demands[0].Original != nil {
+		// 转出单 单独走转出流程（免审）
+		return c.createTransferOutCrpTicket(kt, subTicket, srcData, updateData)
+	}
+
 	resp := new(cvmapi.CvmCbsPlanAdjustResp)
 	rangeMS := [2]uint{CreateCrpTicketDefaultRetryDelayMinMS, CreateCrpTicketDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
@@ -730,11 +735,9 @@ func (c *CrpTicketCreator) calcAdjustAbleDCanConsumeCPU(kt *kit.Kit, adjustAbleD
 
 	var canConsume int64
 	// 磁盘类型需一致，未知的磁盘类型（包括空值）除外
-	if adjustAbleD.DiskType.Name() != demandDetail.DiskTypeName {
-		// 加急延期场景CRP会根据原预测的磁盘类型创建新的预测，此时需保证磁盘类型完全一致，不能为空
-		if adjustType == enumor.CrpAdjustTypeDelay || adjustAbleD.DiskType.Name() != "" {
-			return canConsume, nil
-		}
+	adjustDiskTypeName := adjustAbleD.DiskType.Name()
+	if adjustDiskTypeName != "" && adjustDiskTypeName != demandDetail.DiskTypeName {
+		return canConsume, nil
 	}
 
 	// 预测内外需一致
@@ -795,8 +798,10 @@ func (c *CrpTicketCreator) constructAdjustAppendData(kt *kit.Kit, subTicket *pty
 	demand rpt.ResPlanDemand) (*cvmapi.AdjustUpdatedData, error) {
 
 	// 根据HCM的diskType，生成CRP的diskType和diskName
-	diskTypeName := demand.Updated.Cbs.DiskType.Name()
-	diskType, err := enumor.GetCRPDiskTypeFromCRPName(diskTypeName)
+	// 当HCM的diskType无法识别时，使用默认值
+	hcmDiskType := demand.Updated.Cbs.DiskType.GetWithDefault()
+	diskTypeName := hcmDiskType.Name()
+	crpDiskType, err := enumor.GetCRPDiskTypeFromCRPName(diskTypeName)
 	if err != nil {
 		return nil, err
 	}
@@ -817,7 +822,7 @@ func (c *CrpTicketCreator) constructAdjustAppendData(kt *kit.Kit, subTicket *pty
 		UseTime:         demand.Updated.ExpectTime,
 		CvmAmount:       demand.Updated.Cvm.Os.InexactFloat64(),
 		InstanceIO:      int(demand.Updated.Cbs.DiskIo),
-		DiskType:        diskType,
+		DiskType:        crpDiskType,
 		DiskTypeName:    diskTypeName,
 		AllDiskAmount:   demand.Updated.Cbs.DiskSize,
 	}
@@ -854,8 +859,9 @@ func (c *CrpTicketCreator) constructTransferAppendDataToBiz(kt *kit.Kit, subTick
 		}
 
 		// 根据HCM的diskType，生成CRP的diskType和diskName
-		diskTypeName := key.Cbs.DiskType.Name()
-		diskType, err := enumor.GetCRPDiskTypeFromCRPName(diskTypeName)
+		hcmDiskType := key.Cbs.DiskType.GetWithDefault()
+		diskTypeName := hcmDiskType.Name()
+		crpDiskType, err := enumor.GetCRPDiskTypeFromCRPName(diskTypeName)
 		if err != nil {
 			return nil, err
 		}
@@ -880,8 +886,8 @@ func (c *CrpTicketCreator) constructTransferAppendDataToBiz(kt *kit.Kit, subTick
 			ReturnPlanTime:  key.ReturnPlanTime,
 			CvmAmount:       transferCVM,
 			InstanceIO:      int(key.Cbs.DiskIo),
-			DiskType:        diskType,
-			DiskTypeName:    key.Cbs.DiskTypeName,
+			DiskType:        crpDiskType,
+			DiskTypeName:    diskTypeName,
 			// TODO 用户的云盘需求会在这里被丢弃，避免出现一对多的情况下多次提交CBS需求
 			AllDiskAmount: 0,
 		}

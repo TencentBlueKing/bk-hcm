@@ -1477,7 +1477,6 @@ func (c *Controller) getApplyOrderConsumePoolMapV2(kt *kit.Kit, subOrders []*tas
 				BkBizID:       subOrderInfo.BkBizId,
 				DemandClass:   enumor.DemandClassCVM,
 				RegionID:      subOrderInfo.Spec.Region,
-				DiskType:      subOrderInfo.Spec.DiskType,
 			}
 			// 机房裁撤需要忽略预测内、预测外 --story=121848852
 			if subOrderInfo.RequireType == enumor.RequireTypeDissolve {
@@ -1498,7 +1497,6 @@ func (c *Controller) getApplyOrderConsumePoolMapV2(kt *kit.Kit, subOrders []*tas
 				BkBizID:       subOrderInfo.BkBizId,
 				DemandClass:   enumor.DemandClassCVM,
 				RegionID:      expendPlan.Region,
-				DiskType:      expendPlan.DiskType,
 			}
 			// 机房裁撤需要忽略预测内、预测外 --story=121848852
 			if subOrderInfo.RequireType == enumor.RequireTypeDissolve {
@@ -1569,7 +1567,6 @@ func (c *Controller) GetProdResRemainPoolMatch(kt *kit.Kit, bkBizID int64, requi
 
 	// matching.
 	for prodResPlanKey, consumeCpuCore := range prodConsumePool {
-		// TODO 参考
 		// 当未显示指定预测内外时，需按 预测外 -> 预测内 的顺序依次尝试匹配
 		matchPlanType := []enumor.PlanTypeCode{prodResPlanKey.PlanType}
 		if prodResPlanKey.PlanType == "" {
@@ -1585,7 +1582,6 @@ func (c *Controller) GetProdResRemainPoolMatch(kt *kit.Kit, bkBizID int64, requi
 				BkBizID:       prodResPlanKey.BkBizID,
 				DemandClass:   prodResPlanKey.DemandClass,
 				RegionID:      prodResPlanKey.RegionID,
-				DiskType:      prodResPlanKey.DiskType,
 			}
 
 			planMap, ok := prodPlanPool[keyLoop]
@@ -1598,26 +1594,6 @@ func (c *Controller) GetProdResRemainPoolMatch(kt *kit.Kit, bkBizID int64, requi
 				}
 			}
 
-			// 优先匹配diskType相同的预测，匹配不完时尝试匹配其他diskType
-			for _, diskType := range enumor.GetDiskTypeMembers() {
-				if diskType == prodResPlanKey.DiskType {
-					continue
-				}
-				if consumeCpuCore <= 0 {
-					break
-				}
-
-				keyLoop.DiskType = diskType
-				planMap, ok = prodPlanPool[keyLoop]
-				if ok {
-					for demandID, planCore := range planMap {
-						canConsume := max(min(planCore, consumeCpuCore), 0)
-						prodPlanPool[keyLoop][demandID] -= canConsume
-						prodMaxAvailablePool[keyLoop][demandID] -= canConsume
-						consumeCpuCore -= canConsume
-					}
-				}
-			}
 			logs.Infof("biz resource plan pool is loop matched, bkBizID: %d, record: %+v, ok: %v, plan: %+v, "+
 				"prodPlanPool: %+v, maxAvailablePool: %+v, consumeCpuCore: %d, rid: %s", bkBizID, prodResPlanKey, ok,
 				planMap, prodPlanPool, prodMaxAvailablePool, consumeCpuCore, kt.Rid)
@@ -1721,7 +1697,6 @@ func (c *Controller) GetProdResPlanPoolMatch(kt *kit.Kit, bkBizID int64, startDa
 			BkBizID:       demand.BkBizID,
 			DemandClass:   demand.DemandClass,
 			RegionID:      demand.RegionID,
-			DiskType:      demand.DiskType,
 		}
 		// 机房裁撤需要忽略预测内、预测外 --story=121848852
 		if requireType == enumor.RequireTypeDissolve {

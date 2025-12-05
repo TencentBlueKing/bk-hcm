@@ -272,11 +272,9 @@ func (s *SubTicketSplitter) calcAdjustAbleDCanConsumeCPU(kt *kit.Kit, adjustAble
 
 	var canConsume int64
 	// 磁盘类型需一致，未知的磁盘类型（包括空值）除外
-	if adjustAbleD.DiskType.Name() != demandDetail.DiskTypeName {
-		// 加急延期场景CRP会根据原预测的磁盘类型创建新的预测，此时需保证磁盘类型完全一致，不能为空
-		if adjustType == enumor.CrpAdjustTypeDelay || adjustAbleD.DiskType.Name() != "" {
-			return canConsume, nil
-		}
+	adjustDiskTypeName := adjustAbleD.DiskType.Name()
+	if adjustDiskTypeName != "" && adjustDiskTypeName != demandDetail.DiskTypeName {
+		return canConsume, nil
 	}
 
 	// 预测内外需一致

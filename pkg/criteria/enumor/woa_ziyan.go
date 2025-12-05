@@ -451,6 +451,7 @@ func (r CoreType) Validate() error {
 }
 
 // CRPCoreTypeMap crp core type map
+// key为crp侧的值，1.2.3 分别标识，小核心，中核心，大核心
 var CRPCoreTypeMap = map[int]CoreType{
 	1: CoreTypeSmall,
 	2: CoreTypeMedium,

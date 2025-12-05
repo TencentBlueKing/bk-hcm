@@ -31,9 +31,9 @@ import (
 
 // createTransferOutCrpTicket create transfer out crp ticket.
 func (c *CrpTicketCreator) createTransferOutCrpTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInfo,
-	srcData []*cvmapi.AdjustSrcData) (string, error) {
+	srcData []*cvmapi.AdjustSrcData, updateData []*cvmapi.AdjustUpdatedData) (string, error) {
 
-	transReq := c.constructTransReq(subTicket, srcData)
+	transReq := c.constructTransReq(kt, subTicket, srcData, updateData)
 	resp, err := c.crpCli.CreateTransOrder(kt.Ctx, kt.Header(), transReq)
 	if err != nil {
 		logs.Errorf("failed to transfer plan order, err: %v, sub_ticket_id: %s, rid: %s", err, subTicket.ID,
@@ -59,8 +59,8 @@ func (c *CrpTicketCreator) createTransferOutCrpTicket(kt *kit.Kit, subTicket *pt
 }
 
 // constructTransReq construct cvm cbs plan trans request.
-func (c *CrpTicketCreator) constructTransReq(subTicket *ptypes.SubTicketInfo,
-	srcData []*cvmapi.AdjustSrcData) *cvmapi.TransOrderReq {
+func (c *CrpTicketCreator) constructTransReq(kt *kit.Kit, subTicket *ptypes.SubTicketInfo,
+	srcData []*cvmapi.AdjustSrcData, updateData []*cvmapi.AdjustUpdatedData) *cvmapi.TransOrderReq {
 
 	transOrder := &cvmapi.TransOrderReq{
 		ReqMeta: cvmapi.ReqMeta{
@@ -89,39 +89,33 @@ func (c *CrpTicketCreator) constructTransReq(subTicket *ptypes.SubTicketInfo,
 		},
 	}
 
+	sliceIDToUpdateData := make(map[string]*cvmapi.AdjustUpdatedData)
+	for _, item := range updateData {
+		sliceIDToUpdateData[item.SliceId] = item
+	}
+
 	for _, item := range srcData {
-		transOrder.Params.TransferDetailList = append(transOrder.Params.TransferDetailList, cvmapi.TransOrderDetail{
-			SliceId:             item.SliceId,
-			CityId:              item.CityId,
-			CityName:            item.CityName,
-			ZoneId:              item.ZoneId,
-			ZoneName:            item.ZoneName,
-			InstanceType:        item.InstanceType,
-			InstanceModel:       item.InstanceModel,
-			CvmAmount:           int(item.CvmAmount),
-			RamAmount:           int(item.RamAmount),
-			CoreAmount:          int(item.CoreAmount),
-			InstanceIO:          item.InstanceIO,
-			DiskType:            item.DiskType,
-			DiskTypeName:        item.DiskTypeName,
-			AllDiskAmount:       int(item.AllDiskAmount),
-			Desc:                "", // 需要从其他字段获取或留空
-			ProjectName:         item.ProjectName,
-			RequirementWeekType: item.RequirementWeekType,
-			Year:                item.Year,
-			Month:               item.Month,
-			UseTime:             item.UseTime,
-			BgId:                item.BgId,
-			BgName:              item.BgName,
-			DeptId:              item.DeptId,
-			DeptName:            item.DeptName,
-			PlanProductId:       item.PlanProductId,
-			PlanProductName:     item.PlanProductName,
-			ProductName:         item.ProductName,
-			ReviewStatus:        item.ReviewStatus,
-			CoreType:            item.CoreType,
-			CoreTypeName:        item.CoreTypeName,
-		})
+		updateTo, ok := sliceIDToUpdateData[item.SliceId]
+		if !ok {
+			// 理论上src一定有对应的update，没有时说明没有发生调减，直接跳过
+			continue
+		}
+
+		logs.Infof("create transfer out crp ticket, ticketID: %s, srcData: %+v, newCore: %d, rid: %s",
+			subTicket.ID, item.CvmCbsPlanQueryItem, updateTo.CoreAmount, kt.Rid)
+
+		transOrderDetail := item.ToTransOrderDetail()
+		// update表示原预测剩余的核心数，因此这里用 src - update得出需要转移的核心数、实例数、内存数
+		cvmAmountNew := item.CvmAmount - updateTo.CvmAmount
+		coreAmountNew := item.CoreAmount - updateTo.CoreAmount
+		transOrderDetail.CvmAmount = cvmAmountNew
+		transOrderDetail.CoreAmount = coreAmountNew
+		transOrderDetail.RamAmount = int64(item.RamAmount - updateTo.RamAmount)
+		// 对于标准型、小核心，CRP会以 coreAmountNew 为准，其他机型以 cvmAmountNew 为准，这里我们都传保持兼容
+		transOrderDetail.CvmAmountNew = cvmAmountNew
+		transOrderDetail.CoreAmountNew = coreAmountNew
+
+		transOrder.Params.TransferDetailList = append(transOrder.Params.TransferDetailList, transOrderDetail)
 	}
 
 	return transOrder

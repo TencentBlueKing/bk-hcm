@@ -215,7 +215,7 @@ type ResPlanPoolKeyV2 struct {
 	DemandClass   enumor.DemandClass
 	RegionID      string
 	// ZoneID        string  // 预测匹配不要求zoneID相同
-	DiskType enumor.DiskType
+	// DiskType enumor.DiskType // 预测的云盘类型，不再作为预测校验的强匹配条件 TODO 云盘的预测单独管理，单独进行余量校验
 }
 
 // ResPlanConsumePool resource plan consume pool.

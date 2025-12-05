@@ -231,10 +231,7 @@ func (d *Dispatcher) prepareResPlanDemandChangeReq(kt *kit.Kit, ticket *ApplyTic
 	batchCreateLogReq := make([]rpproto.DemandChangelogCreate, 0)
 	// 最后再调整disk_type为空的
 	changeDemandsSlice := maps.PartitionSortKeys(changeDemandsMap, func(key ptypes.ResPlanDemandAggregateKey) bool {
-		if key.DiskType == enumor.DiskUnknown {
-			return false
-		}
-		return true
+		return key.DiskType != enumor.DiskUnknown
 	})
 	for _, aggregateKey := range changeDemandsSlice {
 		changeDemand := changeDemandsMap[aggregateKey]
@@ -836,10 +833,8 @@ func convCreateResPlanDemandReqs(kt *kit.Kit, ticket *ApplyTicketCtx, demand *pt
 		}
 		createReq.ReturnPlanTime = returnPlanTimeFormat.Format(constant.DateLayout)
 	}
-	if createReq.DiskType.Validate() != nil {
-		createReq.DiskType = enumor.DiskPremium
-		createReq.DiskTypeName = createReq.DiskType.Name()
-	}
+	createReq.DiskType = createReq.DiskType.GetWithDefault()
+	createReq.DiskTypeName = createReq.DiskType.Name()
 	if kt.User == constant.BackendOperationUserKey {
 		createReq.Creator = ticket.Applicant
 	}
