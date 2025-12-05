@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0059,HCMVER=v1.8.7.15
+    SQLVER=0059,HCMVER=v1.8.8.1
 
     Notes:
     1. 扩容 res_plan_sub_ticket 与 res_plan_ticket_status 的 message 字段，支持记录完整失败信息
@@ -33,7 +33,7 @@ ALTER TABLE `res_plan_ticket_status`
     MODIFY COLUMN `message` TEXT NOT NULL COMMENT '单据失败信息';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v1.8.7.15' as `hcm_ver`, '0059' as `sql_ver`;
+SELECT 'v1.8.8.1' as `hcm_ver`, '0059' as `sql_ver`;
 
 COMMIT;
 

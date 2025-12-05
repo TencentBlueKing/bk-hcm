@@ -750,6 +750,7 @@ func genExists[T comparable]() (exists func(T) bool) {
 	}
 	return exists
 }
+
 func isTargetGroupChanged(tg corelb.BaseTargetGroup, opt *SyncListenerOption,
 	tgCloudHealthMap map[string]*tclb.HealthCheck) bool {
 
