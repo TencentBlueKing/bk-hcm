@@ -12,28 +12,24 @@
  * either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
- * We undertake not to change the open source license (MIT license) applicable
+ * We undertake not to change the open source license (MIT License) applicable
  *
  * to the current version of the project delivered to anyone in the future.
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
-
+    SQLVER=0042,HCMVER=v1.8.8
     Notes:
-    1. 扩容 res_plan_sub_ticket 与 res_plan_ticket_status 的 message 字段，支持记录完整失败信息
+    1. 添加bk_asset_id字段到cvm表
 */
 
 START TRANSACTION;
 
-ALTER TABLE `res_plan_sub_ticket`
-    MODIFY COLUMN `message` TEXT NOT NULL COMMENT '子单据信息';
+-- 首先添加bk_asset_id字段到cvm表
+ALTER TABLE cvm ADD COLUMN bk_asset_id VARCHAR(64) DEFAULT '' COMMENT '固资号';
 
-ALTER TABLE `res_plan_ticket_status`
-    MODIFY COLUMN `message` TEXT NOT NULL COMMENT '单据失败信息';
-
+-- 更新版本信息
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.8' as `hcm_ver`, '0042' as `sql_ver`;
 
 COMMIT;
-

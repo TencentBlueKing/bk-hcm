@@ -56,7 +56,6 @@ type GcpCvmCreateReq struct {
 		AutoDelete *bool               `json:"auto_delete" validate:"required"`
 	} `json:"data_disk" validate:"omitempty"`
 
-	// 访问主机的ssh公钥
 	Password string `json:"password" validate:"required"`
 
 	RequiredCount int64 `json:"required_count" validate:"required,min=1,max=500"`

@@ -39,6 +39,8 @@ export const OPERATION_LOG_SOURCE = {
 } as const;
 
 export const OPERATION_LOG_RESOURCE_TYPE_NAME = {
+  [OPERATION_LOG_RESOURCE_TYPE.SECURITY_GROUP]: '安全组',
+  [OPERATION_LOG_RESOURCE_TYPE.CLB]: '负载均衡',
   [OPERATION_LOG_RESOURCE_TYPE.ACCOUNT]: '云账号',
   [OPERATION_LOG_RESOURCE_TYPE.CVM]: '主机',
   [OPERATION_LOG_RESOURCE_TYPE.VPC]: 'VPC',
@@ -75,3 +77,6 @@ export const OPERATION_LOG_SOURCE_NAME = {
   [OPERATION_LOG_SOURCE.BACKGROUND_SYNC]: '后台同步',
   [OPERATION_LOG_SOURCE.ASYNCHRONOUS_TASKS]: '异步任务',
 };
+
+// res_type为负载均衡时的相关资源
+export const CLB_RES_TYPES = ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'];

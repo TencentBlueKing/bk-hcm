@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/web/bizs/{bk_biz_id}/instance_types/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/instance_types/list
 
 ### 请求参数
 

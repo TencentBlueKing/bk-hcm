@@ -20,6 +20,8 @@
 package gcp
 
 import (
+	"fmt"
+
 	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -27,7 +29,9 @@ import (
 
 // PrepareReq 预处理请求参数，比如敏感数据加密
 func (a *ApplicationOfCreateGcpCvm) PrepareReq() error {
-	// GCP 主机公钥无需加密
+	// 密码加密
+	encryptedPassword := a.Cipher.EncryptToBase64(a.req.Password)
+	a.req.Password = encryptedPassword
 	return nil
 }
 
@@ -45,7 +49,13 @@ func (a *ApplicationOfCreateGcpCvm) GenerateApplicationContent() interface{} {
 
 // PrepareReqFromContent 预处理请求参数，对于申请内容来着DB，其实入库前是加密了的
 func (a *ApplicationOfCreateGcpCvm) PrepareReqFromContent() error {
-	// GCP 主机公钥无需解密
+	// 解密密码
+	password, err := a.Cipher.DecryptFromBase64(a.req.Password)
+	if err != nil {
+		return fmt.Errorf("decrypt password failed, err: %w", err)
+	}
+	a.req.Password = password
+
 	return nil
 }
 

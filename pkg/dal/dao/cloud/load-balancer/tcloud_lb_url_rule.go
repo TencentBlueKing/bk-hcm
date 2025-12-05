@@ -281,7 +281,7 @@ func (dao LbTCloudUrlRuleDao) ListJoinListener(kt *kit.Kit, opt *types.ListOptio
 	expr := filter.NewExprOption(
 		filter.RuleFields(tablelb.TCloudLbUrlRuleColumns.ColumnTypes()),
 	)
-	if err := opt.Validate(expr, core.NewDefaultPageOption()); err != nil {
+	if err := opt.Validate(expr, &core.PageOption{MaxLimit: constant.CLBTopoFindPageLimit}); err != nil {
 		return nil, err
 	}
 

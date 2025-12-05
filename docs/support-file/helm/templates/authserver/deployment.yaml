@@ -56,7 +56,7 @@ spec:
             {{ end }}
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /alivez
               port: {{ .Values.authserver.port }}
             initialDelaySeconds: 30
             periodSeconds: 10
