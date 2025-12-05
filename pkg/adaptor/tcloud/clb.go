@@ -416,6 +416,39 @@ func (t *TCloudImpl) SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typelb.TClo
 	return resp.Response, nil
 }
 
+// SetSecurityGroupForLoadbalancers reference: https://cloud.tencent.com/document/api/214/36189
+func (t *TCloudImpl) SetSecurityGroupForLoadbalancers(kt *kit.Kit, opt *typelb.TCloudSetSecurityGroupForClbsOption) (
+	*clb.SetSecurityGroupForLoadbalancersResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "set clb security group option is required")
+	}
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewSetSecurityGroupForLoadbalancersRequest()
+	req.SecurityGroup = common.StringPtr(opt.SecurityGroup)
+	req.LoadBalancerIds = common.StringPtrs(opt.LoadBalancerIDs)
+	req.OperationType = common.StringPtr(string(opt.OperationType))
+
+	resp, err := client.SetSecurityGroupForLoadbalancersWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("run tencent cloud clb set security group failed, err: %v, opt: %+v, rid: %s",
+			err, cvt.PtrToVal(opt), kt.Rid)
+		return nil, err
+	}
+
+	logs.Infof("call tencent security group set cloud clb success, opt: %+v, requestID: %s, rid: %s",
+		cvt.PtrToVal(opt), resp.Response.RequestId, kt.Rid)
+	return resp.Response, nil
+}
+
 // DeleteLoadBalancer reference: https://cloud.tencent.com/document/api/214/30689
 func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error {
 

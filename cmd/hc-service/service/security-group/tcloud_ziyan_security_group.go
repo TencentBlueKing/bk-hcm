@@ -837,3 +837,117 @@ func (g *securityGroup) createTZiyanSecurityGroupForData(kt *kit.Kit, req *proto
 	}
 	return result.IDs[0], nil
 }
+
+// ZiyanSGBatchAssociateLoadBalancers 绑定一个安全组到多个负载均衡实例
+func (g *securityGroup) ZiyanSGBatchAssociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	req := new(proto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloudZiyan(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	_, clbCloudIDs, sgComReq, err := g.getSecurityGroupIDRelReq(cts.Kit, req, sg, adptsg.AddSGOperationType)
+	if err != nil {
+		logs.Errorf("get security group id rel rel failed, sgID: %s, err: %v, rid: %s",
+			req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 绑定一个安全组到多个负载均衡实例
+	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
+		Region:          sg.Region,
+		SecurityGroup:   sg.CloudID,
+		OperationType:   adptsg.AddSGOperationType,
+		LoadBalancerIDs: clbCloudIDs,
+	}
+	if _, err = client.SetSecurityGroupForLoadbalancers(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate clbs failed, err: %v, vendor: %s, opt: %+v, "+
+			"rid: %s", err, sg.Vendor, converter.PtrToVal(opt), cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(sgComReq.Rels) > 0 {
+		if err = g.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(cts.Kit, sgComReq); err != nil {
+			logs.Errorf("request dataservice upsert security group clb rels failed, err: %v, vendor: %s, "+
+				"req: %+v, rid: %s", err, sg.Vendor, sgComReq, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// ZiyanSGBatchDisassociateLoadBalancers 解绑一个安全组到多个负载均衡实例
+func (g *securityGroup) ZiyanSGBatchDisassociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	req := new(proto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloudZiyan(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	clbIDs, clbCloudIDs, _, err := g.getSecurityGroupIDRelReq(cts.Kit, req, sg, adptsg.DelSGOperationType)
+	if err != nil {
+		logs.Errorf("get security group id rel rel failed, sgID: %s, err: %v, rid: %s",
+			req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 解绑一个安全组到多个负载均衡实例
+	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
+		Region:          sg.Region,
+		SecurityGroup:   sg.CloudID,
+		OperationType:   adptsg.DelSGOperationType,
+		LoadBalancerIDs: clbCloudIDs,
+	}
+	if _, err = client.SetSecurityGroupForLoadbalancers(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud-ziyan security group associate clbs failed, err: %v, vendor: %s, "+
+			"opt: %+v, rid: %s", err, sg.Vendor, converter.PtrToVal(opt), cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(clbIDs) > 0 {
+		deleteReq := buildSGCommonRelDeleteClbsReq(
+			sg.Vendor, req.SecurityGroupID, clbIDs, enumor.LoadBalancerCloudResType)
+		if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
+			logs.Errorf("request dataservice delete security group lb rels failed, err: %v, vendor: %s, "+
+				"sgID: %s, clbIDs: %v, rid: %s", err, sg.Vendor, req.SecurityGroupID, clbIDs, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+	return nil, nil
+}

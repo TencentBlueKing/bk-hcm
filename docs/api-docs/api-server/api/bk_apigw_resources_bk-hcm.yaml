@@ -901,3 +901,53 @@ paths:
           userVerifiedRequired: false
         disabledStages: [ ]
         descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/security_groups/associate/load_balancers/batch:
+    post:
+      operationId: batch_associate_security_group_load_balancers
+      description: 安全组批量绑定CLB接口
+      tags:
+        - SecurityGroup
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/security_groups/associate/load_balancers/batch
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers/batch:
+    post:
+      operationId: batch_disassociate_security_group_load_balancers
+      description: 安全组批量解绑CLB接口
+      tags:
+        - SecurityGroup
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers/batch
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn:

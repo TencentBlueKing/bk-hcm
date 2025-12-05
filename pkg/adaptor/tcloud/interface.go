@@ -168,6 +168,8 @@ type TCloud interface {
 	ListCert(kt *kit.Kit, opt *cert.TCloudListOption) ([]cert.TCloudCert, error)
 	SetLoadBalancerSecurityGroups(kt *kit.Kit, opt *typelb.TCloudSetClbSecurityGroupOption) (
 		*tclb.SetLoadBalancerSecurityGroupsResponseParams, error)
+	SetSecurityGroupForLoadbalancers(kt *kit.Kit, opt *typelb.TCloudSetSecurityGroupForClbsOption) (
+		*tclb.SetSecurityGroupForLoadbalancersResponseParams, error)
 	DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOption) error
 	UpdateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudUpdateOption) (*string, error)
 	CreateListener(kt *kit.Kit, opt *typelb.TCloudCreateListenerOption) (*poller.BaseDoneResult, error)

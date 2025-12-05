@@ -166,3 +166,19 @@ func (cli *SecurityGroupClient) DisassociateCvm(kt *kit.Kit, req *proto.Security
 		"/security_groups/disassociate/cvms")
 
 }
+
+// BatchAssociateLoadBalancers 批量绑定负载均衡
+func (cli *SecurityGroupClient) BatchAssociateLoadBalancers(kt *kit.Kit,
+	req *proto.SecurityGroupBatchOperateLoadBalancerReq) error {
+
+	return common.RequestNoResp[proto.SecurityGroupBatchOperateLoadBalancerReq](cli.client, rest.POST, kt, req,
+		"/security_groups/associate/load_balancers/batch")
+}
+
+// BatchDisassociateLoadBalancers 批量解绑负载均衡
+func (cli *SecurityGroupClient) BatchDisassociateLoadBalancers(kt *kit.Kit,
+	req *proto.SecurityGroupBatchOperateLoadBalancerReq) error {
+
+	return common.RequestNoResp[proto.SecurityGroupBatchOperateLoadBalancerReq](cli.client, rest.POST, kt, req,
+		"/security_groups/disassociate/load_balancers/batch")
+}
