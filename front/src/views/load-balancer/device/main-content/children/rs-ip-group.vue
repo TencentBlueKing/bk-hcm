@@ -250,7 +250,7 @@ defineExpose({ selections, isExceeded });
         </span>
         <bk-button text theme="primary" @click="handleClearSelection">{{ t('一键清空') }}</bk-button>
       </div>
-      <bk-collapse use-block-theme class="rs-expand" v-model="activeGroupKeys" accordion>
+      <bk-collapse use-block-theme class="rs-expand" v-model="activeGroupKeys">
         <bk-collapse-panel v-for="item in rsList" :key="item.rowKey" :name="item.rowKey" render-directive="if">
           <template #header>
             <div class="header" :class="{ 'is-expand': isExpand(item.rowKey) }">
