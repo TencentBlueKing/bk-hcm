@@ -125,7 +125,8 @@ const bindingTargetGroupName = ref('');
 const isSniOpen = ref(false);
 watchEffect(() => {
   if (!props.initialModel) return;
-  const { default_domain, target_group_name, session_expire, sni_switch, certificate, extension } = props.initialModel;
+  const { default_domain, target_group_name, session_expire, sni_switch, certificate, extension, end_port, port } =
+    props.initialModel;
   Object.assign(formModel, props.initialModel, {
     domain: default_domain,
     session_open: session_expire !== 0,
@@ -135,9 +136,7 @@ watchEffect(() => {
       ca_cloud_id: '',
       cert_cloud_ids: [],
     },
-    port_segment: props.initialModel.end_port
-      ? `${props.initialModel.port}-${props.initialModel.end_port}`
-      : props.initialModel.port,
+    port_segment: end_port ? `${port}-${end_port}` : port,
   });
   bindingTargetGroupName.value = target_group_name;
   isSniOpen.value = !!sni_switch;
@@ -264,8 +263,8 @@ const handleConfirm = async () => {
   } else {
     // 将port_segment分解成port和end_port
     const [port, end_port] = formModel.port_segment.split('-');
-    formModel.port = +port;
-    formModel.end_port = +end_port;
+    formModel.port = port ? +port : undefined;
+    formModel.end_port = end_port ? +end_port : undefined;
     await loadBalancerListenerStore.addListener(
       {
         ...{ ...formModel, port_segment: undefined },
