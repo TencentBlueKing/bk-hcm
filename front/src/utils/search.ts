@@ -416,15 +416,17 @@ export const buildMultipleValueRulesItem = (field: string, value: string) => {
   const rulesItem: RulesItem = { field, op: QueryRuleOPEnum.EQ, value: '' };
 
   if (value) {
-    const splitValue = value
-      .trim()
-      .split(/\n|;|；|,|，|\|/)
-      .reduce((prev, curr) => {
-        if (curr.trim()) {
-          prev.push(curr.trim());
-        }
-        return prev;
-      }, []);
+    const splitValue = Array.isArray(value)
+      ? value
+      : value
+          .trim()
+          .split(/\n|;|；|,|，|\|/)
+          .reduce((prev, curr) => {
+            if (curr.trim()) {
+              prev.push(curr.trim());
+            }
+            return prev;
+          }, []);
 
     if (!splitValue.length) {
       // 如果没有分割值，直接使用原始值进行搜索

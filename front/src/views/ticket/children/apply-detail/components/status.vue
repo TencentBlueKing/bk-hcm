@@ -16,26 +16,30 @@ const props = defineProps<{ applicationDetail: IApplicationDetail }>();
 const status = computed(() => props.applicationDetail?.status ?? '');
 const message = computed(() => props.applicationDetail?.delivery_detail ?? '');
 
-const toClbList = () => {
-  const { delivery_detail, content } = props.applicationDetail;
-  const { load_balancer_id } = JSON.parse(delivery_detail);
-  const { bk_biz_id } = JSON.parse(content);
-  if (!load_balancer_id || !bk_biz_id) return;
+const handleGotoClbList = () => {
+  try {
+    const { delivery_detail, content } = props.applicationDetail;
+    const { load_balancer_id } = JSON.parse(delivery_detail);
+    const { bk_biz_id } = JSON.parse(content);
+    if (!load_balancer_id || !bk_biz_id) return;
 
-  const query: LocationQueryRaw = {
-    [GLOBAL_BIZS_KEY]: bk_biz_id,
-    filter: qs.stringify(
-      {
-        cloud_id: Array.isArray(load_balancer_id) ? load_balancer_id[0] : load_balancer_id,
-      },
-      {
-        arrayFormat: 'comma',
-        encode: false,
-        allowEmptyArrays: true,
-      },
-    ),
-  };
-  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+    const query: LocationQueryRaw = {
+      [GLOBAL_BIZS_KEY]: bk_biz_id,
+      filter: qs.stringify(
+        {
+          cloud_id: load_balancer_id.join(','),
+        },
+        {
+          arrayFormat: 'comma',
+          encode: false,
+          allowEmptyArrays: true,
+        },
+      ),
+    };
+    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+  } catch (e) {
+    console.error(e);
+  }
 };
 </script>
 
@@ -57,7 +61,10 @@ const toClbList = () => {
     <span class="status-name">{{ APPLICATION_STATUS_MAP[status] }}</span>
     <!-- link -->
     <template v-if="['pass', 'completed'].includes(status)">
-      <share class="font-small ml8 to-clb-list" fill="#3a84ff" @click="toClbList" />
+      <bk-link style="display: block" theme="primary" class="ml8" href="javascript:void(0)" @click="handleGotoClbList">
+        查看交付结果
+        <share class="font-small" fill="#3a84ff" />
+      </bk-link>
     </template>
     <!-- message -->
     <template v-if="status === ApplicationStatus.deliver_error">
@@ -112,10 +119,6 @@ const toClbList = () => {
   .link {
     margin-left: auto;
     flex-shrink: 0;
-  }
-
-  .to-clb-list {
-    cursor: pointer;
   }
 }
 </style>
