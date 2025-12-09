@@ -95,7 +95,7 @@ export const useResourcePlanStore = defineStore('resourcePlanStore', {
     getBizsByOpProductList(data: { op_product_id: number }): Promise<IBizsByOpProductResult> {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/metas/bizs/by/op_product/list`, data);
     },
-    // 获取计划类型列表
+    // 获取预测类型列表
     getPlanTypes() {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/metas/plan_types/list`);
     },

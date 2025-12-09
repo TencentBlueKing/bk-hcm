@@ -1992,7 +1992,7 @@ export default (type: string, isSimpleShow = false) => {
       isDefaultShow: true,
     },
     {
-      label: '计划类型',
+      label: '预测类型',
       field: 'plan_type',
       fixed: 'right',
       minWidth: 90,

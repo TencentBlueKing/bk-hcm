@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, h } from 'vue';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import { Tag } from 'bkui-vue';
 import { AngleDoubleDownLine, AngleDoubleUpLine } from 'bkui-vue/lib/icon';
 import { useConfigRequirementStore, type IRequirementObsProject } from '@/store/config/requirement';
 import { useResourcePlanStore, IResourcesDemandItem, ResourcesDemandStatus } from '@/store/resource-plan';
@@ -80,6 +81,13 @@ const columns = computed(() => {
       id: 'region_name',
       name: '地域',
       type: 'string',
+    },
+    {
+      id: 'plan_type',
+      name: '预测类型',
+      type: 'string',
+      render: ({ row }: { row?: IResourcesDemandItem }) =>
+        h(Tag, { theme: row.plan_type === '预测内' ? 'success' : 'warning' }, row.plan_type),
     },
     {
       id: 'zone_name',
@@ -270,6 +278,7 @@ const handleReset = () => {
         :sort="column.sort"
         :align="column.align"
         :width="column.width"
+        :render="column.render"
       >
         <template #default="{ row }">
           <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />

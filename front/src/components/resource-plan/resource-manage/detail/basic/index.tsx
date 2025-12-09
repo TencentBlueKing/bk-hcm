@@ -41,7 +41,7 @@ export default defineComponent({
       { label: t('实例数'), value: baseInfo.value?.os },
       { label: t('期望到货时间'), value: timeFormatter(baseInfo.value?.expect_time) },
       { label: t('核心类型'), value: baseInfo.value?.core_type },
-      { label: t('计划类型'), value: baseInfo.value?.plan_type },
+      { label: t('预测类型'), value: baseInfo.value?.plan_type },
       { label: t('云磁盘类型'), value: baseInfo.value?.disk_type_name },
       { label: t('地域'), value: baseInfo.value?.area_name },
       { label: t('单实例磁盘IO(MB/s)'), value: baseInfo.value?.disk_io },

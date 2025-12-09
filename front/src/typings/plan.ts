@@ -28,7 +28,7 @@ export interface IDemandListDetail {
   region_name: string; // 地区/楼层名称
   zone_id: string; // 可用区ID
   zone_name: string; // 可用区名称
-  plan_type: string; // 计划类型
+  plan_type: string; // 预测类型
   obs_project: string; // OBS项目类型
   generation_type: string; // 机型类型
   device_family: string; // 机型族

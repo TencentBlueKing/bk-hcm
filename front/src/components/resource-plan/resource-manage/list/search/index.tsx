@@ -51,7 +51,7 @@ export default defineComponent({
       device_types: [], // 机型规格
       region_ids: [], // 地区城市
       zone_ids: [], // 可用区
-      plan_types: [], // 计划类型
+      plan_types: [], // 预测类型
       expiring_only: false, // 过期状态
       expect_time_range: props.expectTimeRange, // 期望交付时间范围
       statuses: [], // 状态
@@ -345,7 +345,7 @@ export default defineComponent({
                   </Select>
                 </div>
                 <div>
-                  <div class={cssModule['search-label']}>{t('计划类型')}</div>
+                  <div class={cssModule['search-label']}>{t('预测类型')}</div>
                   <Select multiple v-model={searchModel.value.plan_types} loading={isLoadingPlanClass.value}>
                     {planClassList.value.map((item) => (
                       <Option name={item} id={item} />
