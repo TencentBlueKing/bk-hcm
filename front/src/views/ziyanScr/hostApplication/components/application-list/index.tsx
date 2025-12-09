@@ -22,7 +22,7 @@ import SuborderDetail from '../suborder-detail';
 import CommonDialog from '@/components/common-dialog';
 import { throttle } from 'lodash';
 import MatchPanel from '../match-panel';
-import { getZoneCn } from '@/views/ziyanScr/cvm-web/transform';
+import { getRegionCn, getZoneCn } from '@/views/ziyanScr/cvm-web/transform';
 import { getResourceTypeName } from '../transform';
 import { getTypeCn } from '@/views/ziyanScr/cvm-produce/transform';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
@@ -292,7 +292,7 @@ export default defineComponent({
                         <div>园区：</div>
                         <div>
                           {data.spec?.zones?.[0] === 'all'
-                            ? '全部可用区'
+                            ? `${getRegionCn(data.spec.region)}(全部可用区)`
                             : data.spec?.zones?.map((zone: string) => {
                                 return <div>{getZoneCn(zone)}</div>;
                               }) || '--'}
