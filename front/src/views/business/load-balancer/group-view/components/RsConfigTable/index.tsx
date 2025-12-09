@@ -198,7 +198,7 @@ export default defineComponent({
               ]}>
               <Input
                 type='number'
-                modelValue={port}
+                modelValue={cell}
                 onChange={(v: number) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_PORT, data.id)}
                 // 可操作场景：新增目标组、编辑初始态、修改单个端口（一次只能修改一个RS）、新增RS(仅新增项)
                 disabled={
