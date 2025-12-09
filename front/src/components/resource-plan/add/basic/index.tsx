@@ -58,12 +58,6 @@ export default defineComponent({
     const isLoadingZone = ref(false);
     const isLoadingSource = ref(false);
 
-    const isThirteenDate = computed(() => {
-      const expectedDate = dayjs(props.planTicketDemand.expect_time);
-      const futureDate = dayjs().add(13, 'week');
-      return expectedDate.isSame(futureDate, 'day');
-    });
-
     const DISABLE_TIME_KEYS = ['obs_project', 'region_id', 'zone_id'];
     const DISABLE_CONFIG_KEY = 'expect_time';
 
@@ -207,9 +201,6 @@ export default defineComponent({
     };
 
     const handleDateWithThirteen = () => {
-      if (isThirteenDate.value) {
-        return;
-      }
       handleUpdatePlanTicketDemand('expect_time', dayjs().add(13, 'week').format('YYYY-MM-DD'));
     };
 
@@ -355,9 +346,7 @@ export default defineComponent({
               onChange={(val: string) => handleUpdatePlanTicketDemand('expect_time', val)}>
               {{
                 footer: () => (
-                  <div
-                    class={[`${isThirteenDate.value ? 'is-thirteen' : ''}`, cssModule['in-thirteen-weeks']]}
-                    onClick={handleDateWithThirteen}>
+                  <div class={[cssModule['in-thirteen-weeks']]} onClick={handleDateWithThirteen}>
                     {t('13周后')}
                   </div>
                 ),

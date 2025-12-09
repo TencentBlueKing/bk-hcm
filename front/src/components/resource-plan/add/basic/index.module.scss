@@ -31,13 +31,18 @@
     }
   }
 
+  :global(.bk-date-picker-cells-cell-next-month em) {
+    color: inherit;
+  }
+
+  :global(.bk-date-picker-cells-cell-prev-month em) {
+    color: inherit;
+  }
+
   .in-thirteen-weeks {
     text-align: center;
     cursor: pointer;
     padding: 10px 0;
-  }
-
-  :global(.is-thirteen) {
     color: #5594fa;
   }
 }
