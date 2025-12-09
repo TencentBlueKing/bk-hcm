@@ -13,6 +13,7 @@ import useBillStore from '@/store/useBillStore';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import isEmail from 'validator/lib/isEmail';
 import {
   ValidateStatus,
   useSecretExtension,
@@ -123,6 +124,13 @@ export default defineComponent({
                     validator: (val: string) => {
                       return /^[a-z][a-z0-9]{5,19}$/.test(val);
                     },
+                  },
+                ],
+                email: [
+                  {
+                    trigger: 'change',
+                    message: '请输入正确格式的邮箱',
+                    validator: (val: string) => isEmail(`${val}@tencent.com`),
                   },
                 ],
               }}>

@@ -13,6 +13,7 @@ import { useOperationProducts } from '@/hooks/useOperationProducts';
 import { VendorAccountNameMap } from './constants';
 import { useVerify } from '@/hooks';
 import { IApplicationDetail } from '../index';
+import UserValue from '@/components/display-value/user-value.vue';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -160,10 +161,14 @@ export default defineComponent({
               {
                 prop: 'managers',
                 name: '主负责人',
+                render: (val: string | string[]) => <UserValue value={val} />,
+                copy: false,
               },
               {
                 prop: 'bak_managers',
                 name: '备份负责人',
+                render: (val: string | string[]) => <UserValue value={val} />,
+                copy: false,
               },
               {
                 prop: 'op_product_id',

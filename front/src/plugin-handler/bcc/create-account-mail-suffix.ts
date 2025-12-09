@@ -1,13 +1,15 @@
 import { ref } from 'vue';
+import isEmail from 'validator/lib/isEmail';
+
 export const PluginHandlerMailbox = {
   suffixText: '@tencent.com' as any,
   isMailValid: ref(false),
   emailRules: [
     {
       trigger: 'change',
-      message: '账号邮箱不能为空',
+      message: '请输入正确格式的邮箱',
       validator: (val: string) => {
-        const isValid = val.trim() !== '';
+        const isValid = isEmail(`${val}${PluginHandlerMailbox.suffixText}`);
         PluginHandlerMailbox.isMailValid.value = isValid;
         return isValid;
       },
