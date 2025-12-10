@@ -128,7 +128,9 @@ func (c *BatchDeleteListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMan
 	}
 
 	// 把符合条件的监听器列表赋值给details
-	c.details = lblResp.Details
+	for _, item := range lblResp.Details {
+		c.details = append(c.details, cvt.ValToPtr(item.BaseListener))
+	}
 
 	taskID, err := c.Run(kt, source)
 	if err != nil {
