@@ -1,10 +1,8 @@
 import { computed, defineComponent, PropType, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_CREATE_CLB, AUTH_CREATE_CLB } from '@/constants/auth-symbols';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
-import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 export default defineComponent({
   props: {
@@ -85,26 +83,15 @@ export default defineComponent({
     };
     const handleConfirm = async () => {
       applyLoading.value = true;
-      try {
-        const { list } = props;
-        if (!list.length) return;
-        const { vendor } = list[0];
-        const url = isBusinessPage
-          ? `/api/v1/cloud/vendors/${vendor}/applications/types/create_load_balancer`
-          : `/api/v1/cloud/load_balancers/create`;
+      const { list } = props;
+      if (!list.length) return;
+      const { vendor } = list[0];
+      const url = isBusinessPage
+        ? `/api/v1/cloud/vendors/${vendor}/applications/types/create_load_balancer`
+        : `/api/v1/cloud/load_balancers/create`;
 
-        const params = list.map((item: ApplyClbModel) => handleParams(item));
-        emit('confirm', params, url);
-        setTimeout(
-          () => routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'load_balancer' } }),
-          300,
-        );
-      } catch (error) {
-        console.error(error);
-        return Promise.reject(error);
-      } finally {
-        applyLoading.value = false;
-      }
+      const params = list.map((item: ApplyClbModel) => handleParams(item));
+      emit('confirm', { params, url, cb: () => (applyLoading.value = false) });
     };
     const handleCancel = () => {
       emit('cancel');

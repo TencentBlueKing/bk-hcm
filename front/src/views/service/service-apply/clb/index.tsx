@@ -10,6 +10,7 @@ import './index.scss';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import BottomBar from './children/bottom-bar';
 import http from '@/http';
+import { applyClbSuccessHandler } from './apply-clb.plugin';
 
 export default defineComponent({
   name: 'ApplyLoadBalancer',
@@ -54,9 +55,15 @@ export default defineComponent({
       router.go(-1);
     };
 
-    const handleApplyClb = async (params: ApplyClbModel[], url: string) => {
-      const allApi = params.map((item: ApplyClbModel) => http.post(url, item));
-      await Promise.any(allApi);
+    const handleApplyClb = async (options: { params: ApplyClbModel[]; url: string; cb: Function }) => {
+      try {
+        const { params, url } = options;
+        const allApi = params.map((item: ApplyClbModel) => http.post(url, item));
+        await Promise.any(allApi);
+        applyClbSuccessHandler();
+      } finally {
+        options.cb();
+      }
     };
 
     return () => (
