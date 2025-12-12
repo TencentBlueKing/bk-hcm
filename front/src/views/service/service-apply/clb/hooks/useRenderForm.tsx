@@ -672,6 +672,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           </Form>
           <bk-sideslider
             v-model:isShow={sideSliderOptions.value.show}
+            renderDirective='if'
             title={'添加负载均衡'}
             width='850'
             class={cssModule.addClbConfigureSideslider}>

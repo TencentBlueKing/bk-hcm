@@ -56,7 +56,7 @@ const menu = ref(null);
 const isShow = ref(false);
 
 const { t } = useI18n();
-const { getRegionName } = useRegionsStore();
+const { getRegionName, getZoneName } = useRegionsStore();
 
 const disabledTip = computed(() => {
   if (overLength.value) {
@@ -87,8 +87,12 @@ const configListColumns = [
     label: '可用区',
     field: 'zones',
     isDefaultShow: true,
-    render({ cell }: { cell: string }) {
-      return h('span', [cell || '--']);
+    render({ cell, row }: { cell: string | string[]; row: { vendor: VendorEnum } }) {
+      return h('span', [
+        Array.isArray(cell)
+          ? cell.map((zone) => getZoneName(zone, row.vendor)).join(',')
+          : getZoneName(cell as string, row.vendor),
+      ]);
     },
   },
   {
