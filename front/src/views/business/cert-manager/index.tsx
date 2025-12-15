@@ -382,7 +382,8 @@ export default defineComponent({
           width='640'
           onHandleSubmit={handleCreateCert}
           isSubmitLoading={isLoading.value}
-          class='cert-upload-sideslider'>
+          class='cert-upload-sideslider'
+          renderType='if'>
           <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;
