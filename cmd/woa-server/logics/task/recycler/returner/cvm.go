@@ -199,6 +199,7 @@ func (r *Returner) RecoverReturnCvm(kt *kit.Kit, task *table.ReturnTask, hosts [
 			time.Sleep(30 * time.Second)
 			continue
 		}
+		break
 	}
 
 	// 故障前未创建return单，恢复后成功创建return单
