@@ -1283,7 +1283,7 @@ func (s *service) GetDeliverDeviceByOrder(cts *rest.Contexts) (any, error) {
 	}
 
 	briefRst := &getDeviceBriefRst{
-		Count: rst.Count,
+		Count: int64(len(rst.Info)),
 		Info:  make([]*deviceBriefInfo, 0),
 	}
 	for _, device := range rst.Info {

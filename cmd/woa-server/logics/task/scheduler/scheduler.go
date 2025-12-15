@@ -1669,10 +1669,13 @@ func (s *scheduler) GetApplyDevice(kit *kit.Kit, param *types.GetApplyDeviceReq)
 	// return delivered device only
 	filter["is_delivered"] = true
 
-	count, err := model.Operation().DeviceInfo().CountDeviceInfo(kit.Ctx, filter)
-	if err != nil {
-		logs.Errorf("failed to count apply device, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
-		return nil, err
+	if param.Page.EnableCount {
+		count, err := model.Operation().DeviceInfo().CountDeviceInfo(kit.Ctx, filter)
+		if err != nil {
+			logs.Errorf("failed to count apply device, filter: %+v, err: %v, rid: %s", filter, err, kit.Rid)
+			return nil, err
+		}
+		return &types.GetApplyDeviceRst{Count: int64(count)}, nil
 	}
 
 	insts, err := model.Operation().DeviceInfo().FindManyDeviceInfo(kit.Ctx, param.Page, filter)
@@ -1682,20 +1685,7 @@ func (s *scheduler) GetApplyDevice(kit *kit.Kit, param *types.GetApplyDeviceReq)
 		return nil, err
 	}
 
-	// 统计有母机IP的设备数量
-	ownerIPCount := 0
-	for _, inst := range insts {
-		if inst.OwnerIP != "" {
-			ownerIPCount++
-		}
-	}
-
-	rst := &types.GetApplyDeviceRst{
-		Count: int64(count),
-		Info:  insts,
-	}
-
-	return rst, nil
+	return &types.GetApplyDeviceRst{Info: insts}, nil
 }
 
 // ExportDeliverDevice export resource apply delivered devices
