@@ -23,12 +23,17 @@ import (
 	"fmt"
 
 	protoaudit "hcm/pkg/api/data-service/audit"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/orm"
 	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // CloudResourceDeleteAudit cloud resource delete audit.
@@ -65,7 +70,16 @@ func (ad Audit) CloudResourceDeleteAudit(cts *rest.Contexts) (interface{}, error
 	}
 
 	// 审计信息保存
-	if err := ad.dao.Audit().BatchCreate(cts.Kit, auditAll); err != nil {
+	_, err := ad.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, batch := range slice.Split(auditAll, constant.BatchOperationMaxLimit) {
+			if err := ad.dao.Audit().BatchCreateWithTx(cts.Kit, txn, batch); err != nil {
+				logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, err
+			}
+		}
+		return nil, nil
+	})
+	if err != nil {
 		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
