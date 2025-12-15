@@ -922,7 +922,7 @@ export default defineComponent({
 
     const handleAffinityCheck = () => {
       affinityCheck({
-        bk_biz_id: !isSpringPool.value ? +computedBiz.value : 931,
+        bk_biz_id: +computedBiz.value,
         specs: cloudTableData.value.map((item) => ({
           region: item.spec.region,
           zones: item.spec.zones,
@@ -1039,6 +1039,9 @@ export default defineComponent({
       if (isRollingServer.value) {
         return { disabled: true, content: '滚服项目暂不支持一键申请' };
       }
+      if (isSpringPool.value) {
+        return { disabled: true, content: '春保资源池暂不支持一键申请' };
+      }
       if ((isGreenChannel.value || isSpringPool.value || isDissolve.value) && availableCpuCoreQuota.value <= 0) {
         return { disabled: true, content: '已超过CPU可用额度，不允许添加' };
       }
@@ -1049,12 +1052,17 @@ export default defineComponent({
       if (isRequirementsEmpty.value) {
         return { disabled: true, content: '资源需求不能为空' };
       }
-      if ((isRollingServer.value || isGreenChannel.value || isDissolve.value) && isCpuCoreExceeded.value) {
+      if (
+        (isRollingServer.value || isGreenChannel.value || isDissolve.value || isSpringPool.value) &&
+        isCpuCoreExceeded.value
+      ) {
         let name = '滚服项目';
         if (isGreenChannel.value) {
           name = '小额绿通';
         } else if (isDissolve.value) {
           name = '机房裁撤';
+        } else if (isSpringPool.value) {
+          name = '春保资源池';
         }
         return { disabled: true, content: `当前所需的CPU总核数超过${name}CPU限额，请调整后再重试。` };
       }
@@ -1136,8 +1144,6 @@ export default defineComponent({
                   <hcm-form-req-type
                     appearance='card'
                     v-model={order.value.model.requireType}
-                    // 春保资源池不显示
-                    filter={(list: any) => list.filter((item: any) => item.require_type !== 8)}
                     onChange={() => {
                       // 手动更改时，需要清空已保存的需求
                       clearResRequirements();
