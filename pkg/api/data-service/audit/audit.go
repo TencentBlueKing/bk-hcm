@@ -69,15 +69,7 @@ type CloudResourceDeleteAuditReq struct {
 
 // Validate cloud create audit request when cloud resource update.
 func (req *CloudResourceDeleteAuditReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if len(req.Deletes) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("deletes shuold <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // CloudResourceDeleteInfo defines cloud resource deletes info for audit.
