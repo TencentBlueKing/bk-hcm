@@ -85,7 +85,7 @@ export default defineComponent({
     const isMeetSearchConditions = computed(() => props.moduleNames.length);
 
     const groupIds = computed(() => {
-      const leafIds = new Set<string>();
+      const leafIds = new Set<number>();
 
       const collectLeafCodes = (dept: ITreeItem) => {
         if (!dept?.has_children && dept?.tof_dept_id) {

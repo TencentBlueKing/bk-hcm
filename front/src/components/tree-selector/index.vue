@@ -9,7 +9,7 @@ export interface ITreeItem {
   has_children?: 0 | 1 | boolean;
   children?: ITreeItem[];
   level?: number;
-  tof_dept_id?: string;
+  tof_dept_id?: number;
 }
 
 export interface ITreeSelectorProps {
@@ -27,6 +27,10 @@ defineOptions({
   name: 'tree-selector',
 });
 
+const model = defineModel<string | number | (string | number)[]>();
+
+const modelChecked = defineModel<ITreeItem | ITreeItem[]>('checked');
+
 const props = withDefaults(defineProps<ITreeSelectorProps>(), {
   data: () => [] as ITreeItem[],
   multiple: true,
@@ -35,9 +39,6 @@ const props = withDefaults(defineProps<ITreeSelectorProps>(), {
   collapseTags: true,
   showOnInit: false,
 });
-
-const model = defineModel<string | number | (string | number)[]>();
-const modelChecked = defineModel<ITreeItem | ITreeItem[]>('checked');
 
 const selectRef = ref();
 const treeRef = ref();
@@ -249,14 +250,18 @@ defineExpose({
 .tree-selector {
   font-size: 12px;
 }
+
 .tree-selector-tree {
   color: #63656e;
+
   .bk-node-action {
     display: inline-flex;
     align-items: center;
   }
+
   .bk-node-content {
     gap: 4px;
+
     & > span {
       display: flex;
       align-items: center;
