@@ -198,7 +198,7 @@ func (req *HostListReq) Validate() error {
 
 // ResDissolveReq resource dissolve request.
 type ResDissolveReq struct {
-	GroupIDs    []string `json:"group_ids"`
+	GroupIDs    []int64  `json:"group_ids"`
 	BizNames    []string `json:"bk_biz_names"`
 	ModuleNames []string `json:"module_names"`
 	Operators   []string `json:"operators"`
@@ -219,12 +219,7 @@ func (req *ResDissolveReq) GetESCond(assetIDs []string, bizIDName, blackBizIDNam
 
 	cond := make(map[string][]interface{})
 
-	for _, v := range req.GroupIDs {
-		id, err := strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("group id:%s is invalid, err: %v", v, err)
-		}
-
+	for _, id := range req.GroupIDs {
 		cond[es.GroupID] = append(cond[es.GroupID], id)
 	}
 

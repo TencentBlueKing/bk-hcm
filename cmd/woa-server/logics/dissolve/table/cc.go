@@ -22,7 +22,6 @@ package table
 import (
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -40,14 +39,9 @@ import (
 )
 
 // getBizIDNameByName 此方法如果没有传name,那么会查询所有的业务
-func (l *logics) getBizIDNameByName(kt *kit.Kit, names []string, groupIDs []string) (map[int64]string, error) {
+func (l *logics) getBizIDNameByName(kt *kit.Kit, names []string, groupIDs []int64) (map[int64]string, error) {
 	groupIDMap := make(map[int64]struct{})
-	for _, groupID := range groupIDs {
-		id, err := strconv.ParseInt(groupID, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("group id:%s is invalid, err: %v", groupID, err)
-		}
-
+	for _, id := range groupIDs {
 		groupIDMap[id] = struct{}{}
 	}
 
@@ -186,7 +180,7 @@ func (l *logics) getBlackBizIDName(kt *kit.Kit) (map[int64]string, error) {
 		bizNames = append(bizNames, v)
 	}
 
-	return l.getBizIDNameByName(kt, bizNames, make([]string, 0))
+	return l.getBizIDNameByName(kt, bizNames, make([]int64, 0))
 }
 
 func (l *logics) getHostByIDFromCC(kt *kit.Kit, hostIDs []int64, page *core.BasePage, source ReqSourceI) ([]cmdb.Host,

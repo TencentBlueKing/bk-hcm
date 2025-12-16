@@ -68,7 +68,7 @@ type OrgTopo struct {
 	// HasChildren 是否有下级部门(0:否1:有)
 	HasChildren *int64 `db:"has_children" json:"has_children"`
 	// TofDeptID TOF部门ID
-	TofDeptID string `db:"tof_dept_id" json:"tof_dept_id"`
+	TofDeptID int `db:"tof_dept_id" json:"tof_dept_id"`
 
 	// Memo is used to set the memo information if needed.
 	Memo *string `db:"memo" json:"memo"`

@@ -40,14 +40,14 @@ POST /api/v1/woa/metas/org_topos/list
           "name": "XXXX事业群",
           "full_name": "腾讯公司/XXXX事业群",
           "level": 1,
-          "tof_dept_id": "1001",
+          "tof_dept_id": 1001,
           "children": [
             {
               "id": "33333",
               "name": "XXXX部",
               "full_name": "腾讯公司/XXXX事业群/XXXX部",
               "level": 2,
-              "tof_dept_id": "1002",
+              "tof_dept_id": 1002,
               "children": null
             },
             {
@@ -55,14 +55,14 @@ POST /api/v1/woa/metas/org_topos/list
               "name": "XX工作室群",
               "full_name": "腾讯公司/XXXX事业群/XXXX群",
               "level": 2,
-              "tof_dept_id": "1003",
+              "tof_dept_id": 1003,
               "children": [
                 {
                   "id": "55555",
                   "name": "XXXX部",
                   "full_name": "腾讯公司/XXXX事业群/XX工作室群/XXXX部",
                   "level": 3,
-                  "tof_dept_id": "1004",
+                  "tof_dept_id": 1004,
                   "children": null
                 }
               ]
@@ -91,5 +91,5 @@ POST /api/v1/woa/metas/org_topos/list
 | name         | string       | 节点名称                            |
 | full_name    | string       | 到当前节点的全路径名称                |
 | level        | int          | 节点所在层级                         |
-| tof_dept_id  | string       | 节点在tof平台的ID                    |
+| tof_dept_id  | int          | 节点在tof平台的ID                    |
 | children     | object array | 子节点列表，数据结构类型和data一致      |

@@ -137,6 +137,6 @@ type OrgInfo struct {
 	Level       int64      `json:"level"`
 	HasChildren bool       `json:"has_children"`
 	Children    []*OrgInfo `json:"children"`
-	TofDeptID   string     `json:"tof_dept_id"`
+	TofDeptID   int        `json:"tof_dept_id"`
 	Parent      string     `json:"parent"`
 }

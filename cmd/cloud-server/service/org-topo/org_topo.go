@@ -122,9 +122,20 @@ func (ots *orgTopoSvc) convertDeptMapToDB(kt *kit.Kit, deptMap map[string]*userm
 			hasChildren = 1
 		}
 
-		tofDeptID := ""
+		var tofDeptID int
 		if deptInfo.Extras != nil {
-			tofDeptID = deptInfo.Extras.Code
+			if deptInfo.Extras.TofID > 0 {
+				tofDeptID = deptInfo.Extras.TofID
+			}
+			if len(deptInfo.Extras.Code) > 0 {
+				codeInt, err := strconv.Atoi(deptInfo.Extras.Code)
+				if err != nil {
+					logs.Errorf("failed to convert org dept code to int, deptID: %d, code: %s, err: %v, rid: %s",
+						deptInfo.ID, deptInfo.Extras.Code, err, kt.Rid)
+					return nil, err
+				}
+				tofDeptID = codeInt
+			}
 		}
 
 		orgTopos = append(orgTopos, table.OrgTopo{

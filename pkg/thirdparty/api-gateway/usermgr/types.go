@@ -56,13 +56,12 @@ type DeptInfo struct {
 	Enabled     bool       `json:"enabled"`
 	CategoryID  int64      `json:"category_id"`
 	Order       int64      `json:"order"`
-	Left        int64      `json:"lft"`
-	Right       int64      `json:"rght"`
 	Extras      *DeptExtra `json:"extras"`
 	Children    []DeptInfo `json:"children"`
 }
 
 // DeptExtra is usermgr department extra info.
 type DeptExtra struct {
-	Code string `json:"code"`
+	Code  string `json:"code"` // 用户管理即将删除该字段，用tof_id字段代替，需要兼容
+	TofID int    `json:"tof_id"`
 }

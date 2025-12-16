@@ -93,7 +93,7 @@ func (l *logics) FindOriginHost(kt *kit.Kit, req *dissolve.HostListReq, source R
 		return &dissolve.ListHostDetails{}, nil
 	}
 
-	bizIDName, err := l.getBizIDNameByName(kt, req.BizNames, make([]string, 0))
+	bizIDName, err := l.getBizIDNameByName(kt, req.BizNames, make([]int64, 0))
 	if err != nil {
 		logs.Errorf("get biz id and name failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
 		return nil, err
