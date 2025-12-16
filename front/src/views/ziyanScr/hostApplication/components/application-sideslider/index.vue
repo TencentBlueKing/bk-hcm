@@ -31,7 +31,17 @@ const view = computed(() => (isUseResourcePlan.value ? ResourcePlan : Inventory)
 const handleApply = (data: IResourcesDemandItem | ICvmDeviceItem) => {
   if (isUseResourcePlan.value) {
     const { device_type, region_id: region, zone_id: zone } = data as IResourcesDemandItem;
-    emit('apply', { device_type, region, zone, zones: [zone] }, false);
+    emit(
+      'apply',
+      {
+        device_type,
+        region,
+        zone,
+        zones: [zone],
+        charge_type: data.plan_type === '预测内' ? 'PREPAID' : 'POSTPAID_BY_HOUR',
+      },
+      false,
+    );
   } else {
     const { device_type, region, zone } = data as ICvmDeviceItem;
     emit('apply', { device_type, region, zone, zones: [zone] }, false);

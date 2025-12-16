@@ -629,6 +629,7 @@ export default defineComponent({
       resourceForm.value.region = data.region;
       resourceForm.value.zone = data.zone;
       resourceForm.value.zones = data.zone ? [data.zone] : data.zones;
+      resourceForm.value.charge_type = data.charge_type;
       resourceForm.value.charge_months = 36;
     };
 
