@@ -38,6 +38,7 @@ export const useUserStore = defineStore('user', () => {
     username.value = data.bk_username;
     displayName.value = data.display_name;
     tenantId.value = data.tenant_id;
+    window.PROJECT_CONFIG.TIMEZONE = data.time_zone;
     return data;
   };
 

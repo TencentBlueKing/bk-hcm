@@ -10,8 +10,8 @@ import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from '../components/cloud-service-tag';
 import SchemeEditDialog from '../components/scheme-edit-dialog';
 import { useVerify } from '@/hooks';
+import { timeFormatter } from '@/common/util';
 import ErrorPage from '@/views/error-pages/403';
-import moment from 'moment';
 
 import './index.scss';
 import PermissionDialog from '@/components/permission-dialog';
@@ -185,7 +185,7 @@ export default defineComponent({
         field: 'updated_at',
         sort: true,
         render: ({ data }: { data: ISchemeListItem }) => {
-          return moment(data.updated_at).format('YYYY-MM-DD HH:mm:ss');
+          return timeFormatter(data.updated_at);
         },
       },
       {

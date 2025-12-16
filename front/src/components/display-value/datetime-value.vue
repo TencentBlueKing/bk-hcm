@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { timeFormatter } from '@/common/util';
 const props = withDefaults(defineProps<{ value: string; format: string }>(), {
-  format: 'YYYY-MM-DD HH:mm:ss',
+  format: 'YYYY-MM-DD HH:mm:ssZZ',
 });
 
 const displayValue = computed(() => timeFormatter(props.value, props.format));
