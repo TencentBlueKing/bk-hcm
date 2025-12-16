@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/zip/excel"
 )
 
-// targetExporter ...
+// targetExporter target excel exporter
 type targetExporter struct {
 	client *client.ClientSet
 	vendor enumor.Vendor
@@ -47,7 +47,7 @@ type targetExporter struct {
 	path   string
 }
 
-// NewTargetExporter ...
+// NewTargetExporter new target exporter
 func NewTargetExporter(client *client.ClientSet, vendor enumor.Vendor, params *cslb.ExportTargetReq) (Exporter, error) {
 	return &targetExporter{
 		client: client,
@@ -57,12 +57,12 @@ func NewTargetExporter(client *client.ClientSet, vendor enumor.Vendor, params *c
 	}, nil
 }
 
-// PreCheck ...
+// PreCheck pre check target export params
 func (t *targetExporter) PreCheck(kt *kit.Kit) error {
 	return t.params.Validate()
 }
 
-// Export ...
+// Export export target excel
 func (t *targetExporter) Export(kt *kit.Kit) (string, error) {
 	fileName := zip.GenFileName(constant.CLBFilePrefix)
 	zipOperator, err := excel.NewOperator(t.path, fileName)

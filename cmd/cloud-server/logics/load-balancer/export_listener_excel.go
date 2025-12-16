@@ -42,7 +42,7 @@ import (
 	"hcm/pkg/zip/excel"
 )
 
-// listenerExporter ...
+// listenerExporter listener excel exporter
 type listenerExporter struct {
 	client *client.ClientSet
 	vendor enumor.Vendor
@@ -50,7 +50,7 @@ type listenerExporter struct {
 	path   string
 }
 
-// NewListenerExporter ...
+// NewListenerExporter new listener exporter
 func NewListenerExporter(client *client.ClientSet, vendor enumor.Vendor, params *cslb.ExportListenerReq) (Exporter,
 	error) {
 
@@ -62,7 +62,7 @@ func NewListenerExporter(client *client.ClientSet, vendor enumor.Vendor, params 
 	}, nil
 }
 
-// PreCheck ...
+// PreCheck pre check listener export params
 func (l *listenerExporter) PreCheck(kt *kit.Kit) error {
 	// 1. 如果入参传入了监听器id，判断监听器是否在负载均衡下
 	if err := l.checkClbListenerRel(kt); err != nil {
@@ -331,7 +331,7 @@ func (l *listenerExporter) getRsCountRule(ruleType enumor.RuleType) []filter.Rul
 	return rules
 }
 
-// Export ...
+// Export export listener excel
 func (l *listenerExporter) Export(kt *kit.Kit) (string, error) {
 	fileName := zip.GenFileName(constant.CLBFilePrefix)
 	zipOperator, err := excel.NewOperator(l.path, fileName)

@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/zip/excel"
 )
 
-// Exporter ...
+// Exporter excel exporter interface
 type Exporter interface {
 	PreCheck(kt *kit.Kit) error
 	Export(kt *kit.Kit) (string, error)

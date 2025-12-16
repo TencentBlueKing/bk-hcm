@@ -64,7 +64,7 @@ func init() {
 
 var _ table.Table = (*Layer4ListenerDetail)(nil)
 
-// Layer4ListenerDetail ...
+// Layer4ListenerDetail layer4 listener detail
 type Layer4ListenerDetail struct {
 	ClbVipDomain    string                        `json:"clb_vip_domain" header:"clb_vip/clb_domain;负载均衡vip/域名"`
 	CloudClbID      string                        `json:"cloud_clb_id" header:"clb_id;负载均衡云ID"`
@@ -88,7 +88,7 @@ func (l Layer4ListenerDetail) GetValuesByHeader() ([]string, error) {
 	return table.GetValuesByHeader(l)
 }
 
-// Layer7ListenerDetail ...
+// Layer7ListenerDetail layer7 listener detail
 type Layer7ListenerDetail struct {
 	ClbVipDomain    string              `json:"clb_vip_domain" header:"clb_vip/clb_domain;负载均衡vip/域名"`
 	CloudClbID      string              `json:"cloud_clb_id" header:"clb_id;负载均衡云ID"`
@@ -112,7 +112,7 @@ func (l Layer7ListenerDetail) GetValuesByHeader() ([]string, error) {
 	return table.GetValuesByHeader(l)
 }
 
-// RuleDetail ...
+// RuleDetail rule detail
 type RuleDetail struct {
 	ClbVipDomain    string                        `json:"clb_vip_domain" header:"clb_vip/clb_domain;负载均衡vip/域名"`
 	CloudClbID      string                        `json:"cloud_clb_id" header:"clb_id;负载均衡云ID"`
@@ -138,7 +138,7 @@ func (r RuleDetail) GetValuesByHeader() ([]string, error) {
 	return table.GetValuesByHeader(r)
 }
 
-// Layer4RsDetail ...
+// Layer4RsDetail layer4 rs detail
 type Layer4RsDetail struct {
 	ClbVipDomain    string              `json:"clb_vip_domain" header:"clb_vip/clb_domain;负载均衡vip/域名"`
 	CloudClbID      string              `json:"cloud_clb_id" header:"clb_id;负载均衡云ID"`
@@ -162,7 +162,7 @@ func (l Layer4RsDetail) GetValuesByHeader() ([]string, error) {
 	return table.GetValuesByHeader(l)
 }
 
-// Layer7RsDetail ...
+// Layer7RsDetail layer7 rs detail
 type Layer7RsDetail struct {
 	ClbVipDomain    string              `json:"clb_vip_domain" header:"clb_vip/clb_domain;负载均衡vip/域名"`
 	CloudClbID      string              `json:"cloud_clb_id" header:"clb_id;负载均衡云ID"`
