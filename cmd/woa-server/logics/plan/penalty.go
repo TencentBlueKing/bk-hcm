@@ -910,8 +910,12 @@ func (c *Controller) generateExpireNotificationsEmail(kt *kit.Kit, demands []*pt
 			continue
 		}
 
-		uniqueReceivers[demand.Creator] = struct{}{}
-		uniqueReceivers[demand.Reviser] = struct{}{}
+		if demand.Creator != constant.BackendOperationUserKey {
+			uniqueReceivers[demand.Creator] = struct{}{}
+		}
+		if demand.Reviser != constant.BackendOperationUserKey {
+			uniqueReceivers[demand.Reviser] = struct{}{}
+		}
 		allRemainedCPU += demand.RemainedCpuCore
 
 		if expectStart == "" || demand.ExpectTime < expectStart {
