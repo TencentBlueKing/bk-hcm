@@ -85,6 +85,8 @@ web:
   enableCloudSelection: true
   # 是否启用账单账号功能
   enableAccountBill: true
+  ## 子路径，默认配置：/
+  subPath: /bkhcm
 
 # defines esb related settings.
 esb:

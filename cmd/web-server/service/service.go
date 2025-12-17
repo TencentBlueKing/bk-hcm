@@ -395,6 +395,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"ENABLE_ACCOUNT_BILL":         cc.WebServer().Web.EnableAccountBill,
 		"ENABLE_NOTICE":               cc.WebServer().Notice.Enable,
 		"USER_MANAGE_URL":             cc.WebServer().Web.BkUserManageUrl,
+		"PUBLIC_PATH":                 cc.WebServer().Web.SubPath + "/",
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

@@ -657,6 +657,14 @@ bkUserManageUrl: ""
 enableCloudSelection: true
 # 是否启用账单账号功能
 enableAccountBill: true
+# 如果区分子域名和子路径，建议新增的配置项
+bkWebSiteAccess:
+  # 可选值：subdomain（子域名）、subpath（子路径）
+  mode: "subpath"
+  subdomain: # 子域名模式生效的配置
+  subpath: # 子路径模式生效的配置
+    # 根路径前缀（如 "/app"则访问路径 https://www.example.com/app/xxx）
+    rootPrefix: "/bkhcm"
 
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##

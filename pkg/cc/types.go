@@ -540,6 +540,7 @@ type Web struct {
 	BkUserManageUrl        string `yaml:"bkUserManageUrl"`
 	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
 	EnableAccountBill      bool   `yaml:"enableAccountBill"`
+	SubPath                string `yaml:"subPath"`
 }
 
 func (s Web) validate() error {
