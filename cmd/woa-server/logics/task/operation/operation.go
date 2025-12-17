@@ -380,7 +380,11 @@ func buildCompletionRateStatisticsPipeline(filter map[string]interface{}) []map[
 					"date":   "$create_at"}},
 			"is_done": map[string]interface{}{
 				"$cond": []interface{}{
-					map[string]interface{}{"$eq": []interface{}{"$stage", "DONE"}},
+					map[string]interface{}{
+						condition.BKDBIN: []interface{}{
+							"$stage", []interface{}{types.TicketStageDone, types.TicketStageTerminate},
+						},
+					},
 					1,
 					0,
 				},
@@ -402,7 +406,7 @@ func buildCompletionRateStatisticsPipeline(filter map[string]interface{}) []map[
 									"$done_count",
 									map[string]interface{}{
 										"$cond": []interface{}{
-											map[string]interface{}{"$eq": []interface{}{"$total_count", 0}},
+											map[string]interface{}{condition.BKDBEQ: []interface{}{"$total_count", 0}},
 											1,
 											"$total_count",
 										},
@@ -519,8 +523,16 @@ func buildCompletionRateDetailPipeline(baseFilter map[string]interface{}) []map[
 					"$cond": []interface{}{
 						map[string]interface{}{
 							"$and": []interface{}{
-								map[string]interface{}{"$eq": []interface{}{"$stage", types.TicketStageDone}},
-								map[string]interface{}{"$eq": []interface{}{"$status", types.ApplyStatusDone}},
+								map[string]interface{}{
+									condition.BKDBIN: []interface{}{
+										"$stage", []interface{}{types.TicketStageDone, types.TicketStageTerminate},
+									},
+								},
+								map[string]interface{}{
+									condition.BKDBIN: []interface{}{
+										"$status", []interface{}{types.ApplyStatusDone, types.ApplyStatusTerminate},
+									},
+								},
 							},
 						},
 						1,
@@ -543,7 +555,7 @@ func buildCompletionRateDetailPipeline(baseFilter map[string]interface{}) []map[
 			"$addFields": map[string]interface{}{
 				"completion_rate": map[string]interface{}{
 					"$cond": []interface{}{
-						map[string]interface{}{"$eq": []interface{}{"$total_orders", 0}},
+						map[string]interface{}{condition.BKDBEQ: []interface{}{"$total_orders", 0}},
 						0.0,
 						map[string]interface{}{
 							"$multiply": []interface{}{
