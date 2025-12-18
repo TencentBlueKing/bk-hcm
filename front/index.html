@@ -5,14 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>海垒 | 腾讯蓝鲸智云</title>
-    <link rel="shortcut icon" href="<%= BK_STATIC_URL %>favicon.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="<%= PUBLIC_PATH %>static/favicon.ico" type="image/x-icon" />
   </head>
 
   <body>
     <div id="app"></div>
     <script>
       window.PROJECT_CONFIG = (function () {
-        const BK_HCM_AJAX_URL_PREFIX = '<%= BK_HCM_AJAX_URL_PREFIX %>';
+        const BK_HCM_AJAX_URL_PREFIX = '<%= BK_HCM_AJAX_URL_PREFIX %><%= PUBLIC_PATH %>';
         const BK_LOGIN_URL = '<%= BK_LOGIN_URL %>';
         const BK_COMPONENT_API_URL = '<%= BK_COMPONENT_API_URL %>';
         const BK_ITSM_URL = '<%= BK_ITSM_URL %>';
@@ -25,9 +25,17 @@
         const ENABLE_ACCOUNT_BILL = '<%= ENABLE_ACCOUNT_BILL %>';
         const ENABLE_NOTICE = '<%= ENABLE_NOTICE %>';
         const USER_MANAGE_URL = '<%= USER_MANAGE_URL %>';
+        const PUBLIC_PATH = '<%= PUBLIC_PATH %>';
+
+        const ajaxUrl = new URL(BK_HCM_AJAX_URL_PREFIX);
+        const ajaxUrlPathname = ajaxUrl.pathname
+          .split('/')
+          .filter((str) => str)
+          .join('/');
+        const ajaxUrlPrefix = `${ajaxUrl.origin}${ajaxUrlPathname ? '/' : ''}${ajaxUrlPathname}`;
 
         return {
-          BK_HCM_AJAX_URL_PREFIX,
+          BK_HCM_AJAX_URL_PREFIX: ajaxUrlPrefix,
           BK_LOGIN_URL,
           BK_COMPONENT_API_URL,
           BK_ITSM_URL,
@@ -40,8 +48,11 @@
           ENABLE_ACCOUNT_BILL,
           ENABLE_NOTICE,
           USER_MANAGE_URL,
+          PUBLIC_PATH,
         };
       })();
+
+      window.BK_STATIC_URL = '<%= PUBLIC_PATH %>static';
     </script>
   </body>
 </html>

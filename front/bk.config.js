@@ -3,6 +3,9 @@ const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
 const BuildHashPlugin = require('./build-hash-plugin');
 
+const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const appDir = fs.realpathSync(process.cwd());
 const resolveBase = (relativePath) => path.resolve(appDir, relativePath);
 
@@ -10,7 +13,7 @@ const getConfig = (custom = {}) => ({
   assetsDir: '',
   outputAssetsDirName: '',
   outputDir: custom.outputDir ?? 'dist',
-  publicPath: custom.publicPath ?? custom.env?.BK_STATIC_URL ?? process.env.BK_STATIC_URL,
+  publicPath: isDevelopment ? custom.publicPath ?? custom.env?.PUBLIC_PATH : `${process.env.PUBLIC_PATH}static/`,
   host: custom.host ?? custom.env?.BK_APP_HOST ?? process.env.BK_APP_HOST,
   port: custom.port ?? custom.env?.BK_APP_PORT ?? process.env.BK_APP_PORT,
   cache: true,
@@ -18,7 +21,9 @@ const getConfig = (custom = {}) => ({
   typescript: true,
   forkTsChecker: false,
   bundleAnalysis: false,
-  replaceStatic: false,
+  replaceStatic: {
+    key: '{{ .PUBLIC_PATH }}static/',
+  },
   target: 'web',
   lazyCompilation: false,
   lazyCompilationHost: 'localhost',
@@ -38,8 +43,15 @@ const getConfig = (custom = {}) => ({
     },
   },
   css: {
+    cssLoaderOptions: {
+      esModule: false,
+      modules: {
+        exportLocalsConvention: 'camelCase',
+        auto: /\.module\.s?css$/,
+      },
+    },
     scssLoaderOptions: {
-      additionalData: '@import "./src/style/variables.scss";',
+      additionalData: '@import "~@/style/variables.scss";',
     },
   },
   configureWebpack() {
@@ -77,7 +89,7 @@ const getConfig = (custom = {}) => ({
         },
       });
 
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       config.plugin('buildHash').use(BuildHashPlugin);
     }
 

@@ -7,10 +7,10 @@
     "海垒2.0"
   ],
   "scripts": {
-    "dev": "bk-cli-service-webpack dev",
-    "dev:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack dev",
-    "build": "bk-cli-service-webpack build",
-    "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack build",
+    "dev": "bk-cli-service dev",
+    "dev:bcc": "cross-env TARGET_MODE=bcc bk-cli-service dev",
+    "build": "bk-cli-service build",
+    "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service build",
     "serve": "node ./paas-server/index.js",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache",
     "lint:style": "stylelint --fix ./**/*.{scss,css,vue} --custom-syntax",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "@blueking/babel-preset-bk": "2.1.0",
-    "@blueking/cli-service-webpack": "0.0.7",
+    "@blueking/cli-service": "0.1.2",
     "@blueking/eslint-config-bk": "2.1.0",
     "@types/cookie": "0.5.1",
     "@types/lodash": "4.14.182",

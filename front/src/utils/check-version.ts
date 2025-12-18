@@ -1,7 +1,7 @@
 import { InfoBox } from 'bkui-vue';
 import useTimeoutPoll, { type TimeoutPollAction } from '@/hooks/use-timeout-poll';
 
-const STATIC_PATH = '/static/';
+const STATIC_PATH = `${window.PROJECT_CONFIG.PUBLIC_PATH}static/`;
 const VERSION_FILE = 'build-hash.txt';
 
 let localVersion = '';
