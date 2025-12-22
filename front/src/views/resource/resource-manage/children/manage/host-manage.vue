@@ -30,12 +30,6 @@ const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
-  isResourcePage: {
-    type: Boolean,
-  },
-  whereAmI: {
-    type: String,
-  },
 });
 
 const { DropdownMenu, DropdownItem } = Dropdown;

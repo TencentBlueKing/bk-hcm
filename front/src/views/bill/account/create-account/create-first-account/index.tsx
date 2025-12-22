@@ -6,7 +6,6 @@ import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
 import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
-import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import { useRouter } from 'vue-router';
 import useBillStore from '@/store/useBillStore';
@@ -142,26 +141,10 @@ export default defineComponent({
               </FormItem>
               <div class={'account-manager-wrapper'}>
                 <FormItem label='主负责人' required property='managers' class={'account-manager'}>
-                  <MemberSelect
-                    v-model={formModel.managers}
-                    defaultUserlist={[
-                      {
-                        username: userStore.username,
-                        display_name: userStore.username,
-                      },
-                    ]}
-                  />
+                  <hcm-form-user v-model={formModel.managers} />
                 </FormItem>
                 <FormItem label='备份负责人' required property='bak_managers' class={'ml24 account-manager'}>
-                  <MemberSelect
-                    v-model={formModel.bak_managers}
-                    defaultUserlist={[
-                      {
-                        username: userStore.username,
-                        display_name: userStore.username,
-                      },
-                    ]}
-                  />
+                  <hcm-form-user v-model={formModel.bak_managers} />
                 </FormItem>
               </div>
               <FormItem label='备注' property='memo'>

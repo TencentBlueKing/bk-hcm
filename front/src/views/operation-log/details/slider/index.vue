@@ -6,8 +6,8 @@ import { IAuditItem } from '@/store/audit';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 
-const props = defineProps<{ fields: ModelPropertyDisplay[]; info: IAuditItem }>();
 const model = defineModel<boolean>();
+const props = defineProps<{ fields: ModelPropertyDisplay[]; info: IAuditItem }>();
 const emit = defineEmits(['hidden']);
 
 const detailJsonStr = computed(() => {
@@ -24,7 +24,7 @@ const handleHidden = () => {
 </script>
 
 <template>
-  <bk-sideslider v-model:isShow="model" title="操作详情" :width="640" @hidden="handleHidden">
+  <bk-sideslider v-model:is-show="model" title="操作详情" :width="640" @hidden="handleHidden">
     <grid-container
       class="info-display-container"
       :column="2"

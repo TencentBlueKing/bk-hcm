@@ -91,7 +91,7 @@ watch(
           :vendor="formData.vendor"
           :region="formData.region"
           v-model="formData.cloud_vpc_id"
-          @handleVpcDetail="getVpcDetail"
+          @handle-vpc-detail="getVpcDetail"
         ></vpc-selector>
       </bk-form-item>
       <bk-form-item

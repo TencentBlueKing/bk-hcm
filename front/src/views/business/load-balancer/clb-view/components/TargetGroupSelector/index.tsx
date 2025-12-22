@@ -88,7 +88,8 @@ export default defineComponent({
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isScrollLoading.value}
-        remoteMethod={remoteSearchMethod}>
+        remoteMethod={remoteSearchMethod}
+      >
         {{
           default: () =>
             dataList.value.map(({ id, name, listener_num }: any) => (

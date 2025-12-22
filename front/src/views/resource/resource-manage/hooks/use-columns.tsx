@@ -1113,6 +1113,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '操作人',
       field: 'operator',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
   ];
 
@@ -1714,7 +1715,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '主负责人',
       field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     // {
     //   label: '组织架构',
@@ -1752,7 +1753,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '主负责人',
       field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '业务名称',
@@ -1818,6 +1819,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '申请人',
       field: 'applicant',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '创建时间',
@@ -2465,6 +2467,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '操作人',
       field: 'operator',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '人民币（元）',

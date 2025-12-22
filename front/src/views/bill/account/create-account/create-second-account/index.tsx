@@ -7,7 +7,6 @@ import { VendorEnum } from '@/common/constant';
 import { MAIN_ACCOUNT_VENDORS } from '../constants';
 import { Success } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import useFormModel from '@/hooks/useFormModel';
 import useBillStore from '@/store/useBillStore';
@@ -212,26 +211,10 @@ export default defineComponent({
                       </FormItem>
                       <div class={'account-manager-wrapper'}>
                         <FormItem label='主负责人' required property='managers' class={'account-manager'}>
-                          <MemberSelect
-                            v-model={formModel.managers}
-                            defaultUserlist={[
-                              {
-                                username: userStore.username,
-                                display_name: userStore.username,
-                              },
-                            ]}
-                          />
+                          <hcm-form-user v-model={formModel.managers} />
                         </FormItem>
                         <FormItem label='备份负责人' required property='bak_managers' class={'ml24 account-manager'}>
-                          <MemberSelect
-                            v-model={formModel.bak_managers}
-                            defaultUserlist={[
-                              {
-                                username: userStore.username,
-                                display_name: userStore.username,
-                              },
-                            ]}
-                          />
+                          <hcm-form-user v-model={formModel.bak_managers} />
                         </FormItem>
                       </div>
                       {/* <FormItem label='所属组织架构' required property='dept_id'>

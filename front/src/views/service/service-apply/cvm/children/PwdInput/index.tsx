@@ -99,7 +99,8 @@ export default defineComponent({
         key={inputType.value}
         class={[cssModule.wrapper, { [cssModule['render-custom-suffix']]: isGenerate.value }]}
         v-model={pwd.value}
-        type={inputType.value}>
+        type={inputType.value}
+      >
         {{
           suffix: () => renderSuffix.value,
         }}

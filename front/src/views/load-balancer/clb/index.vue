@@ -102,6 +102,7 @@ watch(
 .container {
   height: 100%;
 }
+
 .resource-type {
   display: flex;
   border-color: #f0f1f5;
@@ -114,6 +115,7 @@ watch(
   label {
     background: #f0f1f5;
     flex: 1;
+
     :deep(.bk-radio-button-label) {
       color: #4d4f56;
       border-color: transparent !important;
