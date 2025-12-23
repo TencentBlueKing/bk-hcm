@@ -55,7 +55,6 @@ export default defineComponent({
         cloud_vpc_id,
         cloud_subnet_id,
         require_count,
-        name,
         load_balancer_type,
         account_type,
         address_ip_version,
@@ -68,12 +67,7 @@ export default defineComponent({
 
       // 基本验证
       const hasRequiredFields =
-        account_id &&
-        region &&
-        load_balancer_pass_to_target !== undefined &&
-        require_count !== 0 &&
-        name &&
-        /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(name);
+        account_id && region && load_balancer_pass_to_target !== undefined && require_count !== 0;
 
       if (!hasRequiredFields) return false;
 
