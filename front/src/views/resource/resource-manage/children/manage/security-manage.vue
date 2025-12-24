@@ -221,7 +221,7 @@ const selectSearchData = computed(() => {
       searchData: [],
     },
   };
-  const baseSearchData = [
+  let baseSearchData = [
     {
       name: map[activeType.value].idName,
       id: 'cloud_id',
@@ -237,6 +237,15 @@ const selectSearchData = computed(() => {
       (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
     ),
   ];
+
+  // 如果当前选定了某个云账号筛选条件就剔除云厂商
+  if (!isAllVendor.value) {
+    baseSearchData = baseSearchData.filter((item) => item.id !== 'vendor');
+    if (selectedAccountId.value) {
+      // 如果选中了某个账号ID筛选条件就剔除云账号ID
+      baseSearchData = baseSearchData.filter((item) => item.id !== 'account_id');
+    }
+  }
 
   return [...baseSearchData, ...map[activeType.value].searchData];
 });
@@ -1276,6 +1285,23 @@ watch(
       regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
     }
     filter.rules = rules;
+    if (vendorInResourcePage.value) {
+      // 如果选择的不是全部云厂商，则把当前云厂商当做固定参数入参
+      filter.rules.push({
+        field: 'vendor',
+        op: 'eq',
+        value: vendorInResourcePage.value,
+      });
+
+      if (selectedAccountId.value) {
+        // 如果选中了某个账号ID，则把当前云账号ID当做固定参数入参
+        filter.rules.push({
+          field: 'account_id',
+          op: 'cs',
+          value: selectedAccountId.value,
+        });
+      }
+    }
     searchValue.value = buildSearchSelectValueBySearchQsCondition(value, selectSearchData.value);
     if (firstTime) {
       // 资源下业务切换资源tab时候，进行强制更新type
