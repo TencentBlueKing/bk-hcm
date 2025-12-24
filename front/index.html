@@ -26,13 +26,10 @@
         const ENABLE_NOTICE = '<%= ENABLE_NOTICE %>';
         const USER_MANAGE_URL = '<%= USER_MANAGE_URL %>';
         const PUBLIC_PATH = '<%= PUBLIC_PATH %>';
+        const ENV = '<%= NODE_ENV %>';
 
-        const ajaxUrl = new URL(BK_HCM_AJAX_URL_PREFIX);
-        const ajaxUrlPathname = ajaxUrl.pathname
-          .split('/')
-          .filter((str) => str)
-          .join('/');
-        const ajaxUrlPrefix = `${ajaxUrl.origin}${ajaxUrlPathname ? '/' : ''}${ajaxUrlPathname}`;
+        const ajaxUrl = ENV === 'production' ? location.origin + location.pathname : BK_HCM_AJAX_URL_PREFIX;
+        const ajaxUrlPrefix = ajaxUrl.endsWith('/') ? ajaxUrl.slice(0, -1) : ajaxUrl;
 
         return {
           BK_HCM_AJAX_URL_PREFIX: ajaxUrlPrefix,

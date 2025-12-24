@@ -77,6 +77,7 @@ index-dev.html
 .bk.local.env
 env.*.config.js
 .bk.*.custom.env
+index.dev.js
 
 .husky/commit-msg
 .husky/commit-msg-bkcodeai
