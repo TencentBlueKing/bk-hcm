@@ -205,6 +205,10 @@ export const FILTER_DATA = [
     name: '云厂商',
     id: 'vendor',
     children: VENDORS,
+    option: VENDORS.reduce((acc: { [key: string]: string }, cur) => {
+      acc[cur['id']] = cur.name;
+      return acc;
+    }, {}),
     async: false,
     meta: {
       search: {
