@@ -358,8 +358,9 @@ var CrpOrderStatusCanRevoke = []CrpOrderStatus{
 }
 
 var crpOrderStatusApprovalStateMap = map[CrpOrderStatus]ApprovalState{
-	CrpOrderStatusDeptApprove: HcmAdminApproval,
-	CrpOrderStatusPlanApprove: CrpAdminApproval,
+	CrpOrderStatusDeptApprove:     HcmAdminApproval,
+	CrpOrderStatusPlanApprove:     CrpAdminApproval,
+	CrpOrderStatusResourceApprove: CrpAdminApproval,
 }
 
 // IsAdminApproval is admin approval.
