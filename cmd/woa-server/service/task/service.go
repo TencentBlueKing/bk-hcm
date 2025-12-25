@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/thirdparty/cvmapi"
 )
 
 // InitService initial the service
@@ -39,6 +40,7 @@ func InitService(c *capability.Capability) {
 		itsmClient:     c.ThirdCli.ITSM,
 		gcLogics:       c.GcLogic,
 		dissolveLogics: c.DissolveLogic,
+		cvmClient:      c.ThirdCli.CVM,
 	}
 	h := rest.NewHandler()
 	h.Path("/task")
@@ -67,6 +69,7 @@ type service struct {
 	itsmClient     itsm.Client
 	gcLogics       gclogics.Logics
 	dissolveLogics dissolve.Logics
+	cvmClient      cvmapi.CVMClientInterface
 }
 
 func (s *service) initOperationService(h *rest.Handler) {
