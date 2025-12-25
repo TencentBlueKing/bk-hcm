@@ -20,7 +20,7 @@ import http from '@/http';
 import { useZiyanScrStore } from '@/store';
 import SuborderDetail from '../suborder-detail';
 import CommonDialog from '@/components/common-dialog';
-import { throttle } from 'lodash';
+import throttle from 'lodash/throttle';
 import MatchPanel from '../match-panel';
 import { getRegionCn, getZoneCn } from '@/views/ziyanScr/cvm-web/transform';
 import { getResourceTypeName } from '../transform';
@@ -37,6 +37,7 @@ import { serviceShareBizSelectedKey } from '@/constants/storage-symbols';
 import { SCR_RESOURCE_TYPE_NAME, ScrResourceType } from '@/constants';
 import { RES_ASSIGN_TYPE } from '@/components/device-type-selector/constants';
 import type { ICvmDeviceTypeFormData } from '@/components/device-type-selector/typings';
+import UserValue from '@/components/display-value/user-value.vue';
 
 export default defineComponent({
   setup() {
@@ -176,9 +177,9 @@ export default defineComponent({
           {
             label: '单据状态',
             field: 'stage',
-            width: 200,
+            width: 170,
             render: ({ data }: any) => {
-              const { create_at, stage, resource_type } = data;
+              const { create_at, stage, resource_type, spec } = data;
               const diffHours = moment(new Date()).diff(moment(create_at), 'hours');
               const isAbnormal = diffHours >= 2 && stage === 'RUNNING';
               const resourceTypeName = SCR_RESOURCE_TYPE_NAME[resource_type as keyof typeof ScrResourceType];
@@ -205,8 +206,14 @@ export default defineComponent({
                       v-bk-tooltips={{
                         content: (
                           <>
-                            建议
-                            <span class='text-primary ml4'>修改需求重试</span>
+                            {spec?.failed_zone_ids?.length > 0 && (
+                              <div>
+                                可用区：
+                                {[...new Set(spec.failed_zone_ids)].map((zone) => getZoneCn(zone)).join('，')}
+                                。已尝试生产主机失败
+                              </div>
+                            )}
+                            <span>建议：修改需求重试</span>
                           </>
                         ),
                       }}>
@@ -311,8 +318,13 @@ export default defineComponent({
           },
           {
             label: '申请人',
+            width: 150,
             render: ({ data }: any) => {
-              return <WName name={data.bk_username}></WName>;
+              return (
+                <WName name={data.bk_username}>
+                  <UserValue value={data.bk_username} />
+                </WName>
+              );
             },
           },
           {
@@ -350,7 +362,7 @@ export default defineComponent({
           {
             label: '已交付数',
             field: 'success_num',
-            width: 180,
+            width: 150,
             render: ({ data }: any) => {
               if (data.success_num > 0) {
                 const ips = orderClipboard.value?.[data.suborder_id]?.ips || [];
