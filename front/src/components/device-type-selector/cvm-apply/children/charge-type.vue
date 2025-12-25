@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, inject, Ref, ref } from 'vue';
+import { computed, inject, Ref, ref, h } from 'vue';
+import { Link } from 'bkui-vue';
+import { Share } from 'bkui-vue/lib/icon';
 import useCvmChargeType from '@/views/ziyanScr/hooks/use-cvm-charge-type';
 import ChargeMonthsSelector from '@/views/ziyanScr/cvm-produce/component/create-order/children/charge-months-selector.vue';
 import { type ICvmDevicetypeItem } from '@/store/cvm/device';
@@ -16,6 +18,9 @@ const props = defineProps<{
   isDefaultFourYears: boolean;
   isGpuDeviceType: boolean;
   isChargeTypeLoading: boolean;
+  // 整个组件禁用，与内部选项禁用无关，优先级更高，当为true时仅展示禁用选项即可忽略一切内部逻辑
+  disabled?: boolean;
+  disabledTips?: string;
 }>();
 
 const emit = defineEmits<{
@@ -76,27 +81,116 @@ const handleTypeChange = (type: string) => {
 <template>
   <div class="charge-type">
     <div class="item">
-      <div class="form-label required title">计费模式</div>
-      <bk-pop-confirm
-        v-bind="popConfirmProps"
-        @confirm="() => confirmPromise.resolve(1)"
-        @cancel="() => confirmPromise.reject()"
-        ref="popConfirmRef"
-      >
-        <!-- 滚服、小额绿通与预测无关 -->
+      <div class="form-label required title">
+        <span
+          class="bottom-dashed"
+          v-bk-tooltips="{
+            theme: 'light',
+            placement: 'top-start',
+            content: h('div', [
+              h(
+                'p',
+                '包年包月（预测提前13周）：按梯度折扣，1-3月150%，4-6月130%，7-11月120%，1年110%，2年105%，3年100%，4年95%',
+              ),
+              h('p', '按量计费（预测在13周内）：折扣为170%，与使用时长无关。使用满3个月后可转包年包月'),
+              h(
+                Link,
+                {
+                  theme: 'primary',
+                  href: 'https://iwiki.woa.com/p/4011431167',
+                  target: '_blank',
+                },
+                h(
+                  'span',
+                  {
+                    style: {
+                      fontSize: '12px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    },
+                  },
+                  ['计费模式说明', h(Share)],
+                ),
+              ),
+            ]),
+          }"
+        >
+          计费模式
+        </span>
+      </div>
+      <template v-if="!disabled">
+        <bk-pop-confirm
+          v-bind="popConfirmProps"
+          @confirm="() => confirmPromise.resolve(1)"
+          @cancel="() => confirmPromise.reject()"
+          ref="popConfirmRef"
+        >
+          <!-- 滚服、小额绿通与预测无关 -->
+          <bk-radio-group
+            v-if="isRollingServerOrGreenChannel"
+            type="card"
+            class="radio-group"
+            v-model="chargeType"
+            :with-validate="false"
+            :disabled="isRollingServer"
+            v-bk-tooltips="{
+              content: '继承原有套餐，计费模式不可选',
+              disabled: !isRollingServer,
+            }"
+            :before-change="handleTypeBeforeChange"
+            @change="handleTypeChange"
+          >
+            <bk-radio-button :label="cvmChargeTypes.PREPAID">
+              {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
+            </bk-radio-button>
+            <bk-radio-button :label="cvmChargeTypes.POSTPAID_BY_HOUR">
+              {{ cvmChargeTypeNames[cvmChargeTypes.POSTPAID_BY_HOUR] }}
+            </bk-radio-button>
+          </bk-radio-group>
+
+          <!-- 其它需求类型，需要看预测 -->
+          <bk-radio-group
+            v-else
+            type="card"
+            class="radio-group"
+            v-model="chargeType"
+            :with-validate="false"
+            :disabled="isChargeTypeLoading"
+            :before-change="handleTypeBeforeChange"
+            @change="handleTypeChange"
+          >
+            <bk-radio-button
+              :label="cvmChargeTypes.PREPAID"
+              :disabled="availableDeviceTypeMap?.get(cvmChargeTypes.PREPAID)?.size === 0"
+              v-bk-tooltips="{
+                content: '当前地域无有效的预测需求，请提预测单后再按量申请',
+                disabled: isChargeTypeLoading || availableDeviceTypeMap?.get(cvmChargeTypes.PREPAID)?.size > 0,
+              }"
+            >
+              {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
+            </bk-radio-button>
+            <bk-radio-button
+              :label="cvmChargeTypes.POSTPAID_BY_HOUR"
+              :disabled="availableDeviceTypeMap?.get(cvmChargeTypes.POSTPAID_BY_HOUR)?.size === 0"
+              v-bk-tooltips="{
+                content: '当前地域无有效的预测需求，请提预测单后再按量申请',
+                disabled: isChargeTypeLoading || availableDeviceTypeMap?.get(cvmChargeTypes.POSTPAID_BY_HOUR)?.size > 0,
+              }"
+            >
+              {{ cvmChargeTypeNames[cvmChargeTypes.POSTPAID_BY_HOUR] }}
+            </bk-radio-button>
+          </bk-radio-group>
+        </bk-pop-confirm>
+      </template>
+      <template v-else>
         <bk-radio-group
-          v-if="isRollingServerOrGreenChannel"
           type="card"
           class="radio-group"
-          v-model="chargeType"
-          :with-validate="false"
-          :disabled="isRollingServer"
+          :disabled="true"
           v-bk-tooltips="{
-            content: '继承原有套餐，计费模式不可选',
-            disabled: !isRollingServer,
+            content: disabledTips,
           }"
-          :before-change="handleTypeBeforeChange"
-          @change="handleTypeChange"
         >
           <bk-radio-button :label="cvmChargeTypes.PREPAID">
             {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
@@ -105,44 +199,12 @@ const handleTypeChange = (type: string) => {
             {{ cvmChargeTypeNames[cvmChargeTypes.POSTPAID_BY_HOUR] }}
           </bk-radio-button>
         </bk-radio-group>
-
-        <!-- 其它需求类型，需要看预测 -->
-        <bk-radio-group
-          v-else
-          type="card"
-          class="radio-group"
-          v-model="chargeType"
-          :with-validate="false"
-          :disabled="isChargeTypeLoading"
-          :before-change="handleTypeBeforeChange"
-          @change="handleTypeChange"
-        >
-          <bk-radio-button
-            :label="cvmChargeTypes.PREPAID"
-            :disabled="availableDeviceTypeMap?.get(cvmChargeTypes.PREPAID)?.size === 0"
-            v-bk-tooltips="{
-              content: '当前地域无有效的预测需求，请提预测单后再按量申请',
-              disabled: isChargeTypeLoading || availableDeviceTypeMap?.get(cvmChargeTypes.PREPAID)?.size > 0,
-            }"
-          >
-            {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
-          </bk-radio-button>
-          <bk-radio-button
-            :label="cvmChargeTypes.POSTPAID_BY_HOUR"
-            :disabled="availableDeviceTypeMap?.get(cvmChargeTypes.POSTPAID_BY_HOUR)?.size === 0"
-            v-bk-tooltips="{
-              content: '当前地域无有效的预测需求，请提预测单后再按量申请',
-              disabled: isChargeTypeLoading || availableDeviceTypeMap?.get(cvmChargeTypes.POSTPAID_BY_HOUR)?.size > 0,
-            }"
-          >
-            {{ cvmChargeTypeNames[cvmChargeTypes.POSTPAID_BY_HOUR] }}
-          </bk-radio-button>
-        </bk-radio-group>
-      </bk-pop-confirm>
+      </template>
     </div>
     <div class="item" v-if="chargeType === cvmChargeTypes.PREPAID">
       <div class="form-label required title">购买时长</div>
       <charge-months-selector
+        class="charge-months-selector"
         v-model="chargeMonths"
         :require-type="requireType"
         :is-gpu-device-type="isGpuDeviceType"
@@ -160,17 +222,25 @@ const handleTypeChange = (type: string) => {
 <style scoped lang="scss">
 .charge-type {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 28px;
 
   .radio-group {
     background: #fff;
   }
 
   .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
     .title {
-      margin-bottom: 8px;
+      flex: none;
     }
+  }
+
+  .charge-months-selector {
+    width: 110px;
   }
 }
 </style>

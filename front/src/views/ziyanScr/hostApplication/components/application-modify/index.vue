@@ -40,6 +40,10 @@ const formModel = reactive({ zones: [], res_assign: undefined, device_type: '', 
 
 const details = ref<IApplyOrderItem>();
 const unProductNum = computed(() => (!details.value ? 0 : details.value.origin_num - details.value.product_num));
+
+const chargeType = computed(() => details.value?.spec.charge_type);
+const chargeMonths = computed(() => details.value?.spec.charge_months);
+
 const getDetails = async () => {
   const list = await ziyanScrStore.getApplyOrderList({
     bk_biz_id: [businessId.value],
@@ -256,6 +260,8 @@ const handleBack = () => {
               v-model="formModel.device_type"
               v-model:zones="formModel.zones"
               v-model:res-assign-type="formModel.res_assign"
+              v-model:charge-type="chargeType"
+              v-model:charge-months="chargeMonths"
               :biz-id="businessId"
               :vendor="VendorEnum.ZIYAN"
               :require-type="details?.require_type"

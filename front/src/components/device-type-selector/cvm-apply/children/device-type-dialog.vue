@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { computed, ref, shallowReactive, onMounted, watch, watchEffect, inject, Ref, provide } from 'vue';
+import { computed, ref, shallowReactive, onMounted, watch, watchEffect, inject, Ref, provide, h } from 'vue';
 import { Loading } from 'bkui-vue';
 import { PrimaryTable, type TableProps } from '@blueking/tdesign-ui';
 import { VendorEnum } from '@/common/constant';
@@ -12,6 +12,7 @@ import { QueryRuleOPEnumLegacy } from '@/typings';
 import ChargeType from './charge-type.vue';
 import AssetMatch from './asset-match.vue';
 import Inventory from './inventory.vue';
+import DeviceTypePlanEmptyAlert from './device-type-plan-empty-alert.vue';
 import { useZoneFactory } from './use-zone-factory';
 import type { AvailableDeviceTypeMap } from './use-device-type-plan';
 import { useChargeTypeDefault } from './use-charge-type-default';
@@ -42,11 +43,11 @@ const isGreenChannel = inject<Ref<boolean>>('isGreenChannel');
 const isRollingServerOrGreenChannel = inject<Ref<boolean>>('isRollingServerOrGreenChannel');
 const isGreenChannelOrSpringPool = inject<Ref<boolean>>('isGreenChannelOrSpringPool');
 
-const editMode = inject('editMode');
+const editMode = inject<boolean>('editMode');
 
 const cvmDeviceStore = useCvmDeviceStore();
 
-const { cvmChargeTypes } = useCvmChargeType();
+const { cvmChargeTypes, cvmChargeTypeNames, getMonthName } = useCvmChargeType();
 
 // 勾选的可用区
 const zoneChecked = ref<string[]>(props.defaultData?.zones?.slice() ?? [ZONE_ALL]);
@@ -67,6 +68,12 @@ const selectedRowKeys = ref<string[]>(props.defaultData?.deviceTypes ?? []);
 
 const availableDeviceTypeMap = computed(() => props.chargeTypeDeviceTypeMap);
 const chargeTypeDeviceTypeListLoading = computed(() => props.chargeTypeDeviceTypeLoading);
+
+const hasPlanedDeviceType = computed(
+  () =>
+    availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size > 0 ||
+    availableDeviceTypeMap.value.get(cvmChargeTypes.POSTPAID_BY_HOUR)?.size > 0,
+);
 
 // 选中的机型列表
 const selectedDeviceTypeList = computed(() => {
@@ -193,15 +200,17 @@ const displayColumns = computed(() => {
     {
       colKey: 'row-select',
       type: 'single',
-      width: 30,
+      thClassName: 'th-class-name',
+      width: 40,
       checkProps: ({ row }) => {
         return { disabled: !row.available };
       },
     },
     {
       colKey: 'device_type',
+      thClassName: 'th-class-name',
       title: '机型',
-      width: 220,
+      width: 210,
       cell: (h, { row }) => (
         <div class='device-type'>
           {<span>{row.device_type}</span>}
@@ -213,11 +222,13 @@ const displayColumns = computed(() => {
     },
     {
       colKey: 'device_group',
+      thClassName: 'th-class-name',
       title: '机型族',
       width: 90,
     },
     {
       colKey: 'cpu_amount',
+      thClassName: 'th-class-name',
       title: 'CPU(核)',
       width: 90,
       align: 'right',
@@ -226,6 +237,7 @@ const displayColumns = computed(() => {
     },
     {
       colKey: 'ram_amount',
+      thClassName: 'th-class-name',
       title: '内存(GB)',
       width: 110,
       align: 'right',
@@ -234,6 +246,7 @@ const displayColumns = computed(() => {
     },
     {
       colKey: 'available',
+      thClassName: 'th-class-name',
       title: '是否预测',
       width: 80,
       cell: (h, { row }) => (
@@ -245,6 +258,7 @@ const displayColumns = computed(() => {
     },
     {
       colKey: 'maxLimit',
+      thClassName: 'th-class-name',
       title: '可申请数',
       width: 110,
       sorter: true,
@@ -513,52 +527,114 @@ provide('requireType', props.requireType);
     <div class="dialog-container">
       <div class="zone">
         <div class="title required">可用区选择</div>
-        <div class="content zone-list">
-          <div
-            :class="['zone-item', { selected: zoneSelected.includes(ZONE_ALL) }]"
-            @click.self="handleZoneSelect(ZONE_ALL)"
-          >
-            <bk-checkbox
-              size="small"
-              :model-value="ZONE_ALL"
-              :true-label="zoneChecked.includes(ZONE_ALL) ? ZONE_ALL : true"
-              :checked="zoneChecked.includes(ZONE_ALL)"
-              :immediate-emit-change="false"
-              :before-change="zoneCheckBeforeChange"
-              @change="(checked: boolean) => handleZoneCheckChange(checked, ZONE_ALL)"
-            />
-            <div class="zone-name" @click.self="handleZoneSelect(ZONE_ALL)">全部</div>
+        <div class="zone-content">
+          <div class="content zone-list">
+            <div
+              :class="['zone-item', { selected: zoneSelected.includes(ZONE_ALL) }]"
+              @click.self="handleZoneSelect(ZONE_ALL)"
+            >
+              <bk-checkbox
+                size="small"
+                :model-value="ZONE_ALL"
+                :true-label="zoneChecked.includes(ZONE_ALL) ? ZONE_ALL : true"
+                :checked="zoneChecked.includes(ZONE_ALL)"
+                :immediate-emit-change="false"
+                :before-change="zoneCheckBeforeChange"
+                @change="(checked: boolean) => handleZoneCheckChange(checked, ZONE_ALL)"
+              />
+              <div class="zone-name" @click.self="handleZoneSelect(ZONE_ALL)">全部</div>
+            </div>
+            <div
+              v-for="(zone, index) in zoneList"
+              :key="index"
+              :class="['zone-item', { selected: zoneSelected.includes(zone.id) }]"
+              @click.self="handleZoneSelect(zone.id)"
+            >
+              <bk-checkbox
+                size="small"
+                :model-value="zone.id"
+                :true-label="zoneChecked.includes(zone.id) ? zone.id : true"
+                :checked="zoneChecked.includes(zone.id)"
+                :immediate-emit-change="false"
+                :before-change="zoneCheckBeforeChange"
+                @change="(checked: boolean) => handleZoneCheckChange(checked, zone.id)"
+              />
+              <div class="zone-name" @click.self="handleZoneSelect(zone.id)">{{ zone.name }}</div>
+            </div>
           </div>
-          <div
-            v-for="(zone, index) in zoneList"
-            :key="index"
-            :class="['zone-item', { selected: zoneSelected.includes(zone.id) }]"
-            @click.self="handleZoneSelect(zone.id)"
-          >
-            <bk-checkbox
-              size="small"
-              :model-value="zone.id"
-              :true-label="zoneChecked.includes(zone.id) ? zone.id : true"
-              :checked="zoneChecked.includes(zone.id)"
-              :immediate-emit-change="false"
-              :before-change="zoneCheckBeforeChange"
-              @change="(checked: boolean) => handleZoneCheckChange(checked, zone.id)"
-            />
-            <div class="zone-name" @click.self="handleZoneSelect(zone.id)">{{ zone.name }}</div>
+          <div class="assign-type">
+            <div :class="['form-label', { required: !resAssignTypeDisabled }]">
+              <span
+                class="bottom-dashed"
+                v-bk-tooltips="{
+                  placement: 'top-start',
+                  content: h('div', [
+                    h('p', `${RES_ASSIGN_TYPE[1].label}：主机在资源充足的可用区中优先生产`),
+                    h(
+                      'p',
+                      `${RES_ASSIGN_TYPE[2].label}：主机默认在所选可用区（数量>=2）内平均分布。当资源不足时，则任一可用区分布比例上限为50%`,
+                    ),
+                  ]),
+                }"
+              >
+                资源分布方式
+              </span>
+            </div>
+            <bk-radio-group
+              v-model="applyData.resAssignType"
+              type="card"
+              class="radio-group"
+              :with-validate="false"
+              :disabled="resAssignTypeDisabled"
+              v-bk-tooltips="{
+                content: isSingleCheckedAllZone ? '只有一个可用区时，不支持勾选' : '选择一个可用区时，不支持勾选',
+                disabled: !resAssignTypeDisabled,
+              }"
+            >
+              <bk-radio-button :label="RES_ASSIGN_TYPE[1].value">
+                <div>
+                  <span>{{ RES_ASSIGN_TYPE[1].label }}</span>
+                </div>
+              </bk-radio-button>
+              <bk-radio-button :label="RES_ASSIGN_TYPE[2].value">
+                <div>
+                  <span>{{ RES_ASSIGN_TYPE[2].label }}</span>
+                </div>
+              </bk-radio-button>
+            </bk-radio-group>
           </div>
         </div>
       </div>
       <div class="device-type">
         <div class="title required">机型选择</div>
-        <div class="asset-match-container" v-if="isRollingServer">
-          <asset-match
-            :biz-id="bizId"
-            :region="region"
-            :inherit-instance-id="applyData.inheritInstanceId"
-            v-model="applyData.inheritAssetId"
-            @check-success="handleAssetMatchSuccess"
-            @check-fail="handleAssetMatchFail"
-          />
+        <div class="top-container">
+          <div class="plan-empty-container" v-if="!isRollingServerOrGreenChannel && !hasPlanedDeviceType">
+            <device-type-plan-empty-alert :bk-biz-id="bizId" />
+          </div>
+          <div class="charge-type-container">
+            <charge-type
+              v-model:charge-type="applyData.chargeType"
+              v-model:charge-months="applyData.chargeMonths"
+              :available-device-type-map="availableDeviceTypeMap"
+              :selected-device-type-list="selectedDeviceTypeList"
+              :is-default-four-years="isDefaultFourYears"
+              :is-gpu-device-type="isGpuDeviceType"
+              :is-charge-type-loading="chargeTypeDeviceTypeListLoading"
+              :disabled="editMode"
+              :disabled-tips="'修改需求的配置时，计费模式保持不变'"
+              @change="handleChargeTypeChange"
+            />
+          </div>
+          <div class="asset-match-container" v-if="isRollingServer">
+            <asset-match
+              :biz-id="bizId"
+              :region="region"
+              :inherit-instance-id="applyData.inheritInstanceId"
+              v-model="applyData.inheritAssetId"
+              @check-success="handleAssetMatchSuccess"
+              @check-fail="handleAssetMatchFail"
+            />
+          </div>
         </div>
         <div class="content device-type-list">
           <div class="condition-row">
@@ -570,6 +646,10 @@ provide('requireType', props.requireType);
                   :key="group"
                   :label="group"
                   :disabled="isGreenChannel && !['全部', '标准型'].includes(group)"
+                  v-bk-tooltips="{
+                    content: '小额绿通，仅支持<=16核的标准型机型',
+                    disabled: !isGreenChannel || ['全部', '标准型'].includes(group),
+                  }"
                 />
               </bk-radio-group>
             </div>
@@ -615,12 +695,15 @@ provide('requireType', props.requireType);
             <primary-table
               class="device-type-table"
               table-layout="fixed"
-              :height="480 - (isRollingServer ? 50 : 0)"
+              :height="
+                420 - (isRollingServer ? 36 : 0) - (!isRollingServerOrGreenChannel && !hasPlanedDeviceType ? 74 : 0)
+              "
               :hover="true"
               :hide-sort-tips="true"
               :row-key="DEVICE_ROW_KEY"
               :data="displayDeviceTypeList"
               :columns="displayColumns"
+              :size="'small'"
               :row-class-name="
                 (context: any) => {
                   return {
@@ -653,7 +736,16 @@ provide('requireType', props.requireType);
         <div class="preview-content">
           <div class="content selected-container">
             <div class="toolbar">
-              已选机型
+              <div class="selected-info">
+                <span>已选</span>
+                <template v-if="zoneChecked?.[0] !== ZONE_ALL">
+                  <em class="selected-count">{{ zoneChecked.length }}</em>
+                  个可用区，
+                </template>
+                <span v-else>&nbsp;全部可用区，</span>
+                <em class="selected-count">{{ selectedDeviceTypeList.length }}</em>
+                个机型
+              </div>
               <div class="operation">
                 <div class="clear" @click="handleClearSelection">
                   <i class="hcm-icon bkhcm-icon-cc-clear"></i>
@@ -661,79 +753,67 @@ provide('requireType', props.requireType);
                 </div>
               </div>
             </div>
-            <div class="selected-list">
-              <div v-for="item in selectedDeviceTypeList" :key="item.device_type" class="selected-item">
-                <div class="device-type-name">
-                  <bk-overflow-title type="tips">
-                    {{ item.device_type }}({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
-                  </bk-overflow-title>
-                </div>
-                <i
-                  class="hcm-icon bkhcm-icon-close icon-remove"
-                  @click="handleRemoveSelectedItem(item.device_type)"
-                ></i>
+            <dl class="selected-group">
+              <div class="group-item">
+                <dt class="group-title">机型</dt>
+                <dd class="group-content">
+                  <div class="selected-device-list" v-if="selectedDeviceTypeList?.length">
+                    <div v-for="item in selectedDeviceTypeList" :key="item.device_type" class="selected-item">
+                      <div class="device-type-name">
+                        <bk-overflow-title type="tips">
+                          {{ item.device_type }}
+                          <span class="extra-text">
+                            ({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
+                          </span>
+                        </bk-overflow-title>
+                      </div>
+                      <i
+                        class="hcm-icon bkhcm-icon-close icon-remove"
+                        @click="handleRemoveSelectedItem(item.device_type)"
+                      ></i>
+                    </div>
+                  </div>
+                  <span v-else>请选择机型</span>
+                </dd>
               </div>
-            </div>
-          </div>
-          <div class="charge-type-container" v-if="!editMode">
-            <charge-type
-              v-model:charge-type="applyData.chargeType"
-              v-model:charge-months="applyData.chargeMonths"
-              :available-device-type-map="availableDeviceTypeMap"
-              :selected-device-type-list="selectedDeviceTypeList"
-              :is-default-four-years="isDefaultFourYears"
-              :is-gpu-device-type="isGpuDeviceType"
-              :is-charge-type-loading="chargeTypeDeviceTypeListLoading"
-              @change="handleChargeTypeChange"
-            />
+              <div class="group-item">
+                <dt class="group-title">计费模式</dt>
+                <dd class="group-content">
+                  <div class="selected-value" v-if="applyData.chargeType">
+                    {{ cvmChargeTypeNames[applyData.chargeType] }}
+                    <span class="extra-text" v-if="applyData.chargeType === cvmChargeTypes.PREPAID">
+                      ({{ getMonthName(applyData.chargeMonths) }})
+                    </span>
+                  </div>
+                  <span v-else>请选择计费模式</span>
+                </dd>
+              </div>
+              <div class="group-item">
+                <dt class="group-title">资源分布方式</dt>
+                <dd class="group-content">
+                  <div class="selected-value" v-if="applyData.resAssignType">
+                    {{ RES_ASSIGN_TYPE[applyData.resAssignType]?.label ?? '--' }}
+                  </div>
+                  <span v-else>{{ resAssignTypeDisabled ? '无需选择资源分布方式' : '请选择资源分布方式' }}</span>
+                </dd>
+              </div>
+            </dl>
           </div>
         </div>
       </div>
     </div>
     <template #footer>
       <div class="dialog-footer">
-        <div class="assign-type">
-          <div :class="['form-label', { required: !resAssignTypeDisabled }]">资源分布方式</div>
-          <bk-radio-group
-            v-model="applyData.resAssignType"
-            size="small"
-            :with-validate="false"
-            :disabled="resAssignTypeDisabled"
-            v-bk-tooltips="{
-              content: isSingleCheckedAllZone ? '只有一个可用区时，不支持勾选' : '选择一个可用区时，不支持勾选',
-              disabled: !resAssignTypeDisabled,
-            }"
-          >
-            <bk-radio :label="RES_ASSIGN_TYPE[1].value">
-              <div
-                class="bottom-dashed"
-                v-bk-tooltips="{ content: '主机在资源充足的可用区中优先生产', disabled: resAssignTypeDisabled }"
-              >
-                {{ RES_ASSIGN_TYPE[1].label }}
-              </div>
-            </bk-radio>
-            <bk-radio :label="RES_ASSIGN_TYPE[2].value">
-              <div
-                class="bottom-dashed"
-                v-bk-tooltips="{
-                  content: '主机默认在所选可用区（数量>=2）内平均分布。当资源不足时，则任一可用区分布比例上限为50%',
-                  disabled: resAssignTypeDisabled,
-                }"
-              >
-                {{ RES_ASSIGN_TYPE[2].label }}
-              </div>
-            </bk-radio>
-          </bk-radio-group>
-        </div>
         <bk-button
           theme="primary"
+          class="button"
           @click="handleConfirm"
           :disabled="confirmDisabled"
           v-bk-tooltips="{ content: '请选择机型或资源分布方式', disabled: !confirmDisabled }"
         >
           确定
         </bk-button>
-        <bk-button @click="closeDialog">取消</bk-button>
+        <bk-button class="button" @click="closeDialog">取消</bk-button>
       </div>
     </template>
   </bk-dialog>
@@ -755,33 +835,7 @@ provide('requireType', props.requireType);
 .dialog-container {
   display: flex;
   width: 100%;
-  height: 700px;
-
-  .zone {
-    flex: none;
-    width: 280px;
-    background: #fff;
-    border-right: 1px solid #dcdee5;
-  }
-
-  .device-type {
-    flex: none;
-    width: 780px;
-    background: #fff;
-
-    .asset-match-container {
-      padding: 0 24px 10px;
-      box-shadow: 0 2px 4px 0 #00000014;
-      margin-bottom: 12px;
-    }
-  }
-
-  .result-preview {
-    flex: none;
-    width: 300px;
-    background: #f5f7fa;
-    border-left: 1px solid #dcdee5;
-  }
+  height: 691px;
 
   .title {
     display: flex;
@@ -795,32 +849,113 @@ provide('requireType', props.requireType);
   .content {
     padding: 0 24px;
   }
+
+  .zone {
+    flex: none;
+    width: 280px;
+    background: #fff;
+    border-right: 1px solid #dcdee5;
+
+    .zone-content {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 56px);
+    }
+
+    .assign-type {
+      margin-top: auto;
+      padding: 16px 24px;
+      color: #313238;
+      background: #f5f7fa;
+
+      .form-label {
+        margin-bottom: 8px;
+      }
+
+      .radio-group {
+        background: #fff;
+      }
+    }
+  }
+
+  .device-type {
+    flex: none;
+    width: 780px;
+    background: #fafbfd;
+
+    .title {
+      background: #fff;
+    }
+
+    .top-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 24px 12px;
+      box-shadow: 0 2px 4px 0 #00000014;
+      background: #fff;
+    }
+
+    .device-type-list {
+      padding: 12px 24px 0;
+
+      .condition-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+
+        .device-group {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .available-only {
+          margin-left: auto;
+
+          .bk-checkbox-small {
+            font-size: 12px;
+          }
+        }
+
+        .device-type-select {
+          flex: 2;
+        }
+
+        .cup-select {
+          flex: 1;
+        }
+
+        .mem-select {
+          flex: 1;
+        }
+      }
+    }
+  }
+
+  .result-preview {
+    flex: none;
+    width: 300px;
+    background: #f5f7fa;
+    border-left: 1px solid #dcdee5;
+  }
 }
 
 .dialog-footer {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 
-  .assign-type {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    gap: 16px;
-    color: #313238;
-
-    .form-label {
-      &::after {
-        display: inline-block;
-        content: ' ';
-        width: 14px;
-      }
-    }
+  .button {
+    min-width: 88px;
   }
 }
 
 .zone-list {
-  height: calc(100% - 56px);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
 
   .zone-item {
@@ -845,41 +980,6 @@ provide('requireType', props.requireType);
     &.selected {
       background: #e1ecff;
       border: 1px solid #3a84ff;
-    }
-  }
-}
-
-.device-type-list {
-  .condition-row {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 16px;
-
-    .device-group {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .available-only {
-      margin-left: auto;
-
-      .bk-checkbox-small {
-        font-size: 12px;
-      }
-    }
-
-    .device-type-select {
-      flex: 2;
-    }
-
-    .cup-select {
-      flex: 1;
-    }
-
-    .mem-select {
-      flex: 1;
     }
   }
 }
@@ -909,6 +1009,10 @@ provide('requireType', props.requireType);
     }
   }
 
+  .th-class-name {
+    background: #f0f1f5;
+  }
+
   .row-active {
     background-color: #fafbfd;
 
@@ -917,6 +1021,12 @@ provide('requireType', props.requireType);
         display: block;
       }
     }
+  }
+
+  /* stylelint-disable-next-line selector-class-pattern */
+  .t-table__pagination {
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 }
 
@@ -945,6 +1055,18 @@ provide('requireType', props.requireType);
       z-index: 1;
       background: #f5f7fa;
 
+      .selected-info {
+        display: inline-flex;
+        align-items: center;
+
+        .selected-count {
+          color: #3a84ff;
+          font-weight: 700;
+          font-style: normal;
+          padding: 0 3px;
+        }
+      }
+
       .operation {
         margin-left: auto;
         display: flex;
@@ -965,7 +1087,42 @@ provide('requireType', props.requireType);
       }
     }
 
-    .selected-list {
+    .selected-group {
+      .group-item {
+        margin-bottom: 16px;
+
+        .group-title {
+          font-size: 12px;
+          color: #313238;
+          margin-bottom: 8px;
+        }
+
+        .group-content {
+          font-size: 12px;
+          color: #c4c6cc;
+
+          .selected-value {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            height: 32px;
+            padding: 0 12px;
+            margin: 4px 0;
+            background: #fff;
+            border-radius: 2px;
+            color: #313238;
+            box-shadow: 0 2px 4px 0 #1919290d;
+
+            .extra-text {
+              color: #979ba5;
+            }
+          }
+        }
+      }
+    }
+
+    .selected-device-list {
       .selected-item {
         position: relative;
         display: flex;
@@ -984,6 +1141,11 @@ provide('requireType', props.requireType);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
+          color: #313238;
+
+          .extra-text {
+            color: #979ba5;
+          }
         }
 
         .icon-remove {
@@ -1012,13 +1174,6 @@ provide('requireType', props.requireType);
         }
       }
     }
-  }
-
-  .charge-type-container {
-    margin-top: auto;
-    padding: 12px 24px;
-    border-top: 1px solid #dcdee5;
-    background: #f0f1f5;
   }
 }
 </style>
