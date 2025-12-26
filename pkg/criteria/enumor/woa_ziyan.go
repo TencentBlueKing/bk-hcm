@@ -232,8 +232,8 @@ func (t RequireType) Validate() error {
 // NeedVerifyResPlan need verify resource plan.
 func (t RequireType) NeedVerifyResPlan() bool {
 	switch t {
-	// 常规项目、春节保障、机房裁撤、春保资源池、短租项目需要校验预测
-	case RequireTypeRegular, RequireTypeSpring, RequireTypeDissolve, RequireTypeSpringResPool, RequireTypeShortLease:
+	// 常规项目、春节保障、机房裁撤、短租项目需要校验预测
+	case RequireTypeRegular, RequireTypeSpring, RequireTypeDissolve, RequireTypeShortLease:
 		return true
 	default:
 		return false
