@@ -1297,7 +1297,7 @@ watch(
         // 如果选中了某个账号ID，则把当前云账号ID当做固定参数入参
         filter.rules.push({
           field: 'account_id',
-          op: 'cs',
+          op: 'eq',
           value: selectedAccountId.value,
         });
       }
