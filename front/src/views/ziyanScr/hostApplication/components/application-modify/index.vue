@@ -170,8 +170,9 @@ const handleDeviceTypeChange = (
 
 const isNeedVerify = computed(() => {
   return (
-    ![RequirementType.RollServer, RequirementType.GreenChannel].includes(details.value?.require_type) &&
-    !verifyResult.value
+    ![RequirementType.RollServer, RequirementType.GreenChannel, RequirementType.SpringResPool].includes(
+      details.value?.require_type,
+    ) && !verifyResult.value
   );
 });
 const isVerifyLoading = ref(false);

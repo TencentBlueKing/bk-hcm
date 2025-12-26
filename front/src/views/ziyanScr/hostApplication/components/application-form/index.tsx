@@ -762,7 +762,7 @@ export default defineComponent({
         { required: true, message: '请输入需求数量', trigger: 'blur' },
         // 临时规则双十一后可能需要去除
         {
-          validator: (value: number) => !(isRollingServerLike.value && value > 100),
+          validator: (value: number) => !(isRollingServer.value && value > 100),
           message: '注意：因云接口限制，单次的机器数最大值为100，超过后请手动克隆为多条配置',
           trigger: 'change',
         },
