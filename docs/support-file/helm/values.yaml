@@ -14,7 +14,7 @@ image:
   pullPolicy: IfNotPresent
   pullSecrets: []
   # tag版本，不需要带v前缀
-  tag: 1.8.8.4
+  tag: 1.8.8.5
 
 apigwReleaseVersion: 1.0.0
 
