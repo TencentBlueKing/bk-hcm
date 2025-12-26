@@ -54,8 +54,9 @@ export interface IProp {
     apiMethod?: (...args: any) => Promise<any>;
     // 排序参数
     sortOption?: {
-      sort: string; // 需要排序的字段
-      order: 'ASC' | 'DESC'; // 排序方式
+      sort?: string; // 需要排序的字段
+      order?: 'ASC' | 'DESC'; // 排序方式
+      legacy?: boolean; // 是否使用旧排序方式
     };
     // 筛选参数
     filterOption?: {
@@ -89,6 +90,10 @@ export interface IProp {
     url?: string;
     // 请求接口参数data
     payload?: Object;
+    // count的key
+    pageEnableCountKey?: string;
+    // 清除filter内的空规则
+    clearRules?: boolean;
   };
 }
 

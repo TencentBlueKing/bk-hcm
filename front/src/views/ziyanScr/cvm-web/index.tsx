@@ -17,35 +17,35 @@ export default defineComponent({
     const defaultCvmWebForm = () => ({
       region: [],
       zone: [],
-      vpc_name: '',
-      vpc_id: '',
-      subnet_id: '',
-      subnet_name: '',
+      // vpc_name: '',
+      cloud_vpc_id: '',
+      cloud_id: '',
+      name: '',
       enable: '',
     });
     const cvmWebForm = ref<Record<string, any>>(defaultCvmWebForm());
-    const vpcFilterType = ref('vpc_name');
-    const vpcLabel = ref('VPC 名');
-    const subnetFilterType = ref('subnet_name');
+    const vpcFilterType = ref('cloud_vpc_id');
+    const vpcLabel = ref('VPC ID');
+    const subnetFilterType = ref('name');
     const subnetLabel = ref('Subnet 名');
     const vpcList = [
-      {
-        label: 'VPC 名',
-        value: 'vpc_name',
-      },
+      // {
+      //   label: 'VPC 名',
+      //   value: 'vpc_name',
+      // },
       {
         label: 'VPC ID',
-        value: 'vpc_id',
+        value: 'cloud_vpc_id',
       },
     ];
     const subnetList = [
       {
         label: 'Subnet 名',
-        value: 'subnet_name',
+        value: 'name',
       },
       {
         label: 'Subnet ID',
-        value: 'subnet_id',
+        value: 'cloud_id',
       },
     ];
     const useList = [
@@ -101,13 +101,16 @@ export default defineComponent({
         },
       },
     ];
-    const pageInfo = ref({
-      start: 0,
-      limit: 10,
-      enable_count: false,
-    });
     const requestParams = ref({
-      page: pageInfo.value,
+      page: {
+        start: 0,
+        limit: 10,
+        count: false,
+      },
+      filter: {
+        op: 'and',
+        rules: [],
+      },
     });
     const { CommonTable, getListData } = useTable({
       tableOptions: {
@@ -123,6 +126,9 @@ export default defineComponent({
       },
       requestOption: {
         dataPath: 'data.info',
+        sortOption: {
+          legacy: false,
+        },
       },
       scrConfig: () => {
         return {
@@ -130,17 +136,19 @@ export default defineComponent({
             ...requestParams.value,
           },
           url: '/api/v1/woa/config/findmany/config/cvm/subnet/list',
+          pageEnableCountKey: 'count',
+          clearRules: false,
         };
       },
     });
     const paramRules = computed(() => {
       const { enable } = cvmWebForm.value;
       const rules = [];
-      ['vpc_name', 'vpc_id', 'subnet_id', 'subnet_name'].map((item) => {
+      ['vpc_name', 'cloud_vpc_id', 'cloud_id', 'name'].map((item) => {
         if (cvmWebForm.value[item]) {
           rules.push({
             field: item,
-            operator: 'contains',
+            op: 'cs',
             value: cvmWebForm.value[item],
           });
         }
@@ -150,7 +158,7 @@ export default defineComponent({
         if (Array.isArray(cvmWebForm.value[item]) && cvmWebForm.value[item].length) {
           rules.push({
             field: item,
-            operator: 'in',
+            op: 'in',
             value: cvmWebForm.value[item],
           });
         }
@@ -158,30 +166,19 @@ export default defineComponent({
       });
       if (String(enable))
         rules.push({
-          field: 'enable',
-          operator: 'equal',
-          value: enable,
+          field: 'extension.enable_cvm',
+          op: 'json_eq',
+          value: String(enable),
         });
       return rules;
     });
-    const getCvmWeblist = (enableCount = false) => {
-      pageInfo.value.enable_count = enableCount;
-      const params = {
-        page: enableCount ? Object.assign(pageInfo.value, { limit: 0 }) : pageInfo.value,
-      };
-      if (paramRules.value.length) {
-        params.filter = {
-          condition: 'AND',
-          rules: paramRules.value,
-        };
-      }
-      requestParams.value = { ...params };
+    const getCvmWeblist = () => {
+      requestParams.value.filter.rules = paramRules.value;
       resetSelections();
       getListData();
     };
     const filterOrders = () => {
-      pageInfo.value.start = 0;
-      getCvmWeblist(true);
+      getCvmWeblist();
     };
     const clearFilter = () => {
       cvmWebForm.value = defaultCvmWebForm();
@@ -203,6 +200,8 @@ export default defineComponent({
       const { enable, comment } = updateForm.value;
       if (String(enable)) properties.enable = enable;
       if (comment) properties.comment = comment;
+      // 如果 properties 是空对象则不发送请求
+      if (Object.keys(properties).length === 0) return;
       updateSubnetProperties({ ...params, properties }, {}).then(() => {
         handleCancel();
         filterOrders();
@@ -308,7 +307,7 @@ export default defineComponent({
               </bk-input>
             </bk-form-item>
             <bk-form-item label='启用'>
-              <bk-select v-model={cvmWebForm.value.enable} clearable>
+              <bk-select v-model={cvmWebForm.value.enable} clearable allowEmptyValues={[false]}>
                 {useList.map(({ label, value }) => {
                   return <bk-option key={value} name={label} id={value}></bk-option>;
                 })}
@@ -334,7 +333,7 @@ export default defineComponent({
             default: () => (
               <bk-form label-width='110' model={updateForm}>
                 <bk-form-item label='启用'>
-                  <bk-select v-model={updateForm.value.enable} clearable>
+                  <bk-select v-model={updateForm.value.enable} clearable allowEmptyValues={[false]}>
                     <bk-option name='保持不变' id=''></bk-option>
                     {useList.map(({ label, value }) => {
                       return <bk-option key={value} label={label} id={value}></bk-option>;
