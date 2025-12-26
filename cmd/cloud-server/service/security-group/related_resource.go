@@ -182,8 +182,8 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 		accountID, region := arr[1], arr[2]
 		listFunc, err := svc.chooseListSGStatisticFunc(vendor)
 		if err != nil {
-			logs.Errorf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
+			logs.Warnf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
+			continue
 		}
 
 		ids := make([]string, 0, len(groups))

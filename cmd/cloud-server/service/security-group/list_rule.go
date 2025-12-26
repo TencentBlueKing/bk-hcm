@@ -301,9 +301,9 @@ func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler h
 	for vendor, ids := range vendorToSGIDMap {
 		resp, err := svc.client.DataService().Global.SecurityGroup.CountSecurityGroupRules(cts.Kit, vendor, ids)
 		if err != nil {
-			logs.Errorf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
+			logs.Warnf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
 				err, vendor, ids, cts.Kit.Rid)
-			return nil, err
+			continue
 		}
 
 		for sgID, count := range resp {
