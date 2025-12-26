@@ -331,7 +331,6 @@ func (a *applicationSvc) getHandlerByApplication(cts *rest.Contexts, application
 func (a *applicationSvc) deliver(cts *rest.Contexts, application *dataproto.ApplicationResp) {
 	// 将执行人设置为申请人，租户设置为单据对应租户
 	cts.Kit.User = application.Applicant
-	cts.Kit.SetTenant(application.TenantID)
 
 	// 除非交付成功，否则都属于交付失败状态
 	deliverStatus := enumor.DeliverError

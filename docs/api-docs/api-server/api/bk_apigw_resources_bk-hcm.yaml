@@ -23,7 +23,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/cos/buckets/create
+          path: /{env.url_path_prefix}api/v1/cloud/cos/buckets/create
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -48,7 +48,7 @@ paths:
         backend:
           type: HTTP
           method: delete
-          path: /api/v1/cloud/cos/buckets/delete
+          path: /{env.url_path_prefix}api/v1/cloud/cos/buckets/delete
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -73,7 +73,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/cos/buckets/list
+          path: /{env.url_path_prefix}api/v1/cloud/cos/buckets/list
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -123,7 +123,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/accounts/list
+          path: /{env.url_path_prefix}api/v1/cloud/accounts/list
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -173,7 +173,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/vendors/{vendor}/bills/list
+          path: /{env.url_path_prefix}api/v1/cloud/vendors/{vendor}/bills/list
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -198,7 +198,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond
+          path: /{env.url_path_prefix}api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -223,7 +223,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/bizs/{bk_biz_id}/task_details/list_by_cond
+          path: /{env.url_path_prefix}api/v1/cloud/bizs/{bk_biz_id}/task_details/list_by_cond
           matchSubpath: false
           timeout: 30
           upstreams: {}
@@ -248,7 +248,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/applications/approve
+          path: /{env.url_path_prefix}api/v1/cloud/applications/approve
           matchSubpath: false
           timeout: 30
           upstreams: {}
