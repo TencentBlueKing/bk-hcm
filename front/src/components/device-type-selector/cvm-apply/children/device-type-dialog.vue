@@ -40,8 +40,9 @@ const ZONE_ALL = 'all';
 
 const isRollingServer = inject<Ref<boolean>>('isRollingServer');
 const isGreenChannel = inject<Ref<boolean>>('isGreenChannel');
-const isRollingServerOrGreenChannel = inject<Ref<boolean>>('isRollingServerOrGreenChannel');
+const isSpringPool = inject<Ref<boolean>>('isSpringPool');
 const isGreenChannelOrSpringPool = inject<Ref<boolean>>('isGreenChannelOrSpringPool');
+const isNonPlanType = inject<Ref<boolean>>('isNonPlanType');
 
 const editMode = inject<boolean>('editMode');
 
@@ -135,7 +136,7 @@ const displayDeviceTypeList = computed(() => {
           'SpecialType' !== item.device_type_class &&
           item.device_group === rollingServerCvm.value?.device_group &&
           !item.device_type.toLowerCase().startsWith('da');
-      } else if (isGreenChannel.value) {
+      } else if (isGreenChannel.value || isSpringPool.value) {
         // 小额绿通禁用了available，在接口默认条件中已经过滤掉了，这里直接返回true
         available = true;
       } else {
@@ -183,7 +184,7 @@ const { isDefaultFourYears, isGpuDeviceType } = useChargeTypeDefault({
 
 watchEffect(() => {
   // 需要看预测的情况下，如有预测内的预测，则包年包月可用，否则默认选中按量计费
-  if (!isRollingServerOrGreenChannel.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
+  if (!isNonPlanType.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
     applyData.chargeType = cvmChargeTypes.POSTPAID_BY_HOUR;
   }
   if (isDefaultFourYears.value) {
@@ -282,7 +283,7 @@ const displayColumns = computed(() => {
     },
   ];
 
-  if (isRollingServerOrGreenChannel.value) {
+  if (isNonPlanType.value) {
     columns = columns.filter((col) => !['available', 'maxLimit'].includes(col.colKey));
   }
 
@@ -458,8 +459,8 @@ const handleDeviceGroupChange = () => {
 };
 
 const handleDeviceTypeChange = () => {
-  // 小额绿通禁用了仅展示可用机型
-  if (!isGreenChannel.value) {
+  // 小额绿通、春保资源池禁用了仅展示可用机型
+  if (!isGreenChannelOrSpringPool.value) {
     // 机型筛选时，自动取消仅展示可用机型的勾选
     condition.isAvailable = false;
   }
@@ -608,7 +609,7 @@ provide('requireType', props.requireType);
       <div class="device-type">
         <div class="title required">机型选择</div>
         <div class="top-container">
-          <div class="plan-empty-container" v-if="!isRollingServerOrGreenChannel && !hasPlanedDeviceType">
+          <div class="plan-empty-container" v-if="!isNonPlanType && !hasPlanedDeviceType">
             <device-type-plan-empty-alert :bk-biz-id="bizId" />
           </div>
           <div class="charge-type-container">
@@ -654,7 +655,7 @@ provide('requireType', props.requireType);
               </bk-radio-group>
             </div>
             <div class="available-only">
-              <bk-checkbox size="small" :disabled="isGreenChannel" v-model="condition.isAvailable">
+              <bk-checkbox size="small" :disabled="isGreenChannelOrSpringPool" v-model="condition.isAvailable">
                 仅展示可用机型
               </bk-checkbox>
             </div>
@@ -695,9 +696,7 @@ provide('requireType', props.requireType);
             <primary-table
               class="device-type-table"
               table-layout="fixed"
-              :height="
-                420 - (isRollingServer ? 36 : 0) - (!isRollingServerOrGreenChannel && !hasPlanedDeviceType ? 74 : 0)
-              "
+              :height="420 - (isRollingServer ? 36 : 0) - (!isNonPlanType && !hasPlanedDeviceType ? 74 : 0)"
               :hover="true"
               :hide-sort-tips="true"
               :row-key="DEVICE_ROW_KEY"

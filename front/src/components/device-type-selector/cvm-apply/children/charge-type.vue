@@ -31,7 +31,7 @@ const { cvmChargeTypes, cvmChargeTypeNames } = useCvmChargeType();
 
 const requireType = inject<RequirementType>('requireType');
 const isRollingServer = inject<Ref<boolean>>('isRollingServer');
-const isRollingServerOrGreenChannel = inject<Ref<boolean>>('isRollingServerOrGreenChannel');
+const isNonPlanType = inject<Ref<boolean>>('isNonPlanType');
 
 const chargeMonthsDisabledState = computed(() => {
   if (props.isGpuDeviceType) {
@@ -126,9 +126,9 @@ const handleTypeChange = (type: string) => {
           @cancel="() => confirmPromise.reject()"
           ref="popConfirmRef"
         >
-          <!-- 滚服、小额绿通与预测无关 -->
+          <!-- 滚服、小额绿通、春保资源池与预测无关 -->
           <bk-radio-group
-            v-if="isRollingServerOrGreenChannel"
+            v-if="isNonPlanType"
             type="card"
             class="radio-group"
             v-model="chargeType"

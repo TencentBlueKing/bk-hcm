@@ -1,4 +1,4 @@
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { ref, Ref, watchEffect } from 'vue';
 import { RequirementType } from '@/store/config/requirement';
 import { useCvmDeviceStore, type ICvmChargeTypDevicetypeItem } from '@/store/cvm/device';
 import { storeToRefs } from 'pinia';
@@ -22,11 +22,13 @@ export const useDeviceTypePlan = (params: {
 
   const { bizId, region, requireType } = params;
 
-  const isSpringPool = computed(() => requireType.value === RequirementType.SpringResPool);
-
   watchEffect(async () => {
     // 非预测需求类型，不获取机型的预测数据
-    const isNonPlanType = [RequirementType.RollServer, RequirementType.GreenChannel].includes(requireType.value);
+    const isNonPlanType = [
+      RequirementType.RollServer,
+      RequirementType.GreenChannel,
+      RequirementType.SpringResPool,
+    ].includes(requireType.value);
 
     // 获取机型的预测数据，除非条件变化，预期只获取一次
     if (!bizId.value || !requireType.value || !region.value || isNonPlanType) {
@@ -36,7 +38,7 @@ export const useDeviceTypePlan = (params: {
     availableDeviceTypeMap.value.clear();
 
     const { list } = await cvmDeviceStore.getChargeTypeDeviceTypeList({
-      bk_biz_id: isSpringPool.value ? 931 : Number(params.bizId.value),
+      bk_biz_id: Number(params.bizId.value),
       require_type: params.requireType.value,
       region: params.region.value,
     });
