@@ -41,7 +41,6 @@ import (
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
-	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
 
@@ -75,6 +74,7 @@ type batchListenerModifyRsWeightTaskDetail struct {
 	flowID       string
 	actionID     string
 	*cslb.TgModifyWeightTaskDetailParam
+	*dataproto.ListBatchListenerResult
 }
 
 // Execute 导入执行器的唯一入口
@@ -216,36 +216,28 @@ func (c *BatchListenerModifyRsWeightExecutor) filter() {
 }
 
 func (c *BatchListenerModifyRsWeightExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
-	// 按负载均衡ID和所在目标组进行分组
-	clbToTgIDDetails := make(map[string]map[string][]*batchListenerModifyRsWeightTaskDetail)
+	// 按负载均衡ID进行分组
+	clbToDetails := make(map[string][]*batchListenerModifyRsWeightTaskDetail)
 	for _, detail := range c.taskDetails {
-		if _, ok := clbToTgIDDetails[detail.CloudLBID]; !ok {
-			clbToTgIDDetails[detail.CloudLBID] = make(map[string][]*batchListenerModifyRsWeightTaskDetail)
-		}
-		clbToTgIDDetails[detail.CloudLBID][detail.TargetGroupID] =
-			append(clbToTgIDDetails[detail.CloudLBID][detail.TargetGroupID], detail)
+		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
 	}
 
 	// 批量获取负载均衡列表
 	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.vendor, c.accountID, c.bkBizID,
-		cvt.MapKeyToSlice(clbToTgIDDetails))
+		cvt.MapKeyToSlice(clbToDetails))
 	if err != nil {
 		return nil, err
 	}
 
 	flowIDs := make([]string, 0)
-	for cloudClbID, tgIDDetails := range clbToTgIDDetails {
+	for cloudClbID, details := range clbToDetails {
 		lbInfo := lbMap[cloudClbID]
 		var flowID string
-		flowID, err = c.buildFlow(kt, lbInfo.ID, tgIDDetails)
+		flowID, err = c.buildFlow(kt, lbInfo.ID, details)
 		if err != nil {
 			logs.Errorf("build flow for modify listener rs weight clb(%s) failed, err: %v, lbID: %s, rid: %s",
 				cloudClbID, err, lbInfo.ID, kt.Rid)
-			batch := make([]*batchListenerModifyRsWeightTaskDetail, 0)
-			for _, details := range maps.Values(tgIDDetails) {
-				batch = append(batch, details...)
-			}
-			taskErr := c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, batch)
+			taskErr := c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, details)
 			if taskErr != nil {
 				logs.Errorf("update task details status failed, err: %v, rid: %s", taskErr, kt.Rid)
 				return nil, taskErr
@@ -257,7 +249,7 @@ func (c *BatchListenerModifyRsWeightExecutor) buildFlows(kt *kit.Kit) ([]string,
 
 	if len(flowIDs) == 0 {
 		logs.Errorf("build clb flow failed, no clb need modified, clbToDetails: %+v, err: %v, rid: %s",
-			clbToTgIDDetails, err, kt.Rid)
+			clbToDetails, err, kt.Rid)
 		return nil, fmt.Errorf("build clb flow failed, no clb need to be modified, err: %v", err)
 	}
 
@@ -381,13 +373,14 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 
 	for i := range c.taskDetails {
 		c.taskDetails[i].taskDetailID = result.IDs[i]
+		c.taskDetails[i].ListBatchListenerResult = c.details[i]
 	}
 
 	return nil
 }
 
 func (c *BatchListenerModifyRsWeightExecutor) buildFlow(kt *kit.Kit, lbID string,
-	tgIDDetails map[string][]*batchListenerModifyRsWeightTaskDetail) (string, error) {
+	tgIDDetails []*batchListenerModifyRsWeightTaskDetail) (string, error) {
 
 	// 预检测
 	lockRel, err := checkResFlowRel(kt, c.dataServiceCli, lbID, enumor.LoadBalancerCloudResType)
@@ -415,63 +408,66 @@ func (c *BatchListenerModifyRsWeightExecutor) buildFlow(kt *kit.Kit, lbID string
 		return "", err
 	}
 
-	for _, details := range tgIDDetails {
-		for _, detail := range details {
-			detail.flowID = flowID
-		}
+	for _, detail := range tgIDDetails {
+		detail.flowID = flowID
 	}
 
 	return flowID, nil
 }
 
 func (c *BatchListenerModifyRsWeightExecutor) buildFlowTask(lbID string,
-	tgIDDetails map[string][]*batchListenerModifyRsWeightTaskDetail) ([]ts.CustomFlowTask, error) {
+	details []*batchListenerModifyRsWeightTaskDetail) ([]ts.CustomFlowTask, error) {
 
+	// NOTE: 目前只支持腾讯云（支持跨目标组批量操作RS权重）
 	switch c.vendor {
 	case enumor.TCloud:
-		return c.buildTCloudFlowTask(lbID, tgIDDetails)
+		return c.buildTCloudFlowTask(lbID, details)
 	default:
 		return nil, fmt.Errorf("build flow task failed, lbID: %s, vendor: %s not supported", lbID, c.vendor)
 	}
 }
 
 func (c *BatchListenerModifyRsWeightExecutor) buildTCloudFlowTask(lbID string,
-	tgIDDetails map[string][]*batchListenerModifyRsWeightTaskDetail) ([]ts.CustomFlowTask, error) {
+	details []*batchListenerModifyRsWeightTaskDetail) ([]ts.CustomFlowTask, error) {
 
 	result := make([]ts.CustomFlowTask, 0)
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	for targetGroupID, details := range tgIDDetails {
-		for _, taskDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
-			cur, prev := actionIDGenerator()
-			managementDetailIDs := make([]string, 0, len(taskDetails))
-			rsList := make([]*dataproto.TargetBaseReq, 0)
-			for _, detail := range taskDetails {
-				managementDetailIDs = append(managementDetailIDs, detail.taskDetailID)
-				rsList = append(rsList, detail.TgModifyWeightTaskDetailParam.TargetBaseReq)
+	for _, partDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
+		cur, prev := actionIDGenerator()
+		lblRsList := make([]*hclb.TCloudBatchModifyRsWeightReq, 0, len(partDetails))
+		managementDetailIDs := make([]string, 0, len(partDetails))
+		for _, detail := range partDetails {
+			rsWeightReq := &hclb.TCloudBatchModifyRsWeightReq{
+				AccountID:           c.accountID,
+				Region:              detail.Region,
+				Vendor:              c.vendor,
+				LoadBalancerCloudId: detail.CloudLBID,
+				Details:             make([]*dataproto.ListBatchListenerResult, 0),
+				NewRsWeight:         c.params.NewRsWeight,
 			}
+			rsWeightReq.Details = append(rsWeightReq.Details, detail.ListBatchListenerResult)
+			lblRsList = append(lblRsList, rsWeightReq)
+			managementDetailIDs = append(managementDetailIDs, detail.taskDetailID)
+		}
 
-			tmpTask := ts.CustomFlowTask{
-				ActionID:   action.ActIDType(cur),
-				ActionName: enumor.ActionTargetGroupModifyWeight,
-				Params: &actionlb.OperateRsOption{
-					Vendor:              c.vendor,
-					ManagementDetailIDs: managementDetailIDs,
-					TCloudBatchOperateTargetReq: hclb.TCloudBatchOperateTargetReq{
-						LbID:          lbID,
-						TargetGroupID: targetGroupID,
-						RsList:        rsList,
-					},
-				},
-				Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
-			}
-			if prev != "" {
-				tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
-			}
-			result = append(result, tmpTask)
+		tmpTask := ts.CustomFlowTask{
+			ActionID:   action.ActIDType(cur),
+			ActionName: enumor.ActionBatchTaskTCloudModifyRsWeight,
+			Params: &actionlb.BatchTaskModifyRsWeightOption{
+				Vendor:              c.vendor,
+				LoadBalancerID:      lbID,
+				ManagementDetailIDs: managementDetailIDs,
+				LblList:             lblRsList,
+			},
+			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+		}
+		if prev != "" {
+			tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
+		}
+		result = append(result, tmpTask)
 
-			for _, detail := range taskDetails {
-				detail.actionID = cur
-			}
+		for _, detail := range partDetails {
+			detail.actionID = cur
 		}
 	}
 
