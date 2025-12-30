@@ -180,8 +180,16 @@ type GetApplyDeviceReq struct {
 // errKey: invalid key
 // err: detail reason why errKey is invalid
 func (req *GetApplyDeviceReq) Validate() (errKey string, err error) {
-	if key, err := req.Page.Validate(true); err != nil {
-		return fmt.Sprintf("page.%s", key), err
+	// 兼容原来直接调用req.Page.Validate(true)逻辑，只是放开了最大的限制
+	page := req.Page
+	if page.EnableCount {
+		if page.Start > 0 || page.Limit > 0 || page.Sort != "" {
+			return "page", fmt.Errorf("params page can not be set")
+		}
+		return "", nil
+	}
+	if page.Limit > 5000 && page.Limit != pkg.BKNoLimit {
+		return "limit", fmt.Errorf("exceed max page size: %d", 5000)
 	}
 
 	if req.Filter != nil {
