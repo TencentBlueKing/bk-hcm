@@ -150,6 +150,12 @@ type BaseListener struct {
 	*core.Revision `json:",inline"`
 }
 
+// ListenerWithClbInfo define clb listener with clb info
+type ListenerWithClbInfo struct {
+	BaseListener `json:",inline"`
+	ClbVipDomain string `json:"clb_vip_domain"`
+}
+
 // Listener 监听器带拓展
 type Listener[T ListenerExtension] struct {
 	*BaseListener `json:",inline"`
