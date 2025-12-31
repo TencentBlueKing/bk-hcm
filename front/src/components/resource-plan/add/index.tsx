@@ -59,7 +59,9 @@ export default defineComponent({
     const is931Business = computed(() => props.currentGlobalBusinessId === 931);
     const initData = async () => {
       resourceType.value =
-        props.initDemand?.demand_res_types.length < 2 ? props.initDemand.demand_res_type.toLocaleLowerCase() : 'cvm';
+        props.initDemand?.demand_res_types.length < 2
+          ? props.initDemand.demand_res_types?.[0]?.toLocaleLowerCase()
+          : 'cvm';
       adjustType.value =
         props.initDemand && props.initDemand.adjustType === AdjustType.time ? AdjustType.time : AdjustType.config;
 
@@ -140,7 +142,15 @@ export default defineComponent({
 
     // 单独监听 props.initDemand 和 props.initAddParams 的变化，用于初始化数据
     watch(() => [props.initDemand, props.initAddParams], initData, { immediate: true, deep: true });
-    watch(() => props.isShow, initData, { immediate: true });
+    watch(
+      () => props.isShow,
+      (isShow) => {
+        if (isShow) {
+          initData();
+        }
+      },
+      { immediate: true },
+    );
 
     watch(() => resourceType.value, clearValidate);
 
