@@ -83,8 +83,22 @@ export default defineComponent({
     } = useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
 
     // click-handler - 新建目标组
-    const handleAddTargetGroup = () => {
+    const handleAddTargetGroup = (initialData?: {
+      region?: string;
+      cloud_vpc_id?: string;
+      account_id?: string;
+      port?: number;
+      protocol?: string;
+    }) => {
       clearFormData();
+      // 如果有初始数据，则填充到表单中
+      if (initialData) {
+        if (initialData.account_id) formData.account_id = initialData.account_id;
+        if (initialData.protocol) formData.protocol = initialData.protocol;
+        if (initialData.port) formData.port = initialData.port;
+        if (initialData.region) formData.region = initialData.region;
+        if (initialData.cloud_vpc_id) formData.cloud_vpc_id = initialData.cloud_vpc_id;
+      }
       loadBalancerStore.setCurrentScene(TargetGroupOperationScene.ADD);
       isShow.value = true;
       isEdit.value = false;
