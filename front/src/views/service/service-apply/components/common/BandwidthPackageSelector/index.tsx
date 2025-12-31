@@ -1,4 +1,4 @@
-import { defineComponent, onBeforeUnmount, PropType, reactive, ref, watch } from 'vue';
+import { defineComponent, onMounted, PropType, reactive, ref, watch } from 'vue';
 import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import http from '@/http';
@@ -78,8 +78,8 @@ export default defineComponent({
           },
         );
 
-        const sortedPackages = res.data.packages.sort((a, b) => Number(b.recommend) - Number(a.recommend));
-        bandwidthPackageList.value = sortedPackages;
+        const sortedPackages = res.data.packages?.sort((a, b) => Number(b.recommend) - Number(a.recommend));
+        bandwidthPackageList.value = sortedPackages || [];
         totalCount.value = res.data.total_count;
       } finally {
         isDataLoad.value = false;
@@ -119,14 +119,10 @@ export default defineComponent({
       return true;
     };
 
-    watch(
-      [() => props.accountId, () => props.region, () => props.vipIsp],
-      () => {
-        emit('update:modelValue', undefined);
-        getBandwidthPackageList();
-      },
-      { immediate: true },
-    );
+    watch([() => props.accountId, () => props.region, () => props.vipIsp], () => {
+      emit('update:modelValue', undefined);
+      getBandwidthPackageList();
+    });
 
     watch(
       () => props.modelValue,
@@ -141,11 +137,14 @@ export default defineComponent({
       },
     );
 
-    onBeforeUnmount(() => {
-      // 组件卸载之前，将组件相关状态清空
-      emit('update:modelValue', undefined);
-      emit('change', {});
+    onMounted(() => {
+      getBandwidthPackageList();
     });
+    // onBeforeUnmount(() => {
+    //   // 组件卸载之前，将组件相关状态清空
+    //   emit('update:modelValue', undefined);
+    //   emit('change', {});
+    // });
 
     return () => (
       <Select
