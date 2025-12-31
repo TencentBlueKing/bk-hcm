@@ -125,7 +125,6 @@ func (svc *regionSvc) BatchUpdateTCloudRegion(cts *rest.Contexts) error {
 	}
 
 	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
 		tmpRegion.Status = updateReq.Status

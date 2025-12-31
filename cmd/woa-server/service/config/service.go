@@ -142,9 +142,6 @@ func (s *service) initPmRestrict(h *rest.Handler) {
 
 func (s *service) initRegion(h *rest.Handler) {
 	h.Add("GetQcloudRegion", http.MethodGet, "/config/find/config/qcloud/region", s.GetQcloudRegion)
-	h.Add("CreateQcloudRegion", http.MethodPost, "/config/create/config/qcloud/region", s.CreateQcloudRegion)
-	h.Add("UpdateQcloudRegion", http.MethodPut, "/config/update/config/qcloud/region/{id}", s.UpdateQcloudRegion)
-	h.Add("DeleteQcloudRegion", http.MethodDelete, "/config/delete/config/qcloud/region/{id}", s.DeleteQcloudRegion)
 	h.Add("GetIdcRegion", http.MethodGet, "/config/find/config/idc/region", s.GetIdcRegion)
 }
 
@@ -170,9 +167,6 @@ func (s *service) initVpc(h *rest.Handler) {
 
 func (s *service) initZone(h *rest.Handler) {
 	h.Add("GetQcloudZone", http.MethodPost, "/config/findmany/config/qcloud/zone", s.GetQcloudZone)
-	h.Add("CreateQcloudZone", http.MethodPost, "/config/create/config/qcloud/zone", s.CreateQcloudZone)
-	h.Add("UpdateQcloudZone", http.MethodPut, "/config/update/config/qcloud/zone/{id}", s.UpdateQcloudZone)
-	h.Add("DeleteQcloudZone", http.MethodDelete, "/config/delete/config/qcloud/zone/{id}", s.DeleteQcloudZone)
 	h.Add("GetIdcZone", http.MethodPost, "/config/findmany/config/idc/zone", s.GetIdcZone)
 	h.Add("CreateIdcZone", http.MethodPost, "/config/create/config/idc/zone", s.CreateIdcZone)
 }

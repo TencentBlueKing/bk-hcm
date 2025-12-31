@@ -452,7 +452,6 @@ func convListResPlanDemandItemByTable(table rpd.ResPlanDemandTable, expectTime s
 		RegionName:       table.RegionName,
 		ZoneID:           table.ZoneID,
 		ZoneName:         table.ZoneName,
-		AreaID:           table.AreaID,
 		AreaName:         table.AreaName,
 		ResMode:          table.ResMode,
 		PlanType:         table.PlanType.Name(),

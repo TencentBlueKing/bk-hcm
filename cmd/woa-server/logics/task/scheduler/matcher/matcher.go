@@ -388,14 +388,12 @@ func calMatchCnt(devices []*types.DeviceInfo) int {
 
 // getRegionList get region list by zone list
 func (m *Matcher) getRegionList(kt *kit.Kit, zoneList []string) ([]*cfgtype.Zone, error) {
-	cond := mapstr.MapStr{}
+	req := &cfgtype.GetZoneParam{}
 	// if input is empty list, return all zone info
 	if len(zoneList) > 0 {
-		cond["zone"] = mapstr.MapStr{
-			pkg.BKDBIN: zoneList,
-		}
+		req.Zone = zoneList
 	}
-	zoneResp, err := m.configLogics.Zone().GetZone(kt, &cond)
+	zoneResp, err := m.configLogics.Zone().GetZone(kt, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1101,7 +1099,7 @@ func (m *Matcher) checkAndNotifyDelivery(kt *kit.Kit, orderId uint64) error {
 		return nil
 	}
 
-	//检查是否有已交付的设备
+	// 检查是否有已交付的设备
 	devices, err := m.getDeliveryDevices(kt, int64(orderId))
 	if err != nil {
 		logs.Errorf("failed to get delivery devices, orderId: %d, err: %v, rid: %s", orderId, err, kt.Rid)

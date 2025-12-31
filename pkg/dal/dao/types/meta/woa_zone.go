@@ -33,7 +33,6 @@ type WoaZoneListResult struct {
 type RegionArea struct {
 	RegionID   string `db:"region_id" json:"region_id"`
 	RegionName string `db:"region_name" json:"region_name"`
-	AreaID     string `db:"area_id" json:"area_id"`
 	AreaName   string `db:"area_name" json:"area_name"`
 }
 

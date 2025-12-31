@@ -412,7 +412,6 @@ func (c *Controller) constructUpdateDemands(kt *kit.Kit, updates []ptypes.Adjust
 				ZoneName:       zoneMap[update.UpdatedInfo.ZoneID],
 				RegionID:       update.UpdatedInfo.RegionID,
 				RegionName:     regionAreaMap[update.UpdatedInfo.RegionID].RegionName,
-				AreaID:         regionAreaMap[update.UpdatedInfo.RegionID].AreaID,
 				AreaName:       regionAreaMap[update.UpdatedInfo.RegionID].AreaName,
 				DemandSource:   update.DemandSource,
 				Cvm: rpt.Cvm{
@@ -539,7 +538,6 @@ func (c *Controller) constructOriginalDemandWithCPUCore(kt *kit.Kit, demand rpdt
 		ZoneName:       demand.ZoneName,
 		RegionID:       demand.RegionID,
 		RegionName:     demand.RegionName,
-		AreaID:         demand.AreaID,
 		AreaName:       demand.AreaName,
 		Cvm: rpt.Cvm{
 			ResMode:        demand.ResMode.Name(),
@@ -616,7 +614,6 @@ func (c *Controller) constructDelayDemands(kt *kit.Kit, delays []ptypes.AdjustRP
 			ZoneName:       result[idx].Original.ZoneName,
 			RegionID:       result[idx].Original.RegionID,
 			RegionName:     result[idx].Original.RegionName,
-			AreaID:         result[idx].Original.AreaID,
 			AreaName:       result[idx].Original.AreaName,
 			Cvm: rpt.Cvm{
 				ResMode:        result[idx].Original.Cvm.ResMode,

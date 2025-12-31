@@ -17,37 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package ziyan
+package constant
 
-import (
-	"hcm/cmd/hc-service/logics/res-sync/ziyan"
-	"hcm/pkg/api/hc-service/zone"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/logs"
-	"hcm/pkg/rest"
+const (
+	// RegionProductID 地域查询默认产品ID，用于地域管理系统的 DescribeRegions 接口
+	RegionProductID = "cvm"
 )
-
-// SyncZone sync tcloud ziyan zone
-func (svc *service) SyncZone(cts *rest.Contexts) (interface{}, error) {
-	req := new(zone.TCloudZoneSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	syncCli, err := svc.syncCli.TCloudZiyan(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := syncCli.Zone(cts.Kit, &ziyan.SyncZoneOption{AccountID: req.AccountID,
-		Region: req.Region}); err != nil {
-		logs.Errorf("sync tcloud ziyan zone failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}

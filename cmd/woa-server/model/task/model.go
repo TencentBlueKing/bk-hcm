@@ -16,7 +16,6 @@ import (
 	"context"
 
 	daltypes "hcm/cmd/woa-server/storage/dal/types"
-	cfgtypes "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/tools/metadata"
@@ -32,7 +31,6 @@ type model struct {
 	diskCheckRecord DiskCheckRecord
 	deliverRecord   DeliverRecord
 	deviceInfo      DeviceInfo
-	zone            Zone
 }
 
 // ApplyTicket get apply ticket operation interface
@@ -75,11 +73,6 @@ func (m *model) DeviceInfo() DeviceInfo {
 	return m.deviceInfo
 }
 
-// Zone get zone operation interface
-func (m *model) Zone() Zone {
-	return m.zone
-}
-
 var operation *model
 
 func init() {
@@ -92,7 +85,6 @@ func init() {
 		diskCheckRecord: &diskCheckRecord{},
 		deliverRecord:   &deliverRecord{},
 		deviceInfo:      &deviceInfo{},
-		zone:            &zone{},
 	}
 }
 
@@ -111,7 +103,6 @@ type Model interface {
 	DiskCheckRecord() DiskCheckRecord
 	DeliverRecord() DeliverRecord
 	DeviceInfo() DeviceInfo
-	Zone() Zone
 }
 
 // ApplyTicket apply ticket operation interface
@@ -273,20 +264,4 @@ type DeviceInfo interface {
 	AggregateAll(ctx context.Context, pipeline interface{}, result interface{}, opts ...*daltypes.AggregateOpts) error
 	// Distinct gets device info distinct result from db
 	Distinct(ctx context.Context, field string, filter map[string]interface{}) ([]interface{}, error)
-}
-
-// Zone zone operation interface
-type Zone interface {
-	// NextSequence returns next zone config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateZone creates zone config in db
-	CreateZone(ctx context.Context, inst *cfgtypes.Zone) error
-	// GetZone gets resource zone config by filter from db
-	GetZone(ctx context.Context, filter *mapstr.MapStr) (*cfgtypes.Zone, error)
-	// FindManyZone gets zone config list by filter from db
-	FindManyZone(ctx context.Context, filter *mapstr.MapStr) ([]*cfgtypes.Zone, error)
-	// UpdateZone updates zone config by filter and doc in db
-	UpdateZone(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteZone deletes zone config from db
-	DeleteZone(ctx context.Context, filter *mapstr.MapStr) error
 }

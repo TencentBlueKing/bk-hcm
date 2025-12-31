@@ -21,13 +21,16 @@
 package zone
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/cloud-server/service/capability"
 	cloudproto "hcm/pkg/api/cloud-server/zone"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/zone"
 	dataproto "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
@@ -65,6 +68,8 @@ func InitZoneService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListZone", http.MethodPost, "/vendors/{vendor}/regions/{region}/zones/list", svc.ListZone)
+	h.Add("ImportZone", http.MethodPost, "/vendors/{vendor}/zones/import", svc.ImportZone)
+	h.Add("DeleteZone", http.MethodDelete, "/vendors/{vendor}/zones/{id}", svc.DeleteZone)
 
 	h.Load(c.WebService)
 }
@@ -77,7 +82,7 @@ type ZoneSvc struct {
 
 // ListZone ...
 func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
-	vendor := cts.PathParameter("vendor").String()
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "vendor is required")
 	}
@@ -87,7 +92,7 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.New(errf.InvalidParameter, "region is required")
 	}
 
-	if vendor == Azure {
+	if vendor == enumor.Azure {
 		return makeAzureZones(region)
 	}
 
@@ -117,6 +122,15 @@ func (dSvc *ZoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 	regionFilter := filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region}
 	zoneReq.Filter.Rules = append(zoneReq.Filter.Rules, vendorFilter)
 	zoneReq.Filter.Rules = append(zoneReq.Filter.Rules, regionFilter)
+
+	switch vendor {
+	case enumor.TCloud, enumor.Aws, enumor.HuaWei, enumor.Azure, enumor.Gcp:
+		// TODO 这些云厂商暂时统一用 listZone 查询明细，屏蔽extension差异，后续应支持单独的ListZoneExt接口
+	case enumor.TCloudZiyan:
+		return dSvc.client.DataService().TCloudZiyan.Zone.ListZoneExt(cts.Kit, zoneReq)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+	}
 
 	return dSvc.client.DataService().Global.Zone.ListZone(
 		cts.Kit.Ctx,
@@ -157,4 +171,197 @@ func makeAzureZones(region string) (*dataproto.ZoneListResult, error) {
 	}
 
 	return resp, nil
+}
+
+// ImportZone import zone from cloud to local database.
+func (dSvc *ZoneSvc) ImportZone(cts *rest.Contexts) (interface{}, error) {
+	vendorStr := cts.PathParameter("vendor").String()
+	if len(vendorStr) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	vendor := enumor.Vendor(vendorStr)
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(cloudproto.ZoneImportReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 检查是否已存在
+	if err := dSvc.checkZoneExists(cts, vendor, req.Name); err != nil {
+		return nil, err
+	}
+
+	// 根据 vendor 创建 zone
+	switch vendor {
+	case enumor.TCloud:
+		return dSvc.importTCloudZone(cts, req)
+	case enumor.Aws:
+		return dSvc.importAwsZone(cts, req)
+	case enumor.HuaWei:
+		return dSvc.importHuaWeiZone(cts, req)
+	case enumor.Gcp:
+		return dSvc.importGcpZone(cts, req)
+	case enumor.TCloudZiyan:
+		return dSvc.importTCloudZiyanZone(cts, req)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+	}
+}
+
+// checkZoneExists 检查zone是否已存在
+func (dSvc *ZoneSvc) checkZoneExists(cts *rest.Contexts, vendor enumor.Vendor, name string) error {
+	checkFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
+			filter.AtomRule{Field: "name", Op: filter.Equal.Factory(), Value: name},
+		},
+	}
+	checkReq := &dataproto.ZoneListReq{
+		Filter: checkFilter,
+		Page:   core.NewCountPage(),
+	}
+	checkResp, err := dSvc.client.DataService().Global.Zone.ListZone(cts.Kit.Ctx, cts.Kit.Header(), checkReq)
+	if err != nil {
+		return fmt.Errorf("check zone existence failed, err: %v", err)
+	}
+	if checkResp != nil && checkResp.Count > 0 {
+		return errf.Newf(errf.InvalidParameter, "zone already exists with vendor: %s, name: %s", vendor, name)
+	}
+	return nil
+}
+
+// importTCloudZone 导入TCloud zone
+func (dSvc *ZoneSvc) importTCloudZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
+	extension := &zone.TCloudZoneExtension{}
+	if req.Extension != nil {
+		if extMap, ok := req.Extension.(map[string]interface{}); ok {
+			if cityName, ok := extMap["city_name"].(string); ok {
+				extension.CityName = cityName
+			}
+		}
+	}
+
+	createReq := &dataproto.ZoneBatchCreateReq[zone.TCloudZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.TCloudZoneExtension]{
+			{
+				CloudID:   req.CloudID,
+				Name:      req.Name,
+				State:     req.State,
+				Region:    req.Region,
+				NameCn:    req.NameCn,
+				Source:    enumor.RegionSourceManually,
+				Extension: extension,
+			},
+		},
+	}
+	return dSvc.client.DataService().TCloud.Zone.BatchCreateZone(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+}
+
+// importAwsZone 导入Aws zone
+func (dSvc *ZoneSvc) importAwsZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
+	extension := &zone.AwsZoneExtension{}
+	createReq := &dataproto.ZoneBatchCreateReq[zone.AwsZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.AwsZoneExtension]{
+			{
+				CloudID:   req.CloudID,
+				Name:      req.Name,
+				State:     req.State,
+				Region:    req.Region,
+				NameCn:    req.NameCn,
+				Source:    enumor.RegionSourceManually,
+				Extension: extension,
+			},
+		},
+	}
+	return dSvc.client.DataService().Aws.Zone.BatchCreateZone(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+}
+
+// importHuaWeiZone 导入HuaWei zone
+func (dSvc *ZoneSvc) importHuaWeiZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
+	extension := &zone.HuaWeiZoneExtension{}
+	if req.Extension != nil {
+		if extMap, ok := req.Extension.(map[string]interface{}); ok {
+			if port, ok := extMap["port"].(string); ok {
+				extension.Port = port
+			}
+		}
+	}
+	createReq := &dataproto.ZoneBatchCreateReq[zone.HuaWeiZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.HuaWeiZoneExtension]{
+			{
+				CloudID:   req.CloudID,
+				Name:      req.Name,
+				State:     req.State,
+				Region:    req.Region,
+				NameCn:    req.NameCn,
+				Source:    enumor.RegionSourceManually,
+				Extension: extension,
+			},
+		},
+	}
+	return dSvc.client.DataService().HuaWei.Zone.BatchCreateZone(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+}
+
+// importGcpZone 导入Gcp zone
+func (dSvc *ZoneSvc) importGcpZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
+	extension := &zone.GcpZoneExtension{}
+	if req.Extension != nil {
+		if extMap, ok := req.Extension.(map[string]interface{}); ok {
+			if selfLink, ok := extMap["self_link"].(string); ok {
+				extension.SelfLink = selfLink
+			}
+		}
+	}
+	createReq := &dataproto.ZoneBatchCreateReq[zone.GcpZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.GcpZoneExtension]{
+			{
+				CloudID:   req.CloudID,
+				Name:      req.Name,
+				State:     req.State,
+				Region:    req.Region,
+				NameCn:    req.NameCn,
+				Source:    enumor.RegionSourceManually,
+				Extension: extension,
+			},
+		},
+	}
+	return dSvc.client.DataService().Gcp.Zone.BatchCreateZone(cts.Kit.Ctx, cts.Kit.Header(), createReq)
+}
+
+// DeleteZone delete zone by id.
+func (dSvc *ZoneSvc) DeleteZone(cts *rest.Contexts) (interface{}, error) {
+	vendorStr := cts.PathParameter("vendor").String()
+	if len(vendorStr) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	// 通过 id 删除
+	deleteFilter := &filter.Expression{
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
+	}
+	deleteReq := &dataproto.ZoneBatchDeleteReq{
+		Filter: deleteFilter,
+	}
+
+	err := dSvc.client.DataService().Global.Zone.BatchDeleteZone(cts.Kit.Ctx, cts.Kit.Header(), deleteReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

@@ -44,7 +44,6 @@ type GetRequirementResult struct {
 
 // Region qcloud resource region config
 type Region struct {
-	BkInstId       int64  `json:"id" bson:"id"`
 	Region         string `json:"region" bson:"region"`
 	RegionCn       string `json:"region_cn" bson:"region_cn"`
 	CmdbRegionName string `json:"cmdb_region_name" bson:"cmdb_region_name"`
@@ -58,19 +57,18 @@ type GetRegionResult struct {
 
 // Zone qcloud resource zone config
 type Zone struct {
-	BkInstId       int64  `json:"id" bson:"id"`
 	Zone           string `json:"zone" bson:"zone"`
 	ZoneCn         string `json:"zone_cn" bson:"zone_cn"`
 	Region         string `json:"region" bson:"region"`
 	RegionCn       string `json:"region_cn" bson:"region_cn"`
 	CmdbRegionName string `json:"cmdb_region_name" bson:"cmdb_region_name"`
-	CmdbZoneId     int64  `json:"cmdb_zone_id" bson:"cmdb_zone_id"`
 	CmdbZoneName   string `json:"cmdb_zone_name" bson:"cmdb_zone_name"`
 }
 
 // GetZoneParam get zone list request param
 type GetZoneParam struct {
 	Region     []string `json:"region" bson:"region"`
+	Zone       []string `json:"zone" bson:"zone"`
 	CmdbRegion []string `json:"cmdb_region_name" bson:"cmdb_region_name"`
 }
 

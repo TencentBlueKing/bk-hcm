@@ -52,8 +52,8 @@ func InitZoneService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("BatchCreateZone", http.MethodPost, "/vendors/{vendor}/zones/batch/create", svc.BatchCreateZone)
-
 	h.Add("BatchUpdateZone", http.MethodPatch, "/vendors/{vendor}/zones/batch/update", svc.BatchUpdateZone)
+	h.Add("ListZoneExt", http.MethodPost, "/vendors/{vendor}/zones/list", svc.ListZoneExt)
 
 	h.Add("ListZone", http.MethodPost, "/zones/list", svc.ListZone)
 
@@ -112,6 +112,75 @@ func (svc *zoneSvc) BatchUpdateZone(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
+// ListZoneExt list zone with extension.
+func (svc *zoneSvc) ListZoneExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(protocloud.ZoneListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Fields: req.Field,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.Zone().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list zone failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list zone failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &protocloud.ZoneListResult{Count: result.Count}, nil
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return convZoneListResult[zone.TCloudZoneExtension](result.Details)
+	case enumor.Aws:
+		return convZoneListResult[zone.AwsZoneExtension](result.Details)
+	case enumor.HuaWei:
+		return convZoneListResult[zone.HuaWeiZoneExtension](result.Details)
+	case enumor.Gcp:
+		return convZoneListResult[zone.GcpZoneExtension](result.Details)
+	case enumor.TCloudZiyan:
+		return convZoneListResult[zone.TCloudZoneExtension](result.Details)
+	default:
+		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
+	}
+}
+
+func convZoneListResult[T zone.ZoneExtension](tables []tablezone.ZoneTable) (*protocloud.ZoneExtListResult[T], error) {
+
+	details := make([]zone.Zone[T], 0, len(tables))
+	for _, one := range tables {
+		extension := new(T)
+		if len(one.Extension) != 0 {
+			if err := json.UnmarshalFromString(string(one.Extension), &extension); err != nil {
+				return nil, fmt.Errorf("UnmarshalFromString zone json extension failed, err: %v", err)
+			}
+		}
+
+		details = append(details, zone.Zone[T]{
+			BaseZone:  *convTableToBaseZone(&one),
+			Extension: extension,
+		})
+	}
+
+	return &protocloud.ZoneExtListResult[T]{
+		Details: details,
+	}, nil
+}
+
 // BatchDeleteZone delete zone.
 func (svc *zoneSvc) BatchDeleteZone(cts *rest.Contexts) (interface{}, error) {
 
@@ -160,22 +229,28 @@ func (svc *zoneSvc) ListZone(cts *rest.Contexts) (interface{}, error) {
 
 	details := make([]zone.BaseZone, 0, len(result.Details))
 	for _, one := range result.Details {
-		details = append(details, zone.BaseZone{
-			ID:        one.ID,
-			Vendor:    enumor.Vendor(one.Vendor),
-			CloudID:   one.CloudID,
-			Name:      one.Name,
-			Region:    one.Region,
-			NameCn:    one.NameCn,
-			State:     one.State,
-			Creator:   one.Creator,
-			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt.String(),
-			UpdatedAt: one.UpdatedAt.String(),
-		})
+		details = append(details, *convTableToBaseZone(&one))
 	}
 
 	return &protocloud.ZoneListResult{Details: details}, nil
+}
+
+func convTableToBaseZone(table *tablezone.ZoneTable) *zone.BaseZone {
+	return &zone.BaseZone{
+		ID:        table.ID,
+		Vendor:    table.Vendor,
+		CloudID:   table.CloudID,
+		Name:      table.Name,
+		Region:    table.Region,
+		NameCn:    table.NameCn,
+		State:     table.State,
+		Source:    table.Source,
+		Creator:   table.Creator,
+		Reviser:   table.Reviser,
+		CreatedAt: table.CreatedAt.String(),
+		UpdatedAt: table.UpdatedAt.String(),
+	}
+
 }
 
 func batchCreateZone[T zone.ZoneExtension](vendor enumor.Vendor, svc *zoneSvc,
@@ -198,17 +273,25 @@ func batchCreateZone[T zone.ZoneExtension](vendor enumor.Vendor, svc *zoneSvc,
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
 
-			zones = append(zones, &tablezone.ZoneTable{
+			zoneTable := &tablezone.ZoneTable{
 				Vendor:    vendor,
 				CloudID:   zone.CloudID,
 				Name:      zone.Name,
 				Region:    zone.Region,
 				NameCn:    zone.NameCn,
+				Source:    zone.Source,
 				State:     zone.State,
 				Extension: tabletype.JsonField(extension),
 				Creator:   cts.Kit.User,
 				Reviser:   cts.Kit.User,
-			})
+			}
+
+			// 如果入参没有 source，默认为 sync
+			if zoneTable.Source == "" {
+				zoneTable.Source = enumor.RegionSourceSync
+			}
+
+			zones = append(zones, zoneTable)
 		}
 
 		ids, err := svc.dao.Zone().CreateWithTx(cts.Kit, txn, zones)
@@ -243,19 +326,25 @@ func batchUpdateZone[T zone.ZoneExtension](cts *rest.Contexts, svc *zoneSvc) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids := make([]string, 0, len(req.Zones))
-	for _, one := range req.Zones {
-		ids = append(ids, one.ID)
-	}
-
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		for _, zone := range req.Zones {
+		for _, z := range req.Zones {
 			update := &tablezone.ZoneTable{
-				State:   zone.State,
+				State:   z.State,
 				Reviser: cts.Kit.User,
 			}
 
-			if err := svc.dao.Zone().UpdateByIDWithTx(cts.Kit, txn, zone.ID, update); err != nil {
+			if len(z.Source) > 0 {
+				update.Source = z.Source
+			}
+			if z.Extension != nil {
+				extension, err := json.MarshalToString(z.Extension)
+				if err != nil {
+					return nil, errf.NewFromErr(errf.InvalidParameter, err)
+				}
+				update.Extension = tabletype.JsonField(extension)
+			}
+
+			if err := svc.dao.Zone().UpdateByIDWithTx(cts.Kit, txn, z.ID, update); err != nil {
 				logs.Errorf("UpdateByIDWithTx zone failed, err: %v, rid: %s", err, cts.Kit.Rid)
 				return nil, fmt.Errorf("update zone failed, err: %v", err)
 			}

@@ -30,15 +30,18 @@ type Region interface {
 
 // TCloudRegion define tcloud region.
 type TCloudRegion struct {
-	ID         string        `json:"id"`
-	Vendor     enumor.Vendor `json:"vendor"`
-	RegionID   string        `json:"region_id"`
-	RegionName string        `json:"region_name"`
-	Status     string        `json:"status"`
-	Creator    string        `json:"creator"`
-	Reviser    string        `json:"reviser"`
-	CreatedAt  string        `json:"created_at"`
-	UpdatedAt  string        `json:"updated_at"`
+	ID         string              `json:"id"`
+	Vendor     enumor.Vendor       `json:"vendor"`
+	RegionID   string              `json:"region_id"`
+	RegionName string              `json:"region_name"`
+	AreaName   string              `json:"area_name"`
+	CityName   string              `json:"city_name"`
+	Source     enumor.RegionSource `json:"source"`
+	Status     string              `json:"status"`
+	Creator    string              `json:"creator"`
+	Reviser    string              `json:"reviser"`
+	CreatedAt  string              `json:"created_at"`
+	UpdatedAt  string              `json:"updated_at"`
 }
 
 // GetID ...

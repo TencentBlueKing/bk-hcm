@@ -20,7 +20,9 @@
 package aws
 
 import (
+	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -38,6 +40,8 @@ type CondSyncParams struct {
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
+	enumor.RegionCloudResType:        CondSyncRegion,
+	enumor.ZoneCloudResType:          CondSyncZone,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
 }
 
@@ -62,6 +66,40 @@ func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSy
 			return err
 		}
 		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.Aws, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncRegion sync region
+func CondSyncRegion(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := &region.AwsRegionSyncReq{
+		AccountID: params.AccountID,
+	}
+	err := cliSet.HCService().Aws.Region.SyncRegion(kt.Ctx, kt.Header(), syncReq)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync region failed, err: %v, req: %+v, rid: %s",
+			enumor.Aws, err, syncReq, kt.Rid)
+		return err
+	}
+	logs.Infof("[%s] conditional sync region end, req: %+v, rid: %s", enumor.Aws, syncReq, kt.Rid)
+	return nil
+}
+
+// CondSyncZone sync zone
+func CondSyncZone(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	// zone不能根据cloudID进行部分同步
+	syncReq := &zone.AwsZoneSyncReq{
+		AccountID: params.AccountID,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().Aws.Zone.SyncZone(kt.Ctx, kt.Header(), syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync zone failed, err: %v, req: %+v, rid: %s",
+				enumor.Aws, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync zone end, req: %+v, rid: %s", enumor.Aws, syncReq, kt.Rid)
 	}
 	return nil
 }

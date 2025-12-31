@@ -21,6 +21,7 @@ package ziyan
 
 import (
 	"errors"
+	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typesregion "hcm/pkg/adaptor/types/region"
@@ -50,6 +51,41 @@ func (opt SyncRegionOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// extractAreaAndCityName 从 region_name 中提取 area_name 和 city_name
+// 例如：从 "华南地区(广州)" 提取 area_name="华南地区", city_name="广州"
+func extractAreaAndCityName(regionName string) (areaName, cityName string) {
+	if len(regionName) == 0 {
+		return "", ""
+	}
+
+	leftIdx := strings.Index(regionName, "(")
+	if leftIdx < 0 {
+		// 没有英文括号，整个字符串作为 city_name
+		return "", strings.TrimSpace(regionName)
+	}
+
+	// 查找第一个右括号
+	content := regionName[leftIdx+1:]
+	rightIdx := strings.Index(content, ")")
+	if rightIdx < 0 {
+		// 没有找到右括号，整个字符串作为 city_name
+		return "", strings.TrimSpace(regionName)
+	}
+
+	// 提取括号内容，如果包含嵌套括号，只取第一个括号对的内容
+	cityName = strings.TrimSpace(content[:rightIdx])
+	if nestedIdx := strings.Index(cityName, "("); nestedIdx >= 0 {
+		cityName = strings.TrimSpace(cityName[:nestedIdx])
+	}
+
+	// 如果左括号在开头，area_name 为空
+	if leftIdx == 0 {
+		return "", cityName
+	}
+
+	return strings.TrimSpace(regionName[:leftIdx]), cityName
+}
+
 // Region ...
 func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
@@ -61,20 +97,35 @@ func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, erro
 		return nil, err
 	}
 
-	regionFromDB, err := cli.listRegionFromDB(kt, opt)
+	// 从本地查询region
+	allRegionFromDB, err := cli.listRegionFromDB(kt, opt)
 	if err != nil {
 		return nil, err
 	}
+
+	// 仅对 source 为 sync 的数据进行云上对比
+	regionFromDB := slice.Filter(allRegionFromDB, func(region cloudcore.TCloudRegion) bool {
+		return region.Source == enumor.RegionSourceSync
+	})
 
 	if len(regionFromCloud) == 0 && len(regionFromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
+	// 只对 sync 的数据进行 diff
 	addSlice, updateMap, delCloudIDs := common.Diff[typesregion.TCloudRegion, cloudcore.TCloudRegion](
 		regionFromCloud, regionFromDB, isRegionChange)
 
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteRegion(kt, opt, delCloudIDs); err != nil {
+	// 对于需要 add 的 region，检查是否在 allRegionFromDB 中存在（可能是过去临时手动添加的）
+	// 如果存在，需要先删除
+	var toDeleteForAdd []string
+	if len(addSlice) > 0 {
+		toDeleteForAdd = cli.findExistingRegionsToDelete(addSlice, allRegionFromDB)
+	}
+
+	// 删除 diff 出来的 region（这些 region 在云上不存在，需要验证）
+	if len(delCloudIDs) > 0 || len(toDeleteForAdd) > 0 {
+		if err := cli.deleteRegion(kt, opt, delCloudIDs, toDeleteForAdd); err != nil {
 			return nil, err
 		}
 	}
@@ -104,11 +155,15 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 	createResources := make([]dataregion.TCloudRegionBatchCreate, 0, len(addSlice))
 
 	for _, one := range addSlice {
+		areaName, cityName := extractAreaAndCityName(one.RegionName)
 		tmpRes := dataregion.TCloudRegionBatchCreate{
 			Vendor:     enumor.TCloudZiyan,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
+			AreaName:   areaName,
+			CityName:   cityName,
 			Status:     one.RegionState,
+			Source:     enumor.RegionSourceSync,
 		}
 		createResources = append(createResources, tmpRes)
 	}
@@ -138,10 +193,13 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 	updateResources := make([]dataregion.TCloudRegionBatchUpdate, 0, len(updateMap))
 
 	for id, one := range updateMap {
+		areaName, cityName := extractAreaAndCityName(one.RegionName)
 		tmpRes := dataregion.TCloudRegionBatchUpdate{
 			ID:         id,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
+			AreaName:   areaName,
+			CityName:   cityName,
 			Status:     one.RegionState,
 		}
 		updateResources = append(updateResources, tmpRes)
@@ -162,8 +220,30 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 	return nil
 }
 
-func (cli *client) deleteRegion(kt *kit.Kit, opt *SyncRegionOption, delCloudIDs []string) error {
-	if len(delCloudIDs) <= 0 {
+// findExistingRegionsToDelete 查找需要删除的已存在 region
+// 返回这些 region 的 region_id 列表
+func (cli *client) findExistingRegionsToDelete(addRegions []typesregion.TCloudRegion,
+	allDBRegions []cloudcore.TCloudRegion) []string {
+
+	toDeleteRegionIDs := make([]string, 0)
+	addRegionMap := converter.SliceToMap(addRegions,
+		func(t typesregion.TCloudRegion) (string, interface{}) {
+			return t.RegionID, nil
+		})
+
+	for _, dbRegion := range allDBRegions {
+		if _, exists := addRegionMap[dbRegion.RegionID]; exists {
+			toDeleteRegionIDs = append(toDeleteRegionIDs, dbRegion.RegionID)
+		}
+	}
+
+	return toDeleteRegionIDs
+}
+
+// deleteRegion 删除 region
+// delCloudIDs: 要删除的 region_id 列表
+func (cli *client) deleteRegion(kt *kit.Kit, opt *SyncRegionOption, delCloudIDs, toDeleteForAdd []string) error {
+	if len(delCloudIDs) <= 0 && len(toDeleteForAdd) <= 0 {
 		return errors.New("region delCloudIDs is <= 0, not delete")
 	}
 
@@ -174,11 +254,16 @@ func (cli *client) deleteRegion(kt *kit.Kit, opt *SyncRegionOption, delCloudIDs 
 
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
 	for _, one := range delRegionFromCloud {
-		if _, exsit := delCloudMap[one.RegionID]; exsit {
+		if _, exist := delCloudMap[one.RegionID]; exist {
 			logs.Errorf("[%s] validate region not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
 				enumor.TCloudZiyan, opt, len(delRegionFromCloud), kt.Rid)
 			return errors.New("validate region not exist failed, before delete")
 		}
+	}
+
+	// 因新增而删除的本地资源，不需要和云上对比
+	if len(toDeleteForAdd) > 0 {
+		delCloudIDs = append(delCloudIDs, toDeleteForAdd...)
 	}
 
 	elems := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
@@ -187,9 +272,6 @@ func (cli *client) deleteRegion(kt *kit.Kit, opt *SyncRegionOption, delCloudIDs 
 			Filter: tools.ContainersExpression("region_id", parts),
 		}
 		if err := cli.dbCli.TCloudZiyan.Region.BatchDelete(kt, deleteReq); err != nil {
-			return err
-		}
-		if err != nil {
 			logs.Errorf("[%s] delete region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloudZiyan,
 				err, opt.AccountID, opt, kt.Rid)
 			return err
@@ -244,8 +326,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 		regions, err := cli.dbCli.TCloudZiyan.Region.ListRegion(kt, req)
 		if err != nil {
 			logs.Errorf("[%s] list region from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.TCloudZiyan,
-				err,
-				opt.AccountID, req, kt.Rid)
+				err, opt.AccountID, req, kt.Rid)
 			return nil, err
 		}
 		results = append(results, regions.Details...)
@@ -267,6 +348,15 @@ func isRegionChange(cloud typesregion.TCloudRegion, db cloudcore.TCloudRegion) b
 	}
 
 	if cloud.RegionName != db.RegionName {
+		return true
+	}
+
+	// area_name 和 city_name 也需相同，仅在第一次同步补充这些字段时需关注该对比
+	areaName, cityName := extractAreaAndCityName(cloud.RegionName)
+	if areaName != db.AreaName {
+		return true
+	}
+	if cityName != db.CityName {
 		return true
 	}
 

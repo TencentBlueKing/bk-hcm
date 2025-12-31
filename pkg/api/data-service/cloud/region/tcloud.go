@@ -36,19 +36,21 @@ import (
 
 // TCloudRegionCreateReq define region create request.
 type TCloudRegionCreateReq struct {
-	Regions   []TCloudRegionBatchCreate `json:"regions" validate:"required"`
-	AccountID string                    `json:"account_id" validate:"omitempty"`
+	Regions []TCloudRegionBatchCreate `json:"regions" validate:"required"`
 }
 
 // TCloudRegionBatchCreate define region rule when create.
 type TCloudRegionBatchCreate struct {
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id" validate:"required"`
-	RegionName string        `json:"region_name" validate:"required"`
-	Status     string        `json:"status"`
+	Vendor     enumor.Vendor       `json:"vendor" validate:"required"`
+	RegionID   string              `json:"region_id" validate:"required"`
+	RegionName string              `json:"region_name" validate:"required"`
+	AreaName   string              `json:"area_name"`
+	CityName   string              `json:"city_name"`
+	Status     string              `json:"status"`
+	Source     enumor.RegionSource `json:"source"`
 }
 
-// Validate region create request.
+// Validate validate TCloudRegionCreateReq.
 func (req *TCloudRegionCreateReq) Validate() error {
 	if len(req.Regions) == 0 {
 		return errors.New("regions is required")
@@ -58,7 +60,29 @@ func (req *TCloudRegionCreateReq) Validate() error {
 		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, r := range req.Regions {
+		if err := r.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// Validate validate TCloudRegionBatchCreate.
+func (req *TCloudRegionBatchCreate) Validate() error {
+	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+	if err := req.Source.Validate(); err != nil {
+		return err
+	}
+
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- Update --------------------------
@@ -70,14 +94,16 @@ type TCloudRegionBatchUpdateReq struct {
 
 // TCloudRegionBatchUpdate tcloud region batch update option.
 type TCloudRegionBatchUpdate struct {
-	ID         string        `json:"id" validate:"required"`
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
-	RegionID   string        `json:"region_id"`
-	RegionName string        `json:"region_name"`
-	Status     string        `json:"status"`
+	ID         string              `json:"id" validate:"required"`
+	RegionID   string              `json:"region_id"`
+	RegionName string              `json:"region_name"`
+	AreaName   string              `json:"area_name"`
+	CityName   string              `json:"city_name"`
+	Status     string              `json:"status"`
+	Source     enumor.RegionSource `json:"source"`
 }
 
-// Validate tcloud region batch update request.
+// Validate validate TCloudRegionBatchUpdateReq.
 func (req *TCloudRegionBatchUpdateReq) Validate() error {
 	if len(req.Regions) == 0 {
 		return errors.New("regions is required")
@@ -87,7 +113,28 @@ func (req *TCloudRegionBatchUpdateReq) Validate() error {
 		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, r := range req.Regions {
+		if err := r.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// Validate validate TCloudRegionBatchUpdate.
+func (req *TCloudRegionBatchUpdate) Validate() error {
+	if len(req.Source) > 0 {
+		if err := req.Source.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- List --------------------------

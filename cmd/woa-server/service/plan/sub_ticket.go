@@ -98,7 +98,7 @@ func (s *service) listResPlanSubTicket(cts *rest.Contexts, bkBizID int64, author
 		}
 	}
 
-	rst, err := s.planController.ListResPlanSubTicket(cts.Kit, req)
+	rst, err := s.planController.Fetch().ListResPlanSubTicket(cts.Kit, req)
 	if err != nil {
 		logs.Errorf("failed to list resource plan sub ticket, err: %v, id: %s, applicant: %s, rid: %s", err,
 			req.TicketID, cts.Kit.User, cts.Kit.Rid)
@@ -175,7 +175,7 @@ func (s *service) GetBizResPlanSubTicketDetail(cts *rest.Contexts) (interface{},
 func (s *service) getResPlanSubTicketDetail(kt *kit.Kit, bizID int64, subTicketID string, authorized bool) (
 	*ptypes.GetSubTicketDetailResp, error) {
 
-	detail, applicant, err := s.planController.GetResPlanSubTicketDetail(kt, subTicketID)
+	detail, applicant, err := s.planController.Fetch().GetResPlanSubTicketDetail(kt, subTicketID)
 	if err != nil {
 		logs.Errorf("failed to get resource plan sub ticket detail, err: %v, id: %s, rid: %s", err, subTicketID,
 			kt.Rid)
@@ -243,7 +243,7 @@ func (s *service) getResPlanSubTicketAudit(cts *rest.Contexts, bkBizID int64, au
 		return nil, errf.NewFromErr(errf.InvalidParameter, errors.New("sub_ticket_id can not be empty"))
 	}
 
-	auditResp, applicant, err := s.planController.GetResPlanSubTicketAudit(cts.Kit, bkBizID, subTicketID)
+	auditResp, applicant, err := s.planController.Fetch().GetResPlanSubTicketAudit(cts.Kit, bkBizID, subTicketID)
 	if err != nil {
 		logs.Errorf("failed to get resource plan sub ticket audit, err: %v, id: %s, rid: %s", err, subTicketID,
 			cts.Kit.Rid)

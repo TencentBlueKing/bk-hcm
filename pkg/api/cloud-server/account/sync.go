@@ -28,14 +28,18 @@ import (
 
 // ResCondSyncReq sync condition
 type ResCondSyncReq struct {
-	Regions  []string `json:"regions,required" validate:"min=1,max=5"`
+	Regions  []string `json:"regions" validate:"max=5"`
 	CloudIDs []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=5"`
 }
 
 // Validate ...
-func (r *ResCondSyncReq) Validate() error {
+func (r *ResCondSyncReq) Validate(needRegion bool) error {
+	if needRegion && len(r.Regions) == 0 {
+		return fmt.Errorf("regions is required")
+	}
+
 	return validator.Validate.Struct(r)
 }
 
@@ -49,7 +53,8 @@ type AzureResCondSyncReq struct {
 func (r *AzureResCondSyncReq) Validate() error {
 	if len(r.CloudIDs) > 0 {
 		if len(r.ResourceGroupNames) > 1 {
-			return fmt.Errorf("resource_group_names must be one when cloud_ids is specified, got: %v", r.ResourceGroupNames)
+			return fmt.Errorf("resource_group_names must be one when cloud_ids is specified, got: %v",
+				r.ResourceGroupNames)
 		}
 	}
 	return validator.Validate.Struct(r)

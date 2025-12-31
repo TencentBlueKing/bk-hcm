@@ -22,7 +22,6 @@ import (
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
@@ -310,14 +309,12 @@ func (dh *DeviceTypeHandler) getAvailableZoneIds(kt *kit.Kit, requireType int64,
 
 // getZoneList get zone info in certain region
 func (dh *DeviceTypeHandler) getZoneList(kt *kit.Kit, region string) ([]*cfgtype.Zone, error) {
-	cond := mapstr.MapStr{}
+	req := &cfgtype.GetZoneParam{}
 	// if input region is empty list, return all zone info
 	if len(region) > 0 {
-		cond["region"] = mapstr.MapStr{
-			pkg.BKDBIN: []string{region},
-		}
+		req.Region = []string{region}
 	}
-	zoneResp, err := dh.configLogics.Zone().GetZone(kt, &cond)
+	zoneResp, err := dh.configLogics.Zone().GetZone(kt, req)
 	if err != nil {
 		return nil, err
 	}

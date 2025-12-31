@@ -92,3 +92,14 @@ const (
 	SecurityGroupUsageBizRelResType CloudResourceType = "security_group_usage_biz_rel"
 	CvmCCInfoResType                CloudResourceType = "cvm_cc_info"
 )
+
+// allowedSyncAllResTypes 标记允许全量同步的资源类型（条件同步时允许不指定regions）
+var allowedSyncAllResTypes = map[CloudResourceType]bool{
+	RegionCloudResType: true,
+	ZoneCloudResType:   true,
+}
+
+// IsAllowedSyncAll 资源是否允许全量同步
+func (rt CloudResourceType) IsAllowedSyncAll() bool {
+	return allowedSyncAllResTypes[rt]
+}

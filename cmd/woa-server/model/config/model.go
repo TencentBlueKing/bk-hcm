@@ -22,8 +22,6 @@ import (
 
 type model struct {
 	requirement    Requirement
-	region         Region
-	zone           Zone
 	idcZone        IdcZone
 	deviceRestrict DeviceRestrict
 	cvmImage       CvmImage
@@ -35,16 +33,6 @@ type model struct {
 // Requirement get requirement operation interface
 func (m *model) Requirement() Requirement {
 	return m.requirement
-}
-
-// Region get region operation interface
-func (m *model) Region() Region {
-	return m.region
-}
-
-// Zone get qcloud zone operation interface
-func (m *model) Zone() Zone {
-	return m.zone
 }
 
 // IdcZone get idc zone operation interface
@@ -82,8 +70,6 @@ var operation *model
 func init() {
 	operation = &model{
 		requirement:    &requirement{},
-		region:         &region{},
-		zone:           &zone{},
 		idcZone:        &idcZone{},
 		deviceRestrict: &deviceRestrict{},
 		cvmImage:       &cvmImage{},
@@ -101,8 +87,6 @@ func Operation() *model {
 // Model provides storage interface for operations of models
 type Model interface {
 	Requirement() Requirement
-	Region() Region
-	Zone() Zone
 	IdcZone() IdcZone
 	DeviceRestrict() DeviceRestrict
 	CvmImage() CvmImage
@@ -125,38 +109,6 @@ type Requirement interface {
 	UpdateRequirement(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
 	// DeleteRequirement deletes resource requirement type config from db
 	DeleteRequirement(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// Region qcloud region operation interface
-type Region interface {
-	// NextSequence returns next region config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateRegion creates region config in db
-	CreateRegion(ctx context.Context, inst *types.Region) error
-	// GetRegion gets resource region config by filter from db
-	GetRegion(ctx context.Context, filter *mapstr.MapStr) (*types.Region, error)
-	// FindManyRegion gets region config list by filter from db
-	FindManyRegion(ctx context.Context, filter *mapstr.MapStr) ([]*types.Region, error)
-	// UpdateRegion updates region config by filter and doc in db
-	UpdateRegion(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteRegion deletes region config from db
-	DeleteRegion(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// Zone qcloud zone operation interface
-type Zone interface {
-	// NextSequence returns next zone config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateZone creates zone config in db
-	CreateZone(ctx context.Context, inst *types.Zone) error
-	// GetZone gets resource zone config by filter from db
-	GetZone(ctx context.Context, filter *mapstr.MapStr) (*types.Zone, error)
-	// FindManyZone gets zone config list by filter from db
-	FindManyZone(ctx context.Context, filter *mapstr.MapStr) ([]*types.Zone, error)
-	// UpdateZone updates zone config by filter and doc in db
-	UpdateZone(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteZone deletes zone config from db
-	DeleteZone(ctx context.Context, filter *mapstr.MapStr) error
 }
 
 // IdcZone idc zone operation interface

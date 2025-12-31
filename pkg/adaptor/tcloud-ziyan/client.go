@@ -38,6 +38,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+	regionsdk "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/region/v20220627"
 	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
@@ -177,6 +178,19 @@ func (c *clientSet) CertClient() (*ssl.Client, error) {
 func (c *clientSet) BPaasClient() (*bpaas.Client, error) {
 	// 使用内部域名
 	client, err := bpaas.NewClient(c.credential, "", c.getProfileUseSpecifiedEndpoint(constant.InternalBPaasEndpoint))
+	if err != nil {
+		return nil, err
+	}
+	client.WithHttpTransport(metric.GetZiyanRecordRoundTripper(nil))
+
+	return client, nil
+}
+
+// RegionClient tcloud ziyan sdk region client
+func (c *clientSet) RegionClient() (*regionsdk.Client, error) {
+	// 使用内部域名
+	client, err := regionsdk.NewClient(c.credential, "",
+		c.getProfileUseSpecifiedEndpoint(constant.InternalRegionEndpoint))
 	if err != nil {
 		return nil, err
 	}

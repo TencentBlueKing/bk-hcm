@@ -244,7 +244,6 @@ type ListResPlanDemandItem struct {
 	RemainedDiskSize int64                `json:"remained_disk_size"`
 	RegionID         string               `json:"region_id"`
 	RegionName       string               `json:"region_name"`
-	AreaID           string               `json:"area_id"`
 	AreaName         string               `json:"area_name"`
 	ResMode          enumor.ResModeCode   `json:"res_mode"`
 	ZoneID           string               `json:"zone_id"`
@@ -324,7 +323,6 @@ type GetPlanDemandDetailResp struct {
 	OpProductID     int64             `json:"op_product_id"`
 	OpProductName   string            `json:"op_product_name"`
 	ObsProject      enumor.ObsProject `json:"obs_project"`
-	AreaID          string            `json:"area_id"`
 	AreaName        string            `json:"area_name"`
 	RegionID        string            `json:"region_id"`
 	RegionName      string            `json:"region_name"`
@@ -366,7 +364,6 @@ func (g *GetPlanDemandDetailResp) SetRegionAreaAndZoneID(zoneNameMap map[string]
 		return fmt.Errorf("region name: %s not found in woa_zone", g.RegionName)
 	}
 	g.RegionID = regionArea.RegionID
-	g.AreaID = regionArea.AreaID
 	g.AreaName = regionArea.AreaName
 
 	zoneID, exists := zoneNameMap[g.ZoneName]
@@ -733,7 +730,6 @@ type CrpOrderChangeInfo struct {
 	DemandResType   enumor.DemandResType `json:"demand_res_type"`
 	ResMode         enumor.ResModeCode   `json:"res_mode"`
 	PlanType        enumor.PlanTypeCode  `json:"plan_type"`
-	AreaID          string               `json:"area_id"`
 	AreaName        string               `json:"area_name"`
 	RegionID        string               `json:"region_id"`
 	RegionName      string               `json:"region_name"`
@@ -763,7 +759,6 @@ func (c *CrpOrderChangeInfo) SetRegionAreaAndZoneID(zoneNameMap map[string]strin
 		return fmt.Errorf("region name: %s not found in woa_zone", c.RegionName)
 	}
 	c.RegionID = regionArea.RegionID
-	c.AreaID = regionArea.AreaID
 	c.AreaName = regionArea.AreaName
 
 	// CRP的底层逻辑里空字符串会存储为"-"

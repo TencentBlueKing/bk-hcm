@@ -60,13 +60,13 @@ func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Cli
 	capacityOp := NewCapacityOp(vpcOp, subnetOp, thirdCli, cmdbCli)
 	return &logics{
 		requirement:          NewRequirementOp(),
-		region:               NewRegionOp(),
-		zone:                 NewZoneOp(),
+		region:               NewRegionOp(client),
+		zone:                 NewZoneOp(client),
 		vpc:                  vpcOp,
 		subnet:               subnetOp,
 		deviceRestrict:       NewDeviceRestrictOp(),
 		cvmImage:             NewCvmImageOp(),
-		device:               NewDeviceOp(thirdCli),
+		device:               NewDeviceOp(thirdCli, NewZoneOp(client)),
 		capacity:             capacityOp,
 		batchCapacity:        capacityOp,
 		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),

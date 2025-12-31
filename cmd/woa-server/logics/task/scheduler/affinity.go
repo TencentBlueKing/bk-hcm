@@ -18,10 +18,9 @@ import (
 	"time"
 
 	"hcm/cmd/woa-server/logics/config"
+	cfgtype "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/task"
-	"hcm/pkg"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
@@ -104,13 +103,13 @@ func (s *AffinityService) processSpec(kt *kit.Kit, bizID int64, spec *types.Affi
 
 // getCampusList 获取园区列表
 func (s *AffinityService) getCampusList(kt *kit.Kit, spec *types.AffinityMatchSpec) ([]types.CampusInfo, error) {
-	cond := mapstr.MapStr{}
+	req := &cfgtype.GetZoneParam{}
 
 	if spec.IsCVMSeparateCampus() {
 		if spec.Region == "" {
 			return []types.CampusInfo{}, nil
 		}
-		cond["region"] = mapstr.MapStr{pkg.BKDBIN: []string{spec.Region}}
+		req.Region = []string{spec.Region}
 
 		var campusZones []string
 		for _, zone := range spec.Zones {
@@ -120,17 +119,17 @@ func (s *AffinityService) getCampusList(kt *kit.Kit, spec *types.AffinityMatchSp
 			campusZones = append(campusZones, zone)
 		}
 		if len(campusZones) > 0 {
-			cond["zone"] = mapstr.MapStr{pkg.BKDBIN: campusZones}
+			req.Zone = campusZones
 		}
 	} else {
 		if len(spec.Zones) > 0 {
-			cond["zone"] = mapstr.MapStr{pkg.BKDBIN: spec.Zones}
+			req.Zone = spec.Zones
 		}
 	}
 
-	zoneResult, err := s.configLogics.Zone().GetZone(kt, &cond)
+	zoneResult, err := s.configLogics.Zone().GetZone(kt, req)
 	if err != nil {
-		logs.Errorf("failed to get zone list from config, cond: %+v, err: %v, rid: %s", cond, err, kt.Rid)
+		logs.Errorf("failed to get zone list from config, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
 

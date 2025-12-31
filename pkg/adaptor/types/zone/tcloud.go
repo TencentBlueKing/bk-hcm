@@ -21,9 +21,6 @@ package zone
 
 import (
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/tools/converter"
-
-	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // TCloudZoneListOption define tcloud zone list option.
@@ -43,10 +40,14 @@ func (opt TCloudZoneListOption) Validate() error {
 
 // TCloudZone for cvm ZoneInfo
 type TCloudZone struct {
-	*cvm.ZoneInfo
+	CloudID         string `json:"cloud_id"`
+	ZoneID          string `json:"zone_id"`
+	ZoneName        string `json:"zone_name"`
+	State           string `json:"state,omitempty"`
+	LogicCampusName string `json:"logic_campus_name,omitempty"`
 }
 
 // GetCloudID ...
 func (zone TCloudZone) GetCloudID() string {
-	return converter.PtrToVal(zone.ZoneId)
+	return zone.CloudID
 }

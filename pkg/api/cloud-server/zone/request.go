@@ -35,3 +35,18 @@ type ZoneListReq struct {
 func (req *ZoneListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// ZoneImportReq define zone import request.
+type ZoneImportReq struct {
+	CloudID   string      `json:"cloud_id" validate:"required"`
+	Name      string      `json:"name" validate:"required"`
+	State     string      `json:"state" validate:"required"`
+	Region    string      `json:"region" validate:"required"`
+	NameCn    string      `json:"name_cn" validate:"required"`
+	Extension interface{} `json:"extension"`
+}
+
+// Validate validate ZoneImportReq.
+func (req *ZoneImportReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

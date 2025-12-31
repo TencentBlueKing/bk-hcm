@@ -56,6 +56,9 @@ import (
 
 // Logics provides management interface for resource plan.
 type Logics interface {
+	// Fetch resource plan data.
+	Fetch() fetcher.Fetcher
+
 	// ListResPlanDemandAndOverview list res plan demand and overview.
 	ListResPlanDemandAndOverview(kt *kit.Kit, req *ptypes.ListResPlanDemandReq) (*ptypes.ListResPlanDemandResp, error)
 	// GetResPlanDemandDetail get res plan demand detail.
@@ -141,13 +144,6 @@ type Logics interface {
 	// UpdatePlanTransferQuotaConfigs 更新预测转移额度配置
 	UpdatePlanTransferQuotaConfigs(kt *kit.Kit, req *ptypes.UpdatePlanTransferQuotaConfigsReq) error
 
-	// ListResPlanSubTicket list res plan sub ticket.
-	ListResPlanSubTicket(kt *kit.Kit, req *ptypes.ListResPlanSubTicketReq) (*ptypes.ListResPlanSubTicketResp, error)
-	// GetResPlanSubTicketDetail get res plan sub ticket detail.
-	GetResPlanSubTicketDetail(kt *kit.Kit, subTicketID string) (*ptypes.GetSubTicketDetailResp, string, error)
-	// GetResPlanSubTicketAudit get res plan sub ticket audit.
-	GetResPlanSubTicketAudit(kt *kit.Kit, bizID int64, subTicketID string) (*ptypes.GetSubTicketAuditResp, string,
-		error)
 	// ApproveResPlanSubTicketAdmin approve res plan ticket admin.
 	ApproveResPlanSubTicketAdmin(kt *kit.Kit, subTicketID string, bizID int64,
 		req *ptypes.AuditResPlanTicketAdminReq) error
@@ -242,6 +238,11 @@ func New(sd serviced.State, client *client.ClientSet, dao dao.Set, cmsiCli cmsi.
 	go ctrl.Run()
 
 	return ctrl, nil
+}
+
+// Fetch returns fetcher
+func (c *Controller) Fetch() fetcher.Fetcher {
+	return c.resFetcher
 }
 
 func (c *Controller) recoverLog(keywords constant.WarnSign) {

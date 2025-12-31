@@ -98,7 +98,6 @@ func (f *ResPlanFetcher) GetResPlanDemandDetail(kt *kit.Kit, demandID string, bk
 		OpProductID:     detail.OpProductID,
 		OpProductName:   detail.OpProductName,
 		ObsProject:      detail.ObsProject,
-		AreaID:          detail.AreaID,
 		AreaName:        detail.AreaName,
 		RegionID:        detail.RegionID,
 		RegionName:      detail.RegionName,

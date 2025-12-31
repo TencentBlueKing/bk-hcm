@@ -27,10 +27,7 @@ import (
 	mtypes "hcm/cmd/woa-server/types/meta"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/tools"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	"hcm/pkg/kit"
-	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/tools/times"
 )
@@ -287,20 +284,4 @@ func (c *Controller) GetPlanTypeByChargeType(chargeType cvmapi.ChargeType) (enum
 	default: // 计费模式默认:包年包月
 		return enumor.PlanTypeCodeInPlan, nil
 	}
-}
-
-// GetZoneMapByRegionIDs get zone map by region ids.
-func (c *Controller) GetZoneMapByRegionIDs(kt *kit.Kit, regionIDs []string) (map[string]string, error) {
-	queryReq := tools.ContainersExpression("region_id", regionIDs)
-	zoneList, err := c.dao.WoaZone().GetZoneList(kt, queryReq)
-	if err != nil {
-		logs.Errorf("get zone map by region ids failed, err: %v, regionIDs: %v, rid: %s", err, regionIDs, kt.Rid)
-		return nil, err
-	}
-
-	zoneMap := make(map[string]string)
-	for _, detail := range zoneList {
-		zoneMap[detail.ZoneID] = detail.ZoneName
-	}
-	return zoneMap, nil
 }

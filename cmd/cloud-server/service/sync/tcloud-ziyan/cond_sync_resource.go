@@ -21,7 +21,9 @@ package tziyan
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -41,6 +43,8 @@ type CondSyncParams struct {
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
+	enumor.RegionCloudResType:        CondSyncRegion,
+	enumor.ZoneCloudResType:          CondSyncZone,
 	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
 }
@@ -91,6 +95,40 @@ func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSy
 		}
 		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s",
 			enumor.TCloudZiyan, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncRegion sync region
+func CondSyncRegion(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := &region.TCloudRegionSyncReq{
+		AccountID: params.AccountID,
+	}
+	err := cliSet.HCService().TCloudZiyan.Region.Sync(kt, syncReq)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync region failed, err: %v, req: %+v, rid: %s",
+			enumor.TCloudZiyan, err, syncReq, kt.Rid)
+		return err
+	}
+	logs.Infof("[%s] conditional sync region end, req: %+v, rid: %s", enumor.TCloudZiyan, syncReq, kt.Rid)
+	return nil
+}
+
+// CondSyncZone sync zone
+func CondSyncZone(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	// zone不能根据cloudID或tagFilter进行部分同步
+	syncReq := &zone.TCloudZoneSyncReq{
+		AccountID: params.AccountID,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloudZiyan.Zone.SyncZone(kt, syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync zone failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloudZiyan, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync zone end, req: %+v, rid: %s", enumor.TCloudZiyan, syncReq, kt.Rid)
 	}
 	return nil
 }

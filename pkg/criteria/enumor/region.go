@@ -17,37 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package ziyan
+package enumor
 
-import (
-	"hcm/cmd/hc-service/logics/res-sync/ziyan"
-	"hcm/pkg/api/hc-service/zone"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/logs"
-	"hcm/pkg/rest"
-)
+import "fmt"
 
-// SyncZone sync tcloud ziyan zone
-func (svc *service) SyncZone(cts *rest.Contexts) (interface{}, error) {
-	req := new(zone.TCloudZoneSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+// RegionSource is region source type.
+type RegionSource string
+
+// Validate RegionSource.
+func (r RegionSource) Validate() error {
+	switch r {
+	case RegionSourceSync:
+	case RegionSourceManually:
+	default:
+		return fmt.Errorf("unsupported region source: %s", r)
 	}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	syncCli, err := svc.syncCli.TCloudZiyan(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := syncCli.Zone(cts.Kit, &ziyan.SyncZoneOption{AccountID: req.AccountID,
-		Region: req.Region}); err != nil {
-		logs.Errorf("sync tcloud ziyan zone failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return nil
 }
+
+const (
+	// RegionSourceSync region source from sync
+	RegionSourceSync RegionSource = "sync"
+	// RegionSourceManually region source from manually
+	RegionSourceManually RegionSource = "manually"
+)

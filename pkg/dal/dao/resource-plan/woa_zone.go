@@ -234,7 +234,6 @@ func (d WoaZoneDao) GetRegionAreaMap(kt *kit.Kit) (map[string]mtypes.RegionArea,
 		regionMap[detail.RegionID] = mtypes.RegionArea{
 			RegionID:   detail.RegionID,
 			RegionName: detail.RegionName,
-			AreaID:     detail.AreaID,
 			AreaName:   detail.AreaName,
 		}
 	}
