@@ -24,8 +24,6 @@ type model struct {
 	requirement    Requirement
 	region         Region
 	zone           Zone
-	vpc            Vpc
-	subnet         Subnet
 	idcZone        IdcZone
 	deviceRestrict DeviceRestrict
 	cvmImage       CvmImage
@@ -47,16 +45,6 @@ func (m *model) Region() Region {
 // Zone get qcloud zone operation interface
 func (m *model) Zone() Zone {
 	return m.zone
-}
-
-// Vpc get vpc operation interface
-func (m *model) Vpc() Vpc {
-	return m.vpc
-}
-
-// Subnet get subnet operation interface
-func (m *model) Subnet() Subnet {
-	return m.subnet
 }
 
 // IdcZone get idc zone operation interface
@@ -96,8 +84,6 @@ func init() {
 		requirement:    &requirement{},
 		region:         &region{},
 		zone:           &zone{},
-		vpc:            &vpc{},
-		subnet:         &subnet{},
 		idcZone:        &idcZone{},
 		deviceRestrict: &deviceRestrict{},
 		cvmImage:       &cvmImage{},
@@ -117,8 +103,6 @@ type Model interface {
 	Requirement() Requirement
 	Region() Region
 	Zone() Zone
-	Vpc() Vpc
-	Subnet() Subnet
 	IdcZone() IdcZone
 	DeviceRestrict() DeviceRestrict
 	CvmImage() CvmImage
@@ -173,44 +157,6 @@ type Zone interface {
 	UpdateZone(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
 	// DeleteZone deletes zone config from db
 	DeleteZone(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// Vpc vpc operation interface
-type Vpc interface {
-	// NextSequence returns next vpc config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateVpc creates vpc config in db
-	CreateVpc(ctx context.Context, inst *types.Vpc) error
-	// GetVpc gets vpc config by filter from db
-	GetVpc(ctx context.Context, filter *mapstr.MapStr) (*types.Vpc, error)
-	// CountVpc gets vpc count by filter from db
-	CountVpc(ctx context.Context, filter map[string]interface{}) (uint64, error)
-	// FindManyVpc gets vpc config list by filter from db
-	FindManyVpc(ctx context.Context, filter *mapstr.MapStr) ([]*types.Vpc, error)
-	// FindManyVpcId gets vpc id list by filter from db
-	FindManyVpcId(ctx context.Context, filter map[string]interface{}) ([]interface{}, error)
-	// UpdateVpc updates vpc config by filter and doc in db
-	UpdateVpc(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteVpc deletes vpc config from db
-	DeleteVpc(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// Subnet subnet operation interface
-type Subnet interface {
-	// NextSequence returns next subnet config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateSubnet creates subnet config in db
-	CreateSubnet(ctx context.Context, inst *types.Subnet) error
-	// GetSubnet gets subnet config by filter from db
-	GetSubnet(ctx context.Context, filter *mapstr.MapStr) (*types.Subnet, error)
-	// CountSubnet gets subnet count by filter from db
-	CountSubnet(ctx context.Context, filter map[string]interface{}) (uint64, error)
-	// FindManySubnet gets subnet config list by filter from db
-	FindManySubnet(ctx context.Context, page metadata.BasePage, filter map[string]interface{}) ([]*types.Subnet, error)
-	// UpdateSubnet updates subnet config by filter and doc in db
-	UpdateSubnet(ctx context.Context, filter, doc map[string]interface{}) error
-	// DeleteSubnet deletes subnet config from db
-	DeleteSubnet(ctx context.Context, filter *mapstr.MapStr) error
 }
 
 // IdcZone idc zone operation interface

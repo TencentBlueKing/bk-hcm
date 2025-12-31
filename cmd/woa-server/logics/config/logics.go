@@ -56,19 +56,20 @@ type logics struct {
 // New create a logics manager
 func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Client, daoSet dao.Set) Logics {
 	vpcOp := NewVpcOp(client, thirdCli)
-	capacityOp := NewCapacityOp(vpcOp, thirdCli, cmdbCli)
+	subnetOp := NewSubnetOp(client, thirdCli)
+	capacityOp := NewCapacityOp(vpcOp, subnetOp, thirdCli, cmdbCli)
 	return &logics{
 		requirement:          NewRequirementOp(),
 		region:               NewRegionOp(),
 		zone:                 NewZoneOp(),
 		vpc:                  vpcOp,
-		subnet:               NewSubnetOp(thirdCli),
+		subnet:               subnetOp,
 		deviceRestrict:       NewDeviceRestrictOp(),
 		cvmImage:             NewCvmImageOp(),
 		device:               NewDeviceOp(thirdCli),
 		capacity:             capacityOp,
 		batchCapacity:        capacityOp,
-		leftIP:               NewLeftIPOp(vpcOp, thirdCli),
+		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),
 		sg:                   ziyan.NewSgOp(client),
 		applyOrderStatistics: NewApplyOrderStatisticsOp(daoSet),
 	}

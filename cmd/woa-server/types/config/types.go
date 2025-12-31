@@ -17,9 +17,12 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/tools/metadata"
 	"hcm/pkg/tools/querybuilder"
@@ -79,7 +82,7 @@ type GetZoneResult struct {
 
 // Vpc cvm vpc config
 type Vpc struct {
-	BkInstId int64  `json:"id" bson:"id"`
+	BkInstId string `json:"id" bson:"id"`
 	Region   string `json:"region" bson:"region"`
 	VpcId    string `json:"vpc_id" bson:"vpc_id"`
 	VpcName  string `json:"vpc_name" bson:"vpc_name"`
@@ -108,7 +111,7 @@ type GetVpcListRst struct {
 
 // Subnet cvm subnet config
 type Subnet struct {
-	BkInstId   int64  `json:"id" bson:"id"`
+	BkInstId   string `json:"id" bson:"id"`
 	Region     string `json:"region" bson:"region"`
 	Zone       string `json:"zone" bson:"zone"`
 	VpcId      string `json:"vpc_id" bson:"vpc_id"`
@@ -134,46 +137,30 @@ type GetSubnetResult struct {
 
 // GetSubnetListParam get subnet detail list request param
 type GetSubnetListParam struct {
-	Filter *querybuilder.QueryFilter `json:"filter" bson:"filter"`
-	Page   metadata.BasePage         `json:"page" bson:"page"`
+	Filter *filter.Expression `json:"filter"`
+	Page   *core.BasePage     `json:"page"`
 }
 
 // Validate whether GetSubnetListParam is valid
-// errKey: invalid key
-// err: detail reason why errKey is invalid
-func (param *GetSubnetListParam) Validate() (errKey string, err error) {
-	if key, err := param.Page.Validate(false); err != nil {
-		return fmt.Sprintf("page.%s", key), err
+func (param *GetSubnetListParam) Validate() error {
+	if param.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
 	}
 
-	if param.Filter != nil {
-		if key, err := param.Filter.Validate(&querybuilder.RuleOption{NeedSameSliceElementType: true}); err != nil {
-			return fmt.Sprintf("filter.%s", key), err
-		}
-		if param.Filter.GetDeep() > querybuilder.MaxDeep {
-			return "filter.rules", fmt.Errorf("exceed max query condition deepth: %d",
-				querybuilder.MaxDeep)
-		}
+	if param.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
 	}
 
-	return "", nil
-}
-
-// GetFilter get mgo filter
-func (param *GetSubnetListParam) GetFilter() (map[string]interface{}, error) {
-	if param.Filter != nil {
-		mgoFilter, key, err := param.Filter.ToMgo()
-		if err != nil {
-			return nil, fmt.Errorf("invalid key:filter.%s, err: %s", key, err)
-		}
-		return mgoFilter, nil
+	if err := param.Page.Validate(); err != nil {
+		return err
 	}
-	return make(map[string]interface{}), nil
+
+	return nil
 }
 
 // UpdateSubnetPropertyParam update subnet property request param
 type UpdateSubnetPropertyParam struct {
-	Ids      []int64                `json:"ids" bson:"ids"`
+	Ids      []string               `json:"ids" bson:"ids"`
 	Property map[string]interface{} `json:"properties"`
 }
 
@@ -777,4 +764,13 @@ func (req RegionDftSg) Validate() error {
 type DeviceFuzzyMatchInfo struct {
 	TechnicalClass string          `json:"technical_class"` // 技术分类
 	CoreType       enumor.CoreType `json:"core_type"`       // 机型核心类型
+}
+
+// GetAllSubnetReq get all subnet request param
+type GetAllSubnetReq struct {
+	Region     string   `json:"region"`
+	Zones      []string `json:"zones"`
+	CloudVpcID string   `json:"cloud_vpc_id"`
+	CloudID    string   `json:"cloud_id"`
+	Name       string   `json:"name"`
 }

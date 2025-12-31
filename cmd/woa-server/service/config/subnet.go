@@ -14,10 +14,7 @@
 package config
 
 import (
-	"strconv"
-
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -32,15 +29,12 @@ func (s *service) GetSubnet(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cond := map[string]interface{}{
-		"region": input.Region,
-		"zone":   input.Zone,
-		"vpc_id": input.Vpc,
+	subnetReq := &types.GetAllSubnetReq{
+		Region:     input.Region,
+		Zones:      []string{input.Zone},
+		CloudVpcID: input.Vpc,
 	}
-	// get subnet with enable flag only
-	cond["enable"] = true
-
-	rst, err := s.logics.Subnet().GetSubnet(cts.Kit, cond)
+	rst, err := s.logics.Subnet().GetAllSubnet(cts.Kit, subnetReq)
 	if err != nil {
 		logs.Errorf("failed to get subnet list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -57,9 +51,8 @@ func (s *service) GetSubnetList(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	errKey, err := input.Validate()
-	if err != nil {
-		logs.Errorf("failed to get subnet list, key: %s, err: %v, rid: %s", errKey, err, cts.Kit.Rid)
+	if err := input.Validate(); err != nil {
+		logs.Errorf("failed to get subnet list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -70,59 +63,6 @@ func (s *service) GetSubnetList(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return rst, nil
-}
-
-// CreateSubnet creates subnet config
-func (s *service) CreateSubnet(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.Subnet)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to create subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// CVM子网-菜单粒度鉴权
-	err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmSubnet, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	rst, err := s.logics.Subnet().CreateSubnet(cts.Kit, inputData)
-	if err != nil {
-		logs.Errorf("failed to create subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
-// UpdateSubnet updates subnet config
-func (s *service) UpdateSubnet(cts *rest.Contexts) (interface{}, error) {
-	input := make(map[string]interface{})
-	if err := cts.DecodeInto(&input); err != nil {
-		logs.Errorf("failed to update subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// CVM子网-菜单粒度鉴权
-	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmSubnet, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = s.logics.Subnet().UpdateSubnet(cts.Kit, instId, input); err != nil {
-		logs.Errorf("failed to update subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
 }
 
 // UpdateSubnetProperty updates subnet config property
@@ -146,64 +86,12 @@ func (s *service) UpdateSubnetProperty(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
-	cond := map[string]interface{}{
-		"id": map[string]interface{}{
-			pkg.BKDBIN: input.Ids,
-		},
-	}
-
 	data := input.Property
 	// cannot update device id
 	delete(data, "id")
 
-	if err := s.logics.Subnet().UpdateSubnetBatch(cts.Kit, cond, input.Property); err != nil {
-		logs.Errorf("failed to update subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// DeleteSubnet deletes subnet config
-func (s *service) DeleteSubnet(cts *rest.Contexts) (interface{}, error) {
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// CVM子网-菜单粒度鉴权
-	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmSubnet, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = s.logics.Subnet().DeleteSubnet(cts.Kit, instId); err != nil {
-		logs.Errorf("failed to delete subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// SyncSubnet sync subnet config from yunti
-func (s *service) SyncSubnet(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.GetSubnetParam)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to sync subnet, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// CVM子网-菜单粒度鉴权
-	err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmSubnet, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = s.logics.Subnet().SyncSubnet(cts.Kit, inputData); err != nil {
-		logs.Errorf("failed to sync subnet, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err = s.logics.Subnet().UpdateSubnetBatch(cts.Kit, input.Ids, input.Property); err != nil {
+		logs.Errorf("failed to update subnet, err: %v, ids: %v, rid: %s", err, input.Ids, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -15,41 +15,29 @@ package config
 import (
 	"fmt"
 
-	"hcm/cmd/woa-server/model/config"
 	types "hcm/cmd/woa-server/types/config"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	cgconf "hcm/pkg/api/core/global-config"
 	datagconf "hcm/pkg/api/data-service/global_config"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/mapstr"
-	"hcm/pkg/dal"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/cvmapi"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
-
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // VpcIf provides management interface for operations of vpc config
 type VpcIf interface {
 	// GetVpc get vpc type config list
-	GetVpc(kt *kit.Kit, cond *mapstr.MapStr) (*types.GetVpcResult, error)
+	GetVpc(kt *kit.Kit, regions []string) (*types.GetVpcResult, error)
 	// GetVpcList get vpc id list
-	GetVpcList(kt *kit.Kit, cond map[string]interface{}) (*types.GetVpcListRst, error)
-	// CreateVpc creates vpc type config
-	CreateVpc(kt *kit.Kit, input *types.Vpc) (mapstr.MapStr, error)
-	// UpdateVpc updates vpc type config
-	UpdateVpc(kt *kit.Kit, instId int64, input *mapstr.MapStr) error
-	// DeleteVpc deletes vpc type config
-	DeleteVpc(kt *kit.Kit, instId int64) error
-	// SyncVpc sync vpc config from yunti
-	SyncVpc(kt *kit.Kit, param *types.GetVpcParam) error
+	GetVpcList(kt *kit.Kit, regions []string) (*types.GetVpcListRst, error)
 	// GetRegionDftVpc gets the default vpc of a region.
 	GetRegionDftVpc(kt *kit.Kit, region string) (string, error)
 	// IsRegionDftVpc check if given vpc is the default vpc of a region.
@@ -72,166 +60,74 @@ type vpc struct {
 }
 
 // GetVpc get vpc type config list
-func (v *vpc) GetVpc(kt *kit.Kit, cond *mapstr.MapStr) (*types.GetVpcResult, error) {
-	insts, err := config.Operation().Vpc().FindManyVpc(kt.Ctx, cond)
+func (v *vpc) GetVpc(kt *kit.Kit, regions []string) (*types.GetVpcResult, error) {
+	// 查询账号信息
+	accountID, err := getTCloudZiyanAccount(kt, v.client)
 	if err != nil {
+		logs.Errorf("get vpc %s account failed, err: %v, rid: %s", enumor.TCloudZiyan, err, kt.Rid)
 		return nil, err
 	}
 
-	rst := &types.GetVpcResult{
-		Count: int64(len(insts)),
-		Info:  insts,
+	// 构建查询条件
+	filterRules := []*filter.AtomRule{
+		tools.RuleEqual("vendor", enumor.TCloudZiyan),
+		tools.RuleEqual("account_id", accountID),
+		tools.RuleIn("region", regions),
+		tools.RuleJSONEqual("extension.enable_cvm", "true"),
 	}
 
+	vpcList := make([]cloud.Vpc[cloud.TCloudVpcExtension], 0)
+	// 从MySQL查询VPC列表
+	listReq := &core.ListReq{
+		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(filterRules...),
+	}
+	for {
+		vpcListResult, err := v.client.DataService().TCloudZiyan.Vpc.ListVpcExt(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("failed to list vpc, err: %v, vendor: %s, accountID: %s, rid: %s",
+				err, enumor.TCloudZiyan, accountID, kt.Rid)
+			return nil, err
+		}
+
+		vpcList = append(vpcList, vpcListResult.Details...)
+		if len(vpcListResult.Details) < int(listReq.Page.Limit) {
+			break
+		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	vpcResult := make([]*types.Vpc, 0, len(vpcList))
+	for _, vpcDetail := range vpcList {
+		vpcResult = append(vpcResult, &types.Vpc{
+			BkInstId: vpcDetail.ID,
+			Region:   vpcDetail.Region,
+			VpcId:    vpcDetail.CloudID,
+			VpcName:  vpcDetail.Name,
+		})
+	}
+
+	rst := &types.GetVpcResult{
+		Count: int64(len(vpcResult)),
+		Info:  vpcResult,
+	}
 	return rst, nil
 }
 
 // GetVpcList get vpc id list
-func (v *vpc) GetVpcList(kt *kit.Kit, cond map[string]interface{}) (*types.GetVpcListRst, error) {
-	insts, err := config.Operation().Vpc().FindManyVpcId(kt.Ctx, cond)
+func (v *vpc) GetVpcList(kt *kit.Kit, regions []string) (*types.GetVpcListRst, error) {
+	vpcList, err := v.GetVpc(kt, regions)
 	if err != nil {
 		return nil, err
 	}
 
-	rst := &types.GetVpcListRst{
-		Info: insts,
+	rst := &types.GetVpcListRst{}
+	for _, item := range vpcList.Info {
+		rst.Info = append(rst.Info, item.VpcId)
 	}
 
 	return rst, nil
-}
-
-// CreateVpc creates vpc type config
-func (v *vpc) CreateVpc(kt *kit.Kit, input *types.Vpc) (mapstr.MapStr, error) {
-	id, err := config.Operation().Vpc().NextSequence(kt.Ctx)
-	if err != nil {
-		logs.Errorf("failed to create vpc, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	instId := int64(id)
-
-	input.BkInstId = instId
-	if err := config.Operation().Vpc().CreateVpc(kt.Ctx, input); err != nil {
-		logs.Errorf("failed to create vpc, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	rst := mapstr.MapStr{
-		"id": instId,
-	}
-
-	return rst, nil
-}
-
-// UpdateVpc updates vpc type config
-func (v *vpc) UpdateVpc(kt *kit.Kit, instId int64, input *mapstr.MapStr) error {
-	filter := &mapstr.MapStr{
-		"id": instId,
-	}
-
-	if err := config.Operation().Vpc().UpdateVpc(kt.Ctx, filter, input); err != nil {
-		logs.Errorf("failed to update vpc, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// DeleteVpc deletes vpc type config
-func (v *vpc) DeleteVpc(kt *kit.Kit, instId int64) error {
-	filter := &mapstr.MapStr{
-		"id": instId,
-	}
-
-	if err := config.Operation().Vpc().DeleteVpc(kt.Ctx, filter); err != nil {
-		logs.Errorf("failed to delete vpc, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// SyncVpc sync vpc config from yunti
-func (v *vpc) SyncVpc(kt *kit.Kit, param *types.GetVpcParam) error {
-	req := &cvmapi.VpcReq{
-		ReqMeta: cvmapi.ReqMeta{
-			Id:      cvmapi.CvmId,
-			JsonRpc: cvmapi.CvmJsonRpc,
-			Method:  cvmapi.CvmVpcMethod,
-		},
-		Params: &cvmapi.VpcParam{
-			DeptId: cvmapi.CvmDeptId,
-			Region: param.Region,
-		},
-	}
-
-	resp, err := v.cvm.QueryCvmVpc(kt.Ctx, nil, req)
-	if err != nil {
-		logs.Errorf("failed to get cvm vpc info, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	if resp.Error.Code != 0 {
-		logs.Errorf("failed to get cvm vpc info, code: %d, msg: %s, region: %s, crpTraceID: %s, rid: %s",
-			resp.Error.Code, resp.Error.Message, param.Region, resp.TraceId, kt.Rid)
-		return fmt.Errorf("failed to get cvm vpc info, code: %d, msg: %s, crpTraceID: %s", resp.Error.Code,
-			resp.Error.Message, resp.TraceId)
-	}
-
-	for _, vpcItem := range resp.Result {
-		filter := map[string]interface{}{
-			"region":   param.Region,
-			"vpc_id":   vpcItem.Id,
-			"vpc_name": vpcItem.Name,
-		}
-		count, err := config.Operation().Vpc().CountVpc(kt.Ctx, filter)
-		if err != nil {
-			logs.Errorf("failed to count vpc with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
-			return err
-		}
-		// 按云端返回的VPCID、VPC名称能查到数据，说明已同步，用于多次执行同步的场景
-		if count > 0 {
-			continue
-		}
-
-		listFilter := &mapstr.MapStr{
-			"region": param.Region,
-			"vpc_id": vpcItem.Id,
-		}
-		vpcList, err := config.Operation().Vpc().FindManyVpc(kt.Ctx, listFilter)
-		if err != nil {
-			logs.Errorf("failed to list vpc with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
-			return err
-		}
-
-		txnErr := dal.RunTransaction(kit.New(), func(sc mongo.SessionContext) error {
-			kt.Ctx = sc
-			// 清理旧的VPC
-			for _, vpcInfo := range vpcList {
-				err = v.DeleteVpc(kt, vpcInfo.BkInstId)
-				if err != nil {
-					logs.Errorf("failed to delete vpc, err: %v, vpcInstID: %d, region: %s, vpcItem: %+v, rid: %s",
-						err, vpcInfo.BkInstId, param.Region, cvt.PtrToVal(vpcItem), kt.Rid)
-					return err
-				}
-			}
-
-			// 插入新的VPC
-			vpcCfg := &types.Vpc{
-				Region:  param.Region,
-				VpcId:   vpcItem.Id,
-				VpcName: vpcItem.Name,
-			}
-			if _, err = v.CreateVpc(kt, vpcCfg); err != nil {
-				logs.Errorf("failed to create vpc, err: %v, rid: %s", filter, err, kt.Rid)
-				return err
-			}
-			return nil
-		})
-		if txnErr != nil {
-			logs.Errorf("failed to create vpc with transation, err: %v, rid: %s", filter, txnErr, kt.Rid)
-			return txnErr
-		}
-	}
-	return nil
 }
 
 // 请勿继续添加内容，应该通过/config/region/default_vpc/upsert接口添加到db

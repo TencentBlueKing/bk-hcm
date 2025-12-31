@@ -217,6 +217,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID string, region string,
 			Extension: &cloud.TCloudSubnetCreateExt{
 				IsDefault:         item.Extension.IsDefault,
 				CloudNetworkAclID: item.Extension.CloudNetworkAclID,
+				EnableCvm:         true,
 			},
 		}
 

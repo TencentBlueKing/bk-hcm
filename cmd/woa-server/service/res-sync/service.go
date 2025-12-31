@@ -52,8 +52,6 @@ type service struct {
 
 // initService 资源下的接口
 func (s *service) initService(h *rest.Handler) {
-	h.Add("SyncVpcs", http.MethodPost, "/vpcs/sync", s.SyncVpcs)
-	h.Add("SyncSubnets", http.MethodPost, "/subnets/sync", s.SyncSubnets)
 	h.Add("SyncCapacitys", http.MethodPost, "/capacitys/sync", s.SyncCapacitys)
 	h.Add("SyncLeftIPs", http.MethodPost, "/left_ips/sync", s.SyncLeftIPs)
 }

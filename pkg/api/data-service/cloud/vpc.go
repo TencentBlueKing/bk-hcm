@@ -57,6 +57,7 @@ type TCloudVpcCreateExt struct {
 	EnableMulticast bool         `json:"enable_multicast" validate:"omitempty"`
 	DnsServerSet    []string     `json:"dns_server_set" validate:"omitempty"`
 	DomainName      string       `json:"domain_name,omitempty" validate:"omitempty"`
+	EnableCvm       bool         `json:"enable_cvm,omitempty" validate:"omitempty"` // 是否支持cvm申领
 }
 
 // AwsVpcCreateExt defines create aws vpc extensional info.
@@ -137,6 +138,7 @@ type TCloudVpcUpdateExt struct {
 	EnableMulticast *bool        `json:"enable_multicast,omitempty" validate:"omitempty"`
 	DnsServerSet    []string     `json:"dns_server_set" validate:"omitempty"`
 	DomainName      *string      `json:"domain_name,omitempty" validate:"omitempty"`
+	EnableCvm       *bool        `json:"enable_cvm,omitempty" validate:"omitempty"` // 是否支持cvm申领
 }
 
 // AwsVpcUpdateExt defines aws vpc extensional info.

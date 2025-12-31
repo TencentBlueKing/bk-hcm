@@ -33,10 +33,6 @@ import (
 
 // Logics provides management interface for resource sync.
 type Logics interface {
-	// SyncVpc sync vpc config list
-	SyncVpc() error
-	// SyncSubnet sync subnet config list
-	SyncSubnet() error
 	// SyncCapacity sync device capacity info collection
 	SyncCapacity() error
 	// SyncLeftIP sync left ip config list
@@ -64,18 +60,6 @@ func New(sd serviced.State, client *client.ClientSet, configLogics config.Logics
 // Run starts dispatcher
 func (l *logics) Run() {
 	ctx := context.Background()
-	vpcMinute := cc.WoaServer().ResourceSync.SyncVpc
-	if vpcMinute > 0 {
-		// sync vpc every 30 minutes
-		go wait.JitterUntil(l.SyncVpc, time.Duration(vpcMinute)*time.Minute, 0.5, true, ctx)
-	}
-
-	subnetMinute := cc.WoaServer().ResourceSync.SyncSubnet
-	if subnetMinute > 0 {
-		// sync subnet every 30 minutes
-		go wait.JitterUntil(l.SyncSubnet, time.Duration(subnetMinute)*time.Minute, 0.5, true, ctx)
-	}
-
 	capacityMinute := cc.WoaServer().ResourceSync.SyncCapacity
 	if capacityMinute > 0 {
 		// sync capacity every 6 hours

@@ -653,14 +653,12 @@ func (g *Generator) getCvmSubnet(kt *kit.Kit, zone, vpc string, order *types.App
 		"crpRemainIP: %s, crpTraceID: %s, rid: %s", order.SubOrderId, order.Spec.Region, zone, vpc,
 		crpRemainIPJSON, resp.TraceId, kt.Rid)
 
-	cond := map[string]interface{}{
-		"region": order.Spec.Region,
-		"zone":   zone,
-		"vpc_id": vpc,
+	subnetCond := &cfgtypes.GetAllSubnetReq{
+		Region:     order.Spec.Region,
+		Zones:      []string{zone},
+		CloudVpcID: vpc,
 	}
-	// get subnet with enable flag only
-	cond["enable"] = true
-	cfgSubnets, err := g.configLogics.Subnet().GetSubnet(kt, cond)
+	cfgSubnets, err := g.configLogics.Subnet().GetAllSubnet(kt, subnetCond)
 	if err != nil {
 		logs.Errorf("failed to get config cvm subnet info, subOrderID: %s, err: %v, region: %s, zone: %s, vpc: %s, "+
 			"rid: %s", order.SubOrderId, err, order.Spec.Region, zone, vpc, kt.Rid)

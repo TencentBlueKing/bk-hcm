@@ -158,21 +158,13 @@ func (s *service) initRequirement(h *rest.Handler) {
 func (s *service) initSubnet(h *rest.Handler) {
 	h.Add("GetSubnet", http.MethodPost, "/config/findmany/config/cvm/subnet", s.GetSubnet)
 	h.Add("GetSubnetList", http.MethodPost, "/config/findmany/config/cvm/subnet/list", s.GetSubnetList)
-	h.Add("CreateSubnet", http.MethodPost, "/config/create/config/cvm/subnet", s.CreateSubnet)
-	h.Add("UpdateSubnet", http.MethodPut, "/config/update/config/cvm/subnet/{id}", s.UpdateSubnet)
 	h.Add("UpdateSubnetProperty", http.MethodPut, "/config/updatemany/config/cvm/subnet/property",
 		s.UpdateSubnetProperty)
-	h.Add("DeleteSubnet", http.MethodDelete, "/config/delete/config/cvm/subnet/{id}", s.DeleteSubnet)
-	h.Add("SyncSubnet", http.MethodPost, "/config/sync/config/cvm/subnet", s.SyncSubnet)
 }
 
 func (s *service) initVpc(h *rest.Handler) {
 	h.Add("GetVpc", http.MethodPost, "/config/findmany/config/cvm/vpc", s.GetVpc)
 	h.Add("GetVpcList", http.MethodPost, "/config/findmany/config/cvm/vpclist", s.GetVpcList)
-	h.Add("CreateVpc", http.MethodPost, "/config/create/config/cvm/vpc", s.CreateVpc)
-	h.Add("UpdateVpc", http.MethodPut, "/config/update/config/cvm/vpc/{id}", s.UpdateVpc)
-	h.Add("DeleteVpc", http.MethodDelete, "/config/delete/config/cvm/vpc/{id}", s.DeleteVpc)
-	h.Add("SyncVpc", http.MethodPost, "/config/sync/config/cvm/vpc", s.SyncVpc)
 	h.Add("UpsertRegionDftVpc", http.MethodPost, "/config/region/default_vpc/upsert", s.UpsertRegionDftVpc)
 }
 

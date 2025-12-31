@@ -597,17 +597,15 @@ func (l *logics) getCvmSubnet(kt *kit.Kit, region, zone, vpc string) (string, ui
 		return "", 0, err
 	}
 
-	cond := map[string]interface{}{
-		"region": region,
-		"vpc_id": vpc,
-		// get subnet with enable flag only
-		"enable": true,
+	subnetReq := &cfgtypes.GetAllSubnetReq{
+		Region:     region,
+		CloudVpcID: vpc,
 	}
 	// 园区-分区Campus
 	if len(zone) > 0 && zone != cvmapi.CvmSeparateCampus {
-		cond["zone"] = zone
+		subnetReq.Zones = []string{zone}
 	}
-	cfgSubnets, err := l.confLogic.Subnet().GetSubnet(kt, cond)
+	cfgSubnets, err := l.confLogic.Subnet().GetAllSubnet(kt, subnetReq)
 	if err != nil {
 		logs.Errorf("failed to get config cvm subnet info, err: %v, rid: %s", err, kt.Rid)
 		return "", 0, err

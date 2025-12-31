@@ -908,6 +908,7 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 // jsonFieldSqlFormat
 // 1. 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`。
 // 2. 如果规则中不存在'.'，则不进行转换。
+// 3. 目前extension支持的字段类型：字符串（布尔值也需要传入字符串才会生效）
 func jsonFieldSqlFormat(field string) string {
 	if !strings.ContainsAny(field, JSONFieldSeparator) {
 		return field

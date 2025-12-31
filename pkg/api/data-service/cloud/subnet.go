@@ -64,6 +64,7 @@ type SubnetCreateExtension interface {
 type TCloudSubnetCreateExt struct {
 	IsDefault         bool    `json:"is_default" validate:"required"`
 	CloudNetworkAclID *string `json:"cloud_network_acl_id,omitempty" validate:"omitempty"`
+	EnableCvm         bool    `json:"enable_cvm,omitempty" validate:"omitempty"` // 是否支持cvm申领
 }
 
 // AwsSubnetCreateExt defines create aws subnet extensional info.
@@ -145,6 +146,7 @@ type TCloudSubnetUpdateExt struct {
 	Region            string  `json:"region" validate:"omitempty"`
 	Zone              string  `json:"zone" validate:"omitempty"`
 	CloudNetworkAclID *string `json:"cloud_network_acl_id,omitempty" validate:"omitempty"`
+	EnableCvm         *bool   `json:"enable_cvm,omitempty" validate:"omitempty"` // 是否支持cvm申领
 }
 
 // AwsSubnetUpdateExt defines update aws subnet extensional info.

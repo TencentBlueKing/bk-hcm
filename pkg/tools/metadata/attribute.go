@@ -907,7 +907,8 @@ func GetString(val interface{}) string {
 	return ""
 }
 
-func getBool(val interface{}) bool {
+// GetBool get bool by interface
+func GetBool(val interface{}) bool {
 	if val == nil {
 		return false
 	}
@@ -975,7 +976,7 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 			enumOption.ID = GetString(option["id"])
 			enumOption.Name = GetString(option["name"])
 			enumOption.Type = GetString(option["type"])
-			enumOption.IsDefault = getBool(option["is_default"])
+			enumOption.IsDefault = GetBool(option["is_default"])
 			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
 				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
 			}
@@ -985,7 +986,7 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 			enumOption.ID = GetString(option["id"])
 			enumOption.Name = GetString(option["name"])
 			enumOption.Type = GetString(option["type"])
-			enumOption.IsDefault = getBool(option["is_default"])
+			enumOption.IsDefault = GetBool(option["is_default"])
 			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
 				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
 			}
@@ -996,7 +997,7 @@ func parseEnumOption(options []interface{}, enumOptions *[]EnumVal) error {
 			enumOption.ID = GetString(opt["id"])
 			enumOption.Name = GetString(opt["name"])
 			enumOption.Type = GetString(opt["type"])
-			enumOption.IsDefault = getBool(opt["is_default"])
+			enumOption.IsDefault = GetBool(opt["is_default"])
 			if enumOption.ID == "" || enumOption.Name == "" || enumOption.Type != "text" {
 				return fmt.Errorf("operation %#v id, name empty or not string, or type not text", option)
 			}
@@ -1282,11 +1283,11 @@ func parseSubAttr(options map[string]interface{}) SubAttribute {
 	subAttr.PropertyGroup = GetString(options["bk_property_group"])
 	subAttr.Placeholder = GetString(options["placeholder"])
 	subAttr.PropertyType = GetString(options["bk_property_type"])
-	subAttr.IsAPI = getBool(options["bk_isapi"])
-	subAttr.IsEditable = getBool(options["editable"])
-	subAttr.IsReadOnly = getBool(options["isreadonly"])
-	subAttr.IsRequired = getBool(options["isrequired"])
-	subAttr.IsSystem = getBool(options["bk_issystem"])
+	subAttr.IsAPI = GetBool(options["bk_isapi"])
+	subAttr.IsEditable = GetBool(options["editable"])
+	subAttr.IsReadOnly = GetBool(options["isreadonly"])
+	subAttr.IsRequired = GetBool(options["isrequired"])
+	subAttr.IsSystem = GetBool(options["bk_issystem"])
 	subAttr.Option = options["option"]
 	subAttr.Description = GetString(options["description"])
 

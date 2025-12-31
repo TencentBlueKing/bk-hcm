@@ -274,6 +274,7 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.TClou
 				EnableMulticast: one.Extension.EnableMulticast,
 				DnsServerSet:    one.Extension.DnsServerSet,
 				DomainName:      one.Extension.DomainName,
+				EnableCvm:       true,
 			},
 		}
 

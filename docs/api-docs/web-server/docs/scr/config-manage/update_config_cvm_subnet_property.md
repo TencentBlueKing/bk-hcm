@@ -12,7 +12,7 @@ PUT /api/v1/woa/config/updatemany/config/cvm/subnet/property
 
 | 参数名称     | 参数类型                | 必选 | 描述          |
 |-------------|-----------------------|------|--------------|
-| ids         | int array             | 是   | 更新的配置实例ID列表，最大为20  |
+| ids         | string array          | 是   | 更新的子网自增ID列表，最大为20个  |
 | properties  |map[string]interface{} | 是   | 更新的属性      |
 
 ### 调用示例
@@ -22,9 +22,9 @@ PUT /api/v1/woa/config/updatemany/config/cvm/subnet/property
 ```json
 {
   "ids":[
-    1,
-    2,
-    3
+    "00000001",
+    "00000002",
+    "00000003"
   ],
   "properties":{
     "enable":false,

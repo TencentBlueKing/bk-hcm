@@ -17,15 +17,12 @@ import (
 
 	"hcm/cmd/woa-server/dal/config/dao"
 	"hcm/cmd/woa-server/dal/config/table"
-	"hcm/cmd/woa-server/model/config"
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/cvmapi"
-	"hcm/pkg/tools/metadata"
 )
 
 // LeftIPIf provides management interface for operations of left ip config
@@ -43,16 +40,18 @@ type LeftIPIf interface {
 }
 
 // NewLeftIPOp creates a left ip interface
-func NewLeftIPOp(vpc VpcIf, thirdCli *thirdparty.Client) LeftIPIf {
+func NewLeftIPOp(vpc VpcIf, subnet SubnetIf, thirdCli *thirdparty.Client) LeftIPIf {
 	return &leftIP{
-		cvm: thirdCli.OldCVM,
-		vpc: vpc,
+		cvm:    thirdCli.OldCVM,
+		subnet: subnet,
+		vpc:    vpc,
 	}
 }
 
 type leftIP struct {
-	cvm cvmapi.CVMClientInterface
-	vpc VpcIf
+	cvm    cvmapi.CVMClientInterface
+	subnet SubnetIf
+	vpc    VpcIf
 }
 
 // GetLeftIP get left ip config list
@@ -140,25 +139,15 @@ func (l *leftIP) SyncLeftIP(kt *kit.Kit, input *types.SyncLeftIPParam) error {
 		return err
 	}
 
-	filterSubnet := map[string]interface{}{
-		"region": input.Region,
-		"zone":   input.Zone,
-		"vpc_id": vpc,
-		// filter subnet with name prefix cvm_use_
-		"subnet_name": mapstr.MapStr{
-			pkg.BKDBLIKE: "^cvm_use_",
-		},
-		"enable": true,
+	subnetReq := &types.GetAllSubnetReq{
+		Region:     input.Region,
+		Zones:      []string{input.Zone},
+		CloudVpcID: vpc,
+		Name:       "cvm_use_",
 	}
-
-	page := metadata.BasePage{
-		Start: 0,
-		Limit: pkg.BKNoLimit,
-	}
-
-	cfgSubnetList, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, page, filterSubnet)
+	cfgSubnetList, err := l.subnet.GetAllSubnet(kt, subnetReq)
 	if err != nil {
-		logs.Errorf("failed to find subnet with filter: %+v, err: %v, rid: %s", filterSubnet, err, kt.Rid)
+		logs.Errorf("failed to find subnet with subnetReq: %+v, err: %v, rid: %s", subnetReq, err, kt.Rid)
 		return err
 	}
 
@@ -169,14 +158,14 @@ func (l *leftIP) SyncLeftIP(kt *kit.Kit, input *types.SyncLeftIPParam) error {
 		logs.Errorf("failed to get cvm subnet info, err: %v, rid: %s", err, kt.Rid)
 		return nil
 	}
-	for _, subnet := range cvmSubnetList {
-		subnetToLeftIp[subnet.Id] = subnet
+	for _, subnetItem := range cvmSubnetList {
+		subnetToLeftIp[subnetItem.Id] = subnetItem
 	}
 
-	leftIP := 0
-	for _, subnet := range cfgSubnetList {
-		if subnetToLeftIp[subnet.SubnetId] != nil {
-			leftIP = leftIP + subnetToLeftIp[subnet.SubnetId].LeftIpNum
+	leftIPNum := 0
+	for _, subnetItem := range cfgSubnetList.Info {
+		if subnetToLeftIp[subnetItem.SubnetId] != nil {
+			leftIPNum = leftIPNum + subnetToLeftIp[subnetItem.SubnetId].LeftIpNum
 		}
 	}
 
@@ -187,11 +176,11 @@ func (l *leftIP) SyncLeftIP(kt *kit.Kit, input *types.SyncLeftIPParam) error {
 	}
 
 	update := map[string]interface{}{
-		"left_ip_num": leftIP,
+		"left_ip_num": leftIPNum,
 		"update_at":   time.Now(),
 	}
 
-	if err := dao.Set().ZoneLeftIP().UpdateZoneLeftIP(kt.Ctx, filterLeftIP, update); err != nil {
+	if err = dao.Set().ZoneLeftIP().UpdateZoneLeftIP(kt.Ctx, filterLeftIP, update); err != nil {
 		logs.Errorf("failed to update zone with left ip info in db, err: %v, %s", err, kt.Rid)
 		return err
 	}

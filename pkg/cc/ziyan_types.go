@@ -1059,22 +1059,12 @@ func (c CaiCheCli) Validate() error {
 
 // ResourceSync 自研云-资源同步相关配置
 type ResourceSync struct {
-	SyncVpc      int `yaml:"syncVpc"`
-	SyncSubnet   int `yaml:"syncSubnet"`
 	SyncCapacity int `yaml:"syncCapacity"`
 	SyncLeftIP   int `yaml:"syncLeftIP"`
 }
 
 // Validate ...
 func (c ResourceSync) Validate() error {
-	if c.SyncVpc < 0 {
-		return errors.New("resourceSync.syncVpc is illegality")
-	}
-
-	if c.SyncSubnet < 0 {
-		return errors.New("resourceSync.syncSubnet is illegality")
-	}
-
 	if c.SyncCapacity < 0 {
 		return errors.New("resourceSync.syncCapacity is illegality")
 	}

@@ -21,7 +21,6 @@ import (
 
 	"hcm/cmd/woa-server/model/config"
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -29,7 +28,6 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
-	"hcm/pkg/tools/metadata"
 	arrayutil "hcm/pkg/tools/util"
 )
 
@@ -44,10 +42,11 @@ type CapacityIf interface {
 }
 
 // NewCapacityOp creates a capacity interface
-func NewCapacityOp(vpc VpcIf, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) CapacityIf {
+func NewCapacityOp(vpc VpcIf, subnet SubnetIf, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) CapacityIf {
 	return &capacity{
 		cvm:     thirdCli.OldCVM,
 		vpc:     vpc,
+		subnet:  subnet,
 		cmdbCli: cmdbCli,
 	}
 }
@@ -55,16 +54,15 @@ func NewCapacityOp(vpc VpcIf, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) 
 type capacity struct {
 	cvm     cvmapi.CVMClientInterface
 	vpc     VpcIf
+	subnet  SubnetIf
 	cmdbCli cmdb.Client
 }
 
 func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*types.GetCapacityRst, error) {
 	// 1. query subnet from db
-	filter := map[string]interface{}{
-		"region": input.Region,
-	}
+	subnetReq := &types.GetAllSubnetReq{Region: input.Region}
 	if input.Zone != "" && input.Zone != cvmapi.CvmSeparateCampus {
-		filter["zone"] = input.Zone
+		subnetReq.Zones = []string{input.Zone}
 	}
 	vpcID := input.Vpc
 	if vpcID == "" {
@@ -75,10 +73,10 @@ func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*typ
 		}
 		vpcID = dftVpc
 	}
-	filter["vpc_id"] = vpcID
+	subnetReq.CloudVpcID = vpcID
 
 	if input.Subnet != "" {
-		filter["subnet_id"] = input.Subnet
+		subnetReq.CloudID = input.Subnet
 	} else {
 		isDftRegionVpc, err := c.vpc.IsRegionDftVpc(kt, vpcID)
 		if err != nil {
@@ -87,31 +85,20 @@ func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*typ
 			return nil, err
 		}
 		if isDftRegionVpc {
-			// filter subnet with name prefix cvm_use_
-			filter["subnet_name"] = mapstr.MapStr{
-				pkg.BKDBLIKE: "^cvm_use_",
-			}
+			subnetReq.Name = "cvm_use_"
 		}
 	}
 
-	// get subnet with enable flag only
-	filter["enable"] = true
-
-	page := metadata.BasePage{
-		Start: 0,
-		Limit: pkg.BKNoLimit,
-	}
-
-	subnetList, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, page, filter)
+	subnetList, err := c.subnet.GetAllSubnet(kt, subnetReq)
 	if err != nil {
-		logs.Errorf("failed to find subnet with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
+		logs.Errorf("failed to find subnet with subnetReq: %+v, err: %v, rid: %s", subnetReq, err, kt.Rid)
 		return nil, err
 	}
 
 	zoneToVpc := make(map[string][]string)
 	vpcToSubnet := make(map[string][]string)
 
-	for _, subnetItem := range subnetList {
+	for _, subnetItem := range subnetList.Info {
 		zoneToVpc[subnetItem.Zone] = append(zoneToVpc[subnetItem.Zone], subnetItem.VpcId)
 		vpcToSubnet[subnetItem.VpcId] = append(vpcToSubnet[subnetItem.VpcId], subnetItem.SubnetId)
 	}
@@ -147,12 +134,9 @@ func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*typ
 // BatchGetCapacity 批量获取资源申请容量信息
 func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityParam) (*types.BatchGetCapacityRst, error) {
 	// 1. query subnet from db
-	filter := map[string]interface{}{
-		"region": input.Region,
-	}
-
+	subnetReq := &types.GetAllSubnetReq{Region: input.Region}
 	if len(input.Zones) > 0 {
-		filter["zone"] = mapstr.MapStr{pkg.BKDBIN: input.Zones}
+		subnetReq.Zones = input.Zones
 	}
 
 	vpcID := input.Vpc
@@ -164,10 +148,10 @@ func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityPa
 		}
 		vpcID = dftVpc
 	}
-	filter["vpc_id"] = vpcID
+	subnetReq.CloudVpcID = vpcID
 
 	if input.Subnet != "" {
-		filter["subnet_id"] = input.Subnet
+		subnetReq.CloudID = input.Subnet
 	} else {
 		isDftRegionVpc, err := c.vpc.IsRegionDftVpc(kt, vpcID)
 		if err != nil {
@@ -176,31 +160,20 @@ func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityPa
 			return nil, err
 		}
 		if isDftRegionVpc {
-			// filter subnet with name prefix cvm_use_
-			filter["subnet_name"] = mapstr.MapStr{
-				pkg.BKDBLIKE: "^cvm_use_",
-			}
+			subnetReq.Name = "cvm_use_"
 		}
 	}
 
-	// get subnet with enable flag only
-	filter["enable"] = true
-
-	page := metadata.BasePage{
-		Start: 0,
-		Limit: pkg.BKNoLimit,
-	}
-
-	subnetList, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, page, filter)
+	subnetList, err := c.subnet.GetAllSubnet(kt, subnetReq)
 	if err != nil {
-		logs.Errorf("failed to find subnet with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
+		logs.Errorf("failed to find subnet with subnetReq: %+v, err: %v, rid: %s", subnetReq, err, kt.Rid)
 		return nil, err
 	}
 
 	zoneToVpc := make(map[string][]string)
 	vpcToSubnet := make(map[string][]string)
 
-	for _, subnetItem := range subnetList {
+	for _, subnetItem := range subnetList.Info {
 		zoneToVpc[subnetItem.Zone] = append(zoneToVpc[subnetItem.Zone], subnetItem.VpcId)
 		vpcToSubnet[subnetItem.VpcId] = append(vpcToSubnet[subnetItem.VpcId], subnetItem.SubnetId)
 	}

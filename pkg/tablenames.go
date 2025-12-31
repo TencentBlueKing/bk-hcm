@@ -68,12 +68,6 @@ const (
 	// BKTableNameCfgIdcZone the table name of resource region config
 	BKTableNameCfgIdcZone = "cr_CfgIdcZone"
 
-	// BKTableNameCfgVpc the table name of cvm vpc config
-	BKTableNameCfgVpc = "cr_CfgVpc"
-
-	// BKTableNameCfgSubnet the table name of cvm subnet config
-	BKTableNameCfgSubnet = "cr_CfgSubnet"
-
 	// BKTableNameCfgCvmImage the table name of cvm image config
 	BKTableNameCfgCvmImage = "cr_CfgCvmImage"
 
