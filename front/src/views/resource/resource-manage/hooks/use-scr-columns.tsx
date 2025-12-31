@@ -160,13 +160,8 @@ export default (type: string, isSimpleShow = false) => {
 
   const hIColumns = [
     {
-      label: '需求类型',
-      field: 'require_type',
-      render: ({ row }: any) => getTypeCn(row.require_type),
-    },
-    {
       label: '实例族',
-      field: 'label.device_group',
+      field: 'device_family',
     },
     {
       label: '机型',
@@ -174,12 +169,12 @@ export default (type: string, isSimpleShow = false) => {
     },
     {
       label: 'CPU(核)',
-      field: 'cpu',
+      field: 'cpu_core',
       sort: true,
     },
     {
       label: '内存(G)',
-      field: 'mem',
+      field: 'memory',
       sort: true,
     },
     {
@@ -196,8 +191,9 @@ export default (type: string, isSimpleShow = false) => {
       label: '库存情况',
       field: 'capacity_flag',
       sort: { value: 'desc' },
-      render({ cell }: { cell: string }) {
-        const { class: theClass, text } = capacityLevel(cell);
+      sortField: 'capacity', // 排序时使用的字段
+      render({ row }: { row: any }) {
+        const { class: theClass, text } = capacityLevel(row.capacity_flag);
         return <span class={cssModule[`${theClass}`]}>{text}</span>;
       },
     },
@@ -761,8 +757,9 @@ export default (type: string, isSimpleShow = false) => {
       sort: {
         value: 'desc',
       },
-      render({ cell }: { cell: string }) {
-        const { class: theClass, text } = capacityLevel(cell);
+      sortField: 'capacity', // 排序时使用的字段
+      render({ row }: { row: any }) {
+        const { class: theClass, text } = capacityLevel(row.capacity_flag);
         return <span class={cssModule[`${theClass}`]}>{text}</span>;
       },
     },
@@ -3033,13 +3030,7 @@ export default (type: string, isSimpleShow = false) => {
   // CVM虚拟机 - CVM生产 - 快速生产
   const cvmFastProduceColumns = [
     {
-      field: 'require_type',
-      label: '需求类型',
-      width: 100,
-      render: ({ row }: any) => getTypeCn(row.require_type),
-    },
-    {
-      field: 'label.device_group',
+      field: 'device_family',
       label: '实例族',
       width: 120,
     },
@@ -3048,13 +3039,13 @@ export default (type: string, isSimpleShow = false) => {
       label: '机型',
     },
     {
-      field: 'cpu',
+      field: 'cpu_core',
       label: 'CPU(核)',
       sort: true,
       width: 100,
     },
     {
-      field: 'mem',
+      field: 'memory',
       label: '内存(G)',
       sort: true,
       width: 100,
@@ -3074,6 +3065,7 @@ export default (type: string, isSimpleShow = false) => {
       label: '库存情况',
       width: 140,
       sort: { value: 'desc' },
+      sortField: 'capacity', // 排序时使用的字段
       render: ({ row }: any) => {
         const { class: theClass, text } = capacityLevel(row.capacity_flag);
         return <span class={cssModule[`${theClass}`]}>{text}</span>;

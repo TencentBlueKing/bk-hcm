@@ -22,10 +22,8 @@ dayjs.extend(isoWeek);
 interface IParams {
   require_type: number;
   region: string;
-  label: {
-    device_group: string;
-    device_size: string;
-  };
+  core_type: string;
+  device_family: string;
 }
 
 const list = ref<IListResourcesDemandsItem[]>([]);
@@ -42,8 +40,8 @@ const combineRequest = CombineRequest.setup<IListResourcesDemandsItem[]>(
           (item) =>
             item.require_type === cur.require_type &&
             item.region === cur.region &&
-            item.label.device_size === cur.label.device_size &&
-            item.label.device_group === cur.label.device_group,
+            item.core_type === cur.core_type &&
+            item.device_family === cur.device_family,
         )
       ) {
         acc.push(cur);
@@ -60,8 +58,8 @@ const combineRequest = CombineRequest.setup<IListResourcesDemandsItem[]>(
           `/api/v1/woa/bizs/${props.bizId}/plans/resources/demands/list`,
           {
             obs_projects: [props.obsProjectMap[params.require_type]],
-            core_types: [params.label.device_size],
-            device_families: [params.label.device_group],
+            core_types: [params.core_type],
+            device_families: [params.device_family],
             region_ids: [params.region],
             // 查询当月有效的预测
             expect_time_range: {
@@ -113,8 +111,8 @@ const planStatus = computed(() => {
     const demands = list.value.filter(
       (item) =>
         item.obs_project === props.obsProjectMap[props.data.require_type] &&
-        item.device_family === props.data.label.device_group &&
-        item.core_type === props.data.label.device_size &&
+        item.device_family === props.data.device_family &&
+        item.core_type === props.data.core_type &&
         item.region_id === props.data.region,
     );
 

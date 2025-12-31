@@ -101,6 +101,10 @@ export const useTable = (props: IProp) => {
   let lastType: string = props.requestOption.type;
   defaults(props, { requestOption: {} });
   defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
+  if (!props.requestOption.sortOption) {
+    props.requestOption.sortOption = {};
+  }
+  defaults(props.requestOption.sortOption, { legacy: true });
   defaults(props, { tableOptions: {} });
   defaults(props.tableOptions, { showPagination: true });
 
@@ -131,7 +135,8 @@ export const useTable = (props: IProp) => {
 
   // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
-    sort.value = column.field;
+    // 如果列配置了 sortField，则使用 sortField 进行排序，否则使用 field
+    sort.value = column.sortField || column.field;
     order.value = type === 'asc' ? 'ASC' : 'DESC';
     // 如果type为null，则默认排序
     if (type === 'null') {

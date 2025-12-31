@@ -53,7 +53,7 @@ const searchFields: ModelPropertySearch[] = [
     id: 'require_type',
     name: '需求类型',
     type: 'number',
-    op: QueryRuleOPEnumLegacy.EQ,
+    op: QueryRuleOPEnum.EQ,
   },
   {
     id: 'region',
@@ -62,19 +62,19 @@ const searchFields: ModelPropertySearch[] = [
   },
   {
     id: 'zone',
-    name: '地域',
+    name: '可用区',
     type: 'array',
   },
   {
     id: 'device_families',
-    name: '地域',
+    name: '实例族',
     type: 'array',
     meta: {
       search: {
         filterRules(value: string[]) {
           return {
-            field: 'label.device_group',
-            operator: QueryRuleOPEnum.IN,
+            field: 'device_family',
+            op: QueryRuleOPEnum.IN,
             value,
           };
         },
@@ -83,20 +83,53 @@ const searchFields: ModelPropertySearch[] = [
   },
   {
     id: 'device_type',
-    name: '地域',
+    name: '机型',
     type: 'array',
+    meta: {
+      search: {
+        filterRules(value: string[]) {
+          return {
+            field: 'dc.device_type',
+            op: QueryRuleOPEnum.IN,
+            value,
+          };
+        },
+      },
+    },
   },
   {
     id: 'cpu',
     name: 'CPU',
     type: 'number',
     op: QueryRuleOPEnumLegacy.EQ,
+    meta: {
+      search: {
+        filterRules(value: number) {
+          return {
+            field: 'cpu_core',
+            op: QueryRuleOPEnum.EQ,
+            value,
+          };
+        },
+      },
+    },
   },
   {
     id: 'mem',
     name: '内存',
     type: 'number',
     op: QueryRuleOPEnumLegacy.EQ,
+    meta: {
+      search: {
+        filterRules(value: number) {
+          return {
+            field: 'memory',
+            op: QueryRuleOPEnum.EQ,
+            value,
+          };
+        },
+      },
+    },
   },
 ];
 
@@ -128,7 +161,7 @@ const columns: ModelPropertyColumn[] = [
     type: 'string',
   },
   {
-    id: 'cpu',
+    id: 'cpu_core',
     name: 'CPU',
     type: 'number',
     unit: '核',
@@ -136,7 +169,7 @@ const columns: ModelPropertyColumn[] = [
     align: 'right',
   },
   {
-    id: 'mem',
+    id: 'memory',
     name: '内存',
     type: 'number',
     unit: 'GB',
@@ -185,7 +218,7 @@ const getList = async () => {
   const fields = getSearchAndFields();
   const params = getSearchParams();
   const { list, count } = await cvmDeviceStore.getDeviceList({
-    filter: transformSimpleCondition(params, fields, true),
+    filter: transformSimpleCondition(params, fields, false),
     page: pageParams.value,
   });
 

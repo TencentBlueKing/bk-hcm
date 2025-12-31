@@ -83,12 +83,12 @@ export const useCvmDeviceStore = defineStore('cvm-device', () => {
 
   const getDeviceList = async (params: QueryBuilderType) => {
     deviceListLoading.value = true;
-    const api = '/api/v1/woa/config/findmany/config/cvm/device/detail';
+    const api = '/api/v1/woa/config/capacity/list_with_device_info';
     try {
       const [listRes, countRes] = await Promise.all<
         [Promise<IListResData<ICvmDeviceItem[]>>, Promise<IListResData<ICvmDeviceItem[]>>]
       >([http.post(api, enableCount(params, false)), http.post(api, enableCount(params, true))]);
-      const [{ info: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
+      const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
       return { list, count };
     } catch (error) {
       console.error(error);

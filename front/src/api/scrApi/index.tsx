@@ -163,7 +163,7 @@ const getRestrict = async () => {
  */
 const getIDCPMDeviceTypes = async () => {
   const { data } = await http.post(
-    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/capacity/list_with_device_info`,
+    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/findmany/config/idcpm/devicetype`,
     { page: {} },
     { simpleConditions: true },
   );
