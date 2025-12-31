@@ -391,7 +391,11 @@ resPlan:
 
 # 开启自研云资源同步服务,单位:分钟
 resourceSync:
-  syncCapacity: 360
+  syncCapacity:
+    # 同步库存间隔时间，单位:分钟
+    interval: 360
+    # 同步库存并发数
+    concurrent: 100
   syncLeftIP: 360
 
 # defines bkdbm related settings.

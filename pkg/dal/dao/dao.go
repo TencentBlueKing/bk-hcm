@@ -58,6 +58,7 @@ import (
 	daosync "hcm/pkg/dal/dao/cloud/sync"
 	"hcm/pkg/dal/dao/cloud/zone"
 	daoapplystat "hcm/pkg/dal/dao/cvm-apply-order-statistics-config"
+	devicecapacity "hcm/pkg/dal/dao/device-capacity"
 	"hcm/pkg/dal/dao/dissolve/host"
 	"hcm/pkg/dal/dao/dissolve/module"
 	globalconfig "hcm/pkg/dal/dao/global-config"
@@ -193,6 +194,7 @@ type Set interface {
 
 	ResUsageBizRel() cloud.ResUsageBizRel
 	Tenant() tenant.Tenant
+	DeviceCapacity() devicecapacity.DeviceCapacity
 
 	Txn() *Txn
 }
@@ -1142,4 +1144,9 @@ func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
 	return &cloud.ResUsageBizRelDao{
 		Orm: s.orm,
 	}
+}
+
+// DeviceCapacity return device capacity dao.
+func (s *set) DeviceCapacity() devicecapacity.DeviceCapacity {
+	return devicecapacity.NewDeviceCapacityDao(s.orm, s.idGen, s.audit)
 }

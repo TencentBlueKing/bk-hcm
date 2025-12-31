@@ -288,6 +288,13 @@ func (t RequireType) ToRequireTypeWhenGetDevice() RequireType {
 	return requireType
 }
 
+// GetRequireTypesForDeviceCapacity 获取用于主机库存同步的需求类型
+func GetRequireTypesForDeviceCapacity() []RequireType {
+	return []RequireType{
+		RequireTypeRegular,
+	}
+}
+
 // RequireTypeObsProjectMap 需求类型与 obs project 的映射
 var RequireTypeObsProjectMap = map[RequireType]ObsProject{
 	RequireTypeRegular:    ObsProjectNormal,

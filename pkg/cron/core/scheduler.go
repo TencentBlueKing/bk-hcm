@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"hcm/pkg/api/core"
 	cronmetric "hcm/pkg/cron/metric"
 	"hcm/pkg/logs"
 
@@ -158,9 +159,10 @@ func (s *scheduler) executeSingleRun(task Task) error {
 	cronmetric.ExecCounter().With(labels).Inc()
 	start := time.Now()
 
-	if err := task.Do(s.ctx); err != nil {
+	kt := core.NewBackendKit().NewSubKitWithCtx(s.ctx)
+	if err = task.Do(kt); err != nil {
 		cronmetric.ExecError().With(labels).Inc()
-		logs.Errorf("task execution failed, err: %v, task: %s", err, taskName)
+		logs.Errorf("task execution failed, err: %v, task: %s, rid: %s", err, taskName, kt.Rid)
 		return fmt.Errorf("task execution failed: %w, task: %s", err, taskName)
 	}
 

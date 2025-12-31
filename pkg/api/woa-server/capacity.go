@@ -17,23 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core ...
-package core
+package woaserver
 
 import (
-	"time"
-
-	"hcm/pkg/kit"
+	"hcm/pkg/api/core"
+	devicecapacity "hcm/pkg/api/core/device-capacity"
 )
 
-// Task defines the interface for the Task.
-type Task interface {
-	// Name return the name of the task.
-	Name() string
-	// Next return the next time to run the task.
-	Next() (time.Time, error)
-	// Do execute the task.
-	Do(kt *kit.Kit) error
-	// GetURL get the url of the task, require every task to have external api in service.
-	GetURL() string
+// CapacityWithDeviceInfo define capacity with device info.
+type CapacityWithDeviceInfo struct {
+	devicecapacity.CapacityWithDeviceInfo `json:",inline"`
+	CapacityFlag                          int `json:"capacity_flag"`
 }
+
+// ListCapacityWithDeviceInfoResult defines list with device info result.
+type ListCapacityWithDeviceInfoResult = core.ListResultT[CapacityWithDeviceInfo]

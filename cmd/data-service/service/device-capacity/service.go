@@ -17,23 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core ...
-package core
+package devicecapacity
 
 import (
-	"time"
+	"net/http"
 
-	"hcm/pkg/kit"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
 )
 
-// Task defines the interface for the Task.
-type Task interface {
-	// Name return the name of the task.
-	Name() string
-	// Next return the next time to run the task.
-	Next() (time.Time, error)
-	// Do execute the task.
-	Do(kt *kit.Kit) error
-	// GetURL get the url of the task, require every task to have external api in service.
-	GetURL() string
+// InitService initial the device capacity service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("CreateDeviceCapacity", http.MethodPost, "/device_capacities/create", svc.CreateDeviceCapacity)
+	h.Add("UpdateDeviceCapacity", http.MethodPatch, "/device_capacities/update", svc.UpdateDeviceCapacity)
+	h.Add("DeleteDeviceCapacity", http.MethodDelete, "/device_capacities/delete", svc.DeleteDeviceCapacity)
+	h.Add("ListDeviceCapacity", http.MethodPost, "/device_capacities/list", svc.ListDeviceCapacity)
+	h.Add("ListCapacityWithDeviceInfo", http.MethodPost, "/device_capacities/list_with_device_info",
+		svc.ListCapacityWithDeviceInfo)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	dao dao.Set
 }

@@ -73,6 +73,7 @@ type Client struct {
 	OrgTopo                    *OrgTopoClient
 	Meta                       *MetaClient
 	ResUsageBizRel             *ResUsageBizRelClient
+	DeviceCapacity             *DeviceCapacityClient
 }
 
 type restClient struct {
@@ -127,5 +128,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		ResourcePlan:               NewResourcePlanClient(client),
 		OrgTopo:                    NewOrgTopoClient(client),
 		Meta:                       NewMetaClient(client),
+		DeviceCapacity:             NewDeviceCapacityClient(client),
 	}
 }

@@ -17,23 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package core ...
-package core
+package enumor
 
-import (
-	"time"
+// CronTask 定时任务
+type CronTask string
 
-	"hcm/pkg/kit"
+const (
+	// CronTaskSyncDeviceCapacity 同步主机库存
+	CronTaskSyncDeviceCapacity CronTask = "sync_device_capacity"
 )
-
-// Task defines the interface for the Task.
-type Task interface {
-	// Name return the name of the task.
-	Name() string
-	// Next return the next time to run the task.
-	Next() (time.Time, error)
-	// Do execute the task.
-	Do(kt *kit.Kit) error
-	// GetURL get the url of the task, require every task to have external api in service.
-	GetURL() string
-}

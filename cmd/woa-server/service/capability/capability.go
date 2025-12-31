@@ -37,6 +37,8 @@ import (
 	taskStatistics "hcm/cmd/woa-server/logics/task/statistics"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/cron/core"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty"
@@ -72,4 +74,5 @@ type Capability struct {
 	TaskLogic      taskLogics.Logics
 	TaskStatistics taskStatistics.Interface
 	CvmLogic       cvmlogic.Logics
+	Tasks          map[enumor.CronTask]core.Task
 }

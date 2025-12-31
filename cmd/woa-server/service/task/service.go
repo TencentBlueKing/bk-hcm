@@ -22,6 +22,8 @@ import (
 	taskLogics "hcm/cmd/woa-server/logics/task"
 	"hcm/cmd/woa-server/service/capability"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/cron/core"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -67,6 +69,7 @@ type service struct {
 	itsmClient     itsm.Client
 	gcLogics       gclogics.Logics
 	dissolveLogics dissolve.Logics
+	Tasks          map[enumor.CronTask]core.Task
 }
 
 func (s *service) initOperationService(h *rest.Handler) {
@@ -101,7 +104,8 @@ func (s *service) initDeliverAnalysisService(h *rest.Handler) {
 		s.GetProductionStageTimeCostOverview)
 	h.Add("GetProductionStageTimeCostCompare", http.MethodPost, "/apply/analysis/production_stage_time_cost/compare",
 		s.GetProductionStageTimeCostCompare)
-	h.Add("GetPercentileTimeConsumptionOverview", http.MethodPost, "/apply/analysis/percentile_time_consumption/overview",
+	h.Add("GetPercentileTimeConsumptionOverview", http.MethodPost,
+		"/apply/analysis/percentile_time_consumption/overview",
 		s.GetPercentileTimeConsumptionOverview)
 	h.Add("GetPercentileTimeConsumptionCompare", http.MethodPost, "/apply/analysis/percentile_time_consumption/compare",
 		s.GetPercentileTimeConsumptionCompare)

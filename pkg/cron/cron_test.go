@@ -26,7 +26,9 @@ import (
 	"testing"
 	"time"
 
+	"hcm/pkg/cc"
 	"hcm/pkg/cron/core"
+	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
 )
 
@@ -54,7 +56,7 @@ func (t *testTask) Next() (time.Time, error) {
 }
 
 // Do execute the task.
-func (t *testTask) Do(ctx context.Context) error {
+func (t *testTask) Do(kt *kit.Kit) error {
 	fmt.Printf("exec test task, now: %v\n", time.Now())
 	return nil
 }
@@ -66,6 +68,7 @@ func (t *testTask) GetURL() string {
 
 // TestCron test cron
 func TestCron(t *testing.T) {
+	cc.InitRuntime(cc.TestSetting{})
 	if err := Init(context.Background(), metrics.Register()); err != nil {
 		t.Fatal(err)
 	}

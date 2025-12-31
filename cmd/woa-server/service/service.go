@@ -62,11 +62,15 @@ import (
 	"hcm/cmd/woa-server/storage/driver/mongodb"
 	redisCli "hcm/cmd/woa-server/storage/driver/redis"
 	"hcm/cmd/woa-server/storage/stream"
+	crontask "hcm/cmd/woa-server/task"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/cron"
+	croncore "hcm/pkg/cron/core"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
@@ -115,6 +119,7 @@ type Service struct {
 	taskLogic      taskLogics.Logics
 	taskStatistics taskStatistics.Interface
 	cvmLogic       cvmlogic.Logics
+	tasks          map[enumor.CronTask]croncore.Task
 }
 
 // NewService create a service instance.
@@ -145,7 +150,15 @@ func NewService(dis serviced.ServiceDiscover, sd serviced.State) (*Service, erro
 	}
 
 	service := assembleService(apiClientSet, clients, logics, mongoComponents)
-	return newOtherClient(core.NewBackendKit(), service, clients.itsmCli, sd)
+	service, err = newOtherClient(core.NewBackendKit(), service, clients.itsmCli, sd)
+	if err != nil {
+		return nil, err
+	}
+	if err = service.initCronTask(); err != nil {
+		logs.Errorf("init cron task failed, err: %v", err)
+		return nil, err
+	}
+	return service, nil
 }
 
 // initTLSConfig 初始化TLS配置
@@ -582,6 +595,7 @@ func (s *Service) apiSet() *restful.Container {
 		TaskLogic:      s.taskLogic,
 		TaskStatistics: s.taskStatistics,
 		CvmLogic:       s.cvmLogic,
+		Tasks:          s.tasks,
 	}
 
 	config.InitService(c)
@@ -629,4 +643,27 @@ func (s *Service) Alivez(w http.ResponseWriter, r *http.Request) {
 
 	rest.WriteResp(w, rest.NewBaseResp(errf.OK, "alive"))
 	return
+}
+
+// initCronTask 初始化定时任务
+func (s *Service) initCronTask() error {
+	if err := cron.Init(context.Background(), metrics.Register()); err != nil {
+		logs.Errorf("init cron scheduler failed, err: %v", err)
+		return err
+	}
+	s.tasks = make(map[enumor.CronTask]croncore.Task)
+
+	deviceCapacityTask, err := crontask.NewDeviceCapacityTask(s.client, s.configLogics)
+	if err != nil {
+		logs.Errorf("init device capacity task failed, err: %v", err)
+		return err
+	}
+	s.tasks[enumor.CronTaskSyncDeviceCapacity] = deviceCapacityTask
+
+	if err = cron.Register([]croncore.Task{deviceCapacityTask}); err != nil {
+		logs.Errorf("register device capacity task failed, err: %v", err)
+		return err
+	}
+
+	return nil
 }

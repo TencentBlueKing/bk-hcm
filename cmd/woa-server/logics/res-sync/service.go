@@ -33,8 +33,6 @@ import (
 
 // Logics provides management interface for resource sync.
 type Logics interface {
-	// SyncCapacity sync device capacity info collection
-	SyncCapacity() error
 	// SyncLeftIP sync left ip config list
 	SyncLeftIP() error
 }
@@ -60,12 +58,6 @@ func New(sd serviced.State, client *client.ClientSet, configLogics config.Logics
 // Run starts dispatcher
 func (l *logics) Run() {
 	ctx := context.Background()
-	capacityMinute := cc.WoaServer().ResourceSync.SyncCapacity
-	if capacityMinute > 0 {
-		// sync capacity every 6 hours
-		go wait.JitterUntil(l.SyncCapacity, time.Duration(capacityMinute)*time.Minute, 0.5, true, ctx)
-	}
-
 	leftIPMinute := cc.WoaServer().ResourceSync.SyncLeftIP
 	if leftIPMinute > 0 {
 		// sync left ip every 6 hours

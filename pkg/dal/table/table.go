@@ -286,6 +286,8 @@ const (
 
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
+	// DeviceCapacityTable 机型库存表
+	DeviceCapacityTable = "device_capacity"
 )
 
 // Validate whether the table name is valid or not.
@@ -440,6 +442,7 @@ var TableMap = map[Name]TableConfig{
 	OrgTopoTable:                       {},
 
 	ResUsageBizRelTable: {},
+	DeviceCapacityTable: {},
 }
 
 // Register 注册表名

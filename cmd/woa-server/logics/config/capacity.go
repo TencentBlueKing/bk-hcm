@@ -19,15 +19,24 @@ import (
 	"fmt"
 	"sync"
 
-	"hcm/cmd/woa-server/model/config"
 	types "hcm/cmd/woa-server/types/config"
+	"hcm/pkg/api/core"
+	devicecapacity "hcm/pkg/api/data-service/device-capacity"
+	woaserver "hcm/pkg/api/woa-server"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/mapstr"
+	"hcm/pkg/dal/dao/tools"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
+	hcmjson "hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 	arrayutil "hcm/pkg/tools/util"
 )
 
@@ -35,15 +44,19 @@ import (
 type CapacityIf interface {
 	// GetCapacity gets resource apply capacity info
 	GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*types.GetCapacityRst, error)
-	// UpdateCapacity updates resource apply capacity info
-	UpdateCapacity(kt *kit.Kit, input *types.UpdateCapacityParam) error
+	// UpsertCapacity upsert resource apply capacity info
+	UpsertCapacity(kt *kit.Kit, input *types.UpdateCapacityParam) error
 	// BatchGetCapacity 批量获取资源申请容量信息
 	BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityParam) (*types.BatchGetCapacityRst, error)
+	// ListCapacityWithDeviceInfo 查询设备库存及其机型详细信息
+	ListCapacityWithDeviceInfo(kt *kit.Kit, input *devicecapacity.ListCapacityWithDeviceInfoReq) (
+		*woaserver.ListCapacityWithDeviceInfoResult, error)
 }
 
 // NewCapacityOp creates a capacity interface
-func NewCapacityOp(vpc VpcIf, subnet SubnetIf, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) CapacityIf {
+func NewCapacityOp(client *client.ClientSet, subnet SubnetIf, vpc VpcIf, thirdCli *thirdparty.Client, cmdbCli cmdb.Client) CapacityIf {
 	return &capacity{
+		client:  client,
 		cvm:     thirdCli.OldCVM,
 		vpc:     vpc,
 		subnet:  subnet,
@@ -52,6 +65,7 @@ func NewCapacityOp(vpc VpcIf, subnet SubnetIf, thirdCli *thirdparty.Client, cmdb
 }
 
 type capacity struct {
+	client  *client.ClientSet
 	cvm     cvmapi.CVMClientInterface
 	vpc     VpcIf
 	subnet  SubnetIf
@@ -94,7 +108,6 @@ func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*typ
 		logs.Errorf("failed to find subnet with subnetReq: %+v, err: %v, rid: %s", subnetReq, err, kt.Rid)
 		return nil, err
 	}
-
 	zoneToVpc := make(map[string][]string)
 	vpcToSubnet := make(map[string][]string)
 
@@ -112,33 +125,49 @@ func (c *capacity) GetCapacity(kt *kit.Kit, input *types.GetCapacityParam) (*typ
 			zoneToCapacity[zoneID] = capa
 		}
 	}
-
 	rst := &types.GetCapacityRst{}
+	upsertItems := make([]types.UpsertDeviceCapacityItem, 0)
 	for _, capInfo := range zoneToCapacity {
 		rst.Info = append(rst.Info, capInfo)
+		upsertItems = append(upsertItems, types.UpsertDeviceCapacityItem{
+			RequireType: input.RequireType,
+			DeviceType:  input.DeviceType,
+			Region:      capInfo.Region,
+			Zone:        capInfo.Zone,
+			MaxNum:      capInfo.MaxNum,
+			MaxInfo:     capInfo.MaxInfo,
+		})
 	}
 	rst.Count = int64(len(rst.Info))
-
 	// 为方便排查问题，增加日志记录
 	jsonRst, err := json.Marshal(rst)
 	if err != nil {
 		logs.Errorf("cvm apply order get capacity failed to marshal capacityRst, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	logs.Infof("cvm apply order get capacity, input: %+v, zoneInfo: %s, rid: %s",
-		cvt.PtrToVal(input), string(jsonRst), kt.Rid)
+	logs.Infof("get capacity, input: %+v, zoneInfo: %s, rid: %s", cvt.PtrToVal(input), string(jsonRst), kt.Rid)
 
+	if input.DisableUpsertDB {
+		return rst, nil
+	}
+	for _, batch := range slice.Split(upsertItems, constant.BatchOperationMaxLimit) {
+		// 失败不影响正常返回，只打印日志
+		if err = c.upsertDeviceCapacity(kt, batch); err != nil {
+			logs.Errorf("batch get capacity failed to upsert device capacity, err: %v, input: %v, rid: %s", err,
+				cvt.PtrToVal(input), kt.Rid)
+		}
+	}
 	return rst, nil
 }
 
 // BatchGetCapacity 批量获取资源申请容量信息
-func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityParam) (*types.BatchGetCapacityRst, error) {
+func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityParam) (*types.BatchGetCapacityRst,
+	error) {
 	// 1. query subnet from db
 	subnetReq := &types.GetAllSubnetReq{Region: input.Region}
 	if len(input.Zones) > 0 {
 		subnetReq.Zones = input.Zones
 	}
-
 	vpcID := input.Vpc
 	if vpcID == "" {
 		dftVpc, err := c.vpc.GetRegionDftVpc(kt, input.Region)
@@ -169,7 +198,6 @@ func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityPa
 		logs.Errorf("failed to find subnet with subnetReq: %+v, err: %v, rid: %s", subnetReq, err, kt.Rid)
 		return nil, err
 	}
-
 	zoneToVpc := make(map[string][]string)
 	vpcToSubnet := make(map[string][]string)
 
@@ -180,10 +208,18 @@ func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityPa
 
 	// 2.query apply capacity concurrently
 	deviceZoneToCapacity := c.queryBatchCapacityConcurrent(kt, input, zoneToVpc, vpcToSubnet)
-
 	rst := &types.BatchGetCapacityRst{}
+	upsertItems := make([]types.UpsertDeviceCapacityItem, 0)
 	for _, capacityInfo := range deviceZoneToCapacity {
 		rst.Info = append(rst.Info, capacityInfo)
+		upsertItems = append(upsertItems, types.UpsertDeviceCapacityItem{
+			RequireType: input.RequireType,
+			DeviceType:  capacityInfo.DeviceType,
+			Region:      capacityInfo.Region,
+			Zone:        capacityInfo.Zone,
+			MaxNum:      capacityInfo.MaxNum,
+			MaxInfo:     capacityInfo.MaxInfo,
+		})
 	}
 	rst.Count = int64(len(rst.Info))
 	// 为方便排查问题，增加日志记录
@@ -192,9 +228,17 @@ func (c *capacity) BatchGetCapacity(kt *kit.Kit, input *types.BatchGetCapacityPa
 		logs.Errorf("batch get capacity failed to marshal capacityRst, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	logs.Infof("batch get capacity, input: %+v, result: %s, rid: %s",
-		cvt.PtrToVal(input), string(jsonRst), kt.Rid)
-
+	logs.Infof("batch get capacity, input: %+v, result: %s, rid: %s", cvt.PtrToVal(input), string(jsonRst), kt.Rid)
+	if input.DisableUpsertDB {
+		return rst, nil
+	}
+	for _, batch := range slice.Split(upsertItems, constant.BatchOperationMaxLimit) {
+		// 失败不影响正常返回，只打印日志
+		if err = c.upsertDeviceCapacity(kt, batch); err != nil {
+			logs.Errorf("batch get capacity failed to upsert device capacity, err: %v, input: %v, rid: %s", err,
+				cvt.PtrToVal(input), kt.Rid)
+		}
+	}
 	return rst, nil
 }
 
@@ -237,7 +281,8 @@ func (c *capacity) queryBatchCapacityConcurrent(kt *kit.Kit, input *types.BatchG
 			defer func() { <-semaphore }()
 
 			vpcUniq := arrayutil.StrArrayUnique(vpcs)
-			capacityInfo := c.getZoneCapacityForBatch(kt, input, deviceType, zone, vpcUniq, vpcToSubnet, input.IgnorePrediction)
+			capacityInfo := c.getZoneCapacityForBatch(kt, input, deviceType, zone, vpcUniq, vpcToSubnet,
+				input.IgnorePrediction)
 
 			if capacityInfo != nil {
 				resultChan <- capacityInfo
@@ -259,7 +304,8 @@ func (c *capacity) queryBatchCapacityConcurrent(kt *kit.Kit, input *types.BatchG
 }
 
 // getZoneCapacityForBatch 获取单个设备类型+可用区的容量信息
-func (c *capacity) getZoneCapacityForBatch(kt *kit.Kit, input *types.BatchGetCapacityParam, deviceType, zone string, vpcList []string,
+func (c *capacity) getZoneCapacityForBatch(kt *kit.Kit, input *types.BatchGetCapacityParam, deviceType, zone string,
+	vpcList []string,
 	vpcToSubnet map[string][]string, ignorePrediction bool) *types.BatchCapacityInfo {
 
 	capacityInfo := c.createEmptyCapacityInfo(deviceType, input.Region, zone)
@@ -391,8 +437,8 @@ func (c *capacity) logCapacityInfo(kt *kit.Kit, input *types.BatchGetCapacityPar
 }
 
 // createCapacityReqForBatch 创建容量查询请求
-func (c *capacity) createCapacityReqForBatch(kt *kit.Kit, input *types.BatchGetCapacityParam, deviceType, zone string, vpcList []string,
-	vpcToSubnet map[string][]string) (*cvmapi.CapacityReq, error) {
+func (c *capacity) createCapacityReqForBatch(kt *kit.Kit, input *types.BatchGetCapacityParam, deviceType, zone string,
+	vpcList []string, vpcToSubnet map[string][]string) (*cvmapi.CapacityReq, error) {
 
 	tempParam := &types.GetCapacityParam{
 		RequireType:      input.RequireType,
@@ -410,7 +456,8 @@ func (c *capacity) createCapacityReqForBatch(kt *kit.Kit, input *types.BatchGetC
 }
 
 // updateCapacityMaxInfoForBatch 更新容量最大信息
-func (c *capacity) updateCapacityMaxInfoForBatch(capacity *types.BatchCapacityInfo, leftIp int64, ignorePrediction bool) {
+func (c *capacity) updateCapacityMaxInfoForBatch(capacity *types.BatchCapacityInfo, leftIp int64,
+	ignorePrediction bool) {
 	maxNum := leftIp
 	for _, maxInfo := range capacity.MaxInfo {
 		key := maxInfo.Key
@@ -427,19 +474,20 @@ func (c *capacity) updateCapacityMaxInfoForBatch(capacity *types.BatchCapacityIn
 	capacity.MaxNum = maxNum
 }
 
-// UpdateCapacity updates resource apply capacity info
-func (c *capacity) UpdateCapacity(kt *kit.Kit, input *types.UpdateCapacityParam) error {
+// UpsertCapacity upsert resource apply capacity info
+func (c *capacity) UpsertCapacity(kt *kit.Kit, input *types.UpdateCapacityParam) error {
 	// 1. get capacity
 	param := &types.GetCapacityParam{
-		RequireType: input.RequireType,
-		DeviceType:  input.DeviceType,
-		Region:      input.Region,
-		Zone:        input.Zone,
+		RequireType:     input.RequireType,
+		DeviceType:      input.DeviceType,
+		Region:          input.Region,
+		Zone:            input.Zone,
+		DisableUpsertDB: true,
 	}
 
 	rst, err := c.GetCapacity(kt, param)
 	if err != nil {
-		logs.Errorf("failed to get capacity, err: %v, %s", err, kt.Rid)
+		logs.Errorf("failed to get capacity, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -455,31 +503,19 @@ func (c *capacity) UpdateCapacity(kt *kit.Kit, input *types.UpdateCapacityParam)
 		return errors.New("get invalid null capacity info")
 	}
 
-	maxNum := rst.Info[0].MaxNum
-
-	// 2. calculate capacity flag
-	flag := c.getCapacityFlag(int(maxNum))
-
-	// 3. update capacity info in db
-	filter := map[string]interface{}{
-		"require_type": input.RequireType,
-		"region":       input.Region,
-		"zone":         input.Zone,
-		"device_type":  input.DeviceType,
-	}
-
-	update := map[string]interface{}{
-		"capacity_flag": flag,
-	}
-
-	if err = config.Operation().CvmDevice().UpdateDevice(kt.Ctx, filter, update); err != nil {
-		logs.Errorf("failed to update capacity info in db, err: %v, flag: %d, input: %+v, rid: %s",
-			err, flag, cvt.PtrToVal(input), kt.Rid)
+	// 2. upsert device capacity
+	upsertItem := []types.UpsertDeviceCapacityItem{{
+		RequireType: input.RequireType,
+		DeviceType:  input.DeviceType,
+		Region:      input.Region,
+		Zone:        input.Zone,
+		MaxNum:      rst.Info[0].MaxNum,
+		MaxInfo:     rst.Info[0].MaxInfo,
+	}}
+	if err = c.upsertDeviceCapacity(kt, upsertItem); err != nil {
+		logs.Errorf("batch get capacity failed to upsert device capacity, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	// 记录日志方便排查问题
-	logs.Errorf("update device capacity success, maxNum: %d, flag: %d, input: %+v, crpResp: %+v, rid: %s",
-		maxNum, flag, cvt.PtrToVal(input), cvt.PtrToSlice(rst.Info), kt.Rid)
 
 	return nil
 }
@@ -742,4 +778,151 @@ func (c *capacity) translateCapacityKey(key string) string {
 	default:
 		return key
 	}
+}
+
+// upsertDeviceCapacity 更新或创建库存信息
+func (c *capacity) upsertDeviceCapacity(kt *kit.Kit, items []types.UpsertDeviceCapacityItem) error {
+	if len(items) == 0 {
+		return nil
+	}
+	if len(items) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("items exceed limit %d", constant.BatchOperationMaxLimit)
+	}
+
+	// 验证所有输入
+	for i, item := range items {
+		if err := item.Validate(); err != nil {
+			logs.Errorf("input is invalid at index %d, err: %v, rid: %s", i, err, kt.Rid)
+			return fmt.Errorf("input is invalid at index %d: %w", i, err)
+		}
+	}
+
+	// 构建批量查询条件,查询所有可能存在的记录
+	// 构建 OR 表达式,每个分支是一个 AND 表达式
+	orRules := make([]filter.RuleFactory, 0, len(items))
+	for _, item := range items {
+		andExpressions := []*filter.AtomRule{
+			tools.RuleEqual("require_type", item.RequireType),
+			tools.RuleEqual("region", item.Region),
+			tools.RuleEqual("zone", item.Zone),
+			tools.RuleEqual("device_type", item.DeviceType),
+		}
+		orRules = append(orRules, tools.ExpressionAnd(andExpressions...))
+	}
+
+	// 构建已存在记录的映射表,key为 "require_type:region:zone:device_type"
+	existingMap := make(map[string]string)
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{Op: filter.Or, Rules: orRules},
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+	for {
+		listRst, err := c.client.DataService().Global.DeviceCapacity.List(kt, listReq)
+		if err != nil {
+			logs.Errorf("failed to list device capacity, err: %v, req: %+v, rid: %s", err, cvt.PtrToVal(listReq),
+				kt.Rid)
+			return err
+		}
+		for _, detail := range listRst.Details {
+			key := fmt.Sprintf("%d:%s:%s:%s", int64(detail.RequireType), detail.Region, detail.Zone, detail.DeviceType)
+			existingMap[key] = detail.ID
+		}
+
+		if len(listRst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return c.upsertDeviceCapacityByExistMap(kt, items, existingMap)
+}
+
+func (c *capacity) upsertDeviceCapacityByExistMap(kt *kit.Kit, items []types.UpsertDeviceCapacityItem,
+	existingMap map[string]string) error {
+
+	// 分离需要创建和更新的记录
+	createItems := make([]devicecapacity.CreateDeviceCapacityField, 0)
+	updateItems := make([]devicecapacity.UpdateDeviceCapacityField, 0)
+	for _, item := range items {
+		extension, err := hcmjson.MarshalToString(item.MaxInfo)
+		if err != nil {
+			logs.Errorf("fail to marshal capacity max info to string, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		key := fmt.Sprintf("%d:%s:%s:%s", int64(item.RequireType), item.Region, item.Zone, item.DeviceType)
+		id, exists := existingMap[key]
+		if exists {
+			// 需要更新
+			updateItems = append(updateItems, devicecapacity.UpdateDeviceCapacityField{
+				ID:          id,
+				RequireType: cvt.ValToPtr(item.RequireType),
+				Region:      cvt.ValToPtr(item.Region),
+				Zone:        cvt.ValToPtr(item.Zone),
+				DeviceType:  cvt.ValToPtr(item.DeviceType),
+				Capacity:    cvt.ValToPtr(item.MaxNum),
+				Extension:   cvt.ValToPtr(tabletype.JsonField(extension)),
+			})
+			continue
+		}
+		// 需要创建
+		createItems = append(createItems, devicecapacity.CreateDeviceCapacityField{
+			RequireType: item.RequireType,
+			Region:      item.Region,
+			Zone:        item.Zone,
+			DeviceType:  item.DeviceType,
+			Capacity:    cvt.ValToPtr(item.MaxNum),
+			Extension:   tabletype.JsonField(extension),
+		})
+	}
+
+	// 分批处理创建操作
+	for _, batch := range slice.Split(createItems, constant.BatchOperationMaxLimit) {
+		_, err := c.client.DataService().Global.DeviceCapacity.Create(kt, &devicecapacity.CreateDeviceCapacityReq{
+			Items: batch,
+		})
+		if err != nil {
+			logs.Errorf("failed to create device capacity batch, err: %v, batch: %v, rid: %s", err, batch, kt.Rid)
+			return err
+		}
+	}
+
+	// 分批处理更新操作
+	for _, batch := range slice.Split(updateItems, constant.BatchOperationMaxLimit) {
+		err := c.client.DataService().Global.DeviceCapacity.Update(kt, &devicecapacity.UpdateDeviceCapacityReq{
+			Items: batch,
+		})
+		if err != nil {
+			logs.Errorf("failed to update device capacity batch, err: %v, batch: %v, rid: %s", err, batch, kt.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+// ListCapacityWithDeviceInfo 查询设备库存及其机型详细信息
+func (c *capacity) ListCapacityWithDeviceInfo(kt *kit.Kit, input *devicecapacity.ListCapacityWithDeviceInfoReq) (
+	*woaserver.ListCapacityWithDeviceInfoResult, error) {
+
+	if err := input.Validate(); err != nil {
+		logs.Errorf("failed to validate list capacity with device info request, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	resp, err := c.client.DataService().Global.DeviceCapacity.ListCapacityWithDeviceInfo(kt, input)
+	if err != nil {
+		logs.Errorf("failed to list capacity with device info, err: %v, req: %+v, rid: %s", err, input, kt.Rid)
+		return nil, err
+	}
+	if input.Page.Count {
+		return &woaserver.ListCapacityWithDeviceInfoResult{Count: resp.Count}, nil
+	}
+
+	details := make([]woaserver.CapacityWithDeviceInfo, 0, len(resp.Details))
+	for _, one := range resp.Details {
+		details = append(details, woaserver.CapacityWithDeviceInfo{
+			CapacityWithDeviceInfo: one,
+			CapacityFlag:           c.getCapacityFlag(int(one.Capacity)),
+		})
+	}
+	return &woaserver.ListCapacityWithDeviceInfoResult{Details: details}, nil
 }

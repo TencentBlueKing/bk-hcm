@@ -173,8 +173,11 @@ func (s *service) initZone(h *rest.Handler) {
 
 func (s *service) initCapacity(h *rest.Handler) {
 	h.Add("GetCapacity", http.MethodPost, "/config/find/cvm/capacity", s.GetCapacity)
-	h.Add("UpdateCapacity", http.MethodPost, "/config/sync/cvm/capacity", s.UpdateCapacity)
+	h.Add("UpsertCapacity", http.MethodPost, "/config/sync/cvm/capacity", s.UpsertCapacity)
 	h.Add("BatchGetCapacity", http.MethodPost, "/config/findmany/cvm/capacity", s.BatchGetCapacity)
+	h.Add("ListCapacityWithDeviceInfo", http.MethodPost, "/config/capacity/list_with_device_info",
+		s.ListCapacityWithDeviceInfo)
+
 }
 
 func (s *service) initSg(h *rest.Handler) {

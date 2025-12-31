@@ -480,6 +480,8 @@ type GetCapacityParam struct {
 	BizID            int64 `json:"bk_biz_id"`
 	// 多可用区
 	Zones []string `json:"zones"`
+	// 是否插入或更新DB数据
+	DisableUpsertDB bool `json:"disable_upsert_db"`
 }
 
 // Validate whether GetCapacityParam is valid
@@ -539,6 +541,8 @@ type BatchGetCapacityParam struct {
 	// 是否忽略预测
 	IgnorePrediction bool  `json:"ignore_prediction"`
 	BizID            int64 `json:"bk_biz_id"`
+	// 是否禁用插入或更新DB数据
+	DisableUpsertDB bool `json:"disable_upsert_db"`
 }
 
 // Validate 验证批量容量查询参数
@@ -771,4 +775,39 @@ type GetAllSubnetReq struct {
 	CloudVpcID string   `json:"cloud_vpc_id"`
 	CloudID    string   `json:"cloud_id"`
 	Name       string   `json:"name"`
+}
+
+// UpsertDeviceCapacityItem 需要更新或创建的库存项
+type UpsertDeviceCapacityItem struct {
+	RequireType enumor.RequireType `json:"require_type"`
+	DeviceType  string             `json:"device_type"`
+	Region      string             `json:"region"`
+	Zone        string             `json:"zone"`
+	MaxNum      int64              `json:"max_num"`
+	MaxInfo     []*CapacityMaxInfo `json:"max_info"`
+}
+
+// Validate ...
+func (u *UpsertDeviceCapacityItem) Validate() error {
+	if err := u.RequireType.Validate(); err != nil {
+		return fmt.Errorf("require_type validation failed: %v", err)
+	}
+
+	if len(u.DeviceType) == 0 {
+		return fmt.Errorf("device_type cannot be empty")
+	}
+
+	if len(u.Region) == 0 {
+		return fmt.Errorf("region cannot be empty")
+	}
+
+	if len(u.Zone) == 0 {
+		return fmt.Errorf("zone cannot be empty")
+	}
+
+	if u.MaxNum < 0 {
+		return fmt.Errorf("max_num cannot be less than 0")
+	}
+
+	return nil
 }

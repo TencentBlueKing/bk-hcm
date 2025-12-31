@@ -31,7 +31,6 @@ type Logics interface {
 	CvmImage() CvmImageIf
 	Device() DeviceIf
 	Capacity() CapacityIf
-	BatchCapacity() CapacityIf
 	LeftIP() LeftIPIf
 	Sg() ziyan.SgIf
 	ApplyOrderStatistics() ApplyOrderStatisticsIf
@@ -47,7 +46,6 @@ type logics struct {
 	cvmImage             CvmImageIf
 	device               DeviceIf
 	capacity             CapacityIf
-	batchCapacity        CapacityIf
 	leftIP               LeftIPIf
 	sg                   ziyan.SgIf
 	applyOrderStatistics ApplyOrderStatisticsIf
@@ -57,7 +55,6 @@ type logics struct {
 func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Client, daoSet dao.Set) Logics {
 	vpcOp := NewVpcOp(client, thirdCli)
 	subnetOp := NewSubnetOp(client, thirdCli)
-	capacityOp := NewCapacityOp(vpcOp, subnetOp, thirdCli, cmdbCli)
 	return &logics{
 		requirement:          NewRequirementOp(),
 		region:               NewRegionOp(client),
@@ -66,9 +63,8 @@ func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Cli
 		subnet:               subnetOp,
 		deviceRestrict:       NewDeviceRestrictOp(),
 		cvmImage:             NewCvmImageOp(),
+		capacity:             NewCapacityOp(client, subnetOp, vpcOp, thirdCli, cmdbCli),
 		device:               NewDeviceOp(thirdCli, NewZoneOp(client)),
-		capacity:             capacityOp,
-		batchCapacity:        capacityOp,
 		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),
 		sg:                   ziyan.NewSgOp(client),
 		applyOrderStatistics: NewApplyOrderStatisticsOp(daoSet),
@@ -118,11 +114,6 @@ func (l *logics) Device() DeviceIf {
 // Capacity capacity interface
 func (l *logics) Capacity() CapacityIf {
 	return l.capacity
-}
-
-// BatchCapacity batch capacity interface
-func (l *logics) BatchCapacity() CapacityIf {
-	return l.batchCapacity
 }
 
 // LeftIP left ip interface
