@@ -142,6 +142,7 @@ const handleClosed = () => {
           :cloud-vpc-id="loadBalancerDetails.cloud_vpc_id"
           :region="loadBalancerDetails.region"
           :protocol="listenerRowData.protocol"
+          :port="listenerRowData.port"
           :is-cors-v2="loadBalancerDetails.extension.snat_pro"
         />
       </bk-form-item>

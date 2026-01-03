@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
@@ -79,25 +80,47 @@ func (s *service) CreateBizUpgradeCRPOrder(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	// 统一使用 applyReq 实现交付逻辑
-	applyReq := &types.ApplyReq{
-		BkBizId: input.BkBizID,
-		User:    input.User,
-		// 升降配默认常规项目
-		RequireType: enumor.RequireTypeRegular,
-		Remark:      input.Remark,
-		Suborders: []*types.Suborder{
-			{
-				ResourceType:   types.ResourceTypeUpgradeCvm,
-				Replicas:       uint(len(upgradeCVMList)),
-				AppliedCore:    0,
-				Remark:         input.Remark,
-				UpgradeCVMList: upgradeCVMList,
-			},
-		},
+	// TODO 临时，直接调用CRP的升降配接口
+	// 构造 CRP 升降配请求参数
+	upgradeParam := &cvmapi.UpgradeParam{
+		Reason: input.Remark,
+		Data:   make([]cvmapi.UpgradeParamInstance, 0, len(upgradeCVMList)),
+	}
+	for _, item := range upgradeCVMList {
+		upgradeParam.Data = append(upgradeParam.Data, cvmapi.UpgradeParamInstance{
+			InstanceID:         item.InstanceID,
+			TargetInstanceType: item.TargetInstanceType,
+		})
 	}
 
-	return s.createUpgradeCRPOrder(cts.Kit, applyReq)
+	// 构造 CRP 升降配请求
+	upgradeReq := cvmapi.NewCvmUpgradeOrderReq(upgradeParam)
+	// 调用 CRP 创建升降配单据接口
+	resp, err := s.cvmClient.CreateUpgradeOrder(cts.Kit, upgradeReq)
+	if err != nil {
+		logs.Errorf("failed to create upgrade crp order, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if resp == nil {
+		logs.Errorf("failed to create cvm upgrade order, resp is nil, rid: %s", cts.Kit.Rid)
+		return nil, fmt.Errorf("failed to create cvm upgrade order, resp is nil")
+	}
+
+	// 检查 CRP 响应错误
+	if resp.Error.Code != 0 {
+		logs.Errorf("failed to create upgrade crp order, code: %d, msg: %s, crp_trace: %s, rid: %s",
+			resp.Error.Code, resp.Error.Message, resp.TraceId, cts.Kit.Rid)
+		return nil, fmt.Errorf("failed to create upgrade crp order, code: %d, msg: %s", resp.Error.Code,
+			resp.Error.Message)
+	}
+	if resp.Result.OrderId == "" {
+		return nil, fmt.Errorf("create upgrade order return empty order id, crpTraceID: %s", resp.TraceId)
+	}
+
+	// 返回 CRP 单据ID
+	return &types.CreateUpgradeCrpOrderResult{
+		CRPOrderID: resp.Result.OrderId,
+	}, nil
 }
 
 func (s *service) getInstanceDetails(kt *kit.Kit, bkBizID int64, user string, upgradeList []types.UpgradeCvmItem) (

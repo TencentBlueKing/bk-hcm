@@ -13,7 +13,7 @@ import StageDetailSideslider from './stage-detail';
 
 import moment from 'moment';
 import { useI18n } from 'vue-i18n';
-import { throttle } from 'lodash';
+import throttle from 'lodash/throttle';
 import { useUserStore, useZiyanScrStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useScrColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
@@ -34,6 +34,7 @@ import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { SCR_RESOURCE_TYPE_NAME, ScrResourceType } from '@/constants';
 import { RES_ASSIGN_TYPE } from '@/components/device-type-selector/constants';
 import type { ICvmDeviceTypeFormData } from '@/components/device-type-selector/typings';
+import UserValue from '@/components/display-value/user-value.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -236,9 +237,9 @@ export default defineComponent({
           {
             label: t('单据状态'),
             field: 'stage',
-            width: 200,
+            width: 170,
             render: ({ data }: any) => {
-              const { create_at, stage, resource_type } = data;
+              const { create_at, stage, resource_type, spec } = data;
               const diffHours = moment(new Date()).diff(moment(create_at), 'hours');
               const isAbnormal = diffHours >= 2 && stage === 'RUNNING';
               const resourceTypeName = SCR_RESOURCE_TYPE_NAME[resource_type as keyof typeof ScrResourceType];
@@ -265,8 +266,14 @@ export default defineComponent({
                       v-bk-tooltips={{
                         content: (
                           <>
-                            {t('建议')}
-                            <span class='text-primary ml4'>{t('修改需求重试')}</span>
+                            {spec?.failed_zone_ids?.length > 0 && (
+                              <div>
+                                可用区：
+                                {[...new Set(spec.failed_zone_ids)].map((zone) => getZoneCn(zone)).join('，')}
+                                。已尝试生产主机失败
+                              </div>
+                            )}
+                            <span>建议：修改需求重试</span>
                           </>
                         ),
                       }}>
@@ -375,8 +382,13 @@ export default defineComponent({
           },
           {
             label: t('申请人'),
+            width: 150,
             render: ({ data }: any) => {
-              return <WName name={data.bk_username}></WName>;
+              return (
+                <WName name={data.bk_username}>
+                  <UserValue value={data.bk_username} />
+                </WName>
+              );
             },
           },
           {
@@ -393,6 +405,7 @@ export default defineComponent({
           {
             label: t('待交付数'),
             field: 'pending_num',
+            width: 90,
           },
           {
             label: t('已交付数'),

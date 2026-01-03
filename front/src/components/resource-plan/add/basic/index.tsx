@@ -102,7 +102,9 @@ export default defineComponent({
 
     const handleUpdateResourceType = (value: string) => {
       handleUpdatePlanTicketDemand('demand_res_types', value === 'cvm' ? ['CVM', 'CBS'] : ['CBS']);
-      handleUpdatePlanTicketDemand('obs_project', ''); // 切换资源类型时清空项目类型
+      nextTick(() => {
+        handleUpdatePlanTicketDemand('obs_project', ''); // 切换资源类型时清空项目类型
+      });
       emit('update:resourceType', value);
     };
 

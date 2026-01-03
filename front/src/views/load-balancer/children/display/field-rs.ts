@@ -21,7 +21,16 @@ export class DisplayFieldRs {
   @Column('array', { name: '所属VPC', index: 0, width: 120 })
   cloud_vpc_ids: string[];
 
-  @Column('number', { name: '端口', index: 0, width: 80, fixed: 'right' })
+  @Column('number', {
+    name: '端口',
+    index: 0,
+    width: 150,
+    fixed: 'right',
+    render: ({ row }: { row: { port: number; end_port?: number } }) => {
+      const { port, end_port } = row;
+      return end_port ? `${port}-${end_port}` : `${port}`;
+    },
+  })
   port: number;
 
   @Column('number', { name: '权重', index: 0, width: 100, fixed: 'right' })

@@ -20,7 +20,7 @@ import http from '@/http';
 import { useZiyanScrStore } from '@/store';
 import SuborderDetail from '../suborder-detail';
 import CommonDialog from '@/components/common-dialog';
-import { throttle } from 'lodash';
+import throttle from 'lodash/throttle';
 import MatchPanel from '../match-panel';
 import { getRegionCn, getZoneCn } from '@/views/ziyanScr/cvm-web/transform';
 import { getResourceTypeName } from '../transform';
@@ -37,6 +37,9 @@ import { serviceShareBizSelectedKey } from '@/constants/storage-symbols';
 import { SCR_RESOURCE_TYPE_NAME, ScrResourceType } from '@/constants';
 import { RES_ASSIGN_TYPE } from '@/components/device-type-selector/constants';
 import type { ICvmDeviceTypeFormData } from '@/components/device-type-selector/typings';
+import UserValue from '@/components/display-value/user-value.vue';
+import ExportToExcelBatchButton from '@/components/export-to-excel-batch-button/index.vue';
+import rollRequest from '@blueking/roll-request';
 
 export default defineComponent({
   setup() {
@@ -76,11 +79,11 @@ export default defineComponent({
       });
     };
 
-    const { columns } = useColumns('applicationList');
+    const { columns: applicationListColumns } = useColumns('applicationList');
     const router = useRouter();
     const route = useRoute();
     const orderClipboard = ref({});
-    columns.splice(3, 0);
+    applicationListColumns.splice(3, 0);
 
     const opBtnDisabled = (row: any) => {
       if (row.stage === 'RUNNING' && row.status === 'MATCHING') {
@@ -142,262 +145,303 @@ export default defineComponent({
     const searchFields = getModel(HostApplySearchNonBusiness).getProperties();
     const searchQs = useSearchQs({ key: 'filter', properties: searchFields });
 
-    const { CommonTable, getListData, pagination } = useTable({
+    const columns = [
+      {
+        label: '单号/子单号',
+        field: 'order_id',
+        width: 100,
+        render: ({ data }: any) => {
+          return (
+            <div>
+              <div>
+                <Button theme='primary' text onClick={() => getOrderRoute(data)}>
+                  {data.order_id}
+                </Button>
+              </div>
+              <div>
+                <p>{data.suborder_id || '无'}</p>
+              </div>
+              {data.source === 'purchase_to_resource_pool' && (
+                <div>
+                  <bk-tag theme='info'>资源池</bk-tag>
+                </div>
+              )}
+            </div>
+          );
+        },
+        exportFormatter: (row: any) => `${row.order_id}/${row.suborder_id || '无'}`,
+      },
+      {
+        label: '业务',
+        field: 'bk_biz_id',
+        render: ({ data }: any) => businessMapStore.getNameFromBusinessMap(data.bk_biz_id) || data.bk_biz_id || '--',
+        exportFormatter: (row: any) => businessMapStore.getNameFromBusinessMap(row.bk_biz_id) || row.bk_biz_id || '--',
+      },
+      {
+        label: '单据状态',
+        field: 'stage',
+        width: 170,
+        render: ({ data }: any) => {
+          const { create_at, stage, resource_type, spec } = data;
+          const diffHours = moment(new Date()).diff(moment(create_at), 'hours');
+          const isAbnormal = diffHours >= 2 && stage === 'RUNNING';
+          const resourceTypeName = SCR_RESOURCE_TYPE_NAME[resource_type as keyof typeof ScrResourceType];
+
+          const isIdcpm = resource_type === ScrResourceType.IDCPM;
+          const isUpgradeCvm = ScrResourceType.UPGRADECVM === resource_type;
+
+          const stageClass = (stage: string) => {
+            if (stage === 'UNCOMMIT') return 'c-text-3';
+            if (stage === 'AUDIT') return 'c-text-2';
+            if (stage === 'DONE') return 'c-success';
+            if (isAbnormal) return 'c-warning';
+            if (stage === 'RUNNING') return 'c-text-1';
+            if (stage === 'TERMINATE') return 'c-danger';
+            if (stage === 'SUSPEND') return 'c-danger';
+          };
+
+          const abnormalStatus = () => {
+            if (stage === 'SUSPEND') {
+              if (isUpgradeCvm) return '备货状态异常';
+              return (
+                <div
+                  class={'flex-row align-item-center'}
+                  v-bk-tooltips={{
+                    content: (
+                      <>
+                        {spec?.failed_zone_ids?.length > 0 && (
+                          <div>
+                            可用区：
+                            {[...new Set(spec.failed_zone_ids)].map((zone) => getZoneCn(zone)).join('，')}
+                            。已尝试生产主机失败
+                          </div>
+                        )}
+                        <span>建议：修改需求重试</span>
+                      </>
+                    ),
+                  }}>
+                  备货状态异常 <HelpDocumentFill fill='#ffbb00' width={12} height={12} class={'ml4'} />
+                </div>
+              );
+            }
+            return null;
+          };
+
+          const modifyButton = () => {
+            const isDisabled = isIdcpm || isUpgradeCvm;
+            const tooltipsOption = {
+              // eslint-disable-next-line no-nested-ternary
+              disabled: isDisabled ? (isIdcpm ? !isIdcpm : !isUpgradeCvm) : true,
+              content: `${resourceTypeName}不支持修改,请联系ICR(IEG资源服务助手)`,
+            };
+
+            return (
+              <Button
+                class='mr8'
+                theme='primary'
+                text
+                size='small'
+                disabled={isDisabled}
+                v-bk-tooltips={tooltipsOption}
+                onClick={() => modify(data)}>
+                修改需求重试
+              </Button>
+            );
+          };
+
+          const progressButton = () => {
+            return (
+              <Button
+                theme='primary'
+                text
+                size='small'
+                onClick={async () => {
+                  stageDetailSlideState.show = true;
+                  stageDetailSlideState.suborderId = data.suborder_id;
+                  const { data: list } = await getMatchDetails(data.suborder_id);
+                  machineDetails.value = list.info;
+                }}>
+                查看详情
+              </Button>
+            );
+          };
+
+          return (
+            <div>
+              <p class={stageClass(stage)}>
+                {stage !== 'SUSPEND' && transformApplyStages(stage)}
+                {abnormalStatus()}
+              </p>
+              <p>
+                {stage === 'SUSPEND' ? modifyButton() : null}
+                {['RUNNING', 'DONE', 'SUSPEND'].includes(stage) ? progressButton() : null}
+              </p>
+            </div>
+          );
+        },
+        exportFormatter: (row: any) => transformApplyStages(row.stage),
+      },
+      {
+        label: '需求类型',
+        field: 'require_type',
+        width: 100,
+        render: ({ data }: any) => getTypeCn(data.require_type),
+        exportFormatter: (row: any) => getTypeCn(row.require_type),
+      },
+      {
+        label: '需求摘要',
+        field: 'resource_type',
+        width: 250,
+        render: ({ data }: any) => {
+          const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
+          return (
+            <div>
+              <div>资源类型：{data?.resource_type ? getResourceTypeName(data?.resource_type) : '--'}</div>
+              {/* 机型配置调整不展示机型、园区 */}
+              {!isUpgradeCvm && (
+                <>
+                  <div>机型：{data.spec?.device_type || '--'}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr' }}>
+                    <div>园区：</div>
+                    <div>
+                      {data.spec?.zones?.[0] === 'all'
+                        ? `${getRegionCn(data.spec.region)}(全部可用区)`
+                        : data.spec?.zones?.map((zone: string) => {
+                            return <div>{getZoneCn(zone)}</div>;
+                          }) || '--'}
+                    </div>
+                  </div>
+                  <div>
+                    分布：
+                    {RES_ASSIGN_TYPE[data.spec?.res_assign as ICvmDeviceTypeFormData['resAssignType']]?.label ?? '--'}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        },
+        exportFormatter: (row: any) => {
+          const isUpgradeCvm = ScrResourceType.UPGRADECVM === row.resource_type;
+          const resourceType = row?.resource_type ? getResourceTypeName(row?.resource_type) : '--';
+          if (isUpgradeCvm) {
+            return `资源类型：${resourceType}`;
+          }
+          const deviceType = row.spec?.device_type || '--';
+          const zones =
+            row.spec?.zones?.[0] === 'all'
+              ? `${getRegionCn(row.spec.region)}(全部可用区)`
+              : row.spec?.zones?.map((zone: string) => getZoneCn(zone))?.join('，') || '--';
+          const resAssign =
+            RES_ASSIGN_TYPE[row.spec?.res_assign as ICvmDeviceTypeFormData['resAssignType']]?.label ?? '--';
+          return `资源类型：${resourceType}；机型：${deviceType}；园区：${zones}；分布：${resAssign}`;
+        },
+      },
+      {
+        label: '申请人',
+        field: 'bk_username',
+        width: 150,
+        render: ({ data }: any) => {
+          return (
+            <WName name={data.bk_username}>
+              <UserValue value={data.bk_username} />
+            </WName>
+          );
+        },
+      },
+      {
+        label: `需求数`,
+        width: 120,
+        field: 'total_num',
+        render: ({ row, cell }: any) => {
+          if (row.modify_time > 0) {
+            return `${row.total_num}(原需求数${row.origin_num})`;
+          }
+          return cell;
+        },
+        exportFormatter: (row: any) => {
+          if (row.modify_time > 0) {
+            return `${row.total_num}(原需求数${row.origin_num})`;
+          }
+          return row.total_num;
+        },
+      },
+      {
+        label: '待交付数',
+        width: 90,
+        field: 'pending_num',
+        render({ cell, data }: any) {
+          const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
+          return !isUpgradeCvm && cell > 0 ? (
+            <Button
+              theme='primary'
+              text
+              onClick={() => {
+                curRow.value = data;
+                isMatchPanelShow.value = true;
+              }}>
+              {cell}
+            </Button>
+          ) : (
+            cell
+          );
+        },
+      },
+      {
+        label: '已交付数',
+        field: 'success_num',
+        width: 150,
+        render: ({ data }: any) => {
+          if (data.success_num > 0) {
+            const ips = orderClipboard.value?.[data.suborder_id]?.ips || [];
+            const assetIds = orderClipboard.value?.[data.suborder_id]?.assetIds || [];
+            const goToCmdb = (ips: string[]) => {
+              window.open(`http://bkcc.oa.com/#/business/${data.bk_biz_id}/index?ip=text=${ips.join(',')}`);
+            };
+
+            return (
+              <div class={'flex-row align-item-center'}>
+                {data.success_num}
+                <Button
+                  text
+                  theme={'primary'}
+                  class='ml8 mr8'
+                  v-clipboard:copy={ips.join('\n')}
+                  v-bk-tooltips={{
+                    content: '复制 IP',
+                  }}>
+                  <Copy />
+                </Button>
+                <Button
+                  text
+                  theme={'primary'}
+                  class='mr8'
+                  v-clipboard:copy={assetIds.join('\n')}
+                  v-bk-tooltips={{
+                    content: '复制固资号',
+                  }}>
+                  <Copy />
+                </Button>
+                <Button
+                  text
+                  theme={'primary'}
+                  onClick={() => goToCmdb(ips)}
+                  v-bk-tooltips={{
+                    content: '去蓝鲸配置平台管理资源',
+                  }}>
+                  <DataShape />
+                </Button>
+              </div>
+            );
+          }
+
+          return <span>{data.success_num}</span>;
+        },
+      },
+      ...applicationListColumns,
+    ];
+    const { CommonTable, getListData, pagination, dataList } = useTable({
       tableOptions: {
         columns: [
-          {
-            label: '单号/子单号',
-            width: 100,
-            render: ({ data }: any) => {
-              return (
-                <div>
-                  <div>
-                    <Button theme='primary' text onClick={() => getOrderRoute(data)}>
-                      {data.order_id}
-                    </Button>
-                  </div>
-                  <div>
-                    <p>{data.suborder_id || '无'}</p>
-                  </div>
-                  {data.source === 'purchase_to_resource_pool' && (
-                    <div>
-                      <bk-tag theme='info'>资源池</bk-tag>
-                    </div>
-                  )}
-                </div>
-              );
-            },
-          },
-          {
-            label: '业务',
-            render: ({ data }: any) =>
-              businessMapStore.getNameFromBusinessMap(data.bk_biz_id) || data.bk_biz_id || '--',
-          },
-          {
-            label: '单据状态',
-            field: 'stage',
-            width: 200,
-            render: ({ data }: any) => {
-              const { create_at, stage, resource_type } = data;
-              const diffHours = moment(new Date()).diff(moment(create_at), 'hours');
-              const isAbnormal = diffHours >= 2 && stage === 'RUNNING';
-              const resourceTypeName = SCR_RESOURCE_TYPE_NAME[resource_type as keyof typeof ScrResourceType];
-
-              const isIdcpm = resource_type === ScrResourceType.IDCPM;
-              const isUpgradeCvm = ScrResourceType.UPGRADECVM === resource_type;
-
-              const stageClass = (stage: string) => {
-                if (stage === 'UNCOMMIT') return 'c-text-3';
-                if (stage === 'AUDIT') return 'c-text-2';
-                if (stage === 'DONE') return 'c-success';
-                if (isAbnormal) return 'c-warning';
-                if (stage === 'RUNNING') return 'c-text-1';
-                if (stage === 'TERMINATE') return 'c-danger';
-                if (stage === 'SUSPEND') return 'c-danger';
-              };
-
-              const abnormalStatus = () => {
-                if (stage === 'SUSPEND') {
-                  if (isUpgradeCvm) return '备货状态异常';
-                  return (
-                    <div
-                      class={'flex-row align-item-center'}
-                      v-bk-tooltips={{
-                        content: (
-                          <>
-                            建议
-                            <span class='text-primary ml4'>修改需求重试</span>
-                          </>
-                        ),
-                      }}>
-                      备货状态异常 <HelpDocumentFill fill='#ffbb00' width={12} height={12} class={'ml4'} />
-                    </div>
-                  );
-                }
-                return null;
-              };
-
-              const modifyButton = () => {
-                const isDisabled = isIdcpm || isUpgradeCvm;
-                const tooltipsOption = {
-                  // eslint-disable-next-line no-nested-ternary
-                  disabled: isDisabled ? (isIdcpm ? !isIdcpm : !isUpgradeCvm) : true,
-                  content: `${resourceTypeName}不支持修改,请联系ICR(IEG资源服务助手)`,
-                };
-
-                return (
-                  <Button
-                    class='mr8'
-                    theme='primary'
-                    text
-                    size='small'
-                    disabled={isDisabled}
-                    v-bk-tooltips={tooltipsOption}
-                    onClick={() => modify(data)}>
-                    修改需求重试
-                  </Button>
-                );
-              };
-
-              const progressButton = () => {
-                return (
-                  <Button
-                    theme='primary'
-                    text
-                    size='small'
-                    onClick={async () => {
-                      stageDetailSlideState.show = true;
-                      stageDetailSlideState.suborderId = data.suborder_id;
-                      const { data: list } = await getMatchDetails(data.suborder_id);
-                      machineDetails.value = list.info;
-                    }}>
-                    查看详情
-                  </Button>
-                );
-              };
-
-              return (
-                <div>
-                  <p class={stageClass(stage)}>
-                    {stage !== 'SUSPEND' && transformApplyStages(stage)}
-                    {abnormalStatus()}
-                  </p>
-                  <p>
-                    {stage === 'SUSPEND' ? modifyButton() : null}
-                    {['RUNNING', 'DONE', 'SUSPEND'].includes(stage) ? progressButton() : null}
-                  </p>
-                </div>
-              );
-            },
-          },
-          {
-            label: '需求类型',
-            field: 'require_type',
-            width: 100,
-            render: ({ data }: any) => getTypeCn(data.require_type),
-          },
-          {
-            label: '需求摘要',
-            width: 250,
-            render: ({ data }: any) => {
-              const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
-              return (
-                <div>
-                  <div>资源类型：{data?.resource_type ? getResourceTypeName(data?.resource_type) : '--'}</div>
-                  {/* 机型配置调整不展示机型、园区 */}
-                  {!isUpgradeCvm && (
-                    <>
-                      <div>机型：{data.spec?.device_type || '--'}</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr' }}>
-                        <div>园区：</div>
-                        <div>
-                          {data.spec?.zones?.[0] === 'all'
-                            ? `${getRegionCn(data.spec.region)}(全部可用区)`
-                            : data.spec?.zones?.map((zone: string) => {
-                                return <div>{getZoneCn(zone)}</div>;
-                              }) || '--'}
-                        </div>
-                      </div>
-                      <div>
-                        分布：
-                        {RES_ASSIGN_TYPE[data.spec?.res_assign as ICvmDeviceTypeFormData['resAssignType']]?.label ??
-                          '--'}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            },
-          },
-          {
-            label: '申请人',
-            render: ({ data }: any) => {
-              return <WName name={data.bk_username}></WName>;
-            },
-          },
-          {
-            label: `需求数`,
-            width: 120,
-            field: 'total_num',
-            render: ({ row, cell }: any) => {
-              if (row.modify_time > 0) {
-                return `${row.total_num}(原需求数${row.origin_num})`;
-              }
-              return cell;
-            },
-          },
-          {
-            label: '待交付数',
-            width: 90,
-            field: 'pending_num',
-            render({ cell, data }: any) {
-              const isUpgradeCvm = ScrResourceType.UPGRADECVM === data.resource_type;
-              return !isUpgradeCvm && cell > 0 ? (
-                <Button
-                  theme='primary'
-                  text
-                  onClick={() => {
-                    curRow.value = data;
-                    isMatchPanelShow.value = true;
-                  }}>
-                  {cell}
-                </Button>
-              ) : (
-                cell
-              );
-            },
-          },
-          {
-            label: '已交付数',
-            field: 'success_num',
-            width: 180,
-            render: ({ data }: any) => {
-              if (data.success_num > 0) {
-                const ips = orderClipboard.value?.[data.suborder_id]?.ips || [];
-                const assetIds = orderClipboard.value?.[data.suborder_id]?.assetIds || [];
-                const goToCmdb = (ips: string[]) => {
-                  window.open(`http://bkcc.oa.com/#/business/${data.bk_biz_id}/index?ip=text=${ips.join(',')}`);
-                };
-
-                return (
-                  <div class={'flex-row align-item-center'}>
-                    {data.success_num}
-                    <Button
-                      text
-                      theme={'primary'}
-                      class='ml8 mr8'
-                      v-clipboard:copy={ips.join('\n')}
-                      v-bk-tooltips={{
-                        content: '复制 IP',
-                      }}>
-                      <Copy />
-                    </Button>
-                    <Button
-                      text
-                      theme={'primary'}
-                      class='mr8'
-                      v-clipboard:copy={assetIds.join('\n')}
-                      v-bk-tooltips={{
-                        content: '复制固资号',
-                      }}>
-                      <Copy />
-                    </Button>
-                    <Button
-                      text
-                      theme={'primary'}
-                      onClick={() => goToCmdb(ips)}
-                      v-bk-tooltips={{
-                        content: '去蓝鲸配置平台管理资源',
-                      }}>
-                      <DataShape />
-                    </Button>
-                  </div>
-                );
-              }
-
-              return <span>{data.success_num}</span>;
-            },
-          },
           ...columns,
           {
             label: '操作',
@@ -638,6 +682,33 @@ export default defineComponent({
     onMounted(() => {
       throttleDeliveredHostField();
     });
+
+    // 导出全部的请求函数
+    const exportAllRequest = async (signal: AbortSignal) => {
+      const payload = transformFlatCondition(condition.value, searchFields);
+      if (payload.bk_biz_id?.[0] === 0) {
+        payload.bk_biz_id = businessGlobalStore.businessAuthorizedList.map((item: any) => item.id);
+      }
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'enable_count',
+      }).rollReqUseTotalCount(
+        '/api/v1/woa/task/findmany/apply',
+        payload,
+        {
+          limit: 5000,
+          total: pagination.count,
+          listGetter: (res: { data: { info: any[] } }) => res.data.info,
+          countGetter: (res: { data: { count: number } }) => res.data.count,
+        },
+        {
+          signal,
+        },
+      );
+
+      return list;
+    };
+
     return () => (
       <div class={'apply-list-container scr-application-list'}>
         <div class={'filter-container'} style={{ margin: '0 24px 20px 24px' }}>
@@ -678,6 +749,25 @@ export default defineComponent({
             }}>
             新增申请
           </Button>
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            data={dataList.value}
+            columns={columns}
+            filename='申领主机列表'
+            text='导出当页'
+            name='申领主机'
+            disabled={dataList.value.length === 0}
+          />
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            request={exportAllRequest}
+            columns={columns}
+            filename='申领主机列表'
+            text='导出全部'
+            name='申领主机'
+            pickNum={pagination.count}
+            disabled={pagination.count === 0}
+          />
         </div>
         <CommonTable />
         <CommonSideslider v-model:isShow={stageDetailSlideState.show} title='资源匹配详情' width={1100} noFooter>

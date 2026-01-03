@@ -1,5 +1,6 @@
-import { computed, ComputedRef, defineComponent, inject, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, inject, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 import useRenderTRList from './useRenderTGList';
 import useBatchDeleteTR from './useBatchDeleteTR';
@@ -24,6 +25,8 @@ export default defineComponent({
   setup() {
     // use hooks
     const { t } = useI18n();
+    const route = useRoute();
+    const router = useRouter();
     const clbCreateAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbCreateAuthSign');
     const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
     const clbDeleteAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbDeleteAuthSign');
@@ -35,6 +38,29 @@ export default defineComponent({
     const { searchData, selections, CommonTable, getListData } = useRenderTRList();
 
     const isDropdownShow = ref(false);
+
+    // 检测路由query中的action参数，自动打开新建目标组弹窗
+    onMounted(() => {
+      if (route.query.action === 'create') {
+        const { region, cloud_vpc_id, account_id, port, protocol } = route.query;
+        bus.$emit('addTargetGroup', {
+          region,
+          cloud_vpc_id,
+          account_id,
+          port: port ? Number(port) : undefined,
+          protocol,
+        });
+        // 清除action参数，避免刷新页面时重复打开
+        const query = { ...route.query };
+        delete query.action;
+        delete query.region;
+        delete query.cloud_vpc_id;
+        delete query.account_id;
+        delete query.port;
+        delete query.protocol;
+        router.replace({ query });
+      }
+    });
 
     // 批量删除目标组
     const {

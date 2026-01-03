@@ -27,6 +27,7 @@ export default defineComponent({
     cloudVpcId: String,
     region: String,
     protocol: String as PropType<Protocol>,
+    port: Number,
     isCorsV2: Boolean,
   },
   emits: ['update:modelValue'],
@@ -68,7 +69,15 @@ export default defineComponent({
     const handleAddTargetGroup = () => {
       routerAction.open({
         name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
-        query: { [GLOBAL_BIZS_KEY]: accountStore.bizs },
+        query: {
+          action: 'create', // 跳转到目标组创建页面后打开侧滑栏
+          [GLOBAL_BIZS_KEY]: accountStore.bizs,
+          region: props.region,
+          cloud_vpc_id: props.cloudVpcId,
+          account_id: props.accountId,
+          port: props.port,
+          protocol: props.protocol,
+        },
       });
     };
 

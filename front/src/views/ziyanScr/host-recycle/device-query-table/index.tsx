@@ -5,23 +5,27 @@ import { getDeviceTypeList, getRegionList, getZoneList, getRecycleStageOpts } fr
 import { removeEmptyFields } from '@/utils/scr/remove-query-fields';
 import { Search } from 'bkui-vue/lib/icon';
 import { useBusinessGlobalStore } from '@/store/business-global';
-import ExportToExcelButton from '@/components/export-to-excel-button';
+import ExportToExcelBatchButton from '@/components/export-to-excel-batch-button/index.vue';
 import FloatInput from '@/components/float-input';
 import dayjs from 'dayjs';
 import { Button, DatePicker, Form, Select } from 'bkui-vue';
 import HcmSearchBusiness from '@/components/search/business.vue';
 import { serviceShareBizSelectedKey } from '@/constants/storage-symbols';
 import { isEmpty } from '@/common/util';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
+import rollRequest from '@blueking/roll-request';
+import http from '@/http';
 
 const { FormItem } = Form;
 export default defineComponent({
   components: {
-    ExportToExcelButton,
+    ExportToExcelBatchButton,
     FloatInput,
   },
   emits: ['goBillDetailPage'],
   setup(_, { emit }) {
     const businessGlobalStore = useBusinessGlobalStore();
+    const { selections, handleSelectionChange } = useSelection();
     const defaultDeviceForm = () => ({
       bk_biz_id: businessGlobalStore.getCacheSelected(serviceShareBizSelectedKey) ?? [0],
       order_id: [] as any[],
@@ -86,15 +90,23 @@ export default defineComponent({
       removeEmptyFields(params);
       return params;
     });
-    const { CommonTable, getListData, dataList, pagination } = useTable({
+    const { CommonTable, getListData, pagination } = useTable({
       tableOptions: {
         columns: tableColumns,
+        extra: {
+          onSelect: (selections: any) => {
+            handleSelectionChange(selections, () => true, false);
+          },
+          onSelectAll: (selections: any) => {
+            handleSelectionChange(selections, () => true, true);
+          },
+        },
       },
       requestOption: {
         dataPath: 'data.info',
         sortOption: {
-          sort: 'ip' as string,
-          order: 'ASC' as string,
+          sort: 'create_at',
+          order: 'DESC',
         },
         immediate: false,
       },
@@ -117,6 +129,31 @@ export default defineComponent({
       timeForm.value = defaultTime();
       filterOrders();
     };
+
+    // 导出全部的请求函数
+    const exportAllRequest = async (signal: AbortSignal) => {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'enable_count',
+      }).rollReqUseTotalCount(
+        '/api/v1/woa/task/findmany/recycle/host',
+        {
+          ...requestListParams.value,
+        },
+        {
+          limit: 5000,
+          total: pagination.count,
+          listGetter: (res: { data: { info: any[] } }) => res.data.info,
+          countGetter: (res: { data: { count: number } }) => res.data.count,
+        },
+        {
+          signal,
+        },
+      );
+
+      return list;
+    };
+
     const fetchDeviceTypeList = async () => {
       const data = await getDeviceTypeList();
       deviceTypeList.value = data?.info || [];
@@ -210,7 +247,25 @@ export default defineComponent({
           </div>
         </div>
         <div class='btn-container oper-btn-pad'>
-          <export-to-excel-button data={dataList.value} columns={tableColumns} filename='回收设备列表' />
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            data={selections.value}
+            columns={tableColumns}
+            filename='回收设备列表'
+            text='导出勾选'
+            name='回收主机'
+            disabled={selections.value.length === 0}
+          />
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            request={exportAllRequest}
+            columns={columns}
+            filename='回收设备列表'
+            text='导出全部'
+            name='回收主机'
+            pickNum={pagination.count}
+            disabled={pagination.count === 0}
+          />
         </div>
         <CommonTable />
       </div>

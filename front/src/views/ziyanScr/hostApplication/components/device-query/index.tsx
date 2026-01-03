@@ -7,11 +7,13 @@ import { Button, Form, TagInput } from 'bkui-vue';
 import useFormModel from '@/hooks/useFormModel';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { timeFormatter, applicationTime, isEmpty } from '@/common/util';
-import ExportToExcelButton from '@/components/export-to-excel-button';
+import ExportToExcelBatchButton from '@/components/export-to-excel-batch-button/index.vue';
 import RequirementTypeSelector from '@/components/scr/requirement-type-selector';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HcmSearchBusiness from '@/components/search/business.vue';
 import { serviceShareBizSelectedKey } from '@/constants/storage-symbols';
+import rollRequest from '@blueking/roll-request';
+import http from '@/http';
 
 const { FormItem } = Form;
 export default defineComponent({
@@ -37,7 +39,29 @@ export default defineComponent({
       assetId: [],
     });
 
-    const { CommonTable, getListData, isLoading, dataList, pagination } = useTable({
+    // 构建查询条件的函数
+    const buildFilterPayload = () => ({
+      filter: transferSimpleConditions([
+        'AND',
+        [
+          'bk_biz_id',
+          'in',
+          formModel.bkBizId?.[0] === 0 || isEmpty(formModel.bkBizId)
+            ? businessGlobalStore.businessAuthorizedList.map((item: any) => item.id)
+            : formModel.bkBizId,
+        ],
+        ['require_type', '=', formModel.requireType],
+        ['order_id', '=', formModel.orderId],
+        ['suborder_id', '=', formModel.suborderId],
+        ['bk_username', 'in', formModel.bkUsername],
+        ['ip', 'in', formModel.ip],
+        ['update_at', 'd>=', timeFormatter(formModel.dateRange[0], 'YYYY-MM-DD')],
+        ['update_at', 'd<=', timeFormatter(formModel.dateRange[1], 'YYYY-MM-DD')],
+        ['asset_id', 'in', formModel.assetId],
+      ]),
+    });
+
+    const { CommonTable, getListData, isLoading, pagination } = useTable({
       tableOptions: {
         columns,
         extra: {
@@ -60,27 +84,7 @@ export default defineComponent({
       scrConfig: () => {
         return {
           url: '/api/v1/woa/task/findmany/apply/device',
-          payload: {
-            filter: transferSimpleConditions([
-              'AND',
-              [
-                'bk_biz_id',
-                'in',
-                formModel.bkBizId?.[0] === 0 || isEmpty(formModel.bkBizId)
-                  ? businessGlobalStore.businessAuthorizedList.map((item: any) => item.id)
-                  : formModel.bkBizId,
-              ],
-              ['require_type', '=', formModel.requireType],
-              ['order_id', '=', formModel.orderId],
-              ['suborder_id', '=', formModel.suborderId],
-              ['bk_username', 'in', formModel.bkUsername],
-              ['ip', 'in', formModel.ip],
-              ['update_at', 'd>=', timeFormatter(formModel.dateRange[0], 'YYYY-MM-DD')],
-              ['update_at', 'd<=', timeFormatter(formModel.dateRange[1], 'YYYY-MM-DD')],
-              ['asset_id', 'in', formModel.assetId],
-            ]),
-            page: { start: 0, limit: 10 },
-          },
+          payload: buildFilterPayload(),
         };
       },
     });
@@ -88,6 +92,30 @@ export default defineComponent({
     const filterOrders = () => {
       pagination.start = 0;
       getListData();
+    };
+
+    // 导出全部的请求函数
+    const exportAllRequest = async (signal: AbortSignal) => {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'enable_count',
+      }).rollReqUseTotalCount(
+        '/api/v1/woa/task/findmany/apply/device',
+        {
+          ...buildFilterPayload(),
+        },
+        {
+          limit: 5000,
+          total: pagination.count,
+          listGetter: (res: { data: { info: any[] } }) => res.data.info,
+          countGetter: (res: { data: { count: number } }) => res.data.count,
+        },
+        {
+          signal,
+        },
+      );
+
+      return list;
     };
 
     onMounted(() => {
@@ -164,8 +192,26 @@ export default defineComponent({
           </div>
         </div>
         <div class='btn-container oper-btn-pad'>
-          <ExportToExcelButton data={selections.value} columns={columns} filename='设备列表' />
-          <ExportToExcelButton data={dataList.value} columns={columns} filename='设备列表' text='导出全部' />
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            data={selections.value}
+            columns={columns}
+            filename='设备列表'
+            text='导出勾选'
+            name='申领主机'
+            disabled={selections.value.length === 0}
+          />
+          <ExportToExcelBatchButton
+            showConfirmDialog
+            request={exportAllRequest}
+            columns={columns}
+            filename='设备列表'
+            text='导出全部'
+            name='申领主机'
+            pickNum={pagination.count}
+            disabled={pagination.count === 0}
+          />
+
           <Button v-clipboard={clipHostIp.value} disabled={selections.value.length === 0}>
             复制IP
           </Button>

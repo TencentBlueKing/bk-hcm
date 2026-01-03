@@ -399,6 +399,7 @@ const { beforeClose } = useSideslider(formModel);
             :cloud-vpc-id="loadBalancerDetails.cloud_vpc_id"
             :region="loadBalancerDetails.region"
             :protocol="formModel.protocol"
+            :port="formModel.port"
             :is-cors-v2="loadBalancerDetails.extension.snat_pro"
           />
         </bk-form-item>

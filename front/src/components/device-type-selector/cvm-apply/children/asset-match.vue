@@ -95,11 +95,19 @@ watch(
 <template>
   <div class="asset-match">
     <div class="required">
-      <span class="bottom-dashed" v-bk-tooltips="'选择固资号后会继承机型族和计费模式'">固资号</span>
+      <span
+        class="bottom-dashed"
+        v-bk-tooltips="{
+          content:
+            '填写本业务下「一台主机」的CC固资号作为继承对象。新购主机将\n继承：套餐类型、计费时长、大小核心、地域大区等信息。需注意：\n1.不可跨业务使用CC固资号\n2.新购机型应为常规机型。如需专用机型，请选择常规项目申领',
+        }"
+      >
+        固资号
+      </span>
     </div>
-    <bk-input behavior="simplicity" class="asset-id-input" :disabled="editMode" size="small" v-model="model" />
+    <bk-input behavior="simplicity" class="asset-id-input" size="small" v-model="model" />
     <div class="check-result">
-      <div class="result-item" v-if="!editMode && checkState.error === false">
+      <div class="result-item" v-if="checkState.error === false">
         <Success fill="#2CAF5E" width="14" height="14" />
         校验成功
       </div>
@@ -109,7 +117,6 @@ watch(
       </div>
     </div>
     <bk-button
-      v-if="!editMode"
       theme="primary"
       size="small"
       outline
