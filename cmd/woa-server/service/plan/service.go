@@ -79,6 +79,11 @@ func (s *service) initPlanService(h *rest.Handler) {
 		"/plans/resources/tickets/{ticket_id}/retry", s.RetryResPlanTicket)
 	h.Add("TerminateResPlanTicket", http.MethodPost,
 		"/plans/resources/tickets/{ticket_id}/terminate", s.TerminateResPlanTicket)
+	// ticket audit
+	h.Add("ListResPlanItsmTicket", http.MethodPost,
+		"/plans/resources/itsm/ticket/list", s.ListResPlanItsmTicket)
+	h.Add("ListResPlanCrpTicket", http.MethodPost,
+		"/plans/resources/crp/ticket/list", s.ListResPlanCrpTicket)
 
 	// sub_ticket
 	h.Add("ListResPlanSubTicket", http.MethodPost, "/plans/resources/sub_tickets/list",

@@ -632,6 +632,35 @@ func (h HostApplyItsmStepName) GetApprovalState() ApprovalState {
 	return hostApplyItsmStepNameApproveStateMap[h]
 }
 
+// ResPlanItsmStepName defines the resource plan itsm step name
+type ResPlanItsmStepName string
+
+const (
+	// ResPlanItsmStepNameLeaderApproval defines  res plan itsm leader approval step name
+	ResPlanItsmStepNameLeaderApproval ResPlanItsmStepName = "直接上级审批"
+	// ResPlanItsmStepNameAdminApproval defines the res plan itsm admin approval step name
+	ResPlanItsmStepNameAdminApproval ResPlanItsmStepName = "资源管理员"
+)
+
+// Validate validates the res plan itsm step name
+func (r ResPlanItsmStepName) Validate() error {
+	if _, ok := resPlanItsmStepNameApproveStateMap[r]; !ok {
+		return fmt.Errorf("invalid res plan itsm step name: %s", r)
+	}
+
+	return nil
+}
+
+var resPlanItsmStepNameApproveStateMap = map[ResPlanItsmStepName]ApprovalState{
+	ResPlanItsmStepNameLeaderApproval: LeaderApproval,
+	ResPlanItsmStepNameAdminApproval:  HcmAdminApproval,
+}
+
+// GetApprovalState get the approval state
+func (r ResPlanItsmStepName) GetApprovalState() ApprovalState {
+	return resPlanItsmStepNameApproveStateMap[r]
+}
+
 // ApplyTicketSource apply ticket source
 type ApplyTicketSource string
 

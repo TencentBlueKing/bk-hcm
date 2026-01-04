@@ -197,6 +197,20 @@ func (c *Controller) GetResPlanTicketStatusInfo(kt *kit.Kit, ticketID string) (
 	return c.resFetcher.GetResPlanTicketStatusInfo(kt, ticketID)
 }
 
+// GetCrpCurrentApprove get crp current approve.
+func (c *Controller) GetCrpCurrentApprove(kt *kit.Kit, bkBizID int64, orderID string) (
+	[]*ptypes.CrpAuditStep, error) {
+
+	return c.resFetcher.GetCrpCurrentApprove(kt, bkBizID, orderID)
+}
+
+// ListAllResPlanTicket list all res plan ticket with status (join query).
+func (c *Controller) ListAllResPlanTicket(kt *kit.Kit, listFilter *filter.Expression) (
+	[]rpdaotypes.RPTicketWithStatus, error) {
+
+	return c.resFetcher.ListAllResPlanTicket(kt, listFilter)
+}
+
 // ListResPlanTicketWithRes list res plan ticket with res.
 func (c *Controller) ListResPlanTicketWithRes(kt *kit.Kit, req *core.ListReq) (*ptypes.RPTicketWithStatusAndResListRst,
 	error) {

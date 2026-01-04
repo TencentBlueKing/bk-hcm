@@ -43,10 +43,12 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
+	rpdaotypes "hcm/pkg/dal/dao/types/resource-plan"
 	rpts "hcm/pkg/dal/table/resource-plan/res-plan-ticket-status"
 	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -123,6 +125,10 @@ type Logics interface {
 	GetResPlanTicketStatusInfo(kt *kit.Kit, ticketID string) (*ptypes.GetRPTicketStatusInfo, error)
 	// GetResPlanTicketAudit get res plan ticket audit.
 	GetResPlanTicketAudit(kt *kit.Kit, ticketID string, bkBizID int64) (*ptypes.GetResPlanTicketAuditResp, error)
+	// GetCrpCurrentApprove get crp current approve.
+	GetCrpCurrentApprove(kt *kit.Kit, bkBizID int64, orderID string) ([]*ptypes.CrpAuditStep, error)
+	// ListAllResPlanTicket list all res plan ticket with status.
+	ListAllResPlanTicket(kt *kit.Kit, listFilter *filter.Expression) ([]rpdaotypes.RPTicketWithStatus, error)
 	// ListResPlanTicketWithRes list res plan ticket with res.
 	ListResPlanTicketWithRes(kt *kit.Kit, req *core.ListReq) (*ptypes.RPTicketWithStatusAndResListRst, error)
 	// GetResPlanTicketStatusByBiz get res plan ticket status by biz.

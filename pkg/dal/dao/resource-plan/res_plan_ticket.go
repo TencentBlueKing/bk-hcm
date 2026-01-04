@@ -220,7 +220,11 @@ func (d ResPlanTicketDao) ListWithStatus(kt *kit.Kit, opt *types.ListOption) (
 	// append status col type to col types.
 	colTypes := rpt.ResPlanTicketColumns.ColumnTypes()
 	statusColType := rpts.ResPlanTicketStatusColumns.ColumnTypes()["status"]
+	itsmSnColType := rpts.ResPlanTicketStatusColumns.ColumnTypes()["itsm_sn"]
+	crpSnColType := rpts.ResPlanTicketStatusColumns.ColumnTypes()["crp_sn"]
 	colTypes["status"] = statusColType
+	colTypes["itsm_sn"] = itsmSnColType
+	colTypes["crp_sn"] = crpSnColType
 
 	exprOpt := filter.NewExprOption(
 		filter.RuleFields(colTypes),

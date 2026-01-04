@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
@@ -80,9 +81,22 @@ func (f *ResPlanFetcher) GetCrpCurrentApprove(kt *kit.Kit, bkBizID int64, orderI
 		return nil, err
 	}
 
+	var crpStatus enumor.CrpOrderStatus
+	switch orderItem.Data.BaseInfo.Status {
+	case cvmapi.PlanOrderStatusDeptAdmin:
+		crpStatus = enumor.CrpOrderStatusDeptApprove
+	case cvmapi.PlanOrderStatusPlanManager:
+		crpStatus = enumor.CrpOrderStatusPlanApprove
+	case cvmapi.PlanOrderStatusResManager:
+		crpStatus = enumor.CrpOrderStatusResourceApprove
+	default:
+		crpStatus = enumor.CrpOrderStatus(orderItem.Data.BaseInfo.Status)
+	}
+
 	currentStep := &ptypes.CrpAuditStep{
 		StateID:        "", // CRP接口暂时没有节点的ID，后续实现审批操作功能时，必须补全这个ID
 		Name:           orderItem.Data.BaseInfo.StatusDesc,
+		Status:         crpStatus,
 		Processors:     processorUsers,
 		ProcessorsAuth: processorAuth,
 	}

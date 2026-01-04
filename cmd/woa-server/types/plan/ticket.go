@@ -16,6 +16,7 @@ package plan
 import (
 	"errors"
 	"slices"
+	"time"
 	"unicode/utf8"
 
 	"hcm/pkg/api/core"
@@ -599,10 +600,11 @@ type AdminAuditLog struct {
 
 // CrpAuditStep is crp audit step.
 type CrpAuditStep struct {
-	StateID        string          `json:"state_id"`
-	Name           string          `json:"name"`
-	Processors     []string        `json:"processors"`
-	ProcessorsAuth map[string]bool `json:"processors_auth"`
+	StateID        string                `json:"state_id"`
+	Name           string                `json:"name"`
+	Status         enumor.CrpOrderStatus `json:"status"`
+	Processors     []string              `json:"processors"`
+	ProcessorsAuth map[string]bool       `json:"processors_auth"`
 }
 
 // CrpAuditLog is crp audit log.
@@ -684,4 +686,49 @@ type AuditResPlanTicketAdminReq struct {
 // Validate ...
 func (r *AuditResPlanTicketAdminReq) Validate() error {
 	return validator.Validate.Struct(r)
+}
+
+// ListPendingResPlanTicketReq 请求资源计划待审批列表
+type ListPendingResPlanTicketReq struct {
+	SubmittedAt SubmittedAtRange `json:"submitted_at" validate:"required"`
+}
+
+// SubmittedAtRange 提单时间范围
+type SubmittedAtRange struct {
+	Start time.Time `json:"start" validate:"required"`
+	End   time.Time `json:"end" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *SubmittedAtRange) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+	if !r.End.IsZero() && r.Start.After(r.End) {
+		return errors.New("submitted_at.start must be before or equal to submitted_at.end")
+	}
+	return nil
+}
+
+// Validate ...
+func (r *ListPendingResPlanTicketReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+	return r.SubmittedAt.Validate()
+}
+
+// ListResPlanTicketData 返回数据
+type ListResPlanTicketData struct {
+	Tickets []ResPlanTicket `json:"tickets"`
+}
+
+// ResPlanTicket 待审批单据
+type ResPlanTicket struct {
+	ID            string               `json:"id"`        // ITSM/CRP 单据ID
+	TicketID      string               `json:"ticket_id"` // HCM 侧的单据ID
+	URL           string               `json:"url"`
+	User          string               `json:"user"`
+	ApprovalState enumor.ApprovalState `json:"approval_state"`
+	SubmittedAt   string               `json:"submitted_at"`
 }

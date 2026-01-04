@@ -21,12 +21,15 @@ import (
 	"hcm/cmd/woa-server/logics/plan"
 	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
+	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	mtypes "hcm/pkg/dal/dao/types/meta"
+	rpdaotypes "hcm/pkg/dal/dao/types/resource-plan"
+	rpst "hcm/pkg/dal/table/resource-plan/res-plan-sub-ticket"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
 	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	tabletypes "hcm/pkg/dal/table/types"
@@ -34,8 +37,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 )
 
 // ListResPlanTicket list resource plan ticket.
@@ -661,4 +666,241 @@ func (s *service) TerminateBizResPlanTicket(cts *rest.Contexts) (any, error) {
 	}
 
 	return nil, nil
+}
+
+// ListResPlanItsmTicket 查询资源预测 ITSM 待审批列表
+func (s *service) ListResPlanItsmTicket(cts *rest.Contexts) (interface{}, error) {
+	req := new(ptypes.ListPendingResPlanTicketReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode list res plan itsm ticket request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		logs.Errorf("failed to validate list res plan itsm ticket request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("status", enumor.RPTicketStatusAuditing),
+		tools.RuleNotEqual("itsm_sn", ""),
+		tools.RuleGreaterThanEqual("submitted_at", req.SubmittedAt.Start.Format(constant.TimeStdFormat)),
+	}
+	if !req.SubmittedAt.End.IsZero() {
+		rules = append(rules, tools.RuleLessThanEqual("submitted_at",
+			req.SubmittedAt.End.Format(constant.TimeStdFormat)))
+	}
+	listFilter := tools.ExpressionAnd(rules...)
+
+	ticketList, err := s.planController.ListAllResPlanTicket(cts.Kit, listFilter)
+	if err != nil {
+		logs.Errorf("failed to list res plan ticket with status, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(ticketList) == 0 {
+		return ptypes.ListResPlanTicketData{Tickets: nil}, nil
+	}
+
+	result, err := s.processItsmTicketAudit(cts.Kit, ticketList)
+	if err != nil {
+		logs.Errorf("failed to process itsm ticket audit, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return ptypes.ListResPlanTicketData{Tickets: result}, nil
+}
+
+// ListResPlanCrpTicket 查询资源预测 CRP 待审批列表
+func (s *service) ListResPlanCrpTicket(cts *rest.Contexts) (interface{}, error) {
+	req := new(ptypes.ListPendingResPlanTicketReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode list res plan crp ticket request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		logs.Errorf("failed to validate list res plan crp ticket request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 查询子单，获取有CRP SN的子单信息
+	subTickets, ticketIDs, err := s.listAuditingCrpTicketStatus(cts.Kit, &req.SubmittedAt)
+	if err != nil {
+		logs.Errorf("failed to list ticket status with crp SN, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(subTickets) == 0 {
+		return ptypes.ListResPlanTicketData{Tickets: nil}, nil
+	}
+
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("status", enumor.RPTicketStatusAuditing),
+		tools.RuleIn("id", ticketIDs),
+	}
+	listFilter := tools.ExpressionAnd(rules...)
+
+	ticketList, err := s.planController.ListAllResPlanTicket(cts.Kit, listFilter)
+	if err != nil {
+		logs.Errorf("failed to list res plan ticket with status, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	ticketMap := make(map[string]*rpt.ResPlanTicketTable, len(ticketList))
+	for i := range ticketList {
+		ticketMap[ticketList[i].ID] = &ticketList[i].ResPlanTicketTable
+	}
+
+	result, err := s.processCrpTicketAudit(cts.Kit, subTickets, ticketMap)
+	if err != nil {
+		logs.Errorf("failed to process crp ticket audit, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return ptypes.ListResPlanTicketData{Tickets: result}, nil
+}
+
+// listAuditingCrpTicketStatus 查询审核中的 CRP 单据状态从子单查询
+func (s *service) listAuditingCrpTicketStatus(kt *kit.Kit, submittedAt *ptypes.SubmittedAtRange) (
+	[]*rpst.ResPlanSubTicketTable, []string, error) {
+
+	page := core.NewDefaultBasePage()
+	subTickets := make([]*rpst.ResPlanSubTicketTable, 0) // 子单列表
+	ticketIDSet := make(map[string]struct{})             // 主单ID去重
+
+	for {
+		rules := []*filter.AtomRule{
+			tools.RuleEqual("status", enumor.RPSubTicketStatusAuditing),
+			tools.RuleNotEqual("crp_sn", ""),
+			tools.RuleGreaterThanEqual("submitted_at", submittedAt.Start.Format(constant.TimeStdFormat)),
+		}
+		if !submittedAt.End.IsZero() {
+			rules = append(rules, tools.RuleLessThanEqual("submitted_at",
+				submittedAt.End.Format(constant.TimeStdFormat)))
+		}
+
+		listOpt := &rpproto.ResPlanSubTicketListReq{
+			ListReq: core.ListReq{
+				Filter: tools.ExpressionAnd(rules...),
+				Page:   page,
+			},
+		}
+
+		rst, err := s.client.DataService().Global.ResourcePlan.ListResPlanSubTicket(kt, listOpt)
+		if err != nil {
+			logs.Errorf("failed to list res plan sub ticket, err: %v, rid: %s", err, kt.Rid)
+			return nil, nil, err
+		}
+
+		for i := range rst.Details {
+			subTicket := &rst.Details[i]
+			subTickets = append(subTickets, subTicket)
+			if subTicket.TicketID != "" {
+				ticketIDSet[subTicket.TicketID] = struct{}{}
+			}
+		}
+
+		if uint(len(rst.Details)) < page.Limit {
+			break
+		}
+		page.Start += uint32(page.Limit)
+	}
+
+	ticketIDs := maps.Keys(ticketIDSet)
+
+	return subTickets, ticketIDs, nil
+}
+
+// processItsmTicketAudit 处理 ITSM 审批详情并过滤，返回待审批列表
+func (s *service) processItsmTicketAudit(kt *kit.Kit, ticketList []rpdaotypes.RPTicketWithStatus) (
+	[]ptypes.ResPlanTicket, error) {
+
+	if len(ticketList) == 0 {
+		return []ptypes.ResPlanTicket{}, nil
+	}
+
+	result := make([]ptypes.ResPlanTicket, 0, len(ticketList))
+	for _, ticket := range ticketList {
+		if len(ticket.ItsmSN) == 0 {
+			logs.Warnf("itsm sn is empty, skip, ticketID: %s, rid: %s", ticket.ID, kt.Rid)
+			continue
+		}
+
+		audit, err := s.planController.GetResPlanTicketAudit(kt, ticket.ID, constant.AttachedAllBiz)
+		if err != nil {
+			logs.Warnf("failed to get res plan ticket itsm audit, err: %v, ticketID: %s, rid: %s",
+				err, ticket.ID, kt.Rid)
+			continue
+		}
+		if audit == nil || audit.ItsmAudit == nil || len(audit.ItsmAudit.CurrentSteps) == 0 {
+			logs.Warnf("itsm audit info is invalid, skip, ticketID: %s, rid: %s", ticket.ID, kt.Rid)
+			continue
+		}
+
+		stepName := enumor.ResPlanItsmStepName(audit.ItsmAudit.CurrentSteps[0].Name)
+		if err = stepName.Validate(); err != nil {
+			logs.Warnf("invalid res plan itsm step name, err: %v, ticketID: %s, stepName: %s, rid: %s",
+				err, ticket.ID, stepName, kt.Rid)
+			continue
+		}
+
+		result = append(result, ptypes.ResPlanTicket{
+			ID:            audit.ItsmAudit.ItsmSN,
+			TicketID:      ticket.ID,
+			URL:           audit.ItsmAudit.ItsmURL,
+			User:          ticket.Applicant,
+			ApprovalState: stepName.GetApprovalState(),
+			SubmittedAt:   ticket.SubmittedAt,
+		})
+	}
+
+	return result, nil
+}
+
+// processCrpTicketAudit 处理 CRP 审批详情并过滤，返回待审批列表
+func (s *service) processCrpTicketAudit(kt *kit.Kit, subTickets []*rpst.ResPlanSubTicketTable,
+	ticketMap map[string]*rpt.ResPlanTicketTable) ([]ptypes.ResPlanTicket, error) {
+
+	if len(subTickets) == 0 {
+		return []ptypes.ResPlanTicket{}, nil
+	}
+
+	if ticketMap == nil {
+		return nil, fmt.Errorf("ticketMap is nil")
+	}
+
+	result := make([]ptypes.ResPlanTicket, 0, len(subTickets))
+	for _, subTicket := range subTickets {
+		base, ok := ticketMap[subTicket.TicketID]
+		if !ok {
+			logs.Warnf("ticket base info not found, skip, subTicketID: %s, ticketID: %s, rid: %s",
+				subTicket.ID, subTicket.TicketID, kt.Rid)
+			continue
+		}
+
+		crpCurrentSteps, err := s.planController.GetCrpCurrentApprove(kt, constant.AttachedAllBiz, subTicket.CrpSN)
+		if err != nil {
+			logs.Warnf("failed to get crp current approve, err: %v, subTicketID: %s, crpSN: %s, rid: %s",
+				err, subTicket.ID, subTicket.CrpSN, kt.Rid)
+			continue
+		}
+		if len(crpCurrentSteps) == 0 || crpCurrentSteps[0] == nil {
+			logs.Warnf("crp current steps is empty, skip, subTicketID: %s, crpSN: %s, rid: %s",
+				subTicket.ID, subTicket.CrpSN, kt.Rid)
+			continue
+		}
+
+		crpOrderStatus := crpCurrentSteps[0].Status
+		if !crpOrderStatus.IsAdminApproval() {
+			logs.Warnf("crp order status is not admin approval, skip, subTicketID: %s, status: %d, rid: %s",
+				subTicket.ID, crpOrderStatus, kt.Rid)
+			continue
+		}
+
+		result = append(result, ptypes.ResPlanTicket{
+			ID:            subTicket.CrpSN,
+			TicketID:      subTicket.TicketID,
+			URL:           subTicket.CrpURL,
+			User:          base.Applicant,
+			ApprovalState: crpOrderStatus.GetApprovalState(),
+			SubmittedAt:   subTicket.SubmittedAt,
+		})
+	}
+
+	return result, nil
 }
