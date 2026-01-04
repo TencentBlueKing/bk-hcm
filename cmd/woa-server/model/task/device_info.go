@@ -68,7 +68,7 @@ func (d *deviceInfo) FindManyDeviceInfo(ctx context.Context, page metadata.BaseP
 	if len(page.Sort) > 0 {
 		query = query.Sort(page.Sort)
 	} else {
-		query = query.Sort("suborder_id")
+		query = query.Sort("create_at:-1")
 	}
 
 	insts := make([]*types.DeviceInfo, 0)

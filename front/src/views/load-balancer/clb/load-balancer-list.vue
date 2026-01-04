@@ -119,7 +119,6 @@ defineExpose({
         v-if="isLoading || loadBalancerList.length"
         ref="virtual-render"
         class="load-balancer-list"
-        :height="300"
         :line-height="36"
         :list="loadBalancerList"
         row-key="id"
@@ -173,6 +172,7 @@ defineExpose({
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 
     .load-balancer-item {
       flex-shrink: 0;
@@ -209,7 +209,7 @@ defineExpose({
     }
 
     .load-balancer-list {
-      flex: 1;
+      margin-bottom: 40px;
     }
   }
 }

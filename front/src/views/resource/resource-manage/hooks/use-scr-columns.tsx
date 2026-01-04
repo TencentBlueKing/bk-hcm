@@ -651,6 +651,7 @@ export default (type: string, isSimpleShow = false) => {
         return businessMapStore.getNameFromBusinessMap(cell);
       },
       notDisplayedInBusiness: true,
+      exportFormatter: (row: any) => businessMapStore.getNameFromBusinessMap(row.bk_biz_id),
     },
     {
       label: '单号',
@@ -683,6 +684,7 @@ export default (type: string, isSimpleShow = false) => {
       label: '需求类型',
       field: 'require_type',
       render: ({ row }: any) => getTypeCn(row.require_type),
+      exportFormatter: (row: any) => getTypeCn(row.require_type),
     },
     {
       label: '申请人',
@@ -707,8 +709,20 @@ export default (type: string, isSimpleShow = false) => {
     { label: '机型', field: 'device_type' },
     { label: '园区', field: 'zone_name' },
     { label: '所在母机IP', field: 'owner_ip', render: ({ row }: any) => row.owner_ip || '--' },
-    { label: '交付时间', field: 'update_at', width: 160, render: ({ cell }: any) => timeFormatter(cell) },
-    { label: '申请时间', field: 'create_at', width: 160, render: ({ cell }: any) => timeFormatter(cell) },
+    {
+      label: '交付时间',
+      field: 'update_at',
+      width: 160,
+      render: ({ cell }: any) => timeFormatter(cell),
+      exportFormatter: (row: any) => timeFormatter(row.update_at),
+    },
+    {
+      label: '申请时间',
+      field: 'create_at',
+      width: 160,
+      render: ({ cell }: any) => timeFormatter(cell),
+      exportFormatter: (row: any) => timeFormatter(row.create_at),
+    },
     {
       label: '备注信息',
       field: 'remark',
@@ -1043,6 +1057,7 @@ export default (type: string, isSimpleShow = false) => {
 
   // 主机回收-设备视角
   const HostRecycleDeviceColumns = [
+    { type: 'selection', width: 30, minWidth: 30, isDefaultShow: true },
     {
       label: '单号',
       field: 'order_id',
@@ -1087,6 +1102,7 @@ export default (type: string, isSimpleShow = false) => {
       render: ({ row }: any) => {
         return row.return_cost_rate ? `${Math.ceil(row.return_cost_rate * 100)}%` : '-';
       },
+      exportFormatter: (row: any) => (row.return_cost_rate ? `${Math.ceil(row.return_cost_rate * 100)}%` : '-'),
     },
     {
       label: '状态',
@@ -1122,6 +1138,7 @@ export default (type: string, isSimpleShow = false) => {
       field: 'return_time',
       width: 160,
       render: ({ cell }: any) => timeFormatter(cell),
+      formatter: ({ create_at }: any) => timeFormatter(create_at),
     },
     {
       label: '备注',
@@ -1633,12 +1650,14 @@ export default (type: string, isSimpleShow = false) => {
       field: 'create_at',
       width: 160,
       render: ({ cell }: any) => timeFormatter(cell),
+      formatter: ({ create_at }: any) => timeFormatter(create_at),
     },
     {
       label: '期望交付时间',
       field: 'expect_time',
       width: 160,
       render: ({ cell }: any) => timeFormatter(cell),
+      formatter: ({ expect_time }: any) => timeFormatter(expect_time),
     },
     {
       label: '备注信息',

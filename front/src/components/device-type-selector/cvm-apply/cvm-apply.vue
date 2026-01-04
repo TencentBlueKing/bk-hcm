@@ -60,6 +60,7 @@ const isGreenChannel = computed(() => props.requireType === RequirementType.Gree
 const isSpringPool = computed(() => props.requireType === RequirementType.SpringResPool);
 const isRollingServerOrGreenChannel = computed(() => isRollingServer.value || isGreenChannel.value);
 const isGreenChannelOrSpringPool = computed(() => isGreenChannel.value || isSpringPool.value);
+const isNonPlanType = computed(() => isRollingServerOrGreenChannel.value || isSpringPool.value);
 
 const isInfoMode = ref(props.isEditing || props.editMode);
 
@@ -85,7 +86,7 @@ const { isDefaultFourYears, isGpuDeviceType } = useChargeTypeDefault({
 // 这里初始化值与dialog中目的不同，这里是在详情态时，场景是通过一键申领这种填充默认值的（可能没有计费模式），确保在不点开编辑时正确初始化相关的值
 watchEffect(() => {
   // 需要看预测的情况下，如有预测内的预测，则包年包月可用，否则默认选中按量计费
-  if (!isRollingServerOrGreenChannel.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
+  if (!isNonPlanType.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
     chargeType.value = cvmChargeTypes.POSTPAID_BY_HOUR;
   }
 
@@ -212,6 +213,7 @@ provide('isGreenChannel', isGreenChannel);
 provide('isSpringPool', isSpringPool);
 provide('isRollingServerOrGreenChannel', isRollingServerOrGreenChannel);
 provide('isGreenChannelOrSpringPool', isGreenChannelOrSpringPool);
+provide('isNonPlanType', isNonPlanType);
 provide('editMode', props.editMode);
 provide('isInfoMode', isInfoMode);
 </script>

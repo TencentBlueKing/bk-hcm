@@ -53,7 +53,30 @@ export function useSingleList<T>(options?: {
   const isDataRefresh = ref(false);
   const isScrollLoading = ref(false);
 
+  // 用于终止请求的 AbortController
+  let abortController: AbortController | null = null;
+
+  /**
+   * 终止当前正在进行的请求
+   */
+  const cancelRequest = () => {
+    if (abortController) {
+      abortController.abort();
+      abortController = null;
+    }
+    // 关闭所有 loading 状态
+    isDataLoad.value = false;
+    isDataRefresh.value = false;
+    isScrollLoading.value = false;
+  };
+
   const loadDataList = async (customRules: RulesItem[] = [], replace = false) => {
+    // 终止之前的请求
+    cancelRequest();
+    // 创建新的 AbortController
+    abortController = new AbortController();
+    const { signal } = abortController;
+
     try {
       const url = typeof options.url === 'function' ? options.url() : options.url;
       const filter = {
@@ -81,6 +104,10 @@ export function useSingleList<T>(options?: {
 
         // 串行迭代请求，避免一次性请求过多数据导致阻塞
         for await (const res of listGen) {
+          // 检查是否已被取消
+          if (signal.aborted) {
+            return dataList.value;
+          }
           dataList.value = [...dataList.value, ...(res.data?.details as any[])];
           pagination.count = dataList.value.length;
 
@@ -97,18 +124,22 @@ export function useSingleList<T>(options?: {
         (async () => {
           return Promise.all(
             [false, true].map((isCount) =>
-              http.post(BK_HCM_AJAX_URL_PREFIX + url, {
-                filter,
-                page: {
-                  count: isCount,
-                  start: isCount ? 0 : pagination.start,
-                  limit: isCount ? 0 : pagination.limit,
-                  ...(options.disableSort
-                    ? {}
-                    : { sort: isCount ? undefined : 'created_at', order: isCount ? undefined : 'DESC' }),
+              http.post(
+                BK_HCM_AJAX_URL_PREFIX + url,
+                {
+                  filter,
+                  page: {
+                    count: isCount,
+                    start: isCount ? 0 : pagination.start,
+                    limit: isCount ? 0 : pagination.limit,
+                    ...(options.disableSort
+                      ? {}
+                      : { sort: isCount ? undefined : 'created_at', order: isCount ? undefined : 'DESC' }),
+                  },
+                  ...payload,
                 },
-                ...payload,
-              }),
+                { signal },
+              ),
             ),
           );
         });
@@ -128,7 +159,11 @@ export function useSingleList<T>(options?: {
       pagination.count = get(countRes.data, options.path.count, 0);
       // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理
       return dataList.value;
-    } catch (error) {
+    } catch (error: any) {
+      // 如果是取消请求，静默处理不打印错误
+      if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
+        return dataList.value;
+      }
       console.error(error);
       return Promise.reject(error);
     } finally {
@@ -146,7 +181,11 @@ export function useSingleList<T>(options?: {
     isScrollLoading.value = true;
     try {
       await loadDataList();
-    } catch (error) {
+    } catch (error: any) {
+      // 如果是取消请求，静默处理不打印错误
+      if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
+        return dataList.value;
+      }
       console.error(error);
       return Promise.reject(error);
     } finally {
@@ -164,7 +203,11 @@ export function useSingleList<T>(options?: {
     isDataRefresh.value = true;
     try {
       await loadDataList();
-    } catch (error) {
+    } catch (error: any) {
+      // 如果是取消请求，静默处理不打印错误
+      if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
+        return dataList.value;
+      }
       console.error(error);
       return Promise.reject(error);
     } finally {
@@ -222,5 +265,9 @@ export function useSingleList<T>(options?: {
      * 数据刷新
      */
     handleRefresh,
+    /**
+     * 终止请求
+     */
+    cancelRequest,
   };
 }

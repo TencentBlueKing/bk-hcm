@@ -170,14 +170,14 @@ export default defineComponent({
     const { columns: PhysicalMachinecolumns } = useColumns('PhysicalMachine');
     const cloudTableColumns = ref([]);
 
-    // 特殊需求类型（滚服项目、小额绿通）-状态
     const isRollingServer = computed(() => order.value.model.requireType === RequirementType.RollServer);
     const isGreenChannel = computed(() => order.value.model.requireType === RequirementType.GreenChannel);
     const isSpringPool = computed(() => order.value.model.requireType === RequirementType.SpringResPool);
     const isShortRental = computed(() => order.value.model.requireType === RequirementType.ShortRental);
     const isDissolve = computed(() => order.value.model.requireType === RequirementType.Dissolve);
     const isRollingServerLike = computed(() => isRollingServer.value || isSpringPool.value);
-    const isSpecialRequirement = computed(() => isRollingServer.value || isGreenChannel.value);
+    // 用于控制是否需要进行需求校验及是否只支持云主机，特殊需求类型不需要进行需求校验及只支持云主机
+    const isSpecialRequirement = computed(() => isRollingServer.value || isGreenChannel.value || isSpringPool.value);
 
     const handleDeviceTypeChange = (
       data: Partial<ICvmDeviceTypeFormData>,
@@ -762,7 +762,7 @@ export default defineComponent({
         { required: true, message: '请输入需求数量', trigger: 'blur' },
         // 临时规则双十一后可能需要去除
         {
-          validator: (value: number) => !(isRollingServerLike.value && value > 100),
+          validator: (value: number) => !(isRollingServer.value && value > 100),
           message: '注意：因云接口限制，单次的机器数最大值为100，超过后请手动克隆为多条配置',
           trigger: 'change',
         },
@@ -1331,7 +1331,7 @@ export default defineComponent({
 
             <bk-form-item class={'mt16 form-button-row'}>
               {!isSpecialRequirement.value ? (
-                // 非滚服、非小额绿通
+                // 非滚服、非小额绿通、非春保资源池
                 <>
                   {!!cloudTableData.value.length && isNeedVerfiy.value ? (
                     <Button class='mr16' theme='primary' loading={isLoading.value} onClick={handleVerify}>
@@ -1366,7 +1366,7 @@ export default defineComponent({
                   )}
                 </>
               ) : (
-                // 滚服、小额绿通
+                // 滚服、小额绿通、春保资源池
                 <>
                   <Button
                     class='mr16'
@@ -1385,7 +1385,12 @@ export default defineComponent({
                     class={'mr16'}
                     loading={isLoading.value}
                     disabled={true}
-                    v-bk-tooltips={{ content: `${isRollingServer.value ? '滚服项目' : '小额绿通'}暂不支持保存` }}>
+                    v-bk-tooltips={{
+                      content: `${
+                        // eslint-disable-next-line no-nested-ternary
+                        isRollingServer.value ? '滚服项目' : isGreenChannel.value ? '小额绿通' : '春保资源池'
+                      }暂不支持保存`,
+                    }}>
                     保存
                   </Button>
                 </>

@@ -316,7 +316,7 @@ export default defineComponent({
               class={cssModule.button}
               data={dataList.value}
               columns={columns}
-              text={t('全部导出')}
+              text={t('导出当页')}
               filename={t('回收单据列表')}
             />
             <Button class={cssModule.button} disabled={!selections.value.length} onClick={goToPrecheck}>

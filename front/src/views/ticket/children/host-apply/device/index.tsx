@@ -3,7 +3,7 @@ import cssModule from './index.module.scss';
 
 import { Button, Input, TagInput } from 'bkui-vue';
 import ScrCreateFilterSelector from '@/views/ziyanScr/resource-manage/create/ScrCreateFilterSelector';
-import ExportToExcelButton from '@/components/export-to-excel-button';
+import ExportToExcelBatchButton from '@/components/export-to-excel-batch-button/index.vue';
 import GridFilterComp from '@/components/grid-filter-comp';
 import ScrDatePicker from '@/components/scr/scr-date-picker';
 
@@ -13,6 +13,8 @@ import useFormModel from '@/hooks/useFormModel';
 import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { transferSimpleConditions } from '@/utils/scr/simple-query-builder';
+import rollRequest from '@blueking/roll-request';
+import http from '@/http';
 import { applicationTime } from '@/common/util';
 import { useRoute } from 'vue-router';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -49,7 +51,7 @@ export default defineComponent({
 
     const { columns } = useScrColumns('hostApplyDevice');
 
-    const { CommonTable, getListData, isLoading, dataList, pagination } = useTable({
+    const { CommonTable, getListData, isLoading, pagination } = useTable({
       tableOptions: {
         columns,
         extra: {
@@ -97,6 +99,46 @@ export default defineComponent({
       getListData();
     };
     const { saveSearchRules, clearSearchRules } = useSaveSearchRules(searchRulesKey, filterOrders, formModel);
+
+    // 构建查询条件的函数
+    const buildFilterPayload = () => ({
+      filter: transferSimpleConditions([
+        'AND',
+        ['bk_biz_id', 'in', [getBizsId()]],
+        ['require_type', '=', formModel.requireType],
+        ['order_id', '=', formModel.orderId],
+        ['suborder_id', '=', formModel.suborderId],
+        ['bk_username', 'in', formModel.bkUsername],
+        ['ip', 'in', formModel.ip],
+        ['update_at', 'd>=', formModel.dateRange[0]],
+        ['update_at', 'd<=', formModel.dateRange[1]],
+        ['asset_id', 'in', formModel.assetId],
+      ]),
+    });
+
+    // 导出全部的请求函数
+    const exportAllRequest = async (signal: AbortSignal) => {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'enable_count',
+      }).rollReqUseTotalCount(
+        `/api/v1/woa/${getBusinessApiPath()}task/findmany/apply/device`,
+        {
+          ...buildFilterPayload(),
+        },
+        {
+          limit: 5000,
+          total: pagination.count,
+          listGetter: (res: { data: { info: any[] } }) => res.data.info,
+          countGetter: (res: { data: { count: number } }) => res.data.count,
+        },
+        {
+          signal,
+        },
+      );
+
+      return list;
+    };
 
     const handleSearch = () => {
       // update query
@@ -182,18 +224,26 @@ export default defineComponent({
         />
         <section class={cssModule['table-wrapper']}>
           <div class={[cssModule.buttons, cssModule.mb16]}>
-            <ExportToExcelButton
+            <ExportToExcelBatchButton
               class={cssModule.button}
+              showConfirmDialog
               data={selections.value}
               columns={columns}
               filename='设备列表'
+              text='导出勾选'
+              name='申领主机'
+              disabled={selections.value.length === 0}
             />
-            <ExportToExcelButton
+            <ExportToExcelBatchButton
               class={cssModule.button}
-              data={dataList.value}
+              showConfirmDialog
+              request={exportAllRequest}
               columns={columns}
               filename='设备列表'
               text='导出全部'
+              name='申领主机'
+              pickNum={pagination.count}
+              disabled={pagination.count === 0}
             />
             <Button class={cssModule.button} v-clipboard={clipHostIp.value} disabled={selections.value.length === 0}>
               复制IP

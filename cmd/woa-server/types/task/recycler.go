@@ -912,8 +912,11 @@ func (param *GetRecycleHostReq) Validate() error {
 		}
 	}
 
-	if _, err := param.Page.Validate(false); err != nil {
-		return err
+	if param.Page.EnableCount {
+		if param.Page.Start > 0 || param.Page.Limit > 0 || param.Page.Sort != "" {
+			return fmt.Errorf("params page can not be set")
+		}
+		return nil
 	}
 
 	if param.Page.Start < 0 {
@@ -924,8 +927,8 @@ func (param *GetRecycleHostReq) Validate() error {
 		return fmt.Errorf("invalid page.limit < 0")
 	}
 
-	if param.Page.Limit > 500 {
-		return fmt.Errorf("exceed page.limit 500")
+	if param.Page.Limit > 5000 {
+		return fmt.Errorf("exceed page.limit 5000")
 	}
 
 	return nil

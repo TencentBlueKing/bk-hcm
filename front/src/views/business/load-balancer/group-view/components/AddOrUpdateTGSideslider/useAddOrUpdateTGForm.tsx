@@ -213,12 +213,16 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
 
   watch(
     () => formData.region,
-    () => {
+    (newVal, oldVal) => {
       // region改变时, 过滤掉新增的rs, 保留原有的rs
       formData.rs_list = formData.rs_list.filter((item: any) => !item.isNew);
-      // 重置cloud_vpc_id
-      [TargetGroupOperationScene.ADD, TargetGroupOperationScene.EDIT].includes(loadBalancerStore.currentScene) &&
-        (formData.cloud_vpc_id = '');
+      // 重置cloud_vpc_id: 只有当region从有值变为另一个值时才重置，从空值变为有值时不重置（初始化场景）
+      if (
+        oldVal &&
+        [TargetGroupOperationScene.ADD, TargetGroupOperationScene.EDIT].includes(loadBalancerStore.currentScene)
+      ) {
+        formData.cloud_vpc_id = '';
+      }
     },
   );
 

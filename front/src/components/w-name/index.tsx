@@ -15,7 +15,7 @@ export default defineComponent({
           window.open(`wxwork://message?username=${props.name}`);
         }}>
         {slots.icon?.()}
-        {props.alias || props.name}
+        {slots.default?.() || props.alias || props.name}
       </Button>
     );
   },

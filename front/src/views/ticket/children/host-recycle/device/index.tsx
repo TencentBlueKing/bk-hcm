@@ -5,7 +5,7 @@ import scrCssModule from '@/views/resource/resource-manage/hooks/use-scr-columns
 
 import { Select } from 'bkui-vue';
 import GridFilterComp from '@/components/grid-filter-comp';
-import ExportToExcelButton from '@/components/export-to-excel-button';
+import ExportToExcelBatchButton from '@/components/export-to-excel-batch-button/index.vue';
 import FloatInput from '@/components/float-input';
 import ScrDatePicker from '@/components/scr/scr-date-picker';
 
@@ -13,12 +13,15 @@ import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store';
 import useScrColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 import { useTable } from '@/hooks/useTable/useTable';
+import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { removeEmptyFields } from '@/utils/scr/remove-query-fields';
 import { getDeviceTypeList, getRecycleStageOpts, getRegionList, getZoneList } from '@/api/host/recycle';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useSaveSearchRules } from '@/views/ticket/utils/useSaveSearchRules';
 import useFormModel from '@/hooks/useFormModel';
 import { applicationTime } from '@/common/util';
+import rollRequest from '@blueking/roll-request';
+import http from '@/http';
 
 export default defineComponent({
   setup() {
@@ -43,6 +46,8 @@ export default defineComponent({
     });
 
     const { formModel, resetForm } = useFormModel(defaultDeviceForm());
+
+    const { selections, handleSelectionChange } = useSelection();
 
     const deviceTypeList = ref([]);
     const bkZoneNameList = ref([]);
@@ -76,9 +81,17 @@ export default defineComponent({
         );
       },
     });
-    const { CommonTable, getListData, dataList, pagination, isLoading } = useTable({
+    const { CommonTable, getListData, pagination, isLoading } = useTable({
       tableOptions: {
         columns,
+        extra: {
+          onSelect: (selections: any) => {
+            handleSelectionChange(selections, () => true, false);
+          },
+          onSelectAll: (selections: any) => {
+            handleSelectionChange(selections, () => true, true);
+          },
+        },
       },
       requestOption: {
         dataPath: 'data.info',
@@ -156,6 +169,30 @@ export default defineComponent({
       },
     );
 
+    // 导出全部的请求函数
+    const exportAllRequest = async (signal: AbortSignal) => {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'enable_count',
+      }).rollReqUseTotalCount(
+        `/api/v1/woa/${getBusinessApiPath()}task/findmany/recycle/host`,
+        {
+          ...requestListParams.value,
+        },
+        {
+          limit: 5000,
+          total: pagination.count,
+          listGetter: (res: { data: { info: any[] } }) => res.data.info,
+          countGetter: (res: { data: { count: number } }) => res.data.count,
+        },
+        {
+          signal,
+        },
+      );
+
+      return list;
+    };
+
     return () => (
       <>
         <GridFilterComp
@@ -232,12 +269,25 @@ export default defineComponent({
         />
         <section class={cssModule['table-wrapper']}>
           <div class={[cssModule.buttons, cssModule.mb16]}>
-            <ExportToExcelButton
+            <ExportToExcelBatchButton
               class={cssModule.button}
-              data={dataList.value}
+              showConfirmDialog
+              data={selections.value}
               columns={columns}
-              text={t('全部导出')}
+              text={t('导出勾选')}
               filename={t('回收设备列表')}
+              name='回收主机'
+              disabled={selections.value.length === 0}
+            />
+            <ExportToExcelBatchButton
+              showConfirmDialog
+              request={exportAllRequest}
+              columns={columns}
+              filename='回收设备列表'
+              text='导出全部'
+              name='回收主机'
+              pickNum={pagination.count}
+              disabled={pagination.count === 0}
             />
           </div>
           <CommonTable style={{ height: 'calc(100% - 48px)' }} />

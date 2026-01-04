@@ -1,6 +1,7 @@
 import isIP from 'validator/es/lib/isIP';
 import { AddressDescription } from '@/typings';
 import { IAuthSign } from '@/common/auth-service';
+import { ExportOptions } from '@/vendor/Export2Excel';
 
 const getAuthSignByBusinessId = (
   businessId: number,
@@ -64,45 +65,78 @@ const cleanPayload = (payload: any) => {
   return newPayload;
 };
 
+/** 导出列配置 */
+interface ExportColumn {
+  /** 列标题 */
+  label?: string;
+  /** 字段名，支持嵌套路径如 'a.b.c' */
+  field?: string;
+  /** 列类型，如 'selection'、'index' 等，有 type 的列会被过滤 */
+  type?: string;
+  /** 单元格格式化函数 */
+  formatter?: (cellData: Record<string, any>) => string | number;
+  /** 导出专用格式化函数，接收整行数据 */
+  exportFormatter?: (rowData: Record<string, any>) => string | number;
+}
+
 /**
  * 导出表格数据为 Excel
- * @param {Array} list 表格数据
- * @param {Array} columns 表格列
- * @param {String} filename 文件名，自动添加时间戳
+ * @param list 表格数据
+ * @param columns 表格列配置
+ * @param filename 文件名，自动添加时间戳
  */
-const exportTableToExcel = (list, columns, filename) => {
-  import('@/vendor/Export2Excel').then((excel) => {
-    const header = columns.map((col) => col.label).filter((label) => label);
-    const newColumns = columns.filter((item) => !item.type);
-    const data = list.map((item) =>
-      newColumns.map((col) => {
-        if (col.formatter) {
-          return col.formatter({ [col.field]: item[col.field] });
+const exportTableToExcel = (
+  list: Record<string, any>[],
+  columns: ExportColumn[],
+  filename: string,
+  opts?: ExportOptions,
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    import('@/vendor/Export2Excel')
+      .then(async (excel) => {
+        const header = columns.map((col) => col.label).filter((label): label is string => !!label);
+        const newColumns = columns.filter((item) => !item.type);
+
+        function getNestedProperty(obj: Record<string, any>, path: string): any {
+          return path.split('.').reduce((acc, part) => acc?.[part], obj);
         }
 
-        if (col.exportFormatter) {
-          return col.exportFormatter(item);
-        }
+        const data = list.map((item, rowIndex) =>
+          newColumns.map((col, colIndex) => {
+            try {
+              if (col.formatter && col.field) {
+                return col.formatter({ [col.field]: item[col.field] });
+              }
 
-        if (col.field?.includes('.')) {
-          return getNestedProperty(item, col.field);
-        }
-        return item[col.field];
-      }),
-    );
+              if (col.exportFormatter) {
+                return col.exportFormatter(item);
+              }
 
-    function getNestedProperty(obj: Object, path: String) {
-      return path.split('.').reduce((acc, part) => acc?.[part], obj);
-    }
+              if (col.field?.includes('.')) {
+                return getNestedProperty(item, col.field);
+              }
+              return col.field ? item?.[col.field] : '';
+            } catch (cellError) {
+              console.warn(`exportTableToExcel: 处理单元格数据失败 [行${rowIndex}, 列${colIndex}]`, cellError);
+              return ''; // 单元格错误时返回空字符串，不中断整个导出
+            }
+          }),
+        );
 
-    excel.export_json_to_excel({
-      header,
-      data,
-      filename: `${filename}${getDate('yyyyMMddhhmmss')}`,
-    });
+        await excel.export_json_to_excel({
+          header,
+          data,
+          filename: `${filename}${getDate('yyyyMMddhhmmss')}`,
+          ...opts,
+        });
+        resolve();
+      })
+      .catch((err) => {
+        reject(new Error(`exportTableToExcel: 导出失败 - ${err.message || err}`));
+      });
   });
 };
-const getDate = (fmt, n) => {
+const getDate = (fmt: string, n?: number) => {
   let d;
   if (n) {
     let nd = Date.parse(new Date());

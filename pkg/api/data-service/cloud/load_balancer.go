@@ -632,7 +632,7 @@ func (req *ListenerDeleteReq) Validate() error {
 
 // BatchListListenerResp define batch list listener resp.
 type BatchListListenerResp struct {
-	Details []*corelb.BaseListener `json:"details"`
+	Details []*corelb.ListenerWithClbInfo `json:"details"`
 }
 
 // -------------------------- List Listener With Targets --------------------------
