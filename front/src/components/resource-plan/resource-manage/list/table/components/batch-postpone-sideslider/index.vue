@@ -119,7 +119,7 @@ watchEffect(() => {
 
 const devicetypeInfo = ref<CvmDeviceType>(null);
 const getDevicetypeInfo = async () => {
-  devicetypeInfo.value = await cvmDeviceStore.getDevicetypeListWithoutPage({
+  const devicetypeList = await cvmDeviceStore.getDevicetypeListWithoutPage({
     filter: {
       condition: 'AND',
       rules: [
@@ -128,6 +128,7 @@ const getDevicetypeInfo = async () => {
       ],
     },
   });
+  devicetypeInfo.value = devicetypeList?.[0];
 };
 
 const delayTotalCpuCore = computed(() => formModel.delay_os * (devicetypeInfo.value?.cpu_amount ?? 0));
