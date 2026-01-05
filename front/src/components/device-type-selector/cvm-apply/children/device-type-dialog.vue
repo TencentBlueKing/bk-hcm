@@ -187,6 +187,9 @@ watchEffect(() => {
   if (!isNonPlanType.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
     applyData.chargeType = cvmChargeTypes.POSTPAID_BY_HOUR;
   }
+  if (isSpringPool.value) {
+    applyData.chargeType = cvmChargeTypes.POSTPAID_BY_HOUR;
+  }
   if (isDefaultFourYears.value) {
     applyData.chargeMonths = 48;
   }

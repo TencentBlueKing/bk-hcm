@@ -31,6 +31,7 @@ const { cvmChargeTypes, cvmChargeTypeNames } = useCvmChargeType();
 
 const requireType = inject<RequirementType>('requireType');
 const isRollingServer = inject<Ref<boolean>>('isRollingServer');
+const isSpringPool = inject<Ref<boolean>>('isSpringPool');
 const isNonPlanType = inject<Ref<boolean>>('isNonPlanType');
 
 const chargeMonthsDisabledState = computed(() => {
@@ -141,7 +142,14 @@ const handleTypeChange = (type: string) => {
             :before-change="handleTypeBeforeChange"
             @change="handleTypeChange"
           >
-            <bk-radio-button :label="cvmChargeTypes.PREPAID">
+            <bk-radio-button
+              :label="cvmChargeTypes.PREPAID"
+              :disabled="isSpringPool"
+              v-bk-tooltips="{
+                content: '春保资源池暂不支持包年包月',
+                disabled: !isSpringPool,
+              }"
+            >
               {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
             </bk-radio-button>
             <bk-radio-button :label="cvmChargeTypes.POSTPAID_BY_HOUR">
