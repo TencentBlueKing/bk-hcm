@@ -59,10 +59,11 @@ func initMetric(register prometheus.Registerer) *metric {
 		prometheus.HistogramOpts{
 			Namespace:   metrics.Namespace,
 			Subsystem:   metrics.AsyncSubSys,
-			Name:        "flow_type_exec_duration_milliseconds",
-			Help:        "Execution duration of flows by type in milliseconds",
+			Name:        "flow_type_exec_duration_seconds",
+			Help:        "Execution duration of flows by type in seconds",
 			ConstLabels: labels,
-			Buckets:     []float64{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 400, 800, 1000, 1500, 6000},
+			Buckets: []float64{1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 200, 400, 800, 1000, 1500,
+				6000},
 		},
 		[]string{"flowType"},
 	)
