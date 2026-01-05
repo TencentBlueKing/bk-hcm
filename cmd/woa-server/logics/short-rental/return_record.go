@@ -20,6 +20,7 @@
 package shortrental
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -58,7 +59,7 @@ func (l *logics) CreateReturnedHostRecord(kt *kit.Kit, bkBizID int64, orderID ui
 	}
 	if _, ok := bizsOrgRel[bkBizID]; !ok {
 		logs.Errorf("failed to list bizs org rel, bkBizID: %d not found, rid: %s", bkBizID, kt.Rid)
-		return err
+		return fmt.Errorf("failed to list bizs org rel, bkBizID: %d not found", bkBizID)
 	}
 
 	// 3. 查询退回的CVM机型对应的物理机机型族映射
@@ -80,7 +81,7 @@ func (l *logics) CreateReturnedHostRecord(kt *kit.Kit, bkBizID int64, orderID ui
 	}
 	if regionMapPtr == nil {
 		logs.Errorf("failed to get region area map, regionMap is nil, rid: %s", kt.Rid)
-		return err
+		return fmt.Errorf("failed to get region area map, regionMap is nil")
 	}
 	regionMap := cvt.PtrToVal(regionMapPtr)
 
@@ -90,13 +91,13 @@ func (l *logics) CreateReturnedHostRecord(kt *kit.Kit, bkBizID int64, orderID ui
 		regionInfo, ok := regionMap[host.CloudRegionID]
 		if !ok {
 			logs.Errorf("cannot found region: %s, rid: %s", host.CloudRegionID, kt.Rid)
-			return err
+			return fmt.Errorf("cannot found region: %s", host.CloudRegionID)
 		}
 
 		physFamily, ok := deviceToPhysFamilyMap[host.DeviceType]
 		if !ok {
 			logs.Errorf("cannot found device type: %s physical family, rid: %s", host.DeviceType, kt.Rid)
-			return err
+			return fmt.Errorf("cannot found device type: %s physical family", host.DeviceType)
 		}
 
 		groupKey := srtypes.RecycleGroupKey{

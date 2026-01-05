@@ -20,6 +20,7 @@
 package shortrental
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -56,7 +57,7 @@ func (l *logics) ListShortRentalReturnPlan(kt *kit.Kit, planProductName string, 
 	}
 	if regionMapPtr == nil {
 		logs.Errorf("failed to get region area map, regionMap is nil, rid: %s", kt.Rid)
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to get region area map, regionMap is nil")
 	}
 	regionMap := cvt.PtrToVal(regionMapPtr)
 
@@ -68,14 +69,14 @@ func (l *logics) ListShortRentalReturnPlan(kt *kit.Kit, planProductName string, 
 		regionInfo, ok := regionMap[host.CloudRegionID]
 		if !ok {
 			logs.Errorf("cannot found region: %s, rid: %s", host.CloudRegionID, kt.Rid)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("cannot found region: %s", host.CloudRegionID)
 		}
 		cities = append(cities, regionInfo.RegionName)
 
 		physFamily, ok := deviceToPhysFamilyMap[host.DeviceType]
 		if !ok {
 			logs.Errorf("cannot found device type: %s physical family, rid: %s", host.DeviceType, kt.Rid)
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("cannot found device type: %s physical family", host.DeviceType)
 		}
 		physFamilies = append(physFamilies, physFamily)
 
@@ -150,8 +151,9 @@ func (l *logics) listAllShortRentalReturnPlan(kt *kit.Kit, planProductNames, opP
 
 		if rst.Result == nil {
 			logs.Errorf("failed to query return plan, result is nil, trace_id: %s, req: %+v, rid: %s", rst.TraceId,
-				queryParam, kt.Rid)
-			return nil, err
+				cvt.PtrToVal(queryParam), kt.Rid)
+			return nil, fmt.Errorf("failed to query return plan, result is nil, trace_id: %s, req: %+v", rst.TraceId,
+				cvt.PtrToVal(queryParam))
 		}
 
 		result = append(result, rst.Result.Data...)

@@ -20,6 +20,8 @@
 package recycler
 
 import (
+	"fmt"
+
 	"hcm/cmd/woa-server/dal/task/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -70,7 +72,7 @@ func (r *recycler) matchShortRental(kt *kit.Kit, bkBizID int64, hosts []*table.R
 	}
 	if _, ok := bizsOrgRel[bkBizID]; !ok {
 		logs.Errorf("failed to list bizs org rel, bkBizID: %d not found, rid: %s", bkBizID, kt.Rid)
-		return nil, err
+		return nil, fmt.Errorf("failed to list bizs org rel, bkBizID: %d not found", bkBizID)
 	}
 	planProductName := bizsOrgRel[bkBizID].PlanProductName
 	opProductName := bizsOrgRel[bkBizID].OpProductName
