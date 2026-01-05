@@ -114,6 +114,8 @@ func (svc *service) batchUpdateResPlanDemandWithTx(kt *kit.Kit, txn *sqlx.Tx,
 		if updateReq.TechnicalClass != "" {
 			record.TechnicalClass = updateReq.TechnicalClass
 		}
+		// is_confirmed 是否确认
+		record.IsConfirmed = updateReq.IsConfirmed
 
 		if err := svc.dao.ResPlanDemand().UpdateWithTx(kt, txn,
 			tools.EqualExpression("id", updateReq.ID), record); err != nil {

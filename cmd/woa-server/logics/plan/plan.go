@@ -51,6 +51,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
+	"hcm/pkg/thirdparty/api-gateway/finops"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/tools/times"
@@ -171,6 +172,10 @@ type Logics interface {
 	CalcPenaltyRatioAndPush(kt *kit.Kit, baseTime time.Time) error
 	// PushExpireNotifications push expire notifications.
 	PushExpireNotifications(kt *kit.Kit, bkBizIDs []int64, extraReceivers []string) error
+	// PushResPlanConfirmNotice push res plan confirm notice.
+	PushResPlanConfirmNotice(kt *kit.Kit, bkBizIDs []int64) ([]int64, []int64, error)
+	// ConfirmResPlanDemands confirm res plan demands.
+	ConfirmResPlanDemands(kt *kit.Kit, bkBizID int64, demandIDs []string) ([]string, []string, error)
 
 	// RepairResPlanDemandFromTicket repair res plan demand from ticket.
 	RepairResPlanDemandFromTicket(kt *kit.Kit, bkBizIDs []int64, ticketTimeRange times.DateRange) error
@@ -192,6 +197,7 @@ type Controller struct {
 	bkHcmURL       string
 	CmsiClient     cmsi.Client
 	itsmCli        itsm.Client
+	finOpsCli      finops.Client
 	itsmFlow       cc.ItsmFlow
 	crpCli         cvmapi.CVMClientInterface
 	bizLogics      biz.Logics
@@ -205,7 +211,7 @@ type Controller struct {
 
 // New creates a resource plan ticket controller instance.
 func New(sd serviced.State, client *client.ClientSet, dao dao.Set, cmsiCli cmsi.Client, itsmCli itsm.Client,
-	crpCli cvmapi.CVMClientInterface, bizLogic biz.Logics) (Logics, error) {
+	finOpsCli finops.Client, crpCli cvmapi.CVMClientInterface, bizLogic biz.Logics) (Logics, error) {
 
 	var itsmFlowCfg cc.ItsmFlow
 	for _, itsmFlow := range cc.WoaServer().ItsmFlows {
@@ -235,6 +241,7 @@ func New(sd serviced.State, client *client.ClientSet, dao dao.Set, cmsiCli cmsi.
 		bkHcmURL:       cc.WoaServer().BkHcmURL,
 		CmsiClient:     cmsiCli,
 		itsmCli:        itsmCli,
+		finOpsCli:      finOpsCli,
 		itsmFlow:       itsmFlowCfg,
 		crpCli:         crpCli,
 		bizLogics:      bizLogic,
@@ -311,6 +318,15 @@ func (c *Controller) Run() {
 		}
 		defer c.recoverLog(constant.ResPlanNearExpiredDemandTransferFailed)
 		c.autoTransferNearExpireDemand(c.ctx, loc)
+	}()
+
+	// 预测确认通知
+	go func() {
+		if !c.resPlanCfg.ConfirmNotice.Enable {
+			return
+		}
+		defer c.recoverLog(constant.ResPlanConfirmNotificationFailed)
+		c.runConfirmNotice(c.ctx, loc)
 	}()
 
 	select {

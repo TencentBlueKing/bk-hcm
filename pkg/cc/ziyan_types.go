@@ -136,6 +136,7 @@ type ClientConfig struct {
 	CaiChe        CaiCheCli  `yaml:"caiche"`
 	BkDbm         ApiGateway `yaml:"bkdbm"`
 	BkBotApproval ApiGateway `yaml:"bkbotapproval"`
+	Esb           Esb        `yaml:"esb"`
 }
 
 func (c ClientConfig) validate() error {
@@ -204,6 +205,10 @@ func (c ClientConfig) validate() error {
 	}
 
 	if err := c.BkBotApproval.validate(); err != nil {
+		return err
+	}
+
+	if err := c.Esb.validate(); err != nil {
 		return err
 	}
 
@@ -793,6 +798,7 @@ type ResPlan struct {
 	ExpireNotification   ResPlanExpireNotice        `yaml:"expireNotification"`
 	NearExpiredTransfer  ResPlanNearExpiredTransfer `yaml:"nearExpiredTransfer"`
 	RefreshTransferQuota ResPlanTransferQuota       `yaml:"refreshTransferQuota"`
+	ConfirmNotice        ResPlanConfirmNotice       `yaml:"confirmNotice"`
 	AdminAuditor         []string                   `yaml:"adminAuditor"`
 	CRPOverLimitContact  []string                   `yaml:"crpOverLimitContact"`
 }
@@ -814,6 +820,18 @@ type ResPlanTransferQuota struct {
 	Enable     bool  `yaml:"enable"`
 	Quota      int64 `yaml:"quota"`
 	AuditQuota int64 `yaml:"audit_quota"`
+}
+
+// ResPlanConfirmNotice 资源预测确认通知配置
+type ResPlanConfirmNotice struct {
+	// Enable 是否启用确认通知
+	Enable bool `yaml:"enable"`
+	// SendToBusiness 是否发送给业务
+	SendToBusiness bool `yaml:"sendToBusiness"`
+	// DefaultReceivers 主送
+	DefaultReceivers []string `yaml:"defaultReceivers"`
+	// CcReceivers 固定抄送人员列表
+	CcReceivers []string `yaml:"ccReceivers"`
 }
 
 // MOA 太湖/MOA api配置

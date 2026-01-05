@@ -83,6 +83,7 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/finops"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/es"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -220,6 +221,12 @@ func initClients(apiClientSet *client.ClientSet, dis serviced.ServiceDiscover) (
 	}
 	clients.finOpsCli = finOpsCli
 
+	// init ESB client
+	esbCfg := cc.WoaServer().Esb
+	if err := esb.InitEsbClient(&esbCfg, metrics.Register()); err != nil {
+		return nil, err
+	}
+
 	// 创建调用第三方平台Client
 	thirdCli, err := thirdparty.NewClient(cc.WoaServer().ClientConfig, metrics.Register())
 	if err != nil {
@@ -322,7 +329,7 @@ func initLogics(sd serviced.State, apiClientSet *client.ClientSet, clients *clie
 
 	// new resource plan controller
 	planCtrl, err := planctrl.New(sd, apiClientSet, clients.daoSet, clients.cmsiCli, clients.itsmCli,
-		clients.thirdCli.CVM, bizLogic)
+		clients.finOpsCli, clients.thirdCli.CVM, bizLogic)
 	if err != nil {
 		logs.Errorf("new plan controller failed, err: %v", err)
 		return nil, err

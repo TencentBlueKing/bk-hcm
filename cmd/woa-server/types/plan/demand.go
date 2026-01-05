@@ -889,3 +889,55 @@ type AvailableMonth string
 func NewAvailableMonth(year int, month time.Month) AvailableMonth {
 	return AvailableMonth(fmt.Sprintf("%04d-%02d", year, month))
 }
+
+// PushResPlanConfirmNoticeReq 手动触发资源计划确认通知请求
+type PushResPlanConfirmNoticeReq struct {
+	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
+}
+
+// Validate whether PushResPlanConfirmNoticeReq is valid.
+func (r *PushResPlanConfirmNoticeReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	for _, bizID := range r.BkBizIDs {
+		if bizID <= 0 {
+			return errors.New("bk_biz_id must be greater than 0")
+		}
+	}
+	return nil
+}
+
+// PushResPlanConfirmNoticeResp 手动触发资源计划确认通知响应
+type PushResPlanConfirmNoticeResp struct {
+	SuccessIDs []int64 `json:"success_ids"`
+	FailedIDs  []int64 `json:"failed_ids"`
+}
+
+// ConfirmResPlanDemandsReq 确认资源计划需求请求
+type ConfirmResPlanDemandsReq struct {
+	BkBizID   int64    `json:"bk_biz_id" validate:"required"`
+	DemandIDs []string `json:"demand_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate whether ConfirmResPlanDemandsReq is valid.
+func (r *ConfirmResPlanDemandsReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ConfirmBizResPlanDemandsReq 确认业务资源计划需求请求
+type ConfirmBizResPlanDemandsReq struct {
+	DemandIDs []string `json:"demand_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate whether ConfirmBizResPlanDemandsReq is valid.
+func (r *ConfirmBizResPlanDemandsReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ConfirmResPlanDemandsResp 确认资源计划需求响应
+type ConfirmResPlanDemandsResp struct {
+	SuccessIDs []string `json:"success_ids"`
+	FailedIDs  []string `json:"failed_ids"`
+}

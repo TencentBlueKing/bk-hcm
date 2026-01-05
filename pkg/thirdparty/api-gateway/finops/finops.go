@@ -16,6 +16,9 @@ import (
 // OpProductBgIEG BG ID for IEG
 const OpProductBgIEG = 4
 
+// MaxOpProductIDsPerRequest OpProductIds 参数最大限制数量
+const MaxOpProductIDsPerRequest = 3000
+
 // ListOpProductParam ...
 type ListOpProductParam struct {
 	// 筛选事业群id列表，不传筛选全部
@@ -105,6 +108,40 @@ type GetDeviceCPUUsageTrendResult struct {
 	Trend []CPUUsageTrendData `json:"trend"`
 }
 
+// GetBudgetDeclarationOperatorParam 获取预算申报单据运营产品和操作人对应关系参数
+type GetBudgetDeclarationOperatorParam struct {
+	// 年份列表，最大20，不传时查询全部
+	Years []int `json:"years,omitempty"`
+	// 运营产品ID列表，最大3000，不传时查询全部
+	OpProductIDs []int64 `json:"op_product_ids,omitempty"`
+}
+
+// BudgetDeclarationOperatorItem 预算申报单据运营产品和操作人对应关系项
+type BudgetDeclarationOperatorItem struct {
+	// 年份
+	Year int `json:"year"`
+	// 组成
+	Composition []BudgetDeclarationComposition `json:"composition"`
+}
+
+// BudgetDeclarationComposition 预算申报组成
+type BudgetDeclarationComposition struct {
+	// 运营产品ID
+	OpProductID int64 `json:"op_product_id"`
+	// 创建人列表
+	Creators []string `json:"creators"`
+	// 提交人列表
+	Committers []string `json:"committers"`
+}
+
+// GetBudgetDeclarationOperatorResult 获取预算申报单据运营产品和操作人对应关系结果
+type GetBudgetDeclarationOperatorResult struct {
+	// 总记录条数
+	Count int `json:"count"`
+	// 关系列表
+	Items []BudgetDeclarationOperatorItem `json:"items"`
+}
+
 // Client FinOps Client
 type Client interface {
 	// ListOpProduct 查询全内部事业群运营产品
@@ -113,6 +150,8 @@ type Client interface {
 	GetDeviceLoadCompliance(kt *kit.Kit, params *GetDeviceLoadComplianceParam) (*DeviceLoadComplianceResult, error)
 	// GetDeviceCPUUsageTrend 查询业务的CPU利用率趋势
 	GetDeviceCPUUsageTrend(kt *kit.Kit, params *GetDeviceCPUUsageTrendParam) (*GetDeviceCPUUsageTrendResult, error)
+	// GetBudgetDeclarationOperator 查询预算提报人
+	GetBudgetDeclarationOperator(kt *kit.Kit, params *GetBudgetDeclarationOperatorParam) (*GetBudgetDeclarationOperatorResult, error)
 }
 
 // NewClient initialize a new FinOps client
@@ -176,6 +215,14 @@ func (c *finOps) GetDeviceCPUUsageTrend(kt *kit.Kit, params *GetDeviceCPUUsageTr
 
 	return apigateway.ApiGatewayCall[GetDeviceCPUUsageTrendParam, GetDeviceCPUUsageTrendResult](c.systemCli, c.config,
 		rest.POST, kt, params, "/analysis/dm/device/get/cpu/usage/trend")
+}
+
+// GetBudgetDeclarationOperator 查询预算提报人
+func (c *finOps) GetBudgetDeclarationOperator(kt *kit.Kit, params *GetBudgetDeclarationOperatorParam) (
+	*GetBudgetDeclarationOperatorResult, error) {
+
+	return apigateway.ApiGatewayCall[GetBudgetDeclarationOperatorParam, GetBudgetDeclarationOperatorResult](c.systemCli, c.config,
+		rest.POST, kt, params, "/analysis/dm/budget/get/declaration/operator")
 }
 
 // 其他请求使用esb 接口

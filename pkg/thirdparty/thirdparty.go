@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/thirdparty/dvmapi"
 	"hcm/pkg/thirdparty/erpapi"
+	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/thirdparty/l5api"
 	"hcm/pkg/thirdparty/ngateapi"
 	"hcm/pkg/thirdparty/safetyapi"
@@ -69,6 +70,7 @@ type Client struct {
 	UserMgr         usermgr.Client
 	BkDbm           bkdbm.Client
 	BkBotApproval   bkbotapproval.Client
+	Esb             esb.Client
 }
 
 // NewClient new third party client
@@ -233,6 +235,8 @@ func newApiGWClient(opts cc.ClientConfig, reg prometheus.Registerer, client *Cli
 		return nil, err
 	}
 	client.BkBotApproval = bkBotApprovalCli
+
+	client.Esb = esb.EsbClient()
 
 	return client, nil
 }

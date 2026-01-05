@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/thirdparty/esb/iam"
 	"hcm/pkg/thirdparty/esb/login"
+	"hcm/pkg/thirdparty/esb/tof"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,6 +57,7 @@ type Client interface {
 	//Cmdb() cmdb.Client
 	Login() login.Client
 	Iam() iam.Client
+	Tof() tof.Client
 }
 
 // NewClient new esb client.
@@ -81,10 +83,12 @@ func NewClient(cfg *cc.Esb, reg prometheus.Registerer) (Client, error) {
 		MetricOpts: client.MetricOption{Register: reg},
 	}
 	restCli := rest.NewClient(c, "/api/c/compapi/v2")
+	tofRestCli := rest.NewClient(c, "/component/compapi")
 	return &esbCli{
 		cc:    cmdb.NewClient(restCli, cfg),
 		login: login.NewClient(restCli, cfg),
 		iam:   iam.NewClient(restCli, cfg),
+		tof:   tof.NewClient(tofRestCli, cfg),
 	}, nil
 }
 
@@ -92,6 +96,7 @@ type esbCli struct {
 	cc    cmdb.Client
 	login login.Client
 	iam   iam.Client
+	tof   tof.Client
 }
 
 func (e *esbCli) Cmdb() cmdb.Client {
@@ -104,4 +109,8 @@ func (e *esbCli) Login() login.Client {
 
 func (e *esbCli) Iam() iam.Client {
 	return e.iam
+}
+
+func (e *esbCli) Tof() tof.Client {
+	return e.tof
 }

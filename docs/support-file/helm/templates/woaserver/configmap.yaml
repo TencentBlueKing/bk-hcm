@@ -61,7 +61,25 @@ data:
     bkchat:
       {{- toYaml .Values.bkchat | nindent 6 }}
     cmsi:
-      {{- toYaml .Values.cmsi | nindent 6 }}    
+      {{- toYaml .Values.cmsi | nindent 6 }}
+    esb:
+      endpoints:
+        - {{ .Values.bkEsbApiUrl }}
+      appCode: {{ .Values.appCode }}
+      appSecret: {{ .Values.appSecret }}
+      user: admin
+      # defines tls related options.
+      tls:
+        # server should be accessed without verifying the TLS certificate.
+        insecureSkipVerify:
+        # server requires TLS client certificate authentication.
+        certFile:
+        # server requires TLS client certificate authentication.
+        keyFile:
+        # trusted root certificates for server.
+        caFile:
+        # the password to decrypt the certificate.
+        password:
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
     itsmFlows:

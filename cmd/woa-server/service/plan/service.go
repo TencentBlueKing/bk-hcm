@@ -100,6 +100,7 @@ func (s *service) initPlanService(h *rest.Handler) {
 	h.Add("GetPlanDemandDetail", http.MethodGet, "/plans/demands/{id}", s.GetPlanDemandDetail)
 	h.Add("ListPlanDemandChangelog", http.MethodPost, "/plans/demands/change_logs/list", s.ListPlanDemandChangeLog)
 	h.Add("BatchUpdateResPlanDemand", http.MethodPatch, "/plans/resources/demands/batch", s.BatchUpdateResPlanDemand)
+	h.Add("ConfirmResPlanDemands", http.MethodPost, "/plans/resources/demands/confirm", s.ConfirmResPlanDemands)
 
 	// verify
 	h.Add("VerifyResPlanDemandV2", http.MethodPost, "/plans/resources/demands/verify", s.VerifyResPlanDemandV2)
@@ -114,6 +115,10 @@ func (s *service) initPlanService(h *rest.Handler) {
 	h.Add("CalcAndPushPenaltyRatio", http.MethodPost, "/plans/penalty/ratio/push", s.CalcAndPushPenaltyRatio)
 	h.Add("PushExpireNotification", http.MethodPost, "/plans/demands/expire_notifications/push",
 		s.PushExpireNotification)
+
+	// res plan confirm notice
+	h.Add("PushResPlanConfirmNotice", http.MethodPost,
+		"/plans/resources/demands/confirm_notifications/push", s.PushResPlanConfirmNotice)
 
 	// demand week
 	h.Add("ImportDemandWeek", http.MethodPost, "/plans/demand_week/import", s.ImportDemandWeek)
@@ -180,6 +185,8 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 		s.CancelBizResPlanDemand)
 	h.Add("AutoTransferBizResPlanDemand", http.MethodPost, "/plans/resources/demands/auto_transfer",
 		s.AutoTransferBizResPlanDemand)
+	h.Add("ConfirmBizResPlanDemands", http.MethodPost, "/plans/resources/demands/confirm",
+		s.ConfirmBizResPlanDemands)
 
 	// resource plan transfer quota
 	h.Add("ListBizResPlanTransferQuotaSummary", http.MethodPost, "/plans/resources/transfer_quotas/summary",

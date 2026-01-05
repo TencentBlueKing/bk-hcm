@@ -148,6 +148,7 @@ type ResPlanDemandUpdateReq struct {
 	DiskSize        *int64           `json:"disk_size"`
 	Reviser         string           `json:"reviser"`
 	TechnicalClass  string           `json:"technical_class"`
+	IsConfirmed     bool             `json:"is_confirmed"`
 }
 
 // Validate validate

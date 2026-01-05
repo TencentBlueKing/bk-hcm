@@ -72,6 +72,7 @@ var ResPlanDemandColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "memory", NamedC: "memory", Type: enumor.Numeric},
 	{Column: "disk_size", NamedC: "disk_size", Type: enumor.Numeric},
 	{Column: "disk_io", NamedC: "disk_io", Type: enumor.Numeric},
+	{Column: "is_confirmed", NamedC: "is_confirmed", Type: enumor.Boolean},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -154,6 +155,8 @@ type ResPlanDemandTable struct {
 	DiskSize *int64 `db:"disk_size" json:"disk_size"`
 	// DiskIO 磁盘IO
 	DiskIO int64 `db:"disk_io" json:"disk_io"`
+	// IsConfirmed 预测是否已确认
+	IsConfirmed bool `db:"is_confirmed" json:"is_confirmed"`
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64" json:"creator"`
 	// Reviser 更新者
