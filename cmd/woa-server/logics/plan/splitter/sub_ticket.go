@@ -106,8 +106,13 @@ func (s *SubTicketSplitter) createSubTicket(kt *kit.Kit, ticketID string, allDem
 func constructSubTicketCreateReq(ticket *rpt.ResPlanTicketTable, auditQuota int64, subTicketType enumor.RPTicketType,
 	demands []*rpt.ResPlanDemand, demandsJson tabletypes.JsonField) rpproto.ResPlanSubTicketCreateReq {
 
+	// transfer_in 和 transfer_out 在子单中均表现为 transfer 类型，通过 demand 内容决定转移方向
 	if subTicketType == enumor.RPTicketTypeTransferIN || subTicketType == enumor.RPTicketTypeTransferOUT {
 		subTicketType = enumor.RPTicketTypeTransfer
+	}
+	// transfer_out_exempt 类型在子单中表现为 transfer_exempt 类型
+	if subTicketType == enumor.RPTicketTypeTransferOUTExempt {
+		subTicketType = enumor.RPTicketTypeTransferExempt
 	}
 
 	var originalOs, updatedOs decimal.Decimal
@@ -155,11 +160,13 @@ func constructSubTicketCreateReq(ticket *rpt.ResPlanTicketTable, auditQuota int6
 		SubUpdatedDiskSize:  cvt.ValToPtr(updatedDiskSize),
 		SubmittedAt:         time.Now().Format(constant.DateTimeLayout),
 	}
-	// 非转移单、调减转移单跳过管理员审批
-	if ticket.Type == enumor.RPTicketTypeDelete || subTicket.SubType != enumor.RPTicketTypeTransfer {
+	// 调减单、自动延期单、非转移单跳过管理员审批
+	if ticket.Type == enumor.RPTicketTypeDelete || ticket.Type == enumor.RPTicketTypeAutomaticTransfer ||
+		subTicket.SubType != enumor.RPTicketTypeTransfer {
+
 		subTicket.AdminAuditStatus = enumor.RPAdminAuditStatusSkip
 	}
-	if subTicket.SubType == enumor.RPTicketTypeTransfer {
+	if subTicket.SubType == enumor.RPTicketTypeTransfer || subTicket.SubType == enumor.RPTicketTypeTransferExempt {
 		// 转移单核数小于审批下限，跳过管理员审批
 		if updatedCpuCore <= auditQuota {
 			subTicket.AdminAuditStatus = enumor.RPAdminAuditStatusSkip

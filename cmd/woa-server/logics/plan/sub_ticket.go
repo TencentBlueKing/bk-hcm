@@ -135,7 +135,7 @@ func (c *Controller) retrySplitResPlanTickets(kt *kit.Kit, ticketID string, tick
 	splitHelper := splitter.New(c.dao, c.client, c.crpCli, c.resFetcher, c.deviceTypesMap)
 	switch ticket.Type {
 	case enumor.RPTicketTypeDelete, enumor.RPTicketTypeAutomaticTransfer:
-		splitErr = splitHelper.SplitDeleteTicket(kt, ticket.ID, failedDemands, ticket.PlanProductName,
+		splitErr = splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.Type, failedDemands, ticket.PlanProductName,
 			ticket.OpProductName)
 	case enumor.RPTicketTypeAdd:
 		splitErr = splitHelper.SplitAddTicket(kt, ticket.ID, failedDemands)

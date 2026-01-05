@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
@@ -84,7 +85,8 @@ func (c *CrpTicketCreator) constructTransReq(kt *kit.Kit, subTicket *ptypes.SubT
 				AfterProductID:       cvmapi.TransferOpProductID,
 				AfterProductName:     cvmapi.TransferOpProductName,
 				AfterBgName:          cvmapi.CvmCbsPlanQueryBgName,
-				SkipTodo:             true,
+				// transfer_exempt 类型免审，transfer 类型不免审
+				SkipTodo: subTicket.Type == enumor.RPTicketTypeTransferExempt,
 			},
 		},
 	}

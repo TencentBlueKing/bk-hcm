@@ -39,7 +39,8 @@ func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, dema
 	addDemands, delDemands := s.splitAdjustDemandsToAddAndDelete(remainDemands)
 
 	// 3. 调减逻辑
-	err := s.prepareDeleteSubTickets(kt, ticketID, delDemands, planProductName, opProductName)
+	err := s.prepareDeleteSubTickets(kt, ticketID, enumor.RPTicketTypeDelete, delDemands, planProductName,
+		opProductName)
 	if err != nil {
 		logs.Errorf("failed to prepare delete sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err

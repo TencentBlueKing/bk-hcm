@@ -83,19 +83,15 @@ func NewCrpTicketCreator(fetch fetcher.Fetcher, crpCli cvmapi.CVMClientInterface
 	}
 }
 
-// CreateCRPTicket create crp ticket
-func (c *CrpTicketCreator) CreateCRPTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInfo) (string, error) {
-	// 1. 新增单走新增流程
-	if subTicket.Type == enumor.RPTicketTypeAdd {
-		return c.createAddCrpTicket(kt, subTicket)
-	}
+// constructCrpAdjustReq construct crp adjust req
+func (c *CrpTicketCreator) constructCrpAdjustReq(kt *kit.Kit, subTicket *ptypes.SubTicketInfo) (
+	*cvmapi.CvmCbsPlanAdjustReq, []*cvmapi.AdjustSrcData, []*cvmapi.AdjustUpdatedData, error) {
 
-	// 2. 生成调整请求
 	srcData, updateData, err := c.constructCrpAdjustReqParams(kt, subTicket)
 	if err != nil {
 		logs.Errorf("failed to construct adjust crp plan order request params, ticketID: %s, err: %v, rid: %s",
 			subTicket.ID, err, kt.Rid)
-		return "", err
+		return nil, nil, nil, err
 	}
 
 	adjustReq := &cvmapi.CvmCbsPlanAdjustReq{
@@ -126,9 +122,27 @@ func (c *CrpTicketCreator) CreateCRPTicket(kt *kit.Kit, subTicket *ptypes.SubTic
 		logs.Warnf("failed to construct adjust desc, unsupported demand class: %s, rid: %s",
 			subTicket.DemandClass, kt.Rid)
 	}
+	return adjustReq, srcData, updateData, nil
+}
 
-	if subTicket.Type == enumor.RPTicketTypeTransfer && subTicket.Demands[0].Original != nil {
-		// 转出单 单独走转出流程（免审）
+// CreateCRPTicket create crp ticket
+func (c *CrpTicketCreator) CreateCRPTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInfo) (string, error) {
+	// 1. 新增单走新增流程
+	if subTicket.Type == enumor.RPTicketTypeAdd {
+		return c.createAddCrpTicket(kt, subTicket)
+	}
+
+	// 2. 生成调整请求
+	adjustReq, srcData, updateData, err := c.constructCrpAdjustReq(kt, subTicket)
+	if err != nil {
+		logs.Errorf("failed to construct adjust crp plan order request, ticketID: %s, err: %v, rid: %s",
+			subTicket.ID, err, kt.Rid)
+		return "", err
+	}
+
+	if (subTicket.Type == enumor.RPTicketTypeTransfer || subTicket.Type == enumor.RPTicketTypeTransferExempt) &&
+		subTicket.Demands[0].Original != nil {
+		// 转出单 单独走转出流程
 		return c.createTransferOutCrpTicket(kt, subTicket, srcData, updateData)
 	}
 
@@ -182,8 +196,8 @@ func (c *CrpTicketCreator) constructCrpAdjustReqParams(kt *kit.Kit, subTicket *p
 	[]*cvmapi.AdjustSrcData, []*cvmapi.AdjustUpdatedData, error) {
 
 	// 根据子单的需求类型（新增、删除）决定转移的方向
-	if subTicket.Type == enumor.RPTicketTypeTransfer {
-		transferDirection := subTicket.Type
+	if subTicket.Type == enumor.RPTicketTypeTransfer || subTicket.Type == enumor.RPTicketTypeTransferExempt {
+		var transferDirection enumor.RPTicketType
 		if len(subTicket.Demands) == 0 {
 			logs.Errorf("sub ticket has no demands, sub ticket id: %s, rid: %s", subTicket.ID, kt.Rid)
 			return nil, nil, errors.New("sub ticket has no demands")
@@ -493,11 +507,12 @@ func (c *CrpTicketCreator) getAllCRPAdjustAbleDemands(kt *kit.Kit, ticketType en
 		for _, ad := range AbleDemandsRst {
 			switch ad.ReviewStatus {
 			case enumor.ResPlanReviewStatusPass:
-				if ticketType != enumor.RPTicketTypeTransfer && ticketType != enumor.RPTicketTypeDelay {
+				if ticketType != enumor.RPTicketTypeTransfer && ticketType != enumor.RPTicketTypeTransferExempt &&
+					ticketType != enumor.RPTicketTypeDelay {
 					continue
 				}
 			case enumor.ResPlanReviewStatusPending:
-				if ticketType == enumor.RPTicketTypeTransfer {
+				if ticketType == enumor.RPTicketTypeTransfer || ticketType == enumor.RPTicketTypeTransferExempt {
 					continue
 				}
 			default:
@@ -538,7 +553,7 @@ func (c *CrpTicketCreator) constructAdjustDemandDetails(kt *kit.Kit, subTicket *
 		isAppend = true
 		// 我们的删除对crp来说是部分调减
 		adjustType = enumor.CrpAdjustTypeUpdate
-	case enumor.RPTicketTypeTransfer:
+	case enumor.RPTicketTypeTransfer, enumor.RPTicketTypeTransferExempt:
 		isTransfer = true
 		adjustType = enumor.CrpAdjustTypeTransfer
 	default:
@@ -566,7 +581,8 @@ func (c *CrpTicketCreator) constructAdjustDemandDetails(kt *kit.Kit, subTicket *
 	}
 
 	// 加急延期、删除、转移时不追加预测
-	if adjustType == enumor.CrpAdjustTypeDelay || demand.Updated == nil || subTicket.Type == enumor.RPTicketTypeTransfer {
+	if adjustType == enumor.CrpAdjustTypeDelay || demand.Updated == nil ||
+		subTicket.Type == enumor.RPTicketTypeTransfer || subTicket.Type == enumor.RPTicketTypeTransferExempt {
 		return nil
 	}
 

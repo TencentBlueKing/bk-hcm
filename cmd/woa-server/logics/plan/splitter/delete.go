@@ -34,11 +34,11 @@ import (
 )
 
 // SplitDeleteTicket split res plan delete ticket to sub ticket
-func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands,
-	planProductName, opProductName string) error {
+func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
+	demands rpt.ResPlanDemands, planProductName, opProductName string) error {
 
 	// 1. 准备拆分后的子单，存储在 adjSplitGroupDemands 中备用
-	err := s.prepareDeleteSubTickets(kt, ticketID, demands, planProductName, opProductName)
+	err := s.prepareDeleteSubTickets(kt, ticketID, ticketType, demands, planProductName, opProductName)
 	if err != nil {
 		logs.Errorf("failed to prepare delete sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -56,8 +56,9 @@ func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, dema
 
 // prepareDeleteSubTickets 准备删除场景下拆分后的子单，存储在 adjSplitGroupDemands 中备用
 // 该方法可在调整场景复用
-func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands,
-	planProductName, opProductName string) error {
+func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
+	demands rpt.ResPlanDemands, planProductName, opProductName string) error {
+
 	// 1.查询CRP中可修改的预测
 	err := s.getAllCRPAdjustAbleDemands(kt, demands, planProductName, opProductName)
 	if err != nil {
@@ -80,7 +81,7 @@ func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string
 			return err
 		}
 
-		err = s.splitDemandInDeleteScenarios(kt, ticketID, demand, transferableCore, nonTransferableCore,
+		err = s.splitDemandInDeleteScenarios(kt, ticketID, ticketType, demand, transferableCore, nonTransferableCore,
 			deviceTypeMap)
 		if err != nil {
 			logs.Errorf("failed to split demand in delete scenarios, err: %v, ticket id: %s, update: %+v, rid: %s",
@@ -94,8 +95,9 @@ func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string
 
 // splitDemandInDeleteScenarios 在删除场景下，根据本业务中已评审的CPU核数将需求拆分到 adjSplitGroupDemands 备用
 // 删除场景只会从本业务转移到中转产品，因此拆分时仅需关注demand的original部分，即纯删除的部分
-func (s *SubTicketSplitter) splitDemandInDeleteScenarios(kt *kit.Kit, ticketID string, demand rpt.ResPlanDemand,
-	transferableCore, nonTransferableCore int64, deviceTypeMap map[string]wdt.WoaDeviceTypeTable) error {
+func (s *SubTicketSplitter) splitDemandInDeleteScenarios(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
+	demand rpt.ResPlanDemand, transferableCore, nonTransferableCore int64,
+	deviceTypeMap map[string]wdt.WoaDeviceTypeTable) error {
 
 	if demand.Original == nil {
 		logs.Errorf("original is nil, ticket id: %s, updated: %+v, rid: %s", ticketID, demand.Updated, kt.Rid)
@@ -120,8 +122,13 @@ func (s *SubTicketSplitter) splitDemandInDeleteScenarios(kt *kit.Kit, ticketID s
 		transferDemand.Original.Cvm.CpuCore = transferableCore
 		transferDemand.Original.Cvm.Os = ttypes.Decimal{Decimal: transferableOS}
 		transferDemand.Original.Cvm.Memory = transferableMem
-		s.adjSplitGroupDemands[enumor.RPTicketTypeTransferOUT] = append(
-			s.adjSplitGroupDemands[enumor.RPTicketTypeTransferOUT], transferDemand)
+		transferType := enumor.RPTicketTypeTransferOUT
+		// 当主单类型为 automatic_transfer 时，转出单免审
+		if ticketType == enumor.RPTicketTypeAutomaticTransfer {
+			transferType = enumor.RPTicketTypeTransferOUTExempt
+		}
+		s.adjSplitGroupDemands[transferType] = append(
+			s.adjSplitGroupDemands[transferType], transferDemand)
 	}
 
 	// 不可转移的预测

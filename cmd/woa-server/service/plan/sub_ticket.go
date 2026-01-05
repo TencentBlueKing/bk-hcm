@@ -111,6 +111,11 @@ func (s *service) listResPlanSubTicket(cts *rest.Contexts, bkBizID int64, author
 			rst.Details[i].SubTicketType = enumor.RPTicketTypeAdjust
 			rst.Details[i].TicketTypeName = rst.Details[i].SubTicketType.Name()
 		}
+		// 屏蔽免审转移类型，将其改为转移类型
+		if rst.Details[i].SubTicketType == enumor.RPTicketTypeTransferExempt {
+			rst.Details[i].SubTicketType = enumor.RPTicketTypeTransfer
+			rst.Details[i].TicketTypeName = rst.Details[i].SubTicketType.Name()
+		}
 
 		// RPSubTicketStatusWaiting 仅用于内部状态流转，对外统一展示为待审批
 		if rst.Details[i].Status == enumor.RPSubTicketStatusWaiting {
@@ -197,6 +202,11 @@ func (s *service) getResPlanSubTicketDetail(kt *kit.Kit, bizID int64, subTicketI
 	// 屏蔽延期类型，将其改为调整类型
 	if detail.BaseInfo.Type == enumor.RPTicketTypeDelay {
 		detail.BaseInfo.Type = enumor.RPTicketTypeAdjust
+		detail.BaseInfo.TypeName = detail.BaseInfo.Type.Name()
+	}
+	// 屏蔽免审转移类型，将其改为转移类型
+	if detail.BaseInfo.Type == enumor.RPTicketTypeTransferExempt {
+		detail.BaseInfo.Type = enumor.RPTicketTypeTransfer
 		detail.BaseInfo.TypeName = detail.BaseInfo.Type.Name()
 	}
 

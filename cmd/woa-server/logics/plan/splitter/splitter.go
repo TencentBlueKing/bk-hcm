@@ -38,7 +38,8 @@ import (
 
 // Splitter ...
 type Splitter interface {
-	SplitDeleteTicket(kt *kit.Kit, demands rpt.ResPlanDemands, planProductName, opProductName string) error
+	SplitDeleteTicket(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType, demands rpt.ResPlanDemands,
+		planProductName, opProductName string) error
 }
 
 // SubTicketSplitter split res plan ticket to sub ticket

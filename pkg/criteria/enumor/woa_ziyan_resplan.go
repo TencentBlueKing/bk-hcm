@@ -45,10 +45,17 @@ const (
 	// RPTicketTypeDelete is resource plan ticket status delete.
 	RPTicketTypeDelete RPTicketType = "delete"
 	// RPTicketTypeDelay is resource plan ticket status delay. Only used in sub_ticket.
+	// will be modified to RPTicketTypeAdjust when return to frontend.
 	// 该类型不返回给前端展示，仅用于内部逻辑，汇总不影响预算，可以直接发起调整的需求
 	RPTicketTypeDelay RPTicketType = "delay"
 	// RPTicketTypeTransfer is resource plan ticket status transfer. Only used in sub_ticket.
 	RPTicketTypeTransfer RPTicketType = "transfer"
+	// RPTicketTypeAutomaticTransfer is resource plan ticket type automatic transfer.
+	RPTicketTypeAutomaticTransfer RPTicketType = "automatic_transfer"
+	// RPTicketTypeTransferExempt is resource plan ticket status transfer exempt. Only used in sub_ticket.
+	// will be modified to RPTicketTypeTransfer when return to frontend.
+	// 该类型不返回给前端展示，仅用于内部逻辑，表示免审转移
+	RPTicketTypeTransferExempt RPTicketType = "transfer_exempt"
 
 	// RPTicketTypeTransferIN is resource plan ticket status transfer in.
 	// Will be modified to RPTicketTypeTransfer in sub_ticket create stage.
@@ -56,16 +63,16 @@ const (
 	// RPTicketTypeTransferOUT is resource plan ticket status transfer out.
 	// Will be modified to RPTicketTypeTransfer in sub_ticket create stage.
 	RPTicketTypeTransferOUT RPTicketType = "transfer_out"
-
-	// RPTicketTypeAutomaticTransfer is resource plan ticket type automatic transfer.
-	RPTicketTypeAutomaticTransfer RPTicketType = "automatic_transfer"
+	// RPTicketTypeTransferOUTExempt is resource plan ticket status transfer out exempt.
+	// will be modified to RPTicketTypeTransferExempt in sub_ticket create stage.
+	RPTicketTypeTransferOUTExempt RPTicketType = "transfer_out_exempt"
 )
 
 // Validate RPTicketType.
 func (t RPTicketType) Validate() error {
 	switch t {
 	case RPTicketTypeAdd, RPTicketTypeAdjust, RPTicketTypeDelay, RPTicketTypeDelete, RPTicketTypeTransfer,
-		RPTicketTypeAutomaticTransfer:
+		RPTicketTypeAutomaticTransfer, RPTicketTypeTransferExempt:
 	default:
 		return fmt.Errorf("unsupported resource plan type: %s", t)
 	}
@@ -75,11 +82,13 @@ func (t RPTicketType) Validate() error {
 
 // rdTicketTypeNameMap records RPTicketType's name.
 var rdTicketTypeNameMap = map[RPTicketType]string{
-	RPTicketTypeAdd:      "新增",
-	RPTicketTypeAdjust:   "调整",
-	RPTicketTypeDelay:    "延期",
-	RPTicketTypeDelete:   "取消",
-	RPTicketTypeTransfer: "转移",
+	RPTicketTypeAdd:               "新增",
+	RPTicketTypeAdjust:            "调整",
+	RPTicketTypeDelay:             "延期",
+	RPTicketTypeDelete:            "取消",
+	RPTicketTypeTransfer:          "转移",
+	RPTicketTypeAutomaticTransfer: "过期自动转移",
+	RPTicketTypeTransferExempt:    "免审转移",
 }
 
 // Name return RPTicketType's name.
@@ -109,6 +118,7 @@ func GetPRSubTicketTypeMembers() []RPTicketType {
 		RPTicketTypeDelay,
 		RPTicketTypeDelete,
 		RPTicketTypeTransfer,
+		RPTicketTypeTransferExempt,
 	}
 }
 

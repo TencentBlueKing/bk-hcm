@@ -176,7 +176,8 @@ func (d *Dispatcher) checkCrpTicket(kt *kit.Kit, subTicket *ptypes.SubTicketInfo
 
 		if resp.Error.Code != 0 {
 			logs.Errorf("%s: failed to query crp plan order, code: %d, msg: %s, crp_sn: %s, crp_trace: %s, rid: %s",
-				constant.ResPlanTicketWatchFailed, resp.Error.Code, resp.Error.Message, subTicket.CrpSN, resp.TraceId, kt.Rid)
+				constant.ResPlanTicketWatchFailed, resp.Error.Code, resp.Error.Message, subTicket.CrpSN, resp.TraceId,
+				kt.Rid)
 			return fmt.Errorf("failed to query crp plan order, code: %d, msg: %s", resp.Error.Code, resp.Error.Message)
 		}
 		if resp.Result == nil {
@@ -409,7 +410,7 @@ func (d *Dispatcher) createSubTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) err
 	splitHelper := splitter.New(d.dao, d.client, d.crpCli, d.resFetcher, d.deviceTypesMap)
 	switch ticket.Type {
 	case enumor.RPTicketTypeDelete, enumor.RPTicketTypeAutomaticTransfer:
-		return splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.Demands, ticket.PlanProductName,
+		return splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.Type, ticket.Demands, ticket.PlanProductName,
 			ticket.OpProductName)
 	case enumor.RPTicketTypeAdd:
 		return splitHelper.SplitAddTicket(kt, ticket.ID, ticket.Demands)
