@@ -88,10 +88,11 @@ const configListColumns = [
     field: 'zones',
     isDefaultShow: true,
     render({ cell, row }: { cell: string | string[]; row: { vendor: VendorEnum } }) {
+      if (!cell) return h('span', '--');
       return h('span', [
         Array.isArray(cell)
-          ? cell.map((zone) => getZoneName(zone, row.vendor)).join(',')
-          : getZoneName(cell as string, row.vendor),
+          ? cell.map((zone) => getZoneName(zone, row.vendor)).join(',') || '--'
+          : getZoneName(cell as string, row.vendor) || '--',
       ]);
     },
   },
@@ -255,6 +256,7 @@ const showDropdownList = (e: any, data: ApplyClbModel) => {
 configListColumns.push({
   label: '操作',
   width: 120,
+  fixed: 'right',
   showOverflowTooltip: false,
   render: ({ data }: { data: any; index: number }) => {
     return h('div', { class: 'operation-column' }, [

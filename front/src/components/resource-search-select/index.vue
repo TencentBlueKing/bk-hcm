@@ -9,7 +9,7 @@ defineOptions({ name: 'ResourceSearchSelect' });
 
 const props = withDefaults(defineProps<IResourceSelectProps>(), {
   clearable: true,
-  valueBehavior: 'all',
+  valueBehavior: 'need-key',
 });
 
 const emit = defineEmits(['update:modelValue']);

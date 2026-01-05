@@ -90,8 +90,16 @@ export default defineComponent({
       isInquiryPricesLoading.value = true;
       const { formModel } = props;
       try {
-        // eslint-disable-next-line prefer-const
-        let zones = formModel.zones ? [formModel.zones] : [];
+        // 处理 zones 参数，确保传递的是字符串数组
+        let zones: string[] = [];
+        if (formModel.zones) {
+          if (Array.isArray(formModel.zones)) {
+            zones = formModel.zones.filter(Boolean); // 过滤空值
+          } else if (typeof formModel.zones === 'string' && formModel.zones.length > 0) {
+            // 单可用区场景，zones 是字符串
+            zones = [formModel.zones];
+          }
+        }
         const backup_zones = formModel.backup_zones ? [formModel.backup_zones] : undefined;
         const bandwidthpkg_sub_type = BGP_VIP_ISP_TYPES.includes(formModel.vip_isp) ? 'BGP' : 'SINGLEISP';
 

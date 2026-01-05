@@ -350,8 +350,18 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '安全组放通模式',
           required: true,
           property: 'load_balancer_pass_to_target',
-          description:
-            '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n一、1次校验-仅校验CLB上的安全组，忽略后端RS的安全组，仅关注CLB上的安全组配置即可\n二、2次校验-同时校验CLB和RS上的安全组，需同时关注CLB和RS这2处绑定的安全组',
+          description: (() => {
+            const toChineseNumber = (num: number) => {
+              return new Intl.NumberFormat('zh-Hans-CN-u-nu-hanidec').format(num);
+            };
+            const text = '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n';
+
+            const context = LOAD_BALANCER_PASS_TO_TARGET_LIST.map(({ label, description }, index) => {
+              return `${toChineseNumber(index + 1)}、${label}（${description}）`;
+            });
+
+            return text + context.join('\n');
+          })(),
           content: () => (
             <bk-select
               v-model={formModel.load_balancer_pass_to_target}
