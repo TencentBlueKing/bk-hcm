@@ -159,7 +159,7 @@ const selectSearchData = computed(() => {
           children: [
             { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
             { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: '', name: t('未确认') },
+            { id: SecurityGroupManageType.UNKNOWN, name: t('未确认') },
           ],
           multiple: true,
           meta: {
