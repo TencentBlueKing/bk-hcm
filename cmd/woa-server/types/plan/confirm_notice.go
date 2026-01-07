@@ -144,6 +144,7 @@ const (
     <title>资源预测确认通知</title>
   </head>
   <body style="margin: 0; padding: 0">
+    <!-- banner start -->
     <div style="padding: 30px 40px 0; height: 148px; background-color: #2e3959; box-sizing: border-box">
       <img
         style="margin-right: 8px; width: 48px; height: 48px; vertical-align: middle"
@@ -259,7 +260,11 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
         </a>
       </div>
     </div>
+    <!-- banner-end -->
+
+    <!-- email-start -->
     <div style="margin: -48px 40px 0; box-sizing: border-box">
+      <!-- email-header-start -->
       <div
         style="
           padding: 20px;
@@ -343,33 +348,128 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
             </span>
           </div>
         </div>
-        <div
-          style="
-            margin-top: 16px;
-            padding: 12px 16px;
-            background-color: #f5f7fa;
-            border-radius: 2px;
-            line-height: 24px;
-          "
-        >
-          <p style="margin: 0; font-size: 12px; color: #63656e">
-            以下预测,将在14-16周后领取,为确保预测和业务实际需求一致,请按以下步骤核对：
-          </p>
-          <p style="margin: 8px 0 0; font-size: 12px;">
-            <span style="color: #63656e;">1.</span>
-            <span style="color: #ea3636;">确认机型,到货日期,地域,实例数量,如不符合需求,请对预测单进行调整</span>
-          </p>
-          <p style="margin: 4px 0 0; font-size: 12px;">
-            <span style="color: #63656e;">2.</span>
-            <span style="color: #ea3636;">业务需求变动,不需要申领主机,可对预测进行延期、取消</span>
-          </p>
-          <p style="margin: 4px 0 0; font-size: 12px; color: #63656e">
-            3.如有任何疑问,可企微联系ICR(IEG资源服务助手)
-          </p>
+      </div>
+      <!-- email-header-end -->
+
+      <!-- email-body-start -->
+      <div
+        style="
+          margin-top: 16px;
+          padding: 20px 26px;
+          border-radius: 2px;
+          background-color: #fff;
+          box-shadow: 0 4px 10px 2px #979ba54d;
+          box-sizing: border-box;
+        "
+      >
+        <div style="margin: 0 0 12px; font-size: 12px; color: #4d4f56">
+          以下预测，将在14-16周后领取，为确保预测和业务实际需求一致，请按以下步骤核对：
         </div>
+        <div style="padding: 0; font-size: 0">
+          <div style="margin-bottom: 8px">
+            <span
+              style="
+                margin-right: 8px;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                background-color: #cddffe;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                text-align: center;
+              "
+            >
+              1
+            </span>
+            <span
+              style="
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                line-height: 20px;
+              "
+              >确认机型、到货日期、地域、实例数量，如不符合需求，请对预测单进行调整</span
+            >
+          </div>
+          <div style="margin-bottom: 8px">
+            <span
+              style="
+                margin-right: 8px;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                background-color: #cddffe;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                text-align: center;
+              "
+            >
+              2
+            </span>
+            <span
+              style="
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                line-height: 20px;
+              "
+              >业务需求变动，不需要申领主机，可对预测进行延期、取消</span
+            >
+          </div>
+          <div style="margin-bottom: 8px">
+            <span
+              style="
+                margin-right: 8px;
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                background-color: #cddffe;
+                border-radius: 4px;
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                text-align: center;
+              "
+            >
+              3
+            </span>
+            <span
+              style="
+                font-size: 12px;
+                color: #4d4f56;
+                font-weight: 700;
+                line-height: 20px;
+              "
+              >如有任何疑问，可企微联系ICR(IEG资源服务助手)</span
+            >
+          </div>
+        </div>
+        <!-- desc-end -->
+
         <div style="margin-top: 16px; overflow-x: auto">
-          <table style="width: 100%%; border-collapse: collapse; table-layout: fixed; min-width: 800px">
-            <thead>
+          <!-- table-start -->
+        <table
+            style="
+              width: 100%%;
+              border: 1px solid #dcdee5;
+              border-collapse: collapse;
+              border-spacing: 0;
+              border-radius: 2px;
+              text-align: left;
+              line-height: 42px;
+            "
+          >
+            <thead
+              style="
+                border-bottom: 1px solid #dcdee5;
+                background-color: #fafbfd;
+                color: #313238;
+              "
+            >
               <tr style="height: 42px">
                 <th
                   style="
@@ -379,7 +479,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   机型规格
@@ -392,7 +494,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   期望到货日期
@@ -405,7 +509,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   可申领时间
@@ -418,7 +524,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   截止申领时间
@@ -431,7 +539,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   地域
@@ -444,7 +554,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   实例需求数
@@ -457,7 +569,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   CPU需求核数
@@ -470,7 +584,9 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
                     font-size: 12px;
                     color: #313238;
                     font-weight: normal;
-                    text-align: left;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                   "
                 >
                   项目类型
@@ -481,9 +597,12 @@ d3yK4Q58NIcZOqL3mVwgq3xJ8O/U118pW6sV/admxyH0sY3nvFjJ86++876v/19cFyues7TwrhH+wnJD
               %s
             </tbody>
           </table>
+          <!-- table-end -->
         </div>
       </div>
+      <!-- email-body-end -->
     </div>
+    <!-- email-end -->
   </body>
 </html>`
 )
