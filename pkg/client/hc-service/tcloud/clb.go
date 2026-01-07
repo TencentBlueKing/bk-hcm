@@ -212,8 +212,8 @@ func (c *ClbClient) QueryListenerTargetsByCloudIDs(kt *kit.Kit, req *hcproto.Que
 }
 
 // InquiryPrice 负载均衡购买询价
-func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudLoadBalancerCreateReq) (*typelb.TCloudLBPrice, error) {
-	return common.Request[hcproto.TCloudLoadBalancerCreateReq, typelb.TCloudLBPrice](
+func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudLoadBalancerInquiryReq) (*typelb.TCloudLBPrice, error) {
+	return common.Request[hcproto.TCloudLoadBalancerInquiryReq, typelb.TCloudLBPrice](
 		c.client, http.MethodPost, kt, req, "/load_balancers/prices/inquiry")
 }
 

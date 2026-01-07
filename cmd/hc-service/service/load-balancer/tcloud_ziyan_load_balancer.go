@@ -943,12 +943,12 @@ func (svc *clbSvc) BatchDeleteTCloudZiyanLoadBalancer(cts *rest.Contexts) (any, 
 
 // InquiryPriceTCloudZiyanLB inquiry price tcloud clb.
 func (svc *clbSvc) InquiryPriceTCloudZiyanLB(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudLoadBalancerCreateReq)
+	req := new(protolb.TCloudZiyanLoadBalancerInquiryReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(false); err != nil {
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -962,7 +962,6 @@ func (svc *clbSvc) InquiryPriceTCloudZiyanLB(cts *rest.Contexts) (any, error) {
 	createOpt := &typelb.TCloudCreateClbOption{
 		Region:           req.Region,
 		LoadBalancerType: req.LoadBalancerType,
-		LoadBalancerName: req.Name,
 		VpcID:            req.CloudVpcID,
 		SubnetID:         req.CloudSubnetID,
 		Vip:              req.Vip,

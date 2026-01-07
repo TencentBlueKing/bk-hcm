@@ -55,7 +55,7 @@ func (svc *cvmSvc) initHuaWeiCvmService(cap *capability.Capability) {
 // InquiryPriceHuaWeiCvm inquiry price huawei cvm.
 func (svc *cvmSvc) InquiryPriceHuaWeiCvm(cts *rest.Contexts) (interface{}, error) {
 	// 参数解析
-	req := new(protocvm.HuaWeiBatchCreateReq)
+	req := new(protocvm.HuaWeiCvmInquiryReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -70,22 +70,17 @@ func (svc *cvmSvc) InquiryPriceHuaWeiCvm(cts *rest.Contexts) (interface{}, error
 	}
 
 	opt := &typecvm.HuaWeiCreateOption{
-		DryRun:                req.DryRun,
-		Region:                req.Region,
-		Name:                  req.Name,
-		Zone:                  req.Zone,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
-		Password:              req.Password,
-		RequiredCount:         req.RequiredCount,
-		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
-		ClientToken:           req.ClientToken,
-		CloudVpcID:            req.CloudVpcID,
-		CloudSubnetID:         req.CloudSubnetID,
-		Description:           req.Description,
-		RootVolume:            req.RootVolume,
-		DataVolume:            req.DataVolume,
-		InstanceCharge:        req.InstanceCharge,
+		DryRun:         req.DryRun,
+		Region:         req.Region,
+		Zone:           req.Zone,
+		InstanceType:   req.InstanceType,
+		CloudImageID:   req.CloudImageID,
+		RequiredCount:  req.RequiredCount,
+		Description:    req.Description,
+		RootVolume:     req.RootVolume,
+		DataVolume:     req.DataVolume,
+		InstanceCharge: req.InstanceCharge,
+		// 询价不需要 Name/Password/SG 等非计费字段
 	}
 	result, err := huawei.InquiryPriceCvm(cts.Kit, opt)
 	if err != nil {

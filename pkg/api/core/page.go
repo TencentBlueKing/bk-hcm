@@ -243,3 +243,17 @@ func (bp BasePage) Validate(opt ...*PageOption) (err error) {
 
 	return nil
 }
+
+// SetDefaultDescSort 默认排序字段与方向，count 模式下不生效。
+func (bp *BasePage) SetDefaultDescSort(sort string) {
+	if bp == nil || bp.Count {
+		return
+	}
+
+	if bp.Sort == "" {
+		bp.Sort = sort
+	}
+	if bp.Order == "" {
+		bp.Order = Descending
+	}
+}

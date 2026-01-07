@@ -46,6 +46,11 @@ func (a *applicationSvc) ListApplications(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 默认按创建时间倒序（仅在非 count 查询时设定），避免前端未传排序或未填 order 时时间线反向。
+	// 当 count=true 时，page.sort 不允许存在。
+	if req.Page != nil {
+		req.Page.SetDefaultDescSort("created_at")
+	}
 	_, authorized, err := a.authorizer.Authorize(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
 		Type:   meta.Application,
 		Action: meta.Find,
@@ -70,6 +75,12 @@ func (a *applicationSvc) ListBizApplications(cts *rest.Contexts) (interface{}, e
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 默认按创建时间倒序（仅在非 count 查询时设定），避免前端未传排序或未填 order 时时间线反向。
+	// 当 count=true 时，page.sort 不允许存在。
+	if req.Page != nil {
+		req.Page.SetDefaultDescSort("created_at")
 	}
 
 	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()

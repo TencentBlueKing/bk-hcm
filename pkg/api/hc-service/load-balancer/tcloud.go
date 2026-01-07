@@ -35,13 +35,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// TCloudLoadBalancerCreateReq tcloud batch create req.
-type TCloudLoadBalancerCreateReq struct {
-	AccountID string  `json:"account_id" validate:"required"`
-	BkBizID   int64   `json:"bk_biz_id"`
-	Region    string  `json:"region" validate:"required"`
-	Name      *string `json:"name" validate:"required,max=60"`
-
+// TCloudLoadBalancerSpec 计费/规格参数（询价/创建共用，不含名称标签等非计费字段）
+type TCloudLoadBalancerSpec struct {
 	LoadBalancerType typelb.TCloudLoadBalancerType   `json:"load_balancer_type" validate:"required"`
 	AddressIPVersion typelb.TCloudIPVersionForCreate `json:"address_ip_version" validate:"omitempty"`
 
@@ -63,12 +58,53 @@ type TCloudLoadBalancerCreateReq struct {
 	SlaType      *string `json:"sla_type" validate:"omitempty"`
 	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`
 	RequireCount *uint64 `json:"require_count" validate:"omitempty,max=20"`
-	Memo         string  `json:"memo" validate:"omitempty"`
 
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
 	// LoadBalancerPassToTarget 安全组放通模式
 	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target" validate:"required"`
+}
 
+// ValidateSpec 校验规格/计费字段
+func (spec *TCloudLoadBalancerSpec) ValidateSpec() error {
+	if spec == nil {
+		return fmt.Errorf("spec is required")
+	}
+
+	switch spec.LoadBalancerType {
+	case typelb.InternalLoadBalancerType:
+		// 内网校验
+		if converter.PtrToVal(spec.CloudSubnetID) == "" {
+			return errors.New("subnet id is required for load balancer type 'INTERNAL'")
+		}
+	case typelb.OpenLoadBalancerType:
+		if converter.PtrToVal(spec.CloudEipID) != "" {
+			return errors.New("eip id only support load balancer type 'INTERNAL'")
+		}
+		// 公网IPv4 不能指定子网
+		if spec.AddressIPVersion == typelb.IPV4IPVersion && converter.PtrToVal(spec.CloudSubnetID) != "" {
+			return errors.New("subnet id is not supported for IPV4 load balancer with type 'OPEN'")
+		}
+	default:
+		return fmt.Errorf("unknown load balancer type: '%s'", spec.LoadBalancerType)
+	}
+	// ipv6模式下，不允许修改安全组的放通模式，默认为关闭
+	if spec.AddressIPVersion == typelb.IPV6FullChainIPVersion && converter.PtrToVal(spec.LoadBalancerPassToTarget) {
+		return fmt.Errorf("ipv6 mode does not support load_balancer_pass_to_target")
+	}
+
+	return validator.Validate.Struct(spec)
+}
+
+// TCloudLoadBalancerCreateReq tcloud batch create req.
+type TCloudLoadBalancerCreateReq struct {
+	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id"`
+	Region    string  `json:"region" validate:"required"`
+	Name      *string `json:"name" validate:"required,max=60"`
+
+	TCloudLoadBalancerSpec `json:",inline" validate:"required"`
+
+	Memo string            `json:"memo" validate:"omitempty"`
 	Tags []apicore.TagPair `json:"tags,omitempty"`
 }
 
@@ -84,28 +120,26 @@ func (req *TCloudLoadBalancerCreateReq) Validate(bizRequired bool) error {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	switch req.LoadBalancerType {
-	case typelb.InternalLoadBalancerType:
-		// 内网校验
-		if converter.PtrToVal(req.CloudSubnetID) == "" {
-			return errors.New("subnet id is required for load balancer type 'INTERNAL'")
-		}
-	case typelb.OpenLoadBalancerType:
-		if converter.PtrToVal(req.CloudEipID) != "" {
-			return errors.New("eip id only support load balancer type 'INTERNAL'")
-		}
-		// 	公网IPv4 不能指定子网
-		if req.AddressIPVersion == typelb.IPV4IPVersion && converter.PtrToVal(req.CloudSubnetID) != "" {
-			return errors.New("subnet id is not supported for IPV4 load balancer with type 'OPEN'")
-		}
-	default:
-		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
-	}
-	// ipv6模式下, 不允许修改安全组的放通模式, 默认为关闭
-	if req.AddressIPVersion == typelb.IPV6FullChainIPVersion && converter.PtrToVal(req.LoadBalancerPassToTarget) {
-		return fmt.Errorf("ipv6 mode does not support load_balancer_pass_to_target")
+	if err := req.TCloudLoadBalancerSpec.ValidateSpec(); err != nil {
+		return err
 	}
 
+	return validator.Validate.Struct(req)
+}
+
+// TCloudLoadBalancerInquiryReq tcloud lb inquiry req
+type TCloudLoadBalancerInquiryReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+
+	TCloudLoadBalancerSpec `json:",inline" validate:"required"`
+}
+
+// Validate inquiry request.
+func (req *TCloudLoadBalancerInquiryReq) Validate() error {
+	if err := req.TCloudLoadBalancerSpec.ValidateSpec(); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(req)
 }
 

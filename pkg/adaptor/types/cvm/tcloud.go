@@ -181,13 +181,13 @@ const (
 type TCloudCreateOption struct {
 	DryRun                  bool                         `json:"dry_run" validate:"omitempty"`
 	Region                  string                       `json:"region" validate:"required"`
-	Name                    string                       `json:"name" validate:"required"`
+	Name                    string                       `json:"name" validate:"omitempty"`
 	Zone                    string                       `json:"zone" validate:"required"`
 	InstanceType            string                       `json:"instance_type" validate:"required"`
 	CloudImageID            string                       `json:"cloud_image_id" validate:"required"`
-	Password                string                       `json:"password" validate:"required"`
+	Password                string                       `json:"password" validate:"omitempty"`
 	RequiredCount           int64                        `json:"required_count" validate:"required"`
-	CloudSecurityGroupIDs   []string                     `json:"cloud_security_group_ids" validate:"required"`
+	CloudSecurityGroupIDs   []string                     `json:"cloud_security_group_ids" validate:"omitempty"`
 	ClientToken             *string                      `json:"client_token" validate:"omitempty"`
 	CloudVpcID              string                       `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID           string                       `json:"cloud_subnet_id" validate:"required"`

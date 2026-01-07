@@ -60,26 +60,28 @@ func ConvTCloudCvmCreateReq(req *cscvm.TCloudCvmCreateReq) *hcproto.TCloudBatchC
 	createReq := &hcproto.TCloudBatchCreateReq{
 		AccountID:             req.AccountID,
 		Region:                req.Region,
-		Name:                  req.Name,
 		Zone:                  req.Zone,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
+		Name:                  req.Name,
 		Password:              req.Password,
-		RequiredCount:         req.RequiredCount,
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
-		CloudVpcID:            req.CloudVpcID,
-		CloudSubnetID:         req.CloudSubnetID,
-		InstanceChargeType:    req.InstanceChargeType,
-		InstanceChargePrepaid: instanceChargePrepaid,
-		SystemDisk: &typecvm.TCloudSystemDisk{
-			DiskType:   req.SystemDisk.DiskType,
-			DiskSizeGB: &req.SystemDisk.DiskSizeGB,
+		TCloudCvmSpec: hcproto.TCloudCvmSpec{
+			InstanceType:          req.InstanceType,
+			CloudImageID:          req.CloudImageID,
+			RequiredCount:         req.RequiredCount,
+			CloudVpcID:            req.CloudVpcID,
+			CloudSubnetID:         req.CloudSubnetID,
+			InstanceChargeType:    req.InstanceChargeType,
+			InstanceChargePrepaid: instanceChargePrepaid,
+			SystemDisk: &typecvm.TCloudSystemDisk{
+				DiskType:   req.SystemDisk.DiskType,
+				DiskSizeGB: &req.SystemDisk.DiskSizeGB,
+			},
+			DataDisk:                dataDisk,
+			PublicIPAssigned:        req.PublicIPAssigned,
+			InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+			InternetChargeType:      req.InternetChargeType,
+			BandwidthPackageID:      req.BandwidthPackageID,
 		},
-		DataDisk:                dataDisk,
-		PublicIPAssigned:        req.PublicIPAssigned,
-		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
-		InternetChargeType:      req.InternetChargeType,
-		BandwidthPackageID:      req.BandwidthPackageID,
 	}
 
 	return createReq
@@ -242,29 +244,31 @@ func ConvHuaWeiCvmCreateReq(req *cscvm.HuaWeiCvmCreateReq) *hcproto.HuaWeiBatchC
 	createReq := &hcproto.HuaWeiBatchCreateReq{
 		AccountID:             req.AccountID,
 		Region:                req.Region,
-		Name:                  req.Name,
 		Zone:                  req.Zone,
-		InstanceType:          req.InstanceType,
-		CloudImageID:          req.CloudImageID,
+		Name:                  req.Name,
 		Password:              req.Password,
-		RequiredCount:         int32(req.RequiredCount),
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		CloudVpcID:            req.CloudVpcID,
 		CloudSubnetID:         req.CloudSubnetID,
-		Description:           req.Memo,
-		RootVolume: &typecvm.HuaWeiVolume{
-			VolumeType: req.SystemDisk.DiskType,
-			SizeGB:     int32(req.SystemDisk.DiskSizeGB),
+		HuaWeiCvmSpec: hcproto.HuaWeiCvmSpec{
+			InstanceType:  req.InstanceType,
+			CloudImageID:  req.CloudImageID,
+			RequiredCount: int32(req.RequiredCount),
+			Description:   req.Memo,
+			RootVolume: &typecvm.HuaWeiVolume{
+				VolumeType: req.SystemDisk.DiskType,
+				SizeGB:     int32(req.SystemDisk.DiskSizeGB),
+			},
+			DataVolume: dataVolumes,
+			InstanceCharge: &typecvm.HuaWeiInstanceCharge{
+				ChargingMode: req.InstanceChargeType,
+				PeriodType:   &periodType,
+				PeriodNum:    &periodNum,
+				IsAutoRenew:  req.AutoRenew,
+			},
+			PublicIPAssigned: req.PublicIPAssigned,
+			Eip:              req.Eip,
 		},
-		DataVolume: dataVolumes,
-		InstanceCharge: &typecvm.HuaWeiInstanceCharge{
-			ChargingMode: req.InstanceChargeType,
-			PeriodType:   &periodType,
-			PeriodNum:    &periodNum,
-			IsAutoRenew:  req.AutoRenew,
-		},
-		PublicIPAssigned: req.PublicIPAssigned,
-		Eip:              req.Eip,
 	}
 
 	return createReq

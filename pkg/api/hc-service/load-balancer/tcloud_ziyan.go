@@ -32,6 +32,16 @@ type TCloudZiyanLoadBalancerCreateReq struct {
 	ClusterIDs                  []string `json:"cluster_ids"`
 }
 
+// TCloudZiyanLoadBalancerInquiryReq 自研云CLB询价请求
+type TCloudZiyanLoadBalancerInquiryReq struct {
+	TCloudLoadBalancerInquiryReq `json:",inline" validate:"required"`
+}
+
+// Validate inquiry request.
+func (req *TCloudZiyanLoadBalancerInquiryReq) Validate() error {
+	return req.TCloudLoadBalancerInquiryReq.Validate()
+}
+
 // TCloudDescribeSlaCapacityOption ...
 type TCloudDescribeSlaCapacityOption struct {
 	AccountID                               string `json:"account_id" validate:"required"`

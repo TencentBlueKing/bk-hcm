@@ -132,34 +132,71 @@ func (req *HuaWeiBatchResetPwdReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// HuaWeiCvmSpec 计费/规格字段（询价/创建共用）
+type HuaWeiCvmSpec struct {
+	DryRun           bool                          `json:"dry_run" validate:"omitempty"`
+	InstanceType     string                        `json:"instance_type" validate:"required"`
+	CloudImageID     string                        `json:"cloud_image_id" validate:"required"`
+	RequiredCount    int32                         `json:"required_count" validate:"required"`
+	Description      *string                       `json:"description" validate:"omitempty"`
+	RootVolume       *typecvm.HuaWeiVolume         `json:"root_volume" validate:"required"`
+	DataVolume       []typecvm.HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
+	InstanceCharge   *typecvm.HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
+	PublicIPAssigned bool                          `json:"public_ip_assigned" validate:"omitempty"`
+	Eip              *typecvm.HuaWeiEip            `json:"eip" validate:"omitempty"`
+}
+
+// ValidateSpec 校验规格/计费字段
+func (spec *HuaWeiCvmSpec) ValidateSpec() error {
+	if spec == nil {
+		return fmt.Errorf("spec is required")
+	}
+	if spec.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
+		return fmt.Errorf("required_count should <= %d", constant.BatchCreateCvmFromCloudMaxLimit)
+	}
+	return validator.Validate.Struct(spec)
+}
+
 // HuaWeiBatchCreateReq batch create req.
 type HuaWeiBatchCreateReq struct {
-	DryRun                bool                          `json:"dry_run" validate:"omitempty"`
-	AccountID             string                        `json:"account_id" validate:"required"`
-	Region                string                        `json:"region" validate:"required"`
-	Name                  string                        `json:"name" validate:"required"`
-	Zone                  string                        `json:"zone" validate:"required"`
-	InstanceType          string                        `json:"instance_type" validate:"required"`
-	CloudImageID          string                        `json:"cloud_image_id" validate:"required"`
-	Password              string                        `json:"password" validate:"required"`
-	RequiredCount         int32                         `json:"required_count" validate:"required"`
-	CloudSecurityGroupIDs []string                      `json:"cloud_security_group_ids" validate:"required"`
-	ClientToken           *string                       `json:"client_token" validate:"omitempty"`
-	CloudVpcID            string                        `json:"cloud_vpc_id" validate:"required"`
-	CloudSubnetID         string                        `json:"cloud_subnet_id" validate:"required"`
-	Description           *string                       `json:"description" validate:"omitempty"`
-	RootVolume            *typecvm.HuaWeiVolume         `json:"root_volume" validate:"required"`
-	DataVolume            []typecvm.HuaWeiVolume        `json:"data_volume" validate:"omitempty"`
-	InstanceCharge        *typecvm.HuaWeiInstanceCharge `json:"instance_charge" validate:"required"`
-	PublicIPAssigned      bool                          `json:"public_ip_assigned" validate:"omitempty"`
-	Eip                   *typecvm.HuaWeiEip            `json:"eip" validate:"omitempty"`
+	AccountID             string   `json:"account_id" validate:"required"`
+	Region                string   `json:"region" validate:"required"`
+	Zone                  string   `json:"zone" validate:"required"`
+	Name                  string   `json:"name" validate:"required"`
+	Password              string   `json:"password" validate:"required"`
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string  `json:"client_token" validate:"omitempty"`
+	CloudVpcID            string   `json:"cloud_vpc_id" validate:"required"`
+	CloudSubnetID         string   `json:"cloud_subnet_id" validate:"required"`
+	HuaWeiCvmSpec         `json:",inline" validate:"required"`
 }
 
 // Validate request.
 func (req *HuaWeiBatchCreateReq) Validate() error {
-	if req.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
-		return fmt.Errorf("required_count should <= %d", constant.BatchCreateCvmFromCloudMaxLimit)
+	if err := req.HuaWeiCvmSpec.ValidateSpec(); err != nil {
+		return err
 	}
+	if req.CloudVpcID == "" {
+		return fmt.Errorf("cloud_vpc_id is required")
+	}
+	if req.CloudSubnetID == "" {
+		return fmt.Errorf("cloud_subnet_id is required")
+	}
+	return validator.Validate.Struct(req)
+}
 
+// HuaWeiCvmInquiryReq huawei cvm inquiry req
+type HuaWeiCvmInquiryReq struct {
+	AccountID     string `json:"account_id" validate:"required"`
+	Region        string `json:"region" validate:"required"`
+	Zone          string `json:"zone" validate:"required"`
+	HuaWeiCvmSpec `json:",inline" validate:"required"`
+}
+
+// Validate inquiry request.
+func (req *HuaWeiCvmInquiryReq) Validate() error {
+	if err := req.HuaWeiCvmSpec.ValidateSpec(); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(req)
 }

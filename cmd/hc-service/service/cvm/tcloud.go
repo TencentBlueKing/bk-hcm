@@ -133,7 +133,7 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 
 // InquiryPriceTCloudCvm inquiry price tcloud cvm.
 func (svc *cvmSvc) InquiryPriceTCloudCvm(cts *rest.Contexts) (interface{}, error) {
-	req := new(protocvm.TCloudBatchCreateReq)
+	req := new(protocvm.TCloudCvmInquiryReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -150,14 +150,10 @@ func (svc *cvmSvc) InquiryPriceTCloudCvm(cts *rest.Contexts) (interface{}, error
 	createOpt := &typecvm.TCloudCreateOption{
 		DryRun:                  req.DryRun,
 		Region:                  req.Region,
-		Name:                    req.Name,
 		Zone:                    req.Zone,
 		InstanceType:            req.InstanceType,
 		CloudImageID:            req.CloudImageID,
-		Password:                req.Password,
 		RequiredCount:           req.RequiredCount,
-		CloudSecurityGroupIDs:   req.CloudSecurityGroupIDs,
-		ClientToken:             req.ClientToken,
 		CloudVpcID:              req.CloudVpcID,
 		CloudSubnetID:           req.CloudSubnetID,
 		InstanceChargeType:      req.InstanceChargeType,
@@ -168,6 +164,7 @@ func (svc *cvmSvc) InquiryPriceTCloudCvm(cts *rest.Contexts) (interface{}, error
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
 		InternetChargeType:      req.InternetChargeType,
 		BandwidthPackageID:      req.BandwidthPackageID,
+		// 询价不需要 Name/Password/SG 等非计费字段
 	}
 	result, err := tcloud.InquiryPriceCvm(cts.Kit, createOpt)
 	if err != nil {

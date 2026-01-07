@@ -115,19 +115,12 @@ func (req *TCloudBatchResetPwdReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudBatchCreateReq tcloud batch create req.
-type TCloudBatchCreateReq struct {
+// TCloudCvmSpec 计费/规格字段（询价/创建共用，不含名称/密码/安全组等非计费字段）
+type TCloudCvmSpec struct {
 	DryRun                  bool                                 `json:"dry_run" validate:"omitempty"`
-	AccountID               string                               `json:"account_id" validate:"required"`
-	Region                  string                               `json:"region" validate:"required"`
-	Name                    string                               `json:"name" validate:"required"`
-	Zone                    string                               `json:"zone" validate:"required"`
 	InstanceType            string                               `json:"instance_type" validate:"required"`
 	CloudImageID            string                               `json:"cloud_image_id" validate:"required"`
-	Password                string                               `json:"password" validate:"required"`
 	RequiredCount           int64                                `json:"required_count" validate:"required"`
-	CloudSecurityGroupIDs   []string                             `json:"cloud_security_group_ids" validate:"required"`
-	ClientToken             *string                              `json:"client_token" validate:"omitempty"`
 	CloudVpcID              string                               `json:"cloud_vpc_id" validate:"required"`
 	CloudSubnetID           string                               `json:"cloud_subnet_id" validate:"required"`
 	InstanceChargeType      typecvm.TCloudInstanceChargeType     `json:"instance_charge_type" validate:"required"`
@@ -140,12 +133,52 @@ type TCloudBatchCreateReq struct {
 	BandwidthPackageID      *string                              `json:"bandwidth_package_id" validate:"omitempty"`
 }
 
-// Validate request.
-func (req *TCloudBatchCreateReq) Validate() error {
-	if req.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
+// ValidateSpec 校验规格/计费字段
+func (spec *TCloudCvmSpec) ValidateSpec() error {
+	if spec == nil {
+		return fmt.Errorf("spec is required")
+	}
+	if spec.RequiredCount > constant.BatchCreateCvmFromCloudMaxLimit {
 		return fmt.Errorf("required_count should <= %d", constant.BatchCreateCvmFromCloudMaxLimit)
 	}
+	return validator.Validate.Struct(spec)
+}
 
+// TCloudBatchCreateReq tcloud batch create req.
+type TCloudBatchCreateReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	Zone      string `json:"zone" validate:"required"`
+	Name      string `json:"name" validate:"required"`
+
+	TCloudCvmSpec `json:",inline" validate:"required"`
+
+	Password              string   `json:"password" validate:"required"`
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required"`
+	ClientToken           *string  `json:"client_token" validate:"omitempty"`
+}
+
+// Validate request.
+func (req *TCloudBatchCreateReq) Validate() error {
+	if err := req.TCloudCvmSpec.ValidateSpec(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// TCloudCvmInquiryReq tcloud cvm inquiry req
+type TCloudCvmInquiryReq struct {
+	AccountID     string `json:"account_id" validate:"required"`
+	Region        string `json:"region" validate:"required"`
+	Zone          string `json:"zone" validate:"required"`
+	TCloudCvmSpec `json:",inline" validate:"required"`
+}
+
+// Validate inquiry request.
+func (req *TCloudCvmInquiryReq) Validate() error {
+	if err := req.TCloudCvmSpec.ValidateSpec(); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(req)
 }
 
@@ -206,4 +239,3 @@ func (opt TCloudInstanceConfigListOption) Validate() error {
 	}
 	return validator.Validate.Struct(opt)
 }
-
