@@ -21,6 +21,7 @@ package enumor
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"time"
@@ -529,23 +530,38 @@ var CvmModifyRecordStatusMap = map[CvmModifyRecordStatus]string{
 	ApprovalTimeoutCvmModifyStatus:  "审批超时",
 }
 
-// ResAssign 资源分配方式（1表示“有资源区域优先”、2表示“分Campus生产”）
-type ResAssign uint
+// CPUThreadSwitch CPU超线程开关（0表示“默认”、1表示“关闭”、2表示“开启”）
+type CPUThreadSwitch int
 
 const (
-	// ResPriorityResAssign 有资源区域优先
-	ResPriorityResAssign ResAssign = 1
-	// CampusResAssign 分Campus生产
-	CampusResAssign ResAssign = 2
+	// CPUThreadClose CPU超线程-关闭
+	CPUThreadClose CPUThreadSwitch = 1
+	// CPUThreadOpen CPU超线程-开启
+	CPUThreadOpen CPUThreadSwitch = 2
 )
 
-// Validate ResAssign.
-func (r ResAssign) Validate() error {
+var (
+	// allowedCPUThreadDeviceTypeRegex 允许开启/关闭CPU超线程的设备类型正则
+	allowedCPUThreadDeviceTypeRegex = regexp.MustCompile(
+		`^(SA9|SA9e|S9|S9e|S9pro|SA5|S8|SA4|S6|SA3|SA2|S5|S5se|` +
+			`MA9|MA9e|M9|M9e|M9pro|MA5|M8|M6ce|M6|MA3|MA2|M5|` +
+			`C6|C5|C4|CN3|C3|IT5|IT3|IA3se|D3|D2)`,
+	)
+)
+
+// Validate CPUThreadSwitch.
+func (r CPUThreadSwitch) Validate(deviceType string) error {
 	switch r {
-	case ResPriorityResAssign:
-	case CampusResAssign:
+	case CPUThreadClose:
+	case CPUThreadOpen:
 	default:
-		return fmt.Errorf("unsupported verify res assign result: %d", r)
+		return fmt.Errorf("unsupported verify cpu thread switch result: %d", r)
+	}
+
+	// 允许开启/关闭CPU超线程的设备类型
+	matched := allowedCPUThreadDeviceTypeRegex.MatchString(deviceType)
+	if !matched {
+		return fmt.Errorf("spec.cpu_thread_switch not allowed to set for device_type: %s", deviceType)
 	}
 
 	return nil
@@ -674,4 +690,26 @@ const (
 // GetAllApplyTicketSource get all apply ticket source
 func GetAllApplyTicketSource() []ApplyTicketSource {
 	return []ApplyTicketSource{ApplyTicketSrcBusiness, ApplyTicketSrcPurchaseToResPool}
+}
+
+// ResAssign 资源分配方式（1表示“有资源区域优先”、2表示“分Campus生产”）
+type ResAssign uint
+
+const (
+	// ResPriorityResAssign 有资源区域优先
+	ResPriorityResAssign ResAssign = 1
+	// CampusResAssign 分Campus生产
+	CampusResAssign ResAssign = 2
+)
+
+// Validate ResAssign.
+func (r ResAssign) Validate() error {
+	switch r {
+	case ResPriorityResAssign:
+	case CampusResAssign:
+	default:
+		return fmt.Errorf("unsupported verify res assign result: %d", r)
+	}
+
+	return nil
 }

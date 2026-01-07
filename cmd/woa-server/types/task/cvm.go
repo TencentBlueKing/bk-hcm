@@ -48,6 +48,9 @@ type CVM struct {
 	SystemDisk        enumor.DiskSpec        `json:"system_disk"`
 	DataDisk          []enumor.DiskSpec      `json:"data_disk"`
 	FuzzyZone         []cvmapi.FuzzyZoneItem `json:"fuzzyZone"` // 可用区模糊申领，传入多个可用区+vpc+子网
+	CPUCore           int64                  `json:"cpu_core"`  // CPU核心数
+	// CPU超线程(0:默认 1:关闭 2:开启)
+	CPUThreadSwitch enumor.CPUThreadSwitch `json:"cpu_thread_switch"`
 }
 
 // DeliveredCVMKey delivered cvm key

@@ -1356,6 +1356,7 @@ func (s *scheduler) fillCVMAppliedCore(kt *kit.Kit, param *types.ApplyReq) (*typ
 		if param.Suborders[i].Spec != nil {
 			param.Suborders[i].Spec.DeviceGroup = deviceTypeInfo.DeviceGroup
 			param.Suborders[i].Spec.DeviceSize = deviceTypeInfo.CoreType
+			param.Suborders[i].Spec.CPUCore = deviceTypeInfo.CPUAmount
 		}
 	}
 

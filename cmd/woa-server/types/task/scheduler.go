@@ -837,6 +837,7 @@ type ResourceSpec struct {
 	Zone        string          `json:"zone" bson:"zone"`
 	DeviceGroup string          `json:"device_group" bson:"device_group"` // 机型族
 	DeviceSize  enumor.CoreType `json:"device_size" bson:"device_size"`   // 机型核心类型(小核心、中核心、大核心)
+	CPUCore     int64           `json:"cpu_core"`                         // CPU核心数
 	DeviceType  string          `json:"device_type" bson:"device_type"`
 	ImageId     string          `json:"image_id" bson:"image_id"`
 	Image       string          `json:"image" bson:"image"`
@@ -866,18 +867,15 @@ type ResourceSpec struct {
 	Zones         []string          `json:"zones" bson:"zones"` //  多可用区
 	// ResAssign 资源分配方式（1表示“有资源区域优先”、2表示“分Campus生产”）
 	ResAssign enumor.ResAssign `json:"res_assign" bson:"res_assign"`
+	// CPU超线程(0:默认 1:关闭 2:开启)
+	CPUThreadSwitch enumor.CPUThreadSwitch `json:"cpu_thread_switch" bson:"cpu_thread_switch"`
 }
 
 // Validate whether ResourceSpec is valid
-// errKey: invalid key
-// err: detail reason why errKey is invalid
 func (s *ResourceSpec) Validate(resType ResourceType) error {
-	if len(s.Region) == 0 {
-		return fmt.Errorf("spec.region cannot be empty")
-	}
-
-	if len(s.Vpc) > 0 && len(s.Subnet) == 0 {
-		return fmt.Errorf("spec.subnet cannot be empty while vpc is set")
+	// 地域、可用区、VPC、子网校验
+	if err := s.validateRegionZoneAndNetwork(); err != nil {
+		return err
 	}
 
 	if len(s.DeviceType) == 0 {
@@ -889,6 +887,26 @@ func (s *ResourceSpec) Validate(resType ResourceType) error {
 		return err
 	}
 
+	// 镜像ID校验
+	if err := s.validateImageId(resType); err != nil {
+		return err
+	}
+
+	// 计费模式校验
+	if err := s.validateChargeType(); err != nil {
+		return err
+	}
+
+	// CPU超线程参数校验
+	if err := s.validateCPUThreadSwitch(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateImageId 校验镜像ID
+func (s *ResourceSpec) validateImageId(resType ResourceType) error {
 	switch resType {
 	case ResourceTypeCvm:
 		if len(s.ImageId) == 0 {
@@ -896,16 +914,48 @@ func (s *ResourceSpec) Validate(resType ResourceType) error {
 		}
 	}
 
-	// 计费模式校验
-	if len(s.ChargeType) > 0 {
-		if err := s.ChargeType.Validate(); err != nil {
-			return err
-		}
+	return nil
+}
 
-		// 包年包月时，计费时长必传
-		if s.ChargeType == cvmapi.ChargeTypePrePaid && s.ChargeMonths < 1 {
-			return fmt.Errorf("spec.charge_months invalid value < 1")
-		}
+// validateCPUThreadSwitch 校验CPU超线程参数
+func (s *ResourceSpec) validateCPUThreadSwitch() error {
+	if s.CPUThreadSwitch == 0 {
+		return nil
+	}
+
+	if err := s.CPUThreadSwitch.Validate(s.DeviceType); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateChargeType 校验计费模式
+func (s *ResourceSpec) validateChargeType() error {
+	if len(s.ChargeType) == 0 {
+		return nil
+	}
+
+	if err := s.ChargeType.Validate(); err != nil {
+		return err
+	}
+
+	// 包年包月时，计费时长必传
+	if s.ChargeType == cvmapi.ChargeTypePrePaid && s.ChargeMonths < 1 {
+		return fmt.Errorf("spec.charge_months invalid value < 1")
+	}
+
+	return nil
+}
+
+// validateRegionZoneAndNetwork 校验地域、可用区、VPC、子网
+func (s *ResourceSpec) validateRegionZoneAndNetwork() error {
+	if len(s.Region) == 0 {
+		return fmt.Errorf("spec.region cannot be empty")
+	}
+
+	if len(s.Vpc) > 0 && len(s.Subnet) == 0 {
+		return fmt.Errorf("spec.subnet cannot be empty while vpc is set")
 	}
 
 	// 可用区校验
@@ -913,7 +963,7 @@ func (s *ResourceSpec) Validate(resType ResourceType) error {
 		return fmt.Errorf("spec.zone or spec.zones cannot be empty")
 	}
 
-	// 如果是多可用区或“全部”可用区，那么Vpc和Subnet不能指定，必须为空
+	// 如果是多可用区或"全部"可用区，那么Vpc和Subnet不能指定，必须为空
 	if (len(s.Zones) == 1 && s.Zones[0] == cvmapi.CvmZoneAll) || len(s.Zones) > 1 {
 		// 资源分配方式校验
 		if err := s.ResAssign.Validate(); err != nil {

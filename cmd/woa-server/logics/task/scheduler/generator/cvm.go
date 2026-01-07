@@ -185,6 +185,12 @@ func (g *Generator) getCreateCvmReq(cvm *types.CVM) *cvmapi.OrderCreateReq {
 	if requireType == enumor.RequireTypeGreenChannel {
 		createReq.Params.ResourceType = cvmapi.ResourceTypeQuick
 	}
+	if cvm.CPUThreadSwitch > 0 {
+		createReq.Params.CpuTopology = &cvmapi.CpuTopology{
+			CoreCount:     cvm.CPUCore,
+			ThreadPerCore: cvm.CPUThreadSwitch,
+		}
+	}
 	return createReq
 }
 
@@ -458,6 +464,11 @@ func (g *Generator) buildCvmReq(kt *kit.Kit, order *types.ApplyOrder, orderZones
 		return nil, err
 	}
 
+	// CPU超线程(0:默认 1:关闭 2:开启)
+	if order.Spec.CPUThreadSwitch > 0 {
+		req.CPUCore = order.Spec.CPUCore
+		req.CPUThreadSwitch = order.Spec.CPUThreadSwitch
+	}
 	req.BkProductID = productInfo.BkProductID
 	req.BkProductName = productInfo.BkProductName
 	req.VirtualDeptID = productInfo.VirtualDeptID

@@ -68,6 +68,7 @@ type OrderCreateParams struct {
 	ChargeMonths      uint            `json:"chargeMonths,omitempty"`
 	InheritInstanceId string          `json:"inheritInstanceId,omitempty"`
 	FuzzyZone         []FuzzyZoneItem `json:"fuzzyZone"` // 可用区模糊申领，传入多个可用区+vpc+子网
+	CpuTopology       *CpuTopology    `json:"cpuTopology,omitempty"`
 }
 
 // ResourceType 申请类型
@@ -777,4 +778,10 @@ type TransOrderBaseInfo struct {
 	AfterProductName     string `json:"afterProductName"`
 	AfterBgName          string `json:"afterBgName"`
 	SkipTodo             bool   `json:"skipTodo"` // 是否免审，只有IEGtoIEG才生效
+}
+
+// CpuTopology cvm cpu topology specification
+type CpuTopology struct {
+	CoreCount     int64                  `json:"coreCount"`     // CPU核数
+	ThreadPerCore enumor.CPUThreadSwitch `json:"threadPerCore"` // 每核线程数(1:关闭 2:开启)
 }

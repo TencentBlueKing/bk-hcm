@@ -56,6 +56,7 @@ POST /api/v1/woa/task/create/apply
 | data_disk           | DiskObject array | 否  | 数据盘，支持多块硬盘，磁盘大小：20G-32000G且为10的倍数，数据盘数量总和不能超过20块 |
 | zones               | string array     | 否  | 多可用区(选“全部”时传all)                                      |
 | res_assign          | int              | 否  | 资源分配方式(1表示“有资源区域优先”、2表示“分Campus生产”)           |
+| cpu_thread_switch   | int              | 否  | CPU超线程(默认不传，1:关闭 2:开启)                              |
 
 #### spec for IDCPM
 
