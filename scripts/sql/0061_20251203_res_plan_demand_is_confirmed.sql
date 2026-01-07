@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
+    SQLVER=0061,HCMVER=v1.8.8.8
 
     Notes:
     1. 修改`res_plan_demand`表，新增`is_confirmed`字段，用于标记预测是否已确认
@@ -30,6 +30,6 @@ ALTER TABLE `res_plan_demand`
     ADD COLUMN `is_confirmed` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已确认' AFTER `disk_io`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.8.8' as `hcm_ver`, '0061' as `sql_ver`;
 
 COMMIT;
