@@ -2,10 +2,8 @@
 import {
   ref,
   h,
-  PropType,
   watch,
   reactive,
-  defineExpose,
   computed,
   withDirectives,
   nextTick,
@@ -68,22 +66,22 @@ import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import RefreshCell from '../components/security/refresh-cell/index.vue';
+import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
-  isResourcePage: {
-    type: Boolean,
-  },
-  bkBizId: Number,
-});
+interface IProps {
+  filter: FilterType;
+  isResourcePage: boolean;
+  whereAmI: string;
+  bkBizId: number;
+}
+const props = defineProps<IProps>();
 
 const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-done']);
 
 let firstTime = true;
 
 // use hooks
+const { searchData, searchValue, filter } = useFilter(props);
 const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
@@ -92,7 +90,7 @@ const securityGroupStore = useSecurityGroupStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
 const route = useRoute();
-const { whereAmI, getBizsId } = useWhereAmI();
+const { whereAmI: whereAmIRef, getBizsId } = useWhereAmI();
 
 const resourceAccountStore = useResourceAccountStore();
 const { selectedAccountId, vendorInResourcePage } = storeToRefs(resourceAccountStore);
@@ -127,11 +125,7 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 });
 
 const templateData = ref([]);
-const searchData = ref([]);
-const searchValue = ref([]);
 const regionChildren = ref([]);
-
-const filter = reactive<any>(cloneDeep(props.filter));
 
 const selectSearchData = computed(() => {
   const map: Record<string, { idName: string; searchData: ISearchItem[] & ModelProperty[] }> = {
@@ -160,12 +154,12 @@ const selectSearchData = computed(() => {
           option: {
             [SecurityGroupManageType.BIZ]: t('业务管理'),
             [SecurityGroupManageType.PLATFORM]: t('平台管理'),
-            unknown: t('未确认'),
+            [SecurityGroupManageType.UNKNOWN]: t('未确认'),
           },
           children: [
             { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
             { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: '', name: t('未确认') },
+            { id: SecurityGroupManageType.UNKNOWN, name: t('未确认') },
           ],
           multiple: true,
           meta: {
@@ -245,7 +239,7 @@ const asyncRegionChildren = computed(() => regionChildren.value);
 const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
-  useQueryCommonList({ filter }, fetchUrl, {
+  useQueryCommonList({ filter: filter.value }, fetchUrl, {
     asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
       // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !datalist.length) return [];
@@ -286,7 +280,7 @@ const fetchSecurityGroupExtraFields = async (
   const relatedResourcesPromise = fetchSecurityGroupRelatedResourcesCount(sgIds, datalistRef);
 
   const maintainerPromise =
-    whereAmI.value === Senarios.business && unclaimedSgIds.length
+    whereAmIRef.value === Senarios.business && unclaimedSgIds.length
       ? securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds).then((maintainers) => {
           const maintainerMap = new Map(maintainers.map((item) => [item.id, item]));
           datalistRef.value.forEach((sg) => {
@@ -327,11 +321,11 @@ watch(
       const ids = data.map(({ id }) => id);
       if (!ids.length) return;
       const url = `/api/v1/cloud${
-        whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''
+        whereAmIRef.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''
       }/argument_templates/instance/rule/list`;
       const res = await http.post(url, {
         ids,
-        bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
+        bk_biz_id: whereAmIRef.value === Senarios.business ? accountStore.bizs : undefined,
       });
       const dataMap = new Map<any, { id: any; instance_num: any; rule_num: any }>(
         res.data.map((element: { id: any; instance_num: any; rule_num: any }) => [element.id, element]),
@@ -526,7 +520,7 @@ const groupColumns = [
     render: ({ cell, data }: any) => {
       if (!cell || cell === -1) return '--';
       const { mgmt_type, bk_biz_id } = data;
-      if (mgmt_type === SecurityGroupManageType.BIZ && bk_biz_id === -1 && whereAmI.value === Senarios.business) {
+      if (mgmt_type === SecurityGroupManageType.BIZ && bk_biz_id === -1 && whereAmIRef.value === Senarios.business) {
         return h(UnclaimedComp, { data });
       }
       return getNameFromBusinessMap(cell);
@@ -679,7 +673,7 @@ const groupColumns = [
     },
   },
 ].filter((item) => {
-  if (Senarios.business === whereAmI.value) return !item.notDisplayedInBusiness;
+  if (Senarios.business === whereAmIRef.value) return !item.notDisplayedInBusiness;
   return true;
 });
 
@@ -892,7 +886,7 @@ const gcpColumns = [
     },
   },
 ].filter((item) => {
-  if (Senarios.business === whereAmI.value) return !item.notDisplayedInBusiness;
+  if (Senarios.business === whereAmIRef.value) return !item.notDisplayedInBusiness;
   return true;
 });
 
@@ -1034,10 +1028,11 @@ const templateColumns = [
 ]
   .filter(
     ({ field }) =>
-      (whereAmI.value === Senarios.resource && !['actions'].includes(field)) || whereAmI.value !== Senarios.resource,
+      (whereAmIRef.value === Senarios.resource && !['actions'].includes(field)) ||
+      whereAmIRef.value !== Senarios.resource,
   )
   .filter((item) => {
-    if (Senarios.business === whereAmI.value) return !item.notDisplayedInBusiness;
+    if (Senarios.business === whereAmIRef.value) return !item.notDisplayedInBusiness;
     return true;
   });
 
@@ -1051,7 +1046,7 @@ const isGcpVendor = computed(() => VendorEnum.GCP === vendorInResourcePage.value
 const isTcloudVendor = computed(() => VendorEnum.TCLOUD === vendorInResourcePage.value);
 const isZiyanVendor = computed(() => VendorEnum.ZIYAN === vendorInResourcePage.value);
 const types = computed(() => {
-  if (whereAmI.value === Senarios.business || isAllVendor.value) {
+  if (whereAmIRef.value === Senarios.business || isAllVendor.value) {
     return [securityType, gcpType, templateType];
   }
   if (isGcpVendor.value) {
@@ -1087,15 +1082,15 @@ watch(
   () => activeType.value,
   (v) => {
     fetchUrl.value = URL_MAP[v] || '';
-    filter.rules = [];
+    filter.value.rules = [];
     resetSelections();
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
     emit('handleSecrityType', v);
 
     // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
-    const isResourcePage = whereAmI.value === Senarios.resource;
-    const isBusinessPage = whereAmI.value === Senarios.business;
+    const isResourcePage = whereAmIRef.value === Senarios.resource;
+    const isBusinessPage = whereAmIRef.value === Senarios.business;
     const path = isResourcePage ? '/resource/resource' : '/business/security';
     const bizId = isBusinessPage ? getBizsId() : undefined;
     const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
@@ -1283,7 +1278,7 @@ watch(
     if (hasRegion) {
       regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
     }
-    filter.rules = rules;
+    filter.value.rules = rules;
     searchValue.value = buildSearchSelectValueBySearchQsCondition(value, selectSearchData.value);
     if (firstTime) {
       // 资源下业务切换资源tab时候，进行强制更新type
@@ -1326,7 +1321,7 @@ onMounted(() => {
   // 默认进来搜索是 管理类型：业务管理|未确认
   const value = Object.keys(searchQs.get(route.query))?.length
     ? searchQs.get(route.query)
-    : { mgmt_type: ['biz', 'unknown'] };
+    : { mgmt_type: [SecurityGroupManageType.BIZ, SecurityGroupManageType.UNKNOWN] };
   searchQs.set(value);
 });
 
