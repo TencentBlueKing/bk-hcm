@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
@@ -157,6 +158,18 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
+	// 非ENI类型的RS，需要查询CVM表，校验RS是否存在
+	rsIPs := make([]string, 0)
+	for _, detail := range l.details {
+		if detail.InstType != enumor.EniInstType {
+			rsIPs = append(rsIPs, detail.RsIp)
+		}
+	}
+	cvmList, err := batchGetCvmWithoutVpc(kt, l.dataServiceCli, rsIPs, l.vendor, l.bkBizID, l.accountID)
+	if err != nil {
+		return err
+	}
+
 	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer4ListenerBindRSDetail) error {
 
@@ -179,13 +192,13 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			}
 			detail.RegionID = lb.Region
 
-			err := l.validateListener(kt, detail)
+			err = l.validateListener(kt, detail)
 			if err != nil {
 				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 
-			err = l.validateRS(kt, detail, lb)
+			err = l.validateRS(kt, detail, lb, cvmList)
 			if err != nil {
 				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
 				return err
@@ -274,7 +287,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail,
-	lb corelb.LoadBalancerRaw) error {
+	lb corelb.LoadBalancerRaw, cvmList []corecvm.BaseCvm) error {
 
 	if curDetail.InstType == enumor.EniInstType {
 		// ENI 不做校验
@@ -287,7 +300,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return err
 	}
 	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
-		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID)
+		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, cvmList)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
