@@ -181,7 +181,10 @@
 
   .network-info-collapse-panel {
     box-shadow: none !important;
-    margin-bottom: 24px;
+
+    &:not(:has(+ .bk-collapse-wrapper)) {
+      margin-bottom: 24px;
+    }
 
     .bk-collapse-header {
       margin-left: -40px;
@@ -207,6 +210,10 @@
 
     .bk-collapse-content {
       padding: 0 !important;
+
+      .bk-form-item {
+        margin-bottom: 16px !important;
+      }
     }
 
     .cvm-vpc-selector,

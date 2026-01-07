@@ -1,0 +1,50 @@
+.form-item-collapse {
+  background-color: #fff;
+  box-shadow: none;
+
+  .form-item-collapse-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    .sub-title {
+      margin-left: 40px;
+    }
+  }
+
+  :global {
+    .bk-collapse-item {
+      margin-bottom: 12px;
+
+      &.bk-collapse-item-active {
+        margin-bottom: 0;
+      }
+    }
+
+    .bk-collapse-header {
+      margin-left: -40px;
+
+      &:hover {
+        background-color: transparent !important;
+      }
+
+      .bk-collapse-title {
+        font-weight: 400;
+      }
+
+      .bk-collapse-icon {
+        top: 17px;
+        left: 24px;
+        color: #979ba5;
+
+        svg {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .bk-collapse-content {
+      padding: 0 !important;
+    }
+  }
+}

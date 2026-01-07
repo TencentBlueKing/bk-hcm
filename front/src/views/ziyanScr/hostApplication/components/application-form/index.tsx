@@ -1,6 +1,7 @@
 import { defineComponent, onMounted, ref, watch, nextTick, computed, reactive, useTemplateRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import './index.scss';
+import classes from './style.module.scss';
 import { Input, Button, Sideslider, Message, Dropdown, Alert } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import CommonCard from '@/components/CommonCard';
@@ -57,6 +58,14 @@ import AffinityCheckResultDialog from './affinity-check/affinity-check-result-di
 
 // 资源利用率
 import ResourceUsageRateCard from '@/components/resource-usage-rate/resource-usage-rate-card.vue';
+// CPU超线程开关
+import CpuThreadSelector from './cpu-thread/cpu-thread-selector.vue';
+import {
+  CpuThreadSwitch,
+  isDeviceTypeSupportCpuThread,
+  isBizInCpuThreadWhitelist,
+  useCpuThread,
+} from './cpu-thread/use-cpu-thread';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -147,6 +156,7 @@ export default defineComponent({
         inherit_instance_id: '', // 继承套餐的机器代表实例ID
         cpu: undefined,
         res_assign: undefined,
+        cpu_thread_switch: undefined, // CPU超线程开关
       },
     });
 
@@ -198,6 +208,9 @@ export default defineComponent({
             QCLOUDCVMForm.value.spec.vpc = '';
           }
         }
+
+        // 变更机型后，CPU超线程开关重置为默认值
+        QCLOUDCVMForm.value.spec.cpu_thread_switch = undefined;
       }
     };
 
@@ -496,7 +509,7 @@ export default defineComponent({
       }
     };
 
-    const resolveSpecDataDiskInReApply = (spec: any) => {
+    const resolveSpecDataInReApply = (spec: any) => {
       const { data_disk, disk_type, disk_size } = spec;
       if (spec.zones === null && spec.zone === 'cvm_separate_campus') {
         spec.zones = ['all'];
@@ -504,6 +517,11 @@ export default defineComponent({
       // 兼容旧单据数据
       if (!data_disk) {
         return disk_type ? { ...spec, data_disk: [{ disk_type, disk_size, disk_num: 1 }] } : { ...spec, data_disk: [] };
+      }
+
+      // 修正CPU超线程开关
+      if (!isDeviceTypeSupportCpuThread(spec.device_type) || !isBizInCpuThreadWhitelist(Number(computedBiz.value))) {
+        spec.cpu_thread_switch = undefined;
       }
       return spec;
     };
@@ -542,7 +560,7 @@ export default defineComponent({
             resource_type,
             remark,
             replicas: +replicas,
-            spec: resolveSpecDataDiskInReApply(spec),
+            spec: resolveSpecDataInReApply(spec),
             applied_core,
           };
 
@@ -610,6 +628,8 @@ export default defineComponent({
       return whereAmI.value === Senarios.business ? getBizsId() : order.value.model.bkBizId;
     });
 
+    const { enabledCpuThread } = useCpuThread(computedBiz, QCLOUDCVMForm);
+
     const assignment = (data: any) => {
       resourceForm.value.resourceType = 'QCLOUDCVM';
       QCLOUDCVMForm.value.spec = {
@@ -625,6 +645,7 @@ export default defineComponent({
         inherit_instance_id: '',
         cpu: data.cpu,
         res_assign: data.res_assign,
+        cpu_thread_switch: undefined,
       };
       resourceForm.value.region = data.region;
       resourceForm.value.zone = data.zone;
@@ -698,6 +719,7 @@ export default defineComponent({
           inherit_instance_id: QCLOUDCVMForm.value.spec.inherit_instance_id, // 继承套餐的机器实例id不用清除
           cpu: undefined,
           res_assign: undefined,
+          cpu_thread_switch: undefined, // CPU超线程开关
         },
       };
       pmForm.value.spec = {
@@ -1590,6 +1612,32 @@ export default defineComponent({
                               }
                               onChangeVpc={handleVpcChange}
                             />
+                            {enabledCpuThread.value && (
+                              <bk-collapse class={classes['form-item-collapse']}>
+                                <bk-collapse-panel icon='right-shape' alone>
+                                  {{
+                                    default: () => (
+                                      <div class={classes['form-item-collapse-title']}>
+                                        CPU超线程
+                                        <span class={classes['sub-title']}>
+                                          {
+                                            // eslint-disable-next-line no-nested-ternary
+                                            QCLOUDCVMForm.value.spec.cpu_thread_switch !== undefined
+                                              ? QCLOUDCVMForm.value.spec.cpu_thread_switch === CpuThreadSwitch.ENABLED
+                                                ? '开启'
+                                                : '关闭'
+                                              : '默认无需配置'
+                                          }
+                                        </span>
+                                      </div>
+                                    ),
+                                    content: () => (
+                                      <CpuThreadSelector v-model={QCLOUDCVMForm.value.spec.cpu_thread_switch} />
+                                    ),
+                                  }}
+                                </bk-collapse-panel>
+                              </bk-collapse>
+                            )}
                             <bk-form-item label='备注'>
                               <Input
                                 type='textarea'
