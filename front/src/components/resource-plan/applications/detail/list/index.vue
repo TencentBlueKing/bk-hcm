@@ -35,7 +35,7 @@ const columns = [
     sort: true,
   },
   {
-    label: '预测类型',
+    label: '预测用途',
     field: 'demand_class',
   },
   {

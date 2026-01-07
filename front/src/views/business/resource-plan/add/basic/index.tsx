@@ -119,7 +119,7 @@ export default defineComponent({
           <bk-alert theme='warning' class={cssModule['biz-list']}>
             {t(`注意：当前运营产品有${bizListLength.value}个业务，资源预测额度在这${bizListLength.value}个业务中共用`)}
           </bk-alert>
-          <bk-form-item label={t('预测类型')} property='demand_class' required class={cssModule['forecast-type']}>
+          <bk-form-item label={t('预测用途')} property='demand_class' required class={cssModule['forecast-type']}>
             <bk-select
               clearable
               loading={isLoadingDemandClasses.value}

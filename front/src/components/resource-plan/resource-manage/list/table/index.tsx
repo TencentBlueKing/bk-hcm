@@ -18,6 +18,7 @@ import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { ITimeRange } from '@/typings/plan';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import useCvmChargeType from '@/views/ziyanScr/hooks/use-cvm-charge-type';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -51,6 +52,7 @@ export default defineComponent({
     const { getRequirementObsProject } = useConfigRequirementStore();
     const requirementObsProjectMap = ref<IRequirementObsProject>({});
     const { getBizsId } = useWhereAmI();
+    const { cvmChargeTypes } = useCvmChargeType();
 
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialog = useGlobalPermissionDialog();
@@ -141,7 +143,10 @@ export default defineComponent({
                       ? 'hcm-no-permision-text-btn'
                       : undefined
                   }`}
-                  disabled={data.status !== ResourcesDemandsStatus.CAN_APPLY}
+                  disabled={
+                    data.status !== ResourcesDemandsStatus.CAN_APPLY ||
+                    !['常规项目', '短租项目', '2026春节保障', '2026机房裁撤'].includes(data.obs_project)
+                  }
                   onClick={() => handleApply(data)}>
                   一键申领
                 </Button>
@@ -280,7 +285,7 @@ export default defineComponent({
     };
 
     const handleApply = (data: IListResourcesDemandsItem) => {
-      const { demand_id, bk_biz_id, device_type, region_id: region, zone_id: zone, obs_project } = data;
+      const { demand_id, bk_biz_id, device_type, region_id: region, zone_id: zone, obs_project, plan_type } = data;
 
       // 由obs_project得到requireType
       const requireType = Object.entries(requirementObsProjectMap.value).find(
@@ -295,6 +300,7 @@ export default defineComponent({
           zone,
           require_type: requireType,
           id: demand_id,
+          charge_type: plan_type === '预测内' ? cvmChargeTypes.PREPAID : cvmChargeTypes.POSTPAID_BY_HOUR,
           from: 'businessResourcePlan',
           [GLOBAL_BIZS_KEY]: bk_biz_id,
         },

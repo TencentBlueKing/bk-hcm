@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import Inventory from './children/inventory/index.vue';
 import ResourcePlan from './children/resource-plan/index.vue';
 import { RequirementType } from '@/store/config/requirement';
+import useCvmChargeType from '@/views/ziyanScr/hooks/use-cvm-charge-type';
 import { type IResourcesDemandItem } from '@/store/resource-plan';
 import { type ICvmDeviceItem } from '@/store/cvm/device';
 import { type ICondition } from './typings';
@@ -19,6 +20,8 @@ const props = withDefaults(defineProps<Props>(), {});
 const emit = defineEmits<{
   apply: [data: Partial<IResourcesDemandItem | ICvmDeviceItem>, show: boolean];
 }>();
+
+const { cvmChargeTypes } = useCvmChargeType();
 
 const isUseResourcePlan = computed(() =>
   [RequirementType.Regular, RequirementType.Spring, RequirementType.Dissolve, RequirementType.ShortRental].includes(
@@ -38,7 +41,7 @@ const handleApply = (data: IResourcesDemandItem | ICvmDeviceItem) => {
         region,
         zone,
         zones: [zone],
-        charge_type: data.plan_type === '预测内' ? 'PREPAID' : 'POSTPAID_BY_HOUR',
+        charge_type: data.plan_type === '预测内' ? cvmChargeTypes.PREPAID : cvmChargeTypes.POSTPAID_BY_HOUR,
       },
       false,
     );

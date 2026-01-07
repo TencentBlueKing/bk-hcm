@@ -292,7 +292,7 @@ export default defineComponent({
                   />
                 </div>
                 <div>
-                  <div class={cssModule['search-label']}>{t('预测类型')}</div>
+                  <div class={cssModule['search-label']}>{t('预测用途')}</div>
                   <Select multiple v-model={searchModel.value.demand_classes} loading={isLoadingDemandClass.value}>
                     {demandClassList.value.map((item) => (
                       <Option name={item} id={item} />

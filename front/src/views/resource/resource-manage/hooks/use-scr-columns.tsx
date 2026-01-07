@@ -1880,7 +1880,7 @@ export default (type: string, isSimpleShow = false) => {
       fixed: 'left',
     },
     {
-      label: '预测类型',
+      label: '预测用途',
       field: 'demand_class',
       fixed: 'left',
       minWidth: 90,
