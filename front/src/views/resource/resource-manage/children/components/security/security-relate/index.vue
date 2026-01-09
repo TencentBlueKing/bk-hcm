@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, provide, ref, watch } from 'vue';
 import {
   useSecurityGroupStore,
   type ISecurityGroupRelResCountItem,
@@ -45,11 +45,20 @@ const getRelatedInfo = () => {
   }
   securityGroupStore.queryRelatedResourcesCount([id]).then((data) => (relatedResourcesCountList.value = data));
 };
-onBeforeMount(async () => {
-  if (props.detail) {
-    getRelatedInfo();
-  }
-});
+
+watch(
+  () => props.detail.id,
+  (id) => {
+    if (id) {
+      getRelatedInfo();
+    }
+  },
+  { immediate: true },
+);
+
+const vendor = computed(() => props.detail.vendor);
+
+provide('vendor', vendor);
 </script>
 
 <template>

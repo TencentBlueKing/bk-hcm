@@ -75,7 +75,7 @@ export default defineComponent({
 
       options.value = info.map((item) => {
         return {
-          label: `${item.zone_cn}(${item.cmdb_zone_name})`,
+          label: `${item.zone_cn}${item.cmdb_zone_name ? `(${item.cmdb_zone_name})` : ''}`,
           value: props.valueKey === 'cmdbZoneName' ? item.cmdb_zone_name : item.zone,
         };
       });

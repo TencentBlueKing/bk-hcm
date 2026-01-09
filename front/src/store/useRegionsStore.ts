@@ -12,6 +12,7 @@ import {
 import { swapMapKeysAndValuesToObj } from '@/common/util';
 
 export const useRegionsStore = defineStore('useRegions', () => {
+  const ziyan = ref<Map<string, string>>(new Map());
   const tcloud = ref<Map<string, string>>(new Map());
   const huawei = ref<Map<string, string>>(new Map());
   const vendor = ref('' as VendorEnum);
@@ -36,9 +37,14 @@ export const useRegionsStore = defineStore('useRegions', () => {
   ) => {
     const res = await ressourceStore.getCloudRegion(vendor, payload);
     const details = res?.data?.details || [];
-    if ([VendorEnum.TCLOUD, VendorEnum.ZIYAN].includes(vendor)) {
+    if (vendor === VendorEnum.TCLOUD) {
       details.forEach((v: { region_id: string; region_name: string }) => {
         tcloud.value.set(v.region_id, v.region_name);
+      });
+    }
+    if (vendor === VendorEnum.ZIYAN) {
+      details.forEach((v: { region_id: string; region_name: string }) => {
+        ziyan.value.set(v.region_id, v.region_name);
       });
     }
     if (vendor === VendorEnum.HUAWEI) {
@@ -65,7 +71,8 @@ export const useRegionsStore = defineStore('useRegions', () => {
         regionName = tcloud.value.get(id) || id;
         break;
       case VendorEnum.ZIYAN:
-        return tcloud.value.get(id) || id;
+        regionName = ziyan.value.get(id) || id;
+        break;
       default:
         regionName = id;
     }
@@ -74,11 +81,16 @@ export const useRegionsStore = defineStore('useRegions', () => {
 
   const getRegionNameEN = (id: string) => {
     if (!isChinese) return id;
+    const CLOUD_AREA_REGION_ZIYAN_EN = swapMapKeysAndValuesToObj(ziyan.value);
     const CLOUD_AREA_REGION_TCLOUD_EN = swapMapKeysAndValuesToObj(tcloud.value);
     const CLOUD_AREA_REGION_HUAWEI_EN = swapMapKeysAndValuesToObj(huawei.value);
     if (CLOUD_AREA_REGION_TCLOUD_EN[id]) {
       vendor.value = VendorEnum.TCLOUD;
       return CLOUD_AREA_REGION_TCLOUD_EN[id];
+    }
+    if (CLOUD_AREA_REGION_ZIYAN_EN[id]) {
+      vendor.value = VendorEnum.ZIYAN;
+      return CLOUD_AREA_REGION_ZIYAN_EN[id];
     }
     if (CLOUD_AREA_REGION_HUAWEI_EN[id]) {
       vendor.value = VendorEnum.HUAWEI;
