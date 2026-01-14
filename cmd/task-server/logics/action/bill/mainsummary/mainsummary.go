@@ -415,7 +415,11 @@ func (act *MainAccountSummaryAction) getAdjustmentSummary(kt *kit.Kit, opt *Main
 			return nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
 		}
 		for _, item := range result.Details {
-			cost = cost.Add(item.Cost)
+			adjCost, err := item.GetCost()
+			if err != nil {
+				return nil, fmt.Errorf("get adjustment item cost failed, err: %+v", err)
+			}
+			cost = cost.Add(adjCost)
 			if len(item.Currency) != 0 && currency != item.Currency {
 				return nil, fmt.Errorf("adjustment currency mismatch, want: %s ,got: %s", currency, item.Currency)
 			}
