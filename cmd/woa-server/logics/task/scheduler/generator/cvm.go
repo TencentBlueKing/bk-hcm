@@ -553,7 +553,7 @@ OuterZoneLoop:
 					"rid: %s", zone, order.SubOrderId, orderZones, excludeZoneMap, kt.Rid)
 				break
 			}
-			capacity, err := g.getCapacity(kt, order, zone, req.VPCId, subnet.Id)
+			capacity, err := g.getCapacity(kt, order, zone, req.VPCId, subnet.Id, orderZones)
 			if err != nil {
 				logs.Errorf("failed to get capacity with subnet %s, subOrderID: %s, subnetNum: %d, zone: %s, "+
 					"reqVpcID: %s, err: %v, rid: %s", subnet.Id, order.SubOrderId, len(subnetList), zone,

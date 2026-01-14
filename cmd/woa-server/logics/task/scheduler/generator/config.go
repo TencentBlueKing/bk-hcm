@@ -15,6 +15,7 @@ package generator
 
 import (
 	"errors"
+	"math"
 
 	cfgtype "hcm/cmd/woa-server/types/config"
 	"hcm/cmd/woa-server/types/task"
@@ -22,8 +23,10 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/querybuilder"
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/util"
 )
 
@@ -127,8 +130,21 @@ func (g *Generator) getRegionList(kt *kit.Kit, zoneList []string) ([]*cfgtype.Zo
 }
 
 // getCapacity get resource apply capacity info
-func (g *Generator) getCapacity(kt *kit.Kit, order *task.ApplyOrder, zone, vpc, subnet string) (
+func (g *Generator) getCapacity(kt *kit.Kit, order *task.ApplyOrder, zone, vpc, subnet string, orderZones []string) (
 	map[string]int64, error) {
+
+	// 小额绿通不需要查询库存
+	if order.RequireType.NotNeedVerifyCapacity() {
+		// 不是分Campus的话，直接返回
+		if len(zone) > 0 && zone != cvmapi.CvmSeparateCampus {
+			return map[string]int64{zone: math.MaxInt}, nil
+		}
+		// 是分Campus的话，返回所有zone
+		if zone == cvmapi.CvmSeparateCampus && len(orderZones) > 0 {
+			return slice.FuncToMap(orderZones, func(zone string) (string, int64) { return zone, math.MaxInt }), nil
+		}
+		return map[string]int64{}, nil
+	}
 
 	param := &cfgtype.GetCapacityParam{
 		RequireType:      order.RequireType,

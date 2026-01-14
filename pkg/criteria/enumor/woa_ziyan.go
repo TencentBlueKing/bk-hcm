@@ -241,6 +241,17 @@ func (t RequireType) NeedVerifyResPlan() bool {
 	}
 }
 
+// NotNeedVerifyCapacity not need verify capacity.
+func (t RequireType) NotNeedVerifyCapacity() bool {
+	switch t {
+	// 小额绿通不需要校验库存
+	case RequireTypeGreenChannel:
+		return true
+	default:
+		return false
+	}
+}
+
 // ToObsProject ObsProject.
 func (t RequireType) ToObsProject() ObsProject {
 	if obsProject, ok := RequireTypeObsProjectMap[t]; ok {
