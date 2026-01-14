@@ -47,6 +47,7 @@ type Client interface {
 	AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
 	ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBizParams) (*ListHostWithoutBizResult, error)
 	ListResourcePoolHosts(kt *kit.Kit, params *ListResourcePoolHostsParams) (*ListResourcePoolHostsResult, error)
+	FindManyCmdbModule(kt *kit.Kit, params *FindManyCmdbModuleParams) (*FindManyCmdbModuleResult, error)
 }
 
 var (
@@ -249,4 +250,16 @@ func (c *cmdbApiGateWay) ListResourcePoolHosts(kt *kit.Kit, params *ListResource
 
 	return apigateway.ApiGatewayCall[ListResourcePoolHostsParams, ListResourcePoolHostsResult](c.client, c.config,
 		rest.POST, kt, params, "/hosts/list_resource_pool_hosts")
+}
+
+// FindManyCmdbModule find many cmdb module.
+func (c *cmdbApiGateWay) FindManyCmdbModule(kt *kit.Kit, params *FindManyCmdbModuleParams) (
+	*FindManyCmdbModuleResult, error) {
+
+	err := params.Validate()
+	if err != nil {
+		return nil, err
+	}
+	return apigateway.ApiGatewayCall[FindManyCmdbModuleParams, FindManyCmdbModuleResult](c.client, c.config,
+		rest.POST, kt, params, "/shipper/findmany/cmdb/module")
 }

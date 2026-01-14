@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"errors"
+	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typesregion "hcm/pkg/adaptor/types/region"
@@ -48,6 +49,24 @@ type SyncRegionOption struct {
 // Validate ...
 func (opt SyncRegionOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// extractAreaName 从 region_name 中提取 area_name
+// 例如：从 "华南地区(广州)" 提取 "华南地区"
+func extractAreaName(regionName string) string {
+	if len(regionName) == 0 {
+		return ""
+	}
+
+	// 查找左括号的位置
+	idx := strings.Index(regionName, "(")
+	if idx > 0 {
+		// 如果找到左括号，返回括号前面的部分
+		return strings.TrimSpace(regionName[:idx])
+	}
+
+	// 如果没有找到括号，返回原始字符串
+	return regionName
 }
 
 // Region ...
@@ -108,6 +127,7 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 			Vendor:     enumor.TCloud,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
+			AreaName:   extractAreaName(one.RegionName),
 			Status:     one.RegionState,
 		}
 		createResources = append(createResources, tmpRes)
@@ -146,6 +166,7 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 			ID:         id,
 			RegionID:   one.RegionID,
 			RegionName: one.RegionName,
+			AreaName:   extractAreaName(one.RegionName),
 			Status:     one.RegionState,
 		}
 		updateResources = append(updateResources, tmpRes)

@@ -23,20 +23,28 @@ import (
 	"fmt"
 
 	typesRegion "hcm/pkg/adaptor/types/region"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	regionapi "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/region/v20220627"
 )
 
-// ListRegion list region.
-// reference: https://cloud.tencent.com/document/product/1278/55255
+// ListRegion list region using region management system API.
+// reference: https://cloud.tencent.com/document/product/1596/77930
 func (t *TCloudImpl) ListRegion(kt *kit.Kit) (*typesRegion.TCloudRegionListResult, error) {
-	CvmClient, err := t.clientSet.CvmClient("")
+	regionClient, err := t.clientSet.RegionClient()
 	if err != nil {
-		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
+		return nil, fmt.Errorf("new region client failed, err: %v", err)
 	}
 
-	resp, err := CvmClient.DescribeRegionsWithContext(kt.Ctx, nil)
+	// 使用地域管理系统的 DescribeRegions 接口
+	req := regionapi.NewDescribeRegionsRequest()
+	// 暂时以 constant.RegionProductID 产品的地域为基准地域
+	req.Product = converter.ValToPtr(constant.RegionProductID)
+
+	resp, err := regionClient.DescribeRegionsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list tcloud region failed, err: %v", err)
@@ -52,5 +60,8 @@ func (t *TCloudImpl) ListRegion(kt *kit.Kit) (*typesRegion.TCloudRegionListResul
 		details = append(details, tmpData)
 	}
 
-	return &typesRegion.TCloudRegionListResult{Count: resp.Response.TotalCount, Details: details}, nil
+	return &typesRegion.TCloudRegionListResult{
+		Count:   resp.Response.TotalCount,
+		Details: details,
+	}, nil
 }

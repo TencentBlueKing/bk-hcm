@@ -21,8 +21,9 @@
 package core
 
 import (
-	"context"
 	"time"
+
+	"hcm/pkg/kit"
 )
 
 // Task defines the interface for the Task.
@@ -32,7 +33,7 @@ type Task interface {
 	// Next return the next time to run the task.
 	Next() (time.Time, error)
 	// Do execute the task.
-	Do(ctx context.Context) error
+	Do(kt *kit.Kit) error
 	// GetURL get the url of the task, require every task to have external api in service.
 	GetURL() string
 }

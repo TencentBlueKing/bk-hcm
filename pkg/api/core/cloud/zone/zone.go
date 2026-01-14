@@ -26,17 +26,18 @@ import (
 
 // BaseZone define base zone.
 type BaseZone struct {
-	ID        string        `json:"id"`
-	Vendor    enumor.Vendor `json:"vendor"`
-	CloudID   string        `json:"cloud_id"`
-	Name      string        `json:"name"`
-	NameCn    string        `json:"name_cn"`
-	Region    string        `json:"region"`
-	State     string        `json:"state"`
-	Creator   string        `json:"creator"`
-	Reviser   string        `json:"reviser"`
-	CreatedAt string        `json:"created_at"`
-	UpdatedAt string        `json:"updated_at"`
+	ID        string              `json:"id"`
+	Vendor    enumor.Vendor       `json:"vendor"`
+	CloudID   string              `json:"cloud_id"`
+	Name      string              `json:"name"`
+	NameCn    string              `json:"name_cn"`
+	Region    string              `json:"region"`
+	State     string              `json:"state"`
+	Source    enumor.RegionSource `json:"source"`
+	Creator   string              `json:"creator"`
+	Reviser   string              `json:"reviser"`
+	CreatedAt string              `json:"created_at"`
+	UpdatedAt string              `json:"updated_at"`
 }
 
 // GetID ...
@@ -62,6 +63,8 @@ type ZoneExtension interface {
 
 // TCloudZoneExtension define tcloud zone extension.
 type TCloudZoneExtension struct {
+	CityName        string `json:"city_name"`
+	LogicCampusName string `json:"logic_campus_name"`
 }
 
 // HuaWeiZoneExtension define huawei zone extension.

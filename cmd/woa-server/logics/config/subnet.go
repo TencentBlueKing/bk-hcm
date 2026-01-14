@@ -13,66 +13,86 @@
 package config
 
 import (
-	"fmt"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"hcm/cmd/woa-server/model/config"
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
-	"hcm/pkg/criteria/mapstr"
-	"hcm/pkg/dal"
+	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/metadata"
+	"hcm/pkg/tools/slice"
 )
 
 // SubnetIf provides management interface for operations of subnet config
 type SubnetIf interface {
-	// GetSubnet get subnet type config list
-	GetSubnet(kt *kit.Kit, cond map[string]interface{}) (*types.GetSubnetResult, error)
+	// GetAllSubnet get all subnet
+	GetAllSubnet(kt *kit.Kit, req *types.GetAllSubnetReq) (*types.GetSubnetResult, error)
 	// GetSubnetList get subnet detail config list
 	GetSubnetList(kt *kit.Kit, input *types.GetSubnetListParam) (*types.GetSubnetResult, error)
-	// CreateSubnet creates subnet type config
-	CreateSubnet(kt *kit.Kit, input *types.Subnet) (mapstr.MapStr, error)
-	// UpdateSubnet updates subnet type config
-	UpdateSubnet(kt *kit.Kit, instId int64, input map[string]interface{}) error
-	// UpdateSubnetBatch updates subnet config in batch
-	UpdateSubnetBatch(kt *kit.Kit, cond, update map[string]interface{}) error
-	// DeleteSubnet deletes subnet type config
-	DeleteSubnet(kt *kit.Kit, instId int64) error
-
-	// SyncSubnet sync subnet config from yunti
-	SyncSubnet(kt *kit.Kit, param *types.GetSubnetParam) error
+	// UpdateSubnetBatch update subnet batch
+	UpdateSubnetBatch(kt *kit.Kit, ids []string, update map[string]interface{}) error
 }
 
 // NewSubnetOp creates a subnet interface
-func NewSubnetOp(thirdCli *thirdparty.Client) SubnetIf {
+func NewSubnetOp(client *client.ClientSet, thirdCli *thirdparty.Client) SubnetIf {
 	return &subnet{
-		cvm: thirdCli.OldCVM,
+		cvm:    thirdCli.OldCVM,
+		client: client,
 	}
 }
 
 type subnet struct {
-	cvm cvmapi.CVMClientInterface
+	cvm    cvmapi.CVMClientInterface
+	client *client.ClientSet
 }
 
-// GetSubnet get subnet type config list
-func (s *subnet) GetSubnet(kt *kit.Kit, cond map[string]interface{}) (*types.GetSubnetResult, error) {
-	page := metadata.BasePage{
-		Start: 0,
-		Limit: pkg.BKNoLimit,
+// GetAllSubnet get all subnet
+func (s *subnet) GetAllSubnet(kt *kit.Kit, req *types.GetAllSubnetReq) (*types.GetSubnetResult, error) {
+	filterRules := []filter.RuleFactory{
+		tools.RuleEqual("region", req.Region),
+		tools.RuleJSONEqual("extension.enable_cvm", "true"),
 	}
-	insts, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, page, cond)
-	if err != nil {
-		return nil, err
+	if len(req.Zones) > 0 {
+		filterRules = append(filterRules, tools.RuleIn("zone", req.Zones))
+	}
+	if len(req.CloudVpcID) > 0 {
+		filterRules = append(filterRules, tools.RuleEqual("cloud_vpc_id", req.CloudVpcID))
+	}
+	if len(req.CloudID) > 0 {
+		filterRules = append(filterRules, tools.RuleEqual("cloud_id", req.CloudID))
+	}
+	if len(req.Name) > 0 {
+		filterRules = append(filterRules, tools.RuleCis("name", req.Name))
+	}
+
+	subnetReq := &types.GetSubnetListParam{
+		Filter: &filter.Expression{Op: filter.And, Rules: filterRules},
+		Page:   core.NewDefaultBasePage(),
+	}
+	subnetList := make([]*types.Subnet, 0)
+	for {
+		tmpSubnets, err := s.GetSubnetList(kt, subnetReq)
+		if err != nil {
+			return nil, err
+		}
+		subnetList = append(subnetList, tmpSubnets.Info...)
+		if len(tmpSubnets.Info) < int(subnetReq.Page.Limit) {
+			break
+		}
+		subnetReq.Page.Start += uint32(subnetReq.Page.Limit)
 	}
 
 	rst := &types.GetSubnetResult{
-		Count: int64(len(insts)),
-		Info:  insts,
+		Count: int64(len(subnetList)),
+		Info:  subnetList,
 	}
 
 	return rst, nil
@@ -80,192 +100,135 @@ func (s *subnet) GetSubnet(kt *kit.Kit, cond map[string]interface{}) (*types.Get
 
 // GetSubnetList get subnet detail config list
 func (s *subnet) GetSubnetList(kt *kit.Kit, input *types.GetSubnetListParam) (*types.GetSubnetResult, error) {
-	filter, err := input.GetFilter()
+	// 查询账号信息
+	accountID, err := getTCloudZiyanAccount(kt, s.client)
 	if err != nil {
-		logs.Errorf("get config subnet detail failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	rst := &types.GetSubnetResult{}
-	if input.Page.EnableCount {
-		cnt, err := config.Operation().Subnet().CountSubnet(kt.Ctx, filter)
+	filterRules := []filter.RuleFactory{
+		tools.RuleEqual("vendor", enumor.TCloudZiyan),
+		tools.RuleEqual("account_id", accountID),
+	}
+	if input.Filter != nil {
+		filterRules = append(filterRules, input.Filter)
+	}
+
+	// 从MySQL查询子网列表
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{Op: filter.And, Rules: filterRules},
+		Page:   input.Page,
+	}
+	subnetList, err := s.client.DataService().TCloudZiyan.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("failed to list subnet by page, err: %v, vendor: %s, accountID: %s, rid: %s",
+			err, enumor.TCloudZiyan, accountID, kt.Rid)
+		return nil, err
+	}
+
+	if input.Page.Count {
+		return &types.GetSubnetResult{Count: int64(subnetList.Count)}, nil
+	}
+
+	// 查询VPC列表
+	vpcIDNameMap, err := s.getVpcNameMap(kt, accountID, subnetList)
+	if err != nil {
+		return nil, err
+	}
+
+	subnetResult := make([]*types.Subnet, 0, len(subnetList.Details))
+	for _, subnetDetail := range subnetList.Details {
+		var enableCvm bool
+		if subnetDetail.Extension != nil {
+			enableCvm = subnetDetail.Extension.EnableCvm
+		}
+		var vpcName string
+		if _, ok := vpcIDNameMap[subnetDetail.CloudVpcID]; ok {
+			vpcName = vpcIDNameMap[subnetDetail.CloudVpcID]
+		}
+		subnetResult = append(subnetResult, &types.Subnet{
+			BkInstId:   subnetDetail.ID,
+			Region:     subnetDetail.Region,
+			Zone:       subnetDetail.Zone,
+			VpcId:      subnetDetail.CloudVpcID,
+			VpcName:    vpcName,
+			SubnetId:   subnetDetail.CloudID,
+			SubnetName: subnetDetail.Name,
+			Enable:     enableCvm,
+			Comment:    cvt.PtrToVal(subnetDetail.Memo),
+		})
+	}
+
+	rst := &types.GetSubnetResult{Count: int64(subnetList.Count), Info: subnetResult}
+	return rst, nil
+}
+
+func (s *subnet) getVpcNameMap(kt *kit.Kit, accountID string,
+	subnetList *cloud.SubnetExtListResult[corecloud.TCloudSubnetExtension]) (map[string]string, error) {
+
+	cloudVpcIDs := slice.Map(subnetList.Details, func(cls corecloud.Subnet[corecloud.TCloudSubnetExtension]) string {
+		return cls.CloudVpcID
+	})
+	var vpcIDNameMap map[string]string
+	if len(cloudVpcIDs) > 0 {
+		vpcListReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", slice.Unique(cloudVpcIDs)),
+				tools.RuleEqual("vendor", enumor.TCloudZiyan),
+				tools.RuleEqual("account_id", accountID),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		vpcList, err := s.client.DataService().TCloudZiyan.Vpc.ListVpcExt(kt.Ctx, kt.Header(), vpcListReq)
 		if err != nil {
-			logs.Errorf("failed to get subnet detail count, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("failed to list vpc, err: %+v, vendor: %s, cloudVpcIDs: %v, rid: %s",
+				err, enumor.TCloudZiyan, cloudVpcIDs, kt.Rid)
 			return nil, err
 		}
-		rst.Count = int64(cnt)
-		rst.Info = make([]*types.Subnet, 0)
-		return rst, nil
-	}
-
-	insts, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, input.Page, filter)
-	if err != nil {
-		logs.Errorf("failed to get recycle order, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	rst.Count = 0
-	rst.Info = insts
-
-	return rst, nil
-}
-
-// CreateSubnet creates subnet type config
-func (s *subnet) CreateSubnet(kt *kit.Kit, input *types.Subnet) (mapstr.MapStr, error) {
-	id, err := config.Operation().Subnet().NextSequence(kt.Ctx)
-	if err != nil {
-		logs.Errorf("failed to create subnet, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	instId := int64(id)
-
-	input.BkInstId = instId
-	if err := config.Operation().Subnet().CreateSubnet(kt.Ctx, input); err != nil {
-		logs.Errorf("failed to create subnet, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	rst := mapstr.MapStr{
-		"id": instId,
-	}
-
-	return rst, nil
-}
-
-// UpdateSubnet updates subnet type config
-func (s *subnet) UpdateSubnet(kt *kit.Kit, instId int64, input map[string]interface{}) error {
-	filter := map[string]interface{}{
-		"id": instId,
-	}
-
-	if err := config.Operation().Subnet().UpdateSubnet(kt.Ctx, filter, input); err != nil {
-		logs.Errorf("failed to update subnet, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// UpdateSubnetBatch updates subnet config in batch
-func (s *subnet) UpdateSubnetBatch(kt *kit.Kit, cond, update map[string]interface{}) error {
-	if err := config.Operation().Subnet().UpdateSubnet(kt.Ctx, cond, update); err != nil {
-		logs.Errorf("failed to update subnet, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// DeleteSubnet deletes subnet type config
-func (s *subnet) DeleteSubnet(kt *kit.Kit, instId int64) error {
-	filter := &mapstr.MapStr{
-		"id": instId,
-	}
-
-	if err := config.Operation().Subnet().DeleteSubnet(kt.Ctx, filter); err != nil {
-		logs.Errorf("failed to delete subnet, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	return nil
-}
-
-// SyncSubnet sync subnet config from yunti
-func (s *subnet) SyncSubnet(kt *kit.Kit, param *types.GetSubnetParam) error {
-	subnetReq := cvmapi.SubnetRealParam{
-		Region:      param.Region,
-		CloudCampus: param.Zone,
-		VpcId:       param.Vpc,
-	}
-	resp, err := s.cvm.QueryRealCvmSubnet(kt, subnetReq)
-	if err != nil {
-		logs.Errorf("failed to get cvm subnet info, err: %v, param: %+v, rid: %s", err, cvt.PtrToVal(param), kt.Rid)
-		return err
-	}
-
-	if resp.Error.Code != 0 {
-		logs.Errorf("failed to get crp cvm subnet info, code: %d, msg: %s, crpTraceID: %s, rid: %s",
-			resp.Error.Code, resp.Error.Message, resp.TraceId, kt.Rid)
-		return fmt.Errorf("failed to get cvm subnet info, code: %d, msg: %s", resp.Error.Code, resp.Error.Message)
-	}
-
-	for _, subnetItem := range resp.Result {
-		filter := map[string]interface{}{
-			"region":      param.Region,
-			"zone":        param.Zone,
-			"vpc_id":      param.Vpc,
-			"subnet_id":   subnetItem.Id,
-			"subnet_name": subnetItem.Name,
-		}
-		count, err := config.Operation().Subnet().CountSubnet(kt.Ctx, filter)
-		if err != nil {
-			logs.Errorf("failed to count subnet with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
-			return err
-		}
-		// 按云端返回的子网ID、子网名称能查到数据，说明已同步，用于多次执行同步的场景
-		if count > 0 {
-			continue
-		}
-
-		// 拉取所有符合条件的子网
-		filter = map[string]interface{}{
-			"region":    param.Region,
-			"zone":      param.Zone,
-			"vpc_id":    param.Vpc,
-			"subnet_id": subnetItem.Id,
-		}
-		page := metadata.BasePage{
-			Sort:  "id",
-			Start: 0,
-			Limit: pkg.BKMaxPageSize,
-		}
-		subnetList := make([]*types.Subnet, 0)
-		for {
-			list, err := config.Operation().Subnet().FindManySubnet(kt.Ctx, page, filter)
-			if err != nil {
-				logs.Errorf("failed to list subnet with filter: %+v, err: %v, rid: %s", filter, err, kt.Rid)
-				return err
-			}
-
-			subnetList = append(subnetList, list...)
-			if len(list) < pkg.BKMaxPageSize {
-				break
-			}
-			page.Start += pkg.BKMaxPageSize
-		}
-
-		txnErr := dal.RunTransaction(kit.New(), func(sc mongo.SessionContext) error {
-			kt.Ctx = sc
-			// 清理旧的子网
-			for _, subnetInfo := range subnetList {
-				err = s.DeleteSubnet(kt, subnetInfo.BkInstId)
-				if err != nil {
-					logs.Errorf("failed to delete subnet, err: %v, subnetInstID: %d, param: %+v, subnetItem: %+v, "+
-						"rid: %s", err, subnetInfo.BkInstId, cvt.PtrToVal(param), cvt.PtrToVal(subnetItem), kt.Rid)
-					return err
-				}
-			}
-
-			// 插入新的子网
-			subnetCfg := &types.Subnet{
-				Region:     param.Region,
-				Zone:       param.Zone,
-				VpcId:      param.Vpc,
-				SubnetId:   subnetItem.Id,
-				SubnetName: subnetItem.Name,
-				Enable:     true,
-				Comment:    "",
-			}
-			if _, err = s.CreateSubnet(kt, subnetCfg); err != nil {
-				logs.Errorf("failed to create subnet, err: %v, subnetOld: %+v, subnetCfg: %+v, rid: %s",
-					err, subnetList[0], cvt.PtrToVal(subnetCfg), kt.Rid)
-				return err
-			}
-			return nil
+		vpcIDNameMap = slice.FuncToMap(vpcList.Details, func(vpcItem corecloud.Vpc[corecloud.TCloudVpcExtension]) (
+			string, string) {
+			return vpcItem.CloudID, vpcItem.Name
 		})
-		if txnErr != nil {
-			logs.Errorf("failed to create subnet with transation, err: %v, rid: %s", filter, txnErr, kt.Rid)
-			return txnErr
+	}
+	return vpcIDNameMap, nil
+}
+
+// UpdateSubnetBatch updates subnet batch
+func (s *subnet) UpdateSubnetBatch(kt *kit.Kit, ids []string, update map[string]interface{}) error {
+	if len(ids) == 0 {
+		logs.Errorf("failed to batch update subnet, ids is empty, rid: %s", kt.Rid)
+		return errf.Newf(errf.InvalidParameter, "ids is empty")
+	}
+
+	var enableCvm *bool
+	if update["enable"] != nil {
+		enableCvm = cvt.ValToPtr(metadata.GetBool(update["enable"]))
+	}
+
+	var memo string
+	if update["comment"] != nil {
+		memo = metadata.GetString(update["comment"])
+	}
+
+	subnets := make([]cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt], 0)
+	for _, id := range ids {
+		tmpRes := cloud.SubnetUpdateReq[cloud.TCloudSubnetUpdateExt]{ID: id}
+		if len(memo) > 0 {
+			tmpRes.SubnetUpdateBaseInfo.Memo = cvt.ValToPtr(memo)
 		}
+		if enableCvm != nil {
+			tmpRes.Extension = &cloud.TCloudSubnetUpdateExt{EnableCvm: enableCvm}
+		}
+		subnets = append(subnets, tmpRes)
+	}
+
+	updateReq := &cloud.SubnetBatchUpdateReq[cloud.TCloudSubnetUpdateExt]{
+		Subnets: subnets,
+	}
+	if err := s.client.DataService().TCloudZiyan.Subnet.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+		logs.Errorf("failed to update subnet, err: %v, ids: %v, enableCvm: %v, memo: %s, rid: %s",
+			err, ids, enableCvm, memo, kt.Rid)
+		return err
 	}
 
 	return nil

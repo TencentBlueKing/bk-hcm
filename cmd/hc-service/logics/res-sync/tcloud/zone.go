@@ -62,20 +62,35 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 		return nil, err
 	}
 
-	zoneFromDB, err := cli.listZoneFromDB(kt, opt)
+	// 从本地查询所有 zone
+	allZoneFromDB, err := cli.listZoneFromDB(kt, opt)
 	if err != nil {
 		return nil, err
 	}
+
+	// 仅对 source 为 sync 的数据进行云上对比
+	zoneFromDB := slice.Filter(allZoneFromDB, func(zone corezone.BaseZone) bool {
+		return zone.Source == enumor.RegionSourceSync
+	})
 
 	if len(zoneFromCloud) == 0 && len(zoneFromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
+	// 只对 sync 的数据进行 diff
 	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.TCloudZone, corezone.BaseZone](
 		zoneFromCloud, zoneFromDB, isZoneChange)
 
-	if len(delCloudIDs) > 0 {
-		if err := cli.deleteZone(kt, opt, delCloudIDs); err != nil {
+	// 对于需要 add 的 zone，检查是否在 allZoneFromDB 中存在（可能是过去临时手动添加的）
+	// 如果存在，需要先删除
+	var toDeleteForAdd []string
+	if len(addSlice) > 0 {
+		toDeleteForAdd = cli.findExistingZonesToDelete(addSlice, allZoneFromDB)
+	}
+
+	// 删除 diff 出来的 zone（这些 zone 在云上不存在，需要验证）
+	if len(delCloudIDs) > 0 || len(toDeleteForAdd) > 0 {
+		if err := cli.deleteZone(kt, opt, delCloudIDs, toDeleteForAdd); err != nil {
 			return nil, err
 		}
 	}
@@ -95,9 +110,7 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	return new(SyncResult), nil
 }
 
-func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption,
-	addSlice []typeszone.TCloudZone) error {
-
+func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption, addSlice []typeszone.TCloudZone) error {
 	if len(addSlice) <= 0 {
 		return errors.New("zone addSlice is <= 0, not create")
 	}
@@ -106,11 +119,12 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption,
 
 	for _, one := range addSlice {
 		zoneOne := datazone.ZoneBatchCreate[zone.TCloudZoneExtension]{
-			CloudID:   converter.PtrToVal(one.ZoneId),
-			Name:      converter.PtrToVal(one.Zone),
-			State:     converter.PtrToVal(one.ZoneState),
+			CloudID:   one.CloudID,
+			Name:      one.ZoneID,
+			NameCn:    one.ZoneName,
+			State:     one.State,
 			Region:    opt.Region,
-			NameCn:    converter.PtrToVal(one.ZoneName),
+			Source:    enumor.RegionSourceSync,
 			Extension: &zone.TCloudZoneExtension{},
 		}
 		list = append(list, zoneOne)
@@ -132,9 +146,7 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption,
 	return nil
 }
 
-func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption,
-	updateMap map[string]typeszone.TCloudZone) error {
-
+func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[string]typeszone.TCloudZone) error {
 	if len(updateMap) <= 0 {
 		return errors.New("zone updateMap is <= 0, not update")
 	}
@@ -144,7 +156,7 @@ func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption,
 	for id, one := range updateMap {
 		one := datazone.ZoneBatchUpdate[zone.TCloudZoneExtension]{
 			ID:    id,
-			State: converter.PtrToVal(one.ZoneState),
+			State: one.State,
 		}
 		list = append(list, one)
 	}
@@ -164,8 +176,31 @@ func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption,
 	return nil
 }
 
-func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs []string) error {
-	if len(delCloudIDs) <= 0 {
+// findExistingZonesToDelete 查找需要删除的已存在 zone
+// 返回这些 zone 的 cloud_id 列表
+func (cli *client) findExistingZonesToDelete(addZones []typeszone.TCloudZone,
+	allDBZones []corezone.BaseZone) []string {
+
+	toDeleteCloudIDs := make([]string, 0)
+	addZoneMap := converter.SliceToMap(addZones,
+		func(t typeszone.TCloudZone) (string, interface{}) {
+			return t.GetCloudID(), nil
+		})
+
+	for _, dbZone := range allDBZones {
+		if _, exists := addZoneMap[dbZone.GetCloudID()]; exists {
+			toDeleteCloudIDs = append(toDeleteCloudIDs, dbZone.GetCloudID())
+		}
+	}
+
+	return toDeleteCloudIDs
+}
+
+// deleteZone 删除 zone
+// delCloudIDs: 要删除的 zone cloud_id 列表
+// toDeleteForAdd: 因新增而需要删除的 zone cloud_id 列表（可能是之前手动添加的）
+func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs, toDeleteForAdd []string) error {
+	if len(delCloudIDs) <= 0 && len(toDeleteForAdd) <= 0 {
 		return errors.New("zone delCloudIDs is <= 0, not delete")
 	}
 
@@ -176,17 +211,28 @@ func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs []st
 
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
 	for _, one := range delZoneFromCloud {
-		if _, exsit := delCloudMap[converter.PtrToVal(one.ZoneId)]; exsit {
+		if _, exist := delCloudMap[one.GetCloudID()]; exist {
 			logs.Errorf("[%s] validate zone not exist failed, before delete, opt: %v, exist zone id: %s, "+
-				"del cloud ids: %v, rid: %s", enumor.TCloud, opt, converter.PtrToVal(one.ZoneId), delCloudIDs, kt.Rid)
+				"del cloud ids: %v, rid: %s", enumor.TCloud, opt, one.GetCloudID(), delCloudIDs, kt.Rid)
 			return errors.New("validate zone not exist failed, before delete")
 		}
+	}
+
+	// 因新增而删除的本地资源，不需要和云上对比
+	if len(toDeleteForAdd) > 0 {
+		delCloudIDs = append(delCloudIDs, toDeleteForAdd...)
 	}
 
 	elems := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
 	for _, parts := range elems {
 		deleteReq := &datazone.ZoneBatchDeleteReq{
-			Filter: tools.ContainersExpression("cloud_id", parts),
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					tools.RuleEqual("vendor", enumor.TCloud),
+					tools.ContainersExpression("cloud_id", parts),
+				},
+			},
 		}
 
 		err := cli.dbCli.Global.Zone.BatchDeleteZone(kt.Ctx, kt.Header(), deleteReq)
@@ -221,9 +267,7 @@ func (cli *client) listZoneFromCloud(kt *kit.Kit, opt *SyncZoneOption) ([]typesz
 	return results, nil
 }
 
-func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) (
-	[]corezone.BaseZone, error) {
-
+func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) ([]corezone.BaseZone, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -270,7 +314,7 @@ func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) (
 
 func isZoneChange(cloud typeszone.TCloudZone, db corezone.BaseZone) bool {
 
-	if converter.PtrToVal(cloud.ZoneState) != db.State {
+	if cloud.State != db.State {
 		return true
 	}
 

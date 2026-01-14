@@ -20,7 +20,10 @@
 package region
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -33,5 +36,55 @@ type RegionListReq struct {
 
 // Validate ...
 func (req *RegionListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RegionImportReq define region batch import request.
+type RegionImportReq struct {
+	Regions []RegionImportItem `json:"regions" validate:"required"`
+}
+
+// RegionImportItem define single region import item.
+type RegionImportItem struct {
+	RegionID   string `json:"region_id" validate:"required"`
+	RegionName string `json:"region_name" validate:"required"`
+	Status     string `json:"status"`
+}
+
+// Validate validate RegionImportReq.
+func (req *RegionImportReq) Validate() error {
+	if len(req.Regions) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("regions count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, r := range req.Regions {
+		if err := r.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Validate validate RegionImportItem.
+func (req *RegionImportItem) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RegionDeleteReq define region batch delete request.
+type RegionDeleteReq struct {
+	IDs []string `json:"ids" validate:"required"`
+}
+
+// Validate validate RegionDeleteReq.
+func (req *RegionDeleteReq) Validate() error {
+	if len(req.IDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
 	return validator.Validate.Struct(req)
 }

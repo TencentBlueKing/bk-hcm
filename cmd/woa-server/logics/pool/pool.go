@@ -38,7 +38,6 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/metadata"
 	"hcm/pkg/tools/querybuilder"
-	"hcm/pkg/tools/util"
 )
 
 // PoolIf provides management interface for operations of resource pool
@@ -790,7 +789,8 @@ func (p *pool) ReturnHost(kt *kit.Kit, param *types.ReturnHostReq) error {
 
 	for _, hostID := range param.HostIDs {
 		// transfer hosts to 资源运营服务-CR资源下架中
-		if err := p.transferHost(kt, hostID, param.FromBizID, types.BizIDPool, types.ModuleIDPoolRecalling); err != nil {
+		if err := p.transferHost(kt, hostID, param.FromBizID, types.BizIDPool,
+			types.ModuleIDPoolRecalling); err != nil {
 			logs.Errorf("failed to transfer host %d, err: %v, rid: %s", hostID, err, kt.Rid)
 			return err
 		}
@@ -1305,6 +1305,8 @@ func (p *pool) createListMatchDeviceReqRule(param *types.GetLaunchMatchDeviceReq
 	return rule, nil
 }
 
+// setListMatchDeviceZoneFilter ...
+// Deprecated: 上下架功能已弃用
 func (p *pool) setListMatchDeviceZoneFilter(param *types.GetLaunchMatchDeviceReq,
 	rule *querybuilder.CombinedRule) error {
 
@@ -1328,51 +1330,6 @@ func (p *pool) setListMatchDeviceZoneFilter(param *types.GetLaunchMatchDeviceReq
 			})
 		}
 		return nil
-	}
-
-	if len(param.Spec.Zone) > 0 {
-		filter := mapstr.MapStr{}
-		filter["zone"] = mapstr.MapStr{
-			pkg.BKDBIN: param.Spec.Zone,
-		}
-		if len(param.Spec.Region) > 0 {
-			filter["region"] = mapstr.MapStr{
-				pkg.BKDBIN: param.Spec.Region,
-			}
-		}
-		zones, err := dao.Set().Zone().FindManyZone(context.Background(), &filter)
-		if err != nil {
-			return err
-		}
-		cmdbZoneNames := make([]string, 0)
-		for _, zone := range zones {
-			cmdbZoneNames = append(cmdbZoneNames, zone.CmdbZoneName)
-		}
-		cmdbZoneNames = util.StrArrayUnique(cmdbZoneNames)
-		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-			Field:    "sub_zone",
-			Operator: querybuilder.OperatorIn,
-			Value:    cmdbZoneNames,
-		})
-	} else if len(param.Spec.Region) != 0 {
-		filter := mapstr.MapStr{}
-		filter["region"] = mapstr.MapStr{
-			pkg.BKDBIN: param.Spec.Region,
-		}
-		zones, err := dao.Set().Zone().FindManyZone(context.Background(), &filter)
-		if err != nil {
-			return err
-		}
-		cmdbRegionNames := make([]string, 0)
-		for _, zone := range zones {
-			cmdbRegionNames = append(cmdbRegionNames, zone.CmdbRegionName)
-		}
-		cmdbRegionNames = util.StrArrayUnique(cmdbRegionNames)
-		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-			Field:    "bk_zone_name",
-			Operator: querybuilder.OperatorIn,
-			Value:    cmdbRegionNames,
-		})
 	}
 
 	return nil

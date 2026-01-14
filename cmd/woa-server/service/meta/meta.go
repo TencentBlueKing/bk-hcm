@@ -19,6 +19,7 @@ import (
 	mtypes "hcm/cmd/woa-server/types/meta"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud/zone"
 	rsproto "hcm/pkg/api/data-service/rolling-server"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -52,10 +53,31 @@ func (s *service) ListObsProject(_ *rest.Contexts) (interface{}, error) {
 
 // ListRegion lists region.
 func (s *service) ListRegion(cts *rest.Contexts) (interface{}, error) {
-	details, err := s.dao.WoaZone().GetRegionList(cts.Kit, tools.AllExpression())
-	if err != nil {
-		logs.Errorf("failed to get region list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.Aborted, err)
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("vendor", enumor.TCloudZiyan),
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	// 从 region 表获取 region 列表
+	details := make([]dtypes.RegionElem, 0)
+	for {
+		regions, err := s.client.DataService().TCloudZiyan.Region.ListRegion(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("failed to get region list, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, errf.NewFromErr(errf.Aborted, err)
+		}
+
+		for _, region := range regions.Details {
+			details = append(details, dtypes.RegionElem{
+				RegionID:   region.RegionID,
+				RegionName: region.CityName,
+			})
+		}
+
+		if len(regions.Details) < int(req.Page.Limit) {
+			break
+		}
+		req.Page.Start += uint32(req.Page.Limit)
 	}
 
 	return &core.ListResultT[dtypes.RegionElem]{Details: details}, nil
@@ -74,14 +96,43 @@ func (s *service) ListZone(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := tools.AllExpression()
-	if len(req.RegionIDs) > 0 {
-		opt = tools.ContainersExpression("region_id", req.RegionIDs)
+	// 构建查询条件
+	rules := []filter.RuleFactory{
+		tools.RuleEqual("vendor", enumor.TCloudZiyan),
 	}
-	details, err := s.dao.WoaZone().GetZoneList(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("failed to get zone list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.Aborted, err)
+	if len(req.RegionIDs) > 0 {
+		rules = append(rules, tools.RuleIn("region", req.RegionIDs))
+	}
+
+	zoneReq := &protocloud.ZoneListReq{
+		Filter: &filter.Expression{
+			Op:    filter.And,
+			Rules: rules,
+		},
+		Page: core.NewDefaultBasePage(),
+	}
+
+	// 遍历获取zones
+	details := make([]dtypes.ZoneElem, 0)
+	for {
+		zones, err := s.client.DataService().TCloudZiyan.Zone.ListZoneExt(cts.Kit, zoneReq)
+		if err != nil {
+			logs.Errorf("failed to get zone list, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, errf.NewFromErr(errf.Aborted, err)
+		}
+
+		// 转换为 ZoneElem 格式
+		for _, zone := range zones.Details {
+			details = append(details, dtypes.ZoneElem{
+				ZoneID:   zone.Name,
+				ZoneName: zone.NameCn,
+			})
+		}
+
+		if uint(len(zones.Details)) < zoneReq.Page.Limit {
+			break
+		}
+		zoneReq.Page.Start += uint32(zoneReq.Page.Limit)
 	}
 
 	return &core.ListResultT[dtypes.ZoneElem]{Details: details}, nil

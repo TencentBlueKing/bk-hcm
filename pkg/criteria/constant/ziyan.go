@@ -39,6 +39,8 @@ const (
 	InternalClbEndpoint = "clb.internal.tencentcloudapi.com"
 	// InternalTagEndpoint 标签内部域名
 	InternalTagEndpoint = "tag.internal.tencentcloudapi.com"
+	// InternalRegionEndpoint 地域管理系统内部域名
+	InternalRegionEndpoint = "region.internal.tencentcloudapi.com"
 
 	// InternalBPaasEndpoint bpaas 内部域名
 	InternalBPaasEndpoint = "bpaas.internal.tencentcloudapi.com"

@@ -91,7 +91,7 @@ func (s *set) GradeCfg() GradeCfg {
 	return s.gradeCfg
 }
 
-// GradeCfg get qcloud zone config operation interface
+// Zone get qcloud zone config operation interface
 func (s *set) Zone() Zone {
 	return s.zone
 }

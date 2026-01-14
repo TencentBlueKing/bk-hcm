@@ -73,14 +73,16 @@ type DeviceIf interface {
 }
 
 // NewDeviceOp creates a device interface
-func NewDeviceOp(thirdCli *thirdparty.Client) DeviceIf {
+func NewDeviceOp(thirdCli *thirdparty.Client, zoneOp ZoneIf) DeviceIf {
 	return &device{
-		cvm: thirdCli.CVM,
+		cvm:    thirdCli.CVM,
+		zoneOp: zoneOp,
 	}
 }
 
 type device struct {
-	cvm cvmapi.CVMClientInterface
+	cvm    cvmapi.CVMClientInterface
+	zoneOp ZoneIf
 }
 
 // GetDeviceWithCapacity get device config list with enable_capacity
@@ -324,17 +326,14 @@ func (d *device) CreateDevice(kt *kit.Kit, input *types.DeviceInfo) (mapstr.MapS
 
 // CreateManyDevice creates device config in batch
 func (d *device) CreateManyDevice(kt *kit.Kit, input *types.CreateManyDeviceParam) error {
-	filter := &mapstr.MapStr{
-		"zone": &mapstr.MapStr{
-			pkg.BKDBIN: input.Zone,
-		},
-	}
-
-	zones, err := config.Operation().Zone().FindManyZone(kt.Ctx, filter)
+	zoneResult, err := d.zoneOp.GetZone(kt, &types.GetZoneParam{
+		Zone: input.Zone,
+	})
 	if err != nil {
 		logs.Errorf("failed to get zones, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+	zones := zoneResult.Info
 
 	for _, requireType := range input.RequireType {
 		param := &types.DeviceInfo{

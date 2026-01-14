@@ -69,6 +69,7 @@ type SubnetExtension interface {
 type TCloudSubnetExtension struct {
 	IsDefault         bool    `json:"is_default"`
 	CloudNetworkAclId *string `json:"cloud_network_acl_id,omitempty"`
+	EnableCvm         bool    `json:"enable_cvm,omitempty"` // 是否支持cvm申领
 }
 
 // AwsSubnetExtension defines aws subnet extensional info.

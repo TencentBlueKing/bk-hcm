@@ -59,7 +59,10 @@ func (svc *regionSvc) BatchCreateTCloudZiyanRegion(cts *rest.Contexts) (interfac
 				Vendor:     createReq.Vendor,
 				RegionID:   createReq.RegionID,
 				RegionName: createReq.RegionName,
+				AreaName:   createReq.AreaName,
+				CityName:   createReq.CityName,
 				Status:     createReq.Status,
+				Source:     createReq.Source,
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,
 			}
@@ -125,10 +128,14 @@ func (svc *regionSvc) BatchUpdateTCloudZiyanRegion(cts *rest.Contexts) error {
 	}
 
 	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
+		tmpRegion.AreaName = updateReq.AreaName
+		tmpRegion.CityName = updateReq.CityName
 		tmpRegion.Status = updateReq.Status
+		if len(updateReq.Source) > 0 {
+			tmpRegion.Source = updateReq.Source
+		}
 
 		err = svc.dao.TCloudZiyanRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
@@ -216,6 +223,9 @@ func convertTCloudZiyanBaseRegion(dbRegion *tableregion.TCloudZiyanRegionTable) 
 		Vendor:     dbRegion.Vendor,
 		RegionID:   dbRegion.RegionID,
 		RegionName: dbRegion.RegionName,
+		AreaName:   dbRegion.AreaName,
+		CityName:   dbRegion.CityName,
+		Source:     dbRegion.Source,
 		Status:     dbRegion.Status,
 		Creator:    dbRegion.Creator,
 		Reviser:    dbRegion.Reviser,

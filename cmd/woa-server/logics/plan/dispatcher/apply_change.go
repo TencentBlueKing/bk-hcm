@@ -787,7 +787,6 @@ func newResPlanDemandCreateReq(ticket *ApplyTicketCtx, demand *ptypes.CrpOrderCh
 		ObsProject:      demand.ObsProject,
 		ExpectTime:      expectTime.Format(constant.DateLayout),
 		PlanType:        demand.PlanType,
-		AreaID:          demand.AreaID,
 		AreaName:        demand.AreaName,
 		RegionID:        demand.RegionID,
 		RegionName:      demand.RegionName,

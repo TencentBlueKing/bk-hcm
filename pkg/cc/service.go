@@ -76,6 +76,28 @@ type Setting interface {
 	TenantEnable() bool
 }
 
+// TestSetting test setting.
+type TestSetting struct {
+}
+
+func (t TestSetting) trySetFlagBindIP(ip net.IP) error {
+	return nil
+}
+
+func (t TestSetting) trySetDefault() {
+	return
+}
+
+// Validate TestSetting option.
+func (t TestSetting) Validate() error {
+	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (t TestSetting) TenantEnable() bool {
+	return false
+}
+
 // ApiServerSetting defines api server used setting options.
 type ApiServerSetting struct {
 	Network Network      `yaml:"network"`
@@ -581,31 +603,31 @@ func (s *TaskServerSetting) TenantEnable() bool {
 
 // WoaServerSetting defines woa server used setting options.
 type WoaServerSetting struct {
-	Network         Network    `yaml:"network"`
-	Service         Service    `yaml:"service"`
-	Database        DataBase   `yaml:"database"`
-	Log             LogOption  `yaml:"log"`
-	Cmdb            ApiGateway `yaml:"cmdb"`
-	FinOps          ApiGateway `yaml:"finops"`
-	BkHcmURL        string     `yaml:"bkHcmUrl"`
-	BkApigwHCMURL   string     `yaml:"bkApigwHCMUrl"`
-	MongoDB         MongoDB    `yaml:"mongodb"`
-	Watch           MongoDB    `yaml:"watch"`
-	Redis           Redis      `yaml:"redis"`
-	ClientConfig    `yaml:",inline"`
-	ItsmFlows       []ItsmFlow       `yaml:"itsmFlows"`
-	CancelItsmFlows []ItsmFlow       `yaml:"cancelItsmFlows"`
-	ResDissolve     ResourceDissolve `yaml:"resourceDissolve"`
-	Es              Es               `yaml:"elasticsearch"`
-	Blacklist       string           `yaml:"blacklist"`
-	UseMongo        bool             `yaml:"useMongo"`
-	Recover         Recover          `yaml:"recover"`
-	LocalTimezone   string           `yaml:"localTimezone"`
-	RollingServer   RollingServer    `yaml:"rollingServer"`
-	ResPlan         ResPlan          `yaml:"resPlan"`
-	ResourceSync    ResourceSync     `yaml:"resourceSync"`
-	Cmsi            CMSI             `yaml:"cmsi"`
-	StuckCheck      StuckCheck       `yaml:"stuckCheck"`
+	Network           Network    `yaml:"network"`
+	Service           Service    `yaml:"service"`
+	Database          DataBase   `yaml:"database"`
+	Log               LogOption  `yaml:"log"`
+	Cmdb              ApiGateway `yaml:"cmdb"`
+	FinOps            ApiGateway `yaml:"finops"`
+	BkHcmURL          string     `yaml:"bkHcmUrl"`
+	BkApigwHCMURL     string     `yaml:"bkApigwHCMUrl"`
+	MongoDB           MongoDB    `yaml:"mongodb"`
+	Watch             MongoDB    `yaml:"watch"`
+	Redis             Redis      `yaml:"redis"`
+	ClientConfig      `yaml:",inline"`
+	ItsmFlows         []ItsmFlow        `yaml:"itsmFlows"`
+	CancelItsmFlows   []ItsmFlow        `yaml:"cancelItsmFlows"`
+	ResDissolve       ResourceDissolve  `yaml:"resourceDissolve"`
+	Es                Es                `yaml:"elasticsearch"`
+	Blacklist         string            `yaml:"blacklist"`
+	UseMongo          bool              `yaml:"useMongo"`
+	Recover           Recover           `yaml:"recover"`
+	LocalTimezone     string            `yaml:"localTimezone"`
+	RollingServer     RollingServer     `yaml:"rollingServer"`
+	ResPlan           ResPlan           `yaml:"resPlan"`
+	ResourceSync      ResourceSync      `yaml:"resourceSync"`
+	Cmsi              CMSI              `yaml:"cmsi"`
+	StuckCheck        StuckCheck        `yaml:"stuckCheck"`
 	ApplyTicketConfig ApplyTicketConfig `yaml:"applyTicketConfig"`
 
 	Tenant TenantConfig `yaml:"tenant"`

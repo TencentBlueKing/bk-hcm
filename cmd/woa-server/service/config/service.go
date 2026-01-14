@@ -142,9 +142,6 @@ func (s *service) initPmRestrict(h *rest.Handler) {
 
 func (s *service) initRegion(h *rest.Handler) {
 	h.Add("GetQcloudRegion", http.MethodGet, "/config/find/config/qcloud/region", s.GetQcloudRegion)
-	h.Add("CreateQcloudRegion", http.MethodPost, "/config/create/config/qcloud/region", s.CreateQcloudRegion)
-	h.Add("UpdateQcloudRegion", http.MethodPut, "/config/update/config/qcloud/region/{id}", s.UpdateQcloudRegion)
-	h.Add("DeleteQcloudRegion", http.MethodDelete, "/config/delete/config/qcloud/region/{id}", s.DeleteQcloudRegion)
 	h.Add("GetIdcRegion", http.MethodGet, "/config/find/config/idc/region", s.GetIdcRegion)
 }
 
@@ -158,37 +155,29 @@ func (s *service) initRequirement(h *rest.Handler) {
 func (s *service) initSubnet(h *rest.Handler) {
 	h.Add("GetSubnet", http.MethodPost, "/config/findmany/config/cvm/subnet", s.GetSubnet)
 	h.Add("GetSubnetList", http.MethodPost, "/config/findmany/config/cvm/subnet/list", s.GetSubnetList)
-	h.Add("CreateSubnet", http.MethodPost, "/config/create/config/cvm/subnet", s.CreateSubnet)
-	h.Add("UpdateSubnet", http.MethodPut, "/config/update/config/cvm/subnet/{id}", s.UpdateSubnet)
 	h.Add("UpdateSubnetProperty", http.MethodPut, "/config/updatemany/config/cvm/subnet/property",
 		s.UpdateSubnetProperty)
-	h.Add("DeleteSubnet", http.MethodDelete, "/config/delete/config/cvm/subnet/{id}", s.DeleteSubnet)
-	h.Add("SyncSubnet", http.MethodPost, "/config/sync/config/cvm/subnet", s.SyncSubnet)
 }
 
 func (s *service) initVpc(h *rest.Handler) {
 	h.Add("GetVpc", http.MethodPost, "/config/findmany/config/cvm/vpc", s.GetVpc)
 	h.Add("GetVpcList", http.MethodPost, "/config/findmany/config/cvm/vpclist", s.GetVpcList)
-	h.Add("CreateVpc", http.MethodPost, "/config/create/config/cvm/vpc", s.CreateVpc)
-	h.Add("UpdateVpc", http.MethodPut, "/config/update/config/cvm/vpc/{id}", s.UpdateVpc)
-	h.Add("DeleteVpc", http.MethodDelete, "/config/delete/config/cvm/vpc/{id}", s.DeleteVpc)
-	h.Add("SyncVpc", http.MethodPost, "/config/sync/config/cvm/vpc", s.SyncVpc)
 	h.Add("UpsertRegionDftVpc", http.MethodPost, "/config/region/default_vpc/upsert", s.UpsertRegionDftVpc)
 }
 
 func (s *service) initZone(h *rest.Handler) {
 	h.Add("GetQcloudZone", http.MethodPost, "/config/findmany/config/qcloud/zone", s.GetQcloudZone)
-	h.Add("CreateQcloudZone", http.MethodPost, "/config/create/config/qcloud/zone", s.CreateQcloudZone)
-	h.Add("UpdateQcloudZone", http.MethodPut, "/config/update/config/qcloud/zone/{id}", s.UpdateQcloudZone)
-	h.Add("DeleteQcloudZone", http.MethodDelete, "/config/delete/config/qcloud/zone/{id}", s.DeleteQcloudZone)
 	h.Add("GetIdcZone", http.MethodPost, "/config/findmany/config/idc/zone", s.GetIdcZone)
 	h.Add("CreateIdcZone", http.MethodPost, "/config/create/config/idc/zone", s.CreateIdcZone)
 }
 
 func (s *service) initCapacity(h *rest.Handler) {
 	h.Add("GetCapacity", http.MethodPost, "/config/find/cvm/capacity", s.GetCapacity)
-	h.Add("UpdateCapacity", http.MethodPost, "/config/sync/cvm/capacity", s.UpdateCapacity)
+	h.Add("UpsertCapacity", http.MethodPost, "/config/sync/cvm/capacity", s.UpsertCapacity)
 	h.Add("BatchGetCapacity", http.MethodPost, "/config/findmany/cvm/capacity", s.BatchGetCapacity)
+	h.Add("ListCapacityWithDeviceInfo", http.MethodPost, "/config/capacity/list_with_device_info",
+		s.ListCapacityWithDeviceInfo)
+
 }
 
 func (s *service) initSg(h *rest.Handler) {

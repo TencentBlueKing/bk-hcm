@@ -1,6 +1,6 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useFieldVal } from '@/views/ziyanScr/cvm-produce/component/property-display/field-map';
-import { QueryFilterTypeLegacy, QueryRuleOPEnumLegacy } from '@/typings';
+import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import rollRequest from '@blueking/roll-request';
 import http from '@/http';
 
@@ -28,9 +28,9 @@ export default defineComponent({
     const { getFieldCn, getFieldCnVal } = useFieldVal();
 
     const reqKeyList = ['vpc', 'subnet'];
-    const keyMap: Record<string, { reqKey: string; nameKey: string }> = {
-      vpc: { reqKey: 'vpc_id', nameKey: 'vpc_name' },
-      subnet: { reqKey: 'subnet_id', nameKey: 'subnet_name' },
+    const keyMap: Record<string, { reqKey: string; resKey: string; nameKey: string }> = {
+      vpc: { reqKey: 'cloud_vpc_id', resKey: 'vpc_id', nameKey: 'vpc_name' },
+      subnet: { reqKey: 'cloud_id', resKey: 'subnet_id', nameKey: 'subnet_name' },
     };
 
     const displayName = ref('');
@@ -39,25 +39,25 @@ export default defineComponent({
       const { spec } = props.row;
       const { region, zone } = spec;
 
-      const filter: QueryFilterTypeLegacy = {
-        condition: 'AND',
+      const filter: QueryFilterType = {
+        op: 'and',
         rules: [
-          { field: 'region', operator: QueryRuleOPEnumLegacy.EQ, value: region },
-          { field: 'zone', operator: QueryRuleOPEnumLegacy.EQ, value: zone },
-          { field: keyMap[k].reqKey, operator: QueryRuleOPEnumLegacy.EQ, value: v },
+          { field: 'region', op: QueryRuleOPEnum.EQ, value: region },
+          { field: 'zone', op: QueryRuleOPEnum.EQ, value: zone },
+          { field: keyMap[k].reqKey, op: QueryRuleOPEnum.EQ, value: v },
         ],
       };
 
       const list = (await rollRequest({
         httpClient: http,
-        pageEnableCountKey: 'enable_count',
+        pageEnableCountKey: 'count',
       }).rollReqUseCount(
         '/api/v1/woa/config/findmany/config/cvm/subnet/list',
         { filter },
         { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.info },
       )) as ICvmSubnetItem[];
 
-      displayName.value = list.find((item) => item[keyMap[k].reqKey] === v)?.[keyMap[k].nameKey] || '';
+      displayName.value = list.find((item) => item[keyMap[k].resKey] === v)?.[keyMap[k].nameKey] || '';
     };
 
     onMounted(() => {

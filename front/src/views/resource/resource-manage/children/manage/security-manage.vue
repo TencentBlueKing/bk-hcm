@@ -253,7 +253,7 @@ const getQueryOperator = (value: string | number | string[] | number[], field: s
   const result: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
   if (Array.isArray(value)) {
     op = QueryRuleOPEnum.IN;
-  } else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) {
+  } else if (typeof value === 'number' || ['vendor', 'mgmt_type', 'region'].includes(field)) {
     op = QueryRuleOPEnum.EQ;
   }
   result.rules = [{ op, value, field }];

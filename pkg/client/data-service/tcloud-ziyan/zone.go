@@ -54,5 +54,12 @@ func (cli *ZoneClient) BatchUpdateZone(kt *kit.Kit,
 
 	return common.RequestNoResp[protocloud.ZoneBatchUpdateReq[corecloud.TCloudZoneExtension]](
 		cli.client, rest.PATCH, kt, req, "/zones/batch/update")
+}
 
+// ListZoneExt list zone with extension.
+func (cli *ZoneClient) ListZoneExt(kt *kit.Kit, req *protocloud.ZoneListReq) (
+	*protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension], error) {
+
+	return common.Request[protocloud.ZoneListReq, protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension]](
+		cli.client, rest.POST, kt, req, "/zones/list")
 }

@@ -23,13 +23,11 @@ import (
 	"hcm/pkg/adaptor/types/region"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/uuid"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"
-	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	"go.uber.org/mock/gomock"
 )
 
@@ -94,12 +92,10 @@ func NewRegionPlaybook() Playbook {
 
 func newZone(zone, id, name, status string) typeszone.TCloudZone {
 	return typeszone.TCloudZone{
-		ZoneInfo: &cvm.ZoneInfo{
-			Zone:      &zone,
-			ZoneId:    &id,
-			ZoneName:  &name,
-			ZoneState: &status,
-		},
+		CloudID:  id,
+		ZoneID:   zone,
+		ZoneName: name,
+		State:    status,
 	}
 }
 
@@ -111,7 +107,7 @@ func RegionValidate(regionID string) error {
 		return errors.NewTencentCloudSDKError("InvalidParameterValue",
 			"参数 `X-TC-Region` 取值错误。", uuid.UUID())
 	}
-	if regions[0].RegionState == "AVAILABLE" {
+	if regions[0].RegionState == "UNAVAILABLE" {
 		return errors.NewTencentCloudSDKError("InvalidParameterValue",
 			"region 不可用。", uuid.UUID())
 	}
@@ -126,13 +122,13 @@ func ZoneValidate(regionID, zoneStr string) error {
 		return err
 	}
 	zones := slice.Filter(zoneMap[regionID], func(z typeszone.TCloudZone) bool {
-		return assert.IsPtrStringEqual(z.ZoneId, &regionID)
+		return z.GetCloudID() == regionID
 	})
 	if len(zones) != 1 {
 		return errors.NewTencentCloudSDKError("InvalidParameterValue",
 			"zone 错误", uuid.UUID())
 	}
-	if converter.PtrToVal(zones[0].ZoneState) == "AVAILABLE" {
+	if zones[0].State == "UNAVAILABLE" {
 		return errors.NewTencentCloudSDKError("InvalidParameterValue",
 			"zone 不可用。", uuid.UUID())
 	}

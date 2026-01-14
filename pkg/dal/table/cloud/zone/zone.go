@@ -40,6 +40,7 @@ var ZoneTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
+	{Column: "source", NamedC: "source", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "name_cn", NamedC: "name_cn", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -51,18 +52,19 @@ var ZoneTableColumnDescriptor = utils.ColumnDescriptors{
 
 // ZoneTable define zone table.
 type ZoneTable struct {
-	ID        string          `db:"id" json:"id" validate:"lte=64"`
-	Vendor    enumor.Vendor   `db:"vendor" json:"vendor"`
-	CloudID   string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
-	Name      string          `db:"name" json:"name" validate:"lte=64"`
-	Region    string          `db:"region" json:"region" validate:"lte=64"`
-	NameCn    string          `db:"name_cn" json:"name_cn" validate:"lte=64"`
-	State     string          `db:"state" json:"state" validate:"lte=64"`
-	Extension types.JsonField `db:"extension" json:"extension"`
-	Creator   string          `db:"creator" json:"creator" validate:"lte=64"`
-	Reviser   string          `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt types.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	ID        string              `db:"id" json:"id" validate:"lte=64"`
+	Vendor    enumor.Vendor       `db:"vendor" json:"vendor"`
+	CloudID   string              `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
+	Name      string              `db:"name" json:"name" validate:"lte=64"`
+	Region    string              `db:"region" json:"region" validate:"lte=64"`
+	NameCn    string              `db:"name_cn" json:"name_cn" validate:"lte=64"`
+	State     string              `db:"state" json:"state" validate:"lte=64"`
+	Source    enumor.RegionSource `db:"source" json:"source" validate:"-"`
+	Extension types.JsonField     `db:"extension" json:"extension"`
+	Creator   string              `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser   string              `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt types.Time          `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt types.Time          `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 	// TenantID 租户ID
 	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
@@ -89,6 +91,10 @@ func (t ZoneTable) InsertValidate() error {
 
 	if len(t.State) == 0 {
 		return errors.New("state is required")
+	}
+
+	if err := t.Source.Validate(); err != nil {
+		return err
 	}
 
 	if len(t.CloudID) == 0 {
@@ -123,6 +129,17 @@ func (t ZoneTable) UpdateValidate() error {
 
 	if len(t.Creator) != 0 {
 		return errors.New("creator can not update")
+	}
+
+	// vendor, account id can not update
+	if len(t.Vendor) > 0 {
+		return errors.New("vendor can not update")
+	}
+
+	if len(t.Source) > 0 {
+		if err := t.Source.Validate(); err != nil {
+			return err
+		}
 	}
 
 	return nil

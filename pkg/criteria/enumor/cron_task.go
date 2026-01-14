@@ -17,27 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package ressync 资源同步相关接口
-package ressync
+package enumor
 
-import (
-	"hcm/pkg/iam/meta"
-	"hcm/pkg/logs"
-	"hcm/pkg/rest"
+// CronTask 定时任务
+type CronTask string
+
+const (
+	// CronTaskSyncDeviceCapacity 同步主机库存
+	CronTaskSyncDeviceCapacity CronTask = "sync_device_capacity"
 )
-
-// SyncSubnets sync subnets.
-func (s *service) SyncSubnets(cts *rest.Contexts) (any, error) {
-	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.ZiyanCvmSubnet, Action: meta.Find}}); err != nil {
-		logs.Errorf("no permission to sync subnet resource, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.resSyncLogic.SyncSubnet(); err != nil {
-		logs.Errorf("sync subnet resource failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}

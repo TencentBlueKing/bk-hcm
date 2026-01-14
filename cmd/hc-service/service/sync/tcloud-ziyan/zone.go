@@ -21,7 +21,7 @@ package ziyan
 
 import (
 	"hcm/cmd/hc-service/logics/res-sync/ziyan"
-	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/api/hc-service/zone"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -29,7 +29,7 @@ import (
 
 // SyncZone sync tcloud ziyan zone
 func (svc *service) SyncZone(cts *rest.Contexts) (interface{}, error) {
-	req := new(sync.TCloudSyncReq)
+	req := new(zone.TCloudZoneSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

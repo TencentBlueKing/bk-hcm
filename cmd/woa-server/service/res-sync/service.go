@@ -26,6 +26,8 @@ import (
 	ressync "hcm/cmd/woa-server/logics/res-sync"
 	"hcm/cmd/woa-server/service/capability"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/cron/core"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
@@ -36,6 +38,7 @@ func InitService(c *capability.Capability) {
 		client:       c.Client,
 		authorizer:   c.Authorizer,
 		resSyncLogic: c.ResSyncLogic,
+		tasks:        c.Tasks,
 	}
 	h := rest.NewHandler()
 	h.Path("/res_syncs")
@@ -48,12 +51,11 @@ type service struct {
 	authorizer   auth.Authorizer
 	client       *client.ClientSet
 	resSyncLogic ressync.Logics
+	tasks        map[enumor.CronTask]core.Task
 }
 
 // initService 资源下的接口
 func (s *service) initService(h *rest.Handler) {
-	h.Add("SyncVpcs", http.MethodPost, "/vpcs/sync", s.SyncVpcs)
-	h.Add("SyncSubnets", http.MethodPost, "/subnets/sync", s.SyncSubnets)
-	h.Add("SyncCapacitys", http.MethodPost, "/capacitys/sync", s.SyncCapacitys)
+	h.Add("SyncCapacities", http.MethodPost, s.tasks[enumor.CronTaskSyncDeviceCapacity].GetURL(), s.SyncCapacities)
 	h.Add("SyncLeftIPs", http.MethodPost, "/left_ips/sync", s.SyncLeftIPs)
 }

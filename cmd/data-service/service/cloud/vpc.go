@@ -518,28 +518,28 @@ func (svc *vpcSvc) ListVpcExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return conVpcExtListResult[protocore.TCloudVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.TCloudVpcExtension](listResp)
 	case enumor.TCloudZiyan:
-		return conVpcExtListResult[protocore.TCloudVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.TCloudVpcExtension](listResp)
 	case enumor.Aws:
-		return conVpcExtListResult[protocore.AwsVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.AwsVpcExtension](listResp)
 	case enumor.Azure:
-		return conVpcExtListResult[protocore.AzureVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.AzureVpcExtension](listResp)
 	case enumor.HuaWei:
-		return conVpcExtListResult[protocore.HuaWeiVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.HuaWeiVpcExtension](listResp)
 	case enumor.Gcp:
-		return conVpcExtListResult[protocore.GcpVpcExtension](listResp.Details)
+		return conVpcExtListResult[protocore.GcpVpcExtension](listResp)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
 // conVpcExtListResult converts the list of VPC tables to a VPC extension list result.
-func conVpcExtListResult[T protocore.VpcExtension](tables []tablecloud.VpcTable) (
+func conVpcExtListResult[T protocore.VpcExtension](list *types.VpcListResult) (
 	*protocloud.VpcExtListResult[T], error) {
 
-	details := make([]protocore.Vpc[T], 0, len(tables))
-	for _, one := range tables {
+	details := make([]protocore.Vpc[T], 0, len(list.Details))
+	for _, one := range list.Details {
 		extension := new(T)
 		if len(one.Extension) != 0 {
 			err := json.UnmarshalFromString(string(one.Extension), &extension)
@@ -555,6 +555,7 @@ func conVpcExtListResult[T protocore.VpcExtension](tables []tablecloud.VpcTable)
 	}
 
 	return &protocloud.VpcExtListResult[T]{
+		Count:   list.Count,
 		Details: details,
 	}, nil
 }

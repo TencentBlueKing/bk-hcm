@@ -125,6 +125,7 @@ export default defineComponent({
      * 在这里获取项目公共数据并缓存
      */
     onMounted(() => {
+      fetchRegions(VendorEnum.ZIYAN);
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
       fetchBusinessMap();

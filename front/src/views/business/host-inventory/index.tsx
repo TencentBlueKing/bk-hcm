@@ -1,4 +1,4 @@
-import { defineComponent, ref, onMounted, computed, reactive } from 'vue';
+import { defineComponent, ref, onMounted, computed } from 'vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import apiService from '@/api/scrApi';
 import { Button } from 'bkui-vue';
@@ -9,10 +9,7 @@ import cssModule from './index.module.scss';
 import GridFilterComp from '@/components/grid-filter-comp';
 import useColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
-import { useConfigRequirementStore, type IRequirementObsProject } from '@/store/config/requirement';
-import ResourceDemandsResult from './resource-demands-result.vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { ResourceDemandResultStatusCode } from '@/typings/resourcePlan';
 import routerAction from '@/router/utils/action';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
@@ -23,7 +20,6 @@ export default defineComponent({
     const deviceGroups = ['标准型', '高IO型', '大数据型', '计算型'];
     const { t } = useI18n();
     const filter = ref({
-      require_type: 1,
       region: [],
       zone: [],
       device_type: [],
@@ -34,7 +30,6 @@ export default defineComponent({
       enable_capacity: true,
     });
     const options = ref({
-      require_types: [],
       device_groups: deviceGroups,
       device_types: [],
       regions: [],
@@ -48,24 +43,18 @@ export default defineComponent({
       limit: 50,
       start: 0,
     });
-    const queryrules = ref(
+    const queryRules = ref(
       [
-        filter.value.region.length && { field: 'region', operator: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', operator: 'in', value: filter.value.zone },
-        filter.value.require_type && { field: 'require_type', operator: 'equal', value: filter.value.require_type },
+        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
-          field: 'label.device_group',
-          operator: 'in',
+          field: 'device_family',
+          op: 'in',
           value: filter.value.device_group,
         },
-        filter.value.device_type.length && { field: 'device_type', operator: 'in', value: filter.value.device_type },
-        filter.value.cpu && { field: 'cpu', operator: 'equal', value: filter.value.cpu },
-        filter.value.mem && { field: 'mem', operator: 'equal', value: filter.value.mem },
-        filter.value.enable_capacity && {
-          field: 'enable_capacity',
-          operator: 'equal',
-          value: filter.value.enable_capacity,
-        },
+        filter.value.device_type.length && { field: 'dc.device_type', op: 'in', value: filter.value.device_type },
+        filter.value.cpu && { field: 'cpu_core', op: 'eq', value: filter.value.cpu },
+        filter.value.mem && { field: 'memory', op: 'eq', value: filter.value.mem },
       ].filter(Boolean),
     );
     const loadResources = () => {
@@ -73,12 +62,9 @@ export default defineComponent({
     };
 
     const whereAmI = useWhereAmI();
-    const configRequirementStore = useConfigRequirementStore();
-    const requirementObsProjectMap = ref<IRequirementObsProject>({});
 
     const emptyform = () => {
       filter.value = {
-        require_type: 1,
         region: [],
         zone: [],
         device_type: [],
@@ -106,18 +92,17 @@ export default defineComponent({
       filter.value.device_type = [];
     };
     const filterDevices = () => {
-      queryrules.value = [
-        filter.value.region.length && { field: 'region', operator: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', operator: 'in', value: filter.value.zone },
-        filter.value.require_type && { field: 'require_type', operator: 'equal', value: filter.value.require_type },
+      queryRules.value = [
+        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
-          field: 'label.device_group',
-          operator: 'in',
+          field: 'device_family',
+          op: 'in',
           value: filter.value.device_group,
         },
-        filter.value.device_type.length && { field: 'device_type', operator: 'in', value: filter.value.device_type },
-        filter.value.cpu && { field: 'cpu', operator: 'equal', value: filter.value.cpu },
-        filter.value.mem && { field: 'mem', operator: 'equal', value: filter.value.mem },
+        filter.value.device_type.length && { field: 'dc.device_type', op: 'in', value: filter.value.device_type },
+        filter.value.cpu && { field: 'cpu_core', op: 'eq', value: filter.value.cpu },
+        filter.value.mem && { field: 'memory', op: 'eq', value: filter.value.mem },
       ].filter(Boolean);
 
       page.value.start = 0;
@@ -134,123 +119,69 @@ export default defineComponent({
       options.value.cpu = cpu || [];
       options.value.mem = mem || [];
     };
-    const getOptions = async () => {
-      const [{ info }, obsProjectMap] = await Promise.all([
-        apiService.getRequireTypes(),
-        configRequirementStore.getRequirementObsProject(),
-      ]);
-      options.value.require_types = info;
-      requirementObsProjectMap.value = obsProjectMap;
-    };
-    const handleApply = (row: any) => {
-      routerAction.open({
-        path: '/business/service/service-apply/cvm',
-        query: {
-          ...row,
-          from: 'businessCvmInventory',
-          [GLOBAL_BIZS_KEY]: whereAmI.getBizsId(),
-        },
-      });
-    };
     onMounted(() => {
       loadRestrict();
-      getOptions();
     });
-
-    const demandStatus = reactive<Record<number, { code: number; text: string }>>({});
-    const updateResourceDemands = (planStatus: { code: number; text: string }, row: any) => {
-      demandStatus[row.id] = planStatus;
-    };
 
     const { CommonTable, getListData, isLoading } = useTable({
       tableOptions: {
         columns: [
           ...columns,
           {
-            label: '预测情况',
-            width: 150,
-            render: ({ row }: { row: any }) => (
-              <ResourceDemandsResult
-                data={row}
-                obsProjectMap={requirementObsProjectMap.value}
-                bizId={whereAmI.getBizsId()}
-                onUpdate={updateResourceDemands}
-              />
-            ),
-          },
-          {
             label: '操作',
-            width: 180,
+            width: 120,
             showOverflowTooltip: false,
             render: ({ row }: { row: any }) => {
               return (
-                <div class={cssModule['operation-button-group']}>
-                  <Button
-                    text
-                    theme='primary'
-                    disabled={
-                      row.listenerNum > 0 ||
-                      row.delete_protect ||
-                      [
-                        undefined,
-                        ResourceDemandResultStatusCode.BGNone,
-                        ResourceDemandResultStatusCode.BIZNone,
-                      ].includes(demandStatus[row.id]?.code)
-                    }
-                    onClick={() => handleApply(row)}>
-                    一键申请
-                  </Button>
-                  {/* 滚服禁用，增加提示 滚服由BG统一提交预测 */}
-                  <Button
-                    text
-                    theme='primary'
-                    disabled={row.listenerNum > 0 || row.delete_protect || row.require_type === 6}
-                    v-bk-tooltips={{ content: '滚服由BG统一提交预测', disabled: row.require_type !== 6 }}
-                    onClick={() => {
-                      routerAction.open({
-                        path: '/business/resource-plan/add',
-                        query: {
-                          [GLOBAL_BIZS_KEY]: whereAmI.getBizsId(),
-                          action: 'add',
-                          payload: encodeURIComponent(
-                            JSON.stringify({
-                              obs_project: requirementObsProjectMap.value[row.require_type],
-                              region_id: row.region,
-                              zone_id: row.zone,
-                              cvm: {
-                                device_type: row.device_type,
-                              },
-                            }),
-                          ),
-                        },
-                      });
-                    }}>
-                    增加预测
-                  </Button>
-                </div>
+                <Button
+                  text
+                  theme='primary'
+                  disabled={row.listenerNum > 0 || row.delete_protect || row.require_type === 6}
+                  v-bk-tooltips={{ content: '滚服由BG统一提交预测', disabled: row.require_type !== 6 }}
+                  onClick={() => {
+                    routerAction.open({
+                      path: '/business/resource-plan/add',
+                      query: {
+                        [GLOBAL_BIZS_KEY]: whereAmI.getBizsId(),
+                        action: 'add',
+                        payload: encodeURIComponent(
+                          JSON.stringify({
+                            region_id: row.region,
+                            zone_id: row.zone,
+                            cvm: {
+                              device_type: row.device_type,
+                            },
+                          }),
+                        ),
+                      },
+                    });
+                  }}>
+                  增加预测
+                </Button>
               );
             },
           },
         ],
       },
       requestOption: {
-        dataPath: 'data.info',
         sortOption: {
-          sort: 'capacity_flag',
+          sort: 'capacity',
           order: 'DESC',
+          legacy: false,
         },
       },
       scrConfig: () => {
         return {
-          url: '/api/v1/woa/config/findmany/config/cvm/device/detail',
+          url: '/api/v1/woa/config/capacity/list_with_device_info',
           payload: {
             filter: {
-              condition: 'AND',
-              rules: [...queryrules.value],
+              op: 'and',
+              rules: [...queryRules.value],
             },
             page: page.value,
           },
-          filter: { simpleConditions: true, requestId: 'devices' },
+          pageEnableCountKey: 'count',
+          clearRules: true,
         };
       },
     });
@@ -264,22 +195,6 @@ export default defineComponent({
       <div class={cssModule.page}>
         <GridFilterComp
           rules={[
-            {
-              // 小额绿通和春保资源池不显示
-              title: t('需求类型'),
-              content: (
-                <bk-select v-model={filter.value.require_type}>
-                  {options.value.require_types
-                    .filter((item) => ![7, 8].includes(item.require_type))
-                    .map((item) => (
-                      <bk-option
-                        key={item.require_type}
-                        value={item.require_type}
-                        label={item.require_name}></bk-option>
-                    ))}
-                </bk-select>
-              ),
-            },
             {
               title: t('地域'),
               content: (

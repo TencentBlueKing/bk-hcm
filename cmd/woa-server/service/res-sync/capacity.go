@@ -21,20 +21,21 @@
 package ressync
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// SyncCapacitys sync capacitys.
-func (s *service) SyncCapacitys(cts *rest.Contexts) (any, error) {
+// SyncCapacities sync capacities.
+func (s *service) SyncCapacities(cts *rest.Contexts) (any, error) {
 	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
 		Type: meta.ZiyanResInventory, Action: meta.Find}}); err != nil {
 		logs.Errorf("no permission to sync capacity resource, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if err := s.resSyncLogic.SyncCapacity(); err != nil {
+	if err := s.tasks[enumor.CronTaskSyncDeviceCapacity].Do(cts.Kit); err != nil {
 		logs.Errorf("sync capacity resource failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}

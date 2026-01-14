@@ -185,6 +185,7 @@ type DBResType interface {
 		coreresourcegroup.AzureRG |
 
 		corezone.BaseZone |
+		corezone.Zone[corezone.TCloudZoneExtension] |
 
 		coreimage.Image[coreimage.TCloudExtension] |
 		coreimage.Image[coreimage.HuaWeiExtension] |

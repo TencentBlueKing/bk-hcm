@@ -68,27 +68,27 @@ func (svc *subnetSvc) ListSubnetExt(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp)
 	case enumor.TCloudZiyan:
-		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.TCloudSubnetExtension](listResp)
 	case enumor.Aws:
-		return conSubnetExtListResult[protocore.AwsSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.AwsSubnetExtension](listResp)
 	case enumor.Azure:
-		return conSubnetExtListResult[protocore.AzureSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.AzureSubnetExtension](listResp)
 	case enumor.HuaWei:
-		return conSubnetExtListResult[protocore.HuaWeiSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.HuaWeiSubnetExtension](listResp)
 	case enumor.Gcp:
-		return conSubnetExtListResult[protocore.GcpSubnetExtension](listResp.Details)
+		return conSubnetExtListResult[protocore.GcpSubnetExtension](listResp)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func conSubnetExtListResult[T protocore.SubnetExtension](tables []tablecloud.SubnetTable) (
+func conSubnetExtListResult[T protocore.SubnetExtension](list *types.SubnetListResult) (
 	*protocloud.SubnetExtListResult[T], error) {
 
-	details := make([]protocore.Subnet[T], 0, len(tables))
-	for _, one := range tables {
+	details := make([]protocore.Subnet[T], 0, len(list.Details))
+	for _, one := range list.Details {
 		extension := new(T)
 		err := json.UnmarshalFromString(string(one.Extension), &extension)
 		if err != nil {
@@ -102,6 +102,7 @@ func conSubnetExtListResult[T protocore.SubnetExtension](tables []tablecloud.Sub
 	}
 
 	return &protocloud.SubnetExtListResult[T]{
+		Count:   list.Count,
 		Details: details,
 	}, nil
 }

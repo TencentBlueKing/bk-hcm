@@ -17,7 +17,7 @@ const useList = (props: IZoneTagSelectorProps) => {
         list.value = info.map((item: any) => {
           return {
             id: item.zone,
-            name: `${item.zone_cn}(${item.cmdb_zone_name})`,
+            name: `${item.zone_cn}${item.cmdb_zone_name ? `(${item.cmdb_zone_name})` : ''}`,
           };
         });
       } else if (['IDCDVM', 'IDCPM'].includes(resourceType)) {

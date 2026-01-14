@@ -309,7 +309,6 @@ func (c *Controller) constructAutoTransferDemands(demands []*ptypes.ListResPlanD
 				ZoneName:   demand.ZoneName,
 				RegionID:   demand.RegionID,
 				RegionName: demand.RegionName,
-				AreaID:     demand.AreaID,
 				AreaName:   demand.AreaName,
 				Cvm: rpt.Cvm{
 					ResMode:        demand.ResMode.Name(),
@@ -336,7 +335,8 @@ func (c *Controller) constructAutoTransferDemands(demands []*ptypes.ListResPlanD
 }
 
 // AutoTransferBizResPlanDemandByID 根据业务ID和需求ID自动转移预测
-func (c *Controller) AutoTransferBizResPlanDemandByID(kt *kit.Kit, bkBizID int64, demandIDs []string) ([]string, error) {
+func (c *Controller) AutoTransferBizResPlanDemandByID(kt *kit.Kit, bkBizID int64, demandIDs []string) ([]string,
+	error) {
 	if len(demandIDs) == 0 {
 		return nil, fmt.Errorf("demand_ids is empty")
 	}

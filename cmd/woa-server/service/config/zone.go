@@ -14,8 +14,6 @@
 package config
 
 import (
-	"strconv"
-
 	types "hcm/cmd/woa-server/types/config"
 	"hcm/pkg"
 	"hcm/pkg/criteria/mapstr"
@@ -31,80 +29,13 @@ func (s *service) GetQcloudZone(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cond := mapstr.MapStr{}
-	// if input region is empty list, return all zone info
-	if len(input.Region) > 0 {
-		cond["region"] = mapstr.MapStr{
-			pkg.BKDBIN: input.Region,
-		}
-	} else if len(input.CmdbRegion) > 0 {
-		cond["cmdb_region_name"] = mapstr.MapStr{
-			pkg.BKDBIN: input.CmdbRegion,
-		}
-	}
-
-	rst, err := s.logics.Zone().GetZone(cts.Kit, &cond)
+	rst, err := s.logics.Zone().GetZone(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to get zone list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return rst, nil
-}
-
-// CreateQcloudZone creates qcloud zone config
-func (s *service) CreateQcloudZone(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.Zone)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to create zone, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Zone().CreateZone(cts.Kit, inputData)
-	if err != nil {
-		logs.Errorf("failed to create zone, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
-// UpdateQcloudZone updates qcloud zone config
-func (s *service) UpdateQcloudZone(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(mapstr.MapStr)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to update zone, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.logics.Zone().UpdateZone(cts.Kit, instId, inputData); err != nil {
-		logs.Errorf("failed to update zone, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// DeleteQcloudZone deletes qcloud zone config
-func (s *service) DeleteQcloudZone(cts *rest.Contexts) (interface{}, error) {
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.logics.Zone().DeleteZone(cts.Kit, instId); err != nil {
-		logs.Errorf("failed to delete zone, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
 }
 
 // GetIdcZone gets idc zone config list

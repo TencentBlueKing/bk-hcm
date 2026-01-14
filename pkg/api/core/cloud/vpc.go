@@ -66,6 +66,7 @@ type TCloudVpcExtension struct {
 	EnableMulticast bool         `json:"enable_multicast"`
 	DnsServerSet    []string     `json:"dns_server_set"`
 	DomainName      string       `json:"domain_name,omitempty"`
+	EnableCvm       bool         `json:"enable_cvm,omitempty"` // 是否支持cvm申领
 }
 
 // TCloudCidr tencent cloud cidr

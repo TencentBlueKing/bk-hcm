@@ -31,7 +31,6 @@ import (
 	rpdaotypes "hcm/pkg/dal/dao/types/resource-plan"
 	rpst "hcm/pkg/dal/table/resource-plan/res-plan-sub-ticket"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -179,7 +178,7 @@ func (s *service) validateResPlanTicket(req *ptypes.CreateResPlanTicketReq, bkBi
 // createResPlanTicket create resource plan ticket.
 func (s *service) createResPlanTicket(kt *kit.Kit, bkBizID int64, req *ptypes.CreateResPlanTicketReq) (string, error) {
 	// get create resource plan ticket needed zoneMap, regionAreaMap and deviceTypeMap.
-	zoneMap, regionAreaMap, deviceTypeMap, err := s.getMetaMaps(kt)
+	zoneMap, regionAreaMap, deviceTypeMap, err := s.planController.Fetch().GetMetaMaps(kt)
 	if err != nil {
 		logs.Errorf("get meta maps failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -198,7 +197,6 @@ func (s *service) createResPlanTicket(kt *kit.Kit, bkBizID int64, req *ptypes.Cr
 				ZoneName:       zoneMap[demand.ZoneID],
 				RegionID:       demand.RegionID,
 				RegionName:     regionAreaMap[demand.RegionID].RegionName,
-				AreaID:         regionAreaMap[demand.RegionID].AreaID,
 				AreaName:       regionAreaMap[demand.RegionID].AreaName,
 				DemandSource:   demand.DemandSource,
 				Remark:         demand.Remark,
@@ -254,37 +252,9 @@ func (s *service) createResPlanTicket(kt *kit.Kit, bkBizID int64, req *ptypes.Cr
 	return ticketID, nil
 }
 
-// getMetaMaps get create resource plan demand needed zoneMap, regionAreaMap and deviceTypeMap.
-func (s *service) getMetaMaps(kt *kit.Kit) (map[string]string, map[string]mtypes.RegionArea,
-	map[string]wdt.WoaDeviceTypeTable, error) {
-
-	// get zone id name mapping.
-	zoneMap, err := s.dao.WoaZone().GetZoneMap(kt)
-	if err != nil {
-		logs.Errorf("get zone map failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, err
-	}
-
-	// get region area mapping.
-	regionAreaMap, err := s.dao.WoaZone().GetRegionAreaMap(kt)
-	if err != nil {
-		logs.Errorf("get region area map failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, err
-	}
-
-	// get device type mapping.
-	deviceTypeMap, err := s.dao.WoaDeviceType().GetDeviceTypeMap(kt, tools.AllExpression())
-	if err != nil {
-		logs.Errorf("get device type map failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, nil, nil, err
-	}
-
-	return zoneMap, regionAreaMap, deviceTypeMap, nil
-}
-
 // getMetaNameMaps get create resource plan demand needed zoneMap, regionAreaMap and deviceTypeMap. map key is name
 func (s *service) getMetaNameMaps(kt *kit.Kit) (map[string]string, map[string]mtypes.RegionArea, error) {
-	zoneMap, regionAreaMap, _, err := s.getMetaMaps(kt)
+	zoneMap, regionAreaMap, _, err := s.planController.Fetch().GetMetaMaps(kt)
 	if err != nil {
 		return nil, nil, err
 	}

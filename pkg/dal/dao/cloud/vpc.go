@@ -182,6 +182,8 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 	columnTypes := cloud.VpcColumns.ColumnTypes()
 	columnTypes["extension.self_link"] = enumor.String
 	columnTypes["extension.resource_group_name"] = enumor.String
+	// 目前extension支持的字段类型：字符串（布尔值也需要传入字符串才会生效）
+	columnTypes["extension.enable_cvm"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err

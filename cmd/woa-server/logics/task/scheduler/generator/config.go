@@ -19,9 +19,7 @@ import (
 	cfgtype "hcm/cmd/woa-server/types/config"
 	"hcm/cmd/woa-server/types/task"
 	types "hcm/cmd/woa-server/types/task"
-	"hcm/pkg"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
@@ -100,14 +98,12 @@ func (g *Generator) getAvailableZoneIds(kt *kit.Kit, requireType enumor.RequireT
 
 // getZoneList get zone info in certain region
 func (g *Generator) getZoneList(kt *kit.Kit, region string) ([]*cfgtype.Zone, error) {
-	cond := mapstr.MapStr{}
+	req := &cfgtype.GetZoneParam{}
 	// if input region is empty list, return all zone info
 	if len(region) > 0 {
-		cond["region"] = mapstr.MapStr{
-			pkg.BKDBIN: []string{region},
-		}
+		req.Region = []string{region}
 	}
-	zoneResp, err := g.configLogics.Zone().GetZone(kt, &cond)
+	zoneResp, err := g.configLogics.Zone().GetZone(kt, req)
 	if err != nil {
 		return nil, err
 	}
@@ -117,14 +113,12 @@ func (g *Generator) getZoneList(kt *kit.Kit, region string) ([]*cfgtype.Zone, er
 
 // getRegionList get region list by zone list
 func (g *Generator) getRegionList(kt *kit.Kit, zoneList []string) ([]*cfgtype.Zone, error) {
-	cond := mapstr.MapStr{}
+	req := &cfgtype.GetZoneParam{}
 	// if input is empty list, return all zone info
 	if len(zoneList) > 0 {
-		cond["zone"] = mapstr.MapStr{
-			pkg.BKDBIN: zoneList,
-		}
+		req.Zone = zoneList
 	}
-	zoneResp, err := g.configLogics.Zone().GetZone(kt, &cond)
+	zoneResp, err := g.configLogics.Zone().GetZone(kt, req)
 	if err != nil {
 		return nil, err
 	}

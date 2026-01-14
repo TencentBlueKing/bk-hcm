@@ -14,10 +14,6 @@
 package config
 
 import (
-	"strconv"
-
-	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -31,61 +27,6 @@ func (s *service) GetQcloudRegion(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return rst, nil
-}
-
-// CreateQcloudRegion creates qcloud region config
-func (s *service) CreateQcloudRegion(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.Region)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to create region, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Region().CreateRegion(cts.Kit, inputData)
-	if err != nil {
-		logs.Errorf("failed to create region, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
-// UpdateQcloudRegion updates qcloud region config
-func (s *service) UpdateQcloudRegion(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(mapstr.MapStr)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to update region, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.logics.Region().UpdateRegion(cts.Kit, instId, inputData); err != nil {
-		logs.Errorf("failed to update region, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// DeleteQcloudRegion deletes qcloud region config
-func (s *service) DeleteQcloudRegion(cts *rest.Contexts) (interface{}, error) {
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.logics.Region().DeleteRegion(cts.Kit, instId); err != nil {
-		logs.Errorf("failed to delete region, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
 }
 
 // GetIdcRegion gets idc region config list

@@ -1,7 +1,6 @@
 import { defineComponent, ref, computed, watch, onMounted } from 'vue';
 import useColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 import { useTable } from '@/hooks/useTable/useTable';
-import { getRequireTypes } from '@/api/host/task';
 import { getRestrict } from '@/api/host/cvm';
 import MemberSelect from '@/components/MemberSelect';
 import AreaSelector from '@/views/ziyanScr/hostApplication/components/AreaSelector';
@@ -9,7 +8,6 @@ import ZoneSelector from '@/views/ziyanScr/hostApplication/components/ZoneSelect
 import { HelpFill, Search } from 'bkui-vue/lib/icon';
 import { Button, Form, Select, Sideslider } from 'bkui-vue';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
-import { ICvmDeviceDetailItem } from '@/typings/ziyanScr';
 const { FormItem } = Form;
 // import { statusList } from './transform';
 // import './index.scss';
@@ -34,7 +32,7 @@ export default defineComponent({
       default: '快速生产',
     },
   },
-  emits: ['update:modelValue', 'oneKeyApply'],
+  emits: ['update:modelValue'],
   setup(props, { attrs, emit }) {
     const instanceList = ['标准型', '高IO型', '大数据型', '计算型'];
     const isDisplay = ref(false);
@@ -52,14 +50,12 @@ export default defineComponent({
     };
     const deviceTypeDisabled = ref(false);
     const defaultFilterForm = () => ({
-      require_type: 1,
       region: [],
       zone: [],
       device_type: [],
       device_group: [instanceList[0]],
       cpu: '',
       mem: '',
-      enable_capacity: true,
     });
     const filterForm = ref(defaultFilterForm());
     const pageInfo = ref({
@@ -67,21 +63,11 @@ export default defineComponent({
       limit: 10,
     });
     const defaultFilter = () => ({
-      condition: 'AND',
+      op: 'and',
       rules: [
         {
-          field: 'require_type',
-          operator: 'equal',
-          value: filterForm.value.require_type,
-        },
-        {
-          field: 'enable_capacity',
-          operator: 'equal',
-          value: filterForm.value.enable_capacity,
-        },
-        {
-          field: 'label.device_group',
-          operator: 'in',
+          field: 'device_family',
+          op: 'in',
           value: filterForm.value.device_group,
         },
       ],
@@ -95,33 +81,39 @@ export default defineComponent({
       ['region', 'zone', 'device_type', 'device_group'].map((item) => {
         if (Array.isArray(filterForm.value[item]) && filterForm.value[item].length) {
           rules.push({
-            field: item === 'device_group' ? 'label.device_group' : item,
-            operator: 'in',
+            field: item === 'device_group' ? 'device_family' : item === 'device_type' ? 'dc.device_type' : item,
+            op: 'in',
             value: filterForm.value[item],
           });
         }
         return null;
       });
-      ['require_type', 'cpu', 'mem'].map((item) => {
-        if (String(filterForm.value[item])) {
-          rules.push({
-            field: item,
-            operator: 'equal',
-            value: filterForm.value[item],
-          });
-        }
-        return null;
-      });
+      if (filterForm.value.cpu) {
+        rules.push({
+          field: 'cpu_core',
+          op: 'eq',
+          value: filterForm.value.cpu,
+        });
+      }
+      if (filterForm.value.mem) {
+        rules.push({
+          field: 'memory',
+          op: 'eq',
+          value: filterForm.value.mem,
+        });
+      }
       return rules;
     });
     const loadOrders = () => {
-      let filter = {};
-      if (paramTableRules.value.length) {
-        filter = {
-          condition: 'AND',
-          rules: paramTableRules.value,
-        };
-      }
+      const filter = paramTableRules.value.length
+        ? {
+            op: 'and',
+            rules: paramTableRules.value,
+          }
+        : {
+            op: 'and',
+            rules: [],
+          };
       const params = {
         filter,
         page: pageInfo.value,
@@ -139,53 +131,30 @@ export default defineComponent({
       deviceTypeDisabled.value = false;
       filterOrders();
     };
-    const oneKeyApply = (row: ICvmDeviceDetailItem) => {
-      emit('oneKeyApply', row);
-    };
     const { columns } = useColumns('cvmFastProduceQuery');
-    // columns.splice();
-    const operationList = [
-      {
-        label: '操作',
-        render: ({ row }) => {
-          return (
-            <Button disabled={row.capacity_flag === 0} theme='primary' text onClick={() => oneKeyApply(row)}>
-              {props.actionText}
-            </Button>
-          );
-        },
-      },
-    ];
-    const tableColumns = [...columns, ...operationList];
+    const tableColumns = [...columns];
     const { CommonTable, getListData } = useTable({
       tableOptions: {
         columns: tableColumns,
       },
       requestOption: {
-        dataPath: 'data.info',
         sortOption: {
-          sort: 'capacity_flag',
+          sort: 'capacity',
           order: 'DESC',
+          legacy: false,
         },
       },
       scrConfig: () => {
         return {
-          url: '/api/v1/woa/config/findmany/config/cvm/device/detail',
+          url: '/api/v1/woa/config/capacity/list_with_device_info',
           payload: {
             ...requestListParams.value,
           },
+          pageEnableCountKey: 'count',
+          clearRules: true,
         };
       },
     });
-    // 需求类型
-    const requireTypeList = ref([]);
-    const fetchRequireType = async () => {
-      const res = await getRequireTypes();
-      requireTypeList.value = res.data.info.map((item) => ({
-        label: item.require_name,
-        value: item.require_type,
-      }));
-    };
     const cpuList = ref([]);
     const memList = ref([]);
     const fetchCpuOrMem = async () => {
@@ -196,8 +165,8 @@ export default defineComponent({
     };
     // CVM机型
     const cvmDevicetypeParams = computed(() => {
-      const { require_type, region, zone, device_group, cpu, mem, enable_capacity } = filterForm.value;
-      return { require_type, region, zone, device_group, cpu, mem, enable_capacity };
+      const { region, zone, device_group, cpu, mem } = filterForm.value;
+      return { region, zone, device_group, cpu, mem, enable_capacity: true };
     });
 
     const handleDeviceGroupChange = () => {
@@ -219,7 +188,6 @@ export default defineComponent({
       deviceTypeDisabled.value = Boolean(cpu || mem);
     };
     onMounted(() => {
-      fetchRequireType();
       fetchCpuOrMem();
     });
     return () => (
@@ -235,13 +203,6 @@ export default defineComponent({
             <div class='apply-list-container common-sideslider-content'>
               <div class={'filter-container'}>
                 <Form formType='vertical' class='scr-form-wrapper' model={filterForm}>
-                  <FormItem label='需求类型'>
-                    <Select v-model={filterForm.value.require_type} clearable placeholder='请选择'>
-                      {requireTypeList.value.map(({ label, value }) => {
-                        return <Select.Option key={value} name={label} id={value} />;
-                      })}
-                    </Select>
-                  </FormItem>
                   <FormItem label='地域'>
                     <area-selector multiple v-model={filterForm.value.region} params={{ resourceType: 'QCLOUDCVM' }} />
                   </FormItem>

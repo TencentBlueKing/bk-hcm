@@ -1077,28 +1077,36 @@ func (c CaiCheCli) Validate() error {
 
 // ResourceSync 自研云-资源同步相关配置
 type ResourceSync struct {
-	SyncVpc      int `yaml:"syncVpc"`
-	SyncSubnet   int `yaml:"syncSubnet"`
-	SyncCapacity int `yaml:"syncCapacity"`
-	SyncLeftIP   int `yaml:"syncLeftIP"`
+	SyncCapacity SyncCapacity `yaml:"syncCapacity"`
+	SyncLeftIP   int          `yaml:"syncLeftIP"`
 }
 
 // Validate ...
 func (c ResourceSync) Validate() error {
-	if c.SyncVpc < 0 {
-		return errors.New("resourceSync.syncVpc is illegality")
-	}
-
-	if c.SyncSubnet < 0 {
-		return errors.New("resourceSync.syncSubnet is illegality")
-	}
-
-	if c.SyncCapacity < 0 {
-		return errors.New("resourceSync.syncCapacity is illegality")
+	if err := c.SyncCapacity.Validate(); err != nil {
+		return err
 	}
 
 	if c.SyncLeftIP < 0 {
 		return errors.New("resourceSync.syncLeftIP is illegality")
+	}
+
+	return nil
+}
+
+// SyncCapacity 自研云-资源同步库存相关配置
+type SyncCapacity struct {
+	Interval   int `yaml:"interval"`
+	Concurrent int `yaml:"concurrent"`
+}
+
+// Validate ...
+func (c SyncCapacity) Validate() error {
+	if c.Interval <= 0 {
+		return errors.New("resourceSync.syncCapacity.interval is illegality")
+	}
+	if c.Concurrent <= 0 {
+		return errors.New("resourceSync.syncCapacity.concurrent is illegality")
 	}
 
 	return nil

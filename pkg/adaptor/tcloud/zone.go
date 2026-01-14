@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
@@ -57,9 +58,15 @@ func (t *TCloudImpl) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) 
 		return make([]typeszone.TCloudZone, 0), nil
 	}
 
-	results := make([]typeszone.TCloudZone, 0)
+	results := make([]typeszone.TCloudZone, 0, len(resp.Response.ZoneSet))
 	for _, one := range resp.Response.ZoneSet {
-		results = append(results, typeszone.TCloudZone{one})
+		tmpData := typeszone.TCloudZone{
+			CloudID:  converter.PtrToVal(one.ZoneId),
+			ZoneID:   converter.PtrToVal(one.Zone),
+			ZoneName: converter.PtrToVal(one.ZoneName),
+			State:    converter.PtrToVal(one.ZoneState),
+		}
+		results = append(results, tmpData)
 	}
 
 	return results, nil

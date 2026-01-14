@@ -34,27 +34,6 @@ import (
 	"hcm/pkg/logs"
 )
 
-// ListResPlanSubTicket list resource plan sub_ticket.
-func (c *Controller) ListResPlanSubTicket(kt *kit.Kit, req *ptypes.ListResPlanSubTicketReq) (
-	*ptypes.ListResPlanSubTicketResp, error) {
-
-	return c.resFetcher.ListResPlanSubTicket(kt, req)
-}
-
-// GetResPlanSubTicketDetail get resource plan sub_ticket detail.
-func (c *Controller) GetResPlanSubTicketDetail(kt *kit.Kit, subTicketID string) (*ptypes.GetSubTicketDetailResp, string,
-	error) {
-
-	return c.resFetcher.GetResPlanSubTicketDetail(kt, subTicketID)
-}
-
-// GetResPlanSubTicketAudit get res plan sub ticket audit
-func (c *Controller) GetResPlanSubTicketAudit(kt *kit.Kit, bizID int64, subTicketID string) (
-	*ptypes.GetSubTicketAuditResp, string, error) {
-
-	return c.resFetcher.GetResPlanSubTicketAudit(kt, bizID, subTicketID)
-}
-
 // RetryResPlanFailedSubTickets 重试失败的子单
 func (c *Controller) RetryResPlanFailedSubTickets(kt *kit.Kit, ticketID string) error {
 	// TODO 先用同步方式验证速度，拆单速度太慢的话需要转异步；转异步时需要根据kt创建新的子kit

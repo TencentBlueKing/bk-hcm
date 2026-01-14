@@ -80,7 +80,8 @@ func (svc *service) batchCreateResPlanDemandWithTx(kt *kit.Kit, txn *sqlx.Tx,
 		// 把字符串类型的[期望交付时间转]为符合格式的Int类型
 		expectTimeInt, err := times.ConvStrTimeToInt(item.ExpectTime, constant.DateLayout)
 		if err != nil {
-			logs.Errorf("convert expect time to int64 failed, expect time: %s, err: %v, rid: %s", item.ExpectTime, err, kt.Rid)
+			logs.Errorf("convert expect time to int64 failed, expect time: %s, err: %v, rid: %s", item.ExpectTime, err,
+				kt.Rid)
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
 		returnPlanTimeInt := 0
@@ -117,7 +118,6 @@ func (svc *service) batchCreateResPlanDemandWithTx(kt *kit.Kit, txn *sqlx.Tx,
 			ExpectTime:      expectTimeInt,
 			ReturnPlanTime:  returnPlanTimeInt,
 			PlanType:        item.PlanType,
-			AreaID:          item.AreaID,
 			AreaName:        item.AreaName,
 			RegionID:        item.RegionID,
 			RegionName:      item.RegionName,

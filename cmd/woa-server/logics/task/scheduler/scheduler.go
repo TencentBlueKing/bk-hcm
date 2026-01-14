@@ -41,6 +41,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/scheduler/recommender"
 	"hcm/cmd/woa-server/logics/task/scheduler/record"
 	model "hcm/cmd/woa-server/model/task"
+	cfgtype "hcm/cmd/woa-server/types/config"
 	configtypes "hcm/cmd/woa-server/types/config"
 	rstypes "hcm/cmd/woa-server/types/rolling-server"
 	types "hcm/cmd/woa-server/types/task"
@@ -1726,7 +1727,21 @@ func (s *scheduler) ExportDeliverDevice(kit *kit.Kit, param *types.ExportDeliver
 
 // GetMatchDevice get resource apply match devices
 func (s *scheduler) GetMatchDevice(kit *kit.Kit, param *types.GetMatchDeviceReq) (*types.GetMatchDeviceRst, error) {
-	rule := querybuilder.CombinedRule{
+	rule := s.buildMatchDeviceFilter(kit, param)
+	req := s.buildCMDBQueryRequest(rule)
+
+	resp, err := s.cc.ListBizHost(kit, req)
+	if err != nil {
+		logs.Errorf("failed to get cc host info, err: %v, rid: %s", err, kit.Rid)
+		return nil, err
+	}
+
+	return s.convertHostsToMatchDevices(resp.Info, param.PendingNum), nil
+}
+
+// buildMatchDeviceFilter builds the filter rule for matching devices
+func (s *scheduler) buildMatchDeviceFilter(kit *kit.Kit, param *types.GetMatchDeviceReq) *querybuilder.CombinedRule {
+	rule := &querybuilder.CombinedRule{
 		Condition: querybuilder.ConditionAnd,
 		Rules:     make([]querybuilder.Rule, 0),
 	}
@@ -1743,105 +1758,142 @@ func (s *scheduler) GetMatchDevice(kit *kit.Kit, param *types.GetMatchDeviceReq)
 		})
 	}
 	if param.Spec != nil {
-		if param.ResourceType != types.ResourceTypeCvm {
-			if len(param.Spec.Region) != 0 {
-				rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-					Field:    "bk_zone_name",
-					Operator: querybuilder.OperatorIn,
-					Value:    param.Spec.Region,
-				})
-			}
-			if len(param.Spec.Zone) != 0 {
-				rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-					Field:    "sub_zone",
-					Operator: querybuilder.OperatorIn,
-					Value:    param.Spec.Zone,
-				})
-			}
-		} else {
-			if len(param.Spec.Zone) != 0 {
-				filter := mapstr.MapStr{}
-				filter["zone"] = mapstr.MapStr{
-					pkg.BKDBIN: param.Spec.Zone,
-				}
-				if len(param.Spec.Region) != 0 {
-					filter["region"] = mapstr.MapStr{
-						pkg.BKDBIN: param.Spec.Region,
-					}
-				}
-				zones, err := model.Operation().Zone().FindManyZone(context.Background(), &filter)
-				if err != nil {
-					return nil, err
-				}
-				cmdbZoneNames := make([]string, 0)
-				for _, zone := range zones {
-					cmdbZoneNames = append(cmdbZoneNames, zone.CmdbZoneName)
-				}
-				cmdbZoneNames = util.StrArrayUnique(cmdbZoneNames)
-				rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-					Field:    "sub_zone",
-					Operator: querybuilder.OperatorIn,
-					Value:    cmdbZoneNames,
-				})
-			} else if len(param.Spec.Region) != 0 {
-				filter := mapstr.MapStr{}
-				filter["region"] = mapstr.MapStr{
-					pkg.BKDBIN: param.Spec.Region,
-				}
-				zones, err := model.Operation().Zone().FindManyZone(context.Background(), &filter)
-				if err != nil {
-					return nil, err
-				}
-				cmdbRegionNames := make([]string, 0)
-				for _, zone := range zones {
-					cmdbRegionNames = append(cmdbRegionNames, zone.CmdbRegionName)
-				}
-				cmdbRegionNames = util.StrArrayUnique(cmdbRegionNames)
-				rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-					Field:    "bk_zone_name",
-					Operator: querybuilder.OperatorIn,
-					Value:    cmdbRegionNames,
-				})
-			}
-		}
-		if len(param.Spec.DeviceType) != 0 {
-			rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-				Field:    "svr_device_class",
-				Operator: querybuilder.OperatorIn,
-				Value:    param.Spec.DeviceType,
-			})
-		}
-		if len(param.Spec.OsType) != 0 {
-			re := regexp.MustCompile(`([.*+?^${}()|[\]\\])`)
-			osType := re.ReplaceAllString(param.Spec.OsType, `\$1`)
-			rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-				Field:    "bk_os_name",
-				Operator: querybuilder.OperatorContains,
-				Value:    osType,
-			})
-		}
-		if len(param.Spec.RaidType) != 0 {
-			rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-				Field:    "raid_name",
-				Operator: querybuilder.OperatorIn,
-				Value:    param.Spec.RaidType,
-			})
-		}
-		if len(param.Spec.Isp) != 0 {
-			rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-				Field:    "bk_ip_oper_name",
-				Operator: querybuilder.OperatorIn,
-				Value:    param.Spec.Isp,
-			})
-		}
-		if len(param.Spec.InstanceChargeType) != 0 {
-			rule.Rules = append(rule.Rules, querybuilder.AtomRule{
-				Field:    "instance_charge_type",
-				Operator: querybuilder.OperatorEqual,
-				Value:    param.Spec.InstanceChargeType,
-			})
-		}
+		s.buildRegionZoneFilter(kit, rule, param)
+		s.buildSpecFilter(rule, param.Spec)
 	}
+
+	return rule
+}
+
+// buildRegionZoneFilter builds region and zone filter rules based on resource type
+func (s *scheduler) buildRegionZoneFilter(kt *kit.Kit, rule *querybuilder.CombinedRule,
+	param *types.GetMatchDeviceReq) {
+
+	if param.ResourceType != types.ResourceTypeCvm {
+		s.buildNonCvmRegionZoneFilter(rule, param.Spec)
+	}
+	s.buildCvmRegionZoneFilter(kt, rule, param.Spec)
+}
+
+// buildNonCvmRegionZoneFilter builds region/zone filter for non-CVM resources
+func (s *scheduler) buildNonCvmRegionZoneFilter(rule *querybuilder.CombinedRule, spec *types.MatchSpec) {
+	if len(spec.Region) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "bk_zone_name",
+			Operator: querybuilder.OperatorIn,
+			Value:    spec.Region,
+		})
+	}
+	if len(spec.Zone) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "sub_zone",
+			Operator: querybuilder.OperatorIn,
+			Value:    spec.Zone,
+		})
+	}
+}
+
+// buildCvmRegionZoneFilter builds region/zone filter for CVM resources
+func (s *scheduler) buildCvmRegionZoneFilter(kt *kit.Kit, rule *querybuilder.CombinedRule, spec *types.MatchSpec) {
+	if len(spec.Zone) > 0 {
+		zoneIDs := s.getCvmZoneIDs(kt, spec.Region, spec.Zone)
+
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "bk_cloud_zone",
+			Operator: querybuilder.OperatorIn,
+			Value:    zoneIDs,
+		})
+
+	} else if len(spec.Region) > 0 {
+		regionIDs := s.getCvmRegionIDs(kt, spec.Region)
+
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "bk_cloud_region",
+			Operator: querybuilder.OperatorIn,
+			Value:    regionIDs,
+		})
+	}
+}
+
+// getCvmZoneIDs gets zone IDs for CVM by querying zone config
+func (s *scheduler) getCvmZoneIDs(kt *kit.Kit, regions []string, zones []string) []string {
+	req := &cfgtype.GetZoneParam{Zone: zones}
+	if len(regions) > 0 {
+		req.Region = regions
+	}
+
+	zoneResult, err := s.configLogics.Zone().GetZone(kt, req)
+	if err != nil {
+		logs.Errorf("failed to get zone config, err: %v, rid: %s", err, kt.Rid)
+		return nil
+	}
+
+	zoneIDs := make([]string, 0, len(zoneResult.Info))
+	for _, zone := range zoneResult.Info {
+		zoneIDs = append(zoneIDs, zone.Zone)
+	}
+	return zoneIDs
+}
+
+// getCvmRegionIDs gets region IDs for CVM by querying zone config
+func (s *scheduler) getCvmRegionIDs(kt *kit.Kit, regions []string) []string {
+	req := &cfgtype.GetZoneParam{Region: regions}
+	zoneResult, err := s.configLogics.Zone().GetZone(kt, req)
+	if err != nil {
+		logs.Errorf("failed to get zone config, err: %v, rid: %s", err, kt.Rid)
+		return nil
+	}
+
+	regionIDs := make([]string, 0)
+	for _, zone := range zoneResult.Info {
+		regionIDs = append(regionIDs, zone.Region)
+	}
+	return slice.Unique(regionIDs)
+}
+
+// buildSpecFilter builds filter rules for device specifications
+func (s *scheduler) buildSpecFilter(rule *querybuilder.CombinedRule, spec *types.MatchSpec) {
+	if len(spec.DeviceType) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "svr_device_class",
+			Operator: querybuilder.OperatorIn,
+			Value:    spec.DeviceType,
+		})
+	}
+	if len(spec.OsType) > 0 {
+		re := regexp.MustCompile(`([.*+?^${}()|[\]\\])`)
+		osType := re.ReplaceAllString(spec.OsType, `\$1`)
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "bk_os_name",
+			Operator: querybuilder.OperatorContains,
+			Value:    osType,
+		})
+	}
+	if len(spec.RaidType) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "raid_name",
+			Operator: querybuilder.OperatorIn,
+			Value:    spec.RaidType,
+		})
+	}
+	if len(spec.Isp) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "bk_ip_oper_name",
+			Operator: querybuilder.OperatorIn,
+			Value:    spec.Isp,
+		})
+	}
+	if len(spec.InstanceChargeType) > 0 {
+		rule.Rules = append(rule.Rules, querybuilder.AtomRule{
+			Field:    "instance_charge_type",
+			Operator: querybuilder.OperatorEqual,
+			Value:    spec.InstanceChargeType,
+		})
+	}
+}
+
+// buildCMDBQueryRequest builds CMDB query request
+func (s *scheduler) buildCMDBQueryRequest(rule *querybuilder.CombinedRule) *cmdb.ListBizHostParams {
 	req := &cmdb.ListBizHostParams{
 		BizID:       931,
 		BkModuleIDs: []int64{239149},
@@ -1882,26 +1934,25 @@ func (s *scheduler) GetMatchDevice(kit *kit.Kit, param *types.GetMatchDeviceReq)
 		}
 	}
 
-	resp, err := s.cc.ListBizHost(kit, req)
-	if err != nil {
-		logs.Errorf("failed to get cc host info, err: %v, rid: %s", err, kit.Rid)
-		return nil, err
-	}
+	return req
+}
 
+// convertHostsToMatchDevices converts CMDB hosts to match devices
+func (s *scheduler) convertHostsToMatchDevices(hosts []cmdb.Host, pendingNum int64) *types.GetMatchDeviceRst {
 	// TODO: filter and sort devices
 	rst := &types.GetMatchDeviceRst{
 		Count: 0,
 		Info:  make([]*types.MatchDevice, 0),
 	}
 	tagNum := int64(0)
-	for _, host := range resp.Info {
+	for _, host := range hosts {
 		rackId, err := strconv.Atoi(host.RackId)
 		if err != nil {
 			logs.Warnf("failed to convert host %d rack_id %s to int", host.BkHostID, host.RackId)
 			rackId = 0
 		}
 		tag := false
-		if tagNum < param.PendingNum {
+		if tagNum < pendingNum {
 			tag = true
 			tagNum++
 		}
@@ -1931,8 +1982,7 @@ func (s *scheduler) GetMatchDevice(kit *kit.Kit, param *types.GetMatchDeviceReq)
 		rst.Info = append(rst.Info, device)
 	}
 	rst.Count = int64(len(rst.Info))
-
-	return rst, nil
+	return rst
 }
 
 // MatchDevice execute resource apply match devices

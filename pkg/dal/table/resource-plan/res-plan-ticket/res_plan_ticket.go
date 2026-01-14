@@ -234,8 +234,6 @@ type OriginalRPDemandItem struct {
 	RegionID string `json:"region_id" validate:"lte=64"`
 	// RegionName 地区/城市名称
 	RegionName string `json:"region_name" validate:"lte=64"`
-	// AreaID 地域ID
-	AreaID string `json:"area_id" validate:"lte=64"`
 	// AreaName 地域名称
 	AreaName string `json:"area_name" validate:"lte=64"`
 	// Remark 需求备注
@@ -274,10 +272,6 @@ func (i *OriginalRPDemandItem) Validate() error {
 		return errors.New("region name can not be empty")
 	}
 
-	if len(i.AreaID) == 0 {
-		return errors.New("area id can not be empty")
-	}
-
 	if len(i.AreaName) == 0 {
 		return errors.New("area name can not be empty")
 	}
@@ -305,7 +299,6 @@ func (i *OriginalRPDemandItem) Clone() *OriginalRPDemandItem {
 		ZoneName:       i.ZoneName,
 		RegionID:       i.RegionID,
 		RegionName:     i.RegionName,
-		AreaID:         i.AreaID,
 		AreaName:       i.AreaName,
 		Remark:         i.Remark,
 		Cvm:            i.Cvm,
@@ -329,8 +322,6 @@ type UpdatedRPDemandItem struct {
 	RegionID string `json:"region_id" validate:"lte=64"`
 	// RegionName 地区/城市名称
 	RegionName string `json:"region_name" validate:"lte=64"`
-	// AreaID 地域ID
-	AreaID string `json:"area_id" validate:"lte=64"`
 	// AreaName 地域名称
 	AreaName string `json:"area_name" validate:"lte=64"`
 	// DemandSource 需求分类/变更原因
@@ -367,10 +358,6 @@ func (i *UpdatedRPDemandItem) Validate() error {
 		return errors.New("region name can not be empty")
 	}
 
-	if len(i.AreaID) == 0 {
-		return errors.New("area id can not be empty")
-	}
-
 	if len(i.AreaName) == 0 {
 		return errors.New("area name can not be empty")
 	}
@@ -396,7 +383,6 @@ func (i *UpdatedRPDemandItem) Clone() *UpdatedRPDemandItem {
 		ZoneName:       i.ZoneName,
 		RegionID:       i.RegionID,
 		RegionName:     i.RegionName,
-		AreaID:         i.AreaID,
 		AreaName:       i.AreaName,
 		DemandSource:   i.DemandSource,
 		Remark:         i.Remark,

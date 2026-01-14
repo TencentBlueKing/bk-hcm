@@ -53,7 +53,6 @@ var ResPlanDemandColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "expect_time", NamedC: "expect_time", Type: enumor.Numeric},
 	{Column: "return_plan_time", NamedC: "return_plan_time", Type: enumor.Numeric},
 	{Column: "plan_type", NamedC: "plan_type", Type: enumor.String},
-	{Column: "area_id", NamedC: "area_id", Type: enumor.String},
 	{Column: "area_name", NamedC: "area_name", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
@@ -117,8 +116,6 @@ type ResPlanDemandTable struct {
 	ReturnPlanTime int `db:"return_plan_time" json:"return_plan_time"`
 	// PlanType 预测内外
 	PlanType enumor.PlanTypeCode `db:"plan_type" json:"plan_type" validate:"lte=16"`
-	// AreaID 地域ID
-	AreaID string `db:"area_id" json:"area_id" validate:"lte=64"`
 	// AreaName 地域名称
 	AreaName string `db:"area_name" json:"area_name" validate:"lte=64"`
 	// RegionID 地区/城市ID

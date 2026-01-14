@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/zone"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -41,9 +42,10 @@ type ZoneBatchUpdateReq[Extension zone.ZoneExtension] struct {
 
 // ZoneBatchUpdate define zone batch update.
 type ZoneBatchUpdate[Extension zone.ZoneExtension] struct {
-	ID        string     `json:"id" validate:"required"`
-	State     string     `json:"state" validate:"omitempty"`
-	Extension *Extension `json:"extension" validate:"omitempty"`
+	ID        string              `json:"id" validate:"required"`
+	State     string              `json:"state" validate:"omitempty"`
+	Source    enumor.RegionSource `json:"source" validate:"omitempty"`
+	Extension *Extension          `json:"extension" validate:"omitempty"`
 }
 
 // Validate security group update request.
@@ -60,7 +62,24 @@ func (req *ZoneBatchUpdateReq[T]) Validate() error {
 		return fmt.Errorf("security group count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
+	for _, z := range req.Zones {
+		if err := z.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// Validate validate ZoneBatchUpdate.
+func (req *ZoneBatchUpdate[T]) Validate() error {
+	if len(req.Source) > 0 {
+		if err := req.Source.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
 }
 
 // -------------------------- Create --------------------------
@@ -72,17 +91,41 @@ type ZoneBatchCreateReq[Extension zone.ZoneExtension] struct {
 
 // ZoneBatchCreate define zone batch create.
 type ZoneBatchCreate[Extension zone.ZoneExtension] struct {
-	CloudID   string     `json:"cloud_id" validate:"required"`
-	Name      string     `json:"name" validate:"required"`
-	State     string     `json:"state" validate:"required"`
-	Region    string     `json:"region" validate:"required"`
-	NameCn    string     `json:"name_cn" validate:"omitempty"`
-	Extension *Extension `json:"extension" validate:"required"`
+	CloudID   string              `json:"cloud_id" validate:"required"`
+	Name      string              `json:"name" validate:"required"`
+	State     string              `json:"state" validate:"required"`
+	Region    string              `json:"region" validate:"required"`
+	NameCn    string              `json:"name_cn" validate:"omitempty"`
+	Source    enumor.RegionSource `json:"source" validate:"omitempty"`
+	Extension *Extension          `json:"extension" validate:"required"`
+}
+
+// Validate validate ZoneBatchCreate.
+func (z *ZoneBatchCreate[T]) Validate() error {
+	return validator.Validate.Struct(z)
 }
 
 // Validate zone create request.
 func (req *ZoneBatchCreateReq[T]) Validate() error {
-	return validator.Validate.Struct(req)
+	if len(req.Zones) == 0 {
+		return errors.New("zones is required")
+	}
+
+	if len(req.Zones) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("zones count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, z := range req.Zones {
+		if err := z.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // -------------------------- Delete --------------------------
@@ -121,4 +164,16 @@ type ZoneListResult struct {
 type ZoneListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *ZoneListResult `json:"data"`
+}
+
+// ZoneExtListResult define zone with extension list result.
+type ZoneExtListResult[T zone.ZoneExtension] struct {
+	Count   uint64         `json:"count,omitempty"`
+	Details []zone.Zone[T] `json:"details,omitempty"`
+}
+
+// ZoneExtListResp define list resp.
+type ZoneExtListResp[T zone.ZoneExtension] struct {
+	rest.BaseResp `json:",inline"`
+	Data          *ZoneExtListResult[T] `json:"data"`
 }

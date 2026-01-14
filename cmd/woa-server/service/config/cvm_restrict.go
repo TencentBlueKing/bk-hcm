@@ -15,6 +15,8 @@ package config
 
 import (
 	types "hcm/cmd/woa-server/types/config"
+	devicecapacity "hcm/pkg/api/data-service/device-capacity"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -62,22 +64,22 @@ func (s *service) GetCapacity(cts *rest.Contexts) (interface{}, error) {
 	return rst, nil
 }
 
-// UpdateCapacity update cvm capacity
-func (s *service) UpdateCapacity(cts *rest.Contexts) (interface{}, error) {
+// UpsertCapacity upsert cvm capacity
+func (s *service) UpsertCapacity(cts *rest.Contexts) (interface{}, error) {
 	input := new(types.UpdateCapacityParam)
 	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to update resource apply capacity, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("failed to upsert resource apply capacity, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	if _, err := input.Validate(); err != nil {
-		logs.Errorf("failed to update resource apply capacity, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("failed to upsert resource apply capacity, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	err := s.logics.Capacity().UpdateCapacity(cts.Kit, input)
+	err := s.logics.Capacity().UpsertCapacity(cts.Kit, input)
 	if err != nil {
-		logs.Errorf("failed to update resource apply capacity, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)
+		logs.Errorf("failed to upsert resource apply capacity, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -100,6 +102,26 @@ func (s *service) BatchGetCapacity(cts *rest.Contexts) (interface{}, error) {
 	rst, err := s.logics.Capacity().BatchGetCapacity(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to batch get resource apply capacity, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return rst, nil
+}
+
+// ListCapacityWithDeviceInfo 查询设备库存及其机型详细信息
+func (s *service) ListCapacityWithDeviceInfo(cts *rest.Contexts) (interface{}, error) {
+	req := new(devicecapacity.ListCapacityWithDeviceInfoReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode list capacity with device info request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	rst, err := s.logics.Capacity().ListCapacityWithDeviceInfo(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("failed to list capacity with device info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

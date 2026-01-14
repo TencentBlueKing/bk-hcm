@@ -73,6 +73,7 @@ import (
 	sync "hcm/cmd/data-service/service/cloud/sync"
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/cmd/data-service/service/cos"
+	devicecapacity "hcm/cmd/data-service/service/device-capacity"
 	globalconfig "hcm/cmd/data-service/service/global-config"
 	"hcm/cmd/data-service/service/meta"
 	orgtopo "hcm/cmd/data-service/service/org-topo"
@@ -311,6 +312,7 @@ func (s *Service) apiSet() *restful.Container {
 	tenant.InitService(capability)
 
 	resusagebizrel.InitService(capability)
+	devicecapacity.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

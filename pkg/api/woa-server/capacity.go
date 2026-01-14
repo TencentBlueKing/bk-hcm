@@ -17,27 +17,18 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package ressync 资源同步相关接口
-package ressync
+package woaserver
 
 import (
-	"hcm/pkg/iam/meta"
-	"hcm/pkg/logs"
-	"hcm/pkg/rest"
+	"hcm/pkg/api/core"
+	devicecapacity "hcm/pkg/api/core/device-capacity"
 )
 
-// SyncVpcs sync vpcs.
-func (s *service) SyncVpcs(cts *rest.Contexts) (any, error) {
-	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.ZiyanCvmSubnet, Action: meta.Find}}); err != nil {
-		logs.Errorf("no permission to sync vpc resource, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.resSyncLogic.SyncVpc(); err != nil {
-		logs.Errorf("sync vpc resource failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+// CapacityWithDeviceInfo define capacity with device info.
+type CapacityWithDeviceInfo struct {
+	devicecapacity.CapacityWithDeviceInfo `json:",inline"`
+	CapacityFlag                          int `json:"capacity_flag"`
 }
+
+// ListCapacityWithDeviceInfoResult defines list with device info result.
+type ListCapacityWithDeviceInfoResult = core.ListResultT[CapacityWithDeviceInfo]

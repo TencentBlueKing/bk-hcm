@@ -71,7 +71,6 @@ type ResPlanDemandCreateReq struct {
 	ExpectTime      string               `json:"expect_time" validate:"required"`
 	ReturnPlanTime  string               `json:"return_plan_time" validate:"omitempty"`
 	PlanType        enumor.PlanTypeCode  `json:"plan_type" validate:"required"`
-	AreaID          string               `json:"area_id" validate:"required"`
 	AreaName        string               `json:"area_name" validate:"required"`
 	RegionID        string               `json:"region_id" validate:"required"`
 	RegionName      string               `json:"region_name" validate:"required"`

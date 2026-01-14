@@ -24,7 +24,6 @@ import (
 	model "hcm/cmd/woa-server/model/cvm"
 	cfgtypes "hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/cvm"
-	"hcm/pkg"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/mapstr"
@@ -597,17 +596,15 @@ func (l *logics) getCvmSubnet(kt *kit.Kit, region, zone, vpc string) (string, ui
 		return "", 0, err
 	}
 
-	cond := map[string]interface{}{
-		"region": region,
-		"vpc_id": vpc,
-		// get subnet with enable flag only
-		"enable": true,
+	subnetReq := &cfgtypes.GetAllSubnetReq{
+		Region:     region,
+		CloudVpcID: vpc,
 	}
 	// 园区-分区Campus
 	if len(zone) > 0 && zone != cvmapi.CvmSeparateCampus {
-		cond["zone"] = zone
+		subnetReq.Zones = []string{zone}
 	}
-	cfgSubnets, err := l.confLogic.Subnet().GetSubnet(kt, cond)
+	cfgSubnets, err := l.confLogic.Subnet().GetAllSubnet(kt, subnetReq)
 	if err != nil {
 		logs.Errorf("failed to get config cvm subnet info, err: %v, rid: %s", err, kt.Rid)
 		return "", 0, err
@@ -656,9 +653,9 @@ func (l *logics) getSubnetList(kt *kit.Kit, region string, zone string, vpc stri
 	zones := make([]string, 0)
 	// 园区-分区Campus，获取该区域下的可用区列表
 	if zone == cvmapi.CvmSeparateCampus {
-		zoneCond := mapstr.MapStr{}
-		zoneCond["region"] = mapstr.MapStr{pkg.BKDBIN: region}
-		zoneResp, err := l.confLogic.Zone().GetZone(kt, &zoneCond)
+		zoneResp, err := l.confLogic.Zone().GetZone(kt, &cfgtypes.GetZoneParam{
+			Region: []string{region},
+		})
 		if err != nil {
 			logs.Errorf("failed to get cvm subnet zone list, err: %v, region: %s, zone: %s, vpc: %s, rid: %s",
 				err, region, zone, vpc, kt.Rid)

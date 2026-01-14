@@ -101,7 +101,12 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, nil, err
 	}
-	if err := req.Validate(); err != nil {
+
+	// 部分资源允许全量同步（不要求必须提供regions参数）
+	allowedSyncAllRes := resType.IsAllowedSyncAll()
+	// 不允许全量同步的资源类型需要 regions 参数
+	// allowedSyncAllRes 为 false 时，needRegion 为 true，表示需要 regions 参数
+	if err := req.Validate(!allowedSyncAllRes); err != nil {
 		return nil, nil, err
 	}
 

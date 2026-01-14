@@ -2,8 +2,7 @@ import { defineComponent, ref, onMounted, computed } from 'vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { Search } from 'bkui-vue/lib/icon';
 import apiService from '@/api/scrApi';
-import { Button, Form } from 'bkui-vue';
-import { useRouter } from 'vue-router';
+import { Form } from 'bkui-vue';
 import AreaSelector from '../hostApplication/components/AreaSelector';
 import ZoneSelector from '../hostApplication/components/ZoneSelector';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
@@ -16,9 +15,7 @@ export default defineComponent({
   setup() {
     const { columns } = useColumns('hostInventor');
     const deviceGroups = ['标准型', '高IO型', '大数据型', '计算型'];
-    const router = useRouter();
     const filter = ref({
-      require_type: 1,
       region: [],
       zone: [],
       device_type: [],
@@ -29,7 +26,6 @@ export default defineComponent({
       enable_capacity: true,
     });
     const options = ref({
-      require_types: [],
       device_groups: deviceGroups,
       device_types: [],
       regions: [],
@@ -45,22 +41,16 @@ export default defineComponent({
     });
     const queryrules = ref(
       [
-        filter.value.region.length && { field: 'region', operator: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', operator: 'in', value: filter.value.zone },
-        filter.value.require_type && { field: 'require_type', operator: 'equal', value: filter.value.require_type },
+        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
-          field: 'label.device_group',
-          operator: 'in',
+          field: 'device_family',
+          op: 'in',
           value: filter.value.device_group,
         },
-        filter.value.device_type.length && { field: 'device_type', operator: 'in', value: filter.value.device_type },
-        filter.value.cpu && { field: 'cpu', operator: 'equal', value: filter.value.cpu },
-        filter.value.mem && { field: 'mem', operator: 'equal', value: filter.value.mem },
-        filter.value.enable_capacity && {
-          field: 'enable_capacity',
-          operator: 'equal',
-          value: filter.value.enable_capacity,
-        },
+        filter.value.device_type.length && { field: 'dc.device_type', op: 'in', value: filter.value.device_type },
+        filter.value.cpu && { field: 'cpu_core', op: 'eq', value: filter.value.cpu },
+        filter.value.mem && { field: 'memory', op: 'eq', value: filter.value.mem },
       ].filter(Boolean),
     );
     const loadResources = () => {
@@ -68,7 +58,6 @@ export default defineComponent({
     };
     const emptyform = () => {
       filter.value = {
-        require_type: 1,
         region: [],
         zone: [],
         device_type: [],
@@ -97,17 +86,16 @@ export default defineComponent({
     };
     const filterDevices = () => {
       queryrules.value = [
-        filter.value.region.length && { field: 'region', operator: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', operator: 'in', value: filter.value.zone },
-        filter.value.require_type && { field: 'require_type', operator: 'equal', value: filter.value.require_type },
+        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
-          field: 'label.device_group',
-          operator: 'in',
+          field: 'device_family',
+          op: 'in',
           value: filter.value.device_group,
         },
-        filter.value.device_type.length && { field: 'device_type', operator: 'in', value: filter.value.device_type },
-        filter.value.cpu && { field: 'cpu', operator: 'equal', value: filter.value.cpu },
-        filter.value.mem && { field: 'mem', operator: 'equal', value: filter.value.mem },
+        filter.value.device_type.length && { field: 'dc.device_type', op: 'in', value: filter.value.device_type },
+        filter.value.cpu && { field: 'cpu_core', op: 'eq', value: filter.value.cpu },
+        filter.value.mem && { field: 'memory', op: 'eq', value: filter.value.mem },
       ].filter(Boolean);
 
       page.value.start = 0;
@@ -130,63 +118,33 @@ export default defineComponent({
       options.value.cpu = cpu || [];
       options.value.mem = mem || [];
     };
-    const getfetchOptionslist = async () => {
-      const { info } = await apiService.getRequireTypes();
-      options.value.require_types = info;
-    };
-    const application = (row: any) => {
-      router.push({
-        path: '/service/hostApplication/apply',
-        query: {
-          ...row,
-          from: 'serviceCvmInventory',
-        },
-      });
-    };
     onMounted(() => {
       loadRestrict();
-      getfetchOptionslist();
     });
 
     const { CommonTable, getListData } = useTable({
       tableOptions: {
-        columns: [
-          ...columns,
-          {
-            label: '操作',
-            width: 120,
-            render: ({ row }: { row: any }) => {
-              return (
-                <Button
-                  text
-                  theme='primary'
-                  disabled={row.listenerNum > 0 || row.delete_protect}
-                  onClick={() => application(row)}>
-                  一键申请
-                </Button>
-              );
-            },
-          },
-        ],
+        columns: [...columns],
       },
       requestOption: {
-        dataPath: 'data.info',
         sortOption: {
-          sort: 'capacity_flag',
+          sort: 'capacity',
           order: 'DESC',
+          legacy: false,
         },
       },
       scrConfig: () => {
         return {
-          url: '/api/v1/woa/config/findmany/config/cvm/device/detail',
+          url: '/api/v1/woa/config/capacity/list_with_device_info',
           payload: {
             filter: {
-              condition: 'AND',
+              op: 'and',
               rules: [...queryrules.value],
             },
             page: page.value,
           },
-          filter: { simpleConditions: true, requestId: 'devices' },
+          pageEnableCountKey: 'count',
+          clearRules: true,
         };
       },
     });
@@ -194,13 +152,6 @@ export default defineComponent({
       <div class={'apply-list-container cvm-web-wrapper'}>
         <div class={'filter-container'}>
           <Form model={filter.value} formType='vertical' class={'scr-form-wrapper'}>
-            <FormItem label='需求类型'>
-              <bk-select v-model={filter.value.require_type}>
-                {options.value.require_types.map((item) => (
-                  <bk-option key={item.require_type} value={item.require_type} label={item.require_name}></bk-option>
-                ))}
-              </bk-select>
-            </FormItem>
             <FormItem label='地域'>
               <AreaSelector
                 ref='areaSelector'

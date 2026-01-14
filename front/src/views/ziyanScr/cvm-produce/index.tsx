@@ -351,7 +351,7 @@ export default defineComponent({
           onConfirm-success={handleCreateCvmConfirmSuccess}
           onClosed={handleCreateCvmClosed}
         />
-        <fast-cvm-produce v-model={isFastProVisible.value} onOneKeyApply={handleOrderCreate} />
+        <fast-cvm-produce v-model={isFastProVisible.value} />
         <success-produce-detail v-model={isShowProduceDetail.value} tableData={producedDetail.value} />
       </div>
     );

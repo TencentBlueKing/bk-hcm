@@ -20,25 +20,92 @@
 package fetcher
 
 import (
+	"fmt"
+
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud/zone"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	dmtypes "hcm/pkg/dal/dao/types/meta"
 	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
+// GetZoneMap get zone id name mapping from data-service.
+func (f *ResPlanFetcher) GetZoneMap(kt *kit.Kit) (map[string]string, error) {
+	req := &protocloud.ZoneListReq{
+		Filter: tools.EqualExpression("vendor", enumor.TCloudZiyan),
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	zoneMap := make(map[string]string)
+	for {
+		zones, err := f.client.DataService().TCloudZiyan.Zone.ListZoneExt(kt, req)
+		if err != nil {
+			return nil, fmt.Errorf("list zone failed, err: %v", err)
+		}
+
+		for _, zone := range zones.Details {
+			zoneMap[zone.Name] = zone.NameCn
+		}
+
+		if len(zones.Details) < int(req.Page.Limit) {
+			break
+		}
+		req.Page.Start += uint32(req.Page.Limit)
+	}
+
+	return zoneMap, nil
+}
+
+// GetRegionAreaMap get region area mapping from data-service.
+// region_name 从 region.city_name 获取
+// area_name 从 region.area_name 获取
+func (f *ResPlanFetcher) GetRegionAreaMap(kt *kit.Kit) (map[string]dmtypes.RegionArea, error) {
+	// 查询 region 表获取 region_name 和 area_name
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("vendor", enumor.TCloudZiyan),
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	regionAreaMap := make(map[string]dmtypes.RegionArea)
+	for {
+		regions, err := f.client.DataService().TCloudZiyan.Region.ListRegion(kt, req)
+		if err != nil {
+			return nil, fmt.Errorf("list region from data-service failed, err: %v", err)
+		}
+
+		for _, region := range regions.Details {
+			regionAreaMap[region.RegionID] = dmtypes.RegionArea{
+				RegionID:   region.RegionID,
+				RegionName: region.CityName,
+				AreaName:   region.AreaName,
+			}
+		}
+
+		if uint(len(regions.Details)) < req.Page.Limit {
+			break
+		}
+		req.Page.Start += uint32(req.Page.Limit)
+	}
+
+	return regionAreaMap, nil
+}
+
 // GetMetaMaps get create resource plan demand needed zoneMap, regionAreaMap and deviceTypeMap.
 func (f *ResPlanFetcher) GetMetaMaps(kt *kit.Kit) (map[string]string, map[string]dmtypes.RegionArea,
 	map[string]wdt.WoaDeviceTypeTable, error) {
 
-	// get zone id name mapping.
-	zoneMap, err := f.dao.WoaZone().GetZoneMap(kt)
+	// get zone id name mapping from data-service.
+	zoneMap, err := f.GetZoneMap(kt)
 	if err != nil {
 		logs.Errorf("get zone map failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, nil, err
 	}
 
-	// get region area mapping.
-	regionAreaMap, err := f.dao.WoaZone().GetRegionAreaMap(kt)
+	// get region area mapping from data-service.
+	regionAreaMap, err := f.GetRegionAreaMap(kt)
 	if err != nil {
 		logs.Errorf("get region area map failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, nil, err

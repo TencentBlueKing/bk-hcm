@@ -1137,3 +1137,48 @@ type ConditionItem struct {
 	Operator string      `json:"operator,omitempty"`
 	Value    interface{} `json:"value,omitempty"`
 }
+
+// ----------------------------- findmany cmdb module -----------------------------
+
+// FindManyCmdbModuleParams is findmany cmdb module parameter.
+type FindManyCmdbModuleParams struct {
+	Filter   *QueryFilter `json:"filter,omitempty"`
+	ScrollID string       `json:"scroll_id"`
+}
+
+// Validate validate FindManyCmdbModuleParams
+func (p *FindManyCmdbModuleParams) Validate() error {
+	return validator.Validate.Struct(p)
+}
+
+// FindManyCmdbModuleResult is findmany cmdb module result.
+type FindManyCmdbModuleResult struct {
+	ScrollID string           `json:"scrollId"`
+	HasNext  bool             `json:"hasNext"` // 该标识可能不准，不建议使用
+	List     []CmdbModuleInfo `json:"list"`
+}
+
+// CmdbModuleInfo is cmdb module info.
+type CmdbModuleInfo struct {
+	AvailabilityZoneInfos []AvailabilityZoneInfo `json:"availabilityZoneInfos"`
+	// LogicCampusName is logic campus name. e.g. 南京-吉山
+	LogicCampusName string `json:"logicCampusName"`
+	ModuleID        int64  `json:"moduleId"`
+}
+
+// AvailabilityZoneInfo is availability zone info.
+type AvailabilityZoneInfo struct {
+	// AvailabilityZoneEnglishName is availability zone english name. e.g. ap-nanjing-1
+	AvailabilityZoneEnglishName string `json:"availabilityZoneEnglishName"`
+	AvailabilityZoneID          int64  `json:"availabilityZoneId"`
+	// AvailabilityZoneName is availability zone name. e.g. 南京一区
+	AvailabilityZoneName string `json:"availabilityZoneName"`
+	CloudAreaID          int64  `json:"cloudAreaId"`
+	// CloudAreaName is cloud area name. e.g. 华东地区
+	CloudAreaName string `json:"cloudAreaName"`
+	// CloudRegionChineseName is cloud region chinese name. e.g. 南京
+	CloudRegionChineseName string `json:"cloudRegionChineseName"`
+	CloudRegionID          int64  `json:"cloudRegionId"`
+	// CloudRegionName is cloud region name. e.g. ap-nanjing
+	CloudRegionName string `json:"cloudRegionName"`
+}
