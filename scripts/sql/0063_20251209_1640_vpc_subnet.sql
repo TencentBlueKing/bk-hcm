@@ -18,26 +18,29 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
+    SQLVER=0063,HCMVER=v1.8.8.9
 
     Notes:
-    1. 为 tcloud_ziyan_region 表添加 area_name、source 字段
-    2. 为 zone 表添加 source 字段
+    1. account 表新增索引 idx_vendor_type
+    2. vpc 表新增 extension.enable_cvm 字段、新增索引 idx_vendor_account_id
+    3. subnet 表新增 extension.enable_cvm 字段
 */
 
 START TRANSACTION;
 
--- 添加 area_name、source 字段
-ALTER TABLE `tcloud_ziyan_region`
-    ADD COLUMN `city_name` varchar(64) NOT NULL DEFAULT '' COMMENT '城市名称' after `region_name`,
-    ADD COLUMN `area_name` varchar(64) NOT NULL DEFAULT '' COMMENT '地域名称' after `region_name`,
-    ADD COLUMN `source` varchar(64) NOT NULL DEFAULT 'sync' COMMENT '来源：sync-同步，manually-手动添加' after `status`;
+ALTER TABLE account ADD KEY idx_vendor_type (vendor, type);
 
--- 为 zone 表添加 source 字段
-ALTER TABLE `zone`
-    ADD COLUMN `source` varchar(64) NOT NULL DEFAULT 'sync' COMMENT '来源：sync-同步，manually-手动添加' after `state`;
+ALTER TABLE vpc ADD KEY idx_vendor_account_id (vendor, account_id);
+
+-- 为自研云 VPC 添加 extension.enable_cvm 字段（排除默认VPC）
+UPDATE vpc SET extension = JSON_SET(extension, '$.enable_cvm', true)
+WHERE vendor = 'tcloud-ziyan' AND JSON_EXTRACT(extension, '$.enable_cvm') IS NULL AND `name` != "Default-VPC";
+
+-- 为自研云 Subnet 添加 extension.enable_cvm 字段
+UPDATE subnet SET extension = JSON_SET(extension, '$.enable_cvm', true)
+WHERE vendor = 'tcloud-ziyan' AND JSON_EXTRACT(extension, '$.enable_cvm') IS NULL;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.8.9' as `hcm_ver`, '0063' as `sql_ver`;
 
 COMMIT;
