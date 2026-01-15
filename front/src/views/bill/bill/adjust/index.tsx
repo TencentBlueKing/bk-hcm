@@ -1,4 +1,4 @@
-import { defineComponent, ref, inject, watch, Ref, onMounted } from 'vue';
+import { defineComponent, ref, inject, watch, Ref, onMounted, computed } from 'vue';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -20,7 +20,6 @@ import { timeFormatter } from '@/common/util';
 import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
-import { computed } from '@vue/reactivity';
 import { formatBillCost } from '@/utils';
 import { useRoute } from 'vue-router';
 import pluginHandler from '@pluginHandler/bill-manage';
@@ -252,7 +251,13 @@ export default defineComponent({
                 </>
               ),
               operationBarEnd: () => (
-                <Amount isAdjust api={billStore.sum_adjust_items} payload={() => amountFilter.value} ref={amountRef} />
+                <Amount
+                  isAdjust
+                  immediate
+                  api={billStore.sum_adjust_items}
+                  payload={() => amountFilter.value}
+                  ref={amountRef}
+                />
               ),
             }}
           </CommonTable>
