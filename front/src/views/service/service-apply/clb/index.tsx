@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive } from 'vue';
+import { ref, computed, defineComponent, reactive } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
 import useBindEip from './hooks/useBindEip';
@@ -10,6 +10,9 @@ import './index.scss';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import BottomBar from './children/bottom-bar';
 import http from '@/http';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { MENU_BUSINESS_LOAD_BALANCER, MENU_RESOURCE_RESOURCE_MANAGEMENT } from '@/constants/menu-symbol';
+import { applyClbSuccessHandler } from './apply-clb.plugin';
 
 export default defineComponent({
   name: 'ApplyLoadBalancer',
@@ -18,7 +21,7 @@ export default defineComponent({
     const router = useRouter();
     // use hooks
     const { t } = useI18n();
-    const { getBizsId, whereAmI } = useWhereAmI();
+    const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
     // define data
     const formModel = reactive<ApplyClbModel>({
       bk_biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
@@ -42,6 +45,8 @@ export default defineComponent({
       egress: undefined,
     });
 
+    const applyLoading = ref(false);
+
     // use custom hooks
     const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, configureList } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
@@ -51,12 +56,27 @@ export default defineComponent({
     });
 
     const goBack = () => {
-      router.go(-1);
+      const to = isBusinessPage
+        ? { name: MENU_BUSINESS_LOAD_BALANCER, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } }
+        : { name: MENU_RESOURCE_RESOURCE_MANAGEMENT, query: { type: 'clb' } };
+
+      router.replace(to);
     };
 
-    const handleApplyClb = async (params: ApplyClbModel[], url: string) => {
-      const allApi = params.map((item: ApplyClbModel) => http.post(url, item));
-      await Promise.any(allApi);
+    const handleApplyClb = async (params: ApplyClbModel[]) => {
+      try {
+        applyLoading.value = true;
+        const { vendor } = formModel;
+        const url = isBusinessPage
+          ? `/api/v1/cloud/vendors/${vendor}/applications/types/create_load_balancer`
+          : `/api/v1/cloud/load_balancers/create`;
+
+        const allApi = params.map((item: ApplyClbModel) => http.post(url, item));
+        await Promise.any(allApi);
+        applyClbSuccessHandler(isBusinessPage, goBack, { bizId: formModel.bk_biz_id });
+      } finally {
+        applyLoading.value = false;
+      }
     };
 
     return () => (
@@ -70,7 +90,7 @@ export default defineComponent({
         <ApplyClbForm />
 
         {/* bottom */}
-        <BottomBar list={configureList} onConfirm={handleApplyClb} onCancel={goBack} />
+        <BottomBar list={configureList} loading={applyLoading.value} onConfirm={handleApplyClb} onCancel={goBack} />
 
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, computed } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
 import { BusinessFormFilter } from '@/typings';
@@ -13,6 +13,7 @@ import { type IBusinessItem } from '@/store/business-global';
 import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps<{
   isFormDataChanged: boolean;
@@ -42,7 +43,26 @@ const handleFormFilter = (value: BusinessFormFilter) => {
 };
 const formData = ref({ name: '', memo: '', resource_group_name: '', usage_biz_ids: [] });
 
+const nameValidator = computed(() => {
+  const validate = {
+    rule: /^[\u4e00-\u9fa5a-zA-Z0-9]([\u4e00-\u9fa5a-zA-Z0-9-]{0,58}[\u4e00-\u9fa5a-zA-Z0-9])?$/,
+    msg: '1-60个字符，中文、字母、数字、“-”，且必须以中文、字母、数字开头和结尾。',
+  };
+  if (type.value === VendorEnum.AZURE) {
+    validate.rule = /^[\u4e00-\u9fa5a-z0-9]([\u4e00-\u9fa5a-z0-9-]{0,58}[\u4e00-\u9fa5a-z0-9])?$/;
+    validate.msg = '1-60个字符，中文、小写字母、数字、“-”，且必须以中文、小写字母、数字开头和结尾。';
+  }
+  return validate;
+});
+
 const rules = {
+  name: [
+    {
+      validator: (value: string) => nameValidator.value.rule.test(value),
+      message: () => nameValidator.value.msg,
+      trigger: 'change',
+    },
+  ],
   resource_group_name: [
     {
       validator: (value: string) => value.length > 0,
@@ -71,12 +91,12 @@ const submit = async () => {
   const { formData: personSelectorParams, validate } = personSelectorRef.value;
   await Promise.all([formSelectRef.value[0](), formRef.value.validate(), validate()]);
   const params: any = { ...formData.value, ...formFilter.value, ...personSelectorParams };
-  if (type.value === 'aws') {
+  if (type.value === VendorEnum.AWS) {
     params.extension = {
       cloud_vpc_id: cloudVpcId.value,
     };
     params.extension.cloud_vpc_id = cloudVpcId.value;
-  } else if (type.value === 'azure') {
+  } else if (type.value === VendorEnum.AZURE) {
     params.extension = {
       resource_group_name: formData.value.resource_group_name,
     };
@@ -114,7 +134,7 @@ watch(
   (val) => {
     if (val) {
       filter.value.filter.rules = [
-        { field: 'vendor', op: 'eq', value: 'aws' },
+        { field: 'vendor', op: 'eq', value: VendorEnum.AWS },
         { field: 'region', op: 'eq', value: val },
       ];
     }

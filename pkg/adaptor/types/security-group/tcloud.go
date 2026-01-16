@@ -20,6 +20,8 @@
 package securitygroup
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/types/core"
 	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
@@ -151,4 +153,25 @@ type TCloudSecurityGroupCloneOption struct {
 // Validate security group clone option.
 func (opt TCloudSecurityGroupCloneOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// SecurityGroupOperationType 安全组操作类型
+type SecurityGroupOperationType string
+
+// 负载均衡类型
+const (
+	// AddSGOperationType 绑定安全组
+	AddSGOperationType SecurityGroupOperationType = "ADD"
+	// DelSGOperationType 解绑安全组
+	DelSGOperationType SecurityGroupOperationType = "DEL"
+)
+
+// Validate 验证安全组操作类型
+func (r SecurityGroupOperationType) Validate() error {
+	switch r {
+	case AddSGOperationType, DelSGOperationType:
+		return nil
+	default:
+		return errors.New("unsupported operation_type: " + string(r))
+	}
 }

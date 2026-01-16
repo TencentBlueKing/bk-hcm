@@ -26,6 +26,7 @@ import (
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/cloud-server/task"
+	"hcm/pkg/api/core"
 	loadbalancer "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
@@ -220,7 +221,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 			state = enumor.TaskDetailFailed
 			reason = err.Error()
 		}
-		if err := svc.updateTaskDetailState(kt, state, detailIDs, reason); err != nil {
+		if err = svc.updateTaskDetailState(kt, state, detailIDs, reason); err != nil {
 			logs.Errorf("update task details state failed, err: %v, taskDetails: %+v, rid: %s", err, details, kt.Rid)
 		}
 	}()
@@ -239,8 +240,15 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 		})
 	}
 
-	if err = svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, updateReq); err != nil {
-		return err
+	// 分批更新，每批最多500个，避免超过API限制
+	for _, targetBatch := range slice.Split(updateReq.Targets, int(core.DefaultMaxPageLimit)) {
+		batchReq := &dataproto.TargetBatchUpdateReq{
+			Targets: targetBatch,
+		}
+		if err = svc.client.DataService().Global.LoadBalancer.BatchUpdateTarget(kt, batchReq); err != nil {
+			logs.Errorf("fail to batch update targets weight, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
 	return nil
 }

@@ -335,6 +335,22 @@ func (cli *SecurityGroupClient) BatchDisassociateCvm(kt *kit.Kit, sgID string, c
 		"/security_groups/disassociate/cvms/batch")
 }
 
+// BatchAssociateLoadBalancers 批量绑定负载均衡
+func (cli *SecurityGroupClient) BatchAssociateLoadBalancers(kt *kit.Kit,
+	req *proto.SecurityGroupBatchOperateLoadBalancerReq) error {
+
+	return common.RequestNoResp[proto.SecurityGroupBatchOperateLoadBalancerReq](cli.client, rest.POST, kt, req,
+		"/security_groups/associate/load_balancers/batch")
+}
+
+// BatchDisassociateLoadBalancers 批量解绑负载均衡
+func (cli *SecurityGroupClient) BatchDisassociateLoadBalancers(kt *kit.Kit,
+	req *proto.SecurityGroupBatchOperateLoadBalancerReq) error {
+
+	return common.RequestNoResp[proto.SecurityGroupBatchOperateLoadBalancerReq](cli.client, rest.POST, kt, req,
+		"/security_groups/disassociate/load_balancers/batch")
+}
+
 // ListSecurityGroupStatistic 查询安全组关联的云上资源数量
 func (cli *SecurityGroupClient) ListSecurityGroupStatistic(kt *kit.Kit, req *proto.ListSecurityGroupStatisticReq) (
 	*proto.ListSecurityGroupStatisticResp, error) {

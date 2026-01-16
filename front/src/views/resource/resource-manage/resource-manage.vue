@@ -103,7 +103,6 @@ const headerExtensionMap = computed(() => {
 const filter = ref({ op: 'and', rules: [] });
 const accountId = ref((route.query.accountId as string) || '');
 const status = ref('all');
-const op = ref('eq');
 const accountFilter = ref<FilterType>({
   op: 'and',
   rules: [{ field: 'type', op: 'eq', value: 'resource' }],
@@ -188,32 +187,21 @@ const handleActiveTabChange = (value: string) => {
 };
 
 const filterData = (key: string, val: string | number) => {
-  if (!filter.value.rules.length) {
-    if (val === 1) {
-      // 已分配标志
-      op.value = 'neq';
-    }
+  // val === 1 表示已分配，需要 bk_biz_id !== -1，即 op = 'neq'
+  // val === -1 表示未分配，需要 bk_biz_id === -1，即 op = 'eq'
+  const currentOp = val === 1 ? 'neq' : 'eq';
+
+  const existingRuleIndex = filter.value.rules.findIndex((e: any) => e.field === key);
+
+  if (existingRuleIndex !== -1) {
+    // 更新已存在的规则
+    filter.value.rules[existingRuleIndex].op = currentOp;
+  } else {
+    // 添加新规则
     filter.value.rules.push({
       field: key,
-      op: op.value,
+      op: currentOp,
       value: -1,
-    });
-  } else {
-    filter.value.rules.forEach((e: any) => {
-      if (e.field === key) {
-        e.op = val === 1 ? 'neq' : 'eq';
-        return;
-      }
-      if (filter.value.rules.length === 2) return;
-      if (val === 1) {
-        // 已分配标志
-        op.value = 'neq';
-      }
-      filter.value.rules.push({
-        field: key,
-        op: op.value,
-        value: -1,
-      });
     });
   }
 };

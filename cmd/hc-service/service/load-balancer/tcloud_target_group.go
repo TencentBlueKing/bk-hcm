@@ -484,7 +484,17 @@ func (svc *clbSvc) batchUpdateTargetPortWeightDb(kt *kit.Kit, req *protolb.TClou
 		return nil
 	}
 
-	return svc.dataCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq)
+	// 分批更新，每批最多500个，避免超过API限制
+	for _, targetBatch := range slice.Split(updateReq.Targets, int(core.DefaultMaxPageLimit)) {
+		batchReq := &dataproto.TargetBatchUpdateReq{
+			Targets: targetBatch,
+		}
+		if err := svc.dataCli.Global.LoadBalancer.BatchUpdateTarget(kt, batchReq); err != nil {
+			logs.Errorf("fail to batch update targets port and weight, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 // BatchModifyTCloudTargetsWeight 批量修改RS权重
@@ -919,14 +929,14 @@ func (svc *clbSvc) modifyTCloudListenerTargetsWeight(kt *kit.Kit, req *protolb.T
 
 	cloudRuleIDs := make([]string, 0)
 	updateRsList := make([]*dataproto.TargetBaseReq, 0)
-	rsOpt := &typelb.TCloudTargetWeightUpdateOption{
-		LoadBalancerId: req.LoadBalancerCloudId,
-		Region:         req.Region,
-		ModifyList:     make([]*typelb.TargetWeightRule, 0),
-	}
 	for _, item := range lblRsList {
+		rsOpt := &typelb.TCloudTargetWeightUpdateOption{
+			LoadBalancerId: req.LoadBalancerCloudId,
+			Region:         req.Region,
+			ModifyList:     make([]*typelb.TargetWeightRule, 0),
+		}
+		tmpWeightRule := &typelb.TargetWeightRule{ListenerId: cvt.ValToPtr(item.CloudLblID)}
 		for _, rsItem := range item.RsList {
-			tmpWeightRule := &typelb.TargetWeightRule{ListenerId: cvt.ValToPtr(item.CloudLblID)}
 			if rsItem.RuleType == enumor.Layer7RuleType {
 				tmpWeightRule.LocationId = cvt.ValToPtr(rsItem.CloudRuleID)
 			}
@@ -937,18 +947,18 @@ func (svc *clbSvc) modifyTCloudListenerTargetsWeight(kt *kit.Kit, req *protolb.T
 			}
 			tmpRs = setTargetInstanceIDOrEniIP(rsItem.InstType, rsItem.CloudInstID, rsItem.IP, tmpRs)
 			tmpWeightRule.Targets = append(tmpWeightRule.Targets, tmpRs)
-			rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
 			updateRsList = append(updateRsList, &dataproto.TargetBaseReq{
 				ID: rsItem.ID, NewWeight: req.NewRsWeight,
 			})
 			cloudRuleIDs = append(cloudRuleIDs, rsItem.CloudRuleID)
 		}
-	}
-	err = tcloudAdpt.ModifyTargetWeight(kt, rsOpt)
-	if err != nil {
-		logs.Errorf("modify listener rs weight tcloud api failed, err: %v, newWeight: %d, rsOpt: %+v, rid: %s",
-			err, req.NewRsWeight, rsOpt, kt.Rid)
-		return nil, nil, err
+		rsOpt.ModifyList = append(rsOpt.ModifyList, tmpWeightRule)
+		err = tcloudAdpt.ModifyTargetWeight(kt, rsOpt)
+		if err != nil {
+			logs.Errorf("modify listener rs weight tcloud api failed, err: %v, newWeight: %d, rsOpt: %+v, rid: %s",
+				err, cvt.PtrToVal(req.NewRsWeight), rsOpt, kt.Rid)
+			return nil, nil, err
+		}
 	}
 	return cloudRuleIDs, updateRsList, nil
 }

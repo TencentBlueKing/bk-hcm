@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/core"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
 	apicore "hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
@@ -375,6 +376,24 @@ func (opt TCloudSetClbSecurityGroupOption) Validate() error {
 		return fmt.Errorf("invalid page.limit max value: %d", constant.LoadBalancerBindSecurityGroupMaxLimit)
 	}
 
+	return validator.Validate.Struct(opt)
+}
+
+// --------------------------[绑定或解绑一个安全组到多个负载均衡实例]--------------------------
+
+// TCloudSetSecurityGroupForClbsOption defines options to set tcloud clb security-group option.
+type TCloudSetSecurityGroupForClbsOption struct {
+	Region          string                                   `json:"region" validate:"required"`
+	SecurityGroup   string                                   `json:"security_group" validate:"required"`
+	LoadBalancerIDs []string                                 `json:"load_balancer_ids" validate:"required,max=20"`
+	OperationType   securitygroup.SecurityGroupOperationType `json:"operation_type" validate:"required"`
+}
+
+// Validate tcloud clb security-group option.
+func (opt TCloudSetSecurityGroupForClbsOption) Validate() error {
+	if err := opt.OperationType.Validate(); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(opt)
 }
 

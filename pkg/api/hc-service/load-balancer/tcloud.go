@@ -422,10 +422,10 @@ func (req *DomainAttrUpdateReq) Validate() error {
 type TCloudBatchOperateTargetReq struct {
 	TargetGroupID string                 `json:"target_group_id" validate:"omitempty"`
 	LbID          string                 `json:"lb_id" validate:"required"`
-	RsList        []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=100,dive"`
+	RsList        []*cloud.TargetBaseReq `json:"targets" validate:"required,min=1,max=500,dive"`
 }
 
-// Validate RsList最大支持100个.
+// Validate RsList最大支持500个.
 func (req *TCloudBatchOperateTargetReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

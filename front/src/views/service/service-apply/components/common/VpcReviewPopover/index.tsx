@@ -1,6 +1,7 @@
 import { PropType, defineComponent } from 'vue';
 import { Button, Popover } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
+import FlexTag from '@/components/flex-tag/index.vue';
 import './index.scss';
 
 export interface VpcDetail {
@@ -65,15 +66,16 @@ export default defineComponent({
               </div>
               <div class='detail-item'>
                 <div class='item-label'>管控区域 ID</div>
-                <div class='item-value'>{props.data.bk_cloud_id}</div>
+                <div class='item-value'>{props.data.bk_cloud_id || '--'}</div>
               </div>
-              {/* TODO：替换为flex-tag */}
               <div class='detail-item'>
                 <div class='item-label'>IPv4 CIDR</div>
-                <div class='item-value'>
-                  {props.data.extension?.cidr?.map((obj: any) => (
-                    <p>{obj.cidr}</p>
-                  ))}
+                <div class='item-value' style={{ width: '200px' }}>
+                  {props.data.extension?.cidr?.length ? (
+                    <FlexTag isTagStyle list={props.data.extension?.cidr.map((obj: any) => ({ name: obj.cidr }))} />
+                  ) : (
+                    '--'
+                  )}
                 </div>
               </div>
             </div>

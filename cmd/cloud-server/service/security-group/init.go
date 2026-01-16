@@ -40,9 +40,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		sgLogic:    c.Logics.SecurityGroup,
 		cmdbClient: c.CmdbCli,
 	}
-
 	h := rest.NewHandler()
-
 	// 资源下安全组相关接口
 	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
@@ -99,6 +97,10 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/security_groups/associate/cvms/batch", svc.BatchAssociateCvm)
 	h.Add("BatchDisassociateCvm", http.MethodPost,
 		"/security_groups/disassociate/cvms/batch", svc.BatchDisassociateCvm)
+	h.Add("BatchAssociateLoadBalancers", http.MethodPost,
+		"/security_groups/associate/load_balancers/batch", svc.BatchAssociateLoadBalancers)
+	h.Add("BatchDisassociateLoadBalancers", http.MethodPost,
+		"/security_groups/disassociate/load_balancers/batch", svc.BatchDisassociateLoadBalancers)
 
 	h.Add("BatchListResSecurityGroups", http.MethodPost, "/security_groups/res/{res_type}/batch",
 		svc.BatchListResSecurityGroups)
@@ -108,10 +110,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSGRelLB", http.MethodPost,
 		"/security_groups/{sg_id}/related_resources/load_balancers/list",
 		svc.ListSGRelLB)
-
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
-
 	h.Load(c.WebService)
 }
 
@@ -184,6 +184,11 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_groups/associate/cvms/batch", svc.BatchAssociateBizCvm)
 	h.Add("BatchDisassociateBizCvm", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/disassociate/cvms/batch", svc.BatchDisassociateBizCvm)
+
+	h.Add("BatchAssociateBizLoadBalancers", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/associate/load_balancers/batch", svc.BatchAssociateBizLoadBalancers)
+	h.Add("BatchDisassociateBizLoadBalancers", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/disassociate/load_balancers/batch", svc.BatchDisassociateBizLoadBalancers)
 
 	h.Add("BizBatchListResSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/res/{res_type}/batch",
 		svc.BizBatchListResSecurityGroups)

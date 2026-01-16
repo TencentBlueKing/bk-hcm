@@ -149,7 +149,7 @@ watch(
   { deep: true },
 );
 
-watch([selected, list], ([newVal, newList], [oldVal]) => {
+watch([selected, list, model], ([newVal, newList], [oldVal]) => {
   const account = newList.find((item) => item.id === newVal);
   const oldAccount = list.value.find((item) => item.id === oldVal);
   // autoSelect时selected默认值不会触发其set导致model未触发update，在这里触发一次

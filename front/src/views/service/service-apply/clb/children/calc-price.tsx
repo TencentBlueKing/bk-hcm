@@ -55,7 +55,6 @@ export default defineComponent({
         cloud_vpc_id,
         cloud_subnet_id,
         require_count,
-        name,
         load_balancer_type,
         account_type,
         address_ip_version,
@@ -68,12 +67,7 @@ export default defineComponent({
 
       // 基本验证
       const hasRequiredFields =
-        account_id &&
-        region &&
-        load_balancer_pass_to_target !== undefined &&
-        require_count !== 0 &&
-        name &&
-        /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(name);
+        account_id && region && load_balancer_pass_to_target !== undefined && require_count !== 0;
 
       if (!hasRequiredFields) return false;
 
@@ -96,8 +90,16 @@ export default defineComponent({
       isInquiryPricesLoading.value = true;
       const { formModel } = props;
       try {
-        // eslint-disable-next-line prefer-const
-        let zones = formModel.zones ? [formModel.zones] : [];
+        // 处理 zones 参数，确保传递的是字符串数组
+        let zones: string[] = [];
+        if (formModel.zones) {
+          if (Array.isArray(formModel.zones)) {
+            zones = formModel.zones.filter(Boolean); // 过滤空值
+          } else if (typeof formModel.zones === 'string' && formModel.zones.length > 0) {
+            // 单可用区场景，zones 是字符串
+            zones = [formModel.zones];
+          }
+        }
         const backup_zones = formModel.backup_zones ? [formModel.backup_zones] : undefined;
         const bandwidthpkg_sub_type = BGP_VIP_ISP_TYPES.includes(formModel.vip_isp) ? 'BGP' : 'SINGLEISP';
 

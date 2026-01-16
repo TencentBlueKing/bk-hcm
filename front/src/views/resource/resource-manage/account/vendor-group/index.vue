@@ -11,7 +11,6 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useResourceAccount } from '../accountList/useResourceAccount';
 import CreateAccount from '../createAccount';
 import { vendorProperty } from './vendor.plugin';
-import routerAction from '@/router/utils/action';
 
 const route = useRoute();
 const router = useRouter();
@@ -105,14 +104,12 @@ const toggleExpanded = (vendor: VendorEnum) => {
 const handleSelectAll = () => {
   setAccountId('');
   resourceAccountStore.clear();
-  routerAction.redirect({ query: { ...route.query, _t: Date.now(), accountId: undefined } });
 };
 
 const handleSelectVendor = (vendor: VendorEnum) => {
   resourceAccountStore.setCurrentVendor(vendor);
   toggleExpanded(vendor);
   setAccountId('');
-  routerAction.redirect({ query: { ...route.query, _t: Date.now(), accountId: undefined } });
 };
 
 const handleSelectAccount = (account: IAccountItem) => {

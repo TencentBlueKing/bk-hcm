@@ -22,6 +22,7 @@ package securitygroup
 import (
 	protoaudit "hcm/pkg/api/data-service/audit"
 	"hcm/pkg/api/data-service/cloud"
+	hcproto "hcm/pkg/api/hc-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -194,4 +196,138 @@ func (svc *securityGroupSvc) getAssociateLBValidBasicInfos(kt *kit.Kit, sgIDs []
 	}
 
 	return basicInfos, nil
+}
+
+// BatchAssociateLoadBalancers 绑定负载均衡，安全组本地id，lb 云id
+func (svc *securityGroupSvc) BatchAssociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	return svc.batchAssociateLoadBalancers(cts, handler.ResOperateAuth)
+}
+
+// BatchAssociateBizLoadBalancers 业务下绑定负载均衡，安全组本地id，lb 云id
+func (svc *securityGroupSvc) BatchAssociateBizLoadBalancers(cts *rest.Contexts) (any, error) {
+	return svc.batchAssociateLoadBalancers(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) batchAssociateLoadBalancers(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (any, error) {
+
+	req := new(hcproto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, req.SecurityGroupID)
+	if err != nil {
+		logs.Errorf("get security group resource basic info failed, err: %v, sg_id: %s, rid: %s",
+			err, req.SecurityGroupID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Associate, BasicInfo: sgInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.createBatchOperateLoadBalancerAudit(cts.Kit, req, protoaudit.Associate); err != nil {
+		logs.Errorf("batch create set load balancer audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch sgInfo.Vendor {
+	case enumor.TCloud:
+		if err = svc.client.HCService().TCloud.SecurityGroup.BatchAssociateLoadBalancers(cts.Kit, req); err != nil {
+			logs.Errorf("fail to call tcloud hc service associate cloud load balancers, err: %v, sgID: %s, req: %+v, "+
+				"rid: %s", err, req.SecurityGroupID, cvt.PtrToVal(req), cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for batch associate load balancer", sgInfo.Vendor)
+	}
+}
+
+// BatchDisassociateLoadBalancers 解绑负载均衡，安全组本地id，lb 云id
+func (svc *securityGroupSvc) BatchDisassociateLoadBalancers(cts *rest.Contexts) (any, error) {
+	return svc.batchDisassociateLoadBalancers(cts, handler.ResOperateAuth)
+}
+
+// BatchDisassociateBizLoadBalancers 业务下解绑负载均衡，安全组本地id，lb 云id
+func (svc *securityGroupSvc) BatchDisassociateBizLoadBalancers(cts *rest.Contexts) (any, error) {
+	return svc.batchDisassociateLoadBalancers(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) batchDisassociateLoadBalancers(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (any, error) {
+
+	req := new(hcproto.SecurityGroupBatchOperateLoadBalancerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, req.SecurityGroupID)
+	if err != nil {
+		logs.Errorf("get security group resource basic info failed, err: %v, sg_id: %s, rid: %s",
+			err, req.SecurityGroupID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Disassociate, BasicInfo: sgInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.createBatchOperateLoadBalancerAudit(cts.Kit, req, protoaudit.Disassociate); err != nil {
+		logs.Errorf("batch create set load balancer audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	switch sgInfo.Vendor {
+	case enumor.TCloud:
+		if err = svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateLoadBalancers(cts.Kit, req); err != nil {
+			logs.Errorf("fail to call tcloud hc service disassociate cloud load balancers, err: %v, sgID: %s, "+
+				"req: %+v, rid: %s", err, req.SecurityGroupID, cvt.PtrToVal(req), cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for batch disassociate load balancer",
+			sgInfo.Vendor)
+	}
+}
+
+func (svc *securityGroupSvc) createBatchOperateLoadBalancerAudit(kt *kit.Kit,
+	req *hcproto.SecurityGroupBatchOperateLoadBalancerReq, action protoaudit.OperationAction) error {
+
+	// create operation audit.
+	audits := make([]protoaudit.CloudResourceOperationInfo, 0, len(req.LoadBalancerIDs))
+	for _, lbID := range req.LoadBalancerIDs {
+		audits = append(audits, protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.SecurityGroupAuditResType,
+			ResID:             req.SecurityGroupID,
+			Action:            action,
+			AssociatedResType: enumor.LoadBalancerAuditResType,
+			AssociatedResID:   lbID,
+		})
+	}
+
+	if err := svc.audit.BatchResOperationAudit(kt, audits); err != nil {
+		logs.Errorf("create security-group associate load balancer operation audit failed, err: %v, req: %+v, rid: %s",
+			err, cvt.PtrToVal(req), kt.Rid)
+		return err
+	}
+	return nil
 }

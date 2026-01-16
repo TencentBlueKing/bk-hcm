@@ -138,6 +138,17 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     currentLbQuota.value?.quota_limit ? quotaMax.value - formModel.require_count : 0,
   );
 
+  const rules = {
+    name: [
+      {
+        validator: (value: string) =>
+          /^(?=.{1,60}$)[\u4E00-\u9FA5A-Za-z0-9]([\u4E00-\u9FA5A-Za-z0-9-]*[\u4E00-\u9FA5A-Za-z0-9])?$/.test(value),
+        message: '60个字符，支持中文、字母、数字、“-”，且必须以中文、字母、数字开头和结尾。',
+        trigger: 'change',
+      },
+    ],
+  };
+
   // change-handle - 更新 sla_type
   const handleSlaTypeChange = (v: '0' | '1') => {
     if (v === '0') formModel.sla_type = 'shared';
@@ -339,8 +350,18 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '安全组放通模式',
           required: true,
           property: 'load_balancer_pass_to_target',
-          description:
-            '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n一、1次校验-仅校验CLB上的安全组，忽略后端RS的安全组，仅关注CLB上的安全组配置即可\n二、2次校验-同时校验CLB和RS上的安全组，需同时关注CLB和RS这2处绑定的安全组',
+          description: (() => {
+            const toChineseNumber = (num: number) => {
+              return new Intl.NumberFormat('zh-Hans-CN-u-nu-hanidec').format(num);
+            };
+            const text = '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n';
+
+            const context = LOAD_BALANCER_PASS_TO_TARGET_LIST.map(({ label, description }, index) => {
+              return `${toChineseNumber(index + 1)}、${label}（${description}）`;
+            });
+
+            return text + context.join('\n');
+          })(),
           content: () => (
             <bk-select
               v-model={formModel.load_balancer_pass_to_target}
@@ -672,12 +693,18 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           </Form>
           <bk-sideslider
             v-model:isShow={sideSliderOptions.value.show}
+            renderDirective='if'
             title={'添加负载均衡'}
             width='850'
             class={cssModule.addClbConfigureSideslider}>
             {{
               default: () => (
-                <bk-form class={cssModule.applyClbFormContainer} formType='vertical' model={formModel} ref={formRef}>
+                <bk-form
+                  class={cssModule.applyClbFormContainer}
+                  formType='vertical'
+                  model={formModel}
+                  ref={formRef}
+                  rules={rules}>
                   {formItemOptions.value.map(({ id, title, children }) => (
                     <CommonCard key={id} title={() => t(title)} class={cssModule.formCardContainer}>
                       {children.map((item) => {

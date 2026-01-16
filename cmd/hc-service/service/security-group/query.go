@@ -83,6 +83,31 @@ func (g *securityGroup) getSecurityGroupMap(kt *kit.Kit, sgIDs []string) (
 	return sgMap, nil
 }
 
+// getLoadBalancers 根据lbIDs获取负载均衡信息
+func (g *securityGroup) getLoadBalancers(kt *kit.Kit, lbIDs []string) ([]corelb.BaseLoadBalancer, error) {
+	result := make([]corelb.BaseLoadBalancer, 0, len(lbIDs))
+	for _, ids := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := g.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
+		if err != nil {
+			logs.Errorf("list load balancer failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, resp.Details...)
+	}
+
+	if len(result) != len(lbIDs) {
+		logs.Errorf("list load balancer failed, got %d, but expect %d, rid: %s", len(result), len(lbIDs), kt.Rid)
+		return nil, fmt.Errorf("list load balancer failed, got %d, but expect %d", len(result), len(lbIDs))
+	}
+	return result, nil
+}
+
 func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string) (
 	*corelb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
 

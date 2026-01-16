@@ -43,5 +43,11 @@ defineExpose({ clear });
 </script>
 
 <template>
-  <bk-search-select v-model="searchValue" :data="searchData" :validate-values="validateValues" v-bind="attrs" />
+  <bk-search-select
+    v-model="searchValue"
+    :data="searchData"
+    :validate-values="validateValues"
+    v-bind="attrs"
+    value-behavior="need-key"
+  />
 </template>
