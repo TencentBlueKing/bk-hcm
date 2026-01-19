@@ -103,6 +103,13 @@ func (kt *Kit) NewSubKitWithRid(subRid string) *Kit {
 	return newSubKit
 }
 
+// NewSubKitWithCtx 生成子kit, 变更context
+func (kt *Kit) NewSubKitWithCtx(newCtx context.Context) *Kit {
+	newSubKit := converter.ValToPtr(*kt)
+	newSubKit.Ctx = newCtx
+	return newSubKit
+}
+
 // WithAsyncSource 生成子kit 设置对应的请求来源为 AsynchronousTasks
 func (kt *Kit) WithAsyncSource() *Kit {
 	newKit := converter.ValToPtr(*kt)

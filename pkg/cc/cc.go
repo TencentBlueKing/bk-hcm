@@ -21,6 +21,7 @@
 package cc
 
 import (
+	"net"
 	"sync"
 
 	"hcm/pkg/logs"
@@ -33,7 +34,8 @@ var runtimeOnce sync.Once
 // It can be called only after LoadSettings is executed successfully.
 var rt *runtime
 
-func initRuntime(s Setting) {
+// InitRuntime init runtime.
+func InitRuntime(s Setting) {
 	runtimeOnce.Do(func() {
 		rt = &runtime{
 			settings: s,
@@ -72,6 +74,28 @@ func TenantEnable() bool {
 	}
 
 	return rt.settings.TenantEnable()
+}
+
+// TestSetting test setting.
+type TestSetting struct {
+}
+
+func (t TestSetting) trySetFlagBindIP(ip net.IP) error {
+	return nil
+}
+
+func (t TestSetting) trySetDefault() {
+	return
+}
+
+// Validate TestSetting option.
+func (t TestSetting) Validate() error {
+	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (t TestSetting) TenantEnable() bool {
+	return false
 }
 
 // ApiServer return api server Setting.

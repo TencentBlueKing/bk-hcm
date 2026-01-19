@@ -68,6 +68,9 @@ const (
 
 	// AsyncSubSys defines all the async flow or task related sub system.
 	AsyncSubSys = "async"
+
+	// CronSubSys defines all the cron related sub system.
+	CronSubSys = "cron"
 )
 
 // labels
