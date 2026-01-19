@@ -73,6 +73,7 @@ const handleViewDetails = (row: IResourcePlanTicketItem) => {
       name: MENU_BUSINESS_TICKET_RESOURCE_PLAN_DETAILS,
       query: {
         id: row.id,
+        type: 'resource_plan',
         [GLOBAL_BIZS_KEY]: row.bk_biz_id,
       },
     },
