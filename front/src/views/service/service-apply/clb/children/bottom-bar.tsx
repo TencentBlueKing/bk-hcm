@@ -75,6 +75,11 @@ export default defineComponent({
             : undefined,
         // 内网下支持EIP
         cloud_eip_id: !isOpenVal ? formModel.cloud_eip_id ?? undefined : undefined,
+        // 带宽包ID只在公网且计费模式为带宽包时才传递
+        bandwidth_package_id:
+          isOpenVal && formModel.internet_charge_type === 'BANDWIDTH_PACKAGE'
+            ? formModel.bandwidth_package_id
+            : undefined,
         // 后端无用字段
         account_type: undefined as undefined,
         zoneType: undefined as undefined,

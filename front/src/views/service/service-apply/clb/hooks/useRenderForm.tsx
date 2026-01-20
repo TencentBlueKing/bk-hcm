@@ -853,6 +853,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
       resetParams();
       if (val === 'INTERNAL') {
         resetParams(['address_ip_version', 'sla_type', 'internet_charge_type', 'internet_max_bandwidth_out']);
+        // 内网不支持带宽包，需要清除带宽包ID
+        formModel.bandwidth_package_id = undefined;
       } else {
         // 如果是公网, 则重置初始状态
         Object.assign(formModel, {
