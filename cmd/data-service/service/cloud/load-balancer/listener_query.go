@@ -689,12 +689,13 @@ func (svc *lbSvc) listBizListenerByLbIDs(kt *kit.Kit, lblReq protocloud.ListList
 		lblProtocolPortMap[fmt.Sprintf("%s_%d", item.Protocol, item.Port)] = item
 	}
 
-	// 如果传入了监听器端口，则需要进行校验
-	if len(lblReq.ListenerQueryItem.Ports) > 0 {
+	// 查到了监听器才需要校验端口，如果传入了监听器端口，则需要进行校验
+	if len(lblList) > 0 && len(lblReq.ListenerQueryItem.Ports) > 0 {
 		for _, port := range lblReq.ListenerQueryItem.Ports {
 			if _, ok := lblProtocolPortMap[fmt.Sprintf("%s_%d", lblReq.ListenerQueryItem.Protocol, port)]; !ok {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "listener protocol[%s] port[%d] is not found",
-					lblReq.ListenerQueryItem.Protocol, port)
+				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "listener region[%s] protocol[%s] port[%d] "+
+					"is not found, cloudClbIDs: %v",
+					lblReq.ListenerQueryItem.Region, lblReq.ListenerQueryItem.Protocol, port, cloudClbIDs)
 			}
 		}
 	}
