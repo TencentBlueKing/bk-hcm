@@ -23,9 +23,8 @@ const dataListColumns: ModelPropertyColumn[] = [
     id: 'port',
     name: 'RS端口',
     type: 'number',
-    width: 80,
+    width: 110,
     fixed: 'left',
-    cell: 'port',
   },
   {
     id: 'weight',
@@ -324,7 +323,10 @@ defineExpose({ selections, isExceeded });
                   :ellipsis="column.ellipsis"
                 >
                   <template #default="{ row }">
-                    <template v-if="column.id === 'target_group_name'">
+                    <template v-if="column.id === 'port'">
+                      {{ row.lbl_end_port ? `${row.port}-${row.port + row.lbl_end_port - row.lbl_port}` : row.port }}
+                    </template>
+                    <template v-else-if="column.id === 'target_group_name'">
                       <bk-button text theme="primary" @click="() => handleViewTargetGroupDetails(row)">
                         {{ row.target_group_name }}
                       </bk-button>

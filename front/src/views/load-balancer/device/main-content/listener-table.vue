@@ -162,21 +162,21 @@ const convertFieldIds = {
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
 const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   name: {
-    render: ({ data, row }) => {
+    cell: (h, { row }) => {
       const handleClick = async () => {
         details.value = await loadBalancerClbStore.getLoadBalancerDetails(row.lb_id, currentGlobalBusinessId.value);
         detailsSidesliderState.isHidden = false;
         detailsSidesliderState.isShow = true;
-        detailsSidesliderState.rowData = data;
+        detailsSidesliderState.rowData = row;
       };
       return h(Button, { theme: 'primary', text: true, onClick: handleClick }, row.name);
     },
   },
   port: {
-    render: ({ row, cell }) => `${cell}${row.end_port ? `-${row.end_port}` : ''}`,
+    cell: (h, { row }) => `${row.port}${row.end_port ? `-${row.end_port}` : ''}`,
   },
   lb_network_type: {
-    render: ({ cell }) => LB_TYPE_MAP[cell],
+    cell: (h, { row }) => LB_TYPE_MAP[row.lb_network_type],
   },
 };
 const dataListColumns = displayFieldIds.map((id) => {
@@ -402,8 +402,9 @@ const initAllCheckStatus = () => {
           :width="column.width"
           :fixed="column.fixed"
           :ellipsis="column.ellipsis"
+          :cell="column.cell"
         >
-          <template #default="{ row }">
+          <template v-if="!column.cell" #default="{ row }">
             <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
           </template>
         </table-column>
