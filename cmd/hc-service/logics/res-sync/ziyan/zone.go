@@ -25,7 +25,6 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/zone"
 	corezone "hcm/pkg/api/core/cloud/zone"
 	datazone "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/constant"
@@ -237,7 +236,7 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateZone(kt, opt, updateMap); err != nil {
+		if err = cli.updateZone(kt, opt, updateMap, zoneFromDB); err != nil {
 			return nil, err
 		}
 	}
@@ -250,25 +249,26 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption, addSlice []types
 		return errors.New("zone addSlice is <= 0, not create")
 	}
 
-	list := make([]datazone.ZoneBatchCreate[zone.TCloudZoneExtension], 0, len(addSlice))
+	list := make([]datazone.ZoneBatchCreate[corezone.TCloudZoneExtension], 0, len(addSlice))
 
 	for _, one := range addSlice {
-		zoneOne := datazone.ZoneBatchCreate[zone.TCloudZoneExtension]{
+		zoneOne := datazone.ZoneBatchCreate[corezone.TCloudZoneExtension]{
 			CloudID: one.CloudID,
 			Name:    one.ZoneID,
 			NameCn:  one.ZoneName,
 			State:   one.State,
 			Region:  opt.Region,
 			Source:  enumor.RegionSourceSync,
-			Extension: &zone.TCloudZoneExtension{
+			Extension: &corezone.TCloudZoneExtension{
 				CityName:        opt.CityName,
 				LogicCampusName: one.LogicCampusName,
+				DisableCvm:      false, // 默认不禁用（启用）
 			},
 		}
 		list = append(list, zoneOne)
 	}
 
-	createReq := &datazone.ZoneBatchCreateReq[zone.TCloudZoneExtension]{
+	createReq := &datazone.ZoneBatchCreateReq[corezone.TCloudZoneExtension]{
 		Zones: list,
 	}
 	_, err := cli.dbCli.TCloudZiyan.Zone.BatchCreateZone(kt, createReq)
@@ -284,26 +284,43 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption, addSlice []types
 	return nil
 }
 
-func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[string]typeszone.TCloudZone) error {
+func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[string]typeszone.TCloudZone,
+	zoneFromDB []corezone.Zone[corezone.TCloudZoneExtension]) error {
+
 	if len(updateMap) <= 0 {
 		return errors.New("zone updateMap is <= 0, not update")
 	}
 
-	updates := make([]datazone.ZoneBatchUpdate[zone.TCloudZoneExtension], 0, len(updateMap))
+	// 构建 zone ID 到 DisableCvm 的映射，保留原有的 DisableCvm 设置
+	disableCvmMap := make(map[string]bool)
+	for _, dbZone := range zoneFromDB {
+		if dbZone.Extension != nil {
+			disableCvmMap[dbZone.GetID()] = dbZone.Extension.DisableCvm
+		}
+	}
+
+	updates := make([]datazone.ZoneBatchUpdate[corezone.TCloudZoneExtension], 0, len(updateMap))
 
 	for id, one := range updateMap {
-		update := datazone.ZoneBatchUpdate[zone.TCloudZoneExtension]{
+		// 保留原有的 DisableCvm 值，如果不存在（旧数据）则默认为 false（不禁用）
+		disableCvm := false
+		if val, exists := disableCvmMap[id]; exists {
+			disableCvm = val
+		}
+
+		update := datazone.ZoneBatchUpdate[corezone.TCloudZoneExtension]{
 			ID:    id,
 			State: one.State,
-			Extension: &zone.TCloudZoneExtension{
+			Extension: &corezone.TCloudZoneExtension{
 				CityName:        opt.CityName,
 				LogicCampusName: one.LogicCampusName,
+				DisableCvm:      disableCvm,
 			},
 		}
 		updates = append(updates, update)
 	}
 
-	updateReq := &datazone.ZoneBatchUpdateReq[zone.TCloudZoneExtension]{
+	updateReq := &datazone.ZoneBatchUpdateReq[corezone.TCloudZoneExtension]{
 		Zones: updates,
 	}
 	if err := cli.dbCli.TCloudZiyan.Zone.BatchUpdateZone(kt, updateReq); err != nil {

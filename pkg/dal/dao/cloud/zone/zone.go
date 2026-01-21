@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
@@ -118,7 +119,10 @@ func (z ZoneDao) List(kt *kit.Kit, opt *types.ListOption) (*typeszone.ListZoneDe
 		return nil, errf.New(errf.InvalidParameter, "list zone options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(zone.ZoneColumns.ColumnTypes())),
+	columnTypes := zone.ZoneColumns.ColumnTypes()
+	// 目前extension支持的字段类型：字符串（布尔值也需要传入字符串才会生效）
+	columnTypes["extension.disable_cvm"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}

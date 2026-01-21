@@ -26,7 +26,9 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud/zone"
 	protocloud "hcm/pkg/api/data-service/cloud/zone"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -88,4 +90,12 @@ func (cli *ZoneClient) BatchUpdateZone(ctx context.Context, h http.Header,
 	}
 
 	return nil
+}
+
+// ListZoneExt list zone with extension.
+func (cli *ZoneClient) ListZoneExt(kt *kit.Kit, req *protocloud.ZoneListReq) (
+	*protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension], error) {
+
+	return common.Request[protocloud.ZoneListReq, protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension]](
+		cli.client, rest.POST, kt, req, "/zones/list")
 }

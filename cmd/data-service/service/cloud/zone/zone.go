@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablezone "hcm/pkg/dal/table/cloud/zone"
 	tabletype "hcm/pkg/dal/table/types"
@@ -128,9 +129,19 @@ func (svc *zoneSvc) ListZoneExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 强制筛选vendor
+	mergedFilter := tools.EqualExpression("vendor", vendor)
+	if req.Filter != nil {
+		var err error
+		mergedFilter, err = tools.And(req.Filter, mergedFilter)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+
 	opt := &types.ListOption{
 		Fields: req.Field,
-		Filter: req.Filter,
+		Filter: mergedFilter,
 		Page:   req.Page,
 	}
 	result, err := svc.dao.Zone().List(cts.Kit, opt)

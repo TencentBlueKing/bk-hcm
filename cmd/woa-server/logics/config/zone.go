@@ -106,8 +106,12 @@ func (z *zone) GetZone(kt *kit.Kit, req *types.GetZoneParam) (*types.GetZoneResu
 			regionSet[item.Region] = struct{}{}
 		}
 
-		// 转换数据为 types.Zone
+		// 转换数据为 types.Zone，排除 disable_cvm 为 true 的 zone（disable_cvm 为空视为 false，即不禁用）
 		for _, item := range apiZones.Details {
+			// 如果 DisableCvm 显式为 true，则跳过该 zone（已禁用）
+			if item.Extension != nil && item.Extension.DisableCvm {
+				continue
+			}
 			zoneOne := &types.Zone{
 				Zone:           item.Name,
 				ZoneCn:         item.NameCn,

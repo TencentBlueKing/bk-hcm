@@ -50,3 +50,14 @@ type ZoneImportReq struct {
 func (req *ZoneImportReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// ZoneBatchUpdateDisableCvmReq define zone batch update disable_cvm request.
+type ZoneBatchUpdateDisableCvmReq struct {
+	Zones      []string `json:"zones" validate:"required,min=1,max=500"`
+	DisableCvm bool     `json:"disable_cvm"`
+}
+
+// Validate validate ZoneBatchUpdateDisableCvmReq.
+func (req *ZoneBatchUpdateDisableCvmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
