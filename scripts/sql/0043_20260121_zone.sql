@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0043,HCMVER=v1.8.9
 
     Notes:
     1. 为 zone 表添加 source 字段
@@ -31,6 +31,6 @@ ALTER TABLE `zone`
     ADD COLUMN `source` varchar(64) NOT NULL DEFAULT 'sync' COMMENT '来源：sync-同步，manually-手动添加' after `state`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.9' as `hcm_ver`, '0043' as `sql_ver`;
 
 COMMIT;
