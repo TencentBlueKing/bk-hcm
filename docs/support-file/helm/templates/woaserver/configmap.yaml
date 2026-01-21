@@ -130,3 +130,5 @@ data:
       {{- toYaml .Values.finops | nindent 6 }}
     applyTicketConfig:
       {{- toYaml .Values.applyTicketConfig | nindent 6 }}
+    recycleNotice:
+      {{- toYaml .Values.recycleNotice | nindent 6 }}

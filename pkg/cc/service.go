@@ -629,6 +629,7 @@ type WoaServerSetting struct {
 	Cmsi              CMSI              `yaml:"cmsi"`
 	StuckCheck        StuckCheck        `yaml:"stuckCheck"`
 	ApplyTicketConfig ApplyTicketConfig `yaml:"applyTicketConfig"`
+	RecycleNotice     RecycleNotice     `yaml:"recycleNotice"`
 
 	Tenant TenantConfig `yaml:"tenant"`
 }
@@ -710,6 +711,9 @@ func (s WoaServerSetting) Validate() error {
 	}
 
 	if err := s.ApplyTicketConfig.validate(); err != nil {
+		return err
+	}
+	if err := s.RecycleNotice.validate(); err != nil {
 		return err
 	}
 

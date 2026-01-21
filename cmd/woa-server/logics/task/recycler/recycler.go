@@ -32,6 +32,7 @@ import (
 	"hcm/cmd/woa-server/logics/task/recycler/detector"
 	"hcm/cmd/woa-server/logics/task/recycler/dispatcher"
 	"hcm/cmd/woa-server/logics/task/recycler/event"
+	"hcm/cmd/woa-server/logics/task/recycler/notifier"
 	"hcm/cmd/woa-server/logics/task/recycler/returner"
 	"hcm/cmd/woa-server/logics/task/recycler/transit"
 	types "hcm/cmd/woa-server/types/task"
@@ -47,6 +48,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/language"
@@ -140,6 +142,7 @@ type Interface interface {
 	UpdateReturnTaskStatus(kt *kit.Kit, suborderID string, status table.ReturnStatus, msg string) error
 
 	StartStuckCheckLoop(kt *kit.Kit)
+	StartFailedNoticeScanLoop(kt *kit.Kit)
 }
 
 // recycler provides resource recycle service
@@ -156,12 +159,16 @@ type recycler struct {
 	srLogic       srlogics.Logics
 	bizLogic      biz.Logics
 	dissolveLogic dissolve.Logics
+	cmsiClient    cmsi.Client
+	thirdCli      *thirdparty.Client
+	notifier      *notifier.Notifier
 }
 
 // New create a recycler
 func New(ctx context.Context, thirdCli *thirdparty.Client, bizLogic biz.Logics, cmdbCli cmdb.Client,
 	authorizer auth.Authorizer, rsLogic rslogics.Logics, srLogics srlogics.Logics, dissolveLogic dissolve.Logics,
-	cliSet *client.ClientSet, configLogics configLogics.Logics, planLogic plan.Logics) (Interface, error) {
+	cliSet *client.ClientSet, configLogics configLogics.Logics, planLogic plan.Logics, cmsiClient cmsi.Client) (
+	Interface, error) {
 
 	// new detector
 	moduleDetector, err := detector.New(ctx, thirdCli, cmdbCli, cliSet)
@@ -181,8 +188,14 @@ func New(ctx context.Context, thirdCli *thirdparty.Client, bizLogic biz.Logics, 
 		return nil, err
 	}
 
+	// new notifier
+	notice, err := notifier.New(cmsiClient, thirdCli)
+	if err != nil {
+		return nil, err
+	}
+
 	// new dispatcher
-	dispatch, err := dispatcher.New(ctx, moduleDetector, moduleReturner, moduleTransit, rsLogic, srLogics)
+	dispatch, err := dispatcher.New(ctx, moduleDetector, moduleReturner, moduleTransit, rsLogic, srLogics, notice)
 	if err != nil {
 		return nil, err
 	}
@@ -198,6 +211,9 @@ func New(ctx context.Context, thirdCli *thirdparty.Client, bizLogic biz.Logics, 
 		srLogic:       srLogics,
 		bizLogic:      bizLogic,
 		dissolveLogic: dissolveLogic,
+		cmsiClient:    cmsiClient,
+		thirdCli:      thirdCli,
+		notifier:      notice,
 	}
 
 	return recycler, nil
