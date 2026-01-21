@@ -320,7 +320,7 @@ func (m *Matcher) UpdateApplyOrderStatus(order *types.ApplyOrder) error {
 
 	if isSuspend && suspendCnt+matchedCnt >= int(order.TotalNum) {
 		status = types.ApplyStatusTerminate
-		stage = types.TicketStageTerminate
+		stage = types.TicketStageSuspend
 		if err := m.updateSuspendSteps(order); err != nil {
 			logs.Errorf("failed to update suspend steps, suborderId: %s, err: %v", order.SubOrderId, err)
 		}
