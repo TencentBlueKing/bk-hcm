@@ -258,6 +258,11 @@ func (act SyncAdjustmentAction) convertAws(kt *kit.Kit, adjItems []*bill.Adjustm
 			regionCode = 1
 		}
 
+		adjCost, err := adj.GetCost()
+		if err != nil {
+			return fmt.Errorf("get adjustment item cost failed, err: %+v", err)
+		}
+
 		obsItem := &tableobs.OBSBillItemAws{
 			SetIndex:      adjustmentSetIndex,
 			Vendor:        string(adj.Vendor),
@@ -267,15 +272,15 @@ func (act SyncAdjustmentAction) convertAws(kt *kit.Kit, adjItems []*bill.Adjustm
 			YearMonth:     int32(yearM),
 			Rate:          floatRate,
 			// OBS要求，aws账单独立配置，Cost保存原始数据即可
-			Cost:              &types.Decimal{Decimal: adj.Cost},
+			Cost:              &types.Decimal{Decimal: adjCost},
 			ProductID:         int32(mainAccount.OpProductID),
 			LinkedAccountName: mainAccount.Extension.CloudMainAccountName,
 			Region:            regionCode,
 			// OBS要求，存入标识
 			Memo: "ieg上报",
 			// OBS 要求，OBS外币金额写入line_item_unblended_cost字段中
-			LineItemUnblendedCost:       adj.Cost.String(),
-			LineItemNetUnblendedCost:    adj.Cost.String(),
+			LineItemUnblendedCost:       adjCost.String(),
+			LineItemNetUnblendedCost:    adjCost.String(),
 			LineItemProductCode:         adjustmentProductCode,
 			ProductProductName:          adjustmentProductName,
 			LineItemUsageAccountID:      mainAccount.CloudID,

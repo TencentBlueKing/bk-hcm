@@ -21,6 +21,7 @@ package bill
 
 import (
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 
 	"github.com/shopspring/decimal"
 )
@@ -46,4 +47,16 @@ type AdjustmentItem struct {
 	Creator       string                     `json:"creator"`
 	CreatedAt     string                     `json:"created_at"`
 	UpdatedAt     string                     `json:"updated_at"`
+}
+
+// GetCost 根据调账类型返回正数或负数的cost
+func (adi AdjustmentItem) GetCost() (decimal.Decimal, error) {
+	switch adi.Type {
+	case enumor.BillAdjustmentIncrease:
+		return adi.Cost, nil
+	case enumor.BillAdjustmentDecrease:
+		return adi.Cost.Neg(), nil
+	default:
+		return decimal.Zero, errf.Newf(errf.InvalidParameter, "invalid adjustment type")
+	}
 }
