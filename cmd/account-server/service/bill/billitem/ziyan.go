@@ -296,7 +296,12 @@ func (b *billItemSvc) buildAIFilters(kt *kit.Kit, vendor enumor.Vendor, req *bil
 	var rules []filter.RuleFactory
 	switch vendor {
 	case enumor.Aws, enumor.Gcp:
-		rules = append(rules, monthtask.GenAIFilterRules()...)
+		aiRules, err := monthtask.GenAIFilterRules(kt, vendor)
+		if err != nil {
+			logs.Errorf("fail to gen ai filter rules, vendor: %s, err: %v, rid: %s", vendor, err, kt.Rid)
+			return nil, err
+		}
+		rules = append(rules, aiRules...)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "invalid vendor: %s", vendor)
 	}

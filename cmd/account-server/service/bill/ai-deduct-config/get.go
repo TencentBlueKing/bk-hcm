@@ -17,47 +17,43 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package monthtask
+package aideductconfig
 
 import (
 	"encoding/json"
+	"fmt"
 
-	actcli "hcm/cmd/task-server/logics/action/cli"
+	actbill "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	datagconf "hcm/pkg/api/data-service/global_config"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/kit"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
-// GenAIFilterRules generate ai filter rules
-func GenAIFilterRules(kt *kit.Kit, vendor enumor.Vendor) (rules []filter.RuleFactory, err error) {
-	rules = []filter.RuleFactory{tools.RuleStartsWith("hc_product_name", constant.BillItemAIPrefix)}
-
-	// 获取排除的主账号列表
-	excludedAccountIDs, err := getExcludedMainAccountIDs(kt, vendor)
+// GetAIDeductConfig 获取AI账单抵扣配置
+func (s *aiDeductConfigSvc) GetAIDeductConfig(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	// 权限校验
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
 	if err != nil {
-		logs.Errorf("fail to get excluded main account ids, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 		return nil, err
 	}
-	if len(excludedAccountIDs) > 0 {
-		rules = append(rules, tools.RuleNotIn("main_account_id", excludedAccountIDs))
+
+	// 获取配置key
+	configKey, err := getConfigKeyByVendor(vendor)
+	if err != nil {
+		logs.Errorf("fail to get config key, err: %v, vendor: %s, rid: %s", err, vendor, cts.Kit.Rid)
+		return nil, err
 	}
-
-	return rules, nil
-}
-
-// getExcludedMainAccountIDs 从 global_config 获取排除的主账号列表
-func getExcludedMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor) ([]string, error) {
-	configKey := getConfigKeyByVendor(vendor)
-	if len(configKey) == 0 {
-		// 不支持的云厂商，返回空列表
-		return nil, nil
-	}
-
 	// 构建查询条件
 	flt := &filter.Expression{
 		Op: filter.And,
@@ -66,45 +62,42 @@ func getExcludedMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor) ([]string, err
 			tools.RuleEqual("config_key", configKey),
 		},
 	}
-
-	req := &datagconf.ListReq{
+	listReq := &datagconf.ListReq{
 		Filter: flt,
 		Page:   core.NewDefaultBasePage(),
 	}
-
 	// 查询配置
-	resp, err := actcli.GetDataService().Global.GlobalConfig.List(kt, req)
+	resp, err := s.client.DataService().Global.GlobalConfig.List(cts.Kit, listReq)
 	if err != nil {
-		logs.Errorf("fail to get excluded main account ids from global config, vendor: %s, err: %v, rid: %s",
-			vendor, err, kt.Rid)
+		logs.Errorf("fail to get ai deduct config, vendor: %s, err: %v, rid: %s", vendor, err, cts.Kit.Rid)
 		return nil, err
 	}
 
+	// 如果配置不存在，返回空列表
 	if len(resp.Details) == 0 {
-		// 配置不存在，返回空列表
-		return nil, nil
+		return &actbill.GetAIDeductConfigResp{MainAccountIDs: []string{}}, nil
 	}
 
 	// 解析配置值
 	configValue := resp.Details[0].ConfigValue
 	var accountIDs []string
 	if err = json.Unmarshal([]byte(configValue), &accountIDs); err != nil {
-		logs.Warnf("fail to parse excluded main account ids config, vendor: %s, config_value: %s, err: %v, rid: %s",
-			vendor, string(configValue), err, kt.Rid)
+		logs.Errorf("fail to parse ai deduct config, vendor: %s, config_value: %s, err: %v, rid: %s", vendor,
+			string(configValue), err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return accountIDs, nil
+	return &actbill.GetAIDeductConfigResp{MainAccountIDs: accountIDs}, nil
 }
 
 // getConfigKeyByVendor 根据云厂商获取对应的配置key
-func getConfigKeyByVendor(vendor enumor.Vendor) string {
+func getConfigKeyByVendor(vendor enumor.Vendor) (string, error) {
 	switch vendor {
 	case enumor.Gcp:
-		return string(enumor.GlobalConfigKeyExcludedGcpMainAccountIDs)
+		return string(enumor.GlobalConfigKeyExcludedGcpMainAccountIDs), nil
 	case enumor.Aws:
-		return string(enumor.GlobalConfigKeyExcludedAwsMainAccountIDs)
+		return string(enumor.GlobalConfigKeyExcludedAwsMainAccountIDs), nil
 	default:
-		return ""
+		return "", fmt.Errorf("invalid vendor: %s", vendor)
 	}
 }
