@@ -214,6 +214,31 @@ func (d *ResPlanDemand) CloneUpdated() *ResPlanDemand {
 	return newD
 }
 
+// ExtractCbsDemand 提取 CBS 需求（克隆需求，保留 Cbs，清空 Cvm）
+func (d *ResPlanDemand) ExtractCbsDemand() *ResPlanDemand {
+	cbsDemand := d.Clone()
+	if cbsDemand.Original != nil {
+		// 清空 Cvm 信息，只保留 CBS
+		cbsDemand.Original.Cvm = Cvm{}
+	}
+
+	if cbsDemand.Updated != nil {
+		// 清空 Cvm 信息，只保留 CBS
+		cbsDemand.Updated.Cvm = Cvm{}
+	}
+	return cbsDemand
+}
+
+// ClearCbsDemand 清空 Cbs 需求量
+func (d *ResPlanDemand) ClearCbsDemand() {
+	if d.Original != nil {
+		d.Original.Cbs.DiskSize = 0
+	}
+	if d.Updated != nil {
+		d.Updated.Cbs.DiskSize = 0
+	}
+}
+
 // OriginalRPDemandItem is original resource plan demand item.
 type OriginalRPDemandItem struct {
 	// DemandID HCM res plan demand ID
@@ -423,6 +448,12 @@ func (c *Cvm) Validate() error {
 	}
 
 	return nil
+}
+
+// IsEmpty checks if Cvm is empty (all fields are zero values).
+// This is used to identify CBS-only demands.
+func (c *Cvm) IsEmpty() bool {
+	return c.DeviceType == "" && c.CpuCore == 0 && c.Memory == 0 && c.Os.IsZero()
 }
 
 // Cbs is struct of ResPlanDemandTable's Cbs.
