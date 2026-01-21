@@ -8,6 +8,7 @@ import { useCvmDeviceStore, type ICvmDevicetypeItem, type IRollingServerCvm } fr
 import useCvmChargeType from '@/views/ziyanScr/hooks/use-cvm-charge-type';
 import { transformSimpleCondition } from '@/utils/search';
 import { RequirementType } from '@/store/config/requirement';
+import { useConfigSpringResPoolStore } from '@/store/config/spring-res-pool';
 import { QueryRuleOPEnumLegacy } from '@/typings';
 import ChargeType from './charge-type.vue';
 import AssetMatch from './asset-match.vue';
@@ -49,6 +50,7 @@ const editMode = inject<boolean>('editMode');
 const cvmDeviceStore = useCvmDeviceStore();
 
 const { cvmChargeTypes, cvmChargeTypeNames, getMonthName } = useCvmChargeType();
+const springResPoolStore = useConfigSpringResPoolStore();
 
 // 勾选的可用区
 const zoneChecked = ref<string[]>(props.defaultData?.zones?.slice() ?? [ZONE_ALL]);
@@ -182,14 +184,24 @@ const { isDefaultFourYears, isGpuDeviceType } = useChargeTypeDefault({
   requireType: props.requireType,
 });
 
-watchEffect(() => {
+watchEffect(async () => {
   // 需要看预测的情况下，如有预测内的预测，则包年包月可用，否则默认选中按量计费
   if (!isNonPlanType.value && availableDeviceTypeMap.value.get(cvmChargeTypes.PREPAID)?.size === 0) {
     applyData.chargeType = cvmChargeTypes.POSTPAID_BY_HOUR;
   }
+
+  // 仅春保资源池：从配置接口读取计费模式并回填
   if (isSpringPool.value) {
-    applyData.chargeType = cvmChargeTypes.POSTPAID_BY_HOUR;
+    const chargeTypeFromConfig = await springResPoolStore.getSpringResPoolChargeType(props.bizId);
+    applyData.chargeType = chargeTypeFromConfig;
+    // 与 charge-type 组件的逻辑保持一致
+    if (applyData.chargeType === cvmChargeTypes.POSTPAID_BY_HOUR) {
+      applyData.chargeMonths = undefined;
+    } else if (!applyData.chargeMonths) {
+      applyData.chargeMonths = 36;
+    }
   }
+
   if (isDefaultFourYears.value) {
     applyData.chargeMonths = 48;
   }
