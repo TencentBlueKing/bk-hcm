@@ -49,7 +49,7 @@ export default defineComponent({
           [cssModule['amount-wrapper']]: true,
           [cssModule.vertical]: props.showType === 'vertical',
         }}>
-        {!props.onlyRMB ? (
+        {!props.onlyRMB && !props.isAdjust ? (
           <span class={cssModule.item}>
             {t('人民币+美金（合人民币）')}：
             <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
