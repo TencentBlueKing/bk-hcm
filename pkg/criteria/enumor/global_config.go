@@ -19,6 +19,10 @@
 
 package enumor
 
+import (
+	"strconv"
+)
+
 // GlobalConfigType global config type
 type GlobalConfigType string
 
@@ -42,6 +46,8 @@ const (
 	GlobalConfigTypeAutoAudit GlobalConfigType = "auto_audit"
 	// GlobalConfigTypeBillAIDeduct AI账单抵扣配置类型
 	GlobalConfigTypeBillAIDeduct GlobalConfigType = "bill_ai_deduct"
+	// GlobalConfigTypeSpringResPool 春保资源池相关配置
+	GlobalConfigTypeSpringResPool GlobalConfigType = "spring_res_pool"
 )
 
 // GlobalConfigResDissolveKey resource dissolve global config key
@@ -95,3 +101,18 @@ const (
 	// GlobalConfigKeyExcludedAwsMainAccountIDs AWS排除主账号列表配置key
 	GlobalConfigKeyExcludedAwsMainAccountIDs GlobalConfigKeyBillAIDeduct = "excluded_aws_main_account_ids"
 )
+
+// GlobalConfigKeySpringResPoolChargeType spring resource pool charge type config key
+type GlobalConfigKeySpringResPoolChargeType string
+
+const (
+	// GlobalConfigKeySpringResPoolChargeTypeGlobal 全局计费模式配置
+	GlobalConfigKeySpringResPoolChargeTypeGlobal GlobalConfigKeySpringResPoolChargeType = "charge_type_global"
+	// GlobalConfigKeySpringResPoolChargeTypeBizPrefix 业务专属计费模式配置前缀
+	GlobalConfigKeySpringResPoolChargeTypeBizPrefix GlobalConfigKeySpringResPoolChargeType = "charge_type_biz_"
+)
+
+// GetBizSpringResPoolChargeTypeKey 获取业务专属计费模式配置key
+func GetBizSpringResPoolChargeTypeKey(bizID int64) string {
+	return string(GlobalConfigKeySpringResPoolChargeTypeBizPrefix) + strconv.FormatInt(bizID, 10)
+}

@@ -34,6 +34,7 @@ type Logics interface {
 	LeftIP() LeftIPIf
 	Sg() ziyan.SgIf
 	ApplyOrderStatistics() ApplyOrderStatisticsIf
+	SpringResPool() SpringResPoolIf
 }
 
 type logics struct {
@@ -49,6 +50,7 @@ type logics struct {
 	leftIP               LeftIPIf
 	sg                   ziyan.SgIf
 	applyOrderStatistics ApplyOrderStatisticsIf
+	springResPool        SpringResPoolIf
 }
 
 // New create a logics manager
@@ -68,6 +70,7 @@ func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Cli
 		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),
 		sg:                   ziyan.NewSgOp(client),
 		applyOrderStatistics: NewApplyOrderStatisticsOp(daoSet),
+		springResPool:        NewSpringResPoolOp(client),
 	}
 }
 
@@ -129,4 +132,9 @@ func (l *logics) Sg() ziyan.SgIf {
 // ApplyOrderStatistics apply order statistics interface
 func (l *logics) ApplyOrderStatistics() ApplyOrderStatisticsIf {
 	return l.applyOrderStatistics
+}
+
+// SpringResPool spring resource pool interface
+func (l *logics) SpringResPool() SpringResPoolIf {
+	return l.springResPool
 }

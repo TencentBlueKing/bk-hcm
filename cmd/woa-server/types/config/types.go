@@ -811,3 +811,32 @@ func (u *UpsertDeviceCapacityItem) Validate() error {
 
 	return nil
 }
+
+// UpsertSpringResPoolChargeTypeReq upsert spring resource pool charge type request
+type UpsertSpringResPoolChargeTypeReq struct {
+	BizID      *int64            `json:"bk_biz_id"`                       // 业务ID，如果为空则更新全局配置
+	ChargeType cvmapi.ChargeType `json:"charge_type" validate:"required"` // 计费模式
+}
+
+// Validate ...
+func (u *UpsertSpringResPoolChargeTypeReq) Validate() error {
+	if err := validator.Validate.Struct(u); err != nil {
+		return err
+	}
+
+	if err := u.ChargeType.Validate(); err != nil {
+		return fmt.Errorf("charge_type validation failed: %w", err)
+	}
+
+	return nil
+}
+
+// DelSpringResPoolChargeTypeReq delete spring resource pool charge type request
+type DelSpringResPoolChargeTypeReq struct {
+	BizID *int64 `json:"bk_biz_id"` // 业务ID，如果为空则删除全局配置
+}
+
+// Validate ...
+func (d *DelSpringResPoolChargeTypeReq) Validate() error {
+	return validator.Validate.Struct(d)
+}

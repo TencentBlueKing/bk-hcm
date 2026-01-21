@@ -1158,11 +1158,9 @@ func (s *scheduler) CreateApplyOrder(kt *kit.Kit, param *types.ApplyReq) (*types
 	rst := new(types.CreateApplyOrderResult)
 	var err error = nil
 
-	if param.RequireType == enumor.RequireTypeRollServer {
-		if err = s.checkRollingServer(kt, param); err != nil {
-			logs.Errorf("failed to check rolling server, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
+	if err = s.processingTicketByRequireType(kt, param); err != nil {
+		logs.Errorf("failed to processing ticket by require type, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	// GPU特殊机型的计费时长校验
@@ -1216,6 +1214,38 @@ func (s *scheduler) CreateApplyOrder(kt *kit.Kit, param *types.ApplyReq) (*types
 	})
 
 	return rst, txnErr
+}
+
+func (s *scheduler) processingTicketByRequireType(kt *kit.Kit, param *types.ApplyReq) error {
+	switch param.RequireType {
+	case enumor.RequireTypeRollServer:
+		if err := s.checkRollingServer(kt, param); err != nil {
+			logs.Errorf("failed to check rolling server, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+	case enumor.RequireTypeSpringResPool:
+		configChargeType, err := s.configLogics.SpringResPool().GetChargeType(kt, param.BkBizId)
+		if err != nil {
+			logs.Errorf("failed to get spring res pool charge type config, bizID: %d, err: %v, rid: %s", param.BkBizId,
+				err, kt.Rid)
+			return err
+		}
+		for _, subOrder := range param.Suborders {
+			userChargeType := subOrder.Spec.ChargeType
+			if userChargeType != configChargeType {
+				logs.Errorf("charge type mismatch for spring res pool, bizID: %d, user: %s, config: %s, rid: %s",
+					param.BkBizId, userChargeType, configChargeType, kt.Rid)
+				return fmt.Errorf("charge type mismatch: user selected %s, but config requires %s, please adjust",
+					userChargeType, configChargeType)
+			}
+		}
+
+	default:
+		return nil
+	}
+
+	return nil
 }
 
 // VerifyCvmGPUChargeMonth GPU特殊机型的计费时长校验
