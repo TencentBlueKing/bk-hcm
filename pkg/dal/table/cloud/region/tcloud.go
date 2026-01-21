@@ -36,7 +36,6 @@ var TCloudRegionColumns = utils.MergeColumns(nil, TCloudRegionColumnDescriptor)
 var TCloudRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "region_id", NamedC: "region_id", Type: enumor.String},
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
 	{Column: "area_name", NamedC: "area_name", Type: enumor.String},
@@ -53,8 +52,6 @@ type TCloudRegionTable struct {
 	ID string `db:"id" validate:"len=0"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" validate:"-"`
-	// AccountID 云账号ID
-	AccountID string `db:"account_id" validate:"lte=64"`
 	// RegionID 地区ID
 	RegionID string `db:"region_id" validate:"max=32"`
 	// RegionName 地区名称

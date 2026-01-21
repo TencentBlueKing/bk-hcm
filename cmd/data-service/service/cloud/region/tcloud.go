@@ -57,7 +57,6 @@ func (svc *regionSvc) BatchCreateTCloudRegion(cts *rest.Contexts) (interface{}, 
 		for _, createReq := range req.Regions {
 			tmpRegion := tableregion.TCloudRegionTable{
 				Vendor:     createReq.Vendor,
-				AccountID:  req.AccountID,
 				RegionID:   createReq.RegionID,
 				RegionName: createReq.RegionName,
 				AreaName:   createReq.AreaName,

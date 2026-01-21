@@ -21,10 +21,17 @@
     SQLVER=0043,HCMVER=v1.8.9
 
     Notes:
-    1. 为 zone 表添加 source 字段
+    1. 为 tcloud_region 表添加 area_name、source 字段
+    2. 为 zone 表添加 source 字段
 */
 
 START TRANSACTION;
+
+-- 添加 area_name、source 字段
+ALTER TABLE `tcloud_region`
+    ADD COLUMN `city_name` varchar(64) NOT NULL DEFAULT '' COMMENT '城市名称' after `region_name`,
+    ADD COLUMN `area_name` varchar(64) NOT NULL DEFAULT '' COMMENT '地域名称' after `region_name`,
+    ADD COLUMN `source` varchar(64) NOT NULL DEFAULT 'sync' COMMENT '来源：sync-同步，manually-手动添加' after `status`;
 
 -- 为 zone 表添加 source 字段
 ALTER TABLE `zone`

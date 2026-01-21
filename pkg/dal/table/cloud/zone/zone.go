@@ -37,7 +37,6 @@ var ZoneColumns = utils.MergeColumns(nil, ZoneTableColumnDescriptor)
 var ZoneTableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
@@ -55,7 +54,6 @@ var ZoneTableColumnDescriptor = utils.ColumnDescriptors{
 type ZoneTable struct {
 	ID        string              `db:"id" json:"id" validate:"lte=64"`
 	Vendor    enumor.Vendor       `db:"vendor" json:"vendor"`
-	AccountID string              `db:"account_id" json:"account_id" validate:"lte=64"`
 	CloudID   string              `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
 	Name      string              `db:"name" json:"name" validate:"lte=64"`
 	Region    string              `db:"region" json:"region" validate:"lte=64"`
@@ -89,10 +87,6 @@ func (t ZoneTable) InsertValidate() error {
 
 	if len(t.Vendor) == 0 {
 		return errors.New("vendor is required")
-	}
-
-	if len(t.AccountID) == 0 {
-		return errors.New("account id is required")
 	}
 
 	if len(t.State) == 0 {
@@ -140,9 +134,6 @@ func (t ZoneTable) UpdateValidate() error {
 	// vendor, account id can not update
 	if len(t.Vendor) > 0 {
 		return errors.New("vendor can not update")
-	}
-	if len(t.AccountID) > 0 {
-		return errors.New("account id can not update")
 	}
 
 	if len(t.Source) > 0 {
