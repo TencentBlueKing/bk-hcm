@@ -73,12 +73,7 @@ func (ots *orgTopoSvc) SyncOrgTopo(kt *kit.Kit) error {
 		dbOrgTopos = append(dbOrgTopos, exists.Details...)
 	}
 
-	adds, updates, deletes, err := ots.diffOrgTopo(kt, cloudOrgTopos, dbOrgTopos)
-	if err != nil {
-		logs.Errorf("failed to diff org topo, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
+	adds, updates, deletes := ots.diffOrgTopo(kt, cloudOrgTopos, dbOrgTopos)
 	if len(deletes) > 0 {
 		if err = ots.batchDeleteOrgTopo(kt, deletes); err != nil {
 			logs.Errorf("batch delete org topo failed, err: %+v, deletes: %v, rid: %s", err, deletes, kt.Rid)
@@ -155,69 +150,50 @@ func (ots *orgTopoSvc) convertDeptMapToDB(kt *kit.Kit, deptMap map[string]*userm
 	return orgTopos, nil
 }
 
-func (ots *orgTopoSvc) diffOrgTopo(kt *kit.Kit, topos []table.OrgTopo, dbOrgTopos []table.OrgTopo) (
-	[]table.OrgTopo, []table.OrgTopo, []string, error) {
-
-	add := make([]table.OrgTopo, 0)
-	update := make([]table.OrgTopo, 0)
-	deletes := make([]string, 0)
-
-	split := slice.Split(topos, int(filter.DefaultMaxInLimit))
-	for _, parts := range split {
-		partAdd, partUpdate, partDelete := ots.compareOrgTopo(kt, parts, dbOrgTopos)
-
-		add = append(add, partAdd...)
-		update = append(update, partUpdate...)
-		deletes = append(deletes, partDelete...)
-	}
-
-	return add, update, deletes, nil
-}
-
-func (ots *orgTopoSvc) compareOrgTopo(kt *kit.Kit, topos []table.OrgTopo, exists []table.OrgTopo) (
+func (ots *orgTopoSvc) diffOrgTopo(kt *kit.Kit, topos []table.OrgTopo, exists []table.OrgTopo) (
 	[]table.OrgTopo, []table.OrgTopo, []string) {
 
-	addMap := make(map[string]table.OrgTopo)
-	for _, topo := range topos {
-		addMap[topo.DeptID] = table.OrgTopo{
-			DeptID:      topo.DeptID,
-			DeptName:    topo.DeptName,
-			FullName:    topo.FullName,
-			Level:       topo.Level,
-			Parent:      topo.Parent,
-			HasChildren: topo.HasChildren,
-			TofDeptID:   topo.TofDeptID,
-			Memo:        topo.Memo,
+	dbMap := make(map[string]table.OrgTopo)
+	for _, dbTopo := range exists {
+		dbMap[dbTopo.DeptID] = table.OrgTopo{
+			ID:          dbTopo.ID,
+			DeptID:      dbTopo.DeptID,
+			DeptName:    dbTopo.DeptName,
+			FullName:    dbTopo.FullName,
+			Level:       dbTopo.Level,
+			Parent:      dbTopo.Parent,
+			HasChildren: dbTopo.HasChildren,
+			TofDeptID:   dbTopo.TofDeptID,
+			Memo:        dbTopo.Memo,
 			Creator:     kt.User,
 			Reviser:     kt.User,
 		}
 	}
 
+	adds := make([]table.OrgTopo, 0)
 	updates := make([]table.OrgTopo, 0)
-	deletes := make([]string, 0)
-	for _, exist := range exists {
-		// 将已存在的条目，从待新增的列表中剔除
-		candidate, ok := addMap[exist.DeptID]
+	for _, topo := range topos {
+		exist, ok := dbMap[topo.DeptID]
 		if !ok {
-			deletes = append(deletes, exist.DeptID)
+			adds = append(adds, topo)
 			continue
 		}
 
-		delete(addMap, exist.DeptID)
+		delete(dbMap, exist.DeptID)
 
 		// 对比条目，判断是否更新
-		if ots.isOrgTopoUpdate(candidate, exist) {
+		if ots.isOrgTopoUpdate(topo, exist) {
 			// do not update memo and creator
-			candidate.ID = exist.ID
-			candidate.Memo = exist.Memo
-			candidate.Creator = ""
-			updates = append(updates, candidate)
+			topo.ID = exist.ID
+			topo.Memo = exist.Memo
+			topo.Creator = ""
+			updates = append(updates, topo)
 		}
 	}
 
-	adds := make([]table.OrgTopo, 0)
-	for _, item := range addMap {
-		adds = append(adds, item)
+	deletes := make([]string, 0)
+	for _, item := range dbMap {
+		deletes = append(deletes, item.DeptID)
 	}
 
 	return adds, updates, deletes
