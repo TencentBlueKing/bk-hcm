@@ -183,7 +183,7 @@ const tabs = computed(() => {
 });
 const activeTab = ref((route.query.type as string) || tabs.value[0].type);
 const handleActiveTabChange = (value: string) => {
-  router.replace({ query: { type: value, accountId: accountId.value || undefined } });
+  routeQuery.set({ type: value });
 };
 
 const filterData = (key: string, val: string | number) => {
@@ -305,16 +305,6 @@ watch(
   },
 );
 
-// 监听 filter 变化，将所有 rules 更新到路由 query 参数
-watch(
-  () => filter.value.rules,
-  (rules) => {
-    // 将 rules 转换为 query 对象
-    routeQuery.set({ rules: JSON.stringify(rules) });
-  },
-  { deep: true },
-);
-
 // 选择账号时，会触发selectedAccountId重新计算，优先使用账号列表中已有的list数据，其次再使用details数据
 // 在这里设置accountId会触发watch accountId改变filter.value
 // 最后触发use-query-list中的triggerApi
@@ -342,6 +332,30 @@ watch(
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
     }
   },
+);
+
+// 监听 filter 变化，将所有 rules 更新到路由 query 参数
+watch(
+  () => filter.value.rules,
+  (rules) => {
+    // 当 store 被 clear 时（切换菜单），不再更新 query，避免干扰路由跳转
+    // 通过检查 vendorInResourcePage 和 selectedAccountId 是否都为空来判断
+    const isStoreCleared = !resourceAccountStore.vendorInResourcePage && !resourceAccountStore.selectedAccountId;
+    if (isStoreCleared && rules.length === 0) return;
+
+    // 将 rules 转换为 query 对象
+    routeQuery.set({
+      rules: rules.length > 0 ? JSON.stringify(rules) : undefined,
+      accountId: rules.find((e: any) => e.field === 'account_id')?.value || accountId.value || undefined,
+    });
+  },
+  { deep: true },
+);
+
+watch(
+  () => route.query,
+  () => initFilterFromRouteQuery(),
+  { once: true },
 );
 
 const getResourceAccountList = async () => {
@@ -403,6 +417,41 @@ const computedSecurityText = computed(() => {
       return '新建安全组';
   }
 });
+// 根据路由中的 rules 参数初始化筛选条件
+const initFilterFromRouteQuery = () => {
+  const rulesParam = route.query.rules as string;
+  if (!rulesParam) return;
+
+  try {
+    const rules = JSON.parse(rulesParam) as Array<{ field: string; op: string; value: any }>;
+    if (!Array.isArray(rules)) return;
+
+    rules.forEach((rule) => {
+      switch (rule.field) {
+        case 'vendor':
+          // 设置左侧云厂商选择
+          resourceAccountStore.setCurrentVendor(rule.value as VendorEnum);
+          break;
+        case 'account_id':
+          // 设置左侧账号选择
+          accountId.value = rule.value;
+          resourceAccountStore.setCurrentAccountSimpleInfo({ id: rule.value });
+          break;
+        case 'bk_biz_id':
+          // 设置右上角分配选择器
+          // op === 'neq' 表示已分配（status=1），op === 'eq' 表示未分配（status=-1）
+          status.value = rule.op === 'neq' ? 1 : -1;
+          break;
+      }
+    });
+
+    // 同步 filter.value.rules
+    filter.value.rules = rules;
+  } catch (e) {
+    console.error('Failed to parse rules from route query:', e);
+  }
+};
+
 onMounted(() => {
   getResourceAccountList();
 });
