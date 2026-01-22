@@ -305,6 +305,16 @@ watch(
   },
 );
 
+// 监听 filter 变化，将所有 rules 更新到路由 query 参数
+watch(
+  () => filter.value.rules,
+  (rules) => {
+    // 将 rules 转换为 query 对象
+    routeQuery.set({ rules: JSON.stringify(rules) });
+  },
+  { deep: true },
+);
+
 // 选择账号时，会触发selectedAccountId重新计算，优先使用账号列表中已有的list数据，其次再使用details数据
 // 在这里设置accountId会触发watch accountId改变filter.value
 // 最后触发use-query-list中的triggerApi

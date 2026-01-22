@@ -66,7 +66,6 @@ import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import RefreshCell from '../components/security/refresh-cell/index.vue';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 
 interface IProps {
   filter: FilterType;
@@ -81,7 +80,6 @@ const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-do
 let firstTime = true;
 
 // use hooks
-const { searchData, searchValue, filter } = useFilter(props);
 const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
@@ -125,7 +123,11 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 });
 
 const templateData = ref([]);
+const searchData = ref([]);
+const searchValue = ref([]);
 const regionChildren = ref([]);
+
+const localFilter = ref<any>({ op: 'and', rules: [] });
 
 const selectSearchData = computed(() => {
   const map: Record<string, { idName: string; searchData: ISearchItem[] & ModelProperty[] }> = {
@@ -248,7 +250,7 @@ const asyncRegionChildren = computed(() => regionChildren.value);
 const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
-  useQueryCommonList({ filter: filter.value }, fetchUrl, {
+  useQueryCommonList({ filter: localFilter.value }, fetchUrl, {
     asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
       // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !datalist.length) return [];
@@ -1083,7 +1085,7 @@ watch(
   () => activeType.value,
   (v) => {
     fetchUrl.value = URL_MAP[v] || '';
-    filter.value.rules = [];
+    localFilter.value.rules = [];
     resetSelections();
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
@@ -1096,8 +1098,11 @@ watch(
     const bizId = isBusinessPage ? getBizsId() : undefined;
     const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
 
-    // 更新路由
-    router.replace({ path, query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v, accountId } });
+    // 更新路由，保留现有的 rules 参数
+    router.replace({
+      path,
+      query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v, accountId, rules: route.query.rules },
+    });
   },
   {
     immediate: true,
@@ -1275,28 +1280,17 @@ watch(
     const value = searchQs.get(query);
     // 是否有地域，存在的话需要查询一遍接口拿name值
     const hasRegion = Object.hasOwn(value, 'region');
-    const { rules = [] }: { rules: any[] } = transformSimpleCondition(value, selectSearchData.value);
+    let { rules = [] }: { rules: any[] } = transformSimpleCondition(value, selectSearchData.value);
     if (hasRegion) {
       regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
     }
-    if (vendorInResourcePage.value) {
-      // 如果选择的不是全部云厂商，则把当前云厂商当做固定参数入参
-      rules.push({
-        field: 'vendor',
-        op: 'eq',
-        value: vendorInResourcePage.value,
-      });
-
-      if (selectedAccountId.value) {
-        // 如果选中了某个账号ID，则把当前云账号ID当做固定参数入参
-        rules.push({
-          field: 'account_id',
-          op: 'eq',
-          value: selectedAccountId.value,
-        });
-      }
+    // 解析父组件传入的 filter rules
+    const outRules = query?.rules as string;
+    if (outRules) {
+      rules.push(...JSON.parse(outRules));
+      if (isGcpVendor.value) rules = rules.filter(({ field }) => field !== 'vendor'); // GCP 云厂商不支持 vendor 筛选
     }
-    filter.value.rules = rules;
+    localFilter.value.rules = rules;
     searchValue.value = buildSearchSelectValueBySearchQsCondition(value, selectSearchData.value);
     if (firstTime) {
       // 资源下业务切换资源tab时候，进行强制更新type
