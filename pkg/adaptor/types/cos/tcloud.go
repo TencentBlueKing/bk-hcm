@@ -157,3 +157,5 @@ type Bucket struct {
 	CreationDate string `json:"creation_date"`
 	BucketType   string `json:"bucket_type"`
 }
+
+

@@ -1,7 +1,8 @@
 /*
+ *
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +18,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package cos ...
-package cos
+package types
 
 import (
-	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
-	"hcm/cmd/hc-service/service/capability"
-	dataservice "hcm/pkg/client/data-service"
+	tablecos "hcm/pkg/dal/table/cloud/cos"
 )
 
-// InitCosService initial cos service.
-func InitCosService(cap *capability.Capability) {
-	svc := &cosSvc{
-		ad:      cap.CloudAdaptor,
-		dataCli: cap.ClientSet.DataService(),
-	}
-
-	svc.initTCloudCosService(cap)
-}
-
-type cosSvc struct {
-	ad      *cloudadaptor.CloudAdaptorClient
-	dataCli *dataservice.Client
+// ListCosDetails list cos details.
+type ListCosDetails struct {
+	Count   uint64              `json:"count,omitempty"`
+	Details []tablecos.CosTable `json:"details,omitempty"`
 }

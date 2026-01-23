@@ -23,10 +23,15 @@ package cos
 import (
 	"net/http"
 
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/tcloud"
 	typecos "hcm/pkg/adaptor/types/cos"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	protocos "hcm/pkg/api/hc-service/cos"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
@@ -78,7 +83,11 @@ func (svc *cosSvc) CreateTCloudCosBucket(cts *rest.Contexts) (interface{}, error
 			cts.Kit.Rid)
 		return nil, err
 	}
-
+	_ = svc.createTCloudDBCos(cts.Kit, req)
+	err = svc.cosSync(cts.Kit, tCloud, req.AccountID, req.Region, req.Name)
+	if err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -143,4 +152,46 @@ func (svc *cosSvc) ListTCloudCosBucket(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	return result, nil
+}
+
+func (svc *cosSvc) createTCloudDBCos(kt *kit.Kit, req *protocos.TCloudCreateBucketReq) (err error) {
+	dataReq := &protocloud.TCloudCosBatchCreateReq{Cos: make([]protocloud.TCloudCosCreate, 1)}
+	dataReq.Cos[0].Vendor = enumor.TCloud
+	dataReq.Cos[0].BkBizID = req.BkBizID
+	dataReq.Cos[0].Name = req.Name
+	dataReq.Cos[0].AccountID = req.AccountID
+	dataReq.Cos[0].Region = req.Region
+	dataReq.Cos[0].ACL = req.XCosACL
+	dataReq.Cos[0].GrantRead = req.XCosGrantRead
+	dataReq.Cos[0].GrantWrite = req.XCosGrantWrite
+	dataReq.Cos[0].GrantFullControl = req.XCosGrantFullControl
+	dataReq.Cos[0].GrantReadACP = req.XCosGrantReadACP
+	dataReq.Cos[0].GrantWriteACP = req.XCosGrantWriteACP
+	if req.CreateBucketConfiguration != nil {
+		dataReq.Cos[0].CreateBucketConfiguration = req.CreateBucketConfiguration
+	}
+
+	// 创建本地数据，保存业务信息
+	_, err = svc.dataCli.TCloud.Cos.BatchCreateTCloudCos(kt, dataReq)
+	if err != nil {
+		logs.Errorf("fail to create db cos after cloud create, err: %v, rid: %s", err, kt.Rid)
+	}
+	return err
+}
+
+// 同步云上资源
+func (svc *cosSvc) cosSync(kt *kit.Kit, tcloud tcloud.TCloud, accountID, region, cosName string) error {
+	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
+	params := &synctcloud.SyncBaseParams{
+		AccountID: accountID,
+		Region:    region,
+	}
+	_, err := syncClient.Cos(kt, params, &synctcloud.SyncCosOption{
+		Name: cosName,
+	})
+	if err != nil {
+		logs.Errorf("sync load  balancer failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
