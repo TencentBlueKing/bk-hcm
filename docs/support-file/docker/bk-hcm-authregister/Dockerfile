@@ -1,2 +1,4 @@
-FROM hub.bktencent.com/blueking/bk-hcm-base:v1.1
-RUN apt-get update && apt-get install -y jq
+FROM mirrors.tencent.com/build/blueking/bk-hcm-base:v1.2
+RUN yum update -y \
+    && yum install -y --setopt=install_weak_deps=False jq \
+    && yum clean all

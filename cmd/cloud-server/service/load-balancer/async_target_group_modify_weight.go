@@ -221,7 +221,7 @@ func (svc *lbSvc) batchUpdateTargetWeightDb(kt *kit.Kit, taskManagementID string
 			state = enumor.TaskDetailFailed
 			reason = err.Error()
 		}
-		if err := svc.updateTaskDetailState(kt, state, detailIDs, reason); err != nil {
+		if err = svc.updateTaskDetailState(kt, state, detailIDs, reason); err != nil {
 			logs.Errorf("update task details state failed, err: %v, taskDetails: %+v, rid: %s", err, details, kt.Rid)
 		}
 	}()

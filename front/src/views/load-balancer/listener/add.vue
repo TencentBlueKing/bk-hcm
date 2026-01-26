@@ -55,9 +55,17 @@ const rules = {
       trigger: 'change',
     },
   ],
-  port: [
+  port_segment: [
     {
-      validator: (value: number) => value >= 1 && value <= 65535,
+      validator: (value: string) => {
+        const val = value.split('-');
+        const [port, end_port] = val;
+        if (val.length > 2) return false; // eq: xx-xx-xx
+        if (val.length === 2 && !end_port) return false; // eq xx-
+        const portVali = +port >= 1 && +port <= 65535;
+        const endPortVali = end_port ? +end_port >= 1 && +end_port <= 65535 : true;
+        return portVali && endPortVali;
+      },
       message: '端口号不符合规范',
       trigger: 'change',
     },
@@ -93,13 +101,15 @@ const rules = {
     },
   ],
 };
-const formModel = reactive<IListenerModel>({
+const formModel = reactive<IListenerModel & { port_segment: string }>({
   id: '',
   account_id: props.loadBalancerDetails.account_id,
   lb_id: props.loadBalancerDetails.id,
   name: '',
   protocol: ListenerProtocol.TCP,
   port: undefined,
+  end_port: undefined,
+  port_segment: undefined,
   scheduler: undefined,
   session_open: false,
   session_type: SessionType.NORMAL,
@@ -115,7 +125,8 @@ const bindingTargetGroupName = ref('');
 const isSniOpen = ref(false);
 watchEffect(() => {
   if (!props.initialModel) return;
-  const { default_domain, target_group_name, session_expire, sni_switch, certificate, extension } = props.initialModel;
+  const { default_domain, target_group_name, session_expire, sni_switch, certificate, extension, end_port, port } =
+    props.initialModel;
   Object.assign(formModel, props.initialModel, {
     domain: default_domain,
     session_open: session_expire !== 0,
@@ -125,6 +136,7 @@ watchEffect(() => {
       ca_cloud_id: '',
       cert_cloud_ids: [],
     },
+    port_segment: end_port ? `${port}-${end_port}` : port,
   });
   bindingTargetGroupName.value = target_group_name;
   isSniOpen.value = !!sni_switch;
@@ -249,9 +261,13 @@ const handleConfirm = async () => {
     }
     Message({ theme: 'success', message: '更新成功' });
   } else {
+    // 将port_segment分解成port和end_port
+    const [port, end_port] = formModel.port_segment.split('-');
+    formModel.port = port ? +port : undefined;
+    formModel.end_port = end_port ? +end_port : undefined;
     await loadBalancerListenerStore.addListener(
       {
-        ...formModel,
+        ...{ ...formModel, port_segment: undefined },
         id: undefined,
         session_open: undefined,
         // session_type: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_type : undefined, // 后端要求必填
@@ -305,8 +321,11 @@ const { beforeClose } = useSideslider(formModel);
           </bk-radio-button>
         </bk-radio-group>
       </bk-form-item>
-      <bk-form-item label="监听端口" required property="port">
-        <bk-input v-model.number="formModel.port" type="number" :disabled="isEdit" />
+      <bk-form-item label="监听端口" required property="port_segment">
+        <bk-input v-model="formModel.port_segment" :disabled="isEdit" />
+        <div class="form-control-tips" v-if="!isEdit">
+          支持单个端口输入，端口范围为1到65535；支持端口段的输入，格式为 20001-20005
+        </div>
       </bk-form-item>
       <template v-if="ListenerProtocol.HTTPS === formModel.protocol">
         <div class="flex-row justify-content-between">

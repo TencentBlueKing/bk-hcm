@@ -55,7 +55,7 @@ func (a *BaseApplicationHandler) GetTCloudRegion(region string) (*corecloudregio
 }
 
 // GetTCloudZiyanRegion 查询云地域信息
-func (a *BaseApplicationHandler) GetTCloudZiyanRegion(region string) (*corecloudregion.TCloudRegion, error) {
+func (a *BaseApplicationHandler) GetTCloudZiyanRegion(region string) (*corecloudregion.TCloudZiyanRegion, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{

@@ -71,10 +71,8 @@ func (v *RegionClient) BatchDelete(kt *kit.Kit, req *dataservice.BatchDeleteReq)
 }
 
 // ListRegion get tcloud ziyan region list.
-func (v *RegionClient) ListRegion(kt *kit.Kit, req *core.ListReq) (
-	*types.ListResult[region.TCloudRegion], error) {
+func (v *RegionClient) ListRegion(kt *kit.Kit, req *core.ListReq) (*types.ListResult[region.TCloudZiyanRegion], error) {
 
-	return common.Request[core.ListReq, types.ListResult[region.TCloudRegion]](
+	return common.Request[core.ListReq, types.ListResult[region.TCloudZiyanRegion]](
 		v.client, rest.POST, kt, req, "/regions/list")
-
 }

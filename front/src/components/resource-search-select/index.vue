@@ -4,6 +4,8 @@ import { SearchSelect } from 'bkui-vue';
 import type { ISearchValue, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import optionFactory from './option-factory';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { storeToRefs } from 'pinia';
 
 defineOptions({ name: 'ResourceSearchSelect' });
 
@@ -22,8 +24,22 @@ export interface IResourceSelectProps {
   validateValues?: ValidateValuesFunc;
 }
 
+const resourceAccountStore = useResourceAccountStore();
+const { selectedAccountId, vendorInResourcePage } = storeToRefs(resourceAccountStore);
+
 const { getOptionData, getOptionMenu } = optionFactory();
-const searchOptions = getOptionData(props.resourceType);
+const searchOptions = computed(() => {
+  let data = getOptionData(props.resourceType);
+  // 如果当前选定了某个云账号筛选条件就剔除云厂商
+  if (vendorInResourcePage.value) {
+    data = data.filter((item) => item.id !== 'vendor');
+    if (selectedAccountId.value) {
+      // 如果选中了某个账号ID筛选条件就剔除云账号ID
+      data = data.filter((item) => item.id !== 'account_id');
+    }
+  }
+  return data;
+});
 
 const selectValue = computed({
   get() {

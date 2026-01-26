@@ -20,6 +20,6 @@
 package constant
 
 const (
-	// RegionProductID 地域查询默认产品ID，用于地域管理系统的 DescribeRegions 接口
-	RegionProductID = "cvm"
+	// TCloudRegionProductID 地域查询默认产品ID，用于腾讯云地域管理系统的 DescribeRegions 接口
+	TCloudRegionProductID = "cvm"
 )

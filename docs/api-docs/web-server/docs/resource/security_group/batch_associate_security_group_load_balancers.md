@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.8.8.1+。
+- 该接口提供版本：v1.8.9+。
 - 该接口所需权限：资源-IaaS资源操作。
 - 该接口功能描述：安全组批量绑定CLB
 
@@ -28,8 +28,8 @@ POST /api/v1/cloud/security_groups/associate/load_balancers/batch
 
 ```json
 {
-  "code": 0,
-  "message": "ok"
+"code": 0,
+"message": "ok"
 }
 ```
 

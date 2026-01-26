@@ -32,10 +32,10 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/slice"
 )
 
 const (
@@ -353,10 +353,10 @@ func (dSvc *ZoneSvc) DeleteZone(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 通过 id 删除
-	deleteFilter := &filter.Expression{
-		Op:    filter.And,
-		Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
-	}
+	deleteFilter := tools.ExpressionAnd(
+		tools.RuleEqual("id", id),
+		tools.RuleEqual("vendor", vendorStr),
+	)
 	deleteReq := &dataproto.ZoneBatchDeleteReq{
 		Filter: deleteFilter,
 	}
@@ -387,74 +387,9 @@ func (dSvc *ZoneSvc) BatchUpdateZoneDisableCvm(cts *rest.Contexts) (interface{},
 
 	// 根据 vendor 调用不同的更新方法
 	switch vendor {
-	case enumor.TCloud:
-		return dSvc.batchUpdateTCloudZoneDisableCvm(cts, req)
 	case enumor.TCloudZiyan:
 		return dSvc.batchUpdateTCloudZiyanZoneDisableCvm(cts, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support batch update disable_cvm", vendor)
 	}
-}
-
-// batchUpdateTCloudZoneDisableCvm batch update tcloud zone disable_cvm field.
-func (dSvc *ZoneSvc) batchUpdateTCloudZoneDisableCvm(cts *rest.Contexts,
-	req *cloudproto.ZoneBatchUpdateDisableCvmReq) (interface{}, error) {
-
-	var zonesFromDB []zone.Zone[zone.TCloudZoneExtension]
-	// 先查询现有的 zone 数据，获取当前的 Extension 值，通过 name 查询
-	for _, batch := range slice.Split(req.Zones, int(core.DefaultMaxPageLimit)) {
-		listReq := &dataproto.ZoneListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "name", Op: filter.In.Factory(), Value: batch},
-				},
-			},
-			Page: core.NewDefaultBasePage(),
-		}
-
-		// 查询 zone 列表
-		listResp, err := dSvc.client.DataService().TCloud.Zone.ListZoneExt(cts.Kit, listReq)
-		if err != nil {
-			return nil, fmt.Errorf("query zones failed, err: %v", err)
-		}
-
-		if len(listResp.Details) == 0 {
-			return nil, errf.New(errf.RecordNotFound, "no zones found with provided zones name")
-		}
-
-		zonesFromDB = append(zonesFromDB, listResp.Details...)
-	}
-
-	// 构建批量更新请求
-	updates := make([]dataproto.ZoneBatchUpdate[zone.TCloudZoneExtension], 0, len(zonesFromDB))
-	for _, existingZone := range zonesFromDB {
-		extension := &zone.TCloudZoneExtension{
-			DisableCvm: req.DisableCvm,
-		}
-		// 保留其他字段的原有值
-		if existingZone.Extension != nil {
-			extension.CityName = existingZone.Extension.CityName
-			extension.LogicCampusName = existingZone.Extension.LogicCampusName
-		}
-
-		updates = append(updates, dataproto.ZoneBatchUpdate[zone.TCloudZoneExtension]{
-			ID:        existingZone.ID,
-			Extension: extension,
-		})
-	}
-
-	// 分批更新 zone 的 disable_cvm 字段
-	for _, batch := range slice.Split(updates, int(core.DefaultMaxPageLimit)) {
-		updateReq := &dataproto.ZoneBatchUpdateReq[zone.TCloudZoneExtension]{
-			Zones: batch,
-		}
-
-		err := dSvc.client.DataService().TCloud.Zone.BatchUpdateZone(cts.Kit.Ctx, cts.Kit.Header(), updateReq)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return nil, nil
 }

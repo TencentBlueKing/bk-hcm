@@ -21,6 +21,7 @@
 package cc
 
 import (
+	"net"
 	"sync"
 
 	"hcm/pkg/logs"
@@ -73,6 +74,28 @@ func TenantEnable() bool {
 	}
 
 	return rt.settings.TenantEnable()
+}
+
+// TestSetting test setting.
+type TestSetting struct {
+}
+
+func (t TestSetting) trySetFlagBindIP(ip net.IP) error {
+	return nil
+}
+
+func (t TestSetting) trySetDefault() {
+	return
+}
+
+// Validate TestSetting option.
+func (t TestSetting) Validate() error {
+	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (t TestSetting) TenantEnable() bool {
+	return false
 }
 
 // ApiServer return api server Setting.

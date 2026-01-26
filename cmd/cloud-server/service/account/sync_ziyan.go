@@ -140,7 +140,7 @@ func (a *accountSvc) decodeZiyanCondSyncRequest(cts *rest.Contexts, resType enum
 		Filter: tools.ExpressionAnd(rules...),
 		Page:   core.NewDefaultBasePage(),
 	}
-	var regionList = make([]region.TCloudRegion, 0, len(req.Regions))
+	var regionList = make([]region.TCloudZiyanRegion, 0, len(req.Regions))
 	for {
 		regionResult, err := a.client.DataService().TCloudZiyan.Region.ListRegion(cts.Kit, regionListReq)
 		if err != nil {
@@ -155,6 +155,6 @@ func (a *accountSvc) decodeZiyanCondSyncRequest(cts *rest.Contexts, resType enum
 	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
 		return nil, nil, errors.New("request regions mismatch regions on db")
 	}
-	req.Regions = slice.Map(regionList, region.TCloudRegion.GetCloudID)
+	req.Regions = slice.Map(regionList, region.TCloudZiyanRegion.GetCloudID)
 	return req, syncFunc, nil
 }

@@ -5,7 +5,6 @@ import { Button } from 'bkui-vue';
 import FirstLevelAccountDetail from '../../account-detail/first-level-account-detail';
 import SecondLevelAccountDetail from '../../account-detail/second-level-account-detail';
 import CommonSideslider from '@/components/common-sideslider';
-import ErrorPage from '@/views/error-pages/403';
 
 import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -15,13 +14,6 @@ import { AccountLevelEnum, searchData, secondarySearchData } from '../constants'
 export default defineComponent({
   props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
   setup(props) {
-    if (
-      props.accountLevel === AccountLevelEnum.SecondLevel &&
-      !props.authVerifyData.permissionAction?.main_account_find
-    ) {
-      return () => <ErrorPage urlKeyId='main_account_find' />;
-    }
-
     const router = useRouter();
     const route = useRoute();
     const { t } = useI18n();
@@ -29,7 +21,7 @@ export default defineComponent({
     const { columns } = useColumns(props.accountLevel);
 
     const isSideSliderShow = ref(false);
-    const curAccount = ref({});
+    const curAccount = ref<any>({});
 
     const { CommonTable } = useTable({
       tableOptions: {

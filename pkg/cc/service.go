@@ -76,28 +76,6 @@ type Setting interface {
 	TenantEnable() bool
 }
 
-// TestSetting test setting.
-type TestSetting struct {
-}
-
-func (t TestSetting) trySetFlagBindIP(ip net.IP) error {
-	return nil
-}
-
-func (t TestSetting) trySetDefault() {
-	return
-}
-
-// Validate TestSetting option.
-func (t TestSetting) Validate() error {
-	return nil
-}
-
-// TenantEnable get tenant is enabled.
-func (t TestSetting) TenantEnable() bool {
-	return false
-}
-
 // ApiServerSetting defines api server used setting options.
 type ApiServerSetting struct {
 	Network Network      `yaml:"network"`
