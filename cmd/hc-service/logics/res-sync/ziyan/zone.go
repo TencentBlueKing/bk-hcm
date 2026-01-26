@@ -212,8 +212,8 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	}
 
 	// 只对 sync 的数据进行 diff
-	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.TCloudZone, corezone.Zone[corezone.TCloudZiyanZoneExtension]](
-		zoneFromCloud, zoneFromDB, isZoneChange)
+	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.TCloudZone,
+		corezone.Zone[corezone.TCloudZiyanZoneExtension]](zoneFromCloud, zoneFromDB, isZoneChange)
 
 	// 对于需要 add 的 zone，检查是否在 allZoneFromDB 中存在（可能是过去临时手动添加的）
 	// 如果存在，需要先删除
