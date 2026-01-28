@@ -1,12 +1,12 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
-- 该接口所需权限：账号编辑。
+- 该接口提供版本：v9.9.9+。
+- 该接口所需权限：二级账号操作。
 - 该接口功能描述：更新指定账号。
 
 ### URL
 
-PATCH /api/v1/cloud/accounts/{account_id}
+PATCH /api/v1/cloud/bizs/{bk_biz_id}/accounts/{account_id}
 
 ### 输入参数
 

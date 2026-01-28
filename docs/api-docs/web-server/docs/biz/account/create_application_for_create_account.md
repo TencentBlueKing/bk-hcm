@@ -1,12 +1,12 @@
 ### 描述
 
-- 该接口提供版本：v1.2.1+。
-- 该接口所需权限：账号录入。
+- 该接口提供版本：v9.9.9+。
+- 该接口所需权限：业务访问。
 - 该接口功能描述：创建用于创建账号的申请。
 
 ### URL
 
-POST /api/v1/cloud/applications/types/add_account
+POST /api/v1/cloud/bizs/{bk_biz_id}/applications/types/add_account
 
 ### 输入参数
 
