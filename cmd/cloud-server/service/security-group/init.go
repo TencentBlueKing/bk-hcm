@@ -112,7 +112,6 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSGRelLB", http.MethodPost,
 		"/security_groups/{sg_id}/related_resources/load_balancers/list",
 		svc.ListSGRelLB)
-
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
 	h.Load(c.WebService)

@@ -38,6 +38,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
+	monitor "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/monitor/v20180724"
 	regionsdk "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/region/v20220627"
 	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
@@ -223,6 +224,18 @@ func (c *clientSet) CosClient(opt *typescos.ClientOpt) (*cos.Client, error) {
 			},
 		},
 	)
+
+	return client, nil
+}
+
+// MonitorClient tcloud monitor client
+func (c *clientSet) MonitorClient(region string) (*monitor.Client, error) {
+	// TODO 仅占位，暂未验证，应该需要内部域名
+	client, err := monitor.NewClient(c.credential, region, c.profile)
+	if err != nil {
+		return nil, err
+	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 
 	return client, nil
 }

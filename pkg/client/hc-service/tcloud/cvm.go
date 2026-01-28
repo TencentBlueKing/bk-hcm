@@ -269,3 +269,13 @@ func (cli *CvmClient) ListInstanceConfig(kt *kit.Kit, req *protocvm.TCloudInstan
 	return common.Request[protocvm.TCloudInstanceConfigListOption, typecvm.TCloudInstanceConfigListResult](
 		cli.client, "POST", kt, req, "/instances/config/list")
 }
+
+// -------------------------- Monitor --------------------------
+
+// GetMonitorData get tcloud cvm monitor data.
+func (cli *CvmClient) GetMonitorData(kt *kit.Kit, req *protocvm.TCloudMonitorDataReq) (
+	*protocvm.TCloudMonitorDataResp, error) {
+
+	return common.Request[protocvm.TCloudMonitorDataReq, protocvm.TCloudMonitorDataResp](
+		cli.client, rest.POST, kt, req, "/cvms/monitor/data")
+}

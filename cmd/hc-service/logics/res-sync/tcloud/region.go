@@ -129,6 +129,7 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 			RegionName: one.RegionName,
 			AreaName:   extractAreaName(one.RegionName),
 			Status:     one.RegionState,
+			Source:     enumor.RegionSourceSync,
 		}
 		createResources = append(createResources, tmpRes)
 	}
@@ -137,7 +138,8 @@ func (cli *client) createRegion(kt *kit.Kit, opt *SyncRegionOption,
 	elems := slice.Split(createResources, constant.BatchOperationMaxLimit)
 	for _, parts := range elems {
 		createReq := &dataregion.TCloudRegionCreateReq{
-			Regions: parts,
+			Regions:   parts,
+			AccountID: opt.AccountID,
 		}
 		if _, err := cli.dbCli.TCloud.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
 			logs.Errorf("[%s] create region failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,

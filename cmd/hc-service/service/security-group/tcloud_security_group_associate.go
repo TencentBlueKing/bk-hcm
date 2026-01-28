@@ -467,7 +467,7 @@ func (g *securityGroup) TCloudSGBatchAssociateLoadBalancers(cts *rest.Contexts) 
 		return nil, err
 	}
 
-	// 绑定一个安全组到多个负载均衡实例
+	// 绑定或解绑一个安全组到多个负载均衡实例
 	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
 		Region:          sg.Region,
 		SecurityGroup:   sg.CloudID,
@@ -523,7 +523,7 @@ func (g *securityGroup) TCloudSGBatchDisassociateLoadBalancers(cts *rest.Context
 		return nil, err
 	}
 
-	// 解绑一个安全组到多个负载均衡实例
+	// 绑定或解绑一个安全组到多个负载均衡实例
 	opt := &typelb.TCloudSetSecurityGroupForClbsOption{
 		Region:          sg.Region,
 		SecurityGroup:   sg.CloudID,

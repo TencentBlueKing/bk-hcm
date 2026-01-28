@@ -411,6 +411,20 @@ export const buildVIPFilterRules = (value: string | string[]): RulesItem => {
   return { op: QueryRuleOPEnum.OR, rules: [...privateIpResult.rules, ...publicIpResult.rules] };
 };
 
+export const splitToArray = (value: string | string[], separator: string | RegExp = /\n|;|；|,|，|\|/) => {
+  const isArray = Array.isArray(value);
+  if (isArray) return value;
+  return value
+    .trim()
+    .split(separator)
+    .reduce((prev, curr) => {
+      if (curr.trim()) {
+        prev.push(curr.trim());
+      }
+      return prev;
+    }, []);
+};
+
 /**
  * 构建多值查询条件(精确查询)，如：多ID
  */
@@ -418,15 +432,7 @@ export const buildMultipleValueRulesItem = (field: string, value: string) => {
   const rulesItem: RulesItem = { field, op: QueryRuleOPEnum.EQ, value: '' };
 
   if (value) {
-    const splitValue = value
-      .trim()
-      .split(/\n|;|；|,|，|\|/)
-      .reduce((prev, curr) => {
-        if (curr.trim()) {
-          prev.push(curr.trim());
-        }
-        return prev;
-      }, []);
+    const splitValue = splitToArray(value);
 
     if (!splitValue.length) {
       // 如果没有分割值，直接使用原始值进行搜索

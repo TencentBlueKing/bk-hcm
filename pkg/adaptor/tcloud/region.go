@@ -42,7 +42,7 @@ func (t *TCloudImpl) ListRegion(kt *kit.Kit) (*typesRegion.TCloudRegionListResul
 	// 使用地域管理系统的 DescribeRegions 接口
 	req := regionapi.NewDescribeRegionsRequest()
 	// 暂时以 constant.RegionProductID 产品的地域为基准地域
-	req.Product = converter.ValToPtr(constant.RegionProductID)
+	req.Product = converter.ValToPtr(constant.TCloudRegionProductID)
 
 	resp, err := regionClient.DescribeRegionsWithContext(kt.Ctx, req)
 	if err != nil {

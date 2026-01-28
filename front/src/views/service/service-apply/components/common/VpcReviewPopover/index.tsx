@@ -72,7 +72,7 @@ export default defineComponent({
                 <div class='item-label'>IPv4 CIDR</div>
                 <div class='item-value' style={{ width: '200px' }}>
                   {props.data.extension?.cidr?.length ? (
-                    <FlexTag is-tag-style list={props.data.extension?.cidr.map((obj: any) => ({ name: obj.cidr }))} />
+                    <FlexTag isTagStyle list={props.data.extension?.cidr.map((obj: any) => ({ name: obj.cidr }))} />
                   ) : (
                     '--'
                   )}

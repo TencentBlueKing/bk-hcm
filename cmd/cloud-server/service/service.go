@@ -192,6 +192,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 	if err != nil {
 		return nil, nil, err
 	}
+
 	// 加解密器
 	cipher, err := newCipherFromConfig(cc.CloudServer().Crypto)
 	if err != nil {

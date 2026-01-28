@@ -179,6 +179,7 @@ type DBResType interface {
 	coreregion.HuaWeiRegion |
 		coreregion.AzureRegion |
 		coreregion.TCloudRegion |
+		coreregion.TCloudZiyanRegion |
 		coreregion.AwsRegion |
 		coreregion.GcpRegion |
 
@@ -186,6 +187,7 @@ type DBResType interface {
 
 		corezone.BaseZone |
 		corezone.Zone[corezone.TCloudZoneExtension] |
+		corezone.Zone[corezone.TCloudZiyanZoneExtension] |
 
 		coreimage.Image[coreimage.TCloudExtension] |
 		coreimage.Image[coreimage.HuaWeiExtension] |

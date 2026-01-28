@@ -10,6 +10,7 @@ import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { storeToRefs } from 'pinia';
 
 type PropsType = {
   filter?: FilterType;
@@ -40,6 +41,7 @@ interface IUseFilterConfig {
 }
 
 const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
+  let cloneSearchData: any[] = [];
   const searchData = ref([]);
   const searchValue = ref([]);
   const filter = ref<any>(cloneDeep(props.filter));
@@ -48,6 +50,7 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   const route = useRoute();
   const resourceAccountStore = useResourceAccountStore();
   const regionStore = useRegionsStore();
+  const { selectedAccountId, vendorInResourcePage } = storeToRefs(resourceAccountStore);
 
   const { convertValueCallbacks, conditionFormatterMapper } = config;
 
@@ -83,12 +86,22 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   watch(
     () => route.query,
     () => {
+      searchData.value = cloneSearchData;
       if (
         Object.entries(route.query)
           .map(([queryName]) => queryName)
           .includes('cloud_id')
       )
         saveQueryInSearch();
+
+      // 如果当前选定了某个云账号筛选条件就剔除云厂商
+      if (vendorInResourcePage.value) {
+        searchData.value = searchData.value.filter((item) => item.id !== 'vendor');
+        if (selectedAccountId.value) {
+          // 如果选中了某个账号ID筛选条件就剔除云账号ID
+          searchData.value = searchData.value.filter((item) => item.id !== 'account_id');
+        }
+      }
     },
     {
       deep: true,
@@ -109,6 +122,7 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
             return e;
           },
         ));
+      cloneSearchData = cloneDeep(searchData.value);
     },
     {
       deep: true,

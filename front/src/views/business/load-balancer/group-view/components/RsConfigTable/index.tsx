@@ -146,7 +146,13 @@ export default defineComponent({
           if (props.onlyShow) return '端口';
           return (
             <>
-              <span>端口</span>
+              <span
+                class='edit-port'
+                v-bk-tooltips={{
+                  content: `1.单个端口，直接输入RS端口即可 \n 2.端口段，输入RS的开始端口，结束端口无需输入`,
+                }}>
+                端口
+              </span>
               <BatchUpdatePopConfirm
                 disabledTip='目标组基本信息修改，添加，RS权重批量修改，RS端口批量修改，RS批量移除等操作暂不支持同时执行'
                 title='端口'
@@ -192,7 +198,7 @@ export default defineComponent({
               ]}>
               <Input
                 type='number'
-                modelValue={port}
+                modelValue={cell}
                 onChange={(v: number) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_PORT, data.id)}
                 // 可操作场景：新增目标组、编辑初始态、修改单个端口（一次只能修改一个RS）、新增RS(仅新增项)
                 disabled={

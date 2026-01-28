@@ -42,24 +42,24 @@ type ZoneClient struct {
 
 // BatchCreateZone batch create zone.
 func (cli *ZoneClient) BatchCreateZone(kt *kit.Kit,
-	req *protocloud.ZoneBatchCreateReq[corecloud.TCloudZoneExtension]) (*core.BatchCreateResult, error) {
+	req *protocloud.ZoneBatchCreateReq[corecloud.TCloudZiyanZoneExtension]) (*core.BatchCreateResult, error) {
 
-	return common.Request[protocloud.ZoneBatchCreateReq[corecloud.TCloudZoneExtension], core.BatchCreateResult](
+	return common.Request[protocloud.ZoneBatchCreateReq[corecloud.TCloudZiyanZoneExtension], core.BatchCreateResult](
 		cli.client, rest.POST, kt, req, "/zones/batch/create")
 }
 
 // BatchUpdateZone batch update zone.
 func (cli *ZoneClient) BatchUpdateZone(kt *kit.Kit,
-	req *protocloud.ZoneBatchUpdateReq[corecloud.TCloudZoneExtension]) error {
+	req *protocloud.ZoneBatchUpdateReq[corecloud.TCloudZiyanZoneExtension]) error {
 
-	return common.RequestNoResp[protocloud.ZoneBatchUpdateReq[corecloud.TCloudZoneExtension]](
+	return common.RequestNoResp[protocloud.ZoneBatchUpdateReq[corecloud.TCloudZiyanZoneExtension]](
 		cli.client, rest.PATCH, kt, req, "/zones/batch/update")
 }
 
 // ListZoneExt list zone with extension.
 func (cli *ZoneClient) ListZoneExt(kt *kit.Kit, req *protocloud.ZoneListReq) (
-	*protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension], error) {
+	*protocloud.ZoneExtListResult[corecloud.TCloudZiyanZoneExtension], error) {
 
-	return common.Request[protocloud.ZoneListReq, protocloud.ZoneExtListResult[corecloud.TCloudZoneExtension]](
+	return common.Request[protocloud.ZoneListReq, protocloud.ZoneExtListResult[corecloud.TCloudZiyanZoneExtension]](
 		cli.client, rest.POST, kt, req, "/zones/list")
 }

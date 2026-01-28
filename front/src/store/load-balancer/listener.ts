@@ -16,6 +16,7 @@ export interface IListenerModel {
   name: string;
   protocol: ListenerProtocol;
   port: number;
+  end_port?: number;
   scheduler: Scheduler;
   session_open?: boolean;
   session_type?: SessionType;

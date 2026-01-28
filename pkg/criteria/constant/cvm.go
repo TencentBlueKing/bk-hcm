@@ -37,3 +37,11 @@ const (
 	// UnBindBkHostID defines default value for unbind cvm's host id.
 	UnBindBkHostID int64 = -1
 )
+
+// Monitor namespace constants
+const (
+	// TCloudCvmNamespace 腾讯云CVM监控命名空间
+	TCloudCvmNamespace = "QCE/CVM"
+	// TCloudCvmInstanceIDKey 腾讯云CVM实例ID key
+	TCloudCvmInstanceIDKey = "InstanceId"
+)

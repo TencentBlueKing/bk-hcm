@@ -38,7 +38,7 @@ import (
 
 // importTCloudZiyanZone 导入TCloudZiyan zone
 func (dSvc *ZoneSvc) importTCloudZiyanZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
-	extension := &zone.TCloudZoneExtension{}
+	extension := &zone.TCloudZiyanZoneExtension{}
 	if req.Extension != nil {
 		if extMap, ok := req.Extension.(map[string]interface{}); ok {
 			if cityName, ok := extMap["city_name"].(string); ok {
@@ -61,8 +61,8 @@ func (dSvc *ZoneSvc) importTCloudZiyanZone(cts *rest.Contexts, req *cloudproto.Z
 		}
 	}
 
-	createReq := &dataproto.ZoneBatchCreateReq[zone.TCloudZoneExtension]{
-		Zones: []dataproto.ZoneBatchCreate[zone.TCloudZoneExtension]{
+	createReq := &dataproto.ZoneBatchCreateReq[zone.TCloudZiyanZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.TCloudZiyanZoneExtension]{
 			{
 				CloudID:   req.CloudID,
 				Name:      req.Name,
@@ -121,7 +121,7 @@ func getLogicCampusNameFromCmdb(kt *kit.Kit, zoneName string) (string, error) {
 func (dSvc *ZoneSvc) batchUpdateTCloudZiyanZoneDisableCvm(cts *rest.Contexts,
 	req *cloudproto.ZoneBatchUpdateDisableCvmReq) (interface{}, error) {
 
-	var zonesFromDB []zone.Zone[zone.TCloudZoneExtension]
+	var zonesFromDB []zone.Zone[zone.TCloudZiyanZoneExtension]
 	// 先查询现有的 zone 数据，获取当前的 Extension 值，通过 name 查询
 	for _, batch := range slice.Split(req.Zones, int(core.DefaultMaxPageLimit)) {
 		listReq := &dataproto.ZoneListReq{
@@ -148,9 +148,9 @@ func (dSvc *ZoneSvc) batchUpdateTCloudZiyanZoneDisableCvm(cts *rest.Contexts,
 	}
 
 	// 构建批量更新请求
-	updates := make([]dataproto.ZoneBatchUpdate[zone.TCloudZoneExtension], 0, len(zonesFromDB))
+	updates := make([]dataproto.ZoneBatchUpdate[zone.TCloudZiyanZoneExtension], 0, len(zonesFromDB))
 	for _, existingZone := range zonesFromDB {
-		extension := &zone.TCloudZoneExtension{
+		extension := &zone.TCloudZiyanZoneExtension{
 			DisableCvm: req.DisableCvm,
 		}
 		// 保留其他字段的原有值
@@ -159,7 +159,7 @@ func (dSvc *ZoneSvc) batchUpdateTCloudZiyanZoneDisableCvm(cts *rest.Contexts,
 			extension.LogicCampusName = existingZone.Extension.LogicCampusName
 		}
 
-		updates = append(updates, dataproto.ZoneBatchUpdate[zone.TCloudZoneExtension]{
+		updates = append(updates, dataproto.ZoneBatchUpdate[zone.TCloudZiyanZoneExtension]{
 			ID:        existingZone.ID,
 			Extension: extension,
 		})
@@ -167,7 +167,7 @@ func (dSvc *ZoneSvc) batchUpdateTCloudZiyanZoneDisableCvm(cts *rest.Contexts,
 
 	// 分批更新 zone 的 disable_cvm 字段
 	for _, batch := range slice.Split(updates, int(core.DefaultMaxPageLimit)) {
-		updateReq := &dataproto.ZoneBatchUpdateReq[zone.TCloudZoneExtension]{
+		updateReq := &dataproto.ZoneBatchUpdateReq[zone.TCloudZiyanZoneExtension]{
 			Zones: batch,
 		}
 

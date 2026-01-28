@@ -60,8 +60,8 @@ func ConvTCloudCvmCreateReq(req *cscvm.TCloudCvmCreateReq) *hcproto.TCloudBatchC
 	createReq := &hcproto.TCloudBatchCreateReq{
 		AccountID:             req.AccountID,
 		Region:                req.Region,
-		Zone:                  req.Zone,
 		Name:                  req.Name,
+		Zone:                  req.Zone,
 		Password:              req.Password,
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		TCloudCvmSpec: hcproto.TCloudCvmSpec{
@@ -244,8 +244,8 @@ func ConvHuaWeiCvmCreateReq(req *cscvm.HuaWeiCvmCreateReq) *hcproto.HuaWeiBatchC
 	createReq := &hcproto.HuaWeiBatchCreateReq{
 		AccountID:             req.AccountID,
 		Region:                req.Region,
-		Zone:                  req.Zone,
 		Name:                  req.Name,
+		Zone:                  req.Zone,
 		Password:              req.Password,
 		CloudSecurityGroupIDs: req.CloudSecurityGroupIDs,
 		CloudVpcID:            req.CloudVpcID,
