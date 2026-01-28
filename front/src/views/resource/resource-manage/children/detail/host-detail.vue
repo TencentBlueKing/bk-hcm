@@ -298,7 +298,11 @@ const bktoolTipsOptions = computed(() => {
         {{ t('重置密码') }}
       </bk-button> -->
       <span @click="showAuthDialog(actionName)">
-        <bk-dropdown trigger="click">
+        <bk-dropdown
+          trigger="click"
+          :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
+          :popover-options="{ clickContentAutoHide: true }"
+        >
           <bk-button
             v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
             :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"

@@ -71,8 +71,7 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                       getOperationConfig(OperationActions.RECYCLE, data).noPermission ? 'hcm-no-permision-text-btn' : ''
                     }`}
                     onClick={getOperationConfig(OperationActions.RECYCLE, data).clickHandler}
-                    disabled={getOperationConfig(OperationActions.RECYCLE, data).disabled}
-                  >
+                    disabled={getOperationConfig(OperationActions.RECYCLE, data).disabled}>
                     {operationMap[OperationActions.RECYCLE].label}
                   </Button>,
                   [[bkTooltips, getOperationConfig(OperationActions.RECYCLE, data).tooltips]],
@@ -81,15 +80,14 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                   trigger='click'
                   popoverOptions={{
                     renderType: 'shown',
+                    clickContentAutoHide: true,
                     onAfterShow: () => (currentOperateRowIndex.value = index),
                     onAfterHidden: () => (currentOperateRowIndex.value = -1),
-                  }}
-                >
+                  }}>
                   {{
                     default: () => (
                       <div
-                        class={[`more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`]}
-                      >
+                        class={[`more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`]}>
                         <i class={'hcm-icon bkhcm-icon-more-fill'}></i>
                       </div>
                     ),
@@ -104,8 +102,7 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                             <DropdownItem
                               key={type}
                               onClick={clickHandler}
-                              extCls={`more-action-item${disabled || noPermission ? ' disabled' : ''}`}
-                            >
+                              extCls={`more-action-item${disabled || noPermission ? ' disabled' : ''}`}>
                               {label}
                             </DropdownItem>,
                             [[bkTooltips, tooltips]],

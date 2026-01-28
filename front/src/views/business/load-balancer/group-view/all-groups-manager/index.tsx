@@ -1,4 +1,4 @@
-import { computed, ComputedRef, defineComponent, inject, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 import useRenderTRList from './useRenderTGList';
@@ -33,8 +33,6 @@ export default defineComponent({
 
     // 目标组list
     const { searchData, selections, CommonTable, getListData } = useRenderTRList();
-
-    const isDropdownShow = ref(false);
 
     // 批量删除目标组
     const {
@@ -137,22 +135,15 @@ export default defineComponent({
                       ),
                     }}
                   </hcm-auth>
-                  <Dropdown
-                    isShow={isDropdownShow.value}
-                    trigger='manual'
-                    placement='bottom-start'
-                    popoverOptions={{ forceClickoutside: true }}
-                    onHide={() => (isDropdownShow.value = false)}>
+                  <Dropdown placement='bottom-start' disabled={!selections.value.length}>
                     {{
                       default: () => (
-                        <Button disabled={!selections.value.length} onClick={() => (isDropdownShow.value = true)}>
+                        <Button disabled={!selections.value.length}>
                           {t('批量操作')} <AngleDown class='f22' />
                         </Button>
                       ),
                       content: () => (
-                        <DropdownMenu
-                          class='target-group-batch-operation-menu'
-                          onClick={() => (isDropdownShow.value = false)}>
+                        <DropdownMenu class='target-group-batch-operation-menu'>
                           <hcm-auth sign={clbDeleteAuthSign.value}>
                             {{
                               default: ({ noPerm }: { noPerm: boolean }) => (

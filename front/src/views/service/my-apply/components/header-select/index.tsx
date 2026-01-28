@@ -63,7 +63,12 @@ export default defineComponent({
       <div>
         <div class='apply-select'>
           <div class='title'>{state.title}</div>
-          <Dropdown ext-cls='drop-container' trigger='click' onShow={handleShow} onHide={handleHide}>
+          <Dropdown
+            ext-cls='drop-container'
+            trigger='click'
+            popoverOptions={{ clickContentAutoHide: true }}
+            onShow={handleShow}
+            onHide={handleHide}>
             {{
               default: () => (
                 <span class='cursor-pointer flex-row align-items-center '>
