@@ -72,6 +72,9 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64, isB
 			updateIDs = append(updateIDs, detail.ID)
 		}
 	}
+	if len(updateIDs) == 0 {
+		return nil
+	}
 	// assign
 	req := &datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq{
 		IDs:     updateIDs,

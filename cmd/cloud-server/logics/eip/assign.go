@@ -71,6 +71,9 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 			updateIDs = append(updateIDs, detail.ID)
 		}
 	}
+	if len(updateIDs) == 0 {
+		return nil
+	}
 	req := &dataproto.EipBatchUpdateReq{
 		IDs:     updateIDs,
 		BkBizID: bizID,
