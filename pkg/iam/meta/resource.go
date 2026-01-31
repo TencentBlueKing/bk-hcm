@@ -33,6 +33,8 @@ const (
 	Account ResourceType = "account"
 	// SubAccount defines cloud sub account resource's hcm auth resource type
 	SubAccount ResourceType = "sub_account"
+	// SubAccountSecret defines sub account secret resource's hcm auth resource type
+	SubAccountSecret ResourceType = "sub_account_secret"
 	// Vpc defines vpc hcm auth resource type
 	Vpc ResourceType = "vpc"
 	// Subnet defines subnet hcm auth resource type

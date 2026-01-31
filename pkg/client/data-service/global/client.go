@@ -40,6 +40,7 @@ type Client struct {
 	NetworkInterface       *NetworkInterfaceClient
 	NetworkInterfaceCvmRel *NetworkInterfaceCvmRelClient
 	SubAccount             *SubAccountClient
+	SubAccountSecret       *SubAccountSecretClient
 	AccountSyncDetail      *AccountSyncDetailClient
 
 	Auth          *AuthClient
@@ -65,6 +66,8 @@ type Client struct {
 	TaskDetail     *TaskDetailClient
 	TaskManagement *TaskManagementClient
 	Tenant         *TenantClient
+
+	AccountSecret *AccountSecretClient
 
 	GlobalConfig *GlobalConfigsClient
 
@@ -92,6 +95,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		NetworkInterface:       NewNetworkInterfaceClient(client),
 		NetworkInterfaceCvmRel: NewNetworkInterfaceCvmRelClient(client),
 		SubAccount:             NewSubAccountClient(client),
+		SubAccountSecret:       NewSubAccountSecretClient(client),
 		AccountSyncDetail:      NewAccountSyncDetailClient(client),
 
 		Auth:          NewAuthClient(client),
@@ -116,6 +120,9 @@ func NewClient(client rest.ClientInterface) *Client {
 		TaskDetail:     NewTaskDetailClient(client),
 		TaskManagement: NewTaskManagementClient(client),
 		Tenant:         NewTenantClient(client),
+
+		AccountSecret: NewAccountSecretClient(client),
+
 		GlobalConfig:   NewGlobalConfigClient(client),
 		ResUsageBizRel: NewResUsageBizRelRelClient(client),
 	}

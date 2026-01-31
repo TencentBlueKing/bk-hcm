@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	accountsecret "hcm/cmd/cloud-server/service/account-secret"
 	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
@@ -304,6 +305,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	}
 
 	account.InitAccountService(c)
+	accountsecret.InitService(c)
 	securitygroup.InitSecurityGroupService(c)
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)

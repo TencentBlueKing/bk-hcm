@@ -21,6 +21,7 @@ package types
 
 import (
 	"hcm/pkg/dal/table/cloud"
+	tableaccountsecret "hcm/pkg/dal/table/cloud/account-secret"
 	tableaccount "hcm/pkg/dal/table/cloud/sub-account"
 )
 
@@ -34,6 +35,12 @@ type ListAccountDetails struct {
 type ListSubAccountDetails struct {
 	Count   uint64               `json:"count,omitempty"`
 	Details []tableaccount.Table `json:"details,omitempty"`
+}
+
+// ListAccountSecretDetails list account secret details.
+type ListAccountSecretDetails struct {
+	Count   uint64                     `json:"count,omitempty"`
+	Details []tableaccountsecret.Table `json:"details,omitempty"`
 }
 
 // Account ...

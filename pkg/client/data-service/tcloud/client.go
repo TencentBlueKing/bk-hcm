@@ -26,16 +26,18 @@ import (
 // Client is a tcloud api client
 type Client struct {
 	*restClient
-	Account       *AccountClient
-	SecurityGroup *SecurityGroupClient
-	Vpc           *VpcClient
-	Subnet        *SubnetClient
-	Region        *RegionClient
-	Zone          *ZoneClient
-	Cvm           *CvmClient
-	RouteTable    *RouteTableClient
-	SubAccount    *SubAccountClient
-	LoadBalancer  *LoadBalancerClient
+	Account          *AccountClient
+	SecurityGroup    *SecurityGroupClient
+	Vpc              *VpcClient
+	Subnet           *SubnetClient
+	Region           *RegionClient
+	Zone             *ZoneClient
+	Cvm              *CvmClient
+	RouteTable       *RouteTableClient
+	SubAccount       *SubAccountClient
+	SubAccountSecret *SubAccountSecretClient
+	LoadBalancer     *LoadBalancerClient
+	AccountSecret    *AccountSecretClient
 }
 
 type restClient struct {
@@ -45,16 +47,18 @@ type restClient struct {
 // NewClient create a new tcloud api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		restClient:    &restClient{client: client},
-		Account:       NewAccountClient(client),
-		SecurityGroup: NewCloudSecurityGroupClient(client),
-		Vpc:           NewVpcClient(client),
-		Subnet:        NewSubnetClient(client),
-		Region:        NewRegionClient(client),
-		Zone:          NewZoneClient(client),
-		Cvm:           NewCloudCvmClient(client),
-		RouteTable:    NewRouteTableClient(client),
-		SubAccount:    NewSubAccountClient(client),
-		LoadBalancer:  NewLoadBalancerClient(client),
+		restClient:       &restClient{client: client},
+		Account:          NewAccountClient(client),
+		SecurityGroup:    NewCloudSecurityGroupClient(client),
+		Vpc:              NewVpcClient(client),
+		Subnet:           NewSubnetClient(client),
+		Region:           NewRegionClient(client),
+		Zone:             NewZoneClient(client),
+		Cvm:              NewCloudCvmClient(client),
+		RouteTable:       NewRouteTableClient(client),
+		SubAccount:       NewSubAccountClient(client),
+		SubAccountSecret: NewSubAccountSecretClient(client),
+		LoadBalancer:     NewLoadBalancerClient(client),
+		AccountSecret:    NewAccountSecretClient(client),
 	}
 }

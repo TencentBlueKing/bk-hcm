@@ -35,6 +35,10 @@ func genSkipResource(_ *meta.ResourceAttribute) (client.ActionID, []client.Resou
 
 // genAccountResource generate account related iam resource.
 func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID > 0 {
+		return genBizAccountResource(a)
+	}
+
 	res := client.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
@@ -63,6 +67,23 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	case meta.Delete:
 		// update account RecycleReserveTime is related to hcm account resource
 		return sys.AccountDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genBizAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizAccountOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
@@ -357,6 +378,10 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 }
 
 func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID > 0 {
+		return genBizSubAccountResource(a)
+	}
+
 	res := client.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
@@ -368,6 +393,49 @@ func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client
 		return sys.AccountFind, []client.Resource{res}, nil
 	case meta.Update:
 		return sys.SubAccountEdit, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genBizSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizSubAccountOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genSubAccountSecretResource generate sub account secret related iam resource.
+func genSubAccountSecretResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID > 0 {
+		return genBizSubAccountSecretResource(a)
+	}
+
+	return "", nil, errf.Newf(errf.InvalidParameter, "biz id is invalid: %d", a.BizID)
+}
+
+func genBizSubAccountSecretResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizSubAccountSecretOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

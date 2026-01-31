@@ -47,17 +47,21 @@ type Extension interface {
 
 // BaseSubAccount 云账号
 type BaseSubAccount struct {
-	ID            string                 `json:"id"`
-	CloudID       string                 `json:"cloud_id"`
-	Name          string                 `json:"name"`
-	Vendor        enumor.Vendor          `json:"vendor"`
-	Site          enumor.AccountSiteType `json:"site"`
-	AccountID     string                 `json:"account_id"`
-	AccountType   string                 `json:"account_type"`
-	Managers      []string               `json:"managers"`
-	BkBizIDs      []int64                `json:"bk_biz_ids"`
-	Memo          *string                `json:"memo"`
-	core.Revision `json:",inline"`
+	ID             string                 `json:"id"`
+	CloudID        string                 `json:"cloud_id"`
+	Name           string                 `json:"name"`
+	Vendor         enumor.Vendor          `json:"vendor"`
+	Site           enumor.AccountSiteType `json:"site"`
+	AccountID      string                 `json:"account_id"`
+	AccountType    string                 `json:"account_type"`
+	Managers       []string               `json:"managers"`
+	BkBizIDs       []int64                `json:"bk_biz_ids"`
+	Email          *string                `json:"email,omitempty"`
+	PhoneNum       *string                `json:"phone_num,omitempty"`
+	CountryCode    *string                `json:"country_code,omitempty"`
+	CloudCreatedAt *string                `json:"cloud_created_at,omitempty"`
+	Memo           *string                `json:"memo"`
+	core.Revision  `json:",inline"`
 }
 
 // TCloudExtension define tcloud extension.
@@ -72,6 +76,15 @@ type TCloudExtension struct {
 	// 创建时间
 	// 注意：此字段可能返回 null，表示取不到有效值。
 	CreateTime *string `json:"create_time"`
+	// LoginFlag 登录保护设置
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	LoginFlag *enumor.AccountProtectionFlag `json:"login_flag,omitempty"`
+	// ActionFlag 敏感操作保护设置
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	ActionFlag *enumor.AccountProtectionFlag `json:"action_flag,omitempty"`
+	// ConsoleLogin 控制台登录权限
+	// 注意：此字段可能返回 null，表示取不到有效值。
+	ConsoleLogin *enumor.SubAccountConsoleLogin `json:"console_login,omitempty"`
 }
 
 // AwsExtension define aws extension.

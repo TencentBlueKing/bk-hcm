@@ -44,6 +44,10 @@ const (
 	AccountTable Name = "account"
 	// SubAccountTable is sub account table's name.
 	SubAccountTable Name = "sub_account"
+	// SubAccountSecretTable is sub account secret table's name.
+	SubAccountSecretTable Name = "sub_account_secret"
+	// AccountSecretTable is account secret table's name.
+	AccountSecretTable Name = "account_secret"
 	// AccountBizRelTable is account and biz relation table's name.
 	AccountBizRelTable Name = "account_biz_rel"
 	// SecurityGroupTable is security group table's name.
@@ -236,6 +240,8 @@ var TableMap = map[Name]TableConfig{
 	AuditTable:                   {EnableTenant: true},
 	AccountTable:                 {EnableTenant: true},
 	SubAccountTable:              {},
+	SubAccountSecretTable:        {EnableTenant: true},
+	AccountSecretTable:           {EnableTenant: true},
 	AccountBizRelTable:           {},
 	VpcTable:                     {EnableTenant: true},
 	SubnetTable:                  {EnableTenant: true},

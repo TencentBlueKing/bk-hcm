@@ -90,6 +90,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 
 func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("ListBizApplications", "POST", "/applications/list", svc.ListBizApplications)
+	h.Add("CreateBizForAddAccount", "POST", "/applications/types/add_account", svc.CreateBizForAddAccount)
 }
 
 type applicationSvc struct {

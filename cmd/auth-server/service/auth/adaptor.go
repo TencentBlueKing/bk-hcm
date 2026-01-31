@@ -50,6 +50,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.Biz:                      genBizResource,
 	meta.Account:                  genAccountResource,
 	meta.SubAccount:               genSubAccountResource,
+	meta.SubAccountSecret:         genSubAccountSecretResource,
 	meta.Vpc:                      genVpcResource,
 	meta.Subnet:                   genSubnetResource,
 	meta.Disk:                     genDiskResource,
