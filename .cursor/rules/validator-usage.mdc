@@ -1,0 +1,39 @@
+---
+description: validator 工具包使用指南（核心规则）
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Validator 工具包（核心）
+
+## Struct Tag 验证
+
+请求结构体必须实现 `Validate()` 方法，首先调用 `validator.Validate.Struct(req)`：
+
+```go
+func (req *SomeReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+	// 业务逻辑验证...
+	return nil
+}
+```
+
+常用 Tag：
+- `required` - 必填
+- `max=n` / `min=n` - 最大/最小长度或值
+- `gt=0` - 大于 0
+- `dive` - 验证切片元素：`validate:"required,dive,gt=0"`
+- `omitempty` - 可选字段
+
+## 自定义验证函数
+
+| 函数 | 用途 | 参数 |
+|-----|------|------|
+| `ValidateName(name string)` | 验证名称（支持中文、英文、数字、括号、下划线、连字符） | `name` |
+| `ValidateMemo(memo *string, required bool)` | 验证备注（格式+长度<=256） | `memo`（指针）, `required` |
+
+**注意**：`ValidateMemo` 接受 `*string` 类型，需要处理 nil 情况。
+
+> 完整规范请参考 skill: `go-validator-usage`

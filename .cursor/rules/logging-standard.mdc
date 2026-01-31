@@ -1,0 +1,44 @@
+---
+description: Go 日志使用规范
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# 日志规范（核心）
+
+## 日志库
+- 使用 `hcm/pkg/logs`（基于 glog 封装）
+
+## 日志级别
+| 级别 | 函数 | 使用场景 |
+|------|------|----------|
+| Info | `logs.Infof()` | 任务开始/结束、操作成功、正常跳过 |
+| Warn | `logs.Warnf()` | 可恢复错误后 continue、降级处理 |
+| Error | `logs.Errorf()` | 错误后 return |
+| V(n) | `logs.V(n).Infof()` | 调试级别详细日志 |
+
+## rid 追踪
+- **必须**包含 rid（启动阶段除外）
+- 格式：`rid: %s`，放在消息末尾
+- 来源：Handler 用 `cts.Kit.Rid`，Service/DAO 用 `kt.Rid`
+
+## 消息风格
+- 小写字母开头
+- 错误信息用 `err: %v`
+- 使用 `failed`/`success` 描述结果
+
+## 常用模式
+```go
+// Error + return
+logs.Errorf("{op} failed, err: %v, rid: %s", err, kt.Rid)
+return err
+
+// Warn + continue
+logs.Warnf("skip invalid item: %s, rid: %s", id, kt.Rid)
+continue
+
+// 操作成功
+logs.Infof("{op} success, count: %d, rid: %s", count, kt.Rid)
+```
+
+> 完整规范请参考 skill: `go-logging-standard`

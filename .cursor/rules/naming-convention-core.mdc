@@ -1,0 +1,47 @@
+---
+description: Go 代码命名规范核心规则，适用于所有 Go 代码文件
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# 命名规范（核心）
+
+## 包命名
+- 小写字母，无下划线/连字符（目录 `obs-bill` → 包名 `obsbill`）
+- 单数名词为主，工具包可用复数（如 `times`, `strings`）
+
+## 文件命名
+- snake_case：`obs_bill.go`, `gpu_sm_usage.go`
+- 后缀约定：`_test.go`（测试）、`_types.go`（类型定义）
+
+## 结构体命名
+| 类型 | 后缀 | 示例 |
+|-----|-----|------|
+| 请求 | `*Req` | `UserCollectionCreateReq` |
+| 响应 | `*Resp` | `CreateResp` |
+| 元素 | `*Elem` | `GetTopoOrgChildrenElem` |
+| 处理器 | `*Handler` | `OrgObsCostTrendExporterHandler` |
+| 私有实现 | 小写 | `service`, `dao`, `obsBillDao` |
+
+## 接口命名
+- DAO 层：`Interface`
+- 客户端：`Client`
+- 集合类：`ClientSet`
+
+## 函数命名
+| 前缀 | 用途 | 示例 |
+|-----|-----|------|
+| `New*` | 构造函数 | `NewClient` |
+| `Get*` | 单个获取 | `GetCostTrend` |
+| `List*` | 列表查询 | `ListBrief` |
+| `Batch*` | 批量操作 | `BatchCreate` |
+
+## 常量命名
+- PascalCase：`ApiPrefix`, `PlatCatDirectRes`
+- 表名用 `*Table` 后缀：`ObsBillExtTable`
+
+## 缩写约定
+- 保持大写：`ID`, `GPU`, `CPU`, `API`
+- 项目缩写：`kt`(Kit), `opt`(Option), `req`(Request), `resp`(Response), `cfg`(Config)
+
+> 完整规范请参考 skill: `go-naming-convention`

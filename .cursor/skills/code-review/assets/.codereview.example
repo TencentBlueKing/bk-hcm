@@ -1,0 +1,312 @@
+# CodeReview 配置文件示例
+# 复制此文件到项目根目录并重命名为 .codereview 以使用自定义配置
+
+# 审查严格程度
+# - strict: 严格模式,所有问题都会报告
+# - standard: 标准模式,忽略部分低优先级问题(默认)
+# - loose: 宽松模式,仅报告严重问题
+severity: standard
+
+# 忽略的规则
+# 如果某些规则产生误报或不适用于您的团队,可以在此处忽略
+ignore_rules:
+  # - naming-style      # 忽略命名风格检查
+  # - comment-format    # 忽略注释格式检查
+  # - magic-number      # 忽略魔数检查
+
+# 自定义规则
+# 您可以添加团队特定的检查规则
+custom_rules:
+  # - rule_id: custom-001
+  #   description: 禁止使用全局变量
+  #   pattern: "var globalVar"
+  #   severity: important
+  # 
+  # - rule_id: custom-002
+  #   description: 必须使用context包进行超时控制
+  #   pattern: "func.*\\(.*\\)"
+  #   check: "函数参数中应包含context.Context"
+  #   severity: suggestion
+
+# 报告输出配置
+# 支持变量: ${requirement} - 需求名称, ${date} - 日期, ${time} - 时间
+output: code-review/CR-${requirement}-${date}.md
+
+# 自定义编程规范文档路径
+# 如果需要使用团队自定义的编程规范,在此处指定路径
+coding_standards:
+  # go: /path/to/custom/go-standard.md
+  # cpp: /path/to/custom/cpp-standard.md
+  # java: /path/to/custom/java-standard.md
+  # python: /path/to/custom/python-standard.md
+  # sql: /path/to/custom/sql-standard.md
+  # csharp: /path/to/custom/csharp-standard.md
+  # protobuf: /path/to/custom/protobuf-standard.md
+  # lua: /path/to/custom/lua-standard.md
+  # css: /path/to/custom/css-standard.md
+
+# 代码质量阈值
+quality_thresholds:
+  # 圈复杂度阈值,超过此值会标记为需要重构
+  cyclomatic_complexity: 10
+  
+  # 函数行数阈值,超过此值会建议拆分
+  function_lines: 80
+  
+  # 文件行数阈值,超过此值会建议拆分
+  file_lines: 800
+  
+  # 嵌套深度阈值,超过此值会标记为可读性问题
+  nesting_depth: 4
+
+# 静态分析工具配置
+static_analysis:
+  # Go语言
+  go:
+    enabled: true
+    tool: golangci-lint
+    config: assets/.golangci.yml
+  
+  # C++语言
+  cpp:
+    enabled: false
+    tool: clang-tidy
+    # config: .clang-tidy
+  
+  # Python语言
+  python:
+    enabled: false
+    tool: pylint
+    # config: .pylintrc
+  
+  # Java语言
+  java:
+    enabled: false
+    # tool: checkstyle
+    # config: checkstyle.xml
+
+# 需求验证配置
+requirement_validation:
+  # 是否检查功能完整性
+  check_completeness: true
+  
+  # 是否检查API接口符合性
+  check_api_compliance: true
+  
+  # 是否检查边界条件处理
+  check_boundary_conditions: true
+
+# 交互模式配置
+interactive:
+  # 是否在交互模式下自动展示问题详情
+  auto_show_details: false
+  
+  # 是否在确认前生成修复建议
+  generate_fix_suggestions: true
+
+# CI/CD配置
+ci:
+  # 当发现严重问题时的退出码
+  exit_code_on_severe: 1
+  
+  # 当发现重要问题时的退出码
+  exit_code_on_important: 0
+  
+  # 是否在CI环境中自动使用非交互模式
+  auto_non_interactive: true
+
+# ============================================
+# 审查忽略规则配置
+# ============================================
+
+# 排除路径（文件级跳过）
+# 这些文件或目录将完全跳过，不进行任何审查
+exclude_paths:
+  - "vendor/"                           # 第三方依赖
+  - "node_modules/"                     # Node.js 依赖
+  - "third_party/"                      # 第三方代码
+  - "*.pb.go"                          # Protocol Buffers 生成的文件
+  - "**/*_generated.go"                # 所有自动生成的 Go 文件
+  - "*_test.go"                        # 测试文件（如果不需要审查）
+  - "*.min.js"                         # 压缩的 JavaScript 文件
+  - "dist/"                            # 构建输出目录
+  - "build/"                           # 构建输出目录
+  
+  # go-zero 框架生成的代码
+  - "internal/types/types.go"          # API 类型定义（自动生成）
+  - "internal/handler/**/*handler.go"  # Handler 层（自动生成）
+
+# 包含路径
+# 仅审查这些文件或目录（如果指定，则只审查这些路径）
+# include_paths:
+#   - "src/"
+#   - "lib/"
+
+# 忽略特定审查类别
+# 文件会被审查，但跳过指定类别的所有检查
+ignore_categories:
+  # - concurrency          # 忽略并发安全检查
+  # - performance          # 忽略性能相关检查
+  # - naming               # 忽略命名规范检查
+  # - documentation        # 忽略文档注释检查
+  # - security             # 忽略安全检查（不推荐）
+  # - bug                  # 忽略潜在 Bug 检查（不推荐）
+  # - best-practices       # 忽略最佳实践检查
+  # - resource-management  # 忽略资源管理检查
+  # - go-zero              # 忽略 go-zero 框架专项检查
+
+# 忽略特定审查规则
+# 文件会被审查，但跳过指定的具体检查规则
+ignore_rules:
+  # 并发安全相关
+  # - data-race              # 数据竞争检查
+  # - goroutine-leak         # Goroutine 泄漏检查
+  # - lock-usage             # 锁使用检查
+  # - channel-operation      # Channel 操作检查
+  
+  # 安全相关
+  # - sql-injection          # SQL 注入检查
+  # - command-injection      # 命令注入检查
+  # - path-traversal         # 路径遍历检查
+  # - weak-crypto            # 弱加密算法检查
+  # - authentication         # 认证检查
+  # - authorization          # 授权检查
+  
+  # 性能相关
+  # - memory-allocation      # 内存分配检查
+  # - string-concatenation   # 字符串拼接检查
+  # - slice-preallocation    # Slice 预分配检查
+  # - struct-copy            # 结构体复制检查
+  
+  # 最佳实践相关
+  # - error-wrapping         # 错误包装检查
+  # - error-checking         # 错误检查
+  # - context-propagation    # Context 传播检查
+  # - naming-convention      # 命名规范检查
+  # - exported-comment       # 导出符号注释检查
+  
+  # 资源管理相关
+  # - resource-close         # 资源关闭检查
+  # - context-lifecycle      # Context 生命周期检查
+  # - memory-leak            # 内存泄漏检查
+  
+  # Bug 相关
+  # - loop-closure           # 循环闭包变量捕获
+  # - nil-pointer            # 空指针检查
+  # - integer-overflow       # 整数溢出检查
+  
+  # go-zero 框架相关
+  # - go-zero-api-design     # API 设计规范
+  # - go-zero-auth           # JWT 认证配置
+  # - go-zero-context        # Context 传递
+  # - go-zero-error          # 错误处理
+  # - go-zero-db             # 数据库操作
+  # - go-zero-cache          # 缓存使用
+  # - go-zero-rpc            # RPC 调用
+
+# 文件级规则忽略
+# 为特定文件忽略特定的检查规则或类别
+file_ignore_rules:
+  # 示例：auth/handler.go 文件忽略错误包装检查
+  # - file: "auth/handler.go"
+  #   rules:
+  #     - error-wrapping
+  
+  # 示例：db/query.go 文件忽略整个安全类别检查
+  # - file: "db/query.go"
+  #   categories:
+  #     - security
+  
+  # 示例：internal/legacy/ 目录下的所有文件忽略命名规范
+  # - file: "internal/legacy/**/*.go"
+  #   rules:
+  #     - naming-convention
+  #     - exported-comment
+
+# 语言特定配置
+languages:
+  go:
+    # Go特定的检查项
+    check_error_handling: true
+    check_defer_usage: true
+    check_panic_usage: true
+    check_interface_naming: true
+  
+  cpp:
+    # C++特定的检查项
+    check_memory_management: true
+    check_raii: true
+    check_smart_pointers: true
+  
+  python:
+    # Python特定的检查项
+    check_type_hints: true
+    check_docstrings: true
+    check_pep8: true
+  
+  java:
+    # Java特定的检查项
+    check_exception_handling: true
+    check_resource_management: true
+    check_naming_conventions: true
+  
+  sql:
+    # SQL特定的检查项
+    check_injection_prevention: true
+    check_index_usage: true
+    check_query_optimization: true
+    check_naming_conventions: true
+  
+  csharp:
+    # C#特定的检查项
+    check_null_reference: true
+    check_async_await: true
+    check_dispose_pattern: true
+    check_naming_conventions: true
+  
+  protobuf:
+    # ProtoBuf特定的检查项
+    check_field_numbering: true
+    check_backward_compatibility: true
+    check_naming_conventions: true
+    check_message_design: true
+  
+  lua:
+    # Lua特定的检查项
+    check_global_variables: true
+    check_table_usage: true
+    check_error_handling: true
+    check_naming_conventions: true
+  
+  css:
+    # CSS特定的检查项
+    check_selector_specificity: true
+    check_property_order: true
+    check_vendor_prefixes: true
+    check_naming_conventions: true
+
+# 报告配置
+report:
+  # 报告格式: markdown, html, json
+  format: markdown
+  
+  # 是否包含代码片段
+  include_code_snippets: true
+  
+  # 代码片段上下文行数
+  snippet_context_lines: 3
+  
+  # 是否包含统计图表
+  include_charts: false
+  
+  # 是否包含改进建议汇总
+  include_summary: true
+
+# 通知配置
+notifications:
+  # 审查完成后是否发送通知
+  enabled: false
+  
+  # 通知方式: email, slack, webhook
+  # method: slack
+  # webhook_url: https://hooks.slack.com/services/YOUR/WEBHOOK/URL

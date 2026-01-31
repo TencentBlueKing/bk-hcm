@@ -1,0 +1,68 @@
+---
+description: tools 包使用规范，用于构建类型安全的数据库查询条件
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Tools 包使用规范（核心）
+
+## 构建方式
+
+| 场景 | 推荐方式 |
+|------|----------|
+| 动态构建多条件 | `AllExpression()` + 追加 Rule |
+| 单条件查询 | `ContainersExpression()`、`EqualExpression()` 等快捷函数 |
+| 合并已有表达式 | `ExpressionAnd()`、`ExpressionOr()` |
+
+```go
+// 动态构建（最常用）
+expr := tools.AllExpression()
+expr.Rules = append(expr.Rules, tools.RuleEqual("status", 1))
+if len(ids) > 0 {
+    expr.Rules = append(expr.Rules, tools.RuleIn("id", ids))
+}
+
+// 单条件
+expr := tools.ContainersExpression("bk_biz_id", bkBizIDs)
+
+// 合并表达式
+expr, err := tools.ExpressionAnd(baseExpr, tools.RuleEqual("active", true))
+```
+
+## 时间过滤（推荐 VarTime 系列）
+
+```go
+// 单月
+expr.Rules = append(expr.Rules, tools.RuleEqual("stat_date", tools.ConvTime(sateDate)))
+```
+
+## 常用快捷函数
+
+| 函数 | 用途 |
+|------|------|
+| `RuleEqual(fieldName string, value any)` | 等于 |
+| `RuleNotEqual(fieldName string, value any)` | 不等于 |
+| `RuleIn[T any](fieldName string, values []T)` | IN |
+| `RuleNotIn[T any](fieldName string, values []T)` | NOT IN |
+| `RuleGreaterThan(fieldName string, value any)` | 生成资源字段大于查询的AtomRule，即fieldName > value |
+| `RuleGreaterThanEqual(fieldName string, value any)` | 生成资源字段大于等于给定值的AtomRule，即fieldName >= value |
+| `RuleLessThanEqual(fieldName string, value any)` | 生成资源字段小于等于给定值的AtomRule，即fieldName <= value |
+| `RuleJSONEqual(fieldName string, value any)` | 生成资源的 `JSON` 字段等于查询的AtomRule，即fieldName = value |
+| `RuleJsonIn[T any](fieldName string, values []T)` | 生成资源 `JSON` 字段，在查询的AtomRule列表中，即fieldName IN values |
+| `RuleJSONContains[T any](fieldName string, values T)` | 生成资源 `JSON` 字段，包含在查询的AtomRule中，即values IN fieldName |
+
+## SQL 生成
+
+```go
+whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+// whereExpr: "WHERE status = :status_xxx AND id IN (:id_yyy)"
+// whereValue: map[string]interface{}{...}
+```
+
+## 注意事项
+
+- **空表达式初始化**：使用 `AllExpression()` 而非 `var expr *Expression`
+- **IN 限制**：默认最大 200 元素，可通过 `MaxInLimit()` 配置
+- **JSON 字段**：使用 `.` 分隔路径，如 `extension.vpc.id`
+
+> 完整规范请参考 skill: `go-tools-usage`

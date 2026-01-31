@@ -1,0 +1,12 @@
+# 临时克隆的标准仓库
+.temp_repos/
+
+# Python缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 临时文件
+*.tmp
+*.bak
+.DS_Store

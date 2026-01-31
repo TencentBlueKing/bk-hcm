@@ -1,0 +1,65 @@
+---
+description: Go 导入规范核心规则
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# 导入规范（核心）
+
+## 分组顺序
+导入必须按三组顺序，组间用空行分隔：
+1. **标准库** - Go 标准库包
+2. **内部包** - `hcm/` 开头的项目包
+3. **第三方包** - `github.com/`、`gopkg.in/` 等
+
+```go
+import (
+    "context"
+    "fmt"
+
+    "hcm/pkg/cc"
+    "hcm/pkg/logs"
+
+    "github.com/jmoiron/sqlx"
+)
+```
+
+## 别名使用
+仅在以下情况使用别名：
+- **路径含连字符**：`client` → `client`
+- **包名冲突**：两个 `types` 包需区分
+- **语义不清晰**：`types` → `ctypes`
+
+### 常用别名
+| 别名         | 包路径                             |
+|------------|---------------------------------|
+| `cliset`   | `hcm/pkg/client`                |
+| `acset`    | `hcm/pkg/client/account-server` |
+| `authset`  | `hcm/pkg/client/auth-server`    |
+| `cloudset` | `hcm/pkg/client/cloud-server`   |
+| `dsset`    | `hcm/pkg/client/data-service`   |
+| `hcset`    | `hcm/pkg/client/hc-service`     |
+| `taskset`  | `hcm/pkg/client/task-server`    |
+| `woaset`   | `hcm/pkg/client/woa-server`     |
+| `accproto` | `hcm/pkg/api/account-server`    |
+| `authproto` | `hcm/pkg/api/auth-server`       |
+| `cloudproto` | `hcm/pkg/api/cloud-server`      |
+| `dsproto`  | `hcm/pkg/api/data-service`      |
+| `hcproto`  | `hcm/pkg/api/hc-service`        |
+| `taskproto` | `hcm/pkg/api/task-server`       |
+| `woaproto` | `hcm/pkg/api/woa-server`        |
+| `idgenerator` | `hcm/pkg/dal/dao/id-generator`  |
+| `dbtools`  | `hcm/pkg/dal/dao/tools`         |
+
+## 特殊导入
+- **下划线导入**：仅用于驱动注册，必须加注释
+  ```go
+  // import mysql driver, used to create conn.
+  _ "github.com/go-sql-driver/mysql"
+  ```
+- **点导入**：**禁止使用**
+
+## 工具
+使用 `goimports -w .` 自动格式化，IDE 配置保存时自动运行。
+
+> 完整规范请参考 skill: `go-import-standard`

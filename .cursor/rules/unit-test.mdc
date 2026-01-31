@@ -1,0 +1,118 @@
+---
+description: unit test standard
+globs: 
+alwaysApply: false
+---
+
+# Go单元测试最佳实践
+
+## 基本
+
+- **绝对不允许**跳过本应实现的单元测试
+
+## 表驱动测试
+
+表驱动测试是Go语言中推荐的测试模式，它允许我们用简洁的方式测试多种输入和预期输出的组合。
+
+### 优势
+
+- 减少代码重复
+- 提高可读性
+- 易于扩展
+- 详细的错误信息
+
+### 基本结构
+
+```go
+func TestSomething(t *testing.T) {
+    // 定义测试用例表
+    testCases := []struct {
+        name     string        // 测试用例名称
+        input    SomeType      // 输入参数
+        expected AnotherType   // 预期输出
+        wantErr  bool          // 是否期望错误
+    }{
+        {
+            name:     "正常情况",
+            input:    SomeValue,
+            expected: ExpectedValue,
+            wantErr:  false,
+        },
+        // 更多测试用例...
+    }
+
+    // 执行所有测试用例
+    for _, tc := range testCases {
+        t.Run(tc.name, func(t *testing.T) {
+            // 执行被测试的函数
+            result, err := FunctionUnderTest(tc.input)
+
+            // 验证错误情况
+            if tc.wantErr {
+                assert.Error(t, err)
+                return
+            }
+
+            // 验证正常情况
+            assert.NoError(t, err)
+            assert.Equal(t, tc.expected, result)
+        })
+    }
+}
+```
+
+## 测试命名约定
+
+- 测试文件应命名为`xxx_test.go`
+- 测试函数应命名为`TestXxx`，其中`Xxx`是被测试的函数或方法名
+- 对于方法测试，使用`TestType_Method`格式，例如`TestEstDeviceResCostReq_Validate`
+- 表驱动测试中的测试用例应有描述性名称，清晰表明测试目的
+- 代码注释应使用英文
+
+## 使用子测试
+
+使用`t.Run()`创建子测试，这样可以：
+
+- 为每个测试用例提供单独的名称
+- 允许单独运行特定的测试用例
+- 在测试失败时提供更清晰的错误信息
+
+## 断言库的使用
+
+项目中使用`github.com/stretchr/testify/assert`库进行断言：
+
+```go
+assert.NoError(t, err)
+assert.Error(t, err)
+assert.Equal(t, expected, actual)
+assert.True(t, condition)
+assert.False(t, condition)
+```
+
+## 测试覆盖率
+
+定期检查测试覆盖率：
+
+```bash
+go test -cover ./...
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+## 并行测试
+
+对于独立的测试，可以使用`t.Parallel()`使测试并行运行：
+
+```go
+func TestSomething(t *testing.T) {
+    for _, tc := range testCases {
+        tc := tc // 捕获循环变量
+        t.Run(tc.name, func(t *testing.T) {
+            t.Parallel() // 标记此测试可以并行运行
+            // 测试逻辑
+        })
+    }
+}
+```
+
+注意：只有当测试之间没有共享状态或依赖时，才应使用并行测试。
