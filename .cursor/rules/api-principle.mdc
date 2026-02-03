@@ -1,0 +1,29 @@
+---
+name: api-principle
+description: Best practices for writing external APIs.
+globs: **/*
+---
+
+定义：
+- **对外接口**：所有在cloud-server、woa-server、account-server等服务层注册到restful的接口
+
+接口路径要求：
+- 所有接口路径以 /api/v1/{server-name} 开头，其中server-name为接口入口服务，枚举值：cloud、woa、account等
+- 接口路径、方法定义使用restful风格
+
+接口文档要求：
+- 所有**对外接口**都需要接口文档
+- 接口文档**必须**放在以下路径中：
+  - 资源视角下的混合云资源管理相关接口：@docs/api-docs/web-server/docs/resource/
+  - 业务视角下的接口：@docs/api-docs/web-server/docs/biz/
+  - 管理员视角下的内部运营管理相关接口：@docs/api-docs/web-server/docs/scr/
+  - 业务视角下的内部运营管理相关接口：@docs/api-docs/web-server/docs/biz/scr/
+- 接口文档的格式参考 @docs/api-docs/web-server/docs/resource/ 下的现有文档
+- 接口文档版本使用 v9.9.9，我们会在上线前手动将其修改为正确的版本
+
+当开发需求中需要编写接口时，遵循以下规则：
+- 基本所有需求都需要业务视角和资源视角（管理员视角）两组接口，如果你不确定，请提问确认
+- 所有需求的接口都需要在cloud-server、woa-server或account-server有入口
+- 即使一个需求可以直接调用云上接口（这个工作一般由hc-service直接完成），也需要从cloud-server设置入口，再由cloud-server通过内部微服务调用hc-service
+- 除data-service服务外，其他服务的接口**禁止**直接操作db，如有db操作需要，应通过data-service接口实现
+- 所有client调用接口的实现，必须通过：@pkg/client/common/request.go 下的方法进行封装
