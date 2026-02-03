@@ -1518,27 +1518,33 @@ func (s *scheduler) orderToUnifyOrder(kt *kit.Kit, orders []*types.ApplyOrder, g
 			productNum = uint(len(deviceInfos))
 		}
 
-		// 转换旧版可用区到新版可用区，方便前端统一展示
-		if order.Spec != nil && len(order.Spec.Zone) > 0 && len(order.Spec.Zones) == 0 {
-			order.Spec.Zones = []string{order.Spec.Zone}
-			// 分Campus
-			if order.Spec.Zone == cvmapi.CvmSeparateCampus {
-				order.Spec.Zones = []string{cvmapi.CvmZoneAll}
-				order.Spec.ResAssign = enumor.CampusResAssign
-			}
+	// 转换旧版可用区到新版可用区，方便前端统一展示
+	if order.Spec != nil && len(order.Spec.Zone) > 0 && len(order.Spec.Zones) == 0 {
+		order.Spec.Zones = []string{order.Spec.Zone}
+		// 分Campus
+		if order.Spec.Zone == cvmapi.CvmSeparateCampus {
+			order.Spec.Zones = []string{cvmapi.CvmZoneAll}
+			order.Spec.ResAssign = enumor.CampusResAssign
 		}
+	}
 
-		unifyOrder := &types.UnifyOrder{
-			OrderId:           order.OrderId,
-			SubOrderId:        order.SubOrderId,
-			BkBizId:           order.BkBizId,
-			User:              order.User,
-			RequireType:       order.RequireType,
-			ResourceType:      order.ResourceType,
-			ExpectTime:        order.ExpectTime,
-			Description:       order.Description,
-			Remark:            order.Remark,
-			Spec:              order.Spec,
+	// 处理 charge_type 空值，填充默认值（解决API申领未传计费模式的展示问题）
+	// TAPD: 129995406
+	if order.Spec != nil && order.Spec.ChargeType == "" {
+		order.Spec.ChargeType = cvmapi.ChargeTypePrePaid
+	}
+
+	unifyOrder := &types.UnifyOrder{
+		OrderId:           order.OrderId,
+		SubOrderId:        order.SubOrderId,
+		BkBizId:           order.BkBizId,
+		User:              order.User,
+		RequireType:       order.RequireType,
+		ResourceType:      order.ResourceType,
+		ExpectTime:        order.ExpectTime,
+		Description:       order.Description,
+		Remark:            order.Remark,
+		Spec:              order.Spec,
 			AntiAffinityLevel: order.AntiAffinityLevel,
 			EnableDiskCheck:   order.EnableDiskCheck,
 			Stage:             order.Stage,
