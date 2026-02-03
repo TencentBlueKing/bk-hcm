@@ -14,8 +14,12 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     {{- if .Values.ingress.webserver.enabled }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/static/(.*)$ {{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/web/static/$1 last;
-      rewrite ^{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/api/(.*)$ {{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/web/api/$1 last;
+      {{- $rootPrefix := "" }}
+      {{- if eq .Values.bkWebSiteAccess.mode "subpath" }}
+      {{- $rootPrefix = .Values.bkWebSiteAccess.subpath.rootPrefix }}
+      {{- end }}
+      rewrite ^{{$rootPrefix}}/static/(.*)$ {{$rootPrefix}}/web/static/$1 last;
+      rewrite ^{{$rootPrefix}}/api/(.*)$ {{$rootPrefix}}/web/api/$1 last;
     {{- end }}
 spec:
   rules:
