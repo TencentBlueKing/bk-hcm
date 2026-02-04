@@ -17,9 +17,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package gcp
+package tziyan
 
 import (
+	gosync "sync"
 	"time"
 
 	protoimage "hcm/pkg/api/hc-service/image"
@@ -28,31 +29,49 @@ import (
 	"hcm/pkg/logs"
 )
 
-// SyncGcpImage ...
-func SyncGcpImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
-
+// SyncImage sync image
+func SyncImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regions []string) error {
 	// 重新设置rid方便定位
 	kt = kt.NewSubKit()
 
 	start := time.Now()
-	logs.V(3).Infof("gcp account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("tcloud ziyan account[%s] sync image start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	defer func() {
-		logs.V(3).Infof("gcp account[%s] sync image end, cost: %v, rid: %s", accountID, time.Since(start), kt.Rid)
+		logs.V(3).Infof("tcloud ziyan account[%s] sync image end, cost: %v, rid: %s", accountID,
+			time.Since(start), kt.Rid)
 	}()
 
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
 	for _, region := range regions {
-		req := &protoimage.GcpImageSyncReq{
-			AccountID: accountID,
-			Region:    region,
-		}
-		if err := hcCli.Gcp.Image.SyncImage(kt.Ctx, kt.Header(), req); err != nil {
-			logs.Errorf("sync gcp image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-			return err
-		}
+		pipeline <- true
+		wg.Add(1)
 
-		// TODO feature: 因前端查询时未带地域参数，GCP暂时只同步一个地域
-		break
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			req := &protoimage.TCloudImageSyncReq{
+				AccountID: accountID,
+				Region:    region,
+			}
+			err := hcCli.TCloudZiyan.Image.SyncImage(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync tcloud ziyan image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(region)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
 	}
 
 	return nil

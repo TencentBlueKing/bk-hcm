@@ -24,7 +24,6 @@ type model struct {
 	requirement    Requirement
 	idcZone        IdcZone
 	deviceRestrict DeviceRestrict
-	cvmImage       CvmImage
 	cvmDevice      CvmDevice
 	dvmDevice      DvmDevice
 	pmDevice       PmDevice
@@ -43,11 +42,6 @@ func (m *model) IdcZone() IdcZone {
 // DeviceRestrict get device restrict operation interface
 func (m *model) DeviceRestrict() DeviceRestrict {
 	return m.deviceRestrict
-}
-
-// CvmImage get cvm image operation interface
-func (m *model) CvmImage() CvmImage {
-	return m.cvmImage
 }
 
 // CvmDevice get cvm device operation interface
@@ -72,7 +66,6 @@ func init() {
 		requirement:    &requirement{},
 		idcZone:        &idcZone{},
 		deviceRestrict: &deviceRestrict{},
-		cvmImage:       &cvmImage{},
 		cvmDevice:      &cvmDevice{},
 		dvmDevice:      &dvmDevice{},
 		pmDevice:       &pmDevice{},
@@ -89,7 +82,6 @@ type Model interface {
 	Requirement() Requirement
 	IdcZone() IdcZone
 	DeviceRestrict() DeviceRestrict
-	CvmImage() CvmImage
 	CvmDevice() CvmDevice
 	DvmDevice() DvmDevice
 	PmDevice() PmDevice
@@ -143,22 +135,6 @@ type DeviceRestrict interface {
 	UpdateDeviceRestrict(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
 	// DeleteDeviceRestrict deletes device restrict config from db
 	DeleteDeviceRestrict(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// CvmImage cvm image operation interface
-type CvmImage interface {
-	// NextSequence returns next cvm image config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateCvmImage creates cvm image config in db
-	CreateCvmImage(ctx context.Context, inst *types.CvmImage) error
-	// GetCvmImage gets cvm image config by filter from db
-	GetCvmImage(ctx context.Context, filter *mapstr.MapStr) (*types.CvmImage, error)
-	// FindManyCvmImage gets cvm image config list by filter from db
-	FindManyCvmImage(ctx context.Context, filter *mapstr.MapStr) ([]*types.CvmImage, error)
-	// UpdateCvmImage updates cvm image config by filter and doc in db
-	UpdateCvmImage(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteCvmImage deletes cvm image config from db
-	DeleteCvmImage(ctx context.Context, filter *mapstr.MapStr) error
 }
 
 // CvmDevice cvm device operation interface

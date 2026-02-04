@@ -215,7 +215,6 @@ type GetDeviceRestrictResult struct {
 
 // CvmImage cvm image config
 type CvmImage struct {
-	BkInstId  int64  `json:"id" bson:"id"`
 	Region    string `json:"region" bson:"region"`
 	ImageId   string `json:"image_id" bson:"image_id"`
 	ImageName string `json:"image_name" bson:"image_name"`
@@ -230,6 +229,16 @@ type GetCvmImageParam struct {
 type GetCvmImageResult struct {
 	Count int64       `json:"count"`
 	Info  []*CvmImage `json:"info"`
+}
+
+// BatchOpImageToApplyCVMReq 批量修改镜像状态，是否能用于申领CVM请求
+type BatchOpImageToApplyCVMReq struct {
+	ImageIDs []string `json:"image_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ...
+func (req *BatchOpImageToApplyCVMReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // DeviceInfo cvm device info

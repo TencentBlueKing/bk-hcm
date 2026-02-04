@@ -140,6 +140,7 @@ func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 			State:        one.State,
 			Type:         one.Type,
 			OsType:       one.OsType,
+			Region:       region,
 			Extension: &coreimage.TCloudExtension{
 				Region:      region,
 				ImageSource: one.ImageSource,
@@ -239,8 +240,8 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams) (
 					Value: params.CloudIDs,
 				},
 				&filter.AtomRule{
-					Field: "extension.region",
-					Op:    filter.JSONEqual.Factory(),
+					Field: "region",
+					Op:    filter.Equal.Factory(),
 					Value: params.Region,
 				},
 			},
@@ -294,7 +295,7 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.TCloud},
-				&filter.AtomRule{Field: "extension.region", Op: filter.JSONEqual.Factory(), Value: region},
+				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
 			},
 		},
 		Page: &core.BasePage{

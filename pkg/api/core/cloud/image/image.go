@@ -29,6 +29,7 @@ type BaseImage struct {
 	ID            string        `json:"id"`
 	Vendor        string        `json:"vendor"`
 	CloudID       string        `json:"cloud_id"`
+	Region        string        `json:"region"`
 	Name          string        `json:"name"`
 	Architecture  string        `json:"architecture"`
 	Platform      string        `json:"platform"`
@@ -40,7 +41,7 @@ type BaseImage struct {
 
 // Extension ...
 type Extension interface {
-	TCloudExtension | AwsExtension | GcpExtension | HuaWeiExtension | AzureExtension
+	TCloudExtension | TCloudZiyanExtension | AwsExtension | GcpExtension | HuaWeiExtension | AzureExtension
 }
 
 // Image ...
@@ -64,6 +65,14 @@ type TCloudExtension struct {
 	Region      string `json:"region"`
 	ImageSource string `json:"image_source"`
 	ImageSize   uint64 `json:"image_size"`
+}
+
+// TCloudZiyanExtension ...
+type TCloudZiyanExtension struct {
+	Region      string `json:"region"`
+	ImageSource string `json:"image_source"`
+	ImageSize   uint64 `json:"image_size"`
+	EnableCvm   bool   `json:"enable_cvm"`
 }
 
 // AwsExtension ...

@@ -188,6 +188,7 @@ type DBResType interface {
 		corezone.Zone[corezone.TCloudZoneExtension] |
 
 		coreimage.Image[coreimage.TCloudExtension] |
+		coreimage.Image[coreimage.TCloudZiyanExtension] |
 		coreimage.Image[coreimage.HuaWeiExtension] |
 		coreimage.Image[coreimage.AwsExtension] |
 		coreimage.Image[coreimage.AzureExtension] |

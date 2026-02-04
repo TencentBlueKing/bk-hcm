@@ -97,6 +97,7 @@ const (
 var allowedSyncAllResTypes = map[CloudResourceType]bool{
 	RegionCloudResType: true,
 	ZoneCloudResType:   true,
+	ImageCloudResType:  true,
 }
 
 // IsAllowedSyncAll 资源是否允许全量同步

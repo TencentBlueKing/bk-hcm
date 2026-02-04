@@ -39,7 +39,9 @@ func InitImageService(c *capability.Capability) {
 
 	h.Add("GetImage", http.MethodGet, "/vendors/{vendor}/images/{id}", svc.RetrieveImage)
 	h.Add("ListImage", http.MethodPost, "/images/list", svc.ListImage)
+	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", svc.ListImageExt)
 
+	// TODO 用于自研云重装获取镜像，目前直接从云上获取，后续本地镜像按账号、地域分组后，需改为从本地获取
 	h.Add("QueryImage", http.MethodPost, "/vendors/{vendor}/images/query_from_cloud", svc.QueryImage)
 	h.Add("QueryBizImage", http.MethodPost, "/bizs/{bk_biz_id}/vendors/{vendor}/images/query_from_cloud",
 		svc.QueryBizImage)

@@ -62,7 +62,7 @@ func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Cli
 		vpc:                  vpcOp,
 		subnet:               subnetOp,
 		deviceRestrict:       NewDeviceRestrictOp(),
-		cvmImage:             NewCvmImageOp(),
+		cvmImage:             NewCvmImageOp(client),
 		capacity:             NewCapacityOp(client, subnetOp, vpcOp, thirdCli, cmdbCli),
 		device:               NewDeviceOp(thirdCli, NewZoneOp(client)),
 		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),

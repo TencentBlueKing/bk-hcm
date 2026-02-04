@@ -14,11 +14,8 @@
 package config
 
 import (
-	"strconv"
-
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
-	"hcm/pkg/criteria/mapstr"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -31,12 +28,7 @@ func (s *service) GetCvmImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	cond := mapstr.MapStr{}
-	if len(input.Region) > 0 {
-		cond["region"] = mapstr.MapStr{pkg.BKDBIN: input.Region}
-	}
-
-	rst, err := s.logics.CvmImage().GetCvmImage(cts.Kit, &cond)
+	rst, err := s.logics.CvmImage().GetCvmImage(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to get cvm image list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -45,55 +37,33 @@ func (s *service) GetCvmImage(cts *rest.Contexts) (interface{}, error) {
 	return rst, nil
 }
 
-// CreateCvmImage creates cvm image config
-func (s *service) CreateCvmImage(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.CvmImage)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to create cvm image, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.CvmImage().CreateCvmImage(cts.Kit, inputData)
-	if err != nil {
-		logs.Errorf("failed to create cvm image, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
+// BatchEnableImageToApplyCVM 批量允许镜像用于申领CVM
+func (s *service) BatchEnableImageToApplyCVM(cts *rest.Contexts) (interface{}, error) {
+	return s.batchOpImageToApplyCVM(cts, s.logics.CvmImage().BatchEnableImageCvm)
 }
 
-// UpdateCvmImage updates cvm image config
-func (s *service) UpdateCvmImage(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(mapstr.MapStr)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to update cvm image, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if err := s.logics.CvmImage().UpdateCvmImage(cts.Kit, instId, inputData); err != nil {
-		logs.Errorf("failed to update cvm image, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+// BatchDisableImageToApplyCVM 批量禁止镜像用于申领CVM
+func (s *service) BatchDisableImageToApplyCVM(cts *rest.Contexts) (interface{}, error) {
+	return s.batchOpImageToApplyCVM(cts, s.logics.CvmImage().BatchDisableImageCvm)
 }
 
-// DeleteCvmImage deletes cvm image config
-func (s *service) DeleteCvmImage(cts *rest.Contexts) (interface{}, error) {
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
+// batchOpImageToApplyCVM 批量操作镜像用于申领CVM的通用处理函数
+func (s *service) batchOpImageToApplyCVM(cts *rest.Contexts, opFunc func(*kit.Kit, []string) error) (
+	interface{}, error) {
+
+	req := new(types.BatchOpImageToApplyCVMReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode batch operate image cvm request, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if err := s.logics.CvmImage().DeleteCvmImage(cts.Kit, instId); err != nil {
-		logs.Errorf("failed to delete cvm image, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err := req.Validate(); err != nil {
+		logs.Errorf("failed to validate batch operate image cvm request, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := opFunc(cts.Kit, req.ImageIDs); err != nil {
+		logs.Errorf("failed to batch operate image cvm, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
