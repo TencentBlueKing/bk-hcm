@@ -75,6 +75,8 @@ func InitCvmService(c *capability.Capability) {
 		"/vendors/{vendor}/instances/config/query_from_cloud", svc.ListInstanceConfig)
 	h.Add("ListBizInstanceConfig", http.MethodPost,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/instances/config/query_from_cloud", svc.ListBizInstanceConfig)
+	h.Add("GetMonitorData", http.MethodPost,
+		"/vendors/{vendor}/cvms/monitor/data", svc.GetMonitorData)
 
 	// 资源下回收相关接口
 	h.Add("RecycleCvm", http.MethodPost, "/cvms/recycle", svc.RecycleCvm)

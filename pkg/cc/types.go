@@ -1180,3 +1180,39 @@ func (c *ConcurrentConfig) trySetDefault() {
 		c.CLBImportCount = 10
 	}
 }
+
+// RecycleNoticeCfg recycle notice config.
+type RecycleNoticeCfg struct {
+	Enable                bool          `yaml:"enable"`
+	ScanInterval          time.Duration `yaml:"scanInterval"`
+	StartUpDelay          time.Duration `yaml:"startUpDelay"`
+	FailedNoticeIntervals []int         `yaml:"failedNoticeIntervals"`
+}
+
+// RecycleNotice recycle notice config.
+type RecycleNotice struct {
+	Recycle RecycleNoticeCfg `yaml:"recycle"`
+}
+
+func (c *RecycleNotice) validate() error {
+	return c.Recycle.validate()
+}
+
+func (c *RecycleNoticeCfg) validate() error {
+	if !c.Enable {
+		return nil
+	}
+	if c.ScanInterval <= 0 {
+		return errors.New("invalid ScanInterval, should be greater than 0")
+	}
+
+	if c.StartUpDelay <= 0 {
+		return errors.New("invalid StartUpDelay, should be greater than 0")
+	}
+
+	// 默认间隔：[1, 60, 240, 1440, 4320, 10080] 对应：1分钟、1小时、4小时、1天、3天、7天
+	if len(c.FailedNoticeIntervals) == 0 {
+		return errors.New("invalid FailedNoticeIntervals, should not be empty")
+	}
+	return nil
+}

@@ -182,8 +182,8 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 		accountID, region := arr[1], arr[2]
 		listFunc, err := svc.chooseListSGStatisticFunc(vendor)
 		if err != nil {
-			logs.Errorf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
+			logs.Warnf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
+			continue
 		}
 
 		ids := make([]string, 0, len(groups))
@@ -218,8 +218,8 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 	for _, group := range securityGroups {
 		statistic, ok := resultMap[group.ID]
 		if !ok {
-			logs.Errorf("security group %s statistic not found, rid: %s", group.ID, kt.Rid)
-			return nil, fmt.Errorf("security group %s statistic not found", group.ID)
+			logs.Warnf("security group %s statistic not found, rid: %s", group.ID, kt.Rid)
+			continue
 		}
 		result.Details = append(result.Details, statistic)
 	}

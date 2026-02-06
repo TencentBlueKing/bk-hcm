@@ -123,8 +123,12 @@ func (s *service) ListZone(cts *rest.Contexts) (interface{}, error) {
 			return nil, errf.NewFromErr(errf.Aborted, err)
 		}
 
-		// 转换为 ZoneElem 格式
+		// 转换为 ZoneElem 格式，排除 disable_cvm 为 true 的 zone（disable_cvm 为空视为 false，即不禁用）
 		for _, zone := range zones.Details {
+			// 如果 DisableCvm 显式为 true，则跳过该 zone（已禁用）
+			if zone.Extension != nil && zone.Extension.DisableCvm {
+				continue
+			}
 			details = append(details, dtypes.ZoneElem{
 				ZoneID:   zone.Name,
 				ZoneName: zone.NameCn,

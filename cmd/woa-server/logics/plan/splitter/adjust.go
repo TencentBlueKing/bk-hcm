@@ -46,8 +46,8 @@ func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, dema
 		return err
 	}
 
-	// 4. 调增逻辑
-	canTransfer, err := s.prepareAddSubTickets(kt, ticketID, addDemands)
+	// 4. 调增逻辑, cvmAddDemands 为排除纯 CBS 需求后剩余的 CVM 追加需求
+	canTransfer, cvmAddDemands, err := s.prepareAddSubTickets(kt, ticketID, addDemands)
 	if err != nil {
 		logs.Errorf("failed to prepare add sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -55,7 +55,7 @@ func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, dema
 	// 4.1. 如果追加发现无可转移预测，直接将所有调增需求合并为一个追加子单
 	if !canTransfer {
 		s.adjSplitGroupDemands[enumor.RPTicketTypeAdd] = append(s.adjSplitGroupDemands[enumor.RPTicketTypeAdd],
-			cvt.SliceToPtr(addDemands)...)
+			cvt.SliceToPtr(cvmAddDemands)...)
 	}
 
 	// 5. 将所有 adjSplitGroupDemands 中的非转移、延期需求全部合并到adjust子单

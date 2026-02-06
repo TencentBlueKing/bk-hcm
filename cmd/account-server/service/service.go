@@ -32,6 +32,7 @@ import (
 	"hcm/cmd/account-server/logics/bill"
 	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
 	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
+	aideductconfig "hcm/cmd/account-server/service/bill/ai-deduct-config"
 	"hcm/cmd/account-server/service/bill/billadjustment"
 	"hcm/cmd/account-server/service/bill/billitem"
 	"hcm/cmd/account-server/service/bill/billsummarybiz"
@@ -293,6 +294,7 @@ func (s *Service) apiSet() *restful.Container {
 	billsyncrecord.InitService(c)
 	exchangerate.InitService(c)
 	savingsplans.InitService(c)
+	aideductconfig.InitAIDeductConfigService(c)
 
 	finops.InitService(c)
 

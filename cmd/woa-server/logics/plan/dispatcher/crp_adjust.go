@@ -608,6 +608,12 @@ func (c *CrpTicketCreator) prePrepareTransferableData(kt *kit.Kit, id string, de
 		return errors.New("updated demand is nil")
 	}
 
+	// 纯 CBS 场景不支持转移
+	if demand.Updated.Cvm.IsEmpty() {
+		logs.Infof("CBS-only demand, skip transfer logic, ticket id: %s, rid: %s", id, kt.Rid)
+		return nil
+	}
+
 	needDemand := demand.Updated
 	expectYear, err := strconv.Atoi(needDemand.ExpectTime[:4])
 	if err != nil {
@@ -829,18 +835,22 @@ func (c *CrpTicketCreator) constructAdjustAppendData(kt *kit.Kit, subTicket *pty
 		PlanProductName: subTicket.PlanProductName,
 		ProductId:       int(subTicket.OpProductID),
 		ProductName:     subTicket.OpProductName,
-		InstanceType:    demand.Updated.Cvm.DeviceClass,
 		CityId:          0,
 		CityName:        demand.Updated.RegionName,
 		ZoneId:          0,
 		ZoneName:        demand.Updated.ZoneName,
-		InstanceModel:   demand.Updated.Cvm.DeviceType,
 		UseTime:         demand.Updated.ExpectTime,
-		CvmAmount:       demand.Updated.Cvm.Os.InexactFloat64(),
 		InstanceIO:      int(demand.Updated.Cbs.DiskIo),
 		DiskType:        crpDiskType,
 		DiskTypeName:    diskTypeName,
 		AllDiskAmount:   demand.Updated.Cbs.DiskSize,
+	}
+
+	// 仅在有 Cvm 需求的情况下填充 Cvm 相关字段
+	if !demand.Updated.Cvm.IsEmpty() {
+		demandItem.InstanceType = demand.Updated.Cvm.DeviceClass
+		demandItem.InstanceModel = demand.Updated.Cvm.DeviceType
+		demandItem.CvmAmount = demand.Updated.Cvm.Os.InexactFloat64()
 	}
 	// 修改场景追加调整后的预测时，需要提供预期退回时间参数
 	if demand.Updated.ObsProject == enumor.ObsProjectShortLease {

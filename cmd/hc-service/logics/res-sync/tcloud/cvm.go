@@ -156,12 +156,16 @@ func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap m
 	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension], 0, len(updateMap))
 
 	for id, one := range updateMap {
-		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
-			return nil, fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		var vpcID string
+		// 容忍 vpc不存在的情况，不中断同步
+		if _, exists := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; exists {
+			vpcID = vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID
 		}
 
-		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
-			return nil, fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		var subnetID string
+		// 容忍 subnet不存在的情况，不中断同步
+		if _, exists := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; exists {
+			subnetID = subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]
 		}
 
 		imageID := ""
@@ -175,9 +179,9 @@ func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap m
 				ID:             id,
 				Name:           converter.PtrToVal(one.InstanceName),
 				CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
-				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
+				VpcIDs:         []string{vpcID},
 				CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
-				SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
+				SubnetIDs:      []string{subnetID},
 				CloudImageID:   converter.PtrToVal(one.ImageId),
 				ImageID:        imageID,
 				// 备注字段云上没有，仅限hcm内部使用
@@ -241,12 +245,16 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
-		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
-			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		var vpcID string
+		// 容忍 vpc不存在的情况，不中断同步
+		if _, exists := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; exists {
+			vpcID = vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID
 		}
 
-		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
-			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		var subnetID string
+		// 容忍 subnet不存在的情况，不中断同步
+		if _, exists := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; exists {
+			subnetID = subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]
 		}
 
 		imageID := ""
@@ -261,7 +269,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			}
 		}
 		extension := BuildCVMExtension(one)
-		lists = append(lists, buildCvmCreateReq(one, extension, accountID, region, imageID, vpcMap, subnetMap))
+		lists = append(lists, buildCvmCreateReq(one, extension, accountID, region, imageID, vpcID, subnetID))
 	}
 
 	createReq := dataproto.CvmBatchCreateReq[corecvm.TCloudCvmExtension]{
@@ -283,8 +291,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 
 // buildCvmCreateReq builds the request for creating a CVM.
 func buildCvmCreateReq(one typescvm.TCloudCvm, extension *corecvm.TCloudCvmExtension, accountID string, region string,
-	imageID string, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) protocloud.CvmBatchCreate[corecvm.TCloudCvmExtension] {
+	imageID string, vpcID, subnetID string) protocloud.CvmBatchCreate[corecvm.TCloudCvmExtension] {
 
 	addOne := dataproto.CvmBatchCreate[corecvm.TCloudCvmExtension]{
 		CloudID:        converter.PtrToVal(one.InstanceId),
@@ -296,9 +303,9 @@ func buildCvmCreateReq(one typescvm.TCloudCvm, extension *corecvm.TCloudCvmExten
 		Region:         region,
 		Zone:           converter.PtrToVal(one.Placement.Zone),
 		CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
-		VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
+		VpcIDs:         []string{vpcID},
 		CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
-		SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
+		SubnetIDs:      []string{subnetID},
 		CloudImageID:   converter.PtrToVal(one.ImageId),
 		ImageID:        imageID,
 		OsName:         converter.PtrToVal(one.OsName),

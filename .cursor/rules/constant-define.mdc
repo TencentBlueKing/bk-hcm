@@ -1,0 +1,15 @@
+---
+name: constant-define
+description: constant definition and enumeration value definition.
+globs: **/*
+---
+
+当需要为变量定义类型时：
+- 首先确认该变量是否**可枚举**
+- 对**可枚举**变量，优先定义枚举值作为变量类型
+- 枚举值统一放在 @pkg/criteria/enumor/ 目录下
+- 一般来说，枚举值需要一个 Validate() 方法对其进行正确性校验
+
+当需要在代码中写一些固定的字符串或数字时：
+- 除字符串格式化场景外，所有字符串或数字禁止写死，**必须**定义为常量
+- 常量定义统一放在 @pkg/criteria/constant/ 目录下

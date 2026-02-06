@@ -1,4 +1,4 @@
-FROM hub.bktencent.com/blueking/bk-hcm-base:v1.1
+FROM mirrors.tencent.com/build/blueking/bk-hcm-base:v1.2
 
 COPY bk-hcm-webserver /data/hcm/
 COPY front /data/hcm/front

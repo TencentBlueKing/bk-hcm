@@ -104,7 +104,7 @@ func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, erro
 	}
 
 	// 仅对 source 为 sync 的数据进行云上对比
-	regionFromDB := slice.Filter(allRegionFromDB, func(region cloudcore.TCloudRegion) bool {
+	regionFromDB := slice.Filter(allRegionFromDB, func(region cloudcore.TCloudZiyanRegion) bool {
 		return region.Source == enumor.RegionSourceSync
 	})
 
@@ -113,7 +113,7 @@ func (cli *client) Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, erro
 	}
 
 	// 只对 sync 的数据进行 diff
-	addSlice, updateMap, delCloudIDs := common.Diff[typesregion.TCloudRegion, cloudcore.TCloudRegion](
+	addSlice, updateMap, delCloudIDs := common.Diff[typesregion.TCloudRegion, cloudcore.TCloudZiyanRegion](
 		regionFromCloud, regionFromDB, isRegionChange)
 
 	// 对于需要 add 的 region，检查是否在 allRegionFromDB 中存在（可能是过去临时手动添加的）
@@ -223,7 +223,7 @@ func (cli *client) updateRegion(kt *kit.Kit, opt *SyncRegionOption,
 // findExistingRegionsToDelete 查找需要删除的已存在 region
 // 返回这些 region 的 region_id 列表
 func (cli *client) findExistingRegionsToDelete(addRegions []typesregion.TCloudRegion,
-	allDBRegions []cloudcore.TCloudRegion) []string {
+	allDBRegions []cloudcore.TCloudZiyanRegion) []string {
 
 	toDeleteRegionIDs := make([]string, 0)
 	addRegionMap := converter.SliceToMap(addRegions,
@@ -300,7 +300,7 @@ func (cli *client) listRegionFromCloud(kt *kit.Kit, opt *SyncRegionOption) ([]ty
 }
 
 func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
-	[]cloudcore.TCloudRegion, error) {
+	[]cloudcore.TCloudZiyanRegion, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -320,7 +320,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 		Page: core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
-	results := make([]cloudcore.TCloudRegion, 0)
+	results := make([]cloudcore.TCloudZiyanRegion, 0)
 	for {
 		req.Page.Start = start
 		regions, err := cli.dbCli.TCloudZiyan.Region.ListRegion(kt, req)
@@ -341,7 +341,7 @@ func (cli *client) listRegionFromDB(kt *kit.Kit, opt *SyncRegionOption) (
 	return results, nil
 }
 
-func isRegionChange(cloud typesregion.TCloudRegion, db cloudcore.TCloudRegion) bool {
+func isRegionChange(cloud typesregion.TCloudRegion, db cloudcore.TCloudZiyanRegion) bool {
 
 	if cloud.RegionID != db.RegionID {
 		return true

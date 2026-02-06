@@ -43,7 +43,7 @@ import (
 
 // BatchCreateTCloudZiyanRegion batch create region.
 func (svc *regionSvc) BatchCreateTCloudZiyanRegion(cts *rest.Contexts) (interface{}, error) {
-	req := new(protoregion.TCloudRegionCreateReq)
+	req := new(protoregion.TCloudZiyanRegionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -202,23 +202,23 @@ func (svc *regionSvc) ListTCloudZiyanRegion(cts *rest.Contexts) (interface{}, er
 		return nil, fmt.Errorf("list tcloud ziyan region failed, err: %v", err)
 	}
 	if req.Page.Count {
-		return &protoregion.TCloudRegionListResult{Count: daoRegionResp.Count}, nil
+		return &protoregion.TCloudZiyanRegionListResult{Count: daoRegionResp.Count}, nil
 	}
 
-	details := make([]protocore.TCloudRegion, 0, len(daoRegionResp.Details))
+	details := make([]protocore.TCloudZiyanRegion, 0, len(daoRegionResp.Details))
 	for _, region := range daoRegionResp.Details {
 		details = append(details, converter.PtrToVal(convertTCloudZiyanBaseRegion(&region)))
 	}
 
-	return &protoregion.TCloudRegionListResult{Details: details}, nil
+	return &protoregion.TCloudZiyanRegionListResult{Details: details}, nil
 }
 
-func convertTCloudZiyanBaseRegion(dbRegion *tableregion.TCloudZiyanRegionTable) *protocore.TCloudRegion {
+func convertTCloudZiyanBaseRegion(dbRegion *tableregion.TCloudZiyanRegionTable) *protocore.TCloudZiyanRegion {
 	if dbRegion == nil {
 		return nil
 	}
 
-	return &protocore.TCloudRegion{
+	return &protocore.TCloudZiyanRegion{
 		ID:         dbRegion.ID,
 		Vendor:     dbRegion.Vendor,
 		RegionID:   dbRegion.RegionID,

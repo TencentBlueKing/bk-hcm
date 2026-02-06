@@ -51,10 +51,15 @@ func (a *GcpAIDeductMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
 func (a *GcpAIDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (itemList []bill.RawBillItem,
 	isFinished bool, err error) {
 
+	rules, err := GenAIFilterRules(kt, opt.Vendor)
+	if err != nil {
+		logs.Errorf("fail to gen ai filter rules, err: %v, rid: %s", err, kt.Rid)
+		return nil, false, fmt.Errorf("fail to gen ai filter rules, err: %w", err)
+	}
 	// ai 账单抵扣
 	flt := &filter.Expression{
 		Op:    filter.And,
-		Rules: GenAIFilterRules(),
+		Rules: rules,
 	}
 	page := &core.BasePage{
 		Start: uint32(index),

@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { ref, onBeforeMount, computed, useTemplateRef } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onBeforeMount, computed, useTemplateRef, reactive } from 'vue';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { useResourcePlanStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
-import useBreadcrumb from '@/hooks/use-breadcrumb';
 import Approval from '@/components/resource-plan/applications/detail/approval';
 import ResourcePlanTicketAudit from '@/components/resource-plan/applications/detail/ticket-audit/index.vue';
 import Basic from '@/components/resource-plan/applications/detail/basic/index.vue';
 import ResourcePlanList from '@/components/resource-plan/applications/detail/list/index.vue';
 import SubTicketList from '../sub-ticket/sub-ticket-list.vue';
+import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { TicketByIdResult } from '@/typings/resourcePlan';
 import { SubTicketAudit } from '@/store/ticket/res-sub-ticket';
+import { MENU_BUSINESS_TICKET_MANAGEMENT, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 // 路由、状态管理、工具函数
 const route = useRoute();
@@ -20,7 +22,12 @@ const router = useRouter();
 const { t } = useI18n();
 const resourcePlanStore = useResourcePlanStore();
 const { getBizsId, isBusinessPage } = useWhereAmI();
-const { setTitle } = useBreadcrumb();
+
+// 跳转至单据列表
+const navigateTo: RouteLocationRaw = reactive({
+  name: computed(() => (isBusinessPage ? MENU_BUSINESS_TICKET_MANAGEMENT : MENU_SERVICE_TICKET_MANAGEMENT)),
+  query: computed(() => ({ type: 'resource_plan', [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] })),
+});
 
 // 响应式数据
 const ticketDetail = ref<TicketByIdResult>();
@@ -29,6 +36,9 @@ const isLoading = ref(false);
 const errorMessage = ref<string>();
 const active = ref('approval');
 const subTicketListRef = useTemplateRef('subTicketList');
+
+// 计算属性：详情标题
+const detailTitle = computed(() => `${t('申请单详情')} - ${ticketDetail.value?.id || ''}`);
 
 // 计算属性：是否显示审批详情组件
 const isTicketAuditDetailShow = computed(() => {
@@ -70,9 +80,6 @@ const getResultData = async () => {
     // 获取子单列表数据
     subTicketListRef.value && subTicketListRef.value?.getData();
 
-    // 设置面包屑标题
-    setTitle(`${t('申请单详情')} - ${ticketDetail.value?.id}`);
-
     // 轮询逻辑：init 或 auditing 状态时自动刷新
     if (ticketRes?.data?.status_info?.status === 'init' || ticketRes?.data?.status_info?.status === 'auditing') {
       autoFlushTask.resume();
@@ -109,6 +116,9 @@ onBeforeMount(() => {
 
 <template>
   <bk-loading :loading="isLoading">
+    <DetailHeader :to="navigateTo">
+      <span>{{ detailTitle }}</span>
+    </DetailHeader>
     <section class="home">
       <!-- 当前审批节点信息 -->
       <Approval
@@ -163,6 +173,7 @@ onBeforeMount(() => {
 <style scoped lang="scss">
 .home {
   padding: 24px;
+  margin-top: 52px;
 }
 
 .mb-16 {

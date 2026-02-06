@@ -101,6 +101,7 @@ type Service struct {
 	cmdbCli        cmdb.Client
 	itsmCli        itsm.Client
 	finOpsCli      finops.Client
+	cmsiCli        cmsi.Client
 	// authorizer 鉴权所需接口集合
 	authorizer     auth.Authorizer
 	thirdCli       *thirdparty.Client
@@ -419,6 +420,7 @@ func assembleService(apiClientSet *client.ClientSet, clients *clientSet, logics 
 		bizLogic:       logics.bizLogic,
 		dissolveLogic:  logics.dissolveLogics,
 		configLogics:   logics.configLogics,
+		cmsiCli:        clients.cmsiCli,
 	}
 }
 
@@ -463,7 +465,7 @@ func newOtherClient(kt *kit.Kit, service *Service, itsmCli itsm.Client, sd servi
 
 	recyclerIf, err := recycler.New(kt.Ctx, service.thirdCli, service.bizLogic, service.cmdbCli, service.authorizer,
 		service.rsLogic, service.srLogic, service.dissolveLogic, service.client, service.configLogics,
-		service.planController)
+		service.planController, service.cmsiCli)
 	if err != nil {
 		logs.Errorf("new recycler failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -478,6 +480,16 @@ func newOtherClient(kt *kit.Kit, service *Service, itsmCli itsm.Client, sd servi
 		}()
 
 		recyclerIf.StartStuckCheckLoop(kt.NewSubKit())
+	}()
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				logs.Errorf("recycler failed notice scan loop exit unexpectedly, err: %v, rid: %s", err, kt.Rid)
+			}
+		}()
+
+		recyclerIf.StartFailedNoticeScanLoop(kt.NewSubKit())
 	}()
 
 	operationIf, err := operation.New(kt.Ctx, service.client)

@@ -110,32 +110,9 @@ func (l *logics) CreateApplyOrder(kt *kit.Kit, param *types.CvmCreateReq) (*type
 		UpdateAt:    now,
 	}
 
-	if enumor.RequireType(order.RequireType) == enumor.RequireTypeRollServer {
-		canApply, reason, err := l.rsLogic.CanApplyHost(kt, order.BkBizId, order.Total, enumor.CvmProduceAppliedType)
-		if err != nil {
-			logs.Errorf("determine can apply rolling server host failed, err: %v, bizID: %s, total: %d, rid: %s", err,
-				order.BkBizId, order.Total, kt.Rid)
-			return nil, err
-		}
-		if !canApply {
-			logs.Errorf("can not apply host, order: %+v, reason: %s, rid: %s", *order, reason, kt.Rid)
-			return nil, fmt.Errorf("%s", reason)
-		}
-
-		data := rstypes.CreateAppliedRecordData{
-			BizID:       order.BkBizId,
-			OrderID:     order.OrderId,
-			SubOrderID:  strconv.FormatUint(order.OrderId, 10),
-			DeviceType:  order.Spec.DeviceType,
-			Count:       int(order.Total),
-			AppliedType: enumor.CvmProduceAppliedType,
-			RequireType: enumor.RequireType(order.RequireType),
-		}
-
-		if err = l.rsLogic.CreateAppliedRecord(kt, []rstypes.CreateAppliedRecordData{data}); err != nil {
-			logs.Errorf("create rolling applied record failed, err: %v, order: %+v, rid: %s", err, *order, kt.Rid)
-			return nil, err
-		}
+	if err = l.processingOrderByRequireType(kt, order); err != nil {
+		logs.Errorf("processing cvm apply order by require type failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	// GPU特殊机型的计费时长校验
@@ -175,6 +152,58 @@ func (l *logics) CreateApplyOrder(kt *kit.Kit, param *types.CvmCreateReq) (*type
 	}
 
 	return rst, nil
+}
+
+func (l *logics) processingOrderByRequireType(kt *kit.Kit, order *types.ApplyOrder) error {
+	switch enumor.RequireType(order.RequireType) {
+	case enumor.RequireTypeRollServer:
+		canApply, reason, err := l.rsLogic.CanApplyHost(kt, order.BkBizId, order.Total, enumor.CvmProduceAppliedType)
+		if err != nil {
+			logs.Errorf("determine can apply rolling server host failed, err: %v, bizID: %s, total: %d, rid: %s",
+				err, order.BkBizId, order.Total, kt.Rid)
+			return err
+		}
+		if !canApply {
+			logs.Errorf("can not apply host, order: %+v, reason: %s, rid: %s", *order, reason, kt.Rid)
+			return fmt.Errorf("%s", reason)
+		}
+
+		data := rstypes.CreateAppliedRecordData{
+			BizID:       order.BkBizId,
+			OrderID:     order.OrderId,
+			SubOrderID:  strconv.FormatUint(order.OrderId, 10),
+			DeviceType:  order.Spec.DeviceType,
+			Count:       int(order.Total),
+			AppliedType: enumor.CvmProduceAppliedType,
+			RequireType: enumor.RequireType(order.RequireType),
+		}
+
+		if err = l.rsLogic.CreateAppliedRecord(kt, []rstypes.CreateAppliedRecordData{data}); err != nil {
+			logs.Errorf("create rolling applied record failed, err: %v, order: %+v, rid: %s", err, *order, kt.Rid)
+			return err
+		}
+
+	case enumor.RequireTypeSpringResPool:
+		configChargeType, err := l.confLogic.SpringResPool().GetChargeType(kt, order.BkBizId)
+		if err != nil {
+			logs.Errorf("failed to get spring res pool charge type config, bizID: %d, err: %v, rid: %s",
+				order.BkBizId, err, kt.Rid)
+			return err
+		}
+
+		userChargeType := order.Spec.ChargeType
+		if userChargeType != configChargeType {
+			logs.Errorf("charge type mismatch for spring res pool, bizID: %d, user: %s, config: %s, rid: %s",
+				order.BkBizId, userChargeType, configChargeType, kt.Rid)
+			return fmt.Errorf("charge type mismatch: user selected %s, but config requires %s, please adjust",
+				userChargeType, configChargeType)
+		}
+
+	default:
+		return nil
+	}
+
+	return nil
 }
 
 // GetApplyOrderById get cvm apply order info by order id

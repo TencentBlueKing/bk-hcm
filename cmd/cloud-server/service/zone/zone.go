@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -70,6 +71,8 @@ func InitZoneService(c *capability.Capability) {
 	h.Add("ListZone", http.MethodPost, "/vendors/{vendor}/regions/{region}/zones/list", svc.ListZone)
 	h.Add("ImportZone", http.MethodPost, "/vendors/{vendor}/zones/import", svc.ImportZone)
 	h.Add("DeleteZone", http.MethodDelete, "/vendors/{vendor}/zones/{id}", svc.DeleteZone)
+	h.Add("BatchUpdateZoneDisableCvm", http.MethodPatch, "/vendors/{vendor}/zones/disable_cvm/batch",
+		svc.BatchUpdateZoneDisableCvm)
 
 	h.Load(c.WebService)
 }
@@ -350,10 +353,10 @@ func (dSvc *ZoneSvc) DeleteZone(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 通过 id 删除
-	deleteFilter := &filter.Expression{
-		Op:    filter.And,
-		Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: id}},
-	}
+	deleteFilter := tools.ExpressionAnd(
+		tools.RuleEqual("id", id),
+		tools.RuleEqual("vendor", vendorStr),
+	)
 	deleteReq := &dataproto.ZoneBatchDeleteReq{
 		Filter: deleteFilter,
 	}
@@ -364,4 +367,29 @@ func (dSvc *ZoneSvc) DeleteZone(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// BatchUpdateZoneDisableCvm batch update zone disable_cvm field.
+func (dSvc *ZoneSvc) BatchUpdateZoneDisableCvm(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(cloudproto.ZoneBatchUpdateDisableCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 根据 vendor 调用不同的更新方法
+	switch vendor {
+	case enumor.TCloudZiyan:
+		return dSvc.batchUpdateTCloudZiyanZoneDisableCvm(cts, req)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support batch update disable_cvm", vendor)
+	}
 }

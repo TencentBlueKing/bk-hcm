@@ -25,7 +25,6 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeszone "hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud/zone"
 	corezone "hcm/pkg/api/core/cloud/zone"
 	datazone "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/constant"
@@ -204,7 +203,7 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	}
 
 	// 仅对 source 为 sync 的数据进行云上对比
-	zoneFromDB := slice.Filter(allZoneFromDB, func(zone corezone.Zone[corezone.TCloudZoneExtension]) bool {
+	zoneFromDB := slice.Filter(allZoneFromDB, func(zone corezone.Zone[corezone.TCloudZiyanZoneExtension]) bool {
 		return zone.Source == enumor.RegionSourceSync
 	})
 
@@ -213,8 +212,8 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	}
 
 	// 只对 sync 的数据进行 diff
-	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.TCloudZone, corezone.Zone[corezone.TCloudZoneExtension]](
-		zoneFromCloud, zoneFromDB, isZoneChange)
+	addSlice, updateMap, delCloudIDs := common.Diff[typeszone.TCloudZone,
+		corezone.Zone[corezone.TCloudZiyanZoneExtension]](zoneFromCloud, zoneFromDB, isZoneChange)
 
 	// 对于需要 add 的 zone，检查是否在 allZoneFromDB 中存在（可能是过去临时手动添加的）
 	// 如果存在，需要先删除
@@ -237,7 +236,7 @@ func (cli *client) Zone(kt *kit.Kit, opt *SyncZoneOption) (*SyncResult, error) {
 	}
 
 	if len(updateMap) > 0 {
-		if err = cli.updateZone(kt, opt, updateMap); err != nil {
+		if err = cli.updateZone(kt, opt, updateMap, zoneFromDB); err != nil {
 			return nil, err
 		}
 	}
@@ -250,25 +249,26 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption, addSlice []types
 		return errors.New("zone addSlice is <= 0, not create")
 	}
 
-	list := make([]datazone.ZoneBatchCreate[zone.TCloudZoneExtension], 0, len(addSlice))
+	list := make([]datazone.ZoneBatchCreate[corezone.TCloudZiyanZoneExtension], 0, len(addSlice))
 
 	for _, one := range addSlice {
-		zoneOne := datazone.ZoneBatchCreate[zone.TCloudZoneExtension]{
+		zoneOne := datazone.ZoneBatchCreate[corezone.TCloudZiyanZoneExtension]{
 			CloudID: one.CloudID,
 			Name:    one.ZoneID,
 			NameCn:  one.ZoneName,
 			State:   one.State,
 			Region:  opt.Region,
 			Source:  enumor.RegionSourceSync,
-			Extension: &zone.TCloudZoneExtension{
+			Extension: &corezone.TCloudZiyanZoneExtension{
 				CityName:        opt.CityName,
 				LogicCampusName: one.LogicCampusName,
+				DisableCvm:      false, // 默认不禁用（启用）
 			},
 		}
 		list = append(list, zoneOne)
 	}
 
-	createReq := &datazone.ZoneBatchCreateReq[zone.TCloudZoneExtension]{
+	createReq := &datazone.ZoneBatchCreateReq[corezone.TCloudZiyanZoneExtension]{
 		Zones: list,
 	}
 	_, err := cli.dbCli.TCloudZiyan.Zone.BatchCreateZone(kt, createReq)
@@ -284,26 +284,43 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption, addSlice []types
 	return nil
 }
 
-func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[string]typeszone.TCloudZone) error {
+func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[string]typeszone.TCloudZone,
+	zoneFromDB []corezone.Zone[corezone.TCloudZiyanZoneExtension]) error {
+
 	if len(updateMap) <= 0 {
 		return errors.New("zone updateMap is <= 0, not update")
 	}
 
-	updates := make([]datazone.ZoneBatchUpdate[zone.TCloudZoneExtension], 0, len(updateMap))
+	// 构建 zone ID 到 DisableCvm 的映射，保留原有的 DisableCvm 设置
+	disableCvmMap := make(map[string]bool)
+	for _, dbZone := range zoneFromDB {
+		if dbZone.Extension != nil {
+			disableCvmMap[dbZone.GetID()] = dbZone.Extension.DisableCvm
+		}
+	}
+
+	updates := make([]datazone.ZoneBatchUpdate[corezone.TCloudZiyanZoneExtension], 0, len(updateMap))
 
 	for id, one := range updateMap {
-		update := datazone.ZoneBatchUpdate[zone.TCloudZoneExtension]{
+		// 保留原有的 DisableCvm 值，如果不存在（旧数据）则默认为 false（不禁用）
+		disableCvm := false
+		if val, exists := disableCvmMap[id]; exists {
+			disableCvm = val
+		}
+
+		update := datazone.ZoneBatchUpdate[corezone.TCloudZiyanZoneExtension]{
 			ID:    id,
 			State: one.State,
-			Extension: &zone.TCloudZoneExtension{
+			Extension: &corezone.TCloudZiyanZoneExtension{
 				CityName:        opt.CityName,
 				LogicCampusName: one.LogicCampusName,
+				DisableCvm:      disableCvm,
 			},
 		}
 		updates = append(updates, update)
 	}
 
-	updateReq := &datazone.ZoneBatchUpdateReq[zone.TCloudZoneExtension]{
+	updateReq := &datazone.ZoneBatchUpdateReq[corezone.TCloudZiyanZoneExtension]{
 		Zones: updates,
 	}
 	if err := cli.dbCli.TCloudZiyan.Zone.BatchUpdateZone(kt, updateReq); err != nil {
@@ -321,7 +338,7 @@ func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption, updateMap map[st
 // findExistingZonesToDelete 查找需要删除的已存在 zone
 // 返回这些 zone 的 cloud_id 列表
 func (cli *client) findExistingZonesToDelete(addZones []typeszone.TCloudZone,
-	allDBZones []corezone.Zone[corezone.TCloudZoneExtension]) []string {
+	allDBZones []corezone.Zone[corezone.TCloudZiyanZoneExtension]) []string {
 
 	toDeleteCloudIDs := make([]string, 0)
 	addZoneMap := converter.SliceToMap(addZones,
@@ -410,7 +427,7 @@ func (cli *client) listZoneFromCloud(kt *kit.Kit, opt *SyncZoneOption) ([]typesz
 }
 
 func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) (
-	[]corezone.Zone[corezone.TCloudZoneExtension], error) {
+	[]corezone.Zone[corezone.TCloudZiyanZoneExtension], error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -435,7 +452,7 @@ func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) (
 		Page: core.NewDefaultBasePage(),
 	}
 	start := uint32(0)
-	results := make([]corezone.Zone[corezone.TCloudZoneExtension], 0)
+	results := make([]corezone.Zone[corezone.TCloudZiyanZoneExtension], 0)
 	for {
 		req.Page.Start = start
 		zones, err := cli.dbCli.TCloudZiyan.Zone.ListZoneExt(kt, req)
@@ -457,7 +474,7 @@ func (cli *client) listZoneFromDB(kt *kit.Kit, opt *SyncZoneOption) (
 	return results, nil
 }
 
-func isZoneChange(cloud typeszone.TCloudZone, db corezone.Zone[corezone.TCloudZoneExtension]) bool {
+func isZoneChange(cloud typeszone.TCloudZone, db corezone.Zone[corezone.TCloudZiyanZoneExtension]) bool {
 
 	if cloud.ZoneID != db.Name {
 		return true

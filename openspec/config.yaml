@@ -1,0 +1,46 @@
+schema: spec-driven
+
+context: |
+  BlueKing Hybrid Cloud Management (BK-HCM) - Unified multi-cloud IaaS/PaaS resource management system
+  
+  **Tech Stack**: Go 1.21 + Vue 3.5/TS + MySQL/MongoDB/Redis + ETCD
+  
+  **Architecture**: 4-tier microservices - Access Layer (web/api-server) → Service Layer (cloud/auth/account/woa/task-server) → Resource Layer (data/hc/event-service) → Infrastructure
+  
+  **Key Constraints**:
+  - MySQL driver fixed at v1.7.1 (v1.8.1 has EOF errors)
+  - Ziyan (self-developed cloud) uses Tencent Cloud SDK, differentiated by internal domain during client init
+  
+  **Naming**: Go uses camelCase, database uses snake_case, API uses kebab-case
+  
+  **Code Structure**: 
+  - cmd/: Service entrypoints and business logic
+  - pkg/api/: Protocol definitions
+  - pkg/dal/: Data access layer
+  - pkg/adaptor/: Multi-cloud SDK adapters
+  
+  **Critical Rules**:
+  - Go errors must be explicitly handled, cannot be ignored
+  - Comments in Chinese
+  - Sensitive data (API keys) must be encrypted
+  - Cloud resource operations require audit logs
+
+rules:
+  proposal:
+    - Clarify if multiple service/resource layers are affected and mark accordingly
+
+  specs:
+    - Use Given/When/Then format for scenario descriptions
+    - When not explicitly specified, prioritize existing patterns in the project
+    - Explicitly mark integration points with BlueKing ecosystem (CMDB/IAM/ITSM)
+    - Specify supported cloud vendors when involving cloud SDK operations (Tencent Cloud/Huawei Cloud/AWS/Azure/GCP)
+
+  design:
+    - Layered architecture: clarify responsibilities of each layer (Access/Service/Resource)
+    - Microservice interactions: use flowcharts to illustrate inter-service calls
+
+  tasks:
+    - Inter-service calls use protocol structs defined in pkg/api/
+    - Database operations through pkg/dal/ layer, no direct SQL
+    - Multi-cloud SDK calls unified through pkg/adaptor/ adapters
+    - Error handling must be explicit, cannot use _ to ignore error returns

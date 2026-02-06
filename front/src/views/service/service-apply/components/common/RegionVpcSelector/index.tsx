@@ -127,7 +127,9 @@ export default defineComponent({
         if (!val) return;
         handleRefresh();
       },
-      { immediate: true },
+      {
+        immediate: true,
+      },
     );
 
     watch(

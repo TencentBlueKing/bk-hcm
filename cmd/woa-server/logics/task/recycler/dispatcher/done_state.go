@@ -14,8 +14,12 @@
 package dispatcher
 
 import (
+	"fmt"
+
 	"hcm/cmd/woa-server/dal/task/table"
 	"hcm/cmd/woa-server/logics/task/recycler/event"
+	"hcm/pkg/api/core"
+	"hcm/pkg/logs"
 )
 
 // DoneState the action to be executed in done state
@@ -28,6 +32,28 @@ func (ds *DoneState) Name() table.RecycleStatus {
 
 // Execute executes action in done state
 func (ds *DoneState) Execute(ctx EventContext) error {
+	taskCtx, ok := ctx.(*CommonContext)
+	if !ok {
+		logs.Errorf("failed to convert to common context in done state")
+		return fmt.Errorf("failed to convert to common context in done state")
+	}
+
+	if taskCtx.Order == nil {
+		logs.Errorf("state %s failed to execute, for invalid context order is nil", ds.Name())
+		return fmt.Errorf("state %s failed to execute, for invalid context order is nil", ds.Name())
+	}
+
+	// DONE 状态后触发回收成功通知检查
+	if taskCtx.Dispatcher != nil && taskCtx.Dispatcher.notifier != nil {
+		kt := core.NewBackendKit()
+		kt.Ctx = taskCtx.Dispatcher.ctx
+		if _, err := taskCtx.Dispatcher.notifier.SendSuccessNotice(kt, taskCtx.Order.OrderID); err != nil {
+			logs.Errorf("state %s failed to execute, for notifier send success notice failed, err: %v, rid: %s",
+				ds.Name(), err, kt.Rid)
+			return err
+		}
+	}
+
 	return nil
 }
 

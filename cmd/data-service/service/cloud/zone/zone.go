@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablezone "hcm/pkg/dal/table/cloud/zone"
 	tabletype "hcm/pkg/dal/table/types"
@@ -83,7 +84,7 @@ func (svc *zoneSvc) BatchCreateZone(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Gcp:
 		return batchCreateZone[zone.GcpZoneExtension](vendor, svc, cts)
 	case enumor.TCloudZiyan:
-		return batchCreateZone[zone.TCloudZoneExtension](vendor, svc, cts)
+		return batchCreateZone[zone.TCloudZiyanZoneExtension](vendor, svc, cts)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
@@ -106,7 +107,7 @@ func (svc *zoneSvc) BatchUpdateZone(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		return batchUpdateZone[zone.GcpZoneExtension](cts, svc)
 	case enumor.TCloudZiyan:
-		return batchUpdateZone[zone.TCloudZoneExtension](cts, svc)
+		return batchUpdateZone[zone.TCloudZiyanZoneExtension](cts, svc)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
@@ -128,9 +129,19 @@ func (svc *zoneSvc) ListZoneExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 强制筛选vendor
+	mergedFilter := tools.EqualExpression("vendor", vendor)
+	if req.Filter != nil {
+		var err error
+		mergedFilter, err = tools.And(req.Filter, mergedFilter)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+
 	opt := &types.ListOption{
 		Fields: req.Field,
-		Filter: req.Filter,
+		Filter: mergedFilter,
 		Page:   req.Page,
 	}
 	result, err := svc.dao.Zone().List(cts.Kit, opt)
@@ -153,7 +164,7 @@ func (svc *zoneSvc) ListZoneExt(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Gcp:
 		return convZoneListResult[zone.GcpZoneExtension](result.Details)
 	case enumor.TCloudZiyan:
-		return convZoneListResult[zone.TCloudZoneExtension](result.Details)
+		return convZoneListResult[zone.TCloudZiyanZoneExtension](result.Details)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}

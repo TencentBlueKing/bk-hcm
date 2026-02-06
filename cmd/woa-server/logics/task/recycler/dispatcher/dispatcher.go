@@ -25,6 +25,7 @@ import (
 	rslogics "hcm/cmd/woa-server/logics/rolling-server"
 	srlogics "hcm/cmd/woa-server/logics/short-rental"
 	"hcm/cmd/woa-server/logics/task/recycler/detector"
+	"hcm/cmd/woa-server/logics/task/recycler/notifier"
 	"hcm/cmd/woa-server/logics/task/recycler/returner"
 	"hcm/cmd/woa-server/logics/task/recycler/transit"
 	"hcm/pkg"
@@ -47,11 +48,13 @@ type Dispatcher struct {
 	ctx      context.Context
 	rsLogic  rslogics.Logics
 	srLogic  srlogics.Logics
+	notifier *notifier.Notifier
 }
 
 // New create a dispatcher
 func New(ctx context.Context, moduleDetector *detector.Detector, moduleReturner *returner.Returner,
-	moduleTransit *transit.Transit, rsLogic rslogics.Logics, srLogic srlogics.Logics) (*Dispatcher, error) {
+	moduleTransit *transit.Transit, rsLogic rslogics.Logics, srLogic srlogics.Logics, notifier *notifier.Notifier) (
+	*Dispatcher, error) {
 
 	dispatcher := &Dispatcher{
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "recycle_dispatch"),
@@ -61,6 +64,7 @@ func New(ctx context.Context, moduleDetector *detector.Detector, moduleReturner 
 		transit:  moduleTransit,
 		rsLogic:  rsLogic,
 		srLogic:  srLogic,
+		notifier: notifier,
 	}
 
 	// TODO: get worker num from config

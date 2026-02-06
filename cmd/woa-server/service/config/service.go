@@ -57,6 +57,7 @@ func InitService(c *capability.Capability) {
 	s.initZone(h)
 	s.initCapacity(h)
 	s.initSg(h)
+	s.initSpringResPool(h)
 
 	h.Load(c.WebService)
 }
@@ -179,4 +180,13 @@ func (s *service) initCapacity(h *rest.Handler) {
 
 func (s *service) initSg(h *rest.Handler) {
 	h.Add("UpsertRegionDftSg", http.MethodPost, "/config/region/default_sg/upsert", s.UpsertRegionDftSg)
+}
+
+func (s *service) initSpringResPool(h *rest.Handler) {
+	h.Add("GetSpringResPoolChargeType", http.MethodGet, "/bizs/{bk_biz_id}/config/spring_res_pool/charge_type",
+		s.GetSpringResPoolChargeType)
+	h.Add("UpsertSpringResPoolChargeType", http.MethodPost, "/config/spring_res_pool/charge_type",
+		s.UpsertSpringResPoolChargeType)
+	h.Add("DeleteSpringResPoolChargeTypeGlobal", http.MethodDelete, "/config/spring_res_pool/charge_type",
+		s.DeleteSpringResPoolChargeType)
 }

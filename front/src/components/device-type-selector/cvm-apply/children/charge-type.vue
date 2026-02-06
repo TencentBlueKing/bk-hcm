@@ -134,22 +134,15 @@ const handleTypeChange = (type: string) => {
             class="radio-group"
             v-model="chargeType"
             :with-validate="false"
-            :disabled="isRollingServer"
+            :disabled="isRollingServer || isSpringPool"
             v-bk-tooltips="{
-              content: '继承原有套餐，计费模式不可选',
-              disabled: !isRollingServer,
+              content: isRollingServer ? '继承原有套餐，计费模式不可选' : '春保资源池，计费模式不可选',
+              disabled: !(isRollingServer || isSpringPool),
             }"
             :before-change="handleTypeBeforeChange"
             @change="handleTypeChange"
           >
-            <bk-radio-button
-              :label="cvmChargeTypes.PREPAID"
-              :disabled="isSpringPool"
-              v-bk-tooltips="{
-                content: '春保资源池暂不支持包年包月',
-                disabled: !isSpringPool,
-              }"
-            >
+            <bk-radio-button :label="cvmChargeTypes.PREPAID">
               {{ cvmChargeTypeNames[cvmChargeTypes.PREPAID] }}
             </bk-radio-button>
             <bk-radio-button :label="cvmChargeTypes.POSTPAID_BY_HOUR">

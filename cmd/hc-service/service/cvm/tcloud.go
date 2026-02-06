@@ -22,6 +22,7 @@ package cvm
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
@@ -29,6 +30,7 @@ import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -54,6 +56,8 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 		svc.BatchAssociateTCloudSecurityGroup)
 	h.Add("ListTCloudInstanceConfig", http.MethodPost,
 		"/vendors/tcloud/instances/config/list", svc.ListTCloudInstanceConfig)
+	h.Add("GetTCloudMonitorData", http.MethodPost,
+		"/vendors/tcloud/cvms/monitor/data", svc.GetTCloudMonitorData)
 
 	h.Load(cap.WebService)
 }
@@ -377,4 +381,92 @@ func (svc *cvmSvc) ListTCloudInstanceConfig(cts *rest.Contexts) (interface{}, er
 	}
 
 	return result, nil
+}
+
+// GetTCloudMonitorData get tcloud cvm monitor data.
+func (svc *cvmSvc) GetTCloudMonitorData(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.TCloudMonitorDataReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 转换时间格式从 DateTimeLayout 到 RFC3339
+	startTime, err := parseTimeToRFC3339(req.StartTime)
+	if err != nil {
+		logs.Errorf("parse start_time failed, err: %v, start_time: %s, rid: %s", err, req.StartTime, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	endTime, err := parseTimeToRFC3339(req.EndTime)
+	if err != nil {
+		logs.Errorf("parse end_time failed, err: %v, end_time: %s, rid: %s", err, req.EndTime, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 构建适配器选项
+	instances := make([]string, 0, len(req.InstanceIDs))
+	for _, instID := range req.InstanceIDs {
+		instances = append(instances, instID)
+	}
+
+	opt := &typecvm.TCloudMonitorDataOption{
+		Region:      req.Region,
+		MetricName:  req.MetricName,
+		Period:      req.Period,
+		StartTime:   startTime,
+		EndTime:     endTime,
+		InstanceIDs: instances,
+	}
+
+	result, err := tcloud.GetMonitorData(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("get tcloud monitor data failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 转换返回数据
+	resp := &protocvm.TCloudMonitorDataResp{
+		DataPoints: make([]*protocvm.MonitorDataPointResp, 0, len(result.DataPoints)),
+	}
+
+	for _, dp := range result.DataPoints {
+		dataPoint := &protocvm.MonitorDataPointResp{
+			Dimensions: make([]*protocvm.MonitorDimensionResp, 0, len(dp.Dimensions)),
+			Timestamps: dp.Timestamps,
+			Values:     dp.Values,
+		}
+
+		for _, dim := range dp.Dimensions {
+			dataPoint.Dimensions = append(dataPoint.Dimensions, &protocvm.MonitorDimensionResp{
+				Name:  dim.Name,
+				Value: dim.Value,
+			})
+		}
+
+		resp.DataPoints = append(resp.DataPoints, dataPoint)
+	}
+
+	return resp, nil
+}
+
+// parseTimeToRFC3339 converts DateTimeLayout format to RFC3339 format.
+// Input: "2006-01-02 15:04:05"
+// Output: "2006-01-02T15:04:05+08:00"
+func parseTimeToRFC3339(timeStr string) (string, error) {
+	// 解析 DateTimeLayout 格式的时间
+	t, err := time.Parse(constant.DateTimeLayout, timeStr)
+	if err != nil {
+		return "", err
+	}
+
+	return t.Format(constant.TimeStdFormat), nil
 }

@@ -189,15 +189,20 @@ func (c *CrpTicketCreator) constructAddReq(kt *kit.Kit, subTicket *ptypes.SubTic
 			ProductName:     subTicket.OpProductName,
 			CityName:        demand.Updated.RegionName,
 			ZoneName:        demand.Updated.ZoneName,
-			CoreTypeName:    demand.Updated.Cvm.CoreType,
-			InstanceModel:   demand.Updated.Cvm.DeviceType,
-			CvmAmount:       demand.Updated.Cvm.Os.InexactFloat64(),
-			CoreAmount:      int(demand.Updated.Cvm.CpuCore),
 			Desc:            demand.Updated.Remark,
 			InstanceIO:      int(demand.Updated.Cbs.DiskIo),
 			DiskTypeName:    demand.Updated.Cbs.DiskType.Name(),
 			DiskAmount:      int(demand.Updated.Cbs.DiskSize),
 		}
+
+		// 仅在有 Cvm 需求的情况下填充 Cvm 相关字段
+		if !demand.Updated.Cvm.IsEmpty() {
+			planItem.CoreTypeName = demand.Updated.Cvm.CoreType
+			planItem.InstanceModel = demand.Updated.Cvm.DeviceType
+			planItem.CvmAmount = demand.Updated.Cvm.Os.InexactFloat64()
+			planItem.CoreAmount = int(demand.Updated.Cvm.CpuCore)
+		}
+
 		if demand.Updated.ObsProject == enumor.ObsProjectShortLease {
 			planItem.IsAutoReturnPlan = true
 			planItem.ReturnPlanTime = demand.Updated.ReturnPlanTime

@@ -57,15 +57,6 @@ export const ticketRoutes: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
         notMenu: true,
-        title: t('申请单详情'),
-        layout: {
-          breadcrumbs: {
-            show: true,
-          },
-        },
-        menu: {
-          relative: MENU_SERVICE_TICKET_MANAGEMENT,
-        },
       }),
     },
   },
@@ -116,15 +107,6 @@ export const ticketRoutesBiz: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
         notMenu: true,
-        title: t('申请单详情'),
-        layout: {
-          breadcrumbs: {
-            show: true,
-          },
-        },
-        menu: {
-          relative: MENU_BUSINESS_TICKET_MANAGEMENT,
-        },
       }),
     },
   },

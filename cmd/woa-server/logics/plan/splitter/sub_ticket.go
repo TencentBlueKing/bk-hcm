@@ -127,9 +127,12 @@ func constructSubTicketCreateReq(ticket *rpt.ResPlanTicketTable, auditQuota int6
 		}
 
 		if demand.Updated != nil {
-			updatedOs = updatedOs.Add(demand.Updated.Cvm.Os.Decimal)
-			updatedCpuCore += demand.Updated.Cvm.CpuCore
-			updatedMemory += demand.Updated.Cvm.Memory
+			// Updated 中的 Cvm 可能为空（仅 CBS 场景）
+			if !demand.Updated.Cvm.IsEmpty() {
+				updatedOs = updatedOs.Add(demand.Updated.Cvm.Os.Decimal)
+				updatedCpuCore += demand.Updated.Cvm.CpuCore
+				updatedMemory += demand.Updated.Cvm.Memory
+			}
 			updatedDiskSize += demand.Updated.Cbs.DiskSize
 		}
 	}

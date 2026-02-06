@@ -84,6 +84,14 @@ const formRules = {
       trigger: 'change',
     },
   ],
+  // // 对剩余数量进行校验
+  // replicas: [
+  //   {
+  //     validator: (value: number) => value > 0,
+  //     message: '剩余数量必须大于0',
+  //     trigger: 'change',
+  //   },
+  // ],
 };
 
 const baseInfoFields: ModelPropertyDisplay[] = [
@@ -156,6 +164,12 @@ const setNetworkInfoDisabled = (zones: string[]) => {
 };
 
 const selectedDeviceType = ref<ICvmDeviceTypeFormData['deviceTypeList'][number]>();
+// 初始的机型核数
+const initialCpuCore = ref(0);
+// 剩余生产数量的最大值，初始为 unProductNum，切换机型后动态计算
+const maxReplicas = ref<number | null>(null);
+const computedMaxReplicas = computed(() => maxReplicas.value ?? unProductNum.value);
+
 const handleDeviceTypeChange = (
   data: Partial<ICvmDeviceTypeFormData>,
   from: 'confirm' | 'auto',
@@ -165,7 +179,26 @@ const handleDeviceTypeChange = (
     formModel.subnet = '';
     setNetworkInfoDisabled(data.zones);
   }
-  selectedDeviceType.value = data?.deviceTypeList?.[0];
+
+  if (!selectedDeviceType.value) {
+    selectedDeviceType.value = data?.deviceTypeList?.[0];
+    initialCpuCore.value = selectedDeviceType.value?.cpu_core || 0;
+  }
+
+  const newDeviceType = data?.deviceTypeList?.[0];
+
+  // 如果机型发生变化且有核数信息，重新计算剩余生产数量
+  if (newDeviceType && initialCpuCore.value) {
+    const newCpuAmount = newDeviceType.cpu_core;
+    // 计算新的剩余生产数量：(修改前核数 × 原剩余生产数量) ÷ 修改后核数，向下取整
+    const newReplicas = Math.floor((initialCpuCore.value * unProductNum.value) / newCpuAmount);
+    // 更新最大值
+    maxReplicas.value = newReplicas;
+    // 确保新数量不超过最大值的限制
+    formModel.replicas = newReplicas;
+  }
+
+  selectedDeviceType.value = newDeviceType;
 };
 
 const isNeedVerify = computed(() => {
@@ -218,6 +251,8 @@ watch(networkInfoDisabled, (disabled) => {
     formModel.subnet = '';
   }
 });
+
+const isReplicasInvalid = computed(() => formModel.replicas <= 0);
 
 const handleSubmit = async () => {
   await formValidate();
@@ -278,27 +313,29 @@ const handleBack = () => {
               class="form-control"
               v-model.number="formModel.replicas"
               type="number"
-              :min="1"
-              :max="unProductNum"
+              :min="0"
+              :max="computedMaxReplicas"
             />
-            <div class="tips">
-              <div v-if="selectedDeviceType">
-                所需CPU总核心数为 {{ selectedDeviceType?.cpu_core * formModel.replicas }} 核 ({{
-                  `${selectedDeviceType?.cpu_core}*${formModel.replicas}`
-                }})
-              </div>
-              <div>
-                <span class="text-danger">注意：</span>
-                已生产 {{ details?.product_num }}，剩余生产数量为
-                <span class="text-danger">{{ formModel.replicas }}</span>
-                ，将共计生产
-                <span class="text-danger">{{ details?.product_num + formModel.replicas }}</span>
-                后（原单据需求数为
-                <span class="text-danger">{{ details?.origin_num }}</span>
-                ），该单据会自动结单，不可以再重试修改
-              </div>
-            </div>
+            <div v-if="computedMaxReplicas === 0" class="replicas-warning">核数对应的机器不足为1，请更换机型</div>
+            <div v-else-if="formModel.replicas === 0" class="replicas-warning">剩余数量必须大于0</div>
           </bk-form-item>
+          <div class="tips">
+            <div v-if="selectedDeviceType">
+              所需CPU总核心数为 {{ selectedDeviceType?.cpu_core * formModel.replicas }} 核 ({{
+                `${selectedDeviceType?.cpu_core}*${formModel.replicas}`
+              }})
+            </div>
+            <div>
+              <span class="text-danger">注意：</span>
+              已生产 {{ details?.product_num }}，剩余生产数量为
+              <span class="text-danger">{{ formModel.replicas }}</span>
+              ，将共计生产
+              <span class="text-danger">{{ details?.product_num + formModel.replicas }}</span>
+              后（原单据需求数为
+              <span class="text-danger">{{ details?.origin_num }}</span>
+              ），该单据会自动结单，不可以再重试修改
+            </div>
+          </div>
         </div>
         <network-info-collapse-panel
           ref="network-info-panel"
@@ -330,7 +367,7 @@ const handleBack = () => {
         v-else
         theme="primary"
         :loading="ziyanScrStore.modifyApplyOrderLoading"
-        :disabled="verifyResult?.verify_result === 'FAILED'"
+        :disabled="verifyResult?.verify_result === 'FAILED' || isReplicasInvalid"
         @click="handleSubmit"
       >
         提交修改
@@ -358,6 +395,13 @@ const handleBack = () => {
     margin-top: 8px;
     line-height: normal;
     font-size: 12px;
+  }
+
+  .replicas-warning {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #ea3636;
+    line-height: normal;
   }
 
   :deep(.device-type-selector) {

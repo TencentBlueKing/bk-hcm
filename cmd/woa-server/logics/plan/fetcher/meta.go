@@ -46,7 +46,12 @@ func (f *ResPlanFetcher) GetZoneMap(kt *kit.Kit) (map[string]string, error) {
 			return nil, fmt.Errorf("list zone failed, err: %v", err)
 		}
 
+		// 排除 disable_cvm 为 true 的 zone（disable_cvm 为空视为 false，即不禁用）
 		for _, zone := range zones.Details {
+			// 如果 DisableCvm 显式为 true，则跳过该 zone（已禁用）
+			if zone.Extension != nil && zone.Extension.DisableCvm {
+				continue
+			}
 			zoneMap[zone.Name] = zone.NameCn
 		}
 

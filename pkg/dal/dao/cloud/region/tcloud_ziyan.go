@@ -42,9 +42,8 @@ import (
 type TCloudZiyanRegion interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []region.TCloudZiyanRegionTable) ([]string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *region.TCloudZiyanRegionTable) error
-	List(kt *kit.Kit, opt *types.ListOption,
-		whereOpts ...*filter.SQLWhereOption) (*types.ListResult[region.TCloudZiyanRegionTable],
-		error)
+	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (
+		*types.ListResult[region.TCloudZiyanRegionTable], error)
 	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 

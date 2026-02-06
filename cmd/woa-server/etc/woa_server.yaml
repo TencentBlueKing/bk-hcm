@@ -440,6 +440,15 @@ stuckCheck:
     minTime: 24h
     maxTime: 336h
 
+# 主机回收通知配置
+recycleNotice:
+  recycle:
+    enable: true
+    scanInterval: 1m
+    startUpDelay: 1m
+    # 失败通知间隔配置（单位：分钟）默认间隔：[1, 60, 240, 1440, 4320, 10080] 对应：1分钟、1小时、4小时、1天、3天、7天
+    failedNoticeIntervals: [1, 60, 240, 1440, 4320, 10080]
+
 # defines cmdb api gateway related settings.
 cmdb:
   # endpoints is a seed list of host:port addresses of cmdb api gateway nodes.

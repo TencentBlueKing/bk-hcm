@@ -88,6 +88,15 @@ func (rs *ReturningPlanState) UpdateState(ctx EventContext, ev *event.Event) err
 		return errUpdate
 	}
 
+	if taskCtx.Dispatcher == nil {
+		logs.Errorf("recycler:logics:cvm:ReturningPlanState:failed, failed to add order to dispatch, "+
+			"for dispatcher is nil, subOrderId: %s, state: %s", taskCtx.Order.SuborderID, rs.Name())
+		return fmt.Errorf("failed to add order to dispatch, for dispatcher is nil, subOrderId: %s, state: %s",
+			taskCtx.Order.SuborderID, rs.Name())
+	}
+
+	taskCtx.Dispatcher.Add(taskCtx.Order.SuborderID)
+
 	// 记录日志
 	logs.Infof("recycler: finish return plan state, subOrderId: %s, ev: %+v", taskCtx.Order.SuborderID,
 		cvt.PtrToVal(ev))

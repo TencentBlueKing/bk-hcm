@@ -40,7 +40,7 @@ import (
 func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) error {
 
 	// 1. 准备拆分后的子单，存储在 adjSplitGroupDemands 中备用
-	_, err := s.prepareAddSubTickets(kt, ticketID, demands)
+	_, _, err := s.prepareAddSubTickets(kt, ticketID, demands)
 	if err != nil {
 		logs.Errorf("failed to prepare add sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -59,33 +59,32 @@ func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, demands
 // prepareAddSubTickets 准备追加场景下拆分后的子单，存储在 adjSplitGroupDemands 中备用
 // 该方法可在调整场景复用
 func (s *SubTicketSplitter) prepareAddSubTickets(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) (
-	bool, error) {
+	bool, rpt.ResPlanDemands, error) {
 
 	// 1.1. 获取机型信息列表，用于后续操作
 	deviceTypeMap, err := s.deviceTypes.GetDeviceTypes(kt)
 	if err != nil {
 		logs.Errorf("get device type map failed, err: %v, rid: %s", err, kt.Rid)
-		return false, err
+		return false, nil, err
 	}
 
-	// 1.2. 整合所有需求的项目类型和技术大类
-	obsProjects := make([]enumor.ObsProject, 0)
-	technicalClasses := make([]string, 0)
-	for _, d := range demands {
-		if d.Updated == nil {
-			logs.Errorf("updated demand is nil, ticket id: %s, rid: %s", ticketID, kt.Rid)
-			return false, errors.New("updated demand is nil")
-		}
-		obsProjects = append(obsProjects, d.Updated.ObsProject)
-		technicalClasses = append(technicalClasses, d.Updated.Cvm.TechnicalClass)
+	// 1.2. 区分并处理纯 CBS 和包含 CVM 的需求
+	cvmDemands, obsProjects, technicalClasses, err := s.separateAndProcessDemands(kt, ticketID, demands)
+	if err != nil {
+		return false, nil, err
 	}
 
-	// 1.3. 额度池余额判断
-	// TODO 额度需请求CRP接口，可以和下方的 queryTransferCRPDemands 合并
+	// 如果没有 CVM 需求，直接返回
+	if len(cvmDemands) == 0 {
+		return false, nil, nil
+	}
+
+	// 1.4. 额度池余额判断
+	// TODO 额度需请求CRP接口（QueryCvmCbsPlans），可以和下方的 queryTransferCRPDemands 合并
 	canTransfer, err := s.canTransferByQuota(kt, obsProjects)
 	if err != nil {
 		logs.Errorf("failed to check quota, err: %v, ticket id: %s, rid: %s", err, ticketID, kt.Rid)
-		return false, err
+		return false, nil, err
 	}
 
 	// 2. 查询CRP中可转移的预测（中转产品）
@@ -93,15 +92,15 @@ func (s *SubTicketSplitter) prepareAddSubTickets(kt *kit.Kit, ticketID string, d
 		err := s.queryTransferCRPDemands(kt, obsProjects, technicalClasses)
 		if err != nil {
 			logs.Errorf("query crp demands failed, err: %v, ticket id: %s, rid: %s", err, ticketID, kt.Rid)
-			return canTransfer, err
+			return canTransfer, nil, err
 		}
 		// 2.1. 对每个变更需求，匹配可转移的CRP预测，匹配不完的拆分为另一个子单
-		for _, demand := range demands {
+		for _, demand := range cvmDemands {
 			transferableCore, nonTransferableCore, err := s.matchTransferCRPDemands(kt, ticketID, demand)
 			if err != nil {
 				logs.Errorf("failed to match transfer crp demands, err: %v, ticket id: %s, update: %+v, rid: %s",
 					err, ticketID, demand.Updated, kt.Rid)
-				return canTransfer, err
+				return canTransfer, nil, err
 			}
 
 			err = s.splitDemandInAddScenarios(kt, ticketID, demand, transferableCore, nonTransferableCore,
@@ -109,12 +108,55 @@ func (s *SubTicketSplitter) prepareAddSubTickets(kt *kit.Kit, ticketID string, d
 			if err != nil {
 				logs.Errorf("failed to split demand in add scenarios, err: %v, ticket id: %s, update: %+v, rid: %s",
 					err, ticketID, demand.Updated, kt.Rid)
-				return canTransfer, err
+				return canTransfer, nil, err
 			}
 		}
 	}
 
-	return canTransfer, nil
+	return canTransfer, cvmDemands, nil
+}
+
+// separateAndProcessDemands 分离并处理仅包含 CBS 的和包含 CVM 的需求
+func (s *SubTicketSplitter) separateAndProcessDemands(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) (
+	cvmDemands rpt.ResPlanDemands, obsProjects []enumor.ObsProject, technicalClasses []string, err error) {
+
+	obsProjects = make([]enumor.ObsProject, 0)
+	technicalClasses = make([]string, 0)
+	cbsOnlyDemands := make([]*rpt.ResPlanDemand, 0)
+	cvmDemands = make(rpt.ResPlanDemands, 0)
+
+	for idx, d := range demands {
+		if d.Updated == nil {
+			logs.Errorf("updated demand is nil, ticket id: %s, rid: %s", ticketID, kt.Rid)
+			return cvmDemands, obsProjects, technicalClasses, errors.New("updated demand is nil")
+		}
+
+		// 仅包含 CBS 需求，单独处理
+		if d.Updated.Cvm.IsEmpty() {
+			cbsOnlyDemands = append(cbsOnlyDemands, &demands[idx])
+			continue
+		}
+
+		// 对 CVM 需求，拆分出 CBS 部分单独处理
+		if d.Updated.Cbs.DiskSize > 0 {
+			cbsDemand := d.ExtractCbsDemand()
+			cbsOnlyDemands = append(cbsOnlyDemands, cbsDemand)
+			// 将原需求的 CBS 置为 0
+			demands[idx].ClearCbsDemand()
+		}
+
+		cvmDemands = append(cvmDemands, demands[idx])
+		obsProjects = append(obsProjects, d.Updated.ObsProject)
+		technicalClasses = append(technicalClasses, d.Updated.Cvm.TechnicalClass)
+	}
+
+	// 处理仅包含 CBS 的需求，直接放入 adjSplitGroupDemands，不需要考虑转移逻辑
+	if len(cbsOnlyDemands) > 0 {
+		s.adjSplitGroupDemands[enumor.RPTicketTypeAdd] = append(s.adjSplitGroupDemands[enumor.RPTicketTypeAdd],
+			cbsOnlyDemands...)
+	}
+
+	return cvmDemands, obsProjects, technicalClasses, nil
 }
 
 // canTransferByQuota 根据额度判断是否可通过转移进行预测追加

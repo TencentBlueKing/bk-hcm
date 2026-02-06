@@ -58,13 +58,19 @@ type Zone[Extension ZoneExtension] struct {
 
 // ZoneExtension define zone extension.
 type ZoneExtension interface {
-	TCloudZoneExtension | AwsZoneExtension | HuaWeiZoneExtension | GcpZoneExtension
+	TCloudZoneExtension | TCloudZiyanZoneExtension | AwsZoneExtension | HuaWeiZoneExtension | GcpZoneExtension
 }
 
 // TCloudZoneExtension define tcloud zone extension.
 type TCloudZoneExtension struct {
+	CityName string `json:"city_name"`
+}
+
+// TCloudZiyanZoneExtension define tcloud ziyan zone extension.
+type TCloudZiyanZoneExtension struct {
 	CityName        string `json:"city_name"`
 	LogicCampusName string `json:"logic_campus_name"`
+	DisableCvm      bool   `json:"disable_cvm,omitempty"` // 是否禁用cvm申领，默认为false（不禁用）
 }
 
 // HuaWeiZoneExtension define huawei zone extension.

@@ -23,18 +23,22 @@ import (
 	"fmt"
 
 	cloudproto "hcm/pkg/api/cloud-server/zone"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/zone"
 	dataproto "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/tools/slice"
 )
 
 // importTCloudZiyanZone 导入TCloudZiyan zone
 func (dSvc *ZoneSvc) importTCloudZiyanZone(cts *rest.Contexts, req *cloudproto.ZoneImportReq) (interface{}, error) {
-	extension := &zone.TCloudZoneExtension{}
+	extension := &zone.TCloudZiyanZoneExtension{}
 	if req.Extension != nil {
 		if extMap, ok := req.Extension.(map[string]interface{}); ok {
 			if cityName, ok := extMap["city_name"].(string); ok {
@@ -57,8 +61,8 @@ func (dSvc *ZoneSvc) importTCloudZiyanZone(cts *rest.Contexts, req *cloudproto.Z
 		}
 	}
 
-	createReq := &dataproto.ZoneBatchCreateReq[zone.TCloudZoneExtension]{
-		Zones: []dataproto.ZoneBatchCreate[zone.TCloudZoneExtension]{
+	createReq := &dataproto.ZoneBatchCreateReq[zone.TCloudZiyanZoneExtension]{
+		Zones: []dataproto.ZoneBatchCreate[zone.TCloudZiyanZoneExtension]{
 			{
 				CloudID:   req.CloudID,
 				Name:      req.Name,
@@ -111,4 +115,67 @@ func getLogicCampusNameFromCmdb(kt *kit.Kit, zoneName string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no logic_campus_name found for zone: %s", zoneName)
+}
+
+// batchUpdateTCloudZiyanZoneDisableCvm batch update tcloud-ziyan zone disable_cvm field.
+func (dSvc *ZoneSvc) batchUpdateTCloudZiyanZoneDisableCvm(cts *rest.Contexts,
+	req *cloudproto.ZoneBatchUpdateDisableCvmReq) (interface{}, error) {
+
+	var zonesFromDB []zone.Zone[zone.TCloudZiyanZoneExtension]
+	// 先查询现有的 zone 数据，获取当前的 Extension 值，通过 name 查询
+	for _, batch := range slice.Split(req.Zones, int(core.DefaultMaxPageLimit)) {
+		listReq := &dataproto.ZoneListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					filter.AtomRule{Field: "name", Op: filter.In.Factory(), Value: batch},
+				},
+			},
+			Page: core.NewDefaultBasePage(),
+		}
+
+		// 查询 zone 列表
+		listResp, err := dSvc.client.DataService().TCloudZiyan.Zone.ListZoneExt(cts.Kit, listReq)
+		if err != nil {
+			return nil, fmt.Errorf("query zones failed, err: %v", err)
+		}
+
+		if len(listResp.Details) == 0 {
+			return nil, errf.New(errf.RecordNotFound, "no zones found with provided zones name")
+		}
+
+		zonesFromDB = append(zonesFromDB, listResp.Details...)
+	}
+
+	// 构建批量更新请求
+	updates := make([]dataproto.ZoneBatchUpdate[zone.TCloudZiyanZoneExtension], 0, len(zonesFromDB))
+	for _, existingZone := range zonesFromDB {
+		extension := &zone.TCloudZiyanZoneExtension{
+			DisableCvm: req.DisableCvm,
+		}
+		// 保留其他字段的原有值
+		if existingZone.Extension != nil {
+			extension.CityName = existingZone.Extension.CityName
+			extension.LogicCampusName = existingZone.Extension.LogicCampusName
+		}
+
+		updates = append(updates, dataproto.ZoneBatchUpdate[zone.TCloudZiyanZoneExtension]{
+			ID:        existingZone.ID,
+			Extension: extension,
+		})
+	}
+
+	// 分批更新 zone 的 disable_cvm 字段
+	for _, batch := range slice.Split(updates, int(core.DefaultMaxPageLimit)) {
+		updateReq := &dataproto.ZoneBatchUpdateReq[zone.TCloudZiyanZoneExtension]{
+			Zones: batch,
+		}
+
+		err := dSvc.client.DataService().TCloudZiyan.Zone.BatchUpdateZone(cts.Kit, updateReq)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
 }

@@ -221,4 +221,6 @@ type TCloud interface {
 	ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOption) (*typescos.TCloudBucketListResult, error)
 
 	ListInstanceConfig(kt *kit.Kit, opt cvm.TCloudInstanceConfigListOption) (*cvm.TCloudInstanceConfigListResult, error)
+
+	GetMonitorData(kt *kit.Kit, opt *cvm.TCloudMonitorDataOption) (*cvm.TCloudMonitorDataResult, error)
 }

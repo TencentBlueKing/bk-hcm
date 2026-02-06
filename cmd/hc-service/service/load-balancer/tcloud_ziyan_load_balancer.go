@@ -20,7 +20,9 @@
 package loadbalancer
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	syncziyan "hcm/cmd/hc-service/logics/res-sync/ziyan"
 	adcore "hcm/pkg/adaptor/types/core"
@@ -36,7 +38,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchCreateTCloudZiyanClb ...
@@ -297,7 +301,94 @@ func (svc *clbSvc) tcloudZiyanLbSync(kt *kit.Kit, accountID string, region strin
 		logs.Errorf("sync load  balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+
+	// 仅在指定资源同步时进行标签的重试
+	if len(lbIDs) == 0 {
+		return nil
+	}
+
+	unassignedIDs, err := svc.listUnassignedTcloudZiyanLBCloudIDs(kt, accountID, region, lbIDs)
+	if err != nil {
+		logs.Errorf("list unassigned clb after sync failed, err: %v, account: %s, region: %s, ids: %v, rid: %s",
+			err, accountID, region, lbIDs, kt.Rid)
+		return err
+	}
+	if len(unassignedIDs) == 0 {
+		logs.Infof("[%s] unassigned clb resolved after sync, account: %s, region: %s, ids: %v, rid: %s",
+			enumor.TCloudZiyan, accountID, region, lbIDs, kt.Rid)
+		return nil
+	}
+
+	// 异步重试
+	logs.Infof("start async wait 90s for unassigned clb retry, account: %s, region: %s, ids: %v, rid: %s",
+		accountID, region, unassignedIDs, kt.Rid)
+
+	go func(unassignedIDs []string) {
+		time.Sleep(90 * time.Second)
+
+		kt = kt.NewSubKitWithCtx(context.Background())
+		unassignedIDs, err = svc.listUnassignedTcloudZiyanLBCloudIDs(kt, accountID, region, unassignedIDs)
+		if err != nil {
+			logs.Errorf("list unassigned clb before retry failed, err: %v, account: %s, region: %s, ids: %v,"+
+				" rid: %s", err, accountID, region, unassignedIDs, kt.Rid)
+			return
+		}
+		if len(unassignedIDs) == 0 {
+			logs.Infof("[%s] unassigned clb resolved during wait, account: %s, region: %s, ids: %v, rid: %s",
+				enumor.TCloudZiyan, accountID, region, unassignedIDs, kt.Rid)
+			return
+		}
+
+		retryParams := &syncziyan.SyncBaseParams{
+			AccountID: accountID,
+			Region:    region,
+			CloudIDs:  unassignedIDs,
+		}
+		if _, err = syncCli.LoadBalancer(kt, retryParams, &syncziyan.SyncLBOption{}); err != nil {
+			logs.Errorf("[%s] retry sync clb failed, account: %s, region: %s, ids: %v, err: %v, rid: %s",
+				enumor.TCloudZiyan, accountID, region, unassignedIDs, err, kt.Rid)
+			return
+		}
+		logs.Infof("[%s] retry sync clb success, account: %s, region: %s, ids: %v, rid: %s",
+			enumor.TCloudZiyan, accountID, region, unassignedIDs, kt.Rid)
+	}(unassignedIDs)
+
 	return nil
+}
+
+// listUnassignedTcloudZiyanLBCloudIDs 查询未分配业务的 CLB云ID列表
+func (svc *clbSvc) listUnassignedTcloudZiyanLBCloudIDs(kt *kit.Kit, accountID, region string, cloudIDs []string) (
+	[]string, error) {
+
+	if len(cloudIDs) == 0 {
+		return []string{}, nil
+	}
+
+	unassigned := make([]string, 0, len(cloudIDs))
+	for _, batchIDs := range slice.Split(cloudIDs, int(filter.DefaultMaxInLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("region", region),
+				tools.RuleIn("cloud_id", batchIDs),
+				tools.RuleEqual("bk_biz_id", constant.UnassignedBiz),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"cloud_id"},
+		}
+
+		resp, err := svc.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("list unassigned clb failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, err
+		}
+
+		for _, lb := range resp.Details {
+			unassigned = append(unassigned, lb.CloudID)
+		}
+	}
+
+	return unassigned, nil
 }
 
 // CreateTCloudZiyanListenerWithTargetGroup 创建监听器

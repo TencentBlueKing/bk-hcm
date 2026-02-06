@@ -239,3 +239,43 @@ func (opt TCloudInstanceConfigListOption) Validate() error {
 	}
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Monitor --------------------------
+
+// TCloudMonitorDataReq defines request to get tcloud monitor data.
+type TCloudMonitorDataReq struct {
+	AccountID   string   `json:"account_id" validate:"required"`
+	Region      string   `json:"region" validate:"required"`
+	MetricName  string   `json:"metric_name" validate:"required"`
+	Period      int64    `json:"period" validate:"required,min=60"`
+	StartTime   string   `json:"start_time" validate:"required"` // DateTimeLayout format: 2006-01-02 15:04:05
+	EndTime     string   `json:"end_time" validate:"required"`   // DateTimeLayout format: 2006-01-02 15:04:05
+	InstanceIDs []string `json:"instance_ids" validate:"required,min=1"`
+}
+
+// Validate request.
+func (req *TCloudMonitorDataReq) Validate() error {
+	if len(req.InstanceIDs) > constant.MonitorMaxInstanceLimit {
+		return fmt.Errorf("instances count should <= %d", constant.MonitorMaxInstanceLimit)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TCloudMonitorDataResp defines response of tcloud monitor data.
+type TCloudMonitorDataResp struct {
+	DataPoints []*MonitorDataPointResp `json:"data_points"`
+}
+
+// MonitorDataPointResp defines a single monitor data point response.
+type MonitorDataPointResp struct {
+	Dimensions []*MonitorDimensionResp `json:"dimensions"`
+	Timestamps []int64                 `json:"timestamps"`
+	Values     []float64               `json:"values"`
+}
+
+// MonitorDimensionResp defines monitor dimension response.
+type MonitorDimensionResp struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}

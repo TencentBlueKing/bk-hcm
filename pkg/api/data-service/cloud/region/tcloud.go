@@ -36,7 +36,8 @@ import (
 
 // TCloudRegionCreateReq define region create request.
 type TCloudRegionCreateReq struct {
-	Regions []TCloudRegionBatchCreate `json:"regions" validate:"required"`
+	Regions   []TCloudRegionBatchCreate `json:"regions" validate:"required"`
+	AccountID string                    `json:"account_id" validate:"required"`
 }
 
 // TCloudRegionBatchCreate define region rule when create.
