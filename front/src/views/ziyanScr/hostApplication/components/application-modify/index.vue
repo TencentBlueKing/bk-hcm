@@ -283,8 +283,8 @@ const handleBack = () => {
             />
             <div class="tips">
               <div v-if="selectedDeviceType">
-                所需CPU总核心数为 {{ selectedDeviceType?.cpu_amount * formModel.replicas }} 核 ({{
-                  `${selectedDeviceType?.cpu_amount}*${formModel.replicas}`
+                所需CPU总核心数为 {{ selectedDeviceType?.cpu_core * formModel.replicas }} 核 ({{
+                  `${selectedDeviceType?.cpu_core}*${formModel.replicas}`
                 }})
               </div>
               <div>

@@ -1,7 +1,7 @@
 <template>
   <bk-alert>
     <template #title>
-      <p>所选机型为{{ info.device_type }}，CPU为{{ info.cpu_amount }}核，内存为{{ info.ram_amount }}G。</p>
+      <p>所选机型为{{ info.device_type }}，CPU为{{ info.cpu_core }}核，内存为{{ info.memory }}G。</p>
       <slot></slot>
       <p v-if="helperText">{{ helperText }}</p>
     </template>

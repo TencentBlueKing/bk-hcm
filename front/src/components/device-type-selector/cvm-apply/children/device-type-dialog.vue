@@ -8,7 +8,7 @@ import { useCvmDeviceStore, type ICvmDevicetypeItem, type IRollingServerCvm } fr
 import useCvmChargeType from '@/views/ziyanScr/hooks/use-cvm-charge-type';
 import { transformSimpleCondition } from '@/utils/search';
 import { RequirementType } from '@/store/config/requirement';
-import { QueryRuleOPEnumLegacy } from '@/typings';
+import { QueryRuleOPEnum } from '@/typings';
 import ChargeType from './charge-type.vue';
 import AssetMatch from './asset-match.vue';
 import Inventory from './inventory.vue';
@@ -134,7 +134,7 @@ const displayDeviceTypeList = computed(() => {
       if (isRollingServer.value) {
         available =
           'SpecialType' !== item.device_type_class &&
-          item.device_group === rollingServerCvm.value?.device_group &&
+          item.device_family === rollingServerCvm.value?.device_group &&
           !item.device_type.toLowerCase().startsWith('da');
       } else if (isGreenChannel.value || isSpringPool.value) {
         // 小额绿通禁用了available，在接口默认条件中已经过滤掉了，这里直接返回true
@@ -148,7 +148,7 @@ const displayDeviceTypeList = computed(() => {
 
         available = !!availableDeviceType;
         maxLimit = Math.floor(
-          item.cpu_amount > 0 && availableDeviceType ? availableDeviceType?.remain_core / item.cpu_amount : 0,
+          item.cpu_core > 0 && availableDeviceType ? availableDeviceType?.remain_core / item.cpu_core : 0,
         );
       }
 
@@ -167,10 +167,10 @@ const displayDeviceTypeList = computed(() => {
         isMatch = condition.deviceType.includes(item.device_type);
       }
       if (isMatch && condition.cpu.length) {
-        isMatch = condition.cpu.includes(item.cpu_amount);
+        isMatch = condition.cpu.includes(item.cpu_core);
       }
       if (isMatch && condition.mem.length) {
-        isMatch = condition.mem.includes(item.ram_amount);
+        isMatch = condition.mem.includes(item.memory);
       }
       return isMatch;
     });
@@ -225,27 +225,27 @@ const displayColumns = computed(() => {
       ),
     },
     {
-      colKey: 'device_group',
+      colKey: 'device_family',
       thClassName: 'th-class-name',
       title: '机型族',
       width: 90,
     },
     {
-      colKey: 'cpu_amount',
+      colKey: 'cpu_core',
       thClassName: 'th-class-name',
       title: 'CPU(核)',
       width: 90,
       align: 'right',
-      cell: (h, { row }) => `${row.cpu_amount}`,
+      cell: (h, { row }) => `${row.cpu_core}`,
       sorter: true,
     },
     {
-      colKey: 'ram_amount',
+      colKey: 'memory',
       thClassName: 'th-class-name',
       title: '内存(GB)',
       width: 110,
       align: 'right',
-      cell: (h, { row }) => `${row.ram_amount}`,
+      cell: (h, { row }) => `${row.memory}`,
       sorter: true,
     },
     {
@@ -330,29 +330,25 @@ const getOptions = async () => {
 
 const getDeviceTypeList = async () => {
   const baseCondition: Record<string, any> = {
-    require_type: isGreenChannelOrSpringPool.value ? RequirementType.Regular : props.requireType,
+    vendor: props.vendor,
     region: props.region,
     zone: zoneSelected.value.includes(ZONE_ALL) ? undefined : zoneSelected.value,
-    'label.device_group': condition.deviceGroup === '全部' ? undefined : condition.deviceGroup,
+    device_family: condition.deviceGroup === '全部' ? undefined : condition.deviceGroup,
   };
 
   // 小额绿通特殊处理，只展示标准型，且CPU不超过16核
   if (isGreenChannel.value) {
-    baseCondition['label.device_group'] = '标准型';
-    baseCondition.cpu = 16;
+    baseCondition.device_family = '标准型';
+    baseCondition.cpu_core = 16;
   }
 
-  const params = transformSimpleCondition(
-    baseCondition,
-    [
-      { id: 'require_type', name: 'require_type', type: 'req-type', op: QueryRuleOPEnumLegacy.EQ },
-      { id: 'region', name: 'region', type: 'region', op: QueryRuleOPEnumLegacy.EQ },
-      { id: 'zone', name: 'zone', type: 'list' },
-      { id: 'label.device_group', name: 'label.device_group', op: QueryRuleOPEnumLegacy.IN, type: 'string' },
-      { id: 'cpu', name: 'cpu', op: QueryRuleOPEnumLegacy.LESS_OR_EQUAL, type: 'number' },
-    ],
-    true,
-  );
+  const params = transformSimpleCondition(baseCondition, [
+    { id: 'vendor', name: 'vendor', op: QueryRuleOPEnum.EQ, type: 'string' },
+    { id: 'region', name: 'region', type: 'region', op: QueryRuleOPEnum.EQ },
+    { id: 'zone', name: 'zone', type: 'list', op: QueryRuleOPEnum.IN },
+    { id: 'device_family', name: 'device_family', op: QueryRuleOPEnum.IN, type: 'string' },
+    { id: 'cpu_core', name: 'cpu_core', op: QueryRuleOPEnum.LTE, type: 'number' },
+  ]);
 
   const { list, count } = await cvmDeviceStore.getDeviceTypeFullList({ filter: params });
   pagination.total = count;
@@ -765,7 +761,7 @@ provide('requireType', props.requireType);
                         <bk-overflow-title type="tips">
                           {{ item.device_type }}
                           <span class="extra-text">
-                            ({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
+                            ({{ item.device_family }}, {{ item.cpu_core }}核{{ item.memory }}GB)
                           </span>
                         </bk-overflow-title>
                       </div>

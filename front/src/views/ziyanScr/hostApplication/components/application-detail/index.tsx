@@ -11,7 +11,7 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useUserStore } from '@/store';
 import { timeFormatter } from '@/common/util';
 import { getBusinessNameById } from '@/views/ziyanScr/host-recycle/field-dictionary';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { MENU_SERVICE_HOST_APPLICATION, MENU_BUSINESS_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 import http from '@/http';
 
@@ -25,7 +25,7 @@ import { useDissolveQuotaStore, type ICpuCoreSummary } from '@/store/dissolve/qu
 
 import ModifyRecord from './modify-record';
 import ItsmTicketAudit, { type IItsmTicketAudit } from './itsm-ticket-audit.vue';
-import { QueryRuleOPEnumLegacy, type IQueryResData } from '@/typings';
+import { QueryRuleOPEnum, type IQueryResData } from '@/typings';
 import ApprovalStatus from './approval-status.vue';
 import { ScrResourceType } from '@/constants';
 import UpgradeCvmTable from './upgrade-cvm-table.vue';
@@ -250,19 +250,12 @@ export default defineComponent({
       if (isEqual(newVal, oldVal) || !newVal.length) {
         return;
       }
-      const requireType = detail.value.require_type;
-      const isGreenChannelOrSpringPool =
-        requireType === RequirementType.GreenChannel || requireType === RequirementType.SpringResPool;
       const { list } = await cvmDeviceStore.getDeviceTypeFullList({
         filter: {
-          condition: 'AND',
+          op: 'and',
           rules: [
-            { field: 'device_type', operator: QueryRuleOPEnumLegacy.IN, value: [...new Set(newVal)] },
-            {
-              field: 'require_type',
-              operator: QueryRuleOPEnumLegacy.EQ,
-              value: isGreenChannelOrSpringPool ? RequirementType.Regular : requireType,
-            },
+            { field: 'vendor', op: QueryRuleOPEnum.EQ, value: VendorEnum.ZIYAN },
+            { field: 'device_type', op: QueryRuleOPEnum.IN, value: [...new Set(newVal)] },
           ],
         },
       });

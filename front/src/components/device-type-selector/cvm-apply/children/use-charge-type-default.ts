@@ -18,7 +18,7 @@ export const useChargeTypeDefault = (props: {
   const isGpuDeviceType = computed(
     () =>
       selectedDeviceType.value?.device_type_class === 'SpecialType' &&
-      selectedDeviceType.value?.device_group.includes('GPU'),
+      selectedDeviceType.value?.device_family.includes('GPU'),
   );
 
   return {

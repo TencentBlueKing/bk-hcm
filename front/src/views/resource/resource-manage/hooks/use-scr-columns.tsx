@@ -1678,59 +1678,40 @@ export default (type: string, isSimpleShow = false) => {
       label: '机型',
       field: 'device_type',
       width: 200,
-    },
-    {
-      label: '需求类型',
-      field: 'require_type',
-      render: ({ row }: any) => getTypeCn(row.require_type),
+      isDefaultShow: true,
     },
     {
       label: '地域',
       field: 'region',
       render: ({ row }: any) => getRegionCn(row.region),
+      isDefaultShow: true,
     },
     {
       label: '园区',
       field: 'zone',
       render: ({ row }: any) => getZoneCn(row.zone),
+      isDefaultShow: true,
     },
     {
       label: '实例族',
-      field: 'label.device_group',
+      field: 'device_family',
+      isDefaultShow: true,
     },
     {
       label: 'CPU(核)',
-      field: 'cpu',
-      width: 50,
+      field: 'cpu_core',
+      isDefaultShow: true,
     },
     {
       label: '内存(G)',
-      field: 'mem',
-      width: 50,
-    },
-    {
-      label: '其他信息',
-      field: 'remark',
-      render: ({ cell }: any) => cell || '--',
-    },
-    {
-      label: '可查询容量',
-      field: 'enable_capacity',
-      render: ({ cell }: any) => (cell ? '是' : '否'),
+      field: 'memory',
+      isDefaultShow: true,
     },
     {
       label: '可申请',
-      field: 'enable_apply',
-      render: ({ cell }: any) => (cell ? <span style={'color:#67c23a'}>是</span> : <span>否</span>),
-    },
-    {
-      label: '推荐分数',
-      field: 'score',
-    },
-    {
-      label: '备注',
-      field: 'comment',
-      render: ({ cell }: any) => cell || '--',
+      field: 'disable',
+      render: ({ cell }: any) => (!cell ? <span style={'color:#67c23a'}>是</span> : <span>否</span>),
+      isDefaultShow: true,
     },
   ];
   const firstAccountColumns = [
