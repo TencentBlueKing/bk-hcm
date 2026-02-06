@@ -33,6 +33,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var syncConcurrencyCount = 10
+
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -141,4 +143,5 @@ var syncOrder = []syncItem{
 	{enumor.CertCloudResType, SyncCert},
 	{enumor.LoadBalancerCloudResType, SyncLoadBalancer},
 	{enumor.SecurityGroupUsageBizRelResType, SyncSGUsageBizRel},
+	{enumor.DeviceType, SyncDeviceType},
 }

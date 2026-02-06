@@ -11,6 +11,7 @@ import QcloudZoneSelector from '@/views/ziyanScr/components/qcloud-resource/zone
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
 import QcloudZoneValue from '@/views/ziyanScr/components/qcloud-resource/zone-value.vue';
 import QcloudRegionValue from '@/views/ziyanScr/components/qcloud-resource/region-value.vue';
+import { VendorEnum } from '@/common/constant';
 
 const { FormItem } = Form;
 
@@ -119,7 +120,7 @@ export default defineComponent({
 
     const cvmDevicetypeParams = computed(() => {
       const { bk_cloud_regions: region, bk_cloud_zones: zone } = formModel.spec || {};
-      return { region, zone };
+      return { vendor: VendorEnum.ZIYAN, region, zone, disable: false };
     });
 
     const submitSelectedDevices = async () => {

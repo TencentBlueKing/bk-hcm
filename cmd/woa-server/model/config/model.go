@@ -24,10 +24,7 @@ type model struct {
 	requirement    Requirement
 	idcZone        IdcZone
 	deviceRestrict DeviceRestrict
-	cvmImage       CvmImage
-	cvmDevice      CvmDevice
 	dvmDevice      DvmDevice
-	pmDevice       PmDevice
 }
 
 // Requirement get requirement operation interface
@@ -45,24 +42,9 @@ func (m *model) DeviceRestrict() DeviceRestrict {
 	return m.deviceRestrict
 }
 
-// CvmImage get cvm image operation interface
-func (m *model) CvmImage() CvmImage {
-	return m.cvmImage
-}
-
-// CvmDevice get cvm device operation interface
-func (m *model) CvmDevice() CvmDevice {
-	return m.cvmDevice
-}
-
 // DvmDevice get dvm device operation interface
 func (m *model) DvmDevice() DvmDevice {
 	return m.dvmDevice
-}
-
-// PmDevice get physical machine device operation interface
-func (m *model) PmDevice() PmDevice {
-	return m.pmDevice
 }
 
 var operation *model
@@ -72,10 +54,7 @@ func init() {
 		requirement:    &requirement{},
 		idcZone:        &idcZone{},
 		deviceRestrict: &deviceRestrict{},
-		cvmImage:       &cvmImage{},
-		cvmDevice:      &cvmDevice{},
 		dvmDevice:      &dvmDevice{},
-		pmDevice:       &pmDevice{},
 	}
 }
 
@@ -89,10 +68,7 @@ type Model interface {
 	Requirement() Requirement
 	IdcZone() IdcZone
 	DeviceRestrict() DeviceRestrict
-	CvmImage() CvmImage
-	CvmDevice() CvmDevice
 	DvmDevice() DvmDevice
-	PmDevice() PmDevice
 }
 
 // Requirement requirement operation interface
@@ -145,22 +121,6 @@ type DeviceRestrict interface {
 	DeleteDeviceRestrict(ctx context.Context, filter *mapstr.MapStr) error
 }
 
-// CvmImage cvm image operation interface
-type CvmImage interface {
-	// NextSequence returns next cvm image config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateCvmImage creates cvm image config in db
-	CreateCvmImage(ctx context.Context, inst *types.CvmImage) error
-	// GetCvmImage gets cvm image config by filter from db
-	GetCvmImage(ctx context.Context, filter *mapstr.MapStr) (*types.CvmImage, error)
-	// FindManyCvmImage gets cvm image config list by filter from db
-	FindManyCvmImage(ctx context.Context, filter *mapstr.MapStr) ([]*types.CvmImage, error)
-	// UpdateCvmImage updates cvm image config by filter and doc in db
-	UpdateCvmImage(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteCvmImage deletes cvm image config from db
-	DeleteCvmImage(ctx context.Context, filter *mapstr.MapStr) error
-}
-
 // CvmDevice cvm device operation interface
 type CvmDevice interface {
 	// NextSequence returns next device config sequence id from db
@@ -198,27 +158,6 @@ type DvmDevice interface {
 	CountDevice(ctx context.Context, filter map[string]interface{}) (uint64, error)
 	// FindManyDevice gets device list by filter from db
 	FindManyDevice(ctx context.Context, page metadata.BasePage, filter map[string]interface{}) ([]*types.DvmDeviceInfo,
-		error)
-	// FindManyDeviceType gets resource device type config list by filter from db
-	FindManyDeviceType(ctx context.Context, filter map[string]interface{}) ([]interface{}, error)
-	// UpdateDevice updates device config by filter and doc in db
-	UpdateDevice(ctx context.Context, filter *mapstr.MapStr, doc *mapstr.MapStr) error
-	// DeleteDevice deletes device config from db
-	DeleteDevice(ctx context.Context, filter *mapstr.MapStr) error
-}
-
-// PmDevice physical machine device operation interface
-type PmDevice interface {
-	// NextSequence returns next device config sequence id from db
-	NextSequence(ctx context.Context) (uint64, error)
-	// CreateDevice creates device config in db
-	CreateDevice(ctx context.Context, inst *types.PmDeviceInfo) error
-	// GetDevice gets device config by filter from db
-	GetDevice(ctx context.Context, filter *mapstr.MapStr) (*types.PmDeviceInfo, error)
-	// CountDevice gets resource device count by filter from db
-	CountDevice(ctx context.Context, filter map[string]interface{}) (uint64, error)
-	// FindManyDevice gets device list by filter from db
-	FindManyDevice(ctx context.Context, page metadata.BasePage, filter map[string]interface{}) ([]*types.PmDeviceInfo,
 		error)
 	// FindManyDeviceType gets resource device type config list by filter from db
 	FindManyDeviceType(ctx context.Context, filter map[string]interface{}) ([]interface{}, error)

@@ -24,14 +24,17 @@ import (
 	"sort"
 	"time"
 
-	"hcm/cmd/woa-server/model/config"
 	ptypes "hcm/cmd/woa-server/types/plan"
 	ttypes "hcm/cmd/woa-server/types/task"
+	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 )
@@ -114,7 +117,7 @@ func (c *Controller) VerifyResPlanDemandV2(kt *kit.Kit, bkBizID int64, requireTy
 
 // getVerifySliceWithDeviceInfo 获取用于校验预测的对象，仅从子单信息中填充机型、地域、核心数等和机型强相关的字段
 // 其他字段在后续 fillVerifyElems 方法中补充
-func (c *Controller) getVerifySliceWithDeviceInfo(deviceTypeMap map[string]wdt.WoaDeviceTypeTable,
+func (c *Controller) getVerifySliceWithDeviceInfo(deviceTypeMap map[string]dt.DistinctDeviceType,
 	subOrder ttypes.Suborder) (verifySlice []VerifyResPlanElemV2) {
 
 	switch subOrder.ResourceType {
@@ -201,7 +204,7 @@ func (c *Controller) GetPlanTypeAvlDeviceTypesV2(kt *kit.Kit, planType enumor.Pl
 	[]ptypes.DeviceTypeAvailable, error) {
 
 	// get region and zone all matched device types from mongodb.
-	matchedDeviceTypes, err := c.getMatchedDeviceTypesFromMgoV2(kt, req.Region, req.Zone)
+	matchedDeviceTypes, err := c.getMatchedDeviceTypes(kt, req.Region, req.Zone)
 	if err != nil {
 		logs.Errorf("failed to get matched device types v2, err: %v, req: %+v, rid: %s",
 			err, cvt.PtrToVal(req), kt.Rid)
@@ -291,34 +294,37 @@ func getAvlDeviceTypeMap(req *ptypes.GetCvmChargeTypeDeviceTypeReq, key ResPlanP
 	return avlDeviceTypeMap
 }
 
-// getMatchedDeviceTypesFromMgoV2 get matched device types from mongodb.
-func (c *Controller) getMatchedDeviceTypesFromMgoV2(kt *kit.Kit, regionID, zoneID string) ([]string, error) {
-	// construct mongodb filter.
-	mgoFilter := map[string]interface{}{
-		"region":       regionID,
-		"enable_apply": true,
+// getMatchedDeviceTypes get matched device types.
+func (c *Controller) getMatchedDeviceTypes(kt *kit.Kit, regionID, zoneID string) ([]string, error) {
+	filters := []*filter.AtomRule{
+		tools.RuleEqual("vendor", enumor.TCloudZiyan),
+		tools.RuleEqual("region", regionID),
+		tools.RuleEqual("disable", false),
 	}
-
 	// zone name may be empty, if it is not empty, supplement it into filter.
 	if zoneID != "" && zoneID != cvmapi.CvmSeparateCampus {
-		mgoFilter["zone"] = zoneID
+		filters = append(filters, tools.RuleEqual("zone", zoneID))
 	}
 
-	matchedDeviceTypeInterfaces, err := config.Operation().CvmDevice().FindManyDeviceType(kt.Ctx, mgoFilter)
-	if err != nil {
-		logs.Errorf("failed to find many device type v2, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+	matchedDeviceTypes := make([]string, 0)
+	req := core.ListReq{
+		Filter: tools.ExpressionAnd(filters...),
+		Page:   core.NewDefaultBasePage(),
 	}
-
-	matchedDeviceTypes := make([]string, len(matchedDeviceTypeInterfaces))
-	for idx, deviceTypeInterface := range matchedDeviceTypeInterfaces {
-		deviceTypeStr, ok := deviceTypeInterface.(string)
-		if !ok {
-			logs.Errorf("failed to convert device type interface: %v to string, rid: %s", deviceTypeInterface, kt.Rid)
-			return nil, fmt.Errorf("failed to convert device type interface: %v to string", deviceTypeInterface)
+	for {
+		resp, err := c.client.DataService().TCloudZiyan.DeviceType.ListDeviceType(kt, &protocloud.DeviceTypeListReq{
+			ListReq: req})
+		if err != nil {
+			logs.Errorf("failed to list device type, err: %v, filters: %+v, rid: %s", err, filters, kt.Rid)
+			return nil, err
 		}
-
-		matchedDeviceTypes[idx] = deviceTypeStr
+		for _, detail := range resp.Details {
+			matchedDeviceTypes = append(matchedDeviceTypes, detail.DeviceType)
+		}
+		if len(resp.Details) < int(req.Page.Limit) {
+			break
+		}
+		req.Page.Start += uint32(req.Page.Limit)
 	}
 
 	return matchedDeviceTypes, nil

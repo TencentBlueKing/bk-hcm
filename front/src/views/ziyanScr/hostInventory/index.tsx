@@ -6,6 +6,7 @@ import { Form } from 'bkui-vue';
 import AreaSelector from '../hostApplication/components/AreaSelector';
 import ZoneSelector from '../hostApplication/components/ZoneSelector';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
+import { VendorEnum } from '@/common/constant';
 import './index.scss';
 import useColumns from '@/views/resource/resource-manage/hooks/use-scr-columns';
 
@@ -23,7 +24,6 @@ export default defineComponent({
       cpu: '',
       mem: '',
       disk: '',
-      enable_capacity: true,
     });
     const options = ref({
       device_groups: deviceGroups,
@@ -39,10 +39,10 @@ export default defineComponent({
       limit: 50,
       start: 0,
     });
-    const queryrules = ref(
+    const queryRules = ref(
       [
-        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
+        filter.value.region.length && { field: 'dc.region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'dc.zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
           field: 'device_family',
           op: 'in',
@@ -65,7 +65,6 @@ export default defineComponent({
         cpu: '',
         mem: '',
         disk: '',
-        enable_capacity: true,
       };
     };
     const handleDeviceConfigChange = () => {
@@ -85,9 +84,9 @@ export default defineComponent({
       filter.value.device_type = [];
     };
     const filterDevices = () => {
-      queryrules.value = [
-        filter.value.region.length && { field: 'region', op: 'in', value: filter.value.region },
-        filter.value.zone.length && { field: 'zone', op: 'in', value: filter.value.zone },
+      queryRules.value = [
+        filter.value.region.length && { field: 'dc.region', op: 'in', value: filter.value.region },
+        filter.value.zone.length && { field: 'dc.zone', op: 'in', value: filter.value.zone },
         filter.value.device_group.length && {
           field: 'device_family',
           op: 'in',
@@ -109,8 +108,17 @@ export default defineComponent({
     };
 
     const cvmDevicetypeParams = computed(() => {
-      const { region, zone, device_group, cpu, mem, disk, enable_capacity } = filter.value;
-      return { region, zone, device_group, cpu, mem, disk, enable_capacity };
+      const { region, zone, device_group, cpu, mem, disk } = filter.value;
+      return {
+        vendor: VendorEnum.ZIYAN,
+        region,
+        zone,
+        device_family: device_group,
+        cpu,
+        mem,
+        disk,
+        disable: false,
+      };
     });
 
     const loadRestrict = async () => {
@@ -139,7 +147,7 @@ export default defineComponent({
           payload: {
             filter: {
               op: 'and',
-              rules: [...queryrules.value],
+              rules: [...queryRules.value],
             },
             page: page.value,
           },

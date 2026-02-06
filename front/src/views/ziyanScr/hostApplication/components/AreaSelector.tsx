@@ -5,7 +5,7 @@ export default defineComponent({
   name: 'AreaSelector',
   props: {
     value: {
-      type: String as PropType<string>,
+      type: [String, Array] as PropType<string | string[]>,
       default: '',
     },
     valueKey: {
@@ -16,6 +16,10 @@ export default defineComponent({
       type: Object,
       default: () => ({}),
     },
+    multiple: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['change'],
   setup(props, { attrs, emit }) {
@@ -24,7 +28,7 @@ export default defineComponent({
     const options = ref([]);
     const isIdc = computed(() => ['IDCDVM', 'IDCPM'].includes(props.params.resourceType));
     const isQcloud = computed(() => ['QCLOUDCVM', 'QCLOUDDVM'].includes(props.params.resourceType));
-    const handleSelectorChange = (value: string) => {
+    const handleSelectorChange = (value: string | string[]) => {
       emit('change', value);
     };
     const initValue = () => {
@@ -47,7 +51,7 @@ export default defineComponent({
     };
     const loadIdcRegions = async () => {
       const { info } = await apiService.getRegions('idc');
-      options.value = info.map((item) => {
+      options.value = info.map((item: any) => {
         return {
           region: item,
           region_cn: item,
@@ -80,10 +84,11 @@ export default defineComponent({
         v-bind={attrs}
         filterable
         default-first-option
+        multiple={props.multiple}
         v-model={props.value}
         loading={loading.value}
         onChange={handleSelectorChange}>
-        {options.value.map((item) => (
+        {options.value.map((item: any) => (
           <bk-option key={item.region} value={item.region} label={item.region_cn}></bk-option>
         ))}
       </bk-select>

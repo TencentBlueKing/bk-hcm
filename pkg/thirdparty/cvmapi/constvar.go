@@ -128,6 +128,8 @@ const (
 	CvmReturnPlanMethod = "queryReturnPlanItem"
 	// QueryCvmInstanceType 查询CVM机型信息
 	QueryCvmInstanceType = "queryCvmInstanceType"
+	// GetInstanceTypeInfoMethod 获取可申领的实例机型以及实例机型参数
+	GetInstanceTypeInfoMethod = "getInstanceTypeInfo"
 	// GetApproveLogMethod 查询审批日志
 	GetApproveLogMethod = "getApproveLog"
 	// CvmMatchSwapGroupMethod 亲和性匹配请求方法

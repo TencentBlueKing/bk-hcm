@@ -20,16 +20,8 @@
 package plan
 
 import (
-	"hcm/pkg/api/core"
-	rpproto "hcm/pkg/api/data-service/resource-plan"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/thirdparty/cvmapi"
-	"hcm/pkg/tools/slice"
 )
 
 // IsDeviceMatched return whether each device type in deviceTypeSlice can use deviceType's resource plan.
@@ -64,120 +56,4 @@ func (c *Controller) IsDeviceMatched(kt *kit.Kit, deviceTypeSlice []string, devi
 	}
 
 	return result, nil
-}
-
-// SyncDeviceTypesFromCRP sync device types from crp.
-func (c *Controller) SyncDeviceTypesFromCRP(kt *kit.Kit, deviceTypes []string) error {
-	// 1.从本地获取这些机型
-	localDeviceTypeMap := make(map[string]wdt.WoaDeviceTypeTable)
-	for _, batch := range slice.Split(deviceTypes, int(core.DefaultMaxPageLimit)) {
-		listReq := &rpproto.WoaDeviceTypeListReq{
-			ListReq: core.ListReq{
-				Filter: tools.ContainersExpression("device_type", batch),
-				Page:   core.NewDefaultBasePage(),
-				Fields: []string{"id", "device_type"},
-			},
-		}
-		batchRst, err := c.client.DataService().Global.ResourcePlan.ListWoaDeviceType(kt, listReq)
-		if err != nil {
-			logs.Errorf("failed to list cvm device type from crp, err: %v, deviceTypes: %v, rid: %s", err,
-				batch, kt.Rid)
-			return err
-		}
-
-		for _, item := range batchRst.Details {
-			localDeviceTypeMap[item.DeviceType] = item
-		}
-	}
-
-	// 2.从crp平台获取机型
-	crpDeviceTypeMap, err := c.listCvmInstanceTypeFromCrp(kt, deviceTypes)
-	if err != nil {
-		logs.Errorf("failed to list cvm device type from crp, err: %v, deviceTypes: %v, rid: %s", err,
-			deviceTypes, kt.Rid)
-		return err
-	}
-
-	needCreate := make([]wdt.WoaDeviceTypeTable, 0)
-	needUpdate := make([]wdt.WoaDeviceTypeTable, 0)
-	for deviceType, item := range crpDeviceTypeMap {
-		if localItem, ok := localDeviceTypeMap[deviceType]; ok {
-			item.ID = localItem.ID
-			needUpdate = append(needUpdate, item)
-			continue
-		}
-		needCreate = append(needCreate, item)
-	}
-
-	// 3.本地已存在时更新
-	for _, batch := range slice.Split(needUpdate, constant.BatchOperationMaxLimit) {
-		updateReq := &rpproto.WoaDeviceTypeBatchUpdateReq{
-			DeviceTypes: batch,
-		}
-		err = c.client.DataService().Global.ResourcePlan.BatchUpdateWoaDeviceType(kt, updateReq)
-		if err != nil {
-			logs.Errorf("failed to batch update cvm device type, err: %v, deviceTypes: %v, rid: %s", err,
-				batch, kt.Rid)
-			return err
-		}
-	}
-
-	// 4.本地不存在时创建
-	for _, batch := range slice.Split(needCreate, constant.BatchOperationMaxLimit) {
-		createReq := &rpproto.WoaDeviceTypeBatchCreateReq{
-			DeviceTypes: batch,
-		}
-		_, err = c.client.DataService().Global.ResourcePlan.BatchCreateWoaDeviceType(kt, createReq)
-		if err != nil {
-			logs.Errorf("failed to batch create cvm device type, err: %v, deviceTypes: %v, rid: %s", err,
-				batch, kt.Rid)
-			return err
-		}
-	}
-
-	return nil
-}
-
-// listCvmInstanceTypeFromCrp 从Crp平台获取机型
-func (c *Controller) listCvmInstanceTypeFromCrp(kt *kit.Kit, deviceTypes []string) (map[string]wdt.WoaDeviceTypeTable,
-	error) {
-
-	req := &cvmapi.QueryCvmInstanceTypeReq{
-		ReqMeta: cvmapi.ReqMeta{
-			Id:      cvmapi.CvmId,
-			JsonRpc: cvmapi.CvmJsonRpc,
-			Method:  cvmapi.QueryCvmInstanceType,
-		},
-		Params: &cvmapi.QueryCvmInstanceTypeParams{InstanceType: deviceTypes},
-	}
-
-	resp, err := c.crpCli.QueryCvmInstanceType(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("query cvm device type failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-		return nil, err
-	}
-	if resp.Result == nil {
-		logs.Errorf("query cvm device type error, deviceTypes: %v, resp: %+v, rid: %s", deviceTypes, resp, kt.Rid)
-		return nil, err
-	}
-
-	deviceTypeMap := make(map[string]wdt.WoaDeviceTypeTable)
-	for _, item := range resp.Result.Data {
-		if _, ok := deviceTypeMap[item.InstanceType]; ok {
-			continue
-		}
-		deviceTypeMap[item.InstanceType] = wdt.WoaDeviceTypeTable{
-			DeviceType:   item.InstanceType,
-			DeviceClass:  item.InstanceClassDesc,
-			DeviceFamily: item.InstanceGroup,
-			CoreType:     string(enumor.GetCoreTypeByCRPCoreTypeID(item.CoreType)),
-			// CPU和内存都是整数值，可直接转换
-			CpuCore:         int64(item.CPUAmount),
-			Memory:          int64(item.RamAmount),
-			DeviceTypeClass: item.InstanceTypeClass,
-			TechnicalClass:  item.CvmInstanceTypeClass,
-		}
-	}
-
-	return deviceTypeMap, nil
 }

@@ -51,6 +51,7 @@ func SyncTCloudImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, reg
 			return err
 		}
 
+		// TODO feature: 因前端查询时未带地域参数，腾讯云暂时只同步一个地域
 		break
 	}
 

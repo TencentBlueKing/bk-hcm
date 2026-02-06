@@ -123,13 +123,6 @@ func (s *service) initPlanService(h *rest.Handler) {
 	// demand week
 	h.Add("ImportDemandWeek", http.MethodPost, "/plans/demand_week/import", s.ImportDemandWeek)
 
-	// woa device type
-	h.Add("ListDeviceType", http.MethodPost, "/plans/device_types/list", s.ListDeviceType)
-	h.Add("CreateDeviceType", http.MethodPost, "/plans/device_types/batch/create", s.CreateDeviceType)
-	h.Add("UpdateDeviceType", http.MethodPatch, "/plans/device_types/batch", s.UpdateDeviceType)
-	h.Add("DeleteDeviceType", http.MethodDelete, "/plans/device_types/batch", s.DeleteDeviceType)
-	h.Add("SyncDeviceType", http.MethodPost, "/plans/device_types/sync", s.SyncDeviceType)
-
 	// woa device type physical rel
 	h.Add("CreateDeviceTypePhysicalRel", http.MethodPost, "/plans/device_type_physical_rels/batch/create",
 		s.CreateDeviceTypePhysicalRel)

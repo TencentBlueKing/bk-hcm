@@ -74,6 +74,8 @@ type Client struct {
 	Meta                       *MetaClient
 	ResUsageBizRel             *ResUsageBizRelClient
 	DeviceCapacity             *DeviceCapacityClient
+	TCloudZiyanPmDeviceType    *TCloudZiyanPmDeviceTypeClient
+	DeviceType                 *DeviceTypeClient
 }
 
 type restClient struct {
@@ -129,5 +131,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		OrgTopo:                    NewOrgTopoClient(client),
 		Meta:                       NewMetaClient(client),
 		DeviceCapacity:             NewDeviceCapacityClient(client),
+		TCloudZiyanPmDeviceType:    NewTCloudZiyanPmDeviceTypeClient(client),
+		DeviceType:                 NewDeviceTypeClient(client),
 	}
 }

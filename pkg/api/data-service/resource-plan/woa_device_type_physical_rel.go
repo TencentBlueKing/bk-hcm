@@ -26,6 +26,16 @@ import (
 	wd "hcm/pkg/dal/table/resource-plan/woa-device-type"
 )
 
+// WoaDeviceTypeSyncReq sync device type request
+type WoaDeviceTypeSyncReq struct {
+	DeviceTypes []string `json:"device_types" validate:"required,min=1"`
+}
+
+// Validate validates the WoaDeviceTypeSyncReq
+func (req *WoaDeviceTypeSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // WoaDeviceTypePhysicalRelListResult woa device type physical rel list result.
 type WoaDeviceTypePhysicalRelListResult types.ListResult[wd.WoaDeviceTypePhysicalRelTable]
 

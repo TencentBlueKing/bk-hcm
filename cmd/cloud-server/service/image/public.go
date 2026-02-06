@@ -49,6 +49,8 @@ func (svc *imageSvc) RetrieveImage(cts *rest.Contexts) (interface{}, error) {
 		return svc.client.DataService().Gcp.GetImage(cts.Kit, imageID)
 	case enumor.Azure:
 		return svc.client.DataService().Azure.GetImage(cts.Kit, imageID)
+	case enumor.TCloudZiyan:
+		return svc.client.DataService().TCloudZiyan.GetImage(cts.Kit, imageID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", vendor))
 	}
@@ -102,6 +104,8 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 		return svc.client.DataService().HuaWei.ListImage(cts.Kit, req)
 	case enumor.Azure:
 		return svc.client.DataService().Azure.ListImage(cts.Kit, req)
+	case enumor.TCloudZiyan:
+		return svc.client.DataService().TCloudZiyan.ListImage(cts.Kit, req)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}

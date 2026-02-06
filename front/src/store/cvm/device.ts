@@ -1,8 +1,9 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import rollRequest from '@blueking/roll-request';
 import http, { type HttpRequestConfig } from '@/http';
 import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
-import { enableCount } from '@/utils/search';
+import { enableCount, onePageParams } from '@/utils/search';
 import { RequirementType } from '@/store/config/requirement';
 
 export interface ICvmDeviceItem {
@@ -31,11 +32,12 @@ export interface ICvmDeviceItem {
 export interface ICvmDevicetypeItem {
   device_type: string;
   device_type_class: string;
-  device_group: string;
-  cpu_amount: number;
-  ram_amount: number;
-  core_type: number;
+  device_family: string; // 原 device_group
+  cpu_core: number; // 原 cpu_amount
+  memory: number; // 原 ram_amount
+  core_type: string; // 核心类型，枚举值：小核心、中核心、大核心
   device_class: string;
+  technical_class?: string;
   [k: string]: any;
 }
 
@@ -99,21 +101,12 @@ export const useCvmDeviceStore = defineStore('cvm-device', () => {
   };
 
   const devicetypeListLoading = ref(false);
-  const getDevicetypeListWithoutPage = async (params: QueryBuilderType) => {
+  const getOneDevicetype = async (params: QueryBuilderType) => {
     devicetypeListLoading.value = true;
     const api = '/api/v1/woa/config/findmany/config/cvm/devicetype';
     try {
-      const { page } = params;
-      if (page) {
-        const [listRes, countRes] = await Promise.all<
-          [Promise<IListResData<ICvmDevicetypeItem[]>>, Promise<IListResData<ICvmDevicetypeItem[]>>]
-        >([http.post(api, enableCount(params, false)), http.post(api, enableCount(params, true))]);
-        const [{ info: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
-        return { list, count };
-      }
-
-      const res = await http.post(api, params);
-      return res?.data?.info ?? [];
+      const res = await http.post(api, enableCount({ ...params, page: onePageParams() }, false));
+      return res?.data?.details?.[0];
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -126,12 +119,15 @@ export const useCvmDeviceStore = defineStore('cvm-device', () => {
   const getDeviceTypeFullList = async (params: QueryBuilderType) => {
     deviceTypeFullListLoading.value = true;
     try {
-      const res: IListResData<ICvmDevicetypeItem[]> = await http.post(
-        '/api/v1/woa/config/findmany/config/cvm/devicetype',
-        params,
-      );
-      const { info: list = [], count = 0 } = res.data ?? {};
-      return { list: list ?? [], count };
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<ICvmDevicetypeItem>('/api/v1/woa/config/findmany/config/cvm/devicetype', params, {
+        limit: 500,
+        countGetter: (res) => res.data.count,
+        listGetter: (res) => res.data.details,
+      });
+      return { list, count: list.length };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -219,7 +215,7 @@ export const useCvmDeviceStore = defineStore('cvm-device', () => {
     deviceListLoading,
     getDeviceList,
     devicetypeListLoading,
-    getDevicetypeListWithoutPage,
+    getOneDevicetype,
     deviceTypeFullListLoading,
     getDeviceTypeFullList,
     chargeTypeDeviceTypeListLoading,

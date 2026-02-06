@@ -26,9 +26,9 @@ import (
 	"time"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/criteria/enumor"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	ttypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -266,7 +266,7 @@ func (s *SubTicketSplitter) matchTransferCRPDemands(kt *kit.Kit, ticketID string
 // splitDemandInAddScenarios 在新增场景下，根据中转产品中可转移的CPU核数将需求拆分到 adjSplitGroupDemands 备用
 // 新增场景只会从中转产品转移到本业务，因此拆分时仅需关注demand的updated部分，即纯新增的部分
 func (s *SubTicketSplitter) splitDemandInAddScenarios(kt *kit.Kit, ticketID string, demand rpt.ResPlanDemand,
-	transferableCore, nonTransferableCore int64, deviceTypeMap map[string]wdt.WoaDeviceTypeTable) error {
+	transferableCore, nonTransferableCore int64, deviceTypeMap map[string]dt.DistinctDeviceType) error {
 
 	if demand.Updated == nil {
 		logs.Errorf("updated is nil, ticket id: %s, original: %+v, rid: %s", ticketID, demand.Original, kt.Rid)

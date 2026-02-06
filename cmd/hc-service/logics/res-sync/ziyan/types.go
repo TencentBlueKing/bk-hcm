@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coredevicetype "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -102,4 +103,24 @@ func (opt SyncRemovedParams) Validate() error {
 
 func getDatabaseTagKey(k string) string {
 	return "tags." + k
+}
+
+// SyncDeviceTypeParams sync device type params
+type SyncDeviceTypeParams struct {
+	Region      string                      `json:"region" validate:"required"`
+	DeviceTypes []coredevicetype.DeviceType `json:"device_types" validate:"required"`
+}
+
+// Validate ...
+func (s SyncDeviceTypeParams) Validate() error {
+	if err := validator.Validate.Struct(s); err != nil {
+		return err
+	}
+
+	for _, deviceType := range s.DeviceTypes {
+		if deviceType.Region != s.Region {
+			return fmt.Errorf("device type region should be %s", s.Region)
+		}
+	}
+	return nil
 }

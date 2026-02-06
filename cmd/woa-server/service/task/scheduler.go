@@ -24,14 +24,17 @@ import (
 	"time"
 
 	model "hcm/cmd/woa-server/model/task"
-	"hcm/cmd/woa-server/types/config"
 	gctypes "hcm/cmd/woa-server/types/green-channel"
 	types "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
+	"hcm/pkg/api/core"
+	coredevicetype "hcm/pkg/api/core/cloud/device-type"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -587,25 +590,23 @@ func (s *service) validateDeviceTypeForGreenAndRoll(kt *kit.Kit, input *types.Ap
 			deviceTypes = append(deviceTypes, suborder.Spec.DeviceType)
 		}
 	}
+	deviceTypes = slice.Unique(deviceTypes)
 
-	deviceReq := &config.GetDeviceParam{
-		Filter: &querybuilder.QueryFilter{
-			Rule: querybuilder.CombinedRule{
-				Condition: querybuilder.ConditionAnd,
-				Rules: []querybuilder.Rule{
-					querybuilder.AtomRule{
-						Field:    "device_type",
-						Operator: querybuilder.OperatorIn,
-						Value:    deviceTypes,
-					}},
+	deviceInfos := make([]coredevicetype.DistinctDeviceType, 0)
+	for _, batch := range slice.Split(deviceTypes, int(core.DefaultMaxPageLimit)) {
+		deviceReq := &protocloud.DistinctDeviceTypeListReq{
+			ListReq: core.ListReq{
+				Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", enumor.TCloudZiyan),
+					tools.RuleIn("device_type", batch)),
+				Page: core.NewDefaultBasePage(),
 			},
-		},
-		Page: metadata.BasePage{Limit: pkg.BKNoLimit, Start: 0},
-	}
-	resp, err := s.configLogics.Device().GetDevice(kt, deviceReq)
-	if err != nil {
-		logs.Errorf("failed to get device type info, err: %v, deviceTypes: %v, rid: %s", err, deviceTypes, kt.Rid)
-		return err
+		}
+		resp, err := s.configLogics.Device().ListDistinctDeviceType(kt, deviceReq)
+		if err != nil {
+			logs.Errorf("failed to get device type info, err: %v, deviceTypes: %v, rid: %s", err, batch, kt.Rid)
+			return err
+		}
+		deviceInfos = append(deviceInfos, resp.Details...)
 	}
 
 	// 获取小额绿通的配置
@@ -620,7 +621,7 @@ func (s *service) validateDeviceTypeForGreenAndRoll(kt *kit.Kit, input *types.Ap
 	}
 
 	var unsupportedTypes []string
-	for _, item := range resp.Info {
+	for _, item := range deviceInfos {
 		if item.DeviceTypeClass == cvmapi.SpecialType {
 			unsupportedTypes = append(unsupportedTypes, item.DeviceType)
 		}
@@ -628,12 +629,8 @@ func (s *service) validateDeviceTypeForGreenAndRoll(kt *kit.Kit, input *types.Ap
 		if !(input.RequireType == enumor.RequireTypeGreenChannel && cvmApplyConfigs.Enabled) {
 			continue
 		}
-		deviceGroupIf, ok := item.Label["device_group"]
-		if !ok {
-			continue
-		}
-		deviceGroup := util.GetStrByInterface(deviceGroupIf)
-		if !(slices.Contains(cvmApplyConfigs.DeviceGroups, deviceGroup) && item.Cpu <= cvmApplyConfigs.CpuMaxLimit) {
+		if !(slices.Contains(cvmApplyConfigs.DeviceGroups, item.DeviceFamily) && item.CpuCore <=
+			cvmApplyConfigs.CpuMaxLimit) {
 			unsupportedTypes = append(unsupportedTypes, item.DeviceType)
 		}
 	}
@@ -1699,55 +1696,6 @@ func (s *service) modifyApplyOrder(cts *rest.Contexts, bkBizIDMap map[int64]stru
 	}
 
 	return nil, nil
-}
-
-// RecommendApplyOrder get apply order modification recommendation
-func (s *service) RecommendApplyOrder(cts *rest.Contexts) (any, error) {
-	input := new(types.RecommendApplyReq)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to recommend apply order, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	errKey, err := input.Validate()
-	if err != nil {
-		logs.Errorf("failed to recommend apply order, err: %v, errKey: %s, rid: %s", err, errKey, cts.Kit.Rid)
-		return nil, errf.NewFromErr(pkg.CCErrCommParamsIsInvalid, err)
-	}
-
-	// get orders' biz id list
-	suborderIDs := []string{input.SuborderID}
-	bizIds, err := s.getApplyOrderBizIds(cts.Kit, suborderIDs)
-	if err != nil {
-		logs.Errorf("failed to recommend apply order, for get order biz id err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.Newf(pkg.CCErrCommParamsIsInvalid, "get order biz id err: %v", err)
-	}
-
-	if len(bizIds) == 0 {
-		err = errors.New("biz id list is empty")
-		logs.Errorf("failed to recommend apply order, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// check permission
-	for _, bizId := range bizIds {
-		err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-			Basic: &meta.Basic{Type: meta.ZiYanResource, Action: meta.Create}, BizID: bizId,
-		})
-		if err != nil {
-			logs.Errorf("no permission to terminate apply order, failed to check permission, bizID: %d, "+
-				"err: %v, rid: %s", bizId, err, cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
-	rst, err := s.logics.Scheduler().RecommendApplyOrder(cts.Kit, input)
-	if err != nil {
-		logs.Errorf("failed to recommend recycle order, input: %+v, err: %v, rid: %s", input, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
 }
 
 // GetBizApplyModify get biz apply modify

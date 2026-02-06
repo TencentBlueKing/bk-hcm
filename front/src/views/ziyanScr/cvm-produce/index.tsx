@@ -11,6 +11,7 @@ import CreateOrderDialog from './component/create-order/index.vue';
 import { useUserStore } from '@/store';
 import SuccessProduceDetail from './component/success-produce-detail';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
+import { VendorEnum } from '@/common/constant';
 import { Button, Form, Select } from 'bkui-vue';
 import { Copy, Plus, Search } from 'bkui-vue/lib/icon';
 import FloatInput from '@/components/float-input';
@@ -235,7 +236,7 @@ export default defineComponent({
 
     const cvmDevicetypeParams = computed(() => {
       const { region, zone } = cvmProduceForm.value;
-      return { region, zone };
+      return { vendor: VendorEnum.ZIYAN, region, zone, disable: false };
     });
 
     const taskPoll = useTimeoutPoll(pollProduceOrderList, 30000, { max: 60 });

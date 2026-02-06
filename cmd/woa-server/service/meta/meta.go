@@ -19,7 +19,8 @@ import (
 	mtypes "hcm/cmd/woa-server/types/meta"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
-	protocloud "hcm/pkg/api/data-service/cloud/zone"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	protozone "hcm/pkg/api/data-service/cloud/zone"
 	rsproto "hcm/pkg/api/data-service/rolling-server"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -29,6 +30,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/maps"
 )
 
 // ListDiskType lists disk type.
@@ -104,7 +106,7 @@ func (s *service) ListZone(cts *rest.Contexts) (interface{}, error) {
 		rules = append(rules, tools.RuleIn("region", req.RegionIDs))
 	}
 
-	zoneReq := &protocloud.ZoneListReq{
+	zoneReq := &protozone.ZoneListReq{
 		Filter: &filter.Expression{
 			Op:    filter.And,
 			Rules: rules,
@@ -144,13 +146,34 @@ func (s *service) ListZone(cts *rest.Contexts) (interface{}, error) {
 
 // ListDeviceClass lists region.
 func (s *service) ListDeviceClass(cts *rest.Contexts) (interface{}, error) {
-	details, err := s.dao.WoaDeviceType().GetDeviceClassList(cts.Kit, tools.AllExpression())
-	if err != nil {
-		logs.Errorf("failed to get device class list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.Aborted, err)
+	// 分页获取所有设备类型数据，然后提取去重的 device_class
+	deviceClassSet := make(map[string]struct{})
+	page := core.NewDefaultBasePage()
+	for {
+		req := &protocloud.DistinctDeviceTypeListReq{
+			ListReq: core.ListReq{
+				Filter: tools.EqualExpression("vendor", enumor.TCloudZiyan),
+				Page:   page,
+			},
+		}
+		result, err := s.client.DataService().TCloudZiyan.DeviceType.ListDistinctDeviceType(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("failed to list device type, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, errf.NewFromErr(errf.Aborted, err)
+		}
+		// 提取 device_class 并去重
+		for _, detail := range result.Details {
+			if detail.DeviceClass != "" {
+				deviceClassSet[detail.DeviceClass] = struct{}{}
+			}
+		}
+		if len(result.Details) < int(page.Limit) {
+			break
+		}
+		page.Start += uint32(page.Limit)
 	}
 
-	return &core.ListResultT[string]{Details: details}, nil
+	return &core.ListResultT[string]{Details: maps.Keys(deviceClassSet)}, nil
 }
 
 // ListDeviceType lists device type.
@@ -166,32 +189,43 @@ func (s *service) ListDeviceType(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	var opt []*filter.AtomRule
+	opt := []*filter.AtomRule{tools.RuleEqual("vendor", enumor.TCloudZiyan)}
 	if len(req.DeviceClasses) > 0 {
 		opt = append(opt, tools.RuleIn("device_class", req.DeviceClasses))
 	}
 	if len(req.DeviceTypes) > 0 {
 		opt = append(opt, tools.RuleIn("device_type", req.DeviceTypes))
 	}
-	devTypeMap, err := s.dao.WoaDeviceType().GetDeviceTypeMap(cts.Kit, tools.ExpressionAnd(opt...))
-	if err != nil {
-		logs.Errorf("failed to get device type map, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.Aborted, err)
+	deviceDetails := make([]mtypes.ListDeviceTypeRst, 0)
+	listReq := &protocloud.DistinctDeviceTypeListReq{
+		ListReq: core.ListReq{
+			Filter: tools.ExpressionAnd(opt...),
+			Page:   core.NewDefaultBasePage(),
+		},
+	}
+	for {
+		result, err := s.client.DataService().TCloudZiyan.DeviceType.ListDistinctDeviceType(cts.Kit, listReq)
+		if err != nil {
+			logs.Errorf("failed to list device type, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, errf.NewFromErr(errf.Aborted, err)
+		}
+		for _, detail := range result.Details {
+			deviceDetails = append(deviceDetails, mtypes.ListDeviceTypeRst{
+				DeviceType:   detail.DeviceType,
+				CoreType:     string(detail.CoreType),
+				CpuCore:      detail.CpuCore,
+				Memory:       detail.Memory,
+				DeviceClass:  detail.DeviceClass,
+				DeviceFamily: detail.DeviceFamily,
+			})
+		}
+		if len(result.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
-	details := make([]mtypes.ListDeviceTypeRst, 0, len(devTypeMap))
-	for _, v := range devTypeMap {
-		details = append(details, mtypes.ListDeviceTypeRst{
-			DeviceType:   v.DeviceType,
-			CoreType:     v.CoreType,
-			CpuCore:      v.CpuCore,
-			Memory:       v.Memory,
-			DeviceClass:  v.DeviceClass,
-			DeviceFamily: v.DeviceFamily,
-		})
-	}
-
-	return &core.ListResultT[mtypes.ListDeviceTypeRst]{Details: details}, nil
+	return &core.ListResultT[mtypes.ListDeviceTypeRst]{Details: deviceDetails}, nil
 }
 
 // ListPlanType lists plan type.

@@ -5,7 +5,7 @@ import { Button, Form, Input, Message, Table } from 'bkui-vue';
 import { Column } from 'bkui-vue/lib/table/props';
 import http from '@/http';
 import { timeFormatter } from '@/common/util';
-import { INSTANCE_CHARGE_MAP } from '@/common/constant';
+import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { removeEmptyFields } from '@/utils/scr/remove-query-fields';
 import { useLegacyTableSettings } from '@/hooks/use-table-settings';
 import useTableSelection from '@/hooks/use-table-selection';
@@ -225,7 +225,7 @@ export default defineComponent({
 
     const cvmDevicetypeParams = computed(() => {
       const { region, zone } = formModel.spec;
-      return { region, zone };
+      return { vendor: VendorEnum.ZIYAN, region, zone, disable: false };
     });
 
     const loadResource = async () => {

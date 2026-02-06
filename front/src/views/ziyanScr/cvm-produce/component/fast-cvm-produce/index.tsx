@@ -8,6 +8,7 @@ import ZoneSelector from '@/views/ziyanScr/hostApplication/components/ZoneSelect
 import { HelpFill, Search } from 'bkui-vue/lib/icon';
 import { Button, Form, Select, Sideslider } from 'bkui-vue';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
+import { VendorEnum } from '@/common/constant';
 const { FormItem } = Form;
 // import { statusList } from './transform';
 // import './index.scss';
@@ -80,8 +81,14 @@ export default defineComponent({
       const rules = [];
       ['region', 'zone', 'device_type', 'device_group'].map((item) => {
         if (Array.isArray(filterForm.value[item]) && filterForm.value[item].length) {
+          const fieldNameMap: Record<string, string> = {
+            region: 'dc.region',
+            zone: 'dc.zone',
+            device_type: 'dc.device_type',
+            device_group: 'device_family',
+          };
           rules.push({
-            field: item === 'device_group' ? 'device_family' : item === 'device_type' ? 'dc.device_type' : item,
+            field: fieldNameMap[item],
             op: 'in',
             value: filterForm.value[item],
           });
@@ -166,7 +173,15 @@ export default defineComponent({
     // CVM机型
     const cvmDevicetypeParams = computed(() => {
       const { region, zone, device_group, cpu, mem } = filterForm.value;
-      return { region, zone, device_group, cpu, mem, enable_capacity: true };
+      return {
+        vendor: VendorEnum.ZIYAN,
+        region,
+        zone,
+        device_family: device_group,
+        cpu,
+        mem,
+        disable: false,
+      };
     });
 
     const handleDeviceGroupChange = () => {

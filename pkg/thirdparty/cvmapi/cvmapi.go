@@ -56,8 +56,9 @@ type CVMClientInterface interface {
 	// GetErpProcess check if physical machine is in any process like "退回"
 	GetErpProcess(ctx context.Context, header http.Header, req *GetErpProcessReq) (*GetErpProcessResp, error)
 	// QueryCvmInstanceType query cvm instance type
-	QueryCvmInstanceType(ctx context.Context, header http.Header, req *QueryCvmInstanceTypeReq) (
-		*QueryCvmInstanceTypeResp, error)
+	QueryCvmInstanceType(kt *kit.Kit, params *QueryCvmInstanceTypeParams) (*QueryCvmInstanceTypeResp, error)
+	// GetInstanceTypeInfo get instance type info
+	GetInstanceTypeInfo(kt *kit.Kit, params *GetInstanceTypeInfoParams) (*GetInstanceTypeInfoResp, error)
 	// GetCvmApproveLogs get cvm approve logs
 	GetCvmApproveLogs(ctx context.Context, header http.Header, req *GetCvmApproveLogReq) (*GetCvmApproveLogsResp, error)
 	// RevokeCvmOrder revoke cvm order
@@ -578,17 +579,25 @@ func (c *cvmApi) GetErpProcess(ctx context.Context, header http.Header, req *Get
 }
 
 // QueryCvmInstanceType query cvm instance type
-func (c *cvmApi) QueryCvmInstanceType(ctx context.Context, header http.Header, req *QueryCvmInstanceTypeReq) (
+func (c *cvmApi) QueryCvmInstanceType(kt *kit.Kit, params *QueryCvmInstanceTypeParams) (
 	*QueryCvmInstanceTypeResp, error) {
 
+	req := &QueryCvmInstanceTypeReq{
+		ReqMeta: ReqMeta{
+			Id:      CvmId,
+			JsonRpc: CvmJsonRpc,
+			Method:  QueryCvmInstanceType,
+		},
+		Params: params,
+	}
 	subPath := "/apply/api/"
 	resp := new(QueryCvmInstanceTypeResp)
 	err := c.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(req).
 		SubResourcef(subPath).
 		WithParam(CvmApiKey, CvmApiKeyVal).
-		WithHeaders(header).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 
@@ -601,6 +610,44 @@ func (c *cvmApi) QueryCvmInstanceType(ctx context.Context, header http.Header, r
 		logs.Errorf("query cvm instance type code error, subPath: %s, code: %d, msg: %s, crpTraceID: %s, req: %+v",
 			subPath, resp.Error.Code, resp.Error.Message, resp.TraceId, req)
 		return nil, fmt.Errorf("query cvm instance type code error, code: %d, msg: %s, crpTraceID: %s",
+			resp.Error.Code, resp.Error.Message, resp.TraceId)
+	}
+
+	return resp, nil
+}
+
+// GetInstanceTypeInfo get instance type info
+func (c *cvmApi) GetInstanceTypeInfo(kt *kit.Kit, params *GetInstanceTypeInfoParams) (
+	*GetInstanceTypeInfoResp, error) {
+
+	req := &GetInstanceTypeInfoReq{
+		ReqMeta: ReqMeta{
+			Id:      CvmId,
+			JsonRpc: CvmJsonRpc,
+			Method:  GetInstanceTypeInfoMethod,
+		},
+		Params: params,
+	}
+	subPath := "/apply/api/"
+	resp := new(GetInstanceTypeInfoResp)
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef(subPath).
+		WithParam(CvmApiKey, CvmApiKeyVal).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		logs.Errorf("get instance type info failed, err: %v, subPath: %s, req: %+v", err, subPath, req)
+		return nil, err
+	}
+
+	if resp.Error.Code != 0 {
+		logs.Errorf("get instance type info code error, subPath: %s, code: %d, msg: %s, crpTraceID: %s, req: %+v",
+			subPath, resp.Error.Code, resp.Error.Message, resp.TraceId, req)
+		return nil, fmt.Errorf("get instance type info code error, code: %d, msg: %s, crpTraceID: %s",
 			resp.Error.Code, resp.Error.Message, resp.TraceId)
 	}
 

@@ -40,6 +40,7 @@ type Client struct {
 	BandPkg       *BandwidthPackageClient
 	Tag           *TagClient
 	Cos           *CosClient
+	DeviceType    *DeviceTypeClient
 }
 
 // NewClient create a new tcloud api client.
@@ -60,5 +61,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		BandPkg:       NewBandPkgClient(client),
 		Tag:           NewTagClient(client),
 		Cos:           NewCosClient(client),
+		DeviceType:    NewDeviceTypeClient(client),
 	}
 }

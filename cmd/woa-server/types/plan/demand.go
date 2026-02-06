@@ -27,11 +27,11 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	mtypes "hcm/pkg/dal/dao/types/meta"
-	wdttablers "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
@@ -798,7 +798,7 @@ func (c *CrpOrderChangeInfo) GetKey(bkBizID int64, demandClass enumor.DemandClas
 }
 
 // GetAggregateKey get aggregate key of crp order change info.
-func (c *CrpOrderChangeInfo) GetAggregateKey(bkBizID int64, deviceTypes map[string]wdttablers.WoaDeviceTypeTable,
+func (c *CrpOrderChangeInfo) GetAggregateKey(bkBizID int64, deviceTypes map[string]dt.DistinctDeviceType,
 	expectTimeRange times.DateRange) (ResPlanDemandAggregateKey, error) {
 
 	deviceInfo, ok := deviceTypes[c.DeviceType]
@@ -811,7 +811,7 @@ func (c *CrpOrderChangeInfo) GetAggregateKey(bkBizID int64, deviceTypes map[stri
 		RegionID:        c.RegionID,
 		ExpectTimeRange: expectTimeRange,
 		DeviceFamily:    deviceInfo.DeviceFamily,
-		CoreType:        deviceInfo.CoreType,
+		CoreType:        string(deviceInfo.CoreType),
 		PlanType:        c.PlanType,
 		ObsProject:      c.ObsProject,
 		ResType:         c.DemandResType,

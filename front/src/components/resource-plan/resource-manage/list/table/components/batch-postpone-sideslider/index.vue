@@ -69,7 +69,7 @@ import { useCvmDeviceStore } from '@/store/cvm/device';
 import { IListResourcesDemandsItem } from '@/typings/resourcePlan';
 import { CvmDeviceType } from '@/views/ziyanScr/components/devicetype-selector/types';
 import { AdjustType } from '@/typings/plan';
-import { QueryRuleOPEnumLegacy } from '@/typings';
+import { QueryRuleOPEnum } from '@/typings';
 import { timeFormatter } from '@/common/util';
 import dayjs from 'dayjs';
 
@@ -119,20 +119,19 @@ watchEffect(() => {
 
 const devicetypeInfo = ref<CvmDeviceType>(null);
 const getDevicetypeInfo = async () => {
-  const devicetypeList = await cvmDeviceStore.getDevicetypeListWithoutPage({
+  devicetypeInfo.value = await cvmDeviceStore.getOneDevicetype({
     filter: {
-      condition: 'AND',
+      op: 'and',
       rules: [
-        { field: 'zone', operator: QueryRuleOPEnumLegacy.EQ, value: props.data.zone_id },
-        { field: 'device_type', operator: QueryRuleOPEnumLegacy.EQ, value: props.data.device_type },
+        { field: 'zone', op: QueryRuleOPEnum.EQ, value: props.data.zone_id },
+        { field: 'device_type', op: QueryRuleOPEnum.EQ, value: props.data.device_type },
       ],
     },
   });
-  devicetypeInfo.value = devicetypeList?.[0];
 };
 
-const delayTotalCpuCore = computed(() => formModel.delay_os * (devicetypeInfo.value?.cpu_amount ?? 0));
-const delayTotalMemory = computed(() => formModel.delay_os * (devicetypeInfo.value?.ram_amount ?? 0));
+const delayTotalCpuCore = computed(() => formModel.delay_os * (devicetypeInfo.value?.cpu_core ?? 0));
+const delayTotalMemory = computed(() => formModel.delay_os * (devicetypeInfo.value?.memory ?? 0));
 const delayTotalDisk = computed(
   () => formModel.delay_os * (props.data.remained_disk_size / Number(props.data.remained_os)),
 );

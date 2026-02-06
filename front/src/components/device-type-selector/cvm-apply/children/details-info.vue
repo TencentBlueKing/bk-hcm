@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { watchEffect, inject, ref, type Ref } from 'vue';
+import { watchEffect, inject, ref } from 'vue';
 import { ArrowsRight } from 'bkui-vue/lib/icon';
 import isEqual from 'lodash/isEqual';
-import { QueryRuleOPEnumLegacy } from '@/typings';
+import { QueryRuleOPEnum } from '@/typings';
+import { VendorEnum } from '@/common/constant';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import gridItem from '@/components/layout/grid-container/grid-item.vue';
 import { getZoneCn } from '@/views/ziyanScr/cvm-web/transform';
@@ -22,7 +23,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ edit: []; 'update-selected': [value: ICvmDeviceTypeFormData['deviceTypeList']] }>();
 
-const isGreenChannelOrSpringPool = inject<Ref<boolean>>('isGreenChannelOrSpringPool');
 const editMode = inject('editMode');
 
 const cvmDeviceStore = useCvmDeviceStore();
@@ -36,16 +36,15 @@ watchEffect(async () => {
   if (!props.data.deviceTypeList?.length && props.data.deviceTypes?.length) {
     const params = transformSimpleCondition(
       {
-        require_type: isGreenChannelOrSpringPool.value ? RequirementType.Regular : props.requireType,
+        vendor: VendorEnum.ZIYAN,
         region: props.region,
         device_type: props.data.deviceTypes,
       },
       [
-        { id: 'require_type', name: 'require_type', type: 'req-type', op: QueryRuleOPEnumLegacy.EQ },
-        { id: 'region', name: 'region', type: 'region', op: QueryRuleOPEnumLegacy.EQ },
-        { id: 'device_type', name: 'device_type', type: 'list' },
+        { id: 'vendor', name: 'vendor', op: QueryRuleOPEnum.EQ, type: 'string' },
+        { id: 'region', name: 'region', type: 'region', op: QueryRuleOPEnum.EQ },
+        { id: 'device_type', name: 'device_type', type: 'list', op: QueryRuleOPEnum.IN },
       ],
-      true,
     );
 
     const { list } = await cvmDeviceStore.getDeviceTypeFullList({ filter: params });
@@ -73,9 +72,7 @@ watchEffect(async () => {
             <template v-if="deviceTypeList?.length">
               <grid-item class="device-item" v-for="(item, index) in deviceTypeList" :key="index">
                 {{ item.device_type }}
-                <span class="extra-text">
-                  ({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
-                </span>
+                <span class="extra-text">({{ item.device_family }}, {{ item.cpu_core }}核{{ item.memory }}GB)</span>
               </grid-item>
             </template>
             <span v-else>--</span>
@@ -111,18 +108,14 @@ watchEffect(async () => {
             <div class="original">
               <div v-for="(item, index) in originalData.deviceTypeList" :key="index" class="device-item">
                 <span class="device-type">{{ item.device_type }}</span>
-                <span class="extra-text">
-                  ({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
-                </span>
+                <span class="extra-text">({{ item.device_family }}, {{ item.cpu_core }}核{{ item.memory }}GB)</span>
               </div>
             </div>
             <div class="update">
               <arrows-right class="right-icon" />
               <div v-for="(item, index) in deviceTypeList" :key="index" class="device-item">
                 <span class="device-type">{{ item.device_type }}</span>
-                <span class="extra-text">
-                  ({{ item.device_group }}, {{ item.cpu_amount }}核{{ item.ram_amount }}GB)
-                </span>
+                <span class="extra-text">({{ item.device_family }}, {{ item.cpu_core }}核{{ item.memory }}GB)</span>
               </div>
             </div>
           </div>

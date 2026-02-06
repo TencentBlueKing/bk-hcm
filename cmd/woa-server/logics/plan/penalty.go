@@ -30,6 +30,7 @@ import (
 	mtypes "hcm/cmd/woa-server/types/meta"
 	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	dataservice "hcm/pkg/api/data-service"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
@@ -37,7 +38,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	dmtypes "hcm/pkg/dal/dao/types/meta"
 	rtypes "hcm/pkg/dal/dao/types/resource-plan"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -383,7 +383,7 @@ func (c *Controller) createDemandPenaltyBase(kt *kit.Kit, baseYearWeek dtime.Dem
 // calcPenaltyBaseCoreByTicket calculate penalty base core by ticket.
 func (c *Controller) calcPenaltyBaseCoreByTicket(kt *kit.Kit, tickets []rtypes.RPTicketWithStatus,
 	timeRange times.DateRange, regionNameMap map[string]dmtypes.RegionArea,
-	deviceTypeMap map[string]wdt.WoaDeviceTypeTable) (map[ptypes.DemandPenaltyBaseKey]int64,
+	deviceTypeMap map[string]dt.DistinctDeviceType) (map[ptypes.DemandPenaltyBaseKey]int64,
 	map[int64]mtypes.BizOrgRel, error) {
 	baseCoreMap := make(map[ptypes.DemandPenaltyBaseKey]int64)
 	bizOrgRelMap := make(map[int64]mtypes.BizOrgRel)
@@ -558,7 +558,7 @@ func (c *Controller) GetBizResPlanAppliedCPUCore(kt *kit.Kit, bkBizIDs []int64, 
 // convResConsumePoolToPenaltyMap 将 ResConsumePool 转为以 DemandPenaltyBaseKey 为 key 的 map
 // 因为 ResConsumePool 精确指定了deviceType，因此在list时无法进行模糊匹配，需要进行转化后使用
 func convResConsumePoolToPenaltyMap(kt *kit.Kit, pool ResPlanConsumePool, regionAreaMap map[string]dmtypes.RegionArea,
-	deviceTypes map[string]wdt.WoaDeviceTypeTable) (map[ptypes.DemandPenaltyBaseKey]int64, error) {
+	deviceTypes map[string]dt.DistinctDeviceType) (map[ptypes.DemandPenaltyBaseKey]int64, error) {
 
 	consumeMap := make(map[ptypes.DemandPenaltyBaseKey]int64)
 
@@ -860,7 +860,7 @@ func (c *Controller) getExpireNotificationsDemandRange(kt *kit.Kit, now time.Tim
 
 // generateAndSendMail generate and send expire notifications email.
 func (c *Controller) generateAndSendMail(kt *kit.Kit, bkBizID int64, demands []*ptypes.ListResPlanDemandItem,
-	maintainers []string, extraReceivers []string, deviceTypeMap map[string]wdt.WoaDeviceTypeTable) error {
+	maintainers []string, extraReceivers []string, deviceTypeMap map[string]dt.DistinctDeviceType) error {
 
 	emailTitle, emailContent, receivers, skip, err := c.generateExpireNotificationsEmail(kt, demands, deviceTypeMap,
 		bkBizID)
@@ -887,7 +887,7 @@ func (c *Controller) generateAndSendMail(kt *kit.Kit, bkBizID int64, demands []*
 
 // generateExpireNotificationsEmail generate expire notifications email content.
 func (c *Controller) generateExpireNotificationsEmail(kt *kit.Kit, demands []*ptypes.ListResPlanDemandItem,
-	deviceTypeMap map[string]wdt.WoaDeviceTypeTable, bkBizID int64) (title string, content string, receivers []string,
+	deviceTypeMap map[string]dt.DistinctDeviceType, bkBizID int64) (title string, content string, receivers []string,
 	skip bool, err error) {
 
 	sendTime := time.Now()

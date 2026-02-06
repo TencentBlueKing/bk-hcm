@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/cvmapi"
 )
 
 // InitService initial tcloud sync service
@@ -43,6 +44,7 @@ func InitService(cap *capability.Capability) {
 		cs:      cap.ClientSet,
 		dataCli: cap.ClientSet.DataService(),
 		syncCli: cap.ResSyncCli,
+		crpCli:  cap.CrpCli,
 	}
 
 	h := rest.NewHandler()
@@ -61,6 +63,8 @@ func InitService(cap *capability.Capability) {
 		v.SyncHostWithRelResByCond)
 	h.Add("DeleteHost", "DELETE", "/hosts/by_condition/delete", v.DeleteHostByCond)
 	h.Add("SyncSecurityGroupUsageBiz", "POST", "/security_groups/usage_biz_rels/sync", v.SyncSecurityGroupUsageBiz)
+	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
+	h.Add("SyncDeviceType", "POST", "/device_types/sync", v.SyncDeviceType)
 
 	h.Load(cap.WebService)
 }
@@ -70,6 +74,7 @@ type service struct {
 	cs      *client.ClientSet
 	dataCli *dataservice.Client
 	syncCli ressync.Interface
+	crpCli  cvmapi.CVMClientInterface
 }
 
 func defaultPrepare(cts *rest.Contexts, cli ressync.Interface) (*sync.TCloudSyncReq, ziyan.Interface, error) {

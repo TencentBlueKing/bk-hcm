@@ -159,17 +159,6 @@ const getRestrict = async () => {
   return data;
 };
 /**
- * 获取物理机机型
- */
-const getIDCPMDeviceTypes = async () => {
-  const { data } = await http.post(
-    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/findmany/config/idcpm/devicetype`,
-    { page: {} },
-    { simpleConditions: true },
-  );
-  return data;
-};
-/**
  * 获取物理机操作系统
  */
 const getOsTypes = async () => {
@@ -199,18 +188,20 @@ const getSubnets = async ({ region, zone, vpc }) => {
   });
   return data;
 };
-const updateCvmDeviceTypeConfigs = async ({ ids, properties }) => {
-  const { data } = await http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/updatemany/config/cvm/device/property`, {
-    ids,
-    properties,
-  });
+const updateCvmDeviceTypeConfigs = async (params: any) => {
+  const { data } = await http.put(
+    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/updatemany/config/cvm/device/property`,
+    params,
+  );
   return data;
 };
 /**
  * CVM机型配置信息创建接口
+ * @param  {object} params
+ * @param  {Array} params.device_types 机型配置列表
  * @returns {Promise}
  */
-const createCvmDevice = async (params: ICvmDeviceCreateModel & { force_create: boolean }, config?: any) => {
+const createCvmDevice = async (params: { device_types: ICvmDeviceCreateModel[] }, config?: any) => {
   const res = await http.post(
     `${BK_HCM_AJAX_URL_PREFIX}/api/v1/woa/config/createmany/config/cvm/device`,
     params,
@@ -342,7 +333,6 @@ export default {
   getRegions,
   getVpcs,
   getSubnets,
-  getIDCPMDeviceTypes,
   getOsTypes,
   getIsps,
   getRestrict,

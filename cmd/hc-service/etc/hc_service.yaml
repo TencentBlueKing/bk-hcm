@@ -137,3 +137,6 @@ esb:
 securityGroupMgmtSkipList:
   - sg-xxxxxx
 
+# defines crp related settings
+crp:
+  host: http://127.0.0.1

@@ -16,22 +16,18 @@ import (
 	"fmt"
 	"slices"
 
-	"hcm/cmd/woa-server/types/config"
 	types "hcm/cmd/woa-server/types/cvm"
-	gctypes "hcm/cmd/woa-server/types/green-channel"
-	"hcm/pkg"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/cvmapi"
-	"hcm/pkg/tools/metadata"
-	"hcm/pkg/tools/querybuilder"
-	"hcm/pkg/tools/slice"
-	"hcm/pkg/tools/util"
 )
 
 // CreateApplyOrder creates apply order(CVM生产-创建单据)
@@ -86,59 +82,46 @@ func (s *service) validateDeviceTypeForGreenAndRoll(kt *kit.Kit, input *types.Cv
 		return fmt.Errorf("device type is required for green channel or roll server apply")
 	}
 
-	deviceReq := &config.GetDeviceParam{
-		Filter: &querybuilder.QueryFilter{
-			Rule: querybuilder.CombinedRule{
-				Condition: querybuilder.ConditionAnd,
-				Rules: []querybuilder.Rule{
-					querybuilder.AtomRule{
-						Field:    "device_type",
-						Operator: querybuilder.OperatorEqual,
-						Value:    deviceType,
-					}},
-			},
+	deviceReq := &protocloud.DistinctDeviceTypeListReq{
+		ListReq: core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", enumor.TCloudZiyan),
+				tools.RuleEqual("device_type", deviceType)),
+			Page: core.NewDefaultBasePage(),
 		},
-		Page: metadata.BasePage{Limit: pkg.BKNoLimit, Start: 0},
 	}
-	resp, err := s.configLogics.Device().GetDevice(kt, deviceReq)
+	resp, err := s.configLogics.Device().ListDistinctDeviceType(kt, deviceReq)
 	if err != nil {
 		logs.Errorf("failed to get device type info, err: %v, deviceTypes: %v, rid: %s", err, deviceType, kt.Rid)
 		return err
 	}
+	if len(resp.Details) == 0 {
+		logs.Errorf("device type not found, deviceType: %s, rid: %s", deviceType, kt.Rid)
+		return fmt.Errorf("device type not found, deviceType: %s", deviceType)
+	}
+	deviceInfo := resp.Details[0]
+	if deviceInfo.DeviceTypeClass == cvmapi.SpecialType {
+		return fmt.Errorf("device type %s is not supported for green channel or roll server apply", deviceType)
+	}
+
+	if requireType != enumor.RequireTypeGreenChannel {
+		return nil
+	}
 
 	// 获取小额绿通的配置
-	cvmApplyConfigs := gctypes.CvmApplyConfig{}
-	if requireType == enumor.RequireTypeGreenChannel {
-		gcConfigs, err := s.gcLogics.GetConfigs(kt)
-		if err != nil {
-			logs.Errorf("get green channel configs failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-		cvmApplyConfigs = gcConfigs.CvmApplyConfig
+	gcConfigs, err := s.gcLogics.GetConfigs(kt)
+	if err != nil {
+		logs.Errorf("get green channel configs failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	cvmApplyConfigs := gcConfigs.CvmApplyConfig
+	if !cvmApplyConfigs.Enabled {
+		return nil
+	}
+	if !(slices.Contains(cvmApplyConfigs.DeviceGroups, deviceInfo.DeviceFamily) && deviceInfo.CpuCore <=
+		cvmApplyConfigs.CpuMaxLimit) {
+		return fmt.Errorf("device type %s is not supported for green channel", deviceType)
 	}
 
-	var unsupportedTypes []string
-	for _, item := range resp.Info {
-		if item.DeviceTypeClass == cvmapi.SpecialType {
-			unsupportedTypes = append(unsupportedTypes, item.DeviceType)
-		}
-		// 小额绿通只能申请[标准型]、[16核以下]的机型
-		if !(requireType == enumor.RequireTypeGreenChannel && cvmApplyConfigs.Enabled) {
-			continue
-		}
-		deviceGroupIf, ok := item.Label["device_group"]
-		if !ok {
-			continue
-		}
-		deviceGroup := util.GetStrByInterface(deviceGroupIf)
-		if !(slices.Contains(cvmApplyConfigs.DeviceGroups, deviceGroup) && item.Cpu <= cvmApplyConfigs.CpuMaxLimit) {
-			unsupportedTypes = append(unsupportedTypes, item.DeviceType)
-		}
-	}
-	if len(unsupportedTypes) > 0 {
-		return fmt.Errorf("device types %v are not supported for green channel or roll server apply",
-			slice.Unique(unsupportedTypes))
-	}
 	return nil
 }
 

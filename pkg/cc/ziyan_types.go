@@ -1146,3 +1146,16 @@ func (c *StuckCheckCfg) trySetDefault() {
 		c.StartUpDelay = 2 * time.Minute
 	}
 }
+
+// Crp crp client options
+type Crp struct {
+	Host string `yaml:"host"`
+}
+
+func (c Crp) validate() error {
+	if len(c.Host) == 0 {
+		return errors.New("crp host is not set")
+	}
+
+	return nil
+}

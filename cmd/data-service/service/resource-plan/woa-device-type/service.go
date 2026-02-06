@@ -34,18 +34,11 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("ListWoaDeviceType", http.MethodPost, "/res_plans/woa_device_types/list",
-		svc.ListWoaDeviceType)
-	h.Add("BatchCreateWoaDeviceType", http.MethodPost, "/res_plans/woa_device_types/batch/create",
-		svc.BatchCreateWoaDeviceType)
-	h.Add("BatchUpdateWoaDeviceType", http.MethodPatch, "/res_plans/woa_device_types/batch",
-		svc.BatchUpdateWoaDeviceType)
-	h.Add("BatchDeleteWoaDeviceType", http.MethodDelete, "/res_plans/woa_device_types/batch",
-		svc.BatchDeleteWoaDeviceType)
 
 	h.Add("ListWoaDeviceTypePhysicalRel", http.MethodPost, "/res_plans/woa_device_type_physical_rels/list",
 		svc.ListWoaDeviceTypePhysicalRel)
-	h.Add("BatchCreateWoaDeviceTypePhysicalRel", http.MethodPost, "/res_plans/woa_device_type_physical_rels/batch/create",
+	h.Add("BatchCreateWoaDeviceTypePhysicalRel", http.MethodPost,
+		"/res_plans/woa_device_type_physical_rels/batch/create",
 		svc.BatchCreateWoaDeviceTypePhysicalRel)
 	h.Add("BatchUpdateWoaDeviceTypePhysicalRel", http.MethodPatch, "/res_plans/woa_device_type_physical_rels/batch",
 		svc.BatchUpdateWoaDeviceTypePhysicalRel)

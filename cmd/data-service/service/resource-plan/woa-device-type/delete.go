@@ -37,60 +37,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchDeleteWoaDeviceType batch delete woa device type
-func (svc *service) BatchDeleteWoaDeviceType(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.BatchDeleteReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	listOpt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   core.NewDefaultBasePage(),
-	}
-
-	delIDs := make([]string, 0)
-	for {
-		listResp, err := svc.dao.WoaDeviceType().List(cts.Kit, listOpt)
-		if err != nil {
-			logs.Errorf("batch delete list woa device type failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("delete list woa device type failed, err: %v", err)
-		}
-
-		for _, one := range listResp.Details {
-			delIDs = append(delIDs, one.ID)
-		}
-
-		if len(listResp.Details) < int(listOpt.Page.Limit) {
-			break
-		}
-		listOpt.Page.Start += uint32(listOpt.Page.Limit)
-	}
-
-	if len(delIDs) == 0 {
-		return nil, nil
-	}
-
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		for _, batchIDs := range slice.Split(delIDs, constant.BatchOperationMaxLimit) {
-			delFilter := tools.ContainersExpression("id", batchIDs)
-			if err := svc.dao.WoaDeviceType().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-				return nil, err
-			}
-		}
-		return nil, nil
-	})
-	if err != nil {
-		logs.Errorf("batch delete woa device type failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
 // DeleteWoaDeviceTypePhysicalRel delete woa device type physical rel records.
 func (svc *service) DeleteWoaDeviceTypePhysicalRel(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.BatchDeleteReq)

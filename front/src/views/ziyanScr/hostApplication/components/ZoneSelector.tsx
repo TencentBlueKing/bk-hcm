@@ -9,7 +9,7 @@ export default defineComponent({
   name: 'ZoneSelector',
   props: {
     value: {
-      type: String as PropType<string>,
+      type: [String, Array] as PropType<string | string[]>,
       default: '',
     },
     params: {
@@ -19,7 +19,7 @@ export default defineComponent({
     valueKey: {
       type: String,
       default: '',
-      validator: (val) => ['cmdbZoneName', ''].includes(val),
+      validator: (val: unknown) => ['cmdbZoneName', ''].includes(String(val)),
     },
     separateCampus: {
       type: Boolean,
@@ -29,10 +29,14 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    multiple: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['change'],
   setup(props, { attrs, emit }) {
-    const options = ref<{ label: string; value: string }[]>([]);
+    const options = ref<{ label: string; value: string; region: string }[]>([]);
     const optionsRequestId = ref();
     const selectedValue = ref();
     const regionsIsEmpty = computed(() => {
@@ -46,8 +50,10 @@ export default defineComponent({
 
       return props.params.region || [];
     });
-    const handleSelectorChange = (value: string) => {
-      emit('change', value);
+    const handleSelectorChange = (value: string | string[]) => {
+      const values = Array.isArray(value) ? value : [value];
+      const selected = options.value.filter((opt) => values.includes(opt.value));
+      emit('change', value, selected);
     };
     const initValue = () => {
       selectedValue.value = props.value;
@@ -73,10 +79,13 @@ export default defineComponent({
         },
       );
 
-      options.value = info.map((item) => {
+      options.value = info.map((item: any) => {
+        const value = props.valueKey === 'cmdbZoneName' ? item.cmdb_zone_name : item.zone;
+        const region = item.region || item.cmdb_region_name;
         return {
           label: `${item.zone_cn}${item.cmdb_zone_name ? `(${item.cmdb_zone_name})` : ''}`,
-          value: props.valueKey === 'cmdbZoneName' ? item.cmdb_zone_name : item.zone,
+          value,
+          region,
         };
       });
     };
@@ -88,10 +97,12 @@ export default defineComponent({
         },
       );
 
-      options.value = info.map((item) => {
+      options.value = info.map((item: any) => {
+        const region = item.cmdb_region_name || item.region;
         return {
           value: item.cmdb_zone_name,
           label: item.cmdb_zone_name,
+          region,
         };
       });
     };
@@ -116,7 +127,13 @@ export default defineComponent({
 
     return () =>
       !props.editable ? (
-        <Select v-bind={attrs} filterable default-first-option v-model={props.value} onChange={handleSelectorChange}>
+        <Select
+          v-bind={attrs}
+          filterable
+          default-first-option
+          multiple={props.multiple}
+          v-model={props.value}
+          onChange={handleSelectorChange}>
           {options.value.map((item) => (
             <bk-option key={item.value} value={item.value} label={item.label}></bk-option>
           ))}

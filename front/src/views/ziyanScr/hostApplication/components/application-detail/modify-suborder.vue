@@ -6,7 +6,8 @@ import ZoneSelector from '@/views/ziyanScr/hostApplication/components/ZoneSelect
 import http from '@/http';
 import { useRoute } from 'vue-router';
 import { Message } from 'bkui-vue';
-import { type ICvmDevicetypeItem, CoreTypeMap } from '@/store/cvm/device';
+import { type ICvmDevicetypeItem } from '@/store/cvm/device';
+import { VendorEnum } from '@/common/constant';
 
 const model = defineModel<boolean>();
 const props = defineProps<{ tableData: any[]; deviceTypeList: ICvmDevicetypeItem[] }>();
@@ -77,7 +78,7 @@ watch(
           replicas: remainder,
           source: 'purchase_to_resource_pool',
           pageData: {
-            remainderCPUAmount: deviceType.cpu_amount * remainder,
+            remainderCPUAmount: deviceType.cpu_core * remainder,
             deviceType,
           },
         };
@@ -100,7 +101,7 @@ const removeUnchangeItem = () => {
   modifyTableData.value = modifyTableData.value.filter((item) => item.modify_num);
 };
 const handleDevicetypeChange = (device: any, row: any, index: number) => {
-  row.replicas = Math.floor(row.pageData.remainderCPUAmount / device.cpu_amount);
+  row.replicas = Math.floor(row.pageData.remainderCPUAmount / device.cpu_core);
   row.pageData.deviceType = device;
   nextTick(() => replicasValidArr.value[index].value?.getValue());
 };
@@ -132,14 +133,14 @@ const handleSubmit = async () => {
       ? {
           ...rest,
           replicas: Number(modify_num),
-          applied_core: deviceType?.cpu_amount * Number(modify_num),
+          applied_core: deviceType?.cpu_core * Number(modify_num),
         }
       : { ...item, source: 'business' };
   });
   const rData = retainSource.value
     ? resourceTableData.value.map(({ pageData, ...rest }) => ({
         ...rest,
-        applied_core: pageData.deviceType.cpu_amount * rest.replicas,
+        applied_core: pageData.deviceType.cpu_core * rest.replicas,
       }))
     : [];
 
@@ -218,10 +219,11 @@ const handleCancel = () => {
                 resource-type="cvm"
                 :clearable="false"
                 :params="{
-                  require_type: row.require_type,
+                  vendor: VendorEnum.ZIYAN,
                   region: row.spec.region,
-                  device_size: CoreTypeMap[row.pageData.deviceType.core_type as keyof typeof CoreTypeMap],
+                  core_type: row.pageData.deviceType.core_type,
                   technical_class: row.pageData.deviceType.technical_class,
+                  disable: false,
                 }"
                 :editable="true"
                 :rules="rules.deviceType"

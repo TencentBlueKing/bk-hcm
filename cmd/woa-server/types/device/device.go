@@ -24,9 +24,12 @@ import (
 	"sync"
 	"time"
 
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -34,16 +37,16 @@ import (
 // DeviceTypesMap cache of device_type, reducing the pressure of MySQL.
 type DeviceTypesMap struct {
 	lock        sync.RWMutex
-	dao         dao.Set
-	DeviceTypes map[string]wdt.WoaDeviceTypeTable
+	client      *client.ClientSet
+	DeviceTypes map[string]dt.DistinctDeviceType
 	TTL         time.Time
 }
 
 // NewDeviceTypesMap ...
-func NewDeviceTypesMap(dao dao.Set) *DeviceTypesMap {
+func NewDeviceTypesMap(client *client.ClientSet) *DeviceTypesMap {
 	return &DeviceTypesMap{
-		dao:         dao,
-		DeviceTypes: make(map[string]wdt.WoaDeviceTypeTable),
+		client:      client,
+		DeviceTypes: make(map[string]dt.DistinctDeviceType),
 		TTL:         time.Now(),
 	}
 }
@@ -52,10 +55,27 @@ func (d *DeviceTypesMap) updateDeviceTypesMap(kt *kit.Kit) error {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	deviceTypeMap, err := d.dao.WoaDeviceType().GetDeviceTypeMap(kt, tools.AllExpression())
-	if err != nil {
-		logs.Errorf("failed to get device type map, err: %v, rid: %s", err, kt.Rid)
-		return err
+	deviceTypeMap := make(map[string]dt.DistinctDeviceType)
+	page := core.NewDefaultBasePage()
+	for {
+		req := &protocloud.DistinctDeviceTypeListReq{
+			ListReq: core.ListReq{
+				Filter: tools.EqualExpression("vendor", enumor.TCloudZiyan),
+				Page:   page,
+			},
+		}
+		result, err := d.client.DataService().TCloudZiyan.DeviceType.ListDistinctDeviceType(kt, req)
+		if err != nil {
+			logs.Errorf("failed to list device type, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		for _, detail := range result.Details {
+			deviceTypeMap[detail.DeviceType] = detail
+		}
+		if len(result.Details) < int(page.Limit) {
+			break
+		}
+		page.Start += uint32(page.Limit)
 	}
 	d.DeviceTypes = deviceTypeMap
 	d.TTL = time.Now().Add(1 * time.Minute)
@@ -63,9 +83,9 @@ func (d *DeviceTypesMap) updateDeviceTypesMap(kt *kit.Kit) error {
 }
 
 // GetDeviceTypes get device type map from cache.
-func (d *DeviceTypesMap) GetDeviceTypes(kt *kit.Kit) (map[string]wdt.WoaDeviceTypeTable, error) {
+func (d *DeviceTypesMap) GetDeviceTypes(kt *kit.Kit) (map[string]dt.DistinctDeviceType, error) {
 	d.lock.RLock()
-	res := make(map[string]wdt.WoaDeviceTypeTable)
+	res := make(map[string]dt.DistinctDeviceType)
 	if time.Now().After(d.TTL) {
 		d.lock.RUnlock()
 		err := d.updateDeviceTypesMap(kt)

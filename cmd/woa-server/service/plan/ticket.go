@@ -211,7 +211,7 @@ func (s *service) createResPlanTicket(kt *kit.Kit, bkBizID int64, req *ptypes.Cr
 				DeviceClass:    deviceTypeMap[deviceType].DeviceClass,
 				DeviceFamily:   deviceTypeMap[deviceType].DeviceFamily,
 				TechnicalClass: deviceTypeMap[deviceType].TechnicalClass,
-				CoreType:       deviceTypeMap[deviceType].CoreType,
+				CoreType:       string(deviceTypeMap[deviceType].CoreType),
 				Os:             tabletypes.Decimal{Decimal: cvt.PtrToVal(demand.Cvm.Os)},
 				CpuCore:        cvt.PtrToVal(demand.Cvm.CpuCore),
 				Memory:         cvt.PtrToVal(demand.Cvm.Memory),
