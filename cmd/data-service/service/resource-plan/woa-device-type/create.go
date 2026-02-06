@@ -35,37 +35,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreateWoaDeviceType batch create woa device type
-func (svc *service) BatchCreateWoaDeviceType(cts *rest.Contexts) (interface{}, error) {
-	req := new(rpproto.WoaDeviceTypeBatchCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	dtIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		recordIDs, err := svc.dao.WoaDeviceType().CreateWithTx(cts.Kit, txn, req.DeviceTypes)
-		if err != nil {
-			logs.Errorf("batch create woa device type failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("batch create woa device type failed, err: %v", err)
-		}
-		return recordIDs, nil
-	})
-	if err != nil {
-		logs.Errorf("batch create woa device type failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	ids, err := util.GetStrSliceByInterface(dtIDs)
-	if err != nil {
-		logs.Errorf("batch create woa device type but return ids type not []string, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("batch create woa device type but return ids type not []string, err: %v", err)
-	}
-
-	return &core.BatchCreateResult{IDs: ids}, nil
-}
-
 // BatchCreateWoaDeviceTypePhysicalRel batch create woa device type physical rel records.
 func (svc *service) BatchCreateWoaDeviceTypePhysicalRel(cts *rest.Contexts) (interface{}, error) {
 	req := new(rpproto.WoaDeviceTypePhysicalRelBatchCreateReq)

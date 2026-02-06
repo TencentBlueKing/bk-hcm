@@ -962,3 +962,36 @@ type QueryMatchTaskResult struct {
 	MaxCutNum    int      `json:"maxCutNum"`    // 最大切片数量
 	IPs          []string `json:"ips"`          // 母机IP列表
 }
+
+// GetInstanceTypeInfoResp get instance type info response
+type GetInstanceTypeInfoResp struct {
+	RespMeta `json:",inline"`
+	Result   *GetInstanceTypeInfoRst `json:"result"`
+}
+
+// GetInstanceTypeInfoRst get instance type info result
+type GetInstanceTypeInfoRst struct {
+	InstanceTypes []InstanceTypeInfoItem `json:"instanceTypes"` // 可用机型列表
+	CpuConditions []interface{}          `json:"cpuConditions"` // CPU核心支持的筛选选项
+	RamConditions []interface{}          `json:"ramConditions"` // 内存支持的筛选选项
+	CvmConditions []interface{}          `json:"cvmConditions"` // 机型类型的筛选选项
+}
+
+// InstanceTypeInfoItem instance type info item
+type InstanceTypeInfoItem struct {
+	CpuAmount        int     `json:"CpuAmount"`        // CPU核数
+	CvmInstanceGroup string  `json:"CvmInstanceGroup"` // 机型大类
+	CvmInstanceModel string  `json:"CvmInstanceModel"` // 具体规格
+	CvmInstanceType  string  `json:"CvmInstanceType"`  // 机型类别
+	Price            float64 `json:"Price"`            // 参考价格
+	RamAmount        int     `json:"RamAmount"`        // 内存，单位G
+	SysDiskAmount    int     `json:"SysDiskAmount"`    // 系统盘大小
+	SellStatus       int     `json:"sellStatus"`       // 是否售卖
+	InstanceFamily   string  `json:"instanceFamily"`   // 机型族
+}
+
+// LocalDiskTypeInfo local disk type info
+type LocalDiskTypeInfo struct {
+	Type string `json:"type"` // 类型，ROOT表示系统盘，DATA表示数据盘
+	Size int    `json:"size"` // 大小
+}

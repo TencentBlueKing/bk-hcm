@@ -24,6 +24,7 @@ import (
 	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/pkg/client"
+	"hcm/pkg/thirdparty/cvmapi"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -34,4 +35,5 @@ type Capability struct {
 	ClientSet    *client.ClientSet
 	CloudAdaptor *cloudclient.CloudAdaptorClient
 	ResSyncCli   ressync.Interface
+	CrpCli       cvmapi.CVMClientInterface
 }

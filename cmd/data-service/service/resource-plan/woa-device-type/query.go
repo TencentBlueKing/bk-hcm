@@ -22,30 +22,10 @@ package woadevicetype
 
 import (
 	"hcm/pkg/api/core"
-	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 )
-
-// ListWoaDeviceType list woa device type.
-func (svc *service) ListWoaDeviceType(cts *rest.Contexts) (interface{}, error) {
-	req := new(rpproto.WoaDeviceTypeListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   req.Page,
-		Fields: req.Fields,
-	}
-
-	return svc.dao.WoaDeviceType().List(cts.Kit, opt)
-}
 
 // ListWoaDeviceTypePhysicalRel list woa device type physical rel records.
 func (svc *service) ListWoaDeviceTypePhysicalRel(cts *rest.Contexts) (interface{}, error) {

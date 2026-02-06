@@ -51,6 +51,7 @@ var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.ImageCloudResType:         CondSyncImage,
 	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
+	enumor.DeviceType:                CondSyncDeviceType,
 }
 
 // GetCondSyncFunc ...
@@ -172,5 +173,21 @@ func CondSyncImage(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams
 		return firstErr
 	}
 
+	return nil
+}
+
+// CondSyncDeviceType sync device type
+func CondSyncDeviceType(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.TCloudSyncReq{AccountID: params.AccountID}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloudZiyan.DeviceType.SyncDeviceType(kt, &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync device type failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloudZiyan, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync device type end, req: %+v, rid: %s", enumor.TCloudZiyan, syncReq, kt.Rid)
+	}
 	return nil
 }

@@ -28,13 +28,13 @@ import (
 	mtypes "hcm/cmd/woa-server/types/meta"
 	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	rpdtablers "hcm/pkg/dal/table/resource-plan/res-plan-demand"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	dttablers "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -420,7 +420,7 @@ func (c *Controller) constructUpdateDemands(kt *kit.Kit, updates []ptypes.Adjust
 					DeviceClass:    deviceTypeMap[update.UpdatedInfo.Cvm.DeviceType].DeviceClass,
 					DeviceFamily:   deviceTypeMap[update.UpdatedInfo.Cvm.DeviceType].DeviceFamily,
 					TechnicalClass: deviceTypeMap[update.UpdatedInfo.Cvm.DeviceType].TechnicalClass,
-					CoreType:       deviceTypeMap[update.UpdatedInfo.Cvm.DeviceType].CoreType,
+					CoreType:       string(deviceTypeMap[update.UpdatedInfo.Cvm.DeviceType].CoreType),
 					Os:             types.Decimal{Decimal: cvt.PtrToVal(update.UpdatedInfo.Cvm.Os)},
 					CpuCore:        cvt.PtrToVal(update.UpdatedInfo.Cvm.CpuCore),
 					Memory:         cvt.PtrToVal(update.UpdatedInfo.Cvm.Memory),
@@ -499,7 +499,7 @@ func (c *Controller) constructOriginalDemandMap(kt *kit.Kit,
 // constructOriginalDemandWithCPUCore construct original demand according to db demand,
 // with cpu core specified via parameters.
 func (c *Controller) constructOriginalDemandWithCPUCore(kt *kit.Kit, demand rpdtablers.ResPlanDemandTable,
-	originDemandRemainRes ptypes.CreateResPlanDemandResource, deviceType dttablers.WoaDeviceTypeTable) (
+	originDemandRemainRes ptypes.CreateResPlanDemandResource, deviceType dt.DistinctDeviceType) (
 	*rpt.OriginalRPDemandItem, error) {
 
 	// 变更前资源量以请求中的变更前数据为准

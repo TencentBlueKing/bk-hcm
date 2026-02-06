@@ -36,6 +36,7 @@ import (
 	ptypes "hcm/cmd/woa-server/types/plan"
 	ttypes "hcm/cmd/woa-server/types/task"
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -45,7 +46,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	rpdaotypes "hcm/pkg/dal/dao/types/resource-plan"
 	rpts "hcm/pkg/dal/table/resource-plan/res-plan-ticket-status"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -117,9 +117,7 @@ type Logics interface {
 	AddMatchedPlanDemandExpendLogs(kt *kit.Kit, bkBizID int64, subOrder *ttypes.ApplyOrder,
 		verifyGroups []VerifyResPlanElemV2) error
 	// GetAllDeviceTypeMap get all device type map.
-	GetAllDeviceTypeMap(kt *kit.Kit) (map[string]wdt.WoaDeviceTypeTable, error)
-	// SyncDeviceTypesFromCRP sync device types from crp.
-	SyncDeviceTypesFromCRP(kt *kit.Kit, deviceTypes []string) error
+	GetAllDeviceTypeMap(kt *kit.Kit) (map[string]dt.DistinctDeviceType, error)
 
 	// CreateAuditFlow creates an audit flow for resource plan ticket.
 	CreateAuditFlow(kt *kit.Kit, ticketID string) error
@@ -218,7 +216,7 @@ func New(sd serviced.State, client *client.ClientSet, dao dao.Set, cmsiCli cmsi.
 	}
 
 	demandTimeCli := demandtime.NewDemandTimeFromTable(client)
-	deviceTypesMap := device.NewDeviceTypesMap(dao)
+	deviceTypesMap := device.NewDeviceTypesMap(client)
 	fetch := fetcher.New(dao, demandTimeCli, client, crpCli, itsmCli, bizLogic, deviceTypesMap)
 
 	ctx := context.Background()

@@ -657,6 +657,28 @@ type QueryCvmInstanceTypeParams struct {
 	InstanceGroup []string `json:"instanceGroup,omitempty"`
 }
 
+// GetInstanceTypeInfoReq get instance type info request
+type GetInstanceTypeInfoReq struct {
+	ReqMeta `json:",inline"`
+	Params  *GetInstanceTypeInfoParams `json:"params"`
+}
+
+// GetInstanceTypeInfoParams get instance type info parameters
+type GetInstanceTypeInfoParams struct {
+	// 必填，用户的业务部门ID
+	DeptId int `json:"deptId"`
+	// 必填，可用区
+	Zone string `json:"zone"`
+	// 选填，预测日期，格式：YYYY-MM-DD，默认：当天
+	ForecastDate string `json:"forecastDate,omitempty"`
+	// 选填，OBS项目类型，默认：常规项目
+	ObsProject string `json:"obsProject,omitempty"`
+	// 选填，申领类型，0常规,5小额快捷，不填写默认为常规申请
+	ResourceType *int `json:"resourceType,omitempty"`
+	// 选填，计费模式，PREPAID包年包月，POSTPAID_BY_HOUR按量计费，默认使用：PREPAID
+	InstanceChargeType ChargeType `json:"instanceChargeType,omitempty"`
+}
+
 // GetApproveLogReq get approve log request
 type GetApproveLogReq struct {
 	ReqMeta `json:",inline"`

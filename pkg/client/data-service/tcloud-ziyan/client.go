@@ -34,6 +34,7 @@ type Client struct {
 	SecurityGroup *SecurityGroupClient
 	LoadBalancer  *LoadBalancerClient
 	Cvm           *CvmClient
+	DeviceType    *DeviceTypeClient
 }
 
 type restClient struct {
@@ -52,5 +53,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		SecurityGroup: NewCloudSecurityGroupClient(client),
 		LoadBalancer:  NewLoadBalancerClient(client),
 		Cvm:           NewCloudCvmClient(client),
+		DeviceType:    NewDeviceTypeClient(client),
 	}
 }

@@ -32,48 +32,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchUpdateWoaDeviceType batch update woa device type
-func (svc *service) BatchUpdateWoaDeviceType(cts *rest.Contexts) (interface{}, error) {
-	req := new(rpproto.WoaDeviceTypeBatchUpdateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		for _, updateReq := range req.DeviceTypes {
-			record := &wdttable.WoaDeviceTypeTable{
-				ID:              updateReq.ID,
-				DeviceType:      updateReq.DeviceType,
-				DeviceClass:     updateReq.DeviceClass,
-				DeviceFamily:    updateReq.DeviceFamily,
-				CoreType:        updateReq.CoreType,
-				CpuCore:         updateReq.CpuCore,
-				Memory:          updateReq.Memory,
-				DeviceTypeClass: updateReq.DeviceTypeClass,
-				TechnicalClass:  updateReq.TechnicalClass,
-			}
-
-			if err := svc.dao.WoaDeviceType().Update(cts.Kit,
-				tools.EqualExpression("id", updateReq.ID), record); err != nil {
-				logs.Errorf("update woa device type loop failed, id: %s, err: %v, rid: %s",
-					updateReq.ID, err, cts.Kit.Rid)
-				return nil, err
-			}
-		}
-		return nil, nil
-	})
-	if err != nil {
-		logs.Errorf("batch update woa device type failed, err: %v, rid: %v", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
 // BatchUpdateWoaDeviceTypePhysicalRel batch update woa device type physical rel records.
 func (svc *service) BatchUpdateWoaDeviceTypePhysicalRel(cts *rest.Contexts) (interface{}, error) {
 	req := new(rpproto.WoaDeviceTypePhysicalRelBatchUpdateReq)

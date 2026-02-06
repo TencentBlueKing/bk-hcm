@@ -125,3 +125,23 @@ const (
 	// DeviceFamilyStandard 标准型
 	DeviceFamilyStandard DeviceFamily = "标准型"
 )
+
+// DeviceTypeSource 机型来源
+type DeviceTypeSource string
+
+const (
+	// DeviceTypeSourceSync 自动同步
+	DeviceTypeSourceSync DeviceTypeSource = "sync"
+	// DeviceTypeSourceManually 手动添加
+	DeviceTypeSourceManually DeviceTypeSource = "manually"
+)
+
+// Validate DeviceTypeSource.
+func (s DeviceTypeSource) Validate() error {
+	switch s {
+	case DeviceTypeSourceSync, DeviceTypeSourceManually:
+	default:
+		return fmt.Errorf("unsupported device type source: %s", s)
+	}
+	return nil
+}

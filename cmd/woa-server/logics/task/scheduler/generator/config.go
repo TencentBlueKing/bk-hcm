@@ -20,14 +20,16 @@ import (
 	cfgtype "hcm/cmd/woa-server/types/config"
 	"hcm/cmd/woa-server/types/task"
 	types "hcm/cmd/woa-server/types/task"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
-	"hcm/pkg/tools/querybuilder"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
-	"hcm/pkg/tools/util"
 )
 
 // getAvailableZoneInfo get available cvm zone info
@@ -39,7 +41,7 @@ func (g *Generator) getAvailableZoneInfo(kt *kit.Kit, requireType enumor.Require
 		return nil, err
 	}
 
-	availZoneIds, err := g.getAvailableZoneIds(kt, requireType, deviceType, region)
+	availZoneIds, err := g.getAvailableZoneIds(kt, deviceType, region)
 	if err != nil {
 		return nil, err
 	}
@@ -58,45 +60,33 @@ func (g *Generator) getAvailableZoneInfo(kt *kit.Kit, requireType enumor.Require
 }
 
 // getAvailableZoneIds get available cvm zone id
-func (g *Generator) getAvailableZoneIds(kt *kit.Kit, requireType enumor.RequireType, deviceType, region string) (
-	[]string, error) {
-
-	param := &cfgtype.GetDeviceParam{
-		Filter: &querybuilder.QueryFilter{
-			Rule: querybuilder.CombinedRule{
-				Condition: querybuilder.ConditionAnd,
-				Rules: []querybuilder.Rule{
-					&querybuilder.AtomRule{
-						Field:    "require_type",
-						Operator: querybuilder.OperatorEqual,
-						Value:    requireType.ToRequireTypeWhenGetDevice(),
-					},
-					&querybuilder.AtomRule{
-						Field:    "device_type",
-						Operator: querybuilder.OperatorEqual,
-						Value:    deviceType,
-					},
-					&querybuilder.AtomRule{
-						Field:    "region",
-						Operator: querybuilder.OperatorEqual,
-						Value:    region,
-					},
-				},
-			},
+func (g *Generator) getAvailableZoneIds(kt *kit.Kit, deviceType, region string) ([]string, error) {
+	zoneMap := make(map[string]struct{})
+	req := &protocloud.DeviceTypeListReq{
+		ListReq: core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", enumor.TCloudZiyan), tools.RuleEqual("region", region),
+				tools.RuleEqual("device_type", deviceType), tools.RuleEqual("disable", false),
+			),
+			Page: core.NewDefaultBasePage(),
 		},
 	}
-	zoneResp, err := g.configLogics.Device().GetDevice(kt, param)
-	if err != nil {
-		return nil, err
+	for {
+		resp, err := g.configLogics.Device().ListDeviceType(kt, req)
+		if err != nil {
+			logs.Errorf("failed to list device type, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, err
+		}
+		for _, deviceType := range resp.Details {
+			zoneMap[deviceType.Zone] = struct{}{}
+		}
+		if len(resp.Details) < int(req.Page.Limit) {
+			break
+		}
+		req.Page.Start += uint32(req.Page.Limit)
 	}
 
-	zoneIds := make([]string, 0)
-	for _, device := range zoneResp.Info {
-		zoneIds = append(zoneIds, device.Zone)
-	}
-
-	zoneIds = util.StrArrayUnique(zoneIds)
-	return zoneIds, nil
+	return maps.Keys(zoneMap), nil
 }
 
 // getZoneList get zone info in certain region

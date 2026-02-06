@@ -26,8 +26,8 @@ import (
 	configlogic "hcm/cmd/woa-server/logics/config"
 	types "hcm/cmd/woa-server/types/config"
 	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	devicecapacity "hcm/pkg/api/data-service/device-capacity"
-	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -114,20 +114,8 @@ func (d *DeviceCapacityTask) getRelInfoFromRes(kt *kit.Kit) (*deviceCapacityRelI
 		result.requireTypeMap[requireType] = struct{}{}
 	}
 
-	zones, err := d.configLogics.Zone().GetZone(kt, nil)
-	if err != nil {
-		logs.Errorf("failed to list zone, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	for _, zone := range zones.Info {
-		if _, ok := result.regionZonesMap[zone.Region]; !ok {
-			result.regionZonesMap[zone.Region] = make(map[string]struct{})
-		}
-		result.regionZonesMap[zone.Region][zone.Zone] = struct{}{}
-	}
-
-	// 获取机型
-	deviceReq := &rpproto.WoaDeviceTypeListReq{
+	// 获取机型、地域、可用区
+	deviceReq := &protocloud.DeviceTypeListReq{
 		ListReq: core.ListReq{
 			Filter: tools.AllExpression(),
 			Page: &core.BasePage{
@@ -138,13 +126,17 @@ func (d *DeviceCapacityTask) getRelInfoFromRes(kt *kit.Kit) (*deviceCapacityRelI
 		},
 	}
 	for {
-		deviceResp, err := d.clientSet.DataService().Global.ResourcePlan.ListWoaDeviceType(kt, deviceReq)
+		deviceResp, err := d.clientSet.DataService().TCloudZiyan.DeviceType.ListDeviceType(kt, deviceReq)
 		if err != nil {
 			logs.Errorf("failed to list woa device type, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 		for _, one := range deviceResp.Details {
 			result.deviceTypeMap[one.DeviceType] = struct{}{}
+			if _, ok := result.regionZonesMap[one.Region]; !ok {
+				result.regionZonesMap[one.Region] = make(map[string]struct{})
+			}
+			result.regionZonesMap[one.Region][one.Zone] = struct{}{}
 		}
 		if len(deviceResp.Details) < int(deviceReq.Page.Limit) {
 			break

@@ -54,6 +54,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/bill"
 	"hcm/cmd/data-service/service/cloud/cert"
 	"hcm/cmd/data-service/service/cloud/cvm"
+	devicetype "hcm/cmd/data-service/service/cloud/device-type"
 	"hcm/cmd/data-service/service/cloud/disk"
 	diskcvmrel "hcm/cmd/data-service/service/cloud/disk-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/eip"
@@ -86,6 +87,7 @@ import (
 	rollingfinedetail "hcm/cmd/data-service/service/rolling-server/rolling-fine-detail"
 	"hcm/cmd/data-service/service/rolling-server/rolling-returned"
 	"hcm/cmd/data-service/service/task"
+	tcloudziyanpmdevicetype "hcm/cmd/data-service/service/tcloud-ziyan-pm-device-type"
 	"hcm/cmd/data-service/service/tenant"
 	"hcm/cmd/data-service/service/user"
 	"hcm/pkg/cc"
@@ -307,6 +309,8 @@ func (s *Service) apiSet() *restful.Container {
 	globalconfig.InitService(capability)
 	orgtopo.InitService(capability)
 	woadevicetype.InitService(capability)
+	devicetype.InitService(capability)
+	tcloudziyanpmdevicetype.InitService(capability)
 
 	task.InitService(capability)
 	tenant.InitService(capability)

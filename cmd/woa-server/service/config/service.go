@@ -86,19 +86,12 @@ func (s *service) initCvmRestrict(h *rest.Handler) {
 }
 
 func (s *service) initDevice(h *rest.Handler) {
-	h.Add("GetDeviceWithCapacity", http.MethodPost, "/config/findmany/config/cvm/device/detail",
-		s.GetDeviceWithCapacity)
-	h.Add("GetDevice", http.MethodPost, "/config/findmany/config/cvm/device/detail/avail", s.GetDevice)
 	h.Add("GetDeviceType", http.MethodPost, "/config/findmany/config/cvm/devicetype", s.GetDeviceType)
-	h.Add("GetDeviceTypeDetail", http.MethodPost, "/config/findmany/config/cvm/devicetype/detail",
-		s.GetDeviceTypeDetail)
 	h.Add("GetCvmDeviceDetail", http.MethodPost, "/config/findmany/config/cvm/device", s.GetCvmDeviceDetail)
-	h.Add("CreateDevice", http.MethodPost, "/config/create/config/cvm/device", s.CreateDevice)
 	h.Add("CreateManyDevice", http.MethodPost, "/config/createmany/config/cvm/device", s.CreateManyDevice)
-	h.Add("UpdateDevice", http.MethodPut, "/config/update/config/cvm/device/{id}", s.UpdateDevice)
 	h.Add("UpdateDeviceProperty", http.MethodPut, "/config/updatemany/config/cvm/device/property",
 		s.UpdateDeviceProperty)
-	h.Add("DeleteDevice", http.MethodDelete, "/config/delete/config/cvm/device/{id}", s.DeleteDevice)
+	h.Add("DeleteDevice", http.MethodDelete, "/config/delete/config/cvm/device", s.DeleteDevice)
 	h.Add("GetDvmDeviceType", http.MethodPost, "/config/findmany/config/dvm/devicetype", s.GetDvmDeviceType)
 	h.Add("CreateDvmDevice", http.MethodPost, "/config/create/config/dvm/device", s.CreateDvmDevice)
 	h.Add("GetPmDeviceType", http.MethodPost, "/config/findmany/config/idcpm/devicetype", s.GetPmDeviceType)

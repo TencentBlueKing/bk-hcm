@@ -143,4 +143,5 @@ var syncOrder = []syncItem{
 	{enumor.CertCloudResType, SyncCert},
 	{enumor.LoadBalancerCloudResType, SyncLoadBalancer},
 	{enumor.SecurityGroupUsageBizRelResType, SyncSGUsageBizRel},
+	{enumor.DeviceType, SyncDeviceType},
 }

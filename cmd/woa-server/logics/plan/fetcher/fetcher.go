@@ -25,6 +25,7 @@ import (
 	demandtime "hcm/cmd/woa-server/logics/plan/demand-time"
 	"hcm/cmd/woa-server/types/device"
 	ptypes "hcm/cmd/woa-server/types/plan"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -33,7 +34,6 @@ import (
 	rpdaotypes "hcm/pkg/dal/dao/types/resource-plan"
 	tablegconf "hcm/pkg/dal/table/global-config"
 	rpd "hcm/pkg/dal/table/resource-plan/res-plan-demand"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -87,7 +87,7 @@ type Fetcher interface {
 		*ptypes.ResPlanTransferQuotaSummaryResp, error)
 
 	// GetMetaMaps get res plan meta maps, like zoneMap, regionAreaMap and deviceTypeMap.
-	GetMetaMaps(kt *kit.Kit) (map[string]string, map[string]dmtypes.RegionArea, map[string]wdt.WoaDeviceTypeTable,
+	GetMetaMaps(kt *kit.Kit) (map[string]string, map[string]dmtypes.RegionArea, map[string]dt.DistinctDeviceType,
 		error)
 	// GetMetaNameMapsFromIDMap get meta name maps from id map
 	GetMetaNameMapsFromIDMap(zoneMap map[string]string, regionAreaMap map[string]dmtypes.RegionArea) (

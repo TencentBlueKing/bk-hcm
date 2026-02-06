@@ -23,11 +23,11 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	protocloud "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	dmtypes "hcm/pkg/dal/dao/types/meta"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -95,7 +95,7 @@ func (f *ResPlanFetcher) GetRegionAreaMap(kt *kit.Kit) (map[string]dmtypes.Regio
 
 // GetMetaMaps get create resource plan demand needed zoneMap, regionAreaMap and deviceTypeMap.
 func (f *ResPlanFetcher) GetMetaMaps(kt *kit.Kit) (map[string]string, map[string]dmtypes.RegionArea,
-	map[string]wdt.WoaDeviceTypeTable, error) {
+	map[string]dt.DistinctDeviceType, error) {
 
 	// get zone id name mapping from data-service.
 	zoneMap, err := f.GetZoneMap(kt)

@@ -64,7 +64,7 @@ func New(client *client.ClientSet, thirdCli *thirdparty.Client, cmdbCli cmdb.Cli
 		deviceRestrict:       NewDeviceRestrictOp(),
 		cvmImage:             NewCvmImageOp(client),
 		capacity:             NewCapacityOp(client, subnetOp, vpcOp, thirdCli, cmdbCli),
-		device:               NewDeviceOp(thirdCli, NewZoneOp(client)),
+		device:               NewDeviceOp(thirdCli, NewZoneOp(client), client),
 		leftIP:               NewLeftIPOp(vpcOp, subnetOp, thirdCli),
 		sg:                   ziyan.NewSgOp(client),
 		applyOrderStatistics: NewApplyOrderStatisticsOp(daoSet),

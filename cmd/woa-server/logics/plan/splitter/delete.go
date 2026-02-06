@@ -23,9 +23,9 @@ import (
 	"errors"
 	"fmt"
 
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/criteria/enumor"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	ttypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -97,7 +97,7 @@ func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string
 // 删除场景只会从本业务转移到中转产品，因此拆分时仅需关注demand的original部分，即纯删除的部分
 func (s *SubTicketSplitter) splitDemandInDeleteScenarios(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
 	demand rpt.ResPlanDemand, transferableCore, nonTransferableCore int64,
-	deviceTypeMap map[string]wdt.WoaDeviceTypeTable) error {
+	deviceTypeMap map[string]dt.DistinctDeviceType) error {
 
 	if demand.Original == nil {
 		logs.Errorf("original is nil, ticket id: %s, updated: %+v, rid: %s", ticketID, demand.Updated, kt.Rid)

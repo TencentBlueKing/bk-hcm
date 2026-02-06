@@ -32,6 +32,7 @@ import (
 	tasktypes "hcm/cmd/woa-server/types/task"
 	"hcm/pkg"
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -39,7 +40,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	rpd "hcm/pkg/dal/table/resource-plan/res-plan-demand"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -183,7 +183,7 @@ func (c *Controller) extendResPlanListReq(kt *kit.Kit, req *ptypes.ListResPlanDe
 // convResConsumePoolToExpendMap 将 ResConsumePool 转为以 ResPlanDemandExpendKey 为 key 的 map
 // 因为 ResConsumePool 精确指定了deviceType，因此在list时无法进行模糊匹配，需要进行转化后使用
 func convResConsumePoolToExpendMap(kt *kit.Kit, pool ResPlanConsumePool,
-	deviceTypes map[string]wdt.WoaDeviceTypeTable) map[ptypes.ResPlanDemandExpendKey]int64 {
+	deviceTypes map[string]dt.DistinctDeviceType) map[ptypes.ResPlanDemandExpendKey]int64 {
 
 	consumeMap := make(map[ptypes.ResPlanDemandExpendKey]int64)
 
@@ -199,7 +199,7 @@ func convResConsumePoolToExpendMap(kt *kit.Kit, pool ResPlanConsumePool,
 			PlanType:      key.PlanType,
 			AvailableTime: ptypes.AvailableMonth(key.AvailableTime),
 			DeviceFamily:  deviceTypes[key.DeviceType].DeviceFamily,
-			CoreType:      deviceTypes[key.DeviceType].CoreType,
+			CoreType:      string(deviceTypes[key.DeviceType].CoreType),
 			ObsProject:    key.ObsProject,
 			RegionID:      key.RegionID,
 		}
@@ -266,7 +266,7 @@ func (c *Controller) demandBelongListReq(kt *kit.Kit, demandItem *ptypes.ListRes
 // and filter by request params.
 func (c *Controller) convResPlanDemandRespAndFilter(kt *kit.Kit, req *ptypes.ListResPlanDemandReq,
 	planTables []rpd.ResPlanDemandTable, planAppliedCore map[ptypes.ResPlanDemandExpendKey]int64,
-	deviceTypes map[string]wdt.WoaDeviceTypeTable) (*ptypes.ListResPlanDemandOverview, []*ptypes.ListResPlanDemandItem,
+	deviceTypes map[string]dt.DistinctDeviceType) (*ptypes.ListResPlanDemandOverview, []*ptypes.ListResPlanDemandItem,
 	error) {
 
 	overview := &ptypes.ListResPlanDemandOverview{}
@@ -387,7 +387,7 @@ func calcDemandListOverview(overview *ptypes.ListResPlanDemandOverview, demandIt
 }
 
 func (c *Controller) getDemandExpendKeyFromTable(kt *kit.Kit, demand rpd.ResPlanDemandTable, expectTime string,
-	deviceTypeMap map[string]wdt.WoaDeviceTypeTable) (ptypes.ResPlanDemandExpendKey, error) {
+	deviceTypeMap map[string]dt.DistinctDeviceType) (ptypes.ResPlanDemandExpendKey, error) {
 
 	t, err := time.Parse(constant.DateLayout, expectTime)
 	if err != nil {
@@ -409,7 +409,7 @@ func (c *Controller) getDemandExpendKeyFromTable(kt *kit.Kit, demand rpd.ResPlan
 		PlanType:      demand.PlanType,
 		AvailableTime: ptypes.NewAvailableMonth(availableYear, availableMonth),
 		DeviceFamily:  deviceTypeMap[demand.DeviceType].DeviceFamily,
-		CoreType:      deviceTypeMap[demand.DeviceType].CoreType,
+		CoreType:      string(deviceTypeMap[demand.DeviceType].CoreType),
 		ObsProject:    demand.ObsProject,
 		RegionID:      demand.RegionID,
 	}
@@ -1860,7 +1860,7 @@ func isDiffDemandMatch(key ResPlanPoolKeyV2, need VerifyResPlanElemV2) (bool, st
 }
 
 // GetAllDeviceTypeMap get all device type map.
-func (c *Controller) GetAllDeviceTypeMap(kt *kit.Kit) (map[string]wdt.WoaDeviceTypeTable, error) {
+func (c *Controller) GetAllDeviceTypeMap(kt *kit.Kit) (map[string]dt.DistinctDeviceType, error) {
 	// get all device type maps.
 	deviceTypeMap, err := c.deviceTypesMap.GetDeviceTypes(kt)
 	if err != nil {

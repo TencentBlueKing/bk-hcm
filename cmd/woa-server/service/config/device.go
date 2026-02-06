@@ -14,85 +14,31 @@
 package config
 
 import (
-	"errors"
-	"fmt"
-	"strconv"
-
 	types "hcm/cmd/woa-server/types/config"
-	"hcm/pkg"
-	"hcm/pkg/criteria/enumor"
+	dataproto "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	datapmdevicetype "hcm/pkg/api/data-service/tcloud-ziyan-pm-device-type"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// GetDeviceWithCapacity gets config device detail info with capacity
-func (s *service) GetDeviceWithCapacity(cts *rest.Contexts) (interface{}, error) {
-	// TODO: input validation
-	input := new(types.GetDeviceParam)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Device().GetDeviceWithCapacity(cts.Kit, input)
-	if err != nil {
-		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
-// GetDevice gets all available config device detail info
-func (s *service) GetDevice(cts *rest.Contexts) (interface{}, error) {
-	// TODO: input validation
-	input := new(types.GetDeviceParam)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Device().GetDevice(cts.Kit, input)
-	if err != nil {
-		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
 // GetDeviceType gets config device type list
 func (s *service) GetDeviceType(cts *rest.Contexts) (interface{}, error) {
-	// TODO: input validation
-	input := new(types.GetDeviceParam)
+	input := new(protocloud.DistinctDeviceTypeListReq)
 	if err := cts.DecodeInto(input); err != nil {
 		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+	if err := input.Validate(); err != nil {
+		logs.Errorf("failed to validate list device type parameter, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	rst, err := s.logics.Device().GetDeviceType(cts.Kit, input)
+	rst, err := s.logics.Device().ListDistinctDeviceType(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
-// GetDeviceTypeDetail gets config device type with detail info
-func (s *service) GetDeviceTypeDetail(cts *rest.Contexts) (interface{}, error) {
-	// TODO: input validation
-	input := new(types.GetDeviceParam)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to get device type detail, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Device().GetDeviceTypeDetail(cts.Kit, input)
-	if err != nil {
-		logs.Errorf("failed to get device type detail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -101,19 +47,17 @@ func (s *service) GetDeviceTypeDetail(cts *rest.Contexts) (interface{}, error) {
 
 // GetCvmDeviceDetail gets config cvm device detail info by condition
 func (s *service) GetCvmDeviceDetail(cts *rest.Contexts) (interface{}, error) {
-	input := new(types.GetDeviceParam)
+	input := new(protocloud.DeviceTypeListReq)
 	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to get cvm device config, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	errKey, err := input.Validate()
-	if err != nil {
-		logs.Errorf("failed to get cvm device config, key: %s, err: %v, rid: %s", errKey, err, cts.Kit.Rid)
+	if err := input.Validate(); err != nil {
+		logs.Errorf("failed to validate list device type parameter, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rst, err := s.logics.Device().GetCvmDeviceDetail(cts.Kit, input)
+	rst, err := s.logics.Device().ListDeviceType(cts.Kit, input)
 	if err != nil {
 		logs.Errorf("failed to get device list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -122,145 +66,37 @@ func (s *service) GetCvmDeviceDetail(cts *rest.Contexts) (interface{}, error) {
 	return rst, nil
 }
 
-// CreateDevice creates device config
-func (s *service) CreateDevice(cts *rest.Contexts) (interface{}, error) {
-	inputData := new(types.DeviceInfo)
-	if err := cts.DecodeInto(inputData); err != nil {
-		logs.Errorf("failed to create device, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	rst, err := s.logics.Device().CreateDevice(cts.Kit, inputData)
-	if err != nil {
-		logs.Errorf("failed to create device, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 在CRP device_type中同步该机型
-	if err = s.planLogics.SyncDeviceTypesFromCRP(cts.Kit, []string{inputData.DeviceType}); err != nil {
-		logs.Errorf("failed to sync res plan device type, err: %v, input: %+v, rid: %s", err, inputData,
-			cts.Kit.Rid)
-		return nil, err
-	}
-
-	return rst, nil
-}
-
 // CreateManyDevice creates device configs in batch
 func (s *service) CreateManyDevice(cts *rest.Contexts) (interface{}, error) {
-	input := new(types.CreateManyDeviceParam)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to create device in batch, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	req := new(protocloud.DeviceTypeBatchCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
-	err := input.Validate()
-	if err != nil {
-		logs.Errorf("failed to create device in batch, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	crpDeviceTypeMap, err := s.logics.Device().ListDeviceTypeInfoFromCrp(cts.Kit, []string{input.DeviceType})
+	result, err := s.logics.Device().BatchCreateDeviceType(cts.Kit, req)
 	if err != nil {
-		logs.Errorf("failed to get device type from CRP, err: %v, deviceType: %s, rid: %s", err, input.DeviceType,
-			cts.Kit.Rid)
+		logs.Errorf("failed to batch create device type, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	crpDeviceInfo, exists := crpDeviceTypeMap[input.DeviceType]
-	if !exists && !input.ForceCreate {
-		logs.Errorf("device type not exist in CRP, input: %+v, rid: %s", input, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.DeviceTypeAbsentInCRP, errors.New("device type not exist in CRP"))
-	}
-
-	// 当机型存在于crp时，那么创建时以crp的实例族为准
-	if exists {
-		input.DeviceGroup = crpDeviceInfo.InstanceGroup
-		// 判断输入的 CPU核数，内存大小，大小核心 和crp的是否一致
-		if input.Cpu != int64(crpDeviceInfo.CPUAmount) || input.Mem != int64(crpDeviceInfo.RamAmount) ||
-			input.DeviceSize != enumor.GetCoreTypeByCRPCoreTypeID(crpDeviceInfo.CoreType) {
-			return nil, fmt.Errorf("input device config not match CRP device config, input: %+v, crp: %+v",
-				input, crpDeviceInfo)
-		}
-		input.DeviceTypeClass = crpDeviceInfo.InstanceTypeClass
-		input.TechnicalClass = crpDeviceInfo.CvmInstanceTypeClass
-	}
-	if err = s.logics.Device().CreateManyDevice(cts.Kit, input); err != nil {
-		logs.Errorf("failed to create device in batch, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 在CRP device_type中同步该机型
-	if err = s.planLogics.SyncDeviceTypesFromCRP(cts.Kit, []string{input.DeviceType}); err != nil {
-		logs.Errorf("failed to sync res plan device type, err: %v, input: %+v, rid: %s", err, input, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// UpdateDevice updates device config
-func (s *service) UpdateDevice(cts *rest.Contexts) (interface{}, error) {
-	input := make(map[string]interface{})
-	if err := cts.DecodeInto(&input); err != nil {
-		logs.Errorf("failed to update device, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// CVM机型-菜单粒度鉴权
-	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmType, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = s.logics.Device().UpdateDevice(cts.Kit, instId, input); err != nil {
-		logs.Errorf("failed to update device, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	return result, nil
 }
 
 // UpdateDeviceProperty updates device config property
 func (s *service) UpdateDeviceProperty(cts *rest.Contexts) (interface{}, error) {
-	input := new(types.UpdateDevicePropertyParam)
-	if err := cts.DecodeInto(input); err != nil {
-		logs.Errorf("failed to update cvm device config, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+	req := new(protocloud.DeviceTypeBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
-	err := input.Validate()
-	if err != nil {
-		logs.Errorf("failed to update cvm device config, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// CVM机型-菜单粒度鉴权
-	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmType, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	cond := map[string]interface{}{
-		"id": map[string]interface{}{
-			pkg.BKDBIN: input.Ids,
-		},
-	}
-
-	data := input.Property
-	// cannot update device id
-	delete(data, "id")
-
-	if err = s.logics.Device().UpdateDeviceBatch(cts.Kit, cond, input.Property); err != nil {
-		logs.Errorf("failed to update cvm device config, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err := s.logics.Device().BatchUpdateDeviceType(cts.Kit, req); err != nil {
+		logs.Errorf("failed to batch update device type, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -269,24 +105,16 @@ func (s *service) UpdateDeviceProperty(cts *rest.Contexts) (interface{}, error) 
 
 // DeleteDevice deletes device config
 func (s *service) DeleteDevice(cts *rest.Contexts) (interface{}, error) {
-	instId, err := strconv.ParseInt(cts.Request.PathParameter("id"), 10, 64)
-	if err != nil {
-		logs.Errorf("failed to parse id, err: %v, rid: %s", err, cts.Kit.Rid)
+	req := new(dataproto.BatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := s.logics.Device().BatchDeleteDeviceType(cts.Kit, req); err != nil {
 		return nil, err
 	}
-
-	// CVM机型-菜单粒度鉴权
-	err = s.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.ZiyanCvmType, Action: meta.Find}})
-	if err != nil {
-		return nil, err
-	}
-
-	if err = s.logics.Device().DeleteDevice(cts.Kit, instId); err != nil {
-		logs.Errorf("failed to delete device, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	return nil, nil
 }
 
@@ -336,7 +164,7 @@ func (s *service) CreateDvmDevice(cts *rest.Contexts) (interface{}, error) {
 // GetPmDeviceType gets config physical machine device type list
 func (s *service) GetPmDeviceType(cts *rest.Contexts) (interface{}, error) {
 	// TODO: input validation
-	input := new(types.GetDeviceParam)
+	input := new(types.GetPmDeviceTypeParam)
 	if err := cts.DecodeInto(input); err != nil {
 		logs.Errorf("failed to get physical machine device list, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -353,11 +181,13 @@ func (s *service) GetPmDeviceType(cts *rest.Contexts) (interface{}, error) {
 
 // CreatePmDevice creates config physical machine device type
 func (s *service) CreatePmDevice(cts *rest.Contexts) (interface{}, error) {
-	// TODO: input validation
-	input := new(types.PmDeviceInfo)
-	if err := cts.DecodeInto(input); err != nil {
+	req := new(datapmdevicetype.CreateTCloudZiyanPmDeviceTypeReq)
+	if err := cts.DecodeInto(req); err != nil {
 		logs.Errorf("failed to create physical machine device type, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// CVM机型-菜单粒度鉴权
@@ -367,7 +197,7 @@ func (s *service) CreatePmDevice(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	rst, err := s.logics.Device().CreatePmDevice(cts.Kit, input)
+	rst, err := s.logics.Device().CreatePmDevice(cts.Kit, req)
 	if err != nil {
 		logs.Errorf("failed to create physical machine device type, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

@@ -14,10 +14,10 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
+	pmdevicetype "hcm/pkg/api/core/tcloud-ziyan-pm-device-type"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/mapstr"
@@ -350,93 +350,6 @@ type GetDeviceTypeDetailResult struct {
 	Info  []*DeviceTypeInfo `json:"info"`
 }
 
-// CreateManyDeviceParam create device config in batch request param
-type CreateManyDeviceParam struct {
-	RequireType     []enumor.RequireType     `json:"require_type" validate:"required,max=20,dive"`
-	Zone            []string                 `json:"zone" validate:"required,max=100,dive"`
-	DeviceGroup     string                   `json:"device_group" validate:"required"`
-	DeviceSize      enumor.CoreType          `json:"device_size" validate:"required"`
-	DeviceType      string                   `json:"device_type" validate:"required"`
-	DeviceTypeClass cvmapi.InstanceTypeClass `json:"device_type_class" validate:"omitempty"`
-	Cpu             int64                    `json:"cpu" validate:"required,min=1"`
-	Mem             int64                    `json:"mem" validate:"required,min=1"`
-	Remark          string                   `json:"remark"`
-	// ForceCreate 当机型在CRP中不存在时是否仍然创建
-	ForceCreate    bool   `json:"force_create" validate:"omitempty"`
-	TechnicalClass string `json:"technical_class"` // 技术分类
-}
-
-// Validate whether GetDeviceParam is valid
-// errKey: invalid key
-// err: detail reason why errKey is invalid
-func (param *CreateManyDeviceParam) Validate() error {
-	if len(param.RequireType) == 0 {
-		return errors.New("require_type empty or non-exist")
-	}
-
-	if len(param.RequireType) > 20 {
-		return errors.New("require_type exceed limit 20")
-	}
-
-	for _, rt := range param.RequireType {
-		if err := rt.Validate(); err != nil {
-			return fmt.Errorf("require_type: %v", err)
-		}
-	}
-
-	if len(param.Zone) == 0 {
-		return errors.New("zone empty or non-exist")
-	}
-
-	if len(param.Zone) > 100 {
-		return errors.New("zone exceed limit 100")
-	}
-
-	if param.DeviceGroup == "" {
-		return errors.New("device_group empty or non-exist")
-	}
-
-	if param.DeviceSize == "" {
-		return errors.New("device_size empty or non-exist")
-	}
-
-	if err := param.DeviceSize.Validate(); err != nil {
-		return err
-	}
-
-	if param.DeviceType == "" {
-		return errors.New("device_type empty or non-exist")
-	}
-
-	if param.Cpu <= 0 {
-		return errors.New("cpu should be positive")
-	}
-
-	if param.Mem <= 0 {
-		return errors.New("mem should be positive")
-	}
-
-	return validator.Validate.Struct(param)
-}
-
-// UpdateDevicePropertyParam update device property request param
-type UpdateDevicePropertyParam struct {
-	Ids      []int64                `json:"ids" bson:"ids"`
-	Property map[string]interface{} `json:"properties"`
-}
-
-// Validate whether UpdateDevicePropertyParam is valid
-// errKey: invalid key
-// err: detail reason why errKey is invalid
-func (param *UpdateDevicePropertyParam) Validate() error {
-	limit := 200
-	if len(param.Ids) > limit {
-		return fmt.Errorf("ids exceed limit %d", limit)
-	}
-
-	return nil
-}
-
 // DvmDeviceInfo dvm device info
 type DvmDeviceInfo struct {
 	BkInstId    int64         `json:"id" bson:"id"`
@@ -456,22 +369,16 @@ type GetDvmDeviceRst struct {
 	Info  []*DvmDeviceInfo `json:"info"`
 }
 
-// PmDeviceInfo physical machine device info
-type PmDeviceInfo struct {
-	BkInstId   int64         `json:"id" bson:"id"`
-	DeviceType string        `json:"device_type" bson:"device_type"`
-	Cpu        int64         `json:"cpu" bson:"cpu"`
-	Mem        int64         `json:"mem" bson:"mem"`
-	Raid       string        `json:"raid" bson:"raid"`
-	NetWork    string        `json:"network" bson:"network"`
-	Remark     string        `json:"remark" bson:"remark"`
-	Label      mapstr.MapStr `json:"label" bson:"label"`
-}
-
 // GetPmDeviceRst get dvm device result
 type GetPmDeviceRst struct {
-	Count int64           `json:"count"`
-	Info  []*PmDeviceInfo `json:"info"`
+	Count int64                                  `json:"count"`
+	Info  []pmdevicetype.TCloudZiyanPmDeviceType `json:"info"`
+}
+
+// GetPmDeviceTypeParam get pm device type list request param (uses MySQL filter directly)
+type GetPmDeviceTypeParam struct {
+	Filter *filter.Expression `json:"filter"`
+	Page   *core.BasePage     `json:"page"`
 }
 
 // GetCapacityParam get resource apply capacity request param
@@ -682,11 +589,12 @@ var Description = map[string]string{
 
 // DeviceTypeCpuItem device type cpu item
 type DeviceTypeCpuItem struct {
-	DeviceType     string          `json:"device_type"`     // 机型
-	CPUAmount      int64           `json:"cpu_amount"`      // CPU数量
-	DeviceGroup    string          `json:"device_group"`    // 机型族
-	CoreType       enumor.CoreType `json:"core_type"`       // 机型核心类型
-	TechnicalClass string          `json:"technical_class"` // 技术分类
+	DeviceType      string                   `json:"device_type"`       // 机型
+	CPUAmount       int64                    `json:"cpu_amount"`        // CPU数量
+	DeviceGroup     string                   `json:"device_group"`      // 机型族
+	CoreType        enumor.CoreType          `json:"core_type"`         // 机型核心类型
+	TechnicalClass  string                   `json:"technical_class"`   // 技术分类
+	DeviceTypeClass cvmapi.InstanceTypeClass `json:"device_type_class"` // 通/专用机型
 }
 
 // UpsertRegionDftVpcReq upsert region default vpc request.
