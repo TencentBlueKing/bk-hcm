@@ -434,6 +434,46 @@ func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) 
 	return nil
 }
 
+// BulkInsertWithIDs insert data batch with transaction and return auto-increment IDs.
+// Note: This method works for MySQL auto-increment primary keys. It uses LAST_INSERT_ID()
+// to get the first inserted ID, then calculates subsequent IDs based on the count.
+// The order of returned IDs matches the order of inserted data.
+func (do *doTxn) BulkInsertWithIDs(ctx context.Context, expr string, args interface{}, count int) ([]uint64, error) {
+	if err := do.ro.tryAccept(); err != nil {
+		return nil, err
+	}
+
+	if count <= 0 {
+		return nil, errors.New("count must be greater than 0")
+	}
+
+	start := time.Now()
+
+	result, err := do.tx.NamedExecContext(ctx, expr, args)
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert-with-ids"}).Inc()
+		return nil, err
+	}
+
+	// 获取第一个插入记录的自增ID
+	firstID, err := result.LastInsertId()
+	if err != nil {
+		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert-with-ids"}).Inc()
+		return nil, err
+	}
+
+	// 根据插入数量计算所有ID（MySQL自增ID是连续的）
+	ids := make([]uint64, count)
+	for i := 0; i < count; i++ {
+		ids[i] = uint64(firstID) + uint64(i)
+	}
+
+	do.ro.logSlowCmd(ctx, expr, time.Since(start))
+	do.ro.mc.cmdLagMS.With(prm.Labels{"cmd": "bulk-insert-with-ids"}).Observe(float64(time.Since(start).Milliseconds()))
+
+	return ids, nil
+}
+
 // Update with transaction
 func (do *doTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	if arg == nil {
