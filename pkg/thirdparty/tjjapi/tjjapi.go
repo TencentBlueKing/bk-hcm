@@ -22,7 +22,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

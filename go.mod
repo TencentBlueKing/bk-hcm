@@ -29,7 +29,6 @@ require (
 	// go-sql-driver/mysql v1.8.1 may casuse error: connection.go:49: unexpected EOF
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/protobuf v1.5.4
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.1.40
