@@ -16,7 +16,7 @@ import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import AreaSelector from '@/views/ziyanScr/hostApplication/components/AreaSelector';
 import ZoneSelector from '@/views/ziyanScr/hostApplication/components/ZoneSelector';
 import DevicetypeSelector from '@/views/ziyanScr/components/devicetype-selector/index.vue';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { type ICondition } from '../../typings';
 import { deviceGroups } from '../../constants';
 
@@ -107,7 +107,13 @@ const columns = computed(() => {
 
 const cvmDevicetypeParams = computed(() => {
   const { region, zone, device_families } = searchValues.value;
-  return { region_ids: region, zone_ids: zone, device_group: device_families, enable_capacity: true };
+  return {
+    vendor: VendorEnum.ZIYAN,
+    region,
+    zone,
+    device_family: device_families,
+    disable: false,
+  };
 });
 
 const demandList = ref<IResourcesDemandItem[]>([]);

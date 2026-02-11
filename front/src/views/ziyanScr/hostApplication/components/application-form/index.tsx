@@ -41,6 +41,7 @@ import http from '@/http';
 
 import { useItDeviceType } from '@/views/ziyanScr/cvm-produce/component/create-order/use-it-device-type';
 import { ICvmSystemDisk } from '@/views/ziyanScr/components/cvm-system-disk/typings';
+import { useIdcpmDeviceStore } from '@/store/idcpm/device';
 // 滚服项目
 import RollingServerTips from './host-apply-tips/rolling-server-tips.vue';
 import RollingServerCpuCoreLimits from '@/views/ziyanScr/rolling-server/cpu-core-limits/index.vue';
@@ -196,7 +197,7 @@ export default defineComponent({
     ) => {
       if (from === 'confirm') {
         const { deviceTypeList, inheritInstanceId, inheritAssetId } = data;
-        QCLOUDCVMForm.value.spec.cpu = deviceTypeList?.[0]?.cpu_amount;
+        QCLOUDCVMForm.value.spec.cpu = deviceTypeList?.[0]?.cpu_core;
         QCLOUDCVMForm.value.spec.inherit_instance_id = inheritInstanceId;
         resourceForm.value.bk_asset_id = inheritAssetId;
 
@@ -430,9 +431,10 @@ export default defineComponent({
       pmForm.value.options.isps = info || [];
     };
     // 获取 IDCPM机型列表
+    const idcpmDeviceStore = useIdcpmDeviceStore();
     const IDCPMDeviceTypes = async () => {
-      const { info } = await apiService.getIDCPMDeviceTypes();
-      pmForm.value.options.deviceTypes = info || [];
+      const { list } = await idcpmDeviceStore.getDeviceTypeFullList();
+      pmForm.value.options.deviceTypes = list || [];
     };
 
     // 获取可用的IDCPM列表
@@ -599,7 +601,6 @@ export default defineComponent({
         device_group: ['标准型'],
         cpu: '',
         mem: '',
-        enable_capacity: true,
       },
       options: {
         require_types: [],

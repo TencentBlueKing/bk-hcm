@@ -57,10 +57,9 @@ func SyncPublicResource(kt *kit.Kit, cliSet *client.ClientSet, opt *SyncPublicRe
 		return enumor.ZoneCloudResType, err
 	}
 
-	// 暂未接入
-	// if err = SyncTCloudImage(kt, cliSet.HCService(), opt.AccountID, regions); err != nil {
-	// 	return err
-	// }
+	if err = SyncImage(kt, cliSet.HCService(), opt.AccountID, regions); err != nil {
+		return enumor.ImageCloudResType, err
+	}
 
 	return "", nil
 }

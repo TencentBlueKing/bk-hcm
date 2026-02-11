@@ -142,6 +142,7 @@ func (cli *client) createImage(kt *kit.Kit, accountID, projectID, region string,
 			State:        one.State,
 			Type:         one.Type,
 			OsType:       one.OsType,
+			Region:       region,
 			Extension: &coreimage.GcpExtension{
 				SelfLink:  one.SelfLink,
 				Region:    region,

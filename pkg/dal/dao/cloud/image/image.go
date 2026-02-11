@@ -108,6 +108,8 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 	columnTypes["extension.offer"] = enumor.String
 	columnTypes["extension.sku"] = enumor.String
 	columnTypes["extension.self_link"] = enumor.String
+	// 目前extension支持的字段类型：字符串（布尔值也需要传入字符串才会生效）
+	columnTypes["extension.enable_cvm"] = enumor.String
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
@@ -122,7 +124,8 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ImageTable, whereExpr)
-		count, err := pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
+		count, err := pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql,
+			whereValue)
 		if err != nil {
 			logs.ErrorJson("count image failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err

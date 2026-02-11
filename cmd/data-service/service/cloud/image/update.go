@@ -48,6 +48,8 @@ func (svc *imageSvc) BatchUpdateImageExt(cts *rest.Contexts) (interface{}, error
 	switch vendor {
 	case enumor.TCloud:
 		return batchUpdateImageExt[coreimage.TCloudExtension](cts, svc)
+	case enumor.TCloudZiyan:
+		return batchUpdateImageExt[coreimage.TCloudZiyanExtension](cts, svc)
 	case enumor.Aws:
 		return batchUpdateImageExt[coreimage.AwsExtension](cts, svc)
 	case enumor.Gcp:

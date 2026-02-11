@@ -310,6 +310,7 @@ type HCServiceSetting struct {
 	Tenant        TenantConfig `yaml:"tenant"`
 	Cmdb          ApiGateway   `yaml:"cmdb"`
 	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
+	Crp           Crp          `yaml:"crp"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -353,6 +354,10 @@ func (s HCServiceSetting) Validate() error {
 
 	if s.CCHostPoolBiz == 0 {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
+	}
+
+	if err := s.Crp.validate(); err != nil {
+		return err
 	}
 
 	return nil

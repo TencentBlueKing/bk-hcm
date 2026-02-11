@@ -74,14 +74,8 @@ const (
 	// BKTableNameCfgDeviceRestrict the table name of device restriction config
 	BKTableNameCfgDeviceRestrict = "cr_CfgDeviceRestrict"
 
-	// BKTableNameCfgDevice the table name of cvm device config
-	BKTableNameCfgDevice = "cr_CfgDevice"
-
 	// BKTableNameCfgDvmDevice the table name of dvm device config
 	BKTableNameCfgDvmDevice = "cr_CfgDvmDevice"
-
-	// BKTableNameCfgPmDevice the table name of physical machine device config
-	BKTableNameCfgPmDevice = "cr_CfgPmDevice"
 
 	// BKTableNamePlanInfo the table name of cvm&cbs plan info
 	BKTableNamePlanInfo = "cr_CvmCbsPlan"

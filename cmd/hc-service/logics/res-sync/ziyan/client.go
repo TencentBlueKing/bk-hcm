@@ -74,6 +74,15 @@ type Interface interface {
 
 	RemoveHostFromCC(kt *kit.Kit, params *DelHostParams) error
 	HostWithRelRes(kt *kit.Kit, params *SyncHostParams) (*SyncResult, error)
+
+	// Image 同步镜像
+	Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOption) (*SyncResult, error)
+	RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+
+	// DeviceType 同步机型
+	DeviceType(kt *kit.Kit, params *SyncDeviceTypeParams) (*SyncResult, error)
+	// RemoveDeviceTypeDeleteFromCloud 删除云上已不存在的机型
+	RemoveDeviceTypeDeleteFromCloud(kt *kit.Kit, params *SyncRemovedParams, allCloudIDMap map[string]struct{}) error
 }
 
 var _ Interface = new(client)

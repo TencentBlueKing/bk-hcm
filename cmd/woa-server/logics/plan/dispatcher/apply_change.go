@@ -29,13 +29,13 @@ import (
 
 	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	rtypes "hcm/pkg/dal/dao/types/resource-plan"
 	rpd "hcm/pkg/dal/table/resource-plan/res-plan-demand"
 	rpt "hcm/pkg/dal/table/resource-plan/res-plan-ticket"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/cvmapi"
@@ -276,7 +276,7 @@ func (d *Dispatcher) prepareResPlanDemandChangeReq(kt *kit.Kit, ticket *ApplyTic
 
 func convUpdateResPlanDemandReqs(kt *kit.Kit, ticket *ApplyTicketCtx,
 	updateDemands map[string]*rpd.ResPlanDemandTable, demandChangelog map[string]*ptypes.DemandResource,
-	deviceTypeMap map[string]wdt.WoaDeviceTypeTable) ([]string, []rpproto.ResPlanDemandUpdateReq,
+	deviceTypeMap map[string]dt.DistinctDeviceType) ([]string, []rpproto.ResPlanDemandUpdateReq,
 	[]rpproto.DemandChangelogCreate, error) {
 
 	updatedDemandIDs := make([]string, 0)

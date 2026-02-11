@@ -20,13 +20,13 @@
 package dispatcher
 
 import (
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
 // getAllDeviceTypeMap get all device type map.
-func (d *Dispatcher) getAllDeviceTypeMap(kt *kit.Kit) (map[string]wdt.WoaDeviceTypeTable, error) {
+func (d *Dispatcher) getAllDeviceTypeMap(kt *kit.Kit) (map[string]dt.DistinctDeviceType, error) {
 	// get all device type maps.
 	deviceTypeMap, err := d.deviceTypesMap.GetDeviceTypes(kt)
 	if err != nil {

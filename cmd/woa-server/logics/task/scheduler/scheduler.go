@@ -38,7 +38,6 @@ import (
 	"hcm/cmd/woa-server/logics/task/scheduler/dispatcher"
 	"hcm/cmd/woa-server/logics/task/scheduler/generator"
 	"hcm/cmd/woa-server/logics/task/scheduler/matcher"
-	"hcm/cmd/woa-server/logics/task/scheduler/recommender"
 	"hcm/cmd/woa-server/logics/task/scheduler/record"
 	model "hcm/cmd/woa-server/model/task"
 	cfgtype "hcm/cmd/woa-server/types/config"
@@ -48,6 +47,7 @@ import (
 	"hcm/pkg"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
@@ -58,6 +58,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/bkbotapproval"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
@@ -131,8 +132,6 @@ type Interface interface {
 	ModifyApplyOrder(kit *kit.Kit, param *types.ModifyApplyReq) error
 	// ConfirmApplyModify confirm resource apply modify
 	ConfirmApplyModify(kit *kit.Kit, param *types.ConfirmApplyModifyReq) (*types.ConfirmApplyModifyResp, error)
-	// RecommendApplyOrder get resource apply order modification recommendation
-	RecommendApplyOrder(kit *kit.Kit, param *types.RecommendApplyReq) (*types.RecommendApplyRst, error)
 	// GetApplyModify gets resource apply order modify records
 	GetApplyModify(kit *kit.Kit, param *types.GetApplyModifyReq) (*types.GetApplyModifyRst, error)
 	// DeliverDevice deliver one device to business
@@ -187,7 +186,6 @@ type scheduler struct {
 	dispatcher     *dispatcher.Dispatcher
 	generator      *generator.Generator
 	matcher        *matcher.Matcher
-	recommend      *recommender.Recommender
 	configLogics   config.Logics
 	rsLogics       rollingserver.Logics
 	srLogics       shortrental.Logics
@@ -205,12 +203,6 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 	thirdCli *thirdparty.Client, cmdbCli cmdb.Client, informerIf informer.Interface, clientConf cc.ClientConfig,
 	planLogics plan.Logics, bizLogic biz.Logics, configLogics config.Logics, dissolveLogics dissolve.Logics,
 	cmsiCli cmsi.Client, apiClientSet *client.ClientSet) (*scheduler, error) {
-
-	// new recommend module
-	recommend, err := recommender.New(ctx, thirdCli)
-	if err != nil {
-		return nil, err
-	}
 
 	// new matcher
 	match, err := matcher.New(ctx, rsLogics, thirdCli, cmdbCli, clientConf, informerIf, planLogics, configLogics,
@@ -240,7 +232,6 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 		dispatcher:     dispatch,
 		generator:      generate,
 		matcher:        match,
-		recommend:      recommend,
 		configLogics:   configLogics,
 		rsLogics:       rsLogics,
 		srLogics:       srLogics,
@@ -1268,7 +1259,7 @@ func (s *scheduler) VerifyCvmGPUChargeMonth(kt *kit.Kit, subOrders []*types.Subo
 		return nil
 	}
 
-	deviceTypeInfoMap, err := s.configLogics.Device().ListDeviceTypeInfoFromCrp(kt, deviceTypes)
+	deviceTypeInfoMap, err := s.configLogics.Device().ListCvmInstanceInfoByDeviceTypes(kt, deviceTypes)
 	if err != nil {
 		logs.Errorf("get crp cvm instance info by device type failed, err: %v, deviceTypes: %v, rid: %s",
 			err, deviceTypes, kt.Rid)
@@ -1287,8 +1278,8 @@ func (s *scheduler) VerifyCvmGPUChargeMonth(kt *kit.Kit, subOrders []*types.Subo
 		}
 
 		// 特殊机型+GPU的机型，计费时长必须为5年
-		if deviceInfo.InstanceTypeClass == cvmapi.SpecialType &&
-			strings.Contains(deviceInfo.InstanceGroup, constant.GpuInstanceClass) &&
+		if deviceInfo.DeviceTypeClass == cvmapi.SpecialType &&
+			strings.Contains(deviceInfo.DeviceGroup, constant.GpuInstanceClass) &&
 			suborder.Spec.ChargeMonths != constant.GPUDeviceTypeChargeMonth {
 
 			logs.Warnf("special gpu instance charge month must be %d months, deviceTypes: %v, deviceType: %s, "+
@@ -2639,16 +2630,14 @@ func (s *scheduler) validateReplicasAndModifyParam(kt *kit.Kit, order *types.App
 
 func (s *scheduler) validateModifyDeviceType(kt *kit.Kit, order *types.ApplyOrder, param *types.ModifyApplyReq) error {
 	// 小额绿通需要按常规项目去校验 --story=125266150
-	requireType := order.RequireType.ToRequireTypeWhenGetDevice()
-
-	originDeviceGroup, originDeviceSize, err := s.getDeviceGroup(kt, requireType, order.Spec.DeviceType,
+	originDeviceGroup, originDeviceSize, err := s.getDeviceFamilyAndCoreType(kt, order.Spec.DeviceType,
 		order.Spec.Region, order.Spec.Zone)
 	if err != nil {
 		logs.Errorf("failed to get device group, err: %v", err)
 		return err
 	}
 
-	modifiedDeviceGroup, modifiedDeviceSize, err := s.getDeviceGroup(kt, requireType, param.Spec.DeviceType,
+	modifiedDeviceGroup, modifiedDeviceSize, err := s.getDeviceFamilyAndCoreType(kt, param.Spec.DeviceType,
 		param.Spec.Region, param.Spec.Zone)
 	if err != nil {
 		logs.Errorf("failed to get device group, err: %v", err)
@@ -2681,84 +2670,29 @@ func (s *scheduler) validateModifyDeviceType(kt *kit.Kit, order *types.ApplyOrde
 	return nil
 }
 
-func (s *scheduler) getDeviceGroup(kt *kit.Kit, requireType enumor.RequireType, deviceType, region, zone string) (
-	string, string, error) {
-
-	rules := []querybuilder.Rule{
-		querybuilder.AtomRule{
-			Field:    "device_type",
-			Operator: querybuilder.OperatorEqual,
-			Value:    deviceType,
-		},
-		querybuilder.AtomRule{
-			Field:    "require_type",
-			Operator: querybuilder.OperatorEqual,
-			Value:    requireType,
-		},
-		querybuilder.AtomRule{
-			Field:    "region",
-			Operator: querybuilder.OperatorEqual,
-			Value:    region,
-		},
-	}
-
+func (s *scheduler) getDeviceFamilyAndCoreType(kt *kit.Kit, deviceType, region, zone string) (string, string, error) {
+	rules := make([]*filter.AtomRule, 0)
+	rules = append(rules, tools.RuleEqual("vendor", enumor.TCloudZiyan))
+	rules = append(rules, tools.RuleEqual("device_type", deviceType))
+	rules = append(rules, tools.RuleEqual("region", region))
 	if zone != "" && zone != cvmapi.CvmSeparateCampus {
-		rules = append(rules, querybuilder.AtomRule{
-			Field:    "zone",
-			Operator: querybuilder.OperatorEqual,
-			Value:    zone,
-		})
+		rules = append(rules, tools.RuleEqual("zone", zone))
 	}
-
-	req := &configtypes.GetDeviceParam{
-		Filter: &querybuilder.QueryFilter{
-			Rule: querybuilder.CombinedRule{
-				Condition: querybuilder.ConditionAnd,
-				Rules:     rules,
-			},
-		},
-		Page: metadata.BasePage{
-			Limit: 1,
-			Start: 0,
+	req := &protocloud.DeviceTypeListReq{
+		ListReq: core.ListReq{
+			Filter: tools.ExpressionAnd(rules...),
 		},
 	}
-
-	deviceInfo, err := s.configLogics.Device().GetDevice(kt, req)
+	deviceInfo, err := s.configLogics.Device().ListDeviceType(kt, req)
 	if err != nil {
-		logs.Errorf("failed to get device info, err: %v", err)
+		logs.Errorf("failed to list device type, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return "", "", err
 	}
-
-	num := len(deviceInfo.Info)
-	if num == 0 {
-		// return empty when found no device config
+	if len(deviceInfo.Details) == 0 {
 		return "", "", nil
-	} else if num != 1 {
-		logs.Errorf("failed to get device info, for len %d != 1", num)
-		return "", "", fmt.Errorf("failed to get device info, for len %d != 1", num)
 	}
 
-	// 机型族
-	deviceGroup, ok := deviceInfo.Info[0].Label["device_group"]
-	if !ok {
-		return "", "", errors.New("get invalid empty device group")
-	}
-	deviceGroupStr, ok := deviceGroup.(string)
-	if !ok {
-		return "", "", errors.New("get invalid non-string device group")
-	}
-
-	// 机型核心类型
-	deviceSize, ok := deviceInfo.Info[0].Label["device_size"]
-	if !ok {
-		return "", "", errors.New("get invalid empty device size")
-	}
-	deviceSizeStr, ok := deviceSize.(string)
-	if !ok {
-		return "", "", errors.New("get invalid non-string device size")
-	}
-
-	return deviceGroupStr, deviceSizeStr, nil
+	return deviceInfo.Details[0].DeviceFamily, string(deviceInfo.Details[0].CoreType), nil
 }
 
 func (s *scheduler) validateModifyZone(kt *kit.Kit, order *types.ApplyOrder, param *types.ModifyApplyReq) error {
@@ -2937,19 +2871,6 @@ func (s *scheduler) updateModifyRecordData(kt *kit.Kit, subOrderID string, modif
 	}
 
 	return nil
-}
-
-// RecommendApplyOrder get resource apply order modification recommendation
-func (s *scheduler) RecommendApplyOrder(kt *kit.Kit, param *types.RecommendApplyReq) (*types.RecommendApplyRst,
-	error) {
-
-	rst, err := s.recommend.GetApplyRecommendation(param.SuborderID)
-	if err != nil {
-		logs.Errorf("failed to get apply recommendation, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("failed to get apply recommendation, err: %v", err)
-	}
-
-	return rst, nil
 }
 
 // GetApplyModify gets resource apply order modify records
@@ -3216,7 +3137,8 @@ func (s *scheduler) checkInheritedHost(kt *kit.Kit, param *types.CheckRollingSer
 		return errors.New("该主机无计费结束时间")
 	}
 
-	deviceTypeInfoMap, err := s.configLogics.Device().ListDeviceTypeInfoFromCrp(kt, []string{host.SvrDeviceClassName})
+	deviceTypeInfoMap, err := s.configLogics.Device().ListCvmInstanceInfoByDeviceTypes(kt,
+		[]string{host.SvrDeviceClassName})
 	if err != nil {
 		logs.Errorf("list device type info from crp failed, err: %v, val: %s, rid: %s", err, host.SvrDeviceClassName,
 			kt.Rid)
@@ -3226,7 +3148,7 @@ func (s *scheduler) checkInheritedHost(kt *kit.Kit, param *types.CheckRollingSer
 	if !ok {
 		return errors.New("该主机未找到对应的机型信息")
 	}
-	if deviceTypeInfo.InstanceTypeClass != cvmapi.CommonType {
+	if deviceTypeInfo.DeviceTypeClass != cvmapi.CommonType {
 		return errors.New("该主机机型不是通用机型")
 	}
 

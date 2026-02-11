@@ -43,6 +43,8 @@ func (svc *imageSvc) BatchCreateImageExt(cts *rest.Contexts) (interface{}, error
 	switch vendor {
 	case enumor.TCloud:
 		return batchCreateImageExt[coreimage.TCloudExtension](cts, svc, vendor)
+	case enumor.TCloudZiyan:
+		return batchCreateImageExt[coreimage.TCloudZiyanExtension](cts, svc, vendor)
 	case enumor.Aws:
 		return batchCreateImageExt[coreimage.AwsExtension](cts, svc, vendor)
 	case enumor.Gcp:
@@ -85,6 +87,7 @@ func batchCreateImageExt[T coreimage.Extension](cts *rest.Contexts, svc *imageSv
 				OsType:       one.OsType,
 				State:        one.State,
 				Type:         one.Type,
+				Region:       one.Region,
 				Extension:    tabletype.JsonField(extensionJson),
 				Creator:      cts.Kit.User,
 				Reviser:      cts.Kit.User,

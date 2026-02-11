@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -62,6 +63,8 @@ func (svc *imageSvc) GetImageExt(cts *rest.Contexts) (interface{}, error) {
 	switch vendor {
 	case enumor.TCloud:
 		return toProtoImageExtResult[coreimage.TCloudExtension](imageData)
+	case enumor.TCloudZiyan:
+		return toProtoImageExtResult[coreimage.TCloudZiyanExtension](imageData)
 	case enumor.Aws:
 		return toProtoImageExtResult[coreimage.AwsExtension](imageData)
 	case enumor.Gcp:
@@ -120,20 +123,32 @@ func (svc *imageSvc) ListImageExt(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	vendorFilter, err := tools.And(
+		req.Filter,
+		tools.RuleEqual("vendor", vendor),
+	)
+	if err != nil {
+		logs.Errorf("failed to build filter, err: %v, vendor: %s, rid: %s", err, vendor, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	opt := &types.ListOption{
-		Filter: req.Filter,
+		Filter: vendorFilter,
 		Page:   req.Page,
 		Fields: req.Fields,
 	}
 
 	data, err := svc.dao.Image().List(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("failed to list image, err: %v, vendor: %s, rid: %s", err, vendor, cts.Kit.Rid)
 		return nil, err
 	}
 
 	switch vendor {
 	case enumor.TCloud:
 		return toProtoImageExtListResult[coreimage.TCloudExtension](data)
+	case enumor.TCloudZiyan:
+		return toProtoImageExtListResult[coreimage.TCloudZiyanExtension](data)
 	case enumor.Aws:
 		return toProtoImageExtListResult[coreimage.AwsExtension](data)
 	case enumor.Gcp:

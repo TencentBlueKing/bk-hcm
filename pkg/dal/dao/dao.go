@@ -71,6 +71,7 @@ import (
 	rollingserver "hcm/pkg/dal/dao/rolling-server"
 	shortrental "hcm/pkg/dal/dao/short-rental"
 	"hcm/pkg/dal/dao/task"
+	ziyanpmdt "hcm/pkg/dal/dao/tcloud-ziyan-pm-device-type"
 	"hcm/pkg/dal/dao/tenant"
 	daouser "hcm/pkg/dal/dao/user"
 	"hcm/pkg/kit"
@@ -97,6 +98,7 @@ type Set interface {
 	AccountBizRel() cloud.AccountBizRel
 	Vpc() cloud.Vpc
 	Subnet() cloud.Subnet
+	DeviceType() cloud.DeviceTypeInterface
 	HuaWeiRegion() region.HuaWeiRegion
 	AzureRG() resourcegroup.AzureRG
 	AzureRegion() region.AzureRegion
@@ -157,6 +159,7 @@ type Set interface {
 
 	TCloudZiyanRegion() region.TCloudZiyanRegion
 	TCloudZiyanSGRule() securitygroup.TCloudZiyanSGRule
+	TCloudZiyanPmDeviceType() ziyanpmdt.TCloudZiyanPmDeviceType
 
 	ResPlanTicket() resplan.ResPlanTicketInterface
 	ResPlanSubTicket() resplan.ResPlanSubTicketInterface
@@ -168,7 +171,6 @@ type Set interface {
 	ResPlanPenalty() resplan.ResPlanPenaltyInterface
 	ResPlanWeek() resplan.ResPlanWeekInterface
 	WoaZone() resplan.WoaZoneInterface
-	WoaDeviceType() resplan.WoaDeviceTypeInterface
 	WoaDeviceTypePhysicalRel() resplan.WoaDeviceTypePhysicalRelInterface
 	ResPlanTransferAppliedRecord() resplan.TransferAppliedRecordInterface
 	ShortRentalReturnedRecord() shortrental.ShortRentalReturnedRecordInterface
@@ -414,6 +416,15 @@ func (s *set) Vpc() cloud.Vpc {
 // Subnet returns subnet dao.
 func (s *set) Subnet() cloud.Subnet {
 	return cloud.NewSubnetDao(s.orm, s.idGen, s.audit)
+}
+
+// DeviceType returns device type dao.
+func (s *set) DeviceType() cloud.DeviceTypeInterface {
+	return &cloud.DeviceTypeDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
 }
 
 // Auth return auth dao.
@@ -883,6 +894,11 @@ func (s *set) TCloudZiyanRegion() region.TCloudZiyanRegion {
 	return region.NewTCloudZiyanRegionDao(s.orm, s.idGen)
 }
 
+// TCloudZiyanPmDeviceType 腾讯自研云物理机机型 dao.
+func (s *set) TCloudZiyanPmDeviceType() ziyanpmdt.TCloudZiyanPmDeviceType {
+	return ziyanpmdt.NewTCloudZiyanPmDeviceTypeDao(s.orm, s.idGen, s.audit)
+}
+
 // ResPlanTicket resource plan ticket dao.
 func (s *set) ResPlanTicket() resplan.ResPlanTicketInterface {
 	return &resplan.ResPlanTicketDao{
@@ -967,15 +983,6 @@ func (s *set) ResPlanWeek() resplan.ResPlanWeekInterface {
 // WoaZone woa zone status dao.
 func (s *set) WoaZone() resplan.WoaZoneInterface {
 	return &resplan.WoaZoneDao{
-		Orm:   s.orm,
-		IDGen: s.idGen,
-		Audit: s.audit,
-	}
-}
-
-// WoaDeviceType woa device type dao.
-func (s *set) WoaDeviceType() resplan.WoaDeviceTypeInterface {
-	return &resplan.WoaDeviceTypeDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

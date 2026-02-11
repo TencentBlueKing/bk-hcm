@@ -176,6 +176,8 @@ const (
 	TCloudZiyanRegionTable Name = "tcloud_ziyan_region"
 	// TCloudZiyanSecurityGroupRuleTable 腾讯自研云安全组规则表名
 	TCloudZiyanSecurityGroupRuleTable = "tcloud_ziyan_security_group_rule"
+	// TCloudZiyanPmDeviceTypeTable 腾讯自研云物理机机型表名
+	TCloudZiyanPmDeviceTypeTable Name = "tcloud_ziyan_pm_device_type"
 
 	// ResPlanTicketTable is res_plan_ticket table's name.
 	ResPlanTicketTable = "res_plan_ticket"
@@ -185,8 +187,8 @@ const (
 	ResPlanTicketStatusTable = "res_plan_ticket_status"
 	// WoaZoneTable is woa_zone table's name.
 	WoaZoneTable = "woa_zone"
-	// WoaDeviceTypeTable is woa_device_type table's name.
-	WoaDeviceTypeTable = "woa_device_type"
+	// DeviceTypeTable is device_type table's name.
+	DeviceTypeTable Name = "device_type"
 	// WoaDeviceTypePhysicalRelTable is woa_device_type_physical_rel table's name.
 	WoaDeviceTypePhysicalRelTable = "woa_device_type_physical_rel"
 	// ResPlanCrpDemandTable is res_plan_crp_demand table's name.
@@ -364,6 +366,7 @@ var TableMap = map[Name]TableConfig{
 
 	TCloudZiyanSecurityGroupRuleTable: {},
 	TCloudZiyanRegionTable:            {},
+	TCloudZiyanPmDeviceTypeTable:      {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
@@ -401,7 +404,7 @@ var TableMap = map[Name]TableConfig{
 	ResPlanDemandTable:                {},
 	ResPlanTicketStatusTable:          {},
 	WoaZoneTable:                      {},
-	WoaDeviceTypeTable:                {},
+	DeviceTypeTable:                   {},
 	WoaDeviceTypePhysicalRelTable:     {},
 	ResPlanCrpDemandTable:             {},
 	ResPlanPenaltyTable:               {},

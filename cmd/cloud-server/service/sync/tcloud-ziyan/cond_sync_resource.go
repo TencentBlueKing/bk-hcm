@@ -20,7 +20,10 @@
 package tziyan
 
 import (
+	gosync "sync"
+
 	"hcm/pkg/api/core"
+	protoimage "hcm/pkg/api/hc-service/image"
 	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/api/hc-service/zone"
@@ -45,8 +48,10 @@ type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncPa
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.RegionCloudResType:        CondSyncRegion,
 	enumor.ZoneCloudResType:          CondSyncZone,
+	enumor.ImageCloudResType:         CondSyncImage,
 	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
+	enumor.DeviceType:                CondSyncDeviceType,
 }
 
 // GetCondSyncFunc ...
@@ -129,6 +134,60 @@ func CondSyncZone(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams)
 			return err
 		}
 		logs.Infof("[%s] conditional sync zone end, req: %+v, rid: %s", enumor.TCloudZiyan, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncImage sync image
+func CondSyncImage(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	pipeline := make(chan bool, syncConcurrencyCount)
+	var firstErr error
+	var wg gosync.WaitGroup
+	for _, oneRegion := range params.Regions {
+		pipeline <- true
+		wg.Add(1)
+
+		go func(region string) {
+			defer func() {
+				wg.Done()
+				<-pipeline
+			}()
+
+			// cloud不能根据cloudID或tagFilter进行部分同步
+			req := &protoimage.TCloudImageSyncReq{
+				AccountID: params.AccountID,
+				Region:    region,
+			}
+			err := cliSet.HCService().TCloudZiyan.Image.SyncImage(kt.Ctx, kt.Header(), req)
+			if firstErr == nil && err != nil {
+				logs.Errorf("sync tcloud ziyan image failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+				firstErr = err
+				return
+			}
+		}(oneRegion)
+	}
+
+	wg.Wait()
+
+	if firstErr != nil {
+		return firstErr
+	}
+
+	return nil
+}
+
+// CondSyncDeviceType sync device type
+func CondSyncDeviceType(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.TCloudSyncReq{AccountID: params.AccountID}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloudZiyan.DeviceType.SyncDeviceType(kt, &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync device type failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloudZiyan, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync device type end, req: %+v, rid: %s", enumor.TCloudZiyan, syncReq, kt.Rid)
 	}
 	return nil
 }

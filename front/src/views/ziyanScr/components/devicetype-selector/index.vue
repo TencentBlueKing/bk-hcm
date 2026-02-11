@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Select, Popover } from 'bkui-vue';
-import http from '@/http';
 import isEqual from 'lodash/isEqual';
 import type { CvmDeviceType, IProps, OptionsType, SelectionType } from './types';
 import { SelectColumn } from '@blueking/ediatable';
+import { useCvmDeviceStore } from '@/store/cvm/device';
+import { useIdcpmDeviceStore } from '@/store/idcpm/device';
 
 defineOptions({ name: 'DeviceTypeSelector' });
 
@@ -24,6 +25,9 @@ const props = withDefaults(defineProps<IProps>(), {
 const emit = defineEmits<(e: 'change', result: SelectionType) => void>();
 
 const { Option } = Select;
+
+const cvmDeviceStore = useCvmDeviceStore();
+const idcpmDeviceStore = useIdcpmDeviceStore();
 
 const triggerChange = (val: string | string[]) => {
   let result: SelectionType;
@@ -56,59 +60,50 @@ const loading = ref(false);
 const getOptions = async () => {
   if (props.disabled) return;
   const { resourceType, params, sort } = props;
-  const {
-    require_type,
-    region,
-    zone,
-    device_group,
-    device_size,
-    cpu,
-    mem,
-    disk,
-    enable_capacity,
-    enable_apply,
-    technical_class,
-  } = params;
 
-  // 小额与春保资源池时使用常规需求类型，require_type可能是多选，这里暂仅考虑主机申请与修改场景单选
-  const requireType = [7, 8].includes(require_type as number) ? 1 : require_type;
+  const { vendor, region, zone, device_family, core_type, cpu, mem, disk, disable = false, technical_class } = params;
 
+  // 使用常规 filter 格式（QueryRuleOPEnum）
   const buildRules = (fields: Array<{ field: string; value: number | string | Array<number | string> | boolean }>) => {
     return fields.reduce((prev, curr) => {
       const { field, value } = curr;
       if (Array.isArray(value) && value.length > 0) {
-        prev.push({ field, operator: 'in', value });
+        prev.push({ field, op: 'in', value });
       }
-      if (!Array.isArray(value) && value) {
-        prev.push({ field, operator: 'equal', value });
+      // 处理布尔值（包括 false）和其他非空值
+      if (!Array.isArray(value) && value !== undefined && value !== null && value !== '') {
+        prev.push({ field, op: 'eq', value });
       }
       return prev;
     }, []);
   };
 
   const rules = buildRules([
-    { field: 'require_type', value: requireType },
+    { field: 'vendor', value: vendor },
     { field: 'region', value: region },
     { field: 'zone', value: zone },
-    { field: 'label.device_group', value: device_group },
-    { field: 'label.device_size', value: device_size },
-    { field: 'cpu', value: cpu },
-    { field: 'mem', value: mem },
+    { field: 'device_family', value: device_family },
+    { field: 'core_type', value: core_type },
+    { field: 'cpu_core', value: cpu },
+    { field: 'memory', value: mem },
     { field: 'disk', value: disk },
-    { field: 'enable_capacity', value: enable_capacity },
-    { field: 'enable_apply', value: enable_apply },
-    { field: 'label.technical_class', value: technical_class },
+    { field: 'disable', value: disable },
+    { field: 'technical_class', value: technical_class },
   ]);
 
-  const filter = rules.length ? { condition: 'AND', rules } : undefined;
+  const filter = rules.length ? { op: 'and' as const, rules } : undefined;
 
   loading.value = true;
   try {
-    const url = `/api/v1/woa/config/findmany/config/${resourceType}/devicetype`;
-    const data = resourceType === 'cvm' ? { filter } : {};
-
-    const res = await http.post(url, data);
-    options.value[resourceType] = res.data?.info || [];
+    if (resourceType === 'cvm') {
+      // CVM 使用 getDeviceTypeFullList 全量拉取
+      const { list } = await cvmDeviceStore.getDeviceTypeFullList({ filter });
+      options.value[resourceType] = list as any;
+    } else {
+      // idcpm 使用 getDeviceTypeFullList 全量拉取
+      const { list } = await idcpmDeviceStore.getDeviceTypeFullList();
+      options.value[resourceType] = list as any;
+    }
 
     if (typeof sort === 'function') {
       options.value[resourceType].sort(sort);

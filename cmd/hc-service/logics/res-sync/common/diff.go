@@ -42,6 +42,7 @@ import (
 	coreargstpl "hcm/pkg/api/core/cloud/argument-template"
 	corecert "hcm/pkg/api/core/cloud/cert"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	coredevicetype "hcm/pkg/api/core/cloud/device-type"
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	coreimage "hcm/pkg/api/core/cloud/image"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -158,7 +159,9 @@ type CloudResType interface {
 		typeslb.TCloudClb |
 		typeslb.TCloudListener |
 		typeslb.TCloudUrlRule |
-		typeslb.Backend
+		typeslb.Backend |
+
+		coredevicetype.DeviceType
 }
 
 // TestCloudRes 测试云资源类型
@@ -190,6 +193,7 @@ type DBResType interface {
 		corezone.Zone[corezone.TCloudZiyanZoneExtension] |
 
 		coreimage.Image[coreimage.TCloudExtension] |
+		coreimage.Image[coreimage.TCloudZiyanExtension] |
 		coreimage.Image[coreimage.HuaWeiExtension] |
 		coreimage.Image[coreimage.AwsExtension] |
 		coreimage.Image[coreimage.AzureExtension] |
@@ -269,7 +273,9 @@ type DBResType interface {
 		corelb.TCloudLoadBalancer |
 		corelb.TCloudLbUrlRule |
 		corelb.TCloudListener |
-		corelb.BaseTarget
+		corelb.BaseTarget |
+
+		coredevicetype.DeviceType
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

@@ -1,14 +1,13 @@
 interface CvmDeviceTypeReqParams {
-  require_type?: number | number[];
+  vendor?: string;
   region?: string | string[];
   zone?: string | string[];
-  device_group?: string[];
-  device_size?: string;
+  device_family?: string[]; // 原 device_group
+  core_type?: string; // 核心类型，枚举值：小核心、中核心、大核心
   cpu?: number | string;
   mem?: number | string;
   disk?: number | string;
-  enable_capacity?: boolean | string;
-  enable_apply?: boolean | string;
+  disable?: boolean; // 原 enable_apply，改为 disable，默认值 false
   technical_class?: string;
 }
 
@@ -29,23 +28,22 @@ export interface IProps {
 export interface CvmDeviceType {
   device_type: string; // 机型
   device_type_class: 'SpecialType' | 'CommonType'; // 通/专用机型，SpecialType专用，CommonType通用
-  cpu_amount: number; // cpu核数
-  device_group: string; // 机型族
-  ram_amount: number; // 内容容量
+  cpu_core: number; // cpu核数（原 cpu_amount）
+  device_family: string; // 机型族（原 device_group）
+  memory: number; // 内存容量（原 ram_amount）
+  core_type: string; // 核心类型，枚举值：小核心、中核心、大核心
   technical_class: string; // 技术分类
+  device_class?: string; // 机型分类
 }
 export type CvmDeviceTypeList = Array<CvmDeviceType>;
 
 // 物理机
 export interface IdcpmDeviceType {
-  id: number;
+  id: string; // 改为字符串类型
   device_type: string;
-  cpu: number;
-  mem: number;
+  cpu_core: number; // 原 cpu
+  memory: number; // 原 mem
   raid: string;
-  network: string;
-  remark: string;
-  label: object;
 }
 export type IdcpmDeviceTypeList = Array<IdcpmDeviceType>;
 

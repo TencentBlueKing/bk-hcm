@@ -25,10 +25,10 @@ import (
 	"time"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
+	dt "hcm/pkg/api/core/cloud/device-type"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	dmtypes "hcm/pkg/dal/dao/types/meta"
-	wdt "hcm/pkg/dal/table/resource-plan/woa-device-type"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/slice"
@@ -249,8 +249,8 @@ func (d *Dispatcher) aggregateDemandChangeInfoByProductName(kt *kit.Kit, changeD
 	return changeDemandBizMap, nil
 }
 
-func (d *Dispatcher) getMetas(kt *kit.Kit) (
-	map[string]string, map[string]dmtypes.RegionArea, map[string]wdt.WoaDeviceTypeTable, error) {
+func (d *Dispatcher) getMetas(kt *kit.Kit) (map[string]string, map[string]dmtypes.RegionArea,
+	map[string]dt.DistinctDeviceType, error) {
 
 	// 从 woa_zone 获取城市/地区的中英文对照
 	zoneMap, regionAreaMap, deviceTypeMap, err := d.resFetcher.GetMetaMaps(kt)

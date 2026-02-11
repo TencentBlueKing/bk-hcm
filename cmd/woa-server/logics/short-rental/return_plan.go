@@ -27,6 +27,7 @@ import (
 	"hcm/cmd/woa-server/dal/task/table"
 	srtypes "hcm/cmd/woa-server/types/short-rental"
 	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -270,13 +271,14 @@ func (l *logics) getHostCPUCore(kt *kit.Kit, hosts []*table.RecycleHost) ([]*tab
 	// 根据设备列表获取设备机型CPU核数
 	deviceTypeCpuCores := make(map[string]int64)
 	for _, batch := range slice.Split(deviceTypes, int(core.DefaultMaxPageLimit)) {
-		listReq := &rpproto.WoaDeviceTypeListReq{
+		listReq := &protocloud.DistinctDeviceTypeListReq{
 			ListReq: core.ListReq{
-				Filter: tools.ContainersExpression("device_type", batch),
-				Page:   core.NewDefaultBasePage(),
+				Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", enumor.TCloudZiyan),
+					tools.RuleIn("device_type", batch)),
+				Page: core.NewDefaultBasePage(),
 			},
 		}
-		rst, err := l.client.DataService().Global.ResourcePlan.ListWoaDeviceType(kt, listReq)
+		rst, err := l.client.DataService().TCloudZiyan.DeviceType.ListDistinctDeviceType(kt, listReq)
 		if err != nil {
 			logs.Errorf("list woa device type failed, err: %v, deviceTypes: %v, rid: %s", err, batch, kt.Rid)
 			return nil, err

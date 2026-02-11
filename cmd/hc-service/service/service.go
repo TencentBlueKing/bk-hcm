@@ -64,6 +64,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/cvmapi"
 	"hcm/pkg/thirdparty/esb"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
@@ -76,6 +77,7 @@ type Service struct {
 	serve        *http.Server
 	clientSet    *client.ClientSet
 	cloudAdaptor *cloudadaptor.CloudAdaptorClient
+	crpCli       cvmapi.CVMClientInterface
 }
 
 // NewService create a service instance.
@@ -106,9 +108,14 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
+	crpCli, err := cvmapi.NewCVMClientInterface(cvmapi.CVMCli{CvmApiAddr: cc.HCService().Crp.Host}, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
 	svr := &Service{
 		clientSet:    cliSet,
 		cloudAdaptor: cloudAdaptor,
+		crpCli:       crpCli,
 	}
 
 	return svr, nil
@@ -182,6 +189,7 @@ func (s *Service) apiSet() *restful.Container {
 		ClientSet:    s.clientSet,
 		CloudAdaptor: s.cloudAdaptor,
 		ResSyncCli:   ressync.NewClient(s.cloudAdaptor, s.clientSet.DataService()),
+		CrpCli:       s.crpCli,
 	}
 
 	account.InitAccountService(c)

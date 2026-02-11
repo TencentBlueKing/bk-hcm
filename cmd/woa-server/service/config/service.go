@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/woa-server/logics/config"
 	"hcm/cmd/woa-server/logics/plan"
 	"hcm/cmd/woa-server/service/capability"
+	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
@@ -36,6 +37,7 @@ func InitService(c *capability.Capability) {
 		authorizer: c.Authorizer,
 		logics:     c.ConfigLogics,
 		planLogics: c.PlanController,
+		client:     c.Client,
 	}
 	h := rest.NewHandler()
 
@@ -64,6 +66,7 @@ type service struct {
 	logics     config.Logics
 	planLogics plan.Logics
 	authorizer auth.Authorizer
+	client     *client.ClientSet
 }
 
 func (s *service) initCommonRestrict(h *rest.Handler) {
@@ -73,9 +76,10 @@ func (s *service) initCommonRestrict(h *rest.Handler) {
 
 func (s *service) initCvmImage(h *rest.Handler) {
 	h.Add("GetCvmImage", http.MethodPost, "/config/findmany/config/cvm/image", s.GetCvmImage)
-	h.Add("CreateCvmImage", http.MethodPost, "/config/create/config/cvm/image", s.CreateCvmImage)
-	h.Add("UpdateCvmImage", http.MethodPut, "/config/update/config/cvm/image/{id}", s.UpdateCvmImage)
-	h.Add("DeleteCvmImage", http.MethodDelete, "/config/delete/config/cvm/image/{id}", s.DeleteCvmImage)
+	h.Add("BatchEnableImageToApplyCVM", http.MethodPost, "/config/images/enable_cvm/batch",
+		s.BatchEnableImageToApplyCVM)
+	h.Add("BatchDisableImageToApplyCVM", http.MethodPost, "/config/images/disable_cvm/batch",
+		s.BatchDisableImageToApplyCVM)
 }
 
 func (s *service) initCvmRestrict(h *rest.Handler) {
@@ -83,19 +87,12 @@ func (s *service) initCvmRestrict(h *rest.Handler) {
 }
 
 func (s *service) initDevice(h *rest.Handler) {
-	h.Add("GetDeviceWithCapacity", http.MethodPost, "/config/findmany/config/cvm/device/detail",
-		s.GetDeviceWithCapacity)
-	h.Add("GetDevice", http.MethodPost, "/config/findmany/config/cvm/device/detail/avail", s.GetDevice)
 	h.Add("GetDeviceType", http.MethodPost, "/config/findmany/config/cvm/devicetype", s.GetDeviceType)
-	h.Add("GetDeviceTypeDetail", http.MethodPost, "/config/findmany/config/cvm/devicetype/detail",
-		s.GetDeviceTypeDetail)
 	h.Add("GetCvmDeviceDetail", http.MethodPost, "/config/findmany/config/cvm/device", s.GetCvmDeviceDetail)
-	h.Add("CreateDevice", http.MethodPost, "/config/create/config/cvm/device", s.CreateDevice)
 	h.Add("CreateManyDevice", http.MethodPost, "/config/createmany/config/cvm/device", s.CreateManyDevice)
-	h.Add("UpdateDevice", http.MethodPut, "/config/update/config/cvm/device/{id}", s.UpdateDevice)
 	h.Add("UpdateDeviceProperty", http.MethodPut, "/config/updatemany/config/cvm/device/property",
 		s.UpdateDeviceProperty)
-	h.Add("DeleteDevice", http.MethodDelete, "/config/delete/config/cvm/device/{id}", s.DeleteDevice)
+	h.Add("DeleteDevice", http.MethodDelete, "/config/delete/config/cvm/device", s.DeleteDevice)
 	h.Add("GetDvmDeviceType", http.MethodPost, "/config/findmany/config/dvm/devicetype", s.GetDvmDeviceType)
 	h.Add("CreateDvmDevice", http.MethodPost, "/config/create/config/dvm/device", s.CreateDvmDevice)
 	h.Add("GetPmDeviceType", http.MethodPost, "/config/findmany/config/idcpm/devicetype", s.GetPmDeviceType)
