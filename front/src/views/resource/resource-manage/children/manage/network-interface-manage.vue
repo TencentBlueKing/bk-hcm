@@ -1,63 +1,27 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
-
-import { PropType, computed } from 'vue';
-
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
-
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
-  whereAmI: {
-    type: String,
-  },
-});
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
 const { columns, settings } = useColumns('networkInterface');
 
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.NETWORK_INTERFACE);
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
-  {
-    ...props,
-    filter: filter.value,
-  },
+  { filter: filter.value },
   'network_interfaces',
 );
-
-const selectSearchData = computed(() => {
-  return [
-    {
-      name: '接口 ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-    ...[
-      {
-        name: '公网ipv4',
-        id: 'public_ipv4',
-      },
-      {
-        name: '内网ipv4',
-        id: 'private_ipv4',
-      },
-    ],
-  ];
-});
 </script>
 
 <template>
   <bk-loading :loading="isLoading">
-    <bk-search-select
+    <resource-search-select
       class="search"
-      clearable
-      :conditions="[]"
-      :data="selectSearchData"
       v-model="searchValue"
-      value-behavior="need-key"
+      :resource-type="ResourceTypeEnum.NETWORK_INTERFACE"
+      @change="(condition) => searchQs.set(condition)"
     />
     <bk-table
       :settings="settings"
@@ -76,7 +40,6 @@ const selectSearchData = computed(() => {
 
 <style lang="scss" scoped>
 .search {
-  width: 500px;
   margin-left: auto;
 }
 </style>

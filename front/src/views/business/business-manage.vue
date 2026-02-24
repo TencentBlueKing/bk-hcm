@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide } from 'vue';
-import { QueryRuleOPEnum } from '@/typings/common';
+import { ref, computed, provide, type Component } from 'vue';
 import HostManage from '@/views/business/host/host-manage.vue';
 import VpcManage from '@/views/resource/resource-manage/children/manage/vpc-manage.vue';
 import SubnetManage from '@/views/resource/resource-manage/children/manage/subnet-manage.vue';
@@ -10,7 +9,6 @@ import IpManage from '@/views/resource/resource-manage/children/manage/ip-manage
 import RoutingManage from '@/views/resource/resource-manage/children/manage/routing-manage.vue';
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
-import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 // forms
@@ -22,9 +20,20 @@ import TemplateDialog from '@/views/resource/resource-manage/children/dialog/tem
 
 import { useRoute, useRouter } from 'vue-router';
 
-import { useAccountStore } from '@/store/account';
 import { InfoBox } from 'bkui-vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import {
+  MENU_BUSINESS_HOST_MANAGEMENT,
+  MENU_BUSINESS_DISK_MANAGEMENT,
+  MENU_BUSINESS_VPC_MANAGEMENT,
+  MENU_BUSINESS_SUBNET_MANAGEMENT,
+  MENU_BUSINESS_EIP_MANAGEMENT,
+  MENU_BUSINESS_IMAGE_MANAGEMENT,
+  MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+  MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
+  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+} from '@/constants/menu-symbol';
 
 const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
@@ -38,7 +47,7 @@ const templateDialogPayload = ref({});
 // use hooks
 const route = useRoute();
 const router = useRouter();
-const accountStore = useAccountStore();
+const { getBizsId } = useWhereAmI();
 
 const gcpTitle = ref<string>('新增');
 const isAdd = ref(true);
@@ -51,61 +60,33 @@ provide('securityType', securityType); // 将数据传入孙组件
 // 用于判断 sideslider 中的表单数据是否改变
 const isFormDataChanged = ref(false);
 
-// 组件map
-const componentMap = {
-  host: HostManage,
-  vpc: VpcManage,
-  subnet: SubnetManage,
-  security: SecurityManage,
-  drive: DriveManage,
-  ip: IpManage,
-  routing: RoutingManage,
-  image: ImageManage,
-  'network-interface': NetworkInterfaceManage,
-  recyclebin: recyclebinManage,
-};
-const formMap = {
-  ip: EipForm,
-  subnet: subnetForm,
-  security: securityForm,
-};
+const componentMap = new Map<symbol, Component>([
+  [MENU_BUSINESS_HOST_MANAGEMENT, HostManage],
+  [MENU_BUSINESS_DISK_MANAGEMENT, DriveManage],
+  [MENU_BUSINESS_VPC_MANAGEMENT, VpcManage],
+  [MENU_BUSINESS_SUBNET_MANAGEMENT, SubnetManage],
+  [MENU_BUSINESS_EIP_MANAGEMENT, IpManage],
+  [MENU_BUSINESS_IMAGE_MANAGEMENT, ImageManage],
+  [MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT, NetworkInterfaceManage],
+  [MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT, RoutingManage],
+  [MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, SecurityManage],
+]);
 
-const renderComponent = computed(() => {
-  return Object.keys(componentMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = componentMap[cur];
-    return acc;
-  }, {});
-});
+const formMap = new Map<symbol, Component>([
+  [MENU_BUSINESS_EIP_MANAGEMENT, EipForm],
+  [MENU_BUSINESS_SUBNET_MANAGEMENT, subnetForm],
+  [MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, securityForm],
+]);
+
+const activeKey = computed(() => route.name as symbol);
+
+const renderComponent = computed(() => componentMap.get(activeKey.value));
 
 const renderForm = computed(() => {
-  return Object.keys(formMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) {
-      if (cur === 'security') acc = securityType.value === 'gcp' ? firewallForm : securityForm;
-      else acc = formMap[cur];
-    }
-    return acc;
-  }, {});
-});
-
-const filter = computed(() => {
-  if (renderComponent.value === HostManage) {
-    return {
-      op: 'and',
-      rules: [
-        {
-          op: QueryRuleOPEnum.NEQ,
-          field: 'recycle_status',
-          value: 'recycling',
-        },
-      ],
-    };
+  if (activeKey.value === MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT && securityType.value === 'gcp') {
+    return firewallForm;
   }
-  return { op: 'and', rules: [] };
-});
-
-const isResourcePage = computed(() => {
-  // 资源下没有业务ID
-  return !accountStore.bizs;
+  return formMap.get(activeKey.value);
 });
 
 const handleAdd = () => {
@@ -176,15 +157,6 @@ const submit = async (data: any) => {
   isLoading.value = false;
 };
 
-// const handleToPage = () => {
-//   const isHostManagePage = route.path.includes('/business/host');
-//   const isDriveManagePage = route.path.includes('/business/drive');
-//   let destination = '';
-//   if (isHostManagePage) destination = '/business/host/recyclebin/cvm';
-//   if (isDriveManagePage) destination = '/business/drive/recyclebin/disk';
-//   router.push({ path: destination });
-// };
-
 const handleBeforeClose = () => {
   if (isFormDataChanged.value) {
     InfoBox({
@@ -219,28 +191,18 @@ const handleEditTemplate = (payload: any) => {
 </script>
 
 <template>
-  <div
-    class="business-manage-wrapper"
-    :class="[
-      route.path === '/business/host' ? 'is-host-page' : '',
-      route.path === '/business/recyclebin' ? 'is-recycle-page' : '',
-    ]"
-  >
-    <bk-loading class="common-card-wrap" :loading="!accountStore.bizs">
+  <div class="business-manage-wrapper">
+    <div class="common-card-wrap">
       <component
-        v-if="accountStore.bizs"
         ref="componentRef"
         :is="renderComponent"
-        :filter="filter"
-        :is-resource-page="isResourcePage"
-        :bk-biz-id="accountStore.bizs"
         @handle-secrity-type="handleSecrityType"
         @edit-template="handleEditTemplate"
         @edit="handleEdit"
         v-model:is-form-data-changed="isFormDataChanged"
       >
         <span>
-          <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+          <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [getBizsId()] }" v-slot="{ noPerm }">
             <bk-button theme="primary" class="mw64" :disabled="noPerm" @click="handleAdd">
               {{
                 renderComponent === DriveManage ||
@@ -253,14 +215,8 @@ const handleEditTemplate = (payload: any) => {
             </bk-button>
           </hcm-auth>
         </span>
-
-        <template #recycleHistory>
-          <!-- <bk-button class="f-right" theme="primary" @click="handleToPage">
-            {{ '回收记录' }}
-          </bk-button> -->
-        </template>
       </component>
-    </bk-loading>
+    </div>
     <bk-sideslider
       v-model:is-show="isShowSideSlider"
       width="800"
@@ -271,7 +227,6 @@ const handleEditTemplate = (payload: any) => {
       <template #default>
         <component
           :is="renderForm"
-          :filter="filter"
           @cancel="handleCancel"
           @success="handleSuccess"
           :detail="formDetail"
@@ -323,23 +278,6 @@ const handleEditTemplate = (payload: any) => {
       .bk-table {
         margin-top: 16px;
         max-height: calc(100% - 48px);
-      }
-    }
-  }
-
-  &.is-host-page {
-    padding-bottom: 0;
-  }
-
-  &.is-recycle-page .common-card-wrap {
-    padding: 0;
-    background-color: transparent;
-
-    :deep(.recycle-manager-page) {
-      height: 100%;
-
-      .bk-tab {
-        height: 100%;
       }
     }
   }

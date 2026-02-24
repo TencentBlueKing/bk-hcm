@@ -2,15 +2,14 @@
 import type {
   // PlainObject,
   DoublePlainObject,
-  FilterType,
 } from '@/typings/resource';
 import { Button, Dropdown, Message, Checkbox, bkTooltips } from 'bkui-vue';
-import { PropType, Ref, h, inject, reactive, ref, withDirectives } from 'vue';
+import { Ref, h, inject, reactive, ref, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilterHost from '@/views/resource/resource-manage/hooks/use-filter-host';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
 import { useHostStore, useResourceStore } from '@/store';
 import HostOperations, { operationMap, OperationActions } from '../../common/table/HostOperations';
 import Confirm, { confirmInstance } from '@/components/confirm';
@@ -26,15 +25,9 @@ import type { ICvmItem } from '@/store';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { parseIP } from '@/utils';
 
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
+defineProps({
   isResourcePage: {
     type: Boolean,
-  },
-  whereAmI: {
-    type: String,
   },
 });
 
@@ -42,7 +35,7 @@ const { DropdownMenu, DropdownItem } = Dropdown;
 
 const { t } = useI18n();
 
-const { searchValue, filter } = useFilterHost(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.CVM);
 const validateValues: ValidateValuesFunc = async (item, values) => {
   if (!item) return '请选择条件';
   // IP值为单选，这里可以简单处理（即便是多IP搜索，粘贴上去也是一个值）
@@ -322,6 +315,7 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
           v-model="searchValue"
           :resource-type="ResourceTypeEnum.CVM"
           :validate-values="validateValues"
+          @change="(condition) => searchQs.set(condition)"
         />
         <slot name="recycleHistory"></slot>
       </div>

@@ -6,7 +6,7 @@ import { useSingleList } from '@/hooks/useSingleList';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { Protocol, QueryRuleOPEnum } from '@/typings';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_TG_VIEW } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { Option } = Select;
@@ -67,7 +67,7 @@ export default defineComponent({
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {
       routerAction.open({
-        name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+        name: MENU_BUSINESS_LOAD_BALANCER_TG_VIEW,
         query: { [GLOBAL_BIZS_KEY]: accountStore.bizs },
       });
     };

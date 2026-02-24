@@ -1,0 +1,154 @@
+---
+description: 前端项目约定 - 代码规范和最佳实践
+globs:
+  - "front/**/*.vue"
+  - "front/**/*.ts"
+  - "front/**/*.tsx"
+alwaysApply: true
+---
+
+# 前端项目约定
+
+## 1. Vue 单文件组件结构
+
+Vue 单文件组件 (.vue) 必须按照以下顺序定义代码块：
+
+1. `<script>` 或 `<script setup>`
+2. `<template>`
+3. `<style>`
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const count = ref(0);
+</script>
+
+<template>
+  <div>{{ count }}</div>
+</template>
+
+<style scoped lang="scss">
+div {
+  color: #333;
+}
+</style>
+```
+
+---
+
+## 2. bk-table 使用规范
+
+### 2.1 Column render 函数
+
+在 `bk-table-column` 的 `render` 函数中，**必须使用 `row` 而不是 `data`** 来访问行数据。
+
+**原因**：`data` 参数是非响应式的，`row` 参数是响应式的。
+
+```typescript
+// ❌ 错误：使用 data
+const columnConfig = {
+  name: {
+    render: ({ data }) => data.name,
+  },
+};
+
+// ✅ 正确：使用 row
+const columnConfig = {
+  name: {
+    render: ({ row }: { row?: IDataItem }) => row.name,
+  },
+};
+```
+
+### 2.2 表格选择功能
+
+使用 `useTableSelection` hook 处理表格多选，而不是手写选择逻辑。
+
+```typescript
+// ❌ 错误：手写选择逻辑
+const selectedItems = ref([]);
+const handleSelectionChange = ({ checked, row, isAll }) => {
+  if (isAll) {
+    selectedItems.value = checked ? tableData.value : [];
+  } else if (row) {
+    // ... 手动处理
+  }
+};
+
+// ✅ 正确：使用 useTableSelection
+import useTableSelection from '@/hooks/use-table-selection';
+
+const isRowSelectable = ({ row }) => {
+  return row.status === 'init'; // 根据业务逻辑判断
+};
+
+const {
+  selections,           // 已选择的项
+  checked,              // 已选择项的 id 列表（用于表格默认勾选）
+  handleSelectChange,   // 单个选择事件处理
+  handleSelectAll,      // 全选事件处理
+  resetSelections,      // 重置选择
+} = useTableSelection({ isRowSelectable });
+```
+
+**模板绑定**：
+- `:is-row-select-enable` - 控制行 checkbox 禁用状态（与 hook 的 isRowSelectable 使用同一个函数）
+- `@select-all` 和 `@selection-change` - 绑定 hook 返回的事件处理函数
+
+```vue
+<bk-table
+  :data="tableData"
+  :is-row-select-enable="isRowSelectable"
+  @select-all="handleSelectAll"
+  @selection-change="handleSelectChange"
+/>
+```
+
+**注意**：`isRowSelectable` 同时传递给 hook 和 table，确保选择逻辑和 UI 禁用状态一致。
+
+---
+
+## 3. bkui-vue3 组件使用
+
+### 3.1 查阅文档的场景
+
+使用 bkui-vue3 组件时，以下场景应主动查阅 MCP 文档：
+
+- **配置属性**：不确定是否有对应的 prop
+- **复杂组件**：bk-table、bk-form、bk-tree、bk-dialog 等
+- **事件和插槽**：确认名称和参数
+- **不确定的用法**：可能有更好的内置方案
+
+### 3.2 查阅方式
+
+```
+// 使用 bkui-vue3 MCP 工具
+get-component { name: "form" }
+get-components-batch { names: ["form", "input", "select"] }
+```
+
+### 3.3 实践建议
+
+1. **宁可多查一次，不要猜错实现**
+2. **发现组件能力不足时，先确认是否遗漏了内置功能**
+3. **避免不必要的样式覆盖**
+
+---
+
+## 4. 响应式数据传递
+
+传递 reactive 对象给外部函数时，应创建副本而非传递引用。
+
+```typescript
+// ❌ 错误：传递 reactive 引用
+await submitHandler(formModel);
+resetForm(); // 可能影响已传递的数据
+
+// ✅ 正确：传递副本
+await submitHandler({
+  field1: formModel.field1,
+  field2: formModel.field2,
+});
+resetForm(); // 不影响已传递的数据
+```

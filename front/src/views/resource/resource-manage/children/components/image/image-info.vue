@@ -71,6 +71,7 @@ const { loading, detail } = useDetail(
     }
   },
   props.vendor,
+  true,
 );
 </script>
 

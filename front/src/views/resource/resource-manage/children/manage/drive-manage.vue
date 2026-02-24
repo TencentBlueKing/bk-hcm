@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
-
-import { PropType, h, computed, withDirectives } from 'vue';
+import { h, computed, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { bkTooltips, Button, InfoBox, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
@@ -9,24 +7,22 @@ import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
 import { VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { AUTH_BIZ_DELETE_IAAS_RESOURCE, AUTH_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
-  bkBizId: Number,
 });
+
+const { getBizsId } = useWhereAmI();
 
 const { t } = useI18n();
 
@@ -34,17 +30,7 @@ const { columns, settings } = useColumns('drive');
 const simpleColumns = useColumns('drive', true).columns;
 const resourceStore = useResourceStore();
 
-const selectSearchData = computed(() => {
-  return [
-    {
-      name: '云硬盘ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-  ];
-});
-
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.DISK);
 
 const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   let res = true;
@@ -112,7 +98,7 @@ const renderColumns = [
     render({ data }: any) {
       return h(
         HcmAuth,
-        { sign: { type: deleteAuthType.value, relation: [props.bkBizId] } },
+        { sign: { type: deleteAuthType.value, relation: [getBizsId()] } },
         {
           default: ({ noPerm }: { noPerm: boolean }) =>
             withDirectives(
@@ -197,7 +183,7 @@ const isCurRowSelectEnable = (row: any) => {
           }
         "
       />
-      <hcm-auth :sign="{ type: deleteAuthType, relation: [props.bkBizId] }" v-slot="{ noPerm }">
+      <hcm-auth :sign="{ type: deleteAuthType, relation: [getBizsId()] }" v-slot="{ noPerm }">
         <bk-button
           class="mw88"
           :disabled="selections.length <= 0 || noPerm"
@@ -214,13 +200,10 @@ const isCurRowSelectEnable = (row: any) => {
       </hcm-auth>
 
       <div class="flex-row align-items-center justify-content-arround mlauto">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :data="selectSearchData"
+        <resource-search-select
           v-model="searchValue"
-          value-behavior="need-key"
+          :resource-type="ResourceTypeEnum.DISK"
+          @change="(condition) => searchQs.set(condition)"
         />
         <slot name="recycleHistory"></slot>
       </div>

@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 import VPCCidr from '../components/vpc/vpc-cidr.vue';
@@ -9,7 +8,7 @@ import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
 import bus from '@/common/bus';
 
-import { ref, inject, computed, watch } from 'vue';
+import { ref, inject, computed, watch, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -19,12 +18,14 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = [
   {
@@ -122,7 +123,7 @@ const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
-const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail: any) => {
+const { loading, detail } = useDetail('vpcs', route.params.id as string, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       VPCFields.value.push(
@@ -275,6 +276,12 @@ const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail:
   }
 });
 
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`VPC：（${detail.value.id}）`);
+  }
+});
+
 const vpcRelateSubnetCount = ref(0);
 watch(
   () => detail.value.id,
@@ -396,25 +403,21 @@ const handleDeleteVpc = (data: any) => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      VPC：（{{ detail.id }}）
-      <template #right>
-        <div @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            @click="handleDeleteVpc(detail)"
-            :disabled="disabledOption"
-            v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-      </template>
-    </detail-header>
+  <Teleport to="#breadcrumbExtra">
+    <div @click="showAuthDialog(actionName)">
+      <bk-button
+        theme="primary"
+        @click="handleDeleteVpc(detail)"
+        :disabled="disabledOption"
+        v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </div>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <bk-loading :loading="loading">
+    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default>
           <detail-info

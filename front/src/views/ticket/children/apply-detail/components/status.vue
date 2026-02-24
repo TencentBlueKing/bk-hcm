@@ -8,7 +8,7 @@ import copyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { APPLICATION_STATUS_MAP } from '@/views/ticket/constants';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import qs from 'qs';
 
 const props = defineProps<{ applicationDetail: IApplicationDetail }>();
@@ -36,7 +36,7 @@ const handleGotoClbList = () => {
         },
       ),
     };
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW, query });
   } catch (e) {
     console.error(e);
   }

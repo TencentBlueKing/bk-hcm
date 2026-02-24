@@ -1,44 +1,47 @@
 <script lang="ts" setup>
-import { defineProps, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, watch } from 'vue';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../../common/info-list/types';
+import { MENU_BUSINESS_VPC_DETAILS, MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   detail: Object,
 });
 
-const route = useRoute();
-const router = useRouter();
+const { whereAmI } = useWhereAmI();
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
+const BUSINESS_DETAIL_MAP: Record<string, symbol> = {
+  vpc: MENU_BUSINESS_VPC_DETAILS,
+  host: MENU_BUSINESS_HOST_DETAILS,
+};
+
 const txtBtn = (id: string, type: string) => {
   const routeInfo: any = {
     query: {
-      id,
       type: props.detail.vendor,
     },
   };
-  // 业务下
-  if (route.path.includes('business')) {
+  if (whereAmI.value === Senarios.business) {
     Object.assign(routeInfo, {
-      name: `${type}BusinessDetail`,
+      name: BUSINESS_DETAIL_MAP[type],
+      params: { id },
     });
   } else {
     Object.assign(routeInfo, {
-      name: 'resourceDetail',
-      params: {
-        type,
-      },
+      name: MENU_RESOURCE_DETAIL,
+      params: { resourceType: type, id },
     });
   }
-  router.push(routeInfo);
+  routerAction.redirect(routeInfo, { history: true });
 };
 
 const baseTabs = [

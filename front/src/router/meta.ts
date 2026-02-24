@@ -1,23 +1,24 @@
+import type { RouteLocationNormalized } from 'vue-router';
+import type { IAuthSign, IPermission } from '@/common/auth-service';
+
 interface Menu {
   i18n?: string;
   parent?: any;
-  relative?: any;
+  relative?: string | symbol;
 }
 
-interface AuthView {
-  type: string;
-  relation?: number[] | string[];
-}
+// 视图权限配置函数，接收完整的路由信息
+export type AuthViewFn = (to: RouteLocationNormalized) => IAuthSign;
 
 interface Auth {
   superView?: any;
-  view?: AuthView | (() => AuthView);
+  view?: IAuthSign | AuthViewFn;
   operation?: any;
   permission?: any;
 }
 
 interface Layout {
-  breadcrumbs?: {
+  breadcrumb?: {
     show?: boolean;
     back?: boolean;
   };
@@ -29,7 +30,8 @@ interface Extra {
 
 export interface RouteMetaConfig {
   available?: boolean;
-  owner?: symbol | string;
+  owner?: symbol;
+  /** @deprecated 使用 menu.i18n 代替 */
   title?: string;
   authKey?: string;
   view?: string;
@@ -37,18 +39,16 @@ export interface RouteMetaConfig {
   menu?: Menu;
   auth?: Auth;
   layout?: Layout;
-  notMenu?: boolean;
-  activeKey?: symbol | string;
+  activeKey?: symbol;
+  /** @deprecated 使用 layout.breadcrumb.show 代替 */
   isShowBreadcrumb?: boolean;
-  icon?: string;
+  permissionData?: IPermission;
 }
 
 export default class Meta {
   available = true;
 
-  owner = '';
-
-  title = '';
+  owner = Symbol.for('');
 
   authKey = 'view';
 
@@ -60,16 +60,27 @@ export default class Meta {
 
   auth: Auth = {};
 
-  layout: Layout = {};
+  layout: Layout = {
+    breadcrumb: {
+      show: true,
+      back: true,
+    },
+  };
+
+  activeKey = Symbol.for('');
+
+  permissionData: IPermission = null;
 
   constructor(data: RouteMetaConfig) {
-    Object.keys(data).forEach((key) => {
-      const typedKey = key as keyof RouteMetaConfig;
-      Reflect.set(this, typedKey, data[typedKey]);
-    });
+    // 设置非嵌套对象属性
+    this.available = data.available ?? this.available;
+    this.owner = data.owner ?? this.owner;
+    this.authKey = data.authKey ?? this.authKey;
+    this.view = data.view ?? this.view;
+    this.activeKey = data.activeKey ?? this.activeKey;
+    this.permissionData = data.permissionData ?? this.permissionData;
 
-    this.menu.i18n = this.title;
-
+    // 合并嵌套对象（保留默认值，只覆盖传入的属性）
     this.menu = Object.assign(this.menu, data.menu);
 
     this.auth = Object.assign(this.auth, data.auth);

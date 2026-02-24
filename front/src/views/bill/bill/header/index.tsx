@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n';
 import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
 import { reqBillsExchangeRateList } from '@/api/bill';
 import { QueryRuleOPEnum } from '@/typings';
+import { MENU_BILL_MANAGE_SUMMARY, MENU_BILL_MANAGE_DETAIL, MENU_BILL_MANAGE_ADJUST } from '@/constants/menu-symbol';
 
 export default defineComponent({
   setup() {
@@ -17,9 +18,9 @@ export default defineComponent({
     const bill_month = inject<Ref<number>>('bill_month');
 
     const links = ref([
-      { name: 'billSummary', title: t('账单汇总') },
-      { name: 'billDetail', title: t('账单明细') },
-      { name: 'billAdjust', title: t('账单调整') },
+      { name: MENU_BILL_MANAGE_SUMMARY, title: t('账单汇总') },
+      { name: MENU_BILL_MANAGE_DETAIL, title: t('账单明细') },
+      { name: MENU_BILL_MANAGE_ADJUST, title: t('账单调整') },
     ]);
 
     const currentMonthExchangeRate = ref('');

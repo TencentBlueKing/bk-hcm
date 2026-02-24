@@ -19,7 +19,7 @@
   "dependencies": {
     "@antv/l7": "2.20.2",
     "@antv/l7-maps": "2.20.2",
-    "@blueking/app-select": "0.0.1-beta.6",
+    "@blueking/app-select": "0.0.1-beta.19",
     "@blueking/collapsible-tag": "1.1.0-beta.4",
     "@blueking/combine-request": "1.0.1",
     "@blueking/ediatable": "0.0.1-beta.16",
@@ -29,7 +29,7 @@
     "@blueking/roll-request": "1.0.2",
     "@blueking/tdesign-ui": "0.0.1-beta.92",
     "axios": "1.10.0",
-    "bkui-vue": "2.0.1-beta.73",
+    "bkui-vue": "2.0.2-beta.92",
     "dayjs": "1.11.3",
     "ipaddr.js": "2.1.0",
     "js-cookie": "3.0.5",
@@ -52,7 +52,7 @@
     "@blueking/babel-preset-bk": "2.1.0",
     "@blueking/cli-service-webpack": "0.0.7",
     "@blueking/eslint-config-bk": "2.1.0",
-    "@types/cookie": "0.5.1",
+    "@types/js-cookie": "3.0.6",
     "@types/lodash": "4.14.182",
     "@types/node": "18.19.68",
     "@types/qs": "6.9.7",
@@ -63,6 +63,7 @@
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "4.2.1",
     "husky": "8.0.1",
+    "less": "4.5.1",
     "lint-staged": "13.0.3",
     "minimist": "1.2.8",
     "postcss": "8.5.6",
@@ -94,5 +95,6 @@
       "prettier --config ./.prettierrc.js --write",
       "eslint --fix -c ./.eslintrc.js --debug"
     ]
-  }
+  },
+  "packageManager": "pnpm@8.8.0+sha512.798e6b322669ce63c8da856bd62ad1f7b6f36f4dfaa0ac025af2bdd700d09dd5dca943e5cad3edac5d1b3baebc4b2c3fb80fbb8537f936733c32be2ec7805144"
 }

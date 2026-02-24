@@ -1,5 +1,11 @@
+/**
+ * @deprecated 此文件已废弃。一级账号和二级账号已拆分为独立页面文件：
+ * - 一级账号：./root-account-list.tsx
+ * - 二级账号：./main-account-list.tsx
+ * 共用 accountLevel prop 区分的方式已弃用，每个账号类型有各自独立的页面组件。
+ */
 import { PropType, defineComponent, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
 import FirstLevelAccountDetail from '../../account-detail/first-level-account-detail';
@@ -10,12 +16,17 @@ import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { AccountLevelEnum, searchData, secondarySearchData } from '../constants';
+import { MENU_BILL_ROOT_ACCOUNT_CREATE, MENU_BILL_MAIN_ACCOUNT_CREATE } from '@/constants/menu-symbol';
 
 export default defineComponent({
-  props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
+  props: {
+    accountLevel: {
+      type: String as PropType<AccountLevelEnum>,
+      default: AccountLevelEnum.FirstLevel,
+    },
+  },
   setup(props) {
     const router = useRouter();
-    const route = useRoute();
     const { t } = useI18n();
 
     const { columns } = useColumns(props.accountLevel);
@@ -34,7 +45,6 @@ export default defineComponent({
                 text
                 theme='primary'
                 onClick={() => {
-                  // SideSlider展示详情(可编辑)
                   curAccount.value = data;
                   isSideSliderShow.value = true;
                 }}>
@@ -55,29 +65,29 @@ export default defineComponent({
       },
     });
 
+    const handleCreate = () => {
+      router.push({
+        name:
+          props.accountLevel === AccountLevelEnum.FirstLevel
+            ? MENU_BILL_ROOT_ACCOUNT_CREATE
+            : MENU_BILL_MAIN_ACCOUNT_CREATE,
+      });
+    };
+
     return () => (
       <>
         <CommonTable>
           {{
             operation: () => (
-              <Button
-                theme='primary'
-                onClick={() => {
-                  router.push({
-                    path:
-                      props.accountLevel === AccountLevelEnum.FirstLevel
-                        ? '/bill/account-manage/first-account'
-                        : '/bill/account-manage/second-account',
-                    query: { ...route.query },
-                  });
-                }}>
+              // TODO: 操作权限 —— "录入/创建"按钮需要使用 hcm-auth 组件包裹以实现操作级权限控制
+              // 一级账号对应 AUTH_FIND_ROOT_ACCOUNT 相关写权限，二级账号对应 AUTH_FIND_MAIN_ACCOUNT 相关写权限
+              <Button theme='primary' onClick={handleCreate}>
                 {props.accountLevel === AccountLevelEnum.FirstLevel ? t('录入一级账号') : t('创建二级账号')}
               </Button>
             ),
           }}
         </CommonTable>
 
-        {/* 一级账号详情及编辑 */}
         <CommonSideslider
           v-model:isShow={isSideSliderShow.value}
           width={640}

@@ -11,9 +11,9 @@ export interface IPermApplyDialogProps {
 
 defineOptions({ name: 'permission-apply-dialog' });
 
-const props = defineProps<IPermApplyDialogProps>();
-
 const model = defineModel<boolean>();
+
+const props = defineProps<IPermApplyDialogProps>();
 
 const { t } = useI18n();
 

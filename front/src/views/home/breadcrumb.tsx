@@ -1,3 +1,6 @@
+/**
+ * @deprecated 此文件已废弃，请使用 components/layout/breadcrumb.vue
+ */
 import { computed, defineComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';

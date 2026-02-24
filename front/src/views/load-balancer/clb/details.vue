@@ -4,11 +4,11 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
 import { ActiveQueryKey, ClbDetailsTabKey } from '../constants';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 import { type ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { getInstVip } from '@/utils';
 import { useBack } from '@/router/hooks/use-back';
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { DisplayFieldFactory, DisplayFieldType } from '../children/display/field-factory';
 
@@ -24,8 +24,8 @@ const { t } = useI18n();
 const loadBalancerClbStore = useLoadBalancerClbStore();
 
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
-watch(currentGlobalBusinessId, (val) => {
-  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query: { [GLOBAL_BIZS_KEY]: val } });
+watch(currentGlobalBusinessId, () => {
+  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW });
 });
 
 const { handleBack } = useBack();
@@ -76,11 +76,7 @@ onMounted(() => {
 
 <template>
   <div class="details-container">
-    <section
-      v-if="hasBackAll"
-      class="back"
-      @click="handleBack({ query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId } })"
-    >
+    <section v-if="hasBackAll" class="back" @click="handleBack()">
       <i class="hcm-icon bkhcm-icon-arrows--left-line"></i>
       <span>{{ t('返回全部') }}</span>
     </section>

@@ -1,13 +1,13 @@
-import { computed, defineComponent, reactive, ref, PropType, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { Button, Form, Input, Upload, Message } from 'bkui-vue';
 import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
-import { DoublePlainObject, FilterType, IAccountItem, QueryRuleOPEnum } from '@/typings';
+import { DoublePlainObject, IAccountItem, QueryRuleOPEnum } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useResourceStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import CommonSideslider from '@/components/common-sideslider';
@@ -24,13 +24,10 @@ import {
 const { FormItem } = Form;
 export default defineComponent({
   name: 'CertManager',
-  props: {
-    filter: Object as PropType<FilterType>,
-  },
-  setup(props) {
+  setup() {
     const { isResourcePage, isBusinessPage, whereAmI, getBizsId } = useWhereAmI();
     const resourceStore = useResourceStore();
-    const resourceAccountStore = useResourceAccountStore();
+    const route = useRoute();
 
     const currentBusinessId = computed(() => (whereAmI.value === Senarios.business ? getBizsId() : 0));
     const authTypeMap = computed(() => {
@@ -43,12 +40,34 @@ export default defineComponent({
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
     const rules = computed(() => {
-      const rules = [...(props.filter?.rules || [])];
-      if (isResourcePage) {
-        const bizsRules = rules.filter((rule) => rule.field === 'bk_biz_id');
-        !bizsRules.length && rules.push({ field: 'bk_biz_id', op: QueryRuleOPEnum.EQ, value: 'all' });
+      const result: any[] = [];
+
+      // accountId
+      const accountId = route.query.accountId as string;
+      if (accountId) {
+        result.push({ field: 'account_id', op: QueryRuleOPEnum.EQ, value: accountId });
       }
-      return rules;
+
+      // vendor
+      const vendor = route.query.vendor as string;
+      if (vendor) {
+        result.push({ field: 'vendor', op: QueryRuleOPEnum.EQ, value: vendor });
+      }
+
+      // assign（分配状态）
+      const assign = route.query.assign as string;
+      if (assign && assign !== 'all') {
+        result.push({
+          field: 'bk_biz_id',
+          op: Number(assign) === 1 ? QueryRuleOPEnum.NEQ : QueryRuleOPEnum.EQ,
+          value: -1,
+        });
+      } else if (isResourcePage) {
+        // 资源页默认传 bk_biz_id: 'all' 作为占位
+        result.push({ field: 'bk_biz_id', op: QueryRuleOPEnum.EQ, value: 'all' });
+      }
+
+      return result;
     });
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
@@ -253,7 +272,7 @@ export default defineComponent({
 
     const resetForm = () => {
       Object.assign(formModel, {
-        account_id: resourceAccountStore?.resourceAccount?.id || '',
+        account_id: (route.query.accountId as string) || '',
         name: '',
         vendor: VendorEnum.TCLOUD,
         cert_type: 'SVR',

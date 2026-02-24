@@ -16,7 +16,6 @@ import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { SubnetInput } from '@/components/subnet-input';
 import { IP_RANGES } from './contansts';
 import { Info } from 'bkui-vue/lib/icon';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 const { FormItem } = Form;
 const { Group: RadioGroup } = Radio;
@@ -27,7 +26,6 @@ export default defineComponent({
     const { cond, isEmptyCond } = useCondtion();
     const { isResourcePage, whereAmI } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
-    const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
     const route = useRoute();
@@ -80,7 +78,7 @@ export default defineComponent({
             idx: 0,
             range: IP_RANGES[VendorEnum.GCP],
           };
-          subCIDR.value = IP_RANGES[VendorEnum.GCP][0];
+          [subCIDR.value] = IP_RANGES[VendorEnum.GCP];
         }
       },
       {
@@ -88,12 +86,15 @@ export default defineComponent({
       },
     );
 
-    watch([() => resourceAccountStore.resourceAccount?.id, whereAmI.value], () => {
-      if (whereAmI.value === Senarios.resource) {
-        curIpRef.value?.reset();
-        subIpRef.value?.reset();
-      }
-    });
+    watch(
+      () => route.query.accountId,
+      () => {
+        if (whereAmI.value === Senarios.resource) {
+          curIpRef.value?.reset();
+          subIpRef.value?.reset();
+        }
+      },
+    );
 
     const submitDisabled = computed(() => isEmptyCond.value);
 

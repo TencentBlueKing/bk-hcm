@@ -15,21 +15,14 @@
       <bk-button class="mw88" @click="handleClickBatchDelete" :disabled="selections.length === 0">
         {{ t('批量删除') }}
       </bk-button>
-      <bk-button
-        :disabled="selections.length > 0"
-        @click="() => handleSync(false, resourceAccountStore.resourceAccount)"
-      >
+      <bk-button :disabled="selections.length > 0" @click="() => handleSync(false, currentAccountForSync)">
         {{ t('同步负载均衡') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select
-          class="w500"
-          clearable
-          :conditions="[]"
-          :get-menu-list="getMenuList"
-          :data="clbsSearchData"
+        <resource-search-select
           v-model="searchValue"
-          value-behavior="need-key"
+          :resource-type="ResourceTypeEnum.CLB"
+          @change="(condition) => searchQs.set(condition)"
         />
         <slot name="recycleHistory"></slot>
       </div>
@@ -95,50 +88,50 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, h, withDirectives, ref, reactive, computed } from 'vue';
+import { h, withDirectives, ref, reactive, computed } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
 import BatchDeleteDialog from '@/views/load-balancer/clb/children/batch-delete-dialog.vue';
 import Confirm from '@/components/confirm';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import type { DoublePlainObject, FilterType } from '@/typings/resource';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import type { DoublePlainObject } from '@/typings/resource';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import { useI18n } from 'vue-i18n';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
+import { useAccountSelectorStore } from '@/store/account-selector';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
-import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
-import { useRegionStore } from '@/store/region';
-import { buildVIPFilterRules } from '@/utils/search';
+import { useRoute } from 'vue-router';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
+defineProps({
   isResourcePage: {
     type: Boolean,
   },
 });
 
 const { t } = useI18n();
+const route = useRoute();
 // eslint-disable-next-line vue/no-dupe-keys
 const { whereAmI } = useWhereAmI();
-const { getAllVendorRegion } = useRegionStore();
-const { searchValue, filter } = useFilter(props, {
-  conditionFormatterMapper: {
-    lb_vip: (value: string) => buildVIPFilterRules(value),
-  },
-});
+
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.CLB);
 
 const resourceStore = useResourceStore();
-const resourceAccountStore = useResourceAccountStore();
+const accountSelectorStore = useAccountSelectorStore();
+const currentAccountForSync = computed(() => {
+  const accountId = route.query.accountId as string;
+  if (accountId) {
+    return accountSelectorStore.authorizedResourceAccountList.find((a: { id: string }) => a.id === accountId) || null;
+  }
+  return null;
+});
 const loadBalancerClbStore = useLoadBalancerClbStore();
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
@@ -232,54 +225,6 @@ const renderColumns = [
   },
 ];
 
-const clbsSearchData = [
-  { id: 'name', name: '负载均衡名称', async: false },
-  { id: 'cloud_id', name: '负载均衡ID', async: false },
-  { id: 'domain', name: '负载均衡域名', async: false },
-  { id: 'lb_vip', name: '负载均衡VIP', async: false },
-  {
-    id: 'lb_type',
-    name: '网络类型',
-    async: false,
-    children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
-      id: lbType,
-      name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
-    })),
-  },
-  {
-    id: 'ip_version',
-    name: t('IP版本'),
-    async: false,
-    children: [
-      { id: 'ipv4', name: 'IPv4' },
-      { id: 'ipv6', name: 'IPv6' },
-      { id: 'ipv6_dual_stack', name: 'IPv6DualStack' },
-      { id: 'ipv6_nat64', name: 'IPv6Nat64' },
-    ],
-  },
-  {
-    id: 'vendor',
-    name: t('云厂商'),
-    async: false,
-    children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
-  },
-  { id: 'zones', name: '可用区域', async: false },
-  {
-    id: 'status',
-    name: '状态',
-    async: false,
-    children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
-  },
-  { id: 'cloud_vpc_id', name: '所属VPC' },
-  {
-    name: t('地域'),
-    id: 'region',
-    async: true,
-    placeholder: '请输入地域名',
-  },
-];
-
-const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);

@@ -1,16 +1,19 @@
+/**
+ * @deprecated 已迁移至 views/resource-manage/hooks/use-filter-from-route.ts
+ * 资源纳管模块请使用 useFilterFromRoute，配合 resource-search-select + searchQs
+ */
 /* eslint-disable no-nested-ternary */
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import type { FilterType } from '@/typings/resource';
 import { FILTER_DATA, SEARCH_VALUE_IDS, VendorEnum } from '@/common/constant';
 import cloneDeep from 'lodash/cloneDeep';
 
-import { useAccountStore } from '@/store';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { storeToRefs } from 'pinia';
+import { useAccountSelectorStore } from '@/store/account-selector';
 
 type PropsType = {
   filter?: FilterType;
@@ -46,11 +49,27 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   const searchValue = ref([]);
   const filter = ref<any>(cloneDeep(props.filter));
   const isAccurate = ref(false);
-  const accountStore = useAccountStore();
   const route = useRoute();
   const resourceAccountStore = useResourceAccountStore();
+  const accountSelectorStore = useAccountSelectorStore();
   const regionStore = useRegionsStore();
-  const { selectedAccountId, vendorInResourcePage } = storeToRefs(resourceAccountStore);
+
+  // 优先使用 route.query（新资源纳管流程），否则 fallback 到 resourceAccountStore（旧 resource-manage 流程）
+  const selectedAccountId = computed(
+    () => (route.query.accountId as string) || resourceAccountStore.selectedAccountId || '',
+  );
+  const vendorInResourcePage = computed(() => {
+    const queryVendor = route.query.vendor as VendorEnum;
+    if (queryVendor) return queryVendor;
+    const accountIdVal = selectedAccountId.value;
+    if (accountIdVal) {
+      const account = accountSelectorStore.authorizedResourceAccountList.find(
+        (a: { id: string }) => a.id === accountIdVal,
+      );
+      return account?.vendor || resourceAccountStore.vendorInResourcePage;
+    }
+    return resourceAccountStore.vendorInResourcePage;
+  });
 
   const { convertValueCallbacks, conditionFormatterMapper } = config;
 
@@ -110,14 +129,15 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   );
 
   watch(
-    () => accountStore.accountList, // 设置云账号筛选所需数据
+    () => accountSelectorStore.authorizedResourceAccountList, // 设置云账号筛选所需数据（与 vendor-group 共用数据源）
     (val) => {
       if (!val) return;
-      val.length &&
+      const accountChildren = val.map(({ id, name }: { id: string; name: string }) => ({ id, name }));
+      accountChildren.length &&
         (searchData.value = FILTER_DATA.filter((item) => !isImage() || (isImage() && 'account_id' !== item.id)).map(
           (e) => {
             if (e.id === 'account_id') {
-              e.children = val;
+              e.children = accountChildren;
             }
             return e;
           },
@@ -207,7 +227,7 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
 
       // 为resource页面下的list页面设置vendor过滤条件（vendor有值的情况：选择了具体的账号或云厂商）
       // 解决的问题：资源下进入下钻页面后，back回来会丢失vendor条件，请求的数据与页面的vendor不一致（比如腾讯云安全组列表页->腾讯云安全组详情页->腾讯云安全组列表页）
-      const selectedVendor = resourceAccountStore.vendorInResourcePage;
+      const selectedVendor = vendorInResourcePage.value;
       // 处理不同场景的过滤规则
       if (selectedVendor) {
         const isGcpSecurity = selectedVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security;
@@ -234,7 +254,8 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   watch(
     () => props.filter,
     () => {
-      if (/^\/resource\/resource/.test(route.path)) searchValue.value = [];
+      // 资源列表页（新流程 /resource/manage、旧流程 /resource/resource）切换 tab 时清空搜索
+      if (/\/resource\/(resource|manage)/.test(route.path)) searchValue.value = [];
     },
     {
       deep: true,

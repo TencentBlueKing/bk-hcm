@@ -1,5 +1,6 @@
 import { Ref, defineComponent, inject, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD } from '@/constants/menu-symbol';
 
 import { Button } from 'bkui-vue';
 import Amount from '../../components/amount';
@@ -116,7 +117,7 @@ export default defineComponent({
     });
 
     const goOperationRecord = () => {
-      router.push({ name: 'billSummaryOperationRecord' });
+      router.push({ name: MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD });
     };
 
     watch([bill_year, bill_month], () => {

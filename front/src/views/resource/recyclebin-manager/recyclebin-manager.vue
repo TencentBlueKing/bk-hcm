@@ -1,3 +1,4 @@
+<!-- @deprecated 此文件已废弃，已迁移到 views/recyclebin/index.vue -->
 <template>
   <div class="recycle-manager-page">
     <!-- <bk-button-group>
@@ -258,6 +259,8 @@ import moment from 'moment';
 import http from '@/http';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
+import { MENU_BUSINESS_DRIVE_DETAILS, MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -602,28 +605,29 @@ export default defineComponent({
       state.showResourceInfo = true;
     };
 
+    const RECYCLEBIN_DETAIL_MAP: Record<string, symbol> = {
+      drive: MENU_BUSINESS_DRIVE_DETAILS,
+      host: MENU_BUSINESS_HOST_DETAILS,
+    };
+
     const handleClick = (vendor: VendorEnum, id: number, type: 'drive' | 'host') => {
       const routeInfo: any = {
         query: {
-          id,
           type: vendor,
         },
       };
-      // 业务下
-      if (route.path.includes('business')) {
-        routeInfo.query.bizs = accountStore.bizs;
+      if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
-          name: `${type}BusinessDetail`,
+          name: RECYCLEBIN_DETAIL_MAP[type],
+          params: { id },
         });
       } else {
         Object.assign(routeInfo, {
-          name: 'resourceDetail',
-          params: {
-            type,
-          },
+          name: MENU_RESOURCE_DETAIL,
+          params: { resourceType: type, id },
         });
       }
-      router.push(routeInfo);
+      routerAction.redirect(routeInfo, { history: true });
     };
 
     // 权限hook

@@ -1,4 +1,5 @@
 /**
+ * @deprecated 此文件已废弃，头部导航配置已迁移到 constants/menu.ts
  * 头部导航配置
  */
 

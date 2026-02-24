@@ -3,8 +3,8 @@
  */
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import isEqual from 'lodash/isEqual';
 
 type SelectionType = {
@@ -17,17 +17,14 @@ type SelectionType = {
 export default () => {
   const selections = ref([]);
   const { whereAmI } = useWhereAmI();
-  const resourceAccountStore = useResourceAccountStore();
   const accountStore = useAccountStore();
+  const route = useRoute();
 
   watch(
-    () => resourceAccountStore.resourceAccount,
+    () => route.query.accountId,
     () => {
       if (whereAmI.value !== Senarios.resource) return;
       resetSelections();
-    },
-    {
-      deep: true,
     },
   );
 

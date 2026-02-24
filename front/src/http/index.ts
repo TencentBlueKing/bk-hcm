@@ -284,6 +284,17 @@ function handleReject(error: any, config: any) {
  * @param error 异常
  */
 function handleCustomErrorCode(error: any) {
+  // 权限不足错误码，弹出权限申请弹窗
+  if (error.code === 2030403) {
+    const permission = error.data?.permission;
+    if (permission) {
+      window.hcmPermissionDialog?.show(permission);
+    } else {
+      Message({ theme: 'error', message: error.message });
+    }
+    return;
+  }
+
   if (error.code === 2000014) {
     Message({ message: '当前负载均衡正在变更中，云平台限制新的任务同时变更。', theme: 'error' });
     return;

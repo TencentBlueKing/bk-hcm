@@ -9,7 +9,7 @@ import HcmFormUser from '@/components/form/user.vue';
 import { useAccountStore } from '@/store';
 import './index.scss';
 import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
-import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import { MENU_SERVICE_APPLY_MANAGEMENT } from '@/constants/menu-symbol';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -208,7 +208,7 @@ export default defineComponent({
         });
         // router.go(-1);
         router.push({
-          name: MENU_SERVICE_TICKET_MANAGEMENT, // 返回审批列表
+          name: MENU_SERVICE_APPLY_MANAGEMENT, // 返回审批列表
         });
       } catch (error: any) {
         console.error(error);

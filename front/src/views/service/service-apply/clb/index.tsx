@@ -11,7 +11,7 @@ import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import BottomBar from './children/bottom-bar';
 import http from '@/http';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
-import { MENU_BUSINESS_LOAD_BALANCER, MENU_RESOURCE_RESOURCE_MANAGEMENT } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER, MENU_RESOURCE } from '@/constants/menu-symbol';
 import { applyClbSuccessHandler } from './apply-clb.plugin';
 
 export default defineComponent({
@@ -58,7 +58,7 @@ export default defineComponent({
     const goBack = () => {
       const to = isBusinessPage
         ? { name: MENU_BUSINESS_LOAD_BALANCER, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } }
-        : { name: MENU_RESOURCE_RESOURCE_MANAGEMENT, query: { type: 'clb' } };
+        : { name: MENU_RESOURCE, query: { type: 'clb' } };
 
       router.replace(to);
     };

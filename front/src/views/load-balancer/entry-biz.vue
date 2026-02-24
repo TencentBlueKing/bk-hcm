@@ -2,11 +2,7 @@
 import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import {
-  MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
-  MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
-} from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH, MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import {
   AUTH_BIZ_CREATE_CLB,
   AUTH_BIZ_DELETE_CLB,
@@ -16,36 +12,24 @@ import {
   AUTH_UPDATE_CLB,
 } from '@/constants/auth-symbols';
 import { getAuthSignByBusinessId } from '@/utils';
-import routerAction from '@/router/utils/action';
-
-import ResourceView from './clb/index.vue';
-import DeviceSearchView from './device/index.vue';
 
 const route = useRoute();
 const { t } = useI18n();
 
-const LOAD_BALANCER_VIEW_LIST = [
-  {
-    label: t('资源列表'),
-    path: '/business/load-balancer/resource',
-    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
-    component: ResourceView,
-  },
-  {
-    label: t('配置检索'),
-    path: '/business/load-balancer/device',
-    name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH,
-    component: DeviceSearchView,
-  },
+const LOAD_BALANCER_VIEWS = [
+  { label: t('资源列表'), name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW },
+  { label: t('配置检索'), name: MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH },
 ];
 
-const activeComponent = computed(
-  () => LOAD_BALANCER_VIEW_LIST.find((item) => route.path.includes(item.path)).component,
+const activeView = computed(() =>
+  route.name === MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH
+    ? MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH
+    : MENU_BUSINESS_LOAD_BALANCER_LB_VIEW,
 );
 
 const currentGlobalBusinessId = computed(() => {
-  const val = route.query?.[GLOBAL_BIZS_KEY];
-  return val ? Number(val) : undefined;
+  const val = route.params.bizId;
+  return val ? Number(val as string) : undefined;
 });
 const clbCreateAuthSign = computed(() =>
   getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_CREATE_CLB, AUTH_BIZ_CREATE_CLB),
@@ -56,13 +40,6 @@ const clbOperationAuthSign = computed(() =>
 const clbDeleteAuthSign = computed(() =>
   getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_DELETE_CLB, AUTH_BIZ_DELETE_CLB),
 );
-
-const handleViewChange = (name: (typeof LOAD_BALANCER_VIEW_LIST)[number]['name']) => {
-  routerAction.redirect({
-    name,
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
-  });
-};
 
 provide('currentGlobalBusinessId', currentGlobalBusinessId);
 provide('clbCreateAuthSign', clbCreateAuthSign);
@@ -75,19 +52,21 @@ provide('clbDeleteAuthSign', clbDeleteAuthSign);
     <div class="header">
       <span class="title">{{ t('负载均衡') }}</span>
       <ul class="view-list">
-        <li
-          v-for="{ label, name, path } in LOAD_BALANCER_VIEW_LIST"
-          :key="name"
-          class="view-item"
-          :class="{ active: route.path.includes(path) }"
-          @click="handleViewChange(name)"
+        <router-link
+          v-for="view in LOAD_BALANCER_VIEWS"
+          :key="view.name.toString()"
+          :to="{ name: view.name as any }"
+          custom
+          v-slot="{ navigate }"
         >
-          {{ label }}
-        </li>
+          <li class="view-item" :class="{ active: activeView === view.name }" @click="navigate">
+            {{ view.label }}
+          </li>
+        </router-link>
       </ul>
     </div>
     <div class="main">
-      <component :is="activeComponent" />
+      <router-view />
     </div>
   </div>
 </template>

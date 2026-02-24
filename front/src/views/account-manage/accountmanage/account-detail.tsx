@@ -1,0 +1,869 @@
+import { Form, Dialog, Input, Message, Button, Alert } from 'bkui-vue';
+import { reactive, defineComponent, ref, onMounted, computed, watch } from 'vue';
+import { ProjectModel, SecretModel, CloudType, SiteType } from '@/typings';
+import { useI18n } from 'vue-i18n';
+import { useAccountStore } from '@/store';
+import { useRoute } from 'vue-router';
+import Loading from '@/components/loading';
+import RenderDetailEdit from '@/components/RenderDetailEdit';
+import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+import './account-detail.scss';
+import MemberSelect from '@/components/MemberSelect';
+import http from '@/http';
+import {
+  ValidateStatus,
+  useSecretExtension,
+} from '@/views/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import { VendorEnum } from '@/common/constant';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
+import { timeFormatter } from '@/common/util';
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+const { FormItem } = Form;
+
+// const { Option } = Select;
+export default defineComponent({
+  name: 'AccountManageDetail',
+  setup() {
+    const { t } = useI18n();
+    const formRef = ref<InstanceType<typeof Form>>(null);
+    const accountStore = useAccountStore();
+    const route = useRoute();
+    const formDiaRef = ref(null);
+    // accountId 从路由路径参数获取
+    const accountId = computed(() => route.params.accountId as string);
+
+    const initProjectModel: ProjectModel = {
+      id: 1,
+      type: '', // 账号类型
+      name: '', // 名称
+      vendor: VendorEnum.TCLOUD, // 云厂商
+      account: '', // 主账号
+      subAccountId: '', // 子账号id
+      subAccountName: '', // 子账号名称
+      secretId: '', // 密钥id
+      secretKey: '', // 密钥key
+      managers: [], // 责任人
+      usage_biz_ids: [], // 使用业务
+      bk_biz_id: 0, // 管理业务
+      memo: '', // 备注
+      price: 0,
+      extension: {}, // 特殊信息
+    };
+    const isShowModifyScretDialog = ref(false);
+    const isShowModifyAccountDialog = ref(false);
+    const isAccountDialogLoading = ref(false);
+    const isSecretDialogLoading = ref(false);
+    const buttonLoading = ref<boolean>(false);
+    const accountFormModel = reactive({
+      managers: [],
+      memo: '',
+      bk_biz_id: 0,
+      usage_biz_ids: [],
+    });
+    const accountForm = ref(null);
+
+    const computedManagers = computed(() =>
+      accountFormModel.managers.map((name) => ({
+        username: name,
+        display_name: name,
+      })),
+    );
+
+    const isResourceAccount = computed(() => projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE);
+
+    const initSecretModel: SecretModel = {
+      secretId: '',
+      secretKey: '',
+      subAccountId: '',
+      iamUserName: '',
+    };
+
+    const projectModel = reactive<ProjectModel>({
+      ...initProjectModel,
+    });
+
+    const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled, extensionPayload } =
+      useSecretExtension(projectModel, true);
+
+    const secretModel = reactive<SecretModel>({
+      ...initSecretModel,
+    });
+
+    const businessList = reactive({
+      // 业务列表
+      list: [],
+    });
+
+    const isLoading = ref(false);
+    const getDetail = async () => {
+      if (!accountId.value) return;
+      isLoading.value = true;
+      try {
+        const res = await accountStore.getAccountDetail(accountId.value);
+        await getBusinessList();
+        Object.assign(projectModel, res?.data);
+        initProjectModel.name = res?.data?.name;
+        renderBaseInfoForm(projectModel);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    onMounted(() => {
+      getDetail(); // 请求数据
+    });
+
+    watch(accountId, (id, oldId) => {
+      if (!oldId && id) return;
+      if (id) {
+        getDetail();
+      }
+    });
+
+    // 获取业务列表
+    const getBusinessList = async () => {
+      const res = await accountStore.getBizList();
+      businessList.list = res.data;
+    };
+
+    // 动态表单
+    const renderBaseInfoForm = (data: any) => {
+      let insertFormData: any = [];
+      const siteIndex = formBaseInfo[0].data.findIndex((e) => e.property === 'site');
+      const creatorIndex = formBaseInfo[0].data.findIndex((e) => e.property === 'creator');
+      switch (data.vendor) {
+        case 'huawei':
+          insertFormData = [
+            {
+              label: t('主账号名'),
+              required: false,
+              property: 'cloud_main_account_name',
+              component: () => <span>{projectModel.extension.cloud_main_account_name || '--'}</span>,
+            },
+            {
+              label: t('账号名'),
+              required: false,
+              property: 'cloud_sub_account_name',
+              component: () => <span>{projectModel.extension.cloud_sub_account_name || '--'}</span>,
+            },
+            {
+              label: t('账号 ID'),
+              required: false,
+              property: 'cloud_sub_account_id',
+              component: () => <span>{projectModel.extension.cloud_sub_account_id || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('IAM用户 ID'),
+              required: false,
+              property: 'cloud_iam_user_id',
+              component: () => <span>{projectModel.extension.cloud_iam_user_id || '--'}</span>,
+            },
+            {
+              label: t('IAM用户名'),
+              required: false,
+              property: 'cloud_iam_username',
+              component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'cloud_secret_id',
+              component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
+          break;
+        case 'tcloud':
+          insertFormData = [
+            {
+              label: t('主账号 ID'),
+              required: false,
+              property: 'cloud_main_account_id',
+              component: () => <span>{projectModel.extension.cloud_main_account_id || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'cloud_secret_id',
+              component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+            {
+              label: t('子账号 ID'),
+              required: false,
+              property: 'cloud_sub_account_id',
+              component: () => <span>{projectModel.extension.cloud_sub_account_id}</span>,
+            },
+          ];
+          break;
+        case 'aws':
+          insertFormData = [
+            {
+              label: t('账号 ID'),
+              required: false,
+              property: 'cloud_account_id',
+              component: () => <span>{projectModel.extension.cloud_account_id || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('IAM用户名称'),
+              required: false,
+              property: 'cloud_iam_username',
+              component: () => <span>{projectModel.extension.cloud_iam_username || '--'}</span>,
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'secretId',
+              component: () => <span>{projectModel.extension.cloud_secret_id}</span>,
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
+          break;
+        case 'azure':
+          insertFormData = [
+            {
+              label: t('租户 ID'),
+              required: false,
+              property: 'cloud_tenant_id',
+              component: () => <span>{projectModel.extension.cloud_tenant_id || '--'}</span>,
+            },
+            {
+              label: t('订阅 ID'),
+              required: false,
+              property: 'cloud_subscription_id',
+              component: () => <span>{projectModel.extension.cloud_subscription_id || '--'}</span>,
+            },
+            {
+              label: t('订阅名称'),
+              required: false,
+              property: 'cloud_subscription_name',
+              component: () => <span>{projectModel.extension.cloud_subscription_name || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('应用(客户端)ID'),
+              required: false,
+              property: 'cloud_application_id',
+              component: () => <span>{projectModel.extension.cloud_application_id || '--'}</span>,
+            },
+            {
+              label: t('应用程序名称'),
+              required: false,
+              property: 'cloud_application_name',
+              component: () => <span>{projectModel.extension.cloud_application_name || '--'}</span>,
+            },
+            {
+              label: t('客户端密钥 ID'),
+              required: false,
+              property: 'cloud_client_secret_id',
+              component: () => <span>{projectModel.extension.cloud_client_secret_id || '--'}</span>,
+            },
+            {
+              label: t('客户端密钥'),
+              required: false,
+              property: 'cloud_client_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
+          break;
+        case 'gcp':
+          insertFormData = [
+            {
+              label: t('项目 ID'),
+              required: false,
+              property: 'cloud_project_id',
+              component: () => <span>{projectModel.extension.cloud_project_id || '--'}</span>,
+            },
+            {
+              label: t('项目名称'),
+              required: false,
+              property: 'cloud_project_name',
+              component: () => <span>{projectModel.extension.cloud_project_name || '--'}</span>,
+            },
+          ];
+          formBaseInfo[0].data.splice(siteIndex + 1, creatorIndex - (siteIndex + 1), ...insertFormData);
+          formBaseInfo[2].data = [
+            {
+              label: t('服务账号 ID'),
+              required: false,
+              property: 'cloud_service_account_id',
+              component: () => <span>{projectModel.extension.cloud_service_account_id}</span>,
+            },
+            {
+              label: t('服务账号名称'),
+              required: false,
+              property: 'cloud_service_account_name',
+              component: () => <span>{projectModel.extension.cloud_service_account_name}</span>,
+            },
+            {
+              label: 'Secret ID',
+              required: false,
+              property: 'secretId',
+              component: () => <span>{projectModel.extension.cloud_service_secret_id}</span>,
+            },
+            {
+              label: 'Secret Key',
+              required: false,
+              property: 'cloud_secret_key',
+              component: () => <span>********</span>,
+            },
+          ];
+          break;
+        default:
+          break;
+      }
+    };
+
+    const check = (val: any): boolean => {
+      return /^[a-zA-Z][a-zA-Z0-9-_]{1,62}[a-zA-Z0-9]$/.test(val);
+    };
+
+    const formRules = {
+      name: [
+        {
+          trigger: 'blur',
+          message: '名称必须以小写字母开头，后面最多可跟 63个小写字母、数字或连字符，但不能以连字符结尾',
+          validator: check,
+        },
+      ],
+    };
+    // 更新信息方法
+    const updateFormData = async (key: any) => {
+      let params: any = {};
+      if (key === 'bk_biz_ids') {
+        // 若选择全部业务，则参数是-1
+        // params.bk_biz_ids = projectModel[key].length === businessList.list.length
+        //   ? [-1] : projectModel[key];
+        params.bk_biz_ids = projectModel[key] ? [projectModel[key]] : [-1];
+      } else {
+        params = {};
+        params[key] = projectModel[key];
+      }
+      try {
+        await accountStore.updateAccount({
+          // 更新密钥信息
+          id: projectModel.id,
+          ...params,
+        });
+        Message({
+          message: t('更新成功'),
+          theme: 'success',
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    // 显示弹窗
+    const handleModifyScret = () => {
+      secretModel.secretId =
+        projectModel.extension.cloud_secret_id ||
+        projectModel.extension.cloud_client_secret_id ||
+        projectModel.extension.cloud_service_secret_id ||
+        '';
+      secretModel.secretKey = '';
+      secretModel.subAccountId = projectModel.extension.cloud_sub_account_id || '';
+      secretModel.iamUserName = projectModel.extension.cloud_iam_username || '';
+      secretModel.iamUserId = projectModel.extension.cloud_iam_user_id || '';
+      secretModel.accountId = projectModel.extension.cloud_service_account_id || '';
+      secretModel.accountName = projectModel.extension.cloud_service_account_name || '';
+      secretModel.applicationId = projectModel.extension.cloud_application_id || '';
+      secretModel.applicationName = projectModel.extension.cloud_application_name || '';
+      isShowModifyScretDialog.value = true;
+    };
+
+    // 弹窗确认
+    const onConfirm = async () => {
+      await formDiaRef.value?.validate();
+      buttonLoading.value = true;
+      try {
+        const extension = extensionPayload.value;
+        await accountStore.updateTestAccount({
+          // 测试连接密钥信息
+          id: projectModel.id,
+          extension: {
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id?.value,
+            ...extension,
+          },
+        });
+        await accountStore.updateAccount({
+          // 更新密钥信息
+          id: projectModel.id,
+          extension: {
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id?.value,
+            ...extension,
+          },
+        });
+        Message({
+          message: t('更新密钥信息成功'),
+          theme: 'success',
+        });
+        projectModel.extension = extension;
+        onClosed();
+      } finally {
+        buttonLoading.value = false;
+      }
+    };
+
+    // 取消
+    const onClosed = () => {
+      isShowModifyScretDialog.value = false;
+    };
+
+    const handleEditStatus = (val: boolean, key: string) => {
+      formBaseInfo.forEach((e) => {
+        e.data = e.data.map((item) => {
+          if (item.property === key) {
+            item.isEdit = val;
+          }
+          return item;
+        });
+      });
+    };
+
+    // 处理失焦
+    const handleblur = async (val: boolean, key: string) => {
+      if (!projectModel.managers.length) {
+        Message({
+          message: t('请选择负责人'),
+          theme: 'error',
+        });
+        return;
+      }
+      handleEditStatus(val, key); // 未通过检验前状态为编辑态
+      await formRef.value?.validate();
+      if (projectModel[key] !== initProjectModel[key]) {
+        await updateFormData(key); // 更新数据
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      } else {
+        handleEditStatus(false, key);
+      }
+    };
+
+    const handleModifyAccount = () => {
+      isShowModifyAccountDialog.value = true;
+      // 数据回显
+      Object.assign(accountFormModel, {
+        managers: projectModel.managers,
+        memo: projectModel.memo,
+        usage_biz_ids: projectModel.usage_biz_ids,
+        bk_biz_id: projectModel.bk_biz_id,
+      });
+    };
+
+    const handleModifyAccountSubmit = async () => {
+      await accountForm.value.validate();
+      isAccountDialogLoading.value = true;
+      // Select单选下，不返回数组，需要进行转换
+      await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${accountId.value}`, {
+        managers: accountFormModel.managers,
+        memo: accountFormModel.memo,
+        bk_biz_id: isResourceAccount.value ? accountFormModel.bk_biz_id : undefined,
+        usage_biz_ids: Array.isArray(accountFormModel.usage_biz_ids)
+          ? accountFormModel.usage_biz_ids
+          : [accountFormModel.usage_biz_ids],
+      });
+      isAccountDialogLoading.value = false;
+      isShowModifyAccountDialog.value = false;
+      getDetail();
+    };
+
+    const formBaseInfo = reactive([
+      {
+        name: t('基本信息'),
+        data: [
+          {
+            label: 'ID',
+            required: false,
+            property: 'id',
+            component: () => <span>{projectModel.id}</span>,
+          },
+          {
+            label: t('名称'),
+            property: 'name',
+            isEdit: true,
+            component() {
+              // eslint-disable-next-line max-len
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.name}
+                  fromPlaceholder={t('请输入名称')}
+                  fromKey={this.property}
+                  hideEdit={false}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
+            },
+          },
+          {
+            label: t('云厂商'),
+            required: false,
+            property: 'vendor',
+            isEdit: false,
+            component: () => <span>{CloudType[projectModel.vendor]}</span>,
+          },
+          {
+            label: t('站点类型'),
+            required: false,
+            property: 'site',
+            component: () => <span>{SiteType[projectModel.site]}</span>,
+          },
+          {
+            label: t('创建人'),
+            required: false,
+            property: 'creator',
+            component: () => <span>{projectModel.creator}</span>,
+          },
+          {
+            label: t('创建时间'),
+            required: false,
+            property: 'created_at',
+            component: () => <span>{timeFormatter(projectModel.created_at)}</span>,
+          },
+          {
+            label: t('修改人'),
+            required: false,
+            property: 'reviser',
+            component: () => <span>{projectModel.reviser}</span>,
+          },
+          {
+            label: t('修改时间'),
+            required: false,
+            property: 'updated_at',
+            component: () => <span>{timeFormatter(projectModel.updated_at)}</span>,
+          },
+
+          // {
+          //   label: t('账号类别'),
+          //   required: false,
+          //   property: 'type',
+          //   isEdit: false,
+          //   component: () => <span>{AccountType[projectModel.type]}</span>,
+          // },
+          // {
+          //   label: t('余额'),
+          //   required: false,
+          //   property: 'price',
+          //   component: () => (
+          //     <span>
+          //       {projectModel?.price || '--'}
+          //       {projectModel.price_unit}
+          //     </span>
+          //   ),
+          // },
+        ],
+      },
+      {
+        name: '账号归属',
+        data: [
+          {
+            label: t('负责人'),
+            property: 'managers',
+            isEdit: false,
+            component() {
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.managers}
+                  fromKey={this.property}
+                  fromType='member'
+                  hideEdit={true}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
+            },
+          },
+          {
+            label: t('备注'),
+            required: false,
+            property: 'memo',
+            isEdit: false,
+            component() {
+              // eslint-disable-next-line max-len
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.memo}
+                  fromKey={this.property}
+                  fromType='textarea'
+                  hideEdit={true}
+                  isEdit={this.isEdit}
+                  onBlur={handleblur}
+                />
+              );
+            },
+          },
+          {
+            label: t('使用业务'),
+            required: false,
+            property: 'bk_biz_ids',
+            isEdit: false,
+            component() {
+              if (projectModel.usage_biz_ids?.[0] === -1) return '全部业务';
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.usage_biz_ids}
+                  fromKey={this.property}
+                  hideEdit={true}
+                  selectData={businessList.list}
+                  fromType='select'
+                  isEdit={this.isEdit}
+                />
+              );
+            },
+          },
+          {
+            label: t('管理业务'),
+            required: false,
+            property: 'bk_biz_id',
+            isEdit: false,
+            isHidden: () => !isResourceAccount.value,
+            component() {
+              return (
+                <RenderDetailEdit
+                  v-model={projectModel.bk_biz_id}
+                  fromKey={this.property}
+                  hideEdit={true}
+                  selectData={businessList.list}
+                  fromType='select'
+                  isEdit={this.isEdit}
+                />
+              );
+            },
+          },
+        ],
+      },
+      {
+        name: '密钥信息',
+        data: [],
+      },
+    ]);
+
+    const isSyncLoading = ref(false);
+    const handleSync = async () => {
+      isSyncLoading.value = true;
+      try {
+        await accountStore.accountSync(projectModel.id);
+        Message({ message: t('本次同步任务触发成功。如需再次同步，请在20分钟后重试'), theme: 'success' });
+      } catch (error) {
+      } finally {
+        isSyncLoading.value = false;
+      }
+    };
+
+    const handleChangeManage = (val: number) => {
+      const usageVal = accountFormModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
+        accountFormModel.usage_biz_ids.push(val);
+      }
+    };
+    const handleChangeUse = (val: number[]) => {
+      const [firstVal] = val;
+      // 取消全选 val是空数组[]
+      if (!firstVal) {
+        accountFormModel.usage_biz_ids = [accountFormModel.bk_biz_id];
+        return;
+      }
+      // 如果有值，且val里面不包含管理业务，则把管理业务加进去
+      if (firstVal !== -1 && !val.includes(accountFormModel.bk_biz_id)) {
+        accountFormModel.usage_biz_ids.push(accountFormModel.bk_biz_id);
+      }
+    };
+
+    return () =>
+      isLoading.value ? (
+        <Loading />
+      ) : (
+        <div class='detail-wrap'>
+          <DetailHeader>
+            {{
+              default: () => (
+                <>
+                  <span class='header-title-prefix'>{t('账号详情')}</span>
+                  <span class='header-title-content'>&nbsp;- ID {projectModel.id}</span>
+                </>
+              ),
+              right:
+                projectModel.type === 'resource' ? (
+                  <bk-pop-confirm
+                    content={t('同步该账号下的资源，点击确定后，立即触发同步任务')}
+                    trigger='click'
+                    onConfirm={handleSync}>
+                    <bk-button loading={isSyncLoading.value}>{t('同步')}</bk-button>
+                  </bk-pop-confirm>
+                ) : undefined,
+            }}
+          </DetailHeader>
+          <div class='h16'></div>
+          {/* 基本信息 */}
+          {formBaseInfo.map((baseItem, index) => (
+            <div class={index < formBaseInfo.length - 1 ? 'mb32' : 'mb16'}>
+              <div class='font-bold pb8'>
+                {baseItem.name}
+                {index > 0 ? (
+                  <span
+                    class={'account-detail-edit-icon-font'}
+                    onClick={index === 2 ? handleModifyScret : handleModifyAccount}>
+                    {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
+                    <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
+                    编辑
+                  </span>
+                ) : (
+                  ''
+                )}
+              </div>
+              <Form model={projectModel} labelWidth={190} rules={formRules} ref={index === 0 ? formRef : null}>
+                <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
+                  {baseItem.data
+                    .filter((item) => !item?.isHidden?.())
+                    .map((formItem) => (
+                      <FormItem
+                        class='formItem-cls info-value'
+                        label={`${formItem.label} ：`}
+                        required={formItem.required}
+                        property={formItem.property}>
+                        {formItem.component()}
+                      </FormItem>
+                    ))}
+                </div>
+              </Form>
+            </div>
+          ))}
+
+          <Dialog
+            v-model:isShow={isShowModifyScretDialog.value}
+            width={680}
+            title={'编辑API密钥'}
+            onClosed={onClosed}
+            onConfirm={onConfirm}
+            isLoading={isSecretDialogLoading.value}
+            theme='primary'>
+            {{
+              default: () => (
+                <>
+                  <Alert class={'mb12'} theme='info' title='更新的API密钥必须属于同一个主账号ID' />
+                  <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
+                    {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                      <FormItem label={label} property={property}>
+                        <Input
+                          v-model={curExtension.value.input[property].value}
+                          type={
+                            property === 'cloud_service_secret_key' && projectModel.vendor === VendorEnum.GCP
+                              ? 'textarea'
+                              : 'text'
+                          }
+                          rows={8}
+                        />
+                      </FormItem>
+                    ))}
+                    {[curExtension.value.output1, curExtension.value.output2].map((output) =>
+                      Object.entries(output).map(([property, { label, placeholder }]) => (
+                        <FormItem label={label} property={property}>
+                          <Input v-model={output[property].value} readonly placeholder={placeholder} />
+                        </FormItem>
+                      )),
+                    )}
+                  </Form>
+                </>
+              ),
+              footer: () => (
+                <div class={'validate-btn-container'}>
+                  <Button
+                    outline={curExtension.value.validatedStatus === ValidateStatus.YES}
+                    theme='primary'
+                    class={'validate-btn'}
+                    loading={isValidateLoading.value}
+                    onClick={() => handleValidate()}
+                    disabled={isValidateDiasbled.value}>
+                    账号校验
+                  </Button>
+                  <Button
+                    theme='primary'
+                    disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES}
+                    loading={buttonLoading.value}
+                    onClick={onConfirm}>
+                    {t('确认')}
+                  </Button>
+                  <Button class='ml10' onClick={onClosed}>
+                    {t('取消')}
+                  </Button>
+                </div>
+              ),
+            }}
+          </Dialog>
+
+          <Dialog
+            isShow={isShowModifyAccountDialog.value}
+            width={680}
+            title={'编辑账号'}
+            isLoading={isAccountDialogLoading.value}
+            onConfirm={handleModifyAccountSubmit}
+            onClosed={() => (isShowModifyAccountDialog.value = false)}
+            theme='primary'>
+            <Form v-model={accountFormModel} formType='vertical' model={accountFormModel} ref={accountForm}>
+              <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
+                <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
+              </FormItem>
+              {isResourceAccount.value && (
+                <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>
+                  <hcm-form-business
+                    data={businessList.list}
+                    clearable={true}
+                    placeholder={'请选择管理业务'}
+                    v-model={accountFormModel.bk_biz_id}
+                    onChange={handleChangeManage}
+                  />
+                </FormItem>
+              )}
+              <FormItem label='使用业务' class={'api-secret-selector'} required property='usage_biz_ids'>
+                <hcm-form-business
+                  multiple={projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE}
+                  data={businessList.list}
+                  v-model={accountFormModel.usage_biz_ids}
+                  show-all={true}
+                  all-option-id={-1}
+                  tag-clearable={false}
+                  disabled={isResourceAccount.value && !accountFormModel.bk_biz_id}
+                  onChange={handleChangeUse}
+                />
+              </FormItem>
+              <FormItem label='备注'>
+                <Input type={'textarea'} v-model={accountFormModel.memo} maxlength={256} resize={false} />
+              </FormItem>
+            </Form>
+          </Dialog>
+        </div>
+      );
+  },
+});

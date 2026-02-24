@@ -6,6 +6,7 @@ import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
 import { useResourceStore } from '@/store/resource';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 // 硬盘选主机挂载
 export default defineComponent({
@@ -30,6 +31,7 @@ export default defineComponent({
 
   setup(props, { emit }) {
     const { t } = useI18n();
+    const { whereAmI } = useWhereAmI();
 
     const deviceName = ref();
     const cachingType = ref();
@@ -59,7 +61,7 @@ export default defineComponent({
       },
     ];
 
-    if (!location.href.includes('business')) {
+    if (whereAmI.value !== Senarios.business) {
       rules.push({
         field: 'bk_biz_id',
         op: 'eq',

@@ -1,3 +1,6 @@
+/**
+ * @deprecated 此文件已废弃，路由配置已迁移到 views 目录下的各模块 route-config.ts
+ */
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
@@ -7,7 +10,7 @@ import {
   MENU_RESOURCE_LOAD_BALANCER_APPLY,
   MENU_RESOURCE_DISK_APPLY,
   MENU_RESOURCE_HOST_APPLY,
-  MENU_RESOURCE_RESOURCE_MANAGEMENT,
+  MENU_RESOURCE,
   MENU_RESOURCE_SUBNET_APPLY,
   MENU_RESOURCE_VPC_APPLY,
 } from '@/constants/menu-symbol';
@@ -21,7 +24,7 @@ const resourceMenus: RouteRecordRaw[] = [
     children: [
       {
         path: 'resource',
-        name: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+        name: MENU_RESOURCE,
         component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
         children: [
           operationLogRscRouteConfig[0],
@@ -83,7 +86,7 @@ const resourceMenus: RouteRecordRaw[] = [
           ...new Meta({
             notMenu: true,
             menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+              relative: MENU_RESOURCE,
             },
           }),
         },
@@ -96,7 +99,7 @@ const resourceMenus: RouteRecordRaw[] = [
           ...new Meta({
             notMenu: true,
             menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+              relative: MENU_RESOURCE,
             },
           }),
         },
@@ -109,7 +112,7 @@ const resourceMenus: RouteRecordRaw[] = [
           ...new Meta({
             notMenu: true,
             menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+              relative: MENU_RESOURCE,
             },
           }),
         },
@@ -122,7 +125,7 @@ const resourceMenus: RouteRecordRaw[] = [
           ...new Meta({
             notMenu: true,
             menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+              relative: MENU_RESOURCE,
             },
           }),
         },
@@ -136,7 +139,7 @@ const resourceMenus: RouteRecordRaw[] = [
             notMenu: true,
             isFilterAccount: true,
             menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
+              relative: MENU_RESOURCE,
             },
           }),
         },

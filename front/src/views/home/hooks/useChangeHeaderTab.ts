@@ -1,3 +1,6 @@
+/**
+ * @deprecated 此文件已废弃，请使用 constants/menu.ts 和新的 layout 组件
+ */
 import { ref, watch } from 'vue';
 import { useRoute, useRouter, type RouteRecordRaw } from 'vue-router';
 // import routes
@@ -9,13 +12,11 @@ import scheme from '@/router/module/scheme';
 import bill from '@/router/module/bill';
 // import stores
 import { useAccountStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 // home页切换header-tab相关业务逻辑
 export default () => {
   const accountStore = useAccountStore();
-  const resourceAccountStore = useResourceAccountStore();
   // use hooks
   const route = useRoute();
   const router = useRouter();
@@ -30,9 +31,6 @@ export default () => {
     let bizs;
     if (id === 'business') {
       bizs = accountStore.bizs;
-    }
-    if (id !== 'resource') {
-      resourceAccountStore.clear();
     }
     router.push({ path, query: { [GLOBAL_BIZS_KEY]: bizs } });
   };

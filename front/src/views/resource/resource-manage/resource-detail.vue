@@ -46,8 +46,15 @@ const componentMap = {
   template: TemplateDetail,
 };
 
+// resourceType 与 componentMap 的映射（tab 类型 -> 组件 key）
+const resourceTypeToComponentKey: Record<string, string> = {
+  ip: 'eips',
+  routing: 'route',
+};
 const renderComponent = computed(() => {
-  return componentMap[route.params.type as string];
+  const resourceType = route.params.resourceType as string;
+  const componentKey = resourceTypeToComponentKey[resourceType] || resourceType;
+  return componentMap[componentKey as keyof typeof componentMap];
 });
 
 const isResourcePage = computed(() => {

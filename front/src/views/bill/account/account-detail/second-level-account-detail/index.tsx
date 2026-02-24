@@ -6,9 +6,12 @@ import { Message, Button } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
+// TODO: 操作权限重构 —— useVerify + PermissionDialog 需替换为新的 hcm-auth 组件模式
+// 相关操作权限：main_account_edit (AUTH_UPDATE_MAIN_ACCOUNT)
+// provide 的 authAction 也需要重构为使用 auth 组件
 import { useVerify } from '@/hooks';
 import PermissionDialog from '@/components/permission-dialog';
-import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
+import { MENU_SERVICE_APPLY_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 
 export default defineComponent({
@@ -62,7 +65,7 @@ export default defineComponent({
               text
               onClick={() => {
                 routerAction.open({
-                  name: MENU_SERVICE_TICKET_DETAILS,
+                  name: MENU_SERVICE_APPLY_MANAGEMENT_DETAILS,
                   query: {
                     id: data.id,
                   },

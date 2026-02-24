@@ -1,0 +1,60 @@
+.detail-wrap {
+  overflow: auto;
+  background-color: #fff;
+  .formItem-cls {
+    width: 50%;
+    margin-bottom: 0;
+    
+    .bk-form-label, .bk-form-content {
+      line-height: 40px;
+    }
+  }
+}
+
+.account-edit-icon {
+  position: relative;
+  top: -1px;
+  margin: 0 6px 0 25px;
+  color: #3A84FF;
+  cursor: pointer;
+
+  &:hover {
+    color: #3A84FF !important;
+  }
+}
+
+.button-warp {
+  text-align: right;
+}
+
+.icon-disabled {
+  color: #dcdee5;
+}
+
+.info-value {
+  color: #313238;
+}
+
+.account-detail-edit-icon-font {
+  color: #3A84FF;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.validate-btn-container {
+  width: 100%;
+  display: flex;
+  .validate-btn {
+    margin-right: auto;
+    min-width: 88px;
+  }
+}
+
+.mb32 {
+  margin-bottom: 32px;
+} 
+
+.h16 {
+  height: 16px;
+  margin-top: 30px;
+}

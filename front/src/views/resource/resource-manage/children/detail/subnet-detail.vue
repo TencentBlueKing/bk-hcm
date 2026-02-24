@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
 import bus from '@/common/bus';
 
-import { ref, inject, computed, onBeforeMount } from 'vue';
+import { ref, inject, computed, onBeforeMount, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { InfoBox, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
@@ -16,6 +15,7 @@ import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import router from '@/router';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
@@ -23,6 +23,7 @@ import { FieldList } from '../../common/info-list/types';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = ref<any[]>([
   {
@@ -120,7 +121,7 @@ const showAuthDialog = (authActionName: string) => {
 
 const { getRegionName } = useRegionsStore();
 
-const { loading, detail } = useDetail('subnets', route.query.id as string, (detail: any) => {
+const { loading, detail } = useDetail('subnets', route.params.id as string, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       settingFields.value.push(
@@ -281,6 +282,12 @@ const { loading, detail } = useDetail('subnets', route.query.id as string, (deta
   }
 });
 
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`子网：ID（${detail.value.id}）`);
+  }
+});
+
 const handleDeleteSubnet = (data: any) => {
   const subnetIds = [data.id];
   const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
@@ -349,55 +356,50 @@ const handleDeleteSubnet = (data: any) => {
 
 onBeforeMount(() => {
   if (route.query.type === 'gcp') return;
-  resourceStore.countSubnetIps(route.query.id as string).then((res: any) => {
+  resourceStore.countSubnetIps(route.params.id as string).then((res: any) => {
     detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
   });
 });
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      子网：ID（{{ detail.id }}）
-      <template #right>
-        <div
-          v-if="isResourcePage"
-          v-bk-tooltips="{
-            content: '该子网已分配到业务，仅可在业务下操作',
-            disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName],
-          }"
-          @click="showAuthDialog(actionName)"
-        >
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-            @click="handleDeleteSubnet(detail)"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-        <div
-          v-else
-          @click="showAuthDialog(actionName)"
-          v-bk-tooltips="{
-            content: '该子网正在使用中，不能删除',
-            disabled: !authVerifyData?.permissionAction[actionName],
-          }"
-        >
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="authVerifyData?.permissionAction[actionName]"
-            @click="handleDeleteSubnet(detail)"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-      </template>
-    </detail-header>
+  <Teleport to="#breadcrumbExtra">
+    <div
+      v-if="isResourcePage"
+      v-bk-tooltips="{
+        content: '该子网已分配到业务，仅可在业务下操作',
+        disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName],
+      }"
+      @click="showAuthDialog(actionName)"
+    >
+      <bk-button
+        theme="primary"
+        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        @click="handleDeleteSubnet(detail)"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </div>
+    <div
+      v-else
+      @click="showAuthDialog(actionName)"
+      v-bk-tooltips="{
+        content: '该子网正在使用中，不能删除',
+        disabled: !authVerifyData?.permissionAction[actionName],
+      }"
+    >
+      <bk-button
+        theme="primary"
+        :disabled="authVerifyData?.permissionAction[actionName]"
+        @click="handleDeleteSubnet(detail)"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </div>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <bk-loading :loading="loading">
+    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default="type">
           <detail-info

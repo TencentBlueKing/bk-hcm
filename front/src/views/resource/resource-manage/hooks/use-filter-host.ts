@@ -1,3 +1,7 @@
+/**
+ * @deprecated host-manage (资源纳管 + business) 已迁移至 useFilterFromRoute
+ * 仅 load-balancer/AddRsDialog/useAddRsTable.tsx 仍在使用（弹窗内本地搜索场景，不涉及 URL query）
+ */
 import { onMounted, ref, watch } from 'vue';
 import type { FilterType } from '@/typings/resource';
 import { SEARCH_VALUE_IDS } from '@/common/constant';
@@ -194,7 +198,8 @@ const useFilterHost = (props: PropsType) => {
   watch(
     () => props.filter,
     () => {
-      if (/^\/resource\/resource/.test(route.path)) {
+      // 资源列表页（新流程 /resource/manage、旧流程 /resource/resource）切换 tab 时清空搜索
+      if (/\/resource\/(resource|manage)/.test(route.path)) {
         searchValue.value = [];
       }
     },

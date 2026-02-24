@@ -1,3 +1,7 @@
+/**
+ * @deprecated 此文件已废弃，路由配置已迁移到 views 目录下的各模块 route-config.ts
+ * 请使用 views/index.ts 中的 businessViews
+ */
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
@@ -43,7 +47,7 @@ const businessMenus: RouteRecordRaw[] = [
               ...new Meta({
                 activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
                 layout: {
-                  breadcrumbs: {
+                  breadcrumb: {
                     show: false,
                   },
                 },

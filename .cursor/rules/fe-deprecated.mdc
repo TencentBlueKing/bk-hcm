@@ -1,0 +1,126 @@
+---
+description: 禁止使用已废弃或有问题的代码模式
+globs:
+  - 'front/**/*.vue'
+  - 'front/**/*.ts'
+  - 'front/**/*.tsx'
+alwaysApply: true
+---
+
+# 废弃代码模式规范
+
+## 禁止使用的模式
+
+### 1. useFormModel hook
+
+**禁止原因**：`useFormModel` 返回的 `formModel` 是 reactive 对象引用，当传递给外部函数后调用 `resetForm()` 会影响已传递的数据，容易导致数据丢失或状态混乱的问题。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止使用
+import useFormModel from '@/hooks/useFormModel';
+
+const { formModel, resetForm } = useFormModel({
+  name: '',
+  value: '',
+});
+
+// 传递 reactive 引用后 resetForm 会影响已传递的数据
+await submitHandler(formModel);
+resetForm(); // 可能导致问题
+```
+
+**正确做法**：
+
+```typescript
+// ✅ 使用 reactive + 手动重置
+import { reactive } from 'vue';
+
+const initialState = {
+  name: '',
+  value: '',
+};
+
+const formModel = reactive({ ...initialState });
+
+const resetForm = () => {
+  Object.assign(formModel, initialState);
+};
+
+// 传递时创建副本
+await submitHandler({ ...formModel });
+resetForm(); // 不影响已传递的数据
+```
+
+**或者**：
+
+```typescript
+// ✅ 使用 ref + 解构传递
+import { ref } from 'vue';
+
+const formModel = ref({
+  name: '',
+  value: '',
+});
+
+// 传递时解构
+await submitHandler({ ...formModel.value });
+formModel.value = { name: '', value: '' }; // 重置
+```
+
+### 2. route meta 中的 notMenu
+
+**禁止原因**：新架构下菜单由 `menu-service.ts` 独立定义，完全与路由解耦。是否在菜单中展示某个路由，取决于它是否被注册到 `menu-service.ts` 的菜单结构中，而非路由 meta 上的标记。`notMenu` 仅在已废弃的 `views/home/index.tsx`（老布局）中被消费，新的 `components/layout/menu.vue` 不读取此字段。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止在新的 route-config 中使用 notMenu
+{
+  name: MENU_XXX_CREATE,
+  path: 'xxx/create',
+  meta: {
+    ...new Meta({
+      notMenu: true, // 不需要
+      activeKey: MENU_XXX_LIST,
+    }),
+  },
+}
+```
+
+**正确做法**：
+
+```typescript
+// ✅ 不注册到 menu-service.ts 即可，路由中无需任何标记
+{
+  name: MENU_XXX_CREATE,
+  path: 'xxx/create',
+  meta: {
+    ...new Meta({
+      owner: MENU_RESOURCE,
+      activeKey: MENU_XXX_LIST,
+      menu: { i18n: '创建XXX', relative: MENU_XXX_LIST },
+    }),
+  },
+}
+// menu-service.ts 中只注册列表菜单，不注册创建页，自然不会出现在菜单中
+```
+
+**备注**：`router/meta.ts` 中 `RouteMetaConfig.notMenu` 类型定义已移除。`router/module/` 下的老路由文件仍残留 `notMenu` 使用（作为纯冗余字段存在，无任何代码消费），待老文件删除时一并清理。
+
+## 规则扩展
+
+此规则文件用于记录项目中禁止使用的代码模式。发现新的问题模式时，应在此文件中添加说明。
+
+### 添加新规则的格式
+
+```markdown
+### N. 模式名称
+
+**禁止原因**：说明为什么这个模式有问题
+
+**错误示例**：展示错误用法
+
+**正确做法**：展示推荐的替代方案
+```

@@ -1,12 +1,10 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
-// import { useAccountStore } from '@/store';
 
-import { ref, computed, h, withDirectives, inject } from 'vue';
+import { ref, computed, h, withDirectives, inject, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, bkTooltips } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
@@ -17,13 +15,22 @@ import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_RECYCLEBIN,
+  MENU_RESOURCE_DETAIL,
+  MENU_RESOURCE_RECYCLEBIN,
+} from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const isResourcePage: any = inject('isResourcePage');
 const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = [
   {
@@ -108,27 +115,23 @@ const settingFields = ref<FieldList>([
     name: '挂载主机',
     prop: 'instance_id',
     txtBtn(id: string) {
-      const type = 'host';
       const routeInfo: any = {
         query: {
-          id,
           type: detail.value.vendor,
         },
       };
-      // 业务下
-      if (route.path.includes('business')) {
+      if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
-          name: `${type}BusinessDetail`,
+          name: MENU_BUSINESS_HOST_DETAILS,
+          params: { id },
         });
       } else {
         Object.assign(routeInfo, {
-          name: 'resourceDetail',
-          params: {
-            type,
-          },
+          name: MENU_RESOURCE_DETAIL,
+          params: { resourceType: 'host', id },
         });
       }
-      router.push(routeInfo);
+      routerAction.redirect(routeInfo, { history: true });
     },
   },
   {
@@ -165,7 +168,7 @@ const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive
 
 const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
 
-const { loading, detail, getDetail } = useDetail('disks', route.query.id as string, (detail: any) => {
+const { loading, detail, getDetail } = useDetail('disks', route.params.id as string, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       settingFields.value.push(
@@ -254,6 +257,12 @@ const { loading, detail, getDetail } = useDetail('disks', route.query.id as stri
   }
 });
 
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`云硬盘：ID（${detail.value.id}）`);
+  }
+});
+
 const handleShowDelete = () => {
   InfoBox({
     title: '请确认是否回收',
@@ -270,7 +279,7 @@ const handleShowDelete = () => {
         })
         .then(() => {
           router.replace({
-            path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/resource/recycle',
+            name: whereAmI.value === Senarios.business ? MENU_BUSINESS_RECYCLEBIN : MENU_RESOURCE_RECYCLEBIN,
             query: {
               type: 'disk',
             },
@@ -322,56 +331,50 @@ const bkTooltipsOptions = computed(() => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      云硬盘：ID（{{ detail.id }}）
-      <template #right>
-        <bk-button
-          v-if="!detail.instance_id"
-          v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
-          class="w100 ml10"
-          theme="primary"
-          :disabled="disabledOption"
-          @click="handleMountedDrive"
-        >
-          {{ t('挂载') }}
-        </bk-button>
-        <bk-button
-          v-else
-          class="w100 ml10"
-          theme="primary"
-          v-bk-tooltips="
-            bkTooltipsOptions ||
-            (detail.is_system_disk
-              ? {
-                  content: '该硬盘是系统盘，不允许卸载',
-                  disabled: !detail.is_system_disk,
-                }
-              : { disabled: true })
-          "
-          :disabled="disabledOption || detail.is_system_disk"
-          @click="handleUninstallDrive(detail)"
-        >
-          {{ t('卸载') }}
-        </bk-button>
-        <bk-button
-          v-bk-tooltips="
-            bkTooltipsOptions || {
-              content: '该硬盘已绑定主机，不可单独回收',
-              disabled: !detail.instance_id,
+  <Teleport to="#breadcrumbExtra">
+    <bk-button
+      v-if="!detail.instance_id"
+      v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+      theme="primary"
+      :disabled="disabledOption"
+      @click="handleMountedDrive"
+    >
+      {{ t('挂载') }}
+    </bk-button>
+    <bk-button
+      v-else
+      theme="primary"
+      v-bk-tooltips="
+        bkTooltipsOptions ||
+        (detail.is_system_disk
+          ? {
+              content: '该硬盘是系统盘，不允许卸载',
+              disabled: !detail.is_system_disk,
             }
-          "
-          class="w100 ml10"
-          theme="primary"
-          :disabled="!!detail.instance_id || disabledOption"
-          @click="handleShowDelete"
-        >
-          {{ t('回收') }}
-        </bk-button>
-      </template>
-    </detail-header>
+          : { disabled: true })
+      "
+      :disabled="disabledOption || detail.is_system_disk"
+      @click="handleUninstallDrive(detail)"
+    >
+      {{ t('卸载') }}
+    </bk-button>
+    <bk-button
+      v-bk-tooltips="
+        bkTooltipsOptions || {
+          content: '该硬盘已绑定主机，不可单独回收',
+          disabled: !detail.instance_id,
+        }
+      "
+      theme="primary"
+      :disabled="!!detail.instance_id || disabledOption"
+      @click="handleShowDelete"
+    >
+      {{ t('回收') }}
+    </bk-button>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <bk-loading :loading="loading">
+    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default>
           <detail-info :fields="settingFields" :detail="detail" global-copyable />

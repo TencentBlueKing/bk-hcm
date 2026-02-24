@@ -1,3 +1,9 @@
+/**
+ * @deprecated 此文件已废弃。一级账号和二级账号已拆分为独立路由页面：
+ * - 一级账号：./root-account-list.tsx（路由 MENU_BILL_ROOT_ACCOUNT）
+ * - 二级账号：./main-account-list.tsx（路由 MENU_BILL_MAIN_ACCOUNT）
+ * 原 Tab 切换 + panel 共用入口的方式已弃用。
+ */
 import { defineComponent, ref } from 'vue';
 import './index.scss';
 

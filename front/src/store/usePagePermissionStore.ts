@@ -1,3 +1,8 @@
+/**
+ * @deprecated 此文件已废弃
+ * - 权限相关功能请使用 store/auth.ts 中的 useAuthStore
+ * - logout 功能已迁移到 components/layout/header.vue，使用 utils/login-helper.ts
+ */
 import { deleteCookie } from '@/common/util';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';

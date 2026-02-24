@@ -20,8 +20,6 @@ import '@blueking/ediatable/vue3/vue3.css';
 
 // 全量引入 bkui-vue
 import bkui from 'bkui-vue';
-// 全量引入 bkui-vue 样式
-import 'bkui-vue/dist/style.css';
 
 import '@blueking/tdesign-ui/vue3/index.css';
 

@@ -7,8 +7,9 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { PropType, computed, useTemplateRef, watch } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useAccountSelectorStore } from '@/store/account-selector';
 import { Form } from 'bkui-vue';
+import { useRoute } from 'vue-router';
 
 const props = defineProps({
   type: String as PropType<ResourceTypeEnum>,
@@ -81,14 +82,17 @@ const handleChangeAccount = (account: IAccountItem) => {
  * 资源下申请主机、VPC、硬盘时无需选择业务，且无需走审批流程
  */
 const { isResourcePage } = useWhereAmI();
-const resourceAccountStore = useResourceAccountStore();
+const route = useRoute();
+const accountSelectorStore = useAccountSelectorStore();
 
-// TODO: 这里是一个副作用，需要优化
+// 从 route.query 获取 accountId，联查账号详情
 watch(
-  () => resourceAccountStore.resourceAccount?.id,
-  (id) => {
-    selectedCloudAccountId.value = id;
-    handleChangeAccount(resourceAccountStore.resourceAccount as IAccountItem);
+  () => route.query.accountId,
+  (accountId) => {
+    if (!accountId) return;
+    selectedCloudAccountId.value = accountId as string;
+    const account = accountSelectorStore.authorizedResourceAccountList.find((a: { id: string }) => a.id === accountId);
+    if (account) handleChangeAccount(account as IAccountItem);
   },
   {
     immediate: true,

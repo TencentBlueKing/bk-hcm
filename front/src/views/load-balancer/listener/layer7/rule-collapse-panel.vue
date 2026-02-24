@@ -16,7 +16,7 @@ import { ModelPropertyDisplay } from '@/model/typings';
 import { ConditionKeyType, SearchConditionFactory } from '../../children/search/condition-factory';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 import { merge } from 'lodash';
 import routerAction from '@/router/utils/action';
 import { IAuthSign } from '@/common/auth-service';
@@ -59,7 +59,6 @@ const jumpToTargetGroupDetails = (id: string) => {
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
     params: { id },
     query: {
-      [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value,
       type: 'detail',
       vendor: props.listenerRowData.vendor,
     },

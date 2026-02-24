@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { watch, ref, watchEffect, defineExpose } from 'vue';
+import { watch, ref, watchEffect } from 'vue';
 import { useResourceStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
 

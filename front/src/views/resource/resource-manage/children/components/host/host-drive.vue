@@ -2,15 +2,16 @@
 import { h, watch, ref, inject, computed, withDirectives } from 'vue';
 import { bkTooltips, Button } from 'bkui-vue';
 
-import { useRouter, useRoute } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
 import useQueryList from '../../../hooks/use-query-list';
 import bus from '@/common/bus';
 import { useResourceStore } from '@/store/resource';
-import { useAccountStore } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
+import { MENU_BUSINESS_DRIVE_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   data: {
@@ -22,9 +23,7 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
-const accountStore = useAccountStore();
-const router = useRouter();
-const route = useRoute();
+const { whereAmI } = useWhereAmI();
 
 const isResourcePage: any = inject('isResourcePage');
 const authVerifyData: any = inject('authVerifyData');
@@ -92,28 +91,23 @@ const columns = ref([
           text: true,
           theme: 'primary',
           onClick() {
-            const type = 'drive';
             const routeInfo: any = {
               query: {
-                id: cell,
                 type: props.data.vendor,
               },
             };
-            // 业务下
-            if (route.path.includes('business')) {
-              routeInfo.query.bizs = accountStore.bizs;
+            if (whereAmI.value === Senarios.business) {
               Object.assign(routeInfo, {
-                name: `${type}BusinessDetail`,
+                name: MENU_BUSINESS_DRIVE_DETAILS,
+                params: { id: cell },
               });
             } else {
               Object.assign(routeInfo, {
-                name: 'resourceDetail',
-                params: {
-                  type,
-                },
+                name: MENU_RESOURCE_DETAIL,
+                params: { resourceType: 'drive', id: cell },
               });
             }
-            router.push(routeInfo);
+            routerAction.redirect(routeInfo, { history: true });
           },
         },
         [cell || '--'],

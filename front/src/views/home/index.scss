@@ -1,3 +1,4 @@
+// @deprecated 此文件已废弃，布局样式已迁移到 components/layout/ 目录下的对应组件中
 .navigation-container {
     width: 100%;
     padding: 0 !important;
@@ -43,9 +44,8 @@
             overflow-y: auto;
 
             .i-detail-tap-wrap {
-              margin-top: 52px;
               padding: 24px;
-              height: calc(100% - 52px);
+              height: 100%;
 
               .detail-info-main .info-list-item .item-field {
                 width: 120px;

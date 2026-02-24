@@ -1,0 +1,18 @@
+.account-info-container {
+  height: calc(100% - 100px);
+  .bk-tab {
+    height: 100%;
+    .bk-tab-header {
+      line-height: normal !important;
+  
+      .bk-tab-header-item {
+        padding: 0 24px;
+      }
+    }
+    .bk-tab-content {
+      padding: 16px 24px;
+      height: calc(100% - 50px);
+      overflow: auto;
+    }
+  }
+}

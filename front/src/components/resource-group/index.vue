@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watchEffect, defineExpose, watch } from 'vue';
+import { ref, watchEffect, watch } from 'vue';
 import { useBusinessStore } from '@/store';
 
 const props = defineProps({

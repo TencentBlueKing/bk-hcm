@@ -1,3 +1,6 @@
+<!--
+  @deprecated 此文件已废弃，请使用 components/release-note/index.vue
+-->
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import ReleaseNote from '@blueking/release-note';

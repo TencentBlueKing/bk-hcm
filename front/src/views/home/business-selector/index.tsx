@@ -1,3 +1,6 @@
+/**
+ * @deprecated 此文件已废弃，请使用 components/business-selector/global.vue
+ */
 import { defineComponent, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 

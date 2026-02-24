@@ -1,0 +1,83 @@
+---
+description: 禁止使用已废弃或有问题的代码模式
+globs:
+  - "front/**/*.vue"
+  - "front/**/*.ts"
+  - "front/**/*.tsx"
+alwaysApply: true
+---
+
+# 废弃代码模式规范
+
+## 禁止使用的模式
+
+### 1. useFormModel hook
+
+**禁止原因**：`useFormModel` 返回的 `formModel` 是 reactive 对象引用，当传递给外部函数后调用 `resetForm()` 会影响已传递的数据，容易导致数据丢失或状态混乱的问题。
+
+**错误示例**：
+```typescript
+// ❌ 禁止使用
+import useFormModel from '@/hooks/useFormModel';
+
+const { formModel, resetForm } = useFormModel({
+  name: '',
+  value: '',
+});
+
+// 传递 reactive 引用后 resetForm 会影响已传递的数据
+await submitHandler(formModel);
+resetForm(); // 可能导致问题
+```
+
+**正确做法**：
+```typescript
+// ✅ 使用 reactive + 手动重置
+import { reactive } from 'vue';
+
+const initialState = {
+  name: '',
+  value: '',
+};
+
+const formModel = reactive({ ...initialState });
+
+const resetForm = () => {
+  Object.assign(formModel, initialState);
+};
+
+// 传递时创建副本
+await submitHandler({ ...formModel });
+resetForm(); // 不影响已传递的数据
+```
+
+**或者**：
+```typescript
+// ✅ 使用 ref + 解构传递
+import { ref } from 'vue';
+
+const formModel = ref({
+  name: '',
+  value: '',
+});
+
+// 传递时解构
+await submitHandler({ ...formModel.value });
+formModel.value = { name: '', value: '' }; // 重置
+```
+
+## 规则扩展
+
+此规则文件用于记录项目中禁止使用的代码模式。发现新的问题模式时，应在此文件中添加说明。
+
+### 添加新规则的格式
+
+```markdown
+### N. 模式名称
+
+**禁止原因**：说明为什么这个模式有问题
+
+**错误示例**：展示错误用法
+
+**正确做法**：展示推荐的替代方案
+```

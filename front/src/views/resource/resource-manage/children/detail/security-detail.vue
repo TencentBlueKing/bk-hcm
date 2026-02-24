@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import { Message } from 'bkui-vue';
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
 import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
 import Confirm from '@/components/confirm';
 
-import { watch, ref, reactive, computed, provide } from 'vue';
+import { watch, ref, reactive, computed, provide, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { SecurityGroupManageType } from '@/constants/security-group';
@@ -21,8 +21,9 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 const { t } = useI18n();
 const { whereAmI, getBizsId } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
-const securityId = ref(route.query?.id);
+const securityId = ref(route.params?.id ?? route.query?.id);
 const vendor = ref(route.query?.vendor);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
@@ -32,6 +33,15 @@ const templateData = reactive({
   portGroupList: [],
 });
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
+
+watchEffect(() => {
+  if (securityId.value) {
+    setTitle(`${t('安全组')}：ID（${securityId.value}）`);
+  }
+  if (!vendor.value && detail.value?.vendor) {
+    vendor.value = detail.value.vendor;
+  }
+});
 
 const tabs = [
   { name: t('基本信息'), value: 'detail' },
@@ -186,14 +196,11 @@ provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
-  <detail-header>
-    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
-    <template #right>
-      <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
-    </template>
-  </detail-header>
+  <Teleport to="#breadcrumbExtra">
+    <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
+  </Teleport>
 
-  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
       <template #default="type">
         <security-info

@@ -13,7 +13,7 @@ import detailHeader from '@/views/resource/resource-manage/common/header/detail-
 import gridContainer from '@/components/layout/grid-container/grid-container.vue';
 import gridItem from '@/components/layout/grid-container/grid-item.vue';
 import status from './components/status.vue';
-import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import { MENU_SERVICE_APPLY_MANAGEMENT } from '@/constants/menu-symbol';
 
 const props = defineProps<{ applicationDetail: IApplicationDetail; loading: boolean }>();
 
@@ -81,7 +81,7 @@ const paramInfoFields: ModelProperty[] = [
 ];
 
 const navigateTo: RouteLocationRaw = {
-  name: MENU_SERVICE_TICKET_MANAGEMENT,
+  name: MENU_SERVICE_APPLY_MANAGEMENT,
   query: { type: 'load_balancer' },
 };
 </script>

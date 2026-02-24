@@ -52,7 +52,9 @@ export const useRegionStore = defineStore('region', () => {
 
   const getRegionList = async (params: IRegionListParams) => {
     const { vendor, resourceType, rules = [], limit = 500 } = params;
-    const { IdKey, NameKey } = getRegionKey(vendor as VendorEnum);
+    const regionKey = getRegionKey(vendor as VendorEnum);
+    if (!regionKey) return [];
+    const { IdKey, NameKey } = regionKey;
 
     const filter: QueryFilterType = { op: 'and', rules };
     switch (vendor) {

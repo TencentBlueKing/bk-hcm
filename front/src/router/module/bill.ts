@@ -1,3 +1,9 @@
+/**
+ * @deprecated 此文件已废弃。bill 模块路由已迁移到 views/bill/route-config.ts，
+ * 并从一级菜单调整为"资源运营"下的二级路由。
+ * 原"云账号管理"（一级/二级账号 tab 形式）已拆分为独立路由页面（MENU_BILL_ROOT_ACCOUNT、MENU_BILL_MAIN_ACCOUNT）。
+ * 原"云账单管理"已更名为"账单管理"（MENU_BILL_MANAGE）。
+ */
 import type { RouteRecordRaw } from 'vue-router';
 
 const bill: RouteRecordRaw[] = [

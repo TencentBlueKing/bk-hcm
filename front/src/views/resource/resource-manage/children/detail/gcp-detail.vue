@@ -1,7 +1,6 @@
 <!-- eslint-disable @typescript-eslint/prefer-optional-chain -->
 <script lang="ts" setup>
 // @ts-nocheck
-import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 // import GcpRelate from '../components/gcp/gcp-relate.vue';
@@ -18,8 +17,9 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 import { useI18n } from 'vue-i18n';
 
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
@@ -27,6 +27,7 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const { t } = useI18n();
 
@@ -37,7 +38,14 @@ const hostTabs = [
   },
 ];
 
-const id = route.query?.id;
+const id = route.params?.id ?? route.query?.id;
+
+watchEffect(() => {
+  if (id) {
+    setTitle(`${t('GCP防火墙')}：ID（${id}）`);
+  }
+});
+
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
 
@@ -242,32 +250,7 @@ const submit = async (data: any) => {
 </script>
 
 <template>
-  <detail-header>
-    {{ t('GCP防火墙') }}：ID（{{ `${id}` }}）
-    <template #right>
-      <!-- <div @click="showAuthDialog(actionName)">
-        <bk-button
-          :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-          class="w100 ml10"
-          theme="primary"
-          @click="handleGcpAdd(false)"
-        >
-          {{ t('修改') }}
-        </bk-button>
-      </div> -->
-      <!-- <bk-button
-      class="w100 ml10"
-      theme="primary"
-    >
-      {{ t('删除') }}
-    </bk-button> -->
-    </template>
-  </detail-header>
-  <!-- <detail-info
-  :fields="gcpFields"
-  :detail="gcpDetail"
-/> -->
-  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="hostTabs">
       <template #default>
         <detail-info :fields="gcpFields" :detail="gcpDetail" label-width="150px" global-copyable />

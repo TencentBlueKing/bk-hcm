@@ -5,42 +5,50 @@ import {
   createWebHashHistory,
   RouteLocationNormalized,
 } from 'vue-router';
-import { MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT, MENU_SERVICE } from '@/constants/menu-symbol';
-import { businessViews, serviceViews } from '@/views';
-import common from './module/common';
-import resource from './module/resource';
-import resourceInside from './module/resource-inside';
-// import service from './module/service';
-import serviceInside from './module/service-inside';
-// import business from './module/business';
-import scheme from './module/scheme';
-import bill from './module/bill';
-import { useCommonStore } from '@/store';
-import { useVerify } from '@/hooks';
-import { isArray, isRegExp, isString } from 'lodash';
+import {
+  MENU_BUSINESS,
+  MENU_BUSINESS_HOST_MANAGEMENT,
+  MENU_SERVICE,
+  MENU_RESOURCE,
+  MENU_RESOURCE_MANAGE,
+} from '@/constants/menu-symbol';
+import { businessViews, serviceViews, resourceViews } from '@/views';
+import { useAuthStore } from '@/store/auth';
+import { before as businessBeforeInterceptor } from './business-interceptor';
 
-const routes: RouteRecordRaw[] = [
-  ...common,
-  ...resource,
-  ...resourceInside,
-  // ...service,
-  ...serviceInside,
-  ...scheme,
-  ...bill,
+// 状态页面路由
+const statusRouters: RouteRecordRaw[] = [
+  {
+    name: '404',
+    path: '/404',
+    component: () => import('@/views/status/404.vue'),
+  },
+  {
+    name: 'error',
+    path: '/error',
+    component: () => import('@/views/status/error.vue'),
+  },
+];
+
+// 重定向路由
+const redirectRouters: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/business/host',
-    meta: {
-      activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
-    },
+    redirect: { name: MENU_BUSINESS },
   },
+  // catch-all 放在最后
   {
-    path: '/403',
-    redirect: '/403',
+    path: '/:pathMatch(.*)*',
+    redirect: { name: '404' },
   },
+];
+
+const routes: RouteRecordRaw[] = [
+  ...statusRouters,
   {
     name: MENU_BUSINESS,
-    path: '/business',
+    path: '/business/:bizId(\\d+)?',
+    redirect: { name: MENU_BUSINESS_HOST_MANAGEMENT },
     children: businessViews,
   },
   {
@@ -48,6 +56,13 @@ const routes: RouteRecordRaw[] = [
     path: '/service',
     children: serviceViews,
   },
+  {
+    name: MENU_RESOURCE,
+    path: '/resource',
+    redirect: { name: MENU_RESOURCE_MANAGE },
+    children: resourceViews,
+  },
+  ...redirectRouters,
 ];
 
 const router = createRouter({
@@ -55,70 +70,36 @@ const router = createRouter({
   routes,
 });
 
-// 进入目标页面
-const toCurrentPage = (
-  authVerifyData: {
-    permissionAction: Record<string, boolean>;
-    urlParams: {
-      system_id: string;
-      actions: Array<{
-        id: string;
-        name: string;
-        related_resource_types: Array<any>;
-      }>;
-    };
-  },
-  currentFindAuthData: {
-    action: string;
-    id: string;
-    path: string;
-    type: string;
-  },
-  next: NavigationGuardNext,
-  to?: RouteLocationNormalized,
-) => {
-  // 是否需要鉴权
-  const needAuth = !!currentFindAuthData?.id;
-  // 是否有权限
-  const hasAuth = !!authVerifyData?.permissionAction?.[currentFindAuthData?.id];
+router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+  const authStore = useAuthStore();
 
-  if (!needAuth) {
-    if (to?.name === '403') next(!!authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
-    else next();
+  // 1. 业务路由拦截器（bizId 兼容性、默认值、业务权限检查）
+  const canContinue = await businessBeforeInterceptor(to, from, next);
+  if (!canContinue) {
+    // 已拦截（已调用 next），直接返回
     return;
   }
 
-  if (hasAuth) next();
-  else next({ name: '403', params: { id: currentFindAuthData?.id } });
-};
+  // 2. 默认恢复为 default 视图
+  to.meta.view = 'default';
 
-router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  const commonStore = useCommonStore();
-  const { pageAuthData, authVerifyData } = commonStore; // 所有需要检验的查看权限数据
-  const currentFindAuthData = pageAuthData.find((e: any) => {
-    const { path } = e;
-    if (isString(path)) return path === to.path;
-    if (isArray(path)) return path.includes(to.path);
-    if (isRegExp(path)) return path.test(to.path);
-    return undefined;
-  });
+  // 3. 检查视图权限
+  // - 如果已在 preload 中预获取，直接使用缓存
+  // - 否则根据 meta.auth.view 动态请求权限
+  const viewAuthConfig = to.meta?.auth?.view;
+  if (viewAuthConfig) {
+    const viewId = to.name as symbol;
+    // 支持函数形式的权限配置（用于动态 relation，如 bizId）
+    const authSign = typeof viewAuthConfig === 'function' ? viewAuthConfig(to) : viewAuthConfig;
+    const { authorized, permissionData } = await authStore.checkViewPermission(viewId, authSign);
 
-  // if (to.path === '/service/my-approval') {
-  //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
-  //   window.location.reload();
-  // }
-  if (from.path === '/') {
-    // 刷新或者首次进入请求权限接口
-    const { getAuthVerifyData } = useVerify(); // 权限中心权限
-    getAuthVerifyData(pageAuthData).then(() => {
-      const { authVerifyData } = commonStore;
-      toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
-    });
-  } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
-    next();
-  } else {
-    toCurrentPage(authVerifyData, currentFindAuthData as any, next);
+    if (!authorized) {
+      to.meta.view = 'permission';
+      to.meta.permissionData = permissionData;
+    }
   }
+
+  next();
 });
 
 export default router;

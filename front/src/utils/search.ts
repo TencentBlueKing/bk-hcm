@@ -193,11 +193,30 @@ export const getSimpleConditionBySearchSelect = (
   // 将搜索值转换为 rules，rule之间为AND关系，rule.values之间为OR关系
   return Object.fromEntries(
     searchValue.reduce((conditionMap, { id, values }) => {
-      const formattedValues = values.map((v) => applyFormatters(v.id, id));
+      const formattedValues = (values || []).map((v) => applyFormatters(v.id, id));
       conditionMap.set(id, [...(conditionMap.get(id) || []), ...formattedValues]);
       return conditionMap;
     }, new Map<string, Array<string>>()),
   );
+};
+
+/**
+ * 将 search-select 的 modelValue 转换为 searchQs.set 所需格式
+ * @returns Record<string, string | number | string[] | number[]> 单值用标量，多值用数组
+ */
+export const searchSelectValueToSearchQsCondition = (
+  searchValue: ISearchSelectValue,
+  options: Array<{ field: string; formatter?: Function }> = [],
+): Record<string, string | number | string[] | number[]> => {
+  const condition = getSimpleConditionBySearchSelect(searchValue, options);
+  if (!condition) return {};
+
+  const result: Record<string, string | number | string[] | number[]> = {};
+  for (const [id, values] of Object.entries(condition)) {
+    if (!values || values.length === 0) continue;
+    result[id] = values.length === 1 ? values[0] : values;
+  }
+  return result;
 };
 
 // 处理本地搜索，返回一个filterFn - search-select

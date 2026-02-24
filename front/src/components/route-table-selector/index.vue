@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { ref, watchEffect, defineExpose, watch } from 'vue';
-import { useBusinessStore, useAccountStore } from '@/store';
+import { ref, watchEffect, watch } from 'vue';
+import { useBusinessStore } from '@/store';
 
 const props = defineProps({
   modelValue: {
@@ -14,14 +14,12 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const businessStore = useBusinessStore();
-const accountStore = useAccountStore();
 const tableList = ref([]);
 const loading = ref(null);
 const page = ref(0);
 const selectedValue = ref(props.modelValue);
 const hasMoreData = ref(true);
 
-console.log(accountStore.bizs);
 const getSelectData = async () => {
   if (!hasMoreData.value || !props.cloudVpcId) return;
   loading.value = true;
