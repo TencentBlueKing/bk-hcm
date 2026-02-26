@@ -4,9 +4,8 @@ import { CloudType } from '@/typings/account';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
-import bus from '@/common/bus';
 
-import { ref, inject, computed, onBeforeMount, watchEffect } from 'vue';
+import { ref, inject, computed, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { InfoBox, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
@@ -20,9 +19,11 @@ import router from '@/router';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
+import { AUTH_DELETE_IAAS_RESOURCE, AUTH_BIZ_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
 const { setTitle } = useBreadcrumb();
 
 const hostTabs = ref<any[]>([
@@ -53,7 +54,7 @@ const settingFields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+      return `/#/service/account/details/${val}`;
     },
   },
   {
@@ -99,25 +100,10 @@ const settingFields = ref<FieldList>([
 
 const { t } = useI18n();
 
-const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
 
 const resourceStore = useResourceStore();
 const route = useRoute();
-
-const isBindBusiness = computed(() => {
-  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
-});
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const { getRegionName } = useRegionsStore();
 
@@ -280,6 +266,21 @@ const { loading, detail } = useDetail('subnets', route.params.id as string, (det
       );
       break;
   }
+
+  if (detail.vendor !== 'gcp') {
+    resourceStore.countSubnetIps(route.params.id as string).then((res: any) => {
+      detail.ipv4_nums = res?.data?.available_ip_count || 0;
+    });
+  }
+});
+
+const isBindBusiness = computed(() => {
+  return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+});
+
+const deleteSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_DELETE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_DELETE_IAAS_RESOURCE, relation: [detail.value.account_id] };
 });
 
 watchEffect(() => {
@@ -353,49 +354,36 @@ const handleDeleteSubnet = (data: any) => {
     },
   );
 };
-
-onBeforeMount(() => {
-  if (route.query.type === 'gcp') return;
-  resourceStore.countSubnetIps(route.params.id as string).then((res: any) => {
-    detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
-  });
-});
 </script>
 
 <template>
   <Teleport to="#breadcrumbExtra">
-    <div
-      v-if="isResourcePage"
-      v-bk-tooltips="{
-        content: '该子网已分配到业务，仅可在业务下操作',
-        disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName],
-      }"
-      @click="showAuthDialog(actionName)"
-    >
+    <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
       <bk-button
+        v-if="isResourcePage"
+        v-bk-tooltips="{
+          content: '该子网已分配到业务，仅可在业务下操作',
+          disabled: !isBindBusiness,
+        }"
         theme="primary"
-        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        :disabled="isBindBusiness || noPerm"
         @click="handleDeleteSubnet(detail)"
       >
         {{ t('删除') }}
       </bk-button>
-    </div>
-    <div
-      v-else
-      @click="showAuthDialog(actionName)"
-      v-bk-tooltips="{
-        content: '该子网正在使用中，不能删除',
-        disabled: !authVerifyData?.permissionAction[actionName],
-      }"
-    >
       <bk-button
+        v-else
+        v-bk-tooltips="{
+          content: '该子网正在使用中，不能删除',
+          disabled: noPerm,
+        }"
         theme="primary"
-        :disabled="authVerifyData?.permissionAction[actionName]"
+        :disabled="!noPerm"
         @click="handleDeleteSubnet(detail)"
       >
         {{ t('删除') }}
       </bk-button>
-    </div>
+    </hcm-auth>
   </Teleport>
 
   <bk-loading :loading="loading">

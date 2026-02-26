@@ -9,6 +9,18 @@ alwaysApply: true
 
 # 废弃代码模式规范
 
+## 总则
+
+**不要修改已标记为 `@deprecated` 的文件**。这些文件是死代码，待整体删除时一并清理。修改它们既浪费精力，又可能引入不必要的合并冲突。
+
+已标记废弃的文件目录：
+- `router/module/` — 老路由配置（已迁移到 `views/*/route-config.ts`）
+- `views/home/index.tsx` — 老布局（已迁移到 `components/layout/`）
+- `views/error-pages/403.tsx` — 老 403 页面（已迁移到 `views/status/permission.vue`）
+- `components/permission-dialog/` — 老权限弹窗（已迁移到 `components/permission/apply-dialog.vue`）
+- `components/global-permission-dialog/` — 老全局权限弹窗
+- `store/useGlobalPermissionDialog.ts` — 老权限弹窗 store
+
 ## 禁止使用的模式
 
 ### 1. useFormModel hook
@@ -108,6 +120,172 @@ formModel.value = { name: '', value: '' }; // 重置
 ```
 
 **备注**：`router/meta.ts` 中 `RouteMetaConfig.notMenu` 类型定义已移除。`router/module/` 下的老路由文件仍残留 `notMenu` 使用（作为纯冗余字段存在，无任何代码消费），待老文件删除时一并清理。
+
+### 3. route meta 中的 isShowBreadcrumb 和 icon
+
+**禁止原因**：
+- `isShowBreadcrumb` 已被 `layout.breadcrumb.show` 替代，`Meta` 类通过 `layout` 嵌套对象管理面包屑配置。
+- `icon` 仅在已废弃的 `views/home/index.tsx`（老菜单渲染）中被消费，新菜单由 `menu-service.ts` 管理图标。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止：使用 isShowBreadcrumb
+meta: {
+  ...new Meta({
+    isShowBreadcrumb: false,
+  }),
+}
+
+// ❌ 禁止：使用 icon
+meta: {
+  icon: 'hcm-icon bkhcm-icon-host',
+}
+```
+
+**正确做法**：
+
+```typescript
+// ✅ 使用 layout.breadcrumb.show
+meta: {
+  ...new Meta({
+    layout: { breadcrumb: { show: false } },
+  }),
+}
+// show: true 是 Meta 的默认值，无需显式设置
+```
+
+### 4. useVerify hook 及 authVerifyData
+
+**禁止原因**：`useVerify` 依赖的 `commonStore.authVerify`、`commonStore.authActionUrl`、`commonStore.addAuthVerifyData` 方法已从 store 中完全移除。调用 `getAuthVerifyData()` 会报错，`authVerifyData.permissionAction` 始终为空对象 `{}`，导致所有基于它的权限判断失败，按钮永远禁用。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止：useVerify 已废弃
+import { useVerify } from '@/hooks';
+const { authVerifyData, handleAuth } = useVerify();
+
+// permissionAction 始终为 {}，按钮永远禁用
+const disabled = !authVerifyData?.permissionAction?.some_action;
+
+// urlParams 始终为 {}，handleAuth 无法弹出弹窗
+handleAuth('some_action_name');
+```
+
+```typescript
+// ❌ 禁止：通过 provide/inject 传递 authVerifyData
+provide('authVerifyData', authVerifyData);
+const authVerifyData = inject('authVerifyData');
+```
+
+```typescript
+// ❌ 禁止：使用 bus 触发权限弹窗
+bus.$emit('auth', actionName);
+```
+
+**正确做法**：使用 `HcmAuth` 组件（`components/auth/auth.vue`）包裹按钮。
+
+```vue
+<!-- ✅ Vue 模板用法 -->
+<script setup lang="ts">
+import { AUTH_MANAGE_RECYCLE_BIN } from '@/constants/auth-symbols';
+const authSign = { type: AUTH_MANAGE_RECYCLE_BIN };
+</script>
+
+<template>
+  <hcm-auth :sign="authSign" v-slot="{ noPerm }">
+    <bk-button :disabled="noPerm" @click="doAction">操作</bk-button>
+  </hcm-auth>
+</template>
+```
+
+```tsx
+// ✅ TSX 用法
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+
+<HcmAuth sign={{ type: AUTH_UPDATE_IAAS_RESOURCE, relation: [accountId] }}>
+  {{
+    default: ({ noPerm }: { noPerm: boolean }) => (
+      <Button disabled={noPerm} onClick={handler}>操作</Button>
+    ),
+  }}
+</HcmAuth>
+```
+
+**参考**：详细的迁移指南和 auth ID → auth symbol 映射表见 `.cursor/rules/fe-auth-migration.mdc`。
+
+### 5. 403.tsx / NoPermission.tsx 做视图无权限控制
+
+**禁止原因**：旧的 `/403/:id` 路由和 `views/error-pages/403.tsx` 页面已废弃。视图权限现在由路由守卫通过 `route.meta.auth.view` 控制，无权限时渲染 `views/status/permission.vue`（资源/工作台）或 `views/status/business.vue`（业务）。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止：导入旧的 403 页面组件
+import ErrorPage403 from '@/views/error-pages/403';
+
+// ❌ 禁止：导入 NoPermission 组件做视图权限控制
+import NoPermission from '@/views/resource/NoPermission';
+
+// ❌ 禁止：导航到 /403/:id 路由
+router.push(`/403/${authId}`);
+
+// ❌ 禁止：通过 hasPagePermission 控制页面渲染
+const { hasPagePermission } = usePagePermissionStore();
+if (!hasPagePermission) return () => <NoPermission />;
+```
+
+**正确做法**：在路由配置的 meta 中声明 `auth.view`，路由守卫自动处理权限检查和页面切换。
+
+```typescript
+// ✅ 正确：在 route-config.ts 中声明 auth.view
+import { AUTH_FIND_IAAS_RESOURCE } from '@/constants/auth-symbols';
+
+{
+  name: MENU_RESOURCE_MANAGE,
+  path: 'manage',
+  component: () => import('@/views/resource-manage/entry.vue'),
+  meta: {
+    ...new Meta({
+      owner: MENU_RESOURCE,
+      auth: {
+        view: { type: AUTH_FIND_IAAS_RESOURCE },
+      },
+    }),
+  },
+}
+
+// ✅ 正确：需要动态参数的业务路由
+auth: {
+  view: (to) => ({ type: AUTH_ACCESS_BIZ, relation: [Number(to.params.bizId)] }),
+}
+```
+
+**参考**：视图权限配置详见 `.cursor/rules/fe-auth-migration.mdc` 中的「视图级别权限」章节。
+
+### 6. 旧 PermissionDialog / GlobalPermissionDialog 组件
+
+**禁止原因**：`components/permission-dialog/index.tsx` 和 `components/global-permission-dialog/index.tsx` 依赖已废弃的 `useVerify` hook，功能已不可用。操作级别权限弹窗已迁移到 `components/permission/apply-dialog.vue`，通过 `window.hcmPermissionDialog.show(permission)` 调用。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止：使用旧的 PermissionDialog 组件
+import PermissionDialog from '@/components/permission-dialog';
+
+// ❌ 禁止：使用旧的 GlobalPermissionDialog
+import GlobalPermissionDialog from '@/components/global-permission-dialog';
+
+// ❌ 禁止：使用旧的 store
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+
+// ❌ 禁止：使用 bus 事件触发权限弹窗
+bus.$emit('show-forbidden', data);
+```
+
+**正确做法**：HTTP 层 403 错误自动通过 `window.hcmPermissionDialog` 弹出权限申请弹窗（`http/index.ts` 已处理）。操作级别权限使用 `HcmAuth` 组件（自动集成权限申请弹窗）。
 
 ## 规则扩展
 

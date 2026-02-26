@@ -20,8 +20,8 @@ const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
 const { t } = useI18n();
 const route = useRoute();
 
-// 资源运营现已拆分为独立模块（资源纳管、回收管理、操作记录），需要显示侧边菜单
-const isNeedSideMenu = computed(() => true);
+const isStatusPage = computed(() => route.name === '404' || route.name === 'error');
+const isNeedSideMenu = computed(() => !isStatusPage.value);
 const hasFooter = computed(() => route.name === MENU_BUSINESS_HOST_MANAGEMENT);
 
 // 面包屑

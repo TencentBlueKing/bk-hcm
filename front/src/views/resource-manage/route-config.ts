@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
+import { AUTH_FIND_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import {
   MENU_RESOURCE,
   MENU_RESOURCE_MANAGE,
@@ -26,6 +27,9 @@ const resourceManageRoutes: RouteRecordRaw[] = [
       ...new Meta({
         owner: MENU_RESOURCE,
         activeKey: MENU_RESOURCE_MANAGE,
+        auth: {
+          view: { type: AUTH_FIND_IAAS_RESOURCE },
+        },
         menu: {
           i18n: '资源纳管',
         },

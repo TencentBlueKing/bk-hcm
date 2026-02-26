@@ -15,10 +15,10 @@ export default [
       ...new Meta({
         owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_TASK_MANAGEMENT,
+        layout: { breadcrumb: { show: false } },
         menu: {
           i18n: '任务管理',
         },
-        icon: 'hcm-icon bkhcm-icon-bushu',
       }),
     },
   },
@@ -30,7 +30,7 @@ export default [
       ...new Meta({
         owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_TASK_MANAGEMENT,
-        isShowBreadcrumb: true,
+        layout: { breadcrumb: { show: false } },
         menu: {
           i18n: '任务详情',
           relative: MENU_BUSINESS_TASK_MANAGEMENT,

@@ -1,4 +1,4 @@
-import { defineComponent, provide, ref, watch } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore, { IMainAccountDetail } from '@/store/useBillStore';
@@ -6,13 +6,9 @@ import { Message, Button } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
-// TODO: 操作权限重构 —— useVerify + PermissionDialog 需替换为新的 hcm-auth 组件模式
-// 相关操作权限：main_account_edit (AUTH_UPDATE_MAIN_ACCOUNT)
-// provide 的 authAction 也需要重构为使用 auth 组件
-import { useVerify } from '@/hooks';
-import PermissionDialog from '@/components/permission-dialog';
 import { MENU_SERVICE_APPLY_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
+import { AUTH_UPDATE_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 
 export default defineComponent({
   props: {
@@ -24,17 +20,7 @@ export default defineComponent({
   setup(props) {
     const detail = ref<IMainAccountDetail>({});
     const billStore = useBillStore();
-
-    const {
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
-    } = useVerify();
-    // provide 预鉴权参数
-    provide('authAction', { authVerifyData, handleAuth, authId: 'main_account_edit' });
+    const getAuthSign = () => ({ type: AUTH_UPDATE_MAIN_ACCOUNT });
 
     const getDetail = async () => {
       const { data } = await billStore.main_account_detail(props.accountId);
@@ -99,26 +85,19 @@ export default defineComponent({
             { prop: 'name', name: '二级帐号名称' },
             { prop: 'cloud_id', name: '云账号id' },
             { prop: 'site', name: '站点类型', render: () => SITE_TYPE_MAP[detail.value.site] },
-            { prop: 'email', name: '帐号邮箱', edit: true },
-            { prop: 'managers', name: '主负责人', edit: true, type: 'member' },
-            { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member' },
+            { prop: 'email', name: '帐号邮箱', edit: true, getAuthSign },
+            { prop: 'managers', name: '主负责人', edit: true, type: 'member', getAuthSign },
+            { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member', getAuthSign },
             {
               prop: 'op_product_id',
               name: '业务',
             },
-            { prop: 'memo', name: '备注', edit: true },
+            { prop: 'memo', name: '备注', edit: true, getAuthSign },
             { prop: 'creator', name: '创建者' },
             { prop: 'reviser', name: '修改者' },
             { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.value.created_at) },
             { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.value.updated_at) },
           ]}
-        />
-        {/* 申请权限 */}
-        <PermissionDialog
-          v-model:isShow={showPermissionDialog.value}
-          params={permissionParams.value}
-          onCancel={handlePermissionDialog}
-          onConfirm={handlePermissionConfirm}
         />
       </div>
     );

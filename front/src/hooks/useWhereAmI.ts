@@ -21,7 +21,6 @@ export const useWhereAmI = (): {
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     // 兼容旧 /bill/ 路径
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
-    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
 

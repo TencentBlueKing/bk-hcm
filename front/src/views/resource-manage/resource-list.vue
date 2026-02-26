@@ -24,7 +24,7 @@ import { useI18n } from 'vue-i18n';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
-import { QueryRuleOPEnum } from '@/typings';
+
 import {
   MENU_RESOURCE_LOAD_BALANCER_APPLY,
   MENU_RESOURCE_DISK_APPLY,
@@ -72,29 +72,6 @@ const assign = computed({
       query: { ...route.query, assign: val === 'all' ? undefined : String(val) },
     });
   },
-});
-
-/**
- * @deprecated 仅为尚未迁移到 useFilterFromRoute 的旧组件（security-manage、load-balancer-manage、cert-manager）提供兼容。
- * 已迁移的组件（host、vpc、subnet 等）不使用此 prop，它们在 useFilterFromRoute 中自行读取 route.query。
- */
-const legacyFilter = computed(() => {
-  const rules: any[] = [];
-  if (accountId.value) {
-    rules.push({ field: 'account_id', op: QueryRuleOPEnum.EQ, value: accountId.value });
-  }
-  if (queryVendor.value) {
-    rules.push({ field: 'vendor', op: QueryRuleOPEnum.EQ, value: queryVendor.value });
-  }
-  const status = assign.value;
-  if (status && status !== 'all') {
-    rules.push({
-      field: 'bk_biz_id',
-      op: Number(status) === 1 ? QueryRuleOPEnum.NEQ : QueryRuleOPEnum.EQ,
-      value: -1,
-    });
-  }
-  return { op: 'and', rules };
 });
 
 const isShowSideSlider = ref(false);
@@ -204,10 +181,6 @@ const handleSecrityType = (val: 'group' | 'gcp' | 'template') => {
   securityType.value = val;
 };
 
-const handleRouteDone = () => {
-  // 资源类型已由 route.params.resourceType 表达，搜索条件后续由 searchQs 实现
-};
-
 const handleCancel = () => {
   isShowSideSlider.value = false;
   isEdit.value = false;
@@ -285,10 +258,8 @@ const computedSecurityText = computed(() => {
             v-if="item.name === activeTab"
             :is="item.component"
             @handle-secrity-type="handleSecrityType"
-            @route-done="handleRouteDone"
             ref="componentRef"
             @edit="handleEdit"
-            v-model:is-form-data-changed="isFormDataChanged"
           >
             <template
               v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab) && !isOtherVendor"
@@ -317,7 +288,6 @@ const computedSecurityText = computed(() => {
       <template #default>
         <component
           :is="renderForm"
-          :filter="legacyFilter"
           @cancel="handleCancel"
           @success="handleSuccess"
           :is-edit="isEdit"

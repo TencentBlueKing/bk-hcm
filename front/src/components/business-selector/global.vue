@@ -35,8 +35,9 @@ const sortBusinessList = () => {
 watch(
   () => props.value,
   async (newValue) => {
-    await businessFavorite.get(newValue);
     selectedValue.value.id = newValue;
+    if (!businessGlobalStore.businessAuthorizedList.some((biz) => biz.id === newValue)) return;
+    await businessFavorite.get(newValue);
     sortBusinessList();
   },
 );

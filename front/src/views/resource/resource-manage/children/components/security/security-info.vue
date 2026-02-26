@@ -14,8 +14,8 @@ import UserValue from '@/components/display-value/user-value.vue';
 import UpdateMgmtTypeDialog from '../../dialog/security-group/update-mgmt-type.vue';
 import UpdateMgmtAttrSingleDialog from '../../dialog/security-group/update-mgmt-attr-single.vue';
 import { SecurityGroupMgmtAttrSingleType } from '@/store/security-group';
-import { useVerify } from '@/hooks/useVerify';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import { VendorEnum } from '@/common/constant';
 import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
@@ -48,13 +48,12 @@ const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('opera
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
-
-const { handleAuth, authVerifyData } = useVerify();
-
-const authAction = computed(() =>
-  whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate',
-);
+const { getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.detail?.account_id] };
+});
 
 const mgmtAttrFields: FieldList = [
   {
@@ -313,10 +312,6 @@ const mgmtAttrSingleDialogState = reactive<{
   field: undefined,
 });
 const handleUpdateMgmtAttrSingle = (field: SecurityGroupMgmtAttrSingleType) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
   mgmtAttrSingleDialogState.isShow = true;
   mgmtAttrSingleDialogState.isHidden = false;
   mgmtAttrSingleDialogState.field = field;
@@ -358,19 +353,20 @@ const handleChange = async (val: any) => {
     <template v-else>
       <h3 class="info-title">
         使用范围
-        <bk-button
-          text
-          size="small"
-          theme="primary"
-          style="font-weight: 400; margin-left: 12px"
-          :disabled="!hasEditScopeInBusiness"
-          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          v-bk-tooltips="operateTooltipsOption"
-          @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
-        >
-          <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />
-          <span style="margin-left: 4px">编辑</span>
-        </bk-button>
+        <hcm-auth :sign="updateSign" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            text
+            size="small"
+            theme="primary"
+            style="font-weight: 400; margin-left: 12px"
+            :disabled="noPerm || !hasEditScopeInBusiness"
+            v-bk-tooltips="operateTooltipsOption"
+            @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
+          >
+            <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />
+            <span style="margin-left: 4px">编辑</span>
+          </bk-button>
+        </hcm-auth>
       </h3>
       <div class="wrap-info">
         <detail-info

@@ -1,7 +1,11 @@
+/**
+ * @deprecated 已废弃。视图权限页面已迁移到 views/status/permission.vue，
+ * 由路由守卫通过 route.meta.view = 'permission' 控制显示。
+ * 此文件及对应的 /403/:id 路由（router/module/common.ts）均为死代码，可安全删除。
+ */
 import { defineComponent, ref, watch, PropType } from 'vue';
 import { Button } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
-import { useCommonStore } from '@/store';
 import { useRoute } from 'vue-router';
 
 import permissions from '@/assets/image/403.png';
@@ -14,36 +18,20 @@ export default defineComponent({
   setup(props) {
     const { t } = useI18n();
     const route = useRoute();
-    const commonStore = useCommonStore();
-    const authUrl = ref('');
     const urlLoading = ref<boolean>(false);
     const urlKey = ref<string>('');
 
-    // 根据urlKey获取权限链接
-    const getAuthActionUrl = async () => {
-      const { authVerifyData } = commonStore;
-      if (authVerifyData) {
-        // 权限矩阵数据
-        const params = authVerifyData.urlParams[urlKey.value]; // 获取权限链接需要的参数
-        if (params) {
-          urlLoading.value = true;
-          const res = await commonStore.authActionUrl(params); // 列表的权限申请地址
-          authUrl.value = res;
-          urlLoading.value = false;
-        }
-      }
-    };
+    // TODO: authVerifyData 已从 commonStore 移除，权限申请链接获取需要适配新的权限系统
+    const authUrl = ref('');
 
     watch(
       () => route.path,
       (path) => {
         if (['/scheme/recommendation'].includes(path)) {
           urlKey.value = 'cloud_selection_recommend';
-          getAuthActionUrl();
         }
         if (['/scheme/deployment/list'].includes(path)) {
           urlKey.value = 'cloud_selection_find';
-          getAuthActionUrl();
         }
       },
       {
@@ -56,7 +44,6 @@ export default defineComponent({
       (key: any, oldKey: any) => {
         if (key === oldKey) return;
         urlKey.value = key;
-        getAuthActionUrl();
       },
       { immediate: true },
     );
@@ -66,14 +53,12 @@ export default defineComponent({
       (key: any, oldKey: any) => {
         if (key === oldKey) return;
         urlKey.value = key;
-        getAuthActionUrl();
       },
       { immediate: true },
     );
 
-    // 打开一个新窗口
     const handlePermissionJump = () => {
-      window.open(authUrl.value);
+      if (authUrl.value) window.open(authUrl.value);
     };
 
     return {

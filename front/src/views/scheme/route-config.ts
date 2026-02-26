@@ -7,7 +7,7 @@ import {
   MENU_SCHEME_LIST,
   MENU_SCHEME_DETAIL,
 } from '@/constants/menu-symbol';
-import { AUTH_CREATE_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
+import { AUTH_CREATE_CLOUD_SELECTION_SCHEME, AUTH_FIND_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
 
 export default [
   {
@@ -54,6 +54,7 @@ export default [
           ...new Meta({
             owner: MENU_SERVICE,
             activeKey: MENU_SCHEME,
+            auth: { view: { type: AUTH_FIND_CLOUD_SELECTION_SCHEME } },
             menu: {
               i18n: '方案列表',
               relative: MENU_SCHEME,

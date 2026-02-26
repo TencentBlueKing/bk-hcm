@@ -69,8 +69,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '主机',
           activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-host',
         },
       },
       {
@@ -91,7 +89,7 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
-                isShowBreadcrumb: false,
+                layout: { breadcrumb: { show: false } },
               }),
             },
           },
@@ -101,7 +99,7 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
-                isShowBreadcrumb: false,
+                layout: { breadcrumb: { show: false } },
               }),
             },
           },
@@ -109,8 +107,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '硬盘',
           activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-disk',
         },
       },
       {
@@ -137,7 +133,6 @@ const businessMenus: RouteRecordRaw[] = [
           title: '镜像',
           activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
           notMenu: true,
-          icon: 'hcm-icon bkhcm-icon-image',
         },
       },
       {
@@ -158,7 +153,7 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
-                isShowBreadcrumb: false,
+                layout: { breadcrumb: { show: false } },
               }),
             },
           },
@@ -166,8 +161,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: 'VPC',
           activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-vpc',
         },
       },
       {
@@ -188,7 +181,7 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
-                isShowBreadcrumb: false,
+                layout: { breadcrumb: { show: false } },
               }),
             },
           },
@@ -196,8 +189,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '子网',
           activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-subnet',
         },
       },
       {
@@ -217,15 +208,12 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
-              isShowBreadcrumb: false,
             },
           },
         ],
         meta: {
           title: '弹性IP',
           activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-eip',
         },
       },
       {
@@ -245,15 +233,12 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
-              isShowBreadcrumb: false,
             },
           },
         ],
         meta: {
           title: '网络接口',
           activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-network-interface',
         },
       },
       {
@@ -273,15 +258,12 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
-              isShowBreadcrumb: false,
             },
           },
         ],
         meta: {
           title: '路由表',
           activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-route-table',
         },
       },
       {
@@ -301,15 +283,12 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
-              isShowBreadcrumb: false,
             },
           },
         ],
         meta: {
           title: '安全组',
           activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-security-group',
         },
       },
       {
@@ -338,8 +317,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '证书托管',
           activeKey: MENU_BUSINESS_CERT_MANAGEMENT,
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-cert',
           isFilterAccount: true,
         },
       },
@@ -365,8 +342,6 @@ const businessMenus: RouteRecordRaw[] = [
         meta: {
           title: '回收站',
           activeKey: 'businessRecyclebin',
-          isShowBreadcrumb: true,
-          icon: 'hcm-icon bkhcm-icon-recyclebin',
         },
       },
       {

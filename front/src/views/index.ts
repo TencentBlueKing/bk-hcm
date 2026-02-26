@@ -22,32 +22,32 @@ import accountManage from '@/views/account-manage/route-config';
 import resourceManage from '@/views/resource-manage/route-config';
 import billRoutes from '@/views/bill/route-config';
 
+import statusNotFound from '@/views/status/404.vue';
 import statusError from '@/views/status/error.vue';
 import statusBusiness from '@/views/status/business.vue';
 import statusPermission from '@/views/status/permission.vue';
 import { MENU_BUSINESS } from '@/constants/menu-symbol';
 
 /**
- * 为路由注入状态组件
- * - 业务视图使用 statusBusiness 作为 permission 视图
- * - 资源视图使用 statusPermission 作为 permission 视图
- * - 所有视图使用 statusError 作为 error 视图
+ * 为路由注入状态组件（named views）
+ * - notFound: 404 页面（available=false 或功能未开放时）
+ * - error: 500 错误页面（路由守卫异常时）
+ * - permission: 权限申请页面（业务→business，资源→permission）
  */
 const injectStatusComponents = (routes: RouteRecordRaw[]) => {
   routes.forEach((route) => {
     route.components = {
       default: route.component,
+      notFound: statusNotFound,
       error: statusError,
     };
 
-    // 业务视图使用 business 状态页面，资源视图使用 permission 状态页面
     if (route.meta?.owner === MENU_BUSINESS) {
       route.components.permission = statusBusiness;
     } else {
       route.components.permission = statusPermission;
     }
 
-    // 递归处理子路由
     if (route.children) {
       injectStatusComponents(route.children);
     }

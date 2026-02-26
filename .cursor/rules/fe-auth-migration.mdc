@@ -1,0 +1,291 @@
+# 权限系统迁移规范
+
+## 背景
+
+权限系统分两个层面：
+
+1. **视图级别**：用户能否看到某个页面（路由守卫拦截，显示权限申请页）
+2. **操作级别**：用户能否执行某个操作（按钮禁用 + 权限申请弹窗）
+
+旧方案（`useVerify` hook + `403.tsx` 页面 + `PermissionDialog` 组件）已全部废弃，依赖的 store 方法已移除。
+
+## 一、视图级别权限
+
+### 机制
+
+1. **路由配置**：在 `route-config.ts` 的 `meta.auth.view` 中声明所需权限
+2. **预鉴权**：`constants/view-auth.ts` 配置静态权限签名，应用启动时批量鉴权
+3. **路由守卫**：`router/index.ts` 中 `beforeEach` 检查 `route.meta.auth.view`，无权限时设置 `route.meta.view = 'permission'`
+4. **权限页面**：`views/status/permission.vue`（资源/工作台）或 `views/status/business.vue`（业务）渲染权限申请页
+
+### 添加视图权限的步骤
+
+**第一步**：在 `route-config.ts` 中声明 `auth.view`
+
+```typescript
+import { AUTH_FIND_IAAS_RESOURCE } from '@/constants/auth-symbols';
+
+{
+  name: MENU_RESOURCE_MANAGE,
+  path: 'manage',
+  meta: {
+    ...new Meta({
+      owner: MENU_RESOURCE,
+      auth: {
+        view: { type: AUTH_FIND_IAAS_RESOURCE },
+      },
+    }),
+  },
+}
+```
+
+动态参数场景（如业务 ID）使用函数形式：
+
+```typescript
+auth: {
+  view: (to) => ({ type: AUTH_ACCESS_BIZ, relation: [Number(to.params.bizId)] }),
+}
+```
+
+**第二步**：在 `constants/view-auth.ts` 中添加预鉴权配置（仅限无动态参数的静态权限）
+
+```typescript
+export const viewAuthConfig: IViewAuthConfig[] = [
+  { viewId: MENU_RESOURCE_MANAGE, authSign: { type: AUTH_FIND_IAAS_RESOURCE } },
+  // ...
+];
+```
+
+**第三步**：在 `views/status/permission.vue` 的 `descriptions` Map 中添加对应的权限说明文案（可选，用于展示友好的权限申请说明）
+
+### 已配置的视图权限
+
+| 路由 | auth.view | 预鉴权 |
+|---|---|---|
+| `MENU_RESOURCE_MANAGE` | `AUTH_FIND_IAAS_RESOURCE` | ✅ |
+| `MENU_RESOURCE_RECYCLEBIN` | `AUTH_FIND_RECYCLE_BIN` | ✅ |
+| `MENU_RESOURCE_OPERATION_LOG` | `AUTH_BIZ_FIND_AUDIT` | ✅ |
+| `MENU_SCHEME_RECOMMENDATION` | `AUTH_CREATE_CLOUD_SELECTION_SCHEME` | ✅ |
+| `MENU_SCHEME_LIST` | `AUTH_FIND_CLOUD_SELECTION_SCHEME` | ✅ |
+| `MENU_SERVICE_ACCOUNT_MANAGE` | `AUTH_FIND_ACCOUNT` | ✅ |
+| `MENU_BILL_ROOT_ACCOUNT` | `AUTH_FIND_ROOT_ACCOUNT` | ✅ |
+| `MENU_BILL_MAIN_ACCOUNT` | `AUTH_FIND_MAIN_ACCOUNT` | ✅ |
+| `MENU_BILL_MANAGE` | `AUTH_FIND_ACCOUNT_BILL` | ✅ |
+| `MENU_BUSINESS_HOST_MANAGEMENT` | `AUTH_ACCESS_BIZ` (动态 bizId) | ❌ 动态 |
+
+业务路由的 `AUTH_ACCESS_BIZ` 由业务拦截器统一处理，无需逐个路由配置。
+
+## 二、操作级别权限
+
+## 禁止使用
+
+### useVerify hook 及相关 API
+
+```typescript
+// ❌ 禁止：useVerify 已废弃，权限数据永远为空
+import { useVerify } from '@/hooks/useVerify';
+const { authVerifyData, handleAuth, getAuthVerifyData } = useVerify();
+
+// ❌ 禁止：通过 provide/inject 传递 authVerifyData
+provide('authVerifyData', authVerifyData);
+const authVerifyData = inject('authVerifyData');
+
+// ❌ 禁止：基于 permissionAction 判断按钮状态
+const disabled = !authVerifyData?.permissionAction?.some_action;
+
+// ❌ 禁止：使用 handleAuth 弹出权限弹窗
+handleAuth('some_action_name');
+
+// ❌ 禁止：使用 useGlobalPermissionDialog
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+```
+
+## 正确方案：HcmAuth 组件
+
+使用 `components/auth/auth.vue` 组件（`HcmAuth`）包裹需要权限控制的按钮。
+
+### 核心概念
+
+1. **IAuthSign**：权限标记，`{ type: symbol, relation?: [...] }`
+2. **auth-symbols.ts**：权限类型常量（如 `AUTH_UPDATE_IAAS_RESOURCE`）
+3. **getAuthSignByBusinessId**：根据 bizId 自动选择资源/业务权限符号
+4. **noPerm**：`HcmAuth` 通过 scoped slot 传出的无权限标记
+
+### 旧 auth ID → 新 auth symbol 映射
+
+| 旧 ID (useVerify) | 新 symbol (HcmAuth) | 说明 |
+|---|---|---|
+| `iaas_resource_operate` | `AUTH_UPDATE_IAAS_RESOURCE` | 资源下 IaaS 操作 |
+| `iaas_resource_delete` | `AUTH_DELETE_IAAS_RESOURCE` | 资源下 IaaS 删除 |
+| `biz_iaas_resource_operate` | `AUTH_BIZ_UPDATE_IAAS_RESOURCE` | 业务下 IaaS 操作 |
+| `biz_iaas_resource_delete` | `AUTH_BIZ_DELETE_IAAS_RESOURCE` | 业务下 IaaS 删除 |
+| `recycle_bin_manage` | `AUTH_MANAGE_RECYCLE_BIN` | 回收站管理 |
+| `account_edit` | `AUTH_UPDATE_ACCOUNT` | 账号编辑 |
+| `account_import` | `AUTH_IMPORT_ACCOUNT` | 账号接入 |
+| `root_account_find` | `AUTH_FIND_ROOT_ACCOUNT` | 一级账号查看 |
+
+### Vue 模板用法
+
+```vue
+<script setup lang="ts">
+import { AUTH_MANAGE_RECYCLE_BIN } from '@/constants/auth-symbols';
+</script>
+
+<template>
+  <hcm-auth :sign="{ type: AUTH_MANAGE_RECYCLE_BIN }" v-slot="{ noPerm }">
+    <bk-button :disabled="noPerm || otherDisabledCondition" @click="handleClick">
+      操作
+    </bk-button>
+  </hcm-auth>
+</template>
+```
+
+### TSX 用法
+
+```tsx
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+
+// 资源场景（需要 accountId 作为 relation）
+<HcmAuth sign={{ type: AUTH_UPDATE_IAAS_RESOURCE, relation: [accountId] }}>
+  {{
+    default: ({ noPerm }: { noPerm: boolean }) => (
+      <Button disabled={noPerm || statusDisabled} onClick={handler}>
+        操作
+      </Button>
+    ),
+  }}
+</HcmAuth>
+```
+
+### 业务/资源场景用法
+
+资源详情页需要区分资源下和业务下两种场景：
+- **资源下**：使用 `AUTH_*` symbol + `relation: [accountId]`（从资源详情接口数据获取）
+- **业务下**：使用 `AUTH_BIZ_*` symbol + `relation: [bizId]`
+
+```typescript
+import {
+  AUTH_UPDATE_IAAS_RESOURCE,
+  AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+} from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+
+const { getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
+
+// 详情页：从 useDetail 获取的 detail 数据中取 account_id
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [detail.value.account_id] };
+});
+```
+
+子组件中 account_id 通过 props 传入（`props.detail?.account_id` / `props.data?.account_id` / `props.accountId`）。
+
+列表页可使用 `getAuthSignByBusinessId` 简化：
+
+```typescript
+import { getAuthSignByBusinessId } from '@/utils';
+
+const authSign = computed(() =>
+  getAuthSignByBusinessId(bizId.value, AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE),
+);
+```
+
+### 禁止使用 useResourceAccountStore 获取 account_id
+
+```typescript
+// ❌ 禁止：useResourceAccountStore 已废弃，新路由流程下 resourceAccount 始终为 null
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+const resourceAccountStore = useResourceAccountStore();
+const sign = { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] };
+
+// ✅ 正确：从资源详情数据中获取 account_id
+const sign = computed(() => ({
+  type: AUTH_UPDATE_IAAS_RESOURCE,
+  relation: [detail.value.account_id],
+}));
+```
+
+### HcmAuth 的工作机制
+
+1. **CombineRequest 批量合并**：多个 HcmAuth 实例的相同 sign 会合并为一次 API 请求
+2. **自动遮罩**：无权限时自动显示锁定光标，点击弹出权限申请弹窗
+3. **pointer-events 控制**：验证完成前阻止点击，避免误操作
+4. **HTTP 兜底**：即使未使用 HcmAuth 预检查，API 层 403 错误（code 2030403）也会触发全局权限弹窗
+
+### 迁移模式
+
+#### 模式一：直接使用 useVerify → 改为 HcmAuth 包裹按钮
+
+```typescript
+// 迁移前
+const { authVerifyData, handleAuth } = useVerify();
+const noPermission = !authVerifyData?.permissionAction?.recycle_bin_manage;
+// template: <button :disabled="noPermission" @click="noPermission ? handleAuth('recycle_bin_manage') : doAction()">
+
+// 迁移后
+// template:
+// <hcm-auth :sign="{ type: AUTH_MANAGE_RECYCLE_BIN }" v-slot="{ noPerm }">
+//   <button :disabled="noPerm" @click="doAction()">
+// </hcm-auth>
+```
+
+#### 模式二：provide/inject 传递 authVerifyData → 子组件各自使用 HcmAuth
+
+```typescript
+// 迁移前（父组件）
+const { authVerifyData } = useVerify();
+provide('authVerifyData', authVerifyData);
+
+// 迁移前（子组件）
+const authVerifyData = inject('authVerifyData');
+const noPermission = !authVerifyData?.permissionAction?.[actionName];
+
+// 迁移后：删除 provide/inject，子组件直接使用 HcmAuth
+// <hcm-auth :sign="authSign" v-slot="{ noPerm }">
+//   <button :disabled="noPerm">操作</button>
+// </hcm-auth>
+```
+
+## 需要迁移的文件清单
+
+### 高优先级（功能完全不可用）
+
+| 文件 | 影响 | 旧 auth ID |
+|---|---|---|
+| `views/recyclebin/index.vue` | 销毁/恢复按钮永远禁用 | `recycle_bin_manage` |
+| `views/resource/resource-manage/resource-detail.vue` | provide 空数据给所有子详情页 | 多种 |
+| `views/resource/resource-manage/children/detail/host-detail.vue` | 主机操作按钮禁用 | `iaas_resource_operate/delete` |
+| `views/resource/resource-manage/children/detail/vpc-detail.vue` | 删除按钮禁用 | `iaas_resource_delete` |
+| `views/resource/resource-manage/children/detail/subnet-detail.vue` | 删除按钮禁用 | `iaas_resource_delete` |
+| `views/resource/resource-manage/children/detail/ip-detail.vue` | 绑定/解绑/删除禁用 | `iaas_resource_operate/delete` |
+| `views/resource/resource-manage/children/components/host/host-drive.vue` | 挂载/卸载禁用 | `iaas_resource_operate` |
+| `views/resource/resource-manage/children/components/host/host-security.vue` | 解绑禁用 | `iaas_resource_operate` |
+| `views/resource/resource-manage/children/components/security/security-rule.vue` | 安全组规则操作禁用 | `iaas_resource_operate` |
+| `views/resource/resource-manage/children/components/security/security-info.vue` | 编辑禁用 | `iaas_resource_operate` |
+| `views/resource/resource-manage/children/components/security/security-relate/platform.vue` | 绑定/解绑禁用 | `iaas_resource_operate` |
+| `views/account-manage/accountmanage/index.vue` | 编辑按钮禁用 | `account_edit` |
+| `views/resource/accountmanage/index.vue` | 编辑按钮禁用 | `account_edit` |
+| `views/resource/resource-manage/account/accountList/index.tsx` | 接入按钮异常 | `account_import` |
+| `views/resource/resource-manage/common/info-list/info-list.tsx` | 编辑图标无法点击 | 动态 |
+
+### 中优先级
+
+| 文件 | 影响 | 旧 auth ID |
+|---|---|---|
+| `views/bill/account/account-detail/second-level-account-detail/index.tsx` | 编辑权限校验失效 | 多种 |
+| `views/ticket/children/apply-detail/account-apply-detail/index.tsx` | 无法获取一级账号 | `root_account_find` |
+| `views/error-pages/403.tsx` | 权限申请链接失效 | 动态 |
+| `views/scheme/scheme-list/index.tsx` | 方案操作异常 | 动态 |
+
+### 低优先级（已废弃或代码已注释）
+
+| 文件 | 说明 |
+|---|---|
+| `views/home/index.tsx` | 旧布局，已被 App.vue 替代 |
+| `views/resource/recyclebin-manager/recyclebin-manager.vue` | 已废弃 |
+| `views/bill/account/account-manage/index.tsx` | 已废弃 |
+| `views/resource/resource-manage/children/detail/gcp-detail.vue` | 权限代码已注释 |
+| `views/resource/resource-manage/children/detail/drive-detail.vue` | 权限检查已注释 |

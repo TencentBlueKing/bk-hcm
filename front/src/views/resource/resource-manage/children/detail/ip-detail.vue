@@ -7,12 +7,17 @@ import { InfoBox, Message } from 'bkui-vue';
 import { useRoute, useRouter } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
-import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
 import { IEip, EipStatus } from '@/typings';
 import { CLOUD_VENDOR } from '@/constants/resource';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
+import {
+  AUTH_UPDATE_IAAS_RESOURCE,
+  AUTH_DELETE_IAAS_RESOURCE,
+  AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+  AUTH_BIZ_DELETE_IAAS_RESOURCE,
+} from '@/constants/auth-symbols';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,7 +27,8 @@ const { t } = useI18n();
 const isShowAssignEip = ref(false);
 const showDelete = ref(false);
 const isDeleteing = ref(false);
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
 const { setTitle } = useBreadcrumb();
 
 const { loading, detail, getDetail } = useDetail('eips', route.params.id as string);
@@ -95,22 +101,15 @@ const disableOperation = computed(() => {
 });
 
 const isResourcePage: any = inject('isResourcePage');
-const authVerifyData: any = inject('authVerifyData');
 
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [detail.value.account_id] };
 });
-
-const actionDeleteName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
+const deleteSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_DELETE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_DELETE_IAAS_RESOURCE, relation: [detail.value.account_id] };
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const hasNoRelateResource = ({ vendor, status }: IEip): boolean => {
   let res = false;
@@ -138,20 +137,7 @@ const canDelete = (data: IEip): boolean => {
   return hasNoRelateResource(data);
 };
 
-// 之前的 bktooltips option对象
-/* {
-  content: '该弹性IP已被绑定，或者被分配到业务，不能删除',
-  disabled: !(!canDelete(detail) || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-        || !authVerifyData?.permissionAction[actionDeleteName])),
-}*/
 const bkToolTipsOptions = computed(() => {
-  // 无权限
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value.permissionAction[actionName.value],
-    };
-  // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {
       content: '该弹性IP已分配到业务，仅可在业务下操作',
@@ -172,11 +158,11 @@ const bkToolTipsOptions = computed(() => {
 
 <template>
   <Teleport to="#breadcrumbExtra">
-    <span v-if="!detail.instance_id" @click="showAuthDialog(actionName)">
+    <hcm-auth v-if="!detail.instance_id" :sign="updateSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
         @click="handleShowAssignEip"
-        :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]"
+        :disabled="disableOperation || noPerm"
         v-bk-tooltips="{
           content: '该弹性IP已分配到业务，仅可在业务下操作',
           disabled: !disableOperation,
@@ -184,34 +170,28 @@ const bkToolTipsOptions = computed(() => {
       >
         {{ t('绑定') }}
       </bk-button>
-    </span>
-    <span v-else @click="showAuthDialog(actionName)">
+    </hcm-auth>
+    <hcm-auth v-else :sign="updateSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
-        :disabled="
-          disableOperation || detail.instance_type === 'OTHER' || !authVerifyData?.permissionAction[actionName]
-        "
+        :disabled="disableOperation || detail.instance_type === 'OTHER' || noPerm"
         @click="handleShowDeleteDialog"
       >
         {{ t('解绑') }}
       </bk-button>
-    </span>
-    <span @click="showAuthDialog(actionDeleteName)">
+    </hcm-auth>
+    <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
         :disabled="
-          !canDelete(detail) ||
-          !!detail.cvm_id ||
-          disableOperation ||
-          detail.instance_type === 'OTHER' ||
-          !authVerifyData?.permissionAction[actionDeleteName]
+          !canDelete(detail) || !!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER' || noPerm
         "
         @click="handleShowDelete"
         v-bk-tooltips="bkToolTipsOptions"
       >
         {{ t('删除') }}
       </bk-button>
-    </span>
+    </hcm-auth>
   </Teleport>
 
   <bk-loading :loading="loading">

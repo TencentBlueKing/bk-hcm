@@ -14,7 +14,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
         {
           field: 'vpc_id',
           op: 'eq',
-          value: route.query.id,
+          value: route.params.id,
         },
       ],
     },

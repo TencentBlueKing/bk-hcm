@@ -8,8 +8,6 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
-// import bus from '@/common/bus';
-
 import { useRoute } from 'vue-router';
 
 import { useResourceStore } from '@/store/resource';
@@ -38,7 +36,7 @@ const hostTabs = [
   },
 ];
 
-const id = route.params?.id ?? route.query?.id;
+const id = route.params.id as string;
 
 watchEffect(() => {
   if (id) {
@@ -48,14 +46,6 @@ watchEffect(() => {
 
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
-
-// const authVerifyData: any = inject('authVerifyData');
-// const isResourcePage: any = inject('isResourcePage');
-
-// const actionName = computed(() => {   // 资源下没有业务ID
-//   console.log('isResourcePage.value', isResourcePage.value);
-//   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-// });
 
 const { loading, detail } = useDetail('vendors/gcp/firewalls/rules', id);
 
@@ -238,15 +228,6 @@ const submit = async (data: any) => {
   isLoading.value = loading;
   isShowGcpAdd.value = false;
 };
-
-// const isBindBusiness = computed(() => {
-//   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
-// });
-
-// // 权限弹窗 bus通知最外层弹出
-// const showAuthDialog = (authActionName: string) => {
-//   bus.$emit('auth', authActionName);
-// };
 </script>
 
 <template>

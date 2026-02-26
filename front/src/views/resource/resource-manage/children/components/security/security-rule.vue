@@ -1,6 +1,6 @@
 <!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import { ref, watch, h, PropType, inject, computed, withDirectives, ComputedRef } from 'vue';
+import { ref, watch, h, PropType, inject, computed, withDirectives, ComputedRef, resolveComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { bkTooltips, Button, Message } from 'bkui-vue';
@@ -12,7 +12,8 @@ import { VendorEnum } from '@/common/constant';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
-import bus from '@/common/bus';
+import { AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
 import {
   azureSourceAddressTypes,
@@ -20,7 +21,7 @@ import {
   azureTargetAddressTypes,
   AzureTargetTypeArr,
 } from './add-rule/vendors/azure';
-import { useRoute } from 'vue-router';
+
 import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws';
 import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
@@ -42,6 +43,9 @@ const props = defineProps({
   templateData: {
     type: Object as PropType<Record<string, Array<any>>>,
   },
+  accountId: {
+    type: String as PropType<string>,
+  },
 });
 
 // use hook
@@ -50,7 +54,14 @@ const { t } = useI18n();
 const { isShowSecurityRule, handleSecurityRule, SecurityRule } = UseSecurityRule();
 
 const resourceStore = useResourceStore();
-const route = useRoute();
+
+const { getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.accountId] };
+});
+const HcmAuthComp = resolveComponent('hcm-auth');
 
 const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
 const hasEditScopeInResource = inject<ComputedRef<boolean>>('hasEditScopeInResource');
@@ -60,26 +71,20 @@ const activeType = ref<'ingress' | 'egress'>('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);
-const fetchUrl = ref<string>(`vendors/${route.query.vendor}/security_groups/${props.id}/rules/list`);
+const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
 const dataId = ref('');
 const azureDefaultList = ref([]);
 const azureDefaultColumns = ref([]);
-const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 const show = ref<Boolean>(false);
 const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
 
 watch(
   () => activeType.value,
   (v) => {
     // eslint-disable-next-line vue/no-mutating-props
     filter.value.rules[0].value = v;
-    if (route.query.vendor === 'azure') {
+    if (props.vendor === 'azure') {
       getDefaultList(v);
     }
   },
@@ -94,12 +99,12 @@ const getDefaultList = async (type: string) => {
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
   { filter: filter.value },
   fetchUrl,
-  route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
+  props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
 
 // 切换tab
 const handleSwtichType = async () => {
-  if (route.query.vendor === 'azure') {
+  if (props.vendor === 'azure') {
     getDefaultList(activeType.value);
   }
 };
@@ -108,7 +113,7 @@ const handleSwtichType = async () => {
 const handleDeleteConfirm = () => {
   securityRuleLoading.value = true;
   resourceStore
-    .delete(`vendors/${route.query.vendor}/security_groups/${props.id}/rules`, deleteId.value)
+    .delete(`vendors/${props.vendor}/security_groups/${props.id}/rules`, deleteId.value)
     .then(() => {
       Message({
         theme: 'success',
@@ -126,10 +131,6 @@ const handleRuleSubmit = () => {
 };
 
 const handleSecurityRuleDialog = (data: any) => {
-  if (!authVerifyData.value?.permissionAction[actionName.value]) {
-    showAuthDialog(actionName.value);
-    return;
-  }
   dataId.value = data?.id;
   resourceStore.setSecurityRuleDetail(data);
   handleSecurityRule();
@@ -138,11 +139,6 @@ const handleSecurityRuleDialog = (data: any) => {
 // 规则排序抽屉
 const handleSecurityRuleSort = () => {
   show.value = true;
-};
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
 };
 
 const handelSortDone = () => {
@@ -158,17 +154,17 @@ const inColumns: any = computed(() =>
     {
       label: t('名称'),
       field: 'name',
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('优先级'),
       field: 'priority',
-      isShow: route.query.vendor === 'huawei' || route.query.vendor === 'azure',
+      isShow: props.vendor === 'huawei' || props.vendor === 'azure',
     },
     {
       label: t('源地址类型'),
       render({ data }: any) {
-        const vendor = (route.query.vendor as VendorEnum) || VendorEnum.TCLOUD;
+        const vendor = (props.vendor as VendorEnum) || VendorEnum.TCLOUD;
         const sourceMap: any = {
           [VendorEnum.AWS]: {
             types: awsSourceAddressTypes,
@@ -224,7 +220,7 @@ const inColumns: any = computed(() =>
       render({ data }: any) {
         return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('目标地址类型'),
@@ -236,12 +232,12 @@ const inColumns: any = computed(() =>
         AzureTargetTypeArr.forEach((type: string) => data[type] && (k = type));
         return map.get(k) || '--';
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('类型'),
       field: 'ethertype',
-      isShow: route.query.vendor === 'huawei',
+      isShow: props.vendor === 'huawei',
     },
 
     {
@@ -253,18 +249,18 @@ const inColumns: any = computed(() =>
           data.cloud_destination_security_group_ids
         );
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
-      label: route.query.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
+      label: props.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
       render({ data }: any) {
         return h('span', {}, [
           data.cloud_service_id ||
-            (route.query.vendor === 'aws' && data.protocol === '-1'
+            (props.vendor === 'aws' && data.protocol === '-1'
               ? t('ALL')
-              : route.query.vendor === 'huawei' && !data.protocol
+              : props.vendor === 'huawei' && !data.protocol
               ? t('ALL')
-              : route.query.vendor === 'azure' && data.protocol === '*'
+              : props.vendor === 'azure' && data.protocol === '*'
               ? t('ALL')
               : `${data.protocol}`),
         ]);
@@ -272,15 +268,15 @@ const inColumns: any = computed(() =>
       isShow: true,
     },
     {
-      label: route.query.vendor === 'azure' ? t('目标协议端口') : t('端口'),
+      label: props.vendor === 'azure' ? t('目标协议端口') : t('端口'),
       render({ data }: any) {
         return h('span', {}, [
           data.cloud_service_id ||
-            (route.query.vendor === 'aws' && data.to_port === -1
+            (props.vendor === 'aws' && data.to_port === -1
               ? t('ALL')
-              : route.query.vendor === 'huawei' && !data.port
+              : props.vendor === 'huawei' && !data.port
               ? t('ALL')
-              : route.query.vendor === 'azure' && data.destination_port_range === '*'
+              : props.vendor === 'azure' && data.destination_port_range === '*'
               ? t('ALL')
               : `${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`),
         ]);
@@ -291,16 +287,16 @@ const inColumns: any = computed(() =>
       label: t('策略'),
       render({ data }: any) {
         return h('span', {}, [
-          route.query.vendor === 'huawei'
+          props.vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
-            : route.query.vendor === 'azure'
+            : props.vendor === 'azure'
             ? AzureSecurityRuleEnum[data.access]
-            : route.query.vendor === 'aws'
+            : props.vendor === 'aws'
             ? t('允许')
             : SecurityRuleEnum[data.action] || '--',
         ]);
       },
-      isShow: route.query.vendor !== 'aws',
+      isShow: props.vendor !== 'aws',
     },
     {
       label: t('备注'),
@@ -318,59 +314,61 @@ const inColumns: any = computed(() =>
       label: t('操作'),
       field: 'operate',
       render({ data }: any) {
-        return h('span', { style: { display: 'flex', gap: '8px' } }, [
-          withDirectives(
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled:
-                  route.query.vendor === 'huawei' ||
-                  (isResourcePage.value && !hasEditScopeInResource.value) ||
-                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
-                onClick() {
-                  handleSecurityRuleDialog(data);
-                },
-              },
-              [t('编辑')],
-            ),
-            [
-              [
-                bkTooltips,
-                route.query.vendor === 'huawei'
-                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
-                  : operateTooltipsOption.value,
-              ],
+        return h(
+          HcmAuthComp,
+          { sign: updateSign.value, tag: 'span', style: { display: 'flex', gap: '8px' } },
+          {
+            default: ({ noPerm }: { noPerm: boolean }) => [
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      noPerm ||
+                      props.vendor === 'huawei' ||
+                      (isResourcePage.value && !hasEditScopeInResource.value) ||
+                      (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                    onClick() {
+                      handleSecurityRuleDialog(data);
+                    },
+                  },
+                  [t('编辑')],
+                ),
+                [
+                  [
+                    bkTooltips,
+                    props.vendor === 'huawei'
+                      ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
+                      : operateTooltipsOption.value,
+                  ],
+                ],
+              ),
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      noPerm ||
+                      (isResourcePage.value && !hasEditScopeInResource.value) ||
+                      (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                    onClick() {
+                      deleteDialogShow.value = true;
+                      deleteId.value = data.id;
+                    },
+                  },
+                  [t('删除')],
+                ),
+                [[bkTooltips, operateTooltipsOption.value]],
+              ),
             ],
-          ),
-          withDirectives(
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled:
-                  (isResourcePage.value && !hasEditScopeInResource.value) ||
-                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
-                onClick() {
-                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
-                    showAuthDialog(actionName.value);
-                    return;
-                  }
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [t('删除')],
-            ),
-            [[bkTooltips, operateTooltipsOption.value]],
-          ),
-        ]);
+          },
+        );
       },
-      isShow: !checkVendorInResource(route?.query?.vendor),
+      isShow: !checkVendorInResource(props.vendor),
       showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
@@ -382,12 +380,12 @@ const outColumns: any = computed(() =>
     {
       label: t('名称'),
       field: 'name',
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('优先级'),
       field: 'priority',
-      isShow: route.query.vendor === 'huawei' || route.query.vendor === 'azure',
+      isShow: props.vendor === 'huawei' || props.vendor === 'azure',
     },
     {
       label: t('源地址类型'),
@@ -399,7 +397,7 @@ const outColumns: any = computed(() =>
         AzureSourceTypeArr.forEach((type: string) => data[type] && (k = type));
         return map.get(k) || '--';
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('源地址'),
@@ -422,19 +420,19 @@ const outColumns: any = computed(() =>
             (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ]);
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('源端口'),
       render({ data }: any) {
         return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
       },
-      isShow: route.query.vendor === 'azure',
+      isShow: props.vendor === 'azure',
     },
     {
       label: t('目标地址类型'),
       render({ data }: any) {
-        const vendor = route.query.vendor as VendorEnum;
+        const vendor = props.vendor as VendorEnum;
         const targetMap: any = {
           [VendorEnum.AWS]: {
             types: awsSourceAddressTypes,
@@ -486,18 +484,18 @@ const outColumns: any = computed(() =>
     {
       label: t('类型'),
       field: 'ethertype',
-      isShow: route.query.vendor === 'huawei',
+      isShow: props.vendor === 'huawei',
     },
     {
-      label: route.query.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
+      label: props.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
       render({ data }: any) {
         return h('span', {}, [
           data.cloud_service_id ||
-            (route.query.vendor === 'aws' && data.protocol === '-1'
+            (props.vendor === 'aws' && data.protocol === '-1'
               ? t('ALL')
-              : route.query.vendor === 'huawei' && !data.protocol
+              : props.vendor === 'huawei' && !data.protocol
               ? t('ALL')
-              : route.query.vendor === 'azure' && data.protocol === '*'
+              : props.vendor === 'azure' && data.protocol === '*'
               ? t('ALL')
               : `${data.protocol}`),
         ]);
@@ -505,15 +503,15 @@ const outColumns: any = computed(() =>
       isShow: true,
     },
     {
-      label: route.query.vendor === 'azure' ? t('目标协议端口') : t('端口'),
+      label: props.vendor === 'azure' ? t('目标协议端口') : t('端口'),
       render({ data }: any) {
         return h('span', {}, [
           data.cloud_service_id ||
-            (route.query.vendor === 'aws' && data.to_port === -1
+            (props.vendor === 'aws' && data.to_port === -1
               ? t('ALL')
-              : route.query.vendor === 'huawei' && !data.port
+              : props.vendor === 'huawei' && !data.port
               ? t('ALL')
-              : route.query.vendor === 'azure' && data.destination_port_range === '*'
+              : props.vendor === 'azure' && data.destination_port_range === '*'
               ? t('ALL')
               : `${data.port || data.to_port || data.destination_port_range || '--'}`),
         ]);
@@ -524,16 +522,16 @@ const outColumns: any = computed(() =>
       label: t('策略'),
       render({ data }: any) {
         return h('span', {}, [
-          route.query.vendor === 'huawei'
+          props.vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
-            : route.query.vendor === 'azure'
+            : props.vendor === 'azure'
             ? AzureSecurityRuleEnum[data.access]
-            : route.query.vendor === 'aws'
+            : props.vendor === 'aws'
             ? t('允许')
             : SecurityRuleEnum[data.action] || '--',
         ]);
       },
-      isShow: route.query.vendor !== 'aws',
+      isShow: props.vendor !== 'aws',
     },
     {
       label: t('备注'),
@@ -551,59 +549,61 @@ const outColumns: any = computed(() =>
       label: t('操作'),
       field: 'operate',
       render({ data }: any) {
-        return h('span', { style: { display: 'flex', gap: '8px' } }, [
-          withDirectives(
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled:
-                  route.query.vendor === 'huawei' ||
-                  (isResourcePage.value && !hasEditScopeInResource.value) ||
-                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
-                onClick() {
-                  handleSecurityRuleDialog(data);
-                },
-              },
-              [t('编辑')],
-            ),
-            [
-              [
-                bkTooltips,
-                route.query.vendor === 'huawei'
-                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
-                  : operateTooltipsOption.value,
-              ],
+        return h(
+          HcmAuthComp,
+          { sign: updateSign.value, tag: 'span', style: { display: 'flex', gap: '8px' } },
+          {
+            default: ({ noPerm }: { noPerm: boolean }) => [
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      noPerm ||
+                      props.vendor === 'huawei' ||
+                      (isResourcePage.value && !hasEditScopeInResource.value) ||
+                      (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                    onClick() {
+                      handleSecurityRuleDialog(data);
+                    },
+                  },
+                  [t('编辑')],
+                ),
+                [
+                  [
+                    bkTooltips,
+                    props.vendor === 'huawei'
+                      ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
+                      : operateTooltipsOption.value,
+                  ],
+                ],
+              ),
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      noPerm ||
+                      (isResourcePage.value && !hasEditScopeInResource.value) ||
+                      (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                    onClick() {
+                      deleteDialogShow.value = true;
+                      deleteId.value = data.id;
+                    },
+                  },
+                  [t('删除')],
+                ),
+                [[bkTooltips, operateTooltipsOption.value]],
+              ),
             ],
-          ),
-          withDirectives(
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled:
-                  (isResourcePage.value && !hasEditScopeInResource.value) ||
-                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
-                onClick() {
-                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
-                    showAuthDialog(actionName.value);
-                    return;
-                  }
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [t('删除')],
-            ),
-            [[bkTooltips, operateTooltipsOption.value]],
-          ),
-        ]);
+          },
+        );
       },
-      isShow: !checkVendorInResource(route?.query?.vendor),
+      isShow: !checkVendorInResource(props.vendor),
       showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
@@ -630,21 +630,21 @@ const types = [
         </bk-radio-button>
       </bk-radio-group>
 
-      <div @click="showAuthDialog(actionName)">
+      <hcm-auth v-if="!checkVendorInResource(props.vendor)" :sign="updateSign" tag="span" v-slot="{ noPerm }">
         <bk-button
-          v-if="!checkVendorInResource(route?.query?.vendor)"
-          :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
+          :disabled="
+            noPerm || (isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)
+          "
           v-bk-tooltips="operateTooltipsOption"
           theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
           @click="handleSecurityRuleDialog({})"
         >
           {{ t('新增规则') }}
         </bk-button>
-      </div>
+      </hcm-auth>
 
       <bk-button
-        v-if="showSort(route?.query?.vendor)"
+        v-if="showSort(props.vendor)"
         icon="plus"
         :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
         v-bk-tooltips="operateTooltipsOption"
@@ -654,7 +654,7 @@ const types = [
       </bk-button>
     </section>
 
-    <div v-if="route.query.vendor === 'azure'" class="mb20">
+    <div v-if="props.vendor === 'azure'" class="mb20">
       <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
       <bk-table
         class="mt10"
@@ -677,7 +677,7 @@ const types = [
       </bk-table>
     </div>
 
-    <h4 v-if="route.query.vendor === 'azure'" class="mt10">
+    <h4 v-if="props.vendor === 'azure'" class="mt10">
       Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
     </h4>
 
@@ -732,7 +732,7 @@ const types = [
     </bk-loading>
 
     <security-rule
-      v-model:isShow="isShowSecurityRule"
+      v-model:is-show="isShowSecurityRule"
       :loading="securityRuleLoading"
       :id="props.id"
       dialog-width="90vw"
@@ -758,7 +758,7 @@ const types = [
       <span>删除后不可恢复</span>
     </bk-dialog>
 
-    <bk-sideslider v-model:isShow="show" :title="t('规则排序')" width="640" quick-close>
+    <bk-sideslider v-model:is-show="show" :title="t('规则排序')" width="640" quick-close>
       <template #default>
         <rule-sort
           :id="props.id"

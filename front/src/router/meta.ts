@@ -10,6 +10,9 @@ interface Menu {
 // 视图权限配置函数，接收完整的路由信息
 export type AuthViewFn = (to: RouteLocationNormalized) => IAuthSign;
 
+// available 支持静态布尔值或动态函数
+export type AvailableFn = (to: RouteLocationNormalized) => boolean;
+
 interface Auth {
   superView?: any;
   view?: IAuthSign | AuthViewFn;
@@ -29,7 +32,7 @@ interface Extra {
 }
 
 export interface RouteMetaConfig {
-  available?: boolean;
+  available?: boolean | AvailableFn;
   owner?: symbol;
   /** @deprecated 使用 menu.i18n 代替 */
   title?: string;
@@ -43,10 +46,11 @@ export interface RouteMetaConfig {
   /** @deprecated 使用 layout.breadcrumb.show 代替 */
   isShowBreadcrumb?: boolean;
   permissionData?: IPermission;
+  errorMessage?: string;
 }
 
 export default class Meta {
-  available = true;
+  available: boolean | AvailableFn = true;
 
   owner = Symbol.for('');
 
@@ -71,6 +75,8 @@ export default class Meta {
 
   permissionData: IPermission = null;
 
+  errorMessage = '';
+
   constructor(data: RouteMetaConfig) {
     // 设置非嵌套对象属性
     this.available = data.available ?? this.available;
@@ -79,6 +85,7 @@ export default class Meta {
     this.view = data.view ?? this.view;
     this.activeKey = data.activeKey ?? this.activeKey;
     this.permissionData = data.permissionData ?? this.permissionData;
+    this.errorMessage = data.errorMessage ?? this.errorMessage;
 
     // 合并嵌套对象（保留默认值，只覆盖传入的属性）
     this.menu = Object.assign(this.menu, data.menu);

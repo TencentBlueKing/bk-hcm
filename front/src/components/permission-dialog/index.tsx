@@ -1,3 +1,8 @@
+/**
+ * @deprecated 已废弃。操作级别权限弹窗已迁移到 components/permission/apply-dialog.vue，
+ * 通过 hooks/use-permission-dialog.ts 和 window.hcmPermissionDialog 调用。
+ * 此组件依赖的 useVerify hook 和 commonStore.authVerify 均已移除，不再可用。
+ */
 /* eslint-disable no-nested-ternary */
 import { computed, defineComponent, PropType, watch, ref, h } from 'vue';
 import permissions from '@/assets/image/403.png';

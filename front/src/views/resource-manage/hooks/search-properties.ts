@@ -17,17 +17,25 @@ const vendorOption = VENDORS.reduce((acc: Record<string, string>, cur) => {
 export const createProperty = (
   id: string,
   name: string,
-  opts?: { type?: ModelPropertyType; filterRules?: (value: any) => any; option?: Record<string, string> },
+  opts?: {
+    type?: ModelPropertyType;
+    op?: QueryRuleOPEnum;
+    filterRules?: (value: any) => any;
+    option?: Record<string, string>;
+  },
 ): ModelPropertyGeneric => ({
   id,
   name,
   type: opts?.type || 'string',
   option: opts?.option,
-  meta: opts?.filterRules ? { search: { filterRules: opts.filterRules } } : undefined,
+  meta:
+    opts?.filterRules || opts?.op
+      ? { search: { ...(opts.filterRules && { filterRules: opts.filterRules }), ...(opts.op && { op: opts.op }) } }
+      : undefined,
 });
 
 const baseProperties: ModelPropertyGeneric[] = [
-  createProperty('name', '名称'),
+  createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
   createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
   createProperty('account_id', '云账号ID', { type: 'string' }),
   createProperty('cloud_id', '资源ID', { type: 'string' }),
@@ -43,14 +51,16 @@ const cvmProperties: ModelPropertyGeneric[] = [
   createProperty('cloud_id', '主机ID'),
   createProperty('bk_asset_id', '固资号', { type: 'string' }),
   ...baseProperties,
-  createProperty('bk_cloud_id', '管控区域', { type: 'string' }),
-  createProperty('os_name', '操作系统'),
-  createProperty('cloud_vpc_ids', '所属VPC'),
+  createProperty('bk_cloud_id', '管控区域', { type: 'number' }),
+  createProperty('os_name', '操作系统', { op: QueryRuleOPEnum.CS }),
+  createProperty('cloud_vpc_ids', '所属VPC', {
+    filterRules: (value) => ({ field: 'cloud_vpc_ids', op: QueryRuleOPEnum.JSON_CONTAINS, value }),
+  }),
 ];
 
 const imageProperties: ModelPropertyGeneric[] = [
   createProperty('cloud_id', '镜像ID'),
-  createProperty('name', '名称'),
+  createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
   createProperty('vendor', '云厂商'),
 ];
 
@@ -67,9 +77,9 @@ const networkInterfaceProperties: ModelPropertyGeneric[] = [
  * lb_vip 需要 buildVIPFilterRules；lb_type / ip_version / status 用 EQ（枚举精确匹配）
  */
 const clbProperties: ModelPropertyGeneric[] = [
-  createProperty('name', '负载均衡名称'),
+  createProperty('name', '负载均衡名称', { op: QueryRuleOPEnum.CS }),
   createProperty('cloud_id', '负载均衡ID'),
-  createProperty('domain', '负载均衡域名'),
+  createProperty('domain', '负载均衡域名', { op: QueryRuleOPEnum.CS }),
   createProperty('lb_vip', '负载均衡VIP', {
     filterRules: (value) => buildVIPFilterRules(value),
   }),
@@ -82,7 +92,7 @@ const clbProperties: ModelPropertyGeneric[] = [
     filterRules: (value) => ({ field: 'ip_version', op: QueryRuleOPEnum.EQ, value }),
   }),
   createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
-  createProperty('zones', '可用区域'),
+  createProperty('zones', '可用区域', { op: QueryRuleOPEnum.CS }),
   createProperty('status', '状态', {
     option: CLB_STATUS_MAP,
     filterRules: (value) => ({ field: 'status', op: QueryRuleOPEnum.EQ, value }),
@@ -100,7 +110,7 @@ const securityGroupProperties: ModelPropertyGeneric[] = [
   createProperty('cloud_id', '安全组ID', {
     filterRules: (value) => buildMultipleValueRulesItem('cloud_id', value),
   }),
-  createProperty('name', '名称'),
+  createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
   createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
   createProperty('account_id', '云账号ID', { type: 'string' }),
   createProperty('usage_biz_id', '使用业务', {

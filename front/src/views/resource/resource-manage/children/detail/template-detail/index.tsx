@@ -14,7 +14,7 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
     const { setTitle } = useBreadcrumb();
     const route = useRoute();
-    const templateId = ref(route.params?.id ?? route.query?.id);
+    const templateId = ref(route.params.id as string);
 
     watchEffect(() => {
       if (templateId.value) {
@@ -53,7 +53,7 @@ export default defineComponent({
             {
               field: 'cloud_id',
               op: QueryRuleOPEnum.CS,
-              value: route.params?.id ?? route.query?.id,
+              value: route.params.id,
             },
           ],
         },

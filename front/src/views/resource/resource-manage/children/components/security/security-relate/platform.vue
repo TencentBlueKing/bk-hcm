@@ -12,7 +12,7 @@ import { useBusinessGlobalStore } from '@/store/business-global';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
-import { useVerify } from '@/hooks';
+import { AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import { transformSimpleCondition } from '@/utils/search';
 import {
   RELATED_RES_KEY_MAP,
@@ -48,10 +48,10 @@ const regionStore = useRegionsStore();
 
 const isBusinessPage = computed(() => whereAmI.value === Senarios.business);
 
-// 预鉴权
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+const bizId = computed(() => getBizsId());
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.detail?.account_id] };
 });
 
 const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
@@ -144,10 +144,6 @@ const handleShowOperateDialog = (
   operate: 'bind' | 'single-unbind' | 'batch-unbind',
   row?: SecurityGroupRelResourceByBizItem,
 ) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
   switch (operate) {
     case 'bind':
       bindVisible.value = true;
@@ -214,11 +210,10 @@ watch(
       <tab v-model="tabActive" :detail="detail" :related-resources-count-list="relatedResourcesCountList" />
 
       <!-- TODO：目前只支持CVM -->
-      <div class="operate-btn-wrap">
+      <hcm-auth :sign="updateSign" tag="div" class="operate-btn-wrap" v-slot="{ noPerm }">
         <bk-button
           theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="(!isBusinessPage && isAssigned) || isClb"
+          :disabled="noPerm || (!isBusinessPage && isAssigned) || isClb"
           v-bk-tooltips="bindDisabledTooltipsOption"
           @click="handleShowOperateDialog('bind')"
         >
@@ -226,14 +221,13 @@ watch(
           {{ t('新增绑定') }}
         </bk-button>
         <bk-button
-          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || (!isBusinessPage && isAssigned) || isClb"
+          :disabled="noPerm || !selected.length || (!isBusinessPage && isAssigned) || isClb"
           v-bk-tooltips="unbindDisabledTooltipsOption"
           @click="handleShowOperateDialog('batch-unbind')"
         >
           {{ t('批量解绑') }}
         </bk-button>
-      </div>
+      </hcm-auth>
 
       <search
         class="search"
@@ -266,16 +260,17 @@ watch(
         @select="(selections) => (selected = selections)"
       >
         <template #operate="{ row }">
-          <bk-button
-            :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-            theme="primary"
-            text
-            :disabled="(!isBusinessPage && isAssigned) || isClb"
-            v-bk-tooltips="unbindDisabledTooltipsOption"
-            @click="handleShowOperateDialog('single-unbind', row)"
-          >
-            {{ t('解绑') }}
-          </bk-button>
+          <hcm-auth :sign="updateSign" tag="span" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm || (!isBusinessPage && isAssigned) || isClb"
+              v-bk-tooltips="unbindDisabledTooltipsOption"
+              @click="handleShowOperateDialog('single-unbind', row)"
+            >
+              {{ t('解绑') }}
+            </bk-button>
+          </hcm-auth>
         </template>
       </data-list>
     </div>

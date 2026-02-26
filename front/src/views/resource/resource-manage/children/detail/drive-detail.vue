@@ -62,7 +62,7 @@ const settingFields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+      return `/#/service/account/details/${val}`;
     },
   },
   {
@@ -290,19 +290,12 @@ const handleShowDelete = () => {
 };
 
 const disabledOption = computed(() => {
-  // 无权限，直接禁用按钮
-  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
   // 业务下，判断是否已被回收
   if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
   // 资源下，判断是否分配业务，是否已被回收
   return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
 });
 const bkTooltipsOptions = computed(() => {
-  // 无权限
-  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
-  //     content: '当前用户无权限操作该按钮',
-  //     disabled: authVerifyData.value.permissionAction[actionName.value],
-  // }
   // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {

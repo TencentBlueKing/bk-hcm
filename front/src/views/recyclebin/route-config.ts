@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
+import { AUTH_FIND_RECYCLE_BIN } from '@/constants/auth-symbols';
 import {
   MENU_BUSINESS,
   MENU_BUSINESS_RECYCLEBIN,
@@ -43,6 +44,9 @@ const recyclebinRsc: RouteRecordRaw[] = [
       ...new Meta({
         owner: MENU_RESOURCE,
         activeKey: MENU_RESOURCE_RECYCLEBIN,
+        auth: {
+          view: { type: AUTH_FIND_RECYCLE_BIN },
+        },
         menu: {
           i18n: '回收管理',
         },

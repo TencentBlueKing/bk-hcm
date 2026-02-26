@@ -23,7 +23,7 @@ const { t } = useI18n();
 const { whereAmI, getBizsId } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
-const securityId = ref(route.params?.id ?? route.query?.id);
+const securityId = ref(route.params.id as string);
 const vendor = ref(route.query?.vendor);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
@@ -217,6 +217,7 @@ provide('operateTooltipsOption', operateTooltipsOption);
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
+          :account-id="detail?.account_id"
         />
         <security-relate v-else :detail="detail" />
       </template>

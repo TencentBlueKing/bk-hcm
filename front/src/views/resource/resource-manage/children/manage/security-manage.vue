@@ -1,18 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  h,
-  watch,
-  reactive,
-  computed,
-  withDirectives,
-  nextTick,
-  Ref,
-  Fragment,
-  vShow,
-  useTemplateRef,
-  onMounted,
-} from 'vue';
+import { ref, h, watch, reactive, computed, withDirectives, nextTick, Ref, Fragment, vShow, useTemplateRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import routerAction from '@/router/utils/action';
 import { useI18n } from 'vue-i18n';
@@ -68,9 +55,7 @@ import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import RefreshCell from '../components/security/refresh-cell/index.vue';
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-done']);
-
-let firstTime = true;
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 
 // use hooks
 const searchValue = ref<any[]>([]);
@@ -937,17 +922,22 @@ watch(
 // 状态保持
 watch(
   () => activeType.value,
-  (v) => {
+  (v, oldV) => {
     fetchUrl.value = URL_MAP[v] || '';
-    filter.value.rules = [];
     resetSelections();
-    // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
     emit('handleSecrityType', v);
 
     const isResourcePage = whereAmIRef.value === Senarios.resource;
     const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
-    router.replace({ query: { scene: v, accountId } });
+
+    // 初始化时保留 URL 中已有的 filter 等参数，切换 tab 时清空搜索条件并重置 query
+    if (oldV === undefined) {
+      router.replace({ query: { ...route.query, scene: v, accountId } });
+    } else {
+      filter.value.rules = [];
+      router.replace({ query: { scene: v, accountId } });
+    }
   },
   {
     immediate: true,
@@ -1132,7 +1122,12 @@ watch(
     const isFilterForCurrentTab = !queryScene || queryScene === activeType.value;
 
     if (isFilterForCurrentTab) {
-      const condition = searchQs.get(query);
+      // 安全组列表默认搜索：管理类型=业务管理|未确认（GCP防火墙和参数模板不支持 mgmt_type）
+      const defaults =
+        activeType.value === 'group'
+          ? { mgmt_type: [SecurityGroupManageType.BIZ, SecurityGroupManageType.UNKNOWN] }
+          : undefined;
+      const condition = searchQs.get(query, defaults);
       const { rules: searchRules = [] }: { rules: any[] } = transformSimpleCondition(condition, properties);
       rules.push(...searchRules);
       searchValue.value = buildSearchSelectValueBySearchQsCondition(condition, properties);
@@ -1149,26 +1144,17 @@ watch(
       searchValue.value = [];
     }
 
-    if (currentVendor.value) {
-      rules.push({
-        field: 'vendor',
-        op: 'eq',
-        value: currentVendor.value,
-      });
-      if (selectedAccountId.value) {
-        rules.push({
-          field: 'account_id',
-          op: 'eq',
-          value: selectedAccountId.value,
-        });
-      }
+    // accountId（来自账号选择器或 URL）
+    if (selectedAccountId.value) {
+      rules.push({ field: 'account_id', op: QueryRuleOPEnum.EQ, value: selectedAccountId.value });
+    }
+
+    // vendor（GCP 防火墙不需要 vendor 条件，后端接口不支持该字段）
+    if (currentVendor.value && activeType.value !== 'gcp') {
+      rules.push({ field: 'vendor', op: QueryRuleOPEnum.EQ, value: currentVendor.value });
     }
 
     filter.value.rules = rules;
-    if (firstTime) {
-      firstTime = false;
-      emit('route-done');
-    }
   },
   {
     deep: true,
@@ -1183,15 +1169,6 @@ watch(
   },
   { deep: true },
 );
-
-// TODO: 后续请求改为 watch query 后，这里删掉，改为通过 searchQs.get 设置默认值
-onMounted(() => {
-  // 默认进来搜索是 管理类型：业务管理|未确认
-  const value = Object.keys(searchQs.get(route.query))?.length
-    ? searchQs.get(route.query)
-    : { mgmt_type: [SecurityGroupManageType.BIZ, SecurityGroupManageType.UNKNOWN] };
-  searchQs.set(value);
-});
 
 defineExpose({ fetchComponentsData });
 </script>

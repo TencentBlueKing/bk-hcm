@@ -18,35 +18,28 @@
       </template>
       <bk-tab-panel v-for="item in recycleTypeData" :key="item.value" :name="item.value" :label="item.name">
         <section class="header-container">
-          <span
-            v-bk-tooltips="{
-              content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-              disabled: selections.length,
-            }"
-            @click="handleAuth('recycle_bin_manage')"
-          >
-            <bk-button
-              :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
-              @click="handleOperate('destroy')"
+          <hcm-auth :sign="recycleManageSign" v-slot="{ noPerm }">
+            <span
+              v-bk-tooltips="{
+                content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
+                disabled: selections.length,
+              }"
             >
-              {{ t('立即销毁') }}
-            </bk-button>
-          </span>
-          <span
-            v-bk-tooltips="{
-              content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-              disabled: selections.length,
-            }"
-            @click="handleAuth('recycle_bin_manage')"
-          >
-            <bk-button
-              class="ml8"
-              :disabled="!selections.length || !authVerifyData?.permissionAction?.recycle_bin_manage"
-              @click="handleOperate('recover')"
+              <bk-button :disabled="!selections.length || noPerm" @click="handleOperate('destroy')">
+                {{ t('立即销毁') }}
+              </bk-button>
+            </span>
+            <span
+              v-bk-tooltips="{
+                content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
+                disabled: selections.length,
+              }"
             >
-              {{ t('立即恢复') }}
-            </bk-button>
-          </span>
+              <bk-button class="ml8" :disabled="!selections.length || noPerm" @click="handleOperate('recover')">
+                {{ t('立即恢复') }}
+              </bk-button>
+            </span>
+          </hcm-auth>
           <SearchSelect
             class="w500 common-search-selector"
             v-model="searchVal"
@@ -154,7 +147,7 @@
             </bk-table-column>
             <bk-table-column v-if="isResourcePage" :label="t('操作')" :min-width="150">
               <template #default="{ data }">
-                <span @click="handleAuth('recycle_bin_manage')">
+                <hcm-auth :sign="recycleManageSign" tag="span" v-slot="{ noPerm }">
                   <bk-button
                     text
                     class="mr10"
@@ -162,29 +155,27 @@
                     @click="handleOperate('destroy', [data.id])"
                     v-bk-tooltips="generateTooltipsOptions(data)"
                     :disabled="
-                      !authVerifyData?.permissionAction?.recycle_bin_manage ||
+                      noPerm ||
                       data?.recycle_type === 'related' ||
                       (whereAmI === Senarios.resource && data?.bk_biz_id !== -1)
                     "
                   >
                     销毁
                   </bk-button>
-                </span>
-                <span @click="handleAuth('recycle_bin_manage')">
                   <bk-button
                     text
                     theme="primary"
                     @click="handleOperate('recover', [data.id])"
                     v-bk-tooltips="generateTooltipsOptions(data)"
                     :disabled="
-                      !authVerifyData?.permissionAction?.recycle_bin_manage ||
+                      noPerm ||
                       data?.recycle_type === 'related' ||
                       (whereAmI === Senarios.resource && data?.bk_biz_id !== -1)
                     "
                   >
                     恢复
                   </bk-button>
-                </span>
+                </hcm-auth>
               </template>
             </bk-table-column>
           </bk-table>
@@ -224,13 +215,6 @@
         <bk-option v-for="item in RESERVE_TIME_SET" :key="item.value" :value="item.value" :label="item.label" />
       </bk-select>
     </bk-dialog>
-
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
   </div>
 </template>
 
@@ -246,8 +230,8 @@ import { VENDORS, VendorEnum } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
-import { useVerify } from '@/hooks';
 import { RECYCLE_BIN_ITEM_STATUS } from '@/constants/resource';
+import { AUTH_MANAGE_RECYCLE_BIN } from '@/constants/auth-symbols';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import moment from 'moment';
@@ -381,7 +365,6 @@ export default defineComponent({
           message: '配置成功',
         });
         isSettingDialogShow.value = false;
-        // recycle_reserve_time 更新后无需写回 store（已废弃 resourceAccountStore）
       } finally {
         isSettingDialogLoading.value = false;
       }
@@ -638,15 +621,7 @@ export default defineComponent({
       routerAction.redirect(routeInfo, { history: true });
     };
 
-    // 权限hook
-    const {
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
-    } = useVerify();
+    const recycleManageSign = { type: AUTH_MANAGE_RECYCLE_BIN };
 
     return {
       ...toRefs(state),
@@ -665,12 +640,7 @@ export default defineComponent({
       handleShowDialog,
       t,
       isRowSelectEnable,
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
+      recycleManageSign,
       RECYCLE_BIN_ITEM_STATUS,
       getRegionName,
       isSettingDialogShow,

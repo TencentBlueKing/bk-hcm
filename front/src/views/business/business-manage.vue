@@ -199,7 +199,6 @@ const handleEditTemplate = (payload: any) => {
         @handle-secrity-type="handleSecrityType"
         @edit-template="handleEditTemplate"
         @edit="handleEdit"
-        v-model:is-form-data-changed="isFormDataChanged"
       >
         <span>
           <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [getBizsId()] }" v-slot="{ noPerm }">

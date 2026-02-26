@@ -109,11 +109,10 @@ const isBusinessNav = computed(() => {
 const bizId = computed(() => Number(route.params.bizId));
 
 const handleChangeBusiness = (id: number) => {
-  router.push({
-    name: route.name,
-    params: { ...route.params, bizId: id },
-    query: route.query,
-  });
+  const targetRoute = route.meta.menu?.relative ?? route.name;
+  const resolved = router.resolve({ name: targetRoute as string, params: { bizId: id } });
+  window.location.hash = resolved.href;
+  window.location.reload();
 };
 
 const isActiveItemFavorited = computed(() => {

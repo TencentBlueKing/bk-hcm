@@ -1,5 +1,6 @@
 import type { RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
 import Meta from '@/router/meta';
+import { AUTH_BIZ_FIND_AUDIT } from '@/constants/auth-symbols';
 import {
   MENU_BUSINESS,
   MENU_RESOURCE,
@@ -22,7 +23,7 @@ const operationLogBiz: RouteRecordRaw[] = [
       ...new Meta({
         owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: true,
+        available: false,
         menu: {
           i18n: '操作记录',
         },
@@ -41,7 +42,7 @@ const operationLogBiz: RouteRecordRaw[] = [
           relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,
         },
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: false,
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },
@@ -57,6 +58,9 @@ const operationLogRsc: RouteRecordRaw[] = [
         owner: MENU_RESOURCE,
         title: '操作记录',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
+        auth: {
+          view: { type: AUTH_BIZ_FIND_AUDIT },
+        },
         menu: {},
       }),
     },
@@ -70,7 +74,7 @@ const operationLogRsc: RouteRecordRaw[] = [
       ...new Meta({
         title: '操作记录详情',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        isShowBreadcrumb: false,
+        layout: { breadcrumb: { show: false } },
         menu: {
           relative: MENU_RESOURCE_OPERATION_LOG,
         },

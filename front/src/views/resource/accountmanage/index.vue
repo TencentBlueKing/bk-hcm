@@ -6,9 +6,8 @@ import { useAccountStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useTableSettings from '@/hooks/use-table-settings';
 import usePage from '@/hooks/use-page';
-import { useVerify } from '@/hooks';
-
 import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/common/constant';
+import { AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
 import type { ModelPropertyColumn } from '@/model/typings';
 import type { FilterType, IAccountItem, IListResData } from '@/typings';
 import { timeFormatter } from '@/common/util';
@@ -153,12 +152,9 @@ const handleJump = (routerName: string, id?: string, isDetail?: boolean) => {
   router.push(routerConfig);
 };
 
+const accountEditSign = { type: AUTH_UPDATE_ACCOUNT };
 const handleEdit = (id: string) => {
-  if (authVerifyData?.value?.permissionAction?.account_edit) {
-    handleJump('accountDetail', id);
-  } else {
-    handleAuth('account_edit');
-  }
+  handleJump('accountDetail', id);
 };
 
 // 删除
@@ -201,16 +197,6 @@ watchEffect(() => {
 
   getAccountList();
 });
-
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 </script>
 
 <template>
@@ -247,15 +233,11 @@ const {
         </bk-table-column>
         <bk-table-column :label="t('操作')" fixed="right" width="120">
           <template #default="{ row }">
-            <bk-button
-              text
-              theme="primary"
-              @click="handleEdit(row.id)"
-              :disabled="!authVerifyData?.permissionAction?.account_edit"
-              :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.account_edit }"
-            >
-              {{ t('编辑') }}
-            </bk-button>
+            <hcm-auth :sign="accountEditSign" tag="span" v-slot="{ noPerm }">
+              <bk-button text theme="primary" @click="handleEdit(row.id)" :disabled="noPerm">
+                {{ t('编辑') }}
+              </bk-button>
+            </hcm-auth>
             <bk-button class="ml8" theme="primary" text @click="handleDelete(row.id)">{{ t('删除') }}</bk-button>
           </template>
         </bk-table-column>
@@ -270,13 +252,6 @@ const {
     >
       {{ t('删除之后无法恢复账户信息') }}
     </bk-dialog>
-
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
   </div>
 </template>
 

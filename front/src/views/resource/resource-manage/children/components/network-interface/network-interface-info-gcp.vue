@@ -42,7 +42,7 @@ const fields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+      return `/#/service/account/details/${val}`;
     },
   },
   {
@@ -118,9 +118,9 @@ const fields = ref<FieldList>([
     prop: 'cvm_id',
     link(val: string) {
       if (props.isResourcePage) {
-        return val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
+        return val ? `/#/resource/manage/host/details/${val}?type=gcp` : '--';
       }
-      return val ? `/#/business/host/detail?id=${val}&type=gcp&bizs=${props.detail.bk_biz_id}` : '--';
+      return val ? `/#/business/${props.detail.bk_biz_id}/host/detail/${val}?type=gcp` : '--';
     },
   },
   {

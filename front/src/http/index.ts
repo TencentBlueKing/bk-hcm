@@ -9,7 +9,6 @@ import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { showLoginModal } from '@/utils/login-helper';
-import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
 
@@ -195,10 +194,10 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
   const { config, response, resolve, reject } = params;
   const transformedResponse = response.data;
-  const { code, message, data } = transformedResponse;
+  const { code, message, data, permission } = transformedResponse;
 
   if (code !== 0 && config.globalError) {
-    reject({ code, message });
+    reject({ code, message, data, permission });
     return;
   }
   if (config.originalResponse) {
@@ -248,7 +247,12 @@ function handleReject(error: any, config: any) {
     if (status === 401) {
       showLoginModal();
     } else if (status === 403) {
-      bus.$emit('show-forbidden', error.response.data);
+      const permission = data?.permission;
+      if (permission) {
+        window.hcmPermissionDialog?.show(permission);
+      } else {
+        Message({ theme: 'error', message: data?.message || '没有权限访问此资源' });
+      }
     } else if (status === 404) {
       nextError.message = '不存在';
       Message({ theme: 'error', message: nextError.message });
@@ -286,7 +290,7 @@ function handleReject(error: any, config: any) {
 function handleCustomErrorCode(error: any) {
   // 权限不足错误码，弹出权限申请弹窗
   if (error.code === 2030403) {
-    const permission = error.data?.permission;
+    const permission = error?.permission;
     if (permission) {
       window.hcmPermissionDialog?.show(permission);
     } else {

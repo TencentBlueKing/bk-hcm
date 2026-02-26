@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
+import { AUTH_FIND_ACCOUNT } from '@/constants/auth-symbols';
 import {
   MENU_SERVICE,
   MENU_SERVICE_ACCOUNT_MANAGE,
@@ -28,6 +29,9 @@ const accountManageRoutes: RouteRecordRaw[] = [
       ...new Meta({
         owner: MENU_SERVICE,
         activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
+        auth: {
+          view: { type: AUTH_FIND_ACCOUNT },
+        },
         menu: {
           i18n: '账号管理',
         },
