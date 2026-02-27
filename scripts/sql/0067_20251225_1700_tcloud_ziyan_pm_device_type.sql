@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0067,HCMVER=v1.8.9.1
 
     Notes:
     1. 新增 tcloud_ziyan_pm_device_type 表
@@ -47,6 +47,6 @@ insert into id_generator(`resource`, `max_id`)
 values ('tcloud_ziyan_pm_device_type', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.9.1' as `hcm_ver`, '0067' as `sql_ver`;
 
 COMMIT;
