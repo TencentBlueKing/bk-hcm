@@ -52,9 +52,7 @@ provide('isResourcePage', isResourcePage);
 </script>
 
 <template>
-  <div>
-    <component :is="renderComponent"></component>
-  </div>
+  <component :is="renderComponent"></component>
 </template>
 
 <style lang="scss">

@@ -13,7 +13,7 @@ import useDetail from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import router from '@/router';
 import { timeFormatter } from '@/common/util';
@@ -22,7 +22,7 @@ import { FieldList } from '../../common/info-list/types';
 import { AUTH_DELETE_IAAS_RESOURCE, AUTH_BIZ_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI, getBizsId } = useWhereAmI();
+const { getBizsId } = useWhereAmI();
 const bizId = computed(() => getBizsId());
 const { setTitle } = useBreadcrumb();
 
@@ -387,7 +387,7 @@ const handleDeleteSubnet = (data: any) => {
   </Teleport>
 
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <detail-tab :tabs="hostTabs">
         <template #default="type">
           <detail-info

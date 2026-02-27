@@ -127,17 +127,18 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         }
 
         const defaultClickHandler = () => {
-          const routeInfo: any = { query: { type: data.vendor } };
+          const routeInfo: any = {};
           if (whereAmI.value === Senarios.business) {
             Object.assign(routeInfo, {
               name: BUSINESS_DETAIL_ROUTE_MAP[type],
               params: { id: data[idFiled] },
             });
           } else {
-            // 资源纳管：使用 params.resourceType 和 params.id
+            // accountId 保留侧边栏选中状态；vendor 来自资源数据，用于详情页按厂商展示及 API 调用
             Object.assign(routeInfo, {
               name: MENU_RESOURCE_DETAIL,
               params: { resourceType: type, id: data[idFiled] },
+              query: { accountId: route.query.accountId, vendor: data.vendor },
             });
           }
           routerAction.redirect(routeInfo, { history: true });

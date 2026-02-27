@@ -115,20 +115,18 @@ const settingFields = ref<FieldList>([
     name: '挂载主机',
     prop: 'instance_id',
     txtBtn(id: string) {
-      const routeInfo: any = {
-        query: {
-          type: detail.value.vendor,
-        },
-      };
+      const routeInfo: any = {};
       if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
           name: MENU_BUSINESS_HOST_DETAILS,
           params: { id },
         });
       } else {
+        // vendor 取自当前硬盘详情，挂载主机与硬盘厂商相同
         Object.assign(routeInfo, {
           name: MENU_RESOURCE_DETAIL,
           params: { resourceType: 'host', id },
+          query: { accountId: route.query.accountId, vendor: detail.value.vendor },
         });
       }
       routerAction.redirect(routeInfo, { history: true });
@@ -367,7 +365,7 @@ const bkTooltipsOptions = computed(() => {
   </Teleport>
 
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <detail-tab :tabs="hostTabs">
         <template #default>
           <detail-info :fields="settingFields" :detail="detail" global-copyable />

@@ -1,19 +1,23 @@
 <script setup lang="ts">
 /**
  * 资源纳管入口组件
- * - 左侧：AccountVendorGroup 云厂商&账号选择器（仅资源纳管模块需要）
- * - 右侧：账号头部信息 + RouterView
+ * - 左侧：AccountVendorGroup 云厂商&账号选择器
+ * - 右侧：列表页显示账号头部信息，详情/申请页显示面包屑 + RouterView
  */
 import { computed, ref, watch } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 import AccountVendorGroup from './account/vendor-group/index.vue';
+import HcmBreadcrumb from '@/components/layout/breadcrumb.vue';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
+import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 
 const route = useRoute();
 const accountSelectorStore = useAccountSelectorStore();
 const accountStore = useAccountStore();
+
+const isListPage = computed(() => route.name === MENU_RESOURCE_RESOURCE_LIST);
 
 // 从 route.query 获取 accountId、vendor
 const accountId = computed(() => (route.query.accountId as string) || '');
@@ -105,34 +109,37 @@ const headerExtensionMap = computed(() => {
 
 <template>
   <div class="resource-entry">
-    <div class="resource-entry__sidebar">
+    <div class="resource-entry-sidebar">
       <AccountVendorGroup />
     </div>
-    <div class="resource-entry__main">
-      <div class="resource-entry__header">
-        <p class="resource-title">
-          <span class="main-account-name">
-            {{ currentAccount?.name || '全部账号' }}
-          </span>
-          <template v-if="(currentAccount as any)?.extension && !isOtherVendor">
-            <div class="extension">
-              <span>
-                {{ headerExtensionMap.firstLabel }}：
-                <span class="info-text">
-                  {{ (currentAccount as any).extension?.[headerExtensionMap.firstField] }}
+    <div class="resource-entry-main">
+      <template v-if="isListPage">
+        <div class="resource-entry-header">
+          <p class="resource-title">
+            <span class="main-account-name">
+              {{ currentAccount?.name || '全部账号' }}
+            </span>
+            <template v-if="(currentAccount as any)?.extension && !isOtherVendor">
+              <div class="extension">
+                <span>
+                  {{ headerExtensionMap.firstLabel }}：
+                  <span class="info-text">
+                    {{ (currentAccount as any).extension?.[headerExtensionMap.firstField] }}
+                  </span>
                 </span>
-              </span>
-              <span>
-                {{ headerExtensionMap.secondLabel }}：
-                <span class="info-text">
-                  {{ (currentAccount as any).extension?.[headerExtensionMap.secondField] }}
+                <span>
+                  {{ headerExtensionMap.secondLabel }}：
+                  <span class="info-text">
+                    {{ (currentAccount as any).extension?.[headerExtensionMap.secondField] }}
+                  </span>
                 </span>
-              </span>
-            </div>
-          </template>
-        </p>
-      </div>
-      <div class="resource-entry__content">
+              </div>
+            </template>
+          </p>
+        </div>
+      </template>
+      <HcmBreadcrumb v-else />
+      <div class="resource-entry-content">
         <RouterView />
       </div>
     </div>
@@ -143,37 +150,32 @@ const headerExtensionMap = computed(() => {
 .resource-entry {
   display: flex;
   height: 100%;
+}
 
-  &__sidebar {
-    flex-shrink: 0;
-    width: 240px;
-    height: 100%;
-    border-right: 1px solid #eaebf0;
-    overflow-y: auto;
-  }
+.resource-entry-sidebar {
+  flex-shrink: 0;
+  width: 240px;
+  height: 100%;
+  border-right: 1px solid #eaebf0;
+  overflow-y: auto;
+}
 
-  &__main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+.resource-entry-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-  &__header {
-    flex-shrink: 0;
-    background: #fff;
-    border-bottom: 1px solid #dcdee5;
-  }
+.resource-entry-header {
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid #dcdee5;
+}
 
-  &__content {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-
-    :deep(.apply-clb-form-container) {
-      padding: 0 !important;
-    }
-  }
+.resource-entry-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .resource-title {

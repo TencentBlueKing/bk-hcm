@@ -24,6 +24,7 @@ import { useI18n } from 'vue-i18n';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import routerAction from '@/router/utils/action';
 
 import {
   MENU_RESOURCE_LOAD_BALANCER_APPLY,
@@ -155,22 +156,19 @@ const handleAdd = () => {
     templateDialogPayload.value = {};
     return;
   }
+  const applyRouteMap: Record<string, symbol> = {
+    host: MENU_RESOURCE_HOST_APPLY,
+    vpc: MENU_RESOURCE_VPC_APPLY,
+    drive: MENU_RESOURCE_DISK_APPLY,
+    subnet: MENU_RESOURCE_SUBNET_APPLY,
+    clb: MENU_RESOURCE_LOAD_BALANCER_APPLY,
+  };
+  const applyRouteName = applyRouteMap[activeTab.value];
+  if (applyRouteName) {
+    routerAction.redirect({ name: applyRouteName, query: route.query }, { history: true });
+    return;
+  }
   switch (activeTab.value) {
-    case 'host':
-      router.push({ name: MENU_RESOURCE_HOST_APPLY, query: route.query });
-      break;
-    case 'vpc':
-      router.push({ name: MENU_RESOURCE_VPC_APPLY, query: route.query });
-      break;
-    case 'drive':
-      router.push({ name: MENU_RESOURCE_DISK_APPLY, query: route.query });
-      break;
-    case 'subnet':
-      router.push({ name: MENU_RESOURCE_SUBNET_APPLY, query: route.query });
-      break;
-    case 'clb':
-      router.push({ name: MENU_RESOURCE_LOAD_BALANCER_APPLY, query: route.query });
-      break;
     default:
       isShowSideSlider.value = true;
       isFormDataChanged.value = false;
@@ -228,7 +226,7 @@ const computedSecurityText = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="resource-list-page">
     <bk-alert
       theme="error"
       closable
@@ -315,9 +313,18 @@ const computedSecurityText = computed(() => {
 </template>
 
 <style lang="scss" scoped>
+.resource-list-page {
+  padding: 24px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
 .resource-main {
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
-  height: calc(100vh - 200px);
+  flex: 1;
+  overflow: hidden;
 
   :deep(.bk-tab-header) {
     line-height: normal !important;

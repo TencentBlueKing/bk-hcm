@@ -7,10 +7,7 @@ import { watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-
 const route = useRoute();
-const { whereAmI } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
 const routeTabs = [
@@ -35,7 +32,7 @@ watchEffect(() => {
 
 <template>
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <detail-tab :tabs="routeTabs" class="route-tab">
         <template #default="type">
           <route-info v-if="type === 'detail'" :detail="detail" />

@@ -8,6 +8,7 @@ import useQueryList from '../../../hooks/use-query-list';
 import { useResourceStore } from '@/store/resource';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
+import { useRoute } from 'vue-router';
 import { MENU_BUSINESS_DRIVE_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -25,6 +26,7 @@ const props = defineProps({
 const resourceStore = useResourceStore();
 const { whereAmI, getBizsId } = useWhereAmI();
 
+const route = useRoute();
 const isResourcePage: any = inject('isResourcePage');
 const bizId = computed(() => getBizsId());
 const updateSign = computed(() => {
@@ -81,20 +83,18 @@ const columns = ref([
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = {
-              query: {
-                type: props.data.vendor,
-              },
-            };
+            const routeInfo: any = {};
             if (whereAmI.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_DRIVE_DETAILS,
                 params: { id: cell },
               });
             } else {
+              // vendor 取自主机数据，挂载硬盘与主机厂商相同
               Object.assign(routeInfo, {
                 name: MENU_RESOURCE_DETAIL,
                 params: { resourceType: 'drive', id: cell },
+                query: { accountId: route.query.accountId, vendor: props.data.vendor },
               });
             }
             routerAction.redirect(routeInfo, { history: true });

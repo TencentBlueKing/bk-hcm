@@ -136,7 +136,33 @@ get-components-batch { names: ["form", "input", "select"] }
 
 ---
 
-## 4. 响应式数据传递
+## 4. CSS 类名命名规范
+
+使用**连字符（kebab-case）**命名，不使用 BEM 风格（`__`、`--`）。
+
+```scss
+// ❌ 错误：BEM 风格
+.resource-entry {
+  &__sidebar { ... }
+  &__header { ... }
+  &__content { ... }
+}
+
+// ✅ 正确：连字符风格
+.resource-entry { ... }
+.resource-entry-sidebar { ... }
+.resource-entry-header { ... }
+.resource-entry-content { ... }
+```
+
+**要点**：
+- 组件根元素和子元素统一使用连字符连接
+- 通过组件名前缀实现作用域隔离（配合 `scoped`）
+- 状态类使用 `is-` 前缀，如 `is-active`、`is-sticky`
+
+---
+
+## 5. 响应式数据传递
 
 传递 reactive 对象给外部函数时，应创建副本而非传递引用。
 

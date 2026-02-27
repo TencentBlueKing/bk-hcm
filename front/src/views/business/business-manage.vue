@@ -18,11 +18,12 @@ import securityForm from './forms/security/index.vue';
 import firewallForm from './forms/firewall';
 import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
 
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { InfoBox } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import routerAction from '@/router/utils/action';
 import {
   MENU_BUSINESS_HOST_MANAGEMENT,
   MENU_BUSINESS_DISK_MANAGEMENT,
@@ -33,6 +34,10 @@ import {
   MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
   MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
   MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+  MENU_BUSINESS_APPLY_CVM,
+  MENU_BUSINESS_APPLY_VPC,
+  MENU_BUSINESS_APPLY_DISK,
+  MENU_BUSINESS_APPLY_SUBNET,
 } from '@/constants/menu-symbol';
 
 const isShowSideSlider = ref(false);
@@ -46,7 +51,6 @@ const templateDialogPayload = ref({});
 
 // use hooks
 const route = useRoute();
-const router = useRouter();
 const { getBizsId } = useWhereAmI();
 
 const gcpTitle = ref<string>('新增');
@@ -95,33 +99,20 @@ const handleAdd = () => {
     isTemplateDialogEdit.value = false;
     return;
   }
-  const { bizs } = route.query;
-  if (renderComponent.value === DriveManage) {
-    router.push({
-      path: '/business/service/service-apply/disk',
-      query: { bizs },
-    });
-  } else if (renderComponent.value === HostManage) {
-    router.push({
-      path: '/business/service/service-apply/cvm',
-      query: { bizs },
-    });
-  } else if (renderComponent.value === VpcManage) {
-    router.push({
-      path: '/business/service/service-apply/vpc',
-      query: { bizs },
-    });
-  } else if (renderComponent.value === SubnetManage) {
-    router.push({
-      path: '/business/service/service-apply/subnet',
-      query: { bizs },
-    });
-  } else {
-    isEdit.value = false;
-    isShowSideSlider.value = true;
-    // 标记初始化
-    isFormDataChanged.value = false;
+  const applyRouteMap = new Map<Component, symbol>([
+    [DriveManage, MENU_BUSINESS_APPLY_DISK],
+    [HostManage, MENU_BUSINESS_APPLY_CVM],
+    [VpcManage, MENU_BUSINESS_APPLY_VPC],
+    [SubnetManage, MENU_BUSINESS_APPLY_SUBNET],
+  ]);
+  const applyRouteName = applyRouteMap.get(renderComponent.value!);
+  if (applyRouteName) {
+    routerAction.redirect({ name: applyRouteName }, { history: true });
+    return;
   }
+  isEdit.value = false;
+  isShowSideSlider.value = true;
+  isFormDataChanged.value = false;
 };
 
 const handleCancel = () => {

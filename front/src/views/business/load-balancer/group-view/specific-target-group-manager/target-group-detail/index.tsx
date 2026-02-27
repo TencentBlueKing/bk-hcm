@@ -59,7 +59,7 @@ export default defineComponent({
             value: (
               <Link
                 theme='primary'
-                href={`/#/resource/manage/vpc/details/${props.detail.vpc_id}?type=tcloud`}
+                href={`/#/resource/manage/vpc/details/${props.detail.vpc_id}?vendor=${props.detail.vendor}`}
                 target='_blank'>
                 <div class='flex-row align-items-center'>
                   {props.detail.cloud_vpc_id}

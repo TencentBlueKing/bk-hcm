@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { ref, watch, watchEffect } from 'vue';
+import { computed, ref, watch, watchEffect } from 'vue';
 import { storeToRefs } from 'pinia';
 import { escapeRegExp } from 'lodash';
 import { useRoute, useRouter } from 'vue-router';
 import { VendorEnum, VendorMap } from '@/common/constant';
 import { QueryRuleOPEnum, IAccountItem } from '@/typings';
 import { AUTH_IMPORT_ACCOUNT } from '@/constants/auth-symbols';
+import { MENU_RESOURCE_DETAIL, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import CreateAccount from '../createAccount';
 import { vendorProperty } from './vendor.plugin';
@@ -118,41 +119,38 @@ const toggleExpanded = (vendor: VendorEnum) => {
   expandedMap.value.set(vendor, !expandedMap.value.get(vendor));
 };
 
+const isDetailPage = computed(() => route.name === MENU_RESOURCE_DETAIL);
+
+// 详情页不支持切换账号/云厂商筛选，切换时跳转到对应资源类型的列表页；其它页面仅更新 query 参数
+const navigate = (query: { accountId?: string; vendor?: VendorEnum }) => {
+  if (isDetailPage.value) {
+    router.replace({
+      name: MENU_RESOURCE_RESOURCE_LIST,
+      params: { resourceType: route.params.resourceType },
+      query,
+    });
+  } else {
+    router.push({ query: { ...route.query, ...query } });
+  }
+};
+
 const handleSelectAll = () => {
   accountId.value = '';
   currentVendor.value = null;
-  router.push({
-    query: {
-      ...route.query,
-      accountId: undefined,
-      vendor: undefined,
-    },
-  });
+  navigate({ accountId: undefined, vendor: undefined });
 };
 
 const handleSelectVendor = (vendor: VendorEnum) => {
   currentVendor.value = vendor;
   toggleExpanded(vendor);
   accountId.value = '';
-  router.push({
-    query: {
-      ...route.query,
-      accountId: undefined,
-      vendor,
-    },
-  });
+  navigate({ accountId: undefined, vendor });
 };
 
 const handleSelectAccount = (account: IAccountItem) => {
   currentVendor.value = null;
   accountId.value = account.id;
-  router.push({
-    query: {
-      ...route.query,
-      accountId: account.id,
-      vendor: undefined,
-    },
-  });
+  navigate({ accountId: account.id, vendor: undefined });
 };
 
 const handleCreateShow = () => {
@@ -200,7 +198,7 @@ const handleCreateCancel = () => {
         <div class="group-list g-scroller">
           <div class="group-item" v-for="[vendor, accountList] in vendorAccountMap" :key="vendor">
             <div
-              :class="['vendor-title', { active: currentVendor === vendor }]"
+              :class="['vendor-title', { active: !accountId && currentVendor === vendor }]"
               @click="handleSelectVendor(vendor)"
               v-show="accountList.length"
             >

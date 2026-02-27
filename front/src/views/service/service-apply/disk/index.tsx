@@ -1,8 +1,8 @@
 import { computed, defineComponent } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import CommonCard from '@/components/CommonCard';
+import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 import ZoneSelector from '../components/common/zone-selector';
 
 import type { IOption } from '@/typings/common';
@@ -13,7 +13,7 @@ import useDiskFormData from '../hooks/use-disk-form-data';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useRouter, useRoute, RouteLocationRaw } from 'vue-router';
+import { useRouter } from 'vue-router';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -28,7 +28,6 @@ export default defineComponent({
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
-    const route = useRoute();
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -231,76 +230,72 @@ export default defineComponent({
       },
     ]);
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
-      <div>
-        <DetailHeader fromConfig={fromConfig.value}>
-          <p class={'purchase-dish-header-title'}>购买硬盘</p>
-        </DetailHeader>
-        <div class='create-form-container disk-wrap' style={isResourcePage && { padding: 0 }}>
-          <Form model={formData} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
-            <ConditionOptions
-              type={ResourceTypeEnum.DISK}
-              bizs={cond.bizId}
-              v-model:cloudAccountId={cond.cloudAccountId}
-              v-model:vendor={cond.vendor}
-              v-model:region={cond.region}
-              v-model:resourceGroup={cond.resourceGroup}
-            />
-            {formConfig.value
-              .filter(({ display }) => display !== false)
-              .map(({ title, children }) => (
-                <CommonCard title={() => title} class={'mb16'}>
-                  {children
-                    .filter(({ display }) => display !== false)
-                    .map(({ label, description, tips, rules, required, property, content }) => (
-                      <FormItem
-                        label={label}
-                        required={required}
-                        property={property}
-                        rules={rules}
-                        description={description}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter((sub) => sub.display !== false)
-                              .map((sub) => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  description={sub?.description}
-                                  class={'mr8'}>
-                                  {sub.content()}
-                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
-                      </FormItem>
-                    ))}
-                </CommonCard>
-              ))}
-            <div class='action-bar' style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
+      <StickyBottomContainer>
+        {{
+          default: () => (
+            <Form model={formData} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
+              <ConditionOptions
+                type={ResourceTypeEnum.DISK}
+                bizs={cond.bizId}
+                v-model:cloudAccountId={cond.cloudAccountId}
+                v-model:vendor={cond.vendor}
+                v-model:region={cond.region}
+                v-model:resourceGroup={cond.resourceGroup}
+              />
+              {formConfig.value
+                .filter(({ display }) => display !== false)
+                .map(({ title, children }) => (
+                  <CommonCard title={() => title} class={'mb16'}>
+                    {children
+                      .filter(({ display }) => display !== false)
+                      .map(({ label, description, tips, rules, required, property, content }) => (
+                        <FormItem
+                          label={label}
+                          required={required}
+                          property={property}
+                          rules={rules}
+                          description={description}>
+                          {Array.isArray(content) ? (
+                            <div class='flex-row'>
+                              {content
+                                .filter((sub) => sub.display !== false)
+                                .map((sub) => (
+                                  <FormItem
+                                    label={sub.label}
+                                    required={sub.required}
+                                    property={sub.property}
+                                    description={sub?.description}
+                                    class={'mr8'}>
+                                    {sub.content()}
+                                    {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                  </FormItem>
+                                ))}
+                            </div>
+                          ) : (
+                            content()
+                          )}
+                          {tips && <div class='form-item-tips'>{tips()}</div>}
+                        </FormItem>
+                      ))}
+                  </CommonCard>
+                ))}
+            </Form>
+          ),
+          footer: () => (
+            <>
               <Button
                 theme='primary'
                 loading={submitting.value}
                 disabled={submitDisabled.value}
-                class={'mr8'}
                 onClick={handleFormSubmit}>
                 {isResourcePage ? t('提交') : t('提交审批')}
               </Button>
               <Button onClick={() => router.back()}>{t('取消')}</Button>
-            </div>
-          </Form>
-        </div>
-      </div>
+            </>
+          ),
+        }}
+      </StickyBottomContainer>
     );
   },
 });

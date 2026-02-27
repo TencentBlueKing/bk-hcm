@@ -24,6 +24,7 @@ const { whereAmI, getBizsId } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
 const securityId = ref(route.params.id as string);
+// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
 const vendor = ref(route.query?.vendor);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
@@ -200,7 +201,7 @@ provide('operateTooltipsOption', operateTooltipsOption);
     <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
   </Teleport>
 
-  <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
       <template #default="type">
         <security-info

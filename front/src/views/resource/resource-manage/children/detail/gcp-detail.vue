@@ -16,7 +16,6 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useI18n } from 'vue-i18n';
 
 import { ref, watch, watchEffect } from 'vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
@@ -24,7 +23,6 @@ import { FieldList } from '../../common/info-list/types';
 const route = useRoute();
 const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
 const { t } = useI18n();
@@ -231,7 +229,7 @@ const submit = async (data: any) => {
 </script>
 
 <template>
-  <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
     <detail-tab :tabs="hostTabs">
       <template #default>
         <detail-info :fields="gcpFields" :detail="gcpDetail" label-width="150px" global-copyable />

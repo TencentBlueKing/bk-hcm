@@ -14,14 +14,11 @@ import useDetail from '../../hooks/use-detail';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 
 import { computed, inject, watchEffect } from 'vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-
 const route = useRoute();
 const { t } = useI18n();
 const { setTitle } = useBreadcrumb();
 
 const isResourcePage: any = inject('isResourcePage');
-const { whereAmI } = useWhereAmI();
 
 const { loading, detail } = useDetail('network_interfaces', route.params.id as string, (data: any) => {
   data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
@@ -89,7 +86,7 @@ const tabs = computed(() => {
 
 <template>
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <detail-tab :tabs="tabs">
         <template #default="type">
           <template v-if="detail.vendor === 'azure'">

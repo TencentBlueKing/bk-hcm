@@ -35,7 +35,8 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 
 const hostId = ref<any>(route.params.id);
-const cloudType = ref<VendorEnum>((route.query?.type as VendorEnum) || undefined);
+// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
+const cloudType = ref<VendorEnum>((route.query?.vendor as VendorEnum) || undefined);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const isDialogShow = ref(false);
@@ -278,21 +279,20 @@ const bktoolTipsOptions = computed(() => {
     </bk-dropdown>
   </Teleport>
 
-  <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-    <detail-tab :tabs="hostTabs">
-      <template #default="type">
-        <bk-loading :loading="loading">
+  <div class="detail-content-wrap">
+    <bk-loading :loading="loading">
+      <detail-tab v-if="!loading" :tabs="hostTabs">
+        <template #default="type">
           <component
-            v-if="!loading"
             :is="componentMap[type]"
             :data="detail"
             :type="cloudType"
             :filter="filter"
             :is-bind-business="isBindBusiness"
           ></component>
-        </bk-loading>
-      </template>
-    </detail-tab>
+        </template>
+      </detail-tab>
+    </bk-loading>
   </div>
 
   <bk-dialog

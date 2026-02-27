@@ -15,13 +15,13 @@ import {
 
 /**
  * 资源纳管模块 —— 唯一需要 AccountVendorGroup 侧边栏的模块
- * entry.vue 提供左侧云厂商&账号选择器 + 账号头部信息 + RouterView
+ * resource-entry.vue 提供左侧云厂商&账号选择器 + 账号头部信息 + RouterView
  */
 const resourceManageRoutes: RouteRecordRaw[] = [
   {
     name: MENU_RESOURCE_MANAGE,
     path: 'manage',
-    component: () => import('@/views/resource-manage/entry.vue'),
+    component: () => import('@/views/resource-manage/resource-entry.vue'),
     redirect: { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'host' } },
     meta: {
       ...new Meta({
@@ -53,6 +53,11 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             menu: {
               i18n: '资源详情',
               relative: MENU_RESOURCE_MANAGE,
+            },
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
             },
           }),
         },
@@ -88,6 +93,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             owner: MENU_RESOURCE,
             activeKey: MENU_RESOURCE_MANAGE,
             menu: { i18n: '申请主机', relative: MENU_RESOURCE_MANAGE },
+            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -101,6 +107,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             owner: MENU_RESOURCE,
             activeKey: MENU_RESOURCE_MANAGE,
             menu: { i18n: '申请VPC', relative: MENU_RESOURCE_MANAGE },
+            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -114,6 +121,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             owner: MENU_RESOURCE,
             activeKey: MENU_RESOURCE_MANAGE,
             menu: { i18n: '申请硬盘', relative: MENU_RESOURCE_MANAGE },
+            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -127,6 +135,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             owner: MENU_RESOURCE,
             activeKey: MENU_RESOURCE_MANAGE,
             menu: { i18n: '申请子网', relative: MENU_RESOURCE_MANAGE },
+            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -140,6 +149,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
             owner: MENU_RESOURCE,
             activeKey: MENU_RESOURCE_MANAGE,
             menu: { i18n: '申请负载均衡', relative: MENU_RESOURCE_MANAGE },
+            layout: { breadcrumb: { show: false } },
           }),
         },
       },

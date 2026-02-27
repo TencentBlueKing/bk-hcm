@@ -1,16 +1,16 @@
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import RouteTableSelector from '@/components/route-table-selector/index.vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
 import { Button, Form, Input, Select, Message } from 'bkui-vue';
 import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { useAccountStore, useBusinessStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import CommonCard from '@/components/CommonCard';
+import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -19,8 +19,7 @@ export default defineComponent({
   props: {},
   setup() {
     const router = useRouter();
-    const route = useRoute();
-    const { getBizsId, whereAmI, isResourcePage } = useWhereAmI();
+    const { getBizsId, whereAmI } = useWhereAmI();
     const formModel = reactive({
       biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
       account_id: '' as string, // 云账号
@@ -156,113 +155,111 @@ export default defineComponent({
       },
     );
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
-      <div>
-        <DetailHeader fromConfig={fromConfig.value}>
-          <span class={'subnet-title'}>新建子网</span>
-        </DetailHeader>
-        <div
-          class='create-form-container subnet-wrap'
-          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '68px' }}>
-          <Form formType='vertical' model={formModel} ref={formRef} rules={formRules}>
-            <ConditionOptions
-              type={ResourceTypeEnum.SUBNET}
-              bizs={formModel.biz_id}
-              v-model:cloudAccountId={formModel.account_id}
-              v-model:vendor={formModel.vendor}
-              v-model:region={formModel.region}
-              v-model:resourceGroup={formModel.resource_group}>
-              {{
-                default: () => (
-                  <FormItem label={'可用区'} required property='zone'>
-                    <ZoneSelector v-model={formModel.zone} vendor={formModel.vendor} region={formModel.region} />
-                  </FormItem>
-                ),
-              }}
-            </ConditionOptions>
-            <CommonCard title={() => '子网信息'}>
-              <FormItem
-                label='所属VPC网络'
-                property='cloud_vpc_id'
-                required
-                style={{
-                  width: '590px',
-                }}>
-                <VpcSelector
-                  isSubnet={true}
-                  zone={formModel.zone}
-                  bizId={formModel.biz_id}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  v-model={formModel.cloud_vpc_id}
-                  accountId={formModel.account_id}
-                  clearable={false}
-                  onChange={getVpcDetail}
-                />
-              </FormItem>
-              <FormItem
-                label='子网名称'
-                property='name'
-                required
-                style={{
-                  width: '880px',
-                }}>
-                <Input
-                  maxlength={60}
-                  placeholder="不超过60个字符，允许字母、数字、中文字符，'-'、'_'、'.'"
-                  v-model={formModel.name}></Input>
-              </FormItem>
-              <FormItem label='IPv4 CIDR' property='ipv4_cidr' required>
-                <div class={'cidr-selector-container'}>
-                  {`${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.`}
-                  <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host1.value} />.
-                  <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host2.value} />
-                  <p>/</p>
-                  <Select class={'cidr-selector'} placeholder={`${subIpv4cidr.value[2]}-31`} v-model={cidr_mask.value}>
-                    {new Array(31 - subIpv4cidr.value[2] + 1)
-                      .fill(0)
-                      .map((_, idx) => idx + +subIpv4cidr.value[2])
-                      .map((num) => (
-                        <Option key={num} label={num} value={num}>
-                          {num}
-                        </Option>
-                      ))}
-                  </Select>
-                </div>
-              </FormItem>
-              <FormItem
-                label='关联路由表'
-                style={{
-                  width: '590px',
-                }}>
-                <RouteTableSelector cloud-vpc-id={formModel.cloud_vpc_id} v-model={formModel.cloud_route_table_id} />
-              </FormItem>
-              {formModel.vendor === 'huawei' && (
+      <StickyBottomContainer>
+        {{
+          default: () => (
+            <Form formType='vertical' model={formModel} ref={formRef} rules={formRules}>
+              <ConditionOptions
+                type={ResourceTypeEnum.SUBNET}
+                bizs={formModel.biz_id}
+                v-model:cloudAccountId={formModel.account_id}
+                v-model:vendor={formModel.vendor}
+                v-model:region={formModel.region}
+                v-model:resourceGroup={formModel.resource_group}>
+                {{
+                  default: () => (
+                    <FormItem label={'可用区'} required property='zone'>
+                      <ZoneSelector v-model={formModel.zone} vendor={formModel.vendor} region={formModel.region} />
+                    </FormItem>
+                  ),
+                }}
+              </ConditionOptions>
+              <CommonCard title={() => '子网信息'}>
                 <FormItem
-                  label='网关地址'
-                  property='gateway_ip'
+                  label='所属VPC网络'
+                  property='cloud_vpc_id'
                   required
-                  description={'子网的网关地址，默认建议填写子网中的第1个IP'}
-                  style={{ width: '880px' }}>
-                  <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
+                  style={{
+                    width: '590px',
+                  }}>
+                  <VpcSelector
+                    isSubnet={true}
+                    zone={formModel.zone}
+                    bizId={formModel.biz_id}
+                    vendor={formModel.vendor}
+                    region={formModel.region}
+                    v-model={formModel.cloud_vpc_id}
+                    accountId={formModel.account_id}
+                    clearable={false}
+                    onChange={getVpcDetail}
+                  />
                 </FormItem>
-              )}
-            </CommonCard>
-          </Form>
-        </div>
-        <div class={'button-group'} style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
-          <Button theme={'primary'} class={'button-submit'} onClick={handleSubmit} loading={submitLoading.value}>
-            提交
-          </Button>
-          <Button class={'button-cancel'} loading={submitLoading.value} onClick={handleCancel}>
-            取消
-          </Button>
-        </div>
-      </div>
+                <FormItem
+                  label='子网名称'
+                  property='name'
+                  required
+                  style={{
+                    width: '880px',
+                  }}>
+                  <Input
+                    maxlength={60}
+                    placeholder="不超过60个字符，允许字母、数字、中文字符，'-'、'_'、'.'"
+                    v-model={formModel.name}></Input>
+                </FormItem>
+                <FormItem label='IPv4 CIDR' property='ipv4_cidr' required>
+                  <div class={'cidr-selector-container'}>
+                    {`${subIpv4cidr.value[0]}.${subIpv4cidr.value[1]}.`}
+                    <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host1.value} />.
+                    <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host2.value} />
+                    <p>/</p>
+                    <Select
+                      class={'cidr-selector'}
+                      placeholder={`${subIpv4cidr.value[2]}-31`}
+                      v-model={cidr_mask.value}>
+                      {new Array(31 - subIpv4cidr.value[2] + 1)
+                        .fill(0)
+                        .map((_, idx) => idx + +subIpv4cidr.value[2])
+                        .map((num) => (
+                          <Option key={num} label={num} value={num}>
+                            {num}
+                          </Option>
+                        ))}
+                    </Select>
+                  </div>
+                </FormItem>
+                <FormItem
+                  label='关联路由表'
+                  style={{
+                    width: '590px',
+                  }}>
+                  <RouteTableSelector cloud-vpc-id={formModel.cloud_vpc_id} v-model={formModel.cloud_route_table_id} />
+                </FormItem>
+                {formModel.vendor === 'huawei' && (
+                  <FormItem
+                    label='网关地址'
+                    property='gateway_ip'
+                    required
+                    description={'子网的网关地址，默认建议填写子网中的第1个IP'}
+                    style={{ width: '880px' }}>
+                    <Input v-model={formModel.gateway_ip} placeholder='请输入网关地址'></Input>
+                  </FormItem>
+                )}
+              </CommonCard>
+            </Form>
+          ),
+          footer: () => (
+            <>
+              <Button theme={'primary'} onClick={handleSubmit} loading={submitLoading.value}>
+                提交
+              </Button>
+              <Button loading={submitLoading.value} onClick={handleCancel}>
+                取消
+              </Button>
+            </>
+          ),
+        }}
+      </StickyBottomContainer>
     );
   },
 });

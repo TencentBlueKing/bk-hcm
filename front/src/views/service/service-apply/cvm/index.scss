@@ -21,50 +21,45 @@
   }
 }
 
-.create-form-container.cvm-wrap {
-  padding: 24px;
-  margin: 52px 0 66px;
+.sub-form-item-wrap {
+  margin: 0 8px 0 0;
+}
 
-  .sub-form-item-wrap {
-    margin: 0 8px 0 0;
-  }
-
-  .data-disk-wrap {
-    .flex-row {
+.data-disk-wrap {
+  .flex-row {
+    .bk-form-item {
+      margin: 0 8px 8px 0;
+    }
+    &:last-child {
       .bk-form-item {
-        margin: 0 8px 8px 0;
-      }
-      &:last-child {
-        .bk-form-item {
-          margin: 0 8px 0 0;
-        }
-      }
-    }
-    .btns {
-      margin-left: 10px;
-      .btn {
-        margin-right: 18px;
-        padding: 0;
-        border-style: none;
+        margin: 0 8px 0 0;
       }
     }
   }
+  .btns {
+    margin-left: 10px;
+    .btn {
+      margin-right: 18px;
+      padding: 0;
+      border-style: none;
+    }
+  }
+}
 
-  .purchase-cvm-form-item-subnet-wrap {
-    position: relative;
-    .automatic-allocation-checkbox {
-      position: absolute;
-      top: -32px;
-      right: -10px;
-      z-index: 999;
-    }
+.purchase-cvm-form-item-subnet-wrap {
+  position: relative;
+  .automatic-allocation-checkbox {
+    position: absolute;
+    top: -32px;
+    right: -10px;
+    z-index: 999;
   }
+}
 
-  .pwd-tips-mark {
-    margin-left: 4px;
-    font-size: 14px;
-    cursor: pointer;
-  }
+.pwd-tips-mark {
+  margin-left: 4px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .pwd-tips-content-wrap {
@@ -96,30 +91,16 @@
   }
 }
 
-.purchase-cvm-header-title {
-  font-size: 16px;
-  color: #313238;
-}
-
 .purchase-cvm-bottom-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 80px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px 0 0;
-  background: #fafbfd;
-  border: 1px solid #dcdee5;
-  z-index: 9999;
+  width: 100%;
 
   .purchase-cvm-bottom-bar-form {
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding-left: 387px;
 
     .purchase-cvm-bottom-bar-form-item-wrap {
       display: flex;
@@ -154,13 +135,8 @@
   }
 
   .purchase-cvm-bottom-bar-info {
-    margin-top: -16px;
     display: flex;
     align-items: center;
-
-    .bk-button {
-      min-width: 88px;
-    }
 
     .purchase-cvm-cost-wrap {
       display: flex;

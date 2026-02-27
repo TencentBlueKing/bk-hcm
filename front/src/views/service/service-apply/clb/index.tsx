@@ -1,14 +1,14 @@
-import { ref, computed, defineComponent, reactive } from 'vue';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+import { ref, defineComponent, reactive } from 'vue';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
 import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
-import { useI18n } from 'vue-i18n';
+
 import './index.scss';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import BottomBar from './children/bottom-bar';
+import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 import http from '@/http';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { MENU_BUSINESS_LOAD_BALANCER, MENU_RESOURCE } from '@/constants/menu-symbol';
@@ -20,7 +20,6 @@ export default defineComponent({
     const route = useRoute();
     const router = useRouter();
     // use hooks
-    const { t } = useI18n();
     const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
     // define data
     const formModel = reactive<ApplyClbModel>({
@@ -51,10 +50,6 @@ export default defineComponent({
     const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, configureList } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     const goBack = () => {
       const to = isBusinessPage
         ? { name: MENU_BUSINESS_LOAD_BALANCER, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } }
@@ -80,25 +75,24 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='apply-clb-page'>
-        {/* header */}
-        <DetailHeader fromConfig={fromConfig.value}>
-          <p class='apply-clb-header-title'>{t('购买负载均衡')}</p>
-        </DetailHeader>
-
-        {/* form */}
-        <ApplyClbForm />
-
-        {/* bottom */}
-        <BottomBar list={configureList} loading={applyLoading.value} onConfirm={handleApplyClb} onCancel={goBack} />
-
-        <SubnetPreviewDialog
-          isShow={isSubnetPreviewDialogShow.value}
-          data={subnetData.value}
-          handleClose={() => (isSubnetPreviewDialogShow.value = false)}
-        />
-        <BindEipDialog />
-      </div>
+      <StickyBottomContainer class='apply-clb-page'>
+        {{
+          default: () => (
+            <>
+              <ApplyClbForm />
+              <SubnetPreviewDialog
+                isShow={isSubnetPreviewDialogShow.value}
+                data={subnetData.value}
+                handleClose={() => (isSubnetPreviewDialogShow.value = false)}
+              />
+              <BindEipDialog />
+            </>
+          ),
+          footer: () => (
+            <BottomBar list={configureList} loading={applyLoading.value} onConfirm={handleApplyClb} onCancel={goBack} />
+          ),
+        }}
+      </StickyBottomContainer>
     );
   },
 });

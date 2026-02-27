@@ -13,12 +13,14 @@ const currentTitle = computed(() => {
   const routeMeta = route.meta as RouteMetaConfig;
   return breadcrumb.data.title ?? routeMeta?.menu?.i18n;
 });
+
+const showBack = computed(() => breadcrumb.data.back !== false && !!from.value);
 </script>
 
 <template>
   <div class="hcm-breadcrumb">
     <div class="breadcrumb-content">
-      <i v-if="from" class="hcm-icon bkhcm-icon-arrows--left-line back-icon" @click="() => handleBack()" />
+      <i v-if="showBack" class="hcm-icon bkhcm-icon-arrows--left-line back-icon" @click="() => handleBack()" />
       <span class="breadcrumb-name">{{ currentTitle }}</span>
     </div>
     <div id="breadcrumbHead" class="breadcrumb-head"></div>

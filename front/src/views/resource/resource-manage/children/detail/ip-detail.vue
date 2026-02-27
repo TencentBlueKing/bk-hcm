@@ -195,7 +195,7 @@ const bkToolTipsOptions = computed(() => {
   </Teleport>
 
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <ip-info :detail="detail" />
       <assign-eip v-if="detail.id" v-model:is-show="isShowAssignEip" :detail="detail" @success-assign="getDetail" />
     </div>

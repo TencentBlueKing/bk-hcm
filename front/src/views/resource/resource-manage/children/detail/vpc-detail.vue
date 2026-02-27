@@ -16,7 +16,7 @@ import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
@@ -24,7 +24,7 @@ import { AUTH_DELETE_IAAS_RESOURCE, AUTH_BIZ_DELETE_IAAS_RESOURCE } from '@/cons
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI, getBizsId } = useWhereAmI();
+const { getBizsId } = useWhereAmI();
 const bizId = computed(() => getBizsId());
 const { setTitle } = useBreadcrumb();
 
@@ -399,7 +399,7 @@ const handleDeleteVpc = (data: any) => {
   </Teleport>
 
   <bk-loading :loading="loading">
-    <div class="detail-content-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+    <div class="detail-content-wrap">
       <detail-tab :tabs="hostTabs">
         <template #default>
           <detail-info

@@ -248,7 +248,7 @@ const groupColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = { query: { type: data.vendor, vendor: data.vendor } };
+            const routeInfo: any = {};
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
@@ -258,6 +258,7 @@ const groupColumns = [
               Object.assign(routeInfo, {
                 name: MENU_RESOURCE_DETAIL,
                 params: { resourceType: 'security', id: data.id },
+                query: { accountId: route.query.accountId, vendor: data.vendor },
               });
             }
             routerAction.redirect(routeInfo, { history: true });
@@ -557,13 +558,14 @@ const gcpColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = { query: { type: data.vendor } };
+            const routeInfo: any = {};
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, { name: MENU_BUSINESS_GCP_DETAILS, params: { id: data.id } });
             } else {
               Object.assign(routeInfo, {
                 name: MENU_RESOURCE_DETAIL,
                 params: { resourceType: 'gcp', id: data.id },
+                query: { accountId: route.query.accountId, vendor: data.vendor },
               });
             }
             routerAction.redirect(routeInfo, { history: true });
@@ -758,13 +760,14 @@ const templateColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = { query: { type: data.vendor } };
+            const routeInfo: any = {};
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, { name: MENU_BUSINESS_TEMPLATE_DETAILS, params: { id: data.cloud_id } });
             } else {
               Object.assign(routeInfo, {
                 name: MENU_RESOURCE_DETAIL,
                 params: { resourceType: 'template', id: data.cloud_id },
+                query: { accountId: route.query.accountId, vendor: data.vendor },
               });
             }
             routerAction.redirect(routeInfo, { history: true });
@@ -968,18 +971,18 @@ const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem
 };
 const handleChangeEffectConfirm = () => {
   isChangeEffectConfirmDialogShow.value = false;
-  const routeInfo: any = {
-    query: { activeTab: 'rule', type: currentSecurityGroup.value.vendor, vendor: currentSecurityGroup.value.vendor },
-  };
+  const routeInfo: any = {};
   if (whereAmIRef.value === Senarios.business) {
     Object.assign(routeInfo, {
       name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
       params: { id: currentSecurityGroup.value.id },
+      query: { activeTab: 'rule' },
     });
   } else {
     Object.assign(routeInfo, {
       name: MENU_RESOURCE_DETAIL,
       params: { resourceType: 'security', id: currentSecurityGroup.value.id },
+      query: { accountId: route.query.accountId, vendor: currentSecurityGroup.value.vendor, activeTab: 'rule' },
     });
   }
   routerAction.redirect(routeInfo, { history: true });
