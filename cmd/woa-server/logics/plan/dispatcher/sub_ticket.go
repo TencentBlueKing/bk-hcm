@@ -266,76 +266,43 @@ func (d *Dispatcher) checkAdminAuditStatus(kt *kit.Kit, subTicket *ptypes.SubTic
 	return nil
 }
 
+// subTicketStatistics 子单统计结果
+type subTicketStatistics struct {
+	allDone     bool
+	allFailed   bool
+	hasFailed   bool
+	allRejected bool
+	hasRejected bool
+}
+
 // checkSubTicket check sub ticket to update ticket status
 func (d *Dispatcher) checkSubTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) error {
 	logs.Infof("ready to check sub ticket status, id: %s, rid: %s", ticket.ID, kt.Rid)
 
-	subTickets := make([]ptypes.ListResPlanSubTicketItem, 0)
-	listReq := &ptypes.ListResPlanSubTicketReq{
-		TicketID: ticket.ID,
-		Page:     core.NewDefaultBasePage(),
-	}
-	for {
-		rst, err := d.resFetcher.ListResPlanSubTicket(kt, listReq)
-		if err != nil {
-			logs.Errorf("failed to list res plan sub ticket, err: %v, id: %s, rid: %s", err, ticket.ID, kt.Rid)
-			return err
-		}
-
-		subTickets = append(subTickets, rst.Details...)
-		if len(rst.Details) < int(listReq.Page.Limit) {
-			break
-		}
-		listReq.Page.Start += uint32(listReq.Page.Limit)
+	// 查询所有子单
+	subTickets, err := d.listAllSubTickets(kt, ticket.ID)
+	if err != nil {
+		return err
 	}
 
 	// 统计子单状态
-	allDone, allFailed, hasFailed, allRejected, hasRejected := true, true, false, true, false
-	for _, subTicket := range subTickets {
-		// 有子单处于非终态，继续等待
-		if subTicket.Status.IsUnfinished() {
-			logs.Infof("sub ticket %s is not finished, id: %s, rid: %s", subTicket.ID, ticket.ID, kt.Rid)
-			return nil
-		}
-		if subTicket.Status == enumor.RPSubTicketStatusInvalid {
-			continue
-		}
+	stats, hasUnfinished := d.calculateSubTicketStatistics(kt, ticket.ID, subTickets)
+	if hasUnfinished {
+		return nil
+	}
 
-		// 拒绝状态为最低优先级，只有全部子单均为审批拒绝时才更新主单状态为审批拒绝
-		allRejected = allRejected && subTicket.Status == enumor.RPSubTicketStatusRejected
-		hasRejected = hasRejected || subTicket.Status == enumor.RPSubTicketStatusRejected
-		// 审批拒绝不认为是失败（失败为非终态，不会触发结果汇总生效）
-		allDone = allDone && subTicket.Status == enumor.RPSubTicketStatusDone
-		allFailed = allFailed && subTicket.Status == enumor.RPSubTicketStatusFailed
-		hasFailed = hasFailed || subTicket.Status == enumor.RPSubTicketStatusFailed
-	}
-	// 根据统计结果更新主单状态(失败优先级高于审批拒绝，当同时存在失败和审批拒绝时，以失败为最终结果)
-	ticketStatus := enumor.RPTicketStatusAuditing
-	switch {
-	case allFailed:
-		ticketStatus = enumor.RPTicketStatusFailed
-	case hasFailed:
-		ticketStatus = enumor.RPTicketStatusPartialFailed
-	case allRejected:
-		ticketStatus = enumor.RPTicketStatusRejected
-	case hasRejected:
-		ticketStatus = enumor.RPTicketStatusPartialRejected
-	case allDone:
-		ticketStatus = enumor.RPTicketStatusDone
-	default:
-		logs.Warnf("invalid sub ticket status, allDone: %t, allFailed: %t, hasFailed: %t, "+
-			"allRejected: %t, hasRejected: %t, id: %s, rid: %s", allDone, allFailed, hasFailed, allRejected,
-			hasRejected, ticket.ID, kt.Rid)
-	}
+	// 根据统计结果决定主单状态
+	ticketStatus := d.determineTicketStatus(kt, ticket.ID, subTickets, stats)
 
 	// 单据成功完结，且不存在失败的子单，需要将所有子单的结果汇总生效
-	if !hasFailed {
+	if !stats.hasFailed {
 		if err := d.FinishAuditFlow(kt, ticket); err != nil {
 			logs.Errorf("failed to finish audit flow, err: %v, id: %s, rid: %s", err, ticket.ID, kt.Rid)
 			return err
 		}
 	}
 
+	// 更新主单状态
 	update := &rpts.ResPlanTicketStatusTable{
 		TicketID: ticket.ID,
 		Status:   ticketStatus,
@@ -346,6 +313,97 @@ func (d *Dispatcher) checkSubTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) erro
 	}
 
 	return nil
+}
+
+// listAllSubTickets 分页查询指定主单的所有子单
+func (d *Dispatcher) listAllSubTickets(kt *kit.Kit, ticketID string) ([]ptypes.ListResPlanSubTicketItem, error) {
+	subTickets := make([]ptypes.ListResPlanSubTicketItem, 0)
+	listReq := &ptypes.ListResPlanSubTicketReq{
+		TicketID: ticketID,
+		Page:     core.NewDefaultBasePage(),
+	}
+
+	for {
+		rst, err := d.resFetcher.ListResPlanSubTicket(kt, listReq)
+		if err != nil {
+			logs.Errorf("failed to list res plan sub ticket, err: %v, id: %s, rid: %s", err, ticketID, kt.Rid)
+			return nil, err
+		}
+
+		subTickets = append(subTickets, rst.Details...)
+		if len(rst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return subTickets, nil
+}
+
+// calculateSubTicketStatistics 统计子单状态，返回统计结果和是否有未完成的子单
+func (d *Dispatcher) calculateSubTicketStatistics(kt *kit.Kit, ticketID string,
+	subTickets []ptypes.ListResPlanSubTicketItem) (subTicketStatistics, bool) {
+
+	stats := subTicketStatistics{
+		allDone:     true,
+		allFailed:   true,
+		hasFailed:   false,
+		allRejected: true,
+		hasRejected: false,
+	}
+
+	for _, subTicket := range subTickets {
+		// 有子单处于非终态，继续等待
+		if subTicket.Status.IsUnfinished() {
+			logs.Infof("sub ticket %s is not finished, id: %s, rid: %s", subTicket.ID, ticketID, kt.Rid)
+			return stats, true
+		}
+
+		// 跳过无效状态的子单
+		if subTicket.Status == enumor.RPSubTicketStatusInvalid {
+			continue
+		}
+
+		// 拒绝状态为最低优先级，只有全部子单均为审批拒绝时才更新主单状态为审批拒绝
+		stats.allRejected = stats.allRejected && subTicket.Status == enumor.RPSubTicketStatusRejected
+		stats.hasRejected = stats.hasRejected || subTicket.Status == enumor.RPSubTicketStatusRejected
+		// 审批拒绝不认为是失败（失败为非终态，不会触发结果汇总生效）
+		stats.allDone = stats.allDone && subTicket.Status == enumor.RPSubTicketStatusDone
+		stats.allFailed = stats.allFailed && subTicket.Status == enumor.RPSubTicketStatusFailed
+		stats.hasFailed = stats.hasFailed || subTicket.Status == enumor.RPSubTicketStatusFailed
+	}
+
+	return stats, false
+}
+
+// determineTicketStatus 根据子单统计结果决定主单状态
+func (d *Dispatcher) determineTicketStatus(kt *kit.Kit, ticketID string,
+	subTickets []ptypes.ListResPlanSubTicketItem, stats subTicketStatistics) enumor.RPTicketStatus {
+
+	// 当主单没有创建子单时，可以认为主单在ITSM审批阶段被拒绝
+	// （ITSM拒绝的状态和结束的状态完全一致，因此只能通过是否有创建子单间接判断）
+	if len(subTickets) == 0 {
+		return enumor.RPTicketStatusRejected
+	}
+
+	// 根据统计结果更新主单状态(失败优先级高于审批拒绝，当同时存在失败和审批拒绝时，以失败为最终结果)
+	switch {
+	case stats.allFailed:
+		return enumor.RPTicketStatusFailed
+	case stats.hasFailed:
+		return enumor.RPTicketStatusPartialFailed
+	case stats.allRejected:
+		return enumor.RPTicketStatusRejected
+	case stats.hasRejected:
+		return enumor.RPTicketStatusPartialRejected
+	case stats.allDone:
+		return enumor.RPTicketStatusDone
+	default:
+		logs.Warnf("invalid sub ticket status, allDone: %t, allFailed: %t, hasFailed: %t, "+
+			"allRejected: %t, hasRejected: %t, id: %s, rid: %s", stats.allDone, stats.allFailed, stats.hasFailed,
+			stats.allRejected, stats.hasRejected, ticketID, kt.Rid)
+		return enumor.RPTicketStatusAuditing
+	}
 }
 
 // checkSubTicketTimeout check sub ticket timeout

@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -33,6 +34,10 @@ import (
 // getItsmAndCrpAuditStatus get itsm and crp audit status.
 func (f *ResPlanFetcher) getItsmAndCrpAuditStatus(kt *kit.Kit, bkBizID int64,
 	ticketStatus *ptypes.GetRPTicketStatusInfo) (*ptypes.GetRPTicketItsmAudit, *ptypes.GetRPTicketCrpAudit, error) {
+
+	if ticketStatus.ItsmSN == constant.ResPlanItsmAuditSkip {
+		return nil, nil, nil
+	}
 
 	itsmAudit := &ptypes.GetRPTicketItsmAudit{
 		ItsmSN:  ticketStatus.ItsmSN,

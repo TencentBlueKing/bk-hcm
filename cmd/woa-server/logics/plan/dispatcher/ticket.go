@@ -220,7 +220,7 @@ func (d *Dispatcher) checkItsmTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) (bo
 	case string(itsm.StatusFinished):
 		// ITSM单正常完结时，依然需要确认子单的状态
 		checkSubTicket = true
-		return checkSubTicket, d.createSubTicket(kt, ticket)
+		return checkSubTicket, nil
 	default:
 		return checkSubTicket, d.checkTicketTimeout(kt, ticket)
 	}
@@ -255,34 +255,56 @@ func (d *Dispatcher) checkTicketTimeout(kt *kit.Kit, ticket *ptypes.TicketInfo) 
 
 // FinishAuditFlow 单据的所有子单均已结单，汇总成功的子单并应用到本地
 func (d *Dispatcher) FinishAuditFlow(kt *kit.Kit, ticket *ptypes.TicketInfo) error {
-	itsmStatus, err := d.itsmCli.GetTicketStatus(kt, ticket.ItsmSN)
-	if err != nil {
-		logs.Errorf("failed to get itsm ticket status, err: %v, id: %s, rid: %s", err, ticket.ID, kt.Rid)
-		return err
-	}
-
-	// 将itsm单结单，如果itsm单已结单，继续走后续流程
-	if len(itsmStatus.Data.CurrentSteps) > 0 && itsmStatus.Data.CurrentSteps[0].StateId == d.crpAuditNode.ID {
-		approveReq := &itsm.ApproveReq{
-			Sn:       ticket.ItsmSN,
-			StateID:  int(d.crpAuditNode.ID),
-			Approver: d.crpAuditNode.Approver,
-			Action:   "true",
-			Remark:   "",
-		}
-		if err := d.itsmCli.Approve(kt, approveReq); err != nil {
-			logs.Errorf("request itsm ticket approve failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-	}
-
 	// crp单据通过后更新本地数据表
 	if err := d.queryAndApplyResPlanDemandChange(kt, ticket); err != nil {
 		logs.Errorf("%s: failed to upsert crp demand, err: %v, rid: %s", constant.DemandChangeAppliedFailed,
 			err, kt.Rid)
 		return err
 	}
+
+	// 如果不是跳过审核的单据，需要结束ITSM单
+	if ticket.ItsmSN != constant.ResPlanItsmAuditSkip {
+		if err := d.finishItsmTicket(kt, ticket); err != nil {
+			// ITSM单结单失败不影响主流程，hcm单据应正常结束
+			logs.Warnf("failed to finish itsm ticket, err: %v, rid: %s", err, kt.Rid)
+		}
+	}
 	return nil
+}
+
+// finishItsmTicket 结束ITSM单据
+func (d *Dispatcher) finishItsmTicket(kt *kit.Kit, ticket *ptypes.TicketInfo) error {
+	itsmStatus, err := d.itsmCli.GetTicketStatus(kt, ticket.ItsmSN)
+	if err != nil {
+		logs.Errorf("failed to get itsm ticket status, err: %v, id: %s, rid: %s", err, ticket.ID, kt.Rid)
+		return err
+	}
+
+	// 仅在CRP审批节点时才进行结单操作
+	if !d.itsmTicketInCRPState(itsmStatus) {
+		return nil
+	}
+
+	approveReq := &itsm.ApproveReq{
+		Sn:       ticket.ItsmSN,
+		StateID:  int(d.crpAuditNode.ID),
+		Approver: d.crpAuditNode.Approver,
+		Action:   "true",
+		Remark:   "",
+	}
+	if err := d.itsmCli.Approve(kt, approveReq); err != nil {
+		logs.Errorf("request itsm ticket approve failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+// itsmTicketInCRPState 判断ITSM单是否处于CRP审批节点
+func (d *Dispatcher) itsmTicketInCRPState(status *itsm.GetTicketStatusResp) bool {
+	if len(status.Data.CurrentSteps) == 0 {
+		return false
+	}
+	return status.Data.CurrentSteps[0].StateId == d.crpAuditNode.ID
 }
 
 // updateTicketStatus update ticket status.
