@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
 import { loadBalancerBiz as loadBalancerBizRouteConfig } from '@/views/load-balancer/route-config';
 import taskRouteConfig from '@/views/task/route-config';
+import cloudAccountManageRouteConfig from '@/views/cloud-account-manage/route-config';
 import Meta from '../meta';
 import {
   MENU_BUSINESS_CERT_MANAGEMENT,
@@ -349,6 +350,13 @@ const businessMenus: RouteRecordRaw[] = [
     children: [...taskRouteConfig, ...operationLogBizRouteConfig],
     meta: {
       groupTitle: '其他',
+    },
+  },
+  {
+    path: '/business',
+    children: [...cloudAccountManageRouteConfig],
+    meta: {
+      groupTitle: '账号',
     },
   },
   {

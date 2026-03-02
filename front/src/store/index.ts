@@ -17,3 +17,4 @@ export * from './host';
 export * from './scheme';
 export * from './loadbalancer';
 export * from './task';
+export * from './cloud-account';
