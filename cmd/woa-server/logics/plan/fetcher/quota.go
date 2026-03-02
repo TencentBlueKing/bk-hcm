@@ -20,6 +20,8 @@
 package fetcher
 
 import (
+	"errors"
+
 	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
@@ -176,6 +178,12 @@ func (f *ResPlanFetcher) QueryCRPTransferPoolDemands(kt *kit.Kit, obsProjects []
 		if err != nil {
 			logs.Errorf("query crp demands failed, err: %v, params: %+v, rid: %s", err, queryReq.Params, kt.Rid)
 			return nil, err
+		}
+
+		if rst.Error.Code != 0 {
+			logs.Errorf("failed to query cvm cbs plans, err: %s, crp_trace: %s, rid: %s", rst.Error.Message,
+				rst.TraceId, kt.Rid)
+			return nil, errors.New(rst.Error.Message)
 		}
 
 		result = append(result, rst.Result.Data...)

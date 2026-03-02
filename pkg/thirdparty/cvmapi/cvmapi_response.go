@@ -226,8 +226,8 @@ type CvmCbsPlanPenaltyRatioReportRst struct {
 // CvmCbsPlanQueryResp cvm and cbs plan query response
 type CvmCbsPlanQueryResp struct {
 	RespMeta  `json:",inline"`
-	Result    *CvmCbsPlanQueryRst `json:"result"`
-	Errorinfo interface{}         `json:"errorinfo"`
+	Result    CvmCbsPlanQueryRst `json:"result"`
+	Errorinfo interface{}        `json:"errorinfo"`
 }
 
 // CvmCbsPlanQueryRst cvm and cbs plan query result

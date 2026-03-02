@@ -688,7 +688,12 @@ func (c *Controller) QueryIEGDemands(kt *kit.Kit, req *QueryIEGDemandsReq) ([]*c
 		return nil, err
 	}
 
-	// init request parameter.
+	queryReq := buildIEGDemandQueryReq(req)
+	return c.fetchAllCvmCbsPlans(kt, queryReq)
+}
+
+// buildIEGDemandQueryReq builds CvmCbsPlanQueryReq from QueryIEGDemandsReq.
+func buildIEGDemandQueryReq(req *QueryIEGDemandsReq) *cvmapi.CvmCbsPlanQueryReq {
 	queryReq := &cvmapi.CvmCbsPlanQueryReq{
 		ReqMeta: cvmapi.ReqMeta{
 			Id:      cvmapi.CvmId,
@@ -727,6 +732,7 @@ func (c *Controller) QueryIEGDemands(kt *kit.Kit, req *QueryIEGDemandsReq) ([]*c
 	if len(req.PlanProdNames) > 0 {
 		queryReq.Params.PlanProductName = req.PlanProdNames
 	}
+
 	if len(req.OpProdNames) > 0 {
 		queryReq.Params.ProductName = req.OpProdNames
 	}
@@ -748,13 +754,25 @@ func (c *Controller) QueryIEGDemands(kt *kit.Kit, req *QueryIEGDemandsReq) ([]*c
 		queryReq.Params.TechnicalClass = req.TechnicalClasses
 	}
 
-	// query all demands.
+	return queryReq
+}
+
+// fetchAllCvmCbsPlans fetches all pages of cvm cbs plan data.
+func (c *Controller) fetchAllCvmCbsPlans(kt *kit.Kit, queryReq *cvmapi.CvmCbsPlanQueryReq) (
+	[]*cvmapi.CvmCbsPlanQueryItem, error) {
+
 	result := make([]*cvmapi.CvmCbsPlanQueryItem, 0)
 	for start := 0; ; start += int(core.DefaultMaxPageLimit) {
 		queryReq.Params.Page.Start = start
 		rst, err := c.crpCli.QueryCvmCbsPlans(kt.Ctx, kt.Header(), queryReq)
 		if err != nil {
 			return nil, err
+		}
+
+		if rst.Error.Code != 0 {
+			logs.Errorf("failed to query cvm cbs plans, err: %s, crp_trace: %s, rid: %s", rst.Error.Message,
+				rst.TraceId, kt.Rid)
+			return nil, errors.New(rst.Error.Message)
 		}
 
 		result = append(result, rst.Result.Data...)

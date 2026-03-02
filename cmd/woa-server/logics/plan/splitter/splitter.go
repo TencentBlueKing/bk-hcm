@@ -158,7 +158,7 @@ func (s *SubTicketSplitter) queryAdjustAbleDemands(kt *kit.Kit, req *ptypes.Adju
 		return nil, errors.New(rst.Error.Message)
 	}
 
-	if rst.Result == nil || len(rst.Result.Data) == 0 {
+	if len(rst.Result.Data) == 0 {
 		logs.Errorf("failed to query adjust able demands, return is empty, crp_trace: %s, rid: %s",
 			rst.TraceId, kt.Rid)
 		return nil, errors.New("no demands can be adjusted in CRP")
