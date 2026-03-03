@@ -4,6 +4,7 @@ import { AUTH_FIND_ACCOUNT } from '@/constants/auth-symbols';
 import {
   MENU_SERVICE,
   MENU_SERVICE_ACCOUNT_MANAGEMENT,
+  MENU_SERVICE_ACCOUNT_CHECK_IN,
   MENU_SERVICE_ACCOUNT_DETAIL,
   MENU_SERVICE_ACCOUNT_DETAIL_BASIC,
 } from '@/constants/menu-symbol';
@@ -12,6 +13,7 @@ import {
  * 账号管理模块 —— 放置在"工作台"一级菜单下
  * 路由结构：
  *   service/account                              → 账号列表
+ *   service/account/check-in                      → 账号登记
  *   service/account/details/:accountId            → 详情容器（redirect → basic）
  *   service/account/details/:accountId/basic      → 基本信息
  */
@@ -30,6 +32,27 @@ const accountManageRoutes: RouteRecordRaw[] = [
         },
         menu: {
           i18n: '账号管理',
+        },
+      }),
+    },
+  },
+  // 账号登记
+  {
+    name: MENU_SERVICE_ACCOUNT_CHECK_IN,
+    path: 'account/check-in',
+    component: () => import('@/views/service/service-apply/account-add/index'),
+    meta: {
+      ...new Meta({
+        owner: MENU_SERVICE,
+        activeKey: MENU_SERVICE_ACCOUNT_MANAGEMENT,
+        menu: {
+          i18n: '账号登记',
+          relative: MENU_SERVICE_ACCOUNT_MANAGEMENT,
+        },
+        layout: {
+          breadcrumb: {
+            show: false,
+          },
         },
       }),
     },
@@ -69,5 +92,11 @@ const accountManageRoutes: RouteRecordRaw[] = [
     ],
   },
 ];
+
+// 旧路径兼容重定向
+accountManageRoutes.push({
+  path: 'service-apply/account-add',
+  redirect: { name: MENU_SERVICE_ACCOUNT_CHECK_IN },
+});
 
 export default accountManageRoutes;

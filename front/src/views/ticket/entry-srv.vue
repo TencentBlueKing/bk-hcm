@@ -1,6 +1,6 @@
 <template>
-  <div class="tab-container">
-    <bk-tab type="card-grid" v-model:active="applyType" class="header-tab" @update:active="saveActiveType">
+  <div class="page-container ticket-page">
+    <bk-tab type="card-grid" v-model:active="applyType" class="ticket-tab" @update:active="saveActiveType">
       <bk-tab-panel v-for="(item, index) in tabList" :name="item.name" :label="item.label" :key="index">
         <component
           v-if="item.name === applyType"
@@ -81,7 +81,7 @@ const tabList = ref<ApplicationsType[]>([
       {
         field: 'type',
         op: QueryRuleOPEnum.IN,
-        value: ['create_disk'],
+        value: ['create_vpc'],
       },
     ],
     Component: CommonTable,
@@ -123,17 +123,18 @@ const tabList = ref<ApplicationsType[]>([
 </script>
 
 <style lang="scss" scoped>
-.tab-container {
-  height: 100%;
-  padding: 24px;
+.ticket-page {
+  display: flex;
+  flex-direction: column;
 }
 
-:global(.bk-tab) {
-  height: 100%;
+.ticket-tab {
+  flex: 1;
+  overflow: hidden;
 
-  :global(.bk-tab-content) {
-    height: calc(100% - 40px);
-    padding: 0;
+  :deep(.bk-tab-content) {
+    height: calc(100% - 42px);
+    padding: 16px 24px;
   }
 }
 </style>

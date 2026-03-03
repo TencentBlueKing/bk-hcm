@@ -100,6 +100,7 @@ const handleGotoClbList = () => {
 .status {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   padding: 0 24px;
   height: 52px;
   background-color: #fff;

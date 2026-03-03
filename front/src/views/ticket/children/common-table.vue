@@ -5,8 +5,9 @@
 <script setup lang="ts">
 import { h } from 'vue';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP, searchData } from '../constants';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { Button } from 'bkui-vue';
+import routerAction from '@/router/utils/action';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import StatusSuccess from '@/assets/image/success-account.png';
@@ -23,7 +24,6 @@ interface IProps {
 
 const props = withDefaults(defineProps<IProps>(), {});
 
-const router = useRouter();
 const route = useRoute();
 
 const columns = [
@@ -45,14 +45,17 @@ const columns = [
           text: true,
           theme: 'primary',
           onClick: () => {
-            router.push({
-              name: MENU_SERVICE_TICKET_DETAILS,
-              query: {
-                ...route.query,
-                id: data.id,
-                type: data.type,
+            routerAction.redirect(
+              {
+                name: MENU_SERVICE_TICKET_DETAILS,
+                query: {
+                  ...route.query,
+                  id: data.id,
+                  type: data.type,
+                },
               },
-            });
+              { history: true },
+            );
           },
         },
         data.sn,

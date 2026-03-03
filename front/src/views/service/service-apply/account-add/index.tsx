@@ -817,13 +817,13 @@ export default defineComponent({
     ]);
 
     return () => (
-      <div class='form-container flex-row justify-content-between'>
+      <div class='form-container page-container flex-row justify-content-between'>
         <Form class='form-warp' model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
           {formList
             .filter((item) => item.hidden !== true)
-            .map((item) => (
+            .map((item, index) => (
               <>
-                {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
+                {item.formName && <div class={{ mb10: true, mt10: index > 0 }}>{item.formName}</div>}
                 <div
                   class={{
                     'form-item-warp': true,

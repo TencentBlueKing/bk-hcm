@@ -66,6 +66,7 @@ export const MENU_SERVICE = Symbol('menu_service');
 export const MENU_SERVICE_TICKET_MANAGEMENT = Symbol('menu_service_ticket_management');
 export const MENU_SERVICE_TICKET_DETAILS = Symbol('menu_service_ticket_details');
 export const MENU_SERVICE_ACCOUNT_MANAGEMENT = Symbol('menu_service_account_management');
+export const MENU_SERVICE_ACCOUNT_CHECK_IN = Symbol('menu_service_account_check_in');
 export const MENU_SERVICE_ACCOUNT_DETAIL = Symbol('menu_service_account_detail');
 export const MENU_SERVICE_ACCOUNT_DETAIL_BASIC = Symbol('menu_service_account_detail_basic');
 export const MENU_SERVICE_ACCOUNT_DETAIL_RESOURCE = Symbol('menu_service_account_detail_resource');
