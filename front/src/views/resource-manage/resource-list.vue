@@ -18,6 +18,7 @@ import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
 import firewallForm from '@/views/business/forms/firewall';
 import TemplateDialog from '@/views/resource/resource-manage/children/dialog/template-dialog';
+import AccountSummary from './account/account-summary.vue';
 import { useRouter, useRoute } from 'vue-router';
 import { RESOURCE_TYPES, VendorEnum } from '@/common/constant';
 import { useI18n } from 'vue-i18n';
@@ -67,7 +68,12 @@ const currentAccountDetail = computed(() => {
 
 // 分配状态：通过 route.query.assign 驱动
 const assign = computed({
-  get: () => (route.query.assign as string) || 'all',
+  get: () => {
+    const raw = route.query.assign as string;
+    if (!raw) return 'all';
+    const num = Number(raw);
+    return Number.isNaN(num) ? raw : num;
+  },
   set: (val: string | number) => {
     router.push({
       query: { ...route.query, assign: val === 'all' ? undefined : String(val) },
@@ -227,6 +233,7 @@ const computedSecurityText = computed(() => {
 
 <template>
   <div class="resource-list-page">
+    <AccountSummary />
     <bk-alert
       theme="error"
       closable
@@ -237,10 +244,10 @@ const computedSecurityText = computed(() => {
         {{ currentAccountDetail?.sync_failed_reason }}
       </template>
     </bk-alert>
-    <bk-tab :active="activeTab" type="card-grid" class="resource-main g-scroller" @change="handleActiveTabChange">
+    <bk-tab :active="activeTab" type="card-grid" class="resource-main" @change="handleActiveTabChange">
       <template #setting>
-        <div style="margin: 0 10px">
-          <bk-select v-model="assign" :clearable="false" :filterable="false" class="w80">
+        <div class="assign-container">
+          <bk-select v-model="assign" :clearable="false" :filterable="false" class="assign-select">
             <bk-option
               v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
               :key="index"
@@ -314,17 +321,21 @@ const computedSecurityText = computed(() => {
 
 <style lang="scss" scoped>
 .resource-list-page {
-  padding: 24px;
   height: 100%;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+.error-message-alert {
+  margin: 0 24px;
 }
 
 .resource-main {
-  box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   flex: 1;
   overflow: hidden;
+  margin: 0 24px 24px;
 
   :deep(.bk-tab-header) {
     line-height: normal !important;
@@ -350,12 +361,14 @@ const computedSecurityText = computed(() => {
   }
 }
 
-.w80 {
-  width: 80px;
+.assign-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
-.error-message-alert {
-  margin: -8px 0 16px;
+.assign-select {
+  width: 80px;
 }
 </style>
 

@@ -63,13 +63,13 @@ export const MENU_BUSINESS_APPLY_CLB = Symbol('menu_business_apply_clb');
  * 工作台
  */
 export const MENU_SERVICE = Symbol('menu_service');
-export const MENU_SERVICE_APPLY_MANAGEMENT = Symbol('menu_service_apply_management');
-export const MENU_SERVICE_APPLY_MANAGEMENT_DETAILS = Symbol('menu_service_apply_management_details');
-export const MENU_SERVICE_ACCOUNT_MANAGE = Symbol('menu_service_account_manage');
+export const MENU_SERVICE_TICKET_MANAGEMENT = Symbol('menu_service_ticket_management');
+export const MENU_SERVICE_TICKET_DETAILS = Symbol('menu_service_ticket_details');
+export const MENU_SERVICE_ACCOUNT_MANAGEMENT = Symbol('menu_service_account_management');
 export const MENU_SERVICE_ACCOUNT_DETAIL = Symbol('menu_service_account_detail');
-export const MENU_SERVICE_ACCOUNT_BASIC = Symbol('menu_service_account_basic');
-export const MENU_SERVICE_ACCOUNT_RESOURCE = Symbol('menu_service_account_resource');
-export const MENU_SERVICE_ACCOUNT_USERS = Symbol('menu_service_account_users');
+export const MENU_SERVICE_ACCOUNT_DETAIL_BASIC = Symbol('menu_service_account_detail_basic');
+export const MENU_SERVICE_ACCOUNT_DETAIL_RESOURCE = Symbol('menu_service_account_detail_resource');
+export const MENU_SERVICE_ACCOUNT_DETAIL_USERS = Symbol('menu_service_account_detail_users');
 export const MENU_SCHEME = Symbol('menu_scheme');
 export const MENU_SCHEME_RECOMMENDATION = Symbol('menu_scheme_recommendation');
 export const MENU_SCHEME_LIST = Symbol('menu_scheme_list');

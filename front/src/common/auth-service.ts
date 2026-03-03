@@ -213,8 +213,15 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
   },
   [authSymbol.AUTH_UPDATE_ACCOUNT]: {
     id: 'account_edit',
-    action: 'import',
+    action: 'update',
     resourceType: 'account',
+    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
+  },
+  [authSymbol.AUTH_DELETE_ACCOUNT]: {
+    id: 'account_delete',
+    action: 'delete',
+    resourceType: 'account',
+    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
   },
   [authSymbol.AUTH_ACCESS_BIZ]: {
     id: 'biz_access',

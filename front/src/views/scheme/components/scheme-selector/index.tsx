@@ -9,6 +9,7 @@ import SchemeEditDialog from '../scheme-edit-dialog';
 import CloudServiceTag from '../cloud-service-tag';
 import HcmAuth from '@/components/auth/auth.vue';
 import { AUTH_UPDATE_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
+import { MENU_SCHEME_LIST, MENU_SCHEME_DETAIL } from '@/constants/menu-symbol';
 
 import './index.scss';
 
@@ -40,7 +41,7 @@ export default defineComponent({
       if (typeof props.onBack === 'function') {
         props.onBack();
       } else {
-        router.push({ name: 'scheme-list' });
+        router.push({ name: MENU_SCHEME_LIST });
       }
     };
 
@@ -50,7 +51,7 @@ export default defineComponent({
           props.selectFn(scheme);
           setTimeout(() => (isSelectorOpen.value = false), 800);
         } else {
-          router.push({ name: 'scheme-detail', query: { sid: scheme.id } });
+          router.push({ name: MENU_SCHEME_DETAIL, query: { sid: scheme.id } });
         }
       }
     };

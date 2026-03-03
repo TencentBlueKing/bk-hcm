@@ -3,32 +3,28 @@ import Meta from '@/router/meta';
 import { AUTH_FIND_ACCOUNT } from '@/constants/auth-symbols';
 import {
   MENU_SERVICE,
-  MENU_SERVICE_ACCOUNT_MANAGE,
+  MENU_SERVICE_ACCOUNT_MANAGEMENT,
   MENU_SERVICE_ACCOUNT_DETAIL,
-  MENU_SERVICE_ACCOUNT_BASIC,
-  MENU_SERVICE_ACCOUNT_RESOURCE,
-  MENU_SERVICE_ACCOUNT_USERS,
+  MENU_SERVICE_ACCOUNT_DETAIL_BASIC,
 } from '@/constants/menu-symbol';
 
 /**
  * 账号管理模块 —— 放置在"工作台"一级菜单下
  * 路由结构：
- *   service/account                         → 账号列表
- *   service/account/details/:accountId      → 详情容器（redirect → basic）
- *   service/account/details/:accountId/basic    → 基本信息
- *   service/account/details/:accountId/resource → 资源状态
- *   service/account/details/:accountId/user     → 用户列表
+ *   service/account                              → 账号列表
+ *   service/account/details/:accountId            → 详情容器（redirect → basic）
+ *   service/account/details/:accountId/basic      → 基本信息
  */
 const accountManageRoutes: RouteRecordRaw[] = [
   // 账号列表
   {
-    name: MENU_SERVICE_ACCOUNT_MANAGE,
+    name: MENU_SERVICE_ACCOUNT_MANAGEMENT,
     path: 'account',
     component: () => import('@/views/account-manage/accountmanage/index.vue'),
     meta: {
       ...new Meta({
         owner: MENU_SERVICE,
-        activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
+        activeKey: MENU_SERVICE_ACCOUNT_MANAGEMENT,
         auth: {
           view: { type: AUTH_FIND_ACCOUNT },
         },
@@ -42,63 +38,30 @@ const accountManageRoutes: RouteRecordRaw[] = [
   {
     name: MENU_SERVICE_ACCOUNT_DETAIL,
     path: 'account/details/:accountId',
-    redirect: { name: MENU_SERVICE_ACCOUNT_BASIC },
+    redirect: { name: MENU_SERVICE_ACCOUNT_DETAIL_BASIC },
     component: () => import('@/views/account-manage/accountInfo/index'),
     meta: {
       ...new Meta({
         owner: MENU_SERVICE,
-        activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
+        activeKey: MENU_SERVICE_ACCOUNT_MANAGEMENT,
         menu: {
           i18n: '账号详情',
-          relative: MENU_SERVICE_ACCOUNT_MANAGE,
+          relative: MENU_SERVICE_ACCOUNT_MANAGEMENT,
         },
       }),
     },
     children: [
       {
-        name: MENU_SERVICE_ACCOUNT_BASIC,
+        name: MENU_SERVICE_ACCOUNT_DETAIL_BASIC,
         path: 'basic',
         component: () => import('@/views/account-manage/accountmanage/account-detail'),
         meta: {
           ...new Meta({
             owner: MENU_SERVICE,
-            activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
-
+            activeKey: MENU_SERVICE_ACCOUNT_MANAGEMENT,
             menu: {
               i18n: '基本信息',
-              relative: MENU_SERVICE_ACCOUNT_DETAIL,
-            },
-          }),
-        },
-      },
-      {
-        name: MENU_SERVICE_ACCOUNT_RESOURCE,
-        path: 'resource',
-        component: () => import('@/views/account-manage/accountInfo/component/resourceStatus/index'),
-        meta: {
-          ...new Meta({
-            owner: MENU_SERVICE,
-            activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
-
-            menu: {
-              i18n: '资源状态',
-              relative: MENU_SERVICE_ACCOUNT_DETAIL,
-            },
-          }),
-        },
-      },
-      {
-        name: MENU_SERVICE_ACCOUNT_USERS,
-        path: 'user',
-        component: () => import('@/views/account-manage/accountInfo/component/usersList/index'),
-        meta: {
-          ...new Meta({
-            owner: MENU_SERVICE,
-            activeKey: MENU_SERVICE_ACCOUNT_MANAGE,
-
-            menu: {
-              i18n: '用户列表',
-              relative: MENU_SERVICE_ACCOUNT_DETAIL,
+              relative: MENU_SERVICE_ACCOUNT_MANAGEMENT,
             },
           }),
         },

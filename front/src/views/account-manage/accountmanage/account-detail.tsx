@@ -6,7 +6,9 @@ import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
+import { AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
+import { type IAuthSign } from '@/common/auth-service';
 import './account-detail.scss';
 import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
@@ -25,12 +27,14 @@ export default defineComponent({
   name: 'AccountManageDetail',
   setup() {
     const { t } = useI18n();
+    const { setTitle } = useBreadcrumb();
     const formRef = ref<InstanceType<typeof Form>>(null);
     const accountStore = useAccountStore();
     const route = useRoute();
     const formDiaRef = ref(null);
     // accountId 从路由路径参数获取
     const accountId = computed(() => route.params.accountId as string);
+    const accountEditSign = computed<IAuthSign>(() => ({ type: AUTH_UPDATE_ACCOUNT, relation: [accountId.value] }));
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -104,6 +108,7 @@ export default defineComponent({
         Object.assign(projectModel, res?.data);
         initProjectModel.name = res?.data?.name;
         renderBaseInfoForm(projectModel);
+        setTitle(`${t('账号详情')}：ID（${accountId.value}）`);
       } finally {
         isLoading.value = false;
       }
@@ -511,13 +516,12 @@ export default defineComponent({
             property: 'name',
             isEdit: true,
             component() {
-              // eslint-disable-next-line max-len
               return (
                 <RenderDetailEdit
                   v-model={projectModel.name}
                   fromPlaceholder={t('请输入名称')}
                   fromKey={this.property}
-                  hideEdit={false}
+                  authSign={accountEditSign.value}
                   isEdit={this.isEdit}
                   onBlur={handleblur}
                 />
@@ -667,18 +671,6 @@ export default defineComponent({
       },
     ]);
 
-    const isSyncLoading = ref(false);
-    const handleSync = async () => {
-      isSyncLoading.value = true;
-      try {
-        await accountStore.accountSync(projectModel.id);
-        Message({ message: t('本次同步任务触发成功。如需再次同步，请在20分钟后重试'), theme: 'success' });
-      } catch (error) {
-      } finally {
-        isSyncLoading.value = false;
-      }
-    };
-
     const handleChangeManage = (val: number) => {
       const usageVal = accountFormModel.usage_biz_ids;
       // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
@@ -706,39 +698,25 @@ export default defineComponent({
         <Loading />
       ) : (
         <div class='detail-wrap'>
-          <DetailHeader>
-            {{
-              default: () => (
-                <>
-                  <span class='header-title-prefix'>{t('账号详情')}</span>
-                  <span class='header-title-content'>&nbsp;- ID {projectModel.id}</span>
-                </>
-              ),
-              right:
-                projectModel.type === 'resource' ? (
-                  <bk-pop-confirm
-                    content={t('同步该账号下的资源，点击确定后，立即触发同步任务')}
-                    trigger='click'
-                    onConfirm={handleSync}>
-                    <bk-button loading={isSyncLoading.value}>{t('同步')}</bk-button>
-                  </bk-pop-confirm>
-                ) : undefined,
-            }}
-          </DetailHeader>
-          <div class='h16'></div>
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
             <div class={index < formBaseInfo.length - 1 ? 'mb32' : 'mb16'}>
               <div class='font-bold pb8'>
                 {baseItem.name}
                 {index > 0 ? (
-                  <span
-                    class={'account-detail-edit-icon-font'}
-                    onClick={index === 2 ? handleModifyScret : handleModifyAccount}>
-                    {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                    <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
-                    编辑
-                  </span>
+                  <hcm-auth sign={accountEditSign.value}>
+                    {{
+                      default: ({ noPerm }: { noPerm: boolean }) => (
+                        <span
+                          class={'account-detail-edit-icon-font'}
+                          onClick={noPerm ? undefined : index === 2 ? handleModifyScret : handleModifyAccount}
+                          style={noPerm ? { cursor: 'not-allowed', opacity: 0.5 } : {}}>
+                          <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
+                          编辑
+                        </span>
+                      ),
+                    }}
+                  </hcm-auth>
                 ) : (
                   ''
                 )}

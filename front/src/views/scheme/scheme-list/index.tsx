@@ -14,6 +14,7 @@ import {
   AUTH_UPDATE_CLOUD_SELECTION_SCHEME,
   AUTH_DELETE_CLOUD_SELECTION_SCHEME,
 } from '@/constants/auth-symbols';
+import { MENU_SCHEME_RECOMMENDATION, MENU_SCHEME_DETAIL } from '@/constants/menu-symbol';
 import moment from 'moment';
 
 import './index.scss';
@@ -402,12 +403,12 @@ export default defineComponent({
 
     // 跳转创建方案
     const goToCreate = () => {
-      router.push({ name: 'scheme-recommendation' });
+      router.push({ name: MENU_SCHEME_RECOMMENDATION });
     };
 
     // 跳转方案详情
     const goToDetail = (id: string) => {
-      router.push({ name: 'scheme-detail', query: { sid: id } });
+      router.push({ name: MENU_SCHEME_DETAIL, query: { sid: id } });
     };
 
     // 收藏/取消收藏

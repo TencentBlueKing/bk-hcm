@@ -60,7 +60,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div style={{ padding: '24px', height: '100%', background: '#f5f7fa' }}>
+      <div style={{ padding: '24px', height: '100%' }}>
         <div style={{ padding: '16px 24px', height: '100%', backgroundColor: '#fff' }}>
           <CommonTable>
             {{

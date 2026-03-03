@@ -6,7 +6,7 @@ import { Message, Button } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
-import { MENU_SERVICE_APPLY_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import { AUTH_UPDATE_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 
@@ -51,7 +51,7 @@ export default defineComponent({
               text
               onClick={() => {
                 routerAction.open({
-                  name: MENU_SERVICE_APPLY_MANAGEMENT_DETAILS,
+                  name: MENU_SERVICE_TICKET_DETAILS,
                   query: {
                     id: data.id,
                   },

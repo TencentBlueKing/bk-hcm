@@ -162,7 +162,45 @@ get-components-batch { names: ["form", "input", "select"] }
 
 ---
 
-## 5. 响应式数据传递
+## 5. 禁止使用工具类 class 设置间距
+
+不使用 `.mt24`、`.mb16`、`.pl8` 等独立的工具类 class 来设置间距。间距应通过语义化的样式规则或行内样式处理。
+
+```scss
+// ❌ 错误：定义独立的工具类
+.mt24 {
+  margin-top: 24px;
+}
+.mb16 {
+  margin-bottom: 16px;
+}
+```
+
+```vue
+<!-- ❌ 错误：使用工具类 -->
+<div class="section-title mt24">资源状态</div>
+
+<!-- ✅ 正确：行内样式（适用于一次性间距） -->
+<div class="section-title" style="margin-top: 24px">资源状态</div>
+
+<!-- ✅ 正确：语义化 class 中包含间距（适用于可复用场景） -->
+<div class="resource-section-title">资源状态</div>
+```
+
+```scss
+// ✅ 正确：间距作为语义化样式的一部分
+.resource-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 24px;
+}
+```
+
+**原因**：工具类 class 缺乏语义、不易维护，且在 scoped 样式中容易产生冲突。
+
+---
+
+## 6. 响应式数据传递
 
 传递 reactive 对象给外部函数时，应创建副本而非传递引用。
 

@@ -48,6 +48,11 @@ const showBreadcrumb = computed(() => breadcrumb.data.display);
         overflow: auto;
       }
 
+      :deep(.page-container) {
+        padding: 24px;
+        height: 100%;
+      }
+
       :deep(.detail-content-wrap) {
         padding: 24px;
         height: 100%;

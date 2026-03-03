@@ -8,7 +8,8 @@ import { MENU_SERVICE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import useTableSettings from '@/hooks/use-table-settings';
 import usePage from '@/hooks/use-page';
 import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/common/constant';
-import { AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
+import { AUTH_DELETE_ACCOUNT } from '@/constants/auth-symbols';
 import type { ModelPropertyColumn } from '@/model/typings';
 import type { FilterType, IAccountItem, IListResData } from '@/typings';
 import { timeFormatter } from '@/common/util';
@@ -29,7 +30,7 @@ const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const searchData = [
   { name: t('名称'), id: 'name' },
-  { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES },
+  { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES.filter((v) => v.id !== ACCOUNT_TYPE_ENUM.RESOURCE) },
   { name: t('云厂商'), id: 'vendor', children: VENDORS },
   { name: t('站点类型'), id: 'site', children: SITE_TYPES },
   { name: t('负责人'), id: 'managers' },
@@ -149,10 +150,7 @@ const handleJump = (id: string) => {
   router.push({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId: id } });
 };
 
-const accountEditSign = { type: AUTH_UPDATE_ACCOUNT };
-const handleEdit = (id: string) => {
-  handleJump(id);
-};
+const accountDeleteSign = { type: AUTH_DELETE_ACCOUNT };
 
 // 删除
 const deleteOptions = reactive({
@@ -179,7 +177,7 @@ const handleDeleteConfirm = async () => {
 };
 
 watchEffect(() => {
-  state.filter.rules = searchVal.value.reduce((p, v) => {
+  const rules = searchVal.value.reduce((p, v) => {
     if (v.type === 'condition') {
       state.filter.op = v.id || 'and';
     } else {
@@ -191,6 +189,8 @@ watchEffect(() => {
     }
     return p;
   }, []);
+  rules.push({ field: 'type', op: 'neq', value: ACCOUNT_TYPE_ENUM.RESOURCE });
+  state.filter.rules = rules;
 
   getAccountList();
 });
@@ -198,47 +198,48 @@ watchEffect(() => {
 
 <template>
   <div class="account-manage-page">
-    <!-- search -->
-    <div class="tools">
-      <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
-      <bk-search-select v-model="searchVal" :data="searchData" />
-    </div>
-    <!-- table -->
-    <div class="table-wrap">
-      <bk-table
-        max-height="100%"
-        :data="state.dataList"
-        row-key="id"
-        row-hover="auto"
-        show-overflow-tooltip
-        :pagination="pagination"
-        :settings="settings"
-        v-bkloading="{ loading: state.loading }"
-      >
-        <bk-table-column
-          v-for="column in columns"
-          :key="column.id"
-          :label="column.name"
-          :prop="column.id"
-          :render="column.render"
-          :width="column.width"
-          :filter="column.filter"
+    <div class="account-manage-content">
+      <!-- search -->
+      <div class="tools">
+        <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
+        <bk-search-select v-model="searchVal" :data="searchData" />
+      </div>
+      <!-- table -->
+      <div class="table-wrap">
+        <bk-table
+          max-height="100%"
+          :data="state.dataList"
+          row-key="id"
+          row-hover="auto"
+          show-overflow-tooltip
+          :pagination="pagination"
+          :settings="settings"
+          v-bkloading="{ loading: state.loading }"
         >
-          <template #default="{ row }">
-            <display-value :property="column" :value="row[column.id]" :vendor="row?.vendor" />
-          </template>
-        </bk-table-column>
-        <bk-table-column :label="t('操作')" fixed="right" width="120">
-          <template #default="{ row }">
-            <hcm-auth :sign="accountEditSign" tag="span" v-slot="{ noPerm }">
-              <bk-button text theme="primary" @click="handleEdit(row.id)" :disabled="noPerm">
-                {{ t('编辑') }}
-              </bk-button>
-            </hcm-auth>
-            <bk-button class="ml8" theme="primary" text @click="handleDelete(row.id)">{{ t('删除') }}</bk-button>
-          </template>
-        </bk-table-column>
-      </bk-table>
+          <bk-table-column
+            v-for="column in columns"
+            :key="column.id"
+            :label="column.name"
+            :prop="column.id"
+            :render="column.render"
+            :width="column.width"
+            :filter="column.filter"
+          >
+            <template #default="{ row }">
+              <display-value :property="column" :value="row[column.id]" :vendor="row?.vendor" />
+            </template>
+          </bk-table-column>
+          <bk-table-column :label="t('操作')" fixed="right" width="80">
+            <template #default="{ row }">
+              <hcm-auth :sign="{ ...accountDeleteSign, relation: [row.id] }" tag="span" v-slot="{ noPerm }">
+                <bk-button theme="primary" text :disabled="noPerm" @click="handleDelete(row.id)">
+                  {{ t('删除') }}
+                </bk-button>
+              </hcm-auth>
+            </template>
+          </bk-table-column>
+        </bk-table>
+      </div>
     </div>
     <!-- dialog -->
     <bk-dialog
@@ -255,6 +256,13 @@ watchEffect(() => {
 <style scoped lang="scss">
 .account-manage-page {
   height: 100%;
+  padding: 24px;
+
+  .account-manage-content {
+    height: 100%;
+    padding: 16px 24px;
+    background: #fff;
+  }
 
   .tools {
     margin-bottom: 16px;

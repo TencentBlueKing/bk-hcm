@@ -20,8 +20,8 @@ import {
   MENU_BUSINESS_OPERATION_LOG,
   MENU_BUSINESS_TASK_MANAGEMENT,
   MENU_BUSINESS_RECYCLEBIN,
-  MENU_SERVICE_APPLY_MANAGEMENT,
-  MENU_SERVICE_ACCOUNT_MANAGE,
+  MENU_SERVICE_TICKET_MANAGEMENT,
+  MENU_SERVICE_ACCOUNT_MANAGEMENT,
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_MAIN_ACCOUNT,
   MENU_BILL_MANAGE,
@@ -149,11 +149,11 @@ const menus: IMenu[] = [
     i18n: '工作台',
     menu: [
       {
-        id: MENU_SERVICE_APPLY_MANAGEMENT,
+        id: MENU_SERVICE_TICKET_MANAGEMENT,
         i18n: '单据管理',
         group: '个人事务',
         groupIcon: 'bkhcm-icon-user-8',
-        route: getMenuRoute(serviceViews, MENU_SERVICE_APPLY_MANAGEMENT),
+        route: getMenuRoute(serviceViews, MENU_SERVICE_TICKET_MANAGEMENT),
       },
       {
         id: MENU_SCHEME,
@@ -164,11 +164,11 @@ const menus: IMenu[] = [
         route: getMenuRoute(serviceViews, MENU_SCHEME),
       },
       {
-        id: MENU_SERVICE_ACCOUNT_MANAGE,
+        id: MENU_SERVICE_ACCOUNT_MANAGEMENT,
         i18n: '账号管理',
         group: '公共事务',
         groupIcon: 'bkhcm-icon-user-8',
-        route: getMenuRoute(serviceViews, MENU_SERVICE_ACCOUNT_MANAGE),
+        route: getMenuRoute(serviceViews, MENU_SERVICE_ACCOUNT_MANAGEMENT),
       },
     ],
   },

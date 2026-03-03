@@ -1,36 +1,37 @@
 import { RESOURCES_SYNC_STATUS_MAP, RESOURCE_TYPES_MAP } from '@/common/constant';
 import http from '@/http';
 import { Loading, Table } from 'bkui-vue';
-import { computed, defineComponent, ref, watch, onBeforeUnmount, reactive } from 'vue';
-import { useRoute } from 'vue-router';
+import { defineComponent, ref, watch } from 'vue';
 import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
 import loadingStatus from '@/assets/image/status_loading.png';
-import './index.scss';
+import './resource-status.scss';
 import { timeFormatter } from '@/common/util';
-import interval from '@/utils/interval';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
-  setup() {
-    const route = useRoute();
-    const accountId = computed(() => route.params.accountId as string);
+  props: {
+    accountId: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
     const statusList = ref([]);
     const isLoading = ref(false);
-    const timeInterval = reactive({
-      set: null,
-      clear: null,
-    });
 
     const tableColumns = [
       {
         label: '资源名称',
         field: 'res_name',
+        width: 150,
         render: ({ cell }: { cell: string }) => RESOURCE_TYPES_MAP[cell],
       },
       {
         label: '任务状态',
         field: 'res_status',
+        width: 150,
         render: ({ cell }: { cell: string }) => (
           <div class={'resource-status'}>
             <img
@@ -47,19 +48,18 @@ export default defineComponent({
       {
         label: '最近同步时间',
         field: 'res_end_time',
+        width: 150,
         render: ({ cell }: { cell: string }) => timeFormatter(cell),
       },
       {
         label: '同步周期',
         field: 'is_implement',
+        width: 150,
         render: () => <div>20 分钟</div>,
       },
     ];
-    const init = () => {
-      timeInterval.clear();
-      timeInterval.set();
-    };
-    const getList = async (id: string) => {
+    const getList = async () => {
+      const id = props.accountId;
       if (!id) return;
       isLoading.value = true;
       try {
@@ -69,28 +69,24 @@ export default defineComponent({
         isLoading.value = false;
       }
     };
-    onBeforeUnmount(() => {
-      timeInterval?.clear();
-    });
+
+    const { resume, reset } = useTimeoutPoll(getList, 10000, { immediate: false, max: 60 });
+
     watch(
-      accountId,
+      () => props.accountId,
       (id) => {
         if (!id) return;
-        getList(id);
-        if (!timeInterval.set) {
-          const { clearTimeInterval, setTimeInterval } = interval(() => getList(id), 10000, 600000);
-          timeInterval.set = setTimeInterval;
-          timeInterval.clear = clearTimeInterval;
-        }
-        init();
+        reset();
+        getList();
+        resume();
       },
       {
         immediate: true,
       },
     );
     return () => (
-      <Loading loading={isLoading.value} style={{ margin: '8px 0' }}>
-        <Table data={statusList.value} columns={tableColumns} border={['row', 'outer']}></Table>
+      <Loading loading={isLoading.value}>
+        <Table data={statusList.value} columns={tableColumns}></Table>
       </Loading>
     );
   },

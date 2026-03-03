@@ -35,7 +35,7 @@ export default [
             activeKey: MENU_SCHEME,
             auth: { view: { type: AUTH_CREATE_CLOUD_SELECTION_SCHEME } },
             menu: {
-              i18n: '资源推荐',
+              i18n: '资源选型',
               relative: MENU_SCHEME,
             },
             layout: {
@@ -56,8 +56,13 @@ export default [
             activeKey: MENU_SCHEME,
             auth: { view: { type: AUTH_FIND_CLOUD_SELECTION_SCHEME } },
             menu: {
-              i18n: '方案列表',
+              i18n: '选型方案',
               relative: MENU_SCHEME,
+            },
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
             },
           }),
         },
@@ -74,6 +79,11 @@ export default [
             menu: {
               i18n: '方案详情',
               relative: MENU_SCHEME_LIST,
+            },
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
             },
           }),
         },

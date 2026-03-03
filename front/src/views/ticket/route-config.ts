@@ -1,7 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
 import Meta from '@/router/meta';
-import { MENU_SERVICE_APPLY_MANAGEMENT_DETAILS, MENU_SERVICE_APPLY_MANAGEMENT } from '@/constants/menu-symbol';
+import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const { t } = i18n.global;
 
@@ -19,11 +19,11 @@ export const ticketRoutes: RouteRecordRaw[] = [
   },
   {
     path: 'ticket',
-    name: MENU_SERVICE_APPLY_MANAGEMENT,
+    name: MENU_SERVICE_TICKET_MANAGEMENT,
     component: () => import('@/views/ticket/entry-srv.vue'),
     meta: {
       ...new Meta({
-        activeKey: MENU_SERVICE_APPLY_MANAGEMENT,
+        activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
         menu: {
           i18n: t('单据管理'),
         },
@@ -32,11 +32,11 @@ export const ticketRoutes: RouteRecordRaw[] = [
   },
   {
     path: 'ticket/detail',
-    name: MENU_SERVICE_APPLY_MANAGEMENT_DETAILS,
+    name: MENU_SERVICE_TICKET_DETAILS,
     component: () => import('@/views/ticket/children/apply-detail'),
     meta: {
       ...new Meta({
-        activeKey: MENU_SERVICE_APPLY_MANAGEMENT,
+        activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
         menu: {
           i18n: t('单据详情'),
         },

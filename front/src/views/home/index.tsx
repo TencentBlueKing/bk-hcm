@@ -41,7 +41,7 @@ import {
   MENU_BUSINESS_LOAD_BALANCER,
   MENU_BUSINESS_OPERATION_LOG,
   MENU_BUSINESS_TASK_MANAGEMENT,
-  MENU_SERVICE_APPLY_MANAGEMENT,
+  MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 import { jsonp } from '@/http';
 import i18n from '@/language/i18n';
@@ -92,7 +92,7 @@ export default defineComponent({
       if (
         [
           MENU_BUSINESS_TASK_MANAGEMENT,
-          MENU_SERVICE_APPLY_MANAGEMENT,
+          MENU_SERVICE_TICKET_MANAGEMENT,
           MENU_BUSINESS_OPERATION_LOG,
           MENU_BUSINESS_LOAD_BALANCER,
         ].includes(config.name)

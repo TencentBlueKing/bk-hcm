@@ -11,7 +11,7 @@ import {
   MENU_SERVICE,
   MENU_RESOURCE,
   MENU_RESOURCE_MANAGE,
-  MENU_SERVICE_APPLY_MANAGEMENT,
+  MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 import { businessViews, serviceViews, resourceViews } from '@/views';
 import { useAuthStore } from '@/store/auth';
@@ -80,7 +80,7 @@ const routes: RouteRecordRaw[] = [
   {
     name: MENU_SERVICE,
     path: '/service',
-    redirect: { name: MENU_SERVICE_APPLY_MANAGEMENT },
+    redirect: { name: MENU_SERVICE_TICKET_MANAGEMENT },
     children: serviceViews,
   },
   {
