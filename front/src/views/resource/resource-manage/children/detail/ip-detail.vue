@@ -157,7 +157,7 @@ const bkToolTipsOptions = computed(() => {
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra">
+  <Teleport defer to="#breadcrumbExtra">
     <hcm-auth v-if="!detail.instance_id" :sign="updateSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
@@ -194,22 +194,22 @@ const bkToolTipsOptions = computed(() => {
     </hcm-auth>
   </Teleport>
 
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
+  <div class="detail-content-wrap">
+    <bk-loading :loading="loading">
       <ip-info :detail="detail" />
       <assign-eip v-if="detail.id" v-model:is-show="isShowAssignEip" :detail="detail" @success-assign="getDetail" />
-    </div>
+    </bk-loading>
+  </div>
 
-    <bk-dialog title="解绑EIP" theme="danger" :is-show="showDelete" :quick-close="false" @closed="handleCloseDeleteEip">
-      <div>确定解绑EIP【{{ detail.id }}】吗</div>
-      <template #footer>
-        <section class="bk-dialog-footer">
-          <bk-button theme="danger" :loading="isDeleteing" @click="handleDeleteEip">确定</bk-button>
-          <bk-button class="bk-dialog-cancel" :disabled="isDeleteing" @click="handleCloseDeleteEip">取消</bk-button>
-        </section>
-      </template>
-    </bk-dialog>
-  </bk-loading>
+  <bk-dialog title="解绑EIP" theme="danger" :is-show="showDelete" :quick-close="false" @closed="handleCloseDeleteEip">
+    <div>确定解绑EIP【{{ detail.id }}】吗</div>
+    <template #footer>
+      <section class="bk-dialog-footer">
+        <bk-button theme="danger" :loading="isDeleteing" @click="handleDeleteEip">确定</bk-button>
+        <bk-button class="bk-dialog-cancel" :disabled="isDeleteing" @click="handleCloseDeleteEip">取消</bk-button>
+      </section>
+    </template>
+  </bk-dialog>
 </template>
 
 <style lang="scss" scoped>

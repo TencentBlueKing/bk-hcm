@@ -322,7 +322,7 @@ const bkTooltipsOptions = computed(() => {
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra">
+  <Teleport defer to="#breadcrumbExtra">
     <bk-button
       v-if="!detail.instance_id"
       v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
@@ -364,15 +364,15 @@ const bkTooltipsOptions = computed(() => {
     </bk-button>
   </Teleport>
 
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
-      <detail-tab :tabs="hostTabs">
-        <template #default>
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default>
+        <bk-loading :loading="loading">
           <detail-info :fields="settingFields" :detail="detail" global-copyable />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 
   <mounted-drive v-if="detail.id" v-model:is-show="isShowMountedDrive" :detail="detail" @success-attach="getDetail" />
 

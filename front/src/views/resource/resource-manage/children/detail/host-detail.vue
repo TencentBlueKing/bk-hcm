@@ -34,9 +34,7 @@ const route = useRoute();
 
 const resourceStore = useResourceStore();
 
-const hostId = ref<any>(route.params.id);
-// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
-const cloudType = ref<VendorEnum>((route.query?.vendor as VendorEnum) || undefined);
+const hostId = computed(() => route.params.id as string);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const isDialogShow = ref(false);
@@ -61,6 +59,9 @@ const cvmInfo = ref({
 
 const { loading, detail, getDetail } = useDetail('cvms', hostId.value);
 
+// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
+const cloudType = computed<VendorEnum>(() => (route.query?.vendor as VendorEnum) || detail.value?.vendor);
+
 const updateSign = computed(() => {
   if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
   return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [detail.value.account_id] };
@@ -73,9 +74,6 @@ const deleteSign = computed(() => {
 watchEffect(() => {
   if (hostId.value) {
     setTitle(`主机详情 - ID ${hostId.value}`);
-  }
-  if (!cloudType.value && detail.value?.vendor) {
-    cloudType.value = detail.value.vendor;
   }
 });
 
@@ -208,7 +206,7 @@ const bktoolTipsOptions = computed(() => {
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra" v-if="!isOtherVendor">
+  <Teleport defer to="#breadcrumbExtra" v-if="!isOtherVendor">
     <hcm-auth :sign="updateSign" tag="span" v-slot="{ noPerm }" v-if="whereAmI === Senarios.resource">
       <bk-button
         v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
@@ -279,20 +277,18 @@ const bktoolTipsOptions = computed(() => {
     </bk-dropdown>
   </Teleport>
 
-  <div class="detail-content-wrap">
-    <bk-loading :loading="loading">
-      <detail-tab v-if="!loading" :tabs="hostTabs">
-        <template #default="type">
-          <component
-            :is="componentMap[type]"
-            :data="detail"
-            :type="cloudType"
-            :filter="filter"
-            :is-bind-business="isBindBusiness"
-          ></component>
-        </template>
-      </detail-tab>
-    </bk-loading>
+  <div class="detail-content-wrap" v-bkloading="{ loading }">
+    <detail-tab v-if="!loading" :tabs="hostTabs">
+      <template #default="type">
+        <component
+          :is="componentMap[type]"
+          :data="detail"
+          :type="cloudType"
+          :filter="filter"
+          :is-bind-business="isBindBusiness"
+        ></component>
+      </template>
+    </detail-tab>
   </div>
 
   <bk-dialog

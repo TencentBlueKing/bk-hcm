@@ -33,7 +33,7 @@ const showBreadcrumb = computed(() => breadcrumb.data.display);
 
   .main-layout {
     height: calc(100% - 52px);
-    overflow: auto;
+    overflow: hidden;
 
     .main-view {
       min-width: 1089px;
@@ -47,24 +47,25 @@ const showBreadcrumb = computed(() => breadcrumb.data.display);
         min-width: auto;
         overflow: auto;
       }
+
+      :deep(.detail-content-wrap) {
+        padding: 24px;
+        height: 100%;
+        overflow-y: auto;
+
+        .detail-info-main .info-list-item .item-field {
+          width: 120px;
+        }
+
+        .detail-tab-main .info-title {
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+      }
     }
 
     &.no-breadcrumb {
       height: 100%;
-    }
-
-    :deep(.detail-content-wrap) {
-      padding: 24px;
-      height: 100%;
-
-      .detail-info-main .info-list-item .item-field {
-        width: 120px;
-      }
-
-      .detail-tab-main .info-title {
-        margin-bottom: 8px;
-        font-size: 14px;
-      }
     }
   }
 }

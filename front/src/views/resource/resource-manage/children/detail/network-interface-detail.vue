@@ -85,10 +85,10 @@ const tabs = computed(() => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
-      <detail-tab :tabs="tabs">
-        <template #default="type">
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="tabs">
+      <template #default="type">
+        <bk-loading :loading="loading">
           <template v-if="detail.vendor === 'azure'">
             <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
             <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
@@ -112,10 +112,10 @@ const tabs = computed(() => {
               v-if="type === 'ipconfig'"
             ></network-interface-ipconfig-huawei>
           </template>
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

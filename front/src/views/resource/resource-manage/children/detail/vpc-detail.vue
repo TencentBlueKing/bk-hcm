@@ -385,7 +385,7 @@ const handleDeleteVpc = (data: any) => {
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra">
+  <Teleport defer to="#breadcrumbExtra">
     <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
@@ -398,28 +398,28 @@ const handleDeleteVpc = (data: any) => {
     </hcm-auth>
   </Teleport>
 
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
-      <detail-tab :tabs="hostTabs">
-        <template #default>
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default>
+        <bk-loading :loading="loading">
           <detail-info
             :detail="detail"
             :fields="VPCFields"
             :label-width="VendorEnum.GCP === detail.vendor ? '200px' : '120px'"
             global-copyable
           />
-        </template>
-      </detail-tab>
+        </bk-loading>
+      </template>
+    </detail-tab>
 
-      <detail-tab class="mt16" :tabs="VPCTabs">
-        <template #default="type">
-          <VPCCidr v-if="type === 'cidr'" :detail="detail" />
-          <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
-          <VPCRoute v-if="type === 'route'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+    <detail-tab class="mt16" :tabs="VPCTabs">
+      <template #default="type">
+        <VPCCidr v-if="type === 'cidr'" :detail="detail" />
+        <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
+        <VPCRoute v-if="type === 'route'" :detail="detail" />
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

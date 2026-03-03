@@ -55,12 +55,13 @@ const operationLogRsc: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '操作记录',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
         auth: {
           view: { type: AUTH_BIZ_FIND_AUDIT },
         },
-        menu: {},
+        menu: {
+          i18n: '操作记录',
+        },
       }),
     },
     // beforeEnter: removeQueryParams,

@@ -26,6 +26,7 @@ import batchUnbind from '../unbind/batch.vue';
 import singleUnbind from '../unbind/single.vue';
 
 const props = defineProps<{
+  id: string;
   detail: ISecurityGroupDetail;
   bkBizId: number;
   tabActive: SecurityGroupRelatedResourceName;
@@ -74,7 +75,7 @@ const getList = async (
 ) => {
   loading.value = true;
   try {
-    const res = await securityGroupStore.queryRelatedResourcesByBiz(props.detail.id, props.bkBizId, tabActive, {
+    const res = await securityGroupStore.queryRelatedResourcesByBiz(props.id, props.bkBizId, tabActive, {
       filter: transformSimpleCondition(condition, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
       page: getPageParams(pagination, { sort, order }),
     });

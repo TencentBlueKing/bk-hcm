@@ -60,22 +60,28 @@ export default defineComponent({
     };
 
     return () => (
-      <>
-        <CommonTable>
-          {{
-            operation: () => (
-              // TODO: 操作权限 —— 使用 hcm-auth 组件包裹
-              <Button theme='primary' onClick={handleCreate}>
-                {t('创建二级账号')}
-              </Button>
-            ),
-          }}
-        </CommonTable>
+      <div style={{ padding: '24px', height: '100%', background: '#f5f7fa' }}>
+        <div style={{ padding: '16px 24px', height: '100%', backgroundColor: '#fff' }}>
+          <CommonTable>
+            {{
+              operation: () => (
+                // TODO: 操作权限 —— 使用 hcm-auth 组件包裹
+                <Button theme='primary' onClick={handleCreate}>
+                  {t('创建二级账号')}
+                </Button>
+              ),
+            }}
+          </CommonTable>
 
-        <CommonSideslider v-model:isShow={isSideSliderShow.value} width={640} title={t('二级账号详情')} noFooter={true}>
-          <SecondLevelAccountDetail accountId={curAccount.value.id} />
-        </CommonSideslider>
-      </>
+          <CommonSideslider
+            v-model:isShow={isSideSliderShow.value}
+            width={640}
+            title={t('二级账号详情')}
+            noFooter={true}>
+            <SecondLevelAccountDetail accountId={curAccount.value.id} />
+          </CommonSideslider>
+        </div>
+      </div>
     );
   },
 });

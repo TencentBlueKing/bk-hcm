@@ -155,4 +155,9 @@ provide('isResourcePage', true);
   </template>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.entry-rsc {
+  height: 100%;
+  padding: 24px;
+}
+</style>

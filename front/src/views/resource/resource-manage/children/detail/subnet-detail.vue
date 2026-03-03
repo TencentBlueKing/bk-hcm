@@ -357,7 +357,7 @@ const handleDeleteSubnet = (data: any) => {
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra">
+  <Teleport defer to="#breadcrumbExtra">
     <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
       <bk-button
         v-if="isResourcePage"
@@ -386,10 +386,10 @@ const handleDeleteSubnet = (data: any) => {
     </hcm-auth>
   </Teleport>
 
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
-      <detail-tab :tabs="hostTabs">
-        <template #default="type">
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default="type">
+        <bk-loading :loading="loading">
           <detail-info
             v-if="type === 'detail'"
             :fields="settingFields"
@@ -398,10 +398,10 @@ const handleDeleteSubnet = (data: any) => {
             global-copyable
           />
           <subnet-route v-if="type === 'network'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

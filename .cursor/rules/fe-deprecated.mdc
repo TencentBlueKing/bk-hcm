@@ -287,6 +287,26 @@ bus.$emit('show-forbidden', data);
 
 **正确做法**：HTTP 层 403 错误自动通过 `window.hcmPermissionDialog` 弹出权限申请弹窗（`http/index.ts` 已处理）。操作级别权限使用 `HcmAuth` 组件（自动集成权限申请弹窗）。
 
+### 7. BK_HCM_AJAX_URL_PREFIX
+
+**禁止原因**：`BK_HCM_AJAX_URL_PREFIX` 已废弃，调用后端 API 时不再需要拼接此前缀。http 模块已内置处理，手动拼接会导致路径错误或重复前缀。
+
+**错误示例**：
+
+```typescript
+// ❌ 禁止使用
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+
+return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/...`, data);
+```
+
+**正确做法**：
+
+```typescript
+// ✅ 直接使用相对路径
+return http.post(`/api/v1/cloud/...`, data);
+```
+
 ## 规则扩展
 
 此规则文件用于记录项目中禁止使用的代码模式。发现新的问题模式时，应在此文件中添加说明。

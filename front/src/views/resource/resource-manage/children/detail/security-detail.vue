@@ -23,9 +23,7 @@ const { t } = useI18n();
 const { whereAmI, getBizsId } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
-const securityId = ref(route.params.id as string);
-// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
-const vendor = ref(route.query?.vendor);
+const securityId = computed(() => route.params.id as string);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
   ipList: [],
@@ -34,13 +32,12 @@ const templateData = reactive({
   portGroupList: [],
 });
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
+// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
+const vendor = computed(() => route.query?.vendor || detail.value?.vendor);
 
 watchEffect(() => {
   if (securityId.value) {
     setTitle(`${t('安全组')}：ID（${securityId.value}）`);
-  }
-  if (!vendor.value && detail.value?.vendor) {
-    vendor.value = detail.value.vendor;
   }
 });
 
@@ -49,7 +46,7 @@ const tabs = [
   { name: t('安全组规则'), value: 'rule' },
   { name: t('关联实例'), value: 'relate' },
 ];
-const activeTab = ref(route.query?.active || tabs[0].value);
+const activeTab = computed(() => (route.query?.active as string) || tabs[0].value);
 
 const handleTabsChange = (val: string) => {
   if (val === 'rule') getRelatedSecurityGroups(detail.value);
@@ -197,7 +194,7 @@ provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
-  <Teleport to="#breadcrumbExtra">
+  <Teleport defer to="#breadcrumbExtra">
     <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
   </Teleport>
 
@@ -208,8 +205,8 @@ provide('operateTooltipsOption', operateTooltipsOption);
           :id="securityId"
           :vendor="vendor"
           v-if="type === 'detail'"
-          :loading="loading"
           :detail="detail"
+          :loading="loading"
           :get-detail="getDetail"
         />
         <security-rule
@@ -220,7 +217,7 @@ provide('operateTooltipsOption', operateTooltipsOption);
           :template-data="templateData"
           :account-id="detail?.account_id"
         />
-        <security-relate v-else :detail="detail" />
+        <security-relate v-else :id="securityId" :detail="detail" />
       </template>
     </detail-tab>
   </div>

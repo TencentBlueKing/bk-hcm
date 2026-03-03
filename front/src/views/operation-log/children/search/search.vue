@@ -74,7 +74,7 @@ watch(
 
 <template>
   <div class="search">
-    <grid-container layout="vertical" :column="4" :content-min-width="300" :gap="[16, 60]">
+    <grid-container layout="vertical" :column="4" :content-min-width="280" :gap="[16, 60]">
       <grid-item-form-element v-for="field in fields" :key="field.id" :label="field.name">
         <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="formValues[field.id]" />
       </grid-item-form-element>
@@ -89,7 +89,6 @@ watch(
 <style lang="scss" scoped>
 .search {
   background: #fff;
-  box-shadow: 0 2px 4px 0 #1919290d;
   border-radius: 2px;
   padding: 16px 24px;
   margin-bottom: 16px;

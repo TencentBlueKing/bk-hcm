@@ -31,16 +31,16 @@ watchEffect(() => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <div class="detail-content-wrap">
-      <detail-tab :tabs="routeTabs" class="route-tab">
-        <template #default="type">
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="routeTabs" class="route-tab">
+      <template #default="type">
+        <bk-loading :loading="loading">
           <route-info v-if="type === 'detail'" :detail="detail" />
           <route-subnet v-if="type === 'subnet'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

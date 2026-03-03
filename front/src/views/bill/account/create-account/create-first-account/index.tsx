@@ -1,6 +1,6 @@
 import { defineComponent, reactive, ref, watchEffect } from 'vue';
 import './index.scss';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+
 import CommonCard from '@/components/CommonCard';
 import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
@@ -77,10 +77,6 @@ export default defineComponent({
 
     return () => (
       <div class={'create-first-account-wrapper'}>
-        <DetailHeader>
-          <span class={'header-title'}>录入一级账号</span>
-        </DetailHeader>
-
         <CommonCard title={() => '基础信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
             <Form formType='vertical' model={formModel}>
@@ -252,7 +248,7 @@ export default defineComponent({
 
         <Button
           theme='primary'
-          class={'mr8 ml24 mw88'}
+          class={'mr8 mw88'}
           disabled={curExtension.value.validatedStatus !== ValidateStatus.YES}
           v-bk-tooltips={{
             disabled: !(curExtension.value.validatedStatus !== ValidateStatus.YES),

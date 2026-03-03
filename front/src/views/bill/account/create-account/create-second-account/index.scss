@@ -1,28 +1,17 @@
 .create-second-account-wrapper {
-  padding-bottom: 12px;
-  .header-title {
-    font-family: MicrosoftYaHei;
-    font-size: 16px;
-    color: #313238;
-    letter-spacing: 0;
-    line-height: 24px;
-    padding: 14px 5px;
-    display: flex;
-    align-items: center;
+  height: 100%;
+
+  .bk-resize-layout {
+    height: 100%;
   }
 
   .left-container {
-    height: calc(100vh - 120px);
-    padding-right: 48px;
-    margin-top: 68px;
-    overflow: scroll;
-
-    .mr-24 {
-      margin-right: -24px;
-    }
+    height: 100%;
+    padding: 24px;
+    overflow-y: auto;
 
     .info-card {
-      margin: 12px 24px;
+      margin: 12px 0;
 
       &:last-of-type {
         margin-bottom: 16px;
@@ -100,9 +89,8 @@
   }
 
   .right-container {
-    margin-top: 52px;
     background-color: #fff;
-    height: calc(100vh - 104px);
+    height: 100%;
     padding: 12px 24px;
 
     .header {

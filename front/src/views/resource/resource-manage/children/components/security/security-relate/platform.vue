@@ -33,6 +33,7 @@ import dataList from './data-list/index.vue';
 import singleUnbind from './unbind/single.vue';
 
 const props = defineProps<{
+  id: string;
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
   relatedBiz: ISecurityGroupRelBusiness;
@@ -95,8 +96,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 
   loading.value = true;
   try {
-    const { id } = props.detail;
-    const res = await (isBusinessPage.value ? reqInBusiness(id) : reqInResource(id));
+    const res = await (isBusinessPage.value ? reqInBusiness(props.id) : reqInResource(props.id));
     list.value = res.list;
     // 设置页码总条数
     pagination.count = res.count;

@@ -14,7 +14,7 @@ export default defineComponent({
     const { whereAmI } = useWhereAmI();
     const { setTitle } = useBreadcrumb();
     const route = useRoute();
-    const templateId = ref(route.params.id as string);
+    const templateId = computed(() => route.params.id as string);
 
     watchEffect(() => {
       if (templateId.value) {

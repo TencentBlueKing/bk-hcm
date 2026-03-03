@@ -72,7 +72,9 @@ export const useResourceStore = defineStore('resource', () => {
      * @return {*}
      */
     list(data: any, type: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data, {
+        cancelPrevious: true,
+      });
     },
     detail(type: string, id: number | string, vendor?: string, resourceLevel?: boolean) {
       const bizPath = resourceLevel ? '' : getBusinessApiPath();
@@ -117,12 +119,12 @@ export const useResourceStore = defineStore('resource', () => {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/assign/bizs`, data);
     },
     // 新增
-    add(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}`, data);
+    add(type: string, data: any, config?: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}`, data, config);
     },
     // 更新
-    update(type: string, data: any, id: string | number) {
-      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`, data);
+    update(type: string, data: any, id: string | number, config?: any) {
+      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`, data, config);
     },
     // 获取
     countSubnetIps(id: string | number) {
@@ -275,13 +277,12 @@ export const useResourceStore = defineStore('resource', () => {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/create`, data);
     },
     // 同步拉取资源
-    syncResource(params: SyncResourceParams) {
-      const { regions, cloud_ids, tag_filters } = params;
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}sync`, {
-        regions,
-        cloud_ids,
-        tag_filters,
-      });
+    syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams, config?: any) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
+        params,
+        config,
+      );
     },
   };
 });

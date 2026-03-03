@@ -108,6 +108,11 @@ const billRoutes: RouteRecordRaw[] = [
         menu: {
           i18n: '账单管理',
         },
+        layout: {
+          breadcrumb: {
+            show: false,
+          },
+        },
       }),
     },
     children: [
@@ -120,6 +125,11 @@ const billRoutes: RouteRecordRaw[] = [
           ...new Meta({
             owner: MENU_RESOURCE,
             activeKey: MENU_BILL_MANAGE,
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
+            },
           }),
         },
         children: [
@@ -131,6 +141,11 @@ const billRoutes: RouteRecordRaw[] = [
               ...new Meta({
                 owner: MENU_RESOURCE,
                 activeKey: MENU_BILL_MANAGE,
+                layout: {
+                  breadcrumb: {
+                    show: false,
+                  },
+                },
               }),
             },
           },
@@ -142,6 +157,11 @@ const billRoutes: RouteRecordRaw[] = [
               ...new Meta({
                 owner: MENU_RESOURCE,
                 activeKey: MENU_BILL_MANAGE,
+                layout: {
+                  breadcrumb: {
+                    show: false,
+                  },
+                },
               }),
             },
           },
@@ -155,6 +175,11 @@ const billRoutes: RouteRecordRaw[] = [
           ...new Meta({
             owner: MENU_RESOURCE,
             activeKey: MENU_BILL_MANAGE,
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
+            },
           }),
         },
       },
@@ -166,6 +191,11 @@ const billRoutes: RouteRecordRaw[] = [
           ...new Meta({
             owner: MENU_RESOURCE,
             activeKey: MENU_BILL_MANAGE,
+            layout: {
+              breadcrumb: {
+                show: false,
+              },
+            },
           }),
         },
       },
