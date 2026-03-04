@@ -146,6 +146,7 @@ func (c *BatchListenerModifyRsWeightExecutor) getNewListenerRsList(kt *kit.Kit) 
 			Port:         item.Port,
 			NewRsWeight:  c.params.NewRsWeight,
 		}
+
 		for _, rsItem := range item.RsList {
 			tmpLblRs.RsList = append(tmpLblRs.RsList, rsItem)
 			if cvt.PtrToVal(rsItem.Weight) != cvt.PtrToVal(c.params.NewRsWeight) {
@@ -345,14 +346,30 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 				State:            enumor.TaskDetailInit,
 				Param:            param,
 			}
-			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
-				taskDetail := &batchListenerModifyRsWeightTaskDetail{
-					TgModifyWeightTaskDetailParam: &param,
-				}
-				c.taskDetails = append(c.taskDetails, taskDetail)
-				items = append(items, item)
-				continue
+		if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
+			// 创建只包含当前 RS 的 ListBatchListenerResult，避免携带其他不相关的 RS
+			singleRsDetail := &dataproto.ListBatchListenerResult{
+				ClbID:        detail.ClbID,
+				CloudClbID:   detail.CloudClbID,
+				ClbVipDomain: detail.ClbVipDomain,
+				BkBizID:      detail.BkBizID,
+				Region:       detail.Region,
+				Vendor:       detail.Vendor,
+				LblID:        detail.LblID,
+				CloudLblID:   detail.CloudLblID,
+				Protocol:     detail.Protocol,
+				Port:         detail.Port,
+				RsList:       []*dataproto.LoadBalancerTargetRsList{rs}, // 只包含当前 RS
+				NewRsWeight:  detail.NewRsWeight,
 			}
+			taskDetail := &batchListenerModifyRsWeightTaskDetail{
+				TgModifyWeightTaskDetailParam: &param,
+				ListBatchListenerResult:       singleRsDetail,
+			}
+			c.taskDetails = append(c.taskDetails, taskDetail)
+			items = append(items, item)
+			continue
+		}
 			item.State = enumor.TaskDetailSuccess
 			sameItems = append(sameItems, item)
 		}
@@ -372,7 +389,6 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 
 	for i := range c.taskDetails {
 		c.taskDetails[i].taskDetailID = result.IDs[i]
-		c.taskDetails[i].ListBatchListenerResult = c.details[i]
 	}
 
 	return nil
