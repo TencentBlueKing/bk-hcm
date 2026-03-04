@@ -283,7 +283,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskManagement(
 		Items: []task.CreateManagementField{
 			{
 				BkBizID:    c.bkBizID,
-				Source:     source,
+				Source:     source.RefineByRequestSource(kt.RequestSource),
 				Vendors:    []enumor.Vendor{c.vendor},
 				AccountIDs: []string{c.accountID},
 				Resource:   enumor.TaskManagementResClb,

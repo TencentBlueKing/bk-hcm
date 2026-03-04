@@ -117,7 +117,7 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, v
 		Items: []task.CreateManagementField{
 			{
 				BkBizID:    bkBizID,
-				Source:     source,
+				Source:     source.RefineByRequestSource(kt.RequestSource),
 				Vendors:    []enumor.Vendor{vendor},
 				AccountIDs: []string{accountID},
 				Resource:   enumor.TaskManagementResClb,
