@@ -22,11 +22,12 @@ package monthtask
 import (
 	"encoding/json"
 
-	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	datagconf "hcm/pkg/api/data-service/global_config"
+	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -34,11 +35,18 @@ import (
 )
 
 // GenAIFilterRules generate ai filter rules
-func GenAIFilterRules(kt *kit.Kit, vendor enumor.Vendor) (rules []filter.RuleFactory, err error) {
+func GenAIFilterRules(kt *kit.Kit, vendor enumor.Vendor, cli *client.ClientSet) (rules []filter.RuleFactory,
+	err error) {
+
+	if cli == nil {
+		logs.Errorf("client is nil, vendor: %s, rid: %s", vendor, kt.Rid)
+		return nil, errf.Newf(errf.InvalidParameter, "client is nil")
+	}
+
 	rules = []filter.RuleFactory{tools.RuleStartsWith("hc_product_name", constant.BillItemAIPrefix)}
 
 	// 获取排除的主账号列表
-	excludedAccountIDs, err := getExcludedMainAccountIDs(kt, vendor)
+	excludedAccountIDs, err := getExcludedMainAccountIDs(kt, vendor, cli)
 	if err != nil {
 		logs.Errorf("fail to get excluded main account ids, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 		return nil, err
@@ -51,7 +59,7 @@ func GenAIFilterRules(kt *kit.Kit, vendor enumor.Vendor) (rules []filter.RuleFac
 }
 
 // getExcludedMainAccountIDs 从 global_config 获取排除的主账号列表
-func getExcludedMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor) ([]string, error) {
+func getExcludedMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor, cli *client.ClientSet) ([]string, error) {
 	configKey := getConfigKeyByVendor(vendor)
 	if len(configKey) == 0 {
 		// 不支持的云厂商，返回空列表
@@ -73,7 +81,7 @@ func getExcludedMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor) ([]string, err
 	}
 
 	// 查询配置
-	resp, err := actcli.GetDataService().Global.GlobalConfig.List(kt, req)
+	resp, err := cli.DataService().Global.GlobalConfig.List(kt, req)
 	if err != nil {
 		logs.Errorf("fail to get excluded main account ids from global config, vendor: %s, err: %v, rid: %s",
 			vendor, err, kt.Rid)

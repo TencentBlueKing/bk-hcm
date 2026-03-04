@@ -51,7 +51,7 @@ func (a *AwsAIDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, ind
 	rules := []filter.RuleFactory{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 	}
-	aiRules, err := GenAIFilterRules(kt, opt.Vendor)
+	aiRules, err := GenAIFilterRules(kt, opt.Vendor, actcli.GetClientSet())
 	if err != nil {
 		logs.Errorf("fail to gen ai filter rules, err: %v, rid: %s", err, kt.Rid)
 		return nil, false, fmt.Errorf("fail to gen ai filter rules, err: %w", err)

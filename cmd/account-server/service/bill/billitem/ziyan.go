@@ -296,7 +296,7 @@ func (b *billItemSvc) buildAIFilters(kt *kit.Kit, vendor enumor.Vendor, req *bil
 	var rules []filter.RuleFactory
 	switch vendor {
 	case enumor.Aws, enumor.Gcp:
-		aiRules, err := monthtask.GenAIFilterRules(kt, vendor)
+		aiRules, err := monthtask.GenAIFilterRules(kt, vendor, b.client)
 		if err != nil {
 			logs.Errorf("fail to gen ai filter rules, vendor: %s, err: %v, rid: %s", vendor, err, kt.Rid)
 			return nil, err
