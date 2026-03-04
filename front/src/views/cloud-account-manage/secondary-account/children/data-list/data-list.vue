@@ -86,18 +86,12 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         display: { appearance: 'tag' },
       });
   }
-  // 数字类型的可点击列
+  // 三级账号数、密钥数 - 普通标签样式
   if (column.id === 'sub_account_count' || column.id === 'account_secret_count') {
-    return ({ row }: { row: ISecondaryAccountItem }) =>
-      h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick: () => handleViewDetails(row),
-        },
-        () => row[column.id as keyof ISecondaryAccountItem] ?? 0,
-      );
+    return ({ row }: { row: ISecondaryAccountItem }) => {
+      const value = row[column.id as keyof ISecondaryAccountItem] ?? 0;
+      return h('span', { style: { color: '#3A84FF' } }, value);
+    };
   }
   // 资源纳管状态列 - 标签样式
   if (column.id === 'sync_status') {
@@ -195,6 +189,18 @@ const getColumnRender = (column: ModelPropertyColumn) => {
 
 // 同步中 - 蓝色
 :deep(.status-tag-syncing) {
+  color: #3a84ff;
+  background-color: #e1ecff;
+}
+
+// 数量标签 - 蓝色
+:deep(.count-tag) {
+  display: inline-block;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 8px;
+  border-radius: 9px;
+  font-size: 12px;
   color: #3a84ff;
   background-color: #e1ecff;
 }

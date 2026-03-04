@@ -60,6 +60,7 @@ export class TableColumn {
     name: '三级账号数',
     index: 7,
     width: 130,
+    sort: true,
   })
   sub_account_count: number;
 
@@ -67,6 +68,7 @@ export class TableColumn {
     name: '密钥数',
     index: 8,
     width: 80,
+    sort: true,
   })
   account_secret_count: number;
 
