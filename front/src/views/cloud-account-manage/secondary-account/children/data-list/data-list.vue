@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<IDataListProps>(), {
 // 定义事件
 const emit = defineEmits<{
   'view-details': [row: ISecondaryAccountItem];
+  'edit-account': [row: ISecondaryAccountItem];
 }>();
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
@@ -47,6 +48,11 @@ const formatArray = (arr: any[]) => {
 // 查看详情 - 触发事件
 const handleViewDetails = (row: ISecondaryAccountItem) => {
   emit('view-details', row);
+};
+
+// 编辑账号 - 触发事件
+const handleEditAccount = (row: ISecondaryAccountItem) => {
+  emit('edit-account', row);
 };
 
 // 自定义渲染列
@@ -149,7 +155,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
-          <bk-button theme="primary" text @click="handleViewDetails(row)">详情</bk-button>
+          <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
         </template>
       </bk-table-column>
     </bk-table>

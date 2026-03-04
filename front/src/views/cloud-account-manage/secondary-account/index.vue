@@ -192,6 +192,13 @@ const handleAddAccount = () => {
   showAccountFormSideslider.value = true;
 };
 
+// 编辑账号（从列表操作列触发）
+const handleEditAccount = (row: ISecondaryAccountItem) => {
+  isEditMode.value = true;
+  editingAccount.value = row;
+  showAccountFormSideslider.value = true;
+};
+
 const handleAccountFormSuccess = () => {
   refreshList();
 };
@@ -315,6 +322,7 @@ const handleSyncAccount = () => {
         :pagination="pagination"
         :loading="isLoading"
         @view-details="handleViewDetails"
+        @edit-account="handleEditAccount"
       />
     </div>
 

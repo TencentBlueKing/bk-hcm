@@ -41,8 +41,8 @@ const formData = ref({
   cloud_main_account_id: '',
   managers: [] as string[],
   security_managers: [] as string[],
-  bk_biz_id: undefined as number | undefined,
-  usage_biz_ids: [] as number[],
+  bk_biz_id: getBizsId() as number | undefined,
+  usage_biz_ids: getBizsId() ? [getBizsId()] : ([] as number[]),
   memo: '',
 });
 
@@ -78,8 +78,8 @@ const resetForm = () => {
     cloud_main_account_id: '',
     managers: [userStore.username],
     security_managers: [userStore.username],
-    bk_biz_id: undefined,
-    usage_biz_ids: [],
+    bk_biz_id: getBizsId(),
+    usage_biz_ids: getBizsId() ? [getBizsId()] : [],
     memo: '',
   };
   nextTick(() => {
@@ -245,9 +245,9 @@ const handleCancel = () => {
             <UserSelector v-model="formData.security_managers" placeholder="请输入用户名" />
           </bk-form-item>
 
-          <!-- 管理业务 -->
+          <!-- 管理业务（只读，录入时默认当前业务，编辑时使用已有数据） -->
           <bk-form-item label="管理业务" property="bk_biz_id">
-            <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" clearable />
+            <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" disabled />
           </bk-form-item>
 
           <!-- 使用业务 -->
