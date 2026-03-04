@@ -128,7 +128,7 @@ func (svc *lbSvc) buildBatchModifyTargetWeightTask(kt *kit.Kit, bkBizID int64, r
 	}
 
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, req.AccountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyWeight)
+		svc.getTaskSource(kt), enumor.TaskTargetGroupModifyWeight)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err

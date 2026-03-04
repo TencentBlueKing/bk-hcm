@@ -56,7 +56,7 @@ type TaskManagementSource string
 // Validate ...
 func (t TaskManagementSource) Validate() error {
 	switch t {
-	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI:
+	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI, TaskManagementSourceWeb:
 		return nil
 	default:
 		return fmt.Errorf("invalid task management source: %s", t)
@@ -70,6 +70,8 @@ const (
 	TaskManagementSourceExcel TaskManagementSource = "excel"
 	// TaskManagementSourceAPI is a source indicating that api.
 	TaskManagementSourceAPI TaskManagementSource = "api"
+	// TaskManagementSourceWeb is a source indicating that web.
+	TaskManagementSourceWeb TaskManagementSource = "web"
 )
 
 // TaskManagementResource is task management resource.

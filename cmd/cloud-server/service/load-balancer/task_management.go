@@ -176,3 +176,13 @@ func (svc *lbSvc) updateTaskDetails(kt *kit.Kit, details []*taskManagementDetail
 	}
 	return nil
 }
+
+func (svc *lbSvc) getTaskSource(kt *kit.Kit) enumor.TaskManagementSource {
+	//根据kt请求来源区分Web还是API来源
+	if kt.RequestSource == enumor.WebCall {
+		return enumor.TaskManagementSourceWeb
+	}
+
+	//默认来源为API
+	return enumor.TaskManagementSourceAPI
+}

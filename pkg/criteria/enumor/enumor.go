@@ -34,8 +34,10 @@ const (
 type RequestSourceType string
 
 const (
-	// ApiCall 来自前端和OpenApi调用的请求。
+	// ApiCall 来自OpenApi调用的请求。
 	ApiCall RequestSourceType = "api_call"
+	// WebCall 来自前端调用的请求。
+	WebCall RequestSourceType = "web_call"
 	// BackgroundSync 同步云上数据而发出的请求。
 	BackgroundSync RequestSourceType = "background_sync"
 	// AsynchronousTasks 异步任务请求，比如云的批量异步操作，会设置腾讯云接口调用的超限重试
@@ -45,6 +47,7 @@ const (
 // RequestSourceEnums request type map.
 var RequestSourceEnums = map[RequestSourceType]bool{
 	ApiCall:           true,
+	WebCall:           true,
 	BackgroundSync:    true,
 	AsynchronousTasks: true,
 }

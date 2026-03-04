@@ -134,7 +134,7 @@ func (svc *lbSvc) buildRemoveTargetManagement(kt *kit.Kit, vendor enumor.Vendor,
 		}
 	}
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, vendor, accountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupRemoveRS)
+		svc.getTaskSource(kt), enumor.TaskTargetGroupRemoveRS)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err

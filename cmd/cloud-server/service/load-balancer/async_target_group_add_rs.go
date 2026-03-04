@@ -232,7 +232,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, bkBizID int64, accountI
 	}
 
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, accountInfo.AccountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupAddRS)
+		svc.getTaskSource(kt), enumor.TaskTargetGroupAddRS)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err

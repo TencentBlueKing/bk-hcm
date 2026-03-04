@@ -115,7 +115,7 @@ func (svc *lbSvc) buildDelLblTaskManagement(kt *kit.Kit, bkBizID int64, accountI
 	}
 
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, accountInfo.Vendor, accountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskDeleteListener)
+		svc.getTaskSource(kt), enumor.TaskDeleteListener)
 	if err != nil {
 		logs.Errorf("create task management failed, bkBizID: %d, accountID: %s, err: %v, rid: %s",
 			bkBizID, accountID, err, kt.Rid)

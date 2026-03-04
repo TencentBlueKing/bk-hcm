@@ -139,7 +139,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 		return "", err
 	}
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, lb.Vendor, lb.AccountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskListenerAddTarget)
+		svc.getTaskSource(kt), enumor.TaskListenerAddTarget)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err

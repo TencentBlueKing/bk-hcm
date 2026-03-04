@@ -180,7 +180,7 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksPort(kt *kit.Kit, req *cslb.TCloud
 	}
 
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, vendor, accountID,
-		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupModifyPort)
+		svc.getTaskSource(kt), enumor.TaskTargetGroupModifyPort)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
