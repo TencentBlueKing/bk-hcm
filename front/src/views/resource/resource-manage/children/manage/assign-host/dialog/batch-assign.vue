@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, Fragment, h, ref, useTemplateRef, watch, watchEffect } from 'vue';
+import { computed, Fragment, h, ref, useTemplateRef, watch, watchEffect, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { groupBy } from 'lodash';
 import {
@@ -13,16 +13,16 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 import { timeFormatter } from '@/common/util';
 import { ModelPropertyColumn } from '@/model/typings';
 
-import { Button, Message, Tag } from 'bkui-vue';
+import { Button, Message, Tag, bkTooltips as vBkTooltips } from 'bkui-vue';
 import MatchHost from './match-host.vue';
 import ManualAssign from './manual-assign.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   previewList: Array<CvmsAssignPreviewItem>;
   reloadTable: () => void;
 }>();
 const emit = defineEmits<(e: 'hidden') => void>();
-const model = defineModel<boolean>();
 
 const { t } = useI18n();
 const hostStore = useHostStore();
@@ -109,56 +109,64 @@ watch(
 );
 
 // 表格配置
-const columns: ModelPropertyColumn[] = [
+const isBatchMode = ref(false);
+
+const matchTypeRender = ({
+  cell,
+  data,
+}: {
+  cell?: ICvmsAssignBizsPreviewItem['match_type'];
+  data?: CvmsAssignPreviewItem;
+}) => {
+  const isIconShow = ['no_match', 'manual'].includes(cell);
+
+  const tagMap: Record<
+    ICvmsAssignBizsPreviewItem['match_type'],
+    { text: string; theme: 'success' | 'danger' | 'warning'; clickHandler?: () => void }
+  > = {
+    no_match: {
+      text: t('待关联'),
+      theme: 'danger',
+      clickHandler: () => {
+        isBatchMode.value = false;
+        isManualAssignShow.value = true;
+        currentCvm.value = { ...data };
+      },
+    },
+    manual: {
+      text: t('手动关联'),
+      theme: 'warning',
+      clickHandler: () => {
+        isBatchMode.value = false;
+        isMatchHostShow.value = true;
+        currentCvm.value = { ...data };
+      },
+    },
+    auto: { text: t('自动关联'), theme: 'success' },
+  };
+
+  const { text, theme, clickHandler } = tagMap[cell];
+
+  return h(Fragment, null, [
+    h(Tag, { theme }, text),
+    isIconShow
+      ? h(
+          Button,
+          { theme: 'primary', text: true, class: 'ml8', onClick: clickHandler },
+          h('i', { class: 'hcm-icon bkhcm-icon-configuration', style: 'font-size: 16px' }),
+        )
+      : null,
+  ]);
+};
+
+const staticColumns: ModelPropertyColumn[] = [
   { id: 'private_ip_address', name: t('内网IP'), type: 'string', width: 150 },
   { id: 'public_ip_address', name: t('公网IP'), type: 'string', width: 150 },
   { id: 'bk_cloud_id', name: t('管控区域'), type: 'cloud-area', width: 150 },
   { id: 'bk_biz_id', name: t('分配的目标业务'), type: 'business', width: 120 },
-  {
-    id: 'match_type',
-    name: t('是否与配置平台关联'),
-    type: 'string',
-    width: 150,
-    render: ({ cell, data }: { cell: ICvmsAssignBizsPreviewItem['match_type']; data: CvmsAssignPreviewItem }) => {
-      const isIconShow = ['no_match', 'manual'].includes(cell);
+];
 
-      const tagMap: Record<
-        ICvmsAssignBizsPreviewItem['match_type'],
-        { text: string; theme: 'success' | 'danger' | 'warning'; clickHandler?: () => void }
-      > = {
-        no_match: {
-          text: t('待关联'),
-          theme: 'danger',
-          clickHandler: () => {
-            isManualAssignShow.value = true;
-            currentCvm.value = { ...data };
-          },
-        },
-        manual: {
-          text: t('手动关联'),
-          theme: 'warning',
-          clickHandler: () => {
-            isMatchHostShow.value = true;
-            currentCvm.value = { ...data };
-          },
-        },
-        auto: { text: t('自动关联'), theme: 'success' },
-      };
-
-      const { text, theme, clickHandler } = tagMap[cell];
-
-      return h(Fragment, null, [
-        h(Tag, { theme }, text),
-        isIconShow
-          ? h(
-              Button,
-              { theme: 'primary', text: true, class: 'ml8', onClick: clickHandler },
-              h('i', { class: 'hcm-icon bkhcm-icon-configuration', style: 'font-size: 16px' }),
-            )
-          : null,
-      ]);
-    },
-  },
+const trailingColumns: ModelPropertyColumn[] = [
   { id: 'region', name: t('地域'), type: 'region', width: 150 },
   { id: 'cloud_vpc_ids', name: t('所属vpc'), type: 'string', width: 150, render: ({ cell }: any) => cell?.join(',') },
   { id: 'name', name: t('主机名称'), type: 'string', width: 150 },
@@ -177,11 +185,51 @@ const columns: ModelPropertyColumn[] = [
   { id: 'created_at', name: t('创建时间'), type: 'string', width: 180, render: ({ cell }: any) => timeFormatter(cell) },
 ];
 
+const getColumns = (panelIndex: number): ModelPropertyColumn[] => [
+  ...staticColumns,
+  {
+    id: 'match_type',
+    name: t('是否与配置平台关联'),
+    type: 'string',
+    width: 180,
+    label: () =>
+      h(Fragment, null, [
+        h('span', null, t('是否与配置平台关联')),
+        withDirectives(
+          h('i', {
+            class: 'hcm-icon bkhcm-icon-batch-edit batch-edit-icon',
+            onClick: (e: MouseEvent) => {
+              e.stopPropagation();
+              isBatchMode.value = true;
+              currentCvm.value = { ...previewOpList.value[panelIndex].tableData[0] };
+              isManualAssignShow.value = true;
+            },
+          }),
+          [[vBkTooltips, t('批量操作')]],
+        ),
+      ]),
+    render: matchTypeRender,
+  },
+  ...trailingColumns,
+];
+
 // 关联配置平台主机
 const isMatchHostShow = ref(false);
 const matchHostDialogRef = useTemplateRef('match-host-dialog');
 const currentCvm = ref<CvmsAssignPreviewItem>(null);
 const handleBackfill = (cvm: CvmsAssignPreviewItem, bkBizId: number, bkCloudId: number) => {
+  if (isBatchMode.value) {
+    const outerIdx = previewOpList.value.findIndex(
+      ({ account_name, cloud_vpc_id }) => account_name === cvm.account_name && cloud_vpc_id === cvm.cloud_vpc_ids[0],
+    );
+    previewOpList.value[outerIdx].tableData.forEach((item) => {
+      item.bk_biz_id = bkBizId;
+      item.bk_cloud_id = bkCloudId;
+    });
+    isBatchMode.value = false;
+    return;
+  }
+
   const [outerIdx, innerIdx] = findCvmIndex(cvm.account_name, cvm.cloud_vpc_ids[0], cvm.id);
   previewOpList.value[outerIdx].tableData[innerIdx].bk_biz_id = bkBizId;
   previewOpList.value[outerIdx].tableData[innerIdx].bk_cloud_id = bkCloudId;
@@ -277,10 +325,10 @@ const handleClosed = () => {
                 pagination
               >
                 <bk-table-column
-                  v-for="(column, idx) in columns"
+                  v-for="(column, idx) in getColumns(index)"
                   :key="idx"
                   :prop="column.id"
-                  :label="column.name"
+                  :label="column.label ?? column.name"
                   :render="column.render"
                   :width="column.width"
                 >
@@ -434,6 +482,17 @@ const handleClosed = () => {
 
   .bkhcm-icon-minus-circle-shape {
     color: #c4c6cc;
+  }
+
+  :deep(.batch-edit-icon) {
+    margin-left: 4px;
+    font-size: 14px;
+    color: #979ba5;
+    cursor: pointer;
+
+    &:hover {
+      color: #3a84ff;
+    }
   }
 }
 </style>
