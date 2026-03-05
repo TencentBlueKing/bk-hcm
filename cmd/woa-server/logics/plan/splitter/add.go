@@ -32,6 +32,7 @@ import (
 	ttypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/shopspring/decimal"
 )
@@ -40,10 +41,16 @@ import (
 func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) error {
 
 	// 1. 准备拆分后的子单，存储在 adjSplitGroupDemands 中备用
-	_, _, err := s.prepareAddSubTickets(kt, ticketID, demands)
+	// cvmDemands 为排除纯 CBS 需求后剩余的 CVM 追加需求
+	canTransfer, cvmDemands, err := s.prepareAddSubTickets(kt, ticketID, demands)
 	if err != nil {
 		logs.Errorf("failed to prepare add sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
+	}
+	// 1.1. 如果追加发现无可转移预测，直接将所有调增需求合并为一个追加子单
+	if !canTransfer {
+		s.adjSplitGroupDemands[enumor.RPTicketTypeAdd] = append(s.adjSplitGroupDemands[enumor.RPTicketTypeAdd],
+			cvt.SliceToPtr(cvmDemands)...)
 	}
 
 	// 2. 对每个变更需求，匹配可转移的CRP预测，并按照可转移和不可转移拆分为2个子单
