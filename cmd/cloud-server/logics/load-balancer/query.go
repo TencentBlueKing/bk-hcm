@@ -296,36 +296,47 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 	return cvms.Details, nil
 }
 
+func buildBatchGetCvmWithoutVpcExpr(partIPs []string, vendor enumor.Vendor, bkBizID int64,
+	accountID string) *filter.Expression {
+
+	return &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJsonOverlaps("private_ipv4_addresses", partIPs),
+				tools.RuleJsonOverlaps("private_ipv6_addresses", partIPs),
+				tools.RuleJsonOverlaps("public_ipv4_addresses", partIPs),
+				tools.RuleJsonOverlaps("public_ipv6_addresses", partIPs),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+		},
+	}
+}
+
 // batchGetCvmWithoutVpc 不指定VPC批量查询主机
 func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, vendor enumor.Vendor, bkBizID int64,
 	accountID string) ([]corecvm.BaseCvm, error) {
 
 	cvmList := make([]corecvm.BaseCvm, 0)
 	for _, partIPs := range slice.Split(ips, int(core.DefaultMaxPageLimit)) {
-		expr := &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				tools.ExpressionOr(
-					tools.RuleJsonIn("private_ipv4_addresses", partIPs),
-					tools.RuleJsonIn("private_ipv6_addresses", partIPs),
-					tools.RuleJsonIn("public_ipv4_addresses", partIPs),
-					tools.RuleJsonIn("public_ipv6_addresses", partIPs),
-				),
-				tools.RuleEqual("vendor", vendor),
-				tools.RuleEqual("bk_biz_id", bkBizID),
-				tools.RuleEqual("account_id", accountID),
-			},
+		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, vendor, bkBizID, accountID)
+		start := uint32(0)
+		for {
+			listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
+			cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
+			if err != nil {
+				logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+
+			cvmList = append(cvmList, cvms.Details...)
+			if uint(len(cvms.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+			start += uint32(core.DefaultMaxPageLimit)
 		}
-		listReq := &core.ListReq{
-			Filter: expr,
-			Page:   core.NewDefaultBasePage(),
-		}
-		cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
-		if err != nil {
-			logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-		cvmList = append(cvmList, cvms.Details...)
 	}
 	return cvmList, nil
 }
