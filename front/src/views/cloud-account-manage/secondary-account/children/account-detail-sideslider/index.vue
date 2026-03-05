@@ -76,15 +76,14 @@ const fetchSecretList = async () => {
   }
 };
 
-// 监听显示状态变化，加载数据
-watch(
-  () => model.value,
-  (newVal) => {
-    if (newVal && currentRowData.value) {
-      fetchSecretList();
-    }
-  },
-);
+// 监听显示状态和数据变化，确保用最新数据加载密钥列表
+watch([model, () => props.rowData], ([isShow, rowData]) => {
+  if (isShow && rowData) {
+    // 先同步更新 currentRowData，再发起请求，避免时序错位
+    currentRowData.value = { ...rowData };
+    fetchSecretList();
+  }
+});
 
 // 云厂商枚举选项
 const vendorOptions: Record<string, string> = {
