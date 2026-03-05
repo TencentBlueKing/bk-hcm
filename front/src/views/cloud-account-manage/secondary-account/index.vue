@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, h, inject, type Ref } from 'vue';
+import { ref, computed, watch, inject, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Message, InfoBox } from 'bkui-vue';
+// import { Message, InfoBox } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
@@ -211,89 +211,89 @@ const handleReset = () => {
   searchQs.clear();
 };
 
-const handleSyncAccount = () => {
-  const SyncContent = () =>
-    h('div', { class: 'sync-info-content' }, [
-      h('p', { class: 'sync-info-title' }, '同步信息包含：'),
-      h('ul', { class: 'sync-info-list' }, [
-        h('li', '二级账号本身的信息（邮箱、保护状态、MFA等）'),
-        h('li', '二级账号下的三级账号'),
-        h('li', '二级账号下的权限模板'),
-      ]),
-      h('p', { class: 'sync-info-tip' }, '同步操作可能需要几分钟，请耐心等待'),
-    ]);
+// const handleSyncAccount = () => {
+//   const SyncContent = () =>
+//     h('div', { class: 'sync-info-content' }, [
+//       h('p', { class: 'sync-info-title' }, '同步信息包含：'),
+//       h('ul', { class: 'sync-info-list' }, [
+//         h('li', '二级账号本身的信息（邮箱、保护状态、MFA等）'),
+//         h('li', '二级账号下的三级账号'),
+//         h('li', '二级账号下的权限模板'),
+//       ]),
+//       h('p', { class: 'sync-info-tip' }, '同步操作可能需要几分钟，请耐心等待'),
+//     ]);
 
-  InfoBox({
-    title: '确定同步本业务下所有二级账号信息',
-    type: 'warning',
-    subTitle: SyncContent,
-    width: 480,
-    contentAlign: 'left',
-    confirmText: '确定',
-    cancelText: '取消',
-    beforeClose: (action: string) =>
-      new Promise(async (resolve) => {
-        if (action === 'confirm') {
-          const loadingBox = InfoBox({
-            type: 'loading',
-            title: '同步二级账号信息中...',
-            subTitle: '请耐心等待',
-            width: 400,
-            closeIcon: false,
-            showMask: true,
-            quickClose: false,
-            escClose: false,
-            confirmText: '',
-            cancelText: '',
-          });
+//   InfoBox({
+//     title: '确定同步本业务下所有二级账号信息',
+//     type: 'warning',
+//     subTitle: SyncContent,
+//     width: 480,
+//     contentAlign: 'left',
+//     confirmText: '确定',
+//     cancelText: '取消',
+//     beforeClose: (action: string) =>
+//       new Promise(async (resolve) => {
+//         if (action === 'confirm') {
+//           const loadingBox = InfoBox({
+//             type: 'loading',
+//             title: '同步二级账号信息中...',
+//             subTitle: '请耐心等待',
+//             width: 400,
+//             closeIcon: false,
+//             showMask: true,
+//             quickClose: false,
+//             escClose: false,
+//             confirmText: '',
+//             cancelText: '',
+//           });
 
-          try {
-            const bkBizId = getBizsId();
-            const vendor = currentVendor?.value || VendorEnum.TCLOUD;
-            const accountIds = tableData.value.map((item) => item.id);
+//           try {
+//             const bkBizId = getBizsId();
+//             const vendor = currentVendor?.value || VendorEnum.TCLOUD;
+//             const accountIds = tableData.value.map((item) => item.id);
 
-            if (accountIds.length === 0) {
-              loadingBox.hide();
-              Message({ theme: 'warning', message: '当前没有可同步的账号' });
-              resolve(true);
-              return;
-            }
+//             if (accountIds.length === 0) {
+//               loadingBox.hide();
+//               Message({ theme: 'warning', message: '当前没有可同步的账号' });
+//               resolve(true);
+//               return;
+//             }
 
-            const results = await cloudAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
-            loadingBox.hide();
+//             const results = await cloudAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
+//             loadingBox.hide();
 
-            if (results.failed.length === 0) {
-              Message({ theme: 'success', message: `同步完成，成功同步 ${results.success.length} 个账号` });
-            } else if (results.success.length === 0) {
-              Message({ theme: 'error', message: `同步失败，${results.failed.length} 个账号同步失败` });
-            } else {
-              Message({
-                theme: 'warning',
-                message: `部分同步完成：${results.success.length} 个成功，${results.failed.length} 个失败`,
-              });
-            }
+//             if (results.failed.length === 0) {
+//               Message({ theme: 'success', message: `同步完成，成功同步 ${results.success.length} 个账号` });
+//             } else if (results.success.length === 0) {
+//               Message({ theme: 'error', message: `同步失败，${results.failed.length} 个账号同步失败` });
+//             } else {
+//               Message({
+//                 theme: 'warning',
+//                 message: `部分同步完成：${results.success.length} 个成功，${results.failed.length} 个失败`,
+//               });
+//             }
 
-            const { query } = route;
-            const timestamp = Date.now();
-            window.history.replaceState(
-              null,
-              '',
-              `${route.path}?${new URLSearchParams({ ...query, _t: String(timestamp) } as any).toString()}`,
-            );
-            resolve(true);
-          } catch (error) {
-            console.error('同步失败:', error);
-            loadingBox.hide();
-            Message({ theme: 'error', message: '同步失败，请稍后重试' });
-            resolve(true);
-          }
-        }
-        if (action === 'cancel') {
-          resolve(true);
-        }
-      }),
-  });
-};
+//             const { query } = route;
+//             const timestamp = Date.now();
+//             window.history.replaceState(
+//               null,
+//               '',
+//               `${route.path}?${new URLSearchParams({ ...query, _t: String(timestamp) } as any).toString()}`,
+//             );
+//             resolve(true);
+//           } catch (error) {
+//             console.error('同步失败:', error);
+//             loadingBox.hide();
+//             Message({ theme: 'error', message: '同步失败，请稍后重试' });
+//             resolve(true);
+//           }
+//         }
+//         if (action === 'cancel') {
+//           resolve(true);
+//         }
+//       }),
+//   });
+// };
 </script>
 
 <template>
@@ -309,10 +309,11 @@ const handleSyncAccount = () => {
           <plus style="font-size: 22px" />
           录入账号
         </bk-button>
-        <bk-button @click="handleSyncAccount">
+
+        <!-- <bk-button @click="handleSyncAccount">
           <i class="hcm-icon bkhcm-icon-update mr6"></i>
           同步账号
-        </bk-button>
+        </bk-button> -->
       </div>
 
       <!-- 数据列表 -->

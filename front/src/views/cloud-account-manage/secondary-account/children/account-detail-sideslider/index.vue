@@ -82,6 +82,9 @@ watch([model, () => props.rowData], ([isShow, rowData]) => {
     // 先同步更新 currentRowData，再发起请求，避免时序错位
     currentRowData.value = { ...rowData };
     fetchSecretList();
+  } else if (!isShow) {
+    // 退出详情时清空资源密钥列表
+    secretList.value = [];
   }
 });
 
