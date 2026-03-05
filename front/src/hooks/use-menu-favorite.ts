@@ -78,9 +78,26 @@ export const useMenuFavorite = () => {
   };
 
   const getFavoriteMenus = (topMenuId: symbol, allMenus: IMenu[]): IMenu[] => {
-    const section = favorites.value[key(topMenuId)];
+    const k = key(topMenuId);
+    const section = favorites.value[k];
     if (!section?.length) return [];
-    return section.map((desc) => allMenus.find((m) => key(m.id as symbol) === desc)).filter(Boolean) as IMenu[];
+
+    const matched: IMenu[] = [];
+    const valid: string[] = [];
+    for (const desc of section) {
+      const menu = allMenus.find((m) => key(m.id as symbol) === desc);
+      if (menu) {
+        matched.push(menu);
+        valid.push(desc);
+      }
+    }
+
+    if (valid.length !== section.length) {
+      favorites.value[k] = valid;
+      persist();
+    }
+
+    return matched;
   };
 
   const setClickSource = (source: ClickSource) => {

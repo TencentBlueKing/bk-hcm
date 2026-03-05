@@ -64,13 +64,7 @@ function useFilterFromRoute(resourceType: ResourceTypeEnum) {
         }
       }
 
-      // 4. recycle_status（CVM/DISK/EIP 排除回收中的资源）
-      const RECYCLABLE_TYPES = [ResourceTypeEnum.CVM, ResourceTypeEnum.DISK, ResourceTypeEnum.EIP];
-      if (RECYCLABLE_TYPES.includes(resourceType)) {
-        rules.push({ field: 'recycle_status', op: QueryRuleOPEnum.NEQ, value: 'recycling' });
-      }
-
-      // 5. searchQs 搜索条件
+      // 4. searchQs 搜索条件
       const condition = searchQs.get(query);
       searchValue.value = buildSearchSelectValueBySearchQsCondition(condition, properties);
       const { rules: searchRules = [] } = transformSimpleCondition(condition, properties);

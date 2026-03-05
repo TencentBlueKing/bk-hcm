@@ -36,7 +36,7 @@ export const createProperty = (
 
 const baseProperties: ModelPropertyGeneric[] = [
   createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
-  createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
+  createProperty('vendor', '云厂商', { option: vendorOption, op: QueryRuleOPEnum.IN }),
   createProperty('account_id', '云账号ID', { type: 'string' }),
   createProperty('cloud_id', '资源ID', { type: 'string' }),
 ];
@@ -61,7 +61,7 @@ const cvmProperties: ModelPropertyGeneric[] = [
 const imageProperties: ModelPropertyGeneric[] = [
   createProperty('cloud_id', '镜像ID'),
   createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
-  createProperty('vendor', '云厂商'),
+  createProperty('vendor', '云厂商', { option: vendorOption, op: QueryRuleOPEnum.IN }),
 ];
 
 const subnetProperties: ModelPropertyGeneric[] = [...baseProperties, createProperty('cloud_vpc_id', '所属VPC ID')];
@@ -91,7 +91,7 @@ const clbProperties: ModelPropertyGeneric[] = [
     option: { ipv4: 'IPv4', ipv6: 'IPv6', ipv6_dual_stack: 'IPv6DualStack', ipv6_nat64: 'IPv6Nat64' },
     filterRules: (value) => ({ field: 'ip_version', op: QueryRuleOPEnum.EQ, value }),
   }),
-  createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
+  createProperty('vendor', '云厂商', { option: vendorOption, op: QueryRuleOPEnum.IN }),
   createProperty('zones', '可用区域', { op: QueryRuleOPEnum.CS }),
   createProperty('status', '状态', {
     option: CLB_STATUS_MAP,
@@ -111,7 +111,7 @@ const securityGroupProperties: ModelPropertyGeneric[] = [
     filterRules: (value) => buildMultipleValueRulesItem('cloud_id', value),
   }),
   createProperty('name', '名称', { op: QueryRuleOPEnum.CS }),
-  createProperty('vendor', '云厂商', { type: 'string', option: vendorOption }),
+  createProperty('vendor', '云厂商', { option: vendorOption, op: QueryRuleOPEnum.IN }),
   createProperty('account_id', '云账号ID', { type: 'string' }),
   createProperty('usage_biz_id', '使用业务', {
     filterRules: (value) => ({
