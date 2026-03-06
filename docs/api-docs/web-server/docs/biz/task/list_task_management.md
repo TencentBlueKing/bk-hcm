@@ -99,7 +99,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list
 |------------|--------------|------------------------------------------------------------------------------|
 | id         | string       | 任务管理数据ID                                                                     |
 | bk_biz_id  | int          | 业务ID                                                                         |
-| source     | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)                                           |
+| source     | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)、API调用(api)、页面操作(web)                                           |
 | vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                         |
 | state      | string       | 任务状态，如：为running（运行中）、failed（失败）、success（成功）、deliver_partial（部分成功）、cancel（取消） |
 | account_id | string       | 账号ID                                                                         |
@@ -227,7 +227,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list
 |------------|--------------|------------------------------------------------------------------------------|
 | id         | string       | 任务管理ID                                                                       |
 | bk_biz_id  | int          | 业务id                                                                         |
-| source     | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)                                           |
+| source     | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)、API调用(api)、页面调用(web)                                          |
 | vendor     | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                         |
 | state      | string       | 任务状态，如：为running（运行中）、failed（失败）、success（成功）、deliver_partial（部分成功）、cancel（取消） |
 | account_id | string       | 账号ID                                                                         |
