@@ -36,6 +36,7 @@ export const OPERATION_LOG_SOURCE = {
   API_CALL: 'api_call',
   BACKGROUND_SYNC: 'background_sync',
   ASYNCHRONOUS_TASKS: 'asynchronous_tasks',
+  WEB_CALL: 'web_call',
 } as const;
 
 export const OPERATION_LOG_RESOURCE_TYPE_NAME = {
@@ -76,6 +77,7 @@ export const OPERATION_LOG_SOURCE_NAME = {
   [OPERATION_LOG_SOURCE.API_CALL]: 'API调用',
   [OPERATION_LOG_SOURCE.BACKGROUND_SYNC]: '后台同步',
   [OPERATION_LOG_SOURCE.ASYNCHRONOUS_TASKS]: '异步任务',
+  [OPERATION_LOG_SOURCE.WEB_CALL]: '页面操作',
 };
 
 // res_type为负载均衡时的相关资源
