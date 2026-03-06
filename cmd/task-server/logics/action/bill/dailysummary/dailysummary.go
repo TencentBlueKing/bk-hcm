@@ -75,7 +75,6 @@ func getFilter(opt *DailySummaryOption, billDay int) *filter.Expression {
 	expressions = append(expressions, []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("main_account_id", opt.MainAccountID),
-		tools.RuleEqual("product_id", opt.ProductID),
 		tools.RuleEqual("bk_biz_id", opt.BkBizID),
 		tools.RuleEqual("vendor", opt.Vendor),
 		tools.RuleEqual("version_id", opt.VersionID),
