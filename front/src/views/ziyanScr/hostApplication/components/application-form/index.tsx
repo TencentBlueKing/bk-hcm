@@ -1583,6 +1583,7 @@ export default defineComponent({
                                 default: () => (
                                   <CvmDataDisk
                                     v-model={QCLOUDCVMForm.value.spec.data_disk}
+                                    isItDeviceType={isItDeviceType.value}
                                     currentCloudInstanceConfig={currentCloudInstanceConfig.value}
                                   />
                                 ),

@@ -407,6 +407,7 @@ watchEffect(() => {
           </template>
           <cvm-data-disk
             v-model="formModel.spec.data_disk"
+            :is-it-device-type="isItDeviceType"
             :current-cloud-instance-config="currentCloudInstanceConfig"
           />
         </bk-form-item>

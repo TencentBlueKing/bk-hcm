@@ -10,10 +10,33 @@ import { Plus } from 'bkui-vue/lib/icon';
 
 const model = defineModel<ICvmDataDisk[]>();
 const props = defineProps<{
+  isItDeviceType: boolean;
   currentCloudInstanceConfig: ICloudInstanceConfigItem;
 }>();
 
 const formItem = useFormItem();
+
+// 本地盘类型列表
+const localDiskTypes = [
+  CvmDataDiskType.LOCAL_BASIC,
+  CvmDataDiskType.LOCAL_SSD,
+  CvmDataDiskType.LOCAL_NVME,
+  CvmDataDiskType.LOCAL_NVME_BASIC,
+  CvmDataDiskType.LOCAL_PRO,
+];
+const isLocalDiskType = (type: CvmDataDiskType) => localDiskTypes.includes(type);
+
+// IT机型，并且local_disk_type_list有值，则可以选本地盘（与系统盘组件逻辑一致）
+const hasLocalDisk = computed(
+  () => props.isItDeviceType && props.currentCloudInstanceConfig?.local_disk_type_list?.length,
+);
+
+// 监听机型变化，当机型不支持本地盘时，清空已选择的本地盘数据盘
+watch(hasLocalDisk, (val) => {
+  if (!val && model.value?.length) {
+    model.value = model.value.filter((disk) => !isLocalDiskType(disk.disk_type));
+  }
+});
 
 const loading = ref(false);
 const dataDiskOptions = ref<ICvmDataDiskOption[]>([]);
@@ -49,7 +72,7 @@ watch(model, () => formItem?.validate('change'), { deep: true });
 </script>
 
 <template>
-  <div v-if="storageBlockAttr && storageBlockAmount" class="cvm-data-disk-item mb8">
+  <div v-if="isItDeviceType && storageBlockAttr && storageBlockAmount" class="cvm-data-disk-item mb8">
     <bk-input class="form-control" :model-value="CVM_DATA_DISK_INFO[storageBlockAttr.type].disk_name" disabled />
     <hcm-form-number :model-value="storageBlockAttr.min_size" class="form-control" prefix="大小" suffix="GB" disabled />
     <hcm-form-number :model-value="storageBlockAmount" class="form-control small" suffix="块" disabled />
