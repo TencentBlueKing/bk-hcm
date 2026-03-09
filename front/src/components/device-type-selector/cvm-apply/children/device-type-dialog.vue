@@ -132,12 +132,22 @@ const displayDeviceTypeList = computed(() => {
     .map((item) => {
       let available = true;
       let maxLimit = undefined;
+      let unavailableTip = '';
 
-      if (isRollingServer.value) {
-        available =
-          'SpecialType' !== item.device_type_class &&
-          item.device_family === rollingServerCvm.value?.device_group &&
-          !item.device_type.toLowerCase().startsWith('da');
+      if (item.disable) {
+        available = false;
+        unavailableTip = '该机型已被禁用';
+      } else if (isRollingServer.value) {
+        if (item.device_type_class === 'SpecialType') {
+          available = false;
+          unavailableTip = '滚服不支持专用机型';
+        } else if (item.device_family !== rollingServerCvm.value?.device_group) {
+          available = false;
+          unavailableTip = `机型族与继承套餐不匹配，需要「${rollingServerCvm.value?.device_group}」`;
+        } else if (item.device_type.toLowerCase().startsWith('da')) {
+          available = false;
+          unavailableTip = '滚服不支持 DA 系列机型';
+        }
       } else if (isGreenChannel.value || isSpringPool.value) {
         // 小额绿通禁用了available，在接口默认条件中已经过滤掉了，这里直接返回true
         available = true;
@@ -152,12 +162,16 @@ const displayDeviceTypeList = computed(() => {
         maxLimit = Math.floor(
           item.cpu_core > 0 && availableDeviceType ? availableDeviceType?.remain_core / item.cpu_core : 0,
         );
+        if (!available) {
+          unavailableTip = '当前计费模式下无该机型的预测';
+        }
       }
 
       return {
         ...item,
         available,
         maxLimit,
+        unavailableTip,
       };
     })
     .filter((item) => {
@@ -218,8 +232,13 @@ const displayColumns = computed(() => {
       type: 'single',
       thClassName: 'th-class-name',
       width: 40,
+      disabled: ({ row }) => !row.available,
       checkProps: ({ row }) => {
         return { disabled: !row.available };
+      },
+      attrs: ({ type, row }) => {
+        if (type === 'th' || row.available) return {};
+        return { title: row.unavailableTip };
       },
     },
     {
