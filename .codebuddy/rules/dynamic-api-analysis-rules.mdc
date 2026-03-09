@@ -1,0 +1,177 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-01-09T07:22:03.309Z
+provider: 
+---
+
+# 动态接口调用分析规则
+
+## 规则概述
+在分析项目中的API接口调用和使用链时，必须识别和追踪动态生成的接口地址，避免遗漏通过函数参数、变量拼接、模板字符串等方式构建的接口调用。
+
+## 核心分析策略
+
+### 1. 通用函数模式识别
+**优先级：🔴 最高**
+
+搜索以下通用函数模式：
+```javascript
+// 通用CRUD函数
+detail(type, id, vendor?)
+list(type, params?)
+create(type, data)
+update(type, id, data)
+delete(type, id)
+```
+
+**分析要点：**
+- 函数参数中的 `type` 通常对应API路径中的资源类型
+- 当 `type='images'` 时，实际调用 `/api/v1/.../images/...` 相关接口
+- 需要追踪所有调用该函数时传入的 `type` 值
+
+### 2. 动态URL构建模式
+**优先级：🔴 最高**
+
+**模式1：模板字符串拼接**
+```javascript
+`${baseUrl}/api/v1/cloud/${path}vendors/${vendor}/${type}/${id}`
+```
+
+**模式2：字符串连接**
+```javascript
+url + '/vendors/' + vendor + '/images/' + id
+```
+
+**模式3：路径函数生成**
+```javascript
+getBusinessApiPath(type) // 动态插入 bizs/{bizId}/
+```
+
+### 3. 环境变量和配置依赖
+**优先级：🟡 高**
+
+**必须搜索的模式：**
+- `${BK_HCM_AJAX_URL_PREFIX}` - 环境变量前缀
+- `window.PROJECT_CONFIG` - 运行时配置
+- `getBusinessApiPath()` - 业务路径生成函数
+- `useWhereAmI()` - 上下文感知函数
+
+### 4. 参数化接口识别
+**优先级：🟡 高**
+
+**搜索模式：**
+```regex
+/api/v1/.*\{.*\}/  # 路径参数
+/\$\{.*\}/         # 模板变量
+/.*\+.*api/        # 字符串拼接
+```
+
+**关键参数类型：**
+- `{vendor}` - 云厂商标识
+- `{id}` - 资源ID
+- `{type}` - 资源类型
+- `{bizId}` - 业务ID
+
+## 具体分析步骤
+
+### 步骤1：识别通用函数
+```bash
+# 搜索通用CRUD函数定义
+search_pattern: "detail.*\(.*type.*\)|list.*\(.*type.*\)"
+search_pattern: "function.*\(.*type.*\)|const.*=.*\(.*type.*\)"
+```
+
+### 步骤2：追踪函数调用
+```bash
+# 搜索函数调用位置
+search_pattern: "detail\(|\.detail\("
+search_pattern: "list\(|\.list\("
+# 分析传入的参数值
+search_pattern: "type.*=.*['\"].*['\"]"
+```
+
+### 步骤3：分析URL构建逻辑
+```bash
+# 搜索URL拼接模式
+search_pattern: "\`.*\$\{.*\}.*\`"
+search_pattern: ".*\+.*api.*\+"
+search_pattern: "concat.*api|join.*api"
+```
+
+### 步骤4：环境变量追踪
+```bash
+# 搜索环境变量使用
+search_pattern: "BK_HCM_AJAX_URL_PREFIX"
+search_pattern: "PROJECT_CONFIG"
+search_pattern: "getBusinessApiPath"
+```
+
+## 重要注意事项
+
+### ⚠️ 常见遗漏点
+1. **通用函数调用** - 最容易被忽略的接口使用方式
+2. **运行时参数替换** - 静态分析难以发现的动态值
+3. **条件性接口调用** - 基于业务逻辑的接口选择
+4. **嵌套函数调用** - 多层函数封装的接口调用
+
+### 📋 分析检查清单
+- [ ] 是否搜索了所有通用CRUD函数？
+- [ ] 是否追踪了函数调用时的参数传递？
+- [ ] 是否分析了URL模板字符串？
+- [ ] 是否检查了环境变量依赖？
+- [ ] 是否考虑了业务上下文切换？
+- [ ] 是否验证了参数化路径的所有可能值？
+
+### 🎯 输出要求
+分析结果必须包含：
+1. **静态接口列表** - 硬编码的接口地址
+2. **动态接口模式** - 参数化的接口模板
+3. **函数调用映射** - 通用函数到具体接口的映射关系
+4. **参数值枚举** - 所有可能的参数取值
+5. **使用位置详情** - 每个接口的具体调用位置和上下文
+
+## 示例分析结果格式
+
+```markdown
+### 接口：GET /api/v1/cloud/vendors/{vendor}/images/{id}
+
+**调用方式：**
+- 直接调用：0处
+- 动态调用：15处
+
+**动态调用详情：**
+1. **通用函数**：`resource.detail(type, id, vendor)`
+   - 调用位置：`image-detail.vue:45`
+   - 参数值：`type='images', vendor='tcloud', id=动态值`
+   - 生成接口：`/api/v1/cloud/vendors/tcloud/images/{id}`
+
+2. **使用场景**：
+   - 镜像详情页面查看
+   - 镜像信息组件展示
+   - 业务镜像管理
+
+**依赖分析：**
+- 环境变量：`BK_HCM_AJAX_URL_PREFIX`
+- 路径函数：`getBusinessApiPath('images')`
+- 上下文：业务页面 vs 资源页面
+```
+
+## 工具使用建议
+
+### 推荐搜索顺序
+1. `search_content` - 搜索通用函数定义
+2. `search_content` - 搜索函数调用位置  
+3. `read_file` - 读取关键文件分析逻辑
+4. `search_content` - 搜索参数传递模式
+5. `search_content` - 搜索URL构建模式
+
+### 关键文件类型
+- `store/*.ts` - 状态管理和API封装
+- `api/*.ts` - API接口定义
+- `hooks/*.ts` - 自定义Hook函数
+- `utils/*.ts` - 工具函数
+- `*.vue, *.tsx` - 组件中的接口调用
+
+遵循这些规则，可以确保全面、准确地分析项目中的接口调用链，避免遗漏动态生成的接口使用情况。

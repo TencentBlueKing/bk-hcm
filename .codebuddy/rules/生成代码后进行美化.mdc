@@ -1,0 +1,9 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-01-09T09:35:00.402Z
+provider: 
+---
+
+在模型返回并生成代码后，使用prettier进行一次代码格式化

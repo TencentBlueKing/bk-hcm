@@ -1,0 +1,9 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-01-09T10:30:35.153Z
+provider: 
+---
+
+在使用bkui-vue相关组件时，先搜索项目中其他有用到该组件的地方，参考其使用方法并结合bkui-vue3的MCP服务查询使用方式，最后输出具体的组件相关的业务代码

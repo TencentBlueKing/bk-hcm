@@ -1,0 +1,199 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-01-09T09:19:57.248Z
+provider: 
+---
+
+# Message 全局组件使用规则
+
+## 组件导入
+```typescript
+import { Message } from 'bkui-vue';
+```
+
+## 基本语法
+```typescript
+Message({
+  message: string,           // 必需：提示信息内容
+  theme?: string,           // 可选：主题类型
+  duration?: number,        // 可选：显示持续时间（毫秒）
+  delay?: number           // 可选：延迟显示时间（毫秒）
+});
+```
+
+## 参数详解
+
+### 1. message (必需参数)
+- **类型**: `string`
+- **说明**: 显示的提示信息内容
+- **示例**:
+  ```typescript
+  Message({ message: '提交成功' });
+  Message({ message: '复制成功' });
+  Message({ message: '操作失败' });
+  ```
+
+### 2. theme (可选参数)
+- **类型**: `'success' | 'error' | 'warning' | 'info'`
+- **默认值**: 无主题（普通样式）
+- **说明**: 控制提示框的主题颜色和图标
+- **使用场景**:
+  - `success`: 成功操作（绿色）
+  - `error`: 错误操作（红色）  
+  - `warning`: 警告信息（橙色）
+  - `info`: 一般信息（蓝色）
+
+### 3. duration (可选参数)
+- **类型**: `number`
+- **单位**: 毫秒
+- **默认值**: 系统默认（通常3000ms）
+- **说明**: 控制提示框显示的持续时间
+- **常用值**: `1500` (1.5秒)
+
+### 4. delay (可选参数)
+- **类型**: `number`
+- **单位**: 毫秒
+- **说明**: 延迟显示提示框的时间
+- **常用值**: `500` (0.5秒)
+
+## 常用使用模式
+
+### 1. 成功提示
+```typescript
+// 基础成功提示
+Message({ theme: 'success', message: '提交成功' });
+Message({ theme: 'success', message: '保存成功' });
+Message({ theme: 'success', message: '复制成功' });
+
+// 带持续时间的成功提示
+Message({ message: '已复制', theme: 'success', duration: 1500 });
+```
+
+### 2. 错误提示
+```typescript
+// 基础错误提示
+Message({ theme: 'error', message: '提交失败' });
+Message({ theme: 'error', message: '修改失败' });
+
+// 带错误详情的提示
+Message({ theme: 'error', message: `提交失败 ${error}` });
+```
+
+### 3. 警告提示
+```typescript
+// 操作进行中的警告
+Message({ 
+  message: '操作中, 请不要操作', 
+  theme: 'warning',
+  delay: 500 
+});
+
+// 校验警告
+Message({
+  theme: 'warning',
+  message: '校验不通过'
+});
+
+// 数据验证警告
+Message({ theme: 'error', message: '剩余生产数量必须大于0' });
+```
+
+### 4. 信息提示
+```typescript
+// 一般信息提示
+Message({ message: '刷新成功', theme: 'success' });
+Message({ theme: 'success', message: '请求已提交，5s后自动刷新' });
+```
+
+## 实际应用场景
+
+### 1. 表单提交反馈
+```typescript
+// 成功提交
+if (res.code === 0) {
+  Message({ theme: 'success', message: '提交成功' });
+}
+
+// 提交失败
+Message({ theme: 'error', message: res.message });
+```
+
+### 2. 异步操作反馈
+```typescript
+try {
+  await someAsyncOperation();
+  Message({ theme: 'success', message: '操作成功' });
+} catch (error) {
+  Message({ theme: 'error', message: '操作失败' });
+}
+```
+
+### 3. 复制操作反馈
+```typescript
+try {
+  await toClipboard(data);
+  Message({ theme: 'success', message: '复制成功' });
+} catch (error) {
+  Message({ theme: 'error', message: '复制失败' });
+}
+```
+
+### 4. 批量操作反馈
+```typescript
+const textTip = (text: string, theme: 'error' | 'success') => {
+  const themeDes = { error: '失败', success: '成功' };
+  Message({ 
+    message: `${text}${themeDes[theme]}`, 
+    theme, 
+    duration: 1500 
+  });
+};
+```
+
+## 最佳实践
+
+### 1. 参数顺序建议
+```typescript
+// 推荐：theme 在前，message 在后
+Message({ theme: 'success', message: '操作成功' });
+
+// 或者：message 在前，theme 在后
+Message({ message: '操作成功', theme: 'success' });
+```
+
+### 2. 条件提示
+```typescript
+// 根据条件显示不同主题
+Message({
+  theme: isSuccess ? 'success' : 'warning',
+  message: isSuccess ? '校验通过' : '校验不通过'
+});
+```
+
+### 3. 国际化支持
+```typescript
+// 使用 t() 函数进行国际化
+Message({ theme: 'success', message: t('提交成功') });
+Message({ theme: 'success', message: t('savePermissionSuccess') });
+```
+
+### 4. 错误处理
+```typescript
+// 包含错误详情
+Message({ theme: 'error', message: `操作失败: ${error.message}` });
+
+// 简洁错误提示
+Message({ theme: 'error', message: '操作失败' });
+```
+
+## 注意事项
+
+1. **message 参数是必需的**，不能省略
+2. **theme 参数决定样式**，根据操作结果选择合适的主题
+3. **duration 用于控制显示时长**，重要信息可适当延长
+4. **delay 用于延迟显示**，适用于需要等待的场景
+5. **支持动态内容**，可以使用模板字符串拼接动态信息
+6. **国际化友好**，配合 t() 函数使用
+7. **错误信息要清晰**，帮助用户理解问题所在
