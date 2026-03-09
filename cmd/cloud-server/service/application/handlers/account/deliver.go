@@ -65,8 +65,8 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 			"but add create action associate permissions failed, err: %v", err)}, err
 	}
 
-	// 不同步登记账号
-	if a.req.Type != enumor.RegistrationAccount {
+	// 仅同步资源账号
+	if a.req.Type == enumor.ResourceAccount {
 		go func() {
 			err = account.Sync(a.Cts.Kit, a.Client, a.req.Vendor, accountID)
 			if err != nil {
