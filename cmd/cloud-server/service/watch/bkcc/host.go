@@ -20,11 +20,11 @@
 package bkcc
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/cvm"
@@ -36,7 +36,6 @@ import (
 	"hcm/pkg/hooks"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
@@ -45,8 +44,8 @@ import (
 var allFields = make([]string, 0)
 
 // watchCCEvent 监听cmdb事件
-func (w *Watcher) watchCCEvent(sd serviced.ServiceDiscover, resType cmdb.CursorType, eventTypes []cmdb.EventType,
-	fields []string, consumeFunc func(kt *kit.Kit, events []cmdb.WatchEventDetail) error) {
+func (w *Watcher) watchCCEvent(ctx context.Context, tenantID string, resType cmdb.CursorType,
+	eventTypes []cmdb.EventType, fields []string, consumeFunc func(kt *kit.Kit, events []cmdb.WatchEventDetail) error) {
 
 	param := &cmdb.WatchEventParams{
 		EventTypes: eventTypes,
@@ -57,27 +56,30 @@ func (w *Watcher) watchCCEvent(sd serviced.ServiceDiscover, resType cmdb.CursorT
 	}
 
 	for {
-		if !sd.IsMaster() {
-			time.Sleep(10 * time.Second)
-			continue
+		select {
+		case <-ctx.Done():
+			return
+		default:
 		}
 
-		kt := core.NewBackendKit()
-		cursor, err := w.getEventCursor(kt, resType)
+		kt := core.NewTenantBackendKit(tenantID)
+		cursor, err := w.getEventCursor(kt, tenantID, resType)
 		if err != nil {
-			logs.Errorf("get event cursor failed, err: %v, type: %s, rid: %s", err, resType, kt.Rid)
+			logs.Errorf("get event cursor failed, err: %v, type: %s, tenant: %s, rid: %s", err, resType, tenantID,
+				kt.Rid)
 			continue
 		}
 		param.Cursor = cursor
 
 		result, err := cmdb.CmdbClient().ResourceWatch(kt, param)
 		if err != nil {
-			logs.Errorf("watch cmdb host resource failed, err: %v, req: %+v, rid: %s", err, param, kt.Rid)
+			logs.Errorf("watch cmdb host resource failed, err: %v, req: %+v, tenant: %s, rid: %s", err, param,
+				tenantID, kt.Rid)
 			// 如果事件节点不存在，cc会返回该错误码，此时需要将cursor设置为""，从当前时间开始监听事件
 			if strings.Contains(err.Error(), cmdb.CCErrEventChainNodeNotExist) {
-				if err = w.setEventCursor(kt, resType, ""); err != nil {
-					logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, rid: %s", err, resType,
-						"", kt.Rid)
+				if err = w.setEventCursor(kt, tenantID, resType, ""); err != nil {
+					logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, tenant: %s, rid: %s",
+						err, resType, "", tenantID, kt.Rid)
 				}
 			}
 			continue
@@ -86,32 +88,33 @@ func (w *Watcher) watchCCEvent(sd serviced.ServiceDiscover, resType cmdb.CursorT
 		if !result.Watched {
 			if len(result.Events) != 0 {
 				newCursor := result.Events[0].Cursor
-				if err = w.setEventCursor(kt, resType, newCursor); err != nil {
-					logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, rid: %s", err, resType,
-						newCursor, kt.Rid)
+				if err = w.setEventCursor(kt, tenantID, resType, newCursor); err != nil {
+					logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, tenant: %s, rid: %s",
+						err, resType, newCursor, tenantID, kt.Rid)
 				}
 			}
 			continue
 		}
 
 		if err = consumeFunc(kt, result.Events); err != nil {
-			logs.Errorf("consume event failed, err: %+v, type: %s, res: %+v, rid: %s", err, resType, result, kt.Rid)
+			logs.Errorf("consume event failed, err: %+v, type: %s, tenant: %s, res: %+v, rid: %s", err, resType,
+				tenantID, result, kt.Rid)
 		}
 
 		if len(result.Events) != 0 {
 			newCursor := result.Events[len(result.Events)-1].Cursor
-			if err = w.setEventCursor(kt, resType, newCursor); err != nil {
-				logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, rid: %s", err, resType,
-					newCursor, kt.Rid)
+			if err = w.setEventCursor(kt, tenantID, resType, newCursor); err != nil {
+				logs.Errorf("set event cursor failed, err: %v, resource type: %v, val: %s, tenant: %s, rid: %s",
+					err, resType, newCursor, tenantID, kt.Rid)
 			}
 		}
 	}
 }
 
 // WatchHostEvent 监听主机事件，增量同步主机
-func (w *Watcher) WatchHostEvent(sd serviced.ServiceDiscover) {
-	w.watchCCEvent(sd, cmdb.HostType, []cmdb.EventType{cmdb.Create, cmdb.Update, cmdb.Delete}, cmdb.HostFields,
-		w.consumeHostEvent)
+func (w *Watcher) WatchHostEvent(ctx context.Context, tenantID string) {
+	w.watchCCEvent(ctx, tenantID, cmdb.HostType, []cmdb.EventType{cmdb.Create, cmdb.Update, cmdb.Delete},
+		cmdb.HostFields, w.consumeHostEvent)
 }
 
 func (w *Watcher) consumeHostEvent(kt *kit.Kit, events []cmdb.WatchEventDetail) error {
@@ -569,8 +572,9 @@ func (w *Watcher) getHostBizID(kt *kit.Kit, hostIDs []int64) (map[int64]int64, e
 }
 
 // WatchHostRelationEvent 监听主机关系事件，增量修改主机关系
-func (w *Watcher) WatchHostRelationEvent(sd serviced.ServiceDiscover) {
-	w.watchCCEvent(sd, cmdb.HostRelation, []cmdb.EventType{cmdb.Create}, allFields, w.consumeHostRelationEvent)
+func (w *Watcher) WatchHostRelationEvent(ctx context.Context, tenantID string) {
+	w.watchCCEvent(ctx, tenantID, cmdb.HostRelation, []cmdb.EventType{cmdb.Create}, allFields,
+		w.consumeHostRelationEvent)
 }
 
 func (w *Watcher) consumeHostRelationEvent(kt *kit.Kit, events []cmdb.WatchEventDetail) error {

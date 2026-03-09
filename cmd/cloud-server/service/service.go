@@ -132,7 +132,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		if err != nil {
 			return nil, fmt.Errorf("new cc syncer failed, err: %v", err)
 		}
-		watcher.Watch(sd)
+		go watcher.Watch(sd)
 	}
 
 	if cc.CloudServer().BillConfig.Enable {
