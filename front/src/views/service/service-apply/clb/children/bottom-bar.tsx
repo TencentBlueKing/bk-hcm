@@ -98,6 +98,11 @@ export default defineComponent({
         // 自研云字段
         tgw_group_name: tgwGroupName,
         zhi_tong: formModel.vendor === VendorEnum.ZIYAN && isOpenVal ? formModel.zhi_tong : undefined,
+        // 带宽包ID只在公网且计费模式为带宽包时才传递
+        bandwidth_package_id:
+          isOpenVal && formModel.internet_charge_type === 'BANDWIDTH_PACKAGE'
+            ? formModel.bandwidth_package_id
+            : undefined,
         // 后端无用字段
         account_type: undefined as undefined,
         zoneType: undefined as undefined,
