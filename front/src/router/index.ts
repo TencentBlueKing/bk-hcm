@@ -46,6 +46,11 @@ const legacyRedirects: RouteRecordRaw[] = [
       };
     },
   },
+  // 旧: /resource/resource/account?type=xxx → 新: /service/account
+  {
+    path: '/resource/resource/account',
+    redirect: '/service/account',
+  },
   // 旧: /resource/account/detail/?accountId=xxx → 新: /service/account/details/:accountId
   {
     path: '/resource/account/detail',

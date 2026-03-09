@@ -17,7 +17,7 @@ import isEmail from 'validator/lib/isEmail';
 import {
   ValidateStatus,
   useSecretExtension,
-} from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+} from '@/views/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 
 const { FormItem } = Form;
 

@@ -38,10 +38,9 @@ const operationLogBiz: RouteRecordRaw[] = [
         owner: MENU_BUSINESS,
         menu: {
           i18n: '操作记录详情',
-          relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+          relative: MENU_BUSINESS_OPERATION_LOG,
         },
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        layout: { breadcrumb: { show: false } },
       }),
     },
   },
@@ -72,10 +71,9 @@ const operationLogRsc: RouteRecordRaw[] = [
     component: () => import('@/views/operation-log/details/flow-task/index'),
     meta: {
       ...new Meta({
-        title: '操作记录详情',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        layout: { breadcrumb: { show: false } },
         menu: {
+          i18n: '操作记录详情',
           relative: MENU_RESOURCE_OPERATION_LOG,
         },
       }),

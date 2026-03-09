@@ -1,21 +1,20 @@
 import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRoute } from 'vue-router';
 import { Success } from 'bkui-vue/lib/icon';
 import { Button, Select, Tab, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessStore } from '@/store';
-import { useFlowNode, NodeState, type Flow } from './useFlowNode';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
+import { useFlowNode, NodeState, type Flow, FlowNodeNameMap } from './useFlowNode';
 const { Option } = Select;
 const { TabPanel } = Tab;
 
 export default defineComponent({
   setup() {
     const route = useRoute();
-    const { isResourcePage } = useWhereAmI();
     const businessStore = useBusinessStore();
+    const { setTitle } = useBreadcrumb();
     const tasks = ref([]);
     const flow = ref<Flow>({});
     const isEndDisabled = computed(() => flow.value.state !== NodeState.running);
@@ -102,6 +101,10 @@ export default defineComponent({
       });
       flow.value = res.data.flow;
       tasks.value = res.data.tasks;
+      const flowName = FlowNodeNameMap[res.data.flow.name];
+      if (flowName) {
+        setTitle(`操作记录详情 - ${flowName}`);
+      }
     };
 
     watch(
@@ -129,11 +132,7 @@ export default defineComponent({
 
     return () => (
       <div class={'record-detail-container'}>
-        <DetailHeader>
-          <span class={'header-title'}>操作记录详情</span>
-          <span class={'header-content'}>&nbsp;- {flowInfo.value.name}</span>
-        </DetailHeader>
-        <div class={'record-detail-info-card'} style={isResourcePage ? { margin: '52px 0 0' } : null}>
+        <div class={'record-detail-info-card'}>
           <Success
             width={21}
             height={21}
@@ -157,9 +156,7 @@ export default defineComponent({
             终止任务
           </Button>
         </div>
-        <div
-          class={'main-wrapper'}
-          style={isResourcePage ? { margin: '16px 0 0', height: 'calc(100% - 120px)' } : null}>
+        <div class={'main-wrapper'}>
           <div class={'main-side-card'}>
             <p class={'main-side-card-title'}>执行步骤</p>
             <TimeLine class={'main-side-card-timeline'} list={nodes.value}></TimeLine>

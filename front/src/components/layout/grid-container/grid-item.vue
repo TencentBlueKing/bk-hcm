@@ -43,6 +43,11 @@ defineProps({
   display: grid;
   grid-column: var(--span) span;
 
+  // 使用 1/-1 替代 span N，确保无论实际列数如何都能跨满整行
+  &.span {
+    grid-column: 1 / -1;
+  }
+
   .item-label,
   .item-content {
     display: inline-flex;

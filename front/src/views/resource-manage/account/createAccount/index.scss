@@ -71,6 +71,10 @@
         height: 52px !important;
         display: flex;
         align-items: center;
+
+        .bk-dialog-footer {
+          flex: 1;
+        }
       }
 
       .bk-modal-close {

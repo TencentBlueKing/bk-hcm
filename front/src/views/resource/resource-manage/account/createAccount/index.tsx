@@ -1,3 +1,4 @@
+/** @deprecated 此文件已废弃，已迁移到 views/resource-manage/account/createAccount/index.tsx */
 import { Button, Dialog, Steps } from 'bkui-vue';
 import { PropType, defineComponent, ref } from 'vue';
 import './index.scss';
@@ -61,8 +62,7 @@ export default defineComponent({
           props.onCancel();
         }}
         title='云账号接入'
-        class={['create-account-dialog-container', { 'has-notice': isNoticeAlert.value }]}
-      >
+        class={['create-account-dialog-container', { 'has-notice': isNoticeAlert.value }]}>
         {{
           default: () => (
             <div class={'create-account-dialog-content'}>
@@ -129,8 +129,7 @@ export default defineComponent({
                     step.value = 1;
                     props.onCancel();
                   }}
-                  loading={isSubmitLoading.value}
-                >
+                  loading={isSubmitLoading.value}>
                   取消
                 </Button>
               ) : null}

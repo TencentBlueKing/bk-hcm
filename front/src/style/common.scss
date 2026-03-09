@@ -39,6 +39,9 @@ ul, ol, li {
 html, body {
   width: 100%;
   height: 100%;
+  // 设置页面最小宽度，当窗口可视区域小于此值时出现横向滚动条，
+  // 避免布局被压缩变形，保证内容可通过滚动完整查看
+  min-width: 1366px;
   scroll-behavior: smooth;
 }
 

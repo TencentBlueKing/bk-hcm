@@ -54,6 +54,7 @@ export default defineComponent({
     return () => (
       <Dialog
         fullscreen
+        transfer
         showMask={false}
         isShow={props.isShow}
         onClosed={() => {

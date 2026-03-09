@@ -95,6 +95,9 @@ const handleCollapse = (collapse: boolean) => {
 .hcm-app {
   :deep(.bk-navigation-wrapper) {
     .navigation-container {
+      // 覆盖组件内联的 max-width: calc(100vw - 60px)，使导航容器跟随文档宽度而非视口宽度
+      max-width: none !important;
+
       .container-content {
         padding: 0;
       }

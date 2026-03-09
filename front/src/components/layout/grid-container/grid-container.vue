@@ -31,7 +31,7 @@ export interface IGridContainerProps {
   contentMinWidth?: number | string;
   gap?: (number | string)[] | number | string;
   labelAlign?: 'center' | 'left' | 'right';
-  labelWidth?: number | string; // 上下布局时重置为100%
+  labelWidth?: number | string;
   layout?: 'horizontal' | 'vertical';
 }
 
@@ -123,7 +123,10 @@ const labelContainerWidth = computed(() => {
   &.vertical {
     row-gap: var(--row-gap, 24px);
     :deep(.grid-item) {
-      grid-template-columns: minmax(var(--content-min-width, 312px), var(--content-max-width, 1fr));
+      // vertical 布局下 label 在上、content 在下，content 没有最小宽度约束，
+      // 原默认值 312px 会在页面设置 min-width 后导致搜索表单等区域溢出不可见，
+      // 改为 0 让内容区宽度完全由外部 column 和容器宽度决定
+      grid-template-columns: minmax(var(--content-min-width, 0), var(--content-max-width, 1fr));
       // grid-template-rows: max-content;
       grid-auto-rows: auto minmax(var(--min-height, 32px), max-content);
 
