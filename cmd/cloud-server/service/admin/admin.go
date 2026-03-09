@@ -96,6 +96,13 @@ func (s *adminService) InitTenant(cts *rest.Contexts) (any, error) {
 		return nil, fmt.Errorf("itsm process init error: %w", err)
 	}
 
+	// 2. 其他云厂商内置账号初始化
+	_, err = s.adminLogics.InitVendorOtherAccount(cts.Kit)
+	if err != nil {
+		logs.Errorf("init vendor other account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// 租户表插入/更新租户数据
 	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)
 	if err != nil {

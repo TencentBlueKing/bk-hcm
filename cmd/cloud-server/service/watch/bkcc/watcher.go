@@ -20,9 +20,13 @@
 package bkcc
 
 import (
+	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"hcm/cmd/cloud-server/logics/tenant"
+	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/kit"
@@ -39,27 +43,84 @@ type Watcher struct {
 	EtcdCli       *clientv3.Client
 	leaseOp       *leaseOp
 	ccHostPoolBiz int64
+	mu            sync.Mutex
+	activeTenants map[string]context.CancelFunc
 }
 
 // NewWatcher create cc Watcher
 func NewWatcher(cliSet *client.ClientSet, etcdCli *clientv3.Client) (Watcher, error) {
 	op := &leaseOp{cli: clientv3.NewLease(etcdCli), leaseMap: make(map[string]clientv3.LeaseID)}
 	// todo ccHostPoolBiz后续使用cc提供的api获取
-	return Watcher{CliSet: cliSet, EtcdCli: etcdCli, leaseOp: op, ccHostPoolBiz: cc.CloudServer().CCHostPoolBiz}, nil
+	return Watcher{
+		CliSet:        cliSet,
+		EtcdCli:       etcdCli,
+		leaseOp:       op,
+		ccHostPoolBiz: cc.CloudServer().CCHostPoolBiz,
+		activeTenants: make(map[string]context.CancelFunc),
+	}, nil
 }
 
 // Watch cc event
 func (w *Watcher) Watch(sd serviced.ServiceDiscover) {
-	go w.WatchHostEvent(sd)
-	go w.WatchHostRelationEvent(sd)
+	for {
+		if !sd.IsMaster() {
+			w.cancelAllTenants()
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
+		kt := core.NewBackendKit()
+		tenantIDs, err := tenant.ListAllTenantID(kt, w.CliSet.DataService())
+		if err != nil {
+			logs.Errorf("list all tenant id failed, err: %v, rid: %s", err, kt.Rid)
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
+		tenantSet := make(map[string]struct{}, len(tenantIDs))
+		for _, id := range tenantIDs {
+			tenantSet[id] = struct{}{}
+		}
+
+		w.mu.Lock()
+		for _, tenantID := range tenantIDs {
+			if _, exists := w.activeTenants[tenantID]; !exists {
+				ctx, cancel := context.WithCancel(context.Background())
+				w.activeTenants[tenantID] = cancel
+				go w.WatchHostEvent(ctx, tenantID)
+				go w.WatchHostRelationEvent(ctx, tenantID)
+				logs.Infof("started watch goroutines for tenant: %s, rid: %s", tenantID, kt.Rid)
+			}
+		}
+		for tenantID, cancel := range w.activeTenants {
+			if _, exists := tenantSet[tenantID]; !exists {
+				cancel()
+				delete(w.activeTenants, tenantID)
+				logs.Infof("stopped watch goroutines for tenant: %s, rid: %s", tenantID, kt.Rid)
+			}
+		}
+		w.mu.Unlock()
+
+		time.Sleep(5 * time.Minute)
+	}
 }
 
-func getCursorKey(cursorType cmdb.CursorType) string {
-	return fmt.Sprintf("/hcm/event/cc/%s", cursorType)
+// cancelAllTenants cancels all active tenant watch goroutines and clears the active map.
+func (w *Watcher) cancelAllTenants() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	for tenantID, cancel := range w.activeTenants {
+		cancel()
+		delete(w.activeTenants, tenantID)
+	}
 }
 
-func (w *Watcher) getEventCursor(kt *kit.Kit, cursorType cmdb.CursorType) (string, error) {
-	key := getCursorKey(cursorType)
+func getCursorKey(tenantID string, cursorType cmdb.CursorType) string {
+	return fmt.Sprintf("/hcm/event/cc/%s/%s", tenantID, cursorType)
+}
+
+func (w *Watcher) getEventCursor(kt *kit.Kit, tenantID string, cursorType cmdb.CursorType) (string, error) {
+	key := getCursorKey(tenantID, cursorType)
 	resp, err := w.EtcdCli.Get(kt.Ctx, key)
 	if err != nil {
 		logs.Errorf("get cmdb event cursor from etcd fail, err: %v, key: %s, rid: %s", err, key, kt.Rid)
@@ -75,8 +136,8 @@ func (w *Watcher) getEventCursor(kt *kit.Kit, cursorType cmdb.CursorType) (strin
 	return string(resp.Kvs[0].Value), nil
 }
 
-func (w *Watcher) setEventCursor(kt *kit.Kit, cursorType cmdb.CursorType, cursor string) error {
-	key := getCursorKey(cursorType)
+func (w *Watcher) setEventCursor(kt *kit.Kit, tenantID string, cursorType cmdb.CursorType, cursor string) error {
+	key := getCursorKey(tenantID, cursorType)
 
 	leaseID, err := w.leaseOp.getLeaseID(kt, key)
 	if err != nil {
