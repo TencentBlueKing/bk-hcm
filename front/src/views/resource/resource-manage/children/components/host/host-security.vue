@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { ref, PropType, reactive, h, watch, computed, inject } from 'vue';
+import { ref, PropType, reactive, h, watch, computed } from 'vue';
+import HcmAuth from '@/components/auth/auth.vue';
 import { useI18n } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -9,8 +10,6 @@ import { QueryRuleOPEnum } from '@/typings';
 import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routerAction from '@/router/utils/action';
-import bus from '@/common/bus';
-
 import { Button, Message, OverflowTitle } from 'bkui-vue';
 import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
@@ -70,13 +69,6 @@ const state = reactive<any>({
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
-const authVerifyData: any = inject('authVerifyData');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
-
 const authSign = computed(() => {
   return isResourcePage.value
     ? { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.data.account_id] }
@@ -99,11 +91,6 @@ const multiple = computed(() => {
   const isMultiple = [VendorEnum.TCLOUD, VendorEnum.AWS];
   return isMultiple.includes(props.data.vendor);
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
@@ -202,34 +189,29 @@ const columns: any = [
             ['绑定'],
           ),
         h(
-          'span',
+          HcmAuth,
+          { sign: authSign.value, tag: 'span' },
           {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled:
-                  (data.vendor === 'azure' && !data.extension?.cloud_security_group_id) ||
-                  !authVerifyData.value?.permissionAction[actionName.value], // 如果没有安全组id 就不可以解绑
-                onClick() {
-                  if (data.vendor === 'azure') {
-                    securityId.value = data.extension.security_group_id;
-                    curreClickId.value = data.id;
-                  } else {
-                    securityId.value = data.id;
-                  }
-                  unBind(data);
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: noPerm || (data.vendor === 'azure' && !data.extension?.cloud_security_group_id),
+                  onClick() {
+                    if (data.vendor === 'azure') {
+                      securityId.value = data.extension.security_group_id;
+                      curreClickId.value = data.id;
+                    } else {
+                      securityId.value = data.id;
+                    }
+                    unBind(data);
+                  },
                 },
-              },
-              ['解绑'],
-            ),
-          ],
+                ['解绑'],
+              ),
+          },
         ),
       ]);
     },

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-import { ref, inject, computed } from 'vue';
-import DetailHeader from '../../common/header/detail-header';
+import { ref, inject, computed, watchEffect } from 'vue';
 import IpInfo from '../components/ip/ip-info.vue';
 import AssignEip from '../dialog/assign-eip/assign-eip';
 
@@ -8,11 +7,17 @@ import { InfoBox, Message } from 'bkui-vue';
 import { useRoute, useRouter } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
-import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
 import { IEip, EipStatus } from '@/typings';
 import { CLOUD_VENDOR } from '@/constants/resource';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
+import {
+  AUTH_UPDATE_IAAS_RESOURCE,
+  AUTH_DELETE_IAAS_RESOURCE,
+  AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+  AUTH_BIZ_DELETE_IAAS_RESOURCE,
+} from '@/constants/auth-symbols';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,9 +27,17 @@ const { t } = useI18n();
 const isShowAssignEip = ref(false);
 const showDelete = ref(false);
 const isDeleteing = ref(false);
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
+const { setTitle } = useBreadcrumb();
 
-const { loading, detail, getDetail } = useDetail('eips', route.query.id as string);
+const { loading, detail, getDetail } = useDetail('eips', route.params.id as string);
+
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`弹性IP：ID（${detail.value.id}）`);
+  }
+});
 
 const handleShowAssignEip = () => {
   isShowAssignEip.value = true;
@@ -40,7 +53,7 @@ const handleCloseDeleteEip = () => {
 
 const handleDeleteEip = () => {
   const postData: any = {
-    eip_id: route.query.id,
+    eip_id: route.params.id,
   };
   if (['gcp', 'azure'].includes(detail.value.vendor)) {
     postData.network_interface_id = detail.value.instance_id;
@@ -84,26 +97,19 @@ const handleShowDelete = () => {
 };
 
 const disableOperation = computed(() => {
-  return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
+  return whereAmI.value !== Senarios.business && detail.value.bk_biz_id !== -1;
 });
 
 const isResourcePage: any = inject('isResourcePage');
-const authVerifyData: any = inject('authVerifyData');
 
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [detail.value.account_id] };
 });
-
-const actionDeleteName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_delete' : 'biz_iaas_resource_delete';
+const deleteSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_DELETE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_DELETE_IAAS_RESOURCE, relation: [detail.value.account_id] };
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const hasNoRelateResource = ({ vendor, status }: IEip): boolean => {
   let res = false;
@@ -131,20 +137,7 @@ const canDelete = (data: IEip): boolean => {
   return hasNoRelateResource(data);
 };
 
-// 之前的 bktooltips option对象
-/* {
-  content: '该弹性IP已被绑定，或者被分配到业务，不能删除',
-  disabled: !(!canDelete(detail) || (!!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER'
-        || !authVerifyData?.permissionAction[actionDeleteName])),
-}*/
 const bkToolTipsOptions = computed(() => {
-  // 无权限
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value.permissionAction[actionName.value],
-    };
-  // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {
       content: '该弹性IP已分配到业务，仅可在业务下操作',
@@ -164,71 +157,59 @@ const bkToolTipsOptions = computed(() => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      弹性IP：ID（{{ detail.id }}）
-      <template #right>
-        <span v-if="!detail.instance_id" @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            @click="handleShowAssignEip"
-            :disabled="disableOperation || !authVerifyData?.permissionAction[actionName]"
-            v-bk-tooltips="{
-              content: '该弹性IP已分配到业务，仅可在业务下操作',
-              disabled: !disableOperation,
-            }"
-          >
-            {{ t('绑定') }}
-          </bk-button>
-        </span>
-        <span v-else @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="
-              disableOperation || detail.instance_type === 'OTHER' || !authVerifyData?.permissionAction[actionName]
-            "
-            @click="handleShowDeleteDialog"
-          >
-            {{ t('解绑') }}
-          </bk-button>
-        </span>
-        <span @click="showAuthDialog(actionDeleteName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="
-              !canDelete(detail) ||
-              !!detail.cvm_id ||
-              disableOperation ||
-              detail.instance_type === 'OTHER' ||
-              !authVerifyData?.permissionAction[actionDeleteName]
-            "
-            @click="handleShowDelete"
-            v-bk-tooltips="bkToolTipsOptions"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </span>
-      </template>
-    </detail-header>
+  <Teleport defer to="#breadcrumbExtra">
+    <hcm-auth v-if="!detail.instance_id" :sign="updateSign" tag="span" v-slot="{ noPerm }">
+      <bk-button
+        theme="primary"
+        @click="handleShowAssignEip"
+        :disabled="disableOperation || noPerm"
+        v-bk-tooltips="{
+          content: '该弹性IP已分配到业务，仅可在业务下操作',
+          disabled: !disableOperation,
+        }"
+      >
+        {{ t('绑定') }}
+      </bk-button>
+    </hcm-auth>
+    <hcm-auth v-else :sign="updateSign" tag="span" v-slot="{ noPerm }">
+      <bk-button
+        theme="primary"
+        :disabled="disableOperation || detail.instance_type === 'OTHER' || noPerm"
+        @click="handleShowDeleteDialog"
+      >
+        {{ t('解绑') }}
+      </bk-button>
+    </hcm-auth>
+    <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
+      <bk-button
+        theme="primary"
+        :disabled="
+          !canDelete(detail) || !!detail.cvm_id || disableOperation || detail.instance_type === 'OTHER' || noPerm
+        "
+        @click="handleShowDelete"
+        v-bk-tooltips="bkToolTipsOptions"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </hcm-auth>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
+    <bk-loading :loading="loading">
       <ip-info :detail="detail" />
       <assign-eip v-if="detail.id" v-model:is-show="isShowAssignEip" :detail="detail" @success-assign="getDetail" />
-    </div>
+    </bk-loading>
+  </div>
 
-    <bk-dialog title="解绑EIP" theme="danger" :is-show="showDelete" :quick-close="false" @closed="handleCloseDeleteEip">
-      <div>确定解绑EIP【{{ detail.id }}】吗</div>
-      <template #footer>
-        <section class="bk-dialog-footer">
-          <bk-button theme="danger" :loading="isDeleteing" @click="handleDeleteEip">确定</bk-button>
-          <bk-button class="bk-dialog-cancel" :disabled="isDeleteing" @click="handleCloseDeleteEip">取消</bk-button>
-        </section>
-      </template>
-    </bk-dialog>
-  </bk-loading>
+  <bk-dialog title="解绑EIP" theme="danger" :is-show="showDelete" :quick-close="false" @closed="handleCloseDeleteEip">
+    <div>确定解绑EIP【{{ detail.id }}】吗</div>
+    <template #footer>
+      <section class="bk-dialog-footer">
+        <bk-button theme="danger" :loading="isDeleteing" @click="handleDeleteEip">确定</bk-button>
+        <bk-button class="bk-dialog-cancel" :disabled="isDeleteing" @click="handleCloseDeleteEip">取消</bk-button>
+      </section>
+    </template>
+  </bk-dialog>
 </template>
 
 <style lang="scss" scoped>

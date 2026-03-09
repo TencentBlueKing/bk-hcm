@@ -10,12 +10,12 @@ export const ticketRoutes: RouteRecordRaw[] = [
   {
     path: '/service/my-apply',
     redirect: '/service/ticket',
-    meta: { ...new Meta({ notMenu: true }) },
+    meta: { ...new Meta({}) },
   },
   {
     path: '/service/my-apply/detail',
     redirect: '/service/ticket/detail',
-    meta: { ...new Meta({ notMenu: true }) },
+    meta: { ...new Meta({}) },
   },
   {
     path: 'ticket',
@@ -24,9 +24,9 @@ export const ticketRoutes: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
-        title: t('单据管理'),
-        isShowBreadcrumb: true,
-        icon: 'hcm-icon bkhcm-icon-my-apply',
+        menu: {
+          i18n: t('单据管理'),
+        },
       }),
     },
   },
@@ -37,7 +37,10 @@ export const ticketRoutes: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
-        notMenu: true,
+        menu: {
+          i18n: t('申请单详情'),
+          relative: MENU_SERVICE_TICKET_MANAGEMENT,
+        },
       }),
     },
   },

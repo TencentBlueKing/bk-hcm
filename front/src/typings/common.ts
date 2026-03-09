@@ -134,6 +134,7 @@ export type Awaitable<T> = Promise<T> | T;
 export interface IBreadcrumb {
   title: string;
   display: boolean;
+  back: boolean;
 }
 
 export type ISearchSelectValue = Array<{ id: string; name: string; values: { id: string; name: string }[] }>;

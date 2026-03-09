@@ -9,9 +9,6 @@ import { useSchemeStore } from '@/store';
 import SchemeRecommendDetail from '../components/scheme-recommend-detail';
 import { onBeforeRouteLeave } from 'vue-router';
 import { InfoBox } from 'bkui-vue';
-import { useVerify } from '@/hooks';
-import ErrorPage from '@/views/error-pages/403';
-
 export default defineComponent({
   name: 'SchemeRecommendationPage',
   setup() {
@@ -48,9 +45,6 @@ export default defineComponent({
       formData.user_distribution = [];
       schemeStore.setUserDistribution([]);
     };
-
-    const { authVerifyData } = useVerify();
-    if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     const handleChangeCountry = async () => {
       clearLastData();

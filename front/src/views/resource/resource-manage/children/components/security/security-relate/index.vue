@@ -12,7 +12,7 @@ import { SecurityGroupManageType } from '@/constants/security-group';
 import platform from './platform.vue';
 import biz from './biz.vue';
 
-const props = defineProps<{ detail: ISecurityGroupDetail }>();
+const props = defineProps<{ id: string; detail: ISecurityGroupDetail }>();
 
 const { whereAmI, getBizsId } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
@@ -38,15 +38,13 @@ const relatedResourcesCountList = ref<ISecurityGroupRelResCountItem[]>([]);
 const relatedBiz = ref<ISecurityGroupRelBusiness>(null);
 
 const getRelatedInfo = () => {
-  const { id } = props.detail;
   if (whereAmI.value === Senarios.business) {
-    // 业务下，关联资源list请求前置接口
-    securityGroupStore.queryRelBusiness(id).then((data) => (relatedBiz.value = data));
+    securityGroupStore.queryRelBusiness(props.id).then((data) => (relatedBiz.value = data));
   }
-  securityGroupStore.queryRelatedResourcesCount([id]).then((data) => (relatedResourcesCountList.value = data));
+  securityGroupStore.queryRelatedResourcesCount([props.id]).then((data) => (relatedResourcesCountList.value = data));
 };
-onBeforeMount(async () => {
-  if (props.detail) {
+onBeforeMount(() => {
+  if (props.id) {
     getRelatedInfo();
   }
 });
@@ -56,6 +54,7 @@ onBeforeMount(async () => {
   <div class="security-relate-page">
     <component
       :is="comps[viewType]"
+      :id="props.id"
       :detail="props.detail"
       :related-resources-count-list="relatedResourcesCountList"
       :related-biz="relatedBiz"

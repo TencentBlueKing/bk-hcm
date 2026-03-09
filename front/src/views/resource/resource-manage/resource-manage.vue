@@ -1,3 +1,10 @@
+<!--
+  @deprecated 此文件已废弃，原资源接入的功能已拆分为独立模块：
+  - 资源纳管（AccountVendorGroup + 资源列表）→ views/resource-manage/
+  - 回收管理 → views/recyclebin/
+  - 操作记录 → views/operation-log/
+  - 账号管理 → views/account-manage/（已移至工作台菜单）
+-->
 <script setup lang="ts">
 import { ref, watch, computed, provide, onMounted } from 'vue';
 import HostManage from './children/manage/host-manage.vue';

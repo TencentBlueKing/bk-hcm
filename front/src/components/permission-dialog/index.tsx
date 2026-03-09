@@ -1,13 +1,19 @@
+/**
+ * @deprecated 已废弃。操作级别权限弹窗已迁移到 components/permission/apply-dialog.vue，
+ * 通过 hooks/use-permission-dialog.ts 和 window.hcmPermissionDialog 调用。
+ * 此组件依赖的 useVerify hook 和 commonStore.authVerify 均已移除，不再可用。
+ */
 /* eslint-disable no-nested-ternary */
-import { defineComponent, PropType, watch, ref, h } from 'vue';
+import { computed, defineComponent, PropType, watch, ref, h } from 'vue';
 import permissions from '@/assets/image/403.png';
 import { useVerify } from '@/hooks';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useAccountSelectorStore } from '@/store/account-selector';
 import { useAccountStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { useRoute } from 'vue-router';
 
 type permissionType = {
   system_id: string;
@@ -42,9 +48,19 @@ export default defineComponent({
   setup(props, { emit }) {
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
-    const resourceAccountStore = useResourceAccountStore();
+    const route = useRoute();
+    const accountSelectorStore = useAccountSelectorStore();
     const accountStore = useAccountStore();
     const businessMapStore = useBusinessMapStore();
+
+    const currentAccountName = computed(() => {
+      const accountId = route.query.accountId as string;
+      if (!accountId) return '';
+      const account = accountSelectorStore.authorizedResourceAccountList.find(
+        (a: { id: string }) => a.id === accountId,
+      );
+      return account?.name || '';
+    });
 
     const columns = [
       {
@@ -66,9 +82,7 @@ export default defineComponent({
           return h('span', {}, [
             `【${data?.related_resource_types[0]?.type_name || '--'}】${
               whereAmI.value === Senarios.resource
-                ? resourceAccountStore.resourceAccount?.name
-                  ? `${resourceAccountStore.resourceAccount?.name}`
-                  : ''
+                ? currentAccountName.value || ''
                 : `${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`
             }`,
           ]);
@@ -106,7 +120,7 @@ export default defineComponent({
       tableData,
       handleClose,
       handleConfirm,
-      resourceAccountStore,
+      currentAccountName,
       whereAmI,
       accountStore,
     };
@@ -123,8 +137,7 @@ export default defineComponent({
           title={this.title}
           size={this.size}
           isShow={this.isShow}
-          onClosed={this.handleClose}
-        >
+          onClosed={this.handleClose}>
           {{
             default: () => {
               return (
@@ -149,8 +162,7 @@ export default defineComponent({
                     class='mr10 dialog-button'
                     theme='primary'
                     loading={this.loading}
-                    onClick={this.handleConfirm}
-                  >
+                    onClick={this.handleConfirm}>
                     {this.t('去申请')}
                   </bk-button>
                   <bk-button class='dialog-button' onClick={this.handleClose}>

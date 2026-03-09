@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watchEffect, defineExpose, watch, computed, PropType } from 'vue';
+import { ref, watchEffect, watch, computed, PropType } from 'vue';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { useBusinessStore } from '@/store';

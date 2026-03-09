@@ -1,3 +1,4 @@
+<!-- @deprecated 此文件已废弃，已迁移到 views/resource-manage/account/vendor-group/index.vue -->
 <script lang="ts" setup>
 import { ref, watch, watchEffect } from 'vue';
 import { storeToRefs } from 'pinia';

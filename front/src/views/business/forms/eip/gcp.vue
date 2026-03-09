@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
+import { ref, watch } from 'vue';
 
-const emit = defineEmits(['change']);
 const props = defineProps({
   region: {
     type: String,
   },
 });
-
+const emit = defineEmits(['change']);
 const formData = ref({
   eip_name: '',
   eip_count: 1,

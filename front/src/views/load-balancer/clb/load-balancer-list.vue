@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, inject, ref, Ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { LocationQueryRaw, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ConditionKeyType, SearchConditionFactory } from '../children/search/condition-factory';
 import { ISearchSelectValue } from '@/typings';
 import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import { getInstVip, parseIP } from '@/utils';
 
 import { VirtualRender } from 'bkui-vue';
@@ -75,11 +75,10 @@ const activeLoadBalancerId = ref<string>();
 const handleClick = (id: string) => {
   activeLoadBalancerId.value = id;
 
-  const query: LocationQueryRaw = { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value };
   if (id) {
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_DETAILS, params: { id }, query });
+    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_DETAILS, params: { id } });
   } else {
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW });
   }
 };
 

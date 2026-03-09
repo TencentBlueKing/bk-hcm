@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType, reactive, watch } from 'vue';
+import { computed, ref, watchEffect, PropType, reactive, watch } from 'vue';
 import { useAccountStore } from '@/store';
 import { SelectColumn } from '@blueking/ediatable';
 import { useRouter, useRoute } from 'vue-router';

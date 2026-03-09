@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, defineExpose, PropType, useAttrs, watch, onMounted } from 'vue';
+import { computed, ref, PropType, useAttrs, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
 

@@ -1,17 +1,17 @@
 <script lang="ts" setup>
 import { Message } from 'bkui-vue';
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
 import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
 import Confirm from '@/components/confirm';
 
-import { watch, ref, reactive, computed, provide } from 'vue';
+import { watch, ref, reactive, computed, provide, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { SecurityGroupManageType } from '@/constants/security-group';
@@ -21,9 +21,9 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 const { t } = useI18n();
 const { whereAmI, getBizsId } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
-const securityId = ref(route.query?.id);
-const vendor = ref(route.query?.vendor);
+const securityId = computed(() => route.params.id as string);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
   ipList: [],
@@ -32,13 +32,21 @@ const templateData = reactive({
   portGroupList: [],
 });
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
+// vendor 非详情 API 的前置依赖，可从 API 响应的 detail.vendor 中获取作为 fallback
+const vendor = computed(() => route.query?.vendor || detail.value?.vendor);
+
+watchEffect(() => {
+  if (securityId.value) {
+    setTitle(`${t('安全组')}：ID（${securityId.value}）`);
+  }
+});
 
 const tabs = [
   { name: t('基本信息'), value: 'detail' },
   { name: t('安全组规则'), value: 'rule' },
   { name: t('关联实例'), value: 'relate' },
 ];
-const activeTab = ref(route.query?.active || tabs[0].value);
+const activeTab = computed(() => (route.query?.active as string) || tabs[0].value);
 
 const handleTabsChange = (val: string) => {
   if (val === 'rule') getRelatedSecurityGroups(detail.value);
@@ -186,22 +194,19 @@ provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
-  <detail-header>
-    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
-    <template #right>
-      <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
-    </template>
-  </detail-header>
+  <Teleport defer to="#breadcrumbExtra">
+    <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
+  </Teleport>
 
-  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
       <template #default="type">
         <security-info
           :id="securityId"
           :vendor="vendor"
           v-if="type === 'detail'"
-          :loading="loading"
           :detail="detail"
+          :loading="loading"
           :get-detail="getDetail"
         />
         <security-rule
@@ -210,8 +215,9 @@ provide('operateTooltipsOption', operateTooltipsOption);
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
+          :account-id="detail?.account_id"
         />
-        <security-relate v-else :detail="detail" />
+        <security-relate v-else :id="securityId" :detail="detail" />
       </template>
     </detail-tab>
   </div>

@@ -10,33 +10,35 @@ export const provideBreadcrumb = () => {
   const data = reactive<IBreadcrumb>({
     title: '',
     display: false,
+    back: true,
   });
 
   watch(
     () => route.meta,
     (meta: RouteMetaConfig, oldMeta: RouteMetaConfig) => {
-      // 比较是为了防止push等操作产生路由更新时通过setTitle设置的title被覆盖，这是目前比较经济的做法
-      // 视之后的使用情况，如果比较不能满足所有场景可以考虑通过route.name判断或者重新赋值title时优先取当前data.title
-      if (!isEqual(meta, oldMeta)) {
-        data.title = meta.title;
-        data.display = meta?.layout?.breadcrumbs?.show ?? meta.isShowBreadcrumb;
+      // oldMeta 为 undefined 时是首次调用（immediate），必须初始化；
+      // 后续变更通过 isEqual 比较，防止 query 变化时覆盖 setTitle 设置的 title
+      if (!oldMeta || !isEqual(meta, oldMeta)) {
+        data.title = meta.menu?.i18n;
+        data.display = meta.layout?.breadcrumb?.show !== false;
+        data.back = meta.layout?.breadcrumb?.back ?? true;
       }
     },
-    { deep: true },
+    { deep: true, immediate: true },
   );
 
   provide(breadcrumbSymbol, data);
 };
 
 export default function useBreadcrumb() {
-  const breadcrumb = inject<IBreadcrumb>(breadcrumbSymbol);
+  const data = inject<IBreadcrumb>(breadcrumbSymbol);
 
   const setTitle = (newTitle: string) => {
-    breadcrumb.title = newTitle;
+    data.title = newTitle;
   };
 
   return {
-    breadcrumb,
+    data,
     setTitle,
   };
 }

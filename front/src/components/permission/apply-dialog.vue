@@ -11,9 +11,9 @@ export interface IPermApplyDialogProps {
 
 defineOptions({ name: 'permission-apply-dialog' });
 
-const props = defineProps<IPermApplyDialogProps>();
-
 const model = defineModel<boolean>();
+
+const props = defineProps<IPermApplyDialogProps>();
 
 const { t } = useI18n();
 
@@ -104,12 +104,12 @@ defineExpose({ show: permissionDialog.show });
     <bk-table class="permission-table" :data="list" :max-height="190">
       <bk-table-column :label="t('系统')" :width="150" prop="system" show-overflow-tooltip></bk-table-column>
       <bk-table-column :label="t('需要申请的权限')" :width="200" prop="action" show-overflow-tooltip></bk-table-column>
-      <bk-table-column :label="t('关联的资源实例')" :width="342" prop="resources">
+      <bk-table-column :label="t('关联的资源实例')" :width="342" prop="resources" show-overflow-tooltip>
         <template #default="{ row }">
           <template v-if="row.resources?.length">
-            <div class="resource-item" v-for="instance in row.resources" :key="instance.id">
+            <bk-overflow-title v-for="instance in row.resources" :key="instance.id" class="resource-item" type="tips">
               【{{ instance.type_name }}】{{ instance.name }}
-            </div>
+            </bk-overflow-title>
           </template>
           <span v-else>--</span>
         </template>

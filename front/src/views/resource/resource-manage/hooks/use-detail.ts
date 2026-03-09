@@ -3,7 +3,7 @@ import { VendorMap } from '@/common/constant';
 import { useResourceStore } from '@/store/resource';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 
-export default (type: string, id: string, cb?: Function, vendor?: string) => {
+export default (type: string, id: string, cb?: Function, vendor?: string, resourceLevel?: boolean) => {
   const loading = ref(false);
   const detail = ref<any>({});
   const resourceStore = useResourceStore();
@@ -13,7 +13,7 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
   const getDetail = async () => {
     loading.value = true;
     resourceStore
-      .detail(type, id, vendor)
+      .detail(type, id, vendor, resourceLevel)
       .then(async ({ data = {} }: { data: any }) => {
         detail.value = {
           ...data,

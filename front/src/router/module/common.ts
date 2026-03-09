@@ -1,4 +1,5 @@
 /**
+ * @deprecated 此文件已废弃，路由配置已迁移到 views 目录下的各模块 route-config.ts
  * 公告路由
  */
 

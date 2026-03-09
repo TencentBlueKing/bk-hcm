@@ -97,7 +97,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div class={['save-footer', 'apply-clb-bottom-bar', { 'business-apply-clb-bottom-bar': !isBusinessPage }]}>
+      <div class='apply-clb-bottom-bar'>
         <hcm-auth sign={{ type: createClbAuthSymbol.value, relation: [computedBizId.value] }} class='mr10'>
           {{
             default: ({ noPerm }: { noPerm: boolean }) => (

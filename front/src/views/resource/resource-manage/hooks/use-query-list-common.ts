@@ -4,7 +4,8 @@
 import type { FilterType } from '@/typings/resource';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useBusinessStore, useResourceStore } from '@/store';
-import { Ref, ref, watch } from 'vue';
+import { Ref, ref, watch, onBeforeUnmount } from 'vue';
+import axios from 'axios';
 type SortType = {
   column: {
     field: string;
@@ -83,6 +84,7 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
 
       return details;
     } catch (error) {
+      if (axios.isCancel(error)) return;
       console.error(error);
       datas.value = [];
       pagination.value.count = 0;
@@ -112,15 +114,21 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
     triggerApi();
   };
 
+  // filter 和 url 可能在同一轮变化中先后更新（如 activeType 切换时同步改 url，异步路由变化再改 filter），
+  // 用 debounce 合并为一次请求，避免中间状态触发多余的 API 调用。
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+  onBeforeUnmount(() => clearTimeout(debounceTimer));
+
   watch(
     [() => props.filter, () => url],
     () => {
-      pagination.value.current = 1; // 页码重置
-      triggerApi();
+      pagination.value.current = 1;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => triggerApi());
     },
     {
       deep: true,
-      flush: 'post', // DOM更新后执行
+      flush: 'post',
     },
   );
 

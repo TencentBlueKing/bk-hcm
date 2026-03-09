@@ -1,56 +1,27 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
-import { computed, PropType } from 'vue';
-// import {
-//   useI18n,
-// } from 'vue-i18n';
-
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
-  whereAmI: {
-    type: String,
-  },
-});
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.ROUTING);
 
-const { searchData, searchValue, filter } = useFilter(props);
-
-// use hooks
-// const {
-//   t,
-// } = useI18n();
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
   { filter: filter.value },
   'route_tables',
 );
-
-const selectSearchData = computed(() => {
-  return [
-    {
-      name: '路由表ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-  ];
-});
 
 const { columns, settings } = useColumns('route');
 </script>
 
 <template>
   <bk-loading :loading="isLoading">
-    <bk-search-select
+    <resource-search-select
       class="search"
-      clearable
-      :conditions="[]"
-      :data="selectSearchData"
       v-model="searchValue"
-      value-behavior="need-key"
+      :resource-type="ResourceTypeEnum.ROUTING"
+      @change="(condition) => searchQs.set(condition)"
     />
     <bk-table
       :settings="settings"
@@ -73,7 +44,6 @@ const { columns, settings } = useColumns('route');
   margin-top: 20px;
 }
 .search {
-  width: 500px;
   margin-left: auto;
 }
 </style>

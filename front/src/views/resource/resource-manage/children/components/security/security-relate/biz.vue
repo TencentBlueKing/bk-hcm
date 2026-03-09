@@ -15,6 +15,7 @@ import collapseDataList from './data-list/collapse-data-list.vue';
 import search from './search/index.vue';
 
 const props = defineProps<{
+  id: string;
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
   relatedBiz: ISecurityGroupRelBusiness;
@@ -75,6 +76,7 @@ watch(tabActive, () => {
         v-for="{ bk_biz_id: bkBizId, res_count: resCount } in relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]"
         ref="collapse-data-list"
         :key="bkBizId"
+        :id="props.id"
         :detail="detail"
         :bk-biz-id="bkBizId"
         :tab-active="tabActive"

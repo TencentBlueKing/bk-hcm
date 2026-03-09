@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bkui-knowledge": {
+      "command": "npx",
+      "args": ["-y", "@blueking/bkui-knowledge", "."]
+    }
+  }
+}

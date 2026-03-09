@@ -98,7 +98,7 @@ const handleReset = () => {
 };
 
 const handleViewDetails = (row: IAuditItem) => {
-  const { id, res_type, res_name, res_id } = row;
+  const { id, res_type, res_id } = row;
   const flowId = row.detail?.data?.res_flow?.flow_id;
 
   if (CLB_RES_TYPES.includes(res_type) && flowId) {
@@ -107,7 +107,6 @@ const handleViewDetails = (row: IAuditItem) => {
         name: MENU_RESOURCE_OPERATION_LOG_DETAILS,
         query: {
           record_id: id,
-          name: res_name,
           flow: flowId,
           res_id,
         },
@@ -155,4 +154,9 @@ provide('isResourcePage', true);
   </template>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.entry-rsc {
+  height: 100%;
+  padding: 24px;
+}
+</style>

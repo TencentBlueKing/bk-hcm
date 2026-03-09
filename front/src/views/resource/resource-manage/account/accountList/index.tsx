@@ -8,8 +8,7 @@ import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute, useRouter } from 'vue-router';
-import { useVerify } from '@/hooks';
-import PermissionDialog from '@/components/permission-dialog';
+import { AUTH_IMPORT_ACCOUNT } from '@/constants/auth-symbols';
 
 export default defineComponent({
   setup() {
@@ -21,15 +20,6 @@ export default defineComponent({
       useAllVendorsAccounts();
     const { accountId, setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
-    const {
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
-    } = useVerify();
-
     const handleCancel = () => {
       // isCreateAccountDialogShow.value = false;
       router.push({
@@ -76,27 +66,29 @@ export default defineComponent({
         <div class={'account-list-header'}>
           <p class={'header-title'}>账号列表</p>
           <div class={'header-btn'}>
-            <Button
-              text
-              theme='primary'
-              class={!authVerifyData.value?.permissionAction?.account_import ? 'hcm-no-permision-text-btn' : ''}
-              onClick={() => {
-                if (!authVerifyData.value?.permissionAction?.account_import) {
-                  handleAuth('account_import');
-                } else {
-                  router.push({
-                    query: {
-                      ...route.query,
-                      dialog: 'create_account',
-                    },
-                  });
-                }
-              }}>
-              <div class={'flex-row align-items-center'}>
-                <i class={'hcm-icon bkhcm-icon-plus-circle mr3'} />
-                接入
-              </div>
-            </Button>
+            <hcm-auth sign={{ type: AUTH_IMPORT_ACCOUNT }}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Button
+                    text
+                    theme='primary'
+                    disabled={noPerm}
+                    onClick={() => {
+                      router.push({
+                        query: {
+                          ...route.query,
+                          dialog: 'create_account',
+                        },
+                      });
+                    }}>
+                    <div class={'flex-row align-items-center'}>
+                      <i class={'hcm-icon bkhcm-icon-plus-circle mr3'} />
+                      接入
+                    </div>
+                  </Button>
+                ),
+              }}
+            </hcm-auth>
           </div>
         </div>
 
@@ -151,13 +143,6 @@ export default defineComponent({
           )}
         </Loading>
         <CreateAccount isShow={isCreateAccountDialogShow.value} onCancel={handleCancel} onSubmit={handleSubmit} />
-        {/* 申请权限 */}
-        <PermissionDialog
-          v-model:isShow={showPermissionDialog.value}
-          params={permissionParams.value}
-          onCancel={handlePermissionDialog}
-          onConfirm={handlePermissionConfirm}
-        />
       </div>
     );
   },

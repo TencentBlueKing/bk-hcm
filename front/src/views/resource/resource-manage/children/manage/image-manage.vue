@@ -1,47 +1,19 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
-
-import { PropType, watch, computed } from 'vue';
+import { watch } from 'vue';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
-
-const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
-  whereAmI: {
-    type: String,
-  },
-});
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
 const { columns, settings } = useColumns('image');
 
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.IMAGE);
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
-  {
-    filter: filter.value,
-  },
+  { filter: filter.value },
   'images',
 );
-
-const selectSearchData = computed(() => {
-  return [
-    {
-      name: '镜像ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-    // ...[{
-    //   name: '公网ipv4',
-    //   id: 'public_ipv4',
-    // }, {
-    //   name: '内网ipv4',
-    //   id: 'private_ipv4',
-    // }],
-  ];
-});
 
 // 字段列表
 const fieldList: string[] = columns.map((item) => item.field);
@@ -61,13 +33,11 @@ watch(datas, (list) => {
 
 <template>
   <bk-loading :loading="isLoading">
-    <bk-search-select
+    <resource-search-select
       class="search"
-      clearable
-      :conditions="[]"
-      :data="selectSearchData"
       v-model="searchValue"
-      value-behavior="need-key"
+      :resource-type="ResourceTypeEnum.IMAGE"
+      @change="(condition) => searchQs.set(condition)"
     />
     <bk-table
       :settings="settings"
@@ -86,7 +56,6 @@ watch(datas, (list) => {
 
 <style lang="scss" scoped>
 .search {
-  width: 500px;
   margin-left: auto;
 }
 </style>

@@ -1,10 +1,10 @@
 import http from '@/http';
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import rollRequest from '@blueking/roll-request';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VendorEnum } from '@/common/constant';
 import { FilterType } from '@/typings';
-// import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 export interface GetAllSortParams {
@@ -23,34 +23,25 @@ export interface BatchBindSecurityInfoParams {
   security_group_ids: string[];
 }
 
-// 获取
-const getBusinessApiPath = (type?: string) => {
-  const { getBizsId } = useWhereAmI();
-  if (location.href.includes('business') && type !== 'images') {
-    return `bizs/${getBizsId()}/`;
-  }
-  return '';
-};
+export const useResourceStore = defineStore('resource', () => {
+  const { getBusinessApiPath } = useWhereAmI();
 
-export const useResourceStore = defineStore({
-  id: 'resourceStore',
-  state: () => ({
-    securityRuleDetail: {},
-    vendorOfCurrentResource: '' as VendorEnum,
-  }),
-  actions: {
+  const securityRuleDetail = ref<any>({});
+  const vendorOfCurrentResource = ref<VendorEnum>();
+
+  return {
+    securityRuleDetail,
+    vendorOfCurrentResource,
     setSecurityRuleDetail(data: any) {
-      this.securityRuleDetail = data;
+      securityRuleDetail.value = data;
     },
     setVendorOfCurrentResource(vendorName: VendorEnum) {
-      this.vendorOfCurrentResource = vendorName;
+      vendorOfCurrentResource.value = vendorName;
     },
     // 更新安全组规则排序
     updateRulesSort(data: any, type: string, id: string) {
       return http.put(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
-          type,
-        )}vendors/${type}/security_groups/${id}/rules/batch/update`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${type}/security_groups/${id}/rules/batch/update`,
         data,
       );
     },
@@ -81,24 +72,23 @@ export const useResourceStore = defineStore({
      * @return {*}
      */
     list(data: any, type: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/list`, data, {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data, {
         cancelPrevious: true,
       });
     },
-    detail(type: string, id: number | string, vendor?: string) {
+    detail(type: string, id: number | string, vendor?: string, resourceLevel?: boolean) {
+      const bizPath = resourceLevel ? '' : getBusinessApiPath();
       if (vendor) {
-        return http.get(
-          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${vendor}/${type}/${id}`,
-        );
+        return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${bizPath}vendors/${vendor}/${type}/${id}`);
       }
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`);
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${bizPath}${type}/${id}`);
     },
     delete(type: string, id: string | number) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`);
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`);
     },
     deleteBatch(type: string, data: any, config?: any) {
       return http.delete(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/batch`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/batch`,
         { data },
         config,
       );
@@ -107,7 +97,7 @@ export const useResourceStore = defineStore({
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, { data });
     },
     recycled(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recycle`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/recycle`, data);
     },
     bindVPCWithCloudArea(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vpcs/bind/cloud_areas`, data);
@@ -120,23 +110,21 @@ export const useResourceStore = defineStore({
     },
     getRouteList(type: string, id: string, data: any) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
-          type,
-        )}vendors/${type}/route_tables/${id}/routes/list`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${type}/route_tables/${id}/routes/list`,
         data,
       );
     },
     // 分配到业务下
     assignBusiness(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/assign/bizs`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/assign/bizs`, data);
     },
     // 新增
     add(type: string, data: any, config?: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}`, data, config);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}`, data, config);
     },
     // 更新
     update(type: string, data: any, id: string | number, config?: any) {
-      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`, data, config);
+      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/${id}`, data, config);
     },
     // 获取
     countSubnetIps(id: string | number) {
@@ -158,7 +146,7 @@ export const useResourceStore = defineStore({
     },
     // 操作主机相关
     cvmOperate(type: string, data: { ids: string[] }) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}cvms/batch/${type}`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/batch/${type}`, data);
     },
     // 主机分配
     cvmAssignBizs(data: { cvm_ids: string[]; bk_biz_id: string }) {
@@ -167,9 +155,7 @@ export const useResourceStore = defineStore({
     // 网络接口
     cvmNetwork(type: string, id: string) {
       return http.get(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
-          type,
-        )}vendors/${type}/network_interfaces/cvms/${id}`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${type}/network_interfaces/cvms/${id}`,
       );
     },
     getCommonList(data: any, url: string, config = {}) {
@@ -177,35 +163,33 @@ export const useResourceStore = defineStore({
     },
     getNetworkList(type: string, id: string) {
       return http.get(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
-          type,
-        )}vendors/${type}/network_interfaces/cvms/${id}`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${type}/network_interfaces/cvms/${id}`,
       );
     },
     attachDisk(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('disks')}disks/attach`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disks/attach`, data);
     },
     detachDisk(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('disks')}disks/detach`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disks/detach`, data);
     },
     associateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('eips')}eips/associate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eips/associate`, data);
     },
     disassociateEip(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('eips')}eips/disassociate`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eips/disassociate`, data);
     },
     getCloudRegion(type: string, data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${type}/regions/list`, data);
     },
     // 销毁
     deleteRecycledData(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/batch`, {
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}recycled/${type}/batch`, {
         data,
       });
     },
     // 回收
     recoverRecycledData(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/recover`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/recover`, data);
     },
 
     // 主机所关联资源(硬盘, eip)的个数
@@ -215,12 +199,12 @@ export const useResourceStore = defineStore({
 
     // 虚拟机回收
     recycledCvmsData(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('cvms')}cvms/recycle`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
     },
 
     // 回收资源详情
     recycledResourceDetail(type: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/${id}`);
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}recycled/${type}/${id}`);
     },
 
     // 获取azure默认数据
@@ -290,15 +274,15 @@ export const useResourceStore = defineStore({
     },
     // 创建
     create(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/create`, data);
     },
     // 同步拉取资源
     syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams, config?: any) {
       return http.post(
-        `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
         params,
         config,
       );
     },
-  },
+  };
 });

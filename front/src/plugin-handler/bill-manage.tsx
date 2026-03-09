@@ -124,7 +124,7 @@ const useSearchCompHandler = () => {
   const productSearchLabel = t('业务');
 
   const renderProductComponent = (modal: Ref<ISearchModal>) => {
-    return <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple urlKey={BILL_BIZS_KEY} />;
+    return <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple urlKey={BILL_BIZS_KEY} base64Encode />;
   };
 
   return {

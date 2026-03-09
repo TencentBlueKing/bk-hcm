@@ -1,52 +1,38 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
-
-import { PropType, h, computed, withDirectives } from 'vue';
+import { h, computed, withDirectives } from 'vue';
 import { bkTooltips, Button, InfoBox, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useSelection from '../../hooks/use-selection';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
 import { EipStatus, IEip } from '@/typings/business';
 import { CLOUD_VENDOR } from '@/constants/resource';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { AUTH_BIZ_DELETE_IAAS_RESOURCE, AUTH_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
-  bkBizId: Number,
 });
+
+const { getBizsId } = useWhereAmI();
 
 // use hooks
 const resourceStore = useResourceStore();
 
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.EIP);
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
   'eips',
 );
-
-const selectSearchData = computed(() => {
-  return [
-    {
-      name: 'IP资源ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-  ];
-});
 
 const { columns, settings } = useColumns('eips');
 
@@ -93,7 +79,7 @@ const deleteAuthType = computed(() =>
 );
 const canDelete = (data: IEip): boolean => {
   // 分配到业务下面后不可删除
-  const isInBusiness = data.cvm_id || (data.bk_biz_id !== -1 && !location.href.includes('business'));
+  const isInBusiness = data.cvm_id || (data.bk_biz_id !== -1 && props.isResourcePage);
   return hasNoRelateResource(data) && !isInBusiness;
 };
 
@@ -121,7 +107,7 @@ const renderColumns = [
     render({ data }: any) {
       return h(
         HcmAuth,
-        { sign: { type: deleteAuthType.value, relation: [props.bkBizId] } },
+        { sign: { type: deleteAuthType.value, relation: [getBizsId()] } },
         {
           default: ({ noPerm }: { noPerm: boolean }) =>
             withDirectives(
@@ -190,7 +176,7 @@ defineExpose({ fetchComponentsData });
           }
         "
       />
-      <hcm-auth :sign="{ type: deleteAuthType, relation: [props.bkBizId] }" v-slot="{ noPerm }">
+      <hcm-auth :sign="{ type: deleteAuthType, relation: [getBizsId()] }" v-slot="{ noPerm }">
         <bk-button
           class="mw88"
           :disabled="selections.length <= 0 || noPerm"
@@ -202,13 +188,11 @@ defineExpose({ fetchComponentsData });
         </bk-button>
       </hcm-auth>
 
-      <bk-search-select
-        class="w500 ml10 mlauto"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
+      <resource-search-select
+        class="mlauto"
         v-model="searchValue"
-        value-behavior="need-key"
+        :resource-type="ResourceTypeEnum.EIP"
+        @change="(condition) => searchQs.set(condition)"
       />
     </section>
 

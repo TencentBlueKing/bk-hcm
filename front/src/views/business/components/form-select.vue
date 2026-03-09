@@ -6,8 +6,9 @@ import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum, IAccountItem } fr
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useAccountSelectorStore } from '@/store/account-selector';
 import AccountSelector from '@/components/account-selector/index-new.vue';
+import { useRoute } from 'vue-router';
 
 const props = defineProps({
   hidden: {
@@ -25,19 +26,20 @@ const props = defineProps({
   show: Boolean,
 });
 
+const emit = defineEmits(['change']);
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
-const emit = defineEmits(['change']);
 const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
 const accountSelector = ref(null);
 const { isResourcePage } = useWhereAmI();
+const route = useRoute();
+const accountSelectorStore = useAccountSelectorStore();
 
 const securityType: any = inject('securityType');
-const resourceAccountStore = useResourceAccountStore();
 
 const state = reactive<{ filter: BusinessFormFilter }>({
   filter: {
@@ -192,10 +194,14 @@ watch(
   () => props.show,
   (val) => {
     if (val) {
-      // 业务下或资源未选择指定账号情况下为空
+      // 从 route.query 获取 accountId，联查账号详情
+      const accountId = route.query.accountId as string;
+      const account = accountId
+        ? accountSelectorStore.authorizedResourceAccountList.find((a: { id: string }) => a.id === accountId)
+        : null;
       return getAccountList({
-        vendor: resourceAccountStore.resourceAccount?.vendor,
-        id: resourceAccountStore.resourceAccount?.id,
+        vendor: account?.vendor,
+        id: account?.id,
       });
     }
     return resetForm();

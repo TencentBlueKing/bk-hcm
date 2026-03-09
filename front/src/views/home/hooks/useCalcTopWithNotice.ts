@@ -1,3 +1,6 @@
+/**
+ * @deprecated 此文件已废弃，请使用 hooks/use-calc-top-with-notice.ts
+ */
 import { computed, Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCommonStore } from '@/store';

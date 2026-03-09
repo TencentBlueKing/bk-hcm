@@ -1,4 +1,4 @@
-import { computed, defineComponent, inject, PropType, ref } from 'vue';
+import { computed, defineComponent, PropType, ref } from 'vue';
 
 import { OverflowTitle } from 'bkui-vue';
 import { Share, Copy } from 'bkui-vue/lib/icon';
@@ -24,17 +24,6 @@ export default defineComponent({
   emits: ['change'],
 
   setup(props, { emit }) {
-    // 注入预鉴权相关参数
-    const authAction = inject<any>('authAction');
-    // undefined：不校验权限；true：有权限；false：无权限
-    const isAuth = computed(() => {
-      if (authAction) {
-        const { authVerifyData, authId } = authAction;
-        return !(authId && !authVerifyData?.value?.permissionAction?.[authId]);
-      }
-      return undefined;
-    });
-
     const gridTemplateColumnsStyle = computed(() => `repeat(${props.col}, calc(${100 / props.col}% - 12px))`);
     // item 最大宽度至少需要减去 column-gap * (col - 1), 避免出现横向滚动条
     const itemMaxWidthBaseDecrement = computed(() => 12 * (props.col - 1));
@@ -44,16 +33,9 @@ export default defineComponent({
     };
 
     const editCompRefs = ref(new Map<string, any>());
-    // 如果祖辈组件有 provide 预鉴权参数, 则需要对编辑操作进行预鉴权处理
     const handleEdit = (name: string) => {
       if (!name) return;
-      if (isAuth.value === false) {
-        // 无权限, 展示权限申请弹窗
-        const { authId, handleAuth } = authAction;
-        handleAuth(authId);
-      } else {
-        editCompRefs.value.get(name).handleEdit();
-      }
+      editCompRefs.value.get(name).handleEdit();
     };
 
     return {
@@ -61,7 +43,6 @@ export default defineComponent({
       itemMaxWidthBaseDecrement,
       handleBlur,
       handleEdit,
-      isAuth,
       editCompRefs,
     };
   },
@@ -172,15 +153,7 @@ export default defineComponent({
               );
             }
 
-            return (
-              <i
-                class={[
-                  'icon hcm-icon bkhcm-icon-bianji edit-icon',
-                  { 'hcm-no-permision-text-btn': this.isAuth === false },
-                ]}
-                onClick={() => this.handleEdit(name)}
-              />
-            );
+            return <i class='icon hcm-icon bkhcm-icon-bianji edit-icon' onClick={() => this.handleEdit(name)} />;
           };
 
           return (

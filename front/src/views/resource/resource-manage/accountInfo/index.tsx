@@ -1,3 +1,4 @@
+/** @deprecated 此文件已废弃，已迁移到 views/account-manage/accountInfo/index.tsx */
 import { RESOURCE_DETAIL_TABS } from '@/common/constant';
 import { Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';

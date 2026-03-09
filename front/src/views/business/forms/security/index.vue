@@ -6,9 +6,9 @@ import FormSelect from '@/views/business/components/form-select.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
 import { BusinessFormFilter } from '@/typings';
 import { useBusinessStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useRoute } from 'vue-router';
 import { type IBusinessItem } from '@/store/business-global';
 import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
@@ -22,7 +22,7 @@ const props = defineProps<{
 const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const { t } = useI18n();
 const useBusiness = useBusinessStore();
-const resourceAccountStore = useResourceAccountStore();
+const route = useRoute();
 
 const formRef = ref(null);
 const formSelectRef = ref(null);
@@ -119,7 +119,7 @@ const submit = async () => {
   }
 };
 const getAccountList = () => {
-  const accountId = ref(resourceAccountStore.resourceAccount?.id ?? '');
+  const accountId = ref((route.query.accountId as string) ?? '');
   if (!isResourcePage || !accountId.value) return;
 
   const { accountBizList } = useAccountBusiness(accountId);

@@ -1,9 +1,12 @@
 import { useBusinessGlobalStore } from './business-global';
+import { useAuthStore } from './auth';
+import { viewAuthConfig } from '@/constants/view-auth';
 
 export const preload = async () => {
   const { getFullBusiness, getAuthorizedBusiness } = useBusinessGlobalStore();
+  const authStore = useAuthStore();
 
-  return Promise.all([getFullBusiness(), getAuthorizedBusiness()]);
+  return Promise.all([getFullBusiness(), getAuthorizedBusiness(), authStore.fetchViewPermissions(viewAuthConfig)]);
 };
 
 export * from './staff';

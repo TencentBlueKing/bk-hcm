@@ -1,6 +1,6 @@
 import { computed, defineComponent, nextTick, ref, watch, watchEffect } from 'vue';
 import './index.scss';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
+
 import CommonCard from '@/components/CommonCard';
 import { Alert, Button, Form, Input, Message, ResizeLayout } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
@@ -129,9 +129,6 @@ export default defineComponent({
 
     return () => (
       <div class={'create-second-account-wrapper'}>
-        <DetailHeader class={'header'}>
-          <span class={'header-title'}>创建二级账号</span>
-        </DetailHeader>
         <ResizeLayout placement='right' initialDivide={'25%'} collapsible>
           {{
             main: () => (
@@ -140,7 +137,6 @@ export default defineComponent({
                   theme='warning'
                   closable
                   title='申请帐号需要进行邮箱配置，请确认邮箱配置完成再提交申请，否则将导致帐号申请失败！'
-                  class={'ml24 mr-24'}
                 />
                 <Form formType='vertical' model={formModel} ref={formInstance} auto-check={true} rules={rules.value}>
                   <CommonCard title={() => '基础信息'} class={'info-card'}>
@@ -242,7 +238,7 @@ export default defineComponent({
                       </FormItem>
                     </div>
                   </CommonCard>
-                  <Button theme='primary' class={'mr8 ml24 mw88'} onClick={handleSubmit} loading={isLoading.value}>
+                  <Button theme='primary' class={'mr8 mw88'} onClick={handleSubmit} loading={isLoading.value}>
                     提交
                   </Button>
                   <Button class='mw88' disabled={isLoading.value} onClick={() => router.back()}>

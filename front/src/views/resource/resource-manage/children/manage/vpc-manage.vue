@@ -1,31 +1,24 @@
 <script setup lang="ts">
-import type { DoublePlainObject, FilterType } from '@/typings/resource';
+import type { DoublePlainObject } from '@/typings/resource';
 
-import { PropType, defineExpose, computed } from 'vue';
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilterFromRoute from '@/views/resource-manage/hooks/use-filter-from-route';
 import useSelection from '../../hooks/use-selection';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<FilterType>,
-  },
   isResourcePage: {
     type: Boolean,
-  },
-  whereAmI: {
-    type: String,
   },
 });
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-// use hooks
-// const { t } = useI18n();
 const { columns, settings } = useColumns('vpc');
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter, searchQs } = useFilterFromRoute(ResourceTypeEnum.VPC);
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
   'vpcs',
@@ -47,16 +40,6 @@ const isCurRowSelectEnable = (row: any) => {
   }
 };
 
-const hostSearchData = computed(() => {
-  return [
-    {
-      name: 'VPC ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-  ];
-});
-
 const renderColumns = [...columns];
 
 defineExpose({ fetchComponentsData });
@@ -76,14 +59,13 @@ defineExpose({ fetchComponentsData });
           }
         "
       />
-      <bk-search-select
-        class="w500 ml10 search-selector-container"
-        clearable
-        :conditions="[]"
-        :data="hostSearchData"
-        v-model="searchValue"
-        value-behavior="need-key"
-      />
+      <div class="search-selector-container">
+        <resource-search-select
+          v-model="searchValue"
+          :resource-type="ResourceTypeEnum.VPC"
+          @change="(condition) => searchQs.set(condition)"
+        />
+      </div>
     </section>
 
     <bk-table
@@ -105,10 +87,6 @@ defineExpose({ fetchComponentsData });
 </template>
 
 <style lang="scss" scoped>
-.w100 {
-  width: 100px;
-}
-
 .toolbar {
   display: flex;
   align-items: center;

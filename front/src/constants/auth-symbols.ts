@@ -7,11 +7,12 @@ export const AUTH_UPDATE_CLOUD_SELECTION_SCHEME = Symbol.for('auth_update_cloud_
 export const AUTH_DELETE_CLOUD_SELECTION_SCHEME = Symbol.for('auth_delete_cloud_selection_scheme');
 
 /**
- * 账号
+ * 资源账号
  */
 export const AUTH_FIND_ACCOUNT = Symbol.for('auth_find_account');
 export const AUTH_IMPORT_ACCOUNT = Symbol.for('auth_import_account');
 export const AUTH_UPDATE_ACCOUNT = Symbol.for('auth_update_account');
+export const AUTH_DELETE_ACCOUNT = Symbol.for('auth_delete_account');
 
 /**
  * 业务访问
@@ -55,7 +56,7 @@ export const AUTH_DELETE_CERT = Symbol.for('auth_delete_cert');
 export const AUTH_BIZ_DELETE_CERT = Symbol.for('auth_biz_delete_cert');
 
 /**
- * 账号管理
+ * 账单账号
  */
 export const AUTH_FIND_ROOT_ACCOUNT = Symbol.for('auth_find_root_account');
 export const AUTH_FIND_MAIN_ACCOUNT = Symbol.for('auth_find_main_account');

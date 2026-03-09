@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import NetworkInterfaceInfo from '../components/network-interface/network-interface-info.vue';
 import NetworkInterfaceInfoGcp from '../components/network-interface/network-interface-info-gcp.vue';
@@ -12,20 +11,16 @@ import NetworkInterfaceNetsecgroup from '../components/network-interface/network
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
-import { computed } from '@vue/runtime-core';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 
-import { inject } from 'vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-
+import { computed, inject, watchEffect } from 'vue';
 const route = useRoute();
 const { t } = useI18n();
+const { setTitle } = useBreadcrumb();
 
 const isResourcePage: any = inject('isResourcePage');
-const { whereAmI } = useWhereAmI();
 
-console.log('isResourcePage', isResourcePage.value);
-
-const { loading, detail } = useDetail('network_interfaces', route.query.id as string, (data: any) => {
+const { loading, detail } = useDetail('network_interfaces', route.params.id as string, (data: any) => {
   data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
   switch (data.vendor) {
     case 'azure':
@@ -46,6 +41,12 @@ const { loading, detail } = useDetail('network_interfaces', route.query.id as st
         });
       }
       break;
+  }
+});
+
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`${t('网络接口')}：ID（${detail.value.id}）`);
   }
 });
 
@@ -84,12 +85,10 @@ const tabs = computed(() => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>{{ t('网络接口') }}：ID（{{ detail.id }}）</detail-header>
-
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-tab :tabs="tabs">
-        <template #default="type">
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="tabs">
+      <template #default="type">
+        <bk-loading :loading="loading">
           <template v-if="detail.vendor === 'azure'">
             <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
             <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
@@ -113,10 +112,10 @@ const tabs = computed(() => {
               v-if="type === 'ipconfig'"
             ></network-interface-ipconfig-huawei>
           </template>
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

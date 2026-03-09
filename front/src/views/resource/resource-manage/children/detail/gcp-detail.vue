@@ -1,7 +1,6 @@
 <!-- eslint-disable @typescript-eslint/prefer-optional-chain -->
 <script lang="ts" setup>
 // @ts-nocheck
-import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 // import GcpRelate from '../components/gcp/gcp-relate.vue';
@@ -9,8 +8,6 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
-// import bus from '@/common/bus';
-
 import { useRoute } from 'vue-router';
 
 import { useResourceStore } from '@/store/resource';
@@ -18,15 +15,15 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 import { useI18n } from 'vue-i18n';
 
-import { ref, watch } from 'vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { ref, watch, watchEffect } from 'vue';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const { t } = useI18n();
 
@@ -37,17 +34,16 @@ const hostTabs = [
   },
 ];
 
-const id = route.query?.id;
+const id = route.params.id as string;
+
+watchEffect(() => {
+  if (id) {
+    setTitle(`${t('GCP防火墙')}：ID（${id}）`);
+  }
+});
+
 const gcpDetail = ref({});
 const gcpLoading = ref(true);
-
-// const authVerifyData: any = inject('authVerifyData');
-// const isResourcePage: any = inject('isResourcePage');
-
-// const actionName = computed(() => {   // 资源下没有业务ID
-//   console.log('isResourcePage.value', isResourcePage.value);
-//   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-// });
 
 const { loading, detail } = useDetail('vendors/gcp/firewalls/rules', id);
 
@@ -230,44 +226,10 @@ const submit = async (data: any) => {
   isLoading.value = loading;
   isShowGcpAdd.value = false;
 };
-
-// const isBindBusiness = computed(() => {
-//   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
-// });
-
-// // 权限弹窗 bus通知最外层弹出
-// const showAuthDialog = (authActionName: string) => {
-//   bus.$emit('auth', authActionName);
-// };
 </script>
 
 <template>
-  <detail-header>
-    {{ t('GCP防火墙') }}：ID（{{ `${id}` }}）
-    <template #right>
-      <!-- <div @click="showAuthDialog(actionName)">
-        <bk-button
-          :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-          class="w100 ml10"
-          theme="primary"
-          @click="handleGcpAdd(false)"
-        >
-          {{ t('修改') }}
-        </bk-button>
-      </div> -->
-      <!-- <bk-button
-      class="w100 ml10"
-      theme="primary"
-    >
-      {{ t('删除') }}
-    </bk-button> -->
-    </template>
-  </detail-header>
-  <!-- <detail-info
-  :fields="gcpFields"
-  :detail="gcpDetail"
-/> -->
-  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
     <detail-tab :tabs="hostTabs">
       <template #default>
         <detail-info :fields="gcpFields" :detail="gcpDetail" label-width="150px" global-copyable />

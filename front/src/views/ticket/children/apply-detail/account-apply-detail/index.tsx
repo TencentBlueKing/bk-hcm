@@ -10,7 +10,6 @@ import useFormModel from '@/hooks/useFormModel';
 import { BILL_VENDORS_MAP } from '@/views/bill/account/account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
-import { useVerify } from '@/hooks';
 import { IApplicationDetail } from '../index';
 import BusinessValue from '@/components/display-value/business-value.vue';
 import UserValue from '@/components/display-value/user-value.vue';
@@ -94,18 +93,14 @@ export default defineComponent({
       extension: computedExtension.value, // 不同云厂商的信息
     });
 
-    const { authVerifyData } = useVerify();
-    const hasRootAccountFindPermission = computed(() => authVerifyData.value?.permissionAction?.root_account_find);
-
     onMounted(async () => {
-      // 有权限才获取列表
-      if (hasRootAccountFindPermission.value) {
+      try {
         const { data } = await billStore.root_accounts_list({
           filter: { op: 'and', rules: [] },
           page: { limit: 500, start: 0, count: false },
         });
         rootAccountList.value = data.details.map((v: any) => ({ name: v.name, id: v.id, key: v.id, vendor: v.vendor }));
-      } else {
+      } catch {
         rootAccountList.value = [];
       }
     });

@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch, ComputedRef } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PrimaryTable, TableColumn, type TableProps, type SelectOptions } from '@blueking/tdesign-ui';
 import { ModelPropertyColumn } from '@/model/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import { RsInstType, RsDeviceType } from '@/views/load-balancer/constants';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_HOST_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
 
 const props = defineProps<{ rsList: any[]; allList: any[]; vendor: VendorEnum; type: RsDeviceType }>();
 
 const emit = defineEmits(['delete']);
-
-const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 
 const { t } = useI18n();
 const regionStore = useRegionsStore();
@@ -192,8 +190,9 @@ const handleTableSelectChange = (value: TableProps['selectedRowKeys'], ctx: Sele
 const handleIPClick = (instId: string, rowKey: string) => {
   visitedIpSet.add(rowKey);
   routerAction.open({
-    name: 'hostBusinessDetail',
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, id: instId, type: props.vendor },
+    name: MENU_BUSINESS_HOST_DETAILS,
+    params: { id: instId },
+    query: { type: props.vendor },
   });
 };
 
@@ -225,7 +224,7 @@ const handleViewTargetGroupDetails = (row: any) => {
     params: {
       id: row.target_group_id,
     },
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, type: 'list', vendor: props.vendor },
+    query: { type: 'list', vendor: props.vendor },
   });
 };
 

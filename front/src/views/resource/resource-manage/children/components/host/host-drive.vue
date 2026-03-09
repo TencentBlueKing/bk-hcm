@@ -1,16 +1,18 @@
 <script lang="ts" setup>
-import { h, watch, ref, inject, computed, withDirectives } from 'vue';
+import { h, watch, ref, inject, computed, withDirectives, resolveComponent } from 'vue';
 import { bkTooltips, Button } from 'bkui-vue';
 
-import { useRouter, useRoute } from 'vue-router';
 import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
 import useQueryList from '../../../hooks/use-query-list';
-import bus from '@/common/bus';
 import { useResourceStore } from '@/store/resource';
-import { useAccountStore } from '@/store/account';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
+import { useRoute } from 'vue-router';
+import { MENU_BUSINESS_DRIVE_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const props = defineProps({
   data: {
@@ -22,22 +24,16 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
-const accountStore = useAccountStore();
-const router = useRouter();
+const { whereAmI, getBizsId } = useWhereAmI();
+
 const route = useRoute();
-
 const isResourcePage: any = inject('isResourcePage');
-const authVerifyData: any = inject('authVerifyData');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+const bizId = computed(() => getBizsId());
+const updateSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.data?.account_id] };
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
+const HcmAuthComp = resolveComponent('hcm-auth');
 
 const { datas, triggerApi, isLoading } = useQueryList({}, 'disk', () => {
   return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)]);
@@ -48,11 +44,6 @@ const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive
 const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
 
 const generateTooltipsOptions = (data: any) => {
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value?.permissionAction?.[actionName.value],
-    };
   if (isResourcePage.value && props.data?.bk_biz_id !== -1)
     return {
       content: '该主机已分配到业务，仅可在业务下操作',
@@ -92,28 +83,21 @@ const columns = ref([
           text: true,
           theme: 'primary',
           onClick() {
-            const type = 'drive';
-            const routeInfo: any = {
-              query: {
-                id: cell,
-                type: props.data.vendor,
-              },
-            };
-            // 业务下
-            if (route.path.includes('business')) {
-              routeInfo.query.bizs = accountStore.bizs;
+            const routeInfo: any = {};
+            if (whereAmI.value === Senarios.business) {
               Object.assign(routeInfo, {
-                name: `${type}BusinessDetail`,
+                name: MENU_BUSINESS_DRIVE_DETAILS,
+                params: { id: cell },
               });
             } else {
+              // vendor 取自主机数据，挂载硬盘与主机厂商相同
               Object.assign(routeInfo, {
-                name: 'resourceDetail',
-                params: {
-                  type,
-                },
+                name: MENU_RESOURCE_DETAIL,
+                params: { resourceType: 'drive', id: cell },
+                query: { accountId: route.query.accountId, vendor: props.data.vendor },
               });
             }
-            router.push(routeInfo);
+            routerAction.redirect(routeInfo, { history: true });
           },
         },
         [cell || '--'],
@@ -149,32 +133,27 @@ const columns = ref([
     label: '操作',
     render({ data }: any) {
       return h(
-        'span',
+        HcmAuthComp,
+        { sign: updateSign.value, tag: 'span' },
         {
-          onClick() {
-            showAuthDialog(actionName.value);
-          },
-        },
-        [
-          withDirectives(
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled:
-                  !authVerifyData.value?.permissionAction[actionName.value] ||
-                  data.is_system_disk ||
-                  (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                onClick() {
-                  handleUninstallDrive(data);
+          default: ({ noPerm }: { noPerm: boolean }) => [
+            withDirectives(
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: noPerm || data.is_system_disk || (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                  onClick() {
+                    handleUninstallDrive(data);
+                  },
                 },
-              },
-              ['卸载'],
+                ['卸载'],
+              ),
+              [[bkTooltips, generateTooltipsOptions(data)]],
             ),
-            [[bkTooltips, generateTooltipsOptions(data)]],
-          ),
-        ],
+          ],
+        },
       );
     },
   },
@@ -298,16 +277,11 @@ watch(
 
 <template>
   <bk-loading :loading="isLoading">
-    <span @click="showAuthDialog(actionName)">
-      <bk-button
-        class="btn"
-        theme="primary"
-        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-        @click="handleMountedDrive"
-      >
+    <hcm-auth :sign="updateSign" tag="span" v-slot="{ noPerm }">
+      <bk-button class="btn" theme="primary" :disabled="isBindBusiness || noPerm" @click="handleMountedDrive">
         挂载
       </bk-button>
-    </span>
+    </hcm-auth>
     <bk-table class="mt16" row-hover="auto" :columns="columns" :data="datas" show-overflow-tooltip />
   </bk-loading>
 

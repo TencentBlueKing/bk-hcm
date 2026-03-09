@@ -1,6 +1,6 @@
 import { computed, defineComponent, ref, watch } from 'vue';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
+import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import CloudAreaSelector from '../components/common/cloud-area-selector';
 import ZoneSelector from '../components/common/zone-selector';
@@ -12,11 +12,10 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { SubnetInput } from '@/components/subnet-input';
 import { IP_RANGES } from './contansts';
 import { Info } from 'bkui-vue/lib/icon';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 const { FormItem } = Form;
 const { Group: RadioGroup } = Radio;
@@ -27,7 +26,6 @@ export default defineComponent({
     const { cond, isEmptyCond } = useCondtion();
     const { isResourcePage, whereAmI } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
-    const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
     const route = useRoute();
@@ -80,7 +78,7 @@ export default defineComponent({
             idx: 0,
             range: IP_RANGES[VendorEnum.GCP],
           };
-          subCIDR.value = IP_RANGES[VendorEnum.GCP][0];
+          [subCIDR.value] = IP_RANGES[VendorEnum.GCP];
         }
       },
       {
@@ -88,12 +86,15 @@ export default defineComponent({
       },
     );
 
-    watch([() => resourceAccountStore.resourceAccount?.id, whereAmI.value], () => {
-      if (whereAmI.value === Senarios.resource) {
-        curIpRef.value?.reset();
-        subIpRef.value?.reset();
-      }
-    });
+    watch(
+      () => route.query.accountId,
+      () => {
+        if (whereAmI.value === Senarios.resource) {
+          curIpRef.value?.reset();
+          subIpRef.value?.reset();
+        }
+      },
+    );
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -367,70 +368,66 @@ export default defineComponent({
       ],
     };
 
-    const fromConfig = computed<Partial<RouteLocationRaw>>(() => {
-      return { query: { ...route.query } };
-    });
-
     return () => (
-      <div>
-        <DetailHeader fromConfig={fromConfig.value}>
-          <p class={'purchase-vpc-header-title'}>购买VPC</p>
-        </DetailHeader>
-        <div class='create-form-container' style={isResourcePage && { padding: 0 }}>
-          <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
-            <ConditionOptions
-              type={ResourceTypeEnum.VPC}
-              bizs={cond.bizId}
-              v-model:cloudAccountId={cond.cloudAccountId}
-              v-model:vendor={cond.vendor}
-              v-model:region={cond.region}
-              v-model:resourceGroup={cond.resourceGroup}
-            />
-            {formConfig.value
-              .filter(({ display }) => display !== false)
-              .map(({ title, children }) => (
-                <CommonCard title={() => title} class={'mb16'}>
-                  {children
-                    .filter(({ display }) => display !== false)
-                    .map(({ label, description, tips, required, property, content }) => (
-                      <FormItem label={label} required={required} property={property} description={description}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter((sub) => sub.display !== false)
-                              .map((sub) => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  description={sub?.description}>
-                                  {sub.content()}
-                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
-                      </FormItem>
-                    ))}
-                </CommonCard>
-              ))}
-          </Form>
-        </div>
-        <div class='action-bar' style={{ paddingLeft: isResourcePage && 'calc(15% + 24px)' }}>
-          <Button
-            theme='primary'
-            loading={submitting.value}
-            disabled={submitDisabled.value}
-            class={'mr8'}
-            onClick={handleFormSubmit}>
-            {isResourcePage ? t('提交') : t('提交审批')}
-          </Button>
-          <Button onClick={() => router.back()}>{t('取消')}</Button>
-        </div>
-      </div>
+      <StickyBottomContainer>
+        {{
+          default: () => (
+            <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
+              <ConditionOptions
+                type={ResourceTypeEnum.VPC}
+                bizs={cond.bizId}
+                v-model:cloudAccountId={cond.cloudAccountId}
+                v-model:vendor={cond.vendor}
+                v-model:region={cond.region}
+                v-model:resourceGroup={cond.resourceGroup}
+              />
+              {formConfig.value
+                .filter(({ display }) => display !== false)
+                .map(({ title, children }) => (
+                  <CommonCard title={() => title} class={'mb16'}>
+                    {children
+                      .filter(({ display }) => display !== false)
+                      .map(({ label, description, tips, required, property, content }) => (
+                        <FormItem label={label} required={required} property={property} description={description}>
+                          {Array.isArray(content) ? (
+                            <div class='flex-row'>
+                              {content
+                                .filter((sub) => sub.display !== false)
+                                .map((sub) => (
+                                  <FormItem
+                                    label={sub.label}
+                                    required={sub.required}
+                                    property={sub.property}
+                                    description={sub?.description}>
+                                    {sub.content()}
+                                    {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                  </FormItem>
+                                ))}
+                            </div>
+                          ) : (
+                            content()
+                          )}
+                          {tips && <div class='form-item-tips'>{tips()}</div>}
+                        </FormItem>
+                      ))}
+                  </CommonCard>
+                ))}
+            </Form>
+          ),
+          footer: () => (
+            <>
+              <Button
+                theme='primary'
+                loading={submitting.value}
+                disabled={submitDisabled.value}
+                onClick={handleFormSubmit}>
+                {isResourcePage ? t('提交') : t('提交审批')}
+              </Button>
+              <Button onClick={() => router.back()}>{t('取消')}</Button>
+            </>
+          ),
+        }}
+      </StickyBottomContainer>
     );
   },
 });

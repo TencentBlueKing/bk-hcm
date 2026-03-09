@@ -6,4 +6,8 @@ export enum ResourceTypeEnum {
   CLB = 'clb',
   ACCOUNT = 'account',
   SECURITY_GROUP = 'security_group',
+  EIP = 'eip',
+  IMAGE = 'image',
+  NETWORK_INTERFACE = 'network_interface',
+  ROUTING = 'routing',
 }

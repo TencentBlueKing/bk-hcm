@@ -1,15 +1,13 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 import VPCCidr from '../components/vpc/vpc-cidr.vue';
 import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
-import bus from '@/common/bus';
 
-import { ref, inject, computed, watch } from 'vue';
+import { ref, inject, computed, watch, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -18,13 +16,17 @@ import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
+import { AUTH_DELETE_IAAS_RESOURCE, AUTH_BIZ_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
+const { getBizsId } = useWhereAmI();
+const bizId = computed(() => getBizsId());
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = [
   {
@@ -55,7 +57,7 @@ const VPCFields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+      return `/#/service/account/details/${val}`;
     },
   },
   {
@@ -104,25 +106,14 @@ const VPCTabs = ref([
   },
 ]);
 
-const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
 
 const resourceStore = useResourceStore();
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
-
-const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail: any) => {
+const { loading, detail } = useDetail('vpcs', route.params.id as string, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       VPCFields.value.push(
@@ -275,6 +266,17 @@ const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail:
   }
 });
 
+const deleteSign = computed(() => {
+  if (bizId.value) return { type: AUTH_BIZ_DELETE_IAAS_RESOURCE, relation: [bizId.value] };
+  return { type: AUTH_DELETE_IAAS_RESOURCE, relation: [detail.value.account_id] };
+});
+
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`VPC：（${detail.value.id}）`);
+  }
+});
+
 const vpcRelateSubnetCount = ref(0);
 watch(
   () => detail.value.id,
@@ -296,29 +298,16 @@ watch(
   },
 );
 
-// VPC删除只需要判断 vpc 下是否有子网
 const disabledOption = computed(() => {
-  // 无权限，直接禁用按钮
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
-  // 业务下，判断vpc下是否有关联子网
   if (!isResourcePage.value) return vpcRelateSubnetCount.value > 0;
-  // 资源下，判断是否分配业务，vpc下是否有关联子网
   return detail.value?.bk_biz_id !== -1 || vpcRelateSubnetCount.value > 0;
 });
 const bkTooltipsOptions = computed(() => {
-  // 无权限
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value.permissionAction[actionName.value],
-    };
-  // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {
       content: '该VPC已分配到业务，仅可在业务下操作',
       disabled: detail.value.bk_biz_id === -1,
     };
-  // 业务/资源下，vpc下是否有关联子网
   if (vpcRelateSubnetCount.value > 0)
     return {
       content: `该vpc关联了 ${vpcRelateSubnetCount.value} 个子网，不可直接删除`,
@@ -396,45 +385,41 @@ const handleDeleteVpc = (data: any) => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      VPC：（{{ detail.id }}）
-      <template #right>
-        <div @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            @click="handleDeleteVpc(detail)"
-            :disabled="disabledOption"
-            v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-      </template>
-    </detail-header>
+  <Teleport defer to="#breadcrumbExtra">
+    <hcm-auth :sign="deleteSign" tag="span" v-slot="{ noPerm }">
+      <bk-button
+        theme="primary"
+        @click="handleDeleteVpc(detail)"
+        :disabled="disabledOption || noPerm"
+        v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </hcm-auth>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-tab :tabs="hostTabs">
-        <template #default>
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default>
+        <bk-loading :loading="loading">
           <detail-info
             :detail="detail"
             :fields="VPCFields"
             :label-width="VendorEnum.GCP === detail.vendor ? '200px' : '120px'"
             global-copyable
           />
-        </template>
-      </detail-tab>
+        </bk-loading>
+      </template>
+    </detail-tab>
 
-      <detail-tab class="mt16" :tabs="VPCTabs">
-        <template #default="type">
-          <VPCCidr v-if="type === 'cidr'" :detail="detail" />
-          <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
-          <VPCRoute v-if="type === 'route'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+    <detail-tab class="mt16" :tabs="VPCTabs">
+      <template #default="type">
+        <VPCCidr v-if="type === 'cidr'" :detail="detail" />
+        <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
+        <VPCRoute v-if="type === 'route'" :detail="detail" />
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

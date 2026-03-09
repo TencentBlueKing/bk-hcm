@@ -1,6 +1,8 @@
 import type { RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
 import Meta from '@/router/meta';
+import { AUTH_BIZ_FIND_AUDIT } from '@/constants/auth-symbols';
 import {
+  MENU_BUSINESS,
   MENU_RESOURCE,
   MENU_BUSINESS_OPERATION_LOG,
   MENU_BUSINESS_OPERATION_LOG_DETAILS,
@@ -19,11 +21,11 @@ const operationLogBiz: RouteRecordRaw[] = [
     component: () => import('@/views/operation-log/entry-biz.vue'),
     meta: {
       ...new Meta({
-        title: '操作记录',
+        owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: true,
-        menu: {},
-        icon: 'hcm-icon bkhcm-icon-operation-record',
+        menu: {
+          i18n: '操作记录',
+        },
       }),
     },
   },
@@ -33,13 +35,12 @@ const operationLogBiz: RouteRecordRaw[] = [
     component: () => import('@/views/operation-log/details/flow-task/index'),
     meta: {
       ...new Meta({
-        title: '操作记录详情',
-        notMenu: true,
-        activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: false,
+        owner: MENU_BUSINESS,
         menu: {
-          relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+          i18n: '操作记录详情',
+          relative: MENU_BUSINESS_OPERATION_LOG,
         },
+        activeKey: MENU_BUSINESS_OPERATION_LOG,
       }),
     },
   },
@@ -53,9 +54,13 @@ const operationLogRsc: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '操作记录',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        menu: {},
+        auth: {
+          view: { type: AUTH_BIZ_FIND_AUDIT },
+        },
+        menu: {
+          i18n: '操作记录',
+        },
       }),
     },
     // beforeEnter: removeQueryParams,
@@ -66,11 +71,9 @@ const operationLogRsc: RouteRecordRaw[] = [
     component: () => import('@/views/operation-log/details/flow-task/index'),
     meta: {
       ...new Meta({
-        title: '操作记录详情',
-        notMenu: true,
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        isShowBreadcrumb: false,
         menu: {
+          i18n: '操作记录详情',
           relative: MENU_RESOURCE_OPERATION_LOG,
         },
       }),

@@ -1,3 +1,8 @@
+/**
+ * @deprecated 此文件已废弃，请使用 store/auth.ts 中的 useAuthStore 和 hcm-auth 组件
+ * 视图级别权限检查请使用 constants/view-auth.ts 和 store/auth.ts 中的 fetchViewPermissions/hasViewPermission
+ * 操作级别权限检查请使用 components/auth/auth.vue 组件
+ */
 import { useCommonStore } from '@/store';
 import { ref } from 'vue';
 

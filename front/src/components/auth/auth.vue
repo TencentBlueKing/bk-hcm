@@ -3,7 +3,7 @@ import { watch, useId, ref, getCurrentInstance } from 'vue';
 import isEqual from 'lodash/isEqual';
 import { useAuthStore } from '@/store/auth';
 import CombineRequest from '@blueking/combine-request';
-import { type IAuthSign, getAuthDefs, getAuthResources } from '@/common/auth-service';
+import { type IAuthSign, extractSignPermission } from '@/common/auth-service';
 import { type IVerifyResult } from '@/store/auth';
 import usePermissionDialog from '@/hooks/use-permission-dialog';
 
@@ -123,41 +123,12 @@ const handleClick = async () => {
     return;
   }
 
-  // 获取当前组件sign的权限定义
-  const authIds = getAuthDefs(props.sign).map((item) => item.id);
+  // 从完整的 permission 数据中提取出当前组件 sign 对应的 permission
+  const compPermission = extractSignPermission(props.sign, permission);
 
-  // 获取当前组件sign的资源配置
-  const resources = getAuthResources(props.sign);
-
-  // 取得当前组件sign所对应的permission数据
-  const { actions, ...others } = permission;
-
-  const currentActions = actions
-    // 先通过id过滤，只保留当前组件所对应的action
-    .filter((item) => authIds.includes(item.id))
-    .map((item) => ({
-      ...item,
-      related_resource_types: item.related_resource_types.map((resourceItem) => ({
-        ...resourceItem,
-        // TODO: 支持多层级
-        // 只保留当前组件所对应需要申请的资源实例
-        // 目前的业务场景没有多层级，可以先打平处理，为满足内部数据格式需要手动构造为二层结构且过滤掉空数据兼容未指定实例的情况
-        instances: [
-          resourceItem?.instances
-            ?.flat()
-            .filter((instance) =>
-              resources.some((resource) =>
-                [String(resource.bk_biz_id), String(resource.resource_id)].includes(String(instance.id)),
-              ),
-            ),
-        ].filter(Boolean),
-      })),
-    }));
-
-  const compPermission = {
-    actions: currentActions,
-    ...others,
-  };
+  if (!compPermission) {
+    return;
+  }
 
   // 传入permission及相关配置，done为点击已申请时触发的回调函数，当绑定了done事件时则触发事件，否则置空使用dialog默认刷新逻辑
   permissionDialog.show(compPermission, {

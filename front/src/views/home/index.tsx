@@ -1,3 +1,12 @@
+/**
+ * @deprecated 此文件已废弃，布局组件已迁移到 components/layout/ 目录
+ * - header.vue - 头部导航
+ * - menu.vue - 侧边菜单
+ * - main-content.vue - 主内容区
+ * - breadcrumb.vue - 面包屑
+ * - footer.vue - 页脚
+ * 新的布局在 app.vue 中使用 bk-navigation 组件集成
+ */
 import { defineComponent, computed, watch, ref, nextTick, onMounted } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 
@@ -6,6 +15,7 @@ import ReleaseNote from './release-note/index.vue';
 import Breadcrumb from './breadcrumb';
 import BusinessSelector from './business-selector';
 import NoPermission from '@/views/resource/NoPermission';
+// @deprecated AccountVendorGroup 已迁移到 views/resource-manage/entry.vue 中使用
 import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
@@ -105,6 +115,7 @@ export default defineComponent({
       isMenuOpen.value = val;
     };
 
+    // @deprecated 资源视图的布局（AccountVendorGroup + RouterView）已迁移到 views/resource-manage/entry.vue
     const renderRouterView = () => {
       if (whereAmI.value !== Senarios.resource) return <RouterView />;
       return (

@@ -7,10 +7,11 @@ import { ISchemeSelectorItem } from '@/typings/scheme';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import SchemeEditDialog from '../scheme-edit-dialog';
 import CloudServiceTag from '../cloud-service-tag';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
+import { MENU_SCHEME_LIST, MENU_SCHEME_DETAIL } from '@/constants/menu-symbol';
 
 import './index.scss';
-import PermissionDialog from '@/components/permission-dialog';
-import { useVerify } from '@/hooks';
 
 export default defineComponent({
   name: 'SchemeSelector',
@@ -34,20 +35,13 @@ export default defineComponent({
     const isEditDialogOpen = ref(false);
     let editedSchemeData = reactive({});
 
-    const {
-      authVerifyData,
-      handleAuth,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      showPermissionDialog,
-      permissionParams,
-    } = useVerify();
+    const editAuthSign = { type: AUTH_UPDATE_CLOUD_SELECTION_SCHEME };
 
     const handleBack = () => {
       if (typeof props.onBack === 'function') {
         props.onBack();
       } else {
-        router.push({ name: 'scheme-list' });
+        router.push({ name: MENU_SCHEME_LIST });
       }
     };
 
@@ -57,7 +51,7 @@ export default defineComponent({
           props.selectFn(scheme);
           setTimeout(() => (isSelectorOpen.value = false), 800);
         } else {
-          router.push({ name: 'scheme-detail', query: { sid: scheme.id } });
+          router.push({ name: MENU_SCHEME_DETAIL, query: { sid: scheme.id } });
         }
       }
     };
@@ -152,17 +146,20 @@ export default defineComponent({
             }}
           </Popover>
           {props.showEditIcon ? (
-            <div
-              class={`edit-btn ${
-                authVerifyData.value.permissionAction.cloud_selection_edit ? '' : 'hcm-no-permision-text-btn'
-              }`}
-              onClick={() => {
-                if (authVerifyData.value.permissionAction.cloud_selection_edit) isEditDialogOpen.value = true;
-                else handleAuth('cloud_selection_edit');
-              }}>
-              <EditLine class='edit-icon' />
-              编辑
-            </div>
+            <HcmAuth sign={editAuthSign}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <div
+                    class='edit-btn'
+                    onClick={() => {
+                      if (!noPerm) isEditDialogOpen.value = true;
+                    }}>
+                    <EditLine class='edit-icon' />
+                    编辑
+                  </div>
+                ),
+              }}
+            </HcmAuth>
           ) : null}
         </div>
         <SchemeEditDialog
@@ -171,12 +168,6 @@ export default defineComponent({
           schemeData={props.schemeData}
           confirmFn={saveSchemeFn}
           onConfirm={handleConfirm}
-        />
-        <PermissionDialog
-          isShow={showPermissionDialog.value}
-          onConfirm={handlePermissionConfirm}
-          onCancel={handlePermissionDialog}
-          params={permissionParams.value}
         />
       </>
     );

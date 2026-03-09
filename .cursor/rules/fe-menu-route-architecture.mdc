@@ -1,0 +1,122 @@
+---
+description: 前端菜单路由架构规范 —— 新模块创建或老模块改造时的路由、菜单、权限定义原则
+alwaysApply: true
+---
+
+# 菜单路由架构规范
+
+## 整体架构
+
+项目有三个一级视图，每个一级视图对应一组路由集合：
+
+| 一级视图 | 路由前缀            | 注册位置（views/index.ts） | 说明                |
+| -------- | ------------------- | -------------------------- | ------------------- |
+| 业务资源 | `/business/:bizId/` | `businessViews`            | 需要 bizId 路径参数 |
+| 工作台   | `/service/`         | `serviceViews`             | 个人/公共事务       |
+| 资源运营 | `/resource/`        | `resourceViews`            | 资源管理、账单等    |
+
+## 关键文件职责
+
+- **`constants/menu-symbol.ts`** — 所有菜单/路由的 Symbol 常量
+- **`constants/auth-symbols.ts`** — 所有权限标识的 Symbol 常量
+- **`views/<模块>/route-config.ts`** — 模块路由定义（去中心化）
+- **`views/index.ts`** — 汇总所有模块路由，注入状态组件
+- **`common/menu-service.ts`** — 菜单结构定义，与路由解耦
+- **`common/auth-service.ts`** — 权限定义与鉴权工具
+- **`router/meta.ts`** — 路由 meta 配置类
+
+## 新建/改造模块 Checklist
+
+### 1. 定义 Symbol 常量
+
+在 `constants/menu-symbol.ts` 中添加模块的所有路由 Symbol：
+
+```typescript
+export const MENU_XXX_LIST = Symbol('menu_xxx_list');
+export const MENU_XXX_CREATE = Symbol('menu_xxx_create');
+export const MENU_XXX_DETAIL = Symbol('menu_xxx_detail');
+```
+
+### 2. 创建 route-config.ts
+
+在 `views/<模块>/route-config.ts` 中定义路由，遵循：
+
+- **path 使用相对路径**，不要以 `/` 开头
+- **name 使用 Symbol**，禁止使用字符串
+- **meta 使用 `new Meta({...})` 展开**
+- **owner** 指向所属一级视图 Symbol（`MENU_BUSINESS` / `MENU_SERVICE` / `MENU_RESOURCE`）
+- **activeKey** 指向菜单高亮项
+- **menu.relative** 指向面包屑的上级
+  菜单是否展示由 `menu-service.ts` 独立控制，路由中不需要标记 `notMenu`。
+
+```typescript
+const routes: RouteRecordRaw[] = [
+  // 菜单页面（列表）
+  {
+    name: MENU_XXX_LIST,
+    path: 'xxx', // 相对路径
+    component: () => import('@/views/xxx/list'),
+    meta: {
+      ...new Meta({
+        owner: MENU_RESOURCE,
+        activeKey: MENU_XXX_LIST,
+        auth: { view: { type: AUTH_XXX_FIND } },
+        menu: { i18n: '模块名称', relative: MENU_RESOURCE },
+      }),
+    },
+  },
+  // 非菜单页面（详情、创建等）—— 不需要特殊标记，只需不在 menu-service.ts 中注册即可
+  {
+    name: MENU_XXX_CREATE,
+    path: 'xxx/create',
+    component: () => import('@/views/xxx/create'),
+    meta: {
+      ...new Meta({
+        owner: MENU_RESOURCE,
+        activeKey: MENU_XXX_LIST, // 高亮对应的菜单项
+        menu: { i18n: '创建XXX', relative: MENU_XXX_LIST },
+      }),
+    },
+  },
+];
+```
+
+### 3. 注册路由
+
+在 `views/index.ts` 中将模块路由合入对应视图数组：
+
+```typescript
+import xxxRoutes from '@/views/xxx/route-config';
+export const resourceViews = injectStatusComponents([...existing, ...xxxRoutes]);
+```
+
+### 4. 注册菜单
+
+在 `common/menu-service.ts` 中对应一级菜单的 `menu` 数组里添加菜单项：
+
+```typescript
+{
+  id: MENU_XXX_LIST,
+  i18n: '模块名称',
+  group: '分组名',
+  groupIcon: 'bkhcm-icon-xxx',
+  visibility: () => SOME_FEATURE_FLAG === 'true',  // 可选，控制显隐
+  route: getMenuRoute(resourceViews, MENU_XXX_LIST),
+},
+```
+
+### 5. 权限配置
+
+- **视图权限**：通过 `meta.auth.view` 定义，值为 `IAuthSign` 对象 `{ type: AUTH_SYMBOL }`
+- **操作权限**：通过 `hcm-auth` 组件包裹操作按钮
+- **权限 Symbol** 定义在 `constants/auth-symbols.ts`，对应定义在 `common/auth-service.ts`
+
+## 重要原则
+
+1. **路由导航一律使用 name（Symbol）**，禁止硬编码路径字符串
+2. **菜单与路由解耦** —— 菜单在 `menu-service.ts` 独立定义，通过 `getMenuRoute` 关联路由
+3. **模块路由去中心化** —— 每个模块在自己的 `views/<模块>/route-config.ts` 定义
+4. **改造老模块不删除老文件** —— 新建文件迁移，老文件添加 `@deprecated` 注释说明替代方案
+5. **功能模块独立于菜单** —— 模块是不变的功能单元，菜单和路由是可变的上层配置
+6. **跨视图复用模块** —— 同一模块可出现在多个视图下（如回收站同时在业务和资源视图），通过导出多个路由数组实现（如 `recyclebinBiz` / `recyclebinRsc`）
+7. **`useWhereAmI`（待废弃）** —— 当前通过正则匹配路由路径判断所处场景（`Senarios`），这是一种脆弱的实现。如果模块路径嵌套在其他一级路径下（如 `/resource/bill/`），需手动添加优先匹配规则。**后续应通过路由 meta（如 `owner`）来确定场景，彻底移除路径正则匹配**

@@ -8,7 +8,7 @@ import DataList from '@/views/load-balancer/children/display/data-list.vue';
 import { ILoadBalanceDeviceCondition, DeviceTabEnum, IDeviceListDataLoadedEvent } from '../typing';
 import { Share } from 'bkui-vue/lib/icon';
 import routerAction from '@/router/utils/action';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 import qs from 'qs';
 import { useLoadBalancerDeviceSearchStore, type IUrlRuleItem } from '@/store/load-balancer/device-search';
@@ -43,7 +43,6 @@ const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
             id: row.lb_id,
           },
           query: {
-            [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value,
             filter,
             detailShow: true,
           },

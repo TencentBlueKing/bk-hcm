@@ -71,6 +71,57 @@ export const cvm: ISearchItem[] = [
 
 optionMap.set(ResourceTypeEnum.CVM, cvm);
 
+// 通用资源选项（cloud_id + base）
+const commonResourceOptions = [
+  {
+    name: '资源ID',
+    id: 'cloud_id',
+  },
+  ...base,
+];
+
+// VPC、子网、云硬盘、网络接口、路由表
+optionMap.set(ResourceTypeEnum.VPC, [{ name: 'VPC ID', id: 'cloud_id' }, ...base]);
+optionMap.set(ResourceTypeEnum.SUBNET, [
+  ...commonResourceOptions,
+  {
+    name: '所属VPC ID',
+    id: 'cloud_vpc_id',
+  },
+]);
+optionMap.set(ResourceTypeEnum.DISK, [...commonResourceOptions]);
+optionMap.set(ResourceTypeEnum.NETWORK_INTERFACE, [
+  ...commonResourceOptions,
+  {
+    name: '公网ipv4',
+    id: 'public_ipv4',
+  },
+  {
+    name: '内网ipv4',
+    id: 'private_ipv4',
+  },
+]);
+optionMap.set(ResourceTypeEnum.ROUTING, [...commonResourceOptions]);
+
+// 弹性 IP
+optionMap.set(ResourceTypeEnum.EIP, [
+  { name: '公网IP', id: 'public_ip' },
+  { name: '弹性IP ID', id: 'cloud_id' },
+  ...base,
+]);
+
+// 镜像（无 account_id，镜像为公有资源）
+optionMap.set(ResourceTypeEnum.IMAGE, [
+  { name: '镜像ID', id: 'cloud_id' },
+  { name: '名称', id: 'name' },
+  {
+    name: '云厂商',
+    id: 'vendor',
+    multiple: true,
+    children: VENDORS,
+  },
+]);
+
 export const getAccountList = async (keyword: string) => {
   const query: FilterType = {
     op: 'and',

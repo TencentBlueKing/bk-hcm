@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, useTemplateRef, inject, Ref } from 'vue';
+import { ref, watch, useTemplateRef } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
@@ -7,34 +7,31 @@ import routerAction from '@/router/utils/action';
 import LoadBalancerList from '@/views/load-balancer/clb/load-balancer-list.vue';
 import TargetGroupList from '@/views/business/load-balancer/group-view/target-group-list';
 
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { MENU_BUSINESS_LOAD_BALANCER_LB_VIEW, MENU_BUSINESS_LOAD_BALANCER_TG_VIEW } from '@/constants/menu-symbol';
 
 defineOptions({ name: 'resource-view' });
 
 const route = useRoute();
 const { t } = useI18n();
-const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
-
 const typeEnum = {
   clb: {
     value: t('负载均衡'),
-    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW,
   },
   target_group: {
     value: t('目标组'),
-    name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER_TG_VIEW,
   },
 };
 // 负载均衡/目标组上次定位的参数
 const memory: { [key: string]: any } = {
   clb: {
-    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW,
     query: {},
     params: {},
   },
   target_group: {
-    name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+    name: MENU_BUSINESS_LOAD_BALANCER_TG_VIEW,
     query: {},
     params: {},
   },
@@ -71,7 +68,7 @@ watch(
     routerAction.redirect(
       {
         name,
-        query: { ...(query ?? route.query), [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
+        query: { ...(query ?? route.query) },
         params: { ...(params ?? route.params) },
       },
       {

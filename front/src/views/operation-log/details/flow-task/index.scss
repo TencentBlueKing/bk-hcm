@@ -1,23 +1,14 @@
 .record-detail-container {
   height: 100%;
   overflow: hidden;
+  padding: 24px;
 
-  .header-title {
-    font-size: 16px;
-    color: #313238;
-  }
-  .header-content {
-    font-size: 14px;
-    color: #63656e;
-  }
   .record-detail-info-card {
     background: #ffffff;
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
     height: 52px;
-    margin: 0 24px;
     padding: 0 24px;
-    margin-top: 76px;
     display: flex;
     align-items: center;
     .info-card-prefix {
@@ -43,8 +34,8 @@
   }
 
   .main-wrapper {
-    height: calc(100% - 168px);
-    margin: 16px 24px 0px 24px;
+    height: calc(100% - 68px);
+    margin-top: 16px;
     display: flex;
     .main-side-card {
       height: 100%;

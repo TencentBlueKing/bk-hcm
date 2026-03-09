@@ -1,8 +1,8 @@
-import { computed, defineComponent, onUnmounted, ref, watch } from 'vue';
+import { defineComponent, onUnmounted, ref, watch } from 'vue';
 import './index.scss';
-import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { APPLICATION_TYPE_MAP } from '@/views/ticket/constants';
 import Clb from './clb.vue';
 import { applyContentRender } from './apply-content-render.plugin';
@@ -39,6 +39,7 @@ export interface IApplicationDetail {
 export default defineComponent({
   setup() {
     const accountStore = useAccountStore();
+    const { setTitle } = useBreadcrumb();
     const isLoading = ref(false);
     const currentApplyData = ref<Partial<IApplicationDetail>>({});
     const curApplyKey = ref('');
@@ -53,6 +54,8 @@ export default defineComponent({
         const res = await accountStore.getApplyAccountDetail(id);
         currentApplyData.value = res.data;
         curApplyKey.value = res.data.id;
+        const subTitle = APPLICATION_TYPE_MAP[res.data.type];
+        setTitle(subTitle ? `申请单详情 - ${subTitle}` : '申请单详情');
 
         if ([ApplicationStatus.pending, ApplicationStatus.delivering].includes(res.data.status)) {
           clearInterval(interval);
@@ -92,37 +95,17 @@ export default defineComponent({
       },
     );
 
-    const subTitle = computed(() => {
-      return APPLICATION_TYPE_MAP[currentApplyData.value?.type];
-    });
-
     const render = () => {
-      // 负载均衡详情
       if (!currentApplyData.value?.type) return null;
       if (['create_load_balancer'].includes(currentApplyData.value.type)) {
         return <Clb applicationDetail={currentApplyData.value} loading={isLoading.value} />;
       }
       return (
-        <div class={'apply-detail-container'}>
-          <DetailHeader>
-            {{
-              default: () => (
-                <>
-                  <span class={'title'}>申请单详情</span>
-                  <span class={'sub-title'}>
-                    &nbsp;-&nbsp;
-                    {subTitle.value}
-                  </span>
-                </>
-              ),
-            }}
-          </DetailHeader>
-          <div class={'apply-content-wrapper'}>
-            {applyContentRender(currentApplyData, curApplyKey, {
-              cancelLoading: isCancelBtnLoading.value,
-              onCancel: handleCancel,
-            })}
-          </div>
+        <div class={'apply-detail-container page-container'}>
+          {applyContentRender(currentApplyData, curApplyKey, {
+            cancelLoading: isCancelBtnLoading.value,
+            onCancel: handleCancel,
+          })}
         </div>
       );
     };

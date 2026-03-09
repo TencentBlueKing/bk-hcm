@@ -89,8 +89,14 @@ const parseIP = (text: string) => {
 
 // 将值进行btoa编码
 const encodeValueByBtoa = (v: any) => btoa(JSON.stringify(v));
-// 获取atob解码后的值
-const decodeValueByAtob = (v: string) => JSON.parse(atob(v));
+// 获取atob解码后的值，容错处理无效 base64 字符串
+const decodeValueByAtob = (v: string) => {
+  try {
+    return JSON.parse(atob(v));
+  } catch {
+    return null;
+  }
+};
 
 /**
  * 从文本（单个IP、CIDR 网段、连续地址段）中解析出IP地址和备注

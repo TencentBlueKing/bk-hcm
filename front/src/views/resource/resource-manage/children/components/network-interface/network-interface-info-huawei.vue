@@ -39,7 +39,7 @@ const fields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+      return `/#/service/account/details/${val}`;
     },
   },
   {

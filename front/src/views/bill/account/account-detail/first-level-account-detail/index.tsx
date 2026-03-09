@@ -9,8 +9,9 @@ import CommonDialog from '@/components/common-dialog';
 import {
   ValidateStatus,
   useSecretExtension,
-} from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+} from '@/views/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { SecretModel } from '@/typings/account';
+// TODO: useFormModel 已废弃，后续需替换为 reactive + 手动重置
 import useFormModel from '@/hooks/useFormModel';
 
 const { FormItem } = Form;

@@ -20,9 +20,10 @@ export const useBack = () => {
   const from = computed(() => {
     if (Object.hasOwn(route.query, '_f')) {
       try {
-        return HistoryStorage.pop();
-      } catch (error) {
-        return defaultFrom.value;
+        const history = HistoryStorage.pop();
+        if (history?.name) return history;
+      } catch {
+        // fall through
       }
     }
     return defaultFrom.value;

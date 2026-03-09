@@ -1,3 +1,9 @@
+/**
+ * @deprecated 此 store 已废弃，不要新增使用。
+ * accountId / vendor 等信息已统一通过 route.query 传递。
+ * 需要账号详情时使用 accountSelectorStore.authorizedResourceAccountList 按 ID 查询。
+ * 仅旧 views/resource/resource-manage/ 流程仍在使用，待旧流程整体移除后可删除此文件。
+ */
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { VendorEnum } from '@/common/constant';
