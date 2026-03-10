@@ -51,7 +51,8 @@ type clientSet struct {
 }
 
 func newClientSet(secret *types.BaseSecret) *clientSet {
-	return &clientSet{credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey, "")}
+	return &clientSet{credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey,
+		secret.CloudSessionToken)}
 }
 
 func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {

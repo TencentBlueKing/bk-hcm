@@ -40,6 +40,9 @@ type AwsInstanceTypeResp struct {
 	InstanceFamily     string `json:"instance_family"`
 	InstanceType       string `json:"instance_type"`
 	GPU                int64  `json:"gpu"`
+	GPUMemory          int64  `json:"gpu_memory"`
+	GPUName            string `json:"gpu_name"`
+	GPUManufacturer    string `json:"gpu_manufacturer"`
 	CPU                int64  `json:"cpu"`
 	Memory             int64  `json:"memory"`
 	FPGA               int64  `json:"fpga"`
@@ -53,4 +56,51 @@ type AwsInstanceTypeResp struct {
 type AwsInstanceTypeListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AwsInstanceTypeResp `json:"data"`
+}
+
+// AwsGpuInstanceTypeListReq is the request for listing GPU instance types via AssumeRole.
+type AwsGpuInstanceTypeListReq struct {
+	CloudID  string `json:"cloud_id" validate:"required"`
+	RoleName string `json:"role_name" validate:"required"`
+	Region   string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsGpuInstanceTypeListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsGpuInstanceListReq is the request for listing GPU instances via AssumeRole.
+type AwsGpuInstanceListReq struct {
+	CloudID  string `json:"cloud_id" validate:"required"`
+	RoleName string `json:"role_name" validate:"required"`
+	Region   string `json:"region" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsGpuInstanceListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsGpuInstanceResp represents a single EC2 instance in the GPU instance list response.
+type AwsGpuInstanceResp struct {
+	InstanceID   string `json:"instance_id"`
+	InstanceType string `json:"instance_type"`
+	State        string `json:"state"`
+	PrivateIP    string `json:"private_ip"`
+	PublicIP     string `json:"public_ip"`
+	Region       string `json:"region"`
+	Zone         string `json:"zone"`
+}
+
+// AwsGpuInstanceTypeListResp wraps a list of AwsInstanceTypeResp for GPU instance type queries.
+type AwsGpuInstanceTypeListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*AwsInstanceTypeResp `json:"data"`
+}
+
+// AwsGpuInstanceListResp wraps a list of AwsGpuInstanceResp.
+type AwsGpuInstanceListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*AwsGpuInstanceResp `json:"data"`
 }

@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	proto "hcm/pkg/api/cloud-server/instance-type"
+	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -31,6 +32,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -219,4 +221,97 @@ func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.ListReq) (
 	}
 
 	return result, nil
+}
+
+// lookupAccountIDByCloudID reverse-looks up the parent account_id from cloud_id via data-service.
+func (svc *instanceTypeSvc) lookupAccountIDByCloudID(cts *rest.Contexts, cloudID string) (string, error) {
+	listReq := &core.ListReq{
+		Filter: &filter.Expression{
+			Op: filter.And,
+			Rules: []filter.RuleFactory{
+				&filter.AtomRule{
+					Field: "cloud_id",
+					Op:    filter.Equal.Factory(),
+					Value: cloudID,
+				},
+			},
+		},
+		Page: &core.BasePage{Start: 0, Limit: 1},
+	}
+	result, err := svc.client.DataService().Aws.SubAccount.ListExt(cts.Kit, listReq)
+	if err != nil {
+		return "", fmt.Errorf("list aws sub account by cloud_id failed, cloud_id: %s, err: %v", cloudID, err)
+	}
+	if result == nil || len(result.Details) == 0 {
+		return "", fmt.Errorf("aws sub account not found for cloud_id: %s", cloudID)
+	}
+	return result.Details[0].AccountID, nil
+}
+
+// ListGpuInstanceTypeInRes lists AWS GPU instance types (resource scope).
+func (svc *instanceTypeSvc) ListGpuInstanceTypeInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsGpuInstanceTypeListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.InstanceType,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: accountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListGpuInstanceType(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws gpu instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
+}
+
+// ListGpuInstanceInRes lists AWS GPU instances (resource scope).
+func (svc *instanceTypeSvc) ListGpuInstanceInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsGpuInstanceListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: accountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListGpuInstance(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws gpu instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
 }

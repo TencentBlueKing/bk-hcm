@@ -51,5 +51,11 @@ func InitInstanceTypeService(c *capability.Capability) {
 	// 资源下。
 	h.Add("ListInRes", http.MethodPost, "/instance_types/list", svc.ListInRes)
 
+	// AWS GPU 数据透传（资源下）。
+	h.Add("ListGpuInstanceTypeInRes", http.MethodPost,
+		"/vendors/aws/gpu/instance_types/list", svc.ListGpuInstanceTypeInRes)
+	h.Add("ListGpuInstanceInRes", http.MethodPost,
+		"/vendors/aws/gpu/instances/list", svc.ListGpuInstanceInRes)
+
 	h.Load(c.WebService)
 }

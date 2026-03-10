@@ -62,3 +62,53 @@ func (c *InstanceTypeClient) List(kt *kit.Kit, request *instancetype.AwsInstance
 
 	return resp.Data, nil
 }
+
+// ListGpuInstanceType lists instance types via AssumeRole for GPU data pass-through.
+func (c *InstanceTypeClient) ListGpuInstanceType(kt *kit.Kit,
+	request *instancetype.AwsGpuInstanceTypeListReq) ([]*instancetype.AwsInstanceTypeResp, error) {
+
+	resp := new(instancetype.AwsGpuInstanceTypeListResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/gpu/instance_types/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListGpuInstance lists EC2 instances via AssumeRole for GPU data pass-through.
+func (c *InstanceTypeClient) ListGpuInstance(kt *kit.Kit,
+	request *instancetype.AwsGpuInstanceListReq) ([]*instancetype.AwsGpuInstanceResp, error) {
+
+	resp := new(instancetype.AwsGpuInstanceListResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/gpu/instances/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

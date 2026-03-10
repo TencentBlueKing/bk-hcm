@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
+	adaptortypes "hcm/pkg/adaptor/types"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -36,6 +37,7 @@ func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
 	return &CloudAdaptorClient{
 		adaptor:   adaptor.New(),
 		secretCli: NewSecretClient(dataCli),
+		credCache: NewCredentialCache(),
 	}
 }
 
@@ -43,6 +45,7 @@ func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
 type CloudAdaptorClient struct {
 	adaptor   *adaptor.Adaptor
 	secretCli *SecretClient
+	credCache *CredentialCache
 }
 
 // Adaptor return adaptor.
@@ -114,6 +117,42 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 	}
 
 	return cli.adaptor.Azure(cred)
+}
+
+// AwsWithAssumeRole returns an Aws client that accesses a member account via STS AssumeRole.
+// cloudID is the member account's AWS Account ID (globally unique); the method reverse-looks up
+// sub_account to find the parent account's AK/SK automatically.
+func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID, roleName string) (*aws.Aws, error) {
+
+	subInfo, err := cli.secretCli.AwsSubAccountByCloudID(kt, cloudID)
+	if err != nil {
+		return nil, err
+	}
+
+	secret, cloudAccountID, site, err := cli.secretCli.AwsSecret(kt, subInfo.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	roleArn := aws.BuildRoleArn(cloudID, roleName, site)
+	rid := kt.Rid
+	if len(rid) > 60 {
+		rid = rid[:60]
+	}
+	sessionName := "hcm-" + rid
+
+	cred, err := cli.credCache.GetOrRefresh(secret, cloudAccountID, roleArn, sessionName, site)
+	if err != nil {
+		return nil, err
+	}
+
+	assumedSecret := &adaptortypes.BaseSecret{
+		CloudSecretID:     cred.AccessKeyID,
+		CloudSecretKey:    cred.SecretAccessKey,
+		CloudSessionToken: cred.SessionToken,
+	}
+
+	return cli.adaptor.Aws(assumedSecret, cloudID, site)
 }
 
 // AwsRoot return aws root client.

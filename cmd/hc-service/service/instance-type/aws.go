@@ -27,6 +27,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ListForAws ...
@@ -86,6 +89,9 @@ func toAwsInstanceTypeResp(it *typesinstancetype.AwsInstanceType) *proto.AwsInst
 		InstanceFamily:     it.InstanceFamily,
 		InstanceType:       it.InstanceType,
 		GPU:                it.GPU,
+		GPUMemory:          it.GPUMemory,
+		GPUName:            it.GPUName,
+		GPUManufacturer:    it.GPUManufacturer,
 		CPU:                it.CPU,
 		Memory:             it.Memory,
 		FPGA:               it.FPGA,
@@ -94,4 +100,114 @@ func toAwsInstanceTypeResp(it *typesinstancetype.AwsInstanceType) *proto.AwsInst
 		Architecture:       it.Architecture,
 		DiskType:           it.DiskType,
 	}
+}
+
+// ListGpuInstanceTypeForAws lists instance types via AssumeRole for GPU data pass-through.
+func (i *instanceTypeAdaptor) ListGpuInstanceTypeForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsGpuInstanceTypeListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleName)
+	if err != nil {
+		return nil, err
+	}
+
+	data := make([]*proto.AwsInstanceTypeResp, 0)
+	nextToken := ""
+	for {
+		opt := &typesinstancetype.AwsInstanceTypeListOption{
+			Region: req.Region,
+			Page:   &core.AwsPage{MaxResults: converter.ValToPtr(int64(100))},
+		}
+		if nextToken != "" {
+			opt.Page.NextToken = converter.ValToPtr(nextToken)
+		}
+
+		result, err := client.ListInstanceType(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("list aws gpu instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		if len(result.Details) <= 0 {
+			break
+		}
+
+		for _, it := range result.Details {
+			data = append(data, toAwsInstanceTypeResp(it))
+		}
+
+		if result.NextToken == nil || *result.NextToken == "" {
+			break
+		}
+		nextToken = *result.NextToken
+	}
+
+	return data, nil
+}
+
+// ListGpuInstanceForAws lists EC2 instances via AssumeRole for GPU data pass-through.
+func (i *instanceTypeAdaptor) ListGpuInstanceForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsGpuInstanceListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleName)
+	if err != nil {
+		return nil, err
+	}
+
+	ec2Client, err := client.GetEC2Client(req.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	data := make([]*proto.AwsGpuInstanceResp, 0)
+	input := &ec2.DescribeInstancesInput{
+		MaxResults: converter.ValToPtr(int64(100)),
+	}
+
+	for {
+		resp, err := ec2Client.DescribeInstancesWithContext(cts.Kit.Ctx, input)
+		if err != nil {
+			logs.Errorf("list aws gpu instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, reservation := range resp.Reservations {
+			for _, inst := range reservation.Instances {
+				item := &proto.AwsGpuInstanceResp{
+					InstanceID:   aws.StringValue(inst.InstanceId),
+					InstanceType: aws.StringValue(inst.InstanceType),
+					PrivateIP:    aws.StringValue(inst.PrivateIpAddress),
+					PublicIP:     aws.StringValue(inst.PublicIpAddress),
+					Region:       req.Region,
+				}
+				if inst.State != nil {
+					item.State = aws.StringValue(inst.State.Name)
+				}
+				if inst.Placement != nil {
+					item.Zone = aws.StringValue(inst.Placement.AvailabilityZone)
+				}
+				data = append(data, item)
+			}
+		}
+
+		if resp.NextToken == nil {
+			break
+		}
+		input.NextToken = resp.NextToken
+	}
+
+	return data, nil
 }

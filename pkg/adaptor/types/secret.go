@@ -32,6 +32,8 @@ type BaseSecret struct {
 	CloudSecretKey string `json:"cloud_secret_key"`
 	// CloudAccountID is the account id to do credential.
 	CloudAccountID string `json:"cloud_account_id"`
+	// CloudSessionToken is the session token for STS temporary credentials.
+	CloudSessionToken string `json:"cloud_session_token"`
 }
 
 // Validate BaseSecret.

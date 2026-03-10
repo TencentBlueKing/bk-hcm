@@ -45,6 +45,8 @@ func InitInstanceTypeService(cap *capability.Capability) {
 	h.Add("ListForHuaWei", "POST", "/vendors/huawei/instance_types/list", i.ListForHuaWei)
 	h.Add("ListForAzure", "POST", "/vendors/azure/instance_types/list", i.ListForAzure)
 	h.Add("ListForGcp", "POST", "/vendors/gcp/instance_types/list", i.ListForGcp)
+	h.Add("ListGpuInstanceTypeForAws", "POST", "/vendors/aws/gpu/instance_types/list", i.ListGpuInstanceTypeForAws)
+	h.Add("ListGpuInstanceForAws", "POST", "/vendors/aws/gpu/instances/list", i.ListGpuInstanceForAws)
 
 	h.Load(cap.WebService)
 }
