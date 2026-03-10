@@ -39,7 +39,7 @@ POST /api/v1/cloud/vendors/aws/gpu/instances/list
       "instance_id": "i-0abcdef1234567890",
       "instance_type": "p3.2xlarge",
       "state": "running",
-      "private_ip": "10.0.1.100",
+      "private_ip": "192.168.1.100",
       "public_ip": "54.123.45.67",
       "region": "us-east-1",
       "zone": "us-east-1a"
@@ -48,7 +48,7 @@ POST /api/v1/cloud/vendors/aws/gpu/instances/list
       "instance_id": "i-0fedcba0987654321",
       "instance_type": "g4dn.xlarge",
       "state": "stopped",
-      "private_ip": "10.0.2.200",
+      "private_ip": "192.168.2.200",
       "public_ip": "",
       "region": "us-east-1",
       "zone": "us-east-1b"
