@@ -84,6 +84,9 @@
     "stylelint-config-standard-vue": "1.0.0",
     "typescript": "4.7.4"
   },
+  "overrides": {
+    "less": "4.2.0"
+  },
   "engines": {
     "node": ">= v16.20.2",
     "npm": "^8.19.4"
