@@ -10,11 +10,12 @@ POST /api/v1/cloud/vendors/aws/assume_role/instance_types/list
 
 ### 请求参数
 
-| 参数名称       | 参数类型     | 必选 | 描述                                                                                                     |
-|------------|----------|----|--------------------------------------------------------------------------------------------------------|
-| cloud_id   | string   | 是  | 成员账号 AWS Account ID（全球唯一），HCM 自动反查对应根账号                                                                |
-| role_chain | string[] | 是  | 角色名数组，支持 Role Chaining。中间角色在管理账号中 AssumeRole，最后一个角色在成员账号（cloud_id）中 AssumeRole。至少包含 1 个角色名 |
-| region     | string   | 是  | AWS 区域，如 us-east-1                                                                                     |
+| 参数名称        | 参数类型     | 必选 | 描述                                                                                                     |
+|-------------|----------|----|--------------------------------------------------------------------------------------------------------|
+| cloud_id    | string   | 是  | 成员账号 AWS Account ID（全球唯一），HCM 自动反查对应根账号                                                                |
+| role_chain  | string[] | 是  | 角色名数组，支持 Role Chaining。中间角色在管理账号中 AssumeRole，最后一个角色在成员账号（cloud_id）中 AssumeRole。至少包含 1 个角色名 |
+| region      | string   | 是  | AWS 区域，如 us-east-1                                                                                     |
+| external_id | string   | 否  | STS AssumeRole 的 ExternalId，用于目标角色 Trust Policy 的条件验证。仅应用于 Role Chain 最后一步                             |
 
 ### 调用示例
 
@@ -34,7 +35,8 @@ POST /api/v1/cloud/vendors/aws/assume_role/instance_types/list
 {
   "cloud_id": "123456789012",
   "role_chain": ["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"],
-  "region": "us-east-1"
+  "region": "us-east-1",
+  "external_id": "your-external-id"
 }
 ```
 

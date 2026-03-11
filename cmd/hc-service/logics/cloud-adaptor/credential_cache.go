@@ -55,7 +55,8 @@ func NewCredentialCache() *CredentialCache {
 
 // GetOrRefresh returns cached credentials if valid, or calls STS to obtain new ones.
 // cacheKey is constructed by the orchestration method (AwsWithAssumeRole) to support role chaining scenarios.
-func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleArn, sessionName string,
+// externalId is optional; when non-empty it is passed to the STS AssumeRole call.
+func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleArn, sessionName, externalId string,
 	site enumor.AccountSiteType) (*CachedCredential, error) {
 
 	key := cacheKey
@@ -73,7 +74,7 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 
 	// Cache hit, near expiry — try refresh, fallback to old credential on failure.
 	if exists && now.Before(cached.Expiration) {
-		result, err := aws.AssumeRole(secret, roleArn, sessionName, site)
+		result, err := aws.AssumeRole(secret, roleArn, sessionName, externalId, site)
 		if err != nil {
 			logs.Warnf("refresh STS credential failed (using cached), key: %s, err: %v", key, err)
 			return cached, nil
@@ -90,7 +91,7 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 	}
 
 	// Cache miss or expired — must obtain new credentials.
-	result, err := aws.AssumeRole(secret, roleArn, sessionName, site)
+	result, err := aws.AssumeRole(secret, roleArn, sessionName, externalId, site)
 	if err != nil {
 		return nil, fmt.Errorf("assume role failed, key: %s, err: %v", key, err)
 	}

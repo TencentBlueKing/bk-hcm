@@ -112,3 +112,53 @@ func (c *InstanceTypeClient) ListAssumeRoleInstance(kt *kit.Kit,
 
 	return resp.Data, nil
 }
+
+// GetAssumeRoleMetricData queries CloudWatch metric data via AssumeRole cross-account access.
+func (c *InstanceTypeClient) GetAssumeRoleMetricData(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleGetMetricDataReq) ([]*instancetype.MetricDataResultItem, error) {
+
+	resp := new(instancetype.AwsAssumeRoleGetMetricDataResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/cloudwatch/metric_data/get").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListAssumeRoleMetrics lists available CloudWatch metrics via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleMetrics(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleListMetricsReq) ([]*instancetype.MetricItem, error) {
+
+	resp := new(instancetype.AwsAssumeRoleListMetricsResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/cloudwatch/metrics/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

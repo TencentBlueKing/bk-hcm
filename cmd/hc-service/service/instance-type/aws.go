@@ -21,15 +21,13 @@ package instancetype
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
 	proto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ListForAws ...
@@ -113,7 +111,7 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceTypeForAws(cts *rest.Context
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain)
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,51 +160,47 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain)
-	if err != nil {
-		return nil, err
-	}
-
-	ec2Client, err := client.GetEC2Client(req.Region)
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
 		return nil, err
 	}
 
 	data := make([]*proto.AwsAssumeRoleInstanceResp, 0)
-	input := &ec2.DescribeInstancesInput{
-		MaxResults: converter.ValToPtr(int64(100)),
-	}
+	var nextToken *string
 
 	for {
-		resp, err := ec2Client.DescribeInstancesWithContext(cts.Kit.Ctx, input)
+		opt := &typescvm.AwsListOption{
+			Region: req.Region,
+			Page:   &core.AwsPage{MaxResults: converter.ValToPtr(int64(100)), NextToken: nextToken},
+		}
+
+		cvms, rawResp, err := client.ListCvm(cts.Kit, opt)
 		if err != nil {
 			logs.Errorf("list aws assume role instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
-		for _, reservation := range resp.Reservations {
-			for _, inst := range reservation.Instances {
-				item := &proto.AwsAssumeRoleInstanceResp{
-					InstanceID:   aws.StringValue(inst.InstanceId),
-					InstanceType: aws.StringValue(inst.InstanceType),
-					PrivateIP:    aws.StringValue(inst.PrivateIpAddress),
-					PublicIP:     aws.StringValue(inst.PublicIpAddress),
-					Region:       req.Region,
-				}
-				if inst.State != nil {
-					item.State = aws.StringValue(inst.State.Name)
-				}
-				if inst.Placement != nil {
-					item.Zone = aws.StringValue(inst.Placement.AvailabilityZone)
-				}
-				data = append(data, item)
+		for _, cvm := range cvms {
+			item := &proto.AwsAssumeRoleInstanceResp{
+				InstanceID:   converter.PtrToVal(cvm.InstanceId),
+				InstanceType: converter.PtrToVal(cvm.InstanceType),
+				PrivateIP:    converter.PtrToVal(cvm.PrivateIpAddress),
+				PublicIP:     converter.PtrToVal(cvm.PublicIpAddress),
+				Region:       req.Region,
 			}
+			if cvm.State != nil {
+				item.State = converter.PtrToVal(cvm.State.Name)
+			}
+			if cvm.Placement != nil {
+				item.Zone = converter.PtrToVal(cvm.Placement.AvailabilityZone)
+			}
+			data = append(data, item)
 		}
 
-		if resp.NextToken == nil {
+		if rawResp.NextToken == nil {
 			break
 		}
-		input.NextToken = resp.NextToken
+		nextToken = rawResp.NextToken
 	}
 
 	return data, nil

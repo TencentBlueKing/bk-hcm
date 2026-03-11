@@ -123,7 +123,11 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 // cloudID is the member account's AWS Account ID (globally unique); roleChain is a list of role
 // names to assume in sequence (supports Role Chaining). Roles [0..n-2] are assumed in the
 // management account, role [n-1] is assumed in the target member account (cloudID).
-func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID string, roleChain []string) (*aws.Aws, error) {
+// externalId is optional; when non-empty it is passed to the final AssumeRole step for
+// Trust Policy condition verification (e.g. sts:ExternalId).
+func (cli *CloudAdaptorClient) AwsWithAssumeRole(
+	kt *kit.Kit, cloudID string, roleChain []string, externalId string,
+) (*aws.Aws, error) {
 
 	subInfo, err := cli.secretCli.AwsSubAccountByCloudID(kt, cloudID)
 	if err != nil {
@@ -153,7 +157,12 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID string, ro
 		roleArn := aws.BuildRoleArn(targetAccountID, roleName, site)
 		cacheKey := cloudAccountID + ":" + roleArn
 
-		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, site)
+		stepExternalId := ""
+		if i == len(roleChain)-1 {
+			stepExternalId = externalId
+		}
+
+		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, stepExternalId, site)
 		if err != nil {
 			return nil, err
 		}

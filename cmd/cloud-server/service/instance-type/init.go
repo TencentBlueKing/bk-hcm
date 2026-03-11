@@ -56,6 +56,10 @@ func InitInstanceTypeService(c *capability.Capability) {
 		"/vendors/aws/assume_role/instance_types/list", svc.ListAssumeRoleInstanceTypeInRes)
 	h.Add("ListAssumeRoleInstanceInRes", http.MethodPost,
 		"/vendors/aws/assume_role/instances/list", svc.ListAssumeRoleInstanceInRes)
+	h.Add("GetAssumeRoleMetricDataInRes", http.MethodPost,
+		"/vendors/aws/assume_role/cloudwatch/metric_data/get", svc.GetAssumeRoleMetricDataInRes)
+	h.Add("ListAssumeRoleMetricsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/cloudwatch/metrics/list", svc.ListAssumeRoleMetricsInRes)
 
 	h.Load(c.WebService)
 }
