@@ -2681,6 +2681,7 @@ func (s *scheduler) getDeviceFamilyAndCoreType(kt *kit.Kit, deviceType, region, 
 	req := &protocloud.DeviceTypeListReq{
 		ListReq: core.ListReq{
 			Filter: tools.ExpressionAnd(rules...),
+			Page:   core.NewDefaultBasePage(),
 		},
 	}
 	deviceInfo, err := s.configLogics.Device().ListDeviceType(kt, req)
