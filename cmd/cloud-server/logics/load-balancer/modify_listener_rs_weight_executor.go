@@ -346,30 +346,29 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 				State:            enumor.TaskDetailInit,
 				Param:            param,
 			}
-		if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
-			// 创建只包含当前 RS 的 ListBatchListenerResult，避免携带其他不相关的 RS
-			singleRsDetail := &dataproto.ListBatchListenerResult{
-				ClbID:        detail.ClbID,
-				CloudClbID:   detail.CloudClbID,
-				ClbVipDomain: detail.ClbVipDomain,
-				BkBizID:      detail.BkBizID,
-				Region:       detail.Region,
-				Vendor:       detail.Vendor,
-				LblID:        detail.LblID,
-				CloudLblID:   detail.CloudLblID,
-				Protocol:     detail.Protocol,
-				Port:         detail.Port,
-				RsList:       []*dataproto.LoadBalancerTargetRsList{rs}, // 只包含当前 RS
-				NewRsWeight:  detail.NewRsWeight,
+			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
+				singleRsDetail := &dataproto.ListBatchListenerResult{ // 创建只包含当前 RS 的 ListBatchListenerResult
+					ClbID:        detail.ClbID,
+					CloudClbID:   detail.CloudClbID,
+					ClbVipDomain: detail.ClbVipDomain,
+					BkBizID:      detail.BkBizID,
+					Region:       detail.Region,
+					Vendor:       detail.Vendor,
+					LblID:        detail.LblID,
+					CloudLblID:   detail.CloudLblID,
+					Protocol:     detail.Protocol,
+					Port:         detail.Port,
+					RsList:       []*dataproto.LoadBalancerTargetRsList{rs}, // 只包含当前 RS
+					NewRsWeight:  detail.NewRsWeight,
+				}
+				taskDetail := &batchListenerModifyRsWeightTaskDetail{
+					TgModifyWeightTaskDetailParam: &param,
+					ListBatchListenerResult:       singleRsDetail,
+				}
+				c.taskDetails = append(c.taskDetails, taskDetail)
+				items = append(items, item)
+				continue
 			}
-			taskDetail := &batchListenerModifyRsWeightTaskDetail{
-				TgModifyWeightTaskDetailParam: &param,
-				ListBatchListenerResult:       singleRsDetail,
-			}
-			c.taskDetails = append(c.taskDetails, taskDetail)
-			items = append(items, item)
-			continue
-		}
 			item.State = enumor.TaskDetailSuccess
 			sameItems = append(sameItems, item)
 		}
@@ -381,16 +380,13 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 		logs.Errorf("create dataservice task detail failed, err: %v, taskID: %s, rid: %s", err, taskID, kt.Rid)
 		return err
 	}
-
 	if len(result.IDs) != len(items) {
 		return fmt.Errorf("create task details failed, operation: %s, expect created[%d] task details, but got [%d]",
 			c.operationType, len(items), len(result.IDs))
 	}
-
 	for i := range c.taskDetails {
 		c.taskDetails[i].taskDetailID = result.IDs[i]
 	}
-
 	return nil
 }
 
