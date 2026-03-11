@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	ptypes "hcm/cmd/woa-server/types/plan"
@@ -45,6 +46,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 
@@ -345,11 +347,8 @@ func (c *Controller) ApproveResPlanSubTicketAdmin(kt *kit.Kit, subTicketID strin
 	req *ptypes.AuditResPlanTicketAdminReq) error {
 
 	// 校验审批人
-	processors := c.resFetcher.GetAdminAuditors()
-	if !slices.Contains(processors, kt.User) {
-		logs.Errorf("not authorized to approve res plan sub ticket, user: %s, processors: %v, rid: %s",
-			kt.User, processors, kt.Rid)
-		return errors.New("not authorized to approve res plan sub ticket")
+	if err := c.ensureAdminApprover(kt); err != nil {
+		return err
 	}
 
 	// 查询数据
@@ -363,6 +362,7 @@ func (c *Controller) ApproveResPlanSubTicketAdmin(kt *kit.Kit, subTicketID strin
 	if !subTicket.IsInAdminAuditing() {
 		logs.Errorf("sub ticket: %s is not in admin auditing, now status: %s, stage: %s, rid: %s",
 			subTicket.ID, subTicket.Status.Name(), subTicket.Stage, kt.Rid)
+		return err
 	}
 
 	// 审批，改变子单状态
@@ -374,18 +374,152 @@ func (c *Controller) ApproveResPlanSubTicketAdmin(kt *kit.Kit, subTicketID strin
 	return nil
 }
 
-func (c *Controller) approveResPlanTicketAdmin(kt *kit.Kit, subTicket *rpst.ResPlanSubTicketTable,
-	req *ptypes.AuditResPlanTicketAdminReq) error {
+// BatchApproveResPlanSubTicketsAdmin 批量审批子单
+func (c *Controller) BatchApproveResPlanSubTicketsAdmin(kt *kit.Kit, bizID int64,
+	req *ptypes.BatchAuditResPlanTicketAdminReq) (*ptypes.BatchApproveResPlanSubTicketsAdminResp, error) {
+
+	if err := c.ensureAdminApprover(kt); err != nil {
+		return nil, err
+	}
+
+	// 校验重复 ID
+	seen := make(map[string]struct{}, len(req.SubTicketIDs))
+	duplicates := make(map[string]struct{})
+	for _, id := range req.SubTicketIDs {
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			duplicates[id] = struct{}{}
+			continue
+		}
+		seen[id] = struct{}{}
+	}
+	if len(duplicates) > 0 {
+		dupIDs := maps.Keys(duplicates)
+		logs.Errorf("batch approve: duplicate sub ticket ids %v, rid: %s", dupIDs, kt.Rid)
+		return nil, fmt.Errorf("duplicate sub ticket ids: %v", dupIDs)
+	}
+
+	subMap, err := c.listSubTicketsByIDs(kt, bizID, req.SubTicketIDs)
+	if err != nil {
+		logs.Errorf("batch approve: list sub tickets failed, biz_id: %d, ids: %v, err: %v, rid: %s",
+			bizID, req.SubTicketIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	validSubTickets := make([]rpst.ResPlanSubTicketTable, 0, len(req.SubTicketIDs))
+	for _, id := range req.SubTicketIDs {
+		subTicket, ok := subMap[id]
+		if !ok {
+			logs.Errorf("batch approve: sub ticket %s not found, biz_id: %d, rid: %s", id, bizID, kt.Rid)
+			return nil, fmt.Errorf("sub ticket %s not found or not belong to biz %d", id, bizID)
+		}
+
+		if !subTicket.IsInAdminAuditing() {
+			logs.Errorf("batch approve: sub ticket %s not in admin audit stage, stage: %s, status: %s, rid: %s",
+				id, subTicket.Stage, subTicket.Status.Name(), kt.Rid)
+			return nil, fmt.Errorf("sub ticket %s not in admin audit stage", id)
+		}
+
+		validSubTickets = append(validSubTickets, subTicket)
+	}
+
+	updateReqs := make([]rpproto.ResPlanSubTicketUpdateReq, 0, len(validSubTickets))
+	for i := range validSubTickets {
+		updateItem, err := c.buildSubTicketUpdateReq(kt, &validSubTickets[i],
+			&req.AuditResPlanTicketAdminReq)
+		if err != nil {
+			logs.Errorf("batch approve: sub ticket %s invalid demands data, err: %v",
+				validSubTickets[i].ID, err)
+			return nil, fmt.Errorf("sub ticket %s invalid demands data: %w",
+				validSubTickets[i].ID, err)
+		}
+
+		updateReqs = append(updateReqs, updateItem)
+	}
+
+	if len(updateReqs) > 0 {
+		if err := c.batchUpdateSubTickets(kt, updateReqs); err != nil {
+			return nil, err
+		}
+	}
+
+	resp := &ptypes.BatchApproveResPlanSubTicketsAdminResp{
+		HandledCount: len(updateReqs),
+	}
+
+	return resp, nil
+}
+
+func (c *Controller) ensureAdminApprover(kt *kit.Kit) error {
+	processors := c.resFetcher.GetAdminAuditors()
+	if !slices.Contains(processors, kt.User) {
+		logs.Errorf("not authorized to approve res plan sub ticket, user: %s, processors: %v, rid: %s",
+			kt.User, processors, kt.Rid)
+		return fmt.Errorf("user %s not authorized to approve admin sub tickets", kt.User)
+	}
+	return nil
+}
+
+func (c *Controller) listSubTicketsByIDs(kt *kit.Kit, bizID int64, ids []string) (
+	map[string]rpst.ResPlanSubTicketTable, error) {
+
+	result := make(map[string]rpst.ResPlanSubTicketTable, len(ids))
+	if len(ids) == 0 {
+		return result, nil
+	}
+
+	rules := []*filter.AtomRule{tools.RuleIn("id", ids)}
+	if bizID != constant.AttachedAllBiz {
+		rules = append(rules, tools.RuleEqual("bk_biz_id", bizID))
+	}
+
+	listReq := &rpproto.ResPlanSubTicketListReq{
+		ListReq: core.ListReq{
+			Filter: tools.ExpressionAnd(rules...),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"id", "status", "stage", "admin_audit_status", "sub_updated_cpu_core", "sub_demands"},
+		},
+	}
+
+	resp, err := c.client.DataService().Global.ResourcePlan.ListResPlanSubTicket(kt, listReq)
+	if err != nil {
+		logs.Errorf("failed to list sub tickets by ids, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+		return nil, err
+	}
+
+	for _, detail := range resp.Details {
+		result[detail.ID] = detail
+	}
+
+	if len(result) != len(ids) {
+		missing := make([]string, 0, len(ids)-len(result))
+		for _, id := range ids {
+			if _, ok := result[id]; !ok {
+				missing = append(missing, id)
+			}
+		}
+		logs.Errorf("batch approve: sub tickets count mismatch, requested: %d, found: %d, missing: %v, biz_id: %d, rid: %s",
+			len(ids), len(result), missing, bizID, kt.Rid)
+		return nil, fmt.Errorf("missing sub ticket ids %v or they do not belong to biz %d", missing, bizID)
+	}
+
+	return result, nil
+}
+
+func (c *Controller) buildSubTicketUpdateReq(kt *kit.Kit, subTicket *rpst.ResPlanSubTicketTable,
+	req *ptypes.AuditResPlanTicketAdminReq) (rpproto.ResPlanSubTicketUpdateReq, error) {
 
 	var demandsStruct rpt.ResPlanDemands
 	if err := json.Unmarshal([]byte(subTicket.SubDemands), &demandsStruct); err != nil {
-		logs.Errorf("failed to unmarshal sub ticket demands, err: %v, id: %s, rid: %s", err,
-			subTicket.ID, kt.Rid)
-		return err
+		logs.Errorf("failed to unmarshal sub ticket demands, err: %v, id: %s, sub_demands: %s, rid: %s",
+			err, subTicket.ID, subTicket.SubDemands, kt.Rid)
+		return rpproto.ResPlanSubTicketUpdateReq{}, err
 	}
 	if len(demandsStruct) == 0 {
 		logs.Errorf("sub ticket demands is empty, id: %s, rid: %s", subTicket.ID, kt.Rid)
-		return fmt.Errorf("sub ticket %s demands is empty", subTicket.ID)
+		return rpproto.ResPlanSubTicketUpdateReq{}, fmt.Errorf("sub ticket %s demands is empty", subTicket.ID)
 	}
 
 	var subTicketType enumor.RPTicketType
@@ -415,10 +549,34 @@ func (c *Controller) approveResPlanTicketAdmin(kt *kit.Kit, subTicket *rpst.ResP
 		AdminAuditOperator: kt.User,
 		AdminAuditAt:       time.Now().Format(constant.DateTimeLayout),
 	}
+	if msg := strings.TrimSpace(req.OperateInfo); msg != "" {
+		updateItem.OperateInfo = &msg
+	}
+
+	return updateItem, nil
+}
+
+func (c *Controller) batchUpdateSubTickets(kt *kit.Kit,
+	subTickets []rpproto.ResPlanSubTicketUpdateReq) error {
+	if len(subTickets) == 0 {
+		return nil
+	}
+
 	updateReq := &rpproto.ResPlanSubTicketBatchUpdateReq{
-		SubTickets: []rpproto.ResPlanSubTicketUpdateReq{updateItem},
+		SubTickets: subTickets,
 	}
 	return c.client.DataService().Global.ResourcePlan.BatchUpdateResPlanSubTicket(kt, updateReq)
+}
+
+func (c *Controller) approveResPlanTicketAdmin(kt *kit.Kit, subTicket *rpst.ResPlanSubTicketTable,
+	req *ptypes.AuditResPlanTicketAdminReq) error {
+
+	updateItem, err := c.buildSubTicketUpdateReq(kt, subTicket, req)
+	if err != nil {
+		return err
+	}
+
+	return c.batchUpdateSubTickets(kt, []rpproto.ResPlanSubTicketUpdateReq{updateItem})
 }
 
 func (c *Controller) getSubTicketByBiz(kt *kit.Kit, subTicketID string, bizID int64) (

@@ -53,6 +53,7 @@ var ResPlanSubTicketColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "admin_audit_status", NamedC: "admin_audit_status", Type: enumor.String},
 	{Column: "admin_audit_operator", NamedC: "admin_audit_operator", Type: enumor.String},
 	{Column: "admin_audit_at", NamedC: "admin_audit_at", Type: enumor.String},
+	{Column: "operate_info", NamedC: "operate_info", Type: enumor.String},
 	{Column: "crp_sn", NamedC: "crp_sn", Type: enumor.String},
 	{Column: "crp_url", NamedC: "crp_url", Type: enumor.String},
 	{Column: "sub_original_os", NamedC: "sub_original_os", Type: enumor.Numeric},
@@ -108,6 +109,8 @@ type ResPlanSubTicketTable struct {
 	AdminAuditOperator string `db:"admin_audit_operator" json:"admin_audit_operator"`
 	// AdminAuditAt 管理员审批时间
 	AdminAuditAt string `db:"admin_audit_at" json:"admin_audit_at"`
+	// OperateInfo 管理员审批意见
+	OperateInfo *string `db:"operate_info" json:"operate_info" validate:"omitempty"`
 	// CrpSN CRP单据ID
 	CrpSN string `db:"crp_sn" json:"crp_sn" validate:"lte=64"`
 	// CrpURL CRP单据审批链接

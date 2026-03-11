@@ -333,3 +333,56 @@ func (s *service) ApproveResPlanSubTicketAdminNode(cts *rest.Contexts) (any, err
 
 	return nil, nil
 }
+
+// BatchApproveResPlanSubTicketAdminNodes 批量管理员审批
+func (s *service) BatchApproveResPlanSubTicketAdminNodes(cts *rest.Contexts) (any, error) {
+	req := new(ptypes.BatchAuditResPlanTicketAdminReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Application, Action: meta.Find}}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.planController.BatchApproveResPlanSubTicketsAdmin(cts.Kit, constant.AttachedAllBiz, req)
+	if err != nil {
+		logs.Errorf("failed to batch approve sub tickets, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// BatchApproveBizResPlanSubTicketAdminNodes 业务下批量管理员审批
+func (s *service) BatchApproveBizResPlanSubTicketAdminNodes(cts *rest.Contexts) (any, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(ptypes.BatchAuditResPlanTicketAdminReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bkBizID}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	resp, err := s.planController.BatchApproveResPlanSubTicketsAdmin(cts.Kit, bkBizID, req)
+	if err != nil {
+		logs.Errorf("failed to batch approve sub tickets for biz %d, err: %v, rid: %s", bkBizID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return resp, nil
+}

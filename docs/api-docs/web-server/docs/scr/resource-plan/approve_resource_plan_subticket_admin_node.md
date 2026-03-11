@@ -10,10 +10,11 @@ POST /api/v1/woa/plans/resources/sub_tickets/{sub_ticket_id}/approve_admin_node
 
 ### 输入参数
 
-| 参数名称               | 参数类型 | 必选 | 描述        |
-|--------------------|------|----|-----------|
-| approval	          | bool | 是  | 是否通过      |
-| use_transfer_pool	 | bool | 是  | 是否使用中转池额度 |
+| 参数名称               | 参数类型 | 必选 | 描述          |
+|--------------------|------|----|-------------|
+| approval	          | bool | 是  | 是否通过        |
+| use_transfer_pool	 | bool | 是  | 是否使用中转池额度   |
+| operate_info   | string | 否  | 审批意见,最多100字 |
 
 ### 调用示例
 
@@ -22,7 +23,8 @@ POST /api/v1/woa/plans/resources/sub_tickets/{sub_ticket_id}/approve_admin_node
 ```json
 {
   "approval": true,
-  "use_transfer_pool": false
+  "use_transfer_pool": false,
+  "operate_info": ""
 }
 ```
 

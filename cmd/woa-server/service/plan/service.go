@@ -94,6 +94,8 @@ func (s *service) initPlanService(h *rest.Handler) {
 		s.GetResPlanSubTicketAudit)
 	h.Add("ApproveResPlanTicketAdminNode", http.MethodPost,
 		"/plans/resources/sub_tickets/{sub_ticket_id}/approve_admin_node", s.ApproveResPlanSubTicketAdminNode)
+	h.Add("BatchApproveResPlanSubTicketAdminNodes", http.MethodPost,
+		"/plans/resources/sub_tickets/approve_admin_node/batch", s.BatchApproveResPlanSubTicketAdminNodes)
 
 	// demand
 	h.Add("ListResPlanDemand", http.MethodPost, "/plans/resources/demands/list", s.ListResPlanDemand)
@@ -166,6 +168,8 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 		"/plans/resources/sub_tickets/{sub_ticket_id}/audit", s.GetBizResPlanSubTicketAudit)
 	h.Add("ApproveBizResPlanTicketAdminNode", http.MethodPost,
 		"/plans/resources/sub_tickets/{sub_ticket_id}/approve_admin_node", s.ApproveBizResPlanSubTicketAdminNode)
+	h.Add("BatchApproveBizResPlanSubTicketAdminNodes", http.MethodPost,
+		"/plans/resources/sub_tickets/approve_admin_node/batch", s.BatchApproveBizResPlanSubTicketAdminNodes)
 
 	// demand
 	h.Add("ListBizResPlanDemand", http.MethodPost, "/plans/resources/demands/list", s.ListBizResPlanDemand)

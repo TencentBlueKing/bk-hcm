@@ -135,6 +135,7 @@ type ResPlanSubTicketUpdateReq struct {
 	AdminAuditStatus    enumor.RPAdminAuditStatus `json:"admin_audit_status"`
 	AdminAuditOperator  string                    `json:"admin_audit_operator"`
 	AdminAuditAt        string                    `json:"admin_audit_at"`
+	OperateInfo         *string                   `json:"operate_info"`
 	CrpSN               string                    `json:"crp_sn"`
 	CrpURL              string                    `json:"crp_url"`
 	SubOriginalOS       *float64                  `json:"sub_original_os"`

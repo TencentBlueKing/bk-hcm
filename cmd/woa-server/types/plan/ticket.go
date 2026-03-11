@@ -16,6 +16,7 @@ package plan
 import (
 	"errors"
 	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -593,9 +594,10 @@ type AdminAuditStep struct {
 
 // AdminAuditLog is admin audit log.
 type AdminAuditLog struct {
-	Name      string `json:"name"`
-	Operator  string `json:"operator"`
-	OperateAt string `json:"operate_at"`
+	Name        string `json:"name"`
+	Operator    string `json:"operator"`
+	OperateAt   string `json:"operate_at"`
+	OperateInfo string `json:"operate_info"`
 }
 
 // CrpAuditStep is crp audit step.
@@ -679,8 +681,36 @@ func (r *AuditResPlanTicketITSMReq) Validate() error {
 
 // AuditResPlanTicketAdminReq 通过管理员审批需求单请求
 type AuditResPlanTicketAdminReq struct {
-	Approval        *bool `json:"approval" validate:"required"`
-	UseTransferPool *bool `json:"use_transfer_pool" validate:"required"`
+	Approval        *bool  `json:"approval" validate:"required"`
+	UseTransferPool *bool  `json:"use_transfer_pool" validate:"required"`
+	OperateInfo     string `json:"operate_info" validate:"omitempty,max=100"`
+}
+
+// BatchAuditResPlanTicketAdminReq 批量审批接口请求参数
+type BatchAuditResPlanTicketAdminReq struct {
+	SubTicketIDs               []string `json:"sub_ticket_ids"`
+	AuditResPlanTicketAdminReq `json:",inline"`
+}
+
+// Validate validate batch request
+func (r *BatchAuditResPlanTicketAdminReq) Validate() error {
+	if len(r.SubTicketIDs) == 0 {
+		return errors.New("sub_ticket_ids is required")
+	}
+	if len(r.SubTicketIDs) > 100 {
+		return errors.New("sub_ticket_ids max length is 100")
+	}
+	for _, id := range r.SubTicketIDs {
+		if strings.TrimSpace(id) == "" {
+			return errors.New("sub_ticket_ids contains empty id")
+		}
+	}
+	return r.AuditResPlanTicketAdminReq.Validate()
+}
+
+// BatchApproveResPlanSubTicketsAdminResp 批量审批响应结构
+type BatchApproveResPlanSubTicketsAdminResp struct {
+	HandledCount int `json:"handled_count"`
 }
 
 // Validate ...

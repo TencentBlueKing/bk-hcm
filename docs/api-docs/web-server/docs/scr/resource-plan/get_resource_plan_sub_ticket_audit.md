@@ -43,6 +43,7 @@ GET /api/v1/woa/plans/resources/sub_tickets/{sub_ticket_id}/audit
         {
           "name": "管理员审批",
           "operator": "lisi",
+          "operate_info": "审批意见",
           "operate_at": "2024-11-06 12:03:12"
         }
       ]
@@ -131,6 +132,7 @@ GET /api/v1/woa/plans/resources/sub_tickets/{sub_ticket_id}/audit
 | operator   | string | 审批人    |
 | operate_at | string | 处理时间   |
 | name       | string | 步骤名称   |
+| operate_info | string | 审批意见 |
 
 #### data.crp_audit.current_steps[n]
 

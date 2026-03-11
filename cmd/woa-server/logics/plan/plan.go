@@ -152,6 +152,9 @@ type Logics interface {
 	// ApproveResPlanSubTicketAdmin approve res plan ticket admin.
 	ApproveResPlanSubTicketAdmin(kt *kit.Kit, subTicketID string, bizID int64,
 		req *ptypes.AuditResPlanTicketAdminReq) error
+	// BatchApproveResPlanSubTicketsAdmin 批量审批资源预测子单
+	BatchApproveResPlanSubTicketsAdmin(kt *kit.Kit, bizID int64,
+		req *ptypes.BatchAuditResPlanTicketAdminReq) (*ptypes.BatchApproveResPlanSubTicketsAdminResp, error)
 	// RetryResPlanFailedSubTickets retry res plan failed sub tickets.
 	RetryResPlanFailedSubTickets(kt *kit.Kit, ticketID string) error
 	// TerminateResPlanFailedTicket terminate res plan failed ticket.

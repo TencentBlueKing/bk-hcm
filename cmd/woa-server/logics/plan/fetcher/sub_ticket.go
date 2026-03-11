@@ -276,9 +276,10 @@ func (f *ResPlanFetcher) GetResPlanSubTicketAudit(kt *kit.Kit, bizID int64, subT
 	if detail.AdminAuditStatus.IsFinished() {
 		adminAudit.CurrentSteps = []*ptypes.AdminAuditStep{}
 		adminAudit.Logs = append(adminAudit.Logs, &ptypes.AdminAuditLog{
-			Name:      constant.AdminAuditStepName,
-			Operator:  detail.AdminAuditOperator,
-			OperateAt: detail.AdminAuditAt,
+			Name:        constant.AdminAuditStepName,
+			Operator:    detail.AdminAuditOperator,
+			OperateAt:   detail.AdminAuditAt,
+			OperateInfo: cvt.PtrToVal(detail.OperateInfo),
 		})
 	}
 
