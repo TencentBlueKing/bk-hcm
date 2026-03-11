@@ -10,20 +10,30 @@ POST /api/v1/cloud/vendors/aws/assume_role/instance_types/list
 
 ### 请求参数
 
-| 参数名称      | 参数类型   | 必选 | 描述                                           |
-|-----------|--------|----|----------------------------------------------|
-| cloud_id  | string | 是  | 成员账号 AWS Account ID（全球唯一），HCM 自动反查对应根账号      |
-| role_name | string | 是  | 成员账号中的 IAM Role 名称，用于拼接 Role ARN 执行 AssumeRole |
-| region    | string | 是  | AWS 区域，如 us-east-1                           |
+| 参数名称       | 参数类型     | 必选 | 描述                                                                                                     |
+|------------|----------|----|--------------------------------------------------------------------------------------------------------|
+| cloud_id   | string   | 是  | 成员账号 AWS Account ID（全球唯一），HCM 自动反查对应根账号                                                                |
+| role_chain | string[] | 是  | 角色名数组，支持 Role Chaining。中间角色在管理账号中 AssumeRole，最后一个角色在成员账号（cloud_id）中 AssumeRole。至少包含 1 个角色名 |
+| region     | string   | 是  | AWS 区域，如 us-east-1                                                                                     |
 
 ### 调用示例
 
-#### 请求参数示例
+#### 请求参数示例（单步 AssumeRole）
 
 ```json
 {
   "cloud_id": "123456789012",
-  "role_name": "gpu-readonly",
+  "role_chain": ["gpu-readonly"],
+  "region": "us-east-1"
+}
+```
+
+#### 请求参数示例（多步 Role Chain）
+
+```json
+{
+  "cloud_id": "123456789012",
+  "role_chain": ["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"],
   "region": "us-east-1"
 }
 ```

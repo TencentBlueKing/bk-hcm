@@ -119,10 +119,11 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 	return cli.adaptor.Azure(cred)
 }
 
-// AwsWithAssumeRole returns an Aws client that accesses a member account via STS AssumeRole.
-// cloudID is the member account's AWS Account ID (globally unique); the method reverse-looks up
-// sub_account to find the parent account's AK/SK automatically.
-func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID, roleName string) (*aws.Aws, error) {
+// AwsWithAssumeRole returns an Aws client that accesses a member account via STS AssumeRole chain.
+// cloudID is the member account's AWS Account ID (globally unique); roleChain is a list of role
+// names to assume in sequence (supports Role Chaining). Roles [0..n-2] are assumed in the
+// management account, role [n-1] is assumed in the target member account (cloudID).
+func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID string, roleChain []string) (*aws.Aws, error) {
 
 	subInfo, err := cli.secretCli.AwsSubAccountByCloudID(kt, cloudID)
 	if err != nil {
@@ -134,25 +135,37 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(kt *kit.Kit, cloudID, roleName 
 		return nil, err
 	}
 
-	roleArn := aws.BuildRoleArn(cloudID, roleName, site)
 	rid := kt.Rid
 	if len(rid) > 60 {
 		rid = rid[:60]
 	}
 	sessionName := "hcm-" + rid
 
-	cred, err := cli.credCache.GetOrRefresh(secret, cloudAccountID, roleArn, sessionName, site)
-	if err != nil {
-		return nil, err
+	currentSecret := secret
+	for i, roleName := range roleChain {
+		var targetAccountID string
+		if i < len(roleChain)-1 {
+			targetAccountID = cloudAccountID
+		} else {
+			targetAccountID = cloudID
+		}
+
+		roleArn := aws.BuildRoleArn(targetAccountID, roleName, site)
+		cacheKey := cloudAccountID + ":" + roleArn
+
+		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, site)
+		if err != nil {
+			return nil, err
+		}
+
+		currentSecret = &adaptortypes.BaseSecret{
+			CloudSecretID:     cred.AccessKeyID,
+			CloudSecretKey:    cred.SecretAccessKey,
+			CloudSessionToken: cred.SessionToken,
+		}
 	}
 
-	assumedSecret := &adaptortypes.BaseSecret{
-		CloudSecretID:     cred.AccessKeyID,
-		CloudSecretKey:    cred.SecretAccessKey,
-		CloudSessionToken: cred.SessionToken,
-	}
-
-	return cli.adaptor.Aws(assumedSecret, cloudID, site)
+	return cli.adaptor.Aws(currentSecret, cloudID, site)
 }
 
 // AwsRoot return aws root client.

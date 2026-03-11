@@ -53,15 +53,12 @@ func NewCredentialCache() *CredentialCache {
 	}
 }
 
-func buildCacheKey(cloudAccountID, roleArn string) string {
-	return cloudAccountID + ":" + roleArn
-}
-
 // GetOrRefresh returns cached credentials if valid, or calls STS to obtain new ones.
-func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cloudAccountID, roleArn, sessionName string,
+// cacheKey is constructed by the orchestration method (AwsWithAssumeRole) to support role chaining scenarios.
+func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleArn, sessionName string,
 	site enumor.AccountSiteType) (*CachedCredential, error) {
 
-	key := buildCacheKey(cloudAccountID, roleArn)
+	key := cacheKey
 	now := time.Now()
 
 	c.mu.Lock()

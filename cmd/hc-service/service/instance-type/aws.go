@@ -113,7 +113,7 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceTypeForAws(cts *rest.Context
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleName)
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleName)
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain)
 	if err != nil {
 		return nil, err
 	}
