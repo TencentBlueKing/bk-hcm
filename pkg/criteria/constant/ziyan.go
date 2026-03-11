@@ -117,3 +117,6 @@ const ResPlanItsmAuditSkip string = "skip"
 
 // CrpCvmApplySubnetMaxNum CRP主机申请接口-子网最大数量
 const CrpCvmApplySubnetMaxNum = 10
+
+// GpuInstanceClassValue  GPU机型族
+const GpuInstanceClassValue = "GPU型"

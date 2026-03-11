@@ -702,6 +702,7 @@ func (s *scheduler) AutoAuditTicket(kit *kit.Kit, param *types.ApplyAutoAuditReq
 		checkResourceType,
 		checkTotalDevice,
 		checkRequireType,
+		checkGPUResource,
 	}
 	for _, checkerRule := range checkerRules {
 		reason, needAudit, err := checkerRule(s, kit, order)
@@ -843,6 +844,20 @@ func checkResourceType(_ *scheduler, _ *kit.Kit, order *types.ApplyTicket) (stri
 		if suborder.ResourceType == types.ResourceTypePm {
 			reason := fmt.Sprintf("order %d apply resource type %s, but require type is %s",
 				order.OrderId, suborder.ResourceType, order.RequireType)
+			return reason, true, nil
+		}
+	}
+
+	return "", false, nil
+}
+
+// checkGPUResource 判断申请单是否包含 GPU 机型资源
+func checkGPUResource(_ *scheduler, _ *kit.Kit, order *types.ApplyTicket) (string, bool, error) {
+	// 检查每个子订单是否包含 GPU 资源,判断机型族是否为 GPU 实例族
+	for _, suborder := range order.Suborders {
+		if suborder.Spec != nil && suborder.Spec.DeviceGroup == constant.GpuInstanceClassValue {
+			reason := fmt.Sprintf("order %d contains GPU resource (device_group: %s), require manual audit",
+				order.OrderId, suborder.Spec.DeviceGroup)
 			return reason, true, nil
 		}
 	}
