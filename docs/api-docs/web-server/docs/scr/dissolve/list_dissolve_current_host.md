@@ -103,7 +103,8 @@ POST /api/v1/woa/dissolve/host/current/list
         "disk_total": 1,
         "max_cpu_core_amount": 1,
         "group_name": "test",
-        "center": "test"
+        "center": "test",
+        "project_name": "test"
       }
     ]
   }
@@ -172,3 +173,4 @@ POST /api/v1/woa/dissolve/host/current/list
 |max_cpu_core_amount| int    | CPU核数        |
 |group_name| string | 运维小组        |
 |center	| string | 业务中心        |
+|project_name| string| 主机项目类型|

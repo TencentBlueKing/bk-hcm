@@ -42,6 +42,7 @@ import (
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/metadata"
+	"hcm/pkg/tools/slice"
 )
 
 // Table provides interface for operations of dissolve table.
@@ -290,7 +291,61 @@ func (l *logics) FindCurHost(kt *kit.Kit, req *dissolve.HostListReq, source ReqS
 		return nil, err
 	}
 
+	// 6.填充主机项目类型
+	data, err = l.fillProjectName(kt, data)
+	if err != nil {
+		logs.Errorf("fill project name failed, err: %v, host: %+v, rid: %s", err, data, kt.Rid)
+		return nil, err
+	}
+
 	return &dissolve.ListHostDetails{Details: data}, nil
+}
+
+// fillProjectName 填充主机项目类型
+func (l *logics) fillProjectName(kt *kit.Kit, hosts []dissolve.Host) ([]dissolve.Host, error) {
+	assetIDs := make(map[string]struct{}, len(hosts))
+	for _, host := range hosts {
+		assetIDs[host.ServerAssetID] = struct{}{}
+	}
+	uniqueAssetIDs := maps.Keys(assetIDs)
+	if len(uniqueAssetIDs) == 0 {
+		return hosts, nil
+	}
+
+	assetIDProjectNameMap := make(map[string]string, len(uniqueAssetIDs))
+
+	for _, batch := range slice.Split(uniqueAssetIDs, int(core.DefaultMaxPageLimit)) {
+		opt := &types.ListOption{
+			Fields: []string{"asset_id", "project_name"},
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("asset_id", batch),
+				// 查询当前阶段为未裁撤的主机
+				tools.RuleIn("abolish_phase", []enumor.AbolishPhase{enumor.Incomplete, enumor.BsiComplete,
+					enumor.Retain}),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		list, err := l.recycledHost.List(kt, opt)
+		if err != nil {
+			logs.Errorf("list recycled hosts failed, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
+			return nil, err
+		}
+
+		for _, recycledHost := range list.Details {
+			assetID := cvt.PtrToVal(recycledHost.AssetID)
+			if projectName := cvt.PtrToVal(recycledHost.ProjectName); projectName != "" {
+				assetIDProjectNameMap[assetID] = projectName
+			}
+		}
+	}
+
+	for i := range hosts {
+		if projectName, ok := assetIDProjectNameMap[hosts[i].ServerAssetID]; ok {
+			hosts[i].ProjectName = projectName
+		}
+	}
+
+	return hosts, nil
 }
 
 // ListResDissolveTable list resource dissolve table

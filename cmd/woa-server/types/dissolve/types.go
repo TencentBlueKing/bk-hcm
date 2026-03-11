@@ -334,6 +334,7 @@ type Host struct {
 	MaxCPUCoreAmount     int64   `json:"max_cpu_core_amount"`
 	GroupName            string  `json:"group_name"`
 	Center               string  `json:"center"`
+	ProjectName          string  `json:"project_name"`
 }
 
 // ConvertHost convert host
