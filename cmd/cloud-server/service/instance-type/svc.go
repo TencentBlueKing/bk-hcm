@@ -248,9 +248,9 @@ func (svc *instanceTypeSvc) lookupAccountIDByCloudID(cts *rest.Contexts, cloudID
 	return result.Details[0].AccountID, nil
 }
 
-// ListGpuInstanceTypeInRes lists AWS GPU instance types (resource scope).
-func (svc *instanceTypeSvc) ListGpuInstanceTypeInRes(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcproto.AwsGpuInstanceTypeListReq)
+// ListAssumeRoleInstanceTypeInRes lists AWS instance types via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleInstanceTypeInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleInstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -273,18 +273,18 @@ func (svc *instanceTypeSvc) ListGpuInstanceTypeInRes(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
-	list, err := svc.client.HCService().Aws.InstanceType.ListGpuInstanceType(cts.Kit, req)
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleInstanceType(cts.Kit, req)
 	if err != nil {
-		logs.Errorf("call hc-service to list aws gpu instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("call hc-service to list aws assume role instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return list, nil
 }
 
-// ListGpuInstanceInRes lists AWS GPU instances (resource scope).
-func (svc *instanceTypeSvc) ListGpuInstanceInRes(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcproto.AwsGpuInstanceListReq)
+// ListAssumeRoleInstanceInRes lists AWS instances via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleInstanceInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleInstanceListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -307,9 +307,9 @@ func (svc *instanceTypeSvc) ListGpuInstanceInRes(cts *rest.Contexts) (interface{
 		return nil, err
 	}
 
-	list, err := svc.client.HCService().Aws.InstanceType.ListGpuInstance(cts.Kit, req)
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleInstance(cts.Kit, req)
 	if err != nil {
-		logs.Errorf("call hc-service to list aws gpu instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("call hc-service to list aws assume role instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

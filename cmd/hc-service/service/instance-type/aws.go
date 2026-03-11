@@ -102,9 +102,9 @@ func toAwsInstanceTypeResp(it *typesinstancetype.AwsInstanceType) *proto.AwsInst
 	}
 }
 
-// ListGpuInstanceTypeForAws lists instance types via AssumeRole for GPU data pass-through.
-func (i *instanceTypeAdaptor) ListGpuInstanceTypeForAws(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AwsGpuInstanceTypeListReq)
+// ListAssumeRoleInstanceTypeForAws lists instance types via AssumeRole cross-account access.
+func (i *instanceTypeAdaptor) ListAssumeRoleInstanceTypeForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleInstanceTypeListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -131,7 +131,7 @@ func (i *instanceTypeAdaptor) ListGpuInstanceTypeForAws(cts *rest.Contexts) (int
 
 		result, err := client.ListInstanceType(cts.Kit, opt)
 		if err != nil {
-			logs.Errorf("list aws gpu instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("list aws assume role instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 		if len(result.Details) <= 0 {
@@ -151,9 +151,9 @@ func (i *instanceTypeAdaptor) ListGpuInstanceTypeForAws(cts *rest.Contexts) (int
 	return data, nil
 }
 
-// ListGpuInstanceForAws lists EC2 instances via AssumeRole for GPU data pass-through.
-func (i *instanceTypeAdaptor) ListGpuInstanceForAws(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AwsGpuInstanceListReq)
+// ListAssumeRoleInstanceForAws lists EC2 instances via AssumeRole cross-account access.
+func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleInstanceListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -172,7 +172,7 @@ func (i *instanceTypeAdaptor) ListGpuInstanceForAws(cts *rest.Contexts) (interfa
 		return nil, err
 	}
 
-	data := make([]*proto.AwsGpuInstanceResp, 0)
+	data := make([]*proto.AwsAssumeRoleInstanceResp, 0)
 	input := &ec2.DescribeInstancesInput{
 		MaxResults: converter.ValToPtr(int64(100)),
 	}
@@ -180,13 +180,13 @@ func (i *instanceTypeAdaptor) ListGpuInstanceForAws(cts *rest.Contexts) (interfa
 	for {
 		resp, err := ec2Client.DescribeInstancesWithContext(cts.Kit.Ctx, input)
 		if err != nil {
-			logs.Errorf("list aws gpu instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("list aws assume role instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
 		for _, reservation := range resp.Reservations {
 			for _, inst := range reservation.Instances {
-				item := &proto.AwsGpuInstanceResp{
+				item := &proto.AwsAssumeRoleInstanceResp{
 					InstanceID:   aws.StringValue(inst.InstanceId),
 					InstanceType: aws.StringValue(inst.InstanceType),
 					PrivateIP:    aws.StringValue(inst.PrivateIpAddress),

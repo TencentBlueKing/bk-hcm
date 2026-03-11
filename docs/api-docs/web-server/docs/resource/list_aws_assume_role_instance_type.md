@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：查询 AWS 成员账号的 GPU 实例类型列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstanceTypes 接口，返回含 GPU 字段（显存、型号、制造商）的实例类型列表。
+- 该接口功能描述：查询 AWS 成员账号的实例类型列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstanceTypes 接口，返回含 GPU 字段（显存、型号、制造商）的实例类型列表。
 
 ### URL
 
-POST /api/v1/cloud/vendors/aws/gpu/instance_types/list
+POST /api/v1/cloud/vendors/aws/assume_role/instance_types/list
 
 ### 请求参数
 

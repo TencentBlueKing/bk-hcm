@@ -58,32 +58,32 @@ type AwsInstanceTypeListResp struct {
 	Data          []*AwsInstanceTypeResp `json:"data"`
 }
 
-// AwsGpuInstanceTypeListReq is the request for listing GPU instance types via AssumeRole.
-type AwsGpuInstanceTypeListReq struct {
+// AwsAssumeRoleInstanceTypeListReq is the request for listing instance types via AssumeRole.
+type AwsAssumeRoleInstanceTypeListReq struct {
 	CloudID  string `json:"cloud_id" validate:"required"`
 	RoleName string `json:"role_name" validate:"required"`
 	Region   string `json:"region" validate:"required"`
 }
 
 // Validate ...
-func (req *AwsGpuInstanceTypeListReq) Validate() error {
+func (req *AwsAssumeRoleInstanceTypeListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AwsGpuInstanceListReq is the request for listing GPU instances via AssumeRole.
-type AwsGpuInstanceListReq struct {
+// AwsAssumeRoleInstanceListReq is the request for listing instances via AssumeRole.
+type AwsAssumeRoleInstanceListReq struct {
 	CloudID  string `json:"cloud_id" validate:"required"`
 	RoleName string `json:"role_name" validate:"required"`
 	Region   string `json:"region" validate:"required"`
 }
 
 // Validate ...
-func (req *AwsGpuInstanceListReq) Validate() error {
+func (req *AwsAssumeRoleInstanceListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AwsGpuInstanceResp represents a single EC2 instance in the GPU instance list response.
-type AwsGpuInstanceResp struct {
+// AwsAssumeRoleInstanceResp represents a single EC2 instance in the AssumeRole instance list response.
+type AwsAssumeRoleInstanceResp struct {
 	InstanceID   string `json:"instance_id"`
 	InstanceType string `json:"instance_type"`
 	State        string `json:"state"`
@@ -93,14 +93,14 @@ type AwsGpuInstanceResp struct {
 	Zone         string `json:"zone"`
 }
 
-// AwsGpuInstanceTypeListResp wraps a list of AwsInstanceTypeResp for GPU instance type queries.
-type AwsGpuInstanceTypeListResp struct {
+// AwsAssumeRoleInstanceTypeListResp wraps a list of AwsInstanceTypeResp for AssumeRole instance type queries.
+type AwsAssumeRoleInstanceTypeListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AwsInstanceTypeResp `json:"data"`
 }
 
-// AwsGpuInstanceListResp wraps a list of AwsGpuInstanceResp.
-type AwsGpuInstanceListResp struct {
+// AwsAssumeRoleInstanceListResp wraps a list of AwsAssumeRoleInstanceResp.
+type AwsAssumeRoleInstanceListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          []*AwsGpuInstanceResp `json:"data"`
+	Data          []*AwsAssumeRoleInstanceResp `json:"data"`
 }

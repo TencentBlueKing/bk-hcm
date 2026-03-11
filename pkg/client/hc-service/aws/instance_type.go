@@ -63,16 +63,16 @@ func (c *InstanceTypeClient) List(kt *kit.Kit, request *instancetype.AwsInstance
 	return resp.Data, nil
 }
 
-// ListGpuInstanceType lists instance types via AssumeRole for GPU data pass-through.
-func (c *InstanceTypeClient) ListGpuInstanceType(kt *kit.Kit,
-	request *instancetype.AwsGpuInstanceTypeListReq) ([]*instancetype.AwsInstanceTypeResp, error) {
+// ListAssumeRoleInstanceType lists instance types via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleInstanceType(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleInstanceTypeListReq) ([]*instancetype.AwsInstanceTypeResp, error) {
 
-	resp := new(instancetype.AwsGpuInstanceTypeListResp)
+	resp := new(instancetype.AwsAssumeRoleInstanceTypeListResp)
 
 	err := c.client.Post().
 		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/gpu/instance_types/list").
+		SubResourcef("/assume_role/instance_types/list").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
@@ -88,16 +88,16 @@ func (c *InstanceTypeClient) ListGpuInstanceType(kt *kit.Kit,
 	return resp.Data, nil
 }
 
-// ListGpuInstance lists EC2 instances via AssumeRole for GPU data pass-through.
-func (c *InstanceTypeClient) ListGpuInstance(kt *kit.Kit,
-	request *instancetype.AwsGpuInstanceListReq) ([]*instancetype.AwsGpuInstanceResp, error) {
+// ListAssumeRoleInstance lists EC2 instances via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleInstance(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleInstanceListReq) ([]*instancetype.AwsAssumeRoleInstanceResp, error) {
 
-	resp := new(instancetype.AwsGpuInstanceListResp)
+	resp := new(instancetype.AwsAssumeRoleInstanceListResp)
 
 	err := c.client.Post().
 		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/gpu/instances/list").
+		SubResourcef("/assume_role/instances/list").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)

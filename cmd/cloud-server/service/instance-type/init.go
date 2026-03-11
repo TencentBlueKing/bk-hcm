@@ -51,11 +51,11 @@ func InitInstanceTypeService(c *capability.Capability) {
 	// 资源下。
 	h.Add("ListInRes", http.MethodPost, "/instance_types/list", svc.ListInRes)
 
-	// AWS GPU 数据透传（资源下）。
-	h.Add("ListGpuInstanceTypeInRes", http.MethodPost,
-		"/vendors/aws/gpu/instance_types/list", svc.ListGpuInstanceTypeInRes)
-	h.Add("ListGpuInstanceInRes", http.MethodPost,
-		"/vendors/aws/gpu/instances/list", svc.ListGpuInstanceInRes)
+	// AWS AssumeRole cross-account data pass-through (resource scope).
+	h.Add("ListAssumeRoleInstanceTypeInRes", http.MethodPost,
+		"/vendors/aws/assume_role/instance_types/list", svc.ListAssumeRoleInstanceTypeInRes)
+	h.Add("ListAssumeRoleInstanceInRes", http.MethodPost,
+		"/vendors/aws/assume_role/instances/list", svc.ListAssumeRoleInstanceInRes)
 
 	h.Load(c.WebService)
 }

@@ -2,11 +2,11 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：查询 AWS 成员账号的 EC2 实例列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstances 接口，返回指定 region 下的实例列表。该接口为数据透传，不持久化到 HCM 本地数据库。
+- 该接口功能描述：查询 AWS 成员账号的 EC2 实例列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstances 接口，返回指定 region 下的实例列表。
 
 ### URL
 
-POST /api/v1/cloud/vendors/aws/gpu/instances/list
+POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 ### 请求参数
 
