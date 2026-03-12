@@ -20,6 +20,8 @@
 package instancetype
 
 import (
+	"encoding/json"
+
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -84,25 +86,14 @@ func (req *AwsAssumeRoleInstanceListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// AwsAssumeRoleInstanceResp represents a single EC2 instance in the AssumeRole instance list response.
-type AwsAssumeRoleInstanceResp struct {
-	InstanceID   string `json:"instance_id"`
-	InstanceType string `json:"instance_type"`
-	State        string `json:"state"`
-	PrivateIP    string `json:"private_ip"`
-	PublicIP     string `json:"public_ip"`
-	Region       string `json:"region"`
-	Zone         string `json:"zone"`
-}
-
 // AwsAssumeRoleInstanceTypeListResp wraps a list of AwsInstanceTypeResp for AssumeRole instance type queries.
 type AwsAssumeRoleInstanceTypeListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AwsInstanceTypeResp `json:"data"`
 }
 
-// AwsAssumeRoleInstanceListResp wraps a list of AwsAssumeRoleInstanceResp.
+// AwsAssumeRoleInstanceListResp wraps the raw AWS EC2 DescribeInstances response for transparent pass-through.
 type AwsAssumeRoleInstanceListResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          []*AwsAssumeRoleInstanceResp `json:"data"`
+	Data          json.RawMessage `json:"data"`
 }

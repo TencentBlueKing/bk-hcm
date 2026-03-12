@@ -46,9 +46,18 @@ type AwsGetMetricDataOption struct {
 	EndTime           time.Time
 }
 
+// MetricDataMessage holds a warning or error message associated with a metric data query.
+type MetricDataMessage struct {
+	Code  string
+	Value string
+}
+
 // MetricDataResult holds the time-series result for a single metric query.
 type MetricDataResult struct {
 	ID         string
+	Label      string
+	StatusCode string
+	Messages   []MetricDataMessage
 	Timestamps []int64
 	Values     []float64
 }
@@ -56,13 +65,6 @@ type MetricDataResult struct {
 // AwsListMetricsOption is the option for listing available CloudWatch metrics.
 type AwsListMetricsOption struct {
 	Region     string
-	Namespace  string
-	MetricName string
-	Dimensions []Dimension
-}
-
-// MetricItem represents a single CloudWatch metric discovered by ListMetrics.
-type MetricItem struct {
 	Namespace  string
 	MetricName string
 	Dimensions []Dimension

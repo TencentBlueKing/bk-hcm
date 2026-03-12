@@ -74,8 +74,15 @@ func (i *instanceTypeAdaptor) GetAssumeRoleMetricDataForAws(cts *rest.Contexts) 
 
 	data := make([]*proto.MetricDataResultItem, 0, len(results))
 	for _, r := range results {
+		msgs := make([]proto.MetricDataMessageItem, 0, len(r.Messages))
+		for _, m := range r.Messages {
+			msgs = append(msgs, proto.MetricDataMessageItem{Code: m.Code, Value: m.Value})
+		}
 		data = append(data, &proto.MetricDataResultItem{
 			ID:         r.ID,
+			Label:      r.Label,
+			StatusCode: r.StatusCode,
+			Messages:   msgs,
 			Timestamps: r.Timestamps,
 			Values:     r.Values,
 		})
@@ -118,18 +125,5 @@ func (i *instanceTypeAdaptor) ListAssumeRoleMetricsForAws(cts *rest.Contexts) (i
 		return nil, err
 	}
 
-	data := make([]*proto.MetricItem, 0, len(results))
-	for _, m := range results {
-		mDims := make([]proto.DimensionParam, 0, len(m.Dimensions))
-		for _, d := range m.Dimensions {
-			mDims = append(mDims, proto.DimensionParam{Name: d.Name, Value: d.Value})
-		}
-		data = append(data, &proto.MetricItem{
-			Namespace:  m.Namespace,
-			MetricName: m.MetricName,
-			Dimensions: mDims,
-		})
-	}
-
-	return data, nil
+	return results, nil
 }

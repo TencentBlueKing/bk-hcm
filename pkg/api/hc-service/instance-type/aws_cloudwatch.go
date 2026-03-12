@@ -20,6 +20,7 @@
 package instancetype
 
 import (
+	"encoding/json"
 	"time"
 
 	"hcm/pkg/criteria/validator"
@@ -60,11 +61,20 @@ func (req *AwsAssumeRoleGetMetricDataReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// MetricDataMessageItem holds a warning or error message associated with a metric data query.
+type MetricDataMessageItem struct {
+	Code  string `json:"code,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
 // MetricDataResultItem holds the time-series result for a single metric query.
 type MetricDataResultItem struct {
-	ID         string    `json:"id"`
-	Timestamps []int64   `json:"timestamps"`
-	Values     []float64 `json:"values"`
+	ID         string                  `json:"id"`
+	Label      string                  `json:"label,omitempty"`
+	StatusCode string                  `json:"status_code,omitempty"`
+	Messages   []MetricDataMessageItem `json:"messages,omitempty"`
+	Timestamps []int64                 `json:"timestamps"`
+	Values     []float64               `json:"values"`
 }
 
 // AwsAssumeRoleGetMetricDataResp wraps the GetMetricData response.
@@ -90,15 +100,9 @@ func (req *AwsAssumeRoleListMetricsReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// MetricItem represents a single CloudWatch metric discovered by ListMetrics.
-type MetricItem struct {
-	Namespace  string           `json:"namespace"`
-	MetricName string           `json:"metric_name"`
-	Dimensions []DimensionParam `json:"dimensions"`
-}
-
-// AwsAssumeRoleListMetricsResp wraps the ListMetrics response.
+// AwsAssumeRoleListMetricsResp wraps the raw AWS CloudWatch ListMetrics response
+// for transparent pass-through.
 type AwsAssumeRoleListMetricsResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          []*MetricItem `json:"data"`
+	Data          json.RawMessage `json:"data"`
 }

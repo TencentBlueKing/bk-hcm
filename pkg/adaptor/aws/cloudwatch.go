@@ -86,6 +86,18 @@ func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) ([
 				mergedMap[id] = item
 				orderedIDs = append(orderedIDs, id)
 			}
+			if result.Label != nil {
+				item.Label = aws.StringValue(result.Label)
+			}
+			if result.StatusCode != nil {
+				item.StatusCode = aws.StringValue(result.StatusCode)
+			}
+			for _, msg := range result.Messages {
+				item.Messages = append(item.Messages, typescw.MetricDataMessage{
+					Code:  aws.StringValue(msg.Code),
+					Value: aws.StringValue(msg.Value),
+				})
+			}
 			for _, t := range result.Timestamps {
 				item.Timestamps = append(item.Timestamps, t.Unix())
 			}
@@ -109,8 +121,9 @@ func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) ([
 }
 
 // ListMetrics lists available CloudWatch metrics.
+// Returns raw AWS SDK cloudwatch.Metric objects for transparent pass-through.
 // reference: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_ListMetrics.html
-func (a *Aws) ListMetrics(kt *kit.Kit, opt *typescw.AwsListMetricsOption) ([]*typescw.MetricItem, error) {
+func (a *Aws) ListMetrics(kt *kit.Kit, opt *typescw.AwsListMetricsOption) ([]*cloudwatch.Metric, error) {
 	client, err := a.clientSet.cloudWatchClient(opt.Region)
 	if err != nil {
 		return nil, err
@@ -134,7 +147,7 @@ func (a *Aws) ListMetrics(kt *kit.Kit, opt *typescw.AwsListMetricsOption) ([]*ty
 		input.Dimensions = filters
 	}
 
-	data := make([]*typescw.MetricItem, 0)
+	data := make([]*cloudwatch.Metric, 0)
 	for {
 		resp, err := client.ListMetricsWithContext(kt.Ctx, input)
 		if err != nil {
@@ -142,20 +155,7 @@ func (a *Aws) ListMetrics(kt *kit.Kit, opt *typescw.AwsListMetricsOption) ([]*ty
 			return nil, err
 		}
 
-		for _, m := range resp.Metrics {
-			dims := make([]typescw.Dimension, 0, len(m.Dimensions))
-			for _, d := range m.Dimensions {
-				dims = append(dims, typescw.Dimension{
-					Name:  aws.StringValue(d.Name),
-					Value: aws.StringValue(d.Value),
-				})
-			}
-			data = append(data, &typescw.MetricItem{
-				Namespace:  aws.StringValue(m.Namespace),
-				MetricName: aws.StringValue(m.MetricName),
-				Dimensions: dims,
-			})
-		}
+		data = append(data, resp.Metrics...)
 
 		if resp.NextToken == nil {
 			break

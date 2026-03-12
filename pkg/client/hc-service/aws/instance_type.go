@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"encoding/json"
+
 	instancetype "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -89,8 +91,9 @@ func (c *InstanceTypeClient) ListAssumeRoleInstanceType(kt *kit.Kit,
 }
 
 // ListAssumeRoleInstance lists EC2 instances via AssumeRole cross-account access.
+// Returns raw AWS EC2 Instance JSON for transparent pass-through.
 func (c *InstanceTypeClient) ListAssumeRoleInstance(kt *kit.Kit,
-	request *instancetype.AwsAssumeRoleInstanceListReq) ([]*instancetype.AwsAssumeRoleInstanceResp, error) {
+	request *instancetype.AwsAssumeRoleInstanceListReq) (json.RawMessage, error) {
 
 	resp := new(instancetype.AwsAssumeRoleInstanceListResp)
 
@@ -139,8 +142,9 @@ func (c *InstanceTypeClient) GetAssumeRoleMetricData(kt *kit.Kit,
 }
 
 // ListAssumeRoleMetrics lists available CloudWatch metrics via AssumeRole cross-account access.
+// Returns raw AWS CloudWatch Metric JSON for transparent pass-through.
 func (c *InstanceTypeClient) ListAssumeRoleMetrics(kt *kit.Kit,
-	request *instancetype.AwsAssumeRoleListMetricsReq) ([]*instancetype.MetricItem, error) {
+	request *instancetype.AwsAssumeRoleListMetricsReq) (json.RawMessage, error) {
 
 	resp := new(instancetype.AwsAssumeRoleListMetricsResp)
 

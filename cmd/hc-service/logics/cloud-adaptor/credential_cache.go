@@ -93,7 +93,7 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 	// Cache miss or expired — must obtain new credentials.
 	result, err := aws.AssumeRole(secret, roleArn, sessionName, externalId, site)
 	if err != nil {
-		return nil, fmt.Errorf("assume role failed, key: %s, err: %v", key, err)
+		return nil, fmt.Errorf("assume role [%s] failed: %w", key, err)
 	}
 	fresh := &CachedCredential{
 		AccessKeyID:     result.AccessKeyID,

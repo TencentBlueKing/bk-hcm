@@ -28,6 +28,8 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // ListForAws ...
@@ -165,7 +167,7 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	data := make([]*proto.AwsAssumeRoleInstanceResp, 0)
+	data := make([]*ec2.Instance, 0)
 	var nextToken *string
 
 	for {
@@ -181,20 +183,7 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 		}
 
 		for _, cvm := range cvms {
-			item := &proto.AwsAssumeRoleInstanceResp{
-				InstanceID:   converter.PtrToVal(cvm.InstanceId),
-				InstanceType: converter.PtrToVal(cvm.InstanceType),
-				PrivateIP:    converter.PtrToVal(cvm.PrivateIpAddress),
-				PublicIP:     converter.PtrToVal(cvm.PublicIpAddress),
-				Region:       req.Region,
-			}
-			if cvm.State != nil {
-				item.State = converter.PtrToVal(cvm.State.Name)
-			}
-			if cvm.Placement != nil {
-				item.Zone = converter.PtrToVal(cvm.Placement.AvailabilityZone)
-			}
-			data = append(data, item)
+			data = append(data, cvm.Instance)
 		}
 
 		if rawResp.NextToken == nil {

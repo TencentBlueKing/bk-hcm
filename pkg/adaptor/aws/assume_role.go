@@ -80,7 +80,7 @@ func AssumeRole(secret *types.BaseSecret, roleArn, sessionName, externalId strin
 
 	output, err := stsClient.AssumeRole(input)
 	if err != nil {
-		return nil, fmt.Errorf("assume role failed, roleArn: %s, err: %v", roleArn, err)
+		return nil, err
 	}
 
 	if output.Credentials == nil {
