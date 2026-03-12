@@ -117,7 +117,6 @@ var syncOrder = []enumor.CloudResourceType{
 	enumor.SecurityGroupCloudResType,
 	enumor.CvmCloudResType,
 	enumor.RouteTableCloudResType,
-	enumor.SubAccountCloudResType,
 	enumor.SecurityGroupUsageBizRelResType,
 	enumor.CvmCCInfoResType,
 }
@@ -129,7 +128,6 @@ var syncFuncMap = map[enumor.CloudResourceType]ResSyncFunc{
 	enumor.SecurityGroupCloudResType:       SyncSG,
 	enumor.CvmCloudResType:                 SyncCvm,
 	enumor.RouteTableCloudResType:          SyncRouteTable,
-	enumor.SubAccountCloudResType:          SyncSubAccount,
 	enumor.SecurityGroupUsageBizRelResType: SyncSGUsageBizRel,
 	enumor.CvmCCInfoResType:                SyncCvmCCHostInfo,
 }

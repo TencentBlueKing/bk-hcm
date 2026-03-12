@@ -120,21 +120,17 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 }
 
 // AwsWithAssumeRole returns an Aws client that accesses a member account via STS AssumeRole chain.
-// cloudID is the member account's AWS Account ID (globally unique); roleChain is a list of role
-// names to assume in sequence (supports Role Chaining). Roles [0..n-2] are assumed in the
-// management account, role [n-1] is assumed in the target member account (cloudID).
+// rootAccountID is the root account ID used to get base credentials; cloudID is the member account's
+// AWS Account ID (globally unique); roleChain is a list of role names to assume in sequence (supports
+// Role Chaining). Roles [0..n-2] are assumed in the management account, role [n-1] is assumed in the
+// target member account (cloudID).
 // externalId is optional; when non-empty it is passed to the final AssumeRole step for
 // Trust Policy condition verification (e.g. sts:ExternalId).
 func (cli *CloudAdaptorClient) AwsWithAssumeRole(
-	kt *kit.Kit, cloudID string, roleChain []string, externalId string,
+	kt *kit.Kit, rootAccountID string, cloudID string, roleChain []string, externalId string,
 ) (*aws.Aws, error) {
 
-	subInfo, err := cli.secretCli.AwsSubAccountByCloudID(kt, cloudID)
-	if err != nil {
-		return nil, err
-	}
-
-	secret, cloudAccountID, site, err := cli.secretCli.AwsSecret(kt, subInfo.AccountID)
+	secret, cloudAccountID, site, err := cli.secretCli.AwsRootSecret(kt, rootAccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +150,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 			targetAccountID = cloudID
 		}
 
-		roleArn := aws.BuildRoleArn(targetAccountID, roleName, site)
+		roleArn := aws.BuildRoleArn(targetAccountID, roleName, enumor.AccountSiteType(site))
 		cacheKey := cloudAccountID + ":" + roleArn
 
 		stepExternalId := ""
@@ -162,7 +158,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 			stepExternalId = externalId
 		}
 
-		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, stepExternalId, site)
+		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, stepExternalId, enumor.AccountSiteType(site))
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +170,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 		}
 	}
 
-	return cli.adaptor.Aws(currentSecret, cloudID, site)
+	return cli.adaptor.Aws(currentSecret, cloudID, enumor.AccountSiteType(site))
 }
 
 // AwsRoot return aws root client.

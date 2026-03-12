@@ -47,13 +47,14 @@ type MetricDataQueryParam struct {
 // AwsAssumeRoleGetMetricDataReq is the request for querying CloudWatch metric
 // time-series data via AssumeRole cross-account access.
 type AwsAssumeRoleGetMetricDataReq struct {
-	CloudID          string                 `json:"cloud_id" validate:"required"`
-	RoleChain        []string               `json:"role_chain" validate:"required,min=1"`
-	Region           string                 `json:"region" validate:"required"`
-	ExternalID       string                 `json:"external_id,omitempty"`
+	RootAccountID     string                 `json:"root_account_id" validate:"required"`
+	MainAccountID     string                 `json:"main_account_id" validate:"required"`
+	RoleChain         []string               `json:"role_chain" validate:"required,min=1"`
+	Region            string                 `json:"region" validate:"required"`
+	ExternalID        string                 `json:"external_id,omitempty"`
 	MetricDataQueries []MetricDataQueryParam `json:"metric_data_queries" validate:"required,min=1,dive"`
-	StartTime        time.Time              `json:"start_time" validate:"required"`
-	EndTime          time.Time              `json:"end_time" validate:"required"`
+	StartTime         time.Time              `json:"start_time" validate:"required"`
+	EndTime           time.Time              `json:"end_time" validate:"required"`
 }
 
 // Validate validates the request fields.
@@ -86,13 +87,14 @@ type AwsAssumeRoleGetMetricDataResp struct {
 // AwsAssumeRoleListMetricsReq is the request for listing available CloudWatch
 // metrics via AssumeRole cross-account access.
 type AwsAssumeRoleListMetricsReq struct {
-	CloudID    string           `json:"cloud_id" validate:"required"`
-	RoleChain  []string         `json:"role_chain" validate:"required,min=1"`
-	Region     string           `json:"region" validate:"required"`
-	ExternalID string           `json:"external_id,omitempty"`
-	Namespace  string           `json:"namespace,omitempty"`
-	MetricName string           `json:"metric_name,omitempty"`
-	Dimensions []DimensionParam `json:"dimensions,omitempty"`
+	RootAccountID string           `json:"root_account_id" validate:"required"`
+	MainAccountID string           `json:"main_account_id" validate:"required"`
+	RoleChain     []string         `json:"role_chain" validate:"required,min=1"`
+	Region        string           `json:"region" validate:"required"`
+	ExternalID    string           `json:"external_id,omitempty"`
+	Namespace     string           `json:"namespace,omitempty"`
+	MetricName    string           `json:"metric_name,omitempty"`
+	Dimensions    []DimensionParam `json:"dimensions,omitempty"`
 }
 
 // Validate validates the request fields.

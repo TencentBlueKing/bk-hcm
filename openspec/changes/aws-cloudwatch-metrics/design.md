@@ -16,7 +16,7 @@ AWS 的所有监控指标（无论内置还是 Agent 采集）统一通过 Cloud
 - 新增 CloudWatch client 支持（`clientSet` 中新增 `cloudWatchClient`）
 - 提供指标时序数据查询透传接口（`GetMetricData`），支持按 Namespace + MetricName + InstanceId + 时间范围查询
 - 提供可用指标列表查询透传接口（`ListMetrics`），支持发现指定实例实际存在的指标
-- 复用已有 AssumeRole + Role Chain 链路，入参模式与实例列表接口一致（`cloud_id` + `role_chain` + `region` + 指标参数）
+- 复用已有 AssumeRole + Role Chain 链路，入参模式与 GPU 实例数据接口一致（`root_account_id` + `main_account_id` + `role_chain` + `region` + 指标参数）
 - 提供 cloud-server 资源视角入口、蓝鲸 API 网关注册、接口文档
 - 非破坏性：不改动任何已有接口的行为
 

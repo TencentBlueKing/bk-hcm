@@ -113,7 +113,16 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceTypeForAws(cts *rest.Context
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain, req.ExternalID)
+	// Get CloudID from main_account table
+	mainAccountInfo, err := i.dataCli.Aws.MainAccount.Get(cts.Kit, req.MainAccountID)
+	if err != nil {
+		logs.Errorf("get aws main account failed, main account id: %s, err: %v, rid: %s",
+			req.MainAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	cloudID := mainAccountInfo.CloudID
+
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +171,16 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.CloudID, req.RoleChain, req.ExternalID)
+	// Get CloudID from main_account table
+	mainAccountInfo, err := i.dataCli.Aws.MainAccount.Get(cts.Kit, req.MainAccountID)
+	if err != nil {
+		logs.Errorf("get aws main account failed, main account id: %s, err: %v, rid: %s",
+			req.MainAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	cloudID := mainAccountInfo.CloudID
+
+	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
 		return nil, err
 	}

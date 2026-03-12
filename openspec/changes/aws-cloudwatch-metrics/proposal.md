@@ -7,7 +7,7 @@ GPU 资源分析平台在获取到 AWS 实例列表（已由 `aws-assume-role-gp
 - **新增 CloudWatch client 支持**：在 `pkg/adaptor/aws/` 的 `clientSet` 中新增 `cloudWatchClient` 方法，引入 `github.com/aws/aws-sdk-go/service/cloudwatch` 依赖
 - **新增 CloudWatch 指标查询能力**：在 `pkg/adaptor/aws/` 实现 `GetMetricData` 封装，支持按 Namespace + MetricName + Dimensions + 时间范围查询指标时序数据
 - **新增 CloudWatch 可用指标列表查询能力**：封装 `ListMetrics` API，支持列出指定实例在 CloudWatch 中实际存在的指标（用于发现 Agent 采集了哪些 GPU 指标）
-- **新增 CloudWatch 指标透传接口**：hc-service 实现指标查询 handler，入参为 `cloud_id` + `role_chain` + `region` + 指标参数，复用已有的 AssumeRole + Role Chain 链路
+- **新增 CloudWatch 指标透传接口**：hc-service 实现指标查询 handler，入参为 `root_account_id` + `main_account_id` + `role_chain` + `region` + 指标参数，复用已有的 AssumeRole + Role Chain 链路
 - **新增 CloudWatch 接口 cloud-server 入口与开放接口注册**：cloud-server 提供资源视角入口（含鉴权），在蓝鲸 API 网关 YAML 中注册为开放接口
 - **新增接口文档**：按 HCM 接口文档规范编写指标查询和指标列表的接口文档
 

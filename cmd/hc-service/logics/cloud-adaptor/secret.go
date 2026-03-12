@@ -24,11 +24,9 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types"
-	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
-	"hcm/pkg/runtime/filter"
 )
 
 // SecretClient used to get secret by account id from data-service.
@@ -86,46 +84,6 @@ func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (
 	}
 
 	return secret, account.Extension.CloudAccountID, account.Site, nil
-}
-
-// AwsSubAccountByCloudIDResult holds the reverse-lookup result from CloudID to parent account.
-type AwsSubAccountByCloudIDResult struct {
-	AccountID string
-	CloudID   string
-}
-
-// AwsSubAccountByCloudID reverse-looks up a sub_account by CloudID (AWS Account ID, globally unique)
-// and returns the parent cloud.account internal ID along with the CloudID.
-func (cli *SecretClient) AwsSubAccountByCloudID(kt *kit.Kit, cloudID string) (
-	*AwsSubAccountByCloudIDResult, error) {
-
-	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.Equal.Factory(),
-					Value: cloudID,
-				},
-			},
-		},
-		Page: &core.BasePage{Start: 0, Limit: 1},
-	}
-	result, err := cli.data.Aws.SubAccount.ListExt(kt, listReq)
-	if err != nil {
-		return nil, fmt.Errorf("list aws sub account by cloud_id failed, cloud_id: %s, err: %v",
-			cloudID, err)
-	}
-	if result == nil || len(result.Details) == 0 {
-		return nil, fmt.Errorf("aws sub account not found for cloud_id: %s", cloudID)
-	}
-
-	sub := result.Details[0]
-	return &AwsSubAccountByCloudIDResult{
-		AccountID: sub.AccountID,
-		CloudID:   sub.CloudID,
-	}, nil
 }
 
 // HuaWeiSecret get huawei secret and validate secret.

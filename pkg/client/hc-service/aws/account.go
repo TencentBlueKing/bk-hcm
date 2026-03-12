@@ -26,7 +26,6 @@ import (
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
-	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -114,28 +113,4 @@ func (a *AccountClient) GetResCountBySecret(kt *kit.Kit, request *cloud.AwsSecre
 	}
 
 	return resp.Data, nil
-}
-
-// SyncSubAccount sync aws sub account.
-func (a *AccountClient) SyncSubAccount(kt *kit.Kit, req *sync.AwsGlobalSyncReq) error {
-
-	resp := new(rest.BaseResp)
-
-	err := a.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/sub_accounts/sync").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
 }

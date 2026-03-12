@@ -10,12 +10,13 @@ POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 ### 请求参数
 
-| 参数名称        | 参数类型     | 必选 | 描述                                                                                                     |
-|-------------|----------|----|--------------------------------------------------------------------------------------------------------|
-| cloud_id    | string   | 是  | 成员账号 AWS Account ID（全球唯一），HCM 自动反查对应根账号                                                                |
-| role_chain  | string[] | 是  | 角色名数组，支持 Role Chaining。中间角色在管理账号中 AssumeRole，最后一个角色在成员账号（cloud_id）中 AssumeRole。至少包含 1 个角色名 |
-| region      | string   | 是  | AWS 区域，如 us-east-1                                                                                     |
-| external_id | string   | 否  | STS AssumeRole 的 ExternalId，用于目标角色 Trust Policy 的条件验证。仅应用于 Role Chain 最后一步                             |
+| 参数名称           | 参数类型     | 必选 | 描述                                                                                                     |
+|----------------|----------|----|--------------------------------------------------------------------------------------------------------|
+| root_account_id | string   | 是  | 根账号 ID，用于获取 AWS 根账号凭证                                                                                  |
+| main_account_id | string   | 是  | 主账号 ID，用于查询 main_account 表获取成员账号的 AWS Account ID                                                       |
+| role_chain     | string[] | 是  | 角色名数组，支持 Role Chaining。中间角色在管理账号中 AssumeRole，最后一个角色在成员账号中 AssumeRole。至少包含 1 个角色名                    |
+| region         | string   | 是  | AWS 区域，如 us-east-1                                                                                     |
+| external_id    | string   | 否  | STS AssumeRole 的 ExternalId，用于目标角色 Trust Policy 的条件验证。仅应用于 Role Chain 最后一步                             |
 
 ### 调用示例
 
@@ -23,7 +24,8 @@ POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 ```json
 {
-  "cloud_id": "123456789012",
+  "root_account_id": "00000000001",
+  "main_account_id": "00000000002",
   "role_chain": ["gpu-readonly"],
   "region": "us-east-1"
 }
@@ -33,7 +35,8 @@ POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 ```json
 {
-  "cloud_id": "123456789012",
+  "root_account_id": "00000000001",
+  "main_account_id": "00000000002",
   "role_chain": ["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"],
   "region": "us-east-1",
   "external_id": "your-external-id"

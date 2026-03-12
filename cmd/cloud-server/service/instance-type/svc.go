@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	proto "hcm/pkg/api/cloud-server/instance-type"
-	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -32,7 +31,6 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -223,31 +221,6 @@ func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.ListReq) (
 	return result, nil
 }
 
-// lookupAccountIDByCloudID reverse-looks up the parent account_id from cloud_id via data-service.
-func (svc *instanceTypeSvc) lookupAccountIDByCloudID(cts *rest.Contexts, cloudID string) (string, error) {
-	listReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.Equal.Factory(),
-					Value: cloudID,
-				},
-			},
-		},
-		Page: &core.BasePage{Start: 0, Limit: 1},
-	}
-	result, err := svc.client.DataService().Aws.SubAccount.ListExt(cts.Kit, listReq)
-	if err != nil {
-		return "", fmt.Errorf("list aws sub account by cloud_id failed, cloud_id: %s, err: %v", cloudID, err)
-	}
-	if result == nil || len(result.Details) == 0 {
-		return "", fmt.Errorf("aws sub account not found for cloud_id: %s", cloudID)
-	}
-	return result.Details[0].AccountID, nil
-}
-
 // ListAssumeRoleInstanceTypeInRes lists AWS instance types via AssumeRole (resource scope).
 func (svc *instanceTypeSvc) ListAssumeRoleInstanceTypeInRes(cts *rest.Contexts) (interface{}, error) {
 	req := new(hcproto.AwsAssumeRoleInstanceTypeListReq)
@@ -259,15 +232,11 @@ func (svc *instanceTypeSvc) ListAssumeRoleInstanceTypeInRes(cts *rest.Contexts) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer: svc.authorizer, ResType: meta.InstanceType,
 		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
-			AccountID: accountID,
+			AccountID: req.RootAccountID,
 		}})
 	if err != nil {
 		return nil, err
@@ -293,15 +262,11 @@ func (svc *instanceTypeSvc) ListAssumeRoleInstanceInRes(cts *rest.Contexts) (int
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
-			AccountID: accountID,
+			AccountID: req.RootAccountID,
 		}})
 	if err != nil {
 		return nil, err
@@ -327,15 +292,11 @@ func (svc *instanceTypeSvc) GetAssumeRoleMetricDataInRes(cts *rest.Contexts) (in
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
-			AccountID: accountID,
+			AccountID: req.RootAccountID,
 		}})
 	if err != nil {
 		return nil, err
@@ -362,15 +323,11 @@ func (svc *instanceTypeSvc) ListAssumeRoleMetricsInRes(cts *rest.Contexts) (inte
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	accountID, err := svc.lookupAccountIDByCloudID(cts, req.CloudID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer: svc.authorizer, ResType: meta.Cvm,
 		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
-			AccountID: accountID,
+			AccountID: req.RootAccountID,
 		}})
 	if err != nil {
 		return nil, err

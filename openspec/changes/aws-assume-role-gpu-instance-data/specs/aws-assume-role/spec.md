@@ -5,7 +5,7 @@
 
 #### Scenario: 成功获取临时凭证
 - **GIVEN** 管理账号 IAM User 拥有 `sts:AssumeRole` 权限
-- **WHEN** 以 `cloud.account` 的 AK/SK 调用 AssumeRole，传入 Role ARN 和 SessionName
+- **WHEN** 以 `root_account` 的 AK/SK 调用 AssumeRole，传入 Role ARN 和 SessionName
 - **THEN** 返回包含 AccessKeyId、SecretAccessKey、SessionToken 和 Expiration 的临时凭证
 
 #### Scenario: AssumeRole 失败
@@ -14,15 +14,15 @@
 - **THEN** 返回错误，错误信息中包含 Role ARN 和原始 AWS 错误描述
 
 ### Requirement: Role ARN 自动拼接
-系统 SHALL 根据下游平台透传的 `role_name` + `sub_account.CloudID`（成员账号 AWS Account ID）+ `site`（国际站/中国站）自动拼接完整 Role ARN。不依赖数据库存储 Role ARN。仅涉及 AWS 云厂商。
+系统 SHALL 根据下游平台透传的 `role_name` + 目标账号 CloudID（成员账号 AWS Account ID，从 `main_account` 表获取）+ `site`（国际站/中国站）自动拼接完整 Role ARN。不依赖数据库存储 Role ARN。仅涉及 AWS 云厂商。
 
 #### Scenario: 国际站 ARN 拼接
-- **GIVEN** site 为国际站，sub_account.CloudID 为 `123456789012`，role_name 为 `gpu-readonly`
+- **GIVEN** site 为国际站，目标账号 CloudID 为 `123456789012`，role_name 为 `gpu-readonly`
 - **WHEN** 系统拼接 Role ARN
 - **THEN** 生成 `arn:aws:iam::123456789012:role/gpu-readonly`
 
 #### Scenario: 中国站 ARN 拼接
-- **GIVEN** site 为中国站，sub_account.CloudID 为 `123456789012`，role_name 为 `gpu-readonly`
+- **GIVEN** site 为中国站，目标账号 CloudID 为 `123456789012`，role_name 为 `gpu-readonly`
 - **WHEN** 系统拼接 Role ARN
 - **THEN** 生成 `arn:aws-cn:iam::123456789012:role/gpu-readonly`
 
@@ -50,22 +50,22 @@
 - **THEN** 调用 STS API 获取新凭证，写入缓存并返回
 
 ### Requirement: AwsWithAssumeRole 编排方法（支持 Role Chain）
-`CloudAdaptorClient` SHALL 提供 `AwsWithAssumeRole` 方法，接收 `kt`、`cloudID`（成员账号 AWS Account ID）和 `roleChain`（角色名数组）参数，返回具备成员账号访问权限的 `*aws.Aws` client。该方法内部 SHALL 用 CloudID 反查 sub_account 表获取对应的 `account_id`（根账号），再查 cloud.account 获取 AK/SK，然后按 roleChain 顺序执行链式 AssumeRole。`roleChain[0..n-2]` 的角色在管理账号中 AssumeRole，`roleChain[n-1]` 在目标成员账号（cloudID）中 AssumeRole。该方法 SHALL 不改动现有 `Aws()` 和 `AwsRoot()` 方法。仅涉及 AWS 云厂商。
+`CloudAdaptorClient` SHALL 提供 `AwsWithAssumeRole` 方法，接收 `kt`、`rootAccountID`（根账号 HCM 内部 ID）、`cloudID`（成员账号 AWS Account ID，从 main_account 表获取）和 `roleChain`（角色名数组）参数，返回具备成员账号访问权限的 `*aws.Aws` client。该方法内部 SHALL 用 `rootAccountID` 调 `AwsRoot()` 获取根账号 AK/SK，然后按 roleChain 顺序执行链式 AssumeRole。`roleChain[0..n-2]` 的角色在管理账号中 AssumeRole，`roleChain[n-1]` 在目标成员账号（cloudID）中 AssumeRole。参考 GCP GPU monitoring 的 `GcpRoot` + `MainAccount` 模式。该方法 SHALL 不改动现有 `Aws()` 和 `AwsRoot()` 方法。仅涉及 AWS 云厂商。
 
 #### Scenario: 单步 AssumeRole（roleChain 长度为 1）
-- **GIVEN** cloudID 在 sub_account 表中存在，roleChain 为 `["gpu-readonly"]`
+- **GIVEN** rootAccountID 有效，cloudID 为目标成员账号 AWS Account ID，roleChain 为 `["gpu-readonly"]`
 - **WHEN** 调用 `AwsWithAssumeRole`
-- **THEN** 系统依次执行：CloudID 反查 sub_account → 查 AK/SK → 用成员账号 CloudID 拼接 Role ARN → AssumeRole → 构建并返回 Aws client
+- **THEN** 系统依次执行：AwsRoot 获取 AK/SK → 用成员账号 CloudID 拼接 Role ARN → AssumeRole → 构建并返回 Aws client
 
 #### Scenario: 多步 Role Chain（roleChain 长度为 2）
-- **GIVEN** cloudID 在 sub_account 表中存在，roleChain 为 `["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"]`
+- **GIVEN** rootAccountID 有效，cloudID 为目标成员账号 AWS Account ID，roleChain 为 `["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"]`
 - **WHEN** 调用 `AwsWithAssumeRole`
-- **THEN** 系统执行：CloudID 反查 → 查 AK/SK → 用**管理账号** CloudID 拼接第一个 Role ARN 并 AssumeRole → 用第一步的临时凭证 + **成员账号** CloudID 拼接第二个 Role ARN 并 AssumeRole → 构建并返回 Aws client
+- **THEN** 系统执行：AwsRoot 获取 AK/SK → 用**管理账号** CloudID 拼接第一个 Role ARN 并 AssumeRole → 用第一步的临时凭证 + **成员账号** CloudID 拼接第二个 Role ARN 并 AssumeRole → 构建并返回 Aws client
 
-#### Scenario: CloudID 在 sub_account 表中不存在
-- **GIVEN** cloudID 对应的成员账号未同步到 sub_account 表
+#### Scenario: rootAccountID 无效
+- **GIVEN** rootAccountID 在 root_account 表中不存在
 - **WHEN** 调用 `AwsWithAssumeRole`
-- **THEN** 返回错误，错误信息包含 cloudID
+- **THEN** 返回错误，错误信息包含 rootAccountID
 
 #### Scenario: Role Chain 中间步骤失败
 - **GIVEN** roleChain 中某个中间角色不存在或权限不足
@@ -84,16 +84,3 @@
 - **GIVEN** BaseSecret 的 CloudSessionToken 为空字符串（零值）
 - **WHEN** newClientSet 构建 credentials
 - **THEN** 行为与当前硬编码 `""` 完全一致，无任何变化
-
-### Requirement: AWS sub_account 同步链路补完
-cloud-server 的 AWS 同步流程 SHALL 包含 sub_account 同步步骤。需要在 `hc-service` 新增 `SyncSubAccount` client 方法，在 `cloud-server` 新增同步入口函数，并在 `syncOrder` 中注册。同步数据来源为 AWS Organizations `ListAccounts` API。仅涉及 AWS 云厂商。
-
-#### Scenario: cloud-server 触发 AWS 全量同步
-- **GIVEN** cloud-server 发起 AWS 资源同步
-- **WHEN** 按 syncOrder 执行
-- **THEN** sub_account 同步 SHALL 被包含在同步序列中
-
-#### Scenario: sub_account 同步成功
-- **GIVEN** 管理账号拥有 `organizations:ListAccounts` 权限
-- **WHEN** 执行 AWS sub_account 同步
-- **THEN** 所有 Organizations 成员账号写入 `cloud.sub_account` 表，包含 CloudID（AWS Account ID）、Name、Status

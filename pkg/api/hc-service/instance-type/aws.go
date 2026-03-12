@@ -62,10 +62,11 @@ type AwsInstanceTypeListResp struct {
 
 // AwsAssumeRoleInstanceTypeListReq is the request for listing instance types via AssumeRole.
 type AwsAssumeRoleInstanceTypeListReq struct {
-	CloudID    string   `json:"cloud_id" validate:"required"`
-	RoleChain  []string `json:"role_chain" validate:"required,min=1"`
-	Region     string   `json:"region" validate:"required"`
-	ExternalID string   `json:"external_id,omitempty"`
+	RootAccountID string   `json:"root_account_id" validate:"required"`
+	MainAccountID string   `json:"main_account_id" validate:"required"`
+	RoleChain     []string `json:"role_chain" validate:"required,min=1"`
+	Region        string   `json:"region" validate:"required"`
+	ExternalID    string   `json:"external_id,omitempty"`
 }
 
 // Validate ...
@@ -75,10 +76,11 @@ func (req *AwsAssumeRoleInstanceTypeListReq) Validate() error {
 
 // AwsAssumeRoleInstanceListReq is the request for listing instances via AssumeRole.
 type AwsAssumeRoleInstanceListReq struct {
-	CloudID    string   `json:"cloud_id" validate:"required"`
-	RoleChain  []string `json:"role_chain" validate:"required,min=1"`
-	Region     string   `json:"region" validate:"required"`
-	ExternalID string   `json:"external_id,omitempty"`
+	RootAccountID string   `json:"root_account_id" validate:"required"`
+	MainAccountID string   `json:"main_account_id" validate:"required"`
+	RoleChain     []string `json:"role_chain" validate:"required,min=1"`
+	Region        string   `json:"region" validate:"required"`
+	ExternalID    string   `json:"external_id,omitempty"`
 }
 
 // Validate ...
