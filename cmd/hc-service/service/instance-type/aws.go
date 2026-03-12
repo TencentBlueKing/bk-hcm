@@ -20,6 +20,8 @@
 package instancetype
 
 import (
+	"fmt"
+
 	"hcm/pkg/adaptor/types/core"
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesinstancetype "hcm/pkg/adaptor/types/instance-type"
@@ -120,7 +122,11 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceTypeForAws(cts *rest.Context
 			req.MainAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	cloudID := mainAccountInfo.CloudID
+	if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudMainAccountID == "" {
+		logs.Errorf("main account: %s cloud main account id is empty, rid: %s", req.MainAccountID, cts.Kit.Rid)
+		return nil, fmt.Errorf("main account: %s cloud main account id is empty", req.MainAccountID)
+	}
+	cloudID := mainAccountInfo.Extension.CloudMainAccountID
 
 	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
@@ -178,7 +184,11 @@ func (i *instanceTypeAdaptor) ListAssumeRoleInstanceForAws(cts *rest.Contexts) (
 			req.MainAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	cloudID := mainAccountInfo.CloudID
+	if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudMainAccountID == "" {
+		logs.Errorf("main account: %s cloud main account id is empty, rid: %s", req.MainAccountID, cts.Kit.Rid)
+		return nil, fmt.Errorf("main account: %s cloud main account id is empty", req.MainAccountID)
+	}
+	cloudID := mainAccountInfo.Extension.CloudMainAccountID
 
 	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {

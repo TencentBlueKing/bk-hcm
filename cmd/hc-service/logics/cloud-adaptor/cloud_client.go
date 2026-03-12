@@ -142,6 +142,9 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 	sessionName := "hcm-" + rid
 
 	currentSecret := secret
+	// Convert RootAccountSiteType to AccountSiteType (both have same underlying values)
+	accountSite := enumor.AccountSiteType(string(site))
+
 	for i, roleName := range roleChain {
 		var targetAccountID string
 		if i < len(roleChain)-1 {
@@ -150,7 +153,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 			targetAccountID = cloudID
 		}
 
-		roleArn := aws.BuildRoleArn(targetAccountID, roleName, enumor.AccountSiteType(site))
+		roleArn := aws.BuildRoleArn(targetAccountID, roleName, accountSite)
 		cacheKey := cloudAccountID + ":" + roleArn
 
 		stepExternalId := ""
@@ -158,7 +161,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 			stepExternalId = externalId
 		}
 
-		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, stepExternalId, enumor.AccountSiteType(site))
+		cred, err := cli.credCache.GetOrRefresh(currentSecret, cacheKey, roleArn, sessionName, stepExternalId, accountSite)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +173,7 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 		}
 	}
 
-	return cli.adaptor.Aws(currentSecret, cloudID, enumor.AccountSiteType(site))
+	return cli.adaptor.Aws(currentSecret, cloudID, accountSite)
 }
 
 // AwsRoot return aws root client.
