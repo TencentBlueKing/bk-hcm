@@ -108,11 +108,15 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
   "data": [
     {
       "id": "cpu_util",
+      "label": "CPUUtilization",
+      "status_code": "Complete",
       "timestamps": [1704067200, 1704070800, 1704074400],
       "values": [23.5, 45.2, 12.8]
     },
     {
       "id": "gpu_util",
+      "label": "nvidia_smi_utilization_gpu",
+      "status_code": "Complete",
       "timestamps": [1704067200, 1704070800, 1704074400],
       "values": [78.3, 92.1, 65.7]
     }
@@ -130,8 +134,18 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
 
 #### data[n]
 
-| 参数名称       | 参数类型     | 描述                                 |
-|------------|----------|------------------------------------|
-| id         | string   | 对应请求中 metric_data_queries 的 id     |
-| timestamps | int[]    | 时间戳数组（Unix 秒），与 values 一一对应        |
-| values     | float[]  | 指标值数组，与 timestamps 一一对应             |
+| 参数名称        | 参数类型     | 描述                                                                                     |
+|-------------|----------|----------------------------------------------------------------------------------------|
+| id          | string   | 对应请求中 metric_data_queries 的 id                                                         |
+| label       | string   | 指标标签（可选），通常为指标名称                                                                       |
+| status_code | string   | 查询状态码（可选），如 Complete（数据完整）、InternalError、PartialData、Forbidden                          |
+| messages    | array    | 查询相关的警告或错误消息列表（可选），每个元素包含 code 和 value                                                 |
+| timestamps  | int[]    | 时间戳数组（Unix 秒），与 values 一一对应                                                            |
+| values      | float[]  | 指标值数组，与 timestamps 一一对应                                                                 |
+
+#### messages[n]
+
+| 参数名称  | 参数类型   | 描述           |
+|-------|--------|--------------|
+| code  | string | 消息错误码        |
+| value | string | 消息详细内容       |

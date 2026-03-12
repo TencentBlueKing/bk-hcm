@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：查询 AWS 成员账号在 CloudWatch 中实际存在的指标列表。通过 STS AssumeRole 跨账号访问成员账号的 CloudWatch ListMetrics 接口，返回匹配条件的指标列表。可用于发现实例上 CloudWatch Agent 实际采集了哪些指标。
+- 该接口功能描述：查询 AWS 成员账号在 CloudWatch 中实际存在的指标列表。通过 STS AssumeRole 跨账号访问成员账号的 CloudWatch ListMetrics 接口，透传返回 AWS 原始 Metric 对象。可用于发现实例上 CloudWatch Agent 实际采集了哪些指标。
 
 ### URL
 
@@ -59,32 +59,35 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metrics/list
 
 #### 返回参数示例
 
+> **注意**：`data` 为 AWS CloudWatch ListMetrics 原始 Metric 对象数组的透传。
+> 完整字段列表请参考 [AWS CloudWatch Metric 文档](https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_Metric.html)。
+
 ```json
 {
   "code": 0,
   "message": "",
   "data": [
     {
-      "namespace": "CWAgent",
-      "metric_name": "nvidia_smi_utilization_gpu",
-      "dimensions": [
-        {"name": "InstanceId", "value": "i-0abcdef1234567890"},
-        {"name": "InstanceType", "value": "p3.2xlarge"}
+      "Namespace": "CWAgent",
+      "MetricName": "nvidia_smi_utilization_gpu",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0abcdef1234567890"},
+        {"Name": "InstanceType", "Value": "p3.2xlarge"}
       ]
     },
     {
-      "namespace": "CWAgent",
-      "metric_name": "nvidia_smi_memory_used",
-      "dimensions": [
-        {"name": "InstanceId", "value": "i-0abcdef1234567890"},
-        {"name": "InstanceType", "value": "p3.2xlarge"}
+      "Namespace": "CWAgent",
+      "MetricName": "nvidia_smi_memory_used",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0abcdef1234567890"},
+        {"Name": "InstanceType", "Value": "p3.2xlarge"}
       ]
     },
     {
-      "namespace": "AWS/EC2",
-      "metric_name": "CPUUtilization",
-      "dimensions": [
-        {"name": "InstanceId", "value": "i-0abcdef1234567890"}
+      "Namespace": "AWS/EC2",
+      "MetricName": "CPUUtilization",
+      "Dimensions": [
+        {"Name": "InstanceId", "Value": "i-0abcdef1234567890"}
       ]
     }
   ]
@@ -93,16 +96,16 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metrics/list
 
 ### 响应参数说明
 
-| 参数名称    | 参数类型   | 描述   |
-|---------|--------|------|
-| code    | int    | 状态码  |
-| message | string | 请求信息 |
-| data    | array  | 响应数据 |
+| 参数名称    | 参数类型   | 描述                                                  |
+|---------|--------|-----------------------------------------------------|
+| code    | int    | 状态码                                                 |
+| message | string | 请求信息                                                |
+| data    | array  | AWS CloudWatch Metric 对象数组，完全透传 AWS 原始结构 |
 
-#### data[n]
+#### data[n] 字段
 
-| 参数名称        | 参数类型   | 描述                                         |
-|-------------|--------|--------------------------------------------|
-| namespace   | string | CloudWatch 命名空间，如 AWS/EC2、CWAgent          |
-| metric_name | string | 指标名称                                       |
-| dimensions  | array  | 该指标关联的维度列表，每个元素包含 name 和 value              |
+| 参数名称       | 参数类型   | 描述                                                  |
+|------------|--------|-----------------------------------------------------|
+| Namespace  | string | CloudWatch 命名空间，如 AWS/EC2、CWAgent                  |
+| MetricName | string | 指标名称                                                |
+| Dimensions | array  | 该指标关联的维度列表，每个元素包含 Name（string）和 Value（string） |

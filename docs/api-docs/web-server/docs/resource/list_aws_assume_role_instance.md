@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源查看。
-- 该接口功能描述：查询 AWS 成员账号的 EC2 实例列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstances 接口，返回指定 region 下的实例列表。
+- 该接口功能描述：查询 AWS 成员账号的 EC2 实例列表。通过 STS AssumeRole 跨账号访问成员账号的 DescribeInstances 接口，透传返回 AWS 原始 Instance 对象。
 
 ### URL
 
@@ -42,28 +42,39 @@ POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 #### 返回参数示例
 
+> **注意**：`data` 为 AWS EC2 DescribeInstances 原始 Instance 对象数组的透传。
+> 完整字段列表请参考 [AWS EC2 Instance 文档](https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Instance.html)，以下仅展示常用字段。
+
 ```json
 {
   "code": 0,
   "message": "",
   "data": [
     {
-      "instance_id": "i-0abcdef1234567890",
-      "instance_type": "p3.2xlarge",
-      "state": "running",
-      "private_ip": "192.168.1.100",
-      "public_ip": "54.123.45.67",
-      "region": "us-east-1",
-      "zone": "us-east-1a"
-    },
-    {
-      "instance_id": "i-0fedcba0987654321",
-      "instance_type": "g4dn.xlarge",
-      "state": "stopped",
-      "private_ip": "192.168.2.200",
-      "public_ip": "",
-      "region": "us-east-1",
-      "zone": "us-east-1b"
+      "InstanceId": "i-0abcdef1234567890",
+      "InstanceType": "p3.2xlarge",
+      "State": {
+        "Code": 16,
+        "Name": "running"
+      },
+      "PrivateIpAddress": "192.168.1.100",
+      "PublicIpAddress": "54.123.45.67",
+      "Placement": {
+        "AvailabilityZone": "us-east-1a",
+        "GroupName": "",
+        "Tenancy": "default"
+      },
+      "Architecture": "x86_64",
+      "ImageId": "ami-0abcdef1234567890",
+      "LaunchTime": "2025-06-01T12:00:00Z",
+      "SubnetId": "subnet-abc123",
+      "VpcId": "vpc-abc123",
+      "Tags": [
+        {
+          "Key": "Name",
+          "Value": "gpu-worker-01"
+        }
+      ]
     }
   ]
 }
@@ -71,20 +82,27 @@ POST /api/v1/cloud/vendors/aws/assume_role/instances/list
 
 ### 响应参数说明
 
-| 参数名称    | 参数类型   | 描述   |
-|---------|--------|------|
-| code    | int    | 状态码  |
-| message | string | 请求信息 |
-| data    | array  | 响应数据 |
+| 参数名称    | 参数类型   | 描述                                           |
+|---------|--------|----------------------------------------------|
+| code    | int    | 状态码                                          |
+| message | string | 请求信息                                         |
+| data    | array  | AWS EC2 Instance 对象数组，完全透传 AWS 原始结构 |
 
-#### data[n]
+#### data[n] 常用字段
 
-| 参数名称          | 参数类型   | 描述                                     |
-|---------------|--------|----------------------------------------|
-| instance_id   | string | EC2 实例 ID                              |
-| instance_type | string | 实例机型，如 p3.2xlarge                      |
-| state         | string | 实例状态，如 running、stopped、terminated 等    |
-| private_ip    | string | 内网 IP 地址                               |
-| public_ip     | string | 公网 IP 地址，无公网 IP 时为空字符串                 |
-| region        | string | 所在区域                                   |
-| zone          | string | 所在可用区                                  |
+> 以下仅列出常用字段，实际返回包含 AWS EC2 Instance 的全部字段。
+
+| 参数名称             | 参数类型   | 描述                                               |
+|------------------|--------|--------------------------------------------------|
+| InstanceId       | string | EC2 实例 ID                                        |
+| InstanceType     | string | 实例机型，如 p3.2xlarge、g4dn.xlarge                   |
+| State            | object | 实例状态，含 Code（int）和 Name（string，如 running/stopped）|
+| PrivateIpAddress | string | 内网 IP 地址                                         |
+| PublicIpAddress  | string | 公网 IP 地址，无公网 IP 时该字段不存在                         |
+| Placement        | object | 放置信息，含 AvailabilityZone、Tenancy 等               |
+| Architecture     | string | CPU 架构，如 x86_64、arm64                            |
+| ImageId          | string | AMI 镜像 ID                                        |
+| LaunchTime       | string | 启动时间，ISO 8601 格式                                |
+| SubnetId         | string | 子网 ID                                            |
+| VpcId            | string | VPC ID                                           |
+| Tags             | array  | 标签列表，每项含 Key 和 Value                            |
