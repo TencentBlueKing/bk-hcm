@@ -165,6 +165,7 @@ type Set interface {
 	ResPlanSubTicket() resplan.ResPlanSubTicketInterface
 	ResPlanDemand() resplan.ResPlanDemandInterface
 	ResPlanDemandGpuOrder() resplan.ResPlanDemandGpuOrderInterface
+	ResPlanDemandGpuSubOrder() resplan.ResPlanDemandGpuSubOrderInterface
 	ResPlanDemandPenaltyBase() resplan.DemandPenaltyBaseInterface
 	ResPlanDemandChangelog() resplan.DemandChangelogInterface
 	ResPlanTicketStatus() resplan.ResPlanTicketStatusInterface
@@ -933,6 +934,15 @@ func (s *set) ResPlanDemandGpuOrder() resplan.ResPlanDemandGpuOrderInterface {
 	return &resplan.ResPlanDemandGpuOrderDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+	}
+}
+
+// ResPlanDemandGpuSubOrder resource plan demand gpu sub order dao.
+func (s *set) ResPlanDemandGpuSubOrder() resplan.ResPlanDemandGpuSubOrderInterface {
+	return &resplan.ResPlanDemandGpuSubOrderDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 

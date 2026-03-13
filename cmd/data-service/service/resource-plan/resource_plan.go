@@ -26,6 +26,7 @@ import (
 	demandchangelog "hcm/cmd/data-service/service/resource-plan/res-plan-demand-changelog"
 	"hcm/cmd/data-service/service/resource-plan/res-plan-demand-gpu-order"
 	demandgputemplate "hcm/cmd/data-service/service/resource-plan/res-plan-demand-gpu-template"
+	"hcm/cmd/data-service/service/resource-plan/res-plan-demand-gpu-suborder"
 	demandpenaltybase "hcm/cmd/data-service/service/resource-plan/res-plan-demand-penalty-base"
 	resplansubticket "hcm/cmd/data-service/service/resource-plan/res-plan-sub-ticket"
 	transferappliedrecord "hcm/cmd/data-service/service/resource-plan/res-plan-transfer-applied-record"
@@ -37,6 +38,7 @@ import (
 func InitService(cap *capability.Capability) {
 	resplandemand.InitService(cap)
 	resplandemandgpuorder.InitService(cap)
+	resplandemandgpusuborder.InitService(cap)
 	demandpenaltybase.InitService(cap)
 	demandchangelog.InitService(cap)
 	demandgputemplate.InitService(cap)

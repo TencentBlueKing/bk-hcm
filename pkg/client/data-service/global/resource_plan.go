@@ -323,3 +323,34 @@ func (b *ResourcePlanClient) DeleteResPlanDemandGpuOrder(kt *kit.Kit, req *datap
 	return common.RequestNoResp[dataproto.BatchDeleteReq](
 		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch")
 }
+
+// --- resource plan demand gpu sub order ---
+
+// ListResPlanDemandGpuSubOrder list resource plan demand gpu sub order
+func (b *ResourcePlanClient) ListResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderListReq) (*rpproto.ResPlanDemandGpuSubOrderListResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderListReq, rpproto.ResPlanDemandGpuSubOrderListResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/list")
+}
+
+// BatchCreateResPlanDemandGpuSubOrder batch create resource plan demand gpu sub order
+func (b *ResourcePlanClient) BatchCreateResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch/create")
+}
+
+// BatchUpdateResPlanDemandGpuSubOrder update resource plan demand gpu sub order
+func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq) error {
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
+}
+
+// DeleteResPlanDemandGpuSubOrder delete resource plan demand gpu sub order
+func (b *ResourcePlanClient) DeleteResPlanDemandGpuSubOrder(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
+}

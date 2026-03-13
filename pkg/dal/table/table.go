@@ -185,6 +185,8 @@ const (
 	ResPlanDemandTable = "res_plan_demand"
 	// ResPlanDemandGpuOrderTable is res_plan_demand_gpu_order table's name.
 	ResPlanDemandGpuOrderTable = "res_plan_demand_gpu_order"
+	// ResPlanDemandGpuSubOrderTable is res_plan_demand_gpu_suborder table's name.
+	ResPlanDemandGpuSubOrderTable = "res_plan_demand_gpu_suborder"
 	// ResPlanTicketStatusTable is res_plan_ticket_status table's name.
 	ResPlanTicketStatusTable = "res_plan_ticket_status"
 	// WoaZoneTable is woa_zone table's name.
@@ -407,6 +409,7 @@ var TableMap = map[Name]TableConfig{
 	ResPlanTicketTable:                {},
 	ResPlanDemandTable:                {},
 	ResPlanDemandGpuOrderTable:        {},
+	ResPlanDemandGpuSubOrderTable:     {},
 	ResPlanTicketStatusTable:          {},
 	WoaZoneTable:                      {},
 	DeviceTypeTable:                   {},
