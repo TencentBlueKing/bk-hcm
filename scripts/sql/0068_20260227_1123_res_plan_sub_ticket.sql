@@ -18,7 +18,7 @@
  */
 
 /*
-   SQLVER=9999,HCMVER=v9.9.9.9
+   SQLVER=0068,HCMVER=v1.8.10.1
 
    Notes:
    1. res_plan_sub_ticket 表新增 operate_info 字段
@@ -30,6 +30,6 @@ ALTER TABLE `res_plan_sub_ticket`
     ADD COLUMN `operate_info` varchar(100) DEFAULT NULL COMMENT '管理员审批意见，最多 100 字';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.10.1' as `hcm_ver`, '0068' as `sql_ver`;
 
 COMMIT;
