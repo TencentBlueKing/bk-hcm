@@ -183,6 +183,8 @@ const (
 	ResPlanTicketTable = "res_plan_ticket"
 	// ResPlanDemandTable is res_plan_demand table's name.
 	ResPlanDemandTable = "res_plan_demand"
+	// ResPlanDemandGpuOrderTable is res_plan_demand_gpu_order table's name.
+	ResPlanDemandGpuOrderTable = "res_plan_demand_gpu_order"
 	// ResPlanTicketStatusTable is res_plan_ticket_status table's name.
 	ResPlanTicketStatusTable = "res_plan_ticket_status"
 	// WoaZoneTable is woa_zone table's name.
@@ -402,6 +404,7 @@ var TableMap = map[Name]TableConfig{
 	// TODO 内部版独有的表，有待梳理是否启用多租户
 	ResPlanTicketTable:                {},
 	ResPlanDemandTable:                {},
+	ResPlanDemandGpuOrderTable:        {},
 	ResPlanTicketStatusTable:          {},
 	WoaZoneTable:                      {},
 	DeviceTypeTable:                   {},

@@ -260,3 +260,35 @@ func (b *ResourcePlanClient) SumResPlanTransferAppliedRecord(kt *kit.Kit, req *r
 	return common.Request[rpproto.TransferAppliedRecordListReq, resplan.SumTransferAppliedRecord](
 		b.client, rest.POST, kt, req, "/res_plans/transfer_applied_records/sum")
 }
+
+// --- res plan demand gpu order ---
+
+// BatchCreateResPlanDemandGpuOrder batch create res plan demand gpu order
+func (b *ResourcePlanClient) BatchCreateResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuOrderBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch/create")
+}
+
+// BatchUpdateResPlanDemandGpuOrder batch update res plan demand gpu order
+func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderBatchUpdateReq) error {
+
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuOrderBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch")
+}
+
+// ListResPlanDemandGpuOrder list res plan demand gpu order
+func (b *ResourcePlanClient) ListResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderListReq) (*rpproto.ResPlanDemandGpuOrderListResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuOrderListReq, rpproto.ResPlanDemandGpuOrderListResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_orders/list")
+}
+
+// DeleteResPlanDemandGpuOrder delete res plan demand gpu order
+func (b *ResourcePlanClient) DeleteResPlanDemandGpuOrder(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch")
+}
