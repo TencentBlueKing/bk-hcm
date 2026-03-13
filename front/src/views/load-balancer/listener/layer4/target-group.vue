@@ -48,6 +48,7 @@ const rsListWithEndPort = computed(() => {
     end_port: portRangeLength.value ? rs.port + portRangeLength.value : undefined,
   }));
 });
+
 const isDisplaySimpleInfoLoading = computed(
   () =>
     loadBalancerTargetGroupStore.targetGroupDetailsLoading ||
