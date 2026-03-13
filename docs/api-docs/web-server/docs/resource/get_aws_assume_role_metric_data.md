@@ -45,8 +45,8 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
 
 ```json
 {
-  "root_account_id": "00000000001",
-  "main_account_id": "00000000002",
+  "root_account_id": "00000001",
+  "main_account_id": "00000002",
   "role_chain": ["gpu-readonly"],
   "region": "us-east-1",
   "metric_data_queries": [
@@ -70,8 +70,8 @@ POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
 
 ```json
 {
-  "root_account_id": "00000000001",
-  "main_account_id": "00000000002",
+  "root_account_id": "00000001",
+  "main_account_id": "00000002",
   "role_chain": ["GPUInventoryCallerRole", "GPUInventoryReadOnlyRole"],
   "region": "us-east-1",
   "external_id": "your-external-id",
