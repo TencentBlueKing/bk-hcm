@@ -174,6 +174,7 @@ type Set interface {
 	WoaZone() resplan.WoaZoneInterface
 	WoaDeviceTypePhysicalRel() resplan.WoaDeviceTypePhysicalRelInterface
 	ResPlanTransferAppliedRecord() resplan.TransferAppliedRecordInterface
+	ResPlanDemandGpuTemplate() resplan.DemandGpuTemplateInterface
 	ShortRentalReturnedRecord() shortrental.ShortRentalReturnedRecordInterface
 
 	RecycleModule() module.RecycleModule
@@ -1013,6 +1014,14 @@ func (s *set) ResPlanTransferAppliedRecord() resplan.TransferAppliedRecordInterf
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// ResPlanDemandGpuTemplate demand gpu template dao.
+func (s *set) ResPlanDemandGpuTemplate() resplan.DemandGpuTemplateInterface {
+	return &resplan.DemandGpuTemplateDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }
 

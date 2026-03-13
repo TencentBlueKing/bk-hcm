@@ -153,6 +153,37 @@ func (b *ResourcePlanClient) DeleteDemandChangelog(kt *kit.Kit, req *dataproto.B
 		b.client, rest.DELETE, kt, req, "/res_plans/demand_changelogs/batch")
 }
 
+// --- demand gpu template ---
+
+// ListDemandGpuTemplate list demand gpu template
+func (b *ResourcePlanClient) ListDemandGpuTemplate(kt *kit.Kit, req *rpproto.DemandGpuTemplateListReq) (
+	*rpproto.DemandGpuTemplateListResult, error) {
+
+	return common.Request[rpproto.DemandGpuTemplateListReq, rpproto.DemandGpuTemplateListResult](
+		b.client, rest.POST, kt, req, "/res_plans/demand_gpu_templates/list")
+}
+
+// BatchCreateDemandGpuTemplate batch create demand gpu template
+func (b *ResourcePlanClient) BatchCreateDemandGpuTemplate(kt *kit.Kit, req *rpproto.DemandGpuTemplateBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.DemandGpuTemplateBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/demand_gpu_templates/batch/create")
+}
+
+// BatchUpdateDemandGpuTemplate batch update demand gpu template
+func (b *ResourcePlanClient) BatchUpdateDemandGpuTemplate(kt *kit.Kit,
+	req *rpproto.DemandGpuTemplateBatchUpdateReq) error {
+	return common.RequestNoResp[rpproto.DemandGpuTemplateBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/demand_gpu_templates/batch")
+}
+
+// DeleteDemandGpuTemplate delete demand gpu template
+func (b *ResourcePlanClient) DeleteDemandGpuTemplate(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/demand_gpu_templates/batch")
+}
+
 // --- res plan week ---
 
 // ListResPlanWeek list resource plan week
