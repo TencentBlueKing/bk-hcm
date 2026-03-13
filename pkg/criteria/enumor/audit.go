@@ -52,8 +52,10 @@ const (
 	RootAccountAuditResType       AuditResourceType = "root_account"
 	RsAppliedRecordAuditResType   AuditResourceType = "rolling_server_applied_record"
 
-	// 自研云-云上主机
+	// CloudCvmAuditResType 自研云-云上主机
 	CloudCvmAuditResType AuditResourceType = "cloud_cvm"
+	// ResPlanGPUDemandsAuditResType 自研云-GPU需求
+	ResPlanGPUDemandsAuditResType AuditResourceType = "res_plan_gpu_demands"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -80,6 +82,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	MainAccountAuditResType:       {},
 	RootAccountAuditResType:       {},
 	RsAppliedRecordAuditResType:   {},
+	ResPlanGPUDemandsAuditResType: {},
 }
 
 // Exist judge enum value exist.

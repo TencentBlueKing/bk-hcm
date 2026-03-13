@@ -125,6 +125,8 @@ const (
 	BizResPlanOperate client.ActionID = "biz_resource_plan_operate"
 	// ZiyanResPlanManage ziyan resource plan manage action id to register iam.
 	ZiyanResPlanManage client.ActionID = "ziyan_resource_plan_manage"
+	// ZiYanResPlanGPUDemands 平台管理-GPU需求 action id to register iam.
+	ZiYanResPlanGPUDemands client.ActionID = "ziyan_resource_plan_gpu_demands"
 
 	// BizTaskManagementOperate biz task management operate action id to register iam.
 	BizTaskManagementOperate client.ActionID = "biz_task_management_operate"
@@ -271,8 +273,9 @@ var ActionIDNameMap = map[client.ActionID]string{
 	BizRecycleBinConfig:    "业务-回收站配置",
 	BizOperationRecordFind: "业务-操作记录查看",
 
-	BizResPlanOperate:  "业务-资源预测操作",
-	ZiyanResPlanManage: "平台-资源预测",
+	BizResPlanOperate:      "业务-资源预测操作",
+	ZiyanResPlanManage:     "平台-资源预测",
+	ZiYanResPlanGPUDemands: "平台-GPU需求",
 
 	ServiceResDissolve: "服务-机房裁撤",
 

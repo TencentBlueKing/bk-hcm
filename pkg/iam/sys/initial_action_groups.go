@@ -256,6 +256,7 @@ func genPlatformManageActionGroups() client.ActionGroup {
 					{ID: ZiyanResCreate},
 					{ID: ZiyanResRecycle},
 					{ID: ZiyanResPlanManage},
+					{ID: ZiYanResPlanGPUDemands},
 					{ID: ZiyanResDeliverAnalyze},
 				},
 			},

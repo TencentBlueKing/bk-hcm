@@ -690,6 +690,15 @@ func genZiYanPlatformManageActions() []client.ResourceAction {
 		Version:              1,
 		Hidden:               true,
 	}, {
+		ID:                   ZiYanResPlanGPUDemands,
+		Name:                 ActionIDNameMap[ZiYanResPlanGPUDemands],
+		NameEn:               "ZiYan Resource Plan GPU Demands",
+		Type:                 Edit,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+		Hidden:               true,
+	}, {
 		ID:                   RollingServerManage,
 		Name:                 ActionIDNameMap[RollingServerManage],
 		NameEn:               "Rolling Server Manage",
