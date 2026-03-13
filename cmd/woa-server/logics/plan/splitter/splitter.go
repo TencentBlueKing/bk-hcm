@@ -38,7 +38,10 @@ import (
 
 // Splitter ...
 type Splitter interface {
-	SplitDeleteTicket(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType, demands rpt.ResPlanDemands,
+	SplitAddTicket(kt *kit.Kit, ticketID string, virtualDeptID int64, demands rpt.ResPlanDemands) error
+	SplitDeleteTicket(kt *kit.Kit, ticketID string, virtualDeptID int64, ticketType enumor.RPTicketType,
+		demands rpt.ResPlanDemands, planProductName, opProductName string) error
+	SplitAdjustTicket(kt *kit.Kit, ticketID string, virtualDeptID int64, demands rpt.ResPlanDemands,
 		planProductName, opProductName string) error
 }
 
@@ -74,7 +77,7 @@ type AdjustAbleRemainObj struct {
 
 // New create a SubTicketSplitter
 func New(dao dao.Set, cli *client.ClientSet, crpCli cvmapi.CVMClientInterface, resFetcher fetcher.Fetcher,
-	deviceMap *device.DeviceTypesMap) *SubTicketSplitter {
+	deviceMap *device.DeviceTypesMap) Splitter {
 
 	return &SubTicketSplitter{
 		dao:         dao,

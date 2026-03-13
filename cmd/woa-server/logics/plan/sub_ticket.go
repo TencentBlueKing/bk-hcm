@@ -114,13 +114,13 @@ func (c *Controller) retrySplitResPlanTickets(kt *kit.Kit, ticketID string, tick
 	splitHelper := splitter.New(c.dao, c.client, c.crpCli, c.resFetcher, c.deviceTypesMap)
 	switch ticket.Type {
 	case enumor.RPTicketTypeDelete, enumor.RPTicketTypeAutomaticTransfer:
-		splitErr = splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.Type, failedDemands, ticket.PlanProductName,
-			ticket.OpProductName)
+		splitErr = splitHelper.SplitDeleteTicket(kt, ticket.ID, ticket.VirtualDeptID, ticket.Type, failedDemands,
+			ticket.PlanProductName, ticket.OpProductName)
 	case enumor.RPTicketTypeAdd:
-		splitErr = splitHelper.SplitAddTicket(kt, ticket.ID, failedDemands)
+		splitErr = splitHelper.SplitAddTicket(kt, ticket.ID, ticket.VirtualDeptID, failedDemands)
 	case enumor.RPTicketTypeAdjust:
-		splitErr = splitHelper.SplitAdjustTicket(kt, ticket.ID, failedDemands, ticket.PlanProductName,
-			ticket.OpProductName)
+		splitErr = splitHelper.SplitAdjustTicket(kt, ticket.ID, ticket.VirtualDeptID, failedDemands,
+			ticket.PlanProductName, ticket.OpProductName)
 	default:
 		splitErr = fmt.Errorf("unsupported res plan ticket type, type: %s", ticket.Type)
 	}

@@ -29,16 +29,19 @@ import (
 	ttypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/cvmapi"
 
 	"github.com/shopspring/decimal"
 )
 
-// SplitDeleteTicket split res plan delete ticket to sub ticket
-func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
-	demands rpt.ResPlanDemands, planProductName, opProductName string) error {
+// SplitDeleteTicket split res plan delete ticket to sub ticket.
+// The virtualDeptID parameter is used to gate transfer pool logic: only dept 1041 (CvmCbsPlanDeptId) may
+// transfer demands into the transfer pool. Other depts skip the transfer branch entirely.
+func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, virtualDeptID int64,
+	ticketType enumor.RPTicketType, demands rpt.ResPlanDemands, planProductName, opProductName string) error {
 
 	// 1. 准备拆分后的子单，存储在 adjSplitGroupDemands 中备用
-	err := s.prepareDeleteSubTickets(kt, ticketID, ticketType, demands, planProductName, opProductName)
+	err := s.prepareDeleteSubTickets(kt, ticketID, virtualDeptID, ticketType, demands, planProductName, opProductName)
 	if err != nil {
 		logs.Errorf("failed to prepare delete sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -56,8 +59,20 @@ func (s *SubTicketSplitter) SplitDeleteTicket(kt *kit.Kit, ticketID string, tick
 
 // prepareDeleteSubTickets 准备删除场景下拆分后的子单，存储在 adjSplitGroupDemands 中备用
 // 该方法可在调整场景复用
-func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string, ticketType enumor.RPTicketType,
-	demands rpt.ResPlanDemands, planProductName, opProductName string) error {
+// The virtualDeptID parameter gates transfer pool logic: only dept CvmCbsPlanDeptId (1041) may transfer
+// demands into the transfer pool. Non-1041 depts bypass the transfer matching and proceed as regular deletes.
+func (s *SubTicketSplitter) prepareDeleteSubTickets(kt *kit.Kit, ticketID string, virtualDeptID int64,
+	ticketType enumor.RPTicketType, demands rpt.ResPlanDemands, planProductName, opProductName string) error {
+
+	// Only dept 1041 (CvmCbsPlanDeptId) may transfer demands into the transfer pool.
+	// For other depts, skip the transfer matching and put all demands directly into the regular delete group.
+	if virtualDeptID != cvmapi.CvmCbsPlanDeptId {
+		for idx := range demands {
+			s.adjSplitGroupDemands[enumor.RPTicketTypeDelete] = append(
+				s.adjSplitGroupDemands[enumor.RPTicketTypeDelete], &demands[idx])
+		}
+		return nil
+	}
 
 	// 1.查询CRP中可修改的预测
 	err := s.getAllCRPAdjustAbleDemands(kt, demands, planProductName, opProductName)

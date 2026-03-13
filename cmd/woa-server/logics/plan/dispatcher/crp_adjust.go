@@ -223,38 +223,152 @@ func (c *CrpTicketCreator) constructCrpAdjustReqParams(kt *kit.Kit, subTicket *p
 	return c.constructNormalCrpAdjustReqParams(kt, subTicket)
 }
 
-// constructAddTransferAdjustReqParams 构建CRP调整单请求参数，用于新增转移调整场景（中转产品 -> 本业务）
+// constructAddTransferAdjustReqParams constructs CRP adjustOrder request parameters for the
+// transfer-in scenario (transit pool → current business).
+//
+// Internally handles concurrent races via a re-entrant loop: a freshly split SliceId may be
+// claimed by another concurrent request, requiring re-entry and retry.
+// Loop invariant: at the start of each iteration, transferAbleDemands is cleared and re-queried
+// from CRP to ensure the latest SliceId is used (a previous split produces a new SliceId).
 func (c *CrpTicketCreator) constructAddTransferAdjustReqParams(kt *kit.Kit, subTicket *ptypes.SubTicketInfo) (
 	[]*cvmapi.AdjustSrcData, []*cvmapi.AdjustUpdatedData, error) {
 
-	// 1. 整合所有需求的项目类型和技术大类
-	obsProjectMap := make([]enumor.ObsProject, 0)
-	technicalClassMap := make([]string, 0)
+	// 1. Pre-validate and collect query parameters. obsProjects/technicalClasses are invariant
+	// across re-entry iterations, so they are collected once outside the loop.
+	obsProjects := make([]enumor.ObsProject, 0, len(subTicket.Demands))
+	technicalClasses := make([]string, 0, len(subTicket.Demands))
 	for _, d := range subTicket.Demands {
 		if d.Updated == nil {
 			logs.Errorf("updated demand is nil, sub ticket id: %s, rid: %s", subTicket.ID, kt.Rid)
 			return nil, nil, errors.New("updated demand is nil")
 		}
-		obsProjectMap = append(obsProjectMap, d.Updated.ObsProject)
-		technicalClassMap = append(technicalClassMap, d.Updated.Cvm.TechnicalClass)
+		obsProjects = append(obsProjects, d.Updated.ObsProject)
+		technicalClasses = append(technicalClasses, d.Updated.Cvm.TechnicalClass)
 	}
 
-	// 2. 查询CRP中可转移的预测（中转产品）
-	err := c.queryTransferCRPDemands(kt, obsProjectMap, technicalClassMap)
-	if err != nil {
-		logs.Errorf("query crp demands failed, err: %v, sub ticket id: %s, rid: %s", err, subTicket.ID, kt.Rid)
+	// 2. Re-entrant match-and-split loop.
+	if err := c.runTransferMatchRetryLoop(kt, subTicket, obsProjects, technicalClasses); err != nil {
 		return nil, nil, err
 	}
 
-	// 3. 构造调整请求的详细内容。从可转移的中转产品预测中进行调减，以及从预测需求内容中进行追加
-	for _, demand := range subTicket.Demands {
-		if err := c.constructAdjustDemandDetails(kt, subTicket, demand); err != nil {
-			logs.Errorf("failed to construct adjust demand details, err: %v, rid: %s", err, kt.Rid)
-			return nil, nil, err
+	// 3. Build final srcData + updatedData from the committed adjCRPDemandsRst.
+	return c.buildTransferAdjustData(kt, subTicket)
+}
+
+// runTransferMatchRetryLoop runs the re-entrant greedy-match and split-order retry loop.
+// On each iteration it re-queries CRP for the latest transferable demands, attempts greedy
+// matching for all sub-ticket demands, and if there are gaps, merges and submits one split
+// order before polling until approved. Repeats up to MaxSplitRetry times.
+func (c *CrpTicketCreator) runTransferMatchRetryLoop(kt *kit.Kit, subTicket *ptypes.SubTicketInfo,
+	obsProjects []enumor.ObsProject, technicalClasses []string) error {
+
+	matched := false
+	for retry := 0; retry < constant.MaxSplitRetry; retry++ {
+		// 2.1. Clear and re-query transferable CRP demands (transit product) to get the latest
+		// SliceId produced by the previous split.
+		c.transferAbleDemands = make(map[int][]*cvmapi.CvmCbsPlanQueryItem)
+		if err := c.queryTransferCRPDemands(kt, obsProjects, technicalClasses); err != nil {
+			logs.Errorf("query crp demands failed, err: %v, sub ticket id: %s, rid: %s",
+				err, subTicket.ID, kt.Rid)
+			return err
+		}
+
+		// 2.2. Greedy-match all demands; results written to an iteration-local matchResult.
+		// matchResult is only committed to c.adjCRPDemandsRst when all demands are matched.
+		matchResult := make(map[string]*AdjustAbleRemainObj)
+		splitTargets, allMatched, err := c.greedyMatchAllDemands(kt, subTicket, matchResult)
+		if err != nil {
+			return err
+		}
+
+		// 2.3. All matched: commit matchResult and exit loop.
+		if allMatched {
+			c.adjCRPDemandsRst = matchResult
+			matched = true
+			break
+		}
+
+		// 2.4. Gaps exist: merge targets with the same SliceId and submit one split request.
+		merged := mergeSplitTargets(splitTargets)
+		orderSN, err := c.splitAdjustOrder(kt, subTicket, merged)
+		if err != nil {
+			if errors.Is(err, errAdjustInProcessing) {
+				// Target SliceId is locked by a concurrent request; re-query and retry next iteration.
+				logs.Warnf("split adjustOrder returned in-processing, will retry, "+
+					"retry: %d, sub_ticket_id: %s, rid: %s", retry, subTicket.ID, kt.Rid)
+				continue
+			}
+			logs.Errorf("failed to split adjustOrder, err: %v, sub_ticket_id: %s, rid: %s",
+				err, subTicket.ID, kt.Rid)
+			return err
+		}
+
+		// 2.5. Wait for split approval; the new SliceId will be visible in the next iteration.
+		if err := c.pollSplitOrderUntilApproved(kt, orderSN); err != nil {
+			logs.Errorf("poll split order failed, sn: %s, err: %v, sub_ticket_id: %s, rid: %s",
+				orderSN, err, subTicket.ID, kt.Rid)
+			return err
 		}
 	}
 
-	// 3. 根据暂存的修改信息生成最终的变更请求内容
+	if !matched {
+		logs.Errorf("max split retry exhausted, sub_ticket_id: %s, rid: %s", subTicket.ID, kt.Rid)
+		return fmt.Errorf("max split retry exhausted for sub ticket %s", subTicket.ID)
+	}
+
+	return nil
+}
+
+// greedyMatchAllDemands performs one round of greedy matching for every demand in subTicket.
+// Results are accumulated into matchResult. Returns the split targets needed for any gaps,
+// whether all demands were matched, and any error encountered.
+func (c *CrpTicketCreator) greedyMatchAllDemands(kt *kit.Kit, subTicket *ptypes.SubTicketInfo,
+	matchResult map[string]*AdjustAbleRemainObj) ([]splitTargetEntry, bool, error) {
+
+	allMatched := true
+	splitTargets := make([]splitTargetEntry, 0)
+
+	for _, demand := range subTicket.Demands {
+		if len(demand.Updated.ExpectTime) < 4 {
+			return nil, false, fmt.Errorf("invalid ExpectTime length, year extraction failed: %s, rid: %s",
+				demand.Updated.ExpectTime, kt.Rid)
+		}
+		expectYear, err := strconv.Atoi(demand.Updated.ExpectTime[:4])
+		if err != nil {
+			logs.Errorf("failed to parse expect year, err: %v, expect_time: %s, rid: %s",
+				err, demand.Updated.ExpectTime, kt.Rid)
+			return nil, false, err
+		}
+		candidates := c.transferAbleDemands[expectYear]
+
+		gap, target, err := greedyMatch(kt, demand, candidates, matchResult)
+		if err != nil {
+			logs.Errorf("greedy match failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, false, err
+		}
+
+		if gap > 0 && target == nil {
+			logs.Errorf("crp demand remained is not enough to deduction, demand: %+v, "+
+				"need cpu cores: %d, rid: %s", demand.Updated.Cvm, gap, kt.Rid)
+			return nil, false, fmt.Errorf(
+				"crp demand remained is not enough to deduction, adjust cores: %d, need cores: %d",
+				demand.Updated.Cvm.CpuCore, gap)
+		}
+
+		if gap > 0 {
+			splitTargets = append(splitTargets, splitTargetEntry{Source: target, Gap: gap})
+			allMatched = false
+		}
+	}
+
+	return splitTargets, allMatched, nil
+}
+
+// buildTransferAdjustData constructs the final srcData and updatedData slices from the
+// committed adjCRPDemandsRst after a successful match loop.
+func (c *CrpTicketCreator) buildTransferAdjustData(kt *kit.Kit, subTicket *ptypes.SubTicketInfo) (
+	[]*cvmapi.AdjustSrcData, []*cvmapi.AdjustUpdatedData, error) {
+
 	srcData := make([]*cvmapi.AdjustSrcData, 0)
 	updatedData := make([]*cvmapi.AdjustUpdatedData, 0)
 

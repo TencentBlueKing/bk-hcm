@@ -32,17 +32,21 @@ import (
 	ttypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/cvmapi"
 	cvt "hcm/pkg/tools/converter"
 
 	"github.com/shopspring/decimal"
 )
 
-// SplitAddTicket split res plan append ticket to sub ticket
-func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) error {
+// SplitAddTicket split res plan append ticket to sub ticket.
+// The virtualDeptID parameter is used to determine whether the ticket is eligible for
+// transfer pool logic (only dept 1041 / CvmCbsPlanDeptId is allowed).
+func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, virtualDeptID int64,
+	demands rpt.ResPlanDemands) error {
 
 	// 1. 准备拆分后的子单，存储在 adjSplitGroupDemands 中备用
 	// cvmDemands 为排除纯 CBS 需求后剩余的 CVM 追加需求
-	canTransfer, cvmDemands, err := s.prepareAddSubTickets(kt, ticketID, demands)
+	canTransfer, cvmDemands, err := s.prepareAddSubTickets(kt, ticketID, virtualDeptID, demands)
 	if err != nil {
 		logs.Errorf("failed to prepare add sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -63,21 +67,28 @@ func (s *SubTicketSplitter) SplitAddTicket(kt *kit.Kit, ticketID string, demands
 	return nil
 }
 
-// prepareAddSubTickets 准备追加场景下拆分后的子单，存储在 adjSplitGroupDemands 中备用
-// 该方法可在调整场景复用
-func (s *SubTicketSplitter) prepareAddSubTickets(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands) (
-	bool, rpt.ResPlanDemands, error) {
+// prepareAddSubTickets prepares the sub tickets for the add scenario, storing results in adjSplitGroupDemands.
+// It is also reused by the adjust scenario (SplitAdjustTicket).
+// The virtualDeptID parameter gates transfer pool logic: only tickets belonging to dept CvmCbsPlanDeptId (1041)
+// are eligible. Other depts skip the transfer branch entirely.
+func (s *SubTicketSplitter) prepareAddSubTickets(kt *kit.Kit, ticketID string, virtualDeptID int64,
+	demands rpt.ResPlanDemands) (bool, rpt.ResPlanDemands, error) {
 
-	// 1.1. 获取机型信息列表，用于后续操作
-	deviceTypeMap, err := s.deviceTypes.GetDeviceTypes(kt)
+	// 1.1. 区分并处理纯 CBS 和包含 CVM 的需求
+	cvmDemands, obsProjects, technicalClasses, err := s.separateAndProcessDemands(kt, ticketID, demands)
 	if err != nil {
-		logs.Errorf("get device type map failed, err: %v, rid: %s", err, kt.Rid)
 		return false, nil, err
 	}
 
-	// 1.2. 区分并处理纯 CBS 和包含 CVM 的需求
-	cvmDemands, obsProjects, technicalClasses, err := s.separateAndProcessDemands(kt, ticketID, demands)
+	// Only dept 1041 (CvmCbsPlanDeptId) may use transfer pool logic.
+	if virtualDeptID != cvmapi.CvmCbsPlanDeptId {
+		return false, cvmDemands, nil
+	}
+
+	// 1.2. 获取机型信息列表，用于后续操作
+	deviceTypeMap, err := s.deviceTypes.GetDeviceTypes(kt)
 	if err != nil {
+		logs.Errorf("get device type map failed, err: %v, rid: %s", err, kt.Rid)
 		return false, nil, err
 	}
 
@@ -230,6 +241,11 @@ func (s *SubTicketSplitter) matchTransferCRPDemands(kt *kit.Kit, ticketID string
 	for _, transAbleD := range s.transferAbleDemands[expectYear] {
 		if needCpuCores <= 0 {
 			break
+		}
+
+		// Skip demands that are currently in an approval process.
+		if transAbleD.IsInProcessing == 1 {
+			continue
 		}
 
 		// 未评审需求跳过，不记录

@@ -27,9 +27,10 @@ import (
 	cvt "hcm/pkg/tools/converter"
 )
 
-// SplitAdjustTicket split res plan adjust ticket to sub ticket
-func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, demands rpt.ResPlanDemands,
-	planProductName, opProductName string) error {
+// SplitAdjustTicket split res plan adjust ticket to sub ticket.
+// The virtualDeptID parameter is forwarded to prepareAddSubTickets to gate transfer pool logic.
+func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, virtualDeptID int64,
+	demands rpt.ResPlanDemands, planProductName, opProductName string) error {
 
 	// 1. 无需考虑转移的预测，单独创建子单
 	// 包含延期类调整、关键属性未产生变化（技术分类、项目类型、总核数）的调整
@@ -39,15 +40,15 @@ func (s *SubTicketSplitter) SplitAdjustTicket(kt *kit.Kit, ticketID string, dema
 	addDemands, delDemands := s.splitAdjustDemandsToAddAndDelete(remainDemands)
 
 	// 3. 调减逻辑
-	err := s.prepareDeleteSubTickets(kt, ticketID, enumor.RPTicketTypeDelete, delDemands, planProductName,
-		opProductName)
+	err := s.prepareDeleteSubTickets(kt, ticketID, virtualDeptID, enumor.RPTicketTypeDelete, delDemands,
+		planProductName, opProductName)
 	if err != nil {
 		logs.Errorf("failed to prepare delete sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	// 4. 调增逻辑, cvmAddDemands 为排除纯 CBS 需求后剩余的 CVM 追加需求
-	canTransfer, cvmAddDemands, err := s.prepareAddSubTickets(kt, ticketID, addDemands)
+	canTransfer, cvmAddDemands, err := s.prepareAddSubTickets(kt, ticketID, virtualDeptID, addDemands)
 	if err != nil {
 		logs.Errorf("failed to prepare add sub tickets, err: %v, rid: %s", err, kt.Rid)
 		return err
