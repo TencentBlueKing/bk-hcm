@@ -74,19 +74,21 @@ func (svc *service) batchCreateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 	models := make([]tablers.ResPlanDemandGpuSubOrderTable, len(createReqs))
 	for idx, item := range createReqs {
 		createT := tablers.ResPlanDemandGpuSubOrderTable{
-			OrderID:     item.OrderID,
-			BkBizID:     item.BkBizID,
-			DemandType:  item.DemandType,
-			DemandYear:  item.DemandYear,
-			DemandMonth: item.DemandMonth,
-			GPUNum:      item.GPUNum,
-			QpmMax:      item.QpmMax,
-			Status:      item.Status,
-			Comment:     item.Comment,
-			Extension:   item.Extension,
-			Remark:      item.Remark,
-			Creator:     kt.User,
-			Reviser:     kt.User,
+			OrderID:       item.OrderID,
+			BkBizID:       item.BkBizID,
+			OpProductID:   item.OpProductID,
+			OpProductName: item.OpProductName,
+			DemandType:    item.DemandType,
+			DemandYear:    item.DemandYear,
+			DemandMonth:   item.DemandMonth,
+			GPUNum:        item.GPUNum,
+			QpmMax:        item.QpmMax,
+			Status:        item.Status,
+			Comment:       item.Comment,
+			Extension:     item.Extension,
+			Remark:        item.Remark,
+			Creator:       kt.User,
+			Reviser:       kt.User,
 		}
 
 		if item.Creator != "" {

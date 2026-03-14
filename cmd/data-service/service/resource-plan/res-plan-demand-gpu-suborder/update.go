@@ -68,15 +68,17 @@ func (svc *service) batchUpdateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 
 	for _, updateReq := range updateReqs {
 		record := &tablers.ResPlanDemandGpuSubOrderTable{
-			BkBizID:     updateReq.BkBizID,
-			DemandType:  updateReq.DemandType,
-			DemandYear:  updateReq.DemandYear,
-			DemandMonth: updateReq.DemandMonth,
-			GPUNum:      updateReq.GPUNum,
-			QpmMax:      updateReq.QpmMax,
-			Status:      updateReq.Status,
-			Remark:      updateReq.Remark,
-			Reviser:     kt.User,
+			BkBizID:       updateReq.BkBizID,
+			OpProductID:   updateReq.OpProductID,
+			OpProductName: updateReq.OpProductName,
+			DemandType:    updateReq.DemandType,
+			DemandYear:    updateReq.DemandYear,
+			DemandMonth:   updateReq.DemandMonth,
+			GPUNum:        updateReq.GPUNum,
+			QpmMax:        updateReq.QpmMax,
+			Status:        updateReq.Status,
+			Remark:        updateReq.Remark,
+			Reviser:       kt.User,
 		}
 		if updateReq.Comment != nil {
 			record.Comment = updateReq.Comment

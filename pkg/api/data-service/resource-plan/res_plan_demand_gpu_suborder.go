@@ -53,18 +53,20 @@ func (r *ResPlanDemandGpuSubOrderBatchCreateReq) Validate() error {
 
 // ResPlanDemandGpuSubOrderCreateReq create request.
 type ResPlanDemandGpuSubOrderCreateReq struct {
-	OrderID     string                           `json:"order_id" validate:"required"`
-	BkBizID     int64                            `json:"bk_biz_id" validate:"required"`
-	DemandType  string                           `json:"demand_type" validate:"required"`
-	DemandYear  int64                            `json:"demand_year"`
-	DemandMonth int64                            `json:"demand_month"`
-	GPUNum      int64                            `json:"gpu_num"`
-	QpmMax      int64                            `json:"qpm_max"`
-	Status      enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
-	Comment     *ttypes.JsonField                `json:"comment"`
-	Extension   ttypes.JsonField                 `json:"extension" validate:"required"`
-	Remark      string                           `json:"remark" validate:"omitempty,max=255"`
-	Creator     string                           `json:"creator" validate:"omitempty,max=64"`
+	OrderID       string                           `json:"order_id" validate:"required"`
+	BkBizID       int64                            `json:"bk_biz_id" validate:"required"`
+	OpProductID   int64                            `json:"op_product_id" validate:"required"`
+	OpProductName string                           `json:"op_product_name" validate:"required,lte=64"`
+	DemandType    string                           `json:"demand_type" validate:"required"`
+	DemandYear    int64                            `json:"demand_year"`
+	DemandMonth   int64                            `json:"demand_month"`
+	GPUNum        int64                            `json:"gpu_num"`
+	QpmMax        int64                            `json:"qpm_max"`
+	Status        enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
+	Comment       *ttypes.JsonField                `json:"comment"`
+	Extension     ttypes.JsonField                 `json:"extension" validate:"required"`
+	Remark        string                           `json:"remark" validate:"omitempty,max=255"`
+	Creator       string                           `json:"creator" validate:"omitempty,max=64"`
 }
 
 // Validate validate.
@@ -114,18 +116,20 @@ func (r *ResPlanDemandGpuSubOrderBatchUpdateReq) Validate() error {
 
 // ResPlanDemandGpuSubOrderUpdateReq batch update request.
 type ResPlanDemandGpuSubOrderUpdateReq struct {
-	ID          string                           `json:"id" validate:"required"`
-	BkBizID     int64                            `json:"bk_biz_id"`
-	DemandType  string                           `json:"demand_type"`
-	DemandYear  int64                            `json:"demand_year"`
-	DemandMonth int64                            `json:"demand_month"`
-	GPUNum      int64                            `json:"gpu_num"`
-	QpmMax      int64                            `json:"qpm_max"`
-	Status      enumor.RPDemandGPUSubOrderStatus `json:"status"`
-	Comment     *ttypes.JsonField                `json:"comment"`
-	Extension   *ttypes.JsonField                `json:"extension"`
-	Remark      string                           `json:"remark" validate:"omitempty,max=255"`
-	Reviser     string                           `json:"reviser" validate:"omitempty,max=64"`
+	ID            string                           `json:"id" validate:"required"`
+	BkBizID       int64                            `json:"bk_biz_id"`
+	OpProductID   int64                            `json:"op_product_id" validate:"omitempty"`
+	OpProductName string                           `json:"op_product_name" validate:"omitempty,lte=64"`
+	DemandType    string                           `json:"demand_type"`
+	DemandYear    int64                            `json:"demand_year"`
+	DemandMonth   int64                            `json:"demand_month"`
+	GPUNum        int64                            `json:"gpu_num"`
+	QpmMax        int64                            `json:"qpm_max"`
+	Status        enumor.RPDemandGPUSubOrderStatus `json:"status"`
+	Comment       *ttypes.JsonField                `json:"comment"`
+	Extension     *ttypes.JsonField                `json:"extension"`
+	Remark        string                           `json:"remark" validate:"omitempty,max=255"`
+	Reviser       string                           `json:"reviser" validate:"omitempty,max=64"`
 }
 
 // Validate validate.
