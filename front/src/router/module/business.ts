@@ -14,9 +14,11 @@ import {
   MENU_BUSINESS_SUBNET_MANAGEMENT,
   MENU_BUSINESS_VPC_MANAGEMENT,
   MENU_BUSINESS_TICKET_MANAGEMENT,
+  MENU_BUSINESS_RESOURCE_PLAN_CVM,
 } from '@/constants/menu-symbol';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
 import { loadBalancerBiz as loadBalancerBizRouteConfig } from '@/views/load-balancer/route-config';
+import { gpuDemandBiz as gpuDemandBizRouteConfig } from '@/views/resource-plan/route-config';
 import taskRouteConfig from '@/views/task/route-config';
 import { ticketRoutesBiz } from '@/views/ticket/route-config';
 import Meta from '../meta';
@@ -351,7 +353,7 @@ const businessMenus: RouteRecordRaw[] = [
     path: '/business',
     children: [
       {
-        path: '/business/resource-plan',
+        path: '/business/resource-plan/cvm',
         name: 'BizResourcePlan',
         meta: {
           title: '资源预测',
@@ -361,15 +363,15 @@ const businessMenus: RouteRecordRaw[] = [
         children: [
           {
             path: '',
-            name: 'bizResourcePlanList',
-            component: () => import('@/views/business/resource-plan/list'),
+            name: MENU_BUSINESS_RESOURCE_PLAN_CVM,
+            component: () => import('@/views/resource-plan/entry-biz.vue'),
             meta: {
               activeKey: 'bizResourcePlan',
               isShowBreadcrumb: true,
             },
           },
           {
-            path: '/business/resource-plan/add',
+            path: '/business/resource-plan/cvm/add',
             name: 'BizResourcePlanAdd',
             component: () => import('@/views/business/resource-plan/add'),
             meta: {
@@ -377,7 +379,7 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: '/business/resource-plan/detail',
+            path: '/business/resource-plan/cvm/detail',
             name: 'BizResourcePlanDetail',
             component: () => import('@/views/business/resource-plan/detail'),
             meta: {
@@ -385,6 +387,22 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
         ],
+      },
+      ...gpuDemandBizRouteConfig,
+      {
+        path: '/business/resource-plan',
+        redirect: (to) => ({ path: '/business/resource-plan/cvm', query: to.query }),
+        meta: { notMenu: true },
+      },
+      {
+        path: '/business/resource-plan/add',
+        redirect: (to) => ({ path: '/business/resource-plan/cvm/add', query: to.query }),
+        meta: { notMenu: true },
+      },
+      {
+        path: '/business/resource-plan/detail',
+        redirect: (to) => ({ path: '/business/resource-plan/cvm/detail', query: to.query }),
+        meta: { notMenu: true },
       },
       {
         path: '/business/hostInventory',
