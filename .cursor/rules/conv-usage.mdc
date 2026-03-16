@@ -1,0 +1,52 @@
+---
+description: converter 包使用规范
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# converter 包使用规范（核心）
+
+## 包用途
+`pkg/tools/converter` 提供类型转换工具函数，涵盖指针、切片、Map、字符串、数值转换。
+
+## 高频函数速查
+
+| 函数 | 用途 | 返回错误 |
+|-----|-----|---------|
+| `ValToPtr[T]` | 值转指针 | 否 |
+| `PtrToVal[T]` | 指针转值（nil→零值） | 否 |
+| `SliceToPtr[T]` | 切片转指针 | 否 |
+| `PtrToSlice[T]` | 指针转切片 | 否 |
+| `SliceToMap[T]` | 切片转 map | 否 |
+| `JsonStrToMap` | json转map |是 |
+| `MapToJsonStr` | map转json |是 |
+| `MapKeyToSlice[K,V]` | map 键转有序切片 | 否 |
+
+## 核心规则
+
+### 1. 映射
+```go
+// 一 key 一 value → SliceToMap
+byID, err := converter.SliceToMap(items, func(i Item) string { return i.ID }, false)
+```
+
+### 2. 返回错误必检查
+```go
+// ✅ 检查错误
+val, err := converter.JsonStrToMap(data)
+if err != nil { return err }
+
+// ❌ 忽略错误
+val, _ := converter.JsonStrToMap(data)  // 禁止
+```
+
+### 3. nil 指针安全
+```go
+// ✅ 使用 PtrToVal
+val := converter.PtrToVal(ptr)  // nil 返回零值
+
+// ❌ 直接解引用
+val := *ptr  // nil 会 panic
+```
+
+> 完整规范请参考 skill: `go-conv-usage`

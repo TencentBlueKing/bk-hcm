@@ -1,0 +1,59 @@
+---
+description: Go 代码规范索引，指导如何使用项目的 Rules 和 Skills
+globs: "**/*.go"
+alwaysApply: true
+---
+
+# Go 代码规范
+
+编写 Go 代码时，必须遵循项目规范。
+
+## 规范体系
+
+| 类型 | 加载方式 | 说明 |
+|-----|---------|------|
+| **Rules** | 自动加载 | 核心规则，始终遵循 |
+| **Skills** | 按需读取 | 详细指南，需要时主动查阅 |
+
+## 必读 Rules
+
+编写代码前，确保已了解以下核心规则：
+
+- **命名规范** - `naming-convention-core.mdc`
+- **导入规范** - `import-standard.mdc`
+- **注释规范** - `comment-standard.mdc`
+- **错误处理** - `error-handling.mdc`
+- **日志规范** - `logging-standard.mdc`
+
+## 按需 Skills
+
+遇到以下场景时，**必须先读取对应 Skill**：
+
+| 场景 | Skill | 路径 |
+|-----|-------|------|
+| 命名不确定 | go-naming-convention | `.cursor/skills/go-naming-convention/SKILL.md` |
+| 编写 DAO 层 | go-dal-pattern | `.cursor/skills/go-dal-pattern/SKILL.md` |
+| 导出 Excel | go-excel-export | `.cursor/skills/go-excel-export/SKILL.md` |
+| 使用 tools 包 | go-tools-usage | `.cursor/skills/go-tools-usage/SKILL.md` |
+| 使用 filter expression | filter-expression-usage | `.cursor/skills/filter-expression-usage/SKILL.md` |
+| 实现 API 接口 | api-implementation-workflow | `.cursor/skills/api-implementation-workflow/SKILL.md` |
+| 实现 Distribution 接口 | distribution-implementation | `.cursor/skills/distribution-implementation/SKILL.md` |
+| 实现 Export 接口 | export-implementation | `.cursor/skills/export-implementation/SKILL.md` |
+| 使用 conv 工具包 | go-conv-usage | `.cursor/skills/go-conv-usage/SKILL.md` |
+| 使用 validator 工具包 | go-validator-usage | `.cursor/skills/go-validator-usage/SKILL.md` |
+| 编写注释 | go-comment-standard | `.cursor/skills/go-comment-standard/SKILL.md` |
+| 处理错误 | go-error-handling | `.cursor/skills/go-error-handling/SKILL.md` |
+| 编写日志 | go-logging-standard | `.cursor/skills/go-logging-standard/SKILL.md` |
+| 导入包 | go-import-standard | `.cursor/skills/go-import-standard/SKILL.md` |
+
+## 使用指南
+
+1. **编写新代码** - 先读取相关 Skill 的 `SKILL.md`，了解项目模式
+2. **不确定命名** - 查阅 `go-naming-convention` Skill 中的具体规则文件
+3. **代码审查** - 对照 Rules 检查是否符合规范
+
+## 重要提醒
+
+- 所有 Go 代码必须符合项目规范，不可使用个人习惯
+- 遇到不确定的情况，优先查阅 Skill 而非猜测
+- Skill 内部有细分规则文件，可按需只读取相关部分

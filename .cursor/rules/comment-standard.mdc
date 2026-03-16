@@ -1,0 +1,57 @@
+---
+description: Go 代码注释规范核心规则
+globs: **/*.go
+alwaysApply: true
+---
+
+# 注释规范（核心）
+
+## 语言要求
+- **代码注释**优先使用英文，注释超过一行或者用到业务词汇时改用中文
+- 业务数据（映射值、显示名称）可用中文
+
+## 函数/方法注释
+| 类型 | 格式 | 示例 |
+|-----|-----|------|
+| 导出函数 | `// FuncName verb...` | `// NewClient creates a new client instance.` |
+| 非导出函数 | 同上（可选） | `// initDAO initializes the DAO.` |
+| 参数说明 | `The xxx parameter ...` | `// The reverse parameter controls sort order.` |
+| 多返回值 | 缩进列表 | 见下方示例 |
+
+```go
+// Compare returns
+//
+//	-1 if x is less than y,
+//	 0 if x equals y,
+//	+1 if x is greater than y.
+func Compare[T cmp.Ordered](x, y T) int
+```
+
+## 结构体/字段注释
+- 结构体：`// StructName is/defines/represents...`
+- 字段：注释在字段**上方**，以字段名开头
+- 枚举字段说明可选值：`enumeration values such as: a/b/c`
+
+## 接口注释
+- 格式：`// InterfaceName holds/defines all...`
+- 接口方法在**实现处**添加注释，接口定义处可省略
+
+## 包注释
+```go
+// Package times provides time handling and date range manipulation.
+package times
+```
+
+## 常量/变量注释
+- 以名称开头：`// ApiPrefix is the prefix of all API.`
+- 常量组内每个常量单独注释
+
+## TODO/FIXME
+- 格式：`// TODO: description` 或 `// FIXME: description`
+- 冒号后加空格
+
+## 弃用标记
+```go
+// Deprecated: Use NewClientV2 instead.
+func NewClient() *Client
+```

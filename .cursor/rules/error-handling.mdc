@@ -1,0 +1,76 @@
+---
+description: Go 错误处理规范核心规则
+globs: **/*.go
+alwaysApply: true
+---
+
+# 错误处理规范（核心）
+
+## 错误创建
+| 场景 | 方法 | 示例 |
+|-----|------|------|
+| 业务错误（需错误码） | `errf.New/Newf` | `errf.New(errf.InvalidParameter, "param required")` |
+| 包装底层错误 | `errf.NewFromErr` | `errf.NewFromErr(errf.DecodeRequestFailed, err)` |
+| 内部简单错误 | `errors.New` | `errors.New("kit is nil")` |
+| 内部格式化错误 | `fmt.Errorf` | `fmt.Errorf("connect failed, err: %v", err)` |
+
+## 错误返回
+- error 始终作为**最后一个**返回值
+- Handler 统一签名：`func(cts *rest.Contexts) (interface{}, error)`
+
+## 错误检查
+```go
+// 标准模式：检查后立即处理
+if err := cts.DecodeInto(req); err != nil {
+    logs.Errorf("decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+    return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+}
+
+// 判断特定错误类型
+if errors.Is(err, orm.ErrRecordNotFound) { ... }
+```
+
+## 日志级别
+| 场景 | 级别 | 说明 |
+|-----|------|------|
+| 错误后 `return` | `logs.Errorf` | 流程终止 |
+| 错误后 `continue` | `logs.Warnf` | 流程继续 |
+| 可降级处理 | `logs.Warnf` | 使用默认值 |
+
+## 日志格式要求
+- 动词开头描述操作（get、list、create、update、delete）
+- 包含上下文信息（如请求参数）
+- **必须包含 rid**：`..., rid: %s", kt.Rid`
+- 使用 `%v` 格式化 error，`%+v` 格式化结构体
+
+## 常用错误码
+| 错误码 | 常量 | 场景 |
+|-------|------|------|
+| 2000001 | InvalidParameter | 参数校验失败 |
+| 2000003 | RecordNotFound | 记录不存在 |
+| 2000004 | DecodeRequestFailed | JSON 解析失败 |
+| 2000006 | Aborted | 业务处理异常 |
+| 2000010 | RecordNotUpdate | DB 数据一行都没有被更新 |
+| 2000011 | RecordDuplicated | 数据重复，对应 MySQL Error 1062 (23000) |
+
+## Handler 标准处理流程
+```go
+func (svc *service) Handler(cts *rest.Contexts) (interface{}, error) {
+    // 1. 解码 → DecodeRequestFailed
+    // 2. 校验 → InvalidParameter
+    // 3. 业务 → Aborted / 其他
+    return data, nil
+}
+```
+
+## 事务错误处理
+```go
+_, err := o.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+    if err := operation(); err != nil {
+        return nil, err  // 返回错误，自动回滚
+    }
+    return nil, nil
+})
+```
+
+> 完整规范请参考 skill: `go-error-handling`

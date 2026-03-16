@@ -1,0 +1,69 @@
+---
+description: sorts 工具包的使用方法
+globs: 
+alwaysApply: false
+---
+
+# 排序功能使用指南
+
+在`hcm`项目中，排序功能通常用于对查询结果进行排序处理。以下是排序功能的常见用法。
+
+## 基本用法
+
+```go
+// 对数据项进行排序
+sortPlanCostDist(page ctypes.BasePage, items []*dsset.CostOptimPlanCostDistItem) error {
+    // 默认按cost降序排序
+    page.TrySetDftSort("cost", ctypes.Descending)
+
+    switch page.Sort {
+    case "cost":
+        sorts.Sort(items, !page.Order.IsAscending(), func(item *dsset.CostOptimPlanCostDistItem) float64 {
+            return item.Cost
+        })
+    case "accomplish_cost":
+        sorts.Sort(items, !page.Order.IsAscending(), func(item *dsset.CostOptimPlanCostDistItem) float64 {
+            return item.AccomplishCost
+        })
+    default:
+        return errf.Newf(errf.InvalidParameter, "unsupported sort: %s", page.Sort)
+    }
+
+    return nil
+}
+```
+
+## 关键函数
+
+### sorts.Sort
+
+`sorts.Sort`是项目中封装的通用排序函数，使用函数式编程的方式进行排序：
+
+```go
+sorts.Sort(items, isDescending, extractValueFunc)
+```
+
+参数说明：
+
+- `items`: 要排序的数据项切片
+- `isDescending`: 是否降序排序
+- `extractValueFunc`: 从数据项中提取用于排序的值的函数
+
+### 排序顺序处理
+
+通常使用`!page.Order.IsAscending()`来判断是否需要降序排序：
+
+```go
+sorts.Sort(items, !page.Order.IsAscending(), func(item *YourType) float64 {
+    return item.SomeValue
+})
+```
+
+## 分页处理
+
+排序完成后，通常需要进行分页处理：
+
+```go
+// 分页处理
+items = ctypes.PageLimit(*req.Page, items)
+```
