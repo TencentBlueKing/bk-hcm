@@ -45,7 +45,7 @@ func InitService(cap *capability.Capability) {
 		svc.BatchUpdateAccountSecret)
 	h.Add("BatchDeleteAccountSecret", http.MethodDelete, "/account_secrets/batch", svc.BatchDeleteAccountSecret)
 	h.Add("ListAccountSecret", http.MethodPost, "/account_secrets/list", svc.ListAccountSecret)
-	h.Add("ListAccountSecretWithExtension", "POST", "/vendors/{vendor}/account_secrets/extensions/list",
+	h.Add("ListAccountSecretWithExtension", http.MethodPost, "/vendors/{vendor}/account_secrets/extensions/list",
 		svc.ListAccountSecretWithExtension)
 
 	h.Load(cap.WebService)

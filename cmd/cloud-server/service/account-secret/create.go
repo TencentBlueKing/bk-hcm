@@ -116,7 +116,7 @@ func (s *service) checkResourceSecretUniqueness(kt *kit.Kit, accountID string) e
 	return nil
 }
 
-// createAccountSecretByVendor creates account secret by vendor.x
+// createAccountSecretByVendor creates account secret by vendor.
 func (s *service) createAccountSecretByVendor(kt *kit.Kit, req *proto.AccountSecretCreateReq, vendor enumor.Vendor) (
 	string, error) {
 

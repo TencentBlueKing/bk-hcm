@@ -68,6 +68,12 @@ func (s *service) BatchDeleteBizAccountSecret(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
+	// 记录删除审计
+	if err = s.audit.ResDeleteAudit(cts.Kit, enumor.AccountSecretAuditResType, req.IDs); err != nil {
+		logs.Errorf("create delete audit failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+
 	// Batch delete secret records
 	delReq := &protocloud.AccountSecretBatchDeleteReq{Filter: tools.ExpressionAnd(tools.RuleIn("id", req.IDs))}
 	err = s.client.DataService().Global.AccountSecret.BatchDelete(cts.Kit, delReq)

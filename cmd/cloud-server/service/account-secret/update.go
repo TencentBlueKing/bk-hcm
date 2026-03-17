@@ -92,6 +92,17 @@ func (s *service) UpdateBizAccountSecret(cts *rest.Contexts) (interface{}, error
 		return nil, errf.Newf(errf.PermissionDenied, "secret %s does not belong to business %d", secretID, bizID)
 	}
 
+	// 记录更新审计
+	updateFields, err := cvt.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if err = s.audit.ResUpdateAudit(cts.Kit, enumor.AccountSecretAuditResType, secretID, updateFields); err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	if err := s.updateAccountSecretByType(cts.Kit, account.Vendor, currentSecret, req); err != nil {
 		logs.Errorf("update account secret by type failed, secret_id: %s, err: %v, rid: %s", secretID, err, cts.Kit.Rid)
 		return nil, err

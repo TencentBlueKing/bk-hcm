@@ -129,7 +129,7 @@ func (s *service) ListBizAccountSecret(cts *rest.Contexts) (interface{}, error) 
 		return &core.ListResult{Details: make([]interface{}, 0)}, nil
 	}
 
-	secretFilter, err := tools.And(tools.RuleIn("account_id", accountIDs), req.Filter)
+	secretFilter, err := tools.And(buildAccountIDsFilter(accountIDs), req.Filter)
 	if err != nil {
 		logs.Errorf("merge filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -140,6 +140,24 @@ func (s *service) ListBizAccountSecret(cts *rest.Contexts) (interface{}, error) 
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
 	}
+}
+
+// buildAccountIDsFilter builds a filter rule for account_id field, splitting into batches of 500
+// to respect the IN clause limit, and OR-ing them together.
+func buildAccountIDsFilter(accountIDs []string) filter.RuleFactory {
+	if len(accountIDs) <= int(filter.DefaultMaxInLimit) {
+		return tools.RuleIn("account_id", accountIDs)
+	}
+
+	inRules := make([]*filter.AtomRule, 0)
+	for i := 0; i < len(accountIDs); i += int(filter.DefaultMaxInLimit) {
+		end := i + int(filter.DefaultMaxInLimit)
+		if end > len(accountIDs) {
+			end = len(accountIDs)
+		}
+		inRules = append(inRules, tools.RuleIn("account_id", accountIDs[i:end]))
+	}
+	return tools.ExpressionOr(inRules...)
 }
 
 // listTCloudAccountSecret list tcloud account secret.

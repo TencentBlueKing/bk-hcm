@@ -22,6 +22,7 @@ package accountsecret
 import (
 	"net/http"
 
+	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
@@ -33,6 +34,7 @@ func InitService(c *capability.Capability) {
 	svc := &service{
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
 	h := rest.NewHandler()
@@ -52,4 +54,5 @@ func InitService(c *capability.Capability) {
 type service struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+	audit      audit.Interface
 }
