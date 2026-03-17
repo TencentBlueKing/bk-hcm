@@ -46,7 +46,7 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/accounts/{account_id}
 
 | 参数名称                       | 参数类型   | 必选 | 描述      |
 |----------------------------|--------|----|---------|
-| Email                      | string | 否  | 邮箱地址    |
+| email                      | string | 否  | 邮箱地址    |
 | cloud_service_account_id   | string | 否  | 云服务账户ID |
 | cloud_service_account_name | string | 否  | 云服务账户名称 |
 | cloud_service_secret_id    | string | 否  | 云服务加密ID |

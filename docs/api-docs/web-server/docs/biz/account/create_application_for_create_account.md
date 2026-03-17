@@ -54,7 +54,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/applications/types/add_account
 
 | 参数名称                       | 参数类型   | 必选 | 描述      |
 |----------------------------|--------|----|---------|
-| Email                      | string | 否  | 邮箱地址    |
+| email                      | string | 否  | 邮箱地址    |
 | cloud_project_id           | string | 是  | 云项目ID   |
 | cloud_project_name         | string | 是  | 云项目名称   |
 | cloud_service_account_id   | string | 否  | 云服务账户ID |
