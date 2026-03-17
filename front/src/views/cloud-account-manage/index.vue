@@ -22,6 +22,7 @@ const currentVendor = ref<VendorEnum>(VendorEnum.TCLOUD);
 const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
   'cloud-secret': defineAsyncComponent(() => import('./cloud-secret/index.vue')),
+  'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
   // 其他Tab组件待开发
   // 'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
