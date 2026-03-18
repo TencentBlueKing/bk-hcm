@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, reactive } from 'vue';
 import { useRoute } from 'vue-router';
 import { Message } from 'bkui-vue';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
@@ -20,6 +20,7 @@ import BatchReviewDialog from '../components/batch-review-dialog.vue';
 import BatchRejectDialog from '../components/batch-reject-dialog.vue';
 import ReviewDialog, { type IReviewDetailItem } from '../components/review-dialog.vue';
 import GpuDemandSlider from '../create/index.vue';
+import SubOrderEditSlider from '../components/sub-order-edit-slider.vue';
 import { QueryRuleOPEnum } from '@/typings';
 import QuanbuIcon from '@/assets/image/quanbu.svg';
 import RejectCircleIcon from '@/assets/image/reject-circle.svg';
@@ -27,7 +28,7 @@ import StatusLoading from '@/assets/image/status_loading.png';
 
 const route = useRoute();
 
-const { isBusinessPage, isServicePage: _isServicePage } = useWhereAmI();
+const { isBusinessPage, isServicePage: _isServicePage, getBizsId } = useWhereAmI();
 
 const { setTitle } = useBreadcrumb();
 const gpuDemandStore = useGpuDemandStore();
@@ -356,6 +357,8 @@ interface ISheetTableColumn {
   formula?: string;
   excelField?: string;
   fixed?: string;
+  /** 对应编辑表单中的 formField key，用于匹配修改差异 */
+  formFieldKey?: string;
 }
 
 const getSheetColumns = (sheetName: string): ISheetTableColumn[] => {
@@ -392,12 +395,15 @@ const getSheetColumns = (sheetName: string): ISheetTableColumn[] => {
         dbField: h.db_field,
         formula: h.formula,
         excelField: h.field,
+        formFieldKey: h.db_field || `fixed_${h.field}`,
       });
       colIdx += 1;
     }
   }
   // headers
+  let extIdx = 0;
   for (const h of sheet.headers) {
+    const hasField = h.field && h.field !== '-';
     if (!h.hidden) {
       cols.push({
         field: `col_${colIdx}`,
@@ -406,9 +412,11 @@ const getSheetColumns = (sheetName: string): ISheetTableColumn[] => {
         isFixed: false,
         formula: h.formula,
         excelField: h.field,
+        formFieldKey: `ext_${extIdx}`,
       });
       colIdx += 1;
     }
+    if (hasField) extIdx += 1;
   }
   return cols;
 };
@@ -432,7 +440,7 @@ const getSheetRows = (sheetName: string): Record<string, any>[] => {
       _id: sub.id,
       _status: sub.status,
       _comment: Array.isArray(sub.comment) && sub.comment.length > 0 ? sub.comment.join('、') : sub.comment || '-',
-      _demand_type: sub.demand_type,
+      _diffs: editDiffsMap[sub.id] || null,
     };
     let colIdx = 0;
 
@@ -524,10 +532,6 @@ watch([activeFilter, activeTab], () => {
   resetSubOrderSelections();
 });
 
-// ==================== 子单操作权限 ====================
-const canSubEdit = (row: Record<string, any>) => row._status === 'INIT' || row._status === 'REJECT';
-const canSubTerminate = (row: Record<string, any>) => row._status === 'REJECT';
-
 const REVIEW_DISABLED_STATUS: Record<string, string> = {
   DONE: '已评审，不支持操作',
   REJECT: '已驳回，不支持操作',
@@ -536,9 +540,38 @@ const REVIEW_DISABLED_STATUS: Record<string, string> = {
 const canSubReview = (row: Record<string, any>) => !REVIEW_DISABLED_STATUS[row._status];
 const getReviewTip = (row: Record<string, any>) => REVIEW_DISABLED_STATUS[row._status] || '';
 
-// ==================== 子单操作（待开发） ====================
+// ==================== 子单操作权限 ====================
+const canSubEdit = (row: Record<string, any>) =>
+  row._status === GPU_DEMAND_STATUS.INIT || row._status === GPU_DEMAND_STATUS.REJECT;
+const canSubEditScr = (row: Record<string, any>) => row._status === GPU_DEMAND_STATUS.PENDING;
+const canSubTerminate = (row: Record<string, any>) => row._status === GPU_DEMAND_STATUS.REJECT;
+
+// ==================== 子单编辑侧边栏 ====================
+const isEditSliderShow = ref(false);
+const editingSubOrder = ref<IGpuDemandSubOrder | null>(null);
+const editingSheet = computed(() => {
+  if (!editingSubOrder.value) return null;
+  return tplSheets.value.find((s) => s.name === editingSubOrder.value!.demand_type) ?? null;
+});
+const editBizId = computed(() => Number(getBizsId()) || 0);
+
+/**
+ * 修改差异追踪（仅当次编辑保存后生效，离开详情页后清空）
+ * key: subOrderId, value: { colFieldKey → { oldVal, newVal } }
+ */
+const editDiffsMap = reactive<Record<string, Record<string, { oldVal: any; newVal: any }>>>({});
+
 const handleSubEdit = (row: Record<string, any>) => {
-  Message({ theme: 'warning', message: `编辑功能开发中（子单ID: ${row._id}）` });
+  // 根据 _id 找到原始子单
+  const sub = subOrders.value.find((s) => s.id === row._id);
+  if (!sub) return;
+  editingSubOrder.value = sub;
+  isEditSliderShow.value = true;
+};
+
+const handleEditSuccess = (payload: { subOrderId: string; diffs: Record<string, { oldVal: any; newVal: any }> }) => {
+  // 合并差异（同一子单多次编辑时以最新为准）
+  editDiffsMap[payload.subOrderId] = { ...payload.diffs };
 };
 
 // ==================== 单条评审弹窗 ====================
@@ -557,6 +590,10 @@ const reviewDetailItems = computed<IReviewDetailItem[]>(() => {
 const handleSubReview = (row: Record<string, any>) => {
   reviewRow.value = row;
   isReviewDialogShow.value = true;
+};
+
+const handleSubReject = (row: Record<string, any>) => {
+  Message({ theme: 'warning', message: `驳回功能开发中（子单ID: ${row._id}）` });
 };
 
 // ==================== 子单终止（InfoBox 确认弹窗） ====================
@@ -736,16 +773,45 @@ const handleTerminateOrder = () => {
     <div class="detail-table-panel">
       <bk-tab v-model:active="activeTab" type="card-tab">
         <!-- 数据汇总 Tab（固定在第一个） -->
-        <bk-tab-panel :name="SUMMARY_TAB">
+        <bk-tab-panel :name="SUMMARY_TAB" render-directive="if">
           <template #label>
             <div class="tab-label summary-label">
               <img :src="QuanbuIcon" alt="quanbu" class="tab-icon" />
               <span>数据汇总</span>
             </div>
           </template>
+          <bk-table
+            :key="`summary-${tableRenderKey}`"
+            :data="summaryRows"
+            :max-height="500"
+            row-hover="auto"
+            show-overflow-tooltip
+            :border="['row']"
+            class="table-container"
+          >
+            <bk-table-column
+              v-for="col in summaryColumns"
+              :key="col.field"
+              :prop="col.field"
+              :label="col.label"
+              :min-width="col.minWidth"
+              :fixed="col.fixed"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                <span v-if="col.field === 'gpu_num' || col.field === 'qpm_max'">
+                  {{ row[col.field] > 0 ? row[col.field] : '-' }}
+                </span>
+                <span v-else-if="col.field.startsWith('month_')">
+                  {{ row[col.field] > 0 ? row[col.field] : '-' }}
+                </span>
+                <span v-else>{{ row[col.field] }}</span>
+              </template>
+            </bk-table-column>
+          </bk-table>
         </bk-tab-panel>
         <!-- 动态 sheet Tab -->
-        <bk-tab-panel v-for="tab in sheetTabs" :key="tab.name" :name="tab.name">
+        <bk-tab-panel v-for="tab in sheetTabs" :key="tab.name" :name="tab.name" render-directive="if">
           <template #label>
             <div class="tab-label">
               <img v-if="tab.hasReject" :src="RejectCircleIcon" alt="reject" class="tab-reject-icon" />
@@ -753,117 +819,83 @@ const handleTerminateOrder = () => {
               <span class="tab-count">{{ tab.count }}</span>
             </div>
           </template>
+          <!-- 服务请求视角：批量操作 toolbar -->
+          <div v-if="activeTab === tab.name && _isServicePage" class="sheet-toolbar">
+            <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReview">
+              批量评审
+            </bk-button>
+            <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReject">
+              批量驳回
+            </bk-button>
+          </div>
+          <bk-table
+            :key="`${tab.name}-${tableRenderKey}`"
+            :data="getSheetRows(tab.name)"
+            :max-height="500"
+            row-hover="auto"
+            show-overflow-tooltip
+            :border="['row']"
+            class="table-container"
+            row-key="_id"
+            :is-row-select-enable="isSubOrderSelectable"
+            @select-all="handleSubOrderSelectAll"
+            @selection-change="handleSubOrderSelectChange"
+          >
+            <bk-table-column v-if="_isServicePage" type="selection" min-width="30" fixed="left" />
+            <bk-table-column
+              v-for="col in getSheetColumns(tab.name)"
+              :key="col.field"
+              :prop="col.field"
+              :label="col.label"
+              :min-width="col.minWidth"
+              :fixed="col.fixed"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }">
+                <span
+                  v-if="col.field === '_status'"
+                  class="status-tag"
+                  :style="{
+                    background: SUB_STATUS_COLOR[row._status]?.bg || '#f0f1f5',
+                    color: SUB_STATUS_COLOR[row._status]?.text || '#979ba5',
+                  }"
+                >
+                  {{ SUB_STATUS_LABEL[row._status] || row._status }}
+                </span>
+                <!-- 带修改痕迹的单元格 -->
+                <span v-else-if="col.formFieldKey && row._diffs && row._diffs[col.formFieldKey]" class="cell-diff">
+                  <span class="cell-diff-old">{{ row._diffs[col.formFieldKey].oldVal }}</span>
+                  <span class="cell-diff-arrow">→</span>
+                  <span class="cell-diff-new">{{ row._diffs[col.formFieldKey].newVal }}</span>
+                </span>
+                <span v-else>{{ row[col.field] }}</span>
+              </template>
+            </bk-table-column>
+            <!-- 操作列 -->
+            <bk-table-column label="操作" fixed="right" :width="isBusinessPage ? 120 : 160">
+              <template #default="{ row }">
+                <div class="sub-order-actions">
+                  <template v-if="isBusinessPage">
+                    <bk-button theme="primary" text :disabled="!canSubEdit(row)" @click="handleSubEdit(row)">
+                      编辑
+                    </bk-button>
+                    <bk-button theme="primary" text :disabled="!canSubTerminate(row)" @click="handleSubTerminate(row)">
+                      终止
+                    </bk-button>
+                  </template>
+                  <template v-else>
+                    <bk-button theme="primary" text :disabled="!canSubEditScr(row)" @click="handleSubEdit(row)">
+                      编辑
+                    </bk-button>
+                    <bk-button theme="primary" text @click="handleSubReview(row)">评审</bk-button>
+                    <bk-button theme="primary" text @click="handleSubReject(row)">驳回</bk-button>
+                  </template>
+                </div>
+              </template>
+            </bk-table-column>
+          </bk-table>
         </bk-tab-panel>
       </bk-tab>
-
-      <!-- 数据汇总表 -->
-      <bk-table
-        v-if="activeTab === SUMMARY_TAB"
-        :key="`summary-${tableRenderKey}`"
-        :data="summaryRows"
-        :max-height="500"
-        row-hover="auto"
-        show-overflow-tooltip
-        :border="['row']"
-        class="table-container"
-      >
-        <bk-table-column
-          v-for="col in summaryColumns"
-          :key="col.field"
-          :prop="col.field"
-          :label="col.label"
-          :min-width="col.minWidth"
-          :fixed="col.fixed"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }">
-            <span v-if="col.field === 'gpu_num' || col.field === 'qpm_max'">
-              {{ row[col.field] > 0 ? row[col.field] : '-' }}
-            </span>
-            <span v-else-if="col.field.startsWith('month_')">
-              {{ row[col.field] > 0 ? row[col.field] : '-' }}
-            </span>
-            <span v-else>{{ row[col.field] }}</span>
-          </template>
-        </bk-table-column>
-      </bk-table>
-
-      <!-- 各 sheet 的子单表格 -->
-      <template v-for="tab in sheetTabs" :key="tab.name">
-        <!-- 服务请求视角：批量操作 toolbar -->
-        <div v-if="activeTab === tab.name && _isServicePage" class="sheet-toolbar">
-          <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReview">
-            批量评审
-          </bk-button>
-          <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReject">
-            批量驳回
-          </bk-button>
-        </div>
-        <bk-table
-          v-if="activeTab === tab.name"
-          :key="`${tab.name}-${tableRenderKey}`"
-          :data="sheetRowsMap[tab.name]"
-          :max-height="500"
-          row-hover="auto"
-          show-overflow-tooltip
-          :border="['row']"
-          class="table-container"
-          row-key="_id"
-          :is-row-select-enable="isSubOrderSelectable"
-          @select-all="handleSubOrderSelectAll"
-          @selection-change="handleSubOrderSelectChange"
-        >
-          <bk-table-column v-if="_isServicePage" type="selection" min-width="30" fixed="left" />
-          <bk-table-column
-            v-for="col in getSheetColumns(tab.name)"
-            :key="col.field"
-            :prop="col.field"
-            :label="col.label"
-            :min-width="col.minWidth"
-            :fixed="col.fixed"
-            show-overflow-tooltip
-          >
-            <template #default="{ row }">
-              <span
-                v-if="col.field === '_status'"
-                class="status-tag"
-                :style="{
-                  background: SUB_STATUS_COLOR[row._status]?.bg || '#f0f1f5',
-                  color: SUB_STATUS_COLOR[row._status]?.text || '#979ba5',
-                }"
-              >
-                {{ SUB_STATUS_LABEL[row._status] || row._status }}
-              </span>
-              <span v-else>{{ row[col.field] }}</span>
-            </template>
-          </bk-table-column>
-          <!-- 操作列 -->
-          <bk-table-column label="操作" fixed="right" :width="isBusinessPage ? 120 : 120">
-            <template #default="{ row }">
-              <div class="sub-order-actions">
-                <bk-button theme="primary" text :disabled="!canSubEdit(row)" @click="handleSubEdit(row)">
-                  编辑
-                </bk-button>
-                <template v-if="isBusinessPage">
-                  <bk-button theme="primary" text :disabled="!canSubTerminate(row)" @click="handleSubTerminate(row)">
-                    终止
-                  </bk-button>
-                </template>
-                <bk-button
-                  v-else
-                  v-bk-tooltips="{ content: getReviewTip(row), disabled: canSubReview(row) }"
-                  theme="primary"
-                  text
-                  :disabled="!canSubReview(row)"
-                  @click="handleSubReview(row)"
-                >
-                  评审
-                </bk-button>
-              </div>
-            </template>
-          </bk-table-column>
-        </bk-table>
-      </template>
     </div>
   </div>
   <GpuDemandSlider
@@ -872,7 +904,13 @@ const handleTerminateOrder = () => {
     :order-detail="orderDetail"
     @success="handleReimportSuccess"
   />
-
+  <SubOrderEditSlider
+    v-model="isEditSliderShow"
+    :sub-order="editingSubOrder"
+    :sheet="editingSheet"
+    :biz-id="editBizId"
+    @success="handleEditSuccess"
+  />
   <BatchReviewDialog
     v-model="isBatchReviewDialogShow"
     :suborder-ids="selectedSubOrderIds"
@@ -1190,5 +1228,28 @@ const handleTerminateOrder = () => {
   align-items: center;
   gap: 8px;
   padding: 0 24px;
+}
+
+// ==================== 修改痕迹样式 ====================
+.cell-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+
+  .cell-diff-old {
+    color: #c4c6cc;
+    text-decoration: line-through;
+  }
+
+  .cell-diff-arrow {
+    color: #c4c6cc;
+    font-size: 12px;
+  }
+
+  .cell-diff-new {
+    color: #e89f18;
+    font-weight: 700;
+  }
 }
 </style>

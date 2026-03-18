@@ -130,7 +130,14 @@ const handlePreviewFile = () => {
 };
 
 const handleDownloadTemplate = () => {
-  // TODO: download template file
+  const url =
+    'https://ieg-hcm-cloud-bill-1258344700.cos-internal.ap-nanjing.tencentcos.cn/rawbills/tcloud-ziyan/res-plan-demand/budget_declaration_gpu_template.xlsx';
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'budget_declaration_gpu_template.xlsx';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
 // ==================== 新增模式：运营产品 / 业务初始化 ====================

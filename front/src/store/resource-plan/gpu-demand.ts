@@ -234,7 +234,7 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
 
   /** 服务请求 - 子单批量更新（评审/驳回/编辑） */
   const batchUpdateSubOrders = async (params: { suborder_data: IGpuSubOrderUpdateItem[] }) => {
-    const api = '/api/v1/woa/plans/resources/gpu/demands/suborders/batch';
+    const api = `/api/v1/woa/${getBusinessApiPath()}plans/resources/gpu/demands/suborders/batch`;
     return http.post(api, params);
   };
 
@@ -245,11 +245,11 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
     batchPendingOrders,
     batchRejectOrders,
     batchTerminateOrders,
+    batchUpdateSubOrders,
     batchTerminateSubOrders,
     createGpuDemandOrder,
     overwriteGpuDemandOrder,
     getGpuSubOrderList,
     getGpuDemandDetail,
-    batchUpdateSubOrders,
   };
 });

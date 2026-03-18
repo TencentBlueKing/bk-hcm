@@ -19,3 +19,6 @@ pre-*-bkcodeai
 front/.husky/pre-push
 vetur.config.js
 bkcodeai.json
+.codebuddy/memory/
+**/api-doc
+.bkwikiairc
