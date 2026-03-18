@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/adaptor/aws"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
@@ -56,7 +57,7 @@ func NewCredentialCache() *CredentialCache {
 // GetOrRefresh returns cached credentials if valid, or calls STS to obtain new ones.
 // cacheKey is constructed by the orchestration method (AwsWithAssumeRole) to support role chaining scenarios.
 // externalID is optional; when non-empty it is passed to the STS AssumeRole call.
-func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleArn, sessionName, externalID string,
+func (c *CredentialCache) GetOrRefresh(kt *kit.Kit, secret *types.BaseSecret, cacheKey, roleArn, sessionName, externalID string,
 	site enumor.AccountSiteType) (*CachedCredential, error) {
 
 	key := cacheKey
@@ -76,7 +77,7 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 	if exists && now.Before(cached.Expiration) {
 		result, err := aws.AssumeRole(secret, roleArn, sessionName, externalID, site)
 		if err != nil {
-			logs.Warnf("refresh STS credential failed (using cached), key: %s, err: %v", key, err)
+			logs.Warnf("refresh STS credential failed (using cached), key: %s, err: %v, rid: %s", key, err, kt.Rid)
 			return cached, nil
 		}
 		refreshed := &CachedCredential{
@@ -86,7 +87,7 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 			Expiration:      result.Expiration,
 		}
 		c.cache[key] = refreshed
-		logs.Infof("STS credential refreshed, key: %s, expires: %v", key, refreshed.Expiration)
+		logs.Infof("STS credential refreshed, key: %s, expires: %v, rid: %s", key, refreshed.Expiration, kt.Rid)
 		return refreshed, nil
 	}
 
@@ -102,6 +103,6 @@ func (c *CredentialCache) GetOrRefresh(secret *types.BaseSecret, cacheKey, roleA
 		Expiration:      result.Expiration,
 	}
 	c.cache[key] = fresh
-	logs.Infof("STS credential obtained, key: %s, expires: %v", key, fresh.Expiration)
+	logs.Infof("STS credential obtained, key: %s, expires: %v, rid: %s", key, fresh.Expiration, kt.Rid)
 	return fresh, nil
 }

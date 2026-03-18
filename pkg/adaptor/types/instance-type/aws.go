@@ -42,9 +42,9 @@ type AwsInstanceType struct {
 	Memory             int64
 	CPU                int64
 	GPU                int64
-	GPUMemory          int64  `json:"gpu_memory"`
-	GPUName            string `json:"gpu_name"`
-	GPUManufacturer    string `json:"gpu_manufacturer"`
+	GPUMemory          int64
+	GPUName            string
+	GPUManufacturer    string
 	FPGA               int64
 	NetworkPerformance string
 	DiskSizeInGB       int64
