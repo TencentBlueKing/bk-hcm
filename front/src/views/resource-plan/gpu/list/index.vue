@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, inject } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
@@ -15,6 +16,7 @@ import { TableColumn, SERVICE_ONLY_COLUMNS } from './children/data-list/column';
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
 import CreateSlider from '../create/index.vue';
+import { useTerminateConfirm } from '../hooks/use-terminate-confirm';
 
 const route = useRoute();
 const router = useRouter();
@@ -22,6 +24,7 @@ const router = useRouter();
 const isBusinessPage = inject('isBusinessPage', false);
 
 const gpuDemandStore = useGpuDemandStore();
+const { confirmTerminateOrder } = useTerminateConfirm();
 
 const { pagination, getPageParams } = usePage();
 
@@ -113,16 +116,51 @@ const handleCreateHidden = () => {
 
 const handleViewDetails = (row: IGpuDemandItem) => {
   const detailName = isBusinessPage ? MENU_BUSINESS_RESOURCE_PLAN_GPU_DETAIL : MENU_SERVICE_RESOURCE_PLAN_GPU_DETAIL;
-  router.push({ name: detailName, query: { id: row.id } });
+  router.push({ name: detailName, query: { ...route.query, id: row.id } });
 };
 
-const handleReject = async (row: IGpuDemandItem) => {
-  await gpuDemandStore.batchRejectOrders({ order_ids: [row.id] });
-  fetchList();
+const handleAdjust = (row: IGpuDemandItem) => {
+  const detailName = isBusinessPage ? MENU_BUSINESS_RESOURCE_PLAN_GPU_DETAIL : MENU_SERVICE_RESOURCE_PLAN_GPU_DETAIL;
+  router.push({ name: detailName, query: { ...route.query, id: row.id, action: 'adjust' } });
 };
 
-const handleTerminate = async (row: IGpuDemandItem) => {
-  await gpuDemandStore.batchTerminateOrders({ order_ids: [row.id] });
+// 驳回确认弹窗
+const isRejectDialogShow = ref(false);
+const rejectRow = ref<IGpuDemandItem | null>(null);
+const isRejectLoading = ref(false);
+
+const handleReject = (row: IGpuDemandItem) => {
+  rejectRow.value = row;
+  isRejectDialogShow.value = true;
+};
+
+const handleRejectConfirm = async () => {
+  if (!rejectRow.value) return;
+  isRejectLoading.value = true;
+  try {
+    await gpuDemandStore.batchRejectOrders({ order_ids: [rejectRow.value.id] });
+    Message({ theme: 'success', message: '驳回成功' });
+    isRejectDialogShow.value = false;
+    fetchList();
+  } catch {
+    Message({ theme: 'error', message: '驳回失败' });
+  } finally {
+    isRejectLoading.value = false;
+  }
+};
+
+const handleRejectCancel = () => {
+  isRejectDialogShow.value = false;
+  rejectRow.value = null;
+};
+
+// 终止确认（InfoBox）
+const handleTerminate = (row: IGpuDemandItem) => {
+  confirmTerminateOrder(row.id, fetchList);
+};
+
+const handleStartReview = async (row: IGpuDemandItem) => {
+  await gpuDemandStore.batchPendingOrders({ order_ids: [row.id] });
   fetchList();
 };
 </script>
@@ -137,7 +175,7 @@ const handleTerminate = async (row: IGpuDemandItem) => {
           新增需求
         </bk-button>
         <bk-button v-if="isServicePage" theme="primary" :disabled="!selectedRows.length" @click="handleBatchPending">
-          批量更新状态
+          批量转为评审中
         </bk-button>
       </div>
       <data-list
@@ -146,8 +184,10 @@ const handleTerminate = async (row: IGpuDemandItem) => {
         :list="gpuDemandList"
         :pagination="pagination"
         @view-details="handleViewDetails"
+        @adjust="handleAdjust"
         @reject="handleReject"
         @terminate="handleTerminate"
+        @start-review="handleStartReview"
         @select="handleSelect"
       />
     </div>
@@ -155,6 +195,19 @@ const handleTerminate = async (row: IGpuDemandItem) => {
   <template v-if="!isCreateSliderHidden">
     <create-slider v-model="isCreateSliderShow" @hidden="handleCreateHidden" @success="handleCreateSuccess" />
   </template>
+
+  <!-- 驳回确认弹窗 -->
+  <bk-dialog v-model:is-show="isRejectDialogShow" title="驳回确认" :quick-close="false" @closed="handleRejectCancel">
+    <div class="reject-confirm-content">
+      驳回需求
+      <span class="reject-order-id">{{ rejectRow?.id }}</span>
+      后，该需求单下所有关联记录（含已评审记录）将统一变更为驳回状态，是否确认？
+    </div>
+    <template #footer>
+      <bk-button @click="handleRejectCancel">取消</bk-button>
+      <bk-button theme="danger" :loading="isRejectLoading" @click="handleRejectConfirm">确认驳回</bk-button>
+    </template>
+  </bk-dialog>
 </template>
 
 <style lang="scss" scoped>
@@ -173,6 +226,17 @@ const handleTerminate = async (row: IGpuDemandItem) => {
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+  }
+}
+
+.reject-confirm-content {
+  font-size: 14px;
+  line-height: 22px;
+  color: #63656e;
+
+  .reject-order-id {
+    color: #3a84ff;
+    font-weight: 700;
   }
 }
 </style>

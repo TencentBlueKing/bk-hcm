@@ -50,6 +50,8 @@ const tabComps: Record<string, any> = {
 
   :deep(.bk-tab-header) {
     padding: 0 12px;
+    background-color: #fff;
+    border-bottom: none;
   }
 
   :deep(.bk-tab-content) {

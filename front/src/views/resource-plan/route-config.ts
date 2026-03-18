@@ -33,6 +33,16 @@ const gpuDemandBiz: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: 'bizResourcePlan',
         notMenu: true,
+        title: 'GPU需求详情',
+        menu: {
+          relative: MENU_BUSINESS_RESOURCE_PLAN_GPU,
+        },
+        layout: {
+          breadcrumbs: {
+            show: true,
+            back: true,
+          },
+        },
       }),
     },
   },
@@ -65,7 +75,17 @@ const gpuDemandSrv: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: 'opResourcePlan',
         notMenu: true,
+        title: 'GPU需求详情',
         checkAuth: 'ziyan_resource_plan_manage',
+        menu: {
+          relative: MENU_SERVICE_RESOURCE_PLAN_GPU,
+        },
+        layout: {
+          breadcrumbs: {
+            show: true,
+            back: true,
+          },
+        },
       }),
     },
   },

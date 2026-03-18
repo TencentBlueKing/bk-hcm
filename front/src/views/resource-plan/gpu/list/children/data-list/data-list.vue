@@ -16,8 +16,10 @@ export interface IDataListProps {
 const props = withDefaults(defineProps<IDataListProps>(), {});
 const emit = defineEmits<{
   'view-details': [row: IGpuDemandItem];
+  adjust: [row: IGpuDemandItem];
   reject: [row: IGpuDemandItem];
   terminate: [row: IGpuDemandItem];
+  'start-review': [row: IGpuDemandItem];
   select: [selections: IGpuDemandItem[]];
 }>();
 
@@ -38,7 +40,15 @@ const { selections, handleSelectAll, handleSelectChange } = useTableSelection({
 
 watch(selections, (val) => emit('select', val), { deep: true });
 
-const canReview = (row: IGpuDemandItem) => row.status !== GPU_DEMAND_STATUS.INIT;
+const canAdjust = (row: IGpuDemandItem) =>
+  row.status === GPU_DEMAND_STATUS.INIT ||
+  row.status === GPU_DEMAND_STATUS.REJECT ||
+  row.status === GPU_DEMAND_STATUS.REJECT_ALL;
+const isInitStatus = (row: IGpuDemandItem) => row.status === GPU_DEMAND_STATUS.INIT;
+const canReview = (row: IGpuDemandItem) =>
+  row.status === GPU_DEMAND_STATUS.PENDING ||
+  row.status === GPU_DEMAND_STATUS.REJECT ||
+  row.status === GPU_DEMAND_STATUS.REJECT_ALL;
 const canReject = (row: IGpuDemandItem) => row.status === GPU_DEMAND_STATUS.PENDING;
 const canTerminateSrv = (row: IGpuDemandItem) => row.status === GPU_DEMAND_STATUS.PENDING;
 const canTerminateBiz = (row: IGpuDemandItem) =>
@@ -73,18 +83,28 @@ const canTerminateBiz = (row: IGpuDemandItem) =>
       :fixed="column.fixed"
     >
       <template #default="{ row }">
-        <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
+        <!-- 需求ID列：蓝色链接样式，点击跳转详情 -->
+        <bk-button v-if="column.id === 'id'" theme="primary" text @click="emit('view-details', row)">
+          {{ row[column.id] }}
+        </bk-button>
+        <display-value v-else :property="column" :value="row[column.id]" :display="column?.meta?.display" />
       </template>
     </bk-table-column>
     <bk-table-column :label="'操作'" :min-width="isServicePage ? 150 : 100">
       <template #default="{ row }">
         <div class="actions" v-if="isBusinessPage">
-          <bk-button theme="primary" text @click="emit('view-details', row)">调整</bk-button>
+          <bk-button theme="primary" text :disabled="!canAdjust(row)" @click="emit('adjust', row)">调整</bk-button>
           <bk-button theme="primary" text :disabled="!canTerminateBiz(row)" @click="emit('terminate', row)">
             终止
           </bk-button>
         </div>
-        <div class="actions" v-if="isServicePage">
+        <div class="actions" v-if="isServicePage && isInitStatus(row)">
+          <bk-button theme="primary" text @click="emit('start-review', row)">转为评审中</bk-button>
+          <bk-button theme="primary" text :disabled="!canTerminateSrv(row)" @click="emit('terminate', row)">
+            终止
+          </bk-button>
+        </div>
+        <div class="actions" v-if="isServicePage && !isInitStatus(row)">
           <bk-button theme="primary" text :disabled="!canReview(row)" @click="emit('view-details', row)">
             评审
           </bk-button>

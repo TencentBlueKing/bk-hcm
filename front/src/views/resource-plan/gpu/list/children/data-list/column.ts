@@ -1,5 +1,5 @@
 import { Model, Column } from '@/decorator';
-import { GPU_DEMAND_STATUS_MAP } from '@/store/resource-plan/gpu-demand';
+import { GPU_DEMAND_STATUS, GPU_DEMAND_STATUS_MAP } from '@/store/resource-plan/gpu-demand';
 import type { GpuDemandStatus } from '@/store/resource-plan/gpu-demand';
 
 export const SERVICE_ONLY_COLUMNS = ['op_product_name', 'bk_biz_id'];
@@ -27,6 +27,25 @@ export class TableColumn {
   @Column('user', { name: '提单人', minWidth: 100, index: 6 })
   creator: string;
 
-  @Column('enum', { name: '单据状态', option: GPU_DEMAND_STATUS_MAP, minWidth: 100, index: 7 })
+  @Column('enum', {
+    name: '单据状态',
+    option: GPU_DEMAND_STATUS_MAP,
+    minWidth: 100,
+    index: 7,
+    meta: {
+      display: {
+        appearance: 'dynamic-status',
+        appearanceProps: {
+          statusObject: {
+            success: [GPU_DEMAND_STATUS.DONE],
+            fail: [GPU_DEMAND_STATUS.REJECT, GPU_DEMAND_STATUS.REJECT_ALL],
+            wait: [GPU_DEMAND_STATUS.INIT],
+            ing: [GPU_DEMAND_STATUS.PENDING],
+            stop: [GPU_DEMAND_STATUS.TERMINATE],
+          },
+        },
+      },
+    },
+  })
   status: GpuDemandStatus;
 }
