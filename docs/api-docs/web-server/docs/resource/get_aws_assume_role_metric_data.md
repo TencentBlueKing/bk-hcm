@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
+POST /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/list
 
 ### 请求参数
 

@@ -307,9 +307,9 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn: List AWS member account instances via AssumeRole
-  /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get:
+  /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/list:
     post:
-      operationId: get_aws_assume_role_metric_data
+      operationId: list_aws_assume_role_metric_data
       description: 查询 AWS 成员账号 CloudWatch 指标时序数据（通过 AssumeRole 跨账号访问）
       tags:
         - CloudWatch
@@ -323,7 +323,7 @@ paths:
         backend:
           type: HTTP
           method: post
-          path: /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/get
+          path: /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/list
           matchSubpath: false
           timeout: 60
           upstreams: {}

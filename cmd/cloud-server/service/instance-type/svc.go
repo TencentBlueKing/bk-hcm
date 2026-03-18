@@ -281,8 +281,8 @@ func (svc *instanceTypeSvc) ListAssumeRoleInstanceInRes(cts *rest.Contexts) (int
 	return list, nil
 }
 
-// GetAssumeRoleMetricDataInRes queries CloudWatch metric data via AssumeRole (resource scope).
-func (svc *instanceTypeSvc) GetAssumeRoleMetricDataInRes(cts *rest.Contexts) (interface{}, error) {
+// ListAssumeRoleMetricDataInRes queries CloudWatch metric data via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleMetricDataInRes(cts *rest.Contexts) (interface{}, error) {
 	req := new(hcproto.AwsAssumeRoleGetMetricDataReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -302,9 +302,9 @@ func (svc *instanceTypeSvc) GetAssumeRoleMetricDataInRes(cts *rest.Contexts) (in
 		return nil, err
 	}
 
-	list, err := svc.client.HCService().Aws.InstanceType.GetAssumeRoleMetricData(cts.Kit, req)
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleMetricData(cts.Kit, req)
 	if err != nil {
-		logs.Errorf("call hc-service to get aws assume role cloudwatch metric data failed, err: %v, rid: %s",
+		logs.Errorf("call hc-service to list aws assume role cloudwatch metric data failed, err: %v, rid: %s",
 			err, cts.Kit.Rid)
 		return nil, err
 	}

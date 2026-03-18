@@ -197,13 +197,6 @@ func (c *clientSet) costAndUsageReportClient(region string) (*curservice.Costand
 func (c *clientSet) cloudWatchClient(region string) (*cloudwatch.CloudWatch, error) {
 	cfg := &aws.Config{
 		Credentials: c.credentials,
-		DisableSSL:  nil,
-		HTTPClient:  nil,
-		LogLevel:    nil,
-		Logger:      nil,
-		MaxRetries:  nil,
-		Retryer:     nil,
-		SleepDelay:  nil,
 	}
 
 	if len(region) != 0 {

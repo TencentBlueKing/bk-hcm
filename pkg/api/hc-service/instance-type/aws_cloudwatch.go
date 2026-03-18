@@ -21,6 +21,7 @@ package instancetype
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"hcm/pkg/criteria/validator"
@@ -59,7 +60,13 @@ type AwsAssumeRoleGetMetricDataReq struct {
 
 // Validate validates the request fields.
 func (req *AwsAssumeRoleGetMetricDataReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+	if !req.EndTime.After(req.StartTime) {
+		return errors.New("end_time must be after start_time")
+	}
+	return nil
 }
 
 // MetricDataMessageItem holds a warning or error message associated with a metric data query.

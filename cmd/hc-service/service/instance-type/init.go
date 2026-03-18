@@ -47,7 +47,7 @@ func InitInstanceTypeService(cap *capability.Capability) {
 	h.Add("ListForGcp", "POST", "/vendors/gcp/instance_types/list", i.ListForGcp)
 	h.Add("ListAssumeRoleInstanceTypeForAws", "POST", "/vendors/aws/assume_role/instance_types/list", i.ListAssumeRoleInstanceTypeForAws)
 	h.Add("ListAssumeRoleInstanceForAws", "POST", "/vendors/aws/assume_role/instances/list", i.ListAssumeRoleInstanceForAws)
-	h.Add("GetAssumeRoleMetricDataForAws", "POST", "/vendors/aws/assume_role/cloudwatch/metric_data/get", i.GetAssumeRoleMetricDataForAws)
+	h.Add("ListAssumeRoleMetricDataForAws", "POST", "/vendors/aws/assume_role/cloudwatch/metric_data/list", i.ListAssumeRoleMetricDataForAws)
 	h.Add("ListAssumeRoleMetricsForAws", "POST", "/vendors/aws/assume_role/cloudwatch/metrics/list", i.ListAssumeRoleMetricsForAws)
 
 	h.Load(cap.WebService)

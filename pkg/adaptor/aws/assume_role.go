@@ -51,7 +51,7 @@ type AssumeRoleResult struct {
 // AssumeRole calls AWS STS AssumeRole API with the given long-term credentials and role ARN,
 // returning temporary credentials for cross-account access. externalId is optional; when
 // non-empty it is passed to STS for Trust Policy condition verification.
-func AssumeRole(secret *types.BaseSecret, roleArn, sessionName, externalId string,
+func AssumeRole(secret *types.BaseSecret, roleArn, sessionName, externalID string,
 	site enumor.AccountSiteType) (*AssumeRoleResult, error) {
 
 	region := stsRegionInternational
@@ -74,8 +74,8 @@ func AssumeRole(secret *types.BaseSecret, roleArn, sessionName, externalId strin
 		RoleArn:         aws.String(roleArn),
 		RoleSessionName: aws.String(sessionName),
 	}
-	if externalId != "" {
-		input.ExternalId = aws.String(externalId)
+	if externalID != "" {
+		input.ExternalId = aws.String(externalID)
 	}
 
 	output, err := stsClient.AssumeRole(input)

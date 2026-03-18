@@ -116,8 +116,8 @@ func (c *InstanceTypeClient) ListAssumeRoleInstance(kt *kit.Kit,
 	return resp.Data, nil
 }
 
-// GetAssumeRoleMetricData queries CloudWatch metric data via AssumeRole cross-account access.
-func (c *InstanceTypeClient) GetAssumeRoleMetricData(kt *kit.Kit,
+// ListAssumeRoleMetricData queries CloudWatch metric data via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleMetricData(kt *kit.Kit,
 	request *instancetype.AwsAssumeRoleGetMetricDataReq) ([]*instancetype.MetricDataResultItem, error) {
 
 	resp := new(instancetype.AwsAssumeRoleGetMetricDataResp)
@@ -125,7 +125,7 @@ func (c *InstanceTypeClient) GetAssumeRoleMetricData(kt *kit.Kit,
 	err := c.client.Post().
 		WithContext(kt.Ctx).
 		Body(request).
-		SubResourcef("/assume_role/cloudwatch/metric_data/get").
+		SubResourcef("/assume_role/cloudwatch/metric_data/list").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)

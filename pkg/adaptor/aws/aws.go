@@ -24,8 +24,6 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // NewAws new aws.
@@ -64,11 +62,6 @@ func (a *Aws) CloudAccountID() string {
 // IsChinaSite is china site.
 func (a *Aws) IsChinaSite() bool {
 	return a.site == enumor.ChinaSite
-}
-
-// GetEC2Client returns an EC2 client for the given region.
-func (a *Aws) GetEC2Client(region string) (*ec2.EC2, error) {
-	return a.clientSet.ec2Client(region)
 }
 
 // DefaultRegion return default region.

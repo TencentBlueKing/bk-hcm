@@ -20,8 +20,6 @@
 package instancetype
 
 import (
-	"fmt"
-
 	typescw "hcm/pkg/adaptor/types/cloudwatch"
 	proto "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
@@ -29,8 +27,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// GetAssumeRoleMetricDataForAws queries CloudWatch metric time-series data via AssumeRole.
-func (i *instanceTypeAdaptor) GetAssumeRoleMetricDataForAws(cts *rest.Contexts) (interface{}, error) {
+// ListAssumeRoleMetricDataForAws queries CloudWatch metric time-series data via AssumeRole.
+func (i *instanceTypeAdaptor) ListAssumeRoleMetricDataForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleGetMetricDataReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -40,18 +38,11 @@ func (i *instanceTypeAdaptor) GetAssumeRoleMetricDataForAws(cts *rest.Contexts) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// Get CloudID from main_account table
-	mainAccountInfo, err := i.dataCli.Aws.MainAccount.Get(cts.Kit, req.MainAccountID)
+	// Get and validate CloudID from main_account table
+	cloudID, err := i.getCloudIDFromMainAccount(cts.Kit, req.MainAccountID, req.RootAccountID)
 	if err != nil {
-		logs.Errorf("get aws main account failed, main account id: %s, err: %v, rid: %s",
-			req.MainAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudMainAccountID == "" {
-		logs.Errorf("main account: %s cloud main account id is empty, rid: %s", req.MainAccountID, cts.Kit.Rid)
-		return nil, fmt.Errorf("main account: %s cloud main account id is empty", req.MainAccountID)
-	}
-	cloudID := mainAccountInfo.Extension.CloudMainAccountID
 
 	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
@@ -117,18 +108,11 @@ func (i *instanceTypeAdaptor) ListAssumeRoleMetricsForAws(cts *rest.Contexts) (i
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// Get CloudID from main_account table
-	mainAccountInfo, err := i.dataCli.Aws.MainAccount.Get(cts.Kit, req.MainAccountID)
+	// Get and validate CloudID from main_account table
+	cloudID, err := i.getCloudIDFromMainAccount(cts.Kit, req.MainAccountID, req.RootAccountID)
 	if err != nil {
-		logs.Errorf("get aws main account failed, main account id: %s, err: %v, rid: %s",
-			req.MainAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudMainAccountID == "" {
-		logs.Errorf("main account: %s cloud main account id is empty, rid: %s", req.MainAccountID, cts.Kit.Rid)
-		return nil, fmt.Errorf("main account: %s cloud main account id is empty", req.MainAccountID)
-	}
-	cloudID := mainAccountInfo.Extension.CloudMainAccountID
 
 	client, err := i.adaptor.AwsWithAssumeRole(cts.Kit, req.RootAccountID, cloudID, req.RoleChain, req.ExternalID)
 	if err != nil {
