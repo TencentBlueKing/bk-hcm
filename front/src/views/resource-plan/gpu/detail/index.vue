@@ -15,6 +15,10 @@ import {
 } from '@/store/resource-plan/gpu-demand';
 import { evaluateFormula } from '../hooks/use-excel-preview';
 import { useTerminateConfirm } from '../hooks/use-terminate-confirm';
+import useTableSelection from '@/hooks/use-table-selection';
+import BatchReviewDialog from '../components/batch-review-dialog.vue';
+import BatchRejectDialog from '../components/batch-reject-dialog.vue';
+import ReviewDialog, { type IReviewDetailItem } from '../components/review-dialog.vue';
 import GpuDemandSlider from '../create/index.vue';
 import { QueryRuleOPEnum } from '@/typings';
 import QuanbuIcon from '@/assets/image/quanbu.svg';
@@ -428,6 +432,7 @@ const getSheetRows = (sheetName: string): Record<string, any>[] => {
       _id: sub.id,
       _status: sub.status,
       _comment: Array.isArray(sub.comment) && sub.comment.length > 0 ? sub.comment.join('、') : sub.comment || '-',
+      _demand_type: sub.demand_type,
     };
     let colIdx = 0;
 
@@ -491,27 +496,93 @@ const getSheetRows = (sheetName: string): Record<string, any>[] => {
   });
 };
 
+/** 缓存各 sheet 的表格行数据，避免每次渲染创建新对象导致选中态丢失 */
+const sheetRowsMap = computed(() => {
+  const map: Record<string, Record<string, any>[]> = {};
+  for (const sheet of tplSheets.value) {
+    map[sheet.name] = getSheetRows(sheet.name);
+  }
+  return map;
+});
+
+// ==================== 子单选择（服务请求视角批量操作） ====================
+const isSubOrderSelectable = ({ row }: { row: Record<string, any> }) => {
+  return row._status === 'PENDING';
+};
+
+const {
+  selections: selectedSubOrders,
+  handleSelectAll: handleSubOrderSelectAll,
+  handleSelectChange: handleSubOrderSelectChange,
+  resetSelections: resetSubOrderSelections,
+} = useTableSelection({ isRowSelectable: isSubOrderSelectable, rowKey: '_id' });
+
+const selectedSubOrderIds = computed(() => selectedSubOrders.value.map((row: Record<string, any>) => row._id));
+
+// 切换筛选状态或 tab 时清空选中
+watch([activeFilter, activeTab], () => {
+  resetSubOrderSelections();
+});
+
 // ==================== 子单操作权限 ====================
 const canSubEdit = (row: Record<string, any>) => row._status === 'INIT' || row._status === 'REJECT';
 const canSubTerminate = (row: Record<string, any>) => row._status === 'REJECT';
+
+const REVIEW_DISABLED_STATUS: Record<string, string> = {
+  DONE: '已评审，不支持操作',
+  REJECT: '已驳回，不支持操作',
+  TERMINATE: '已终止，不支持操作',
+};
+const canSubReview = (row: Record<string, any>) => !REVIEW_DISABLED_STATUS[row._status];
+const getReviewTip = (row: Record<string, any>) => REVIEW_DISABLED_STATUS[row._status] || '';
 
 // ==================== 子单操作（待开发） ====================
 const handleSubEdit = (row: Record<string, any>) => {
   Message({ theme: 'warning', message: `编辑功能开发中（子单ID: ${row._id}）` });
 };
 
-const handleSubReview = (row: Record<string, any>) => {
-  Message({ theme: 'warning', message: `评审功能开发中（子单ID: ${row._id}）` });
-};
+// ==================== 单条评审弹窗 ====================
+const isReviewDialogShow = ref(false);
+const reviewRow = ref<Record<string, any> | null>(null);
 
-const handleSubReject = (row: Record<string, any>) => {
-  Message({ theme: 'warning', message: `驳回功能开发中（子单ID: ${row._id}）` });
+const reviewDetailItems = computed<IReviewDetailItem[]>(() => {
+  if (!reviewRow.value) return [];
+  const sheetName = reviewRow.value._demand_type;
+  const cols = getSheetColumns(sheetName);
+  return cols
+    .filter((col) => col.field !== '_status' && col.field !== '_comment')
+    .map((col) => ({ label: col.label, value: reviewRow.value![col.field] ?? '-' }));
+});
+
+const handleSubReview = (row: Record<string, any>) => {
+  reviewRow.value = row;
+  isReviewDialogShow.value = true;
 };
 
 // ==================== 子单终止（InfoBox 确认弹窗） ====================
 const handleSubTerminate = (row: Record<string, any>) => {
   confirmTerminateSubOrder(row._id, fetchDetail);
 };
+
+// ==================== 批量评审 / 批量驳回 ====================
+const isBatchReviewDialogShow = ref(false);
+const isBatchRejectDialogShow = ref(false);
+
+const handleBatchReview = () => {
+  isBatchReviewDialogShow.value = true;
+};
+
+const handleBatchReject = () => {
+  isBatchRejectDialogShow.value = true;
+};
+
+const handleBatchSuccess = () => {
+  resetSubOrderSelections();
+  fetchDetail();
+};
+
+// ==================== 表格渲染 key（数据刷新后强制重建表格） ====================
+const tableRenderKey = ref(0);
 
 // ==================== 数据加载 ====================
 const fetchDetail = async () => {
@@ -532,6 +603,7 @@ const fetchDetail = async () => {
       const [firstConfig] = data.tpl_config;
       tplConfig.value = firstConfig;
     }
+    tableRenderKey.value += 1;
   } catch {
     subOrders.value = [];
   }
@@ -687,6 +759,7 @@ const handleTerminateOrder = () => {
       <!-- 数据汇总表 -->
       <bk-table
         v-if="activeTab === SUMMARY_TAB"
+        :key="`summary-${tableRenderKey}`"
         :data="summaryRows"
         :max-height="500"
         row-hover="auto"
@@ -717,15 +790,30 @@ const handleTerminateOrder = () => {
 
       <!-- 各 sheet 的子单表格 -->
       <template v-for="tab in sheetTabs" :key="tab.name">
+        <!-- 服务请求视角：批量操作 toolbar -->
+        <div v-if="activeTab === tab.name && _isServicePage" class="sheet-toolbar">
+          <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReview">
+            批量评审
+          </bk-button>
+          <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReject">
+            批量驳回
+          </bk-button>
+        </div>
         <bk-table
           v-if="activeTab === tab.name"
-          :data="getSheetRows(tab.name)"
+          :key="`${tab.name}-${tableRenderKey}`"
+          :data="sheetRowsMap[tab.name]"
           :max-height="500"
           row-hover="auto"
           show-overflow-tooltip
           :border="['row']"
           class="table-container"
+          row-key="_id"
+          :is-row-select-enable="isSubOrderSelectable"
+          @select-all="handleSubOrderSelectAll"
+          @selection-change="handleSubOrderSelectChange"
         >
+          <bk-table-column v-if="_isServicePage" type="selection" min-width="30" fixed="left" />
           <bk-table-column
             v-for="col in getSheetColumns(tab.name)"
             :key="col.field"
@@ -750,7 +838,7 @@ const handleTerminateOrder = () => {
             </template>
           </bk-table-column>
           <!-- 操作列 -->
-          <bk-table-column label="操作" fixed="right" :width="isBusinessPage ? 120 : 160">
+          <bk-table-column label="操作" fixed="right" :width="isBusinessPage ? 120 : 120">
             <template #default="{ row }">
               <div class="sub-order-actions">
                 <bk-button theme="primary" text :disabled="!canSubEdit(row)" @click="handleSubEdit(row)">
@@ -761,10 +849,16 @@ const handleTerminateOrder = () => {
                     终止
                   </bk-button>
                 </template>
-                <template v-else>
-                  <bk-button theme="primary" text @click="handleSubReview(row)">评审</bk-button>
-                  <bk-button theme="primary" text @click="handleSubReject(row)">驳回</bk-button>
-                </template>
+                <bk-button
+                  v-else
+                  v-bk-tooltips="{ content: getReviewTip(row), disabled: canSubReview(row) }"
+                  theme="primary"
+                  text
+                  :disabled="!canSubReview(row)"
+                  @click="handleSubReview(row)"
+                >
+                  评审
+                </bk-button>
               </div>
             </template>
           </bk-table-column>
@@ -777,6 +871,23 @@ const handleTerminateOrder = () => {
     mode="reimport"
     :order-detail="orderDetail"
     @success="handleReimportSuccess"
+  />
+
+  <BatchReviewDialog
+    v-model="isBatchReviewDialogShow"
+    :suborder-ids="selectedSubOrderIds"
+    @success="handleBatchSuccess"
+  />
+  <BatchRejectDialog
+    v-model="isBatchRejectDialogShow"
+    :suborder-ids="selectedSubOrderIds"
+    @success="handleBatchSuccess"
+  />
+  <ReviewDialog
+    v-model="isReviewDialogShow"
+    :row="reviewRow"
+    :detail-items="reviewDetailItems"
+    @success="fetchDetail"
   />
 </template>
 
@@ -1072,5 +1183,12 @@ const handleTerminateOrder = () => {
   display: inline-flex;
   align-items: center;
   gap: 12px;
+}
+
+.sheet-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
 }
 </style>

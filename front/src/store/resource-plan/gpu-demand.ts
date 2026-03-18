@@ -113,6 +113,18 @@ export interface ITplConfig {
   sheets: ITplSheet[];
 }
 
+/** 子单批量更新项 */
+export interface IGpuSubOrderUpdateItem {
+  suborder_id: string;
+  status?: string;
+  comment?: string[];
+  demand_year?: number;
+  demand_month?: number;
+  gpu_num?: number;
+  qpm_max?: number;
+  extension?: any[];
+}
+
 /** 子单列表查询参数 */
 export interface IGpuSubOrderListParams {
   filter: QueryFilterType | QueryFilterTypeLegacy;
@@ -220,6 +232,12 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
     return http.post(api, params);
   };
 
+  /** 服务请求 - 子单批量更新（评审/驳回/编辑） */
+  const batchUpdateSubOrders = async (params: { suborder_data: IGpuSubOrderUpdateItem[] }) => {
+    const api = '/api/v1/woa/plans/resources/gpu/demands/suborders/batch';
+    return http.post(api, params);
+  };
+
   return {
     listLoading,
     detailLoading,
@@ -232,5 +250,6 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
     overwriteGpuDemandOrder,
     getGpuSubOrderList,
     getGpuDemandDetail,
+    batchUpdateSubOrders,
   };
 });

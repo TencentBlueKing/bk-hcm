@@ -91,11 +91,36 @@ const handleSelect = (selections: IGpuDemandItem[]) => {
   selectedRows.value = selections;
 };
 
-const handleBatchPending = async () => {
-  const orderIds = selectedRows.value.map((row) => row.id);
+const isPendingDialogShow = ref(false);
+const isPendingLoading = ref(false);
+const pendingRow = ref<IGpuDemandItem | null>(null);
+const isBatchPending = computed(() => !pendingRow.value);
+
+const handleBatchPending = () => {
+  if (!selectedRows.value.length) return;
+  pendingRow.value = null;
+  isPendingDialogShow.value = true;
+};
+
+const handlePendingConfirm = async () => {
+  const orderIds = isBatchPending.value ? selectedRows.value.map((row) => row.id) : [pendingRow.value!.id];
   if (!orderIds.length) return;
-  await gpuDemandStore.batchPendingOrders({ order_ids: orderIds });
-  fetchList();
+  isPendingLoading.value = true;
+  try {
+    await gpuDemandStore.batchPendingOrders({ order_ids: orderIds });
+    Message({ theme: 'success', message: isBatchPending.value ? '批量更新状态成功' : '转为评审中成功' });
+    isPendingDialogShow.value = false;
+    fetchList();
+  } catch {
+    Message({ theme: 'error', message: isBatchPending.value ? '批量更新状态失败' : '转为评审中失败' });
+  } finally {
+    isPendingLoading.value = false;
+  }
+};
+
+const handlePendingCancel = () => {
+  isPendingDialogShow.value = false;
+  pendingRow.value = null;
 };
 
 const isCreateSliderShow = ref(false);
@@ -159,9 +184,9 @@ const handleTerminate = (row: IGpuDemandItem) => {
   confirmTerminateOrder(row.id, fetchList);
 };
 
-const handleStartReview = async (row: IGpuDemandItem) => {
-  await gpuDemandStore.batchPendingOrders({ order_ids: [row.id] });
-  fetchList();
+const handleStartReview = (row: IGpuDemandItem) => {
+  pendingRow.value = row;
+  isPendingDialogShow.value = true;
 };
 </script>
 
@@ -196,17 +221,56 @@ const handleStartReview = async (row: IGpuDemandItem) => {
     <create-slider v-model="isCreateSliderShow" @hidden="handleCreateHidden" @success="handleCreateSuccess" />
   </template>
 
+  <!-- 转为评审中确认弹窗（批量 / 单个复用） -->
+  <bk-dialog
+    v-model:is-show="isPendingDialogShow"
+    :title="isBatchPending ? '批量更新状态' : '转为评审中'"
+    width="680"
+    :quick-close="false"
+    :is-loading="isPendingLoading"
+    @confirm="handlePendingConfirm"
+    @closed="handlePendingCancel"
+  >
+    <div class="batch-pending-content">
+      <p v-if="isBatchPending">
+        将选中的
+        <span class="highlight">{{ selectedRows.length }}</span>
+        条需求单据状态由
+        <span class="highlight">待评审</span>
+        更改为
+        <span class="highlight">评审中</span>
+        。
+      </p>
+      <p v-else>
+        需求
+        <span class="highlight">{{ pendingRow?.id }}</span>
+        单据状态由
+        <span class="highlight">待评审</span>
+        更改为
+        <span class="highlight">评审中</span>
+        。
+      </p>
+      <p class="batch-pending-notice">
+        注意：评审中状态下，业务方无法调整需求单；在评审中驳回，业务方可对驳回的数据修改后再提交。
+      </p>
+      <p>确认操作？</p>
+    </div>
+  </bk-dialog>
+
   <!-- 驳回确认弹窗 -->
-  <bk-dialog v-model:is-show="isRejectDialogShow" title="驳回确认" :quick-close="false" @closed="handleRejectCancel">
+  <bk-dialog
+    v-model:is-show="isRejectDialogShow"
+    title="驳回确认"
+    :quick-close="false"
+    :is-loading="isRejectLoading"
+    @confirm="handleRejectConfirm"
+    @closed="handleRejectCancel"
+  >
     <div class="reject-confirm-content">
       驳回需求
       <span class="reject-order-id">{{ rejectRow?.id }}</span>
       后，该需求单下所有关联记录（含已评审记录）将统一变更为驳回状态，是否确认？
     </div>
-    <template #footer>
-      <bk-button @click="handleRejectCancel">取消</bk-button>
-      <bk-button theme="danger" :loading="isRejectLoading" @click="handleRejectConfirm">确认驳回</bk-button>
-    </template>
   </bk-dialog>
 </template>
 
@@ -226,6 +290,23 @@ const handleStartReview = async (row: IGpuDemandItem) => {
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
+  }
+}
+
+.batch-pending-content {
+  font-size: 14px;
+  line-height: 22px;
+  color: #63656e;
+
+  .highlight {
+    color: #3a84ff;
+    font-weight: 700;
+  }
+
+  .batch-pending-notice {
+    margin: 8px 0;
+    color: #313238;
+    font-weight: 700;
   }
 }
 
