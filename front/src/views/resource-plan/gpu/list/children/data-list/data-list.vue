@@ -92,7 +92,7 @@ const getTerminateSrvTip = (row: IGpuDemandItem) => {
     row-hover="auto"
     :data="list"
     :pagination="pagination"
-    :max-height="`calc(100vh - ${isBusinessPage ? 418 : 516}px)`"
+    :max-height="`calc(100vh - ${isBusinessPage ? 430 : 516}px)`"
     :settings="settings"
     :is-row-select-enable="isRowSelectEnable"
     remote-pagination

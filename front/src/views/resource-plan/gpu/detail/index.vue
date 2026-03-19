@@ -440,6 +440,7 @@ const getSheetRows = (sheetName: string): Record<string, any>[] => {
       _id: sub.id,
       _status: sub.status,
       _comment: Array.isArray(sub.comment) && sub.comment.length > 0 ? sub.comment.join('、') : sub.comment || '-',
+      _demand_type: sub.demand_type,
       _diffs: editDiffsMap[sub.id] || null,
     };
     let colIdx = 0;
@@ -590,10 +591,6 @@ const reviewDetailItems = computed<IReviewDetailItem[]>(() => {
 const handleSubReview = (row: Record<string, any>) => {
   reviewRow.value = row;
   isReviewDialogShow.value = true;
-};
-
-const handleSubReject = (row: Record<string, any>) => {
-  Message({ theme: 'warning', message: `驳回功能开发中（子单ID: ${row._id}）` });
 };
 
 // ==================== 子单终止（InfoBox 确认弹窗） ====================
@@ -821,16 +818,12 @@ const handleTerminateOrder = () => {
           </template>
           <!-- 服务请求视角：批量操作 toolbar -->
           <div v-if="activeTab === tab.name && _isServicePage" class="sheet-toolbar">
-            <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReview">
-              批量评审
-            </bk-button>
-            <bk-button theme="default" :disabled="!selectedSubOrderIds.length" @click="handleBatchReject">
-              批量驳回
-            </bk-button>
+            <bk-button :disabled="!selectedSubOrderIds.length" @click="handleBatchReview">批量评审</bk-button>
+            <bk-button :disabled="!selectedSubOrderIds.length" @click="handleBatchReject">批量驳回</bk-button>
           </div>
           <bk-table
             :key="`${tab.name}-${tableRenderKey}`"
-            :data="getSheetRows(tab.name)"
+            :data="sheetRowsMap[tab.name]"
             :max-height="500"
             row-hover="auto"
             show-overflow-tooltip
@@ -887,8 +880,15 @@ const handleTerminateOrder = () => {
                     <bk-button theme="primary" text :disabled="!canSubEditScr(row)" @click="handleSubEdit(row)">
                       编辑
                     </bk-button>
-                    <bk-button theme="primary" text @click="handleSubReview(row)">评审</bk-button>
-                    <bk-button theme="primary" text @click="handleSubReject(row)">驳回</bk-button>
+                    <bk-button
+                      v-bk-tooltips="{ content: getReviewTip(row), disabled: canSubReview(row) }"
+                      theme="primary"
+                      text
+                      :disabled="!canSubReview(row)"
+                      @click="handleSubReview(row)"
+                    >
+                      评审
+                    </bk-button>
                   </template>
                 </div>
               </template>

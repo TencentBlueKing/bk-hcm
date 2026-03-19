@@ -258,19 +258,18 @@ const handleStartReview = (row: IGpuDemandItem) => {
   </bk-dialog>
 
   <!-- 驳回确认弹窗 -->
-  <bk-dialog
-    v-model:is-show="isRejectDialogShow"
-    title="驳回确认"
-    :quick-close="false"
-    :is-loading="isRejectLoading"
-    @confirm="handleRejectConfirm"
-    @closed="handleRejectCancel"
-  >
+  <bk-dialog v-model:is-show="isRejectDialogShow" title="驳回确认" :quick-close="false">
     <div class="reject-confirm-content">
       驳回需求
       <span class="reject-order-id">{{ rejectRow?.id }}</span>
       后，该需求单下所有关联记录（含已评审记录）将统一变更为驳回状态，是否确认？
     </div>
+    <template #footer>
+      <div class="reject-dialog-footer">
+        <bk-button theme="danger" :loading="isRejectLoading" @click="handleRejectConfirm">确认驳回</bk-button>
+        <bk-button @click="handleRejectCancel">取消</bk-button>
+      </div>
+    </template>
   </bk-dialog>
 </template>
 
@@ -319,5 +318,12 @@ const handleStartReview = (row: IGpuDemandItem) => {
     color: #3a84ff;
     font-weight: 700;
   }
+}
+
+.reject-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>

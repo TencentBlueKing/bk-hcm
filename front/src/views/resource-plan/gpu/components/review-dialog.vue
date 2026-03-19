@@ -70,7 +70,7 @@ const handleClosed = () => {
   >
     <div class="review-dialog-content">
       <p class="review-desc">请确认以下数据信息，确认后将提交评审：</p>
-      <grid-container :column="2" bordered :label-width="160" :content-min-width="80">
+      <grid-container class="review-grid" :column="2" :label-width="140" :content-min-width="80" :gap="[0, 8]">
         <grid-item v-for="item in detailItems" :key="item.label" :label="item.label">
           {{ item.value }}
         </grid-item>
@@ -96,6 +96,16 @@ const handleClosed = () => {
     font-size: 14px;
     color: #63656e;
     margin-bottom: 16px;
+  }
+
+  .review-grid {
+    background: #f5f7fa;
+    border-radius: 4px;
+    padding: 16px;
+
+    :deep(.grid-item .item-content) {
+      word-break: break-all;
+    }
   }
 
   .review-form {
