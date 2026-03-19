@@ -96,6 +96,14 @@ export interface ITplHeader {
   readonly?: boolean;
   hidden?: boolean;
   value?: (string | number)[];
+  /** 大于 (exclusive minimum) */
+  gt?: number;
+  /** 大于等于 (inclusive minimum) */
+  gte?: number;
+  /** 小于 (exclusive maximum) */
+  lt?: number;
+  /** 小于等于 (inclusive maximum) */
+  lte?: number;
 }
 
 /** 子单列表接口 tpl_config 中的 sheet 定义 */

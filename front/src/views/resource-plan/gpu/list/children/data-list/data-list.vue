@@ -122,7 +122,12 @@ const getTerminateSrvTip = (row: IGpuDemandItem) => {
         <display-value v-else :property="column" :value="row[column.id]" :display="column?.meta?.display" />
       </template>
     </bk-table-column>
-    <bk-table-column :label="'操作'" :show-overflow-tooltip="false" :min-width="isServicePage ? 150 : 100">
+    <bk-table-column
+      :label="'操作'"
+      :show-overflow-tooltip="false"
+      :min-width="isServicePage ? 150 : 100"
+      fixed="right"
+    >
       <template #default="{ row }">
         <div class="actions" v-if="isBusinessPage">
           <bk-button

@@ -25,7 +25,18 @@ export class SearchCondition {
   @Column('business', { name: '业务', index: 1 })
   bk_biz_id: number;
 
-  @Column('string', { name: '需求ID', index: 2 })
+  @Column('string', {
+    name: '需求ID',
+    index: 2,
+    props: {
+      collapseTags: true,
+      pasteFn: (value: string) =>
+        value
+          .split(/[\r\n,;\s]+/)
+          .filter(Boolean)
+          .map((tag: string) => ({ id: tag.trim(), name: tag.trim() })),
+    },
+  })
   id: string;
 
   @Column('enum', { name: '单据状态', option: GPU_DEMAND_STATUS_MAP, index: 3 })

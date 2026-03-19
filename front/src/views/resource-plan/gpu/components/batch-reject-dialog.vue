@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'success'): void;
+  (e: 'success', subOrderIds: string[]): void;
 }>();
 
 const gpuDemandStore = useGpuDemandStore();
@@ -29,7 +29,7 @@ const handleConfirm = async () => {
     });
     Message({ theme: 'success', message: '批量驳回成功' });
     isShow.value = false;
-    emit('success');
+    emit('success', [...props.suborderIds]);
   } catch {
     Message({ theme: 'error', message: '批量驳回失败' });
   } finally {

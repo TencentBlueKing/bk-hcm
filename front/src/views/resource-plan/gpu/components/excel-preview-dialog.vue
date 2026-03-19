@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, toRef } from 'vue';
+import { watch, toRef, h } from 'vue';
 import { useExcelPreview, type IExcelImportData, type ITableColumn, type ITableRow } from '../hooks/use-excel-preview';
 
 const model = defineModel<boolean>({ default: false });
@@ -16,16 +16,22 @@ watch(model, (val) => {
   }
 });
 
-/** 错误原因列和错误行数列的宽度 */
-const ERROR_REASON_WIDTH = 160;
-const ERROR_ROW_WIDTH = 80;
-
 /** 判断当前 sheet 是否有任何错误行 */
 const hasAnyError = () => currentRows.value.some((row) => row._hasError);
 
 /** 行样式：错误行添加浅红色背景 - bk-table 的 row-class 回调直接接收 row 对象 */
 const getRowClass = (row: ITableRow) => {
   return row?._hasError ? 'error-row' : '';
+};
+
+/** 生成错误原因列的 tooltips 配置 */
+const getErrorTooltips = (row: ITableRow) => {
+  if (!row._hasError || !row._errorReasons?.length) {
+    return { disabled: true };
+  }
+  return {
+    content: h('div', { style: { maxWidth: '400px' } }, row._errorReasons.join('；')),
+  };
 };
 </script>
 
@@ -52,6 +58,7 @@ const getRowClass = (row: ITableRow) => {
       </bk-tab>
 
       <bk-table
+        :key="activeTab"
         :data="currentRows"
         :max-height="500"
         row-hover="auto"
@@ -60,24 +67,17 @@ const getRowClass = (row: ITableRow) => {
         :border="['row']"
       >
         <!-- 错误原因列：仅当该 sheet 有错误时显示 -->
-        <bk-table-column v-if="hasAnyError()" label="错误原因" :width="ERROR_REASON_WIDTH" fixed="left">
+        <bk-table-column v-if="hasAnyError()" label="错误原因" :width="160" fixed="left" :show-overflow-tooltip="false">
           <template #default="{ row }: { row: ITableRow }">
-            <bk-popover v-if="row._hasError" placement="top" theme="light" :max-width="400" trigger="hover">
-              <div class="error-cell">
-                <i class="hcm-icon bkhcm-icon-warn-triangle tab-error-icon error-icon"></i>
-                <span class="error-text">{{ row._errorReasons.join('；') }}</span>
-              </div>
-              <template #content>
-                <div class="error-popover-content">
-                  {{ row._errorReasons.join('；') }}
-                </div>
-              </template>
-            </bk-popover>
+            <div v-if="row._hasError" v-bk-tooltips="getErrorTooltips(row)" class="error-cell">
+              <i class="hcm-icon bkhcm-icon-warn-triangle tab-error-icon error-icon"></i>
+              <span class="error-text">{{ row._errorReasons.join('；') }}</span>
+            </div>
           </template>
         </bk-table-column>
 
         <!-- 错误行数列：仅当该 sheet 有错误时显示 -->
-        <bk-table-column v-if="hasAnyError()" label="错误行数" :width="ERROR_ROW_WIDTH" fixed="left">
+        <bk-table-column v-if="hasAnyError()" label="错误行数" :width="80" fixed="left" :show-overflow-tooltip="false">
           <template #default="{ row }: { row: ITableRow }">
             <span v-if="row._hasError" class="error-row-index">{{ row._errorRowIndex }}</span>
           </template>
@@ -155,15 +155,6 @@ const getRowClass = (row: ITableRow) => {
 
 .error-row-index {
   color: #ea3636;
-}
-
-.error-popover-content {
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 12px;
-  line-height: 20px;
-  word-break: break-all;
-  color: #63656e;
 }
 </style>
 

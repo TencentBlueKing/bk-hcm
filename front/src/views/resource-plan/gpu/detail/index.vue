@@ -124,14 +124,20 @@ const activeTab = ref(SUMMARY_TAB);
 /** tpl_config 中的 sheets 列表 */
 const tplSheets = computed(() => tplConfig.value?.sheets ?? []);
 
-/** 从 tpl_config 动态生成的 tab 列表（即使无子单数据也展示） */
+/** 从 tpl_config 动态生成的 tab 列表（有数据的排前面，空的排后面，同组保持原始顺序） */
 const sheetTabs = computed(() => {
-  return tplSheets.value.map((sheet) => {
+  const tabList = tplSheets.value.map((sheet) => {
     const sheetSubs = filteredSubOrders.value.filter((s) => s.demand_type === sheet.name);
     const count = sheetSubs.length;
     // 判断该 sheet 中是否存在驳回状态的子单（基于全量子单，不受筛选影响）
     const hasReject = subOrders.value.some((s) => s.demand_type === sheet.name && s.status === 'REJECT');
     return { name: sheet.name, count, hasReject };
+  });
+  // 排序：count > 0 排前面，count === 0 排后面
+  return tabList.sort((a, b) => {
+    const aHasData = a.count > 0 ? 0 : 1;
+    const bHasData = b.count > 0 ? 0 : 1;
+    return aHasData - bHasData;
   });
 });
 
@@ -562,17 +568,80 @@ const editBizId = computed(() => Number(getBizsId()) || 0);
  */
 const editDiffsMap = reactive<Record<string, Record<string, { oldVal: any; newVal: any }>>>({});
 
+/**
+ * 原始子单数据快照（首次加载 / 重新导入时记录）。
+ * 编辑保存后不会更新此快照，这样再次打开编辑表单时，
+ * 原数据对比的基准始终是"第一次修改前"的值。
+ * key: subOrderId, value: 深拷贝的子单数据
+ */
+const originalSubOrdersMap = reactive<Record<string, IGpuDemandSubOrder>>({});
+
+/** 用于传给编辑侧边栏的"原始基准数据"（第一次修改前的快照） */
+const editingOriginalSubOrder = ref<IGpuDemandSubOrder | null>(null);
+
 const handleSubEdit = (row: Record<string, any>) => {
   // 根据 _id 找到原始子单
   const sub = subOrders.value.find((s) => s.id === row._id);
   if (!sub) return;
   editingSubOrder.value = sub;
+  // 传递原始快照作为对比基准；如果该子单从未被编辑过，快照就是当前数据本身
+  editingOriginalSubOrder.value = originalSubOrdersMap[sub.id] ?? sub;
   isEditSliderShow.value = true;
 };
 
-const handleEditSuccess = (payload: { subOrderId: string; diffs: Record<string, { oldVal: any; newVal: any }> }) => {
-  // 合并差异（同一子单多次编辑时以最新为准）
-  editDiffsMap[payload.subOrderId] = { ...payload.diffs };
+/**
+ * 按子单 ID 列表刷新指定子单数据（替代全量 fetchDetail 刷新）
+ * 编辑保存、单条评审/驳回、批量评审/驳回 成功后统一使用此方法
+ */
+const refreshSubOrdersByIds = async (subOrderIds: string[]) => {
+  if (!subOrderIds.length) return;
+  try {
+    const data = await gpuDemandStore.getGpuSubOrderList({
+      filter: {
+        op: 'and',
+        rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: subOrderIds }],
+      },
+      page: { count: false, start: 0, limit: subOrderIds.length },
+    });
+    const updatedList = data.details ?? [];
+    for (const updatedSub of updatedList) {
+      const idx = subOrders.value.findIndex((s) => s.id === updatedSub.id);
+      if (idx !== -1) {
+        subOrders.value[idx] = updatedSub;
+      }
+    }
+    if (updatedList.length > 0) {
+      tableRenderKey.value += 1;
+    }
+  } catch {
+    // 刷新失败静默处理
+  }
+};
+
+const handleEditSuccess = async (payload: {
+  subOrderId: string;
+  diffs: Record<string, { oldVal: any; newVal: any }>;
+}) => {
+  // 合并差异：保留首次编辑前的 oldVal，更新为最新的 newVal
+  const existingDiffs = editDiffsMap[payload.subOrderId] || {};
+  const mergedDiffs: Record<string, { oldVal: any; newVal: any }> = {};
+  for (const [key, diff] of Object.entries(payload.diffs)) {
+    mergedDiffs[key] = {
+      // 如果之前已有该字段的 diff，保留首次的 oldVal；否则使用本次的 oldVal
+      oldVal: existingDiffs[key]?.oldVal ?? diff.oldVal,
+      newVal: diff.newVal,
+    };
+  }
+  // 检查是否值已经改回原始值了（oldVal === newVal），如果是则移除该 diff
+  for (const [key, diff] of Object.entries(mergedDiffs)) {
+    if (String(diff.oldVal) === String(diff.newVal)) {
+      delete mergedDiffs[key];
+    }
+  }
+  editDiffsMap[payload.subOrderId] = mergedDiffs;
+
+  // 使用统一方法刷新该条子单数据
+  await refreshSubOrdersByIds([payload.subOrderId]);
 };
 
 // ==================== 单条评审弹窗 ====================
@@ -610,9 +679,9 @@ const handleBatchReject = () => {
   isBatchRejectDialogShow.value = true;
 };
 
-const handleBatchSuccess = () => {
+const handleBatchSuccess = (subOrderIds: string[]) => {
   resetSubOrderSelections();
-  fetchDetail();
+  refreshSubOrdersByIds(subOrderIds);
 };
 
 // ==================== 表格渲染 key（数据刷新后强制重建表格） ====================
@@ -633,6 +702,15 @@ const fetchDetail = async () => {
       page: { count: false, start: 0, limit: 500 },
     });
     subOrders.value = data.details ?? [];
+
+    // 保存原始快照（深拷贝），用于编辑表单的"原数据"对比基准
+    // 仅在快照不存在时保存（编辑保存后不覆盖，保证基准始终是首次加载的值）
+    for (const sub of subOrders.value) {
+      if (!originalSubOrdersMap[sub.id]) {
+        originalSubOrdersMap[sub.id] = JSON.parse(JSON.stringify(sub));
+      }
+    }
+
     if (data.tpl_config?.length > 0) {
       const [firstConfig] = data.tpl_config;
       tplConfig.value = firstConfig;
@@ -642,11 +720,12 @@ const fetchDetail = async () => {
     subOrders.value = [];
   }
 
-  // 如果是通过"调整"操作进入的，默认切换到第一个 sheet tab（第二个 tab）
+  // 如果是通过"调整"操作进入的，默认切换到第一个有数据的 sheet tab
   // 需要等 nextTick，确保 tplSheets 变化后 bk-tab-panel 已渲染完成
-  if (route.query.action === 'adjust' && tplSheets.value.length > 0) {
+  if (route.query.action === 'adjust' && sheetTabs.value.length > 0) {
     await nextTick();
-    activeTab.value = tplSheets.value[0].name;
+    const firstWithData = sheetTabs.value.find((t) => t.count > 0);
+    activeTab.value = (firstWithData ?? sheetTabs.value[0]).name;
   }
 };
 
@@ -671,7 +750,14 @@ const handleStartReview = async () => {
 };
 
 const handleReimportSuccess = () => {
-  // 重新导入成功后刷新详情数据
+  // 重新导入成功后，清空原始快照和修改差异（数据全部替换了）
+  for (const key of Object.keys(originalSubOrdersMap)) {
+    delete originalSubOrdersMap[key];
+  }
+  for (const key of Object.keys(editDiffsMap)) {
+    delete editDiffsMap[key];
+  }
+  // 刷新详情数据
   fetchDetail();
 };
 
@@ -907,6 +993,7 @@ const handleTerminateOrder = () => {
   <SubOrderEditSlider
     v-model="isEditSliderShow"
     :sub-order="editingSubOrder"
+    :original-sub-order="editingOriginalSubOrder"
     :sheet="editingSheet"
     :biz-id="editBizId"
     @success="handleEditSuccess"
@@ -925,7 +1012,7 @@ const handleTerminateOrder = () => {
     v-model="isReviewDialogShow"
     :row="reviewRow"
     :detail-items="reviewDetailItems"
-    @success="fetchDetail"
+    @success="refreshSubOrdersByIds"
   />
 </template>
 

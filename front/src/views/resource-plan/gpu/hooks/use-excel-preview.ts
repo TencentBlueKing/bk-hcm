@@ -241,11 +241,11 @@ export function buildTableRows(
 export function useExcelPreview(data: Ref<IExcelImportData | null>) {
   const activeTab = ref('');
 
-  /** Tab 列表信息 */
+  /** Tab 列表信息（有数据的 Tab 排前面，空 Tab 排后面，同组保持原始顺序） */
   const tabs = computed<ITabInfo[]>(() => {
     if (!data.value) return [];
     const details = data.value.details ?? [];
-    return data.value.sheets.map((sheet) => {
+    const tabList = data.value.sheets.map((sheet) => {
       const sheetDetails = details.filter((d) => d.name === sheet.name);
       const errorCount = sheetDetails.filter((d) => d.validate_result.length > 0).length;
       return {
@@ -254,6 +254,12 @@ export function useExcelPreview(data: Ref<IExcelImportData | null>) {
         totalCount: sheetDetails.length,
         hasError: errorCount > 0,
       };
+    });
+    // 排序：totalCount > 0 排前面，totalCount === 0 排后面
+    return tabList.sort((a, b) => {
+      const aHasData = a.totalCount > 0 ? 0 : 1;
+      const bHasData = b.totalCount > 0 ? 0 : 1;
+      return aHasData - bHasData;
     });
   });
 
@@ -283,10 +289,11 @@ export function useExcelPreview(data: Ref<IExcelImportData | null>) {
     );
   });
 
-  /** 初始化：选中第一个 Tab */
+  /** 初始化：优先选中第一个有数据的 Tab */
   const initActiveTab = () => {
-    if (tabs.value.length > 0 && !activeTab.value) {
-      activeTab.value = tabs.value[0].name;
+    if (tabs.value.length > 0) {
+      const firstWithData = tabs.value.find((t) => t.totalCount > 0);
+      activeTab.value = (firstWithData ?? tabs.value[0]).name;
     }
   };
 

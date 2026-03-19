@@ -132,8 +132,10 @@ const handlePreviewFile = () => {
 const handleDownloadTemplate = () => {
   const url =
     'https://ieg-hcm-cloud-bill-1258344700.cos-internal.ap-nanjing.tencentcos.cn/rawbills/tcloud-ziyan/res-plan-demand/budget_declaration_gpu_template.xlsx';
+  // 追加时间戳参数，避免浏览器缓存导致无法下载最新模板
+  const urlWithTimestamp = `${url}?t=${Date.now()}`;
   const link = document.createElement('a');
-  link.href = url;
+  link.href = urlWithTimestamp;
   link.download = 'budget_declaration_gpu_template.xlsx';
   document.body.appendChild(link);
   link.click();

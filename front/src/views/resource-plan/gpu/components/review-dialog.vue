@@ -18,7 +18,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'success'): void;
+  (e: 'success', subOrderIds: string[]): void;
 }>();
 
 const gpuDemandStore = useGpuDemandStore();
@@ -45,7 +45,7 @@ const handleConfirm = async () => {
     await gpuDemandStore.batchUpdateSubOrders({ suborder_data: [item] });
     Message({ theme: 'success', message: conclusion.value === 'DONE' ? '评审通过' : '已驳回' });
     isShow.value = false;
-    emit('success');
+    emit('success', [props.row._id]);
   } catch {
     Message({ theme: 'error', message: '评审提交失败' });
   } finally {

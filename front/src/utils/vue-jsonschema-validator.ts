@@ -17,6 +17,14 @@ export interface FieldSchema {
   readonly?: boolean;
   formula?: string;
   value?: (string | number)[];
+  /** 大于 (exclusive minimum) */
+  gt?: number;
+  /** 大于等于 (inclusive minimum) */
+  gte?: number;
+  /** 小于 (exclusive maximum) */
+  lt?: number;
+  /** 小于等于 (inclusive maximum) */
+  lte?: number;
 }
 
 export interface SheetSchema {
@@ -48,6 +56,7 @@ export interface PropertySchema {
   minimum?: number;
   maximum?: number;
   exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
   minLength?: number;
   maxLength?: number;
   readOnly?: boolean;
@@ -103,6 +112,42 @@ export class SchemaConverter {
   }
 
   /**
+   * 根据 gt/gte/lt/lte 设置 JSON Schema 的范围约束
+   * gt  → exclusiveMinimum（大于）
+   * gte → minimum（大于等于）
+   * lt  → exclusiveMaximum（小于）
+   * lte → maximum（小于等于）
+   * 如果都没有指定，默认 minimum = 0
+   */
+  private static applyRangeConstraints(prop: PropertySchema, field: FieldSchema): void {
+    const hasAnyConstraint =
+      field.gt !== undefined || field.gte !== undefined || field.lt !== undefined || field.lte !== undefined;
+
+    if (!hasAnyConstraint) {
+      // 默认行为：无任何范围约束时，使用 minimum = 0
+      prop.minimum = 0;
+      return;
+    }
+
+    // gt（大于）→ exclusiveMinimum
+    if (field.gt !== undefined) {
+      prop.exclusiveMinimum = field.gt;
+    }
+    // gte（大于等于）→ minimum
+    if (field.gte !== undefined) {
+      prop.minimum = field.gte;
+    }
+    // lt（小于）→ exclusiveMaximum
+    if (field.lt !== undefined) {
+      prop.exclusiveMaximum = field.lt;
+    }
+    // lte（小于等于）→ maximum
+    if (field.lte !== undefined) {
+      prop.maximum = field.lte;
+    }
+  }
+
+  /**
    * 将字段定义转换为JSON Schema属性
    */
   private static convertFieldToProperty(field: FieldSchema): PropertySchema {
@@ -119,10 +164,10 @@ export class SchemaConverter {
       prop.maxLength = 4096;
     } else if (fieldType === 'int') {
       prop.type = ['integer', 'string'];
-      prop.minimum = 0;
+      this.applyRangeConstraints(prop, field);
     } else if (fieldType === 'float' || /^float\(\d+\)$/.test(fieldType)) {
       prop.type = ['number', 'string'];
-      prop.minimum = 0;
+      this.applyRangeConstraints(prop, field);
     } else if (fieldType === 'enum') {
       // enum 值可能是 string 或 number，允许两种类型
       if (field.value && field.value.length > 0) {

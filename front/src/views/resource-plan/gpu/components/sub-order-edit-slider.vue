@@ -14,8 +14,10 @@ const isShow = defineModel<boolean>({ default: false });
 
 // ==================== Props / Emits ====================
 const props = defineProps<{
-  /** 当前要编辑的子单原始数据 */
+  /** 当前要编辑的子单最新数据 */
   subOrder: IGpuDemandSubOrder | null;
+  /** 原始基准数据（首次加载时的快照），用于"原数据"对比展示。为 null 时退化为 subOrder */
+  originalSubOrder: IGpuDemandSubOrder | null;
   /** 该子单所属 sheet 的模板配置 */
   sheet: ITplSheet | null;
   /** 业务 ID */
@@ -59,6 +61,14 @@ interface IFormField {
   excelField?: string;
   /** 是否隐藏 */
   hidden: boolean;
+  /** 大于 (exclusive minimum) */
+  gt?: number;
+  /** 大于等于 (inclusive minimum) */
+  gte?: number;
+  /** 小于 (exclusive maximum) */
+  lt?: number;
+  /** 小于等于 (inclusive maximum) */
+  lte?: number;
 }
 
 /** 从 sheet 配置解析出表单字段列表 */
@@ -82,6 +92,10 @@ const formFields = computed<IFormField[]>(() => {
       formula: h.formula,
       excelField: h.field,
       hidden: false,
+      gt: h.gt,
+      gte: h.gte,
+      lt: h.lt,
+      lte: h.lte,
     });
   }
 
@@ -101,6 +115,10 @@ const formFields = computed<IFormField[]>(() => {
         formula: h.formula,
         excelField: h.field,
         hidden: false,
+        gt: h.gt,
+        gte: h.gte,
+        lt: h.lt,
+        lte: h.lte,
       });
     }
     if (hasField) extIdx += 1;
@@ -111,6 +129,26 @@ const formFields = computed<IFormField[]>(() => {
 
 /** 可见的表单字段（非 hidden） */
 const visibleFields = computed(() => formFields.value.filter((f) => !f.hidden));
+
+/**
+ * 获取数字输入框的 min 值
+ * 优先级：gte > gt > 默认 0（不允许负值）
+ */
+const getFieldMin = (field: IFormField): number | undefined => {
+  if (field.gte !== undefined) return field.gte;
+  if (field.gt !== undefined) return field.gt;
+  return 0; // 默认不允许负值
+};
+
+/**
+ * 获取数字输入框的 max 值
+ * 优先级：lte > lt > undefined（不限制上限）
+ */
+const getFieldMax = (field: IFormField): number | undefined => {
+  if (field.lte !== undefined) return field.lte;
+  if (field.lt !== undefined) return field.lt;
+  return undefined;
+};
 
 // ==================== 表单数据 ====================
 /** 当前编辑的表单值 */
@@ -124,21 +162,31 @@ const initFormData = () => {
   const data: Record<string, any> = {};
   const original: Record<string, any> = {};
 
+  // 原始基准数据：优先使用 originalSubOrder（首次加载快照），不存在时退化为 subOrder
+  const baseSubOrder = props.originalSubOrder ?? props.subOrder;
+
   for (const field of formFields.value) {
     let val: any;
+    let origVal: any;
+
     if (field.source === 'fixed' && field.dbField) {
       val = (props.subOrder as any)[field.dbField];
+      origVal = (baseSubOrder as any)[field.dbField];
     } else if (field.source === 'extension' && field.extIndex !== undefined) {
       val = props.subOrder.extension?.[field.extIndex] ?? '';
+      origVal = baseSubOrder.extension?.[field.extIndex] ?? '';
     } else if (field.formula) {
-      // 公式列：计算值
+      // 公式列：计算值（两者均用当前数据计算，original 用原始基准数据计算）
       val = computeFormulaValue(field);
+      origVal = computeFormulaValueFromSubOrder(field, baseSubOrder);
     } else {
       val = '';
+      origVal = '';
     }
+
     // 将值统一转为 string 以方便表单绑定
     data[field.key] = val !== undefined && val !== null ? val : '';
-    original[field.key] = val !== undefined && val !== null ? val : '';
+    original[field.key] = origVal !== undefined && origVal !== null ? origVal : '';
   }
 
   formData.value = data;
@@ -166,6 +214,10 @@ const toFieldSchema = (h: ITplHeader): FieldSchema => ({
   readonly: h.readonly,
   formula: h.formula,
   value: h.value,
+  gt: h.gt,
+  gte: h.gte,
+  lt: h.lt,
+  lte: h.lte,
 });
 
 /** 根据当前 sheet 动态生成校验器实例 */
@@ -263,16 +315,108 @@ const validateAllFields = (): { valid: boolean; errors: string[] } => {
 };
 
 // ==================== 公式计算 ====================
+
+/**
+ * 为公式计算建立 excel 列号 → 取值函数 的完整映射。
+ * formFields 仅包含非 hidden 字段，而公式可能引用 hidden 列的数据。
+ * 对于 hidden 列，从子单原始数据（props.subOrder）中取值。
+ */
+const getExcelFieldValue = (excelField: string): number => {
+  // 1. 优先从 formFields（已在表单中的字段）取值
+  const formField = formFields.value.find((f) => f.excelField === excelField);
+  if (formField) {
+    // 公式列递归计算
+    if (formField.formula) {
+      return computeFormulaValue(formField);
+    }
+    const val = Number(formData.value[formField.key]);
+    return Number.isNaN(val) ? 0 : val;
+  }
+
+  // 2. formFields 中找不到（可能是 hidden 列），从子单原始数据中获取
+  if (!props.sheet || !props.subOrder) return 0;
+
+  // 遍历所有 fixed_headers + headers，找到匹配 excelField 的列
+  for (const h of props.sheet.fixed_headers) {
+    if (h.field && h.field !== '-') {
+      if (h.field === excelField) {
+        // 有 db_field 的从子单字段取值
+        if (h.db_field) {
+          const val = Number((props.subOrder as any)[h.db_field]);
+          return Number.isNaN(val) ? 0 : val;
+        }
+        return 0;
+      }
+    }
+  }
+
+  // extension 部分
+  let extIdx = 0;
+  for (const h of props.sheet.headers) {
+    if (h.field && h.field !== '-') {
+      if (h.field === excelField) {
+        const val = Number(props.subOrder.extension?.[extIdx]);
+        return Number.isNaN(val) ? 0 : val;
+      }
+      extIdx += 1;
+    }
+  }
+
+  return 0;
+};
+
 /** 根据当前 formData 计算公式值 */
 const computeFormulaValue = (field: IFormField): number => {
   if (!field.formula || !props.sheet) return 0;
+  return Math.ceil(evaluateFormula(field.formula, getExcelFieldValue));
+};
+
+/**
+ * 基于指定的子单数据计算公式值（不依赖 formData）。
+ * 用于为 originalData 计算原始基准的公式列值。
+ */
+const computeFormulaValueFromSubOrder = (field: IFormField, sub: IGpuDemandSubOrder): number => {
+  if (!field.formula || !props.sheet) return 0;
 
   const getVal = (excelField: string): number => {
-    // 找到对应的 formField
-    const target = formFields.value.find((f) => f.excelField === excelField);
-    if (!target) return 0;
-    const val = Number(formData.value[target.key]);
-    return Number.isNaN(val) ? 0 : val;
+    // 从 formFields 找到对应字段，然后从子单数据取值
+    const ff = formFields.value.find((f) => f.excelField === excelField);
+    if (ff) {
+      if (ff.formula) {
+        return computeFormulaValueFromSubOrder(ff, sub);
+      }
+      let val: any;
+      if (ff.source === 'fixed' && ff.dbField) {
+        val = (sub as any)[ff.dbField];
+      } else if (ff.source === 'extension' && ff.extIndex !== undefined) {
+        val = sub.extension?.[ff.extIndex] ?? 0;
+      }
+      const num = Number(val);
+      return Number.isNaN(num) ? 0 : num;
+    }
+
+    // hidden 列：从子单原始数据中获取
+    if (!props.sheet || !sub) return 0;
+    for (const h of props.sheet.fixed_headers) {
+      if (h.field && h.field !== '-' && h.field === excelField) {
+        if (h.db_field) {
+          const v = Number((sub as any)[h.db_field]);
+          return Number.isNaN(v) ? 0 : v;
+        }
+        return 0;
+      }
+    }
+    let extIdx = 0;
+    for (const h of props.sheet.headers) {
+      if (h.field && h.field !== '-') {
+        if (h.field === excelField) {
+          const v = Number(sub.extension?.[extIdx]);
+          return Number.isNaN(v) ? 0 : v;
+        }
+        extIdx += 1;
+      }
+    }
+    return 0;
   };
 
   return Math.ceil(evaluateFormula(field.formula, getVal));
@@ -399,8 +543,18 @@ const handleSave = async () => {
         val = parseFloat(val) || 0;
       }
       fixedFields[h.db_field] = val;
+    } else if (h.formula) {
+      // hidden 的公式列（如 qpm_max），需要根据当前编辑的表单数据重新计算
+      const result = evaluateFormula(h.formula, getExcelFieldValue);
+      let val: any = Math.ceil(result);
+      if (h.type === 'int') {
+        val = parseInt(val, 10) || 0;
+      } else if (h.type === 'float') {
+        val = parseFloat(val) || 0;
+      }
+      fixedFields[h.db_field] = val;
     } else {
-      // 表单中没有（hidden 的字段），从子单原始数据中取
+      // 表单中没有且非公式列（hidden 的普通字段），从子单原始数据中取
       fixedFields[h.db_field] = (props.subOrder as any)[h.db_field] ?? '';
     }
   }
@@ -495,7 +649,9 @@ const handleCancel = () => {
                   v-model="formData[field.key]"
                   type="number"
                   :readonly="field.readonly"
-                  :precision="field.type === 'float' ? 2 : 0"
+                  :min="getFieldMin(field)"
+                  :max="getFieldMax(field)"
+                  :precision="field.type === 'int' ? 0 : 100"
                   :class="{ 'field-modified': isFieldModified(field) }"
                   :style="isFieldModified(field) ? { '--input-bg': '#fdf4e8' } : {}"
                 />
