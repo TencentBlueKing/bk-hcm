@@ -30,39 +30,18 @@ import (
 
 // GetMetricData queries CloudWatch metric time-series data.
 // reference: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricData.html
-func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) ([]*typescw.MetricDataResult, error) {
+func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) (
+	[]*typescw.MetricDataResult, error) {
+
 	client, err := a.clientSet.cloudWatchClient(opt.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	queries := make([]*cloudwatch.MetricDataQuery, 0, len(opt.MetricDataQueries))
-	for _, q := range opt.MetricDataQueries {
-		dims := make([]*cloudwatch.Dimension, 0, len(q.Dimensions))
-		for _, d := range q.Dimensions {
-			dims = append(dims, &cloudwatch.Dimension{
-				Name:  aws.String(d.Name),
-				Value: aws.String(d.Value),
-			})
-		}
-		queries = append(queries, &cloudwatch.MetricDataQuery{
-			Id: aws.String(q.ID),
-			MetricStat: &cloudwatch.MetricStat{
-				Metric: &cloudwatch.Metric{
-					Namespace:  aws.String(q.Namespace),
-					MetricName: aws.String(q.MetricName),
-					Dimensions: dims,
-				},
-				Stat:   aws.String(q.Stat),
-				Period: aws.Int64(q.Period),
-			},
-		})
-	}
-
 	startTime := opt.StartTime
 	endTime := opt.EndTime
 	input := &cloudwatch.GetMetricDataInput{
-		MetricDataQueries: queries,
+		MetricDataQueries: buildMetricDataQueries(opt.MetricDataQueries),
 		StartTime:         &startTime,
 		EndTime:           &endTime,
 	}
@@ -78,33 +57,7 @@ func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) ([
 			return nil, err
 		}
 
-		for _, result := range resp.MetricDataResults {
-			id := aws.StringValue(result.Id)
-			item, exists := mergedMap[id]
-			if !exists {
-				item = &typescw.MetricDataResult{ID: id}
-				mergedMap[id] = item
-				orderedIDs = append(orderedIDs, id)
-			}
-			if result.Label != nil {
-				item.Label = aws.StringValue(result.Label)
-			}
-			if result.StatusCode != nil {
-				item.StatusCode = aws.StringValue(result.StatusCode)
-			}
-			for _, msg := range result.Messages {
-				item.Messages = append(item.Messages, typescw.MetricDataMessage{
-					Code:  aws.StringValue(msg.Code),
-					Value: aws.StringValue(msg.Value),
-				})
-			}
-			for _, t := range result.Timestamps {
-				item.Timestamps = append(item.Timestamps, t.Unix())
-			}
-			for _, v := range result.Values {
-				item.Values = append(item.Values, aws.Float64Value(v))
-			}
-		}
+		orderedIDs = mergeMetricDataPage(resp.MetricDataResults, mergedMap, orderedIDs)
 
 		if resp.NextToken == nil {
 			break
@@ -112,12 +65,81 @@ func (a *Aws) GetMetricData(kt *kit.Kit, opt *typescw.AwsGetMetricDataOption) ([
 		input.NextToken = resp.NextToken
 	}
 
+	return buildMetricDataResults(mergedMap, orderedIDs), nil
+}
+
+func buildMetricDataQueries(queries []typescw.MetricDataQuery) []*cloudwatch.MetricDataQuery {
+	data := make([]*cloudwatch.MetricDataQuery, 0, len(queries))
+	for _, q := range queries {
+		dims := make([]*cloudwatch.Dimension, 0, len(q.Dimensions))
+		for _, d := range q.Dimensions {
+			dims = append(dims, &cloudwatch.Dimension{
+				Name:  aws.String(d.Name),
+				Value: aws.String(d.Value),
+			})
+		}
+
+		data = append(data, &cloudwatch.MetricDataQuery{
+			Id: aws.String(q.ID),
+			MetricStat: &cloudwatch.MetricStat{
+				Metric: &cloudwatch.Metric{
+					Namespace:  aws.String(q.Namespace),
+					MetricName: aws.String(q.MetricName),
+					Dimensions: dims,
+				},
+				Stat:   aws.String(q.Stat),
+				Period: aws.Int64(q.Period),
+			},
+		})
+	}
+
+	return data
+}
+
+func mergeMetricDataPage(results []*cloudwatch.MetricDataResult, mergedMap map[string]*typescw.MetricDataResult,
+	orderedIDs []string) []string {
+
+	for _, result := range results {
+		id := aws.StringValue(result.Id)
+		item, exists := mergedMap[id]
+		if !exists {
+			item = &typescw.MetricDataResult{ID: id}
+			mergedMap[id] = item
+			orderedIDs = append(orderedIDs, id)
+		}
+
+		if result.Label != nil {
+			item.Label = aws.StringValue(result.Label)
+		}
+		if result.StatusCode != nil {
+			item.StatusCode = aws.StringValue(result.StatusCode)
+		}
+		for _, msg := range result.Messages {
+			item.Messages = append(item.Messages, typescw.MetricDataMessage{
+				Code:  aws.StringValue(msg.Code),
+				Value: aws.StringValue(msg.Value),
+			})
+		}
+		for _, t := range result.Timestamps {
+			item.Timestamps = append(item.Timestamps, t.Unix())
+		}
+		for _, v := range result.Values {
+			item.Values = append(item.Values, aws.Float64Value(v))
+		}
+	}
+
+	return orderedIDs
+}
+
+func buildMetricDataResults(mergedMap map[string]*typescw.MetricDataResult,
+	orderedIDs []string) []*typescw.MetricDataResult {
+
 	data := make([]*typescw.MetricDataResult, 0, len(orderedIDs))
 	for _, id := range orderedIDs {
 		data = append(data, mergedMap[id])
 	}
 
-	return data, nil
+	return data
 }
 
 // ListMetrics lists available CloudWatch metrics.

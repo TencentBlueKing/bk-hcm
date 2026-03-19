@@ -45,10 +45,14 @@ func InitInstanceTypeService(cap *capability.Capability) {
 	h.Add("ListForHuaWei", "POST", "/vendors/huawei/instance_types/list", i.ListForHuaWei)
 	h.Add("ListForAzure", "POST", "/vendors/azure/instance_types/list", i.ListForAzure)
 	h.Add("ListForGcp", "POST", "/vendors/gcp/instance_types/list", i.ListForGcp)
-	h.Add("ListAssumeRoleInstanceTypeForAws", "POST", "/vendors/aws/assume_role/instance_types/list", i.ListAssumeRoleInstanceTypeForAws)
-	h.Add("ListAssumeRoleInstanceForAws", "POST", "/vendors/aws/assume_role/instances/list", i.ListAssumeRoleInstanceForAws)
-	h.Add("ListAssumeRoleMetricDataForAws", "POST", "/vendors/aws/assume_role/cloudwatch/metric_data/list", i.ListAssumeRoleMetricDataForAws)
-	h.Add("ListAssumeRoleMetricsForAws", "POST", "/vendors/aws/assume_role/cloudwatch/metrics/list", i.ListAssumeRoleMetricsForAws)
+	h.Add("ListAssumeRoleInstanceTypeForAws", "POST",
+		"/vendors/aws/assume_role/instance_types/list", i.ListAssumeRoleInstanceTypeForAws)
+	h.Add("ListAssumeRoleInstanceForAws", "POST",
+		"/vendors/aws/assume_role/instances/list", i.ListAssumeRoleInstanceForAws)
+	h.Add("ListAssumeRoleMetricDataForAws", "POST",
+		"/vendors/aws/assume_role/cloudwatch/metric_data/list", i.ListAssumeRoleMetricDataForAws)
+	h.Add("ListAssumeRoleMetricsForAws", "POST",
+		"/vendors/aws/assume_role/cloudwatch/metrics/list", i.ListAssumeRoleMetricsForAws)
 
 	h.Load(cap.WebService)
 }

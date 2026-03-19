@@ -164,7 +164,8 @@ func (cli *CloudAdaptorClient) AwsWithAssumeRole(
 			}
 		}
 
-		cred, err := cli.credCache.GetOrRefresh(kt, currentSecret, cacheKey, roleArn, sessionName, stepExternalID, accountSite)
+		cred, err := cli.credCache.GetOrRefresh(kt, currentSecret, cacheKey, roleArn, sessionName,
+			stepExternalID, accountSite)
 		if err != nil {
 			return nil, err
 		}
