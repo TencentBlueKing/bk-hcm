@@ -20,6 +20,8 @@
 package aws
 
 import (
+	"encoding/json"
+
 	instancetype "hcm/pkg/api/hc-service/instance-type"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -48,6 +50,108 @@ func (c *InstanceTypeClient) List(kt *kit.Kit, request *instancetype.AwsInstance
 		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/instance_types/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListAssumeRoleInstanceType lists instance types via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleInstanceType(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleInstanceTypeListReq) ([]*instancetype.AwsInstanceTypeResp, error) {
+
+	resp := new(instancetype.AwsAssumeRoleInstanceTypeListResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/instance_types/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListAssumeRoleInstance lists EC2 instances via AssumeRole cross-account access.
+// Returns raw AWS EC2 Instance JSON for transparent pass-through.
+func (c *InstanceTypeClient) ListAssumeRoleInstance(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleInstanceListReq) (json.RawMessage, error) {
+
+	resp := new(instancetype.AwsAssumeRoleInstanceListResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/instances/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListAssumeRoleMetricData queries CloudWatch metric data via AssumeRole cross-account access.
+func (c *InstanceTypeClient) ListAssumeRoleMetricData(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleGetMetricDataReq) ([]*instancetype.MetricDataResultItem, error) {
+
+	resp := new(instancetype.AwsAssumeRoleGetMetricDataResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/cloudwatch/metric_data/list").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// ListAssumeRoleMetrics lists available CloudWatch metrics via AssumeRole cross-account access.
+// Returns raw AWS CloudWatch Metric JSON for transparent pass-through.
+func (c *InstanceTypeClient) ListAssumeRoleMetrics(kt *kit.Kit,
+	request *instancetype.AwsAssumeRoleListMetricsReq) (json.RawMessage, error) {
+
+	resp := new(instancetype.AwsAssumeRoleListMetricsResp)
+
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/assume_role/cloudwatch/metrics/list").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)

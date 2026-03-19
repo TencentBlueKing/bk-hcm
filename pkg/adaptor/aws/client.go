@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/athena"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	curservice "github.com/aws/aws-sdk-go/service/costandusagereportservice"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/organizations"
@@ -51,7 +52,8 @@ type clientSet struct {
 }
 
 func newClientSet(secret *types.BaseSecret) *clientSet {
-	return &clientSet{credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey, "")}
+	return &clientSet{credentials.NewStaticCredentials(secret.CloudSecretID, secret.CloudSecretKey,
+		secret.CloudSessionToken)}
 }
 
 func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {
@@ -190,6 +192,23 @@ func (c *clientSet) costAndUsageReportClient(region string) (*curservice.Costand
 	}
 
 	return curservice.New(sess, aws.NewConfig().WithRegion(region)), nil
+}
+
+func (c *clientSet) cloudWatchClient(region string) (*cloudwatch.CloudWatch, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return cloudwatch.New(sess), nil
 }
 
 func (c *clientSet) cloudFormationClient(region string) (*cloudformation.CloudFormation, error) {

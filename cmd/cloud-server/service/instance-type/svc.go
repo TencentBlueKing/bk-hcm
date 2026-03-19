@@ -220,3 +220,125 @@ func (svc *instanceTypeSvc) ListForGcp(cts *rest.Contexts, req *proto.ListReq) (
 
 	return result, nil
 }
+
+// ListAssumeRoleInstanceTypeInRes lists AWS instance types via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleInstanceTypeInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleInstanceTypeListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.InstanceType,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: req.RootAccountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleInstanceType(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws assume role instance types failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
+}
+
+// ListAssumeRoleInstanceInRes lists AWS instances via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleInstanceInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleInstanceListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: req.RootAccountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleInstance(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws assume role instances failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
+}
+
+// ListAssumeRoleMetricDataInRes queries CloudWatch metric data via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleMetricDataInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleGetMetricDataReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: req.RootAccountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleMetricData(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws assume role cloudwatch metric data failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
+}
+
+// ListAssumeRoleMetricsInRes lists available CloudWatch metrics via AssumeRole (resource scope).
+func (svc *instanceTypeSvc) ListAssumeRoleMetricsInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcproto.AwsAssumeRoleListMetricsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// Use root_account_id for authorization
+	err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer, ResType: meta.Cvm,
+		Action: meta.Find, DisableBizIDEqual: true, BasicInfo: &types.CloudResourceBasicInfo{
+			AccountID: req.RootAccountID,
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := svc.client.HCService().Aws.InstanceType.ListAssumeRoleMetrics(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("call hc-service to list aws assume role cloudwatch metrics failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return list, nil
+}

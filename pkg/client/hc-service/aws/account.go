@@ -25,7 +25,7 @@ import (
 
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
-	"hcm/pkg/api/hc-service/account"
+	hsaccount "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
