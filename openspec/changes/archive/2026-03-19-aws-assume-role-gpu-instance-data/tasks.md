@@ -21,16 +21,11 @@
 
 ## 4. AwsWithAssumeRole 编排方法（支持 Role Chain）
 
-- [ ] 4.1 `cmd/hc-service/logics/cloud-adaptor/cloud_client.go`：修改 `AwsWithAssumeRole(kt, rootAccountID, cloudID, roleChain, externalId)` 签名，改用 `AwsRoot()` 获取根账号凭证（参考 GCP 的 `GcpRoot`），不再内部反查 sub_account
-- [ ] 4.2 移除 `cmd/hc-service/logics/cloud-adaptor/secret.go` 中的 `AwsSubAccountByCloudID` 方法（不再需要）
+- [x] 4.1 `cmd/hc-service/logics/cloud-adaptor/cloud_client.go`：修改 `AwsWithAssumeRole(kt, rootAccountID, cloudID, roleChain, externalId)` 签名，改用 `AwsRoot()` 获取根账号凭证（参考 GCP 的 `GcpRoot`），不再内部反查 sub_account
+- [x] 4.2 移除 `cmd/hc-service/logics/cloud-adaptor/secret.go` 中的 `AwsSubAccountByCloudID` 方法（不再需要）
 - [x] 4.3 编排流程：AwsRoot 获取 AK/SK → 按 roleChain 顺序链式 AssumeRole（中间角色用管理账号 ID，最终角色用 cloudID）→ 构建 Aws client
 - [x] 4.4 凭证缓存 `GetOrRefresh` 改为接收调用方构建的 cacheKey，支持 Role Chain 各步独立缓存
 
-## ~~5. AWS sub_account 同步链路补完~~（已移除：改用 root_account + main_account 体系，不需要 sub_account 同步）
-
-- [ ] 5.1 移除 `pkg/client/hc-service/aws/account.go` 中新增的 `SyncSubAccount` client 方法
-- [ ] 5.2 移除 `cmd/cloud-server/service/sync/aws/sub_account.go` 同步入口文件
-- [ ] 5.3 移除 `cmd/cloud-server/service/sync/aws/sync_all_resource.go` 中 syncOrder 的 sub_account 注册
 
 ## 6. 实例类型 GPU 字段补全
 
@@ -40,17 +35,17 @@
 
 ## 7. GPU 数据透传接口（hc-service）
 
-- [ ] 7.1 `pkg/api/hc-service/`：更新 GPU 实例类型查询请求结构体（入参：`root_account_id` + `main_account_id` + `role_chain` + `region`）
-- [ ] 7.2 `pkg/api/hc-service/`：更新 GPU 实例列表查询请求结构体（入参：`root_account_id` + `main_account_id` + `role_chain` + `region`）
-- [ ] 7.3 `cmd/hc-service/`：更新 GPU 实例类型查询 handler（用 root_account_id 调 AwsRoot + main_account_id 查 CloudID → AwsWithAssumeRole → adaptor.ListInstanceType）
-- [ ] 7.4 `cmd/hc-service/`：更新 GPU 实例列表查询 handler（同上模式 → adaptor.ListCvm）
+- [x] 7.1 `pkg/api/hc-service/`：更新 GPU 实例类型查询请求结构体（入参：`root_account_id` + `main_account_id` + `role_chain` + `region`）
+- [x] 7.2 `pkg/api/hc-service/`：更新 GPU 实例列表查询请求结构体（入参：`root_account_id` + `main_account_id` + `role_chain` + `region`）
+- [x] 7.3 `cmd/hc-service/`：更新 GPU 实例类型查询 handler（用 root_account_id 调 AwsRoot + main_account_id 查 CloudID → AwsWithAssumeRole → adaptor.ListInstanceType）
+- [x] 7.4 `cmd/hc-service/`：更新 GPU 实例列表查询 handler（同上模式 → adaptor.ListCvm）
 - [x] 7.5 注册 hc-service 路由
 
 ## 8. GPU 接口 cloud-server 入口、开放接口与文档
 
 - [x] 8.1 `pkg/client/hc-service/aws/`：新增 `ListGpuInstanceType` 和 `ListGpuInstance` client 方法
-- [ ] 8.2 `cmd/cloud-server/service/instance-type/svc.go`：更新资源视角 handler（移除 `lookupAccountIDByCloudID` 反查逻辑）
+- [x] 8.2 `cmd/cloud-server/service/instance-type/svc.go`：更新资源视角 handler（移除 `lookupAccountIDByCloudID` 反查逻辑）
 - [x] 8.3 `cmd/cloud-server/service/instance-type/init.go`：注册路由 `/vendors/aws/gpu/instance_types/list` 和 `/vendors/aws/gpu/instances/list`
 - [x] 8.4 `docs/api-docs/api-server/api/bk_apigw_resources_bk-hcm.yaml`：注册两个 GPU 开放接口
-- [ ] 8.5 `docs/api-docs/web-server/docs/resource/list_aws_assume_role_instance_type.md`：更新接口文档
-- [ ] 8.6 `docs/api-docs/web-server/docs/resource/list_aws_assume_role_instance.md`：更新接口文档
+- [x] 8.5 `docs/api-docs/web-server/docs/resource/list_aws_assume_role_instance_type.md`：更新接口文档
+- [x] 8.6 `docs/api-docs/web-server/docs/resource/list_aws_assume_role_instance.md`：更新接口文档
