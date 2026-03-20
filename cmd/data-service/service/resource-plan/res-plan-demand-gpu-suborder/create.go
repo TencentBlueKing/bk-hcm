@@ -78,6 +78,7 @@ func (svc *service) batchCreateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 			BkBizID:       item.BkBizID,
 			OpProductID:   item.OpProductID,
 			OpProductName: item.OpProductName,
+			TemplateID:    item.TemplateID,
 			DemandType:    item.DemandType,
 			DemandYear:    item.DemandYear,
 			DemandMonth:   item.DemandMonth,
@@ -89,11 +90,6 @@ func (svc *service) batchCreateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 			Remark:        item.Remark,
 			Creator:       kt.User,
 			Reviser:       kt.User,
-		}
-
-		if item.Creator != "" {
-			createT.Creator = item.Creator
-			createT.Reviser = item.Creator
 		}
 
 		models[idx] = createT

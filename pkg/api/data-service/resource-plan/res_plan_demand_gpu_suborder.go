@@ -57,6 +57,7 @@ type ResPlanDemandGpuSubOrderCreateReq struct {
 	BkBizID       int64                            `json:"bk_biz_id" validate:"required"`
 	OpProductID   int64                            `json:"op_product_id" validate:"required"`
 	OpProductName string                           `json:"op_product_name" validate:"required,lte=64"`
+	TemplateID    string                           `json:"template_id" validate:"required,lte=32"`
 	DemandType    string                           `json:"demand_type" validate:"required"`
 	DemandYear    int64                            `json:"demand_year"`
 	DemandMonth   int64                            `json:"demand_month"`
@@ -120,6 +121,7 @@ type ResPlanDemandGpuSubOrderUpdateReq struct {
 	BkBizID       int64                            `json:"bk_biz_id"`
 	OpProductID   int64                            `json:"op_product_id" validate:"omitempty"`
 	OpProductName string                           `json:"op_product_name" validate:"omitempty,lte=64"`
+	TemplateID    string                           `json:"template_id" validate:"omitempty,lte=32"`
 	DemandType    string                           `json:"demand_type"`
 	DemandYear    int64                            `json:"demand_year"`
 	DemandMonth   int64                            `json:"demand_month"`

@@ -40,6 +40,7 @@ var ResPlanDemandGpuSubOrderColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "op_product_id", NamedC: "op_product_id", Type: enumor.Numeric},
 	{Column: "op_product_name", NamedC: "op_product_name", Type: enumor.String},
+	{Column: "template_id", NamedC: "template_id", Type: enumor.String},
 	{Column: "demand_type", NamedC: "demand_type", Type: enumor.String},
 	{Column: "demand_year", NamedC: "demand_year", Type: enumor.Numeric},
 	{Column: "demand_month", NamedC: "demand_month", Type: enumor.Numeric},
@@ -67,6 +68,8 @@ type ResPlanDemandGpuSubOrderTable struct {
 	OpProductID int64 `db:"op_product_id" json:"op_product_id"`
 	// OpProductName 运营产品名称
 	OpProductName string `db:"op_product_name" json:"op_product_name" validate:"lte=64"`
+	// TemplateID 模版ID
+	TemplateID string `db:"template_id" json:"template_id" validate:"lte=32"`
 	// DemandType 需求分类
 	DemandType string `db:"demand_type" json:"demand_type" validate:"lte=64"`
 	// DemandYear 需求年
@@ -120,6 +123,10 @@ func (r ResPlanDemandGpuSubOrderTable) InsertValidate() error {
 
 	if len(r.OpProductName) == 0 {
 		return errors.New("op_product_name can not be empty")
+	}
+
+	if len(r.TemplateID) == 0 {
+		return errors.New("template_id can not be empty")
 	}
 
 	if len(r.DemandType) == 0 {

@@ -71,6 +71,7 @@ func (svc *service) batchUpdateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 			BkBizID:       updateReq.BkBizID,
 			OpProductID:   updateReq.OpProductID,
 			OpProductName: updateReq.OpProductName,
+			TemplateID:    updateReq.TemplateID,
 			DemandType:    updateReq.DemandType,
 			DemandYear:    updateReq.DemandYear,
 			DemandMonth:   updateReq.DemandMonth,
@@ -85,9 +86,6 @@ func (svc *service) batchUpdateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 		}
 		if updateReq.Extension != nil {
 			record.Extension = cvt.PtrToVal(updateReq.Extension)
-		}
-		if updateReq.Reviser != "" {
-			record.Reviser = updateReq.Reviser
 		}
 
 		if err := svc.dao.ResPlanDemandGpuSubOrder().UpdateWithTx(kt, txn,

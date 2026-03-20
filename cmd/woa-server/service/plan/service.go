@@ -103,6 +103,11 @@ func (s *service) initPlanService(h *rest.Handler) {
 	h.Add("ListPlanDemandChangelog", http.MethodPost, "/plans/demands/change_logs/list", s.ListPlanDemandChangeLog)
 	h.Add("BatchUpdateResPlanDemand", http.MethodPatch, "/plans/resources/demands/batch", s.BatchUpdateResPlanDemand)
 	h.Add("ConfirmResPlanDemands", http.MethodPost, "/plans/resources/demands/confirm", s.ConfirmResPlanDemands)
+	// gpu demand
+	h.Add("ListResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/list", s.ListResPlanDemandGpuSubOrder)
+	h.Add("BatchUpdateResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/batch", s.BatchUpdateResPlanDemandGpuSubOrder)
 
 	// verify
 	h.Add("VerifyResPlanDemandV2", http.MethodPost, "/plans/resources/demands/verify", s.VerifyResPlanDemandV2)
@@ -194,6 +199,13 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 		s.AutoTransferBizResPlanDemand)
 	h.Add("ConfirmBizResPlanDemands", http.MethodPost, "/plans/resources/demands/confirm",
 		s.ConfirmBizResPlanDemands)
+	// gpu demand
+	h.Add("ListBizResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/list", s.ListBizResPlanDemandGpuSubOrder)
+	h.Add("BatchUpdateBizResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/batch", s.BatchUpdateBizResPlanDemandGpuSubOrder)
+	h.Add("BatchTerminateBizResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/batch/terminate", s.BatchTerminateBizResPlanDemandGpuSubOrder)
 
 	// resource plan transfer quota
 	h.Add("ListBizResPlanTransferQuotaSummary", http.MethodPost, "/plans/resources/transfer_quotas/summary",

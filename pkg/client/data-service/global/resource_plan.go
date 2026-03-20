@@ -345,6 +345,7 @@ func (b *ResourcePlanClient) BatchCreateResPlanDemandGpuSubOrder(kt *kit.Kit,
 // BatchUpdateResPlanDemandGpuSubOrder update resource plan demand gpu sub order
 func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuSubOrder(kt *kit.Kit,
 	req *rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq) error {
+
 	return common.RequestNoResp[rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq](
 		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
 }

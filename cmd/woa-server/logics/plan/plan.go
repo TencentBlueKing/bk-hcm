@@ -37,6 +37,7 @@ import (
 	ttypes "hcm/cmd/woa-server/types/task"
 	"hcm/pkg/api/core"
 	dt "hcm/pkg/api/core/cloud/device-type"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -159,6 +160,15 @@ type Logics interface {
 	RetryResPlanFailedSubTickets(kt *kit.Kit, ticketID string) error
 	// TerminateResPlanFailedTicket terminate res plan failed ticket.
 	TerminateResPlanFailedTicket(kt *kit.Kit, ticketID string) error
+
+	// TerminateBizGpuSubOrders 终止业务侧 GPU 需求子单的核心逻辑。
+	TerminateBizGpuSubOrders(kt *kit.Kit, bizID int64, subOrderIDs []string) error
+	// AuditGpuSubOrderUpdates 统一提交 GPU 需求子单变更审计。
+	AuditGpuSubOrderUpdates(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) error
+	// RefreshGpuOrderStatusAfterBizEdit 业务侧修改驳回子单后刷新主单状态。
+	RefreshGpuOrderStatusAfterBizEdit(kt *kit.Kit, orderIDs []string) error
+	// RefreshGpuOrderStatusAfterReview 评审后刷新主单状态。
+	RefreshGpuOrderStatusAfterReview(kt *kit.Kit, orderIDs []string) error
 
 	// CreateDemandWeek create demand week.
 	CreateDemandWeek(kt *kit.Kit, createReqs []rpproto.ResPlanWeekCreateReq) (*core.BatchCreateResult, error)

@@ -57,6 +57,7 @@ CREATE TABLE `res_plan_demand_gpu_suborder` (
     `bk_biz_id`       BIGINT       NOT NULL                                        COMMENT '业务ID',
     `op_product_id`   BIGINT       NOT NULL                                        COMMENT '运营产品ID',
     `op_product_name` VARCHAR(64)  NOT NULL                                        COMMENT '运营产品名称',
+    `template_id`     VARCHAR(32)  NOT NULL                                        COMMENT '模版ID',
     `demand_type`     VARCHAR(64)  NOT NULL                                        COMMENT '需求分类',
     `demand_year`     BIGINT       DEFAULT 0                                       COMMENT '需求年',
     `demand_month`    BIGINT       DEFAULT 0                                       COMMENT '需求月',
