@@ -66,7 +66,7 @@ const serviceMenus: RouteRecordRaw[] = [
           title: t('资源预测'),
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-resource-plan',
-          checkAuth: 'ziyan_resource_plan_manage',
+          checkAuth: ['ziyan_resource_plan_manage', 'ziyan_resource_plan_gpu_demands'],
         },
       },
       {

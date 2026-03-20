@@ -11,7 +11,7 @@ const route = useRoute();
 const { authVerifyData } = useVerify();
 
 const allTabPanels = [
-  { name: MENU_SERVICE_RESOURCE_PLAN_CVM, label: 'CVM预测' },
+  { name: MENU_SERVICE_RESOURCE_PLAN_CVM, label: 'CVM预测', auth: 'ziyan_resource_plan_manage' },
   { name: MENU_SERVICE_RESOURCE_PLAN_GPU, label: 'GPU需求', auth: 'ziyan_resource_plan_gpu_demands' },
 ];
 

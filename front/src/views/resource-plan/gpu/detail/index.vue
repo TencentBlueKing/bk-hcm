@@ -15,6 +15,7 @@ import {
 } from '@/store/resource-plan/gpu-demand';
 import { evaluateFormula } from '../hooks/use-excel-preview';
 import { useTerminateConfirm } from '../hooks/use-terminate-confirm';
+import { getColumnMinWidth } from '@/model/utils';
 import useTableSelection from '@/hooks/use-table-selection';
 import BatchReviewDialog from '../components/batch-review-dialog.vue';
 import BatchRejectDialog from '../components/batch-reject-dialog.vue';
@@ -284,13 +285,13 @@ interface ISummaryRow {
 const summaryColumns = computed(() => {
   const fixedCols = [
     { field: 'demand_type', label: 'GPU需求类别', minWidth: 150, fixed: 'left' },
-    { field: 'gpu_num', label: 'GPU卡数', minWidth: 80, fixed: 'left' },
-    { field: 'qpm_max', label: '需求QPM', minWidth: 80, fixed: 'left' },
+    { field: 'gpu_num', label: 'GPU卡数', minWidth: 120, fixed: 'left' },
+    { field: 'qpm_max', label: '需求QPM', minWidth: 120, fixed: 'left' },
   ];
   const monthCols = allYearMonths.value.map((ym) => ({
     field: `month_${ym}`,
     label: ym,
-    minWidth: 60,
+    minWidth: getColumnMinWidth({ name: ym }),
     fixed: undefined as string | undefined,
   }));
   return [...fixedCols, ...monthCols];
@@ -396,7 +397,7 @@ const getSheetColumns = (sheetName: string): ISheetTableColumn[] => {
       cols.push({
         field: `col_${colIdx}`,
         label: h.name,
-        minWidth: 120,
+        minWidth: getColumnMinWidth({ name: h.name }),
         isFixed: true,
         dbField: h.db_field,
         formula: h.formula,
@@ -414,7 +415,7 @@ const getSheetColumns = (sheetName: string): ISheetTableColumn[] => {
       cols.push({
         field: `col_${colIdx}`,
         label: h.name,
-        minWidth: 120,
+        minWidth: getColumnMinWidth({ name: h.name }),
         isFixed: false,
         formula: h.formula,
         excelField: h.field,
@@ -540,6 +541,7 @@ watch([activeFilter, activeTab], () => {
 });
 
 const REVIEW_DISABLED_STATUS: Record<string, string> = {
+  INIT: '待评审状态，请先更新状态至评审中',
   DONE: '已评审，不支持操作',
   REJECT: '已驳回，不支持操作',
   TERMINATE: '已终止，不支持操作',
