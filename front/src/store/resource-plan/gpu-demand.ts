@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import rollRequest from '@blueking/roll-request';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
 import { enableCount } from '@/utils/search';
@@ -136,7 +137,6 @@ export interface IGpuSubOrderUpdateItem {
 /** 子单列表查询参数 */
 export interface IGpuSubOrderListParams {
   filter: QueryFilterType | QueryFilterTypeLegacy;
-  page: IPageQuery;
 }
 
 /** 子单列表接口返回的 data 结构 */
@@ -201,13 +201,26 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
 
   const detailLoading = ref(false);
 
-  /** 获取 GPU 需求子单列表（含 tpl_config） */
+  /** 获取 GPU 需求子单列表（含 tpl_config），使用 rollRequest 滚动拉取全量数据 */
   const getGpuSubOrderList = async (params: IGpuSubOrderListParams): Promise<IGpuSubOrderListData> => {
     detailLoading.value = true;
     const api = `/api/v1/woa/${getBusinessApiPath()}plans/resources/gpu/demands/suborders/list`;
+    let capturedTplConfig: ITplConfig[] = [];
     try {
-      const res = await http.post<{ data: IGpuSubOrderListData }>(api, params);
-      return res?.data ?? { count: 0, details: [], tpl_config: [] };
+      const details = (await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<IGpuDemandSubOrder>(api, params, {
+        limit: 500,
+        countGetter: (res) => res.data.count,
+        listGetter: (res) => {
+          if (res.data.tpl_config?.length && !capturedTplConfig.length) {
+            capturedTplConfig = res.data.tpl_config;
+          }
+          return res.data.details;
+        },
+      })) as IGpuDemandSubOrder[];
+      return { count: details.length, details, tpl_config: capturedTplConfig };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);

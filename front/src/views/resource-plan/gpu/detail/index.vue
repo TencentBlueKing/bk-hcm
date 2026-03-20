@@ -596,13 +596,15 @@ const handleSubEdit = (row: Record<string, any>) => {
 const refreshSubOrdersByIds = async (subOrderIds: string[]) => {
   if (!subOrderIds.length) return;
   try {
-    const data = await gpuDemandStore.getGpuSubOrderList({
-      filter: {
-        op: 'and',
-        rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: subOrderIds }],
-      },
-      page: { count: false, start: 0, limit: subOrderIds.length },
-    });
+    const [data] = await Promise.all([
+      gpuDemandStore.getGpuSubOrderList({
+        filter: {
+          op: 'and',
+          rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: subOrderIds }],
+        },
+      }),
+      fetchMainOrderDetail(),
+    ]);
     const updatedList = data.details ?? [];
     for (const updatedSub of updatedList) {
       const idx = subOrders.value.findIndex((s) => s.id === updatedSub.id);
@@ -688,18 +690,20 @@ const handleBatchSuccess = (subOrderIds: string[]) => {
 const tableRenderKey = ref(0);
 
 // ==================== 数据加载 ====================
+const fetchMainOrderDetail = async () => {
+  const detail = await gpuDemandStore.getGpuDemandDetail(orderId.value);
+  orderDetail.value = detail;
+};
+
 const fetchDetail = async () => {
   if (!orderId.value) return;
 
-  // 获取主单详情
-  const detail = await gpuDemandStore.getGpuDemandDetail(orderId.value);
-  orderDetail.value = detail;
+  await fetchMainOrderDetail();
 
   // 获取子单列表（真实接口）
   try {
     const data = await gpuDemandStore.getGpuSubOrderList({
       filter: { op: 'and', rules: [{ field: 'order_id', op: QueryRuleOPEnum.EQ, value: orderId.value }] },
-      page: { count: false, start: 0, limit: 500 },
     });
     subOrders.value = data.details ?? [];
 
