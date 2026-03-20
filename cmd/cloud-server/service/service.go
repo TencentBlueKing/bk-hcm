@@ -54,6 +54,7 @@ import (
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
 	"hcm/cmd/cloud-server/service/monitoring"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
+	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -343,6 +344,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	cos.InitService(c)
 
 	admin.InitAdminService(c)
+	permissionpolicylibrary.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

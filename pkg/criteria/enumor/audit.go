@@ -28,53 +28,55 @@ type AuditResourceType string
 
 // AuditResourceType 资源审计类型
 const (
-	SubAccountAuditResType        AuditResourceType = "sub_account"
-	AccountAuditResType           AuditResourceType = "account"
-	SecurityGroupAuditResType     AuditResourceType = "security_group"
-	SecurityGroupRuleAuditResType AuditResourceType = "security_group_rule"
-	VpcCloudAuditResType          AuditResourceType = "vpc"
-	SubnetAuditResType            AuditResourceType = "subnet"
-	DiskAuditResType              AuditResourceType = "disk"
-	CvmAuditResType               AuditResourceType = "cvm"
-	RouteTableAuditResType        AuditResourceType = "route_table"
-	RouteAuditResType             AuditResourceType = "route"
-	EipAuditResType               AuditResourceType = "eip"
-	GcpFirewallRuleAuditResType   AuditResourceType = "gcp_firewall_rule"
-	NetworkInterfaceAuditResType  AuditResourceType = "network_interface"
-	ArgumentTemplateAuditResType  AuditResourceType = "argument_template"
-	SslCertAuditResType           AuditResourceType = "ssl_cert"
-	LoadBalancerAuditResType      AuditResourceType = "load_balancer"
-	TargetGroupAuditResType       AuditResourceType = "target_group"
-	ListenerAuditResType          AuditResourceType = "listener"
-	UrlRuleAuditResType           AuditResourceType = "url_rule"
-	UrlRuleDomainAuditResType     AuditResourceType = "url_rule_domain"
-	MainAccountAuditResType       AuditResourceType = "main_account"
-	RootAccountAuditResType       AuditResourceType = "root_account"
+	SubAccountAuditResType              AuditResourceType = "sub_account"
+	AccountAuditResType                 AuditResourceType = "account"
+	SecurityGroupAuditResType           AuditResourceType = "security_group"
+	SecurityGroupRuleAuditResType       AuditResourceType = "security_group_rule"
+	VpcCloudAuditResType                AuditResourceType = "vpc"
+	SubnetAuditResType                  AuditResourceType = "subnet"
+	DiskAuditResType                    AuditResourceType = "disk"
+	CvmAuditResType                     AuditResourceType = "cvm"
+	RouteTableAuditResType              AuditResourceType = "route_table"
+	RouteAuditResType                   AuditResourceType = "route"
+	EipAuditResType                     AuditResourceType = "eip"
+	GcpFirewallRuleAuditResType         AuditResourceType = "gcp_firewall_rule"
+	NetworkInterfaceAuditResType        AuditResourceType = "network_interface"
+	ArgumentTemplateAuditResType        AuditResourceType = "argument_template"
+	SslCertAuditResType                 AuditResourceType = "ssl_cert"
+	LoadBalancerAuditResType            AuditResourceType = "load_balancer"
+	TargetGroupAuditResType             AuditResourceType = "target_group"
+	ListenerAuditResType                AuditResourceType = "listener"
+	UrlRuleAuditResType                 AuditResourceType = "url_rule"
+	UrlRuleDomainAuditResType           AuditResourceType = "url_rule_domain"
+	MainAccountAuditResType             AuditResourceType = "main_account"
+	RootAccountAuditResType             AuditResourceType = "root_account"
+	PermissionPolicyLibraryAuditResType AuditResourceType = "permission_policy_library"
 )
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
-	SubAccountAuditResType:        {},
-	AccountAuditResType:           {},
-	SecurityGroupAuditResType:     {},
-	SecurityGroupRuleAuditResType: {},
-	VpcCloudAuditResType:          {},
-	SubnetAuditResType:            {},
-	DiskAuditResType:              {},
-	CvmAuditResType:               {},
-	RouteTableAuditResType:        {},
-	EipAuditResType:               {},
-	GcpFirewallRuleAuditResType:   {},
-	NetworkInterfaceAuditResType:  {},
-	ArgumentTemplateAuditResType:  {},
-	SslCertAuditResType:           {},
-	LoadBalancerAuditResType:      {},
-	TargetGroupAuditResType:       {},
-	ListenerAuditResType:          {},
-	UrlRuleAuditResType:           {},
-	UrlRuleDomainAuditResType:     {},
-	MainAccountAuditResType:       {},
-	RootAccountAuditResType:       {},
+	SubAccountAuditResType:              {},
+	AccountAuditResType:                 {},
+	SecurityGroupAuditResType:           {},
+	SecurityGroupRuleAuditResType:       {},
+	VpcCloudAuditResType:                {},
+	SubnetAuditResType:                  {},
+	DiskAuditResType:                    {},
+	CvmAuditResType:                     {},
+	RouteTableAuditResType:              {},
+	EipAuditResType:                     {},
+	GcpFirewallRuleAuditResType:         {},
+	NetworkInterfaceAuditResType:        {},
+	ArgumentTemplateAuditResType:        {},
+	SslCertAuditResType:                 {},
+	LoadBalancerAuditResType:            {},
+	TargetGroupAuditResType:             {},
+	ListenerAuditResType:                {},
+	UrlRuleAuditResType:                 {},
+	UrlRuleDomainAuditResType:           {},
+	MainAccountAuditResType:             {},
+	RootAccountAuditResType:             {},
+	PermissionPolicyLibraryAuditResType: {},
 }
 
 // Exist judge enum value exist.

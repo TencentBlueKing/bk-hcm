@@ -88,6 +88,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.TaskManagement:           genTaskManagementResource,
 	meta.CosBucket:                genCosBucket,
 	meta.GlobalConfig:             genGlobalConfigResource,
+	meta.PermissionPolicyLibrary:  genPermissionPolicyLibraryResource,
 }
 
 func genApplicationResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {

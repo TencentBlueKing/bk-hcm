@@ -209,6 +209,9 @@ const (
 
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
+
+	// PermissionPolicyLibraryTable is permission_policy_library table's name.
+	PermissionPolicyLibraryTable Name = "permission_policy_library"
 )
 
 // Validate whether the table name is valid or not.
@@ -322,6 +325,8 @@ var TableMap = map[Name]TableConfig{
 	GlobalConfigTable: {},
 
 	ResUsageBizRelTable: {},
+
+	PermissionPolicyLibraryTable: {EnableTenant: true},
 }
 
 // Register 注册表名

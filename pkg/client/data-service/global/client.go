@@ -69,6 +69,8 @@ type Client struct {
 	GlobalConfig *GlobalConfigsClient
 
 	ResUsageBizRel *ResUsageBizRelClient
+
+	PermissionPolicyLibrary *PermissionPolicyLibraryClient
 }
 
 type restClient struct {
@@ -113,10 +115,11 @@ func NewClient(client rest.ClientInterface) *Client {
 		RootAccount:    NewRootAccountClient(client),
 		Cos:            NewCosClient(client),
 
-		TaskDetail:     NewTaskDetailClient(client),
-		TaskManagement: NewTaskManagementClient(client),
-		Tenant:         NewTenantClient(client),
-		GlobalConfig:   NewGlobalConfigClient(client),
-		ResUsageBizRel: NewResUsageBizRelRelClient(client),
+		TaskDetail:              NewTaskDetailClient(client),
+		TaskManagement:          NewTaskManagementClient(client),
+		Tenant:                  NewTenantClient(client),
+		GlobalConfig:            NewGlobalConfigClient(client),
+		ResUsageBizRel:          NewResUsageBizRelRelClient(client),
+		PermissionPolicyLibrary: NewPermissionPolicyLibraryClient(client),
 	}
 }
