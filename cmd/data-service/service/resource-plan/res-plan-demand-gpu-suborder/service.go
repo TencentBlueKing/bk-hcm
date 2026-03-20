@@ -42,6 +42,8 @@ func InitService(cap *capability.Capability) {
 		"/res_plans/res_plan_demand_gpu_suborders/list", svc.ListResPlanDemandGpuSubOrder)
 	h.Add("BatchUpdateResPlanDemandGpuSubOrder", http.MethodPatch,
 		"/res_plans/res_plan_demand_gpu_suborders/batch", svc.BatchUpdateResPlanDemandGpuSubOrder)
+	h.Add("BatchUpdateStatusResPlanDemandGpuSubOrder", http.MethodPatch,
+		"/res_plans/res_plan_demand_gpu_suborders/batch/status", svc.BatchUpdateStatusResPlanDemandGpuSubOrder)
 
 	h.Load(cap.WebService)
 }

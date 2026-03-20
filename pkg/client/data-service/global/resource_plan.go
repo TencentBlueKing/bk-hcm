@@ -349,6 +349,14 @@ func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuSubOrder(kt *kit.Kit,
 		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
 }
 
+// BatchUpdateStatusResPlanDemandGpuSubOrder batch update sub orders to the same status by id list (max 100).
+func (b *ResourcePlanClient) BatchUpdateStatusResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq) error {
+
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch/status")
+}
+
 // DeleteResPlanDemandGpuSubOrder delete resource plan demand gpu sub order
 func (b *ResourcePlanClient) DeleteResPlanDemandGpuSubOrder(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
 	return common.RequestNoResp[dataproto.BatchDeleteReq](

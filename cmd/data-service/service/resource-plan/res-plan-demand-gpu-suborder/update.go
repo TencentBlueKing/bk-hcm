@@ -98,3 +98,35 @@ func (svc *service) batchUpdateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *
 	}
 	return nil, nil
 }
+
+// BatchUpdateStatusResPlanDemandGpuSubOrder update all sub orders in the id list to the same status.
+func (svc *service) BatchUpdateStatusResPlanDemandGpuSubOrder(cts *rest.Contexts) (interface{}, error) {
+	req := new(rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq)
+
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	record := &tablers.ResPlanDemandGpuSubOrderTable{
+		Status:  req.Status,
+		Reviser: cts.Kit.User,
+	}
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		if err := svc.dao.ResPlanDemandGpuSubOrder().UpdateWithTx(cts.Kit, txn,
+			tools.ContainersExpression("id", req.IDs), record); err != nil {
+			logs.Errorf("batch update res plan demand gpu sub order status failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		logs.Errorf("batch update res plan demand gpu sub order status failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}

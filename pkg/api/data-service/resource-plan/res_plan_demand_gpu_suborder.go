@@ -159,6 +159,21 @@ func (r *ResPlanDemandGpuSubOrderUpdateReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
+// ResPlanDemandGpuSubOrderBatchUpdateStatusReq batch update sub orders to the same status by id list.
+type ResPlanDemandGpuSubOrderBatchUpdateStatusReq struct {
+	IDs    []string                         `json:"ids" validate:"required,min=1,max=100"`
+	Status enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
+}
+
+// Validate validate.
+func (r *ResPlanDemandGpuSubOrderBatchUpdateStatusReq) Validate() error {
+	if err := r.Status.Validate(); err != nil {
+		return err
+	}
+
+	return validator.Validate.Struct(r)
+}
+
 // ResPlanDemandGpuSubOrderListResult list result.
 type ResPlanDemandGpuSubOrderListResult dtypes.ListResult[tablers.ResPlanDemandGpuSubOrderTable]
 

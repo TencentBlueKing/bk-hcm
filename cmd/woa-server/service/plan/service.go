@@ -137,6 +137,16 @@ func (s *service) initPlanService(h *rest.Handler) {
 	// resource plan transfer applied record
 	h.Add("ListResPlanTransferAppliedRecord", http.MethodPost,
 		"/plans/resources/transfer_applied_records/list", s.ListResPlanTransferAppliedRecord)
+
+	// gpu demand order
+	h.Add("ListResPlanDemandGpuOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/list", s.ListResPlanDemandGpuOrder)
+	h.Add("BatchSetResPlanDemandGpuOrderPending", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/batch/pending", s.BatchSetResPlanDemandGpuOrderPending)
+	h.Add("BatchRejectResPlanDemandGpuOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/batch/reject", s.BatchRejectResPlanDemandGpuOrder)
+	h.Add("BatchTerminateResPlanDemandGpuOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/batch/terminate", s.BatchTerminateResPlanDemandGpuOrder)
 }
 
 // initBizService 初始化业务下接口
@@ -191,4 +201,10 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 	// resource plan transfer applied record
 	h.Add("ListBizResPlanTransferAppliedRecord", http.MethodPost,
 		"/plans/resources/transfer_applied_records/list", s.ListBizResPlanTransferAppliedRecord)
+
+	// gpu demand order
+	h.Add("ListBizResPlanDemandGpuOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/list", s.ListBizResPlanDemandGpuOrder)
+	h.Add("BatchTerminateBizResPlanDemandGpuOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/orders/batch/terminate", s.BatchTerminateBizResPlanDemandGpuOrder)
 }
