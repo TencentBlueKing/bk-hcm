@@ -29,6 +29,16 @@ export const MENU_BUSINESS_HOST_RECYCLE = 'menu_business_host_recycle';
 export const MENU_BUSINESS_RECYCLE_BIN_MANAGEMENT = 'menu_business_recycle_bin_management';
 
 /**
+ * 资源预测
+ */
+export const MENU_BUSINESS_RESOURCE_PLAN_CVM = 'menu_business_resource_plan_cvm';
+export const MENU_BUSINESS_RESOURCE_PLAN_GPU = 'menu_business_resource_plan_gpu';
+export const MENU_SERVICE_RESOURCE_PLAN_CVM = 'menu_service_resource_plan_cvm';
+export const MENU_SERVICE_RESOURCE_PLAN_GPU = 'menu_service_resource_plan_gpu';
+export const MENU_BUSINESS_RESOURCE_PLAN_GPU_DETAIL = 'menu_business_resource_plan_gpu_detail';
+export const MENU_SERVICE_RESOURCE_PLAN_GPU_DETAIL = 'menu_service_resource_plan_gpu_detail';
+
+/**
  * 运营（服务请求）
  */
 export const MENU_SERVICE = 'menu_service';

@@ -1,0 +1,6 @@
+- [x] 1. Define request/response types in `pkg/api/woa-server/res_plan_gpu_demand_order.go` — `CreateGpuDemandOrderReq`, `CreateGpuDemandOrderDetail`, with `Validate()` method
+- [x] 2. Add `CreateGpuDemandOrder` method signature to `Logics` interface in `cmd/woa-server/logics/plan/plan.go`
+- [x] 3. Implement `getLatestGpuTemplateID` helper in `cmd/woa-server/logics/plan/gpu_demand_order.go`
+- [x] 4. Implement `CreateGpuDemandOrder` logics method in `cmd/woa-server/logics/plan/gpu_demand_order.go` — create main order, convert details to sub-orders, batch create sub-orders
+- [x] 5. Implement service handler `CreateGpuDemandOrder` in `cmd/woa-server/service/plan/gpu_demand_order.go` — parse request, authorize, call logics, return order ID
+- [x] 6. Register route in `cmd/woa-server/service/plan/service.go` under `initBizPlanService`

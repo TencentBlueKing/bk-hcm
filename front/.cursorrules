@@ -1,0 +1,27 @@
+# HCM 前端开发 Cursor 规则
+
+## 访问内部 Git 文档
+
+当用户提供内部 Git 链接（MR diff 链接）时，无法通过 HTTP 直接访问。应通过 git 命令获取内容：
+
+1. 从 URL 中提取 `sourceObjectId` 或 `targetObjectId`（commit SHA）和文件路径
+2. 使用 `git fetch origin <commit-sha>` 拉取对应的 commit 对象
+3. 使用 `git show <commit-sha>:<file-path>` 读取文件内容
+
+示例：
+
+```
+URL: https://<git-host>/<org>/<repo>/-/merge_requests/<mr-id>/diff/<file-path>?sourceObjectId=<source-sha>&targetObjectId=<target-sha>
+
+# 拉取 commit
+git fetch origin <source-sha>
+
+# 读取文件
+git show <source-sha>:<file-path>
+```
+
+注意事项：
+- `git fetch` 需要 `full_network` 权限
+- `sourceObjectId` 是 MR 源分支的 commit，通常包含新增/修改的文件
+- `targetObjectId` 是目标分支的 commit
+- 可通过 `git show <sha> --name-only --diff-filter=A` 查看该 commit 新增了哪些文件

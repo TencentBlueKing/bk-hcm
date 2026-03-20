@@ -164,6 +164,8 @@ type Set interface {
 	ResPlanTicket() resplan.ResPlanTicketInterface
 	ResPlanSubTicket() resplan.ResPlanSubTicketInterface
 	ResPlanDemand() resplan.ResPlanDemandInterface
+	ResPlanDemandGpuOrder() resplan.ResPlanDemandGpuOrderInterface
+	ResPlanDemandGpuSubOrder() resplan.ResPlanDemandGpuSubOrderInterface
 	ResPlanDemandPenaltyBase() resplan.DemandPenaltyBaseInterface
 	ResPlanDemandChangelog() resplan.DemandChangelogInterface
 	ResPlanTicketStatus() resplan.ResPlanTicketStatusInterface
@@ -173,6 +175,7 @@ type Set interface {
 	WoaZone() resplan.WoaZoneInterface
 	WoaDeviceTypePhysicalRel() resplan.WoaDeviceTypePhysicalRelInterface
 	ResPlanTransferAppliedRecord() resplan.TransferAppliedRecordInterface
+	ResPlanDemandGpuTemplate() resplan.DemandGpuTemplateInterface
 	ShortRentalReturnedRecord() shortrental.ShortRentalReturnedRecordInterface
 
 	RecycleModule() module.RecycleModule
@@ -926,6 +929,23 @@ func (s *set) ResPlanDemand() resplan.ResPlanDemandInterface {
 	}
 }
 
+// ResPlanDemandGpuOrder res plan demand gpu order dao.
+func (s *set) ResPlanDemandGpuOrder() resplan.ResPlanDemandGpuOrderInterface {
+	return &resplan.ResPlanDemandGpuOrderDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// ResPlanDemandGpuSubOrder resource plan demand gpu sub order dao.
+func (s *set) ResPlanDemandGpuSubOrder() resplan.ResPlanDemandGpuSubOrderInterface {
+	return &resplan.ResPlanDemandGpuSubOrderDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
 // ResPlanDemandPenaltyBase resource plan demand penalty base dao.
 func (s *set) ResPlanDemandPenaltyBase() resplan.DemandPenaltyBaseInterface {
 	return &resplan.DemandPenaltyBaseDao{
@@ -1004,6 +1024,14 @@ func (s *set) ResPlanTransferAppliedRecord() resplan.TransferAppliedRecordInterf
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// ResPlanDemandGpuTemplate demand gpu template dao.
+func (s *set) ResPlanDemandGpuTemplate() resplan.DemandGpuTemplateInterface {
+	return &resplan.DemandGpuTemplateDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }
 

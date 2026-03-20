@@ -823,6 +823,16 @@ func genZiYanResPlanResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 	}
 }
 
+// genZiYanResPlanGPUDemandsResource generate ziyan resource plan gpu demands
+func genZiYanResPlanGPUDemandsResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Create, meta.Update, meta.Delete, meta.Access:
+		return sys.ZiYanResPlanGPUDemands, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
 // 生成账单账号权限映射
 func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	switch a.Basic.Action {

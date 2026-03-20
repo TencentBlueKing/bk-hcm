@@ -52,34 +52,40 @@ const (
 	RootAccountAuditResType       AuditResourceType = "root_account"
 	RsAppliedRecordAuditResType   AuditResourceType = "rolling_server_applied_record"
 
-	// 自研云-云上主机
+	// CloudCvmAuditResType 自研云-云上主机
 	CloudCvmAuditResType AuditResourceType = "cloud_cvm"
+	// ResPlanGPUDemandsOrderAuditResType 自研云-GPU需求主订单
+	ResPlanGPUDemandsOrderAuditResType AuditResourceType = "res_plan_gpu_demands_order"
+	// ResPlanGPUDemandsSuborderAuditResType 自研云-GPU需求子订单
+	ResPlanGPUDemandsSuborderAuditResType AuditResourceType = "res_plan_gpu_demands_suborder"
 )
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
-	SubAccountAuditResType:        {},
-	AccountAuditResType:           {},
-	SecurityGroupAuditResType:     {},
-	SecurityGroupRuleAuditResType: {},
-	VpcCloudAuditResType:          {},
-	SubnetAuditResType:            {},
-	DiskAuditResType:              {},
-	CvmAuditResType:               {},
-	RouteTableAuditResType:        {},
-	EipAuditResType:               {},
-	GcpFirewallRuleAuditResType:   {},
-	NetworkInterfaceAuditResType:  {},
-	ArgumentTemplateAuditResType:  {},
-	SslCertAuditResType:           {},
-	LoadBalancerAuditResType:      {},
-	TargetGroupAuditResType:       {},
-	ListenerAuditResType:          {},
-	UrlRuleAuditResType:           {},
-	UrlRuleDomainAuditResType:     {},
-	MainAccountAuditResType:       {},
-	RootAccountAuditResType:       {},
-	RsAppliedRecordAuditResType:   {},
+	SubAccountAuditResType:                {},
+	AccountAuditResType:                   {},
+	SecurityGroupAuditResType:             {},
+	SecurityGroupRuleAuditResType:         {},
+	VpcCloudAuditResType:                  {},
+	SubnetAuditResType:                    {},
+	DiskAuditResType:                      {},
+	CvmAuditResType:                       {},
+	RouteTableAuditResType:                {},
+	EipAuditResType:                       {},
+	GcpFirewallRuleAuditResType:           {},
+	NetworkInterfaceAuditResType:          {},
+	ArgumentTemplateAuditResType:          {},
+	SslCertAuditResType:                   {},
+	LoadBalancerAuditResType:              {},
+	TargetGroupAuditResType:               {},
+	ListenerAuditResType:                  {},
+	UrlRuleAuditResType:                   {},
+	UrlRuleDomainAuditResType:             {},
+	MainAccountAuditResType:               {},
+	RootAccountAuditResType:               {},
+	RsAppliedRecordAuditResType:           {},
+	ResPlanGPUDemandsOrderAuditResType:    {},
+	ResPlanGPUDemandsSuborderAuditResType: {},
 }
 
 // Exist judge enum value exist.

@@ -153,6 +153,37 @@ func (b *ResourcePlanClient) DeleteDemandChangelog(kt *kit.Kit, req *dataproto.B
 		b.client, rest.DELETE, kt, req, "/res_plans/demand_changelogs/batch")
 }
 
+// --- demand gpu template ---
+
+// ListDemandGpuTemplate list demand gpu template
+func (b *ResourcePlanClient) ListDemandGpuTemplate(kt *kit.Kit, req *rpproto.DemandGpuTemplateListReq) (
+	*rpproto.DemandGpuTemplateListResult, error) {
+
+	return common.Request[rpproto.DemandGpuTemplateListReq, rpproto.DemandGpuTemplateListResult](
+		b.client, rest.POST, kt, req, "/res_plans/demand_gpu_templates/list")
+}
+
+// BatchCreateDemandGpuTemplate batch create demand gpu template
+func (b *ResourcePlanClient) BatchCreateDemandGpuTemplate(kt *kit.Kit, req *rpproto.DemandGpuTemplateBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.DemandGpuTemplateBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/demand_gpu_templates/batch/create")
+}
+
+// BatchUpdateDemandGpuTemplate batch update demand gpu template
+func (b *ResourcePlanClient) BatchUpdateDemandGpuTemplate(kt *kit.Kit,
+	req *rpproto.DemandGpuTemplateBatchUpdateReq) error {
+	return common.RequestNoResp[rpproto.DemandGpuTemplateBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/demand_gpu_templates/batch")
+}
+
+// DeleteDemandGpuTemplate delete demand gpu template
+func (b *ResourcePlanClient) DeleteDemandGpuTemplate(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/demand_gpu_templates/batch")
+}
+
 // --- res plan week ---
 
 // ListResPlanWeek list resource plan week
@@ -259,4 +290,84 @@ func (b *ResourcePlanClient) SumResPlanTransferAppliedRecord(kt *kit.Kit, req *r
 
 	return common.Request[rpproto.TransferAppliedRecordListReq, resplan.SumTransferAppliedRecord](
 		b.client, rest.POST, kt, req, "/res_plans/transfer_applied_records/sum")
+}
+
+// --- res plan demand gpu order ---
+
+// BatchCreateResPlanDemandGpuOrder batch create res plan demand gpu order
+func (b *ResourcePlanClient) BatchCreateResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuOrderBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch/create")
+}
+
+// BatchUpdateResPlanDemandGpuOrder batch update res plan demand gpu order
+func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderBatchUpdateReq) error {
+
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuOrderBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch")
+}
+
+// ListResPlanDemandGpuOrder list res plan demand gpu order
+func (b *ResourcePlanClient) ListResPlanDemandGpuOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuOrderListReq) (*rpproto.ResPlanDemandGpuOrderListResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuOrderListReq, rpproto.ResPlanDemandGpuOrderListResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_orders/list")
+}
+
+// DeleteResPlanDemandGpuOrder delete res plan demand gpu order
+func (b *ResourcePlanClient) DeleteResPlanDemandGpuOrder(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_orders/batch")
+}
+
+// --- resource plan demand gpu sub order ---
+
+// ListResPlanDemandGpuSubOrder list resource plan demand gpu sub order
+func (b *ResourcePlanClient) ListResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderListReq) (*rpproto.ResPlanDemandGpuSubOrderListResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderListReq, rpproto.ResPlanDemandGpuSubOrderListResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/list")
+}
+
+// BatchCreateResPlanDemandGpuSubOrder batch create resource plan demand gpu sub order
+func (b *ResourcePlanClient) BatchCreateResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderBatchCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch/create")
+}
+
+// BatchUpdateResPlanDemandGpuSubOrder update resource plan demand gpu sub order
+func (b *ResourcePlanClient) BatchUpdateResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq) error {
+
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuSubOrderBatchUpdateReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
+}
+
+// BatchUpdateStatusResPlanDemandGpuSubOrder batch update sub orders to the same status by id list (max 100).
+func (b *ResourcePlanClient) BatchUpdateStatusResPlanDemandGpuSubOrder(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq) error {
+
+	return common.RequestNoResp[rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq](
+		b.client, rest.PATCH, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch/status")
+}
+
+// DeleteResPlanDemandGpuSubOrder delete resource plan demand gpu sub order
+func (b *ResourcePlanClient) DeleteResPlanDemandGpuSubOrder(kt *kit.Kit, req *dataproto.BatchDeleteReq) error {
+	return common.RequestNoResp[dataproto.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
+}
+
+// OverwriteResPlanDemandGpuSubOrders atomically replaces all sub orders of an order with new ones.
+func (b *ResourcePlanClient) OverwriteResPlanDemandGpuSubOrders(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderOverwriteReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderOverwriteReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/overwrite")
 }

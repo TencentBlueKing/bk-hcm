@@ -4,8 +4,10 @@ import {
   MENU_SERVICE_HOST_APPLICATION,
   MENU_SERVICE_HOST_RECYCLE_ENTRY,
   MENU_SERVICE_HOST_RECYCLE,
+  MENU_SERVICE_RESOURCE_PLAN_CVM,
 } from '@/constants/menu-symbol';
 import ticketRoutes from '@/views/ticket/route-config';
+import { gpuDemandSrv as gpuDemandSrvRouteConfig } from '@/views/resource-plan/route-config';
 
 const { t } = i18n.global;
 
@@ -44,9 +46,9 @@ const serviceMenus: RouteRecordRaw[] = [
     path: '/service',
     children: [
       {
-        path: '/service/resource-plan',
+        path: '/service/resource-plan/cvm',
         name: 'opResourcePlan-redirect',
-        redirect: '/business/resource-plan', // 前期宣传口径为该路由，产品希望继续保持该路由并将用户重定向到业务下的资源预测功能
+        redirect: '/service/resource-plan/cvm/home',
         meta: {
           activeKey: 'opResourcePlan',
           title: t('资源预测'),
@@ -56,19 +58,19 @@ const serviceMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/service/resource-plan/home',
-        name: 'opResourcePlan',
-        component: () => import('@/views/service/resource-plan/resource-manage/list'),
+        path: '/service/resource-plan/cvm/home',
+        name: MENU_SERVICE_RESOURCE_PLAN_CVM,
+        component: () => import('@/views/resource-plan/entry-srv.vue'),
         meta: {
           activeKey: 'opResourcePlan',
           title: t('资源预测'),
           isShowBreadcrumb: true,
           icon: 'hcm-icon bkhcm-icon-resource-plan',
-          checkAuth: 'ziyan_resource_plan_manage',
+          checkAuth: ['ziyan_resource_plan_manage', 'ziyan_resource_plan_gpu_demands'],
         },
       },
       {
-        path: '/service/resource-plan/detail',
+        path: '/service/resource-plan/cvm/detail',
         name: 'opResourcePlanDetail',
         component: () => import('@/views/service/resource-plan/resource-manage/detail'),
         meta: {
@@ -77,13 +79,34 @@ const serviceMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: '/service/resource-plan/mod',
+        path: '/service/resource-plan/cvm/mod',
         name: 'modPlanList',
         component: () => import('@/views/service/resource-plan/resource-manage/mod'),
         meta: {
           activeKey: 'planlist',
           notMenu: true,
         },
+      },
+      ...gpuDemandSrvRouteConfig,
+      {
+        path: '/service/resource-plan',
+        redirect: (to) => ({ path: '/service/resource-plan/cvm/home', query: to.query }),
+        meta: { notMenu: true },
+      },
+      {
+        path: '/service/resource-plan/home',
+        redirect: (to) => ({ path: '/service/resource-plan/cvm/home', query: to.query }),
+        meta: { notMenu: true },
+      },
+      {
+        path: '/service/resource-plan/detail',
+        redirect: (to) => ({ path: '/service/resource-plan/cvm/detail', query: to.query }),
+        meta: { notMenu: true },
+      },
+      {
+        path: '/service/resource-plan/mod',
+        redirect: (to) => ({ path: '/service/resource-plan/cvm/mod', query: to.query }),
+        meta: { notMenu: true },
       },
       {
         path: '/service/hostInventory',

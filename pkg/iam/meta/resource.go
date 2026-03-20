@@ -117,6 +117,8 @@ const (
 	ZiYanResource ResourceType = "ziyan_resource"
 	// ZiYanResPlan 平台-自研云资源-资源预测
 	ZiYanResPlan ResourceType = "ziyan_resource_plan"
+	// ZiYanResPlanGPUDemands 平台管理-GPU需求
+	ZiYanResPlanGPUDemands ResourceType = "ziyan_resource_plan_gpu_demands"
 	// ZiyanResDeliverAnalyze 自研云资源-交付分析-菜单粒度
 	ZiyanResDeliverAnalyze ResourceType = "ziyan_resource_deliver_analyze"
 

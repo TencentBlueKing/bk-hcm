@@ -68,6 +68,7 @@ export type PropertyColumnConfig = {
 
 export type PropertyFormConfig = {
   rules?: object;
+  props?: Record<string, any>;
 };
 
 export type PropertySearchConfig = {

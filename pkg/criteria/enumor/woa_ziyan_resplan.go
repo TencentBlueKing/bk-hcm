@@ -933,3 +933,34 @@ func (r ResPlanReviewStatus) Validate() error {
 	}
 	return nil
 }
+
+// RPDemandGPUSubOrderStatus is resource plan demand gpu sub order status.
+type RPDemandGPUSubOrderStatus string
+
+const (
+	// RPDemandGPUSubOrderStatusInit is gpu sub order initial status.
+	RPDemandGPUSubOrderStatusInit RPDemandGPUSubOrderStatus = "INIT"
+	// RPDemandGPUSubOrderStatusPending is gpu sub order pending status.
+	RPDemandGPUSubOrderStatusPending RPDemandGPUSubOrderStatus = "PENDING"
+	// RPDemandGPUSubOrderStatusDone is gpu sub order done status.
+	RPDemandGPUSubOrderStatusDone RPDemandGPUSubOrderStatus = "DONE"
+	// RPDemandGPUSubOrderStatusReject is gpu sub order rejected status.
+	RPDemandGPUSubOrderStatusReject RPDemandGPUSubOrderStatus = "REJECT"
+	// RPDemandGPUSubOrderStatusTerminate is gpu sub order terminated status.
+	RPDemandGPUSubOrderStatusTerminate RPDemandGPUSubOrderStatus = "TERMINATE"
+)
+
+// Validate RPDemandGPUSubOrderStatus.
+func (s RPDemandGPUSubOrderStatus) Validate() error {
+	switch s {
+	case RPDemandGPUSubOrderStatusInit:
+	case RPDemandGPUSubOrderStatusPending:
+	case RPDemandGPUSubOrderStatusDone:
+	case RPDemandGPUSubOrderStatusReject:
+	case RPDemandGPUSubOrderStatusTerminate:
+	default:
+		return fmt.Errorf("unsupported resource plan demand gpu sub order status: %s", s)
+	}
+
+	return nil
+}

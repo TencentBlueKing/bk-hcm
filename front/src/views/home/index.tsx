@@ -283,12 +283,12 @@ export default defineComponent({
                           .map((child) => {
                             const { checkAuth } = child.meta || {};
 
-                            if (
-                              // 配置了 checkAuth 且不具备访问权限，隐藏菜单
-                              checkAuth &&
-                              !authVerifyData.value?.permissionAction[checkAuth as string]
-                            ) {
-                              return null;
+                            // 配置了 checkAuth 且不具备访问权限，隐藏菜单
+                            if (checkAuth) {
+                              const keys = Array.isArray(checkAuth) ? checkAuth : [checkAuth];
+                              if (!keys.some((key) => authVerifyData.value?.permissionAction[key])) {
+                                return null;
+                              }
                             }
 
                             return (
@@ -326,13 +326,14 @@ export default defineComponent({
                         );
                       }
 
-                      if (
-                        // notMenu = true，隐藏菜单
-                        notMenu ||
-                        // 配置了 checkAuth 且不具备访问权限，隐藏菜单
-                        (checkAuth && !authVerifyData.value?.permissionAction[checkAuth as string])
-                      ) {
-                        return null;
+                      // notMenu = true，隐藏菜单
+                      if (notMenu) return null;
+                      // 配置了 checkAuth 且不具备访问权限，隐藏菜单
+                      if (checkAuth) {
+                        const keys = Array.isArray(checkAuth) ? checkAuth : [checkAuth];
+                        if (!keys.some((key) => authVerifyData.value?.permissionAction[key])) {
+                          return null;
+                        }
                       }
 
                       // 正常显示菜单

@@ -90,8 +90,9 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.CosBucket:                genCosBucket,
 	meta.ResPlan:                  genResPlanResource,
 	// 自研云资源的操作-业务粒度
-	meta.ZiYanResource: genZiYanResource,
-	meta.ZiYanResPlan:  genZiYanResPlanResource,
+	meta.ZiYanResource:          genZiYanResource,
+	meta.ZiYanResPlan:           genZiYanResPlanResource,
+	meta.ZiYanResPlanGPUDemands: genZiYanResPlanGPUDemandsResource,
 	// 服务请求-服务-机房裁撤-菜单粒度
 	meta.ServiceResDissolve: genServiceResDissolveResource,
 	// CVM机型-菜单粒度

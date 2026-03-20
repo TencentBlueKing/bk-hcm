@@ -81,6 +81,7 @@ export const useCommonStore = defineStore({
 
       // 服务请求 (后端还没加，先注释)
       { type: 'ziyan_resource_plan', action: 'access', id: 'ziyan_resource_plan_manage' }, // 服务请求-管理员查看及操作权限
+      { type: 'ziyan_resource_plan_gpu_demands', action: 'access', id: 'ziyan_resource_plan_gpu_demands' }, // 服务请求-GPU需求
       { type: 'resource_plan', action: 'create', id: 'biz_resource_plan_operate', bk_biz_id: 0 }, // 业务-资源预测-新增
       { type: 'resource_plan', action: 'update', id: 'biz_resource_plan_operate', bk_biz_id: 0 }, // 业务-资源预测-修改
       { type: 'resource_plan', action: 'delete', id: 'biz_resource_plan_operate', bk_biz_id: 0 }, // 业务-资源预测-删除

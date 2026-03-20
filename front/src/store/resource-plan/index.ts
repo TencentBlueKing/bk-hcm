@@ -148,10 +148,21 @@ export const useResourcePlanStore = defineStore('resource-plan', () => {
     }
   };
 
+  const getBizOrgRelation = async (bizId: number) => {
+    return http.get(`/api/v1/woa/bizs/${bizId}/org/relation`);
+  };
+
+  const getBizsByOpProductList = async (params: { op_product_id: number }) => {
+    const res = await http.post('/api/v1/woa/metas/bizs/by/op_product/list', params);
+    return (res?.data?.details ?? []) as Array<{ bk_biz_id: number; bk_biz_name: string }>;
+  };
+
   return {
     demandListLoading,
     getDemandList,
     getOpProductList,
     getPlanProductList,
+    getBizOrgRelation,
+    getBizsByOpProductList,
   };
 });

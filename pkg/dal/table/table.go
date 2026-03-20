@@ -183,6 +183,10 @@ const (
 	ResPlanTicketTable = "res_plan_ticket"
 	// ResPlanDemandTable is res_plan_demand table's name.
 	ResPlanDemandTable = "res_plan_demand"
+	// ResPlanDemandGpuOrderTable is res_plan_demand_gpu_order table's name.
+	ResPlanDemandGpuOrderTable = "res_plan_demand_gpu_order"
+	// ResPlanDemandGpuSubOrderTable is res_plan_demand_gpu_suborder table's name.
+	ResPlanDemandGpuSubOrderTable = "res_plan_demand_gpu_suborder"
 	// ResPlanTicketStatusTable is res_plan_ticket_status table's name.
 	ResPlanTicketStatusTable = "res_plan_ticket_status"
 	// WoaZoneTable is woa_zone table's name.
@@ -205,6 +209,8 @@ const (
 	ResPlanTransferAppliedRecordTable = "res_plan_transfer_applied_record"
 	// ResPlanSubTicketTable is res_plan_sub_ticket table's name.
 	ResPlanSubTicketTable = "res_plan_sub_ticket"
+	// ResPlanDemandGpuTemplateTable is res_plan_demand_gpu_template table's name.
+	ResPlanDemandGpuTemplateTable = "res_plan_demand_gpu_template"
 	// ShortRentalReturnedRecordTable is short_rental_returned_record table's name.
 	ShortRentalReturnedRecordTable = "short_rental_returned_record"
 
@@ -402,6 +408,8 @@ var TableMap = map[Name]TableConfig{
 	// TODO 内部版独有的表，有待梳理是否启用多租户
 	ResPlanTicketTable:                {},
 	ResPlanDemandTable:                {},
+	ResPlanDemandGpuOrderTable:        {},
+	ResPlanDemandGpuSubOrderTable:     {},
 	ResPlanTicketStatusTable:          {},
 	WoaZoneTable:                      {},
 	DeviceTypeTable:                   {},
@@ -413,6 +421,7 @@ var TableMap = map[Name]TableConfig{
 	ResPlanWeekTable:                  {},
 	ResPlanTransferAppliedRecordTable: {},
 	ResPlanSubTicketTable:             {},
+	ResPlanDemandGpuTemplateTable:     {},
 	ShortRentalReturnedRecordTable:    {},
 
 	MainAccountTable: {EnableTenant: true},

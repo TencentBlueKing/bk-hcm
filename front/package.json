@@ -33,6 +33,7 @@
     "dayjs": "1.11.3",
     "echarts": "6.0.0",
     "file-saver": "2.0.5",
+    "hot-formula-parser": "4.0.0",
     "ipaddr.js": "2.1.0",
     "js-cookie": "3.0.5",
     "lodash": "4.17.21",
