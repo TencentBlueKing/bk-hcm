@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0069,HCMVER=v1.8.10.3
 
     Notes:
     1. 新增 res_plan_demand_gpu_order 表
@@ -100,6 +100,6 @@ VALUES ('res_plan_demand_gpu_order', '0'),
        ('res_plan_demand_gpu_template', '0');
 
 CREATE OR REPLACE VIEW `hcm_version` (`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' AS `hcm_ver`, '9999' AS `sql_ver`;
+SELECT 'v1.8.10.3' AS `hcm_ver`, '0069' AS `sql_ver`;
 
 COMMIT;
