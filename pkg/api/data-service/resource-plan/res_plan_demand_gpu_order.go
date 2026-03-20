@@ -121,3 +121,4 @@ func (r *ResPlanDemandGpuOrderListReq) Validate() error {
 
 // ResPlanDemandGpuOrderListResult list result.
 type ResPlanDemandGpuOrderListResult types.ListResult[rpgpu.ResPlanDemandGpuOrderTable]
+

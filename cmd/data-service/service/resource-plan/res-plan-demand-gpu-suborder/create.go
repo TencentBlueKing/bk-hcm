@@ -62,14 +62,16 @@ func (svc *service) BatchCreateResPlanDemandGpuSubOrder(cts *rest.Contexts) (int
 	if err != nil {
 		logs.Errorf("create resource plan demand gpu sub order but return ids type not []string, err: %v, rid: %s",
 			err, cts.Kit.Rid)
-		return nil, fmt.Errorf("create resource plan demand gpu sub order but return ids type not []string, err: %v", err)
+		return nil, fmt.Errorf("create resource plan demand gpu sub order but return ids type not []string, err: %v",
+			err)
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 func (svc *service) batchCreateResPlanDemandGpuSubOrderWithTx(kt *kit.Kit, txn *sqlx.Tx,
-	createReqs []rpproto.ResPlanDemandGpuSubOrderCreateReq) ([]string, error) {
+	createReqs []rpproto.ResPlanDemandGpuSubOrderCreateReq,
+) ([]string, error) {
 
 	models := make([]tablers.ResPlanDemandGpuSubOrderTable, len(createReqs))
 	for idx, item := range createReqs {

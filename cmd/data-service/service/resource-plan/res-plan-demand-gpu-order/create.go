@@ -22,6 +22,7 @@ package resplandemandgpuorder
 import (
 	"fmt"
 
+	rpaudit "hcm/cmd/data-service/service/audit/cloud/resource-plan"
 	"hcm/pkg/api/core"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
 	"hcm/pkg/criteria/errf"
@@ -67,7 +68,21 @@ func (svc *service) BatchCreateResPlanDemandGpuOrder(cts *rest.Contexts) (interf
 			return nil, err
 		}
 
-		return recordIDs, nil
+		strIDs, err := util.GetStrSliceByInterface(recordIDs)
+		if err != nil {
+			return nil, fmt.Errorf("convert record ids to []string failed, err: %v", err)
+		}
+		for i := range models {
+			models[i].ID = strIDs[i]
+		}
+
+		audits := rpaudit.GpuOrderCreateAudits(cts.Kit, models)
+		if err = svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
+			logs.Errorf("batch create gpu order audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		return strIDs, nil
 	})
 	if err != nil {
 		logs.Errorf("batch create res plan demand gpu order txn failed, err: %v, rid: %s", err, cts.Kit.Rid)

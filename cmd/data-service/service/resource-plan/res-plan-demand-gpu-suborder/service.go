@@ -44,6 +44,8 @@ func InitService(cap *capability.Capability) {
 		"/res_plans/res_plan_demand_gpu_suborders/batch", svc.BatchUpdateResPlanDemandGpuSubOrder)
 	h.Add("BatchUpdateStatusResPlanDemandGpuSubOrder", http.MethodPatch,
 		"/res_plans/res_plan_demand_gpu_suborders/batch/status", svc.BatchUpdateStatusResPlanDemandGpuSubOrder)
+	h.Add("OverwriteResPlanDemandGpuSubOrders", http.MethodPost,
+		"/res_plans/res_plan_demand_gpu_suborders/overwrite", svc.OverwriteResPlanDemandGpuSubOrders)
 
 	h.Load(cap.WebService)
 }

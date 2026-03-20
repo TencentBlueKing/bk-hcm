@@ -45,6 +45,29 @@ type ResourcePlan struct {
 	dao dao.Set
 }
 
+// GpuOrderCreateAudits builds create audit entries for GPU demand main orders.
+func GpuOrderCreateAudits(kt *kit.Kit, models []rpgpuorder.ResPlanDemandGpuOrderTable) []*tableaudit.AuditTable {
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, m := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:    m.ID,
+			ResType:  enumor.ResPlanGPUDemandsOrderAuditResType,
+			Action:   enumor.Create,
+			BkBizID:  m.BkBizID,
+			Vendor:   enumor.Ziyan,
+			Operator: kt.User,
+			Source:   kt.GetRequestSource(),
+			Rid:      kt.Rid,
+			AppCode:  kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: m,
+			},
+		})
+	}
+
+	return audits
+}
+
 // ResPlanDemandGpuOrderUpdateAuditBuild resource plan demand gpu order update audit build.
 func (r *ResourcePlan) ResPlanDemandGpuOrderUpdateAuditBuild(kt *kit.Kit,
 	updates []protoaudit.CloudResourceUpdateInfo) ([]*tableaudit.AuditTable, error) {

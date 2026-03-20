@@ -363,3 +363,11 @@ func (b *ResourcePlanClient) DeleteResPlanDemandGpuSubOrder(kt *kit.Kit, req *da
 	return common.RequestNoResp[dataproto.BatchDeleteReq](
 		b.client, rest.DELETE, kt, req, "/res_plans/res_plan_demand_gpu_suborders/batch")
 }
+
+// OverwriteResPlanDemandGpuSubOrders atomically replaces all sub orders of an order with new ones.
+func (b *ResourcePlanClient) OverwriteResPlanDemandGpuSubOrders(kt *kit.Kit,
+	req *rpproto.ResPlanDemandGpuSubOrderOverwriteReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[rpproto.ResPlanDemandGpuSubOrderOverwriteReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/res_plans/res_plan_demand_gpu_suborders/overwrite")
+}

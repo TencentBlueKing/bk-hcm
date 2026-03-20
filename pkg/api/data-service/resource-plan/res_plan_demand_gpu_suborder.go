@@ -21,8 +21,6 @@
 package resourceplan
 
 import (
-	"errors"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -33,7 +31,7 @@ import (
 
 // ResPlanDemandGpuSubOrderBatchCreateReq create request.
 type ResPlanDemandGpuSubOrderBatchCreateReq struct {
-	SubOrders []ResPlanDemandGpuSubOrderCreateReq `json:"sub_orders" validate:"required,min=1,max=100"`
+	SubOrders []ResPlanDemandGpuSubOrderCreateReq `json:"sub_orders" validate:"required,min=1,max=1000"`
 }
 
 // Validate validate.
@@ -59,10 +57,10 @@ type ResPlanDemandGpuSubOrderCreateReq struct {
 	OpProductName string                           `json:"op_product_name" validate:"required,lte=64"`
 	TemplateID    string                           `json:"template_id" validate:"required,lte=32"`
 	DemandType    string                           `json:"demand_type" validate:"required"`
-	DemandYear    int64                            `json:"demand_year"`
-	DemandMonth   int64                            `json:"demand_month"`
-	GPUNum        int64                            `json:"gpu_num"`
-	QpmMax        int64                            `json:"qpm_max"`
+	DemandYear    int64                            `json:"demand_year" validate:"min=0"`
+	DemandMonth   int64                            `json:"demand_month" validate:"min=1,max=12"`
+	GPUNum        int64                            `json:"gpu_num" validate:"min=0"`
+	QpmMax        int64                            `json:"qpm_max" validate:"min=0"`
 	Status        enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
 	Comment       *ttypes.JsonField                `json:"comment"`
 	Extension     ttypes.JsonField                 `json:"extension" validate:"required"`
@@ -74,22 +72,6 @@ type ResPlanDemandGpuSubOrderCreateReq struct {
 func (r *ResPlanDemandGpuSubOrderCreateReq) Validate() error {
 	if err := r.Status.Validate(); err != nil {
 		return err
-	}
-
-	if r.DemandYear < 0 {
-		return errors.New("demand_year should be >= 0")
-	}
-
-	if r.DemandMonth < 0 || r.DemandMonth > 12 {
-		return errors.New("demand_month should be >= 0 and <= 12")
-	}
-
-	if r.GPUNum < 0 {
-		return errors.New("gpu_num should be >= 0")
-	}
-
-	if r.QpmMax < 0 {
-		return errors.New("qpm_max should be >= 0")
 	}
 
 	return validator.Validate.Struct(r)
@@ -142,22 +124,6 @@ func (r *ResPlanDemandGpuSubOrderUpdateReq) Validate() error {
 		}
 	}
 
-	if r.DemandYear < 0 {
-		return errors.New("demand_year should be >= 0")
-	}
-
-	if r.DemandMonth < 0 || r.DemandMonth > 12 {
-		return errors.New("demand_month should be >= 0 and <= 12")
-	}
-
-	if r.GPUNum < 0 {
-		return errors.New("gpu_num should be >= 0")
-	}
-
-	if r.QpmMax < 0 {
-		return errors.New("qpm_max should be >= 0")
-	}
-
 	return validator.Validate.Struct(r)
 }
 
@@ -187,4 +153,25 @@ type ResPlanDemandGpuSubOrderListReq struct {
 // Validate validate.
 func (r *ResPlanDemandGpuSubOrderListReq) Validate() error {
 	return r.ListReq.Validate()
+}
+
+// ResPlanDemandGpuSubOrderOverwriteReq atomically replaces all sub orders of an order with new ones.
+type ResPlanDemandGpuSubOrderOverwriteReq struct {
+	OrderID   string                              `json:"order_id" validate:"required"`
+	SubOrders []ResPlanDemandGpuSubOrderCreateReq `json:"sub_orders" validate:"required,min=1,max=1000"`
+}
+
+// Validate validate.
+func (r *ResPlanDemandGpuSubOrderOverwriteReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	for _, item := range r.SubOrders {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

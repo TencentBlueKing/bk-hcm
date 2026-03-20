@@ -219,4 +219,10 @@ func (s *service) initBizPlanService(h *rest.Handler) {
 		"/plans/resources/gpu/demands/orders/list", s.ListBizResPlanDemandGpuOrder)
 	h.Add("BatchTerminateBizResPlanDemandGpuOrder", http.MethodPost,
 		"/plans/resources/gpu/demands/orders/batch/terminate", s.BatchTerminateBizResPlanDemandGpuOrder)
+	// gpu demand excel import
+	h.Add("ExcelImportGpuDemand", http.MethodPost, "/plans/resources/gpu/excel/import", s.ExcelImportGpuDemand)
+	// gpu demand order
+	h.Add("CreateGpuDemandOrder", http.MethodPost, "/plans/resources/gpu/order/create", s.CreateGpuDemandOrder)
+	h.Add("OverwriteGpuDemandOrder", http.MethodPatch,
+		"/plans/resources/gpu/order/overwrite", s.OverwriteGpuDemandOrder)
 }

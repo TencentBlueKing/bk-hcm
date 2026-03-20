@@ -218,8 +218,8 @@ type Controller struct {
 
 // New creates a resource plan ticket controller instance.
 func New(sd serviced.State, client *client.ClientSet, dao dao.Set, cmsiCli cmsi.Client, itsmCli itsm.Client,
-	finOpsCli finops.Client, crpCli cvmapi.CVMClientInterface, bizLogic biz.Logics) (Logics, error) {
-
+	finOpsCli finops.Client, crpCli cvmapi.CVMClientInterface, bizLogic biz.Logics,
+) (Logics, error) {
 	var itsmFlowCfg cc.ItsmFlow
 	for _, itsmFlow := range cc.WoaServer().ItsmFlows {
 		if itsmFlow.ServiceName == enumor.TicketSvcNameResPlan {
@@ -429,7 +429,6 @@ CPU变更核数：%d
 
 // ApproveTicketITSMByBiz 审批 预测单itsm节点
 func (c *Controller) ApproveTicketITSMByBiz(kt *kit.Kit, ticketID string, param *itsm.ApproveNodeOpt) error {
-
 	if err := c.itsmCli.ApproveNode(kt, param); err != nil {
 		logs.Errorf("failed to approve itsm node of plan ticket %s, err: %v, rid: %s", ticketID, err, kt.Rid)
 		return err
