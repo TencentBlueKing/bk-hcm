@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { Message } from 'bkui-vue';
-// import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-// import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
-import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
+import type { IPermissionPolicyItem } from '../../typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-// import { useUserStore } from '@/store/user';
-// import { SITE_TYPE } from '@/constants/account';
+import { isJSON } from '@/utils';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -15,17 +12,14 @@ const model = defineModel<boolean>();
 // Props 定义
 const props = defineProps<{
   isEdit?: boolean;
-  accountData?: ISecondaryAccountItem | null;
+  accountData?: IPermissionPolicyItem | null;
 }>();
 
 // Emits 定义
 const emit = defineEmits<{
-  success: [updatedData?: ISecondaryAccountItem];
+  success: [updatedData?: IPermissionPolicyItem];
 }>();
 
-// Store 和 Hooks
-const cloudAccountStore = useCloudAccountStore();
-// const userStore = useUserStore();
 const { getBizsId } = useWhereAmI();
 
 // 表单引用
@@ -34,47 +28,39 @@ const formRef = ref();
 // 提交加载状态
 const submitLoading = ref(false);
 
+// 是否是粘贴得数据
+const isPaste = ref(false);
+
 // 表单数据
-const formData = ref({
+const formData = ref<IPermissionPolicyItem>({
+  id: '',
   name: '',
-  desc: '',
+  description: '',
   bk_biz_id: getBizsId() as number | undefined,
   usage_biz_ids: getBizsId() ? [getBizsId()] : ([] as number[]),
-  memo: '',
+  json: '',
 });
 
 // 侧栏标题
 const sidesliderTitle = computed(() => (props.isEdit ? '编辑权限策略库' : '新建权限策略库'));
 
-// 使用业务校验器：必须包含管理业务
-const usageBizValidator = (value: number[]) => {
-  const manageBizId = formData.value.bk_biz_id;
-  if (manageBizId !== undefined && manageBizId !== null) {
-    if (!value || !value.includes(manageBizId)) {
-      return false;
-    }
-  }
-  return true;
-};
-
 // 表单校验规则
 const formRules = {
   name: [{ required: true, message: '请输入权限策略库名称', trigger: 'blur' }],
-  desc: [{ required: true, message: '请输入权限策略库描述', trigger: 'blur' }],
-  usage_biz_ids: [
-    { required: true },
-    { validator: usageBizValidator, trigger: 'change', message: '使用业务必须包含当前选择的管理业务' },
-  ],
+  description: [{ required: true, message: '请输入权限策略库描述', trigger: 'blur' }],
+  usage_biz_ids: [{ required: true, message: '请选择使用业务', trigger: 'blur' }],
+  memo: [{ required: true }, { validator: isJSON, trigger: 'change', message: '请输入正确得JSON' }],
 };
 
 // 重置表单
 const resetForm = () => {
   formData.value = {
+    id: '',
     name: '',
-    desc: '',
+    description: '',
     bk_biz_id: getBizsId(),
     usage_biz_ids: getBizsId() ? [getBizsId()] : [],
-    memo: '',
+    json: '',
   };
   nextTick(() => {
     formRef.value?.clearValidate();
@@ -86,11 +72,12 @@ const fillEditData = () => {
   if (props.isEdit && props.accountData) {
     const data = props.accountData;
     formData.value = {
+      id: data.id || '',
       name: data.name || '',
-      desc: data.desc || [],
+      description: data.description || '',
       bk_biz_id: data.bk_biz_id,
       usage_biz_ids: data.usage_biz_ids || [],
-      memo: data.memo || '',
+      json: data.json || '',
     };
   }
 };
@@ -99,12 +86,10 @@ const fillEditData = () => {
 watch(
   () => model.value,
   (newVal) => {
-    if (newVal) {
-      if (props.isEdit) {
-        fillEditData();
-      } else {
-        resetForm();
-      }
+    if (newVal && props.isEdit) {
+      fillEditData();
+    } else {
+      resetForm();
     }
   },
 );
@@ -123,35 +108,22 @@ const handleSubmit = async () => {
     // 真实接口调用
     if (props.isEdit) {
       // 编辑接口
-      await cloudAccountStore.updateSecondaryAccount(getBizsId(), props.accountData!.id, {
-        name: formData.value.name,
-        desc: formData.value.desc,
-        bk_biz_id: formData.value.bk_biz_id,
-        usage_biz_ids: formData.value.usage_biz_ids,
-        memo: formData.value.memo,
-      });
+      // TODO: 替换为真实API调用
+      // const list = await permissionPolicyStore.updatePermissionPolicy(getBizsId(), vendorFilter);
       Message({ theme: 'success', message: '编辑成功' });
       // 编辑模式时，返回更新后的数据
-      const updatedData: ISecondaryAccountItem = {
+      const updatedData: IPermissionPolicyItem = {
         ...props.accountData!,
         name: formData.value.name,
-        desc: formData.value.desc,
         bk_biz_id: formData.value.bk_biz_id || 0,
-        usage_biz_ids: formData.value.usage_biz_ids,
-        memo: formData.value.memo,
         updated_at: new Date().toISOString(),
       };
       model.value = false;
       emit('success', updatedData);
     } else {
       // 录入接口
-      await cloudAccountStore.createSecondaryAccount(getBizsId(), {
-        name: formData.value.name,
-        desc: formData.value.desc,
-        bk_biz_id: formData.value.bk_biz_id,
-        usage_biz_ids: formData.value.usage_biz_ids,
-        memo: formData.value.memo,
-      });
+      // TODO: 替换为真实API调用
+      // const list = await permissionPolicyStore.createPermissionPolicy(getBizsId(), vendorFilter);
       Message({ theme: 'success', message: '新建成功' });
       model.value = false;
       emit('success');
@@ -164,6 +136,19 @@ const handleSubmit = async () => {
   }
 };
 
+const handlePaste = () => {
+  isPaste.value = true;
+};
+const handleInput = (val: string) => {
+  if (isPaste.value) {
+    if (isJSON(val)) {
+      formData.value.json = JSON.stringify(JSON.parse(val), null, 2);
+    }
+    isPaste.value = false;
+    return;
+  }
+};
+
 // 取消
 const handleCancel = () => {
   model.value = false;
@@ -173,7 +158,7 @@ const handleCancel = () => {
 <template>
   <bk-sideslider v-model:is-show="model" :title="sidesliderTitle" :width="640" quick-close>
     <template #default>
-      <div class="account-form-container">
+      <div class="policy-form-container">
         <bk-form ref="formRef" :model="formData" :rules="formRules" form-type="vertical">
           <!-- 权限策略库名称 -->
           <bk-form-item label="权限策略库名称" property="name" required>
@@ -191,18 +176,20 @@ const handleCancel = () => {
             />
           </bk-form-item>
 
-          <!-- 权限策略库名称 -->
-          <bk-form-item label="权限策略库名称" property="name" required>
-            <bk-input v-model="formData.name" placeholder="请输入权限策略库名称" />
+          <!-- 权限策略库描述 -->
+          <bk-form-item label="权限策略库描述" property="description" required>
+            <bk-input v-model="formData.name" placeholder="请输入权限策略库描述" />
           </bk-form-item>
 
           <!-- 权限策略 -->
-          <bk-form-item label="权限策略" property="memo">
+          <bk-form-item label="权限策略" property="json">
             <bk-input
-              v-model="formData.memo"
+              v-model="formData.json"
               type="textarea"
               placeholder="请输入权限策略"
               style="height: 350px; overflow-y: auto"
+              @paste="handlePaste"
+              @input="handleInput"
             />
           </bk-form-item>
         </bk-form>
@@ -219,7 +206,7 @@ const handleCancel = () => {
 </template>
 
 <style lang="scss" scoped>
-.account-form-container {
+.policy-form-container {
   padding: 24px 40px 0;
 
   :deep(.bk-form-item) {

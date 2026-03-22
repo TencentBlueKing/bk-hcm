@@ -5,12 +5,11 @@ import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
-import type { ISecondaryAccountItem } from '@/store/cloud-account';
-import BusinessValue from '@/components/display-value/business-value.vue';
+import type { IPermissionPolicyItem, IRelatedAccount } from '../../typings';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
-  list: ISecondaryAccountItem[];
+  list: IPermissionPolicyItem[];
   pagination: PaginationType;
   loading?: boolean;
 }
@@ -21,45 +20,41 @@ const props = withDefaults(defineProps<IDataListProps>(), {
 
 // 定义事件
 const emit = defineEmits<{
-  'view-details': [row: ISecondaryAccountItem];
-  'edit-account': [row: ISecondaryAccountItem];
+  'view-details': [row: IPermissionPolicyItem];
+  'apply-to-account': [row: IPermissionPolicyItem];
+  'edit-account': [row: IPermissionPolicyItem];
 }>();
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-// 格式化邮箱展示（脱敏处理）
-const formatEmail = (email: string) => {
-  if (!email) return '--';
-  const atIndex = email.indexOf('@');
-  if (atIndex <= 3) return email;
-  const prefix = email.substring(0, 3);
-  const suffix = email.substring(atIndex);
-  return `${prefix}***${suffix}`;
-};
-
-// 格式化数组展示
-const formatArray = (arr: any[]) => {
-  if (!arr || !arr.length) return '--';
-  return arr.join(', ');
-};
-
-// 查看详情 - 触发事件
-const handleViewDetails = (row: ISecondaryAccountItem) => {
+// 查看详情
+const handleViewDetails = (row: IPermissionPolicyItem) => {
   emit('view-details', row);
 };
 
-// 编辑账号 - 触发事件
-const handleEditAccount = (row: ISecondaryAccountItem) => {
+// 应用到二级账号
+const handleApplyToAccount = (row: IPermissionPolicyItem) => {
+  emit('apply-to-account', row);
+};
+
+// 编辑
+const handleEditAccount = (row: IPermissionPolicyItem) => {
   emit('edit-account', row);
 };
 
-// 自定义渲染列
+// 跳转二级账号详情（新开标签页）
+const handleGoToAccount = (account: IRelatedAccount) => {
+  // TODO: 替换为真实路由，跳转到三级账号页面
+  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${account.account_id}`;
+  window.open(url, '_blank');
+};
+
+// 判断是否为需要自定义渲染的列（排除 related_account_count，它在 template 中单独处理）
 const getColumnRender = (column: ModelPropertyColumn) => {
-  // 名称列 - 点击打开详情侧栏
   if (column.id === 'name') {
-    return ({ row }: { row: ISecondaryAccountItem }) =>
+    return ({ row }: { row: IPermissionPolicyItem }) =>
       h(
         Button,
         {
@@ -70,46 +65,11 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         () => row.name || '--',
       );
   }
-  // 邮箱列 - 脱敏处理
-  if (column.id === 'email') {
-    return ({ row }: { row: ISecondaryAccountItem }) => formatEmail(row.email);
-  }
-  // 负责人、安全负责人列 - 数组展示
-  if (column.id === 'managers' || column.id === 'security_managers') {
-    return ({ row }: { row: ISecondaryAccountItem }) => formatArray(row[column.id]);
-  }
-  // 使用业务列 - 使用 BusinessValue 组件，tag 模式展示
-  if (column.id === 'usage_biz_ids') {
-    return ({ row }: { row: ISecondaryAccountItem }) =>
-      h(BusinessValue, {
-        value: row.usage_biz_ids,
-        display: { appearance: 'tag' },
-      });
-  }
-  // 三级账号数、密钥数 - 普通标签样式
-  if (column.id === 'sub_account_count' || column.id === 'account_secret_count') {
-    return ({ row }: { row: ISecondaryAccountItem }) => {
-      const value = row[column.id as keyof ISecondaryAccountItem] ?? 0;
-      return h('span', { style: { color: '#3A84FF' } }, value);
-    };
-  }
-  // 资源纳管状态列 - 标签样式
-  if (column.id === 'sync_status') {
-    return ({ row }: { row: ISecondaryAccountItem }) => {
-      const statusMap: Record<string, { class: string; text: string }> = {
-        sync_success: { class: 'status-tag status-tag-success', text: '同步成功' },
-        sync_failed: { class: 'status-tag status-tag-failed', text: '同步失败' },
-        not_sync: { class: 'status-tag status-tag-not-sync', text: '未同步' },
-        syncing: { class: 'status-tag status-tag-syncing', text: '同步中' },
-        managed: { class: 'status-tag status-tag-managed', text: '已纳管' },
-        unmanaged: { class: 'status-tag status-tag-unmanaged', text: '未纳管' },
-      };
-      const status = statusMap[row.sync_status] || { class: '', text: row.sync_status || '--' };
-      return h('span', { class: status.class }, status.text);
-    };
-  }
   return null;
 };
+
+// 判断列是否为关联二级账号数
+const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'related_account_count';
 </script>
 
 <template>
@@ -139,17 +99,49 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         v-bind="column"
       >
         <template #default="{ row }">
-          <template v-if="getColumnRender(column)">
+          <!-- 关联二级账号数 - hover 弹出账号列表 -->
+          <template v-if="isRelatedAccountColumn(column)">
+            <bk-popover
+              v-if="row.related_accounts?.length"
+              theme="light"
+              trigger="hover"
+              placement="auto"
+              :popover-delay="[200, 150]"
+              :max-height="240"
+              :arrow="true"
+              ext-cls="related-account-popover"
+            >
+              <span class="related-count-link">{{ row.related_account_count ?? 0 }}</span>
+              <template #content>
+                <div class="related-account-list">
+                  <div
+                    v-for="account in row.related_accounts"
+                    :key="account.account_id"
+                    class="related-account-item"
+                    @click="handleGoToAccount(account)"
+                  >
+                    <span class="account-id">{{ account.account_id }}</span>
+                    <i class="hcm-icon bkhcm-icon-jump-fill account-link-icon" />
+                  </div>
+                </div>
+              </template>
+            </bk-popover>
+            <span v-else class="related-count-zero">{{ row.related_account_count ?? 0 }}</span>
+          </template>
+          <!-- 其他自定义渲染列 -->
+          <template v-else-if="getColumnRender(column)">
             <component :is="() => getColumnRender(column)({ row })" />
           </template>
+          <!-- 默认渲染 -->
           <template v-else>
             <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
           </template>
         </template>
       </bk-table-column>
-      <bk-table-column label="操作" width="100" fixed="right">
+      <bk-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
           <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
+          <bk-button theme="primary" text @click="handleApplyToAccount(row)">应用到二级账号</bk-button>
         </template>
       </bk-table-column>
     </bk-table>
@@ -157,51 +149,52 @@ const getColumnRender = (column: ModelPropertyColumn) => {
 </template>
 
 <style lang="scss" scoped>
-// 状态标签基础样式
-:deep(.status-tag) {
-  display: inline-block;
-  height: 18px;
-  line-height: 18px;
-  padding: 0 8px;
-  border-radius: 9px;
-  font-size: 12px;
-}
-
-// 同步成功 / 已纳管 - 绿色
-:deep(.status-tag-success),
-:deep(.status-tag-managed) {
-  color: #2dcb56;
-  background-color: #daf6e5;
-}
-
-// 同步失败 - 红色
-:deep(.status-tag-failed) {
-  color: #ea3636;
-  background-color: #fdd;
-}
-
-// 未同步 / 未纳管 - 灰色
-:deep(.status-tag-not-sync),
-:deep(.status-tag-unmanaged) {
-  color: #4d4f56;
-  background-color: #f0f1f5;
-}
-
-// 同步中 - 蓝色
-:deep(.status-tag-syncing) {
+.related-count-link {
   color: #3a84ff;
-  background-color: #e1ecff;
+  cursor: pointer;
 }
 
-// 数量标签 - 蓝色
-:deep(.count-tag) {
-  display: inline-block;
-  height: 18px;
-  line-height: 18px;
-  padding: 0 8px;
-  border-radius: 9px;
-  font-size: 12px;
-  color: #3a84ff;
-  background-color: #e1ecff;
+.related-count-zero {
+  color: #63656e;
+}
+</style>
+
+<style lang="scss">
+.related-account-popover {
+  padding: 8px !important;
+
+  .related-account-list {
+    max-height: 220px;
+    overflow-y: auto;
+
+    // padding: 4px 0;
+
+    .related-account-item {
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      height: 36px;
+      line-height: 20px;
+      cursor: pointer;
+      transition: background-color 0.15s;
+
+      &:hover {
+        background-color: #f0f1f5;
+      }
+
+      .account-id {
+        font-size: 12px;
+        color: #4d4f56;
+        margin-right: 8px;
+      }
+
+      .account-link-icon {
+        font-size: 16px;
+        color: #3a84ff;
+        flex-shrink: 0;
+        font-weight: 400 !important;
+      }
+    }
+  }
 }
 </style>

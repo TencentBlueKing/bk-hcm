@@ -26,7 +26,6 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   // 其他Tab组件待开发
   // 'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
-  // 'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
 };
 
 // 当前Tab对应的组件
@@ -111,8 +110,8 @@ provide('currentVendor', currentVendor);
 
       .bk-tab-header {
         padding: 0 24px;
-
-        // background: #fff;
+        background: #fff;
+        border-bottom: none;
       }
 
       .bk-tab-content {

@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, watch, inject, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// import { Message, InfoBox } from 'bkui-vue';
-import { Plus } from 'bkui-vue/lib/icon';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
-import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
-// import AccountDetailSideslider from './children/account-detail-sideslider/index.vue';
 import PolicyFormSideslider from './children/policy-form-sideslider/index.vue';
+import PolicyInfoSideslider from './children/policy-form-sideslider/info.vue';
+import ApplySideslider from './children/apply-sideslider/index.vue';
+import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
+import type { IPermissionPolicyItem } from './typings';
+import { ENABLE_MOCK, MOCK_PERMISSION_POLICY_LIST } from './constants';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -25,8 +26,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const cloudAccountStore = useCloudAccountStore();
-const { getBizsId } = useWhereAmI();
+const { getBizsId: _getBizsId } = useWhereAmI();
 
 // 创建模型实例
 const searchModel = SearchConditionFactory.createModel();
@@ -42,10 +42,10 @@ const columns = computed<ModelPropertyColumn[]>(() => columnModel.getProperties(
 const condition = ref<ISearchCondition>({});
 
 // 全量数据（用于前端分页）
-const fullList = ref<ISecondaryAccountItem[]>([]);
+const fullList = ref<IPermissionPolicyItem[]>([]);
 
 // 当前页展示的数据
-const tableData = ref<ISecondaryAccountItem[]>([]);
+const tableData = ref<IPermissionPolicyItem[]>([]);
 
 // 排序参数
 const sortParams = ref<{ sort: string; order: string }>({ sort: 'created_at', order: 'DESC' });
@@ -81,7 +81,7 @@ const loadFullList = async () => {
 
     // 构建 filter，加入云厂商 vendor 条件
     const baseFilter = transformSimpleCondition(condition.value, searchFields.value);
-    const vendorFilter: QueryFilterType = {
+    const _vendorFilter: QueryFilterType = {
       op: 'and',
       rules: [
         ...((baseFilter?.rules || []) as RulesItem[]),
@@ -93,23 +93,38 @@ const loadFullList = async () => {
       ],
     };
 
-    // 使用 rollRequest 获取全量数据
-    const list = await cloudAccountStore.getSecondaryAccountFullList(
-      getBizsId(),
-      vendorFilter,
-      (progressList, count) => {
-        // 进度回调：每批次数据返回时更新
-        fullList.value = progressList;
-        pagination.count = count;
-        updateTableData();
-      },
-    );
+    if (ENABLE_MOCK) {
+      // Mock 模式：使用本地模拟数据，并根据搜索条件前端过滤
+      let mockData = MOCK_PERMISSION_POLICY_LIST.filter((item) => item.vendor === currentVendor.value);
 
-    fullList.value = list;
-    pagination.count = list.length;
+      // 前端搜索过滤
+      const cond = condition.value;
+      if (cond.name) {
+        mockData = mockData.filter((item) => item.name.toLowerCase().includes(cond.name.toLowerCase()));
+      }
+      if (cond.description) {
+        mockData = mockData.filter((item) => item.description.includes(cond.description));
+      }
+      if (cond.creator) {
+        mockData = mockData.filter((item) => item.creator === cond.creator);
+      }
+      if (cond.reviser) {
+        mockData = mockData.filter((item) => item.reviser === cond.reviser);
+      }
+
+      fullList.value = mockData;
+      pagination.count = mockData.length;
+      updateTableData();
+      return;
+    }
+
+    // TODO: 替换为真实API调用
+    // const list = await permissionPolicyStore.getPermissionPolicyFullList(getBizsId(), vendorFilter);
+    fullList.value = [];
+    pagination.count = 0;
     updateTableData();
   } catch (error) {
-    console.error('获取账号列表失败:', error);
+    console.error('获取权限策略库列表失败:', error);
     fullList.value = [];
     tableData.value = [];
     pagination.count = 0;
@@ -136,10 +151,8 @@ watch(
     const isRefresh = query._t !== undefined;
 
     if (conditionChanged || fullList.value.length === 0 || isRefresh) {
-      // 搜索条件变化或首次加载或刷新，重新拉取全量数据
       await loadFullList();
     } else {
-      // 仅分页/排序变化，前端处理
       updateTableData();
     }
   },
@@ -151,7 +164,7 @@ watch(
   () => currentVendor.value,
   () => {
     pagination.current = 1;
-    fullList.value = []; // 清空全量数据，触发重新加载
+    fullList.value = [];
     const query = { ...route.query };
     delete query.page;
     query._t = String(Date.now());
@@ -160,20 +173,31 @@ watch(
 );
 
 // 加载状态
-const isLoading = computed(() => cloudAccountStore.accountListLoading);
+const isLoading = ref(false);
 
-// 详情侧栏状态
-const showDetailSideslider = ref(false);
-const currentAccount = ref<ISecondaryAccountItem | null>(null);
+const showApplySideslider = ref(false);
+const showPolicyInfoSideslider = ref(false);
+const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
 
-const handleViewDetails = (row: ISecondaryAccountItem) => {
-  currentAccount.value = row;
-  showDetailSideslider.value = true;
+const handleApplyToAccount = (row: IPermissionPolicyItem) => {
+  currentApplyPolicy.value = row;
+  showApplySideslider.value = true;
 };
 
-// const handleDetailUpdateSuccess = () => {
-//   refreshList();
-// };
+// 查看详情
+const handleViewDetails = (row: IPermissionPolicyItem) => {
+  currentApplyPolicy.value = row;
+  showPolicyInfoSideslider.value = true;
+};
+
+// 应用成功回调
+const handleApplySuccess = () => {
+  refreshList();
+  showLogSideslider.value = true;
+};
+
+// 应用成功查看日志弹窗
+const showLogSideslider = ref(false);
 
 const refreshList = () => {
   const query = { ...route.query };
@@ -181,25 +205,25 @@ const refreshList = () => {
   router.replace({ query });
 };
 
-// 录入/编辑账号弹窗状态
-const showAccountFormSideslider = ref(false);
+// 新建/编辑权限策略库状态
+const showPolicyFormSideslider = ref(false);
 const isEditMode = ref(false);
-const editingAccount = ref<ISecondaryAccountItem | null>(null);
+const editingAccount = ref<IPermissionPolicyItem | null>(null);
 
-const handleAddAccount = () => {
+const handleAddPolicy = () => {
   isEditMode.value = false;
   editingAccount.value = null;
-  showAccountFormSideslider.value = true;
+  showPolicyFormSideslider.value = true;
 };
 
-// 编辑账号（从列表操作列触发）
-const handleEditAccount = (row: ISecondaryAccountItem) => {
+// 编辑权限策略（从列表操作列触发）
+const handleEditAccount = (row: IPermissionPolicyItem) => {
   isEditMode.value = true;
   editingAccount.value = row;
-  showAccountFormSideslider.value = true;
+  showPolicyFormSideslider.value = true;
 };
 
-const handleAccountFormSuccess = () => {
+const handlePolicyFormSuccess = () => {
   refreshList();
 };
 
@@ -210,94 +234,10 @@ const handleSearch = (searchCondition: ISearchCondition) => {
 const handleReset = () => {
   searchQs.clear();
 };
-
-// const handleSyncAccount = () => {
-//   const SyncContent = () =>
-//     h('div', { class: 'sync-info-content' }, [
-//       h('p', { class: 'sync-info-title' }, '同步信息包含：'),
-//       h('ul', { class: 'sync-info-list' }, [
-//         h('li', '二级账号本身的信息（邮箱、保护状态、MFA等）'),
-//         h('li', '二级账号下的三级账号'),
-//         h('li', '二级账号下的权限模板'),
-//       ]),
-//       h('p', { class: 'sync-info-tip' }, '同步操作可能需要几分钟，请耐心等待'),
-//     ]);
-
-//   InfoBox({
-//     title: '确定同步本业务下所有二级账号信息',
-//     type: 'warning',
-//     subTitle: SyncContent,
-//     width: 480,
-//     contentAlign: 'left',
-//     confirmText: '确定',
-//     cancelText: '取消',
-//     beforeClose: (action: string) =>
-//       new Promise(async (resolve) => {
-//         if (action === 'confirm') {
-//           const loadingBox = InfoBox({
-//             type: 'loading',
-//             title: '同步二级账号信息中...',
-//             subTitle: '请耐心等待',
-//             width: 400,
-//             closeIcon: false,
-//             showMask: true,
-//             quickClose: false,
-//             escClose: false,
-//             confirmText: '',
-//             cancelText: '',
-//           });
-
-//           try {
-//             const bkBizId = getBizsId();
-//             const vendor = currentVendor?.value || VendorEnum.TCLOUD;
-//             const accountIds = tableData.value.map((item) => item.id);
-
-//             if (accountIds.length === 0) {
-//               loadingBox.hide();
-//               Message({ theme: 'warning', message: '当前没有可同步的账号' });
-//               resolve(true);
-//               return;
-//             }
-
-//             const results = await cloudAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
-//             loadingBox.hide();
-
-//             if (results.failed.length === 0) {
-//               Message({ theme: 'success', message: `同步完成，成功同步 ${results.success.length} 个账号` });
-//             } else if (results.success.length === 0) {
-//               Message({ theme: 'error', message: `同步失败，${results.failed.length} 个账号同步失败` });
-//             } else {
-//               Message({
-//                 theme: 'warning',
-//                 message: `部分同步完成：${results.success.length} 个成功，${results.failed.length} 个失败`,
-//               });
-//             }
-
-//             const { query } = route;
-//             const timestamp = Date.now();
-//             window.history.replaceState(
-//               null,
-//               '',
-//               `${route.path}?${new URLSearchParams({ ...query, _t: String(timestamp) } as any).toString()}`,
-//             );
-//             resolve(true);
-//           } catch (error) {
-//             console.error('同步失败:', error);
-//             loadingBox.hide();
-//             Message({ theme: 'error', message: '同步失败，请稍后重试' });
-//             resolve(true);
-//           }
-//         }
-//         if (action === 'cancel') {
-//           resolve(true);
-//         }
-//       }),
-//   });
-// };
 </script>
 
 <template>
-  <div class="secondary-account-page">
+  <div class="permission-policy-page">
     <!-- 搜索区域 -->
     <Search :fields="searchFields" :condition="condition" @search="handleSearch" @reset="handleReset" />
 
@@ -305,15 +245,10 @@ const handleReset = () => {
     <div class="table-container">
       <!-- 操作按钮区域 -->
       <div class="action-btns">
-        <bk-button theme="primary" @click="handleAddAccount">
+        <bk-button theme="primary" @click="handleAddPolicy">
           <plus style="font-size: 22px" />
           新增权限策略库
         </bk-button>
-
-        <!-- <bk-button @click="handleSyncAccount">
-          <i class="hcm-icon bkhcm-icon-update mr6"></i>
-          同步账号
-        </bk-button> -->
       </div>
 
       <!-- 数据列表 -->
@@ -323,29 +258,36 @@ const handleReset = () => {
         :pagination="pagination"
         :loading="isLoading"
         @view-details="handleViewDetails"
+        @apply-to-account="handleApplyToAccount"
         @edit-account="handleEditAccount"
       />
     </div>
 
+    <!-- 应用策略库到二级账号弹窗 -->
+    <ApplySideslider v-model="showApplySideslider" :policy-data="currentApplyPolicy" @success="handleApplySuccess" />
+
+    <!-- 应用成功后弹出得账号列表查看应用日志 -->
+    <LogSideslider v-model="showLogSideslider" />
+
     <!-- 详情侧栏 -->
-    <!-- <AccountDetailSideslider
-      v-model="showDetailSideslider"
-      :row-data="currentAccount"
-      @update-success="handleDetailUpdateSuccess"
-    /> -->
+    <PolicyInfoSideslider
+      v-model="showPolicyInfoSideslider"
+      :policy-data="currentApplyPolicy"
+      @apply-to-account="handleApplyToAccount"
+    />
 
     <!-- 新建/编辑权限策略库 -->
     <PolicyFormSideslider
-      v-model="showAccountFormSideslider"
+      v-model="showPolicyFormSideslider"
       :is-edit="isEditMode"
       :account-data="editingAccount"
-      @success="handleAccountFormSuccess"
+      @success="handlePolicyFormSuccess"
     />
   </div>
 </template>
 
 <style lang="scss" scoped>
-.secondary-account-page {
+.permission-policy-page {
   height: 100%;
 
   .table-container {
@@ -360,40 +302,6 @@ const handleReset = () => {
     align-items: center;
     gap: 8px;
     margin-bottom: 16px;
-  }
-}
-</style>
-
-<!-- 同步账号弹窗全局样式 -->
-<style lang="scss">
-.sync-info-content {
-  text-align: left;
-  padding: 12px 16px;
-  background-color: rgb(245 247 250);
-
-  .sync-info-title {
-    font-size: 12px;
-    color: #4d4f56;
-    line-height: 20px;
-    font-weight: 700;
-  }
-
-  .sync-info-list {
-    margin: 0;
-    padding-left: 22px;
-
-    li {
-      font-size: 12px;
-      color: #4d4f56;
-      line-height: 20px;
-      list-style-type: disc;
-    }
-  }
-
-  .sync-info-tip {
-    font-size: 12px;
-    margin-top: 22px;
-    line-height: 20px;
   }
 }
 </style>

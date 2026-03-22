@@ -1,54 +1,218 @@
-// 二级账号管理相关常量
+import type { IPermissionPolicyItem, ISelectableAccount, IAppliedAccountItem } from './typings';
+import { PolicyApplyStatus } from './typings';
+import { VendorEnum } from '@/common/constant';
 
-import { FlagType } from './typings';
+// Mock 数据开关：设为 true 启用 mock 数据，false 走真实 API
+export const ENABLE_MOCK = true;
 
-// 资源纳管状态
-export const RESOURCE_MANAGE_STATUS_MAP: Record<string, string> = {
-  managed: '已纳管',
-  unmanaged: '未纳管',
-};
+// Mock 数据
+export const MOCK_PERMISSION_POLICY_LIST: IPermissionPolicyItem[] = [
+  {
+    id: 'policy-001',
+    name: 'AdministratorAccess',
+    related_account_count: 4,
+    related_accounts: [
+      { account_id: '100012345678', alias: '主账号-生产环境' },
+      { account_id: '100087654321', alias: '子账号-测试环境' },
+      { account_id: '100011223344', alias: '子账号-开发环境' },
+      { account_id: '100055667788', alias: '子账号-预发布环境' },
+    ],
+    description: '该策略允许您管理账户内所有腾讯云资源，拥有账号内所有资源的全部操作权限',
+    creator: 'admin',
+    created_at: '2025-12-01 10:30:00',
+    reviser: 'admin',
+    updated_at: '2026-02-15 14:20:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+  {
+    id: 'policy-002',
+    name: 'ReadOnlyAccess',
+    related_account_count: 3,
+    related_accounts: [
+      { account_id: '100012345678', alias: '主账号-生产环境' },
+      { account_id: '100099887766', alias: '子账号-审计环境' },
+      { account_id: '100033445566', alias: '子账号-监控环境' },
+    ],
+    description: '该策略允许您只读访问账户内所有腾讯云资源',
+    creator: 'user_a',
+    created_at: '2025-12-05 09:15:00',
+    reviser: 'user_b',
+    updated_at: '2026-01-20 16:45:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+  {
+    id: 'policy-003',
+    name: 'QcloudCVMFullAccess',
+    related_account_count: 2,
+    related_accounts: [
+      { account_id: '100012345678', alias: '主账号-生产环境' },
+      { account_id: '100087654321', alias: '子账号-测试环境' },
+    ],
+    description: '该策略允许您管理云服务器(CVM)的全部操作权限，包括CVM及相关CLB、VPC的监控权限',
+    creator: 'user_c',
+    created_at: '2025-12-10 11:00:00',
+    reviser: 'user_c',
+    updated_at: '2026-03-01 08:30:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+  {
+    id: 'policy-004',
+    name: 'QcloudCOSFullAccess',
+    related_account_count: 2,
+    related_accounts: [
+      { account_id: '100055667788', alias: '子账号-预发布环境' },
+      { account_id: '100033445566', alias: '子账号-监控环境' },
+    ],
+    description: '该策略允许您管理对象存储(COS)的全部操作权限',
+    creator: 'user_b',
+    created_at: '2026-01-08 14:00:00',
+    reviser: 'user_a',
+    updated_at: '2026-03-05 10:15:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+  {
+    id: 'policy-005',
+    name: 'QcloudVPCFullAccess',
+    related_account_count: 6,
+    related_accounts: [
+      { account_id: '100012345678', alias: '主账号-生产环境' },
+      { account_id: '100087654321', alias: '子账号-测试环境' },
+      { account_id: '100011223344', alias: '子账号-开发环境' },
+      { account_id: '100055667788', alias: '子账号-预发布环境' },
+      { account_id: '100099887766', alias: '子账号-审计环境' },
+      { account_id: '100033445566', alias: '子账号-监控环境' },
+    ],
+    description: '该策略允许您管理私有网络(VPC)的全部操作权限，包括VPC、子网、路由表等',
+    creator: 'admin',
+    created_at: '2026-01-15 16:30:00',
+    reviser: 'admin',
+    updated_at: '2026-02-28 09:00:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+  {
+    id: 'policy-006',
+    name: 'QcloudCDBFullAccess',
+    related_account_count: 0,
+    related_accounts: [],
+    description: '该策略允许您管理云数据库MySQL(CDB)的全部操作权限',
+    creator: 'user_a',
+    created_at: '2026-02-01 10:00:00',
+    reviser: 'user_a',
+    updated_at: '2026-03-10 11:30:00',
+    vendor: VendorEnum.TCLOUD,
+    bk_biz_id: 100,
+  },
+];
 
-// 站点类型
-export const SITE_TYPE_MAP: Record<string, string> = {
-  china: '中国站',
-  international: '国际站',
-};
+// Mock 可选二级账号列表（用于"应用到新账号"表格）
+export const MOCK_SELECTABLE_ACCOUNTS: ISelectableAccount[] = [
+  { account_id: '100012345678', alias: '游戏业务主账号' },
+  { account_id: '100087654321', alias: '游戏业务主账号' },
+  { account_id: '100011223344', alias: '游戏业务主账号' },
+  { account_id: '100055667788', alias: '游戏业务主账号' },
+  { account_id: '100099887766', alias: '游戏业务主账号' },
+  { account_id: '100033445566', alias: '游戏业务主账号' },
+  { account_id: '100077889900', alias: '游戏业务主账号' },
+  { account_id: '100044556677', alias: '游戏业务主账号' },
+  { account_id: '100022334455', alias: '游戏业务主账号' },
+  { account_id: '100066778899', alias: '游戏业务主账号' },
+];
 
-// 登录保护状态
-export const LOGIN_PROTECTION_STATUS_MAP: Record<string, string> = {
-  enabled: '已开启',
-  disabled: '未开启',
-};
-
-// 操作保护状态
-export const OPERATION_PROTECTION_STATUS_MAP: Record<string, string> = {
-  enabled: '已开启',
-  disabled: '未开启',
-};
-
-// MFA设备绑定状态
-export const MFA_BINDDING_STATUS_MAP: Record<string, string> = {
-  bound: '已绑定',
-  unbound: '未绑定',
-};
-
-// 状态颜色配置
-export const STATUS_COLOR_MAP: Record<string, string> = {
-  managed: '#2dcb56', // 绿色
-  unmanaged: '#ff9c01', // 橙色
-  enabled: '#2dcb56', // 绿色
-  disabled: '#c4c6cc', // 灰色
-  bound: '#2dcb56', // 绿色
-  unbound: '#c4c6cc', // 灰色
-};
-
-// 保护设置
-export const FLAG_OPTIONS: Record<FlagType, string> = {
-  phone: '安全手机',
-  token: '硬token',
-  stoken: 'MFA字段',
-  wechat: '微信',
-  custom: '自定义',
-  mail: '邮箱',
-  u2FToken: 'u2硬件token',
-};
+// Mock 已应用账号列表（用于"更新已应用账号"表格）
+export const MOCK_APPLIED_ACCOUNTS: IAppliedAccountItem[] = [
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v2',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v2',
+    apply_status: PolicyApplyStatus.PENDING,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v2',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v2',
+    apply_status: PolicyApplyStatus.PENDING,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.DATA_MISMATCH,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v2',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v2',
+    apply_status: PolicyApplyStatus.PENDING,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+  {
+    account_id: '100012345678',
+    alias: '游戏业务主账号',
+    cloud_template_name: 'HCM_只读权限策略库_v3',
+    cloud_sync_time: '2026-01-17 10:30:25',
+    applied_version: 'v3',
+    apply_status: PolicyApplyStatus.APPLIED,
+    apply_time: '2026-01-17 10:30:25',
+  },
+];
