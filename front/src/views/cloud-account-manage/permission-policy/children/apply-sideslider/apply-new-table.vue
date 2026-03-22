@@ -61,6 +61,9 @@ const handleRemoveSelected = (accountId: string) => {
   selectedAccounts.value = selectedAccounts.value.filter((item) => item.account_id !== accountId);
   // 同步取消表格中的选中状态 - 通过 clearSelection 后重新选中来实现
   // bk-table 没有直接取消某行选中的 API，这里通过 ref 操作
+  const allSelections = tableRef.value?.getSelection?.();
+  const targetRow = allSelections.filter((item: { account_id: string }) => item.account_id === accountId);
+  tableRef.value?.toggleRowSelection?.(targetRow?.[0]);
 };
 
 // 清空已选
@@ -143,9 +146,14 @@ defineExpose({
   }
 
   .selected-footer {
-    margin-top: 16px;
     border-top: 1px solid #dcdee5;
-    padding-top: 12px;
+    padding: 12px 48px;
+    position: fixed;
+    bottom: 48px;
+    background: white;
+    display: inline-block;
+    right: 0;
+    left: calc(100% - 1200px);
 
     .selected-header {
       display: flex;

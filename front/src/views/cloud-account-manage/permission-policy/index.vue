@@ -11,7 +11,10 @@ import { QueryFilterType, RulesItem } from '@/typings';
 
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
+import PolicyFormSideslider from './children/policy-form-sideslider/index.vue';
+import PolicyInfoSideslider from './children/policy-form-sideslider/info.vue';
 import ApplySideslider from './children/apply-sideslider/index.vue';
+import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { IPermissionPolicyItem } from './typings';
@@ -172,30 +175,56 @@ watch(
 // 加载状态
 const isLoading = ref(false);
 
-// 查看详情
-const handleViewDetails = (_row: IPermissionPolicyItem) => {
-  // TODO: 打开详情
-};
-
-// 应用到二级账号弹窗
 const showApplySideslider = ref(false);
+const showPolicyInfoSideslider = ref(false);
 const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
 
-// 应用到二级账号
 const handleApplyToAccount = (row: IPermissionPolicyItem) => {
   currentApplyPolicy.value = row;
   showApplySideslider.value = true;
 };
 
+// 查看详情
+const handleViewDetails = (row: IPermissionPolicyItem) => {
+  currentApplyPolicy.value = row;
+  showPolicyInfoSideslider.value = true;
+};
+
 // 应用成功回调
 const handleApplySuccess = () => {
   refreshList();
+  showLogSideslider.value = true;
 };
+
+// 应用成功查看日志弹窗
+const showLogSideslider = ref(false);
 
 const refreshList = () => {
   const query = { ...route.query };
   query._t = String(Date.now());
   router.replace({ query });
+};
+
+// 新建/编辑权限策略库状态
+const showPolicyFormSideslider = ref(false);
+const isEditMode = ref(false);
+const editingAccount = ref<IPermissionPolicyItem | null>(null);
+
+const handleAddPolicy = () => {
+  isEditMode.value = false;
+  editingAccount.value = null;
+  showPolicyFormSideslider.value = true;
+};
+
+// 编辑权限策略（从列表操作列触发）
+const handleEditAccount = (row: IPermissionPolicyItem) => {
+  isEditMode.value = true;
+  editingAccount.value = row;
+  showPolicyFormSideslider.value = true;
+};
+
+const handlePolicyFormSuccess = () => {
+  refreshList();
 };
 
 const handleSearch = (searchCondition: ISearchCondition) => {
@@ -214,6 +243,14 @@ const handleReset = () => {
 
     <!-- 表格区域 -->
     <div class="table-container">
+      <!-- 操作按钮区域 -->
+      <div class="action-btns">
+        <bk-button theme="primary" @click="handleAddPolicy">
+          <plus style="font-size: 22px" />
+          新增权限策略库
+        </bk-button>
+      </div>
+
       <!-- 数据列表 -->
       <DataList
         :columns="columns"
@@ -222,11 +259,30 @@ const handleReset = () => {
         :loading="isLoading"
         @view-details="handleViewDetails"
         @apply-to-account="handleApplyToAccount"
+        @edit-account="handleEditAccount"
       />
     </div>
 
     <!-- 应用策略库到二级账号弹窗 -->
     <ApplySideslider v-model="showApplySideslider" :policy-data="currentApplyPolicy" @success="handleApplySuccess" />
+
+    <!-- 应用成功后弹出得账号列表查看应用日志 -->
+    <LogSideslider v-model="showLogSideslider" />
+
+    <!-- 详情侧栏 -->
+    <PolicyInfoSideslider
+      v-model="showPolicyInfoSideslider"
+      :policy-data="currentApplyPolicy"
+      @apply-to-account="handleApplyToAccount"
+    />
+
+    <!-- 新建/编辑权限策略库 -->
+    <PolicyFormSideslider
+      v-model="showPolicyFormSideslider"
+      :is-edit="isEditMode"
+      :account-data="editingAccount"
+      @success="handlePolicyFormSuccess"
+    />
   </div>
 </template>
 
@@ -239,6 +295,13 @@ const handleReset = () => {
     border-radius: 2px;
     margin: 24px;
     padding: 16px 24px;
+  }
+
+  .action-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 }
 </style>

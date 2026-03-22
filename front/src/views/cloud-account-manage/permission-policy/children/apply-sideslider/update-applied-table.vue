@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import type { IAppliedAccountItem } from '../../typings';
 import { PolicyApplyStatus } from '../../typings';
 import { ENABLE_MOCK, MOCK_APPLIED_ACCOUNTS } from '../../constants';
 import usePage from '@/hooks/use-page';
+import ModelInfoDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/info.vue';
+import PolicyDiffDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/diff.vue';
 
 const props = defineProps<{
   policyId: string;
@@ -18,6 +20,22 @@ const { pagination } = usePage();
 // 已选账号（用于批量更新）
 const selectedAccounts = ref<IAppliedAccountItem[]>([]);
 const tableRef = ref();
+
+// 模板详情数据
+const modelInfo = reactive({
+  show: false,
+  json: '{"version":"2.0","statement":[{"effect":"allow","action":["cvm:Describe*","cvm:Query*"],"resource":"*"},{"effect":"allow","action":["cbs:Describe*"],"resource":"*"},{"effect":"allow","action":["vpc:Describe*","vpc:Query*"],"resource":"*"}]}',
+  accountId: '100012345678 (游戏业务主账号)',
+  id: 'policy-abc123xyz',
+  name: 'HCM_只读权限策略库_v3',
+});
+
+// 策略内容对比数据
+const policyDiffInfo = reactive({
+  show: false,
+  id: '',
+  accountId: '',
+});
 
 // 状态映射
 const statusMap: Record<string, { text: string; dotClass: string }> = {
@@ -78,6 +96,17 @@ const handlePageSizeChange = (limit: number) => {
   pagination.current = 1;
 };
 
+const handleModelInfo = (row: IAppliedAccountItem) => {
+  modelInfo.name = row.cloud_template_name;
+  modelInfo.accountId = `${row.account_id}(${row.alias})`;
+  modelInfo.show = true;
+};
+
+const handlePolicyDiff = (row: IAppliedAccountItem) => {
+  policyDiffInfo.show = true;
+  policyDiffInfo.accountId = `${row.account_id}(${row.alias})`;
+};
+
 // 监听策略ID变化
 watch(
   () => props.policyId,
@@ -132,13 +161,14 @@ defineExpose({
         <bk-table-column label="策略库应用时间" prop="apply_time" min-width="160" />
         <bk-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <bk-button theme="primary" text class="mr8">模版详情</bk-button>
+            <bk-button theme="primary" text class="mr8" @click="handleModelInfo(row)">模版详情</bk-button>
             <bk-button
               v-if="
                 row.apply_status === PolicyApplyStatus.PENDING || row.apply_status === PolicyApplyStatus.DATA_MISMATCH
               "
               theme="primary"
               text
+              @click="handlePolicyDiff(row)"
             >
               策略对比
             </bk-button>
@@ -146,6 +176,10 @@ defineExpose({
         </bk-table-column>
       </bk-table>
     </bk-loading>
+    <!--模版详情弹框-->
+    <ModelInfoDialog v-bind="modelInfo" @close="modelInfo.show = false" />
+    <!--策略对比弹框-->
+    <PolicyDiffDialog v-bind="policyDiffInfo" @close="policyDiffInfo.show = false" />
   </div>
 </template>
 

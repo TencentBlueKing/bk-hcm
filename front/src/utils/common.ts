@@ -227,6 +227,23 @@ const isPortValid = (text: string) => {
   }
   return true;
 };
+
+/**
+ * 判断字符串是否为有效JSON
+ * @param {string} str - 要检测的字符串
+ * @returns {boolean} 是否为JSON
+ */
+const isJSON = (str: any) => {
+  if (typeof str !== 'string') return false;
+  try {
+    const result = JSON.parse(str);
+    const type = Object.prototype.toString.call(result);
+    return type === '[object Object]' || type === '[object Array]';
+  } catch (e) {
+    return false;
+  }
+};
+
 export {
   getAuthSignByBusinessId,
   getInstVip,
@@ -240,4 +257,5 @@ export {
   analysisPort,
   isIpsValid,
   isPortValid,
+  isJSON,
 };

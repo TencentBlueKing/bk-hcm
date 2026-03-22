@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<IDataListProps>(), {
 const emit = defineEmits<{
   'view-details': [row: IPermissionPolicyItem];
   'apply-to-account': [row: IPermissionPolicyItem];
+  'edit-account': [row: IPermissionPolicyItem];
 }>();
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
@@ -36,6 +37,11 @@ const handleViewDetails = (row: IPermissionPolicyItem) => {
 // 应用到二级账号
 const handleApplyToAccount = (row: IPermissionPolicyItem) => {
   emit('apply-to-account', row);
+};
+
+// 编辑
+const handleEditAccount = (row: IPermissionPolicyItem) => {
+  emit('edit-account', row);
 };
 
 // 跳转二级账号详情（新开标签页）
@@ -132,8 +138,9 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'r
           </template>
         </template>
       </bk-table-column>
-      <bk-table-column label="操作" width="140" fixed="right">
+      <bk-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
+          <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
           <bk-button theme="primary" text @click="handleApplyToAccount(row)">应用到二级账号</bk-button>
         </template>
       </bk-table-column>

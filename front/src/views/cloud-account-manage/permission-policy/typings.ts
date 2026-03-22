@@ -12,15 +12,17 @@ export interface IRelatedAccount {
 export interface IPermissionPolicyItem {
   id: string;
   name: string; // 策略库名称
-  related_account_count: number; // 关联二级账号数
+  related_account_count?: number; // 关联二级账号数
   related_accounts?: IRelatedAccount[]; // 关联二级账号列表
   description: string; // 策略库描述
-  creator: string; // 创建人
-  created_at: string; // 创建时间
-  reviser: string; // 更新人
-  updated_at: string; // 更新时间
-  vendor: string; // 云厂商
-  bk_biz_id: number; // 业务ID
+  creator?: string; // 创建人
+  created_at?: string; // 创建时间
+  reviser?: string; // 更新人
+  updated_at?: string; // 更新时间
+  vendor?: string; // 云厂商
+  bk_biz_id?: number; // 业务ID
+  usage_biz_ids?: number[]; // 允许使用的业务ID
+  json?: string; // 权限策略库JSON
 }
 
 // 操作类型枚举

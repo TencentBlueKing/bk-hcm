@@ -5,6 +5,7 @@ import type { IPermissionPolicyItem } from '../../typings';
 import { ApplyOperationType } from '../../typings';
 import ApplyNewTable from './apply-new-table.vue';
 import UpdateAppliedTable from './update-applied-table.vue';
+import { InfoBox } from 'bkui-vue';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -46,9 +47,24 @@ const baseInfoFields = computed(() => {
 // 已应用账号数
 const appliedCount = computed(() => props.policyData?.related_account_count || 0);
 
+// 应用按钮是否可以点击
+const applyBtnDisabled = computed(() => {
+  if (operationType.value === ApplyOperationType.APPLY_NEW) {
+    const _selected = applyNewTableRef.value?.getSelectedAccounts() || [];
+    return _selected.length === 0;
+  }
+  const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
+  return _selected.length === 0;
+});
+
 // 应用提交
 const handleApply = async () => {
   submitLoading.value = true;
+  const tips = InfoBox({
+    type: 'loading',
+    title: '策略应用正在提交中...',
+    content: '应用过程中，请勿关闭本弹窗',
+  });
   try {
     // TODO: 替换为真实 API 调用
     if (operationType.value === ApplyOperationType.APPLY_NEW) {
@@ -58,18 +74,18 @@ const handleApply = async () => {
       const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
       // TODO: 调用更新已应用账号 API
     }
-    model.value = false;
-    emit('success');
+
+    // TODO 模拟
+    setTimeout(() => {
+      tips.hide();
+      model.value = false;
+      emit('success');
+    }, 2500);
   } catch (error) {
     // TODO: 使用全局消息提示替代 console
   } finally {
     submitLoading.value = false;
   }
-};
-
-// IOA 校验
-const handleIOACheck = () => {
-  // TODO: IOA 校验逻辑
 };
 
 // 取消
@@ -98,14 +114,13 @@ watch(
     background-color="#f5f7fa"
   >
     <template #default>
-      <div class="apply-sideslider-container">
+      <div :class="['apply-sideslider-container', operationType === ApplyOperationType.APPLY_NEW ? 'apply' : 'update']">
         <!-- 基本信息卡片 -->
         <bk-card
           title="基本信息"
           :is-collapse="true"
           v-model:collapse-status="baseInfoCollapsed"
           :border="false"
-          :disable-header-style="true"
           class="info-card"
         >
           <div class="info-grid">
@@ -167,8 +182,9 @@ watch(
 
     <template #footer>
       <div class="sideslider-footer">
-        <bk-button theme="primary" :loading="submitLoading" @click="handleApply">应用</bk-button>
-        <bk-button @click="handleIOACheck">IOA校验</bk-button>
+        <bk-button theme="primary" :loading="submitLoading" :disabled="applyBtnDisabled" @click="handleApply">
+          应用
+        </bk-button>
         <bk-button @click="handleCancel">取消</bk-button>
       </div>
     </template>
@@ -182,10 +198,18 @@ watch(
   flex-direction: column;
   gap: 16px;
 
+  &.apply {
+    padding-bottom: 150px;
+  }
+
   // 基本信息卡片
   .info-card {
     :deep(.bk-card-head) {
-      padding: 12px 24px;
+      border-bottom: 0;
+
+      .title {
+        padding-left: 5px;
+      }
     }
 
     :deep(.bk-card-body) {
@@ -222,6 +246,7 @@ watch(
   .apply-card {
     :deep(.bk-card-head) {
       padding: 12px 24px;
+      border-bottom: 0;
 
       .bk-card-title {
         font-size: 14px;
@@ -316,9 +341,9 @@ watch(
   align-items: center;
   height: 48px;
   padding: 8px 24px;
-  background-color: #fafbfd;
-  border-top: 1px solid #eaebf0;
   gap: 8px;
+  position: fixed;
+  bottom: 0;
 
   .bk-button {
     min-width: 88px;
