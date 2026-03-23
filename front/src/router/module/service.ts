@@ -5,7 +5,9 @@ import {
   MENU_SERVICE_HOST_RECYCLE_ENTRY,
   MENU_SERVICE_HOST_RECYCLE,
   MENU_SERVICE_RESOURCE_PLAN_CVM,
+  MENU_SERVICE_RESOURCE_PLAN_GPU,
 } from '@/constants/menu-symbol';
+import { useVerify } from '@/hooks/useVerify';
 import ticketRoutes from '@/views/ticket/route-config';
 import { gpuDemandSrv as gpuDemandSrvRouteConfig } from '@/views/resource-plan/route-config';
 
@@ -61,6 +63,15 @@ const serviceMenus: RouteRecordRaw[] = [
         path: '/service/resource-plan/cvm/home',
         name: MENU_SERVICE_RESOURCE_PLAN_CVM,
         component: () => import('@/views/resource-plan/entry-srv.vue'),
+        beforeEnter: (_to, _from, next) => {
+          const { authVerifyData } = useVerify();
+          const perm = authVerifyData.value?.permissionAction ?? {};
+          if (!perm.ziyan_resource_plan_manage && perm.ziyan_resource_plan_gpu_demands) {
+            next({ name: MENU_SERVICE_RESOURCE_PLAN_GPU });
+          } else {
+            next();
+          }
+        },
         meta: {
           activeKey: 'opResourcePlan',
           title: t('资源预测'),

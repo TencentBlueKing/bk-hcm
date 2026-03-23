@@ -22,11 +22,10 @@ const formValues = ref<ISearchCondition>({});
 let conditionInitValues: ISearchCondition;
 
 const getSearchCompProps = (field: ModelPropertySearch) => {
-  return {
-    ...field.props,
-    option: field.option,
-    list: field.list,
-  };
+  const compProps: Record<string, any> = { ...field.props };
+  if (field.option !== undefined) compProps.option = field.option;
+  if (field.list !== undefined) compProps.list = field.list;
+  return compProps;
 };
 
 const handleSearch = () => {

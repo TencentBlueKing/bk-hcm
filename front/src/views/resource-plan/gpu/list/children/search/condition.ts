@@ -3,6 +3,7 @@ import { useResourcePlanStore } from '@/store/resource-plan';
 import { GPU_DEMAND_STATUS_MAP } from '@/store/resource-plan/gpu-demand';
 import type { GpuDemandStatus } from '@/store/resource-plan/gpu-demand';
 import { toArray } from '@/common/util';
+import { QueryRuleOPEnum } from '@/typings';
 
 const resourcePlanStore = useResourcePlanStore();
 
@@ -28,6 +29,11 @@ export class SearchCondition {
   @Column('string', {
     name: '需求ID',
     index: 2,
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.IN,
+      },
+    },
     props: {
       collapseTags: true,
       pasteFn: (value: string) =>
