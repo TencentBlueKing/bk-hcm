@@ -49,7 +49,10 @@ const formRules = {
   name: [{ required: true, message: '请输入权限策略库名称', trigger: 'blur' }],
   description: [{ required: true, message: '请输入权限策略库描述', trigger: 'blur' }],
   usage_biz_ids: [{ required: true, message: '请选择使用业务', trigger: 'blur' }],
-  memo: [{ required: true }, { validator: isJSON, trigger: 'change', message: '请输入正确得JSON' }],
+  json: [
+    { required: true, message: '请输入权限策略', trigger: 'blur' },
+    { validator: isJSON, trigger: 'change', message: '请输入正确得JSON' },
+  ],
 };
 
 // 重置表单
