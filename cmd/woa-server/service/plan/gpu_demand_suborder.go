@@ -325,6 +325,32 @@ func (s *service) buildScrGpuSubOrderUpdateReqAndAudit(items []ptypes.UpdateResP
 	return updateReq, reviewOrderIDs, auditLogs, nil
 }
 
+// BatchUpdateStatusResPlanDemandGpuSubOrder batch review GPU demand suborders in scr.
+func (s *service) BatchUpdateStatusResPlanDemandGpuSubOrder(cts *rest.Contexts) (interface{}, error) {
+	req := new(ptypes.BatchUpdateStatusResPlanDemandGpuSubOrderReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode batch update gpu demand suborders status request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		logs.Errorf("failed to validate batch update gpu demand suborders status request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.ZiYanResPlanGPUDemands, Action: meta.Update}}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	if err := s.planController.BatchReviewGpuSubOrders(cts.Kit, req); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 // BatchTerminateBizResPlanDemandGpuSubOrder batch terminate biz GPU demand suborders.
 func (s *service) BatchTerminateBizResPlanDemandGpuSubOrder(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()

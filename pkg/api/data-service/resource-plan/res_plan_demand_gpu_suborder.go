@@ -129,8 +129,9 @@ func (r *ResPlanDemandGpuSubOrderUpdateReq) Validate() error {
 
 // ResPlanDemandGpuSubOrderBatchUpdateStatusReq batch update sub orders to the same status by id list.
 type ResPlanDemandGpuSubOrderBatchUpdateStatusReq struct {
-	IDs    []string                         `json:"ids" validate:"required,min=1,max=100"`
-	Status enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
+	IDs     []string                         `json:"ids" validate:"required,min=1,max=100"`
+	Status  enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
+	Comment *ttypes.JsonField                `json:"comment"`
 }
 
 // Validate validate.

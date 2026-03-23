@@ -20,18 +20,25 @@
 package plan
 
 import (
+	"encoding/json"
 	"fmt"
 
+	ptypes "hcm/cmd/woa-server/types/plan"
 	"hcm/pkg/api/core"
 	protoaudit "hcm/pkg/api/data-service/audit"
 	rpproto "hcm/pkg/api/data-service/resource-plan"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	resplandemandgpuorder "hcm/pkg/dal/table/resource-plan/res-plan-demand-gpu-order"
 	gpusuborder "hcm/pkg/dal/table/resource-plan/res-plan-demand-gpu-suborder"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // TerminateBizGpuSubOrders 终止业务侧 GPU 需求子单的核心逻辑，包括校验、更新子单状态、刷新主单状态。
@@ -61,6 +68,54 @@ func (c *Controller) TerminateBizGpuSubOrders(kt *kit.Kit, bizID int64, subOrder
 		logs.Errorf("failed to update gpu demand orders after suborder terminate, err: %v, biz: %d, rid: %s",
 			err, bizID, kt.Rid)
 		return err
+	}
+
+	return nil
+}
+
+// BatchReviewGpuSubOrders 资源侧批量评审 GPU 需求子单，包括校验、审计、更新子单状态和刷新主单状态。
+func (c *Controller) BatchReviewGpuSubOrders(kt *kit.Kit,
+	req *ptypes.BatchUpdateStatusResPlanDemandGpuSubOrderReq) error {
+
+	subOrderMap, err := c.listGpuSubOrdersByIDs(kt, req.SubOrderIDs, nil, []string{"id", "status", "order_id"})
+	if err != nil {
+		logs.Errorf("failed to list gpu demand suborders before batch review, err: %v, rid: %s", err, kt.Rid)
+		return errf.NewFromErr(errf.Aborted, err)
+	}
+
+	comment, err := buildJsonFieldPtrFromArray(req.Comment)
+	if err != nil {
+		logs.Errorf("failed to parse batch review gpu demand suborders comment, err: %v, rid: %s", err, kt.Rid)
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	reviewOrderIDs, auditLogs, err := c.buildGpuSubOrderBatchReviewAudit(
+		req.SubOrderIDs, req.Status, req.Comment, subOrderMap)
+	if err != nil {
+		return err
+	}
+
+	if err = c.AuditGpuSubOrderUpdates(kt, auditLogs); err != nil {
+		logs.Errorf("audit batch review gpu demand suborders failed, err: %v, rid: %s", err, kt.Rid)
+		return errf.NewFromErr(errf.Aborted, err)
+	}
+
+	for _, ids := range slice.Split(req.SubOrderIDs, constant.BatchOperationMaxLimit) {
+		updateReq := &rpproto.ResPlanDemandGpuSubOrderBatchUpdateStatusReq{
+			IDs:     ids,
+			Status:  req.Status,
+			Comment: comment,
+		}
+		if err = c.client.DataService().Global.ResourcePlan.BatchUpdateStatusResPlanDemandGpuSubOrder(
+			kt, updateReq); err != nil {
+			logs.Errorf("failed to batch update gpu demand suborders status in scr, err: %v, rid: %s", err, kt.Rid)
+			return errf.NewFromErr(errf.Aborted, err)
+		}
+	}
+
+	if err = c.RefreshGpuOrderStatusAfterReview(kt, reviewOrderIDs); err != nil {
+		logs.Errorf("failed to refresh gpu demand order status after batch review, err: %v, rid: %s", err, kt.Rid)
+		return errf.NewFromErr(errf.Aborted, err)
 	}
 
 	return nil
@@ -99,6 +154,42 @@ func (c *Controller) listTerminableBizGpuSubOrders(kt *kit.Kit, bizID int64, sub
 	}
 
 	return resp.Details, orderIDs, nil
+}
+
+func (c *Controller) buildGpuSubOrderBatchReviewAudit(subOrderIDs []string, status enumor.RPDemandGPUSubOrderStatus,
+	comment []json.RawMessage, subOrderMap map[string]gpusuborder.ResPlanDemandGpuSubOrderTable) (
+	[]string, []protoaudit.CloudResourceUpdateInfo, error) {
+
+	reviewOrderIDs := make([]string, 0)
+	reviewOrderIDSet := make(map[string]struct{})
+	auditLogs := make([]protoaudit.CloudResourceUpdateInfo, 0, len(subOrderIDs))
+
+	for _, subOrderID := range subOrderIDs {
+		subOrder, exists := subOrderMap[subOrderID]
+		if !exists {
+			return nil, nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("suborder(%s) not found", subOrderID))
+		}
+		if subOrder.Status != enumor.RPDemandGPUSubOrderStatusPending {
+			return nil, nil, errf.NewFromErr(errf.InvalidParameter,
+				fmt.Errorf("suborder(%s) status(%s) is not allowed to review", subOrder.ID, subOrder.Status))
+		}
+
+		updateFields := map[string]interface{}{"status": status}
+		if comment != nil {
+			updateFields["comment"] = comment
+		}
+		auditLogs = append(auditLogs, protoaudit.CloudResourceUpdateInfo{
+			ResType:      enumor.ResPlanGPUDemandsSuborderAuditResType,
+			ResID:        subOrder.ID,
+			UpdateFields: updateFields,
+		})
+		if _, exists = reviewOrderIDSet[subOrder.OrderID]; !exists {
+			reviewOrderIDSet[subOrder.OrderID] = struct{}{}
+			reviewOrderIDs = append(reviewOrderIDs, subOrder.OrderID)
+		}
+	}
+
+	return reviewOrderIDs, auditLogs, nil
 }
 
 // genTerminateGpuSubOrderReqAndAudit 一次遍历同时生成子单终止更新请求和审计日志。
@@ -348,6 +439,40 @@ func (c *Controller) listGpuOrdersByIDs(kt *kit.Kit, orderIDs []string, fields [
 	return orderMap, nil
 }
 
+func (c *Controller) listGpuSubOrdersByIDs(kt *kit.Kit, subOrderIDs []string, bizID *int64, fields []string) (
+	map[string]gpusuborder.ResPlanDemandGpuSubOrderTable, error) {
+
+	subOrderMap := make(map[string]gpusuborder.ResPlanDemandGpuSubOrderTable, len(subOrderIDs))
+	for _, ids := range slice.Split(subOrderIDs, int(core.DefaultMaxPageLimit)) {
+		rules := []*filter.AtomRule{tools.RuleIn("id", ids)}
+		if bizID != nil {
+			rules = append(rules, tools.RuleEqual("bk_biz_id", cvt.PtrToVal(bizID)))
+		}
+
+		listResp, err := c.client.DataService().Global.ResourcePlan.ListResPlanDemandGpuSubOrder(kt,
+			&rpproto.ResPlanDemandGpuSubOrderListReq{
+				ListReq: core.ListReq{
+					Filter: tools.ExpressionAnd(rules...),
+					Page:   &core.BasePage{Start: 0, Limit: uint(len(ids))},
+					Fields: fields,
+				},
+			})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, detail := range listResp.Details {
+			subOrderMap[detail.ID] = detail
+		}
+	}
+
+	if len(subOrderMap) != len(subOrderIDs) {
+		return nil, fmt.Errorf("some suborder_ids are invalid")
+	}
+
+	return subOrderMap, nil
+}
+
 func (c *Controller) countGpuSubOrders(kt *kit.Kit, expr *filter.Expression) (uint64, error) {
 	resp, err := c.client.DataService().Global.ResourcePlan.ListResPlanDemandGpuSubOrder(kt,
 		&rpproto.ResPlanDemandGpuSubOrderListReq{ListReq: core.ListReq{Filter: expr, Page: core.NewCountPage()}})
@@ -356,4 +481,17 @@ func (c *Controller) countGpuSubOrders(kt *kit.Kit, expr *filter.Expression) (ui
 	}
 
 	return resp.Count, nil
+}
+
+func buildJsonFieldPtrFromArray(data []json.RawMessage) (*tabletypes.JsonField, error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	field, err := tabletypes.NewJsonField(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &field, nil
 }

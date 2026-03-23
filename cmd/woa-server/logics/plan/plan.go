@@ -163,6 +163,8 @@ type Logics interface {
 
 	// TerminateBizGpuSubOrders 终止业务侧 GPU 需求子单的核心逻辑。
 	TerminateBizGpuSubOrders(kt *kit.Kit, bizID int64, subOrderIDs []string) error
+	// BatchReviewGpuSubOrders 资源侧批量评审 GPU 需求子单。
+	BatchReviewGpuSubOrders(kt *kit.Kit, req *ptypes.BatchUpdateStatusResPlanDemandGpuSubOrderReq) error
 	// AuditGpuSubOrderUpdates 统一提交 GPU 需求子单变更审计。
 	AuditGpuSubOrderUpdates(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) error
 	// RefreshGpuOrderStatusAfterBizEdit 业务侧修改驳回子单后刷新主单状态。

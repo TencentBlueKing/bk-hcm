@@ -77,6 +77,38 @@ func (r *BatchUpdateResPlanDemandGpuSubOrderReq) ValidateResource() error {
 	return nil
 }
 
+// BatchUpdateStatusResPlanDemandGpuSubOrderReq is batch review request for GPU demand suborders.
+type BatchUpdateStatusResPlanDemandGpuSubOrderReq struct {
+	SubOrderIDs []string                         `json:"suborder_ids" validate:"required,min=1,max=1000,dive,required"`
+	Status      enumor.RPDemandGPUSubOrderStatus `json:"status" validate:"required"`
+	Comment     []json.RawMessage                `json:"comment"`
+}
+
+// Validate validate resource batch review request.
+func (r *BatchUpdateStatusResPlanDemandGpuSubOrderReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	if err := r.Status.Validate(); err != nil {
+		return err
+	}
+
+	if r.Status != enumor.RPDemandGPUSubOrderStatusDone && r.Status != enumor.RPDemandGPUSubOrderStatusReject {
+		return errors.New("status should be DONE or REJECT")
+	}
+
+	seen := make(map[string]struct{}, len(r.SubOrderIDs))
+	for _, subOrderID := range r.SubOrderIDs {
+		if _, exists := seen[subOrderID]; exists {
+			return errors.New("duplicate suborder_id")
+		}
+		seen[subOrderID] = struct{}{}
+	}
+
+	return nil
+}
+
 // ValidateBiz validate biz update item.
 func (i *UpdateResPlanDemandGpuSubOrderItem) ValidateBiz() error {
 	if err := validator.Validate.Struct(i); err != nil {

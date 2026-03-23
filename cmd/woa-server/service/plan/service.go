@@ -108,6 +108,8 @@ func (s *service) initPlanService(h *rest.Handler) {
 		"/plans/resources/gpu/demands/suborders/list", s.ListResPlanDemandGpuSubOrder)
 	h.Add("BatchUpdateResPlanDemandGpuSubOrder", http.MethodPost,
 		"/plans/resources/gpu/demands/suborders/batch", s.BatchUpdateResPlanDemandGpuSubOrder)
+	h.Add("BatchUpdateStatusResPlanDemandGpuSubOrder", http.MethodPost,
+		"/plans/resources/gpu/demands/suborders/batch/status", s.BatchUpdateStatusResPlanDemandGpuSubOrder)
 
 	// verify
 	h.Add("VerifyResPlanDemandV2", http.MethodPost, "/plans/resources/demands/verify", s.VerifyResPlanDemandV2)

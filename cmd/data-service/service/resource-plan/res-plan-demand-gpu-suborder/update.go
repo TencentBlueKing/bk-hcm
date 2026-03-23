@@ -113,6 +113,9 @@ func (svc *service) BatchUpdateStatusResPlanDemandGpuSubOrder(cts *rest.Contexts
 		Status:  req.Status,
 		Reviser: cts.Kit.User,
 	}
+	if req.Comment != nil {
+		record.Comment = req.Comment
+	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.ResPlanDemandGpuSubOrder().UpdateWithTx(cts.Kit, txn,
 			tools.ContainersExpression("id", req.IDs), record); err != nil {
