@@ -356,16 +356,19 @@ func (c *Controller) RefreshGpuOrderStatusAfterReview(kt *kit.Kit, orderIDs []st
 	return c.client.DataService().Global.ResourcePlan.BatchUpdateResPlanDemandGpuOrder(kt, updateReq)
 }
 
-// AuditGpuSubOrderUpdates 统一提交 GPU 需求子单变更审计
+// AuditGpuSubOrderUpdates 统一提交 GPU 需求子单变更审计，按 BatchOperationMaxLimit 分批调用。
 func (c *Controller) AuditGpuSubOrderUpdates(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) error {
 	if len(updates) == 0 {
 		return nil
 	}
 
-	auditReq := protoaudit.CloudResourceUpdateAuditReq{Updates: updates}
-	if err := c.client.DataService().Global.Audit.CloudResourceUpdateAudit(kt.Ctx, kt.Header(), &auditReq); err != nil {
-		logs.Errorf("audit gpu demand suborder update failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+	for _, batch := range slice.Split(updates, constant.BatchOperationMaxLimit) {
+		auditReq := protoaudit.CloudResourceUpdateAuditReq{Updates: batch}
+		if err := c.client.DataService().Global.Audit.CloudResourceUpdateAudit(
+			kt.Ctx, kt.Header(), &auditReq); err != nil {
+			logs.Errorf("audit gpu demand suborder update failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
 
 	return nil
