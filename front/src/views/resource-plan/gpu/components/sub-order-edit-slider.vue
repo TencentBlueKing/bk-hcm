@@ -513,11 +513,12 @@ const handleSave = async () => {
       const field = extFieldMap.get(extIdx);
       if (field) {
         let val: any = formData.value[field.key];
-        // 根据类型转换
+        // 根据类型转换：空值传空字符串，有值时才做数值转换
+        const isEmpty = val === '' || val === undefined || val === null;
         if (field.type === 'int') {
-          val = parseInt(val, 10) || 0;
+          val = isEmpty ? '' : parseInt(val, 10);
         } else if (field.type === 'float') {
-          val = parseFloat(val) || 0;
+          val = isEmpty ? '' : parseFloat(val);
         }
         newExtension.push(val);
       } else {
@@ -537,20 +538,22 @@ const handleSave = async () => {
     const field = formFields.value.find((f) => f.dbField === h.db_field);
     if (field) {
       let val: any = field.formula ? computeFormulaValue(field) : formData.value[field.key];
+      const isEmpty = val === '' || val === undefined || val === null;
       if (h.type === 'int') {
-        val = parseInt(val, 10) || 0;
+        val = isEmpty ? '' : parseInt(val, 10);
       } else if (h.type === 'float') {
-        val = parseFloat(val) || 0;
+        val = isEmpty ? '' : parseFloat(val);
       }
       fixedFields[h.db_field] = val;
     } else if (h.formula) {
       // hidden 的公式列（如 qpm_max），需要根据当前编辑的表单数据重新计算
       const result = evaluateFormula(h.formula, getExcelFieldValue);
       let val: any = Math.ceil(result);
+      const isEmpty = val === '' || val === undefined || val === null;
       if (h.type === 'int') {
-        val = parseInt(val, 10) || 0;
+        val = isEmpty ? '' : parseInt(val, 10);
       } else if (h.type === 'float') {
-        val = parseFloat(val) || 0;
+        val = isEmpty ? '' : parseFloat(val);
       }
       fixedFields[h.db_field] = val;
     } else {
@@ -634,9 +637,10 @@ const handleCancel = () => {
                 <bk-select
                   v-model="formData[field.key]"
                   :disabled="field.readonly"
-                  :clearable="false"
+                  :clearable="!field.required"
                   :class="{ 'field-modified': isFieldModified(field) }"
                   :style="isFieldModified(field) ? { '--input-bg': '#fdf4e8' } : {}"
+                  @clear="formData[field.key] = ''"
                 >
                   <bk-option v-for="opt in field.options" :key="opt" :value="opt" :label="String(opt)" />
                 </bk-select>

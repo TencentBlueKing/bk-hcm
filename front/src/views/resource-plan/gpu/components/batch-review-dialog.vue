@@ -20,12 +20,10 @@ const comment = ref('');
 const handleConfirm = async () => {
   loading.value = true;
   try {
-    await gpuDemandStore.batchUpdateSubOrders({
-      suborder_data: props.suborderIds.map((id) => ({
-        suborder_id: id,
-        status: 'DONE',
-        ...(comment.value.trim() ? { comment: [comment.value.trim()] } : {}),
-      })),
+    await gpuDemandStore.batchUpdateSubOrderStatus({
+      suborder_ids: props.suborderIds,
+      status: 'DONE',
+      ...(comment.value.trim() ? { comment: [comment.value.trim()] } : {}),
     });
     Message({ theme: 'success', message: '批量评审成功' });
     isShow.value = false;

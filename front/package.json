@@ -28,6 +28,7 @@
     "@blueking/release-note": "0.0.1-beta.17",
     "@blueking/roll-request": "1.0.2",
     "@blueking/tdesign-ui": "0.0.1-beta.92",
+    "ajv": "6.14.0",
     "axios": "1.10.0",
     "bkui-vue": "2.0.1-beta.73",
     "dayjs": "1.11.3",

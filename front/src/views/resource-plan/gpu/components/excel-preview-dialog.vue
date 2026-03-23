@@ -46,7 +46,7 @@ const getErrorTooltips = (row: ITableRow) => {
   >
     <div class="excel-preview">
       <bk-tab v-model:active="activeTab" type="unborder-card">
-        <bk-tab-panel v-for="tab in tabs" :key="tab.name" :name="tab.name">
+        <bk-tab-panel v-for="tab in tabs" :key="tab.name" :name="tab.name" render-directive="if">
           <template #label>
             <div class="tab-label" :class="{ 'has-error': tab.hasError }">
               <i v-if="tab.hasError" class="hcm-icon bkhcm-icon-warn-triangle tab-error-icon"></i>
@@ -54,49 +54,60 @@ const getErrorTooltips = (row: ITableRow) => {
               <span class="tab-count">{{ tab.totalCount }}</span>
             </div>
           </template>
+
+          <bk-table
+            :data="currentRows"
+            :max-height="500"
+            row-hover="auto"
+            show-overflow-tooltip
+            :row-class="getRowClass"
+            :border="['row']"
+          >
+            <!-- 错误原因列：仅当该 sheet 有错误时显示 -->
+            <bk-table-column
+              v-if="hasAnyError()"
+              label="错误原因"
+              :width="160"
+              fixed="left"
+              :show-overflow-tooltip="false"
+            >
+              <template #default="{ row }: { row: ITableRow }">
+                <div v-if="row._hasError" v-bk-tooltips="getErrorTooltips(row)" class="error-cell">
+                  <i class="hcm-icon bkhcm-icon-warn-triangle tab-error-icon error-icon"></i>
+                  <span class="error-text">{{ row._errorReasons.join('；') }}</span>
+                </div>
+              </template>
+            </bk-table-column>
+
+            <!-- 错误行数列：仅当该 sheet 有错误时显示 -->
+            <bk-table-column
+              v-if="hasAnyError()"
+              label="错误行数"
+              :width="80"
+              fixed="left"
+              :show-overflow-tooltip="false"
+            >
+              <template #default="{ row }: { row: ITableRow }">
+                <span v-if="row._hasError" class="error-row-index">{{ row._errorRowIndex }}</span>
+              </template>
+            </bk-table-column>
+
+            <!-- 动态数据列：由 fixed_headers + headers 拼接 -->
+            <bk-table-column
+              v-for="(col, index) in (currentColumns as ITableColumn[])"
+              :key="index"
+              :prop="col.field"
+              :label="col.label"
+              :min-width="120"
+              show-overflow-tooltip
+            >
+              <template #default="{ row }: { row: ITableRow }">
+                {{ row[col.field] ?? '' }}
+              </template>
+            </bk-table-column>
+          </bk-table>
         </bk-tab-panel>
       </bk-tab>
-
-      <bk-table
-        :key="activeTab"
-        :data="currentRows"
-        :max-height="500"
-        row-hover="auto"
-        show-overflow-tooltip
-        :row-class="getRowClass"
-        :border="['row']"
-      >
-        <!-- 错误原因列：仅当该 sheet 有错误时显示 -->
-        <bk-table-column v-if="hasAnyError()" label="错误原因" :width="160" fixed="left" :show-overflow-tooltip="false">
-          <template #default="{ row }: { row: ITableRow }">
-            <div v-if="row._hasError" v-bk-tooltips="getErrorTooltips(row)" class="error-cell">
-              <i class="hcm-icon bkhcm-icon-warn-triangle tab-error-icon error-icon"></i>
-              <span class="error-text">{{ row._errorReasons.join('；') }}</span>
-            </div>
-          </template>
-        </bk-table-column>
-
-        <!-- 错误行数列：仅当该 sheet 有错误时显示 -->
-        <bk-table-column v-if="hasAnyError()" label="错误行数" :width="80" fixed="left" :show-overflow-tooltip="false">
-          <template #default="{ row }: { row: ITableRow }">
-            <span v-if="row._hasError" class="error-row-index">{{ row._errorRowIndex }}</span>
-          </template>
-        </bk-table-column>
-
-        <!-- 动态数据列：由 fixed_headers + headers 拼接 -->
-        <bk-table-column
-          v-for="(col, index) in (currentColumns as ITableColumn[])"
-          :key="index"
-          :prop="col.field"
-          :label="col.label"
-          :min-width="120"
-          show-overflow-tooltip
-        >
-          <template #default="{ row }: { row: ITableRow }">
-            {{ row[col.field] ?? '' }}
-          </template>
-        </bk-table-column>
-      </bk-table>
     </div>
   </bk-dialog>
 </template>

@@ -259,6 +259,12 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
     return http.post(api, params);
   };
 
+  /** 资源下 GPU 需求子单批量更新状态（评审通过/驳回） */
+  const batchUpdateSubOrderStatus = async (params: { suborder_ids: string[]; status: string; comment?: string[] }) => {
+    const api = '/api/v1/woa/plans/resources/gpu/demands/suborders/batch/status';
+    return http.post(api, params);
+  };
+
   return {
     listLoading,
     detailLoading,
@@ -267,6 +273,7 @@ export const useGpuDemandStore = defineStore('gpu-demand', () => {
     batchRejectOrders,
     batchTerminateOrders,
     batchUpdateSubOrders,
+    batchUpdateSubOrderStatus,
     batchTerminateSubOrders,
     createGpuDemandOrder,
     overwriteGpuDemandOrder,

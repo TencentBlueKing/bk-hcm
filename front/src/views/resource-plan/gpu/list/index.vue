@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, inject } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
+import routerAction from '@/router/utils/action';
 import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import useSearchQs from '@/hooks/use-search-qs';
@@ -19,7 +20,6 @@ import CreateSlider from '../create/index.vue';
 import { useTerminateConfirm } from '../hooks/use-terminate-confirm';
 
 const route = useRoute();
-const router = useRouter();
 
 const isBusinessPage = inject('isBusinessPage', false);
 
@@ -141,12 +141,12 @@ const handleCreateHidden = () => {
 
 const handleViewDetails = (row: IGpuDemandItem) => {
   const detailName = isBusinessPage ? MENU_BUSINESS_RESOURCE_PLAN_GPU_DETAIL : MENU_SERVICE_RESOURCE_PLAN_GPU_DETAIL;
-  router.push({ name: detailName, query: { ...route.query, id: row.id } });
+  routerAction.redirect({ name: detailName, query: { id: row.id } }, { history: true });
 };
 
 const handleAdjust = (row: IGpuDemandItem) => {
   const detailName = isBusinessPage ? MENU_BUSINESS_RESOURCE_PLAN_GPU_DETAIL : MENU_SERVICE_RESOURCE_PLAN_GPU_DETAIL;
-  router.push({ name: detailName, query: { ...route.query, id: row.id, action: 'adjust' } });
+  routerAction.redirect({ name: detailName, query: { id: row.id, action: 'adjust' } }, { history: true });
 };
 
 // 驳回确认弹窗

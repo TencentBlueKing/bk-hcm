@@ -130,9 +130,7 @@ const sheetTabs = computed(() => {
   const tabList = tplSheets.value.map((sheet) => {
     const sheetSubs = filteredSubOrders.value.filter((s) => s.demand_type === sheet.name);
     const count = sheetSubs.length;
-    // 判断该 sheet 中是否存在驳回状态的子单（基于全量子单，不受筛选影响）
-    const hasReject = subOrders.value.some((s) => s.demand_type === sheet.name && s.status === 'REJECT');
-    return { name: sheet.name, count, hasReject };
+    return { name: sheet.name, count };
   });
   // 排序：count > 0 排前面，count === 0 排后面
   return tabList.sort((a, b) => {
@@ -521,6 +519,13 @@ const sheetRowsMap = computed(() => {
   return map;
 });
 
+/** 判断指定 sheet 中是否存在驳回状态的单据 */
+const hasSheetReject = (sheetName: string): boolean => {
+  const rows = sheetRowsMap.value[sheetName];
+  if (!rows) return false;
+  return rows.some((row) => row._status === GPU_DEMAND_STATUS.REJECT);
+};
+
 // ==================== 子单选择（服务请求视角批量操作） ====================
 const isSubOrderSelectable = ({ row }: { row: Record<string, any> }) => {
   return row._status === 'PENDING';
@@ -563,6 +568,12 @@ const editingSheet = computed(() => {
   return tplSheets.value.find((s) => s.name === editingSubOrder.value!.demand_type) ?? null;
 });
 const editBizId = computed(() => Number(getBizsId()) || 0);
+
+/** 差异值显示：空值显示为"空值"文本 */
+const displayDiffVal = (val: any): string => {
+  if (val === '' || val === null || val === undefined) return '空值';
+  return String(val);
+};
 
 /**
  * 修改差异追踪（仅当次编辑保存后生效，离开详情页后清空）
@@ -872,7 +883,7 @@ const handleTerminateOrder = () => {
           <bk-table
             :key="`summary-${tableRenderKey}`"
             :data="summaryRows"
-            :max-height="500"
+            max-height="78vh"
             row-hover="auto"
             show-overflow-tooltip
             :border="['row']"
@@ -903,7 +914,7 @@ const handleTerminateOrder = () => {
         <bk-tab-panel v-for="tab in sheetTabs" :key="tab.name" :name="tab.name" render-directive="if">
           <template #label>
             <div class="tab-label">
-              <img v-if="tab.hasReject" :src="RejectCircleIcon" alt="reject" class="tab-reject-icon" />
+              <img v-if="hasSheetReject(tab.name)" :src="RejectCircleIcon" alt="reject" class="tab-reject-icon" />
               <span>{{ tab.name }}</span>
               <span class="tab-count">{{ tab.count }}</span>
             </div>
@@ -916,13 +927,13 @@ const handleTerminateOrder = () => {
           <bk-table
             :key="`${tab.name}-${tableRenderKey}`"
             :data="sheetRowsMap[tab.name]"
-            :max-height="500"
             row-hover="auto"
             show-overflow-tooltip
             :border="['row']"
             class="table-container"
             row-key="_id"
             :is-row-select-enable="isSubOrderSelectable"
+            max-height="78vh"
             @select-all="handleSubOrderSelectAll"
             @selection-change="handleSubOrderSelectChange"
           >
@@ -949,9 +960,9 @@ const handleTerminateOrder = () => {
                 </span>
                 <!-- 带修改痕迹的单元格 -->
                 <span v-else-if="col.formFieldKey && row._diffs && row._diffs[col.formFieldKey]" class="cell-diff">
-                  <span class="cell-diff-old">{{ row._diffs[col.formFieldKey].oldVal }}</span>
+                  <span class="cell-diff-old">{{ displayDiffVal(row._diffs[col.formFieldKey].oldVal) }}</span>
                   <span class="cell-diff-arrow">→</span>
-                  <span class="cell-diff-new">{{ row._diffs[col.formFieldKey].newVal }}</span>
+                  <span class="cell-diff-new">{{ displayDiffVal(row._diffs[col.formFieldKey].newVal) }}</span>
                 </span>
                 <span v-else>{{ row[col.field] }}</span>
               </template>

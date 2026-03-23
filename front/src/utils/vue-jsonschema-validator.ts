@@ -83,12 +83,17 @@ export interface ValidationResult {
 export class SchemaConverter {
   /**
    * 将自定义Schema转换为JSON Schema
+   * 同时返回每个 sheet 中必填字段名集合，用于空值清理
    */
-  static convertToJSONSchema(schema: CustomSchema): Record<string, JSONSchema> {
-    const result: Record<string, JSONSchema> = {};
+  static convertToJSONSchema(schema: CustomSchema): {
+    schemas: Record<string, JSONSchema>;
+    requiredFieldsMap: Record<string, Set<string>>;
+  } {
+    const schemas: Record<string, JSONSchema> = {};
+    const requiredFieldsMap: Record<string, Set<string>> = {};
 
     for (const sheet of schema.sheets) {
-      result[sheet.name] = {
+      schemas[sheet.name] = {
         $schema: 'http://json-schema.org/draft-07/schema#',
         title: `${sheet.name} 数据校验Schema`,
         description: `Sheet: ${sheet.name}, 数据起始行: ${sheet.start}`,
@@ -96,19 +101,21 @@ export class SchemaConverter {
         properties: {},
         required: [],
       };
+      requiredFieldsMap[sheet.name] = new Set();
 
       for (const field of sheet.header) {
         const propName = this.sanitizeFieldName(field.name);
         const prop = this.convertFieldToProperty(field);
-        result[sheet.name].properties![propName] = prop;
+        schemas[sheet.name].properties![propName] = prop;
 
         if (field.required) {
-          result[sheet.name].required!.push(propName);
+          schemas[sheet.name].required!.push(propName);
+          requiredFieldsMap[sheet.name].add(propName);
         }
       }
     }
 
-    return result;
+    return { schemas, requiredFieldsMap };
   }
 
   /**
@@ -117,18 +124,10 @@ export class SchemaConverter {
    * gte → minimum（大于等于）
    * lt  → exclusiveMaximum（小于）
    * lte → maximum（小于等于）
-   * 如果都没有指定，默认 minimum = 0
+   * 接口没有给约束则不设置默认值，允许任意范围
    */
   private static applyRangeConstraints(prop: PropertySchema, field: FieldSchema): void {
-    const hasAnyConstraint =
-      field.gt !== undefined || field.gte !== undefined || field.lt !== undefined || field.lte !== undefined;
-
-    if (!hasAnyConstraint) {
-      // 默认行为：无任何范围约束时，使用 minimum = 0
-      prop.minimum = 0;
-      return;
-    }
-
+    // 仅根据接口给出的约束设置范围，接口没给则不限制
     // gt（大于）→ exclusiveMinimum
     if (field.gt !== undefined) {
       prop.exclusiveMinimum = field.gt;
@@ -160,8 +159,23 @@ export class SchemaConverter {
 
     if (fieldType === 'string') {
       prop.type = 'string';
-      prop.minLength = 1;
-      prop.maxLength = 4096;
+      // 根据接口的 gt/gte/lt/lte 设置 minLength/maxLength
+      if (field.gt !== undefined) {
+        prop.minLength = field.gt + 1; // gt（大于）→ minLength = gt + 1
+      }
+      if (field.gte !== undefined) {
+        prop.minLength = field.gte; // gte（大于等于）→ minLength = gte
+      }
+      if (field.lt !== undefined) {
+        prop.maxLength = field.lt - 1; // lt（小于）→ maxLength = lt - 1
+      }
+      if (field.lte !== undefined) {
+        prop.maxLength = field.lte; // lte（小于等于）→ maxLength = lte
+      }
+      // 必填字段至少保证 minLength >= 1
+      if (field.required && (prop.minLength === undefined || prop.minLength < 1)) {
+        prop.minLength = 1;
+      }
     } else if (fieldType === 'int') {
       prop.type = ['integer', 'string'];
       this.applyRangeConstraints(prop, field);
@@ -252,10 +266,13 @@ export class JSONSchemaValidator {
   private ajv: InstanceType<typeof Ajv>;
   private schemas: Record<string, JSONSchema>;
   private validators: Map<string, ValidateFunction>;
+  private requiredFieldsMap: Record<string, Set<string>>;
 
   constructor(customSchema: CustomSchema) {
     this.ajv = new Ajv({ allErrors: true, coerceTypes: true });
-    this.schemas = SchemaConverter.convertToJSONSchema(customSchema);
+    const { schemas, requiredFieldsMap } = SchemaConverter.convertToJSONSchema(customSchema);
+    this.schemas = schemas;
+    this.requiredFieldsMap = requiredFieldsMap;
     this.validators = new Map();
 
     // 预编译所有Schema
@@ -288,8 +305,21 @@ export class JSONSchemaValidator {
     // 转换字段名
     const convertedData = this.convertFieldNames(rowData);
 
+    // 非必填字段的空值清理：移除空值字段，让 ajv 跳过校验
+    // 只有在 required 数组中的字段，空值才会触发 "不能为空" 校验
+    const requiredFields = this.requiredFieldsMap[sheetName] || new Set();
+    const cleanedData: Record<string, any> = {};
+    for (const [key, value] of Object.entries(convertedData)) {
+      const isEmpty = value === '' || value === undefined || value === null;
+      if (isEmpty && !requiredFields.has(key)) {
+        // 非必填字段的空值：不传入 ajv，跳过所有校验
+        continue;
+      }
+      cleanedData[key] = value;
+    }
+
     // 执行校验
-    const valid = validate(convertedData);
+    const valid = validate(cleanedData);
     if (!valid) {
       result.valid = false;
       result.errors = this.formatErrors(validate.errors, rowNum);
