@@ -84,7 +84,7 @@
     "typescript": "4.7.4"
   },
   "overrides": {
-    "less": "4.2.0"
+    "less": "$less"
   },
   "engines": {
     "node": ">= v16.20.2",
