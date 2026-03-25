@@ -47,7 +47,7 @@ const handleTabsChange = (val: string) => {
 
 watch(
   () => detail.value,
-  (val: { account_id: string; region: string }) => {
+  (val: { account_id: string; region: string; vendor?: string }) => {
     getRelatedSecurityGroups(val);
     getTemplateData(val);
   },
@@ -162,7 +162,12 @@ const getRelatedSecurityGroups = async (detail: { account_id: string; region: st
   relatedSecurityGroups.value = res?.data?.details;
 };
 
-const getTemplateData = async (detail: { account_id: string }) => {
+const getTemplateData = async (detail: { account_id?: string; vendor?: string }) => {
+  if (!detail?.account_id) {
+    return;
+  }
+  // 使用当前安全组自身的 vendor 筛选参数模板列表（如 tcloud-ziyan）；详情未带 vendor 时回退 tcloud。
+  const securityGroupVendor = detail.vendor || 'tcloud';
   const [ipListPromise, ipGroupListPromise, portListPromise, portGroupListPromise] = [
     'address',
     'address_group',
@@ -177,7 +182,7 @@ const getTemplateData = async (detail: { account_id: string }) => {
             {
               field: 'vendor',
               op: 'eq',
-              value: 'tcloud',
+              value: securityGroupVendor,
             },
             {
               field: 'account_id',
