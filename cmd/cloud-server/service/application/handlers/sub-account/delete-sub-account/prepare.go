@@ -24,12 +24,13 @@ import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 )
 
 // deleteSubAccountContent is the content stored in application.content for deleting sub-account.
 type deleteSubAccountContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
-	proto.SubAccountDeleteReq        `json:",inline"`
+	Req                              proto.SubAccountDeleteReq `json:"req"`
 }
 
 // GetItsmApprover get ITSM approvers, delegates to base which queries 2nd-level account managers.
@@ -45,6 +46,6 @@ func (a *ApplicationOfDeleteSubAccount) GenerateApplicationContent() interface{}
 			Vendor:  a.Vendor(),
 			BkBizID: a.BkBizID(),
 		},
-		SubAccountDeleteReq: *a.req,
+		Req: converter.PtrToVal(a.req),
 	}
 }

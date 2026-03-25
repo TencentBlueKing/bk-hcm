@@ -105,7 +105,7 @@ type UpdateField struct {
 	AccountType    string                 `json:"account_type" validate:"omitempty"`
 	Managers       types.StringArray      `json:"managers" validate:"omitempty"`
 	BkBizIDs       types.Int64Array       `json:"bk_biz_ids" validate:"omitempty"`
-	Extension      core.ExtMessage        `json:"extension" validate:"omitempty"`
+	Extension      *core.ExtMessage       `json:"extension" validate:"omitempty"`
 	Email          *string                `json:"email" validate:"omitempty"`
 	PhoneNum       *string                `json:"phone_num" validate:"omitempty"`
 	CountryCode    *string                `json:"country_code" validate:"omitempty"`

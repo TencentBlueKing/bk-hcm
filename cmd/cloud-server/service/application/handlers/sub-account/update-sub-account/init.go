@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package updatesubaccount provides the handler for updating sub accounts.
 package updatesubaccount
 
 import (
@@ -26,6 +27,7 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -35,8 +37,7 @@ func init() {
 	subaccount.RegisterActionHandler(enumor.SubAccountActionUpdate, newHandlerFromContent)
 }
 
-func newHandlerFromContent(
-	opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
+func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error) {
 
 	ct := new(updateSubAccountContent)
@@ -44,9 +45,7 @@ func newHandlerFromContent(
 		return nil, fmt.Errorf("unmarshal update sub account content failed, err: %w", err)
 	}
 
-	return NewApplicationOfUpdateSubAccount(opt, base.Vendor, base.BkBizID, ct.AccountID, ct.SubAccountName,
-		&ct.SubAccountUpdateReq,
-	), nil
+	return NewApplicationOfUpdateSubAccount(opt, base, ct.SubAccountName, converter.ValToPtr(ct.Req)), nil
 }
 
 // ApplicationOfUpdateSubAccount handler for updating sub account.
@@ -58,15 +57,12 @@ type ApplicationOfUpdateSubAccount struct {
 }
 
 // NewApplicationOfUpdateSubAccount create a new handler for updating sub account.
-func NewApplicationOfUpdateSubAccount(opt *handlers.HandlerOption, vendor enumor.Vendor, bkBizID int64,
-	accountID string, subAccountName string, req *proto.SubAccountUpdateReq,
-) *ApplicationOfUpdateSubAccount {
+func NewApplicationOfUpdateSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
+	subAccountName string, req *proto.SubAccountUpdateReq) *ApplicationOfUpdateSubAccount {
 
 	return &ApplicationOfUpdateSubAccount{
-		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(
-			opt, enumor.SubAccountActionUpdate, vendor, bkBizID, accountID,
-		),
-		req:            req,
-		subAccountName: subAccountName,
+		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
+		req:                       req,
+		subAccountName:            subAccountName,
 	}
 }

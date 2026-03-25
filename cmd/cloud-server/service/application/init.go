@@ -22,6 +22,7 @@ package application
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"hcm/cmd/cloud-server/logics/audit"
@@ -60,23 +61,23 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		cmdbCli:    c.CmdbCli,
 	}
 	h := rest.NewHandler()
-	h.Add("ListApplications", "POST", "/applications/list", svc.ListApplications)
-	h.Add("GetApplication", "GET", "/applications/{application_id}", svc.GetApplication)
-	h.Add("CancelApplication", "PATCH", "/applications/{application_id}/cancel", svc.CancelApplication)
-	h.Add("ApproveApplication", "POST", "/applications/approve", svc.ApproveApplication)
+	h.Add("ListApplications", http.MethodPost, "/applications/list", svc.ListApplications)
+	h.Add("GetApplication", http.MethodGet, "/applications/{application_id}", svc.GetApplication)
+	h.Add("CancelApplication", http.MethodPatch, "/applications/{application_id}/cancel", svc.CancelApplication)
+	h.Add("ApproveApplication", http.MethodPost, "/applications/approve", svc.ApproveApplication)
 
-	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
-	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
-	h.Add("CreateForCreateVpc", "POST", "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
-	h.Add("CreateForCreateDisk", "POST", "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
-	h.Add("CreateForCreateLB", "POST",
+	h.Add("CreateForAddAccount", http.MethodPost, "/applications/types/add_account", svc.CreateForAddAccount)
+	h.Add("CreateForCreateCvm", http.MethodPost, "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
+	h.Add("CreateForCreateVpc", http.MethodPost, "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
+	h.Add("CreateForCreateDisk", http.MethodPost, "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
+	h.Add("CreateForCreateLB", http.MethodPost,
 		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
 
-	h.Add("CreateForCreateMainAccount", "POST",
+	h.Add("CreateForCreateMainAccount", http.MethodPost,
 		"/applications/types/create_main_account", svc.CreateForCreateMainAccount)
-	h.Add("CompleteForCreateMainAccount", "POST",
+	h.Add("CompleteForCreateMainAccount", http.MethodPost,
 		"/applications/types/complete_main_account", svc.CompleteForCreateMainAccount)
-	h.Add("CreateForUpdateMainAccount", "POST",
+	h.Add("CreateForUpdateMainAccount", http.MethodPost,
 		"/applications/types/update_main_account", svc.CreateForUpdateMainAccount)
 
 	bizH := rest.NewHandler()
@@ -89,16 +90,16 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 }
 
 func bizService(h *rest.Handler, svc *applicationSvc) {
-	h.Add("ListBizApplications", "POST", "/applications/list", svc.ListBizApplications)
-	h.Add("CreateBizForAddAccount", "POST", "/applications/types/add_account", svc.CreateBizForAddAccount)
+	h.Add("ListBizApplications", http.MethodPost, "/applications/list", svc.ListBizApplications)
+	h.Add("CreateBizForAddAccount", http.MethodPost, "/applications/types/add_account", svc.CreateBizForAddAccount)
 
-	h.Add("CreateBizForAddSubAccount", "POST",
+	h.Add("CreateBizForAddSubAccount", http.MethodPost,
 		"/vendors/{vendor}/applications/types/add_sub_account", svc.CreateBizForAddSubAccount)
 
-	h.Add("CreateBizForUpdateSubAccount", "POST",
+	h.Add("CreateBizForUpdateSubAccount", http.MethodPost,
 		"/vendors/{vendor}/applications/types/update_sub_account", svc.CreateBizForUpdateSubAccount)
 
-	h.Add("CreateBizForDeleteSubAccount", "POST",
+	h.Add("CreateBizForDeleteSubAccount", http.MethodPost,
 		"/vendors/{vendor}/applications/types/delete_sub_account", svc.CreateBizForDeleteSubAccount)
 
 }
@@ -138,18 +139,13 @@ func (a *applicationSvc) getApprovalProcessInfo(
 	// Note：目前4条记录对应一个itsm流程id，后续如果要使用其它流程可直接修改数据库适配
 	// 新增类型只需要增加对应的tye和DB记录
 	result, err := a.client.DataService().Global.ApprovalProcess.ListApprovalProcesses(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit.Ctx, cts.Kit.Header(),
 		&dataproto.ApprovalProcessListReq{
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					filter.AtomRule{
-						Field: "application_type",
-						Op:    filter.Equal.Factory(),
-						Value: string(applicationType),
-					},
-				},
+						Field: "application_type", Op: filter.Equal.Factory(), Value: string(applicationType)}},
 			},
 			Page: &core.BasePage{
 				Count: false,

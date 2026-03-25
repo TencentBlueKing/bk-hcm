@@ -23,12 +23,38 @@ import (
 	typeaccount "hcm/pkg/adaptor/types/account"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
+// TCloudListAccount list tcloud accounts (CAM ListUsers).
+func (svc *service) TCloudListAccount(cts *rest.Contexts) (interface{}, error) {
+	req := new(hssubaccount.TCloudListAccountReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := client.ListAccount(cts.Kit)
+	if err != nil {
+		logs.Errorf("list tcloud account failed, err: %v, account: %s, rid: %s",
+			err, req.AccountID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // TCloudCreateSubAccount create tcloud subaccount (CAM AddUser).
 func (svc *service) TCloudCreateSubAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(hssubaccount.CreateSubAccountReq)
+	req := new(hssubaccount.TCloudCreateSubAccountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -43,8 +69,8 @@ func (svc *service) TCloudCreateSubAccount(cts *rest.Contexts) (interface{}, err
 
 	result, err := client.AddUser(cts.Kit, &typeaccount.AddUserOption{
 		Name: req.Name,
-		// 1代表生成子账户密钥，0代表不生成
-		UseAPI:       1,
+		// 1代表生成子账户密钥,0代表不生成,创建子账户不生成密钥,用户需要到海垒上创建对应密钥。
+		UseAPI:       0,
 		Remark:       req.Remark,
 		Email:        req.Email,
 		PhoneNum:     req.PhoneNum,
@@ -60,7 +86,7 @@ func (svc *service) TCloudCreateSubAccount(cts *rest.Contexts) (interface{}, err
 
 // TCloudUpdateSubAccount update tcloud subaccount (CAM UpdateUser).
 func (svc *service) TCloudUpdateSubAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(hssubaccount.UpdateSubAccountReq)
+	req := new(hssubaccount.TCloudUpdateSubAccountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -96,7 +122,7 @@ func (svc *service) TCloudUpdateSubAccount(cts *rest.Contexts) (interface{}, err
 
 // TCloudDeleteSubAccount delete tcloud subaccount (CAM DeleteUser).
 func (svc *service) TCloudDeleteSubAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(hssubaccount.DeleteSubAccountReq)
+	req := new(hssubaccount.TCloudDeleteSubAccountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -116,9 +142,36 @@ func (svc *service) TCloudDeleteSubAccount(cts *rest.Contexts) (interface{}, err
 	return nil, nil
 }
 
+// TCloudDescribeSubAccounts query sub accounts by UIN list (CAM DescribeSubAccounts).
+func (svc *service) TCloudDescribeSubAccounts(cts *rest.Contexts) (interface{}, error) {
+	req := new(hssubaccount.TCloudDescribeSubAccountsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := client.DescribeSubAccounts(cts.Kit, &typeaccount.DescribeSubAccountsOption{
+		SubUin: req.SubUin,
+	})
+	if err != nil {
+		logs.Errorf("describe sub accounts failed, err: %v, account: %s, rid: %s",
+			err, req.AccountID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // TCloudDescribeSafeAuthFlag get tcloud sub-account safe auth flag settings (CAM DescribeSafeAuthFlagColl).
 func (svc *service) TCloudDescribeSafeAuthFlag(cts *rest.Contexts) (interface{}, error) {
-	req := new(hssubaccount.DescribeSafeAuthFlagReq)
+	req := new(hssubaccount.TCloudDescribeSafeAuthFlagReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -139,4 +192,30 @@ func (svc *service) TCloudDescribeSafeAuthFlag(cts *rest.Contexts) (interface{},
 	}
 
 	return result, nil
+}
+
+// TCloudSetMfaFlag set tcloud sub-account login protection and sensitive operation protection (CAM SetMfaFlag).
+func (svc *service) TCloudSetMfaFlag(cts *rest.Contexts) (interface{}, error) {
+	req := new(hssubaccount.TCloudSetMfaFlagReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = client.SetMfaFlag(cts.Kit, &typeaccount.SetMfaFlagOption{
+		OpUin:      req.OpUin,
+		LoginFlag:  req.LoginFlag,
+		ActionFlag: req.ActionFlag,
+	}); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }

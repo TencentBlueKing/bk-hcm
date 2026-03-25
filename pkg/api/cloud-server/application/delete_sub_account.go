@@ -31,12 +31,23 @@ type SubAccountBatchDeleteReq struct {
 	IDs               []string `json:"ids" validate:"required,min=1,max=100"`
 }
 
-// SubAccountDeleteReq define sub account delete request for a single sub-account.
+// SubAccountBasicInfo holds the basic identifying fields of a sub-account,
+// shared between the service layer and vendor-specific delete/operate requests.
+type SubAccountBasicInfo struct {
+	ID        string `json:"id" validate:"required"`
+	AccountID string `json:"account_id" validate:"required"`
+	Name      string `json:"name" validate:"required"`
+	CloudID   string `json:"cloud_id" validate:"required"`
+}
+
+// SubAccountDeleteReq define subaccount delete request for a single sub-account.
 type SubAccountDeleteReq struct {
-	ID        string `json:"id"`
-	AccountID string `json:"account_id"`
-	Name      string `json:"name"`
-	CloudID   string `json:"cloud_id"`
+	SubAccountBasicInfo `json:",inline"`
+}
+
+// Validate sub account delete request.
+func (req *SubAccountDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // Validate sub account batch delete request.

@@ -37,7 +37,7 @@ func (a *ApplicationOfUpdateSubAccount) CheckReq() error {
 	}
 
 	if _, err := a.GetAccount(a.AccountID()); err != nil {
-		return fmt.Errorf("parent account(%s) not found, err: %w", a.AccountID(), err)
+		return fmt.Errorf("found parent account(%s) failed, err: %w", a.AccountID(), err)
 	}
 
 	return nil
@@ -50,11 +50,7 @@ func (a *ApplicationOfUpdateSubAccount) checkSubAccountExists() error {
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.ID,
-					},
+					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID},
 				},
 			},
 			Page: &core.BasePage{Count: true},

@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package deletesubaccount provides the handler for deleting sub accounts.
 package deletesubaccount
 
 import (
@@ -26,6 +27,7 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -43,7 +45,7 @@ func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSub
 		return nil, fmt.Errorf("unmarshal delete sub account content failed, err: %w", err)
 	}
 
-	return NewApplicationOfDeleteSubAccount(opt, base.Vendor, base.BkBizID, &ct.SubAccountDeleteReq), nil
+	return NewApplicationOfDeleteSubAccount(opt, base, converter.ValToPtr(ct.Req)), nil
 }
 
 // ApplicationOfDeleteSubAccount handler for deleting sub account.
@@ -54,14 +56,11 @@ type ApplicationOfDeleteSubAccount struct {
 }
 
 // NewApplicationOfDeleteSubAccount create a new handler for deleting sub account.
-func NewApplicationOfDeleteSubAccount(opt *handlers.HandlerOption, vendor enumor.Vendor, bkBizID int64,
-	req *proto.SubAccountDeleteReq,
-) *ApplicationOfDeleteSubAccount {
+func NewApplicationOfDeleteSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
+	req *proto.SubAccountDeleteReq) *ApplicationOfDeleteSubAccount {
 
 	return &ApplicationOfDeleteSubAccount{
-		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(
-			opt, enumor.SubAccountActionDelete, vendor, bkBizID, req.AccountID,
-		),
-		req: req,
+		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
+		req:                       req,
 	}
 }

@@ -26,6 +26,7 @@ import (
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // Deliver execute resource delivery after approval.
@@ -40,10 +41,7 @@ func (a *ApplicationOfUpdateSubAccount) Deliver() (enumor.ApplicationStatus, map
 	}
 }
 
-func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (
-	enumor.ApplicationStatus, map[string]interface{}, error,
-) {
-
+func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	if err := a.updateCloudSubAccount(); err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)},
@@ -68,12 +66,13 @@ func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (
 }
 
 func (a *ApplicationOfUpdateSubAccount) updateCloudSubAccount() error {
-	req := &hssubaccount.UpdateSubAccountReq{
+	req := &hssubaccount.TCloudUpdateSubAccountReq{
 		AccountID:   a.AccountID(),
 		Name:        a.subAccountName,
 		Email:       a.req.Email,
 		PhoneNum:    a.req.PhoneNum,
 		CountryCode: a.req.CountryCode,
+		Remark:      a.req.Memo,
 	}
 
 	return a.Client.HCService().TCloud.Account.UpdateSubAccount(a.Cts.Kit, req)
@@ -82,9 +81,6 @@ func (a *ApplicationOfUpdateSubAccount) updateCloudSubAccount() error {
 func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {
 	field := dssubaccount.UpdateField{ID: a.req.ID}
 
-	if a.req.Name != nil {
-		field.Name = *a.req.Name
-	}
 	if a.req.Email != nil {
 		field.Email = a.req.Email
 	}
@@ -99,6 +95,20 @@ func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {
 	}
 	if a.req.Memo != nil {
 		field.Memo = a.req.Memo
+	}
+	if a.req.BkBizID != nil {
+		field.BkBizIDs = []int64{converter.PtrToVal(a.req.BkBizID)}
+	}
+
+	updateFields, err := converter.StructToMap(field)
+	if err != nil {
+		logs.Errorf("convert update_sub_account field to map failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+	err = a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountAuditResType, a.req.ID, updateFields)
+	if err != nil {
+		logs.Errorf("create update_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
 	}
 
 	return a.Client.DataService().Global.SubAccount.BatchUpdate(

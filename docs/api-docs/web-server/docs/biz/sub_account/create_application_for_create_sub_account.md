@@ -13,7 +13,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 | 参数名称         | 参数类型   | 必选 | 描述     |
 |--------------|--------|----|--------|
 | bk_biz_id    | int64  | 是  | 业务ID   |
-| vendor    | string       | 是  | 云厂商, 枚举值：tcloud |
+| vendor       | string | 是  | 云厂商, 枚举值：tcloud |
 | sub_accounts | object | 是  | 三级账号列表，长度限制100 |
 
 #### sub_accounts
@@ -23,9 +23,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 | name          | string      | 是  | 三级账号名称   |
 | receive_email | string      | 是  | 账号开通接收邮箱 |
 | email         | string      | 否  | 三级账号邮箱   |
+| managers      | string array | 是  | 账号管理者    |
 | phone_num     | string      | 否  | 手机号      |
 | country_code  | string    | 否  | 手机区域代码   |
-| managers      | string array | 否  | 账号管理者    |
 | memo          | string      | 否  | 备注       |
 | extension     | object       | 是  | 混合云差异字段    |
 

@@ -28,8 +28,8 @@ import (
 
 // CheckReq validate the request and check that the sub account exists.
 func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
-	if a.req.ID == "" {
-		return fmt.Errorf("sub account id is required")
+	if err := a.req.Validate(); err != nil {
+		return err
 	}
 
 	if err := a.checkSubAccountExists(); err != nil {
@@ -37,7 +37,7 @@ func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
 	}
 
 	if _, err := a.GetAccount(a.AccountID()); err != nil {
-		return fmt.Errorf("parent account(%s) not found, err: %w", a.AccountID(), err)
+		return fmt.Errorf("found parent account(%s) failed, err: %w", a.AccountID(), err)
 	}
 
 	// TODO: 密钥管理功能实现后，需要校验三级账号关联的密钥是否已全部删除，
@@ -51,14 +51,8 @@ func (a *ApplicationOfDeleteSubAccount) checkSubAccountExists() error {
 		a.Cts.Kit,
 		&core.ListReq{
 			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.ID,
-					},
-				},
+				Op:    filter.And,
+				Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID}},
 			},
 			Page: &core.BasePage{Count: true},
 		},

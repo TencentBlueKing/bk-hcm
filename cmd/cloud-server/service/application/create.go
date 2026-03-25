@@ -37,6 +37,7 @@ import (
 	lbtcloud "hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
+	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
 	deletesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-sub-account"
 	updatesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-sub-account"
@@ -59,6 +60,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -562,18 +564,23 @@ func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req 
 ) ([]string, error) {
 
 	opt := a.getHandlerOption(cts)
-	ids := make([]string, 0, len(req.SubAccounts))
-	for i, account := range req.SubAccounts {
-		handler := createsubaccount.NewApplicationOfCreateSubAccount(
-			opt, req.Vendor, req.BkBizID, &req.SubAccounts[i],
-		)
 
-		commReq := &proto.CreateCommonReq{Remark: account.Memo}
+	ids := make([]string, 0, len(req.SubAccounts))
+	for i, subAccount := range req.SubAccounts {
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionCreate,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: subAccount.AccountID,
+		}
+
+		handler := createsubaccount.NewApplicationOfCreateSubAccount(opt, base, &req.SubAccounts[i])
+		commReq := &proto.CreateCommonReq{Remark: subAccount.Memo}
+
 		result, err := a.create(cts, commReq, handler)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.Aborted,
-				fmt.Errorf("create application for sub_account[%d](%s) failed, err: %w",
-					i, req.SubAccounts[i].Name, err))
+				fmt.Errorf("create application for sub_account[%d](%s) failed, err: %w", i, subAccount.Name, err))
 		}
 
 		if createResult, ok := result.(*core.CreateResult); ok {
@@ -638,16 +645,22 @@ func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, r
 	}
 
 	opt := a.getHandlerOption(cts)
+
 	ids := make([]string, 0, len(req.SubAccounts))
 	for i := range req.SubAccounts {
 		info, ok := subAccountMap[req.SubAccounts[i].ID]
 		if !ok {
-			return nil, errf.Newf(errf.InvalidParameter,
-				"sub account(%s) not found", req.SubAccounts[i].ID)
+			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", req.SubAccounts[i].ID)
 		}
 
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionUpdate,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
 		handler := updatesubaccount.NewApplicationOfUpdateSubAccount(
-			opt, req.Vendor, req.BkBizID, info.AccountID, info.Name, &req.SubAccounts[i],
+			opt, base, info.Name, &req.SubAccounts[i],
 		)
 
 		commReq := &proto.CreateCommonReq{Remark: req.SubAccounts[i].Memo}
@@ -715,6 +728,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 	}
 
 	opt := a.getHandlerOption(cts)
+
 	ids := make([]string, 0, len(req.IDs))
 	for _, subAccountID := range req.IDs {
 		info, ok := infoMap[subAccountID]
@@ -722,13 +736,14 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", subAccountID)
 		}
 
-		handler := deletesubaccount.NewApplicationOfDeleteSubAccount(opt, req.Vendor, req.BkBizID,
-			&proto.SubAccountDeleteReq{
-				ID:        info.ID,
-				AccountID: info.AccountID,
-				Name:      info.Name,
-				CloudID:   info.CloudID,
-			},
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionDelete,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
+		handler := deletesubaccount.NewApplicationOfDeleteSubAccount(opt, base,
+			&proto.SubAccountDeleteReq{SubAccountBasicInfo: converter.PtrToVal(info)},
 		)
 
 		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
@@ -746,17 +761,9 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 	return ids, nil
 }
 
-// subAccountBasicInfo holds basic sub-account info used by create/update/delete entry points.
-type subAccountBasicInfo struct {
-	ID        string
-	AccountID string
-	Name      string
-	CloudID   string
-}
-
-// listSubAccountBasicInfo batch queries sub-accounts by IDs and returns a map keyed by sub-account ID.
+// listSubAccountBasicInfo batch queries subaccounts by IDs and returns a map keyed by sub-account ID.
 func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountIDs []string,
-) (map[string]*subAccountBasicInfo, error) {
+) (map[string]*proto.SubAccountBasicInfo, error) {
 
 	result, err := a.client.DataService().Global.SubAccount.List(
 		cts.Kit,
@@ -764,11 +771,7 @@ func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountI
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.In.Factory(),
-						Value: subAccountIDs,
-					},
+					filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: subAccountIDs},
 				},
 			},
 			Page: &core.BasePage{Start: 0, Limit: uint(len(subAccountIDs))},
@@ -779,15 +782,13 @@ func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountI
 	}
 
 	if len(result.Details) != len(subAccountIDs) {
-		return nil, fmt.Errorf(
-			"some sub accounts not found, expected %d but got %d",
-			len(subAccountIDs), len(result.Details),
-		)
+		return nil, fmt.Errorf("some sub accounts not found, expected %d but got %d",
+			len(subAccountIDs), len(result.Details))
 	}
 
-	infoMap := make(map[string]*subAccountBasicInfo, len(result.Details))
+	infoMap := make(map[string]*proto.SubAccountBasicInfo, len(result.Details))
 	for _, sa := range result.Details {
-		infoMap[sa.ID] = &subAccountBasicInfo{
+		infoMap[sa.ID] = &proto.SubAccountBasicInfo{
 			ID:        sa.ID,
 			AccountID: sa.AccountID,
 			Name:      sa.Name,

@@ -89,6 +89,54 @@ func (t *TCloudImpl) CountAccount(kt *kit.Kit) (int32, error) {
 	return int32(len(resp.Response.Data)), nil
 }
 
+// DescribeSubAccounts query sub accounts by UIN list.
+// reference: https://cloud.tencent.com/document/api/598/53486
+func (t *TCloudImpl) DescribeSubAccounts(kt *kit.Kit, opt *typeaccount.DescribeSubAccountsOption) (
+	[]typeaccount.TCloudSubAccountUser, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe sub accounts option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewDescribeSubAccountsRequest()
+	uins := make([]*uint64, 0, len(opt.SubUin))
+	for i := range opt.SubUin {
+		uins = append(uins, &opt.SubUin[i])
+	}
+	req.FilterSubAccountUin = uins
+
+	resp, err := camClient.DescribeSubAccountsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("describe sub accounts failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("describe sub accounts failed, err: %v", err)
+	}
+
+	list := make([]typeaccount.TCloudSubAccountUser, 0, len(resp.Response.SubAccounts))
+	for _, one := range resp.Response.SubAccounts {
+		list = append(list, typeaccount.TCloudSubAccountUser{
+			Uin:           one.Uin,
+			Name:          one.Name,
+			Uid:           one.Uid,
+			Remark:        one.Remark,
+			CreateTime:    one.CreateTime,
+			UserType:      one.UserType,
+			LastLoginIp:   one.LastLoginIp,
+			LastLoginTime: one.LastLoginTime,
+		})
+	}
+
+	return list, nil
+}
+
 // GetAccountZoneQuota 获取账号配额信息.
 // reference: https://cloud.tencent.com/document/api/213/55628
 func (t *TCloudImpl) GetAccountZoneQuota(kt *kit.Kit, opt *typeaccount.GetTCloudAccountZoneQuotaOption) (
@@ -401,6 +449,50 @@ func (t *TCloudImpl) DescribeSafeAuthFlag(kt *kit.Kit, opt *typeaccount.Describe
 	}
 
 	return result, nil
+}
+
+// SetMfaFlag set sub-account login protection and sensitive operation protection.
+// reference: https://cloud.tencent.com/document/product/598/36227
+func (t *TCloudImpl) SetMfaFlag(kt *kit.Kit, opt *typeaccount.SetMfaFlagOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "set mfa flag option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewSetMfaFlagRequest()
+	req.OpUin = converter.ValToPtr(opt.OpUin)
+
+	if opt.LoginFlag != nil {
+		req.LoginFlag = &cam.LoginActionMfaFlag{
+			Phone:  opt.LoginFlag.Phone,
+			Stoken: opt.LoginFlag.Stoken,
+			Wechat: opt.LoginFlag.Wechat,
+		}
+	}
+
+	if opt.ActionFlag != nil {
+		req.ActionFlag = &cam.LoginActionMfaFlag{
+			Phone:  opt.ActionFlag.Phone,
+			Stoken: opt.ActionFlag.Stoken,
+			Wechat: opt.ActionFlag.Wechat,
+		}
+	}
+
+	_, err = camClient.SetMfaFlagWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("set mfa flag failed, op_uin: %d, err: %v, rid: %s", opt.OpUin, err, kt.Rid)
+		return fmt.Errorf("set mfa flag failed, err: %v", err)
+	}
+
+	return nil
 }
 
 // GetAccountInfoBySecret 根据秘钥获取云上获取账号信息

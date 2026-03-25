@@ -44,9 +44,6 @@ func (a *ApplicationOfUpdateSubAccount) RenderItsmForm() (string, error) {
 		fmt.Sprintf("三级账号名称: %s", a.subAccountName),
 	}
 
-	if a.req.Name != nil {
-		items = append(items, fmt.Sprintf("修改名称: %s", converter.PtrToVal(a.req.Name)))
-	}
 	if a.req.Email != nil {
 		items = append(items, fmt.Sprintf("修改邮箱: %s", converter.PtrToVal(a.req.Email)))
 	}

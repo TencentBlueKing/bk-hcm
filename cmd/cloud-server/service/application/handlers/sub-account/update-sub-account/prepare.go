@@ -24,15 +24,15 @@ import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 )
 
 // updateSubAccountContent is the content stored in application.content for updating sub-account.
 type updateSubAccountContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
-	proto.SubAccountUpdateReq        `json:",inline"`
-
-	AccountID      string `json:"account_id"`
-	SubAccountName string `json:"sub_account_name"`
+	Req                              proto.SubAccountUpdateReq `json:"req"`
+	AccountID                        string                    `json:"account_id"`
+	SubAccountName                   string                    `json:"sub_account_name"`
 }
 
 // GetItsmApprover get ITSM approvers, delegates to base which queries 2nd-level account managers.
@@ -48,8 +48,8 @@ func (a *ApplicationOfUpdateSubAccount) GenerateApplicationContent() interface{}
 			Vendor:  a.Vendor(),
 			BkBizID: a.BkBizID(),
 		},
-		SubAccountUpdateReq: *a.req,
-		AccountID:           a.AccountID(),
-		SubAccountName:      a.subAccountName,
+		Req:            converter.PtrToVal(a.req),
+		AccountID:      a.AccountID(),
+		SubAccountName: a.subAccountName,
 	}
 }

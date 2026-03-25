@@ -43,9 +43,10 @@ func RegisterActionHandler(action enumor.SubAccountAction, factory ActionHandler
 // BaseSubAccountContent is the common header embedded in all sub-account application content structs.
 // Each action's content struct embeds this base and adds action-specific fields.
 type BaseSubAccountContent struct {
-	Action  enumor.SubAccountAction `json:"action"`
-	Vendor  enumor.Vendor           `json:"vendor"`
-	BkBizID int64                   `json:"bk_biz_id"`
+	Action    enumor.SubAccountAction `json:"action"`
+	Vendor    enumor.Vendor           `json:"vendor"`
+	BkBizID   int64                   `json:"bk_biz_id"`
+	AccountID string                  `json:"account_id"`
 }
 
 // NewHandlerFromApplication dispatches to the registered action handler factory
@@ -77,17 +78,14 @@ type ApplicationBaseSubAccount struct {
 }
 
 // NewApplicationBaseSubAccount create a new base subaccount handler.
-func NewApplicationBaseSubAccount(opt *handlers.HandlerOption, action enumor.SubAccountAction, vendor enumor.Vendor,
-	bkBizID int64, accountID string,
-) ApplicationBaseSubAccount {
-
+func NewApplicationBaseSubAccount(opt *handlers.HandlerOption, base *BaseSubAccountContent) ApplicationBaseSubAccount {
 	return ApplicationBaseSubAccount{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.OperateSubAccount, vendor,
+			opt, enumor.OperateSubAccount, base.Vendor,
 		),
-		action:    action,
-		bkBizID:   bkBizID,
-		accountID: accountID,
+		action:    base.Action,
+		bkBizID:   base.BkBizID,
+		accountID: base.AccountID,
 	}
 }
 

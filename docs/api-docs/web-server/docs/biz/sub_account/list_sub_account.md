@@ -204,11 +204,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 | 参数名称                     | 参数类型         | 描述                                   |
 |--------------------------|--------------|--------------------------------------|
-| id                       | string       | 三级账号ID                               |
+| id                       | string       | 三级账号HCM本地ID                               |
 | vendor                   | string       | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
 | name                     | string       | 名称                                   |
-| cloud_id                 | string       | 账号云ID                                |
-| account_id               | string       | 三级账号所属二级账号ID                         |
+| cloud_id                 | string       | 三级账号云ID                                |
+| account_id               | string       | 三级账号所属二级账号HCM本地ID                         |
 | managers                 | string array | 账号管理者                                |
 | bk_biz_ids               | int64 array  | 使用业务id                               |
 | site                     | string       | 站点（枚举值：china:中国站、international:国际站）  |
@@ -231,3 +231,4 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | login_flag  | string | 登录保护设置，枚举值：phone(安全手机)、token(硬token)、stoken(MFA字段)、wechat(微信)、custom(自定义)、mail(邮箱)、u2FToken(u2f硬件token) |
 | action_flag | string | 敏感操作保护设置，枚举值：phone(安全手机)、token(硬token)、stoken(MFA字段)、wechat(微信)、custom(自定义)、mail(邮箱)、u2FToken(u2f硬件token)                                             |
 | console_login | int64 | 枚举值：0（编程账号，无法登录控制台）、1（控制台账号，可登录控制台）                                                           |
+| cloud_main_account_id                 | string       | 三级账号所属的二级账号云ID                                |

@@ -40,7 +40,7 @@ func (a *ApplicationOfCreateSubAccount) CheckReq() error {
 	}
 
 	if _, err := a.GetAccount(a.req.AccountID); err != nil {
-		return fmt.Errorf("account id(%s) not found, err: %w", a.req.AccountID, err)
+		return fmt.Errorf("found parent account(%s) failed, err: %w", a.req.AccountID, err)
 	}
 
 	if err := a.checkDuplicateName(); err != nil {
@@ -70,26 +70,18 @@ func decodeTCloudExtension(a *ApplicationOfCreateSubAccount) (*proto.TCloudSubAc
 	if err := svccommon.DecodeExtension(a.Cts.Kit, a.req.Extension, ext); err != nil {
 		return nil, fmt.Errorf("decode tcloud sub account extension failed, err: %w", err)
 	}
+
 	return ext, nil
 }
 
 func (a *ApplicationOfCreateSubAccount) checkDuplicateName() error {
 	result, err := a.Client.DataService().Global.SubAccount.List(
-		a.Cts.Kit,
-		&core.ListReq{
+		a.Cts.Kit, &core.ListReq{
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "account_id",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.AccountID,
-					},
-					filter.AtomRule{
-						Field: "name",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.Name,
-					},
+					filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: a.req.AccountID},
+					filter.AtomRule{Field: "name", Op: filter.Equal.Factory(), Value: a.req.Name},
 				},
 			},
 			Page: &core.BasePage{Count: true},
@@ -100,10 +92,7 @@ func (a *ApplicationOfCreateSubAccount) checkDuplicateName() error {
 	}
 
 	if result.Count > 0 {
-		return fmt.Errorf(
-			"sub account name [%s] already exists under account [%s]",
-			a.req.Name, a.req.AccountID,
-		)
+		return fmt.Errorf("sub account name [%s] already exists under account [%s]", a.req.Name, a.req.AccountID)
 	}
 
 	return nil

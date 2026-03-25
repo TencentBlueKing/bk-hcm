@@ -20,6 +20,8 @@
 package subaccount
 
 import (
+	"fmt"
+
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -28,6 +30,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -51,7 +54,6 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 				Site:        item.Site,
 				AccountID:   item.AccountID,
 				AccountType: item.AccountType,
-				Extension:   tabletype.JsonField(item.Extension),
 				Managers:    item.Managers,
 				BkBizIDs:    item.BkBizIDs,
 				Email:       item.Email,
@@ -65,6 +67,22 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 			if item.CloudCreatedAt != nil {
 				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
 				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+			}
+
+			// 只有提供了Extension才进行更新
+			if item.Extension != nil {
+				dbSubAccount, err := svc.dao.SubAccount().Get(cts.Kit, item.ID)
+				if err != nil {
+					logs.Errorf("get sub account by id: %s failed, err: %v, rid: %s",
+						item.ID, err, cts.Kit.Rid)
+					return nil, err
+				}
+
+				updatedExtension, err := json.UpdateMerge(item.Extension, string(dbSubAccount.Extension))
+				if err != nil {
+					return nil, fmt.Errorf("json UpdateMerge sub account extension failed, err: %v", err)
+				}
+				model.Extension = tabletype.JsonField(updatedExtension)
 			}
 
 			if err := svc.dao.SubAccount().UpdateByIDWithTx(cts.Kit, txn, item.ID, model); err != nil {

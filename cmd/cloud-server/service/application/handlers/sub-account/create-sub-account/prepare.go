@@ -24,12 +24,13 @@ import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 )
 
 // createSubAccountContent is the content stored in application.content for creating sub-account.
 type createSubAccountContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
-	proto.SubAccountAddReq           `json:",inline"`
+	Req                              proto.SubAccountAddReq `json:"req"`
 }
 
 // GetItsmApprover get ITSM approvers, delegates to base which queries 2nd-level account managers.
@@ -45,6 +46,6 @@ func (a *ApplicationOfCreateSubAccount) GenerateApplicationContent() interface{}
 			Vendor:  a.Vendor(),
 			BkBizID: a.BkBizID(),
 		},
-		SubAccountAddReq: *a.req,
+		Req: converter.PtrToVal(a.req),
 	}
 }

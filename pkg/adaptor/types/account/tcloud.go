@@ -22,6 +22,7 @@ package account
 import (
 	"strconv"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -155,6 +156,33 @@ type LoginActionFlag struct {
 	U2FToken *uint64 `json:"u2f_token"`
 }
 
+// ToProtectionFlag maps enabled fields (value == 1) to AccountProtectionFlag using priority:
+// Phone > Token > Stoken > Wechat > Custom > Mail > U2FToken. Returns nil if flag is nil or none enabled.
+func (flag LoginActionFlag) ToProtectionFlag() enumor.AccountProtectionFlag {
+	if flag.Phone != nil && converter.PtrToVal(flag.Phone) == 1 {
+		return enumor.PhoneProtection
+	}
+	if flag.Token != nil && converter.PtrToVal(flag.Token) == 1 {
+		return enumor.TokenProtection
+	}
+	if flag.Stoken != nil && converter.PtrToVal(flag.Stoken) == 1 {
+		return enumor.StokenProtection
+	}
+	if flag.Wechat != nil && converter.PtrToVal(flag.Wechat) == 1 {
+		return enumor.WechatProtection
+	}
+	if flag.Custom != nil && converter.PtrToVal(flag.Custom) == 1 {
+		return enumor.CustomProtection
+	}
+	if flag.Mail != nil && converter.PtrToVal(flag.Mail) == 1 {
+		return enumor.MailProtection
+	}
+	if flag.U2FToken != nil && converter.PtrToVal(flag.U2FToken) == 1 {
+		return enumor.U2FTokenProtection
+	}
+	return ""
+}
+
 // OffsiteFlag define offsite login protection settings.
 type OffsiteFlag struct {
 	// VerifyFlag indicates whether verification is required for offsite login.
@@ -167,6 +195,48 @@ type OffsiteFlag struct {
 	NotifyWechat *uint64 `json:"notify_wechat"`
 	// Tips indicates tip settings.
 	Tips *uint64 `json:"tips"`
+}
+
+// SetMfaFlagOption define tcloud set sub-account login protection and sensitive operation protection option.
+// reference: https://cloud.tencent.com/document/product/598/36227
+type SetMfaFlagOption struct {
+	// OpUin is the sub-account UIN to set MFA flag for.
+	OpUin uint64 `json:"op_uin" validate:"required"`
+	// LoginFlag is the login protection settings, nil means no change.
+	LoginFlag *LoginActionFlag `json:"login_flag" validate:"omitempty"`
+	// ActionFlag is the sensitive operation protection settings, nil means no change.
+	ActionFlag *LoginActionFlag `json:"action_flag" validate:"omitempty"`
+}
+
+// Validate SetMfaFlagOption.
+func (opt SetMfaFlagOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// DescribeSubAccountsMaxUIN is the max number of UINs per DescribeSubAccounts API call.
+const DescribeSubAccountsMaxUIN = 50
+
+// DescribeSubAccountsOption define tcloud DescribeSubAccounts option.
+// reference: https://cloud.tencent.com/document/api/598/53486
+type DescribeSubAccountsOption struct {
+	SubUin []uint64 `json:"sub_uin" validate:"required,min=1,max=50"`
+}
+
+// Validate DescribeSubAccountsOption.
+func (opt DescribeSubAccountsOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudSubAccountUser define tcloud DescribeSubAccounts API result item.
+type TCloudSubAccountUser struct {
+	Uin           *uint64 `json:"uin"`
+	Name          *string `json:"name"`
+	Uid           *uint64 `json:"uid"`
+	Remark        *string `json:"remark"`
+	CreateTime    *string `json:"create_time"`
+	UserType      *uint64 `json:"user_type"`
+	LastLoginIp   *string `json:"last_login_ip"`
+	LastLoginTime *string `json:"last_login_time"`
 }
 
 // SafeAuthFlagResult define tcloud DescribeSafeAuthFlagColl API result.

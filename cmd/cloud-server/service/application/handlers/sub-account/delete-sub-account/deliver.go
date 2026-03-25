@@ -63,7 +63,13 @@ func (a *ApplicationOfDeleteSubAccount) deliverForTCloud() (enumor.ApplicationSt
 			}, err
 	}
 
-	a.deleteRegistrationAccount()
+	if err := a.deleteRegistrationAccount(); err != nil {
+		return enumor.DeliverError,
+			map[string]interface{}{
+				"error":    fmt.Sprintf("delete registration account failed, err: %v", err),
+				"cloud_id": a.req.CloudID,
+			}, err
+	}
 
 	return enumor.Completed, map[string]interface{}{
 		"deleted_id":       a.req.ID,
@@ -74,7 +80,7 @@ func (a *ApplicationOfDeleteSubAccount) deliverForTCloud() (enumor.ApplicationSt
 func (a *ApplicationOfDeleteSubAccount) deleteCloudSubAccount() error {
 	return a.Client.HCService().TCloud.Account.DeleteSubAccount(
 		a.Cts.Kit,
-		&hssubaccount.DeleteSubAccountReq{
+		&hssubaccount.TCloudDeleteSubAccountReq{
 			AccountID: a.AccountID(),
 			Name:      a.req.Name,
 		},
@@ -82,18 +88,17 @@ func (a *ApplicationOfDeleteSubAccount) deleteCloudSubAccount() error {
 }
 
 func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
+	if err := a.Audit.ResDeleteAudit(a.Cts.Kit, enumor.SubAccountAuditResType, []string{a.req.ID}); err != nil {
+		logs.Errorf("create delete_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
 	return a.Client.DataService().Global.SubAccount.BatchDelete(
 		a.Cts.Kit,
 		&dataservice.BatchDeleteReq{
 			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.ID,
-					},
-				},
+				Op:    filter.And,
+				Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID}},
 			},
 		},
 	)
@@ -101,36 +106,34 @@ func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
 
 // deleteRegistrationAccount deletes the registration account record in the account table
 // by matching cloud_sub_account_id. Non-fatal if not found.
-func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccount() {
+func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccount() error {
 	if err := a.deleteRegistrationAccountByCloudID(); err != nil {
-		logs.Warnf(
+		logs.Errorf(
 			"delete registration account for cloud_id(%s) failed, err: %v, rid: %s",
 			a.req.CloudID, err, a.Cts.Kit.Rid,
 		)
+		return fmt.Errorf("delete registration account for cloud_id(%s) failed, err: %v", a.req.CloudID, err)
 	}
+	return nil
 }
 
 func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccountByCloudID() error {
 	_, err := a.Client.DataService().Global.Account.Delete(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
 		&dataprotocloud.AccountDeleteReq{
 			Filter: &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
 					filter.AtomRule{
-						Field: "type",
-						Op:    filter.Equal.Factory(),
-						Value: string(enumor.RegistrationAccount),
+						Field: "type", Op: filter.Equal.Factory(), Value: string(enumor.RegistrationAccount),
 					},
 					filter.AtomRule{
-						Field: "extension.cloud_sub_account_id",
-						Op:    filter.Equal.Factory(),
-						Value: a.req.CloudID,
+						Field: "extension.cloud_sub_account_id", Op: filter.JSONEqual.Factory(), Value: a.req.CloudID,
 					},
 				},
 			},
 		},
 	)
+
 	return err
 }

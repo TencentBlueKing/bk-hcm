@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package createsubaccount provides the handler for creating sub accounts.
 package createsubaccount
 
 import (
@@ -26,6 +27,7 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -38,14 +40,14 @@ func init() {
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error) {
 
-	req := new(proto.SubAccountAddReq)
-	if err := json.UnmarshalFromString(content, req); err != nil {
+	ct := new(createSubAccountContent)
+	if err := json.UnmarshalFromString(content, ct); err != nil {
 		return nil, fmt.Errorf("unmarshal create sub account content failed, err: %w", err)
 	}
-	return NewApplicationOfCreateSubAccount(opt, base.Vendor, base.BkBizID, req), nil
+	return NewApplicationOfCreateSubAccount(opt, base, converter.ValToPtr(ct.Req)), nil
 }
 
-// ApplicationOfCreateSubAccount handler for creating sub account.
+// ApplicationOfCreateSubAccount handler for creating subaccount.
 type ApplicationOfCreateSubAccount struct {
 	subaccount.ApplicationBaseSubAccount
 
@@ -53,14 +55,11 @@ type ApplicationOfCreateSubAccount struct {
 }
 
 // NewApplicationOfCreateSubAccount create a new handler for creating sub account.
-func NewApplicationOfCreateSubAccount(opt *handlers.HandlerOption, vendor enumor.Vendor, bkBizID int64,
-	req *proto.SubAccountAddReq,
-) *ApplicationOfCreateSubAccount {
+func NewApplicationOfCreateSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
+	req *proto.SubAccountAddReq) *ApplicationOfCreateSubAccount {
 
 	return &ApplicationOfCreateSubAccount{
-		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(
-			opt, enumor.SubAccountActionCreate, vendor, bkBizID, req.AccountID,
-		),
-		req: req,
+		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
+		req:                       req,
 	}
 }

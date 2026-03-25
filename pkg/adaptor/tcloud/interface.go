@@ -83,6 +83,8 @@ type TCloud interface {
 
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)
 	CountAccount(kt *kit.Kit) (int32, error)
+	DescribeSubAccounts(kt *kit.Kit, opt *account.DescribeSubAccountsOption) (
+		[]account.TCloudSubAccountUser, error)
 	AddUser(kt *kit.Kit, opt *account.AddUserOption) (*account.AddUserResult, error)
 	UpdateUser(kt *kit.Kit, opt *account.UpdateUserOption) error
 	DeleteUser(kt *kit.Kit, name string) error
@@ -91,6 +93,7 @@ type TCloud interface {
 	GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error)
 	DescribeSafeAuthFlag(kt *kit.Kit, opt *account.DescribeSafeAuthFlagOption) (
 		*account.SafeAuthFlagResult, error)
+	SetMfaFlag(kt *kit.Kit, opt *account.SetMfaFlagOption) error
 	CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error)
 	InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
 		*cvm.InquiryPriceResult, error)

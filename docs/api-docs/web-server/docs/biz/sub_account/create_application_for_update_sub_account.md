@@ -10,22 +10,22 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_s
 
 ### 输入参数
 
-| 参数名称       | 参数类型        | 必选 | 描述                                   |
-|------------|-------------|----|--------------------------------------|
-| bk_biz_id  | int64       | 是  | 业务ID                                 |
-| vendor    | string       | 是  | 云厂商, 枚举值：tcloud |
-| sub_accounts | object | 是  | 三级账号列表，长度限制100 |
+| 参数名称         | 参数类型          | 必选 | 描述                |
+|--------------|---------------|----|-------------------|
+| bk_biz_id    | int64         | 是  | 业务ID              |
+| vendor       | string        | 是  | 云厂商, 枚举值：tcloud   |
+| sub_accounts | object        | 是  | 三级账号列表，长度限制100    |
 
 #### sub_accounts
-| 参数名称        | 参数类型   | 必选 | 描述     |
-|-------------|--------|----|--------|
-| id         | string      | 是  | 三级账号ID                               |
-| name       | string      | 否  | 三级账号名称                              |
-| email      | string      | 否  | 三级账号邮箱               |
-| phone_num  | string      | 否  | 手机号                |
-| country_code | string    | 否  | 手机区域代码          |
-| managers   | string array | 否 | 账号管理者                               |
-| memo       | string      | 否  | 备注                                   |
+| 参数名称         | 参数类型         | 必选  | 描述                      |
+|--------------|--------------|-----|-------------------------|
+| id           | string       | 是   | 三级账号ID                  |
+| email        | string       | 否   | 三级账号邮箱                  |
+| phone_num    | string       | 否   | 手机号                     |
+| bk_biz_id    | int64        | 否   | 三级账号要修改的新业务ID           |
+| country_code | string       | 否   | 手机区域代码                  |
+| managers     | string array | 否   | 账号管理者                   |
+| memo         | string       | 否   | 备注                      |
 
 
 ### 调用示例
@@ -35,9 +35,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_s
   "sub_accounts": [
     {
       "id": "00000001",
-      "name": "sub-account-01",
       "email": "sub@example.com",
       "phone_num": "11111111",
+      "bk_biz_id": 123,
       "country_code": "86",
       "memo": "update sub account"
     }
@@ -69,4 +69,4 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_s
 
 | 参数名称 | 参数类型   | 描述     |
 |------|--------|--------|
-| ids  | string | 单据ID数组 |
+| ids  | string array | 单据ID数组 |

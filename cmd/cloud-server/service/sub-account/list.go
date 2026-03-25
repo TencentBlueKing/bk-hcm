@@ -107,7 +107,6 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 	}
 
 	req.Filter = expr
-
 	switch vendor {
 	case enumor.TCloud:
 		return svc.client.DataService().TCloud.SubAccount.ListExt(cts.Kit, req)
@@ -148,17 +147,19 @@ func listBizSubAccountAuthRes(cts *rest.Contexts, opt *handler.ListAuthResOption
 	if !authorized {
 		return nil, true, nil
 	}
-	if opt.Filter == nil {
-		return nil, false, nil
-	}
 
 	bizRules := make([]*filter.AtomRule, 0)
 	bizRules = append(bizRules, tools.RuleJSONContains[int64]("bk_biz_ids", bizID))
 	bizFilter := tools.ExpressionOr(bizRules...)
 
+	if opt.Filter == nil {
+		return bizFilter, false, nil
+	}
+
 	finalFilter, err := tools.And(bizFilter, opt.Filter)
 	if err != nil {
 		return nil, false, err
 	}
+
 	return finalFilter, false, err
 }

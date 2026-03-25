@@ -54,7 +54,7 @@ func (req *SubAccountBatchUpdateReq) Validate() error {
 // Pointer fields use nil to indicate "no change"; non-nil means update to that value.
 type SubAccountUpdateReq struct {
 	ID          string   `json:"id" validate:"required"`
-	Name        *string  `json:"name" validate:"omitempty"`
+	BkBizID     *int64   `json:"bk_biz_id" validate:"omitempty,gt=0"`
 	Email       *string  `json:"email" validate:"omitempty,email"`
 	PhoneNum    *string  `json:"phone_num" validate:"omitempty"`
 	CountryCode *string  `json:"country_code" validate:"omitempty"`
