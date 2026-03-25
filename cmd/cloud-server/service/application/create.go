@@ -109,8 +109,8 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult,
-	error) {
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
+	*core.CreateResult, error) {
 
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())

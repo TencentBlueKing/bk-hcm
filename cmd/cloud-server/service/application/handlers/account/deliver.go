@@ -95,6 +95,7 @@ func (a *ApplicationOfAddAccount) createForTCloud() (string, error) {
 			CloudMainAccountID: a.req.Extension["cloud_main_account_id"],
 		},
 	}
+	// 之前会将登记账号和安全审计账号这两种三级账号也录入到account中，如果是资源账号，不应该有三账号信息
 	if a.req.Type != enumor.ResourceAccount {
 		req.Extension.CloudSubAccountID = a.req.Extension["cloud_sub_account_id"]
 	}
