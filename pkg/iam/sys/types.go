@@ -129,6 +129,10 @@ const (
 	BizSubAccountOperate client.ActionID = "biz_sub_account_operate"
 	// BizSubAccountSecretOperate biz sub account secret operate action id to register iam.
 	BizSubAccountSecretOperate client.ActionID = "biz_sub_account_secret_operate"
+	// BizPermissionTemplateOperate biz permission template operate action id to register iam.
+	BizPermissionTemplateOperate client.ActionID = "biz_permission_template_operate"
+	// BizPermissionPolicyLibraryOperate biz permission policy library operate action id to register iam.
+	BizPermissionPolicyLibraryOperate client.ActionID = "biz_permission_policy_library_operate"
 
 	// AccountFind account find action id to register iam.
 	AccountFind client.ActionID = "account_find"
@@ -246,9 +250,11 @@ var ActionIDNameMap = map[client.ActionID]string{
 
 	BizTaskManagementOperate: "业务-任务管理操作",
 
-	BizAccountOperate:          "业务-二级账号操作",
-	BizSubAccountOperate:       "业务-三级账号操作",
-	BizSubAccountSecretOperate: "业务-三级账号密钥操作",
+	BizAccountOperate:                 "业务-二级账号操作",
+	BizSubAccountOperate:              "业务-三级账号操作",
+	BizSubAccountSecretOperate:        "业务-三级账号密钥操作",
+	BizPermissionTemplateOperate:      "业务-云权限模板操作",
+	BizPermissionPolicyLibraryOperate: "业务-权限策略库操作",
 
 	AccountFind:    "资源-账号查看",
 	AccountImport:  "资源-账号录入",

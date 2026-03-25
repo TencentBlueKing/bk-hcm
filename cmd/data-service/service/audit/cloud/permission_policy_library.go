@@ -111,8 +111,73 @@ func (ad Audit) permissionPolicyLibraryDeleteAuditBuild(kt *kit.Kit, deletes []p
 	return audits, nil
 }
 
-func (ad Audit) listPermissionPolicyLibrary(kt *kit.Kit,
-	ids []string) (map[string]*tablecloud.PermissionPolicyLibraryTable, error) {
+func (ad Audit) permissionPolicyLibraryApplyAuditBuild(kt *kit.Kit,
+	operations []protoaudit.CloudResourceOperationInfo) ([]*tableaudit.AuditTable, error) {
+
+	libraryIDs := make([]string, 0, len(operations))
+	accountIDs := make([]string, 0, len(operations))
+	for _, one := range operations {
+		libraryIDs = append(libraryIDs, one.ResID)
+		if one.AssociatedResID != "" {
+			accountIDs = append(accountIDs, one.AssociatedResID)
+		}
+	}
+
+	libraryMap, err := ad.listPermissionPolicyLibrary(kt, libraryIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	accountMap := make(map[string]tablecloud.AccountTable)
+	if len(accountIDs) > 0 {
+		accountMap, err = ad.listAccount(kt, accountIDs)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(operations))
+	for _, one := range operations {
+		action, convErr := one.Action.ConvAuditAction()
+		if convErr != nil {
+			return nil, convErr
+		}
+
+		resData, exist := libraryMap[one.ResID]
+		if !exist {
+			continue
+		}
+
+		detail := &tableaudit.BasicDetail{Data: resData}
+		if account, ok := accountMap[one.AssociatedResID]; ok {
+			detail = &tableaudit.BasicDetail{
+				Data: &tableaudit.AssociatedOperationAudit{
+					AssResType: enumor.AccountAuditResType,
+					AssResID:   account.ID,
+					AssResName: account.Name,
+				},
+			}
+		}
+
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:    one.ResID,
+			ResName:  resData.Name,
+			ResType:  enumor.PermissionPolicyLibraryAuditResType,
+			Action:   action,
+			Vendor:   resData.Vendor,
+			Operator: kt.User,
+			Source:   kt.GetRequestSource(),
+			Rid:      kt.Rid,
+			AppCode:  kt.AppCode,
+			Detail:   detail,
+		})
+	}
+
+	return audits, nil
+}
+
+func (ad Audit) listPermissionPolicyLibrary(kt *kit.Kit, ids []string) (
+	map[string]*tablecloud.PermissionPolicyLibraryTable, error) {
 
 	opt := &types.ListOption{
 		Filter: tools.ContainersExpression("id", ids),

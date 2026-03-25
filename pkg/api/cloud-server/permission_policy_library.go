@@ -66,3 +66,42 @@ type PermissionPolicyLibraryListResult struct {
 	Count   uint64                          `json:"count"`
 	Details []PermissionPolicyLibraryResult `json:"details"`
 }
+
+// ApplyPermissionPolicyLibraryReq defines request for applying a permission policy library.
+type ApplyPermissionPolicyLibraryReq struct {
+	AccountIDs []string `json:"account_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ApplyPermissionPolicyLibraryReq.
+func (req *ApplyPermissionPolicyLibraryReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ApplyAccountResult defines the apply result for a single account.
+type ApplyAccountResult struct {
+	AccountID string `json:"account_id"`
+	Status    string `json:"status"`
+	Reason    string `json:"reason,omitempty"`
+}
+
+const (
+	// ApplyStatusSuccess indicates the apply operation succeeded.
+	ApplyStatusSuccess = "success"
+	// ApplyStatusFailed indicates the apply operation failed.
+	ApplyStatusFailed = "failed"
+)
+
+// ApplyPermissionPolicyLibraryResult defines the result of applying a permission policy library.
+type ApplyPermissionPolicyLibraryResult struct {
+	Results []ApplyAccountResult `json:"results"`
+}
+
+// PermissionPolicyLibraryAccountIDsResult defines the result for account IDs query.
+type PermissionPolicyLibraryAccountIDsResult struct {
+	AccountIDs []string `json:"account_ids"`
+}
+
+// PermissionPolicyLibraryPermTmplResult defines the result for listing permission templates under a policy library.
+type PermissionPolicyLibraryPermTmplResult struct {
+	Details any `json:"details"`
+}

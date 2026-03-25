@@ -48,6 +48,16 @@ func InitService(c *capability.Capability) {
 		"/vendors/{vendor}/permission_policy_libraries/{id}", svc.UpdatePermissionPolicyLibrary)
 	h.Add("DeletePermissionPolicyLibrary", http.MethodDelete,
 		"/vendors/{vendor}/permission_policy_libraries/{id}", svc.DeletePermissionPolicyLibrary)
+	h.Add("ApplyPermissionPolicyLibraryCreate", http.MethodPost,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/apply", svc.ApplyPermissionPolicyLibraryCreate)
+	h.Add("ApplyPermissionPolicyLibraryUpdate", http.MethodPut,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/apply", svc.ApplyPermissionPolicyLibraryUpdate)
+	h.Add("ListPermissionPolicyLibraryUnappliedAccountIDs", http.MethodGet,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/unapplied_account_ids",
+		svc.ListPermissionPolicyLibraryUnappliedAccountIDs)
+	h.Add("ListPermissionPolicyLibraryPermissionTemplates", http.MethodGet,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/permission_templates",
+		svc.ListPermissionPolicyLibraryPermissionTemplates)
 
 	h.Load(c.WebService)
 }

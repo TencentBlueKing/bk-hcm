@@ -931,6 +931,28 @@ func genCloudSelectionResource(*meta.ResourceAttribute) (client.ActionID, []clie
 	return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 }
 
+// genPermissionTemplateResource generate permission template related iam resource.
+func genPermissionTemplateResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID <= 0 {
+		return "", nil, errf.Newf(errf.InvalidParameter, "biz id is required for permission template, got: %d", a.BizID)
+	}
+
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizPermissionTemplateOperate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
 func genGlobalConfigResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Create:
@@ -946,9 +968,30 @@ func genGlobalConfigResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 
 // genPermissionPolicyLibraryResource generate permission policy library related iam resource.
 func genPermissionPolicyLibraryResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID > 0 {
+		return genBizPermissionPolicyLibraryResource(a)
+	}
+
 	switch a.Basic.Action {
-	case meta.Create, meta.Find, meta.Update, meta.Delete:
+	case meta.Create, meta.Find, meta.Update, meta.Delete, meta.Apply:
 		return sys.CloudVendorConfig, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genBizPermissionPolicyLibraryResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Update, meta.Delete:
+		return sys.BizPermissionPolicyLibraryOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

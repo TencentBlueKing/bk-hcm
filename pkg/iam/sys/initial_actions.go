@@ -199,6 +199,22 @@ func genResManagementActions() []client.ResourceAction {
 		RelatedResourceTypes: bizResource,
 		RelatedActions:       []client.ActionID{BizAccess},
 		Version:              1,
+	}, {
+		ID:                   BizPermissionTemplateOperate,
+		Name:                 ActionIDNameMap[BizPermissionTemplateOperate],
+		NameEn:               "Operate Biz Permission Template",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizPermissionPolicyLibraryOperate,
+		Name:                 ActionIDNameMap[BizPermissionPolicyLibraryOperate],
+		NameEn:               "Operate Biz Permission Policy Library",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
 	}}...)
 
 	return actions

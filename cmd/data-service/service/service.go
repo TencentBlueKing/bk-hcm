@@ -63,6 +63,7 @@ import (
 	loadbalancer "hcm/cmd/data-service/service/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
+	"hcm/cmd/data-service/service/cloud/permission-template"
 	"hcm/cmd/data-service/service/cloud/permission-policy-library"
 	"hcm/cmd/data-service/service/cloud/region"
 	resusagebizrel "hcm/cmd/data-service/service/cloud/res-usage-biz-rel"
@@ -283,6 +284,7 @@ func (s *Service) apiSet() *restful.Container {
 	tenant.InitService(capability)
 
 	resusagebizrel.InitService(capability)
+	permissiontemplate.InitService(capability)
 	permissionpolicylibrary.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)

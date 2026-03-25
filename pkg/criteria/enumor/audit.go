@@ -54,6 +54,7 @@ const (
 	UrlRuleDomainAuditResType           AuditResourceType = "url_rule_domain"
 	MainAccountAuditResType             AuditResourceType = "main_account"
 	RootAccountAuditResType             AuditResourceType = "root_account"
+	PermissionTemplateAuditResType      AuditResourceType = "permission_template"
 	PermissionPolicyLibraryAuditResType AuditResourceType = "permission_policy_library"
 )
 
@@ -82,6 +83,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	UrlRuleDomainAuditResType:           {},
 	MainAccountAuditResType:             {},
 	RootAccountAuditResType:             {},
+	PermissionTemplateAuditResType:      {},
 	PermissionPolicyLibraryAuditResType: {},
 }
 
@@ -123,6 +125,8 @@ const (
 	Bind AuditAction = "bind"
 	// Deliver 交付
 	Deliver AuditAction = "deliver"
+	// Apply 应用
+	Apply AuditAction = "apply"
 )
 
 // AuditActionEnums op type map.
@@ -141,6 +145,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	Disassociate: {},
 	Bind:         {},
 	Deliver:      {},
+	Apply:        {},
 }
 
 // Exist judge enum value exist.

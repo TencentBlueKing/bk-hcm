@@ -90,3 +90,82 @@ func (svc *svc) ListPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, er
 
 	return &proto.PermissionPolicyLibraryListResult{Count: 0, Details: details}, nil
 }
+
+// ListPermissionPolicyLibraryUnappliedAccountIDs returns account IDs that have not applied the given policy library.
+func (svc *svc) ListPermissionPolicyLibraryUnappliedAccountIDs(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:       meta.PermissionPolicyLibrary,
+			Action:     meta.Find,
+			ResourceID: id,
+		},
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list unapplied account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to query unapplied account ids")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	accountIDs, err := applier.ListUnappliedAccountIDs(cts.Kit, vendor, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if accountIDs == nil {
+		accountIDs = make([]string, 0)
+	}
+	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
+}
+
+// ListPermissionPolicyLibraryPermissionTemplates returns all permission templates applied from the given policy library
+// that are still within the library's current biz scope.
+func (svc *svc) ListPermissionPolicyLibraryPermissionTemplates(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:       meta.PermissionPolicyLibrary,
+			Action:     meta.Find,
+			ResourceID: id,
+		},
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list permission templates auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to list permission templates")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	details, err := applier.ListTemplatesInScope(cts.Kit, vendor, id)
+	if err != nil {
+		logs.Errorf("list permission templates in scope failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &proto.PermissionPolicyLibraryPermTmplResult{Details: details}, nil
+}
