@@ -41,7 +41,6 @@ func init() {
 
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error) {
-
 	ct := new(deleteSubAccountContent)
 	if err := json.UnmarshalFromString(content, ct); err != nil {
 		return nil, fmt.Errorf("unmarshal delete sub account content failed, err: %w", err)
@@ -59,8 +58,8 @@ type ApplicationOfDeleteSubAccount struct {
 
 // NewApplicationOfDeleteSubAccount create a new handler for deleting sub account.
 func NewApplicationOfDeleteSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
-	req *proto.SubAccountDeleteReq) *ApplicationOfDeleteSubAccount {
-
+	req *proto.SubAccountDeleteReq,
+) *ApplicationOfDeleteSubAccount {
 	return &ApplicationOfDeleteSubAccount{
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,

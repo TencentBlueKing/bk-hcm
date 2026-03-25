@@ -41,7 +41,6 @@ func init() {
 
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error) {
-
 	ct := new(updateSubAccountContent)
 	if err := json.UnmarshalFromString(content, ct); err != nil {
 		return nil, fmt.Errorf("unmarshal update sub account content failed, err: %w", err)
@@ -60,8 +59,8 @@ type ApplicationOfUpdateSubAccount struct {
 
 // NewApplicationOfUpdateSubAccount create a new handler for updating sub account.
 func NewApplicationOfUpdateSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
-	subAccountName string, req *proto.SubAccountUpdateReq) *ApplicationOfUpdateSubAccount {
-
+	subAccountName string, req *proto.SubAccountUpdateReq,
+) *ApplicationOfUpdateSubAccount {
 	return &ApplicationOfUpdateSubAccount{
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,
