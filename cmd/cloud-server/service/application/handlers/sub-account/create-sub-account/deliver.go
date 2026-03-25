@@ -75,19 +75,24 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 		logs.Errorf("cloud sub account created (uin=%s) but local persistence failed, err: %v, rid: %s", cloudID,
 			err, a.Cts.Kit.Rid)
 		return enumor.DeliverError,
-			map[string]interface{}{"error": fmt.Sprintf("save sub account/account to db failed, err: %v", err),
-				"cloud_id": converter.PtrToVal(cloudResult.Uin)}, err
+			map[string]interface{}{
+				"error":    fmt.Sprintf("save sub account/account to db failed, err: %v", err),
+				"cloud_id": converter.PtrToVal(cloudResult.Uin),
+			}, err
 	}
 
 	if err := a.sendSubAccountMail(cloudResult); err != nil {
 		logs.Errorf("cloud sub account created (uin=%s) but send secret mail failed, err: %v, rid: %s",
 			cloudID, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError,
-			map[string]interface{}{"error": fmt.Sprintf("send secret mail failed, err: %v", err),
-				"cloud_id": cloudID}, err
+			map[string]interface{}{
+				"error":    fmt.Sprintf("send secret mail failed, err: %v", err),
+				"cloud_id": cloudID,
+			}, err
 	}
 
-	return enumor.Completed, map[string]interface{}{"sub_account_ids": subAccountIDs, "account_id": accountID,
+	return enumor.Completed, map[string]interface{}{
+		"sub_account_ids": subAccountIDs, "account_id": accountID,
 		"cloud_id": cloudID,
 	}, nil
 }
@@ -103,7 +108,6 @@ type tcloudCreateCloudResult struct {
 // and best-effort loads safe auth flags.
 func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto.TCloudSubAccountAddExtension,
 ) (*tcloudCreateCloudResult, error) {
-
 	cloudResult, err := a.Client.HCService().TCloud.Account.CreateSubAccount(
 		a.Cts.Kit,
 		&hssubaccount.TCloudCreateSubAccountReq{
@@ -167,8 +171,8 @@ func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto
 }
 
 func (a *ApplicationOfCreateSubAccount) registerAccountForTCloud(cloudID string, createResult *tcloudCreateCloudResult,
-	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension]) (string, error) {
-
+	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
+) (string, error) {
 	result, err := a.Client.DataService().TCloud.Account.Create(
 		a.Cts.Kit.Ctx,
 		a.Cts.Kit.Header(),
@@ -201,7 +205,6 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 	ext *proto.TCloudSubAccountAddExtension,
 	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
 ) ([]string, string, error) {
-
 	cloudID := strconv.FormatUint(converter.PtrToVal(cloudResult.Uin), 10)
 
 	if ext == nil {
