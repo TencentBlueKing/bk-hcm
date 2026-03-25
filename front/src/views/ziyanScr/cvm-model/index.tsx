@@ -50,10 +50,6 @@ export default defineComponent({
     const batchEditForm = ref({
       disable: 0,
     });
-    const page = ref({
-      limit: 50,
-      start: 0,
-    });
     const queryRules = ref(
       [
         { field: 'vendor', op: 'eq', value: VendorEnum.ZIYAN },
@@ -67,7 +63,42 @@ export default defineComponent({
           filter.value.disable !== '' && { field: 'disable', op: 'eq', value: filter.value.disable },
       ].filter(Boolean),
     );
+
+    const { CommonTable, getListData, pagination } = useTable({
+      tableOptions: {
+        columns,
+        extra: {
+          onSelect: (selections: any) => {
+            handleSelectionChange(selections, () => true, false);
+          },
+          onSelectAll: (selections: any) => {
+            handleSelectionChange(selections, () => true, true);
+          },
+        },
+      },
+      requestOption: {
+        sortOption: {
+          legacy: false,
+        },
+      },
+      scrConfig: () => {
+        return {
+          url: '/api/v1/woa/config/findmany/config/cvm/device',
+          pageEnableCountKey: 'count',
+          payload: {
+            filter: {
+              op: 'and',
+              rules: [...queryRules.value],
+            },
+          },
+          filter: { simpleConditions: true, requestId: 'devices' },
+        };
+      },
+    });
+
     const loadResources = () => {
+      pagination.start = 0;
+      pagination.current = 1;
       getListData();
     };
     const handleDeviceConfigChange = () => {
@@ -118,7 +149,7 @@ export default defineComponent({
         batchEditForm.value = {
           disable: 0,
         };
-        getListData();
+        loadResources();
       } finally {
         loadingState.update = false;
       }
@@ -142,7 +173,6 @@ export default defineComponent({
           filter.value.disable !== '' && { field: 'disable', op: 'eq', value: filter.value.disable },
       ].filter(Boolean);
 
-      page.value.start = 0;
       loadResources();
     };
     const handleDeviceTypeChange = () => {
@@ -157,39 +187,6 @@ export default defineComponent({
     };
     onMounted(() => {
       loadRestrict();
-    });
-
-    const { CommonTable, getListData } = useTable({
-      tableOptions: {
-        columns,
-        extra: {
-          onSelect: (selections: any) => {
-            handleSelectionChange(selections, () => true, false);
-          },
-          onSelectAll: (selections: any) => {
-            handleSelectionChange(selections, () => true, true);
-          },
-        },
-      },
-      requestOption: {
-        sortOption: {
-          legacy: false,
-        },
-      },
-      scrConfig: () => {
-        return {
-          url: '/api/v1/woa/config/findmany/config/cvm/device',
-          pageEnableCountKey: 'count',
-          payload: {
-            filter: {
-              op: 'and',
-              rules: [...queryRules.value],
-            },
-            page: page.value,
-          },
-          filter: { simpleConditions: true, requestId: 'devices' },
-        };
-      },
     });
 
     const cvmDevicetypeParams = computed(() => {
