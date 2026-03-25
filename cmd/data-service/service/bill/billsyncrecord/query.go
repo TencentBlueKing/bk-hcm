@@ -40,6 +40,16 @@ func (svc *service) ListBillSyncRecord(cts *rest.Contexts) (interface{}, error) 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	if !req.Page.Count {
+		if req.Page.Sort == "" {
+			req.Page.Sort = "created_at"
+		}
+		if req.Page.Order == "" {
+			req.Page.Order = core.Descending
+		}
+	}
+
 	opt := &types.ListOption{
 		Filter: req.Filter,
 		Page:   req.Page,
