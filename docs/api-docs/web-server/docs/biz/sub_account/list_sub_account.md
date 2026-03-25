@@ -187,18 +187,18 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 ### 响应参数说明
 
-| 参数名称 | 参数类型 | 描述   |
-|------|------|------|
-| code | int32 | 状态码  |
+| 参数名称 | 参数类型   | 描述   |
+|------|--------|------|
+| code | int32  | 状态码  |
 | message | string | 请求信息 |
 | data | object | 响应数据 |
 
 #### data
 
-| 参数名称 | 参数类型 | 描述             |
-|------|------|----------------|
-| count | uint64 | 当前规则能匹配到的总记录条数 |
-| details | array | 查询返回的数据        |
+| 参数名称 | 参数类型         | 描述             |
+|------|--------------|----------------|
+| count | uint64       | 当前规则能匹配到的总记录条数 |
+| details | object array | 查询返回的数据        |
 
 #### data.details[n]
 

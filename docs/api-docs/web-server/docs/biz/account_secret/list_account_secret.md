@@ -195,10 +195,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/account_secrets/list
 
 #### data
 
-| 参数名称 | 参数类型 | 描述             |
-|------|------|----------------|
-| count | uint64 | 当前规则能匹配到的总记录条数 |
-| details | array | 查询返回的数据        |
+| 参数名称 | 参数类型         | 描述             |
+|------|--------------|----------------|
+| count | uint64       | 当前规则能匹配到的总记录条数 |
+| details | object array | 查询返回的数据        |
 
 #### data.details[n]
 

@@ -26,6 +26,14 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_s
 | country_code | string    | 否  | 手机区域代码          |
 | managers   | string array | 否 | 账号管理者                               |
 | memo       | string      | 否  | 备注                                   |
+| extension     | object       | 是  | 混合云差异字段    |
+
+##### extension[tcloud]
+
+| 参数名称                  | 参数类型  | 必选 | 描述     |
+|-----------------------|--------|----|--------|
+| console_login | int64 | 是  | 枚举值：0（编程账号，无法登录控制台）、1（控制台账号，可登录控制台）                                                           |
+
 
 ### 调用示例
 
