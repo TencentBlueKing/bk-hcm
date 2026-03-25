@@ -24,8 +24,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
-
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/capability"
@@ -44,6 +42,8 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
+
+	"github.com/tidwall/gjson"
 )
 
 // InitApplicationService ...
@@ -91,6 +91,16 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("ListBizApplications", "POST", "/applications/list", svc.ListBizApplications)
 	h.Add("CreateBizForAddAccount", "POST", "/applications/types/add_account", svc.CreateBizForAddAccount)
+
+	h.Add("CreateBizForAddSubAccount", "POST",
+		"/vendors/{vendor}/applications/types/add_sub_account", svc.CreateBizForAddSubAccount)
+
+	h.Add("CreateBizForUpdateSubAccount", "POST",
+		"/vendors/{vendor}/applications/types/update_sub_account", svc.CreateBizForUpdateSubAccount)
+
+	h.Add("CreateBizForDeleteSubAccount", "POST",
+		"/vendors/{vendor}/applications/types/delete_sub_account", svc.CreateBizForDeleteSubAccount)
+
 }
 
 type applicationSvc struct {

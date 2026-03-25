@@ -44,9 +44,20 @@ func InitService(c *capability.Capability) {
 	h.Add("UpdateSubAccount", http.MethodPatch, "/sub_accounts/{id}", svc.UpdateSubAccount)
 
 	h.Load(c.WebService)
+
+	// 业务下接口
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, svc)
+
+	bizH.Load(c.WebService)
 }
 
 type service struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
+}
+
+func bizService(h *rest.Handler, svc *service) {
+	h.Add("ListBizSubAccount", http.MethodPost, "/vendors/{vendor}/sub_accounts/list", svc.ListBizSubAccountExt)
 }

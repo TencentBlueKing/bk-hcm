@@ -82,6 +82,18 @@ func (s SubAccountConsoleLogin) Validate() error {
 	return nil
 }
 
+// GetNameZh get the chinese name of the sub account console login type.
+func (s SubAccountConsoleLogin) GetNameZh() string {
+	switch s {
+	case ProgramAccount:
+		return "编程账号"
+	case ConsoleAccount:
+		return "控制台账号"
+	}
+
+	return ""
+}
+
 const (
 	// ProgramAccount 编程账号，无法登录控制台
 	ProgramAccount SubAccountConsoleLogin = 0

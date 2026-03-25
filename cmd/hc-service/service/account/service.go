@@ -77,6 +77,22 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
 		svc.GetTCloudNetworkAccountType)
 
+	// 创建子账号
+	h.Add("TCloudCreateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/create", svc.TCloudCreateSubAccount)
+
+	// 更新子账号
+	h.Add("TCloudUpdateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/update", svc.TCloudUpdateSubAccount)
+
+	// 删除子账号
+	h.Add("TCloudDeleteSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/delete", svc.TCloudDeleteSubAccount)
+
+	// 获取子账号安全设置
+	h.Add("TCloudDescribeSafeAuthFlag", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlag)
+
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)

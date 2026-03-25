@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -121,4 +122,43 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", vendor)
 	}
+}
+
+// ListBizSubAccountExt list biz sub account with extension.
+func (svc *service) ListBizSubAccountExt(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSubAccountExt(cts, listBizSubAccountAuthRes)
+}
+
+func listBizSubAccountAuthRes(cts *rest.Contexts, opt *handler.ListAuthResOption) (*filter.Expression, bool, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, false, err
+	}
+
+	if bizID <= 0 {
+		return nil, false, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: opt.ResType, Action: opt.Action}, BizID: bizID}
+	_, authorized, err := opt.Authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !authorized {
+		return nil, true, nil
+	}
+	if opt.Filter == nil {
+		return nil, false, nil
+	}
+
+	bizRules := make([]*filter.AtomRule, 0)
+	bizRules = append(bizRules, tools.RuleJSONContains[int64]("bk_biz_ids", bizID))
+	bizFilter := tools.ExpressionOr(bizRules...)
+
+	finalFilter, err := tools.And(bizFilter, opt.Filter)
+	if err != nil {
+		return nil, false, err
+	}
+	return finalFilter, false, err
 }

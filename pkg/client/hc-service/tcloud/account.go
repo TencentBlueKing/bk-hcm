@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
+	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
@@ -204,4 +205,97 @@ func (a *AccountClient) GetNetworkAccountType(kt *kit.Kit, accountID string) (
 	return common.Request[common.Empty, vpc.DescribeNetworkAccountTypeResponseParams](
 		a.client, http.MethodGet, kt, nil, "accounts/%s/network_type", accountID)
 
+}
+
+// CreateSubAccount create sub account via TCloud CAM AddUser.
+func (a *AccountClient) CreateSubAccount(kt *kit.Kit, req *hssubaccount.CreateSubAccountReq,
+) (*hssubaccount.CreateSubAccountResult, error) {
+
+	resp := new(hssubaccount.CreateSubAccountResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_accounts/create").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// UpdateSubAccount update sub account via TCloud CAM UpdateUser.
+func (a *AccountClient) UpdateSubAccount(kt *kit.Kit, req *hssubaccount.UpdateSubAccountReq) error {
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_accounts/update").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DeleteSubAccount delete sub account via TCloud CAM DeleteUser.
+func (a *AccountClient) DeleteSubAccount(kt *kit.Kit, req *hssubaccount.DeleteSubAccountReq) error {
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_accounts/delete").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
+// DescribeSafeAuthFlag get sub-account safe auth flag settings via TCloud CAM DescribeSafeAuthFlagColl.
+func (a *AccountClient) DescribeSafeAuthFlag(kt *kit.Kit,
+	req *hssubaccount.DescribeSafeAuthFlagReq,
+) (*hssubaccount.DescribeSafeAuthFlagResult, error) {
+
+	resp := new(hssubaccount.DescribeSafeAuthFlagResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_accounts/safe_auth_flag").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
 }
