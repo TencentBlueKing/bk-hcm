@@ -239,6 +239,7 @@ func New(ctx context.Context, rsLogics rollingserver.Logics, srLogics shortrenta
 		bizLogic:       bizLogic,
 		bkBotApproval:  thirdCli.BkBotApproval,
 		dissolveLogics: dissolveLogics,
+		cmsiClient:     cmsiCli,
 		apiClientSet:   apiClientSet,
 	}
 

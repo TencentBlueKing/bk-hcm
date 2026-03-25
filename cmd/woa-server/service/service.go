@@ -598,6 +598,7 @@ func (s *Service) apiSet() *restful.Container {
 		CmdbCli:        s.cmdbCli,
 		FinOpsCli:      s.finOpsCli,
 		ThirdCli:       s.thirdCli,
+		CmsiCli:        s.cmsiCli,
 		Conf:           s.clientConf,
 		SchedulerIf:    s.schedulerIf,
 		InformerIf:     s.informerIf,
@@ -679,8 +680,16 @@ func (s *Service) initCronTask() error {
 	}
 	s.tasks[enumor.CronTaskSyncDeviceCapacity] = deviceCapacityTask
 
-	if err = cron.Register([]croncore.Task{deviceCapacityTask}); err != nil {
-		logs.Errorf("register device capacity task failed, err: %v", err)
+	rollingMonthlyTerminateNoticeTask, err := crontask.NewRollingMonthlyTerminateNoticeTask(s.client, s.bizLogic,
+		s.cmsiCli, s.configLogics)
+	if err != nil {
+		logs.Errorf("init rolling monthly terminate notice task failed, err: %v", err)
+		return err
+	}
+	s.tasks[enumor.CronTaskRollingMonthlyTerminateNotice] = rollingMonthlyTerminateNoticeTask
+
+	if err = cron.Register([]croncore.Task{deviceCapacityTask, rollingMonthlyTerminateNoticeTask}); err != nil {
+		logs.Errorf("register cron tasks failed, err: %v", err)
 		return err
 	}
 

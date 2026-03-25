@@ -26,6 +26,8 @@ import (
 	rslogic "hcm/cmd/woa-server/logics/rolling-server"
 	"hcm/cmd/woa-server/service/capability"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/cron/core"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
@@ -36,6 +38,7 @@ func InitService(c *capability.Capability) {
 		client:             c.Client,
 		authorizer:         c.Authorizer,
 		rollingServerLogic: c.RsLogic,
+		tasks:              c.Tasks,
 	}
 	h := rest.NewHandler()
 	h.Path("/rolling_servers")
@@ -54,6 +57,7 @@ type service struct {
 	authorizer         auth.Authorizer
 	client             *client.ClientSet
 	rollingServerLogic rslogic.Logics
+	tasks              map[enumor.CronTask]core.Task
 }
 
 // initService 资源下的接口
@@ -83,6 +87,9 @@ func (s *service) initService(h *rest.Handler) {
 	h.Add("SyncBills", http.MethodPost, "/bills/sync", s.SyncBills)
 	h.Add("PushRollingServerReturnNotification", http.MethodPost, "/return_notifications/push",
 		s.PushReturnNotification)
+
+	h.Add("ManualTriggerCrossMonthTermination", http.MethodPost,
+		s.tasks[enumor.CronTaskRollingMonthlyTerminateNotice].GetURL(), s.TerminateLastMonthOrders)
 }
 
 // bizService 业务下的接口

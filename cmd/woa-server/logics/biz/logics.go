@@ -31,6 +31,8 @@ type Logics interface {
 	BatchCheckUserBizAccessAuth(kt *kit.Kit, bkBizID int64, userNames []string) (map[string]bool, error)
 	// GetBkBizMaintainer get biz maintainer.
 	GetBkBizMaintainer(kt *kit.Kit, bkBizIDs []int64) (map[int64][]string, error)
+	// GetBizNames get biz names.
+	GetBizNames(kt *kit.Kit, bkBizIDs []int64) (map[int64]string, error)
 	// GetBkBizIDsByOpProductName get biz id by op product name.
 	GetBkBizIDsByOpProductName(kt *kit.Kit, opProductNames []string) (map[string][]int64, error)
 }

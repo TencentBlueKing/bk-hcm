@@ -43,6 +43,7 @@ import (
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/finops"
 	"hcm/pkg/thirdparty/es"
 
@@ -58,6 +59,7 @@ type Capability struct {
 	CmdbCli        cmdb.Client
 	ThirdCli       *thirdparty.Client
 	FinOpsCli      finops.Client
+	CmsiCli        cmsi.Client
 	Authorizer     auth.Authorizer
 	Conf           cc.WoaServerSetting
 	SchedulerIf    scheduler.Interface

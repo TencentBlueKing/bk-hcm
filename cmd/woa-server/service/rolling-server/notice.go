@@ -20,7 +20,12 @@
 package rollingserver
 
 import (
+	"time"
+
+	crontask "hcm/cmd/woa-server/task"
 	ptypes "hcm/cmd/woa-server/types/rolling-server"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -54,5 +59,62 @@ func (s *service) PushReturnNotification(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
+	return nil, nil
+}
+
+// TerminateLastMonthOrders 手动触发滚服申领单跨月终止通知
+func (s *service) TerminateLastMonthOrders(cts *rest.Contexts) (any, error) {
+	req := new(ptypes.ManualTerminateMonthlyOrdersReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("failed to decode manual terminate monthly orders request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("failed to validate manual terminate monthly orders request, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RollingServerManage, Action: meta.Update}})
+	if err != nil {
+		logs.Errorf("terminate last month orders auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	task, ok := s.tasks[enumor.CronTaskRollingMonthlyTerminateNotice]
+	if !ok {
+		logs.Errorf("failed to find rolling monthly terminate task, rid: %s", cts.Kit.Rid)
+		return nil, errf.Newf(errf.InvalidParameter, "rolling monthly terminate task not found")
+	}
+
+	rollingTask, ok := task.(*crontask.RollingMonthlyTerminateNoticeTask)
+	if !ok {
+		logs.Errorf("failed to cast task to RollingMonthlyTerminateNoticeTask, rid: %s", cts.Kit.Rid)
+		return nil, errf.Newf(errf.InvalidParameter, "invalid task type")
+	}
+
+	if req.Month != "" {
+		targetMonth, err := time.Parse(constant.YearMonthLayout, req.Month)
+		if err != nil {
+			logs.Errorf("failed to parse month, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, errf.Newf(errf.InvalidParameter, "invalid month format, expected YYYY-MM: %v", err)
+		}
+
+		err = rollingTask.DoWithMonth(cts.Kit, targetMonth)
+		if err != nil {
+			logs.Errorf("failed to trigger rolling monthly terminate task, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	err = rollingTask.Do(cts.Kit)
+	if err != nil {
+		logs.Errorf("failed to trigger rolling monthly terminate task, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 	return nil, nil
 }

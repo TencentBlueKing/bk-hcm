@@ -19,7 +19,12 @@
 
 package rollingserver
 
-import "hcm/pkg/criteria/validator"
+import (
+	"time"
+
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/validator"
+)
 
 // PushReturnNoticeReq is request of push expire notice.
 type PushReturnNoticeReq struct {
@@ -39,4 +44,20 @@ type PushReturnNoticeMsg struct {
 	UnReturnedSubOrderMsgs []UnReturnedSubOrderMsg
 	Receivers              []string
 	CC                     []string
+}
+
+// ManualTerminateMonthlyOrdersReq 手动触发滚服申领单跨月终止通知请求
+type ManualTerminateMonthlyOrdersReq struct {
+	Month string `json:"month,omitempty"` // 格式: YYYY-MM,不填则默认上月
+}
+
+// Validate 验证请求参数
+func (r ManualTerminateMonthlyOrdersReq) Validate() error {
+	if r.Month != "" {
+		_, err := time.Parse(constant.YearMonthLayout, r.Month)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -25,4 +25,6 @@ type CronTask string
 const (
 	// CronTaskSyncDeviceCapacity 同步主机库存
 	CronTaskSyncDeviceCapacity CronTask = "sync_device_capacity"
+	// CronTaskRollingMonthlyTerminateNotice 滚服申领单跨月终止通知
+	CronTaskRollingMonthlyTerminateNotice CronTask = "rolling_monthly_terminate_notice"
 )
