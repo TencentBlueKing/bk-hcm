@@ -705,6 +705,7 @@ func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, r
 	}
 
 	opt := a.getHandlerOption(cts)
+
 	ids := make([]string, 0, len(req.SubAccounts))
 	for i := range req.SubAccounts {
 		info, ok := subAccountMap[req.SubAccounts[i].ID]
@@ -787,6 +788,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 	}
 
 	opt := a.getHandlerOption(cts)
+
 	ids := make([]string, 0, len(req.IDs))
 	for _, subAccountID := range req.IDs {
 		info, ok := infoMap[subAccountID]
