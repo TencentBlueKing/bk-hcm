@@ -164,11 +164,7 @@ func (a *applicationSvc) getApprovalProcessInfo(
 		cts.Kit.Ctx, cts.Kit.Header(),
 		&dataproto.ApprovalProcessListReq{
 			Filter: tools.ExpressionAnd(tools.RuleEqual("application_type", string(applicationType))),
-			Page: &core.BasePage{
-				Count: false,
-				Start: 0,
-				Limit: 1,
-			},
+			Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {

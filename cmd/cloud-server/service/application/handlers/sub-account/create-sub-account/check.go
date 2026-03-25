@@ -76,6 +76,7 @@ func decodeTCloudExtension(a *ApplicationOfCreateSubAccount) (*proto.TCloudSubAc
 	if err := svccommon.DecodeExtension(a.Cts.Kit, a.req.Extension, ext); err != nil {
 		return nil, fmt.Errorf("decode tcloud sub account extension failed, err: %w", err)
 	}
+
 	return ext, nil
 }
 
