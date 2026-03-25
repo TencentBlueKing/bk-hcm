@@ -214,6 +214,9 @@ const (
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
 
+	// PermissionTemplateTable is permission_template table's name.
+	PermissionTemplateTable Name = "permission_template"
+
 	// PermissionPolicyLibraryTable is permission_policy_library table's name.
 	PermissionPolicyLibraryTable Name = "permission_policy_library"
 )
@@ -331,6 +334,8 @@ var TableMap = map[Name]TableConfig{
 	GlobalConfigTable: {},
 
 	ResUsageBizRelTable: {},
+
+	PermissionTemplateTable: {EnableTenant: true},
 
 	PermissionPolicyLibraryTable: {EnableTenant: true},
 }

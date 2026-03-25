@@ -103,6 +103,8 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.accountSecretUpdateAuditBuild(kt, updates)
 	case enumor.SubAccountAuditResType:
 		audits, err = ad.subAccountUpdateAuditBuild(kt, updates)
+	case enumor.PermissionTemplateAuditResType:
+		audits, err = ad.permissionTemplateUpdateAuditBuild(kt, updates)
 
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
