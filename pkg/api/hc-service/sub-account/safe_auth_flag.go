@@ -17,36 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package deletesubaccount
+package hssubaccount
 
 import (
-	"fmt"
+	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/criteria/validator"
+	"hcm/pkg/rest"
 )
 
-// CheckReq validate the request and check that the sub account exists.
-func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
-	}
+// DescribeSafeAuthFlagReq define describe sub-account safe auth flag request for hc-service.
+type DescribeSafeAuthFlagReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	SubUin    uint64 `json:"sub_uin" validate:"required"`
+}
 
-	if err := a.CheckSubAccountExists(a.req.ID); err != nil {
-		return err
-	}
+// Validate describe safe auth flag request.
+func (req *DescribeSafeAuthFlagReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
 
-	account, err := a.GetAccount(a.req.AccountID)
-	if err != nil {
-		return fmt.Errorf("found parent account(%s) failed, err: %w", a.req.AccountID, err)
-	}
+// DescribeSafeAuthFlagResult directly reuses adaptor SafeAuthFlagResult.
+type DescribeSafeAuthFlagResult = typeaccount.SafeAuthFlagResult
 
-	if a.BkBizID() != account.BkBizID {
-		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccount of it",
-			a.req.AccountID, account.BkBizID, a.BkBizID())
-	}
-
-	// 校验三级账号关联的密钥是否已全部删除
-	if err := a.CheckSubSecretExists(a.req.ID); err != nil {
-		return err
-	}
-
-	return nil
+// DescribeSafeAuthFlagResp define describe sub-account safe auth flag response.
+type DescribeSafeAuthFlagResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *DescribeSafeAuthFlagResult `json:"data"`
 }

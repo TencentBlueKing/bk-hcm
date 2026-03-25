@@ -77,6 +77,17 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
 		svc.GetTCloudNetworkAccountType)
 
+	tcloudAccountService(h, svc)
+	// 访问密钥管理
+	tcloudSecretService(h, svc)
+
+	initAccountServiceHooks(svc, h)
+
+	h.Load(cap.WebService)
+}
+
+// 腾讯云密钥管理
+func tcloudAccountService(h *rest.Handler, svc *service) {
 	// 查询账号列表
 	h.Add("TCloudListAccount", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/list", svc.TCloudListAccount)
@@ -98,17 +109,10 @@ func InitAccountService(cap *capability.Capability) {
 	// 设置子账号登录保护和敏感操作保护
 	h.Add("TCloudSetMfaFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
-
-	// 访问密钥管理
-	secretService(h, svc)
-
-	initAccountServiceHooks(svc, h)
-
-	h.Load(cap.WebService)
 }
 
 // 密钥管理
-func secretService(h *rest.Handler, svc *service) {
+func tcloudSecretService(h *rest.Handler, svc *service) {
 	// TCloud 密钥管理
 	h.Add("TCloudCreateAccessKey", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/secrets/create", svc.TCloudCreateAccessKey)

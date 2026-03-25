@@ -17,36 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package deletesubaccount
+package hssubaccount
 
 import (
-	"fmt"
+	"hcm/pkg/criteria/validator"
 )
 
-// CheckReq validate the request and check that the sub account exists.
-func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
-	if err := a.req.Validate(); err != nil {
-		return err
-	}
+// UpdateSubAccountReq define update sub account request for hc-service.
+// Pointer fields use nil to indicate "no change".
+type UpdateSubAccountReq struct {
+	AccountID   string  `json:"account_id" validate:"required"`
+	Name        string  `json:"name" validate:"required"`
+	Remark      *string `json:"remark" validate:"omitempty"`
+	Email       *string `json:"email" validate:"omitempty"`
+	PhoneNum    *string `json:"phone_num" validate:"omitempty"`
+	CountryCode *string `json:"country_code" validate:"omitempty"`
+}
 
-	if err := a.CheckSubAccountExists(a.req.ID); err != nil {
-		return err
-	}
-
-	account, err := a.GetAccount(a.req.AccountID)
-	if err != nil {
-		return fmt.Errorf("found parent account(%s) failed, err: %w", a.req.AccountID, err)
-	}
-
-	if a.BkBizID() != account.BkBizID {
-		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccount of it",
-			a.req.AccountID, account.BkBizID, a.BkBizID())
-	}
-
-	// 校验三级账号关联的密钥是否已全部删除
-	if err := a.CheckSubSecretExists(a.req.ID); err != nil {
-		return err
-	}
-
-	return nil
+// Validate update sub account request.
+func (req *UpdateSubAccountReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
