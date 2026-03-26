@@ -49,13 +49,13 @@ POST /api/v1/cloud/cos/buckets/list
     },
     "buckets": [
       {
-        "name": "bucket-test-1",
+        "cloud_name": "bucket-test-1",
         "region": "ap-hk",
         "creation_date": "2022-09-14T03:17:34Z",
         "bucket_type": "cos"
       },
       {
-        "name": "bucket-test-2",
+        "cloud_name": "bucket-test-2",
         "region": "ap-hk",
         "creation_date": "2022-09-14T02:37:05Z",
         "bucket_type": "cos"
@@ -99,7 +99,7 @@ POST /api/v1/cloud/cos/buckets/list
 
 | 参数名称            | 参数类型    | 描述                                            |
 |-----------------|---------|-----------------------------------------------|
-| name            | string  | 存储桶的名称                                        |
+| cloud_name      | string  | 存储桶的名称                                        |
 | region          | string  | 存储桶的地域                                        |
 | creation_date   | string  | 存储桶的创建时间，为 ISO8601 格式，例如 2019-05-24T10:56:40Z |
 | bucket_type     | string  | 存储桶类型                                         |

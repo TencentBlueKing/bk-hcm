@@ -224,5 +224,6 @@ func (t *TCloudImpl) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySec
 	return &cloud.TCloudInfoBySecret{
 		CloudSubAccountID:  converter.PtrToVal(resp.Response.Uin),
 		CloudMainAccountID: converter.PtrToVal(resp.Response.OwnerUin),
+		AppID:              converter.PtrToVal(resp.Response.AppId),
 	}, nil
 }

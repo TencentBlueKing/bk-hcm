@@ -156,7 +156,7 @@ func (t *TCloudImpl) ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOpti
 	}
 	for _, bucket := range res.Buckets {
 		result.Buckets = append(result.Buckets, typescos.Bucket{
-			Name:         bucket.Name,
+			CloudName:    bucket.Name,
 			Region:       bucket.Region,
 			CreationDate: bucket.CreationDate,
 			BucketType:   bucket.BucketType,
