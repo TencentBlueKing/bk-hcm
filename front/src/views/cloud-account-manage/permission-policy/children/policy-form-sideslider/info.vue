@@ -10,10 +10,9 @@ const props = defineProps<{
   policyData: IPermissionPolicyItem | null;
 }>();
 
-const emit = defineEmits<{
-  success: [];
-  'apply-to-account': [row: IPermissionPolicyItem];
-}>();
+// const emit = defineEmits<{
+//   'apply-to-account': [row: IPermissionPolicyItem];
+// }>();
 
 // 基本信息字段
 const baseInfoFields = computed(() => {
@@ -36,9 +35,9 @@ const handleGoToAccount = () => {
 };
 
 // 应用到二级账号
-const handleApplyToAccount = () => {
-  emit('apply-to-account', props.policyData);
-};
+// const handleApplyToAccount = () => {
+//   emit('apply-to-account', props.policyData);
+// };
 </script>
 
 <template>
@@ -49,7 +48,7 @@ const handleApplyToAccount = () => {
           权限策略库详情
           <span class="name">| {{ props.policyData.name }}</span>
         </div>
-        <bk-button theme="primary" @click="handleApplyToAccount" outline>应用到二级账号</bk-button>
+        <!-- <bk-button theme="primary" @click="handleApplyToAccount" outline>应用到二级账号</bk-button> -->
       </div>
     </template>
     <template #default>
