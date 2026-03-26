@@ -89,7 +89,12 @@ func (s *AffinityService) processSpec(kt *kit.Kit, bizID int64, spec *types.Affi
 		return details, nil
 	}
 
-	for _, zone := range spec.Zones {
+	zones, err := s.resolveZones(kt, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, zone := range zones {
 		detail, err := s.matchAffinityForZone(kt, bizID, spec, zone)
 		if err != nil {
 			logs.Errorf("failed to match affinity for zone, err: %v, zone: %s, rid: %s", err, zone, kt.Rid)
@@ -99,6 +104,43 @@ func (s *AffinityService) processSpec(kt *kit.Kit, bizID int64, spec *types.Affi
 	}
 
 	return details, nil
+}
+
+// resolveZones 解析可用区列表，当 zones 包含 "all" 时查询 region 下所有可用区
+func (s *AffinityService) resolveZones(kt *kit.Kit, spec *types.AffinityMatchSpec) ([]string, error) {
+	hasAll := false
+	for _, zone := range spec.Zones {
+		if zone == cvmapi.CvmZoneAll {
+			hasAll = true
+			break
+		}
+	}
+	if !hasAll {
+		return spec.Zones, nil
+	}
+
+	if spec.Region == "" {
+		return nil, fmt.Errorf("region is required when zones contains '%s'", cvmapi.CvmZoneAll)
+	}
+
+	zoneResult, err := s.configLogics.Zone().GetZone(kt, &cfgtype.GetZoneParam{
+		Region: []string{spec.Region},
+	})
+	if err != nil {
+		logs.Errorf("get zone list for region %s failed, err: %v, rid: %s", spec.Region, err, kt.Rid)
+		return nil, err
+	}
+
+	zones := make([]string, 0, len(zoneResult.Info))
+	for _, z := range zoneResult.Info {
+		zones = append(zones, z.Zone)
+	}
+	if len(zones) == 0 {
+		return nil, fmt.Errorf("no available zones found for region %s", spec.Region)
+	}
+
+	logs.Infof("resolved zones for region %s: %v, rid: %s", spec.Region, zones, kt.Rid)
+	return zones, nil
 }
 
 // getCampusList 获取园区列表
@@ -154,7 +196,7 @@ func (s *AffinityService) matchAffinityForCampus(kt *kit.Kit, bizID int64, spec 
 			Method:  cvmapi.CvmMatchSwapGroupMethod,
 		},
 		Params: cvmapi.MatchSwapGroupParams{
-			DeptID:       bizID,
+			DeptID:       cvmapi.CvmDeptId,
 			ApplyNum:     spec.Replicas,
 			Zone:         campus.Zone,
 			InstanceType: spec.DeviceType,
@@ -236,7 +278,7 @@ func (s *AffinityService) matchAffinityForZone(kt *kit.Kit, bizID int64, spec *t
 			Method:  cvmapi.CvmMatchSwapGroupMethod,
 		},
 		Params: cvmapi.MatchSwapGroupParams{
-			DeptID:       bizID,
+			DeptID:       cvmapi.CvmDeptId,
 			ApplyNum:     spec.Replicas,
 			Zone:         zone,
 			InstanceType: spec.DeviceType,
