@@ -25,6 +25,7 @@ import (
 	"net/http"
 
 	"hcm/cmd/hc-service/service/capability"
+	tcloudadaptor "hcm/pkg/adaptor/tcloud"
 	typecos "hcm/pkg/adaptor/types/cos"
 	protocos "hcm/pkg/api/hc-service/cos"
 	"hcm/pkg/criteria/errf"
@@ -88,7 +89,9 @@ func (svc *cosSvc) CreateTCloudCosBucket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	return protocos.TCloudCreateBucketResp{CloudName: fmt.Sprintf("%s-%d", req.Name, accountInfo.AppID)}, nil
+	return protocos.TCloudCreateBucketResp{
+		CloudName: tcloudadaptor.EnsureBucketNameWithAppID(req.Name, accountInfo.AppID),
+	}, nil
 }
 
 // DeleteTCloudCosBucket delete tcloud cos bucket.

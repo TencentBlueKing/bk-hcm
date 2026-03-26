@@ -121,6 +121,8 @@ func (c CreateBucketConfiguration) Validate() error {
 type TCloudBucketDeleteOption struct {
 	Name   string `json:"name" validate:"required"`
 	Region string `json:"region" validate:"required"`
+	// AppID is the application ID for the bucket.
+	AppID uint64 `json:"-" validate:"required"`
 }
 
 // Validate TCloudBucketDeleteOption.
