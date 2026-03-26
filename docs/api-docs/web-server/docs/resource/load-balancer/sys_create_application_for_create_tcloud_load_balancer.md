@@ -1,12 +1,12 @@
 ### 描述
 
-- 该接口提供版本：v1.6.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：负载均衡创建。
-- 该接口功能描述：业务下创建负载均衡申请。
+- 该接口功能描述：系统调用方代替指定用户创建腾讯云负载均衡申请单。
 
 ### URL
 
-POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
+POST /api/v1/cloud/vendors/tcloud/system/applications/types/create_load_balancer
 
 ### 输入参数
 
@@ -14,6 +14,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
 
 | 参数名称                         | 参数类型         | 必选 | 描述                                                            |
 |------------------------------|--------------|----|---------------------------------------------------------------|
+| applicant                    | string       | 是  | 实际提单人（自然人用户名），由系统调用方显式指定                                      |
 | bk_biz_id                    | int64        | 是  | 业务ID                                                          |
 | account_id                   | string       | 是  | 账号ID                                                          |
 | region                       | string       | 是  | 地域                                                            |
@@ -24,7 +25,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
 | address_ip_version           | string       | 否  | ip版本，IPV4,IPV6(ipv6 nat64),IPv6FullChain(ipv6)                |
 | cloud_vpc_id                 | string       | 是  | 云VpcID                                                        |
 | cloud_subnet_id              | string       | 否  | 云子网ID ，内网型必填                                                  |
-| vip                          | string       | 否  | 绑定已有eip的ip地址，，ipv6 nat64 不支持                                  |
+| vip                          | string       | 否  | 绑定已有eip的ip地址，ipv6 nat64 不支持                                   |
 | cloud_eip_id                 | string       | 否  | 绑定eip id                                                      |
 | vip_isp                      | string       | 否  | 运营商类型仅公网，枚举值：CMCC,CUCC,CTCC,BGP。通过TCloudDescribeResource 接口确定 |
 | internet_charge_type         | string       | 否  | 网络计费模式                                                        |
@@ -61,6 +62,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
 
 ```json
 {
+  "applicant": "zhangsan",
   "account_id": "0000001",
   "region": "ap-hk",
   "zone": "ap-hk-1",

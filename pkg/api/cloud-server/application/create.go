@@ -31,3 +31,15 @@ type CreateCommonReq struct {
 func (req *CreateCommonReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// SysCreateCommonReq defines the system create request, which allows explicitly specifying the applicant.
+type SysCreateCommonReq struct {
+	CreateCommonReq `json:",inline"`
+	// Applicant is the actual applicant user for the application, required for system-level calls.
+	Applicant string `json:"applicant" validate:"required,min=1"`
+}
+
+// Validate sys create common req.
+func (req *SysCreateCommonReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
