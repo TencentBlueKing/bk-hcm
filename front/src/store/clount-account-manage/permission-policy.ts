@@ -1,10 +1,32 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
+import { IListResData, QueryFilterType } from '@/typings';
+import rollRequest from '@blueking/roll-request';
 
+// 权限策略列表
 export interface IPermissionPolicyItem {
   id: string;
-  // TODO 待补充
+  name: string; // 策略库名称
+  version: number; // 当前版本号
+  bk_biz_ids: number[]; // 允许使用的业务ID列表
+  memo: string; // 描述
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+  policy_document: string; // 当前版本的策略JSON内容
+  policy_hash: string; // 当前版本的策略HASH
+  associated_account_count: number; // 关联二级账号数
+}
+
+// 新增/编辑权限列表参数
+export interface IOperationPermissionPolicyParams {
+  id?: string;
+  name: string;
+  policy_document: string;
+  bk_biz_ids: number[];
+  memo: string;
 }
 
 export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
@@ -12,12 +34,12 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 创建权限策略库
-   * @param bk_biz_id 业务ID
-   * @param params 账号参数
+   * @param vendor 云账户
+   * @param params 权限策略库参数
    */
-  const createPermissionPolicy = async (bk_biz_id: number, params: IAccountCreateParams) => {
+  const createPermissionPolicy = async (vendor: string, params: IOperationPermissionPolicyParams) => {
     try {
-      const res = await http.post(`/api/v1/cloud/bizs/${bk_biz_id}/applications/types/add_account`, params);
+      const res = await http.post(`/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/create`, params);
       return res?.data;
     } catch (error) {
       console.error(error);
@@ -31,9 +53,15 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
    * @param account_id 账号ID
    * @param params 更新参数
    */
-  const updatePermissionPolicy = async (bk_biz_id: number, account_id: string, params: IAccountUpdateParams) => {
+  const updatePermissionPolicy = async (vendor: string, params: IOperationPermissionPolicyParams) => {
     try {
-      const res = await http.patch(`/api/v1/cloud/bizs/${bk_biz_id}/accounts/${account_id}`, params);
+      const { id, name, policy_document, bk_biz_ids, memo } = params;
+      const res = await http.patch(`/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}`, {
+        name,
+        policy_document,
+        bk_biz_ids,
+        memo,
+      });
       return res?.data;
     } catch (error) {
       console.error(error);
@@ -84,10 +112,60 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     }
   };
 
+  /**
+   * 使用 rollRequest 获取权限策略库全量列表（用于前端分页）
+   * @param vendor 云账户
+   * @param filter 过滤条件
+   * @param onProgress 进度回调，每批次数据返回时调用
+   */
+  const getPermissionPolicyFullList = async (
+    vendor: string,
+    filter: QueryFilterType,
+    onProgress?: (list: IPermissionPolicyItem[], count: number) => void,
+  ): Promise<IPermissionPolicyItem[]> => {
+    permissionPolicyListLoading.value = true;
+    const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
+    const allList: IPermissionPolicyItem[] = [];
+
+    try {
+      const listGen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
+        IListResData<IPermissionPolicyItem[]>
+      >(
+        api,
+        { filter },
+        {
+          limit: 500, // 每批次拉取500条
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+          generator: true,
+        },
+        true,
+      );
+
+      // 串行迭代请求，避免一次性请求过多数据导致阻塞
+      for await (const res of listGen) {
+        const details = res.data?.details || [];
+        allList.push(...details);
+        // 回调通知进度
+        onProgress?.(allList, res.data?.count || allList.length);
+        // 完成第一次请求即关闭 loading 效果，其余请求静默处理
+        permissionPolicyListLoading.value = false;
+      }
+
+      return allList;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      permissionPolicyListLoading.value = false;
+    }
+  };
+
   return {
     permissionPolicyListLoading,
     createPermissionPolicy,
     updatePermissionPolicy,
     getPermissionPolicyList,
+    getPermissionPolicyFullList,
   };
 });
