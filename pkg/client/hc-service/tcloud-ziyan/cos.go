@@ -42,9 +42,11 @@ type CosClient struct {
 }
 
 // CreateCosBucket ....
-func (c *CosClient) CreateCosBucket(kt *kit.Kit, req *protocos.TCloudCreateBucketReq) error {
-	return common.RequestNoResp[protocos.TCloudCreateBucketReq](c.client, http.MethodPost, kt, req,
-		"/cos/buckets/create")
+func (c *CosClient) CreateCosBucket(kt *kit.Kit, req *protocos.TCloudCreateBucketReq) (
+	*protocos.TCloudCreateBucketResp, error) {
+
+	return common.Request[protocos.TCloudCreateBucketReq, protocos.TCloudCreateBucketResp](
+		c.client, http.MethodPost, kt, req, "/cos/buckets/create")
 }
 
 // DeleteCosBucket ....

@@ -45,6 +45,13 @@ func InitService(c *capability.Capability) {
 	h.Add("ListCosBucket", http.MethodPost, "/cos/buckets/list", svc.ListCosBucket)
 
 	h.Load(c.WebService)
+
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizH.Add("CreateBizCosBucket", http.MethodPost, "/cos/buckets/create", svc.CreateBizCosBucket)
+	bizH.Add("DeleteBizCosBucket", http.MethodDelete, "/cos/buckets/delete", svc.DeleteBizCosBucket)
+	bizH.Add("ListBizCosBucket", http.MethodPost, "/cos/buckets/list", svc.ListBizCosBucket)
+	bizH.Load(c.WebService)
 }
 
 type cosSvc struct {

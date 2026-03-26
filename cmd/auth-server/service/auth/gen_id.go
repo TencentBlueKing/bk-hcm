@@ -910,6 +910,10 @@ func genTaskManagementResource(a *meta.ResourceAttribute) (client.ActionID, []cl
 }
 
 func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.BizID > 0 {
+		return genBizCosBucketResource(a)
+	}
+
 	res := client.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
@@ -923,6 +927,29 @@ func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource
 		return sys.CosBucketFind, []client.Resource{res}, nil
 	case meta.Delete:
 		return sys.CosBucketDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genBizCosBucketResource generate biz cos bucket related iam resource.
+func genBizCosBucketResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+	}
+
+	if a.BizID > 0 {
+		res.ID = strconv.FormatInt(a.BizID, 10)
+	}
+
+	switch a.Basic.Action {
+	case meta.Create:
+		return sys.BizCosBucketCreate, []client.Resource{res}, nil
+	case meta.Find:
+		return sys.BizCosBucketFind, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.BizCosBucketDelete, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

@@ -221,8 +221,14 @@ func (t *TCloudImpl) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySec
 	if resp.Response.OwnerUin == nil {
 		return nil, errors.New("user owner uin is empty")
 	}
+
+	if resp.Response.AppId == nil {
+		return nil, errors.New("user app id is empty")
+	}
+
 	return &cloud.TCloudInfoBySecret{
 		CloudSubAccountID:  converter.PtrToVal(resp.Response.Uin),
 		CloudMainAccountID: converter.PtrToVal(resp.Response.OwnerUin),
+		AppID:              converter.PtrToVal(resp.Response.AppId),
 	}, nil
 }

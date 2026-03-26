@@ -1,0 +1,73 @@
+### 描述
+
+- 该接口提供版本：v9.9.9+。
+- 该接口所需权限：业务-COS桶创建。
+- 该接口功能描述：创建指定业务的存储桶接口。
+
+### URL
+
+POST /api/v1/cloud/bizs/{bk_biz_id}/cos/buckets/create
+
+### 输入参数
+
+#### tcloud-ziyan
+| 参数名称                                | 参数类型 | 必选 | 描述                                                    |
+|----------------------------------------|--------|-----|---------------------------------------------------------|
+| account_id                             | string | 是  | 账号ID                                                   |
+| region                                 | string | 是  | 地域                                                     |
+| name                                   | string | 是  | 存储桶名称                                                 |
+| manager                                | string | 是  | 负责人                                                    |
+| bak_manager                            | string | 是  | 备份负责人                                                 |
+| x_cos_acl                              | string | 否  | 定义存储桶的访问控制列表（ACL）属性                                    |
+| x_cos_grant_read                       | string | 否  | 赋予被授权者读取存储桶的权限                                           |
+| x_cos_grant_write                      | string | 否  | 赋予被授权者写入存储桶的权限                                           |
+| x_cos_grant_full_control               | string | 否  | 赋予被授权者操作存储桶的所有权限                                        |
+| x_cos_grant_read_acp                   | string | 否  | 赋予被授权者读取存储桶的访问控制列表（ACL）和存储桶策略（Policy）的权限      |
+| x_cos_grant_write_acp                  | string | 否  | 赋予被授权者写入存储桶的访问控制列表（ACL）和存储桶策略（Policy）的权限      |
+| create_bucket_configuration            | object | 否  | 包含操作的所有请求信息                                                |
+
+#### create_bucket_configuration
+| 参数名称                                  | 参数类型   | 必选 | 描述                                |
+|---------------------------------------|--------|----|-----------------------------------|
+| bucket_az_config                      | string | 是  | 存储桶 AZ 配置，指定为 MAZ 以创建多 AZ 存储桶     |
+
+### 调用示例
+
+#### tcloud-ziyan
+
+```json
+{
+  "account_id": "0000001",
+  "region": "ap-nanjing",
+  "name": "xxx",
+  "create_bucket_configuration":{
+    "bucket_az_config": "MAZ"
+  }
+}
+```
+
+### 响应示例
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "cloud_name": "xxxx"
+  }
+}
+```
+
+### 响应参数说明
+
+| 参数名称 | 参数类型       | 描述    |
+|---------|--------------|---------|
+| code    | int32        | 状态码   |
+| message | string       | 请求信息 |
+| data	  | object array | 响应数据 |
+
+#### data
+
+| 参数名称    | 参数类型 | 描述            |
+|------------|--------|-----------------|
+| cloud_name | string | 云厂商的存储桶名称 |

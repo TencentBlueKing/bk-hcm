@@ -20,6 +20,9 @@
 package tcloud
 
 import (
+	"strconv"
+	"strings"
+
 	typescos "hcm/pkg/adaptor/types/cos"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -38,7 +41,12 @@ func (t *TCloudImpl) CreateBucket(kt *kit.Kit, opt *typescos.TCloudBucketCreateO
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cliOpt := &typescos.ClientOpt{UrlType: typescos.UrlWithNameAndRegion, BucketNameAppID: opt.Name, Region: opt.Region}
+	bucketNameAppID := EnsureBucketNameWithAppID(opt.Name, opt.AppID)
+	cliOpt := &typescos.ClientOpt{
+		UrlType:         typescos.UrlWithNameAndRegion,
+		BucketNameAppID: bucketNameAppID,
+		Region:          opt.Region,
+	}
 	client, err := t.clientSet.CosClient(cliOpt)
 	if err != nil {
 		return err
@@ -75,7 +83,12 @@ func (t *TCloudImpl) DeleteBucket(kt *kit.Kit, opt *typescos.TCloudBucketDeleteO
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cliOpt := &typescos.ClientOpt{UrlType: typescos.UrlWithNameAndRegion, BucketNameAppID: opt.Name, Region: opt.Region}
+	bucketNameAppID := EnsureBucketNameWithAppID(opt.Name, opt.AppID)
+	cliOpt := &typescos.ClientOpt{
+		UrlType:         typescos.UrlWithNameAndRegion,
+		BucketNameAppID: bucketNameAppID,
+		Region:          opt.Region,
+	}
 	client, err := t.clientSet.CosClient(cliOpt)
 	if err != nil {
 		return err
@@ -156,7 +169,7 @@ func (t *TCloudImpl) ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOpti
 	}
 	for _, bucket := range res.Buckets {
 		result.Buckets = append(result.Buckets, typescos.Bucket{
-			Name:         bucket.Name,
+			CloudName:    bucket.Name,
 			Region:       bucket.Region,
 			CreationDate: bucket.CreationDate,
 			BucketType:   bucket.BucketType,
@@ -164,4 +177,16 @@ func (t *TCloudImpl) ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOpti
 	}
 
 	return result, nil
+}
+
+// EnsureBucketNameWithAppID 确保 BucketName 包含正确的 APPID 后缀。
+// 腾讯云 COS 存储桶名称格式为 <BucketName-APPID>，如果传入的名称
+// 后缀已匹配 APPID 则不处理，否则自动拼接。
+func EnsureBucketNameWithAppID(name string, appID uint64) string {
+	appIDStr := strconv.FormatUint(appID, 10)
+	suffix := "-" + appIDStr
+	if strings.HasSuffix(name, suffix) {
+		return name
+	}
+	return name + suffix
 }

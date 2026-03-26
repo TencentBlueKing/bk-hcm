@@ -193,6 +193,9 @@ func genResManagementActions() []client.ResourceAction {
 		Version:              1,
 	}}...)
 
+	// 业务下-COS资源的Actions
+	actions = append(actions, genBizCosResManActions()...)
+
 	return actions
 }
 
@@ -245,6 +248,40 @@ func genCertResManActions() []client.ResourceAction {
 			RelatedResourceTypes: bizResource,
 			RelatedActions:       []client.ActionID{BizAccess},
 			Version:              1,
+		},
+	}
+}
+
+// genBizCosResManActions 业务-COS资源的Actions
+func genBizCosResManActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   BizCosBucketCreate,
+			Name:                 ActionIDNameMap[BizCosBucketCreate],
+			NameEn:               "Create Biz COS Bucket",
+			Type:                 Create,
+			RelatedResourceTypes: bizResource,
+			RelatedActions:       []client.ActionID{BizAccess},
+			Version:              1,
+			Hidden:               true,
+		}, {
+			ID:                   BizCosBucketFind,
+			Name:                 ActionIDNameMap[BizCosBucketFind],
+			NameEn:               "Find Biz COS Bucket",
+			Type:                 View,
+			RelatedResourceTypes: bizResource,
+			RelatedActions:       []client.ActionID{BizAccess},
+			Version:              1,
+			Hidden:               true,
+		}, {
+			ID:                   BizCosBucketDelete,
+			Name:                 ActionIDNameMap[BizCosBucketDelete],
+			NameEn:               "Delete Biz COS Bucket",
+			Type:                 Delete,
+			RelatedResourceTypes: bizResource,
+			RelatedActions:       []client.ActionID{BizAccess},
+			Version:              1,
+			Hidden:               true,
 		},
 	}
 }

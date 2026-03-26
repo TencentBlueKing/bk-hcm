@@ -240,6 +240,13 @@ const (
 	// CosBucketDelete cos bucket delete action id to register iam.
 	CosBucketDelete client.ActionID = "cos_bucket_delete"
 
+	// BizCosBucketCreate cos bucket create action id to register iam.
+	BizCosBucketCreate client.ActionID = "biz_cos_bucket_create"
+	// BizCosBucketFind cos bucket find action id to register iam.
+	BizCosBucketFind client.ActionID = "biz_cos_bucket_find"
+	// BizCosBucketDelete cos bucket delete action id to register iam.
+	BizCosBucketDelete client.ActionID = "biz_cos_bucket_delete"
+
 	// AwsSavingsPlansCostQuery aws savings plans cost query action id to register iam.
 	AwsSavingsPlansCostQuery client.ActionID = "aws_savings_plans_cost_query"
 
@@ -334,6 +341,10 @@ var ActionIDNameMap = map[client.ActionID]string{
 	CosBucketCreate: "COS桶创建",
 	CosBucketFind:   "COS桶查询",
 	CosBucketDelete: "COS桶删除",
+
+	BizCosBucketCreate: "业务-COS桶创建",
+	BizCosBucketFind:   "业务-COS桶查询",
+	BizCosBucketDelete: "业务-COS桶删除",
 
 	AwsSavingsPlansCostQuery: "AWS-SavingsPlans成本查询",
 }

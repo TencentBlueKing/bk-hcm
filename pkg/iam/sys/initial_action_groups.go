@@ -103,6 +103,14 @@ func genResManagementActionGroups() []client.ActionGroup {
 					Actions: []client.ActionWithID{
 						{ID: BizTaskManagementOperate},
 					},
+				}, {
+					Name:   "COS资源",
+					NameEn: "Biz COS Resource",
+					Actions: []client.ActionWithID{
+						{ID: BizCosBucketCreate},
+						{ID: BizCosBucketFind},
+						{ID: BizCosBucketDelete},
+					},
 				},
 			},
 		},

@@ -33,6 +33,7 @@ type AccountInfoBySecret interface {
 type TCloudInfoBySecret struct {
 	CloudMainAccountID string `json:"cloud_main_account_id"`
 	CloudSubAccountID  string `json:"cloud_sub_account_id"`
+	AppID              uint64 `json:"app_id"`
 }
 
 // AwsInfoBySecret AWS 根据秘钥获取的字段
