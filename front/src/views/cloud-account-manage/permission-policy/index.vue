@@ -17,6 +17,7 @@ import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { IPermissionPolicyItem } from './typings';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -24,6 +25,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
+const { isBusinessPage } = useWhereAmI();
 
 const permissionPolicyStore = usePermissionPolicyStore();
 // 创建模型实例
@@ -92,16 +94,10 @@ const loadFullList = async () => {
     };
 
     // 使用 rollRequest 获取全量数据
-    await permissionPolicyStore.getPermissionPolicyFullList(
-      currentVendor.value,
-      vendorFilter,
-      (progressList, count) => {
-        // 进度回调：每批次数据返回时更新
-        fullList.value = progressList;
-        pagination.count = count;
-        updateTableData();
-      },
-    );
+    const list = await permissionPolicyStore.getPermissionPolicyFullList(currentVendor.value, vendorFilter);
+    fullList.value = list;
+    pagination.count = list.length;
+    updateTableData();
   } catch (error) {
     console.error('获取权限策略库列表失败:', error);
     fullList.value = [];
@@ -223,7 +219,7 @@ const handleReset = () => {
     <!-- 表格区域 -->
     <div class="table-container">
       <!-- 操作按钮区域 -->
-      <div class="action-btns">
+      <div class="action-btns" v-if="!isBusinessPage">
         <bk-button theme="primary" @click="handleAddPolicy">
           <plus style="font-size: 22px" />
           新增权限策略库
