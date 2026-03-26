@@ -5,7 +5,7 @@ import VendorSelector from './components/vendor-selector.vue';
 
 // Tab面板配置
 const tabPanels = [
-  { name: 'secondary-account', label: '二级账号' },
+  // { name: 'secondary-account', label: '二级账号' },
   // { name: 'tertiary-account', label: '三级账号' },
   // { name: 'cloud-secret', label: '云密钥' },
   // { name: 'cloud-permission', label: '云权限模版' },
@@ -20,7 +20,7 @@ const currentVendor = ref<VendorEnum>(VendorEnum.TCLOUD);
 
 // 异步加载Tab对应的组件
 const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
-  'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
+  // 'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
   'cloud-secret': defineAsyncComponent(() => import('./cloud-secret/index.vue')),
   'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
   // 其他Tab组件待开发
