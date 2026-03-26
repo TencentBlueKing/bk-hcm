@@ -39,6 +39,7 @@ var OBSBillItemRollingColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "delivered_core", NamedC: "delivered_core", Type: enumor.Numeric},
 	{Column: "returned_core", NamedC: "returned_core", Type: enumor.Numeric},
+	{Column: "exempted_returned_core", NamedC: "exempted_returned_core", Type: enumor.Numeric},
 	{Column: "not_returned_core", NamedC: "not_returned_core", Type: enumor.Numeric},
 	{Column: "year", NamedC: "year", Type: enumor.Numeric},
 	{Column: "month", NamedC: "month", Type: enumor.Numeric},
@@ -88,6 +89,8 @@ type OBSBillItemRolling struct {
 	DeliveredCore uint64 `db:"delivered_core" json:"delivered_core"`
 	// ReturnedCore 已退还核心数
 	ReturnedCore uint64 `db:"returned_core" json:"returned_core"`
+	// ExemptedReturnedCore 减免退还核心数
+	ExemptedReturnedCore uint64 `db:"exempted_returned_core" json:"exempted_returned_core"`
 	// NotReturnedCore 未退还核心数
 	NotReturnedCore uint64 `db:"not_returned_core" json:"not_returned_core"`
 	// Year 记录账单的年份

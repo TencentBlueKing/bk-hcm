@@ -104,11 +104,12 @@ func (c *BatchUpdateRollingAppliedRecordReq) Validate() error {
 
 // RollingAppliedRecordUpdateReq update request
 type RollingAppliedRecordUpdateReq struct {
-	ID            string             `json:"id" validate:"required"`
-	AppliedType   enumor.AppliedType `json:"applied_type" validate:"omitempty"`
-	AppliedCore   *int64             `json:"applied_core" validate:"omitempty"`
-	DeliveredCore *int64             `json:"delivered_core" validate:"omitempty"`
-	NotNotice     *bool              `json:"not_notice" validate:"omitempty"`
+	ID                   string             `json:"id" validate:"required"`
+	AppliedType          enumor.AppliedType `json:"applied_type" validate:"omitempty"`
+	AppliedCore          *int64             `json:"applied_core" validate:"omitempty"`
+	DeliveredCore        *int64             `json:"delivered_core" validate:"omitempty"`
+	NotNotice            *bool              `json:"not_notice" validate:"omitempty"`
+	ExemptedReturnedCore *int64             `json:"exempted_returned_core" validate:"omitempty,gte=0"`
 }
 
 // Validate ...
@@ -132,5 +133,16 @@ type AppliedRecordUpdateNoticeStateReq struct {
 
 // Validate ...
 func (req *AppliedRecordUpdateNoticeStateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AppliedRecordUpdateExemptedReturnedCoreReq update request
+type AppliedRecordUpdateExemptedReturnedCoreReq struct {
+	IDs                  []string `json:"ids" validate:"required,min=1,max=100"`
+	ExemptedReturnedCore int64    `json:"exempted_returned_core" validate:"gte=0"`
+}
+
+// Validate ...
+func (req *AppliedRecordUpdateExemptedReturnedCoreReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

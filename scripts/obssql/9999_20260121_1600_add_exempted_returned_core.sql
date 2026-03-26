@@ -17,29 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rollingserver
+/*
+ SQLVER=9999,HCMVER=v9.9.9.9
+ 
+ Notes:
+ 1. 滚服账单表添加减免退还核心数字段
+ */
+START TRANSACTION;
 
-import "hcm/pkg/criteria/enumor"
+alter table obs_rolling_bills
+    add column `exempted_returned_core` bigint unsigned not null default 0 comment '减免退还核心数';
 
-// AppliedRecordDate applied record date
-type AppliedRecordDate struct {
-	Year  int
-	Month int
-	Day   int
-}
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
-// UnReturnedSubOrderMsg unreturned sub order msg
-type UnReturnedSubOrderMsg struct {
-	SubOrderID           string
-	AppliedCore          int64
-	ReturnedCore         int64
-	ExemptedReturnedCore int64
-	AppliedUser          string
-	AppliedYear          int
-	AppliedMonth         int
-	AppliedDay           int
-	NeedReturnedYear     int
-	NeedReturnedMonth    int
-	NeedReturnedDay      int
-	FineState            enumor.RsUnReturnedSubOrderFineState
-}
+COMMIT;
+

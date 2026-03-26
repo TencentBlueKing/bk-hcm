@@ -49,18 +49,19 @@ func (svc *service) BatchCreateRollingDineDetail(cts *rest.Contexts) (interface{
 		details := make([]rstable.RollingFineDetailTable, 0, len(req.FineDetails))
 		for _, createReq := range req.FineDetails {
 			details = append(details, rstable.RollingFineDetailTable{
-				BkBizID:         createReq.BkBizID,
-				AppliedRecordID: createReq.AppliedRecordID,
-				OrderID:         createReq.OrderID,
-				SubOrderID:      createReq.SubOrderID,
-				Year:            createReq.Year,
-				Month:           createReq.Month,
-				Day:             createReq.Day,
-				RollDate:        times.GetDataIntDate(createReq.Year, createReq.Month, createReq.Day),
-				DeliveredCore:   createReq.DeliveredCore,
-				ReturnedCore:    createReq.ReturnedCore,
-				Fine:            createReq.Fine,
-				Creator:         cts.Kit.User,
+				BkBizID:              createReq.BkBizID,
+				AppliedRecordID:      createReq.AppliedRecordID,
+				OrderID:              createReq.OrderID,
+				SubOrderID:           createReq.SubOrderID,
+				Year:                 createReq.Year,
+				Month:                createReq.Month,
+				Day:                  createReq.Day,
+				RollDate:             times.GetDataIntDate(createReq.Year, createReq.Month, createReq.Day),
+				DeliveredCore:        createReq.DeliveredCore,
+				ReturnedCore:         createReq.ReturnedCore,
+				ExemptedReturnedCore: createReq.ExemptedReturnedCore,
+				Fine:                 createReq.Fine,
+				Creator:              cts.Kit.User,
 			})
 		}
 		ids, err := svc.dao.RollingFineDetail().CreateWithTx(cts.Kit, txn, details)

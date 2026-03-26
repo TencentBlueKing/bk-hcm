@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
@@ -183,7 +184,7 @@ func (l *logics) syncBizBills(kt *kit.Kit, req *rollingserver.RollingBillSyncReq
 		return err
 	}
 
-	// 3.聚合step1和step2关联的数据，如果已交付数 > 已退回数，将交付和回收核心数等信息存储在滚服罚金明细中
+	// 3.聚合step1和step2关联的数据，如果未退还核心数(已交付数-已退还数-减免退还数)>0，将交付和回收核心数等信息存储在滚服罚金明细中
 	if err = l.addFineDetail(kt, req, appliedRecords, returnedRecordMap); err != nil {
 		logs.Errorf("add rolling fine detail failed, err: %v, bizID: %d, rid: %s", err, req.BkBizID, kt.Rid)
 		return err
@@ -226,23 +227,27 @@ func (l *logics) addFineDetail(kt *kit.Kit, req *rollingserver.RollingBillSyncRe
 
 		var returnedCore int64
 		for _, returnedRecord := range returnedRecordMap[apply.ID] {
-			returnedCore += *returnedRecord.MatchAppliedCore
+			returnedCore += converter.PtrToVal(returnedRecord.MatchAppliedCore)
 		}
 
-		if *apply.DeliveredCore > returnedCore {
-			fine := unitPrice.Mul(decimal.NewFromUint64(uint64(*apply.DeliveredCore) - uint64(returnedCore))).
+		unreturnedCore := converter.PtrToVal(apply.DeliveredCore) - returnedCore
+		unreturnedCore -= converter.PtrToVal(apply.ExemptedReturnedCore)
+
+		if unreturnedCore > 0 {
+			fine := unitPrice.Mul(decimal.NewFromUint64(uint64(unreturnedCore))).
 				Mul(decimal.NewFromFloat(constant.FineProportion))
 			detail := rsproto.RollingFineDetailCreateReq{
-				BkBizID:         apply.BkBizID,
-				AppliedRecordID: apply.ID,
-				OrderID:         apply.OrderID,
-				SubOrderID:      apply.SubOrderID,
-				Year:            req.Year,
-				Month:           req.Month,
-				Day:             req.Day,
-				DeliveredCore:   uint64(*apply.DeliveredCore),
-				ReturnedCore:    uint64(returnedCore),
-				Fine:            fine,
+				BkBizID:              apply.BkBizID,
+				AppliedRecordID:      apply.ID,
+				OrderID:              apply.OrderID,
+				SubOrderID:           apply.SubOrderID,
+				Year:                 req.Year,
+				Month:                req.Month,
+				Day:                  req.Day,
+				DeliveredCore:        uint64(converter.PtrToVal(apply.DeliveredCore)),
+				ReturnedCore:         uint64(returnedCore),
+				ExemptedReturnedCore: uint64(converter.PtrToVal(apply.ExemptedReturnedCore)),
+				Fine:                 fine,
 			}
 			fineDetails = append(fineDetails, detail)
 		}
@@ -339,6 +344,7 @@ func (l *logics) calculateBill(kt *kit.Kit, req *rollingserver.RollingBillSyncRe
 
 	var deliveredCore uint64 = 0
 	var returnedCore uint64 = 0
+	var exemptedReturnedCore uint64 = 0
 	amount := decimal.NewFromFloat(0)
 	amountInCurrentDate := decimal.NewFromFloat(0)
 	for _, detail := range details {
@@ -347,6 +353,7 @@ func (l *logics) calculateBill(kt *kit.Kit, req *rollingserver.RollingBillSyncRe
 			amountInCurrentDate = amountInCurrentDate.Add(detail.Fine)
 			deliveredCore += detail.DeliveredCore
 			returnedCore += detail.ReturnedCore
+			exemptedReturnedCore += detail.ExemptedReturnedCore
 		}
 	}
 
@@ -365,33 +372,35 @@ func (l *logics) calculateBill(kt *kit.Kit, req *rollingserver.RollingBillSyncRe
 		logs.Errorf("failed to search biz belonging, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	if resp == nil || len(*resp) != 1 {
+	if resp == nil || len(converter.PtrToVal(resp)) != 1 {
 		logs.Errorf("search biz belonging, but resp is empty or len resp != 1, rid: %s", kt.Rid)
 		return errors.New("search biz belonging, but resp is empty or len resp != 1")
 	}
-	bizBelong := (*resp)[0]
+	bizBelong := converter.PtrToVal(resp)[0]
+	notReturnedCore := deliveredCore - returnedCore - exemptedReturnedCore
 
 	bill := rsproto.RollingBillCreateReq{
-		BkBizID:             req.BkBizID,
-		DeliveredCore:       deliveredCore,
-		ReturnedCore:        returnedCore,
-		NotReturnedCore:     deliveredCore - returnedCore,
-		Year:                req.Year,
-		Month:               req.Month,
-		Day:                 req.Day,
-		DataDate:            getObsDataDate(req.Year, req.Month, req.Day),
-		ProductID:           bizBelong.BkProductID,
-		BusinessSetID:       bizBelong.Bs1NameID,
-		BusinessSetName:     bizBelong.Bs1Name,
-		CityID:              constant.DefaultCityID,
-		BusinessID:          bizBelong.Bs2NameID,
-		BusinessName:        bizBelong.Bs2Name,
-		BusinessModID:       constant.DefaultBusinessModID,
-		BusinessModName:     constant.DefaultBusinessModName,
-		PlatformID:          constant.PlatformID,
-		ResClassID:          constant.ResClassID,
-		Amount:              amount.InexactFloat64(),
-		AmountInCurrentDate: amountInCurrentDate.InexactFloat64(),
+		BkBizID:              req.BkBizID,
+		DeliveredCore:        deliveredCore,
+		ReturnedCore:         returnedCore,
+		ExemptedReturnedCore: exemptedReturnedCore,
+		NotReturnedCore:      notReturnedCore,
+		Year:                 req.Year,
+		Month:                req.Month,
+		Day:                  req.Day,
+		DataDate:             getObsDataDate(req.Year, req.Month, req.Day),
+		ProductID:            bizBelong.BkProductID,
+		BusinessSetID:        bizBelong.Bs1NameID,
+		BusinessSetName:      bizBelong.Bs1Name,
+		CityID:               constant.DefaultCityID,
+		BusinessID:           bizBelong.Bs2NameID,
+		BusinessName:         bizBelong.Bs2Name,
+		BusinessModID:        constant.DefaultBusinessModID,
+		BusinessModName:      constant.DefaultBusinessModName,
+		PlatformID:           constant.PlatformID,
+		ResClassID:           constant.ResClassID,
+		Amount:               amount.InexactFloat64(),
+		AmountInCurrentDate:  amountInCurrentDate.InexactFloat64(),
 	}
 	createReq := &rsproto.BatchCreateRollingBillReq{Bills: []rsproto.RollingBillCreateReq{bill}}
 

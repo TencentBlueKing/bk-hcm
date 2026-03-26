@@ -49,15 +49,16 @@ func (svc *service) BatchCreateRollingBill(cts *rest.Contexts) (interface{}, err
 		details := make([]rstable.OBSBillItemRolling, 0, len(req.Bills))
 		for _, createReq := range req.Bills {
 			details = append(details, rstable.OBSBillItemRolling{
-				BkBizID:         createReq.BkBizID,
-				DeliveredCore:   createReq.DeliveredCore,
-				ReturnedCore:    createReq.ReturnedCore,
-				NotReturnedCore: createReq.NotReturnedCore,
-				Year:            createReq.Year,
-				Month:           createReq.Month,
-				Day:             createReq.Day,
-				RollDate:        times.GetDataIntDate(createReq.Year, createReq.Month, createReq.Day),
-				Creator:         cts.Kit.User,
+				BkBizID:              createReq.BkBizID,
+				DeliveredCore:        createReq.DeliveredCore,
+				ReturnedCore:         createReq.ReturnedCore,
+				NotReturnedCore:      createReq.NotReturnedCore,
+				ExemptedReturnedCore: createReq.ExemptedReturnedCore,
+				Year:                 createReq.Year,
+				Month:                createReq.Month,
+				Day:                  createReq.Day,
+				RollDate:             times.GetDataIntDate(createReq.Year, createReq.Month, createReq.Day),
+				Creator:              cts.Kit.User,
 				// 下面字段为obs表所需的字段
 				DataDate:            createReq.DataDate,
 				ProductID:           createReq.ProductID,

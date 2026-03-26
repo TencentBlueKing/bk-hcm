@@ -21,12 +21,13 @@
 package rollingserver
 
 import (
-	"github.com/shopspring/decimal"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	rs "hcm/pkg/dal/table/rolling-server"
 	"hcm/pkg/runtime/filter"
+
+	"github.com/shopspring/decimal"
 )
 
 // BatchCreateRollingFineDetailReq batch create request
@@ -49,16 +50,17 @@ func (c *BatchCreateRollingFineDetailReq) Validate() error {
 
 // RollingFineDetailCreateReq create request
 type RollingFineDetailCreateReq struct {
-	BkBizID         int64           `json:"bk_biz_id" validate:"required"`
-	AppliedRecordID string          `json:"applied_record_id" validate:"required"`
-	OrderID         uint64          `json:"order_id" validate:"required"`
-	SubOrderID      string          `json:"suborder_id" validate:"required"`
-	Year            int             `json:"year" validate:"required"`
-	Month           int             `json:"month" validate:"required"`
-	Day             int             `json:"day" validate:"required"`
-	DeliveredCore   uint64          `json:"delivered_core"`
-	ReturnedCore    uint64          `json:"returned_core"`
-	Fine            decimal.Decimal `json:"fine"`
+	BkBizID              int64           `json:"bk_biz_id" validate:"required"`
+	AppliedRecordID      string          `json:"applied_record_id" validate:"required"`
+	OrderID              uint64          `json:"order_id" validate:"required"`
+	SubOrderID           string          `json:"suborder_id" validate:"required"`
+	Year                 int             `json:"year" validate:"required"`
+	Month                int             `json:"month" validate:"required"`
+	Day                  int             `json:"day" validate:"required"`
+	DeliveredCore        uint64          `json:"delivered_core"`
+	ReturnedCore         uint64          `json:"returned_core"`
+	ExemptedReturnedCore uint64          `json:"exempted_returned_core"`
+	Fine                 decimal.Decimal `json:"fine"`
 }
 
 // Validate ...

@@ -48,6 +48,7 @@ var RollingFineDetailColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "roll_date", NamedC: "roll_date", Type: enumor.Numeric},
 	{Column: "delivered_core", NamedC: "delivered_core", Type: enumor.Numeric},
 	{Column: "returned_core", NamedC: "returned_core", Type: enumor.Numeric},
+	{Column: "exempted_returned_core", NamedC: "exempted_returned_core", Type: enumor.Numeric},
 	{Column: "fine", NamedC: "fine", Type: enumor.Numeric},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -77,6 +78,8 @@ type RollingFineDetailTable struct {
 	DeliveredCore uint64 `db:"delivered_core" json:"delivered_core"`
 	// ReturnedCore 已退还核心数
 	ReturnedCore uint64 `db:"returned_core" json:"returned_core"`
+	// ExemptedReturnedCore 减免退还核心数
+	ExemptedReturnedCore uint64 `db:"exempted_returned_core" json:"exempted_returned_core"`
 	// Fine 超时退还罚金
 	Fine decimal.Decimal `db:"fine" json:"fine"`
 	// Creator 创建者

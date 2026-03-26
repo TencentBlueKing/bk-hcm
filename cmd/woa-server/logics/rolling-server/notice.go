@@ -247,7 +247,7 @@ func (l *logics) generateMail(kt *kit.Kit, pushMsg *rstypes.PushReturnNoticeMsg)
 		appliedDate := fmt.Sprintf("%d-%02d-%02d", msg.AppliedYear, msg.AppliedMonth, msg.AppliedDay)
 		needReturnedDate := fmt.Sprintf("%d-%02d-%02d", msg.NeedReturnedYear, msg.NeedReturnedMonth,
 			msg.NeedReturnedDay)
-		needReturnedCore := msg.AppliedCore - msg.ReturnedCore
+		needReturnedCore := msg.AppliedCore - msg.ReturnedCore - msg.ExemptedReturnedCore
 
 		tableContent += fmt.Sprintf(constant.RsReturnNoticeEmailTableTemplate, appliedDate, needReturnedDate,
 			renderRsReturnNoticeFineState(msg.FineState), msg.SubOrderID, msg.AppliedUser,
@@ -327,7 +327,7 @@ func (l *logics) generateWeComContent(kt *kit.Kit, pushMsg *rstypes.PushReturnNo
 	date := fmt.Sprintf("%d年%d月%d日", now.Year(), now.Month(), now.Day())
 	var allNeedReturnedCore int64
 	for _, msg := range pushMsg.UnReturnedSubOrderMsgs {
-		allNeedReturnedCore += msg.AppliedCore - msg.ReturnedCore
+		allNeedReturnedCore += msg.AppliedCore - msg.ReturnedCore - msg.ExemptedReturnedCore
 	}
 	bkHcmURL := config.WoaServer().BkHcmURL
 	queryStartTime := now.AddDate(0, 0, -constant.CalculateFineEndDay)

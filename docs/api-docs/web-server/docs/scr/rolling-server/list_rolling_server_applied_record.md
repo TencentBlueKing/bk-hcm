@@ -177,6 +177,7 @@ POST /api/v1/woa/rolling_servers/applied_records/list
         "day": 1,
         "applied_core": 0,
         "delivered_core": 0,
+        "exempted_returned_core": 0,
         "creator": "xxxx",
         "created_at": "2024-10-01T00:00:00Z"
       }
@@ -214,17 +215,18 @@ POST /api/v1/woa/rolling_servers/applied_records/list
 
 #### data.details[n]
 
-| 参数名称          | 参数类型   | 描述                                                                             |
-|-----------------|-----------|----------------------------------------------------------------------------------|
-| id              | string    | 滚服申请表的主键ID                                                                  |
-| applied_type    | string    | 申请类型(枚举值：normal-普通申请、resource_pool-资源池申请、cvm_product-管理员cvm生产)   |
-| bk_biz_id       | string    | 业务ID                                                                            |
-| order_id        | string    | 主机申请的订单号                                                                    |
-| suborder_id     | string    | 主机申请的子订单号                                                                   |
-| year            | string    | 申请时间年份                                                                        |
-| month           | string    | 申请时间月份                                                                        |
-| day             | string    | 申请时间天                                                                          |
-| applied_core    | string    | 申请资源数                                                                          |
-| delivered_core  | string    | 已交付资源数                                                                        |
-| creator         | string    | 创建者                                                                             |
-| created_at      | string    | 创建时间，标准格式：2006-01-02T15:04:05Z                                              |
+| 参数名称                   | 参数类型   | 描述                                                             |
+|------------------------|--------|----------------------------------------------------------------|
+| id                     | string | 滚服申请表的主键ID                                                     |
+| applied_type           | string | 申请类型(枚举值：normal-普通申请、resource_pool-资源池申请、cvm_product-管理员cvm生产) |
+| bk_biz_id              | string | 业务ID                                                           |
+| order_id               | string | 主机申请的订单号                                                       |
+| suborder_id            | string | 主机申请的子订单号                                                      |
+| year                   | string | 申请时间年份                                                         |
+| month                  | string | 申请时间月份                                                         |
+| day                    | string | 申请时间天                                                          |
+| applied_core           | string | 申请资源数                                                          |
+| delivered_core         | string | 已交付资源数                                                         |
+| exempted_returned_core | string | 减免退还核心数                                                        |
+| creator                | string | 创建者                                                            |
+| created_at             | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                 |

@@ -78,6 +78,8 @@ func (s *service) initService(h *rest.Handler) {
 	h.Add("ListAppliedRecords", http.MethodPost, "/applied_records/list", s.ListAppliedRecords)
 	h.Add("UpdateAppliedRecordsNoticeState", http.MethodPost, "/applied_records/notice/{state}/update",
 		s.UpdateAppliedRecordsNoticeState)
+	h.Add("UpdateAppliedRecordExemptedCore", http.MethodPatch, "/applied_records/exempted_returned_core",
+		s.UpdateAppliedRecordExemptedCore)
 	h.Add("ListReturnedRecords", http.MethodPost, "/returned_records/list", s.ListReturnedRecords)
 	h.Add("GetCpuCoreSummary", http.MethodPost, "/cpu_core/summary", s.GetCpuCoreSummary)
 

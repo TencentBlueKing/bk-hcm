@@ -660,7 +660,12 @@ func (l *logics) findUnReturnedSubOrderMsg(kt *kit.Kit, bizID int64, startDate, 
 		for _, returnedRecord := range returnedRecordMap[apply.ID] {
 			returnedCore += converter.PtrToVal(returnedRecord.MatchAppliedCore)
 		}
-		if returnedCore >= converter.PtrToVal(apply.DeliveredCore) {
+
+		deliveredCore := converter.PtrToVal(apply.DeliveredCore)
+		unreturnedCore := deliveredCore - returnedCore
+		unreturnedCore -= converter.PtrToVal(apply.ExemptedReturnedCore)
+
+		if unreturnedCore <= 0 {
 			continue
 		}
 		appliedTime := time.Date(apply.Year, time.Month(apply.Month), apply.Day, 0, 0, 0, 0, now.Location())
@@ -673,16 +678,17 @@ func (l *logics) findUnReturnedSubOrderMsg(kt *kit.Kit, bizID int64, startDate, 
 
 		endYear, endMonth, endDay := subDay(apply.Year, apply.Month, apply.Day, -constant.RollingServerLatestReturnDay)
 		msg := rstypes.UnReturnedSubOrderMsg{
-			SubOrderID:        apply.SubOrderID,
-			AppliedCore:       converter.PtrToVal(apply.DeliveredCore),
-			ReturnedCore:      returnedCore,
-			AppliedYear:       apply.Year,
-			AppliedMonth:      apply.Month,
-			AppliedDay:        apply.Day,
-			NeedReturnedYear:  endYear,
-			NeedReturnedMonth: endMonth,
-			NeedReturnedDay:   endDay,
-			FineState:         fineState,
+			SubOrderID:           apply.SubOrderID,
+			AppliedCore:          converter.PtrToVal(apply.DeliveredCore),
+			ReturnedCore:         returnedCore,
+			ExemptedReturnedCore: converter.PtrToVal(apply.ExemptedReturnedCore),
+			AppliedYear:          apply.Year,
+			AppliedMonth:         apply.Month,
+			AppliedDay:           apply.Day,
+			NeedReturnedYear:     endYear,
+			NeedReturnedMonth:    endMonth,
+			NeedReturnedDay:      endDay,
+			FineState:            fineState,
 		}
 		messages = append(messages, msg)
 	}

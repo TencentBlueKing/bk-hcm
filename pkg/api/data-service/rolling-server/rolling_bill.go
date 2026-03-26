@@ -54,6 +54,8 @@ type RollingBillCreateReq struct {
 	DeliveredCore uint64 `json:"delivered_core"`
 	// ReturnedCore 已退还核心数
 	ReturnedCore uint64 `json:"returned_core"`
+	// ExemptedReturnedCore 减免退还核心数
+	ExemptedReturnedCore uint64 `json:"exempted_returned_core"`
 	// NotReturnedCore 未退还核心数
 	NotReturnedCore uint64 `json:"not_returned_core"`
 	// Year 记录账单的年份

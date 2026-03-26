@@ -46,6 +46,7 @@ var RollingAppliedRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "roll_date", NamedC: "roll_date", Type: enumor.Numeric},
 	{Column: "applied_core", NamedC: "applied_core", Type: enumor.Numeric},
 	{Column: "delivered_core", NamedC: "delivered_core", Type: enumor.Numeric},
+	{Column: "exempted_returned_core", NamedC: "exempted_returned_core", Type: enumor.Numeric},
 	{Column: "instance_group", NamedC: "instance_group", Type: enumor.String},
 	{Column: "core_type", NamedC: "core_type", Type: enumor.String},
 	{Column: "not_notice", NamedC: "not_notice", Type: enumor.Boolean},
@@ -80,6 +81,8 @@ type RollingAppliedRecord struct {
 	AppliedCore *int64 `db:"applied_core" json:"applied_core"`
 	// DeliveredCore cpu交付核心数
 	DeliveredCore *int64 `db:"delivered_core" json:"delivered_core"`
+	// ExemptedReturnedCore 减免退还核心数
+	ExemptedReturnedCore *int64 `db:"exempted_returned_core" json:"exempted_returned_core"`
 	// InstanceGroup 机型族
 	InstanceGroup string `db:"instance_group" json:"instance_group"`
 	// CoreType 机型核心类型

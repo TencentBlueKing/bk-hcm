@@ -176,6 +176,7 @@ POST /api/v1/woa/rolling_servers/fine_details/list
         "suborder_id": "1-1",
         "delivered_core": 2,
         "returned_core": 1,
+        "exempted_returned_core": 0,
         "fine": 100,
         "year": 2023,
         "month": 2,
@@ -230,5 +231,6 @@ POST /api/v1/woa/rolling_servers/fine_details/list
 |   roll_date   | int    | 主机申请子单号记录罚金的年月天                      |
 |   delivered_core | int  | cpu交付核心数                       |
 |  returned_core   | int | cpu已退还核数                       |
+|exempted_returned_core   | int | cpu减免退还核心数                     |
 | creator            | string | 创建者                            |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z |
