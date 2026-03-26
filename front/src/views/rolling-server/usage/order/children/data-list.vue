@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, h } from 'vue';
+import dayjs from 'dayjs';
 import { Button, Tag } from 'bkui-vue';
 import type { ModelPropertyColumn, PropertyColumnConfig } from '@/model/typings';
 import type { IDataListProps } from '../../typings';
@@ -20,11 +21,26 @@ withDefaults(defineProps<IDataListProps>(), {});
 const emit = defineEmits<{
   'show-returned-records': [id: string];
   'show-not-notice': [row: RollingServerRecordItem];
+  'show-order-config': [row: RollingServerRecordItem];
 }>();
 
 const rollingServerStore = useRollingServerStore();
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 const { isBusinessPage } = useWhereAmI();
+
+// 判断单据是否可配置
+const canConfigOrder = (row: RollingServerRecordItem) => {
+  // 条件1：单据日期在121天内
+  const rollDate = dayjs(String(row.roll_date), 'YYYYMMDD');
+  const daysDiff = dayjs().diff(rollDate, 'day');
+  const isWithin121Days = daysDiff < 121;
+
+  // 条件2：执行率 < 100%（即有未退还的核心数）
+  const execRateNum = parseFloat(row.exec_rate?.replace('%', '') || '0');
+  const isNotFullReturned = execRateNum < 100;
+
+  return isWithin121Days && isNotFullReturned;
+};
 
 const fieldIds = [
   'suborder_id',
@@ -39,9 +55,9 @@ const fieldIds = [
   'creator',
   'not_notice',
 ];
-const columConfig: Record<string, PropertyColumnConfig> = {
+const columnConfig: Record<string, PropertyColumnConfig> = {
   suborder_id: {
-    width: 150,
+    width: 110,
     render: ({ cell, data }) => {
       const linkVNode = h(
         Button,
@@ -72,19 +88,32 @@ const columConfig: Record<string, PropertyColumnConfig> = {
       return linkVNode;
     },
   },
-  bk_biz_id: {},
-  roll_date: { sort: true, render: ({ cell }) => timeFormatter(String(cell), 'YYYY-MM-DD') },
-  created_at: { width: 180, defaultHidden: true },
-  applied_core: { sort: true, align: 'right' },
-  delivered_core: { sort: true, align: 'right' },
-  returned_core: { align: 'right' },
-  not_returned_core: { align: 'right' },
-  exec_rate: { align: 'right' },
-  creator: { render: ({ cell }) => (cell === 'itsm_callback' ? '平台' : cell) },
+  bk_biz_id: { width: 150 },
+  roll_date: { width: 110, sort: true, render: ({ cell }) => timeFormatter(String(cell), 'YYYY-MM-DD') },
+  created_at: { width: 150, defaultHidden: true },
+  applied_core: { width: 130, sort: true, align: 'right' },
+  delivered_core: { width: 130, sort: true, align: 'right' },
+  returned_core: { width: 110, align: 'right' },
+  not_returned_core: {
+    width: 130,
+    align: 'right',
+    render: ({ data }) => {
+      const { not_returned_core, exempted_returned_core, not_returned_core_after_exempted } = data;
+      // 如果有减免，显示格式：原值(减免后xxx)
+      if (exempted_returned_core && exempted_returned_core > 0) {
+        return h('span', {}, [not_returned_core, h('span', {}, `(减免后${not_returned_core_after_exempted})`)]);
+      }
+      // 无减免，只显示原值
+      return not_returned_core;
+    },
+  },
+  exec_rate: { width: 100, align: 'right' },
+  creator: { width: 100, render: ({ cell }) => (cell === 'itsm_callback' ? '平台' : cell) },
+  not_notice: { width: 100 },
 };
 const columns: ModelPropertyColumn[] = fieldIds.map((id) => ({
   ...usageOrderViewProperties.find((view) => view.id === id),
-  ...columConfig[id],
+  ...columnConfig[id],
 }));
 const renderColumns = computed(() => {
   return isBusinessPage ? columns.filter((column) => column.id !== 'bk_biz_id') : columns;
@@ -135,8 +164,18 @@ const { settings } = useTableSettings(renderColumns.value);
           <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
         </template>
       </bk-table-column>
-      <bk-table-column :label="'操作'" fixed="right" width="150">
+      <bk-table-column :label="'操作'" fixed="right" width="220">
         <template #default="{ row }">
+          <!-- 仅在管理员页面（非业务页面）显示，且满足约束条件 -->
+          <bk-button
+            v-if="!isBusinessPage && !row.isResPollBusiness && canConfigOrder(row)"
+            class="mr8"
+            theme="primary"
+            text
+            @click="emit('show-order-config', row)"
+          >
+            单据配置
+          </bk-button>
           <bk-button v-if="!row.isResPollBusiness" theme="primary" text @click="emit('show-returned-records', row.id)">
             退还记录
           </bk-button>

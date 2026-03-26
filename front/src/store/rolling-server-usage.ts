@@ -34,6 +34,7 @@ export interface IRollingServerAppliedRecordItem extends IRollingServerBaseRecor
   applied_type: AppliedType;
   applied_core: number;
   delivered_core: number;
+  exempted_returned_core?: number; // 减免退还核心数
 }
 
 export interface IRollingServerReturnedRecordItem extends IRollingServerBaseRecordItem {
@@ -46,6 +47,7 @@ export type RollingServerRecordItem = IRollingServerAppliedRecordItem & {
   returned_records?: IRollingServerReturnedRecordItem[];
   returned_core?: number;
   not_returned_core?: number;
+  not_returned_core_after_exempted?: number; // 减免后的未退还核心数
   exec_rate?: string;
 };
 
@@ -139,6 +141,22 @@ export const useRollingServerUsageStore = defineStore('rolling-server-usage', ()
     }
   };
 
+  // 更新减免退还核心数
+  const updateExemptedReturnedCoreLoading = ref(false);
+  const updateExemptedReturnedCore = async (ids: string[], exempted_returned_core: number) => {
+    updateExemptedReturnedCoreLoading.value = true;
+    const api = '/api/v1/woa/rolling_servers/applied_records/exempted_returned_core';
+    try {
+      const res = await http.patch(api, { ids, exempted_returned_core });
+      return res;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      updateExemptedReturnedCoreLoading.value = false;
+    }
+  };
+
   return {
     appliedRecordsListLoading,
     getAppliedRecordList,
@@ -148,5 +166,7 @@ export const useRollingServerUsageStore = defineStore('rolling-server-usage', ()
     getCpuCoreSummary,
     updateAppliedRecordsNoticeDisabledLoading,
     updateAppliedRecordsNoticeDisabled,
+    updateExemptedReturnedCoreLoading,
+    updateExemptedReturnedCore,
   };
 });

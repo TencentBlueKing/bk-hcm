@@ -3,6 +3,7 @@
     :class="{
       'grid-container': true,
       [layout]: true,
+      [size]: !!size,
       bordered,
       fixed,
       [`grid-container-label-${labelAlign}`]: labelAlign,
@@ -33,6 +34,7 @@ export interface IGridContainerProps {
   labelAlign?: 'center' | 'left' | 'right';
   labelWidth?: number | string; // 上下布局时重置为100%
   layout?: 'horizontal' | 'vertical';
+  size?: 'small' | 'large';
 }
 
 defineOptions({
@@ -232,6 +234,17 @@ const labelContainerWidth = computed(() => {
 
         .item-label {
           border-bottom: none;
+        }
+      }
+    }
+  }
+
+  &.small {
+    :deep(.grid-item) {
+      .item-label {
+        padding: 3.5px 0;
+        & + .item-content {
+          padding: 3.5px 0;
         }
       }
     }

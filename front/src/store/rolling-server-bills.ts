@@ -29,6 +29,7 @@ export interface IFineDetailsItem {
   day: number;
   delivered_core: number;
   returned_core: number;
+  exempted_returned_core?: number; // 减免退还核心数
   creator: string;
   created_at: string;
 }

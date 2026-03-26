@@ -28,7 +28,7 @@ const detailsList = ref([]);
 
 const columnConfig: Record<string, PropertyColumnConfig> = {
   suborder_id: {
-    render: ({ data }: { data?: IFineDetailsItem }) =>
+    render: ({ row }: { row?: IFineDetailsItem }) =>
       h(
         Button,
         {
@@ -39,19 +39,29 @@ const columnConfig: Record<string, PropertyColumnConfig> = {
             routerAction.open({
               name: MENU_BUSINESS_TICKET_MANAGEMENT,
               query: {
-                [GLOBAL_BIZS_KEY]: data.bk_biz_id,
+                [GLOBAL_BIZS_KEY]: row.bk_biz_id,
                 type: 'host_apply',
-                filter: searchQs.build({ order_id: [data.order_id], bk_username: [] }),
+                filter: searchQs.build({ order_id: [row.order_id], bk_username: [] }),
               },
             });
           },
         },
-        data.suborder_id,
+        row.suborder_id,
       ),
   },
   delivered_core: { align: 'right' },
   returned_core: { align: 'right' },
-  not_returned_core: { align: 'right', render: ({ data }) => data.delivered_core - data.returned_core },
+  not_returned_core: {
+    align: 'right',
+    render: ({ row }: { row?: IFineDetailsItem }) => {
+      const not_returned_core = row.delivered_core - row.returned_core;
+      const exempted = row.exempted_returned_core || 0;
+      if (exempted > 0) {
+        return h('span', {}, [not_returned_core, `(减免后${not_returned_core - exempted})`]);
+      }
+      return not_returned_core;
+    },
+  },
 };
 
 const columns: ModelPropertyColumn[] = [];

@@ -15,6 +15,7 @@ import Search from './children/search.vue';
 import DataList from './children/data-list.vue';
 import ReturnedRecordsDialog from './children/returned-records-dialog.vue';
 import NotNoticeDialog from './children/not-notice-dialog.vue';
+import OrderConfigDialog from './children/order-config-dialog.vue';
 
 const route = useRoute();
 const rollingServerStore = useRollingServerStore();
@@ -83,9 +84,20 @@ const getList = async (query: LocationQuery) => {
       // 前端计算字段：returned_core, not_returned_core, exec_rate
       const returned_core = returned_records.reduce((acc, cur) => acc + cur.match_applied_core, 0);
       const not_returned_core = appliedRecordItem.delivered_core - returned_core;
+      // exempted_returned_core 直接从申请记录获取（后端接口返回）
+      const exempted_returned_core = appliedRecordItem.exempted_returned_core || 0;
+      const not_returned_core_after_exempted = not_returned_core - exempted_returned_core;
       const exec_rate = `${Number(((returned_core / (appliedRecordItem.delivered_core || 1)) * 100).toFixed(2))}%`; // 结果保留两位小数，不显示多余0
 
-      return { ...appliedRecordItem, returned_records, returned_core, not_returned_core, exec_rate };
+      return {
+        ...appliedRecordItem,
+        returned_records,
+        returned_core,
+        not_returned_core,
+        exempted_returned_core,
+        not_returned_core_after_exempted,
+        exec_rate,
+      };
     });
   } else {
     docList.value = appliedRecordList.map((item) => ({ ...item, isResPollBusiness: true }));
@@ -142,6 +154,23 @@ const handleNotNoticeSuccess = () => {
 const handleNotNoticeHidden = () => {
   Object.assign(notNoticeDialogState, { isHidden: true, details: null });
 };
+
+// 单据配置对话框
+const orderConfigDialogState = reactive({ isHidden: true, isShow: false, details: null });
+const handleShowOrderConfig = (details: RollingServerRecordItem) => {
+  recordsPoll.pause();
+  Object.assign(orderConfigDialogState, {
+    isHidden: false,
+    isShow: true,
+    details,
+  });
+};
+const handleOrderConfigSuccess = () => {
+  recordsPoll.resume();
+};
+const handleOrderConfigHidden = () => {
+  Object.assign(orderConfigDialogState, { isHidden: true, details: null });
+};
 </script>
 
 <template>
@@ -154,6 +183,7 @@ const handleNotNoticeHidden = () => {
     :summary-info="summaryInfo"
     @show-returned-records="handleReturnedRecords"
     @show-not-notice="handleShowNotNotice"
+    @show-order-config="handleShowOrderConfig"
   />
   <returned-records-dialog ref="returned-records-dialog" />
   <template v-if="!notNoticeDialogState.isHidden">
@@ -162,6 +192,14 @@ const handleNotNoticeHidden = () => {
       :details="notNoticeDialogState.details"
       @success="handleNotNoticeSuccess"
       @hidden="handleNotNoticeHidden"
+    />
+  </template>
+  <template v-if="!orderConfigDialogState.isHidden">
+    <order-config-dialog
+      v-model="orderConfigDialogState.isShow"
+      :details="orderConfigDialogState.details"
+      @success="handleOrderConfigSuccess"
+      @hidden="handleOrderConfigHidden"
     />
   </template>
 </template>
