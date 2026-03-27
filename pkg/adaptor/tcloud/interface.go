@@ -94,6 +94,14 @@ type TCloud interface {
 	DescribeSafeAuthFlag(kt *kit.Kit, opt *account.DescribeSafeAuthFlagOption) (
 		*account.SafeAuthFlagResult, error)
 	SetMfaFlag(kt *kit.Kit, opt *account.SetMfaFlagOption) error
+	CreateAccessKey(kt *kit.Kit, opt *account.CreateAccessKeyOption) (
+		*account.CreateAccessKeyResult, error)
+	DeleteAccessKey(kt *kit.Kit, opt *account.DeleteAccessKeyOption) error
+	UpdateAccessKey(kt *kit.Kit, opt *account.UpdateAccessKeyOption) error
+	GetSecurityLastUsed(kt *kit.Kit, opt *account.GetSecurityLastUsedOption) (
+		[]account.SecretIdLastUsed, error)
+	ListAccessKeys(kt *kit.Kit, opt *account.ListAccessKeysOption) (
+		[]account.AccessKeyInfo, error)
 	CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error)
 	InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
 		*cvm.InquiryPriceResult, error)

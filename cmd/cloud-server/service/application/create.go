@@ -41,7 +41,9 @@ import (
 	applyupdate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-update"
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
+	deletesecretkey "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-secret-key"
 	deletesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-sub-account"
+	updatesecretstatus "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-secret-status"
 	updatesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-sub-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
@@ -971,4 +973,145 @@ func (a *applicationSvc) createBizForApplyPermPolicyLibUpdate(cts *rest.Contexts
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForUpdateSubAccountSecretStatus create application for updating sub account secret status.
+func (a *applicationSvc) CreateBizForUpdateSubAccountSecretStatus(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Update},
+		BizID: bizID,
+	}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountSecretStatusBatchUpdateReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForUpdateSecretKeyStatus(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contexts,
+	req *proto.SubAccountSecretStatusBatchUpdateReq,
+) ([]string, error) {
+
+	opt := a.getHandlerOption(cts)
+	base := &subaccount.BaseSubAccountContent{
+		Action:  enumor.SubAccountActionUpdateSecretKeyStatus,
+		Vendor:  req.Vendor,
+		BkBizID: req.BkBizID,
+	}
+
+	ids := make([]string, 0, len(req.SubAccountSecrets))
+	for i, item := range req.SubAccountSecrets {
+		handler := updatesecretstatus.NewApplicationOfUpdateSecretKeyStatus(opt, base, &item)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted, fmt.Errorf(
+				"create application for update secret[%d](%s) status failed, err: %w", i, item.ID, err,
+			))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return ids, nil
+}
+
+// CreateBizForDeleteSubAccountSecret create application for deleting sub account secret.
+func (a *applicationSvc) CreateBizForDeleteSubAccountSecret(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Delete},
+		BizID: bizID,
+	}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "permission denied")
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountSecretBatchDeleteReq](cts)
+	if err != nil {
+		logs.Errorf(
+			"parse req from request body failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForDeleteSecretKey(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, req *proto.SubAccountSecretBatchDeleteReq,
+) ([]string, error) {
+
+	opt := a.getHandlerOption(cts)
+	base := &subaccount.BaseSubAccountContent{
+		Action:  enumor.SubAccountActionDeleteSecretKey,
+		Vendor:  req.Vendor,
+		BkBizID: req.BkBizID,
+	}
+
+	ids := make([]string, 0, len(req.IDs))
+	for i, secretID := range req.IDs {
+		handler := deletesecretkey.NewApplicationOfDeleteSecretKey(opt, base, secretID)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted, fmt.Errorf(
+				"create application for delete secret[%d](%s) failed, err: %w", i, secretID, err,
+			))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return ids, nil
 }

@@ -62,6 +62,7 @@ import (
 	routetable "hcm/cmd/cloud-server/service/route-table"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	subaccount "hcm/cmd/cloud-server/service/sub-account"
+	subaccountsecret "hcm/cmd/cloud-server/service/subaccount-secret"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/sync/lock"
@@ -323,6 +324,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	monitoring.InitMonitoringService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 	subaccount.InitService(c)
+	subaccountsecret.InitService(c)
 
 	application.InitApplicationService(c, bkHcmUrl)
 	audit.InitService(c)

@@ -264,3 +264,97 @@ type SafeAuthFlagResult struct {
 	// PromptTrust indicates whether to prompt the user to trust the device (1: prompt, 0: no prompt).
 	PromptTrust *int64 `json:"prompt_trust"`
 }
+
+// CreateAccessKeyOption define tcloud CreateAccessKey option.
+// reference: https://cloud.tencent.com/document/product/598/82370
+type CreateAccessKeyOption struct {
+	TargetUin   uint64  `json:"target_uin" validate:"required"`
+	Description *string `json:"description" validate:"omitempty"`
+}
+
+// Validate CreateAccessKeyOption.
+func (opt CreateAccessKeyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// CreateAccessKeyResult define tcloud CreateAccessKey API result.
+type CreateAccessKeyResult struct {
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+	Status          string `json:"status"`
+	CreateTime      string `json:"create_time"`
+}
+
+// DeleteAccessKeyOption define tcloud DeleteAccessKey option.
+// reference: https://cloud.tencent.com/document/product/598/82369
+type DeleteAccessKeyOption struct {
+	AccessKeyID string `json:"access_key_id" validate:"required"`
+	TargetUin   uint64 `json:"target_uin" validate:"required"`
+}
+
+// Validate DeleteAccessKeyOption.
+func (opt DeleteAccessKeyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloud CAM access key status constants.
+// reference: https://cloud.tencent.com/document/product/598/82368
+const (
+	// TCloudAccessKeyStatusActive represents an active access key.
+	TCloudAccessKeyStatusActive = "Active"
+	// TCloudAccessKeyStatusInactive represents an inactive access key.
+	TCloudAccessKeyStatusInactive = "Inactive"
+)
+
+// UpdateAccessKeyOption define tcloud UpdateAccessKey option.
+// reference: https://cloud.tencent.com/document/product/598/82368
+type UpdateAccessKeyOption struct {
+	AccessKeyID string `json:"access_key_id" validate:"required"`
+	Status      string `json:"status" validate:"required"`
+	TargetUin   uint64 `json:"target_uin" validate:"required"`
+}
+
+// Validate UpdateAccessKeyOption.
+func (opt UpdateAccessKeyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// ListAccessKeysOption define tcloud ListAccessKeys option.
+// reference: https://cloud.tencent.com/document/product/598/45156
+type ListAccessKeysOption struct {
+	TargetUin uint64 `json:"target_uin" validate:"required"`
+}
+
+// Validate ListAccessKeysOption.
+func (opt ListAccessKeysOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AccessKeyInfo define tcloud ListAccessKeys API result item.
+type AccessKeyInfo struct {
+	AccessKeyID string  `json:"access_key_id"`
+	Status      string  `json:"status"`
+	CreateTime  string  `json:"create_time"`
+	Description *string `json:"description"`
+}
+
+// GetSecurityLastUsedMaxKeys is the max number of secret IDs per GetSecurityLastUsed API call.
+const GetSecurityLastUsedMaxKeys = 10
+
+// GetSecurityLastUsedOption define tcloud GetSecurityLastUsed option.
+// reference: https://cloud.tencent.com/document/product/598/58230
+type GetSecurityLastUsedOption struct {
+	SecretIdList []string `json:"secret_id_list" validate:"required,min=1,max=10"`
+}
+
+// Validate GetSecurityLastUsedOption.
+func (opt GetSecurityLastUsedOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// SecretIdLastUsed define tcloud GetSecurityLastUsed API result item.
+type SecretIdLastUsed struct {
+	SecretId           string  `json:"secret_id"`
+	LastUsedDate       *string `json:"last_used_date"`
+	LastSecretUsedDate *uint64 `json:"last_secret_used_date"`
+}

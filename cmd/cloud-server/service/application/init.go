@@ -116,6 +116,15 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("CreateBizForApplyPermissionPolicyLibraryUpdate", http.MethodPost,
 		"/vendors/{vendor}/applications/types/apply_permission_policy_library_update",
 		svc.CreateBizForApplyPermissionPolicyLibraryUpdate)
+
+	h.Add("CreateBizForUpdateSubAccountSecretStatus", "POST",
+		"/vendors/{vendor}/applications/types/update_sub_account_secret_status",
+		svc.CreateBizForUpdateSubAccountSecretStatus)
+
+	h.Add("CreateBizForDeleteSubAccountSecret", "POST",
+		"/vendors/{vendor}/applications/types/delete_sub_account_secret",
+		svc.CreateBizForDeleteSubAccountSecret)
+
 }
 
 type applicationSvc struct {

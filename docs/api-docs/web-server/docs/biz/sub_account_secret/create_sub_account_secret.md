@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_account_secret
+POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/subaccount_secrets/create
 
 ### 输入参数
 
@@ -14,13 +14,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 |---------------------|----------|----|----------|
 | bk_biz_id           | int64    | 是  | 业务ID     |
 | vendor              | string   | 是  | 云厂商, 枚举值：tcloud |
-| sub_account_secrets | object   | 是  | 三级账号密钥列表，长度限制100 |
-
-#### sub_account_secrets
-
-| 参数名称         | 参数类型   | 必选 | 描述                                       |
-|--------------|--------|----|------------------------------------------|
-| sub_account_id | string | 是  | 三级账号ID                                   |
+| id                  | string   | 是  | 要新增密钥的三级账号HCM ID|
 
 
 ### 调用示例
@@ -31,7 +25,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 {
   "sub_account_secrets": [
     {
-      "sub_account_id": "00000001"
+      "id": "00000001"
     }
   ]
 }
@@ -44,7 +38,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
   "code": 0,
   "message": "",
   "data": {
-    "ids": ["00000001"]
+    "id": "00000001",
+    "extension":{
+        "cloud_secret_id":"AKKSKSKSK",
+        "cloud_secret_key":"DNO**************O"
+    }
   }
 }
 ```
@@ -61,4 +59,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 
 | 参数名称 | 参数类型          | 描述     |
 |------|---------------|--------|
-| ids  | string array  | 单据ID数组 |
+| id       | string | 密钥在HCM本地DB中的ID |
+| extension| object | 公有云密钥扩展信息|
+
+
+##### extension[tcloud]
+
+| 参数名称               | 参数类型   | 描述        |
+|--------------------|--------|-----------|
+| cloud_secret_id    | string | 云密钥ID     |
+| cloud_secret_key   | string | 云密钥KEY |

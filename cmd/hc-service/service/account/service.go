@@ -105,6 +105,18 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("TCloudSetMfaFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
 
+	// 访问密钥管理
+	h.Add("TCloudCreateAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/create", svc.TCloudCreateAccessKey)
+	h.Add("TCloudDeleteAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/delete", svc.TCloudDeleteAccessKey)
+	h.Add("TCloudUpdateAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/update", svc.TCloudUpdateAccessKey)
+	h.Add("TCloudGetSecurityLastUsed", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/last_used", svc.TCloudGetSecurityLastUsed)
+	h.Add("TCloudListAccessKeys", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/list", svc.TCloudListAccessKeys)
+
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)
