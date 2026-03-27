@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,21 @@
  */
 
 /*
- SQLVER=9999,HCMVER=v9.9.9.9
- 
- Notes:
- 1. 滚服账单表添加减免退还核心数字段
- */
+    SQLVER=0070,HCMVER=v1.8.10.6
+
+    Notes:
+    1. 滚服相关表添加减免退还核心数字段
+*/
+
 START TRANSACTION;
 
-alter table obs_rolling_bills
+alter table rolling_fine_detail
+    add column `exempted_returned_core` bigint unsigned not null default 0 comment '减免退还核心数';
+
+alter table rolling_applied_record
     add column `exempted_returned_core` bigint unsigned not null default 0 comment '减免退还核心数';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.10.6' as `hcm_ver`, '0070' as `sql_ver`;
 
 COMMIT;
-
