@@ -76,7 +76,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		"/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
 	h.Add("CreateForCreateLB", http.MethodPost,
 		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
-	h.Add("SysCreateForCreateLB", "POST",
+	h.Add("SysCreateForCreateLB", http.MethodPost,
 		"/vendors/{vendor}/system/applications/types/create_load_balancer", svc.SysCreateForCreateLB)
 
 	h.Add("CreateForCreateMainAccount", http.MethodPost,
@@ -120,7 +120,6 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("CreateBizForUpdateSubAccountSecretStatus", http.MethodPost,
 		"/vendors/{vendor}/applications/types/update_sub_account_secret_status",
 		svc.CreateBizForUpdateSubAccountSecretStatus)
-
 	h.Add("CreateBizForDeleteSubAccountSecret", http.MethodPost,
 		"/vendors/{vendor}/applications/types/delete_sub_account_secret",
 		svc.CreateBizForDeleteSubAccountSecret)

@@ -39,6 +39,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list
 | limit  | uint32   | 否    | 每页限制条数，最大500，不能为0                                                                                                                                   |
 | sort   | string   | 否    | 排序字段，返回数据将按该字段进行排序                                                                                                                                  |
 | order  | string   | 否    | 排序顺序（枚举值：ASC、DESC）                                                                                                                                  |
+
 ### 调用示例
 
 #### 获取详细信息请求参数示例
