@@ -148,6 +148,62 @@ export interface ISubAccountSecretItem {
   account_manager?: string;
 }
 
+// 三级账号项接口定义
+export interface ISubAccountItem {
+  id: string;
+  cloud_id: string;
+  name: string;
+  vendor: string;
+  site: string;
+  account_id: string;
+  managers: string[];
+  bk_biz_ids: number[];
+  memo: string;
+  email: string;
+  phone_num: string;
+  country_code: string;
+  cloud_created_at: string;
+  sub_account_secret_count: number;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+  extension: {
+    login_flag?: string;
+    action_flag?: string;
+    console_login?: number;
+    [k: string]: any;
+  };
+  [k: string]: any;
+}
+
+// 创建三级账号参数
+export interface ISubAccountCreateParams {
+  account_id: string;
+  name: string;
+  receive_email: string;
+  email?: string;
+  phone_num?: string;
+  country_code?: string;
+  managers?: string[];
+  memo?: string;
+  extension: {
+    console_login: number; // 0=编程账号，1=控制台账号
+  };
+}
+
+// 更新三级账号参数
+export interface ISubAccountUpdateParams {
+  id: string;
+  name?: string;
+  email?: string;
+  phone_num?: string;
+  bk_biz_id?: number;
+  country_code?: string;
+  managers?: string[];
+  memo?: string;
+}
+
 // 更新密钥状态参数
 export interface IUpdateSecretStatusParams {
   id: string;
@@ -159,6 +215,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const secretListLoading = ref(false);
   const secretCheckLoading = ref(false);
   const subAccountSecretListLoading = ref(false);
+  const subAccountListLoading = ref(false);
 
   // 根据账号ID缓存二级账号列表
   const allSecondaryAccountCacheList = ref<Map<ISecondaryAccountItem['id'], ISecondaryAccountItem>>(new Map());
@@ -569,11 +626,145 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     }
   };
 
+  /**
+   * 获取三级账号全量列表（用于前端分页）
+   * @param bk_biz_id 业务ID
+   * @param vendor 云厂商
+   * @param filter 过滤条件
+   * @param onProgress 进度回调
+   */
+  const getSubAccountFullList = async (
+    bk_biz_id: number,
+    vendor: string,
+    filter: QueryFilterType,
+    onProgress?: (list: ISubAccountItem[], count: number) => void,
+  ): Promise<ISubAccountItem[]> => {
+    subAccountListLoading.value = true;
+    const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_accounts/list`;
+    const allList: ISubAccountItem[] = [];
+
+    try {
+      const listGen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
+        IListResData<ISubAccountItem[]>
+      >(
+        api,
+        { filter },
+        {
+          limit: 500,
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+          generator: true,
+        },
+        true,
+      );
+
+      for await (const res of listGen) {
+        const details = res.data?.details || [];
+        allList.push(...details);
+        onProgress?.(allList, res.data?.count || allList.length);
+        subAccountListLoading.value = false;
+      }
+
+      return allList;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      subAccountListLoading.value = false;
+    }
+  };
+
+  /**
+   * 创建三级账号（提交申请）
+   */
+  const createSubAccount = async (
+    bk_biz_id: number,
+    vendor: string,
+    subAccounts: ISubAccountCreateParams[],
+  ): Promise<{ ids: string[] }> => {
+    try {
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/add_sub_account`;
+      const res = await http.post(api, { sub_accounts: subAccounts });
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 更新三级账号（提交申请）
+   */
+  const updateSubAccount = async (
+    bk_biz_id: number,
+    vendor: string,
+    subAccounts: ISubAccountUpdateParams[],
+  ): Promise<{ ids: string[] }> => {
+    try {
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/update_sub_account`;
+      const res = await http.post(api, { sub_accounts: subAccounts });
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 删除三级账号（提交申请）
+   */
+  const deleteSubAccount = async (bk_biz_id: number, vendor: string, ids: string[]): Promise<{ ids: string[] }> => {
+    try {
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/delete_sub_account`;
+      const res = await http.post(api, { ids });
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 新增三级账号密钥（提交申请）
+   */
+  const createSubAccountSecret = async (
+    bk_biz_id: number,
+    vendor: string,
+    subAccountSecrets: { sub_account_id: string }[],
+  ): Promise<{ ids: string[] }> => {
+    try {
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/add_sub_account_secret`;
+      const res = await http.post(api, { sub_account_secrets: subAccountSecrets });
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 获取三级账号数量（纯计数查询）
+   * @param bk_biz_id 业务ID
+   * @param vendor 云厂商
+   * @param filter 过滤条件
+   */
+  const getSubAccountCount = async (bk_biz_id: number, vendor: string, filter: QueryFilterType): Promise<number> => {
+    try {
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_accounts/list`;
+      const res = await http.post(api, enableCount({ filter }, true));
+      return res?.data?.count ?? 0;
+    } catch (error) {
+      console.error(error);
+      return 0;
+    }
+  };
+
   return {
     accountListLoading,
     secretListLoading,
     secretCheckLoading,
     subAccountSecretListLoading,
+    subAccountListLoading,
     getSecondaryAccountList,
     getSecondaryAccountFullList,
     getSecondaryAccountListByAccountIds,
@@ -590,5 +781,11 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     updateSubAccountSecretStatus,
     deleteSubAccountSecret,
     allSecondaryAccountCacheList,
+    getSubAccountFullList,
+    getSubAccountCount,
+    createSubAccount,
+    updateSubAccount,
+    deleteSubAccount,
+    createSubAccountSecret,
   };
 });
