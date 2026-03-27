@@ -1,0 +1,651 @@
+<script setup lang="ts">
+import { ref, inject, computed, type Ref, watch } from 'vue';
+import { Message } from 'bkui-vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useCloudAccountStore, type ISubAccountItem, type ISubAccountSecretItem } from '@/store/cloud-account';
+import { VendorEnum } from '@/common/constant';
+import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
+
+const props = defineProps<{
+  modelValue: boolean;
+  rowData: ISubAccountItem | null;
+}>();
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', val: boolean): void;
+  (e: 'update-success'): void;
+  (e: 'edit' | 'delete', row: ISubAccountItem): void;
+}>();
+
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+const cloudAccountStore = useCloudAccountStore();
+const { getBizsId } = useWhereAmI();
+
+// 密钥列表 - 添加假数据用于展示
+const mockSecretList: ISubAccountSecretItem[] = [] as unknown as ISubAccountSecretItem[];
+
+const secretList = ref<ISubAccountSecretItem[]>(mockSecretList);
+const secretLoading = ref(false);
+
+// 新建密钥状态
+const showKeyLoading = ref(false);
+const showKeyResult = ref(false);
+const newSecretId = ref('');
+const newSecretKey = ref('');
+const keyAcknowledged = ref(false);
+
+// 加载密钥列表
+const loadSecretList = async () => {
+  if (!props.rowData?.id) return;
+  secretLoading.value = true;
+  try {
+    const result = await cloudAccountStore.getSubAccountSecretList(getBizsId(), currentVendor.value, {
+      sub_account_ids: [props.rowData.id],
+      page: { count: false, start: 0, limit: 500 },
+    });
+    secretList.value = result.list;
+  } catch (error) {
+    console.error('加载密钥列表失败:', error);
+  } finally {
+    secretLoading.value = false;
+  }
+};
+
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val && props.rowData) {
+      loadSecretList();
+    }
+  },
+);
+
+const handleClose = () => {
+  emit('update:modelValue', false);
+};
+
+const handleEdit = () => {
+  if (props.rowData) {
+    emit('edit', props.rowData);
+  }
+};
+
+const handleDelete = () => {
+  if (props.rowData) {
+    emit('delete', props.rowData);
+  }
+};
+
+// 密钥脱敏 - 显示为 AKID****xyNm 格式
+const maskSecretId = (id: string) => {
+  if (!id) return '****';
+  if (id.length <= 8) return id;
+  return `${id.substring(0, 4)}****${id.substring(id.length - 4)}`;
+};
+
+// 判断是否为编程账号（console_login === 0 表示编程账号）
+const isProgramAccount = computed(() => {
+  return props.rowData?.extension?.console_login === 0;
+});
+
+// 获取登录保护文本
+const getLoginFlagText = (flag?: string) => {
+  if (!flag) return '--';
+  return FLAG_OPTIONS[flag as keyof typeof FLAG_OPTIONS] || '--';
+};
+
+// 获取操作保护文本
+const getActionFlagText = (flag?: string) => {
+  if (!flag) return '--';
+  return FLAG_OPTIONS[flag as keyof typeof FLAG_OPTIONS] || '--';
+};
+
+// MFA绑定状态
+const getMfaStatus = () => {
+  const ext = props.rowData?.extension;
+  if (!ext) return '未绑定';
+  return ext.login_flag === 'stoken' || ext.action_flag === 'stoken' ? '已绑定' : '未绑定';
+};
+
+// 手机号脱敏
+const maskPhone = (phone?: string) => {
+  if (!phone) return '--';
+  if (phone.length < 7) return phone;
+  return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
+};
+
+// 新建密钥
+const handleCreateSecret = async () => {
+  if (!props.rowData?.id) return;
+  if (!isProgramAccount.value) {
+    Message({ theme: 'warning', message: '仅编程账号允许创建密钥' });
+    return;
+  }
+
+  showKeyLoading.value = true;
+  try {
+    await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, [
+      { sub_account_id: props.rowData.id },
+    ]);
+    showKeyLoading.value = false;
+    Message({ theme: 'success', message: '新建密钥申请已提交' });
+    keyAcknowledged.value = false;
+    // 刷新密钥列表
+    await loadSecretList();
+    emit('update-success');
+  } catch (error) {
+    showKeyLoading.value = false;
+    console.error('创建密钥失败:', error);
+  }
+};
+
+// 启用/禁用密钥
+const handleToggleSecretStatus = async (secret: ISubAccountSecretItem) => {
+  const newStatus = secret.status === 'enabled' ? 'disabled' : 'enabled';
+  try {
+    await cloudAccountStore.updateSubAccountSecretStatus(getBizsId(), currentVendor.value, [
+      { id: secret.id, status: newStatus },
+    ]);
+    Message({ theme: 'success', message: `密钥${newStatus === 'enabled' ? '启用' : '禁用'}申请已提交` });
+    await loadSecretList();
+  } catch (error) {
+    console.error('更新密钥状态失败:', error);
+  }
+};
+
+// 删除密钥
+const handleDeleteSecret = async (secret: ISubAccountSecretItem) => {
+  try {
+    await cloudAccountStore.deleteSubAccountSecret(getBizsId(), currentVendor.value, [secret.id]);
+    Message({ theme: 'success', message: '删除密钥申请已提交' });
+    await loadSecretList();
+  } catch (error) {
+    console.error('删除密钥失败:', error);
+  }
+};
+
+// 复制密钥
+const handleCopySecret = () => {
+  const text = `密钥ID: ${newSecretId.value}\n密钥Key: ${newSecretKey.value}`;
+  navigator.clipboard.writeText(text).then(() => {
+    Message({ theme: 'success', message: '密钥已复制到剪贴板' });
+  });
+};
+
+// 下载CSV
+const handleDownloadCSV = () => {
+  const csvContent = `密钥ID,密钥Key\n${newSecretId.value},${newSecretKey.value}`;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'secret_key.csv';
+  link.click();
+};
+
+// 关闭密钥结果弹窗
+const handleCloseKeyResult = () => {
+  showKeyResult.value = false;
+  newSecretId.value = '';
+  newSecretKey.value = '';
+  keyAcknowledged.value = false;
+};
+
+// 格式化时间
+const formatTime = (time?: string) => {
+  if (!time) return '--';
+  return time.replace('T', ' ').replace('Z', '');
+};
+</script>
+
+<template>
+  <bk-sideslider
+    :is-show="modelValue"
+    :width="960"
+    title="三级账号详情"
+    :before-close="handleClose"
+    @closed="handleClose"
+    ext-cls="detail-sideslider"
+  >
+    <template #header>
+      <div class="detail-header">
+        <span class="title">三级账号详情</span>
+        <div class="header-actions">
+          <bk-button @click="handleDelete">删除</bk-button>
+        </div>
+      </div>
+    </template>
+    <template #default>
+      <div v-if="rowData" class="detail-content">
+        <!-- 基本信息 -->
+        <div class="info-card">
+          <div class="card-header">
+            <span class="card-title">基本信息</span>
+            <bk-button theme="primary" outline @click="handleEdit">编辑</bk-button>
+          </div>
+          <div class="card-body info-grid">
+            <div class="info-item">
+              <span class="info-label">云厂商：</span>
+              <span class="info-value">腾讯云</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">账号类型：</span>
+              <span class="info-value">{{ ACCOUNT_TYPE_OPTIONS[rowData.extension?.console_login] || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">三级账号名称：</span>
+              <span class="info-value">{{ rowData.name || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">管理业务：</span>
+              <span class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">三级账号ID：</span>
+              <span class="info-value">{{ rowData.cloud_id || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">所属业务：</span>
+              <span class="info-value">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">账号邮箱：</span>
+              <span class="info-value">{{ rowData.email || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">创建时间：</span>
+              <span class="info-value">{{ formatTime(rowData.cloud_created_at) || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">手机号：</span>
+              <span class="info-value">{{ maskPhone(rowData.phone_num) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">更新时间：</span>
+              <span class="info-value">{{ formatTime(rowData.updated_at) || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">负责人：</span>
+              <span class="info-value">{{ rowData.managers?.join(', ') || '--' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">备注：</span>
+              <span class="info-value">{{ rowData.memo || '--' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 安全信息 -->
+        <div class="info-card">
+          <div class="card-header">
+            <span class="card-title">安全信息</span>
+          </div>
+          <div class="card-body info-grid">
+            <div class="info-item">
+              <span class="info-label">登录保护：</span>
+              <span class="info-value">{{ getLoginFlagText(rowData.extension?.login_flag) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">操作保护：</span>
+              <span class="info-value">{{ getActionFlagText(rowData.extension?.action_flag) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">MFA设备绑定：</span>
+              <span class="info-value">{{ getMfaStatus() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 权限模版 -->
+        <div class="info-card">
+          <div class="card-header">
+            <span class="card-title">权限模版</span>
+          </div>
+          <div class="card-body">
+            <div class="info-item">
+              <span class="info-label">权限模版：</span>
+              <span class="info-value">
+                <!-- <bk-tag v-for="tpl in ['模版1', '模版2']" :key="tpl">{{ tpl }}</bk-tag> -->
+                <span>--</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- API密钥 -->
+        <div class="info-card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="card-title">API密钥</span>
+              <bk-button
+                text
+                theme="primary"
+                class="create-secret-btn"
+                @click="handleCreateSecret"
+                :disabled="!isProgramAccount"
+              >
+                <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
+                新建密钥
+              </bk-button>
+            </div>
+          </div>
+          <div class="card-body">
+            <bk-loading :loading="secretLoading">
+              <bk-table :data="secretList" row-key="id" :border="['row', 'outer']" show-overflow-tooltip>
+                <bk-table-column label="密钥ID" min-width="130">
+                  <template #default="{ row }">
+                    {{ maskSecretId(row.extension?.cloud_secret_id || row.cloud_secret_id) }}
+                  </template>
+                </bk-table-column>
+                <bk-table-column label="密钥Key" width="80">
+                  <template #default>****</template>
+                </bk-table-column>
+                <bk-table-column label="密钥状态" min-width="100">
+                  <template #default="{ row }">
+                    <span :class="['status-dot', row.status === 'enabled' ? 'status-enabled' : 'status-disabled']" />
+                    {{ row.status === 'enabled' ? '已启用' : '已禁用' }}
+                  </template>
+                </bk-table-column>
+                <bk-table-column label="创建时间" min-width="160">
+                  <template #default="{ row }">
+                    {{ formatTime(row.cloud_created_at) }}
+                  </template>
+                </bk-table-column>
+                <bk-table-column label="最近访问时间" min-width="160">
+                  <template #default="{ row }">
+                    {{ formatTime(row.last_used_time) || '--' }}
+                  </template>
+                </bk-table-column>
+                <bk-table-column label="禁用时间" min-width="160">
+                  <template #default="{ row }">
+                    {{ row.status === 'disabled' ? formatTime(row.disabled_time) : '--' }}
+                  </template>
+                </bk-table-column>
+                <bk-table-column label="操作" width="100" fixed="right">
+                  <template #default="{ row }">
+                    <template v-if="row.status === 'enabled'">
+                      <bk-button text theme="primary" @click="handleToggleSecretStatus(row)">禁用</bk-button>
+                    </template>
+                    <template v-else>
+                      <bk-button text theme="primary" @click="handleToggleSecretStatus(row)">启用</bk-button>
+                      <bk-button text theme="danger" class="ml8" @click="handleDeleteSecret(row)">删除</bk-button>
+                    </template>
+                  </template>
+                </bk-table-column>
+              </bk-table>
+            </bk-loading>
+          </div>
+        </div>
+      </div>
+    </template>
+  </bk-sideslider>
+
+  <!-- 生成密钥 Loading 弹窗 -->
+  <bk-dialog
+    :is-show="showKeyLoading"
+    :show-footer="false"
+    :close-icon="true"
+    width="400"
+    @closed="showKeyLoading = false"
+  >
+    <div class="key-loading-content">
+      <bk-loading :loading="true" size="large" />
+      <p class="loading-title">正在生成密钥</p>
+      <p class="loading-subtitle">请耐心等待...</p>
+    </div>
+  </bk-dialog>
+
+  <!-- 新建密钥结果弹窗 -->
+  <bk-dialog
+    :is-show="showKeyResult"
+    :show-footer="false"
+    :close-icon="true"
+    width="600"
+    title="新建密钥"
+    @closed="handleCloseKeyResult"
+  >
+    <div class="key-result-content">
+      <div class="warning-box">
+        <i class="bk-icon icon-exclamation-circle-shape warning-icon" />
+        <span>新建的密钥，仅在创建时提供下载和复制，后续只可查询密钥ID，不可查询密钥key。请妥善保管密钥。</span>
+      </div>
+      <div class="key-info">
+        <div class="key-item">
+          <span class="key-label">密钥ID：</span>
+          <span class="key-value">{{ newSecretId }}</span>
+        </div>
+        <div class="key-item">
+          <span class="key-label">密钥Key：</span>
+          <span class="key-value">{{ newSecretKey }}</span>
+        </div>
+      </div>
+      <div class="key-actions">
+        <bk-button theme="primary" @click="handleCopySecret">
+          <i class="bk-icon icon-copy" style="margin-right: 4px" />
+          复制密钥
+        </bk-button>
+        <bk-button @click="handleDownloadCSV">
+          <i class="bk-icon icon-download" style="margin-right: 4px" />
+          下载CSV文件
+        </bk-button>
+      </div>
+      <div class="key-confirm">
+        <bk-checkbox v-model="keyAcknowledged">我已知晓并保存密钥Key</bk-checkbox>
+        <bk-button :disabled="!keyAcknowledged" @click="handleCloseKeyResult">关闭</bk-button>
+      </div>
+    </div>
+  </bk-dialog>
+</template>
+
+<style lang="scss" scoped>
+.detail-sideslider {
+  :deep(.bk-modal-body) {
+    background: #f5f7fa;
+  }
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 16px;
+
+  .title {
+    font-size: 16px;
+    color: #313238;
+  }
+}
+
+.detail-content {
+  padding: 20px 24px;
+}
+
+.info-card {
+  background: #fff;
+  border-radius: 2px;
+  margin-bottom: 16px;
+  padding: 16px 24px 24px;
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #313238;
+    }
+
+    .card-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .secret-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: #3a84ff;
+        color: #fff;
+        font-size: 12px;
+      }
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .create-secret-btn {
+        display: inline-flex;
+        align-items: center;
+        font-size: 12px;
+
+        .hcm-icon {
+          font-size: 14px;
+          margin-right: 5px;
+          margin-left: 18px;
+        }
+      }
+    }
+  }
+
+  .card-body {
+    &.info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+      padding-left: 10px;
+    }
+  }
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 20px;
+
+  .info-label {
+    color: #4d4f56;
+    white-space: nowrap;
+    min-width: 90px;
+    text-align: right;
+    margin-right: 8px;
+  }
+
+  .info-value {
+    color: #313238;
+    word-break: break-all;
+  }
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.status-enabled {
+    background-color: #2dcb56;
+  }
+
+  &.status-disabled {
+    background-color: #c4c6cc;
+  }
+}
+
+.ml8 {
+  margin-left: 8px;
+}
+
+// 密钥 Loading 弹窗
+.key-loading-content {
+  text-align: center;
+  padding: 40px 0;
+
+  .loading-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #313238;
+    margin-top: 24px;
+  }
+
+  .loading-subtitle {
+    font-size: 14px;
+    color: #979ba5;
+    margin-top: 8px;
+  }
+}
+
+// 密钥结果弹窗
+.key-result-content {
+  .warning-box {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 16px;
+    background: #fff8e6;
+    border: 1px solid #ffe8c3;
+    border-radius: 2px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #63656e;
+    line-height: 20px;
+
+    .warning-icon {
+      color: #ff9c01;
+      font-size: 16px;
+      margin-right: 8px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+
+  .key-info {
+    padding: 16px;
+    background: #f5f7fa;
+    border-radius: 2px;
+    margin-bottom: 16px;
+
+    .key-item {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      line-height: 28px;
+
+      .key-label {
+        color: #313238;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .key-value {
+        color: #313238;
+        word-break: break-all;
+      }
+    }
+  }
+
+  .key-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .key-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid #dcdee5;
+  }
+}
+</style>
