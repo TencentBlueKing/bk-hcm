@@ -179,3 +179,122 @@ type TCloudSetMfaFlagReq struct {
 func (req *TCloudSetMfaFlagReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// ------------------------- Access Key Management -------------------------
+
+// TCloudCreateAccessKeyReq define tcloud create access key request for hc-service.
+type TCloudCreateAccessKeyReq struct {
+	AccountID   string  `json:"account_id" validate:"required"`
+	TargetUin   uint64  `json:"target_uin" validate:"required"`
+	Description *string `json:"description" validate:"omitempty"`
+}
+
+// Validate tcloud create access key request.
+func (req *TCloudCreateAccessKeyReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudCreateAccessKeyResult directly reuses adaptor CreateAccessKeyResult.
+type TCloudCreateAccessKeyResult = typeaccount.CreateAccessKeyResult
+
+// TCloudCreateAccessKeyResp define tcloud create access key response.
+type TCloudCreateAccessKeyResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *TCloudCreateAccessKeyResult `json:"data"`
+}
+
+// TCloudDeleteAccessKeyReq define tcloud delete access key request for hc-service.
+type TCloudDeleteAccessKeyReq struct {
+	AccountID   string `json:"account_id" validate:"required"`
+	TargetUin   uint64 `json:"target_uin" validate:"required"`
+	AccessKeyID string `json:"access_key_id" validate:"required"`
+}
+
+// Validate tcloud delete access key request.
+func (req *TCloudDeleteAccessKeyReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudUpdateAccessKeyReq define tcloud update access key status request for hc-service.
+type TCloudUpdateAccessKeyReq struct {
+	AccountID   string `json:"account_id" validate:"required"`
+	TargetUin   uint64 `json:"target_uin" validate:"required"`
+	AccessKeyID string `json:"access_key_id" validate:"required"`
+	Status      string `json:"status" validate:"required"`
+}
+
+// Validate tcloud update access key request.
+func (req *TCloudUpdateAccessKeyReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.Status != typeaccount.TCloudAccessKeyStatusActive &&
+		req.Status != typeaccount.TCloudAccessKeyStatusInactive {
+		return fmt.Errorf("status must be Active or Inactive, got: %s", req.Status)
+	}
+
+	return nil
+}
+
+// ------------------------- List Access Keys -------------------------
+
+// TCloudListAccessKeysReq define tcloud list access keys request for hc-service.
+type TCloudListAccessKeysReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	TargetUin uint64 `json:"target_uin" validate:"required"`
+}
+
+// Validate tcloud list access keys request.
+func (req *TCloudListAccessKeysReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudListAccessKeysResult directly reuses adaptor AccessKeyInfo slice.
+type TCloudListAccessKeysResult = []typeaccount.AccessKeyInfo
+
+// TCloudListAccessKeysResp define tcloud list access keys response.
+type TCloudListAccessKeysResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          TCloudListAccessKeysResult `json:"data"`
+}
+
+// TCloudGetSecurityLastUsedReq define tcloud get security last used request for hc-service.
+type TCloudGetSecurityLastUsedReq struct {
+	AccountID    string   `json:"account_id" validate:"required"`
+	SecretIdList []string `json:"secret_id_list" validate:"required,min=1,max=10"`
+}
+
+// Validate tcloud get security last used request.
+func (req *TCloudGetSecurityLastUsedReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudGetSecurityLastUsedResult directly reuses adaptor SecretIdLastUsed slice.
+type TCloudGetSecurityLastUsedResult = []typeaccount.SecretIdLastUsed
+
+// TCloudGetSecurityLastUsedResp define tcloud get security last used response.
+type TCloudGetSecurityLastUsedResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          TCloudGetSecurityLastUsedResult `json:"data"`
+}
+
+// SecretStatusToTCloudAccessKeyStatus converts local SubAccountSecretStatus to TCloud CAM access key status.
+func SecretStatusToTCloudAccessKeyStatus(status enumor.SubAccountSecretStatus) string {
+	switch status {
+	case enumor.DisabledSecretStatus:
+		return typeaccount.TCloudAccessKeyStatusInactive
+	default:
+		return typeaccount.TCloudAccessKeyStatusActive
+	}
+}
+
+// TCloudAccessKeyStatusToSecretStatus converts TCloud CAM access key status to local SubAccountSecretStatus.
+func TCloudAccessKeyStatusToSecretStatus(cloudStatus string) enumor.SubAccountSecretStatus {
+	switch cloudStatus {
+	case typeaccount.TCloudAccessKeyStatusInactive:
+		return enumor.DisabledSecretStatus
+	default:
+		return enumor.EnabledSecretStatus
+	}
+}

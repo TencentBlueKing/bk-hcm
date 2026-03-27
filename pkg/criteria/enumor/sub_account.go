@@ -67,6 +67,17 @@ const (
 	DisabledSecretStatus SubAccountSecretStatus = "disabled"
 )
 
+// GetNameZh get the chinese name of the sub account secret status.
+func (s SubAccountSecretStatus) GetNameZh() string {
+	switch s {
+	case EnabledSecretStatus:
+		return "启用"
+	case DisabledSecretStatus:
+		return "禁用"
+	}
+	return ""
+}
+
 // SubAccountConsoleLogin is sub account console login type.
 type SubAccountConsoleLogin int64
 

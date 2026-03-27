@@ -504,3 +504,192 @@ func (t *TCloudImpl) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySec
 		AppID:              converter.PtrToVal(resp.Response.AppId),
 	}, nil
 }
+
+// CreateAccessKey create access key for CAM sub-user.
+// reference: https://cloud.tencent.com/document/product/598/82370
+func (t *TCloudImpl) CreateAccessKey(kt *kit.Kit,
+	opt *typeaccount.CreateAccessKeyOption) (*typeaccount.CreateAccessKeyResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "create access key option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewCreateAccessKeyRequest()
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+	if opt.Description != nil {
+		req.Description = opt.Description
+	}
+
+	resp, err := camClient.CreateAccessKeyWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("create access key failed, target_uin: %d, err: %v, rid: %s",
+			opt.TargetUin, err, kt.Rid)
+		return nil, fmt.Errorf("create access key failed, err: %v", err)
+	}
+
+	if resp.Response == nil || resp.Response.AccessKey == nil {
+		return nil, errors.New("create access key returned nil response")
+	}
+
+	ak := resp.Response.AccessKey
+	return &typeaccount.CreateAccessKeyResult{
+		AccessKeyID:     converter.PtrToVal(ak.AccessKeyId),
+		SecretAccessKey: converter.PtrToVal(ak.SecretAccessKey),
+		Status:          converter.PtrToVal(ak.Status),
+		CreateTime:      converter.PtrToVal(ak.CreateTime),
+	}, nil
+}
+
+// DeleteAccessKey delete access key for CAM sub-user.
+// reference: https://cloud.tencent.com/document/product/598/82369
+func (t *TCloudImpl) DeleteAccessKey(kt *kit.Kit, opt *typeaccount.DeleteAccessKeyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "delete access key option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewDeleteAccessKeyRequest()
+	req.AccessKeyId = converter.ValToPtr(opt.AccessKeyID)
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+
+	_, err = camClient.DeleteAccessKeyWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("delete access key failed, access_key_id: %s, target_uin: %d, err: %v, rid: %s",
+			opt.AccessKeyID, opt.TargetUin, err, kt.Rid)
+		return fmt.Errorf("delete access key failed, err: %v", err)
+	}
+
+	return nil
+}
+
+// UpdateAccessKey update access key status (Active/Inactive) for CAM sub-user.
+// reference: https://cloud.tencent.com/document/product/598/82368
+func (t *TCloudImpl) UpdateAccessKey(kt *kit.Kit, opt *typeaccount.UpdateAccessKeyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "update access key option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewUpdateAccessKeyRequest()
+	req.AccessKeyId = converter.ValToPtr(opt.AccessKeyID)
+	req.Status = converter.ValToPtr(opt.Status)
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+
+	_, err = camClient.UpdateAccessKeyWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("update access key failed, access_key_id: %s, target_uin: %d, err: %v, rid: %s",
+			opt.AccessKeyID, opt.TargetUin, err, kt.Rid)
+		return fmt.Errorf("update access key failed, err: %v", err)
+	}
+
+	return nil
+}
+
+// ListAccessKeys list access keys for CAM user.
+// reference: https://cloud.tencent.com/document/product/598/45156
+func (t *TCloudImpl) ListAccessKeys(kt *kit.Kit,
+	opt *typeaccount.ListAccessKeysOption) ([]typeaccount.AccessKeyInfo, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list access keys option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListAccessKeysRequest()
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+
+	resp, err := camClient.ListAccessKeysWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list access keys failed, target_uin: %d, err: %v, rid: %s",
+			opt.TargetUin, err, kt.Rid)
+		return nil, fmt.Errorf("list access keys failed, err: %v", err)
+	}
+
+	list := make([]typeaccount.AccessKeyInfo, 0, len(resp.Response.AccessKeys))
+	for _, one := range resp.Response.AccessKeys {
+		list = append(list, typeaccount.AccessKeyInfo{
+			AccessKeyID: converter.PtrToVal(one.AccessKeyId),
+			Status:      converter.PtrToVal(one.Status),
+			CreateTime:  converter.PtrToVal(one.CreateTime),
+			Description: one.Description,
+		})
+	}
+
+	return list, nil
+}
+
+// GetSecurityLastUsed get access key last usage info.
+// reference: https://cloud.tencent.com/document/product/598/58230
+func (t *TCloudImpl) GetSecurityLastUsed(kt *kit.Kit,
+	opt *typeaccount.GetSecurityLastUsedOption) ([]typeaccount.SecretIdLastUsed, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "get security last used option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	camClient, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewGetSecurityLastUsedRequest()
+	secretIds := make([]*string, 0, len(opt.SecretIdList))
+	for i := range opt.SecretIdList {
+		secretIds = append(secretIds, &opt.SecretIdList[i])
+	}
+	req.SecretIdList = secretIds
+
+	resp, err := camClient.GetSecurityLastUsedWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("get security last used failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("get security last used failed, err: %v", err)
+	}
+
+	list := make([]typeaccount.SecretIdLastUsed, 0, len(resp.Response.SecretIdLastUsedRows))
+	for _, one := range resp.Response.SecretIdLastUsedRows {
+		list = append(list, typeaccount.SecretIdLastUsed{
+			SecretId:           converter.PtrToVal(one.SecretId),
+			LastUsedDate:       one.LastUsedDate,
+			LastSecretUsedDate: one.LastSecretUsedDate,
+		})
+	}
+
+	return list, nil
+}

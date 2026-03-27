@@ -106,6 +106,14 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("CreateBizForDeleteSubAccount", http.MethodPost,
 		"/vendors/{vendor}/applications/types/delete_sub_account", svc.CreateBizForDeleteSubAccount)
 
+	h.Add("CreateBizForUpdateSubAccountSecretStatus", "POST",
+		"/vendors/{vendor}/applications/types/update_sub_account_secret_status",
+		svc.CreateBizForUpdateSubAccountSecretStatus)
+
+	h.Add("CreateBizForDeleteSubAccountSecret", "POST",
+		"/vendors/{vendor}/applications/types/delete_sub_account_secret",
+		svc.CreateBizForDeleteSubAccountSecret)
+
 }
 
 type applicationSvc struct {

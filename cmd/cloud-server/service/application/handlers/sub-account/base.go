@@ -106,6 +106,11 @@ func (a *ApplicationBaseSubAccount) AccountID() string {
 	return a.accountID
 }
 
+// SetAccountID set the parent account ID, typically called during CheckReq when the ID is resolved dynamically.
+func (a *ApplicationBaseSubAccount) SetAccountID(accountID string) {
+	a.accountID = accountID
+}
+
 // PrepareReq no pre-processing needed for subaccount operations.
 func (a *ApplicationBaseSubAccount) PrepareReq() error {
 	return nil
