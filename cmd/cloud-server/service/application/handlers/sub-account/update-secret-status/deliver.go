@@ -143,7 +143,6 @@ func (a *ApplicationOfUpdateSecretKeyStatus) getTCloudSecretDetail() (
 }
 
 func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() error {
-
 	updateSecret := protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
 		ID:     a.req.ID,
 		Status: &a.req.Status,
