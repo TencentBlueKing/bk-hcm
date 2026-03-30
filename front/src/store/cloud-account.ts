@@ -136,6 +136,8 @@ export interface ISubAccountSecretItem {
     cloud_sub_account_id: string;
     console_login?: number;
   };
+  sub_account_managers?: string[];
+  account_managers?: string[];
   tenant_id?: string;
   cloud_created_at: string;
   disabled_time?: string;
@@ -144,8 +146,6 @@ export interface ISubAccountSecretItem {
   reviser: string;
   created_at: string;
   updated_at: string;
-  sub_account_manager?: string;
-  account_manager?: string;
 }
 
 // 三级账号项接口定义
@@ -517,7 +517,19 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const getSubAccountSecretList = async (
     bk_biz_id: number,
     vendor: string,
-    params: { filter?: any; page: any } & Record<string, any>,
+    params: {
+      status?: string;
+      account_ids?: string[];
+      sub_account_ids?: string[];
+      account_managers?: string[];
+      sub_account_managers?: string[];
+      extension?: {
+        cloud_secret_ids?: string[];
+        cloud_main_account_ids?: string[];
+        cloud_sub_account_ids?: string[];
+      };
+      page: any;
+    },
   ): Promise<{ list: ISubAccountSecretItem[]; count: number }> => {
     subAccountSecretListLoading.value = true;
 
@@ -534,18 +546,18 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     // 使用真实接口
     const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/list`;
     try {
-      // 构建请求参数
-      const requestData = { ...params };
+      // 构建请求参数（去除 page 后的查询条件）
+      const { page, ...queryParams } = params;
 
       // 获取列表数据
       const listRes = await http.post(api, {
-        ...requestData,
-        page: { ...requestData.page, count: false },
+        ...queryParams,
+        page: { ...page, count: false },
       });
 
       // 获取总数
       const countRes = await http.post(api, {
-        ...requestData,
+        ...queryParams,
         page: { count: true, start: 0, limit: 0 },
       });
 
@@ -725,15 +737,15 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   };
 
   /**
-   * 新增三级账号密钥（提交申请）
+   * 新增三级账号密钥
    */
   const createSubAccountSecret = async (
     bk_biz_id: number,
     vendor: string,
-    subAccountSecrets: { sub_account_id: string }[],
-  ): Promise<{ ids: string[] }> => {
+    subAccountSecrets: { id: string }[],
+  ): Promise<{ id: string; extension: { cloud_secret_id: string; cloud_secret_key: string } }> => {
     try {
-      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/add_sub_account_secret`;
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/subaccount_secrets/create`;
       const res = await http.post(api, { sub_account_secrets: subAccountSecrets });
       return res?.data;
     } catch (error) {

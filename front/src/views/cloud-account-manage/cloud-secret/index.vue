@@ -70,31 +70,41 @@ const fetchList = async () => {
 
   try {
     // 构建请求参数
-    const requestParams: { filter?: any; page: any } & Record<string, any> = {
+    const requestParams: Record<string, any> = {
       page: getPageParams(pagination, { sort, order }),
     };
 
     // 处理搜索条件
     const filterRules = transformSimpleCondition(condition.value, searchFields.value);
     if (filterRules && filterRules.rules && filterRules.rules.length > 0) {
-      // 将 filter 条件转换为接口需要的参数格式
+      // 需要放入 extension 中的字段
+      const extensionFields: Record<string, string> = {
+        cloud_secret_id: 'cloud_secret_ids',
+        cloud_sub_account_id: 'cloud_sub_account_ids',
+        cloud_main_account_id: 'cloud_main_account_ids',
+      };
+      // 顶层参数字段
+      const topLevelFields: Record<string, string> = {
+        status: 'status',
+        sub_account_managers: 'sub_account_managers',
+        account_managers: 'account_managers',
+      };
+
       filterRules.rules.forEach((rule: any) => {
         if (rule.field && rule.value) {
-          // 根据字段名称映射到接口参数
-          const fieldMapping: Record<string, string> = {
-            cloud_secret_id: 'cloud_secret_ids',
-            status: 'status',
-            cloud_sub_account_id: 'cloud_sub_account_ids',
-            cloud_main_account_id: 'cloud_main_account_ids',
-            sub_account_managers: 'sub_account_managers',
-            account_managers: 'account_managers',
-          };
-          const paramKey = fieldMapping[rule.field];
-          if (paramKey) {
-            if (paramKey === 'status') {
-              requestParams[paramKey] = rule.value;
-            } else {
-              requestParams[paramKey] = Array.isArray(rule.value) ? rule.value : [rule.value];
+          const extKey = extensionFields[rule.field];
+          if (extKey) {
+            // extension 中的字段
+            if (!requestParams.extension) requestParams.extension = {};
+            requestParams.extension[extKey] = Array.isArray(rule.value) ? rule.value : [rule.value];
+          } else {
+            const paramKey = topLevelFields[rule.field];
+            if (paramKey) {
+              if (paramKey === 'status') {
+                requestParams[paramKey] = rule.value;
+              } else {
+                requestParams[paramKey] = Array.isArray(rule.value) ? rule.value : [rule.value];
+              }
             }
           }
         }

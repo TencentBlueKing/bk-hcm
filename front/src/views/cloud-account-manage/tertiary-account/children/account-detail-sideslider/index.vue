@@ -124,11 +124,13 @@ const handleCreateSecret = async () => {
 
   showKeyLoading.value = true;
   try {
-    await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, [
-      { sub_account_id: props.rowData.id },
+    const res = await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, [
+      { id: props.rowData.id },
     ]);
     showKeyLoading.value = false;
-    Message({ theme: 'success', message: '新建密钥申请已提交' });
+    newSecretId.value = res?.extension?.cloud_secret_id || '--';
+    newSecretKey.value = res?.extension?.cloud_secret_key || '--';
+    showKeyResult.value = true;
     keyAcknowledged.value = false;
     // 刷新密钥列表
     await loadSecretList();
