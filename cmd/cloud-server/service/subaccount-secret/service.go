@@ -42,7 +42,7 @@ func InitService(c *capability.Capability) {
 	h.Add("CreateBizSubAccountSecret", "POST",
 		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create", svc.CreateBizSubAccountSecret)
 	h.Add("ListSubAccountSecretJoinExt", http.MethodPost,
-		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/join/list", svc.ListSubAccountSecretJoinExt)
+		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list", svc.ListSubAccountSecret)
 
 	h.Load(c.WebService)
 }
