@@ -85,5 +85,9 @@ func (svc *svc) createForTCloud(cts *rest.Contexts, req *proto.PermissionPolicyL
 		return nil, err
 	}
 
+	if result == nil || len(result.IDs) == 0 {
+		return nil, errf.New(errf.Aborted, "create returned empty result")
+	}
+
 	return &proto.PermissionPolicyLibraryCreateResult{ID: result.IDs[0]}, nil
 }

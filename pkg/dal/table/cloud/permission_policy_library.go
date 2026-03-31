@@ -64,7 +64,7 @@ type PermissionPolicyLibraryTable struct {
 	// Memo 策略库描述
 	Memo *string `db:"memo" json:"memo"`
 	// Vendor 云厂商
-	Vendor string `db:"vendor" json:"vendor"`
+	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// TenantID 租户ID
 	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者

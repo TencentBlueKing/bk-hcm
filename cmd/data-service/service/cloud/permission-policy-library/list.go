@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
@@ -90,7 +89,7 @@ func convTableToBasePermissionPolicyLibrary(one tablecloud.PermissionPolicyLibra
 		Version:        one.Version,
 		BkBizIDs:       bkBizIDs,
 		Memo:           one.Memo,
-		Vendor:         enumor.Vendor(one.Vendor),
+		Vendor:         one.Vendor,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,

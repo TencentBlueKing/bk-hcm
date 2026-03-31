@@ -94,7 +94,7 @@ func (dao *PermissionPolicyLibraryDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.T
 			ResName:  one.Name,
 			ResType:  enumor.PermissionPolicyLibraryAuditResType,
 			Action:   enumor.Create,
-			Vendor:   enumor.Vendor(one.Vendor),
+			Vendor:   one.Vendor,
 			Operator: kt.User,
 			Source:   kt.GetRequestSource(),
 			Rid:      kt.Rid,

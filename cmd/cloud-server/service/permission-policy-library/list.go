@@ -39,7 +39,8 @@ func (svc *svc) ListPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, er
 
 	req := new(proto.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		logs.Errorf("decode list permission policy library request failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {

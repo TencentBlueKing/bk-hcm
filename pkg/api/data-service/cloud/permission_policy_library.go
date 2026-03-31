@@ -49,7 +49,7 @@ func (req *PermissionPolicyLibraryBatchCreateReq) Validate() error {
 type PermissionPolicyLibraryCreate struct {
 	Name           string  `json:"name" validate:"required,max=128"`
 	PolicyDocument string  `json:"policy_document" validate:"required"`
-	BkBizIDs       []int64 `json:"bk_biz_ids" validate:"omitempty"`
+	BkBizIDs       []int64 `json:"bk_biz_ids" validate:"required"`
 	Memo           *string `json:"memo" validate:"omitempty,max=255"`
 }
 

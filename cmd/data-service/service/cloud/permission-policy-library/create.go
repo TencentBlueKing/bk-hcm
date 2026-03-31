@@ -77,7 +77,7 @@ func batchCreateForVendor(vendor enumor.Vendor, svc *service, cts *rest.Contexts
 				Version:        1,
 				BkBizIDs:       types.JsonField(bkBizIDsJSON),
 				Memo:           one.Memo,
-				Vendor:         string(vendor),
+				Vendor:         vendor,
 				TenantID:       cts.Kit.TenantID,
 				Creator:        cts.Kit.User,
 				Reviser:        cts.Kit.User,
