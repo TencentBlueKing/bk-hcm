@@ -88,6 +88,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.Image:                    genImageResource,
 	meta.TaskManagement:           genTaskManagementResource,
 	meta.CosBucket:                genCosBucket,
+	meta.PermissionTemplate:       genPermissionTemplateResource,
 	meta.GlobalConfig:             genGlobalConfigResource,
 	meta.PermissionPolicyLibrary:  genPermissionPolicyLibraryResource,
 }

@@ -104,6 +104,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizAccountOperate},
 						{ID: BizSubAccountOperate},
 						{ID: BizSubAccountSecretOperate},
+						{ID: BizPermissionTemplateOperate},
 					},
 				},
 			},

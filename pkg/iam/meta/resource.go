@@ -118,6 +118,9 @@ const (
 	// CosBucket cos桶
 	CosBucket ResourceType = "cos_bucket"
 
+	// PermissionTemplate 云权限模板
+	PermissionTemplate ResourceType = "permission_template"
+
 	// GlobalConfig 全局配置
 	GlobalConfig ResourceType = "global_config"
 
