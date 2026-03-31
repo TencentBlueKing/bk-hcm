@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -115,7 +116,8 @@ func (svc *subAccountSecretSvc) ListSubAccountSecretWithExtension(cts *rest.Cont
 	}
 
 	if req.Page.Count {
-		return &protocloud.SubAccountSecretExtListResult[coresass.TCloudSubAccountSecretExtension]{Count: result.Count}, nil
+		return &protocloud.SubAccountSecretExtListResult[coresass.TCloudSubAccountSecretExtension]{
+			Count: result.Count}, nil
 	}
 
 	switch vendor {
@@ -147,4 +149,102 @@ func convSubAccountSecretListResult[T coresass.Extension](tables []tablesass.Tab
 	return &protocloud.SubAccountSecretExtListResult[T]{
 		Details: details,
 	}, nil
+}
+
+// ListSubAccountSecretJoinExt lists sub account secrets with sub_account and account joined (bk_biz_id in WHERE).
+func (svc *subAccountSecretSvc) ListSubAccountSecretJoinExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(protocloud.SubAccountSecretJoinExtListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.listSecretJoinExtTCloud(cts, req)
+	default:
+		return nil, errf.NewFromErr(errf.InvalidParameter,
+			fmt.Errorf("join sub account secret list is not supported for vendor: %s", vendor))
+	}
+}
+
+// listSecretJoinExtTCloud handles join list for Tencent Cloud with extension.
+func (svc *subAccountSecretSvc) listSecretJoinExtTCloud(cts *rest.Contexts,
+	req *protocloud.SubAccountSecretJoinExtListReq) (interface{}, error) {
+
+	tcExt, err := protocloud.ParseTCloudBizListExtension(req.Extension)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	daoOpt := &types.ListSecretJoinAccountOption{
+		Vendor:             enumor.TCloud,
+		BkBizID:            req.BkBizID,
+		Status:             req.Status,
+		AccountIDs:         req.AccountIDs,
+		SubAccountIDs:      req.SubAccountIDs,
+		AccountManagers:    req.AccountManagers,
+		SubAccountManagers: req.SubAccountManagers,
+		Page:               req.Page,
+		Extension:          tcExt,
+	}
+	result, err := svc.dao.SubAccountSecret().ListJoinAccountAndSubAccount(cts.Kit, daoOpt)
+	if err != nil {
+		logs.Errorf("list join sub account secret failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if req.Page.Count {
+		return &protocloud.SubAccountSecretJoinExtListResult{Count: result.Count}, nil
+	}
+
+	details := make([]protocloud.SubAccountSecretJoinExtDetail, 0, len(result.Details))
+	for i := range result.Details {
+		d, err := convJoinRowToListDetailTCloud(result.Details[i])
+		if err != nil {
+			return nil, err
+		}
+		details = append(details, *d)
+	}
+
+	return &protocloud.SubAccountSecretJoinExtListResult{Details: details}, nil
+}
+
+func convJoinRowToListDetailTCloud(row types.SubAccountSecretBizJoinRow) (
+	*protocloud.SubAccountSecretJoinExtDetail, error) {
+
+	ext := new(coresass.TCloudSubAccountSecretExtension)
+	if len(row.Extension) != 0 {
+		if err := json.UnmarshalFromString(string(row.Extension), ext); err != nil {
+			return nil, fmt.Errorf("unmarshal secret extension failed, err: %w", err)
+		}
+	}
+
+	detail := &protocloud.SubAccountSecretJoinExtDetail{
+		BaseSubAccountSecret: convTableToBaseSubAccountSecret(row.Table),
+		Extension:            ext,
+		AccountManagers:      []string(row.AccountManagers),
+		SubAccountManagers:   []string(row.SubAccountManagers),
+	}
+
+	// sub_account.extension JSON -> TCloudExtension (includes console_login for tcloud).
+	if len(row.SubAccountExtensionJSON) != 0 {
+		var saExt coresubaccount.TCloudExtension
+		if err := json.UnmarshalFromString(string(row.SubAccountExtensionJSON), &saExt); err != nil {
+			return nil, fmt.Errorf("unmarshal sub account extension failed, err: %w", err)
+		}
+		if saExt.ConsoleLogin != nil {
+			v := int64(*saExt.ConsoleLogin)
+			detail.ConsoleLogin = &v
+		}
+	}
+
+	return detail, nil
 }
