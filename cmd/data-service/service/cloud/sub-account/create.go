@@ -31,7 +31,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -68,12 +67,7 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 				Memo:                  item.Memo,
 				Creator:               cts.Kit.User,
 				Reviser:               cts.Kit.User,
-			}
-
-			// 处理 CloudCreatedAt 时间转换
-			if item.CloudCreatedAt != nil {
-				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
-				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+				CloudCreatedAt:        item.CloudCreatedAt,
 			}
 
 			models = append(models, model)

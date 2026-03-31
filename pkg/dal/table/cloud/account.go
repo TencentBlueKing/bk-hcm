@@ -63,7 +63,7 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "email", NamedC: "email", Type: enumor.String},
 	{Column: "security_managers", NamedC: "security_managers", Type: enumor.Json},
-	{Column: "cloud_created_at", NamedC: "cloud_created_at", Type: enumor.Time},
+	{Column: "cloud_created_at", NamedC: "cloud_created_at", Type: enumor.String},
 }
 
 // AccountTable 云账号表
@@ -107,7 +107,7 @@ type AccountTable struct {
 	// SecurityManagers 安全负责人
 	SecurityManagers types.StringArray `db:"security_managers" json:"security_managers"`
 	// CloudCreatedAt 云上创建时间
-	CloudCreatedAt *types.Time `db:"cloud_created_at" json:"cloud_created_at"`
+	CloudCreatedAt *string `db:"cloud_created_at" json:"cloud_created_at"`
 }
 
 // TableName return account table name.

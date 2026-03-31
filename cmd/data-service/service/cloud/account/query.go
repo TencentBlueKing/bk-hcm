@@ -36,7 +36,6 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -115,11 +114,7 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 			CreatedAt: dbAccount.CreatedAt.String(),
 			UpdatedAt: dbAccount.UpdatedAt.String(),
 		},
-	}
-
-	if dbAccount.CloudCreatedAt != nil {
-		cloudCreatedAt := dbAccount.CloudCreatedAt.String()
-		baseAccount.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+		CloudCreatedAt: dbAccount.CloudCreatedAt,
 	}
 
 	// 转换为最终的数据结构
@@ -195,11 +190,9 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 				CreatedAt: account.CreatedAt.String(),
 				UpdatedAt: account.UpdatedAt.String(),
 			},
+			CloudCreatedAt: account.CloudCreatedAt,
 		}
-		if account.CloudCreatedAt != nil {
-			cloudCreatedAt := account.CloudCreatedAt.String()
-			baseAccount.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
-		}
+
 		details = append(details, baseAccount)
 	}
 
@@ -400,11 +393,9 @@ func (svc *service) ListAccountWithExtension(cts *rest.Contexts) (interface{}, e
 				CreatedAt: account.CreatedAt.String(),
 				UpdatedAt: account.UpdatedAt.String(),
 			},
+			CloudCreatedAt: account.CloudCreatedAt,
 		}
-		if account.CloudCreatedAt != nil {
-			cloudCreatedAt := account.CloudCreatedAt.String()
-			baseAccount.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
-		}
+
 		details = append(details, &protocloud.BaseAccountWithExtensionListResp{
 			BaseAccount: baseAccount,
 			Extension:   extension,

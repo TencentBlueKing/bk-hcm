@@ -279,10 +279,10 @@ func (opt CreateAccessKeyOption) Validate() error {
 
 // CreateAccessKeyResult define tcloud CreateAccessKey API result.
 type CreateAccessKeyResult struct {
-	AccessKeyID     string `json:"access_key_id"`
-	SecretAccessKey string `json:"secret_access_key"`
-	Status          string `json:"status"`
-	CreateTime      string `json:"create_time"`
+	AccessKeyID     string  `json:"access_key_id"`
+	SecretAccessKey string  `json:"secret_access_key"`
+	Status          string  `json:"status"`
+	CreateTime      *string `json:"create_time"`
 }
 
 // DeleteAccessKeyOption define tcloud DeleteAccessKey option.

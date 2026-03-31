@@ -29,7 +29,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -62,12 +61,6 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 				CountryCode:           item.CountryCode,
 				Memo:                  item.Memo,
 				Reviser:               cts.Kit.User,
-			}
-
-			// 处理 CloudCreatedAt 时间转换
-			if item.CloudCreatedAt != nil {
-				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
-				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
 			}
 
 			// 只有提供了Extension才进行更新

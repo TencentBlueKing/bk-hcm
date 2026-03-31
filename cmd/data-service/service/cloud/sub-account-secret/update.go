@@ -74,13 +74,13 @@ func batchUpdateForTCloud(svc *subAccountSecretSvc, cts *rest.Contexts) (interfa
 			model.Status = cvt.PtrToVal(one.Status)
 		}
 		if one.CloudCreatedAt != nil {
-			model.CloudCreatedAt = tabletype.Time(cvt.PtrToVal(one.CloudCreatedAt))
+			model.CloudCreatedAt = one.CloudCreatedAt
 		}
 		if one.DisabledTime != nil {
 			model.DisabledTime = tabletype.Time(cvt.PtrToVal(one.DisabledTime))
 		}
 		if one.LastUsedTime != nil {
-			model.LastUsedTime = tabletype.Time(cvt.PtrToVal(one.LastUsedTime))
+			model.LastUsedTime = one.LastUsedTime
 		}
 
 		if one.Extension != nil {

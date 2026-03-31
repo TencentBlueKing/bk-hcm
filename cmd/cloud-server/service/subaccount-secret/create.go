@@ -127,6 +127,7 @@ func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAc
 		return nil, err
 	}
 
+	logs.Infof("[jettxiao] akResult: %s", akResult.CreateTime)
 	dbID, err := svc.saveTCloudSubAccountSecret(kt, subAccount, akResult)
 	if err != nil {
 		return nil, err
@@ -160,6 +161,7 @@ func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
 	subAccount *coresubaccount.SubAccount[coresubaccount.TCloudExtension],
 	akResult *hssubaccount.TCloudCreateAccessKeyResult,
 ) (string, error) {
+
 	cloudMainAccountID := ""
 	if subAccount.Extension != nil {
 		cloudMainAccountID = subAccount.Extension.CloudMainAccountID

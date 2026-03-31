@@ -76,9 +76,9 @@ func convTableToBaseSubAccountSecret(one tablesass.Table) coresass.BaseSubAccoun
 		Status:         one.Status,
 		AccountID:      one.AccountID,
 		SubAccountID:   one.SubAccountID,
-		CloudCreatedAt: one.CloudCreatedAt.String(),
+		CloudCreatedAt: one.CloudCreatedAt,
 		DisabledTime:   one.DisabledTime.String(),
-		LastUsedTime:   one.LastUsedTime.String(),
+		LastUsedTime:   one.LastUsedTime,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
