@@ -74,7 +74,7 @@ func BatchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDeta
 	detailUpdates := make([]datatask.UpdateTaskDetailField, min(len(ids), constant.BatchOperationMaxLimit))
 	for _, idBatch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
 		for i := range idBatch {
-			detailUpdates[i] = datatask.UpdateTaskDetailField{ID: ids[i], State: state}
+			detailUpdates[i] = datatask.UpdateTaskDetailField{ID: idBatch[i], State: state}
 		}
 		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
 		rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
@@ -105,7 +105,7 @@ func BatchUpdateTaskDetailResultState(kt *kit.Kit, ids []string, state enumor.Ta
 	detailUpdates := make([]datatask.UpdateTaskDetailField, min(len(ids), constant.BatchOperationMaxLimit))
 	for _, idBatch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
 		for i := range idBatch {
-			field := datatask.UpdateTaskDetailField{ID: ids[i], State: state, Result: result}
+			field := datatask.UpdateTaskDetailField{ID: idBatch[i], State: state, Result: result}
 			if reason != nil {
 				// 需要截取否则超出DB字段长度限制，会更新状态失败
 				runesReason := []rune(reason.Error())
