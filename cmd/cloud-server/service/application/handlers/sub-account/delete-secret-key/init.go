@@ -61,7 +61,7 @@ func NewApplicationOfDeleteSecretKey(opt *handlers.HandlerOption, base *subaccou
 ) *ApplicationOfDeleteSecretKey {
 
 	return &ApplicationOfDeleteSecretKey{
-		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base, ""),
+		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		secretID:                  secretID,
 	}
 }

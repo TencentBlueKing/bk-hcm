@@ -62,7 +62,7 @@ func NewApplicationOfUpdateSecretKeyStatus(opt *handlers.HandlerOption, base *su
 	req *proto.SubAccountSecretStatusUpdateReq,
 ) *ApplicationOfUpdateSecretKeyStatus {
 	return &ApplicationOfUpdateSecretKeyStatus{
-		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base, ""),
+		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,
 	}
 }
