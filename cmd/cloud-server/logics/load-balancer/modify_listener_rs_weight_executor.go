@@ -306,6 +306,43 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskManagement(
 	return result.IDs[0], nil
 }
 
+// buildSingleRsDetail 根据 detail 和单个 rs 构造只包含该 RS 的 ListBatchListenerResult。
+// 该函数为纯函数，不依赖外部状态，便于独立测试。
+func buildSingleRsDetail(detail *dataproto.ListBatchListenerResult,
+	rs *dataproto.LoadBalancerTargetRsList) *dataproto.ListBatchListenerResult {
+
+	return &dataproto.ListBatchListenerResult{
+		ClbID:        detail.ClbID,
+		CloudClbID:   detail.CloudClbID,
+		ClbVipDomain: detail.ClbVipDomain,
+		BkBizID:      detail.BkBizID,
+		Region:       detail.Region,
+		Vendor:       detail.Vendor,
+		LblID:        detail.LblID,
+		CloudLblID:   detail.CloudLblID,
+		Protocol:     detail.Protocol,
+		Port:         detail.Port,
+		RsList:       []*dataproto.LoadBalancerTargetRsList{rs},
+		NewRsWeight:  detail.NewRsWeight,
+	}
+}
+
+// splitDetailsByRS 将 details 按单个 RS 拆分，过滤掉权重未变化的 RS，返回需要变更的单 RS detail 列表。
+// 该函数为纯函数，不依赖外部状态，便于独立测试。
+func splitDetailsByRS(
+	details []*dataproto.ListBatchListenerResult) []*dataproto.ListBatchListenerResult {
+
+	result := make([]*dataproto.ListBatchListenerResult, 0)
+	for _, detail := range details {
+		for _, rs := range detail.RsList {
+			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
+				result = append(result, buildSingleRsDetail(detail, rs))
+			}
+		}
+	}
+	return result
+}
+
 // createTaskDetails 创建任务详情列表
 func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
 	items := make([]task.CreateDetailField, 0)
@@ -347,20 +384,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 				Param:            param,
 			}
 			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
-				singleRsDetail := &dataproto.ListBatchListenerResult{ // 创建只包含当前 RS 的 ListBatchListenerResult
-					ClbID:        detail.ClbID,
-					CloudClbID:   detail.CloudClbID,
-					ClbVipDomain: detail.ClbVipDomain,
-					BkBizID:      detail.BkBizID,
-					Region:       detail.Region,
-					Vendor:       detail.Vendor,
-					LblID:        detail.LblID,
-					CloudLblID:   detail.CloudLblID,
-					Protocol:     detail.Protocol,
-					Port:         detail.Port,
-					RsList:       []*dataproto.LoadBalancerTargetRsList{rs}, // 只包含当前 RS
-					NewRsWeight:  detail.NewRsWeight,
-				}
+				singleRsDetail := buildSingleRsDetail(detail, rs)
 				taskDetail := &batchListenerModifyRsWeightTaskDetail{
 					TgModifyWeightTaskDetailParam: &param,
 					ListBatchListenerResult:       singleRsDetail,

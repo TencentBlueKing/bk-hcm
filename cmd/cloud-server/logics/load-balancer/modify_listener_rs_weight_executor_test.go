@@ -590,38 +590,18 @@ func TestBuildTaskDetailsLogic_VerifyDetailFields(t *testing.T) {
 	assert.Equal(t, int64(25), cvt.PtrToVal(createdDetail.RsList[0].Weight), "应该包含正确的原始权重")
 }
 
-// buildTaskDetailsFromDetailsLogic simulates the core logic of createTaskDetails
-// This is a helper function to test the logic without external dependencies
+// buildTaskDetailsFromDetailsLogic 直接调用生产代码中的 splitDetailsByRS 纯函数，
+// 并将结果包装为 batchListenerModifyRsWeightTaskDetail 列表，确保测试覆盖真正的生产逻辑。
 func buildTaskDetailsFromDetailsLogic(
 	details []*dataproto.ListBatchListenerResult) []*batchListenerModifyRsWeightTaskDetail {
 
-	taskDetails := make([]*batchListenerModifyRsWeightTaskDetail, 0)
-
-	for _, detail := range details {
-		for _, rs := range detail.RsList {
-			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
-				// 创建只包含当前 RS 的 ListBatchListenerResult，避免携带其他不相关的 RS
-				singleRsDetail := &dataproto.ListBatchListenerResult{
-					ClbID:        detail.ClbID,
-					CloudClbID:   detail.CloudClbID,
-					ClbVipDomain: detail.ClbVipDomain,
-					BkBizID:      detail.BkBizID,
-					Region:       detail.Region,
-					Vendor:       detail.Vendor,
-					LblID:        detail.LblID,
-					CloudLblID:   detail.CloudLblID,
-					Protocol:     detail.Protocol,
-					Port:         detail.Port,
-					RsList:       []*dataproto.LoadBalancerTargetRsList{rs}, // 只包含当前 RS
-					NewRsWeight:  detail.NewRsWeight,
-				}
-				taskDetail := &batchListenerModifyRsWeightTaskDetail{
-					ListBatchListenerResult: singleRsDetail,
-				}
-				taskDetails = append(taskDetails, taskDetail)
-			}
+	splitResults := splitDetailsByRS(details)
+	taskDetails := make([]*batchListenerModifyRsWeightTaskDetail, 0, len(splitResults))
+	for _, singleRsDetail := range splitResults {
+		taskDetail := &batchListenerModifyRsWeightTaskDetail{
+			ListBatchListenerResult: singleRsDetail,
 		}
+		taskDetails = append(taskDetails, taskDetail)
 	}
-
 	return taskDetails
 }
