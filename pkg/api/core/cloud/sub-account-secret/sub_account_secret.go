@@ -32,9 +32,9 @@ type BaseSubAccountSecret struct {
 	Status         enumor.SubAccountSecretStatus `json:"status"`
 	AccountID      string                        `json:"account_id"`
 	SubAccountID   string                        `json:"sub_account_id"`
-	CloudCreatedAt string                        `json:"cloud_created_at"`
+	CloudCreatedAt *string                       `json:"cloud_created_at"`
 	DisabledTime   string                        `json:"disabled_time"`
-	LastUsedTime   string                        `json:"last_used_time"`
+	LastUsedTime   *string                       `json:"last_used_time"`
 	*core.Revision `json:",inline"`
 }
 

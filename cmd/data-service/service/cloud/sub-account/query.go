@@ -31,7 +31,6 @@ import (
 	tablesubaccount "hcm/pkg/dal/table/cloud/sub-account"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -142,12 +141,7 @@ func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAcc
 			CreatedAt: one.CreatedAt.String(),
 			UpdatedAt: one.UpdatedAt.String(),
 		},
-	}
-
-	// 处理 CloudCreatedAt 时间转换
-	if one.CloudCreatedAt != nil {
-		cloudCreatedAt := one.CloudCreatedAt.String()
-		baseAccount.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+		CloudCreatedAt: one.CloudCreatedAt,
 	}
 
 	return baseAccount

@@ -71,22 +71,19 @@ func batchCreateForTCloud(vendor enumor.Vendor, svc *subAccountSecretSvc, cts *r
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
 			model := tablesass.Table{
-				Vendor:       vendor,
-				Status:       one.Status,
-				Extension:    tabletype.JsonField(extensionJson),
-				AccountID:    one.AccountID,
-				SubAccountID: one.SubAccountID,
-				Creator:      cts.Kit.User,
-				Reviser:      cts.Kit.User,
+				Vendor:         vendor,
+				Status:         one.Status,
+				Extension:      tabletype.JsonField(extensionJson),
+				AccountID:      one.AccountID,
+				SubAccountID:   one.SubAccountID,
+				Creator:        cts.Kit.User,
+				Reviser:        cts.Kit.User,
+				CloudCreatedAt: one.CloudCreatedAt,
+				LastUsedTime:   one.LastUsedTime,
 			}
-			if one.CloudCreatedAt != "" {
-				model.CloudCreatedAt = tabletype.Time(one.CloudCreatedAt)
-			}
+
 			if one.DisabledTime != "" {
 				model.DisabledTime = tabletype.Time(one.DisabledTime)
-			}
-			if one.LastUsedTime != "" {
-				model.LastUsedTime = tabletype.Time(one.LastUsedTime)
 			}
 
 			models = append(models, model)

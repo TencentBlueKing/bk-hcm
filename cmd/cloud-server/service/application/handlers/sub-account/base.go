@@ -134,6 +134,12 @@ func (a *ApplicationBaseSubAccount) GetBkBizIDs() []int64 {
 // The approvers are the parent 2nd-level account's managers queried by accountID,
 // who serve as the approvers for the subaccount approval flow.
 func (a *ApplicationBaseSubAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return []itsm.VariableApprover{
+		{
+			Variable:  "account_manager",
+			Approvers: []string{"jettxiao"},
+		},
+	}
 	return a.GetItsmPlatformAndAccountApprover(managers, a.accountID)
 }
 

@@ -45,9 +45,9 @@ type SubAccountSecretCreate[T coresass.Extension] struct {
 	AccountID      string                        `json:"account_id" validate:"required"`
 	SubAccountID   string                        `json:"sub_account_id" validate:"required"`
 	Status         enumor.SubAccountSecretStatus `json:"status" validate:"required"`
-	CloudCreatedAt string                        `json:"cloud_created_at" validate:"omitempty"`
+	CloudCreatedAt *string                       `json:"cloud_created_at" validate:"omitempty"`
 	DisabledTime   string                        `json:"disabled_time" validate:"omitempty"`
-	LastUsedTime   string                        `json:"last_used_time" validate:"omitempty"`
+	LastUsedTime   *string                       `json:"last_used_time" validate:"omitempty"`
 	Extension      *T                            `json:"extension" validate:"required"`
 }
 

@@ -31,7 +31,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -52,27 +51,22 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 		models := make([]tablesubaccount.Table, 0, len(req.Items))
 		for _, item := range req.Items {
 			model := tablesubaccount.Table{
-				CloudID:     item.CloudID,
-				Name:        item.Name,
-				Vendor:      item.Vendor,
-				Site:        item.Site,
-				AccountID:   item.AccountID,
-				AccountType: item.AccountType,
-				Extension:   tabletype.JsonField(item.Extension),
-				Managers:    item.Managers,
-				BkBizIDs:    item.BkBizIDs,
-				Email:       item.Email,
-				PhoneNum:    item.PhoneNum,
-				CountryCode: item.CountryCode,
-				Memo:        item.Memo,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
-			}
-
-			// 处理 CloudCreatedAt 时间转换
-			if item.CloudCreatedAt != nil {
-				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
-				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+				CloudID:        item.CloudID,
+				Name:           item.Name,
+				Vendor:         item.Vendor,
+				Site:           item.Site,
+				AccountID:      item.AccountID,
+				AccountType:    item.AccountType,
+				Extension:      tabletype.JsonField(item.Extension),
+				Managers:       item.Managers,
+				BkBizIDs:       item.BkBizIDs,
+				Email:          item.Email,
+				PhoneNum:       item.PhoneNum,
+				CountryCode:    item.CountryCode,
+				Memo:           item.Memo,
+				Creator:        cts.Kit.User,
+				Reviser:        cts.Kit.User,
+				CloudCreatedAt: item.CloudCreatedAt,
 			}
 
 			models = append(models, model)

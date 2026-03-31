@@ -32,7 +32,6 @@ import (
 	tablecloud "hcm/pkg/dal/table/cloud"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -101,11 +100,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			Reviser:            cts.Kit.User,
 			Email:              req.Email,
 			SecurityManagers:   req.SecurityManagers,
-		}
-
-		if req.CloudCreatedAt != nil {
-			cloudCreatedAt := tabletype.Time(cvt.PtrToVal(req.CloudCreatedAt))
-			account.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+			CloudCreatedAt:     req.CloudCreatedAt,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)

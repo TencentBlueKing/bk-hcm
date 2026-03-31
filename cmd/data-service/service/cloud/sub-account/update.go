@@ -29,7 +29,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
@@ -49,24 +48,19 @@ func (svc *service) BatchUpdateSubAccount(cts *rest.Contexts) (interface{}, erro
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, item := range req.Items {
 			model := &tablesubaccount.Table{
-				Name:        item.Name,
-				Vendor:      item.Vendor,
-				Site:        item.Site,
-				AccountID:   item.AccountID,
-				AccountType: item.AccountType,
-				Managers:    item.Managers,
-				BkBizIDs:    item.BkBizIDs,
-				Email:       item.Email,
-				PhoneNum:    item.PhoneNum,
-				CountryCode: item.CountryCode,
-				Memo:        item.Memo,
-				Reviser:     cts.Kit.User,
-			}
-
-			// 处理 CloudCreatedAt 时间转换
-			if item.CloudCreatedAt != nil {
-				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
-				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+				Name:           item.Name,
+				Vendor:         item.Vendor,
+				Site:           item.Site,
+				AccountID:      item.AccountID,
+				AccountType:    item.AccountType,
+				Managers:       item.Managers,
+				BkBizIDs:       item.BkBizIDs,
+				Email:          item.Email,
+				PhoneNum:       item.PhoneNum,
+				CountryCode:    item.CountryCode,
+				Memo:           item.Memo,
+				Reviser:        cts.Kit.User,
+				CloudCreatedAt: item.CloudCreatedAt,
 			}
 
 			// 只有提供了Extension才进行更新

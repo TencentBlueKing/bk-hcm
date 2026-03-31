@@ -545,7 +545,7 @@ func (t *TCloudImpl) CreateAccessKey(kt *kit.Kit,
 		AccessKeyID:     converter.PtrToVal(ak.AccessKeyId),
 		SecretAccessKey: converter.PtrToVal(ak.SecretAccessKey),
 		Status:          converter.PtrToVal(ak.Status),
-		CreateTime:      converter.PtrToVal(ak.CreateTime),
+		CreateTime:      ak.CreateTime,
 	}, nil
 }
 

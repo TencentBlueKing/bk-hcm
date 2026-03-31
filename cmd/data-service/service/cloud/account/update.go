@@ -32,7 +32,6 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -109,8 +108,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 	}
 
 	if req.CloudCreatedAt != nil {
-		cloudCreatedAt := tabletype.Time(cvt.PtrToVal(req.CloudCreatedAt))
-		account.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+		account.CloudCreatedAt = req.CloudCreatedAt
 	}
 
 	// 只有提供了Extension才进行更新
