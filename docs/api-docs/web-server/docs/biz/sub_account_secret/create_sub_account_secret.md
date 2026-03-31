@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/subaccount_secrets/create
+POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create
 
 ### 输入参数
 
