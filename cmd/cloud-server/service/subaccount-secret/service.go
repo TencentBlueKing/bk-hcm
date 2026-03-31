@@ -21,6 +21,8 @@
 package subaccountsecret
 
 import (
+	"net/http"
+
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
@@ -35,8 +37,12 @@ func InitService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
+
+	// 业务下接口
 	h.Add("CreateBizSubAccountSecret", "POST",
-		"/bizs/{bk_biz_id}/vendors/{vendor}/subaccount_secrets/create", svc.CreateBizSubAccountSecret)
+		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create", svc.CreateBizSubAccountSecret)
+	h.Add("ListSubAccountSecretJoinExt", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/join/list", svc.ListSubAccountSecretJoinExt)
 
 	h.Load(c.WebService)
 }

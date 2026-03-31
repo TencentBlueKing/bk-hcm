@@ -47,6 +47,8 @@ type SubAccountSecret interface {
 	BatchUpdate(kt *kit.Kit, models []tablesubas.Table) error
 	BatchDelete(kt *kit.Kit, expr *filter.Expression) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListSubAccountSecretDetails, error)
+	ListJoinAccountAndSubAccount(kt *kit.Kit, opt *types.ListSecretJoinAccountOption) (
+		*types.ListSubAccountSecretBizJoinDetails, error)
 }
 
 var _ SubAccountSecret = new(SubAccountSecretDao)

@@ -20,11 +20,49 @@
 package types
 
 import (
+	"hcm/pkg/api/core"
+	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
+	"hcm/pkg/criteria/enumor"
 	tablesubaccountsecret "hcm/pkg/dal/table/cloud/sub-account-secret"
+	tabletypes "hcm/pkg/dal/table/types"
 )
 
 // ListSubAccountSecretDetails list sub account secret details.
 type ListSubAccountSecretDetails struct {
 	Count   uint64                        `json:"count,omitempty"`
 	Details []tablesubaccountsecret.Table `json:"details,omitempty"`
+}
+
+// TCloudSubAccountSecretBizJoinExt is an alias of coresass.TCloudSubAccountSecretListExt (shared with
+// data-service API extension JSON) for tcloud biz join list filters in the DAO.
+type TCloudSubAccountSecretBizJoinExt = coresass.TCloudSubAccountSecretListExt
+
+// ListSecretJoinAccountOption filters for biz-scoped join list on sub_account_secret.
+// Extension holds vendor-specific filter fields; the DAO layer asserts the concrete type
+// (e.g. *TCloudSubAccountSecretBizJoinExt) based on Vendor inside buildWhere.
+type ListSecretJoinAccountOption struct {
+	Vendor             enumor.Vendor
+	BkBizID            int64
+	Status             *enumor.SubAccountSecretStatus
+	AccountIDs         []string
+	SubAccountIDs      []string
+	AccountManagers    []string
+	SubAccountManagers []string
+	Page               *core.BasePage
+	// Extension is vendor-specific; pass *TCloudSubAccountSecretBizJoinExt for tcloud, nil if no extra filters.
+	Extension any
+}
+
+// SubAccountSecretBizJoinRow is one row of sub_account_secret joined with sub_account and account.
+type SubAccountSecretBizJoinRow struct {
+	tablesubaccountsecret.Table `db:",inline"`
+	AccountManagers             tabletypes.StringArray `db:"account_managers"`
+	SubAccountManagers          tabletypes.StringArray `db:"sub_account_managers"`
+	SubAccountExtensionJSON     tabletypes.JsonField   `db:"sub_account_extension"`
+}
+
+// ListSubAccountSecretBizJoinDetails is the join list result.
+type ListSubAccountSecretBizJoinDetails struct {
+	Count   uint64                       `json:"count,omitempty"`
+	Details []SubAccountSecretBizJoinRow `json:"details,omitempty"`
 }

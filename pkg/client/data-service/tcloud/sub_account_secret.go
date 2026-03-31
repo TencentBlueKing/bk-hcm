@@ -113,3 +113,27 @@ func (s *SubAccountSecretClient) ListSubAccountSecretWithExtension(kt *kit.Kit,
 
 	return resp.Data, nil
 }
+
+// ListSubAccountSecretJoinExt lists sub account secrets with account/sub_account joined and extension fields.
+func (s *SubAccountSecretClient) ListSubAccountSecretJoinExt(kt *kit.Kit,
+	req *protocloud.SubAccountSecretJoinExtListReq) (*protocloud.SubAccountSecretJoinExtListResult, error) {
+
+	resp := new(protocloud.SubAccountSecretJoinListResp)
+
+	err := s.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/sub_account_secrets/list/join").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -20,7 +20,11 @@
 // Package subaccountsecret defines cloud-server sub account secret api types.
 package subaccountsecret
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/validator"
+)
 
 // CreateReq defines create sub account secret request.
 type CreateReq struct {
@@ -42,4 +46,18 @@ type CreateResult struct {
 type TCloudCreateExtension struct {
 	CloudSecretID  string `json:"cloud_secret_id"`
 	CloudSecretKey string `json:"cloud_secret_key"`
+}
+
+// ListSubAccountSecretReq defines list sub account secret request.
+type ListSubAccountSecretReq struct {
+	protocloud.SubAccountSecretFilters `json:",inline"`
+	Page                               *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate list request.
+func (req *ListSubAccountSecretReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+	return req.Page.Validate(core.NewDefaultPageOption())
 }

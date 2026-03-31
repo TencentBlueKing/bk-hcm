@@ -20,10 +20,15 @@
 package cloud
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"hcm/pkg/api/core"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -131,4 +136,73 @@ type SubAccountSecretExtListResult[T coresass.Extension] struct {
 type SubAccountSecretExtListResp[T coresass.Extension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *SubAccountSecretExtListResult[T] `json:"data"`
+}
+
+// TCloudSubAccountSecretListExt is the data-service API name for coresass.TCloudSubAccountSecretListExt.
+type TCloudSubAccountSecretListExt = coresass.TCloudSubAccountSecretListExt
+
+// ParseTCloudBizListExtension decodes and validates Tencent Cloud biz list extension JSON.
+func ParseTCloudBizListExtension(f tabletypes.JsonField) (*TCloudSubAccountSecretListExt, error) {
+	if f.IsEmpty() {
+		return nil, nil
+	}
+	var ext TCloudSubAccountSecretListExt
+	if err := json.Unmarshal([]byte(f), &ext); err != nil {
+		return nil, fmt.Errorf("invalid extension json: %w", err)
+	}
+	if err := validator.Validate.Struct(&ext); err != nil {
+		return nil, err
+	}
+	return &ext, nil
+}
+
+// SubAccountSecretFilters defines biz-scoped list filters; Extension holds vendor-specific JSON (shape depends on vendor).
+type SubAccountSecretFilters struct {
+	Status             *enumor.SubAccountSecretStatus `json:"status,omitempty"`
+	AccountIDs         []string                       `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
+	SubAccountIDs      []string                       `json:"sub_account_ids" validate:"omitempty,max=500,dive,lte=64"`
+	AccountManagers    []string                       `json:"account_managers" validate:"omitempty,max=500,dive,lte=64"`
+	SubAccountManagers []string                       `json:"sub_account_managers" validate:"omitempty,max=500,dive,lte=64"`
+	Extension          tabletypes.JsonField           `json:"extension,omitempty"`
+}
+
+// SubAccountSecretJoinExtListReq defines sub account secret join-list request for data-service
+// (secret joined with sub_account and account). Vendor must match the path; Extension JsonField is vendor-specific.
+type SubAccountSecretJoinExtListReq struct {
+	BkBizID                 int64 `json:"bk_biz_id" validate:"required"`
+	SubAccountSecretFilters `json:",inline"`
+	Page                    *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate join list request.
+func (req *SubAccountSecretJoinExtListReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+	return req.Page.Validate(core.NewDefaultPageOption())
+}
+
+// SubAccountSecretJoinExtDetail is one row in join+ext list response (tcloud detail shape).
+type SubAccountSecretJoinExtDetail struct {
+	coresass.BaseSubAccountSecret `json:",inline"`
+	Extension                     *coresass.TCloudSubAccountSecretExtension `json:"extension"`
+	ConsoleLogin                  *int64                                    `json:"console_login,omitempty"`
+	AccountManagers               []string                                  `json:"account_managers"`
+	SubAccountManagers            []string                                  `json:"sub_account_managers"`
+}
+
+// SubAccountSecretJoinExtListResult defines join list response.
+type SubAccountSecretJoinExtListResult struct {
+	Count   uint64                          `json:"count"`
+	Details []SubAccountSecretJoinExtDetail `json:"details"`
+}
+
+// SubAccountSecretJoinListResp defines list join HTTP response.
+type SubAccountSecretJoinListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *SubAccountSecretJoinExtListResult `json:"data"`
 }
