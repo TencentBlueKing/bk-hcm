@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `sub_account_secret` (
     `extension` json NOT NULL COMMENT '云厂商差异扩展字段',
     `tenant_id` varchar(64) NOT NULL COMMENT '租户ID' default 'default',
     `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间',
-    `disabled_time` timestamp NULL COMMENT '本地禁用时间',
+    `disabled_time` varchar(64) NULL COMMENT '本地禁用时间',
     `last_used_time` varchar(64)  NULL COMMENT '密钥上次调用时间',
     `creator` varchar(64) NOT NULL COMMENT '创建者',
     `reviser` varchar(64) NOT NULL COMMENT '更新者',

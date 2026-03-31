@@ -33,7 +33,7 @@ type BaseSubAccountSecret struct {
 	AccountID      string                        `json:"account_id"`
 	SubAccountID   string                        `json:"sub_account_id"`
 	CloudCreatedAt *string                       `json:"cloud_created_at"`
-	DisabledTime   string                        `json:"disabled_time"`
+	DisabledTime   *string                       `json:"disabled_time"`
 	LastUsedTime   *string                       `json:"last_used_time"`
 	*core.Revision `json:",inline"`
 }

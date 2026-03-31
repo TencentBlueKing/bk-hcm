@@ -77,7 +77,7 @@ func batchUpdateForTCloud(svc *subAccountSecretSvc, cts *rest.Contexts) (interfa
 			model.CloudCreatedAt = one.CloudCreatedAt
 		}
 		if one.DisabledTime != nil {
-			model.DisabledTime = tabletype.Time(cvt.PtrToVal(one.DisabledTime))
+			model.DisabledTime = one.DisabledTime
 		}
 		if one.LastUsedTime != nil {
 			model.LastUsedTime = one.LastUsedTime
