@@ -189,10 +189,9 @@ func (req *SubAccountSecretJoinExtListReq) Validate() error {
 // SubAccountSecretJoinExtDetail is one row in join+ext list response (tcloud detail shape).
 type SubAccountSecretJoinExtDetail struct {
 	coresass.BaseSubAccountSecret `json:",inline"`
-	Extension                     *coresass.TCloudSubAccountSecretExtension `json:"extension"`
-	ConsoleLogin                  *int64                                    `json:"console_login,omitempty"`
-	AccountManagers               []string                                  `json:"account_managers"`
-	SubAccountManagers            []string                                  `json:"sub_account_managers"`
+	Extension                     *coresass.TCloudSubAccountSecretJoinExtension `json:"extension"`
+	AccountManagers               []string                                      `json:"account_managers"`
+	SubAccountManagers            []string                                      `json:"sub_account_managers"`
 }
 
 // SubAccountSecretJoinExtListResult defines join list response.

@@ -49,8 +49,8 @@ type ListSecretJoinAccountOption struct {
 	AccountManagers    []string
 	SubAccountManagers []string
 	Page               *core.BasePage
-	// Extension is vendor-specific; pass *TCloudSubAccountSecretBizJoinExt for tcloud, nil if no extra filters.
-	Extension any
+	// Extension is vendor-specific JSON from upper layer; DAO parses by Vendor.
+	Extension tabletypes.JsonField
 }
 
 // SubAccountSecretBizJoinRow is one row of sub_account_secret joined with sub_account and account.

@@ -19,9 +19,20 @@
 
 package subaccountsecret
 
+import (
+	"hcm/pkg/criteria/enumor"
+)
+
 // TCloudSubAccountSecretExtension 腾讯云子账号密钥扩展
 type TCloudSubAccountSecretExtension struct {
 	CloudSecretID      string `json:"cloud_secret_id"`
 	CloudMainAccountID string `json:"cloud_main_account_id"`
 	CloudSubAccountID  string `json:"cloud_sub_account_id"`
+}
+
+// TCloudSubAccountSecretJoinExtension 腾讯云子账号密钥关联子账号扩展
+type TCloudSubAccountSecretJoinExtension struct {
+	TCloudSubAccountSecretExtension `json:",inline"`
+	// 来源为子账号扩展字段
+	ConsoleLogin *enumor.SubAccountConsoleLogin `json:"console_login"`
 }

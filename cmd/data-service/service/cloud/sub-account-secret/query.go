@@ -179,11 +179,6 @@ func (svc *subAccountSecretSvc) ListSubAccountSecretJoinExt(cts *rest.Contexts) 
 func (svc *subAccountSecretSvc) listSecretJoinExtTCloud(cts *rest.Contexts,
 	req *protocloud.SubAccountSecretJoinExtListReq) (interface{}, error) {
 
-	tcExt, err := protocloud.ParseTCloudBizListExtension(req.Extension)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
 	daoOpt := &types.ListSecretJoinAccountOption{
 		Vendor:             enumor.TCloud,
 		BkBizID:            req.BkBizID,
@@ -193,7 +188,7 @@ func (svc *subAccountSecretSvc) listSecretJoinExtTCloud(cts *rest.Contexts,
 		AccountManagers:    req.AccountManagers,
 		SubAccountManagers: req.SubAccountManagers,
 		Page:               req.Page,
-		Extension:          tcExt,
+		Extension:          req.Extension,
 	}
 	result, err := svc.dao.SubAccountSecret().ListJoinAccountAndSubAccount(cts.Kit, daoOpt)
 	if err != nil {
@@ -220,7 +215,7 @@ func (svc *subAccountSecretSvc) listSecretJoinExtTCloud(cts *rest.Contexts,
 func convJoinRowToListDetailTCloud(row types.SubAccountSecretBizJoinRow) (
 	*protocloud.SubAccountSecretJoinExtDetail, error) {
 
-	ext := new(coresass.TCloudSubAccountSecretExtension)
+	ext := new(coresass.TCloudSubAccountSecretJoinExtension)
 	if len(row.Extension) != 0 {
 		if err := json.UnmarshalFromString(string(row.Extension), ext); err != nil {
 			return nil, fmt.Errorf("unmarshal secret extension failed, err: %w", err)
@@ -240,10 +235,7 @@ func convJoinRowToListDetailTCloud(row types.SubAccountSecretBizJoinRow) (
 		if err := json.UnmarshalFromString(string(row.SubAccountExtensionJSON), &saExt); err != nil {
 			return nil, fmt.Errorf("unmarshal sub account extension failed, err: %w", err)
 		}
-		if saExt.ConsoleLogin != nil {
-			v := int64(*saExt.ConsoleLogin)
-			detail.ConsoleLogin = &v
-		}
+		detail.Extension.ConsoleLogin = saExt.ConsoleLogin
 	}
 
 	return detail, nil
