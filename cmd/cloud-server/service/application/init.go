@@ -67,9 +67,12 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	h.Add("ApproveApplication", http.MethodPost, "/applications/approve", svc.ApproveApplication)
 
 	h.Add("CreateForAddAccount", http.MethodPost, "/applications/types/add_account", svc.CreateForAddAccount)
-	h.Add("CreateForCreateCvm", http.MethodPost, "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
-	h.Add("CreateForCreateVpc", http.MethodPost, "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
-	h.Add("CreateForCreateDisk", http.MethodPost, "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
+	h.Add("CreateForCreateCvm", http.MethodPost,
+		"/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
+	h.Add("CreateForCreateVpc", http.MethodPost,
+		"/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
+	h.Add("CreateForCreateDisk", http.MethodPost,
+		"/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
 	h.Add("CreateForCreateLB", http.MethodPost,
 		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
 

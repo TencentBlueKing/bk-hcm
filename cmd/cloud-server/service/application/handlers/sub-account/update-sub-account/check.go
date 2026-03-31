@@ -48,10 +48,8 @@ func (a *ApplicationOfUpdateSubAccount) checkSubAccountExists() error {
 		a.Cts.Kit,
 		&core.ListReq{
 			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID},
-				},
+				Op:    filter.And,
+				Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID}},
 			},
 			Page: &core.BasePage{Count: true},
 		},
