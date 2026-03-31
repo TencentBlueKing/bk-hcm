@@ -41,7 +41,7 @@ var ColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "sub_account_id", NamedC: "sub_account_id", Type: enumor.String},
 	{Column: "cloud_created_at", NamedC: "cloud_created_at", Type: enumor.String},
-	{Column: "disabled_time", NamedC: "disabled_time", Type: enumor.Time},
+	{Column: "disabled_time", NamedC: "disabled_time", Type: enumor.String},
 	{Column: "last_used_time", NamedC: "last_used_time", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -68,7 +68,7 @@ type Table struct {
 	// CloudCreatedAt 云上创建时间
 	CloudCreatedAt *string `db:"cloud_created_at" json:"cloud_created_at"`
 	// DisabledTime 本地禁用时间
-	DisabledTime types.Time `db:"disabled_time" json:"disabled_time"`
+	DisabledTime *string `db:"disabled_time" json:"disabled_time"`
 	// LastUsedTime 密钥上次调用时间
 	LastUsedTime *string `db:"last_used_time" json:"last_used_time"`
 	// Creator 创建者

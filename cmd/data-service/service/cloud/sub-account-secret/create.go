@@ -82,9 +82,7 @@ func batchCreateForTCloud(vendor enumor.Vendor, svc *subAccountSecretSvc, cts *r
 				LastUsedTime:   one.LastUsedTime,
 			}
 
-			if one.DisabledTime != "" {
-				model.DisabledTime = tabletype.Time(one.DisabledTime)
-			}
+			model.DisabledTime = one.DisabledTime
 
 			models = append(models, model)
 		}

@@ -22,6 +22,7 @@ package updatesecretstatus
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"hcm/pkg/api/core"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 )
 
 // Deliver execute resource delivery after approval.
@@ -141,16 +143,19 @@ func (a *ApplicationOfUpdateSecretKeyStatus) getTCloudSecretDetail() (
 }
 
 func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() error {
-	return a.Client.DataService().TCloud.SubAccountSecret.
-		BatchUpdateSubAccountSecret(
-			a.Cts.Kit,
-			&protocloud.SubAccountSecretBatchUpdateReq[coresass.TCloudSubAccountSecretExtension]{
-				SubAccountSecrets: []protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
-					{
-						ID:     a.req.ID,
-						Status: &a.req.Status,
-					},
-				},
-			},
-		)
+
+	updateSecret := protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
+		ID:     a.req.ID,
+		Status: &a.req.Status,
+	}
+	if a.req.Status == enumor.DisabledSecretStatus {
+		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Format(time.DateTime))
+	}
+	return a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(
+		a.Cts.Kit,
+		&protocloud.SubAccountSecretBatchUpdateReq[coresass.TCloudSubAccountSecretExtension]{
+			SubAccountSecrets: []protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
+				updateSecret},
+		},
+	)
 }
