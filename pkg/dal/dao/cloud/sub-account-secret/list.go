@@ -167,10 +167,16 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	return "WHERE " + strings.Join(whereExprs, " AND "), args, nil
 }
 
-// buildTCloudBizJoinWhere appends tcloud-specific extension filters and returns updated whereExprs.
-func buildTCloudBizJoinWhere(whereExprs []string, args map[string]interface{},
-	tc *types.TCloudSubAccountSecretBizJoinExt) []string {
+func buildExtWhereForTCloud(whereExprs []string, args map[string]interface{}, extension tabletypes.JsonField,
+) ([]string, error) {
 
+	tc := new(types.TCloudSubAccountSecretBizJoinExt)
+	if err := json.Unmarshal([]byte(extension), tc); err != nil {
+		return nil, fmt.Errorf("invalid tcloud extension json: %w", err)
+	}
+	if err := validator.Validate.Struct(tc); err != nil {
+		return nil, err
+	}
 	if len(tc.CloudSecretIDs) > 0 {
 		whereExprs = append(whereExprs,
 			`JSON_UNQUOTE(JSON_EXTRACT(secret.extension, '$."cloud_secret_id"')) IN (:cloud_secret_ids)`)
@@ -182,9 +188,6 @@ func buildTCloudBizJoinWhere(whereExprs []string, args map[string]interface{},
 		args["cloud_main_account_ids"] = tc.CloudMainAccountIDs
 	}
 	if len(tc.CloudSubAccountIDs) > 0 {
-		// Prefer sub_account.cloud_id (HCM canonical cloud user id, matches create flow). Some rows may
-		// only have uin inside extension JSON; OR covers both without requiring duplicate slice binding
-		// under one name (sqlx.In expands each IN placeholder list).
 		whereExprs = append(whereExprs, `(sub_account.cloud_id IN (:cloud_sub_account_ids_cloud_id) OR `+
 			`CAST(JSON_EXTRACT(sub_account.extension, '$.uin') AS CHAR) IN (:cloud_sub_account_ids_uin))`)
 		args["cloud_sub_account_ids_cloud_id"] = tc.CloudSubAccountIDs
@@ -195,21 +198,8 @@ func buildTCloudBizJoinWhere(whereExprs []string, args map[string]interface{},
 			`CAST(JSON_EXTRACT(sub_account.extension, '$.console_login') AS SIGNED) = :console_login`)
 		args["console_login"] = int64(*tc.ConsoleLogin)
 	}
-	return whereExprs
-}
 
-func buildExtWhereForTCloud(whereExprs []string, args map[string]interface{},
-	extension tabletypes.JsonField) ([]string, error) {
-
-	tc := new(types.TCloudSubAccountSecretBizJoinExt)
-	if err := json.Unmarshal([]byte(extension), tc); err != nil {
-		return nil, fmt.Errorf("invalid tcloud extension json: %w", err)
-	}
-	if err := validator.Validate.Struct(tc); err != nil {
-		return nil, err
-	}
-
-	return buildTCloudBizJoinWhere(whereExprs, args, tc), nil
+	return whereExprs, nil
 }
 
 // joinListSortColumn maps API BasePage.Sort field names to ORDER BY expressions using the secret alias.
