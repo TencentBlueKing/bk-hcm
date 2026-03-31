@@ -27,9 +27,11 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
@@ -103,6 +105,10 @@ func (dao *SubAccountSecretDao) ListJoinAccountAndSubAccount(kt *kit.Kit, opt *t
 
 // buildJoinWhere builds WHERE clause and named args for biz join list.
 func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]interface{}, error) {
+	if opt == nil {
+		return "", nil, fmt.Errorf("list secret join account option is nil")
+	}
+
 	whereExprs := make([]string, 0)
 	args := make(map[string]interface{})
 
@@ -144,15 +150,17 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	}
 
 	// 根据vendor构建扩展查询条件
-	if opt.Extension != nil {
+	if !opt.Extension.IsEmpty() {
+		var err error
 		switch opt.Vendor {
 		case enumor.TCloud:
-			tc, ok := opt.Extension.(*types.TCloudSubAccountSecretBizJoinExt)
-			if !ok {
-				return "", nil, fmt.Errorf("extension type mismatch for vendor %s", opt.Vendor)
-			}
-			whereExprs = buildTCloudBizJoinWhere(whereExprs, args, tc)
+			whereExprs, err = buildExtWhereForTCloud(whereExprs, args, opt.Extension)
 		default:
+			return "", nil, fmt.Errorf("unsupported vendor: %s", opt.Vendor)
+		}
+
+		if err != nil {
+			return "", nil, err
 		}
 	}
 
@@ -188,6 +196,20 @@ func buildTCloudBizJoinWhere(whereExprs []string, args map[string]interface{},
 		args["console_login"] = int64(*tc.ConsoleLogin)
 	}
 	return whereExprs
+}
+
+func buildExtWhereForTCloud(whereExprs []string, args map[string]interface{},
+	extension tabletypes.JsonField) ([]string, error) {
+
+	tc := new(types.TCloudSubAccountSecretBizJoinExt)
+	if err := json.Unmarshal([]byte(extension), tc); err != nil {
+		return nil, fmt.Errorf("invalid tcloud extension json: %w", err)
+	}
+	if err := validator.Validate.Struct(tc); err != nil {
+		return nil, err
+	}
+
+	return buildTCloudBizJoinWhere(whereExprs, args, tc), nil
 }
 
 // joinListSortColumn maps API BasePage.Sort field names to ORDER BY expressions using the secret alias.
