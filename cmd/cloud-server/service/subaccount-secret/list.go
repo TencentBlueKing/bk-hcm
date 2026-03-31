@@ -29,8 +29,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListSubAccountSecretJoinExt lists sub account secrets under a business (join + extension via data-service).
-func (svc *service) ListSubAccountSecretJoinExt(cts *rest.Contexts) (interface{}, error) {
+// ListSubAccountSecret lists sub account secrets under a business (join + extension via data-service).
+func (svc *service) ListSubAccountSecret(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
