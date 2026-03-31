@@ -29,7 +29,7 @@
     "@blueking/roll-request": "1.0.2",
     "@blueking/tdesign-ui": "0.0.1-beta.92",
     "axios": "1.10.0",
-    "bkui-vue": "2.0.2-beta.92",
+    "bkui-vue": "2.1.0-beta.4",
     "dayjs": "1.11.3",
     "dompurify": "3.3.3",
     "highlight.js": "~11.5.0",
