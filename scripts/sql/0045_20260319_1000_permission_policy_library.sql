@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0045,HCMVER=v1.8.11
 
     Notes:
     1. 添加权限策略库表 permission_policy_library
@@ -50,6 +50,6 @@ CREATE TABLE IF NOT EXISTS `permission_policy_library` (
 INSERT INTO id_generator(`resource`, `max_id`) VALUES ('permission_policy_library', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.11' as `hcm_ver`, '0045' as `sql_ver`;
 
 COMMIT;
