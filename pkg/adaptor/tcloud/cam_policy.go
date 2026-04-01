@@ -72,3 +72,41 @@ func (t *TCloudImpl) CreatePolicy(kt *kit.Kit, opt *typeaccount.TCloudCreatePoli
 		PolicyID: converter.PtrToVal(resp.Response.PolicyId),
 	}, nil
 }
+
+// UpdatePolicy updates a CAM policy's document.
+// reference: https://cloud.tencent.com/document/product/598/34570
+func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePolicyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	region := opt.Region
+	if region == "" {
+		region = constant.TCloudDefaultRegion
+	}
+
+	client, err := t.clientSet.CamServiceClient(region)
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewUpdatePolicyRequest()
+	req.PolicyId = converter.ValToPtr(opt.PolicyID)
+	if opt.PolicyDocument != nil {
+		req.PolicyDocument = opt.PolicyDocument
+	}
+	if opt.Description != nil {
+		req.Description = opt.Description
+	}
+
+	if _, err = client.UpdatePolicyWithContext(kt.Ctx, req); err != nil {
+		logs.Errorf("update cam policy failed, policyID: %d, err: %v, rid: %s", opt.PolicyID, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}

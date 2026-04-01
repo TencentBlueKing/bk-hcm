@@ -20,7 +20,9 @@
 package hspermissiontemplate
 
 import (
-	"hcm/pkg/criteria/errf"
+	"errors"
+
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
 
@@ -34,19 +36,7 @@ type CreateCAMPolicyReq struct {
 
 // Validate CreateCAMPolicyReq.
 func (req *CreateCAMPolicyReq) Validate() error {
-	if len(req.AccountID) == 0 {
-		return errf.New(errf.InvalidParameter, "account_id is required")
-	}
-
-	if len(req.PolicyName) == 0 {
-		return errf.New(errf.InvalidParameter, "policy_name is required")
-	}
-
-	if len(req.PolicyDocument) == 0 {
-		return errf.New(errf.InvalidParameter, "policy_document is required")
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // CreateCAMPolicyResult defines the result of creating a CAM policy.
@@ -58,4 +48,25 @@ type CreateCAMPolicyResult struct {
 type CreateCAMPolicyResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *CreateCAMPolicyResult `json:"data"`
+}
+
+// UpdateCAMPolicyReq defines the request to update a CAM policy via hc-service.
+type UpdateCAMPolicyReq struct {
+	AccountID      string  `json:"account_id" validate:"required"`
+	PolicyID       uint64  `json:"policy_id" validate:"required"`
+	PolicyDocument *string `json:"policy_document"`
+	Description    *string `json:"description"`
+}
+
+// Validate UpdateCAMPolicyReq.
+func (req *UpdateCAMPolicyReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.PolicyDocument == nil && req.Description == nil {
+		return errors.New("at least one of policy_document or description must be provided")
+	}
+
+	return nil
 }

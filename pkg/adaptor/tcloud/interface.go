@@ -144,6 +144,7 @@ type TCloud interface {
 		[]*v20190116.ListGrantServiceAccessNode, error)
 	CreatePolicy(kt *kit.Kit, opt *account.TCloudCreatePolicyOption) (
 		*account.TCloudCreatePolicyResult, error)
+	UpdatePolicy(kt *kit.Kit, opt *account.TCloudUpdatePolicyOption) error
 	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
 		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
 	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)

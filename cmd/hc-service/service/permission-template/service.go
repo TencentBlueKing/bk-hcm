@@ -38,6 +38,8 @@ func InitService(cap *capability.Capability) {
 
 	h.Add("TCloudCreateCAMPolicy", http.MethodPost,
 		"/vendors/tcloud/permission_templates/cam/create_policy", svc.TCloudCreateCAMPolicy)
+	h.Add("TCloudUpdateCAMPolicy", http.MethodPatch,
+		"/vendors/tcloud/permission_templates/cam/update_policy", svc.TCloudUpdateCAMPolicy)
 
 	h.Load(cap.WebService)
 }

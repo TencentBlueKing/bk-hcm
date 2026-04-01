@@ -62,3 +62,26 @@ func (c *PermissionTemplateClient) CreateCAMPolicy(kt *kit.Kit, req *proto.Creat
 
 	return resp.Data, nil
 }
+
+// UpdateCAMPolicy updates a CAM policy via hc-service.
+func (c *PermissionTemplateClient) UpdateCAMPolicy(kt *kit.Kit, req *proto.UpdateCAMPolicyReq) error {
+	resp := new(rest.BaseResp)
+
+	err := c.client.Patch().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/permission_templates/cam/update_policy").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}

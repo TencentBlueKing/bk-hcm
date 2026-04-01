@@ -64,3 +64,40 @@ func (svc *svc) ApplyPermissionPolicyLibraryCreate(cts *rest.Contexts) (interfac
 	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
 	return applier.ApplyCreate(cts.Kit, vendor, id, req.AccountIDs)
 }
+
+// ApplyPermissionPolicyLibraryUpdate applies a permission policy library by updating cloud policies for each account.
+func (svc *svc) ApplyPermissionPolicyLibraryUpdate(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	req := new(proto.ApplyPermissionPolicyLibraryReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:       meta.PermissionPolicyLibrary,
+			Action:     meta.Apply,
+			ResourceID: id,
+		},
+	}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		logs.Errorf("apply update permission policy library auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	return applier.ApplyUpdate(cts.Kit, vendor, id, req.AccountIDs)
+}

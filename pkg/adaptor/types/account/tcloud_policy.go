@@ -38,3 +38,16 @@ func (opt *TCloudCreatePolicyOption) Validate() error {
 type TCloudCreatePolicyResult struct {
 	PolicyID uint64 `json:"policy_id"`
 }
+
+// TCloudUpdatePolicyOption defines options for updating a CAM policy.
+type TCloudUpdatePolicyOption struct {
+	Region         string  `json:"region"`
+	PolicyID       uint64  `json:"policy_id" validate:"required"`
+	PolicyDocument *string `json:"policy_document"`
+	Description    *string `json:"description"`
+}
+
+// Validate TCloudUpdatePolicyOption.
+func (opt *TCloudUpdatePolicyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
