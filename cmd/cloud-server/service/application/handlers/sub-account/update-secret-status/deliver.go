@@ -151,6 +151,14 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() err
 	if a.req.Status == enumor.DisabledSecretStatus {
 		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Format(time.DateTime))
 	}
+
+	err := a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, a.req.ID,
+		map[string]interface{}{"status": a.req.Status})
+	if err != nil {
+		logs.Errorf("create update_secret_status audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
 	return a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(
 		a.Cts.Kit,
 		&protocloud.SubAccountSecretBatchUpdateReq[coresass.TCloudSubAccountSecretExtension]{
