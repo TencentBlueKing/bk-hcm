@@ -329,9 +329,7 @@ func buildSingleRsDetail(detail *dataproto.ListBatchListenerResult,
 
 // splitDetailsByRS 将 details 按单个 RS 拆分，过滤掉权重未变化的 RS，返回需要变更的单 RS detail 列表。
 // 该函数为纯函数，不依赖外部状态，便于独立测试。
-func splitDetailsByRS(
-	details []*dataproto.ListBatchListenerResult) []*dataproto.ListBatchListenerResult {
-
+func splitDetailsByRS(details []*dataproto.ListBatchListenerResult) []*dataproto.ListBatchListenerResult {
 	result := make([]*dataproto.ListBatchListenerResult, 0)
 	for _, detail := range details {
 		for _, rs := range detail.RsList {
