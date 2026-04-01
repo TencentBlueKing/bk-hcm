@@ -80,32 +80,36 @@ func InitAccountService(cap *capability.Capability) {
 	// 查询账号列表
 	h.Add("TCloudListAccount", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/list", svc.TCloudListAccount)
-
 	// 创建子账号
 	h.Add("TCloudCreateSubAccount", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/create", svc.TCloudCreateSubAccount)
-
 	// 更新子账号
 	h.Add("TCloudUpdateSubAccount", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/update", svc.TCloudUpdateSubAccount)
-
 	// 删除子账号
 	h.Add("TCloudDeleteSubAccount", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/delete", svc.TCloudDeleteSubAccount)
-
 	// 通过子用户UIN列表查询子用户
 	h.Add("TCloudDescribeSubAccounts", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/describe", svc.TCloudDescribeSubAccounts)
-
 	// 获取子账号安全设置
 	h.Add("TCloudDescribeSafeAuthFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlag)
-
 	// 设置子账号登录保护和敏感操作保护
 	h.Add("TCloudSetMfaFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
 
 	// 访问密钥管理
+	secretService(h, svc)
+
+	initAccountServiceHooks(svc, h)
+
+	h.Load(cap.WebService)
+}
+
+// 密钥管理
+func secretService(h *rest.Handler, svc *service) {
+	// TCloud 密钥管理
 	h.Add("TCloudCreateAccessKey", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/secrets/create", svc.TCloudCreateAccessKey)
 	h.Add("TCloudDeleteAccessKey", http.MethodPost,
@@ -116,10 +120,6 @@ func InitAccountService(cap *capability.Capability) {
 		"/vendors/tcloud/sub_accounts/secrets/last_used", svc.TCloudGetSecurityLastUsed)
 	h.Add("TCloudListAccessKeys", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/secrets/list", svc.TCloudListAccessKeys)
-
-	initAccountServiceHooks(svc, h)
-
-	h.Load(cap.WebService)
 }
 
 type service struct {
