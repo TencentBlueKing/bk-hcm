@@ -5,12 +5,6 @@ import { IListResData, QueryBuilderType, QueryFilterType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { enableCount } from '@/utils/search';
 import rollRequest from '@blueking/roll-request';
-import {
-  USE_MOCK,
-  mockGetSubAccountSecretList,
-  mockUpdateSubAccountSecretStatus,
-  mockDeleteSubAccountSecret,
-} from '@/views/cloud-account-manage/cloud-secret/mock';
 
 // 二级账号项接口定义
 export interface ISecondaryAccountItem {
@@ -497,16 +491,6 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   ): Promise<{ list: ISubAccountSecretItem[]; count: number }> => {
     subAccountSecretListLoading.value = true;
 
-    // 使用 Mock 数据
-    if (USE_MOCK) {
-      try {
-        const result = await mockGetSubAccountSecretList(params as any);
-        return result as { list: ISubAccountSecretItem[]; count: number };
-      } finally {
-        subAccountSecretListLoading.value = false;
-      }
-    }
-
     // 使用真实接口
     const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/list`;
     try {
@@ -557,12 +541,6 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     vendor: string,
     params: IUpdateSecretStatusParams[],
   ): Promise<{ ids: string[] }> => {
-    // 使用 Mock 数据
-    if (USE_MOCK) {
-      return mockUpdateSubAccountSecretStatus(params);
-    }
-
-    // 使用真实接口
     try {
       const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/update_sub_account_secret_status`;
       const res = await http.post(api, {
@@ -586,12 +564,6 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     vendor: string,
     ids: string[],
   ): Promise<{ ids: string[] }> => {
-    // 使用 Mock 数据
-    if (USE_MOCK) {
-      return mockDeleteSubAccountSecret(ids);
-    }
-
-    // 使用真实接口
     try {
       const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/applications/types/delete_sub_account_secret`;
       const res = await http.post(api, { ids });

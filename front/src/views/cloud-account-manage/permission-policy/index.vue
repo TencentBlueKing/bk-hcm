@@ -18,7 +18,6 @@ import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { IPermissionPolicyItem } from './typings';
-import { ENABLE_MOCK, MOCK_PERMISSION_POLICY_LIST } from './constants';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -92,31 +91,6 @@ const loadFullList = async () => {
         },
       ],
     };
-
-    if (ENABLE_MOCK) {
-      // Mock 模式：使用本地模拟数据，并根据搜索条件前端过滤
-      let mockData = MOCK_PERMISSION_POLICY_LIST.filter((item) => item.vendor === currentVendor.value);
-
-      // 前端搜索过滤
-      const cond = condition.value;
-      if (cond.name) {
-        mockData = mockData.filter((item) => item.name.toLowerCase().includes(cond.name.toLowerCase()));
-      }
-      if (cond.description) {
-        mockData = mockData.filter((item) => item.description.includes(cond.description));
-      }
-      if (cond.creator) {
-        mockData = mockData.filter((item) => item.creator === cond.creator);
-      }
-      if (cond.reviser) {
-        mockData = mockData.filter((item) => item.reviser === cond.reviser);
-      }
-
-      fullList.value = mockData;
-      pagination.count = mockData.length;
-      updateTableData();
-      return;
-    }
 
     // TODO: 替换为真实API调用
     // const list = await permissionPolicyStore.getPermissionPolicyFullList(getBizsId(), vendorFilter);

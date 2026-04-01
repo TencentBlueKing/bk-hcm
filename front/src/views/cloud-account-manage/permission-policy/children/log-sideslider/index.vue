@@ -2,7 +2,6 @@
 import { ref, watch, reactive } from 'vue';
 import type { IAppliedAccountItem } from '../../typings';
 import { PolicyApplyStatus } from '../../typings';
-import { ENABLE_MOCK, MOCK_APPLIED_ACCOUNTS } from '../../constants';
 import usePage from '@/hooks/use-page';
 import LogDetaiSideslider from '@/views/cloud-account-manage/permission-policy/children/log-sideslider/log-detail.vue';
 
@@ -41,11 +40,6 @@ const getStatusInfo = (status: PolicyApplyStatus) => statusMap[status] || { text
 const loadAppliedAccounts = async () => {
   isLoading.value = true;
   try {
-    if (ENABLE_MOCK) {
-      tableData.value = [...MOCK_APPLIED_ACCOUNTS];
-      pagination.count = MOCK_APPLIED_ACCOUNTS.length;
-      return;
-    }
     // TODO: 替换为真实 API
     tableData.value = [];
     pagination.count = 0;

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import type { ISelectableAccount } from '../../typings';
-import { ENABLE_MOCK, MOCK_SELECTABLE_ACCOUNTS } from '../../constants';
 
 const props = defineProps<{
   policyId: string;
@@ -21,10 +20,6 @@ const tableRef = ref();
 const loadAccounts = async () => {
   isLoading.value = true;
   try {
-    if (ENABLE_MOCK) {
-      tableData.value = [...MOCK_SELECTABLE_ACCOUNTS];
-      return;
-    }
     // TODO: 替换为真实 API
     tableData.value = [];
   } catch (error) {
