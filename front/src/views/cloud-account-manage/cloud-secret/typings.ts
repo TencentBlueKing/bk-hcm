@@ -1,4 +1,3 @@
-// 三级账号密钥项接口定义
 export interface ICloudSecretItem {
   id: string;
   vendor: string;
@@ -28,13 +27,10 @@ export interface ICloudSecretItem {
   console_login?: number;
 }
 
-// 搜索条件类型
 export type ISearchCondition = Record<string, any>;
 
-// 操作类型
 export type SecretActionType = 'enable' | 'disable' | 'delete';
 
-// 操作弹窗配置
 export interface ISecretActionConfig {
   type: SecretActionType;
   title: string;

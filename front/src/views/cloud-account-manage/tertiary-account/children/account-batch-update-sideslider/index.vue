@@ -53,7 +53,6 @@ watch(
         managers: [...(row.managers || [])],
         bk_biz_ids: (row.bk_biz_ids || []).map((id) => String(id)),
       }));
-      // 预加载业务列表数据
       const res = await accountStore.getBizList();
       bizList.value = (res?.data || []).map((item: { id: number; name: string }) => ({
         value: String(item.id),

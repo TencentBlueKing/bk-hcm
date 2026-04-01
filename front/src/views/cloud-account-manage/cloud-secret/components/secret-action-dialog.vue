@@ -6,7 +6,6 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { SECRET_ACTION_CONFIG } from '../constants';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
 
-// Props 定义
 const props = defineProps<{
   modelValue: boolean;
   actionType: SecretActionType;
@@ -14,41 +13,29 @@ const props = defineProps<{
   vendor: string;
 }>();
 
-// Emits 定义
 const emit = defineEmits<{
   'update:modelValue': [value: boolean];
   success: [];
 }>();
 
-// Store 和 Hooks
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 内部显示状态
 const isShow = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val),
 });
 
-// 已知晓变更影响复选框
 const isAcknowledged = ref(false);
-
-// 提交中状态
 const isSubmitting = ref(false);
-
-// 获取当前操作配置
 const actionConfig = computed(() => SECRET_ACTION_CONFIG[props.actionType]);
-
-// 确认按钮是否禁用
 const isConfirmDisabled = computed(() => !isAcknowledged.value || isSubmitting.value);
 
-// 格式化时间显示
 const formatDateTime = (dateStr?: string) => {
   if (!dateStr) return '--';
   return dateStr.replace('T', ' ').replace('Z', '');
 };
 
-// 关闭弹窗时重置状态
 watch(isShow, (val) => {
   if (!val) {
     isAcknowledged.value = false;
@@ -56,12 +43,10 @@ watch(isShow, (val) => {
   }
 });
 
-// 取消操作
 const handleCancel = () => {
   isShow.value = false;
 };
 
-// 确认操作
 const handleConfirm = async () => {
   if (!props.secretData || !isAcknowledged.value) return;
 
@@ -71,11 +56,9 @@ const handleConfirm = async () => {
     const bkBizId = getBizsId();
 
     if (props.actionType === 'delete') {
-      // 删除密钥
       await cloudAccountStore.deleteSubAccountSecret(bkBizId, props.vendor, [props.secretData.id]);
       Message({ theme: 'success', message: '删除密钥申请已提交' });
     } else {
-      // 启用或禁用密钥
       const newStatus = props.actionType === 'enable' ? 'enabled' : 'disabled';
       await cloudAccountStore.updateSubAccountSecretStatus(bkBizId, props.vendor, [
         {
@@ -107,14 +90,12 @@ const handleConfirm = async () => {
     :quick-close="false"
   >
     <div class="secret-action-dialog">
-      <!-- 警告提示 -->
       <bk-alert :theme="actionConfig?.alertType" :title="actionConfig?.alertMessage" class="alert-box">
         <template v-if="actionConfig?.alertDescription" #description>
           {{ actionConfig.alertDescription }}
         </template>
       </bk-alert>
 
-      <!-- 密钥信息 -->
       <div class="secret-info">
         <div class="info-item">
           <span class="label">密钥ID：</span>
@@ -130,7 +111,6 @@ const handleConfirm = async () => {
         </div>
       </div>
 
-      <!-- 确认复选框 -->
       <div class="acknowledge-box">
         <bk-checkbox v-model="isAcknowledged">已知晓变更影响，仍需变更</bk-checkbox>
       </div>

@@ -12,6 +12,7 @@ import SecondaryAccountSelector from './secondary-account-selector.vue';
 
 const props = defineProps<{
   modelValue: boolean;
+  defaultAccountId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -23,7 +24,6 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 二级账号列表（资源类型），弹窗打开时统一加载一次
 const secondaryAccountList = ref<ISecondaryAccountItem[]>([]);
 const secondaryAccountLoading = ref(false);
 
@@ -46,20 +46,22 @@ const loadSecondaryAccountList = async () => {
   }
 };
 
-// 弹窗打开时拉取二级账号列表
 watch(
   () => props.modelValue,
-  (val) => {
+  async (val) => {
     if (val) {
-      loadSecondaryAccountList();
+      await loadSecondaryAccountList();
+      const autoAccountId =
+        props.defaultAccountId || (secondaryAccountList.value.length === 1 ? secondaryAccountList.value[0].id : '');
+      if (autoAccountId) {
+        tableData.value = [{ ...defaultRow(), account_id: autoAccountId }];
+      }
     }
   },
 );
 
-// 账号类型（对应 extension.console_login：1=控制台账号，0=编程账号）
 const accountType = ref<number>(1);
 
-// 表格行数据
 interface IRowData {
   account_id: string;
   account_name: string;
@@ -88,17 +90,14 @@ const isSubmitting = ref(false);
 
 const handleClose = () => {
   emit('update:modelValue', false);
-  // 重置表单
   accountType.value = 1;
   tableData.value = [defaultRow()];
 };
 
-// 添加行
 const handleAddRow = (index: number) => {
   tableData.value.splice(index + 1, 0, defaultRow());
 };
 
-// 复制行
 const handleCopyRow = (index: number) => {
   const copiedRow = { ...tableData.value[index] };
   copiedRow.managers = [...tableData.value[index].managers];
@@ -106,7 +105,6 @@ const handleCopyRow = (index: number) => {
   tableData.value.splice(index + 1, 0, copiedRow);
 };
 
-// 删除行
 const handleRemoveRow = (index: number) => {
   if (tableData.value.length <= 1) {
     Message({ theme: 'warning', message: '至少保留一行' });
@@ -115,7 +113,6 @@ const handleRemoveRow = (index: number) => {
   tableData.value.splice(index, 1);
 };
 
-// Ediatable 表头配置
 const headList = computed(() => [
   { title: '所属二级账号', minWidth: 140, required: true },
   { title: '三级账号名称', minWidth: 140, required: true },
@@ -128,14 +125,12 @@ const headList = computed(() => [
 ]);
 
 const handleSubmit = async () => {
-  // 收集有效行
   const validRows = tableData.value.filter((row) => row.account_id && row.name);
   if (validRows.length === 0) {
     Message({ theme: 'warning', message: '请至少填写一行完整的账号信息' });
     return;
   }
 
-  // 校验必填字段
   for (const row of validRows) {
     if (!row.account_id) {
       Message({ theme: 'warning', message: '请选择所属二级账号' });
@@ -193,7 +188,6 @@ const handleSubmit = async () => {
   >
     <template #default>
       <div class="create-form">
-        <!-- 账号类型选择 -->
         <div class="form-item">
           <label class="form-label required">账号类型</label>
           <bk-radio-group v-model="accountType">
@@ -202,7 +196,6 @@ const handleSubmit = async () => {
           </bk-radio-group>
         </div>
 
-        <!-- 账号信息录入表格 -->
         <div class="form-item">
           <label class="form-label">账号信息录入</label>
           <Ediatable :thead-list="headList">
