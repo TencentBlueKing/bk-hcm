@@ -97,6 +97,8 @@ func (ad Audit) buildUpdateAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.loadBalancer.LoadBalancerUpdateAuditBuild(kt, updates)
 	case enumor.UrlRuleAuditResType:
 		audits, err = ad.loadBalancer.UrlRuleUpdateAuditBuild(kt, parentID, updates)
+	case enumor.SubAccountSecretAuditResType:
+		audits, err = ad.subAccountSecretUpdateAuditBuild(kt, updates)
 	case enumor.PermissionPolicyLibraryAuditResType:
 		audits, err = ad.permissionPolicyLibraryUpdateAuditBuild(kt, updates)
 	case enumor.AccountSecretAuditResType:
