@@ -156,7 +156,8 @@ func ParseTCloudBizListExtension(f tabletypes.JsonField) (*TCloudSubAccountSecre
 	return &ext, nil
 }
 
-// SubAccountSecretFilters defines biz-scoped list filters; Extension holds vendor-specific JSON (shape depends on vendor).
+// SubAccountSecretFilters defines biz-scoped list filters
+// Extension holds vendor-specific JSON (shape depends on vendor).
 type SubAccountSecretFilters struct {
 	Status             *enumor.SubAccountSecretStatus `json:"status,omitempty"`
 	AccountIDs         []string                       `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
