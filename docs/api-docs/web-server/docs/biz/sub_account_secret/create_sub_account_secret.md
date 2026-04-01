@@ -23,11 +23,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create
 
 ```json
 {
-  "sub_account_secrets": [
-    {
-      "id": "00000001"
-    }
-  ]
+  "id": "00000001"
 }
 ```
 
