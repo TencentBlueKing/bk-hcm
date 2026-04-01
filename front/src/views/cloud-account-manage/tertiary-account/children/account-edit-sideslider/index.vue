@@ -33,7 +33,6 @@ const formData = ref({
 
 const isSubmitting = ref(false);
 
-// 腾讯云账号不允许修改名称
 const isTcloud = computed(() => currentVendor.value === VendorEnum.TCLOUD);
 
 watch(
@@ -95,7 +94,6 @@ const handleSubmit = async () => {
   }
 };
 
-// 所属二级账号展示
 const parentAccountDisplay = () => {
   if (!props.accountData) return '--';
   return `${props.accountData.account_id || '--'}`;
@@ -113,49 +111,38 @@ const parentAccountDisplay = () => {
     <template #default>
       <div v-if="accountData" class="edit-form">
         <bk-form form-type="vertical" :model="formData">
-          <!-- 所属二级账号（只读） -->
           <bk-form-item label="所属二级账号" required>
             <bk-input :model-value="parentAccountDisplay()" disabled />
           </bk-form-item>
 
-          <!-- 三级账号ID（只读） -->
           <bk-form-item label="三级账号ID" required>
             <bk-input :model-value="accountData.cloud_id" disabled />
           </bk-form-item>
 
-          <!-- 三级账号名称 -->
           <bk-form-item label="三级账号名称" required>
             <bk-input v-model="formData.name" placeholder="请输入三级账号名称" :disabled="isTcloud" />
           </bk-form-item>
 
-          <!-- 负责人 -->
           <bk-form-item label="负责人" required>
             <UserSelector v-model="formData.managers" placeholder="请输入用户名" />
           </bk-form-item>
 
-          <!-- 所属业务 -->
           <bk-form-item label="所属业务" required>
             <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" clearable />
           </bk-form-item>
 
-          <!-- 权限模版 -->
           <bk-form-item label="权限模版" required>
-            <bk-select v-model="formData.permission_template" placeholder="请选择" multiple>
-              <!-- 权限模版选项后续对接 -->
-            </bk-select>
+            <bk-select v-model="formData.permission_template" placeholder="请选择" multiple></bk-select>
           </bk-form-item>
 
-          <!-- 手机号 -->
           <bk-form-item label="手机号">
             <bk-input v-model="formData.phone_num" placeholder="请输入手机号" />
           </bk-form-item>
 
-          <!-- 账号邮箱 -->
           <bk-form-item label="账号邮箱">
             <bk-input v-model="formData.email" placeholder="请输入邮箱" />
           </bk-form-item>
 
-          <!-- 备注 -->
           <bk-form-item label="备注">
             <bk-input v-model="formData.memo" type="textarea" :maxlength="100" :rows="3" placeholder="请输入" />
           </bk-form-item>

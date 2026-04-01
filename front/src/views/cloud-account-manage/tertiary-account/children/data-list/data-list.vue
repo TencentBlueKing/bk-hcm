@@ -31,7 +31,6 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-// 格式化邮箱展示（脱敏处理）
 const formatEmail = (email: string) => {
   if (!email) return '--';
   const atIndex = email.indexOf('@');
@@ -41,14 +40,12 @@ const formatEmail = (email: string) => {
   return `${prefix}***${suffix}`;
 };
 
-// 格式化手机号（脱敏处理）
 const formatPhone = (phone: string) => {
   if (!phone) return '--';
   if (phone.length < 7) return phone;
   return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
 };
 
-// 格式化数组展示
 const formatArray = (arr: any[]) => {
   if (!arr || !arr.length) return '--';
   return arr.join(', ');
@@ -72,7 +69,6 @@ const isCurRowSelectEnable = (_row: any) => true;
 
 const tableRef = ref();
 
-// 列表数据变化时自动清空选中（与 business/host-manage 的 completeCallback 模式一致）
 watch(
   () => props.list,
   () => {
@@ -89,9 +85,7 @@ watch(
   { deep: true },
 );
 
-// 自定义渲染列
 const getColumnRender = (column: ModelPropertyColumn) => {
-  // 名称列 - 点击打开详情侧栏
   if (column.id === 'name') {
     return ({ row }: { row: ISubAccountItem }) =>
       h(
@@ -104,19 +98,15 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         () => row.name || '--',
       );
   }
-  // 邮箱列 - 脱敏处理
   if (column.id === 'email') {
     return ({ row }: { row: ISubAccountItem }) => formatEmail(row.email);
   }
-  // 手机号列 - 脱敏处理
   if (column.id === 'phone_num') {
     return ({ row }: { row: ISubAccountItem }) => formatPhone(row.phone_num);
   }
-  // 负责人列 - 数组展示
   if (column.id === 'managers') {
     return ({ row }: { row: ISubAccountItem }) => formatArray(row.managers);
   }
-  // 所属业务列 - 使用 BusinessValue 组件
   if (column.id === 'bk_biz_ids') {
     return ({ row }: { row: ISubAccountItem }) =>
       h(BusinessValue, {
@@ -124,7 +114,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         display: { appearance: 'tag' },
       });
   }
-  // 密钥数 - 蓝色数字
   if (column.id === 'sub_account_secret_count') {
     return ({ row }: { row: ISubAccountItem }) => {
       const value = row.sub_account_secret_count ?? 0;
