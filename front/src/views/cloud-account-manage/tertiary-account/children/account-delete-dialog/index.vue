@@ -68,7 +68,6 @@ const getAccountTypeText = (consoleLogin?: number) => {
   >
     <template #default>
       <div v-if="accountData" class="delete-dialog-content">
-        <!-- 警告提示 -->
         <bk-alert theme="warning" class="warning-alert">
           <template #title>
             <p>删除三级账号后，账号不可恢复，请确认该账号不再使用。</p>
@@ -76,7 +75,6 @@ const getAccountTypeText = (consoleLogin?: number) => {
           </template>
         </bk-alert>
 
-        <!-- 账号信息 -->
         <div class="account-info">
           <div class="info-item">
             <span class="info-label">三级账号ID：</span>
@@ -96,7 +94,6 @@ const getAccountTypeText = (consoleLogin?: number) => {
           </div>
         </div>
 
-        <!-- 确认复选框 -->
         <div class="confirm-check">
           <bk-checkbox v-model="confirmed">我已确认删除此账号</bk-checkbox>
         </div>

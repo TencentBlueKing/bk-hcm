@@ -2,7 +2,6 @@
 import { Model, Column } from '@/decorator';
 import { QueryRuleOPEnum } from '@/typings';
 
-// 账号类型选项（对应 extension.console_login 字段：1=控制台账号，0=编程账号）
 export const ACCOUNT_TYPE_OPTIONS: Record<number, string> = {
   1: '控制台账号',
   0: '编程账号',

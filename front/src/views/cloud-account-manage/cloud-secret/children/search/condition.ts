@@ -2,13 +2,11 @@
 import { Model, Column } from '@/decorator';
 import { QueryRuleOPEnum } from '@/typings';
 
-// 密钥状态选项
 export const SECRET_STATUS_OPTIONS = {
   enabled: '已启用',
   disabled: '已禁用',
 };
 
-// 三级账号类型选项
 export const SUB_ACCOUNT_TYPE_OPTIONS = {
   console: '控制台账号',
   programming: '编程账号',

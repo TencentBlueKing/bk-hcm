@@ -21,20 +21,14 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 密钥列表 - 添加假数据用于展示
-const mockSecretList: ISubAccountSecretItem[] = [] as unknown as ISubAccountSecretItem[];
-
-const secretList = ref<ISubAccountSecretItem[]>(mockSecretList);
+const secretList = ref<ISubAccountSecretItem[]>([]);
 const secretLoading = ref(false);
-
-// 新建密钥状态
 const showKeyLoading = ref(false);
 const showKeyResult = ref(false);
 const newSecretId = ref('');
 const newSecretKey = ref('');
 const keyAcknowledged = ref(false);
 
-// 加载密钥列表
 const loadSecretList = async () => {
   if (!props.rowData?.id) return;
   secretLoading.value = true;
@@ -76,45 +70,38 @@ const handleDelete = () => {
   }
 };
 
-// 密钥脱敏 - 显示为 AKID****xyNm 格式
 const maskSecretId = (id: string) => {
   if (!id) return '****';
   if (id.length <= 8) return id;
   return `${id.substring(0, 4)}****${id.substring(id.length - 4)}`;
 };
 
-// 判断是否为编程账号（console_login === 0 表示编程账号）
 const isProgramAccount = computed(() => {
   return props.rowData?.extension?.console_login === 0;
 });
 
-// 获取登录保护文本
 const getLoginFlagText = (flag?: string) => {
   if (!flag) return '--';
   return FLAG_OPTIONS[flag as keyof typeof FLAG_OPTIONS] || '--';
 };
 
-// 获取操作保护文本
 const getActionFlagText = (flag?: string) => {
   if (!flag) return '--';
   return FLAG_OPTIONS[flag as keyof typeof FLAG_OPTIONS] || '--';
 };
 
-// MFA绑定状态
 const getMfaStatus = () => {
   const ext = props.rowData?.extension;
   if (!ext) return '未绑定';
   return ext.login_flag === 'stoken' || ext.action_flag === 'stoken' ? '已绑定' : '未绑定';
 };
 
-// 手机号脱敏
 const maskPhone = (phone?: string) => {
   if (!phone) return '--';
   if (phone.length < 7) return phone;
   return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
 };
 
-// 新建密钥
 const handleCreateSecret = async () => {
   if (!props.rowData?.id) return;
   if (!isProgramAccount.value) {
@@ -132,7 +119,6 @@ const handleCreateSecret = async () => {
     newSecretKey.value = res?.extension?.cloud_secret_key || '--';
     showKeyResult.value = true;
     keyAcknowledged.value = false;
-    // 刷新密钥列表
     await loadSecretList();
     emit('update-success');
   } catch (error) {
@@ -141,7 +127,6 @@ const handleCreateSecret = async () => {
   }
 };
 
-// 启用/禁用密钥
 const handleToggleSecretStatus = async (secret: ISubAccountSecretItem) => {
   const newStatus = secret.status === 'enabled' ? 'disabled' : 'enabled';
   try {
@@ -155,7 +140,6 @@ const handleToggleSecretStatus = async (secret: ISubAccountSecretItem) => {
   }
 };
 
-// 删除密钥
 const handleDeleteSecret = async (secret: ISubAccountSecretItem) => {
   try {
     await cloudAccountStore.deleteSubAccountSecret(getBizsId(), currentVendor.value, [secret.id]);
@@ -166,7 +150,6 @@ const handleDeleteSecret = async (secret: ISubAccountSecretItem) => {
   }
 };
 
-// 复制密钥
 const handleCopySecret = () => {
   const text = `密钥ID: ${newSecretId.value}\n密钥Key: ${newSecretKey.value}`;
   navigator.clipboard.writeText(text).then(() => {
@@ -174,7 +157,6 @@ const handleCopySecret = () => {
   });
 };
 
-// 下载CSV
 const handleDownloadCSV = () => {
   const csvContent = `密钥ID,密钥Key\n${newSecretId.value},${newSecretKey.value}`;
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -184,7 +166,6 @@ const handleDownloadCSV = () => {
   link.click();
 };
 
-// 关闭密钥结果弹窗
 const handleCloseKeyResult = () => {
   showKeyResult.value = false;
   newSecretId.value = '';
@@ -192,7 +173,6 @@ const handleCloseKeyResult = () => {
   keyAcknowledged.value = false;
 };
 
-// 格式化时间
 const formatTime = (time?: string) => {
   if (!time) return '--';
   return time.replace('T', ' ').replace('Z', '');
@@ -218,7 +198,6 @@ const formatTime = (time?: string) => {
     </template>
     <template #default>
       <div v-if="rowData" class="detail-content">
-        <!-- 基本信息 -->
         <div class="info-card">
           <div class="card-header">
             <span class="card-title">基本信息</span>
@@ -276,7 +255,6 @@ const formatTime = (time?: string) => {
           </div>
         </div>
 
-        <!-- 安全信息 -->
         <div class="info-card">
           <div class="card-header">
             <span class="card-title">安全信息</span>
@@ -297,7 +275,6 @@ const formatTime = (time?: string) => {
           </div>
         </div>
 
-        <!-- 权限模版 -->
         <div class="info-card">
           <div class="card-header">
             <span class="card-title">权限模版</span>
@@ -306,14 +283,12 @@ const formatTime = (time?: string) => {
             <div class="info-item">
               <span class="info-label">权限模版：</span>
               <span class="info-value">
-                <!-- <bk-tag v-for="tpl in ['模版1', '模版2']" :key="tpl">{{ tpl }}</bk-tag> -->
                 <span>--</span>
               </span>
             </div>
           </div>
         </div>
 
-        <!-- API密钥 -->
         <div class="info-card">
           <div class="card-header">
             <div class="card-header-left">
@@ -381,7 +356,6 @@ const formatTime = (time?: string) => {
     </template>
   </bk-sideslider>
 
-  <!-- 生成密钥 Loading 弹窗 -->
   <bk-dialog
     :is-show="showKeyLoading"
     :show-footer="false"
@@ -396,7 +370,6 @@ const formatTime = (time?: string) => {
     </div>
   </bk-dialog>
 
-  <!-- 新建密钥结果弹窗 -->
   <bk-dialog
     :is-show="showKeyResult"
     :show-footer="false"
@@ -569,7 +542,6 @@ const formatTime = (time?: string) => {
   margin-left: 8px;
 }
 
-// 密钥 Loading 弹窗
 .key-loading-content {
   text-align: center;
   padding: 40px 0;
@@ -588,7 +560,6 @@ const formatTime = (time?: string) => {
   }
 }
 
-// 密钥结果弹窗
 .key-result-content {
   .warning-box {
     display: flex;

@@ -8,12 +8,10 @@ defineOptions({ name: 'SecondaryAccountSelector' });
 const model = defineModel<string>();
 
 const props = defineProps<{
-  /** 由父组件统一拉取并传入的二级账号列表 */
   accountList: ISecondaryAccountItem[];
   loading?: boolean;
 }>();
 
-// 将二级账号列表转换为 SelectColumn 所需的 { value, label } 格式
 const selectList = computed(() =>
   props.accountList.map((item) => ({
     value: item.id,

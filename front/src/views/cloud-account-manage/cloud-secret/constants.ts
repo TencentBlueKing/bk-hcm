@@ -1,18 +1,15 @@
 import type { ISecretActionConfig, SecretActionType } from './typings';
 
-// 密钥状态映射
 export const SECRET_STATUS_MAP: Record<string, { class: string; text: string; dotClass: string }> = {
   enabled: { class: 'status-enabled', text: '已启用', dotClass: 'dot-enabled' },
   disabled: { class: 'status-disabled', text: '已禁用', dotClass: 'dot-disabled' },
 };
 
-// 三级账号类型映射
 export const CONSOLE_LOGIN_MAP: Record<number, string> = {
   0: '编程账号',
   1: '控制台账号',
 };
 
-// 操作弹窗配置
 export const SECRET_ACTION_CONFIG: Record<SecretActionType, ISecretActionConfig> = {
   disable: {
     type: 'disable',
