@@ -121,7 +121,6 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 }
 
 func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAccount {
-
 	baseAccount := coresubaccount.BaseSubAccount{
 		ID:                    one.ID,
 		CloudID:               one.CloudID,
