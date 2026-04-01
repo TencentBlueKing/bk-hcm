@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9.9
+    SQLVER=0044,HCMVER=v1.8.11
     Notes:
     1. 为image表添加region字段，用于存储镜像的地域信息
     3. 创建(vendor, region)联合索引，优化查询效率
@@ -42,7 +42,7 @@ ALTER TABLE `image`
     ADD INDEX `idx_vendor_region` (`vendor`, `region`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.11' as `hcm_ver`, '0044' as `sql_ver`;
 
 COMMIT;
 
