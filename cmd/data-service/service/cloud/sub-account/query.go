@@ -54,24 +54,18 @@ func (svc *service) GetSubAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	accountNameMap, err := svc.buildAccountNameMap(cts.Kit, []tablesubaccount.Table{*dbAccount})
-	if err != nil {
-		logs.Errorf("build account name map failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	var account interface{}
 	switch dbAccount.Vendor {
 	case enumor.TCloud:
-		account, err = convCoreSubAccount[coresubaccount.TCloudExtension](dbAccount, accountNameMap)
+		account, err = convCoreSubAccount[coresubaccount.TCloudExtension](dbAccount)
 	case enumor.Aws:
-		account, err = convCoreSubAccount[coresubaccount.AwsExtension](dbAccount, accountNameMap)
+		account, err = convCoreSubAccount[coresubaccount.AwsExtension](dbAccount)
 	case enumor.HuaWei:
-		account, err = convCoreSubAccount[coresubaccount.HuaWeiExtension](dbAccount, accountNameMap)
+		account, err = convCoreSubAccount[coresubaccount.HuaWeiExtension](dbAccount)
 	case enumor.Gcp:
-		account, err = convCoreSubAccount[coresubaccount.GcpExtension](dbAccount, accountNameMap)
+		account, err = convCoreSubAccount[coresubaccount.GcpExtension](dbAccount)
 	case enumor.Azure:
-		account, err = convCoreSubAccount[coresubaccount.AzureExtension](dbAccount, accountNameMap)
+		account, err = convCoreSubAccount[coresubaccount.AzureExtension](dbAccount)
 	}
 
 	if err != nil {
@@ -82,10 +76,7 @@ func (svc *service) GetSubAccount(cts *rest.Contexts) (interface{}, error) {
 	return account, nil
 }
 
-func convCoreSubAccount[T coresubaccount.Extension](
-	db *tablesubaccount.Table,
-) (*coresubaccount.SubAccount[T], error) {
-
+func convCoreSubAccount[T coresubaccount.Extension](db *tablesubaccount.Table) (*coresubaccount.SubAccount[T], error) {
 	extension := new(T)
 	if len(db.Extension) != 0 {
 		err := json.UnmarshalFromString(string(db.Extension), extension)
@@ -95,7 +86,7 @@ func convCoreSubAccount[T coresubaccount.Extension](
 	}
 
 	return &coresubaccount.SubAccount[T]{
-		BaseSubAccount: convCoreBaseSubAccount(*db, accountNameMap),
+		BaseSubAccount: convCoreBaseSubAccount(*db),
 		Extension:      extension,
 	}, nil
 }
@@ -125,15 +116,9 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 		return &dssubaccount.ListResult{Count: daoAccountResp.Count}, nil
 	}
 
-	accountNameMap, err := svc.buildAccountNameMap(cts.Kit, daoAccountResp.Details)
-	if err != nil {
-		logs.Errorf("build account name map failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
 	details := make([]coresubaccount.BaseSubAccount, 0, len(daoAccountResp.Details))
 	for _, one := range daoAccountResp.Details {
-		details = append(details, convCoreBaseSubAccount(one, accountNameMap))
+		details = append(details, convCoreBaseSubAccount(one))
 	}
 
 	return &dssubaccount.ListResult{Details: details}, nil
