@@ -66,7 +66,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create
 
 ##### details[n].extension[tcloud]
 
-| 参数名称               | 参数类型    | 描述       |
-|--------------------|---------|----------|
-| cloud_secret_id    |  string  | 云密钥ID    |
-| cloud_secret_key   |  string | 云密钥KEY   |
+| 参数名称               | 参数类型     | 描述       |
+|--------------------|----------|----------|
+| cloud_secret_id    | string   | 云密钥ID    |
+| cloud_secret_key   | string   | 云密钥KEY   |
