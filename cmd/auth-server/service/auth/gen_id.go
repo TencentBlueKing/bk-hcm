@@ -973,7 +973,7 @@ func genPermissionPolicyLibraryResource(a *meta.ResourceAttribute) (client.Actio
 	}
 
 	switch a.Basic.Action {
-	case meta.Create, meta.Find, meta.Update, meta.Delete:
+	case meta.Create, meta.Find, meta.Update, meta.Delete, meta.Apply:
 		return sys.CloudVendorConfig, make([]client.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)

@@ -48,6 +48,8 @@ func InitService(c *capability.Capability) {
 		"/vendors/{vendor}/permission_policy_libraries/{id}", svc.UpdatePermissionPolicyLibrary)
 	h.Add("DeletePermissionPolicyLibrary", http.MethodDelete,
 		"/vendors/{vendor}/permission_policy_libraries/{id}", svc.DeletePermissionPolicyLibrary)
+	h.Add("ApplyPermissionPolicyLibraryCreate", http.MethodPost,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/apply", svc.ApplyPermissionPolicyLibraryCreate)
 
 	h.Load(c.WebService)
 }

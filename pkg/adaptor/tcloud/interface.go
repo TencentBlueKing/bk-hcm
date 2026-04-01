@@ -142,6 +142,8 @@ type TCloud interface {
 		*cvm.InquiryPriceResult, error)
 	ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *account.TCloudListPolicyOption) (
 		[]*v20190116.ListGrantServiceAccessNode, error)
+	CreatePolicy(kt *kit.Kit, opt *account.TCloudCreatePolicyOption) (
+		*account.TCloudCreatePolicyResult, error)
 	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
 		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
 	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)
