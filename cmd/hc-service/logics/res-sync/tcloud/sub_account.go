@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -117,8 +119,12 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 		return err
 	}
 
-	updateItems := make([]dssubaccount.UpdateField, 0, len(updateMap))
+	locSubAccountMap, err := cli.listSubAccountByIDMap(kt, opt, updateMap)
+	if err != nil {
+		return err
+	}
 
+	updateItems := make([]dssubaccount.UpdateField, 0, len(updateMap))
 	for id, one := range updateMap {
 		extension := &coresubaccount.TCloudExtension{
 			CloudMainAccountID: account.Extension.CloudMainAccountID,
@@ -138,19 +144,34 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			accountType = string(enumor.CurrentAccount)
 		}
 
+		locSubAcconut, exist := locSubAccountMap[id]
+		if !exist {
+			logs.Errorf("sync sub account failed, sub account %s not exist from DB", id)
+			return fmt.Errorf("sync sub account failed, sub account %s not exist from DB", id)
+		}
+
 		tmpRes := dssubaccount.UpdateField{
-			ID:          id,
-			Name:        converter.PtrToVal(one.Name),
-			Vendor:      enumor.TCloud,
-			Site:        account.Site,
-			AccountID:   account.ID,
-			AccountType: accountType,
-			Extension:   converter.ValToPtr(ext),
-			// Managers/BizIDs由用户设置不继承资源账号。
+			ID:             id,
+			Name:           converter.PtrToVal(one.Name),
+			Vendor:         enumor.TCloud,
+			Site:           account.Site,
+			AccountID:      account.ID,
+			AccountType:    accountType,
+			Extension:      converter.ValToPtr(ext),
+			Email:          one.Email,
+			PhoneNum:       one.PhoneNum,
+			CountryCode:    one.CountryCode,
+			CloudCreatedAt: one.CreateTime,
+			// Managers/由用户设置不继承资源账号。
 			Managers: nil,
-			BkBizIDs: nil,
 			Memo:     one.Remark,
 		}
+
+		// 如果DB中子账号没有业务ID，则需要继承主账号的业务ID
+		if len(locSubAcconut.BkBizIDs) == 0 {
+			tmpRes.BkBizIDs = types.Int64Array{account.BkBizID}
+		}
+
 		updateItems = append(updateItems, tmpRes)
 	}
 
@@ -169,8 +190,60 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 	return nil
 }
 
+func (cli *client) listSubAccountByIDMap(kt *kit.Kit, opt *SyncSubAccountOption,
+	updateMap map[string]account.TCloudAccount) (
+	map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
+
+	idList := make([]string, 0, len(updateMap))
+	for id := range updateMap {
+		idList = append(idList, id)
+	}
+	if len(idList) == 0 {
+		return map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension]{}, nil
+	}
+
+	result := make(map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], len(idList))
+	idChunks := slice.Split(idList, int(core.DefaultMaxPageLimit))
+	for _, ids := range idChunks {
+		req := &core.ListReq{
+			Filter: &filter.Expression{
+				Op: filter.And,
+				Rules: []filter.RuleFactory{
+					&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.TCloud},
+					&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: opt.AccountID},
+					&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
+				},
+			},
+			Page: core.NewDefaultBasePage(),
+		}
+
+		start := uint32(0)
+		for {
+			req.Page.Start = start
+			resp, err := cli.dbCli.TCloud.SubAccount.ListExt(kt, req)
+			if err != nil {
+				logs.Errorf("[%s] list sub account by ids failed, err: %v, account: %s, req: %v, rid: %s",
+					enumor.TCloud, err, opt.AccountID, req, kt.Rid)
+				return nil, err
+			}
+
+			for _, one := range resp.Details {
+				result[one.ID] = one
+			}
+
+			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
+				break
+			}
+			start += uint32(core.DefaultMaxPageLimit)
+		}
+	}
+
+	return result, nil
+}
+
 func (cli *client) createSubAccount(kt *kit.Kit,
-	mainAccount *protocloud.AccountGetResult[protocore.TCloudAccountExtension], addSlice []account.TCloudAccount) error {
+	mainAccount *protocloud.AccountGetResult[protocore.TCloudAccountExtension],
+	addSlice []account.TCloudAccount) error {
 
 	if len(addSlice) <= 0 {
 		return errors.New("addSlice is required")
@@ -206,16 +279,21 @@ func (cli *client) createSubAccount(kt *kit.Kit,
 		}
 
 		tmpRes := dssubaccount.CreateField{
-			CloudID:     one.GetCloudID(),
-			Name:        converter.PtrToVal(one.Name),
-			Vendor:      enumor.TCloud,
-			Site:        mainAccount.Site,
-			AccountID:   mainAccount.ID,
-			AccountType: accountType,
-			Extension:   ext,
-			// Managers/BizIDs由用户设置不继承资源账号。
+			CloudID:        one.GetCloudID(),
+			Name:           converter.PtrToVal(one.Name),
+			Vendor:         enumor.TCloud,
+			Site:           mainAccount.Site,
+			AccountID:      mainAccount.ID,
+			AccountType:    accountType,
+			Extension:      ext,
+			Email:          one.Email,
+			PhoneNum:       one.PhoneNum,
+			CountryCode:    one.CountryCode,
+			CloudCreatedAt: one.CreateTime,
+			// Managers由用户设置不继承资源账号。
 			Managers: nil,
-			BkBizIDs: nil,
+			// 子用户将二级账号的管理业务ID继承下来
+			BkBizIDs: types.Int64Array{mainAccount.BkBizID},
 			Memo:     one.Remark,
 		}
 		createResources = append(createResources, tmpRes)
@@ -300,6 +378,18 @@ func isSubAccountChange(cloud account.TCloudAccount, db coresubaccount.SubAccoun
 	}
 
 	if !assert.IsPtrStringEqual(cloud.CreateTime, db.Extension.CreateTime) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.Email, db.Email) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.PhoneNum, db.PhoneNum) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(cloud.CountryCode, db.CountryCode) {
 		return true
 	}
 
