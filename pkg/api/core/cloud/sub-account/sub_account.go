@@ -53,7 +53,6 @@ type BaseSubAccount struct {
 	Vendor         enumor.Vendor          `json:"vendor"`
 	Site           enumor.AccountSiteType `json:"site"`
 	AccountID      string                 `json:"account_id"`
-	AccountName    string                 `json:"account_name"`
 	AccountType    string                 `json:"account_type"`
 	Managers       []string               `json:"managers"`
 	BkBizIDs       []int64                `json:"bk_biz_ids"`

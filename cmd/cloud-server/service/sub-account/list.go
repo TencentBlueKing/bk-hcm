@@ -150,7 +150,7 @@ func listBizSubAccountAuthRes(cts *rest.Contexts, opt *handler.ListAuthResOption
 
 	bizRules := make([]*filter.AtomRule, 0)
 	bizRules = append(bizRules, tools.RuleJSONContains[int64]("bk_biz_ids", bizID))
-	bizFilter := tools.ExpressionOr(bizRules...)
+	bizFilter := tools.ExpressionAnd(bizRules...)
 
 	if opt.Filter == nil {
 		return bizFilter, false, nil
