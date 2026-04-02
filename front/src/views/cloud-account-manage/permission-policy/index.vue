@@ -18,6 +18,7 @@ import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { IPermissionPolicyItem } from './typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { AUTH_CREATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -220,10 +221,12 @@ const handleReset = () => {
     <div class="table-container">
       <!-- 操作按钮区域 -->
       <div class="action-btns" v-if="!isBusinessPage">
-        <bk-button theme="primary" @click="handleAddPolicy">
-          <plus style="font-size: 22px" />
-          新增权限策略库
-        </bk-button>
+        <hcm-auth :sign="{ type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY }" ignore v-slot="{ noPerm }">
+          <bk-button theme="primary" :disabled="noPerm" @click="handleAddPolicy">
+            <plus style="font-size: 22px" />
+            新增权限策略库
+          </bk-button>
+        </hcm-auth>
       </div>
 
       <!-- 数据列表 -->

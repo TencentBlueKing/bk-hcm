@@ -71,3 +71,10 @@ export const AUTH_UPDATE_CLB = Symbol.for('auth_update_clb');
 export const AUTH_BIZ_UPDATE_CLB = Symbol.for('auth_biz_update_clb');
 export const AUTH_DELETE_CLB = Symbol.for('auth_delete_clb');
 export const AUTH_BIZ_DELETE_CLB = Symbol.for('auth_biz_delete_clb');
+
+/**
+ * 权限策略库
+ */
+export const AUTH_FIND_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_find_permission_policy_library');
+export const AUTH_CREATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_create_permission_policy_library');
+export const AUTH_UPDATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_update_permission_policy_library');

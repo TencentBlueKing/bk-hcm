@@ -6,6 +6,7 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { AUTH_UPDATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
 import type { IPermissionPolicyItem, IRelatedAccount } from '../../typings';
 
 export interface IDataListProps {
@@ -142,7 +143,9 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'r
       </bk-table-column>
       <bk-table-column label="操作" width="80" fixed="right" v-if="!isBusinessPage">
         <template #default="{ row }">
-          <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
+          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_POLICY_LIBRARY }" v-slot="{ noPerm }">
+            <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)">编辑</bk-button>
+          </hcm-auth>
           <!-- <bk-button theme="primary" text @click="handleApplyToAccount(row)">应用到二级账号</bk-button> -->
         </template>
       </bk-table-column>

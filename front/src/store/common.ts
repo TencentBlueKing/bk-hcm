@@ -75,6 +75,14 @@ export const useCommonStore = defineStore({
       { type: 'load_balancer', action: 'update', id: 'biz_clb_resource_operate', bk_biz_id: 0 }, // 业务-负载均衡操作
       { type: 'load_balancer', action: 'delete', id: 'clb_resource_delete' }, // 资源-负载均衡删除
       { type: 'load_balancer', action: 'delete', id: 'biz_clb_resource_delete', bk_biz_id: 0 }, // 业务-负载均衡删除
+
+      // 权限策略库
+      {
+        type: 'permission_policy_library',
+        action: 'find',
+        id: 'cloud_vendor_config',
+        path: /^\/service\/permission-policy/,
+      },
     ],
     isNoticeAlert: false, // 消息通知的显示状态
   }),

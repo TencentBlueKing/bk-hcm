@@ -53,7 +53,14 @@ const sidesliderTitle = computed(() => (props.isEdit ? '编辑权限策略库' :
 
 // 表单校验规则
 const formRules = {
-  name: [{ required: true, message: '请输入权限策略库名称', trigger: 'blur' }],
+  name: [
+    { required: true, message: '请输入权限策略库名称', trigger: 'blur' },
+    {
+      validator: (value: string) => /^[a-zA-Z0-9_-]{1,128}$/.test(value),
+      message: '长度为1~128个字符，可包含英文字母、数字和-_',
+      trigger: 'blur',
+    },
+  ],
   memo: [{ required: true, message: '请输入权限策略库描述', trigger: 'blur' }],
   bk_biz_ids: [{ required: true, message: '请选择使用业务', trigger: 'blur' }],
   policy_document: [
