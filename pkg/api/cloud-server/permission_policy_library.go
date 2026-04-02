@@ -95,3 +95,8 @@ const (
 type ApplyPermissionPolicyLibraryResult struct {
 	Results []ApplyAccountResult `json:"results"`
 }
+
+// PermissionPolicyLibraryAccountIDsResult defines the result for account IDs query.
+type PermissionPolicyLibraryAccountIDsResult struct {
+	AccountIDs []string `json:"account_ids"`
+}

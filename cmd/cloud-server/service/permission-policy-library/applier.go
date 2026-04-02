@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
 
@@ -433,4 +434,85 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 	}
 
 	return nil
+}
+
+// listAllAppliedAccountIDs scans permission_template table for all account IDs applied to the given library.
+func (a *PolicyLibraryApplier) listAllAppliedAccountIDs(kt *kit.Kit, libraryID string) ([]string, error) {
+	accountIDSet := make(map[string]struct{})
+	start := uint32(0)
+	for {
+		req := &protocloud.PermissionTemplateExtListReq{
+			Filter: tools.EqualExpression("policy_library_id", libraryID),
+			Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
+		}
+		result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
+		if err != nil {
+			logs.Errorf("list permission template failed, libraryID: %s, err: %v, rid: %s", libraryID, err, kt.Rid)
+			return nil, err
+		}
+		for _, tmpl := range result.Details {
+			accountIDSet[tmpl.AccountID] = struct{}{}
+		}
+		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+	return maps.Keys(accountIDSet), nil
+}
+
+// listAllInScopeAccountIDs scans account table for all account IDs matching the given vendor and biz IDs.
+func (a *PolicyLibraryApplier) listAllInScopeAccountIDs(kt *kit.Kit, vendor enumor.Vendor, bizIDs []int64) (
+	[]string, error) {
+
+	if len(bizIDs) == 0 {
+		return nil, nil
+	}
+
+	accountIDs := make([]string, 0)
+	for _, batch := range slice.Split(bizIDs, int(core.DefaultMaxPageLimit)) {
+		req := &protocloud.AccountListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", vendor), tools.RuleIn("bk_biz_id", batch)),
+			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		}
+		for {
+			result, err := a.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
+			if err != nil {
+				logs.Errorf("list accounts in scope failed, vendor: %s, bizID: %v, err: %v, rid: %s", vendor, batch,
+					err, kt.Rid)
+				return nil, err
+			}
+			for _, acc := range result.Details {
+				accountIDs = append(accountIDs, acc.ID)
+			}
+			if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+			req.Page.Start += uint32(req.Page.Limit)
+		}
+	}
+
+	return slice.Unique(accountIDs), nil
+}
+
+// ListUnappliedAccountIDs returns account IDs that are in scope but have not applied the given policy library.
+func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (
+	[]string, error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	inScopeAccountIDs, err := a.listAllInScopeAccountIDs(kt, vendor, library.BkBizIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	appliedAccountIDs, err := a.listAllAppliedAccountIDs(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return slice.NotIn(appliedAccountIDs, inScopeAccountIDs), nil
 }
