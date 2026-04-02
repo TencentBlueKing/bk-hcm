@@ -78,8 +78,10 @@ export const useCommonStore = defineStore({
 
       // 权限策略库
       {
+        // hcm权限type
         type: 'permission_policy_library',
         action: 'find',
+        // iam的permission.actions[number].id，用于从authVerifyData.permissionAction中获取权限
         id: 'cloud_vendor_config',
         path: /^\/service\/permission-policy/,
       },

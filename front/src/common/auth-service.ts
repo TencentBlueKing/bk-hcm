@@ -46,7 +46,9 @@ export interface IVerifyParams {
 
 // 一个权限点的定义
 export interface IAuthDefinition {
+  // iam的permission.actions[number].id，用于读取权限信息并展示
   id: string;
+  // hcm权限action和type
   action: AuthActionType;
   resourceType: AuthResourceType;
   transform?: (
