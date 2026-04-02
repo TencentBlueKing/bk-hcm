@@ -36,8 +36,14 @@ func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
 		return err
 	}
 
-	if _, err := a.GetAccount(a.AccountID()); err != nil {
-		return fmt.Errorf("found parent account(%s) failed, err: %w", a.AccountID(), err)
+	account, err := a.GetAccount(a.req.AccountID)
+	if err != nil {
+		return fmt.Errorf("found parent account(%s) failed, err: %w", a.req.AccountID, err)
+	}
+
+	if a.BkBizID() != account.BkBizID {
+		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccount of it",
+			a.req.AccountID, account.BkBizID, a.BkBizID())
 	}
 
 	// TODO: 密钥管理功能实现后，需要校验三级账号关联的密钥是否已全部删除，

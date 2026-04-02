@@ -39,8 +39,14 @@ func (a *ApplicationOfCreateSubAccount) CheckReq() error {
 		return err
 	}
 
-	if _, err := a.GetAccount(a.req.AccountID); err != nil {
+	account, err := a.GetAccount(a.req.AccountID)
+	if err != nil {
 		return fmt.Errorf("found parent account(%s) failed, err: %w", a.req.AccountID, err)
+	}
+
+	if a.BkBizID() != account.BkBizID {
+		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccount of it",
+			a.req.AccountID, account.BkBizID, a.BkBizID())
 	}
 
 	if err := a.checkDuplicateName(); err != nil {

@@ -147,6 +147,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
         "site": "china",
         "account_id": "00000003",
         "account_type": "current_account",
+        "account_name": "account1",
+        "operable": true,
         "managers": [],
         "bk_biz_ids": [
           310
@@ -209,6 +211,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | name                     | string       | 名称                                   |
 | cloud_id                 | string       | 三级账号云ID                                |
 | account_id               | string       | 三级账号所属二级账号HCM本地ID                         |
+| account_type             | string       | 三级账号所属二级账号类型                        |
+| account_name             | string       | 三级账号所属二级账号名称                        |
+| operable                 | bool         | 当前业务是否可操作该三级账号       |
 | managers                 | string array | 账号管理者                                |
 | bk_biz_ids               | int64 array  | 使用业务id                               |
 | site                     | string       | 站点（枚举值：china:中国站、international:国际站）  |

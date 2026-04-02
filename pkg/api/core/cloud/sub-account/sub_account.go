@@ -30,6 +30,21 @@ type SubAccount[Ext Extension] struct {
 	Extension      *Ext `json:"extension"`
 }
 
+// BizSubAccountItem defines biz sub account ext response item.
+// 业务下返回的子账号详情
+type BizSubAccountItem[Ext Extension] struct {
+	SubAccount[Ext] `json:",inline"`
+	Operable        bool   `json:"operable"`
+	AccountName     string `json:"account_name"`
+}
+
+// BizSubAccountExtListResult defines biz sub account ext response.
+// 业务下返回的子账号列表
+type BizSubAccountExtListResult[Ext Extension] struct {
+	Count   uint64                   `json:"count"`
+	Details []BizSubAccountItem[Ext] `json:"details"`
+}
+
 // GetID ...
 func (account SubAccount[Ext]) GetID() string {
 	return account.ID
