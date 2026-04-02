@@ -44,8 +44,14 @@ func (a *ApplicationOfDeleteSecretKey) CheckReq() error {
 	}
 	a.SetAccountID(accountID)
 
-	if _, err := a.GetAccount(a.AccountID()); err != nil {
+	account, err := a.GetAccount(a.AccountID())
+	if err != nil {
 		return fmt.Errorf("found parent account(%s) failed, err: %w", a.AccountID(), err)
+	}
+
+	if account.BkBizID != a.BkBizID() {
+		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccounts secret of it",
+			a.AccountID(), account.BkBizID, a.BkBizID())
 	}
 
 	return nil

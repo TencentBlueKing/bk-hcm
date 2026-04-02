@@ -24,6 +24,7 @@ import (
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -152,6 +153,25 @@ func (a *ApplicationBaseSubAccount) CheckSubAccountExists(subAccountID string) e
 
 	if result.Count == 0 {
 		return fmt.Errorf("sub account(id=%s) not found", subAccountID)
+	}
+
+	return nil
+}
+
+// CheckSubSecretExists checks if the sub account secret exists.
+func (a *ApplicationBaseSubAccount) CheckSubSecretExists(subAccountID string) error {
+	result, err := a.Client.DataService().Global.SubAccountSecret.ListSubAccountSecret(a.Cts.Kit,
+		&protocloud.SubAccountSecretListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("sub_account_id", subAccountID)),
+			Page:   core.NewCountPage(),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("query sub account secret failed, err: %w", err)
+	}
+
+	if result.Count > 0 {
+		return fmt.Errorf("sub account(%s) has sub account secrets, please delete the secrets first", subAccountID)
 	}
 
 	return nil

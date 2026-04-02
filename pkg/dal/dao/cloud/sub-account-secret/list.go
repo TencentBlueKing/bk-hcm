@@ -87,8 +87,9 @@ func (dao *SubAccountSecretDao) ListJoinAccountAndSubAccount(kt *kit.Kit, opt *t
 	}
 
 	selectSQL := fmt.Sprintf(
-		`SELECT secret.*, account.managers AS account_managers,
+		`SELECT secret.*, account.managers AS account_managers, account.name AS account_name,
 		sub_account.managers AS sub_account_managers,
+		sub_account.name AS sub_account_name,
 		sub_account.extension AS sub_account_extension %s %s %s`,
 		joinSQL, whereSQL, pageExpr,
 	)
@@ -115,7 +116,10 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	whereExprs = append(whereExprs, "secret.vendor = :vendor")
 	args["vendor"] = string(opt.Vendor)
 
-	whereExprs = append(whereExprs, "JSON_CONTAINS(sub_account.bk_biz_ids, CAST(:bk_biz_id AS JSON))")
+	// 最小查询的范围：三级账号的业务是当前业务，同时当前业务为二级账号管理业务下所有三级账号的密钥
+	bizScope := "(JSON_CONTAINS(sub_account.bk_biz_ids, CAST(:bk_biz_id AS JSON)) OR " +
+		"account.bk_biz_id = :bk_biz_id)"
+	whereExprs = append(whereExprs, bizScope)
 	args["bk_biz_id"] = opt.BkBizID
 
 	if opt.Status != nil {

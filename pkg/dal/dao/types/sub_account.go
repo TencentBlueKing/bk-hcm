@@ -39,7 +39,7 @@ type TCloudSubAccountSecretBizJoinExt = coresass.TCloudSubAccountSecretListExt
 
 // ListSecretJoinAccountOption filters for biz-scoped join list on sub_account_secret.
 // Extension holds vendor-specific filter fields; the DAO layer asserts the concrete type
-// (e.g. *TCloudSubAccountSecretBizJoinExt) based on Vendor inside buildWhere.
+// 即查询三级账号业务为BkBizID，也查询二级账号管理业务为BkBizID下的三级密钥
 type ListSecretJoinAccountOption struct {
 	Vendor             enumor.Vendor
 	BkBizID            int64
@@ -57,7 +57,9 @@ type ListSecretJoinAccountOption struct {
 type SubAccountSecretBizJoinRow struct {
 	tablesubaccountsecret.Table `db:",inline"`
 	AccountManagers             tabletypes.StringArray `db:"account_managers"`
+	AccountName                 string                 `db:"account_name"`
 	SubAccountManagers          tabletypes.StringArray `db:"sub_account_managers"`
+	SubAccountName              string                 `db:"sub_account_name"`
 	SubAccountExtensionJSON     tabletypes.JsonField   `db:"sub_account_extension"`
 }
 

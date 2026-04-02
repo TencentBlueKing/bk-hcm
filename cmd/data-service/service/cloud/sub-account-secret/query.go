@@ -151,7 +151,8 @@ func convSubAccountSecretListResult[T coresass.Extension](tables []tablesass.Tab
 	}, nil
 }
 
-// ListSubAccountSecretJoinExt lists sub account secrets with sub_account and account joined (bk_biz_id in WHERE).
+// ListSubAccountSecretJoinExt lists sub account secrets with sub_account and account joined.
+// Biz filter: sub_account.bk_biz_ids contains bk_biz_id OR account.bk_biz_id equals bk_biz_id (AND with other filters).
 func (svc *subAccountSecretSvc) ListSubAccountSecretJoinExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
@@ -226,7 +227,9 @@ func convJoinRowToListDetailTCloud(row types.SubAccountSecretBizJoinRow) (
 		BaseSubAccountSecret: convTableToBaseSubAccountSecret(row.Table),
 		Extension:            ext,
 		AccountManagers:      []string(row.AccountManagers),
+		AccountName:          row.AccountName,
 		SubAccountManagers:   []string(row.SubAccountManagers),
+		SubAccountName:       row.SubAccountName,
 	}
 
 	// sub_account.extension JSON -> TCloudExtension (includes console_login for tcloud).

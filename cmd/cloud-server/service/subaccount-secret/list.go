@@ -20,6 +20,7 @@
 package subaccountsecret
 
 import (
+	logicaccount "hcm/cmd/cloud-server/logics/account"
 	proto "hcm/pkg/api/cloud-server/sub-account-secret"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -52,9 +53,20 @@ func (svc *service) ListSubAccountSecret(cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if err := svc.authorizeBizSubAccountSecretList(cts.Kit, bizID); err != nil {
-		return nil, err
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
 	}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, errf.NewFromErr(errf.PermissionDenied, err)
+	}
+
+	return svc.listBizSubAccountSecretJoinExt(cts.Kit, bizID, vendor, req)
+}
+
+// 最小查询的范围：三级账号的业务是当前业务，同时当前业务为二级账号管理业务下所有三级账号的密钥
+func (svc *service) listBizSubAccountSecretJoinExt(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
+	req *proto.ListSubAccountSecretReq) (interface{}, error) {
 
 	dsReq := &protocloud.SubAccountSecretJoinExtListReq{
 		BkBizID: bizID,
@@ -71,23 +83,55 @@ func (svc *service) ListSubAccountSecret(cts *rest.Contexts) (interface{}, error
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.SubAccountSecret.ListSubAccountSecretJoinExt(cts.Kit, dsReq)
+		dsRes, err := svc.client.DataService().TCloud.SubAccountSecret.ListSubAccountSecretJoinExt(kt, dsReq)
+		if err != nil {
+			return nil, err
+		}
+		return svc.convertBizSubAccountSecretJoinExtList(kt, bizID, dsRes)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 }
 
-func (svc *service) authorizeBizSubAccountSecretList(kt *kit.Kit, bizID int64) error {
-	attr := meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Find},
-		BizID: bizID,
+func (svc *service) convertBizSubAccountSecretJoinExtList(kt *kit.Kit, bkBizID int64,
+	listResult *protocloud.SubAccountSecretJoinExtListResult) (*proto.BizSubAccountSecretJoinExtListResult, error) {
+
+	if listResult == nil {
+		return &proto.BizSubAccountSecretJoinExtListResult{Details: []proto.BizSubAccountSecretJoinExtDetail{}}, nil
 	}
-	_, authorized, err := svc.authorizer.Authorize(kt, attr)
+
+	accountIDs := extractAccountIDsFromSubAccountSecretJoinList(listResult.Details)
+	_, operableMap, err := logicaccount.BatchBuildOperableAndNameMap(kt, svc.client.DataService(), bkBizID, accountIDs)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if !authorized {
-		return errf.New(errf.PermissionDenied, "permission denied")
+
+	return &proto.BizSubAccountSecretJoinExtListResult{
+		Count:   listResult.Count,
+		Details: buildBizSubAccountSecretJoinExtDetails(listResult.Details, operableMap),
+	}, nil
+}
+
+func extractAccountIDsFromSubAccountSecretJoinList(details []protocloud.SubAccountSecretJoinExtDetail) []string {
+	result := make([]string, 0, len(details))
+	for _, item := range details {
+		if item.AccountID == "" {
+			continue
+		}
+		result = append(result, item.AccountID)
 	}
-	return nil
+	return result
+}
+
+func buildBizSubAccountSecretJoinExtDetails(details []protocloud.SubAccountSecretJoinExtDetail,
+	operableMap map[string]bool) []proto.BizSubAccountSecretJoinExtDetail {
+
+	result := make([]proto.BizSubAccountSecretJoinExtDetail, 0, len(details))
+	for _, item := range details {
+		result = append(result, proto.BizSubAccountSecretJoinExtDetail{
+			SubAccountSecretJoinExtDetail: item,
+			Operable:                      operableMap[item.AccountID],
+		})
+	}
+	return result
 }

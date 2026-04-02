@@ -103,6 +103,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/join/li
         "status": "enabled",
         "account_id": "0000001",
         "sub_account_id": "0000001",
+        "operable": true,
         "extension": {
           "cloud_secret_id": "xxxx",
           "cloud_main_account_id": "main-xxxx",
@@ -160,6 +161,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/join/li
 | vendor              | string       | 云厂商, 枚举值：tcloud                    |
 | status              | string       | 密钥状态, 枚举值：enabled(启用)、disabled(禁用) |
 | account_id          | string       | 账号id                               |
+| operable            | bool         | 当前业务是否可操作该密钥（关联账号的 bk_biz_id 与路径 bk_biz_id 一致时为 true） |
 | sub_account_id      | string       | 子账号id                              |
 | extension           | object       | 云厂商差异扩展字段                          |
 | cloud_created_at    | string       | 云上创建时间，标准格式：2006-01-02T15:04:05Z   |
