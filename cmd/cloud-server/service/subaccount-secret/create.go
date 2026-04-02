@@ -24,12 +24,14 @@ import (
 	"strconv"
 
 	proto "hcm/pkg/api/cloud-server/sub-account-secret"
+	"hcm/pkg/api/core"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -84,6 +86,7 @@ func (svc *service) authorizeSubAccountSecret(kt *kit.Kit, bizID int64) error {
 	if !authorized {
 		return errf.New(errf.PermissionDenied, "permission denied")
 	}
+
 	return nil
 }
 
@@ -101,8 +104,13 @@ func validateSubAccountBizOwnership(bizID int64, bkBizIDs []int64) error {
 // createTCloudSubAccountSecret creates access key on TCloud and persists to DB.
 func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAccountID string,
 ) (*proto.CreateResult, error) {
+
 	subAccount, err := svc.getTCloudSubAccount(kt, subAccountID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = svc.validateAccountBiz(kt, bizID, subAccount.ID, subAccount.AccountID); err != nil {
 		return nil, err
 	}
 
@@ -154,6 +162,38 @@ func (svc *service) getTCloudSubAccount(kt *kit.Kit, subAccountID string) (
 	}
 
 	return subAccount, nil
+}
+
+// validateAccountBiz checks business ownership based on accountID resolved from sub-account ID.
+func (svc *service) validateAccountBiz(kt *kit.Kit, bizID int64, subAccountID, accountID string) error {
+	if subAccountID == "" {
+		return errf.New(errf.InvalidParameter, "sub account id is required")
+	}
+
+	if accountID == "" {
+		return errf.Newf(errf.InvalidParameter, "account id is empty for sub account %s", subAccountID)
+	}
+
+	accountListReq := &protocloud.AccountListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("id", accountID)),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "bk_biz_id"},
+	}
+
+	accountResult, err := svc.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), accountListReq)
+	if err != nil {
+		return err
+	}
+
+	if len(accountResult.Details) == 0 {
+		return errf.Newf(errf.RecordNotFound, "account %s not found", accountID)
+	}
+
+	if accountResult.Details[0].BkBizID != bizID {
+		return errf.Newf(errf.PermissionDenied, "account %s does not belong to business %d", accountID, bizID)
+	}
+
+	return nil
 }
 
 // saveTCloudSubAccountSecret saves the access key info to data-service.

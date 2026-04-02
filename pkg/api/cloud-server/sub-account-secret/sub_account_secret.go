@@ -61,3 +61,15 @@ func (req *ListSubAccountSecretReq) Validate() error {
 	}
 	return req.Page.Validate(core.NewDefaultPageOption())
 }
+
+// BizSubAccountSecretJoinExtDetail defines one row in biz-scoped sub account secret join list with operable.
+type BizSubAccountSecretJoinExtDetail struct {
+	protocloud.SubAccountSecretJoinExtDetail `json:",inline"`
+	Operable                                 bool `json:"operable"`
+}
+
+// BizSubAccountSecretJoinExtListResult defines biz-scoped sub account secret join list response.
+type BizSubAccountSecretJoinExtListResult struct {
+	Count   uint64                             `json:"count"`
+	Details []BizSubAccountSecretJoinExtDetail `json:"details"`
+}

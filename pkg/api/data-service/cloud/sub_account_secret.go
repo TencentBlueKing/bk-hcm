@@ -192,7 +192,9 @@ type SubAccountSecretJoinExtDetail struct {
 	coresass.BaseSubAccountSecret `json:",inline"`
 	Extension                     *coresass.TCloudSubAccountSecretJoinExtension `json:"extension"`
 	AccountManagers               []string                                      `json:"account_managers"`
+	AccountName                   string                                        `json:"account_name"`
 	SubAccountManagers            []string                                      `json:"sub_account_managers"`
+	SubAccountName                string                                        `json:"sub_account_name"`
 }
 
 // SubAccountSecretJoinExtListResult defines join list response.
