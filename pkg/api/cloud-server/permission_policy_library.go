@@ -100,3 +100,8 @@ type ApplyPermissionPolicyLibraryResult struct {
 type PermissionPolicyLibraryAccountIDsResult struct {
 	AccountIDs []string `json:"account_ids"`
 }
+
+// PermissionPolicyLibraryPermTmplResult defines the result for listing permission templates under a policy library.
+type PermissionPolicyLibraryPermTmplResult struct {
+	Details any `json:"details"`
+}

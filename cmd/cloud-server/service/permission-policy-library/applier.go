@@ -516,3 +516,61 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 
 	return slice.NotIn(appliedAccountIDs, inScopeAccountIDs), nil
 }
+
+// ListTemplatesInScope returns all permission templates applied from the given library
+// whose associated accounts are still within the library's current biz scope.
+func (a *PolicyLibraryApplier) ListTemplatesInScope(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (any, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		return a.tcloudListTemplatesInScope(kt, libraryID)
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+// tcloudListTemplatesInScope returns TCloud permission templates applied from the given library
+// whose associated accounts are still within the library's current biz scope.
+func (a *PolicyLibraryApplier) tcloudListTemplatesInScope(kt *kit.Kit, libraryID string) (
+	[]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	inScopeAccountIDs, err := a.listAllInScopeAccountIDs(kt, enumor.TCloud, library.BkBizIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	inScopeSet := make(map[string]struct{}, len(inScopeAccountIDs))
+	for _, id := range inScopeAccountIDs {
+		inScopeSet[id] = struct{}{}
+	}
+
+	details := make([]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], 0)
+	start := uint32(0)
+	for {
+		req := &protocloud.PermissionTemplateExtListReq{
+			Filter: tools.EqualExpression("policy_library_id", libraryID),
+			Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
+		}
+		result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
+		if err != nil {
+			logs.Errorf("list permission template ext failed, libraryID: %s, err: %v, rid: %s", libraryID, err, kt.Rid)
+			return nil, err
+		}
+		for _, tmpl := range result.Details {
+			if _, ok := inScopeSet[tmpl.AccountID]; ok {
+				details = append(details, tmpl)
+			}
+		}
+		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return details, nil
+}
