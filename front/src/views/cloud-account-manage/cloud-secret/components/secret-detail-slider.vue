@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, inject } from 'vue';
 import { Share } from 'bkui-vue/lib/icon';
 import { SECRET_STATUS_MAP } from '../constants';
+import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
 import SecretActionDialog from './secret-action-dialog.vue';
 
@@ -23,6 +24,33 @@ const isShow = computed({
 
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
+
+// 注入跨 Tab 跳转方法
+const switchToTertiaryTab =
+  inject<(filter?: Record<string, any>, detailCloudId?: string) => void>('switchToTertiaryTab');
+const switchToSecondaryTab = inject<(detailCloudId?: string) => void>('switchToSecondaryTab');
+
+// 账号 ID 计算属性
+const subAccountId = computed(
+  () => props.secretData?.cloud_sub_account_id || props.secretData?.extension?.cloud_sub_account_id,
+);
+const mainAccountId = computed(
+  () => props.secretData?.cloud_main_account_id || props.secretData?.extension?.cloud_main_account_id,
+);
+
+// 跳转到三级账号详情
+const handleGoToTertiaryAccount = () => {
+  if (!subAccountId.value) return;
+  isShow.value = false;
+  switchToTertiaryTab?.({}, subAccountId.value);
+};
+
+// 跳转到二级账号详情
+const handleGoToSecondaryAccount = () => {
+  if (!mainAccountId.value) return;
+  isShow.value = false;
+  switchToSecondaryTab?.(mainAccountId.value);
+};
 
 const statusConfig = computed(() => {
   if (!props.secretData) return null;
@@ -70,8 +98,7 @@ const handleActionSuccess = () => {
         <div class="detail-item">
           <span class="label">云密钥状态：</span>
           <span class="value status-value" v-if="statusConfig">
-            <span :class="['status-dot', statusConfig.dotClass]"></span>
-            {{ statusConfig.text }}
+            <Status :value="statusConfig.iconName" :display-value="statusConfig.text" />
           </span>
           <span class="value" v-else>--</span>
         </div>
@@ -79,11 +106,11 @@ const handleActionSuccess = () => {
         <div class="detail-item">
           <span class="label">所属三级账号：</span>
           <span class="value link-value">
-            {{ secretData?.cloud_sub_account_id || secretData?.extension?.cloud_sub_account_id || '--' }}
-            <Share
-              class="icon-link"
-              v-if="secretData?.cloud_sub_account_id || secretData?.extension?.cloud_sub_account_id"
-            />
+            <template v-if="subAccountId">
+              {{ secretData?.sub_account_name ? `${secretData.sub_account_name}（${subAccountId}）` : subAccountId }}
+              <Share class="icon-link" @click="handleGoToTertiaryAccount" />
+            </template>
+            <template v-else>--</template>
           </span>
         </div>
 
@@ -95,11 +122,11 @@ const handleActionSuccess = () => {
         <div class="detail-item">
           <span class="label">所属二级账号：</span>
           <span class="value link-value">
-            {{ secretData?.cloud_main_account_id || secretData?.extension?.cloud_main_account_id || '--' }}
-            <Share
-              class="icon-link"
-              v-if="secretData?.cloud_main_account_id || secretData?.extension?.cloud_main_account_id"
-            />
+            <template v-if="mainAccountId">
+              {{ secretData?.account_name ? `${secretData.account_name}（${mainAccountId}）` : mainAccountId }}
+              <Share class="icon-link" @click="handleGoToSecondaryAccount" />
+            </template>
+            <template v-else>--</template>
           </span>
         </div>
 
@@ -155,7 +182,7 @@ const handleActionSuccess = () => {
 }
 
 .secret-detail-container {
-  padding: 24px 40px;
+  padding: 24px 52px;
 
   .detail-content {
     .detail-item {
@@ -163,18 +190,18 @@ const handleActionSuccess = () => {
       align-items: center;
       font-size: 12px;
       line-height: 32px;
-      padding: 4px 0;
+      padding: 2px 0;
 
       .label {
-        color: #979ba5;
-        min-width: 110px;
+        color: #4d4f56;
+        min-width: 96px;
         text-align: right;
         flex-shrink: 0;
       }
 
       .value {
         color: #313238;
-        margin-left: 16px;
+        margin-left: 8px;
 
         &.status-value {
           display: flex;
@@ -184,32 +211,16 @@ const handleActionSuccess = () => {
         &.link-value {
           display: flex;
           align-items: center;
-          color: #3a84ff;
-          cursor: pointer;
 
           .icon-link {
-            margin-left: 4px;
+            cursor: pointer;
+            color: #3a84ff;
+            margin-left: 8px;
             font-size: 14px;
           }
         }
       }
     }
-  }
-}
-
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-
-  &.dot-enabled {
-    background-color: #2dcb56;
-  }
-
-  &.dot-disabled {
-    background-color: #979ba5;
   }
 }
 </style>

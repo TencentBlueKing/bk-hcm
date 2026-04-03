@@ -181,6 +181,37 @@ const handleViewDetails = (row: ISubAccountItem) => {
   showDetailSideslider.value = true;
 };
 
+// 监听 URL 中 detailCloudId 参数，自动打开对应账号详情弹窗
+watch(
+  () => route.query.detailCloudId,
+  (detailCloudId) => {
+    if (!detailCloudId || typeof detailCloudId !== 'string') return;
+    const tryOpenDetail = () => {
+      const target = fullList.value.find((item) => item.cloud_id === detailCloudId || item.id === detailCloudId);
+      if (target) {
+        handleViewDetails(target);
+        const query = { ...route.query };
+        delete query.detailCloudId;
+        router.replace({ query });
+      }
+    };
+    if (fullList.value.length > 0) {
+      tryOpenDetail();
+    } else {
+      const unwatch = watch(
+        () => fullList.value.length,
+        (len) => {
+          if (len > 0) {
+            tryOpenDetail();
+            unwatch();
+          }
+        },
+      );
+    }
+  },
+  { immediate: true },
+);
+
 const showEditSideslider = ref(false);
 const editingAccount = ref<ISubAccountItem | null>(null);
 const handleEditAccount = (row: ISubAccountItem) => {

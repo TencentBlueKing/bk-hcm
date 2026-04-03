@@ -81,18 +81,22 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <bk-dialog
-    v-model:is-show="isShow"
-    :title="actionConfig?.title"
-    :width="480"
-    header-align="center"
-    footer-align="center"
-    :quick-close="false"
-  >
+  <bk-dialog v-model:is-show="isShow" :width="480" header-align="center" footer-align="center" :quick-close="false">
+    <template #header>
+      <div class="dialog-header">
+        <svg class="icon svg-icon">
+          <use xlink:href="#bkhcm-icon-tishi"></use>
+        </svg>
+        <span>{{ actionConfig?.title }}</span>
+      </div>
+    </template>
+
     <div class="secret-action-dialog">
-      <bk-alert :theme="actionConfig?.alertType" :title="actionConfig?.alertMessage" class="alert-box">
-        <template v-if="actionConfig?.alertDescription" #description>
-          {{ actionConfig.alertDescription }}
+      <bk-alert :theme="actionConfig?.alertType" class="alert-box">
+        <template #title>
+          <span>
+            {{ actionConfig?.alertMessage }}
+          </span>
         </template>
       </bk-alert>
 
@@ -111,9 +115,9 @@ const handleConfirm = async () => {
         </div>
       </div>
 
-      <div class="acknowledge-box">
-        <bk-checkbox v-model="isAcknowledged">已知晓变更影响，仍需变更</bk-checkbox>
-      </div>
+      <bk-checkbox v-model="isAcknowledged">
+        <span class="acknowledge-box-label">已知晓变更影响，仍需变更</span>
+      </bk-checkbox>
     </div>
 
     <template #footer>
@@ -133,38 +137,62 @@ const handleConfirm = async () => {
 </template>
 
 <style lang="scss" scoped>
+:deep(.bk-dialog-content) {
+  padding: 0 32px;
+}
+
+:deep(.bk-dialog-header) {
+  padding: 24px 32px 0;
+}
+
+:deep(.bk-alert-icon-info) {
+  margin-top: 3px;
+}
+
 .secret-action-dialog {
   .alert-box {
     margin-bottom: 16px;
+
+    span {
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 20px;
+    }
   }
 
   .secret-info {
     background: #f5f7fa;
     border-radius: 2px;
-    padding: 16px 24px;
+    padding: 14px 24px;
     margin-bottom: 16px;
 
     .info-item {
       display: flex;
       align-items: center;
+      line-height: 20px;
       font-size: 12px;
-      line-height: 28px;
+      margin-bottom: 12px;
+      font-weight: 400;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
 
       .label {
-        color: #979ba5;
-        min-width: 100px;
+        min-width: 84px;
         text-align: right;
+        color: #313238;
       }
 
       .value {
-        color: #313238;
         margin-left: 8px;
+        word-break: break-all;
       }
     }
   }
 
-  .acknowledge-box {
-    padding: 8px 0;
+  .acknowledge-box-label {
+    font-size: 12px;
   }
 }
 
@@ -175,6 +203,20 @@ const handleConfirm = async () => {
 
   .bk-button {
     min-width: 88px;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #4d4f56;
+
+  .svg-icon {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 11px;
   }
 }
 </style>

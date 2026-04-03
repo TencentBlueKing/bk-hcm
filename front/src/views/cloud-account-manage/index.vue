@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, defineAsyncComponent, provide } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import qs from 'qs';
 import { VendorEnum } from '@/common/constant';
 import VendorSelector from './components/vendor-selector.vue';
 
@@ -7,18 +9,18 @@ import VendorSelector from './components/vendor-selector.vue';
 const tabPanels = [
   { name: 'secondary-account', label: '二级账号' },
   { name: 'tertiary-account', label: '三级账号' },
-  // { name: 'cloud-secret', label: '云密钥' },
+  { name: 'cloud-secret', label: '云密钥' },
   // { name: 'cloud-permission', label: '云权限模版' },
   { name: 'permission-policy', label: '权限策略库' },
 ];
 
-// 当前激活的Tab
-const tabActive = ref('secondary-account');
+const route = useRoute();
+const router = useRouter();
+const tabActive = ref(route.query?.type || 'secondary-account');
 
 // 当前选中的云厂商
 const currentVendor = ref<VendorEnum>(VendorEnum.TCLOUD);
 
-// 异步加载Tab对应的组件
 const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
   'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
@@ -27,13 +29,11 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   // 其他Tab组件待开发
   // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
 };
+const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
-// 当前Tab对应的组件
-const currentComponent = computed(() => tabComponents[tabActive.value]);
-
-// Tab切换
+// Tab切换 — 清除上一个 Tab 遗留的搜索条件和分页参数，并将 type 写入 query
 const handleTabChange = (name: string) => {
-  tabActive.value = name;
+  router.replace({ query: { ...route.query, type: name, filter: undefined } });
 };
 
 // 云厂商切换
@@ -44,6 +44,31 @@ const handleVendorChange = (vendor: VendorEnum) => {
 
 // 提供云厂商信息给子组件
 provide('currentVendor', currentVendor);
+
+// 提供切换到三级账号Tab并带查询参数的方法
+const switchToTertiaryTab = (filter?: Record<string, any>, detailCloudId?: string) => {
+  tabActive.value = 'tertiary-account';
+  const query: Record<string, string> = { type: 'tertiary-account', _t: String(Date.now()) };
+  if (filter) {
+    query.filter = qs.stringify(filter, { arrayFormat: 'comma', encode: false });
+  }
+  if (detailCloudId) {
+    query.detailCloudId = detailCloudId;
+  }
+  router.replace({ query });
+};
+provide('switchToTertiaryTab', switchToTertiaryTab);
+
+// 提供切换到二级账号Tab并打开详情弹窗的方法
+const switchToSecondaryTab = (detailCloudId?: string) => {
+  tabActive.value = 'secondary-account';
+  const query: Record<string, string> = { type: 'secondary-account', _t: String(Date.now()) };
+  if (detailCloudId) {
+    query.detailCloudId = detailCloudId;
+  }
+  router.replace({ query });
+};
+provide('switchToSecondaryTab', switchToSecondaryTab);
 </script>
 
 <template>
@@ -59,7 +84,7 @@ provide('currentVendor', currentVendor);
       </Teleport>
     </div>
     <div class="page-content">
-      <bk-tab v-model:active="tabActive" type="unborder-card" @change="handleTabChange">
+      <bk-tab v-model:active="tabActive" type="unborder-card" @update:active="handleTabChange">
         <bk-tab-panel v-for="panel in tabPanels" :key="panel.name" :name="panel.name" :label="panel.label">
           <template v-if="tabActive === panel.name && currentComponent">
             <component :is="currentComponent" />

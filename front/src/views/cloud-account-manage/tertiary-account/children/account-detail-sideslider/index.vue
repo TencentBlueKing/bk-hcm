@@ -5,6 +5,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCloudAccountStore, type ISubAccountItem, type ISubAccountSecretItem } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
+import Status from '@/components/display-value/appearance/status.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -111,9 +112,7 @@ const handleCreateSecret = async () => {
 
   showKeyLoading.value = true;
   try {
-    const res = await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, [
-      { id: props.rowData.id },
-    ]);
+    const res = await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, props.rowData.id);
     showKeyLoading.value = false;
     newSecretId.value = res?.extension?.cloud_secret_id || '--';
     newSecretKey.value = res?.extension?.cloud_secret_key || '--';
@@ -318,8 +317,10 @@ const formatTime = (time?: string) => {
                 </bk-table-column>
                 <bk-table-column label="密钥状态" min-width="100">
                   <template #default="{ row }">
-                    <span :class="['status-dot', row.status === 'enabled' ? 'status-enabled' : 'status-disabled']" />
-                    {{ row.status === 'enabled' ? '已启用' : '已禁用' }}
+                    <Status
+                      :value="row.status === 'enabled' ? 'normal' : 'unknown'"
+                      :display-value="row.status === 'enabled' ? '已启用' : '已禁用'"
+                    />
                   </template>
                 </bk-table-column>
                 <bk-table-column label="创建时间" min-width="160">
@@ -344,7 +345,7 @@ const formatTime = (time?: string) => {
                     </template>
                     <template v-else>
                       <bk-button text theme="primary" @click="handleToggleSecretStatus(row)">启用</bk-button>
-                      <bk-button text theme="danger" class="ml8" @click="handleDeleteSecret(row)">删除</bk-button>
+                      <bk-button text theme="primary" class="ml8" @click="handleDeleteSecret(row)">删除</bk-button>
                     </template>
                   </template>
                 </bk-table-column>
@@ -521,27 +522,6 @@ const formatTime = (time?: string) => {
   }
 }
 
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
-
-  &.status-enabled {
-    background-color: #2dcb56;
-  }
-
-  &.status-disabled {
-    background-color: #c4c6cc;
-  }
-}
-
-.ml8 {
-  margin-left: 8px;
-}
-
 .key-loading-content {
   text-align: center;
   padding: 40px 0;
@@ -620,5 +600,13 @@ const formatTime = (time?: string) => {
     padding-top: 16px;
     border-top: 1px solid #dcdee5;
   }
+}
+
+.svg-icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+
+  /* 不要设置 fill 属性 */
 }
 </style>

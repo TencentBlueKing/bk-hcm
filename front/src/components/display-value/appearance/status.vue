@@ -12,8 +12,8 @@ import { DisplayType } from '../typings';
 const props = defineProps<{
   value: string | number | string[] | number[];
   displayValue: string | number | string[] | number[];
-  option: ModelProperty['option'];
-  displayOn: DisplayType['on'];
+  option?: ModelProperty['option'];
+  displayOn?: DisplayType['on'];
 }>();
 
 const icon = computed(() => {
@@ -30,7 +30,9 @@ const icon = computed(() => {
     case 'abnormal':
       return StatusAbnormal;
     case 'normal':
+    case 'enabled':
       return StatusNormal;
+    case 'disabled':
     default:
       return StatusUnknown;
   }

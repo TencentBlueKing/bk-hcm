@@ -16,6 +16,9 @@ export class TableColumn {
     option: SECRET_STATUS_OPTIONS,
     index: 1,
     width: 100,
+    meta: {
+      display: { appearance: 'status' },
+    },
   })
   status: string;
 
@@ -34,12 +37,12 @@ export class TableColumn {
   })
   console_login: number;
 
-  @Column('string', {
+  @Column('array', {
     name: '三级账号负责人',
     index: 4,
     width: 120,
   })
-  sub_account_manager: string;
+  sub_account_managers: string;
 
   @Column('string', {
     name: '所属二级账号ID',
@@ -48,12 +51,12 @@ export class TableColumn {
   })
   cloud_main_account_id: string;
 
-  @Column('string', {
+  @Column('array', {
     name: '二级账号负责人',
     index: 6,
     width: 120,
   })
-  account_manager: string;
+  account_managers: string;
 
   @Column('datetime', {
     name: '创建时间',

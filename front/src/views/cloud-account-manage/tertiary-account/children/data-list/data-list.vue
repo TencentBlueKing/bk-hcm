@@ -7,7 +7,6 @@ import useTableSettings from '@/hooks/use-table-settings';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Button } from 'bkui-vue';
 import type { ISubAccountItem } from '@/store/cloud-account';
-import BusinessValue from '@/components/display-value/business-value.vue';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -45,12 +44,6 @@ const formatPhone = (phone: string) => {
   if (phone.length < 7) return phone;
   return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
 };
-
-const formatArray = (arr: any[]) => {
-  if (!arr || !arr.length) return '--';
-  return arr.join(', ');
-};
-
 const handleViewDetails = (row: ISubAccountItem) => {
   emit('view-details', row);
 };
@@ -104,16 +97,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   if (column.id === 'phone_num') {
     return ({ row }: { row: ISubAccountItem }) => formatPhone(row.phone_num);
   }
-  if (column.id === 'managers') {
-    return ({ row }: { row: ISubAccountItem }) => formatArray(row.managers);
-  }
-  if (column.id === 'bk_biz_ids') {
-    return ({ row }: { row: ISubAccountItem }) =>
-      h(BusinessValue, {
-        value: row.bk_biz_ids,
-        display: { appearance: 'tag' },
-      });
-  }
   if (column.id === 'sub_account_secret_count') {
     return ({ row }: { row: ISubAccountItem }) => {
       const value = row.sub_account_secret_count ?? 0;
@@ -131,7 +114,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       row-hover="auto"
       :data="list"
       :pagination="pagination"
-      :max-height="`calc(100vh - 400px)`"
+      :max-height="`calc(100vh - 500px)`"
       :settings="settings"
       remote-pagination
       show-overflow-tooltip
