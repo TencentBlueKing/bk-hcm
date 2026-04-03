@@ -48,5 +48,10 @@ func (svc *service) SyncSubAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	if _, err = syncCli.SubAccountSecret(cts.Kit, &tcloud.SyncSubAccountOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync tcloud sub account secret failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	return nil, nil
 }

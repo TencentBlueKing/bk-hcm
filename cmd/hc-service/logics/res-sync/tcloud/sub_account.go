@@ -422,16 +422,8 @@ func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) 
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "vendor",
-					Op:    filter.Equal.Factory(),
-					Value: enumor.TCloud,
-				},
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.Equal.Factory(),
-					Value: opt.AccountID,
-				},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.TCloud},
+				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: opt.AccountID},
 			},
 		},
 		Page: core.NewDefaultBasePage(),
