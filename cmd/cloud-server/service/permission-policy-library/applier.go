@@ -21,6 +21,7 @@ package permissionpolicylibrary
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -514,7 +515,9 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 		return nil, err
 	}
 
-	return slice.NotIn(appliedAccountIDs, inScopeAccountIDs), nil
+	unappliedAccountIDs := slice.NotIn(appliedAccountIDs, inScopeAccountIDs)
+	sort.Strings(unappliedAccountIDs)
+	return unappliedAccountIDs, nil
 }
 
 // ListTemplatesInScope returns all permission templates applied from the given library

@@ -113,9 +113,7 @@ func (dao *PermissionTemplateDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 }
 
 // BatchUpdate batch update permission_template by ID.
-func (dao *PermissionTemplateDao) BatchUpdate(kt *kit.Kit,
-	models []tablecloud.PermissionTemplateTable) error {
-
+func (dao *PermissionTemplateDao) BatchUpdate(kt *kit.Kit, models []tablecloud.PermissionTemplateTable) error {
 	if len(models) == 0 {
 		return nil
 	}
@@ -127,8 +125,7 @@ func (dao *PermissionTemplateDao) BatchUpdate(kt *kit.Kit,
 			}
 
 			opts := utils.NewFieldOptions().
-				AddBlankedFields("memo", "extension", "policy_library_id",
-					"policy_library_version", "policy_library_sync_time").
+				AddBlankedFields("memo", "policy_library_id", "policy_library_version", "policy_library_sync_time").
 				AddIgnoredFields(types.DefaultIgnoredFields...)
 			setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(&model, opts)
 			if err != nil {
