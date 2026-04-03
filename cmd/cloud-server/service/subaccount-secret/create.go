@@ -90,17 +90,6 @@ func (svc *service) authorizeSubAccountSecret(kt *kit.Kit, bizID int64) error {
 	return nil
 }
 
-// validateSubAccountBizOwnership checks that the sub-account belongs to the specified business.
-func validateSubAccountBizOwnership(bizID int64, bkBizIDs []int64) error {
-	for _, id := range bkBizIDs {
-		if id == bizID {
-			return nil
-		}
-	}
-
-	return errf.Newf(errf.PermissionDenied, "sub account does not belong to business %d", bizID)
-}
-
 // createTCloudSubAccountSecret creates access key on TCloud and persists to DB.
 func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAccountID string,
 ) (*proto.CreateResult, error) {
@@ -111,10 +100,6 @@ func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAc
 	}
 
 	if err = svc.validateAccountBiz(kt, bizID, subAccount.ID, subAccount.AccountID); err != nil {
-		return nil, err
-	}
-
-	if err = validateSubAccountBizOwnership(bizID, subAccount.BkBizIDs); err != nil {
 		return nil, err
 	}
 

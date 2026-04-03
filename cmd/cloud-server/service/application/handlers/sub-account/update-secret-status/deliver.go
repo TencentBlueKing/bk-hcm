@@ -149,7 +149,7 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() err
 		Status: &a.req.Status,
 	}
 	if a.req.Status == enumor.DisabledSecretStatus {
-		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Format(time.DateTime))
+		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Local().Format(time.RFC3339))
 	}
 
 	err := a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, a.req.ID,
