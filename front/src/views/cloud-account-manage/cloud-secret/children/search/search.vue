@@ -25,14 +25,15 @@ const formValues = ref<ISearchCondition>({});
 let conditionInitValues: ISearchCondition;
 
 const getSearchCompProps = (field: ModelPropertySearch) => {
-  if (field.id === 'name') {
-    return {
-      pasteFn: (value: string) => value.split(/\r\n|\n|\r/).map((tag) => ({ id: tag, name: tag })),
-    };
-  }
-  return {
+  const searchProps = field?.props || {};
+  const baseProps: Record<string, any> = {
     option: field.option,
+    ...searchProps,
   };
+  if (['cloud_secret_id', 'cloud_sub_account_id', 'cloud_main_account_id'].includes(field.id)) {
+    baseProps.pasteFn = (value: string) => value.split(/\r\n|\n|\r/).map((tag) => ({ id: tag, name: tag }));
+  }
+  return baseProps;
 };
 
 const handleSearch = () => {
@@ -48,7 +49,6 @@ watch(
   () => props.condition,
   (condition) => {
     formValues.value = { ...condition };
-    // 只记录第一次的condition值，重置时回到最开始的默认值
     if (!conditionInitValues) {
       conditionInitValues = { ...formValues.value };
     }
@@ -60,6 +60,7 @@ watch(
 <template>
   <div class="search">
     <grid-container layout="vertical" :column="4" :content-min-width="'1fr'" :gap="[16, 60]">
+      <!-- 直接遍历所有 fields，不再区分基础/高级 -->
       <grid-item-form-element v-for="field in fields" :key="field.id" :label="field.name">
         <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="formValues[field.id]" />
       </grid-item-form-element>

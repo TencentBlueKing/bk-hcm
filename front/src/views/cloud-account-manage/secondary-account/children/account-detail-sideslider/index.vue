@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject } from 'vue';
 import { Message, InfoBox } from 'bkui-vue';
 import { Share } from 'bkui-vue/lib/icon';
 import type { ISecondaryAccountItem, IAccountSecretItem } from '@/store/cloud-account';
@@ -8,6 +8,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import DisplayValue from '@/components/display-value/index.vue';
 import SecretKeyDialog from './secret-key-dialog.vue';
 import AccountFormSideslider from '../account-form-sideslider/index.vue';
+import AccountCreateSideslider from '@/views/cloud-account-manage/tertiary-account/children/account-create-sideslider/index.vue';
 import type { ModelProperty } from '@/model/typings';
 import type { DisplayType } from '@/components/display-value/typings';
 
@@ -30,6 +31,9 @@ const emit = defineEmits<{
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
+// 注入切换到三级账号Tab的方法
+const switchToTertiaryTab = inject<(filter?: Record<string, any>) => void>('switchToTertiaryTab');
+
 // 密钥列表数据
 const secretList = ref<IAccountSecretItem[]>([]);
 const secretLoading = ref(false);
@@ -41,6 +45,9 @@ const isEditMode = ref(false);
 
 // 编辑账号弹窗状态
 const showAccountFormSideslider = ref(false);
+
+// 新建三级账号弹窗状态
+const showCreateSubAccount = ref(false);
 
 // 当前展示的账号数据（用于支持编辑后实时更新）
 const currentRowData = ref<ISecondaryAccountItem | null>(null);
@@ -231,6 +238,22 @@ const handleEditBaseInfo = () => {
   }
 };
 
+// 跳转到三级账号列表（按当前二级账号ID筛选）
+const handleGoToTertiaryAccount = () => {
+  const cloudMainAccountId = (currentRowData.value as any)?.extension?.cloud_main_account_id;
+  if (!cloudMainAccountId) return;
+  // 关闭详情侧栏
+  model.value = false;
+  // 切换到三级账号Tab，并带上所属二级账号ID查询参数
+  switchToTertiaryTab?.({ 'extension.cloud_main_account_id': cloudMainAccountId });
+};
+
+// 新建三级账号成功回调
+const handleCreateSubAccountSuccess = () => {
+  showCreateSubAccount.value = false;
+  emit('update-success');
+};
+
 // 编辑基本信息成功回调
 const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
   if (updatedData) {
@@ -272,7 +295,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
         <template #header>
           <div class="card-header">
             <span class="card-title">三级账号</span>
-            <bk-button theme="primary" text class="add-btn">
+            <bk-button theme="primary" text class="add-btn" @click="showCreateSubAccount = true">
               <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
               新建三级账号
             </bk-button>
@@ -281,7 +304,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
         <div class="sub-account-info">
           <span class="label">三级账号数量：</span>
           <span class="count">{{ currentRowData?.sub_account_count ?? 0 }} 个</span>
-          <Share class="icon-link" />
+          <Share class="icon-link" @click="handleGoToTertiaryAccount" />
         </div>
       </bk-card>
 
@@ -350,6 +373,13 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
       :is-edit="true"
       :account-data="currentRowData"
       @success="handleAccountFormSuccess"
+    />
+
+    <!-- 新建三级账号弹窗 -->
+    <AccountCreateSideslider
+      v-model:model-value="showCreateSubAccount"
+      :default-account-id="currentRowData?.id || ''"
+      @success="handleCreateSubAccountSuccess"
     />
   </bk-sideslider>
 </template>

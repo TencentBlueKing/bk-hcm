@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { h } from 'vue';
+import { Message, Button } from 'bkui-vue';
+import { Copy } from 'bkui-vue/lib/icon';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
-import { Button } from 'bkui-vue';
-import { SECRET_STATUS_MAP, CONSOLE_LOGIN_MAP } from '../../constants';
+import useClipboard from 'vue-clipboard3';
+import { CONSOLE_LOGIN_MAP } from '../../constants';
 import type { ICloudSecretItem } from '../../typings';
 
 export interface IDataListProps {
@@ -19,7 +21,6 @@ const props = withDefaults(defineProps<IDataListProps>(), {
   loading: false,
 });
 
-// 定义事件
 const emit = defineEmits<{
   'view-details': [row: ICloudSecretItem];
   enable: [row: ICloudSecretItem];
@@ -31,60 +32,67 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-// 格式化时间展示
+const { toClipboard } = useClipboard();
+
 const formatDateTime = (dateStr?: string) => {
   if (!dateStr) return '--';
   return dateStr.replace('T', ' ').replace('Z', '');
 };
 
-// 查看详情 - 触发事件
+const maskSecretId = (id: string) => {
+  if (!id) return '--';
+  if (id.length <= 8) return id;
+  return `${id.substring(0, 4)}****${id.substring(id.length - 4)}`;
+};
+
+const handleCopySecretId = async (id: string, event: Event) => {
+  event.stopPropagation();
+  try {
+    await toClipboard(id);
+    Message({ theme: 'success', message: '复制成功' });
+  } catch (e) {
+    Message({ theme: 'error', message: '复制失败' });
+  }
+};
+
 const handleViewDetails = (row: ICloudSecretItem) => {
   emit('view-details', row);
 };
 
-// 启用
 const handleEnable = (row: ICloudSecretItem) => {
   emit('enable', row);
 };
 
-// 禁用
 const handleDisable = (row: ICloudSecretItem) => {
   emit('disable', row);
 };
 
-// 删除
 const handleDelete = (row: ICloudSecretItem) => {
   emit('delete', row);
 };
 
-// 自定义渲染列
 const getColumnRender = (column: ModelPropertyColumn) => {
-  // 密钥ID列 - 点击打开详情侧栏
   if (column.id === 'cloud_secret_id') {
-    return ({ row }: { row: ICloudSecretItem }) =>
-      h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick: () => handleViewDetails(row),
-        },
-        () => row.cloud_secret_id || row.extension?.cloud_secret_id || '--',
-      );
-  }
-
-  // 密钥状态列
-  if (column.id === 'status') {
     return ({ row }: { row: ICloudSecretItem }) => {
-      const status = SECRET_STATUS_MAP[row.status] || { class: '', text: row.status || '--', dotClass: '' };
-      return h('span', { class: ['status-cell', status.class] }, [
-        h('span', { class: ['status-dot', status.dotClass] }),
-        status.text,
+      const secretId = row.cloud_secret_id || row.extension?.cloud_secret_id || '';
+      return h('span', { class: 'secret-id-cell' }, [
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            onClick: () => handleViewDetails(row),
+          },
+          () => maskSecretId(secretId),
+        ),
+        h(Copy, {
+          class: 'copy-icon',
+          onClick: (e: Event) => handleCopySecretId(secretId, e),
+        }),
       ]);
     };
   }
 
-  // 三级账号类型列
   if (column.id === 'console_login') {
     return ({ row }: { row: ICloudSecretItem }) => {
       const consoleLogin = row.console_login ?? row.extension?.console_login;
@@ -92,19 +100,16 @@ const getColumnRender = (column: ModelPropertyColumn) => {
     };
   }
 
-  // 所属三级账号ID列
   if (column.id === 'cloud_sub_account_id') {
     return ({ row }: { row: ICloudSecretItem }) =>
       row.cloud_sub_account_id || row.extension?.cloud_sub_account_id || '--';
   }
 
-  // 所属二级账号ID列
   if (column.id === 'cloud_main_account_id') {
     return ({ row }: { row: ICloudSecretItem }) =>
       row.cloud_main_account_id || row.extension?.cloud_main_account_id || '--';
   }
 
-  // 时间类型列
   if (['cloud_created_at', 'last_used_time', 'disabled_time'].includes(column.id)) {
     return ({ row }: { row: ICloudSecretItem }) => formatDateTime(row[column.id as keyof ICloudSecretItem] as string);
   }
@@ -119,7 +124,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       row-hover="auto"
       :data="list"
       :pagination="pagination"
-      :max-height="`calc(100vh - 450px)`"
+      :max-height="`calc(100vh - 520px)`"
       :settings="settings"
       remote-pagination
       show-overflow-tooltip
@@ -150,14 +155,12 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <!-- 已启用状态：显示禁用按钮 -->
           <template v-if="row.status === 'enabled'">
             <bk-button theme="primary" text @click="handleDisable(row)">禁用</bk-button>
           </template>
-          <!-- 已禁用状态：显示启用和删除按钮 -->
           <template v-else>
             <bk-button theme="primary" text class="mr8" @click="handleEnable(row)">启用</bk-button>
-            <bk-button theme="danger" text @click="handleDelete(row)">删除</bk-button>
+            <bk-button theme="primary" text @click="handleDelete(row)">删除</bk-button>
           </template>
         </template>
       </bk-table-column>
@@ -201,5 +204,22 @@ const getColumnRender = (column: ModelPropertyColumn) => {
 
 .mr8 {
   margin-right: 8px;
+}
+
+:deep(.secret-id-cell) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  .copy-icon {
+    font-size: 14px;
+    color: #979ba5;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &:hover {
+      color: #3a84ff;
+    }
+  }
 }
 </style>
