@@ -140,6 +140,16 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() err
 	}
 	if a.req.Status == enumor.DisabledSecretStatus {
 		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Local().Format(time.RFC3339))
+<<<<<<< HEAD
+=======
+	}
+
+	err := a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, a.req.ID,
+		map[string]interface{}{"status": a.req.Status})
+	if err != nil {
+		logs.Errorf("create update_secret_status audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+>>>>>>> e5c62f265 (feat: 禁用时间格式加上时区 --story=130360061)
 	}
 
 	return a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(
