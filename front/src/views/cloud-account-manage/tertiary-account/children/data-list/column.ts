@@ -41,7 +41,7 @@ export class TableColumn {
   })
   'extension.console_login': string;
 
-  @Column('list', {
+  @Column('array', {
     name: '负责人',
     index: 4,
     width: 120,
@@ -52,6 +52,9 @@ export class TableColumn {
     name: '所属业务',
     index: 5,
     width: 180,
+    meta: {
+      display: { appearance: 'tag' },
+    },
   })
   bk_biz_ids: number[];
 

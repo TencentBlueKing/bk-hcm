@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, watch, inject, type Ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { InfoLine } from 'bkui-vue/lib/icon';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition } from '@/utils/search';
-import { useCloudAccountStore } from '@/store/cloud-account';
+import { ISubAccountSecretParams, useCloudAccountStore } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
 
 import Search from './children/search/search.vue';
@@ -18,72 +18,45 @@ import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { ICloudSecretItem, ISearchCondition, SecretActionType } from './typings';
 
-// 获取当前云厂商
-const currentVendor = inject<{ value: VendorEnum }>('currentVendor', { value: VendorEnum.TCLOUD });
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 
 const route = useRoute();
+const router = useRouter();
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 创建模型实例
 const searchModel = SearchConditionFactory.createModel();
 const columnModel = TableColumnFactory.createModel();
-
-// 搜索字段
 const searchFields = computed<ModelPropertySearch[]>(() => searchModel.getProperties());
-
-// 表格列
 const columns = computed<ModelPropertyColumn[]>(() => columnModel.getProperties());
-
-// 搜索条件
 const condition = ref<ISearchCondition>({});
-
-// 表格数据
 const tableData = ref<ICloudSecretItem[]>([]);
-
-// 分页
 const { pagination, getPageParams } = usePage();
-
-// URL 查询参数处理
 const searchQs = useSearchQs({ key: 'secretFilter', properties: searchFields.value });
-
-// 详情侧栏状态
 const showDetailSlider = ref(false);
 const currentSecret = ref<ICloudSecretItem | null>(null);
-
-// 操作弹窗状态
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
 const actionSecret = ref<ICloudSecretItem | null>(null);
-
-// 加载状态
+const sortParams = ref<{ sort: string; order: string }>({ sort: 'cloud_created_at', order: 'DESC' });
 const isLoading = computed(() => cloudAccountStore.subAccountSecretListLoading);
 
-// 获取列表数据
 const fetchList = async () => {
   const bkBizId = getBizsId();
-  const vendor = currentVendor?.value || VendorEnum.TCLOUD;
-
-  // 排序参数
-  const sort = (route.query.sort || 'cloud_created_at') as string;
-  const order = (route.query.order || 'DESC') as string;
+  const vendor = currentVendor.value;
 
   try {
-    // 构建请求参数
-    const requestParams: Record<string, any> = {
-      page: getPageParams(pagination, { sort, order }),
+    const requestParams: ISubAccountSecretParams = {
+      page: getPageParams(pagination, sortParams.value),
     };
 
-    // 处理搜索条件
     const filterRules = transformSimpleCondition(condition.value, searchFields.value);
     if (filterRules && filterRules.rules && filterRules.rules.length > 0) {
-      // 需要放入 extension 中的字段
       const extensionFields: Record<string, string> = {
         cloud_secret_id: 'cloud_secret_ids',
         cloud_sub_account_id: 'cloud_sub_account_ids',
         cloud_main_account_id: 'cloud_main_account_ids',
       };
-      // 顶层参数字段
       const topLevelFields: Record<string, string> = {
         status: 'status',
         sub_account_managers: 'sub_account_managers',
@@ -92,13 +65,12 @@ const fetchList = async () => {
 
       filterRules.rules.forEach((rule: any) => {
         if (rule.field && rule.value) {
-          const extKey = extensionFields[rule.field];
+          const extKey = extensionFields[rule.field] as keyof NonNullable<typeof requestParams.extension>;
           if (extKey) {
-            // extension 中的字段
             if (!requestParams.extension) requestParams.extension = {};
             requestParams.extension[extKey] = Array.isArray(rule.value) ? rule.value : [rule.value];
           } else {
-            const paramKey = topLevelFields[rule.field];
+            const paramKey = topLevelFields[rule.field] as keyof Omit<typeof requestParams, 'page' | 'extension'>;
             if (paramKey) {
               if (paramKey === 'status') {
                 requestParams[paramKey] = rule.value;
@@ -121,65 +93,67 @@ const fetchList = async () => {
   }
 };
 
-// 监听路由变化，获取列表数据
 watch(
   () => route.query,
   async (query) => {
-    // 从 URL 获取搜索条件
     condition.value = searchQs.get(query, {});
-
-    // 设置分页
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
-
+    sortParams.value = {
+      sort: (query.sort || 'cloud_created_at') as string,
+      order: (query.order || 'DESC') as string,
+    };
     await fetchList();
   },
   { immediate: true },
 );
 
-// 搜索
+watch(
+  () => currentVendor.value,
+  () => {
+    pagination.current = 1;
+    const query = { ...route.query };
+    delete query.page;
+    query._t = String(Date.now());
+    router.replace({ query });
+  },
+);
+
 const handleSearch = (searchCondition: ISearchCondition) => {
   searchQs.set(searchCondition);
 };
 
-// 重置
 const handleReset = () => {
   searchQs.clear();
 };
 
-// 查看详情
 const handleViewDetails = (row: ICloudSecretItem) => {
   currentSecret.value = row;
   showDetailSlider.value = true;
 };
 
-// 启用密钥
 const handleEnableSecret = (row: ICloudSecretItem) => {
   actionSecret.value = row;
   currentActionType.value = 'enable';
   showActionDialog.value = true;
 };
 
-// 禁用密钥
 const handleDisableSecret = (row: ICloudSecretItem) => {
   actionSecret.value = row;
   currentActionType.value = 'disable';
   showActionDialog.value = true;
 };
 
-// 删除密钥
 const handleDeleteSecret = (row: ICloudSecretItem) => {
   actionSecret.value = row;
   currentActionType.value = 'delete';
   showActionDialog.value = true;
 };
 
-// 操作成功回调
 const handleActionSuccess = () => {
   fetchList();
 };
 
-// 详情侧栏操作成功回调
 const handleDetailActionSuccess = () => {
   fetchList();
 };
@@ -187,17 +161,14 @@ const handleDetailActionSuccess = () => {
 
 <template>
   <div class="cloud-secret-page">
-    <!-- 搜索区域 -->
     <Search :fields="searchFields" :condition="condition" @search="handleSearch" @reset="handleReset" />
-    <!-- 提示信息 -->
+
     <div class="info-tip">
       <InfoLine class="tip-icon" />
       <span>本页面仅用于管理已创建的密钥，如需创建新密钥，请进入对应三级账号的详情页进行操作</span>
     </div>
 
-    <!-- 表格区域 -->
     <div class="table-container">
-      <!-- 数据列表 -->
       <DataList
         :columns="columns"
         :list="tableData"
@@ -210,20 +181,18 @@ const handleDetailActionSuccess = () => {
       />
     </div>
 
-    <!-- 详情侧栏 -->
     <SecretDetailSlider
       v-model="showDetailSlider"
       :secret-data="currentSecret"
-      :vendor="currentVendor?.value || 'tcloud'"
+      :vendor="currentVendor"
       @action-success="handleDetailActionSuccess"
     />
 
-    <!-- 操作弹窗 -->
     <SecretActionDialog
       v-model="showActionDialog"
       :action-type="currentActionType"
       :secret-data="actionSecret"
-      :vendor="currentVendor?.value || 'tcloud'"
+      :vendor="currentVendor"
       @success="handleActionSuccess"
     />
   </div>
@@ -255,6 +224,7 @@ const handleDetailActionSuccess = () => {
       color: #3a84ff;
       margin-right: 8px;
       font-size: 14px;
+      flex-shrink: 0;
     }
   }
 }

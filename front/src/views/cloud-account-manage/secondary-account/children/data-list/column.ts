@@ -17,8 +17,11 @@ export class TableColumn {
     name: '二级账号ID',
     index: 1,
     width: 120,
+    render: ({ row }: { row: { extension: ITcloudExtension } }) => {
+      return row?.extension?.cloud_main_account_id || '--';
+    },
   })
-  id: string;
+  'extension.cloud_main_account_id': string;
 
   @Column('string', {
     name: '账号邮箱',
@@ -35,14 +38,14 @@ export class TableColumn {
   })
   site: string;
 
-  @Column('list', {
+  @Column('array', {
     name: '负责人',
     index: 4,
     width: 120,
   })
   managers: string[];
 
-  @Column('list', {
+  @Column('array', {
     name: '安全负责人',
     index: 5,
     width: 120,
@@ -53,6 +56,9 @@ export class TableColumn {
     name: '使用业务',
     index: 6,
     width: 180,
+    meta: {
+      display: { appearance: 'tag' },
+    },
   })
   usage_biz_ids: number[];
 

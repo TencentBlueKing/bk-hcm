@@ -5,6 +5,7 @@ import { Ediatable, TextPlainColumn, SelectColumn } from '@blueking/ediatable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore } from '@/store';
 import { useCloudAccountStore, type ISubAccountItem, type ISubAccountUpdateParams } from '@/store/cloud-account';
+import { useAccountSelectorStore } from '@/store/account-selector';
 import { VendorEnum } from '@/common/constant';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const accountStore = useAccountStore();
 const cloudAccountStore = useCloudAccountStore();
+const accountSelectorStore = useAccountSelectorStore();
 const { getBizsId } = useWhereAmI();
 
 interface IBatchRow {
@@ -53,11 +55,23 @@ watch(
         managers: [...(row.managers || [])],
         bk_biz_ids: (row.bk_biz_ids || []).map((id) => String(id)),
       }));
-      const res = await accountStore.getBizList();
-      bizList.value = (res?.data || []).map((item: { id: number; name: string }) => ({
+      // 并行请求业务列表和云账号列表（用于获取二级账号名称）
+      const [bizRes, accountList] = await Promise.all([
+        accountStore.getBizList(),
+        accountSelectorStore.getBusinessAccountList({ bizId: getBizsId(), account_type: 'resource' }),
+      ]);
+      bizList.value = (bizRes?.data || []).map((item: { id: number; name: string }) => ({
         value: String(item.id),
         label: item.name,
       }));
+      // 构建 account_id -> name 的映射，回填二级账号名称
+      if (accountList?.length) {
+        const nameMap = new Map<string, string>();
+        accountList.forEach((item: { id: string; name: string }) => nameMap.set(item.id, item.name));
+        batchData.value.forEach((row) => {
+          row.account_name = nameMap.get(row.account_id) || '';
+        });
+      }
       await nextTick();
       isReady.value = true;
     }
@@ -139,16 +153,16 @@ const headList = computed(() => [
             <template #data>
               <tr v-for="(row, index) in batchData" :key="row.id">
                 <td>
-                  <TextPlainColumn>{{ row.cloud_id }}</TextPlainColumn>
+                  <TextPlainColumn :data="row.cloud_id" />
                 </td>
                 <td>
-                  <TextPlainColumn>{{ row.name || '--' }}</TextPlainColumn>
+                  <TextPlainColumn :data="row.name" />
                 </td>
                 <td>
-                  <TextPlainColumn>{{ row.account_id }}</TextPlainColumn>
+                  <TextPlainColumn :data="row.account_id" />
                 </td>
                 <td>
-                  <TextPlainColumn>{{ row.account_name || '--' }}</TextPlainColumn>
+                  <TextPlainColumn :data="row.account_name" />
                 </td>
                 <td>
                   <UserSelector

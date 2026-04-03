@@ -204,6 +204,20 @@ export interface IUpdateSecretStatusParams {
   status: 'enabled' | 'disabled';
 }
 
+export interface ISubAccountSecretParams {
+  status?: string;
+  account_ids?: string[];
+  sub_account_ids?: string[];
+  account_managers?: string[];
+  sub_account_managers?: string[];
+  extension?: {
+    cloud_secret_ids?: string[];
+    cloud_main_account_ids?: string[];
+    cloud_sub_account_ids?: string[];
+  };
+  page: any;
+}
+
 export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const accountListLoading = ref(false);
   const secretListLoading = ref(false);
@@ -511,19 +525,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const getSubAccountSecretList = async (
     bk_biz_id: number,
     vendor: string,
-    params: {
-      status?: string;
-      account_ids?: string[];
-      sub_account_ids?: string[];
-      account_managers?: string[];
-      sub_account_managers?: string[];
-      extension?: {
-        cloud_secret_ids?: string[];
-        cloud_main_account_ids?: string[];
-        cloud_sub_account_ids?: string[];
-      };
-      page: any;
-    },
+    params: ISubAccountSecretParams,
   ): Promise<{ list: ISubAccountSecretItem[]; count: number }> => {
     subAccountSecretListLoading.value = true;
 
@@ -714,11 +716,11 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const createSubAccountSecret = async (
     bk_biz_id: number,
     vendor: string,
-    subAccountSecrets: { id: string }[],
+    id: string,
   ): Promise<{ id: string; extension: { cloud_secret_id: string; cloud_secret_key: string } }> => {
     try {
-      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/subaccount_secrets/create`;
-      const res = await http.post(api, { sub_account_secrets: subAccountSecrets });
+      const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/create`;
+      const res = await http.post(api, { id });
       return res?.data;
     } catch (error) {
       console.error(error);

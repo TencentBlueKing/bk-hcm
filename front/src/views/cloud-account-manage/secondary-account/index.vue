@@ -171,6 +171,42 @@ const handleViewDetails = (row: ISecondaryAccountItem) => {
   showDetailSideslider.value = true;
 };
 
+// 监听 URL 中 detailCloudId 参数，自动打开对应账号详情弹窗
+watch(
+  () => route.query.detailCloudId,
+  (detailCloudId) => {
+    if (!detailCloudId || typeof detailCloudId !== 'string') return;
+    // 等全量数据加载完成后再查找
+    const tryOpenDetail = () => {
+      const target = fullList.value.find(
+        (item) => (item as any)?.extension?.cloud_main_account_id === detailCloudId || item.id === detailCloudId,
+      );
+      if (target) {
+        handleViewDetails(target);
+        // 消费掉 detailCloudId，避免重复触发
+        const query = { ...route.query };
+        delete query.detailCloudId;
+        router.replace({ query });
+      }
+    };
+    if (fullList.value.length > 0) {
+      tryOpenDetail();
+    } else {
+      // 数据尚未加载完成，等待数据加载后重试
+      const unwatch = watch(
+        () => fullList.value.length,
+        (len) => {
+          if (len > 0) {
+            tryOpenDetail();
+            unwatch();
+          }
+        },
+      );
+    }
+  },
+  { immediate: true },
+);
+
 const handleDetailUpdateSuccess = () => {
   refreshList();
 };
@@ -211,6 +247,7 @@ const handleReset = () => {
   searchQs.clear();
 };
 
+// 同步账号功能
 // const handleSyncAccount = () => {
 //   const SyncContent = () =>
 //     h('div', { class: 'sync-info-content' }, [

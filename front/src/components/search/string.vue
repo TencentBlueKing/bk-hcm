@@ -61,6 +61,7 @@ const localModel = computed({
       clearable
       allow-create
       allow-auto-match
+      collapse-tags
     ></bk-tag-input>
   </template>
   <!-- input -->

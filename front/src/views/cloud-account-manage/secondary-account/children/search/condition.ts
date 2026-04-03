@@ -21,11 +21,19 @@ export class SearchCondition {
   @Column('string', {
     name: '二级账号ID',
     props: {
-      multiple: false,
+      multiple: true,
+    },
+    meta: {
+      search: {
+        filterRules(value: string | string[]) {
+          const values = Array.isArray(value) ? value : [value];
+          return { field: 'extension.cloud_main_account_id', op: QueryRuleOPEnum.JSON_IN, value: values };
+        },
+      },
     },
     index: 0,
   })
-  id: string;
+  'extension.cloud_main_account_id': string;
 
   @Column('string', {
     name: '二级账号名称',

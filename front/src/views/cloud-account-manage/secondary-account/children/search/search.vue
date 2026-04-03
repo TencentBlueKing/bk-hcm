@@ -30,7 +30,7 @@ const getSearchCompProps = (field: ModelPropertySearch) => {
     option: field.option,
     ...searchProps,
   };
-  if (field.id === 'name') {
+  if (['extension.cloud_main_account_id', 'name'].includes(field.id)) {
     baseProps.pasteFn = (value: string) => value.split(/\r\n|\n|\r/).map((tag) => ({ id: tag, name: tag }));
   }
   return baseProps;
@@ -78,6 +78,11 @@ watch(
   box-shadow: 0 2px 4px 0 #1919290d;
   border-radius: 2px;
   padding: 16px 24px;
+
+  // :deep(.grid-item .item-content .form-element) {
+  //   position: relative;
+  //   top: 0;
+  // }
 
   .row-action {
     padding: 4px 0;

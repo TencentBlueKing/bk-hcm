@@ -6,7 +6,6 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import type { ISecondaryAccountItem } from '@/store/cloud-account';
-import BusinessValue from '@/components/display-value/business-value.vue';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -39,12 +38,6 @@ const formatEmail = (email: string) => {
   return `${prefix}***${suffix}`;
 };
 
-// 格式化数组展示
-const formatArray = (arr: any[]) => {
-  if (!arr || !arr.length) return '--';
-  return arr.join(', ');
-};
-
 // 查看详情 - 触发事件
 const handleViewDetails = (row: ISecondaryAccountItem) => {
   emit('view-details', row);
@@ -57,6 +50,10 @@ const handleEditAccount = (row: ISecondaryAccountItem) => {
 
 // 自定义渲染列
 const getColumnRender = (column: ModelPropertyColumn) => {
+  // 二级账号ID列 - 从 extension.cloud_main_account_id 取值
+  if (column.id === 'extension.cloud_main_account_id') {
+    return ({ row }: { row: ISecondaryAccountItem }) => (row as any)?.extension?.cloud_main_account_id || '--';
+  }
   // 名称列 - 点击打开详情侧栏
   if (column.id === 'name') {
     return ({ row }: { row: ISecondaryAccountItem }) =>
@@ -73,18 +70,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   // 邮箱列 - 脱敏处理
   if (column.id === 'email') {
     return ({ row }: { row: ISecondaryAccountItem }) => formatEmail(row.email);
-  }
-  // 负责人、安全负责人列 - 数组展示
-  if (column.id === 'managers' || column.id === 'security_managers') {
-    return ({ row }: { row: ISecondaryAccountItem }) => formatArray(row[column.id]);
-  }
-  // 使用业务列 - 使用 BusinessValue 组件，tag 模式展示
-  if (column.id === 'usage_biz_ids') {
-    return ({ row }: { row: ISecondaryAccountItem }) =>
-      h(BusinessValue, {
-        value: row.usage_biz_ids,
-        display: { appearance: 'tag' },
-      });
   }
   // 三级账号数、密钥数 - 普通标签样式
   if (column.id === 'sub_account_count' || column.id === 'account_secret_count') {
@@ -118,7 +103,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       row-hover="auto"
       :data="list"
       :pagination="pagination"
-      :max-height="`calc(100vh - 400px)`"
+      :max-height="`calc(100vh - 500px)`"
       :settings="settings"
       remote-pagination
       show-overflow-tooltip
