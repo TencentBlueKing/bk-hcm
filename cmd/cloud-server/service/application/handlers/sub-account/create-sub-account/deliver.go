@@ -152,8 +152,8 @@ func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto
 			uin, a.req.Name, len(subAccounts))
 	}
 
-	safeAuthFlag, err := a.Client.HCService().TCloud.Account.DescribeSafeAuthFlag(
-		a.Cts.Kit, &hssubaccount.TCloudDescribeSafeAuthFlagReq{AccountID: a.req.AccountID, SubUin: uin},
+	safeAuthFlag, err := a.Client.HCService().TCloud.Account.DescribeSafeAuthFlagColl(
+		a.Cts.Kit, &hssubaccount.TCloudDescribeSafeAuthFlagCollReq{AccountID: a.req.AccountID, SubUin: uin},
 	)
 	if err != nil {
 		logs.Errorf("sub account created (uin=%d, name=%s) but get safe auth flag failed, err: %v, rid: %s",
@@ -211,7 +211,7 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 		return nil, "", fmt.Errorf("extension is required")
 	}
 
-	var loginProt, actionProt enumor.AccountProtectionFlag
+	var loginProt, actionProt *enumor.AccountProtectionFlag
 	if cloudResult.SafeAuth != nil {
 		if cloudResult.SafeAuth.LoginFlag != nil {
 			loginProt = cloudResult.SafeAuth.LoginFlag.ToProtectionFlag()
@@ -226,8 +226,8 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 		Uin:                cloudResult.Uin,
 		NickName:           cloudResult.Name,
 		CreateTime:         cloudResult.CreateTime,
-		LoginFlag:          converter.ValToPtr(loginProt),
-		ActionFlag:         converter.ValToPtr(actionProt),
+		LoginFlag:          loginProt,
+		ActionFlag:         actionProt,
 		ConsoleLogin:       ext.ConsoleLogin,
 	}
 	extBytes, err := core.MarshalStruct(tCloudExt)

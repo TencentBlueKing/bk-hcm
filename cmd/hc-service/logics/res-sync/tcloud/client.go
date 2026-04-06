@@ -68,6 +68,7 @@ type Interface interface {
 	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
 
 	SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
+	Account(kt *kit.Kit, opt *SyncAccountOption) (*SyncResult, error)
 
 	ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
 	RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
