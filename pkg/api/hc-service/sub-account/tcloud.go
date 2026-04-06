@@ -143,12 +143,33 @@ func (req *TCloudDescribeSubAccountsReq) Validate() error {
 	return nil
 }
 
-// ------------------------- Describe Safe Auth Flag -------------------------
+// ------------------------- Describe Safe Auth Flag Coll (Sub-account) -------------------------
 
-// TCloudDescribeSafeAuthFlagReq define tcloud describe sub-account safe auth flag request for hc-service.
+// TCloudDescribeSafeAuthFlagCollReq define tcloud describe sub-account safe auth flag request for hc-service.
+type TCloudDescribeSafeAuthFlagCollReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	SubUin    uint64 `json:"sub_uin,omitempty" validate:"omitempty"`
+}
+
+// Validate tcloud describe safe auth flag coll request.
+func (req *TCloudDescribeSafeAuthFlagCollReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDescribeSafeAuthFlagCollResult directly reuses adaptor SafeAuthFlagResult.
+type TCloudDescribeSafeAuthFlagCollResult = typeaccount.SafeAuthFlagResult
+
+// TCloudDescribeSafeAuthFlagCollResp define tcloud describe sub-account safe auth flag response.
+type TCloudDescribeSafeAuthFlagCollResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *TCloudDescribeSafeAuthFlagCollResult `json:"data"`
+}
+
+// ------------------------- Describe Safe Auth Flag (User) -------------------------
+
+// TCloudDescribeSafeAuthFlagReq define tcloud describe user's safe auth flag request for hc-service.
 type TCloudDescribeSafeAuthFlagReq struct {
 	AccountID string `json:"account_id" validate:"required"`
-	SubUin    uint64 `json:"sub_uin" validate:"required"`
 }
 
 // Validate tcloud describe safe auth flag request.
@@ -159,7 +180,7 @@ func (req *TCloudDescribeSafeAuthFlagReq) Validate() error {
 // TCloudDescribeSafeAuthFlagResult directly reuses adaptor SafeAuthFlagResult.
 type TCloudDescribeSafeAuthFlagResult = typeaccount.SafeAuthFlagResult
 
-// TCloudDescribeSafeAuthFlagResp define tcloud describe sub-account safe auth flag response.
+// TCloudDescribeSafeAuthFlagResp define tcloud describe user's safe auth flag response.
 type TCloudDescribeSafeAuthFlagResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *TCloudDescribeSafeAuthFlagResult `json:"data"`

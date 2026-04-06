@@ -141,6 +141,19 @@ const (
 	InvalidSecretStatus AccountSecretStatus = "invalid"
 )
 
+// NewAccountSecretStatusFromTCloud converts TCloud access key status string to AccountSecretStatus.
+// TCloud "Active" status maps to NormalSecretStatus, all other statuses map to InvalidSecretStatus.
+func NewAccountSecretStatusFromTCloud(status string) AccountSecretStatus {
+	switch status {
+	case "Active":
+		return NormalSecretStatus
+	case "Inactive":
+		return InvalidSecretStatus
+	default:
+		return ""
+	}
+}
+
 // AccountProtectionFlag is account protection flag.
 type AccountProtectionFlag string
 

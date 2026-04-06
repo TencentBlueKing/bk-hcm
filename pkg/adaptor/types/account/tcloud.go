@@ -127,11 +127,23 @@ func (opt TCloudListPolicyOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// DescribeSafeAuthFlagOption define tcloud describe sub-account safe auth flag option.
+// DescribeSafeAuthFlagCollOption define tcloud describe sub-account safe auth flag option.
 // reference: https://cloud.tencent.com/document/product/598/48602
-type DescribeSafeAuthFlagOption struct {
+type DescribeSafeAuthFlagCollOption struct {
 	// SubUin is the sub-account UIN.
 	SubUin uint64 `json:"sub_uin" validate:"required"`
+}
+
+// Validate DescribeSafeAuthFlagCollOption.
+func (opt DescribeSafeAuthFlagCollOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// DescribeSafeAuthFlagOption define tcloud describe user's safe auth flag option.
+// reference: https://cloud.tencent.com/document/product/598/48426
+type DescribeSafeAuthFlagOption struct {
+	// Uin is the main account UIN, optional. If not provided, queries current user.
+	Uin *uint64 `json:"uin,omitempty" validate:"omitempty"`
 }
 
 // Validate DescribeSafeAuthFlagOption.
@@ -159,29 +171,30 @@ type LoginActionFlag struct {
 
 // ToProtectionFlag maps enabled fields (value == 1) to AccountProtectionFlag using priority:
 // Phone > Token > Stoken > Wechat > Custom > Mail > U2FToken. Returns nil if flag is nil or none enabled.
-func (flag LoginActionFlag) ToProtectionFlag() enumor.AccountProtectionFlag {
+func (flag LoginActionFlag) ToProtectionFlag() *enumor.AccountProtectionFlag {
 	if flag.Phone != nil && converter.PtrToVal(flag.Phone) == 1 {
-		return enumor.PhoneProtection
+		return converter.ValToPtr(enumor.PhoneProtection)
 	}
 	if flag.Token != nil && converter.PtrToVal(flag.Token) == 1 {
-		return enumor.TokenProtection
+		return converter.ValToPtr(enumor.TokenProtection)
 	}
 	if flag.Stoken != nil && converter.PtrToVal(flag.Stoken) == 1 {
-		return enumor.StokenProtection
+		return converter.ValToPtr(enumor.StokenProtection)
 	}
 	if flag.Wechat != nil && converter.PtrToVal(flag.Wechat) == 1 {
-		return enumor.WechatProtection
+		return converter.ValToPtr(enumor.WechatProtection)
 	}
 	if flag.Custom != nil && converter.PtrToVal(flag.Custom) == 1 {
-		return enumor.CustomProtection
+		return converter.ValToPtr(enumor.CustomProtection)
 	}
 	if flag.Mail != nil && converter.PtrToVal(flag.Mail) == 1 {
-		return enumor.MailProtection
+		return converter.ValToPtr(enumor.MailProtection)
 	}
 	if flag.U2FToken != nil && converter.PtrToVal(flag.U2FToken) == 1 {
-		return enumor.U2FTokenProtection
+		return converter.ValToPtr(enumor.U2FTokenProtection)
 	}
-	return ""
+
+	return nil
 }
 
 // OffsiteFlag define offsite login protection settings.

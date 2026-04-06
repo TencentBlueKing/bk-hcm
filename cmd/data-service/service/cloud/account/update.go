@@ -111,7 +111,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 		account.CloudCreatedAt = req.CloudCreatedAt
 	}
 
-	// 只有提供了Extension才进行更新
+	// Extension 不为 nil 时，需要加密 SecretKey 并合并 extension
 	if req.Extension != nil {
 		// 将参数里的SecretKey加密
 		p := PT(req.Extension)
