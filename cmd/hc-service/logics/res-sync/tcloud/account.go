@@ -156,7 +156,6 @@ func (cli *client) syncAccountSecretStatus(kt *kit.Kit,
 		if secret.Extension == nil {
 			return errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("secret(id=%s) extension is nil, rid: %s",
 				secret.ID, kt.Rid))
-			// continue
 		}
 
 		cloudStatus, ok := cloudKeyStatusMap[secret.Extension.CloudSecretID]
@@ -164,7 +163,6 @@ func (cli *client) syncAccountSecretStatus(kt *kit.Kit,
 			logs.Errorf("[%s] cloud key not found for secret, id: %s, rid: %s", enumor.TCloud, secret.ID, kt.Rid)
 			return errf.NewFromErr(errf.InvalidParameter,
 				fmt.Errorf("cloud key not found for secret, id: %s, rid: %s", secret.ID, kt.Rid))
-			// continue
 		}
 
 		newStatus := enumor.NewAccountSecretStatusFromTCloud(cloudStatus)
