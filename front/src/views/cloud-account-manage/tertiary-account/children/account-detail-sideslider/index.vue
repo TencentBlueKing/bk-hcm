@@ -3,7 +3,13 @@ import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
+import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
+import {
+  AUTH_CREATE_SUB_ACCOUNT_SECRET,
+  AUTH_UPDATE_SUB_ACCOUNT_SECRET,
+  AUTH_DELETE_SUB_ACCOUNT_SECRET,
+} from '@/constants/auth-symbols';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/components/secret-action-dialog.vue';
@@ -22,6 +28,7 @@ const emit = defineEmits<{
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const cloudAccountStore = useCloudAccountStore();
+const accountStore = useAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const secretList = ref<ICloudSecretItem[]>([]);
@@ -293,16 +300,22 @@ const formatTime = (time?: string) => {
           <div class="card-header">
             <div class="card-header-left">
               <span class="card-title">API密钥</span>
-              <bk-button
-                text
-                theme="primary"
-                class="create-secret-btn"
-                @click="handleCreateSecret"
-                :disabled="!isProgramAccount"
+              <hcm-auth
+                v-if="accountStore.bizs"
+                :sign="{ type: AUTH_CREATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                v-slot="{ noPerm }"
               >
-                <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
-                新建密钥
-              </bk-button>
+                <bk-button
+                  text
+                  theme="primary"
+                  class="create-secret-btn"
+                  @click="handleCreateSecret"
+                  :disabled="!isProgramAccount || noPerm || rowData?.operable === false"
+                >
+                  <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
+                  新建密钥
+                </bk-button>
+              </hcm-auth>
             </div>
           </div>
           <div class="card-body">
@@ -341,12 +354,51 @@ const formatTime = (time?: string) => {
                 </bk-table-column>
                 <bk-table-column label="操作" width="100" fixed="right">
                   <template #default="{ row }">
-                    <template v-if="row.status === 'enabled'">
-                      <bk-button text theme="primary" @click="handleToggleSecretStatus(row)">禁用</bk-button>
-                    </template>
-                    <template v-else>
-                      <bk-button text theme="primary" @click="handleToggleSecretStatus(row)">启用</bk-button>
-                      <bk-button text theme="primary" class="ml8" @click="handleDeleteSecret(row)">删除</bk-button>
+                    <template v-if="accountStore.bizs">
+                      <template v-if="row.status === 'enabled'">
+                        <hcm-auth
+                          :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          v-slot="{ noPerm }"
+                        >
+                          <bk-button
+                            text
+                            theme="primary"
+                            :disabled="noPerm || row.operable === false"
+                            @click="handleToggleSecretStatus(row)"
+                          >
+                            禁用
+                          </bk-button>
+                        </hcm-auth>
+                      </template>
+                      <template v-else>
+                        <hcm-auth
+                          :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          v-slot="{ noPerm }"
+                        >
+                          <bk-button
+                            text
+                            theme="primary"
+                            :disabled="noPerm || row.operable === false"
+                            @click="handleToggleSecretStatus(row)"
+                          >
+                            启用
+                          </bk-button>
+                        </hcm-auth>
+                        <hcm-auth
+                          :sign="{ type: AUTH_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          v-slot="{ noPerm }"
+                        >
+                          <bk-button
+                            text
+                            theme="primary"
+                            class="ml8"
+                            :disabled="noPerm || row.operable === false"
+                            @click="handleDeleteSecret(row)"
+                          >
+                            删除
+                          </bk-button>
+                        </hcm-auth>
+                      </template>
                     </template>
                   </template>
                 </bk-table-column>
