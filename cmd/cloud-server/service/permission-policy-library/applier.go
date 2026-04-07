@@ -437,16 +437,16 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 	return nil
 }
 
-// listAllAppliedAccountIDs scans permission_template table for all account IDs applied to the given library.
-func (a *PolicyLibraryApplier) listAllAppliedAccountIDs(kt *kit.Kit, libraryID string) ([]string, error) {
+// ListAllAppliedAccountIDs scans permission_template table for all account IDs applied to the given library.
+func (a *PolicyLibraryApplier) ListAllAppliedAccountIDs(kt *kit.Kit, libraryID string) ([]string, error) {
 	accountIDSet := make(map[string]struct{})
 	start := uint32(0)
 	for {
-		req := &protocloud.PermissionTemplateExtListReq{
+		req := &protocloud.PermissionTemplateListReq{
 			Filter: tools.EqualExpression("policy_library_id", libraryID),
 			Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
 		}
-		result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
+		result, err := a.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, req)
 		if err != nil {
 			logs.Errorf("list permission template failed, libraryID: %s, err: %v, rid: %s", libraryID, err, kt.Rid)
 			return nil, err
@@ -510,7 +510,7 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 		return nil, err
 	}
 
-	appliedAccountIDs, err := a.listAllAppliedAccountIDs(kt, libraryID)
+	appliedAccountIDs, err := a.ListAllAppliedAccountIDs(kt, libraryID)
 	if err != nil {
 		return nil, err
 	}

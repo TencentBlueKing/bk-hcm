@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // ListPermissionPolicyLibrary list permission policy library.
@@ -224,4 +225,134 @@ func (svc *svc) ListPermissionPolicyLibraryPermissionTemplates(cts *rest.Context
 	}
 
 	return &proto.PermissionPolicyLibraryPermTmplResult{Details: details}, nil
+}
+
+// ListPermissionPolicyLibraryAccountIDs returns all account IDs associated with the given policy library.
+func (svc *svc) ListPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:       meta.PermissionPolicyLibrary,
+			Action:     meta.Find,
+			ResourceID: id,
+		},
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list permission policy library account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to query account ids")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	accountIDs, err := applier.ListAllAppliedAccountIDs(cts.Kit, id)
+	if err != nil {
+		logs.Errorf("list all applied account ids failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if accountIDs == nil {
+		accountIDs = make([]string, 0)
+	}
+	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
+}
+
+// ListBizPermissionPolicyLibraryAccountIDs returns account IDs associated with the given policy library,
+// filtered to only those accounts whose management biz equals bk_biz_id.
+func (svc *svc) ListBizPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list biz permission policy library account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to query account ids under this biz")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	library, err := applier.GetPolicyLibraryDetail(cts.Kit, id)
+	if err != nil {
+		logs.Errorf("get policy library detail failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	inScope := false
+	for _, biz := range library.BkBizIDs {
+		if biz == bizID {
+			inScope = true
+			break
+		}
+	}
+	if !inScope {
+		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id %d is not in policy library scope", bizID)
+	}
+
+	allAccountIDs, err := applier.ListAllAppliedAccountIDs(cts.Kit, id)
+	if err != nil {
+		logs.Errorf("list all applied account ids failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	accountIDs, err := svc.filterAccountIDsByBizID(cts.Kit, allAccountIDs, bizID)
+	if err != nil {
+		logs.Errorf("filter account ids by biz failed, bizID: %d, err: %v, rid: %s", bizID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
+}
+
+// filterAccountIDsByBizID queries the given account IDs and returns only those whose bk_biz_id equals bizID.
+func (svc *svc) filterAccountIDsByBizID(kt *kit.Kit, accountIDs []string, bizID int64) ([]string, error) {
+	if len(accountIDs) == 0 {
+		return make([]string, 0), nil
+	}
+
+	result := make([]string, 0)
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		req := &protocloud.AccountListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch), tools.RuleEqual("bk_biz_id", bizID)),
+			Fields: []string{"id"},
+			Page:   core.NewDefaultBasePage(),
+		}
+		listResult, err := svc.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("list accounts for biz filter failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		for _, account := range listResult.Details {
+			result = append(result, account.ID)
+		}
+	}
+	return result, nil
 }

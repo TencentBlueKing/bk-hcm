@@ -58,8 +58,21 @@ func InitService(c *capability.Capability) {
 	h.Add("ListPermissionPolicyLibraryPermissionTemplates", http.MethodGet,
 		"/vendors/{vendor}/permission_policy_libraries/{id}/permission_templates",
 		svc.ListPermissionPolicyLibraryPermissionTemplates)
+	h.Add("ListPermissionPolicyLibraryAccountIDs", http.MethodGet,
+		"/vendors/{vendor}/permission_policy_libraries/{id}/account_ids", svc.ListPermissionPolicyLibraryAccountIDs)
+
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, svc)
 
 	h.Load(c.WebService)
+	bizH.Load(c.WebService)
+}
+
+func bizService(h *rest.Handler, svc *svc) {
+	h.Add("ListBizPermissionPolicyLibraryAccountIDs", http.MethodGet,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/account_ids",
+		svc.ListBizPermissionPolicyLibraryAccountIDs)
 }
 
 type svc struct {
