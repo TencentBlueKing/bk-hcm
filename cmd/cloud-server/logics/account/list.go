@@ -24,9 +24,9 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -61,10 +61,7 @@ func BatchListBasicInfoByAccountIDs(kt *kit.Kit, cli *dataservice.Client, accoun
 
 	for _, ids := range slice.Split(uniqueIDs, constant.BatchOperationMaxLimit) {
 		listReq := &protocloud.AccountListReq{
-			Filter: &filter.Expression{
-				Op:    filter.And,
-				Rules: []filter.RuleFactory{tools.RuleIn("id", ids)},
-			},
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", ids), tools.RuleEqual("type", enumor.ResourceAccount)),
 			Page:   core.NewDefaultBasePage(),
 			Fields: []string{"id", "name", "bk_biz_id"},
 		}
@@ -148,10 +145,13 @@ func BatchBuildOperableAndNameMap(kt *kit.Kit, cli *dataservice.Client, bkBizID 
 	return accountMap, BuildOperableMapByAccountMap(bkBizID, accountIDs, accountMap), nil
 }
 
-// ListAccountIDsByBizID lists all account IDs under specified biz.
+// ListAccountIDsByBizID lists all resource type account IDs under specified biz.
 func ListAccountIDsByBizID(kt *kit.Kit, cli *dataservice.Client, bkBizID int64) ([]string, error) {
 	listReq := &protocloud.AccountListReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("bk_biz_id", bkBizID)),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("type", enumor.ResourceAccount),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}

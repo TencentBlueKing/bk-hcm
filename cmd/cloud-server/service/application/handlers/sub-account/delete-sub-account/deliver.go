@@ -26,8 +26,8 @@ import (
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 )
 
 // Deliver execute resource delivery after approval.
@@ -96,10 +96,7 @@ func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
 	return a.Client.DataService().Global.SubAccount.BatchDelete(
 		a.Cts.Kit,
 		&dataservice.BatchDeleteReq{
-			Filter: &filter.Expression{
-				Op:    filter.And,
-				Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID}},
-			},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
 		},
 	)
 }
@@ -108,10 +105,8 @@ func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
 // by matching cloud_sub_account_id. Non-fatal if not found.
 func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccount() error {
 	if err := a.deleteRegistrationAccountByCloudID(); err != nil {
-		logs.Errorf(
-			"delete registration account for cloud_id(%s) failed, err: %v, rid: %s",
-			a.req.CloudID, err, a.Cts.Kit.Rid,
-		)
+		logs.Errorf("delete registration account for cloud_id(%s) failed, err: %v, rid: %s",
+			a.req.CloudID, err, a.Cts.Kit.Rid)
 		return fmt.Errorf("delete registration account for cloud_id(%s) failed, err: %v", a.req.CloudID, err)
 	}
 	return nil
@@ -121,19 +116,11 @@ func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccountByCloudID() err
 	_, err := a.Client.DataService().Global.Account.Delete(
 		a.Cts.Kit.Ctx, a.Cts.Kit.Header(),
 		&dataprotocloud.AccountDeleteReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "type", Op: filter.Equal.Factory(), Value: string(enumor.RegistrationAccount),
-					},
-					filter.AtomRule{
-						Field: "extension.cloud_sub_account_id", Op: filter.JSONEqual.Factory(), Value: a.req.CloudID,
-					},
-				},
-			},
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("type", enumor.RegistrationAccount),
+				tools.RuleJSONEqual("extension.cloud_sub_account_id", a.req.CloudID),
+			),
 		},
 	)
-
 	return err
 }

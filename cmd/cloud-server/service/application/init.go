@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -144,12 +145,7 @@ func (a *applicationSvc) getApprovalProcessInfo(
 	result, err := a.client.DataService().Global.ApprovalProcess.ListApprovalProcesses(
 		cts.Kit.Ctx, cts.Kit.Header(),
 		&dataproto.ApprovalProcessListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "application_type", Op: filter.Equal.Factory(), Value: string(applicationType)}},
-			},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("application_type", string(applicationType))),
 			Page: &core.BasePage{
 				Count: false,
 				Start: 0,

@@ -55,10 +55,10 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
@@ -768,13 +768,8 @@ func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountI
 	result, err := a.client.DataService().Global.SubAccount.List(
 		cts.Kit,
 		&core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: subAccountIDs},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: uint(len(subAccountIDs))},
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", subAccountIDs)),
+			Page:   &core.BasePage{Start: 0, Limit: uint(len(subAccountIDs))},
 		},
 	)
 	if err != nil {

@@ -23,7 +23,9 @@ import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
@@ -128,4 +130,24 @@ func (a *ApplicationBaseSubAccount) GetBkBizIDs() []int64 {
 // who serve as the approvers for the subaccount approval flow.
 func (a *ApplicationBaseSubAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
 	return a.GetItsmPlatformAndAccountApprover(managers, a.accountID)
+}
+
+// CheckSubAccountExists checks if the sub account exists.
+func (a *ApplicationBaseSubAccount) CheckSubAccountExists(subAccountID string) error {
+	result, err := a.Client.DataService().Global.SubAccount.List(
+		a.Cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", subAccountID)),
+			Page:   core.NewCountPage(),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("query sub account failed, err: %w", err)
+	}
+
+	if result.Count == 0 {
+		return fmt.Errorf("sub account(id=%s) not found", subAccountID)
+	}
+
+	return nil
 }

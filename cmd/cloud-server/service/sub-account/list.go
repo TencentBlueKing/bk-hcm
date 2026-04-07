@@ -135,9 +135,7 @@ func (svc *service) ListBizSubAccountExt(cts *rest.Contexts) (interface{}, error
 	return svc.listBizSubAccountExt(cts, bkBizID)
 }
 
-func (svc *service) listBizSubAccountExt(cts *rest.Contexts, bkBizID int64,
-) (interface{}, error) {
-
+func (svc *service) listBizSubAccountExt(cts *rest.Contexts, bkBizID int64) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -175,10 +173,7 @@ func convertBizSubAccountExtList[Ext coresubaccount.Extension](svc *service, kt 
 
 	accountIDs := extractAccountIDsFromSubAccountList(listResult.Details)
 	accountMap, operableMap, err := logicaccount.BatchBuildOperableAndNameMap(
-		kt,
-		svc.client.DataService(),
-		bkBizID,
-		accountIDs,
+		kt, svc.client.DataService(), bkBizID, accountIDs,
 	)
 	if err != nil {
 		return nil, err
@@ -283,7 +278,7 @@ func (svc *service) listBizSubAccountAuthRes(cts *rest.Contexts, reqFilter *filt
 		return nil, true, nil
 	}
 
-	// 查询管理业务为biz_id的二级账号，下面需要根据二级账号ID获取三级账号列表
+	// 查询管理业务为biz_id的资源类型二级账号ID列表
 	accountIDs, err := logicaccount.ListAccountIDsByBizID(cts.Kit, svc.client.DataService(), bizID)
 	if err != nil {
 		return nil, false, err

@@ -31,7 +31,6 @@ import (
 type updateSubAccountContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
 	Req                              proto.SubAccountUpdateReq `json:"req"`
-	AccountID                        string                    `json:"account_id"`
 	SubAccountName                   string                    `json:"sub_account_name"`
 }
 
@@ -44,12 +43,12 @@ func (a *ApplicationOfUpdateSubAccount) GetItsmApprover(managers []string) []its
 func (a *ApplicationOfUpdateSubAccount) GenerateApplicationContent() interface{} {
 	return &updateSubAccountContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:  enumor.SubAccountActionUpdate,
-			Vendor:  a.Vendor(),
-			BkBizID: a.BkBizID(),
+			Action:    enumor.SubAccountActionUpdate,
+			Vendor:    a.Vendor(),
+			BkBizID:   a.BkBizID(),
+			AccountID: a.AccountID(),
 		},
 		Req:            converter.PtrToVal(a.req),
-		AccountID:      a.AccountID(),
 		SubAccountName: a.subAccountName,
 	}
 }

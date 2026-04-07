@@ -21,9 +21,6 @@ package deletesubaccount
 
 import (
 	"fmt"
-
-	"hcm/pkg/api/core"
-	"hcm/pkg/runtime/filter"
 )
 
 // CheckReq validate the request and check that the sub account exists.
@@ -32,7 +29,7 @@ func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
 		return err
 	}
 
-	if err := a.checkSubAccountExists(); err != nil {
+	if err := a.CheckSubAccountExists(a.req.ID); err != nil {
 		return err
 	}
 
@@ -48,28 +45,6 @@ func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
 
 	// TODO: 密钥管理功能实现后，需要校验三级账号关联的密钥是否已全部删除，
 	// 如果存在未删除的密钥，应阻止删除流程并返回错误提示。
-
-	return nil
-}
-
-func (a *ApplicationOfDeleteSubAccount) checkSubAccountExists() error {
-	result, err := a.Client.DataService().Global.SubAccount.List(
-		a.Cts.Kit,
-		&core.ListReq{
-			Filter: &filter.Expression{
-				Op:    filter.And,
-				Rules: []filter.RuleFactory{filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID}},
-			},
-			Page: &core.BasePage{Count: true},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("query sub account failed, err: %w", err)
-	}
-
-	if result.Count == 0 {
-		return fmt.Errorf("sub account(id=%s) not found", a.req.ID)
-	}
 
 	return nil
 }

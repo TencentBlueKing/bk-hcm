@@ -32,8 +32,8 @@ import (
 )
 
 func (ad Audit) subAccountUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.CloudResourceUpdateInfo) (
-	[]*tableaudit.AuditTable, error,
-) {
+	[]*tableaudit.AuditTable, error) {
+
 	ids := make([]string, 0, len(updates))
 	for _, one := range updates {
 		ids = append(ids, one.ResID)
@@ -73,8 +73,8 @@ func (ad Audit) subAccountUpdateAuditBuild(kt *kit.Kit, updates []protoaudit.Clo
 }
 
 func (ad Audit) subAccountDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
-	[]*tableaudit.AuditTable, error,
-) {
+	[]*tableaudit.AuditTable, error) {
+
 	ids := make([]string, 0, len(deletes))
 	for _, one := range deletes {
 		ids = append(ids, one.ResID)

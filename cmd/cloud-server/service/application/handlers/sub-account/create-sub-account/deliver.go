@@ -199,7 +199,8 @@ func (a *ApplicationOfCreateSubAccount) registerAccountForTCloud(cloudID string,
 
 func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudCreateCloudResult,
 	ext *proto.TCloudSubAccountAddExtension,
-	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension]) ([]string, string, error) {
+	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
+) ([]string, string, error) {
 
 	cloudID := strconv.FormatUint(converter.PtrToVal(cloudResult.Uin), 10)
 

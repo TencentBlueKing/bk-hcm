@@ -44,20 +44,16 @@ func (a *ApplicationOfUpdateSubAccount) Deliver() (enumor.ApplicationStatus, map
 func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	if err := a.updateCloudSubAccount(); err != nil {
 		return enumor.DeliverError,
-			map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)},
-			err
+			map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)}, err
 	}
 
 	if err := a.updateLocalSubAccount(); err != nil {
-		logs.Errorf(
-			"cloud sub account updated but local db update failed, id: %s, err: %v, rid: %s",
+		logs.Errorf("cloud sub account updated but local db update failed, id: %s, err: %v, rid: %s",
 			a.req.ID, err, a.Cts.Kit.Rid,
 		)
 		return enumor.DeliverError,
-			map[string]interface{}{
-				"error":          fmt.Sprintf("update local sub account failed, err: %v", err),
-				"sub_account_id": a.req.ID,
-			}, err
+			map[string]interface{}{"error": fmt.Sprintf("update local sub account failed, err: %v", err),
+				"sub_account_id": a.req.ID}, err
 	}
 
 	return enumor.Completed, map[string]interface{}{
