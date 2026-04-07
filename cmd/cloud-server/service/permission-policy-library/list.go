@@ -21,13 +21,16 @@ package permissionpolicylibrary
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // ListPermissionPolicyLibrary list permission policy library.
@@ -79,16 +82,69 @@ func (svc *svc) ListPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, er
 		return &proto.PermissionPolicyLibraryListResult{Count: dsResult.Count}, nil
 	}
 
+	libraryIDs := make([]string, 0, len(dsResult.Details))
+	for _, item := range dsResult.Details {
+		libraryIDs = append(libraryIDs, item.ID)
+	}
+
+	countMap, err := svc.buildLibraryAccountCountMap(cts.Kit, libraryIDs)
+	if err != nil {
+		logs.Errorf("build library account count map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	details := make([]proto.PermissionPolicyLibraryResult, 0, len(dsResult.Details))
 	for _, item := range dsResult.Details {
 		details = append(details, proto.PermissionPolicyLibraryResult{
 			BasePermissionPolicyLibrary: item,
-			// TODO: 待后续实现 associated_account_count 实际计算逻辑
-			AssociatedAccountCount: 0,
+			AssociatedAccountCount:      countMap[item.ID],
 		})
 	}
 
 	return &proto.PermissionPolicyLibraryListResult{Count: 0, Details: details}, nil
+}
+
+// buildLibraryAccountCountMap queries permission_template by policy_library_id and returns
+// a map of libraryID to unique associated account count.
+func (svc *svc) buildLibraryAccountCountMap(kt *kit.Kit, libraryIDs []string) (map[string]int, error) {
+	countMap := make(map[string]int, len(libraryIDs))
+	if len(libraryIDs) == 0 {
+		return countMap, nil
+	}
+
+	accountSets := make(map[string]map[string]struct{}, len(libraryIDs))
+	req := &protocloud.PermissionTemplateListReq{
+		Filter: tools.ContainersExpression("policy_library_id", libraryIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		result, err := svc.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, req)
+		if err != nil {
+			logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, tmpl := range result.Details {
+			if tmpl.PolicyLibraryID == nil {
+				continue
+			}
+			libID := cvt.PtrToVal(tmpl.PolicyLibraryID)
+			if _, ok := accountSets[libID]; !ok {
+				accountSets[libID] = make(map[string]struct{})
+			}
+			accountSets[libID][tmpl.AccountID] = struct{}{}
+		}
+
+		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	for libID, accountSet := range accountSets {
+		countMap[libID] = len(accountSet)
+	}
+	return countMap, nil
 }
 
 // ListPermissionPolicyLibraryUnappliedAccountIDs returns account IDs that have not applied the given policy library.
