@@ -122,6 +122,5 @@ func (a *ApplicationOfDeleteSubAccount) deleteRegistrationAccountByCloudID() err
 			),
 		},
 	)
-
 	return err
 }
