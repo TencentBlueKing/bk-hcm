@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 
+	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
@@ -66,6 +67,17 @@ type TCloudAccount struct {
 // GetCloudID ...
 func (account TCloudAccount) GetCloudID() string {
 	return strconv.FormatUint(converter.PtrToVal(account.Uin), 10)
+}
+
+// TCloudAccountWithExt 腾讯云子账号完整信息（包含基础信息和扩展信息）
+type TCloudAccountWithExt struct {
+	TCloudAccount `json:",inline"`
+	Extension     *coresubaccount.TCloudExtension `json:"extension"`
+}
+
+// GetCloudID 实现 CloudResType 接口，用于 Diff 对比
+func (a TCloudAccountWithExt) GetCloudID() string {
+	return a.TCloudAccount.GetCloudID()
 }
 
 // AddUserOption define tcloud add user option.
@@ -127,16 +139,25 @@ func (opt TCloudListPolicyOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// DescribeSafeAuthFlagCollMaxUIN is the max number of UINs per DescribeSafeAuthFlagColl API call.
+const DescribeSafeAuthFlagCollMaxUIN = 10
+
 // DescribeSafeAuthFlagCollOption define tcloud describe sub-account safe auth flag option.
 // reference: https://cloud.tencent.com/document/product/598/48602
 type DescribeSafeAuthFlagCollOption struct {
-	// SubUin is the sub-account UIN.
-	SubUin uint64 `json:"sub_uin" validate:"required"`
+	// SubUins is the sub-account UIN list.
+	SubUins []uint64 `json:"sub_uins" validate:"required,min=1,max=10"`
 }
 
 // Validate DescribeSafeAuthFlagCollOption.
 func (opt DescribeSafeAuthFlagCollOption) Validate() error {
-	return validator.Validate.Struct(opt)
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+	if len(opt.SubUins) > DescribeSafeAuthFlagCollMaxUIN {
+		return fmt.Errorf("sub_uin count %d exceeds max %d", len(opt.SubUins), DescribeSafeAuthFlagCollMaxUIN)
+	}
+	return nil
 }
 
 // DescribeSafeAuthFlagOption define tcloud describe user's safe auth flag option.
@@ -266,7 +287,21 @@ type TCloudSubAccountUser struct {
 	LastLoginTime *string `json:"last_login_time"`
 }
 
-// SafeAuthFlagResult define tcloud DescribeSafeAuthFlagColl API result.
+// SafeAuthFlagCollResult define tcloud DescribeSafeAuthFlagColl API result item.
+type SafeAuthFlagCollResult struct {
+	// SubUin is the sub-account UIN.
+	SubUin uint64 `json:"sub_uin"`
+	// LoginFlag is the login protection settings.
+	LoginFlag *LoginActionFlag `json:"login_flag"`
+	// ActionFlag is the sensitive operation protection settings.
+	ActionFlag *LoginActionFlag `json:"action_flag"`
+	// OffsiteFlag is the offsite login protection settings.
+	OffsiteFlag *OffsiteFlag `json:"offsite_flag"`
+	// PromptTrust indicates whether to prompt the user to trust the device (1: prompt, 0: no prompt).
+	PromptTrust *int64 `json:"prompt_trust"`
+}
+
+// SafeAuthFlagResult define tcloud DescribeSafeAuthFlag API result.
 type SafeAuthFlagResult struct {
 	// LoginFlag is the login protection settings.
 	LoginFlag *LoginActionFlag `json:"login_flag"`

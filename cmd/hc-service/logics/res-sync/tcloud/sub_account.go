@@ -56,7 +56,7 @@ func (opt SyncSubAccountOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// SubAccount sync sub account.
+// SubAccount sync subaccount.
 func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -76,23 +76,23 @@ func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResu
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[account.TCloudAccount,
+	addSlice, updateMap, delCloudIDs := common.Diff[account.TCloudAccountWithExt,
 		coresubaccount.SubAccount[coresubaccount.TCloudExtension]](fromCloud, fromDB, isSubAccountChange)
 
-	account, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	parAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
 	if err != nil {
 		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	if len(delCloudIDs) > 0 {
-		if err = cli.deleteSubAccount(kt, opt, account.Extension.CloudMainAccountID, delCloudIDs); err != nil {
+		if err = cli.deleteSubAccount(kt, opt, parAccount.Extension.CloudMainAccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createSubAccount(kt, account, addSlice); err != nil {
+		if err = cli.createSubAccount(kt, parAccount, addSlice); err != nil {
 			return nil, err
 		}
 	}
@@ -106,14 +106,14 @@ func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResu
 	return new(SyncResult), nil
 }
 
-func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, updateMap map[string]account.TCloudAccount,
-) error {
+func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
+	updateMap map[string]account.TCloudAccountWithExt) error {
 
 	if len(updateMap) <= 0 {
 		return errors.New("updateMap is required")
 	}
 
-	account, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	parAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
 	if err != nil {
 		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -126,25 +126,18 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, upda
 
 	updateItems := make([]dssubaccount.UpdateField, 0, len(updateMap))
 	for id, one := range updateMap {
-		extension := &coresubaccount.TCloudExtension{
-			CloudMainAccountID: account.Extension.CloudMainAccountID,
-			Uin:                one.Uin,
-			NickName:           one.NickName,
-			CreateTime:         one.CreateTime,
-		}
-
-		ext, err := core.MarshalStruct(extension)
+		ext, err := core.MarshalStruct(one.Extension)
 		if err != nil {
 			return err
 		}
 
 		accountType := ""
-		if account.Extension.CloudSubAccountID != "" &&
-			account.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+		if parAccount.Extension.CloudSubAccountID != "" &&
+			parAccount.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
 			accountType = string(enumor.CurrentAccount)
 		}
 
-		locSubAcconut, exist := locSubAccountMap[id]
+		locSubAccount, exist := locSubAccountMap[id]
 		if !exist {
 			logs.Errorf("sync sub account failed, sub account %s not exist from DB", id)
 			return fmt.Errorf("sync sub account failed, sub account %s not exist from DB", id)
@@ -154,10 +147,10 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, upda
 			ID:             id,
 			Name:           converter.PtrToVal(one.Name),
 			Vendor:         enumor.TCloud,
-			Site:           account.Site,
-			AccountID:      account.ID,
+			Site:           parAccount.Site,
+			AccountID:      parAccount.ID,
 			AccountType:    accountType,
-			Extension:      converter.ValToPtr(ext),
+			Extension:      &ext,
 			Email:          one.Email,
 			PhoneNum:       one.PhoneNum,
 			CountryCode:    one.CountryCode,
@@ -168,8 +161,8 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, upda
 		}
 
 		// 如果DB中子账号没有业务ID，则需要继承主账号的业务ID
-		if len(locSubAcconut.BkBizIDs) == 0 {
-			tmpRes.BkBizIDs = types.Int64Array{account.BkBizID}
+		if len(locSubAccount.BkBizIDs) == 0 {
+			tmpRes.BkBizIDs = types.Int64Array{parAccount.BkBizID}
 		}
 
 		updateItems = append(updateItems, tmpRes)
@@ -190,8 +183,38 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, upda
 	return nil
 }
 
+// buildSubAccountExtension 构建子账号扩展信息
+func (cli *client) buildSubAccountExtension(dbAccount *protocloud.AccountGetResult[protocore.TCloudAccountExtension],
+	subAccount *account.TCloudAccount, safeAuthFlagMap map[uint64]account.SafeAuthFlagCollResult,
+) *coresubaccount.TCloudExtension {
+
+	// 获取安全认证标记
+	var loginFlag *enumor.AccountProtectionFlag
+	var actionFlag *enumor.AccountProtectionFlag
+	if subAccount.Uin != nil {
+		if flag, ok := safeAuthFlagMap[converter.PtrToVal(subAccount.Uin)]; ok {
+			if flag.LoginFlag != nil {
+				loginFlag = flag.LoginFlag.ToProtectionFlag()
+			}
+			if flag.ActionFlag != nil {
+				actionFlag = flag.ActionFlag.ToProtectionFlag()
+			}
+		}
+	}
+
+	return &coresubaccount.TCloudExtension{
+		CloudMainAccountID: dbAccount.Extension.CloudMainAccountID,
+		Uin:                subAccount.Uin,
+		NickName:           subAccount.NickName,
+		CreateTime:         subAccount.CreateTime,
+		ConsoleLogin:       enumor.GenfromConsoleLogin(subAccount.ConsoleLogin),
+		LoginFlag:          loginFlag,
+		ActionFlag:         actionFlag,
+	}
+}
+
 func (cli *client) listSubAccountByIDMap(kt *kit.Kit, opt *SyncSubAccountOption,
-	updateMap map[string]account.TCloudAccount) (
+	updateMap map[string]account.TCloudAccountWithExt) (
 	map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
 
 	idList := make([]string, 0, len(updateMap))
@@ -243,14 +266,13 @@ func (cli *client) listSubAccountByIDMap(kt *kit.Kit, opt *SyncSubAccountOption,
 
 func (cli *client) createSubAccount(kt *kit.Kit,
 	mainAccount *protocloud.AccountGetResult[protocore.TCloudAccountExtension],
-	addSlice []account.TCloudAccount) error {
+	addSlice []account.TCloudAccountWithExt) error {
 
 	if len(addSlice) <= 0 {
 		return errors.New("addSlice is required")
 	}
 
 	createResources := make([]dssubaccount.CreateField, 0)
-
 	// 产品侧定义主账号数据较重要，定制化插入一条主账号数据
 	mainAccountCreateRes, err := cli.makeMainAccount(kt, mainAccount)
 	if err != nil {
@@ -259,25 +281,17 @@ func (cli *client) createSubAccount(kt *kit.Kit,
 	createResources = append(createResources, mainAccountCreateRes...)
 
 	for _, one := range addSlice {
-
-		extension := &coresubaccount.TCloudExtension{
-			CloudMainAccountID: mainAccount.Extension.CloudMainAccountID,
-			Uin:                one.Uin,
-			NickName:           one.NickName,
-			CreateTime:         one.CreateTime,
-		}
-
-		ext, err := core.MarshalStruct(extension)
-		if err != nil {
-			return err
-		}
-
 		accountType := ""
 		if mainAccount.Extension.CloudSubAccountID != "" &&
 			mainAccount.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
 			accountType = string(enumor.CurrentAccount)
 		}
 
+		ext, err := core.MarshalStruct(one.Extension)
+		if err != nil {
+			return err
+		}
+		// Managers由用户设置不继承资源账号，业务id则继承二级账号的管理业务ID
 		tmpRes := dssubaccount.CreateField{
 			CloudID:        one.GetCloudID(),
 			Name:           converter.PtrToVal(one.Name),
@@ -290,18 +304,14 @@ func (cli *client) createSubAccount(kt *kit.Kit,
 			PhoneNum:       one.PhoneNum,
 			CountryCode:    one.CountryCode,
 			CloudCreatedAt: one.CreateTime,
-			// Managers由用户设置不继承资源账号。
-			Managers: nil,
-			// 子用户将二级账号的管理业务ID继承下来
-			BkBizIDs: types.Int64Array{mainAccount.BkBizID},
-			Memo:     one.Remark,
+			Managers:       nil,
+			BkBizIDs:       types.Int64Array{mainAccount.BkBizID},
+			Memo:           one.Remark,
 		}
 		createResources = append(createResources, tmpRes)
 	}
 
-	createReq := &dssubaccount.CreateReq{
-		Items: createResources,
-	}
+	createReq := &dssubaccount.CreateReq{Items: createResources}
 	if _, err = cli.dbCli.Global.SubAccount.BatchCreate(kt, createReq); err != nil {
 		logs.Errorf("[%s] create sub account failed, err: %v, account: %s, rid: %s", enumor.TCloud,
 			err, mainAccount.ID, kt.Rid)
@@ -310,7 +320,6 @@ func (cli *client) createSubAccount(kt *kit.Kit,
 
 	logs.Infof("[%s] sync sub account to create sub account success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
 		mainAccount.ID, len(addSlice), kt.Rid)
-
 	return nil
 }
 
@@ -359,7 +368,8 @@ func (cli *client) deleteSubAccount(
 	return nil
 }
 
-func isSubAccountChange(cloud account.TCloudAccount, db coresubaccount.SubAccount[coresubaccount.TCloudExtension]) bool {
+func isSubAccountChange(cloud account.TCloudAccountWithExt,
+	db coresubaccount.SubAccount[coresubaccount.TCloudExtension]) bool {
 
 	if !assert.IsPtrUint64Equal(cloud.Uin, db.Extension.Uin) {
 		return true
@@ -393,10 +403,28 @@ func isSubAccountChange(cloud account.TCloudAccount, db coresubaccount.SubAccoun
 		return true
 	}
 
+	// 比较 Extension 中的字段
+	if cloud.Extension != nil && db.Extension != nil {
+		if !assert.IsPtrEqual(cloud.Extension.LoginFlag, db.Extension.LoginFlag) {
+			return true
+		}
+		if !assert.IsPtrEqual(cloud.Extension.ActionFlag, db.Extension.ActionFlag) {
+			return true
+		}
+		if !assert.IsPtrEqual(cloud.Extension.ConsoleLogin, db.Extension.ConsoleLogin) {
+			return true
+		}
+	}
+	if cloud.Extension != nil && db.Extension == nil || cloud.Extension == nil && db.Extension != nil {
+		return true
+	}
+
 	return false
 }
 
-func (cli *client) listSubAccountFromCloud(kt *kit.Kit, opt *SyncSubAccountOption) ([]account.TCloudAccount, error) {
+func (cli *client) listSubAccountFromCloud(kt *kit.Kit, opt *SyncSubAccountOption) (
+	[]account.TCloudAccountWithExt, error) {
+
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -407,8 +435,37 @@ func (cli *client) listSubAccountFromCloud(kt *kit.Kit, opt *SyncSubAccountOptio
 			err, opt.AccountID, opt, kt.Rid)
 		return nil, err
 	}
+	if len(results) == 0 {
+		return []account.TCloudAccountWithExt{}, nil
+	}
 
-	return results, nil
+	parAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	if err != nil {
+		logs.Errorf("request ds to get account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	uinList := make([]uint64, 0, len(results))
+	for _, one := range results {
+		if one.Uin != nil {
+			uinList = append(uinList, converter.PtrToVal(one.Uin))
+		}
+	}
+	safeAuthFlagMap, err := cli.batchDescribeSafeAuthFlagColl(kt, opt.AccountID, uinList)
+	if err != nil {
+		return nil, err
+	}
+
+	accountWithExtList := make([]account.TCloudAccountWithExt, 0, len(results))
+	for _, one := range results {
+		ext := cli.buildSubAccountExtension(parAccount, &one, safeAuthFlagMap)
+		accountWithExtList = append(accountWithExtList, account.TCloudAccountWithExt{
+			TCloudAccount: one,
+			Extension:     ext,
+		})
+	}
+
+	return accountWithExtList, nil
 }
 
 func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) (
@@ -537,4 +594,33 @@ func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit, cloudID string) (boo
 	}
 
 	return ret, nil
+}
+
+// batchDescribeSafeAuthFlagColl 分批次调用DescribeSafeAuthFlagColl获取子账号安全认证标记
+func (cli *client) batchDescribeSafeAuthFlagColl(kt *kit.Kit, accountID string, uins []uint64) (
+	map[uint64]account.SafeAuthFlagCollResult, error) {
+
+	result := make(map[uint64]account.SafeAuthFlagCollResult)
+	if len(uins) == 0 {
+		return result, nil
+	}
+
+	// 分批次，每批次最多10个
+	uinBatches := slice.Split(uins, account.DescribeSafeAuthFlagCollMaxUIN)
+	for _, batch := range uinBatches {
+		safeAuthFlags, err := cli.cloudCli.DescribeSafeAuthFlagColl(kt, &account.DescribeSafeAuthFlagCollOption{
+			SubUins: batch,
+		})
+		if err != nil {
+			logs.Errorf("describe safe auth flag coll failed, account: %s, sub_uin: %v, err: %v, rid: %s",
+				accountID, batch, err, kt.Rid)
+			return nil, fmt.Errorf("describe safe auth flag coll failed, err: %v", err)
+		}
+
+		for _, flag := range safeAuthFlags {
+			result[flag.SubUin] = flag
+		}
+	}
+
+	return result, nil
 }

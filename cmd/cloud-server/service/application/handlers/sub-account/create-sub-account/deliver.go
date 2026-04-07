@@ -100,7 +100,7 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 // tcloudCreateCloudResult aggregates cloud API results during sub account creation.
 type tcloudCreateCloudResult struct {
 	hssubaccount.TCloudCreateSubAccountResult
-	SafeAuth   *typeaccount.SafeAuthFlagResult
+	SafeAuth   *typeaccount.SafeAuthFlagCollResult
 	CreateTime *string
 }
 
@@ -152,14 +152,20 @@ func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto
 			uin, a.req.Name, len(subAccounts))
 	}
 
-	safeAuthFlag, err := a.Client.HCService().TCloud.Account.DescribeSafeAuthFlagColl(
-		a.Cts.Kit, &hssubaccount.TCloudDescribeSafeAuthFlagCollReq{AccountID: a.req.AccountID, SubUin: uin},
+	safeAuthFlags, err := a.Client.HCService().TCloud.Account.DescribeSafeAuthFlagColl(
+		a.Cts.Kit, &hssubaccount.TCloudDescribeSafeAuthFlagCollReq{AccountID: a.req.AccountID, SubUins: []uint64{uin}},
 	)
 	if err != nil {
 		logs.Errorf("sub account created (uin=%d, name=%s) but get safe auth flag failed, err: %v, rid: %s",
 			uin, a.req.Name, err, a.Cts.Kit.Rid)
 		return nil, fmt.Errorf("get safe auth flag failed, err: %v", err)
 	}
+	if len(safeAuthFlags) != 1 {
+		logs.Errorf("safe auth flag result count is not 1, uin=%d, name=%s, count=%d, rid: %s",
+			uin, a.req.Name, len(safeAuthFlags), a.Cts.Kit.Rid)
+		return nil, fmt.Errorf("safe auth flag result count is not 1, got %d", len(safeAuthFlags))
+	}
+	safeAuthFlag := &safeAuthFlags[0]
 
 	result := &tcloudCreateCloudResult{
 		TCloudCreateSubAccountResult: converter.PtrToVal(cloudResult),

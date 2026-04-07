@@ -92,7 +92,7 @@ type TCloud interface {
 		*account.TCloudAccountQuota, error)
 	GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error)
 	DescribeSafeAuthFlagColl(kt *kit.Kit, opt *account.DescribeSafeAuthFlagCollOption) (
-		*account.SafeAuthFlagResult, error)
+		[]account.SafeAuthFlagCollResult, error)
 	DescribeSafeAuthFlag(kt *kit.Kit, opt *account.DescribeSafeAuthFlagOption) (
 		*account.SafeAuthFlagResult, error)
 	SetMfaFlag(kt *kit.Kit, opt *account.SetMfaFlagOption) error

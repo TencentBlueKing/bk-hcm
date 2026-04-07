@@ -229,7 +229,7 @@ func (a *AccountClient) DeleteSubAccount(kt *kit.Kit, req *hssubaccount.TCloudDe
 
 // DescribeSafeAuthFlagColl get subaccount safe auth flag settings via TCloud CAM DescribeSafeAuthFlagColl.
 func (a *AccountClient) DescribeSafeAuthFlagColl(kt *kit.Kit, req *hssubaccount.TCloudDescribeSafeAuthFlagCollReq,
-) (*hssubaccount.TCloudDescribeSafeAuthFlagCollResult, error) {
+) ([]hssubaccount.TCloudDescribeSafeAuthFlagCollResult, error) {
 
 	return common.Request[hssubaccount.TCloudDescribeSafeAuthFlagCollReq,
 		hssubaccount.TCloudDescribeSafeAuthFlagCollResult](

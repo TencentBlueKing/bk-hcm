@@ -367,7 +367,7 @@ func (t *TCloudImpl) UpdateUser(kt *kit.Kit, opt *typeaccount.UpdateUserOption) 
 // DescribeSafeAuthFlagColl get sub-account safe auth flag settings (CAM DescribeSafeAuthFlagColl).
 // reference: https://cloud.tencent.com/document/product/598/48602
 func (t *TCloudImpl) DescribeSafeAuthFlagColl(kt *kit.Kit, opt *typeaccount.DescribeSafeAuthFlagCollOption) (
-	*typeaccount.SafeAuthFlagResult, error) {
+	[]typeaccount.SafeAuthFlagCollResult, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "describe safe auth flag coll option is required")
@@ -382,54 +382,63 @@ func (t *TCloudImpl) DescribeSafeAuthFlagColl(kt *kit.Kit, opt *typeaccount.Desc
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}
 
-	req := cam.NewDescribeSafeAuthFlagCollRequest()
-	req.SubUin = converter.ValToPtr(opt.SubUin)
+	results := make([]typeaccount.SafeAuthFlagCollResult, 0, len(opt.SubUins))
 
-	resp, err := camClient.DescribeSafeAuthFlagCollWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("describe safe auth flag coll failed, sub_uin: %d, err: %v, rid: %s", opt.SubUin, err, kt.Rid)
-		return nil, fmt.Errorf("describe safe auth flag coll failed, err: %v", err)
-	}
+	// CAM DescribeSafeAuthFlagColl API only supports querying one SubUins at a time internally
+	// Iterate through all SubUins and make individual API calls
+	for _, subUin := range opt.SubUins {
+		req := cam.NewDescribeSafeAuthFlagCollRequest()
+		req.SubUin = converter.ValToPtr(subUin)
 
-	result := &typeaccount.SafeAuthFlagResult{
-		PromptTrust: resp.Response.PromptTrust,
-	}
-
-	if resp.Response.LoginFlag != nil {
-		result.LoginFlag = &typeaccount.LoginActionFlag{
-			Phone:    resp.Response.LoginFlag.Phone,
-			Token:    resp.Response.LoginFlag.Token,
-			Stoken:   resp.Response.LoginFlag.Stoken,
-			Wechat:   resp.Response.LoginFlag.Wechat,
-			Custom:   resp.Response.LoginFlag.Custom,
-			Mail:     resp.Response.LoginFlag.Mail,
-			U2FToken: resp.Response.LoginFlag.U2FToken,
+		resp, err := camClient.DescribeSafeAuthFlagCollWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("describe safe auth flag coll failed, sub_uin: %d, err: %v, rid: %s", subUin, err, kt.Rid)
+			return nil, fmt.Errorf("describe safe auth flag coll failed for sub_uin %d, err: %v", subUin, err)
 		}
-	}
 
-	if resp.Response.ActionFlag != nil {
-		result.ActionFlag = &typeaccount.LoginActionFlag{
-			Phone:    resp.Response.ActionFlag.Phone,
-			Token:    resp.Response.ActionFlag.Token,
-			Stoken:   resp.Response.ActionFlag.Stoken,
-			Wechat:   resp.Response.ActionFlag.Wechat,
-			Custom:   resp.Response.ActionFlag.Custom,
-			Mail:     resp.Response.ActionFlag.Mail,
-			U2FToken: resp.Response.ActionFlag.U2FToken,
+		result := typeaccount.SafeAuthFlagCollResult{
+			SubUin:      subUin,
+			PromptTrust: resp.Response.PromptTrust,
 		}
-	}
 
-	if resp.Response.OffsiteFlag != nil {
-		result.OffsiteFlag = &typeaccount.OffsiteFlag{
-			VerifyFlag:   resp.Response.OffsiteFlag.VerifyFlag,
-			NotifyPhone:  resp.Response.OffsiteFlag.NotifyPhone,
-			NotifyEmail:  resp.Response.OffsiteFlag.NotifyEmail,
-			NotifyWechat: resp.Response.OffsiteFlag.NotifyWechat,
-			Tips:         resp.Response.OffsiteFlag.Tips,
+		if resp.Response.LoginFlag != nil {
+			result.LoginFlag = &typeaccount.LoginActionFlag{
+				Phone:    resp.Response.LoginFlag.Phone,
+				Token:    resp.Response.LoginFlag.Token,
+				Stoken:   resp.Response.LoginFlag.Stoken,
+				Wechat:   resp.Response.LoginFlag.Wechat,
+				Custom:   resp.Response.LoginFlag.Custom,
+				Mail:     resp.Response.LoginFlag.Mail,
+				U2FToken: resp.Response.LoginFlag.U2FToken,
+			}
 		}
+
+		if resp.Response.ActionFlag != nil {
+			result.ActionFlag = &typeaccount.LoginActionFlag{
+				Phone:    resp.Response.ActionFlag.Phone,
+				Token:    resp.Response.ActionFlag.Token,
+				Stoken:   resp.Response.ActionFlag.Stoken,
+				Wechat:   resp.Response.ActionFlag.Wechat,
+				Custom:   resp.Response.ActionFlag.Custom,
+				Mail:     resp.Response.ActionFlag.Mail,
+				U2FToken: resp.Response.ActionFlag.U2FToken,
+			}
+		}
+
+		if resp.Response.OffsiteFlag != nil {
+			result.OffsiteFlag = &typeaccount.OffsiteFlag{
+				VerifyFlag:   resp.Response.OffsiteFlag.VerifyFlag,
+				NotifyPhone:  resp.Response.OffsiteFlag.NotifyPhone,
+				NotifyEmail:  resp.Response.OffsiteFlag.NotifyEmail,
+				NotifyWechat: resp.Response.OffsiteFlag.NotifyWechat,
+				Tips:         resp.Response.OffsiteFlag.Tips,
+			}
+		}
+
+		results = append(results, result)
 	}
 
-	return result, nil
+	return results, nil
 }
 
 // DescribeSafeAuthFlag get user's safe auth flag settings (CAM DescribeSafeAuthFlag).
