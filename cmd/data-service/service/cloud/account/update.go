@@ -128,7 +128,6 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 		if err != nil {
 			return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 		}
-
 		account.Extension = tabletype.JsonField(updatedExtension)
 	}
 

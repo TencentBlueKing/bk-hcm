@@ -99,10 +99,6 @@ func (cli *client) syncAccountAuthFlag(kt *kit.Kit,
 		}
 	}
 
-	if !isAccountAuthFlagChange(cloudLoginFlag, cloudActionFlag, account.Extension) {
-		return nil
-	}
-
 	updateReq := &protocloud.AccountUpdateReq[protocloud.TCloudAccountExtensionUpdateReq]{
 		Extension: &protocloud.TCloudAccountExtensionUpdateReq{
 			LoginFlag:  cloudLoginFlag,
@@ -158,14 +154,17 @@ func (cli *client) syncAccountSecretStatus(kt *kit.Kit,
 	updateItems := make([]protocloud.AccountSecretUpdate[coreas.TCloudAccountSecretExtension], 0)
 	for _, secret := range secrets.Details {
 		if secret.Extension == nil {
-			continue
+			return errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("secret(id=%s) extension is nil, rid: %s",
+				secret.ID, kt.Rid))
+			// continue
 		}
 
 		cloudStatus, ok := cloudKeyStatusMap[secret.Extension.CloudSecretID]
 		if !ok {
-			logs.Warnf("[%s] cloud key not found for secret, secret_id: %s, accountID: %s, rid: %s",
-				enumor.TCloud, secret.Extension.CloudSecretID, account.ID, kt.Rid)
-			continue
+			logs.Errorf("[%s] cloud key not found for secret, id: %s, rid: %s", enumor.TCloud, secret.ID, kt.Rid)
+			return errf.NewFromErr(errf.InvalidParameter,
+				fmt.Errorf("cloud key not found for secret, id: %s, rid: %s", secret.ID, kt.Rid))
+			// continue
 		}
 
 		newStatus := enumor.NewAccountSecretStatusFromTCloud(cloudStatus)
@@ -196,26 +195,4 @@ func (cli *client) syncAccountSecretStatus(kt *kit.Kit,
 		enumor.TCloud, account.ID, len(updateItems), kt.Rid)
 
 	return nil
-}
-
-// isAccountAuthFlagChange returns true if the cloud LoginFlag or ActionFlag differs from DB extension.
-func isAccountAuthFlagChange(cloudLogin, cloudAction *enumor.AccountProtectionFlag,
-	ext *protocore.TCloudAccountExtension) bool {
-	if ext == nil {
-		return cloudLogin != nil || cloudAction != nil
-	}
-	loginChanged := !protectionFlagEqual(cloudLogin, ext.LoginFlag)
-	actionChanged := !protectionFlagEqual(cloudAction, ext.ActionFlag)
-	return loginChanged || actionChanged
-}
-
-func protectionFlagEqual(a, b *enumor.AccountProtectionFlag) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-
-	return converter.PtrToVal(a) == converter.PtrToVal(b)
 }
