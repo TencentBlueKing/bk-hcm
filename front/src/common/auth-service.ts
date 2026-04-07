@@ -302,15 +302,18 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     id: 'biz_sub_account_secret_operate',
     action: 'create',
     resourceType: 'sub_account_secret',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_UPDATE_SUB_ACCOUNT_SECRET]: {
     id: 'biz_sub_account_secret_operate',
     action: 'update',
     resourceType: 'sub_account_secret',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_DELETE_SUB_ACCOUNT_SECRET]: {
     id: 'biz_sub_account_secret_operate',
     action: 'delete',
     resourceType: 'sub_account_secret',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
 });

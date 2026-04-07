@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, inject } from 'vue';
 import { Share } from 'bkui-vue/lib/icon';
+import { AUTH_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
+import { useAccountStore } from '@/store';
 import { SECRET_STATUS_MAP } from '../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
@@ -18,6 +20,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: boolean];
   'action-success': [];
 }>();
+
+const accountStore = useAccountStore();
 
 const isShow = computed({
   get: () => props.modelValue,
@@ -79,8 +83,36 @@ const handleActionSuccess = () => {
       <div class="slider-header">
         <span class="title">云密钥详情</span>
         <div class="header-actions">
-          <bk-button v-if="canDisable" theme="primary" outline @click="handleToggleStatus">禁用</bk-button>
-          <bk-button v-if="canEnable" theme="primary" outline @click="handleToggleStatus">启用</bk-button>
+          <template v-if="accountStore.bizs">
+            <hcm-auth
+              v-if="canDisable"
+              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button
+                theme="primary"
+                outline
+                :disabled="noPerm || secretData?.operable === false"
+                @click="handleToggleStatus"
+              >
+                禁用
+              </bk-button>
+            </hcm-auth>
+            <hcm-auth
+              v-if="canEnable"
+              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button
+                theme="primary"
+                outline
+                :disabled="noPerm || secretData?.operable === false"
+                @click="handleToggleStatus"
+              >
+                启用
+              </bk-button>
+            </hcm-auth>
+          </template>
         </div>
       </div>
     </template>

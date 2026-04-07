@@ -147,6 +147,7 @@ export interface ISubAccountItem {
     console_login?: number;
     [k: string]: any;
   };
+  operable?: boolean;
   [k: string]: any;
 }
 
