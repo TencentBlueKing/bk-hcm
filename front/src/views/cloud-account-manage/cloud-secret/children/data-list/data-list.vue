@@ -8,6 +8,7 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useClipboard from 'vue-clipboard3';
 import { AUTH_UPDATE_SUB_ACCOUNT_SECRET, AUTH_DELETE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
+import { useAccountStore } from '@/store';
 import { CONSOLE_LOGIN_MAP } from '../../constants';
 import type { ICloudSecretItem } from '../../typings';
 
@@ -29,6 +30,7 @@ const emit = defineEmits<{
   delete: [row: ICloudSecretItem];
 }>();
 
+const accountStore = useAccountStore();
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
@@ -156,18 +158,46 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <template v-if="row.status === 'enabled'">
-            <hcm-auth :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET }" v-slot="{ noPerm }">
-              <bk-button theme="primary" text :disabled="noPerm" @click="handleDisable(row)">禁用</bk-button>
-            </hcm-auth>
-          </template>
-          <template v-else>
-            <hcm-auth :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET }" v-slot="{ noPerm }">
-              <bk-button theme="primary" text class="mr8" :disabled="noPerm" @click="handleEnable(row)">启用</bk-button>
-            </hcm-auth>
-            <hcm-auth :sign="{ type: AUTH_DELETE_SUB_ACCOUNT_SECRET }" v-slot="{ noPerm }">
-              <bk-button theme="primary" text :disabled="noPerm" @click="handleDelete(row)">删除</bk-button>
-            </hcm-auth>
+          <template v-if="accountStore.bizs">
+            <template v-if="row.status === 'enabled'">
+              <hcm-auth
+                :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                v-slot="{ noPerm }"
+              >
+                <bk-button
+                  theme="primary"
+                  text
+                  :disabled="noPerm || row.operable === false"
+                  @click="handleDisable(row)"
+                >
+                  禁用
+                </bk-button>
+              </hcm-auth>
+            </template>
+            <template v-else>
+              <hcm-auth
+                :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                v-slot="{ noPerm }"
+              >
+                <bk-button
+                  theme="primary"
+                  text
+                  class="mr8"
+                  :disabled="noPerm || row.operable === false"
+                  @click="handleEnable(row)"
+                >
+                  启用
+                </bk-button>
+              </hcm-auth>
+              <hcm-auth
+                :sign="{ type: AUTH_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                v-slot="{ noPerm }"
+              >
+                <bk-button theme="primary" text :disabled="noPerm || row.operable === false" @click="handleDelete(row)">
+                  删除
+                </bk-button>
+              </hcm-auth>
+            </template>
           </template>
         </template>
       </bk-table-column>

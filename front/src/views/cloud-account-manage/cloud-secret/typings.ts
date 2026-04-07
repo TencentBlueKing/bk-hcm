@@ -22,6 +22,7 @@ export interface ICloudSecretItem {
   account_managers?: string[];
   account_name?: string;
   sub_account_name?: string;
+  operable?: boolean;
   // 前端扩展字段 - 从 extension 中提取便于展示
   cloud_secret_id?: string;
   cloud_main_account_id?: string;
