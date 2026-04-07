@@ -5,6 +5,7 @@ import { IListResData, QueryBuilderType, QueryFilterType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { enableCount } from '@/utils/search';
 import rollRequest from '@blueking/roll-request';
+import type { ICloudSecretItem } from '@/views/cloud-account-manage/cloud-secret/typings';
 
 // 二级账号项接口定义
 export interface ISecondaryAccountItem {
@@ -116,30 +117,9 @@ export interface IAccountUpdateParams {
   extension?: Record<string, any>;
 }
 
-// 三级账号密钥项接口定义
-export interface ISubAccountSecretItem {
-  id: string;
-  vendor: string;
-  status: 'enabled' | 'disabled';
-  account_id: string;
-  sub_account_id: string;
-  extension: {
-    cloud_secret_id: string;
-    cloud_main_account_id: string;
-    cloud_sub_account_id: string;
-    console_login?: number;
-  };
-  sub_account_managers?: string[];
-  account_managers?: string[];
-  tenant_id?: string;
-  cloud_created_at: string;
-  disabled_time?: string;
-  last_used_time?: string;
-  creator: string;
-  reviser: string;
-  created_at: string;
-  updated_at: string;
-}
+// ISubAccountSecretItem 已统一为 ICloudSecretItem（来自 cloud-secret/typings.ts），两者共用同一套接口
+// 保留别名以保持向后兼容
+export { type ICloudSecretItem as ISubAccountSecretItem } from '@/views/cloud-account-manage/cloud-secret/typings';
 
 // 三级账号项接口定义
 export interface ISubAccountItem {
@@ -490,7 +470,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     bk_biz_id: number,
     vendor: string,
     params: ISubAccountSecretParams,
-  ): Promise<{ list: ISubAccountSecretItem[]; count: number }> => {
+  ): Promise<{ list: ICloudSecretItem[]; count: number }> => {
     subAccountSecretListLoading.value = true;
 
     // 使用真实接口
@@ -515,7 +495,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
       const count = countRes?.data?.count || 0;
 
       // 处理数据，将 extension 中的字段提取到顶层便于展示
-      const processedList = list.map((item: ISubAccountSecretItem) => ({
+      const processedList = list.map((item: ICloudSecretItem) => ({
         ...item,
         cloud_secret_id: item.extension?.cloud_secret_id,
         cloud_main_account_id: item.extension?.cloud_main_account_id,

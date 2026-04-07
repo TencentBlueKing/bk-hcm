@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject, type Ref } from 'vue';
+import { ref, computed, watch, inject, nextTick, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// import { Message, InfoBox } from 'bkui-vue';
+import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
@@ -9,6 +9,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
 import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
+import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 
@@ -26,6 +27,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const route = useRoute();
 const router = useRouter();
 const cloudAccountStore = useCloudAccountStore();
+const navStore = useCloudAccountNavStore();
 const { getBizsId } = useWhereAmI();
 
 // 创建模型实例
@@ -171,40 +173,32 @@ const handleViewDetails = (row: ISecondaryAccountItem) => {
   showDetailSideslider.value = true;
 };
 
-// 监听 URL 中 detailCloudId 参数，自动打开对应账号详情弹窗
+// 监听 navStore 中的跨 Tab 导航意图，自动打开对应账号详情弹窗
+// 在每次 fullList 更新后检查是否有待消费的导航意图
+const tryConsumeNavIntent = () => {
+  const intent = navStore.peekNavIntent('secondary-account');
+  if (!intent?.detailCloudId) return;
+
+  // 无论是否找到目标，都消费掉意图，防止重复触发
+  navStore.consumeNavIntent('secondary-account');
+
+  const detailId = intent.detailCloudId;
+  const target = fullList.value.find(
+    (item) => (item as any)?.extension?.cloud_main_account_id === detailId || item.id === detailId,
+  );
+  if (target) {
+    nextTick(() => handleViewDetails(target));
+  } else {
+    Message({ theme: 'warning', message: `当前列表中未找到账号「${detailId}」的数据，可能该账号不在当前业务下` });
+  }
+};
+
+// 数据加载完成后尝试消费导航意图（即使列表为空也要消费，以便给出提示）
 watch(
-  () => route.query.detailCloudId,
-  (detailCloudId) => {
-    if (!detailCloudId || typeof detailCloudId !== 'string') return;
-    // 等全量数据加载完成后再查找
-    const tryOpenDetail = () => {
-      const target = fullList.value.find(
-        (item) => (item as any)?.extension?.cloud_main_account_id === detailCloudId || item.id === detailCloudId,
-      );
-      if (target) {
-        handleViewDetails(target);
-        // 消费掉 detailCloudId，避免重复触发
-        const query = { ...route.query };
-        delete query.detailCloudId;
-        router.replace({ query });
-      }
-    };
-    if (fullList.value.length > 0) {
-      tryOpenDetail();
-    } else {
-      // 数据尚未加载完成，等待数据加载后重试
-      const unwatch = watch(
-        () => fullList.value.length,
-        (len) => {
-          if (len > 0) {
-            tryOpenDetail();
-            unwatch();
-          }
-        },
-      );
-    }
+  () => fullList.value,
+  () => {
+    tryConsumeNavIntent();
   },
-  { immediate: true },
 );
 
 const handleDetailUpdateSuccess = () => {

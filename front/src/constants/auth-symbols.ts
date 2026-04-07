@@ -71,3 +71,10 @@ export const AUTH_UPDATE_CLB = Symbol.for('auth_update_clb');
 export const AUTH_BIZ_UPDATE_CLB = Symbol.for('auth_biz_update_clb');
 export const AUTH_DELETE_CLB = Symbol.for('auth_delete_clb');
 export const AUTH_BIZ_DELETE_CLB = Symbol.for('auth_biz_delete_clb');
+
+/**
+ * 云密钥
+ */
+export const AUTH_CREATE_SUB_ACCOUNT_SECRET = Symbol.for('auth_create_sub_account_secret');
+export const AUTH_UPDATE_SUB_ACCOUNT_SECRET = Symbol.for('auth_update_sub_account_secret');
+export const AUTH_DELETE_SUB_ACCOUNT_SECRET = Symbol.for('auth_delete_sub_account_secret');

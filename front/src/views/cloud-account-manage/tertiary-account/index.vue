@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject, type Ref } from 'vue';
+import { ref, computed, watch, inject, nextTick, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
@@ -8,6 +9,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
 import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
+import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 
@@ -28,6 +30,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const route = useRoute();
 const router = useRouter();
 const cloudAccountStore = useCloudAccountStore();
+const navStore = useCloudAccountNavStore();
 const { getBizsId } = useWhereAmI();
 
 const searchModel = SearchConditionFactory.createModel();
@@ -90,10 +93,53 @@ const loadStatistics = async () => {
   pendingCount.value = pending;
 };
 
+// 跨 Tab 注入的 filter（一次性，不写入 URL，避免污染 Search 组件的初始值）
+const crossTabFilter = ref<Record<string, any> | null>(null);
+
+const showDetailSideslider = ref(false);
+const currentAccount = ref<ISubAccountItem | null>(null);
+const handleViewDetails = (row: ISubAccountItem) => {
+  currentAccount.value = row;
+  showDetailSideslider.value = true;
+};
+
+/**
+ * 在数据加载完成后，统一消费 navStore 中的跨 Tab 导航意图：
+ *  - detailCloudId → 在 fullList 中匹配并打开详情弹窗
+ *  - filter 已在 loadFullList 中通过 peekNavIntent 提前读取到 crossTabFilter
+ * 调用后无论是否成功匹配都会 consumeNavIntent，防止残留
+ */
+const tryConsumeNavIntent = () => {
+  const intent = navStore.consumeNavIntent('tertiary-account');
+  if (!intent) return;
+
+  if (intent.detailCloudId) {
+    const detailId = intent.detailCloudId;
+    const target = fullList.value.find((item) => item.cloud_id === detailId || item.id === detailId);
+    if (target) {
+      nextTick(() => handleViewDetails(target));
+    } else {
+      Message({ theme: 'warning', message: `当前列表中未找到账号「${detailId}」的数据，可能该账号不在当前筛选条件下` });
+    }
+  }
+};
+
 const loadFullList = async () => {
   try {
+    // 从 URL 获取搜索条件（这是 Search 组件 / 用户手动设置的条件）
     condition.value = searchQs.get(route.query, {});
-    const baseFilter = transformSimpleCondition(condition.value, searchFields.value);
+    urlCondition.value = { ...condition.value };
+
+    // 检查是否有跨 Tab 注入的 filter（仅 peek，不消费——detailCloudId 留给 tryConsumeNavIntent 处理）
+    const intent = navStore.peekNavIntent('tertiary-account');
+    if (intent?.filter && Object.keys(intent.filter).length > 0) {
+      crossTabFilter.value = intent.filter;
+    }
+
+    // 合并用户搜索条件 + 跨 Tab 注入的条件构建 API filter
+    const extra = crossTabFilter.value || {};
+    const mergedCondition = { ...condition.value, ...extra };
+    const baseFilter = transformSimpleCondition(mergedCondition, searchFields.value);
     const vendorFilter: QueryFilterType = {
       op: 'and',
       rules: [
@@ -121,6 +167,16 @@ const loadFullList = async () => {
     pagination.count = list.length;
     updateTableData();
     loadStatistics();
+
+    // 数据加载完成后，把跨 Tab filter 合并到 condition 让搜索组件显示筛选值
+    // 此时 Search 组件的 conditionInitValues 已经用空对象初始化过了，
+    // 所以后续 "重置" 会恢复到空状态而非带 filter 的状态
+    if (crossTabFilter.value) {
+      condition.value = { ...condition.value, ...crossTabFilter.value };
+    }
+
+    // 数据就绪后，统一消费跨 Tab 导航意图（打开详情弹窗等）
+    tryConsumeNavIntent();
   } catch (error) {
     console.error('获取三级账号列表失败:', error);
     fullList.value = [];
@@ -128,6 +184,9 @@ const loadFullList = async () => {
     pagination.count = 0;
   }
 };
+
+// 记录从 URL 解析出的纯搜索条件（不含 crossTabFilter），用于 conditionChanged 判断
+const urlCondition = ref<ISearchCondition>({});
 
 watch(
   () => route.query,
@@ -139,7 +198,7 @@ watch(
       order: (query.order || 'DESC') as string,
     };
     const newCondition = searchQs.get(query, {});
-    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
+    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(urlCondition.value);
     const isRefresh = query._t !== undefined;
     if (conditionChanged || fullList.value.length === 0 || isRefresh) {
       await loadFullList();
@@ -174,44 +233,6 @@ const handleBatchUpdate = () => {
   showBatchUpdateSideslider.value = true;
 };
 
-const showDetailSideslider = ref(false);
-const currentAccount = ref<ISubAccountItem | null>(null);
-const handleViewDetails = (row: ISubAccountItem) => {
-  currentAccount.value = row;
-  showDetailSideslider.value = true;
-};
-
-// 监听 URL 中 detailCloudId 参数，自动打开对应账号详情弹窗
-watch(
-  () => route.query.detailCloudId,
-  (detailCloudId) => {
-    if (!detailCloudId || typeof detailCloudId !== 'string') return;
-    const tryOpenDetail = () => {
-      const target = fullList.value.find((item) => item.cloud_id === detailCloudId || item.id === detailCloudId);
-      if (target) {
-        handleViewDetails(target);
-        const query = { ...route.query };
-        delete query.detailCloudId;
-        router.replace({ query });
-      }
-    };
-    if (fullList.value.length > 0) {
-      tryOpenDetail();
-    } else {
-      const unwatch = watch(
-        () => fullList.value.length,
-        (len) => {
-          if (len > 0) {
-            tryOpenDetail();
-            unwatch();
-          }
-        },
-      );
-    }
-  },
-  { immediate: true },
-);
-
 const showEditSideslider = ref(false);
 const editingAccount = ref<ISubAccountItem | null>(null);
 const handleEditAccount = (row: ISubAccountItem) => {
@@ -237,10 +258,12 @@ const refreshList = () => {
 };
 
 const handleSearch = (searchCondition: ISearchCondition) => {
+  crossTabFilter.value = null; // 用户主动搜索后清除跨 Tab 条件
   searchQs.set(searchCondition);
 };
 
 const handleReset = () => {
+  crossTabFilter.value = null; // 重置时清除跨 Tab 条件
   searchQs.clear();
 };
 
@@ -265,6 +288,7 @@ const handleGoToPending = () => {
             <plus style="font-size: 22px" />
             创建账号
           </bk-button>
+
           <bk-button :disabled="selectedRows.length === 0" @click="handleBatchUpdate">批量更新</bk-button>
         </div>
         <bk-alert v-if="pendingCount > 0" theme="warning" class="info-alert">

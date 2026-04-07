@@ -42,7 +42,7 @@ export class TableColumn {
     index: 4,
     width: 120,
   })
-  sub_account_managers: string;
+  sub_account_managers: string[];
 
   @Column('string', {
     name: '所属二级账号ID',
@@ -56,7 +56,7 @@ export class TableColumn {
     index: 6,
     width: 120,
   })
-  account_managers: string;
+  account_managers: string[];
 
   @Column('datetime', {
     name: '创建时间',

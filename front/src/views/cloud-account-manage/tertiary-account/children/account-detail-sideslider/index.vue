@@ -2,10 +2,12 @@
 import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCloudAccountStore, type ISubAccountItem, type ISubAccountSecretItem } from '@/store/cloud-account';
+import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
+import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/components/secret-action-dialog.vue';
+import type { ICloudSecretItem, SecretActionType } from '@/views/cloud-account-manage/cloud-secret/typings';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -22,13 +24,18 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-const secretList = ref<ISubAccountSecretItem[]>([]);
+const secretList = ref<ICloudSecretItem[]>([]);
 const secretLoading = ref(false);
 const showKeyLoading = ref(false);
 const showKeyResult = ref(false);
 const newSecretId = ref('');
 const newSecretKey = ref('');
 const keyAcknowledged = ref(false);
+
+// 密钥操作二次确认弹窗状态
+const showSecretActionDialog = ref(false);
+const secretActionType = ref<SecretActionType>('enable');
+const currentSecretData = ref<ICloudSecretItem | null>(null);
 
 const loadSecretList = async () => {
   if (!props.rowData?.id) return;
@@ -126,27 +133,21 @@ const handleCreateSecret = async () => {
   }
 };
 
-const handleToggleSecretStatus = async (secret: ISubAccountSecretItem) => {
-  const newStatus = secret.status === 'enabled' ? 'disabled' : 'enabled';
-  try {
-    await cloudAccountStore.updateSubAccountSecretStatus(getBizsId(), currentVendor.value, [
-      { id: secret.id, status: newStatus },
-    ]);
-    Message({ theme: 'success', message: `密钥${newStatus === 'enabled' ? '启用' : '禁用'}申请已提交` });
-    await loadSecretList();
-  } catch (error) {
-    console.error('更新密钥状态失败:', error);
-  }
+const handleToggleSecretStatus = (secret: ICloudSecretItem) => {
+  secretActionType.value = secret.status === 'enabled' ? 'disable' : 'enable';
+  currentSecretData.value = secret;
+  showSecretActionDialog.value = true;
 };
 
-const handleDeleteSecret = async (secret: ISubAccountSecretItem) => {
-  try {
-    await cloudAccountStore.deleteSubAccountSecret(getBizsId(), currentVendor.value, [secret.id]);
-    Message({ theme: 'success', message: '删除密钥申请已提交' });
-    await loadSecretList();
-  } catch (error) {
-    console.error('删除密钥失败:', error);
-  }
+const handleDeleteSecret = (secret: ICloudSecretItem) => {
+  secretActionType.value = 'delete';
+  currentSecretData.value = secret;
+  showSecretActionDialog.value = true;
+};
+
+const handleSecretActionSuccess = () => {
+  showSecretActionDialog.value = false;
+  loadSecretList();
 };
 
 const handleCopySecret = () => {
@@ -410,6 +411,15 @@ const formatTime = (time?: string) => {
       </div>
     </div>
   </bk-dialog>
+
+  <!-- 密钥操作二次确认弹窗（启用/禁用/删除） -->
+  <SecretActionDialog
+    v-model="showSecretActionDialog"
+    :action-type="secretActionType"
+    :secret-data="currentSecretData"
+    :vendor="currentVendor"
+    @success="handleSecretActionSuccess"
+  />
 </template>
 
 <style lang="scss" scoped>

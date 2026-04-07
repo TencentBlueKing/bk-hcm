@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, defineAsyncComponent, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import qs from 'qs';
 import { VendorEnum } from '@/common/constant';
+import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import VendorSelector from './components/vendor-selector.vue';
 
 // Tab面板配置
@@ -16,6 +16,7 @@ const tabPanels = [
 
 const route = useRoute();
 const router = useRouter();
+const navStore = useCloudAccountNavStore();
 const tabActive = ref(route.query?.type || 'secondary-account');
 
 // 当前选中的云厂商
@@ -31,9 +32,10 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
 };
 const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
-// Tab切换 — 清除上一个 Tab 遗留的搜索条件和分页参数，并将 type 写入 query
+// Tab 手动切换 — 清除遗留搜索条件/分页参数，同时清除残留的跨 Tab 导航意图
 const handleTabChange = (name: string) => {
-  router.replace({ query: { ...route.query, type: name, filter: undefined } });
+  navStore.clearNavIntent();
+  router.replace({ query: { type: name } });
 };
 
 // 云厂商切换
@@ -45,28 +47,35 @@ const handleVendorChange = (vendor: VendorEnum) => {
 // 提供云厂商信息给子组件
 provide('currentVendor', currentVendor);
 
-// 提供切换到三级账号Tab并带查询参数的方法
+/**
+ * 切换到三级账号 Tab（跨 Tab 跳转）
+ * @param filter  要注入的搜索条件，如 { 'extension.cloud_main_account_id': '123' }
+ * @param detailCloudId  要自动打开详情的三级账号 cloud_id
+ */
 const switchToTertiaryTab = (filter?: Record<string, any>, detailCloudId?: string) => {
+  // 将跳转参数写入 store，目标 Tab 在数据就绪后消费
+  navStore.setNavIntent({
+    targetTab: 'tertiary-account',
+    filter: filter && Object.keys(filter).length > 0 ? filter : undefined,
+    detailCloudId,
+  });
   tabActive.value = 'tertiary-account';
-  const query: Record<string, string> = { type: 'tertiary-account', _t: String(Date.now()) };
-  if (filter) {
-    query.filter = qs.stringify(filter, { arrayFormat: 'comma', encode: false });
-  }
-  if (detailCloudId) {
-    query.detailCloudId = detailCloudId;
-  }
-  router.replace({ query });
+  // URL 只保留 type + 时间戳触发 watcher，不再携带 filter/detailCloudId
+  router.replace({ query: { type: 'tertiary-account', _t: String(Date.now()) } });
 };
 provide('switchToTertiaryTab', switchToTertiaryTab);
 
-// 提供切换到二级账号Tab并打开详情弹窗的方法
+/**
+ * 切换到二级账号 Tab 并打开指定账号的详情弹窗
+ * @param detailCloudId  要自动打开详情的二级账号 cloud_main_account_id
+ */
 const switchToSecondaryTab = (detailCloudId?: string) => {
+  navStore.setNavIntent({
+    targetTab: 'secondary-account',
+    detailCloudId,
+  });
   tabActive.value = 'secondary-account';
-  const query: Record<string, string> = { type: 'secondary-account', _t: String(Date.now()) };
-  if (detailCloudId) {
-    query.detailCloudId = detailCloudId;
-  }
-  router.replace({ query });
+  router.replace({ query: { type: 'secondary-account', _t: String(Date.now()) } });
 };
 provide('switchToSecondaryTab', switchToSecondaryTab);
 </script>
