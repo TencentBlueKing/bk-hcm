@@ -129,8 +129,8 @@ const baseInfoFields = computed<Array<{ label: string; value: any; property: Mod
     },
     {
       label: '二级账号ID',
-      value: currentRowData.value?.id,
-      property: { id: 'id', name: '二级账号ID', type: 'string' },
+      value: currentRowData.value?.extension?.cloud_main_account_id,
+      property: { id: 'extension.cloud_main_account_id', name: '二级账号ID', type: 'string' },
     },
     {
       label: '使用业务',

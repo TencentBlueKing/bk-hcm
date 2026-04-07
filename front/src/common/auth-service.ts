@@ -30,7 +30,8 @@ export type AuthResourceType =
   | 'account_bill'
   | 'load_balancer'
   | 'permission_policy_library'
-  | 'permission_template';
+  | 'permission_template'
+  | 'sub_account_secret';
 
 // 权限校验参数
 export interface IVerifyResourceItem {
@@ -333,5 +334,20 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     action: 'delete',
     resourceType: 'permission_template',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_CREATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'create',
+    resourceType: 'sub_account_secret',
+  },
+  [authSymbol.AUTH_UPDATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'update',
+    resourceType: 'sub_account_secret',
+  },
+  [authSymbol.AUTH_DELETE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'delete',
+    resourceType: 'sub_account_secret',
   },
 });

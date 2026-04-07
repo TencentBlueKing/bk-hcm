@@ -18,8 +18,8 @@ export interface ICloudSecretItem {
   reviser: string;
   created_at: string;
   updated_at: string;
-  sub_account_manager?: string;
-  account_manager?: string;
+  sub_account_managers?: string[];
+  account_managers?: string[];
   account_name?: string;
   sub_account_name?: string;
   // 前端扩展字段 - 从 extension 中提取便于展示
