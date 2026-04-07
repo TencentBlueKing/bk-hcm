@@ -5,6 +5,8 @@ import { SECRET_STATUS_MAP } from '../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
 import SecretActionDialog from './secret-action-dialog.vue';
+import ArrayValue from '@/components/display-value/array-value.vue';
+import DatetimeValue from '@/components/display-value/datetime-value.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -60,11 +62,6 @@ const statusConfig = computed(() => {
 const canDisable = computed(() => props.secretData?.status === 'enabled');
 const canEnable = computed(() => props.secretData?.status === 'disabled');
 
-const formatDateTime = (dateStr?: string) => {
-  if (!dateStr) return '--';
-  return dateStr.replace('T', ' ').replace('Z', '');
-};
-
 const handleToggleStatus = () => {
   currentActionType.value = canDisable.value ? 'disable' : 'enable';
   showActionDialog.value = true;
@@ -116,7 +113,9 @@ const handleActionSuccess = () => {
 
         <div class="detail-item">
           <span class="label">三级账号负责人：</span>
-          <span class="value">{{ secretData?.sub_account_manager || '--' }}</span>
+          <span class="value">
+            <ArrayValue :value="secretData?.sub_account_managers" :display="{ showOverflowTooltip: true }" />
+          </span>
         </div>
 
         <div class="detail-item">
@@ -132,22 +131,24 @@ const handleActionSuccess = () => {
 
         <div class="detail-item">
           <span class="label">二级账号负责人：</span>
-          <span class="value">{{ secretData?.account_manager || '--' }}</span>
+          <span class="value">
+            <ArrayValue :value="secretData?.account_managers || []" :display="{ showOverflowTooltip: true }" />
+          </span>
         </div>
 
         <div class="detail-item">
           <span class="label">创建时间：</span>
-          <span class="value">{{ formatDateTime(secretData?.cloud_created_at) }}</span>
+          <span class="value"><DatetimeValue :value="secretData?.cloud_created_at" /></span>
         </div>
 
         <div class="detail-item">
           <span class="label">更新时间：</span>
-          <span class="value">{{ formatDateTime(secretData?.updated_at) }}</span>
+          <span class="value"><DatetimeValue :value="secretData?.updated_at" /></span>
         </div>
 
         <div class="detail-item">
           <span class="label">最近访问时间：</span>
-          <span class="value">{{ formatDateTime(secretData?.last_used_time) }}</span>
+          <span class="value"><DatetimeValue :value="secretData?.last_used_time" /></span>
         </div>
       </div>
     </div>
