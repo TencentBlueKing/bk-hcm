@@ -113,11 +113,17 @@ func (cli *client) listSubAccountSecretFromCloud(kt *kit.Kit, opt *SyncSubAccoun
 			return nil, errf.NewFromErr(errf.InvalidParameter, errors.New("sub account has no valid uin"))
 		}
 
+		if subAccount.AccountType == string(enumor.MainAccount) {
+			logs.Warnf("[%s] sub account %s is main account, skip listing access keys, account: %s, rid: %s",
+				subAccount.ID, opt.AccountID, kt.Rid)
+			continue
+		}
+
 		uin := converter.PtrToVal(subAccount.Extension.Uin)
 		keys, err := cli.cloudCli.ListAccessKeys(kt, &account.ListAccessKeysOption{TargetUin: uin})
 		if err != nil {
-			logs.Errorf("[%s] list access keys failed, uin: %d, account: %s, err: %v, rid: %s",
-				enumor.TCloud, uin, opt.AccountID, err, kt.Rid)
+			logs.Errorf("[%s] list access keys failed, id: %s, account: %s, err: %v, rid: %s",
+				enumor.TCloud, subAccount.ID, opt.AccountID, err, kt.Rid)
 			return nil, err
 		}
 
@@ -333,7 +339,7 @@ func (cli *client) updateSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption
 
 		updates = append(updates, protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
 			ID:             dbID,
-			Status:         &status,
+			Status:         converter.ValToPtr(status),
 			CloudCreatedAt: createTime,
 			LastUsedTime:   entry.LastUsedTime,
 			Extension: &coresass.TCloudSubAccountSecretExtension{

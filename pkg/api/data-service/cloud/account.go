@@ -154,12 +154,12 @@ type AccountExtensionUpdateReq interface {
 
 // TCloudAccountExtensionUpdateReq ...
 type TCloudAccountExtensionUpdateReq struct {
-	CloudMainAccountID string                       `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
-	CloudSubAccountID  *string                      `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
-	CloudSecretID      *string                      `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey     *string                      `json:"cloud_secret_key,omitempty" validate:"omitempty"`
-	LoginFlag          *enumor.AccountProtectionFlag `json:"login_flag,omitempty" validate:"omitempty"`
-	ActionFlag         *enumor.AccountProtectionFlag `json:"action_flag,omitempty" validate:"omitempty"`
+	CloudMainAccountID string                        `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountID  *string                       `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSecretID      *string                       `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey     *string                       `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	LoginFlag          *enumor.AccountProtectionFlag `json:"login_flag" validate:"omitempty"`
+	ActionFlag         *enumor.AccountProtectionFlag `json:"action_flag" validate:"omitempty"`
 }
 
 // EncryptSecretKey ...

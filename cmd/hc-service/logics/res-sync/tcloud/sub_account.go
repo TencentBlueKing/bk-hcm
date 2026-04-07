@@ -106,8 +106,8 @@ func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResu
 	return new(SyncResult), nil
 }
 
-func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
-	updateMap map[string]account.TCloudAccount) error {
+func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, updateMap map[string]account.TCloudAccount,
+) error {
 
 	if len(updateMap) <= 0 {
 		return errors.New("updateMap is required")
