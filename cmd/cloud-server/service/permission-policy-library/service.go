@@ -70,6 +70,9 @@ func InitService(c *capability.Capability) {
 }
 
 func bizService(h *rest.Handler, svc *svc) {
+	h.Add("ListBizPermissionPolicyLibrary", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/list",
+		svc.ListBizPermissionPolicyLibrary)
 	h.Add("ListBizPermissionPolicyLibraryAccountIDs", http.MethodGet,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/account_ids",
 		svc.ListBizPermissionPolicyLibraryAccountIDs)

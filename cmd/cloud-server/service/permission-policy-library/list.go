@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
 
@@ -88,9 +89,9 @@ func (svc *svc) ListPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, er
 		libraryIDs = append(libraryIDs, item.ID)
 	}
 
-	countMap, err := svc.buildLibraryAccountCountMap(cts.Kit, libraryIDs)
+	libAccountIDsMap, err := svc.buildLibraryAccountIDsMap(cts.Kit, libraryIDs)
 	if err != nil {
-		logs.Errorf("build library account count map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("build library account ids map failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -98,19 +99,19 @@ func (svc *svc) ListPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, er
 	for _, item := range dsResult.Details {
 		details = append(details, proto.PermissionPolicyLibraryResult{
 			BasePermissionPolicyLibrary: item,
-			AssociatedAccountCount:      countMap[item.ID],
+			AssociatedAccountCount:      len(libAccountIDsMap[item.ID]),
 		})
 	}
 
 	return &proto.PermissionPolicyLibraryListResult{Count: 0, Details: details}, nil
 }
 
-// buildLibraryAccountCountMap queries permission_template by policy_library_id and returns
-// a map of libraryID to unique associated account count.
-func (svc *svc) buildLibraryAccountCountMap(kt *kit.Kit, libraryIDs []string) (map[string]int, error) {
-	countMap := make(map[string]int, len(libraryIDs))
+// buildLibraryAccountIDsMap queries permission_template by policy_library_id and returns
+// a map of libraryID to unique associated account ids.
+func (svc *svc) buildLibraryAccountIDsMap(kt *kit.Kit, libraryIDs []string) (map[string][]string, error) {
+	libAccountIDsMap := make(map[string][]string, len(libraryIDs))
 	if len(libraryIDs) == 0 {
-		return countMap, nil
+		return libAccountIDsMap, nil
 	}
 
 	accountSets := make(map[string]map[string]struct{}, len(libraryIDs))
@@ -143,9 +144,9 @@ func (svc *svc) buildLibraryAccountCountMap(kt *kit.Kit, libraryIDs []string) (m
 	}
 
 	for libID, accountSet := range accountSets {
-		countMap[libID] = len(accountSet)
+		libAccountIDsMap[libID] = maps.Keys(accountSet)
 	}
-	return countMap, nil
+	return libAccountIDsMap, nil
 }
 
 // ListPermissionPolicyLibraryUnappliedAccountIDs returns account IDs that have not applied the given policy library.
@@ -330,6 +331,101 @@ func (svc *svc) ListBizPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (in
 	}
 
 	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
+}
+
+// ListBizPermissionPolicyLibrary list permission policy library under a biz.
+func (svc *svc) ListBizPermissionPolicyLibrary(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(proto.ListReq)
+	if err = cts.DecodeInto(req); err != nil {
+		logs.Errorf("decode list biz permission policy library request failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list biz permission policy library authorize failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to list permission policy library")
+	}
+
+	listFilter := req.Filter
+	listFilter, err = tools.And(listFilter, tools.EqualExpression("vendor", vendor),
+		tools.RuleJSONContains("bk_biz_ids", bizID))
+	if err != nil {
+		logs.Errorf("merge vendor filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	listReq := &protocloud.PermissionPolicyLibraryListReq{
+		Filter: listFilter,
+		Page:   req.Page,
+	}
+	result, err := svc.client.DataService().Global.PermissionPolicyLibrary.ListPermissionPolicyLibrary(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("list biz permission policy library from data service failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if req.Page.Count {
+		return &proto.PermissionPolicyLibraryListResult{Count: result.Count}, nil
+	}
+
+	libraryIDs := make([]string, 0, len(result.Details))
+	for _, item := range result.Details {
+		libraryIDs = append(libraryIDs, item.ID)
+	}
+
+	countMap, err := svc.buildBizLibraryAccountCountMap(cts.Kit, libraryIDs, bizID)
+	if err != nil {
+		logs.Errorf("build biz library account count map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	details := make([]proto.PermissionPolicyLibraryResult, 0, len(result.Details))
+	for _, item := range result.Details {
+		details = append(details, proto.PermissionPolicyLibraryResult{
+			BasePermissionPolicyLibrary: item,
+			AssociatedAccountCount:      countMap[item.ID],
+		})
+	}
+
+	return &proto.PermissionPolicyLibraryListResult{Count: 0, Details: details}, nil
+}
+
+func (svc *svc) buildBizLibraryAccountCountMap(kt *kit.Kit, libraryIDs []string, bizID int64) (map[string]int, error) {
+	libAccountIDsMap, err := svc.buildLibraryAccountIDsMap(kt, libraryIDs)
+	if err != nil {
+		logs.Errorf("build library account ids map failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	countMap := make(map[string]int)
+	for libraryID, accountIDs := range libAccountIDsMap {
+		accountIDs, err = svc.filterAccountIDsByBizID(kt, accountIDs, bizID)
+		if err != nil {
+			logs.Errorf("filter account ids by biz id failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		countMap[libraryID] = len(accountIDs)
+	}
+	return countMap, nil
 }
 
 // filterAccountIDsByBizID queries the given account IDs and returns only those whose bk_biz_id equals bizID.
