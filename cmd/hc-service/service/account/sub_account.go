@@ -185,7 +185,7 @@ func (svc *service) TCloudDescribeSafeAuthFlagColl(cts *rest.Contexts) (interfac
 	}
 
 	result, err := client.DescribeSafeAuthFlagColl(cts.Kit, &typeaccount.DescribeSafeAuthFlagCollOption{
-		SubUin: req.SubUin,
+		SubUins: req.SubUins,
 	})
 	if err != nil {
 		return nil, err

@@ -286,3 +286,20 @@ func IsStringMapEqual(a map[string]string, b map[string]string) bool {
 func ContainsUpperCase(s string) bool {
 	return strings.ContainsAny(s, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 }
+
+// IsPtrEqual 判断指针是否相同（泛型版本）
+func IsPtrEqual[T comparable](a, b *T) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
+}

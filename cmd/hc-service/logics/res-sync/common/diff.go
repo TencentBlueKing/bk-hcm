@@ -140,6 +140,7 @@ type CloudResType interface {
 		typesroutetable.AwsRoute |
 
 		account.TCloudAccount |
+		account.TCloudAccountWithExt |
 		account.HuaWeiAccount |
 		account.AwsAccount |
 		account.AzureAccount |

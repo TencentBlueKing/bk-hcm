@@ -21,6 +21,8 @@ package enumor
 
 import (
 	"fmt"
+
+	"hcm/pkg/tools/converter"
 )
 
 // SubAccountType is sub account type.
@@ -111,3 +113,19 @@ const (
 	// ConsoleAccount 控制台账号，可登录控制台
 	ConsoleAccount SubAccountConsoleLogin = 1
 )
+
+// GenfromConsoleLogin generate console login from raw login.
+func GenfromConsoleLogin(rawLogin *uint64) *SubAccountConsoleLogin {
+	if rawLogin == nil {
+		return nil
+	}
+
+	switch converter.PtrToVal(rawLogin) {
+	case 0:
+		return converter.ValToPtr(ProgramAccount)
+	case 1:
+		return converter.ValToPtr(ConsoleAccount)
+	default:
+		return nil
+	}
+}
