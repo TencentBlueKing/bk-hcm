@@ -497,3 +497,45 @@ func (svc *svc) filterAccountIDsByBizID(kt *kit.Kit, accountIDs []string, bizID 
 	}
 	return result, nil
 }
+
+// ListBizPermissionPolicyLibraryPermissionTemplates returns all permission templates applied from the given library,
+// filtered to those belonging to accounts whose management biz equals bk_biz_id.
+func (svc *svc) ListBizPermissionPolicyLibraryPermissionTemplates(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list biz permission templates auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to list permission templates under this biz")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	details, err := applier.ListBizTemplatesInScope(cts.Kit, vendor, id, bizID)
+	if err != nil {
+		logs.Errorf("list biz permission templates failed, id: %s, bizID: %d, err: %v, rid: %s",
+			id, bizID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &proto.PermissionPolicyLibraryPermTmplResult{Details: details}, nil
+}

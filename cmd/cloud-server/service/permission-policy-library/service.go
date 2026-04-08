@@ -79,6 +79,9 @@ func bizService(h *rest.Handler, svc *svc) {
 	h.Add("ListBizPermissionPolicyLibraryUnAppliedAccountIDs", http.MethodGet,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/unapplied_account_ids",
 		svc.ListBizPermissionPolicyLibraryUnAppliedAccountIDs)
+	h.Add("ListBizPermissionPolicyLibraryPermissionTemplates", http.MethodGet,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/permission_templates",
+		svc.ListBizPermissionPolicyLibraryPermissionTemplates)
 }
 
 type svc struct {

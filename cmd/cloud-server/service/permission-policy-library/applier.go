@@ -21,6 +21,7 @@ package permissionpolicylibrary
 
 import (
 	"fmt"
+	"hcm/pkg/runtime/filter"
 	"sort"
 	"strconv"
 	"strings"
@@ -573,37 +574,70 @@ func (a *PolicyLibraryApplier) tcloudListTemplatesInScope(kt *kit.Kit, libraryID
 		return nil, err
 	}
 
-	inScopeAccountIDs, err := a.listAllInScopeAccountIDs(kt, enumor.TCloud, library.BkBizIDs)
+	return a.tcloudListBizTemplatesInScope(kt, libraryID, library.BkBizIDs)
+}
+
+// ListBizTemplatesInScope returns all permission templates applied from the given library
+// whose associated accounts have their management biz equal to bizID.
+func (a *PolicyLibraryApplier) ListBizTemplatesInScope(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	bizID int64) (any, error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
 	if err != nil {
 		return nil, err
 	}
 
-	inScopeSet := make(map[string]struct{}, len(inScopeAccountIDs))
-	for _, id := range inScopeAccountIDs {
-		inScopeSet[id] = struct{}{}
+	inScope := false
+	for _, biz := range library.BkBizIDs {
+		if biz == bizID {
+			inScope = true
+			break
+		}
+	}
+	if !inScope {
+		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id %d is not in policy library scope", bizID)
 	}
 
+	switch vendor {
+	case enumor.TCloud:
+		return a.tcloudListBizTemplatesInScope(kt, libraryID, []int64{bizID})
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+// tcloudListBizTemplatesInScope returns TCloud permission templates applied from the given library
+// whose associated accounts have their management biz equal to bizID.
+func (a *PolicyLibraryApplier) tcloudListBizTemplatesInScope(kt *kit.Kit, libraryID string, bizIDs []int64) (
+	[]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
+
+	accountIDs, err := a.listAllInScopeAccountIDs(kt, enumor.TCloud, bizIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := make([]*filter.AtomRule, 0)
+	conditions = append(conditions, tools.RuleEqual("library_id", libraryID))
+	for _, batch := range slice.Split(accountIDs, int(filter.DefaultMaxInLimit)) {
+		conditions = append(conditions, tools.RuleIn("account_id", batch))
+	}
+
+	req := &protocloud.PermissionTemplateExtListReq{
+		Filter: tools.ExpressionAnd(conditions...),
+		Page:   core.NewDefaultBasePage(),
+	}
 	details := make([]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], 0)
-	start := uint32(0)
 	for {
-		req := &protocloud.PermissionTemplateExtListReq{
-			Filter: tools.EqualExpression("policy_library_id", libraryID),
-			Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
-		}
 		result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
 		if err != nil {
 			logs.Errorf("list permission template ext failed, libraryID: %s, err: %v, rid: %s", libraryID, err, kt.Rid)
 			return nil, err
 		}
-		for _, tmpl := range result.Details {
-			if _, ok := inScopeSet[tmpl.AccountID]; ok {
-				details = append(details, tmpl)
-			}
-		}
+		details = append(details, result.Details...)
 		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
-		start += uint32(core.DefaultMaxPageLimit)
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return details, nil
