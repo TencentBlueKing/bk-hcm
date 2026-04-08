@@ -299,9 +299,7 @@ func (svc *service) listBizSubAccountAuthRes(cts *rest.Contexts, reqFilter *filt
 		return scopeFilter, false, nil
 	}
 
-	// 过滤主账号
-	finalFilter, err := tools.And(scopeFilter, reqFilter,
-		tools.RuleNotEqual("account_type", string(enumor.MainAccount)))
+	finalFilter, err := tools.And(scopeFilter, reqFilter)
 	if err != nil {
 		return nil, false, err
 	}
