@@ -61,6 +61,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncLoadBalancerListener", http.MethodPost, "/listeners/sync", v.SyncLoadBalancerListener)
 	h.Add("SyncCvmCCInfo", http.MethodPost, "/cvms/cc_info/sync", v.SyncCvmCCInfo)
 	h.Add("SyncCvmCCInfoByCond", http.MethodPost, "/cvms/cc_info/by_condition/sync", v.SyncCvmCCInfoByCond)
+	h.Add("SyncPermissionTemplate", http.MethodPost, "/permission_templates/sync", v.SyncPermissionTemplate)
 
 	h.Load(cap.WebService)
 }

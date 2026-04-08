@@ -102,6 +102,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		enumor.LoadBalancerCloudResType:        SyncLoadBalancer,
 		enumor.RouteTableCloudResType:          SyncRouteTable,
 		enumor.SubAccountCloudResType:          SyncSubAccount,
+		enumor.PermissionTemplateCloudResType:  SyncPermissionTemplate,
 		enumor.SecurityGroupUsageBizRelResType: SyncSGUsageBizRel,
 		enumor.CvmCCInfoResType:                SyncCvmCCHostInfo,
 	}
@@ -117,6 +118,8 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 func getSyncOrder() []enumor.CloudResourceType {
 	return []enumor.CloudResourceType{
+		// 同步三级账号需要同步权限模版信息，所以需要先同步权限模版
+		enumor.PermissionTemplateCloudResType,
 		// 支持用户在海垒只管理账号信息，防止用户只开了云账号的云上API，全流程没同步完影响到了账号的同步
 		enumor.SubAccountCloudResType,
 		enumor.DiskCloudResType,
