@@ -102,6 +102,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		enumor.LoadBalancerCloudResType:        SyncLoadBalancer,
 		enumor.RouteTableCloudResType:          SyncRouteTable,
 		enumor.SubAccountCloudResType:          SyncSubAccount,
+		enumor.PermissionTemplateCloudResType:  SyncPermissionTemplate,
 		enumor.SecurityGroupUsageBizRelResType: SyncSGUsageBizRel,
 		enumor.CvmCCInfoResType:                SyncCvmCCHostInfo,
 	}
@@ -117,6 +118,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 func getSyncOrder() []enumor.CloudResourceType {
 	return []enumor.CloudResourceType{
+		enumor.PermissionTemplateCloudResType,
 		enumor.SubAccountCloudResType,
 		enumor.DiskCloudResType,
 		enumor.VpcCloudResType,

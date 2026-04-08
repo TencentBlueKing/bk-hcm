@@ -24,6 +24,7 @@ import (
 
 	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -109,4 +110,95 @@ func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePoli
 	}
 
 	return nil
+}
+
+// ListPolicies 分页拉取 CAM 策略列表（含预设策略和自定义策略）。
+// reference: https://cloud.tencent.com/document/product/598/34570
+func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPoliciesOption) (
+	[]typeaccount.TCloudPolicyItem, uint64, error) {
+
+	if opt == nil {
+		return nil, 0, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, 0, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(opt.Region)
+	if err != nil {
+		return nil, 0, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListPoliciesRequest()
+	req.Page = converter.ValToPtr(opt.Page)
+	req.Rp = converter.ValToPtr(opt.Rp)
+	// Scope="Local" 表示拉取该账号下的策略（含预设和自定义）
+	req.Scope = converter.ValToPtr("Local")
+
+	resp, err := client.ListPoliciesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("list cam policies failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, 0, err
+	}
+
+	total := converter.PtrToVal(resp.Response.TotalNum)
+
+	items := make([]typeaccount.TCloudPolicyItem, 0, len(resp.Response.List))
+	for _, p := range resp.Response.List {
+		item := typeaccount.TCloudPolicyItem{
+			PolicyID:    converter.PtrToVal(p.PolicyId),
+			PolicyName:  converter.PtrToVal(p.PolicyName),
+			Description: converter.PtrToVal(p.Description),
+			PolicyType:  enumor.TCloudPolicyType(converter.PtrToVal(p.Type)),
+			CreateTime:  converter.PtrToVal(p.AddTime),
+		}
+		items = append(items, item)
+	}
+
+	return items, total, nil
+}
+
+// GetPolicyDetail 获取单个CAM策略的完整详情（含 PolicyDocument）。
+// reference: https://cloud.tencent.com/document/product/598/34574
+func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPolicyDetailOption) (
+	*typeaccount.TCloudPolicyDetail, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	region := opt.Region
+	if region == "" {
+		region = constant.TCloudDefaultRegion
+	}
+
+	client, err := t.clientSet.CamServiceClient(region)
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewGetPolicyRequest()
+	req.PolicyId = converter.ValToPtr(opt.PolicyID)
+
+	resp, err := client.GetPolicyWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("get cam policy detail failed, policyID: %d, err: %v, rid: %s", opt.PolicyID, err, kt.Rid)
+		return nil, err
+	}
+
+	detail := &typeaccount.TCloudPolicyDetail{
+		PolicyID:       opt.PolicyID,
+		PolicyName:     converter.PtrToVal(resp.Response.PolicyName),
+		PolicyDocument: converter.PtrToVal(resp.Response.PolicyDocument),
+		Description:    converter.PtrToVal(resp.Response.Description),
+		PolicyType:     enumor.TCloudPolicyType(converter.PtrToVal(resp.Response.Type)),
+		CreateTime:     converter.PtrToVal(resp.Response.AddTime),
+	}
+
+	return detail, nil
 }

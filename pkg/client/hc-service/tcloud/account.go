@@ -74,6 +74,29 @@ func (a *AccountClient) SyncSubAccount(kt *kit.Kit, req *sync.TCloudGlobalSyncRe
 	return nil
 }
 
+// SyncPermissionTemplate sync permission templates for the given account.
+func (a *AccountClient) SyncPermissionTemplate(kt *kit.Kit, req *sync.TCloudGlobalSyncReq) error {
+	resp := new(rest.BaseResp)
+
+	err := a.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/permission_templates/sync").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // Check 联通性和云上字段匹配校验
 func (a *AccountClient) Check(ctx context.Context, h http.Header, request *hsaccount.TCloudAccountCheckReq) error {
 
