@@ -109,6 +109,10 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 
 	h.Add("CreateBizForDeleteSubAccount", http.MethodPost,
 		"/vendors/{vendor}/applications/types/delete_sub_account", svc.CreateBizForDeleteSubAccount)
+
+	h.Add("CreateBizForApplyPermissionPolicyLibraryCreate", http.MethodPost,
+		"/vendors/{vendor}/applications/types/apply_permission_policy_library_create",
+		svc.CreateBizForApplyPermissionPolicyLibraryCreate)
 }
 
 type applicationSvc struct {
