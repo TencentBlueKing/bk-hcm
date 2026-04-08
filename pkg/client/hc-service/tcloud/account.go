@@ -241,74 +241,6 @@ func (a *AccountClient) SetMfaFlag(kt *kit.Kit, req *hssubaccount.TCloudSetMfaFl
 		a.client, http.MethodPost, kt, req, "/sub_accounts/set_mfa_flag")
 }
 
-// CreateAccessKey create access key for TCloud CAM sub-user.
-func (a *AccountClient) CreateAccessKey(kt *kit.Kit,
-	req *hssubaccount.TCloudCreateAccessKeyReq) (*hssubaccount.TCloudCreateAccessKeyResult, error) {
-
-	resp := new(hssubaccount.TCloudCreateAccessKeyResp)
-
-	err := a.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/sub_accounts/secrets/create").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
-}
-
-// DeleteAccessKey delete access key for TCloud CAM sub-user.
-func (a *AccountClient) DeleteAccessKey(kt *kit.Kit, req *hssubaccount.TCloudDeleteAccessKeyReq) error {
-	resp := new(rest.BaseResp)
-
-	err := a.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/sub_accounts/secrets/delete").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
-}
-
-// UpdateAccessKey update access key status for TCloud CAM sub-user.
-func (a *AccountClient) UpdateAccessKey(kt *kit.Kit, req *hssubaccount.TCloudUpdateAccessKeyReq) error {
-	resp := new(rest.BaseResp)
-
-	err := a.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/sub_accounts/secrets/update").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
-}
-
 // DescribeSubAccounts query sub accounts by UIN list via TCloud CAM DescribeSubAccounts.
 func (a *AccountClient) DescribeSubAccounts(kt *kit.Kit, req *hssubaccount.TCloudDescribeSubAccountsReq,
 ) ([]typeaccount.TCloudSubAccountUser, error) {
@@ -319,4 +251,24 @@ func (a *AccountClient) DescribeSubAccounts(kt *kit.Kit, req *hssubaccount.TClou
 		return nil, err
 	}
 	return *resp, nil
+}
+
+// CreateAccessKey create access key for TCloud CAM sub-user.
+func (a *AccountClient) CreateAccessKey(kt *kit.Kit,
+	req *hssubaccount.TCloudCreateAccessKeyReq) (*hssubaccount.TCloudCreateAccessKeyResult, error) {
+
+	return common.Request[hssubaccount.TCloudCreateAccessKeyReq, hssubaccount.TCloudCreateAccessKeyResult](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/secrets/create")
+}
+
+// DeleteAccessKey delete access key for TCloud CAM sub-user.
+func (a *AccountClient) DeleteAccessKey(kt *kit.Kit, req *hssubaccount.TCloudDeleteAccessKeyReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudDeleteAccessKeyReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/secrets/delete")
+}
+
+// UpdateAccessKey update access key status for TCloud CAM sub-user.
+func (a *AccountClient) UpdateAccessKey(kt *kit.Kit, req *hssubaccount.TCloudUpdateAccessKeyReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudUpdateAccessKeyReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/secrets/update")
 }
