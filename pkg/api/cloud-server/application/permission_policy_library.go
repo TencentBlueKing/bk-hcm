@@ -38,6 +38,20 @@ func (req *BizApplyPermissionPolicyLibraryCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// BizApplyPermissionPolicyLibraryUpdateReq is the request to create an application for applying a
+// permission policy library (update action) to multiple accounts.
+type BizApplyPermissionPolicyLibraryUpdateReq struct {
+	// PolicyLibraryID is the ID of the permission policy library to apply.
+	PolicyLibraryID string `json:"policy_library_id" validate:"required"`
+	// AccountIDs is the list of account IDs to apply the library to.
+	AccountIDs []string `json:"account_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate validates the request.
+func (req *BizApplyPermissionPolicyLibraryUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // ApplyPermPolicyLibContent is the content stored in the application record for
 // the apply_permission_policy_library type.
 type ApplyPermPolicyLibContent struct {

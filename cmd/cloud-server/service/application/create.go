@@ -42,6 +42,7 @@ import (
 	deletesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-sub-account"
 	updatesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-sub-account"
 	applycreate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-create"
+	applyupdate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-update"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -900,6 +901,74 @@ func (a *applicationSvc) createBizForApplyPermPolicyLibCreate(cts *rest.Contexts
 	for _, accountID := range req.AccountIDs {
 		content := applycreate.BuildContent(bizID, vendor, req, accountID)
 		handler := applycreate.NewApplicationOfApplyPermPolicyLibCreate(opt, content)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for account %s failed, err: %w", accountID, err))
+		}
+
+		createResult, ok := result.(*core.CreateResult)
+		if !ok {
+			return nil, errf.New(errf.Aborted, "create application result type assertion failed")
+		}
+
+		ids = append(ids, createResult.ID)
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForApplyPermissionPolicyLibraryUpdate creates ITSM applications for applying a
+// permission policy library (update action) to multiple accounts.
+func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryUpdate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply}}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizApplyPermissionPolicyLibraryUpdateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.createBizForApplyPermPolicyLibUpdate(cts, bizID, vendor, req)
+}
+
+func (a *applicationSvc) createBizForApplyPermPolicyLibUpdate(cts *rest.Contexts, bizID int64, vendor enumor.Vendor,
+	req *proto.BizApplyPermissionPolicyLibraryUpdateReq) (*core.BatchCreateResult, error) {
+
+	opt := a.getHandlerOption(cts)
+	ids := make([]string, 0, len(req.AccountIDs))
+
+	for _, accountID := range req.AccountIDs {
+		content := applyupdate.BuildContent(bizID, vendor, req, accountID)
+		handler := applyupdate.NewApplicationOfApplyPermPolicyLibUpdate(opt, content)
 		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.Aborted,

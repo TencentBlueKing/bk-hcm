@@ -113,6 +113,9 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 	h.Add("CreateBizForApplyPermissionPolicyLibraryCreate", http.MethodPost,
 		"/vendors/{vendor}/applications/types/apply_permission_policy_library_create",
 		svc.CreateBizForApplyPermissionPolicyLibraryCreate)
+	h.Add("CreateBizForApplyPermissionPolicyLibraryUpdate", http.MethodPost,
+		"/vendors/{vendor}/applications/types/apply_permission_policy_library_update",
+		svc.CreateBizForApplyPermissionPolicyLibraryUpdate)
 }
 
 type applicationSvc struct {
