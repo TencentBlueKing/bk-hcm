@@ -241,7 +241,7 @@ func (a *AccountClient) SetMfaFlag(kt *kit.Kit, req *hssubaccount.TCloudSetMfaFl
 		a.client, http.MethodPost, kt, req, "/sub_accounts/set_mfa_flag")
 }
 
-// DescribeSubAccounts query sub accounts by UIN list via TCloud CAM DescribeSubAccounts.
+// DescribeSubAccounts query subaccounts by UIN list via TCloud CAM DescribeSubAccounts.
 func (a *AccountClient) DescribeSubAccounts(kt *kit.Kit, req *hssubaccount.TCloudDescribeSubAccountsReq,
 ) ([]typeaccount.TCloudSubAccountUser, error) {
 
