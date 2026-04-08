@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -68,11 +69,13 @@ func (dao *PermissionTemplateDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		return nil, err
 	}
 
+	accountIDs := make([]string, 0)
 	for index := range models {
 		if err = models[index].InsertValidate(); err != nil {
 			return nil, err
 		}
 		models[index].ID = ids[index]
+		accountIDs = append(accountIDs, models[index].AccountID)
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES(%s)`,
@@ -87,13 +90,25 @@ func (dao *PermissionTemplateDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.PermissionTemplateTable, err)
 	}
 
+	accountBizIDMap, err := dao.findAccountBizID(kt, accountIDs)
+	if err != nil {
+		logs.Errorf("find account biz id failed, err: %v, accountIDs: %v, rid: %s", err, accountIDs, kt.Rid)
+		return nil, err
+	}
+
 	audits := make([]*tableaudit.AuditTable, 0, len(models))
 	for _, one := range models {
+		bizID, ok := accountBizIDMap[one.AccountID]
+		if !ok {
+			logs.Errorf("account biz id not found, accountID: %s, rid: %s", one.AccountID, kt.Rid)
+			return nil, fmt.Errorf("account biz id not found, accountID: %s", one.AccountID)
+		}
 		audits = append(audits, &tableaudit.AuditTable{
 			ResID:    one.ID,
 			ResName:  one.Name,
 			ResType:  enumor.PermissionTemplateAuditResType,
 			Action:   enumor.Create,
+			BkBizID:  bizID,
 			Vendor:   one.Vendor,
 			Operator: kt.User,
 			Source:   kt.GetRequestSource(),
@@ -110,6 +125,29 @@ func (dao *PermissionTemplateDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	}
 
 	return ids, nil
+}
+
+// findAccountBizID queries bk_biz_id for given account IDs in batches of 500.
+func (dao *PermissionTemplateDao) findAccountBizID(kt *kit.Kit, accountIDs []string) (map[string]int64, error) {
+	result := make(map[string]int64, len(accountIDs))
+
+	for _, batch := range slice.Split(accountIDs, int(filter.DefaultMaxInLimit)) {
+		rows := make([]tablecloud.AccountTable, 0, len(batch))
+		sql := fmt.Sprintf(`SELECT id, bk_biz_id FROM %s WHERE id IN (:id)`, table.AccountTable)
+		whereValue := map[string]interface{}{"id": batch}
+
+		err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &rows, sql, whereValue)
+		if err != nil {
+			logs.Errorf("select account biz id failed, err: %v, accountIDs: %v, rid: %s", err, batch, kt.Rid)
+			return nil, err
+		}
+
+		for _, row := range rows {
+			result[row.ID] = row.BkBizID
+		}
+	}
+
+	return result, nil
 }
 
 // BatchUpdate batch update permission_template by ID.

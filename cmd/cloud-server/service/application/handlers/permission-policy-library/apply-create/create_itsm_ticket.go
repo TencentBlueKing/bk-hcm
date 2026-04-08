@@ -40,6 +40,20 @@ func (a *ApplicationOfApplyPermPolicyLibCreate) RenderItsmTitle() (string, error
 
 // RenderItsmForm renders the ITSM form content.
 func (a *ApplicationOfApplyPermPolicyLibCreate) RenderItsmForm() (string, error) {
+	bizName, err := a.GetBizName(a.Content.BkBizID)
+	if err != nil {
+		logs.Errorf("get biz name for itsm form failed, bizID: %s, err: %v, rid: %s", a.Content.BkBizID, err,
+			a.Cts.Kit.Rid)
+		return "", err
+	}
+
+	accountInfo, err := a.GetAccount(a.Content.AccountID)
+	if err != nil {
+		logs.Errorf("get account for itsm form failed, accountID: %s, err: %v, rid: %s", a.Content.AccountID, err,
+			a.Cts.Kit.Rid)
+		return "", err
+	}
+
 	library, err := a.GetPolicyLibraryDetail(a.Cts.Kit, a.Content.PolicyLibraryID)
 	if err != nil {
 		logs.Errorf("get policy library detail for itsm form failed, libraryID: %s, err: %v, rid: %s",
@@ -48,11 +62,12 @@ func (a *ApplicationOfApplyPermPolicyLibCreate) RenderItsmForm() (string, error)
 	}
 
 	items := []string{
+		fmt.Sprintf("业务: %s", bizName),
+		fmt.Sprintf("云厂商: %s", a.Content.Vendor.GetNameZh()),
+		fmt.Sprintf("云账号: %s", accountInfo.Name),
 		fmt.Sprintf("权限策略库: %s", library.Name),
-		fmt.Sprintf("策略库ID: %s", a.Content.PolicyLibraryID),
-		fmt.Sprintf("账号ID: %s", a.Content.AccountID),
-		fmt.Sprintf("业务ID: %d", a.Content.BkBizID),
-		fmt.Sprintf("云厂商: %s", a.Content.Vendor),
+		fmt.Sprintf("策略库ID: %s", library.ID),
+		fmt.Sprintf("策略内容: %s", library.PolicyDocument),
 	}
 
 	return strings.Join(items, "\n"), nil

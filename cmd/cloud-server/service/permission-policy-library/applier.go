@@ -21,7 +21,6 @@ package permissionpolicylibrary
 
 import (
 	"fmt"
-	"hcm/pkg/runtime/filter"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,6 +39,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
@@ -158,7 +158,7 @@ func (a *PolicyLibraryApplier) CheckAccountsBizInScope(kt *kit.Kit, allowedBkBiz
 	accounts := make([]*corecloud.BaseAccount, 0)
 	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &protocloud.AccountListReq{
-			Filter: tools.ContainersExpression("id", batch),
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch), tools.RuleEqual("type", enumor.ResourceAccount)),
 			Page:   core.NewDefaultBasePage(),
 		}
 		result, err := a.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), listReq)
@@ -417,6 +417,18 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 	templateID string) error {
 
 	now := time.Now().UTC().Format(time.RFC3339)
+	updateFields := map[string]interface{}{
+		"policy_document":          library.PolicyDocument,
+		"policy_library_version":   library.Version,
+		"policy_library_sync_time": now,
+		"memo":                     library.Memo,
+	}
+	if err := a.audit.ResUpdateAudit(kt, enumor.PermissionTemplateAuditResType, templateID, updateFields); err != nil {
+		logs.Errorf("tcloud update permission template failed, templateID: %s, err: %v, rid: %s",
+			templateID, err, kt.Rid)
+		return err
+	}
+
 	dsReq := &protocloud.PermissionTemplateBatchUpdateReq[corecloud.TCloudPermissionTemplateExtension]{
 		PermissionTemplates: []protocloud.PermissionTemplateUpdate[corecloud.TCloudPermissionTemplateExtension]{
 			{
@@ -474,8 +486,9 @@ func (a *PolicyLibraryApplier) listAllInScopeAccountIDs(kt *kit.Kit, vendor enum
 	accountIDs := make([]string, 0)
 	for _, batch := range slice.Split(bizIDs, int(core.DefaultMaxPageLimit)) {
 		req := &protocloud.AccountListReq{
-			Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", vendor), tools.RuleIn("bk_biz_id", batch)),
-			Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("type", enumor.ResourceAccount), tools.RuleIn("bk_biz_id", batch)),
+			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 		}
 		for {
 			result, err := a.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
@@ -617,7 +630,7 @@ func (a *PolicyLibraryApplier) tcloudListBizTemplatesInScope(kt *kit.Kit, librar
 	}
 
 	conditions := make([]*filter.AtomRule, 0)
-	conditions = append(conditions, tools.RuleEqual("library_id", libraryID))
+	conditions = append(conditions, tools.RuleEqual("policy_library_id", libraryID))
 	for _, batch := range slice.Split(accountIDs, int(filter.DefaultMaxInLimit)) {
 		conditions = append(conditions, tools.RuleIn("account_id", batch))
 	}
