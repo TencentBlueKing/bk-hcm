@@ -523,7 +523,6 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 // ListTemplatesInScope returns all permission templates applied from the given library
 // whose associated accounts are still within the library's current biz scope.
 func (a *PolicyLibraryApplier) ListTemplatesInScope(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (any, error) {
-
 	switch vendor {
 	case enumor.TCloud:
 		return a.tcloudListTemplatesInScope(kt, libraryID)

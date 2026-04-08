@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -45,12 +44,7 @@ func (t *TCloudImpl) CreatePolicy(kt *kit.Kit, opt *typeaccount.TCloudCreatePoli
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	region := opt.Region
-	if region == "" {
-		region = constant.TCloudDefaultRegion
-	}
-
-	client, err := t.clientSet.CamServiceClient(region)
+	client, err := t.clientSet.CamServiceClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}
@@ -74,7 +68,7 @@ func (t *TCloudImpl) CreatePolicy(kt *kit.Kit, opt *typeaccount.TCloudCreatePoli
 }
 
 // UpdatePolicy updates a CAM policy's document.
-// reference: https://cloud.tencent.com/document/product/598/34570
+// reference: https://cloud.tencent.com/document/product/598/34569
 func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePolicyOption) error {
 	if opt == nil {
 		return errf.New(errf.InvalidParameter, "option is required")
@@ -84,12 +78,7 @@ func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePoli
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	region := opt.Region
-	if region == "" {
-		region = constant.TCloudDefaultRegion
-	}
-
-	client, err := t.clientSet.CamServiceClient(region)
+	client, err := t.clientSet.CamServiceClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new cam client failed, err: %v", err)
 	}
