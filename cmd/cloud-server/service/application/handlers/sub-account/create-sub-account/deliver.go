@@ -99,7 +99,7 @@ type tcloudCreateCloudResult struct {
 	CreateTime *string
 }
 
-// createTCloudSubAccountInCloud creates the sub-account on Tencent Cloud, queries its detail
+// createTCloudSubAccountInCloud creates the subaccount on Tencent Cloud, queries its detail
 // and best-effort loads safe auth flags.
 func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto.TCloudSubAccountAddExtension,
 ) (*tcloudCreateCloudResult, error) {
@@ -258,7 +258,7 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 		return nil, "", err
 	}
 
-	//registerAccountForTCloud 将用户创建的三级账号登记到account表，防止触发HCM未纳管该账号的安全工单
+	// registerAccountForTCloud 将用户创建的三级账号登记到account表，防止触发HCM未纳管该账号的安全工单
 	accountID, err := a.registerAccountForTCloud(cloudID, cloudResult, parentAccount)
 	if err != nil {
 		return nil, "", err

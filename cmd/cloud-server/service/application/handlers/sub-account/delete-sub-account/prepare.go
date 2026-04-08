@@ -42,9 +42,10 @@ func (a *ApplicationOfDeleteSubAccount) GetItsmApprover(managers []string) []its
 func (a *ApplicationOfDeleteSubAccount) GenerateApplicationContent() interface{} {
 	return &deleteSubAccountContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:  enumor.SubAccountActionDelete,
-			Vendor:  a.Vendor(),
-			BkBizID: a.BkBizID(),
+			Action:    enumor.SubAccountActionDelete,
+			Vendor:    a.Vendor(),
+			BkBizID:   a.BkBizID(),
+			AccountID: a.req.AccountID,
 		},
 		Req: converter.PtrToVal(a.req),
 	}

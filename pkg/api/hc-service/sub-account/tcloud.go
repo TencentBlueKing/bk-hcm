@@ -122,13 +122,17 @@ func (req *TCloudDeleteSubAccountReq) Validate() error {
 // reference: https://cloud.tencent.com/document/api/598/53486
 type TCloudDescribeSubAccountsReq struct {
 	AccountID string   `json:"account_id" validate:"required"`
-	SubUin    []uint64 `json:"sub_uin" validate:"required,min=1,max=50"`
+	SubUin    []uint64 `json:"sub_uin" validate:"required"`
 }
 
 // Validate tcloud describe sub accounts request.
 func (req *TCloudDescribeSubAccountsReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	if len(req.SubUin) < 1 {
+		return fmt.Errorf("sub_uin count %d is less than 1", len(req.SubUin))
 	}
 
 	if len(req.SubUin) > typeaccount.DescribeSubAccountsMaxUIN {

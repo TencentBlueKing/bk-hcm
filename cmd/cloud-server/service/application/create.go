@@ -561,7 +561,7 @@ func (a *applicationSvc) CreateBizForAddSubAccount(cts *rest.Contexts) (interfac
 }
 
 func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchAddReq,
-) ([]string, error) {
+) (interface{}, error) {
 
 	opt := a.getHandlerOption(cts)
 
@@ -588,7 +588,7 @@ func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req 
 		}
 	}
 
-	return ids, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // CreateBizForUpdateSubAccount create application for updating subaccount.
@@ -632,7 +632,7 @@ func (a *applicationSvc) CreateBizForUpdateSubAccount(cts *rest.Contexts) (inter
 }
 
 func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchUpdateReq,
-) ([]string, error) {
+) (interface{}, error) {
 
 	subAccountIDs := make([]string, 0, len(req.SubAccounts))
 	for _, item := range req.SubAccounts {
@@ -676,7 +676,7 @@ func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, r
 		}
 	}
 
-	return ids, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // CreateBizForDeleteSubAccount create application for deleting subaccount.
@@ -720,7 +720,7 @@ func (a *applicationSvc) CreateBizForDeleteSubAccount(cts *rest.Contexts) (inter
 }
 
 func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchDeleteReq,
-) ([]string, error) {
+) (interface{}, error) {
 
 	infoMap, err := a.listSubAccountBasicInfo(cts, req.IDs)
 	if err != nil {
@@ -758,7 +758,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 		}
 	}
 
-	return ids, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // listSubAccountBasicInfo batch queries subaccounts by IDs and returns a map keyed by sub-account ID.

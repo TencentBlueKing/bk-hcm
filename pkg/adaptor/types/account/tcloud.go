@@ -20,6 +20,7 @@
 package account
 
 import (
+	"fmt"
 	"strconv"
 
 	"hcm/pkg/criteria/enumor"
@@ -219,12 +220,25 @@ const DescribeSubAccountsMaxUIN = 50
 // DescribeSubAccountsOption define tcloud DescribeSubAccounts option.
 // reference: https://cloud.tencent.com/document/api/598/53486
 type DescribeSubAccountsOption struct {
-	SubUin []uint64 `json:"sub_uin" validate:"required,min=1,max=50"`
+	SubUin []uint64 `json:"sub_uin" validate:"required"`
 }
 
 // Validate DescribeSubAccountsOption.
 func (opt DescribeSubAccountsOption) Validate() error {
-	return validator.Validate.Struct(opt)
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.SubUin) < 1 {
+		return fmt.Errorf("sub_uin count %d is less than 1", len(opt.SubUin))
+	}
+
+	if len(opt.SubUin) > DescribeSubAccountsMaxUIN {
+		return fmt.Errorf("sub_uin count %d exceeds max %d",
+			len(opt.SubUin), DescribeSubAccountsMaxUIN)
+	}
+
+	return nil
 }
 
 // TCloudSubAccountUser define tcloud DescribeSubAccounts API result item.

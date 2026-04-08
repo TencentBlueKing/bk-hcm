@@ -108,11 +108,7 @@ func (t *TCloudImpl) DescribeSubAccounts(kt *kit.Kit, opt *typeaccount.DescribeS
 	}
 
 	req := cam.NewDescribeSubAccountsRequest()
-	uins := make([]*uint64, 0, len(opt.SubUin))
-	for i := range opt.SubUin {
-		uins = append(uins, &opt.SubUin[i])
-	}
-	req.FilterSubAccountUin = uins
+	req.FilterSubAccountUin = converter.SliceToPtr(opt.SubUin)
 
 	resp, err := camClient.DescribeSubAccountsWithContext(kt.Ctx, req)
 	if err != nil {
@@ -351,28 +347,13 @@ func (t *TCloudImpl) UpdateUser(kt *kit.Kit, opt *typeaccount.UpdateUserOption) 
 
 	req := cam.NewUpdateUserRequest()
 	req.Name = common.StringPtr(opt.Name)
-
-	if opt.Remark != nil {
-		req.Remark = common.StringPtr(*opt.Remark)
-	}
-	if opt.ConsoleLogin != nil {
-		req.ConsoleLogin = common.Uint64Ptr(*opt.ConsoleLogin)
-	}
-	if opt.Password != nil {
-		req.Password = common.StringPtr(*opt.Password)
-	}
-	if opt.NeedResetPassword != nil {
-		req.NeedResetPassword = common.Uint64Ptr(*opt.NeedResetPassword)
-	}
-	if opt.PhoneNum != nil {
-		req.PhoneNum = common.StringPtr(*opt.PhoneNum)
-	}
-	if opt.CountryCode != nil {
-		req.CountryCode = common.StringPtr(*opt.CountryCode)
-	}
-	if opt.Email != nil {
-		req.Email = common.StringPtr(*opt.Email)
-	}
+	req.Remark = opt.Remark
+	req.ConsoleLogin = opt.ConsoleLogin
+	req.Password = opt.Password
+	req.NeedResetPassword = opt.NeedResetPassword
+	req.PhoneNum = opt.PhoneNum
+	req.CountryCode = opt.CountryCode
+	req.Email = opt.Email
 
 	_, err = camClient.UpdateUserWithContext(kt.Ctx, req)
 	if err != nil {
