@@ -52,9 +52,9 @@ func InitService(c *capability.Capability) {
 		"/vendors/{vendor}/permission_policy_libraries/{id}/apply", svc.ApplyPermissionPolicyLibraryCreate)
 	h.Add("ApplyPermissionPolicyLibraryUpdate", http.MethodPut,
 		"/vendors/{vendor}/permission_policy_libraries/{id}/apply", svc.ApplyPermissionPolicyLibraryUpdate)
-	h.Add("ListPermissionPolicyLibraryUnappliedAccountIDs", http.MethodGet,
+	h.Add("ListPermissionPolicyLibraryUnAppliedAccountIDs", http.MethodGet,
 		"/vendors/{vendor}/permission_policy_libraries/{id}/unapplied_account_ids",
-		svc.ListPermissionPolicyLibraryUnappliedAccountIDs)
+		svc.ListPermissionPolicyLibraryUnAppliedAccountIDs)
 	h.Add("ListPermissionPolicyLibraryPermissionTemplates", http.MethodGet,
 		"/vendors/{vendor}/permission_policy_libraries/{id}/permission_templates",
 		svc.ListPermissionPolicyLibraryPermissionTemplates)
@@ -76,6 +76,9 @@ func bizService(h *rest.Handler, svc *svc) {
 	h.Add("ListBizPermissionPolicyLibraryAccountIDs", http.MethodGet,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/account_ids",
 		svc.ListBizPermissionPolicyLibraryAccountIDs)
+	h.Add("ListBizPermissionPolicyLibraryUnAppliedAccountIDs", http.MethodGet,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_policy_libraries/{id}/unapplied_account_ids",
+		svc.ListBizPermissionPolicyLibraryUnAppliedAccountIDs)
 }
 
 type svc struct {

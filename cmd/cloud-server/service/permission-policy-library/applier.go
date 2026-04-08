@@ -496,8 +496,8 @@ func (a *PolicyLibraryApplier) listAllInScopeAccountIDs(kt *kit.Kit, vendor enum
 	return slice.Unique(accountIDs), nil
 }
 
-// ListUnappliedAccountIDs returns account IDs that are in scope but have not applied the given policy library.
-func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (
+// ListUnAppliedAccountIDs returns account IDs that are in scope but have not applied the given policy library.
+func (a *PolicyLibraryApplier) ListUnAppliedAccountIDs(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (
 	[]string, error) {
 
 	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
@@ -505,7 +505,39 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 		return nil, err
 	}
 
-	inScopeAccountIDs, err := a.listAllInScopeAccountIDs(kt, vendor, library.BkBizIDs)
+	return a.computeUnAppliedAccountIDs(kt, vendor, libraryID, library.BkBizIDs)
+}
+
+// ListBizUnAppliedAccountIDs returns account IDs that belong to bizID, are in the library's biz scope,
+// and have not applied the given policy library.
+func (a *PolicyLibraryApplier) ListBizUnAppliedAccountIDs(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	bizID int64) ([]string, error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	inScope := false
+	for _, biz := range library.BkBizIDs {
+		if biz == bizID {
+			inScope = true
+			break
+		}
+	}
+	if !inScope {
+		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id %d is not in policy library scope", bizID)
+	}
+
+	return a.computeUnAppliedAccountIDs(kt, vendor, libraryID, []int64{bizID})
+}
+
+// computeUnAppliedAccountIDs lists in-scope account IDs for the given bizIDs, then subtracts the already-applied
+// ones, returning a sorted slice of account IDs that have not yet applied the policy library.
+func (a *PolicyLibraryApplier) computeUnAppliedAccountIDs(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	bizIDs []int64) ([]string, error) {
+
+	inScopeAccountIDs, err := a.listAllInScopeAccountIDs(kt, vendor, bizIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -515,9 +547,9 @@ func (a *PolicyLibraryApplier) ListUnappliedAccountIDs(kt *kit.Kit, vendor enumo
 		return nil, err
 	}
 
-	unappliedAccountIDs := slice.NotIn(appliedAccountIDs, inScopeAccountIDs)
-	sort.Strings(unappliedAccountIDs)
-	return unappliedAccountIDs, nil
+	unAppliedAccountIDs := slice.NotIn(appliedAccountIDs, inScopeAccountIDs)
+	sort.Strings(unAppliedAccountIDs)
+	return unAppliedAccountIDs, nil
 }
 
 // ListTemplatesInScope returns all permission templates applied from the given library

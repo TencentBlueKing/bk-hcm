@@ -149,8 +149,8 @@ func (svc *svc) buildLibraryAccountIDsMap(kt *kit.Kit, libraryIDs []string) (map
 	return libAccountIDsMap, nil
 }
 
-// ListPermissionPolicyLibraryUnappliedAccountIDs returns account IDs that have not applied the given policy library.
-func (svc *svc) ListPermissionPolicyLibraryUnappliedAccountIDs(cts *rest.Contexts) (interface{}, error) {
+// ListPermissionPolicyLibraryUnAppliedAccountIDs returns account IDs that have not applied the given policy library.
+func (svc *svc) ListPermissionPolicyLibraryUnAppliedAccountIDs(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -178,7 +178,7 @@ func (svc *svc) ListPermissionPolicyLibraryUnappliedAccountIDs(cts *rest.Context
 	}
 
 	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
-	accountIDs, err := applier.ListUnappliedAccountIDs(cts.Kit, vendor, id)
+	accountIDs, err := applier.ListUnAppliedAccountIDs(cts.Kit, vendor, id)
 	if err != nil {
 		return nil, err
 	}
@@ -330,6 +330,51 @@ func (svc *svc) ListBizPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (in
 		return nil, err
 	}
 
+	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
+}
+
+// ListBizPermissionPolicyLibraryUnAppliedAccountIDs returns account IDs under the given biz
+// that have not applied the given policy library.
+func (svc *svc) ListBizPermissionPolicyLibraryUnAppliedAccountIDs(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("list biz unapplied account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "no permission to query unapplied account ids under this biz")
+	}
+
+	applier := NewPolicyLibraryApplier(svc.client, svc.audit)
+	accountIDs, err := applier.ListBizUnAppliedAccountIDs(cts.Kit, vendor, id, bizID)
+	if err != nil {
+		logs.Errorf("list biz unapplied account ids failed, id: %s, bizID: %d, err: %v, rid: %s",
+			id, bizID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if accountIDs == nil {
+		accountIDs = make([]string, 0)
+	}
 	return &proto.PermissionPolicyLibraryAccountIDsResult{AccountIDs: accountIDs}, nil
 }
 
