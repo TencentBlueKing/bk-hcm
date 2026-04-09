@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 )
@@ -136,9 +137,19 @@ func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPolici
 	// Scope="Local" 表示拉取该账号下的策略（含预设和自定义）
 	req.Scope = converter.ValToPtr("Local")
 
-	resp, err := client.ListPoliciesWithContext(kt.Ctx, req)
+	var resp *cam.ListPoliciesResponse
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	err = policy.BaseExec(kt, func() error {
+		resp, err = client.ListPoliciesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("fail to get policy from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		logs.Errorf("list cam policies failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
 		return nil, 0, err
 	}
 
@@ -185,9 +196,19 @@ func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPoli
 	req := cam.NewGetPolicyRequest()
 	req.PolicyId = converter.ValToPtr(opt.PolicyID)
 
-	resp, err := client.GetPolicyWithContext(kt.Ctx, req)
+	var resp *cam.GetPolicyResponse
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	err = policy.BaseExec(kt, func() error {
+		resp, err = client.GetPolicyWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("fail to get policy from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		logs.Errorf("get cam policy detail failed, policyID: %d, err: %v, rid: %s", opt.PolicyID, err, kt.Rid)
+		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
