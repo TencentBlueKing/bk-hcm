@@ -76,7 +76,7 @@ type PermissionTemplateTable struct {
 	// Extension 云厂商差异扩展字段
 	Extension types.JsonField `db:"extension" json:"extension"`
 	// Vendor 云厂商
-	Vendor string `db:"vendor" json:"vendor"`
+	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// TenantID 租户ID
 	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者

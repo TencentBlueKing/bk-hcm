@@ -140,7 +140,7 @@ func convTableToBasePermissionTemplate(one tablecloud.PermissionTemplateTable) c
 		PolicyDocument:        one.PolicyDocument,
 		PolicyHash:            one.PolicyHash,
 		Memo:                  one.Memo,
-		Vendor:                enumor.Vendor(one.Vendor),
+		Vendor:                one.Vendor,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,

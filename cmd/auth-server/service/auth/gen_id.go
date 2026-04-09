@@ -990,7 +990,7 @@ func genBizPermissionPolicyLibraryResource(a *meta.ResourceAttribute) (client.Ac
 	switch a.Basic.Action {
 	case meta.Find:
 		return sys.BizAccess, []client.Resource{res}, nil
-	case meta.Create, meta.Update, meta.Delete:
+	case meta.Create, meta.Update, meta.Delete, meta.Apply:
 		return sys.BizPermissionPolicyLibraryOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)

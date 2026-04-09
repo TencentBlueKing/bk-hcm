@@ -84,7 +84,7 @@ func batchCreatePermissionTemplate[T corecloud.PermissionTemplateExtension](
 				PolicyHash:            computePolicyHash(one.PolicyDocument),
 				Memo:                  one.Memo,
 				Extension:             types.JsonField(extJSON),
-				Vendor:                string(vendor),
+				Vendor:                vendor,
 				TenantID:              cts.Kit.TenantID,
 				Creator:               cts.Kit.User,
 				Reviser:               cts.Kit.User,

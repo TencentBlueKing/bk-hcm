@@ -170,7 +170,7 @@ func (a *PolicyLibraryApplier) CheckAccountsBizInScope(kt *kit.Kit, allowedBkBiz
 
 	if len(accounts) != len(accountIDs) {
 		return errf.Newf(errf.InvalidParameter,
-			"some accounts not found, expected %d but got %d", len(accountIDs), accounts)
+			"some accounts not found, expected %d but got %d", len(accountIDs), len(accounts))
 	}
 
 	outOfScope := make([]string, 0)
