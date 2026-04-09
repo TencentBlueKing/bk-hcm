@@ -59,8 +59,8 @@ type ApplicationOfUpdateSecretKeyStatus struct {
 
 // NewApplicationOfUpdateSecretKeyStatus create a new handler.
 func NewApplicationOfUpdateSecretKeyStatus(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
-	req *proto.SubAccountSecretStatusUpdateReq,
-) *ApplicationOfUpdateSecretKeyStatus {
+	req *proto.SubAccountSecretStatusUpdateReq) *ApplicationOfUpdateSecretKeyStatus {
+
 	return &ApplicationOfUpdateSecretKeyStatus{
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,

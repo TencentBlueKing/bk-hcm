@@ -57,8 +57,7 @@ type ApplicationOfDeleteSecretKey struct {
 
 // NewApplicationOfDeleteSecretKey create a new handler.
 func NewApplicationOfDeleteSecretKey(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
-	secretID string,
-) *ApplicationOfDeleteSecretKey {
+	secretID string) *ApplicationOfDeleteSecretKey {
 
 	return &ApplicationOfDeleteSecretKey{
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),

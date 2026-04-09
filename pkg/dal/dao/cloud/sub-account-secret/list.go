@@ -38,8 +38,8 @@ import (
 
 // ListJoinAccountAndSubAccount lists sub_account_secret rows joined with sub_account and account for biz scope.
 func (dao *SubAccountSecretDao) ListJoinAccountAndSubAccount(kt *kit.Kit, opt *types.ListSecretJoinAccountOption) (
-	*types.ListSubAccountSecretBizJoinDetails, error,
-) {
+	*types.ListSubAccountSecretBizJoinDetails, error) {
+
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list sub account secret biz options is nil")
 	}
@@ -122,9 +122,9 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	whereExprs = append(whereExprs, bizScope)
 	args["bk_biz_id"] = opt.BkBizID
 
-	if opt.Status != nil {
-		whereExprs = append(whereExprs, "secret.status = :status")
-		args["status"] = string(*opt.Status)
+	if len(opt.Status) > 0 {
+		whereExprs = append(whereExprs, "secret.status IN (:status)")
+		args["status"] = opt.Status
 	}
 	if len(opt.AccountIDs) > 0 {
 		whereExprs = append(whereExprs, "secret.account_id IN (:account_ids)")

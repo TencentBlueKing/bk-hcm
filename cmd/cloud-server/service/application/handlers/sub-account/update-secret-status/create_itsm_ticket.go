@@ -23,23 +23,17 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 )
 
 // RenderItsmTitle render ITSM ticket title.
 func (a *ApplicationOfUpdateSecretKeyStatus) RenderItsmTitle() (string, error) {
-	action := "启用"
-	if a.req.Status == enumor.DisabledSecretStatus {
-		action = "禁用"
-	}
-
 	subAccountName, err := a.getSubAccountNameForDisplay()
 	if err != nil {
 		logs.Errorf("get sub account name for itsm title failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 	}
 
-	return fmt.Sprintf("申请%s[%s]三级账号(%s)密钥", action, a.Vendor().GetNameZh(), subAccountName), nil
+	return fmt.Sprintf("申请%s[%s]三级账号(%s)密钥", a.req.Status.GetNameZh(), a.Vendor().GetNameZh(), subAccountName), nil
 }
 
 // RenderItsmForm render ITSM ticket form content.

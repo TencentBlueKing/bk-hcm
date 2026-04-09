@@ -80,7 +80,6 @@ func (dao *SubAccountSecretDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, mode
 	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES(%s)`, table.SubAccountSecretTable,
 		tablesubas.Columns.ColumnExpr(), tablesubas.Columns.ColonNameExpr())
 
-	logs.Infof("[jettxiao] sql: %s", sql)
 	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.SubAccountSecretTable, err, sql, kt.Rid)

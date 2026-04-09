@@ -27,14 +27,11 @@ import (
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablesubaccount "hcm/pkg/dal/table/cloud/sub-account"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
-	"hcm/pkg/tools/slice"
 )
 
 // GetSubAccount get sub account with extension.
@@ -121,39 +118,6 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &dssubaccount.ListResult{Details: details}, nil
-}
-
-// 获取AccountID和AccountName的Map
-func (svc *service) buildAccountNameMap(kt *kit.Kit, subAccounts []tablesubaccount.Table) (map[string]string, error) {
-	allIDs := make([]string, 0, len(subAccounts))
-	for _, sa := range subAccounts {
-		if sa.AccountID != "" {
-			allIDs = append(allIDs, sa.AccountID)
-		}
-	}
-	accountIDs := slice.Unique(allIDs)
-	if len(accountIDs) == 0 {
-		return nil, nil
-	}
-
-	batchSize := int(core.DefaultMaxPageLimit)
-	nameMap := make(map[string]string, len(accountIDs))
-	for _, chunk := range slice.Split(accountIDs, batchSize) {
-		opt := &types.ListOption{
-			Filter: tools.ContainersExpression("id", chunk),
-			Page:   core.NewDefaultBasePage(),
-		}
-		result, err := svc.dao.Account().List(kt, opt)
-		if err != nil {
-			return nil, fmt.Errorf("list account by ids failed, err: %v", err)
-		}
-
-		for _, acc := range result.Details {
-			nameMap[acc.ID] = acc.Name
-		}
-	}
-
-	return nameMap, nil
 }
 
 func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAccount {

@@ -43,7 +43,7 @@ type TCloudSubAccountSecretBizJoinExt = coresass.TCloudSubAccountSecretListExt
 type ListSecretJoinAccountOption struct {
 	Vendor             enumor.Vendor
 	BkBizID            int64
-	Status             *enumor.SubAccountSecretStatus
+	Status             []enumor.SubAccountSecretStatus
 	AccountIDs         []string
 	SubAccountIDs      []string
 	AccountManagers    []string

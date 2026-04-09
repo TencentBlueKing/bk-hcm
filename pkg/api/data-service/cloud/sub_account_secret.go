@@ -20,9 +20,6 @@
 package cloud
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"hcm/pkg/api/core"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
 	"hcm/pkg/criteria/enumor"
@@ -141,30 +138,27 @@ type SubAccountSecretExtListResp[T coresass.Extension] struct {
 // TCloudSubAccountSecretListExt is the data-service API name for coresass.TCloudSubAccountSecretListExt.
 type TCloudSubAccountSecretListExt = coresass.TCloudSubAccountSecretListExt
 
-// ParseTCloudBizListExtension decodes and validates Tencent Cloud biz list extension JSON.
-func ParseTCloudBizListExtension(f tabletypes.JsonField) (*TCloudSubAccountSecretListExt, error) {
-	if f.IsEmpty() {
-		return nil, nil
-	}
-	var ext TCloudSubAccountSecretListExt
-	if err := json.Unmarshal([]byte(f), &ext); err != nil {
-		return nil, fmt.Errorf("invalid extension json: %w", err)
-	}
-	if err := validator.Validate.Struct(&ext); err != nil {
-		return nil, err
-	}
-	return &ext, nil
+// SubAccountSecretFilters defines biz-scoped list filters; Extension holds vendor-specific JSON (shape depends on vendor).
+type SubAccountSecretFilters struct {
+	Status             []enumor.SubAccountSecretStatus `json:"status" validate:"omitempty"`
+	AccountIDs         []string                        `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
+	SubAccountIDs      []string                        `json:"sub_account_ids" validate:"omitempty,max=500,dive,lte=64"`
+	AccountManagers    []string                        `json:"account_managers" validate:"omitempty,max=500,dive,lte=64"`
+	SubAccountManagers []string                        `json:"sub_account_managers" validate:"omitempty,max=500,dive,lte=64"`
+	Extension          tabletypes.JsonField            `json:"extension,omitempty"`
 }
 
-// SubAccountSecretFilters defines biz-scoped list filters
-// Extension holds vendor-specific JSON (shape depends on vendor).
-type SubAccountSecretFilters struct {
-	Status             *enumor.SubAccountSecretStatus `json:"status,omitempty"`
-	AccountIDs         []string                       `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
-	SubAccountIDs      []string                       `json:"sub_account_ids" validate:"omitempty,max=500,dive,lte=64"`
-	AccountManagers    []string                       `json:"account_managers" validate:"omitempty,max=500,dive,lte=64"`
-	SubAccountManagers []string                       `json:"sub_account_managers" validate:"omitempty,max=500,dive,lte=64"`
-	Extension          tabletypes.JsonField           `json:"extension,omitempty"`
+func (f *SubAccountSecretFilters) Validate() error {
+	if err := validator.Validate.Struct(f); err != nil {
+		return err
+	}
+
+	for _, status := range f.Status {
+		if err := status.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SubAccountSecretJoinExtListReq defines sub account secret join-list request for data-service
@@ -181,9 +175,14 @@ func (req *SubAccountSecretJoinExtListReq) Validate() error {
 		return err
 	}
 
+	if err := req.SubAccountSecretFilters.Validate(); err != nil {
+		return err
+	}
+
 	if req.Page == nil {
 		return errf.New(errf.InvalidParameter, "page is required")
 	}
+
 	return req.Page.Validate(core.NewDefaultPageOption())
 }
 

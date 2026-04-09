@@ -28,14 +28,12 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 )
 
 // Deliver execute resource delivery after approval.
-func (a *ApplicationOfDeleteSecretKey) Deliver() (
-	enumor.ApplicationStatus, map[string]interface{}, error,
-) {
+func (a *ApplicationOfDeleteSecretKey) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	switch a.Vendor() {
 	case enumor.TCloud:
@@ -49,10 +47,7 @@ func (a *ApplicationOfDeleteSecretKey) Deliver() (
 	}
 }
 
-func (a *ApplicationOfDeleteSecretKey) tcloudDeliver() (
-	enumor.ApplicationStatus, map[string]interface{}, error,
-) {
-
+func (a *ApplicationOfDeleteSecretKey) tcloudDeliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	if err := a.tcloudDeleteCloudSecret(); err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{
@@ -118,24 +113,14 @@ func (a *ApplicationOfDeleteSecretKey) tcloudDeleteCloudSecret() error {
 }
 
 func (a *ApplicationOfDeleteSecretKey) getTCloudSecretDetail() (
-	*coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension], error,
-) {
+	*coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension], error) {
 
 	result, err := a.Client.DataService().TCloud.SubAccountSecret.
 		ListSubAccountSecretWithExtension(
 			a.Cts.Kit,
 			&protocloud.SubAccountSecretExtListReq{
-				Filter: &filter.Expression{
-					Op: filter.And,
-					Rules: []filter.RuleFactory{
-						filter.AtomRule{
-							Field: "id",
-							Op:    filter.Equal.Factory(),
-							Value: a.secretID,
-						},
-					},
-				},
-				Page: &core.BasePage{Start: 0, Limit: 1},
+				Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID)),
+				Page:   &core.BasePage{Start: 0, Limit: 1},
 			},
 		)
 	if err != nil {
@@ -159,16 +144,7 @@ func (a *ApplicationOfDeleteSecretKey) deleteLocalSecret() error {
 	return a.Client.DataService().Global.SubAccountSecret.BatchDelete(
 		a.Cts.Kit,
 		&protocloud.SubAccountSecretBatchDeleteReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "id",
-						Op:    filter.Equal.Factory(),
-						Value: a.secretID,
-					},
-				},
-			},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID)),
 		},
 	)
 }

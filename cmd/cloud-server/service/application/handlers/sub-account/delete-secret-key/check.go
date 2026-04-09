@@ -24,7 +24,7 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/dal/dao/tools"
 )
 
 // CheckReq validate the request, resolve and populate the secret's parent account info.
@@ -60,13 +60,8 @@ func (a *ApplicationOfDeleteSecretKey) CheckReq() error {
 func (a *ApplicationOfDeleteSecretKey) getSubAccountIDBySecret() (string, error) {
 	result, err := a.Client.DataService().Global.SubAccountSecret.ListSubAccountSecret(a.Cts.Kit,
 		&protocloud.SubAccountSecretListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.secretID},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: 1},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID)),
+			Page:   &core.BasePage{Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {
@@ -83,13 +78,8 @@ func (a *ApplicationOfDeleteSecretKey) getSubAccountIDBySecret() (string, error)
 func (a *ApplicationOfDeleteSecretKey) getAccountIDBySubAccount(subAccountID string) (string, error) {
 	result, err := a.Client.DataService().Global.SubAccount.List(a.Cts.Kit,
 		&core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: subAccountID},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: 1},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", subAccountID)),
+			Page:   &core.BasePage{Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {
@@ -111,13 +101,8 @@ func (a *ApplicationOfDeleteSecretKey) getSubAccountNameForDisplay() (string, er
 
 	result, err := a.Client.DataService().Global.SubAccount.List(a.Cts.Kit,
 		&core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: subAccountID},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: 1},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", subAccountID)),
+			Page:   &core.BasePage{Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {

@@ -59,6 +59,11 @@ func (req *ListSubAccountSecretReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
+
+	if err := req.SubAccountSecretFilters.Validate(); err != nil {
+		return err
+	}
+
 	return req.Page.Validate(core.NewDefaultPageOption())
 }
 
