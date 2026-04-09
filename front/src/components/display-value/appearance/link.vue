@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAttrs } from 'vue';
 import { DisplayType } from '../typings';
 
 defineProps<{
@@ -6,10 +7,16 @@ defineProps<{
   displayValue: string | number | string[] | number[];
   displayOn: DisplayType['on'];
 }>();
+
+const attrs = useAttrs();
 </script>
 
 <template>
-  <bk-link theme="primary">{{ displayValue }}</bk-link>
+  <bk-link class="link" theme="primary" v-bind="attrs">{{ displayValue }}</bk-link>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.link {
+  font-size: 12px;
+}
+</style>

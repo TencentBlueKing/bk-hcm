@@ -7,7 +7,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   usePermissionPolicyStore,
   type IOperationPermissionPolicyParams,
-} from '@/store/clount-account-manage/permission-policy';
+} from '@/store/cloud-account-manage/permission-policy';
 import { VendorEnum } from '@/common/constant';
 import { isJSON } from '@/utils';
 

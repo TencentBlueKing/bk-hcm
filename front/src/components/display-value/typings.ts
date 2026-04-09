@@ -8,7 +8,8 @@ export type AppearanceType =
   | 'cvm-status'
   | 'clb-status'
   | 'business-assign-tag'
-  | 'dynamic-status';
+  | 'dynamic-status'
+  | 'link-button';
 
 export type DisplayType = {
   on?: 'cell' | 'info' | 'search';

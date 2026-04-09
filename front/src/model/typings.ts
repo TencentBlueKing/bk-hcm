@@ -39,6 +39,7 @@ export type ModelProperty = {
   meta?: ModelPropertyMeta;
   unit?: string;
   index?: number;
+  group?: string;
   apiOnly?: boolean;
 };
 
@@ -66,6 +67,8 @@ export type PropertyColumnConfig = {
 };
 
 export type PropertyFormConfig = {
+  required?: boolean;
+  readonly?: boolean;
   rules?: object;
 };
 
@@ -82,8 +85,9 @@ export type PropertyDisplayConfig = {
   appearance?: string;
   appearanceProps?: Record<string, any>;
   format?: (value: any) => any;
-  render?: (value: any) => VNode | string;
+  render?: (value: any) => VNode | boolean | number | string;
   showOverflowTooltip?: boolean;
+  props?: Record<string, any>;
 };
 
 // 与列展示场景相关，联合列的配置属性

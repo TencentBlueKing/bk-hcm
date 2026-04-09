@@ -8,7 +8,7 @@ const tabPanels = [
   { name: 'secondary-account', label: '二级账号' },
   // { name: 'tertiary-account', label: '三级账号' },
   // { name: 'cloud-secret', label: '云密钥' },
-  // { name: 'cloud-permission', label: '云权限模版' },
+  { name: 'permission-template', label: '云权限模板' },
   { name: 'permission-policy', label: '权限策略库' },
 ];
 
@@ -25,7 +25,7 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
   // 其他Tab组件待开发
   // 'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
-  // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
+  'permission-template': defineAsyncComponent(() => import('./permission-template/index.vue')),
 };
 
 // 当前Tab对应的组件

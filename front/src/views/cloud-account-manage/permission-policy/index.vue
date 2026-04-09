@@ -8,7 +8,7 @@ import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
-import { usePermissionPolicyStore } from '@/store/clount-account-manage/permission-policy';
+import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
 import PolicyFormSideslider from './children/policy-form-sideslider/index.vue';

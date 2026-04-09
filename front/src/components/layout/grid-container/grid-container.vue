@@ -94,6 +94,10 @@ const labelContainerWidth = computed(() => {
         grid-template-columns: var(--label-width) 1fr;
       }
 
+      &.non-label {
+        grid-template-columns: 1fr;
+      }
+
       .item-label {
         justify-content: flex-end;
         text-align: right;

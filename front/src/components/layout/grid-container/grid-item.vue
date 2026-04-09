@@ -2,6 +2,7 @@
   <div
     :class="{
       'grid-item': true,
+      'non-label': !($slots.label || label),
       span,
     }"
     :style="{
@@ -21,21 +22,14 @@
   </div>
 </template>
 <script setup lang="ts">
-import { type VNode, PropType } from 'vue';
+import { type VNode } from 'vue';
 
 export interface IGridItemProps {
   label?: (() => string | VNode) | string;
   span?: number;
 }
 
-defineProps({
-  label: {
-    type: [String, Function] as PropType<IGridItemProps['label']>,
-  },
-  span: {
-    type: Number as PropType<IGridItemProps['span']>,
-  },
-});
+defineProps<IGridItemProps>();
 </script>
 
 <style lang="scss" scoped>
@@ -71,7 +65,7 @@ defineProps({
       align-items: center;
       top: 4px;
       left: 0;
-      z-index: 1;
+      z-index: 3; // fix 被 bk-table header遮挡
       width: 100%; // 表单控件宽度铺满
       gap: 4px;
 
