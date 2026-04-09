@@ -170,6 +170,65 @@ func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPolici
 	return items, total, nil
 }
 
+// ListAttachedUserAllPolicies 获取子用户绑定的所有策略列表（支持分页和限流重试）。
+// reference: https://cloud.tencent.com/document/product/598/67728
+func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.TCloudListAttachedUserAllPoliciesOption,
+) (*typeaccount.TCloudListAttachedUserAllPoliciesResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListAttachedUserAllPoliciesRequest()
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+	req.Page = converter.ValToPtr(opt.Page)
+	req.Rp = converter.ValToPtr(opt.Rp)
+
+	var resp *cam.ListAttachedUserAllPoliciesResponse
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	err = policy.BaseExec(kt, func() error {
+		resp, err = client.ListAttachedUserAllPoliciesWithContext(kt.Ctx, req)
+		if err != nil {
+			logs.Errorf("fail to list attached user all policies from tcloud, err: %v, req: %+v, rid: %s",
+				err, req, kt.Rid)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		logs.Errorf("fail to list attached user all policies from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	totalNum := converter.PtrToVal(resp.Response.TotalNum)
+	items := make([]typeaccount.TCloudAttachedPolicy, 0, len(resp.Response.PolicyList))
+	for _, p := range resp.Response.PolicyList {
+		item := typeaccount.TCloudAttachedPolicy{
+			PolicyId:     converter.PtrToVal(p.PolicyId),
+			PolicyName:   converter.PtrToVal(p.PolicyName),
+			Description:  converter.PtrToVal(p.Description),
+			AddTime:      converter.PtrToVal(p.AddTime),
+			StrategyType: converter.PtrToVal(p.StrategyType),
+		}
+		items = append(items, item)
+	}
+
+	return &typeaccount.TCloudListAttachedUserAllPoliciesResult{
+		PolicyList: items,
+		TotalNum:   totalNum,
+	}, nil
+}
+
 // GetPolicyDetail 获取单个CAM策略的完整详情（含 PolicyDocument）。
 // reference: https://cloud.tencent.com/document/product/598/34574
 func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPolicyDetailOption) (

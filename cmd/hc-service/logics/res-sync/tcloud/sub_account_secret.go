@@ -51,7 +51,7 @@ type cloudSubAccountSecret struct {
 	LastUsedTime       *string
 }
 
-// SubAccountSecret sync sub account secret.
+// SubAccountSecret sync subaccount secret.
 func (cli *client) SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
