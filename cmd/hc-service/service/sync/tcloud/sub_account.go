@@ -43,8 +43,16 @@ func (svc *service) SyncSubAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// 同步三级账号前必须先同步二级账号
 	if _, err = syncCli.Account(cts.Kit, &tcloud.SyncAccountOption{AccountID: req.AccountID}); err != nil {
 		logs.Errorf("sync tcloud account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 同步三级账号前必须先同步一次权限模版
+	if _, err = syncCli.PermissionTemplate(
+		cts.Kit, &tcloud.SyncPermissionTemplateOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync tcloud permission template failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -55,6 +63,12 @@ func (svc *service) SyncSubAccount(cts *rest.Contexts) (interface{}, error) {
 
 	if _, err = syncCli.SubAccountSecret(cts.Kit, &tcloud.SyncSubAccountOption{AccountID: req.AccountID}); err != nil {
 		logs.Errorf("sync tcloud sub account secret failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	
+	if _, err = syncCli.SubAccountPermissionTemplate(
+		cts.Kit, &tcloud.SyncSubAccountPermissionTmplOption{AccountID: req.AccountID}); err != nil {
+		logs.Errorf("sync tcloud sub account permission template failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
