@@ -40,4 +40,20 @@ const (
 	HuaWeiPublicIPIDKey = "publicip_id"
 	// HuaWeiMonitorDefaultFilter 华为云监控默认聚合方式
 	HuaWeiMonitorDefaultFilter = "average"
+	// AwsCvmNamespace AWS CVM 监控命名空间
+	AwsCvmNamespace = "AWS/EC2"
+	// AwsCvmInstanceIDKey AWS CVM 实例ID key
+	AwsCvmInstanceIDKey = "InstanceId"
+	// AwsMetricNetworkIn AWS 入流量指标
+	AwsMetricNetworkIn = "NetworkIn"
+	// AwsMetricNetworkOut AWS 出流量指标
+	AwsMetricNetworkOut = "NetworkOut"
+	// MetricLanIntraffic 内网入带宽
+	MetricLanIntraffic = "LanIntraffic"
+	// MetricWanIntraffic 外网入带宽
+	MetricWanIntraffic = "WanIntraffic"
+	// MetricLanOuttraffic 内网出带宽
+	MetricLanOuttraffic = "LanOuttraffic"
+	// MetricWanOuttraffic 外网出带宽
+	MetricWanOuttraffic = "WanOuttraffic"
 )

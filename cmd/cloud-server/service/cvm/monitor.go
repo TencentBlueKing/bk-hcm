@@ -93,6 +93,8 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 		return svc.getTCloudMonitorData(cts, req, cvms.Details)
 	case enumor.HuaWei:
 		return svc.getHuaWeiMonitorData(cts, req, cvms.Details)
+	case enumor.Aws:
+		return svc.getAwsMonitorData(cts, req, cvms.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "vendor %s is not supported", vendor)
 	}
@@ -100,21 +102,16 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 
 func (svc *cvmSvc) getTCloudMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
 	interface{}, error) {
-	startTime, endTime, err := req.GetTCloudTimeRange()
+
+	startTime, endTime, err := req.GetStringTimeRange()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 按account_id + region分组
-	// 定义分组key结构
-	type groupKey struct {
-		AccountID string
-		Region    string
-	}
-	instanceGroups := make(map[groupKey][]cvm.BaseCvm)
+	instanceGroups := make(map[cvmGroupKey][]cvm.BaseCvm)
 
 	for _, instance := range cvms {
-		key := groupKey{
+		key := cvmGroupKey{
 			AccountID: instance.AccountID,
 			Region:    instance.Region,
 		}
@@ -179,13 +176,12 @@ func (svc *cvmSvc) getTCloudMonitorData(cts *rest.Contexts, req *cscvm.GetMonito
 		}
 	}
 
-	return &cscvm.GetMonitorDataResp{
-		DataPoints: allDataPoints,
-	}, nil
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
 }
 
 func (svc *cvmSvc) getHuaWeiMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
 	interface{}, error) {
+
 	startTime, endTime, err := req.GetHuaWeiTimeRange()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -314,4 +310,84 @@ func (svc *cvmSvc) appendHuaWeiMonitorDataPoints(kt *kit.Kit, allDataPoints []*c
 	}
 
 	return allDataPoints
+}
+
+func (svc *cvmSvc) getAwsMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
+	interface{}, error) {
+
+	startTime, endTime, err := req.GetStringTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	instanceGroups := make(map[cvmGroupKey][]cvm.BaseCvm)
+	for _, instance := range cvms {
+		key := cvmGroupKey{
+			AccountID: instance.AccountID,
+			Region:    instance.Region,
+		}
+		instanceGroups[key] = append(instanceGroups[key], instance)
+	}
+
+	allDataPoints := make([]*cscvm.MonitorDataPointResp, 0)
+
+	for key, instances := range instanceGroups {
+		cloudIDToInst := slice.FuncToMap(instances, func(instance cvm.BaseCvm) (string, cvm.BaseCvm) {
+			return instance.CloudID, instance
+		})
+		cloudIDs := maps.Keys(cloudIDToInst)
+
+		hcReq := &protocvm.AwsMonitorDataReq{
+			AccountID:   key.AccountID,
+			Region:      key.Region,
+			MetricName:  req.MetricName,
+			Period:      req.Period,
+			StartTime:   startTime,
+			EndTime:     endTime,
+			InstanceIDs: cloudIDs,
+		}
+
+		resp, err := svc.client.HCService().Aws.Cvm.GetMonitorData(cts.Kit, hcReq)
+		if err != nil {
+			logs.Errorf("get aws monitor data failed, err: %v, account_id: %s, region: %s, rid: %s",
+				err, key.AccountID, key.Region, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, dataPoint := range resp.DataPoints {
+			var cloudID string
+			for _, dimension := range dataPoint.Dimensions {
+				if dimension.Name == constant.AwsCvmInstanceIDKey {
+					cloudID = dimension.Value
+					break
+				}
+			}
+			if len(cloudID) == 0 {
+				logs.Warnf("aws instance_id dimension key not found, account_id: %s, region: %s, rid: %s",
+					key.AccountID, key.Region, cts.Kit.Rid)
+				continue
+			}
+
+			instDetail, ok := cloudIDToInst[cloudID]
+			if !ok {
+				logs.Warnf("aws instance not found, account_id: %s, region: %s, cloud_id: %s, rid: %s",
+					key.AccountID, key.Region, cloudID, cts.Kit.Rid)
+				continue
+			}
+
+			allDataPoints = append(allDataPoints, &cscvm.MonitorDataPointResp{
+				ID:         instDetail.ID,
+				IP:         instDetail.PrivateIPv4Addresses,
+				Region:     key.Region,
+				InstanceID: cloudID,
+				Timestamps: dataPoint.Timestamps,
+				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
+			})
+		}
+	}
+
+	return &cscvm.GetMonitorDataResp{
+		DataPoints: allDataPoints,
+	}, nil
 }
