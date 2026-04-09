@@ -30,4 +30,14 @@ const (
 	TCloudCvmNamespace = "QCE/CVM"
 	// TCloudCvmInstanceIDKey 腾讯云CVM实例ID key
 	TCloudCvmInstanceIDKey = "InstanceId"
+	// HuaWeiCvmNamespace 华为云CVM监控命名空间
+	HuaWeiCvmNamespace = "SYS.ECS"
+	// HuaWeiVpcNamespace 华为云VPC监控命名空间
+	HuaWeiVpcNamespace = "SYS.VPC"
+	// HuaWeiCvmInstanceIDKey 华为云CVM实例ID key
+	HuaWeiCvmInstanceIDKey = "instance_id"
+	// HuaWeiPublicIPIDKey 华为云弹性公网IP ID key
+	HuaWeiPublicIPIDKey = "publicip_id"
+	// HuaWeiMonitorDefaultFilter 华为云监控默认聚合方式
+	HuaWeiMonitorDefaultFilter = "average"
 )

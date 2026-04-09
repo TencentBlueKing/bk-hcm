@@ -343,3 +343,32 @@ func (cvm HuaWeiCvm) GetCloudID() string {
 func (cvm HuaWeiCvm) GetCloudVpcID() string {
 	return cvm.Metadata["vpc_id"]
 }
+
+// -------------------------- Monitor --------------------------
+
+// HuaWeiMonitorDataOption defines options to get monitor data from huawei.
+type HuaWeiMonitorDataOption struct {
+	Region      string   `json:"region" validate:"required"`
+	MetricName  string   `json:"metric_name" validate:"required"`
+	Period      int64    `json:"period" validate:"required,min=1"`
+	StartTime   int64    `json:"start_time" validate:"required,min=1"`
+	EndTime     int64    `json:"end_time" validate:"required,min=1"`
+	Namespace   string   `json:"namespace" validate:"omitempty"`
+	Filter      string   `json:"filter" validate:"omitempty"`
+	Dimension   string   `json:"dimension" validate:"omitempty"`
+	InstanceIDs []string `json:"instance_ids" validate:"required,min=1"`
+}
+
+// Validate huawei monitor data option.
+func (opt HuaWeiMonitorDataOption) Validate() error {
+	if opt.StartTime >= opt.EndTime {
+		return fmt.Errorf("start_time should < end_time")
+	}
+
+	return validator.Validate.Struct(opt)
+}
+
+// HuaWeiMonitorDataResult defines huawei monitor data result.
+type HuaWeiMonitorDataResult struct {
+	DataPoints []*MonitorDataPoint `json:"data_points"`
+}
