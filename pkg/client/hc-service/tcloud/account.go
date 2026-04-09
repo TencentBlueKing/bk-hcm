@@ -254,10 +254,14 @@ func (a *AccountClient) DeleteSubAccount(kt *kit.Kit, req *hssubaccount.TCloudDe
 func (a *AccountClient) DescribeSafeAuthFlagColl(kt *kit.Kit, req *hssubaccount.TCloudDescribeSafeAuthFlagCollReq,
 ) ([]hssubaccount.TCloudDescribeSafeAuthFlagCollResult, error) {
 
-	return common.Request[hssubaccount.TCloudDescribeSafeAuthFlagCollReq,
-		hssubaccount.TCloudDescribeSafeAuthFlagCollResult](
+	resp, err := common.Request[hssubaccount.TCloudDescribeSafeAuthFlagCollReq,
+		[]hssubaccount.TCloudDescribeSafeAuthFlagCollResult](
 		a.client, http.MethodPost, kt, req, "/sub_accounts/safe_auth_flag")
+	if err != nil {
+		return nil, err
+	}
 
+	return *resp, nil
 }
 
 func (a *AccountClient) DescribeSafeAuthFlag(kt *kit.Kit, req *hssubaccount.TCloudDescribeSafeAuthFlagReq,
