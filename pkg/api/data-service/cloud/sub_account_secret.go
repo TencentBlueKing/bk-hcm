@@ -138,7 +138,7 @@ type SubAccountSecretExtListResp[T coresass.Extension] struct {
 // TCloudSubAccountSecretListExt is the data-service API name for coresass.TCloudSubAccountSecretListExt.
 type TCloudSubAccountSecretListExt = coresass.TCloudSubAccountSecretListExt
 
-// SubAccountSecretFilters defines biz-scoped list filters; Extension holds vendor-specific JSON (shape depends on vendor).
+// SubAccountSecretFilters defines biz-scoped list filters;
 type SubAccountSecretFilters struct {
 	Status             []enumor.SubAccountSecretStatus `json:"status" validate:"omitempty"`
 	AccountIDs         []string                        `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
@@ -148,6 +148,7 @@ type SubAccountSecretFilters struct {
 	Extension          tabletypes.JsonField            `json:"extension,omitempty"`
 }
 
+// Validate validates SubAccountSecretFilters
 func (f *SubAccountSecretFilters) Validate() error {
 	if err := validator.Validate.Struct(f); err != nil {
 		return err
