@@ -124,9 +124,7 @@ func (dao *PermissionTemplateDao) BatchUpdate(kt *kit.Kit, models []tablecloud.P
 				return nil, err
 			}
 
-			opts := utils.NewFieldOptions().
-				AddBlankedFields("memo", "policy_library_id", "policy_library_version", "policy_library_sync_time").
-				AddIgnoredFields(types.DefaultIgnoredFields...)
+			opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
 			setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(&model, opts)
 			if err != nil {
 				return nil, fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
