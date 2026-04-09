@@ -6,6 +6,7 @@ import { useAccountStore } from '@/store';
 import { SECRET_STATUS_MAP } from '../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
+import type { SwitchTabFn } from '../../typings';
 import SecretActionDialog from './secret-action-dialog.vue';
 import ArrayValue from '@/components/display-value/array-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
@@ -31,12 +32,8 @@ const isShow = computed({
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
 
-// 注入跨 Tab 跳转方法
-const switchToTertiaryTab =
-  inject<(filter?: Record<string, any>, detailCloudId?: string) => void>('switchToTertiaryTab');
-const switchToSecondaryTab = inject<(detailCloudId?: string) => void>('switchToSecondaryTab');
+const switchTab = inject<SwitchTabFn>('switchTab');
 
-// 账号 ID 计算属性
 const subAccountId = computed(
   () => props.secretData?.cloud_sub_account_id || props.secretData?.extension?.cloud_sub_account_id,
 );
@@ -44,18 +41,16 @@ const mainAccountId = computed(
   () => props.secretData?.cloud_main_account_id || props.secretData?.extension?.cloud_main_account_id,
 );
 
-// 跳转到三级账号详情
 const handleGoToTertiaryAccount = () => {
   if (!subAccountId.value) return;
   isShow.value = false;
-  switchToTertiaryTab?.({}, subAccountId.value);
+  switchTab?.({ tab: 'tertiary-account', detailCloudId: subAccountId.value });
 };
 
-// 跳转到二级账号详情
 const handleGoToSecondaryAccount = () => {
   if (!mainAccountId.value) return;
   isShow.value = false;
-  switchToSecondaryTab?.(mainAccountId.value);
+  switchTab?.({ tab: 'secondary-account', detailCloudId: mainAccountId.value });
 };
 
 const statusConfig = computed(() => {
