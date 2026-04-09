@@ -56,4 +56,16 @@ const (
 	MetricLanOuttraffic = "LanOuttraffic"
 	// MetricWanOuttraffic 外网出带宽
 	MetricWanOuttraffic = "WanOuttraffic"
+	// AzureCvmInstanceIDKey Azure CVM 实例维度 key（对应 Azure metadata name: Microsoft.ResourceId）
+	AzureCvmInstanceIDKey = "Microsoft.ResourceId"
+	// AzureMetricNamespaceDefault Azure 默认监控命名空间
+	AzureMetricNamespaceDefault = "Microsoft.Compute/virtualMachines"
+	// AzureMetricNetworkInTotal Azure 入流量总计指标
+	AzureMetricNetworkInTotal = "Network In Total"
+	// AzureMetricNetworkOutTotal Azure 出流量总计指标
+	AzureMetricNetworkOutTotal = "Network Out Total"
+	// AzureMonitorAggregationTotal Azure 监控 Total 聚合
+	AzureMonitorAggregationTotal = "Total"
+	// AzureMonitorAggregationAverage Azure 监控 Average 聚合
+	AzureMonitorAggregationAverage = "Average"
 )

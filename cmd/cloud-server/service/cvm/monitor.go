@@ -57,7 +57,14 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listFilter := tools.ContainersExpression("id", req.IDs)
+	listFilter, err := tools.And(
+		tools.ContainersExpression("id", req.IDs),
+		tools.EqualExpression("vendor", vendor),
+	)
+	if err != nil {
+		logs.Errorf("merge monitor query filter failed, err: %v, vendor: %s, rid: %s", err, vendor, cts.Kit.Rid)
+		return nil, err
+	}
 
 	// 权限校验
 	// list authorized instances
@@ -95,6 +102,8 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 		return svc.getHuaWeiMonitorData(cts, req, cvms.Details)
 	case enumor.Aws:
 		return svc.getAwsMonitorData(cts, req, cvms.Details)
+	case enumor.Azure:
+		return svc.getAzureMonitorData(cts, req, cvms.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "vendor %s is not supported", vendor)
 	}
@@ -387,7 +396,82 @@ func (svc *cvmSvc) getAwsMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDa
 		}
 	}
 
-	return &cscvm.GetMonitorDataResp{
-		DataPoints: allDataPoints,
-	}, nil
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
+}
+
+func (svc *cvmSvc) getAzureMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
+	interface{}, error) {
+
+	startTime, endTime, err := req.GetStringTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	instanceGroups := groupCvmsByAccountRegion(cvms)
+	allDataPoints := make([]*cscvm.MonitorDataPointResp, 0)
+
+	for key, instances := range instanceGroups {
+		cloudIDToInst := slice.FuncToMap(instances, func(instance cvm.BaseCvm) (string, cvm.BaseCvm) {
+			return instance.CloudID, instance
+		})
+		cloudIDs := maps.Keys(cloudIDToInst)
+
+		hcReq := &protocvm.AzureMonitorDataReq{
+			AccountID:           key.AccountID,
+			Region:              key.Region,
+			MetricName:          req.MetricName,
+			Period:              req.Period,
+			StartTime:           startTime,
+			EndTime:             endTime,
+			MetricNamespace:     req.AzureMetricNamespace,
+			Aggregation:         req.AzureAggregation,
+			AutoAdjustTimegrain: req.AzureAutoAdjustTimegrain,
+			Top:                 req.AzureTop,
+			OrderBy:             req.AzureOrderBy,
+			Filter:              req.Filter,
+			ResultType:          req.AzureResultType,
+			InstanceIDs:         cloudIDs,
+		}
+
+		resp, err := svc.client.HCService().Azure.Cvm.GetMonitorData(cts.Kit, hcReq)
+		if err != nil {
+			logs.Errorf("get azure monitor data failed, err: %v, account_id: %s, region: %s, rid: %s",
+				err, key.AccountID, key.Region, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, dataPoint := range resp.DataPoints {
+			var cloudID string
+			for _, dimension := range dataPoint.Dimensions {
+				if dimension.Name == constant.AzureCvmInstanceIDKey {
+					cloudID = dimension.Value
+					break
+				}
+			}
+			if len(cloudID) == 0 {
+				logs.Warnf("azure resource_id dimension key not found, account_id: %s, region: %s, rid: %s",
+					key.AccountID, key.Region, cts.Kit.Rid)
+				continue
+			}
+
+			instDetail, ok := cloudIDToInst[cloudID]
+			if !ok {
+				logs.Warnf("azure instance not found, account_id: %s, region: %s, cloud_id: %s, rid: %s",
+					key.AccountID, key.Region, cloudID, cts.Kit.Rid)
+				continue
+			}
+
+			allDataPoints = append(allDataPoints, &cscvm.MonitorDataPointResp{
+				ID:         instDetail.ID,
+				IP:         instDetail.PrivateIPv4Addresses,
+				Region:     key.Region,
+				InstanceID: cloudID,
+				Timestamps: dataPoint.Timestamps,
+				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
+			})
+		}
+	}
+
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
 }

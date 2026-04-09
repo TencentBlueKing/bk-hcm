@@ -66,3 +66,46 @@ func TestGetMonitorDataReqValidate_TCloudRejectsAwsFields(t *testing.T) {
 	err := req.Validate(enumor.TCloud)
 	require.NoError(t, err)
 }
+
+func TestGetMonitorDataReqValidate_AzureRequiresUTCFields(t *testing.T) {
+	req := &GetMonitorDataReq{
+		MetricName: "LanOuttraffic",
+		Period:     300,
+		IDs:        []string{"id-1"},
+	}
+
+	err := req.Validate(enumor.Azure)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "start_time and end_time are required")
+}
+
+func TestGetMonitorDataReqValidate_AzureRejectsHuaWeiNamespace(t *testing.T) {
+	req := &GetMonitorDataReq{
+		MetricName: "LanOuttraffic",
+		Period:     300,
+		IDs:        []string{"id-1"},
+		StartTime:  "2026-04-09T00:00:00Z",
+		EndTime:    "2026-04-09T01:00:00Z",
+		Namespace:  "SYS.ECS",
+	}
+
+	err := req.Validate(enumor.Azure)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "namespace is only supported")
+}
+
+func TestGetMonitorDataReqValidate_AzureOrderByRequiresTop(t *testing.T) {
+	req := &GetMonitorDataReq{
+		MetricName:   "LanOuttraffic",
+		Period:       300,
+		IDs:          []string{"id-1"},
+		StartTime:    "2026-04-09T00:00:00Z",
+		EndTime:      "2026-04-09T01:00:00Z",
+		AzureOrderBy: "total desc",
+	}
+
+	err := req.Validate(enumor.Azure)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "orderby requires top")
+}
+

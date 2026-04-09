@@ -38,6 +38,18 @@ type GetMonitorDataReq struct {
 	Namespace  string      `json:"namespace" validate:"omitempty"`  // used by vendor=huawei, e.g. SYS.ECS/SYS.VPC
 	Filter     string      `json:"filter" validate:"omitempty"`     // used by vendor=huawei, e.g. average/max/min
 	IDs        []string    `json:"ids" validate:"required,min=1"`
+	// AzureMetricNamespace example: Microsoft.Compute/virtualMachines, used by vendor=azure
+	AzureMetricNamespace string `json:"metric_namespace" validate:"omitempty"`
+	// AzureAggregation example: Average/Total/Minimum/Maximum/Count/Last, used by vendor=azure
+	AzureAggregation string `json:"aggregation" validate:"omitempty"`
+	// AzureAutoAdjustTimegrain auto adjusts query interval, used by vendor=azure
+	AzureAutoAdjustTimegrain *bool `json:"auto_adjust_timegrain" validate:"omitempty"`
+	// AzureTop limits dimension series count, used by vendor=azure
+	AzureTop *int32 `json:"top" validate:"omitempty"`
+	// AzureOrderBy example: avg asc/total desc, used by vendor=azure
+	AzureOrderBy string `json:"orderby" validate:"omitempty"`
+	// AzureResultType supports Data/Metadata, used by vendor=azure
+	AzureResultType string `json:"result_type" validate:"omitempty"`
 }
 
 // Validate request.
@@ -61,6 +73,8 @@ func (req *GetMonitorDataReq) Validate(vendor enumor.Vendor) error {
 		return req.validateHuaWei(vendor)
 	case enumor.Aws:
 		return req.validateAWS(vendor)
+	case enumor.Azure:
+		return req.validateAzure(vendor)
 	default:
 		return fmt.Errorf("get monitor data unsupported vendor: %s", vendor)
 	}
@@ -98,7 +112,7 @@ func (req *GetMonitorDataReq) validateAWS(vendor enumor.Vendor) error {
 	if err := req.validateAWSFieldCompatibility(); err != nil {
 		return err
 	}
-	startTime, endTime, err := req.parseAWSTimeRange(vendor)
+	startTime, endTime, err := req.parseUTCTimeRange(vendor)
 	if err != nil {
 		return err
 	}
@@ -115,6 +129,36 @@ func (req *GetMonitorDataReq) validateAWS(vendor enumor.Vendor) error {
 func (req *GetMonitorDataReq) validateAWSFieldCompatibility() error {
 	if len(req.Namespace) != 0 || len(req.Filter) != 0 {
 		return fmt.Errorf("namespace/filter are only supported for vendor %s", enumor.HuaWei)
+	}
+	return nil
+}
+
+func (req *GetMonitorDataReq) validateAzure(vendor enumor.Vendor) error {
+	if err := req.validateAzureFieldCompatibility(); err != nil {
+		return err
+	}
+	startTime, endTime, err := req.parseUTCTimeRange(vendor)
+	if err != nil {
+		return err
+	}
+	if !startTime.Before(endTime) {
+		return fmt.Errorf("start_time should < end_time for vendor %s", vendor)
+	}
+	if err = validateUTCTimeZone(startTime, endTime, vendor); err != nil {
+		return err
+	}
+	if req.AzureTop != nil && *req.AzureTop <= 0 {
+		return fmt.Errorf("top should > 0 for vendor %s", vendor)
+	}
+	if len(req.AzureOrderBy) != 0 && req.AzureTop == nil {
+		return fmt.Errorf("orderby requires top for vendor %s", vendor)
+	}
+	return nil
+}
+
+func (req *GetMonitorDataReq) validateAzureFieldCompatibility() error {
+	if len(req.Namespace) != 0 {
+		return fmt.Errorf("namespace is only supported for vendor %s", enumor.HuaWei)
 	}
 	return nil
 }
@@ -149,7 +193,7 @@ func (req *GetMonitorDataReq) GetHuaWeiTimeRange() (int64, int64, error) {
 	return startTime, endTime, nil
 }
 
-func (req *GetMonitorDataReq) parseAWSTimeRange(vendor enumor.Vendor) (time.Time, time.Time, error) {
+func (req *GetMonitorDataReq) parseUTCTimeRange(vendor enumor.Vendor) (time.Time, time.Time, error) {
 	startTimeStr, endTimeStr, err := req.GetStringTimeRange()
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("start_time and end_time are required for vendor %s", vendor)

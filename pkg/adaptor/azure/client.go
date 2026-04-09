@@ -28,6 +28,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
@@ -328,6 +329,21 @@ func (c *clientSet) usageDetailClient(kt *kit.Kit) (*billClient, error) {
 	}
 
 	return newBillClient(ManageServerURL, token)
+}
+
+// monitorMetricsClient ...
+func (c *clientSet) monitorMetricsClient() (*armmonitor.MetricsClient, error) {
+	credential, err := c.newClientSecretCredential()
+	if err != nil {
+		return nil, fmt.Errorf("init monitor metrics credential failed, err: %v", err)
+	}
+
+	client, err := armmonitor.NewMetricsClient(c.credential.CloudSubscriptionID, credential, nil)
+	if err != nil {
+		return nil, fmt.Errorf("init monitor metrics client failed, err: %v", err)
+	}
+
+	return client, nil
 }
 
 // GenResourceName 生产azure批量创建资源名称

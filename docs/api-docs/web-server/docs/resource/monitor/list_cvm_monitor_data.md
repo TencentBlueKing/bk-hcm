@@ -12,10 +12,10 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
 
 #### 通用参数
 
-| 参数名称      | 参数类型      | 必选 | 描述                                            |
-|-------------|--------------|------|------------------------------------------------|
-| vendor      | string       | 是   | 云厂商（枚举值：`tcloud`、`huawei`、`aws`）         |
-| metric_name | string       | 是   | 指标名称，例如：`CPUUsage`、`MemUsage`、`cpu_util` |
+| 参数名称      | 参数类型      | 必选 | 描述                                             |
+|-------------|--------------|------|-------------------------------------------------|
+| vendor      | string       | 是   | 云厂商（枚举值：`tcloud`、`huawei`、`aws`、`azure`） |
+| metric_name | string       | 是   | 指标名称，例如：`CPUUsage`、`MemUsage`、`cpu_util`、`LanOuttraffic`、`WanOuttraffic`、`LanIntraffic`、`WanIntraffic` |
 | period      | int64        | 是   | 监控统计周期，单位：秒                              |
 | ids         | string array | 是   | CVM ID 列表，最多 20 个                           |
 
@@ -41,6 +41,20 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
 |------------|---------|------|----------------------------------------------------------------------|
 | start_time | string  | 是   | 起始时间，RFC3339 UTC 格式，例如：`2026-04-09T00:00:00Z`              |
 | end_time   | string  | 是   | 结束时间，RFC3339 UTC 格式，例如：`2026-04-09T01:00:00Z`              |
+
+#### Azure（azure）参数
+
+| 参数名称               | 参数类型  | 必选 | 描述                                                  |
+|-----------------------|---------|------|------------------------------------------------------|
+| start_time            | string  | 是   | 起始时间，RFC3339 UTC 格式，例如：`2026-04-09T00:00:00Z` |
+| end_time              | string  | 是   | 结束时间，RFC3339 UTC 格式，例如：`2026-04-09T01:00:00Z` |
+| metric_namespace      | string  | 否   | 指标命名空间，默认 `Microsoft.Compute/virtualMachines`   |
+| aggregation           | string  | 否   | 聚合方式，例如：`Average`、`Total`、`Minimum`、`Maximum`、`Count`、`Last` |
+| auto_adjust_timegrain | bool    | 否   | 是否自动调整粒度                                        |
+| top                   | int32   | 否   | 返回维度序列数量上限，需大于 0                            |
+| orderby               | string  | 否   | 排序方式，例如：`total desc`、`avg asc`，传该参数时必须同时传 `top` |
+| filter                | string  | 否   | OData 过滤表达式                                       |
+| result_type           | string  | 否   | 返回类型，枚举值：`Data`、`Metadata`                     |
 
 ### 调用示例
 
@@ -84,6 +98,27 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
   "period": 300,
   "start_time": "2026-04-09T00:00:00Z",
   "end_time": "2026-04-09T01:00:00Z",
+  "ids": [
+    "00000001",
+    "00000002"
+  ]
+}
+```
+
+#### 请求参数示例（azure）
+
+```json
+{
+  "metric_name": "LanOuttraffic",
+  "period": 300,
+  "start_time": "2026-04-09T00:00:00Z",
+  "end_time": "2026-04-09T01:00:00Z",
+  "metric_namespace": "Microsoft.Compute/virtualMachines",
+  "aggregation": "Total",
+  "auto_adjust_timegrain": true,
+  "top": 10,
+  "orderby": "total desc",
+  "result_type": "Data",
   "ids": [
     "00000001",
     "00000002"
@@ -180,6 +215,7 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
    - `tcloud`：使用 `start_time/end_time`，格式 `2006-01-02 15:04:05`
    - `huawei`：使用 `start_time/end_time`，Unix 毫秒时间戳
    - `aws`：使用 `start_time/end_time`，RFC3339 UTC 格式（必须为 UTC 时区）
+   - `azure`：使用 `start_time/end_time`，RFC3339 UTC 格式（必须为 UTC 时区）
 3. 实例数量限制：单次请求最多支持20个实例
 4. 统计周期：
    - `tcloud`：period 最小值为 60
@@ -199,17 +235,17 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
    - `instance_id`：云厂商侧的实例ID（如腾讯云的 ins-xxx）
    - `ip`：实例的内网IP地址列表
    - `region`：实例所在地域
-   - `extensions`：厂商扩展字段，可能包含 `namespace`、`metric_name`、`unit`、`filter`、`dimensions` 等
+   - `extensions`：厂商扩展字段，可能包含 `namespace`、`metric_name`、`unit`、`filter`、`dimensions`、`source_metric_name`、`semantic_phase`、`traffic_scope`、`cost`、`granularity`、`resource_region` 等
 
 ### 常用指标
 
-| 指标名称          | 说明      | 单位   |
-|---------------|---------|------|
-| CPUUsage      | CPU使用率  | %    |
-| CPULoadAvg    | CPU平均负载 | -    |
+| 指标名称       | 说明        | 单位  |
+|---------------|------------|------|
+| CPUUsage      | CPU使用率   | %    |
+| CPULoadAvg    | CPU平均负载  | -    |
 | MemUsage      | 内存使用率   | %    |
 | MemUsed       | 内存使用量   | MB   |
-| TcpCurrEstab  | TCP连接数  | 个    |
+| TcpCurrEstab  | TCP连接数   | 个    |
 | LanOuttraffic | 内网出带宽   | Mbps |
 | LanIntraffic  | 内网入带宽   | Mbps |
 | WanOuttraffic | 外网出带宽   | Mbps |
@@ -221,4 +257,4 @@ POST /api/v1/cloud/vendors/{vendor}/cvms/monitor/data
   - https://support.huaweicloud.com/api-ces/ces_03_0059.html
   - https://support.huaweicloud.com/usermanual-ecs/ecs_03_1002.html
 - AWS官方文档：https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricData.html
-
+- Azure官方文档：https://learn.microsoft.com/rest/api/monitor/metrics/list
