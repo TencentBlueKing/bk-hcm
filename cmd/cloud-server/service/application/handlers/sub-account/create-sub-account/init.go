@@ -41,6 +41,7 @@ func init() {
 
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error) {
+
 	ct := new(createSubAccountContent)
 	if err := json.UnmarshalFromString(content, ct); err != nil {
 		return nil, fmt.Errorf("unmarshal create sub account content failed, err: %w", err)
@@ -57,8 +58,8 @@ type ApplicationOfCreateSubAccount struct {
 
 // NewApplicationOfCreateSubAccount create a new handler for creating sub account.
 func NewApplicationOfCreateSubAccount(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent,
-	req *proto.SubAccountAddReq,
-) *ApplicationOfCreateSubAccount {
+	req *proto.SubAccountAddReq) *ApplicationOfCreateSubAccount {
+
 	return &ApplicationOfCreateSubAccount{
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,
