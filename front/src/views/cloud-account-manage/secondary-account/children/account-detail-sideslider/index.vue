@@ -5,6 +5,7 @@ import { Share } from 'bkui-vue/lib/icon';
 import type { ISecondaryAccountItem, IAccountSecretItem } from '@/store/cloud-account';
 import { useCloudAccountStore } from '@/store/cloud-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import type { SwitchTabFn } from '../../../typings';
 import DisplayValue from '@/components/display-value/index.vue';
 import SecretKeyDialog from './secret-key-dialog.vue';
 import AccountFormSideslider from '../account-form-sideslider/index.vue';
@@ -31,8 +32,7 @@ const emit = defineEmits<{
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 注入切换到三级账号Tab的方法
-const switchToTertiaryTab = inject<(filter?: Record<string, any>) => void>('switchToTertiaryTab');
+const switchTab = inject<SwitchTabFn>('switchTab');
 
 // 密钥列表数据
 const secretList = ref<IAccountSecretItem[]>([]);
@@ -244,8 +244,7 @@ const handleGoToTertiaryAccount = () => {
   if (!cloudMainAccountId) return;
   // 关闭详情侧栏
   model.value = false;
-  // 切换到三级账号Tab，并带上所属二级账号ID查询参数
-  switchToTertiaryTab?.({ 'extension.cloud_main_account_id': cloudMainAccountId });
+  switchTab?.({ tab: 'tertiary-account', filter: { 'extension.cloud_main_account_id': cloudMainAccountId } });
 };
 
 // 新建三级账号成功回调

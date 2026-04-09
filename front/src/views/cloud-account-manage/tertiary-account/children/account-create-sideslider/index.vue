@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, inject, computed, watch, type Ref } from 'vue';
-import { Message } from 'bkui-vue';
+import { ref, inject, computed, watch, nextTick, h, type Ref } from 'vue';
+import { Message, Select } from 'bkui-vue';
 import { Ediatable, InputColumn, SelectColumn } from '@blueking/ediatable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCloudAccountStore, type ISubAccountCreateParams, type ISecondaryAccountItem } from '@/store/cloud-account';
@@ -8,7 +8,8 @@ import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum, type QueryFilterType } from '@/typings';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
-import SecondaryAccountSelector from './secondary-account-selector.vue';
+import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
+import ValidatedUserSelector from '../components/validated-user-selector.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -88,6 +89,19 @@ const tableData = ref<IRowData[]>([defaultRow()]);
 
 const isSubmitting = ref(false);
 
+const accountRefs = ref<Record<number, InstanceType<typeof SelectColumn>>>({});
+const nameRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
+const permissionTemplateRefs = ref<Record<number, InstanceType<typeof SelectColumn>>>({});
+const managerRefs = ref<Record<number, InstanceType<typeof ValidatedUserSelector>>>({});
+const receiveEmailRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
+
+const secondaryAccountSelectList = computed(() =>
+  secondaryAccountList.value.map((item) => ({
+    value: item.id,
+    label: `${item.name}(${item.id})`,
+  })),
+);
+
 const handleClose = () => {
   emit('update:modelValue', false);
   accountType.value = 1;
@@ -113,41 +127,125 @@ const handleRemoveRow = (index: number) => {
   tableData.value.splice(index, 1);
 };
 
+const handleBatchUpdateAccount = async (val: string) => {
+  if (!val) return;
+  tableData.value.forEach((row) => {
+    row.account_id = val;
+  });
+  await nextTick();
+  Object.values(accountRefs.value).forEach((r) => r?.getValue?.());
+};
+
+const handleBatchUpdateName = async (val: string) => {
+  if (!val) return;
+  tableData.value.forEach((row) => {
+    row.name = val;
+  });
+  await nextTick();
+  Object.values(nameRefs.value).forEach((r) => r?.getValue?.());
+};
+
+const handleBatchUpdateManagers = async (val: string | string[]) => {
+  const managers = Array.isArray(val) ? val : [val];
+  if (!managers.length) return;
+  tableData.value.forEach((row) => {
+    row.managers = [...managers];
+  });
+  await nextTick();
+  Object.values(managerRefs.value).forEach((r) => r?.getValue?.());
+};
+
 const headList = computed(() => [
-  { title: '所属二级账号', minWidth: 140, required: true },
-  { title: '三级账号名称', minWidth: 140, required: true },
+  {
+    title: '所属二级账号',
+    minWidth: 140,
+    required: true,
+    renderAppend: () =>
+      h(
+        BatchUpdatePopConfirm,
+        { title: '所属二级账号', onUpdateValue: handleBatchUpdateAccount },
+        {
+          content: ({ value, updateValue }: { value: string; updateValue: (v: string) => void }) =>
+            h(
+              Select,
+              {
+                modelValue: value || '',
+                'onUpdate:modelValue': updateValue,
+                filterable: true,
+                placeholder: '请选择二级账号',
+                popoverOptions: { boundary: 'parent' },
+              },
+              () =>
+                secondaryAccountList.value.map((item) =>
+                  h(Select.Option, {
+                    key: item.id,
+                    value: item.id,
+                    label: `${item.name}(${item.id})`,
+                  }),
+                ),
+            ),
+        },
+      ),
+  },
+  {
+    title: '三级账号名称',
+    minWidth: 140,
+    required: true,
+    renderAppend: () =>
+      h(BatchUpdatePopConfirm, {
+        title: '三级账号名称',
+        valueType: 'string',
+        onUpdateValue: handleBatchUpdateName,
+      }),
+  },
   { title: '权限模版', minWidth: 140, required: true },
   { title: '手机号', minWidth: 120, required: false },
   { title: '账号邮箱', minWidth: 130, required: false },
-  { title: '负责人', minWidth: 180, required: true },
+  {
+    title: '负责人',
+    minWidth: 180,
+    required: true,
+    renderAppend: () =>
+      h(
+        BatchUpdatePopConfirm,
+        { title: '负责人', onUpdateValue: handleBatchUpdateManagers },
+        {
+          content: ({ value, updateValue }: { value: any; updateValue: (v: any) => void }) =>
+            h(UserSelector, {
+              modelValue: value || [],
+              'onUpdate:modelValue': updateValue,
+              multiple: true,
+              collapseTags: false,
+              allowCreate: true,
+              placeholder: '请输入负责人',
+            }),
+        },
+      ),
+  },
   { title: '账号开通接收邮箱', minWidth: 140, required: true },
   { title: '', width: 112, required: false },
 ]);
 
 const handleSubmit = async () => {
+  try {
+    const allRefs = tableData.value
+      .flatMap((_, index) => [
+        accountRefs.value[index],
+        nameRefs.value[index],
+        permissionTemplateRefs.value[index],
+        managerRefs.value[index],
+        receiveEmailRefs.value[index],
+      ])
+      .filter(Boolean);
+    await Promise.all(allRefs.map((r) => r.getValue()));
+  } catch {
+    return;
+  }
+
   const validRows = tableData.value.filter((row) => row.account_id && row.name);
   if (validRows.length === 0) {
     Message({ theme: 'warning', message: '请至少填写一行完整的账号信息' });
     return;
-  }
-
-  for (const row of validRows) {
-    if (!row.account_id) {
-      Message({ theme: 'warning', message: '请选择所属二级账号' });
-      return;
-    }
-    if (!row.name) {
-      Message({ theme: 'warning', message: '请输入三级账号名称' });
-      return;
-    }
-    if (!row.managers?.length) {
-      Message({ theme: 'warning', message: '请选择负责人' });
-      return;
-    }
-    if (!row.receive_email) {
-      Message({ theme: 'warning', message: '请输入账号开通接收邮箱' });
-      return;
-    }
   }
 
   const subAccounts: ISubAccountCreateParams[] = validRows.map((row) => ({
@@ -202,17 +300,33 @@ const handleSubmit = async () => {
             <template #data>
               <tr v-for="(row, index) in tableData" :key="index">
                 <td>
-                  <SecondaryAccountSelector
+                  <SelectColumn
                     v-model="row.account_id"
-                    :account-list="secondaryAccountList"
+                    :ref="(el: any) => (accountRefs[index] = el)"
+                    :list="secondaryAccountSelectList"
                     :loading="secondaryAccountLoading"
+                    :rules="[{ validator: (v: any) => Boolean(v), message: '请选择所属二级账号' }]"
+                    filterable
+                    placeholder="请选择"
                   />
                 </td>
                 <td>
-                  <InputColumn v-model="row.name" placeholder="请输入" />
+                  <InputColumn
+                    v-model="row.name"
+                    :ref="(el: any) => (nameRefs[index] = el)"
+                    :rules="[{ validator: (v: any) => Boolean(v), message: '请输入三级账号名称' }]"
+                    placeholder="请输入"
+                  />
                 </td>
                 <td>
-                  <SelectColumn v-model="row.permission_template" :list="[]" multiple placeholder="请选择" />
+                  <SelectColumn
+                    v-model="row.permission_template"
+                    :ref="(el: any) => (permissionTemplateRefs[index] = el)"
+                    :list="[]"
+                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '请选择权限模版' }]"
+                    multiple
+                    placeholder="请选择"
+                  />
                 </td>
                 <td>
                   <InputColumn v-model="row.phone_num" placeholder="请输入" />
@@ -221,8 +335,9 @@ const handleSubmit = async () => {
                   <InputColumn v-model="row.email" placeholder="请输入" />
                 </td>
                 <td>
-                  <UserSelector
+                  <ValidatedUserSelector
                     v-model="row.managers"
+                    :ref="(el: any) => (managerRefs[index] = el)"
                     :multiple="true"
                     :collapse-tags="false"
                     :allow-create="true"
@@ -230,7 +345,12 @@ const handleSubmit = async () => {
                   />
                 </td>
                 <td>
-                  <InputColumn v-model="row.receive_email" placeholder="请输入" />
+                  <InputColumn
+                    v-model="row.receive_email"
+                    :ref="(el: any) => (receiveEmailRefs[index] = el)"
+                    :rules="[{ validator: (v: any) => Boolean(v), message: '请输入账号开通接收邮箱' }]"
+                    placeholder="请输入"
+                  />
                 </td>
                 <OperationColumn
                   :show-copy="true"

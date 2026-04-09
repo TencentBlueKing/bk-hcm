@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, defineAsyncComponent, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import VendorSelector from './components/vendor-selector.vue';
 
@@ -33,52 +33,34 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
 };
 const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
-// Tab 手动切换 — 清除遗留搜索条件/分页参数，同时清除残留的跨 Tab 导航意图
 const handleTabChange = (name: string) => {
+  // 清除残留的跨 Tab 导航意图
   navStore.clearNavIntent();
-  router.replace({ query: { type: name } });
+  router.replace({ query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], type: name } });
 };
 
 // 云厂商切换
 const handleVendorChange = (vendor: VendorEnum) => {
   currentVendor.value = vendor;
-  // TODO: 触发数据刷新
 };
-
-// 提供云厂商信息给子组件
 provide('currentVendor', currentVendor);
 
-/**
- * 切换到三级账号 Tab（跨 Tab 跳转）
- * @param filter  要注入的搜索条件，如 { 'extension.cloud_main_account_id': '123' }
- * @param detailCloudId  要自动打开详情的三级账号 cloud_id
- */
-const switchToTertiaryTab = (filter?: Record<string, any>, detailCloudId?: string) => {
-  // 将跳转参数写入 store，目标 Tab 在数据就绪后消费
+const switchTab = ({ tab, filter, detailCloudId }: SwitchTabOptions) => {
   navStore.setNavIntent({
-    targetTab: 'tertiary-account',
+    targetTab: tab,
     filter: filter && Object.keys(filter).length > 0 ? filter : undefined,
     detailCloudId,
   });
-  tabActive.value = 'tertiary-account';
-  // URL 只保留 type + 时间戳触发 watcher，不再携带 filter/detailCloudId
-  router.replace({ query: { type: 'tertiary-account', _t: String(Date.now()) } });
-};
-provide('switchToTertiaryTab', switchToTertiaryTab);
-
-/**
- * 切换到二级账号 Tab 并打开指定账号的详情弹窗
- * @param detailCloudId  要自动打开详情的二级账号 cloud_main_account_id
- */
-const switchToSecondaryTab = (detailCloudId?: string) => {
-  navStore.setNavIntent({
-    targetTab: 'secondary-account',
-    detailCloudId,
+  tabActive.value = tab;
+  router.replace({
+    query: {
+      [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
+      type: tab,
+      _t: String(Date.now()),
+    },
   });
-  tabActive.value = 'secondary-account';
-  router.replace({ query: { type: 'secondary-account', _t: String(Date.now()) } });
 };
-provide('switchToSecondaryTab', switchToSecondaryTab);
+provide('switchTab', switchTab);
 </script>
 
 <template>
@@ -153,8 +135,6 @@ provide('switchToSecondaryTab', switchToSecondaryTab);
         height: calc(100% - 42px);
         padding: 0;
         background: none;
-
-        // padding: 16px 24px;
         overflow: auto;
       }
     }
