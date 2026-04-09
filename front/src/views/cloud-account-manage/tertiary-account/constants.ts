@@ -8,7 +8,7 @@ export const ACCOUNT_TYPE_OPTIONS: Record<number, string> = {
 export const FLAG_OPTIONS: Record<FlagType, string> = {
   phone: '安全手机',
   token: '硬token',
-  stoken: 'MFA字段',
+  stoken: 'MFA',
   wechat: '微信',
   custom: '自定义',
   mail: '邮箱',

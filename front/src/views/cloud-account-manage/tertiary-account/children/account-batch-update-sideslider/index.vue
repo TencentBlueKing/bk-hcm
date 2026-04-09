@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, inject, computed, type Ref, watch, nextTick } from 'vue';
-import { Message } from 'bkui-vue';
+import { ref, inject, computed, h, type Ref, type ComponentPublicInstance, watch, nextTick } from 'vue';
+import { Message, Select } from 'bkui-vue';
 import { Ediatable, TextPlainColumn, SelectColumn } from '@blueking/ediatable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore } from '@/store';
@@ -9,6 +9,8 @@ import { useAccountSelectorStore } from '@/store/account-selector';
 import { VendorEnum } from '@/common/constant';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
+import ValidatedUserSelector from '../components/validated-user-selector.vue';
+import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -40,6 +42,8 @@ const batchData = ref<IBatchRow[]>([]);
 const isSubmitting = ref(false);
 const isReady = ref(false);
 const bizList = ref<{ value: string; label: string }[]>([]);
+const managerRefs = ref<Record<number, ComponentPublicInstance & { getValue: () => Promise<any> }>>({});
+const bizRefs = ref<Record<number, ComponentPublicInstance & { getValue: () => Promise<any> }>>({});
 
 watch(
   () => props.modelValue,
@@ -91,13 +95,16 @@ const handleRemoveRow = (index: number) => {
 };
 
 const handleSubmit = async () => {
-  const rows = batchData.value;
-  for (const row of rows) {
-    if (!row.managers?.length) {
-      Message({ theme: 'warning', message: '请填写所有三级账号的负责人' });
-      return;
-    }
+  try {
+    const allRefs = batchData.value
+      .flatMap((_, index) => [managerRefs.value[index], bizRefs.value[index]])
+      .filter(Boolean);
+    await Promise.all(allRefs.map((r) => r.getValue()));
+  } catch {
+    return;
   }
+
+  const rows = batchData.value;
 
   const subAccounts: ISubAccountUpdateParams[] = rows.map((row) => {
     const bizId = Array.isArray(row.bk_biz_ids) ? row.bk_biz_ids[0] : row.bk_biz_ids;
@@ -121,14 +128,77 @@ const handleSubmit = async () => {
   }
 };
 
+const handleBatchUpdateManagers = async (val: string | string[]) => {
+  const managers = Array.isArray(val) ? val : [val];
+  if (!managers.length) return;
+  batchData.value.forEach((row) => {
+    row.managers = [...managers];
+  });
+  await nextTick();
+  Object.values(managerRefs.value).forEach((r) => r?.getValue?.());
+};
+
+const handleBatchUpdateBiz = async (val: string) => {
+  if (!val) return;
+  batchData.value.forEach((row) => {
+    row.bk_biz_ids = [String(val)];
+  });
+  await nextTick();
+  Object.values(bizRefs.value).forEach((r) => r?.getValue?.());
+};
+
 const headList = computed(() => [
   { title: '三级账号ID', minWidth: 120, required: false },
   { title: '三级账号名称', minWidth: 140, required: false },
   { title: '所属二级账号ID', minWidth: 130, required: false },
   { title: '所属二级账号名称', minWidth: 140, required: false },
-  { title: '三级账号负责人', minWidth: 180, required: true },
-  { title: '三级账号业务', minWidth: 160, required: true },
-  { title: '', width: 50, required: false },
+  {
+    title: '三级账号负责人',
+    minWidth: 180,
+    renderAppend: () =>
+      h(
+        BatchUpdatePopConfirm,
+        { title: '负责人', onUpdateValue: handleBatchUpdateManagers },
+        {
+          content: ({ value, updateValue }: { value: any; updateValue: (v: any) => void }) =>
+            h(UserSelector, {
+              modelValue: value || [],
+              'onUpdate:modelValue': updateValue,
+              multiple: true,
+              collapseTags: false,
+              allowCreate: true,
+              placeholder: '请输入负责人',
+            }),
+        },
+      ),
+  },
+  {
+    title: '三级账号业务',
+    minWidth: 160,
+    renderAppend: () =>
+      h(
+        BatchUpdatePopConfirm,
+        { title: '业务', onUpdateValue: handleBatchUpdateBiz },
+        {
+          content: ({ value, updateValue }: { value: string; updateValue: (v: string) => void }) =>
+            h(
+              Select,
+              {
+                modelValue: value || '',
+                'onUpdate:modelValue': updateValue,
+                filterable: true,
+                placeholder: '请选择业务',
+                popoverOptions: { boundary: 'parent' },
+              },
+              () =>
+                bizList.value.map((item) =>
+                  h(Select.Option, { key: item.value, value: item.value, label: item.label }),
+                ),
+            ),
+        },
+      ),
+  },
+  { title: '', width: 48, required: false },
 ]);
 </script>
 
@@ -165,17 +235,23 @@ const headList = computed(() => [
                   <TextPlainColumn :data="row.account_name" />
                 </td>
                 <td>
-                  <UserSelector
+                  <ValidatedUserSelector
                     v-model="row.managers"
+                    :ref="(el: any) => (managerRefs[index] = el)"
                     :multiple="true"
                     :collapse-tags="false"
                     :allow-create="true"
                     placeholder="请输入负责人"
-                    :class="{ 'is-error': !row.managers?.length }"
                   />
                 </td>
                 <td>
-                  <SelectColumn v-model="row.bk_biz_ids" :list="bizList" filterable />
+                  <SelectColumn
+                    v-model="row.bk_biz_ids"
+                    :ref="(el: any) => (bizRefs[index] = el)"
+                    :list="bizList"
+                    filterable
+                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '请选择业务' }]"
+                  />
                 </td>
                 <OperationColumn
                   :show-add="false"
@@ -231,6 +307,10 @@ const headList = computed(() => [
   min-height: 42px;
   border-color: transparent;
   border-radius: 0;
+
+  .placeholder {
+    margin-top: 5px;
+  }
 }
 
 :deep(.user-selector .bk-tag-input-trigger:hover) {
@@ -240,10 +320,6 @@ const headList = computed(() => [
 
 :deep(.user-selector .bk-tag-input-trigger.active) {
   border-color: #3a84ff !important;
-}
-
-:deep(.is-error .user-selector .bk-tag-input-trigger) {
-  background-color: #fff0f1;
 }
 /* stylelint-enable selector-class-pattern */
 </style>

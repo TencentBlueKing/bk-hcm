@@ -11,7 +11,7 @@ import { transformSimpleCondition, localPaginate, localSort } from '@/utils/sear
 import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
 import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import { VendorEnum } from '@/common/constant';
-import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { QueryFilterType, RulesItem } from '@/typings';
 
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
@@ -45,8 +45,16 @@ const sortParams = ref<{ sort: string; order: string }>({ sort: 'created_at', or
 const { pagination, getPageParams } = usePage();
 const searchQs = useSearchQs({ key: 'filter', properties: searchFields.value });
 const selectedRows = ref<ISubAccountItem[]>([]);
-const totalCount = ref(0);
-const pendingCount = ref(0);
+const totalCount = computed(() => fullList.value.length);
+const isPendingItem = (item: ISubAccountItem) => {
+  const managers = item.managers ?? item.extension?.managers;
+  const bizIds = item.bk_biz_ids ?? item.extension?.bk_biz_ids;
+  const emptyManagers = !managers || (Array.isArray(managers) && managers.length === 0);
+  const emptyBizIds = !bizIds || (Array.isArray(bizIds) && bizIds.length === 0);
+  return emptyManagers || emptyBizIds;
+};
+const pendingList = computed(() => fullList.value.filter(isPendingItem));
+const pendingCount = computed(() => pendingList.value.length);
 
 const updateTableData = () => {
   let list = [...fullList.value];
@@ -58,39 +66,6 @@ const updateTableData = () => {
   }
   const pageParams = getPageParams(pagination, sortParams.value);
   tableData.value = localPaginate(list, pageParams);
-};
-
-const buildVendorFilter = (): QueryFilterType => ({
-  op: 'and',
-  rules: [{ field: 'vendor', op: QueryRuleOPEnum.EQ, value: currentVendor.value }],
-});
-
-const loadStatistics = async () => {
-  const bizId = getBizsId();
-  const vendor = currentVendor.value;
-  const vendorFilter = buildVendorFilter();
-
-  const pendingFilter: QueryFilterType = {
-    op: 'and',
-    rules: [
-      { field: 'vendor', op: QueryRuleOPEnum.EQ, value: vendor },
-      {
-        op: QueryRuleOPEnum.OR,
-        rules: [
-          { field: 'managers', op: QueryRuleOPEnum.JSON_EQ, value: '[]' as any },
-          { field: 'bk_biz_ids', op: QueryRuleOPEnum.JSON_EQ, value: '[]' as any },
-        ],
-      },
-    ],
-  };
-
-  const [total, pending] = await Promise.all([
-    cloudAccountStore.getSubAccountCount(bizId, vendor, vendorFilter),
-    cloudAccountStore.getSubAccountCount(bizId, vendor, pendingFilter),
-  ]);
-
-  totalCount.value = total;
-  pendingCount.value = pending;
 };
 
 // 跨 Tab 注入的 filter（一次性，不写入 URL，避免污染 Search 组件的初始值）
@@ -166,11 +141,7 @@ const loadFullList = async () => {
     fullList.value = list;
     pagination.count = list.length;
     updateTableData();
-    loadStatistics();
 
-    // 数据加载完成后，把跨 Tab filter 合并到 condition 让搜索组件显示筛选值
-    // 此时 Search 组件的 conditionInitValues 已经用空对象初始化过了，
-    // 所以后续 "重置" 会恢复到空状态而非带 filter 的状态
     if (crossTabFilter.value) {
       condition.value = { ...condition.value, ...crossTabFilter.value };
     }
@@ -229,7 +200,9 @@ const handleCreateAccount = () => {
 };
 
 const showBatchUpdateSideslider = ref(false);
+const batchUpdateRows = ref<ISubAccountItem[]>([]);
 const handleBatchUpdate = () => {
+  batchUpdateRows.value = [...selectedRows.value];
   showBatchUpdateSideslider.value = true;
 };
 
@@ -269,11 +242,11 @@ const handleReset = () => {
 
 const handleFormSuccess = () => {
   refreshList();
-  loadStatistics();
 };
 
 const handleGoToPending = () => {
-  refreshList();
+  batchUpdateRows.value = [...pendingList.value];
+  showBatchUpdateSideslider.value = true;
 };
 </script>
 
@@ -319,7 +292,7 @@ const handleGoToPending = () => {
 
     <AccountBatchUpdateSideslider
       v-model="showBatchUpdateSideslider"
-      :selected-rows="selectedRows"
+      :selected-rows="batchUpdateRows"
       @success="handleFormSuccess"
     />
 

@@ -498,10 +498,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
       // 处理数据，将 extension 中的字段提取到顶层便于展示
       const processedList = list.map((item: ICloudSecretItem) => ({
         ...item,
-        cloud_secret_id: item.extension?.cloud_secret_id,
-        cloud_main_account_id: item.extension?.cloud_main_account_id,
-        cloud_sub_account_id: item.extension?.cloud_sub_account_id,
-        console_login: item.extension?.console_login,
+        ...item.extension,
       }));
 
       return { list: processedList, count };
