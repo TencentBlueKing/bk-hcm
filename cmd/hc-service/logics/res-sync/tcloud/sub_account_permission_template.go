@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"fmt"
+	"maps"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core"
@@ -181,5 +182,6 @@ func (cli *client) buildPermissionTmplCloudIDMap(kt *kit.Kit, accountID string) 
 		start += uint32(core.DefaultMaxPageLimit)
 	}
 
+	logs.Infof("[jettxiao] buildPermissionTmplCloudIDMap: %+v", maps.Keys(cloudIDToLocalID))
 	return cloudIDToLocalID, nil
 }

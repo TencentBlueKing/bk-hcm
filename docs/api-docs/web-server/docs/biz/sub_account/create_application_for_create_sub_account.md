@@ -77,11 +77,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/add_sub_
 
 ### 响应参数说明
 
-| 参数名称 | 参数类型 | 描述   |
-|------|------|------|
-| code | int32 | 状态码  |
+| 参数名称    | 参数类型 | 描述   |
+|---------|------|------|
+| code    | int32 | 状态码  |
 | message | string | 请求信息 |
-| data | object | 响应数据 |
+| data    | object | 响应数据 |
 
 #### data
 

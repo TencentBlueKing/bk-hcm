@@ -65,15 +65,16 @@ func (req *SubAccountBatchAddReq) Validate() error {
 
 // SubAccountAddReq define sub account create request for a single sub-account.
 type SubAccountAddReq struct {
-	AccountID    string          `json:"account_id" validate:"required"`
-	Name         string          `json:"name" validate:"required"`
-	ReceiveEmail string          `json:"receive_email" validate:"required,email"`
-	Email        string          `json:"email" validate:"omitempty,email"`
-	PhoneNum     string          `json:"phone_num" validate:"omitempty"`
-	CountryCode  string          `json:"country_code" validate:"omitempty"`
-	Managers     []string        `json:"managers" validate:"required,min=1"`
-	Memo         *string         `json:"memo" validate:"omitempty"`
-	Extension    json.RawMessage `json:"extension" validate:"required"`
+	AccountID             string          `json:"account_id" validate:"required"`
+	Name                  string          `json:"name" validate:"required"`
+	PermissionTemplateIDs []string        `json:"permission_template_ids" validate:"required,dive,required"`
+	ReceiveEmail          string          `json:"receive_email" validate:"required,email"`
+	Email                 string          `json:"email" validate:"omitempty,email"`
+	PhoneNum              string          `json:"phone_num" validate:"omitempty"`
+	CountryCode           string          `json:"country_code" validate:"omitempty"`
+	Managers              []string        `json:"managers" validate:"required,min=1"`
+	Memo                  *string         `json:"memo" validate:"omitempty"`
+	Extension             json.RawMessage `json:"extension" validate:"required"`
 }
 
 // Validate sub account create request.

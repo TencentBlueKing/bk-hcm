@@ -461,3 +461,17 @@ type TCloudListAttachedUserAllPoliciesResult struct {
 	// TotalNum 策略总数
 	TotalNum uint64 `json:"total_num"`
 }
+
+// TCloudAttachUserPolicyOption defines options for attaching a policy to a sub-user.
+// reference: https://cloud.tencent.com/document/product/598/34579
+type TCloudAttachUserPolicyOption struct {
+	// TargetUin is the target sub-account UIN.
+	TargetUin uint64 `json:"target_uin" validate:"required"`
+	// PolicyId is the cloud policy ID to attach.
+	PolicyId uint64 `json:"policy_id" validate:"required"`
+}
+
+// Validate TCloudAttachUserPolicyOption.
+func (opt *TCloudAttachUserPolicyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

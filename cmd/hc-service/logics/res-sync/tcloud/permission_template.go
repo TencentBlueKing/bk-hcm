@@ -161,6 +161,11 @@ func (cli *client) listPermissionTemplateFromCloud(kt *kit.Kit, opt *SyncPermiss
 		return nil, err
 	}
 
+	cloudIDs := make([]string, 0, len(items))
+	for _, item := range items {
+		cloudIDs = append(cloudIDs, item.GetCloudID())
+	}
+	logs.Infof("[jettxiao] list cloudIDs: %v", cloudIDs)
 	// results, err := cli.getPolicyDetails(kt, opt, items)
 	// if err != nil {
 	// 	return nil, err
