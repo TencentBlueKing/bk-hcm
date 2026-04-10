@@ -13,8 +13,8 @@ import { VendorEnum } from '@/common/constant';
 
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
-import SecretDetailSlider from './components/secret-detail-slider.vue';
-import SecretActionDialog from './components/secret-action-dialog.vue';
+import SecretDetailSlider from './children/secret-detail-sideslider/index.vue';
+import SecretActionDialog from './children/secret-action-dialog/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 import type { ICloudSecretItem, ISearchCondition, SecretActionType } from './typings';
