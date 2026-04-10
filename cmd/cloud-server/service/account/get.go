@@ -226,7 +226,7 @@ func accountDetailFullFill[T protocloud.AccountExtensionGetResp](svc *accountSvc
 	acc *protocloud.AccountGetResult[T]) error {
 
 	acc.RecycleReserveTime = convertRecycleReverseTime(acc.RecycleReserveTime)
-	syncDetails, err := svc.getAccountsSyncDetail(cts, acc.ID)
+	syncDetails, err := svc.getAccountsSyncDetail(cts.Kit, acc.ID)
 	if err != nil {
 		logs.Errorf("fail to get account sync detail, accountID: %s, rid: %s", acc.ID, cts.Kit.Rid)
 		return err

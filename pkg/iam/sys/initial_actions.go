@@ -175,6 +175,46 @@ func genResManagementActions() []client.ResourceAction {
 		RelatedResourceTypes: bizResource,
 		RelatedActions:       []client.ActionID{BizAccess},
 		Version:              1,
+	}, {
+		ID:                   BizAccountOperate,
+		Name:                 ActionIDNameMap[BizAccountOperate],
+		NameEn:               "Operate Biz Account",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizSubAccountOperate,
+		Name:                 ActionIDNameMap[BizSubAccountOperate],
+		NameEn:               "Operate Biz Sub-Account",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizSubAccountSecretOperate,
+		Name:                 ActionIDNameMap[BizSubAccountSecretOperate],
+		NameEn:               "Operate Biz Sub-Account Secret",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizPermissionTemplateOperate,
+		Name:                 ActionIDNameMap[BizPermissionTemplateOperate],
+		NameEn:               "Operate Biz Permission Template",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
+	}, {
+		ID:                   BizPermissionPolicyLibraryOperate,
+		Name:                 ActionIDNameMap[BizPermissionPolicyLibraryOperate],
+		NameEn:               "Operate Biz Permission Policy Library",
+		Type:                 Edit,
+		RelatedResourceTypes: bizResource,
+		RelatedActions:       []client.ActionID{BizAccess},
+		Version:              1,
 	}}...)
 
 	return actions
@@ -345,6 +385,7 @@ func genResourceAccessActions() []client.ResourceAction {
 		Version:              1,
 	}}...)
 	actions = append(actions, genCosResAccessActions()...)
+	actions = append(actions, genCloudVendorConfigAccessActions()...)
 	return actions
 }
 
@@ -602,6 +643,20 @@ func genCosResAccessActions() []client.ResourceAction {
 			NameEn:               "COS Bucket Delete",
 			Type:                 Delete,
 			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		},
+	}
+}
+
+func genCloudVendorConfigAccessActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   CloudVendorConfig,
+			Name:                 ActionIDNameMap[CloudVendorConfig],
+			NameEn:               "Cloud Vendor Config",
+			Type:                 Edit,
+			RelatedResourceTypes: nil,
 			RelatedActions:       nil,
 			Version:              1,
 		},

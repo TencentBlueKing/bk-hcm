@@ -71,14 +71,24 @@ func (o *ClientOpt) GetUrl(urlMap map[UrlType]string) (*cos.BaseURL, error) {
 type TCloudBucketCreateOption struct {
 	Name   string `json:"name" validate:"required"`
 	Region string `json:"region" validate:"required"`
+	// AppID is the application ID for the bucket.
+	AppID uint64 `json:"-" validate:"required"`
 
-	XCosACL                   string                     `json:"x_cos_acl" validate:"omitempty"`
-	XCosGrantRead             string                     `json:"x_cos_grant_read" validate:"omitempty"`
-	XCosGrantWrite            string                     `json:"x_cos_grant_write" validate:"omitempty"`
-	XCosGrantFullControl      string                     `json:"x_cos_grant_full_control" validate:"omitempty"`
-	XCosGrantReadACP          string                     `json:"x_cos_grant_read_acp" validate:"omitempty"`
-	XCosGrantWriteACP         string                     `json:"x_cos_grant_write_acp" validate:"omitempty"`
-	XCosTagging               string                     `json:"x_cos_tagging" validate:"omitempty"`
+	// XCosACL 定义存储桶的访问控制列表（ACL）属性, 默认为 private
+	XCosACL string `json:"x_cos_acl" validate:"omitempty"`
+	// XCosGrantRead 赋予被授权者读取存储桶的权限
+	XCosGrantRead string `json:"x_cos_grant_read" validate:"omitempty"`
+	// XCosGrantWrite 赋予被授权者写入存储桶的权限
+	XCosGrantWrite string `json:"x_cos_grant_write" validate:"omitempty"`
+	// XCosGrantFullControl 赋予被授权者操作存储桶的所有权限
+	XCosGrantFullControl string `json:"x_cos_grant_full_control" validate:"omitempty"`
+	// XCosGrantReadACP 赋予被授权者读取存储桶的访问控制列表（ACL）和存储桶策略（Policy）的权限
+	XCosGrantReadACP string `json:"x_cos_grant_read_acp" validate:"omitempty"`
+	// XCosGrantWriteACP 赋予被授权者写入存储桶的访问控制列表（ACL）和存储桶策略（Policy）的权限
+	XCosGrantWriteACP string `json:"x_cos_grant_write_acp" validate:"omitempty"`
+	// XCosTagging 在创建存储桶的同时，为存储桶添加标签，最多可设置50个标签。例如 key1=value1&key2=value2
+	XCosTagging string `json:"x_cos_tagging" validate:"omitempty"`
+	// CreateBucketConfiguration 包含 PUT Bucket 操作的所有请求信息
 	CreateBucketConfiguration *CreateBucketConfiguration `json:"create_bucket_configuration" validate:"omitempty"`
 }
 
@@ -111,6 +121,8 @@ func (c CreateBucketConfiguration) Validate() error {
 type TCloudBucketDeleteOption struct {
 	Name   string `json:"name" validate:"required"`
 	Region string `json:"region" validate:"required"`
+	// AppID is the application ID for the bucket.
+	AppID uint64 `json:"-" validate:"required"`
 }
 
 // Validate TCloudBucketDeleteOption.
@@ -152,7 +164,8 @@ type Owner struct {
 
 // Bucket defines tencent cloud bucket.
 type Bucket struct {
-	Name         string `json:"name"`
+	// CloudName 腾讯云接口返回的bucket名称（带AppID后缀）
+	CloudName    string `json:"cloud_name"`
 	Region       string `json:"region"`
 	CreationDate string `json:"creation_date"`
 	BucketType   string `json:"bucket_type"`

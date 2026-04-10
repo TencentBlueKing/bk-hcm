@@ -50,6 +50,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.Biz:                      genBizResource,
 	meta.Account:                  genAccountResource,
 	meta.SubAccount:               genSubAccountResource,
+	meta.SubAccountSecret:         genSubAccountSecretResource,
 	meta.Vpc:                      genVpcResource,
 	meta.Subnet:                   genSubnetResource,
 	meta.Disk:                     genDiskResource,
@@ -87,7 +88,9 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.Image:                    genImageResource,
 	meta.TaskManagement:           genTaskManagementResource,
 	meta.CosBucket:                genCosBucket,
+	meta.PermissionTemplate:       genPermissionTemplateResource,
 	meta.GlobalConfig:             genGlobalConfigResource,
+	meta.PermissionPolicyLibrary:  genPermissionPolicyLibraryResource,
 }
 
 func genApplicationResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {

@@ -76,6 +76,15 @@ func toAwsInstanceType(info *ec2.InstanceTypeInfo) *typesinstancetype.AwsInstanc
 		for _, gpu := range info.GpuInfo.Gpus {
 			if gpu != nil {
 				it.GPU += converter.PtrToVal(gpu.Count)
+				if it.GPUName == "" {
+					it.GPUName = converter.PtrToVal(gpu.Name)
+				}
+				if it.GPUManufacturer == "" {
+					it.GPUManufacturer = converter.PtrToVal(gpu.Manufacturer)
+				}
+				if gpu.MemoryInfo != nil && it.GPUMemory == 0 {
+					it.GPUMemory = converter.PtrToVal(gpu.MemoryInfo.SizeInMiB)
+				}
 			}
 		}
 	}

@@ -20,7 +20,7 @@ const baseInfoFields = computed(() => {
   if (!props.policyData) return [];
   return [
     { label: '权限策略库名称', value: props.policyData.name, id: 'name' },
-    { label: '关联二级账号数', value: props.policyData.related_account_count, id: 'related_account_count' },
+    { label: '关联二级账号数', value: props.policyData.associated_account_count, id: 'associated_account_count ' },
     { label: '创建人', value: `${props.policyData.creator}（平台）`, id: 'creator' },
     { label: '创建时间', value: props.policyData.created_at, id: 'created_at' },
     { label: '更新人', value: props.policyData.reviser, id: 'reviser' },
@@ -73,7 +73,7 @@ const handleApplyToAccount = () => {
 
         <!-- 权限模版 -->
         <bk-card title="权限模版" :border="false" :disable-header-style="true" class="permission-card">
-          <JSON />
+          <JSON :content="props.policyData.policy_document" />
         </bk-card>
       </div>
     </template>

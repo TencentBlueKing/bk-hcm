@@ -61,9 +61,10 @@ type Kit struct {
 	TenantID string
 
 	// RequestSource 请求来源，字段为空是默认为 ApiCall 类型。
-	// Note: hcm请求分为 ApiCall 和 BackgroundSync 请求。所以，RequestSource是内部使用字段，
-	// 因为来自前端和第三方系统调用的请求均为 ApiCall，所以没必要将该字段暴漏出去，仅同步请求需要设
-	// 置该字段为 BackgroundSync。
+	// Note: hcm请求分为 ApiCall 、WebCall、AsynchronousTasks、BackgroundSync 请求。
+	// 因为来自第三方系统调用的请求均为 ApiCall，前端调用代表WebCall，
+	// 异步任务请求代表AsynchronousTasks，同步请求需要设置该字段为 BackgroundSync。
+	// Kt的RequestSource同时也会作为TaskManagementSource划分API调用和页面调用的依据。
 	RequestSource enumor.RequestSourceType
 }
 

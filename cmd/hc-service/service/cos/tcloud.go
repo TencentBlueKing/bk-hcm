@@ -21,9 +21,11 @@
 package cos
 
 import (
+	"fmt"
 	"net/http"
 
 	"hcm/cmd/hc-service/service/capability"
+	tcloudadaptor "hcm/pkg/adaptor/tcloud"
 	typecos "hcm/pkg/adaptor/types/cos"
 	protocos "hcm/pkg/api/hc-service/cos"
 	"hcm/pkg/criteria/errf"
@@ -56,9 +58,17 @@ func (svc *cosSvc) CreateTCloudCosBucket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
+	// 获取 AppID
+	accountInfo, err := tCloud.GetAccountInfoBySecret(cts.Kit)
+	if err != nil {
+		logs.Errorf("get account info by secret failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("get account info failed, err: %v", err)
+	}
+
 	opt := &typecos.TCloudBucketCreateOption{
 		Name:                 req.Name,
 		Region:               req.Region,
+		AppID:                accountInfo.AppID,
 		XCosACL:              req.XCosACL,
 		XCosGrantRead:        req.XCosGrantRead,
 		XCosGrantWrite:       req.XCosGrantWrite,
@@ -79,7 +89,9 @@ func (svc *cosSvc) CreateTCloudCosBucket(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	return nil, nil
+	return protocos.TCloudCreateBucketResp{
+		CloudName: tcloudadaptor.EnsureBucketNameWithAppID(req.Name, accountInfo.AppID),
+	}, nil
 }
 
 // DeleteTCloudCosBucket delete tcloud cos bucket.
@@ -99,7 +111,7 @@ func (svc *cosSvc) DeleteTCloudCosBucket(cts *rest.Contexts) (interface{}, error
 	}
 
 	opt := &typecos.TCloudBucketDeleteOption{
-		Name:   req.Name,
+		Name:   req.CloudName,
 		Region: req.Region,
 	}
 	if err = tCloud.DeleteBucket(cts.Kit, opt); err != nil {

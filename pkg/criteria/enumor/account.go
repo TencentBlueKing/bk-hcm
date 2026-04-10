@@ -96,3 +96,84 @@ var (
 		ChinaSite:         "中国站",
 	}
 )
+
+// AccountSecretType is account secret type.
+type AccountSecretType string
+
+// Validate the AccountSecretType is valid or not
+func (a AccountSecretType) Validate() error {
+	switch a {
+	case ResourceSecretType:
+	case SecuritySecretType:
+	default:
+		return fmt.Errorf("unsupported account secret type: %s", a)
+	}
+
+	return nil
+}
+
+const (
+	// ResourceSecretType 资源管理密钥
+	ResourceSecretType AccountSecretType = "resource"
+	// SecuritySecretType 安全管理密钥
+	SecuritySecretType AccountSecretType = "security"
+)
+
+// AccountSecretStatus is account secret status.
+type AccountSecretStatus string
+
+// Validate the AccountSecretStatus is valid or not
+func (a AccountSecretStatus) Validate() error {
+	switch a {
+	case NormalSecretStatus:
+	case InvalidSecretStatus:
+	default:
+		return fmt.Errorf("unsupported account secret status: %s", a)
+	}
+
+	return nil
+}
+
+const (
+	// NormalSecretStatus 正常状态
+	NormalSecretStatus AccountSecretStatus = "normal"
+	// InvalidSecretStatus 失效状态
+	InvalidSecretStatus AccountSecretStatus = "invalid"
+)
+
+// AccountProtectionFlag is account protection flag.
+type AccountProtectionFlag string
+
+// Validate the AccountProtectionFlag is valid or not
+func (a AccountProtectionFlag) Validate() error {
+	switch a {
+	case PhoneProtection:
+	case TokenProtection:
+	case StokenProtection:
+	case WechatProtection:
+	case CustomProtection:
+	case MailProtection:
+	case U2FTokenProtection:
+	default:
+		return fmt.Errorf("unsupported account protection flag: %s", a)
+	}
+
+	return nil
+}
+
+const (
+	// PhoneProtection 安全手机
+	PhoneProtection AccountProtectionFlag = "phone"
+	// TokenProtection 硬token
+	TokenProtection AccountProtectionFlag = "token"
+	// StokenProtection MFA字段
+	StokenProtection AccountProtectionFlag = "stoken"
+	// WechatProtection 微信
+	WechatProtection AccountProtectionFlag = "wechat"
+	// CustomProtection 自定义
+	CustomProtection AccountProtectionFlag = "custom"
+	// MailProtection 邮箱
+	MailProtection AccountProtectionFlag = "mail"
+	// U2FTokenProtection u2f硬件token
+	U2FTokenProtection AccountProtectionFlag = "u2FToken"
+)

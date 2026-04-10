@@ -66,11 +66,16 @@ func (c CreateBucketConfiguration) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
+// TCloudCreateBucketResp tcloud create bucket resp.
+type TCloudCreateBucketResp struct {
+	CloudName string `json:"cloud_name"`
+}
+
 // TCloudDeleteBucketReq tcloud delete bucket req.
 type TCloudDeleteBucketReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	Name      string `json:"name" validate:"required"`
+	CloudName string `json:"cloud_name" validate:"required"`
 }
 
 // Validate TCloudDeleteBucketReq.

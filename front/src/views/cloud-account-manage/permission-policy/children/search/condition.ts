@@ -40,19 +40,19 @@ export class SearchCondition {
           if (Array.isArray(value) && value.length > 1) {
             return {
               op: QueryRuleOPEnum.OR,
-              rules: value.map((val) => ({ field: 'description', op: QueryRuleOPEnum.CIS, value: val })),
+              rules: value.map((val) => ({ field: 'memo', op: QueryRuleOPEnum.CIS, value: val })),
             };
           }
           if (Array.isArray(value) && value.length === 1) {
-            return { field: 'description', op: QueryRuleOPEnum.CIS, value: value[0] };
+            return { field: 'memo', op: QueryRuleOPEnum.CIS, value: value[0] };
           }
-          return { field: 'description', op: QueryRuleOPEnum.CIS, value };
+          return { field: 'memo', op: QueryRuleOPEnum.CIS, value };
         },
       },
     },
     index: 1,
   })
-  description: string;
+  memo: string;
 
   @Column('user', {
     name: '创建人',

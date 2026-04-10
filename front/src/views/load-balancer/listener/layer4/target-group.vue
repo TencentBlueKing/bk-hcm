@@ -33,6 +33,22 @@ const displaySimpleInfo = computed(() => {
   const { name, protocol, port } = targetGroupDetails.value ?? {};
   return targetGroupDetails.value ? `${name} (${protocol} : ${port})` : '--';
 });
+
+// 计算监听器端口段长度
+const portRangeLength = computed(() => {
+  const { port, end_port } = props.listenerRowData ?? {};
+  return end_port ? end_port - port : 0;
+});
+
+// 为 RS 列表添加端口段结束端口
+const rsListWithEndPort = computed(() => {
+  if (!targetGroupDetails.value?.target_list) return [];
+  return targetGroupDetails.value.target_list.map((rs) => ({
+    ...rs,
+    end_port: portRangeLength.value ? rs.port + portRangeLength.value : undefined,
+  }));
+});
+
 const isDisplaySimpleInfoLoading = computed(
   () =>
     loadBalancerTargetGroupStore.targetGroupDetailsLoading ||
@@ -62,7 +78,7 @@ const jumpToTargetGroupDetails = () => {
     <panel title="RS 信息" no-shadow>
       <rs-preview-table
         :loading="loadBalancerTargetGroupStore.targetGroupDetailsLoading"
-        :list="targetGroupDetails?.target_list"
+        :list="rsListWithEndPort"
         :small-pagination="false"
       />
     </panel>

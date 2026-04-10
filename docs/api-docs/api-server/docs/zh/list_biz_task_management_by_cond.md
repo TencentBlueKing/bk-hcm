@@ -19,7 +19,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond
 | page             | object       | 是   | 分页设置                    |
 | account_ids      | string array | 否   | 账号ID，最大查询数量10个      |
 | operations       | string array | 否   | 任务操作类型，最大查询数量10个（创建4层监听器：create_layer4_listener、创建7层监听器：create_layer7_listener、绑定4层RS：binding_layer4_rs、绑定7层RS：binding_layer7_rs、创建URL规则：create_layer7_rule、解绑4层RS：listener_layer4_unbind_rs、解绑7层RS：listener_layer7_unbind_rs、调整4层权重：listener_layer4_rs_weight、调整7层权重：listener_layer7_rs_weight、删除监听器：listener_delete、开机：start_cvm、关机：stop_cvm、重启：reboot_cvm、重装：cvm_reset_system） |
-| source           | string       | 否   | 任务来源，如：标准运维插件(sops)、excel导入(excel)、api调用(api) |
+| source           | string       | 否   | 任务来源，如：标准运维插件(sops)、excel导入(excel)、API调用(api)、页面操作(web) |
 | state            | string       | 否   | 任务状态，如：为running（运行中）、failed（失败）、success（成功）、deliver_partial（部分成功）、cancel（取消） |
 | creator          | string       | 否   | 操作人                      |
 
@@ -115,7 +115,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond
 |-------------|--------------|-------------------------------------------------------------------------------|
 | id          | string       | 任务管理ID                                                                     |
 | bk_biz_id   | int          | 业务id                                                                         |
-| source      | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)                                  |
+| source      | string       | 任务来源，如：标准运维插件(sops)、excel导入(excel)、API调用(api)、页面操作(web)                                 |
 | vendors     | string array | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                                  |
 | state       | string       | 任务状态，如：为running（运行中）、failed（失败）、success（成功）、deliver_partial（部分成功）、cancel（取消） |
 | account_ids | string array | 账号ID                                                                         |

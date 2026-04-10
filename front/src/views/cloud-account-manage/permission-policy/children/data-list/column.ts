@@ -16,14 +16,14 @@ export class TableColumn {
     width: 140,
     sort: true,
   })
-  related_account_count: number;
+  associated_account_count: number;
 
   @Column('string', {
     name: '策略库描述',
     index: 2,
     minWidth: 300,
   })
-  description: string;
+  memo: string;
 
   @Column('string', {
     name: '创建人',

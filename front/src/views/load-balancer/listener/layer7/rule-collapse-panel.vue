@@ -119,7 +119,9 @@ const setRsNum = async (list: IListenerRuleItem[] = []) => {
 
   urlList.value.forEach((item) => {
     const targetsWeightStat = targetsWeightStatList.find((i) => i.target_group_id === item.target_group_id);
-    Object.assign(item, { rs_num: targetsWeightStat.rs_weight_non_zero_num + targetsWeightStat.rs_weight_zero_num });
+    if (targetsWeightStat) {
+      Object.assign(item, { rs_num: targetsWeightStat.rs_weight_non_zero_num + targetsWeightStat.rs_weight_zero_num });
+    }
   });
 };
 
@@ -193,8 +195,14 @@ const handleScrollBottom = async () => {
       currentGlobalBusinessId.value,
     );
 
-    urlList.value.push(...list.map((item) => ({ ...item, binding_status: 'binding' })));
+    const newItems = list.map((item) => ({ ...item, binding_status: 'binding' }));
+    urlList.value.push(...newItems);
     pagination.count = count;
+
+    setRsNum(newItems);
+    setBindingStatus(newItems);
+    taskPoll.reset();
+    taskPoll.resume();
   } finally {
     isScrollLoading.value = false;
   }

@@ -62,6 +62,8 @@ type DoOrmWithTransaction interface {
 
 	Insert(ctx context.Context, expr string, args interface{}) error
 	BulkInsert(ctx context.Context, expr string, args interface{}) error
+	// BulkInsertWithIDs insert data batch with transaction and return auto-increment IDs
+	BulkInsertWithIDs(ctx context.Context, expr string, args interface{}, count int) ([]uint64, error)
 }
 
 // Interface defines all the orm related operations.
@@ -311,6 +313,14 @@ func (dt *tableShardingDoTxn) Insert(ctx context.Context, expr string, data inte
 func (dt *tableShardingDoTxn) BulkInsert(ctx context.Context, expr string, args interface{}) error {
 	replaced := replaceInsertTableName(dt.tableShardingOpts, expr)
 	return dt.doTxn.BulkInsert(ctx, replaced, args)
+}
+
+// BulkInsertWithIDs ...
+func (dt *tableShardingDoTxn) BulkInsertWithIDs(ctx context.Context, expr string, args interface{}, count int) (
+	[]uint64, error) {
+
+	replaced := replaceInsertTableName(dt.tableShardingOpts, expr)
+	return dt.doTxn.BulkInsertWithIDs(ctx, replaced, args, count)
 }
 
 // Count ...
@@ -603,6 +613,17 @@ func (dt *modifySQLDoTxn) BulkInsert(ctx context.Context, expr string, args inte
 	}
 
 	return dt.doTxn.BulkInsert(ctx, expr, args)
+}
+
+// BulkInsertWithIDs ...
+func (dt *modifySQLDoTxn) BulkInsertWithIDs(ctx context.Context, expr string, args interface{}, count int) (
+	[]uint64, error) {
+
+	for _, opt := range dt.modifySQLOpts {
+		expr, args = opt.InjectInsertSQL(expr, args)
+	}
+
+	return dt.doTxn.BulkInsertWithIDs(ctx, expr, args, count)
 }
 
 // Count ...

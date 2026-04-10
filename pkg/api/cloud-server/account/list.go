@@ -21,6 +21,7 @@ package account
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -61,6 +62,33 @@ type AccountListWithExtReq struct {
 // Validate ...
 func (req *AccountListWithExtReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// AccountBizListReq 业务级账号列表查询请求
+type AccountBizListReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate 验证请求参数
+func (req *AccountBizListReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+	return req.Page.Validate()
+}
+
+// AccountWithOtherInfo 带其他信息的账号数据
+type AccountWithOtherInfo struct {
+	*cloud.BaseAccountWithExtensionListResp `json:",inline"`
+	SubAccountCount                         uint64 `json:"sub_account_count"`
+	AccountSecretCount                      uint64 `json:"account_secret_count"`
+}
+
+// AccountBizListResult 业务级账号列表响应结果
+type AccountBizListResult struct {
+	Count   uint64                  `json:"count"`
+	Details []*AccountWithOtherInfo `json:"details"`
 }
 
 // ListSecretKeyReq ...

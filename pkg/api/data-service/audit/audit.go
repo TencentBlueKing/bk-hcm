@@ -133,6 +133,8 @@ func (o *OperationAction) ConvAuditAction() (enumor.AuditAction, error) {
 		return enumor.Associate, nil
 	case Disassociate:
 		return enumor.Disassociate, nil
+	case ApplyOp:
+		return enumor.Apply, nil
 
 	default:
 		return "", fmt.Errorf("action is not corresponding audit action")
@@ -149,6 +151,8 @@ const (
 	Associate OperationAction = "associate"
 	// Disassociate 解绑、解挂载等操作
 	Disassociate OperationAction = "disassociate"
+	// ApplyOp 应用操作
+	ApplyOp OperationAction = "apply"
 )
 
 // CloudResourceOperationAuditReq define cloud resource operation audit req.

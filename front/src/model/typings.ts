@@ -43,6 +43,7 @@ export type ModelProperty = {
 };
 
 export type PropertyColumnConfig = {
+  label?: () => VNode;
   sort?: boolean;
   align?: 'left' | 'center' | 'right';
   cell?: PrimaryTableCol['cell'];

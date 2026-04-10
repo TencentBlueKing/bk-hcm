@@ -31,6 +31,7 @@ import (
 	tablesubaccount "hcm/pkg/dal/table/cloud/sub-account"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -87,7 +88,7 @@ func convCoreSubAccount[T coresubaccount.Extension](db *tablesubaccount.Table) (
 	}, nil
 }
 
-// ListSubAccount list sub account.
+// ListSubAccount list subaccount.
 func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -121,7 +122,7 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 }
 
 func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAccount {
-	return coresubaccount.BaseSubAccount{
+	baseAccount := coresubaccount.BaseSubAccount{
 		ID:          one.ID,
 		CloudID:     one.CloudID,
 		Name:        one.Name,
@@ -131,6 +132,9 @@ func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAcc
 		AccountType: one.AccountType,
 		Managers:    one.Managers,
 		BkBizIDs:    one.BkBizIDs,
+		Email:       one.Email,
+		PhoneNum:    one.PhoneNum,
+		CountryCode: one.CountryCode,
 		Memo:        one.Memo,
 		Revision: core.Revision{
 			Creator:   one.Creator,
@@ -139,6 +143,14 @@ func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAcc
 			UpdatedAt: one.UpdatedAt.String(),
 		},
 	}
+
+	// 处理 CloudCreatedAt 时间转换
+	if one.CloudCreatedAt != nil {
+		cloudCreatedAt := one.CloudCreatedAt.String()
+		baseAccount.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+	}
+
+	return baseAccount
 }
 
 // ListSubAccountExt list account with extension.
@@ -189,8 +201,8 @@ func (svc *service) ListSubAccountExt(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func convListExtResult[T coresubaccount.Extension](models []tablesubaccount.Table) (
-	*dssubaccount.ListExtResult[T], error) {
+func convListExtResult[T coresubaccount.Extension](models []tablesubaccount.Table,
+) (*dssubaccount.ListExtResult[T], error) {
 
 	details := make([]coresubaccount.SubAccount[T], 0, len(models))
 	for _, one := range models {

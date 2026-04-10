@@ -137,10 +137,11 @@ const tableColumns = [
                     trigger: 'click',
                     popoverOptions: {
                       renderType: 'shown',
+                      clickContentAutoHide: true,
                       onAfterShow: () => (currentOperateRowIndex.value = index),
                       onAfterHidden: () => (currentOperateRowIndex.value = -1),
                     },
-                    disabled: noPerm || !getOperateToolTipsOption(data).disabled,
+                    disabled: !getOperateToolTipsOption(data).disabled,
                   },
                   {
                     default: () =>

@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/client/discovery"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
@@ -62,6 +63,9 @@ func newProxy(dis serviced.Discover, cli *http.Client) (*proxy, error) {
 // Do proxy restful request to target server.
 func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	r, w := req.Request, resp.ResponseWriter
+
+	// 设置请求来源为web调用
+	r.Header.Set(constant.RequestSourceKey, string(enumor.WebCall))
 
 	p.proxyRequest(req, w)
 

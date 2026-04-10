@@ -33,6 +33,8 @@ const (
 	Account ResourceType = "account"
 	// SubAccount defines cloud sub account resource's hcm auth resource type
 	SubAccount ResourceType = "sub_account"
+	// SubAccountSecret defines sub account secret resource's hcm auth resource type
+	SubAccountSecret ResourceType = "sub_account_secret"
 	// Vpc defines vpc hcm auth resource type
 	Vpc ResourceType = "vpc"
 	// Subnet defines subnet hcm auth resource type
@@ -116,6 +118,12 @@ const (
 	// CosBucket cos桶
 	CosBucket ResourceType = "cos_bucket"
 
+	// PermissionTemplate 云权限模板
+	PermissionTemplate ResourceType = "permission_template"
+
 	// GlobalConfig 全局配置
 	GlobalConfig ResourceType = "global_config"
+
+	// PermissionPolicyLibrary 权限策略库
+	PermissionPolicyLibrary ResourceType = "permission_policy_library"
 )

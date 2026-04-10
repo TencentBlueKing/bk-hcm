@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/adaptor/gcp"
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
+	adaptortypes "hcm/pkg/adaptor/types"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -36,6 +37,7 @@ func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
 	return &CloudAdaptorClient{
 		adaptor:   adaptor.New(),
 		secretCli: NewSecretClient(dataCli),
+		credCache: NewCredentialCache(),
 	}
 }
 
@@ -43,6 +45,7 @@ func NewCloudAdaptorClient(dataCli *dataservice.Client) *CloudAdaptorClient {
 type CloudAdaptorClient struct {
 	adaptor   *adaptor.Adaptor
 	secretCli *SecretClient
+	credCache *CredentialCache
 }
 
 // Adaptor return adaptor.
@@ -114,6 +117,67 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 	}
 
 	return cli.adaptor.Azure(cred)
+}
+
+// AwsWithAssumeRole returns an Aws client that accesses a member account via STS AssumeRole chain.
+// rootAccountID is the root account ID used to get base credentials; cloudID is the member account's
+// AWS Account ID (globally unique); roleChain is a list of role names to assume in sequence (supports
+// Role Chaining). Roles [0..n-2] are assumed in the management account, role [n-1] is assumed in the
+// target member account (cloudID).
+// externalID is optional; when non-empty it is passed to the final AssumeRole step for
+// Trust Policy condition verification (e.g. sts:ExternalId).
+func (cli *CloudAdaptorClient) AwsWithAssumeRole(
+	kt *kit.Kit, rootAccountID string, cloudID string, roleChain []string, externalID string,
+) (*aws.Aws, error) {
+
+	secret, cloudAccountID, site, err := cli.secretCli.AwsRootSecret(kt, rootAccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	rid := kt.Rid
+	if len(rid) > 60 {
+		rid = rid[:60]
+	}
+	sessionName := "hcm-" + rid
+
+	currentSecret := secret
+	// Convert RootAccountSiteType to AccountSiteType (both have same underlying values)
+	accountSite := enumor.AccountSiteType(string(site))
+
+	for i, roleName := range roleChain {
+		var targetAccountID string
+		if i < len(roleChain)-1 {
+			targetAccountID = cloudAccountID
+		} else {
+			targetAccountID = cloudID
+		}
+
+		roleArn := aws.BuildRoleArn(targetAccountID, roleName, accountSite)
+		cacheKey := cloudAccountID + ":" + roleArn
+
+		stepExternalID := ""
+		if i == len(roleChain)-1 {
+			stepExternalID = externalID
+			if stepExternalID != "" {
+				cacheKey = cacheKey + ":" + stepExternalID
+			}
+		}
+
+		cred, err := cli.credCache.GetOrRefresh(kt, currentSecret, cacheKey, roleArn, sessionName,
+			stepExternalID, accountSite)
+		if err != nil {
+			return nil, err
+		}
+
+		currentSecret = &adaptortypes.BaseSecret{
+			CloudSecretID:     cred.AccessKeyID,
+			CloudSecretKey:    cred.SecretAccessKey,
+			CloudSessionToken: cred.SessionToken,
+		}
+	}
+
+	return cli.adaptor.Aws(currentSecret, cloudID, accountSite)
 }
 
 // AwsRoot return aws root client.
