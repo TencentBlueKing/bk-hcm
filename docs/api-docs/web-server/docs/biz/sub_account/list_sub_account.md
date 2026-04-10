@@ -159,6 +159,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
         "country_code": "86",
         "cloud_created_at": "2024-01-01T12:00:00Z",
         "sub_account_secret_count": 10,
+		"permission_template_ids": ["00000001"],
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2024-01-01T12:00:00Z",
@@ -206,14 +207,14 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 | 参数名称                     | 参数类型         | 描述                                   |
 |--------------------------|--------------|--------------------------------------|
-| id                       | string       | 三级账号HCM本地ID                               |
+| id                       | string       | 三级账号HCM本地ID                          |
 | vendor                   | string       | 云厂商（枚举值：tcloud、aws、azure、gcp、huawei） |
 | name                     | string       | 名称                                   |
-| cloud_id                 | string       | 三级账号云ID                                |
-| account_id               | string       | 三级账号所属二级账号HCM本地ID                         |
-| account_type             | string       | 三级账号所属二级账号类型                        |
-| account_name             | string       | 三级账号所属二级账号名称                        |
-| operable                 | bool         | 当前业务是否可操作该三级账号       |
+| cloud_id                 | string       | 三级账号云ID                              |
+| account_id               | string       | 三级账号所属二级账号HCM本地ID                    |
+| account_type             | string       | 三级账号所属二级账号类型                         |
+| account_name             | string       | 三级账号所属二级账号名称                         |
+| operable                 | bool         | 当前业务是否可操作该三级账号                       |
 | managers                 | string array | 账号管理者                                |
 | bk_biz_ids               | int64 array  | 使用业务id                               |
 | site                     | string       | 站点（枚举值：china:中国站、international:国际站）  |
@@ -223,6 +224,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | country_code             | string       | 手机区域代码                               |
 | cloud_created_at         | string       | 云上创建时间，标准格式：2006-01-02T15:04:05Z     |
 | sub_account_secret_count | int64        | 三级账号密钥数                              |
+| permission_template_ids  | string array | 三级账号关联权限模版ID列表                       |
 | creator                  | string       | 创建者                                  |
 | reviser                  | string       | 更新者                                  |
 | created_at               | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |

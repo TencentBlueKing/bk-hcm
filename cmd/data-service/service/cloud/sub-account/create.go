@@ -52,21 +52,22 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 		models := make([]tablesubaccount.Table, 0, len(req.Items))
 		for _, item := range req.Items {
 			model := tablesubaccount.Table{
-				CloudID:     item.CloudID,
-				Name:        item.Name,
-				Vendor:      item.Vendor,
-				Site:        item.Site,
-				AccountID:   item.AccountID,
-				AccountType: item.AccountType,
-				Extension:   tabletype.JsonField(item.Extension),
-				Managers:    item.Managers,
-				BkBizIDs:    item.BkBizIDs,
-				Email:       item.Email,
-				PhoneNum:    item.PhoneNum,
-				CountryCode: item.CountryCode,
-				Memo:        item.Memo,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
+				CloudID:               item.CloudID,
+				Name:                  item.Name,
+				Vendor:                item.Vendor,
+				Site:                  item.Site,
+				AccountID:             item.AccountID,
+				AccountType:           item.AccountType,
+				Extension:             tabletype.JsonField(item.Extension),
+				PermissionTemplateIDs: item.PermissionTemplateIDs,
+				Managers:              item.Managers,
+				BkBizIDs:              item.BkBizIDs,
+				Email:                 item.Email,
+				PhoneNum:              item.PhoneNum,
+				CountryCode:           item.CountryCode,
+				Memo:                  item.Memo,
+				Creator:               cts.Kit.User,
+				Reviser:               cts.Kit.User,
 			}
 
 			// 处理 CloudCreatedAt 时间转换

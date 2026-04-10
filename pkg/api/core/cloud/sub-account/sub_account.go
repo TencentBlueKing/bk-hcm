@@ -62,21 +62,22 @@ type Extension interface {
 
 // BaseSubAccount 云账号
 type BaseSubAccount struct {
-	ID             string                 `json:"id"`
-	CloudID        string                 `json:"cloud_id"`
-	Name           string                 `json:"name"`
-	Vendor         enumor.Vendor          `json:"vendor"`
-	Site           enumor.AccountSiteType `json:"site"`
-	AccountID      string                 `json:"account_id"`
-	AccountType    string                 `json:"account_type"`
-	Managers       []string               `json:"managers"`
-	BkBizIDs       []int64                `json:"bk_biz_ids"`
-	Email          *string                `json:"email,omitempty"`
-	PhoneNum       *string                `json:"phone_num,omitempty"`
-	CountryCode    *string                `json:"country_code,omitempty"`
-	CloudCreatedAt *string                `json:"cloud_created_at,omitempty"`
-	Memo           *string                `json:"memo"`
-	core.Revision  `json:",inline"`
+	ID                    string                 `json:"id"`
+	CloudID               string                 `json:"cloud_id"`
+	Name                  string                 `json:"name"`
+	Vendor                enumor.Vendor          `json:"vendor"`
+	Site                  enumor.AccountSiteType `json:"site"`
+	AccountID             string                 `json:"account_id"`
+	AccountType           string                 `json:"account_type"`
+	Managers              []string               `json:"managers"`
+	PermissionTemplateIDs []string               `json:"permission_template_ids"`
+	BkBizIDs              []int64                `json:"bk_biz_ids"`
+	Email                 *string                `json:"email,omitempty"`
+	PhoneNum              *string                `json:"phone_num,omitempty"`
+	CountryCode           *string                `json:"country_code,omitempty"`
+	CloudCreatedAt        *string                `json:"cloud_created_at,omitempty"`
+	Memo                  *string                `json:"memo"`
+	core.Revision         `json:",inline"`
 }
 
 // TCloudExtension define tcloud extension.

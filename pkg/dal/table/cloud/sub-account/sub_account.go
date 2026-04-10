@@ -44,6 +44,7 @@ var ColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
 	{Column: "bk_biz_ids", NamedC: "bk_biz_ids", Type: enumor.Json},
+	{Column: "permission_template_ids", NamedC: "permission_template_ids", Type: enumor.Json},
 	{Column: "email", NamedC: "email", Type: enumor.String},
 	{Column: "phone_num", NamedC: "phone_num", Type: enumor.String},
 	{Column: "country_code", NamedC: "country_code", Type: enumor.String},
@@ -77,6 +78,8 @@ type Table struct {
 	Managers types.StringArray `db:"managers" json:"managers"`
 	// BkBizIDs 业务ID
 	BkBizIDs types.Int64Array `db:"bk_biz_ids" json:"bk_biz_ids"`
+	// PermissionTemplateIDs 权限模板ID列表
+	PermissionTemplateIDs types.StringArray `db:"permission_template_ids" json:"permission_template_ids"`
 	// Email 邮箱：三级账号的邮箱
 	Email *string `db:"email" json:"email" validate:"omitempty,lte=64"`
 	// PhoneNum 手机号

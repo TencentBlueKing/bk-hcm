@@ -30,8 +30,9 @@ ALTER TABLE `sub_account`
     ADD COLUMN `email` varchar(64) DEFAULT NULL COMMENT '邮箱',
     ADD COLUMN `phone_num` varchar(64) DEFAULT NULL COMMENT '手机号',
     ADD COLUMN `country_code` varchar(16) DEFAULT NULL COMMENT '手机区域代码',
-    ADD COLUMN `cloud_created_at` timestamp NULL COMMENT '云上创建时间';
-
+    ADD COLUMN `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间'
+    ADD COLUMN `permission_template_ids` json DEFAULT NULL COMMENT '权限模板ID列表';
+    
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
