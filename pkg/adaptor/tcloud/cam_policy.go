@@ -124,8 +124,6 @@ func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPolici
 	req := cam.NewListPoliciesRequest()
 	req.Page = converter.ValToPtr(opt.Page)
 	req.Rp = converter.ValToPtr(opt.Rp)
-	// Scope="Local" 表示拉取该账号下的策略（含预设和自定义）
-	req.Scope = converter.ValToPtr("Local")
 
 	var resp *cam.ListPoliciesResponse
 	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
@@ -182,9 +180,10 @@ func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.T
 	req.TargetUin = converter.ValToPtr(opt.TargetUin)
 	req.Page = converter.ValToPtr(opt.Page)
 	req.Rp = converter.ValToPtr(opt.Rp)
+	req.AttachType = opt.AttachType
 
 	var resp *cam.ListAttachedUserAllPoliciesResponse
-	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
 	policy := retry.NewRetryPolicy(0, rangeMS)
 	err = policy.BaseExec(kt, func() error {
 		resp, err = client.ListAttachedUserAllPoliciesWithContext(kt.Ctx, req)

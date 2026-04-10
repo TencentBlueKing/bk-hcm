@@ -433,6 +433,8 @@ type TCloudListAttachedUserAllPoliciesOption struct {
 	Page uint64 `json:"page" validate:"required,min=1,max=200"`
 	// Rp 每页数量，必须大于 0 且小于等于 200
 	Rp uint64 `json:"rp" validate:"required,min=1,max=200"`
+	// AttachType 关联类型，可选值为："User"、"Group"，默认 "User"
+	AttachType *uint64 `json:"attach_type" validate:"required"`
 }
 
 // Validate TCloudListAttachedUserAllPoliciesOption.

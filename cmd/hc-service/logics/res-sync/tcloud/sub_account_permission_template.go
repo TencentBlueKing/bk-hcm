@@ -74,6 +74,10 @@ func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit,
 
 	updateItems := make([]dssubaccount.UpdateField, 0, len(subAccounts))
 	for _, subAccount := range subAccounts {
+		if subAccount.AccountType == string(enumor.MainAccount) {
+			continue
+		}
+
 		if subAccount.Extension == nil || subAccount.Extension.Uin == nil {
 			logs.Errorf("[%s] sub account %s has no uin, skip permission template sync, rid: %s",
 				enumor.TCloud, subAccount.ID, kt.Rid)
@@ -121,12 +125,15 @@ func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, 
 	const pageSize = uint64(100)
 	templateIDs := make([]string, 0)
 
+	// page是1开始的
 	for page := uint64(1); ; page++ {
 		result, err := cli.cloudCli.ListAttachedUserAllPolicies(kt,
 			&typeaccount.TCloudListAttachedUserAllPoliciesOption{
 				TargetUin: uin,
 				Page:      page,
 				Rp:        pageSize,
+				// 直接关联和组关联都返回，所以 attach_type 传 0
+				AttachType: converter.ValToPtr(uint64(0)),
 			})
 		if err != nil {
 			return nil, err
@@ -135,7 +142,7 @@ func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, 
 		for _, policy := range result.PolicyList {
 			localID, ok := cloudIDToLocalID[policy.PolicyId]
 			if !ok {
-				logs.Errorf("[%s] policy cloud_id %s not found, rid: %s", enumor.TCloud, policy.PolicyId, kt.Rid)
+				logs.Errorf("[%s] policy cloud_id %s not found, rid: %s", enumor.TCloud, policy.PolicyId, uin, kt.Rid)
 				return nil, errf.NewFromErr(errf.InvalidParameter,
 					fmt.Errorf("[%s] policy cloud_id %s not found, rid: %s", enumor.TCloud, policy.PolicyId, kt.Rid))
 			}

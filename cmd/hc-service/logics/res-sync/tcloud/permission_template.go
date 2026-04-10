@@ -96,11 +96,11 @@ func (cli *client) PermissionTemplate(kt *kit.Kit, opt *SyncPermissionTemplateOp
 
 // listPoliciesFromCloud 分页拉取云上所有策略列表。
 func (cli *client) listPoliciesFromCloud(kt *kit.Kit, opt *SyncPermissionTemplateOption) (
-	[]typeaccount.TCloudPolicyDetail, error) {
+	[]typeaccount.TCloudPolicyItem, error) {
 
-	// TCloud最大分页大小为200
-	const pageSize = uint64(10)
-	results := make([]typeaccount.TCloudPolicyDetail, 0)
+	// TCloud拉取策略列表的接口最大分页大小为200
+	const pageSize = uint64(200)
+	results := make([]typeaccount.TCloudPolicyItem, 0)
 
 	for page := uint64(1); ; page++ {
 		listOpt := &typeaccount.TCloudListPoliciesOption{
@@ -115,12 +115,7 @@ func (cli *client) listPoliciesFromCloud(kt *kit.Kit, opt *SyncPermissionTemplat
 			return nil, err
 		}
 
-		details, err := cli.getPolicyDetails(kt, opt, listItems)
-		if err != nil {
-			return nil, err
-		}
-
-		results = append(results, details...)
+		results = append(results, listItems...)
 
 		// 已拉取完毕
 		if uint64(len(results)) >= total || uint64(len(listItems)) < pageSize {
@@ -146,7 +141,7 @@ func (cli *client) getPolicyDetails(kt *kit.Kit, opt *SyncPermissionTemplateOpti
 				enumor.TCloud, item.PolicyID, opt.AccountID, err, kt.Rid)
 			return nil, err
 		}
-		results = append(results, *detail)
+		results = append(results, converter.PtrToVal(detail))
 	}
 
 	return results, nil
@@ -161,17 +156,12 @@ func (cli *client) listPermissionTemplateFromCloud(kt *kit.Kit, opt *SyncPermiss
 		return nil, err
 	}
 
-	cloudIDs := make([]string, 0, len(items))
-	for _, item := range items {
-		cloudIDs = append(cloudIDs, item.GetCloudID())
+	details, err := cli.getPolicyDetails(kt, opt, items)
+	if err != nil {
+		return nil, err
 	}
-	logs.Infof("[jettxiao] list cloudIDs: %v", cloudIDs)
-	// results, err := cli.getPolicyDetails(kt, opt, items)
-	// if err != nil {
-	// 	return nil, err
-	// }
 
-	return items, nil
+	return details, nil
 }
 
 // listPermissionTemplateFromDB 分页拉取本地 permission_template 表中该账号的所有记录。
