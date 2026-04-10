@@ -3,8 +3,8 @@ import { ref, computed, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useCloudAccountStore } from '@/store/cloud-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { SECRET_ACTION_CONFIG } from '../constants';
-import type { ICloudSecretItem, SecretActionType } from '../typings';
+import { SECRET_ACTION_CONFIG } from '../../constants';
+import type { ICloudSecretItem, SecretActionType } from '../../typings';
 
 const props = defineProps<{
   modelValue: boolean;

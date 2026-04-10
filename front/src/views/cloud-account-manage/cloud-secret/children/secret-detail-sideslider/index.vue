@@ -4,10 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { Share } from 'bkui-vue/lib/icon';
 import { AUTH_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
-import { SECRET_STATUS_MAP } from '../constants';
+import { SECRET_STATUS_MAP } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
-import type { ICloudSecretItem, SecretActionType } from '../typings';
-import SecretActionDialog from './secret-action-dialog.vue';
+import type { ICloudSecretItem, SecretActionType } from '../../typings';
+import SecretActionDialog from '../secret-action-dialog/index.vue';
 import ArrayValue from '@/components/display-value/array-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
 

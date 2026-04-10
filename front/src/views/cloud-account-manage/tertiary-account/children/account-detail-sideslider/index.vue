@@ -12,7 +12,7 @@ import {
 } from '@/constants/auth-symbols';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
-import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/components/secret-action-dialog.vue';
+import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/children/secret-action-dialog/index.vue';
 import type { ICloudSecretItem, SecretActionType } from '@/views/cloud-account-manage/cloud-secret/typings';
 
 const props = defineProps<{
