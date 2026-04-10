@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject, nextTick, type Ref } from 'vue';
+import { ref, computed, watch, inject, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -9,7 +9,6 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
 import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
-import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 
@@ -30,7 +29,6 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const route = useRoute();
 const router = useRouter();
 const cloudAccountStore = useCloudAccountStore();
-const navStore = useCloudAccountNavStore();
 const { getBizsId } = useWhereAmI();
 
 const searchModel = SearchConditionFactory.createModel();
@@ -68,53 +66,58 @@ const updateTableData = () => {
   tableData.value = localPaginate(list, pageParams);
 };
 
-// 跨 Tab 注入的 filter（一次性，不写入 URL，避免污染 Search 组件的初始值）
-const crossTabFilter = ref<Record<string, any> | null>(null);
-
 const showDetailSideslider = ref(false);
 const currentAccount = ref<ISubAccountItem | null>(null);
 const handleViewDetails = (row: ISubAccountItem) => {
   currentAccount.value = row;
   showDetailSideslider.value = true;
+  // 将 id 写入 URL query，支持分享/刷新/浏览器后退
+  router.replace({ query: { ...route.query, id: row.id, _t: undefined } });
 };
 
-/**
- * 在数据加载完成后，统一消费 navStore 中的跨 Tab 导航意图：
- *  - detailCloudId → 在 fullList 中匹配并打开详情弹窗
- *  - filter 已在 loadFullList 中通过 peekNavIntent 提前读取到 crossTabFilter
- * 调用后无论是否成功匹配都会 consumeNavIntent，防止残留
- */
-const tryConsumeNavIntent = () => {
-  const intent = navStore.consumeNavIntent('tertiary-account');
-  if (!intent) return;
-
-  if (intent.detailCloudId) {
-    const detailId = intent.detailCloudId;
-    const target = fullList.value.find((item) => item.cloud_id === detailId || item.id === detailId);
-    if (target) {
-      nextTick(() => handleViewDetails(target));
-    } else {
-      Message({ theme: 'warning', message: `当前列表中未找到账号「${detailId}」的数据，可能该账号不在当前筛选条件下` });
-    }
+// 弹窗被用户手动关闭（点击 X / quick-close）时，同步移除 URL 中的 id
+watch(showDetailSideslider, (val) => {
+  if (!val && route.query.id) {
+    const query = { ...route.query };
+    delete query.id;
+    router.replace({ query });
   }
-};
+});
+
+// 监听 route.query.id，使用详情接口加载并打开弹窗
+watch(
+  () => route.query.id,
+  async (id) => {
+    if (!id) {
+      showDetailSideslider.value = false;
+      currentAccount.value = null;
+      return;
+    }
+    try {
+      const detail = await cloudAccountStore.getSubAccountDetail(getBizsId(), currentVendor.value, id as string);
+      if (detail) {
+        currentAccount.value = detail;
+        showDetailSideslider.value = true;
+      } else {
+        Message({ theme: 'warning', message: `未找到账号「${id}」的数据` });
+        router.replace({ query: { ...route.query, id: undefined } });
+      }
+    } catch (error) {
+      console.error('获取三级账号详情失败:', error);
+      Message({ theme: 'error', message: '获取三级账号详情失败' });
+      router.replace({ query: { ...route.query, id: undefined } });
+    }
+  },
+  { immediate: true },
+);
 
 const loadFullList = async () => {
   try {
-    // 从 URL 获取搜索条件（这是 Search 组件 / 用户手动设置的条件）
+    // 从 URL 获取搜索条件
     condition.value = searchQs.get(route.query, {});
     urlCondition.value = { ...condition.value };
 
-    // 检查是否有跨 Tab 注入的 filter（仅 peek，不消费——detailCloudId 留给 tryConsumeNavIntent 处理）
-    const intent = navStore.peekNavIntent('tertiary-account');
-    if (intent?.filter && Object.keys(intent.filter).length > 0) {
-      crossTabFilter.value = intent.filter;
-    }
-
-    // 合并用户搜索条件 + 跨 Tab 注入的条件构建 API filter
-    const extra = crossTabFilter.value || {};
-    const mergedCondition = { ...condition.value, ...extra };
-    const baseFilter = transformSimpleCondition(mergedCondition, searchFields.value);
+    const baseFilter = transformSimpleCondition(condition.value, searchFields.value);
     const vendorFilter: QueryFilterType = {
       op: 'and',
       rules: [
@@ -141,13 +144,6 @@ const loadFullList = async () => {
     fullList.value = list;
     pagination.count = list.length;
     updateTableData();
-
-    if (crossTabFilter.value) {
-      condition.value = { ...condition.value, ...crossTabFilter.value };
-    }
-
-    // 数据就绪后，统一消费跨 Tab 导航意图（打开详情弹窗等）
-    tryConsumeNavIntent();
   } catch (error) {
     console.error('获取三级账号列表失败:', error);
     fullList.value = [];
@@ -156,7 +152,7 @@ const loadFullList = async () => {
   }
 };
 
-// 记录从 URL 解析出的纯搜索条件（不含 crossTabFilter），用于 conditionChanged 判断
+// 记录从 URL 解析出的纯搜索条件，用于 conditionChanged 判断
 const urlCondition = ref<ISearchCondition>({});
 
 watch(
@@ -231,12 +227,10 @@ const refreshList = () => {
 };
 
 const handleSearch = (searchCondition: ISearchCondition) => {
-  crossTabFilter.value = null; // 用户主动搜索后清除跨 Tab 条件
   searchQs.set(searchCondition);
 };
 
 const handleReset = () => {
-  crossTabFilter.value = null; // 重置时清除跨 Tab 条件
   searchQs.clear();
 };
 
