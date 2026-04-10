@@ -97,12 +97,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   if (column.id === 'phone_num') {
     return ({ row }: { row: ISubAccountItem }) => formatPhone(row.phone_num);
   }
-  if (column.id === 'sub_account_secret_count') {
-    return ({ row }: { row: ISubAccountItem }) => {
-      const value = row.sub_account_secret_count ?? 0;
-      return h('span', { style: { color: '#3A84FF' } }, value);
-    };
-  }
   return null;
 };
 </script>
