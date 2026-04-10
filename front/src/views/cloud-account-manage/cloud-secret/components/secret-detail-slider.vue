@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, inject } from 'vue';
+import { ref, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Share } from 'bkui-vue/lib/icon';
 import { AUTH_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
 import { SECRET_STATUS_MAP } from '../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../typings';
-import type { SwitchTabFn } from '../../typings';
 import SecretActionDialog from './secret-action-dialog.vue';
 import ArrayValue from '@/components/display-value/array-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
@@ -23,6 +23,8 @@ const emit = defineEmits<{
 }>();
 
 const accountStore = useAccountStore();
+const route = useRoute();
+const router = useRouter();
 
 const isShow = computed({
   get: () => props.modelValue,
@@ -32,8 +34,6 @@ const isShow = computed({
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
 
-const switchTab = inject<SwitchTabFn>('switchTab');
-
 const subAccountId = computed(
   () => props.secretData?.cloud_sub_account_id || props.secretData?.extension?.cloud_sub_account_id,
 );
@@ -42,15 +42,11 @@ const mainAccountId = computed(
 );
 
 const handleGoToTertiaryAccount = () => {
-  if (!subAccountId.value) return;
-  isShow.value = false;
-  switchTab?.({ tab: 'tertiary-account', detailCloudId: subAccountId.value });
+  router.push({ query: { ...route.query, type: 'tertiary-account', id: props.secretData?.sub_account_id } });
 };
 
 const handleGoToSecondaryAccount = () => {
-  if (!mainAccountId.value) return;
-  isShow.value = false;
-  switchTab?.({ tab: 'secondary-account', detailCloudId: mainAccountId.value });
+  router.push({ query: { ...route.query, type: 'secondary-account', id: props.secretData?.account_id } });
 };
 
 const statusConfig = computed(() => {

@@ -277,6 +277,24 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   };
 
   /**
+   * 获取二级账号详情（通过列表接口按 id 查询单条）
+   */
+  const getSecondaryAccountDetail = async (bk_biz_id: number, id: string): Promise<ISecondaryAccountItem | null> => {
+    const api = `/api/v1/cloud/bizs/${bk_biz_id}/accounts/list`;
+    try {
+      const res = await http.post(api, {
+        filter: { rules: [{ field: 'id', op: 'eq', value: id }], op: 'and' },
+        page: { count: false, start: 0, limit: 1 },
+      });
+      const list = res?.data?.details ?? [];
+      return list.length > 0 ? list[0] : null;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
    * 同步指定账号下指定资源
    * 接口文档：业务下同步指定账号下指定资源.md
    * @param bk_biz_id 业务ID
@@ -360,6 +378,28 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
       return Promise.reject(error);
     } finally {
       secretListLoading.value = false;
+    }
+  };
+
+  /**
+   * 获取账号密钥详情（通过列表接口按 id 查询单条）
+   */
+  const getAccountSecretDetail = async (
+    bk_biz_id: number,
+    vendor: string,
+    id: string,
+  ): Promise<IAccountSecretItem | null> => {
+    const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/account_secrets/list`;
+    try {
+      const res = await http.post(api, {
+        filter: { rules: [{ field: 'id', op: 'eq', value: id }], op: 'and' },
+        page: { count: false, start: 0, limit: 1 },
+      });
+      const list = res?.data?.details ?? [];
+      return list.length > 0 ? list[0] : null;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
     }
   };
 
@@ -462,6 +502,28 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   };
 
   /**
+   * 获取三级账号详情（通过列表接口按 id 查询单条）
+   */
+  const getSubAccountDetail = async (
+    bk_biz_id: number,
+    vendor: string,
+    id: string,
+  ): Promise<ISubAccountItem | null> => {
+    const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_accounts/list`;
+    try {
+      const res = await http.post(api, {
+        filter: { rules: [{ field: 'id', op: 'eq', value: id }], op: 'and' },
+        page: { count: false, start: 0, limit: 1 },
+      });
+      const list = res?.data?.details ?? [];
+      return list.length > 0 ? list[0] : null;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
    * 获取三级账号密钥列表
    * @param bk_biz_id 业务ID
    * @param vendor 云厂商
@@ -507,6 +569,31 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
       return Promise.reject(error);
     } finally {
       subAccountSecretListLoading.value = false;
+    }
+  };
+
+  /**
+   * 获取三级账号密钥详情（通过 sub_account_secrets/list 接口按 id 查询单条）
+   */
+  const getSubAccountSecretDetail = async (
+    bk_biz_id: number,
+    vendor: string,
+    id: string,
+  ): Promise<ICloudSecretItem | null> => {
+    const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/list`;
+    try {
+      const res = await http.post(api, {
+        filter: { rules: [{ field: 'id', op: 'eq', value: id }], op: 'and' },
+        page: { count: false, start: 0, limit: 1 },
+      });
+      const list = res?.data?.details ?? [];
+      if (list.length === 0) return null;
+      const item = list[0];
+      // 将 extension 中的字段提取到顶层，与列表数据处理保持一致
+      return { ...item, ...item.extension };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
     }
   };
 
@@ -694,10 +781,12 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     subAccountSecretListLoading,
     subAccountListLoading,
     getSecondaryAccountList,
+    getSecondaryAccountDetail,
     getSecondaryAccountFullList,
     syncAccountResource,
     syncSecondaryAccounts,
     getAccountSecretList,
+    getAccountSecretDetail,
     createAccountSecret,
     updateAccountSecret,
     deleteAccountSecret,
@@ -705,8 +794,10 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     createSecondaryAccount,
     updateSecondaryAccount,
     getSubAccountSecretList,
+    getSubAccountSecretDetail,
     updateSubAccountSecretStatus,
     deleteSubAccountSecret,
+    getSubAccountDetail,
     getSubAccountFullList,
     getSubAccountCount,
     createSubAccount,

@@ -2,6 +2,7 @@
 import { ref, computed, watch, inject, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { InfoLine } from 'bkui-vue/lib/icon';
+import { Message } from 'bkui-vue';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -32,7 +33,7 @@ const columns = computed<ModelPropertyColumn[]>(() => columnModel.getProperties(
 const condition = ref<ISearchCondition>({});
 const tableData = ref<ICloudSecretItem[]>([]);
 const { pagination, getPageParams } = usePage();
-const searchQs = useSearchQs({ key: 'secretFilter', properties: searchFields.value });
+const searchQs = useSearchQs({ key: 'filter', properties: searchFields.value });
 const showDetailSlider = ref(false);
 const currentSecret = ref<ICloudSecretItem | null>(null);
 const showActionDialog = ref(false);
@@ -103,7 +104,15 @@ watch(
       sort: (query.sort || 'cloud_created_at') as string,
       order: (query.order || 'DESC') as string,
     };
-    await fetchList();
+
+    // 判断是否只是分页/排序变化（不需要重新全量数据）
+    const newCondition = searchQs.get(query, {});
+    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
+    const isRefresh = query._t !== undefined;
+
+    if (conditionChanged || tableData.value.length === 0 || isRefresh) {
+      await fetchList();
+    }
   },
   { immediate: true },
 );
@@ -130,7 +139,46 @@ const handleReset = () => {
 const handleViewDetails = (row: ICloudSecretItem) => {
   currentSecret.value = row;
   showDetailSlider.value = true;
+  router.replace({ query: { ...route.query, id: row.id, _t: undefined } });
 };
+
+watch(showDetailSlider, (val) => {
+  if (!val && route.query.id && route.query.type === 'cloud-secret') {
+    const query = { ...route.query };
+    delete query.id;
+    router.replace({ query });
+  }
+});
+
+watch(
+  () => route.query.id,
+  async (id) => {
+    // 仅在当前 tab 为云密钥时处理 id，避免跳转到其他 tab 时被本组件拦截
+    if (route.query.type !== 'cloud-secret') {
+      return;
+    }
+    if (!id) {
+      showDetailSlider.value = false;
+      currentSecret.value = null;
+      return;
+    }
+    try {
+      const detail = await cloudAccountStore.getSubAccountSecretDetail(getBizsId(), currentVendor.value, id as string);
+      if (detail) {
+        currentSecret.value = detail as ICloudSecretItem;
+        showDetailSlider.value = true;
+      } else {
+        Message({ theme: 'warning', message: `未找到云密钥「${id}」的数据` });
+        router.replace({ query: { ...route.query, id: undefined } });
+      }
+    } catch (error) {
+      console.error('获取云密钥详情失败:', error);
+      Message({ theme: 'error', message: '获取云密钥详情失败' });
+      router.replace({ query: { ...route.query, id: undefined } });
+    }
+  },
+  { immediate: true },
+);
 
 const handleEnableSecret = (row: ICloudSecretItem) => {
   actionSecret.value = row;

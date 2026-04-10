@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { ref, computed, defineAsyncComponent, provide } from 'vue';
+import { computed, defineAsyncComponent, provide, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
-import { useCloudAccountNavStore } from '@/store/cloud-account-nav';
+import { VendorEnum } from '@/common/constant';
 import VendorSelector from './components/vendor-selector.vue';
 import { TAB_PANELS } from './constants';
-import type { SwitchTabOptions } from './typings';
 
 const tabPanels = TAB_PANELS;
 
 const route = useRoute();
 const router = useRouter();
-const navStore = useCloudAccountNavStore();
-const tabActive = ref(route.query?.type || 'secondary-account');
+
+// tab 状态直接从 URL query.type 派生，单向数据流
+const tabActive = computed(() => (route.query.type as string) || 'secondary-account');
 
 // 当前选中的云厂商
 const currentVendor = ref<VendorEnum>(VendorEnum.TCLOUD);
@@ -22,15 +21,12 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   'cloud-secret': defineAsyncComponent(() => import('./cloud-secret/index.vue')),
   'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
-  // 其他Tab组件待开发
-  // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
 };
 const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
+// 用户点击 tab 时，更新 URL query.type（@change 仅在用户点击时触发，不会在代码修改 active 时触发）
 const handleTabChange = (name: string) => {
-  // 清除残留的跨 Tab 导航意图
-  navStore.clearNavIntent();
-  router.replace({ query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], type: name } });
+  router.replace({ query: { ...route.query, type: name, filter: undefined } });
 };
 
 // 云厂商切换
@@ -38,23 +34,6 @@ const handleVendorChange = (vendor: VendorEnum) => {
   currentVendor.value = vendor;
 };
 provide('currentVendor', currentVendor);
-
-const switchTab = ({ tab, filter, detailCloudId }: SwitchTabOptions) => {
-  navStore.setNavIntent({
-    targetTab: tab,
-    filter: filter && Object.keys(filter).length > 0 ? filter : undefined,
-    detailCloudId,
-  });
-  tabActive.value = tab;
-  router.replace({
-    query: {
-      [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
-      type: tab,
-      _t: String(Date.now()),
-    },
-  });
-};
-provide('switchTab', switchTab);
 </script>
 
 <template>
@@ -70,7 +49,7 @@ provide('switchTab', switchTab);
       </Teleport>
     </div>
     <div class="page-content">
-      <bk-tab v-model:active="tabActive" type="unborder-card" @update:active="handleTabChange">
+      <bk-tab v-model:active="tabActive" type="unborder-card" @change="handleTabChange">
         <bk-tab-panel v-for="panel in tabPanels" :key="panel.name" :name="panel.name" :label="panel.label">
           <template v-if="tabActive === panel.name && currentComponent">
             <component :is="currentComponent" />
