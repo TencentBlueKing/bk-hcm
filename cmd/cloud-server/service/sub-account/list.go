@@ -20,9 +20,12 @@
 package subaccount
 
 import (
+	"fmt"
+
 	logicaccount "hcm/cmd/cloud-server/logics/account"
 	"hcm/pkg/api/core"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -179,10 +182,22 @@ func convertBizSubAccountExtList[Ext coresubaccount.Extension](svc *service, kt 
 		return nil, err
 	}
 
+	ids := make([]string, 0, len(listResult.Details))
+	for _, item := range listResult.Details {
+		if item.ID != "" {
+			ids = append(ids, item.ID)
+		}
+	}
+
+	secretCountMap, err := buildSubAccountSecretCountMap(kt, svc, ids)
+	if err != nil {
+		return nil, err
+	}
+
 	accountNameMap := logicaccount.BuildAccountNameMapByAccountMap(accountIDs, accountMap)
 	return &coresubaccount.BizSubAccountExtListResult[Ext]{
 		Count:   listResult.Count,
-		Details: buildBizSubAccountExtDetails(listResult.Details, operableMap, accountNameMap),
+		Details: buildBizSubAccountExtDetails(listResult.Details, operableMap, accountNameMap, secretCountMap),
 	}, nil
 }
 
@@ -201,16 +216,50 @@ func extractAccountIDsFromSubAccountList[Ext coresubaccount.Extension](
 	return result
 }
 
+// buildSubAccountSecretCountMap queries all secrets for the given sub-account IDs
+// with pagination and returns a map of sub-account ID to secret count.
+func buildSubAccountSecretCountMap(kt *kit.Kit, svc *service, subAccountIDs []string) (map[string]uint64, error) {
+	countMap := make(map[string]uint64, len(subAccountIDs))
+	if len(subAccountIDs) == 0 {
+		return countMap, nil
+	}
+
+	var start uint32
+	for {
+		result, err := svc.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt,
+			&protocloud.SubAccountSecretListReq{
+				Filter: tools.ExpressionAnd(tools.RuleIn("sub_account_id", subAccountIDs)),
+				Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf("list sub account secrets failed, err: %w", err)
+		}
+
+		for _, item := range result.Details {
+			countMap[item.SubAccountID]++
+		}
+
+		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return countMap, nil
+}
+
 func buildBizSubAccountExtDetails[Ext coresubaccount.Extension](details []coresubaccount.SubAccount[Ext],
-	operableMap map[string]bool, accountNameMap map[string]string,
+	operableMap map[string]bool, accountNameMap map[string]string, secretCountMap map[string]uint64,
 ) []coresubaccount.BizSubAccountItem[Ext] {
 
 	result := make([]coresubaccount.BizSubAccountItem[Ext], 0, len(details))
 	for _, item := range details {
 		result = append(result, coresubaccount.BizSubAccountItem[Ext]{
-			SubAccount:  item,
-			Operable:    operableMap[item.AccountID],
-			AccountName: accountNameMap[item.AccountID],
+			SubAccount:            item,
+			Operable:              operableMap[item.AccountID],
+			AccountName:           accountNameMap[item.AccountID],
+			SubAccountSecretCount: secretCountMap[item.ID],
 		})
 	}
 

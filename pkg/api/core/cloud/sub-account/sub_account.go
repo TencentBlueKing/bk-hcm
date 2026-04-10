@@ -33,9 +33,10 @@ type SubAccount[Ext Extension] struct {
 // BizSubAccountItem defines biz sub account ext response item.
 // 业务下返回的子账号详情
 type BizSubAccountItem[Ext Extension] struct {
-	SubAccount[Ext] `json:",inline"`
-	Operable        bool   `json:"operable"`
-	AccountName     string `json:"account_name"`
+	SubAccount[Ext]       `json:",inline"`
+	Operable              bool   `json:"operable"`
+	AccountName           string `json:"account_name"`
+	SubAccountSecretCount uint64 `json:"sub_account_secret_count"`
 }
 
 // BizSubAccountExtListResult defines biz sub account ext response.
