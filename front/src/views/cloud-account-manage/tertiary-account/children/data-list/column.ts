@@ -3,6 +3,7 @@ import { Model, Column } from '@/decorator';
 import { ACCOUNT_TYPE_OPTIONS } from '../search/condition';
 import { ITcloudExtension } from '../../typings';
 import { FLAG_OPTIONS } from '../../constants';
+import { h } from 'vue';
 
 @Model('tertiary-account/table-column')
 export class TableColumn {
@@ -73,10 +74,26 @@ export class TableColumn {
   phone_num: string;
 
   @Column('number', {
+    name: '权限模版数',
+    index: 8,
+    width: 80,
+    sort: true,
+    render: ({ row }: { row: { permission_template_ids: number[] } }) => {
+      const value = row?.permission_template_ids?.length || 0;
+      return h('span', { style: { color: '#3A84FF' } }, value);
+    },
+  })
+  permission_template_count: number;
+
+  @Column('number', {
     name: '密钥数',
     index: 8,
     width: 80,
     sort: true,
+    render: ({ row }: { row: { sub_account_secret_count: number } }) => {
+      const value = row.sub_account_secret_count ?? 0;
+      return h('span', { style: { color: '#3A84FF' } }, value);
+    },
   })
   sub_account_secret_count: number;
 
