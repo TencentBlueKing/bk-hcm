@@ -40,3 +40,21 @@ func (t TCloudPolicyType) Validate() error {
 		return fmt.Errorf("unsupported tcloud policy type: %d", t)
 	}
 }
+
+// OperatePermTemplateAction is the action type for operate permission template application.
+type OperatePermTemplateAction string
+
+const (
+	// PermTemplateActionCreate creates a new permission template from a policy library.
+	PermTemplateActionCreate OperatePermTemplateAction = "create"
+)
+
+// Validate checks whether the OperatePermTemplateAction is valid.
+func (a OperatePermTemplateAction) Validate() error {
+	switch a {
+	case PermTemplateActionCreate:
+		return nil
+	default:
+		return fmt.Errorf("unsupported operate permission template action: %s", a)
+	}
+}

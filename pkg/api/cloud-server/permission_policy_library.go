@@ -20,14 +20,9 @@
 package cloudserver
 
 import (
-	"fmt"
-	"regexp"
-
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/validator"
 )
-
-var permissionPolicyLibraryNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // PermissionPolicyLibraryCreateReq defines create permission policy library request.
 type PermissionPolicyLibraryCreateReq struct {
@@ -42,11 +37,7 @@ func (req *PermissionPolicyLibraryCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
-	if !permissionPolicyLibraryNameRegexp.MatchString(req.Name) {
-		return fmt.Errorf("invalid name: %s, only allows english letters, numbers, underscore (_) and hyphen (-)",
-			req.Name)
-	}
-	return nil
+	return validator.ValidatePermTmplName(req.Name)
 }
 
 // PermissionPolicyLibraryUpdateReq defines update permission policy library request.
@@ -62,9 +53,8 @@ func (req *PermissionPolicyLibraryUpdateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
-	if len(req.Name) > 0 && !permissionPolicyLibraryNameRegexp.MatchString(req.Name) {
-		return fmt.Errorf("invalid name: %s, only allows english letters, numbers, underscore (_) and hyphen (-)",
-			req.Name)
+	if len(req.Name) > 0 {
+		return validator.ValidatePermTmplName(req.Name)
 	}
 	return nil
 }

@@ -39,6 +39,7 @@ import (
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
 	applycreate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-create"
 	applyupdate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-update"
+	createpermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/create"
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
 	deletesecretkey "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-secret-key"
@@ -157,7 +158,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
 		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
 		applicationType == enumor.AddAccount || applicationType == enumor.OperateSubAccount ||
-		applicationType == enumor.ApplyPermissionPolicyLibrary {
+		applicationType == enumor.ApplyPermissionPolicyLibrary || applicationType == enumor.OperatePermissionTemplate {
 		bkBizIDs = handler.GetBkBizIDs()
 	}
 	return a.client.DataService().Global.Application.CreateApplication(
@@ -1098,4 +1099,52 @@ func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, re
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForCreatePermissionTemplate creates an ITSM application for creating a
+// permission template from a policy library for a single account.
+func (a *applicationSvc) CreateBizForCreatePermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionTemplate, Action: meta.Create}}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizCreatePermissionTemplateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	base := &proto.BasePermTemplateContent{
+		Action:  enumor.PermTemplateActionCreate,
+		Vendor:  vendor,
+		BkBizID: bizID,
+	}
+	handler := createpermtemplate.NewApplicationOfCreatePermTemplate(a.getHandlerOption(cts), base, req)
+	return a.create(cts, &proto.CreateCommonReq{}, handler)
 }

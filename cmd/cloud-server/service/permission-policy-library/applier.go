@@ -52,6 +52,12 @@ type PolicyLibraryApplier struct {
 	audit  audit.Interface
 }
 
+// TmplBaseInfo represents the permission template information.
+type TmplBaseInfo struct {
+	Name string  `json:"name"`
+	Memo *string `json:"memo"`
+}
+
 // NewPolicyLibraryApplier creates a new PolicyLibraryApplier.
 func NewPolicyLibraryApplier(cli *client.ClientSet, audit audit.Interface) *PolicyLibraryApplier {
 	return &PolicyLibraryApplier{client: cli, audit: audit}
@@ -72,24 +78,45 @@ func (a *PolicyLibraryApplier) ApplyCreate(kt *kit.Kit, vendor enumor.Vendor, li
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudApplyCreate(kt, library, accountIDs), nil
+		return a.tcloudApplyCreate(kt, library, accountIDs, TmplBaseInfo{Name: library.Name, Memo: library.Memo}), nil
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+// ApplyCreateWithTmplInfo applies a permission policy library (create) to the given accounts with template info.
+func (a *PolicyLibraryApplier) ApplyCreateWithTmplInfo(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	accountIDs []string, tmplInfo TmplBaseInfo) (*proto.ApplyPermissionPolicyLibraryResult, error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.CheckAccountsBizInScope(kt, library.BkBizIDs, accountIDs); err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return a.tcloudApplyCreate(kt, library, accountIDs, tmplInfo), nil
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
 }
 
 func (a *PolicyLibraryApplier) tcloudApplyCreate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountIDs []string) *proto.ApplyPermissionPolicyLibraryResult {
+	accountIDs []string, tmplInfo TmplBaseInfo) *proto.ApplyPermissionPolicyLibraryResult {
 
 	results := make([]proto.ApplyAccountResult, 0, len(accountIDs))
 	for _, accountID := range accountIDs {
-		results = append(results, a.tcloudApplyCreateForAccount(kt, library, accountID))
+		results = append(results, a.tcloudApplyCreateForAccount(kt, library, accountID, tmplInfo))
 	}
 	return &proto.ApplyPermissionPolicyLibraryResult{Results: results}
 }
 
 func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountID string) proto.ApplyAccountResult {
+	accountID string, tmplInfo TmplBaseInfo) proto.ApplyAccountResult {
 
 	applied, err := a.CheckAccountApplied(kt, library.ID, accountID)
 	if err != nil {
@@ -105,14 +132,14 @@ func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library 
 		}
 	}
 
-	camResult, err := a.TCloudCreateCAMPolicy(kt, library, accountID)
+	camResult, err := a.TCloudCreateCAMPolicy(kt, library, accountID, tmplInfo)
 	if err != nil {
 		return proto.ApplyAccountResult{
 			AccountID: accountID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
 
-	if err = a.TCloudCreateLocalTemplate(kt, library, accountID, camResult.PolicyID); err != nil {
+	if err = a.TCloudCreateLocalTemplate(kt, library, accountID, camResult.PolicyID, tmplInfo); err != nil {
 		return proto.ApplyAccountResult{
 			AccountID: accountID,
 			Status:    proto.ApplyStatusFailed,
@@ -224,15 +251,14 @@ func (a *PolicyLibraryApplier) CheckAccountApplied(kt *kit.Kit, libraryID, accou
 }
 
 // TCloudCreateCAMPolicy calls hc-service to create a CAM policy on TCloud.
-func (a *PolicyLibraryApplier) TCloudCreateCAMPolicy(kt *kit.Kit,
-	library *corecloud.BasePermissionPolicyLibrary, accountID string) (
-	*hspermissiontemplate.CreateCAMPolicyResult, error) {
+func (a *PolicyLibraryApplier) TCloudCreateCAMPolicy(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, tmplInfo TmplBaseInfo) (*hspermissiontemplate.CreateCAMPolicyResult, error) {
 
 	camReq := &hspermissiontemplate.CreateCAMPolicyReq{
 		AccountID:      accountID,
-		PolicyName:     library.Name,
+		PolicyName:     tmplInfo.Name,
 		PolicyDocument: library.PolicyDocument,
-		Description:    cvt.PtrToVal(library.Memo),
+		Description:    cvt.PtrToVal(tmplInfo.Memo),
 	}
 
 	result, err := a.client.HCService().TCloud.PermissionTemplate.CreateCAMPolicy(kt, camReq)
@@ -246,21 +272,21 @@ func (a *PolicyLibraryApplier) TCloudCreateCAMPolicy(kt *kit.Kit,
 }
 
 // TCloudCreateLocalTemplate creates a local permission_template record after the cloud policy is created.
-func (a *PolicyLibraryApplier) TCloudCreateLocalTemplate(kt *kit.Kit,
-	library *corecloud.BasePermissionPolicyLibrary, accountID string, cloudPolicyID uint64) error {
+func (a *PolicyLibraryApplier) TCloudCreateLocalTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, cloudPolicyID uint64, tmplInfo TmplBaseInfo) error {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	dsReq := &protocloud.PermissionTemplateBatchCreateReq[corecloud.TCloudPermissionTemplateExtension]{
 		PermissionTemplates: []protocloud.PermissionTemplateCreate[corecloud.TCloudPermissionTemplateExtension]{
 			{
 				CloudID:               strconv.FormatUint(cloudPolicyID, 10),
-				Name:                  library.Name,
+				Name:                  tmplInfo.Name,
 				AccountID:             accountID,
 				PolicyLibraryID:       cvt.ValToPtr(library.ID),
 				PolicyLibraryVersion:  cvt.ValToPtr(library.Version),
 				PolicyLibrarySyncTime: cvt.ValToPtr(now),
 				PolicyDocument:        library.PolicyDocument,
-				Memo:                  library.Memo,
+				Memo:                  tmplInfo.Memo,
 				Extension: &corecloud.TCloudPermissionTemplateExtension{
 					CloudType: enumor.TCloudCustomPolicy,
 				},
