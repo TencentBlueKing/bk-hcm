@@ -20,17 +20,26 @@
 package applycreate
 
 import (
+	"fmt"
+
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/application/handlers/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/json"
 )
 
 func init() {
 	permissionpolicylibrary.RegisterActionHandler(
 		enumor.PermPolicyLibActionApplyCreate,
-		func(opt *handlers.HandlerOption, content *proto.ApplyPermPolicyLibContent) handlers.ApplicationHandler {
-			return NewApplicationOfApplyPermPolicyLibCreate(opt, content)
+		func(opt *handlers.HandlerOption, base *proto.ApplyPermPolicyLibBaseContent, content string) (
+			handlers.ApplicationHandler, error) {
+
+			c := new(proto.ApplyPermPolicyLibCreateContent)
+			if err := json.UnmarshalFromString(content, c); err != nil {
+				return nil, fmt.Errorf("unmarshal apply perm policy lib create content failed, err: %w", err)
+			}
+			return NewApplicationOfApplyPermPolicyLibCreate(opt, c), nil
 		},
 	)
 }
@@ -38,27 +47,32 @@ func init() {
 // ApplicationOfApplyPermPolicyLibCreate is the handler for apply_permission_policy_library (create action).
 type ApplicationOfApplyPermPolicyLibCreate struct {
 	permissionpolicylibrary.ApplicationBasePermissionPolicyLibrary
+
+	Content *proto.ApplyPermPolicyLibCreateContent
 }
 
 // NewApplicationOfApplyPermPolicyLibCreate creates a new handler.
 func NewApplicationOfApplyPermPolicyLibCreate(opt *handlers.HandlerOption,
-	content *proto.ApplyPermPolicyLibContent) *ApplicationOfApplyPermPolicyLibCreate {
+	content *proto.ApplyPermPolicyLibCreateContent) *ApplicationOfApplyPermPolicyLibCreate {
 
 	return &ApplicationOfApplyPermPolicyLibCreate{
 		ApplicationBasePermissionPolicyLibrary: permissionpolicylibrary.NewApplicationBasePermPolicyLibrary(
-			opt, content,
+			opt, &content.ApplyPermPolicyLibBaseContent,
 		),
+		Content: content,
 	}
 }
 
 // BuildContent builds the application content for the given account.
 func BuildContent(bkBizID int64, vendor enumor.Vendor, req *proto.BizApplyPermissionPolicyLibraryCreateReq,
-	accountID string) *proto.ApplyPermPolicyLibContent {
+	accountID string) *proto.ApplyPermPolicyLibCreateContent {
 
-	return &proto.ApplyPermPolicyLibContent{
-		Action:          enumor.PermPolicyLibActionApplyCreate,
-		Vendor:          vendor,
-		BkBizID:         bkBizID,
+	return &proto.ApplyPermPolicyLibCreateContent{
+		ApplyPermPolicyLibBaseContent: proto.ApplyPermPolicyLibBaseContent{
+			Action:  enumor.PermPolicyLibActionApplyCreate,
+			Vendor:  vendor,
+			BkBizID: bkBizID,
+		},
 		PolicyLibraryID: req.PolicyLibraryID,
 		AccountID:       accountID,
 	}

@@ -32,8 +32,8 @@ import (
 )
 
 // ActionHandlerFactory is a factory function that creates an ApplicationHandler for a given content.
-type ActionHandlerFactory func(opt *handlers.HandlerOption,
-	content *proto.ApplyPermPolicyLibContent) handlers.ApplicationHandler
+type ActionHandlerFactory func(opt *handlers.HandlerOption, base *proto.ApplyPermPolicyLibBaseContent,
+	content string) (handlers.ApplicationHandler, error)
 
 var actionHandlerRegistry = map[enumor.PermPolicyLibAction]ActionHandlerFactory{}
 
@@ -46,38 +46,39 @@ func RegisterActionHandler(action enumor.PermPolicyLibAction, factory ActionHand
 func NewHandlerFromApplication(opt *handlers.HandlerOption, appContent string) (
 	handlers.ApplicationHandler, error) {
 
-	content := new(proto.ApplyPermPolicyLibContent)
-	if err := json.UnmarshalFromString(appContent, content); err != nil {
-		return nil, fmt.Errorf("unmarshal apply permission policy library content failed, err: %w", err)
+	base := new(proto.ApplyPermPolicyLibBaseContent)
+	if err := json.UnmarshalFromString(appContent, base); err != nil {
+		return nil, fmt.Errorf("unmarshal apply permission policy library base content failed, err: %w", err)
 	}
 
-	factory, ok := actionHandlerRegistry[content.Action]
+	factory, ok := actionHandlerRegistry[base.Action]
 	if !ok {
-		return nil, errf.Newf(errf.InvalidParameter, "no handler registered for action: %s", content.Action)
+		return nil, errf.Newf(errf.InvalidParameter, "no handler registered for action: %s", base.Action)
 	}
 
-	return factory(opt, content), nil
+	return factory(opt, base, appContent)
 }
 
-// ApplicationBasePermissionPolicyLibrary is the base handler for permission policy library applications.
-// It embeds BaseApplicationHandler and stores the application content.
+// ApplicationBasePermissionPolicyLibrary is the shared base for all permission policy library
+// operation handlers. Each action-specific handler embeds this base and only implements
+// action-specific methods.
 type ApplicationBasePermissionPolicyLibrary struct {
 	handlers.BaseApplicationHandler
 	*permissionpolicylibrary.PolicyLibraryApplier
 
-	Content *proto.ApplyPermPolicyLibContent
+	Base *proto.ApplyPermPolicyLibBaseContent
 }
 
 // NewApplicationBasePermPolicyLibrary creates a new base handler.
 func NewApplicationBasePermPolicyLibrary(opt *handlers.HandlerOption,
-	content *proto.ApplyPermPolicyLibContent) ApplicationBasePermissionPolicyLibrary {
+	base *proto.ApplyPermPolicyLibBaseContent) ApplicationBasePermissionPolicyLibrary {
 
 	return ApplicationBasePermissionPolicyLibrary{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.ApplyPermissionPolicyLibrary, content.Vendor,
+			opt, enumor.ApplyPermissionPolicyLibrary, base.Vendor,
 		),
 		PolicyLibraryApplier: permissionpolicylibrary.NewPolicyLibraryApplier(opt.Client, opt.Audit),
-		Content:              content,
+		Base:                 base,
 	}
 }
 
@@ -93,7 +94,7 @@ func (a *ApplicationBasePermissionPolicyLibrary) PrepareReqFromContent() error {
 
 // GetBkBizIDs returns the business IDs for this application.
 func (a *ApplicationBasePermissionPolicyLibrary) GetBkBizIDs() []int64 {
-	return []int64{a.Content.BkBizID}
+	return []int64{a.Base.BkBizID}
 }
 
 // GetItsmApprover returns ITSM approver configuration.

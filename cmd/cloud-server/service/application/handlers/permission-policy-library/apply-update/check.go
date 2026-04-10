@@ -32,40 +32,31 @@ func (a *ApplicationOfApplyPermPolicyLibUpdate) CheckReq() error {
 		return errors.New("policy_library_id is required")
 	}
 
-	if a.Content.AccountID == "" {
-		return errors.New("account_id is required")
+	if a.Content.PermissionTemplateID == "" {
+		return errors.New("permission_template_id is required")
 	}
 
-	account, err := a.GetAccount(a.Content.AccountID)
+	accountIDs, err := a.GetPermTmplAccountIDs(a.Cts.Kit, []string{a.Content.PermissionTemplateID})
 	if err != nil {
-		return fmt.Errorf("found parent account(%s) failed, err: %w", a.Content.AccountID, err)
+		logs.Errorf("get permission template account ids failed, templateID: %s, err: %v, rid: %s",
+			a.Content.PermissionTemplateID, err, a.Cts.Kit.Rid)
+		return fmt.Errorf("get permission template account ids failed, err: %w", err)
 	}
-
-	if a.Content.BkBizID != account.BkBizID {
-		return fmt.Errorf("account(%s)'s biz_id is %d, biz_id(%d) no permission to operate account of it",
-			a.Content.AccountID, account.BkBizID, a.Content.BkBizID)
+	if len(accountIDs) != 1 {
+		logs.Errorf("permission template id is invalid, templateID: %s, rid: %s", a.Content.PermissionTemplateID,
+			a.Cts.Kit.Rid)
+		return errors.New("permission template id is invalid")
 	}
 
 	library, err := a.GetPolicyLibraryDetail(a.Cts.Kit, a.Content.PolicyLibraryID)
 	if err != nil {
-		logs.Errorf("get policy library detail failed, libraryID: %s, err: %v, rid: %s", a.Content.PolicyLibraryID, err,
-			a.Cts.Kit.Rid)
+		logs.Errorf("get policy library detail failed, libraryID: %s, err: %v, rid: %s",
+			a.Content.PolicyLibraryID, err, a.Cts.Kit.Rid)
 		return fmt.Errorf("get policy library detail failed, err: %w", err)
 	}
 
-	if err = a.CheckAccountsBizInScope(a.Cts.Kit, library.BkBizIDs, []string{a.Content.AccountID}); err != nil {
+	if err = a.CheckAccountsBizInScope(a.Cts.Kit, library.BkBizIDs, accountIDs); err != nil {
 		return err
-	}
-
-	applied, err := a.CheckAccountApplied(a.Cts.Kit, a.Content.PolicyLibraryID, a.Content.AccountID)
-	if err != nil {
-		logs.Errorf("check account applied failed, libraryID: %s, accountID: %s, err: %v, rid: %s",
-			a.Content.PolicyLibraryID, a.Content.AccountID, err, a.Cts.Kit.Rid)
-		return fmt.Errorf("check account applied failed, err: %w", err)
-	}
-
-	if !applied {
-		return fmt.Errorf("account %s has not applied this permission policy library yet", a.Content.AccountID)
 	}
 
 	return nil

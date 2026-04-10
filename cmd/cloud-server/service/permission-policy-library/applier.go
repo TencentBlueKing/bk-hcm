@@ -34,6 +34,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hspermissiontemplate "hcm/pkg/api/hc-service/permission-template"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -119,7 +120,7 @@ func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library 
 		}
 	}
 
-	a.RecordApplyAudit(kt, library.ID, accountID)
+	a.RecordApplyCreateAudit(kt, library.ID, accountID)
 
 	return proto.ApplyAccountResult{AccountID: accountID, Status: proto.ApplyStatusSuccess}
 }
@@ -269,8 +270,8 @@ func (a *PolicyLibraryApplier) TCloudCreateLocalTemplate(kt *kit.Kit,
 	return nil
 }
 
-// RecordApplyAudit records an apply audit log. Errors are logged but not returned.
-func (a *PolicyLibraryApplier) RecordApplyAudit(kt *kit.Kit, libraryID, accountID string) {
+// RecordApplyCreateAudit records an apply audit log. Errors are logged but not returned.
+func (a *PolicyLibraryApplier) RecordApplyCreateAudit(kt *kit.Kit, libraryID, accountID string) {
 	err := a.audit.ResOperationAudit(kt, protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.PermissionPolicyLibraryAuditResType,
 		ResID:             libraryID,
@@ -284,109 +285,116 @@ func (a *PolicyLibraryApplier) RecordApplyAudit(kt *kit.Kit, libraryID, accountI
 	}
 }
 
-// ApplyUpdate applies a permission policy library (update) to the given accounts.
-func (a *PolicyLibraryApplier) ApplyUpdate(kt *kit.Kit, vendor enumor.Vendor, libraryID string, accountIDs []string) (
-	*proto.ApplyPermissionPolicyLibraryResult, error) {
+// ApplyUpdate applies a permission policy library (update) to the given template IDs.
+func (a *PolicyLibraryApplier) ApplyUpdate(kt *kit.Kit, vendor enumor.Vendor, libraryID string, templateIDs []string) (
+	*proto.ApplyPermissionPolicyLibraryUpdateResult, error) {
 
 	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
 	if err != nil {
 		return nil, err
 	}
 
+	accountIDs, err := a.GetPermTmplAccountIDs(kt, templateIDs)
+	if err != nil {
+		return nil, err
+	}
 	if err = a.CheckAccountsBizInScope(kt, library.BkBizIDs, accountIDs); err != nil {
 		return nil, err
 	}
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudApplyUpdate(kt, library, accountIDs), nil
+		return a.tcloudApplyUpdate(kt, library, templateIDs), nil
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
 }
 
-func (a *PolicyLibraryApplier) tcloudApplyUpdate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountIDs []string) *proto.ApplyPermissionPolicyLibraryResult {
-
-	results := make([]proto.ApplyAccountResult, 0, len(accountIDs))
-	for _, accountID := range accountIDs {
-		results = append(results, a.tcloudApplyUpdateForAccount(kt, library, accountID))
-	}
-	return &proto.ApplyPermissionPolicyLibraryResult{Results: results}
-}
-
-func (a *PolicyLibraryApplier) tcloudApplyUpdateForAccount(kt *kit.Kit,
-	library *corecloud.BasePermissionPolicyLibrary, accountID string) proto.ApplyAccountResult {
-
-	tmpl, err := a.GetAccountTemplate(kt, library.ID, accountID)
-	if err != nil {
-		return proto.ApplyAccountResult{
-			AccountID: accountID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
+// GetPermTmplAccountIDs gets the account IDs of the given template IDs.
+func (a *PolicyLibraryApplier) GetPermTmplAccountIDs(kt *kit.Kit, templateIDs []string) ([]string, error) {
+	accountIDMap := make(map[string]struct{})
+	for _, batch := range slice.Split(templateIDs, constant.BatchOperationMaxLimit) {
+		req := &protocloud.PermissionTemplateListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		result, err := a.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, req)
+		if err != nil {
+			logs.Errorf("get permission template failed, err: %v, ids: %v, rid: %s", err, batch, kt.Rid)
+			return nil, err
+		}
+		for _, one := range result.Details {
+			accountIDMap[one.AccountID] = struct{}{}
 		}
 	}
-	if tmpl == nil {
-		return proto.ApplyAccountResult{
-			AccountID: accountID,
-			Status:    proto.ApplyStatusFailed,
-			Reason:    "该二级账号未应用此权限策略库",
+	return maps.Keys(accountIDMap), nil
+}
+
+func (a *PolicyLibraryApplier) tcloudApplyUpdate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	templateIDs []string) *proto.ApplyPermissionPolicyLibraryUpdateResult {
+
+	results := make([]proto.ApplyTemplateResult, 0, len(templateIDs))
+	for _, templateID := range templateIDs {
+		results = append(results, a.tcloudApplyUpdateForTemplate(kt, library, templateID))
+	}
+	return &proto.ApplyPermissionPolicyLibraryUpdateResult{Results: results}
+}
+
+func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	templateID string) proto.ApplyTemplateResult {
+
+	tmpl, err := a.GetTCloudTemplateByID(kt, templateID)
+	if err != nil {
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
 
 	cloudPolicyID, err := strconv.ParseUint(tmpl.CloudID, 10, 64)
 	if err != nil {
-		return proto.ApplyAccountResult{
-			AccountID: accountID,
-			Status:    proto.ApplyStatusFailed,
-			Reason:    fmt.Sprintf("parse cloud policy id failed: %v", err),
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID,
+			Status:               proto.ApplyStatusFailed,
+			Reason:               fmt.Sprintf("parse cloud policy id failed: %v", err),
 		}
 	}
 
-	if err = a.TCloudUpdateCAMPolicy(kt, library, accountID, cloudPolicyID); err != nil {
-		return proto.ApplyAccountResult{
-			AccountID: accountID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
+	if err = a.TCloudUpdateCAMPolicy(kt, library, tmpl.AccountID, cloudPolicyID); err != nil {
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
 
-	if err = a.TCloudUpdateLocalTemplate(kt, library, tmpl.ID); err != nil {
-		return proto.ApplyAccountResult{
-			AccountID: accountID,
-			Status:    proto.ApplyStatusFailed,
-			Reason:    fmt.Sprintf("云策略已更新(id=%d), 但本地模板更新失败: %v", cloudPolicyID, err),
+	if err = a.TCloudUpdateLocalTemplate(kt, library, templateID); err != nil {
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID,
+			Status:               proto.ApplyStatusFailed,
+			Reason:               fmt.Sprintf("云策略已更新(id=%d), 但本地模板更新失败: %v", cloudPolicyID, err),
 		}
 	}
 
-	a.RecordApplyAudit(kt, library.ID, accountID)
+	a.RecordApplyUpdateAudit(kt, library.ID, tmpl.ID)
 
-	return proto.ApplyAccountResult{AccountID: accountID, Status: proto.ApplyStatusSuccess}
+	return proto.ApplyTemplateResult{PermissionTemplateID: templateID, Status: proto.ApplyStatusSuccess}
 }
 
-// GetAccountTemplate retrieves the existing permission template for the given account and library.
-// Returns nil if not found (not applied).
-func (a *PolicyLibraryApplier) GetAccountTemplate(kt *kit.Kit, libraryID, accountID string) (
+// GetTCloudTemplateByID retrieves the Cloud permission template by ID.
+func (a *PolicyLibraryApplier) GetTCloudTemplateByID(kt *kit.Kit, templateID string) (
 	*corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
 
-	expr, err := tools.And(
-		tools.EqualExpression("policy_library_id", libraryID),
-		tools.EqualExpression("account_id", accountID),
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	req := &protocloud.PermissionTemplateExtListReq{
-		Filter: expr,
+		Filter: tools.EqualExpression("id", templateID),
 		Page:   core.NewDefaultBasePage(),
 	}
 
 	result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
 	if err != nil {
-		logs.Errorf("list permission template failed, libraryID: %s, accountID: %s, err: %v, rid: %s",
-			libraryID, accountID, err, kt.Rid)
+		logs.Errorf("list permission template by id failed, templateID: %s, err: %v, rid: %s", templateID, err, kt.Rid)
 		return nil, err
 	}
 
 	if result == nil || len(result.Details) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("permission template not found, templateID: %s", templateID)
 	}
 
 	return &result.Details[0], nil
@@ -448,6 +456,21 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 	}
 
 	return nil
+}
+
+// RecordApplyUpdateAudit records an apply audit log. Errors are logged but not returned.
+func (a *PolicyLibraryApplier) RecordApplyUpdateAudit(kt *kit.Kit, libraryID, permTmplID string) {
+	err := a.audit.ResOperationAudit(kt, protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.PermissionPolicyLibraryAuditResType,
+		ResID:             libraryID,
+		Action:            protoaudit.ApplyOp,
+		AssociatedResType: enumor.PermissionTemplateAuditResType,
+		AssociatedResID:   permTmplID,
+	})
+	if err != nil {
+		logs.Errorf("record apply audit failed, libraryID: %s, permTmplID: %s, err: %v, rid: %s",
+			libraryID, permTmplID, err, kt.Rid)
+	}
 }
 
 // ListAllAppliedAccountIDs scans permission_template table for all account IDs applied to the given library.

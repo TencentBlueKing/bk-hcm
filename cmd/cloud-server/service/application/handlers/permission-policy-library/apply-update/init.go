@@ -20,17 +20,26 @@
 package applyupdate
 
 import (
+	"fmt"
+
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/application/handlers/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/json"
 )
 
 func init() {
 	permissionpolicylibrary.RegisterActionHandler(
 		enumor.PermPolicyLibActionApplyUpdate,
-		func(opt *handlers.HandlerOption, content *proto.ApplyPermPolicyLibContent) handlers.ApplicationHandler {
-			return NewApplicationOfApplyPermPolicyLibUpdate(opt, content)
+		func(opt *handlers.HandlerOption, base *proto.ApplyPermPolicyLibBaseContent,
+			content string) (handlers.ApplicationHandler, error) {
+
+			c := new(proto.ApplyPermPolicyLibUpdateContent)
+			if err := json.UnmarshalFromString(content, c); err != nil {
+				return nil, fmt.Errorf("unmarshal apply perm policy lib update content failed, err: %w", err)
+			}
+			return NewApplicationOfApplyPermPolicyLibUpdate(opt, c), nil
 		},
 	)
 }
@@ -38,28 +47,33 @@ func init() {
 // ApplicationOfApplyPermPolicyLibUpdate is the handler for apply_permission_policy_library (update action).
 type ApplicationOfApplyPermPolicyLibUpdate struct {
 	permissionpolicylibrary.ApplicationBasePermissionPolicyLibrary
+
+	Content *proto.ApplyPermPolicyLibUpdateContent
 }
 
 // NewApplicationOfApplyPermPolicyLibUpdate creates a new handler.
 func NewApplicationOfApplyPermPolicyLibUpdate(opt *handlers.HandlerOption,
-	content *proto.ApplyPermPolicyLibContent) *ApplicationOfApplyPermPolicyLibUpdate {
+	content *proto.ApplyPermPolicyLibUpdateContent) *ApplicationOfApplyPermPolicyLibUpdate {
 
 	return &ApplicationOfApplyPermPolicyLibUpdate{
 		ApplicationBasePermissionPolicyLibrary: permissionpolicylibrary.NewApplicationBasePermPolicyLibrary(
-			opt, content,
+			opt, &content.ApplyPermPolicyLibBaseContent,
 		),
+		Content: content,
 	}
 }
 
-// BuildContent builds the application content for the given account.
+// BuildContent builds the application content for the given permission template.
 func BuildContent(bkBizID int64, vendor enumor.Vendor, req *proto.BizApplyPermissionPolicyLibraryUpdateReq,
-	accountID string) *proto.ApplyPermPolicyLibContent {
+	permissionTemplateID string) *proto.ApplyPermPolicyLibUpdateContent {
 
-	return &proto.ApplyPermPolicyLibContent{
-		Action:          enumor.PermPolicyLibActionApplyUpdate,
-		Vendor:          vendor,
-		BkBizID:         bkBizID,
-		PolicyLibraryID: req.PolicyLibraryID,
-		AccountID:       accountID,
+	return &proto.ApplyPermPolicyLibUpdateContent{
+		ApplyPermPolicyLibBaseContent: proto.ApplyPermPolicyLibBaseContent{
+			Action:  enumor.PermPolicyLibActionApplyUpdate,
+			Vendor:  vendor,
+			BkBizID: bkBizID,
+		},
+		PolicyLibraryID:      req.PolicyLibraryID,
+		PermissionTemplateID: permissionTemplateID,
 	}
 }

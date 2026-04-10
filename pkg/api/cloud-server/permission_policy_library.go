@@ -86,21 +86,38 @@ type PermissionPolicyLibraryListResult struct {
 	Details []PermissionPolicyLibraryResult `json:"details"`
 }
 
-// ApplyPermissionPolicyLibraryReq defines request for applying a permission policy library.
-type ApplyPermissionPolicyLibraryReq struct {
+// ApplyPermissionPolicyLibraryCreateReq defines request for applying a permission policy library (create action).
+type ApplyPermissionPolicyLibraryCreateReq struct {
 	AccountIDs []string `json:"account_ids" validate:"required,min=1,max=100"`
 }
 
-// Validate ApplyPermissionPolicyLibraryReq.
-func (req *ApplyPermissionPolicyLibraryReq) Validate() error {
+// Validate ApplyPermissionPolicyLibraryCreateReq.
+func (req *ApplyPermissionPolicyLibraryCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// ApplyAccountResult defines the apply result for a single account.
+// ApplyPermissionPolicyLibraryUpdateReq defines request for applying a permission policy library (update action).
+type ApplyPermissionPolicyLibraryUpdateReq struct {
+	PermissionTemplateIDs []string `json:"permission_template_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ApplyPermissionPolicyLibraryUpdateReq.
+func (req *ApplyPermissionPolicyLibraryUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ApplyAccountResult defines the apply result for a single account (used in create action).
 type ApplyAccountResult struct {
 	AccountID string `json:"account_id"`
 	Status    string `json:"status"`
 	Reason    string `json:"reason,omitempty"`
+}
+
+// ApplyTemplateResult defines the apply result for a single permission template (used in update action).
+type ApplyTemplateResult struct {
+	PermissionTemplateID string `json:"permission_template_id"`
+	Status               string `json:"status"`
+	Reason               string `json:"reason,omitempty"`
 }
 
 const (
@@ -110,9 +127,14 @@ const (
 	ApplyStatusFailed = "failed"
 )
 
-// ApplyPermissionPolicyLibraryResult defines the result of applying a permission policy library.
+// ApplyPermissionPolicyLibraryResult defines the result of applying a permission policy library (create action).
 type ApplyPermissionPolicyLibraryResult struct {
 	Results []ApplyAccountResult `json:"results"`
+}
+
+// ApplyPermissionPolicyLibraryUpdateResult defines the result of applying a permission policy library (update action).
+type ApplyPermissionPolicyLibraryUpdateResult struct {
+	Results []ApplyTemplateResult `json:"results"`
 }
 
 // PermissionPolicyLibraryAccountIDsResult defines the result for account IDs query.

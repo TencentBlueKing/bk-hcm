@@ -34,29 +34,32 @@ func (a *ApplicationOfApplyPermPolicyLibUpdate) GenerateApplicationContent() int
 
 // Deliver executes the actual resource update after approval.
 func (a *ApplicationOfApplyPermPolicyLibUpdate) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
-	resp, err := a.ApplyUpdate(a.Cts.Kit, a.Content.Vendor, a.Content.PolicyLibraryID, []string{a.Content.AccountID})
+	resp, err := a.ApplyUpdate(a.Cts.Kit, a.Content.Vendor, a.Content.PolicyLibraryID,
+		[]string{a.Content.PermissionTemplateID})
 	if err != nil {
-		logs.Errorf("deliver: apply update failed, accountID: %s, err: %v, rid: %s",
-			a.Content.AccountID, err, a.Cts.Kit.Rid)
+		logs.Errorf("deliver: apply update failed, templateID: %s, err: %v, rid: %s", a.Content.PermissionTemplateID,
+			err, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": fmt.Sprintf("apply update failed, err: %v",
 			err)}, err
 	}
 
 	if len(resp.Results) != 1 {
-		logs.Errorf("deliver: apply update resp invalid, accountID: %s, resp: %v, rid: %s", a.Content.AccountID,
-			resp, a.Cts.Kit.Rid)
+		logs.Errorf("deliver: apply update resp invalid, templateID: %s, resp: %v, rid: %s",
+			a.Content.PermissionTemplateID, resp, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": fmt.Sprintf("apply update resp invalid, "+
 			"resp: %v", resp)}, fmt.Errorf("apply update resp invalid, resp: %v", resp)
 	}
 
 	result := resp.Results[0]
 	if result.Status == cloudserver.ApplyStatusFailed {
-		logs.Errorf("deliver: apply update failed, accountID: %s, result: %v, rid: %s", a.Content.AccountID, result,
-			a.Cts.Kit.Rid)
+		logs.Errorf("deliver: apply update failed, templateID: %s, result: %v, rid: %s",
+			a.Content.PermissionTemplateID, result, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": result.Reason},
 			fmt.Errorf("apply update failed, %v", result.Reason)
 	}
 
-	return enumor.Completed, map[string]interface{}{"policy_library_id": a.Content.PolicyLibraryID,
-		"account_id": a.Content.AccountID}, nil
+	return enumor.Completed, map[string]interface{}{
+		"policy_library_id":      a.Content.PolicyLibraryID,
+		"permission_template_id": a.Content.PermissionTemplateID,
+	}, nil
 }

@@ -35,21 +35,14 @@ func (a *ApplicationOfApplyPermPolicyLibUpdate) RenderItsmTitle() (string, error
 		return "", fmt.Errorf("get policy library detail failed, err: %w", err)
 	}
 
-	return fmt.Sprintf("申请应用权限策略库(%s)到账号(%s)", library.Name, a.Content.AccountID), nil
+	return fmt.Sprintf("申请应用权限策略库(%s)到权限模版(%s)", library.Name, a.Content.PermissionTemplateID), nil
 }
 
 // RenderItsmForm renders the ITSM form content.
 func (a *ApplicationOfApplyPermPolicyLibUpdate) RenderItsmForm() (string, error) {
 	bizName, err := a.GetBizName(a.Content.BkBizID)
 	if err != nil {
-		logs.Errorf("get biz name for itsm form failed, bizID: %s, err: %v, rid: %s", a.Content.BkBizID, err,
-			a.Cts.Kit.Rid)
-		return "", err
-	}
-
-	accountInfo, err := a.GetAccount(a.Content.AccountID)
-	if err != nil {
-		logs.Errorf("get account for itsm form failed, accountID: %s, err: %v, rid: %s", a.Content.AccountID, err,
+		logs.Errorf("get biz name for itsm form failed, bizID: %d, err: %v, rid: %s", a.Content.BkBizID, err,
 			a.Cts.Kit.Rid)
 		return "", err
 	}
@@ -61,10 +54,31 @@ func (a *ApplicationOfApplyPermPolicyLibUpdate) RenderItsmForm() (string, error)
 		return "", fmt.Errorf("get policy library detail failed, err: %w", err)
 	}
 
+	accountIDs, err := a.GetPermTmplAccountIDs(a.Cts.Kit, []string{a.Content.PermissionTemplateID})
+	if err != nil {
+		logs.Errorf("get permission template for itsm form failed, templateID: %s, err: %v, rid: %s",
+			a.Content.PermissionTemplateID, err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("get permission template failed, err: %w", err)
+	}
+	if len(accountIDs) != 1 {
+		logs.Errorf("permission template id is invalid, templateID: %s, rid: %s", a.Content.PermissionTemplateID,
+			a.Cts.Kit.Rid)
+		return "", fmt.Errorf("permission template id is invalid")
+	}
+
+	accountID := accountIDs[0]
+	accountInfo, err := a.GetAccount(accountID)
+	if err != nil {
+		logs.Errorf("get account for itsm form failed, accountID: %s, err: %v, rid: %s", accountID, err,
+			a.Cts.Kit.Rid)
+		return "", err
+	}
+
 	items := []string{
 		fmt.Sprintf("业务: %s", bizName),
 		fmt.Sprintf("云厂商: %s", a.Content.Vendor.GetNameZh()),
 		fmt.Sprintf("云账号: %s", accountInfo.Name),
+		fmt.Sprintf("权限模版ID: %s", a.Content.PermissionTemplateID),
 		fmt.Sprintf("权限策略库: %s", library.Name),
 		fmt.Sprintf("策略库ID: %s", library.ID),
 		fmt.Sprintf("策略内容: %s", library.PolicyDocument),
