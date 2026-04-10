@@ -477,3 +477,17 @@ type TCloudAttachUserPolicyOption struct {
 func (opt *TCloudAttachUserPolicyOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudDetachUserPolicyOption defines options for detaching a policy from a sub-user.
+// reference: https://cloud.tencent.com/document/product/598/34575
+type TCloudDetachUserPolicyOption struct {
+	// DetachUin is the target sub-account UIN.
+	DetachUin uint64 `json:"detach_uin" validate:"required"`
+	// PolicyId is the cloud policy ID to detach.
+	PolicyId uint64 `json:"policy_id" validate:"required"`
+}
+
+// Validate TCloudDetachUserPolicyOption.
+func (opt *TCloudDetachUserPolicyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

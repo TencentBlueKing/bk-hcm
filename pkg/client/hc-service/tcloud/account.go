@@ -311,3 +311,15 @@ func (a *AccountClient) UpdateAccessKey(kt *kit.Kit, req *hssubaccount.TCloudUpd
 	return common.RequestNoResp[hssubaccount.TCloudUpdateAccessKeyReq](
 		a.client, http.MethodPost, kt, req, "/sub_accounts/secrets/update")
 }
+
+// AttachUserPolicies batch attaches CAM policies to a TCloud sub-user.
+func (a *AccountClient) AttachUserPolicies(kt *kit.Kit, req *hssubaccount.TCloudAttachUserPoliciesReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudAttachUserPoliciesReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/attach_user_policies")
+}
+
+// DetachUserPolicies batch detaches CAM policies from a TCloud sub-user.
+func (a *AccountClient) DetachUserPolicies(kt *kit.Kit, req *hssubaccount.TCloudDetachUserPoliciesReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudDetachUserPoliciesReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/detach_user_policies")
+}

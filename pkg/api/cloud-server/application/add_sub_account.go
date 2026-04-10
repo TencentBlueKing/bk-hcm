@@ -67,7 +67,7 @@ func (req *SubAccountBatchAddReq) Validate() error {
 type SubAccountAddReq struct {
 	AccountID             string          `json:"account_id" validate:"required"`
 	Name                  string          `json:"name" validate:"required"`
-	PermissionTemplateIDs []string        `json:"permission_template_ids" validate:"required,dive,required"`
+	PermissionTemplateIDs []string        `json:"permission_template_ids" validate:"required,min=1,dive,required"`
 	ReceiveEmail          string          `json:"receive_email" validate:"required,email"`
 	Email                 string          `json:"email" validate:"omitempty,email"`
 	PhoneNum              string          `json:"phone_num" validate:"omitempty"`

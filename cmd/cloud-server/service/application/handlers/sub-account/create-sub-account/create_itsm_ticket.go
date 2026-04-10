@@ -24,6 +24,8 @@ import (
 	"strings"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // RenderItsmTitle render ITSM ticket title.
@@ -64,8 +66,18 @@ func (a *ApplicationOfCreateSubAccount) RenderItsmForm() (string, error) {
 	if len(a.req.Managers) > 0 {
 		items = append(items, fmt.Sprintf("管理者: %s", strings.Join(a.req.Managers, ",")))
 	}
-	if a.req.Memo != nil && *a.req.Memo != "" {
+	if a.req.Memo != nil && converter.PtrToVal(a.req.Memo) != "" {
 		items = append(items, fmt.Sprintf("备注: %s", *a.req.Memo))
+	}
+
+	if len(a.req.PermissionTemplateIDs) > 0 {
+		names, err := a.QueryPermissionTemplateNames(a.req.PermissionTemplateIDs)
+		if err != nil {
+			logs.Errorf("query permission template names failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+			return "", fmt.Errorf("query permission template names failed, err: %w", err)
+		}
+
+		items = append(items, fmt.Sprintf("绑定权限模版: %s", strings.Join(names, ",")))
 	}
 
 	return strings.Join(items, "\n"), nil

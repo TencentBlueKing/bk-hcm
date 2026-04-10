@@ -43,5 +43,18 @@ func (a *ApplicationOfUpdateSubAccount) CheckReq() error {
 			a.AccountID(), account.BkBizID, a.BkBizID())
 	}
 
+	if err := a.checkPermissionTemplate(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (a *ApplicationOfUpdateSubAccount) checkPermissionTemplate() error {
+	// 不修改
+	if a.req.PermissionTemplateIDs == nil {
+		return nil
+	}
+
+	return a.CheckPermissionTemplate(a.req.PermissionTemplateIDs)
 }

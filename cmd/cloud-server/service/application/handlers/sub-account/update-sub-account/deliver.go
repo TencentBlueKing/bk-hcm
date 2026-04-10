@@ -21,12 +21,16 @@ package updatesubaccount
 
 import (
 	"fmt"
+	"strconv"
 
+	"hcm/pkg/api/core"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // Deliver execute resource delivery after approval.
@@ -45,6 +49,14 @@ func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	if err := a.updateCloudSubAccount(); err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)}, err
+	}
+
+	if err := a.updatePermissionTemplateOnCloud(); err != nil {
+		logs.Errorf("update permission template on cloud failed, sub_account_id: %s, err: %v, rid: %s",
+			a.req.ID, err, a.Cts.Kit.Rid)
+		return enumor.DeliverError, map[string]interface{}{
+			"error":          fmt.Sprintf("update permission template on cloud failed, err: %v", err),
+			"sub_account_id": a.req.ID}, err
 	}
 
 	if err := a.updateLocalSubAccount(); err != nil {
@@ -72,6 +84,50 @@ func (a *ApplicationOfUpdateSubAccount) updateCloudSubAccount() error {
 	}
 
 	return a.Client.HCService().TCloud.Account.UpdateSubAccount(a.Cts.Kit, req)
+}
+
+func (a *ApplicationOfUpdateSubAccount) updatePermissionTemplateOnCloud() error {
+	if a.req.PermissionTemplateIDs == nil {
+		return nil
+	}
+
+	subAccounts, err := a.Client.DataService().Global.SubAccount.List(
+		a.Cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
+			Page:   core.NewDefaultBasePage(),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("get sub account failed, id: %s, err: %w", a.req.ID, err)
+	}
+	if len(subAccounts.Details) == 0 {
+		return fmt.Errorf("sub account not found, id: %s", a.req.ID)
+	}
+
+	subAccount := subAccounts.Details[0]
+	uin, parseErr := strconv.ParseUint(subAccount.CloudID, 10, 64)
+	if parseErr != nil {
+		return fmt.Errorf("parse sub account cloud_id to uin failed, cloud_id: %s, err: %w",
+			subAccount.CloudID, parseErr)
+	}
+
+	toAttach := slice.NotIn(subAccount.PermissionTemplateIDs, a.req.PermissionTemplateIDs)
+	toDetach := slice.NotIn(a.req.PermissionTemplateIDs, subAccount.PermissionTemplateIDs)
+
+	if len(toAttach) > 0 {
+		if err = a.AttachPolicies(uin, toAttach); err != nil {
+			return err
+		}
+	}
+
+	if len(toDetach) > 0 {
+		if err = a.DetachPolicies(uin, toDetach); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {

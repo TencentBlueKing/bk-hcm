@@ -85,6 +85,13 @@ type TCloudCreateSubAccountResp struct {
 	Data          *TCloudCreateSubAccountResult `json:"data"`
 }
 
+// TCloudCreateAggregateResult aggregates cloud API results during sub account creation.
+type TCloudCreateAggregateResult struct {
+	TCloudCreateSubAccountResult
+	SafeAuth   *typeaccount.SafeAuthFlagCollResult
+	CreateTime *string
+}
+
 // ------------------------- Update Sub Account -------------------------
 
 // TCloudUpdateSubAccountReq define tcloud update sub account request for hc-service.
@@ -304,6 +311,32 @@ type TCloudGetSecurityLastUsedResult = []typeaccount.SecretIdLastUsed
 type TCloudGetSecurityLastUsedResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          TCloudGetSecurityLastUsedResult `json:"data"`
+}
+
+// ------------------------- Attach User Policies -------------------------
+
+// TCloudAttachUserPoliciesReq define tcloud batch attach policies to sub-user request for hc-service.
+type TCloudAttachUserPoliciesReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	TargetUin uint64   `json:"target_uin" validate:"required"`
+	PolicyIDs []uint64 `json:"policy_ids" validate:"required,min=1"`
+}
+
+// Validate tcloud attach user policies request.
+func (req *TCloudAttachUserPoliciesReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDetachUserPoliciesReq define tcloud batch detach policies from sub-user request for hc-service.
+type TCloudDetachUserPoliciesReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	DetachUin uint64   `json:"detach_uin" validate:"required"`
+	PolicyIDs []uint64 `json:"policy_ids" validate:"required,min=1"`
+}
+
+// Validate tcloud detach user policies request.
+func (req *TCloudDetachUserPoliciesReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // SecretStatusToTCloudAccessKeyStatus converts local SubAccountSecretStatus to TCloud CAM access key status.

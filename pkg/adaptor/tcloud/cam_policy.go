@@ -200,6 +200,84 @@ func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.T
 	}, nil
 }
 
+// AttachUserPolicy 为子用户绑定策略。
+// reference: https://cloud.tencent.com/document/product/598/34579
+func (t *TCloudImpl) AttachUserPolicy(kt *kit.Kit, opt *typeaccount.TCloudAttachUserPolicyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewAttachUserPolicyRequest()
+	req.AttachUin = converter.ValToPtr(opt.TargetUin)
+	req.PolicyId = converter.ValToPtr(opt.PolicyId)
+
+	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	err = policy.BaseExec(kt, func() error {
+		if _, err = client.AttachUserPolicyWithContext(kt.Ctx, req); err != nil {
+			logs.Errorf("fail to attach user policy, targetUin: %d, policyId: %d, err: %v, rid: %s",
+				opt.TargetUin, opt.PolicyId, err, kt.Rid)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		logs.Errorf("fail to attach user policy after retry, targetUin: %d, policyId: %d, err: %v, rid: %s",
+			opt.TargetUin, opt.PolicyId, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// DetachUserPolicy 解除绑定到子用户的策略。
+// reference: https://cloud.tencent.com/document/product/598/34575
+func (t *TCloudImpl) DetachUserPolicy(kt *kit.Kit, opt *typeaccount.TCloudDetachUserPolicyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewDetachUserPolicyRequest()
+	req.DetachUin = converter.ValToPtr(opt.DetachUin)
+	req.PolicyId = converter.ValToPtr(opt.PolicyId)
+
+	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	err = policy.BaseExec(kt, func() error {
+		if _, err = client.DetachUserPolicyWithContext(kt.Ctx, req); err != nil {
+			logs.Errorf("fail to detach user policy, detachUin: %d, policyId: %d, err: %v, rid: %s",
+				opt.DetachUin, opt.PolicyId, err, kt.Rid)
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		logs.Errorf("fail to detach user policy after retry, detachUin: %d, policyId: %d, err: %v, rid: %s",
+			opt.DetachUin, opt.PolicyId, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // GetPolicyDetail 获取单个CAM策略的完整详情（含 PolicyDocument）。
 // reference: https://cloud.tencent.com/document/product/598/34574
 func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPolicyDetailOption) (

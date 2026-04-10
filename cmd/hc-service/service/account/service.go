@@ -112,6 +112,12 @@ func tcloudAccountService(h *rest.Handler, svc *service) {
 	// 设置子账号登录保护和敏感操作保护
 	h.Add("TCloudSetMfaFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
+
+	// 腾讯云权限策略绑定和解绑
+	h.Add("TCloudAttachUserPolicies", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/attach_user_policies", svc.TCloudAttachUserPolicies)
+	h.Add("TCloudDetachUserPolicies", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/detach_user_policies", svc.TCloudDetachUserPolicies)
 }
 
 // 密钥管理

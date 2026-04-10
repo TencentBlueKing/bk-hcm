@@ -53,13 +53,14 @@ func (req *SubAccountBatchUpdateReq) Validate() error {
 // SubAccountUpdateReq define sub account update request for a single sub-account.
 // Pointer fields use nil to indicate "no change"; non-nil means update to that value.
 type SubAccountUpdateReq struct {
-	ID          string   `json:"id" validate:"required"`
-	BkBizID     *int64   `json:"bk_biz_id" validate:"omitempty,gt=0"`
-	Email       *string  `json:"email" validate:"omitempty,email"`
-	PhoneNum    *string  `json:"phone_num" validate:"omitempty"`
-	CountryCode *string  `json:"country_code" validate:"omitempty"`
-	Managers    []string `json:"managers" validate:"omitempty"`
-	Memo        *string  `json:"memo" validate:"omitempty"`
+	ID                    string   `json:"id" validate:"required"`
+	BkBizID               *int64   `json:"bk_biz_id" validate:"omitempty,gt=0"`
+	Email                 *string  `json:"email" validate:"omitempty,email"`
+	PhoneNum              *string  `json:"phone_num" validate:"omitempty"`
+	CountryCode           *string  `json:"country_code" validate:"omitempty"`
+	Managers              []string `json:"managers" validate:"omitempty"`
+	Memo                  *string  `json:"memo" validate:"omitempty"`
+	PermissionTemplateIDs []string `json:"permission_template_ids" validate:"omitempty"`
 }
 
 // Validate sub account update request.
