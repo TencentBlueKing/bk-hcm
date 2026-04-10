@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Message, InfoBox } from 'bkui-vue';
 import { Share } from 'bkui-vue/lib/icon';
 import type { ISecondaryAccountItem, IAccountSecretItem } from '@/store/cloud-account';
 import { useCloudAccountStore } from '@/store/cloud-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import type { SwitchTabFn } from '../../../typings';
 import DisplayValue from '@/components/display-value/index.vue';
 import SecretKeyDialog from './secret-key-dialog.vue';
 import AccountFormSideslider from '../account-form-sideslider/index.vue';
@@ -31,8 +31,8 @@ const emit = defineEmits<{
 // Store 和 Hooks
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
-
-const switchTab = inject<SwitchTabFn>('switchTab');
+const route = useRoute();
+const router = useRouter();
 
 // 密钥列表数据
 const secretList = ref<IAccountSecretItem[]>([]);
@@ -242,9 +242,15 @@ const handleEditBaseInfo = () => {
 const handleGoToTertiaryAccount = () => {
   const cloudMainAccountId = (currentRowData.value as any)?.extension?.cloud_main_account_id;
   if (!cloudMainAccountId) return;
-  // 关闭详情侧栏
-  model.value = false;
-  switchTab?.({ tab: 'tertiary-account', filter: { 'extension.cloud_main_account_id': cloudMainAccountId } });
+  // 构建目标 query：切换 tab + 带上筛选条件 + 移除 id
+  const { id, ...restQuery } = route.query;
+  router.push({
+    query: {
+      ...restQuery,
+      type: 'tertiary-account',
+      filter: `extension.cloud_main_account_id=${cloudMainAccountId}`,
+    },
+  });
 };
 
 // 新建三级账号成功回调

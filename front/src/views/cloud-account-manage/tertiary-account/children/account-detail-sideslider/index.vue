@@ -208,7 +208,7 @@ const formatTime = (time?: string) => {
         <div class="info-card">
           <div class="card-header">
             <span class="card-title">基本信息</span>
-            <bk-button theme="primary" outline @click="handleEdit">编辑</bk-button>
+            <bk-button theme="primary" size="small" outline @click="handleEdit">编辑</bk-button>
           </div>
           <div class="card-body info-grid">
             <div class="info-item">

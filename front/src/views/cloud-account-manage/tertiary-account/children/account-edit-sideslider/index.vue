@@ -17,6 +17,7 @@ const emit = defineEmits<{
   (e: 'success'): void;
 }>();
 
+const formRef = ref();
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const cloudAccountStore = useCloudAccountStore();
 const { getBizsId } = useWhereAmI();
@@ -34,6 +35,12 @@ const formData = ref({
 const isSubmitting = ref(false);
 
 const isTcloud = computed(() => currentVendor.value === VendorEnum.TCLOUD);
+
+const formRules = {
+  name: [{ required: true, message: '请输入三级账号名称', trigger: 'blur' }],
+  managers: [{ required: true, message: '请选择负责人', trigger: 'change', type: 'array' }],
+  bk_biz_id: [{ required: true, message: '请选择所属业务', trigger: 'change' }],
+};
 
 watch(
   () => props.modelValue,
@@ -59,12 +66,9 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!props.accountData?.id) return;
 
-  if (!isTcloud.value && !formData.value.name) {
-    Message({ theme: 'warning', message: '请输入三级账号名称' });
-    return;
-  }
-  if (!formData.value.managers?.length) {
-    Message({ theme: 'warning', message: '请选择负责人' });
+  try {
+    await formRef.value?.validate();
+  } catch {
     return;
   }
 
@@ -110,7 +114,7 @@ const parentAccountDisplay = () => {
   >
     <template #default>
       <div v-if="accountData" class="edit-form">
-        <bk-form form-type="vertical" :model="formData">
+        <bk-form ref="formRef" form-type="vertical" :model="formData" :rules="formRules">
           <bk-form-item label="所属二级账号" required>
             <bk-input :model-value="parentAccountDisplay()" disabled />
           </bk-form-item>
@@ -119,15 +123,15 @@ const parentAccountDisplay = () => {
             <bk-input :model-value="accountData.cloud_id" disabled />
           </bk-form-item>
 
-          <bk-form-item label="三级账号名称" required>
+          <bk-form-item label="三级账号名称" property="name" required>
             <bk-input v-model="formData.name" placeholder="请输入三级账号名称" :disabled="isTcloud" />
           </bk-form-item>
 
-          <bk-form-item label="负责人" required>
+          <bk-form-item label="负责人" property="managers" required>
             <UserSelector v-model="formData.managers" placeholder="请输入用户名" />
           </bk-form-item>
 
-          <bk-form-item label="所属业务" required>
+          <bk-form-item label="所属业务" property="bk_biz_id" required>
             <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" clearable />
           </bk-form-item>
 
