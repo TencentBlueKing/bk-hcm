@@ -29,8 +29,8 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 )
 
@@ -112,23 +112,14 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateCloudSecretStatus() err
 }
 
 func (a *ApplicationOfUpdateSecretKeyStatus) getTCloudSecretDetail() (
-	*coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension], error,
-) {
+	*coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension], error) {
+
 	result, err := a.Client.DataService().TCloud.SubAccountSecret.
 		ListSubAccountSecretWithExtension(
 			a.Cts.Kit,
 			&protocloud.SubAccountSecretExtListReq{
-				Filter: &filter.Expression{
-					Op: filter.And,
-					Rules: []filter.RuleFactory{
-						filter.AtomRule{
-							Field: "id",
-							Op:    filter.Equal.Factory(),
-							Value: a.req.ID,
-						},
-					},
-				},
-				Page: &core.BasePage{Start: 0, Limit: 1},
+				Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
+				Page:   &core.BasePage{Start: 0, Limit: 1},
 			},
 		)
 	if err != nil {
@@ -143,20 +134,12 @@ func (a *ApplicationOfUpdateSecretKeyStatus) getTCloudSecretDetail() (
 }
 
 func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() error {
-
 	updateSecret := protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
 		ID:     a.req.ID,
 		Status: &a.req.Status,
 	}
 	if a.req.Status == enumor.DisabledSecretStatus {
 		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Local().Format(time.RFC3339))
-	}
-
-	err := a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, a.req.ID,
-		map[string]interface{}{"status": a.req.Status})
-	if err != nil {
-		logs.Errorf("create update_secret_status audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
-		return err
 	}
 
 	return a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(

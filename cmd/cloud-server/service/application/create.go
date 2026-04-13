@@ -112,8 +112,8 @@ func decodeSysCommonReqAndValidate(cts *rest.Contexts) (*proto.SysCreateCommonRe
 
 // create 创建申请单的通用逻辑
 func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler,
-) (interface{}, error) {
+	handler handlers.ApplicationHandler) (interface{}, error) {
+
 	// 校验数据正确性
 	if err := handler.CheckReq(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -141,8 +141,8 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
 	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
-	*core.CreateResult, error,
-) {
+	*core.CreateResult, error) {
+
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -179,8 +179,8 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 
 // createItsmTicket 调用ITSM创建单据
 func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
-	applicationType enumor.ApplicationType,
-) (string, error) {
+	applicationType enumor.ApplicationType) (string, error) {
+
 	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {
 		return "", fmt.Errorf("get approval process service id and managers failed, err: %v", err)
@@ -826,6 +826,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 // listSubAccountBasicInfo batch queries subaccounts by IDs and returns a map keyed by sub-account ID.
 func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountIDs []string,
 ) (map[string]*proto.SubAccountBasicInfo, error) {
+
 	result, err := a.client.DataService().Global.SubAccount.List(
 		cts.Kit,
 		&core.ListReq{

@@ -135,12 +135,6 @@ func (a *ApplicationOfDeleteSecretKey) getTCloudSecretDetail() (
 }
 
 func (a *ApplicationOfDeleteSecretKey) deleteLocalSecret() error {
-	// 记录审计
-	if err := a.Audit.ResDeleteAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, []string{a.secretID}); err != nil {
-		logs.Errorf("create delete_secret_key audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
-		return err
-	}
-
 	return a.Client.DataService().Global.SubAccountSecret.BatchDelete(
 		a.Cts.Kit,
 		&protocloud.SubAccountSecretBatchDeleteReq{
