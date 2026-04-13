@@ -121,7 +121,6 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 }
 
 func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAccount {
-
 	baseAccount := coresubaccount.BaseSubAccount{
 		ID:                    one.ID,
 		CloudID:               one.CloudID,
@@ -199,6 +198,7 @@ func (svc *service) ListSubAccountExt(cts *rest.Contexts) (interface{}, error) {
 
 func convListExtResult[T coresubaccount.Extension](models []tablesubaccount.Table,
 ) (*dssubaccount.ListExtResult[T], error) {
+
 	details := make([]coresubaccount.SubAccount[T], 0, len(models))
 	for _, one := range models {
 		account, err := convCoreSubAccount[T](&one)

@@ -16,6 +16,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list
 | vendor                | string         | 是    | 云厂商, 枚举值：tcloud                    |
 | status                | string array   | 否    | 密钥状态, 枚举值：enabled(启用)、disabled(禁用) |
 | extension             | object[vendor] | 否    | 云产商扩展字段                            |
+| ids                   | string array   | 否    | 密钥id列表，长度限制500                   |
 | account_ids           | string array   | 否    | 二级账号id列表，长度限制500                   |
 | sub_account_ids       | string array   | 否    | 三级账号id列表，长度限制500                   |
 | account_managers      | string array   | 否    | 二级账号负责人列表，长度限制500                  |
@@ -47,6 +48,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list
 {
   "status": ["enabled"],
   "account_ids": ["test"],
+  "ids":["00000001"],
   "sub_account_ids": ["test"],
   "extension":{
     "cloud_secret_ids": ["test"],
@@ -73,6 +75,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list
   "status": ["enabled"],
   "account_ids": ["test"],
   "sub_account_ids": ["test"],
+  "ids":["00000001"],
   "extension":{
     "cloud_secret_ids": ["test"],
     "cloud_main_account_ids": ["test"],

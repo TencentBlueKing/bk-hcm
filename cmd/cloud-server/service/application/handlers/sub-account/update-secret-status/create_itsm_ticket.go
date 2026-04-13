@@ -31,6 +31,7 @@ func (a *ApplicationOfUpdateSecretKeyStatus) RenderItsmTitle() (string, error) {
 	subAccountName, err := a.getSubAccountNameForDisplay()
 	if err != nil {
 		logs.Errorf("get sub account name for itsm title failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("get sub account name for itsm title failed, err: %w", err)
 	}
 
 	return fmt.Sprintf("申请%s[%s]三级账号(%s)密钥", a.req.Status.GetNameZh(), a.Vendor().GetNameZh(), subAccountName), nil
@@ -46,11 +47,13 @@ func (a *ApplicationOfUpdateSecretKeyStatus) RenderItsmForm() (string, error) {
 	subAccountName, err := a.getSubAccountNameForDisplay()
 	if err != nil {
 		logs.Errorf("get sub account name for itsm form failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("get sub account name for itsm form failed, err: %w", err)
 	}
 
 	cloudSecretID, err := a.getCloudSecretIDForDisplay()
 	if err != nil {
 		logs.Errorf("get cloud secret id for itsm form failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("get cloud secret id for itsm form failed, err: %w", err)
 	}
 
 	items := []string{

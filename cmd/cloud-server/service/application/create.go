@@ -153,7 +153,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 	}
 
 	// 主机、硬盘、VPC、负载均衡需要记录业务ID
-	bkBizIDs := make([]int64, 0)
+	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
 		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
 		applicationType == enumor.AddAccount || applicationType == enumor.OperateSubAccount ||
@@ -1017,8 +1017,7 @@ func (a *applicationSvc) CreateBizForUpdateSubAccountSecretStatus(cts *rest.Cont
 }
 
 func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contexts,
-	req *proto.SubAccountSecretStatusBatchUpdateReq,
-) ([]string, error) {
+	req *proto.SubAccountSecretStatusBatchUpdateReq) ([]string, error) {
 
 	opt := a.getHandlerOption(cts)
 	base := &subaccount.BaseSubAccountContent{
