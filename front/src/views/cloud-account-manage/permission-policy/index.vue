@@ -93,17 +93,10 @@ const loadFullList = async () => {
       ],
     };
 
-<<<<<<< feat-third-account
-    // TODO: 替换为真实API调用
-    // const list = await permissionPolicyStore.getPermissionPolicyFullList(getBizsId(), vendorFilter);
-    fullList.value = [];
-    pagination.count = 0;
-=======
     // 使用 rollRequest 获取全量数据
     const list = await permissionPolicyStore.getPermissionPolicyFullList(currentVendor.value, vendorFilter);
     fullList.value = list;
     pagination.count = list.length;
->>>>>>> feat-account-management
     updateTableData();
   } catch (error) {
     console.error('获取权限策略库列表失败:', error);
