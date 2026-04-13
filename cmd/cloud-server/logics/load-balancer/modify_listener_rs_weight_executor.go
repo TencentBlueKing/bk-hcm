@@ -382,10 +382,9 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 				Param:            param,
 			}
 			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
-				singleRsDetail := buildSingleRsDetail(detail, rs)
 				taskDetail := &batchListenerModifyRsWeightTaskDetail{
 					TgModifyWeightTaskDetailParam: &param,
-					ListBatchListenerResult:       singleRsDetail,
+					ListBatchListenerResult:       detail,
 				}
 				c.taskDetails = append(c.taskDetails, taskDetail)
 				items = append(items, item)
