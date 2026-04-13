@@ -16,7 +16,7 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
-
+// Package daosubaccountsecret is the dao layer for sub account secret.
 package daosubaccountsecret
 
 import (
@@ -122,6 +122,10 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	whereExprs = append(whereExprs, bizScope)
 	args["bk_biz_id"] = opt.BkBizID
 
+	if len(opt.IDs) > 0 {
+		whereExprs = append(whereExprs, "secret.id IN (:ids)")
+		args["ids"] = opt.IDs
+	}
 	if len(opt.Status) > 0 {
 		whereExprs = append(whereExprs, "secret.status IN (:status)")
 		args["status"] = opt.Status

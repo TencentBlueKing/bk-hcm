@@ -183,6 +183,7 @@ func (svc *subAccountSecretSvc) listSecretJoinExtTCloud(cts *rest.Contexts,
 	daoOpt := &types.ListSecretJoinAccountOption{
 		Vendor:             enumor.TCloud,
 		BkBizID:            req.BkBizID,
+		IDs:                req.IDs,
 		Status:             req.Status,
 		AccountIDs:         req.AccountIDs,
 		SubAccountIDs:      req.SubAccountIDs,

@@ -71,6 +71,7 @@ func (svc *service) listBizSubAccountSecretJoinExt(kt *kit.Kit, bizID int64, ven
 	dsReq := &protocloud.SubAccountSecretJoinExtListReq{
 		BkBizID: bizID,
 		SubAccountSecretFilters: protocloud.SubAccountSecretFilters{
+			IDs:                req.IDs,
 			Status:             req.Status,
 			AccountIDs:         req.AccountIDs,
 			SubAccountIDs:      req.SubAccountIDs,

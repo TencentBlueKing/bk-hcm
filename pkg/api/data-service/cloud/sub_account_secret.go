@@ -140,6 +140,7 @@ type TCloudSubAccountSecretListExt = coresass.TCloudSubAccountSecretListExt
 
 // SubAccountSecretFilters defines biz-scoped list filters;
 type SubAccountSecretFilters struct {
+	IDs                []string                        `json:"ids" validate:"omitempty"`
 	Status             []enumor.SubAccountSecretStatus `json:"status" validate:"omitempty"`
 	AccountIDs         []string                        `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
 	SubAccountIDs      []string                        `json:"sub_account_ids" validate:"omitempty,max=500,dive,lte=64"`
