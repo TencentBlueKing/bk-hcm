@@ -215,7 +215,7 @@ func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit, bizID int64,
 		Audits: []protoaudit.BatchCreateAuditInfo{
 			{
 				ResID:     result.IDs[0],
-				ResName:   result.IDs[0],
+				ResName:   fmt.Sprintf("%s(id:%s)", enumor.SubAccountSecretAuditResType, result.IDs[0]),
 				ResType:   enumor.SubAccountSecretAuditResType,
 				Action:    enumor.Create,
 				BkBizID:   bizID,

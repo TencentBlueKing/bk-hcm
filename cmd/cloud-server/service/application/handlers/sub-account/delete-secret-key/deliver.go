@@ -154,7 +154,8 @@ func (a *ApplicationOfDeleteSecretKey) deleteLocalSecret() error {
 
 	// 记录审计
 	if err := a.DeleteAudit(
-		enumor.SubAccountSecretAuditResType, a.secretID, a.secretID, result.Details[0]); err != nil {
+		enumor.SubAccountSecretAuditResType, a.secretID,
+		fmt.Sprintf("%s(id:%s)", enumor.SubAccountSecretAuditResType, a.secretID), result.Details[0]); err != nil {
 		logs.Errorf("create delete_secret_key audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
