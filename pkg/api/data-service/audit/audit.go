@@ -243,3 +243,43 @@ type GetAsyncTaskResp struct {
 	Flow  *coreasync.AsyncFlow      `json:"flow"`
 	Tasks []coreasync.AsyncFlowTask `json:"tasks"`
 }
+
+// -------------------------- Batch Create Audit --------------------------
+
+// BatchCreateAuditInfo defines a single audit record for batch creation.
+// This allows cloud-server to construct complete audit records with all fields (including bk_biz_id)
+// and submit them directly, bypassing the limitation of existing audit interfaces that cannot carry bk_biz_id.
+type BatchCreateAuditInfo struct {
+	ResID      string                   `json:"res_id" validate:"required,lte=64"`
+	CloudResID string                   `json:"cloud_res_id" validate:"omitempty,lte=255"`
+	ResName    string                   `json:"res_name" validate:"omitempty,lte=255"`
+	ResType    enumor.AuditResourceType `json:"res_type" validate:"required"`
+	Action     enumor.AuditAction       `json:"action" validate:"required"`
+	BkBizID    int64                    `json:"bk_biz_id"`
+	Vendor     enumor.Vendor            `json:"vendor" validate:"omitempty,lte=16"`
+	AccountID  string                   `json:"account_id" validate:"omitempty,lte=64"`
+	Detail     interface{}              `json:"detail,omitempty"`
+}
+
+// BatchCreateAuditReq defines the request for batch creating audit records directly.
+type BatchCreateAuditReq struct {
+	Audits []BatchCreateAuditInfo `json:"audits" validate:"required,min=1,max=100"`
+}
+
+// Validate BatchCreateAuditReq.
+func (r *BatchCreateAuditReq) Validate() error {
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	for _, a := range r.Audits {
+		if !a.ResType.Exist() {
+			return fmt.Errorf("res_type %s not supported", a.ResType)
+		}
+		if !a.Action.Exist() {
+			return fmt.Errorf("action %s not supported", a.Action)
+		}
+	}
+
+	return nil
+}

@@ -218,3 +218,10 @@ func (a *AuditClient) GetAuditRaw(kt *kit.Kit, id uint64) (
 	return common.Request[common.Empty, coreaudit.RawAudit](a.client, rest.GET, kt, nil,
 		"/audits/%d", id)
 }
+
+// BatchCreateAudit batch create audit records directly with full field control (including bk_biz_id).
+func (a *AuditClient) BatchCreateAudit(kt *kit.Kit, req *protoaudit.BatchCreateAuditReq) error {
+	return common.RequestNoResp[protoaudit.BatchCreateAuditReq](
+		a.client, rest.POST, kt, req, "/audits/batch/create")
+}
+

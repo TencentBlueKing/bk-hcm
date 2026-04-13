@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
@@ -115,7 +116,7 @@ func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAc
 		return nil, err
 	}
 
-	dbID, err := svc.saveTCloudSubAccountSecret(kt, subAccount, akResult)
+	dbID, err := svc.saveTCloudSubAccountSecret(kt, bizID, subAccount, akResult)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +177,7 @@ func (svc *service) validateAccountBiz(kt *kit.Kit, bizID int64, accountID strin
 }
 
 // saveTCloudSubAccountSecret saves the access key info to data-service.
-func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
+func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit, bizID int64,
 	subAccount *coresubaccount.SubAccount[coresubaccount.TCloudExtension],
 	akResult *hssubaccount.TCloudCreateAccessKeyResult) (string, error) {
 
@@ -185,21 +186,19 @@ func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
 		cloudMainAccountID = subAccount.Extension.CloudMainAccountID
 	}
 
-	createReq := &protocloud.SubAccountSecretBatchCreateReq[coresass.TCloudSubAccountSecretExtension]{
-		SubAccountSecrets: []protocloud.SubAccountSecretCreate[coresass.TCloudSubAccountSecretExtension]{
-			{
-				AccountID:      subAccount.AccountID,
-				SubAccountID:   subAccount.ID,
-				Status:         hssubaccount.TCloudAccessKeyStatusToSecretStatus(akResult.Status),
-				CloudCreatedAt: akResult.CreateTime,
-				Extension: &coresass.TCloudSubAccountSecretExtension{
-					CloudSecretID:      akResult.AccessKeyID,
-					CloudMainAccountID: cloudMainAccountID,
-					CloudSubAccountID:  subAccount.CloudID,
-				},
-			},
+	detail := protocloud.SubAccountSecretCreate[coresass.TCloudSubAccountSecretExtension]{
+		AccountID:      subAccount.AccountID,
+		SubAccountID:   subAccount.ID,
+		Status:         hssubaccount.TCloudAccessKeyStatusToSecretStatus(akResult.Status),
+		CloudCreatedAt: akResult.CreateTime,
+		Extension: &coresass.TCloudSubAccountSecretExtension{
+			CloudSecretID:      akResult.AccessKeyID,
+			CloudMainAccountID: cloudMainAccountID,
+			CloudSubAccountID:  subAccount.CloudID,
 		},
 	}
+	createReq := &protocloud.SubAccountSecretBatchCreateReq[coresass.TCloudSubAccountSecretExtension]{
+		SubAccountSecrets: []protocloud.SubAccountSecretCreate[coresass.TCloudSubAccountSecretExtension]{detail}}
 
 	result, err := svc.client.DataService().TCloud.SubAccountSecret.BatchCreateSubAccountSecret(
 		kt, createReq)
@@ -210,6 +209,24 @@ func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
 
 	if len(result.IDs) != 1 {
 		return "", errf.New(errf.Aborted, "create sub account secret returned length of ids not equal to 1")
+	}
+
+	if auditErr := svc.audit.BatchCreateAudit(kt, &protoaudit.BatchCreateAuditReq{
+		Audits: []protoaudit.BatchCreateAuditInfo{
+			{
+				ResID:     result.IDs[0],
+				ResName:   result.IDs[0],
+				ResType:   enumor.SubAccountSecretAuditResType,
+				Action:    enumor.Create,
+				BkBizID:   bizID,
+				Vendor:    enumor.TCloud,
+				AccountID: subAccount.AccountID,
+				Detail:    detail,
+			},
+		},
+	}); auditErr != nil {
+		logs.Errorf("create sub account secret audit failed, secret_id: %s, err: %v, rid: %s",
+			result.IDs[0], auditErr, kt.Rid)
 	}
 
 	return result.IDs[0], nil

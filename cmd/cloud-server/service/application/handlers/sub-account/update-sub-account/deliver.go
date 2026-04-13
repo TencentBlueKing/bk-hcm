@@ -152,19 +152,22 @@ func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {
 		field.BkBizIDs = []int64{converter.PtrToVal(a.req.BkBizID)}
 	}
 
+	if err := a.Client.DataService().Global.SubAccount.BatchUpdate(a.Cts.Kit,
+		&dssubaccount.UpdateReq{Items: []dssubaccount.UpdateField{field}}); err != nil {
+		logs.Errorf("update sub account failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
 	updateFields, err := converter.StructToMap(field)
 	if err != nil {
 		logs.Errorf("convert update_sub_account field to map failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
-	err = a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountAuditResType, a.req.ID, updateFields)
+	err = a.UpdateAudit(enumor.SubAccountAuditResType, a.req.ID, a.subAccountName, updateFields)
 	if err != nil {
 		logs.Errorf("create update_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
-	return a.Client.DataService().Global.SubAccount.BatchUpdate(
-		a.Cts.Kit,
-		&dssubaccount.UpdateReq{Items: []dssubaccount.UpdateField{field}},
-	)
+	return nil
 }

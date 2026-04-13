@@ -142,18 +142,22 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() err
 		updateSecret.DisabledTime = converter.ValToPtr(time.Now().Local().Format(time.RFC3339))
 	}
 
-	err := a.Audit.ResUpdateAudit(a.Cts.Kit, enumor.SubAccountSecretAuditResType, a.req.ID,
+	if err := a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(a.Cts.Kit,
+		&protocloud.SubAccountSecretBatchUpdateReq[coresass.TCloudSubAccountSecretExtension]{
+			SubAccountSecrets: []protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
+				updateSecret}}); err != nil {
+		logs.Errorf("update secret status failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
+	// 密钥本身没有名称，通过密钥ID来代替名称
+	err := a.UpdateAudit(enumor.SubAccountSecretAuditResType, a.req.ID,
+		fmt.Sprintf("%s(id:%s)", enumor.SubAccountSecretAuditResType, a.req.ID),
 		map[string]interface{}{"status": a.req.Status})
 	if err != nil {
 		logs.Errorf("create update_secret_status audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
-	return a.Client.DataService().TCloud.SubAccountSecret.BatchUpdateSubAccountSecret(
-		a.Cts.Kit,
-		&protocloud.SubAccountSecretBatchUpdateReq[coresass.TCloudSubAccountSecretExtension]{
-			SubAccountSecrets: []protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension]{
-				updateSecret},
-		},
-	)
+	return nil
 }

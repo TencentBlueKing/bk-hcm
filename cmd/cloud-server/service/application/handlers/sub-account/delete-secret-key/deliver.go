@@ -34,7 +34,6 @@ import (
 
 // Deliver execute resource delivery after approval.
 func (a *ApplicationOfDeleteSecretKey) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
-
 	switch a.Vendor() {
 	case enumor.TCloud:
 		return a.tcloudDeliver()
@@ -133,10 +132,32 @@ func (a *ApplicationOfDeleteSecretKey) getTCloudSecretDetail() (
 }
 
 func (a *ApplicationOfDeleteSecretKey) deleteLocalSecret() error {
-	return a.Client.DataService().Global.SubAccountSecret.BatchDelete(
-		a.Cts.Kit,
+	// 先把密钥查出来
+	result, err := a.Client.DataService().Global.SubAccountSecret.ListSubAccountSecret(a.Cts.Kit,
+		&protocloud.SubAccountSecretListReq{Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID))})
+	if err != nil {
+		logs.Errorf("query secret failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+	if len(result.Details) != 1 {
+		logs.Errorf("secret(id=%s) not found", a.secretID)
+		return fmt.Errorf("secret(id=%s) not found", a.secretID)
+	}
+
+	// 删除密钥
+	if err := a.Client.DataService().Global.SubAccountSecret.BatchDelete(a.Cts.Kit,
 		&protocloud.SubAccountSecretBatchDeleteReq{
-			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID)),
-		},
-	)
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.secretID))}); err != nil {
+		logs.Errorf("delete secret failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
+	// 记录审计
+	if err := a.DeleteAudit(
+		enumor.SubAccountSecretAuditResType, a.secretID, a.secretID, result.Details[0]); err != nil {
+		logs.Errorf("create delete_secret_key audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
+	return nil
 }

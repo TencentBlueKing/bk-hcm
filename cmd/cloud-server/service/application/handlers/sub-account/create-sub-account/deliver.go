@@ -269,28 +269,25 @@ func (a *ApplicationOfCreateSubAccount) saveCloudSubAccountBasicInfo(cloudResult
 		return nil, "", fmt.Errorf("marshal extension failed, err: %v", err)
 	}
 
+	detail := dssubaccount.CreateField{
+		CloudID:               cloudID,
+		Name:                  a.req.Name,
+		Vendor:                a.Vendor(),
+		Site:                  parentAccount.Site,
+		AccountID:             a.req.AccountID,
+		Managers:              a.req.Managers,
+		BkBizIDs:              types.Int64Array{a.BkBizID()},
+		PermissionTemplateIDs: a.req.PermissionTemplateIDs,
+		// 创建的三级账号为CurrentAccount类型,
+		AccountType: string(enumor.CurrentAccount),
+		Email:       converter.ValToPtr(a.req.Email),
+		PhoneNum:    converter.ValToPtr(a.req.PhoneNum),
+		Memo:        a.req.Memo,
+		Extension:   extBytes,
+	}
+
 	createResult, err := a.Client.DataService().Global.SubAccount.BatchCreate(
-		a.Cts.Kit,
-		&dssubaccount.CreateReq{
-			Items: []dssubaccount.CreateField{
-				{
-					CloudID:   cloudID,
-					Name:      a.req.Name,
-					Vendor:    a.Vendor(),
-					Site:      parentAccount.Site,
-					AccountID: a.req.AccountID,
-					Managers:  a.req.Managers,
-					BkBizIDs:  types.Int64Array{a.BkBizID()},
-					// 创建的三级账号为CurrentAccount类型,
-					AccountType: string(enumor.CurrentAccount),
-					Email:       converter.ValToPtr(a.req.Email),
-					PhoneNum:    converter.ValToPtr(a.req.PhoneNum),
-					Memo:        a.req.Memo,
-					Extension:   extBytes,
-				},
-			},
-		},
-	)
+		a.Cts.Kit, &dssubaccount.CreateReq{Items: []dssubaccount.CreateField{detail}})
 	if err != nil {
 		return nil, "", err
 	}
@@ -299,6 +296,14 @@ func (a *ApplicationOfCreateSubAccount) saveCloudSubAccountBasicInfo(cloudResult
 	accountID, err := a.registerAccountForTCloud(cloudID, cloudResult, parentAccount)
 	if err != nil {
 		return nil, "", err
+	}
+
+	if len(createResult.IDs) > 0 {
+		if err = a.CreateAudit(enumor.SubAccountAuditResType, createResult.IDs[0], a.req.Name, detail); err != nil {
+			logs.Errorf("create sub account audit failed, sub_account_id: %s, err: %v, rid: %s",
+				createResult.IDs[0], err, a.Cts.Kit.Rid)
+			return nil, "", err
+		}
 	}
 
 	return createResult.IDs, accountID, nil
@@ -336,13 +341,11 @@ func (a *ApplicationOfCreateSubAccount) updateSubAccountConfigureDetail(subAccou
 		return fmt.Errorf("marshal extension failed, err: %v", err)
 	}
 
+	updateField := dssubaccount.UpdateField{
+		ID: subAccountID, Extension: &extBytes, PermissionTemplateIDs: permissionTemplateIDs,
+	}
 	err = a.Client.DataService().Global.SubAccount.BatchUpdate(
-		a.Cts.Kit,
-		&dssubaccount.UpdateReq{
-			Items: []dssubaccount.UpdateField{
-				{ID: subAccountID, Extension: &extBytes, PermissionTemplateIDs: permissionTemplateIDs},
-			},
-		},
+		a.Cts.Kit, &dssubaccount.UpdateReq{Items: []dssubaccount.UpdateField{updateField}},
 	)
 	if err != nil {
 		return fmt.Errorf("update sub account failed, err: %v", err)

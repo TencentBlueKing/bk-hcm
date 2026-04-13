@@ -22,6 +22,7 @@ package deletesubaccount
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
@@ -88,17 +89,32 @@ func (a *ApplicationOfDeleteSubAccount) deleteCloudSubAccount() error {
 }
 
 func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
-	if err := a.Audit.ResDeleteAudit(a.Cts.Kit, enumor.SubAccountAuditResType, []string{a.req.ID}); err != nil {
+	// 把三级账号查出来
+	result, err := a.Client.DataService().Global.SubAccount.List(a.Cts.Kit, &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
+		Page:   core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		logs.Errorf("list sub account failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+	if len(result.Details) != 1 {
+		logs.Errorf("sub account not found, id: %s, rid: %s", a.req.ID, a.Cts.Kit.Rid)
+		return fmt.Errorf("sub account not found")
+	}
+
+	if err := a.Client.DataService().Global.SubAccount.BatchDelete(a.Cts.Kit, &dataservice.BatchDeleteReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID))}); err != nil {
+		logs.Errorf("batch delete sub account failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
+	if err := a.DeleteAudit(enumor.SubAccountAuditResType, a.req.ID, a.req.Name, result.Details[0]); err != nil {
 		logs.Errorf("create delete_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
-	return a.Client.DataService().Global.SubAccount.BatchDelete(
-		a.Cts.Kit,
-		&dataservice.BatchDeleteReq{
-			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
-		},
-	)
+	return nil
 }
 
 // deleteRegistrationAccount deletes the registration account record in the account table

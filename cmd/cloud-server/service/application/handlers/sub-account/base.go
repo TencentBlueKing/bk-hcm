@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	protoaudit "hcm/pkg/api/data-service/audit"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
@@ -320,4 +321,64 @@ func (a *ApplicationBaseSubAccount) DetachPolicies(uin uint64, tmplIDs []string)
 	}
 
 	return nil
+}
+
+// CreateAudit 创建审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
+func (a *ApplicationBaseSubAccount) CreateAudit(resType enumor.AuditResourceType, resID, resName string,
+	detail interface{}) error {
+
+	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
+		Audits: []protoaudit.BatchCreateAuditInfo{
+			{
+				ResID:     resID,
+				ResName:   resName,
+				ResType:   resType,
+				Action:    enumor.Create,
+				BkBizID:   a.BkBizID(),
+				Vendor:    a.Vendor(),
+				AccountID: a.AccountID(),
+				Detail:    detail,
+			},
+		},
+	})
+}
+
+// UpdateAudit 更新审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
+func (a *ApplicationBaseSubAccount) UpdateAudit(resType enumor.AuditResourceType, resID, resName string,
+	updateFields map[string]interface{}) error {
+
+	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
+		Audits: []protoaudit.BatchCreateAuditInfo{
+			{
+				ResID:     resID,
+				ResName:   resName,
+				ResType:   resType,
+				Action:    enumor.Update,
+				BkBizID:   a.BkBizID(),
+				Vendor:    a.Vendor(),
+				AccountID: a.AccountID(),
+				Detail:    updateFields,
+			},
+		},
+	})
+}
+
+// DeleteAudit 删除审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
+func (a *ApplicationBaseSubAccount) DeleteAudit(resType enumor.AuditResourceType, resID, resName string,
+	detail interface{}) error {
+
+	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
+		Audits: []protoaudit.BatchCreateAuditInfo{
+			{
+				ResID:     resID,
+				ResName:   resName,
+				ResType:   resType,
+				Action:    enumor.Delete,
+				BkBizID:   a.BkBizID(),
+				Vendor:    a.Vendor(),
+				AccountID: a.AccountID(),
+				Detail:    detail,
+			},
+		},
+	})
 }
