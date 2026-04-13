@@ -152,6 +152,10 @@ func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {
 		field.BkBizIDs = []int64{converter.PtrToVal(a.req.BkBizID)}
 	}
 
+	if len(a.req.PermissionTemplateIDs) > 0 {
+		field.PermissionTemplateIDs = a.req.PermissionTemplateIDs
+	}
+
 	if err := a.Client.DataService().Global.SubAccount.BatchUpdate(a.Cts.Kit,
 		&dssubaccount.UpdateReq{Items: []dssubaccount.UpdateField{field}}); err != nil {
 		logs.Errorf("update sub account failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)

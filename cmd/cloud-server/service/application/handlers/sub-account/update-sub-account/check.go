@@ -56,5 +56,9 @@ func (a *ApplicationOfUpdateSubAccount) checkPermissionTemplate() error {
 		return nil
 	}
 
+	if len(a.req.PermissionTemplateIDs) == 0 {
+		return fmt.Errorf("permission template ids is empty")
+	}
+	
 	return a.CheckPermissionTemplate(a.req.PermissionTemplateIDs)
 }
