@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { inject, computed, type Ref, ref, watch, useTemplateRef, watchEffect } from 'vue';
+import { inject, computed, type Ref, ref, watch, useTemplateRef } from 'vue';
 import { Form } from 'bkui-vue';
-import http from '@/http';
-import rollRequest from '@blueking/roll-request';
-import { type IListResData, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { formatJSON } from '@/utils';
-import type { IPermissionPolicyItem } from '@/store/cloud-account-manage/permission-policy';
+import { usePermissionPolicyStore, type IPermissionPolicyItem } from '@/store/cloud-account-manage/permission-policy';
 import type { FieldTcloud } from './field-tcloud';
 import { FieldFactory } from './field-factory';
 import type { ModelPropertyForm } from '@/model/typings';
@@ -18,6 +15,7 @@ const props = defineProps<{
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+const permissionPolicyStore = usePermissionPolicyStore();
 
 const fieldModel = computed(() => FieldFactory.createModel(currentVendor.value));
 const properties = computed(() => fieldModel.value.getProperties<ModelPropertyForm>());
@@ -41,71 +39,17 @@ watch(
   { deep: true, immediate: true },
 );
 
-const fetchPolicyLibraryList = (name?: string) => {
-  return rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
-    IListResData<IPermissionPolicyItem[]>
-  >(
-    `/api/v1/cloud/vendors/${currentVendor.value}/permission_policy_libraries/list`,
-    {
-      filter: name
-        ? {
-            op: QueryRuleOPEnum.AND,
-            rules: [
-              {
-                field: 'name',
-                op: QueryRuleOPEnum.CS,
-                value: name,
-              },
-            ],
-          }
-        : {},
-    },
-    {
-      limit: 5,
-      countGetter: (res) => res.data.count,
-      listGetter: (res) => res.data.details,
-      generator: true,
-    },
-    true,
-  );
-};
-
-// TODO: 考虑新增 scroll-list 组件，把这套包起来
-const policyLibraryListGenerator = ref<Generator<Promise<IListResData<IPermissionPolicyItem[]>>, void, any>>(null);
-const policyLibraryList = ref<IPermissionPolicyItem[]>([]);
-const policyLibraryListLoading = ref(false);
-const policyLibraryListScrollLoading = ref(false);
-watchEffect(async () => {
-  policyLibraryListLoading.value = true;
-  policyLibraryListGenerator.value = await fetchPolicyLibraryList();
-  policyLibraryListLoading.value = false;
-  const result = policyLibraryListGenerator.value.next();
-  if (!result.done) {
-    const res = await (result.value as Promise<IListResData<IPermissionPolicyItem[]>>);
-    policyLibraryList.value = res?.data?.details ?? [];
-  }
-});
+const policyLibraryListGenerator = computed(() =>
+  permissionPolicyStore.createPolicyLibraryListGenerator(currentVendor.value),
+);
 
 const getFormCompProps = (field: ModelPropertyForm) => {
   const compProps = field.meta?.display?.props || {};
-  if (field.id === 'account_id' && props.isEdit) {
+  if ((field.id === 'account_id' || field.id === 'name') && props.isEdit) {
     compProps.disabled = true;
   }
   if (field.id === 'policy_library_id') {
-    compProps.filterable = true;
-    compProps.loading = policyLibraryListLoading.value;
-    compProps.scrollLoading = policyLibraryListScrollLoading.value;
-    compProps.list = policyLibraryList.value;
-    compProps.remoteMethod = async (query: string) => {
-      policyLibraryListLoading.value = true;
-      policyLibraryListGenerator.value = await fetchPolicyLibraryList(query);
-      policyLibraryListLoading.value = false;
-      const result = policyLibraryListGenerator.value.next();
-      if (!result.done) {
-        const res = await (result.value as Promise<IListResData<IPermissionPolicyItem[]>>);
-        policyLibraryList.value = res?.data?.details ?? [];
-      }
-    };
+    compProps.listGenerator = policyLibraryListGenerator.value;
   }
   return compProps;
 };
@@ -113,19 +57,8 @@ const getFormCompProps = (field: ModelPropertyForm) => {
 const getFormCompEvents = (field: ModelPropertyForm) => {
   if (field.id === 'policy_library_id') {
     return {
-      'scroll-end': async () => {
-        if (!policyLibraryListGenerator.value) return;
-        const result = policyLibraryListGenerator.value.next();
-        if (!result.done) {
-          policyLibraryListScrollLoading.value = true;
-          const res = await (result.value as Promise<IListResData<IPermissionPolicyItem[]>>);
-          policyLibraryList.value = [...policyLibraryList.value, ...(res?.data?.details ?? [])];
-          policyLibraryListScrollLoading.value = false;
-        }
-      },
-      change: (id: string) => {
-        const policyDocument = policyLibraryList.value.find((item) => item.id === id)?.policy_document;
-        formData.value.policy_document = policyDocument ? formatJSON(policyDocument) : '';
+      change: (_value: string, item: IPermissionPolicyItem | undefined) => {
+        formData.value.policy_document = item?.policy_document ? formatJSON(item.policy_document) : '';
       },
     };
   }

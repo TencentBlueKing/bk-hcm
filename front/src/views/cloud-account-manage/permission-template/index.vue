@@ -21,13 +21,20 @@ import CreateForm from './children/form/create.vue';
 import EditForm from './children/form/edit.vue';
 import Details from './children/details/details.vue';
 import DeleteDialog from './children/delete-dialog.vue';
-
+import {
+  AUTH_CREATE_PERMISSION_TEMPLATE,
+  AUTH_UPDATE_PERMISSION_TEMPLATE,
+  AUTH_DELETE_PERMISSION_TEMPLATE,
+} from '@/constants/auth-symbols';
+import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const permissionTemplateStore = usePermissionTemplateStore();
 const route = useRoute();
 const { getBizsId } = useWhereAmI();
 
 const { pagination, getPageParams } = usePage();
+
+const bizId = computed(() => getBizsId());
 
 const searchModel = computed(() => SearchConditionFactory.createModel(currentVendor.value));
 const searchFields = computed<ModelPropertySearch[]>(() => searchModel.value.getProperties());
@@ -74,7 +81,7 @@ watch(
     const order = (query.order || 'DESC') as string;
 
     const { list = [], count } = await permissionTemplateStore.getPermissionTemplateList(
-      getBizsId(),
+      bizId.value,
       currentVendor.value,
       {
         ...transformFlatCondition(condition.value, searchFields.value),
@@ -110,7 +117,7 @@ const handleCreateSubmit = async () => {
   await createFormRef.value.validate();
   const formData = createFormRef.value.getFormData();
   const { type, policy_document, ...postData } = formData;
-  const result = await permissionTemplateStore.createPermissionTemplate(getBizsId(), currentVendor.value, postData);
+  const result = await permissionTemplateStore.createPermissionTemplate(bizId.value, currentVendor.value, postData);
   if (result.id) {
     routerAction.redirect({
       name: MENU_SERVICE_TICKET_DETAILS,
@@ -126,7 +133,7 @@ const handleEditSubmit = async () => {
   await editFormRef.value.validate();
   const formData = editFormRef.value.getFormData();
   const { type, policy_document, account_id, ...postData } = formData;
-  const result = await permissionTemplateStore.updatePermissionTemplate(getBizsId(), currentVendor.value, postData);
+  const result = await permissionTemplateStore.updatePermissionTemplate(bizId.value, currentVendor.value, postData);
   if (result.id) {
     routerAction.redirect({
       name: MENU_SERVICE_TICKET_DETAILS,
@@ -149,7 +156,7 @@ const handleDelete = (row: IPermissionTemplateItem) => {
 };
 
 const handleDeleteConfirm = async () => {
-  const result = await permissionTemplateStore.deletePermissionTemplate(getBizsId(), currentVendor.value, {
+  const result = await permissionTemplateStore.deletePermissionTemplate(bizId.value, currentVendor.value, {
     id: deleteState.data.id,
   });
   deleteState.isShow = false;
@@ -171,10 +178,12 @@ const handleDeleteConfirm = async () => {
 
     <div class="table-panel">
       <div class="toolbar">
-        <bk-button theme="primary" @click="handleCreate">
-          <Plus style="font-size: 22px" />
-          新建权限模板
-        </bk-button>
+        <hcm-auth :sign="{ type: AUTH_CREATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+          <bk-button theme="primary" :disabled="noPerm" @click="handleCreate">
+            <Plus style="font-size: 22px" />
+            新建权限模板
+          </bk-button>
+        </hcm-auth>
       </div>
       <DataList
         v-bkloading="{ loading: permissionTemplateStore.listLoading }"
@@ -228,14 +237,41 @@ const handleDeleteConfirm = async () => {
       <div class="sideslider-details-header">
         <span>权限模板详情</span>
         <div class="actions">
-          <bk-button theme="primary" outline @click="handleEdit(detailsState.data)">编辑</bk-button>
-          <bk-button
-            outline
-            :disabled="detailsState.data.associated_sub_account_count > 0"
-            @click="handleDelete(detailsState.data)"
-          >
-            删除
-          </bk-button>
+          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+            <bk-button
+              outline
+              theme="primary"
+              :disabled="noPerm || getTypeData(detailsState.data).isCloudCustom"
+              @click="handleEdit(detailsState.data)"
+              v-bk-tooltips="{
+                content: '仅云自定义模板可编辑',
+                disabled: !getTypeData(detailsState.data).isCloudCustom,
+              }"
+            >
+              编辑
+            </bk-button>
+          </hcm-auth>
+          <hcm-auth :sign="{ type: AUTH_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+            <bk-button
+              outline
+              :disabled="
+                noPerm ||
+                getTypeData(detailsState.data).isCloudCustom ||
+                detailsState.data.associated_sub_account_count > 0
+              "
+              @click="handleDelete(detailsState.data)"
+              v-bk-tooltips="{
+                content: getTypeData(detailsState.data).isCloudCustom
+                  ? '仅云自定义模板可删除'
+                  : '有三级账号关联不可删除',
+                disabled: !(
+                  getTypeData(detailsState.data).isCloudCustom || detailsState.data.associated_sub_account_count > 0
+                ),
+              }"
+            >
+              删除
+            </bk-button>
+          </hcm-auth>
         </div>
       </div>
     </template>

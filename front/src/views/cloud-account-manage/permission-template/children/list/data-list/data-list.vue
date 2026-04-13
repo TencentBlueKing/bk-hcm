@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, reactive, type Ref, ref } from 'vue';
+import { inject, reactive, type Ref, ref, computed } from 'vue';
 import { Share } from 'bkui-vue/lib/icon';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
@@ -11,6 +11,9 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VendorEnum } from '@/common/constant';
+import { AUTH_UPDATE_PERMISSION_TEMPLATE, AUTH_DELETE_PERMISSION_TEMPLATE } from '@/constants/auth-symbols';
+import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -34,6 +37,8 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
+const bizId = computed(() => getBizsId());
+
 const subAccountCache = reactive<Record<string, string[]>>({});
 const subAccountLoading = reactive<Record<string, boolean>>({});
 
@@ -43,7 +48,7 @@ const afterAssociatedSubAccountPopoverShow = async (_$event: any, row: IPermissi
   subAccountLoading[row.id] = true;
   try {
     const ids = await permissionTemplateStore.getPermissionTemplateSubAccountIds(
-      getBizsId(),
+      bizId.value,
       currentVendor.value,
       row.id,
     );
@@ -80,6 +85,9 @@ const afterAssociatedSubAccountPopoverShow = async (_$event: any, row: IPermissi
         <template v-if="column.id === 'name'">
           <bk-button theme="primary" text @click="emit('view-details', row)">{{ row.name || '--' }}</bk-button>
         </template>
+        <template v-else-if="column.id === 'cloud_account_id'">
+          <SecondaryAccountValue :value="row.cloud_account_id" :biz-id="bizId" />
+        </template>
         <template v-else-if="column.id === 'associated_sub_account_count'">
           <bk-popover
             theme="light"
@@ -111,8 +119,31 @@ const afterAssociatedSubAccountPopoverShow = async (_$event: any, row: IPermissi
     <bk-table-column :show-overflow-tooltip="false" :label="'操作'">
       <template #default="{ row }">
         <div class="actions">
-          <bk-button theme="primary" text @click="emit('edit', row)">编辑</bk-button>
-          <bk-button theme="primary" text @click="emit('delete', row)">删除</bk-button>
+          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm || getTypeData(row).isCloudCustom"
+              @click="emit('edit', row)"
+              v-bk-tooltips="{ content: '仅云自定义模板可编辑', disabled: !getTypeData(row).isCloudCustom }"
+            >
+              编辑
+            </bk-button>
+          </hcm-auth>
+          <hcm-auth :sign="{ type: AUTH_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm || getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0"
+              @click="emit('delete', row)"
+              v-bk-tooltips="{
+                content: getTypeData(row).isCloudCustom ? '仅云自定义模板可删除' : '有三级账号关联不可删除',
+                disabled: !(getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0),
+              }"
+            >
+              删除
+            </bk-button>
+          </hcm-auth>
         </div>
       </template>
     </bk-table-column>

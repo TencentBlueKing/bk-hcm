@@ -29,7 +29,8 @@ export type AuthResourceType =
   | 'main_account'
   | 'account_bill'
   | 'load_balancer'
-  | 'permission_policy_library';
+  | 'permission_policy_library'
+  | 'permission_template';
 
 // 权限校验参数
 export interface IVerifyResourceItem {
@@ -314,5 +315,23 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     id: 'cloud_vendor_config',
     action: 'update',
     resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_CREATE_PERMISSION_TEMPLATE]: {
+    id: 'cloud_vendor_config',
+    action: 'create',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_UPDATE_PERMISSION_TEMPLATE]: {
+    id: 'cloud_vendor_config',
+    action: 'update',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_DELETE_PERMISSION_TEMPLATE]: {
+    id: 'cloud_vendor_config',
+    action: 'delete',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
 });

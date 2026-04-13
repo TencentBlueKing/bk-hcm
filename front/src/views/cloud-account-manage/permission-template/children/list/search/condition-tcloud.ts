@@ -27,9 +27,9 @@ export class SearchConditionTcloud {
   })
   cloud_account_ids: string[];
 
-  @Column('user', { name: '创建人', index: 3 })
+  @Column('user', { name: '创建人' })
   creator: string;
 
-  @Column('user', { name: '更新人', index: 3 })
+  @Column('user', { name: '更新人' })
   reviser: string;
 }

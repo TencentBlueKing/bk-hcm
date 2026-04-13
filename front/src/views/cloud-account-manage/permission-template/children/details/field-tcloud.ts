@@ -1,6 +1,10 @@
+import { h } from 'vue';
+import { Tag } from 'bkui-vue';
 import { Model, Column } from '@/decorator';
 import routeAction from '@/router/utils/action';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import type { IPermissionTemplateItem } from '@/store/cloud-account-manage/permission-template';
+import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 
 @Model()
 export class DetailsFieldTcloud {
@@ -13,8 +17,16 @@ export class DetailsFieldTcloud {
   @Column('string', {
     name: '模板类型',
     group: '基本信息',
+    meta: {
+      display: {
+        render: (value: IPermissionTemplateItem) => {
+          const { label, theme } = getTypeData(value);
+          return h(Tag, { radius: '4px', theme }, label);
+        },
+      },
+    },
   })
-  type: string;
+  'extension.cloud_type': number;
 
   @Column('string', {
     name: '所属二级账号',

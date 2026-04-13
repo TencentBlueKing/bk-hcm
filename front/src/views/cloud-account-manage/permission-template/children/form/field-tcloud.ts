@@ -16,11 +16,9 @@ export class FieldTcloud {
     required: true,
     rules: [
       {
-        trigger: 'change',
-        message: '模板名称只能包含字母、数字和下划线，并且仅能以字母开头，长度为6-20个字符',
-        validator: (val: string) => {
-          return /^[a-zA-Z][a-zA-Z0-9_]{5,19}$/.test(val);
-        },
+        validator: (value: string) => /^[a-zA-Z0-9_-]{1,128}$/.test(value),
+        message: '长度为1~128个字符，可包含英文字母、数字和-_',
+        trigger: 'blur',
       },
     ],
   })

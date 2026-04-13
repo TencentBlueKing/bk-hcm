@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
-import { IListResData, QueryFilterType } from '@/typings';
+import { IListResData, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import rollRequest from '@blueking/roll-request';
 
 // 权限策略列表
@@ -161,11 +161,35 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     }
   };
 
+  const createPolicyLibraryListGenerator = (vendor: string) => {
+    return async function* (keyword?: string) {
+      const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
+      const filter = keyword
+        ? { op: QueryRuleOPEnum.AND, rules: [{ field: 'name', op: QueryRuleOPEnum.CS, value: keyword }] }
+        : {};
+
+      const gen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
+        IListResData<IPermissionPolicyItem[]>
+      >(
+        api,
+        { filter },
+        { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details, generator: true },
+        true,
+      );
+
+      for (const promise of gen) {
+        const res = await promise;
+        yield res?.data?.details ?? [];
+      }
+    };
+  };
+
   return {
     permissionPolicyListLoading,
     createPermissionPolicy,
     updatePermissionPolicy,
     getPermissionPolicyList,
     getPermissionPolicyFullList,
+    createPolicyLibraryListGenerator,
   };
 });

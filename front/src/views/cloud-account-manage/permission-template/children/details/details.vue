@@ -24,7 +24,11 @@ const properties = model.getPropertiesByGroup<ModelPropertyDisplay>();
       <div class="panel-title">{{ group }}</div>
       <grid-container :column="1" :label-width="120">
         <grid-item v-for="field in fields" :key="field.id" :label="field.id === 'policy_document' ? null : field.name">
-          <display-value :property="field" :value="data[field.id]" :display="{ ...field.meta?.display, on: 'info' }" />
+          <display-value
+            :property="field"
+            :value="field.id === 'extension.cloud_type' ? data : data[field.id]"
+            :display="{ ...field.meta?.display, on: 'info' }"
+          />
         </grid-item>
       </grid-container>
     </div>

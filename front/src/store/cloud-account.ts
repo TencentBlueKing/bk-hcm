@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import http from '@/http';
 import { IListResData, QueryBuilderType, QueryFilterType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings/common';
 import { enableCount } from '@/utils/search';
 import rollRequest from '@blueking/roll-request';
 import {
@@ -159,6 +160,9 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const secretCheckLoading = ref(false);
   const subAccountSecretListLoading = ref(false);
 
+  // 根据账号ID缓存二级账号列表
+  const allSecondaryAccountCacheList = ref<Map<ISecondaryAccountItem['id'], ISecondaryAccountItem>>(new Map());
+
   /**
    * 获取二级账号列表
    * @param params 查询参数
@@ -179,6 +183,38 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     } finally {
       accountListLoading.value = false;
     }
+  };
+
+  /**
+   * 根据账号ID获取二级账号列表，带缓存
+   * @param accountIds 账号ID列表
+   * @param bizId 业务ID
+   */
+  const getSecondaryAccountListByAccountIds = async (accountIds: string[], bizId: number) => {
+    const api = `/api/v1/cloud/bizs/${bizId}/accounts/list`;
+    const cachedIds = allSecondaryAccountCacheList.value.keys();
+    const cachedIdSet = new Set(cachedIds);
+    const newIds = accountIds.filter((id) => !cachedIdSet.has(id));
+    if (newIds.length > 0) {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<ISecondaryAccountItem>(
+        api,
+        {
+          filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: newIds }] },
+        },
+        {
+          limit: 500,
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+        },
+      );
+      for (const item of list) {
+        allSecondaryAccountCacheList.value.set(item.id, item);
+      }
+    }
+    return accountIds.map((id) => allSecondaryAccountCacheList.value.get(id)).filter(Boolean);
   };
 
   /**
@@ -540,6 +576,7 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     subAccountSecretListLoading,
     getSecondaryAccountList,
     getSecondaryAccountFullList,
+    getSecondaryAccountListByAccountIds,
     syncAccountResource,
     syncSecondaryAccounts,
     getAccountSecretList,
@@ -552,5 +589,6 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     getSubAccountSecretList,
     updateSubAccountSecretStatus,
     deleteSubAccountSecret,
+    allSecondaryAccountCacheList,
   };
 });

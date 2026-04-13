@@ -78,3 +78,10 @@ export const AUTH_BIZ_DELETE_CLB = Symbol.for('auth_biz_delete_clb');
 export const AUTH_FIND_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_find_permission_policy_library');
 export const AUTH_CREATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_create_permission_policy_library');
 export const AUTH_UPDATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_update_permission_policy_library');
+
+/**
+ * 权限模板
+ */
+export const AUTH_CREATE_PERMISSION_TEMPLATE = Symbol.for('auth_create_permission_template');
+export const AUTH_UPDATE_PERMISSION_TEMPLATE = Symbol.for('auth_update_permission_template');
+export const AUTH_DELETE_PERMISSION_TEMPLATE = Symbol.for('auth_delete_permission_template');
