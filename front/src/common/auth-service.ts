@@ -109,6 +109,9 @@ export const getVerifyParams = (sign: IAuthSign | IAuthSign[]) => {
   return { resources };
 };
 
+const bizTransform = (definition: IAuthDefinition, relation: IAuthSign['relation']) =>
+  basicTransform(definition, relation[0] ? { bk_biz_id: relation[0] as number } : {});
+
 export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
   [authSymbol.AUTH_CREATE_CLOUD_SELECTION_SCHEME]: {
     id: 'cloud_selection_recommend',
@@ -303,50 +306,48 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     id: 'biz_sub_account_secret_operate',
     action: 'create',
     resourceType: 'sub_account_secret',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_UPDATE_SUB_ACCOUNT_SECRET]: {
     id: 'biz_sub_account_secret_operate',
     action: 'update',
     resourceType: 'sub_account_secret',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_DELETE_SUB_ACCOUNT_SECRET]: {
     id: 'biz_sub_account_secret_operate',
     action: 'delete',
     resourceType: 'sub_account_secret',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_UPDATE_SUB_ACCOUNT]: {
-    id: 'biz_sub_account_secret_operate',
+    id: 'biz_sub_account_operate',
     action: 'update',
     resourceType: 'sub_account',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_DELETE_SUB_ACCOUNT]: {
-    id: 'biz_sub_account_secret_operate',
+    id: 'biz_sub_account_operate',
     action: 'delete',
     resourceType: 'sub_account',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_UPDATE_SECONDARY_ACCOUNT]: {
-    id: 'account_edit',
+    id: 'biz_account_operate',
     action: 'update',
     resourceType: 'account',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_CREATE_SECONDARY_ACCOUNT]: {
-    id: 'account_edit',
+    id: 'biz_account_operate',
     action: 'create',
     resourceType: 'account',
-    transform: (definition, relation) =>
-      basicTransform(definition, relation[0] ? { bk_biz_id: relation[0] as number } : {}),
+    transform: bizTransform,
   },
   [authSymbol.AUTH_DELETE_SECONDARY_ACCOUNT]: {
-    id: 'account_edit',
+    id: 'biz_account_operate',
     action: 'delete',
     resourceType: 'account',
-    transform: (definition, relation) =>
-      basicTransform(definition, relation[0] ? { bk_biz_id: relation[0] as number } : {}),
+    transform: bizTransform,
   },
 });

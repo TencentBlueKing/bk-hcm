@@ -9,9 +9,13 @@ import {
   AUTH_CREATE_SUB_ACCOUNT_SECRET,
   AUTH_UPDATE_SUB_ACCOUNT_SECRET,
   AUTH_DELETE_SUB_ACCOUNT_SECRET,
+  AUTH_UPDATE_SUB_ACCOUNT,
+  AUTH_DELETE_SUB_ACCOUNT,
 } from '@/constants/auth-symbols';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
+import BusinessValue from '@/components/display-value/business-value.vue';
+import DatetimeValue from '@/components/display-value/datetime-value.vue';
 import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/children/secret-action-dialog/index.vue';
 import type { ICloudSecretItem, SecretActionType } from '@/views/cloud-account-manage/cloud-secret/typings';
 
@@ -199,7 +203,13 @@ const formatTime = (time?: string) => {
       <div class="detail-header">
         <span class="title">三级账号详情</span>
         <div class="header-actions">
-          <bk-button @click="handleDelete">删除</bk-button>
+          <hcm-auth
+            v-if="accountStore.bizs"
+            :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            v-slot="{ noPerm }"
+          >
+            <bk-button :disabled="noPerm || rowData?.operable === false" @click="handleDelete">删除</bk-button>
+          </hcm-auth>
         </div>
       </div>
     </template>
@@ -208,7 +218,15 @@ const formatTime = (time?: string) => {
         <div class="info-card">
           <div class="card-header">
             <span class="card-title">基本信息</span>
-            <bk-button theme="primary" size="small" outline @click="handleEdit">编辑</bk-button>
+            <hcm-auth
+              v-if="accountStore.bizs"
+              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" text :disabled="noPerm || rowData.operable === false" @click="handleEdit">
+                编辑
+              </bk-button>
+            </hcm-auth>
           </div>
           <div class="card-body info-grid">
             <div class="info-item">
@@ -224,16 +242,12 @@ const formatTime = (time?: string) => {
               <span class="info-value">{{ rowData.name || '--' }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">管理业务：</span>
-              <span class="info-value">--</span>
-            </div>
-            <div class="info-item">
               <span class="info-label">三级账号ID：</span>
               <span class="info-value">{{ rowData.cloud_id || '--' }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">所属业务：</span>
-              <span class="info-value">--</span>
+              <BusinessValue :value="rowData.bk_biz_ids" />
             </div>
             <div class="info-item">
               <span class="info-label">账号邮箱：</span>
@@ -241,7 +255,7 @@ const formatTime = (time?: string) => {
             </div>
             <div class="info-item">
               <span class="info-label">创建时间：</span>
-              <span class="info-value">{{ formatTime(rowData.cloud_created_at) || '--' }}</span>
+              <DatetimeValue :value="rowData.cloud_created_at" />
             </div>
             <div class="info-item">
               <span class="info-label">手机号：</span>
@@ -249,7 +263,7 @@ const formatTime = (time?: string) => {
             </div>
             <div class="info-item">
               <span class="info-label">更新时间：</span>
-              <span class="info-value">{{ formatTime(rowData.updated_at) || '--' }}</span>
+              <DatetimeValue :value="rowData.updated_at" />
             </div>
             <div class="info-item">
               <span class="info-label">负责人：</span>
