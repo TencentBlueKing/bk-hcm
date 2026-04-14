@@ -12,6 +12,12 @@ import AccountFormSideslider from '../account-form-sideslider/index.vue';
 import AccountCreateSideslider from '@/views/cloud-account-manage/tertiary-account/children/account-create-sideslider/index.vue';
 import type { ModelProperty } from '@/model/typings';
 import type { DisplayType } from '@/components/display-value/typings';
+import {
+  AUTH_UPDATE_SECONDARY_ACCOUNT,
+  AUTH_CREATE_SECONDARY_ACCOUNT,
+  AUTH_DELETE_SECONDARY_ACCOUNT,
+} from '@/constants/auth-symbols';
+import { useAccountStore } from '@/store/account';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -30,6 +36,7 @@ const emit = defineEmits<{
 
 // Store 和 Hooks
 const cloudAccountStore = useCloudAccountStore();
+const accountStore = useAccountStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
 const router = useRouter();
@@ -280,7 +287,15 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
         <template #header>
           <div class="card-header btw">
             <span class="card-title">基本信息</span>
-            <bk-button theme="primary" outline size="small" @click="handleEditBaseInfo">编辑</bk-button>
+            <hcm-auth
+              v-if="getBizsId()"
+              :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" outline size="small" :disabled="noPerm" @click="handleEditBaseInfo">
+                编辑
+              </bk-button>
+            </hcm-auth>
           </div>
         </template>
         <div class="info-grid">
@@ -318,10 +333,15 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
         <template #header>
           <div class="card-header">
             <span class="card-title">资源密钥</span>
-            <bk-button theme="primary" text class="add-btn" @click="handleAddSecret">
-              <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
-              录入密钥
-            </bk-button>
+            <hcm-auth
+              :sign="{ type: AUTH_CREATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" text class="add-btn" :disabled="noPerm" @click="handleAddSecret">
+                <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
+                录入密钥
+              </bk-button>
+            </hcm-auth>
           </div>
         </template>
         <bk-loading :loading="secretLoading">
@@ -352,10 +372,27 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
             </bk-table-column>
             <bk-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
-                <bk-button theme="primary" text class="mr8" @click="handleEditSecret(row)">编辑</bk-button>
-                <bk-button theme="danger" text :disabled="row.status === 'normal'" @click="handleDeleteSecret(row)">
-                  删除
-                </bk-button>
+                <hcm-auth
+                  :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+                  v-slot="{ noPerm }"
+                >
+                  <bk-button theme="primary" text class="mr8" :disabled="noPerm" @click="handleEditSecret(row)">
+                    编辑
+                  </bk-button>
+                </hcm-auth>
+                <hcm-auth
+                  :sign="{ type: AUTH_DELETE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+                  v-slot="{ noPerm }"
+                >
+                  <bk-button
+                    theme="danger"
+                    text
+                    :disabled="row.status === 'normal' || noPerm"
+                    @click="handleDeleteSecret(row)"
+                  >
+                    删除
+                  </bk-button>
+                </hcm-auth>
               </template>
             </bk-table-column>
           </bk-table>

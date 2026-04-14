@@ -40,6 +40,7 @@ const formRules = {
   name: [{ required: true, message: '请输入三级账号名称', trigger: 'blur' }],
   managers: [{ required: true, message: '请选择负责人', trigger: 'change', type: 'array' }],
   bk_biz_id: [{ required: true, message: '请选择所属业务', trigger: 'change' }],
+  permission_template: [{ required: true, message: '请选择权限模版', trigger: 'change', type: 'array' }],
 };
 
 watch(
@@ -135,7 +136,7 @@ const parentAccountDisplay = () => {
             <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" clearable />
           </bk-form-item>
 
-          <bk-form-item label="权限模版" required>
+          <bk-form-item label="权限模版" property="permission_template" required>
             <bk-select v-model="formData.permission_template" placeholder="请选择" multiple></bk-select>
           </bk-form-item>
 

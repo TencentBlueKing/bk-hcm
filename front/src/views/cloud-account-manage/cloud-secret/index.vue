@@ -50,6 +50,7 @@ const fetchList = async () => {
     const requestParams: ISubAccountSecretParams = {
       page: getPageParams(pagination, sortParams.value),
     };
+    condition.value = searchQs.get(route.query, {});
 
     const filterRules = transformSimpleCondition(condition.value, searchFields.value);
     if (filterRules && filterRules.rules && filterRules.rules.length > 0) {
@@ -97,15 +98,17 @@ const fetchList = async () => {
 watch(
   () => route.query,
   async (query) => {
-    condition.value = searchQs.get(query, {});
+    // 设置分页
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
+
+    // 排序参数
     sortParams.value = {
       sort: (query.sort || 'cloud_created_at') as string,
       order: (query.order || 'DESC') as string,
     };
 
-    // 判断是否只是分页/排序变化（不需要重新全量数据）
+    // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
     const newCondition = searchQs.get(query, {});
     const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
     const isRefresh = query._t !== undefined;
@@ -139,11 +142,12 @@ const handleReset = () => {
 const handleViewDetails = (row: ICloudSecretItem) => {
   currentSecret.value = row;
   showDetailSlider.value = true;
+  // 将 id 写入 URL query，支持分享/刷新/浏览器后退
   router.replace({ query: { ...route.query, id: row.id, _t: undefined } });
 };
 
 watch(showDetailSlider, (val) => {
-  if (!val && route.query.id && route.query.type === 'cloud-secret') {
+  if (!val && route.query.id) {
     const query = { ...route.query };
     delete query.id;
     router.replace({ query });
@@ -153,10 +157,6 @@ watch(showDetailSlider, (val) => {
 watch(
   () => route.query.id,
   async (id) => {
-    // 仅在当前 tab 为云密钥时处理 id，避免跳转到其他 tab 时被本组件拦截
-    if (route.query.type !== 'cloud-secret') {
-      return;
-    }
     if (!id) {
       showDetailSlider.value = false;
       currentSecret.value = null;
