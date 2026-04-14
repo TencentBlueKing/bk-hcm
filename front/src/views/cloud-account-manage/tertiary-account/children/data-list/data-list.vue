@@ -146,7 +146,11 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <hcm-auth :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+          <hcm-auth
+            v-if="accountStore.bizs"
+            :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            v-slot="{ noPerm }"
+          >
             <bk-button
               theme="primary"
               text
@@ -156,7 +160,11 @@ const getColumnRender = (column: ModelPropertyColumn) => {
               编辑
             </bk-button>
           </hcm-auth>
-          <hcm-auth :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+          <hcm-auth
+            v-if="accountStore.bizs"
+            :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            v-slot="{ noPerm }"
+          >
             <bk-button
               theme="primary"
               text

@@ -121,19 +121,15 @@ const baseInfoFields = computed<Array<{ label: string; value: any; property: Mod
     },
     {
       label: '管理业务',
-      value: null,
-      property: { id: 'manage_biz', name: '管理业务', type: 'string' },
+      value: currentRowData.value?.bk_biz_id,
+      property: { id: 'bk_biz_id', name: '管理业务', type: 'business' },
     },
     {
       label: '二级账号名称',
       value: currentRowData.value?.name,
       property: { id: 'name', name: '二级账号名称', type: 'string' },
     },
-    {
-      label: '运营产品',
-      value: null,
-      property: { id: 'product', name: '运营产品', type: 'string' },
-    },
+
     {
       label: '二级账号ID',
       value: currentRowData.value?.extension?.cloud_main_account_id,
