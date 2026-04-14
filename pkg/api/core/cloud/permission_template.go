@@ -32,7 +32,7 @@ type PermissionTemplateExtension interface {
 // TCloudPermissionTemplateListExt defines TCloud-specific filter fields for biz-scoped permission template
 // join list. Used in data-service request extension JSON and in DAO join filter options (same shape).
 // CloudMainAccountIDs is resolved to account_ids in cloud-server and NOT forwarded to data-service.
-// CloudSubAccountIDs is forwarded to data-service for sub_account JOIN filtering.
+// CloudSubAccountIDs matches sub_account.cloud_id (UIN string) and is forwarded to data-service.
 type TCloudPermissionTemplateListExt struct {
 	CloudMainAccountIDs []string `json:"cloud_main_account_ids" validate:"omitempty,max=500,dive,lte=255"`
 	CloudSubAccountIDs  []string `json:"cloud_sub_account_ids" validate:"omitempty,max=500,dive,lte=255"`

@@ -83,9 +83,12 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 	req *cloudserver.ListBizPermissionTemplateReq) (*cloudserver.BizPermissionTemplateListResult, error) {
 
 	ext := new(corecloud.TCloudPermissionTemplateListExt)
-	if err := json.Unmarshal([]byte(req.Extension), ext); err != nil {
-		return nil, fmt.Errorf("unmarshal tcloud extension failed: %w", err)
+	if !req.Extension.IsEmpty() {
+		if err := json.Unmarshal([]byte(req.Extension), ext); err != nil {
+			return nil, fmt.Errorf("unmarshal tcloud extension failed: %w", err)
+		}
 	}
+
 	accountIDs, err := getAccountIDs(kt, svc.client, bizID, ext.CloudMainAccountIDs)
 	if err != nil {
 		return nil, err

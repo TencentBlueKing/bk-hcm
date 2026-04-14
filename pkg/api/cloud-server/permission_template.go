@@ -23,18 +23,18 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/errf"
-	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/criteria/validator"
+	tabletypes "hcm/pkg/dal/table/types"
 )
 
 // ListBizPermissionTemplateReq defines the cloud-server request for listing business permission templates.
 type ListBizPermissionTemplateReq struct {
-	CloudIDs  []string               `json:"cloud_ids" validate:"omitempty,max=500"`
-	Names     []string               `json:"names" validate:"omitempty,max=500"`
-	Extension tabletypes.JsonField   `json:"extension,omitempty"`
-	Creator   string                 `json:"creator" validate:"omitempty,lte=64"`
-	Reviser   string                 `json:"reviser" validate:"omitempty,lte=64"`
-	Page      *core.BasePage         `json:"page" validate:"required"`
+	CloudIDs  []string             `json:"cloud_ids" validate:"omitempty,max=500"`
+	Names     []string             `json:"names" validate:"omitempty,max=500"`
+	Extension tabletypes.JsonField `json:"extension,omitempty"`
+	Creator   string               `json:"creator" validate:"omitempty,lte=64"`
+	Reviser   string               `json:"reviser" validate:"omitempty,lte=64"`
+	Page      *core.BasePage       `json:"page" validate:"required"`
 }
 
 // Validate validates ListBizPermissionTemplateReq.
@@ -53,9 +53,9 @@ func (req *ListBizPermissionTemplateReq) Validate() error {
 // BizPermissionTemplateDetail defines one row in the biz-scoped permission template list response.
 type BizPermissionTemplateDetail struct {
 	corecloud.BasePermissionTemplate `json:",inline"`
-	CloudAccountID                   string                                     `json:"cloud_account_id"`
-	PolicyLibraryName                string                                     `json:"policy_library_name"`
-	AssociatedSubAccountCount        int64                                      `json:"associated_sub_account_count"`
+	CloudAccountID                   string                                       `json:"cloud_account_id"`
+	PolicyLibraryName                string                                       `json:"policy_library_name"`
+	AssociatedSubAccountCount        int64                                        `json:"associated_sub_account_count"`
 	Extension                        *corecloud.TCloudPermissionTemplateExtension `json:"extension"`
 }
 

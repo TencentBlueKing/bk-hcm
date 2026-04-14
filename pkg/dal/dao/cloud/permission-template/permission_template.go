@@ -303,22 +303,29 @@ func (dao *PermissionTemplateDao) ListJoinSubAccount(kt *kit.Kit,
 		return &types.ListPermissionTmplJoinDetails{Count: count}, nil
 	}
 
+	// associated_sub_account_count 是内层 SELECT 中关联子查询计算的别名，无法在同层
+	// ORDER BY 中直接引用，因此将内层查询包装为派生表（tmp），在外层统一处理
+	sortCol := permTmplJoinSortExpr(opt.Page.Sort)
 	pageExpr, err := types.PageSQLExpr(opt.Page, &types.PageSQLOption{
-		Sort: types.SortOption{Sort: "pt.id", ForceOverlap: true},
+		Sort: types.SortOption{Sort: sortCol, ForceOverlap: true},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	selectSQL := fmt.Sprintf(
+	innerSQL := fmt.Sprintf(
 		`SELECT pt.*,
 			(SELECT COUNT(*) FROM %s AS sa
 				WHERE JSON_CONTAINS(sa.permission_template_ids, JSON_QUOTE(pt.id))) AS associated_sub_account_count
 		FROM %s AS pt
-		%s %s`,
+		%s`,
 		table.SubAccountTable,
 		table.PermissionTemplateTable,
-		whereSQL, pageExpr,
+		whereSQL,
+	)
+	selectSQL := fmt.Sprintf(
+		`SELECT * FROM (%s) AS tmp %s`,
+		innerSQL, pageExpr,
 	)
 
 	details := make([]types.PermissionTmplJoinRow, 0)
@@ -421,11 +428,27 @@ func buildPermTmplExtWhereForTCloud(whereExprs []string, args map[string]interfa
 
 	if len(tc.CloudSubAccountIDs) > 0 {
 		whereExprs = append(whereExprs,
-			fmt.Sprintf(`EXISTS (SELECT 1 FROM %s AS sa WHERE sa.account_id = pt.account_id
-				AND sa.vendor = pt.vendor AND sa.cloud_id IN (:cloud_sub_account_ids))`,
+			fmt.Sprintf(`EXISTS (SELECT 1 FROM %s AS sa WHERE sa.account_id = pt.account_id`+
+				` AND sa.vendor = pt.vendor AND sa.cloud_id IN (:cloud_sub_account_ids)`+
+				` AND JSON_CONTAINS(sa.permission_template_ids, JSON_QUOTE(pt.id)))`,
 				table.SubAccountTable))
 		args["cloud_sub_account_ids"] = tc.CloudSubAccountIDs
 	}
 
 	return whereExprs, nil
+}
+
+// permTmplJoinSortExpr maps API page.sort to an ORDER BY column for ListJoinSubAccount.
+// associated_sub_account_count is resolved after the inner subquery; pt.id is the stable fallback.
+func permTmplJoinSortExpr(apiSort string) string {
+	switch apiSort {
+	case "created_at":
+		return "created_at"
+	case "updated_at":
+		return "updated_at"
+	case "associated_sub_account_count":
+		return "associated_sub_account_count"
+	default:
+		return "id"
+	}
 }
