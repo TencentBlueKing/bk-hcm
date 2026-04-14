@@ -39,6 +39,7 @@ func InitImageService(c *capability.Capability) {
 
 	h.Add("GetImage", http.MethodGet, "/vendors/{vendor}/images/{id}", svc.RetrieveImage)
 	h.Add("ListImage", http.MethodPost, "/images/list", svc.ListImage)
+	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", svc.ListImageExt)
 
 	h.Add("TCloudQueryImage", http.MethodPost, "/vendors/tcloud/images/query_from_cloud", svc.TCloudQueryImage)
 	h.Add("TCLoudBizQueryImage", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud",

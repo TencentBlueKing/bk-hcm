@@ -52,7 +52,10 @@ POST /api/v1/cloud/cos/buckets/create
 ```json
 {
   "code": 0,
-  "message": "ok"
+  "message": "ok",
+  "data": {
+    "cloud_name": "xxxx"
+  }
 }
 ```
 
@@ -62,4 +65,10 @@ POST /api/v1/cloud/cos/buckets/create
 |---------|--------|------|
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
+| data	  | object array | 响应数据 |
 
+#### data
+
+| 参数名称    | 参数类型 | 描述            |
+|------------|--------|-----------------|
+| cloud_name | string | 云厂商的存储桶名称 |

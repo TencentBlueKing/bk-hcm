@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -105,7 +106,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			opt.LoadBalancerID, lb.ID)
 	}
 	// detail 状态检查
-	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
+	detailList, err := actionflow.ListTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -129,7 +130,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 	for i := range ruleCheckResult.Mismatch {
 		mismatch := ruleCheckResult.Mismatch[i]
 		ids := []string{mismatch.DetailID}
-		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailFailed, nil, mismatch.Error)
+		err = actionflow.BatchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailFailed, nil, mismatch.Error)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s, err: %v, detail: %s, rid: %s",
 				enumor.TaskDetailFailed, err, mismatch.DetailID, asyncKit.Rid)
@@ -146,7 +147,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			CloudID: exists.Rule.CloudID,
 		}
 		reason := errors.New("rule exists, skip")
-		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailSuccess, createResult, reason)
+		err = actionflow.BatchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailSuccess, createResult, reason)
 		if err != nil {
 			logs.Errorf("fail to set detail to success, err: %v, detail: %s, rid: %s",
 				err, exists.DetailID, asyncKit.Rid)
@@ -173,7 +174,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 	}
 
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt, nonExistIds, enumor.TaskDetailRunning); err != nil {
+	if err := actionflow.BatchUpdateTaskDetailState(kt, nonExistIds, enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update detail to running, err: %v, detail ids: %s, rid: %s",
 			err, nonExistIds, kt.Rid)
 		return fmt.Sprintf("fail to update detail state to running"), err
@@ -181,9 +182,9 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 
 	var lblResp *hclb.BatchCreateResult
 	var createErr error
-	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	rangeMS := [2]uint{actionflow.BatchTaskDefaultRetryDelayMinMS, actionflow.BatchTaskDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
-	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+	for policy.RetryCount() < actionflow.BatchTaskDefaultRetryTimes {
 		switch opt.Vendor {
 		case enumor.TCloud:
 			lblResp, createErr = actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
@@ -192,7 +193,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 		}
 		// 仅在碰到限频错误时进行重试
 		if createErr != nil && strings.Contains(createErr.Error(), constant.TCloudLimitExceededErrCode) {
-			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+			if policy.RetryCount()+1 < actionflow.BatchTaskDefaultRetryTimes {
 				// 	非最后一次重试，继续sleep
 				logs.Errorf("call tcloud reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
 					policy.RetryCount(), createErr, kt.Rid)
@@ -207,7 +208,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 	if createErr != nil {
 		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, req: %+v, rid: %s",
 			createErr, ruleCreateReq, kt.Rid)
-		err := batchUpdateTaskDetailResultState(kt, nonExistIds, enumor.TaskDetailFailed, lblResp, createErr)
+		err := actionflow.BatchUpdateTaskDetailResultState(kt, nonExistIds, enumor.TaskDetailFailed, lblResp, createErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to failed after cloud operation, err: %v, rid: %s",
 				err, kt.Rid)
@@ -218,7 +219,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 	for i := range nonExists {
 		detailID := []string{nonExists[i].DetailID}
 		var ret = &core.CloudCreateResult{CloudID: lblResp.SuccessCloudIDs[i]}
-		err := batchUpdateTaskDetailResultState(kt, detailID, enumor.TaskDetailSuccess, ret, nil)
+		err := actionflow.BatchUpdateTaskDetailResultState(kt, detailID, enumor.TaskDetailSuccess, ret, nil)
 		if err != nil {
 			logs.Errorf("fail to set detail to success after cloud operation, err: %v, rid: %s",
 				err, kt.Rid)

@@ -54,9 +54,30 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64, isB
 		return err
 	}
 
+	updateIDs := make([]string, 0)
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleNotEqual("bk_biz_id", bizID),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		listResp, err := cli.Global.NetworkInterface.List(kt, req)
+		if err != nil {
+			logs.Errorf("list network_interface failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+		for _, detail := range listResp.Details {
+			updateIDs = append(updateIDs, detail.ID)
+		}
+	}
+	if len(updateIDs) == 0 {
+		return nil
+	}
 	// assign
 	req := &datacloudniproto.NetworkInterfaceCommonInfoBatchUpdateReq{
-		IDs:     ids,
+		IDs:     updateIDs,
 		BkBizID: bizID,
 	}
 	if err := cli.Global.NetworkInterface.BatchUpdateNICommonInfo(kt, req); err != nil {

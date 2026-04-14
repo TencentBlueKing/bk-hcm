@@ -51,5 +51,15 @@ func InitInstanceTypeService(c *capability.Capability) {
 	// 资源下。
 	h.Add("ListInRes", http.MethodPost, "/instance_types/list", svc.ListInRes)
 
+	// AWS AssumeRole cross-account data pass-through (resource scope).
+	h.Add("ListAssumeRoleInstanceTypeInRes", http.MethodPost,
+		"/vendors/aws/assume_role/instance_types/list", svc.ListAssumeRoleInstanceTypeInRes)
+	h.Add("ListAssumeRoleInstanceInRes", http.MethodPost,
+		"/vendors/aws/assume_role/instances/list", svc.ListAssumeRoleInstanceInRes)
+	h.Add("ListAssumeRoleMetricDataInRes", http.MethodPost,
+		"/vendors/aws/assume_role/cloudwatch/metric_data/list", svc.ListAssumeRoleMetricDataInRes)
+	h.Add("ListAssumeRoleMetricsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/cloudwatch/metrics/list", svc.ListAssumeRoleMetricsInRes)
+
 	h.Load(c.WebService)
 }

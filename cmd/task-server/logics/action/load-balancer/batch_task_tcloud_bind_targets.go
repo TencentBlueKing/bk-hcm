@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -90,7 +91,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
-	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
+	detailList, err := actionflow.ListTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -105,7 +106,8 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 		}
 	}
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(asyncKit, opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(asyncKit, opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		return fmt.Sprintf("fail to update detail to running"), err
 	}
 
@@ -116,16 +118,16 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(asyncKit, opt.ManagementDetailIDs, targetState, nil, taskErr)
+		err = actionflow.BatchUpdateTaskDetailResultState(asyncKit, opt.ManagementDetailIDs, targetState, nil, taskErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, asyncKit.Rid)
 		}
 	}()
 
-	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	rangeMS := [2]uint{actionflow.BatchTaskDefaultRetryDelayMinMS, actionflow.BatchTaskDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
-	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+	for policy.RetryCount() < actionflow.BatchTaskDefaultRetryTimes {
 		switch opt.Vendor {
 		case enumor.TCloud:
 			err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(asyncKit,
@@ -136,7 +138,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 
 		// 仅在碰到限频错误时进行重试
 		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
-			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+			if policy.RetryCount()+1 < actionflow.BatchTaskDefaultRetryTimes {
 				// 	非最后一次重试，继续sleep
 				logs.Errorf("call cloud api reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
 					policy.RetryCount(), err, asyncKit.Rid)

@@ -31,6 +31,7 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -50,7 +51,7 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 	accountIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]tablesubaccount.Table, 0, len(req.Items))
 		for _, item := range req.Items {
-			models = append(models, tablesubaccount.Table{
+			model := tablesubaccount.Table{
 				CloudID:     item.CloudID,
 				Name:        item.Name,
 				Vendor:      item.Vendor,
@@ -60,10 +61,21 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 				Extension:   tabletype.JsonField(item.Extension),
 				Managers:    item.Managers,
 				BkBizIDs:    item.BkBizIDs,
+				Email:       item.Email,
+				PhoneNum:    item.PhoneNum,
+				CountryCode: item.CountryCode,
 				Memo:        item.Memo,
 				Creator:     cts.Kit.User,
 				Reviser:     cts.Kit.User,
-			})
+			}
+
+			// 处理 CloudCreatedAt 时间转换
+			if item.CloudCreatedAt != nil {
+				cloudCreatedAt := tabletype.Time(cvt.PtrToVal(item.CloudCreatedAt))
+				model.CloudCreatedAt = cvt.ValToPtr(cloudCreatedAt)
+			}
+
+			models = append(models, model)
 		}
 		ids, err := svc.dao.SubAccount().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {

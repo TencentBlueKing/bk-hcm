@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import type { ActionItemType } from '../typing';
 
 import { AngleDown } from 'bkui-vue/lib/icon';
@@ -12,9 +11,7 @@ interface IProps {
 
 defineProps<IProps>();
 
-const isDropdownMenuShow = ref(false);
 const handleDropdownItemClick = (action: ActionItemType) => {
-  isDropdownMenuShow.value = false;
   action.handleClick();
 };
 </script>
@@ -28,22 +25,18 @@ const handleDropdownItemClick = (action: ActionItemType) => {
     <!-- dropdown -->
     <bk-dropdown
       v-if="action.type === 'dropdown'"
-      :is-show="isDropdownMenuShow"
-      v-bind="action.displayProps"
       :disabled="disabled"
-      trigger="manual"
-      :popover-options="{ forceClickoutside: true }"
-      @hide="isDropdownMenuShow = false"
+      :popover-options="{ clickContentAutoHide: true, hideIgnoreReference: true }"
     >
-      <bk-button :disabled="disabled" @click="isDropdownMenuShow = true">
+      <bk-button :disabled="disabled">
         {{ action.label }}
         <angle-down class="f26" />
       </bk-button>
       <template #content>
-        <bk-dropdown-menu class="dropdown-menu" @click="isDropdownMenuShow = false">
+        <bk-dropdown-menu class="dropdown-menu">
           <template v-for="childAction in action.children" :key="childAction.value">
             <bk-dropdown-item v-if="childAction.render" class="dropdown-item">
-              <component :is="childAction.render()" :is-in-dropdown="true" @click="isDropdownMenuShow = false" />
+              <component :is="childAction.render()" :is-in-dropdown="true" />
             </bk-dropdown-item>
             <hcm-auth v-else-if="childAction.authSign" :sign="childAction.authSign()" v-slot="{ noPerm }">
               <bk-dropdown-item class="dropdown-item">

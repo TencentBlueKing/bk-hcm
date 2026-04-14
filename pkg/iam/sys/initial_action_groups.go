@@ -97,6 +97,17 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizTaskManagementOperate},
 					},
 				},
+				{
+					Name:   "云账号",
+					NameEn: "Cloud Account",
+					Actions: []client.ActionWithID{
+						{ID: BizAccountOperate},
+						{ID: BizSubAccountOperate},
+						{ID: BizSubAccountSecretOperate},
+						{ID: BizPermissionTemplateOperate},
+						{ID: BizPermissionPolicyLibraryOperate},
+					},
+				},
 			},
 		},
 	}
@@ -200,6 +211,13 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: CosBucketCreate},
 					{ID: CosBucketFind},
 					{ID: CosBucketDelete},
+				},
+			},
+			{
+				Name:   "云资源",
+				NameEn: "Cloud Resource",
+				Actions: []client.ActionWithID{
+					{ID: CloudVendorConfig},
 				},
 			},
 		},

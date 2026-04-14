@@ -10,20 +10,20 @@ const props = defineProps<{
   policyData: IPermissionPolicyItem | null;
 }>();
 
-// const emit = defineEmits<{
-//   'apply-to-account': [row: IPermissionPolicyItem];
-// }>();
+const emit = defineEmits<{
+  'apply-to-account': [row: IPermissionPolicyItem];
+}>();
 
 // 基本信息字段
 const baseInfoFields = computed(() => {
   if (!props.policyData) return [];
   return [
-    { label: '权限策略库名称', value: props.policyData.name, id: 'name' },
-    { label: '关联二级账号数', value: props.policyData.associated_account_count, id: 'associated_account_count ' },
-    { label: '创建人', value: `${props.policyData.creator}（平台）`, id: 'creator' },
-    { label: '创建时间', value: props.policyData.created_at, id: 'created_at' },
-    { label: '更新人', value: props.policyData.reviser, id: 'reviser' },
-    { label: '更新时间', value: props.policyData.updated_at, id: 'updated_at' },
+    { label: '权限策略库名称', value: props.policyData.name, id: 'name', type: 'string' },
+    { label: '关联二级账号数', value: props.policyData.associated_account_count, id: 'associated_account_count' },
+    { label: '创建人', value: `${props.policyData.creator}`, id: 'creator', type: 'user' },
+    { label: '创建时间', value: props.policyData.created_at, id: 'created_at', type: 'datetime' },
+    { label: '更新人', value: props.policyData.reviser, id: 'reviser', type: 'user' },
+    { label: '更新时间', value: props.policyData.updated_at, id: 'updated_at', type: 'datetime' },
   ];
 });
 
@@ -35,9 +35,9 @@ const handleGoToAccount = () => {
 };
 
 // 应用到二级账号
-// const handleApplyToAccount = () => {
-//   emit('apply-to-account', props.policyData);
-// };
+const handleApplyToAccount = () => {
+  emit('apply-to-account', props.policyData);
+};
 </script>
 
 <template>
@@ -48,7 +48,7 @@ const handleGoToAccount = () => {
           权限策略库详情
           <span class="name">| {{ props.policyData.name }}</span>
         </div>
-        <!-- <bk-button theme="primary" @click="handleApplyToAccount" outline>应用到二级账号</bk-button> -->
+        <bk-button theme="primary" @click="handleApplyToAccount" outline>应用到二级账号</bk-button>
       </div>
     </template>
     <template #default>
@@ -59,13 +59,16 @@ const handleGoToAccount = () => {
             <div v-for="field in baseInfoFields" :key="field.id" class="info-item">
               <span class="info-label">{{ field.label }}：</span>
               <!--区分是不是关联二级账号数-->
-              <span class="info-value" v-if="field.id === 'related_account_count' && field.value">
+              <span class="info-value" v-if="field.id === 'associated_account_count'">
                 <div class="relate-account-count" @click="handleGoToAccount">
-                  <span class="num">{{ field.value }}</span>
-                  <i class="hcm-icon bkhcm-icon-jump-fill" v-if="field.value" />
+                  <template v-if="field.value">
+                    <span class="num">{{ field.value }}</span>
+                    <i class="hcm-icon bkhcm-icon-jump-fill" />
+                  </template>
+                  <span v-else>0</span>
                 </div>
               </span>
-              <span class="info-value" v-else>{{ field.value || '--' }}</span>
+              <display-value v-else class="info-value" :property="field" :value="field.value" />
             </div>
           </div>
         </bk-card>
@@ -147,8 +150,10 @@ const handleGoToAccount = () => {
         word-break: break-all;
 
         .relate-account-count {
-          color: #3a84ff;
-          cursor: pointer;
+          .num {
+            color: #3a84ff;
+            cursor: pointer;
+          }
         }
       }
     }

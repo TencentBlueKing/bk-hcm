@@ -44,6 +44,10 @@ var ColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
 	{Column: "bk_biz_ids", NamedC: "bk_biz_ids", Type: enumor.Json},
+	{Column: "email", NamedC: "email", Type: enumor.String},
+	{Column: "phone_num", NamedC: "phone_num", Type: enumor.String},
+	{Column: "country_code", NamedC: "country_code", Type: enumor.String},
+	{Column: "cloud_created_at", NamedC: "cloud_created_at", Type: enumor.Time},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -73,6 +77,14 @@ type Table struct {
 	Managers types.StringArray `db:"managers" json:"managers"`
 	// BkBizIDs 业务ID
 	BkBizIDs types.Int64Array `db:"bk_biz_ids" json:"bk_biz_ids"`
+	// Email 邮箱：三级账号的邮箱
+	Email *string `db:"email" json:"email" validate:"omitempty,lte=64"`
+	// PhoneNum 手机号
+	PhoneNum *string `db:"phone_num" json:"phone_num" validate:"omitempty,lte=64"`
+	// CountryCode 手机区域代码
+	CountryCode *string `db:"country_code" json:"country_code" validate:"omitempty,lte=16"`
+	// CloudCreatedAt 云上创建时间
+	CloudCreatedAt *types.Time `db:"cloud_created_at" json:"cloud_created_at"`
 	// Memo 账号信息备注
 	Memo *string `db:"memo" json:"memo"`
 	// Creator 创建者

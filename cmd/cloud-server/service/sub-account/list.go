@@ -20,15 +20,18 @@
 package subaccount
 
 import (
-	"fmt"
-
+	logicaccount "hcm/cmd/cloud-server/logics/account"
 	"hcm/pkg/api/core"
+	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
+	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -82,7 +85,6 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -94,7 +96,6 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 		logs.Errorf("list sub account auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	if noPermFlag {
 		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
 	}
@@ -104,9 +105,7 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 		logs.Errorf("expression append vendor rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	req.Filter = expr
-
 	switch vendor {
 	case enumor.TCloud:
 		return svc.client.DataService().TCloud.SubAccount.ListExt(cts.Kit, req)
@@ -119,6 +118,191 @@ func (svc *service) listSubAccountExt(cts *rest.Contexts, authHandler handler.Li
 	case enumor.Gcp:
 		return svc.client.DataService().Gcp.SubAccount.ListExt(cts.Kit, req)
 	default:
-		return nil, fmt.Errorf("vendor: %s not support", vendor)
+		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
 	}
+}
+
+// ListBizSubAccountExt list biz sub account with extension.
+func (svc *service) ListBizSubAccountExt(cts *rest.Contexts) (interface{}, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bkBizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	return svc.listBizSubAccountExt(cts, bkBizID)
+}
+
+func (svc *service) listBizSubAccountExt(cts *rest.Contexts, bkBizID int64) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	expr, noPermFlag, err := svc.listBizSubAccountAuthRes(cts, req.Filter)
+	if err != nil {
+		logs.Errorf("list sub account auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
+
+	expr, err = tools.And(expr, tools.EqualExpression("vendor", vendor))
+	if err != nil {
+		logs.Errorf("expression append vendor rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Filter = expr
+
+	return svc.listBizSubAccountExtByVendor(cts, vendor, bkBizID, req)
+}
+
+func convertBizSubAccountExtList[Ext coresubaccount.Extension](svc *service, kt *kit.Kit, bkBizID int64,
+	listResult *dssubaccount.ListExtResult[Ext]) (*coresubaccount.BizSubAccountExtListResult[Ext], error) {
+
+	accountIDs := extractAccountIDsFromSubAccountList(listResult.Details)
+	accountMap, operableMap, err := logicaccount.BatchBuildOperableAndNameMap(
+		kt, svc.client.DataService(), bkBizID, accountIDs,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	accountNameMap := logicaccount.BuildAccountNameMapByAccountMap(accountIDs, accountMap)
+	return &coresubaccount.BizSubAccountExtListResult[Ext]{
+		Count:   listResult.Count,
+		Details: buildBizSubAccountExtDetails(listResult.Details, operableMap, accountNameMap),
+	}, nil
+}
+
+func extractAccountIDsFromSubAccountList[Ext coresubaccount.Extension](
+	details []coresubaccount.SubAccount[Ext]) []string {
+
+	result := make([]string, 0, len(details))
+	for _, item := range details {
+		if item.AccountID == "" {
+			continue
+		}
+
+		result = append(result, item.AccountID)
+	}
+
+	return result
+}
+
+func buildBizSubAccountExtDetails[Ext coresubaccount.Extension](details []coresubaccount.SubAccount[Ext],
+	operableMap map[string]bool, accountNameMap map[string]string,
+) []coresubaccount.BizSubAccountItem[Ext] {
+
+	result := make([]coresubaccount.BizSubAccountItem[Ext], 0, len(details))
+	for _, item := range details {
+		result = append(result, coresubaccount.BizSubAccountItem[Ext]{
+			SubAccount:  item,
+			Operable:    operableMap[item.AccountID],
+			AccountName: accountNameMap[item.AccountID],
+		})
+	}
+
+	return result
+}
+
+func (svc *service) listBizSubAccountExtByVendor(cts *rest.Contexts, vendor enumor.Vendor, bkBizID int64,
+	req *core.ListReq) (interface{}, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		result, err := svc.client.DataService().TCloud.SubAccount.ListExt(cts.Kit, req)
+		if err != nil {
+			return nil, err
+		}
+		return convertBizSubAccountExtList(svc, cts.Kit, bkBizID, result)
+	case enumor.Aws:
+		result, err := svc.client.DataService().Aws.SubAccount.ListExt(cts.Kit, req)
+		if err != nil {
+			return nil, err
+		}
+		return convertBizSubAccountExtList(svc, cts.Kit, bkBizID, result)
+	case enumor.HuaWei:
+		result, err := svc.client.DataService().HuaWei.SubAccount.ListExt(cts.Kit, req)
+		if err != nil {
+			return nil, err
+		}
+		return convertBizSubAccountExtList(svc, cts.Kit, bkBizID, result)
+	case enumor.Azure:
+		result, err := svc.client.DataService().Azure.SubAccount.ListExt(cts.Kit, req)
+		if err != nil {
+			return nil, err
+		}
+		return convertBizSubAccountExtList(svc, cts.Kit, bkBizID, result)
+	case enumor.Gcp:
+		result, err := svc.client.DataService().Gcp.SubAccount.ListExt(cts.Kit, req)
+		if err != nil {
+			return nil, err
+		}
+		return convertBizSubAccountExtList(svc, cts.Kit, bkBizID, result)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
+	}
+}
+
+func (svc *service) listBizSubAccountAuthRes(cts *rest.Contexts, reqFilter *filter.Expression,
+) (*filter.Expression, bool, error) {
+
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, false, err
+	}
+
+	if bizID <= 0 {
+		return nil, false, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Find}, BizID: bizID}
+	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !authorized {
+		return nil, true, nil
+	}
+
+	// 查询管理业务为biz_id的资源类型二级账号ID列表
+	accountIDs, err := logicaccount.ListAccountIDsByBizID(cts.Kit, svc.client.DataService(), bizID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	scopeFilter := tools.ExpressionOr(
+		tools.RuleJSONContains[int64]("bk_biz_ids", bizID),
+		tools.RuleIn("account_id", accountIDs),
+	)
+
+	// 过滤主账号
+	scopeFilter, err = tools.And(scopeFilter, tools.RuleNotEqual("account_type", string(enumor.MainAccount)))
+	if err != nil {
+		return nil, false, err
+	}
+
+	if reqFilter == nil {
+		return scopeFilter, false, nil
+	}
+
+	finalFilter, err := tools.And(scopeFilter, reqFilter)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return finalFilter, false, err
 }

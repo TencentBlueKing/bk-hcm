@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
+import { inject, reactive, Ref, ref, watch } from 'vue';
 import type { IAppliedAccountItem } from '../../typings';
 import { PolicyApplyStatus } from '../../typings';
-import { ENABLE_MOCK, MOCK_APPLIED_ACCOUNTS } from '../../constants';
 import usePage from '@/hooks/use-page';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import ModelInfoDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/info.vue';
 import PolicyDiffDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/diff.vue';
+import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps<{
   policyId: string;
   appliedCount: number;
 }>();
+
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+
+const permissionPolicyStore = usePermissionPolicyStore();
 
 // 表格数据
 const tableData = ref<IAppliedAccountItem[]>([]);
@@ -19,7 +25,6 @@ const { pagination } = usePage();
 
 // 已选账号（用于批量更新）
 const selectedAccounts = ref<IAppliedAccountItem[]>([]);
-const tableRef = ref();
 
 // 模板详情数据
 const modelInfo = reactive({
@@ -50,12 +55,7 @@ const getStatusInfo = (status: PolicyApplyStatus) => statusMap[status] || { text
 const loadAppliedAccounts = async () => {
   isLoading.value = true;
   try {
-    if (ENABLE_MOCK) {
-      tableData.value = [...MOCK_APPLIED_ACCOUNTS];
-      pagination.count = MOCK_APPLIED_ACCOUNTS.length;
-      return;
-    }
-    // TODO: 替换为真实 API
+    const data = await permissionPolicyStore.getAppliedAccountIdsList(currentVendor.value, props.policyId);
     tableData.value = [];
     pagination.count = 0;
   } catch (error) {

@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { inject, Ref, ref, watch } from 'vue';
 import type { ISelectableAccount } from '../../typings';
-import { ENABLE_MOCK, MOCK_SELECTABLE_ACCOUNTS } from '../../constants';
+import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps<{
   policyId: string;
 }>();
 
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+
+const permissionPolicyStore = usePermissionPolicyStore();
+
 // 已选账号列表
-const selectedAccounts = ref<ISelectableAccount[]>([]);
+const selectedAccounts = ref<{ account_id: string }[]>([]);
 
 // 表格数据
-const tableData = ref<ISelectableAccount[]>([]);
+const tableData = ref<{ account_id: string }[]>([]);
 const isLoading = ref(false);
 
 // 表格引用
@@ -21,12 +26,8 @@ const tableRef = ref();
 const loadAccounts = async () => {
   isLoading.value = true;
   try {
-    if (ENABLE_MOCK) {
-      tableData.value = [...MOCK_SELECTABLE_ACCOUNTS];
-      return;
-    }
-    // TODO: 替换为真实 API
-    tableData.value = [];
+    const data = await permissionPolicyStore.getUnappliedAccountIdsList(currentVendor.value, props.policyId);
+    tableData.value = data.map((item) => ({ account_id: item }));
   } catch (error) {
     console.error('加载可选账号列表失败:', error);
     tableData.value = [];
@@ -104,7 +105,7 @@ defineExpose({
       >
         <bk-table-column type="selection" align="center" />
         <bk-table-column label="二级账号" min-width="1000">
-          <template #default="{ row }">{{ row.account_id }} ({{ row.alias }})</template>
+          <template #default="{ row }">{{ row.account_id }}</template>
         </bk-table-column>
       </bk-table>
     </bk-loading>

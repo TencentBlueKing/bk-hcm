@@ -14,7 +14,6 @@ export class TableColumn {
     name: '关联二级账号数',
     index: 1,
     width: 140,
-    sort: true,
   })
   associated_account_count: number;
 

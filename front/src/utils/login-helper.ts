@@ -23,7 +23,10 @@ export const showLoginModal = () => {
 };
 
 export const gotoLoginPage = (url?: string, isLogout = false) => {
+  return;
   const rawUrl = url ?? window.PROJECT_CONFIG.BK_LOGIN_URL;
+  console.log(url, window.PROJECT_CONFIG.BK_LOGIN_URL, 'window.PROJECT_CONFIG.BK_LOGIN_URL');
+  return;
   if (!rawUrl) {
     console.error('The login URL is not configured!');
     return;

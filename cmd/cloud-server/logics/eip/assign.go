@@ -53,8 +53,29 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID uint64, is
 		return err
 	}
 
+	updateIDs := make([]string, 0)
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleNotEqual("bk_biz_id", bizID),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		listResp, err := cli.Global.ListEip(kt, req)
+		if err != nil {
+			logs.Errorf("list eip failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return err
+		}
+		for _, detail := range listResp.Details {
+			updateIDs = append(updateIDs, detail.ID)
+		}
+	}
+	if len(updateIDs) == 0 {
+		return nil
+	}
 	req := &dataproto.EipBatchUpdateReq{
-		IDs:     ids,
+		IDs:     updateIDs,
 		BkBizID: bizID,
 	}
 	_, err := cli.Global.BatchUpdateEip(kt, req)

@@ -56,11 +56,21 @@ type TaskManagementSource string
 // Validate ...
 func (t TaskManagementSource) Validate() error {
 	switch t {
-	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI:
+	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI, TaskManagementSourceWeb:
 		return nil
 	default:
 		return fmt.Errorf("invalid task management source: %s", t)
 	}
+}
+
+// RefineByRequestSource refine task management accoding to request source.
+func (t TaskManagementSource) RefineByRequestSource(rs RequestSourceType) TaskManagementSource {
+	// 当创建任务来源是API时，需要根据kt中的RequestSource区分是前端页面调用还是接口调用
+	if t == TaskManagementSourceAPI && rs == WebCall {
+		return TaskManagementSourceWeb
+	}
+
+	return t
 }
 
 const (
@@ -70,6 +80,8 @@ const (
 	TaskManagementSourceExcel TaskManagementSource = "excel"
 	// TaskManagementSourceAPI is a source indicating that api.
 	TaskManagementSourceAPI TaskManagementSource = "api"
+	// TaskManagementSourceWeb is a source indicating that web.
+	TaskManagementSourceWeb TaskManagementSource = "web"
 )
 
 // TaskManagementResource is task management resource.

@@ -42,6 +42,9 @@ type AwsInstanceType struct {
 	Memory             int64
 	CPU                int64
 	GPU                int64
+	GPUMemory          int64
+	GPUName            string
+	GPUManufacturer    string
 	FPGA               int64
 	NetworkPerformance string
 	DiskSizeInGB       int64

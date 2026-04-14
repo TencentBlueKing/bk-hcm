@@ -35,12 +35,12 @@ const submitLoading = ref(false);
 const baseInfoFields = computed(() => {
   if (!props.policyData) return [];
   return [
-    { label: '策略库名称', value: props.policyData.name },
-    { label: '当前版本', value: 'v3' },
-    { label: '创建人', value: `${props.policyData.creator}（平台）` },
-    { label: '更新人', value: props.policyData.reviser },
-    { label: '创建时间', value: props.policyData.created_at },
-    { label: '更新时间', value: props.policyData.updated_at },
+    { label: '策略库名称', value: props.policyData.name, type: 'string', id: 'name' },
+    { label: '当前版本', value: `v${props.policyData.version}`, type: 'string', id: 'version' },
+    { label: '创建人', value: `${props.policyData.creator}`, type: 'user', id: 'creator' },
+    { label: '更新人', value: props.policyData.reviser, type: 'user', id: 'reviser' },
+    { label: '创建时间', value: props.policyData.created_at, type: 'datetime', id: 'created_at' },
+    { label: '更新时间', value: props.policyData.updated_at, type: 'datetime', id: 'updated_at' },
   ];
 });
 
@@ -124,9 +124,9 @@ watch(
           class="info-card"
         >
           <div class="info-grid">
-            <div v-for="(field, index) in baseInfoFields" :key="index" class="info-item">
+            <div v-for="field in baseInfoFields" :key="field.id" class="info-item">
               <span class="info-label">{{ field.label }}：</span>
-              <span class="info-value">{{ field.value || '--' }}</span>
+              <display-value class="info-value" :property="field" :value="field.value" />
             </div>
           </div>
         </bk-card>

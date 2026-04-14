@@ -51,6 +51,7 @@ func SyncGcpImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, region
 			return err
 		}
 
+		// TODO feature: 因前端查询时未带地域参数，GCP暂时只同步一个地域
 		break
 	}
 

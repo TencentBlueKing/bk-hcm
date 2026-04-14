@@ -75,7 +75,7 @@ func (svc *cosSvc) createTCloudCosBucket(kt *kit.Kit, rawReq json.RawMessage) (a
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if err := svc.client.HCService().TCloud.Cos.CreateCosBucket(kt, req); err != nil {
+	if _, err := svc.client.HCService().TCloud.Cos.CreateCosBucket(kt, req); err != nil {
 		logs.Errorf("create cos bucket failed, err: %v, req: %v, rid: %s", err, converter.PtrToVal(req), kt.Rid)
 		return nil, err
 	}

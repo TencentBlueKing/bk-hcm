@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
 	hsaccount "hcm/pkg/api/hc-service/account"
+	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
@@ -204,4 +205,50 @@ func (a *AccountClient) GetNetworkAccountType(kt *kit.Kit, accountID string) (
 	return common.Request[common.Empty, vpc.DescribeNetworkAccountTypeResponseParams](
 		a.client, http.MethodGet, kt, nil, "accounts/%s/network_type", accountID)
 
+}
+
+// CreateSubAccount create subaccount via TCloud CAM AddUser.
+func (a *AccountClient) CreateSubAccount(kt *kit.Kit, req *hssubaccount.TCloudCreateSubAccountReq,
+) (*hssubaccount.TCloudCreateSubAccountResult, error) {
+
+	return common.Request[hssubaccount.TCloudCreateSubAccountReq, hssubaccount.TCloudCreateSubAccountResult](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/create")
+}
+
+// UpdateSubAccount update subaccount via TCloud CAM UpdateUser.
+func (a *AccountClient) UpdateSubAccount(kt *kit.Kit, req *hssubaccount.TCloudUpdateSubAccountReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudUpdateSubAccountReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/update")
+}
+
+// DeleteSubAccount delete subaccount via TCloud CAM DeleteUser.
+func (a *AccountClient) DeleteSubAccount(kt *kit.Kit, req *hssubaccount.TCloudDeleteSubAccountReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudDeleteSubAccountReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/delete")
+}
+
+// DescribeSafeAuthFlag get subaccount safe auth flag settings via TCloud CAM DescribeSafeAuthFlagColl.
+func (a *AccountClient) DescribeSafeAuthFlag(kt *kit.Kit, req *hssubaccount.TCloudDescribeSafeAuthFlagReq,
+) (*hssubaccount.TCloudDescribeSafeAuthFlagResult, error) {
+
+	return common.Request[hssubaccount.TCloudDescribeSafeAuthFlagReq, hssubaccount.TCloudDescribeSafeAuthFlagResult](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/safe_auth_flag")
+}
+
+// SetMfaFlag set subaccount login protection and sensitive operation protection via TCloud CAM SetMfaFlag.
+func (a *AccountClient) SetMfaFlag(kt *kit.Kit, req *hssubaccount.TCloudSetMfaFlagReq) error {
+	return common.RequestNoResp[hssubaccount.TCloudSetMfaFlagReq](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/set_mfa_flag")
+}
+
+// DescribeSubAccounts query subaccounts by UIN list via TCloud CAM DescribeSubAccounts.
+func (a *AccountClient) DescribeSubAccounts(kt *kit.Kit, req *hssubaccount.TCloudDescribeSubAccountsReq,
+) ([]typeaccount.TCloudSubAccountUser, error) {
+
+	resp, err := common.Request[hssubaccount.TCloudDescribeSubAccountsReq, []typeaccount.TCloudSubAccountUser](
+		a.client, http.MethodPost, kt, req, "/sub_accounts/describe")
+	if err != nil {
+		return nil, err
+	}
+	return *resp, nil
 }

@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -98,7 +99,7 @@ func (act BatchTaskModifyRsWeightAction) Run(kt run.ExecuteKit, params any) (res
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), []string{detailID}, targetState, ret, optErr)
+		err := actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), []string{detailID}, targetState, ret, optErr)
 		if err != nil {
 			logs.Errorf("failed to set detail to [%s] after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)
@@ -118,7 +119,7 @@ func (act BatchTaskModifyRsWeightAction) Run(kt run.ExecuteKit, params any) (res
 func (act BatchTaskModifyRsWeightAction) batchListenerModifyRsWeight(kt *kit.Kit, lbID, detailID string,
 	req *hclb.TCloudBatchModifyRsWeightReq) (*hclb.BatchCreateResult, error) {
 
-	detailList, err := listTaskDetail(kt, []string{detailID})
+	detailList, err := actionflow.ListTaskDetail(kt, []string{detailID})
 	if err != nil {
 		logs.Errorf("failed to query task detail, err: %v, detailID: %s, rid: %s", err, detailID, kt.Rid)
 		return nil, err
@@ -135,7 +136,7 @@ func (act BatchTaskModifyRsWeightAction) batchListenerModifyRsWeight(kt *kit.Kit
 	}
 
 	// 更新任务状态为 running
-	if err = batchUpdateTaskDetailState(kt, []string{detailID}, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt, []string{detailID}, enumor.TaskDetailRunning); err != nil {
 		return nil, fmt.Errorf("failed to update detail to running, detailID: %s, err: %v", detailID, err)
 	}
 

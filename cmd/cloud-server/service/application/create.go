@@ -37,6 +37,10 @@ import (
 	lbtcloud "hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
+	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
+	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
+	deletesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-sub-account"
+	updatesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-sub-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -51,10 +55,12 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -73,6 +79,27 @@ func decodeCommonReqAndValidate(cts *rest.Contexts) (*proto.CreateCommonReq, err
 
 	if err = req.Validate(); err != nil {
 		logs.Errorf("create common request failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func decodeSysCommonReqAndValidate(cts *rest.Contexts) (*proto.SysCreateCommonReq, error) {
+	bytes, err := cts.RequestBody()
+	if err != nil {
+		logs.Errorf("get request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	req := new(proto.SysCreateCommonReq)
+	if err = json.Unmarshal(bytes, req); err != nil {
+		logs.Errorf("unmarshal sys create common req failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		logs.Errorf("sys create common request validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -109,7 +136,9 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult, error) {
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
+	*core.CreateResult, error) {
+
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -123,7 +152,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
 		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
-		applicationType == enumor.AddAccount {
+		applicationType == enumor.AddAccount || applicationType == enumor.OperateSubAccount {
 		bkBizIDs = handler.GetBkBizIDs()
 	}
 	return a.client.DataService().Global.Application.CreateApplication(
@@ -197,6 +226,13 @@ func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
 
 // CreateForAddAccount ...
 func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, error) {
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
+	err := a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	commReq, err := decodeCommonReqAndValidate(cts)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -208,12 +244,42 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 	}
 	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
-	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	return a.create(cts, commReq, handler)
+}
+
+// CreateBizForAddAccount create biz for add account
+func (a *applicationSvc) CreateBizForAddAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.AccountAddReq](cts)
+	if err != nil {
+		return nil, err
+	}
+	if req.BkBizID != bizID {
+		return nil, errf.Newf(errf.InvalidParameter,
+			"path bk_biz_id(%d) does not match request body bk_biz_id(%d)", bizID, req.BkBizID)
+	}
+	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)
 
 	return a.create(cts, commReq, handler)
 }
@@ -427,6 +493,38 @@ func (a *applicationSvc) CreateForCreateLB(cts *rest.Contexts) (interface{}, err
 	return nil, nil
 }
 
+// SysCreateForCreateLB creates a CLB application on behalf of a specified applicant for system-level callers.
+func (a *applicationSvc) SysCreateForCreateLB(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	commReq, err := decodeSysCommonReqAndValidate(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := a.checkApplyResPermission(cts, meta.LoadBalancer); err != nil {
+		return nil, err
+	}
+
+	cts.Kit.User = commReq.Applicant
+	opt := a.getHandlerOption(cts)
+
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromRequestBody[hclb.TCloudLoadBalancerCreateReq](cts)
+		if err != nil {
+			return nil, err
+		}
+		handler := lbtcloud.NewApplicationOfCreateTCloudLB(opt, req)
+		return a.create(cts, &commReq.CreateCommonReq, handler)
+	}
+
+	return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+}
+
 // CreateForCreateMainAccount ...
 func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interface{}, error) {
 	req, err := parseReqFromRequestBody[proto.MainAccountCreateReq](cts)
@@ -473,4 +571,278 @@ func (a *applicationSvc) CreateForUpdateMainAccount(cts *rest.Contexts) (interfa
 	}
 
 	return a.create(cts, commReq, handler)
+}
+
+// CreateBizForAddSubAccount create application for adding subaccount.
+func (a *applicationSvc) CreateBizForAddSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchAddReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForAddSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchAddReq,
+) (interface{}, error) {
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.SubAccounts))
+	for i, subAccount := range req.SubAccounts {
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionCreate,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: subAccount.AccountID,
+		}
+
+		handler := createsubaccount.NewApplicationOfCreateSubAccount(opt, base, &req.SubAccounts[i])
+		commReq := &proto.CreateCommonReq{Remark: subAccount.Memo}
+
+		result, err := a.create(cts, commReq, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for sub_account[%d](%s) failed, err: %w", i, subAccount.Name, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForUpdateSubAccount create application for updating subaccount.
+func (a *applicationSvc) CreateBizForUpdateSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchUpdateReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForUpdateSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchUpdateReq,
+) (interface{}, error) {
+
+	subAccountIDs := make([]string, 0, len(req.SubAccounts))
+	for _, item := range req.SubAccounts {
+		subAccountIDs = append(subAccountIDs, item.ID)
+	}
+
+	subAccountMap, err := a.listSubAccountBasicInfo(cts, subAccountIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.SubAccounts))
+	for i := range req.SubAccounts {
+		info, ok := subAccountMap[req.SubAccounts[i].ID]
+		if !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", req.SubAccounts[i].ID)
+		}
+
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionUpdate,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
+		handler := updatesubaccount.NewApplicationOfUpdateSubAccount(
+			opt, base, info.Name, &req.SubAccounts[i],
+		)
+
+		commReq := &proto.CreateCommonReq{Remark: req.SubAccounts[i].Memo}
+		result, err := a.create(cts, commReq, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for update sub_account[%d](%s) failed, err: %w",
+					i, req.SubAccounts[i].ID, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForDeleteSubAccount create application for deleting subaccount.
+func (a *applicationSvc) CreateBizForDeleteSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	attribute := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchDeleteReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForDeleteSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchDeleteReq,
+) (interface{}, error) {
+
+	infoMap, err := a.listSubAccountBasicInfo(cts, req.IDs)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.IDs))
+	for _, subAccountID := range req.IDs {
+		info, ok := infoMap[subAccountID]
+		if !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", subAccountID)
+		}
+
+		base := &subaccount.BaseSubAccountContent{
+			Action:    enumor.SubAccountActionDelete,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
+		handler := deletesubaccount.NewApplicationOfDeleteSubAccount(opt, base,
+			&proto.SubAccountDeleteReq{SubAccountBasicInfo: converter.PtrToVal(info)},
+		)
+
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for delete sub_account(%s) failed, err: %w",
+					subAccountID, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// listSubAccountBasicInfo batch queries subaccounts by IDs and returns a map keyed by sub-account ID.
+func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountIDs []string,
+) (map[string]*proto.SubAccountBasicInfo, error) {
+
+	result, err := a.client.DataService().Global.SubAccount.List(
+		cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", subAccountIDs)),
+			Page:   &core.BasePage{Start: 0, Limit: uint(len(subAccountIDs))},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list sub accounts failed, err: %w", err)
+	}
+
+	if len(result.Details) != len(subAccountIDs) {
+		return nil, fmt.Errorf("some sub accounts not found, expected %d but got %d",
+			len(subAccountIDs), len(result.Details))
+	}
+
+	infoMap := make(map[string]*proto.SubAccountBasicInfo, len(result.Details))
+	for _, sa := range result.Details {
+		infoMap[sa.ID] = &proto.SubAccountBasicInfo{
+			ID:        sa.ID,
+			AccountID: sa.AccountID,
+			Name:      sa.Name,
+			CloudID:   sa.CloudID,
+		}
+	}
+
+	return infoMap, nil
 }

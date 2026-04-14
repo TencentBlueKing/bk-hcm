@@ -296,23 +296,86 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 	return cvms.Details, nil
 }
 
+func buildBatchGetCvmWithoutVpcExpr(partIPs []string, vendor enumor.Vendor, bkBizID int64,
+	accountID string) *filter.Expression {
+
+	return &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJsonOverlaps("private_ipv4_addresses", partIPs),
+				tools.RuleJsonOverlaps("private_ipv6_addresses", partIPs),
+				tools.RuleJsonOverlaps("public_ipv4_addresses", partIPs),
+				tools.RuleJsonOverlaps("public_ipv6_addresses", partIPs),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+		},
+	}
+}
+
+// batchGetCvmWithoutVpc 不指定VPC批量查询主机
+func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, vendor enumor.Vendor, bkBizID int64,
+	accountID string) ([]corecvm.BaseCvm, error) {
+
+	cvmList := make([]corecvm.BaseCvm, 0)
+	for _, partIPs := range slice.Split(ips, int(core.DefaultMaxPageLimit)) {
+		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, vendor, bkBizID, accountID)
+		start := uint32(0)
+		for {
+			listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
+			cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
+			if err != nil {
+				logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+
+			cvmList = append(cvmList, cvms.Details...)
+			if uint(len(cvms.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+			start += uint32(core.DefaultMaxPageLimit)
+		}
+	}
+	return cvmList, nil
+}
+
 // validateCvmExist 导入新RS前, 校验云主机是否存在
 // 跨域1.0如果没找到相同的vpc下的主机，会进行报错
 func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, lb corelb.LoadBalancerRaw,
-	isCrossRegionV1, isCrossRegionV2 bool, targetCloudVpcID string) (*corecvm.BaseCvm, error) {
+	isCrossRegionV1, isCrossRegionV2 bool, targetCloudVpcID string, cvmList []corecvm.BaseCvm) (*corecvm.BaseCvm, error) {
 
 	var cvm *corecvm.BaseCvm
-	var err error
-	cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, lb.Vendor, lb.BkBizID, lb.AccountID)
-	if err != nil {
-		logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
-		return nil, err
-	}
+
+	// 如果上层没有传入cvmList，则自己查询
 	if len(cvmList) == 0 {
+		var err error
+		cvmList, err = getCvmWithoutVpc(kt, dataServiceCli, rsIP, lb.Vendor, lb.BkBizID, lb.AccountID)
+		if err != nil {
+			logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
+			return nil, err
+		}
+	}
+
+	// 从cvmList中筛选出包含rsIP的CVM
+	matchedCvmList := make([]corecvm.BaseCvm, 0)
+	for _, cvmItem := range cvmList {
+		// 检查rsIP是否在CVM的任意IP地址中
+		if slice.IsItemInSlice(cvmItem.PrivateIPv4Addresses, rsIP) ||
+			slice.IsItemInSlice(cvmItem.PrivateIPv6Addresses, rsIP) ||
+			slice.IsItemInSlice(cvmItem.PublicIPv4Addresses, rsIP) ||
+			slice.IsItemInSlice(cvmItem.PublicIPv6Addresses, rsIP) {
+			matchedCvmList = append(matchedCvmList, cvmItem)
+		}
+	}
+
+	if len(matchedCvmList) == 0 {
 		return nil, fmt.Errorf("rs(%s) not found", rsIP)
 	}
+
 	if isCrossRegionV2 {
-		cvm = &cvmList[0]
+		cvm = &matchedCvmList[0]
 		return cvm, nil
 	}
 
@@ -320,13 +383,13 @@ func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP stri
 	if isCrossRegionV1 {
 		cloudVpcIDs = append(cloudVpcIDs, targetCloudVpcID)
 	}
-	for _, one := range cvmList {
+	for _, one := range matchedCvmList {
 		if len(slice.Intersection(cloudVpcIDs, one.CloudVpcIDs)) > 0 {
 			return &one, nil
 		}
 	}
 
-	cvmCloudIDs := slice.Map(cvmList, corecvm.BaseCvm.GetCloudID)
+	cvmCloudIDs := slice.Map(matchedCvmList, corecvm.BaseCvm.GetCloudID)
 	return nil, fmt.Errorf("VPC of %s is different from loadbalancer's VPC (%s)",
 		strings.Join(cvmCloudIDs, ","), strings.Join(cloudVpcIDs, ","))
 }

@@ -17,7 +17,7 @@ Delete /api/v1/cloud/cos/buckets/delete
 |------------|--------|----|-------|
 | account_id | string | 是  | 账号ID  |
 | region     | string | 是  | 地域    |
-| name       | string | 是  | 存储桶名称 |
+| cloud_name | string | 是  | 存储桶名称 |
 
 ### 调用示例
 
@@ -27,7 +27,7 @@ Delete /api/v1/cloud/cos/buckets/delete
 {
   "account_id": "0000001",
   "region": "ap-hk",
-  "name": "xxx"
+  "cloud_name": "xxx"
 }
 ```
 

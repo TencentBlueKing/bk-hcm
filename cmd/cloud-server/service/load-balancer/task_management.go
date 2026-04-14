@@ -36,7 +36,7 @@ func (svc *lbSvc) createTaskManagement(kt *kit.Kit, bkBizID int64, vendor enumor
 		Items: []task.CreateManagementField{
 			{
 				BkBizID:    bkBizID,
-				Source:     source,
+				Source:     source.RefineByRequestSource(kt.RequestSource),
 				Vendors:    []enumor.Vendor{vendor},
 				AccountIDs: []string{accountID},
 				Resource:   enumor.TaskManagementResClb,

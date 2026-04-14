@@ -77,6 +77,34 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
 		svc.GetTCloudNetworkAccountType)
 
+	// 查询账号列表
+	h.Add("TCloudListAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/list", svc.TCloudListAccount)
+
+	// 创建子账号
+	h.Add("TCloudCreateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/create", svc.TCloudCreateSubAccount)
+
+	// 更新子账号
+	h.Add("TCloudUpdateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/update", svc.TCloudUpdateSubAccount)
+
+	// 删除子账号
+	h.Add("TCloudDeleteSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/delete", svc.TCloudDeleteSubAccount)
+
+	// 通过子用户UIN列表查询子用户
+	h.Add("TCloudDescribeSubAccounts", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/describe", svc.TCloudDescribeSubAccounts)
+
+	// 获取子账号安全设置
+	h.Add("TCloudDescribeSafeAuthFlag", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlag)
+
+	// 设置子账号登录保护和敏感操作保护
+	h.Add("TCloudSetMfaFlag", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
+
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)

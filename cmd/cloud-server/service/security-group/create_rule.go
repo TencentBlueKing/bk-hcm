@@ -111,38 +111,14 @@ func (svc *securityGroupSvc) createTCloudSGRule(cts *rest.Contexts, sgBaseInfo *
 	if len(req.EgressRuleSet) != 0 {
 		createReq.EgressRuleSet = make([]hcproto.TCloudSGRuleCreate, 0, len(req.EgressRuleSet))
 		for _, one := range req.EgressRuleSet {
-			createReq.EgressRuleSet = append(createReq.EgressRuleSet, hcproto.TCloudSGRuleCreate{
-				Protocol:                   one.Protocol,
-				Port:                       one.Port,
-				CloudServiceID:             one.CloudServiceID,
-				CloudServiceGroupID:        one.CloudServiceGroupID,
-				IPv4Cidr:                   one.IPv4Cidr,
-				IPv6Cidr:                   one.IPv6Cidr,
-				CloudAddressID:             one.CloudAddressID,
-				CloudAddressGroupID:        one.CloudAddressGroupID,
-				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
-				Action:                     one.Action,
-				Memo:                       one.Memo,
-			})
+			createReq.EgressRuleSet = append(createReq.EgressRuleSet, convertToTCLoudSGRuleCreate(one))
 		}
 	}
 
 	if len(req.IngressRuleSet) != 0 {
 		createReq.IngressRuleSet = make([]hcproto.TCloudSGRuleCreate, 0, len(req.IngressRuleSet))
 		for _, one := range req.IngressRuleSet {
-			createReq.IngressRuleSet = append(createReq.IngressRuleSet, hcproto.TCloudSGRuleCreate{
-				Protocol:                   one.Protocol,
-				Port:                       one.Port,
-				CloudServiceID:             one.CloudServiceID,
-				CloudServiceGroupID:        one.CloudServiceGroupID,
-				IPv4Cidr:                   one.IPv4Cidr,
-				IPv6Cidr:                   one.IPv6Cidr,
-				CloudAddressID:             one.CloudAddressID,
-				CloudAddressGroupID:        one.CloudAddressGroupID,
-				CloudTargetSecurityGroupID: one.CloudTargetSecurityGroupID,
-				Action:                     one.Action,
-				Memo:                       one.Memo,
-			})
+			createReq.IngressRuleSet = append(createReq.IngressRuleSet, convertToTCLoudSGRuleCreate(one))
 		}
 	}
 
@@ -385,4 +361,20 @@ func (svc *securityGroupSvc) checkCreateAzureSGRuleParams(req hcproto.AzureSGRul
 	}
 
 	return nil
+}
+
+func convertToTCLoudSGRuleCreate(reqRule proto.TCloudSecurityGroupRule) hcproto.TCloudSGRuleCreate {
+	return hcproto.TCloudSGRuleCreate{
+		Protocol:                   reqRule.Protocol,
+		Port:                       reqRule.Port,
+		CloudServiceID:             reqRule.CloudServiceID,
+		CloudServiceGroupID:        reqRule.CloudServiceGroupID,
+		IPv4Cidr:                   reqRule.IPv4Cidr,
+		IPv6Cidr:                   reqRule.IPv6Cidr,
+		CloudAddressID:             reqRule.CloudAddressID,
+		CloudAddressGroupID:        reqRule.CloudAddressGroupID,
+		CloudTargetSecurityGroupID: reqRule.CloudTargetSecurityGroupID,
+		Action:                     reqRule.Action,
+		Memo:                       reqRule.Memo,
+	}
 }

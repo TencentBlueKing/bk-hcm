@@ -77,7 +77,7 @@ const (
 func (g *Gcp) GetBillList(kt *kit.Kit, opt *typesBill.GcpBillListOption,
 	billInfo *cloud.AccountBillConfig[cloud.GcpBillConfigExtension]) (interface{}, int64, error) {
 
-	where, err := g.parseCondition(opt)
+	where, params, err := g.parseCondition(opt)
 	if err != nil {
 		logs.Errorf("gcp get bill list parse date failed, opt: %+v, err: %v", opt, err)
 		return nil, 0, err
@@ -86,7 +86,7 @@ func (g *Gcp) GetBillList(kt *kit.Kit, opt *typesBill.GcpBillListOption,
 	// 只有第一页时返回数量，降低查询费用
 	total := int64(0)
 	if opt.Page != nil && opt.Page.Offset == 0 {
-		total, err = g.GetBillTotal(kt, where, billInfo)
+		total, err = g.GetBillTotal(kt, where, params, billInfo)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -100,16 +100,16 @@ func (g *Gcp) GetBillList(kt *kit.Kit, opt *typesBill.GcpBillListOption,
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opt.Page.Limit, opt.Page.Offset)
 	}
 
-	list, _, err := g.GetBigQuery(kt, query)
+	list, _, err := g.GetBigQueryWithParams(kt, query, params)
 	return list, total, err
 }
 
 // GetBillTotal get bill total num
-func (g *Gcp) GetBillTotal(kt *kit.Kit, where string, billInfo *cloud.AccountBillConfig[cloud.GcpBillConfigExtension]) (
-	int64, error) {
+func (g *Gcp) GetBillTotal(kt *kit.Kit, where string, params []bigquery.QueryParameter,
+	billInfo *cloud.AccountBillConfig[cloud.GcpBillConfigExtension]) (int64, error) {
 
 	sql := fmt.Sprintf(QueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
-	_, total, err := g.GetBigQuery(kt, sql)
+	_, total, err := g.GetBigQueryWithParams(kt, sql, params)
 	if err != nil {
 		return 0, err
 	}
@@ -162,6 +162,8 @@ FROM (
 	SELECT
 		ANY_VALUE(billing_account_id) AS billing_account_id,
 		project.id AS project_id,
+		sku.id as sku_id,
+		sku.description as sku_description,
 		ANY_VALUE(project.name) as project_name,
 		ANY_VALUE(project.number) as project_number,
 		ANY_VALUE(currency) as currency,
@@ -179,17 +181,16 @@ FROM (
 	FROM
 		%s.%s
 		%s  
-	GROUP BY project.id )
+	GROUP BY project.id, sku.id, sku.description ) ORDER BY sku_id
 `
 )
 
 // GetRootAccountBillTotal get bill total num
-func (g *Gcp) GetRootAccountBillTotal(
-	kt *kit.Kit, where string, billInfo *billcore.RootAccountBillConfig[billcore.GcpBillConfigExtension]) (
-	int64, error) {
+func (g *Gcp) GetRootAccountBillTotal(kt *kit.Kit, where string, params []bigquery.QueryParameter,
+	billInfo *billcore.RootAccountBillConfig[billcore.GcpBillConfigExtension]) (int64, error) {
 
 	sql := fmt.Sprintf(RootAccountQueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
-	_, total, err := g.GetBigQuery(kt, sql)
+	_, total, err := g.GetBigQueryWithParams(kt, sql, params)
 	if err != nil {
 		return 0, err
 	}
@@ -209,7 +210,7 @@ func (g *Gcp) QueryRootCreditList(kt *kit.Kit, opt *typesBill.GcpRootAccountBill
 		Page:          opt.Page,
 		ProjectID:     opt.ProjectID,
 	}
-	where, err := g.parseRootCreditCondition(conditionOpt)
+	where, params, err := g.parseRootCreditCondition(conditionOpt)
 	if err != nil {
 		logs.Errorf("gcp query bill credit list parse date failed, opt: %+v, err: %v", opt, err)
 		return nil, err
@@ -220,7 +221,7 @@ func (g *Gcp) QueryRootCreditList(kt *kit.Kit, opt *typesBill.GcpRootAccountBill
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opt.Page.Limit, opt.Page.Offset)
 	}
 
-	list, _, err := g.GetBigQuery(kt, query)
+	list, _, err := g.GetBigQueryWithParams(kt, query, params)
 	return list, err
 }
 
@@ -237,7 +238,7 @@ func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountB
 		Page:          opt.Page,
 		ProjectID:     opt.ProjectID,
 	}
-	where, err := g.parseRootAccountCondition(conditionOpt)
+	where, params, err := g.parseRootAccountCondition(conditionOpt)
 	if err != nil {
 		logs.Errorf("gcp get bill list parse date failed, opt: %+v, err: %v", opt, err)
 		return nil, 0, err
@@ -246,7 +247,7 @@ func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountB
 	// 只有第一页时返回数量，降低查询费用
 	total := int64(0)
 	if opt.Page != nil && opt.Page.Offset == 0 {
-		total, err = g.GetRootAccountBillTotal(kt, where, billInfo)
+		total, err = g.GetRootAccountBillTotal(kt, where, params, billInfo)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -261,18 +262,28 @@ func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountB
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opt.Page.Limit, opt.Page.Offset)
 	}
 
-	list, _, err := g.GetBigQuery(kt, query)
+	list, _, err := g.GetBigQueryWithParams(kt, query, params)
 	return list, total, err
 }
 
 // GetBigQuery ...
 func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Value, int64, error) {
+	return g.GetBigQueryWithParams(kt, query, nil)
+}
+
+// GetBigQueryWithParams executes a BigQuery with parameters to prevent SQL injection
+func (g *Gcp) GetBigQueryWithParams(kt *kit.Kit, query string, params []bigquery.QueryParameter) (
+	[]map[string]bigquery.Value, int64, error) {
 	client, err := g.clientSet.bigQueryClient(kt)
 	if err != nil {
 		return nil, 0, fmt.Errorf("gcp.billquery.NewClient, err: %+v", err)
 	}
 
 	q := client.Query(query)
+	if params != nil && len(params) > 0 {
+		q.Parameters = params
+	}
+
 	it, err := q.Read(kt.Ctx)
 	if err != nil {
 		return nil, 0, err
@@ -309,96 +320,129 @@ func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Valu
 	return list, num, nil
 }
 
-func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, error) {
+func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, []bigquery.QueryParameter, error) {
 	var condition []string
+	var params []bigquery.QueryParameter
+
 	if len(opt.ProjectID) != 0 {
-		condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+		condition = []string{"project.id = @projectId"}
+		params = append(params, bigquery.QueryParameter{
+			Name:  "projectId",
+			Value: opt.ProjectID,
+		})
 	}
+
 	if opt.Month != "" {
-		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
+		condition = append(condition, "invoice.month = @month")
+		params = append(params, bigquery.QueryParameter{
+			Name:  "month",
+			Value: opt.Month,
+		})
 	} else if opt.BeginDate != "" && opt.EndDate != "" {
 		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		endDate, err := time.Parse(constant.TimeStdFormat, opt.EndDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(_PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
 			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
 	if len(condition) > 0 {
-		return "WHERE " + strings.Join(condition, " AND "), nil
+		return "WHERE " + strings.Join(condition, " AND "), params, nil
 	}
 
-	return "", nil
+	return "", params, nil
 }
 
-func (g *Gcp) parseRootAccountCondition(opt *typesBill.GcpBillListOption) (string, error) {
+func (g *Gcp) parseRootAccountCondition(opt *typesBill.GcpBillListOption) (string, []bigquery.QueryParameter, error) {
 	var condition []string
+	var params []bigquery.QueryParameter
+
 	if len(opt.ProjectID) != 0 {
-		condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+		condition = []string{"project.id = @projectId"}
+		params = append(params, bigquery.QueryParameter{
+			Name:  "projectId",
+			Value: opt.ProjectID,
+		})
 	} else {
 		condition = []string{"project.id IS NULL"}
 	}
 
 	if opt.Month != "" {
-		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
+		condition = append(condition, "invoice.month = @month")
+		params = append(params, bigquery.QueryParameter{
+			Name:  "month",
+			Value: opt.Month,
+		})
 	}
+
 	if opt.BeginDate != "" && opt.EndDate != "" {
 		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		endDate, err := time.Parse(constant.TimeStdFormat, opt.EndDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(_PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
 			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
 	if len(condition) > 0 {
-		return "WHERE " + strings.Join(condition, " AND "), nil
+		return "WHERE " + strings.Join(condition, " AND "), params, nil
 	}
 
-	return "", nil
+	return "", params, nil
 }
-func (g *Gcp) parseRootCreditCondition(opt *typesBill.GcpBillListOption) (string, error) {
+func (g *Gcp) parseRootCreditCondition(opt *typesBill.GcpBillListOption) (string, []bigquery.QueryParameter, error) {
 	var condition []string
+	var params []bigquery.QueryParameter
+
 	if len(opt.ProjectID) != 0 {
 		if opt.ProjectID == "NULL" {
 			condition = []string{"project.id IS NULL"}
 		} else {
-			condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+			condition = []string{"project.id = @projectId"}
+			params = append(params, bigquery.QueryParameter{
+				Name:  "projectId",
+				Value: opt.ProjectID,
+			})
 		}
 	}
 	// 不传project id 会返回所有project的信息包括project 为NULL
 
 	if opt.Month != "" {
-		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
+		condition = append(condition, "invoice.month = @month")
+		params = append(params, bigquery.QueryParameter{
+			Name:  "month",
+			Value: opt.Month,
+		})
 	}
+
 	if opt.BeginDate != "" && opt.EndDate != "" {
 		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 
 		endDate, err := time.Parse(constant.TimeStdFormat, opt.EndDate)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(_PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
 			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
 	if len(condition) > 0 {
-		return "WHERE " + strings.Join(condition, " AND "), nil
+		return "WHERE " + strings.Join(condition, " AND "), params, nil
 	}
 
-	return "", nil
+	return "", params, nil
 }

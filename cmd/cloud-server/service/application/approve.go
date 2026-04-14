@@ -38,6 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
+	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -319,6 +320,8 @@ func (a *applicationSvc) getHandlerByApplication(cts *rest.Contexts, application
 			return nil, err
 		}
 		return updatemainaccount.NewApplicationOfUpdateMainAccount(opt, a.authorizer, req), nil
+	case enumor.OperateSubAccount:
+		return subaccount.NewHandlerFromApplication(opt, application.Content)
 	}
 	return nil, errors.New("not handler to support")
 }

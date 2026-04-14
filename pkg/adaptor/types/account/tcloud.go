@@ -20,8 +20,10 @@
 package account
 
 import (
+	"fmt"
 	"strconv"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -66,6 +68,54 @@ func (account TCloudAccount) GetCloudID() string {
 	return strconv.FormatUint(converter.PtrToVal(account.Uin), 10)
 }
 
+// AddUserOption define tcloud add user option.
+type AddUserOption struct {
+	Name              string `json:"name" validate:"required"`
+	Remark            string `json:"remark" validate:"omitempty"`
+	ConsoleLogin      uint64 `json:"console_login" validate:"omitempty"`
+	UseAPI            uint64 `json:"use_api" validate:"omitempty"`
+	Password          string `json:"password" validate:"omitempty"`
+	NeedResetPassword uint64 `json:"need_reset_password" validate:"omitempty"`
+	PhoneNum          string `json:"phone_num" validate:"omitempty"`
+	CountryCode       string `json:"country_code" validate:"omitempty"`
+	Email             string `json:"email" validate:"omitempty"`
+}
+
+// Validate add user option.
+func (opt AddUserOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// AddUserResult define tcloud AddUser API response fields.
+// Only contains fields actually returned by the API, not the full TCloudAccount.
+type AddUserResult struct {
+	Uin       *uint64 `json:"uin"`
+	Name      *string `json:"name"`
+	UID       *uint64 `json:"uid"`
+	SecretID  string  `json:"secret_id"`
+	SecretKey string  `json:"secret_key"`
+	Password  string  `json:"password,omitempty"`
+}
+
+// UpdateUserOption define tcloud update user option.
+// reference: https://cloud.tencent.com/document/product/598/34583
+// Pointer fields use nil to indicate "no change".
+type UpdateUserOption struct {
+	Name              string  `json:"name" validate:"required"`
+	Remark            *string `json:"remark" validate:"omitempty"`
+	ConsoleLogin      *uint64 `json:"console_login" validate:"omitempty"`
+	Password          *string `json:"password" validate:"omitempty"`
+	NeedResetPassword *uint64 `json:"need_reset_password" validate:"omitempty"`
+	PhoneNum          *string `json:"phone_num" validate:"omitempty"`
+	CountryCode       *string `json:"country_code" validate:"omitempty"`
+	Email             *string `json:"email" validate:"omitempty"`
+}
+
+// Validate update user option.
+func (opt UpdateUserOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
 // TCloudListPolicyOption define tcloud list policy option.
 type TCloudListPolicyOption struct {
 	Uin         uint64  `json:"uin" validate:"required"`
@@ -75,4 +125,142 @@ type TCloudListPolicyOption struct {
 // Validate define tcloud list policy option.
 func (opt TCloudListPolicyOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// DescribeSafeAuthFlagOption define tcloud describe sub-account safe auth flag option.
+// reference: https://cloud.tencent.com/document/product/598/48602
+type DescribeSafeAuthFlagOption struct {
+	// SubUin is the sub-account UIN.
+	SubUin uint64 `json:"sub_uin" validate:"required"`
+}
+
+// Validate DescribeSafeAuthFlagOption.
+func (opt DescribeSafeAuthFlagOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// LoginActionFlag define login or sensitive operation protection flag.
+type LoginActionFlag struct {
+	// Phone indicates whether phone verification is enabled (1: enabled, 0: disabled).
+	Phone *uint64 `json:"phone"`
+	// Token indicates whether hard token verification is enabled.
+	Token *uint64 `json:"token"`
+	// Stoken indicates whether soft token verification is enabled.
+	Stoken *uint64 `json:"stoken"`
+	// Wechat indicates whether WeChat verification is enabled.
+	Wechat *uint64 `json:"wechat"`
+	// Custom indicates whether custom verification is enabled.
+	Custom *uint64 `json:"custom"`
+	// Mail indicates whether email verification is enabled.
+	Mail *uint64 `json:"mail"`
+	// U2FToken indicates whether U2F hardware token verification is enabled.
+	U2FToken *uint64 `json:"u2f_token"`
+}
+
+// ToProtectionFlag maps enabled fields (value == 1) to AccountProtectionFlag using priority:
+// Phone > Token > Stoken > Wechat > Custom > Mail > U2FToken. Returns nil if flag is nil or none enabled.
+func (flag LoginActionFlag) ToProtectionFlag() enumor.AccountProtectionFlag {
+	if flag.Phone != nil && converter.PtrToVal(flag.Phone) == 1 {
+		return enumor.PhoneProtection
+	}
+	if flag.Token != nil && converter.PtrToVal(flag.Token) == 1 {
+		return enumor.TokenProtection
+	}
+	if flag.Stoken != nil && converter.PtrToVal(flag.Stoken) == 1 {
+		return enumor.StokenProtection
+	}
+	if flag.Wechat != nil && converter.PtrToVal(flag.Wechat) == 1 {
+		return enumor.WechatProtection
+	}
+	if flag.Custom != nil && converter.PtrToVal(flag.Custom) == 1 {
+		return enumor.CustomProtection
+	}
+	if flag.Mail != nil && converter.PtrToVal(flag.Mail) == 1 {
+		return enumor.MailProtection
+	}
+	if flag.U2FToken != nil && converter.PtrToVal(flag.U2FToken) == 1 {
+		return enumor.U2FTokenProtection
+	}
+	return ""
+}
+
+// OffsiteFlag define offsite login protection settings.
+type OffsiteFlag struct {
+	// VerifyFlag indicates whether verification is required for offsite login.
+	VerifyFlag *uint64 `json:"verify_flag"`
+	// NotifyPhone indicates whether phone notification is enabled.
+	NotifyPhone *uint64 `json:"notify_phone"`
+	// NotifyEmail indicates whether email notification is enabled.
+	NotifyEmail *int64 `json:"notify_email"`
+	// NotifyWechat indicates whether WeChat notification is enabled.
+	NotifyWechat *uint64 `json:"notify_wechat"`
+	// Tips indicates tip settings.
+	Tips *uint64 `json:"tips"`
+}
+
+// SetMfaFlagOption define tcloud set sub-account login protection and sensitive operation protection option.
+// reference: https://cloud.tencent.com/document/product/598/36227
+type SetMfaFlagOption struct {
+	// OpUin is the sub-account UIN to set MFA flag for.
+	OpUin uint64 `json:"op_uin" validate:"required"`
+	// LoginFlag is the login protection settings, nil means no change.
+	LoginFlag *LoginActionFlag `json:"login_flag" validate:"omitempty"`
+	// ActionFlag is the sensitive operation protection settings, nil means no change.
+	ActionFlag *LoginActionFlag `json:"action_flag" validate:"omitempty"`
+}
+
+// Validate SetMfaFlagOption.
+func (opt SetMfaFlagOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// DescribeSubAccountsMaxUIN is the max number of UINs per DescribeSubAccounts API call.
+const DescribeSubAccountsMaxUIN = 50
+
+// DescribeSubAccountsOption define tcloud DescribeSubAccounts option.
+// reference: https://cloud.tencent.com/document/api/598/53486
+type DescribeSubAccountsOption struct {
+	SubUin []uint64 `json:"sub_uin" validate:"required"`
+}
+
+// Validate DescribeSubAccountsOption.
+func (opt DescribeSubAccountsOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if len(opt.SubUin) < 1 {
+		return fmt.Errorf("sub_uin count %d is less than 1", len(opt.SubUin))
+	}
+
+	if len(opt.SubUin) > DescribeSubAccountsMaxUIN {
+		return fmt.Errorf("sub_uin count %d exceeds max %d",
+			len(opt.SubUin), DescribeSubAccountsMaxUIN)
+	}
+
+	return nil
+}
+
+// TCloudSubAccountUser define tcloud DescribeSubAccounts API result item.
+type TCloudSubAccountUser struct {
+	Uin           *uint64 `json:"uin"`
+	Name          *string `json:"name"`
+	Uid           *uint64 `json:"uid"`
+	Remark        *string `json:"remark"`
+	CreateTime    *string `json:"create_time"`
+	UserType      *uint64 `json:"user_type"`
+	LastLoginIp   *string `json:"last_login_ip"`
+	LastLoginTime *string `json:"last_login_time"`
+}
+
+// SafeAuthFlagResult define tcloud DescribeSafeAuthFlagColl API result.
+type SafeAuthFlagResult struct {
+	// LoginFlag is the login protection settings.
+	LoginFlag *LoginActionFlag `json:"login_flag"`
+	// ActionFlag is the sensitive operation protection settings.
+	ActionFlag *LoginActionFlag `json:"action_flag"`
+	// OffsiteFlag is the offsite login protection settings.
+	OffsiteFlag *OffsiteFlag `json:"offsite_flag"`
+	// PromptTrust indicates whether to prompt the user to trust the device (1: prompt, 0: no prompt).
+	PromptTrust *int64 `json:"prompt_trust"`
 }

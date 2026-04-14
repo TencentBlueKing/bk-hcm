@@ -66,7 +66,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "zone": "ap-hk-1",
   "backup_zones": [],
   "name": "xxx",
-  "load_balance_type": "INTERNAL",
+  "load_balancer_type": "INTERNAL",
   "cloud_vpc_id": "vpc-123",
   "cloud_subnet_id": "subnet-123",
   "address_ip_version": "IPV4",
@@ -76,9 +76,9 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "sla_type": "clb.c2.medium",
   "internet_max_bandwidth_out": 10,
   "auto_renew": true,
-  "required_count": 1,
+  "require_count": 1,
   "memo": "",
-  "load_balancer_pass_to_target": true,
+  "load_balancer_pass_to_target": true
 }
 ```
 

@@ -20,6 +20,8 @@
 package instancetype
 
 import (
+	"encoding/json"
+
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 )
@@ -40,6 +42,9 @@ type AwsInstanceTypeResp struct {
 	InstanceFamily     string `json:"instance_family"`
 	InstanceType       string `json:"instance_type"`
 	GPU                int64  `json:"gpu"`
+	GPUMemory          int64  `json:"gpu_memory"`
+	GPUName            string `json:"gpu_name"`
+	GPUManufacturer    string `json:"gpu_manufacturer"`
 	CPU                int64  `json:"cpu"`
 	Memory             int64  `json:"memory"`
 	FPGA               int64  `json:"fpga"`
@@ -53,4 +58,44 @@ type AwsInstanceTypeResp struct {
 type AwsInstanceTypeListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AwsInstanceTypeResp `json:"data"`
+}
+
+// AwsAssumeRoleInstanceTypeListReq is the request for listing instance types via AssumeRole.
+type AwsAssumeRoleInstanceTypeListReq struct {
+	RootAccountID string   `json:"root_account_id" validate:"required"`
+	MainAccountID string   `json:"main_account_id" validate:"required"`
+	RoleChain     []string `json:"role_chain" validate:"required,min=1"`
+	Region        string   `json:"region" validate:"required"`
+	ExternalID    string   `json:"external_id,omitempty"`
+}
+
+// Validate ...
+func (req *AwsAssumeRoleInstanceTypeListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleInstanceListReq is the request for listing instances via AssumeRole.
+type AwsAssumeRoleInstanceListReq struct {
+	RootAccountID string   `json:"root_account_id" validate:"required"`
+	MainAccountID string   `json:"main_account_id" validate:"required"`
+	RoleChain     []string `json:"role_chain" validate:"required,min=1"`
+	Region        string   `json:"region" validate:"required"`
+	ExternalID    string   `json:"external_id,omitempty"`
+}
+
+// Validate ...
+func (req *AwsAssumeRoleInstanceListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleInstanceTypeListResp wraps a list of AwsInstanceTypeResp for AssumeRole instance type queries.
+type AwsAssumeRoleInstanceTypeListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          []*AwsInstanceTypeResp `json:"data"`
+}
+
+// AwsAssumeRoleInstanceListResp wraps the raw AWS EC2 DescribeInstances response for transparent pass-through.
+type AwsAssumeRoleInstanceListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          json.RawMessage `json:"data"`
 }

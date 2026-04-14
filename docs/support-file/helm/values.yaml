@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.8.9
+  tag: 1.8.11
 
 apigwReleaseVersion: 1.0.0
 

@@ -23,9 +23,12 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server/application"
+	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // GetApplication ...
@@ -53,6 +56,53 @@ func (a *applicationSvc) GetApplication(cts *rest.Contexts) (interface{}, error)
 		}
 	}
 
+	return a.buildApplicationGetResp(cts, application)
+}
+
+// GetBizApplication 业务视角下查看单据明细
+func (a *applicationSvc) GetBizApplication(cts *rest.Contexts) (interface{}, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	applicationID := cts.PathParameter("application_id").String()
+	if applicationID == "" {
+		return nil, errf.Newf(errf.InvalidParameter, "application_id is required")
+	}
+
+	// 业务访问权限鉴权
+	err = a.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bkBizID,
+	})
+	if err != nil {
+		logs.Warnf("user %s has no access permission to biz %d, rid: %s", cts.Kit.User, bkBizID, cts.Kit.Rid)
+		return nil, errf.New(errf.RecordNotFound, "application not found")
+	}
+
+	// 获取单据详情
+	application, err := a.client.DataService().Global.Application.GetApplication(
+		cts.Kit.Ctx, cts.Kit.Header(), applicationID)
+	if err != nil {
+		logs.Errorf("get application %s failed, err: %v, rid: %s", applicationID, err, cts.Kit.Rid)
+		return nil, errf.New(errf.RecordNotFound, "application not found")
+	}
+
+	// 归属校验：检查 bk_biz_id 是否在 bk_biz_ids 列表中
+	if !slice.IsItemInSlice(application.BkBizIDs, bkBizID) {
+		logs.Warnf("application %s does not belong to biz %d, bk_biz_ids: %v, rid: %s",
+			applicationID, bkBizID, application.BkBizIDs, cts.Kit.Rid)
+		return nil, errf.New(errf.RecordNotFound, "application not found")
+	}
+
+	return a.buildApplicationGetResp(cts, application)
+}
+
+// buildApplicationGetResp 构建单据详情响应体
+func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
+	application *dataproto.ApplicationResp) (*proto.ApplicationGetResp, error) {
+
 	// 查询审批链接
 	ticket, err := a.itsmCli.GetTicketResult(cts.Kit, application.SN)
 	if err != nil {
@@ -61,6 +111,7 @@ func (a *applicationSvc) GetApplication(cts *rest.Contexts) (interface{}, error)
 
 	return &proto.ApplicationGetResp{
 		ID:             application.ID,
+		Source:         application.Source,
 		SN:             application.SN,
 		Type:           application.Type,
 		Status:         application.Status,

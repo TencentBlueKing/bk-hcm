@@ -16,6 +16,7 @@ export const permissionPolicyRoutes: RouteRecordRaw[] = [
         title: t('权限策略库'),
         isShowBreadcrumb: true,
         icon: 'hcm-icon bkhcm-icon-my-apply',
+        checkAuth: 'cloud_vendor_config',
       }),
     },
   },

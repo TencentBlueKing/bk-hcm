@@ -145,6 +145,7 @@ func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 			State:        one.State,
 			Type:         one.Type,
 			OsType:       one.OsType,
+			Region:       region,
 			Extension: &coreimage.HuaWeiExtension{
 				Region: region,
 			},

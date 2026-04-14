@@ -257,3 +257,103 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v1/cloud/vendors/aws/assume_role/instance_types/list:
+    post:
+      operationId: list_aws_assume_role_instance_type
+      description: 查询 AWS 成员账号实例类型列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - InstanceType
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/instance_types/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account instance types via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/instances/list:
+    post:
+      operationId: list_aws_assume_role_instance
+      description: 查询 AWS 成员账号实例列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - Instance
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/instances/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account instances via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/list:
+    post:
+      operationId: list_aws_assume_role_metric_data
+      description: 查询 AWS 成员账号 CloudWatch 指标时序数据（通过 AssumeRole 跨账号访问）
+      tags:
+        - CloudWatch
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metric_data/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account CloudWatch metric data via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metrics/list:
+    post:
+      operationId: list_aws_assume_role_metrics
+      description: 查询 AWS 成员账号 CloudWatch 可用指标列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - CloudWatch
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/cloudwatch/metrics/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account CloudWatch available metrics via AssumeRole

@@ -46,6 +46,7 @@ import (
 	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
 	mainaccount "hcm/cmd/hc-service/service/main-account"
 	"hcm/cmd/hc-service/service/monitoring"
+	"hcm/cmd/hc-service/service/permission-template"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
@@ -195,6 +196,7 @@ func (s *Service) apiSet() *restful.Container {
 	tag.InitTagService(c)
 	cos.InitCosService(c)
 	monitoring.InitMonitoringService(c)
+	permissiontemplate.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

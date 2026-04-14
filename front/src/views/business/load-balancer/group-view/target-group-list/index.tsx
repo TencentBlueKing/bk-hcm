@@ -172,8 +172,8 @@ export default defineComponent({
                   key={item.id}
                   class={`group-item-wrap${activeTargetGroupId.value === item.id ? ' selected' : ''}`}
                   onClick={() => handleTypeChange(item)}>
+                  <img src={mubiaoIcon} alt='' class='prefix-icon' />
                   <OverflowTitle type='tips' class='base-info'>
-                    <img src={mubiaoIcon} alt='' class='prefix-icon' />
                     <span class='text'>{item.name}</span>
                   </OverflowTitle>
                   <div class={`ext-info${currentPopBoundaryNodeKey.value === item.id ? ' show-dropdown' : ''}`}>

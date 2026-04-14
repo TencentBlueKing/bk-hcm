@@ -25,46 +25,48 @@ import (
 
 // Client is a tcloud api client
 type Client struct {
-	Account       *AccountClient
-	Subnet        *SubnetClient
-	SecurityGroup *SecurityGroupClient
-	Vpc           *VpcClient
-	Eip           *EipClient
-	Disk          *DiskClient
-	Zone          *ZoneClient
-	Region        *RegionClient
-	Cvm           *CvmClient
-	Image         *ImageClient
-	RouteTable    *RouteTableClient
-	InstanceType  *InstanceTypeClient
-	Bill          *BillClient
-	ArgsTpl       *ArgsTplClient
-	Cert          *CertClient
-	Clb           *ClbClient
-	BandPkg       *BandwidthPackageClient
-	Cos           *CosClient
+	Account            *AccountClient
+	Subnet             *SubnetClient
+	SecurityGroup      *SecurityGroupClient
+	Vpc                *VpcClient
+	Eip                *EipClient
+	Disk               *DiskClient
+	Zone               *ZoneClient
+	Region             *RegionClient
+	Cvm                *CvmClient
+	Image              *ImageClient
+	RouteTable         *RouteTableClient
+	InstanceType       *InstanceTypeClient
+	Bill               *BillClient
+	ArgsTpl            *ArgsTplClient
+	Cert               *CertClient
+	Clb                *ClbClient
+	BandPkg            *BandwidthPackageClient
+	Cos                *CosClient
+	PermissionTemplate *PermissionTemplateClient
 }
 
 // NewClient create a new tcloud api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		Account:       NewAccountClient(client),
-		SecurityGroup: NewCloudSecurityGroupClient(client),
-		Subnet:        NewSubnetClient(client),
-		Vpc:           NewVpcClient(client),
-		Eip:           NewEipClient(client),
-		Disk:          NewCloudDiskClient(client),
-		Zone:          NewZoneClient(client),
-		Region:        NewRegionClient(client),
-		Cvm:           NewCvmClient(client),
-		Image:         NewCloudPublicClient(client),
-		RouteTable:    NewRouteTableClient(client),
-		InstanceType:  NewInstanceTypeClient(client),
-		Bill:          NewBillClient(client),
-		ArgsTpl:       NewArgsTplClient(client),
-		Cert:          NewCertClient(client),
-		Clb:           NewClbClient(client),
-		BandPkg:       NewBandPkgClient(client),
-		Cos:           NewCosClient(client),
+		Account:            NewAccountClient(client),
+		SecurityGroup:      NewCloudSecurityGroupClient(client),
+		Subnet:             NewSubnetClient(client),
+		Vpc:                NewVpcClient(client),
+		Eip:                NewEipClient(client),
+		Disk:               NewCloudDiskClient(client),
+		Zone:               NewZoneClient(client),
+		Region:             NewRegionClient(client),
+		Cvm:                NewCvmClient(client),
+		Image:              NewCloudPublicClient(client),
+		RouteTable:         NewRouteTableClient(client),
+		InstanceType:       NewInstanceTypeClient(client),
+		Bill:               NewBillClient(client),
+		ArgsTpl:            NewArgsTplClient(client),
+		Cert:               NewCertClient(client),
+		Clb:                NewClbClient(client),
+		BandPkg:            NewBandPkgClient(client),
+		Cos:                NewCosClient(client),
+		PermissionTemplate: NewPermissionTemplateClient(client),
 	}
 }

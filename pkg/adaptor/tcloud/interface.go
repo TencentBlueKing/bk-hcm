@@ -83,9 +83,17 @@ type TCloud interface {
 
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)
 	CountAccount(kt *kit.Kit) (int32, error)
+	DescribeSubAccounts(kt *kit.Kit, opt *account.DescribeSubAccountsOption) (
+		[]account.TCloudSubAccountUser, error)
+	AddUser(kt *kit.Kit, opt *account.AddUserOption) (*account.AddUserResult, error)
+	UpdateUser(kt *kit.Kit, opt *account.UpdateUserOption) error
+	DeleteUser(kt *kit.Kit, name string) error
 	GetAccountZoneQuota(kt *kit.Kit, opt *account.GetTCloudAccountZoneQuotaOption) (
 		*account.TCloudAccountQuota, error)
 	GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error)
+	DescribeSafeAuthFlag(kt *kit.Kit, opt *account.DescribeSafeAuthFlagOption) (
+		*account.SafeAuthFlagResult, error)
+	SetMfaFlag(kt *kit.Kit, opt *account.SetMfaFlagOption) error
 	CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error)
 	InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
 		*cvm.InquiryPriceResult, error)
@@ -134,6 +142,9 @@ type TCloud interface {
 		*cvm.InquiryPriceResult, error)
 	ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *account.TCloudListPolicyOption) (
 		[]*v20190116.ListGrantServiceAccessNode, error)
+	CreatePolicy(kt *kit.Kit, opt *account.TCloudCreatePolicyOption) (
+		*account.TCloudCreatePolicyResult, error)
+	UpdatePolicy(kt *kit.Kit, opt *account.TCloudUpdatePolicyOption) error
 	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
 		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
 	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)
