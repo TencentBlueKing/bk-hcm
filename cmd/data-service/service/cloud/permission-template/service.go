@@ -46,6 +46,8 @@ func InitService(cap *capability.Capability) {
 		"/permission_templates/list", svc.ListPermissionTemplate)
 	h.Add("ListPermissionTemplateExt", http.MethodPost,
 		"/vendors/{vendor}/permission_templates/list", svc.ListPermissionTemplateExt)
+	h.Add("ListPermissionTmplJoinExt", http.MethodPost,
+		"/vendors/{vendor}/permission_templates/list/join", svc.ListPermissionTmplJoinExt)
 	h.Load(cap.WebService)
 }
 

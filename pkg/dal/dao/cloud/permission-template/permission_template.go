@@ -21,11 +21,14 @@
 package permissiontemplate
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/audit"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
@@ -34,6 +37,7 @@ import (
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -49,6 +53,8 @@ type PermissionTemplate interface {
 	BatchUpdate(kt *kit.Kit, models []tablecloud.PermissionTemplateTable) error
 	BatchDelete(kt *kit.Kit, expr *filter.Expression) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListPermissionTemplateDetails, error)
+	ListJoinSubAccount(kt *kit.Kit, opt *types.ListPermTmplJoinOption) (
+		*types.ListPermissionTmplJoinDetails, error)
 }
 
 var _ PermissionTemplate = new(PermissionTemplateDao)
@@ -263,4 +269,163 @@ func (dao *PermissionTemplateDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	return &types.ListPermissionTemplateDetails{Count: 0, Details: details}, nil
+}
+
+// ListJoinSubAccount lists permission_template rows with associated sub_account count.
+// pt=permission_template、sa=sub_account
+func (dao *PermissionTemplateDao) ListJoinSubAccount(kt *kit.Kit,
+	opt *types.ListPermTmplJoinOption) (*types.ListPermissionTmplJoinDetails, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list permission template join options is nil")
+	}
+	if opt.Page == nil {
+		return nil, errf.New(errf.InvalidParameter, "page is required")
+	}
+	if err := opt.Page.Validate(core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereSQL, whereArgs, err := buildPermTmplJoinWhere(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	ormOpts := orm.NewInjectTenantIDOpt(kt.TenantID)
+
+	if opt.Page.Count {
+		sqlStr := fmt.Sprintf(`SELECT COUNT(*) FROM %s AS pt %s`, table.PermissionTemplateTable, whereSQL)
+		count, err := dao.Orm.ModifySQLOpts(ormOpts).Do().Count(kt.Ctx, sqlStr, whereArgs)
+		if err != nil {
+			logs.Errorf("count permission_template join failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		return &types.ListPermissionTmplJoinDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, &types.PageSQLOption{
+		Sort: types.SortOption{Sort: "pt.id", ForceOverlap: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	selectSQL := fmt.Sprintf(
+		`SELECT pt.*,
+			(SELECT COUNT(*) FROM %s AS sa
+				WHERE JSON_CONTAINS(sa.permission_template_ids, JSON_QUOTE(pt.id))) AS associated_sub_account_count
+		FROM %s AS pt
+		%s %s`,
+		table.SubAccountTable,
+		table.PermissionTemplateTable,
+		whereSQL, pageExpr,
+	)
+
+	details := make([]types.PermissionTmplJoinRow, 0)
+	err = dao.Orm.ModifySQLOpts(ormOpts).Do().Select(kt.Ctx, &details, selectSQL, whereArgs)
+	if err != nil {
+		logs.Errorf("select permission_template join failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return &types.ListPermissionTmplJoinDetails{Count: 0, Details: details}, nil
+}
+
+// buildPermTmplJoinWhere builds the WHERE clause and named args for permission_template join list.
+func buildPermTmplJoinWhere(opt *types.ListPermTmplJoinOption) (
+	string, map[string]interface{}, error) {
+
+	if opt == nil {
+		return "", nil, fmt.Errorf("list permission template join option is nil")
+	}
+
+	whereExprs := make([]string, 0)
+	args := make(map[string]interface{})
+
+	whereExprs = append(whereExprs, "pt.vendor = :vendor")
+	args["vendor"] = string(opt.Vendor)
+
+	if len(opt.AccountIDs) > 0 {
+		whereExprs = append(whereExprs, "pt.account_id IN (:account_ids)")
+		args["account_ids"] = opt.AccountIDs
+	}
+
+	if len(opt.IDs) > 0 {
+		whereExprs = append(whereExprs, "pt.id IN (:ids)")
+		args["ids"] = opt.IDs
+	}
+
+	if len(opt.CloudIDs) > 0 {
+		whereExprs = append(whereExprs, "pt.cloud_id IN (:cloud_ids)")
+		args["cloud_ids"] = opt.CloudIDs
+	}
+
+	if len(opt.Names) > 0 {
+		nameConds := make([]string, 0, len(opt.Names))
+		for i, n := range opt.Names {
+			key := fmt.Sprintf("name_%d", i)
+			nameConds = append(nameConds, fmt.Sprintf("pt.name LIKE CONCAT('%%', :%s, '%%')", key))
+			args[key] = n
+		}
+		whereExprs = append(whereExprs, "("+strings.Join(nameConds, " OR ")+")")
+	}
+
+	if opt.Creator != "" {
+		whereExprs = append(whereExprs, "pt.creator = :creator")
+		args["creator"] = opt.Creator
+	}
+
+	if opt.Reviser != "" {
+		whereExprs = append(whereExprs, "pt.reviser = :reviser")
+		args["reviser"] = opt.Reviser
+	}
+
+	if !opt.Extension.IsEmpty() {
+		var err error
+		whereExprs, err = buildPermTmplExtWhere(whereExprs, args, opt.Vendor, opt.Extension)
+		if err != nil {
+			return "", nil, err
+		}
+	}
+
+	if len(whereExprs) == 0 {
+		return "", args, nil
+	}
+
+	return "WHERE " + strings.Join(whereExprs, " AND "), args, nil
+}
+
+// buildPermTmplExtWhere appends vendor-specific extension filter conditions.
+func buildPermTmplExtWhere(whereExprs []string, args map[string]interface{}, vendor enumor.Vendor,
+	extension tabletypes.JsonField) ([]string, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		return buildPermTmplExtWhereForTCloud(whereExprs, args, extension)
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+// buildPermTmplExtWhereForTCloud appends TCloud extension filter conditions.
+func buildPermTmplExtWhereForTCloud(whereExprs []string, args map[string]interface{},
+	extension tabletypes.JsonField) ([]string, error) {
+
+	tc := new(types.TCloudPermTmplJoinExt)
+	if err := json.Unmarshal([]byte(extension), tc); err != nil {
+		return nil, fmt.Errorf("invalid tcloud extension json: %w", err)
+	}
+	if err := validator.Validate.Struct(tc); err != nil {
+		return nil, err
+	}
+
+	if len(tc.CloudSubAccountIDs) > 0 {
+		whereExprs = append(whereExprs,
+			fmt.Sprintf(`EXISTS (SELECT 1 FROM %s AS sa WHERE sa.account_id = pt.account_id
+				AND sa.vendor = pt.vendor AND sa.cloud_id IN (:cloud_sub_account_ids))`,
+				table.SubAccountTable))
+		args["cloud_sub_account_ids"] = tc.CloudSubAccountIDs
+	}
+
+	return whereExprs, nil
 }

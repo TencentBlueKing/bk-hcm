@@ -149,3 +149,80 @@ func convTableToBasePermissionTemplate(one tablecloud.PermissionTemplateTable) c
 		},
 	}
 }
+
+// ListPermissionTmplJoinExt lists permission templates with associated sub_account count.
+func (svc *service) ListPermissionTmplJoinExt(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(protocloud.PermissionTmplJoinExtListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.listPermTmplJoinExtTCloud(cts, vendor, req)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter,
+			"join permission template list is not supported for vendor: %s", vendor)
+	}
+}
+
+func (svc *service) listPermTmplJoinExtTCloud(cts *rest.Contexts, vendor enumor.Vendor,
+	req *protocloud.PermissionTmplJoinExtListReq) (interface{}, error) {
+
+	daoOpt := &types.ListPermTmplJoinOption{
+		BkBizID:    req.BkBizID,
+		IDs:        req.IDs,
+		CloudIDs:   req.CloudIDs,
+		Names:      req.Names,
+		AccountIDs: req.AccountIDs,
+		Creator:    req.Creator,
+		Reviser:    req.Reviser,
+		Page:       req.Page,
+		Vendor:     enumor.TCloud,
+		Extension:  req.Extension,
+	}
+
+	result, err := svc.dao.PermissionTemplate().ListJoinSubAccount(cts.Kit, daoOpt)
+	if err != nil {
+		logs.Errorf("list join permission template failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if req.Page.Count {
+		return &protocloud.PermissionTmplJoinExtListResult{Count: result.Count}, nil
+	}
+
+	details := make([]protocloud.PermissionTmplJoinExtDetail, 0, len(result.Details))
+	for i := range result.Details {
+		d, err := convJoinRowToTmplDetail(result.Details[i])
+		if err != nil {
+			return nil, err
+		}
+		details = append(details, *d)
+	}
+
+	return &protocloud.PermissionTmplJoinExtListResult{Details: details}, nil
+}
+
+func convJoinRowToTmplDetail(row types.PermissionTmplJoinRow) (*protocloud.PermissionTmplJoinExtDetail, error) {
+	ext := new(corecloud.TCloudPermissionTemplateExtension)
+	if len(row.Extension) != 0 {
+		if err := json.UnmarshalFromString(string(row.Extension), ext); err != nil {
+			return nil, fmt.Errorf("unmarshal permission template extension failed, err: %w", err)
+		}
+	}
+
+	return &protocloud.PermissionTmplJoinExtDetail{
+		BasePermissionTemplate:    convTableToBasePermissionTemplate(row.PermissionTemplateTable),
+		AssociatedSubAccountCount: row.AssociatedSubAccountCount,
+		Extension:                 ext,
+	}, nil
+}

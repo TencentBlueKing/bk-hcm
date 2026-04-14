@@ -25,7 +25,9 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
@@ -142,4 +144,65 @@ type PermissionTemplateExtListResult[T corecloud.PermissionTemplateExtension] st
 type PermissionTemplateExtListResp[T corecloud.PermissionTemplateExtension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *PermissionTemplateExtListResult[T] `json:"data"`
+}
+
+// -------------------------- Join List (permission_template + sub_account) --------------------------
+
+// PermissionTemplateFilters defines biz-scoped list filters; style aligned with SubAccountSecretFilters.
+type PermissionTemplateFilters struct {
+	IDs        []string             `json:"ids" validate:"omitempty,max=500"`
+	CloudIDs   []string             `json:"cloud_ids" validate:"omitempty,max=500"`
+	Names      []string             `json:"names" validate:"omitempty,max=500"`
+	AccountIDs []string             `json:"account_ids" validate:"omitempty,max=500,dive,lte=64"`
+	Creator    string               `json:"creator" validate:"omitempty,lte=64"`
+	Reviser    string               `json:"reviser" validate:"omitempty,lte=64"`
+	Extension  tabletypes.JsonField `json:"extension,omitempty"`
+}
+
+// Validate validates PermissionTemplateFilters.
+func (f *PermissionTemplateFilters) Validate() error {
+	return validator.Validate.Struct(f)
+}
+
+// PermissionTmplJoinExtListReq defines permission template join-list request for data-service
+type PermissionTmplJoinExtListReq struct {
+	PermissionTemplateFilters `json:",inline"`
+	BkBizID                   int64          `json:"bk_biz_id" validate:"required"`
+	Page                      *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate validates PermissionTmplJoinExtListReq.
+func (req *PermissionTmplJoinExtListReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.PermissionTemplateFilters.Validate(); err != nil {
+		return err
+	}
+
+	if req.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+
+	return req.Page.Validate(core.NewDefaultPageOption())
+}
+
+// PermissionTmplJoinExtDetail is one row in permission_template join list response.
+type PermissionTmplJoinExtDetail struct {
+	corecloud.BasePermissionTemplate `json:",inline"`
+	AssociatedSubAccountCount        int64                                        `json:"associated_sub_account_count"`
+	Extension                        *corecloud.TCloudPermissionTemplateExtension `json:"extension"`
+}
+
+// PermissionTmplJoinExtListResult defines permission template join list response.
+type PermissionTmplJoinExtListResult struct {
+	Count   uint64                        `json:"count"`
+	Details []PermissionTmplJoinExtDetail `json:"details"`
+}
+
+// PermissionTmplJoinListResp defines permission template join list HTTP response.
+type PermissionTmplJoinListResp struct {
+	rest.BaseResp `json:",inline"`
+	Data          *PermissionTmplJoinExtListResult `json:"data"`
 }

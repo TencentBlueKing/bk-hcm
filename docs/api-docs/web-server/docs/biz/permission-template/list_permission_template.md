@@ -17,21 +17,21 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/list
 
 ### 输入参数
 
-| 参数名称         | 参数类型   | 必选 | 描述                                                                                     |
-|--------------|--------|----|----------------------------------------------------------------------------------------|
-| cloud_ids    | string array | 否  | 权限模板云上ID列表，精确匹配，最多500个                                                        |
-| names        | string array | 否  | 权限模板名称列表，模糊匹配，最多500个                                                          |
-| extension    | object       | 否  | 混合云差异字段                                                   |
-| creator      | string | 否  | 创建人，精确匹配                                                                          |
-| reviser      | string | 否  | 更新人，精确匹配                                                                          |
-| page         | object | 是  | 分页设置                                                                                   |
+| 参数名称                  | 参数类型           | 必选   | 描述                                   |
+|-----------------------|----------------|------|--------------------------------------|
+| cloud_ids             | string array   | 否    | 权限模板云上ID列表，精确匹配，最多500个               |
+| names                 | string array   | 否    | 权限模板名称列表，模糊匹配，最多500个                 |
+| extension             | object[vendor] | 否    | 云产商扩展字段                              |
+| creator               | string         | 否    | 创建人，精确匹配                             |
+| reviser               | string         | 否    | 更新人，精确匹配                             |
+| page                  | object         | 是    | 分页设置                                 |
 
-#### extension[tcloud]
+#### extension [tcloud]
 
-| 参数名称           | 参数类型   | 必选 | 描述                                                                                     |
-|----------------|--------|----|----------------------------------------------------------------------------------------|
-| cloud_sub_account_ids | string array | 否  | 所属三级账号云上ID列表，筛选关联了这些三级账号的权限模板，最多500个                                      |
-| cloud_account_ids     | string array | 否  | 所属二级账号云上ID列表，精确匹配，最多500个                                                      |
+| 参数名称                    | 参数类型           | 必选 | 描述                   |
+|-------------------------|----------------|----|----------------------|
+| cloud_main_account_ids  | string array   | 否  | 云二级账号id列表，长度限制500    |
+| cloud_sub_account_ids   | string array   | 否  | 所属三级账号云上ID列表，长度限制500 |
 
 #### page
 
@@ -52,7 +52,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/list
 ```json
 {
   "extension": {
-    "cloud_account_ids": ["11111"]
+    "cloud_main_account_ids":["10012345"],
+    "cloud_sub_account_ids":["10012555"]
   },
   "names": ["ReadOnly"],
   "page": {

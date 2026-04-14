@@ -20,11 +20,47 @@
 package types
 
 import (
+	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/enumor"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	tabletypes "hcm/pkg/dal/table/types"
 )
 
 // ListPermissionTemplateDetails list permission template details.
 type ListPermissionTemplateDetails struct {
 	Count   uint64                               `json:"count,omitempty"`
 	Details []tablecloud.PermissionTemplateTable `json:"details,omitempty"`
+}
+
+// TCloudPermTmplJoinExt is an alias of corecloud.TCloudPermissionTemplateListExt (shared with
+// data-service API extension JSON) for tcloud biz join list filters in the DAO.
+type TCloudPermTmplJoinExt = corecloud.TCloudPermissionTemplateListExt
+
+// ListPermTmplJoinOption defines filters for biz-scoped permission_template join sub_account list.
+type ListPermTmplJoinOption struct {
+	Vendor     enumor.Vendor
+	BkBizID    int64
+	IDs        []string
+	CloudIDs   []string
+	Names      []string
+	AccountIDs []string
+	Creator    string
+	Reviser    string
+	Page       *core.BasePage
+	// Extension is vendor-specific JSON from upper layer; DAO parses for TCloud.
+	Extension tabletypes.JsonField
+}
+
+// PermissionTmplJoinRow is one row of permission_template with associated sub_account count
+// computed via subquery.
+type PermissionTmplJoinRow struct {
+	tablecloud.PermissionTemplateTable `db:",inline"`
+	AssociatedSubAccountCount          int64 `db:"associated_sub_account_count"`
+}
+
+// ListPermissionTmplJoinDetails is the join list result.
+type ListPermissionTmplJoinDetails struct {
+	Count   uint64                  `json:"count,omitempty"`
+	Details []PermissionTmplJoinRow `json:"details,omitempty"`
 }

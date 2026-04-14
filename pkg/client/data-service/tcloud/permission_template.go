@@ -107,3 +107,26 @@ func (c *PermissionTemplateClient) ListPermissionTemplateExt(kt *kit.Kit, req *p
 
 	return resp.Data, nil
 }
+
+// ListPermissionTmplJoinExt lists permission templates joined with sub_account and permission_policy_library.
+func (c *PermissionTemplateClient) ListPermissionTmplJoinExt(kt *kit.Kit,
+	req *protocloud.PermissionTmplJoinExtListReq) (*protocloud.PermissionTmplJoinExtListResult, error) {
+
+	resp := new(protocloud.PermissionTmplJoinListResp)
+	err := c.client.Post().
+		WithContext(kt.Ctx).
+		Body(req).
+		SubResourcef("/permission_templates/list/join").
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
