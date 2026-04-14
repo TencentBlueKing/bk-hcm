@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // RenderItsmTitle renders the ITSM ticket title.
@@ -64,7 +65,7 @@ func (a *ApplicationOfCreatePermTemplate) RenderItsmForm() (string, error) {
 		fmt.Sprintf("策略库ID: %s", library.ID),
 		fmt.Sprintf("策略内容: %s", library.PolicyDocument),
 		fmt.Sprintf("模板名称: %s", a.content.Name),
-		fmt.Sprintf("模板描述: %s", a.content.Memo),
+		fmt.Sprintf("模板描述: %s", cvt.PtrToVal(a.content.Memo)),
 	}
 
 	return strings.Join(items, "\n"), nil

@@ -55,6 +55,7 @@ func (opt *TCloudUpdatePolicyOption) Validate() error {
 // TCloudDeletePolicyOption defines options for deleting one or more CAM policies.
 type TCloudDeletePolicyOption struct {
 	PolicyIDs []uint64 `json:"policy_ids" validate:"required,min=1"`
+	Region    string   `json:"region"`
 }
 
 // Validate TCloudDeletePolicyOption.

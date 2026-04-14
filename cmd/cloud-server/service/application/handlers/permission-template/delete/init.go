@@ -26,6 +26,7 @@ import (
 	permissiontemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
@@ -57,9 +58,8 @@ func newHandlerFromContent(opt *handlers.HandlerOption, base *proto.BasePermTemp
 
 // ApplicationOfDeletePermTemplate is the handler for operate_permission_template (delete action).
 type ApplicationOfDeletePermTemplate struct {
-	handlers.BaseApplicationHandler
+	permissiontemplate.ApplicationBasePermissionTemplate
 
-	bkBizID int64
 	content *deletePermTemplateContent
 }
 
@@ -79,40 +79,14 @@ func newApplicationFromContent(opt *handlers.HandlerOption, base *proto.BasePerm
 	ct *deletePermTemplateContent) *ApplicationOfDeletePermTemplate {
 
 	return &ApplicationOfDeletePermTemplate{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.OperatePermissionTemplate, base.Vendor,
-		),
-		bkBizID: base.BkBizID,
-		content: ct,
+		ApplicationBasePermissionTemplate: permissiontemplate.NewApplicationBasePermissionTemplate(opt, base),
+		content:                           ct,
 	}
-}
-
-// BkBizID returns the business ID.
-func (a *ApplicationOfDeletePermTemplate) BkBizID() int64 {
-	return a.bkBizID
-}
-
-// GetBkBizIDs returns the business IDs for this application.
-func (a *ApplicationOfDeletePermTemplate) GetBkBizIDs() []int64 {
-	return []int64{a.bkBizID}
-}
-
-// PrepareReq no pre-processing needed.
-func (a *ApplicationOfDeletePermTemplate) PrepareReq() error {
-	return nil
-}
-
-// PrepareReqFromContent no pre-processing needed when restoring from DB content.
-func (a *ApplicationOfDeletePermTemplate) PrepareReqFromContent() error {
-	return nil
 }
 
 // GetItsmApprover returns ITSM approver configuration.
-func (a *ApplicationOfDeletePermTemplate) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return []itsm.VariableApprover{
-		{
-			Variable:  "account_manager",
-			Approvers: managers,
-		},
-	}
+func (a *ApplicationOfDeletePermTemplate) GetItsmApprover(kt *kit.Kit, managers []string) (
+	[]itsm.VariableApprover, error) {
+
+	return a.GetItsmApproverByTemplateID(kt, a.content.ID)
 }

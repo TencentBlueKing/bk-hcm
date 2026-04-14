@@ -26,6 +26,8 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers/permission-template"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -84,4 +86,11 @@ func newApplicationFromContent(opt *handlers.HandlerOption, base *proto.BasePerm
 		ApplicationBasePermissionTemplate: permissiontemplate.NewApplicationBasePermissionTemplate(opt, base),
 		content:                           ct,
 	}
+}
+
+// GetItsmApprover returns ITSM approver configuration.
+func (a *ApplicationOfUpdatePermTemplate) GetItsmApprover(kt *kit.Kit, managers []string) (
+	[]itsm.VariableApprover, error) {
+
+	return a.GetItsmApproverByTemplateID(kt, a.content.ID)
 }

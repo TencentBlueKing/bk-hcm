@@ -111,7 +111,7 @@ func (t *TCloudImpl) DeletePolicy(kt *kit.Kit, opt *typeaccount.TCloudDeletePoli
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	client, err := t.clientSet.CamServiceClient(opt.Region)
 	if err != nil {
 		return fmt.Errorf("new cam client failed, err: %v", err)
 	}

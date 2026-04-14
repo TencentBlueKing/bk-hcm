@@ -4,6 +4,8 @@
 
 系统 SHALL 提供 `POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/delete_permission_template` 接口（v9.9.9+），接收 `id`（权限模板ID）作为请求体，创建 ITSM 申请单。当前仅支持 vendor=tcloud。
 
+接口 SHALL 要求以下权限：`meta.PermissionTemplate` / `meta.Delete`（含 BizID）。
+
 #### Scenario: 创建申请单成功
 - **WHEN** 发送 POST 请求，id 指向一个自定义策略且关联三级账号数为 0 的权限模板，业务 ID 归属合法
 - **THEN** 系统创建 ITSM 申请单，返回 `{"id": "<application_id>"}`

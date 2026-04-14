@@ -4,7 +4,7 @@
 
 系统 SHALL 提供 `POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_permission_template` 接口，供业务侧用户对自定义权限模板提交更新申请单，经 ITSM 审批后执行变更。
 
-接口 SHALL 要求以下权限：biz access + `PermissionTemplate:Create`（与创建接口共用同一权限类型）。
+接口 SHALL 要求以下权限：`meta.PermissionTemplate` / `meta.Update`（含 BizID）。
 
 请求参数：
 - `id`（string，必填）：目标权限模板 ID

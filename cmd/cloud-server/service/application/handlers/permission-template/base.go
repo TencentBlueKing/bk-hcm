@@ -25,8 +25,13 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
@@ -100,12 +105,23 @@ func (a *ApplicationBasePermissionTemplate) GetBkBizIDs() []int64 {
 	return []int64{a.bkBizID}
 }
 
-// GetItsmApprover returns ITSM approver configuration.
-func (a *ApplicationBasePermissionTemplate) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return []itsm.VariableApprover{
-		{
-			Variable:  "account_manager",
-			Approvers: managers,
-		},
+// GetItsmApproverByTemplateID gets the itsm approver by template ID.
+func (a *ApplicationBasePermissionTemplate) GetItsmApproverByTemplateID(kt *kit.Kit, id string) (
+	[]itsm.VariableApprover, error) {
+
+	req := protocloud.PermissionTemplateListReq{
+		Filter: tools.EqualExpression("id", id),
+		Page:   core.NewDefaultBasePage(),
 	}
+	template, err := a.Client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, &req)
+	if err != nil {
+		logs.Errorf("list permission template failed, err: %v, id: %s, rid: %s", err, id, kt.Rid)
+		return nil, err
+	}
+	if template.Details == nil || len(template.Details) == 0 {
+		logs.Errorf("permission template not found, id: %s, rid: %s", id, kt.Rid)
+		return nil, fmt.Errorf("permission template not found, id: %s", id)
+	}
+
+	return a.GetAccountApprover(kt, template.Details[0].AccountID)
 }

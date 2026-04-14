@@ -56,7 +56,7 @@
 - `NewHandlerFromApplication(opt, appContent string) (handlers.ApplicationHandler, error)`：先将 appContent 反序列化为 `BasePermTemplateContent` 以获取 action，再查找注册表调用对应 factory，并将 `base` 和原始 `appContent` 同时传给 factory。
 - `ApplicationBasePermissionTemplate` struct，embed `handlers.BaseApplicationHandler` 和 `*permissionpolicylibrary.PolicyLibraryApplier`，持有 `bkBizID int64`（从 `BasePermTemplateContent` 中提取）；公开 `BkBizID() int64` 方法。
 - `NewApplicationBasePermissionTemplate(opt, base *proto.BasePermTemplateContent) ApplicationBasePermissionTemplate`：构造函数，初始化 BaseApplicationHandler、PolicyLibraryApplier 及 bkBizID。
-- 公共方法：`PrepareReq()`（no-op）、`PrepareReqFromContent()`（no-op）、`GetBkBizIDs() []int64`、`GetItsmApprover(managers []string) []itsm.VariableApprover`（返回 account_manager approver）
+- 公共方法：`PrepareReq()`（no-op）、`PrepareReqFromContent()`（no-op）、`GetBkBizIDs() []int64`、`GetItsmApproverByTemplateID(kt *kit.Kit, id string) ([]itsm.VariableApprover, error)`（按模板 ID 查询 account_id 后委托给 `GetAccountApprover`）；各 action handler 自行覆写 `GetItsmApprover`
 
 #### Scenario: 注册并分发 create action
 - **WHEN** `create/init.go` 通过 `init()` 注册 `PermTemplateActionCreate`，之后调用 `NewHandlerFromApplication`，content 中 action 为 "create"
@@ -120,12 +120,11 @@
 
 **`cmd/cloud-server/service/application/create.go`** — 新增 `CreateBizForCreatePermissionTemplate`，该 handler SHALL：
 1. 校验 `bk_biz_id > 0`
-2. 校验业务访问权限（`meta.Biz` / `meta.Access`）
-3. 校验云权限模板操作权限（`meta.PermissionTemplate` / `meta.Create`）
-4. 解析并校验 `vendor`
-5. 解析 `BizCreatePermissionTemplateReq` 并校验
-6. 构造 `BasePermTemplateContent{Action: PermTemplateActionCreate, Vendor: vendor, BkBizID: bizID}`，调用 `NewApplicationOfCreatePermTemplate(opt, base, req)` 创建 handler，调用 `a.create(cts, &proto.CreateCommonReq{}, handler)`
-7. `createApplication()` 的 bkBizIDs 判断中加入 `OperatePermissionTemplate`
+2. 校验云权限模板操作权限（`meta.PermissionTemplate` / `meta.Create`，含 BizID）
+3. 解析并校验 `vendor`
+4. 解析 `BizCreatePermissionTemplateReq` 并校验
+5. 构造 `BasePermTemplateContent{Action: PermTemplateActionCreate, Vendor: vendor, BkBizID: bizID}`，调用 `NewApplicationOfCreatePermTemplate(opt, base, req)` 创建 handler，调用 `a.create(cts, &proto.CreateCommonReq{}, handler)`
+6. `createApplication()` 的 bkBizIDs 判断中加入 `OperatePermissionTemplate`
 
 **`cmd/cloud-server/service/application/approve.go`** — `getHandlerByApplication()` 新增 case：
 `case enumor.OperatePermissionTemplate` → 调用 `permissiontemplate.NewHandlerFromApplication(opt, application.Content)`

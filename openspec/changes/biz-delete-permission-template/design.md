@@ -19,13 +19,13 @@
 
 ## Decisions
 
-### 决策 1：delete handler 不嵌入 PolicyLibraryApplier
+### 决策 1：delete handler 嵌入 ApplicationBasePermissionTemplate
 
-**选择**：`ApplicationOfDeletePermTemplate` 直接嵌入 `handlers.BaseApplicationHandler`，不走 `ApplicationBasePermissionTemplate`。
+**选择**：`ApplicationOfDeletePermTemplate` 嵌入 `permissiontemplate.ApplicationBasePermissionTemplate`（而非直接嵌入 `handlers.BaseApplicationHandler`），复用 base 已提供的 `BkBizID`、`GetBkBizIDs`、`PrepareReq`、`PrepareReqFromContent`、`GetItsmApproverByTemplateID` 等方法，自身覆写 `GetItsmApprover` 委托给 `GetItsmApproverByTemplateID(kt, content.ID)`。
 
-**理由**：删除操作与策略库（PolicyLibrary）完全无关，强行继承 `PolicyLibraryApplier` 会污染职责边界，引入不必要的依赖和字段。`BaseApplicationHandler` 已提供 `Client`、`Cts`、`GetAccount`、`GetBizName` 等所有需要的基础能力。
+**理由**：delete handler 虽与策略库操作无关，但 `ApplicationBasePermissionTemplate` 同时提供了 handler 生命周期所需的所有公共方法（bkBizID 封装、ITSM approver 查询等），直接复用可避免在 delete 包中重复实现多个桩方法，降低维护成本。`PolicyLibraryApplier` 的方法不会被调用，嵌入不带来运行时开销。
 
-**备选方案**：继续嵌入 `ApplicationBasePermissionTemplate`——被否，会暴露 20+ 个无关方法给 delete handler。
+**原备选方案**（曾被选取后废弃）：直接嵌入 `handlers.BaseApplicationHandler + bkBizID`——需在 delete/init.go 中手动复现 `BkBizID`、`GetBkBizIDs`、`PrepareReq`、`PrepareReqFromContent`、`GetItsmApprover` 等全部桩方法，代码冗余，与 create/update handler 结构不对称。
 
 ### 决策 2：deliver 逻辑内联，不新增 applier 方法
 

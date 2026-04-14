@@ -15,15 +15,15 @@
 
 ## 4. permission-template handler 体系
 
-- [x] 4.1 `handlers/permission-template/base.go`（新建）：定义 `ActionHandlerFactory`、`actionHandlerRegistry`、`RegisterActionHandler`、`NewHandlerFromApplication`、`ApplicationBasePermissionTemplate` 及公共方法
-- [x] 4.2 `handlers/permission-template/create/init.go`（新建）：定义 `ApplicationOfCreatePermissionTemplate`、`NewApplicationOfCreatePermissionTemplate`、`BuildContent`，在 `init()` 中注册 `PermTemplateActionCreate`
+- [x] 4.1 `handlers/permission-template/base.go`（新建）：定义 `ActionHandlerFactory`、`actionHandlerRegistry`、`RegisterActionHandler`、`NewHandlerFromApplication`、`ApplicationBasePermissionTemplate` 及公共方法（`PrepareReq`、`PrepareReqFromContent`、`GetBkBizIDs`、`GetItsmApproverByTemplateID`）；其中 `GetItsmApproverByTemplateID(kt, id string)` 按模板 ID 查询账号后委托给 `GetAccountApprover`，替代原先固定返回 account_manager 的 `GetItsmApprover`
+- [x] 4.2 `handlers/permission-template/create/init.go`（新建）：定义 `createPermTemplateContent`、`ApplicationOfCreatePermTemplate`、`NewApplicationOfCreatePermTemplate`、`newHandlerFromContent`，在 `init()` 中注册 `PermTemplateActionCreate`；并覆写 `GetItsmApprover(kt, managers)` 直接通过 `content.AccountID` 调用 `GetAccountApprover`
 - [x] 4.3 `handlers/permission-template/create/check.go`（新建）：实现 `CheckReq()`，依次执行账号校验、biz 一致性校验、策略库校验、biz scope 校验、重复创建校验
 - [x] 4.4 `handlers/permission-template/create/deliver.go`（新建）：实现 `GenerateApplicationContent()` 和 `Deliver()`，调用 `GetPolicyLibraryDetail`、`TCloudCreateCAMPolicy`、`TCloudCreateLocalTemplate`、`RecordApplyAudit`
 - [x] 4.5 `handlers/permission-template/create/create_itsm_ticket.go`（新建）：实现 `RenderItsmTitle()` 和 `RenderItsmForm()`
 
 ## 5. 服务层注册
 
-- [x] 5.1 `cmd/cloud-server/service/application/create.go`：新增 `CreateBizForCreatePermissionTemplate` handler（biz 鉴权、vendor 校验、请求解析、content 构造、调用 `a.create()`）
+- [x] 5.1 `cmd/cloud-server/service/application/create.go`：新增 `CreateBizForCreatePermissionTemplate` handler（`meta.PermissionTemplate/meta.Create` 鉴权含 BizID、vendor 校验、请求解析、content 构造、调用 `a.create()`）
 - [x] 5.2 同文件 `createApplication()`：在 bkBizIDs 赋值判断中加入 `enumor.OperatePermissionTemplate`
 - [x] 5.3 `cmd/cloud-server/service/application/approve.go`：`getHandlerByApplication()` 新增 `case enumor.OperatePermissionTemplate`，调用 `permissiontemplate.NewHandlerFromApplication`；添加 blank import 触发 init() 注册
 - [x] 5.4 `cmd/cloud-server/service/application/init.go`：`bizService()` 中注册路由 `POST /vendors/{vendor}/applications/types/create_permission_template`

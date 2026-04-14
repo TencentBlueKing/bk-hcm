@@ -20,13 +20,13 @@
 
 ## 5. Application Handler — delete 包
 
-- [x] 5.1 新建 `cmd/cloud-server/service/application/handlers/permission-template/delete/init.go`：定义 `deletePermTemplateContent`（嵌入 `BasePermTemplateContent` + `ID string`）、`ApplicationOfDeletePermTemplate`（嵌入 `handlers.BaseApplicationHandler` + `bkBizID`）及全部接口桩方法（`BkBizID`、`GetBkBizIDs`、`PrepareReq`、`PrepareReqFromContent`、`GetItsmApprover`），在 `init()` 注册 `PermTemplateActionDelete` handler
+- [x] 5.1 新建 `cmd/cloud-server/service/application/handlers/permission-template/delete/init.go`：定义 `deletePermTemplateContent`（嵌入 `BasePermTemplateContent` + `ID string`）、`ApplicationOfDeletePermTemplate`（嵌入 `permissiontemplate.ApplicationBasePermissionTemplate`，公共方法由 base 继承，无需手写桩方法）；覆写 `GetItsmApprover(kt, managers)` 委托给 `GetItsmApproverByTemplateID(kt, content.ID)`，在 `init()` 注册 `PermTemplateActionDelete` handler
 - [x] 5.2 新建 `cmd/cloud-server/service/application/handlers/permission-template/delete/check.go`：实现 `CheckReq()`，内部 `switch vendor`，`checkTCloud()` 完成：获取模板详情、校验 CloudType==TCloudCustomPolicy、校验 biz 归属、查询子账号关联数==0
 - [x] 5.3 新建 `cmd/cloud-server/service/application/handlers/permission-template/delete/deliver.go`：实现 `GenerateApplicationContent()` 和 `Deliver()`，内部 `switch vendor`，`deleteTCloud()` 完成：调用 hc-service `DeleteCAMPolicy` + data-service `BatchDelete`，返回 `Completed` 或 `DeliverError`
 - [x] 5.4 新建 `cmd/cloud-server/service/application/handlers/permission-template/delete/create_itsm_ticket.go`：实现 `RenderItsmTitle()`（格式：`申请删除云权限模板(<name>)`）和 `RenderItsmForm()`（包含业务、云厂商、云账号、权限模板 ID、权限模板名称）
 
 ## 6. Application Service — 路由注册
 
-- [x] 6.1 在 `cmd/cloud-server/service/application/create.go` 新增 `CreateBizForDeletePermissionTemplate` 方法：参考 `CreateBizForUpdatePermissionTemplate`，校验 biz_id / 鉴权 / vendor，构造 `BasePermTemplateContent{Action: PermTemplateActionDelete}`，调用 delete handler
+- [x] 6.1 在 `cmd/cloud-server/service/application/create.go` 新增 `CreateBizForDeletePermissionTemplate` 方法：校验 biz_id、`meta.PermissionTemplate/meta.Delete` 鉴权含 BizID、vendor 校验，构造 `BasePermTemplateContent{Action: PermTemplateActionDelete}`，调用 delete handler
 - [x] 6.2 在 `cmd/cloud-server/service/application/init.go` 注册路由 `POST /vendors/{vendor}/applications/types/delete_permission_template`，绑定 `CreateBizForDeletePermissionTemplate`
 - [x] 6.3 在 `cmd/cloud-server/service/application/handlers/permission-template/delete/init.go` 的 `import` 中确保 delete 包被 side-effect 导入（在 application service 的某个 init 导入处添加 `_ "hcm/cmd/cloud-server/service/application/handlers/permission-template/delete"`）
