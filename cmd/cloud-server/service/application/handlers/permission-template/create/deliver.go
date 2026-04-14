@@ -35,7 +35,7 @@ func (a *ApplicationOfCreatePermTemplate) GenerateApplicationContent() interface
 
 // Deliver executes the actual resource creation after approval.
 func (a *ApplicationOfCreatePermTemplate) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
-	tmplInfo := permissionpolicylibrary.TmplBaseInfo{Name: a.content.Name, Memo: a.content.Memo}
+	tmplInfo := permissionpolicylibrary.CreateTmplBaseInfo{Name: a.content.Name, Memo: a.content.Memo}
 	accountIDs := []string{a.content.AccountID}
 	resp, err := a.ApplyCreateWithTmplInfo(a.Cts.Kit, a.content.Vendor, a.content.PolicyLibraryID, accountIDs, tmplInfo)
 	if err != nil {

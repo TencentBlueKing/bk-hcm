@@ -45,6 +45,8 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers/permission-template"
 	// blank import to register the create permission template handler in the registry via init()
 	_ "hcm/cmd/cloud-server/service/application/handlers/permission-template/create"
+	// blank import to register the update permission template handler in the registry via init()
+	_ "hcm/cmd/cloud-server/service/application/handlers/permission-template/update"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"

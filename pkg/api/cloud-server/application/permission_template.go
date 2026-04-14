@@ -45,6 +45,22 @@ func (req *BizCreatePermissionTemplateReq) Validate() error {
 	return validator.ValidatePermTmplName(req.Name)
 }
 
+// BizUpdatePermissionTemplateReq is the request to create an application for updating a
+// custom permission template to use a new policy library.
+type BizUpdatePermissionTemplateReq struct {
+	// ID is the ID of the existing permission template to update.
+	ID string `json:"id" validate:"required"`
+	// PolicyLibraryID is the new permission policy library ID to bind.
+	PolicyLibraryID string `json:"policy_library_id" validate:"required"`
+	// Memo is an optional description.
+	Memo *string `json:"memo"`
+}
+
+// Validate validates the request.
+func (req *BizUpdatePermissionTemplateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // BasePermTemplateContent is the common header embedded in all permission template application content structs.
 // Each action's content struct embeds this base and adds action-specific fields.
 type BasePermTemplateContent struct {
