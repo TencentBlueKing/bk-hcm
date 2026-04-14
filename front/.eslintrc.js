@@ -13,6 +13,5 @@ module.exports = {
     'vue/require-explicit-emits': 0,
     'vue/multi-word-component-names': 0,
     'vue/component-definition-name-casing': 0,
-    // 'prettier/prettier': ['error', { endOfLine: 'auto' }],
   },
 };
