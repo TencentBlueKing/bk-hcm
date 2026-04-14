@@ -29,6 +29,8 @@ export type AuthResourceType =
   | 'main_account'
   | 'account_bill'
   | 'load_balancer'
+  | 'sub_account_secret'
+  | 'sub_account'
   | 'permission_policy_library'
   | 'permission_template'
   | 'sub_account_secret'
@@ -338,6 +340,54 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     action: 'delete',
     resourceType: 'permission_template',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_CREATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'create',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_UPDATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'update',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_DELETE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'delete',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_UPDATE_SUB_ACCOUNT]: {
+    id: 'biz_sub_account_operate',
+    action: 'update',
+    resourceType: 'sub_account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_DELETE_SUB_ACCOUNT]: {
+    id: 'biz_sub_account_operate',
+    action: 'delete',
+    resourceType: 'sub_account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_UPDATE_SECONDARY_ACCOUNT]: {
+    id: 'biz_account_operate',
+    action: 'update',
+    resourceType: 'account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_CREATE_SECONDARY_ACCOUNT]: {
+    id: 'biz_account_operate',
+    action: 'create',
+    resourceType: 'account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_DELETE_SECONDARY_ACCOUNT]: {
+    id: 'biz_account_operate',
+    action: 'delete',
+    resourceType: 'account',
+    transform: bizTransform,
   },
   [authSymbol.AUTH_CREATE_SUB_ACCOUNT_SECRET]: {
     id: 'biz_sub_account_secret_operate',
