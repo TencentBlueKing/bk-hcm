@@ -34,15 +34,6 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-const formatEmail = (email: string) => {
-  if (!email) return '--';
-  const atIndex = email.indexOf('@');
-  if (atIndex <= 3) return email;
-  const prefix = email.substring(0, 3);
-  const suffix = email.substring(atIndex);
-  return `${prefix}***${suffix}`;
-};
-
 const formatPhone = (phone: string) => {
   if (!phone) return '--';
   if (phone.length < 7) return phone;
@@ -62,7 +53,12 @@ const handleDeleteAccount = (row: ISubAccountItem) => {
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-const isCurRowSelectEnable = (_row: any) => true;
+const isCurRowSelectEnable = (row: ISubAccountItem) => row.operable !== false;
+
+const isRowSelectEnable = ({ row, isCheckAll }: ISubAccountItem) => {
+  if (isCheckAll) return true;
+  return isCurRowSelectEnable(row);
+};
 
 const tableRef = ref();
 
@@ -95,9 +91,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         () => row.name || '--',
       );
   }
-  if (column.id === 'email') {
-    return ({ row }: { row: ISubAccountItem }) => formatEmail(row.email);
-  }
+
   if (column.id === 'phone_num') {
     return ({ row }: { row: ISubAccountItem }) => formatPhone(row.phone_num);
   }
@@ -114,6 +108,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       :pagination="pagination"
       :max-height="`calc(100vh - 500px)`"
       :settings="settings"
+      :is-row-select-enable="isRowSelectEnable"
       remote-pagination
       show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"

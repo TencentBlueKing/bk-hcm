@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useAttrs, watchEffect } from 'vue';
+import { computed, ref, useAttrs, useSlots, watchEffect } from 'vue';
 import { ModelProperty } from '@/model/typings';
 import { SelectColumn } from '@blueking/ediatable';
 import { DisplayType } from './typings';
@@ -26,6 +26,7 @@ const emit = defineEmits<{
   change: [value: string | number, item: Record<string, any> | undefined];
 }>();
 const attrs = useAttrs();
+const slots = useSlots();
 
 const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));
 
@@ -130,5 +131,9 @@ defineExpose({
     v-bind="attrs"
     @change="handleChange"
     @scroll-end="handleScrollEnd"
-  />
+  >
+    <template v-for="(slotFn, slotName) in slots" :key="slotName" #[slotName]="slotProps">
+      <component :is="slotFn" v-if="slotFn" v-bind="slotProps" />
+    </template>
+  </component>
 </template>

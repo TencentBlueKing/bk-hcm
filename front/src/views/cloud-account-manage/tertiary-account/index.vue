@@ -21,6 +21,7 @@ import AccountEditSideslider from './children/account-edit-sideslider/index.vue'
 import AccountDeleteDialog from './children/account-delete-dialog/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
+import { AUTH_CREATE_SUB_ACCOUNT, AUTH_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -45,6 +46,7 @@ const searchQs = useSearchQs({ key: 'filter', properties: searchFields.value });
 const selectedRows = ref<ISubAccountItem[]>([]);
 const totalCount = computed(() => fullList.value.length);
 const isPendingItem = (item: ISubAccountItem) => {
+  if (item.operable === false) return false;
   const managers = item.managers ?? item.extension?.managers;
   const bizIds = item.bk_biz_ids ?? item.extension?.bk_biz_ids;
   const emptyManagers = !managers || (Array.isArray(managers) && managers.length === 0);
@@ -251,12 +253,24 @@ const handleGoToPending = () => {
     <div class="table-container">
       <div class="tertiary-action-bar">
         <div class="action-btns">
-          <bk-button theme="primary" @click="handleCreateAccount">
-            <plus style="font-size: 22px" />
-            创建账号
-          </bk-button>
+          <hcm-auth
+            v-if="getBizsId()"
+            :sign="{ type: AUTH_CREATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+            v-slot="{ noPerm }"
+          >
+            <bk-button theme="primary" :disabled="noPerm" @click="handleCreateAccount">
+              <plus style="font-size: 22px" />
+              创建账号
+            </bk-button>
+          </hcm-auth>
 
-          <bk-button :disabled="selectedRows.length === 0" @click="handleBatchUpdate">批量更新</bk-button>
+          <hcm-auth
+            v-if="getBizsId()"
+            :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+            v-slot="{ noPerm }"
+          >
+            <bk-button :disabled="noPerm || selectedRows.length === 0" @click="handleBatchUpdate">批量更新</bk-button>
+          </hcm-auth>
         </div>
         <bk-alert v-if="pendingCount > 0" theme="warning" class="info-alert">
           <template #title>
@@ -265,7 +279,15 @@ const handleGoToPending = () => {
             个账号，其中待补充信息账号有
             <strong>{{ pendingCount }}</strong>
             个
-            <bk-button text theme="primary" style="margin-left: 8px" @click="handleGoToPending">去处理</bk-button>
+            <hcm-auth
+              v-if="getBizsId()"
+              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button :disabled="noPerm" text theme="primary" style="margin-left: 8px" @click="handleGoToPending">
+                去处理
+              </bk-button>
+            </hcm-auth>
           </template>
         </bk-alert>
       </div>

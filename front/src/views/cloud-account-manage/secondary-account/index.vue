@@ -47,7 +47,7 @@ const fullList = ref<ISecondaryAccountItem[]>([]);
 // 当前页展示的数据
 const tableData = ref<ISecondaryAccountItem[]>([]);
 
-// 排序参数
+// 排序参数（默认按创建时间倒序）
 const sortParams = ref<{ sort: string; order: string }>({ sort: 'created_at', order: 'DESC' });
 
 // 分页
