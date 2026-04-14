@@ -27,15 +27,13 @@ const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   'cloud-secret': defineAsyncComponent(() => import('./cloud-secret/index.vue')),
   'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
-  // 其他Tab组件待开发
-  // 'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   'permission-template': defineAsyncComponent(() => import('./permission-template/index.vue')),
 };
 const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
 // 用户点击 tab 时，更新 URL query.type（@change 仅在用户点击时触发，不会在代码修改 active 时触发）
 const handleTabChange = (name: string) => {
-  router.replace({ query: { ...route.query, type: name, filter: undefined } });
+  router.replace({ query: { type: name } });
 };
 
 // 云厂商切换

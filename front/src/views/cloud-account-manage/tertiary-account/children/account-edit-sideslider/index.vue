@@ -6,6 +6,7 @@ import { useCloudAccountStore, type ISubAccountItem, type ISubAccountUpdateParam
 import { VendorEnum } from '@/common/constant';
 import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
+import ValidatedPermissionTemplateSelector from '../components/validated-permission-template-selector.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -137,7 +138,7 @@ const parentAccountDisplay = () => {
           </bk-form-item>
 
           <bk-form-item label="权限模版" property="permission_template" required>
-            <bk-select v-model="formData.permission_template" placeholder="请选择" multiple></bk-select>
+            <ValidatedPermissionTemplateSelector v-model="formData.permission_template" placeholder="请选择权限模版" />
           </bk-form-item>
 
           <bk-form-item label="手机号">

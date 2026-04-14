@@ -10,6 +10,7 @@ import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 import ValidatedUserSelector from '../components/validated-user-selector.vue';
+import ValidatedPermissionTemplateSelector from '../components/validated-permission-template-selector.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -91,7 +92,7 @@ const isSubmitting = ref(false);
 
 const accountRefs = ref<Record<number, InstanceType<typeof SelectColumn>>>({});
 const nameRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
-const permissionTemplateRefs = ref<Record<number, InstanceType<typeof SelectColumn>>>({});
+const permissionTemplateRefs = ref<Record<number, InstanceType<typeof ValidatedPermissionTemplateSelector>>>({});
 const managerRefs = ref<Record<number, InstanceType<typeof ValidatedUserSelector>>>({});
 const receiveEmailRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
 
@@ -319,12 +320,10 @@ const handleSubmit = async () => {
                   />
                 </td>
                 <td>
-                  <SelectColumn
+                  <ValidatedPermissionTemplateSelector
                     v-model="row.permission_template"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
-                    :list="[]"
-                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '请选择权限模版' }]"
-                    multiple
+                    :display="{ on: 'cell' }"
                     placeholder="请选择"
                   />
                 </td>

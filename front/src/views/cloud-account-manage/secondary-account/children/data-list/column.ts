@@ -3,6 +3,8 @@ import { Model, Column } from '@/decorator';
 import { SITE_TYPE_OPTIONS, SYNC_STATUS_OPTIONS } from '../search/condition';
 import { ITcloudExtension } from '../../typings';
 import { FLAG_OPTIONS } from '../../constants';
+import { ISecondaryAccountItem } from '@/store';
+import { h } from 'vue';
 
 @Model('cloud-account-manage/table-column')
 export class TableColumn {
@@ -83,6 +85,18 @@ export class TableColumn {
     option: SYNC_STATUS_OPTIONS,
     index: 9,
     width: 110,
+    render: ({ row }: { row: ISecondaryAccountItem }) => {
+      const statusMap: Record<string, { class: string; text: string }> = {
+        sync_success: { class: 'status-tag status-tag-success', text: '同步成功' },
+        sync_failed: { class: 'status-tag status-tag-failed', text: '同步失败' },
+        not_sync: { class: 'status-tag status-tag-not-sync', text: '未同步' },
+        syncing: { class: 'status-tag status-tag-syncing', text: '同步中' },
+        managed: { class: 'status-tag status-tag-managed', text: '已纳管' },
+        unmanaged: { class: 'status-tag status-tag-unmanaged', text: '未纳管' },
+      };
+      const status = statusMap[row.sync_status] || { class: '', text: row.sync_status || '--' };
+      return h('span', { class: status.class }, status.text);
+    },
   })
   sync_status: string;
 

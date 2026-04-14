@@ -30,16 +30,6 @@ const { getBizsId } = useWhereAmI();
 const { settings } = useTableSettings(props.columns);
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
-// 格式化邮箱展示（脱敏处理）
-const formatEmail = (email: string) => {
-  if (!email) return '--';
-  const atIndex = email.indexOf('@');
-  if (atIndex <= 3) return email;
-  const prefix = email.substring(0, 3);
-  const suffix = email.substring(atIndex);
-  return `${prefix}***${suffix}`;
-};
-
 // 查看详情 - 触发事件
 const handleViewDetails = (row: ISecondaryAccountItem) => {
   emit('view-details', row);
@@ -52,10 +42,6 @@ const handleEditAccount = (row: ISecondaryAccountItem) => {
 
 // 自定义渲染列
 const getColumnRender = (column: ModelPropertyColumn) => {
-  // 二级账号ID列 - 从 extension.cloud_main_account_id 取值
-  if (column.id === 'extension.cloud_main_account_id') {
-    return ({ row }: { row: ISecondaryAccountItem }) => (row as any)?.extension?.cloud_main_account_id || '--';
-  }
   // 名称列 - 点击打开详情侧栏
   if (column.id === 'name') {
     return ({ row }: { row: ISecondaryAccountItem }) =>
@@ -69,30 +55,11 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         () => row.name || '--',
       );
   }
-  // 邮箱列 - 脱敏处理
-  if (column.id === 'email') {
-    return ({ row }: { row: ISecondaryAccountItem }) => formatEmail(row.email);
-  }
   // 三级账号数、密钥数 - 普通标签样式
   if (column.id === 'sub_account_count' || column.id === 'account_secret_count') {
     return ({ row }: { row: ISecondaryAccountItem }) => {
       const value = row[column.id as keyof ISecondaryAccountItem] ?? 0;
       return h('span', { style: { color: '#3A84FF' } }, value);
-    };
-  }
-  // 资源纳管状态列 - 标签样式
-  if (column.id === 'sync_status') {
-    return ({ row }: { row: ISecondaryAccountItem }) => {
-      const statusMap: Record<string, { class: string; text: string }> = {
-        sync_success: { class: 'status-tag status-tag-success', text: '同步成功' },
-        sync_failed: { class: 'status-tag status-tag-failed', text: '同步失败' },
-        not_sync: { class: 'status-tag status-tag-not-sync', text: '未同步' },
-        syncing: { class: 'status-tag status-tag-syncing', text: '同步中' },
-        managed: { class: 'status-tag status-tag-managed', text: '已纳管' },
-        unmanaged: { class: 'status-tag status-tag-unmanaged', text: '未纳管' },
-      };
-      const status = statusMap[row.sync_status] || { class: '', text: row.sync_status || '--' };
-      return h('span', { class: status.class }, status.text);
     };
   }
   return null;

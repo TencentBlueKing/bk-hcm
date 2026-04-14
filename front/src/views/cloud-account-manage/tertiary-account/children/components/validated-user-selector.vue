@@ -49,9 +49,6 @@ defineExpose({
       :placeholder="placeholder"
       @update:model-value="error = false"
     />
-    <!-- <svg v-if="error" class="icon svg-icon error-icon" v-bk-tooltips="{ content: errorMessage, disabled: !error }">
-      <use xlink:href="#bkhcm-icon-38moxingshibai-01"></use>
-    </svg> -->
     <exclamation-circle-shape
       v-if="error"
       fill="#ea3636"

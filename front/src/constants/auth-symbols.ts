@@ -96,6 +96,7 @@ export const AUTH_DELETE_SUB_ACCOUNT_SECRET = Symbol.for('auth_delete_sub_accoun
 /**
  * 二级账号
  */
+export const AUTH_CREATE_SUB_ACCOUNT = Symbol.for('auth_create_sub_account');
 export const AUTH_UPDATE_SUB_ACCOUNT = Symbol.for('auth_update_sub_account');
 export const AUTH_DELETE_SUB_ACCOUNT = Symbol.for('auth_delete_sub_account');
 export const AUTH_UPDATE_SECONDARY_ACCOUNT = Symbol.for('auth_update_secondary_account');
