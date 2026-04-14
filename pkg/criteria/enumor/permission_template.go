@@ -49,12 +49,14 @@ const (
 	PermTemplateActionCreate OperatePermTemplateAction = "create"
 	// PermTemplateActionUpdate updates an existing custom permission template to use a new policy library.
 	PermTemplateActionUpdate OperatePermTemplateAction = "update"
+	// PermTemplateActionDelete deletes an existing custom permission template.
+	PermTemplateActionDelete OperatePermTemplateAction = "delete"
 )
 
 // Validate checks whether the OperatePermTemplateAction is valid.
 func (a OperatePermTemplateAction) Validate() error {
 	switch a {
-	case PermTemplateActionCreate, PermTemplateActionUpdate:
+	case PermTemplateActionCreate, PermTemplateActionUpdate, PermTemplateActionDelete:
 		return nil
 	default:
 		return fmt.Errorf("unsupported operate permission template action: %s", a)

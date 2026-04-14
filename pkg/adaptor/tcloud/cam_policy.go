@@ -99,3 +99,32 @@ func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePoli
 
 	return nil
 }
+
+// DeletePolicy deletes a CAM policy.
+// reference: https://cloud.tencent.com/document/product/598/34577
+func (t *TCloudImpl) DeletePolicy(kt *kit.Kit, opt *typeaccount.TCloudDeletePolicyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewDeletePolicyRequest()
+	for _, id := range opt.PolicyIDs {
+		req.PolicyId = append(req.PolicyId, converter.ValToPtr(id))
+	}
+
+	if _, err = client.DeletePolicyWithContext(kt.Ctx, req); err != nil {
+		logs.Errorf("delete cam policies failed, policyIDs: %v, err: %v, rid: %s", opt.PolicyIDs, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}

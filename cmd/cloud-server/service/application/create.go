@@ -40,6 +40,7 @@ import (
 	applycreate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-create"
 	applyupdate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-update"
 	createpermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/create"
+	deletepermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/delete"
 	updatepermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/update"
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
@@ -1195,5 +1196,53 @@ func (a *applicationSvc) CreateBizForUpdatePermissionTemplate(cts *rest.Contexts
 		BkBizID: bizID,
 	}
 	handler := updatepermtemplate.NewApplicationOfUpdatePermTemplate(a.getHandlerOption(cts), base, req)
+	return a.create(cts, &proto.CreateCommonReq{}, handler)
+}
+
+// CreateBizForDeletePermissionTemplate creates an ITSM application for deleting a
+// custom permission template.
+func (a *applicationSvc) CreateBizForDeletePermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionTemplate, Action: meta.Delete}}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizDeletePermissionTemplateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	base := &proto.BasePermTemplateContent{
+		Action:  enumor.PermTemplateActionDelete,
+		Vendor:  vendor,
+		BkBizID: bizID,
+	}
+	handler := deletepermtemplate.NewApplicationOfDeletePermTemplate(a.getHandlerOption(cts), base, req)
 	return a.create(cts, &proto.CreateCommonReq{}, handler)
 }

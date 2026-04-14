@@ -61,6 +61,18 @@ func (req *BizUpdatePermissionTemplateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// BizDeletePermissionTemplateReq is the request to create an application for deleting a
+// custom permission template.
+type BizDeletePermissionTemplateReq struct {
+	// ID is the ID of the permission template to delete.
+	ID string `json:"id" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *BizDeletePermissionTemplateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // BasePermTemplateContent is the common header embedded in all permission template application content structs.
 // Each action's content struct embeds this base and adds action-specific fields.
 type BasePermTemplateContent struct {
