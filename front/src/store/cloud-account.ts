@@ -583,10 +583,10 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/list`;
     try {
       const res = await http.post(api, {
-        filter: { rules: [{ field: 'id', op: 'eq', value: id }], op: 'and' },
+        ids: [id],
         page: { count: false, start: 0, limit: 1 },
       });
-      const list = res?.data?.details ?? [];
+      const list = (res?.data as { details: ICloudSecretItem[] })?.details ?? [];
       if (list.length === 0) return null;
       const item = list[0];
       // 将 extension 中的字段提取到顶层，与列表数据处理保持一致

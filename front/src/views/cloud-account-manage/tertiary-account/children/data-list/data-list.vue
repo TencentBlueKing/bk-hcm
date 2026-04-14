@@ -7,13 +7,8 @@ import useTableSettings from '@/hooks/use-table-settings';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { Button } from 'bkui-vue';
 import type { ISubAccountItem } from '@/store/cloud-account';
-
-export interface IDataListProps {
-  columns: ModelPropertyColumn[];
-  list: ISubAccountItem[];
-  pagination: PaginationType;
-  loading?: boolean;
-}
+import { useAccountStore } from '@/store/account';
+import { AUTH_UPDATE_SUB_ACCOUNT, AUTH_DELETE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 
 const props = withDefaults(defineProps<IDataListProps>(), {
   loading: false,
@@ -25,6 +20,15 @@ const emit = defineEmits<{
   'delete-account': [row: ISubAccountItem];
   'selection-change': [selection: ISubAccountItem[]];
 }>();
+
+const accountStore = useAccountStore();
+
+export interface IDataListProps {
+  columns: ModelPropertyColumn[];
+  list: ISubAccountItem[];
+  pagination: PaginationType;
+  loading?: boolean;
+}
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
@@ -142,8 +146,27 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
-          <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
-          <bk-button theme="primary" text style="margin-left: 8px" @click="handleDeleteAccount(row)">删除</bk-button>
+          <hcm-auth :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm || row.operable === false"
+              @click="handleEditAccount(row)"
+            >
+              编辑
+            </bk-button>
+          </hcm-auth>
+          <hcm-auth :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              style="margin-left: 8px"
+              :disabled="noPerm || row.operable === false"
+              @click="handleDeleteAccount(row)"
+            >
+              删除
+            </bk-button>
+          </hcm-auth>
         </template>
       </bk-table-column>
     </bk-table>
