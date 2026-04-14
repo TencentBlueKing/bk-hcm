@@ -6,6 +6,8 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import type { ISecondaryAccountItem } from '@/store/cloud-account';
+import { AUTH_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -24,9 +26,9 @@ const emit = defineEmits<{
   'edit-account': [row: ISecondaryAccountItem];
 }>();
 
-const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
-
+const { getBizsId } = useWhereAmI();
 const { settings } = useTableSettings(props.columns);
+const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 // 格式化邮箱展示（脱敏处理）
 const formatEmail = (email: string) => {
@@ -134,7 +136,13 @@ const getColumnRender = (column: ModelPropertyColumn) => {
       </bk-table-column>
       <bk-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
-          <bk-button theme="primary" text @click="handleEditAccount(row)">编辑</bk-button>
+          <hcm-auth
+            v-if="getBizsId()"
+            :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
+            v-slot="{ noPerm }"
+          >
+            <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)">编辑</bk-button>
+          </hcm-auth>
         </template>
       </bk-table-column>
     </bk-table>
