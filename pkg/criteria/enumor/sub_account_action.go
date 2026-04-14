@@ -34,8 +34,6 @@ func (a SubAccountAction) Validate() error {
 	case SubAccountActionDelete:
 	case SubAccountActionCreateSecretKey:
 	case SubAccountActionDisableSecretKey:
-	case SubAccountActionEnableSecretKey:
-	case SubAccountActionDeleteSecretKey:
 	case SubAccountActionUpdateSecretKeyStatus:
 	default:
 		return fmt.Errorf("unsupported sub account action: %s", a)
@@ -55,10 +53,6 @@ const (
 	SubAccountActionCreateSecretKey SubAccountAction = "create_secret_key"
 	// SubAccountActionDisableSecretKey 禁用三级账号密钥
 	SubAccountActionDisableSecretKey SubAccountAction = "disable_secret_key"
-	// SubAccountActionEnableSecretKey 开启三级账号密钥
-	SubAccountActionEnableSecretKey SubAccountAction = "enable_secret_key"
-	// SubAccountActionDeleteSecretKey 删除三级账号密钥
-	SubAccountActionDeleteSecretKey SubAccountAction = "delete_secret_key"
 	// SubAccountActionUpdateSecretKeyStatus 修改三级账号密钥状态
 	SubAccountActionUpdateSecretKeyStatus SubAccountAction = "update_secret_key_status"
 )
