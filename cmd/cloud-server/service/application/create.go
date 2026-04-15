@@ -597,15 +597,12 @@ func (a *applicationSvc) CreateBizForAddSubAccount(cts *rest.Contexts) (interfac
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	attribute := meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Create},
+		BizID: bizID,
 	}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	req, err := parseReqFromRequestBody[proto.SubAccountBatchAddReq](cts)
@@ -668,15 +665,12 @@ func (a *applicationSvc) CreateBizForUpdateSubAccount(cts *rest.Contexts) (inter
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	attribute := meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Update},
+		BizID: bizID,
 	}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	req, err := parseReqFromRequestBody[proto.SubAccountBatchUpdateReq](cts)
@@ -756,15 +750,12 @@ func (a *applicationSvc) CreateBizForDeleteSubAccount(cts *rest.Contexts) (inter
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	attribute := meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID,
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Delete},
+		BizID: bizID,
 	}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	req, err := parseReqFromRequestBody[proto.SubAccountBatchDeleteReq](cts)
@@ -990,16 +981,13 @@ func (a *applicationSvc) CreateBizForUpdateSubAccountSecretStatus(cts *rest.Cont
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	attribute := meta.ResourceAttribute{
+
+	authRes := meta.ResourceAttribute{
 		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Update},
 		BizID: bizID,
 	}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	req, err := parseReqFromRequestBody[proto.SubAccountSecretStatusBatchUpdateReq](cts)
@@ -1059,16 +1047,12 @@ func (a *applicationSvc) CreateBizForDeleteSubAccountSecret(cts *rest.Contexts) 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	attribute := meta.ResourceAttribute{
+	authRes := meta.ResourceAttribute{
 		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Delete},
 		BizID: bizID,
 	}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "permission denied")
 	}
 
 	req, err := parseReqFromRequestBody[proto.SubAccountSecretBatchDeleteReq](cts)

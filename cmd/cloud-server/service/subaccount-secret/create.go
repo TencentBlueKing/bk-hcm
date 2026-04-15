@@ -75,16 +75,12 @@ func (svc *service) CreateBizSubAccountSecret(cts *rest.Contexts) (interface{}, 
 
 // authorizeSubAccountSecret checks IAM permission for sub account secret creation.
 func (svc *service) authorizeSubAccountSecret(kt *kit.Kit, bizID int64) error {
-	attribute := meta.ResourceAttribute{
+	authRes := meta.ResourceAttribute{
 		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Create},
 		BizID: bizID,
 	}
-	_, authorized, err := svc.authorizer.Authorize(kt, attribute)
-	if err != nil {
+	if err := svc.authorizer.AuthorizeWithPerm(kt, authRes); err != nil {
 		return err
-	}
-	if !authorized {
-		return errf.New(errf.PermissionDenied, "permission denied")
 	}
 
 	return nil
