@@ -42,11 +42,11 @@ func (a *ApplicationOfUpdateSecretKeyStatus) GetItsmApprover(managers []string) 
 func (a *ApplicationOfUpdateSecretKeyStatus) GenerateApplicationContent() interface{} {
 	return &updateSecretKeyStatusContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:  enumor.SubAccountActionUpdateSecretKeyStatus,
-			Vendor:  a.Vendor(),
-			BkBizID: a.BkBizID(),
+			Action:    enumor.SubAccountActionUpdateSecretKeyStatus,
+			Vendor:    a.Vendor(),
+			BkBizID:   a.BkBizID(),
+			AccountID: a.AccountID(),
 		},
-		AccountID:    a.AccountID(),
 		SecretID:     a.req.ID,
 		TargetStatus: a.req.Status,
 	}

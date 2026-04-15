@@ -36,9 +36,10 @@ type createSubAccountContent struct {
 func (a *ApplicationOfCreateSubAccount) GenerateApplicationContent() interface{} {
 	return &createSubAccountContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:  enumor.SubAccountActionCreate,
-			Vendor:  a.Vendor(),
-			BkBizID: a.BkBizID(),
+			Action:    enumor.SubAccountActionCreate,
+			Vendor:    a.Vendor(),
+			BkBizID:   a.BkBizID(),
+			AccountID: a.AccountID(),
 		},
 		Req: converter.PtrToVal(a.req),
 	}

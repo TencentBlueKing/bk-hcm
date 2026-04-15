@@ -39,7 +39,7 @@ func (a *ApplicationOfDeleteSubAccount) GenerateApplicationContent() interface{}
 			Action:    enumor.SubAccountActionDelete,
 			Vendor:    a.Vendor(),
 			BkBizID:   a.BkBizID(),
-			AccountID: a.req.AccountID,
+			AccountID: a.AccountID(),
 		},
 		Req: converter.PtrToVal(a.req),
 	}

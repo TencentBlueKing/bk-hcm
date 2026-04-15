@@ -41,11 +41,11 @@ func (a *ApplicationOfDeleteSecretKey) GetItsmApprover(managers []string) []itsm
 func (a *ApplicationOfDeleteSecretKey) GenerateApplicationContent() interface{} {
 	return &deleteSecretKeyContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:  enumor.SubAccountActionDeleteSecretKey,
-			Vendor:  a.Vendor(),
-			BkBizID: a.BkBizID(),
+			Action:    enumor.SubAccountActionDeleteSecretKey,
+			Vendor:    a.Vendor(),
+			BkBizID:   a.BkBizID(),
+			AccountID: a.AccountID(),
 		},
-		AccountID: a.AccountID(),
-		SecretID:  a.secretID,
+		SecretID: a.secretID,
 	}
 }
