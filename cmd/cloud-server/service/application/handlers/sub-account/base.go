@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
@@ -128,8 +129,8 @@ func (a *ApplicationBaseSubAccount) GetBkBizIDs() []int64 {
 // GetItsmApprover get ITSM approvers for subaccount operations.
 // The approvers are the parent 2nd-level account's managers queried by accountID,
 // who serve as the approvers for the subaccount approval flow.
-func (a *ApplicationBaseSubAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.GetItsmPlatformAndAccountApprover(managers, a.accountID)
+func (a *ApplicationBaseSubAccount) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
+	return a.GetItsmPlatformAndAccountApprover(kt, managers, a.accountID)
 }
 
 // CheckSubAccountExists checks if the sub account exists.

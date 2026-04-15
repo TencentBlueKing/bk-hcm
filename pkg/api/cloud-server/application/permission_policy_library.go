@@ -61,14 +61,14 @@ type ApplyPermPolicyLibBaseContent struct {
 	Vendor enumor.Vendor `json:"vendor"`
 	// BkBizID is the business ID from the request path.
 	BkBizID int64 `json:"bk_biz_id"`
+	// PolicyLibraryID is the permission policy library ID.
+	PolicyLibraryID string `json:"policy_library_id"`
 }
 
 // ApplyPermPolicyLibCreateContent is the content stored in the application record for
 // the apply_permission_policy_library (create action) type.
 type ApplyPermPolicyLibCreateContent struct {
 	ApplyPermPolicyLibBaseContent
-	// PolicyLibraryID is the permission policy library ID.
-	PolicyLibraryID string `json:"policy_library_id"`
 	// AccountID is the single account ID for this application record.
 	AccountID string `json:"account_id"`
 }
@@ -77,8 +77,6 @@ type ApplyPermPolicyLibCreateContent struct {
 // the apply_permission_policy_library (update action) type.
 type ApplyPermPolicyLibUpdateContent struct {
 	ApplyPermPolicyLibBaseContent
-	// PolicyLibraryID is the permission policy library ID.
-	PolicyLibraryID string `json:"policy_library_id"`
 	// PermissionTemplateID is the single permission template ID for this application record.
 	PermissionTemplateID string `json:"permission_template_id"`
 }

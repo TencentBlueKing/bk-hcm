@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package applyupdate is the handler for apply_permission_policy_library (update action).
 package applyupdate
 
 import (
@@ -25,7 +26,13 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	"hcm/cmd/cloud-server/service/application/handlers/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -63,17 +70,39 @@ func NewApplicationOfApplyPermPolicyLibUpdate(opt *handlers.HandlerOption,
 	}
 }
 
+// GetItsmApprover returns ITSM approver configuration.
+func (a *ApplicationOfApplyPermPolicyLibUpdate) GetItsmApprover(kt *kit.Kit, managers []string) (
+	[]itsm.VariableApprover, error) {
+
+	req := protocloud.PermissionTemplateListReq{
+		Filter: tools.EqualExpression("id", a.Content.PermissionTemplateID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	template, err := a.Client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, &req)
+	if err != nil {
+		logs.Errorf("list permission template failed, err: %v, id: %s, rid: %s", err,
+			a.Content.PermissionTemplateID, kt.Rid)
+		return nil, err
+	}
+	if template.Details == nil || len(template.Details) == 0 {
+		logs.Errorf("permission template not found, id: %s, rid: %s", a.Content.PermissionTemplateID, kt.Rid)
+		return nil, fmt.Errorf("permission template not found, id: %s", a.Content.PermissionTemplateID)
+	}
+
+	return a.GetAccountApprover(kt, template.Details[0].AccountID)
+}
+
 // BuildContent builds the application content for the given permission template.
 func BuildContent(bkBizID int64, vendor enumor.Vendor, req *proto.BizApplyPermissionPolicyLibraryUpdateReq,
 	permissionTemplateID string) *proto.ApplyPermPolicyLibUpdateContent {
 
 	return &proto.ApplyPermPolicyLibUpdateContent{
 		ApplyPermPolicyLibBaseContent: proto.ApplyPermPolicyLibBaseContent{
-			Action:  enumor.PermPolicyLibActionApplyUpdate,
-			Vendor:  vendor,
-			BkBizID: bkBizID,
+			Action:          enumor.PermPolicyLibActionApplyUpdate,
+			Vendor:          vendor,
+			BkBizID:         bkBizID,
+			PolicyLibraryID: req.PolicyLibraryID,
 		},
-		PolicyLibraryID:      req.PolicyLibraryID,
 		PermissionTemplateID: permissionTemplateID,
 	}
 }

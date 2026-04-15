@@ -27,7 +27,6 @@ import (
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -95,14 +94,4 @@ func (a *ApplicationBasePermissionPolicyLibrary) PrepareReqFromContent() error {
 // GetBkBizIDs returns the business IDs for this application.
 func (a *ApplicationBasePermissionPolicyLibrary) GetBkBizIDs() []int64 {
 	return []int64{a.Base.BkBizID}
-}
-
-// GetItsmApprover returns ITSM approver configuration.
-func (a *ApplicationBasePermissionPolicyLibrary) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return []itsm.VariableApprover{
-		{
-			Variable:  "account_manager",
-			Approvers: managers,
-		},
-	}
 }

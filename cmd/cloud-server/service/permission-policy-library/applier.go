@@ -120,7 +120,15 @@ func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library 
 		}
 	}
 
-	a.RecordApplyCreateAudit(kt, library.ID, accountID)
+	if err = a.RecordApplyCreateAudit(kt, library.ID, accountID); err != nil {
+		logs.Errorf("record apply create audit failed, library_id: %s, account_id: %s, err: %v, rid: %s",
+			library.ID, accountID, err, kt.Rid)
+		return proto.ApplyAccountResult{
+			AccountID: accountID,
+			Status:    proto.ApplyStatusFailed,
+			Reason:    fmt.Sprintf("云策略已创建(id=%d), 但记录审计失败: %v", camResult.PolicyID, err),
+		}
+	}
 
 	return proto.ApplyAccountResult{AccountID: accountID, Status: proto.ApplyStatusSuccess}
 }
@@ -270,8 +278,8 @@ func (a *PolicyLibraryApplier) TCloudCreateLocalTemplate(kt *kit.Kit,
 	return nil
 }
 
-// RecordApplyCreateAudit records an apply audit log. Errors are logged but not returned.
-func (a *PolicyLibraryApplier) RecordApplyCreateAudit(kt *kit.Kit, libraryID, accountID string) {
+// RecordApplyCreateAudit records an apply audit log.
+func (a *PolicyLibraryApplier) RecordApplyCreateAudit(kt *kit.Kit, libraryID, accountID string) error {
 	err := a.audit.ResOperationAudit(kt, protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.PermissionPolicyLibraryAuditResType,
 		ResID:             libraryID,
@@ -282,7 +290,10 @@ func (a *PolicyLibraryApplier) RecordApplyCreateAudit(kt *kit.Kit, libraryID, ac
 	if err != nil {
 		logs.Errorf("record apply audit failed, libraryID: %s, accountID: %s, err: %v, rid: %s",
 			libraryID, accountID, err, kt.Rid)
+		return err
 	}
+
+	return nil
 }
 
 // ApplyUpdate applies a permission policy library (update) to the given template IDs.
@@ -373,7 +384,13 @@ func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library
 		}
 	}
 
-	a.RecordApplyUpdateAudit(kt, library.ID, tmpl.ID)
+	if err = a.RecordApplyUpdateAudit(kt, library.ID, tmpl.ID); err != nil {
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID,
+			Status:               proto.ApplyStatusFailed,
+			Reason:               fmt.Sprintf("云策略已更新(id=%d), 但审计创建失败: %v", cloudPolicyID, err),
+		}
+	}
 
 	return proto.ApplyTemplateResult{PermissionTemplateID: templateID, Status: proto.ApplyStatusSuccess}
 }
@@ -459,7 +476,7 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 }
 
 // RecordApplyUpdateAudit records an apply audit log. Errors are logged but not returned.
-func (a *PolicyLibraryApplier) RecordApplyUpdateAudit(kt *kit.Kit, libraryID, permTmplID string) {
+func (a *PolicyLibraryApplier) RecordApplyUpdateAudit(kt *kit.Kit, libraryID, permTmplID string) error {
 	err := a.audit.ResOperationAudit(kt, protoaudit.CloudResourceOperationInfo{
 		ResType:           enumor.PermissionPolicyLibraryAuditResType,
 		ResID:             libraryID,
@@ -470,7 +487,10 @@ func (a *PolicyLibraryApplier) RecordApplyUpdateAudit(kt *kit.Kit, libraryID, pe
 	if err != nil {
 		logs.Errorf("record apply audit failed, libraryID: %s, permTmplID: %s, err: %v, rid: %s",
 			libraryID, permTmplID, err, kt.Rid)
+		return err
 	}
+
+	return nil
 }
 
 // ListAllAppliedAccountIDs scans permission_template table for all account IDs applied to the given library.

@@ -253,7 +253,7 @@ func (svc *svc) ListPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (inter
 		return nil, err
 	}
 	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "no permission to query account ids")
+		return nil, errf.New(errf.PermissionDenied, "no permission to list permission policy library apply account ids")
 	}
 
 	applier := NewPolicyLibraryApplier(svc.client, svc.audit)

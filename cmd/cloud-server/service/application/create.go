@@ -865,15 +865,6 @@ func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryCreate(cts *res
 		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
 	}
 
-	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
-		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
-	}
-
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply}}
 	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
@@ -931,15 +922,6 @@ func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryUpdate(cts *res
 	}
 	if bizID <= 0 {
 		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
-	}
-
-	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
-	if err != nil {
-		return nil, err
-	}
-	if !authorized {
-		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
 	}
 
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply}}

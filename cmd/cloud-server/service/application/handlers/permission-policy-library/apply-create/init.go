@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package applycreate is the handler for apply_permission_policy_library (create action).
 package applycreate
 
 import (
@@ -26,6 +27,8 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -63,17 +66,24 @@ func NewApplicationOfApplyPermPolicyLibCreate(opt *handlers.HandlerOption,
 	}
 }
 
+// GetItsmApprover returns ITSM approver configuration.
+func (a *ApplicationOfApplyPermPolicyLibCreate) GetItsmApprover(kt *kit.Kit, managers []string) (
+	[]itsm.VariableApprover, error) {
+
+	return a.GetAccountApprover(kt, a.Content.AccountID)
+}
+
 // BuildContent builds the application content for the given account.
 func BuildContent(bkBizID int64, vendor enumor.Vendor, req *proto.BizApplyPermissionPolicyLibraryCreateReq,
 	accountID string) *proto.ApplyPermPolicyLibCreateContent {
 
 	return &proto.ApplyPermPolicyLibCreateContent{
 		ApplyPermPolicyLibBaseContent: proto.ApplyPermPolicyLibBaseContent{
-			Action:  enumor.PermPolicyLibActionApplyCreate,
-			Vendor:  vendor,
-			BkBizID: bkBizID,
+			Action:          enumor.PermPolicyLibActionApplyCreate,
+			Vendor:          vendor,
+			BkBizID:         bkBizID,
+			PolicyLibraryID: req.PolicyLibraryID,
 		},
-		PolicyLibraryID: req.PolicyLibraryID,
-		AccountID:       accountID,
+		AccountID: accountID,
 	}
 }

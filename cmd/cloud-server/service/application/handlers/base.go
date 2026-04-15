@@ -114,7 +114,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, 
 	accountData, err := a.GetAccount(accountID)
 	if err != nil {
 		logs.Errorf("get account(%s) failed: %v, rid: %s", accountID, err, kt.Rid)
-		return nil, fmt.Errorf("get account(%s) failed: %v", accountID, err)
+		return allManagers, nil
 	}
 
 	allManagers = append(allManagers, itsm2.VariableApprover{
@@ -129,4 +129,20 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, 
 func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{},
 	err error) {
 	return enumor.DeliverError, map[string]interface{}{}, fmt.Errorf("not implemented")
+}
+
+// GetAccountApprover get account approver.
+func (a *BaseApplicationHandler) GetAccountApprover(kt *kit.Kit, accountID string) ([]itsm2.VariableApprover, error) {
+	accountData, err := a.GetAccount(accountID)
+	if err != nil {
+		logs.Errorf("get account failed, err: %v, account id: %v, rid: %s", err, accountID, kt.Rid)
+		return nil, err
+	}
+
+	if len(accountData.Managers) == 0 {
+		logs.Errorf("account %s has no managers, rid: %s", accountID, kt.Rid)
+		return nil, fmt.Errorf("account %s has no managers", accountID)
+	}
+
+	return []itsm2.VariableApprover{{Variable: "account_manager", Approvers: accountData.Managers}}, nil
 }

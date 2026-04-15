@@ -23,7 +23,6 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/converter"
 )
 
@@ -31,11 +30,6 @@ import (
 type deleteSubAccountContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
 	Req                              proto.SubAccountDeleteReq `json:"req"`
-}
-
-// GetItsmApprover get ITSM approvers, delegates to base which queries 2nd-level account managers.
-func (a *ApplicationOfDeleteSubAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.ApplicationBaseSubAccount.GetItsmApprover(managers)
 }
 
 // GenerateApplicationContent generate the content to be stored in DB.

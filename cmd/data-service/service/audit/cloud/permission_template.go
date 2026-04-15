@@ -43,27 +43,14 @@ func (ad Audit) permissionTemplateUpdateAuditBuild(kt *kit.Kit, updates []protoa
 		ids = append(ids, one.ResID)
 	}
 
-	idMap, err := ad.listPermissionTemplate(kt, ids)
+	permTmplMap, accountMap, err := ad.listPermissionTemplateAndAccount(kt, ids)
 	if err != nil {
 		return nil, err
-	}
-
-	accountIDMap := make(map[string]struct{})
-	for _, resData := range idMap {
-		accountIDMap[resData.AccountID] = struct{}{}
-	}
-	accounts, err := ad.listAccount(kt, maps.Keys(accountIDMap))
-	if err != nil {
-		return nil, err
-	}
-	accountMap := make(map[string]tablecloud.AccountTable, len(accounts))
-	for _, one := range accounts {
-		accountMap[one.ID] = one
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(updates))
 	for _, one := range updates {
-		resData, exist := idMap[one.ResID]
+		resData, exist := permTmplMap[one.ResID]
 		if !exist {
 			continue
 		}
@@ -101,27 +88,14 @@ func (ad Audit) permissionTemplateDeleteAuditBuild(kt *kit.Kit, deletes []protoa
 		ids = append(ids, one.ResID)
 	}
 
-	idMap, err := ad.listPermissionTemplate(kt, ids)
+	permTmplMap, accountMap, err := ad.listPermissionTemplateAndAccount(kt, ids)
 	if err != nil {
 		return nil, err
-	}
-
-	accountIDMap := make(map[string]struct{})
-	for _, resData := range idMap {
-		accountIDMap[resData.AccountID] = struct{}{}
-	}
-	accounts, err := ad.listAccount(kt, maps.Keys(accountIDMap))
-	if err != nil {
-		return nil, err
-	}
-	accountMap := make(map[string]tablecloud.AccountTable, len(accounts))
-	for _, one := range accounts {
-		accountMap[one.ID] = one
 	}
 
 	audits := make([]*tableaudit.AuditTable, 0, len(deletes))
 	for _, one := range deletes {
-		resData, exist := idMap[one.ResID]
+		resData, exist := permTmplMap[one.ResID]
 		if !exist {
 			continue
 		}
@@ -148,6 +122,30 @@ func (ad Audit) permissionTemplateDeleteAuditBuild(kt *kit.Kit, deletes []protoa
 	}
 
 	return audits, nil
+}
+
+func (ad Audit) listPermissionTemplateAndAccount(kt *kit.Kit, ids []string) (
+	map[string]*tablecloud.PermissionTemplateTable, map[string]tablecloud.AccountTable, error) {
+
+	idMap, err := ad.listPermissionTemplate(kt, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	accountIDMap := make(map[string]struct{})
+	for _, resData := range idMap {
+		accountIDMap[resData.AccountID] = struct{}{}
+	}
+	accounts, err := ad.listAccount(kt, maps.Keys(accountIDMap))
+	if err != nil {
+		return nil, nil, err
+	}
+	accountMap := make(map[string]tablecloud.AccountTable, len(accounts))
+	for _, one := range accounts {
+		accountMap[one.ID] = one
+	}
+
+	return idMap, accountMap, nil
 }
 
 func (ad Audit) listPermissionTemplate(kt *kit.Kit, ids []string) (
