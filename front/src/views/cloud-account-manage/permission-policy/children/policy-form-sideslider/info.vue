@@ -71,8 +71,8 @@ const handleApplyToAccount = () => {
           </div>
         </bk-card>
 
-        <!-- 权限模版 -->
-        <bk-card title="权限模版" :border="false" :disable-header-style="true" class="permission-card">
+        <!-- 权限模板 -->
+        <bk-card title="权限模板" :border="false" :disable-header-style="true" class="permission-card">
           <JSON :content="props.policyData.policy_document" />
         </bk-card>
       </div>
@@ -172,7 +172,7 @@ const handleApplyToAccount = () => {
 
     :deep(.bk-card-body) {
       padding: 12px;
-      background: hsl(216, 33%, 97%);
+      background: hsl(216deg 33% 97%);
       height: 350px;
       overflow-y: auto;
     }

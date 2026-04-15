@@ -298,11 +298,11 @@ const formatTime = (time?: string) => {
 
         <div class="info-card">
           <div class="card-header">
-            <span class="card-title">权限模版</span>
+            <span class="card-title">权限模板</span>
           </div>
           <div class="card-body">
             <div class="info-item">
-              <span class="info-label">权限模版：</span>
+              <span class="info-label">权限模板：</span>
               <span class="info-value">
                 <span>--</span>
               </span>
