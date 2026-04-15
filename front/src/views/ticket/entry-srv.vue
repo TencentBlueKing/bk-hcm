@@ -57,7 +57,7 @@ const tabList = ref<ApplicationsType[]>([
       {
         field: 'type',
         op: QueryRuleOPEnum.IN,
-        value: ['add_account', 'create_main_account', 'update_main_account'],
+        value: ['add_account', 'create_main_account', 'update_main_account', 'operate_sub_account'],
       },
     ],
     Component: CommonTable,
