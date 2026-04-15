@@ -297,3 +297,84 @@ func getAccountIDs(kt *kit.Kit, cli *client.ClientSet, bkBizID int64, cloudMainA
 
 	return maps.Keys(idSet), nil
 }
+
+// ListPermTmplSubAccountIDs lists sub account ids associated with a permission template.
+func (svc *service) ListPermTmplSubAccountIDs(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	templateID := cts.PathParameter("id").String()
+	if templateID == "" {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	// 业务访问鉴权
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access},
+		BizID: bizID,
+	}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, errf.NewFromErr(errf.PermissionDenied, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.listPermTmplSubAccountIDsForTCloud(cts.Kit, bizID, templateID)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+	}
+}
+
+func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
+	templateID string) (*cloudserver.PermTmplSubAccountIDsResult, error) {
+
+	tmplListReq := &protocloud.PermissionTemplateExtListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", templateID)),
+		Page: core.NewCountPage(),
+	}
+	tmplResult, err := svc.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, tmplListReq)
+	if err != nil {
+		return nil, err
+	}
+	if tmplResult == nil || tmplResult.Count == 0 {
+		return nil, errf.New(errf.InvalidParameter, "permission template not exist")
+	}
+
+	filterExpr := tools.ExpressionAnd(
+		tools.RuleJsonOverlaps("permission_template_ids", []string{templateID}),
+		tools.RuleJsonOverlaps("bk_biz_ids", []int64{bizID}),
+	)
+
+	subAccountIDs := make([]string, 0)
+	listReq := &core.ListReq{Filter: filterExpr, Page: core.NewDefaultBasePage(), Fields: []string{"cloud_id"}}
+	for {
+		results, err := svc.client.DataService().TCloud.SubAccount.ListExt(kt, listReq)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, d := range results.Details {
+			if d.CloudID != "" {
+				subAccountIDs = append(subAccountIDs, d.CloudID)
+			}
+		}
+
+		if len(results.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return &cloudserver.PermTmplSubAccountIDsResult{SubAccountIDs: subAccountIDs}, nil
+}

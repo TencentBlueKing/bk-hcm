@@ -219,6 +219,8 @@ func (dao *SubAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 	columnTypes["extension.uin"] = enumor.Numeric
 	columnTypes["extension.console_login"] = enumor.Numeric
 	columnTypes["extension.cloud_main_account_id"] = enumor.String
+	columnTypes["permission_template_ids"] = enumor.String
+	columnTypes["bk_biz_ids"] = enumor.Numeric
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err

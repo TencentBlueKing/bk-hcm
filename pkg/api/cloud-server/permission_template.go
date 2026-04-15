@@ -64,3 +64,8 @@ type BizPermissionTemplateListResult struct {
 	Count   uint64                        `json:"count"`
 	Details []BizPermissionTemplateDetail `json:"details"`
 }
+
+// PermTmplSubAccountIDsResult defines the response for listing sub account ids associated with a permission template.
+type PermTmplSubAccountIDsResult struct {
+	SubAccountIDs []string `json:"sub_account_ids"`
+}
