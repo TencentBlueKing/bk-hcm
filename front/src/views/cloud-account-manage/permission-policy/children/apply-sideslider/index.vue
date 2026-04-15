@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject, Ref } from 'vue';
 import { Plus, Transfer } from 'bkui-vue/lib/icon';
-import type { IPermissionPolicyItem } from '../../typings';
+import type { IAppliedReasonItem, IPermissionPolicyItem } from '../../typings';
+import { IPermissionAppliedItem, usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
 import { ApplyOperationType } from '../../typings';
 import ApplyNewTable from './apply-new-table.vue';
 import UpdateAppliedTable from './update-applied-table.vue';
 import { InfoBox } from 'bkui-vue';
+import { VendorEnum } from '@/common/constant';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -15,8 +17,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  success: [];
+  success: [row: IAppliedReasonItem[], type: ApplyOperationType];
 }>();
+
+const permissionPolicyStore = usePermissionPolicyStore();
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+
+const appliedList = ref<IPermissionAppliedItem[]>([]);
+const unAppliedList = ref<string[]>([]);
 
 // 基本信息折叠状态
 const baseInfoCollapsed = ref(true);
@@ -27,6 +35,7 @@ const operationType = ref<ApplyOperationType>(ApplyOperationType.APPLY_NEW);
 // 子表格引用
 const applyNewTableRef = ref();
 const updateAppliedTableRef = ref();
+const appliedCount = ref(0);
 
 // 提交加载状态
 const submitLoading = ref(false);
@@ -43,19 +52,50 @@ const baseInfoFields = computed(() => {
     { label: '更新时间', value: props.policyData.updated_at, type: 'datetime', id: 'updated_at' },
   ];
 });
-
-// 已应用账号数
-const appliedCount = computed(() => props.policyData?.related_account_count || 0);
+const policyData = computed(() => props.policyData);
 
 // 应用按钮是否可以点击
 const applyBtnDisabled = computed(() => {
-  if (operationType.value === ApplyOperationType.APPLY_NEW) {
-    const _selected = applyNewTableRef.value?.getSelectedAccounts() || [];
-    return _selected.length === 0;
-  }
-  const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
-  return _selected.length === 0;
+  return getSelected.value.length === 0;
 });
+
+const getSelected = computed(() => {
+  if (operationType.value === ApplyOperationType.APPLY_NEW) return applyNewTableRef.value?.getSelectedAccounts() || [];
+  return updateAppliedTableRef.value?.getSelectedAccounts() || [];
+});
+
+// 获取未应用和已经应用了的列表
+const getList = async () => {
+  const policyId = props.policyData.id;
+  const accountSet = new Set();
+  const [unAppliedRes, appliedRes] = await Promise.all([
+    permissionPolicyStore.getUnappliedAccountIdsList(currentVendor.value, policyId),
+    permissionPolicyStore.getAppliedAccountIdsList(currentVendor.value, policyId),
+  ]);
+  appliedList.value = [...appliedRes];
+  unAppliedList.value = [...unAppliedRes];
+  // 对已经应用的列表中account_id去重计算出总共有几个账号已经应用了
+  appliedRes.forEach((item: IPermissionAppliedItem) => accountSet.add(item.account_id));
+  appliedCount.value = accountSet.size;
+  // 对已经应用的列表进行应用状态比较
+  setAppliedListStatus();
+};
+
+const setAppliedListStatus = () => {
+  appliedList.value.forEach((item: IPermissionAppliedItem) => {
+    if (item.policy_library_version !== props.policyData.version) {
+      // 如果版本号不一致，则表示还未应用
+      item.apply_status = 'pending';
+      return;
+    }
+    // 如果版本一直hash值不一致，则表示待应用
+    if (item.policy_hash !== props.policyData.policy_hash) {
+      item.apply_status = 'data_mismatch';
+      return;
+    }
+    item.apply_status = 'applied';
+  });
+};
 
 // 应用提交
 const handleApply = async () => {
@@ -66,24 +106,20 @@ const handleApply = async () => {
     content: '应用过程中，请勿关闭本弹窗',
   });
   try {
-    // TODO: 替换为真实 API 调用
-    if (operationType.value === ApplyOperationType.APPLY_NEW) {
-      const _selected = applyNewTableRef.value?.getSelectedAccounts() || [];
-      // TODO: 调用应用到新账号 API
-    } else {
-      const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
-      // TODO: 调用更新已应用账号 API
-    }
+    const key = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
+    const method =
+      operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
+    const _selected = getSelected.value.map((item: { [key: string]: string }) => item[key]);
+    const res: IAppliedReasonItem[] = await permissionPolicyStore[method](
+      currentVendor.value,
+      props.policyData.id,
+      _selected,
+    );
 
-    // TODO 模拟
-    setTimeout(() => {
-      tips.hide();
-      model.value = false;
-      emit('success');
-    }, 2500);
-  } catch (error) {
-    // TODO: 使用全局消息提示替代 console
+    model.value = false;
+    emit('success', res, operationType.value);
   } finally {
+    tips.hide();
     submitLoading.value = false;
   }
 };
@@ -93,13 +129,14 @@ const handleCancel = () => {
   model.value = false;
 };
 
-// 重置状态
 watch(
   () => model.value,
   (isShow) => {
     if (isShow) {
       operationType.value = ApplyOperationType.APPLY_NEW;
       baseInfoCollapsed.value = true;
+      // 获取未应用和已应用了的列表
+      getList();
     }
   },
 );
@@ -112,6 +149,7 @@ watch(
     :width="1200"
     quick-close
     background-color="#f5f7fa"
+    render-directive="if"
   >
     <template #default>
       <div :class="['apply-sideslider-container', operationType === ApplyOperationType.APPLY_NEW ? 'apply' : 'update']">
@@ -167,14 +205,10 @@ watch(
             <ApplyNewTable
               v-if="operationType === ApplyOperationType.APPLY_NEW"
               ref="applyNewTableRef"
+              :list="unAppliedList"
               :policy-id="policyData?.id || ''"
             />
-            <UpdateAppliedTable
-              v-else
-              ref="updateAppliedTableRef"
-              :policy-id="policyData?.id || ''"
-              :applied-count="appliedCount"
-            />
+            <UpdateAppliedTable v-else ref="updateAppliedTableRef" :list="appliedList" :policy-data="policyData" />
           </div>
         </bk-card>
       </div>

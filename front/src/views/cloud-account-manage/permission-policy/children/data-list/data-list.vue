@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { h } from 'vue';
+import { computed, h } from 'vue';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { AUTH_UPDATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
-import type { IPermissionPolicyItem, IRelatedAccount } from '../../typings';
+import { AUTH_UPDATE_PERMISSION_POLICY_LIBRARY, AUTH_APPLY_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
+import type { IPermissionPolicyItem } from '../../typings';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -30,7 +30,9 @@ const emit = defineEmits<{
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
-const { isBusinessPage } = useWhereAmI();
+const { isBusinessPage, getBizsId } = useWhereAmI();
+
+const bizId = computed(() => getBizsId());
 
 // 查看详情
 const handleViewDetails = (row: IPermissionPolicyItem) => {
@@ -47,10 +49,17 @@ const handleEditAccount = (row: IPermissionPolicyItem) => {
   emit('edit-account', row);
 };
 
+const getAuth = (type: string) => {
+  const auth = type === 'apply' ? AUTH_APPLY_PERMISSION_POLICY_LIBRARY : AUTH_UPDATE_PERMISSION_POLICY_LIBRARY;
+  if (isBusinessPage) {
+    return { type: auth, relation: [bizId.value] };
+  }
+  return { type: auth };
+};
+
 // 跳转二级账号详情（新开标签页）
-const handleGoToAccount = (account: IRelatedAccount) => {
-  // TODO: 替换为真实路由，跳转到三级账号页面
-  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${account.account_id}`;
+const handleGoToAccount = (account: string) => {
+  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${account}`;
   window.open(url, '_blank');
 };
 
@@ -72,7 +81,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
 };
 
 // 判断列是否为关联二级账号数
-const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'related_account_count';
+const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'associated_account_count';
 </script>
 
 <template>
@@ -105,31 +114,31 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'r
           <!-- 关联二级账号数 - hover 弹出账号列表 -->
           <template v-if="isRelatedAccountColumn(column)">
             <bk-popover
-              v-if="row.related_accounts?.length"
+              v-if="row.associated_account_count > 0"
               theme="light"
               trigger="hover"
               placement="auto"
               :popover-delay="[200, 150]"
               :max-height="240"
-              :arrow="true"
+              :arrow="false"
               ext-cls="related-account-popover"
             >
-              <span class="related-count-link">{{ row.related_account_count ?? 0 }}</span>
+              <span class="related-count-link">{{ row.associated_account_count ?? 0 }}</span>
               <template #content>
                 <div class="related-account-list">
                   <div
                     v-for="account in row.related_accounts"
-                    :key="account.account_id"
+                    :key="account"
                     class="related-account-item"
                     @click="handleGoToAccount(account)"
                   >
-                    <span class="account-id">{{ account.account_id }}</span>
+                    <span class="account-id">{{ account }}</span>
                     <i class="hcm-icon bkhcm-icon-jump-fill account-link-icon" />
                   </div>
                 </div>
               </template>
             </bk-popover>
-            <span v-else class="related-count-zero">{{ row.related_account_count ?? 0 }}</span>
+            <span v-else class="related-count-zero">{{ row.associated_account_count ?? 0 }}</span>
           </template>
           <!-- 其他自定义渲染列 -->
           <template v-else-if="getColumnRender(column)">
@@ -143,12 +152,16 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'r
       </bk-table-column>
       <bk-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_POLICY_LIBRARY }" v-slot="{ noPerm }">
+          <hcm-auth :sign="getAuth('edit')" v-slot="{ noPerm }">
             <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)" v-if="!isBusinessPage">
               编辑
             </bk-button>
           </hcm-auth>
-          <bk-button theme="primary" text @click="handleApplyToAccount(row)">应用到二级账号</bk-button>
+          <hcm-auth :sign="getAuth('apply')" v-slot="{ noPerm }">
+            <bk-button theme="primary" :disabled="noPerm" text @click="handleApplyToAccount(row)">
+              应用到二级账号
+            </bk-button>
+          </hcm-auth>
         </template>
       </bk-table-column>
     </bk-table>

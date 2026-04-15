@@ -1,40 +1,20 @@
 <script setup lang="ts">
-import { inject, Ref, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { ISelectableAccount } from '../../typings';
-import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
-import { VendorEnum } from '@/common/constant';
 
 const props = defineProps<{
-  policyId: string;
+  list: string[];
 }>();
-
-const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-
-const permissionPolicyStore = usePermissionPolicyStore();
 
 // 已选账号列表
 const selectedAccounts = ref<{ account_id: string }[]>([]);
 
 // 表格数据
-const tableData = ref<{ account_id: string }[]>([]);
+const tableData = computed(() => props.list.map((item) => ({ account_id: item })));
 const isLoading = ref(false);
 
 // 表格引用
 const tableRef = ref();
-
-// 加载可选账号列表
-const loadAccounts = async () => {
-  isLoading.value = true;
-  try {
-    const data = await permissionPolicyStore.getUnappliedAccountIdsList(currentVendor.value, props.policyId);
-    tableData.value = data.map((item) => ({ account_id: item }));
-  } catch (error) {
-    console.error('加载可选账号列表失败:', error);
-    tableData.value = [];
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 // 选择变化
 const handleSelectionChange = ({ row, checked }: { row: ISelectableAccount; checked: boolean }) => {
@@ -72,17 +52,6 @@ const handleClearAll = () => {
   selectedAccounts.value = [];
   tableRef.value?.clearSelection?.();
 };
-
-// 监听策略ID变化，重新加载
-watch(
-  () => props.policyId,
-  () => {
-    if (props.policyId) {
-      loadAccounts();
-    }
-  },
-  { immediate: true },
-);
 
 // 暴露已选数据给父组件（defineExpose 必须是 <script setup> 的最后语句）
 defineExpose({

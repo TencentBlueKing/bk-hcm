@@ -16,7 +16,8 @@ import ApplySideslider from './children/apply-sideslider/index.vue';
 import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
-import type { IPermissionPolicyItem } from './typings';
+import type { IAppliedReasonItem, IPermissionPolicyItem } from './typings';
+import { ApplyOperationType } from './typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_CREATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
 
@@ -26,7 +27,15 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const { isBusinessPage } = useWhereAmI();
+const { isBusinessPage, getBizsId } = useWhereAmI();
+
+const bizId = computed(() => getBizsId());
+const sign = computed(() => {
+  if (isBusinessPage) {
+    return { type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY, relation: [bizId] };
+  }
+  return { type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY };
+});
 
 const permissionPolicyStore = usePermissionPolicyStore();
 // 创建模型实例
@@ -82,11 +91,24 @@ const loadList = async () => {
     });
     tableData.value = data.list;
     pagination.count = data.count;
+    // 获取关联的账号列表
+    getAssociationAccountList(data.list);
   } catch (error) {
     console.error('获取权限策略库列表失败:', error);
     tableData.value = [];
     pagination.count = 0;
   }
+};
+
+const getAssociationAccountList = async (list: { id: string; associated_account_count: number }[]) => {
+  const res = await Promise.allSettled(
+    list.map((item: { id: string; associated_account_count: number }) =>
+      permissionPolicyStore.getPermissionAssoAccountList(currentVendor.value, item.id, item.associated_account_count),
+    ),
+  );
+  res.forEach((item: any, index) => {
+    list[index]['related_accounts'] = item?.value || [];
+  });
 };
 
 // 监听路由变化，获取列表数据
@@ -128,6 +150,10 @@ const showApplySideslider = ref(false);
 const showPolicyInfoSideslider = ref(false);
 const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
 
+// 应用日志相关
+const applyReason = ref<IAppliedReasonItem[]>([]);
+const operationType = ref<ApplyOperationType>(ApplyOperationType.APPLY_NEW);
+
 const handleApplyToAccount = (row: IPermissionPolicyItem) => {
   currentApplyPolicy.value = row;
   showApplySideslider.value = true;
@@ -140,9 +166,11 @@ const handleViewDetails = (row: IPermissionPolicyItem) => {
 };
 
 // 应用成功回调
-const handleApplySuccess = () => {
+const handleApplySuccess = (reason: IAppliedReasonItem[], type: ApplyOperationType) => {
   refreshList();
   showLogSideslider.value = true;
+  applyReason.value = [...reason];
+  operationType.value = type;
 };
 
 // 应用成功查看日志弹窗
@@ -194,7 +222,7 @@ const handleReset = () => {
     <div class="table-container">
       <!-- 操作按钮区域 -->
       <div class="action-btns" v-if="!isBusinessPage">
-        <hcm-auth :sign="{ type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY }" ignore v-slot="{ noPerm }">
+        <hcm-auth :sign="sign" v-slot="{ noPerm }">
           <bk-button theme="primary" :disabled="noPerm" @click="handleAddPolicy">
             <plus style="font-size: 22px" />
             新增权限策略库
@@ -218,7 +246,7 @@ const handleReset = () => {
     <ApplySideslider v-model="showApplySideslider" :policy-data="currentApplyPolicy" @success="handleApplySuccess" />
 
     <!-- 应用成功后弹出得账号列表查看应用日志 -->
-    <LogSideslider v-model="showLogSideslider" />
+    <LogSideslider v-model="showLogSideslider" :data="applyReason" :type="operationType" />
 
     <!-- 详情侧栏 -->
     <PolicyInfoSideslider

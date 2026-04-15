@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import type { IPermissionPolicyItem } from '../../typings';
 import JSON from '@/views/cloud-account-manage/components/json.vue';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { AUTH_APPLY_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -13,6 +15,16 @@ const props = defineProps<{
 const emit = defineEmits<{
   'apply-to-account': [row: IPermissionPolicyItem];
 }>();
+
+const { isBusinessPage, getBizsId } = useWhereAmI();
+
+const bizId = computed(() => getBizsId());
+const sign = computed(() => {
+  if (isBusinessPage) {
+    return { type: AUTH_APPLY_PERMISSION_POLICY_LIBRARY, relation: [bizId.value] };
+  }
+  return { type: AUTH_APPLY_PERMISSION_POLICY_LIBRARY };
+});
 
 // 基本信息字段
 const baseInfoFields = computed(() => {
@@ -27,10 +39,9 @@ const baseInfoFields = computed(() => {
   ];
 });
 
-// todo 详情页跳转待定
+// 详情页跳转待定
 const handleGoToAccount = () => {
-  // TODO: 替换为真实路由，跳转到三级账号页面
-  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${props.policyData.related_accounts[0].account_id}`;
+  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${props.policyData.related_accounts[0]}`;
   window.open(url, '_blank');
 };
 
@@ -48,7 +59,9 @@ const handleApplyToAccount = () => {
           权限策略库详情
           <span class="name">| {{ props.policyData.name }}</span>
         </div>
-        <bk-button theme="primary" @click="handleApplyToAccount" outline>应用到二级账号</bk-button>
+        <hcm-auth :sign="sign" v-slot="{ noPerm }">
+          <bk-button theme="primary" :disabled="noPerm" @click="handleApplyToAccount" outline>应用到二级账号</bk-button>
+        </hcm-auth>
       </div>
     </template>
     <template #default>
@@ -62,8 +75,10 @@ const handleApplyToAccount = () => {
               <span class="info-value" v-if="field.id === 'associated_account_count'">
                 <div class="relate-account-count" @click="handleGoToAccount">
                   <template v-if="field.value">
-                    <span class="num">{{ field.value }}</span>
-                    <i class="hcm-icon bkhcm-icon-jump-fill" />
+                    <span class="num">
+                      {{ field.value }}
+                      <i class="hcm-icon bkhcm-icon-jump-fill" />
+                    </span>
                   </template>
                   <span v-else>0</span>
                 </div>
