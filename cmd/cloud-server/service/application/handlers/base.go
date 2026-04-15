@@ -114,7 +114,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, 
 	accountData, err := a.GetAccount(accountID)
 	if err != nil {
 		logs.Errorf("get account(%s) failed: %v, rid: %s", accountID, err, kt.Rid)
-		return nil, fmt.Errorf("get account(%s) failed: %v", accountID, err)
+		return allManagers, nil
 	}
 
 	allManagers = append(allManagers, itsm2.VariableApprover{
