@@ -22,6 +22,7 @@ package tcloud
 import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -49,8 +50,8 @@ func (a *ApplicationOfCreateTCloudLB) PrepareReqFromContent() error {
 }
 
 // GetItsmApprover 获取itsm审批人
-func (a *ApplicationOfCreateTCloudLB) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
+func (a *ApplicationOfCreateTCloudLB) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
+	return a.GetItsmPlatformAndAccountApprover(kt, managers, a.req.AccountID)
 }
 
 // GetBkBizIDs 获取当前的业务IDs

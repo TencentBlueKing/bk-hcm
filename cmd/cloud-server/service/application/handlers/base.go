@@ -27,6 +27,8 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/cryptography"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
@@ -99,8 +101,8 @@ func (a *BaseApplicationHandler) getPageOfOneLimit() *core.BasePage {
 }
 
 // GetItsmPlatformAndAccountApprover get itsm platform and account approver.
-func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []string,
-	accountID string) []itsm2.VariableApprover {
+func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, managers []string,
+	accountID string) ([]itsm2.VariableApprover, error) {
 
 	allManagers := []itsm2.VariableApprover{
 		{
@@ -111,7 +113,8 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 
 	accountData, err := a.GetAccount(accountID)
 	if err != nil {
-		return allManagers
+		logs.Errorf("get account(%s) failed: %v, rid: %s", accountID, err, kt.Rid)
+		return nil, fmt.Errorf("get account(%s) failed: %v", accountID, err)
 	}
 
 	allManagers = append(allManagers, itsm2.VariableApprover{
@@ -119,10 +122,11 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 		Approvers: accountData.Managers,
 	})
 
-	return allManagers
+	return allManagers, nil
 }
 
 // Complete complete the application by manual.
-func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error) {
+func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{},
+	err error) {
 	return enumor.DeliverError, map[string]interface{}{}, fmt.Errorf("not implemented")
 }

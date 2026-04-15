@@ -130,7 +130,9 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult, error) {
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult,
+	error) {
+
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -188,7 +190,11 @@ func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.A
 	}
 
 	// 获取ITSM单据涉及到的各个节点审批人
-	approvers := handler.GetItsmApprover(managers)
+	approvers, err := handler.GetItsmApprover(cts.Kit, managers)
+	if err != nil {
+		logs.Errorf("get itsm approver failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return "", fmt.Errorf("get itsm approver failed, err: %v", err)
+	}
 
 	sn, err := a.itsmCli.CreateTicket(
 		cts.Kit,
