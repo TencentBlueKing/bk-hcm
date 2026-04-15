@@ -35,7 +35,7 @@ defineExpose({
   async getValue() {
     if (!model.value?.length) {
       error.value = true;
-      errorMessage.value = '请选择权限模版';
+      errorMessage.value = '请选择权限模板';
       return Promise.reject(new Error(errorMessage.value));
     }
     error.value = false;

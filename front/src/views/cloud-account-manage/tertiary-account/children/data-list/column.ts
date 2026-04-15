@@ -74,7 +74,7 @@ export class TableColumn {
   phone_num: string;
 
   @Column('number', {
-    name: '权限模版数',
+    name: '权限模板数',
     index: 8,
     width: 80,
     sort: true,

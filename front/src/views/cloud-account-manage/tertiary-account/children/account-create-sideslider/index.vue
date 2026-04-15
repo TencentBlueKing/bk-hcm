@@ -199,7 +199,7 @@ const headList = computed(() => [
         onUpdateValue: handleBatchUpdateName,
       }),
   },
-  { title: '权限模版', minWidth: 140, required: true },
+  { title: '权限模板', minWidth: 140, required: true },
   { title: '手机号', minWidth: 120, required: false },
   { title: '账号邮箱', minWidth: 130, required: false },
   {
