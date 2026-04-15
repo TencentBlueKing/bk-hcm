@@ -21,6 +21,7 @@ package handlers
 
 import (
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -33,7 +34,7 @@ type ApplicationHandler interface {
 	GetType() enumor.ApplicationType
 
 	// GetItsmApprover 获取itsm审批人信息
-	GetItsmApprover(managers []string) []itsm.VariableApprover
+	GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error)
 
 	// CheckReq 申请单的表单校验
 	CheckReq() error

@@ -24,6 +24,7 @@ import (
 
 	proto "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -63,8 +64,8 @@ func (a *ApplicationOfCreateTCloudCvm) PrepareReqFromContent() error {
 }
 
 // GetItsmApprover 获取itsm审批人
-func (a *ApplicationOfCreateTCloudCvm) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
+func (a *ApplicationOfCreateTCloudCvm) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
+	return a.GetItsmPlatformAndAccountApprover(kt, managers, a.req.AccountID)
 }
 
 // GetBkBizIDs 获取当前的业务IDs
