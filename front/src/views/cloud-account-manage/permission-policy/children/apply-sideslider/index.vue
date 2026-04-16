@@ -8,6 +8,7 @@ import ApplyNewTable from './apply-new-table.vue';
 import UpdateAppliedTable from './update-applied-table.vue';
 import { InfoBox } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 }>();
 
 const permissionPolicyStore = usePermissionPolicyStore();
+const { isBusinessPage, getBizsId } = useWhereAmI();
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 
 const appliedList = ref<IPermissionAppliedItem[]>([]);
@@ -53,6 +55,7 @@ const baseInfoFields = computed(() => {
   ];
 });
 const policyData = computed(() => props.policyData);
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 // 应用按钮是否可以点击
 const applyBtnDisabled = computed(() => {
@@ -69,8 +72,8 @@ const getList = async () => {
   const policyId = props.policyData.id;
   const accountSet = new Set();
   const [unAppliedRes, appliedRes] = await Promise.all([
-    permissionPolicyStore.getUnappliedAccountIdsList(currentVendor.value, policyId),
-    permissionPolicyStore.getAppliedAccountIdsList(currentVendor.value, policyId),
+    permissionPolicyStore.getUnappliedAccountIdsList(bizId.value, currentVendor.value, policyId),
+    permissionPolicyStore.getAppliedAccountIdsList(bizId.value, currentVendor.value, policyId),
   ]);
   appliedList.value = [...appliedRes];
   unAppliedList.value = [...unAppliedRes];
@@ -107,14 +110,18 @@ const handleApply = async () => {
   });
   try {
     const key = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
-    const method =
-      operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
     const _selected = getSelected.value.map((item: { [key: string]: string }) => item[key]);
-    const res: IAppliedReasonItem[] = await permissionPolicyStore[method](
-      currentVendor.value,
-      props.policyData.id,
-      _selected,
-    );
+    let res: IAppliedReasonItem[] = [];
+
+    if (isBusinessPage) {
+      const method =
+        operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccountBiz' : 'updateAppliedAccountBiz';
+      res = await permissionPolicyStore[method](bizId.value, currentVendor.value, props.policyData.id, _selected);
+    } else {
+      const method =
+        operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
+      res = await permissionPolicyStore[method](currentVendor.value, props.policyData.id, _selected);
+    }
 
     model.value = false;
     emit('success', res, operationType.value);

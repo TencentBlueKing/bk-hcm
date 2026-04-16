@@ -19,7 +19,11 @@ import { TableColumnFactory } from './children/data-list/column-factory';
 import type { IAppliedReasonItem, IPermissionPolicyItem } from './typings';
 import { ApplyOperationType } from './typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { AUTH_CREATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
+import {
+  AUTH_CREATE_PERMISSION_POLICY_LIBRARY,
+  AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY,
+} from '@/constants/auth-symbols';
+import { getAuthSignByBusinessId } from '@/utils';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -29,13 +33,7 @@ const route = useRoute();
 const router = useRouter();
 const { isBusinessPage, getBizsId } = useWhereAmI();
 
-const bizId = computed(() => getBizsId());
-const sign = computed(() => {
-  if (isBusinessPage) {
-    return { type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY, relation: [bizId] };
-  }
-  return { type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY };
-});
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 const permissionPolicyStore = usePermissionPolicyStore();
 // 创建模型实例
@@ -85,7 +83,7 @@ const loadList = async () => {
     };
 
     // 获取数据
-    const data = await permissionPolicyStore.getPermissionPolicyList(currentVendor.value, {
+    const data = await permissionPolicyStore.getPermissionPolicyList(bizId.value, currentVendor.value, {
       page: { ...pageParams },
       filter: { ...vendorFilter },
     });
@@ -103,7 +101,12 @@ const loadList = async () => {
 const getAssociationAccountList = async (list: { id: string; associated_account_count: number }[]) => {
   const res = await Promise.allSettled(
     list.map((item: { id: string; associated_account_count: number }) =>
-      permissionPolicyStore.getPermissionAssoAccountList(currentVendor.value, item.id, item.associated_account_count),
+      permissionPolicyStore.getPermissionAssoAccountList(
+        bizId.value,
+        currentVendor.value,
+        item.id,
+        item.associated_account_count,
+      ),
     ),
   );
   res.forEach((item: any, index) => {
@@ -222,7 +225,16 @@ const handleReset = () => {
     <div class="table-container">
       <!-- 操作按钮区域 -->
       <div class="action-btns" v-if="!isBusinessPage">
-        <hcm-auth :sign="sign" v-slot="{ noPerm }">
+        <hcm-auth
+          :sign="
+            getAuthSignByBusinessId(
+              bizId,
+              AUTH_CREATE_PERMISSION_POLICY_LIBRARY,
+              AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY,
+            )
+          "
+          v-slot="{ noPerm }"
+        >
           <bk-button theme="primary" :disabled="noPerm" @click="handleAddPolicy">
             <plus style="font-size: 22px" />
             新增权限策略库

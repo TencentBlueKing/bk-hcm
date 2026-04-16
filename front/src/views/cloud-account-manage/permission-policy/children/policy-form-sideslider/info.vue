@@ -3,7 +3,14 @@ import { computed } from 'vue';
 import type { IPermissionPolicyItem } from '../../typings';
 import JSON from '@/views/cloud-account-manage/components/json.vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { AUTH_APPLY_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
+import {
+  AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
+  AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
+} from '@/constants/auth-symbols';
+import { getAuthSignByBusinessId } from '@/utils';
+import router from '@/router';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import { useRoute } from 'vue-router';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -17,14 +24,9 @@ const emit = defineEmits<{
 }>();
 
 const { isBusinessPage, getBizsId } = useWhereAmI();
+const route = useRoute();
 
-const bizId = computed(() => getBizsId());
-const sign = computed(() => {
-  if (isBusinessPage) {
-    return { type: AUTH_APPLY_PERMISSION_POLICY_LIBRARY, relation: [bizId.value] };
-  }
-  return { type: AUTH_APPLY_PERMISSION_POLICY_LIBRARY };
-});
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 // 基本信息字段
 const baseInfoFields = computed(() => {
@@ -41,8 +43,14 @@ const baseInfoFields = computed(() => {
 
 // 详情页跳转待定
 const handleGoToAccount = () => {
-  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${props.policyData.related_accounts[0]}`;
-  window.open(url, '_blank');
+  router.push({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: {
+      ...route.query,
+      type: 'secondary-account',
+      id: props.policyData.related_accounts[0],
+    },
+  });
 };
 
 // 应用到二级账号
@@ -59,7 +67,16 @@ const handleApplyToAccount = () => {
           权限策略库详情
           <span class="name">| {{ props.policyData.name }}</span>
         </div>
-        <hcm-auth :sign="sign" v-slot="{ noPerm }">
+        <hcm-auth
+          :sign="
+            getAuthSignByBusinessId(
+              bizId,
+              AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
+              AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
+            )
+          "
+          v-slot="{ noPerm }"
+        >
           <bk-button theme="primary" :disabled="noPerm" @click="handleApplyToAccount" outline>应用到二级账号</bk-button>
         </hcm-auth>
       </div>

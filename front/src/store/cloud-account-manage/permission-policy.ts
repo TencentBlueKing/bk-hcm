@@ -1,10 +1,10 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
-import { IListResData, QueryFilterType, QueryRuleOPEnum, IPageQuery } from '@/typings';
+import { IListResData, QueryFilterType, QueryRuleOPEnum, QueryBuilderType } from '@/typings';
 import rollRequest from '@blueking/roll-request';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { IAppliedReasonItem } from '@/views/cloud-account-manage/permission-policy/typings';
+import { resolveBizApiPath } from '@/utils/search';
 
 // 权限策略列表
 export interface IPermissionPolicyItem {
@@ -53,8 +53,6 @@ export interface IOperationPermissionPolicyParams {
 }
 
 export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
-  const { getBusinessApiPath } = useWhereAmI();
-
   const permissionPolicyListLoading = ref(false);
   const unappliedAccountIdsListLoading = ref(false);
   const appliedAccountIdsListLoading = ref(false);
@@ -76,8 +74,7 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 更新权限策略库
-   * @param bk_biz_id 业务ID
-   * @param account_id 账号ID
+   * @param vendor 云账户
    * @param params 更新参数
    */
   const updatePermissionPolicy = async (vendor: string, params: IOperationPermissionPolicyParams) => {
@@ -98,16 +95,18 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 获取权限策略库列表
+   * @param bizId 业务ID
    * @param vendor 云厂商
-   * @param businessPath 业务路径
    * @param params 查询参数
    */
   const getPermissionPolicyList = async (
+    bizId: number,
     vendor: string,
-    params: { filter?: any; page: IPageQuery } & Record<string, any>,
+    params: QueryBuilderType,
   ): Promise<{ list: IPermissionPolicyItem[]; count: number }> => {
     permissionPolicyListLoading.value = true;
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/list`;
+
+    const api = `/api/v1/cloud/${resolveBizApiPath(bizId)}vendors/${vendor}/permission_policy_libraries/list`;
     try {
       // 构建请求参数
       const requestData = { ...params };
@@ -187,16 +186,24 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 权限策略库关联的二级账号列表
+   * @param bizId 业务ID
    * @param vendor 云账户
-   * @param businessId 业务ID
    * @param id 策略库ID
    * @param count 关联二级账号数
    */
-  const getPermissionAssoAccountList = async (vendor: string, id: string, count: number): Promise<string[]> => {
+  const getPermissionAssoAccountList = async (
+    bizId: number,
+    vendor: string,
+    id: string,
+    count: number,
+  ): Promise<string[]> => {
     appliedAccountIdsListLoading.value = true;
 
     if (count === 0) return Promise.resolve([]);
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/${id}/account_ids`;
+
+    const api = `/api/v1/cloud/${resolveBizApiPath(
+      bizId,
+    )}vendors/${vendor}/permission_policy_libraries/${id}/account_ids`;
     try {
       // 获取列表数据
       const listRes = await http.get(api);
@@ -214,14 +221,16 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 权限策略库应用到二级账号时未应用的列表
+   * @param bizId 业务ID
    * @param vendor 云账户
-   * @param businessId 业务ID
    * @param id 策略库ID
    */
-  const getUnappliedAccountIdsList = async (vendor: string, id: string): Promise<string[]> => {
+  const getUnappliedAccountIdsList = async (bizId: number, vendor: string, id: string): Promise<string[]> => {
     unappliedAccountIdsListLoading.value = true;
 
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/${id}/unapplied_account_ids`;
+    const api = `/api/v1/cloud/${resolveBizApiPath(
+      bizId,
+    )}vendors/${vendor}/permission_policy_libraries/${id}/unapplied_account_ids`;
     try {
       // 获取列表数据
       const listRes = await http.get(api);
@@ -239,14 +248,20 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
 
   /**
    * 权限策略库应用到二级账号时已经应用的列表
+   * @param bizId 业务ID
    * @param vendor 云账户
-   * @param businessId 业务ID
    * @param id 策略库ID
    */
-  const getAppliedAccountIdsList = async (vendor: string, id: string): Promise<IPermissionAppliedItem[]> => {
+  const getAppliedAccountIdsList = async (
+    bizId: number,
+    vendor: string,
+    id: string,
+  ): Promise<IPermissionAppliedItem[]> => {
     appliedAccountIdsListLoading.value = true;
 
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/${id}/permission_templates`;
+    const api = `/api/v1/cloud/${resolveBizApiPath(
+      bizId,
+    )}vendors/${vendor}/permission_policy_libraries/${id}/permission_templates`;
     try {
       // 获取列表数据
       const listRes = await http.get(api);
@@ -263,9 +278,8 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
   };
 
   /**
-   * 权限策略库应用到二级账号确认应用（创建）
+   * 权限策略库应用到二级账号确认应用（创建）-- 非业务下
    * @param vendor 云账户
-   * @param businessId 业务ID
    * @param id 策略库ID
    * @param accountIds 目标二级账号ID列表
    */
@@ -274,7 +288,7 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     id: string,
     accountIds: string[],
   ): Promise<IAppliedReasonItem[]> => {
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/${id}/apply`;
+    const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}/apply`;
     try {
       const res = await http.post(api, {
         account_ids: accountIds,
@@ -290,9 +304,37 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
   };
 
   /**
-   * 权限策略库应用到二级账号确认应用（更新）
+   * 权限策略库应用到二级账号确认应用（创建）-- 业务下
+   * @param bizId 业务ID
    * @param vendor 云账户
-   * @param businessId 业务ID
+   * @param id 策略库ID
+   * @param accountIds 目标二级账号ID列表
+   */
+  const createAppliedAccountBiz = async (
+    bizId: number,
+    vendor: string,
+    id: string,
+    accountIds: string[],
+  ): Promise<IAppliedReasonItem[]> => {
+    const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/applications/types/apply_permission_policy_library_create`;
+    try {
+      const res = await http.post(api, {
+        account_ids: accountIds,
+        policy_library_id: id,
+      });
+
+      const list = res?.data?.results || [];
+
+      return list;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 权限策略库应用到二级账号确认应用（更新）-- 非业务下
+   * @param vendor 云账户
    * @param id 策略库ID
    * @param templateIds 目前权限模板ID列表
    */
@@ -301,10 +343,40 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     id: string,
     templateIds: string[],
   ): Promise<IAppliedReasonItem[]> => {
-    const api = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/permission_policy_libraries/${id}/apply`;
+    const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}/apply`;
     try {
       const res = await http.put(api, {
         permission_template_ids: templateIds,
+      });
+
+      const list = res?.data?.results || [];
+
+      return list;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 权限策略库应用到二级账号确认应用（更新）-- 业务下
+   * @param bizId 业务ID
+   * @param vendor 云账户
+   * @param businessId 业务ID
+   * @param id 策略库ID
+   * @param templateIds 目前权限模板ID列表
+   */
+  const updateAppliedAccountBiz = async (
+    bizId: number,
+    vendor: string,
+    id: string,
+    templateIds: string[],
+  ): Promise<IAppliedReasonItem[]> => {
+    const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/applications/types/apply_permission_policy_library_update`;
+    try {
+      const res = await http.put(api, {
+        permission_template_ids: templateIds,
+        policy_library_id: id,
       });
 
       const list = res?.data?.results || [];
@@ -353,5 +425,7 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     createAppliedAccount,
     updateAppliedAccount,
     getPermissionAssoAccountList,
+    createAppliedAccountBiz,
+    updateAppliedAccountBiz,
   };
 });

@@ -305,9 +305,19 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     id: 'cloud_vendor_config',
     action: 'apply',
     resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'apply',
+    resourceType: 'permission_policy_library',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_FIND_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'find',
+    resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_FIND_PERMISSION_POLICY_LIBRARY]: {
     id: 'cloud_vendor_config',
     action: 'find',
     resourceType: 'permission_policy_library',
@@ -317,9 +327,19 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     id: 'cloud_vendor_config',
     action: 'create',
     resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'create',
+    resourceType: 'permission_policy_library',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_UPDATE_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'update',
+    resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY]: {
     id: 'cloud_vendor_config',
     action: 'update',
     resourceType: 'permission_policy_library',

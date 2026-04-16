@@ -6,8 +6,17 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { AUTH_UPDATE_PERMISSION_POLICY_LIBRARY, AUTH_APPLY_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
+import {
+  AUTH_UPDATE_PERMISSION_POLICY_LIBRARY,
+  AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
+  AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY,
+  AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
+} from '@/constants/auth-symbols';
 import type { IPermissionPolicyItem } from '../../typings';
+import { getAuthSignByBusinessId } from '@/utils';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import router from '@/router';
+import { useRoute } from 'vue-router';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -31,8 +40,9 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 const { isBusinessPage, getBizsId } = useWhereAmI();
+const route = useRoute();
 
-const bizId = computed(() => getBizsId());
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 // 查看详情
 const handleViewDetails = (row: IPermissionPolicyItem) => {
@@ -49,18 +59,16 @@ const handleEditAccount = (row: IPermissionPolicyItem) => {
   emit('edit-account', row);
 };
 
-const getAuth = (type: string) => {
-  const auth = type === 'apply' ? AUTH_APPLY_PERMISSION_POLICY_LIBRARY : AUTH_UPDATE_PERMISSION_POLICY_LIBRARY;
-  if (isBusinessPage) {
-    return { type: auth, relation: [bizId.value] };
-  }
-  return { type: auth };
-};
-
 // 跳转二级账号详情（新开标签页）
-const handleGoToAccount = (account: string) => {
-  const url = `${window.location.origin}/#/cloud-account-manage/secondary-account/${account}`;
-  window.open(url, '_blank');
+const handleGoToAccount = (id: string) => {
+  router.push({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: {
+      ...route.query,
+      type: 'secondary-account',
+      id,
+    },
+  });
 };
 
 // 判断是否为需要自定义渲染的列（排除 related_account_count，它在 template 中单独处理）
@@ -152,12 +160,30 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
       </bk-table-column>
       <bk-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <hcm-auth :sign="getAuth('edit')" v-slot="{ noPerm }">
+          <hcm-auth
+            :sign="
+              getAuthSignByBusinessId(
+                bizId,
+                AUTH_UPDATE_PERMISSION_POLICY_LIBRARY,
+                AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY,
+              )
+            "
+            v-slot="{ noPerm }"
+          >
             <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)" v-if="!isBusinessPage">
               编辑
             </bk-button>
           </hcm-auth>
-          <hcm-auth :sign="getAuth('apply')" v-slot="{ noPerm }">
+          <hcm-auth
+            :sign="
+              getAuthSignByBusinessId(
+                bizId,
+                AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
+                AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
+              )
+            "
+            v-slot="{ noPerm }"
+          >
             <bk-button theme="primary" :disabled="noPerm" text @click="handleApplyToAccount(row)">
               应用到二级账号
             </bk-button>
