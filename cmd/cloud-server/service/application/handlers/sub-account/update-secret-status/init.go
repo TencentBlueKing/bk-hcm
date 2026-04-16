@@ -27,6 +27,8 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
@@ -65,4 +67,10 @@ func NewApplicationOfUpdateSecretKeyStatus(opt *handlers.HandlerOption, base *su
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,
 	}
+}
+
+func (a *ApplicationOfUpdateSecretKeyStatus) GetItsmApprover(kt *kit.Kit, managers []string) (
+	[]itsm.VariableApprover, error) {
+
+	return a.GetAccountApprover(kt, a.AccountID())
 }
