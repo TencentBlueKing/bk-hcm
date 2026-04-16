@@ -1005,7 +1005,7 @@ func (a *applicationSvc) CreateBizForUpdateSubAccountSecretStatus(cts *rest.Cont
 }
 
 func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contexts,
-	req *proto.SubAccountSecretStatusBatchUpdateReq) ([]string, error) {
+	req *proto.SubAccountSecretStatusBatchUpdateReq) (interface{}, error) {
 
 	opt := a.getHandlerOption(cts)
 	base := &subaccount.BaseSubAccountContent{
@@ -1029,7 +1029,7 @@ func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contex
 		}
 	}
 
-	return ids, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
 // CreateBizForDeleteSubAccountSecret create application for deleting sub account secret.
@@ -1073,7 +1073,7 @@ func (a *applicationSvc) CreateBizForDeleteSubAccountSecret(cts *rest.Contexts) 
 }
 
 func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, req *proto.SubAccountSecretBatchDeleteReq,
-) ([]string, error) {
+) (interface{}, error) {
 
 	opt := a.getHandlerOption(cts)
 	base := &subaccount.BaseSubAccountContent{
@@ -1097,5 +1097,5 @@ func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, re
 		}
 	}
 
-	return ids, nil
+	return &core.BatchCreateResult{IDs: ids}, nil
 }

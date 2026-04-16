@@ -24,7 +24,7 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/dal/dao/tools"
 )
 
 // CheckReq validate the request, resolve and populate the secret's parent account info.
@@ -60,13 +60,8 @@ func (a *ApplicationOfUpdateSecretKeyStatus) CheckReq() error {
 func (a *ApplicationOfUpdateSecretKeyStatus) getSubAccountIDBySecret() (string, error) {
 	result, err := a.Client.DataService().Global.SubAccountSecret.ListSubAccountSecret(a.Cts.Kit,
 		&protocloud.SubAccountSecretListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: a.req.ID},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: 1},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
+			Page:   &core.BasePage{Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {
@@ -83,13 +78,8 @@ func (a *ApplicationOfUpdateSecretKeyStatus) getSubAccountIDBySecret() (string, 
 func (a *ApplicationOfUpdateSecretKeyStatus) getAccountIDBySubAccount(subAccountID string) (string, error) {
 	result, err := a.Client.DataService().Global.SubAccount.List(a.Cts.Kit,
 		&core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: subAccountID},
-				},
-			},
-			Page: &core.BasePage{Start: 0, Limit: 1},
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", subAccountID)),
+			Page:   &core.BasePage{Start: 0, Limit: 1},
 		},
 	)
 	if err != nil {
@@ -110,13 +100,7 @@ func (a *ApplicationOfUpdateSecretKeyStatus) getSubAccountNameForDisplay() (stri
 	}
 
 	result, err := a.Client.DataService().Global.SubAccount.List(a.Cts.Kit,
-		&core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{Field: "id", Op: filter.Equal.Factory(), Value: subAccountID},
-				},
-			},
+		&core.ListReq{Filter: tools.ExpressionAnd(tools.RuleEqual("id", subAccountID)),
 			Page: &core.BasePage{Start: 0, Limit: 1},
 		},
 	)

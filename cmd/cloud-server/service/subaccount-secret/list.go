@@ -64,7 +64,7 @@ func (svc *service) ListSubAccountSecret(cts *rest.Contexts) (interface{}, error
 	return svc.listBizSubAccountSecretJoinExt(cts.Kit, bizID, vendor, req)
 }
 
-// 最小查询的范围：三级账号的业务是当前业务，同时当前业务为二级账号管理业务下所有三级账号的密钥
+// （最大查询范围）查询符合以下条件的三级账号的密钥：三级账号的业务是当前业务，或三级账号所属二级账号的管理业务是当前业务
 func (svc *service) listBizSubAccountSecretJoinExt(kt *kit.Kit, bizID int64, vendor enumor.Vendor,
 	req *proto.ListSubAccountSecretReq) (interface{}, error) {
 
@@ -87,6 +87,9 @@ func (svc *service) listBizSubAccountSecretJoinExt(kt *kit.Kit, bizID int64, ven
 		dsRes, err := svc.client.DataService().TCloud.SubAccountSecret.ListSubAccountSecretJoinExt(kt, dsReq)
 		if err != nil {
 			return nil, err
+		}
+		if req.Page.Count {
+			return &proto.BizSubAccountSecretJoinExtListResult{Count: dsRes.Count}, nil
 		}
 		return svc.convertBizSubAccountSecretJoinExtList(kt, bizID, dsRes)
 	default:

@@ -39,7 +39,7 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// 业务下接口
-	h.Add("CreateBizSubAccountSecret", "POST",
+	h.Add("CreateBizSubAccountSecret", http.MethodPost,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/create", svc.CreateBizSubAccountSecret)
 	h.Add("ListSubAccountSecretJoinExt", http.MethodPost,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/sub_account_secrets/list", svc.ListSubAccountSecret)

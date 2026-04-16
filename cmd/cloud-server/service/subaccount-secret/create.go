@@ -67,7 +67,7 @@ func (svc *service) CreateBizSubAccountSecret(cts *rest.Contexts) (interface{}, 
 
 	switch vendor {
 	case enumor.TCloud:
-		return svc.createTCloudSubAccountSecret(cts.Kit, bizID, req.ID)
+		return svc.createTCloudSubAccountSecret(cts.Kit, bizID, req.SubAccountID)
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
@@ -87,15 +87,15 @@ func (svc *service) authorizeSubAccountSecret(kt *kit.Kit, bizID int64) error {
 }
 
 // createTCloudSubAccountSecret creates access key on TCloud and persists to DB.
-func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAccountID string,
-) (*proto.CreateResult, error) {
+func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAccountID string) (
+	*proto.CreateResult, error) {
 
 	subAccount, err := svc.getTCloudSubAccount(kt, subAccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = svc.validateAccountBiz(kt, bizID, subAccount.ID, subAccount.AccountID); err != nil {
+	if err = svc.validateAccountBiz(kt, bizID, subAccount.AccountID); err != nil {
 		return nil, err
 	}
 
@@ -111,8 +111,7 @@ func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAc
 			TargetUin: targetUin,
 		})
 	if err != nil {
-		logs.Errorf("create access key failed, sub_account_id: %s, err: %v, rid: %s",
-			subAccountID, err, kt.Rid)
+		logs.Errorf("create access key failed, sub_account_id: %s, err: %v, rid: %s", subAccountID, err, kt.Rid)
 		return nil, err
 	}
 
@@ -132,8 +131,8 @@ func (svc *service) createTCloudSubAccountSecret(kt *kit.Kit, bizID int64, subAc
 
 // getTCloudSubAccount retrieves a TCloud sub-account by HCM ID.
 func (svc *service) getTCloudSubAccount(kt *kit.Kit, subAccountID string) (
-	*coresubaccount.SubAccount[coresubaccount.TCloudExtension], error,
-) {
+	*coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
+
 	subAccount, err := svc.client.DataService().TCloud.SubAccount.Get(kt, subAccountID)
 	if err != nil {
 		logs.Errorf("get sub account failed, id: %s, err: %v, rid: %s",
@@ -141,17 +140,17 @@ func (svc *service) getTCloudSubAccount(kt *kit.Kit, subAccountID string) (
 		return nil, err
 	}
 
+	if subAccount.AccountType == string(enumor.MainAccount) {
+		return nil, fmt.Errorf("sub account %s is main account", subAccountID)
+	}
+
 	return subAccount, nil
 }
 
 // validateAccountBiz checks business ownership based on accountID resolved from sub-account ID.
-func (svc *service) validateAccountBiz(kt *kit.Kit, bizID int64, subAccountID, accountID string) error {
-	if subAccountID == "" {
-		return errf.New(errf.InvalidParameter, "sub account id is required")
-	}
-
+func (svc *service) validateAccountBiz(kt *kit.Kit, bizID int64, accountID string) error {
 	if accountID == "" {
-		return errf.Newf(errf.InvalidParameter, "account id is empty for sub account %s", subAccountID)
+		return errf.Newf(errf.InvalidParameter, "account id is empty")
 	}
 
 	accountListReq := &protocloud.AccountListReq{
@@ -179,8 +178,7 @@ func (svc *service) validateAccountBiz(kt *kit.Kit, bizID int64, subAccountID, a
 // saveTCloudSubAccountSecret saves the access key info to data-service.
 func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
 	subAccount *coresubaccount.SubAccount[coresubaccount.TCloudExtension],
-	akResult *hssubaccount.TCloudCreateAccessKeyResult,
-) (string, error) {
+	akResult *hssubaccount.TCloudCreateAccessKeyResult) (string, error) {
 
 	cloudMainAccountID := ""
 	if subAccount.Extension != nil {
@@ -206,8 +204,7 @@ func (svc *service) saveTCloudSubAccountSecret(kt *kit.Kit,
 	result, err := svc.client.DataService().TCloud.SubAccountSecret.BatchCreateSubAccountSecret(
 		kt, createReq)
 	if err != nil {
-		logs.Errorf("persist sub account secret failed, sub_account_id: %s, err: %v, rid: %s",
-			subAccount.ID, err, kt.Rid)
+		logs.Errorf("persist sub account secret failed, sub_account_id: %s, err: %v, rid: %s", subAccount.ID, err, kt.Rid)
 		return "", err
 	}
 

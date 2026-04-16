@@ -18,9 +18,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/applications/types/update_s
 
 #### sub_account_secrets
 
-| 参数名称 | 参数类型 | 必选 | 描述                                   |
-|------|------|----|--------------------------------------|
-| id   | string | 是 | 密钥ID                                 |
+| 参数名称   | 参数类型 | 必选 | 描述                                   |
+|--------|------|----|--------------------------------------|
+| id     | string | 是 | 密钥ID                                 |
 | status | string | 是 | 密钥状态，枚举值：enabled(启用)、disabled(禁用) |
 
 ### 调用示例

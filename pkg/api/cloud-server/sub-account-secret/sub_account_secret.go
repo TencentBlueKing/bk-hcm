@@ -28,7 +28,7 @@ import (
 
 // CreateReq defines create sub account secret request.
 type CreateReq struct {
-	ID string `json:"id" validate:"required"`
+	SubAccountID string `json:"sub_account_id" validate:"required"`
 }
 
 // Validate create sub account secret request.

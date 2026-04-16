@@ -57,9 +57,7 @@ func (a *ApplicationOfDeleteSecretKey) tcloudDeliver() (enumor.ApplicationStatus
 	}
 
 	if err := a.deleteLocalSecret(); err != nil {
-		logs.Errorf(
-			"cloud secret deleted but local db delete failed, "+
-				"secret_id: %s, err: %v, rid: %s",
+		logs.Errorf("cloud secret deleted but local db delete failed, secret_id: %s, err: %v, rid: %s",
 			a.secretID, err, a.Cts.Kit.Rid,
 		)
 		return enumor.DeliverError,

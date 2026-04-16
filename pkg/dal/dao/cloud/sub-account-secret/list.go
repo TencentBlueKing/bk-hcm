@@ -114,10 +114,13 @@ func buildJoinWhere(opt *types.ListSecretJoinAccountOption) (string, map[string]
 	whereExprs := make([]string, 0)
 	args := make(map[string]interface{})
 
-	whereExprs = append(whereExprs, "secret.vendor = :vendor")
-	args["vendor"] = string(opt.Vendor)
+	// 云厂商条件过滤和二级账号资源账号条件过滤
+	whereExprs = append(whereExprs, "secret.vendor = :vendor AND account.type = :account_type")
 
-	// 最小查询的范围：三级账号的业务是当前业务，同时当前业务为二级账号管理业务下所有三级账号的密钥
+	args["vendor"] = string(opt.Vendor)
+	args["account_type"] = string(enumor.ResourceAccount)
+
+	// （最大查询范围）查询符合以下条件的三级账号的密钥：三级账号的业务是当前业务，或三级账号所属二级账号的管理业务是当前业务
 	bizScope := "(JSON_CONTAINS(sub_account.bk_biz_ids, CAST(:bk_biz_id AS JSON)) OR " +
 		"account.bk_biz_id = :bk_biz_id)"
 	whereExprs = append(whereExprs, bizScope)

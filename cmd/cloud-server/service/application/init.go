@@ -117,11 +117,11 @@ func bizService(h *rest.Handler, svc *applicationSvc) {
 		"/vendors/{vendor}/applications/types/apply_permission_policy_library_update",
 		svc.CreateBizForApplyPermissionPolicyLibraryUpdate)
 
-	h.Add("CreateBizForUpdateSubAccountSecretStatus", "POST",
+	h.Add("CreateBizForUpdateSubAccountSecretStatus", http.MethodPost,
 		"/vendors/{vendor}/applications/types/update_sub_account_secret_status",
 		svc.CreateBizForUpdateSubAccountSecretStatus)
 
-	h.Add("CreateBizForDeleteSubAccountSecret", "POST",
+	h.Add("CreateBizForDeleteSubAccountSecret", http.MethodPost,
 		"/vendors/{vendor}/applications/types/delete_sub_account_secret",
 		svc.CreateBizForDeleteSubAccountSecret)
 

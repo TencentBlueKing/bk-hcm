@@ -43,7 +43,6 @@ func (a *ApplicationOfDeleteSubAccount) CheckReq() error {
 			a.req.AccountID, account.BkBizID, a.BkBizID())
 	}
 
-	// 密钥管理功能实现后，需要校验三级账号关联的密钥是否已全部删除
 	if err := a.CheckSubSecretExists(a.req.ID); err != nil {
 		return err
 	}

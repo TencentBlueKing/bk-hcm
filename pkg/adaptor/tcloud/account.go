@@ -531,8 +531,7 @@ func (t *TCloudImpl) CreateAccessKey(kt *kit.Kit,
 
 	resp, err := camClient.CreateAccessKeyWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("create access key failed, target_uin: %d, err: %v, rid: %s",
-			opt.TargetUin, err, kt.Rid)
+		logs.Errorf("create access key failed, target_uin: %d, err: %v, rid: %s", opt.TargetUin, err, kt.Rid)
 		return nil, fmt.Errorf("create access key failed, err: %v", err)
 	}
 
