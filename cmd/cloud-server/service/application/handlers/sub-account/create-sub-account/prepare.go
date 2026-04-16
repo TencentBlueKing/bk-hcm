@@ -22,7 +22,6 @@ package createsubaccount
 import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/converter"
 )
 
@@ -36,7 +35,7 @@ type createSubAccountContent struct {
 func (a *ApplicationOfCreateSubAccount) GenerateApplicationContent() interface{} {
 	return &createSubAccountContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionCreate,
+			Operation: a.GetOperation(),
 			Vendor:    a.Vendor(),
 			BkBizID:   a.BkBizID(),
 			AccountID: a.AccountID(),

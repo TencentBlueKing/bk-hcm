@@ -34,7 +34,7 @@ import (
 var _ handlers.ApplicationHandler = (*ApplicationOfUpdatePermTemplate)(nil)
 
 func init() {
-	permissiontemplate.RegisterActionHandler(enumor.PermTemplateActionUpdate, newHandlerFromContent)
+	permissiontemplate.RegisterOperationHandler(enumor.OpUpdatePermTemplate, newHandlerFromContent)
 }
 
 // updatePermTemplateContent is the full content stored in the application record for update action.

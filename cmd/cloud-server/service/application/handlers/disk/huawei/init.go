@@ -37,7 +37,8 @@ func NewApplicationOfCreateHuaWeiDisk(
 	req *csdisk.HuaWeiDiskCreateReq,
 ) *ApplicationOfCreateHuaWeiDisk {
 	return &ApplicationOfCreateHuaWeiDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.HuaWei),
-		req:                    req,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk,
+			enumor.HuaWei),
+		req: req,
 	}
 }

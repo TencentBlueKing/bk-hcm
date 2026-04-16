@@ -79,6 +79,14 @@ const getConfig = (custom = {}) => ({
 
     if (process.env.NODE_ENV === 'production') {
       config.plugin('buildHash').use(BuildHashPlugin);
+      
+      // 修复 Terser 插件配置兼容性问题（extractComments 字段在新版本 Terser 中不支持）
+      config.optimization.minimizer('terser').tap((args) => {
+        if (args[0] && args[0].extractComments !== undefined) {
+          delete args[0].extractComments;
+        }
+        return args;
+      });
     }
 
     return config;

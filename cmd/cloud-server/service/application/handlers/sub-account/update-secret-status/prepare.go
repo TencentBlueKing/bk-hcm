@@ -36,7 +36,7 @@ type updateSecretKeyStatusContent struct {
 func (a *ApplicationOfUpdateSecretKeyStatus) GenerateApplicationContent() interface{} {
 	return &updateSecretKeyStatusContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionUpdateSecretKeyStatus,
+			Operation: a.GetOperation(),
 			Vendor:    a.Vendor(),
 			BkBizID:   a.BkBizID(),
 			AccountID: a.AccountID(),

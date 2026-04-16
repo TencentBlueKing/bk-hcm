@@ -74,7 +74,7 @@ func NewApplicationBasePermPolicyLibrary(opt *handlers.HandlerOption,
 
 	return ApplicationBasePermissionPolicyLibrary{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.ApplyPermissionPolicyLibrary, base.Vendor,
+			opt, enumor.ApplyPermissionPolicyLibrary, base.Operation, base.Vendor,
 		),
 		PolicyLibraryApplier: permissionpolicylibrary.NewPolicyLibraryApplier(opt.Client, opt.Audit),
 		Base:                 base,

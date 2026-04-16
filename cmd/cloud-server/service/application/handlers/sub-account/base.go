@@ -37,39 +37,39 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-// ActionHandlerFactory creates an ApplicationHandler for a specific sub-account action.
-type ActionHandlerFactory func(opt *handlers.HandlerOption, base *BaseSubAccountContent, content string,
+// OperationHandlerFactory creates an ApplicationHandler for a specific sub-account action.
+type OperationHandlerFactory func(opt *handlers.HandlerOption, base *BaseSubAccountContent, content string,
 ) (handlers.ApplicationHandler, error)
 
-var actionHandlerRegistry = make(map[enumor.SubAccountAction]ActionHandlerFactory)
+var operationHandlerRegistry = make(map[enumor.ApplicationOperation]OperationHandlerFactory)
 
-// RegisterActionHandler registers a handler factory for a sub-account action.
+// RegisterOperationHandler registers a handler factory for a sub-account operation.
 // Each action sub-package calls this in init() to self-register.
-func RegisterActionHandler(action enumor.SubAccountAction, factory ActionHandlerFactory) {
-	actionHandlerRegistry[action] = factory
+func RegisterOperationHandler(operation enumor.ApplicationOperation, factory OperationHandlerFactory) {
+	operationHandlerRegistry[operation] = factory
 }
 
 // BaseSubAccountContent is the common header embedded in all sub-account application content structs.
 // Each action's content struct embeds this base and adds action-specific fields.
 type BaseSubAccountContent struct {
-	Action    enumor.SubAccountAction `json:"action"`
-	Vendor    enumor.Vendor           `json:"vendor"`
-	BkBizID   int64                   `json:"bk_biz_id"`
-	AccountID string                  `json:"account_id"`
+	Operation enumor.ApplicationOperation `json:"action"`
+	Vendor    enumor.Vendor               `json:"vendor"`
+	BkBizID   int64                       `json:"bk_biz_id"`
+	AccountID string                      `json:"account_id"`
 }
 
 // NewHandlerFromApplication dispatches to the registered action handler factory
 // based on the action field in the application content.
 func NewHandlerFromApplication(opt *handlers.HandlerOption, content string) (handlers.ApplicationHandler, error) {
-	// 解析申请单公共内容，并根据Action构建对应handler
+	// 解析申请单公共内容，并根据Operation构建对应handler
 	ac := new(BaseSubAccountContent)
 	if err := json.UnmarshalFromString(content, ac); err != nil {
 		return nil, fmt.Errorf("unmarshal sub account action content failed, err: %w", err)
 	}
 
-	handler, ok := actionHandlerRegistry[ac.Action]
+	handler, ok := operationHandlerRegistry[ac.Operation]
 	if !ok {
-		return nil, fmt.Errorf("unsupported sub account action: %s", ac.Action)
+		return nil, fmt.Errorf("unsupported sub account action: %s", ac.Operation)
 	}
 
 	return handler(opt, ac, content)
@@ -81,7 +81,6 @@ func NewHandlerFromApplication(opt *handlers.HandlerOption, content string) (han
 type ApplicationBaseSubAccount struct {
 	handlers.BaseApplicationHandler
 
-	action    enumor.SubAccountAction
 	bkBizID   int64
 	accountID string
 }
@@ -90,17 +89,11 @@ type ApplicationBaseSubAccount struct {
 func NewApplicationBaseSubAccount(opt *handlers.HandlerOption, base *BaseSubAccountContent) ApplicationBaseSubAccount {
 	return ApplicationBaseSubAccount{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.OperateSubAccount, base.Vendor,
+			opt, enumor.OperateSubAccount, base.Operation, base.Vendor,
 		),
-		action:    base.Action,
 		bkBizID:   base.BkBizID,
 		accountID: base.AccountID,
 	}
-}
-
-// Action return the subaccount action type.
-func (a *ApplicationBaseSubAccount) Action() enumor.SubAccountAction {
-	return a.action
 }
 
 // BkBizID return the biz ID.
@@ -141,7 +134,7 @@ func (a *ApplicationBaseSubAccount) GetBkBizIDs() []int64 {
 // The approvers are the parent 2nd-level account's managers queried by accountID,
 // who serve as the approvers for the subaccount approval flow.
 func (a *ApplicationBaseSubAccount) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
-	return a.GetItsmPlatformAndAccountApprover(kt, managers, a.accountID)
+	return a.GetAccountApprover(kt, a.accountID)
 }
 
 // CheckSubAccountExists checks if the sub account exists.

@@ -27,8 +27,6 @@ import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
@@ -36,7 +34,7 @@ import (
 var _ handlers.ApplicationHandler = (*ApplicationOfCreateSubAccount)(nil)
 
 func init() {
-	subaccount.RegisterActionHandler(enumor.SubAccountActionCreate, newHandlerFromContent)
+	subaccount.RegisterOperationHandler(enumor.OpCreateSubAccount, newHandlerFromContent)
 }
 
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
@@ -64,11 +62,4 @@ func NewApplicationOfCreateSubAccount(opt *handlers.HandlerOption, base *subacco
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		req:                       req,
 	}
-}
-
-// GetItsmApprover 获取itsm审批人
-func (a *ApplicationOfCreateSubAccount) GetItsmApprover(kt *kit.Kit, managers []string) (
-	[]itsm.VariableApprover, error) {
-
-	return a.GetAccountApprover(kt, a.AccountID())
 }

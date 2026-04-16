@@ -34,7 +34,7 @@ import (
 var _ handlers.ApplicationHandler = (*ApplicationOfCreatePermTemplate)(nil)
 
 func init() {
-	permissiontemplate.RegisterActionHandler(enumor.PermTemplateActionCreate, newHandlerFromContent)
+	permissiontemplate.RegisterOperationHandler(enumor.OpCreatePermTemplate, newHandlerFromContent)
 }
 
 // createPermTemplateContent is the full content stored in the application record for create action.

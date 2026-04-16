@@ -36,15 +36,15 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-// ActionHandlerFactory creates an ApplicationHandler for a specific permission template action.
-type ActionHandlerFactory func(opt *handlers.HandlerOption, base *proto.BasePermTemplateContent, content string,
+// OperationHandlerFactory creates an ApplicationHandler for a specific permission template action.
+type OperationHandlerFactory func(opt *handlers.HandlerOption, base *proto.BasePermTemplateContent, content string,
 ) (handlers.ApplicationHandler, error)
 
-var actionHandlerRegistry = map[enumor.OperatePermTemplateAction]ActionHandlerFactory{}
+var OperationOperationHandlerRegistry = map[enumor.ApplicationOperation]OperationHandlerFactory{}
 
-// RegisterActionHandler registers a handler factory for the given action.
-func RegisterActionHandler(action enumor.OperatePermTemplateAction, factory ActionHandlerFactory) {
-	actionHandlerRegistry[action] = factory
+// RegisterOperationHandler registers a handler factory for the given action.
+func RegisterOperationHandler(operation enumor.ApplicationOperation, factory OperationHandlerFactory) {
+	OperationOperationHandlerRegistry[operation] = factory
 }
 
 // NewHandlerFromApplication dispatches to the registered action handler factory
@@ -55,9 +55,9 @@ func NewHandlerFromApplication(opt *handlers.HandlerOption, appContent string) (
 		return nil, fmt.Errorf("unmarshal base permission template content failed, err: %w", err)
 	}
 
-	factory, ok := actionHandlerRegistry[base.Action]
+	factory, ok := OperationOperationHandlerRegistry[base.Operation]
 	if !ok {
-		return nil, errf.Newf(errf.InvalidParameter, "no handler registered for action: %s", base.Action)
+		return nil, errf.Newf(errf.InvalidParameter, "no handler registered for action: %s", base.Operation)
 	}
 
 	return factory(opt, base, appContent)
@@ -78,7 +78,7 @@ func NewApplicationBasePermissionTemplate(opt *handlers.HandlerOption,
 
 	return ApplicationBasePermissionTemplate{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.OperatePermissionTemplate, base.Vendor,
+			opt, enumor.OperatePermissionTemplate, base.Operation, base.Vendor,
 		),
 		PolicyLibraryApplier: permissionpolicylibrary.NewPolicyLibraryApplier(opt.Client, opt.Audit),
 		bkBizID:              base.BkBizID,

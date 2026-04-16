@@ -22,7 +22,6 @@ package updatesubaccount
 import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	proto "hcm/pkg/api/cloud-server/application"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/converter"
 )
 
@@ -37,7 +36,7 @@ type updateSubAccountContent struct {
 func (a *ApplicationOfUpdateSubAccount) GenerateApplicationContent() interface{} {
 	return &updateSubAccountContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionUpdate,
+			Operation: a.GetOperation(),
 			Vendor:    a.Vendor(),
 			BkBizID:   a.BkBizID(),
 			AccountID: a.AccountID(),

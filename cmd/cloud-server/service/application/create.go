@@ -157,11 +157,22 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 
 	// 主机、硬盘、VPC、负载均衡需要记录业务ID
 	var needBkBizIDsOps = map[enumor.ApplicationOperation]struct{}{
-		enumor.OpCreateCvm:          {},
-		enumor.OpCreateDisk:         {},
-		enumor.OpCreateVpc:          {},
-		enumor.OpCreateLoadBalancer: {},
-		enumor.OpAddAccount:         {},
+		enumor.OpCreateCvm:                          {},
+		enumor.OpCreateDisk:                         {},
+		enumor.OpCreateVpc:                          {},
+		enumor.OpCreateLoadBalancer:                 {},
+		enumor.OpAddAccount:                         {},
+		enumor.OpCreateSubAccount:                   {},
+		enumor.OpUpdateSubAccount:                   {},
+		enumor.OpDeleteSubAccount:                   {},
+		enumor.OpCreateSubAccountSecret:             {},
+		enumor.OpUpdateSubAccountSecretStatus:       {},
+		enumor.OpDeleteSubAccountSecret:             {},
+		enumor.OpCreatePermTemplate:                 {},
+		enumor.OpUpdatePermTemplate:                 {},
+		enumor.OpDeletePermTemplate:                 {},
+		enumor.OpApplyPermissionPolicyLibraryCreate: {},
+		enumor.OpApplyPermissionPolicyLibraryUpdate: {},
 	}
 
 	var bkBizIDs = make([]int64, 0)
@@ -638,7 +649,7 @@ func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req 
 	ids := make([]string, 0, len(req.SubAccounts))
 	for i, subAccount := range req.SubAccounts {
 		base := &subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionCreate,
+			Operation: enumor.OpCreateSubAccount,
 			Vendor:    req.Vendor,
 			BkBizID:   req.BkBizID,
 			AccountID: subAccount.AccountID,
@@ -721,7 +732,7 @@ func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, r
 		}
 
 		base := &subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionUpdate,
+			Operation: enumor.OpUpdateSubAccount,
 			Vendor:    req.Vendor,
 			BkBizID:   req.BkBizID,
 			AccountID: info.AccountID,
@@ -801,7 +812,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 		}
 
 		base := &subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionDelete,
+			Operation: enumor.OpDeleteSubAccount,
 			Vendor:    req.Vendor,
 			BkBizID:   req.BkBizID,
 			AccountID: info.AccountID,
@@ -1020,9 +1031,9 @@ func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contex
 
 	opt := a.getHandlerOption(cts)
 	base := &subaccount.BaseSubAccountContent{
-		Action:  enumor.SubAccountActionUpdateSecretKeyStatus,
-		Vendor:  req.Vendor,
-		BkBizID: req.BkBizID,
+		Operation: enumor.OpUpdateSubAccountSecretStatus,
+		Vendor:    req.Vendor,
+		BkBizID:   req.BkBizID,
 	}
 
 	ids := make([]string, 0, len(req.SubAccountSecrets))
@@ -1088,9 +1099,9 @@ func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, re
 
 	opt := a.getHandlerOption(cts)
 	base := &subaccount.BaseSubAccountContent{
-		Action:  enumor.SubAccountActionDeleteSecretKey,
-		Vendor:  req.Vendor,
-		BkBizID: req.BkBizID,
+		Operation: enumor.OpDeleteSubAccountSecret,
+		Vendor:    req.Vendor,
+		BkBizID:   req.BkBizID,
 	}
 
 	ids := make([]string, 0, len(req.IDs))
@@ -1145,9 +1156,9 @@ func (a *applicationSvc) CreateBizForCreatePermissionTemplate(cts *rest.Contexts
 	}
 
 	base := &proto.BasePermTemplateContent{
-		Action:  enumor.PermTemplateActionCreate,
-		Vendor:  vendor,
-		BkBizID: bizID,
+		Operation: enumor.OpCreatePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
 	}
 	handler := createpermtemplate.NewApplicationOfCreatePermTemplate(a.getHandlerOption(cts), base, req)
 	return a.create(cts, &proto.CreateCommonReq{}, handler)
@@ -1187,9 +1198,9 @@ func (a *applicationSvc) CreateBizForUpdatePermissionTemplate(cts *rest.Contexts
 	}
 
 	base := &proto.BasePermTemplateContent{
-		Action:  enumor.PermTemplateActionUpdate,
-		Vendor:  vendor,
-		BkBizID: bizID,
+		Operation: enumor.OpUpdatePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
 	}
 	handler := updatepermtemplate.NewApplicationOfUpdatePermTemplate(a.getHandlerOption(cts), base, req)
 	return a.create(cts, &proto.CreateCommonReq{}, handler)
@@ -1229,9 +1240,9 @@ func (a *applicationSvc) CreateBizForDeletePermissionTemplate(cts *rest.Contexts
 	}
 
 	base := &proto.BasePermTemplateContent{
-		Action:  enumor.PermTemplateActionDelete,
-		Vendor:  vendor,
-		BkBizID: bizID,
+		Operation: enumor.OpDeletePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
 	}
 	handler := deletepermtemplate.NewApplicationOfDeletePermTemplate(a.getHandlerOption(cts), base, req)
 	return a.create(cts, &proto.CreateCommonReq{}, handler)
