@@ -22,7 +22,6 @@ package deletesecretkey
 import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // deleteSecretKeyContent is the content stored in application.content.
@@ -30,11 +29,6 @@ type deleteSecretKeyContent struct {
 	subaccount.BaseSubAccountContent `json:",inline"`
 	AccountID                        string `json:"account_id"`
 	SecretID                         string `json:"secret_id"`
-}
-
-// GetItsmApprover delegates to base which queries 2nd-level account managers.
-func (a *ApplicationOfDeleteSecretKey) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.ApplicationBaseSubAccount.GetItsmApprover(managers)
 }
 
 // GenerateApplicationContent generate the content to be stored in DB.

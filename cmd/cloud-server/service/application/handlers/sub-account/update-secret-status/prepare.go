@@ -22,7 +22,6 @@ package updatesecretstatus
 import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // updateSecretKeyStatusContent is the content stored in application.content.
@@ -31,11 +30,6 @@ type updateSecretKeyStatusContent struct {
 	AccountID                        string                        `json:"account_id"`
 	SecretID                         string                        `json:"secret_id"`
 	TargetStatus                     enumor.SubAccountSecretStatus `json:"target_status"`
-}
-
-// GetItsmApprover delegates to base which queries 2nd-level account managers.
-func (a *ApplicationOfUpdateSecretKeyStatus) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.ApplicationBaseSubAccount.GetItsmApprover(managers)
 }
 
 // GenerateApplicationContent generate the content to be stored in DB.
