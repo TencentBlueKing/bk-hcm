@@ -142,6 +142,7 @@ func (svc *applicationSvc) convertToApplicationResp(
 		Source:         enumor.ApplicationSource(application.Source),
 		SN:             application.SN,
 		Type:           enumor.ApplicationType(application.Type),
+		Operation:      application.Operation,
 		Status:         enumor.ApplicationStatus(application.Status),
 		BkBizIDs:       application.BkBizIDs,
 		Applicant:      application.Applicant,

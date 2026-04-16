@@ -32,6 +32,7 @@ type ApplicationCreateReq struct {
 	Source         enumor.ApplicationSource `json:"source" validate:"required"`
 	SN             string                   `json:"sn" validate:"required"`
 	Type           enumor.ApplicationType   `json:"type" validate:"required"`
+	Operation      string                   `json:"operation" validate:"required"`
 	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
 	BkBizIDs       []int64                  `json:"bk_biz_ids" validate:"required"`
 	Applicant      string                   `json:"applicant" validate:"required"`
@@ -62,6 +63,8 @@ type ApplicationResp struct {
 	Source         enumor.ApplicationSource `json:"source"`
 	SN             string                   `json:"sn"`
 	Type           enumor.ApplicationType   `json:"type"`
+	// Operation 细粒度操作类型，对应 application 表的 operation 字段
+	Operation      string                   `json:"operation"`
 	Status         enumor.ApplicationStatus `json:"status"`
 	BkBizIDs       []int64                  `json:"bk_biz_ids"`
 	Applicant      string                   `json:"applicant"`

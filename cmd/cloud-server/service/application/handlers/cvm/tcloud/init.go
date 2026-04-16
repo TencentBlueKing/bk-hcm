@@ -39,7 +39,7 @@ func NewApplicationOfCreateTCloudCvm(
 	opt *handlers.HandlerOption, req *proto.TCloudCvmCreateReq,
 ) *ApplicationOfCreateTCloudCvm {
 	return &ApplicationOfCreateTCloudCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.TCloud),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.OpCreateCvm, enumor.TCloud),
 		req:                    req,
 	}
 }

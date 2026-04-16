@@ -17,27 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package huawei
+START TRANSACTION;
 
-import (
-	"hcm/cmd/cloud-server/service/application/handlers"
-	csdisk "hcm/pkg/api/cloud-server/disk"
-	"hcm/pkg/criteria/enumor"
-)
+ALTER TABLE `application` ADD COLUMN `operation` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '细粒度操作类型' AFTER `type`;
 
-// ApplicationOfCreateHuaWeiDisk ...
-type ApplicationOfCreateHuaWeiDisk struct {
-	handlers.BaseApplicationHandler
-	req *csdisk.HuaWeiDiskCreateReq
-}
-
-// NewApplicationOfCreateHuaWeiDisk ...
-func NewApplicationOfCreateHuaWeiDisk(
-	opt *handlers.HandlerOption,
-	req *csdisk.HuaWeiDiskCreateReq,
-) *ApplicationOfCreateHuaWeiDisk {
-	return &ApplicationOfCreateHuaWeiDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.HuaWei),
-		req:                    req,
-	}
-}
+COMMIT;

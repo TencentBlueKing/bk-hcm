@@ -120,3 +120,68 @@ const (
 	// ApplicationSourceITSM itsm 单据
 	ApplicationSourceITSM ApplicationSource = "itsm"
 )
+
+// ApplicationOperation 申请单细粒度操作类型
+type ApplicationOperation string
+
+// Validate checks whether the ApplicationOperation is valid.
+func (a ApplicationOperation) Validate() error {
+	switch a {
+	case OpAddAccount:
+	case OpCreateCvm:
+	case OpCreateVpc:
+	case OpCreateDisk:
+
+	case OpCreateMainAccount:
+	case OpUpdateMainAccount:
+
+	case OpCreateLoadBalancer:
+
+	case OpCreateSecurityGroup:
+	case OpUpdateSecurityGroup:
+	case OpDeleteSecurityGroup:
+	case OpAssociateSecurityGroup:
+	case OpDisassociateSecurityGroup:
+
+	case OpCreateSecurityGroupRule:
+	case OpUpdateSecurityGroupRule:
+	case OpDeleteSecurityGroupRule:
+	default:
+		return fmt.Errorf("unsupported application operation: %s", a)
+	}
+
+	return nil
+}
+
+const (
+	// OpAddAccount 新增账号
+	OpAddAccount ApplicationOperation = "add_account"
+	// OpCreateCvm 创建虚拟机
+	OpCreateCvm ApplicationOperation = "create_cvm"
+	// OpCreateVpc 创建VPC
+	OpCreateVpc ApplicationOperation = "create_vpc"
+	// OpCreateDisk 创建云盘
+	OpCreateDisk ApplicationOperation = "create_disk"
+	// OpCreateMainAccount 创建主账号/二级账号
+	OpCreateMainAccount ApplicationOperation = "create_main_account"
+	// OpUpdateMainAccount 修改主账号/二级账号
+	OpUpdateMainAccount ApplicationOperation = "update_main_account"
+	// OpCreateLoadBalancer 创建负载均衡
+	OpCreateLoadBalancer ApplicationOperation = "create_load_balancer"
+	// OpCreateSecurityGroup 创建安全组
+	OpCreateSecurityGroup ApplicationOperation = "create_security_group"
+	// OpUpdateSecurityGroup 更新安全组
+	OpUpdateSecurityGroup ApplicationOperation = "update_security_group"
+	// OpDeleteSecurityGroup 删除安全组
+	OpDeleteSecurityGroup ApplicationOperation = "delete_security_group"
+	// OpAssociateSecurityGroup 安全组关联资源
+	OpAssociateSecurityGroup ApplicationOperation = "associate_security_group"
+	// OpDisassociateSecurityGroup 安全组资源解关联
+	OpDisassociateSecurityGroup ApplicationOperation = "disassociate_security_group"
+	// OpCreateSecurityGroupRule 创建安全组规则
+	OpCreateSecurityGroupRule ApplicationOperation = "create_security_group_rule"
+	// OpUpdateSecurityGroupRule 更新安全组规则
+	OpUpdateSecurityGroupRule ApplicationOperation = "update_security_group_rule"
+	// OpDeleteSecurityGroupRule 删除安全组规则
+	OpDeleteSecurityGroupRule ApplicationOperation = "delete_security_group_rule"
+)

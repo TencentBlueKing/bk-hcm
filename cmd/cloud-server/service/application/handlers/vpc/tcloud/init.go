@@ -37,7 +37,7 @@ func NewApplicationOfCreateTCloudVpc(
 	opt *handlers.HandlerOption, req *csvpc.TCloudVpcCreateReq,
 ) *ApplicationOfCreateTCloudVpc {
 	return &ApplicationOfCreateTCloudVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.TCloud),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.OpCreateVpc, enumor.TCloud),
 		req:                    req,
 	}
 }

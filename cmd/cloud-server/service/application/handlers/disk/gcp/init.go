@@ -37,7 +37,7 @@ func NewApplicationOfCreateGcpDisk(
 	req *csdisk.GcpDiskCreateReq,
 ) *ApplicationOfCreateGcpDisk {
 	return &ApplicationOfCreateGcpDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Gcp),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.Gcp),
 		req:                    req,
 	}
 }

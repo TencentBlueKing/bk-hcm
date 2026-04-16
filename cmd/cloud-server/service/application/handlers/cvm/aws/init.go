@@ -39,7 +39,7 @@ func NewApplicationOfCreateAwsCvm(
 	opt *handlers.HandlerOption, req *proto.AwsCvmCreateReq,
 ) *ApplicationOfCreateAwsCvm {
 	return &ApplicationOfCreateAwsCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Aws),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.OpCreateCvm, enumor.Aws),
 		req:                    req,
 	}
 }

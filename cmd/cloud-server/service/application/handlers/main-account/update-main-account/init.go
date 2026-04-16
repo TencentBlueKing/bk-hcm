@@ -40,7 +40,8 @@ func NewApplicationOfUpdateMainAccount(opt *handlers.HandlerOption, authorizer a
 
 	return &ApplicationOfUpdateMainAccount{
 		authorizer:             authorizer,
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.UpdateMainAccount, req.Vendor),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
+			opt, enumor.UpdateMainAccount, enumor.OpUpdateMainAccount, req.Vendor),
 		req:                    req,
 	}
 }
