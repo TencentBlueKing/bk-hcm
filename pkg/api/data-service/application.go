@@ -59,18 +59,17 @@ func (req *ApplicationUpdateReq) Validate() error {
 
 // ApplicationResp ...
 type ApplicationResp struct {
-	ID             string                   `json:"id"`
-	Source         enumor.ApplicationSource `json:"source"`
-	SN             string                   `json:"sn"`
-	Type           enumor.ApplicationType   `json:"type"`
-	// Operation 细粒度操作类型，对应 application 表的 operation 字段
-	Operation      string                   `json:"operation"`
-	Status         enumor.ApplicationStatus `json:"status"`
-	BkBizIDs       []int64                  `json:"bk_biz_ids"`
-	Applicant      string                   `json:"applicant"`
-	Content        string                   `json:"content"`
-	DeliveryDetail string                   `json:"delivery_detail"`
-	Memo           *string                  `json:"memo"`
+	ID             string                      `json:"id"`
+	Source         enumor.ApplicationSource    `json:"source"`
+	SN             string                      `json:"sn"`
+	Type           enumor.ApplicationType      `json:"type"`
+	Operation      enumor.ApplicationOperation `json:"operation"`
+	Status         enumor.ApplicationStatus    `json:"status"`
+	BkBizIDs       []int64                     `json:"bk_biz_ids"`
+	Applicant      string                      `json:"applicant"`
+	Content        string                      `json:"content"`
+	DeliveryDetail string                      `json:"delivery_detail"`
+	Memo           *string                     `json:"memo"`
 	core.Revision  `json:",inline"`
 }
 

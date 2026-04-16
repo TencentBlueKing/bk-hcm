@@ -74,7 +74,7 @@ func (svc *applicationSvc) CreateApplication(cts *rest.Contexts) (interface{}, e
 	application := &tableapplication.ApplicationTable{
 		SN:             req.SN,
 		Source:         string(req.Source),
-		Type:           string(req.Type),
+		Type:           req.Type,
 		Status:         string(req.Status),
 		BkBizIDs:       req.BkBizIDs,
 		Applicant:      cts.Kit.User,

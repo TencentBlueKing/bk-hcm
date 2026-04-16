@@ -63,9 +63,9 @@ type ApplicationTable struct {
 	// SN 单据号
 	SN string `db:"sn" json:"sn" validate:"max=64"`
 	// Type 申请类型（新增账号、新增CVM等）
-	Type string `db:"type" json:"type" validate:"max=64"`
+	Type enumor.ApplicationType `db:"type" json:"type" validate:"max=64"`
 	// Operation 操作类型 （细粒度的操作类型）
-	Operation string `db:"operation" json:"operation" validate:"max=64"`
+	Operation enumor.ApplicationOperation `db:"operation" json:"operation" validate:"max=64"`
 	// Status 单据状态
 	Status string `db:"status" json:"status" validate:"max=32"`
 	// BkBizID 业务ID
