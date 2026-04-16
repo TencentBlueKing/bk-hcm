@@ -380,7 +380,8 @@ func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library
 		return proto.ApplyTemplateResult{
 			PermissionTemplateID: templateID,
 			Status:               proto.ApplyStatusFailed,
-			Reason:               fmt.Sprintf("云策略已更新(id=%d), 但本地模板更新失败: %v", cloudPolicyID, err),
+			Reason: fmt.Sprintf("云策略已更新(cloudPolicyID=%d), 但本地模板更新失败: %v", cloudPolicyID,
+				err),
 		}
 	}
 
@@ -388,7 +389,7 @@ func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library
 		return proto.ApplyTemplateResult{
 			PermissionTemplateID: templateID,
 			Status:               proto.ApplyStatusFailed,
-			Reason:               fmt.Sprintf("云策略已更新(id=%d), 但审计创建失败: %v", cloudPolicyID, err),
+			Reason:               fmt.Sprintf("云策略已更新(cloudPolicyID=%d), 但审计创建失败: %v", cloudPolicyID, err),
 		}
 	}
 

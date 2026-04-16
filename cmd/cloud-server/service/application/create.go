@@ -138,8 +138,8 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult,
-	error) {
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
+	*core.CreateResult, error) {
 
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
@@ -865,7 +865,8 @@ func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryCreate(cts *res
 		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply},
+		BizID: bizID}
 	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
 	}
@@ -924,7 +925,8 @@ func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryUpdate(cts *res
 		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
 	}
 
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply}}
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply},
+		BizID: bizID}
 	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return nil, err
 	}

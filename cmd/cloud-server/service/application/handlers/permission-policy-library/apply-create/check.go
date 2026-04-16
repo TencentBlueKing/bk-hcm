@@ -54,6 +54,8 @@ func (a *ApplicationOfApplyPermPolicyLibCreate) CheckReq() error {
 	}
 
 	if err = a.CheckAccountsBizInScope(a.Cts.Kit, library.BkBizIDs, []string{a.Content.AccountID}); err != nil {
+		logs.Errorf("check accounts biz in scope failed, libraryID: %s, accountID: %s, err: %v, rid: %s",
+			a.Content.PolicyLibraryID, a.Content.AccountID, err, a.Cts.Kit.Rid)
 		return err
 	}
 

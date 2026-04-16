@@ -135,7 +135,7 @@ func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, de
 func (a *BaseApplicationHandler) GetAccountApprover(kt *kit.Kit, accountID string) ([]itsm2.VariableApprover, error) {
 	accountData, err := a.GetAccount(accountID)
 	if err != nil {
-		logs.Errorf("get account failed, err: %v, account id: %v, rid: %s", err, accountID, kt.Rid)
+		logs.Errorf("get account failed, err: %v, account id: %s, rid: %s", err, accountID, kt.Rid)
 		return nil, err
 	}
 

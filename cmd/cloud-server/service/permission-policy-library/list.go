@@ -114,38 +114,41 @@ func (svc *svc) buildLibraryAccountIDsMap(kt *kit.Kit, libraryIDs []string) (map
 		return libAccountIDsMap, nil
 	}
 
-	accountSets := make(map[string]map[string]struct{}, len(libraryIDs))
-	req := &protocloud.PermissionTemplateListReq{
-		Filter: tools.ContainersExpression("policy_library_id", libraryIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	for {
-		result, err := svc.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, req)
-		if err != nil {
-			logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
+	for _, batch := range slice.Split(libraryIDs, int(core.DefaultMaxPageLimit)) {
+		accountSets := make(map[string]map[string]struct{}, len(batch))
+		req := &protocloud.PermissionTemplateListReq{
+			Filter: tools.ContainersExpression("policy_library_id", batch),
+			Page:   core.NewDefaultBasePage(),
 		}
-
-		for _, tmpl := range result.Details {
-			if tmpl.PolicyLibraryID == nil {
-				continue
+		for {
+			result, err := svc.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, req)
+			if err != nil {
+				logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
 			}
-			libID := cvt.PtrToVal(tmpl.PolicyLibraryID)
-			if _, ok := accountSets[libID]; !ok {
-				accountSets[libID] = make(map[string]struct{})
+
+			for _, tmpl := range result.Details {
+				if tmpl.PolicyLibraryID == nil {
+					continue
+				}
+				libID := cvt.PtrToVal(tmpl.PolicyLibraryID)
+				if _, ok := accountSets[libID]; !ok {
+					accountSets[libID] = make(map[string]struct{})
+				}
+				accountSets[libID][tmpl.AccountID] = struct{}{}
 			}
-			accountSets[libID][tmpl.AccountID] = struct{}{}
+
+			if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+			req.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
 
-		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
-			break
+		for libID, accountSet := range accountSets {
+			libAccountIDsMap[libID] = maps.Keys(accountSet)
 		}
-		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	for libID, accountSet := range accountSets {
-		libAccountIDsMap[libID] = maps.Keys(accountSet)
-	}
 	return libAccountIDsMap, nil
 }
 
@@ -249,7 +252,8 @@ func (svc *svc) ListPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (inter
 	}
 	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
 	if err != nil {
-		logs.Errorf("list permission policy library account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list permission policy library account ids auth failed, err: %v, id: %s, vendor: %s, rid: %s", err,
+			id, vendor, cts.Kit.Rid)
 		return nil, err
 	}
 	if !authorized {
@@ -293,7 +297,8 @@ func (svc *svc) ListBizPermissionPolicyLibraryAccountIDs(cts *rest.Contexts) (in
 	}
 	_, authorized, err := svc.authorizer.Authorize(cts.Kit, authRes)
 	if err != nil {
-		logs.Errorf("list biz permission policy library account ids auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list biz permission policy library account ids auth failed, err: %v, id: %s, vendor: %s, rid: %s",
+			err, id, vendor, cts.Kit.Rid)
 		return nil, err
 	}
 	if !authorized {
@@ -457,7 +462,8 @@ func (svc *svc) ListBizPermissionPolicyLibrary(cts *rest.Contexts) (interface{},
 func (svc *svc) buildBizLibraryAccountCountMap(kt *kit.Kit, libraryIDs []string, bizID int64) (map[string]int, error) {
 	libAccountIDsMap, err := svc.buildLibraryAccountIDsMap(kt, libraryIDs)
 	if err != nil {
-		logs.Errorf("build library account ids map failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("build library account ids map failed, err: %v, libraryIDs: %v, bizID: %d, rid: %s", err,
+			libraryIDs, bizID, kt.Rid)
 		return nil, err
 	}
 
