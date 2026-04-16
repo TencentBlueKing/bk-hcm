@@ -115,8 +115,12 @@ func (a ApplicationTable) InsertValidate() error {
 		return errors.New("type is required")
 	}
 
-	if len(a.Operation) == 0 {
-		return errors.New("operation is required")
+	if err := a.Type.Validate(); err != nil {
+		return errors.New("type is invalid")
+	}
+
+	if err := a.Operation.Validate(); err != nil {
+		return errors.New("operation is invalid")
 	}
 
 	if len(a.Status) == 0 {
