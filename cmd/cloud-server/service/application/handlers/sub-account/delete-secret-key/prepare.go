@@ -21,7 +21,6 @@ package deletesecretkey
 
 import (
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
-	"hcm/pkg/criteria/enumor"
 )
 
 // deleteSecretKeyContent is the content stored in application.content.
@@ -35,7 +34,7 @@ type deleteSecretKeyContent struct {
 func (a *ApplicationOfDeleteSecretKey) GenerateApplicationContent() interface{} {
 	return &deleteSecretKeyContent{
 		BaseSubAccountContent: subaccount.BaseSubAccountContent{
-			Action:    enumor.SubAccountActionDeleteSecretKey,
+			Operation: a.GetOperation(),
 			Vendor:    a.Vendor(),
 			BkBizID:   a.BkBizID(),
 			AccountID: a.AccountID(),

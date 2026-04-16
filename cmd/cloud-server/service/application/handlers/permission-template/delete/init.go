@@ -34,7 +34,7 @@ import (
 var _ handlers.ApplicationHandler = (*ApplicationOfDeletePermTemplate)(nil)
 
 func init() {
-	permissiontemplate.RegisterActionHandler(enumor.PermTemplateActionDelete, newHandlerFromContent)
+	permissiontemplate.RegisterOperationHandler(enumor.OpDeletePermTemplate, newHandlerFromContent)
 }
 
 // deletePermTemplateContent is the full content stored in the application record for delete action.

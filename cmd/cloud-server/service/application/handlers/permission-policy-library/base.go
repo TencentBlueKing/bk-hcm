@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
-	"hcm/cmd/cloud-server/service/permission-policy-library"
+	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -74,7 +74,7 @@ func NewApplicationBasePermPolicyLibrary(opt *handlers.HandlerOption,
 
 	return ApplicationBasePermissionPolicyLibrary{
 		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
-			opt, enumor.ApplyPermissionPolicyLibrary, base.Vendor,
+			opt, enumor.ApplyPermissionPolicyLibrary, base.Operation, base.Vendor,
 		),
 		PolicyLibraryApplier: permissionpolicylibrary.NewPolicyLibraryApplier(opt.Client, opt.Audit),
 		Base:                 base,

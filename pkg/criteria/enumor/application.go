@@ -160,6 +160,22 @@ func (a ApplicationOperation) Validate() error {
 	case OpCreateSecurityGroupRule:
 	case OpUpdateSecurityGroupRule:
 	case OpDeleteSecurityGroupRule:
+
+	case OpCreateSubAccount:
+	case OpUpdateSubAccount:
+	case OpDeleteSubAccount:
+
+	case OpCreateSubAccountSecret:
+	case OpDeleteSubAccountSecret:
+	case OpUpdateSubAccountSecretStatus:
+
+	case OpApplyPermissionPolicyLibraryCreate:
+	case OpApplyPermissionPolicyLibraryUpdate:
+
+	case OpCreatePermTemplate:
+	case OpUpdatePermTemplate:
+	case OpDeletePermTemplate:
+
 	default:
 		return fmt.Errorf("unsupported application operation: %s", a)
 	}
@@ -198,4 +214,30 @@ const (
 	OpUpdateSecurityGroupRule ApplicationOperation = "update_security_group_rule"
 	// OpDeleteSecurityGroupRule 删除安全组规则
 	OpDeleteSecurityGroupRule ApplicationOperation = "delete_security_group_rule"
+
+	// OpCreateSubAccount 新增三级账号
+	OpCreateSubAccount ApplicationOperation = "create_sub_account"
+	// OpUpdateSubAccount 修改三级账号
+	OpUpdateSubAccount ApplicationOperation = "update_sub_account"
+	// OpDeleteSubAccount 删除三级账号
+	OpDeleteSubAccount ApplicationOperation = "delete_sub_account"
+
+	// OpCreateSubAccountSecret 新增三级账号密钥
+	OpCreateSubAccountSecret ApplicationOperation = "create_sub_account_secret"
+	// OpDeleteSubAccountSecret 删除三级账号密钥
+	OpDeleteSubAccountSecret ApplicationOperation = "delete_sub_account_secret"
+	// OpUpdateSubAccountSecretStatus 修改三级账号密钥状态
+	OpUpdateSubAccountSecretStatus ApplicationOperation = "update_sub_account_secret"
+
+	// OpApplyPermissionPolicyLibraryCreate 创建权限策略库
+	OpApplyPermissionPolicyLibraryCreate ApplicationOperation = "apply_permission_policy_library_create"
+	// OpApplyPermissionPolicyLibraryUpdate 更新权限策略库
+	OpApplyPermissionPolicyLibraryUpdate ApplicationOperation = "apply_permission_policy_library_update"
+
+	// OpCreatePermTemplate creates a new permission template from a policy library.
+	OpCreatePermTemplate ApplicationOperation = "create_permission_template"
+	// OpUpdatePermTemplate updates an existing custom permission template to use a new policy library.
+	OpUpdatePermTemplate ApplicationOperation = "update_permission_template"
+	// OpDeletePermTemplate deletes an existing custom permission template.
+	OpDeletePermTemplate ApplicationOperation = "delete_permission_template"
 )

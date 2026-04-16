@@ -26,15 +26,13 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers"
 	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/json"
 )
 
 var _ handlers.ApplicationHandler = (*ApplicationOfDeleteSecretKey)(nil)
 
 func init() {
-	subaccount.RegisterActionHandler(enumor.SubAccountActionDeleteSecretKey, newHandlerFromContent)
+	subaccount.RegisterOperationHandler(enumor.OpDeleteSubAccountSecret, newHandlerFromContent)
 }
 
 func newHandlerFromContent(opt *handlers.HandlerOption, base *subaccount.BaseSubAccountContent, content string,
@@ -65,11 +63,4 @@ func NewApplicationOfDeleteSecretKey(opt *handlers.HandlerOption, base *subaccou
 		ApplicationBaseSubAccount: subaccount.NewApplicationBaseSubAccount(opt, base),
 		secretID:                  secretID,
 	}
-}
-
-// GetItsmApprover 获取itsm审批人
-func (a *ApplicationOfDeleteSecretKey) GetItsmApprover(kt *kit.Kit, managers []string) (
-	[]itsm.VariableApprover, error) {
-
-	return a.GetAccountApprover(kt, a.AccountID())
 }

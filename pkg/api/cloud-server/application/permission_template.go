@@ -77,7 +77,7 @@ func (req *BizDeletePermissionTemplateReq) Validate() error {
 // Each action's content struct embeds this base and adds action-specific fields.
 type BasePermTemplateContent struct {
 	// Action distinguishes create/update/delete operations.
-	Action enumor.OperatePermTemplateAction `json:"action"`
+	Operation enumor.ApplicationOperation `json:"operation"`
 	// Vendor is the cloud vendor.
 	Vendor enumor.Vendor `json:"vendor"`
 	// BkBizID is the business ID from the request path.

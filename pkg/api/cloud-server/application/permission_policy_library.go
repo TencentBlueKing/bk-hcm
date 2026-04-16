@@ -56,7 +56,8 @@ func (req *BizApplyPermissionPolicyLibraryUpdateReq) Validate() error {
 // application content structs. Used for action dispatch in NewHandlerFromApplication.
 type ApplyPermPolicyLibBaseContent struct {
 	// Action distinguishes create from update operations.
-	Action enumor.PermPolicyLibAction `json:"action"`
+	Action    enumor.PermPolicyLibAction  `json:"action"`
+	Operation enumor.ApplicationOperation `json:"operation"`
 	// Vendor is the cloud vendor.
 	Vendor enumor.Vendor `json:"vendor"`
 	// BkBizID is the business ID from the request path.
