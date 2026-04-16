@@ -29,21 +29,33 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
-	Source         enumor.ApplicationSource `json:"source" validate:"required"`
-	SN             string                   `json:"sn" validate:"required"`
-	Type           enumor.ApplicationType   `json:"type" validate:"required"`
-	Operation      string                   `json:"operation" validate:"required"`
-	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
-	BkBizIDs       []int64                  `json:"bk_biz_ids" validate:"required"`
-	Applicant      string                   `json:"applicant" validate:"required"`
-	Content        string                   `json:"content" validate:"required"`
-	DeliveryDetail string                   `json:"delivery_detail" validate:"required"`
-	Memo           *string                  `json:"memo" validate:"omitempty"`
+	Source         enumor.ApplicationSource    `json:"source" validate:"required"`
+	SN             string                      `json:"sn" validate:"required"`
+	Type           enumor.ApplicationType      `json:"type" validate:"required"`
+	Operation      enumor.ApplicationOperation `json:"operation" validate:"required"`
+	Status         enumor.ApplicationStatus    `json:"status" validate:"required"`
+	BkBizIDs       []int64                     `json:"bk_biz_ids" validate:"required"`
+	Applicant      string                      `json:"applicant" validate:"required"`
+	Content        string                      `json:"content" validate:"required"`
+	DeliveryDetail string                      `json:"delivery_detail" validate:"required"`
+	Memo           *string                     `json:"memo" validate:"omitempty"`
 }
 
 // Validate ...
 func (req *ApplicationCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.Type.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Operation.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ApplicationUpdateReq ...

@@ -75,6 +75,7 @@ func (svc *applicationSvc) CreateApplication(cts *rest.Contexts) (interface{}, e
 		SN:             req.SN,
 		Source:         string(req.Source),
 		Type:           req.Type,
+		Operation:      req.Operation,
 		Status:         string(req.Status),
 		BkBizIDs:       req.BkBizIDs,
 		Applicant:      cts.Kit.User,

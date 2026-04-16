@@ -140,13 +140,21 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 		)
 	}
 
+	// 主机、硬盘、VPC、负载均衡需要记录业务ID
+	var needBkBizIDsOps = map[enumor.ApplicationOperation]struct{}{
+		enumor.OpCreateCvm:          {},
+		enumor.OpCreateDisk:         {},
+		enumor.OpCreateVpc:          {},
+		enumor.OpCreateLoadBalancer: {},
+		enumor.OpAddAccount:         {},
+	}
+
 	var bkBizIDs = make([]int64, 0)
-	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
-		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
-		applicationType == enumor.AddAccount {
+	if _, ok := needBkBizIDsOps[handler.GetOperation()]; ok {
 		bkBizIDs = handler.GetBkBizIDs()
 	}
 	operation := handler.GetOperation()
+
 	return a.client.DataService().Global.Application.CreateApplication(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -154,7 +162,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 			SN:             sn,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
-			Operation:      string(operation),
+			Operation:      operation,
 			Status:         enumor.Pending,
 			BkBizIDs:       bkBizIDs,
 			Applicant:      cts.Kit.User,
