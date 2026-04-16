@@ -61,6 +61,7 @@ import (
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
+	sagemaker "hcm/cmd/cloud-server/service/sagemaker"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	subaccount "hcm/cmd/cloud-server/service/sub-account"
 	subaccountsecret "hcm/cmd/cloud-server/service/subaccount-secret"
@@ -322,6 +323,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	region.InitRegionService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
+	sagemaker.InitService(c)
 	monitoring.InitMonitoringService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 	subaccount.InitService(c)

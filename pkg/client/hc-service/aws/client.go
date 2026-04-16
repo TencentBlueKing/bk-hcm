@@ -39,6 +39,7 @@ type Client struct {
 	InstanceType  *InstanceTypeClient
 	Bill          *BillClient
 	MainAccount   *MainAccountClient
+	SageMaker     *SageMakerClient
 }
 
 // NewClient create a new aws api client.
@@ -58,5 +59,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		InstanceType:  NewInstanceTypeClient(client),
 		Bill:          NewBillClient(client),
 		MainAccount:   NewMainAccountClient(client),
+		SageMaker:     NewSageMakerClient(client),
 	}
 }

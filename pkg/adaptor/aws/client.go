@@ -32,6 +32,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/organizations"
 	"github.com/aws/aws-sdk-go/service/s3"
+	awssm "github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -209,6 +210,23 @@ func (c *clientSet) cloudWatchClient(region string) (*cloudwatch.CloudWatch, err
 	}
 
 	return cloudwatch.New(sess), nil
+}
+
+func (c *clientSet) sageMakerClient(region string) (*awssm.SageMaker, error) {
+	cfg := &aws.Config{
+		Credentials: c.credentials,
+	}
+
+	if len(region) != 0 {
+		cfg.Region = aws.String(region)
+	}
+
+	sess, err := session.NewSession(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return awssm.New(sess), nil
 }
 
 func (c *clientSet) cloudFormationClient(region string) (*cloudformation.CloudFormation, error) {
