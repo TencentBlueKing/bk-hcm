@@ -66,6 +66,7 @@ func NewApplicationOfCreateSubAccount(opt *handlers.HandlerOption, base *subacco
 	}
 }
 
+// GetItsmApprover 获取itsm审批人
 func (a *ApplicationOfCreateSubAccount) GetItsmApprover(kt *kit.Kit, managers []string) (
 	[]itsm.VariableApprover, error) {
 

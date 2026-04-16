@@ -69,6 +69,7 @@ func NewApplicationOfUpdateSecretKeyStatus(opt *handlers.HandlerOption, base *su
 	}
 }
 
+// GetItsmApprover 获取itsm审批人
 func (a *ApplicationOfUpdateSecretKeyStatus) GetItsmApprover(kt *kit.Kit, managers []string) (
 	[]itsm.VariableApprover, error) {
 

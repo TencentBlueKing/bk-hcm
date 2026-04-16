@@ -67,6 +67,7 @@ func NewApplicationOfDeleteSubAccount(opt *handlers.HandlerOption, base *subacco
 	}
 }
 
+// GetItsmApprover 获取itsm审批人
 func (a *ApplicationOfDeleteSubAccount) GetItsmApprover(kt *kit.Kit, managers []string) (
 	[]itsm.VariableApprover, error) {
 

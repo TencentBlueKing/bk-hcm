@@ -67,6 +67,7 @@ func NewApplicationOfDeleteSecretKey(opt *handlers.HandlerOption, base *subaccou
 	}
 }
 
+// GetItsmApprover 获取itsm审批人
 func (a *ApplicationOfDeleteSecretKey) GetItsmApprover(kt *kit.Kit, managers []string) (
 	[]itsm.VariableApprover, error) {
 
