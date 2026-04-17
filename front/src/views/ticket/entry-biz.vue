@@ -121,7 +121,7 @@ const tabList = ref<ApplicationsType[]>([
   },
 ]);
 
-provide('isServicePage', true);
+provide('isBusinessPage', true);
 </script>
 
 <style lang="scss" scoped>

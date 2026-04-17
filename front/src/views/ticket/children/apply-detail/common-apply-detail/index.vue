@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import share from 'bkui-vue/lib/icon/share';
 import Panel from '@/components/panel';
 import { type ModelProperty } from '@/model/typings';
 import { APPLICATION_TYPE_MAP, APPLICATION_STATUS_MAP } from '@/views/ticket/constants';
-import { VendorMap } from '@/common/constant';
+import { VendorMap, SITE_TYPE_MAP, ACCOUNT_TYPES } from '@/common/constant';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import DisplayValue from '@/components/display-value/index.vue';
@@ -19,7 +20,7 @@ const props = defineProps<{
 }>();
 
 const baseFields: ModelProperty[] = [
-  { id: 'type', name: '申请类型', type: 'enum', option: APPLICATION_TYPE_MAP },
+  { id: 'operation', name: '申请类型', type: 'enum', option: APPLICATION_TYPE_MAP },
   { id: 'creator', name: '申请人', type: 'user' },
   { id: 'memo', name: '申请单备注', type: 'string' },
   { id: 'created_at', name: '申请时间', type: 'datetime' },
@@ -31,34 +32,56 @@ const paramsFields: ModelProperty[] = [
   { id: 'account_id', name: '账号', type: 'string' },
   { id: 'vendor', name: '云厂商', type: 'enum', option: VendorMap },
   { id: 'bk_biz_id', name: '业务名称', type: 'business' },
-  { id: 'action', name: 'action', type: 'string' },
   { id: 'region', name: '云地域', type: 'region' },
   { id: 'zone', name: '可用区', type: 'string' },
-  { id: 'cloud_image_id', name: 'cloud_image_id', type: 'string' },
-  { id: 'bk_cloud_id', name: 'bk_cloud_id', type: 'string' },
+  { id: 'cloud_image_id', name: '镜像', type: 'string' },
+  { id: 'bk_cloud_id', name: '所属的蓝鲸云区域', type: 'string' },
+  { id: 'memo', name: '备注', type: 'string' },
+
   // 云主机
-  { id: 'auto_renew', name: 'auto_renew', type: 'string' },
-  { id: 'bandwidth_package_id', name: 'bandwidth_package_id', type: 'string' },
-  { id: 'cloud_security_group_ids', name: 'cloud_security_group_ids', type: 'string' },
-  { id: 'cloud_subnet_id', name: 'cloud_subnet_id', type: 'string' },
-  { id: 'cloud_vpc_id', name: 'cloud_vpc_id', type: 'string' },
-  { id: 'data_disk', name: 'data_disk', type: 'json' },
-  { id: 'system_disk', name: 'system_disk', type: 'json' },
-  { id: 'instance_charge_paid_period', name: 'instance_charge_paid_period', type: 'string' },
+  { id: 'name', name: '实例名称', type: 'string' },
+  { id: 'instance_type', name: '机型', type: 'string' },
+  { id: 'public_ip_assigned', name: '是否自动分配公网IP', type: 'bool', option: { trueText: '是', falseText: '否' } },
+  { id: 'bandwidth_package_id', name: '带宽包ID', type: 'string' },
+  { id: 'cloud_security_group_ids', name: '安全组', type: 'string' },
+  { id: 'cloud_subnet_id', name: '子网', type: 'string' },
+  { id: 'cloud_vpc_id', name: 'VPC', type: 'string' },
+  { id: 'data_disk', name: '数据盘', type: 'json' },
+  { id: 'system_disk', name: '系统盘', type: 'json' },
+  { id: 'instance_charge_paid_period', name: '购买时长', type: 'number' },
+  { id: 'auto_renew', name: '是否自动续费', type: 'bool', option: { trueText: '是', falseText: '否' } },
   {
     id: 'instance_charge_type',
-    name: 'instance_charge_type',
+    name: '计费模式',
     type: 'enum',
     option: {
       PREPAID: '包年包月',
       POSTPAID_BY_HOUR: '按量计费',
     },
   },
-  { id: 'instance_type', name: 'instance_type', type: 'string' },
-  { id: 'name', name: 'name', type: 'string' },
-  { id: 'required_count', name: 'required_count', type: 'number' },
+  { id: 'required_count', name: '购买数量', type: 'number' },
+
   // 账号
+  { id: 'managers', name: '负责人', type: 'user' },
+  {
+    id: 'site',
+    name: '站点类型',
+    type: 'enum',
+    option: SITE_TYPE_MAP,
+  },
+  {
+    id: 'type',
+    name: '账号类型',
+    type: 'enum',
+    option: Object.fromEntries(ACCOUNT_TYPES.map((item) => [item.id, item.name])),
+  },
+  { id: 'usage_biz_ids', name: '使用业务', type: 'business' },
+  { id: 'policy_library_id', name: '策略库ID', type: 'string' },
+  { id: 'secret_id', name: 'secret_id', type: 'string' },
+  { id: 'target_status', name: 'target_status', type: 'string' },
+  { id: 'extension', name: '扩展字段', type: 'json' },
   { id: 'req', name: 'req', type: 'json' },
+
   // 硬盘
   { id: 'disk_count', name: 'disk_count', type: 'number' },
   { id: 'disk_name', name: 'disk_name', type: 'string' },
@@ -68,10 +91,8 @@ const paramsFields: ModelProperty[] = [
   // VPC
   { id: 'routing_mode', name: 'routing_mode', type: 'string' },
   { id: 'subnet', name: 'subnet', type: 'json' },
-  { id: 'instance_tenancy', name: 'instance_tenancy', type: 'string' },
-  { id: 'ipv4_cidr', name: 'ipv4_cidr', type: 'string' },
-
-  { id: 'memo', name: 'memo', type: 'string' },
+  { id: 'instance_tenancy', name: '租期', type: 'enum', option: { default: '默认', dedicated: '专用' } },
+  { id: 'ipv4_cidr', name: 'IPv4 CIDR', type: 'string' },
 ];
 
 const detailsParams = computed(() => {
@@ -98,13 +119,7 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
   <div class="common-apply-detail-container">
     <Panel class="status-panel">
       <div class="status-icon">
-        <bk-loading
-          v-if="['pending', 'delivering'].includes(status)"
-          style="transform: scale(0.5)"
-          mode="spin"
-          theme="primary"
-          loading
-        />
+        <bk-loading v-if="['pending', 'delivering'].includes(status)" size="mini" mode="spin" theme="primary" loading />
         <i v-else-if="['rejected'].includes(status)" class="hcm-icon bkhcm-icon-38moxingshibai-01" />
         <i v-else-if="['pass', 'completed'].includes(status)" class="hcm-icon bkhcm-icon-7chenggong-01" />
         <i v-else-if="['deliver_error'].includes(status)" class="hcm-icon bkhcm-icon-close-circle-fill"></i>
@@ -123,9 +138,17 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
         </bk-overflow-title>
         <CopyToClipboard :content="deliveryDetail" />
       </div>
+      <div class="status-link">
+        <bk-link theme="primary" :href="details.ticket_url" target="_blank">
+          <div class="link-content">
+            ITSM单据
+            <share width="12" height="12" />
+          </div>
+        </bk-link>
+      </div>
     </Panel>
     <Panel title="基本信息">
-      <GridContainer fixed :column="2" :content-min-width="300" :label-width="250">
+      <GridContainer :column="2" fixed :content-min-width="200" :content-max-width="400" :label-width="240">
         <GridItem v-for="field in baseFields" :key="field.id" :label="field.name">
           <DisplayValue
             :property="field"
@@ -136,13 +159,13 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
       </GridContainer>
     </Panel>
     <Panel title="参数信息">
-      <GridContainer fixed :column="2" :content-min-width="300" :label-width="250">
+      <GridContainer :column="2" fixed :content-min-width="200" :content-max-width="400" :label-width="240">
         <GridItem v-for="field in displayParamsFields" :key="field.id" :label="field.name">
           <DisplayValue
             :property="field"
             :value="detailsParams[field.id]"
             :vendor="detailsParams.vendor"
-            :display="{ ...field.meta?.display, on: 'info' }"
+            :display="{ ...field.meta?.display, showOverflowTooltip: true, on: 'info' }"
           />
         </GridItem>
       </GridContainer>
@@ -199,6 +222,17 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
       }
       &.success {
         color: $success-color;
+      }
+    }
+
+    .status-link {
+      margin-left: auto;
+      flex-shrink: 0;
+
+      .link-content {
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
     }
   }

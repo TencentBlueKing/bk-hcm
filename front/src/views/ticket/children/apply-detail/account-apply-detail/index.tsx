@@ -18,34 +18,6 @@ import UserValue from '@/components/display-value/user-value.vue';
 const { FormItem } = Form;
 const { Option } = Select;
 
-export interface IDetail {
-  id: string;
-  source: string;
-  sn: string;
-  type: string;
-  status: string;
-  applicant: string;
-  // content: {
-  //   bk_biz_id: number; // 业务
-  //   bak_managers: string[]; // 备份负责人
-  //   op_product_id: number; // 业务ID
-  //   id: string; // 一级账号ID
-  //   vendor: string; // 云厂商
-  //   dept_id: number;
-  //   managers: string[]; // 主负责人
-  // };
-  content: string;
-  delivery_detail: {
-    complete: string;
-  };
-  memo: string;
-  creator: string;
-  reviser: string;
-  created_at: string;
-  updated_at: string;
-  ticket_url: string;
-}
-
 export default defineComponent({
   props: {
     detail: {

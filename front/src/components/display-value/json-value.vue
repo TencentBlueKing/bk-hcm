@@ -8,6 +8,8 @@ const displayValue = computed(() => JSON.stringify(props.value));
 </script>
 
 <template>
-  <bk-overflow-title resizeable type="tips" v-if="display?.showOverflowTooltip">{{ displayValue }}</bk-overflow-title>
+  <bk-overflow-title class="full-width" resizeable type="tips" v-if="display?.showOverflowTooltip">
+    {{ displayValue }}
+  </bk-overflow-title>
   <span v-else>{{ displayValue }}</span>
 </template>
