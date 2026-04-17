@@ -29,6 +29,7 @@ import (
 
 // ListBizPermissionTemplateReq defines the cloud-server request for listing business permission templates.
 type ListBizPermissionTemplateReq struct {
+	IDs       []string             `json:"ids" validate:"omitempty,max=500"`
 	CloudIDs  []string             `json:"cloud_ids" validate:"omitempty,max=500"`
 	Names     []string             `json:"names" validate:"omitempty,max=500"`
 	Extension tabletypes.JsonField `json:"extension,omitempty"`

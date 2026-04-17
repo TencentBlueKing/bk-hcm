@@ -106,6 +106,7 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 	dsReq := &protocloud.PermissionTmplJoinExtListReq{
 		BkBizID: bizID,
 		PermissionTemplateFilters: protocloud.PermissionTemplateFilters{
+			IDs:        req.IDs,
 			CloudIDs:   req.CloudIDs,
 			Names:      req.Names,
 			AccountIDs: accountIDs,
