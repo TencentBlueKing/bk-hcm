@@ -20,9 +20,12 @@
 package account
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -89,6 +92,46 @@ type AccountWithOtherInfo struct {
 type AccountBizListResult struct {
 	Count   uint64                  `json:"count"`
 	Details []*AccountWithOtherInfo `json:"details"`
+}
+
+// AccountListByResTypeReq 根据资源类型批量查询二级账号元数据信息请求
+type AccountListByResTypeReq struct {
+	IDs     []string          `json:"ids" validate:"required,min=1,max=100"`
+	ResType meta.ResourceType `json:"res_type" validate:"required"`
+}
+
+// Validate 校验请求参数
+func (req *AccountListByResTypeReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.ResType.Validate(); err != nil {
+		return err
+	}
+
+	switch req.ResType {
+	case "sub_account", "sub_account_secret", "permission_template":
+	default:
+		return fmt.Errorf("unsupported res_type: %s", req.ResType)
+	}
+
+	return nil
+}
+
+// AccountListByResTypeResp 根据资源类型批量查询二级账号元数据信息响应
+type AccountListByResTypeResp struct {
+	Details []AccountInfoByTypeDetail `json:"details"`
+}
+
+// AccountInfoByTypeDetail 根据资源类型查询的二级账号详情
+type AccountInfoByTypeDetail struct {
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name"`
+	BkBizID     int64                  `json:"bk_biz_id"`
+	UsageBizIDs []int64                `json:"usage_biz_ids"`
+	Managers    []string               `json:"managers"`
+	Extension   map[string]interface{} `json:"extension"`
 }
 
 // ListSecretKeyReq ...

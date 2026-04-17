@@ -19,6 +19,8 @@
 
 package meta
 
+import "fmt"
+
 // ResourceType 表示 hcm 这一侧的资源类型， 对应的有 client.TypeID 表示 iam 一侧的资源类型
 // 两者之间有映射关系，详情见 AdaptAuthOptions
 type ResourceType string
@@ -127,3 +129,60 @@ const (
 	// PermissionPolicyLibrary 权限策略库
 	PermissionPolicyLibrary ResourceType = "permission_policy_library"
 )
+
+// resourceTypes 所有合法的 ResourceType 枚举值
+var resourceTypes = map[ResourceType]struct{}{
+	Account:                  {},
+	SubAccount:               {},
+	SubAccountSecret:         {},
+	Vpc:                      {},
+	Subnet:                   {},
+	Disk:                     {},
+	SecurityGroup:            {},
+	SecurityGroupRule:        {},
+	GcpFirewallRule:          {},
+	Eip:                      {},
+	Cvm:                      {},
+	RouteTable:               {},
+	Route:                    {},
+	RecycleBin:               {},
+	NetworkInterface:         {},
+	Audit:                    {},
+	Biz:                      {},
+	CloudResource:            {},
+	Quota:                    {},
+	InstanceType:             {},
+	CostManage:               {},
+	BizCollection:            {},
+	CloudSelectionScheme:     {},
+	CloudSelectionIdc:        {},
+	CloudSelectionBizType:    {},
+	CloudSelectionDataSource: {},
+	ArgumentTemplate:         {},
+	Cert:                     {},
+	LoadBalancer:             {},
+	Listener:                 {},
+	TargetGroup:              {},
+	UrlRuleAuditResType:      {},
+	MainAccount:              {},
+	RootAccount:              {},
+	Monitoring:               {},
+	AccountBill:              {},
+	Application:              {},
+	AccountBillThirdParty:    {},
+	Image:                    {},
+	TaskManagement:           {},
+	CosBucket:                {},
+	PermissionTemplate:       {},
+	GlobalConfig:             {},
+	PermissionPolicyLibrary:  {},
+}
+
+// Validate 验证 ResourceType
+func (r ResourceType) Validate() error {
+	if _, ok := resourceTypes[r]; !ok {
+		return fmt.Errorf("unsupported resource type: %s", r)
+	}
+
+	return nil
+}
