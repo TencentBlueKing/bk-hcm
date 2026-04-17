@@ -81,7 +81,7 @@ const tabList = ref<ApplicationsType[]>([
       {
         field: 'type',
         op: QueryRuleOPEnum.IN,
-        value: ['create_disk'],
+        value: ['create_vpc'],
       },
     ],
     Component: CommonTable,
