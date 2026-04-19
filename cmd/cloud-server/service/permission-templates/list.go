@@ -272,7 +272,7 @@ func getAccountIDs(kt *kit.Kit, cli *client.ClientSet, bkBizID int64, cloudMainA
 		Fields: []string{"id"},
 	}
 
-	if len(cloudMainAccountIDs) == 1 {
+	if len(cloudMainAccountIDs) != 0 {
 		listReq.Filter.Rules = append(listReq.Filter.Rules,
 			tools.RuleJsonIn("extension.cloud_main_account_id", cloudMainAccountIDs))
 	}

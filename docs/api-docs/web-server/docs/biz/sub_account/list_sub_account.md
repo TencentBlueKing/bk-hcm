@@ -18,9 +18,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 #### filter
 
-| 参数名称 | 参数类型      | 必选 | 描述                                                                                          |
-|------|-------------|----|---------------------------------------------------------------------------------------------|
-| op   | enum string | 是  | 操作符（枚举值：and、or）。如果是and，则表示多个rule之间是且的关系；如果是or，则表示多个rule之间是或的关系。 |
+| 参数名称  | 参数类型      | 必选 | 描述                                                                                          |
+|-------|-------------|----|---------------------------------------------------------------------------------------------|
+| op    | enum string | 是  | 操作符（枚举值：and、or）。如果是and，则表示多个rule之间是且的关系；如果是or，则表示多个rule之间是或的关系。 |
 | rules | array       | 是  | 过滤规则，最多设置5个rules。如果rules为空数组，op（操作符）将没有作用，代表查询全部数据。                 |
 
 #### rules[n] （详情请看 rules 表达式说明）
@@ -160,10 +160,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
         "cloud_created_at": "2024-01-01T12:00:00Z",
         "sub_account_secret_count": 10,
 		"permission_template_ids": ["00000001"],
-        "permission_templates": {
-          "id": "00000001",
-          "name": "template1"
-        },
+		"permission_templates": [
+		  {
+		  "id": "00000001",
+		  "name": "template1"
+		   }
+		],
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2024-01-01T12:00:00Z",
@@ -194,9 +196,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 ### 响应参数说明
 
-| 参数名称 | 参数类型   | 描述   |
-|------|--------|------|
-| code | int32  | 状态码  |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
 | message | string | 请求信息 |
 | data    | object | 响应数据 |
 
@@ -245,9 +247,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | console_login         | int64   | 枚举值：0（编程账号，无法登录控制台）、1（控制台账号，可登录控制台）                                                                       |
 | cloud_main_account_id | string  | 三级账号所属的二级账号云ID                                                                                            |
 
-##### data.details[n].permission_templates[n]
+##### permission_templates[n]
 
-| 参数名称 | 参数类型   | 描述       |
-|------|--------|----------|
-| id   | string | 权限模版本地ID |
-| name | string | 权限模版名称   |
+| 参数名称  | 参数类型   | 描述        |
+|-------|--------|-----------|
+| id    | string | 权限模版本地ID  |
+| name  | string | 权限模版名称    |

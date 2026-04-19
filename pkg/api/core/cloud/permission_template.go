@@ -74,3 +74,9 @@ type PermissionTemplate[T PermissionTemplateExtension] struct {
 	BasePermissionTemplate `json:",inline"`
 	Extension              *T `json:"extension"`
 }
+
+// PermissionTmplBasicInfo permission template basic info.
+type PermissionTmplBasicInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}

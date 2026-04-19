@@ -24,9 +24,12 @@ import (
 
 	logicaccount "hcm/cmd/cloud-server/logics/account"
 	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -36,6 +39,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // ListSubAccount list sub account.
@@ -191,13 +195,21 @@ func convertBizSubAccountExtList[Ext coresubaccount.Extension](svc *service, kt 
 
 	secretCountMap, err := buildSubAccountSecretCountMap(kt, svc, ids)
 	if err != nil {
+		logs.Errorf("build secret count map failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	permissionTemplateMap, err := buildPermissionTemplateMap(svc.client, kt, listResult.Details)
+	if err != nil {
+		logs.Errorf("build permission template map failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	accountNameMap := logicaccount.BuildAccountNameMapByAccountMap(accountIDs, accountMap)
 	return &coresubaccount.BizSubAccountExtListResult[Ext]{
-		Count:   listResult.Count,
-		Details: buildBizSubAccountExtDetails(listResult.Details, operableMap, accountNameMap, secretCountMap),
+		Count: listResult.Count,
+		Details: buildBizSubAccountExtDetails(listResult.Details, operableMap, accountNameMap,
+			secretCountMap, permissionTemplateMap),
 	}, nil
 }
 
@@ -250,7 +262,7 @@ func buildSubAccountSecretCountMap(kt *kit.Kit, svc *service, subAccountIDs []st
 
 func buildBizSubAccountExtDetails[Ext coresubaccount.Extension](details []coresubaccount.SubAccount[Ext],
 	operableMap map[string]bool, accountNameMap map[string]string, secretCountMap map[string]uint64,
-) []coresubaccount.BizSubAccountItem[Ext] {
+	permTmplMap map[string][]corecloud.PermissionTmplBasicInfo) []coresubaccount.BizSubAccountItem[Ext] {
 
 	result := make([]coresubaccount.BizSubAccountItem[Ext], 0, len(details))
 	for _, item := range details {
@@ -258,6 +270,7 @@ func buildBizSubAccountExtDetails[Ext coresubaccount.Extension](details []coresu
 			SubAccount:            item,
 			Operable:              operableMap[item.AccountID],
 			AccountName:           accountNameMap[item.AccountID],
+			PermissionTemplates:   permTmplMap[item.ID],
 			SubAccountSecretCount: secretCountMap[item.ID],
 		})
 	}
@@ -353,4 +366,61 @@ func (svc *service) listBizSubAccountAuthRes(cts *rest.Contexts, reqFilter *filt
 	}
 
 	return finalFilter, false, err
+}
+
+// buildPermissionTemplateMap 批量查询权限模版，构建 subAccountID -> []PermissionTmplBasicInfo 的映射。
+func buildPermissionTemplateMap[Ext coresubaccount.Extension](cli *client.ClientSet, kt *kit.Kit,
+	details []coresubaccount.SubAccount[Ext]) (map[string][]corecloud.PermissionTmplBasicInfo, error) {
+
+	// 1. 收集所有 permission_template_id 并去重
+	tmplIDs := make([]string, 0)
+	for _, detail := range details {
+		tmplIDs = append(tmplIDs, detail.PermissionTemplateIDs...)
+	}
+	tmplIDs = slice.Unique(tmplIDs)
+
+	if len(tmplIDs) == 0 {
+		return make(map[string][]corecloud.PermissionTmplBasicInfo), nil
+	}
+
+	// 2. 批量查询权限模版
+	tmplMap := make(map[string]corecloud.PermissionTmplBasicInfo, len(tmplIDs))
+	start := uint32(0)
+	for {
+		listReq := &protocloud.PermissionTemplateListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", tmplIDs)),
+			Page:   &core.BasePage{Start: start, Limit: uint(constant.BatchOperationMaxLimit)},
+		}
+		result, err := cli.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, listReq)
+		if err != nil {
+			logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, template := range result.Details {
+			tmplMap[template.ID] = corecloud.PermissionTmplBasicInfo{
+				ID:   template.ID,
+				Name: template.Name,
+			}
+		}
+
+		if uint32(len(result.Details)) < uint32(constant.BatchOperationMaxLimit) {
+			break
+		}
+		start += uint32(constant.BatchOperationMaxLimit)
+	}
+
+	// 3. 构建 subAccountID -> []PermissionTmplBasicInfo 的映射
+	result := make(map[string][]corecloud.PermissionTmplBasicInfo, len(details))
+	for _, detail := range details {
+		templates := make([]corecloud.PermissionTmplBasicInfo, 0, len(detail.PermissionTemplateIDs))
+		for _, tmplID := range detail.PermissionTemplateIDs {
+			if info, ok := tmplMap[tmplID]; ok {
+				templates = append(templates, info)
+			}
+		}
+		result[detail.ID] = templates
+	}
+
+	return result, nil
 }
