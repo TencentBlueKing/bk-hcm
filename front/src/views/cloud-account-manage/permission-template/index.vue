@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, inject, type Ref, watch, reactive, useTemplateRef } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Plus } from 'bkui-vue/lib/icon';
+import { Message } from 'bkui-vue';
 import { ModelPropertySearch, ModelPropertyColumn } from '@/model/typings';
 import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
@@ -30,6 +31,7 @@ import { getTypeData } from '@/views/cloud-account-manage/permission-template/ut
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const permissionTemplateStore = usePermissionTemplateStore();
 const route = useRoute();
+const router = useRouter();
 const { getBizsId } = useWhereAmI();
 
 const { pagination, getPageParams } = usePage();
@@ -80,16 +82,23 @@ watch(
     const sort = (query.sort || 'created_at') as string;
     const order = (query.order || 'DESC') as string;
 
-    const { list = [], count } = await permissionTemplateStore.getPermissionTemplateList(
-      bizId.value,
-      currentVendor.value,
-      {
-        ...transformFlatCondition(condition.value, searchFields.value),
-        page: getPageParams(pagination, { sort, order }),
-      },
-    );
-    pagination.count = count;
-    templateList.value = list;
+    // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
+    const newCondition = searchQs.get(query, {});
+    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
+    const isRefresh = query._t !== undefined;
+
+    if (conditionChanged || templateList.value.length === 0 || isRefresh) {
+      const { list = [], count } = await permissionTemplateStore.getPermissionTemplateList(
+        bizId.value,
+        currentVendor.value,
+        {
+          ...transformFlatCondition(condition.value, searchFields.value),
+          page: getPageParams(pagination, { sort, order }),
+        },
+      );
+      pagination.count = count;
+      templateList.value = list;
+    }
   },
   { immediate: true },
 );
@@ -146,9 +155,54 @@ const handleEditSubmit = async () => {
 };
 
 const handleViewDetails = (row: IPermissionTemplateItem) => {
-  detailsState.isShow = true;
   detailsState.data = row;
+  detailsState.isShow = true;
+  // 将 id 写入 URL query，支持分享/刷新/浏览器后退
+  router.replace({ query: { ...route.query, id: row.id, _t: undefined } });
 };
+
+// 弹窗被用户手动关闭时，同步移除 URL 中的 id
+watch(
+  () => detailsState.isShow,
+  (val) => {
+    if (!val && route.query.id) {
+      const query = { ...route.query };
+      delete query.id;
+      router.replace({ query });
+    }
+  },
+);
+
+// 监听 route.query.id，使用详情接口加载并打开弹窗
+watch(
+  () => route.query.id,
+  async (id) => {
+    if (!id) {
+      detailsState.isShow = false;
+      detailsState.data = null;
+      return;
+    }
+    try {
+      const detail = await permissionTemplateStore.getPermissionTemplateDetail(
+        bizId.value,
+        currentVendor.value,
+        id as string,
+      );
+      if (detail) {
+        detailsState.data = detail;
+        detailsState.isShow = true;
+      } else {
+        Message({ theme: 'warning', message: '未找到权限模板数据' });
+        router.replace({ query: { ...route.query, id: undefined } });
+      }
+    } catch (error) {
+      console.error('获取权限模板详情失败:', error);
+      Message({ theme: 'error', message: '获取权限模板详情失败' });
+      router.replace({ query: { ...route.query, id: undefined } });
+    }
+  },
+  { immediate: true },
+);
 
 const handleDelete = (row: IPermissionTemplateItem) => {
   deleteState.isShow = true;

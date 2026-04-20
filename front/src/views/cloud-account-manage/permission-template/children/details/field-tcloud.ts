@@ -1,8 +1,6 @@
 import { h } from 'vue';
 import { Tag } from 'bkui-vue';
 import { Model, Column } from '@/decorator';
-import routeAction from '@/router/utils/action';
-import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import type { IPermissionTemplateItem } from '@/store/cloud-account-manage/permission-template';
 import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 
@@ -31,37 +29,12 @@ export class DetailsFieldTcloud {
   @Column('string', {
     name: '所属二级账号',
     group: '基本信息',
-    meta: {
-      display: {
-        appearance: 'link-button',
-        appearanceProps: {
-          isIcon: true,
-          onClick: () => {
-            routeAction.open({
-              name: MENU_BUSINESS_CLOUD_ACCOUNT,
-            });
-          },
-        },
-      },
-    },
   })
   account_id: string;
 
   @Column('string', {
     name: '关联三级账号数',
     group: '基本信息',
-    meta: {
-      display: {
-        appearance: 'link-button',
-        appearanceProps: {
-          onClick: () => {
-            routeAction.open({
-              name: MENU_BUSINESS_CLOUD_ACCOUNT,
-            });
-          },
-        },
-      },
-    },
   })
   associated_sub_account_count: number;
 
@@ -92,6 +65,6 @@ export class DetailsFieldTcloud {
   @Column('string', { name: '模板描述', group: '基本信息' })
   memo: string;
 
-  @Column('json', { name: '权限模板', group: '权限模板' })
+  @Column('json', { name: '', group: '权限模板' })
   policy_document: string;
 }

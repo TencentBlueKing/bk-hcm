@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { h } from 'vue';
-import { PaginationType } from '@/typings';
+import { PaginationType, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
-import { Button } from 'bkui-vue';
-import type { ISecondaryAccountItem } from '@/store/cloud-account';
+import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
 import { AUTH_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import routeAction from '@/router/utils/action';
+import { inject, ref, Ref } from 'vue';
+import { VendorEnum } from '@/common/constant';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -26,6 +29,7 @@ const emit = defineEmits<{
   'edit-account': [row: ISecondaryAccountItem];
 }>();
 
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const { getBizsId } = useWhereAmI();
 const { settings } = useTableSettings(props.columns);
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
@@ -40,29 +44,47 @@ const handleEditAccount = (row: ISecondaryAccountItem) => {
   emit('edit-account', row);
 };
 
-// 自定义渲染列
-const getColumnRender = (column: ModelPropertyColumn) => {
-  // 名称列 - 点击打开详情侧栏
-  if (column.id === 'name') {
-    return ({ row }: { row: ISecondaryAccountItem }) =>
-      h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick: () => handleViewDetails(row),
-        },
-        () => row.name || '--',
-      );
-  }
-  // 三级账号数、密钥数 - 普通标签样式
-  if (column.id === 'sub_account_count' || column.id === 'account_secret_count') {
-    return ({ row }: { row: ISecondaryAccountItem }) => {
-      const value = row[column.id as keyof ISecondaryAccountItem] ?? 0;
-      return h('span', { style: { color: '#3A84FF' } }, value);
-    };
-  }
-  return null;
+const cloudAccountStore = useCloudAccountStore();
+
+const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'tertiary-account', id: item.id as string },
+  });
+};
+const handleGoToCloudSecret = (item: LinkPopoverItem) => {
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'cloud-secret', id: item.id as string },
+  });
+};
+
+const getSubAccountLoadFn = (row: ISecondaryAccountItem) => async (): Promise<LinkPopoverItem[]> => {
+  const vendorFilter: QueryFilterType = {
+    op: 'and',
+    rules: [
+      {
+        field: 'extension.cloud_main_account_id',
+        op: QueryRuleOPEnum.JSON_IN,
+        value: [row?.extension?.cloud_main_account_id],
+      },
+      {
+        field: 'vendor',
+        op: 'eq' as any,
+        value: currentVendor.value,
+      },
+    ],
+  };
+  const list = await cloudAccountStore.getSubAccountFullList(getBizsId(), currentVendor.value, vendorFilter);
+  return list.map(({ id, name }) => ({ id, label: name }));
+};
+
+const getSecretListLoadFn = (row: ISecondaryAccountItem) => async () => {
+  const { list } = await cloudAccountStore.getSubAccountSecretList(getBizsId(), currentVendor.value, {
+    extension: { cloud_main_account_ids: [row?.extension?.cloud_main_account_id] },
+    page: { count: false, start: 0, limit: 500 },
+  });
+  return list.map(({ id, cloud_secret_id }) => ({ id, label: cloud_secret_id }));
 };
 </script>
 
@@ -93,9 +115,40 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         v-bind="column"
       >
         <template #default="{ row }">
-          <template v-if="getColumnRender(column)">
-            <component :is="() => getColumnRender(column)({ row })" />
+          <template v-if="column.id === 'name'">
+            <bk-button theme="primary" text @click="handleViewDetails(row)">{{ row.name || '--' }}</bk-button>
           </template>
+
+          <template v-else-if="column.id === 'sub_account_count'">
+            <display-value
+              :property="column"
+              :value="row.sub_account_count"
+              :display="{
+                appearance: 'link-popover',
+                appearanceProps: {
+                  loadFn: getSubAccountLoadFn(row),
+                  onLinkClick: handleGoToTertiaryAccount,
+                  emptyText: '未查询到关联三级账号',
+                },
+              }"
+            />
+          </template>
+
+          <template v-else-if="column.id === 'account_secret_count'">
+            <display-value
+              :property="column"
+              :value="row.account_secret_count"
+              :display="{
+                appearance: 'link-popover',
+                appearanceProps: {
+                  loadFn: getSecretListLoadFn(row),
+                  onLinkClick: handleGoToCloudSecret,
+                  emptyText: '未查询到关联云密钥',
+                },
+              }"
+            />
+          </template>
+
           <template v-else>
             <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
           </template>

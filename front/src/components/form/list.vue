@@ -4,7 +4,10 @@ import { ModelProperty } from '@/model/typings';
 import { SelectColumn } from '@blueking/ediatable';
 import { DisplayType } from './typings';
 
-export type ListGeneratorFactory<T = Record<string, any>> = (keyword?: string) => AsyncGenerator<T[], void>;
+export type ListGeneratorFactory<T = Record<string, any>> = (
+  keyword?: string,
+  options?: { ids?: (string | number)[]; [key: string]: any },
+) => AsyncGenerator<T[], void>;
 
 defineOptions({ name: 'hcm-form-list' });
 
@@ -31,22 +34,42 @@ const slots = useSlots();
 const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));
 
 const isGeneratorMode = computed(() => !!props.listGenerator);
+const idKey = computed(() => (attrs.idKey as string) || 'id');
 const localList = ref<Array<Record<string, any>>>([]);
 const loading = ref(false);
 const scrollLoading = ref(false);
+const pinnedIds = ref<Set<string | number>>(new Set());
 let currentGenerator: AsyncGenerator<Record<string, any>[], void> | null = null;
+
+const filterPinned = (items: Record<string, any>[]) => items.filter((item) => !pinnedIds.value.has(item[idKey.value]));
 
 const loadFirstPage = async (generator: AsyncGenerator<Record<string, any>[], void>) => {
   const result = await generator.next();
   localList.value = result.done ? [] : (result.value as Record<string, any>[]);
 };
+const supplementSelectedItems = async () => {
+  if (!model.value) return;
+  const ids = (Array.isArray(model.value) ? model.value : [model.value]).filter(
+    (id) => !localList.value.some((item) => item[idKey.value] === id),
+  );
+  if (ids.length === 0) return;
+  const supplementGen = props.listGenerator!(undefined, { ids });
+  const result = await supplementGen.next();
+  if (!result.done) {
+    const items = result.value as Record<string, any>[];
+    localList.value = [...items, ...localList.value];
+    items.forEach((item) => pinnedIds.value.add(item[idKey.value]));
+  }
+};
 
 watchEffect(async () => {
   if (isGeneratorMode.value) {
     loading.value = true;
+    pinnedIds.value = new Set();
     try {
       currentGenerator = props.listGenerator!();
       await loadFirstPage(currentGenerator);
+      await supplementSelectedItems();
     } finally {
       loading.value = false;
     }
@@ -64,9 +87,11 @@ watchEffect(async () => {
 
 const handleRemoteMethod = async (keyword: string) => {
   loading.value = true;
+  pinnedIds.value = new Set();
   try {
     currentGenerator = props.listGenerator!(keyword);
     await loadFirstPage(currentGenerator);
+    await supplementSelectedItems();
   } finally {
     loading.value = false;
   }
@@ -78,7 +103,7 @@ const handleScrollEnd = async () => {
   try {
     const result = await currentGenerator.next();
     if (!result.done) {
-      localList.value = [...localList.value, ...(result.value as Record<string, any>[])];
+      localList.value = [...localList.value, ...filterPinned(result.value as Record<string, any>[])];
     }
   } finally {
     scrollLoading.value = false;

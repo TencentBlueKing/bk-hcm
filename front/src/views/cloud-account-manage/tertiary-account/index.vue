@@ -101,7 +101,7 @@ watch(
         currentAccount.value = detail;
         showDetailSideslider.value = true;
       } else {
-        Message({ theme: 'warning', message: `未找到账号「${id}」的数据` });
+        Message({ theme: 'warning', message: `未找到账号数据` });
         router.replace({ query: { ...route.query, id: undefined } });
       }
     } catch (error) {

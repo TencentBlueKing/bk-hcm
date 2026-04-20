@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCloudAccountStore, type ISubAccountItem, type ISubAccountUpdateParams } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
@@ -27,10 +28,40 @@ const formData = ref({
   name: '',
   managers: [] as string[],
   bk_biz_id: undefined as number | undefined,
-  permission_template: [] as string[],
+  permission_template_ids: [] as string[],
   phone_num: '',
+  country_code: '',
   email: '',
   memo: '',
+});
+
+// 使用 libphonenumber-js 解析手机号，自动识别国家区号
+const parsePhoneInput = (input: string): { countryCode: string; phoneNum: string } => {
+  const trimmed = input.trim();
+  if (!trimmed) return { countryCode: '', phoneNum: '' };
+  const phoneNumber = parsePhoneNumberFromString(trimmed);
+  if (phoneNumber) {
+    return {
+      countryCode: String(phoneNumber.countryCallingCode),
+      phoneNum: phoneNumber.nationalNumber,
+    };
+  }
+  return { countryCode: '', phoneNum: trimmed };
+};
+
+// 组合 country_code + phone_num 用于显示
+const phoneDisplay = computed({
+  get: () => {
+    const code = formData.value.country_code;
+    const num = formData.value.phone_num;
+    if (!num) return '';
+    return code ? `+${code}${num}` : num;
+  },
+  set: (val: string) => {
+    const { countryCode, phoneNum } = parsePhoneInput(val);
+    formData.value.country_code = countryCode;
+    formData.value.phone_num = phoneNum;
+  },
 });
 
 const isSubmitting = ref(false);
@@ -41,7 +72,7 @@ const formRules = {
   name: [{ required: true, message: '请输入三级账号名称', trigger: 'blur' }],
   managers: [{ required: true, message: '请选择负责人', trigger: 'change', type: 'array' }],
   bk_biz_id: [{ required: true, message: '请选择所属业务', trigger: 'change' }],
-  permission_template: [{ required: true, message: '请选择权限模板', trigger: 'change', type: 'array' }],
+  permission_template_ids: [{ required: true, message: '请选择权限模板', trigger: 'change', type: 'array' }],
 };
 
 watch(
@@ -52,8 +83,9 @@ watch(
         name: props.accountData.name || '',
         managers: [...(props.accountData.managers || [])],
         bk_biz_id: props.accountData.bk_biz_ids?.[0] ?? undefined,
-        permission_template: [],
+        permission_template_ids: props.accountData.permission_template_ids || [],
         phone_num: props.accountData.phone_num || '',
+        country_code: props.accountData.country_code || '',
         email: props.accountData.email || '',
         memo: props.accountData.memo || '',
       };
@@ -77,12 +109,12 @@ const handleSubmit = async () => {
   const subAccounts: ISubAccountUpdateParams[] = [
     {
       id: props.accountData.id,
-      ...(!isTcloud.value ? { name: formData.value.name } : {}),
       email: formData.value.email || undefined,
       phone_num: formData.value.phone_num || undefined,
-      country_code: '86',
-      managers: formData.value.managers,
+      permission_template_ids: formData.value.permission_template_ids,
       bk_biz_id: formData.value.bk_biz_id,
+      country_code: formData.value.country_code,
+      managers: formData.value.managers,
       memo: formData.value.memo || undefined,
     },
   ];
@@ -112,6 +144,7 @@ const parentAccountDisplay = () => {
     :width="640"
     title="编辑三级账号"
     :before-close="handleClose"
+    render-directive="if"
     @closed="handleClose"
   >
     <template #default>
@@ -137,12 +170,18 @@ const parentAccountDisplay = () => {
             <BusinessSelector v-model="formData.bk_biz_id" placeholder="请选择业务" clearable />
           </bk-form-item>
 
-          <bk-form-item label="权限模板" property="permission_template" required>
-            <ValidatedPermissionTemplateSelector v-model="formData.permission_template" placeholder="请选择权限模板" />
+          <bk-form-item label="权限模板" property="permission_template_ids" required>
+            <ValidatedPermissionTemplateSelector
+              v-model="formData.permission_template_ids"
+              placeholder="请选择权限模板"
+            />
           </bk-form-item>
 
-          <bk-form-item label="手机号">
-            <bk-input v-model="formData.phone_num" placeholder="请输入手机号" />
+          <bk-form-item
+            label="手机号"
+            description='填写"+地域代码号码"，如+8613212345678。+86是地区代码 13212345678是电话号码'
+          >
+            <bk-input v-model="phoneDisplay" placeholder="请输入手机号" />
           </bk-form-item>
 
           <bk-form-item label="账号邮箱">

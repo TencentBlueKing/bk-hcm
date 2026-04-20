@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { AppearanceType, DisplayType } from './typings';
 import Link from './appearance/link.vue';
 import LinkButton from './appearance/link-button.vue';
+import LinkPopover from './appearance/link-popover.vue';
 import { isNil, isString } from 'lodash';
 
 const props = defineProps<{ value: string | number | string[] | number[]; display: DisplayType }>();
@@ -28,6 +29,7 @@ const displayValue = computed(() => {
 const appearanceComps: Partial<Record<AppearanceType, any>> = {
   link: Link,
   'link-button': LinkButton,
+  'link-popover': LinkPopover,
 };
 </script>
 

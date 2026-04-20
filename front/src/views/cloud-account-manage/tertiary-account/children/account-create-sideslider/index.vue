@@ -2,6 +2,7 @@
 import { ref, inject, computed, watch, nextTick, h, type Ref } from 'vue';
 import { Message, Select } from 'bkui-vue';
 import { Ediatable, InputColumn, SelectColumn } from '@blueking/ediatable';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCloudAccountStore, type ISubAccountCreateParams, type ISecondaryAccountItem } from '@/store/cloud-account';
 import { VendorEnum } from '@/common/constant';
@@ -68,8 +69,9 @@ interface IRowData {
   account_id: string;
   account_name: string;
   name: string;
-  permission_template: string[];
+  permission_template_ids: string[];
   phone_num: string;
+  country_code: string;
   email: string;
   managers: string[];
   receive_email: string;
@@ -79,12 +81,27 @@ const defaultRow = (): IRowData => ({
   account_id: '',
   account_name: '',
   name: '',
-  permission_template: [],
+  permission_template_ids: [],
   phone_num: '',
+  country_code: '',
   email: '',
   managers: [],
   receive_email: '',
 });
+
+// 使用 libphonenumber-js 解析手机号，自动识别国家区号
+const parsePhoneInput = (input: string): { countryCode: string; phoneNum: string } => {
+  const trimmed = input.trim();
+  if (!trimmed) return { countryCode: '', phoneNum: '' };
+  const phoneNumber = parsePhoneNumberFromString(trimmed);
+  if (phoneNumber) {
+    return {
+      countryCode: String(phoneNumber.countryCallingCode),
+      phoneNum: phoneNumber.nationalNumber,
+    };
+  }
+  return { countryCode: '', phoneNum: trimmed };
+};
 
 const tableData = ref<IRowData[]>([defaultRow()]);
 
@@ -116,7 +133,7 @@ const handleAddRow = (index: number) => {
 const handleCopyRow = (index: number) => {
   const copiedRow = { ...tableData.value[index] };
   copiedRow.managers = [...tableData.value[index].managers];
-  copiedRow.permission_template = [...tableData.value[index].permission_template];
+  copiedRow.permission_template_ids = [...tableData.value[index].permission_template_ids];
   tableData.value.splice(index + 1, 0, copiedRow);
 };
 
@@ -200,7 +217,12 @@ const headList = computed(() => [
       }),
   },
   { title: '权限模板', minWidth: 140, required: true },
-  { title: '手机号', minWidth: 120, required: false },
+  {
+    title: '手机号',
+    minWidth: 120,
+    required: false,
+    memo: '填写"+地域代码号码"，如+8613212345678。+86是地区代码 13212345678是电话号码',
+  },
   { title: '账号邮箱', minWidth: 130, required: false },
   {
     title: '负责人',
@@ -249,19 +271,23 @@ const handleSubmit = async () => {
     return;
   }
 
-  const subAccounts: ISubAccountCreateParams[] = validRows.map((row) => ({
-    account_id: row.account_id,
-    name: row.name,
-    receive_email: row.receive_email,
-    email: row.email || undefined,
-    phone_num: row.phone_num || undefined,
-    country_code: '86',
-    managers: row.managers,
-    memo: '',
-    extension: {
-      console_login: accountType.value,
-    },
-  }));
+  const subAccounts: ISubAccountCreateParams[] = validRows.map((row) => {
+    const { countryCode, phoneNum } = parsePhoneInput(row.phone_num);
+    return {
+      account_id: row.account_id,
+      name: row.name,
+      receive_email: row.receive_email,
+      email: row.email || undefined,
+      phone_num: phoneNum || undefined,
+      country_code: countryCode,
+      managers: row.managers,
+      memo: '',
+      permission_template_ids: row.permission_template_ids,
+      extension: {
+        console_login: accountType.value,
+      },
+    };
+  });
 
   isSubmitting.value = true;
   try {
@@ -321,7 +347,7 @@ const handleSubmit = async () => {
                 </td>
                 <td>
                   <ValidatedPermissionTemplateSelector
-                    v-model="row.permission_template"
+                    v-model="row.permission_template_ids"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
                     :display="{ on: 'cell' }"
                     placeholder="请选择"

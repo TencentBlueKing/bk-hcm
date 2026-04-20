@@ -64,7 +64,7 @@ export class TableColumn {
   })
   usage_biz_ids: number[];
 
-  @Column('number', {
+  @Column('string', {
     name: '三级账号数',
     index: 7,
     width: 130,
@@ -72,7 +72,7 @@ export class TableColumn {
   })
   sub_account_count: number;
 
-  @Column('number', {
+  @Column('string', {
     name: '密钥数',
     index: 8,
     width: 80,

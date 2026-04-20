@@ -2,9 +2,10 @@
 import { ref, inject, computed, type Ref } from 'vue';
 import FormList from '@/components/form/list.vue';
 import { ExclamationCircleShape } from 'bkui-vue/lib/icon';
-import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
+import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
 import { VendorEnum } from '@/common/constant';
 import { DisplayType } from '@/components/form/typings';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 defineOptions({ name: 'ValidatedPermissionTemplateSelector' });
 
@@ -23,13 +24,16 @@ const props = withDefaults(
 );
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const permissionPolicyStore = usePermissionPolicyStore();
+const { getBizsId } = useWhereAmI();
+const permissionTemplateStore = usePermissionTemplateStore();
 
 const error = ref(false);
 const errorMessage = ref('');
-const isSelectColumn = computed(() => props.display?.on === 'cell'); // 是否可编辑变格
+const isSelectColumn = computed(() => props.display?.on === 'cell'); // 是否可编辑表格
 
-const listGenerator = computed(() => permissionPolicyStore.createPolicyLibraryListGenerator(currentVendor.value));
+const listGenerator = computed(() =>
+  permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value),
+);
 
 defineExpose({
   async getValue() {
@@ -55,8 +59,11 @@ defineExpose({
       :list-generator="listGenerator"
       :multiple="multiple"
       :placeholder="placeholder"
-      @change="error = false"
+      display-key="name"
+      id-key="id"
+      collapse-tags
       v-bind="$attrs"
+      @change="error = false"
     >
       <template #suffix v-if="isSelectColumn"></template>
     </FormList>
@@ -102,7 +109,7 @@ defineExpose({
       }
 
       .bk-select-trigger {
-        height: 100%;
+        height: 100% !important;
 
         .bk-select-placeholder {
           line-height: 42px;

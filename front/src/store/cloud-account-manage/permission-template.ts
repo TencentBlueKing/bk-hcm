@@ -4,6 +4,7 @@ import http from '@/http';
 import { IListResData, IQueryResData, QueryParamsType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
+import rollRequest from '@blueking/roll-request';
 
 export interface IPermissionTemplateItem {
   id: string;
@@ -146,19 +147,73 @@ export const usePermissionTemplateStore = defineStore('permission-template', () 
   /**
    * 查询云权限模板关联的三级账号ID列表（全量返回，不分页）
    */
-  const getPermissionTemplateSubAccountIds = async (bizId: number, vendor: VendorEnum, id: string) => {
+  const getPermissionTemplateSubAccountIds = async (
+    bizId: number,
+    vendor: VendorEnum,
+    id: string,
+  ): Promise<{ id: string; cloud_id: string }[]> => {
     subAccountIdsLoading.value = true;
     try {
-      const res: IQueryResData<{ sub_account_ids: string[] }> = await http.get(
+      const res = await http.get(
         `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/${id}/sub_account_ids`,
       );
-      return res?.data?.sub_account_ids ?? [];
+      return res?.data?.sub_accounts ?? [];
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
     } finally {
       subAccountIdsLoading.value = false;
     }
+  };
+
+  /**
+   * 获取云权限模板详情（通过列表接口按 id 查询单条）
+   */
+  const getPermissionTemplateDetail = async (
+    bizId: number,
+    vendor: VendorEnum,
+    id: string,
+  ): Promise<IPermissionTemplateItem | null> => {
+    const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/list`;
+    try {
+      const res = await http.post(api, {
+        ids: [id],
+        page: { count: false, start: 0, limit: 1 },
+      });
+      const list = res?.data?.details ?? [];
+      return list.length > 0 ? list[0] : null;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  /**
+   * 创建云权限模板列表迭代器（用于选择器列表组件）
+   * @param bizId 业务ID
+   * @param vendor 云厂商
+   */
+  const createPermissionTemplateListGenerator = (bizId: number, vendor: VendorEnum) => {
+    return async function* (keyword?: string, options?: { ids?: (string | number)[]; [key: string]: any }) {
+      const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/list`;
+      const params: Record<string, any> = {};
+      if (keyword) params.names = [keyword];
+      if (options?.ids?.length) params.ids = options.ids;
+
+      const gen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
+        IListResData<IPermissionTemplateItem[]>
+      >(
+        api,
+        { ...params },
+        { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details, generator: true },
+        true,
+      );
+
+      for (const promise of gen) {
+        const res = await promise;
+        yield res?.data?.details ?? [];
+      }
+    };
   };
 
   return {
@@ -172,5 +227,7 @@ export const usePermissionTemplateStore = defineStore('permission-template', () 
     updatePermissionTemplate,
     deletePermissionTemplate,
     getPermissionTemplateSubAccountIds,
+    getPermissionTemplateDetail,
+    createPermissionTemplateListGenerator,
   };
 });

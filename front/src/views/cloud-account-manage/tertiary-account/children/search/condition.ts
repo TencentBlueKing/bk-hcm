@@ -64,20 +64,11 @@ export class SearchCondition {
     meta: {
       search: {
         filterRules(value: string | string[]) {
-          if (Array.isArray(value) && value.length > 1) {
-            return {
-              op: QueryRuleOPEnum.OR,
-              rules: value.map((val) => ({
-                field: 'extension.cloud_main_account_id',
-                op: QueryRuleOPEnum.JSON_EQ,
-                value: val,
-              })),
-            };
-          }
-          if (Array.isArray(value) && value.length === 1) {
-            return { field: 'extension.cloud_main_account_id', op: QueryRuleOPEnum.JSON_EQ, value: value[0] };
-          }
-          return { field: 'extension.cloud_main_account_id', op: QueryRuleOPEnum.JSON_EQ, value };
+          return {
+            field: 'extension.cloud_main_account_id',
+            op: QueryRuleOPEnum.JSON_IN,
+            value: Array.isArray(value) ? value : [value],
+          };
         },
       },
     },
