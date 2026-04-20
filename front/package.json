@@ -13,7 +13,10 @@
     "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack build",
     "serve": "node ./paas-server/index.js",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache",
-    "lint:style": "stylelint --fix ./**/*.{scss,css,vue} --custom-syntax",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache --fix",
+    "lint:style": "stylelint \"./src/**/*.{css,scss,vue}\" --cache",
+    "lint:style:fix": "stylelint \"./src/**/*.{css,scss,vue}\" --cache --fix",
+    "format": "prettier --config ./.prettierrc.js --write \"./src/**/*.{js,jsx,ts,tsx,vue,scss,css}\"",
     "prepare": "cd .. && husky install front/.husky"
   },
   "dependencies": {
@@ -96,9 +99,12 @@
     "dist"
   ],
   "lint-staged": {
-    "src/**/*.{js,ts,tsx,vue}": [
+    "src/**/*.{js,jsx,ts,tsx,vue}": [
       "prettier --config ./.prettierrc.js --write",
-      "eslint --fix -c ./.eslintrc.js --debug"
+      "eslint --fix -c ./.eslintrc.js --cache"
+    ],
+    "src/**/*.{css,scss,vue}": [
+      "stylelint --fix --cache"
     ]
   }
 }

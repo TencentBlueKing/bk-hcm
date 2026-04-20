@@ -88,5 +88,6 @@ export const OPERATION_LOG_RES_TYPES = {
     'permission_policy_library',
     'sub_account',
     'sub_account_secret',
+    'account_secret',
   ],
 };
