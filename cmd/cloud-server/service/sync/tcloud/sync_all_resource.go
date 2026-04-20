@@ -117,6 +117,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 func getSyncOrder() []enumor.CloudResourceType {
 	return []enumor.CloudResourceType{
+		// 需要先同步SubAccount信息，再同步其他资源，否则可能会漏掉某些三级账号的资源同步
 		enumor.SubAccountCloudResType,
 		enumor.DiskCloudResType,
 		enumor.VpcCloudResType,

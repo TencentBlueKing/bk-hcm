@@ -81,10 +81,6 @@ func InitAccountService(cap *capability.Capability) {
 	// 访问密钥管理
 	tcloudSecretService(h, svc)
 
-	// 设置子账号登录保护和敏感操作保护
-	h.Add("TCloudSetMfaFlag", http.MethodPost,
-		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
-
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)

@@ -111,8 +111,7 @@ func (cli *client) syncAccountAuthFlag(kt *kit.Kit,
 		return err
 	}
 
-	logs.Infof("[%s] sync account auth flag success, accountID: %s, rid: %s",
-		enumor.TCloud, account.ID, kt.Rid)
+	logs.Infof("[%s] sync account auth flag success, accountID: %s, rid: %s", enumor.TCloud, account.ID, kt.Rid)
 
 	return nil
 }

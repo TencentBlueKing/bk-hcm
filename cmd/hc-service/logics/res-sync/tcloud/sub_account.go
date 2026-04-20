@@ -119,7 +119,11 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 		return err
 	}
 
-	locSubAccountMap, err := cli.listSubAccountByIDMap(kt, opt, updateMap)
+	subAccountIDs := make([]string, 0, len(updateMap))
+	for id := range updateMap {
+		subAccountIDs = append(subAccountIDs, id)
+	}
+	locSubAccountMap, err := cli.listSubAccountByIDMap(kt, opt, subAccountIDs)
 	if err != nil {
 		return err
 	}
@@ -214,32 +218,23 @@ func (cli *client) buildSubAccountExtension(dbAccount *protocloud.AccountGetResu
 }
 
 func (cli *client) listSubAccountByIDMap(kt *kit.Kit, opt *SyncSubAccountOption,
-	updateMap map[string]account.TCloudAccountWithExt) (
-	map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
+	subAccountIDs []string) (map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
 
-	idList := make([]string, 0, len(updateMap))
-	for id := range updateMap {
-		idList = append(idList, id)
-	}
-	if len(idList) == 0 {
+	if len(subAccountIDs) == 0 {
 		return map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension]{}, nil
 	}
 
-	result := make(map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], len(idList))
-	idChunks := slice.Split(idList, int(core.DefaultMaxPageLimit))
+	result := make(map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], len(subAccountIDs))
+	idChunks := slice.Split(subAccountIDs, int(core.DefaultMaxPageLimit))
 	for _, ids := range idChunks {
 		req := &core.ListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.TCloud},
-					&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: opt.AccountID},
-					&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
-				},
-			},
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", enumor.TCloud),
+				tools.RuleEqual("account_id", opt.AccountID),
+				tools.RuleIn("id", ids),
+			),
 			Page: core.NewDefaultBasePage(),
 		}
-
 		start := uint32(0)
 		for {
 			req.Page.Start = start

@@ -7,8 +7,8 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
  * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  *
@@ -22,6 +22,7 @@ package tcloud
 import (
 	"errors"
 
+	"hcm/cmd/hc-service/logics/res-sync/common"
 	"hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core"
 	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
@@ -38,18 +39,6 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
-
-// cloudSubAccountSecret holds cloud access key data enriched with sub-account context for DB operations.
-type cloudSubAccountSecret struct {
-	AccountID          string
-	SubAccountID       string
-	CloudMainAccountID string
-	CloudSubAccountID  string
-	AccessKeyID        string
-	Status             string
-	CreateTime         string
-	LastUsedTime       *string
-}
 
 // SubAccountSecret sync sub account secret.
 func (cli *client) SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error) {
@@ -71,10 +60,12 @@ func (cli *client) SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*Sy
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delIDs := diffSubAccountSecrets(fromCloud, fromDB)
+	addSlice, updateMap, delCloudIDs := common.Diff[account.TCloudSubAccountSecret,
+		coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension]](
+		fromCloud, fromDB, isSubAccountSecretChange)
 
-	if len(delIDs) > 0 {
-		if err = cli.deleteSubAccountSecret(kt, opt, delIDs); err != nil {
+	if len(delCloudIDs) > 0 {
+		if err = cli.deleteSubAccountSecret(kt, opt, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -98,14 +89,14 @@ func (cli *client) SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*Sy
 // It first fetches sub-accounts from DB to retrieve their UINs, then calls ListAccessKeys for each,
 // and finally enriches the result with LastUsedTime via GetSecurityLastUsed.
 func (cli *client) listSubAccountSecretFromCloud(kt *kit.Kit, opt *SyncSubAccountOption) (
-	[]cloudSubAccountSecret, error) {
+	[]account.TCloudSubAccountSecret, error) {
 
 	subAccounts, err := cli.listSubAccountFromDB(kt, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	secrets := make([]cloudSubAccountSecret, 0)
+	secrets := make([]account.TCloudSubAccountSecret, 0)
 	for _, subAccount := range subAccounts {
 		if subAccount.Extension == nil || converter.PtrToVal(subAccount.Extension.Uin) == 0 {
 			logs.Errorf("[%s] sub account %s has no valid uin, skip listing access keys, account: %s, rid: %s",
@@ -128,7 +119,7 @@ func (cli *client) listSubAccountSecretFromCloud(kt *kit.Kit, opt *SyncSubAccoun
 		}
 
 		for _, key := range keys {
-			secrets = append(secrets, cloudSubAccountSecret{
+			secrets = append(secrets, account.TCloudSubAccountSecret{
 				AccountID:          opt.AccountID,
 				SubAccountID:       subAccount.ID,
 				CloudMainAccountID: subAccount.Extension.CloudMainAccountID,
@@ -149,7 +140,9 @@ func (cli *client) listSubAccountSecretFromCloud(kt *kit.Kit, opt *SyncSubAccoun
 
 // fetchLastUsedTime fills in the LastUsedTime for each cloud secret by calling GetSecurityLastUsed in batches
 // of at most GetSecurityLastUsedMaxKeys keys per request.
-func (cli *client) fetchLastUsedTime(kt *kit.Kit, opt *SyncSubAccountOption, secrets []cloudSubAccountSecret) error {
+func (cli *client) fetchLastUsedTime(kt *kit.Kit, opt *SyncSubAccountOption,
+	secrets []account.TCloudSubAccountSecret) error {
+
 	if len(secrets) == 0 {
 		return nil
 	}
@@ -223,46 +216,9 @@ func (cli *client) listSubAccountSecretFromDB(kt *kit.Kit, opt *SyncSubAccountOp
 	return results, nil
 }
 
-// diffSubAccountSecrets computes the add/update/delete sets between cloud and DB secrets.
-// The updateMap key is the local DB ID. delIDs contains local DB IDs to be removed.
-func diffSubAccountSecrets(fromCloud []cloudSubAccountSecret,
-	fromDB []coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension],
-) ([]cloudSubAccountSecret, map[string]cloudSubAccountSecret, []string) {
-
-	dbMap := make(map[string]coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension], len(fromDB))
-	for _, one := range fromDB {
-		if one.Extension != nil {
-			dbMap[one.Extension.CloudSecretID] = one
-		}
-	}
-
-	addSlice := make([]cloudSubAccountSecret, 0)
-	updateMap := make(map[string]cloudSubAccountSecret)
-
-	for _, cloudSecret := range fromCloud {
-		dbSecret, exists := dbMap[cloudSecret.AccessKeyID]
-		if !exists {
-			addSlice = append(addSlice, cloudSecret)
-			continue
-		}
-
-		delete(dbMap, cloudSecret.AccessKeyID)
-		if isSubAccountSecretChange(cloudSecret, dbSecret) {
-			updateMap[dbSecret.ID] = cloudSecret
-		}
-	}
-
-	delIDs := make([]string, 0, len(dbMap))
-	for _, dbSecret := range dbMap {
-		delIDs = append(delIDs, dbSecret.ID)
-	}
-
-	return addSlice, updateMap, delIDs
-}
-
 // isSubAccountSecretChange reports whether the cloud secret differs from the DB record.
 // DisabledTime is intentionally excluded as it is managed locally, not by cloud sync.
-func isSubAccountSecretChange(cloud cloudSubAccountSecret,
+func isSubAccountSecretChange(cloud account.TCloudSubAccountSecret,
 	db coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension]) bool {
 
 	if hssubaccount.TCloudAccessKeyStatusToSecretStatus(cloud.Status) != db.Status {
@@ -282,7 +238,7 @@ func isSubAccountSecretChange(cloud cloudSubAccountSecret,
 
 // createSubAccountSecret batch creates new sub account secrets in DB.
 func (cli *client) createSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption,
-	addSlice []cloudSubAccountSecret) error {
+	addSlice []account.TCloudSubAccountSecret) error {
 
 	creates := make([]protocloud.SubAccountSecretCreate[coresass.TCloudSubAccountSecretExtension], 0, len(addSlice))
 	for _, entry := range addSlice {
@@ -327,7 +283,7 @@ func (cli *client) createSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption
 // updateSubAccountSecret batch updates changed sub account secrets in DB.
 // DisabledTime is not updated as it is managed locally.
 func (cli *client) updateSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption,
-	updateMap map[string]cloudSubAccountSecret) error {
+	updateMap map[string]account.TCloudSubAccountSecret) error {
 
 	updates := make([]protocloud.SubAccountSecretUpdate[coresass.TCloudSubAccountSecretExtension], 0, len(updateMap))
 	for dbID, entry := range updateMap {
@@ -368,12 +324,12 @@ func (cli *client) updateSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption
 	return nil
 }
 
-// deleteSubAccountSecret batch deletes sub account secrets from DB by local IDs.
-func (cli *client) deleteSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption, delIDs []string) error {
-	batches := slice.Split(delIDs, constant.CloudResourceSyncMaxLimit)
+// deleteSubAccountSecret batch deletes sub account secrets from DB by cloud IDs.
+func (cli *client) deleteSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption, delCloudIDs []string) error {
+	batches := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
 	for _, batch := range batches {
 		req := &protocloud.SubAccountSecretBatchDeleteReq{
-			Filter: tools.ContainersExpression("id", batch),
+			Filter: tools.ContainersExpression("cloud_id", batch),
 		}
 		if err := cli.dbCli.Global.SubAccountSecret.BatchDelete(kt, req); err != nil {
 			logs.Errorf("[%s] delete sub account secret failed, account: %s, err: %v, rid: %s",
@@ -383,7 +339,7 @@ func (cli *client) deleteSubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption
 	}
 
 	logs.Infof("[%s] sync sub account secret to delete success, accountID: %s, count: %d, rid: %s",
-		enumor.TCloud, opt.AccountID, len(delIDs), kt.Rid)
+		enumor.TCloud, opt.AccountID, len(delCloudIDs), kt.Rid)
 
 	return nil
 }

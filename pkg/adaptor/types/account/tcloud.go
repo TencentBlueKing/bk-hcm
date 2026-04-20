@@ -406,3 +406,20 @@ type SecretIdLastUsed struct {
 	LastUsedDate       *string `json:"last_used_date"`
 	LastSecretUsedDate *uint64 `json:"last_secret_used_date"`
 }
+
+// TCloudSubAccountSecret holds cloud access key data enriched with sub-account context for DB operations.
+type TCloudSubAccountSecret struct {
+	AccountID          string  `json:"account_id"`
+	SubAccountID       string  `json:"sub_account_id"`
+	CloudMainAccountID string  `json:"cloud_main_account_id"`
+	CloudSubAccountID  string  `json:"cloud_sub_account_id"`
+	AccessKeyID        string  `json:"access_key_id"`
+	Status             string  `json:"status"`
+	CreateTime         string  `json:"create_time"`
+	LastUsedTime       *string `json:"last_used_time"`
+}
+
+// GetCloudID returns the cloud-side unique identifier for the secret (AccessKeyID).
+func (s TCloudSubAccountSecret) GetCloudID() string {
+	return s.AccessKeyID
+}

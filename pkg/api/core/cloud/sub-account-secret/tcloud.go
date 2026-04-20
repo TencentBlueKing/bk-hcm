@@ -30,6 +30,11 @@ type TCloudSubAccountSecretExtension struct {
 	CloudSubAccountID  string `json:"cloud_sub_account_id"`
 }
 
+// GetCloudSecretID 返回云侧密钥唯一标识
+func (e TCloudSubAccountSecretExtension) GetCloudSecretID() string {
+	return e.CloudSecretID
+}
+
 // TCloudSubAccountSecretJoinExtension 腾讯云子账号密钥关联子账号扩展
 type TCloudSubAccountSecretJoinExtension struct {
 	TCloudSubAccountSecretExtension `json:",inline"`

@@ -49,9 +49,17 @@ func (a SubAccountSecret[T]) GetID() string {
 	return a.BaseSubAccountSecret.ID
 }
 
+// GetCloudID 获取云侧唯一标识
+func (a SubAccountSecret[T]) GetCloudID() string {
+	if a.Extension != nil {
+		return (*a.Extension).GetCloudSecretID()
+	}
+	return ""
+}
+
 // Extension 子账号密钥扩展字段接口
 type Extension interface {
-	TCloudSubAccountSecretExtension
+	GetCloudSecretID() string
 }
 
 // TCloudSubAccountSecretListExt defines Tencent Cloud-only filter fields for biz-scoped sub account secret
