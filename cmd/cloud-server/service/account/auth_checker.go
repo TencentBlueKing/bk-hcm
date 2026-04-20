@@ -187,7 +187,6 @@ func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, account
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("id", accountIDs),
-			tools.RuleJSONContains("usage_biz_ids", bizID),
 		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
@@ -203,7 +202,9 @@ func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, account
 		}
 
 		for _, detail := range result.Details {
-			authorizedIDs = append(authorizedIDs, detail.ID)
+			if slice.IsItemInSlice(detail.UsageBizIDs, bizID) {
+				authorizedIDs = append(authorizedIDs, detail.ID)
+			}
 		}
 
 		if uint(len(result.Details)) < req.Page.Limit {
