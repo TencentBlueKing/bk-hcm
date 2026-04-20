@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { h, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-import { Button } from 'bkui-vue';
-import type { ISubAccountItem } from '@/store/cloud-account';
+import routeAction from '@/router/utils/action';
 import { useAccountStore } from '@/store/account';
-import { AUTH_UPDATE_SUB_ACCOUNT, AUTH_DELETE_SUB_ACCOUNT } from '@/constants/auth-symbols';
+import { AUTH_DELETE_SUB_ACCOUNT, AUTH_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import type { ISubAccountItem } from '@/store/cloud-account';
+import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
+
+export interface IPermissionTemplateSimple {
+  id: string;
+  name: string;
+}
 
 const props = withDefaults(defineProps<IDataListProps>(), {
   loading: false,
@@ -34,10 +41,11 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-const formatPhone = (phone: string) => {
-  if (!phone) return '--';
-  if (phone.length < 7) return phone;
-  return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
+const formatPhone = (row: { phone_num: string; country_code: string }) => {
+  const { phone_num, country_code } = row;
+  if (!phone_num) return '--';
+  const codeStr = country_code ? `+${country_code}` : '';
+  return `${codeStr}${phone_num}`;
 };
 const handleViewDetails = (row: ISubAccountItem) => {
   emit('view-details', row);
@@ -78,24 +86,18 @@ watch(
   { deep: true },
 );
 
-const getColumnRender = (column: ModelPropertyColumn) => {
-  if (column.id === 'name') {
-    return ({ row }: { row: ISubAccountItem }) =>
-      h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick: () => handleViewDetails(row),
-        },
-        () => row.name || '--',
-      );
-  }
+const handleGoToPermissionTemplate = (item: LinkPopoverItem) => {
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'permission-template', id: item.id as string },
+  });
+};
 
-  if (column.id === 'phone_num') {
-    return ({ row }: { row: ISubAccountItem }) => formatPhone(row.phone_num);
-  }
-  return null;
+const getPermissionTemplateItems = (row: ISubAccountItem): LinkPopoverItem[] => {
+  return (row.permission_templates || []).map((t: IPermissionTemplateSimple) => ({
+    id: t.id,
+    label: t.name,
+  }));
 };
 </script>
 
@@ -131,8 +133,25 @@ const getColumnRender = (column: ModelPropertyColumn) => {
         v-bind="column"
       >
         <template #default="{ row }">
-          <template v-if="getColumnRender(column)">
-            <component :is="() => getColumnRender(column)({ row })" />
+          <template v-if="column.id === 'name'">
+            <bk-button theme="primary" text @click="handleViewDetails(row)">{{ row.name || '--' }}</bk-button>
+          </template>
+          <template v-else-if="column.id === 'phone_num'">
+            {{ formatPhone(row) }}
+          </template>
+          <template v-else-if="column.id === 'permission_template_count'">
+            <display-value
+              :property="column"
+              :value="row?.permission_templates?.length ?? 0"
+              :display="{
+                appearance: 'link-popover',
+                appearanceProps: {
+                  items: getPermissionTemplateItems(row),
+                  onLinkClick: handleGoToPermissionTemplate,
+                  emptyText: '未查询到关联权限模板',
+                },
+              }"
+            />
           </template>
           <template v-else>
             <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />

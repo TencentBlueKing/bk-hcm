@@ -33,7 +33,8 @@ const currentComponent = computed(() => tabComponents[tabActive.value as string]
 
 // 用户点击 tab 时，更新 URL query.type（@change 仅在用户点击时触发，不会在代码修改 active 时触发）
 const handleTabChange = (name: string) => {
-  router.replace({ query: { type: name } });
+  const { filter, _t, ...query } = route.query;
+  router.replace({ query: { ...query, type: name } });
 };
 
 // 云厂商切换

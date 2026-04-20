@@ -33,9 +33,9 @@ export interface ISecondaryAccountItem {
   created_at: string;
   updated_at: string;
   extension: {
-    login_flag?: string;
-    action_flag?: string;
-    console_login?: number;
+    cloud_main_account_id: string;
+    cloud_secret_id: string;
+    cloud_sub_account_id: string;
     [k: string]: any;
   };
   [k: string]: any;
@@ -143,9 +143,13 @@ export interface ISubAccountItem {
   created_at: string;
   updated_at: string;
   extension: {
-    login_flag?: string;
-    action_flag?: string;
-    console_login?: number;
+    cloud_main_account_id: string;
+    uin: number;
+    nick_name: string;
+    create_time: string;
+    login_flag: string;
+    action_flag: string;
+    console_login: number;
     [k: string]: any;
   };
   operable?: boolean;
@@ -157,6 +161,7 @@ export interface ISubAccountCreateParams {
   account_id: string;
   name: string;
   receive_email: string;
+  permission_template_ids: string[];
   email?: string;
   phone_num?: string;
   country_code?: string;
@@ -177,6 +182,7 @@ export interface ISubAccountUpdateParams {
   country_code?: string;
   managers?: string[];
   memo?: string;
+  permission_template_ids: string[];
 }
 
 // 更新密钥状态参数
@@ -781,11 +787,11 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   const createSubAccountSecret = async (
     bk_biz_id: number,
     vendor: string,
-    id: string,
+    sub_account_id: string,
   ): Promise<{ id: string; extension: { cloud_secret_id: string; cloud_secret_key: string } }> => {
     try {
       const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/create`;
-      const res = await http.post(api, { id });
+      const res = await http.post(api, { sub_account_id });
       return res?.data;
     } catch (error) {
       console.error(error);

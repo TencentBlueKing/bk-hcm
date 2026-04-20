@@ -2,11 +2,18 @@
 import { inject, ref, type Ref } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { ModelPropertyDisplay } from '@/model/typings';
-import type { IPermissionTemplateItem } from '@/store/cloud-account-manage/permission-template';
+import {
+  usePermissionTemplateStore,
+  type IPermissionTemplateItem,
+} from '@/store/cloud-account-manage/permission-template';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import { FieldFactory } from './field-factory';
 import type { DetailsFieldTcloud } from './field-tcloud';
+import routeAction from '@/router/utils/action';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
 
 defineProps<{
   data: IPermissionTemplateItem & DetailsFieldTcloud;
@@ -16,6 +23,31 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const model = FieldFactory.createModel(currentVendor.value);
 const properties = model.getPropertiesByGroup<ModelPropertyDisplay>();
+
+const permissionTemplateStore = usePermissionTemplateStore();
+const { getBizsId } = useWhereAmI();
+
+const handleGoToSecondaryAccount = (data: IPermissionTemplateItem) => {
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'secondary-account', id: data?.account_id },
+  });
+};
+const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'tertiary-account', id: item.id as string },
+  });
+};
+
+const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise<LinkPopoverItem[]> => {
+  const sub_accounts = await permissionTemplateStore.getPermissionTemplateSubAccountIds(
+    getBizsId(),
+    currentVendor.value,
+    data.id,
+  );
+  return sub_accounts.map(({ id, cloud_id }) => ({ id, label: cloud_id }));
+};
 </script>
 
 <template>
@@ -23,8 +55,36 @@ const properties = model.getPropertiesByGroup<ModelPropertyDisplay>();
     <div v-for="(fields, group) in properties" :key="group" class="details-panel">
       <div class="panel-title">{{ group }}</div>
       <grid-container :column="1" :label-width="120">
-        <grid-item v-for="field in fields" :key="field.id" :label="field.id === 'policy_document' ? null : field.name">
+        <grid-item v-for="field in fields" :key="field.id" :label="field.name">
+          <template v-if="field.id === 'account_id'">
+            <display-value
+              :property="field"
+              :value="data.cloud_account_id"
+              :display="{
+                on: 'info',
+                appearance: 'link-button',
+                appearanceProps: { isIcon: true, onClick: () => handleGoToSecondaryAccount(data) },
+              }"
+            />
+          </template>
+
+          <template v-else-if="field.id === 'associated_sub_account_count'">
+            <display-value
+              :property="field"
+              :value="data.associated_sub_account_count"
+              :display="{
+                appearance: 'link-popover',
+                appearanceProps: {
+                  loadFn: getSubAccountLoadFn(data),
+                  onLinkClick: handleGoToTertiaryAccount,
+                  emptyText: '未查询到关联三级账号',
+                },
+              }"
+            />
+          </template>
+
           <display-value
+            v-else
             :property="field"
             :value="field.id === 'extension.cloud_type' ? data : data[field.id]"
             :display="{ ...field.meta?.display, on: 'info' }"

@@ -82,7 +82,6 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
   ): Promise<{ list: IPermissionPolicyItem[]; count: number }> => {
     permissionPolicyListLoading.value = true;
 
-    // 使用真实接口
     const api = `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/sub_account_secrets/list`;
     try {
       // 构建请求参数
@@ -162,17 +161,18 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
   };
 
   const createPolicyLibraryListGenerator = (vendor: string) => {
-    return async function* (keyword?: string) {
+    return async function* (keyword?: string, options?: { ids?: (string | number)[]; [key: string]: any }) {
       const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
-      const filter = keyword
-        ? { op: QueryRuleOPEnum.AND, rules: [{ field: 'name', op: QueryRuleOPEnum.CS, value: keyword }] }
-        : {};
+      const rules: Array<{ field: string; op: string; value: any }> = [];
+      if (keyword) rules.push({ field: 'name', op: QueryRuleOPEnum.CS, value: keyword });
+      if (options?.ids?.length) rules.push({ field: 'id', op: QueryRuleOPEnum.IN, value: options.ids });
+      const filterParams = rules.length > 0 ? { op: QueryRuleOPEnum.AND, rules } : {};
 
       const gen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
         IListResData<IPermissionPolicyItem[]>
       >(
         api,
-        { filter },
+        { filter: filterParams },
         { limit: 500, countGetter: (res) => res.data.count, listGetter: (res) => res.data.details, generator: true },
         true,
       );

@@ -78,10 +78,6 @@ export class TableColumn {
     index: 8,
     width: 80,
     sort: true,
-    render: ({ row }: { row: { permission_template_ids: number[] } }) => {
-      const value = row?.permission_template_ids?.length || 0;
-      return h('span', { style: { color: '#3A84FF' } }, value);
-    },
   })
   permission_template_count: number;
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { Share } from 'bkui-vue/lib/icon';
 import { AUTH_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
@@ -10,6 +9,8 @@ import type { ICloudSecretItem, SecretActionType } from '../../typings';
 import SecretActionDialog from '../secret-action-dialog/index.vue';
 import ArrayValue from '@/components/display-value/array-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
+import routeAction from '@/router/utils/action';
+import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -23,8 +24,6 @@ const emit = defineEmits<{
 }>();
 
 const accountStore = useAccountStore();
-const route = useRoute();
-const router = useRouter();
 
 const isShow = computed({
   get: () => props.modelValue,
@@ -42,11 +41,17 @@ const mainAccountId = computed(
 );
 
 const handleGoToTertiaryAccount = () => {
-  router.push({ query: { ...route.query, type: 'tertiary-account', id: props.secretData?.sub_account_id } });
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'tertiary-account', id: props.secretData?.sub_account_id },
+  });
 };
 
 const handleGoToSecondaryAccount = () => {
-  router.push({ query: { ...route.query, type: 'secondary-account', id: props.secretData?.account_id } });
+  routeAction.open({
+    name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    query: { type: 'secondary-account', id: props.secretData?.sub_account_id },
+  });
 };
 
 const statusConfig = computed(() => {
