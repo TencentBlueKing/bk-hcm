@@ -20,8 +20,6 @@
 package account
 
 import (
-	"fmt"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/validator"
@@ -108,12 +106,6 @@ func (req *AccountListByResTypeReq) Validate() error {
 
 	if err := req.ResType.Validate(); err != nil {
 		return err
-	}
-
-	switch req.ResType {
-	case "sub_account", "sub_account_secret", "permission_template":
-	default:
-		return fmt.Errorf("unsupported res_type: %s", req.ResType)
 	}
 
 	return nil

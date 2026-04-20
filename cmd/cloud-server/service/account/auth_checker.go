@@ -182,11 +182,12 @@ type permissionTemplateAuthChecker struct {
 
 // filterAuthorizedIDs 查询 account 表，校验当前业务是否属于该账号的使用业务
 func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountIDs []string, bizID int64,
-	_ enumor.Vendor) ([]string, error) {
+	vendor enumor.Vendor) ([]string, error) {
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("id", accountIDs),
+			tools.RuleEqual("vendor", vendor),
 		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},

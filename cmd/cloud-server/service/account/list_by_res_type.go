@@ -22,12 +22,12 @@ package account
 import (
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
-	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -54,12 +54,12 @@ func (a *accountSvc) ListAccountByResType(cts *rest.Contexts) (interface{}, erro
 	}
 
 	// 1. 校验业务访问权限
-	if err := a.checkBizAccessPermission(cts, bizID); err != nil {
+	if err := a.checkBizAccessPermission(cts.Kit, bizID); err != nil {
 		return nil, err
 	}
 
 	// 2. 根据资源类型过滤有权限的账号ID
-	authorizedIDs, err := a.bizFilterAuthorizedAccountIDs(cts, req, bizID, vendor)
+	authorizedIDs, err := a.bizFilterAuthorizedAccountIDs(cts.Kit, req, bizID, vendor)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (a *accountSvc) ListAccountByResType(cts *rest.Contexts) (interface{}, erro
 	}
 
 	// 3. 批量查询账号详情（基本信息 + 扩展字段）
-	details, err := a.getAccountDetails(cts, authorizedIDs, vendor)
+	details, err := a.getAccountDetails(cts.Kit, authorizedIDs, vendor)
 	if err != nil {
 		return nil, err
 	}
@@ -77,9 +77,9 @@ func (a *accountSvc) ListAccountByResType(cts *rest.Contexts) (interface{}, erro
 }
 
 // checkBizAccessPermission 校验用户是否有业务访问权限
-func (a *accountSvc) checkBizAccessPermission(cts *rest.Contexts, bizID int64) error {
+func (a *accountSvc) checkBizAccessPermission(kt *kit.Kit, bizID int64) error {
 	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
-	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	_, authorized, err := a.authorizer.Authorize(kt, attribute)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (a *accountSvc) checkBizAccessPermission(cts *rest.Contexts, bizID int64) e
 }
 
 // bizFilterAuthorizedAccountIDs 根据资源类型调用对应校验器，过滤出有权限的账号ID
-func (a *accountSvc) bizFilterAuthorizedAccountIDs(cts *rest.Contexts, req *proto.AccountListByResTypeReq,
+func (a *accountSvc) bizFilterAuthorizedAccountIDs(kt *kit.Kit, req *proto.AccountListByResTypeReq,
 	bizID int64, vendor enumor.Vendor) ([]string, error) {
 
 	checker, err := newAuthChecker(a.client, req.ResType)
@@ -98,10 +98,10 @@ func (a *accountSvc) bizFilterAuthorizedAccountIDs(cts *rest.Contexts, req *prot
 		return nil, err
 	}
 
-	authorizedIDs, err := checker.filterAuthorizedIDs(cts.Kit, req.IDs, bizID, vendor)
+	authorizedIDs, err := checker.filterAuthorizedIDs(kt, req.IDs, bizID, vendor)
 	if err != nil {
 		logs.Errorf("filter authorized account ids failed, res_type: %s, biz_id: %d, err: %v, rid: %s",
-			req.ResType, bizID, err, cts.Kit.Rid)
+			req.ResType, bizID, err, kt.Rid)
 		return nil, err
 	}
 
@@ -109,49 +109,53 @@ func (a *accountSvc) bizFilterAuthorizedAccountIDs(cts *rest.Contexts, req *prot
 }
 
 // getAccountDetails 批量查询账号详情，包含基本信息和扩展字段，并组装为响应结构体
-func (a *accountSvc) getAccountDetails(cts *rest.Contexts, authorizedIDs []string,
+func (a *accountSvc) getAccountDetails(kt *kit.Kit, authorizedIDs []string,
 	vendor enumor.Vendor) ([]proto.AccountInfoByTypeDetail, error) {
 
 	// 1. 批量查询账号基本信息
-	accountMap, err := a.batchGetAccountBaseInfo(cts, authorizedIDs)
+	accountMap, err := a.batchGetAccountBaseInfo(kt, vendor, authorizedIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. 获取云厂商扩展字段
-	extensionMap, err := a.getAccountExtensions(cts, authorizedIDs, vendor)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. 组装响应
-	return buildAccountInfoByTypeDetails(accountMap, extensionMap, authorizedIDs), nil
+	// 2. 转换响应
+	return convAccountInfoByTypeDetails(accountMap, authorizedIDs), nil
 }
 
 // batchGetAccountBaseInfo 批量查询账号基本信息
-func (a *accountSvc) batchGetAccountBaseInfo(cts *rest.Contexts, accountIDs []string) (
-	map[string]*corecloud.BaseAccount, error) {
+func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, accountIDs []string) (
+	map[string]*dataproto.BaseAccountWithExtensionListResp, error) {
 
+	accountMap := make(map[string]*dataproto.BaseAccountWithExtensionListResp, len(accountIDs))
 	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(tools.RuleIn("id", accountIDs)),
-		Page:   core.NewDefaultBasePage(),
-	}
-	resp, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list account base info failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", accountIDs),
+			tools.RuleEqual("vendor", vendor)),
+		Page: &core.BasePage{Limit: 1000},
 	}
 
-	accountMap := make(map[string]*corecloud.BaseAccount, len(resp.Details))
-	for i := range resp.Details {
-		accountMap[resp.Details[i].ID] = resp.Details[i]
+	for {
+		resp, err := a.client.DataService().Global.Account.ListWithExtension(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list account base info failed, start: %d, err: %v, rid: %s", listReq.Page.Start, err, kt.Rid)
+			return nil, err
+		}
+
+		for _, detail := range resp.Details {
+			accountMap[detail.ID] = detail
+		}
+
+		if uint(len(resp.Details)) < listReq.Page.Limit {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
 	return accountMap, nil
 }
 
 // getAccountExtensions 获取云厂商扩展字段
-func (a *accountSvc) getAccountExtensions(cts *rest.Contexts, accountIDs []string,
+func (a *accountSvc) getAccountExtensions(kt *kit.Kit, accountIDs []string,
 	vendor enumor.Vendor) (map[string]map[string]interface{}, error) {
 
 	listReq := &dataproto.AccountListReq{
@@ -160,9 +164,9 @@ func (a *accountSvc) getAccountExtensions(cts *rest.Contexts, accountIDs []strin
 	}
 
 	resp, err := a.client.DataService().Global.Account.ListWithExtension(
-		cts.Kit.Ctx, cts.Kit.Header(), listReq)
+		kt.Ctx, kt.Header(), listReq)
 	if err != nil {
-		logs.Errorf("list account with extension failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list account with extension failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -179,9 +183,9 @@ func (a *accountSvc) getAccountExtensions(cts *rest.Contexts, accountIDs []strin
 	return extensionMap, nil
 }
 
-// buildAccountInfoByTypeDetails 将账号基本信息和扩展字段组装为响应结构体
-func buildAccountInfoByTypeDetails(accountMap map[string]*corecloud.BaseAccount,
-	extensionMap map[string]map[string]interface{}, authorizedIDs []string) []proto.AccountInfoByTypeDetail {
+// convAccountInfoByTypeDetails 将账号基本信息和扩展字段转换为响应结构体
+func convAccountInfoByTypeDetails(accountMap map[string]*dataproto.BaseAccountWithExtensionListResp,
+	authorizedIDs []string) []proto.AccountInfoByTypeDetail {
 
 	details := make([]proto.AccountInfoByTypeDetail, 0, len(authorizedIDs))
 	for _, id := range authorizedIDs {
@@ -190,18 +194,13 @@ func buildAccountInfoByTypeDetails(accountMap map[string]*corecloud.BaseAccount,
 			continue
 		}
 
-		extension := extensionMap[id]
-		if extension == nil {
-			extension = make(map[string]interface{})
-		}
-
 		details = append(details, proto.AccountInfoByTypeDetail{
 			ID:          account.ID,
 			Name:        account.Name,
 			BkBizID:     account.BkBizID,
 			UsageBizIDs: account.UsageBizIDs,
 			Managers:    account.Managers,
-			Extension:   extension,
+			Extension:   account.Extension,
 		})
 	}
 
