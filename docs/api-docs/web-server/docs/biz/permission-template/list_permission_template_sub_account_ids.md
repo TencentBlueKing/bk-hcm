@@ -10,11 +10,11 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/su
 
 ### 路径参数
 
-| 参数名称      | 参数类型   | 必选 | 描述                        |
-|-----------|--------|----|---------------------------|
-| bk_biz_id | int64  | 是  | 业务ID                      |
-| vendor    | string | 是  | 云厂商（枚举值：tcloud） |
-| id        | string | 是  | 权限模板ID                    |
+| 参数名称      | 参数类型   | 必选 | 描述                |
+|-----------|--------|----|-------------------|
+| bk_biz_id | int64  | 是  | 业务ID              |
+| vendor    | string | 是  | 云厂商（枚举值：tcloud）   |
+| id        | string | 是  | 权限模板ID            |
 
 ### 调用示例
 
@@ -28,12 +28,12 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/su
   "code": 0,
   "message": "",
   "data": {
-    "sub_accounts": [
+	"sub_accounts": [
       {
-        "id": "00000001",
-        "cloud_id": "00000001"
-      }
-    ]
+		"id": "00000001",
+		"cloud_id": "00000001"
+	  }
+	]
   }
 }
 ```

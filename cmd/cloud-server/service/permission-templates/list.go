@@ -332,7 +332,7 @@ func (svc *service) ListPermTmplSubAccountIDs(cts *rest.Contexts) (interface{}, 
 	case enumor.TCloud:
 		return svc.listPermTmplSubAccountIDsForTCloud(cts.Kit, bizID, templateID)
 	default:
-		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+		return nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
 	}
 }
 
@@ -357,8 +357,8 @@ func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
 		tools.RuleJsonOverlaps("bk_biz_ids", []int64{bizID}),
 	)
 
-	subAccountIDs := make([]string, 0)
-	listReq := &core.ListReq{Filter: filterExpr, Page: core.NewDefaultBasePage(), Fields: []string{"cloud_id"}}
+	subAccounts := make([]cloudserver.PermRelateSubAccountInfo, 0)
+	listReq := &core.ListReq{Filter: filterExpr, Page: core.NewDefaultBasePage(), Fields: []string{"id", "cloud_id"}}
 	for {
 		results, err := svc.client.DataService().TCloud.SubAccount.ListExt(kt, listReq)
 		if err != nil {
@@ -366,9 +366,10 @@ func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
 		}
 
 		for _, d := range results.Details {
-			if d.CloudID != "" {
-				subAccountIDs = append(subAccountIDs, d.CloudID)
-			}
+			subAccounts = append(subAccounts, cloudserver.PermRelateSubAccountInfo{
+				ID:      d.ID,
+				CloudID: d.CloudID,
+			})
 		}
 
 		if len(results.Details) < int(listReq.Page.Limit) {
@@ -377,5 +378,5 @@ func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
 		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
-	return &cloudserver.PermTmplSubAccountIDsResult{SubAccountIDs: subAccountIDs}, nil
+	return &cloudserver.PermTmplSubAccountIDsResult{SubAccounts: subAccounts}, nil
 }
