@@ -62,7 +62,7 @@ func (h *HuaWei) GetMonitorData(kt *kit.Kit, opt *typecvm.HuaWeiMonitorDataOptio
 		return nil, err
 	}
 
-	return h.buildMonitorResult(responseMetrics, opt.Filter), nil
+	return h.buildMonitorResult(kt, responseMetrics, opt.Filter), nil
 }
 
 // validateMonitorOption validates monitor option parameters
@@ -185,7 +185,7 @@ func (h *HuaWei) fetchSingleBatch(kt *kit.Kit, metrics []cesmodel.MetricInfo, op
 }
 
 // buildMonitorResult builds monitor result from response metrics
-func (h *HuaWei) buildMonitorResult(responseMetrics []cesmodel.BatchMetricData,
+func (h *HuaWei) buildMonitorResult(kt *kit.Kit, responseMetrics []cesmodel.BatchMetricData,
 	filter string) *typecvm.HuaWeiMonitorDataResult {
 
 	result := &typecvm.HuaWeiMonitorDataResult{
@@ -193,7 +193,7 @@ func (h *HuaWei) buildMonitorResult(responseMetrics []cesmodel.BatchMetricData,
 	}
 
 	for _, metric := range responseMetrics {
-		dataPoint := h.convertToMonitorDataPoint(&metric, filter)
+		dataPoint := h.convertToMonitorDataPoint(kt, &metric, filter)
 		result.DataPoints = append(result.DataPoints, dataPoint)
 	}
 
@@ -201,7 +201,7 @@ func (h *HuaWei) buildMonitorResult(responseMetrics []cesmodel.BatchMetricData,
 }
 
 // convertToMonitorDataPoint converts batch metric data to monitor data point
-func (h *HuaWei) convertToMonitorDataPoint(metric *cesmodel.BatchMetricData, filter string) *typecvm.MonitorDataPoint {
+func (h *HuaWei) convertToMonitorDataPoint(kt *kit.Kit, metric *cesmodel.BatchMetricData, filter string) *typecvm.MonitorDataPoint {
 	dimensionsCount := 0
 	if metric.Dimensions != nil {
 		dimensionsCount = len(*metric.Dimensions)
@@ -220,7 +220,7 @@ func (h *HuaWei) convertToMonitorDataPoint(metric *cesmodel.BatchMetricData, fil
 	}
 
 	h.fillDimensions(dataPoint, metric.Dimensions)
-	h.fillDatapoints(dataPoint, metric)
+	h.fillDatapoints(kt, dataPoint, metric)
 
 	return dataPoint
 }
@@ -244,12 +244,12 @@ func (h *HuaWei) fillDimensions(dataPoint *typecvm.MonitorDataPoint, dimensions 
 }
 
 // fillDatapoints fills datapoints to data point
-func (h *HuaWei) fillDatapoints(dataPoint *typecvm.MonitorDataPoint, metric *cesmodel.BatchMetricData) {
+func (h *HuaWei) fillDatapoints(kt *kit.Kit, dataPoint *typecvm.MonitorDataPoint, metric *cesmodel.BatchMetricData) {
 	for _, dp := range metric.Datapoints {
 		value, ok := getHuaWeiMetricValue(dp)
 		if !ok {
 			logs.Warnf("huawei monitor datapoint has no valid value, metric_name: %s, rid: %s",
-				metric.MetricName, dataPoint.Extensions["rid"])
+				metric.MetricName, kt.Rid)
 			continue
 		}
 

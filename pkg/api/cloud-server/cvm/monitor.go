@@ -21,11 +21,11 @@ package cscvm
 
 import (
 	"fmt"
-	"strconv"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // GetMonitorDataReq defines request to get monitor data.
@@ -94,38 +94,17 @@ func (req *GetMonitorDataReq) GetTCloudTimeRange() (string, string, error) {
 
 // GetHuaWeiTimeRange parses huawei time range (unix ms).
 func (req *GetMonitorDataReq) GetHuaWeiTimeRange() (int64, int64, error) {
-	startTime, err := parseTimeToInt64(req.StartTime)
+	startTime, err := cvt.ParseTimeToInt64(req.StartTime)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("parse huawei start_time failed: %w", err)
 	}
 
-	endTime, err := parseTimeToInt64(req.EndTime)
+	endTime, err := cvt.ParseTimeToInt64(req.EndTime)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("parse huawei end_time failed: %w", err)
 	}
 
 	return startTime, endTime, nil
-}
-
-func parseTimeToInt64(value interface{}) (int64, error) {
-	switch val := value.(type) {
-	case int:
-		return int64(val), nil
-	case int32:
-		return int64(val), nil
-	case int64:
-		return val, nil
-	case float64:
-		return int64(val), nil
-	case string:
-		timeVal, err := strconv.ParseInt(val, 10, 64)
-		if err != nil {
-			return 0, err
-		}
-		return timeVal, nil
-	default:
-		return 0, fmt.Errorf("unsupported time type: %T", value)
-	}
 }
 
 // GetMonitorDataResp defines response of get monitor data.
