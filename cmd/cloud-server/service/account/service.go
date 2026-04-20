@@ -89,8 +89,8 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("ListSecretKey", http.MethodPost, "/accounts/secrets/list", svc.ListSecretKey)
 
 	// 根据资源类型批量查询二级账号元数据信息
-	h.Add("ListAccountByResType", http.MethodPost,
-		"/bizs/{bk_biz_id}/vendors/{vendor}/accounts/list/by/res_type", svc.ListAccountByResType)
+	h.Add("ListBizAccountByResType", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/accounts/list/by/res_type", svc.ListBizAccountByResType)
 
 	// 通过密钥获取账号权限策略
 	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",

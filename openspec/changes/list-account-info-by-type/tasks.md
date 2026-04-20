@@ -17,8 +17,7 @@
 - [x] 3.1 在 `cmd/cloud-server/service/account/info_by_type.go` 中实现 `ListAccountInfoByType` 入口函数：参数校验、业务访问权限校验
 - [x] 3.2 实现 `filterAuthorizedAccountIDs`：根据 type 从 typeCheckerMap 获取校验器，调用 filterAuthorizedIDs 过滤
 - [x] 3.3 实现 `batchGetAccountBaseInfo`：批量查询账号基本信息（name、bk_biz_id、managers 等）
-- [x] 3.4 实现 `getAccountExtensions`：根据 vendor 获取云厂商扩展字段（cloud_main_account_id 等）
-- [x] 3.5 实现 `buildAccountInfoByTypeDetails`：将账号基本信息和扩展字段组装为响应结构体
+- [x] 3.4 实现 `buildAccountInfoByTypeDetails`：将账号基本信息和扩展字段组装为响应结构体
 
 ## 4. 清理旧接口
 

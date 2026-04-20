@@ -104,14 +104,12 @@ func (c *subAccountSecretAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountID
 	vendor enumor.Vendor) ([]string, error) {
 
 	// 1. 分页查询满足条件的 sub_account 记录
-	filterExp := tools.ExpressionAnd(
-		tools.RuleIn("account_id", accountIDs),
-		tools.RuleJSONContains("bk_biz_ids", bizID),
-		tools.RuleEqual("vendor", string(vendor)),
-	)
-
 	subAccountReq := &core.ListReq{
-		Filter: filterExp,
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("account_id", accountIDs),
+			tools.RuleJSONContains("bk_biz_ids", bizID),
+			tools.RuleEqual("vendor", string(vendor)),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}

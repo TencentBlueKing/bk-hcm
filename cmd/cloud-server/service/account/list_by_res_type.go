@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListAccountByResType 根据资源类型批量查询二级账号元数据信息
-func (a *accountSvc) ListAccountByResType(cts *rest.Contexts) (interface{}, error) {
+// ListBizAccountByResType 业务下根据资源类型批量查询二级账号元数据信息
+func (a *accountSvc) ListBizAccountByResType(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountListByResTypeReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -113,25 +113,25 @@ func (a *accountSvc) getAccountDetails(kt *kit.Kit, authorizedIDs []string,
 	vendor enumor.Vendor) ([]proto.AccountInfoByTypeDetail, error) {
 
 	// 1. 批量查询账号基本信息
-	accountMap, err := a.batchGetAccountBaseInfo(kt, vendor, authorizedIDs)
+	accounts, err := a.batchGetAccountBaseInfo(kt, vendor, authorizedIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	// 2. 转换响应
-	return convAccountInfoByTypeDetails(accountMap, authorizedIDs), nil
+	return convAccountInfoByTypeDetails(accounts), nil
 }
 
 // batchGetAccountBaseInfo 批量查询账号基本信息
 func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, accountIDs []string) (
-	map[string]*dataproto.BaseAccountWithExtensionListResp, error) {
+	[]*dataproto.BaseAccountWithExtensionListResp, error) {
 
-	accountMap := make(map[string]*dataproto.BaseAccountWithExtensionListResp, len(accountIDs))
+	accounts := make([]*dataproto.BaseAccountWithExtensionListResp, 0)
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("id", accountIDs),
 			tools.RuleEqual("vendor", vendor)),
-		Page: &core.BasePage{Limit: 1000},
+		Page: core.NewDefaultBasePage(),
 	}
 
 	for {
@@ -142,7 +142,7 @@ func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, 
 		}
 
 		for _, detail := range resp.Details {
-			accountMap[detail.ID] = detail
+			accounts = append(accounts, detail)
 		}
 
 		if uint(len(resp.Details)) < listReq.Page.Limit {
@@ -151,49 +151,15 @@ func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, 
 		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
-	return accountMap, nil
-}
-
-// getAccountExtensions 获取云厂商扩展字段
-func (a *accountSvc) getAccountExtensions(kt *kit.Kit, accountIDs []string,
-	vendor enumor.Vendor) (map[string]map[string]interface{}, error) {
-
-	listReq := &dataproto.AccountListReq{
-		Filter: tools.ExpressionAnd(tools.RuleIn("id", accountIDs)),
-		Page:   core.NewDefaultBasePage(),
-	}
-
-	resp, err := a.client.DataService().Global.Account.ListWithExtension(
-		kt.Ctx, kt.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list account with extension failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	// 去除 SecretKey，仅保留主账号ID等扩展字段
-	secretKeyField := vendor.GetSecretField()
-	extensionMap := make(map[string]map[string]interface{}, len(resp.Details))
-	for _, detail := range resp.Details {
-		if _, ok := detail.Extension[secretKeyField]; ok {
-			delete(detail.Extension, secretKeyField)
-		}
-		extensionMap[detail.ID] = detail.Extension
-	}
-
-	return extensionMap, nil
+	return accounts, nil
 }
 
 // convAccountInfoByTypeDetails 将账号基本信息和扩展字段转换为响应结构体
-func convAccountInfoByTypeDetails(accountMap map[string]*dataproto.BaseAccountWithExtensionListResp,
-	authorizedIDs []string) []proto.AccountInfoByTypeDetail {
+func convAccountInfoByTypeDetails(accounts []*dataproto.BaseAccountWithExtensionListResp,
+) []proto.AccountInfoByTypeDetail {
 
-	details := make([]proto.AccountInfoByTypeDetail, 0, len(authorizedIDs))
-	for _, id := range authorizedIDs {
-		account, ok := accountMap[id]
-		if !ok {
-			continue
-		}
-
+	details := make([]proto.AccountInfoByTypeDetail, 0, len(accounts))
+	for _, account := range accounts {
 		details = append(details, proto.AccountInfoByTypeDetail{
 			ID:          account.ID,
 			Name:        account.Name,
