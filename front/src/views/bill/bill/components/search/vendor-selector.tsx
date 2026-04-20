@@ -27,7 +27,7 @@ export default defineComponent({
     watch(selectedValue, (val) => emit('update:modelValue', val), { deep: true });
 
     return () => (
-      <Select v-model={selectedValue.value} multiple multipleMode='tag' collapseTags clearable>
+      <Select v-model={selectedValue.value} multiple multipleMode='tag' collapseTags clearable filterable>
         {list.value.map(({ id, name }) => (
           <Select.Option key={id} id={id} name={name} />
         ))}

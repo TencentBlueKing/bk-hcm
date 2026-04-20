@@ -49,6 +49,7 @@ watchEffect(async () => {
     :id-key="'id'"
     :display-key="'name'"
     :loading="regionStore.regionListLoading"
+    filterable
     v-bind="attrs"
   />
 </template>

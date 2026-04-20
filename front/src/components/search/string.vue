@@ -49,6 +49,7 @@ const localModel = computed({
       :multiple="multiple"
       :multiple-mode="multiple ? 'tag' : 'default'"
       :collapse-tags="true"
+      filterable
     >
       <bk-option v-for="(name, id) in option" :key="id" :id="id" :name="name"></bk-option>
     </bk-select>

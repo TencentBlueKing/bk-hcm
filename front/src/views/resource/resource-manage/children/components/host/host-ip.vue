@@ -408,7 +408,7 @@ watch(
   >
     <template v-if="needNetwork">
       <span class="bind-title">选择网络接口</span>
-      <bk-select v-model="bindData.network_interface_id" class="mb20">
+      <bk-select v-model="bindData.network_interface_id" class="mb20" filterable>
         <bk-option
           v-for="(item, index) in networklist"
           :key="index"

@@ -55,6 +55,7 @@ export default defineComponent({
         multipleMode={props.multiple ? 'tag' : ''}
         collapseTags
         clearable
+        filterable
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isDataLoad.value}>

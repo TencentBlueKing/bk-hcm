@@ -218,7 +218,7 @@ export default defineComponent({
             default: () => (
               <Form formType='vertical'>
                 <FormItem label='所属一级账号'>
-                  <Select v-model={formModel.root_account_id} clearable={false}>
+                  <Select v-model={formModel.root_account_id} clearable={false} filterable>
                     {rootAccountList.value
                       .filter(({ vendor }) => info.value.vendor === vendor)
                       .map(({ name, id, key }) => (
