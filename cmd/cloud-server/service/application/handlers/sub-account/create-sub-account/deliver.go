@@ -88,15 +88,18 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	}
 	syncErr := a.syncSubAccountDetailAndFlags(subAccountID, cloudResult, parAccount)
 	if syncErr != nil {
-		logs.Warnf("sub account created (uin=%s) but sync detail/flags failed (non-blocking), err: %v, rid: %s",
+		logs.Errorf("sub account created (uin=%s) but sync detail failed, err: %v, rid: %s",
 			cloudID, syncErr, a.Cts.Kit.Rid)
+		return enumor.DeliverError,
+			map[string]interface{}{"error": fmt.Sprintf("sync sub account detail failed, err: %v", syncErr),
+				"cloud_id": cloudID}, syncErr
 	}
 
 	if err := a.sendSubAccountMail(&cloudResult.TCloudCreateSubAccountResult); err != nil {
-		logs.Errorf("cloud sub account created (uin=%s) but send secret mail failed, err: %v, rid: %s",
+		logs.Errorf("cloud sub account created (uin=%s) but send sub account mail failed, err: %v, rid: %s",
 			cloudID, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError,
-			map[string]interface{}{"error": fmt.Sprintf("send secret mail failed, err: %v", err),
+			map[string]interface{}{"error": fmt.Sprintf("send sub account mail failed, err: %v", err),
 				"cloud_id": cloudID}, err
 	}
 
@@ -155,6 +158,11 @@ func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto
 func (a *ApplicationOfCreateSubAccount) syncSubAccountDetailAndFlags(subAccountID string,
 	cloudResult *tcloudCreateCloudResult, account *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
 ) error {
+
+	if subAccountID == "" {
+		logs.Errorf("sub account id is empty, name=%s, rid: %s", a.req.Name, a.Cts.Kit.Rid)
+		return fmt.Errorf("sub account id is empty")
+	}
 
 	uin := converter.PtrToVal(cloudResult.Uin)
 	subAccounts, err := a.Client.HCService().TCloud.Account.DescribeSubAccounts(
@@ -319,7 +327,9 @@ func (a *ApplicationOfCreateSubAccount) updateSubAccountWithDetail(subAccountID 
 	err = a.Client.DataService().Global.SubAccount.BatchUpdate(
 		a.Cts.Kit,
 		&dssubaccount.UpdateReq{
-			Items: []dssubaccount.UpdateField{{ID: subAccountID, Extension: &extBytes}},
+			Items: []dssubaccount.UpdateField{
+				{ID: subAccountID, Extension: &extBytes},
+			},
 		},
 	)
 	if err != nil {

@@ -117,7 +117,7 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 
 func getSyncOrder() []enumor.CloudResourceType {
 	return []enumor.CloudResourceType{
-		// 需要先同步SubAccount信息，再同步其他资源，否则可能会漏掉某些三级账号的资源同步
+		// 支持用户在海垒只管理账号信息，防止用户只开了云账号的云上API，全流程没同步完影响到了账号的同步
 		enumor.SubAccountCloudResType,
 		enumor.DiskCloudResType,
 		enumor.VpcCloudResType,
