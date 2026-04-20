@@ -48,7 +48,7 @@ func (opt SyncAccountOption) Validate() error {
 }
 
 // Account syncs a single TCloud second-level account (资源账号) cloud info to DB.
-// It updates email, cloud_created_at, LoginFlag, ActionFlag, and account secret status.
+// It updates LoginFlag, ActionFlag, and account secret status.
 func (cli *client) Account(kt *kit.Kit, opt *SyncAccountOption) (*SyncResult, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

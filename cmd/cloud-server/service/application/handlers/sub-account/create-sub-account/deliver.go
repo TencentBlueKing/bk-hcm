@@ -57,20 +57,22 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 			map[string]interface{}{"error": fmt.Sprintf("decode tcloud extension failed, err: %v", err)}, err
 	}
 
+	// Step 1: 先在云上创建账号，并保存云上的base信息
 	cloudResult, err := a.createTCloudSubAccountInCloud(ext)
 	if err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{"error": fmt.Sprintf("create cloud sub account failed, err: %v", err)}, err
 	}
 
-	parentAccount, err := a.Client.DataService().TCloud.Account.Get(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.req.AccountID)
+	parAccount, err := a.Client.DataService().TCloud.Account.Get(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.req.AccountID)
 	if err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{"error": fmt.Sprintf("get parent account failed, err: %v", err)}, err
 	}
 
+	// Step 2: 先保存子账号的本地基础（云上信息），避免后续流程失败，丢失账号的重要信息
 	cloudID := strconv.FormatUint(converter.PtrToVal(cloudResult.Uin), 10)
-	subAccountIDs, accountID, err := a.saveLocalSubAccount(cloudResult, ext, parentAccount)
+	subAccountIDs, accountID, err := a.saveCloudSubAccountBasicInfo(cloudResult, ext, parAccount)
 	if err != nil {
 		logs.Errorf("cloud sub account created (uin=%s) but local persistence failed, err: %v, rid: %s", cloudID,
 			err, a.Cts.Kit.Rid)
@@ -79,7 +81,18 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 				"cloud_id": converter.PtrToVal(cloudResult.Uin)}, err
 	}
 
-	if err := a.sendSubAccountMail(cloudResult); err != nil {
+	// Step 3: 同步补充子账号信息（云上创建时间、登陆标志、操作标志）到本地
+	var subAccountID string
+	if len(subAccountIDs) > 0 {
+		subAccountID = subAccountIDs[0]
+	}
+	syncErr := a.syncSubAccountDetailAndFlags(subAccountID, cloudResult, parAccount)
+	if syncErr != nil {
+		logs.Warnf("sub account created (uin=%s) but sync detail/flags failed (non-blocking), err: %v, rid: %s",
+			cloudID, syncErr, a.Cts.Kit.Rid)
+	}
+
+	if err := a.sendSubAccountMail(&cloudResult.TCloudCreateSubAccountResult); err != nil {
 		logs.Errorf("cloud sub account created (uin=%s) but send secret mail failed, err: %v, rid: %s",
 			cloudID, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError,
@@ -92,15 +105,13 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	}, nil
 }
 
-// tcloudCreateCloudResult aggregates cloud API results during sub account creation.
+// tcloudCreateCloudResult aggregates cloud account basic info during sub account creation.
 type tcloudCreateCloudResult struct {
 	hssubaccount.TCloudCreateSubAccountResult
-	SafeAuth   *typeaccount.SafeAuthFlagCollResult
 	CreateTime *string
 }
 
-// createTCloudSubAccountInCloud creates the subaccount on Tencent Cloud, queries its detail
-// and best-effort loads safe auth flags.
+// createTCloudSubAccountInCloud creates the subaccount on Tencent Cloud, returns basic cloud info.
 func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto.TCloudSubAccountAddExtension,
 ) (*tcloudCreateCloudResult, error) {
 
@@ -132,44 +143,54 @@ func (a *ApplicationOfCreateSubAccount) createTCloudSubAccountInCloud(ext *proto
 		return nil, fmt.Errorf("set mfa flag for sub account (%s) failed, err: %v", a.req.Name, err)
 	}
 
+	result := &tcloudCreateCloudResult{
+		TCloudCreateSubAccountResult: converter.PtrToVal(cloudResult),
+	}
+
+	return result, nil
+}
+
+// syncSubAccountDetailAndFlags syncs sub account detail and safe auth flags from cloud to local DB.
+// This is a best-effort operation and should not block the main flow.
+func (a *ApplicationOfCreateSubAccount) syncSubAccountDetailAndFlags(subAccountID string,
+	cloudResult *tcloudCreateCloudResult, account *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
+) error {
+
+	uin := converter.PtrToVal(cloudResult.Uin)
 	subAccounts, err := a.Client.HCService().TCloud.Account.DescribeSubAccounts(
-		a.Cts.Kit,
-		&hssubaccount.TCloudDescribeSubAccountsReq{AccountID: a.req.AccountID, SubUin: []uint64{uin}},
+		a.Cts.Kit, &hssubaccount.TCloudDescribeSubAccountsReq{AccountID: a.req.AccountID, SubUin: []uint64{uin}},
 	)
 	if err != nil {
 		logs.Errorf("describe sub accounts for sub account (%s) failed, err: %v, rid: %s",
 			a.req.Name, err, a.Cts.Kit.Rid)
-		return nil, fmt.Errorf("describe sub accounts for sub account (%s) failed, err: %v", a.req.Name, err)
+		return fmt.Errorf("describe sub accounts failed, err: %v", err)
 	}
 	if len(subAccounts) != 1 {
 		logs.Errorf("sub account count is not 1, uin=%d, name=%s, count=%d, rid: %s",
 			uin, a.req.Name, len(subAccounts), a.Cts.Kit.Rid)
-		return nil, fmt.Errorf("sub account count is not 1, uin=%d, name=%s, count=%d",
-			uin, a.req.Name, len(subAccounts))
+		return fmt.Errorf("sub account count is not 1, got %d", len(subAccounts))
 	}
 
+	cloudResult.CreateTime = subAccounts[0].CreateTime
 	safeAuthFlags, err := a.Client.HCService().TCloud.Account.DescribeSafeAuthFlagColl(
 		a.Cts.Kit, &hssubaccount.TCloudDescribeSafeAuthFlagCollReq{AccountID: a.req.AccountID, SubUins: []uint64{uin}},
 	)
 	if err != nil {
-		logs.Errorf("sub account created (uin=%d, name=%s) but get safe auth flag failed, err: %v, rid: %s",
+		logs.Errorf("get safe auth flag failed for sub account (uin=%d, name=%s), err: %v, rid: %s",
 			uin, a.req.Name, err, a.Cts.Kit.Rid)
-		return nil, fmt.Errorf("get safe auth flag failed, err: %v", err)
+		return fmt.Errorf("get safe auth flag failed, err: %v", err)
 	}
 	if len(safeAuthFlags) != 1 {
 		logs.Errorf("safe auth flag result count is not 1, uin=%d, name=%s, count=%d, rid: %s",
 			uin, a.req.Name, len(safeAuthFlags), a.Cts.Kit.Rid)
-		return nil, fmt.Errorf("safe auth flag result count is not 1, got %d", len(safeAuthFlags))
-	}
-	safeAuthFlag := &safeAuthFlags[0]
-
-	result := &tcloudCreateCloudResult{
-		TCloudCreateSubAccountResult: converter.PtrToVal(cloudResult),
-		SafeAuth:                     safeAuthFlag,
-		CreateTime:                   subAccounts[0].CreateTime,
+		return fmt.Errorf("safe auth flag result count is not 1, got %d", len(safeAuthFlags))
 	}
 
-	return result, nil
+	if err := a.updateSubAccountWithDetail(subAccountID, cloudResult, &safeAuthFlags[0], account); err != nil {
+		return fmt.Errorf("update sub account with detail failed, err: %v", err)
+	}
+
+	return nil
 }
 
 func (a *ApplicationOfCreateSubAccount) registerAccountForTCloud(cloudID string, createResult *tcloudCreateCloudResult,
@@ -203,7 +224,10 @@ func (a *ApplicationOfCreateSubAccount) registerAccountForTCloud(cloudID string,
 	return result.ID, nil
 }
 
-func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudCreateCloudResult,
+// saveCloudSubAccountBasicInfo saves the basic cloud sub account info to local DB.
+// It creates the sub_account record and registers the account. This should succeed,
+// otherwise the cloud account becomes orphaned.
+func (a *ApplicationOfCreateSubAccount) saveCloudSubAccountBasicInfo(cloudResult *tcloudCreateCloudResult,
 	ext *proto.TCloudSubAccountAddExtension,
 	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension],
 ) ([]string, string, error) {
@@ -214,23 +238,10 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 		return nil, "", fmt.Errorf("extension is required")
 	}
 
-	var loginProt, actionProt *enumor.AccountProtectionFlag
-	if cloudResult.SafeAuth != nil {
-		if cloudResult.SafeAuth.LoginFlag != nil {
-			loginProt = cloudResult.SafeAuth.LoginFlag.ToProtectionFlag()
-		}
-		if cloudResult.SafeAuth.ActionFlag != nil {
-			actionProt = cloudResult.SafeAuth.ActionFlag.ToProtectionFlag()
-		}
-	}
-
 	tCloudExt := &coresubaccount.TCloudExtension{
 		CloudMainAccountID: parentAccount.Extension.CloudMainAccountID,
 		Uin:                cloudResult.Uin,
 		NickName:           cloudResult.Name,
-		CreateTime:         cloudResult.CreateTime,
-		LoginFlag:          loginProt,
-		ActionFlag:         actionProt,
 		ConsoleLogin:       ext.ConsoleLogin,
 	}
 	extBytes, err := core.MarshalStruct(tCloudExt)
@@ -273,7 +284,52 @@ func (a *ApplicationOfCreateSubAccount) saveLocalSubAccount(cloudResult *tcloudC
 	return createResult.IDs, accountID, nil
 }
 
-func (a *ApplicationOfCreateSubAccount) sendSubAccountMail(result *tcloudCreateCloudResult) error {
+// updateSubAccountWithDetail updates the sub account with detail info and safe auth flags.
+func (a *ApplicationOfCreateSubAccount) updateSubAccountWithDetail(subAccountID string,
+	cloudResult *tcloudCreateCloudResult, safeAuth *typeaccount.SafeAuthFlagCollResult,
+	account *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension]) error {
+
+	if subAccountID == "" {
+		return fmt.Errorf("subAccountID is required for update")
+	}
+
+	var loginProt, actionProt *enumor.AccountProtectionFlag
+	if safeAuth != nil {
+		if safeAuth.LoginFlag != nil {
+			loginProt = safeAuth.LoginFlag.ToProtectionFlag()
+		}
+		if safeAuth.ActionFlag != nil {
+			actionProt = safeAuth.ActionFlag.ToProtectionFlag()
+		}
+	}
+
+	tCloudExt := &coresubaccount.TCloudExtension{
+		CloudMainAccountID: account.Extension.CloudMainAccountID,
+		Uin:                cloudResult.Uin,
+		NickName:           cloudResult.Name,
+		CreateTime:         cloudResult.CreateTime,
+		LoginFlag:          loginProt,
+		ActionFlag:         actionProt,
+	}
+	extBytes, err := core.MarshalStruct(tCloudExt)
+	if err != nil {
+		return fmt.Errorf("marshal extension failed, err: %v", err)
+	}
+
+	err = a.Client.DataService().Global.SubAccount.BatchUpdate(
+		a.Cts.Kit,
+		&dssubaccount.UpdateReq{
+			Items: []dssubaccount.UpdateField{{ID: subAccountID, Extension: &extBytes}},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("update sub account failed, err: %v", err)
+	}
+
+	return nil
+}
+
+func (a *ApplicationOfCreateSubAccount) sendSubAccountMail(result *hssubaccount.TCloudCreateSubAccountResult) error {
 	if a.req.ReceiveEmail == "" {
 		logs.Errorf("send secret mail failed, receive email is empty, rid: %s", a.Cts.Kit.Rid)
 		return fmt.Errorf("send secret mail failed, receive email is empty")

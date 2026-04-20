@@ -123,7 +123,7 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 	for id := range updateMap {
 		subAccountIDs = append(subAccountIDs, id)
 	}
-	locSubAccountMap, err := cli.listSubAccountByIDMap(kt, opt, subAccountIDs)
+	locSubAccountMap, err := cli.listSubAccountByID(kt, opt, subAccountIDs)
 	if err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func (cli *client) buildSubAccountExtension(dbAccount *protocloud.AccountGetResu
 	}
 }
 
-func (cli *client) listSubAccountByIDMap(kt *kit.Kit, opt *SyncSubAccountOption,
+func (cli *client) listSubAccountByID(kt *kit.Kit, opt *SyncSubAccountOption,
 	subAccountIDs []string) (map[string]coresubaccount.SubAccount[coresubaccount.TCloudExtension], error) {
 
 	if len(subAccountIDs) == 0 {

@@ -106,7 +106,7 @@ func (cli *client) listSubAccountSecretFromCloud(kt *kit.Kit, opt *SyncSubAccoun
 
 		if subAccount.AccountType == string(enumor.MainAccount) {
 			logs.Warnf("[%s] sub account %s is main account, skip listing access keys, account: %s, rid: %s",
-				subAccount.ID, opt.AccountID, kt.Rid)
+				enumor.TCloud, subAccount.ID, opt.AccountID, kt.Rid)
 			continue
 		}
 
