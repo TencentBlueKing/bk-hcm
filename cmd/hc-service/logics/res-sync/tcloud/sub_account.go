@@ -79,20 +79,21 @@ func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResu
 	addSlice, updateMap, delCloudIDs := common.Diff[account.TCloudAccountWithExt,
 		coresubaccount.SubAccount[coresubaccount.TCloudExtension]](fromCloud, fromDB, isSubAccountChange)
 
-	parAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	// 获取三级账号的二级账号
+	parentAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
 	if err != nil {
 		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	if len(delCloudIDs) > 0 {
-		if err = cli.deleteSubAccount(kt, opt, parAccount.Extension.CloudMainAccountID, delCloudIDs); err != nil {
+		if err = cli.deleteSubAccount(kt, opt, parentAccount.Extension.CloudMainAccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createSubAccount(kt, parAccount, addSlice); err != nil {
+		if err = cli.createSubAccount(kt, parentAccount, addSlice); err != nil {
 			return nil, err
 		}
 	}
@@ -113,7 +114,8 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 		return errors.New("updateMap is required")
 	}
 
-	parAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	// 获取三级账号的二级账号
+	parentAccount, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
 	if err != nil {
 		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -136,8 +138,8 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 		}
 
 		accountType := ""
-		if parAccount.Extension.CloudSubAccountID != "" &&
-			parAccount.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+		if parentAccount.Extension.CloudSubAccountID != "" &&
+			parentAccount.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
 			accountType = string(enumor.CurrentAccount)
 		}
 
@@ -151,8 +153,8 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			ID:             id,
 			Name:           converter.PtrToVal(one.Name),
 			Vendor:         enumor.TCloud,
-			Site:           parAccount.Site,
-			AccountID:      parAccount.ID,
+			Site:           parentAccount.Site,
+			AccountID:      parentAccount.ID,
 			AccountType:    accountType,
 			Extension:      &ext,
 			Email:          one.Email,
@@ -166,7 +168,7 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 
 		// 如果DB中子账号没有业务ID，则需要继承主账号的业务ID
 		if len(locSubAccount.BkBizIDs) == 0 {
-			tmpRes.BkBizIDs = types.Int64Array{parAccount.BkBizID}
+			tmpRes.BkBizIDs = types.Int64Array{parentAccount.BkBizID}
 		}
 
 		updateItems = append(updateItems, tmpRes)
