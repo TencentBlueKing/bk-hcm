@@ -333,8 +333,8 @@ func (a *PolicyLibraryApplier) ApplyUpdate(kt *kit.Kit, vendor enumor.Vendor, li
 	*proto.ApplyPermissionPolicyLibraryUpdateResult, error) {
 
 	if err := a.CheckPermTmplUpdatability(kt, vendor, templateIDs, libraryID); err != nil {
-		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %w",
-			libraryID, templateIDs, err)
+		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %v, rid: %s",
+			libraryID, templateIDs, err, kt.Rid)
 		return nil, err
 	}
 
@@ -364,8 +364,8 @@ func (a *PolicyLibraryApplier) ApplyUpdateWithTmplInfo(kt *kit.Kit, vendor enumo
 	templateIDs []string, tmplInfo UpdateTmplBaseInfo) (*proto.ApplyPermissionPolicyLibraryUpdateResult, error) {
 
 	if err := a.CheckPermTmplUpdatability(kt, vendor, templateIDs, libraryID); err != nil {
-		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %v",
-			libraryID, templateIDs, err)
+		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %v, rid: %s",
+			libraryID, templateIDs, err, kt.Rid)
 		return nil, err
 	}
 

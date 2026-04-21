@@ -63,8 +63,8 @@ func (a *ApplicationOfUpdatePermTemplate) CheckReq() error {
 
 	err = a.CheckPermTmplUpdatability(a.Cts.Kit, a.Vendor(), []string{a.content.ID}, a.content.PolicyLibraryID)
 	if err != nil {
-		logs.Errorf("check permission template updatability failed, libraryID: %s, templateID: %s, err: %v", library.ID,
-			a.content.ID, err)
+		logs.Errorf("check permission template updatability failed, libraryID: %s, templateID: %s, err: %v, rid: %s",
+			library.ID, a.content.ID, err, a.Cts.Kit.Rid)
 		return err
 	}
 
