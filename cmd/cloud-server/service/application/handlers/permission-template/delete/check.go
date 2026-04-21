@@ -82,7 +82,7 @@ func (a *ApplicationOfDeletePermTemplate) checkSubAccountCount(templateID string
 
 	countResult, err := a.Client.DataService().Global.SubAccount.List(kt, &core.ListReq{
 		Filter: tools.ExpressionAnd(tools.RuleJSONContains("permission_template_ids", templateID)),
-		Page:   &core.BasePage{Count: true},
+		Page:   core.NewCountPage(),
 	})
 	if err != nil {
 		logs.Errorf("count sub accounts linked to template failed, templateID: %s, err: %v, rid: %s", templateID, err,

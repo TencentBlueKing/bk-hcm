@@ -24,6 +24,7 @@ import (
 	"regexp"
 )
 
+// nameRegexp 权限模版命名正则表达式，只能包含英文字母、数字和-_
 var nameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // ValidatePermTmplName 验证权限模板名称
