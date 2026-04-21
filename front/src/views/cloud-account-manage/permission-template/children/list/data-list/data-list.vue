@@ -10,7 +10,7 @@ import {
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { VendorEnum } from '@/common/constant';
+import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { AUTH_UPDATE_PERMISSION_TEMPLATE, AUTH_DELETE_PERMISSION_TEMPLATE } from '@/constants/auth-symbols';
 import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
@@ -90,7 +90,7 @@ const afterAssociatedSubAccountPopoverShow = async (_$event: any, row: IPermissi
             :value="row.cloud_account_id"
             :biz-id="bizId"
             :vendor="currentVendor"
-            res-type="permission_template"
+            :res-type="SecondaryAccountResourceTypeEnum.TEMPLATE"
           />
         </template>
         <template v-else-if="column.id === 'associated_sub_account_count'">

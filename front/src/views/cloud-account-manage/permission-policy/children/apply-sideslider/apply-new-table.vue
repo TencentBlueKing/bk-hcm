@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ISelectableAccount } from '../../typings';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
@@ -12,7 +12,9 @@ const props = defineProps<{
 
 const bizId = computed(() => props.bizId);
 const vendor = computed(() => props.vendor);
-const resType = computed(() => (bizId.value ? 'sub_account' : 'permission_policy_library'));
+const resType = computed(() =>
+  bizId.value ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
+);
 
 // 已选账号列表
 const selectedAccounts = ref<{ account_id: string }[]>([]);

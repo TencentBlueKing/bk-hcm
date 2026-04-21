@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { ApplyOperationType, type IAppliedReasonItem } from '../../typings';
 import usePage from '@/hooks/use-page';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
+import { SecondaryAccountResourceTypeEnum } from '@/common/constant';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -14,7 +15,9 @@ const props = defineProps<{
 }>();
 
 const tableData = computed(() => [...props.data]);
-const resType = computed(() => (props.bizId ? 'sub_account' : 'permission_policy_library'));
+const resType = computed(() =>
+  props.bizId ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
+);
 
 const isLoading = ref(false);
 const { pagination } = usePage();

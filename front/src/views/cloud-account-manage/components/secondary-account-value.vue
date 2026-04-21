@@ -16,7 +16,7 @@ const localValue = computed(() => {
 const displayValue = computed(() => {
   const names = localValue.value.map((id) => {
     // 每次从全局store中查询获取
-    const account = cloudAccountStore.allSecondaryAccountCacheList.get(`${id}@${resType.value}`);
+    const account = cloudAccountStore.allSecondaryAccountCacheList.get(`${id}@${resType.value}@${bizId.value}`);
     if (!account) {
       return `${id} (--)`;
     }
@@ -26,12 +26,12 @@ const displayValue = computed(() => {
 });
 const vendor = computed(() => props.vendor);
 const resType = computed(() => props.resType);
-const bizId = computed(() => props.bizId);
+const bizId = computed(() => props.bizId || 0);
 
 const cloudAccountStore = useCloudAccountStore();
 
 const combineRequest = CombineRequest.setup(Symbol.for('secondary-account-value'), (params: any[]) => {
-  params.map(([accountIds, vendor, resType, bizId]) => {
+  params.forEach(([accountIds, vendor, resType, bizId]) => {
     const uniqueIds = [...new Set((accountIds as string[][]).reduce((acc, cur) => acc.concat(cur), []))];
     return cloudAccountStore.getSecondaryAccountListByAccountIds(uniqueIds, vendor, resType, bizId);
   });

@@ -6,7 +6,7 @@ import usePage from '@/hooks/use-page';
 import ModelInfoDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/info.vue';
 import PolicyDiffDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/diff.vue';
 import { IPermissionAppliedItem } from '@/store/cloud-account-manage/permission-policy';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
@@ -18,7 +18,9 @@ const props = defineProps<{
 
 const bizId = computed(() => props.bizId);
 const vendor = computed(() => props.vendor);
-const resType = computed(() => (bizId.value ? 'sub_account' : 'permission_policy_library'));
+const resType = computed(() =>
+  bizId.value ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
+);
 
 const tableData = computed(() => [...props.list]);
 const isLoading = ref(false);

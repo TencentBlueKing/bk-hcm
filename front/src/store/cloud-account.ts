@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
 import { IListResData, QueryBuilderType, QueryFilterType } from '@/typings';
-import { VendorEnum } from '@/common/constant';
+import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { enableCount, resolveBizApiPath } from '@/utils/search';
 import rollRequest from '@blueking/roll-request';
 import {
@@ -188,30 +188,30 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
    * 根据账号ID获取二级账号列表，带缓存
    * @param accountIds 账号ID列表
    * @param vendor 云厂商
-   * @param res_type 资源类型：permission_policy_library | sub_account | sub_account_secret | permission_template
+   * @param resType 资源类型：permission_policy_library | sub_account | sub_account_secret | permission_template
    * @param bizId 业务ID
    */
   const getSecondaryAccountListByAccountIds = async (
     accountIds: string[],
     vendor: VendorEnum,
-    res_type: string,
+    resType: SecondaryAccountResourceTypeEnum,
     bizId: number,
   ) => {
     const api = `/api/v1/cloud/${resolveBizApiPath(bizId)}vendors/${vendor}/accounts/list/by/res_type`;
     const cachedIds = allSecondaryAccountCacheList.value.keys();
     const cachedIdSet = new Set(cachedIds);
-    const newIds = accountIds.filter((id) => !cachedIdSet.has(`${id}@${res_type}`));
+    const newIds = accountIds.filter((id) => !cachedIdSet.has(`${id}@${resType}@${bizId}`));
     if (newIds.length > 0) {
       const res = await http.post(api, {
         ids: newIds,
-        res_type,
+        res_type: resType,
       });
       const list = res?.data?.details ?? [];
       for (const item of list) {
-        allSecondaryAccountCacheList.value.set(`${item.id}@${res_type}`, item);
+        allSecondaryAccountCacheList.value.set(`${item.id}@${resType}@${bizId}`, item);
       }
     }
-    return accountIds.map((id) => allSecondaryAccountCacheList.value.get(`${id}@${res_type}`)).filter(Boolean);
+    return accountIds.map((id) => allSecondaryAccountCacheList.value.get(`${id}@${resType}@${bizId}`)).filter(Boolean);
   };
 
   /**
