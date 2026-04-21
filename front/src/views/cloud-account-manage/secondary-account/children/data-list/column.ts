@@ -69,6 +69,14 @@ export class TableColumn {
     index: 7,
     width: 130,
     sort: true,
+    meta: {
+      search: {
+        props: {
+          searchField: 'extension.cloud_main_account_id', // 路由查询关联字段-目标文件
+          valueField: 'extension.cloud_main_account_id', // 路由查询值-本文件
+        },
+      },
+    },
   })
   sub_account_count: number;
 
@@ -77,6 +85,14 @@ export class TableColumn {
     index: 8,
     width: 80,
     sort: true,
+    meta: {
+      search: {
+        props: {
+          searchField: 'cloud_main_account_id', // 路由查询关联字段-目标文件
+          valueField: 'extension.cloud_main_account_id', // 路由查询值-本文件
+        },
+      },
+    },
   })
   account_secret_count: number;
 

@@ -56,6 +56,12 @@ const isPendingItem = (item: ISubAccountItem) => {
 const pendingList = computed(() => fullList.value.filter(isPendingItem));
 const pendingCount = computed(() => pendingList.value.length);
 
+const enrichList = (list: ISubAccountItem[]) =>
+  list.map((item) => ({
+    ...item,
+    permission_template_count: item.permission_templates?.length ?? 0, // 额外字段用于排序
+  }));
+
 const updateTableData = () => {
   let list = [...fullList.value];
   if (sortParams.value.sort) {
@@ -137,13 +143,13 @@ const loadFullList = async () => {
       currentVendor.value,
       vendorFilter,
       (progressList, count) => {
-        fullList.value = progressList;
+        fullList.value = enrichList(progressList);
         pagination.count = count;
         updateTableData();
       },
     );
 
-    fullList.value = list;
+    fullList.value = enrichList(list);
     pagination.count = list.length;
     updateTableData();
   } catch (error) {
