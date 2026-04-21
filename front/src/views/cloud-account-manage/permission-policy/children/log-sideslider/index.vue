@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { ApplyOperationType, type IAppliedReasonItem } from '../../typings';
 import usePage from '@/hooks/use-page';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -9,9 +10,12 @@ const model = defineModel<boolean>();
 const props = defineProps<{
   data: IAppliedReasonItem[];
   type: ApplyOperationType;
+  bizId: number;
 }>();
 
 const tableData = computed(() => [...props.data]);
+const resType = computed(() => (props.bizId ? 'sub_account' : 'permission_policy_library'));
+
 const isLoading = ref(false);
 const { pagination } = usePage();
 
@@ -51,7 +55,12 @@ const handleCancel = () => {
         >
           <bk-table-column :label="type === ApplyOperationType.APPLY_NEW ? '二级账号' : '权限模版ID'">
             <template #default="{ row }">
-              {{ type === ApplyOperationType.APPLY_NEW ? row.account_id : row.permission_template_id }}
+              <SecondaryAccountValue
+                v-if="type === ApplyOperationType.APPLY_NEW"
+                :value="row.account_id"
+                :res-type="resType"
+              />
+              <span v-else>{{ row.permission_template_id }}</span>
             </template>
           </bk-table-column>
           <bk-table-column label="策略库应用状态">

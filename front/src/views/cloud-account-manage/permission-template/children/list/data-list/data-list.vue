@@ -86,7 +86,12 @@ const afterAssociatedSubAccountPopoverShow = async (_$event: any, row: IPermissi
           <bk-button theme="primary" text @click="emit('view-details', row)">{{ row.name || '--' }}</bk-button>
         </template>
         <template v-else-if="column.id === 'cloud_account_id'">
-          <SecondaryAccountValue :value="row.cloud_account_id" :biz-id="bizId" />
+          <SecondaryAccountValue
+            :value="row.cloud_account_id"
+            :biz-id="bizId"
+            :vendor="currentVendor"
+            res-type="permission_template"
+          />
         </template>
         <template v-else-if="column.id === 'associated_sub_account_count'">
           <bk-popover

@@ -213,9 +213,17 @@ watch(
               v-if="operationType === ApplyOperationType.APPLY_NEW"
               ref="applyNewTableRef"
               :list="unAppliedList"
-              :policy-id="policyData?.id || ''"
+              :biz-id="bizId"
+              :vendor="currentVendor"
             />
-            <UpdateAppliedTable v-else ref="updateAppliedTableRef" :list="appliedList" :policy-data="policyData" />
+            <UpdateAppliedTable
+              v-else
+              ref="updateAppliedTableRef"
+              :list="appliedList"
+              :policy-data="policyData"
+              :biz-id="bizId"
+              :vendor="currentVendor"
+            />
           </div>
         </bk-card>
       </div>

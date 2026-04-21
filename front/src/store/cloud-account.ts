@@ -3,8 +3,7 @@ import { defineStore } from 'pinia';
 import http from '@/http';
 import { IListResData, QueryBuilderType, QueryFilterType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
-import { QueryRuleOPEnum } from '@/typings/common';
-import { enableCount } from '@/utils/search';
+import { enableCount, resolveBizApiPath } from '@/utils/search';
 import rollRequest from '@blueking/roll-request';
 import {
   USE_MOCK,
@@ -188,33 +187,31 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
   /**
    * 根据账号ID获取二级账号列表，带缓存
    * @param accountIds 账号ID列表
+   * @param vendor 云厂商
+   * @param res_type 资源类型：permission_policy_library | sub_account | sub_account_secret | permission_template
    * @param bizId 业务ID
    */
-  const getSecondaryAccountListByAccountIds = async (accountIds: string[], bizId: number) => {
-    const api = `/api/v1/cloud/bizs/${bizId}/accounts/list`;
+  const getSecondaryAccountListByAccountIds = async (
+    accountIds: string[],
+    vendor: VendorEnum,
+    res_type: string,
+    bizId: number,
+  ) => {
+    const api = `/api/v1/cloud/${resolveBizApiPath(bizId)}vendors/${vendor}/accounts/list/by/res_type`;
     const cachedIds = allSecondaryAccountCacheList.value.keys();
     const cachedIdSet = new Set(cachedIds);
-    const newIds = accountIds.filter((id) => !cachedIdSet.has(id));
+    const newIds = accountIds.filter((id) => !cachedIdSet.has(`${id}@${res_type}`));
     if (newIds.length > 0) {
-      const list = await rollRequest({
-        httpClient: http,
-        pageEnableCountKey: 'count',
-      }).rollReqUseCount<ISecondaryAccountItem>(
-        api,
-        {
-          filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: newIds }] },
-        },
-        {
-          limit: 500,
-          countGetter: (res) => res.data.count,
-          listGetter: (res) => res.data.details,
-        },
-      );
+      const res = await http.post(api, {
+        ids: newIds,
+        res_type,
+      });
+      const list = res?.data?.details ?? [];
       for (const item of list) {
-        allSecondaryAccountCacheList.value.set(item.id, item);
+        allSecondaryAccountCacheList.value.set(`${item.id}@${res_type}`, item);
       }
     }
-    return accountIds.map((id) => allSecondaryAccountCacheList.value.get(id)).filter(Boolean);
+    return accountIds.map((id) => allSecondaryAccountCacheList.value.get(`${id}@${res_type}`)).filter(Boolean);
   };
 
   /**

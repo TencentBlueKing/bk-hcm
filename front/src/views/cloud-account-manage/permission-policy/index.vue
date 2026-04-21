@@ -258,7 +258,7 @@ const handleReset = () => {
     <ApplySideslider v-model="showApplySideslider" :policy-data="currentApplyPolicy" @success="handleApplySuccess" />
 
     <!-- 应用成功后弹出得账号列表查看应用日志 -->
-    <LogSideslider v-model="showLogSideslider" :data="applyReason" :type="operationType" />
+    <LogSideslider v-model="showLogSideslider" :data="applyReason" :type="operationType" :biz-id="bizId" />
 
     <!-- 详情侧栏 -->
     <PolicyInfoSideslider

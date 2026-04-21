@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import JSON from '@/views/cloud-account-manage/components/json.vue';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 interface IProps {
   show: boolean;
@@ -8,6 +9,7 @@ interface IProps {
   accountId: string;
   id: string;
   name: string;
+  resType: string;
 }
 
 const props = withDefaults(defineProps<IProps>(), {
@@ -21,6 +23,7 @@ const props = withDefaults(defineProps<IProps>(), {
 const emit = defineEmits(['close']);
 
 const show = computed(() => props.show);
+const resType = computed(() => props.resType);
 
 const handleClose = () => {
   emit('close');
@@ -35,7 +38,10 @@ const handleClose = () => {
     class="model-info-dialog"
     @closed="handleClose"
   >
-    <div class="model-info-item">二级账号: {{ props.accountId }}</div>
+    <div class="model-info-item">
+      二级账号:
+      <SecondaryAccountValue :value="props.accountId" :res-type="resType" />
+    </div>
     <div class="model-info-item">模板名称: {{ props.name }}</div>
     <div class="model-info-item">云上策略ID: {{ props.id }}</div>
     <div class="model-info-json">

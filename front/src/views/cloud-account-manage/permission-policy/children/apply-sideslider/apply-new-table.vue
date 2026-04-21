@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { ISelectableAccount } from '../../typings';
+import { VendorEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
   list: string[];
+  bizId: number;
+  vendor: VendorEnum;
 }>();
+
+const bizId = computed(() => props.bizId);
+const vendor = computed(() => props.vendor);
+const resType = computed(() => (bizId.value ? 'sub_account' : 'permission_policy_library'));
 
 // 已选账号列表
 const selectedAccounts = ref<{ account_id: string }[]>([]);
@@ -74,7 +82,9 @@ defineExpose({
       >
         <bk-table-column type="selection" align="center" />
         <bk-table-column label="二级账号" min-width="1000">
-          <template #default="{ row }">{{ row.account_id }}</template>
+          <template #default="{ row }">
+            <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
+          </template>
         </bk-table-column>
       </bk-table>
     </bk-loading>

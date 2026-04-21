@@ -6,11 +6,19 @@ import usePage from '@/hooks/use-page';
 import ModelInfoDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/info.vue';
 import PolicyDiffDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/diff.vue';
 import { IPermissionAppliedItem } from '@/store/cloud-account-manage/permission-policy';
+import { VendorEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
   policyData: IPermissionPolicyItem | null;
   list: IPermissionAppliedItem[];
+  bizId: number;
+  vendor: VendorEnum;
 }>();
+
+const bizId = computed(() => props.bizId);
+const vendor = computed(() => props.vendor);
+const resType = computed(() => (bizId.value ? 'sub_account' : 'permission_policy_library'));
 
 const tableData = computed(() => [...props.list]);
 const isLoading = ref(false);
@@ -111,7 +119,9 @@ defineExpose({
       >
         <bk-table-column type="selection" align="center" />
         <bk-table-column label="二级账号" min-width="180">
-          <template #default="{ row }">{{ row.account_id }}</template>
+          <template #default="{ row }">
+            <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
+          </template>
         </bk-table-column>
         <bk-table-column label="云上模版名称" prop="name" min-width="150" />
         <bk-table-column label="云模版同步时间" prop="policy_library_sync_time" min-width="160">
@@ -157,7 +167,7 @@ defineExpose({
       </bk-table>
     </bk-loading>
     <!--模版详情弹框-->
-    <ModelInfoDialog v-bind="modelInfo" @close="modelInfo.show = false" />
+    <ModelInfoDialog v-bind="modelInfo" @close="modelInfo.show = false" :res-type="resType" />
     <!--策略对比弹框-->
     <PolicyDiffDialog v-bind="policyDiffInfo" @close="policyDiffInfo.show = false" :policy-content="policyContent" />
   </div>
