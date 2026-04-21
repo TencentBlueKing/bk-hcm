@@ -263,31 +263,39 @@ func (opt AzureMonitorDataOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {
 		return err
 	}
+
 	startTime, err := time.Parse(time.RFC3339, opt.StartTime)
 	if err != nil {
 		return fmt.Errorf("start_time should be RFC3339 format")
 	}
+
 	endTime, err := time.Parse(time.RFC3339, opt.EndTime)
 	if err != nil {
 		return fmt.Errorf("end_time should be RFC3339 format")
 	}
+
 	if !startTime.Before(endTime) {
 		return fmt.Errorf("start_time should < end_time")
 	}
+
 	_, startOffset := startTime.Zone()
 	_, endOffset := endTime.Zone()
 	if startOffset != 0 || endOffset != 0 {
 		return fmt.Errorf("start_time and end_time should be UTC timezone")
 	}
+
 	if opt.Top != nil && *opt.Top <= 0 {
 		return fmt.Errorf("top should > 0")
 	}
+
 	if len(opt.OrderBy) != 0 && opt.Top == nil {
 		return fmt.Errorf("orderby requires top")
 	}
+
 	if err = opt.ResultType.Validate(); err != nil {
 		return err
 	}
+
 	if len(opt.InstanceIDs) > constant.MonitorMaxInstanceLimit {
 		return fmt.Errorf("instances count should <= %d", constant.MonitorMaxInstanceLimit)
 	}

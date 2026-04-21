@@ -84,8 +84,11 @@ func validateAzureMonitorOption(opt *typecvm.AzureMonitorDataOption) error {
 func buildAzureMetricsListOptions(opt *typecvm.AzureMonitorDataOption,
 	sourceMetricName string) *armmonitor.MetricsClientListOptions {
 
+	// 构建时间范围，格式为 "startTime/endTime"，符合 Azure Monitor Metrics API 的 timespan 参数要求
 	timespan := fmt.Sprintf("%s/%s", opt.StartTime, opt.EndTime)
+	// 构建采样间隔，格式为 ISO 8601 持续时间格式，如 PT60S 表示 60 秒
 	interval := fmt.Sprintf("PT%dS", opt.Period)
+	// 根据指标类型选择聚合方式，流量类指标默认 Total，其余默认 Average
 	aggregation := chooseAzureAggregation(opt)
 	namespace := opt.MetricNamespace
 	if len(namespace) == 0 {
