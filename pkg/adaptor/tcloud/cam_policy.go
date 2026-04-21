@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/retry"
 
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 )
@@ -125,17 +124,9 @@ func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPolici
 	req.Page = converter.ValToPtr(opt.Page)
 	req.Rp = converter.ValToPtr(opt.Rp)
 
-	var resp *cam.ListPoliciesResponse
 	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
-	policy := retry.NewRetryPolicy(0, rangeMS)
-	err = policy.BaseExec(kt, func() error {
-		resp, err = client.ListPoliciesWithContext(kt.Ctx, req)
-		if err != nil {
-			logs.Errorf("fail to get policy from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return err
-		}
-		return nil
-	})
+	resp, err := LimitExceededErrRetry(client.ListPoliciesWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS)
 	if err != nil {
 		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
 		return nil, 0, err
@@ -182,18 +173,9 @@ func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.T
 	req.Rp = converter.ValToPtr(opt.Rp)
 	req.AttachType = opt.AttachType
 
-	var resp *cam.ListAttachedUserAllPoliciesResponse
 	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
-	policy := retry.NewRetryPolicy(0, rangeMS)
-	err = policy.BaseExec(kt, func() error {
-		resp, err = client.ListAttachedUserAllPoliciesWithContext(kt.Ctx, req)
-		if err != nil {
-			logs.Errorf("fail to list attached user all policies from tcloud, err: %v, req: %+v, rid: %s",
-				err, req, kt.Rid)
-			return err
-		}
-		return nil
-	})
+	resp, err := LimitExceededErrRetry(client.ListAttachedUserAllPoliciesWithContext, kt, req,
+		constant.TCloudClientErrRetryTimes, rangeMS)
 	if err != nil {
 		logs.Errorf("fail to list attached user all policies from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -244,17 +226,9 @@ func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPoli
 	req := cam.NewGetPolicyRequest()
 	req.PolicyId = converter.ValToPtr(opt.PolicyID)
 
-	var resp *cam.GetPolicyResponse
 	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
-	policy := retry.NewRetryPolicy(0, rangeMS)
-	err = policy.BaseExec(kt, func() error {
-		resp, err = client.GetPolicyWithContext(kt.Ctx, req)
-		if err != nil {
-			logs.Errorf("fail to get policy from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return err
-		}
-		return nil
-	})
+	resp, err := LimitExceededErrRetry(client.GetPolicyWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS)
 	if err != nil {
 		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
