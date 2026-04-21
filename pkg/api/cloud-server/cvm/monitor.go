@@ -37,7 +37,8 @@ type GetMonitorDataReq struct {
 	EndTime    interface{} `json:"end_time" validate:"omitempty"`   // DateTimeLayout string for tcloud, unix ms for huawei
 	Namespace  string      `json:"namespace" validate:"omitempty"`  // used by vendor=huawei, e.g. SYS.ECS/SYS.VPC
 	Filter     string      `json:"filter" validate:"omitempty"`     // used by vendor=huawei, e.g. average/max/min
-	IDs        []string    `json:"ids" validate:"required,min=1"`
+	// IDs instance ids(tcloud:最大20条 huawei&aws:最大500条 azure:最大20条)
+	IDs []string `json:"ids" validate:"required,min=1"`
 	// AzureMetricNamespace example: Microsoft.Compute/virtualMachines, used by vendor=azure
 	AzureMetricNamespace string `json:"metric_namespace" validate:"omitempty"`
 	// AzureAggregation example: Average/Total/Minimum/Maximum/Count/Last, used by vendor=azure

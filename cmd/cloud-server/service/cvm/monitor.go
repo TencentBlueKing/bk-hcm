@@ -57,17 +57,8 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listFilter, err := tools.And(
-		tools.ContainersExpression("id", req.IDs),
-		tools.EqualExpression("vendor", vendor),
-	)
-	if err != nil {
-		logs.Errorf("merge monitor query filter failed, err: %v, vendor: %s, rid: %s", err, vendor, cts.Kit.Rid)
-		return nil, err
-	}
-
 	// 权限校验
-	// list authorized instances
+	listFilter := tools.ExpressionAnd(tools.RuleIn("id", req.IDs), tools.RuleEqual("vendor", vendor))
 	authFilter, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
 		ResType: meta.Cvm, Action: meta.Find, Filter: listFilter})
 	if err != nil {
