@@ -2,7 +2,7 @@
 import { computed, watchEffect } from 'vue';
 import CombineRequest from '@blueking/combine-request';
 import { useCloudAccountStore } from '@/store/cloud-account';
-import { VendorEnum } from '@/common/constant';
+import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 
 const props = defineProps<{ value: string | string[]; vendor?: VendorEnum; resType: string; bizId?: number }>();
 
@@ -31,10 +31,23 @@ const bizId = computed(() => props.bizId || 0);
 const cloudAccountStore = useCloudAccountStore();
 
 const combineRequest = CombineRequest.setup(Symbol.for('secondary-account-value'), (params: any[]) => {
+  const requestIdsMap = new Map<string, string[]>();
   params.forEach(([accountIds, vendor, resType, bizId]) => {
     const uniqueIds = [...new Set((accountIds as string[][]).reduce((acc, cur) => acc.concat(cur), []))];
-    return cloudAccountStore.getSecondaryAccountListByAccountIds(uniqueIds, vendor, resType, bizId);
+    const key = `${bizId}@${vendor}@${resType}`;
+    const value = requestIdsMap.get(key) ?? [];
+    requestIdsMap.set(key, [...value, ...uniqueIds]);
   });
+  // 将map数据拆解出来通过key去调取接口
+  for (const [key, value] of requestIdsMap) {
+    const [bizId, vendor, resType] = key.split('@');
+    cloudAccountStore.getSecondaryAccountListByAccountIds(
+      value,
+      vendor as VendorEnum,
+      resType as SecondaryAccountResourceTypeEnum,
+      +bizId,
+    );
+  }
 });
 
 watchEffect(() => {

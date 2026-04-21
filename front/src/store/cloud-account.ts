@@ -197,13 +197,14 @@ export const useCloudAccountStore = defineStore('cloudAccount', () => {
     resType: SecondaryAccountResourceTypeEnum,
     bizId: number,
   ) => {
+    const maxIdsLength = 100; // 该接口每次最大ID数目
     const api = `/api/v1/cloud/${resolveBizApiPath(bizId)}vendors/${vendor}/accounts/list/by/res_type`;
     const cachedIds = allSecondaryAccountCacheList.value.keys();
     const cachedIdSet = new Set(cachedIds);
     const newIds = accountIds.filter((id) => !cachedIdSet.has(`${id}@${resType}@${bizId}`));
-    if (newIds.length > 0) {
+    while (newIds.length) {
       const res = await http.post(api, {
-        ids: newIds,
+        ids: newIds.splice(0, maxIdsLength),
         res_type: resType,
       });
       const list = res?.data?.details ?? [];
