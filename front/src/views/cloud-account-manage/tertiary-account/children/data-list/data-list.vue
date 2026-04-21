@@ -10,12 +10,6 @@ import { useAccountStore } from '@/store/account';
 import { AUTH_DELETE_SUB_ACCOUNT, AUTH_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import type { ISubAccountItem } from '@/store/cloud-account';
-import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
-
-export interface IPermissionTemplateSimple {
-  id: string;
-  name: string;
-}
 
 const props = withDefaults(defineProps<IDataListProps>(), {
   loading: false,
@@ -86,18 +80,12 @@ watch(
   { deep: true },
 );
 
-const handleGoToPermissionTemplate = (item: LinkPopoverItem) => {
+const handleGoToPage = (row: ISubAccountItem, column: ModelPropertyColumn, type: string) => {
+  const { searchField, valueField } = column?.meta?.search?.props;
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
-    query: { type: 'permission-template', id: item.id as string },
+    query: { type, filter: `${searchField}=${row?.[valueField]}` },
   });
-};
-
-const getPermissionTemplateItems = (row: ISubAccountItem): LinkPopoverItem[] => {
-  return (row.permission_templates || []).map((t: IPermissionTemplateSimple) => ({
-    id: t.id,
-    label: t.name,
-  }));
 };
 </script>
 
@@ -144,12 +132,18 @@ const getPermissionTemplateItems = (row: ISubAccountItem): LinkPopoverItem[] => 
               :property="column"
               :value="row?.permission_templates?.length ?? 0"
               :display="{
-                appearance: 'link-popover',
-                appearanceProps: {
-                  items: getPermissionTemplateItems(row),
-                  onLinkClick: handleGoToPermissionTemplate,
-                  emptyText: '未查询到关联权限模板',
-                },
+                appearance: 'link-button',
+                appearanceProps: { isIcon: true, onClick: () => handleGoToPage(row, column, 'permission-template') },
+              }"
+            />
+          </template>
+          <template v-else-if="column.id === 'sub_account_secret_count'">
+            <display-value
+              :property="column"
+              :value="row.sub_account_secret_count ?? 0"
+              :display="{
+                appearance: 'link-button',
+                appearanceProps: { isIcon: true, onClick: () => handleGoToPage(row, column, 'cloud-secret') },
               }"
             />
           </template>
