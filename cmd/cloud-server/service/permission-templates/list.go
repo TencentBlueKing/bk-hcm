@@ -285,7 +285,8 @@ func getAccountIDs(kt *kit.Kit, cli *client.ClientSet, bkBizID int64, cloudMainA
 		}
 
 		for _, item := range accounts.Details {
-			if item.ID != "" {
+			// ID不为空，且二级账号的使用业务中有当前业务的二级账号
+			if item.ID != "" && slice.IsItemInSlice(item.UsageBizIDs, bkBizID) {
 				idSet[item.ID] = struct{}{}
 			}
 		}
