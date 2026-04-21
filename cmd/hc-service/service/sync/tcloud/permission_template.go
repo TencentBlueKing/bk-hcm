@@ -45,7 +45,8 @@ func (svc *service) SyncPermissionTemplate(cts *rest.Contexts) (interface{}, err
 
 	if _, err = syncCli.PermissionTemplate(cts.Kit, &tcloud.SyncPermissionTemplateOption{
 		AccountID: req.AccountID}); err != nil {
-		logs.Errorf("sync tcloud permission template failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud permission template failed, accountID: %s, err: %v, rid: %s",
+			req.AccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 

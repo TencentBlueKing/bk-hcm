@@ -48,8 +48,8 @@ func (opt SyncSubAccountPermissionTmplOption) Validate() error {
 }
 
 // SubAccountPermissionTemplate 同步指定账号下所有子账号绑定的权限模板信息。
-func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit,
-	opt *SyncSubAccountPermissionTmplOption) (*SyncResult, error) {
+func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit, opt *SyncSubAccountPermissionTmplOption) (
+	*SyncResult, error) {
 
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -78,8 +78,8 @@ func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit,
 		}
 
 		if subAccount.Extension == nil || subAccount.Extension.Uin == nil {
-			logs.Errorf("[%s] sub account %s has no uin, skip permission template sync, rid: %s",
-				enumor.TCloud, subAccount.ID, kt.Rid)
+			logs.Errorf("[%s] sync sub account(%s) failed, extension has no uin, err: %v, rid: %s",
+				enumor.TCloud, subAccount.ID, err, kt.Rid)
 			return nil, errf.NewFromErr(errf.InvalidParameter,
 				fmt.Errorf("sub account %s has no uin", subAccount.ID))
 		}
@@ -87,8 +87,8 @@ func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit,
 		templateIDs, err := cli.listSubAccountPermissionTemplateIDs(
 			kt, converter.PtrToVal(subAccount.Extension.Uin), cloudIDToLocalID)
 		if err != nil {
-			logs.Errorf("[%s] list sub account permission template ids failed, err: %v, rid: %s",
-				enumor.TCloud, subAccount.ID, converter.PtrToVal(subAccount.Extension.Uin), err, kt.Rid)
+			logs.Errorf("[%s] list sub account(%s) permission template ids failed, err: %v, rid: %s",
+				enumor.TCloud, subAccount.ID, err, kt.Rid)
 			return nil, err
 		}
 
@@ -118,8 +118,8 @@ func (cli *client) SubAccountPermissionTemplate(kt *kit.Kit,
 }
 
 // listSubAccountPermissionTemplateIDs 获取单个子账号绑定的所有本地权限模板 ID 列表。
-func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, cloudIDToLocalID map[string]string,
-) ([]string, error) {
+func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, cloudIDToLocalID map[string]string) (
+	[]string, error) {
 
 	const pageSize = uint64(100)
 	templateIDs := make([]string, 0)
@@ -141,9 +141,11 @@ func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, 
 		for _, policy := range result.PolicyList {
 			localID, ok := cloudIDToLocalID[policy.PolicyId]
 			if !ok {
-				logs.Errorf("[%s] policy cloud_id %s not found, rid: %s", enumor.TCloud, policy.PolicyId, uin, kt.Rid)
+				logs.Errorf("[%s] policy cloud_id %s of account(cloud_id: %d) not found, rid: %s",
+					enumor.TCloud, policy.PolicyId, uin, kt.Rid)
 				return nil, errf.NewFromErr(errf.InvalidParameter,
-					fmt.Errorf("[%s] policy cloud_id %s not found, rid: %s", enumor.TCloud, policy.PolicyId, kt.Rid))
+					fmt.Errorf("[%s] policy cloud_id %s account(cloud_id: %d) not found",
+						enumor.TCloud, policy.PolicyId, uin))
 			}
 			templateIDs = append(templateIDs, localID)
 		}
@@ -157,9 +159,7 @@ func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, 
 }
 
 // buildPermissionTmplCloudIDMap 构建 cloud_id → local_id 的映射表。
-func (cli *client) buildPermissionTmplCloudIDMap(kt *kit.Kit, accountID string) (
-	map[string]string, error) {
-
+func (cli *client) buildPermissionTmplCloudIDMap(kt *kit.Kit, accountID string) (map[string]string, error) {
 	req := &protocloud.PermissionTemplateExtListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("vendor", enumor.TCloud),
