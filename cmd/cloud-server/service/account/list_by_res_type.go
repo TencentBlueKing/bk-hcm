@@ -48,7 +48,7 @@ func (a *accountSvc) ListBizAccountByResType(cts *rest.Contexts) (interface{}, e
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -64,7 +64,7 @@ func (a *accountSvc) ListBizAccountByResType(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 	if len(authorizedIDs) == 0 {
-		return &proto.AccountListByResTypeResp{Details: []proto.AccountInfoByTypeDetail{}}, nil
+		return &proto.AccountListByResTypeResp{Details: []proto.AccountInfoByResTypeDetail{}}, nil
 	}
 
 	// 3. 批量查询账号详情（基本信息 + 扩展字段）
@@ -110,7 +110,7 @@ func (a *accountSvc) bizFilterAuthorizedAccountIDs(kt *kit.Kit, req *proto.Accou
 
 // getAccountDetails 批量查询账号详情，包含基本信息和扩展字段，并组装为响应结构体
 func (a *accountSvc) getAccountDetails(kt *kit.Kit, authorizedIDs []string,
-	vendor enumor.Vendor) ([]proto.AccountInfoByTypeDetail, error) {
+	vendor enumor.Vendor) ([]proto.AccountInfoByResTypeDetail, error) {
 
 	// 1. 批量查询账号基本信息
 	accounts, err := a.batchGetAccountBaseInfo(kt, vendor, authorizedIDs)
@@ -119,7 +119,7 @@ func (a *accountSvc) getAccountDetails(kt *kit.Kit, authorizedIDs []string,
 	}
 
 	// 2. 转换响应
-	return convAccountInfoByTypeDetails(accounts), nil
+	return convAccountInfoByResTypeDetails(kt, accounts)
 }
 
 // batchGetAccountBaseInfo 批量查询账号基本信息
@@ -130,7 +130,7 @@ func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, 
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("id", accountIDs),
-			tools.RuleEqual("vendor", vendor)),
+			tools.RuleEqual("vendor", string(vendor))),
 		Page: core.NewDefaultBasePage(),
 	}
 
@@ -154,21 +154,43 @@ func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, 
 	return accounts, nil
 }
 
-// convAccountInfoByTypeDetails 将账号基本信息和扩展字段转换为响应结构体
-func convAccountInfoByTypeDetails(accounts []*dataproto.BaseAccountWithExtensionListResp,
-) []proto.AccountInfoByTypeDetail {
+// convAccountInfoByResTypeDetails 将账号基本信息和扩展字段转换为响应结构体
+func convAccountInfoByResTypeDetails(kt *kit.Kit, accounts []*dataproto.BaseAccountWithExtensionListResp,
+) ([]proto.AccountInfoByResTypeDetail, error) {
 
-	details := make([]proto.AccountInfoByTypeDetail, 0, len(accounts))
+	details := make([]proto.AccountInfoByResTypeDetail, 0, len(accounts))
 	for _, account := range accounts {
-		details = append(details, proto.AccountInfoByTypeDetail{
+		ext, err := convExtensionByVendor(account)
+		if err != nil {
+			logs.Errorf("conv extension failed, account_id: %s, err: %v, rid: %s", account.ID, err, kt.Rid)
+			return nil, err
+		}
+		details = append(details, proto.AccountInfoByResTypeDetail{
 			ID:          account.ID,
 			Name:        account.Name,
 			BkBizID:     account.BkBizID,
+			Vendor:      account.Vendor,
 			UsageBizIDs: account.UsageBizIDs,
 			Managers:    account.Managers,
-			Extension:   account.Extension,
+			Extension:   ext,
 		})
 	}
 
-	return details
+	return details, nil
+}
+
+func convExtensionByVendor(account *dataproto.BaseAccountWithExtensionListResp) (map[string]interface{}, error) {
+	if account == nil {
+		return nil, errf.Newf(errf.InvalidParameter, "account is nil")
+	}
+
+	ext := make(map[string]interface{})
+	switch account.Vendor {
+	// 过滤敏感信息
+	case enumor.TCloud:
+		ext["cloud_main_account_id"] = account.Extension["cloud_main_account_id"]
+		return ext, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "invalid vendor: %s", account.Vendor)
+	}
 }
