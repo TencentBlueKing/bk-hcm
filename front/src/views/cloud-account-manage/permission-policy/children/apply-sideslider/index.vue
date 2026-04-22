@@ -67,6 +67,20 @@ const getSelected = computed(() => {
   return updateAppliedTableRef.value?.getSelectedAccounts() || [];
 });
 
+const applyMethod = computed(() => {
+  if (isBusinessPage) {
+    return operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccountBiz' : 'updateAppliedAccountBiz';
+  }
+  return operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
+});
+const applyParams = computed(() => {
+  const params = { vendor: currentVendor.value, id: props.policyData.id };
+  if (isBusinessPage) {
+    return { bizId: bizId.value, ...params };
+  }
+  return params;
+});
+
 // 获取未应用和已经应用了的列表
 const getList = async () => {
   const policyId = props.policyData.id;
@@ -111,16 +125,15 @@ const handleApply = async () => {
   try {
     const key = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
     const _selected = getSelected.value.map((item: { [key: string]: string }) => item[key]);
-    let res: IAppliedReasonItem[] = [];
+    const res: IAppliedReasonItem[] = [];
+    const max = 100; // 每次接口selected最大数目
 
-    if (isBusinessPage) {
-      const method =
-        operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccountBiz' : 'updateAppliedAccountBiz';
-      res = await permissionPolicyStore[method](bizId.value, currentVendor.value, props.policyData.id, _selected);
-    } else {
-      const method =
-        operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
-      res = await permissionPolicyStore[method](currentVendor.value, props.policyData.id, _selected);
+    while (_selected.length) {
+      const list = await permissionPolicyStore[applyMethod.value]({
+        ...applyParams.value,
+        selectedIds: _selected.splice(0, max),
+      });
+      res.push(...list);
     }
 
     model.value = false;

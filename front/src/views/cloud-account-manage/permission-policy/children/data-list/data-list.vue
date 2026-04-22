@@ -125,23 +125,18 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
               v-if="row.associated_account_count > 0"
               theme="light"
               trigger="hover"
-              placement="auto"
+              placement="right"
               :popover-delay="[200, 150]"
               :max-height="240"
-              :arrow="false"
+              :arrow="true"
               ext-cls="related-account-popover"
             >
               <span class="related-count-link">{{ row.associated_account_count ?? 0 }}</span>
               <template #content>
                 <div class="related-account-list">
-                  <div
-                    v-for="account in row.related_accounts"
-                    :key="account"
-                    class="related-account-item"
-                    @click="handleGoToAccount(account)"
-                  >
+                  <div v-for="account in row.related_accounts" :key="account" class="related-account-item">
                     <span class="account-id">{{ account }}</span>
-                    <i class="hcm-icon bkhcm-icon-jump-fill account-link-icon" />
+                    <i class="hcm-icon bkhcm-icon-jump-fill account-link-icon" @click="handleGoToAccount(account)" />
                   </div>
                 </div>
               </template>
