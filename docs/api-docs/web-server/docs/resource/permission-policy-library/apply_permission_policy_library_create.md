@@ -71,9 +71,9 @@ POST /api/v1/cloud/vendors/{vendor}/permission_policy_libraries/{id}/apply
 
 | 参数名称    | 参数类型         | 描述             |
 |---------|--------------|----------------|
-| results | result array | 每个二级账号的执行结果列表  |
+| results | object array | 每个二级账号的执行结果列表  |
 
-#### result
+#### result[n]
 
 | 参数名称       | 参数类型   | 描述                                    |
 |------------|--------|---------------------------------------|

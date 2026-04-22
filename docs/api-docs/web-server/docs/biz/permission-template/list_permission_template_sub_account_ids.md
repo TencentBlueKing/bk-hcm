@@ -28,10 +28,11 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/su
   "code": 0,
   "message": "",
   "data": {
-    "sub_account_ids": [
-      "00000001",
-      "00000002",
-      "00000003"
+    "sub_accounts": [
+      {
+        "id": "00000001",
+        "cloud_id": "00000001"
+      }
     ]
   }
 }
@@ -47,6 +48,13 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/su
 
 #### data
 
-| 参数名称            | 参数类型         | 描述                                                             |
-|-----------------|--------------|----------------------------------------------------------------|
-| sub_account_ids | string array | 关联的三级账号ID列表（仅包含业务ID匹配的三级账号，全量返回，不分页） |
+| 参数名称         | 参数类型         | 描述                                                           |
+|--------------|--------------|--------------------------------------------------------------|
+| sub_accounts | object array | 关联的三级账号列表（仅包含业务ID匹配的三级账号，全量返回，不分页） |
+
+#### sub_accounts[n]
+
+| 参数名称 | 参数类型       | 描述          |
+|------|------------|-------------|
+| id   | string | 关联的三级账号本地ID |
+| cloud_id   | string | 关联的三级账号云上ID |
