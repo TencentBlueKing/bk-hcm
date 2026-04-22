@@ -220,17 +220,9 @@ func (t *TCloudImpl) AttachUserPolicy(kt *kit.Kit, opt *typeaccount.TCloudAttach
 	req.AttachUin = converter.ValToPtr(opt.TargetUin)
 	req.PolicyId = converter.ValToPtr(opt.PolicyId)
 
-	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
-	policy := retry.NewRetryPolicy(0, rangeMS)
-	err = policy.BaseExec(kt, func() error {
-		if _, err = client.AttachUserPolicyWithContext(kt.Ctx, req); err != nil {
-			logs.Errorf("fail to attach user policy, targetUin: %d, policyId: %d, err: %v, rid: %s",
-				opt.TargetUin, opt.PolicyId, err, kt.Rid)
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	if _, err = LimitExceededErrRetry(client.AttachUserPolicyWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS); err != nil {
 		logs.Errorf("fail to attach user policy after retry, targetUin: %d, policyId: %d, err: %v, rid: %s",
 			opt.TargetUin, opt.PolicyId, err, kt.Rid)
 		return err
@@ -259,17 +251,9 @@ func (t *TCloudImpl) DetachUserPolicy(kt *kit.Kit, opt *typeaccount.TCloudDetach
 	req.DetachUin = converter.ValToPtr(opt.DetachUin)
 	req.PolicyId = converter.ValToPtr(opt.PolicyId)
 
-	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
-	policy := retry.NewRetryPolicy(0, rangeMS)
-	err = policy.BaseExec(kt, func() error {
-		if _, err = client.DetachUserPolicyWithContext(kt.Ctx, req); err != nil {
-			logs.Errorf("fail to detach user policy, detachUin: %d, policyId: %d, err: %v, rid: %s",
-				opt.DetachUin, opt.PolicyId, err, kt.Rid)
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	if _, err = LimitExceededErrRetry(client.DetachUserPolicyWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS); err != nil {
 		logs.Errorf("fail to detach user policy after retry, detachUin: %d, policyId: %d, err: %v, rid: %s",
 			opt.DetachUin, opt.PolicyId, err, kt.Rid)
 		return err
