@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Share } from 'bkui-vue/lib/icon';
-import { AUTH_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
+import { AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
 import { SECRET_STATUS_MAP } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
@@ -82,7 +82,7 @@ const handleActionSuccess = () => {
           <template v-if="accountStore.bizs">
             <hcm-auth
               v-if="canDisable"
-              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
               v-slot="{ noPerm }"
             >
               <bk-button
@@ -96,7 +96,7 @@ const handleActionSuccess = () => {
             </hcm-auth>
             <hcm-auth
               v-if="canEnable"
-              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
               v-slot="{ noPerm }"
             >
               <bk-button

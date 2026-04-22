@@ -6,11 +6,11 @@ import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-accoun
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
 import {
-  AUTH_CREATE_SUB_ACCOUNT_SECRET,
-  AUTH_UPDATE_SUB_ACCOUNT_SECRET,
-  AUTH_DELETE_SUB_ACCOUNT_SECRET,
-  AUTH_UPDATE_SUB_ACCOUNT,
-  AUTH_DELETE_SUB_ACCOUNT,
+  AUTH_BIZ_CREATE_SUB_ACCOUNT_SECRET,
+  AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET,
+  AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET,
+  AUTH_BIZ_UPDATE_SUB_ACCOUNT,
+  AUTH_BIZ_DELETE_SUB_ACCOUNT,
 } from '@/constants/auth-symbols';
 import { FLAG_OPTIONS, ACCOUNT_TYPE_OPTIONS } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
@@ -205,7 +205,7 @@ const formatTime = (time?: string) => {
         <div class="header-actions">
           <hcm-auth
             v-if="accountStore.bizs"
-            :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            :sign="{ type: AUTH_BIZ_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
             v-slot="{ noPerm }"
           >
             <bk-button :disabled="noPerm || rowData?.operable === false" @click="handleDelete">删除</bk-button>
@@ -220,7 +220,7 @@ const formatTime = (time?: string) => {
             <span class="card-title">基本信息</span>
             <hcm-auth
               v-if="accountStore.bizs"
-              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
               v-slot="{ noPerm }"
             >
               <bk-button theme="primary" text :disabled="noPerm || rowData.operable === false" @click="handleEdit">
@@ -316,7 +316,7 @@ const formatTime = (time?: string) => {
               <span class="card-title">API密钥</span>
               <hcm-auth
                 v-if="accountStore.bizs"
-                :sign="{ type: AUTH_CREATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                :sign="{ type: AUTH_BIZ_CREATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                 v-slot="{ noPerm }"
               >
                 <bk-button
@@ -371,7 +371,7 @@ const formatTime = (time?: string) => {
                     <template v-if="accountStore.bizs">
                       <template v-if="row.status === 'enabled'">
                         <hcm-auth
-                          :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                           v-slot="{ noPerm }"
                         >
                           <bk-button
@@ -386,7 +386,7 @@ const formatTime = (time?: string) => {
                       </template>
                       <template v-else>
                         <hcm-auth
-                          :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                           v-slot="{ noPerm }"
                         >
                           <bk-button
@@ -399,7 +399,7 @@ const formatTime = (time?: string) => {
                           </bk-button>
                         </hcm-auth>
                         <hcm-auth
-                          :sign="{ type: AUTH_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                          :sign="{ type: AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                           v-slot="{ noPerm }"
                         >
                           <bk-button

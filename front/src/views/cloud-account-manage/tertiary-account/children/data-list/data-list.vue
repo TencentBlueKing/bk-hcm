@@ -7,7 +7,7 @@ import useTableSettings from '@/hooks/use-table-settings';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import routeAction from '@/router/utils/action';
 import { useAccountStore } from '@/store/account';
-import { AUTH_DELETE_SUB_ACCOUNT, AUTH_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
+import { AUTH_BIZ_DELETE_SUB_ACCOUNT, AUTH_BIZ_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import type { ISubAccountItem } from '@/store/cloud-account';
 
@@ -156,7 +156,7 @@ const handleGoToPage = (row: ISubAccountItem, column: ModelPropertyColumn, type:
         <template #default="{ row }">
           <hcm-auth
             v-if="accountStore.bizs"
-            :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
             v-slot="{ noPerm }"
           >
             <bk-button
@@ -170,7 +170,7 @@ const handleGoToPage = (row: ISubAccountItem, column: ModelPropertyColumn, type:
           </hcm-auth>
           <hcm-auth
             v-if="accountStore.bizs"
-            :sign="{ type: AUTH_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
+            :sign="{ type: AUTH_BIZ_DELETE_SUB_ACCOUNT, relation: [accountStore.bizs] }"
             v-slot="{ noPerm }"
           >
             <bk-button

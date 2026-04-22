@@ -13,9 +13,9 @@ import AccountCreateSideslider from '@/views/cloud-account-manage/tertiary-accou
 import type { ModelProperty } from '@/model/typings';
 import type { DisplayType } from '@/components/display-value/typings';
 import {
-  AUTH_UPDATE_SECONDARY_ACCOUNT,
-  AUTH_CREATE_SECONDARY_ACCOUNT,
-  AUTH_DELETE_SECONDARY_ACCOUNT,
+  AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT,
+  AUTH_BIZ_CREATE_SECONDARY_ACCOUNT,
+  AUTH_BIZ_DELETE_SECONDARY_ACCOUNT,
 } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store/account';
 
@@ -285,7 +285,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
             <span class="card-title">基本信息</span>
             <hcm-auth
               v-if="getBizsId()"
-              :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
               v-slot="{ noPerm }"
             >
               <bk-button theme="primary" outline size="small" :disabled="noPerm" @click="handleEditBaseInfo">
@@ -330,7 +330,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
           <div class="card-header">
             <span class="card-title">资源密钥</span>
             <hcm-auth
-              :sign="{ type: AUTH_CREATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+              :sign="{ type: AUTH_BIZ_CREATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
               v-slot="{ noPerm }"
             >
               <bk-button theme="primary" text class="add-btn" :disabled="noPerm" @click="handleAddSecret">
@@ -369,7 +369,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
             <bk-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
                 <hcm-auth
-                  :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+                  :sign="{ type: AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
                   v-slot="{ noPerm }"
                 >
                   <bk-button theme="primary" text class="mr8" :disabled="noPerm" @click="handleEditSecret(row)">
@@ -377,7 +377,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
                   </bk-button>
                 </hcm-auth>
                 <hcm-auth
-                  :sign="{ type: AUTH_DELETE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+                  :sign="{ type: AUTH_BIZ_DELETE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
                   v-slot="{ noPerm }"
                 >
                   <bk-button

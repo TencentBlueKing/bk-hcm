@@ -4,7 +4,7 @@ import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { type ISecondaryAccountItem } from '@/store/cloud-account';
-import { AUTH_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
+import { AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import routeAction from '@/router/utils/action';
@@ -111,7 +111,7 @@ const handleGoToPage = (row: ISecondaryAccountItem, column: ModelPropertyColumn,
         <template #default="{ row }">
           <hcm-auth
             v-if="getBizsId()"
-            :sign="{ type: AUTH_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
+            :sign="{ type: AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT, relation: [getBizsId()] }"
             v-slot="{ noPerm }"
           >
             <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)">编辑</bk-button>

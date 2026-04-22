@@ -21,7 +21,7 @@ import AccountEditSideslider from './children/account-edit-sideslider/index.vue'
 import AccountDeleteDialog from './children/account-delete-dialog/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
-import { AUTH_CREATE_SUB_ACCOUNT, AUTH_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
+import { AUTH_BIZ_CREATE_SUB_ACCOUNT, AUTH_BIZ_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -261,7 +261,7 @@ const handleGoToPending = () => {
         <div class="action-btns">
           <hcm-auth
             v-if="getBizsId()"
-            :sign="{ type: AUTH_CREATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+            :sign="{ type: AUTH_BIZ_CREATE_SUB_ACCOUNT, relation: [getBizsId()] }"
             v-slot="{ noPerm }"
           >
             <bk-button theme="primary" :disabled="noPerm" @click="handleCreateAccount">
@@ -272,7 +272,7 @@ const handleGoToPending = () => {
 
           <hcm-auth
             v-if="getBizsId()"
-            :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+            :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
             v-slot="{ noPerm }"
           >
             <bk-button :disabled="noPerm || selectedRows.length === 0" @click="handleBatchUpdate">批量更新</bk-button>
@@ -287,7 +287,7 @@ const handleGoToPending = () => {
             个
             <hcm-auth
               v-if="getBizsId()"
-              :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT, relation: [getBizsId()] }"
               v-slot="{ noPerm }"
             >
               <bk-button :disabled="noPerm" text theme="primary" style="margin-left: 8px" @click="handleGoToPending">

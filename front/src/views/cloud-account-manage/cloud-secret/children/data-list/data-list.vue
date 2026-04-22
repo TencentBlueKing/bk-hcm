@@ -7,7 +7,7 @@ import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useClipboard from 'vue-clipboard3';
-import { AUTH_UPDATE_SUB_ACCOUNT_SECRET, AUTH_DELETE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
+import { AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
 import { CONSOLE_LOGIN_MAP } from '../../constants';
 import type { ICloudSecretItem } from '../../typings';
@@ -161,7 +161,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
           <template v-if="accountStore.bizs">
             <template v-if="row.status === 'enabled'">
               <hcm-auth
-                :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                 v-slot="{ noPerm }"
               >
                 <bk-button
@@ -176,7 +176,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
             </template>
             <template v-else>
               <hcm-auth
-                :sign="{ type: AUTH_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                :sign="{ type: AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                 v-slot="{ noPerm }"
               >
                 <bk-button
@@ -190,7 +190,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
                 </bk-button>
               </hcm-auth>
               <hcm-auth
-                :sign="{ type: AUTH_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
+                :sign="{ type: AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET, relation: [accountStore.bizs] }"
                 v-slot="{ noPerm }"
               >
                 <bk-button theme="primary" text :disabled="noPerm || row.operable === false" @click="handleDelete(row)">
