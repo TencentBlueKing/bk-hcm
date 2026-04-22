@@ -139,13 +139,13 @@ func (cli *client) listSubAccountPermissionTemplateIDs(kt *kit.Kit, uin uint64, 
 		}
 
 		for _, policy := range result.PolicyList {
-			localID, ok := cloudIDToLocalID[policy.PolicyId]
+			localID, ok := cloudIDToLocalID[policy.PolicyID]
 			if !ok {
 				logs.Errorf("[%s] policy cloud_id %s of account(cloud_id: %d) not found, rid: %s",
-					enumor.TCloud, policy.PolicyId, uin, kt.Rid)
+					enumor.TCloud, policy.PolicyID, uin, kt.Rid)
 				return nil, errf.NewFromErr(errf.InvalidParameter,
 					fmt.Errorf("[%s] policy cloud_id %s account(cloud_id: %d) not found",
-						enumor.TCloud, policy.PolicyId, uin))
+						enumor.TCloud, policy.PolicyID, uin))
 			}
 			templateIDs = append(templateIDs, localID)
 		}

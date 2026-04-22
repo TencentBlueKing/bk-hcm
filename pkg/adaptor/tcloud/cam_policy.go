@@ -162,7 +162,7 @@ func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.T
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	client, err := t.clientSet.CamServiceClient(constant.TCloudDefaultRegion)
+	client, err := t.clientSet.CamServiceClient("")
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}
@@ -185,7 +185,7 @@ func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.T
 	items := make([]typeaccount.TCloudAttachedPolicy, 0, len(resp.Response.PolicyList))
 	for _, p := range resp.Response.PolicyList {
 		item := typeaccount.TCloudAttachedPolicy{
-			PolicyId:     converter.PtrToVal(p.PolicyId),
+			PolicyID:     converter.PtrToVal(p.PolicyId),
 			PolicyName:   converter.PtrToVal(p.PolicyName),
 			Description:  converter.PtrToVal(p.Description),
 			AddTime:      converter.PtrToVal(p.AddTime),
@@ -213,12 +213,7 @@ func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPoli
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	region := opt.Region
-	if region == "" {
-		region = constant.TCloudDefaultRegion
-	}
-
-	client, err := t.clientSet.CamServiceClient(region)
+	client, err := t.clientSet.CamServiceClient(opt.Region)
 	if err != nil {
 		return nil, fmt.Errorf("new cam client failed, err: %v", err)
 	}

@@ -316,7 +316,9 @@ func (cli *client) deletePermissionTemplate(kt *kit.Kit, opt *SyncPermissionTemp
 	elems := slice.Split(delCloudIDs, constant.CloudResourceSyncMaxLimit)
 	for _, parts := range elems {
 		deleteReq := &protocloud.PermissionTemplateBatchDeleteReq{
-			Filter: tools.ContainersExpression("cloud_id", parts),
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", parts),
+				tools.RuleEqual("vendor", enumor.TCloud)),
 		}
 		if err := cli.dbCli.Global.PermissionTemplate.BatchDelete(kt, deleteReq); err != nil {
 			logs.Errorf("[%s] delete permission template failed, account: %s, err: %v, rid: %s",

@@ -444,8 +444,8 @@ func (opt *TCloudListAttachedUserAllPoliciesOption) Validate() error {
 
 // TCloudAttachedPolicy defines a single policy attached to a sub-user.
 type TCloudAttachedPolicy struct {
-	// PolicyId 策略 ID（字符串形式）
-	PolicyId string `json:"policy_id"`
+	// PolicyID 策略 ID（字符串形式）
+	PolicyID string `json:"policy_id"`
 	// PolicyName 策略名称
 	PolicyName string `json:"policy_name"`
 	// Description 策略描述
