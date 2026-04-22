@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inject, reactive, type Ref, ref, computed } from 'vue';
+import { inject, type Ref, ref, computed } from 'vue';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import {
@@ -41,25 +41,13 @@ const { settings } = useTableSettings(props.columns);
 
 const bizId = computed(() => getBizsId());
 
-const subAccountCache = reactive<Record<string, LinkPopoverItem[]>>({});
-const subAccountLoading = reactive<Record<string, boolean>>({});
-
 const getSubAccountLoadFn = (row: IPermissionTemplateItem) => async (): Promise<LinkPopoverItem[]> => {
-  if (subAccountCache[row.id]) return subAccountCache[row.id];
-
-  subAccountLoading[row.id] = true;
-  try {
-    const sub_accounts = await permissionTemplateStore.getPermissionTemplateSubAccountIds(
-      bizId.value,
-      currentVendor.value,
-      row.id,
-    );
-    const items = sub_accounts.map(({ id, cloud_id }) => ({ id, label: cloud_id }));
-    subAccountCache[row.id] = items;
-    return items;
-  } finally {
-    subAccountLoading[row.id] = false;
-  }
+  const sub_accounts = await permissionTemplateStore.getPermissionTemplateSubAccountIds(
+    bizId.value,
+    currentVendor.value,
+    row.id,
+  );
+  return sub_accounts.map(({ id, cloud_id }) => ({ id, label: cloud_id }));
 };
 
 const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
