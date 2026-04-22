@@ -35,7 +35,6 @@
     "highlight.js": "~11.5.0",
     "ipaddr.js": "2.1.0",
     "js-cookie": "3.0.5",
-    "less": "4.6.4",
     "libphonenumber-js": "1.12.41",
     "lodash": "4.17.21",
     "mitt": "3.0.0",
