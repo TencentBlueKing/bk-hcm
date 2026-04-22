@@ -351,6 +351,17 @@ func (a *ApplicationOfCreateSubAccount) updateSubAccountConfigureDetail(subAccou
 		return fmt.Errorf("update sub account failed, err: %v", err)
 	}
 
+	updateMap, err := converter.StructToMap(updateField)
+	if err != nil {
+		logs.Errorf("convert update field to map failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return fmt.Errorf("convert update field to map failed, err: %v", err)
+	}
+
+	if err = a.UpdateAudit(enumor.SubAccountAuditResType, subAccountID, a.req.Name, updateMap); err != nil {
+		logs.Errorf("update sub account audit failed, sub_account_id: %s, err: %v, rid: %s",
+			subAccountID, err, a.Cts.Kit.Rid)
+		return err
+	}
 	return nil
 }
 
