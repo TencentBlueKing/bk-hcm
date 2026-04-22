@@ -160,6 +160,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
         "cloud_created_at": "2024-01-01T12:00:00Z",
         "sub_account_secret_count": 10,
 		"permission_template_ids": ["00000001"],
+        "permission_templates": {
+          "id": "00000001",
+          "name": "template1"
+        },
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2024-01-01T12:00:00Z",
@@ -198,9 +202,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 
 #### data
 
-| 参数名称 | 参数类型         | 描述             |
-|------|--------------|----------------|
-| count | uint64       | 当前规则能匹配到的总记录条数 |
+| 参数名称    | 参数类型         | 描述             |
+|---------|--------------|----------------|
+| count   | uint64       | 当前规则能匹配到的总记录条数 |
 | details | object array | 查询返回的数据        |
 
 #### data.details[n]
@@ -225,6 +229,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | cloud_created_at         | string       | 云上创建时间，标准格式：2006-01-02T15:04:05Z     |
 | sub_account_secret_count | int64        | 三级账号密钥数                              |
 | permission_template_ids  | string array | 三级账号关联权限模版ID列表                       |
+| permission_templates     | object array | 三级账号关联权限模版信息列表                       |
 | creator                  | string       | 创建者                                  |
 | reviser                  | string       | 更新者                                  |
 | created_at               | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -239,3 +244,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/sub_accounts/list
 | action_flag           | string  | 敏感操作保护设置，枚举值：phone(安全手机)、token(硬token)、stoken(MFA字段)、wechat(微信)、custom(自定义)、mail(邮箱)、u2FToken(u2f硬件token) |
 | console_login         | int64   | 枚举值：0（编程账号，无法登录控制台）、1（控制台账号，可登录控制台）                                                                       |
 | cloud_main_account_id | string  | 三级账号所属的二级账号云ID                                                                                            |
+
+##### data.details[n].permission_templates[n]
+
+| 参数名称 | 参数类型   | 描述       |
+|------|--------|----------|
+| id   | string | 权限模版本地ID |
+| name | string | 权限模版名称   |
