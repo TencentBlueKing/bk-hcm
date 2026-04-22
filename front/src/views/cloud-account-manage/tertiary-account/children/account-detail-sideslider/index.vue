@@ -303,9 +303,12 @@ const formatTime = (time?: string) => {
           <div class="card-body">
             <div class="info-item">
               <span class="info-label">权限模板：</span>
-              <span class="info-value">
-                <span>--</span>
+              <span class="info-value permission-template-tags" v-if="rowData?.permission_templates?.length">
+                <bk-tag v-for="(template, index) in rowData.permission_templates" :key="index">
+                  {{ template.name }}
+                </bk-tag>
               </span>
+              <span class="info-value" v-else>--</span>
             </div>
           </div>
         </div>
@@ -595,6 +598,12 @@ const formatTime = (time?: string) => {
   .info-value {
     color: #313238;
     word-break: break-all;
+  }
+
+  .permission-template-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 
