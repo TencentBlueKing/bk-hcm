@@ -22,9 +22,7 @@ const props = withDefaults(
     /** 异步加载列表数据的函数 */
     loadFn?: () => Promise<LinkPopoverItem[]>;
     /** 直接传入列表数据（与 loadFn 二选一） */
-    items?: LinkPopoverItem[];
-    /** 列表项点击回调，返回 false 可阻止默认行为 */
-    onLinkClick?: (item: LinkPopoverItem) => void | false;
+    list?: LinkPopoverItem[];
     /** 空状态文案，默认"未查询到数据" */
     emptyText?: string;
     /** 弹出框宽度，默认 162px */
@@ -43,16 +41,20 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  (e: 'linkClick', item: LinkPopoverItem): void;
+}>();
+
 const loading = ref(false);
-const list = ref<LinkPopoverItem[]>([]);
-const hasLoaded = ref(false);
+const renderList = ref<LinkPopoverItem[]>([]);
+const isLoaded = ref(false);
 
 const loadData = async () => {
-  if (props.loadFn && !hasLoaded.value) {
+  if (props.loadFn && !isLoaded.value) {
     loading.value = true;
     try {
-      list.value = await props.loadFn();
-      hasLoaded.value = true;
+      renderList.value = await props.loadFn();
+      isLoaded.value = true;
     } finally {
       loading.value = false;
     }
@@ -63,20 +65,20 @@ const handleAfterShow = () => {
   loadData();
 };
 
-// 当直接传入 items 时同步
+// 当直接传入 list 时同步
 watch(
-  () => props.items,
+  () => props.list,
   (val) => {
     if (val) {
-      list.value = val;
-      hasLoaded.value = true;
+      renderList.value = val;
+      isLoaded.value = true;
     }
   },
   { immediate: true },
 );
 
 const handleLinkClick = (item: LinkPopoverItem) => {
-  props.onLinkClick?.(item);
+  emit('linkClick', item);
 };
 </script>
 
@@ -94,13 +96,13 @@ const handleLinkClick = (item: LinkPopoverItem) => {
     <template #content>
       <bk-loading v-if="showLoading && loading" theme="primary" mode="spin" size="mini" :opacity="1" />
       <ul
-        v-else-if="list.length"
+        v-else-if="renderList.length"
         class="link-popover-list"
         :style="{ width: `${popoverWidth}px`, maxHeight: `${popoverMaxHeight}px` }"
       >
-        <li v-for="item in list" :key="item.id" class="link-popover-item" @click="handleLinkClick(item)">
+        <li v-for="item in renderList" :key="item.id" class="link-popover-item">
           <span class="link-popover-label" v-bk-tooltips="{ content: item.label }">{{ item.label }}</span>
-          <Share class="link-popover-icon" />
+          <Share class="link-popover-icon" @click="handleLinkClick(item)" />
         </li>
       </ul>
       <div v-else class="link-popover-empty">{{ emptyText }}</div>

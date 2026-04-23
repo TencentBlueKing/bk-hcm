@@ -2,7 +2,8 @@
 import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
+import { useCloudSecretStore } from '@/store/cloud-account-manage/cloud-secret';
+import type { ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
 import {
@@ -19,19 +20,19 @@ import DatetimeValue from '@/components/display-value/datetime-value.vue';
 import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/children/secret-action-dialog/index.vue';
 import type { ICloudSecretItem, SecretActionType } from '@/views/cloud-account-manage/cloud-secret/typings';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
-  modelValue: boolean;
   rowData: ISubAccountItem | null;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'update-success'): void;
   (e: 'edit' | 'delete', row: ISubAccountItem): void;
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const cloudAccountStore = useCloudAccountStore();
+const cloudSecretStore = useCloudSecretStore();
 const accountStore = useAccountStore();
 const { getBizsId } = useWhereAmI();
 
@@ -52,7 +53,7 @@ const loadSecretList = async () => {
   if (!props.rowData?.id) return;
   secretLoading.value = true;
   try {
-    const result = await cloudAccountStore.getSubAccountSecretList(getBizsId(), currentVendor.value, {
+    const result = await cloudSecretStore.getSubAccountSecretList(getBizsId(), currentVendor.value, {
       sub_account_ids: [props.rowData.id],
       page: { count: false, start: 0, limit: 500 },
     });
@@ -65,7 +66,7 @@ const loadSecretList = async () => {
 };
 
 watch(
-  () => props.modelValue,
+  () => model.value,
   (val) => {
     if (val && props.rowData) {
       loadSecretList();
@@ -74,7 +75,7 @@ watch(
 );
 
 const handleClose = () => {
-  emit('update:modelValue', false);
+  model.value = false;
 };
 
 const handleEdit = () => {
@@ -130,7 +131,7 @@ const handleCreateSecret = async () => {
 
   showKeyLoading.value = true;
   try {
-    const res = await cloudAccountStore.createSubAccountSecret(getBizsId(), currentVendor.value, props.rowData.id);
+    const res = await cloudSecretStore.createSubAccountSecret(getBizsId(), currentVendor.value, props.rowData.id);
     showKeyLoading.value = false;
     newSecretId.value = res?.extension?.cloud_secret_id || '--';
     newSecretKey.value = res?.extension?.cloud_secret_key || '--';
@@ -192,7 +193,7 @@ const formatTime = (time?: string) => {
 
 <template>
   <bk-sideslider
-    :is-show="modelValue"
+    :is-show="model"
     :width="960"
     title="三级账号详情"
     :before-close="handleClose"

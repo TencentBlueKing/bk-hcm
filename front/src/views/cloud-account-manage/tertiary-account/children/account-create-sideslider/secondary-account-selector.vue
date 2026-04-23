@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { SelectColumn } from '@blueking/ediatable';
-import type { ISecondaryAccountItem } from '@/store/cloud-account';
+import type { ISecondaryAccountItem } from '@/store/cloud-account-manage/secondary-account';
 
 defineOptions({ name: 'SecondaryAccountSelector' });
 

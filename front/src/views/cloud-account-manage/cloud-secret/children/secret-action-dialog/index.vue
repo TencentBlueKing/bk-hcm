@@ -1,30 +1,25 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Message } from 'bkui-vue';
-import { useCloudAccountStore } from '@/store/cloud-account';
+import { useCloudSecretStore } from '@/store/cloud-account-manage/cloud-secret';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { SECRET_ACTION_CONFIG } from '../../constants';
 import type { ICloudSecretItem, SecretActionType } from '../../typings';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
-  modelValue: boolean;
   actionType: SecretActionType;
   secretData: ICloudSecretItem | null;
   vendor: string;
 }>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
   success: [];
 }>();
 
-const cloudAccountStore = useCloudAccountStore();
+const cloudSecretStore = useCloudSecretStore();
 const { getBizsId } = useWhereAmI();
-
-const isShow = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-});
 
 const isAcknowledged = ref(false);
 const isSubmitting = ref(false);
@@ -36,7 +31,7 @@ const formatDateTime = (dateStr?: string) => {
   return dateStr.replace('T', ' ').replace('Z', '');
 };
 
-watch(isShow, (val) => {
+watch(model, (val) => {
   if (!val) {
     isAcknowledged.value = false;
     isSubmitting.value = false;
@@ -44,7 +39,7 @@ watch(isShow, (val) => {
 });
 
 const handleCancel = () => {
-  isShow.value = false;
+  model.value = false;
 };
 
 const handleConfirm = async () => {
@@ -56,11 +51,11 @@ const handleConfirm = async () => {
     const bkBizId = getBizsId();
 
     if (props.actionType === 'delete') {
-      await cloudAccountStore.deleteSubAccountSecret(bkBizId, props.vendor, [props.secretData.id]);
+      await cloudSecretStore.deleteSubAccountSecret(bkBizId, props.vendor, [props.secretData.id]);
       Message({ theme: 'success', message: '删除密钥申请已提交' });
     } else {
       const newStatus = props.actionType === 'enable' ? 'enabled' : 'disabled';
-      await cloudAccountStore.updateSubAccountSecretStatus(bkBizId, props.vendor, [
+      await cloudSecretStore.updateSubAccountSecretStatus(bkBizId, props.vendor, [
         {
           id: props.secretData.id,
           status: newStatus,
@@ -69,7 +64,7 @@ const handleConfirm = async () => {
       Message({ theme: 'success', message: `${props.actionType === 'enable' ? '启用' : '禁用'}密钥申请已提交` });
     }
 
-    isShow.value = false;
+    model.value = false;
     emit('success');
   } catch (error) {
     console.error('操作失败:', error);
@@ -81,7 +76,7 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <bk-dialog v-model:is-show="isShow" :width="480" header-align="center" footer-align="center" :quick-close="false">
+  <bk-dialog v-model:is-show="model" :width="480" header-align="center" footer-align="center" :quick-close="false">
     <template #header>
       <div class="dialog-header">
         <svg class="icon svg-icon">

@@ -2,22 +2,22 @@
 import { ref, inject, type Ref, computed } from 'vue';
 import { Message } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
+import { useTertiaryAccountStore, type ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
 import { VendorEnum } from '@/common/constant';
 import { ACCOUNT_TYPE_OPTIONS } from '../../constants';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
-  modelValue: boolean;
   accountData: ISubAccountItem | null;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'success'): void;
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const cloudAccountStore = useCloudAccountStore();
+const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const confirmed = ref(false);
@@ -26,7 +26,7 @@ const isSubmitting = ref(false);
 const isConfirmDisabled = computed(() => !confirmed.value);
 
 const handleClose = () => {
-  emit('update:modelValue', false);
+  model.value = false;
   confirmed.value = false;
 };
 
@@ -35,7 +35,7 @@ const handleConfirm = async () => {
 
   isSubmitting.value = true;
   try {
-    await cloudAccountStore.deleteSubAccount(getBizsId(), currentVendor.value, [props.accountData.id]);
+    await tertiaryAccountStore.deleteSubAccount(getBizsId(), currentVendor.value, [props.accountData.id]);
     Message({ theme: 'success', message: '删除申请提交成功' });
     handleClose();
     emit('success');
@@ -59,7 +59,7 @@ const getAccountTypeText = (consoleLogin?: number) => {
 
 <template>
   <bk-dialog
-    :is-show="modelValue"
+    :is-show="model"
     title="删除三级账号"
     :close-icon="true"
     width="500"

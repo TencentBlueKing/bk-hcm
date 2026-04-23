@@ -12,23 +12,18 @@ import DatetimeValue from '@/components/display-value/datetime-value.vue';
 import routeAction from '@/router/utils/action';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
-  modelValue: boolean;
   secretData: ICloudSecretItem | null;
   vendor: string;
 }>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
   'action-success': [];
 }>();
 
 const accountStore = useAccountStore();
-
-const isShow = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val),
-});
 
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
@@ -69,12 +64,12 @@ const handleToggleStatus = () => {
 
 const handleActionSuccess = () => {
   emit('action-success');
-  isShow.value = false;
+  model.value = false;
 };
 </script>
 
 <template>
-  <bk-sideslider v-model:is-show="isShow" title="云密钥详情" :width="640" quick-close :before-close="() => true">
+  <bk-sideslider v-model:is-show="model" title="云密钥详情" :width="640" quick-close :before-close="() => true">
     <template #header>
       <div class="slider-header">
         <span class="title">云密钥详情</span>

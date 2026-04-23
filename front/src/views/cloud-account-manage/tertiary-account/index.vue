@@ -8,7 +8,7 @@ import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
-import { useCloudAccountStore, type ISubAccountItem } from '@/store/cloud-account';
+import { useTertiaryAccountStore, type ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 
@@ -29,7 +29,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const cloudAccountStore = useCloudAccountStore();
+const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const searchModel = SearchConditionFactory.createModel();
@@ -102,7 +102,7 @@ watch(
       return;
     }
     try {
-      const detail = await cloudAccountStore.getSubAccountDetail(getBizsId(), currentVendor.value, id as string);
+      const detail = await tertiaryAccountStore.getSubAccountDetail(getBizsId(), currentVendor.value, id as string);
       if (detail) {
         currentAccount.value = detail;
         showDetailSideslider.value = true;
@@ -138,7 +138,7 @@ const loadFullList = async () => {
       ],
     };
 
-    const list = await cloudAccountStore.getSubAccountFullList(
+    const list = await tertiaryAccountStore.getSubAccountFullList(
       getBizsId(),
       currentVendor.value,
       vendorFilter,
@@ -196,7 +196,7 @@ watch(
   },
 );
 
-const isLoading = computed(() => cloudAccountStore.subAccountListLoading);
+const isLoading = computed(() => tertiaryAccountStore.subAccountListLoading);
 
 const showCreateSideslider = ref(false);
 const handleCreateAccount = () => {

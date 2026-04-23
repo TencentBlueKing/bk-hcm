@@ -5,8 +5,7 @@ import { SelectColumn } from '@blueking/ediatable';
 import { DisplayType } from './typings';
 
 export type ListGeneratorFactory<T = Record<string, any>> = (
-  keyword?: string,
-  options?: { ids?: (string | number)[]; [key: string]: any },
+  keywordOrOptions?: string | { ids?: (string | number)[]; [key: string]: any },
 ) => AsyncGenerator<T[], void>;
 
 defineOptions({ name: 'hcm-form-list' });
@@ -53,12 +52,14 @@ const supplementSelectedItems = async () => {
     (id) => !localList.value.some((item) => item[idKey.value] === id),
   );
   if (ids.length === 0) return;
-  const supplementGen = props.listGenerator!(undefined, { ids });
-  const result = await supplementGen.next();
-  if (!result.done) {
-    const items = result.value as Record<string, any>[];
-    localList.value = [...items, ...localList.value];
-    items.forEach((item) => pinnedIds.value.add(item[idKey.value]));
+  const supplementGen = props.listGenerator!({ ids });
+  const supplementList: Record<string, any>[] = [];
+  for await (const items of supplementGen) {
+    supplementList.push(...(items as Record<string, any>[]));
+  }
+  if (supplementList.length > 0) {
+    localList.value = [...supplementList, ...localList.value];
+    supplementList.forEach((item) => pinnedIds.value.add(item[idKey.value]));
   }
 };
 

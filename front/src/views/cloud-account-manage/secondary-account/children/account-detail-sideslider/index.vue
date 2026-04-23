@@ -3,8 +3,8 @@ import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message, InfoBox } from 'bkui-vue';
 import { Share } from 'bkui-vue/lib/icon';
-import type { ISecondaryAccountItem, IAccountSecretItem } from '@/store/cloud-account';
-import { useCloudAccountStore } from '@/store/cloud-account';
+import type { ISecondaryAccountItem, IAccountSecretItem } from '@/store/cloud-account-manage/secondary-account';
+import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import DisplayValue from '@/components/display-value/index.vue';
 import SecretKeyDialog from './secret-key-dialog.vue';
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 }>();
 
 // Store 和 Hooks
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 const accountStore = useAccountStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
@@ -74,7 +74,7 @@ const fetchSecretList = async () => {
 
   try {
     secretLoading.value = true;
-    const { list } = await cloudAccountStore.getAccountSecretList(getBizsId(), currentRowData.value.vendor, {
+    const { list } = await secondaryAccountStore.getAccountSecretList(getBizsId(), currentRowData.value.vendor, {
       filter: {
         op: 'and',
         rules: [{ field: 'account_id', op: 'eq', value: currentRowData.value.id }],
@@ -216,7 +216,7 @@ const handleDeleteSecret = (row: IAccountSecretItem) => {
     cancelText: '取消',
     onConfirm: async () => {
       try {
-        await cloudAccountStore.deleteAccountSecret(getBizsId(), row.vendor, [row.id]);
+        await secondaryAccountStore.deleteAccountSecret(getBizsId(), row.vendor, [row.id]);
         Message({ theme: 'success', message: '删除成功' });
         fetchSecretList();
       } catch (error) {

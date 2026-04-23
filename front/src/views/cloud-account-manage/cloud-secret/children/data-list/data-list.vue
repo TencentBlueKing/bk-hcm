@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { h } from 'vue';
-import { Message, Button } from 'bkui-vue';
-import { Copy } from 'bkui-vue/lib/icon';
+import { Button } from 'bkui-vue';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
-import useClipboard from 'vue-clipboard3';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET, AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
 import { CONSOLE_LOGIN_MAP } from '../../constants';
@@ -35,8 +34,6 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-const { toClipboard } = useClipboard();
-
 const formatDateTime = (dateStr?: string) => {
   if (!dateStr) return '--';
   return dateStr.replace('T', ' ').replace('Z', '');
@@ -46,16 +43,6 @@ const maskSecretId = (id: string) => {
   if (!id) return '--';
   if (id.length <= 8) return id;
   return `${id.substring(0, 4)}****${id.substring(id.length - 4)}`;
-};
-
-const handleCopySecretId = async (id: string, event: Event) => {
-  event.stopPropagation();
-  try {
-    await toClipboard(id);
-    Message({ theme: 'success', message: '复制成功' });
-  } catch (e) {
-    Message({ theme: 'error', message: '复制失败' });
-  }
 };
 
 const handleViewDetails = (row: ICloudSecretItem) => {
@@ -88,10 +75,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
           },
           () => maskSecretId(secretId),
         ),
-        h(Copy, {
-          class: 'copy-icon',
-          onClick: (e: Event) => handleCopySecretId(secretId, e),
-        }),
+        h(CopyToClipboard, { content: secretId }),
       ]);
     };
   }
@@ -247,16 +231,5 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-
-  .copy-icon {
-    font-size: 14px;
-    color: #979ba5;
-    cursor: pointer;
-    flex-shrink: 0;
-
-    &:hover {
-      color: #3a84ff;
-    }
-  }
 }
 </style>

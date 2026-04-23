@@ -8,7 +8,7 @@ import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition } from '@/utils/search';
-import { ISubAccountSecretParams, useCloudAccountStore } from '@/store/cloud-account';
+import { type ISubAccountSecretParams, useCloudSecretStore } from '@/store/cloud-account-manage/cloud-secret';
 import { VendorEnum } from '@/common/constant';
 
 import Search from './children/search/search.vue';
@@ -23,7 +23,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const cloudAccountStore = useCloudAccountStore();
+const cloudSecretStore = useCloudSecretStore();
 const { getBizsId } = useWhereAmI();
 
 const searchModel = SearchConditionFactory.createModel();
@@ -40,7 +40,7 @@ const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
 const actionSecret = ref<ICloudSecretItem | null>(null);
 const sortParams = ref<{ sort: string; order: string }>({ sort: 'cloud_created_at', order: 'DESC' });
-const isLoading = computed(() => cloudAccountStore.subAccountSecretListLoading);
+const isLoading = computed(() => cloudSecretStore.subAccountSecretListLoading);
 
 const fetchList = async () => {
   const bkBizId = getBizsId();
@@ -85,7 +85,7 @@ const fetchList = async () => {
       });
     }
 
-    const { list, count } = await cloudAccountStore.getSubAccountSecretList(bkBizId, vendor, requestParams);
+    const { list, count } = await cloudSecretStore.getSubAccountSecretList(bkBizId, vendor, requestParams);
     tableData.value = list as ICloudSecretItem[];
     pagination.count = count;
   } catch (error) {
@@ -163,7 +163,7 @@ watch(
       return;
     }
     try {
-      const detail = await cloudAccountStore.getSubAccountSecretDetail(getBizsId(), currentVendor.value, id as string);
+      const detail = await cloudSecretStore.getSubAccountSecretDetail(getBizsId(), currentVendor.value, id as string);
       if (detail) {
         currentSecret.value = detail as ICloudSecretItem;
         showDetailSlider.value = true;

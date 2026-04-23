@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue';
 import { Message } from 'bkui-vue';
-import { useCloudAccountStore, type IAccountSecretItem } from '@/store/cloud-account';
+import { useSecondaryAccountStore, type IAccountSecretItem } from '@/store/cloud-account-manage/secondary-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 // 双向绑定控制显示状态
@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>();
 
 // Store 和 Hooks
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 // 表单引用
@@ -139,7 +139,7 @@ const handleCheckSecret = async () => {
   isChecking.value = true;
 
   try {
-    const result = await cloudAccountStore.checkAccountSecret(getBizsId(), {
+    const result = await secondaryAccountStore.checkAccountSecret(getBizsId(), {
       account_id: props.accountId,
       type: formData.value.type,
       extension: {
@@ -181,7 +181,7 @@ const handleSubmit = async () => {
   try {
     if (props.isEdit && props.secretData) {
       // 编辑密钥
-      await cloudAccountStore.updateAccountSecret(getBizsId(), props.secretData.id, {
+      await secondaryAccountStore.updateAccountSecret(getBizsId(), props.secretData.id, {
         type: formData.value.type,
         extension: {
           cloud_secret_id: formData.value.cloud_secret_id,
@@ -191,7 +191,7 @@ const handleSubmit = async () => {
       Message({ theme: 'success', message: '编辑成功' });
     } else {
       // 创建密钥
-      await cloudAccountStore.createAccountSecret(getBizsId(), {
+      await secondaryAccountStore.createAccountSecret(getBizsId(), {
         account_id: props.accountId,
         type: formData.value.type,
         extension: {

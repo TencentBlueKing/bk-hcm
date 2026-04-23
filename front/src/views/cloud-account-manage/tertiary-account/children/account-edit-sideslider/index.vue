@@ -3,25 +3,29 @@ import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCloudAccountStore, type ISubAccountItem, type ISubAccountUpdateParams } from '@/store/cloud-account';
+import {
+  useTertiaryAccountStore,
+  type ISubAccountItem,
+  type ISubAccountUpdateParams,
+} from '@/store/cloud-account-manage/tertiary-account';
 import { VendorEnum } from '@/common/constant';
 import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
-import ValidatedPermissionTemplateSelector from '../components/validated-permission-template-selector.vue';
+import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
+
+const model = defineModel<boolean>();
 
 const props = defineProps<{
-  modelValue: boolean;
   accountData: ISubAccountItem | null;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'success'): void;
 }>();
 
 const formRef = ref();
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const cloudAccountStore = useCloudAccountStore();
+const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const formData = ref({
@@ -76,7 +80,7 @@ const formRules = {
 };
 
 watch(
-  () => props.modelValue,
+  () => model.value,
   (val) => {
     if (val && props.accountData) {
       formData.value = {
@@ -94,7 +98,7 @@ watch(
 );
 
 const handleClose = () => {
-  emit('update:modelValue', false);
+  model.value = false;
 };
 
 const handleSubmit = async () => {
@@ -121,7 +125,7 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    await cloudAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
+    await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
     Message({ theme: 'success', message: '更新申请提交成功' });
     handleClose();
     emit('success');
@@ -136,11 +140,16 @@ const parentAccountDisplay = () => {
   if (!props.accountData) return '--';
   return `${props.accountData.account_id || '--'}`;
 };
+
+const permissionTemplateStore = usePermissionTemplateStore();
+const listGenerator = computed(() =>
+  permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value),
+);
 </script>
 
 <template>
   <bk-sideslider
-    :is-show="modelValue"
+    :is-show="model"
     :width="640"
     title="编辑三级账号"
     :before-close="handleClose"
@@ -171,9 +180,14 @@ const parentAccountDisplay = () => {
           </bk-form-item>
 
           <bk-form-item label="权限模板" property="permission_template_ids" required>
-            <ValidatedPermissionTemplateSelector
+            <hcm-form-list
               v-model="formData.permission_template_ids"
-              placeholder="请选择权限模板"
+              :list-generator="listGenerator"
+              placeholder="请选择"
+              display-key="name"
+              id-key="id"
+              collapse-tags
+              multiple
             />
           </bk-form-item>
 

@@ -4,7 +4,7 @@ import { Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
-import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
+import { useSecondaryAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account-manage/secondary-account';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useUserStore } from '@/store/user';
 import { SITE_TYPE } from '@/constants/account';
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>();
 
 // Store 和 Hooks
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 const userStore = useUserStore();
 const { getBizsId } = useWhereAmI();
 
@@ -155,7 +155,7 @@ const handleSubmit = async () => {
     // 真实接口调用
     if (props.isEdit) {
       // 编辑接口
-      await cloudAccountStore.updateSecondaryAccount(getBizsId(), props.accountData!.id, {
+      await secondaryAccountStore.updateSecondaryAccount(getBizsId(), props.accountData!.id, {
         name: formData.value.name,
         managers: formData.value.managers,
         security_managers: formData.value.security_managers,
@@ -179,7 +179,7 @@ const handleSubmit = async () => {
       emit('success', updatedData);
     } else {
       // 录入接口
-      await cloudAccountStore.createSecondaryAccount(getBizsId(), {
+      await secondaryAccountStore.createSecondaryAccount(getBizsId(), {
         vendor: 'tcloud',
         name: formData.value.name,
         managers: formData.value.managers,

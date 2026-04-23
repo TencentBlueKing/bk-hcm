@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
 import CombineRequest from '@blueking/combine-request';
-import { useCloudAccountStore } from '@/store/cloud-account';
+import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
 
 const props = defineProps<{ value: string | string[]; bizId: number }>();
 
@@ -15,7 +15,7 @@ const localValue = computed(() => {
 const displayValue = computed(() => {
   const names = localValue.value.map((id) => {
     // 每次从全局store中查询获取
-    const account = cloudAccountStore.allSecondaryAccountCacheList.get(id);
+    const account = secondaryAccountStore.allSecondaryAccountCacheList.get(id);
     if (!account) {
       return `${id} (--)`;
     }
@@ -24,11 +24,11 @@ const displayValue = computed(() => {
   return names?.join?.(';') || '--';
 });
 
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 
 const combineRequest = CombineRequest.setup(Symbol.for('secondary-account-value'), (accountIds) => {
   const uniqueIds = [...new Set((accountIds as string[][]).reduce((acc, cur) => acc.concat(cur), []))];
-  cloudAccountStore.getSecondaryAccountListByAccountIds(uniqueIds, props.bizId);
+  secondaryAccountStore.getSecondaryAccountListByAccountIds(uniqueIds, props.bizId);
 });
 
 watchEffect(() => {

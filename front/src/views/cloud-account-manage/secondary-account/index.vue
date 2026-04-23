@@ -8,7 +8,7 @@ import useSearchQs from '@/hooks/use-search-qs';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
-import { useCloudAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account';
+import { useSecondaryAccountStore, type ISecondaryAccountItem } from '@/store/cloud-account-manage/secondary-account';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 
@@ -25,7 +25,7 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 // 创建模型实例
@@ -94,7 +94,7 @@ const loadFullList = async () => {
     };
 
     // 使用 rollRequest 获取全量数据
-    const list = await cloudAccountStore.getSecondaryAccountFullList(
+    const list = await secondaryAccountStore.getSecondaryAccountFullList(
       getBizsId(),
       vendorFilter,
       (progressList, count) => {
@@ -160,7 +160,7 @@ watch(
 );
 
 // 加载状态
-const isLoading = computed(() => cloudAccountStore.accountListLoading);
+const isLoading = computed(() => secondaryAccountStore.accountListLoading);
 
 // 详情侧栏状态
 const showDetailSideslider = ref(false);
@@ -192,7 +192,7 @@ watch(
       return;
     }
     try {
-      const detail = await cloudAccountStore.getSecondaryAccountDetail(getBizsId(), id as string);
+      const detail = await secondaryAccountStore.getSecondaryAccountDetail(getBizsId(), id as string);
       if (detail) {
         currentAccount.value = detail;
         showDetailSideslider.value = true;
@@ -299,7 +299,7 @@ const handleSyncAccount = () => {
               return;
             }
 
-            const results = await cloudAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
+            const results = await secondaryAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
             loadingBox.hide();
 
             if (results.failed.length === 0) {

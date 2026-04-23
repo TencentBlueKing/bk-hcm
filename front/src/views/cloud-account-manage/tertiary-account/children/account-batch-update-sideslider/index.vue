@@ -4,27 +4,31 @@ import { Message, Select } from 'bkui-vue';
 import { Ediatable, TextPlainColumn, SelectColumn } from '@blueking/ediatable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore } from '@/store';
-import { useCloudAccountStore, type ISubAccountItem, type ISubAccountUpdateParams } from '@/store/cloud-account';
+import {
+  useTertiaryAccountStore,
+  type ISubAccountItem,
+  type ISubAccountUpdateParams,
+} from '@/store/cloud-account-manage/tertiary-account';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import { VendorEnum } from '@/common/constant';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
-import ValidatedUserSelector from '../components/validated-user-selector.vue';
+
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
-  modelValue: boolean;
   selectedRows: ISubAccountItem[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'success'): void;
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const accountStore = useAccountStore();
-const cloudAccountStore = useCloudAccountStore();
+const tertiaryAccountStore = useTertiaryAccountStore();
 const accountSelectorStore = useAccountSelectorStore();
 const { getBizsId } = useWhereAmI();
 
@@ -46,7 +50,7 @@ const managerRefs = ref<Record<number, ComponentPublicInstance & { getValue: () 
 const bizRefs = ref<Record<number, ComponentPublicInstance & { getValue: () => Promise<any> }>>({});
 
 watch(
-  () => props.modelValue,
+  () => model.value,
   async (val) => {
     if (val) {
       isReady.value = false;
@@ -83,7 +87,7 @@ watch(
 );
 
 const handleClose = () => {
-  emit('update:modelValue', false);
+  model.value = false;
 };
 
 const handleRemoveRow = (index: number) => {
@@ -117,7 +121,7 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    await cloudAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
+    await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
     Message({ theme: 'success', message: '批量更新申请提交成功' });
     handleClose();
     emit('success');
@@ -154,7 +158,7 @@ const headList = computed(() => [
   { title: '所属二级账号名称', minWidth: 140, required: false },
   {
     title: '三级账号负责人',
-    minWidth: 180,
+    minWidth: 240,
     renderAppend: () =>
       h(
         BatchUpdatePopConfirm,
@@ -204,7 +208,7 @@ const headList = computed(() => [
 
 <template>
   <bk-sideslider
-    :is-show="modelValue"
+    :is-show="model"
     :width="1200"
     title="批量更新三级账号信息"
     :before-close="handleClose"
@@ -235,13 +239,13 @@ const headList = computed(() => [
                   <TextPlainColumn :data="row.account_name" />
                 </td>
                 <td>
-                  <ValidatedUserSelector
+                  <hcm-form-user
                     v-model="row.managers"
                     :ref="(el: any) => (managerRefs[index] = el)"
-                    :multiple="true"
-                    :collapse-tags="false"
-                    :allow-create="true"
-                    placeholder="请输入负责人"
+                    :display="{ on: 'cell' }"
+                    :clearable="false"
+                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '负责人不能为空' }]"
+                    placeholder="请输入"
                   />
                 </td>
                 <td>
@@ -301,25 +305,4 @@ const headList = computed(() => [
     min-width: 88px;
   }
 }
-
-/* stylelint-disable selector-class-pattern */
-:deep(.user-selector .bk-tag-input-trigger) {
-  min-height: 42px;
-  border-color: transparent;
-  border-radius: 0;
-
-  .placeholder {
-    margin-top: 5px;
-  }
-}
-
-:deep(.user-selector .bk-tag-input-trigger:hover) {
-  background-color: #fafbfd;
-  border-color: #a3c5fd !important;
-}
-
-:deep(.user-selector .bk-tag-input-trigger.active) {
-  border-color: #3a84ff !important;
-}
-/* stylelint-enable selector-class-pattern */
 </style>

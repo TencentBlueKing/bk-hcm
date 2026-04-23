@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import http from '@/http';
 import { IListResData, QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import rollRequest from '@blueking/roll-request';
+import { ListGeneratorFactory } from '@/components/form/list.vue';
 
 // 权限策略列表
 export interface IPermissionPolicyItem {
@@ -160,10 +161,12 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     }
   };
 
-  const createPolicyLibraryListGenerator = (vendor: string) => {
-    return async function* (keyword?: string, options?: { ids?: (string | number)[]; [key: string]: any }) {
+  const createPolicyLibraryListGenerator = (vendor: string): ListGeneratorFactory => {
+    return async function* (keywordOrOptions) {
       const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
       const rules: Array<{ field: string; op: string; value: any }> = [];
+      const keyword = typeof keywordOrOptions === 'string' ? keywordOrOptions : undefined;
+      const options = typeof keywordOrOptions === 'object' ? keywordOrOptions : undefined;
       if (keyword) rules.push({ field: 'name', op: QueryRuleOPEnum.CS, value: keyword });
       if (options?.ids?.length) rules.push({ field: 'id', op: QueryRuleOPEnum.IN, value: options.ids });
       const filterParams = rules.length > 0 ? { op: QueryRuleOPEnum.AND, rules } : {};

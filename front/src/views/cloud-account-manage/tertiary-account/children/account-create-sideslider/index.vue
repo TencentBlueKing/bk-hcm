@@ -4,27 +4,30 @@ import { Message, Select } from 'bkui-vue';
 import { Ediatable, InputColumn, SelectColumn } from '@blueking/ediatable';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCloudAccountStore, type ISubAccountCreateParams, type ISecondaryAccountItem } from '@/store/cloud-account';
+import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
+import { useTertiaryAccountStore, type ISubAccountCreateParams } from '@/store/cloud-account-manage/tertiary-account';
+import type { ISecondaryAccountItem } from '@/store/cloud-account-manage/secondary-account';
 import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum, type QueryFilterType } from '@/typings';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
-import ValidatedUserSelector from '../components/validated-user-selector.vue';
-import ValidatedPermissionTemplateSelector from '../components/validated-permission-template-selector.vue';
+
+import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
+
+const model = defineModel<boolean>();
 
 const props = defineProps<{
-  modelValue: boolean;
   defaultAccountId?: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', val: boolean): void;
   (e: 'success'): void;
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const cloudAccountStore = useCloudAccountStore();
+const secondaryAccountStore = useSecondaryAccountStore();
+const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const secondaryAccountList = ref<ISecondaryAccountItem[]>([]);
@@ -40,7 +43,7 @@ const loadSecondaryAccountList = async () => {
         { field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' },
       ],
     };
-    const list = await cloudAccountStore.getSecondaryAccountFullList(getBizsId(), filter);
+    const list = await secondaryAccountStore.getSecondaryAccountFullList(getBizsId(), filter);
     secondaryAccountList.value = list;
   } catch (error) {
     console.error('加载二级账号列表失败:', error);
@@ -50,7 +53,7 @@ const loadSecondaryAccountList = async () => {
 };
 
 watch(
-  () => props.modelValue,
+  () => model.value,
   async (val) => {
     if (val) {
       await loadSecondaryAccountList();
@@ -78,7 +81,7 @@ interface IRowData {
 }
 
 const defaultRow = (): IRowData => ({
-  account_id: '',
+  account_id: undefined,
   account_name: '',
   name: '',
   permission_template_ids: [],
@@ -107,11 +110,16 @@ const tableData = ref<IRowData[]>([defaultRow()]);
 
 const isSubmitting = ref(false);
 
+interface InputColumnExpose {
+  getValue: () => Promise<string | number>;
+  focus: () => void;
+}
+
 const accountRefs = ref<Record<number, InstanceType<typeof SelectColumn>>>({});
-const nameRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
-const permissionTemplateRefs = ref<Record<number, InstanceType<typeof ValidatedPermissionTemplateSelector>>>({});
-const managerRefs = ref<Record<number, InstanceType<typeof ValidatedUserSelector>>>({});
-const receiveEmailRefs = ref<Record<number, InstanceType<typeof InputColumn>>>({});
+const nameRefs = ref<Record<number, InputColumnExpose>>({});
+const permissionTemplateRefs = ref<Record<number, { getValue: () => Promise<any> }>>({});
+const managerRefs = ref<Record<number, { getValue: () => Promise<any> }>>({});
+const receiveEmailRefs = ref<Record<number, InputColumnExpose>>({});
 
 const secondaryAccountSelectList = computed(() =>
   secondaryAccountList.value.map((item) => ({
@@ -121,7 +129,7 @@ const secondaryAccountSelectList = computed(() =>
 );
 
 const handleClose = () => {
-  emit('update:modelValue', false);
+  model.value = false;
   accountType.value = 1;
   tableData.value = [defaultRow()];
 };
@@ -216,7 +224,7 @@ const headList = computed(() => [
         onUpdateValue: handleBatchUpdateName,
       }),
   },
-  { title: '权限模板', minWidth: 140, required: true },
+  { title: '权限模板', minWidth: 220, required: true },
   {
     title: '手机号',
     minWidth: 120,
@@ -226,7 +234,7 @@ const headList = computed(() => [
   { title: '账号邮箱', minWidth: 130, required: false },
   {
     title: '负责人',
-    minWidth: 180,
+    minWidth: 240,
     required: true,
     renderAppend: () =>
       h(
@@ -291,7 +299,7 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    await cloudAccountStore.createSubAccount(getBizsId(), currentVendor.value, subAccounts);
+    await tertiaryAccountStore.createSubAccount(getBizsId(), currentVendor.value, subAccounts);
     Message({ theme: 'success', message: '申请提交成功' });
     handleClose();
     emit('success');
@@ -301,14 +309,20 @@ const handleSubmit = async () => {
     isSubmitting.value = false;
   }
 };
+
+const permissionTemplateStore = usePermissionTemplateStore();
+const listGenerator = computed(() =>
+  permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value),
+);
 </script>
 
 <template>
   <bk-sideslider
-    :is-show="modelValue"
+    :is-show="model"
     :width="1280"
     title="创建三级账号"
     :before-close="handleClose"
+    render-directive="if"
     @closed="handleClose"
   >
     <template #default>
@@ -346,12 +360,18 @@ const handleSubmit = async () => {
                   />
                 </td>
                 <td>
-                  <ValidatedPermissionTemplateSelector
+                  <hcm-form-list
                     v-model="row.permission_template_ids"
+                    :list-generator="listGenerator"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
-                    :display="{ on: 'cell' }"
                     placeholder="请选择"
-                  />
+                    display-key="name"
+                    id-key="id"
+                    :display="{ on: 'cell' }"
+                    collapse-tags
+                    multiple
+                    :rules="[{ validator: (v: any) => (Boolean(v?.length)), message: '请选择权限模板' }]"
+                  ></hcm-form-list>
                 </td>
                 <td>
                   <InputColumn v-model="row.phone_num" placeholder="请输入" />
@@ -360,13 +380,13 @@ const handleSubmit = async () => {
                   <InputColumn v-model="row.email" placeholder="请输入" />
                 </td>
                 <td>
-                  <ValidatedUserSelector
+                  <hcm-form-user
                     v-model="row.managers"
                     :ref="(el: any) => (managerRefs[index] = el)"
-                    :multiple="true"
-                    :collapse-tags="false"
-                    :allow-create="true"
-                    placeholder="请输入负责人"
+                    :display="{ on: 'cell' }"
+                    :clearable="false"
+                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '负责人不能为空' }]"
+                    placeholder="请输入"
                   />
                 </td>
                 <td>
@@ -440,26 +460,4 @@ const handleSubmit = async () => {
     min-width: 88px;
   }
 }
-
-/* stylelint-disable selector-class-pattern */
-:deep(.user-selector .bk-tag-input-trigger) {
-  min-height: 42px;
-  border-color: transparent;
-  border-radius: 0;
-
-  .placeholder {
-    line-height: 42px;
-    top: 0;
-  }
-}
-
-:deep(.user-selector .bk-tag-input-trigger:hover) {
-  background-color: #fafbfd;
-  border-color: #a3c5fd !important;
-}
-
-:deep(.user-selector .bk-tag-input-trigger.active) {
-  border-color: #3a84ff !important;
-}
-/* stylelint-enable selector-class-pattern */
 </style>

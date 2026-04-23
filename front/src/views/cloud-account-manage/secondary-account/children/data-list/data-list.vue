@@ -3,7 +3,7 @@ import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
-import { type ISecondaryAccountItem } from '@/store/cloud-account';
+import { type ISecondaryAccountItem } from '@/store/cloud-account-manage/secondary-account';
 import { AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';

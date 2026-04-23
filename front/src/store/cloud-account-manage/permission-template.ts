@@ -5,6 +5,7 @@ import { IListResData, IQueryResData, QueryParamsType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
 import rollRequest from '@blueking/roll-request';
+import { ListGeneratorFactory } from '@/components/form/list.vue';
 
 export interface IPermissionTemplateItem {
   id: string;
@@ -193,10 +194,12 @@ export const usePermissionTemplateStore = defineStore('permission-template', () 
    * @param bizId 业务ID
    * @param vendor 云厂商
    */
-  const createPermissionTemplateListGenerator = (bizId: number, vendor: VendorEnum) => {
-    return async function* (keyword?: string, options?: { ids?: (string | number)[]; [key: string]: any }) {
+  const createPermissionTemplateListGenerator = (bizId: number, vendor: VendorEnum): ListGeneratorFactory => {
+    return async function* (keywordOrOptions) {
       const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/list`;
       const params: Record<string, any> = {};
+      const keyword = typeof keywordOrOptions === 'string' ? keywordOrOptions : undefined;
+      const options = typeof keywordOrOptions === 'object' ? keywordOrOptions : undefined;
       if (keyword) params.names = [keyword];
       if (options?.ids?.length) params.ids = options.ids;
 
