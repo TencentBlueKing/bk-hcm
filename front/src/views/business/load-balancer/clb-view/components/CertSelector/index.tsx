@@ -42,6 +42,7 @@ export default defineComponent({
 
     return () => (
       <Select
+        filterable
         v-model={selected.value}
         multiple={isSVRCert.value}
         onScroll-end={handleScrollEnd}

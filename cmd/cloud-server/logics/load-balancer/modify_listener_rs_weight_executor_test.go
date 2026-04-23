@@ -181,8 +181,8 @@ func TestBuildTaskDetailsLogic_SingleDetailMultipleRS(t *testing.T) {
 				},
 			},
 			expectedTaskDetails:   3,
-			expectedRsListPerTask: []int{1, 1, 1}, // 每个 taskDetail 应该只包含1个 RS
-			description:           "单个 detail，3个 RS 全部权重变化：应创建3个 taskDetail，每个只包含1个 RS",
+			expectedRsListPerTask: []int{3, 3, 3},
+			description:           "单个 detail，3个 RS 全部权重变化：应创建3个 taskDetail，且每个都携带完整 RsList",
 		},
 		{
 			name: "multiple_rs_partial_changed",
@@ -231,8 +231,8 @@ func TestBuildTaskDetailsLogic_SingleDetailMultipleRS(t *testing.T) {
 				},
 			},
 			expectedTaskDetails:   2,
-			expectedRsListPerTask: []int{1, 1}, // 只有2个需要变更，每个只包含1个 RS
-			description:           "单个 detail，3个 RS 部分权重变化：应创建2个 taskDetail（rs-001, rs-003），rs-002 无需变更",
+			expectedRsListPerTask: []int{3, 3},
+			description:           "单个 detail，3个 RS 部分权重变化：应创建2个 taskDetail（rs-001, rs-003），且每个都携带完整 RsList",
 		},
 	}
 
@@ -244,12 +244,12 @@ func TestBuildTaskDetailsLogic_SingleDetailMultipleRS(t *testing.T) {
 			// 验证 taskDetails 数量
 			assert.Equal(t, tt.expectedTaskDetails, len(taskDetails), tt.description)
 
-			// 验证每个 taskDetail 的 RsList 长度（关键：应该都是1）
+			// 验证每个 taskDetail 的 RsList 长度（当前语义：都应为完整 detail 的 RsList）
 			for i, taskDetail := range taskDetails {
 				actualRsCount := len(taskDetail.ListBatchListenerResult.RsList)
 				expectedRsCount := tt.expectedRsListPerTask[i]
 				assert.Equal(t, expectedRsCount, actualRsCount,
-					"taskDetail[%d] 应该只包含 %d 个 RS，实际包含 %d 个", i, expectedRsCount, actualRsCount)
+					"taskDetail[%d] 应该包含 %d 个 RS，实际包含 %d 个", i, expectedRsCount, actualRsCount)
 			}
 		})
 	}
@@ -326,21 +326,14 @@ func TestBuildTaskDetailsLogic_MultipleDetailsMultipleRS(t *testing.T) {
 	// 验证总数
 	assert.Equal(t, 3, len(taskDetails), "应创建3个 taskDetail（2个来自 clb-001，1个来自 clb-002）")
 
-	// 验证每个 taskDetail 只包含单个 RS
-	for i, taskDetail := range taskDetails {
-		assert.Equal(t, 1, len(taskDetail.ListBatchListenerResult.RsList),
-			"taskDetail[%d] 应该只包含1个 RS", i)
-	}
-
-	// 验证每个 taskDetail 关联的是正确的 detail 信息
+	// 前两个来自 clb-001，携带完整 RsList（2个）；第三个来自 clb-002（1个）
 	assert.Equal(t, "clb-001", taskDetails[0].ListBatchListenerResult.ClbID, "taskDetail[0] 应关联 clb-001")
-	assert.Equal(t, "rs-001", taskDetails[0].ListBatchListenerResult.RsList[0].ID, "taskDetail[0] 应包含 rs-001")
-
 	assert.Equal(t, "clb-001", taskDetails[1].ListBatchListenerResult.ClbID, "taskDetail[1] 应关联 clb-001")
-	assert.Equal(t, "rs-002", taskDetails[1].ListBatchListenerResult.RsList[0].ID, "taskDetail[1] 应包含 rs-002")
-
 	assert.Equal(t, "clb-002", taskDetails[2].ListBatchListenerResult.ClbID, "taskDetail[2] 应关联 clb-002")
-	assert.Equal(t, "rs-003", taskDetails[2].ListBatchListenerResult.RsList[0].ID, "taskDetail[2] 应包含 rs-003")
+
+	assert.Equal(t, 2, len(taskDetails[0].ListBatchListenerResult.RsList), "taskDetail[0] 应携带 clb-001 的完整 RsList")
+	assert.Equal(t, 2, len(taskDetails[1].ListBatchListenerResult.RsList), "taskDetail[1] 应携带 clb-001 的完整 RsList")
+	assert.Equal(t, 1, len(taskDetails[2].ListBatchListenerResult.RsList), "taskDetail[2] 应携带 clb-002 的完整 RsList")
 }
 
 // TestBuildTaskDetailsLogic_EdgeCases tests edge cases
@@ -445,9 +438,9 @@ func TestBuildTaskDetailsLogic_EdgeCases(t *testing.T) {
 	}
 }
 
-// TestBuildTaskDetailsLogic_RsListIsolation tests that each taskDetail has isolated RsList
-func TestBuildTaskDetailsLogic_RsListIsolation(t *testing.T) {
-	// 这个测试验证最关键的修复点：每个 taskDetail 的 RsList 是独立的，不会相互影响
+// TestBuildTaskDetailsLogic_RsListReference tests that taskDetails from same detail share same detail reference
+func TestBuildTaskDetailsLogic_RsListReference(t *testing.T) {
+	// 这个测试验证当前语义：同一个 detail 产生的多个 taskDetail，都会引用同一份完整 detail
 	details := []*dataproto.ListBatchListenerResult{
 		{
 			ClbID:        "clb-001",
@@ -504,33 +497,17 @@ func TestBuildTaskDetailsLogic_RsListIsolation(t *testing.T) {
 	// 验证总数
 	assert.Equal(t, 3, len(taskDetails), "应创建3个 taskDetail")
 
-	// 关键验证：每个 taskDetail 的 RsList 应该只包含1个 RS
+	// 每个 taskDetail 都携带完整 RsList
 	for i := range taskDetails {
-		taskDetail := taskDetails[i]
-		assert.Equal(t, 1, len(taskDetail.ListBatchListenerResult.RsList),
-			"taskDetail[%d] 的 RsList 应该只包含1个 RS", i)
+		assert.Equal(t, 3, len(taskDetails[i].ListBatchListenerResult.RsList),
+			"taskDetail[%d] 的 RsList 应该包含完整3个 RS", i)
 	}
 
-	// 验证每个 taskDetail 关联的是正确的 RS（而不是全部 RS）
-	assert.Equal(t, "rs-001", taskDetails[0].ListBatchListenerResult.RsList[0].ID,
-		"taskDetail[0] 应该只包含 rs-001")
-	assert.Equal(t, "rs-002", taskDetails[1].ListBatchListenerResult.RsList[0].ID,
-		"taskDetail[1] 应该只包含 rs-002")
-	assert.Equal(t, "rs-003", taskDetails[2].ListBatchListenerResult.RsList[0].ID,
-		"taskDetail[2] 应该只包含 rs-003")
-
-	// 验证每个 taskDetail 都关联到正确的 detail 信息（CLB 信息）
-	for i := range taskDetails {
-		assert.Equal(t, "clb-001", taskDetails[i].ListBatchListenerResult.ClbID,
-			"taskDetail[%d] 应该关联 clb-001", i)
-		assert.Equal(t, "lb-cloud-001", taskDetails[i].ListBatchListenerResult.CloudClbID,
-			"taskDetail[%d] 应该关联 lb-cloud-001", i)
-	}
-
-	// 验证 RsList 独立性：修改一个不影响另一个
-	taskDetails[0].ListBatchListenerResult.RsList[0].Weight = cvt.ValToPtr(int64(99))
-	assert.NotEqual(t, int64(99), cvt.PtrToVal(taskDetails[1].ListBatchListenerResult.RsList[0].Weight),
-		"修改 taskDetail[0] 的权重不应影响 taskDetail[1]")
+	// 同一个 detail 拆出的 taskDetail 应共享同一 detail 引用
+	assert.True(t, taskDetails[0].ListBatchListenerResult == taskDetails[1].ListBatchListenerResult,
+		"同一 detail 拆出的 taskDetail 应共享 detail 引用")
+	assert.True(t, taskDetails[1].ListBatchListenerResult == taskDetails[2].ListBatchListenerResult,
+		"同一 detail 拆出的 taskDetail 应共享 detail 引用")
 }
 
 // TestBuildTaskDetailsLogic_VerifyDetailFields tests that all detail fields are correctly copied
@@ -590,18 +567,20 @@ func TestBuildTaskDetailsLogic_VerifyDetailFields(t *testing.T) {
 	assert.Equal(t, int64(25), cvt.PtrToVal(createdDetail.RsList[0].Weight), "应该包含正确的原始权重")
 }
 
-// buildTaskDetailsFromDetailsLogic 直接调用生产代码中的 splitDetailsByRS 纯函数，
-// 并将结果包装为 batchListenerModifyRsWeightTaskDetail 列表，确保测试覆盖真正的生产逻辑。
+// buildTaskDetailsFromDetailsLogic 按生产逻辑构造 taskDetails：
+// 每个需要变更的 RS 生成一个 taskDetail，但 taskDetail 关联的是完整 detail（而非单 RS detail）。
 func buildTaskDetailsFromDetailsLogic(
 	details []*dataproto.ListBatchListenerResult) []*batchListenerModifyRsWeightTaskDetail {
 
-	splitResults := splitDetailsByRS(details)
-	taskDetails := make([]*batchListenerModifyRsWeightTaskDetail, 0, len(splitResults))
-	for _, singleRsDetail := range splitResults {
-		taskDetail := &batchListenerModifyRsWeightTaskDetail{
-			ListBatchListenerResult: singleRsDetail,
+	taskDetails := make([]*batchListenerModifyRsWeightTaskDetail, 0)
+	for _, detail := range details {
+		for _, rs := range detail.RsList {
+			if cvt.PtrToVal(rs.Weight) != cvt.PtrToVal(detail.NewRsWeight) {
+				taskDetails = append(taskDetails, &batchListenerModifyRsWeightTaskDetail{
+					ListBatchListenerResult: detail,
+				})
+			}
 		}
-		taskDetails = append(taskDetails, taskDetail)
 	}
 	return taskDetails
 }

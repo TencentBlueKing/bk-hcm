@@ -39,6 +39,7 @@ var ApplicationColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "source", NamedC: "source", Type: enumor.String},
 	{Column: "sn", NamedC: "sn", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
+	{Column: "operation", NamedC: "operation", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "bk_biz_ids", NamedC: "bk_biz_ids", Type: enumor.Json},
 
@@ -62,7 +63,9 @@ type ApplicationTable struct {
 	// SN 单据号
 	SN string `db:"sn" json:"sn" validate:"max=64"`
 	// Type 申请类型（新增账号、新增CVM等）
-	Type string `db:"type" json:"type" validate:"max=64"`
+	Type enumor.ApplicationType `db:"type" json:"type" validate:"max=64"`
+	// Operation 操作类型 （细粒度的操作类型）
+	Operation enumor.ApplicationOperation `db:"operation" json:"operation" validate:"max=64"`
 	// Status 单据状态
 	Status string `db:"status" json:"status" validate:"max=32"`
 	// BkBizID 业务ID
@@ -110,6 +113,14 @@ func (a ApplicationTable) InsertValidate() error {
 
 	if len(a.Type) == 0 {
 		return errors.New("type is required")
+	}
+
+	if err := a.Type.Validate(); err != nil {
+		return errors.New("type is invalid")
+	}
+
+	if err := a.Operation.Validate(); err != nil {
+		return errors.New("operation is invalid")
 	}
 
 	if len(a.Status) == 0 {

@@ -204,6 +204,7 @@ export default defineComponent({
                     <FormItem label={label} property={property}>
                       {curExtension.value?.selectType?.includes(property) ? (
                         <Select
+                          filterable
                           v-model={value}
                           placeholder={placeholder}
                           list={curExtension.value.selectParams[property].list}

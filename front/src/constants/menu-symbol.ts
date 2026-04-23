@@ -60,6 +60,8 @@ export const MENU_RESOURCE_LOAD_BALANCER = 'menu_resource_load_balancer';
  */
 export const MENU_SERVICE_TICKET_MANAGEMENT = 'menu_service_ticket_management';
 export const MENU_SERVICE_TICKET_DETAILS = 'menu_service_ticket_details';
+export const MENU_BUSINESS_TICKET_MANAGEMENT = 'menu_business_ticket_management';
+export const MENU_BUSINESS_TICKET_DETAILS = 'menu_business_ticket_details';
 
 /**
  * 云账号管理

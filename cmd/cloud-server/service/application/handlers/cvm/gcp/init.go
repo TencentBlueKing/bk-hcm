@@ -39,7 +39,7 @@ func NewApplicationOfCreateGcpCvm(
 	opt *handlers.HandlerOption, req *proto.GcpCvmCreateReq,
 ) *ApplicationOfCreateGcpCvm {
 	return &ApplicationOfCreateGcpCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Gcp),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.OpCreateCvm, enumor.Gcp),
 		req:                    req,
 	}
 }

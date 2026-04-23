@@ -22,7 +22,13 @@ watchEffect(async () => {
 </script>
 
 <template>
-  <bk-select v-model="model" :multiple="multiple" :multiple-mode="multiple ? 'tag' : 'default'" :collapse-tags="true">
+  <bk-select
+    v-model="model"
+    :multiple="multiple"
+    :multiple-mode="multiple ? 'tag' : 'default'"
+    :collapse-tags="true"
+    filterable
+  >
     <bk-option v-for="(name, id) in localOption" :key="id" :id="id" :name="name"></bk-option>
   </bk-select>
 </template>

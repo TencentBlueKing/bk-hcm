@@ -155,7 +155,7 @@ export default defineComponent({
         render: ({ data }: any) => {
           return (
             <>
-              <Select v-model={data.protocol}>
+              <Select v-model={data.protocol} filterable>
                 {GCP_PROTOCOL_LIST.map((ele) => (
                   <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}
@@ -289,7 +289,7 @@ export default defineComponent({
         render: ({ data }: any) => {
           return (
             <>
-              <Select v-model={data.protocol}>
+              <Select v-model={data.protocol} filterable>
                 {AZURE_PROTOCOL_LIST.map((ele) => (
                   <Option value={ele.id} label={ele.name} key={ele.id} />
                 ))}

@@ -186,7 +186,8 @@ export const useAccountStore = defineStore({
      * @return {*}
      */
     async getApplyAccountDetail(id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${id}`);
+      const { getBusinessApiPath } = useWhereAmI();
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}applications/${id}`);
     },
     /**
      * @description: 撤销申请

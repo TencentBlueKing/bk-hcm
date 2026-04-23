@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { provide, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ApplicationsType } from './typings';
@@ -40,10 +40,10 @@ const tabList = ref<ApplicationsType[]>([
   },
   {
     label: t('云主机'),
-    name: 'cloudMachines',
+    name: 'cvm',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
         value: ['create_cvm'],
       },
@@ -55,9 +55,9 @@ const tabList = ref<ApplicationsType[]>([
     name: 'account',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
-        value: ['add_account', 'create_main_account', 'update_main_account'],
+        value: ['add_account', 'create_main_account', 'update_main_account', 'operate_sub_account'],
       },
     ],
     Component: CommonTable,
@@ -67,7 +67,7 @@ const tabList = ref<ApplicationsType[]>([
     name: 'disk',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
         value: ['create_disk'],
       },
@@ -79,19 +79,19 @@ const tabList = ref<ApplicationsType[]>([
     name: 'vpc',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
-        value: ['create_disk'],
+        value: ['create_vpc'],
       },
     ],
     Component: CommonTable,
   },
   {
     label: '安全组',
-    name: 'securityGroup',
+    name: 'security-group',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
         value: [
           'create_security_group',
@@ -109,10 +109,10 @@ const tabList = ref<ApplicationsType[]>([
   },
   {
     label: '负载均衡',
-    name: 'load_balancer',
+    name: 'load-balancer',
     rules: [
       {
-        field: 'type',
+        field: 'operation',
         op: QueryRuleOPEnum.IN,
         value: ['create_load_balancer'],
       },
@@ -120,6 +120,8 @@ const tabList = ref<ApplicationsType[]>([
     Component: CommonTable,
   },
 ]);
+
+provide('isServicePage', true);
 </script>
 
 <style lang="scss" scoped>

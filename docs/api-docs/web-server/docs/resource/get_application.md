@@ -31,7 +31,8 @@ GET /api/v1/cloud/applications/{application_id}
       {
         "id": "1",
         "sn": "1",
-        "type": "1",
+        "type": "xxxx",
+        "operation":"xxxx",
         "status": "1",
         "applicant": "xxxxxxx",
         "content": "",
@@ -68,9 +69,10 @@ GET /api/v1/cloud/applications/{application_id}
 | 参数名称            | 参数类型   | 描述                                                                                           |
 |-----------------|--------|----------------------------------------------------------------------------------------------|
 | id              | string | 申请ID                                                                                         |
-| source          | string | 来源（枚举值：itsm)   该字段需要v1.4.4+ 版本                                                               |
+| source          | string | 来源（枚举值：itsm） 该字段需要v1.4.4+ 版本                                                               |
 | sn              | string | 序列号                                                                                          |
 | type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
+| operation       | string | 操作类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
 | status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
 | applicant       | string | 申请人                                                                                          |
 | content         | string | 申请内容                                                                                         |

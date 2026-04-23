@@ -95,7 +95,12 @@ export default defineComponent({
 
     return () => (
       <div class='region-vpc-selector'>
-        <Select v-model={selected.value} onClear={handleClear} loading={isDataLoad.value} disabled={props.isDisabled}>
+        <Select
+          filterable
+          v-model={selected.value}
+          onClear={handleClear}
+          loading={isDataLoad.value}
+          disabled={props.isDisabled}>
           {dataList.value.map(({ id, name, cloud_id, extension }) => {
             if (props.vendor) {
               const cidrs = extension?.cidr?.map((obj: any) => obj.cidr).join(',') || '';

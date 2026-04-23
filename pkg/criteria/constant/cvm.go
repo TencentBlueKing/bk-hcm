@@ -30,4 +30,42 @@ const (
 	TCloudCvmNamespace = "QCE/CVM"
 	// TCloudCvmInstanceIDKey 腾讯云CVM实例ID key
 	TCloudCvmInstanceIDKey = "InstanceId"
+	// HuaWeiCvmNamespace 华为云CVM监控命名空间
+	HuaWeiCvmNamespace = "SYS.ECS"
+	// HuaWeiVpcNamespace 华为云VPC监控命名空间
+	HuaWeiVpcNamespace = "SYS.VPC"
+	// HuaWeiCvmInstanceIDKey 华为云CVM实例ID key
+	HuaWeiCvmInstanceIDKey = "instance_id"
+	// HuaWeiPublicIPIDKey 华为云弹性公网IP ID key
+	HuaWeiPublicIPIDKey = "publicip_id"
+	// HuaWeiMonitorDefaultFilter 华为云监控默认聚合方式
+	HuaWeiMonitorDefaultFilter = "average"
+	// AwsCvmNamespace AWS CVM 监控命名空间
+	AwsCvmNamespace = "AWS/EC2"
+	// AwsCvmInstanceIDKey AWS CVM 实例ID key
+	AwsCvmInstanceIDKey = "InstanceId"
+	// AwsMetricNetworkIn AWS 入流量指标
+	AwsMetricNetworkIn = "NetworkIn"
+	// AwsMetricNetworkOut AWS 出流量指标
+	AwsMetricNetworkOut = "NetworkOut"
+	// MetricLanIntraffic 内网入带宽
+	MetricLanIntraffic = "LanIntraffic"
+	// MetricWanIntraffic 外网入带宽
+	MetricWanIntraffic = "WanIntraffic"
+	// MetricLanOuttraffic 内网出带宽
+	MetricLanOuttraffic = "LanOuttraffic"
+	// MetricWanOuttraffic 外网出带宽
+	MetricWanOuttraffic = "WanOuttraffic"
+	// AzureCvmInstanceIDKey Azure CVM 实例维度 key（对应 Azure metadata name: Microsoft.ResourceId）
+	AzureCvmInstanceIDKey = "Microsoft.ResourceId"
+	// AzureMetricNamespaceDefault Azure 默认监控命名空间
+	AzureMetricNamespaceDefault = "Microsoft.Compute/virtualMachines"
+	// AzureMetricNetworkInTotal Azure 入流量总计指标
+	AzureMetricNetworkInTotal = "Network In Total"
+	// AzureMetricNetworkOutTotal Azure 出流量总计指标
+	AzureMetricNetworkOutTotal = "Network Out Total"
+	// AzureMonitorAggregationTotal Azure 监控 Total 聚合
+	AzureMonitorAggregationTotal = "Total"
+	// AzureMonitorAggregationAverage Azure 监控 Average 聚合
+	AzureMonitorAggregationAverage = "Average"
 )

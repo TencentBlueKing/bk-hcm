@@ -30,6 +30,8 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
 	bssintl "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2"
 	bssintlv2region "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/region"
+	ces "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ces/v1"
+	cesregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ces/v1/region"
 	dcs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2"
 	dcsregion "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/region"
 	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
@@ -210,6 +212,23 @@ func (c *clientSet) ecsClient(regionID string) (cli *ecs.EcsClient, err error) {
 	client := ecs.NewEcsClient(
 		ecs.EcsClientBuilder().
 			WithRegion(ecsregion.ValueOf(regionID)).
+			WithCredential(c.credentials()).
+			WithHttpConfig(config.DefaultHttpConfig()).
+			Build())
+
+	return client, nil
+}
+
+func (c *clientSet) cesClient(regionID string) (cli *ces.CesClient, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("huawei error recovered, err: %v", p)
+		}
+	}()
+
+	client := ces.NewCesClient(
+		ces.CesClientBuilder().
+			WithRegion(cesregion.ValueOf(regionID)).
 			WithCredential(c.credentials()).
 			WithHttpConfig(config.DefaultHttpConfig()).
 			Build())

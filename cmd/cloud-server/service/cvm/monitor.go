@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -52,14 +53,12 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(vendor); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listFilter := tools.ContainersExpression("id", req.IDs)
-
 	// 权限校验
-	// list authorized instances
+	listFilter := tools.ExpressionAnd(tools.RuleIn("id", req.IDs), tools.RuleEqual("vendor", vendor))
 	authFilter, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
 		ResType: meta.Cvm, Action: meta.Find, Filter: listFilter})
 	if err != nil {
@@ -90,6 +89,12 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 	switch vendor {
 	case enumor.TCloud:
 		return svc.getTCloudMonitorData(cts, req, cvms.Details)
+	case enumor.HuaWei:
+		return svc.getHuaWeiMonitorData(cts, req, cvms.Details)
+	case enumor.Aws:
+		return svc.getAwsMonitorData(cts, req, cvms.Details)
+	case enumor.Azure:
+		return svc.getAzureMonitorData(cts, req, cvms.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "vendor %s is not supported", vendor)
 	}
@@ -98,16 +103,15 @@ func (svc *cvmSvc) getMonitorData(cts *rest.Contexts, authHandler handler.ListAu
 func (svc *cvmSvc) getTCloudMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
 	interface{}, error) {
 
-	// 按account_id + region分组
-	// 定义分组key结构
-	type groupKey struct {
-		AccountID string
-		Region    string
+	startTime, endTime, err := req.GetStringTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	instanceGroups := make(map[groupKey][]cvm.BaseCvm)
+
+	instanceGroups := make(map[cvmGroupKey][]cvm.BaseCvm)
 
 	for _, instance := range cvms {
-		key := groupKey{
+		key := cvmGroupKey{
 			AccountID: instance.AccountID,
 			Region:    instance.Region,
 		}
@@ -129,8 +133,8 @@ func (svc *cvmSvc) getTCloudMonitorData(cts *rest.Contexts, req *cscvm.GetMonito
 			Region:      key.Region,
 			MetricName:  req.MetricName,
 			Period:      req.Period,
-			StartTime:   req.StartTime,
-			EndTime:     req.EndTime,
+			StartTime:   startTime,
+			EndTime:     endTime,
 			InstanceIDs: cloudIDs,
 		}
 
@@ -167,11 +171,298 @@ func (svc *cvmSvc) getTCloudMonitorData(cts *rest.Contexts, req *cscvm.GetMonito
 				InstanceID: cloudID,
 				Timestamps: dataPoint.Timestamps,
 				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
 			})
 		}
 	}
 
-	return &cscvm.GetMonitorDataResp{
-		DataPoints: allDataPoints,
-	}, nil
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
+}
+
+func (svc *cvmSvc) getHuaWeiMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
+	interface{}, error) {
+
+	startTime, endTime, err := req.GetHuaWeiTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	instanceGroups := groupCvmsByAccountRegion(cvms)
+	allDataPoints := make([]*cscvm.MonitorDataPointResp, 0)
+	isVpcNamespace, dimensionName := getHuaWeiDimensionName(req)
+
+	for key, instances := range instanceGroups {
+		queryIDToInsts := buildHuaWeiQueryIDToInstances(instances, isVpcNamespace)
+		queryIDs := maps.Keys(queryIDToInsts)
+		if len(queryIDs) == 0 {
+			logs.Warnf("huawei query ids is empty, account_id: %s, region: %s, namespace: %s, rid: %s",
+				key.AccountID, key.Region, req.Namespace, cts.Kit.Rid)
+			continue
+		}
+
+		hcReq := &protocvm.HuaWeiMonitorDataReq{
+			AccountID:   key.AccountID,
+			Region:      key.Region,
+			MetricName:  req.MetricName,
+			Period:      req.Period,
+			StartTime:   startTime,
+			EndTime:     endTime,
+			Namespace:   req.Namespace,
+			Filter:      req.Filter,
+			Dimension:   dimensionName,
+			InstanceIDs: queryIDs,
+		}
+
+		resp, err := svc.client.HCService().HuaWei.Cvm.GetMonitorData(cts.Kit, hcReq)
+		if err != nil {
+			logs.Errorf("get huawei monitor data failed, err: %v, account_id: %s, region: %s, rid: %s",
+				err, key.AccountID, key.Region, cts.Kit.Rid)
+			return nil, err
+		}
+
+		allDataPoints = svc.appendHuaWeiMonitorDataPoints(cts.Kit, allDataPoints, resp.DataPoints,
+			queryIDToInsts, dimensionName, key)
+	}
+
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
+}
+
+type cvmGroupKey struct {
+	AccountID string
+	Region    string
+}
+
+func groupCvmsByAccountRegion(cvms []cvm.BaseCvm) map[cvmGroupKey][]cvm.BaseCvm {
+	instanceGroups := make(map[cvmGroupKey][]cvm.BaseCvm)
+	for _, instance := range cvms {
+		key := cvmGroupKey{AccountID: instance.AccountID, Region: instance.Region}
+		instanceGroups[key] = append(instanceGroups[key], instance)
+	}
+	return instanceGroups
+}
+
+func getHuaWeiDimensionName(req *cscvm.GetMonitorDataReq) (bool, string) {
+	isVpcNamespace := req.Namespace == constant.HuaWeiVpcNamespace
+	dimensionName := constant.HuaWeiCvmInstanceIDKey
+	if isVpcNamespace {
+		dimensionName = constant.HuaWeiPublicIPIDKey
+	}
+	return isVpcNamespace, dimensionName
+}
+
+func buildHuaWeiQueryIDToInstances(instances []cvm.BaseCvm, isVpcNamespace bool) map[string][]cvm.BaseCvm {
+	queryIDToInsts := make(map[string][]cvm.BaseCvm)
+	for _, instance := range instances {
+		queryIDs := make([]string, 0, 1)
+		if isVpcNamespace {
+			queryIDs = append(queryIDs, instance.CloudVpcIDs...)
+		} else {
+			queryIDs = append(queryIDs, instance.CloudID)
+		}
+
+		for _, queryID := range queryIDs {
+			if len(queryID) == 0 {
+				continue
+			}
+			queryIDToInsts[queryID] = append(queryIDToInsts[queryID], instance)
+		}
+	}
+
+	return queryIDToInsts
+}
+
+func (svc *cvmSvc) appendHuaWeiMonitorDataPoints(kt *kit.Kit, allDataPoints []*cscvm.MonitorDataPointResp,
+	dataPoints []*protocvm.MonitorDataPointResp, queryIDToInsts map[string][]cvm.BaseCvm, dimensionName string,
+	key cvmGroupKey) []*cscvm.MonitorDataPointResp {
+
+	for _, dataPoint := range dataPoints {
+		var queryID string
+		for _, dimension := range dataPoint.Dimensions {
+			if dimension.Name == dimensionName {
+				queryID = dimension.Value
+				break
+			}
+		}
+		if len(queryID) == 0 {
+			logs.Warnf("huawei dimension key(%s) not found, account_id: %s, region: %s, rid: %s",
+				dimensionName, key.AccountID, key.Region, kt.Rid)
+			continue
+		}
+
+		instDetails, ok := queryIDToInsts[queryID]
+		if !ok {
+			logs.Warnf("huawei instance not found, account_id: %s, region: %s, query_id: %s, rid: %s",
+				key.AccountID, key.Region, queryID, kt.Rid)
+			continue
+		}
+
+		for _, instDetail := range instDetails {
+			allDataPoints = append(allDataPoints, &cscvm.MonitorDataPointResp{
+				ID:         instDetail.ID,
+				IP:         instDetail.PrivateIPv4Addresses,
+				Region:     key.Region,
+				InstanceID: instDetail.CloudID,
+				Timestamps: dataPoint.Timestamps,
+				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
+			})
+		}
+	}
+
+	return allDataPoints
+}
+
+func (svc *cvmSvc) getAwsMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
+	interface{}, error) {
+
+	startTime, endTime, err := req.GetStringTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	instanceGroups := make(map[cvmGroupKey][]cvm.BaseCvm)
+	for _, instance := range cvms {
+		key := cvmGroupKey{
+			AccountID: instance.AccountID,
+			Region:    instance.Region,
+		}
+		instanceGroups[key] = append(instanceGroups[key], instance)
+	}
+
+	allDataPoints := make([]*cscvm.MonitorDataPointResp, 0)
+
+	for key, instances := range instanceGroups {
+		cloudIDToInst := slice.FuncToMap(instances, func(instance cvm.BaseCvm) (string, cvm.BaseCvm) {
+			return instance.CloudID, instance
+		})
+		cloudIDs := maps.Keys(cloudIDToInst)
+
+		hcReq := &protocvm.AwsMonitorDataReq{
+			AccountID:   key.AccountID,
+			Region:      key.Region,
+			MetricName:  req.MetricName,
+			Period:      req.Period,
+			StartTime:   startTime,
+			EndTime:     endTime,
+			InstanceIDs: cloudIDs,
+		}
+
+		resp, err := svc.client.HCService().Aws.Cvm.GetMonitorData(cts.Kit, hcReq)
+		if err != nil {
+			logs.Errorf("get aws monitor data failed, err: %v, account_id: %s, region: %s, rid: %s",
+				err, key.AccountID, key.Region, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, dataPoint := range resp.DataPoints {
+			var cloudID string
+			for _, dimension := range dataPoint.Dimensions {
+				if dimension.Name == constant.AwsCvmInstanceIDKey {
+					cloudID = dimension.Value
+					break
+				}
+			}
+			if len(cloudID) == 0 {
+				logs.Warnf("aws instance_id dimension key not found, account_id: %s, region: %s, rid: %s",
+					key.AccountID, key.Region, cts.Kit.Rid)
+				continue
+			}
+
+			instDetail, ok := cloudIDToInst[cloudID]
+			if !ok {
+				logs.Warnf("aws instance not found, account_id: %s, region: %s, cloud_id: %s, rid: %s",
+					key.AccountID, key.Region, cloudID, cts.Kit.Rid)
+				continue
+			}
+
+			allDataPoints = append(allDataPoints, &cscvm.MonitorDataPointResp{
+				ID:         instDetail.ID,
+				IP:         instDetail.PrivateIPv4Addresses,
+				Region:     key.Region,
+				InstanceID: cloudID,
+				Timestamps: dataPoint.Timestamps,
+				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
+			})
+		}
+	}
+
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
+}
+
+func (svc *cvmSvc) getAzureMonitorData(cts *rest.Contexts, req *cscvm.GetMonitorDataReq, cvms []cvm.BaseCvm) (
+	interface{}, error) {
+
+	startTime, endTime, err := req.GetStringTimeRange()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	instanceGroups := groupCvmsByAccountRegion(cvms)
+	allDataPoints := make([]*cscvm.MonitorDataPointResp, 0)
+
+	for key, instances := range instanceGroups {
+		cloudIDToInst := slice.FuncToMap(instances, func(instance cvm.BaseCvm) (string, cvm.BaseCvm) {
+			return instance.CloudID, instance
+		})
+		cloudIDs := maps.Keys(cloudIDToInst)
+
+		hcReq := &protocvm.AzureMonitorDataReq{
+			AccountID:           key.AccountID,
+			Region:              key.Region,
+			MetricName:          req.MetricName,
+			Period:              req.Period,
+			StartTime:           startTime,
+			EndTime:             endTime,
+			MetricNamespace:     req.AzureMetricNamespace,
+			Aggregation:         req.AzureAggregation,
+			AutoAdjustTimegrain: req.AzureAutoAdjustTimegrain,
+			Top:                 req.AzureTop,
+			OrderBy:             req.AzureOrderBy,
+			Filter:              req.Filter,
+			ResultType:          req.AzureResultType,
+			InstanceIDs:         cloudIDs,
+		}
+
+		resp, err := svc.client.HCService().Azure.Cvm.GetMonitorData(cts.Kit, hcReq)
+		if err != nil {
+			logs.Errorf("get azure monitor data failed, err: %v, account_id: %s, region: %s, rid: %s",
+				err, key.AccountID, key.Region, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for _, dataPoint := range resp.DataPoints {
+			var cloudID string
+			for _, dimension := range dataPoint.Dimensions {
+				if dimension.Name == constant.AzureCvmInstanceIDKey {
+					cloudID = dimension.Value
+					break
+				}
+			}
+			if len(cloudID) == 0 {
+				logs.Warnf("azure resource_id dimension key not found, account_id: %s, region: %s, rid: %s",
+					key.AccountID, key.Region, cts.Kit.Rid)
+				continue
+			}
+
+			instDetail, ok := cloudIDToInst[cloudID]
+			if !ok {
+				logs.Warnf("azure instance not found, account_id: %s, region: %s, cloud_id: %s, rid: %s",
+					key.AccountID, key.Region, cloudID, cts.Kit.Rid)
+				continue
+			}
+
+			allDataPoints = append(allDataPoints, &cscvm.MonitorDataPointResp{
+				ID:         instDetail.ID,
+				IP:         instDetail.PrivateIPv4Addresses,
+				Region:     key.Region,
+				InstanceID: cloudID,
+				Timestamps: dataPoint.Timestamps,
+				Values:     dataPoint.Values,
+				Extensions: dataPoint.Extensions,
+			})
+		}
+	}
+
+	return &cscvm.GetMonitorDataResp{DataPoints: allDataPoints}, nil
 }

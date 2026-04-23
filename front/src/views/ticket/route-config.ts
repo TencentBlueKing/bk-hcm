@@ -1,7 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
 import Meta from '@/router/meta';
-import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import {
+  MENU_SERVICE_TICKET_DETAILS,
+  MENU_SERVICE_TICKET_MANAGEMENT,
+  MENU_BUSINESS_TICKET_MANAGEMENT,
+  MENU_BUSINESS_TICKET_DETAILS,
+} from '@/constants/menu-symbol';
 
 const { t } = i18n.global;
 
@@ -42,3 +47,32 @@ export const ticketRoutes: RouteRecordRaw[] = [
     },
   },
 ];
+
+export const ticketRoutesBiz: RouteRecordRaw[] = [
+  {
+    path: 'ticket',
+    name: MENU_BUSINESS_TICKET_MANAGEMENT,
+    component: () => import('@/views/ticket/entry-biz.vue'),
+    meta: {
+      ...new Meta({
+        activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
+        title: t('单据管理'),
+        isShowBreadcrumb: true,
+        icon: 'hcm-icon bkhcm-icon-my-apply',
+      }),
+    },
+  },
+  {
+    path: 'ticket/detail',
+    name: MENU_BUSINESS_TICKET_DETAILS,
+    component: () => import('@/views/ticket/children/apply-detail'),
+    meta: {
+      ...new Meta({
+        activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
+        notMenu: true,
+      }),
+    },
+  },
+];
+
+export default ticketRoutes;

@@ -29,20 +29,33 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
-	Source         enumor.ApplicationSource `json:"source" validate:"required"`
-	SN             string                   `json:"sn" validate:"required"`
-	Type           enumor.ApplicationType   `json:"type" validate:"required"`
-	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
-	BkBizIDs       []int64                  `json:"bk_biz_ids" validate:"required"`
-	Applicant      string                   `json:"applicant" validate:"required"`
-	Content        string                   `json:"content" validate:"required"`
-	DeliveryDetail string                   `json:"delivery_detail" validate:"required"`
-	Memo           *string                  `json:"memo" validate:"omitempty"`
+	Source         enumor.ApplicationSource    `json:"source" validate:"required"`
+	SN             string                      `json:"sn" validate:"required"`
+	Type           enumor.ApplicationType      `json:"type" validate:"required"`
+	Operation      enumor.ApplicationOperation `json:"operation" validate:"required"`
+	Status         enumor.ApplicationStatus    `json:"status" validate:"required"`
+	BkBizIDs       []int64                     `json:"bk_biz_ids" validate:"required"`
+	Applicant      string                      `json:"applicant" validate:"required"`
+	Content        string                      `json:"content" validate:"required"`
+	DeliveryDetail string                      `json:"delivery_detail" validate:"required"`
+	Memo           *string                     `json:"memo" validate:"omitempty"`
 }
 
 // Validate ...
 func (req *ApplicationCreateReq) Validate() error {
-	return validator.Validate.Struct(req)
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.Type.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.Operation.Validate(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ApplicationUpdateReq ...
@@ -58,16 +71,17 @@ func (req *ApplicationUpdateReq) Validate() error {
 
 // ApplicationResp ...
 type ApplicationResp struct {
-	ID             string                   `json:"id"`
-	Source         enumor.ApplicationSource `json:"source"`
-	SN             string                   `json:"sn"`
-	Type           enumor.ApplicationType   `json:"type"`
-	Status         enumor.ApplicationStatus `json:"status"`
-	BkBizIDs       []int64                  `json:"bk_biz_ids"`
-	Applicant      string                   `json:"applicant"`
-	Content        string                   `json:"content"`
-	DeliveryDetail string                   `json:"delivery_detail"`
-	Memo           *string                  `json:"memo"`
+	ID             string                      `json:"id"`
+	Source         enumor.ApplicationSource    `json:"source"`
+	SN             string                      `json:"sn"`
+	Type           enumor.ApplicationType      `json:"type"`
+	Operation      enumor.ApplicationOperation `json:"operation"`
+	Status         enumor.ApplicationStatus    `json:"status"`
+	BkBizIDs       []int64                     `json:"bk_biz_ids"`
+	Applicant      string                      `json:"applicant"`
+	Content        string                      `json:"content"`
+	DeliveryDetail string                      `json:"delivery_detail"`
+	Memo           *string                     `json:"memo"`
 	core.Revision  `json:",inline"`
 }
 

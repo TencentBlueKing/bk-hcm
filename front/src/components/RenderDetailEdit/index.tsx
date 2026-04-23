@@ -155,8 +155,7 @@ export default defineComponent({
               multiple-mode='tag'
               placeholder={props.fromPlaceholder}
               onChange={handleChange}
-              onBlur={() => handleBlur(props.fromKey)}
-            >
+              onBlur={() => handleBlur(props.fromKey)}>
               {props.selectData.map((item: any) => (
                 <Option key={item.id} id={item.id} name={item.name}>
                   {item.name}
