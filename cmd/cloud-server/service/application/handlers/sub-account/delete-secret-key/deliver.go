@@ -140,7 +140,7 @@ func (a *ApplicationOfDeleteSecretKey) deleteLocalSecret() error {
 		return err
 	}
 	if len(result.Details) != 1 {
-		logs.Errorf("secret(id=%s) not found", a.secretID)
+		logs.Errorf("secret(id=%s) not found, rid: %s", a.secretID, a.Cts.Kit.Rid)
 		return fmt.Errorf("secret(id=%s) not found", a.secretID)
 	}
 

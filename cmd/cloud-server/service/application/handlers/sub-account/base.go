@@ -175,10 +175,11 @@ func (a *ApplicationBaseSubAccount) QueryPermissionTemplateNames(ids []string) (
 		},
 	)
 	if err != nil {
+		logs.Errorf("query permission template names failed, err: %v, rid: %s", ids, a.Cts.Kit.Rid)
 		return nil, err
 	}
 
-	if len(result.Details) == 0 || len(result.Details) != len(ids) {
+	if len(result.Details) != len(ids) {
 		return nil, fmt.Errorf("permission template names count mismatch, expected %d, got %d",
 			len(ids), len(result.Details))
 	}

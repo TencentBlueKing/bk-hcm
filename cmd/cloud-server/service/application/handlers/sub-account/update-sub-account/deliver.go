@@ -99,15 +99,19 @@ func (a *ApplicationOfUpdateSubAccount) updatePermissionTemplateOnCloud() error 
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("get sub account failed, id: %s, err: %w", a.req.ID, err)
+		logs.Errorf("get sub account failed, id: %s, err: %v, rid: %s", a.req.ID, err, a.Cts.Kit.Rid)
+		return fmt.Errorf("get sub account failed, id: %s, err: %v", a.req.ID, err)
 	}
 	if len(subAccounts.Details) == 0 {
+		logs.Errorf("sub account not found, id: %s, rid: %s", a.req.ID, a.Cts.Kit.Rid)
 		return fmt.Errorf("sub account not found, id: %s", a.req.ID)
 	}
 
 	subAccount := subAccounts.Details[0]
 	uin, parseErr := strconv.ParseUint(subAccount.CloudID, 10, 64)
 	if parseErr != nil {
+		logs.Errorf("parse sub account cloud_id to uin failed, cloud_id: %s, err: %v, rid: %s",
+			subAccount.CloudID, parseErr, a.Cts.Kit.Rid)
 		return fmt.Errorf("parse sub account cloud_id to uin failed, cloud_id: %s, err: %w",
 			subAccount.CloudID, parseErr)
 	}

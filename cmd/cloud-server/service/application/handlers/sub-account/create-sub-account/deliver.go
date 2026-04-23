@@ -58,7 +58,7 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	}
 
 	// 获取三级账号的二级账号
-	parentAccount, err := a.Client.DataService().TCloud.Account.Get(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.req.AccountID)
+	account, err := a.Client.DataService().TCloud.Account.Get(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), a.req.AccountID)
 	if err != nil {
 		return enumor.DeliverError,
 			map[string]interface{}{"error": fmt.Sprintf("get parent account failed, err: %v", err)}, err
@@ -73,7 +73,7 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	cloudID := strconv.FormatUint(converter.PtrToVal(cloudResult.Uin), 10)
 
 	// Step 2: 本地保存云上的base信息
-	subAccountIDs, accountID, err := a.saveCloudSubAccountBasicInfo(cloudResult, ext, parentAccount)
+	subAccountIDs, accountID, err := a.saveSubAccountBasicInfo(cloudResult, ext, account)
 	if err != nil {
 		logs.Errorf("cloud sub account created (uin=%s) but local persistence failed, err: %v, rid: %s", cloudID,
 			err, a.Cts.Kit.Rid)
@@ -87,7 +87,7 @@ func (a *ApplicationOfCreateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	if len(subAccountIDs) > 0 {
 		subAccountID = subAccountIDs[0]
 	}
-	err = a.configureSubAccount(subAccountID, cloudResult, parentAccount)
+	err = a.configureSubAccount(subAccountID, cloudResult, account)
 	if err != nil {
 		logs.Errorf("sub account created (uin=%s) but configuration failed, err: %v, rid: %s",
 			cloudID, err, a.Cts.Kit.Rid)
@@ -173,7 +173,7 @@ func (a *ApplicationOfCreateSubAccount) configureSubAccount(subAccountID string,
 		return fmt.Errorf("attach permission to cloud failed, err: %v", err)
 	}
 
-	// Step 3: Sync subaccount detail info from cloud
+	// Step 3: Query subaccount detail info from cloud
 	cloudSubAccounts, err := a.Client.HCService().TCloud.Account.DescribeSubAccounts(
 		a.Cts.Kit, &hssubaccount.TCloudDescribeSubAccountsReq{AccountID: a.req.AccountID, SubUin: []uint64{uin}},
 	)
@@ -245,10 +245,10 @@ func (a *ApplicationOfCreateSubAccount) registerAccountForTCloud(cloudID string,
 	return result.ID, nil
 }
 
-// saveCloudSubAccountBasicInfo saves the basic cloud sub account info to local DB.
+// saveSubAccountBasicInfo saves the basic subaccount info to local DB.
 // It creates the sub_account record and registers the account. This should succeed,
 // otherwise the cloud account becomes orphaned.
-func (a *ApplicationOfCreateSubAccount) saveCloudSubAccountBasicInfo(cloudResult *hssubaccount.TCloudCreateAggregateResult,
+func (a *ApplicationOfCreateSubAccount) saveSubAccountBasicInfo(cloudResult *hssubaccount.TCloudCreateAggregateResult,
 	ext *proto.TCloudSubAccountAddExtension,
 	parentAccount *dataprotocloud.AccountGetResult[protocore.TCloudAccountExtension]) ([]string, string, error) {
 

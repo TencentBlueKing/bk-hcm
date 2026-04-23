@@ -70,15 +70,16 @@ func (a *ApplicationOfCreateSubAccount) RenderItsmForm() (string, error) {
 		items = append(items, fmt.Sprintf("备注: %s", *a.req.Memo))
 	}
 
-	if len(a.req.PermissionTemplateIDs) > 0 {
-		names, err := a.QueryPermissionTemplateNames(a.req.PermissionTemplateIDs)
-		if err != nil {
-			logs.Errorf("query permission template names failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
-			return "", fmt.Errorf("query permission template names failed, err: %w", err)
-		}
-
-		items = append(items, fmt.Sprintf("绑定权限模版: %s", strings.Join(names, ",")))
+	if len(a.req.PermissionTemplateIDs) == 0 {
+		return "", fmt.Errorf("permission template ids is empty")
 	}
+	names, err := a.QueryPermissionTemplateNames(a.req.PermissionTemplateIDs)
+	if err != nil {
+		logs.Errorf("query permission template names failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("query permission template names failed, err: %w", err)
+	}
+
+	items = append(items, fmt.Sprintf("绑定权限模版: %s", strings.Join(names, ",")))
 
 	return strings.Join(items, "\n"), nil
 }

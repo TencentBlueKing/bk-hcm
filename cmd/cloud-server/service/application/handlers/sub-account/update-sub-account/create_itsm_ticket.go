@@ -67,7 +67,7 @@ func (a *ApplicationOfUpdateSubAccount) RenderItsmForm() (string, error) {
 		} else {
 			names, err := a.QueryPermissionTemplateNames(a.req.PermissionTemplateIDs)
 			if err != nil {
-				return "", fmt.Errorf("query permission template names failed,, err: %w", err)
+				return "", fmt.Errorf("query permission template names failed, err: %v", err)
 			}
 
 			items = append(items, fmt.Sprintf("修改权限模版为: %s", strings.Join(names, ",")))
