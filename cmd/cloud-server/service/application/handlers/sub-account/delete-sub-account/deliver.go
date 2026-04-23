@@ -109,7 +109,8 @@ func (a *ApplicationOfDeleteSubAccount) deleteLocalSubAccount() error {
 		return err
 	}
 
-	if err := a.DeleteAudit(enumor.SubAccountAuditResType, a.req.ID, a.req.Name, result.Details[0]); err != nil {
+	if err := a.CreateAudit(enumor.Delete, enumor.SubAccountAuditResType, a.req.ID, a.req.Name,
+		result.Details[0]); err != nil {
 		logs.Errorf("create delete_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}

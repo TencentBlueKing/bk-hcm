@@ -151,7 +151,7 @@ func (a *ApplicationOfUpdateSecretKeyStatus) tcloudUpdateLocalSecretStatus() err
 	}
 
 	// 密钥本身没有名称，通过密钥ID来代替名称
-	err := a.UpdateAudit(enumor.SubAccountSecretAuditResType, a.req.ID,
+	err := a.CreateAudit(enumor.Update, enumor.SubAccountSecretAuditResType, a.req.ID,
 		fmt.Sprintf("%s(id:%s)", enumor.SubAccountSecretAuditResType, a.req.ID),
 		map[string]interface{}{"status": a.req.Status})
 	if err != nil {

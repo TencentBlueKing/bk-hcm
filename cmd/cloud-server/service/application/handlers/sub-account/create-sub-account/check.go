@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/tools/converter"
 )
 
 // CheckReq validate the request and check business rules.
@@ -110,5 +111,24 @@ func (a *ApplicationOfCreateSubAccount) checkPermissionTemplate() error {
 		return fmt.Errorf("permission template ids is empty")
 	}
 
-	return a.CheckPermissionTemplate(a.req.PermissionTemplateIDs)
+	details, err := a.ListPermissionTemplate(a.req.PermissionTemplateIDs)
+	if err != nil {
+		return fmt.Errorf("list permission templates failed, err: %w", err)
+	}
+
+	if len(details) != len(a.req.PermissionTemplateIDs) {
+		return fmt.Errorf("permission templates count mismatch, expected %d, got %d",
+			len(a.req.PermissionTemplateIDs), len(details))
+	}
+
+	for _, tmpl := range details {
+		if converter.PtrToVal(tmpl.PolicyLibraryID) == "" {
+			return fmt.Errorf("permission template(id=%s) has empty policy_library_id", tmpl.ID)
+		}
+		if tmpl.AccountID != a.AccountID() {
+			return fmt.Errorf("permission template(id=%s) account_id does not match", tmpl.ID)
+		}
+	}
+
+	return nil
 }

@@ -21,6 +21,12 @@ package updatesubaccount
 
 import (
 	"fmt"
+
+	"hcm/pkg/api/core"
+	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // CheckReq validate the request and check that the sub account exists.
@@ -59,6 +65,79 @@ func (a *ApplicationOfUpdateSubAccount) checkPermissionTemplate() error {
 	if len(a.req.PermissionTemplateIDs) == 0 {
 		return fmt.Errorf("permission template ids is empty")
 	}
-	
-	return a.CheckPermissionTemplate(a.req.PermissionTemplateIDs)
+
+	details, err := a.ListPermissionTemplate(a.req.PermissionTemplateIDs)
+	if err != nil {
+		return fmt.Errorf("list permission templates failed, err: %w", err)
+	}
+
+	if len(details) != len(a.req.PermissionTemplateIDs) {
+		return fmt.Errorf("permission templates count mismatch, expected %d, got %d",
+			len(a.req.PermissionTemplateIDs), len(details))
+	}
+
+	for _, tmpl := range details {
+		if tmpl.AccountID != a.AccountID() {
+			return fmt.Errorf("permission template(id=%s) account_id does not match", tmpl.ID)
+		}
+	}
+
+	// 获取新增的权限模版
+	addedTmpls, err := a.getAddedPermissionTemplates(details)
+	if err != nil {
+		return err
+	}
+
+	// 新增的权限模版必须有权限策略库ID
+	for _, tmpl := range addedTmpls {
+		if converter.PtrToVal(tmpl.PolicyLibraryID) == "" {
+			return fmt.Errorf("permission template(id=%s) has empty policy_library_id", tmpl.ID)
+		}
+	}
+
+	return nil
+}
+
+// getAddedPermissionTemplates returns the newly added permission templates as a map keyed by ID.
+func (a *ApplicationOfUpdateSubAccount) getAddedPermissionTemplates(details []corecloud.BasePermissionTemplate) (
+	[]corecloud.BasePermissionTemplate, error) {
+
+	subAccounts, err := a.Client.DataService().Global.SubAccount.List(
+		a.Cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("id", a.req.ID)),
+			Page:   core.NewDefaultBasePage(),
+		},
+	)
+	if err != nil {
+		logs.Errorf("get sub account failed, id: %s, err: %v, rid: %s", a.req.ID, err, a.Cts.Kit.Rid)
+		return nil, fmt.Errorf("get sub account failed, id: %s, err: %v", a.req.ID, err)
+	}
+	if len(subAccounts.Details) != 1 {
+		logs.Errorf("sub account(id=%s) not found, rid: %s", a.req.ID, a.Cts.Kit.Rid)
+		return nil, fmt.Errorf("sub account(id=%s) not found", a.req.ID)
+	}
+
+	existingIDs := make(map[string]struct{}, len(subAccounts.Details[0].PermissionTemplateIDs))
+	for _, id := range subAccounts.Details[0].PermissionTemplateIDs {
+		existingIDs[id] = struct{}{}
+	}
+
+	detailsMap := converter.SliceToMap(details, func(tmpl corecloud.BasePermissionTemplate) (
+		string, corecloud.BasePermissionTemplate) {
+		return tmpl.ID, tmpl
+	})
+
+	added := make(map[string]corecloud.BasePermissionTemplate)
+	for _, id := range a.req.PermissionTemplateIDs {
+		if _, exists := existingIDs[id]; exists {
+			continue
+		}
+
+		added[id] = detailsMap[id]
+	}
+
+	logs.Infof("added permission templates: %v, rid: %s", converter.MapKeyToSlice(added), a.Cts.Kit.Rid)
+
+	return converter.MapValueToSlice(added), nil
 }

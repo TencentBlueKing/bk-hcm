@@ -171,7 +171,7 @@ func (a *ApplicationOfUpdateSubAccount) updateLocalSubAccount() error {
 		logs.Errorf("convert update_sub_account field to map failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
-	err = a.UpdateAudit(enumor.SubAccountAuditResType, a.req.ID, a.subAccountName, updateFields)
+	err = a.CreateAudit(enumor.Update, enumor.SubAccountAuditResType, a.req.ID, a.subAccountName, updateFields)
 	if err != nil {
 		logs.Errorf("create update_sub_account audit failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err

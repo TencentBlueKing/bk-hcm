@@ -224,16 +224,15 @@ func buildSubAccountSecretCountMap(kt *kit.Kit, svc *service, subAccountIDs []st
 		return countMap, nil
 	}
 
-	var start uint32
+	req := &protocloud.SubAccountSecretListReq{
+		Filter: tools.ExpressionAnd(tools.RuleIn("sub_account_id", subAccountIDs)),
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
 	for {
-		result, err := svc.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt,
-			&protocloud.SubAccountSecretListReq{
-				Filter: tools.ExpressionAnd(tools.RuleIn("sub_account_id", subAccountIDs)),
-				Page:   &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit},
-			},
-		)
+		result, err := svc.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt, req)
 		if err != nil {
-			return nil, fmt.Errorf("list sub account secrets failed, err: %w", err)
+			logs.Errorf("list sub account secrets failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list sub account secrets failed, err: %v", err)
 		}
 
 		for _, item := range result.Details {
@@ -243,7 +242,7 @@ func buildSubAccountSecretCountMap(kt *kit.Kit, svc *service, subAccountIDs []st
 		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
-		start += uint32(core.DefaultMaxPageLimit)
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return countMap, nil

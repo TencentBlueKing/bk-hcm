@@ -34,7 +34,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -155,10 +154,12 @@ func (a *ApplicationBaseSubAccount) CheckSubAccountExists(subAccountID string) e
 		},
 	)
 	if err != nil {
+		logs.Errorf("query sub account failed, id: %s, err: %v, rid: %s", subAccountID, err, a.Cts.Kit.Rid)
 		return fmt.Errorf("query sub account failed, err: %w", err)
 	}
 
 	if result.Count == 0 {
+		logs.Errorf("sub account(id=%s) not found, rid: %s", subAccountID, a.Cts.Kit.Rid)
 		return fmt.Errorf("sub account(id=%s) not found", subAccountID)
 	}
 
@@ -175,11 +176,12 @@ func (a *ApplicationBaseSubAccount) QueryPermissionTemplateNames(ids []string) (
 		},
 	)
 	if err != nil {
-		logs.Errorf("query permission template names failed, err: %v, rid: %s", ids, a.Cts.Kit.Rid)
+		logs.Errorf("query permission template names failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return nil, err
 	}
-
 	if len(result.Details) != len(ids) {
+		logs.Errorf("permission template names count mismatch, expected %d, got %d, rid: %s",
+			len(ids), len(result.Details), a.Cts.Kit.Rid)
 		return nil, fmt.Errorf("permission template names count mismatch, expected %d, got %d",
 			len(ids), len(result.Details))
 	}
@@ -201,35 +203,14 @@ func (a *ApplicationBaseSubAccount) CheckSubSecretExists(subAccountID string) er
 		},
 	)
 	if err != nil {
+		logs.Errorf("query sub account secret failed, id: %s, err: %v, rid: %s", subAccountID,
+			err, a.Cts.Kit.Rid)
 		return fmt.Errorf("query sub account secret failed, err: %w", err)
 	}
-
 	if result.Count > 0 {
+		logs.Errorf("sub account(%s) has sub account secrets, please delete the secrets first, rid: %s",
+			subAccountID, a.Cts.Kit.Rid)
 		return fmt.Errorf("sub account(%s) has sub account secrets, please delete the secrets first", subAccountID)
-	}
-
-	return nil
-}
-
-// CheckPermissionTemplate checks if the permission templates exist and are valid.
-func (a *ApplicationBaseSubAccount) CheckPermissionTemplate(tmplIDs []string) error {
-	details, err := a.ListPermissionTemplate(tmplIDs)
-	if err != nil {
-		return fmt.Errorf("list permission templates failed, err: %w", err)
-	}
-
-	if len(details) != len(tmplIDs) {
-		return fmt.Errorf("permission templates count mismatch, expected %d, got %d",
-			len(tmplIDs), len(details))
-	}
-
-	for _, tmpl := range details {
-		if converter.PtrToVal(tmpl.PolicyLibraryID) == "" {
-			return fmt.Errorf("permission template(id=%s) has empty policy_library_id", tmpl.ID)
-		}
-		if tmpl.AccountID != a.AccountID() {
-			return fmt.Errorf("permission template(id=%s) account_id does not match", tmpl.ID)
-		}
 	}
 
 	return nil
@@ -245,10 +226,13 @@ func (a *ApplicationBaseSubAccount) ListPermissionTemplate(ids []string) ([]core
 		},
 	)
 	if err != nil {
+		logs.Errorf("list permission templates failed, ids: %v, err: %v, rid: %s", ids, err, a.Cts.Kit.Rid)
 		return nil, fmt.Errorf("list permission templates failed, ids: %v, err: %w", ids, err)
 	}
 
-	if len(result.Details) == 0 || len(result.Details) != len(ids) {
+	if len(result.Details) != len(ids) {
+		logs.Errorf("permission templates count mismatch, expected %d, got %d, rid: %s",
+			len(ids), len(result.Details), a.Cts.Kit.Rid)
 		return nil, fmt.Errorf("permission templates count mismatch, expected %d, got %d",
 			len(ids), len(result.Details))
 	}
@@ -272,11 +256,6 @@ func (a *ApplicationBaseSubAccount) ParseTmlIDsFromCloudID(details []corecloud.B
 		policyIDs = append(policyIDs, cloudPolicyID)
 	}
 
-	if len(details) != len(policyIDs) {
-		return nil, fmt.Errorf("permission template cloud_id count mismatch, expected %d, got %d",
-			len(details), len(policyIDs))
-	}
-
 	return policyIDs, nil
 }
 
@@ -296,6 +275,8 @@ func (a *ApplicationBaseSubAccount) AttachPolicies(uin uint64, tmplIDs []string)
 		a.Cts.Kit,
 		&hssubaccount.TCloudAttachUserPoliciesReq{AccountID: a.AccountID(), TargetUin: uin, PolicyIDs: policyIDs},
 	); err != nil {
+		logs.Errorf("attach user policies failed, uin: %d, policy_ids: %v, err: %v, rid: %s",
+			uin, policyIDs, err, a.Cts.Kit.Rid)
 		return fmt.Errorf("attach user policies failed, uin: %d, policy_ids: %v, err: %w", uin, policyIDs, err)
 	}
 
@@ -318,6 +299,8 @@ func (a *ApplicationBaseSubAccount) DetachPolicies(uin uint64, tmplIDs []string)
 		a.Cts.Kit,
 		&hssubaccount.TCloudDetachUserPoliciesReq{AccountID: a.AccountID(), DetachUin: uin, PolicyIDs: policyIDs},
 	); err != nil {
+		logs.Errorf("detach user policies failed, uin: %d, policy_ids: %v, err: %v, rid: %s",
+			uin, policyIDs, err, a.Cts.Kit.Rid)
 		return fmt.Errorf("detach user policies failed, uin: %d, policy_ids: %v, err: %w", uin, policyIDs, err)
 	}
 
@@ -325,8 +308,8 @@ func (a *ApplicationBaseSubAccount) DetachPolicies(uin uint64, tmplIDs []string)
 }
 
 // CreateAudit 创建审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
-func (a *ApplicationBaseSubAccount) CreateAudit(resType enumor.AuditResourceType, resID, resName string,
-	detail interface{}) error {
+func (a *ApplicationBaseSubAccount) CreateAudit(action enumor.AuditAction, resType enumor.AuditResourceType,
+	resID, resName string, detail interface{}) error {
 
 	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
 		Audits: []protoaudit.BatchCreateAuditInfo{
@@ -334,47 +317,7 @@ func (a *ApplicationBaseSubAccount) CreateAudit(resType enumor.AuditResourceType
 				ResID:     resID,
 				ResName:   resName,
 				ResType:   resType,
-				Action:    enumor.Create,
-				BkBizID:   a.BkBizID(),
-				Vendor:    a.Vendor(),
-				AccountID: a.AccountID(),
-				Detail:    detail,
-			},
-		},
-	})
-}
-
-// UpdateAudit 更新审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
-func (a *ApplicationBaseSubAccount) UpdateAudit(resType enumor.AuditResourceType, resID, resName string,
-	updateFields map[string]interface{}) error {
-
-	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
-		Audits: []protoaudit.BatchCreateAuditInfo{
-			{
-				ResID:     resID,
-				ResName:   resName,
-				ResType:   resType,
-				Action:    enumor.Update,
-				BkBizID:   a.BkBizID(),
-				Vendor:    a.Vendor(),
-				AccountID: a.AccountID(),
-				Detail:    updateFields,
-			},
-		},
-	})
-}
-
-// DeleteAudit 删除审计记录，账号可能拥有不同的业务，所以需要放在上层，获取路由的业务作为BizID。
-func (a *ApplicationBaseSubAccount) DeleteAudit(resType enumor.AuditResourceType, resID, resName string,
-	detail interface{}) error {
-
-	return a.Audit.BatchCreateAudit(a.Cts.Kit, &protoaudit.BatchCreateAuditReq{
-		Audits: []protoaudit.BatchCreateAuditInfo{
-			{
-				ResID:     resID,
-				ResName:   resName,
-				ResType:   resType,
-				Action:    enumor.Delete,
+				Action:    action,
 				BkBizID:   a.BkBizID(),
 				Vendor:    a.Vendor(),
 				AccountID: a.AccountID(),

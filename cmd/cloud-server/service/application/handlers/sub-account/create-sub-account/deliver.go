@@ -299,7 +299,8 @@ func (a *ApplicationOfCreateSubAccount) saveSubAccountBasicInfo(cloudResult *hss
 	}
 
 	if len(createResult.IDs) > 0 {
-		if err = a.CreateAudit(enumor.SubAccountAuditResType, createResult.IDs[0], a.req.Name, detail); err != nil {
+		if err = a.CreateAudit(enumor.Create, enumor.SubAccountAuditResType,
+			createResult.IDs[0], a.req.Name, detail); err != nil {
 			logs.Errorf("create sub account audit failed, sub_account_id: %s, err: %v, rid: %s",
 				createResult.IDs[0], err, a.Cts.Kit.Rid)
 			return nil, "", err
@@ -357,7 +358,8 @@ func (a *ApplicationOfCreateSubAccount) updateSubAccountConfigureDetail(subAccou
 		return fmt.Errorf("convert update field to map failed, err: %v", err)
 	}
 
-	if err = a.UpdateAudit(enumor.SubAccountAuditResType, subAccountID, a.req.Name, updateMap); err != nil {
+	if err = a.CreateAudit(enumor.Update, enumor.SubAccountAuditResType,
+		subAccountID, a.req.Name, updateMap); err != nil {
 		logs.Errorf("update sub account audit failed, sub_account_id: %s, err: %v, rid: %s",
 			subAccountID, err, a.Cts.Kit.Rid)
 		return err
