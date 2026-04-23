@@ -38,10 +38,9 @@ import (
 	"hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
-	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	"hcm/cmd/cloud-server/service/application/handlers/permission-policy-library"
-	// blank import to register the apply-create handler in the registry via init()
-	_ "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-create"
+	"hcm/cmd/cloud-server/service/application/handlers/permission-template"
+	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -327,6 +326,8 @@ func (a *applicationSvc) getHandlerByApplication(cts *rest.Contexts, application
 		return subaccount.NewHandlerFromApplication(opt, application.Content)
 	case enumor.ApplyPermissionPolicyLibrary:
 		return permissionpolicylibrary.NewHandlerFromApplication(opt, application.Content)
+	case enumor.OperatePermissionTemplate:
+		return permissiontemplate.NewHandlerFromApplication(opt, application.Content)
 	}
 	return nil, errors.New("not handler to support")
 }

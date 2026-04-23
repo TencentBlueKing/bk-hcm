@@ -423,3 +423,57 @@ type TCloudSubAccountSecret struct {
 func (s TCloudSubAccountSecret) GetCloudID() string {
 	return s.AccessKeyID
 }
+
+// TCloudListAttachedUserAllPoliciesOption defines options for listing all policies attached to a sub-user.
+// reference: https://cloud.tencent.com/document/product/598/67728
+type TCloudListAttachedUserAllPoliciesOption struct {
+	// TargetUin 目标子用户 Uin
+	TargetUin uint64 `json:"target_uin" validate:"required"`
+	// Page 页码，从 1 开始，不能大于 200
+	Page uint64 `json:"page" validate:"required,min=1,max=200"`
+	// Rp 每页数量，必须大于 0 且小于等于 200
+	Rp uint64 `json:"rp" validate:"required,min=1,max=200"`
+	// AttachType 关联类型，可选值为："User"、"Group"，默认 "User"
+	AttachType *uint64 `json:"attach_type" validate:"required"`
+}
+
+// Validate TCloudListAttachedUserAllPoliciesOption.
+func (opt *TCloudListAttachedUserAllPoliciesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudAttachedPolicy defines a single policy attached to a sub-user.
+type TCloudAttachedPolicy struct {
+	// PolicyID 策略 ID（字符串形式）
+	PolicyID string `json:"policy_id"`
+	// PolicyName 策略名称
+	PolicyName string `json:"policy_name"`
+	// Description 策略描述
+	Description string `json:"description"`
+	// AddTime 绑定时间
+	AddTime string `json:"add_time"`
+	// StrategyType 策略类型（"1" 表示自定义策略，"2" 表示预设策略）
+	StrategyType string `json:"strategy_type"`
+}
+
+// TCloudListAttachedUserAllPoliciesResult defines the result of listing all policies attached to a sub-user.
+type TCloudListAttachedUserAllPoliciesResult struct {
+	// PolicyList 策略列表
+	PolicyList []TCloudAttachedPolicy `json:"policy_list"`
+	// TotalNum 策略总数
+	TotalNum uint64 `json:"total_num"`
+}
+
+// TCloudAttachUserPolicyOption defines options for attaching a policy to a sub-user.
+// reference: https://cloud.tencent.com/document/product/598/34579
+type TCloudAttachUserPolicyOption struct {
+	// TargetUin is the target sub-account UIN.
+	TargetUin uint64 `json:"target_uin" validate:"required"`
+	// PolicyId is the cloud policy ID to attach.
+	PolicyId uint64 `json:"policy_id" validate:"required"`
+}
+
+// Validate TCloudAttachUserPolicyOption.
+func (opt *TCloudAttachUserPolicyOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

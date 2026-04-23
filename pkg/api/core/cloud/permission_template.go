@@ -50,6 +50,16 @@ type BasePermissionTemplate struct {
 	*core.Revision        `json:",inline"`
 }
 
+// GetID returns the local ID.
+func (b BasePermissionTemplate) GetID() string {
+	return b.ID
+}
+
+// GetCloudID returns the cloud ID.
+func (b BasePermissionTemplate) GetCloudID() string {
+	return b.CloudID
+}
+
 // PermissionTemplate defines permission template with typed extension.
 type PermissionTemplate[T PermissionTemplateExtension] struct {
 	BasePermissionTemplate `json:",inline"`

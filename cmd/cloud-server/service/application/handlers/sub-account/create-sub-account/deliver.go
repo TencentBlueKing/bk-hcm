@@ -262,14 +262,15 @@ func (a *ApplicationOfCreateSubAccount) saveCloudSubAccountBasicInfo(cloudResult
 		&dssubaccount.CreateReq{
 			Items: []dssubaccount.CreateField{
 				{
-					CloudID:   cloudID,
-					Name:      a.req.Name,
-					Vendor:    a.Vendor(),
-					Site:      parentAccount.Site,
-					AccountID: a.req.AccountID,
-					Managers:  a.req.Managers,
-					BkBizIDs:  types.Int64Array{a.BkBizID()},
-					// 创建的三级账号为CurrentAccount类型
+					CloudID:               cloudID,
+					Name:                  a.req.Name,
+					Vendor:                a.Vendor(),
+					Site:                  parentAccount.Site,
+					AccountID:             a.req.AccountID,
+					Managers:              a.req.Managers,
+					BkBizIDs:              types.Int64Array{a.BkBizID()},
+					PermissionTemplateIDs: a.req.PermissionTemplateIDs,
+					// 创建的三级账号为CurrentAccount类型,
 					AccountType: string(enumor.CurrentAccount),
 					Email:       converter.ValToPtr(a.req.Email),
 					PhoneNum:    converter.ValToPtr(a.req.PhoneNum),

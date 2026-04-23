@@ -1,110 +1,31 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { Message } from 'bkui-vue';
+import { formatJSON } from '@/utils';
 import useClipboard from 'vue-clipboard3';
 import hljs from 'highlight.js';
 
 interface IProps {
   show: boolean;
   accountId: string;
-  id: string;
+  policyContent: any;
+  cloudContent: any;
 }
 
 const props = withDefaults(defineProps<IProps>(), {
   show: false,
   accountId: '',
-  id: '',
+  policyContent: { version: 1, json: '' },
+  cloudContent: { version: 1, json: '' },
 });
 
 const emit = defineEmits(['close']);
 const { toClipboard } = useClipboard();
 
-const newContent = ref(
-  JSON.stringify(
-    {
-      version: '2.0',
-      statement: [
-        { effect: 'allow', action: ['cvm:Describe*', 'cvm:Query*'], resource: '*1' },
-        { effect: 'allow', action: ['cbs:Describe*'], resource: '*' },
-        { effect: 'allow', action: ['vpc:Describe*', 'vpc:Query*'], resource: '*' },
-        {
-          effect: 'allow',
-          action: ['cos:GetBucket', 'cos:GetObject', 'cos:HeadBucket', 'cos:HeadObject', 'cos:ListAllMyBuckets'],
-          resource: '*',
-        },
-      ],
-      statementd: [
-        { effect: 'allow', action: ['cvm:Describe*', 'cvm:Query*'], resource: '*1' },
-        { effect: 'allow', action: ['cbs:Describe*'], resource: '*' },
-        { effect: 'allow', action: ['vpc:Describe*', 'vpc:Query*'], resource: '*' },
-        {
-          effect: 'allow',
-          action: ['cos:GetBucket', 'cos:GetObject', 'cos:HeadBucket', 'cos:HeadObject', 'cos:ListAllMyBuckets'],
-          resource: '*',
-        },
-      ],
-      statements: [
-        { effect: 'allow', action: ['cvm:Describe*', 'cvm:Query*'], resource: '*1' },
-        { effect: 'allow', action: ['cbs:Describe*'], resource: '*' },
-        { effect: 'allow', action: ['vpc:Describe*', 'vpc:Query*'], resource: '*' },
-        {
-          effect: 'allow',
-          action: ['cos:GetBucket', 'cos:GetObject', 'cos:HeadBucket', 'cos:HeadObject', 'cos:ListAllMyBuckets'],
-          resource: '*',
-        },
-      ],
-    },
-    null,
-    2,
-  ),
-); // 策略最新版本
-const cloudContent = ref(
-  JSON.stringify(
-    {
-      version: '2.0',
-      statement: [
-        {
-          effect: 'allow',
-          action: ['cvm:Describe*', 'cvm:Query*'],
-          resource: '*',
-        },
-        {
-          effect: 'allow',
-          action: ['cbs:Describe*'],
-          resource: '*',
-        },
-        {
-          effect: 'allow',
-          action: ['vpc:Describe*', 'vpc:Query*'],
-          resource: '*',
-        },
-      ],
-      statementy: [
-        { effect: 'allow', action: ['cvm:Describe*', 'cvm:Query*'], resource: '*1' },
-        { effect: 'allow', action: ['cbs:Describe*'], resource: '*' },
-        { effect: 'allow', action: ['vpc:Describe*', 'vpc:Query*'], resource: '*' },
-        {
-          effect: 'allow',
-          action: ['cos:GetBucket', 'cos:GetObject', 'cos:HeadBucket', 'cos:HeadObject', 'cos:ListAllMyBuckets'],
-          resource: '*',
-        },
-      ],
-      asgag: [
-        {
-          aa: 33,
-        },
-      ],
-    },
-    null,
-    2,
-  ),
-); // 云上当前版本
+const newContent = computed(() => props.policyContent);
+const cloudContent = computed(() => props.cloudContent);
 
 const show = computed(() => props.show);
-
-// const getDiffContent = () => {
-//   // 后续通过接口获得
-// };
 
 const handleCopy = async (content: string) => {
   try {
@@ -133,21 +54,21 @@ const handleClose = () => {
       <div class="name">二级账号： {{ props.accountId }}</div>
       <div class="diff-info">
         <div>
-          <span>云上当前版本（v2）</span>
+          <span>云上当前版本（v{{ cloudContent.version }}）</span>
           <i
             class="hcm-icon bkhcm-icon-copy diff-copy"
             color="#3A84FF"
             title="复制"
-            @click="handleCopy(cloudContent)"
+            @click="handleCopy(formatJSON(cloudContent.json))"
           ></i>
         </div>
         <div>
-          <span>策略最新版本（v3）</span>
+          <span>策略最新版本（v{{ newContent.version }}）</span>
           <i
             class="hcm-icon bkhcm-icon-copy diff-copy"
             color="#3A84FF"
             title="复制"
-            @click="handleCopy(newContent)"
+            @click="handleCopy(formatJSON(newContent.json))"
           ></i>
           <div class="diff-identify">
             <div class="add-content">新增内容</div>
@@ -159,8 +80,8 @@ const handleClose = () => {
         class="code-diff"
         :hljs="hljs"
         language="json"
-        :new-content="newContent"
-        :old-content="cloudContent"
+        :new-content="formatJSON(newContent.json)"
+        :old-content="formatJSON(cloudContent.json)"
         :diff-context="2000"
         diff-format="side-by-side"
         theme="light"

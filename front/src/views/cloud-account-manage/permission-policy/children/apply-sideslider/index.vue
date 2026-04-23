@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, inject, Ref } from 'vue';
 import { Plus, Transfer } from 'bkui-vue/lib/icon';
-import type { IPermissionPolicyItem } from '../../typings';
+import type { IAppliedReasonItem, IPermissionPolicyItem } from '../../typings';
+import { IPermissionAppliedItem, usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
 import { ApplyOperationType } from '../../typings';
 import ApplyNewTable from './apply-new-table.vue';
 import UpdateAppliedTable from './update-applied-table.vue';
 import { InfoBox } from 'bkui-vue';
+import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -15,8 +18,15 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  success: [];
+  success: [row: IAppliedReasonItem[], type: ApplyOperationType];
 }>();
+
+const permissionPolicyStore = usePermissionPolicyStore();
+const { isBusinessPage, getBizsId } = useWhereAmI();
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+
+const appliedList = ref<IPermissionAppliedItem[]>([]);
+const unAppliedList = ref<string[]>([]);
 
 // 基本信息折叠状态
 const baseInfoCollapsed = ref(true);
@@ -27,6 +37,7 @@ const operationType = ref<ApplyOperationType>(ApplyOperationType.APPLY_NEW);
 // 子表格引用
 const applyNewTableRef = ref();
 const updateAppliedTableRef = ref();
+const appliedCount = ref(0);
 
 // 提交加载状态
 const submitLoading = ref(false);
@@ -35,27 +46,73 @@ const submitLoading = ref(false);
 const baseInfoFields = computed(() => {
   if (!props.policyData) return [];
   return [
-    { label: '策略库名称', value: props.policyData.name },
-    { label: '当前版本', value: 'v3' },
-    { label: '创建人', value: `${props.policyData.creator}（平台）` },
-    { label: '更新人', value: props.policyData.reviser },
-    { label: '创建时间', value: props.policyData.created_at },
-    { label: '更新时间', value: props.policyData.updated_at },
+    { label: '策略库名称', value: props.policyData.name, type: 'string', id: 'name' },
+    { label: '当前版本', value: `v${props.policyData.version}`, type: 'string', id: 'version' },
+    { label: '创建人', value: `${props.policyData.creator}`, type: 'user', id: 'creator' },
+    { label: '更新人', value: props.policyData.reviser, type: 'user', id: 'reviser' },
+    { label: '创建时间', value: props.policyData.created_at, type: 'datetime', id: 'created_at' },
+    { label: '更新时间', value: props.policyData.updated_at, type: 'datetime', id: 'updated_at' },
   ];
 });
-
-// 已应用账号数
-const appliedCount = computed(() => props.policyData?.related_account_count || 0);
+const policyData = computed(() => props.policyData);
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 // 应用按钮是否可以点击
 const applyBtnDisabled = computed(() => {
-  if (operationType.value === ApplyOperationType.APPLY_NEW) {
-    const _selected = applyNewTableRef.value?.getSelectedAccounts() || [];
-    return _selected.length === 0;
-  }
-  const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
-  return _selected.length === 0;
+  return getSelected.value.length === 0;
 });
+
+const getSelected = computed(() => {
+  if (operationType.value === ApplyOperationType.APPLY_NEW) return applyNewTableRef.value?.getSelectedAccounts() || [];
+  return updateAppliedTableRef.value?.getSelectedAccounts() || [];
+});
+
+const applyMethod = computed(() => {
+  if (isBusinessPage) {
+    return operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccountBiz' : 'updateAppliedAccountBiz';
+  }
+  return operationType.value === ApplyOperationType.APPLY_NEW ? 'createAppliedAccount' : 'updateAppliedAccount';
+});
+const applyParams = computed(() => {
+  const params = { vendor: currentVendor.value, id: props.policyData.id };
+  if (isBusinessPage) {
+    return { bizId: bizId.value, ...params };
+  }
+  return params;
+});
+
+// 获取未应用和已经应用了的列表
+const getList = async () => {
+  const policyId = props.policyData.id;
+  const accountSet = new Set();
+  const [unAppliedRes, appliedRes] = await Promise.all([
+    permissionPolicyStore.getUnappliedAccountIdsList(bizId.value, currentVendor.value, policyId),
+    permissionPolicyStore.getAppliedAccountIdsList(bizId.value, currentVendor.value, policyId),
+  ]);
+  appliedList.value = [...appliedRes];
+  unAppliedList.value = [...unAppliedRes];
+  // 对已经应用的列表中account_id去重计算出总共有几个账号已经应用了
+  appliedRes.forEach((item: IPermissionAppliedItem) => accountSet.add(item.account_id));
+  appliedCount.value = accountSet.size;
+  // 对已经应用的列表进行应用状态比较
+  setAppliedListStatus();
+};
+
+const setAppliedListStatus = () => {
+  appliedList.value.forEach((item: IPermissionAppliedItem) => {
+    if (item.policy_library_version !== props.policyData.version) {
+      // 如果版本号不一致，则表示还未应用
+      item.apply_status = 'pending';
+      return;
+    }
+    // 如果版本一直hash值不一致，则表示待应用
+    if (item.policy_hash !== props.policyData.policy_hash) {
+      item.apply_status = 'data_mismatch';
+      return;
+    }
+    item.apply_status = 'applied';
+  });
+};
 
 // 应用提交
 const handleApply = async () => {
@@ -66,24 +123,23 @@ const handleApply = async () => {
     content: '应用过程中，请勿关闭本弹窗',
   });
   try {
-    // TODO: 替换为真实 API 调用
-    if (operationType.value === ApplyOperationType.APPLY_NEW) {
-      const _selected = applyNewTableRef.value?.getSelectedAccounts() || [];
-      // TODO: 调用应用到新账号 API
-    } else {
-      const _selected = updateAppliedTableRef.value?.getSelectedAccounts() || [];
-      // TODO: 调用更新已应用账号 API
+    const key = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
+    const _selected = getSelected.value.map((item: { [key: string]: string }) => item[key]);
+    const res: IAppliedReasonItem[] = [];
+    const max = 100; // 每次接口selected最大数目
+
+    while (_selected.length) {
+      const list = await permissionPolicyStore[applyMethod.value]({
+        ...applyParams.value,
+        selectedIds: _selected.splice(0, max),
+      });
+      res.push(...list);
     }
 
-    // TODO 模拟
-    setTimeout(() => {
-      tips.hide();
-      model.value = false;
-      emit('success');
-    }, 2500);
-  } catch (error) {
-    // TODO: 使用全局消息提示替代 console
+    model.value = false;
+    emit('success', res, operationType.value);
   } finally {
+    tips.hide();
     submitLoading.value = false;
   }
 };
@@ -93,13 +149,14 @@ const handleCancel = () => {
   model.value = false;
 };
 
-// 重置状态
 watch(
   () => model.value,
   (isShow) => {
     if (isShow) {
       operationType.value = ApplyOperationType.APPLY_NEW;
       baseInfoCollapsed.value = true;
+      // 获取未应用和已应用了的列表
+      getList();
     }
   },
 );
@@ -112,6 +169,7 @@ watch(
     :width="1200"
     quick-close
     background-color="#f5f7fa"
+    render-directive="if"
   >
     <template #default>
       <div :class="['apply-sideslider-container', operationType === ApplyOperationType.APPLY_NEW ? 'apply' : 'update']">
@@ -124,9 +182,9 @@ watch(
           class="info-card"
         >
           <div class="info-grid">
-            <div v-for="(field, index) in baseInfoFields" :key="index" class="info-item">
+            <div v-for="field in baseInfoFields" :key="field.id" class="info-item">
               <span class="info-label">{{ field.label }}：</span>
-              <span class="info-value">{{ field.value || '--' }}</span>
+              <display-value class="info-value" :property="field" :value="field.value" />
             </div>
           </div>
         </bk-card>
@@ -167,13 +225,17 @@ watch(
             <ApplyNewTable
               v-if="operationType === ApplyOperationType.APPLY_NEW"
               ref="applyNewTableRef"
-              :policy-id="policyData?.id || ''"
+              :list="unAppliedList"
+              :biz-id="bizId"
+              :vendor="currentVendor"
             />
             <UpdateAppliedTable
               v-else
               ref="updateAppliedTableRef"
-              :policy-id="policyData?.id || ''"
-              :applied-count="appliedCount"
+              :list="appliedList"
+              :policy-data="policyData"
+              :biz-id="bizId"
+              :vendor="currentVendor"
             />
           </div>
         </bk-card>

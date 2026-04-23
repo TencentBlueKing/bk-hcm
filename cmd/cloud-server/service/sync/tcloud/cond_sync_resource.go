@@ -43,11 +43,12 @@ type CondSyncParams struct {
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.RegionCloudResType:        CondSyncRegion,
-	enumor.ZoneCloudResType:          CondSyncZone,
-	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
-	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
-	enumor.SubAccountCloudResType:    CondSyncSubAccount,
+	enumor.RegionCloudResType:             CondSyncRegion,
+	enumor.ZoneCloudResType:               CondSyncZone,
+	enumor.LoadBalancerCloudResType:       CondSyncLoadBalancer,
+	enumor.SecurityGroupCloudResType:      CondSyncSecurityGroup,
+	enumor.SubAccountCloudResType:         CondSyncSubAccount,
+	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
 }
 
 // GetCondSyncFunc ...
@@ -143,6 +144,24 @@ func CondSyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncP
 	}
 
 	logs.Infof("[%s] conditional sync sub account end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+
+	return nil
+}
+
+// CondSyncPermissionTemplate ...
+func CondSyncPermissionTemplate(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := &sync.TCloudGlobalSyncReq{
+		AccountID: params.AccountID,
+	}
+	err := cliSet.HCService().TCloud.Account.SyncPermissionTemplate(kt, syncReq)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync permission template failed, err: %v, req: %+v, rid: %s",
+			enumor.TCloud, err, syncReq, kt.Rid)
+		return err
+	}
+
+	logs.Infof("[%s] conditional sync permission template end, req: %+v, rid: %s",
+		enumor.TCloud, syncReq, kt.Rid)
 
 	return nil
 }

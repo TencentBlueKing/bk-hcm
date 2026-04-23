@@ -53,6 +53,7 @@ func (a ApplicationType) Validate() error {
 	case OperateSubAccount:
 
 	case ApplyPermissionPolicyLibrary:
+	case OperatePermissionTemplate:
 	default:
 		return fmt.Errorf("unsupported application type: %s", a)
 	}
@@ -78,6 +79,9 @@ const (
 
 	// ApplyPermissionPolicyLibrary 应用权限策略库
 	ApplyPermissionPolicyLibrary ApplicationType = "apply_permission_policy_library"
+
+	// OperatePermissionTemplate 操作云权限模板
+	OperatePermissionTemplate ApplicationType = "operate_permission_template"
 
 	// CreateSecurityGroup 创建安全组
 	CreateSecurityGroup ApplicationType = "create_security_group"

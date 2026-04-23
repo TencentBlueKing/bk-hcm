@@ -29,6 +29,14 @@ export enum ResourceTypeEnum {
   CLB = 'clb',
 }
 
+// 二级账号资源类型
+export enum SecondaryAccountResourceTypeEnum {
+  PERMISSION = 'permission_policy_library',
+  TEMPLATE = 'permission_template',
+  SECRET = 'sub_account_secret',
+  SUB = 'sub_account',
+}
+
 // 资源类型
 export const RESOURCE_TYPES = [
   {

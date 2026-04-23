@@ -22,6 +22,7 @@ export interface IPermissionPolicyItem {
   policy_document?: string; // 当前版本的策略JSON内容
   policy_hash?: string; // 当前版本的策略HASH
   associated_account_count?: number; // 关联二级账号数
+  related_accounts?: string[]; // 关联二级账号列表
 }
 
 // 操作类型枚举
@@ -52,4 +53,12 @@ export interface IAppliedAccountItem {
   applied_version: string; // 策略库应用版本
   apply_status: PolicyApplyStatus; // 策略库应用状态
   apply_time: string; // 策略库应用时间
+}
+
+// 应用策略库到二级账号结果列表
+export interface IAppliedReasonItem {
+  account_id?: string; // 二级账号ID
+  permission_template_id?: string; // 权限模版账号ID
+  status: 'success' | 'failed';
+  reason?: string; // status是failed返回
 }
