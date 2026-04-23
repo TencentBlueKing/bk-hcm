@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, ref, type Ref } from 'vue';
-import { VendorEnum } from '@/common/constant';
+import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 import type { ModelPropertyDisplay } from '@/model/typings';
 import {
   usePermissionTemplateStore,
@@ -14,6 +14,8 @@ import routeAction from '@/router/utils/action';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
+import { Share } from 'bkui-vue/lib/icon';
 
 defineProps<{
   data: IPermissionTemplateItem & DetailsFieldTcloud;
@@ -57,7 +59,17 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
       <grid-container :column="1" :label-width="120">
         <grid-item v-for="field in fields" :key="field.id" :label="field.name">
           <template v-if="field.id === 'account_id'">
-            <display-value
+            <div class="link-button-container">
+              <SecondaryAccountValue
+                :value="data.cloud_account_id"
+                :biz-id="getBizsId()"
+                :vendor="currentVendor"
+                :res-type="SecondaryAccountResourceTypeEnum.TEMPLATE"
+              />
+
+              <Share class="icon" @click="handleGoToSecondaryAccount(data)" />
+            </div>
+            <!-- <display-value
               :property="field"
               :value="data.cloud_account_id"
               :display="{
@@ -65,7 +77,7 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
                 appearance: 'link-button',
                 appearanceProps: { isIcon: true, onClick: () => handleGoToSecondaryAccount(data) },
               }"
-            />
+            /> -->
           </template>
 
           <template v-else-if="field.id === 'associated_sub_account_count'">
@@ -114,6 +126,18 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
       line-height: 22px;
       margin-bottom: 8px;
     }
+  }
+}
+
+.link-button-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .icon {
+    font-size: 12px;
+    color: #3a84ff;
+    cursor: pointer;
   }
 }
 </style>
