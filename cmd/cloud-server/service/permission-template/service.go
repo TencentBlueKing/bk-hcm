@@ -42,8 +42,7 @@ func InitService(c *capability.Capability) {
 		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/list", svc.ListPermissionTemplate)
 
 	h.Add("ListPermTmplSubAccountIDs", http.MethodGet,
-		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/sub_account_ids",
-		svc.ListPermTmplSubAccountIDs)
+		"/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/{id}/sub_account_ids", svc.ListPermTmplSubAccountIDs)
 
 	h.Load(c.WebService)
 }

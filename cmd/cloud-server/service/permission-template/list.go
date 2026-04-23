@@ -28,12 +28,12 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
@@ -89,15 +89,12 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 		}
 	}
 
-	accountIDs, err := getAccountIDs(kt, svc.client, bizID, ext.CloudMainAccountIDs)
+	accountIDs, err := getAccountIDs(kt, svc.client, enumor.TCloud, bizID, ext.CloudMainAccountIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(accountIDs) == 0 {
-		if req.Page.Count {
-			return &cloudserver.BizPermissionTemplateListResult{Count: 0}, nil
-		}
 		return &cloudserver.BizPermissionTemplateListResult{
 			Count: 0, Details: []cloudserver.BizPermissionTemplateDetail{},
 		}, nil
@@ -119,26 +116,27 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 
 	results, err := svc.client.DataService().TCloud.PermissionTemplate.ListPermissionTmplJoinExt(kt, dsReq)
 	if err != nil {
+		logs.Errorf("list tcloud permission template failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	return svc.convBizPermTmplListResult(kt, results, req.Page.Count)
+	if req.Page.Count {
+		return &cloudserver.BizPermissionTemplateListResult{Count: results.Count}, nil
+	}
+
+	return svc.convBizPermTmplListResult(kt, results)
 }
 
 // convBizPermTmplListResult assembles the cloud-server response from data-service result.
-func (svc *service) convBizPermTmplListResult(kt *kit.Kit, dsResults *protocloud.PermissionTmplJoinExtListResult,
-	isCountOnly bool) (*cloudserver.BizPermissionTemplateListResult, error) {
+func (svc *service) convBizPermTmplListResult(kt *kit.Kit, dsResults *protocloud.PermissionTmplJoinExtListResult) (
+	*cloudserver.BizPermissionTemplateListResult, error) {
 
 	if dsResults == nil {
 		return &cloudserver.BizPermissionTemplateListResult{Details: []cloudserver.BizPermissionTemplateDetail{}}, nil
 	}
 
-	if isCountOnly {
-		return &cloudserver.BizPermissionTemplateListResult{Count: dsResults.Count}, nil
-	}
-
 	// 补充二级账号cloud_id
-	cloudIDMap, err := svc.batchLoadCloudAccountIDs(kt, dsResults.Details)
+	cloudIDMap, err := svc.batchLoadAccountCloudIDs(kt, dsResults.Details)
 	if err != nil {
 		return nil, err
 	}
@@ -160,12 +158,12 @@ func (svc *service) convBizPermTmplListResult(kt *kit.Kit, dsResults *protocloud
 		})
 	}
 
-	return &cloudserver.BizPermissionTemplateListResult{Count: dsResults.Count, Details: details}, nil
+	return &cloudserver.BizPermissionTemplateListResult{Details: details}, nil
 }
 
-// batchLoadCloudAccountIDs collects account IDs from details, batch-queries the account table,
-func (svc *service) batchLoadCloudAccountIDs(kt *kit.Kit, details []protocloud.PermissionTmplJoinExtDetail,
-) (map[string]string, error) {
+// batchLoadAccountCloudIDs collects account IDs from details, batch-queries the account table,
+func (svc *service) batchLoadAccountCloudIDs(kt *kit.Kit, details []protocloud.PermissionTmplJoinExtDetail) (
+	map[string]string, error) {
 
 	accountIDs := make([]string, 0)
 	for _, d := range details {
@@ -173,37 +171,28 @@ func (svc *service) batchLoadCloudAccountIDs(kt *kit.Kit, details []protocloud.P
 	}
 	result := make(map[string]string, len(accountIDs))
 
-	for _, batch := range slice.Split(accountIDs, constant.BatchOperationMaxLimit) {
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &protocloud.AccountListReq{
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch)),
 			Page:   core.NewDefaultBasePage(),
 		}
 
-		start := uint32(0)
-		for {
-			listReq.Page.Start = start
+		accounts, err := svc.client.DataService().Global.Account.ListWithExtension(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list account failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
 
-			accounts, err := svc.client.DataService().Global.Account.ListWithExtension(kt.Ctx, kt.Header(), listReq)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, item := range accounts.Details {
-				cloudAccountID := ""
-				if item.Extension != nil {
-					if v, ok := item.Extension["cloud_main_account_id"]; ok {
-						if s, ok := v.(string); ok {
-							cloudAccountID = s
-						}
+		for _, item := range accounts.Details {
+			cloudAccountID := ""
+			if item.Extension != nil {
+				if v, ok := item.Extension["cloud_main_account_id"]; ok {
+					if s, ok := v.(string); ok {
+						cloudAccountID = s
 					}
 				}
-				result[item.ID] = cloudAccountID
 			}
-
-			if len(accounts.Details) < int(listReq.Page.Limit) {
-				break
-			}
-			start += uint32(listReq.Page.Limit)
+			result[item.ID] = cloudAccountID
 		}
 	}
 
@@ -237,23 +226,15 @@ func (svc *service) batchLoadPolicyLibraryNames(kt *kit.Kit, details []protoclou
 			Page:   core.NewDefaultBasePage(),
 		}
 
-		start := uint32(0)
-		for {
-			listReq.Page.Start = start
-			libs, err := svc.client.DataService().Global.PermissionPolicyLibrary.ListPermissionPolicyLibrary(
-				kt, listReq)
-			if err != nil {
-				return nil, fmt.Errorf("list permission policy library failed: %w", err)
-			}
+		libs, err := svc.client.DataService().Global.PermissionPolicyLibrary.ListPermissionPolicyLibrary(
+			kt, listReq)
+		if err != nil {
+			logs.Errorf("list perm policy library failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list permission policy library failed, err: %v", err)
+		}
 
-			for _, lib := range libs.Details {
-				result[lib.ID] = lib.Name
-			}
-
-			if len(libs.Details) < int(listReq.Page.Limit) {
-				break
-			}
-			start += uint32(listReq.Page.Limit)
+		for _, lib := range libs.Details {
+			result[lib.ID] = lib.Name
 		}
 	}
 
@@ -261,11 +242,13 @@ func (svc *service) batchLoadPolicyLibraryNames(kt *kit.Kit, details []protoclou
 }
 
 // getAccountIDs resolves cloud-side main account IDs (cloud_id) to local
-func getAccountIDs(kt *kit.Kit, cli *client.ClientSet, bkBizID int64, cloudMainAccountIDs []string) ([]string, error) {
+func getAccountIDs(kt *kit.Kit, cli *client.ClientSet, vendor enumor.Vendor, bkBizID int64, cloudMainAccountIDs []string) (
+	[]string, error) {
+
 	listReq := &protocloud.AccountListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("bk_biz_id", bkBizID),
-			tools.RuleEqual("vendor", enumor.TCloud),
+			tools.RuleEqual("vendor", vendor),
 			tools.RuleEqual("type", enumor.ResourceAccount),
 		),
 		Page:   core.NewDefaultBasePage(),
@@ -354,8 +337,8 @@ func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
 	}
 
 	filterExpr := tools.ExpressionAnd(
-		tools.RuleJsonOverlaps("permission_template_ids", []string{templateID}),
-		tools.RuleJsonOverlaps("bk_biz_ids", []int64{bizID}),
+		tools.RuleJSONContains("permission_template_ids", templateID),
+		tools.RuleJSONContains("bk_biz_ids", bizID),
 	)
 
 	subAccounts := make([]cloudserver.PermRelateSubAccountInfo, 0)

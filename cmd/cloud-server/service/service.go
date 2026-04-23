@@ -56,7 +56,7 @@ import (
 	"hcm/cmd/cloud-server/service/monitoring"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
-	permissiontemplates "hcm/cmd/cloud-server/service/permission-templates"
+	permissiontemplates "hcm/cmd/cloud-server/service/permission-template"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"

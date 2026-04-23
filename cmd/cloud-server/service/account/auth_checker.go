@@ -62,18 +62,18 @@ type subAccountAuthChecker struct {
 func (c *subAccountAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountIDs []string, bizID int64,
 	vendor enumor.Vendor) ([]string, error) {
 
-	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("account_id", accountIDs),
-			tools.RuleJSONContains("bk_biz_ids", bizID),
-			tools.RuleEqual("vendor", string(vendor)),
-		),
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"account_id"},
-	}
-
 	var authorizedIDs []string
-	for {
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("account_id", batch),
+				tools.RuleJSONContains("bk_biz_ids", bizID),
+				tools.RuleEqual("vendor", string(vendor)),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"account_id"},
+		}
+
 		result, err := c.client.DataService().Global.SubAccount.List(kt, req)
 		if err != nil {
 			logs.Errorf("list sub_account failed, biz_id: %d, vendor: %s, err: %v, rid: %s",
@@ -84,11 +84,6 @@ func (c *subAccountAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountIDs []st
 		for _, detail := range result.Details {
 			authorizedIDs = append(authorizedIDs, detail.AccountID)
 		}
-
-		if uint(len(result.Details)) < req.Page.Limit {
-			break
-		}
-		req.Page.Start += uint32(req.Page.Limit)
 	}
 
 	return slice.Unique(authorizedIDs), nil
@@ -104,18 +99,18 @@ func (c *subAccountSecretAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountID
 	vendor enumor.Vendor) ([]string, error) {
 
 	// 1. 分页查询满足条件的 sub_account 记录
-	subAccountReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("account_id", accountIDs),
-			tools.RuleJSONContains("bk_biz_ids", bizID),
-			tools.RuleEqual("vendor", string(vendor)),
-		),
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"id"},
-	}
-
 	var subAccountIDs []string
-	for {
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		subAccountReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("account_id", batch),
+				tools.RuleJSONContains("bk_biz_ids", bizID),
+				tools.RuleEqual("vendor", string(vendor)),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"id"},
+		}
+
 		subAccountResult, err := c.client.DataService().Global.SubAccount.List(kt, subAccountReq)
 		if err != nil {
 			logs.Errorf("list sub_account for secret check failed, biz_id: %d, vendor: %s, err: %v, rid: %s",
@@ -126,11 +121,6 @@ func (c *subAccountSecretAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountID
 		for _, detail := range subAccountResult.Details {
 			subAccountIDs = append(subAccountIDs, detail.ID)
 		}
-
-		if uint(len(subAccountResult.Details)) < subAccountReq.Page.Limit {
-			break
-		}
-		subAccountReq.Page.Start += uint32(subAccountReq.Page.Limit)
 	}
 
 	if len(subAccountIDs) == 0 {
@@ -145,15 +135,15 @@ func (c *subAccountSecretAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountID
 func (c *subAccountSecretAuthChecker) listAccountIDsBySubAccountIDs(kt *kit.Kit,
 	subAccountIDs []string) ([]string, error) {
 
-	secretReq := &protocloud.SubAccountSecretListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("sub_account_id", subAccountIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-
 	var authorizedIDs []string
-	for {
+	for _, batch := range slice.Split(subAccountIDs, int(core.DefaultMaxPageLimit)) {
+		secretReq := &protocloud.SubAccountSecretListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("sub_account_id", batch),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+
 		secretResult, err := c.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt, secretReq)
 		if err != nil {
 			logs.Errorf("list sub_account_secret details failed, err: %v, rid: %s", err, kt.Rid)
@@ -163,11 +153,6 @@ func (c *subAccountSecretAuthChecker) listAccountIDsBySubAccountIDs(kt *kit.Kit,
 		for _, detail := range secretResult.Details {
 			authorizedIDs = append(authorizedIDs, detail.AccountID)
 		}
-
-		if uint(len(secretResult.Details)) < secretReq.Page.Limit {
-			break
-		}
-		secretReq.Page.Start += uint32(secretReq.Page.Limit)
 	}
 
 	return slice.Unique(authorizedIDs), nil
@@ -182,17 +167,17 @@ type permissionTemplateAuthChecker struct {
 func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountIDs []string, bizID int64,
 	vendor enumor.Vendor) ([]string, error) {
 
-	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", accountIDs),
-			tools.RuleEqual("vendor", vendor),
-		),
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"id"},
-	}
-
 	var authorizedIDs []string
-	for {
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleEqual("vendor", vendor),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"id", "usage_biz_ids"},
+		}
+
 		result, err := c.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
 		if err != nil {
 			logs.Errorf("list account for permission_template check failed, biz_id: %d, err: %v, rid: %s",
@@ -205,11 +190,6 @@ func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, account
 				authorizedIDs = append(authorizedIDs, detail.ID)
 			}
 		}
-
-		if uint(len(result.Details)) < req.Page.Limit {
-			break
-		}
-		req.Page.Start += uint32(req.Page.Limit)
 	}
 
 	return slice.Unique(authorizedIDs), nil

@@ -25,7 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
@@ -179,10 +178,6 @@ func (req *PermissionTmplJoinExtListReq) Validate() error {
 
 	if err := req.PermissionTemplateFilters.Validate(); err != nil {
 		return err
-	}
-
-	if req.Page == nil {
-		return errf.New(errf.InvalidParameter, "page is required")
 	}
 
 	return req.Page.Validate(core.NewDefaultPageOption())

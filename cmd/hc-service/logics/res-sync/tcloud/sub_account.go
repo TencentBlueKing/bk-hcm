@@ -237,24 +237,15 @@ func (cli *client) listSubAccountByID(kt *kit.Kit, opt *SyncSubAccountOption,
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-		start := uint32(0)
-		for {
-			req.Page.Start = start
-			resp, err := cli.dbCli.TCloud.SubAccount.ListExt(kt, req)
-			if err != nil {
-				logs.Errorf("[%s] list sub account by ids failed, err: %v, account: %s, req: %v, rid: %s",
-					enumor.TCloud, err, opt.AccountID, req, kt.Rid)
-				return nil, err
-			}
+		resp, err := cli.dbCli.TCloud.SubAccount.ListExt(kt, req)
+		if err != nil {
+			logs.Errorf("[%s] list sub account by ids failed, err: %v, account: %s, req: %v, rid: %s",
+				enumor.TCloud, err, opt.AccountID, req, kt.Rid)
+			return nil, err
+		}
 
-			for _, one := range resp.Details {
-				result[one.ID] = one
-			}
-
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			start += uint32(core.DefaultMaxPageLimit)
+		for _, one := range resp.Details {
+			result[one.ID] = one
 		}
 	}
 
@@ -473,13 +464,10 @@ func (cli *client) listSubAccountFromDB(kt *kit.Kit, opt *SyncSubAccountOption) 
 	}
 
 	req := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.TCloud},
-				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: opt.AccountID},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", enumor.TCloud),
+			tools.RuleEqual("account_id", opt.AccountID),
+		),
 		Page: core.NewDefaultBasePage(),
 	}
 	start := uint32(0)

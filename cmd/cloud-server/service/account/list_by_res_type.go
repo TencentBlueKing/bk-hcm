@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // ListAccountByResType 根据资源类型批量查询二级账号元数据信息
@@ -176,28 +177,24 @@ func (a *accountSvc) batchGetAccountBaseInfo(kt *kit.Kit, vendor enumor.Vendor, 
 	[]*dataproto.BaseAccountWithExtensionListResp, error) {
 
 	accounts := make([]*dataproto.BaseAccountWithExtensionListResp, 0)
-	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", accountIDs),
-			tools.RuleEqual("vendor", string(vendor))),
-		Page: core.NewDefaultBasePage(),
-	}
 
-	for {
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleEqual("vendor", string(vendor))),
+			Page: core.NewDefaultBasePage(),
+		}
+
 		resp, err := a.client.DataService().Global.Account.ListWithExtension(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
-			logs.Errorf("list account base info failed, start: %d, err: %v, rid: %s", listReq.Page.Start, err, kt.Rid)
+			logs.Errorf("list account base info failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
 		for _, detail := range resp.Details {
 			accounts = append(accounts, detail)
 		}
-
-		if uint(len(resp.Details)) < listReq.Page.Limit {
-			break
-		}
-		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
 	return accounts, nil

@@ -29,7 +29,6 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dssubaccount "hcm/pkg/api/data-service/cloud/sub-account"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -385,12 +384,12 @@ func buildPermissionTemplateMap[Ext coresubaccount.Extension](cli *client.Client
 
 	// 2. 批量查询权限模版
 	tmplMap := make(map[string]corecloud.PermissionTmplBasicInfo, len(tmplIDs))
-	start := uint32(0)
-	for {
+	for _, batch := range slice.Split(tmplIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &protocloud.PermissionTemplateListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("id", tmplIDs)),
-			Page:   &core.BasePage{Start: start, Limit: uint(constant.BatchOperationMaxLimit)},
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch)),
+			Page:   core.NewDefaultBasePage(),
 		}
+		
 		result, err := cli.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, listReq)
 		if err != nil {
 			logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
@@ -403,11 +402,6 @@ func buildPermissionTemplateMap[Ext coresubaccount.Extension](cli *client.Client
 				Name: template.Name,
 			}
 		}
-
-		if uint32(len(result.Details)) < uint32(constant.BatchOperationMaxLimit) {
-			break
-		}
-		start += uint32(constant.BatchOperationMaxLimit)
 	}
 
 	// 3. 构建 subAccountID -> []PermissionTmplBasicInfo 的映射
@@ -415,9 +409,12 @@ func buildPermissionTemplateMap[Ext coresubaccount.Extension](cli *client.Client
 	for _, detail := range details {
 		templates := make([]corecloud.PermissionTmplBasicInfo, 0, len(detail.PermissionTemplateIDs))
 		for _, tmplID := range detail.PermissionTemplateIDs {
-			if info, ok := tmplMap[tmplID]; ok {
-				templates = append(templates, info)
+			info, ok := tmplMap[tmplID]
+			if !ok {
+				logs.Errorf("permission template not found, tmpl_id: %s, rid: %s", tmplID, kt.Rid)
+				return nil, errf.New(errf.Aborted, fmt.Sprintf("permission template not found, tmpl_id: %s", tmplID))
 			}
+			templates = append(templates, info)
 		}
 		result[detail.ID] = templates
 	}

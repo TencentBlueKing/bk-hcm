@@ -22,7 +22,6 @@ package cloudserver
 import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	tabletypes "hcm/pkg/dal/table/types"
 )
@@ -42,10 +41,6 @@ type ListBizPermissionTemplateReq struct {
 func (req *ListBizPermissionTemplateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
-	}
-
-	if req.Page == nil {
-		return errf.New(errf.InvalidParameter, "page is required")
 	}
 
 	return req.Page.Validate(core.NewDefaultPageOption())

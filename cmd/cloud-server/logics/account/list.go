@@ -23,10 +23,10 @@ import (
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/slice"
 )
 
@@ -59,34 +59,25 @@ func BatchListBasicInfoByAccountIDs(kt *kit.Kit, cli *dataservice.Client, accoun
 		return result, nil
 	}
 
-	for _, ids := range slice.Split(uniqueIDs, constant.BatchOperationMaxLimit) {
+	for _, ids := range slice.Split(uniqueIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &protocloud.AccountListReq{
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", ids), tools.RuleEqual("type", enumor.ResourceAccount)),
 			Page:   core.NewDefaultBasePage(),
 			Fields: []string{"id", "name", "bk_biz_id"},
 		}
 
-		start := uint32(0)
-		for {
-			listReq.Page.Start = start
+		accounts, err := cli.Global.Account.List(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list account basic info err: %v rid: %s", err, kt.Rid)
+			return nil, err
+		}
 
-			accounts, err := cli.Global.Account.List(kt.Ctx, kt.Header(), listReq)
-			if err != nil {
-				return nil, err
+		for _, accountItem := range accounts.Details {
+			result[accountItem.ID] = BasicInfo{
+				ID:      accountItem.ID,
+				Name:    accountItem.Name,
+				BkBizID: accountItem.BkBizID,
 			}
-
-			for _, accountItem := range accounts.Details {
-				result[accountItem.ID] = BasicInfo{
-					ID:      accountItem.ID,
-					Name:    accountItem.Name,
-					BkBizID: accountItem.BkBizID,
-				}
-			}
-
-			if len(accounts.Details) < int(listReq.Page.Limit) {
-				break
-			}
-			start += uint32(listReq.Page.Limit)
 		}
 	}
 
