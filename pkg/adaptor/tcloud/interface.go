@@ -155,6 +155,11 @@ type TCloud interface {
 	CreatePolicy(kt *kit.Kit, opt *account.TCloudCreatePolicyOption) (
 		*account.TCloudCreatePolicyResult, error)
 	UpdatePolicy(kt *kit.Kit, opt *account.TCloudUpdatePolicyOption) error
+	ListPolicies(kt *kit.Kit, opt *account.TCloudListPoliciesOption) ([]account.TCloudPolicyItem, uint64, error)
+	GetPolicyDetail(kt *kit.Kit, opt *account.TCloudGetPolicyDetailOption) (*account.TCloudPolicyDetail, error)
+	ListAttachedUserAllPolicies(kt *kit.Kit, opt *account.TCloudListAttachedUserAllPoliciesOption) (
+		*account.TCloudListAttachedUserAllPoliciesResult, error)
+	DeletePolicy(kt *kit.Kit, opt *account.TCloudDeletePolicyOption) error
 	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
 		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
 	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)

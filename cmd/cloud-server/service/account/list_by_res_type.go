@@ -20,6 +20,8 @@
 package account
 
 import (
+	"fmt"
+
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -31,6 +33,53 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
+
+// ListAccountByResType 根据资源类型批量查询二级账号元数据信息
+func (a *accountSvc) ListAccountByResType(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AccountListByResTypeReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := a.checkAdminPermission(cts.Kit, req.ResType); err != nil {
+		return nil, err
+	}
+
+	details, err := a.getAccountDetails(cts.Kit, req.IDs, vendor)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.AccountListByResTypeResp{Details: details}, nil
+}
+
+func (a *accountSvc) checkAdminPermission(kt *kit.Kit, resType meta.ResourceType) error {
+	var authType meta.ResourceType
+	var authAction meta.Action
+	switch resType {
+	case meta.PermissionPolicyLibrary:
+		authType = meta.PermissionPolicyLibrary
+		authAction = meta.Find
+	default:
+		return fmt.Errorf("invalid resource type: %s", resType)
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: authType, Action: authAction}}
+	if err := a.authorizer.AuthorizeWithPerm(kt, authRes); err != nil {
+		return errf.NewFromErr(errf.PermissionDenied, err)
+	}
+
+	return nil
+}
 
 // ListBizAccountByResType 业务下根据资源类型批量查询二级账号元数据信息
 func (a *accountSvc) ListBizAccountByResType(cts *rest.Contexts) (interface{}, error) {

@@ -61,6 +61,37 @@ func (svc *service) TCloudCreateCAMPolicy(cts *rest.Contexts) (interface{}, erro
 	return &proto.CreateCAMPolicyResult{PolicyID: result.PolicyID}, nil
 }
 
+// TCloudDeleteCAMPolicy deletes a CAM policy for the specified account.
+func (svc *service) TCloudDeleteCAMPolicy(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.DeleteCAMPolicyReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloudCli, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		logs.Errorf("get tcloud adaptor failed, accountID: %s, err: %v, rid: %s",
+			req.AccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typeaccount.TCloudDeletePolicyOption{
+		PolicyIDs: req.PolicyIDs,
+	}
+
+	if err = tcloudCli.DeletePolicy(cts.Kit, opt); err != nil {
+		logs.Errorf("delete cam policies failed, accountID: %s, policyIDs: %v, err: %v, rid: %s",
+			req.AccountID, req.PolicyIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 // TCloudUpdateCAMPolicy updates a CAM policy for the specified account.
 func (svc *service) TCloudUpdateCAMPolicy(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.UpdateCAMPolicyReq)

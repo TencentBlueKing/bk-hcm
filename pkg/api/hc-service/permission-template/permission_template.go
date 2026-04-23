@@ -50,6 +50,17 @@ type CreateCAMPolicyResp struct {
 	Data          *CreateCAMPolicyResult `json:"data"`
 }
 
+// DeleteCAMPolicyReq defines the request to delete one or more CAM policies via hc-service.
+type DeleteCAMPolicyReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	PolicyIDs []uint64 `json:"policy_ids" validate:"required,min=1"`
+}
+
+// Validate DeleteCAMPolicyReq.
+func (req *DeleteCAMPolicyReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // UpdateCAMPolicyReq defines the request to update a CAM policy via hc-service.
 type UpdateCAMPolicyReq struct {
 	AccountID      string  `json:"account_id" validate:"required"`

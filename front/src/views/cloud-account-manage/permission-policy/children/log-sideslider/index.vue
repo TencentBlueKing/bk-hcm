@@ -1,87 +1,39 @@
 <script setup lang="ts">
-import { ref, watch, reactive } from 'vue';
-import type { IAppliedAccountItem } from '../../typings';
-import { PolicyApplyStatus } from '../../typings';
+import { computed, ref } from 'vue';
+import { ApplyOperationType, type IAppliedReasonItem } from '../../typings';
 import usePage from '@/hooks/use-page';
-import LogDetaiSideslider from '@/views/cloud-account-manage/permission-policy/children/log-sideslider/log-detail.vue';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
+import { SecondaryAccountResourceTypeEnum } from '@/common/constant';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
 
-// const props = defineProps<{
-//   // policyId: string;
-//   // appliedCount: number;
-// }>();
+const props = defineProps<{
+  data: IAppliedReasonItem[];
+  type: ApplyOperationType;
+  bizId: number;
+}>();
 
-// 表格数据
-const tableData = ref<IAppliedAccountItem[]>([]);
+const tableData = computed(() => [...props.data]);
+const resType = computed(() =>
+  props.bizId ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
+);
+
 const isLoading = ref(false);
 const { pagination } = usePage();
 
-// 策略内容对比数据
-const LogDetailInfo = reactive({
-  show: false,
-  id: '',
-  accountId: '',
-});
-
-const tableRef = ref();
-
 // 状态映射
 const statusMap: Record<string, { text: string; dotClass: string }> = {
-  [PolicyApplyStatus.APPLIED]: { text: '成功', dotClass: 'status-applied' },
-  [PolicyApplyStatus.PENDING]: { text: '待应用', dotClass: 'status-pending' },
-  [PolicyApplyStatus.DATA_MISMATCH]: { text: '失败', dotClass: 'status-mismatch' },
+  success: { text: '成功', dotClass: 'status-applied' },
+  failed: { text: '失败', dotClass: 'status-mismatch' },
 };
 
-const getStatusInfo = (status: PolicyApplyStatus) => statusMap[status] || { text: status, dotClass: '' };
-
-// 加载已应用账号列表
-const loadAppliedAccounts = async () => {
-  isLoading.value = true;
-  try {
-    // TODO: 替换为真实 API
-    tableData.value = [];
-    pagination.count = 0;
-  } catch (error) {
-    console.error('加载已应用账号列表失败:', error);
-    tableData.value = [];
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// 分页处理
-const handlePageChange = (page: number) => {
-  pagination.current = page;
-  // TODO: 真实分页时需要重新请求
-};
-const handlePageSizeChange = (limit: number) => {
-  pagination.limit = limit;
-  pagination.current = 1;
-};
+const getStatusInfo = (status: 'success' | 'failed') => statusMap[status] || { text: status, dotClass: '' };
 
 // 取消
 const handleCancel = () => {
   model.value = false;
 };
-
-// 查看详细日志
-const handleLogDetail = () => {
-  LogDetailInfo.show = true;
-  // TODO: 真实数据需要调接口
-};
-
-// 监听策略ID变化
-watch(
-  () => model.value,
-  (value: boolean) => {
-    if (value) {
-      loadAppliedAccounts();
-    }
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -103,34 +55,30 @@ watch(
           :border="['outer', 'row']"
           row-key="account_id"
           show-overflow-tooltip
-          @page-value-change="handlePageChange"
-          @page-limit-change="handlePageSizeChange"
         >
-          <bk-table-column label="二级账号" min-width="180">
-            <template #default="{ row }">{{ row.account_id }} ({{ row.alias }})</template>
+          <bk-table-column :label="type === ApplyOperationType.APPLY_NEW ? '二级账号' : '权限模版ID'">
+            <template #default="{ row }">
+              <SecondaryAccountValue
+                v-if="type === ApplyOperationType.APPLY_NEW"
+                :value="row.account_id"
+                :res-type="resType"
+              />
+              <span v-else>{{ row.permission_template_id }}</span>
+            </template>
           </bk-table-column>
-          <bk-table-column label="云模版同步时间" prop="cloud_sync_time" min-width="160" />
-          <bk-table-column label="策略库应用状态" min-width="150">
+          <bk-table-column label="策略库应用状态">
             <template #default="{ row }">
               <span class="status-cell">
-                <span :class="['status-dot', getStatusInfo(row.apply_status).dotClass]"></span>
-                <span :class="{ 'text-danger': row.apply_status === PolicyApplyStatus.DATA_MISMATCH }">
-                  {{ getStatusInfo(row.apply_status).text }}
+                <span :class="['status-dot', getStatusInfo(row.status).dotClass]"></span>
+                <span>
+                  {{ getStatusInfo(row.status).text }}
                 </span>
               </span>
             </template>
           </bk-table-column>
-          <bk-table-column label="策略库应用时间" prop="apply_time" min-width="160" />
-          <bk-table-column label="操作" width="160" fixed="right">
-            <template #default>
-              <bk-button theme="primary" text class="mr8" @click="handleLogDetail">日志</bk-button>
-            </template>
-          </bk-table-column>
+          <bk-table-column label="失败原因" prop="reason" show-overflow-tooltip />
         </bk-table>
       </bk-loading>
-
-      <!--执行日志-->
-      <LogDetaiSideslider v-bind="LogDetailInfo" @close="LogDetailInfo.show = false" />
     </template>
 
     <template #footer>

@@ -1,34 +1,30 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import type { ISelectableAccount } from '../../typings';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
-  policyId: string;
+  list: string[];
+  bizId: number;
+  vendor: VendorEnum;
 }>();
 
+const bizId = computed(() => props.bizId);
+const vendor = computed(() => props.vendor);
+const resType = computed(() =>
+  bizId.value ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
+);
+
 // 已选账号列表
-const selectedAccounts = ref<ISelectableAccount[]>([]);
+const selectedAccounts = ref<{ account_id: string }[]>([]);
 
 // 表格数据
-const tableData = ref<ISelectableAccount[]>([]);
+const tableData = computed(() => props.list.map((item) => ({ account_id: item })));
 const isLoading = ref(false);
 
 // 表格引用
 const tableRef = ref();
-
-// 加载可选账号列表
-const loadAccounts = async () => {
-  isLoading.value = true;
-  try {
-    // TODO: 替换为真实 API
-    tableData.value = [];
-  } catch (error) {
-    console.error('加载可选账号列表失败:', error);
-    tableData.value = [];
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 // 选择变化
 const handleSelectionChange = ({ row, checked }: { row: ISelectableAccount; checked: boolean }) => {
@@ -67,17 +63,6 @@ const handleClearAll = () => {
   tableRef.value?.clearSelection?.();
 };
 
-// 监听策略ID变化，重新加载
-watch(
-  () => props.policyId,
-  () => {
-    if (props.policyId) {
-      loadAccounts();
-    }
-  },
-  { immediate: true },
-);
-
 // 暴露已选数据给父组件（defineExpose 必须是 <script setup> 的最后语句）
 defineExpose({
   getSelectedAccounts: () => selectedAccounts.value,
@@ -99,7 +84,9 @@ defineExpose({
       >
         <bk-table-column type="selection" align="center" />
         <bk-table-column label="二级账号" min-width="1000">
-          <template #default="{ row }">{{ row.account_id }} ({{ row.alias }})</template>
+          <template #default="{ row }">
+            <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
+          </template>
         </bk-table-column>
       </bk-table>
     </bk-loading>

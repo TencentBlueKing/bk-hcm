@@ -52,6 +52,17 @@ type PolicyLibraryApplier struct {
 	audit  audit.Interface
 }
 
+// CreateTmplBaseInfo represents the create permission template information.
+type CreateTmplBaseInfo struct {
+	Name string  `json:"name"`
+	Memo *string `json:"memo"`
+}
+
+// UpdateTmplBaseInfo represents the update permission template information.
+type UpdateTmplBaseInfo struct {
+	Memo *string `json:"memo"`
+}
+
 // NewPolicyLibraryApplier creates a new PolicyLibraryApplier.
 func NewPolicyLibraryApplier(cli *client.ClientSet, audit audit.Interface) *PolicyLibraryApplier {
 	return &PolicyLibraryApplier{client: cli, audit: audit}
@@ -72,24 +83,46 @@ func (a *PolicyLibraryApplier) ApplyCreate(kt *kit.Kit, vendor enumor.Vendor, li
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudApplyCreate(kt, library, accountIDs), nil
+		return a.applyTCloudCreate(kt, library, accountIDs,
+			CreateTmplBaseInfo{Name: library.Name, Memo: library.Memo}), nil
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
 }
 
-func (a *PolicyLibraryApplier) tcloudApplyCreate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountIDs []string) *proto.ApplyPermissionPolicyLibraryResult {
+// ApplyCreateWithTmplInfo applies a permission policy library (create) to the given accounts with template info.
+func (a *PolicyLibraryApplier) ApplyCreateWithTmplInfo(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	accountIDs []string, tmplInfo CreateTmplBaseInfo) (*proto.ApplyPermissionPolicyLibraryResult, error) {
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.CheckAccountsBizInScope(kt, library.BkBizIDs, accountIDs); err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return a.applyTCloudCreate(kt, library, accountIDs, tmplInfo), nil
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+func (a *PolicyLibraryApplier) applyTCloudCreate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountIDs []string, tmplInfo CreateTmplBaseInfo) *proto.ApplyPermissionPolicyLibraryResult {
 
 	results := make([]proto.ApplyAccountResult, 0, len(accountIDs))
 	for _, accountID := range accountIDs {
-		results = append(results, a.tcloudApplyCreateForAccount(kt, library, accountID))
+		results = append(results, a.applyTCloudCreateForAccount(kt, library, accountID, tmplInfo))
 	}
 	return &proto.ApplyPermissionPolicyLibraryResult{Results: results}
 }
 
-func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountID string) proto.ApplyAccountResult {
+func (a *PolicyLibraryApplier) applyTCloudCreateForAccount(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, tmplInfo CreateTmplBaseInfo) proto.ApplyAccountResult {
 
 	applied, err := a.CheckAccountApplied(kt, library.ID, accountID)
 	if err != nil {
@@ -105,14 +138,14 @@ func (a *PolicyLibraryApplier) tcloudApplyCreateForAccount(kt *kit.Kit, library 
 		}
 	}
 
-	camResult, err := a.TCloudCreateCAMPolicy(kt, library, accountID)
+	camResult, err := a.createTCloudCAMPolicy(kt, library, accountID, tmplInfo)
 	if err != nil {
 		return proto.ApplyAccountResult{
 			AccountID: accountID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
 
-	if err = a.TCloudCreateLocalTemplate(kt, library, accountID, camResult.PolicyID); err != nil {
+	if err = a.createTCloudLocalTemplate(kt, library, accountID, camResult.PolicyID, tmplInfo); err != nil {
 		return proto.ApplyAccountResult{
 			AccountID: accountID,
 			Status:    proto.ApplyStatusFailed,
@@ -223,16 +256,15 @@ func (a *PolicyLibraryApplier) CheckAccountApplied(kt *kit.Kit, libraryID, accou
 	return result != nil && len(result.Details) > 0, nil
 }
 
-// TCloudCreateCAMPolicy calls hc-service to create a CAM policy on TCloud.
-func (a *PolicyLibraryApplier) TCloudCreateCAMPolicy(kt *kit.Kit,
-	library *corecloud.BasePermissionPolicyLibrary, accountID string) (
-	*hspermissiontemplate.CreateCAMPolicyResult, error) {
+// createTCloudCAMPolicy calls hc-service to create a CAM policy on TCloud.
+func (a *PolicyLibraryApplier) createTCloudCAMPolicy(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, tmplInfo CreateTmplBaseInfo) (*hspermissiontemplate.CreateCAMPolicyResult, error) {
 
 	camReq := &hspermissiontemplate.CreateCAMPolicyReq{
 		AccountID:      accountID,
-		PolicyName:     library.Name,
+		PolicyName:     tmplInfo.Name,
 		PolicyDocument: library.PolicyDocument,
-		Description:    cvt.PtrToVal(library.Memo),
+		Description:    cvt.PtrToVal(tmplInfo.Memo),
 	}
 
 	result, err := a.client.HCService().TCloud.PermissionTemplate.CreateCAMPolicy(kt, camReq)
@@ -245,22 +277,22 @@ func (a *PolicyLibraryApplier) TCloudCreateCAMPolicy(kt *kit.Kit,
 	return result, nil
 }
 
-// TCloudCreateLocalTemplate creates a local permission_template record after the cloud policy is created.
-func (a *PolicyLibraryApplier) TCloudCreateLocalTemplate(kt *kit.Kit,
-	library *corecloud.BasePermissionPolicyLibrary, accountID string, cloudPolicyID uint64) error {
+// createTCloudLocalTemplate creates a local permission_template record after the cloud policy is created.
+func (a *PolicyLibraryApplier) createTCloudLocalTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, cloudPolicyID uint64, tmplInfo CreateTmplBaseInfo) error {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	dsReq := &protocloud.PermissionTemplateBatchCreateReq[corecloud.TCloudPermissionTemplateExtension]{
 		PermissionTemplates: []protocloud.PermissionTemplateCreate[corecloud.TCloudPermissionTemplateExtension]{
 			{
 				CloudID:               strconv.FormatUint(cloudPolicyID, 10),
-				Name:                  library.Name,
+				Name:                  tmplInfo.Name,
 				AccountID:             accountID,
 				PolicyLibraryID:       cvt.ValToPtr(library.ID),
 				PolicyLibraryVersion:  cvt.ValToPtr(library.Version),
 				PolicyLibrarySyncTime: cvt.ValToPtr(now),
 				PolicyDocument:        library.PolicyDocument,
-				Memo:                  library.Memo,
+				Memo:                  tmplInfo.Memo,
 				Extension: &corecloud.TCloudPermissionTemplateExtension{
 					CloudType: enumor.TCloudCustomPolicy,
 				},
@@ -300,6 +332,12 @@ func (a *PolicyLibraryApplier) RecordApplyCreateAudit(kt *kit.Kit, libraryID, ac
 func (a *PolicyLibraryApplier) ApplyUpdate(kt *kit.Kit, vendor enumor.Vendor, libraryID string, templateIDs []string) (
 	*proto.ApplyPermissionPolicyLibraryUpdateResult, error) {
 
+	if err := a.CheckPermTmplUpdatability(kt, vendor, templateIDs, libraryID); err != nil {
+		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %v, rid: %s",
+			libraryID, templateIDs, err, kt.Rid)
+		return nil, err
+	}
+
 	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
 	if err != nil {
 		return nil, err
@@ -315,7 +353,38 @@ func (a *PolicyLibraryApplier) ApplyUpdate(kt *kit.Kit, vendor enumor.Vendor, li
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudApplyUpdate(kt, library, templateIDs), nil
+		return a.applyTCloudUpdate(kt, library, templateIDs, UpdateTmplBaseInfo{Memo: library.Memo}), nil
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+// ApplyUpdateWithTmplInfo applies a permission policy library (update) to the given accounts with template info.
+func (a *PolicyLibraryApplier) ApplyUpdateWithTmplInfo(kt *kit.Kit, vendor enumor.Vendor, libraryID string,
+	templateIDs []string, tmplInfo UpdateTmplBaseInfo) (*proto.ApplyPermissionPolicyLibraryUpdateResult, error) {
+
+	if err := a.CheckPermTmplUpdatability(kt, vendor, templateIDs, libraryID); err != nil {
+		logs.Errorf("check permission template updatability failed, libraryID: %s, templateIDs: %v, err: %v, rid: %s",
+			libraryID, templateIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
+	if err != nil {
+		return nil, err
+	}
+
+	accountIDs, err := a.GetPermTmplAccountIDs(kt, templateIDs)
+	if err != nil {
+		return nil, err
+	}
+	if err = a.CheckAccountsBizInScope(kt, library.BkBizIDs, accountIDs); err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return a.applyTCloudUpdate(kt, library, templateIDs, tmplInfo), nil
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
@@ -341,25 +410,31 @@ func (a *PolicyLibraryApplier) GetPermTmplAccountIDs(kt *kit.Kit, templateIDs []
 	return maps.Keys(accountIDMap), nil
 }
 
-func (a *PolicyLibraryApplier) tcloudApplyUpdate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	templateIDs []string) *proto.ApplyPermissionPolicyLibraryUpdateResult {
+func (a *PolicyLibraryApplier) applyTCloudUpdate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	templateIDs []string, tmplInfo UpdateTmplBaseInfo) *proto.ApplyPermissionPolicyLibraryUpdateResult {
 
 	results := make([]proto.ApplyTemplateResult, 0, len(templateIDs))
 	for _, templateID := range templateIDs {
-		results = append(results, a.tcloudApplyUpdateForTemplate(kt, library, templateID))
+		results = append(results, a.applyTCloudUpdateForTemplate(kt, library, templateID, tmplInfo))
 	}
 	return &proto.ApplyPermissionPolicyLibraryUpdateResult{Results: results}
 }
 
-func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	templateID string) proto.ApplyTemplateResult {
+func (a *PolicyLibraryApplier) applyTCloudUpdateForTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	templateID string, tmplInfo UpdateTmplBaseInfo) proto.ApplyTemplateResult {
 
-	tmpl, err := a.GetTCloudTemplateByID(kt, templateID)
+	templates, err := a.getTCloudTemplateByIDs(kt, []string{templateID})
 	if err != nil {
 		return proto.ApplyTemplateResult{
 			PermissionTemplateID: templateID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
+	if len(templates) != 1 {
+		return proto.ApplyTemplateResult{
+			PermissionTemplateID: templateID, Status: proto.ApplyStatusFailed, Reason: "template not found",
+		}
+	}
+	tmpl := templates[0]
 
 	cloudPolicyID, err := strconv.ParseUint(tmpl.CloudID, 10, 64)
 	if err != nil {
@@ -370,13 +445,13 @@ func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library
 		}
 	}
 
-	if err = a.TCloudUpdateCAMPolicy(kt, library, tmpl.AccountID, cloudPolicyID); err != nil {
+	if err = a.updateTCloudCAMPolicy(kt, library, tmpl.AccountID, cloudPolicyID, tmplInfo); err != nil {
 		return proto.ApplyTemplateResult{
 			PermissionTemplateID: templateID, Status: proto.ApplyStatusFailed, Reason: err.Error(),
 		}
 	}
 
-	if err = a.TCloudUpdateLocalTemplate(kt, library, templateID); err != nil {
+	if err = a.updateTCloudLocalTemplate(kt, library, templateID, tmplInfo); err != nil {
 		return proto.ApplyTemplateResult{
 			PermissionTemplateID: templateID,
 			Status:               proto.ApplyStatusFailed,
@@ -396,37 +471,42 @@ func (a *PolicyLibraryApplier) tcloudApplyUpdateForTemplate(kt *kit.Kit, library
 	return proto.ApplyTemplateResult{PermissionTemplateID: templateID, Status: proto.ApplyStatusSuccess}
 }
 
-// GetTCloudTemplateByID retrieves the Cloud permission template by ID.
-func (a *PolicyLibraryApplier) GetTCloudTemplateByID(kt *kit.Kit, templateID string) (
-	*corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
+// getTCloudTemplateByIDs retrieves the Cloud permission template by IDs.
+func (a *PolicyLibraryApplier) getTCloudTemplateByIDs(kt *kit.Kit, templateIDs []string) (
+	[]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
 
-	req := &protocloud.PermissionTemplateExtListReq{
-		Filter: tools.EqualExpression("id", templateID),
-		Page:   core.NewDefaultBasePage(),
+	result := make([]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], 0)
+	for _, batch := range slice.Split(templateIDs, int(core.DefaultMaxPageLimit)) {
+		req := &protocloud.PermissionTemplateExtListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch), tools.RuleEqual("vendor", enumor.TCloud)),
+			Page:   core.NewDefaultBasePage(),
+		}
+		batchResult, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, batchResult.Details...)
 	}
 
-	result, err := a.client.DataService().TCloud.PermissionTemplate.ListPermissionTemplateExt(kt, req)
-	if err != nil {
-		logs.Errorf("list permission template by id failed, templateID: %s, err: %v, rid: %s", templateID, err, kt.Rid)
-		return nil, err
+	if len(result) != len(templateIDs) {
+		logs.Errorf("get tcloud template failed, expected: %d, got: %d, templateIDs: %v, rid: %s", len(templateIDs),
+			len(result), templateIDs, kt.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter,
+			fmt.Errorf("get tcloud template failed, expected: %d, got: %d", len(templateIDs), len(result)))
 	}
 
-	if result == nil || len(result.Details) == 0 {
-		return nil, fmt.Errorf("permission template not found, templateID: %s", templateID)
-	}
-
-	return &result.Details[0], nil
+	return result, nil
 }
 
-// TCloudUpdateCAMPolicy calls hc-service to update a CAM policy on TCloud.
-func (a *PolicyLibraryApplier) TCloudUpdateCAMPolicy(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	accountID string, cloudPolicyID uint64) error {
+// updateTCloudCAMPolicy calls hc-service to update a CAM policy on TCloud.
+func (a *PolicyLibraryApplier) updateTCloudCAMPolicy(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	accountID string, cloudPolicyID uint64, tmplInfo UpdateTmplBaseInfo) error {
 
 	camReq := &hspermissiontemplate.UpdateCAMPolicyReq{
 		AccountID:      accountID,
 		PolicyID:       cloudPolicyID,
 		PolicyDocument: cvt.ValToPtr(library.PolicyDocument),
-		Description:    library.Memo,
+		Description:    tmplInfo.Memo,
 	}
 
 	if err := a.client.HCService().TCloud.PermissionTemplate.UpdateCAMPolicy(kt, camReq); err != nil {
@@ -438,16 +518,17 @@ func (a *PolicyLibraryApplier) TCloudUpdateCAMPolicy(kt *kit.Kit, library *corec
 	return nil
 }
 
-// TCloudUpdateLocalTemplate updates the local permission_template record after the cloud policy is updated.
-func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
-	templateID string) error {
+// updateTCloudLocalTemplate updates the local permission_template record after the cloud policy is updated.
+func (a *PolicyLibraryApplier) updateTCloudLocalTemplate(kt *kit.Kit, library *corecloud.BasePermissionPolicyLibrary,
+	templateID string, tmplInfo UpdateTmplBaseInfo) error {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 	updateFields := map[string]interface{}{
 		"policy_document":          library.PolicyDocument,
+		"policy_library_id":        library.ID,
 		"policy_library_version":   library.Version,
 		"policy_library_sync_time": now,
-		"memo":                     library.Memo,
+		"memo":                     tmplInfo.Memo,
 	}
 	if err := a.audit.ResUpdateAudit(kt, enumor.PermissionTemplateAuditResType, templateID, updateFields); err != nil {
 		logs.Errorf("tcloud update permission template failed, templateID: %s, err: %v, rid: %s",
@@ -460,9 +541,10 @@ func (a *PolicyLibraryApplier) TCloudUpdateLocalTemplate(kt *kit.Kit, library *c
 			{
 				ID:                    templateID,
 				PolicyDocument:        library.PolicyDocument,
+				PolicyLibraryID:       cvt.ValToPtr(library.ID),
 				PolicyLibraryVersion:  cvt.ValToPtr(library.Version),
 				PolicyLibrarySyncTime: cvt.ValToPtr(now),
-				Memo:                  library.Memo,
+				Memo:                  tmplInfo.Memo,
 			},
 		},
 	}
@@ -615,15 +697,15 @@ func (a *PolicyLibraryApplier) computeUnAppliedAccountIDs(kt *kit.Kit, vendor en
 func (a *PolicyLibraryApplier) ListTemplatesInScope(kt *kit.Kit, vendor enumor.Vendor, libraryID string) (any, error) {
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudListTemplatesInScope(kt, libraryID)
+		return a.listTCloudTemplatesInScope(kt, libraryID)
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
 }
 
-// tcloudListTemplatesInScope returns TCloud permission templates applied from the given library
+// listTCloudTemplatesInScope returns TCloud permission templates applied from the given library
 // whose associated accounts are still within the library's current biz scope.
-func (a *PolicyLibraryApplier) tcloudListTemplatesInScope(kt *kit.Kit, libraryID string) (
+func (a *PolicyLibraryApplier) listTCloudTemplatesInScope(kt *kit.Kit, libraryID string) (
 	[]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
 
 	library, err := a.GetPolicyLibraryDetail(kt, libraryID)
@@ -631,7 +713,7 @@ func (a *PolicyLibraryApplier) tcloudListTemplatesInScope(kt *kit.Kit, libraryID
 		return nil, err
 	}
 
-	return a.tcloudListBizTemplatesInScope(kt, libraryID, library.BkBizIDs)
+	return a.listTCloudBizTemplatesInScope(kt, libraryID, library.BkBizIDs)
 }
 
 // ListBizTemplatesInScope returns all permission templates applied from the given library
@@ -657,15 +739,15 @@ func (a *PolicyLibraryApplier) ListBizTemplatesInScope(kt *kit.Kit, vendor enumo
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudListBizTemplatesInScope(kt, libraryID, []int64{bizID})
+		return a.listTCloudBizTemplatesInScope(kt, libraryID, []int64{bizID})
 	default:
 		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
 	}
 }
 
-// tcloudListBizTemplatesInScope returns TCloud permission templates applied from the given library
+// listTCloudBizTemplatesInScope returns TCloud permission templates applied from the given library
 // whose associated accounts have their management biz equal to bizID.
-func (a *PolicyLibraryApplier) tcloudListBizTemplatesInScope(kt *kit.Kit, libraryID string, bizIDs []int64) (
+func (a *PolicyLibraryApplier) listTCloudBizTemplatesInScope(kt *kit.Kit, libraryID string, bizIDs []int64) (
 	[]corecloud.PermissionTemplate[corecloud.TCloudPermissionTemplateExtension], error) {
 
 	accountIDs, err := a.listAllInScopeAccountIDs(kt, enumor.TCloud, bizIDs)
@@ -698,4 +780,54 @@ func (a *PolicyLibraryApplier) tcloudListBizTemplatesInScope(kt *kit.Kit, librar
 	}
 
 	return details, nil
+}
+
+// CheckPermTmplUpdatability checks whether the given permission template can be updated.
+func (a *PolicyLibraryApplier) CheckPermTmplUpdatability(kt *kit.Kit, vendor enumor.Vendor, templateIDs []string,
+	policyLibraryID string) error {
+
+	switch vendor {
+	case enumor.TCloud:
+		return a.checkTCloudPermTmplUpdatability(kt, templateIDs, policyLibraryID)
+	default:
+		return fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+func (a *PolicyLibraryApplier) checkTCloudPermTmplUpdatability(kt *kit.Kit, templateIDs []string,
+	policyLibraryID string) error {
+
+	if policyLibraryID == "" {
+		logs.Errorf("policy library id is required, templateIDs: %v, rid: %s", templateIDs, kt.Rid)
+		return errf.Newf(errf.InvalidParameter, "policy library id is required")
+	}
+
+	templates, err := a.getTCloudTemplateByIDs(kt, templateIDs)
+	if err != nil {
+		logs.Errorf("get tcloud template failed, templateID: %s, err: %v, rid: %s", templateIDs[0], err, kt.Rid)
+		return err
+	}
+
+	for _, template := range templates {
+		if template.Extension == nil {
+			logs.Errorf("tcloud template extension not found, templateID: %s, rid: %s", template.ID, kt.Rid)
+			return errf.Newf(errf.InvalidParameter, "tcloud template %s extension not found", template.ID)
+		}
+		// 权限模版的权限策略库id为空时，只有自定义的权限模版可以更新
+		if cvt.PtrToVal(template.PolicyLibraryID) == "" && template.Extension.CloudType == enumor.TCloudCustomPolicy {
+			continue
+		}
+
+		// 权限模版的权限策略库id不为空时, 权限模版的权限策略库id必须和想要应用的权限策略库id一致
+		if cvt.PtrToVal(template.PolicyLibraryID) != "" && cvt.PtrToVal(template.PolicyLibraryID) == policyLibraryID {
+			continue
+		}
+
+		logs.Errorf("tcloud template permission policy library id not match, templateID: %s, policy library id: %s, "+
+			"rid: %s", template.ID, template.PolicyLibraryID, kt.Rid)
+		return errf.Newf(errf.InvalidParameter, "tcloud template permission policy library id not match, "+
+			"templateID: %s, policy library id: %s", template.ID, cvt.PtrToVal(template.PolicyLibraryID))
+	}
+
+	return nil
 }

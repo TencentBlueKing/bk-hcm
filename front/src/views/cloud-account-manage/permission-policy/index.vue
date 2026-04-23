@@ -3,9 +3,8 @@ import { ref, computed, watch, inject, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
-import { transformSimpleCondition, localPaginate, localSort } from '@/utils/search';
+import { transformSimpleCondition } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
 import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
@@ -17,8 +16,14 @@ import ApplySideslider from './children/apply-sideslider/index.vue';
 import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
-import type { IPermissionPolicyItem } from './typings';
-import { AUTH_CREATE_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
+import type { IAppliedReasonItem, IPermissionPolicyItem } from './typings';
+import { ApplyOperationType } from './typings';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import {
+  AUTH_CREATE_PERMISSION_POLICY_LIBRARY,
+  AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY,
+} from '@/constants/auth-symbols';
+import { getAuthSignByBusinessId } from '@/utils';
 
 export type ISearchCondition = Record<string, any>;
 
@@ -26,7 +31,9 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 
 const route = useRoute();
 const router = useRouter();
-const { isBusinessPage } = useWhereAmI();
+const { isBusinessPage, getBizsId } = useWhereAmI();
+
+const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
 const permissionPolicyStore = usePermissionPolicyStore();
 // 创建模型实例
@@ -42,9 +49,6 @@ const columns = computed<ModelPropertyColumn[]>(() => columnModel.getProperties(
 // 搜索条件
 const condition = ref<ISearchCondition>({});
 
-// 全量数据（用于前端分页）
-const fullList = ref<IPermissionPolicyItem[]>([]);
-
 // 当前页展示的数据
 const tableData = ref<IPermissionPolicyItem[]>([]);
 
@@ -57,26 +61,10 @@ const { pagination, getPageParams } = usePage();
 // URL 查询参数处理
 const searchQs = useSearchQs({ key: 'filter', properties: searchFields.value });
 
-// 前端分页处理：根据全量数据计算当前页数据
-const updateTableData = () => {
-  let list = [...fullList.value];
-
-  // 前端排序
-  if (sortParams.value.sort) {
-    list = localSort(list, {
-      column: { field: sortParams.value.sort },
-      type: sortParams.value.order,
-    });
-  }
-
-  // 前端分页
-  const pageParams = getPageParams(pagination, sortParams.value);
-  tableData.value = localPaginate(list, pageParams);
-};
-
-// 加载全量数据
-const loadFullList = async () => {
+// 加载数据
+const loadList = async () => {
   try {
+    const pageParams = getPageParams(pagination, sortParams.value);
     // 从 URL 获取搜索条件
     condition.value = searchQs.get(route.query, {});
 
@@ -94,17 +82,36 @@ const loadFullList = async () => {
       ],
     };
 
-    // 使用 rollRequest 获取全量数据
-    const list = await permissionPolicyStore.getPermissionPolicyFullList(currentVendor.value, vendorFilter);
-    fullList.value = list;
-    pagination.count = list.length;
-    updateTableData();
+    // 获取数据
+    const data = await permissionPolicyStore.getPermissionPolicyList(bizId.value, currentVendor.value, {
+      page: { ...pageParams },
+      filter: { ...vendorFilter },
+    });
+    tableData.value = data.list;
+    pagination.count = data.count;
+    // 获取关联的账号列表
+    getAssociationAccountList(data.list);
   } catch (error) {
     console.error('获取权限策略库列表失败:', error);
-    fullList.value = [];
     tableData.value = [];
     pagination.count = 0;
   }
+};
+
+const getAssociationAccountList = async (list: { id: string; associated_account_count: number }[]) => {
+  const res = await Promise.allSettled(
+    list.map((item: { id: string; associated_account_count: number }) =>
+      permissionPolicyStore.getPermissionAssoAccountList(
+        bizId.value,
+        currentVendor.value,
+        item.id,
+        item.associated_account_count,
+      ),
+    ),
+  );
+  res.forEach((item: any, index) => {
+    list[index]['related_accounts'] = item?.value || [];
+  });
 };
 
 // 监听路由变化，获取列表数据
@@ -121,16 +128,7 @@ watch(
       order: (query.order || 'DESC') as string,
     };
 
-    // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
-    const newCondition = searchQs.get(query, {});
-    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
-    const isRefresh = query._t !== undefined;
-
-    if (conditionChanged || fullList.value.length === 0 || isRefresh) {
-      await loadFullList();
-    } else {
-      updateTableData();
-    }
+    await loadList();
   },
   { immediate: true },
 );
@@ -140,7 +138,7 @@ watch(
   () => currentVendor.value,
   () => {
     pagination.current = 1;
-    fullList.value = [];
+    tableData.value = [];
     const query = { ...route.query };
     delete query.page;
     query._t = String(Date.now());
@@ -155,6 +153,10 @@ const showApplySideslider = ref(false);
 const showPolicyInfoSideslider = ref(false);
 const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
 
+// 应用日志相关
+const applyReason = ref<IAppliedReasonItem[]>([]);
+const operationType = ref<ApplyOperationType>(ApplyOperationType.APPLY_NEW);
+
 const handleApplyToAccount = (row: IPermissionPolicyItem) => {
   currentApplyPolicy.value = row;
   showApplySideslider.value = true;
@@ -167,9 +169,11 @@ const handleViewDetails = (row: IPermissionPolicyItem) => {
 };
 
 // 应用成功回调
-const handleApplySuccess = () => {
+const handleApplySuccess = (reason: IAppliedReasonItem[], type: ApplyOperationType) => {
   refreshList();
   showLogSideslider.value = true;
+  applyReason.value = [...reason];
+  operationType.value = type;
 };
 
 // 应用成功查看日志弹窗
@@ -221,7 +225,16 @@ const handleReset = () => {
     <div class="table-container">
       <!-- 操作按钮区域 -->
       <div class="action-btns" v-if="!isBusinessPage">
-        <hcm-auth :sign="{ type: AUTH_CREATE_PERMISSION_POLICY_LIBRARY }" ignore v-slot="{ noPerm }">
+        <hcm-auth
+          :sign="
+            getAuthSignByBusinessId(
+              bizId,
+              AUTH_CREATE_PERMISSION_POLICY_LIBRARY,
+              AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY,
+            )
+          "
+          v-slot="{ noPerm }"
+        >
           <bk-button theme="primary" :disabled="noPerm" @click="handleAddPolicy">
             <plus style="font-size: 22px" />
             新增权限策略库
@@ -245,7 +258,7 @@ const handleReset = () => {
     <ApplySideslider v-model="showApplySideslider" :policy-data="currentApplyPolicy" @success="handleApplySuccess" />
 
     <!-- 应用成功后弹出得账号列表查看应用日志 -->
-    <LogSideslider v-model="showLogSideslider" />
+    <LogSideslider v-model="showLogSideslider" :data="applyReason" :type="operationType" :biz-id="bizId" />
 
     <!-- 详情侧栏 -->
     <PolicyInfoSideslider

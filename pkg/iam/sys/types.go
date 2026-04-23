@@ -130,9 +130,9 @@ const (
 	// BizSubAccountSecretOperate biz sub account secret operate action id to register iam.
 	BizSubAccountSecretOperate client.ActionID = "biz_sub_account_secret_operate"
 	// BizPermissionTemplateOperate biz permission template operate action id to register iam.
-	BizPermissionTemplateOperate client.ActionID = "biz_permission_template_operate"
+	BizPermissionTemplateOperate client.ActionID = "biz_perm_template_operate"
 	// BizPermissionPolicyLibraryOperate biz permission policy library operate action id to register iam.
-	BizPermissionPolicyLibraryOperate client.ActionID = "biz_permission_policy_library_operate"
+	BizPermissionPolicyLibraryOperate client.ActionID = "biz_perm_policy_lib_operate"
 
 	// AccountFind account find action id to register iam.
 	AccountFind client.ActionID = "account_find"

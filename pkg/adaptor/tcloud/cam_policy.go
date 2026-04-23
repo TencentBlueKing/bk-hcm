@@ -23,6 +23,8 @@ import (
 	"fmt"
 
 	typeaccount "hcm/pkg/adaptor/types/account"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -94,6 +96,174 @@ func (t *TCloudImpl) UpdatePolicy(kt *kit.Kit, opt *typeaccount.TCloudUpdatePoli
 
 	if _, err = client.UpdatePolicyWithContext(kt.Ctx, req); err != nil {
 		logs.Errorf("update cam policy failed, policyID: %d, err: %v, rid: %s", opt.PolicyID, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// ListPolicies 分页拉取 CAM 策略列表（含预设策略和自定义策略）。
+// reference: https://cloud.tencent.com/document/product/598/34570
+func (t *TCloudImpl) ListPolicies(kt *kit.Kit, opt *typeaccount.TCloudListPoliciesOption) (
+	[]typeaccount.TCloudPolicyItem, uint64, error) {
+
+	if opt == nil {
+		return nil, 0, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, 0, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(opt.Region)
+	if err != nil {
+		return nil, 0, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListPoliciesRequest()
+	req.Page = converter.ValToPtr(opt.Page)
+	req.Rp = converter.ValToPtr(opt.Rp)
+
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	resp, err := LimitExceededErrRetry(client.ListPoliciesWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS)
+	if err != nil {
+		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
+		return nil, 0, err
+	}
+
+	total := converter.PtrToVal(resp.Response.TotalNum)
+
+	items := make([]typeaccount.TCloudPolicyItem, 0, len(resp.Response.List))
+	for _, p := range resp.Response.List {
+		item := typeaccount.TCloudPolicyItem{
+			PolicyID:    converter.PtrToVal(p.PolicyId),
+			PolicyName:  converter.PtrToVal(p.PolicyName),
+			Description: converter.PtrToVal(p.Description),
+			PolicyType:  enumor.TCloudPolicyType(converter.PtrToVal(p.Type)),
+			CreateTime:  converter.PtrToVal(p.AddTime),
+		}
+		items = append(items, item)
+	}
+
+	return items, total, nil
+}
+
+// ListAttachedUserAllPolicies 获取子用户绑定的所有策略列表（支持分页和限流重试）。
+// reference: https://cloud.tencent.com/document/product/598/67728
+func (t *TCloudImpl) ListAttachedUserAllPolicies(kt *kit.Kit, opt *typeaccount.TCloudListAttachedUserAllPoliciesOption,
+) (*typeaccount.TCloudListAttachedUserAllPoliciesResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient("")
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewListAttachedUserAllPoliciesRequest()
+	req.TargetUin = converter.ValToPtr(opt.TargetUin)
+	req.Page = converter.ValToPtr(opt.Page)
+	req.Rp = converter.ValToPtr(opt.Rp)
+	req.AttachType = opt.AttachType
+
+	rangeMS := [2]uint{constant.MinRetryInterval, constant.MaxRetryInterval}
+	resp, err := LimitExceededErrRetry(client.ListAttachedUserAllPoliciesWithContext, kt, req,
+		constant.TCloudClientErrRetryTimes, rangeMS)
+	if err != nil {
+		logs.Errorf("fail to list attached user all policies from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	totalNum := converter.PtrToVal(resp.Response.TotalNum)
+	items := make([]typeaccount.TCloudAttachedPolicy, 0, len(resp.Response.PolicyList))
+	for _, p := range resp.Response.PolicyList {
+		item := typeaccount.TCloudAttachedPolicy{
+			PolicyID:     converter.PtrToVal(p.PolicyId),
+			PolicyName:   converter.PtrToVal(p.PolicyName),
+			Description:  converter.PtrToVal(p.Description),
+			AddTime:      converter.PtrToVal(p.AddTime),
+			StrategyType: converter.PtrToVal(p.StrategyType),
+		}
+		items = append(items, item)
+	}
+
+	return &typeaccount.TCloudListAttachedUserAllPoliciesResult{
+		PolicyList: items,
+		TotalNum:   totalNum,
+	}, nil
+}
+
+// GetPolicyDetail 获取单个CAM策略的完整详情（含 PolicyDocument）。
+// reference: https://cloud.tencent.com/document/product/598/34574
+func (t *TCloudImpl) GetPolicyDetail(kt *kit.Kit, opt *typeaccount.TCloudGetPolicyDetailOption) (
+	*typeaccount.TCloudPolicyDetail, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewGetPolicyRequest()
+	req.PolicyId = converter.ValToPtr(opt.PolicyID)
+
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	resp, err := LimitExceededErrRetry(client.GetPolicyWithContext, kt, req, constant.TCloudClientErrRetryTimes,
+		rangeMS)
+	if err != nil {
+		logs.Errorf("fail to get policy from tcloud after retry, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	detail := &typeaccount.TCloudPolicyDetail{
+		PolicyID:       opt.PolicyID,
+		PolicyName:     converter.PtrToVal(resp.Response.PolicyName),
+		PolicyDocument: converter.PtrToVal(resp.Response.PolicyDocument),
+		Description:    converter.PtrToVal(resp.Response.Description),
+		PolicyType:     enumor.TCloudPolicyType(converter.PtrToVal(resp.Response.Type)),
+		CreateTime:     converter.PtrToVal(resp.Response.AddTime),
+	}
+
+	return detail, nil
+}
+
+// DeletePolicy deletes a CAM policy.
+// reference: https://cloud.tencent.com/document/product/598/34577
+func (t *TCloudImpl) DeletePolicy(kt *kit.Kit, opt *typeaccount.TCloudDeletePolicyOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CamServiceClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("new cam client failed, err: %v", err)
+	}
+
+	req := cam.NewDeletePolicyRequest()
+	for _, id := range opt.PolicyIDs {
+		req.PolicyId = append(req.PolicyId, converter.ValToPtr(id))
+	}
+
+	if _, err = client.DeletePolicyWithContext(kt.Ctx, req); err != nil {
+		logs.Errorf("delete cam policies failed, policyIDs: %v, err: %v, rid: %s", opt.PolicyIDs, err, kt.Rid)
 		return err
 	}
 
