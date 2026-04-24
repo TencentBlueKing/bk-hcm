@@ -83,3 +83,5 @@ env.*.config.js
 
 # cert
 *.pem
+
+.stylelintcache
