@@ -169,7 +169,7 @@ export default defineComponent({
               <CommonTable>
                 {{
                   operation: () => (
-                    <Select v-model={actionId.value} clearable={false}>
+                    <Select v-model={actionId.value} clearable={false} filterable>
                       {flowInfo.value.actions?.map((id) => (
                         <Option name={`第${id}批`} id={id} key={id}></Option>
                       ))}

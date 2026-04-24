@@ -245,3 +245,11 @@ func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) 
 	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
 		"/cvms/cc_info/by_condition/sync")
 }
+
+// GetMonitorData get huawei cvm monitor data.
+func (cli *CvmClient) GetMonitorData(kt *kit.Kit, req *protocvm.HuaWeiMonitorDataReq) (
+	*protocvm.HuaWeiMonitorDataResp, error) {
+
+	return common.Request[protocvm.HuaWeiMonitorDataReq, protocvm.HuaWeiMonitorDataResp](
+		cli.client, rest.POST, kt, req, "/cvms/monitor/data")
+}

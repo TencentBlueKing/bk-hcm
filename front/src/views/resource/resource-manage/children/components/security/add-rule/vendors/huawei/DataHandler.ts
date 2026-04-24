@@ -1,4 +1,4 @@
-import { HuaweiSecurityGroupRule } from '.';
+import { HuaweiSecurityGroupRule } from './index';
 
 export enum HuaweiProtocolEnum {
   ALL = 'huaweiAll',

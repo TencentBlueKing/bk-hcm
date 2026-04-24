@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import { AwsSecurityGroupRule, AwsSourceAddressType, AwsSourceTypeArr } from '.';
+import { AwsSecurityGroupRule, AwsSourceAddressType, AwsSourceTypeArr } from './index';
 
 const SPLIT_SIGN = '-';
 

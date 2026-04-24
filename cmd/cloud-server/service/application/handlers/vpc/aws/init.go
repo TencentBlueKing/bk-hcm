@@ -37,7 +37,7 @@ func NewApplicationOfCreateAwsVpc(
 	opt *handlers.HandlerOption, req *csvpc.AwsVpcCreateReq,
 ) *ApplicationOfCreateAwsVpc {
 	return &ApplicationOfCreateAwsVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Aws),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.OpCreateVpc, enumor.Aws),
 		req:                    req,
 	}
 }

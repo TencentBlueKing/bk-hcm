@@ -20,7 +20,9 @@ const displayValue = computed(() => formatJSON(props.value, displayOn.value === 
     </div>
   </template>
   <template v-else>
-    <bk-overflow-title resizeable type="tips" v-if="display?.showOverflowTooltip">{{ displayValue }}</bk-overflow-title>
+    <bk-overflow-title class="full-width" resizeable type="tips" v-if="display?.showOverflowTooltip">
+      {{ displayValue }}
+    </bk-overflow-title>
     <span v-else>{{ displayValue }}</span>
   </template>
 </template>

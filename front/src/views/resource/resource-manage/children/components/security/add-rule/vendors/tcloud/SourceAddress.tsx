@@ -1,7 +1,7 @@
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import { IpType, validateIpCidr } from '../util';
-import { TcloudSecurityGroupRule } from '.';
+import { TcloudSecurityGroupRule } from './index';
 import { AzureSourceAddressType, AzureTargetAddressType } from '../azure';
 import { HuaweiSourceAddressType } from '../huawei';
 

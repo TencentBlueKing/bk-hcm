@@ -37,7 +37,7 @@ func NewApplicationOfCreateGcpVpc(
 	opt *handlers.HandlerOption, req *csvpc.GcpVpcCreateReq,
 ) *ApplicationOfCreateGcpVpc {
 	return &ApplicationOfCreateGcpVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Gcp),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.OpCreateVpc, enumor.Gcp),
 		req:                    req,
 	}
 }

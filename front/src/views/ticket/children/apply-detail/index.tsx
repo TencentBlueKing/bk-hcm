@@ -22,7 +22,10 @@ export interface IApplicationDetail {
   id: string;
   source: string;
   sn: string;
+  // 被替换为使用 operation 字段，接口还是会返回，但不再使用了
   type: string;
+  // 新增 operation 字段，用于替代 type 字段，解决共用同一个审批流(之前的type字段)但需要区分不同的操作类型
+  operation: string;
   status: ApplicationStatus;
   applicant: string;
   content: string;
@@ -93,13 +96,13 @@ export default defineComponent({
     );
 
     const subTitle = computed(() => {
-      return APPLICATION_TYPE_MAP[currentApplyData.value?.type];
+      return APPLICATION_TYPE_MAP[currentApplyData.value?.operation];
     });
 
     const render = () => {
       // 负载均衡详情
-      if (!currentApplyData.value?.type) return null;
-      if (['create_load_balancer'].includes(currentApplyData.value.type)) {
+      if (!currentApplyData.value?.operation) return null;
+      if (['create_load_balancer'].includes(currentApplyData.value.operation)) {
         return <Clb applicationDetail={currentApplyData.value} loading={isLoading.value} />;
       }
       return (

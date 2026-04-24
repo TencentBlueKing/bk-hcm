@@ -12,12 +12,12 @@
     "build": "bk-cli-service-webpack build",
     "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack build",
     "serve": "node ./paas-server/index.js",
-    "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache",
-    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache --fix",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src --cache",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx src --cache --fix",
     "lint:style": "stylelint \"./src/**/*.{css,scss,vue}\" --cache",
     "lint:style:fix": "stylelint \"./src/**/*.{css,scss,vue}\" --cache --fix",
     "format": "prettier --config ./.prettierrc.js --write \"./src/**/*.{js,jsx,ts,tsx,vue,scss,css}\"",
-    "prepare": "cd .. && husky install front/.husky"
+    "prepare": "cd ../../../../../Desktop && husky install front/.husky"
   },
   "dependencies": {
     "@antv/l7": "2.20.2",

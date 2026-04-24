@@ -37,7 +37,7 @@ func NewApplicationOfCreateHuaWeiVpc(
 	opt *handlers.HandlerOption, req *csvpc.HuaWeiVpcCreateReq,
 ) *ApplicationOfCreateHuaWeiVpc {
 	return &ApplicationOfCreateHuaWeiVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.HuaWei),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.OpCreateVpc, enumor.HuaWei),
 		req:                    req,
 	}
 }

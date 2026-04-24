@@ -5,7 +5,7 @@ import {
   AzureSourceTypeArr,
   AzureTargetAddressType,
   AzureTargetTypeArr,
-} from '.';
+} from './index';
 
 export const AZURE_PROTOCOL_ALL = '*';
 export const AZURE_PROTOCOL_ICMP = 'Icmp';

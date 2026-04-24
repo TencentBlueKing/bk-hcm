@@ -282,7 +282,7 @@ export default defineComponent({
               {formData.data_disk.map((item: IDiskOption, index: number) => (
                 <div class='flex-row'>
                   <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
-                    <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>
+                    <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false} filterable>
                       {dataDiskTypes.value.map(({ id, name }: IOption) => (
                         <Option key={id} value={id} label={name}></Option>
                       ))}
@@ -699,7 +699,11 @@ export default defineComponent({
                 property: 'system_disk.disk_type',
                 required: true,
                 content: () => (
-                  <Select v-model={formData.system_disk.disk_type} style={{ width: '200px' }} clearable={false}>
+                  <Select
+                    v-model={formData.system_disk.disk_type}
+                    style={{ width: '200px' }}
+                    clearable={false}
+                    filterable>
                     {sysDiskTypes.value.map(({ id, name }: IOption) => (
                       <Option key={id} value={id} label={name}></Option>
                     ))}
@@ -734,7 +738,7 @@ export default defineComponent({
                 {formData.data_disk.map((item: IDiskOption, index: number) => (
                   <div class='flex-row'>
                     <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
-                      <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false}>
+                      <Select v-model={item.disk_type} style={{ width: '200px' }} clearable={false} filterable>
                         {dataDiskTypes.value.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>
                         ))}
@@ -1169,7 +1173,11 @@ export default defineComponent({
                         style={{ width: '160px' }}
                         type='number'
                         v-model_number={formData.purchase_duration.count}></Input>
-                      <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
+                      <Select
+                        style={{ width: '50px' }}
+                        v-model={formData.purchase_duration.unit}
+                        clearable={false}
+                        filterable>
                         {purchaseDurationUnits.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>
                         ))}

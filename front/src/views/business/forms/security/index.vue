@@ -205,7 +205,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
       </bk-form-item>
 
       <bk-form-item v-if="type === 'aws'" :label="t('所属的vpc')" :loading="isLoading" class="item-warp" required>
-        <bk-select class="item-warp-component" v-model="cloudVpcId">
+        <bk-select class="item-warp-component" v-model="cloudVpcId" filterable>
           <bk-option
             v-for="(item, index) in datas"
             :key="index"

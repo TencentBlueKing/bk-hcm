@@ -9,13 +9,6 @@
           <bk-button :loading="cancelLoading" @click="handleCancel" :disabled="isShowRevoke">
             {{ t('撤销') }}
           </bk-button>
-          <!-- <bk-button
-          :disabled="isCloneDisabled"
-          :loading="loading"
-          @click="handleCancel"
-          style="margin-left: 20px">
-          {{ t('克隆') }}
-        </bk-button> -->
         </div>
       </template>
     </div>
@@ -64,10 +57,6 @@ export default defineComponent({
       emit('cancel', basicInfo.value.id);
     };
 
-    // const handleClone = () => {
-    //   console.log('克隆');
-    // };
-
     watch(
       () => props.params,
       async (payload: Record<string, any>) => {
@@ -105,5 +94,5 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import './index.scss';
+@import './index';
 </style>

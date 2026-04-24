@@ -1,8 +1,8 @@
 import { defineComponent, reactive, ref, watch, PropType, onMounted } from 'vue';
 import { IIdcInfo, IIdcLatencyListItem, IAreaInfo, IIdcServiceAreaRel } from '@/typings/scheme';
 import { useSchemeStore } from '@/store';
-import SearchInput from '../../../components/search-input/index';
-import RenderTable from './render-table/index';
+import SearchInput from '../../../components/search-input';
+import RenderTable from './render-table';
 import { bkTooltips } from 'bkui-vue';
 import { Info } from 'bkui-vue/lib/icon';
 import './index.scss';

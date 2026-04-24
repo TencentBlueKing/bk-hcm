@@ -1,7 +1,7 @@
 import { PropType, defineComponent, onMounted, ref, watch, watchEffect } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { SecurityRuleDirection } from '..';
+import { SecurityRuleDirection } from '../index';
 import { VendorEnum } from '@/common/constant';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT } from '@/constants/menu-symbol';

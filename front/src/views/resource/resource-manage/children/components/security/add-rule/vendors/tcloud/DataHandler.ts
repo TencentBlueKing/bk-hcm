@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import { TcloudSecurityGroupRule, TcloudSourceTypeArr, TcloudTemplatePort, TcloudTemplatePortArr } from '.';
+import { TcloudSecurityGroupRule, TcloudSourceTypeArr, TcloudTemplatePort, TcloudTemplatePortArr } from './index';
 import { TcloudSourceAddressType } from './SourceAddress';
 
 export const tcloudHandler = (data: TcloudSecurityGroupRule & { sourceAddress: TcloudSourceAddressType }) => {

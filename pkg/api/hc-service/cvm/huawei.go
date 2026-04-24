@@ -201,3 +201,33 @@ func (req *HuaWeiCvmInquiryReq) Validate() error {
 
 	return validator.Validate.Struct(req)
 }
+
+// -------------------------- Monitor --------------------------
+
+// HuaWeiMonitorDataReq defines request to get huawei monitor data.
+type HuaWeiMonitorDataReq struct {
+	AccountID   string   `json:"account_id" validate:"required"`
+	Region      string   `json:"region" validate:"required"`
+	MetricName  string   `json:"metric_name" validate:"required"`
+	Period      int64    `json:"period" validate:"required,min=1"`
+	StartTime   int64    `json:"start_time" validate:"required,min=1"`
+	EndTime     int64    `json:"end_time" validate:"required,min=1"`
+	Namespace   string   `json:"namespace" validate:"omitempty"`
+	Filter      string   `json:"filter" validate:"omitempty"`
+	Dimension   string   `json:"dimension" validate:"omitempty"`
+	InstanceIDs []string `json:"instance_ids" validate:"required,min=1"`
+}
+
+// Validate request.
+func (req *HuaWeiMonitorDataReq) Validate() error {
+	if req.StartTime >= req.EndTime {
+		return fmt.Errorf("start_time should < end_time")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiMonitorDataResp defines response of huawei monitor data.
+type HuaWeiMonitorDataResp struct {
+	DataPoints []*MonitorDataPointResp `json:"data_points"`
+}

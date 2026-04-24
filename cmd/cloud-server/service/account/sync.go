@@ -45,6 +45,10 @@ func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) 
 		return nil, err
 	}
 
+	if err := account.IsResourceAccount(cts.Kit, a.client.DataService(), accountID); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	// 查询该账号对应的Vendor
 	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.AccountCloudResType, accountID)
 	if err != nil {
@@ -67,6 +71,10 @@ func (a *accountSvc) SyncCloudResourceByCond(cts *rest.Contexts) (any, error) {
 	// 校验用户有该账号的访问权限
 	if err := a.checkPermission(cts, meta.Find, accountID); err != nil {
 		return nil, err
+	}
+
+	if err := account.IsResourceAccount(cts.Kit, a.client.DataService(), accountID); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 查询该账号对应的Vendor
@@ -117,6 +125,10 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 	}
 	if !authorized {
 		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	if err := account.IsResourceAccount(cts.Kit, a.client.DataService(), accountID); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	// 查询该账号对应的Vendor

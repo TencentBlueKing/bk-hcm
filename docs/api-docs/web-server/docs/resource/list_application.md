@@ -94,21 +94,21 @@ POST /api/v1/cloud/applications/list
 
 #### 查询参数介绍：
 
-| 参数名称            | 参数类型   | 描述                                                                                           |
-|-----------------|--------|----------------------------------------------------------------------------------------------|
-| id              | string | 申请ID                                                                                         |
-| source          | string | 来源（枚举值：itsm,bpaas)                                                                           |
-| sn              | string | 序列号                                                                                          |
-| type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
-| status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
-| applicant       | string | 申请人                                                                                          |
-| content         | string | 申请内容                                                                                         |
-| delivery_detail | string | 交付详情                                                                                         |
-| memo            | string | 备注                                                                                           |
-| creator         | string | 创建者                                                                                          |
-| reviser         | string | 更新者                                                                                          |
-| created_at      | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                               |
-| updated_at      | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                               |
+| 参数名称              | 参数类型   | 描述                                                                                           |
+|-------------------|--------|----------------------------------------------------------------------------------------------|
+| id                | string | 申请ID                                                                                         |
+| source            | string | 来源（枚举值：itsm,bpaas）                                                                           |
+| sn                | string | 序列号                                                                                          |
+| operation         | string | 操作类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
+| status            | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
+| applicant         | string | 申请人                                                                                          |
+| content           | string | 申请内容                                                                                         |
+| delivery_detail   | string | 交付详情                                                                                         |
+| memo              | string | 备注                                                                                           |
+| creator           | string | 创建者                                                                                          |
+| reviser           | string | 更新者                                                                                          |
+| created_at        | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                               |
+| updated_at        | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                               |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -151,7 +151,7 @@ POST /api/v1/cloud/applications/list
         "id": "1",
         "source": "itsm",
         "sn": "1",
-        "type": "1",
+        "operation": "create_sub_account",
         "status": "1",
         "applicant": "xxxxxxx",
         "content": "",
@@ -197,18 +197,19 @@ POST /api/v1/cloud/applications/list
 
 #### data.details[n]
 
-| 参数名称            | 参数类型   | 描述                                                                                           |
-|-----------------|--------|----------------------------------------------------------------------------------------------|
-| id              | string | 申请ID                                                                                         |
-| source          | string | 来源（枚举值：itsm) 。该字段需要v1.4.4+ 版本。                                                               |
-| sn              | string | 序列号                                                                                          |
-| type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
-| status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
-| applicant       | string | 申请人                                                                                          |
-| content         | string | 申请内容，bpaass申请单中会包含 account_id                                                                |
-| delivery_detail | string | 交付详情                                                                                         |
-| memo            | string | 备注                                                                                           |
-| creator         | string | 创建者                                                                                          |
-| reviser         | string | 更新者                                                                                          |
-| created_at      | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                               |
-| updated_at      | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                               |
+| 参数名称            | 参数类型   | 描述                                                                                             |
+|-----------------|--------|------------------------------------------------------------------------------------------------|
+| id              | string | 申请ID                                                                                           |
+| source          | string | 来源（枚举值：itsm) 。该字段需要v1.4.4+ 版本。                                                                 |
+| sn              | string | 序列号                                                                                            |
+| type            | string | 申请类型（枚举值：operate_sub_account、create_cvm、create_vpc、create_disk）                                |
+| operation       | string | 操作类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                        |
+| status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error）   |
+| applicant       | string | 申请人                                                                                            |
+| content         | string | 申请内容，bpaass申请单中会包含 account_id                                                                  |
+| delivery_detail | string | 交付详情                                                                                           |
+| memo            | string | 备注                                                                                             |
+| creator         | string | 创建者                                                                                            |
+| reviser         | string | 更新者                                                                                            |
+| created_at      | string | 创建时间，标准格式：2006-01-02T15:04:05Z                                                                 |
+| updated_at      | string | 更新时间，标准格式：2006-01-02T15:04:05Z                                                                 |

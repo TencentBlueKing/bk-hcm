@@ -21,6 +21,7 @@
 package converter
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -228,4 +229,26 @@ func StrNilPtr(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+// ParseTimeToInt64 parse time to int64
+func ParseTimeToInt64(value interface{}) (int64, error) {
+	switch val := value.(type) {
+	case int:
+		return int64(val), nil
+	case int32:
+		return int64(val), nil
+	case int64:
+		return val, nil
+	case float64:
+		return int64(val), nil
+	case string:
+		timeVal, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return timeVal, nil
+	default:
+		return 0, fmt.Errorf("unsupported time type: %T", value)
+	}
 }

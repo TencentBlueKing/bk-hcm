@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue';
-import type { ModelProperty, ModelPropertyType } from '@/model/typings';
+import type { ModelProperty, ModelPropertyType, PropertyDisplayConfig } from '@/model/typings';
 import EnumValue from './enum-value.vue';
 import StringValue from './string-value.vue';
 import NumberValue from './number-value.vue';
@@ -14,7 +14,6 @@ import BusinessValue from './business-value.vue';
 import UserValue from './user-value.vue';
 import CloudAreaValue from './cloud-area-value.vue';
 import JsonValue from './json-value.vue';
-import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
 
@@ -22,7 +21,7 @@ const props = withDefaults(
   defineProps<{
     value: any;
     property: ModelProperty;
-    display?: DisplayType;
+    display?: PropertyDisplayConfig;
   }>(),
   {
     display: () => ({
