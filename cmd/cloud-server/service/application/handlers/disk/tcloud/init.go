@@ -37,7 +37,9 @@ func NewApplicationOfCreateTCloudDisk(
 	req *csdisk.TCloudDiskCreateReq,
 ) *ApplicationOfCreateTCloudDisk {
 	return &ApplicationOfCreateTCloudDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.TCloud),
-		req:                    req,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
+			opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.TCloud,
+		),
+		req: req,
 	}
 }
