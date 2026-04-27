@@ -17,7 +17,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { deleteBillsAdjustment, exportBillsAdjustmentItems, reqBillsAdjustmentList } from '@/api/bill';
 import { timeFormatter } from '@/common/util';
-import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
+import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP, RES_CLASS_MAP } from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
 import { formatBillCost } from '@/utils';
@@ -80,6 +80,11 @@ export default defineComponent({
         label: t('二级账号名称'),
         field: 'main_account_cloud_id',
         width: 300,
+      },
+      {
+        label: t('资源类别'),
+        field: 'res_class',
+        render: ({ cell }: any) => RES_CLASS_MAP[cell] || '--',
       },
       {
         label: t('调账类型'),

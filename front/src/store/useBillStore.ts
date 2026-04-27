@@ -1,4 +1,5 @@
 import { VendorEnum } from '@/common/constant';
+import { ResClassEnum } from '@/constants';
 import http from '@/http';
 import { defineStore } from 'pinia';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -488,6 +489,7 @@ export interface UpdateAdjustmentItemParams {
   bill_month?: number; // 所属月份
   bill_day?: number; // 所属日期
   type?: 'increase' | 'decrease'; // 调账类型
+  res_class?: ResClassEnum; // 资源类别
   currency?: string; // 币种
   cost?: string; // 金额
   rmb_cost?: string; // 对应人民币金额
