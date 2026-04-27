@@ -6,16 +6,7 @@ import { userSelectorRecentSelectedKey } from '@/constants/storage-symbols';
 
 defineOptions({ name: 'user-selector' });
 
-export interface IUserSelectorProps {
-  multiple?: boolean;
-  disabled?: boolean;
-  clearable?: boolean;
-  allowCreate?: boolean;
-  hasDeleteIcon?: boolean;
-  trigger?: 'focus' | 'search';
-  collapseTags?: boolean;
-  placeholder?: string;
-}
+const model = defineModel<string | string[]>();
 
 const props = withDefaults(defineProps<IUserSelectorProps>(), {
   multiple: true,
@@ -27,10 +18,19 @@ const props = withDefaults(defineProps<IUserSelectorProps>(), {
   placeholder: '请输入',
 });
 
+export interface IUserSelectorProps {
+  multiple?: boolean;
+  disabled?: boolean;
+  clearable?: boolean;
+  allowCreate?: boolean;
+  hasDeleteIcon?: boolean;
+  trigger?: 'focus' | 'search';
+  collapseTags?: boolean;
+  placeholder?: string;
+}
+
 const id = useId();
 const activeSearchId = ref<string | null>(null);
-
-const model = defineModel<string | string[]>();
 
 const userStore = useUserStore();
 
@@ -171,6 +171,12 @@ const handleClickMe = () => {
   // blur触发强制隐藏，由于组件的实现问题，不隐藏当只有一个“我”选项时会出现一个空白
   tagInputRef.value?.handleBlur();
 };
+
+const focus = () => {
+  tagInputRef.value?.focusInputTrigger?.();
+};
+
+defineExpose({ focus });
 </script>
 
 <template>

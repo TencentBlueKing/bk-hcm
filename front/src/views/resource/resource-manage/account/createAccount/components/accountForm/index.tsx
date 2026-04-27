@@ -11,7 +11,6 @@ import { Success, InfoLine, TextFile } from 'bkui-vue/lib/icon';
 import http from '@/http';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
-import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore, useUserStore } from '@/store';
 import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 
@@ -338,15 +337,7 @@ export default defineComponent({
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect
-                  v-model={formModel.managers}
-                  defaultUserlist={[
-                    {
-                      username: userStore.username,
-                      display_name: userStore.username,
-                    },
-                  ]}
-                />
+                <hcm-form-user v-model={formModel.managers} />
               </FormItem>
               <FormItem label='管理业务' property='bk_biz_id' required>
                 <hcm-form-business

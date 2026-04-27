@@ -72,7 +72,7 @@ export default defineComponent({
     );
 
     const handleChange = (val: any) => {
-      const value = props.trim ? val.trim() : val;
+      const value = props.trim && typeof val === 'string' ? val.trim() : val;
       ctx.emit('change', value, props.fromKey);
       ctx.emit('input', value);
       ctx.emit('update:modelValue', value);
