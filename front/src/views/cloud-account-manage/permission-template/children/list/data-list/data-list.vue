@@ -10,7 +10,7 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
-import { AUTH_UPDATE_PERMISSION_TEMPLATE, AUTH_DELETE_PERMISSION_TEMPLATE } from '@/constants/auth-symbols';
+import { AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE, AUTH_BIZ_DELETE_PERMISSION_TEMPLATE } from '@/constants/auth-symbols';
 import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 import routeAction from '@/router/utils/action';
@@ -114,26 +114,26 @@ const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
     <bk-table-column :show-overflow-tooltip="false" :label="'操作'">
       <template #default="{ row }">
         <div class="actions">
-          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+          <hcm-auth :sign="{ type: AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
             <bk-button
               theme="primary"
               text
-              :disabled="noPerm || getTypeData(row).isCloudCustom"
+              :disabled="noPerm || !getTypeData(row).isCloudCustom"
               @click="emit('edit', row)"
-              v-bk-tooltips="{ content: '仅云自定义模板可编辑', disabled: !getTypeData(row).isCloudCustom }"
+              v-bk-tooltips="{ content: '仅云自定义模板可编辑', disabled: getTypeData(row).isCloudCustom }"
             >
               编辑
             </bk-button>
           </hcm-auth>
-          <hcm-auth :sign="{ type: AUTH_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+          <hcm-auth :sign="{ type: AUTH_BIZ_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
             <bk-button
               theme="primary"
               text
-              :disabled="noPerm || getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0"
+              :disabled="noPerm || !getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0"
               @click="emit('delete', row)"
               v-bk-tooltips="{
-                content: getTypeData(row).isCloudCustom ? '仅云自定义模板可删除' : '有三级账号关联不可删除',
-                disabled: !(getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0),
+                content: !getTypeData(row).isCloudCustom ? '仅云自定义模板可删除' : '有三级账号关联不可删除',
+                disabled: !(!getTypeData(row).isCloudCustom || row.associated_sub_account_count > 0),
               }"
             >
               删除

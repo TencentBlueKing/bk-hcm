@@ -63,6 +63,7 @@ const tabList = ref<ApplicationsType[]>([
           'update_main_account',
           'create_sub_account',
           'update_sub_account',
+          'delete_sub_account',
           'create_sub_account_secret',
           'delete_sub_account_secret',
           'update_sub_account_secret',

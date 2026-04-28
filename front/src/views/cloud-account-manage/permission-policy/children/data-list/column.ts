@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Model, Column } from '@/decorator';
 
 @Model('permission-policy/table-column')
@@ -24,7 +23,7 @@ export class TableColumn {
   })
   memo: string;
 
-  @Column('string', {
+  @Column('user', {
     name: '创建人',
     index: 3,
     width: 120,
@@ -39,7 +38,7 @@ export class TableColumn {
   })
   created_at: string;
 
-  @Column('string', {
+  @Column('user', {
     name: '更新人',
     index: 5,
     width: 120,

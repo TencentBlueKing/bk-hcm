@@ -23,9 +23,9 @@ import EditForm from './children/form/edit.vue';
 import Details from './children/details/details.vue';
 import DeleteDialog from './children/delete-dialog.vue';
 import {
-  AUTH_CREATE_PERMISSION_TEMPLATE,
-  AUTH_UPDATE_PERMISSION_TEMPLATE,
-  AUTH_DELETE_PERMISSION_TEMPLATE,
+  AUTH_BIZ_CREATE_PERMISSION_TEMPLATE,
+  AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE,
+  AUTH_BIZ_DELETE_PERMISSION_TEMPLATE,
 } from '@/constants/auth-symbols';
 import { getTypeData } from '@/views/cloud-account-manage/permission-template/utils';
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
@@ -232,7 +232,7 @@ const handleDeleteConfirm = async () => {
 
     <div class="table-panel">
       <div class="toolbar">
-        <hcm-auth :sign="{ type: AUTH_CREATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+        <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
           <bk-button theme="primary" :disabled="noPerm" @click="handleCreate">
             <Plus style="font-size: 22px" />
             新建权限模板
@@ -291,7 +291,7 @@ const handleDeleteConfirm = async () => {
       <div class="sideslider-details-header">
         <span>权限模板详情</span>
         <div class="actions">
-          <hcm-auth :sign="{ type: AUTH_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+          <hcm-auth :sign="{ type: AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
             <bk-button
               outline
               theme="primary"
@@ -305,7 +305,7 @@ const handleDeleteConfirm = async () => {
               编辑
             </bk-button>
           </hcm-auth>
-          <hcm-auth :sign="{ type: AUTH_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
+          <hcm-auth :sign="{ type: AUTH_BIZ_DELETE_PERMISSION_TEMPLATE, relation: [bizId] }" v-slot="{ noPerm }">
             <bk-button
               outline
               :disabled="

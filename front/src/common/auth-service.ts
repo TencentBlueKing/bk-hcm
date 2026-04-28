@@ -314,7 +314,7 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'permission_policy_library',
   },
   [authSymbol.AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY]: {
-    id: 'cloud_vendor_config',
+    id: 'biz_perm_policy_lib_operate',
     action: 'apply',
     resourceType: 'permission_policy_library',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
@@ -336,7 +336,7 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'permission_policy_library',
   },
   [authSymbol.AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY]: {
-    id: 'cloud_vendor_config',
+    id: 'biz_perm_policy_lib_operate',
     action: 'create',
     resourceType: 'permission_policy_library',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
@@ -347,25 +347,25 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'permission_policy_library',
   },
   [authSymbol.AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY]: {
-    id: 'cloud_vendor_config',
+    id: 'biz_perm_policy_lib_operate',
     action: 'update',
     resourceType: 'permission_policy_library',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
-  [authSymbol.AUTH_CREATE_PERMISSION_TEMPLATE]: {
-    id: 'cloud_vendor_config',
+  [authSymbol.AUTH_BIZ_CREATE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
     action: 'create',
     resourceType: 'permission_template',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
-  [authSymbol.AUTH_UPDATE_PERMISSION_TEMPLATE]: {
-    id: 'cloud_vendor_config',
+  [authSymbol.AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
     action: 'update',
     resourceType: 'permission_template',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
-  [authSymbol.AUTH_DELETE_PERMISSION_TEMPLATE]: {
-    id: 'cloud_vendor_config',
+  [authSymbol.AUTH_BIZ_DELETE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
     action: 'delete',
     resourceType: 'permission_template',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),

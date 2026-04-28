@@ -33,9 +33,15 @@ defineProps<IGridItemProps>();
 </script>
 
 <style lang="scss" scoped>
+/* stylelint-disable */
 .grid-item {
   display: grid;
   grid-column: var(--span) span;
+
+  // 使用 1/-1 替代 span N，确保无论实际列数如何都能跨满整行
+  &.span {
+    grid-column: 1 / -1;
+  }
 
   .item-label,
   .item-content {
@@ -95,6 +101,11 @@ defineProps<IGridItemProps>();
           font-size: 18px;
         }
       }
+    }
+
+    // 当前聚焦的元素 z-index 更高，解决被非聚焦元素遮挡的问题
+    &:focus-within :deep(.form-element) {
+      z-index: 10;
     }
 
     :deep(.form-text) {

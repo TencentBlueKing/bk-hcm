@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
-import { IListResData, QueryFilterType, QueryRuleOPEnum, QueryBuilderType } from '@/typings';
+import { IListResData, QueryRuleOPEnum, QueryBuilderType } from '@/typings';
 import rollRequest from '@blueking/roll-request';
 import { IAppliedReasonItem } from '@/views/cloud-account-manage/permission-policy/typings';
 import { resolveBizApiPath } from '@/utils/search';
@@ -137,55 +137,6 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
       const count = countRes?.data?.count || 0;
 
       return { list, count };
-    } catch (error) {
-      console.error(error);
-      return Promise.reject(error);
-    } finally {
-      permissionPolicyListLoading.value = false;
-    }
-  };
-
-  /**
-   * 使用 rollRequest 获取权限策略库全量列表（用于前端分页）
-   * @param vendor 云账户
-   * @param filter 过滤条件
-   * @param onProgress 进度回调，每批次数据返回时调用
-   */
-  const getPermissionPolicyFullList = async (
-    vendor: string,
-    filter: QueryFilterType,
-    onProgress?: (list: IPermissionPolicyItem[], count: number) => void,
-  ): Promise<IPermissionPolicyItem[]> => {
-    permissionPolicyListLoading.value = true;
-    const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
-    const allList: IPermissionPolicyItem[] = [];
-
-    try {
-      const listGen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
-        IListResData<IPermissionPolicyItem[]>
-      >(
-        api,
-        { filter },
-        {
-          limit: 500, // 每批次拉取500条
-          countGetter: (res) => res.data.count,
-          listGetter: (res) => res.data.details,
-          generator: true,
-        },
-        true,
-      );
-
-      // 串行迭代请求，避免一次性请求过多数据导致阻塞
-      for await (const res of listGen) {
-        const details = res.data?.details || [];
-        allList.push(...details);
-        // 回调通知进度
-        onProgress?.(allList, res.data?.count || allList.length);
-        // 完成第一次请求即关闭 loading 效果，其余请求静默处理
-        permissionPolicyListLoading.value = false;
-      }
-
-      return allList;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -420,7 +371,6 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     createPermissionPolicy,
     updatePermissionPolicy,
     getPermissionPolicyList,
-    getPermissionPolicyFullList,
     createPolicyLibraryListGenerator,
     getUnappliedAccountIdsList,
     getAppliedAccountIdsList,
