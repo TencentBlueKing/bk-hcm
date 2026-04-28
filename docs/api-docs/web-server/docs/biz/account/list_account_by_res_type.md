@@ -15,7 +15,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/list/by/res_type
 | bk_biz_id   | string       | 是  | 业务ID                                                            |
 | vendor      | string       | 是  | 云厂商                                                             |
 | ids         | string array | 是  | 二级账号ID列表，最大支持为100个                                              |
-| res_type    | string       | 是  | 资源类型(目前支持的类型sub_account、sub_account_secret、permission_template) |
+| res_type    | string       | 是  | 资源类型(目前支持的类型sub_account、sub_account_secret、permission_template、permission_policy_library) |
 
 ### 调用示例
 

@@ -48,6 +48,8 @@ func newAuthChecker(client *client.ClientSet, resType meta.ResourceType) (accoun
 		return &subAccountSecretAuthChecker{client: client}, nil
 	case meta.PermissionTemplate:
 		return &permissionTemplateAuthChecker{client: client}, nil
+	case meta.PermissionPolicyLibrary:
+		return &permissionPolicyLibraryAuthChecker{client: client}, nil
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "the checker not support res_type: %s", resType)
 	}
@@ -189,6 +191,42 @@ func (c *permissionTemplateAuthChecker) filterAuthorizedIDs(kt *kit.Kit, account
 			if slice.IsItemInSlice(detail.UsageBizIDs, bizID) {
 				authorizedIDs = append(authorizedIDs, detail.ID)
 			}
+		}
+	}
+
+	return slice.Unique(authorizedIDs), nil
+}
+
+// permissionPolicyLibraryAuthChecker 权限策略库资源权限校验器
+type permissionPolicyLibraryAuthChecker struct {
+	client *client.ClientSet
+}
+
+// filterAuthorizedIDs 查询 account 表，筛选 bk_biz_id 等于当前业务的账号 ID
+func (c *permissionPolicyLibraryAuthChecker) filterAuthorizedIDs(kt *kit.Kit, accountIDs []string, bizID int64,
+	vendor enumor.Vendor) ([]string, error) {
+
+	var authorizedIDs []string
+	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", batch),
+				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("bk_biz_id", bizID),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"id"},
+		}
+
+		result, err := c.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("list account for permission_policy_library check failed, biz_id: %d, err: %v, rid: %s",
+				bizID, err, kt.Rid)
+			return nil, err
+		}
+
+		for _, detail := range result.Details {
+			authorizedIDs = append(authorizedIDs, detail.ID)
 		}
 	}
 

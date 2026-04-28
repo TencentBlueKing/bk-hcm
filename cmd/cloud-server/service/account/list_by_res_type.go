@@ -148,7 +148,7 @@ func (a *accountSvc) bizFilterAuthorizedAccountIDs(kt *kit.Kit, req *proto.Accou
 		return nil, err
 	}
 
-	authorizedIDs, err := checker.filterAuthorizedIDs(kt, req.IDs, bizID, vendor)
+	authorizedIDs, err := checker.filterAuthorizedIDs(kt, slice.Unique(req.IDs), bizID, vendor)
 	if err != nil {
 		logs.Errorf("filter authorized account ids failed, res_type: %s, biz_id: %d, err: %v, rid: %s",
 			req.ResType, bizID, err, kt.Rid)
