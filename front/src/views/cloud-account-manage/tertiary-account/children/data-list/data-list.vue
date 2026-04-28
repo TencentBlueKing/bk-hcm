@@ -10,6 +10,7 @@ import { useAccountStore } from '@/store/account';
 import { AUTH_BIZ_DELETE_SUB_ACCOUNT, AUTH_BIZ_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import type { ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
+import get from 'lodash/get';
 
 const props = withDefaults(defineProps<IDataListProps>(), {
   loading: false,
@@ -84,7 +85,7 @@ const handleGoToPage = (row: ISubAccountItem, column: ModelPropertyColumn, type:
   const { searchField, valueField } = column?.meta?.search?.props;
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
-    query: { type, filter: `${searchField}=${row?.[valueField]}` },
+    query: { type, filter: `${searchField}=${get(row, valueField)}` },
   });
 };
 </script>

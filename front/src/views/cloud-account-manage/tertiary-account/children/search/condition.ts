@@ -158,6 +158,7 @@ export class SearchCondition {
     name: '手机号码',
     props: {
       multiple: false,
+      placeholder: '请输入手机号，无国家码(地区码)前缀',
     },
     index: 7,
   })

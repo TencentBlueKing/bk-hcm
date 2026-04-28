@@ -8,6 +8,7 @@ import { AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import routeAction from '@/router/utils/action';
+import get from 'lodash/get';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -44,7 +45,7 @@ const handleGoToPage = (row: ISecondaryAccountItem, column: ModelPropertyColumn,
   const { searchField, valueField } = column?.meta?.search?.props;
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
-    query: { type, filter: `${searchField}=${row?.[valueField]}` },
+    query: { type, filter: `${searchField}=${get(row, valueField)}` },
   });
 };
 </script>
