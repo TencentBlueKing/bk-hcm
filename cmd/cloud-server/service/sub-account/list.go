@@ -346,8 +346,11 @@ func (svc *service) listBizSubAccountAuthRes(cts *rest.Contexts, reqFilter *filt
 
 	scopeFilter := tools.ExpressionOr(
 		tools.RuleJSONContains[int64]("bk_biz_ids", bizID),
-		tools.RuleIn("account_id", accountIDs),
 	)
+
+	if len(accountIDs) > 0 {
+		scopeFilter.Rules = append(scopeFilter.Rules, tools.RuleIn("account_id", accountIDs))
+	}
 
 	// 过滤主账号
 	scopeFilter, err = tools.And(scopeFilter, tools.RuleNotEqual("account_type", string(enumor.MainAccount)))
@@ -389,7 +392,7 @@ func buildPermissionTemplateMap[Ext coresubaccount.Extension](cli *client.Client
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", batch)),
 			Page:   core.NewDefaultBasePage(),
 		}
-		
+
 		result, err := cli.DataService().Global.PermissionTemplate.ListPermissionTemplate(kt, listReq)
 		if err != nil {
 			logs.Errorf("list permission template failed, err: %v, rid: %s", err, kt.Rid)
