@@ -58,6 +58,7 @@ export class TableColumn {
     name: '使用业务',
     index: 6,
     width: 180,
+    showOverflowTooltip: false,
     meta: {
       display: { appearance: 'tag' },
     },

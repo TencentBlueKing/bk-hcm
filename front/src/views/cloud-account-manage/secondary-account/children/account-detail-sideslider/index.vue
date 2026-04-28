@@ -474,7 +474,7 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
 
   .info-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px 48px;
     color: #4d4f56;
 
@@ -491,7 +491,10 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
       }
 
       .info-value {
+        flex: 1;
         word-break: break-all;
+        min-width: 0;
+        overflow: hidden;
 
         .tag-item {
           margin-right: 4px;
