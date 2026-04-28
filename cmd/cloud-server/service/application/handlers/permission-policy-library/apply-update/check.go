@@ -48,6 +48,19 @@ func (a *ApplicationOfApplyPermPolicyLibUpdate) CheckReq() error {
 		return errors.New("permission template id is invalid")
 	}
 
+	account, err := a.GetAccount(accountIDs[0])
+	if err != nil {
+		logs.Errorf("get policy library account failed, accountID: %s, err: %v, rid: %s",
+			accountIDs[0], err, a.Cts.Kit.Rid)
+		return fmt.Errorf("get policy library account failed, err: %v", err)
+	}
+	if a.GetBkBizIDs()[0] != account.BkBizID {
+		logs.Errorf("get policy library account failed, current biz is %d ,account biz is %d, rid: %s",
+			a.GetBkBizIDs()[0], account.BkBizID, a.Cts.Kit.Rid)
+		return fmt.Errorf("get policy library account failed, biz mismatch current biz is %d ,account biz is %d",
+			a.GetBkBizIDs()[0], account.BkBizID)
+	}
+
 	library, err := a.GetPolicyLibraryDetail(a.Cts.Kit, a.Content.PolicyLibraryID)
 	if err != nil {
 		logs.Errorf("get policy library detail failed, libraryID: %s, err: %v, rid: %s",
