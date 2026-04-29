@@ -45,7 +45,7 @@ const handleGoToTertiaryAccount = () => {
 const handleGoToSecondaryAccount = () => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
-    query: { type: 'secondary-account', id: props.secretData?.sub_account_id },
+    query: { type: 'secondary-account', id: props.secretData?.account_id },
   });
 };
 
