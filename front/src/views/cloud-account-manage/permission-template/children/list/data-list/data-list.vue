@@ -86,7 +86,7 @@ const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
         </template>
         <template v-else-if="column.id === 'cloud_account_id'">
           <SecondaryAccountValue
-            :value="row.cloud_account_id"
+            :value="row.account_id"
             :biz-id="bizId"
             :vendor="currentVendor"
             :res-type="SecondaryAccountResourceTypeEnum.TEMPLATE"

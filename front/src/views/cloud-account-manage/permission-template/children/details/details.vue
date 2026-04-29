@@ -61,7 +61,7 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
           <template v-if="field.id === 'account_id'">
             <div class="link-button-container">
               <SecondaryAccountValue
-                :value="data.cloud_account_id"
+                :value="data.account_id"
                 :biz-id="getBizsId()"
                 :vendor="currentVendor"
                 :res-type="SecondaryAccountResourceTypeEnum.TEMPLATE"
@@ -69,15 +69,6 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
 
               <Share class="icon" @click="handleGoToSecondaryAccount(data)" />
             </div>
-            <!-- <display-value
-              :property="field"
-              :value="data.cloud_account_id"
-              :display="{
-                on: 'info',
-                appearance: 'link-button',
-                appearanceProps: { isIcon: true, onClick: () => handleGoToSecondaryAccount(data) },
-              }"
-            /> -->
           </template>
 
           <template v-else-if="field.id === 'associated_sub_account_count'">
