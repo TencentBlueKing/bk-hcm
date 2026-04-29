@@ -33,7 +33,7 @@ export default defineComponent({
         product_id: '',
         bk_biz_id: '',
         type: AdjustTypeEnum.Increase,
-        res_class: ResClassEnum.Cpu,
+        res_class: ResClassEnum.Gpu,
         cost: '',
         main_account_id: '',
         memo: '',

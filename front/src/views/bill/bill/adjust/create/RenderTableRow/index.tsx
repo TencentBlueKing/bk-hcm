@@ -36,7 +36,7 @@ export default defineComponent({
   setup(props, { emit, expose }) {
     const { formModel, resetForm, setFormValues } = useFormModel({
       type: AdjustTypeEnum.Increase,
-      res_class: ResClassEnum.Cpu,
+      res_class: ResClassEnum.Gpu,
       bk_biz_id: '',
       main_account_id: '',
       cost: '',
