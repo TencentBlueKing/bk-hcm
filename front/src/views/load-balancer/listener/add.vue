@@ -109,7 +109,7 @@ const formModel = reactive<IListenerModel & { port_segment: string }>({
   protocol: ListenerProtocol.TCP,
   port: undefined,
   end_port: undefined,
-  port_segment: undefined,
+  port_segment: '',
   scheduler: undefined,
   session_open: false,
   session_type: SessionType.NORMAL,
@@ -136,7 +136,7 @@ watchEffect(() => {
       ca_cloud_id: '',
       cert_cloud_ids: [],
     },
-    port_segment: end_port ? `${port}-${end_port}` : port,
+    port_segment: end_port ? `${port}-${end_port}` : String(port),
   });
   bindingTargetGroupName.value = target_group_name;
   isSniOpen.value = !!sni_switch;
