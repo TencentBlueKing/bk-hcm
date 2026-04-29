@@ -99,6 +99,7 @@ func BuildContent(bkBizID int64, vendor enumor.Vendor, req *proto.BizApplyPermis
 	return &proto.ApplyPermPolicyLibUpdateContent{
 		ApplyPermPolicyLibBaseContent: proto.ApplyPermPolicyLibBaseContent{
 			Action:          enumor.PermPolicyLibActionApplyUpdate,
+			Operation:       enumor.OpApplyPermissionPolicyLibraryUpdate,
 			Vendor:          vendor,
 			BkBizID:         bkBizID,
 			PolicyLibraryID: req.PolicyLibraryID,
