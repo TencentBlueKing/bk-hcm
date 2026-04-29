@@ -262,7 +262,7 @@ const handleConfirm = async () => {
     Message({ theme: 'success', message: '更新成功' });
   } else {
     // 将port_segment分解成port和end_port
-    const [port, end_port] = formModel.port_segment.split('-');
+    const [port, end_port] = formModel.port_segment?.split('-') ?? [];
     formModel.port = port ? +port : undefined;
     formModel.end_port = end_port ? +end_port : undefined;
     await loadBalancerListenerStore.addListener(
