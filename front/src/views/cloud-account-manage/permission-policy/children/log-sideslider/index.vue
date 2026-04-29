@@ -15,9 +15,7 @@ const props = defineProps<{
 }>();
 
 const tableData = computed(() => [...props.data]);
-const resType = computed(() =>
-  props.bizId ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
-);
+const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
 
 const isLoading = ref(false);
 const { pagination } = usePage();
@@ -93,9 +91,6 @@ const handleCancel = () => {
 .log-list-sideslider {
   :deep(.bk-modal-content) {
     position: relative;
-  }
-
-  :deep(.bk-modal-content) {
     padding: 24px;
   }
 

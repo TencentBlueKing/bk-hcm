@@ -3,6 +3,7 @@ import { inject, computed, type Ref, ref, watch, useTemplateRef } from 'vue';
 import { Form } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
 import { formatJSON } from '@/utils';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { usePermissionPolicyStore, type IPermissionPolicyItem } from '@/store/cloud-account-manage/permission-policy';
 import type { FieldTcloud } from './field-tcloud';
 import { FieldFactory } from './field-factory';
@@ -16,6 +17,7 @@ const props = defineProps<{
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const permissionPolicyStore = usePermissionPolicyStore();
+const { getBizsId } = useWhereAmI();
 
 const fieldModel = computed(() => FieldFactory.createModel(currentVendor.value));
 const properties = computed(() => fieldModel.value.getProperties<ModelPropertyForm>());
@@ -40,7 +42,7 @@ watch(
 );
 
 const policyLibraryListGenerator = computed(() =>
-  permissionPolicyStore.createPolicyLibraryListGenerator(currentVendor.value),
+  permissionPolicyStore.createPolicyLibraryListGenerator(currentVendor.value, getBizsId()),
 );
 
 const getFormCompProps = (field: ModelPropertyForm) => {
