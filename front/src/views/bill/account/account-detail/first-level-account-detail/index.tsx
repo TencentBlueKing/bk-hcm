@@ -7,6 +7,7 @@ import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import CommonDialog from '@/components/common-dialog';
 import HcmFormUser from '@/components/form/user.vue';
+import isEqual from 'lodash/isEqual';
 import {
   ValidateStatus,
   useSecretExtension,
@@ -54,6 +55,25 @@ export default defineComponent({
       accountEditForm.bak_managers = detail.bak_managers ? [...detail.bak_managers] : [];
       accountEditForm.memo = detail.memo || '';
     };
+
+    // 判断表单数据是否有变化
+    const isFormChanged = computed(
+      () =>
+        !isEqual(
+          {
+            name: accountEditForm.name,
+            managers: accountEditForm.managers,
+            bak_managers: accountEditForm.bak_managers,
+            memo: accountEditForm.memo,
+          },
+          {
+            name: detail.name || '',
+            managers: detail.managers || [],
+            bak_managers: detail.bak_managers || [],
+            memo: detail.memo || '',
+          },
+        ),
+    );
 
     // 打开账号信息编辑弹窗
     const openAccountEditDialog = () => {
@@ -352,8 +372,12 @@ export default defineComponent({
             ),
             footer: () => (
               <div class={'validate-btn-container'}>
-                <Button theme='primary' loading={buttonLoading.value} onClick={handleAccountUpdate}>
-                  确认
+                <Button
+                  theme='primary'
+                  loading={buttonLoading.value}
+                  disabled={!isFormChanged.value}
+                  onClick={handleAccountUpdate}>
+                  提交
                 </Button>
                 <Button class='ml10' onClick={() => (isAccountEditDialogShow.value = false)}>
                   取消

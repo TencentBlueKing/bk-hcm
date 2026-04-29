@@ -1,4 +1,4 @@
-import { defineComponent, provide, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, provide, reactive, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore, { IMainAccountDetail } from '@/store/useBillStore';
@@ -10,6 +10,7 @@ import { useVerify } from '@/hooks';
 import PermissionDialog from '@/components/permission-dialog';
 import CommonDialog from '@/components/common-dialog';
 import HcmFormUser from '@/components/form/user.vue';
+import isEqual from 'lodash/isEqual';
 import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 
@@ -61,6 +62,25 @@ export default defineComponent({
       accountEditForm.bak_managers = detail.value.bak_managers ? [...detail.value.bak_managers] : [];
       accountEditForm.memo = detail.value.memo || '';
     };
+
+    // 判断表单数据是否有变化
+    const isFormChanged = computed(
+      () =>
+        !isEqual(
+          {
+            email: accountEditForm.email,
+            managers: accountEditForm.managers,
+            bak_managers: accountEditForm.bak_managers,
+            memo: accountEditForm.memo,
+          },
+          {
+            email: detail.value.email || '',
+            managers: detail.value.managers || [],
+            bak_managers: detail.value.bak_managers || [],
+            memo: detail.value.memo || '',
+          },
+        ),
+    );
 
     // 打开账号信息编辑弹窗
     const openAccountEditDialog = () => {
@@ -192,8 +212,12 @@ export default defineComponent({
             ),
             footer: () => (
               <div class={'validate-btn-container'}>
-                <Button theme='primary' loading={buttonLoading.value} onClick={handleAccountUpdate}>
-                  确认
+                <Button
+                  theme='primary'
+                  loading={buttonLoading.value}
+                  disabled={!isFormChanged.value}
+                  onClick={handleAccountUpdate}>
+                  提交
                 </Button>
                 <Button class='ml10' onClick={() => (isAccountEditDialogShow.value = false)}>
                   取消
