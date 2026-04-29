@@ -12,9 +12,7 @@ const props = defineProps<{
 
 const bizId = computed(() => props.bizId);
 const vendor = computed(() => props.vendor);
-const resType = computed(() =>
-  bizId.value ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
-);
+const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
 
 // 已选账号列表
 const selectedAccounts = ref<{ account_id: string }[]>([]);

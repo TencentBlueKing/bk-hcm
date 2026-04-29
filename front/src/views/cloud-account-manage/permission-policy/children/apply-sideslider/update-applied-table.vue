@@ -18,9 +18,7 @@ const props = defineProps<{
 
 const bizId = computed(() => props.bizId);
 const vendor = computed(() => props.vendor);
-const resType = computed(() =>
-  bizId.value ? SecondaryAccountResourceTypeEnum.SUB : SecondaryAccountResourceTypeEnum.PERMISSION,
-);
+const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
 
 const tableData = computed(() => [...props.list]);
 const isLoading = ref(false);
