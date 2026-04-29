@@ -219,7 +219,7 @@ export const FILTER_DATA = [
   {
     name: '云账号ID',
     id: 'account_id',
-    children: [],
+    children: [] as any[],
     meta: {
       search: {
         filterRules: () => ({}),
@@ -475,7 +475,7 @@ export const NET_CHARGE_MAP: ConstantMapRecord = {
   BANDWIDTH_PACKAGE: '按带宽包计费',
 };
 
-export const SITE_TYPE_MAP = {
+export const SITE_TYPE_MAP: Record<string, string> = {
   china: '中国站',
   international: '国际站',
 };
