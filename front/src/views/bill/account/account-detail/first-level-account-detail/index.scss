@@ -8,26 +8,38 @@
     &:first-of-type {
       margin-top: 0;
     }
-  }
-  .detail-info {
 
+    .edit-icon {
+      color: #3a84ff;
+      margin-left: 8px;
+      cursor: pointer;
+      font-weight: normal;
+      font-size: 12px;
+
+      .mr6 {
+        margin-right: 4px;
+      }
+    }
+  }
+
+  .detail-info {
     .item {
       display: flex;
       align-items: center;
       margin-bottom: 18px;
       font-size: 14px;
-  
+
       .label {
         margin-right: 5px;
         width: 120px;
         text-align: right;
       }
-  
+
       .value {
         margin-left: 8px;
         color: #313238;
       }
-  
+
       &:last-of-type {
         margin-bottom: 41px;
       }
@@ -42,6 +54,7 @@
 .validate-btn-container {
   width: 100%;
   display: flex;
+
   .validate-btn {
     margin-right: auto;
     min-width: 88px;
