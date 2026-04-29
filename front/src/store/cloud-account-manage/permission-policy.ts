@@ -299,7 +299,7 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     const { vendor, id, selectedIds: templateIds } = params;
     const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}/apply`;
     try {
-      const res = await http.put(api, {
+      const res = await http.post(api, {
         permission_template_ids: templateIds,
       });
 
@@ -324,7 +324,7 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     const { bizId, vendor, id, selectedIds: templateIds } = params;
     const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/applications/types/apply_permission_policy_library_update`;
     try {
-      const res = await http.put(api, {
+      const res = await http.post(api, {
         permission_template_ids: templateIds,
         policy_library_id: id,
       });
@@ -338,15 +338,15 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
     }
   };
 
-  const createPolicyLibraryListGenerator = (vendor: string): ListGeneratorFactory => {
+  const createPolicyLibraryListGenerator = (vendor: string, bizId?: number): ListGeneratorFactory => {
     return async function* (keywordOrOptions) {
-      const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/list`;
+      const api = `/api/v1/cloud/${resolveBizApiPath(bizId)}vendors/${vendor}/permission_policy_libraries/list`;
       const rules: Array<{ field: string; op: string; value: any }> = [];
       const keyword = typeof keywordOrOptions === 'string' ? keywordOrOptions : undefined;
       const options = typeof keywordOrOptions === 'object' ? keywordOrOptions : undefined;
       if (keyword) rules.push({ field: 'name', op: QueryRuleOPEnum.CS, value: keyword });
       if (options?.ids?.length) rules.push({ field: 'id', op: QueryRuleOPEnum.IN, value: options.ids });
-      const filterParams = rules.length > 0 ? { op: QueryRuleOPEnum.AND, rules } : {};
+      const filterParams = { op: QueryRuleOPEnum.AND, rules };
 
       const gen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
         IListResData<IPermissionPolicyItem[]>
