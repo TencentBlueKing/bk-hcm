@@ -175,14 +175,6 @@ func genResManagementActions() []client.ResourceAction {
 		RelatedResourceTypes: bizResource,
 		RelatedActions:       []client.ActionID{BizAccess},
 		Version:              1,
-	}, {
-		ID:                   BizSubAccountOperate,
-		Name:                 ActionIDNameMap[BizSubAccountOperate],
-		NameEn:               "Operate Biz Sub-Account",
-		Type:                 Edit,
-		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
-		Version:              1,
 	}}...)
 
 	return actions
