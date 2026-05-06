@@ -97,6 +97,13 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizTaskManagementOperate},
 					},
 				},
+				{
+					Name:   "云账号",
+					NameEn: "Cloud Account",
+					Actions: []client.ActionWithID{
+						{ID: BizSubAccountOperate},
+					},
+				},
 			},
 		},
 	}
