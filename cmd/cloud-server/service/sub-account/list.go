@@ -37,7 +37,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/mask"
 	"hcm/pkg/tools/slice"
 )
 
@@ -265,13 +267,17 @@ func buildBizSubAccountExtDetails[Ext coresubaccount.Extension](details []coresu
 
 	result := make([]coresubaccount.BizSubAccountItem[Ext], 0, len(details))
 	for _, item := range details {
-		result = append(result, coresubaccount.BizSubAccountItem[Ext]{
+		detail := coresubaccount.BizSubAccountItem[Ext]{
 			SubAccount:            item,
 			Operable:              operableMap[item.AccountID],
 			AccountName:           accountNameMap[item.AccountID],
 			PermissionTemplates:   permTmplMap[item.ID],
 			SubAccountSecretCount: secretCountMap[item.ID],
-		})
+		}
+		// 邮箱手机号码脱敏
+		detail.Email = converter.ValToPtr(mask.MaskEmail(converter.PtrToVal(item.Email)))
+		detail.PhoneNum = converter.ValToPtr(mask.MaskPhone(converter.PtrToVal(item.PhoneNum)))
+		result = append(result, detail)
 	}
 
 	return result
