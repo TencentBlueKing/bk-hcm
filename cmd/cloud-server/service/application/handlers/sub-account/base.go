@@ -30,6 +30,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	hssubaccount "hcm/pkg/api/hc-service/sub-account"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -318,4 +319,18 @@ func (a *ApplicationBaseSubAccount) CreateAudit(action enumor.AuditAction, resTy
 			},
 		},
 	})
+}
+
+// ValidatePhoneNum Validate phone num when phone is not empty
+func (a *ApplicationBaseSubAccount) ValidatePhoneNum(countryCode, phoneNum string) error {
+	if phoneNum == "" && countryCode == "" {
+		return nil
+	}
+
+	// 前端请求的country code是不带country code的
+	if !validator.ValidatePhoneWithCountryCode("+"+countryCode, phoneNum) {
+		return fmt.Errorf("invalid phone number with country code: %s%s", countryCode, phoneNum)
+	}
+
+	return nil
 }

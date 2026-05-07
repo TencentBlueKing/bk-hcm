@@ -29,13 +29,19 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// CheckReq validate the request and check that the sub account exists.
+// CheckReq validate the request and check that the subaccount exists.
 func (a *ApplicationOfUpdateSubAccount) CheckReq() error {
 	if err := a.req.Validate(); err != nil {
 		return err
 	}
 
 	if err := a.CheckSubAccountExists(a.req.ID); err != nil {
+		return err
+	}
+
+	if err := a.ValidatePhoneNum(converter.PtrToVal(a.req.CountryCode),
+		converter.PtrToVal(a.req.PhoneNum)); err != nil {
+		logs.Errorf("validate phone num failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
