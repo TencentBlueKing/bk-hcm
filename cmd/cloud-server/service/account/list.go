@@ -487,7 +487,7 @@ func (a *accountSvc) fillAccountInfo(kt *kit.Kit, accounts []*dataproto.BaseAcco
 		return nil, err
 	}
 
-	result, err = a.fillAccountSecretCount(kt, result)
+	result, err = a.fillSubAccountSecretCount(kt, result)
 	if err != nil {
 		logs.Errorf("fill account secret count failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -585,8 +585,8 @@ func (a *accountSvc) fillAccountSubAccountCount(kt *kit.Kit, accounts []*proto.A
 	return accounts, nil
 }
 
-// fillAccountSecretCount 补充账号的密钥数量
-func (a *accountSvc) fillAccountSecretCount(kt *kit.Kit, accounts []*proto.AccountWithOtherInfo) (
+// fillSubAccountSecretCount 补充二级账号下的三级账号的密钥数量
+func (a *accountSvc) fillSubAccountSecretCount(kt *kit.Kit, accounts []*proto.AccountWithOtherInfo) (
 	[]*proto.AccountWithOtherInfo, error) {
 
 	if len(accounts) == 0 {
@@ -601,16 +601,16 @@ func (a *accountSvc) fillAccountSecretCount(kt *kit.Kit, accounts []*proto.Accou
 	// 统计每个账号的密钥数量
 	countMap := make(map[string]uint64)
 	for _, ids := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
-		listReq := &dataproto.AccountSecretListReq{
+		listReq := &dataproto.SubAccountSecretListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("account_id", ids),
 			),
 			Page: core.NewDefaultBasePage(),
 		}
 		for {
-			resp, err := a.client.DataService().Global.AccountSecret.ListAccountSecret(kt, listReq)
+			resp, err := a.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt, listReq)
 			if err != nil {
-				logs.Errorf("list account secret failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("list sub account secret failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
 
