@@ -106,9 +106,6 @@ func tcloudAccountService(h *rest.Handler, svc *service) {
 	// 获取子账号安全设置 (CAM DescribeSafeAuthFlagColl)
 	h.Add("TCloudDescribeSafeAuthFlagColl", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlagColl)
-	// 获取用户账号安全设置 (CAM DescribeSafeAuthFlag)
-	h.Add("TCloudDescribeSafeAuthFlag", http.MethodPost,
-		"/vendors/tcloud/accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlag)
 	// 设置子账号登录保护和敏感操作保护
 	h.Add("TCloudSetMfaFlag", http.MethodPost,
 		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)

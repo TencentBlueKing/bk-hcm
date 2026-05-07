@@ -194,29 +194,6 @@ func (svc *service) TCloudDescribeSafeAuthFlagColl(cts *rest.Contexts) (interfac
 	return result, nil
 }
 
-// TCloudDescribeSafeAuthFlag get tcloud user's safe auth flag settings (CAM DescribeSafeAuthFlag).
-func (svc *service) TCloudDescribeSafeAuthFlag(cts *rest.Contexts) (interface{}, error) {
-	req := new(hssubaccount.TCloudDescribeSafeAuthFlagReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := client.DescribeSafeAuthFlag(cts.Kit, &typeaccount.DescribeSafeAuthFlagOption{})
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
-
 // TCloudSetMfaFlag set tcloud sub-account login protection and sensitive operation protection (CAM SetMfaFlag).
 func (svc *service) TCloudSetMfaFlag(cts *rest.Contexts) (interface{}, error) {
 	req := new(hssubaccount.TCloudSetMfaFlagReq)

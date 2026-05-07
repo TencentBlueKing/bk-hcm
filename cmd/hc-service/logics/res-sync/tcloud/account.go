@@ -82,21 +82,35 @@ func (cli *client) Account(kt *kit.Kit, opt *SyncAccountOption) (*SyncResult, er
 func (cli *client) syncAccountAuthFlag(kt *kit.Kit,
 	account *protocloud.AccountGetResult[protocore.TCloudAccountExtension]) error {
 
-	authFlag, err := cli.cloudCli.DescribeSafeAuthFlag(kt, &typeaccount.DescribeSafeAuthFlagOption{})
+	uin, err := strconv.ParseUint(account.Extension.CloudMainAccountID, 10, 64)
+	if err != nil {
+		logs.Errorf("[%s] parse cloud_main_account_id failed, accountID: %s, err: %v,rid: %s", enumor.TCloud,
+			account.ID, err, kt.Rid)
+		return errf.NewFromErr(errf.Aborted, err)
+	}
+
+	authFlags, err := cli.cloudCli.DescribeSafeAuthFlagColl(kt, &typeaccount.DescribeSafeAuthFlagCollOption{
+		SubUins: []uint64{uin},
+	})
 	if err != nil {
 		logs.Errorf("[%s] describe safe auth flag failed, err: %v, accountID: %s, rid: %s",
 			enumor.TCloud, err, account.ID, kt.Rid)
 		return err
 	}
+	if len(authFlags) != 1 {
+		logs.Errorf("[%s] describe safe auth flag result length != 1, accountID: %s, rid: %s",
+			enumor.TCloud, account.ID, kt.Rid)
+		return errf.NewFromErr(errf.Aborted,
+			fmt.Errorf("describe safe auth flag result length != 1, accountID: %s", account.ID))
+	}
+	authFlag := authFlags[0]
 
 	var cloudLoginFlag, cloudActionFlag *enumor.AccountProtectionFlag
-	if authFlag != nil {
-		if authFlag.LoginFlag != nil {
-			cloudLoginFlag = authFlag.LoginFlag.ToProtectionFlag()
-		}
-		if authFlag.ActionFlag != nil {
-			cloudActionFlag = authFlag.ActionFlag.ToProtectionFlag()
-		}
+	if authFlag.LoginFlag != nil {
+		cloudLoginFlag = authFlag.LoginFlag.ToProtectionFlag()
+	}
+	if authFlag.ActionFlag != nil {
+		cloudActionFlag = authFlag.ActionFlag.ToProtectionFlag()
 	}
 
 	updateReq := &protocloud.AccountUpdateReq[protocloud.TCloudAccountExtensionUpdateReq]{

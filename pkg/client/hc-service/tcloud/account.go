@@ -264,16 +264,6 @@ func (a *AccountClient) DescribeSafeAuthFlagColl(kt *kit.Kit, req *hssubaccount.
 	return *resp, nil
 }
 
-// DescribeSafeAuthFlag get account safe auth flag settings via TCloud CAM DescribeSafeAuthFlag.
-func (a *AccountClient) DescribeSafeAuthFlag(kt *kit.Kit, req *hssubaccount.TCloudDescribeSafeAuthFlagReq,
-) (*hssubaccount.TCloudDescribeSafeAuthFlagResult, error) {
-
-	return common.Request[hssubaccount.TCloudDescribeSafeAuthFlagReq,
-		hssubaccount.TCloudDescribeSafeAuthFlagResult](
-		a.client, http.MethodPost, kt, req, "/accounts/safe_auth_flag")
-
-}
-
 // SetMfaFlag set subaccount login protection and sensitive operation protection via TCloud CAM SetMfaFlag.
 func (a *AccountClient) SetMfaFlag(kt *kit.Kit, req *hssubaccount.TCloudSetMfaFlagReq) error {
 	return common.RequestNoResp[hssubaccount.TCloudSetMfaFlagReq](
