@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	logicaccount "hcm/cmd/cloud-server/logics/account"
 	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -336,10 +337,26 @@ func (svc *service) listPermTmplSubAccountIDsForTCloud(kt *kit.Kit, bizID int64,
 		return nil, errf.New(errf.InvalidParameter, "permission template not exist")
 	}
 
+	// 查询管理业务为biz_id的资源类型二级账号ID列表
+	accountIDs, err := logicaccount.ListAccountIDsByBizID(kt, svc.client.DataService(), bizID)
+	if err != nil {
+		logs.Errorf("list account ids by biz id failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
 	filterExpr := tools.ExpressionAnd(
 		tools.RuleJSONContains("permission_template_ids", templateID),
-		tools.RuleJSONContains("bk_biz_ids", bizID),
 	)
+	if len(accountIDs) > 0 {
+		filterExpr.Rules = append(filterExpr.Rules,
+			tools.ExpressionOr(
+				tools.RuleIn("account_id", accountIDs),
+				tools.RuleJSONContains("bk_biz_ids", bizID),
+			),
+		)
+	} else {
+		filterExpr.Rules = append(filterExpr.Rules, tools.RuleJSONContains("bk_biz_ids", bizID))
+	}
 
 	subAccounts := make([]cloudserver.PermRelateSubAccountInfo, 0)
 	listReq := &core.ListReq{Filter: filterExpr, Page: core.NewDefaultBasePage(), Fields: []string{"id", "cloud_id"}}
