@@ -278,12 +278,10 @@ func (a *ApplicationOfCreateSubAccount) saveSubAccountBasicInfo(cloudResult *hss
 		Managers:              a.req.Managers,
 		BkBizIDs:              types.Int64Array{a.BkBizID()},
 		PermissionTemplateIDs: a.req.PermissionTemplateIDs,
-		// 创建的三级账号为CurrentAccount类型,
-		AccountType: string(enumor.CurrentAccount),
-		Email:       converter.ValToPtr(a.req.Email),
-		PhoneNum:    converter.ValToPtr(a.req.PhoneNum),
-		Memo:        a.req.Memo,
-		Extension:   extBytes,
+		Email:                 converter.ValToPtr(a.req.Email),
+		PhoneNum:              converter.ValToPtr(a.req.PhoneNum),
+		Memo:                  a.req.Memo,
+		Extension:             extBytes,
 	}
 
 	createResult, err := a.Client.DataService().Global.SubAccount.BatchCreate(

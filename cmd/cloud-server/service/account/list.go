@@ -554,6 +554,7 @@ func (a *accountSvc) fillAccountSubAccountCount(kt *kit.Kit, accounts []*proto.A
 		listReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("account_id", ids),
+				tools.RuleNotEqual("account_type", enumor.MainAccount),
 			),
 			Page: core.NewDefaultBasePage(),
 		}

@@ -327,7 +327,7 @@ func (a *ApplicationBaseSubAccount) ValidatePhoneNum(countryCode, phoneNum strin
 		return nil
 	}
 
-	// 前端请求的country code是不带country code的
+	// 前端请求的country code是不带+的
 	if !validator.ValidatePhoneWithCountryCode("+"+countryCode, phoneNum) {
 		return fmt.Errorf("invalid phone number with country code: %s%s", countryCode, phoneNum)
 	}
