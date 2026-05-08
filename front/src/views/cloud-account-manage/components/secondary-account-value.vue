@@ -18,9 +18,9 @@ const displayValue = computed(() => {
     // 每次从全局store中查询获取
     const account = secondaryAccountStore.allSecondaryAccountCacheList.get(`${id}@${resType.value}@${bizId.value}`);
     if (!account) {
-      return `${id} (--)`;
+      return `${account?.extension?.cloud_main_account_id} (--)`;
     }
-    return `${id} (${account.name})`;
+    return `${account?.extension?.cloud_main_account_id} (${account.name})`;
   });
   return names?.join?.(';') || '--';
 });
