@@ -19,6 +19,7 @@ import BusinessValue from '@/components/display-value/business-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
 import SecretActionDialog from '@/views/cloud-account-manage/cloud-secret/children/secret-action-dialog/index.vue';
 import type { ICloudSecretItem, SecretActionType } from '@/views/cloud-account-manage/cloud-secret/typings';
+import UserValue from '@/components/display-value/user-value.vue';
 
 const model = defineModel<boolean>();
 
@@ -116,10 +117,11 @@ const getMfaStatus = () => {
   return ext.login_flag === 'stoken' || ext.action_flag === 'stoken' ? '已绑定' : '未绑定';
 };
 
-const maskPhone = (phone?: string) => {
-  if (!phone) return '--';
-  if (phone.length < 7) return phone;
-  return `${phone.substring(0, 3)}****${phone.substring(phone.length - 4)}`;
+const formatPhone = (row: { phone_num: string; country_code: string }) => {
+  const { phone_num, country_code } = row;
+  if (!phone_num) return '--';
+  const codeStr = country_code ? `+${country_code}` : '';
+  return `${codeStr}${phone_num}`;
 };
 
 const handleCreateSecret = async () => {
@@ -260,7 +262,7 @@ const formatTime = (time?: string) => {
             </div>
             <div class="info-item">
               <span class="info-label">手机号：</span>
-              <span class="info-value">{{ maskPhone(rowData.phone_num) }}</span>
+              <span class="info-value">{{ formatPhone(rowData) }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">更新时间：</span>
@@ -268,7 +270,9 @@ const formatTime = (time?: string) => {
             </div>
             <div class="info-item">
               <span class="info-label">负责人：</span>
-              <span class="info-value">{{ rowData.managers?.join(', ') || '--' }}</span>
+              <span class="info-value">
+                <UserValue :value="rowData.managers" />
+              </span>
             </div>
             <div class="info-item">
               <span class="info-label">备注：</span>
@@ -329,6 +333,10 @@ const formatTime = (time?: string) => {
                   class="create-secret-btn"
                   @click="handleCreateSecret"
                   :disabled="!isProgramAccount || noPerm || rowData?.operable === false"
+                  v-bk-tooltips="{
+                    content: '仅编程账号允许新建密钥',
+                    disabled: isProgramAccount,
+                  }"
                 >
                   <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
                   新建密钥

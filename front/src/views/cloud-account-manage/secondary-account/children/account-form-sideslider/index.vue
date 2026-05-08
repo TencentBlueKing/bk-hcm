@@ -8,6 +8,8 @@ import { useSecondaryAccountStore, type ISecondaryAccountItem } from '@/store/cl
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useUserStore } from '@/store/user';
 import { SITE_TYPE } from '@/constants/account';
+import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -94,7 +96,7 @@ const fillEditData = () => {
     formData.value = {
       site: data.site || 'china',
       name: data.name || '',
-      cloud_main_account_id: data.id || '',
+      cloud_main_account_id: data.extension?.cloud_main_account_id || '',
       managers: data.managers || [],
       security_managers: data.security_managers || [],
       bk_biz_id: data.bk_biz_id,
@@ -179,7 +181,7 @@ const handleSubmit = async () => {
       emit('success', updatedData);
     } else {
       // 录入接口
-      await secondaryAccountStore.createSecondaryAccount(getBizsId(), {
+      const result = await secondaryAccountStore.createSecondaryAccount(getBizsId(), {
         vendor: 'tcloud',
         name: formData.value.name,
         managers: formData.value.managers,
@@ -196,10 +198,18 @@ const handleSubmit = async () => {
       Message({ theme: 'success', message: '录入申请已提交' });
       model.value = false;
       emit('success');
+      if (result?.id) {
+        routerAction.redirect({
+          name: MENU_SERVICE_TICKET_DETAILS,
+          query: {
+            id: result.id,
+            type: 'account',
+          },
+        });
+      }
     }
   } catch (error) {
     console.error('提交失败:', error);
-    Message({ theme: 'error', message: '提交失败，请重试' });
   } finally {
     submitLoading.value = false;
   }
@@ -212,7 +222,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <bk-sideslider v-model:is-show="model" :title="sidesliderTitle" :width="640" quick-close>
+  <bk-sideslider v-model:is-show="model" :title="sidesliderTitle" :width="640" quick-close render-directive="if">
     <template #default>
       <div class="account-form-container">
         <bk-form ref="formRef" :model="formData" :rules="formRules" form-type="vertical">

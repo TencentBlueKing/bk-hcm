@@ -9,7 +9,7 @@ export class TableColumn {
   })
   name: string;
 
-  @Column('number', {
+  @Column('string', {
     name: '关联二级账号数',
     index: 1,
     width: 140,

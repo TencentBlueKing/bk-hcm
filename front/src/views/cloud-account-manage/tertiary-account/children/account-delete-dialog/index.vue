@@ -5,6 +5,8 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useTertiaryAccountStore, type ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
 import { VendorEnum } from '@/common/constant';
 import { ACCOUNT_TYPE_OPTIONS } from '../../constants';
+import routerAction from '@/router/utils/action';
+import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const model = defineModel<boolean>();
 
@@ -35,10 +37,23 @@ const handleConfirm = async () => {
 
   isSubmitting.value = true;
   try {
-    await tertiaryAccountStore.deleteSubAccount(getBizsId(), currentVendor.value, [props.accountData.id]);
+    const result = await tertiaryAccountStore.deleteSubAccount(getBizsId(), currentVendor.value, [
+      props.accountData.id,
+    ]);
     Message({ theme: 'success', message: '删除申请提交成功' });
     handleClose();
     emit('success');
+    // 跳转到审批单页面
+    if (result?.ids?.length) {
+      if (result.ids.length === 1) {
+        routerAction.redirect({
+          name: MENU_SERVICE_TICKET_DETAILS,
+          query: { id: result.ids[0], type: 'account' },
+        });
+      } else {
+        routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'account' } });
+      }
+    }
   } catch (error) {
     console.error('删除三级账号失败:', error);
   } finally {

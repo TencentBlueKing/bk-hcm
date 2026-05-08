@@ -7,10 +7,10 @@ import { SECRET_STATUS_MAP } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../../typings';
 import SecretActionDialog from '../secret-action-dialog/index.vue';
-import ArrayValue from '@/components/display-value/array-value.vue';
 import DatetimeValue from '@/components/display-value/datetime-value.vue';
 import routeAction from '@/router/utils/action';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import UserValue from '@/components/display-value/user-value.vue';
 
 const model = defineModel<boolean>();
 
@@ -137,7 +137,7 @@ const handleActionSuccess = () => {
         <div class="detail-item">
           <span class="label">三级账号负责人：</span>
           <span class="value">
-            <ArrayValue :value="secretData?.sub_account_managers" :display="{ showOverflowTooltip: true }" />
+            <UserValue :value="secretData?.sub_account_managers" :display="{ showOverflowTooltip: true }" />
           </span>
         </div>
 
@@ -155,7 +155,7 @@ const handleActionSuccess = () => {
         <div class="detail-item">
           <span class="label">二级账号负责人：</span>
           <span class="value">
-            <ArrayValue :value="secretData?.account_managers || []" :display="{ showOverflowTooltip: true }" />
+            <UserValue :value="secretData?.account_managers || []" :display="{ showOverflowTooltip: true }" />
           </span>
         </div>
 

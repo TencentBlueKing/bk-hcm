@@ -41,7 +41,7 @@ export class TableColumn {
   })
   'extension.console_login': string;
 
-  @Column('array', {
+  @Column('user', {
     name: '负责人',
     index: 4,
     width: 120,
@@ -68,14 +68,14 @@ export class TableColumn {
   @Column('string', {
     name: '手机号',
     index: 7,
-    width: 120,
+    width: 140,
   })
   phone_num: string;
 
   @Column('string', {
     name: '权限模板数',
     index: 8,
-    width: 80,
+    width: 120,
     sort: true,
     meta: {
       search: {

@@ -2,7 +2,9 @@
 import { ref, inject, computed, type Ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import isEmail from 'validator/lib/isEmail';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useFormModify } from '@/composables/use-form-modify';
 import {
   useTertiaryAccountStore,
   type ISubAccountItem,
@@ -12,6 +14,8 @@ import { VendorEnum } from '@/common/constant';
 import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
+import routerAction from '@/router/utils/action';
+import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const model = defineModel<boolean>();
 
@@ -28,16 +32,17 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
-const formData = ref({
-  name: '',
-  managers: [] as string[],
-  bk_biz_id: undefined as number | undefined,
-  permission_template_ids: [] as string[],
-  phone_num: '',
-  country_code: '',
-  email: '',
-  memo: '',
-});
+// 表单修改检测 composable（内部管理 formData）
+const { formData, isModified, changedFields, initForm } = useFormModify<{
+  name: string;
+  managers: string[];
+  bk_biz_id: number | undefined;
+  permission_template_ids: string[];
+  phone_num: string;
+  country_code: string;
+  email: string;
+  memo: string;
+}>();
 
 // 使用 libphonenumber-js 解析手机号，自动识别国家区号
 const parsePhoneInput = (input: string): { countryCode: string; phoneNum: string } => {
@@ -53,21 +58,6 @@ const parsePhoneInput = (input: string): { countryCode: string; phoneNum: string
   return { countryCode: '', phoneNum: trimmed };
 };
 
-// 组合 country_code + phone_num 用于显示
-const phoneDisplay = computed({
-  get: () => {
-    const code = formData.value.country_code;
-    const num = formData.value.phone_num;
-    if (!num) return '';
-    return code ? `+${code}${num}` : num;
-  },
-  set: (val: string) => {
-    const { countryCode, phoneNum } = parsePhoneInput(val);
-    formData.value.country_code = countryCode;
-    formData.value.phone_num = phoneNum;
-  },
-});
-
 const isSubmitting = ref(false);
 
 const isTcloud = computed(() => currentVendor.value === VendorEnum.TCLOUD);
@@ -77,22 +67,44 @@ const formRules = {
   managers: [{ required: true, message: '请选择负责人', trigger: 'change', type: 'array' }],
   bk_biz_id: [{ required: true, message: '请选择所属业务', trigger: 'change' }],
   permission_template_ids: [{ required: true, message: '请选择权限模板', trigger: 'change', type: 'array' }],
+  phone_num: [
+    {
+      validator: (value: string) => {
+        if (!changedFields.value?.phone_num) return true;
+        if (!value || !value.trim()) return true;
+        const phoneNumber = parsePhoneNumberFromString(value.trim());
+        return phoneNumber?.isValid() || '手机号格式不正确';
+      },
+      trigger: 'change',
+    },
+  ],
+  email: [
+    {
+      validator: (value: string) => {
+        if (!changedFields.value?.email) return true;
+        if (!value || !value.trim()) return true;
+        return isEmail(value.trim()) || '邮箱格式不正确';
+      },
+      trigger: 'change',
+    },
+  ],
 };
 
 watch(
   () => model.value,
   (val) => {
     if (val && props.accountData) {
-      formData.value = {
+      const { phone_num, country_code } = props.accountData;
+      initForm({
         name: props.accountData.name || '',
         managers: [...(props.accountData.managers || [])],
         bk_biz_id: props.accountData.bk_biz_ids?.[0] ?? undefined,
         permission_template_ids: props.accountData.permission_template_ids || [],
-        phone_num: props.accountData.phone_num || '',
+        phone_num: country_code ? `+${country_code}${phone_num}` : phone_num,
         country_code: props.accountData.country_code || '',
         email: props.accountData.email || '',
         memo: props.accountData.memo || '',
-      };
+      });
     }
   },
 );
@@ -110,25 +122,39 @@ const handleSubmit = async () => {
     return;
   }
 
+  // 只提交被修改的字段
+  const { countryCode, phoneNum } = parsePhoneInput(formData.value!.phone_num);
+  const changed = changedFields.value;
+  const options: Partial<ISubAccountUpdateParams> = {};
+  if (changed.phone_num) {
+    options.phone_num = phoneNum || undefined;
+    options.country_code = countryCode || undefined;
+  }
   const subAccounts: ISubAccountUpdateParams[] = [
     {
-      id: props.accountData.id,
-      email: formData.value.email || undefined,
-      phone_num: formData.value.phone_num || undefined,
-      permission_template_ids: formData.value.permission_template_ids,
-      bk_biz_id: formData.value.bk_biz_id,
-      country_code: formData.value.country_code,
-      managers: formData.value.managers,
-      memo: formData.value.memo || undefined,
-    },
+      id: props.accountData!.id,
+      ...changed,
+      ...options,
+    } as ISubAccountUpdateParams,
   ];
 
   isSubmitting.value = true;
   try {
-    await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
+    const result = await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
     Message({ theme: 'success', message: '更新申请提交成功' });
     handleClose();
     emit('success');
+    // 跳转到审批单页面
+    if (result?.ids?.length) {
+      if (result.ids.length === 1) {
+        routerAction.redirect({
+          name: MENU_SERVICE_TICKET_DETAILS,
+          query: { id: result.ids[0], type: 'account' },
+        });
+      } else {
+        routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'account' } });
+      }
+    }
   } catch (error) {
     console.error('更新三级账号失败:', error);
   } finally {
@@ -138,7 +164,7 @@ const handleSubmit = async () => {
 
 const parentAccountDisplay = () => {
   if (!props.accountData) return '--';
-  return `${props.accountData.account_id || '--'}`;
+  return `${props.accountData?.extension.cloud_main_account_id || '--'}`;
 };
 
 const permissionTemplateStore = usePermissionTemplateStore();
@@ -159,7 +185,7 @@ const listGenerator = computed(() =>
     <template #default>
       <div v-if="accountData" class="edit-form">
         <bk-form ref="formRef" form-type="vertical" :model="formData" :rules="formRules">
-          <bk-form-item label="所属二级账号" required>
+          <bk-form-item label="所属二级账号ID" required>
             <bk-input :model-value="parentAccountDisplay()" disabled />
           </bk-form-item>
 
@@ -193,12 +219,13 @@ const listGenerator = computed(() =>
 
           <bk-form-item
             label="手机号"
+            property="phone_num"
             description='填写"+地域代码号码"，如+8613212345678。+86是地区代码 13212345678是电话号码'
           >
-            <bk-input v-model="phoneDisplay" placeholder="请输入手机号" />
+            <bk-input v-model="formData.phone_num" placeholder="请输入手机号" />
           </bk-form-item>
 
-          <bk-form-item label="账号邮箱">
+          <bk-form-item label="账号邮箱" property="email">
             <bk-input v-model="formData.email" placeholder="请输入邮箱" />
           </bk-form-item>
 
@@ -210,7 +237,9 @@ const listGenerator = computed(() =>
     </template>
     <template #footer>
       <div class="sideslider-footer">
-        <bk-button theme="primary" :loading="isSubmitting" @click="handleSubmit">提交</bk-button>
+        <bk-button theme="primary" :loading="isSubmitting" :disabled="!isModified" @click="handleSubmit">
+          提交
+        </bk-button>
         <bk-button @click="handleClose">取消</bk-button>
       </div>
     </template>
