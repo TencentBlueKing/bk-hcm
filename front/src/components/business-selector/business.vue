@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue';
+import { computed, ref, useAttrs, useSlots, watchEffect } from 'vue';
 import { useBusinessGlobalStore, type IBusinessItem } from '@/store/business-global';
 import { isEmpty } from '@/common/util';
+import { SelectColumn } from '@blueking/ediatable';
+import type { DisplayType } from '@/components/form/typings';
 
 export type BusinessScopeType = 'full' | 'auth';
 
@@ -20,6 +22,7 @@ export interface IBusinessSelectorProps {
   data?: IBusinessItem[];
   optionDisabled?: (item: IBusinessItem) => boolean;
   tagClearable?: boolean;
+  display?: DisplayType;
 }
 
 const model = defineModel<number | number[]>();
@@ -51,14 +54,22 @@ watchEffect(async () => {
     loading.value = false;
   } else if (props.scope === 'full') {
     // businessFullList在preload时已获取，这里直接使用，如之后有不使用缓存数据需要则另处理
-    list.value = businessGlobalStore.businessFullList;
+    list.value = businessGlobalStore.businessFullList.map((item) => ({
+      ...item,
+      disabled: props.optionDisabled?.(item) === true,
+    }));
     loading.value = businessGlobalStore.businessFullListLoading;
   } else if (props.scope === 'auth') {
     // businessAuthorizedList在preload时已获取
-    list.value = businessGlobalStore.businessAuthorizedList;
+    list.value = businessGlobalStore.businessAuthorizedList.map((item) => ({
+      ...item,
+      disabled: props.optionDisabled?.(item) === true,
+    }));
     loading.value = businessGlobalStore.businessAuthorizedListLoading;
   }
 });
+
+const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));
 
 const localModel = computed({
   get() {
@@ -78,12 +89,26 @@ const localModel = computed({
 const handleChange = (val: number | number[]) => {
   emit('change', val);
 };
+
+const attrs = useAttrs();
+const slots = useSlots();
+const selectColumnRef = ref();
+
+defineExpose({
+  getValue() {
+    if (selectColumnRef.value?.getValue) {
+      return selectColumnRef.value.getValue().then(() => model.value);
+    }
+    return model.value;
+  },
+});
 </script>
 
 <template>
-  <bk-select
-    :class="{ 'hide-tag-close': !tagClearable }"
-    v-model="localModel"
+  <component
+    :is="comp"
+    v-model="(localModel as any)"
+    ref="selectColumnRef"
     :disabled="disabled"
     :multiple="multiple"
     :filterable="filterable"
@@ -94,20 +119,17 @@ const handleChange = (val: number | number[]) => {
     :all-option-id="allOptionId"
     :show-select-all="showSelectAll"
     :multiple-mode="multipleMode ? multipleMode : multiple ? 'tag' : 'default'"
+    :class="{ 'hide-tag-close': !tagClearable }"
+    :list="list"
+    id-key="id"
+    display-key="name"
+    v-bind="attrs"
     @change="handleChange"
   >
-    <!-- fix “全部”回显 -->
-    <template #tag v-if="showAll && (localModel as number[])?.[0] === allOptionId">
-      <span class="all-option-name">全部</span>
+    <template v-for="(slotFn, slotName) in slots" :key="slotName" #[slotName]="slotProps">
+      <component :is="slotFn" v-if="slotFn" v-bind="slotProps" />
     </template>
-    <bk-option
-      v-for="item in list"
-      :key="item.id"
-      :value="item.id"
-      :label="item.name"
-      :disabled="optionDisabled?.(item) === true"
-    />
-  </bk-select>
+  </component>
 </template>
 
 <style lang="scss" scoped>

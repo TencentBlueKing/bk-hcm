@@ -138,7 +138,7 @@ const handleSubmit = async () => {
 
 const parentAccountDisplay = () => {
   if (!props.accountData) return '--';
-  return `${props.accountData.account_id || '--'}`;
+  return `${props.accountData?.extension.cloud_main_account_id || '--'}`;
 };
 
 const permissionTemplateStore = usePermissionTemplateStore();
@@ -159,7 +159,7 @@ const listGenerator = computed(() =>
     <template #default>
       <div v-if="accountData" class="edit-form">
         <bk-form ref="formRef" form-type="vertical" :model="formData" :rules="formRules">
-          <bk-form-item label="所属二级账号" required>
+          <bk-form-item label="所属二级账号ID" required>
             <bk-input :model-value="parentAccountDisplay()" disabled />
           </bk-form-item>
 

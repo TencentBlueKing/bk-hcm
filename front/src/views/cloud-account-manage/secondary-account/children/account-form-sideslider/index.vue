@@ -94,7 +94,7 @@ const fillEditData = () => {
     formData.value = {
       site: data.site || 'china',
       name: data.name || '',
-      cloud_main_account_id: data.id || '',
+      cloud_main_account_id: data.extension?.cloud_main_account_id || '',
       managers: data.managers || [],
       security_managers: data.security_managers || [],
       bk_biz_id: data.bk_biz_id,
@@ -212,7 +212,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <bk-sideslider v-model:is-show="model" :title="sidesliderTitle" :width="640" quick-close>
+  <bk-sideslider v-model:is-show="model" :title="sidesliderTitle" :width="640" quick-close render-directive="if">
     <template #default>
       <div class="account-form-container">
         <bk-form ref="formRef" :model="formData" :rules="formRules" form-type="vertical">

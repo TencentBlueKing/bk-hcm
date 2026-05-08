@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, inject, computed, h, type Ref, type ComponentPublicInstance, watch, nextTick } from 'vue';
-import { Message, Select } from 'bkui-vue';
-import { Ediatable, TextPlainColumn, SelectColumn } from '@blueking/ediatable';
+import { Message } from 'bkui-vue';
+import { Ediatable, TextPlainColumn } from '@blueking/ediatable';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useAccountStore } from '@/store';
 import {
   useTertiaryAccountStore,
   type ISubAccountItem,
@@ -13,6 +12,7 @@ import { useAccountSelectorStore } from '@/store/account-selector';
 import { VendorEnum } from '@/common/constant';
 import OperationColumn from '@/components/ediatable/operation-column.vue';
 import UserSelector from '@/components/user-selector/index.vue';
+import BusinessSelector from '@/components/business-selector/business.vue';
 
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 
@@ -27,25 +27,17 @@ const emit = defineEmits<{
 }>();
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
-const accountStore = useAccountStore();
 const tertiaryAccountStore = useTertiaryAccountStore();
 const accountSelectorStore = useAccountSelectorStore();
 const { getBizsId } = useWhereAmI();
 
-interface IBatchRow {
-  id: string;
-  cloud_id: string;
-  name: string;
-  account_id: string;
+interface IBatchRow extends ISubAccountItem {
   account_name: string;
-  managers: string[];
-  bk_biz_ids: string | number | string[];
 }
 
 const batchData = ref<IBatchRow[]>([]);
 const isSubmitting = ref(false);
 const isReady = ref(false);
-const bizList = ref<{ value: string; label: string }[]>([]);
 const managerRefs = ref<Record<number, ComponentPublicInstance & { getValue: () => Promise<any> }>>({});
 const bizRefs = ref<Record<number, ComponentPublicInstance & { getValue: () => Promise<any> }>>({});
 
@@ -55,29 +47,20 @@ watch(
     if (val) {
       isReady.value = false;
       batchData.value = props.selectedRows.map((row) => ({
-        id: row.id,
-        cloud_id: row.cloud_id,
-        name: row.name,
-        account_id: row.account_id,
+        ...row,
         account_name: '',
         managers: [...(row.managers || [])],
-        bk_biz_ids: (row.bk_biz_ids || []).map((id) => String(id)),
       }));
-      // 并行请求业务列表和云账号列表（用于获取二级账号名称）
-      const [bizRes, accountList] = await Promise.all([
-        accountStore.getBizList(),
-        accountSelectorStore.getBusinessAccountList({ bizId: getBizsId(), account_type: 'resource' }),
-      ]);
-      bizList.value = (bizRes?.data || []).map((item: { id: number; name: string }) => ({
-        value: String(item.id),
-        label: item.name,
-      }));
-      // 构建 account_id -> name 的映射，回填二级账号名称
+      // 请求云账号列表（用于获取二级账号名称）
+      const accountList = await accountSelectorStore.getBusinessAccountList({
+        bizId: getBizsId(),
+        account_type: 'resource',
+      });
+      // 回填二级账号名称
       if (accountList?.length) {
-        const nameMap = new Map<string, string>();
-        accountList.forEach((item: { id: string; name: string }) => nameMap.set(item.id, item.name));
         batchData.value.forEach((row) => {
-          row.account_name = nameMap.get(row.account_id) || '';
+          const account = accountList.find((item: { id: string; name: string }) => item.id === row.account_id);
+          row.account_name = account?.name || '';
         });
       }
       await nextTick();
@@ -115,7 +98,7 @@ const handleSubmit = async () => {
     return {
       id: row.id,
       managers: row.managers,
-      bk_biz_id: bizId !== undefined && bizId !== '' ? Number(bizId) : undefined,
+      bk_biz_id: bizId,
     };
   });
 
@@ -142,10 +125,10 @@ const handleBatchUpdateManagers = async (val: string | string[]) => {
   Object.values(managerRefs.value).forEach((r) => r?.getValue?.());
 };
 
-const handleBatchUpdateBiz = async (val: string) => {
+const handleBatchUpdateBiz = async (val: number) => {
   if (!val) return;
   batchData.value.forEach((row) => {
-    row.bk_biz_ids = [String(val)];
+    row.bk_biz_ids = [val];
   });
   await nextTick();
   Object.values(bizRefs.value).forEach((r) => r?.getValue?.());
@@ -184,21 +167,13 @@ const headList = computed(() => [
         BatchUpdatePopConfirm,
         { title: '业务', onUpdateValue: handleBatchUpdateBiz },
         {
-          content: ({ value, updateValue }: { value: string; updateValue: (v: string) => void }) =>
-            h(
-              Select,
-              {
-                modelValue: value || '',
-                'onUpdate:modelValue': updateValue,
-                filterable: true,
-                placeholder: '请选择业务',
-                popoverOptions: { boundary: 'parent' },
-              },
-              () =>
-                bizList.value.map((item) =>
-                  h(Select.Option, { key: item.value, value: item.value, label: item.label }),
-                ),
-            ),
+          content: ({ value, updateValue }: { value: any; updateValue: (v: any) => void }) =>
+            h(BusinessSelector, {
+              modelValue: value || '',
+              'onUpdate:modelValue': updateValue,
+              filterable: true,
+              placeholder: '请选择业务',
+            }),
         },
       ),
   },
@@ -233,7 +208,7 @@ const headList = computed(() => [
                   <TextPlainColumn :data="row.name" />
                 </td>
                 <td>
-                  <TextPlainColumn :data="row.account_id" />
+                  <TextPlainColumn :data="row?.extension?.cloud_main_account_id" />
                 </td>
                 <td>
                   <TextPlainColumn :data="row.account_name" />
@@ -249,12 +224,11 @@ const headList = computed(() => [
                   />
                 </td>
                 <td>
-                  <SelectColumn
+                  <hcm-form-business
                     v-model="row.bk_biz_ids"
                     :ref="(el: any) => (bizRefs[index] = el)"
-                    :list="bizList"
-                    filterable
                     :rules="[{ validator: (v: any) => Boolean(v?.length), message: '请选择业务' }]"
+                    :display="{ on: 'cell' }"
                   />
                 </td>
                 <OperationColumn

@@ -2,6 +2,8 @@
 import { computed, useAttrs } from 'vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 import { type IBusinessItem } from '@/store/business-global';
+import { DisplayType } from './typings';
+import type { Rules } from '@blueking/ediatable';
 
 defineOptions({ name: 'hcm-form-business' });
 
@@ -14,6 +16,8 @@ const props = withDefaults(
     filterable?: boolean;
     collapseTags?: boolean;
     optionDisabled?: (item: IBusinessItem) => boolean;
+    display?: DisplayType;
+    rules?: Rules;
   }>(),
   {
     multiple: false,
@@ -52,6 +56,8 @@ const attrs = useAttrs();
     :collapse-tags="collapseTags"
     :option-disabled="optionDisabled"
     @change="handleChange"
+    :display="display"
+    :rules="rules"
     v-bind="attrs"
   />
 </template>
