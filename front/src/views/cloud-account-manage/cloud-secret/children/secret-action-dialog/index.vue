@@ -5,6 +5,8 @@ import { useCloudSecretStore } from '@/store/cloud-account-manage/cloud-secret';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { SECRET_ACTION_CONFIG } from '../../constants';
 import type { ICloudSecretItem, SecretActionType } from '../../typings';
+import routerAction from '@/router/utils/action';
+import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const model = defineModel<boolean>();
 
@@ -49,13 +51,14 @@ const handleConfirm = async () => {
 
   try {
     const bkBizId = getBizsId();
+    let result: { ids: string[] } | null = null;
 
     if (props.actionType === 'delete') {
-      await cloudSecretStore.deleteSubAccountSecret(bkBizId, props.vendor, [props.secretData.id]);
+      result = await cloudSecretStore.deleteSubAccountSecret(bkBizId, props.vendor, [props.secretData.id]);
       Message({ theme: 'success', message: '删除密钥申请已提交' });
     } else {
       const newStatus = props.actionType === 'enable' ? 'enabled' : 'disabled';
-      await cloudSecretStore.updateSubAccountSecretStatus(bkBizId, props.vendor, [
+      result = await cloudSecretStore.updateSubAccountSecretStatus(bkBizId, props.vendor, [
         {
           id: props.secretData.id,
           status: newStatus,
@@ -66,6 +69,18 @@ const handleConfirm = async () => {
 
     model.value = false;
     emit('success');
+
+    // 跳转到审批单页面
+    if (result?.ids?.length) {
+      if (result.ids.length === 1) {
+        routerAction.redirect({
+          name: MENU_SERVICE_TICKET_DETAILS,
+          query: { id: result.ids[0], type: 'account' },
+        });
+      } else {
+        routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'account' } });
+      }
+    }
   } catch (error) {
     console.error('操作失败:', error);
     Message({ theme: 'error', message: '操作失败，请稍后重试' });

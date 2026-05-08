@@ -15,6 +15,8 @@ import UserSelector from '@/components/user-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
+import routerAction from '@/router/utils/action';
+import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const model = defineModel<boolean>();
 
@@ -104,10 +106,21 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true;
   try {
-    await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
+    const result = await tertiaryAccountStore.updateSubAccount(getBizsId(), currentVendor.value, subAccounts);
     Message({ theme: 'success', message: '批量更新申请提交成功' });
     handleClose();
     emit('success');
+    // 跳转到审批单页面
+    if (result?.ids?.length) {
+      if (result.ids.length === 1) {
+        routerAction.redirect({
+          name: MENU_SERVICE_TICKET_DETAILS,
+          query: { id: result.ids[0], type: 'account' },
+        });
+      } else {
+        routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'account' } });
+      }
+    }
   } catch (error) {
     console.error('批量更新失败:', error);
   } finally {
@@ -220,7 +233,7 @@ const headList = computed(() => [
                     :display="{ on: 'cell' }"
                     :clearable="false"
                     :rules="[{ validator: (v: any) => Boolean(v?.length), message: '负责人不能为空' }]"
-                    placeholder="请输入"
+                    placeholder="请选择"
                   />
                 </td>
                 <td>

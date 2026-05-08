@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, h } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message, InfoBox } from 'bkui-vue';
 import { Share } from 'bkui-vue/lib/icon';
@@ -18,6 +18,7 @@ import {
   AUTH_BIZ_DELETE_SECONDARY_ACCOUNT,
 } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store/account';
+import { VendorMap } from '@/common/constant';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -102,22 +103,13 @@ watch([model, () => props.rowData], ([isShow, rowData]) => {
   }
 });
 
-// 云厂商枚举选项
-const vendorOptions: Record<string, string> = {
-  tcloud: '腾讯云',
-  aws: 'AWS',
-  azure: 'Azure',
-  gcp: 'GCP',
-  huawei: '华为云',
-};
-
 // 基本信息字段配置
 const baseInfoFields = computed<Array<{ label: string; value: any; property: ModelProperty; display?: DisplayType }>>(
   () => [
     {
       label: '云厂商',
       value: currentRowData.value?.vendor,
-      property: { id: 'vendor', name: '云厂商', type: 'enum', option: vendorOptions },
+      property: { id: 'vendor', name: '云厂商', type: 'enum', option: VendorMap },
     },
     {
       label: '管理业务',
@@ -273,10 +265,97 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
     emit('update:rowData', updatedData);
   }
 };
+
+// 同步账号功能
+const handleSyncAccount = () => {
+  if (!currentRowData.value) {
+    Message({ theme: 'warning', message: '暂无账号信息' });
+    return;
+  }
+
+  const accountName = currentRowData.value.name || currentRowData.value.extension?.cloud_main_account_id || '';
+  const SyncContent = () =>
+    h('div', { class: 'sync-info-content' }, [
+      h('p', { class: 'sync-info-title' }, `即将同步账号：${accountName}`),
+      h('p', { class: 'sync-info-subtitle' }, '同步信息包含：'),
+      h('ul', { class: 'sync-info-list' }, [
+        h('li', '二级账号本身的信息（邮箱、保护状态、MFA等）'),
+        h('li', '二级账号下的三级账号'),
+        h('li', '二级账号下的权限模板'),
+      ]),
+      h('p', { class: 'sync-info-tip' }, '同步操作可能需要几分钟，请耐心等待'),
+    ]);
+
+  InfoBox({
+    title: '确定同步该二级账号信息',
+    type: 'warning',
+    subTitle: SyncContent,
+    width: 480,
+    contentAlign: 'left',
+    confirmText: '确定',
+    cancelText: '取消',
+    beforeClose: (action: string) =>
+      new Promise(async (resolve) => {
+        if (action === 'confirm') {
+          const loadingBox = InfoBox({
+            type: 'loading',
+            title: '同步二级账号信息中...',
+            subTitle: '请耐心等待',
+            width: 400,
+            closeIcon: false,
+            showMask: true,
+            quickClose: false,
+            escClose: false,
+            confirmText: '',
+            cancelText: '关闭',
+          });
+
+          try {
+            const bkBizId = getBizsId();
+            const { vendor } = currentRowData.value!;
+            const accountIds = [currentRowData.value!.id];
+
+            const results = await secondaryAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
+            loadingBox.hide();
+
+            if (results.failed.length === 0) {
+              Message({ theme: 'success', message: '账号同步成功' });
+            }
+
+            // 重新拉取详情以刷新数据
+            const detail = await secondaryAccountStore.getSecondaryAccountDetail(getBizsId(), currentRowData.value!.id);
+            if (detail) {
+              currentRowData.value = { ...detail };
+              emit('update:rowData', detail);
+              emit('update-success');
+            }
+            resolve(true);
+          } catch (error) {
+            console.error('同步失败:', error);
+            loadingBox.hide();
+            Message({ theme: 'error', message: '账号同步失败，请稍后重试' });
+            resolve(true);
+          }
+        }
+        if (action === 'cancel') {
+          resolve(true);
+        }
+      }),
+  });
+};
 </script>
 
 <template>
   <bk-sideslider v-model:is-show="model" title="二级账号详情" :width="960" quick-close background-color="#f5f7fa">
+    <template #header>
+      <div class="detail-header">
+        <span class="title">二级账号详情</span>
+        <div class="header-actions">
+          <bk-button @click="handleSyncAccount">同步</bk-button>
+        </div>
+      </div>
+    </template>
+
     <div class="account-detail-container">
       <!-- 基本信息 -->
       <bk-card class="info-card" :border="false" :disable-header-style="true">
@@ -543,6 +622,60 @@ const handleAccountFormSuccess = (updatedData?: ISecondaryAccountItem) => {
 
   .mr8 {
     margin-right: 8px;
+  }
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-right: 16px;
+
+  .title {
+    font-size: 16px;
+    color: #313238;
+  }
+}
+</style>
+
+<style lang="scss">
+.sync-info-content {
+  text-align: left;
+  padding: 12px 16px;
+  background-color: rgb(245 247 250);
+
+  .sync-info-title {
+    font-size: 12px;
+    color: #313238;
+    line-height: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .sync-info-subtitle {
+    font-size: 12px;
+    color: #4d4f56;
+    line-height: 20px;
+    font-weight: 700;
+  }
+
+  .sync-info-list {
+    margin: 0;
+    padding-left: 22px;
+
+    li {
+      font-size: 12px;
+      color: #4d4f56;
+      line-height: 20px;
+      list-style-type: disc;
+    }
+  }
+
+  .sync-info-tip {
+    font-size: 12px;
+    margin-top: 22px;
+    line-height: 20px;
   }
 }
 </style>

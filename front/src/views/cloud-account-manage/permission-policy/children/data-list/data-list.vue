@@ -15,8 +15,8 @@ import {
 import type { IPermissionPolicyItem } from '../../typings';
 import { getAuthSignByBusinessId } from '@/utils';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
-import router from '@/router';
-import { useRoute } from 'vue-router';
+import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
+import routeAction from '@/router/utils/action';
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -40,7 +40,6 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 const { isBusinessPage, getBizsId } = useWhereAmI();
-const route = useRoute();
 
 const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
@@ -60,14 +59,10 @@ const handleEditAccount = (row: IPermissionPolicyItem) => {
 };
 
 // 跳转二级账号详情（新开标签页）
-const handleGoToAccount = (id: string) => {
-  router.push({
+const handleGoToAccount = (item: LinkPopoverItem) => {
+  routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
-    query: {
-      ...route.query,
-      type: 'secondary-account',
-      id,
-    },
+    query: { type: 'secondary-account', id: item.id },
   });
 };
 
@@ -88,8 +83,10 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   return null;
 };
 
-// 判断列是否为关联二级账号数
-const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'associated_account_count';
+const getAccountLoadFn = (row: IPermissionPolicyItem) => async (): Promise<LinkPopoverItem[]> => {
+  // TODO: 等接口提供云id
+  return row.related_accounts.map((id) => ({ id, label: id }));
+};
 </script>
 
 <template>
@@ -120,28 +117,19 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
       >
         <template #default="{ row }">
           <!-- 关联二级账号数 - hover 弹出账号列表 -->
-          <template v-if="isRelatedAccountColumn(column)">
-            <bk-popover
-              v-if="row.associated_account_count > 0"
-              theme="light"
-              trigger="hover"
-              placement="right"
-              :popover-delay="[200, 150]"
-              :max-height="240"
-              :arrow="true"
-              ext-cls="related-account-popover"
-            >
-              <span class="related-count-link">{{ row.associated_account_count ?? 0 }}</span>
-              <template #content>
-                <div class="related-account-list">
-                  <div v-for="account in row.related_accounts" :key="account" class="related-account-item">
-                    <span class="account-id">{{ account }}</span>
-                    <i class="hcm-icon bkhcm-icon-jump-fill account-link-icon" @click="handleGoToAccount(account)" />
-                  </div>
-                </div>
-              </template>
-            </bk-popover>
-            <span v-else class="related-count-zero">{{ row.associated_account_count ?? 0 }}</span>
+          <template v-if="column.id === 'associated_account_count'">
+            <display-value
+              :property="column"
+              :value="row.associated_account_count"
+              :display="{
+                appearance: 'link-popover',
+                appearanceProps: {
+                  loadFn: getAccountLoadFn(row),
+                  onLinkClick: handleGoToAccount,
+                  emptyText: '未查询到关联三级账号',
+                },
+              }"
+            />
           </template>
           <!-- 其他自定义渲染列 -->
           <template v-else-if="getColumnRender(column)">
@@ -188,54 +176,3 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
     </bk-table>
   </bk-loading>
 </template>
-
-<style lang="scss" scoped>
-.related-count-link {
-  color: #3a84ff;
-  cursor: pointer;
-}
-
-.related-count-zero {
-  color: #63656e;
-}
-</style>
-
-<style lang="scss">
-.related-account-popover {
-  padding: 8px !important;
-
-  .related-account-list {
-    max-height: 220px;
-    overflow-y: auto;
-
-    // padding: 4px 0;
-
-    .related-account-item {
-      display: flex;
-      align-items: center;
-      padding: 0 12px;
-      height: 36px;
-      line-height: 20px;
-      cursor: pointer;
-      transition: background-color 0.15s;
-
-      &:hover {
-        background-color: #f0f1f5;
-      }
-
-      .account-id {
-        font-size: 12px;
-        color: #4d4f56;
-        margin-right: 8px;
-      }
-
-      .account-link-icon {
-        font-size: 16px;
-        color: #3a84ff;
-        flex-shrink: 0;
-        font-weight: 400 !important;
-      }
-    }
-  }
-}
-</style>

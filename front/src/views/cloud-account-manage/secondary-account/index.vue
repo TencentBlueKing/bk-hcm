@@ -16,6 +16,7 @@ import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
 import AccountDetailSideslider from './children/account-detail-sideslider/index.vue';
 import AccountFormSideslider from './children/account-form-sideslider/index.vue';
+import AccountSyncSideslider from './children/account-sync-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
 
@@ -251,6 +252,9 @@ const handleReset = () => {
 };
 
 // 同步账号功能
+const showSyncSideslider = ref(false);
+const syncingAccounts = ref<ISecondaryAccountItem[]>([]);
+
 const handleSyncAccount = () => {
   const SyncContent = () =>
     h('div', { class: 'sync-info-content' }, [
@@ -271,68 +275,21 @@ const handleSyncAccount = () => {
     contentAlign: 'left',
     confirmText: '确定',
     cancelText: '取消',
-    beforeClose: (action: string) =>
-      new Promise(async (resolve) => {
-        if (action === 'confirm') {
-          const loadingBox = InfoBox({
-            type: 'loading',
-            title: '同步二级账号信息中...',
-            subTitle: '请耐心等待',
-            width: 400,
-            closeIcon: false,
-            showMask: true,
-            quickClose: false,
-            escClose: false,
-            confirmText: '',
-            cancelText: '',
-          });
-
-          try {
-            const bkBizId = getBizsId();
-            const vendor = currentVendor?.value || VendorEnum.TCLOUD;
-            const accountIds = tableData.value.map((item) => item.id);
-
-            if (accountIds.length === 0) {
-              loadingBox.hide();
-              Message({ theme: 'warning', message: '当前没有可同步的账号' });
-              resolve(true);
-              return;
-            }
-
-            const results = await secondaryAccountStore.syncSecondaryAccounts(bkBizId, vendor, accountIds);
-            loadingBox.hide();
-
-            if (results.failed.length === 0) {
-              Message({ theme: 'success', message: `同步完成，成功同步 ${results.success.length} 个账号` });
-            } else if (results.success.length === 0) {
-              Message({ theme: 'error', message: `同步失败，${results.failed.length} 个账号同步失败` });
-            } else {
-              Message({
-                theme: 'warning',
-                message: `部分同步完成：${results.success.length} 个成功，${results.failed.length} 个失败`,
-              });
-            }
-
-            const { query } = route;
-            const timestamp = Date.now();
-            window.history.replaceState(
-              null,
-              '',
-              `${route.path}?${new URLSearchParams({ ...query, _t: String(timestamp) } as any).toString()}`,
-            );
-            resolve(true);
-          } catch (error) {
-            console.error('同步失败:', error);
-            loadingBox.hide();
-            Message({ theme: 'error', message: '同步失败，请稍后重试' });
-            resolve(true);
-          }
-        }
-        if (action === 'cancel') {
-          resolve(true);
-        }
-      }),
+    onConfirm: () => {
+      const accounts = [...tableData.value];
+      if (accounts.length === 0) {
+        Message({ theme: 'warning', message: '当前没有可同步的账号' });
+        return;
+      }
+      syncingAccounts.value = accounts;
+      showSyncSideslider.value = true;
+    },
   });
+};
+
+const handleSyncFinished = () => {
+  syncingAccounts.value = [];
+  refreshList();
 };
 </script>
 
@@ -380,6 +337,15 @@ const handleSyncAccount = () => {
       :is-edit="isEditMode"
       :account-data="editingAccount"
       @success="handleAccountFormSuccess"
+    />
+
+    <!-- 同步账号侧滑 -->
+    <AccountSyncSideslider
+      v-model="showSyncSideslider"
+      :accounts="syncingAccounts"
+      :biz-id="getBizsId()"
+      :vendor="currentVendor"
+      @finished="handleSyncFinished"
     />
   </div>
 </template>
