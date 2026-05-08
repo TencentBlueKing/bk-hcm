@@ -37,7 +37,7 @@ export class TableColumn {
   })
   console_login: number;
 
-  @Column('array', {
+  @Column('user', {
     name: '三级账号负责人',
     index: 4,
     width: 120,
@@ -51,7 +51,7 @@ export class TableColumn {
   })
   cloud_main_account_id: string;
 
-  @Column('array', {
+  @Column('user', {
     name: '二级账号负责人',
     index: 6,
     width: 120,

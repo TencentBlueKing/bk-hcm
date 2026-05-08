@@ -41,7 +41,7 @@ export class TableColumn {
   })
   'extension.console_login': string;
 
-  @Column('array', {
+  @Column('user', {
     name: '负责人',
     index: 4,
     width: 120,

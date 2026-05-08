@@ -40,14 +40,14 @@ export class TableColumn {
   })
   site: string;
 
-  @Column('array', {
+  @Column('user', {
     name: '负责人',
     index: 4,
     width: 120,
   })
   managers: string[];
 
-  @Column('array', {
+  @Column('user', {
     name: '安全负责人',
     index: 5,
     width: 120,
