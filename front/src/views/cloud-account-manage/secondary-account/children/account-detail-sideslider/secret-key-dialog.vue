@@ -156,14 +156,14 @@ const handleCheckSecret = async () => {
     };
 
     Message({ theme: 'success', message: '密钥校验成功' });
-  } catch (error) {
+  } catch (error: any) {
     checkResult.value = {
       isChecked: true,
       isSuccess: false,
       cloudMainAccountId: '',
       cloudSubAccountId: '',
     };
-    Message({ theme: 'error', message: '密钥校验失败，请检查密钥信息' });
+    if (!error || !error?.message) Message({ theme: 'error', message: '密钥校验失败，请检查密钥信息' });
   }
 
   isChecking.value = false;
