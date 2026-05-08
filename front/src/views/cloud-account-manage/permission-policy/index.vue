@@ -7,7 +7,9 @@ import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import { transformSimpleCondition } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
 import { QueryFilterType, RulesItem } from '@/typings';
-import { usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
+import { usePermissionPolicyStore, type IApplyResultItem } from '@/store/cloud-account-manage/permission-policy';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_TICKET_MANAGEMENT, MENU_BUSINESS_TICKET_DETAILS } from '@/constants/menu-symbol';
 import Search from './children/search/search.vue';
 import DataList from './children/data-list/data-list.vue';
 import PolicyFormSideslider from './children/policy-form-sideslider/index.vue';
@@ -16,7 +18,7 @@ import ApplySideslider from './children/apply-sideslider/index.vue';
 import LogSideslider from './children/log-sideslider/index.vue';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
-import type { IAppliedReasonItem, IPermissionPolicyItem } from './typings';
+import type { IPermissionPolicyItem } from './typings';
 import { ApplyOperationType } from './typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import {
@@ -154,7 +156,7 @@ const showPolicyInfoSideslider = ref(false);
 const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
 
 // 应用日志相关
-const applyReason = ref<IAppliedReasonItem[]>([]);
+const applyReason = ref<IApplyResultItem[]>([]);
 const operationType = ref<ApplyOperationType>(ApplyOperationType.APPLY_NEW);
 
 const handleApplyToAccount = (row: IPermissionPolicyItem) => {
@@ -169,10 +171,22 @@ const handleViewDetails = (row: IPermissionPolicyItem) => {
 };
 
 // 应用成功回调
-const handleApplySuccess = (reason: IAppliedReasonItem[], type: ApplyOperationType) => {
+const handleApplySuccess = (data: IApplyResultItem[] | string[], type: ApplyOperationType) => {
+  if (isBusinessPage) {
+    const ticketIds = data as string[];
+    routerAction.redirect({
+      name: ticketIds?.length > 1 ? MENU_BUSINESS_TICKET_MANAGEMENT : MENU_BUSINESS_TICKET_DETAILS,
+      query: {
+        id: ticketIds?.length > 1 ? undefined : ticketIds[0],
+        type: 'account',
+        bizs: bizId.value,
+      },
+    });
+    return;
+  }
   refreshList();
   showLogSideslider.value = true;
-  applyReason.value = [...reason];
+  applyReason.value = [...(data as IApplyResultItem[])];
   operationType.value = type;
 };
 
@@ -244,6 +258,7 @@ const handleReset = () => {
 
       <!-- 数据列表 -->
       <DataList
+        v-bkloading="{ loading: permissionPolicyStore.permissionPolicyListLoading }"
         :columns="columns"
         :list="tableData"
         :pagination="pagination"

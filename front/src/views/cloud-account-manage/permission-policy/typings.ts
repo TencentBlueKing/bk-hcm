@@ -54,11 +54,3 @@ export interface IAppliedAccountItem {
   apply_status: PolicyApplyStatus; // 策略库应用状态
   apply_time: string; // 策略库应用时间
 }
-
-// 应用策略库到二级账号结果列表
-export interface IAppliedReasonItem {
-  account_id?: string; // 二级账号ID
-  permission_template_id?: string; // 权限模版账号ID
-  status: 'success' | 'failed';
-  reason?: string; // status是failed返回
-}

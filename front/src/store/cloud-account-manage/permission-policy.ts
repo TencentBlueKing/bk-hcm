@@ -1,9 +1,8 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import http from '@/http';
-import { IListResData, QueryRuleOPEnum, QueryBuilderType } from '@/typings';
+import { IListResData, QueryRuleOPEnum, QueryBuilderType, IAPIResData } from '@/typings';
 import rollRequest from '@blueking/roll-request';
-import { IAppliedReasonItem } from '@/views/cloud-account-manage/permission-policy/typings';
 import { resolveBizApiPath } from '@/utils/search';
 import { VendorEnum } from '@/common/constant';
 import { ListGeneratorFactory } from '@/components/form/list.vue';
@@ -60,6 +59,13 @@ export interface IOperationPermissionPolicyParams {
   policy_document: string;
   bk_biz_ids: number[];
   memo: string;
+}
+
+export interface IApplyResultItem {
+  account_id?: string; // 二级账号ID
+  permission_template_id?: string; // 权限模版账号ID
+  status: 'success' | 'failed';
+  reason?: string; // status是failed返回
 }
 
 export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
@@ -245,11 +251,11 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
    * @param id 策略库ID
    * @param accountIds 目标二级账号ID列表
    */
-  const createAppliedAccount = async (params: IAppliedParams): Promise<IAppliedReasonItem[]> => {
+  const createAppliedAccount = async (params: IAppliedParams) => {
     const { vendor, id, selectedIds: accountIds } = params;
     const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}/apply`;
     try {
-      const res = await http.post(api, {
+      const res: IAPIResData<{ results: IApplyResultItem[] }> = await http.post(api, {
         account_ids: accountIds,
       });
 
@@ -270,16 +276,16 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
    * @param id 策略库ID
    * @param accountIds 目标二级账号ID列表
    */
-  const createAppliedAccountBiz = async (params: IAppliedParams): Promise<IAppliedReasonItem[]> => {
+  const createAppliedAccountBiz = async (params: IAppliedParams) => {
     const { bizId, vendor, id, selectedIds: accountIds } = params;
     const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/applications/types/apply_permission_policy_library_create`;
     try {
-      const res = await http.post(api, {
+      const res: IAPIResData<{ ids: string[] }> = await http.post(api, {
         account_ids: accountIds,
         policy_library_id: id,
       });
 
-      const list = res?.data?.results || [];
+      const list = res?.data?.ids || [];
 
       return list;
     } catch (error) {
@@ -295,11 +301,11 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
    * @param id 策略库ID
    * @param templateIds 目前权限模板ID列表
    */
-  const updateAppliedAccount = async (params: IAppliedParams): Promise<IAppliedReasonItem[]> => {
+  const updateAppliedAccount = async (params: IAppliedParams) => {
     const { vendor, id, selectedIds: templateIds } = params;
     const api = `/api/v1/cloud/vendors/${vendor}/permission_policy_libraries/${id}/apply`;
     try {
-      const res = await http.post(api, {
+      const res: IAPIResData<{ results: IApplyResultItem[] }> = await http.put(api, {
         permission_template_ids: templateIds,
       });
 
@@ -320,16 +326,16 @@ export const usePermissionPolicyStore = defineStore('permissionPolicy', () => {
    * @param id 策略库ID
    * @param templateIds 目前权限模板ID列表
    */
-  const updateAppliedAccountBiz = async (params: IAppliedParams): Promise<IAppliedReasonItem[]> => {
+  const updateAppliedAccountBiz = async (params: IAppliedParams) => {
     const { bizId, vendor, id, selectedIds: templateIds } = params;
     const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/applications/types/apply_permission_policy_library_update`;
     try {
-      const res = await http.post(api, {
+      const res: IAPIResData<{ ids: string[] }> = await http.post(api, {
         permission_template_ids: templateIds,
         policy_library_id: id,
       });
 
-      const list = res?.data?.results || [];
+      const list = res?.data?.ids || [];
 
       return list;
     } catch (error) {

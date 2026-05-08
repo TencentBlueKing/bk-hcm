@@ -155,34 +155,36 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
       </bk-table-column>
       <bk-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <hcm-auth
-            :sign="
-              getAuthSignByBusinessId(
-                bizId,
-                AUTH_UPDATE_PERMISSION_POLICY_LIBRARY,
-                AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY,
-              )
-            "
-            v-slot="{ noPerm }"
-          >
-            <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)" v-if="!isBusinessPage">
-              编辑
-            </bk-button>
-          </hcm-auth>
-          <hcm-auth
-            :sign="
-              getAuthSignByBusinessId(
-                bizId,
-                AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
-                AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
-              )
-            "
-            v-slot="{ noPerm }"
-          >
-            <bk-button theme="primary" :disabled="noPerm" text @click="handleApplyToAccount(row)">
-              应用到二级账号
-            </bk-button>
-          </hcm-auth>
+          <div class="actions">
+            <hcm-auth
+              :sign="
+                getAuthSignByBusinessId(
+                  bizId,
+                  AUTH_UPDATE_PERMISSION_POLICY_LIBRARY,
+                  AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY,
+                )
+              "
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" text :disabled="noPerm" @click="handleEditAccount(row)" v-if="!isBusinessPage">
+                编辑
+              </bk-button>
+            </hcm-auth>
+            <hcm-auth
+              :sign="
+                getAuthSignByBusinessId(
+                  bizId,
+                  AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
+                  AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY,
+                )
+              "
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" :disabled="noPerm" text @click="handleApplyToAccount(row)">
+                应用到二级账号
+              </bk-button>
+            </hcm-auth>
+          </div>
         </template>
       </bk-table-column>
     </bk-table>
@@ -190,6 +192,11 @@ const isRelatedAccountColumn = (column: ModelPropertyColumn) => column.id === 'a
 </template>
 
 <style lang="scss" scoped>
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
 .related-count-link {
   color: #3a84ff;
   cursor: pointer;

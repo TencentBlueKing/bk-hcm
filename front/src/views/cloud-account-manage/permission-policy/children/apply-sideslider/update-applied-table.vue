@@ -123,8 +123,8 @@ defineExpose({
             <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
           </template>
         </bk-table-column>
-        <bk-table-column label="云上模版名称" prop="name" min-width="150" />
-        <bk-table-column label="云模版同步时间" prop="policy_library_sync_time" min-width="160">
+        <bk-table-column label="云上模板名称" prop="name" min-width="150" />
+        <bk-table-column label="云模板同步时间" prop="policy_library_sync_time" min-width="160">
           <template #default="{ row }">
             <display-value class="info-value" :property="{ type: 'datetime' }" :value="row.policy_library_sync_time" />
           </template>
@@ -151,7 +151,7 @@ defineExpose({
         </bk-table-column>
         <bk-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <bk-button theme="primary" text class="mr8" @click="handleModelInfo(row)">模版详情</bk-button>
+            <bk-button theme="primary" text class="mr8" @click="handleModelInfo(row)">模板详情</bk-button>
             <bk-button
               v-if="
                 row.apply_status === PolicyApplyStatus.PENDING || row.apply_status === PolicyApplyStatus.DATA_MISMATCH

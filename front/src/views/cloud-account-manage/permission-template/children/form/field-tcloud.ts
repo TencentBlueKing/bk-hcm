@@ -5,9 +5,10 @@ export class FieldTcloud {
   @Column('string', { apiOnly: true })
   id: string;
 
-  @Column('string', {
+  @Column('list', {
     name: '二级账号',
     required: true,
+    meta: { display: { props: { idKey: 'id', displayKey: 'name' } } },
   })
   account_id: string;
 

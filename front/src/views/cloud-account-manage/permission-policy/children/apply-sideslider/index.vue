@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch, inject, Ref } from 'vue';
 import { Plus, Transfer } from 'bkui-vue/lib/icon';
-import type { IAppliedReasonItem, IPermissionPolicyItem } from '../../typings';
-import { IPermissionAppliedItem, usePermissionPolicyStore } from '@/store/cloud-account-manage/permission-policy';
+import type { IPermissionPolicyItem } from '../../typings';
+import {
+  IApplyResultItem,
+  IPermissionAppliedItem,
+  usePermissionPolicyStore,
+} from '@/store/cloud-account-manage/permission-policy';
 import { ApplyOperationType } from '../../typings';
 import ApplyNewTable from './apply-new-table.vue';
 import UpdateAppliedTable from './update-applied-table.vue';
@@ -18,7 +22,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  success: [row: IAppliedReasonItem[], type: ApplyOperationType];
+  success: [row: IApplyResultItem[] | string[], type: ApplyOperationType];
 }>();
 
 const permissionPolicyStore = usePermissionPolicyStore();
@@ -121,23 +125,25 @@ const handleApply = async () => {
     type: 'loading',
     title: '策略应用正在提交中...',
     content: '应用过程中，请勿关闭本弹窗',
+    // 不显示footer
+    footer: () => undefined,
   });
   try {
-    const key = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
-    const _selected = getSelected.value.map((item: { [key: string]: string }) => item[key]);
-    const res: IAppliedReasonItem[] = [];
+    const dataKey = operationType.value === ApplyOperationType.APPLY_NEW ? 'account_id' : 'id';
+    const selectedIds = getSelected.value.map((item: { [key: string]: string }) => item[dataKey]);
+    const res = [];
     const max = 100; // 每次接口selected最大数目
 
-    while (_selected.length) {
+    while (selectedIds.length) {
       const list = await permissionPolicyStore[applyMethod.value]({
         ...applyParams.value,
-        selectedIds: _selected.splice(0, max),
+        selectedIds: selectedIds.splice(0, max),
       });
       res.push(...list);
     }
 
     model.value = false;
-    emit('success', res, operationType.value);
+    emit('success', res as IApplyResultItem[] | string[], operationType.value);
   } finally {
     tips.hide();
     submitLoading.value = false;

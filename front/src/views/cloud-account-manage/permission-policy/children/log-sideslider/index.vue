@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { ApplyOperationType, type IAppliedReasonItem } from '../../typings';
+import { ApplyOperationType } from '../../typings';
+import { type IApplyResultItem } from '@/store/cloud-account-manage/permission-policy';
 import usePage from '@/hooks/use-page';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 import { SecondaryAccountResourceTypeEnum } from '@/common/constant';
@@ -9,7 +10,7 @@ import { SecondaryAccountResourceTypeEnum } from '@/common/constant';
 const model = defineModel<boolean>();
 
 const props = defineProps<{
-  data: IAppliedReasonItem[];
+  data: IApplyResultItem[];
   type: ApplyOperationType;
   bizId: number;
 }>();
@@ -54,7 +55,7 @@ const handleCancel = () => {
           row-key="account_id"
           show-overflow-tooltip
         >
-          <bk-table-column :label="type === ApplyOperationType.APPLY_NEW ? '二级账号' : '权限模版ID'">
+          <bk-table-column :label="type === ApplyOperationType.APPLY_NEW ? '二级账号' : '权限模板ID'">
             <template #default="{ row }">
               <SecondaryAccountValue
                 v-if="type === ApplyOperationType.APPLY_NEW"

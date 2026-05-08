@@ -4,7 +4,10 @@ import { Form } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
 import { formatJSON } from '@/utils';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { QueryRuleOPEnum } from '@/typings';
 import { usePermissionPolicyStore, type IPermissionPolicyItem } from '@/store/cloud-account-manage/permission-policy';
+import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
+
 import type { FieldTcloud } from './field-tcloud';
 import { FieldFactory } from './field-factory';
 import type { ModelPropertyForm } from '@/model/typings';
@@ -17,6 +20,7 @@ const props = defineProps<{
 
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const permissionPolicyStore = usePermissionPolicyStore();
+const secondaryAccountStore = useSecondaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
 const fieldModel = computed(() => FieldFactory.createModel(currentVendor.value));
@@ -46,12 +50,19 @@ const policyLibraryListGenerator = computed(() =>
 );
 
 const getFormCompProps = (field: ModelPropertyForm) => {
-  const compProps = field.meta?.display?.props || {};
-  if ((field.id === 'account_id' || field.id === 'name') && props.isEdit) {
-    compProps.disabled = true;
+  const compProps = { ...(field.meta?.display?.props || {}) };
+  if (field.id === 'account_id') {
+    compProps.list = async () =>
+      await secondaryAccountStore.getSecondaryAccountFullList(getBizsId(), {
+        op: 'and',
+        rules: [{ field: 'vendor', op: QueryRuleOPEnum.EQ, value: currentVendor.value }],
+      });
   }
   if (field.id === 'policy_library_id') {
     compProps.listGenerator = policyLibraryListGenerator.value;
+  }
+  if ((field.id === 'account_id' || field.id === 'name') && props.isEdit) {
+    compProps.disabled = true;
   }
   return compProps;
 };

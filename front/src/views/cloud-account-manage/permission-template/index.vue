@@ -127,6 +127,7 @@ const handleCreateSubmit = async () => {
   const formData = createFormRef.value.getFormData();
   const { type, policy_document, ...postData } = formData;
   const result = await permissionTemplateStore.createPermissionTemplate(bizId.value, currentVendor.value, postData);
+  Message({ theme: 'success', message: '新建成功' });
   if (result.id) {
     routerAction.redirect({
       name: MENU_SERVICE_TICKET_DETAILS,
@@ -143,6 +144,7 @@ const handleEditSubmit = async () => {
   const formData = editFormRef.value.getFormData();
   const { type, policy_document, account_id, ...postData } = formData;
   const result = await permissionTemplateStore.updatePermissionTemplate(bizId.value, currentVendor.value, postData);
+  Message({ theme: 'success', message: '编辑成功' });
   if (result.id) {
     routerAction.redirect({
       name: MENU_SERVICE_TICKET_DETAILS,
@@ -295,11 +297,11 @@ const handleDeleteConfirm = async () => {
             <bk-button
               outline
               theme="primary"
-              :disabled="noPerm || getTypeData(detailsState.data).isCloudCustom"
+              :disabled="noPerm || !getTypeData(detailsState.data).isCloudCustom"
               @click="handleEdit(detailsState.data)"
               v-bk-tooltips="{
                 content: '仅云自定义模板可编辑',
-                disabled: !getTypeData(detailsState.data).isCloudCustom,
+                disabled: getTypeData(detailsState.data).isCloudCustom,
               }"
             >
               编辑
@@ -310,16 +312,16 @@ const handleDeleteConfirm = async () => {
               outline
               :disabled="
                 noPerm ||
-                getTypeData(detailsState.data).isCloudCustom ||
+                getTypeData(detailsState.data).isPolicySync ||
                 detailsState.data.associated_sub_account_count > 0
               "
               @click="handleDelete(detailsState.data)"
               v-bk-tooltips="{
-                content: getTypeData(detailsState.data).isCloudCustom
-                  ? '仅云自定义模板可删除'
+                content: getTypeData(detailsState.data).isPolicySync
+                  ? '与策略库同步不可删除'
                   : '有三级账号关联不可删除',
                 disabled: !(
-                  getTypeData(detailsState.data).isCloudCustom || detailsState.data.associated_sub_account_count > 0
+                  getTypeData(detailsState.data).isPolicySync || detailsState.data.associated_sub_account_count > 0
                 ),
               }"
             >

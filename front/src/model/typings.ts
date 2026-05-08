@@ -30,7 +30,8 @@ export type AppearanceType =
   | 'clb-status'
   | 'business-assign-tag'
   | 'dynamic-status'
-  | 'link-button';
+  | 'link-button'
+  | 'radio';
 
 export type ModelPropertyMeta = {
   display?: PropertyDisplayConfig;
