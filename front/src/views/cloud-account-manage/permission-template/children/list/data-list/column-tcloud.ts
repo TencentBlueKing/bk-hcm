@@ -21,7 +21,7 @@ export class TableColumnTcloud {
   @Column('string', { name: '所属二级账号ID' })
   cloud_account_id: string;
 
-  @Column('string', { name: '关联三级账号数', sort: true })
+  @Column('string', { name: '关联三级账号数', sort: true, width: 150 })
   associated_sub_account_count: number;
 
   @Column('string', { name: '模板描述' })
