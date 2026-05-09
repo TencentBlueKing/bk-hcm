@@ -129,11 +129,11 @@ const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
             <bk-button
               theme="primary"
               text
-              :disabled="noPerm || getTypeData(row).isPolicySync || row.associated_sub_account_count > 0"
+              :disabled="noPerm || getTypeData(row).isCloudPreset || row.associated_sub_account_count > 0"
               @click="emit('delete', row)"
               v-bk-tooltips="{
-                content: getTypeData(row).isPolicySync ? '与策略库同步不可删除' : '有三级账号关联不可删除',
-                disabled: !(getTypeData(row).isPolicySync || row.associated_sub_account_count > 0),
+                content: getTypeData(row).isCloudPreset ? '云系统预设不可删除' : '有三级账号关联不可删除',
+                disabled: !(getTypeData(row).isCloudPreset || row.associated_sub_account_count > 0),
               }"
             >
               删除

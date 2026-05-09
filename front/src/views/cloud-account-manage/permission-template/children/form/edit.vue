@@ -13,6 +13,12 @@ const formRef = useTemplateRef<typeof Form>('formRef');
 defineExpose({
   validate: () => formRef.value.validate(),
   getFormData: () => formRef.value.getFormData(),
+  get isChanged() {
+    return formRef.value?.isChanged;
+  },
+  get changedFormData() {
+    return formRef.value?.changedFormData;
+  },
 });
 </script>
 
@@ -32,6 +38,7 @@ defineExpose({
 .permission-template-edit {
   padding: 24px 24px 0;
 }
+
 .alert-info {
   margin-bottom: 16px;
 }

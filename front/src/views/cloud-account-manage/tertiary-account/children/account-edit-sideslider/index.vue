@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, inject, computed, type Ref, watch } from 'vue';
+import { ref, inject, computed, type Ref } from 'vue';
 import { Message } from 'bkui-vue';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import isEmail from 'validator/lib/isEmail';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useFormModify } from '@/composables/use-form-modify';
+import { useFormChange } from '@/hooks/use-form-change';
 import {
   useTertiaryAccountStore,
   type ISubAccountItem,
@@ -32,8 +32,23 @@ const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TC
 const tertiaryAccountStore = useTertiaryAccountStore();
 const { getBizsId } = useWhereAmI();
 
-// 表单修改检测 composable（内部管理 formData）
-const { formData, isModified, changedFields, initForm } = useFormModify<{
+const initialFormData = computed(() => {
+  if (!model.value || !props.accountData) return null;
+
+  const { phone_num, country_code } = props.accountData;
+  return {
+    name: props.accountData.name || '',
+    managers: [...(props.accountData.managers || [])],
+    bk_biz_id: props.accountData.bk_biz_ids?.[0] ?? undefined,
+    permission_template_ids: props.accountData.permission_template_ids || [],
+    phone_num: country_code ? `+${country_code}${phone_num}` : phone_num,
+    country_code: props.accountData.country_code || '',
+    email: props.accountData.email || '',
+    memo: props.accountData.memo || '',
+  };
+});
+
+const { formData, isChanged, changedFormData } = useFormChange<{
   name: string;
   managers: string[];
   bk_biz_id: number | undefined;
@@ -42,7 +57,7 @@ const { formData, isModified, changedFields, initForm } = useFormModify<{
   country_code: string;
   email: string;
   memo: string;
-}>();
+}>(initialFormData);
 
 // 使用 libphonenumber-js 解析手机号，自动识别国家区号
 const parsePhoneInput = (input: string): { countryCode: string; phoneNum: string } => {
@@ -70,7 +85,7 @@ const formRules = {
   phone_num: [
     {
       validator: (value: string) => {
-        if (!changedFields.value?.phone_num) return true;
+        if (!changedFormData.value?.phone_num) return true;
         if (!value || !value.trim()) return true;
         const phoneNumber = parsePhoneNumberFromString(value.trim());
         return phoneNumber?.isValid() || '手机号格式不正确';
@@ -81,7 +96,7 @@ const formRules = {
   email: [
     {
       validator: (value: string) => {
-        if (!changedFields.value?.email) return true;
+        if (!changedFormData.value?.email) return true;
         if (!value || !value.trim()) return true;
         return isEmail(value.trim()) || '邮箱格式不正确';
       },
@@ -89,25 +104,6 @@ const formRules = {
     },
   ],
 };
-
-watch(
-  () => model.value,
-  (val) => {
-    if (val && props.accountData) {
-      const { phone_num, country_code } = props.accountData;
-      initForm({
-        name: props.accountData.name || '',
-        managers: [...(props.accountData.managers || [])],
-        bk_biz_id: props.accountData.bk_biz_ids?.[0] ?? undefined,
-        permission_template_ids: props.accountData.permission_template_ids || [],
-        phone_num: country_code ? `+${country_code}${phone_num}` : phone_num,
-        country_code: props.accountData.country_code || '',
-        email: props.accountData.email || '',
-        memo: props.accountData.memo || '',
-      });
-    }
-  },
-);
 
 const handleClose = () => {
   model.value = false;
@@ -122,11 +118,10 @@ const handleSubmit = async () => {
     return;
   }
 
-  // 只提交被修改的字段
-  const { countryCode, phoneNum } = parsePhoneInput(formData.value!.phone_num);
-  const changed = changedFields.value;
+  const { countryCode, phoneNum } = parsePhoneInput(formData.value.phone_num);
+  const changed = changedFormData.value;
   const options: Partial<ISubAccountUpdateParams> = {};
-  if (changed.phone_num) {
+  if (Object.prototype.hasOwnProperty.call(changed, 'phone_num')) {
     options.phone_num = phoneNum || undefined;
     options.country_code = countryCode || undefined;
   }
@@ -164,13 +159,18 @@ const handleSubmit = async () => {
 
 const parentAccountDisplay = () => {
   if (!props.accountData) return '--';
-  return `${props.accountData?.extension.cloud_main_account_id || '--'}`;
+  return `${props.accountData?.extension?.cloud_main_account_id || '--'}`;
 };
 
 const permissionTemplateStore = usePermissionTemplateStore();
-const listGenerator = computed(() =>
-  permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value),
-);
+const listGenerator = computed(() => {
+  if (!props.accountData?.extension?.cloud_main_account_id) return null;
+  return permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value, {
+    extension: {
+      cloud_main_account_ids: [props.accountData.extension.cloud_main_account_id],
+    },
+  });
+});
 </script>
 
 <template>
@@ -237,9 +237,7 @@ const listGenerator = computed(() =>
     </template>
     <template #footer>
       <div class="sideslider-footer">
-        <bk-button theme="primary" :loading="isSubmitting" :disabled="!isModified" @click="handleSubmit">
-          提交
-        </bk-button>
+        <bk-button theme="primary" :loading="isSubmitting" :disabled="!isChanged" @click="handleSubmit">提交</bk-button>
         <bk-button @click="handleClose">取消</bk-button>
       </div>
     </template>

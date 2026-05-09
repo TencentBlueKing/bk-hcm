@@ -10,6 +10,7 @@ import { useUserStore } from '@/store/user';
 import { SITE_TYPE } from '@/constants/account';
 import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
+import { useFormChange } from '@/hooks/use-form-change';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
@@ -37,7 +38,7 @@ const formRef = ref();
 const submitLoading = ref(false);
 
 // 表单数据
-const formData = ref({
+const initialFormData = ref({
   site: 'china',
   name: '',
   cloud_main_account_id: '',
@@ -47,6 +48,8 @@ const formData = ref({
   usage_biz_ids: getBizsId() ? [getBizsId()] : ([] as number[]),
   memo: '',
 });
+
+const { formData, isChanged, changedFormData } = useFormChange(initialFormData);
 
 // 侧栏标题
 const sidesliderTitle = computed(() => (props.isEdit ? '编辑二级账号' : '录入二级账号'));
@@ -74,7 +77,7 @@ const formRules = {
 
 // 重置表单
 const resetForm = () => {
-  formData.value = {
+  initialFormData.value = {
     site: 'china',
     name: '',
     cloud_main_account_id: '',
@@ -93,7 +96,7 @@ const resetForm = () => {
 const fillEditData = () => {
   if (props.isEdit && props.accountData) {
     const data = props.accountData;
-    formData.value = {
+    initialFormData.value = {
       site: data.site || 'china',
       name: data.name || '',
       cloud_main_account_id: data.extension?.cloud_main_account_id || '',
@@ -158,12 +161,7 @@ const handleSubmit = async () => {
     if (props.isEdit) {
       // 编辑接口
       await secondaryAccountStore.updateSecondaryAccount(getBizsId(), props.accountData!.id, {
-        name: formData.value.name,
-        managers: formData.value.managers,
-        security_managers: formData.value.security_managers,
-        bk_biz_id: formData.value.bk_biz_id,
-        usage_biz_ids: formData.value.usage_biz_ids,
-        memo: formData.value.memo,
+        ...changedFormData.value,
       });
       Message({ theme: 'success', message: '编辑成功' });
       // 编辑模式时，返回更新后的数据
@@ -288,7 +286,9 @@ const handleCancel = () => {
 
     <template #footer>
       <div class="sideslider-footer">
-        <bk-button theme="primary" :loading="submitLoading" @click="handleSubmit">提交</bk-button>
+        <bk-button theme="primary" :disabled="isEdit && !isChanged" :loading="submitLoading" @click="handleSubmit">
+          提交
+        </bk-button>
         <bk-button :disabled="submitLoading" @click="handleCancel">取消</bk-button>
       </div>
     </template>

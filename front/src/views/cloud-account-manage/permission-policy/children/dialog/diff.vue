@@ -4,12 +4,17 @@ import { Message } from 'bkui-vue';
 import { formatJSON } from '@/utils';
 import useClipboard from 'vue-clipboard3';
 import hljs from 'highlight.js';
+import { VendorEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 interface IProps {
   show: boolean;
   accountId: string;
   policyContent: any;
   cloudContent: any;
+  bizId: number;
+  vendor: VendorEnum;
+  resType: string;
 }
 
 const props = withDefaults(defineProps<IProps>(), {
@@ -51,7 +56,15 @@ const handleClose = () => {
     @closed="handleClose"
   >
     <template #default>
-      <div class="name">二级账号： {{ props.accountId }}</div>
+      <div class="name">
+        二级账号：
+        <SecondaryAccountValue
+          :value="props.accountId"
+          :res-type="props.resType"
+          :biz-id="props.bizId"
+          :vendor="props.vendor"
+        />
+      </div>
       <div class="diff-info">
         <div>
           <span>云上当前版本（v{{ cloudContent.version }}）</span>
@@ -137,6 +150,7 @@ const handleClose = () => {
       .add-content::before {
         background: #2caf5e;
       }
+
       .del-content::before {
         background: #ff5656;
       }

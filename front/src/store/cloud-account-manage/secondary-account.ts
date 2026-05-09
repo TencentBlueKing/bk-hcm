@@ -269,7 +269,11 @@ export const useSecondaryAccountStore = defineStore('secondaryAccount', () => {
       const response = await http.post(
         `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/accounts/${account_id}/resources/${res}/sync_by_cond`,
         params || {},
+        { globalError: false },
       );
+      if (response?.code !== 0) {
+        throw new Error(response?.message);
+      }
       return response?.data;
     } catch (error) {
       console.error(error);
@@ -289,19 +293,24 @@ export const useSecondaryAccountStore = defineStore('secondaryAccount', () => {
       failed: [],
     };
 
-    // 并行同步所有账号
-    await Promise.all(
-      account_ids.map(async (account_id) => {
-        try {
-          await syncAccountResource(bk_biz_id, vendor, account_id, 'sub_account');
-          results.success.push(account_id);
-        } catch (error) {
-          results.failed.push({ id: account_id, error });
-        }
-      }),
-    );
+    try {
+      // 并行同步所有账号
+      await Promise.all(
+        account_ids.map(async (account_id) => {
+          try {
+            await syncAccountResource(bk_biz_id, vendor, account_id, 'sub_account');
+            results.success.push(account_id);
+          } catch (error) {
+            results.failed.push({ id: account_id, error });
+          }
+        }),
+      );
 
-    return results;
+      return results;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
   };
 
   /**

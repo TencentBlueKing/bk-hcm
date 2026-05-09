@@ -124,12 +124,12 @@ defineExpose({
           </template>
         </bk-table-column>
         <bk-table-column label="云上模板名称" prop="name" min-width="150" />
-        <bk-table-column label="云模板同步时间" prop="policy_library_sync_time" min-width="160">
+        <bk-table-column label="云模板同步时间" prop="policy_library_sync_time" min-width="150">
           <template #default="{ row }">
             <display-value class="info-value" :property="{ type: 'datetime' }" :value="row.policy_library_sync_time" />
           </template>
         </bk-table-column>
-        <bk-table-column label="策略库应用版本" prop="policy_library_version">
+        <bk-table-column label="策略库应用版本" prop="policy_library_version" min-width="120">
           <template #default="{ row }">
             <span class="version">v{{ row.policy_library_version }}</span>
           </template>
@@ -167,9 +167,22 @@ defineExpose({
       </bk-table>
     </bk-loading>
     <!--模版详情弹框-->
-    <ModelInfoDialog v-bind="modelInfo" @close="modelInfo.show = false" :res-type="resType" />
+    <ModelInfoDialog
+      v-bind="modelInfo"
+      @close="modelInfo.show = false"
+      :res-type="resType"
+      :biz-id="bizId"
+      :vendor="vendor"
+    />
     <!--策略对比弹框-->
-    <PolicyDiffDialog v-bind="policyDiffInfo" @close="policyDiffInfo.show = false" :policy-content="policyContent" />
+    <PolicyDiffDialog
+      v-bind="policyDiffInfo"
+      :res-type="resType"
+      :biz-id="bizId"
+      :vendor="vendor"
+      @close="policyDiffInfo.show = false"
+      :policy-content="policyContent"
+    />
   </div>
 </template>
 

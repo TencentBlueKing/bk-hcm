@@ -17,6 +17,18 @@ import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permiss
 import routerAction from '@/router/utils/action';
 import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
+interface IRowData {
+  account_id: string;
+  account_name: string;
+  name: string;
+  permission_template_ids: string[];
+  phone_num: string;
+  country_code: string;
+  email: string;
+  managers: string[];
+  receive_email: string;
+}
+
 const model = defineModel<boolean>();
 
 const props = defineProps<{
@@ -30,6 +42,8 @@ const emit = defineEmits<{
 const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 const secondaryAccountStore = useSecondaryAccountStore();
 const tertiaryAccountStore = useTertiaryAccountStore();
+const permissionTemplateStore = usePermissionTemplateStore();
+
 const { getBizsId } = useWhereAmI();
 
 const secondaryAccountList = ref<ISecondaryAccountItem[]>([]);
@@ -69,18 +83,6 @@ watch(
 );
 
 const accountType = ref<number>(1);
-
-interface IRowData {
-  account_id: string;
-  account_name: string;
-  name: string;
-  permission_template_ids: string[];
-  phone_num: string;
-  country_code: string;
-  email: string;
-  managers: string[];
-  receive_email: string;
-}
 
 const defaultRow = (): IRowData => ({
   account_id: undefined,
@@ -129,6 +131,17 @@ const secondaryAccountSelectList = computed(() =>
     label: `${item.name}(${item.id})`,
   })),
 );
+
+const getRowPermTemplateListGenerator = (row: IRowData) => {
+  const secondaryAccount = secondaryAccountList.value.find((item) => item.id === row.account_id);
+  if (!secondaryAccount?.extension?.cloud_main_account_id) return null;
+  const defaultParams = {
+    extension: {
+      cloud_main_account_ids: [secondaryAccount.extension.cloud_main_account_id],
+    },
+  };
+  return permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value, defaultParams);
+};
 
 const handleClose = () => {
   model.value = false;
@@ -323,10 +336,10 @@ const handleSubmit = async () => {
   }
 };
 
-const permissionTemplateStore = usePermissionTemplateStore();
-const listGenerator = computed(() =>
-  permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value),
-);
+const handleChangeSecondaryAccount = (index: number) => {
+  // 变更二级账号时，清空权限模板选择数据
+  tableData.value[index].permission_template_ids = [];
+};
 </script>
 
 <template>
@@ -362,6 +375,7 @@ const listGenerator = computed(() =>
                     :rules="[{ validator: (v: any) => Boolean(v), message: '请选择所属二级账号' }]"
                     filterable
                     placeholder="请选择"
+                    @change="handleChangeSecondaryAccount(index)"
                   />
                 </td>
                 <td>
@@ -375,7 +389,7 @@ const listGenerator = computed(() =>
                 <td>
                   <hcm-form-list
                     v-model="row.permission_template_ids"
-                    :list-generator="listGenerator"
+                    :list-generator="getRowPermTemplateListGenerator(row)"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
                     placeholder="请选择"
                     display-key="name"

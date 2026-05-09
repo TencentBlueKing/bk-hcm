@@ -4,7 +4,7 @@ import CombineRequest from '@blueking/combine-request';
 import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
 import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 
-const props = defineProps<{ value: string | string[]; vendor?: VendorEnum; resType: string; bizId?: number }>();
+const props = defineProps<{ value: string | string[]; vendor: VendorEnum; resType: string; bizId?: number }>();
 
 const localValue = computed(() => {
   if (!props.value) {
@@ -18,7 +18,7 @@ const displayValue = computed(() => {
     // 每次从全局store中查询获取
     const account = secondaryAccountStore.allSecondaryAccountCacheList.get(`${id}@${resType.value}@${bizId.value}`);
     if (!account) {
-      return `${account?.extension?.cloud_main_account_id} (--)`;
+      return '';
     }
     return `${account?.extension?.cloud_main_account_id} (${account.name})`;
   });

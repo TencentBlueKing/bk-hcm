@@ -5,13 +5,13 @@ import { VendorEnum } from '@/common/constant';
 import { formatJSON } from '@/utils';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { QueryRuleOPEnum } from '@/typings';
+import type { ModelPropertyForm } from '@/model/typings';
 import { usePermissionPolicyStore, type IPermissionPolicyItem } from '@/store/cloud-account-manage/permission-policy';
 import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
-
+import type { IPermissionTemplateItem } from '@/store/cloud-account-manage/permission-template';
+import { useFormChange } from '@/hooks/use-form-change';
 import type { FieldTcloud } from './field-tcloud';
 import { FieldFactory } from './field-factory';
-import type { ModelPropertyForm } from '@/model/typings';
-import type { IPermissionTemplateItem } from '@/store/cloud-account-manage/permission-template';
 
 const props = defineProps<{
   data: IPermissionTemplateItem & FieldTcloud;
@@ -27,23 +27,25 @@ const fieldModel = computed(() => FieldFactory.createModel(currentVendor.value))
 const properties = computed(() => fieldModel.value.getProperties<ModelPropertyForm>());
 const fields = computed(() => properties.value.filter((field) => !field.apiOnly));
 
-const formData = ref(fieldModel.value.createInstance());
+const initialFormData = ref(fieldModel.value.createInstance());
 
 const formRef = useTemplateRef<typeof Form>('formRef');
 
 watch(
   () => props.data,
   (newVal) => {
-    formData.value.id = newVal?.id; // 仅编辑时存在
-    formData.value.account_id = newVal?.account_id;
-    formData.value.name = newVal?.name;
-    formData.value.type = newVal?.type;
-    formData.value.policy_library_id = newVal?.policy_library_id;
-    formData.value.policy_document = newVal?.policy_document ? formatJSON(newVal?.policy_document) : '';
-    formData.value.memo = newVal?.memo;
+    initialFormData.value.id = newVal?.id; // 仅编辑时存在
+    initialFormData.value.account_id = newVal?.account_id;
+    initialFormData.value.name = newVal?.name;
+    initialFormData.value.type = newVal?.type;
+    initialFormData.value.policy_library_id = newVal?.policy_library_id;
+    initialFormData.value.policy_document = newVal?.policy_document ? formatJSON(newVal?.policy_document) : '';
+    initialFormData.value.memo = newVal?.memo;
   },
   { deep: true, immediate: true },
 );
+
+const { formData, isChanged, changedFormData } = useFormChange(initialFormData);
 
 const policyLibraryListGenerator = computed(() =>
   permissionPolicyStore.createPolicyLibraryListGenerator(currentVendor.value, getBizsId()),
@@ -80,6 +82,8 @@ const getFormCompEvents = (field: ModelPropertyForm) => {
 defineExpose({
   getFormData: () => formData.value,
   validate: () => formRef.value.validate(),
+  isChanged,
+  changedFormData,
 });
 </script>
 

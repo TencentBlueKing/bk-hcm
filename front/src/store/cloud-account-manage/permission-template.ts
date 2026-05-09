@@ -193,11 +193,16 @@ export const usePermissionTemplateStore = defineStore('permission-template', () 
    * 创建云权限模板列表迭代器（用于选择器列表组件）
    * @param bizId 业务ID
    * @param vendor 云厂商
+   * @param defaultParams 默认参数
    */
-  const createPermissionTemplateListGenerator = (bizId: number, vendor: VendorEnum): ListGeneratorFactory => {
+  const createPermissionTemplateListGenerator = (
+    bizId: number,
+    vendor: VendorEnum,
+    defaultParams?: Record<string, any>,
+  ): ListGeneratorFactory => {
     return async function* (keywordOrOptions) {
       const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/list`;
-      const params: Record<string, any> = {};
+      const params: Record<string, any> = { ...defaultParams };
       const keyword = typeof keywordOrOptions === 'string' ? keywordOrOptions : undefined;
       const options = typeof keywordOrOptions === 'object' ? keywordOrOptions : undefined;
       if (keyword) params.names = [keyword];

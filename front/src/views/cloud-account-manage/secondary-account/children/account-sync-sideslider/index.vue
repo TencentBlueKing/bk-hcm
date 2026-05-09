@@ -122,6 +122,12 @@ const hasUnfinished = computed(() => rows.value.some((r) => r.status === 'syncin
             </template>
           </bk-table-column>
 
+          <bk-table-column label="错误信息" width="220" prop="error">
+            <template #default="{ row }: { row: ISyncRow }">
+              {{ row.error || '--' }}
+            </template>
+          </bk-table-column>
+
           <bk-table-column label="请求完成时间" width="220" prop="finishTime">
             <template #default="{ row }: { row: ISyncRow }">
               {{ row.finishTime }}
@@ -154,8 +160,7 @@ const hasUnfinished = computed(() => rows.value.some((r) => r.status === 'syncin
 }
 
 .sideslider-footer {
-  line-height: 48px;
-  background: #fafbfd;
-  border-top: 1px solid #eaebf0;
+  display: flex;
+  align-items: center;
 }
 </style>

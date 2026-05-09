@@ -142,8 +142,12 @@ const handleCreateSubmit = async () => {
 const handleEditSubmit = async () => {
   await editFormRef.value.validate();
   const formData = editFormRef.value.getFormData();
-  const { type, policy_document, account_id, ...postData } = formData;
-  const result = await permissionTemplateStore.updatePermissionTemplate(bizId.value, currentVendor.value, postData);
+  const { changedFormData } = editFormRef.value;
+  const { type, policy_document, account_id, ...postData } = changedFormData;
+  const result = await permissionTemplateStore.updatePermissionTemplate(bizId.value, currentVendor.value, {
+    id: formData.id,
+    ...postData,
+  });
   Message({ theme: 'success', message: '编辑成功' });
   if (result.id) {
     routerAction.redirect({
@@ -273,7 +277,12 @@ const handleDeleteConfirm = async () => {
     </template>
     <template #footer>
       <div class="sideslider-footer">
-        <bk-button theme="primary" :loading="permissionTemplateStore.updateLoading" @click="handleEditSubmit">
+        <bk-button
+          theme="primary"
+          :disabled="!editFormRef?.isChanged"
+          :loading="permissionTemplateStore.updateLoading"
+          @click="handleEditSubmit"
+        >
           提交
         </bk-button>
         <bk-button @click="editState.isShow = false">取消</bk-button>
@@ -312,16 +321,14 @@ const handleDeleteConfirm = async () => {
               outline
               :disabled="
                 noPerm ||
-                getTypeData(detailsState.data).isPolicySync ||
+                getTypeData(detailsState.data).isCloudPreset ||
                 detailsState.data.associated_sub_account_count > 0
               "
               @click="handleDelete(detailsState.data)"
               v-bk-tooltips="{
-                content: getTypeData(detailsState.data).isPolicySync
-                  ? '与策略库同步不可删除'
-                  : '有三级账号关联不可删除',
+                content: getTypeData(detailsState.data).isCloudPreset ? '云系统预设不可删除' : '有三级账号关联不可删除',
                 disabled: !(
-                  getTypeData(detailsState.data).isPolicySync || detailsState.data.associated_sub_account_count > 0
+                  getTypeData(detailsState.data).isCloudPreset || detailsState.data.associated_sub_account_count > 0
                 ),
               }"
             >

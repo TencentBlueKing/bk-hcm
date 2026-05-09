@@ -320,16 +320,20 @@ const handleSyncAccount = () => {
 
             if (results.failed.length === 0) {
               Message({ theme: 'success', message: '账号同步成功' });
+              // 重新拉取详情以刷新数据
+              const detail = await secondaryAccountStore.getSecondaryAccountDetail(
+                getBizsId(),
+                currentRowData.value!.id,
+              );
+              if (detail) {
+                currentRowData.value = { ...detail };
+                emit('update:rowData', detail);
+                emit('update-success');
+              }
+              resolve(true);
+            } else {
+              Message({ theme: 'error', message: '账号同步失败，请稍后重试' });
             }
-
-            // 重新拉取详情以刷新数据
-            const detail = await secondaryAccountStore.getSecondaryAccountDetail(getBizsId(), currentRowData.value!.id);
-            if (detail) {
-              currentRowData.value = { ...detail };
-              emit('update:rowData', detail);
-              emit('update-success');
-            }
-            resolve(true);
           } catch (error) {
             console.error('同步失败:', error);
             loadingBox.hide();
