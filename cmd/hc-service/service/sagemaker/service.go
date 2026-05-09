@@ -53,75 +53,38 @@ func InitService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add(
-		"ListNotebookInstancesForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/notebook_instances/list",
-		svc.ListNotebookInstancesForAws,
-	)
-	h.Add(
-		"GetNotebookInstanceForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/notebook_instances/get",
-		svc.GetNotebookInstanceForAws,
-	)
-	h.Add("ListEndpointsForAws", "POST", "/vendors/aws/assume_role/sagemaker/endpoints/list", svc.ListEndpointsForAws)
+	h.Add("ListNotebookInstancesForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/notebook_instances/list", svc.ListNotebookInstancesForAws)
+	h.Add("GetNotebookInstanceForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/notebook_instances/get", svc.GetNotebookInstanceForAws)
+	h.Add("ListEndpointsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/endpoints/list", svc.ListEndpointsForAws)
 	h.Add("GetEndpointForAws", "POST", "/vendors/aws/assume_role/sagemaker/endpoints/get", svc.GetEndpointForAws)
-	h.Add(
-		"ListEndpointConfigsForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/endpoint_configs/list",
-		svc.ListEndpointConfigsForAws,
-	)
-	h.Add(
-		"GetEndpointConfigForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/endpoint_configs/get",
-		svc.GetEndpointConfigForAws,
-	)
-	h.Add(
-		"ListTrainingJobsForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/training_jobs/list",
-		svc.ListTrainingJobsForAws,
-	)
-	h.Add("GetTrainingJobForAws", "POST", "/vendors/aws/assume_role/sagemaker/training_jobs/get", svc.GetTrainingJobForAws)
-	h.Add(
-		"ListProcessingJobsForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/processing_jobs/list",
-		svc.ListProcessingJobsForAws,
-	)
-	h.Add(
-		"GetProcessingJobForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/processing_jobs/get",
-		svc.GetProcessingJobForAws,
-	)
-	h.Add(
-		"ListTransformJobsForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/transform_jobs/list",
-		svc.ListTransformJobsForAws,
-	)
-	h.Add(
-		"GetTransformJobForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/transform_jobs/get",
-		svc.GetTransformJobForAws,
-	)
+	h.Add("ListEndpointConfigsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/endpoint_configs/list", svc.ListEndpointConfigsForAws)
+	h.Add("GetEndpointConfigForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/endpoint_configs/get", svc.GetEndpointConfigForAws)
+	h.Add("ListTrainingJobsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/training_jobs/list", svc.ListTrainingJobsForAws)
+	h.Add("GetTrainingJobForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/training_jobs/get", svc.GetTrainingJobForAws)
+	h.Add("ListProcessingJobsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/processing_jobs/list", svc.ListProcessingJobsForAws)
+	h.Add("GetProcessingJobForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/processing_jobs/get", svc.GetProcessingJobForAws)
+	h.Add("ListTransformJobsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/transform_jobs/list", svc.ListTransformJobsForAws)
+	h.Add("GetTransformJobForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/transform_jobs/get", svc.GetTransformJobForAws)
 
 	h.Add("ListAppsForAws", "POST", "/vendors/aws/assume_role/sagemaker/apps/list", svc.ListAppsForAws)
 	h.Add("GetAppForAws", "POST", "/vendors/aws/assume_role/sagemaker/apps/get", svc.GetAppForAws)
 	h.Add("ListClustersForAws", "POST", "/vendors/aws/assume_role/sagemaker/clusters/list", svc.ListClustersForAws)
 	h.Add("GetClusterForAws", "POST", "/vendors/aws/assume_role/sagemaker/clusters/get", svc.GetClusterForAws)
-	h.Add(
-		"ListClusterNodesForAws",
-		"POST",
-		"/vendors/aws/assume_role/sagemaker/cluster_nodes/list",
-		svc.ListClusterNodesForAws,
-	)
-	h.Add("GetClusterNodeForAws", "POST", "/vendors/aws/assume_role/sagemaker/cluster_nodes/get", svc.GetClusterNodeForAws)
+	h.Add("ListClusterNodesForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/cluster_nodes/list", svc.ListClusterNodesForAws)
+	h.Add("GetClusterNodeForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/cluster_nodes/get", svc.GetClusterNodeForAws)
 	h.Load(cap.WebService)
 }
 
