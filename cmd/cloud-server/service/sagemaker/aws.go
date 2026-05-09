@@ -416,6 +416,72 @@ func (svc *service) GetClusterNodeInRes(cts *rest.Contexts) (interface{}, error)
 	return data, nil
 }
 
+func (svc *service) ListTrainingPlansInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListTrainingPlansReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListTrainingPlans(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker training plans failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) GetTrainingPlanInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeTrainingPlanReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetTrainingPlan(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker training plan failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) SearchTrainingPlanOfferingsInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.SearchTrainingPlanOfferings(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to search aws assume role sagemaker training plan offerings failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
 func (svc *service) authRootAccount(cts *rest.Contexts, accountID string) error {
 	return handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer:        svc.authorizer,

@@ -825,3 +825,81 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker HyperPod cluster node via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_training_plans
+      description: 查询 AWS 成员账号 SageMaker Training Plan 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - AWS
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker training plans via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_training_plan
+      description: 查询 AWS 成员账号 SageMaker Training Plan 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - AWS
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker training plan via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plan_offerings/search:
+    post:
+      operationId: search_aws_assume_role_sagemaker_training_plan_offerings
+      description: 搜索 AWS 成员账号 SageMaker Training Plan Offering（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - AWS
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plan_offerings/search
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Search AWS member account SageMaker training plan offerings via AssumeRole

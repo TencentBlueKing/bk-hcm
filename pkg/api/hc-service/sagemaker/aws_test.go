@@ -166,6 +166,30 @@ func TestAwsAssumeRoleSageMakerDescribeRequestsValidate(t *testing.T) {
 				NodeID:      "i-0123456789abcdef0",
 			},
 		},
+		{
+			name: "describe training plan valid",
+			request: &AwsAssumeRoleSageMakerDescribeTrainingPlanReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+				TrainingPlanName: "demo-training-plan",
+			},
+		},
+		{
+			name: "describe training plan missing name",
+			request: &AwsAssumeRoleSageMakerDescribeTrainingPlanReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tc := range tests {

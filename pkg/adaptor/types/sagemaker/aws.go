@@ -206,3 +206,41 @@ type AwsDescribeClusterNodeOption struct {
 	ClusterName string
 	NodeID      string
 }
+
+// AwsTrainingPlanFilter defines a Training Plan list filter.
+type AwsTrainingPlanFilter struct {
+	Name  string
+	Value string
+}
+
+// AwsListTrainingPlansOption defines list filters for Training Plans.
+type AwsListTrainingPlansOption struct {
+	Region          string
+	Filters         []AwsTrainingPlanFilter
+	MaxResults      *int32
+	NextToken       *string
+	SortBy          string
+	SortOrder       string
+	StartTimeAfter  *time.Time
+	StartTimeBefore *time.Time
+}
+
+// AwsDescribeTrainingPlanOption defines the Training Plan to describe.
+type AwsDescribeTrainingPlanOption struct {
+	Region           string
+	TrainingPlanName string
+}
+
+// AwsSearchTrainingPlanOfferingsOption defines search filters for Training Plan offerings.
+type AwsSearchTrainingPlanOfferingsOption struct {
+	Region           string
+	DurationHours    *int64
+	EndTimeBefore    *time.Time
+	InstanceCount    *int32
+	InstanceType     string
+	StartTimeAfter   *time.Time
+	TargetResources  []string
+	TrainingPlanArn  string
+	UltraServerCount *int32
+	UltraServerType  string
+}

@@ -1,6 +1,6 @@
 ## Context
 
-HCM 已经新增了 AWS SageMaker AssumeRole 透传接口代码，覆盖 notebook instances、endpoints、endpoint configs、training jobs、processing jobs、transform jobs、apps、clusters、cluster nodes 的 list / get。实现边界已经明确：HCM 只负责透传 AWS SageMaker 原生资源，不处理 GPU 统计、ML instance type 字典或跨资源聚合逻辑。
+HCM 已经新增了 AWS SageMaker AssumeRole 透传接口代码，覆盖 notebook instances、endpoints、endpoint configs、training jobs、processing jobs、transform jobs、apps、clusters、cluster nodes、training plans、training plan offerings 的 list / get。实现边界已经明确：HCM 只负责透传 AWS SageMaker 原生资源，不处理 GPU 统计、ML instance type 字典或跨资源聚合逻辑。
 
 当前缺口不在代码本身，而在交付配套：
 - 缺少面向调用方的 Markdown 接口文档

@@ -5,7 +5,7 @@ AWS SageMaker assume-role 透传接口已经完成代码实现，但当前还缺
 ## What Changes
 
 - 新增 SageMaker assume-role 透传接口的 OpenSpec 变更工件，覆盖 proposal、design、specs、tasks
-- 新增 18 个 SageMaker assume-role 接口的 Markdown 文档，覆盖 notebook instances、endpoints、endpoint configs、training jobs、processing jobs、transform jobs、apps、clusters、cluster nodes 的 list / get
+- 新增 18 个 SageMaker assume-role 接口的 Markdown 文档，覆盖 notebook instances、endpoints、endpoint configs、training jobs、processing jobs、transform jobs、apps、clusters、cluster nodes、training plans、training plan offerings 的 list / get
 - 在 `docs/api-docs/api-server/api/bk_apigw_resources_bk-hcm.yaml` 中注册 18 个 SageMaker assume-role 开放接口
 - 文档中明确 HCM 的职责边界：仅提供 SageMaker 原生资源透传接口，不承担 GPU / ml instance type 业务逻辑
 

@@ -339,3 +339,56 @@ type AwsAssumeRoleSageMakerDescribeClusterNodeReq struct {
 func (req *AwsAssumeRoleSageMakerDescribeClusterNodeReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// AwsTrainingPlanFilter defines a Training Plan list filter.
+type AwsTrainingPlanFilter struct {
+	Name  string `json:"name" validate:"required"`
+	Value string `json:"value" validate:"required"`
+}
+
+// AwsAssumeRoleSageMakerListTrainingPlansReq lists Training Plans via AssumeRole.
+type AwsAssumeRoleSageMakerListTrainingPlansReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	Filters                       []AwsTrainingPlanFilter `json:"filters,omitempty"`
+	MaxResults                    *int32                  `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NextToken                     string                  `json:"next_token,omitempty"`
+	SortBy                        string                  `json:"sort_by,omitempty"`
+	SortOrder                     string                  `json:"sort_order,omitempty"`
+	StartTimeAfter                *time.Time              `json:"start_time_after,omitempty"`
+	StartTimeBefore               *time.Time              `json:"start_time_before,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListTrainingPlansReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeTrainingPlanReq describes a Training Plan via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeTrainingPlanReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	TrainingPlanName              string `json:"training_plan_name" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeTrainingPlanReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq searches Training Plan offerings via AssumeRole.
+type AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	DurationHours                 *int64     `json:"duration_hours,omitempty"`
+	EndTimeBefore                 *time.Time `json:"end_time_before,omitempty"`
+	InstanceCount                 *int32     `json:"instance_count,omitempty" validate:"omitempty,min=1"`
+	InstanceType                  string     `json:"instance_type,omitempty"`
+	StartTimeAfter                *time.Time `json:"start_time_after,omitempty"`
+	TargetResources               []string   `json:"target_resources,omitempty"`
+	TrainingPlanArn               string     `json:"training_plan_arn,omitempty"`
+	UltraServerCount              *int32     `json:"ultra_server_count,omitempty" validate:"omitempty,min=1"`
+	UltraServerType               string     `json:"ultra_server_type,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

@@ -17,6 +17,8 @@
 - [x] 2.7 新增 apps 的 list / get 文档
 - [x] 2.8 新增 clusters 的 list / get 文档
 - [x] 2.9 新增 cluster nodes 的 list / get 文档
+- [x] 2.10 新增 training plans 的 list / get 文档
+- [x] 2.11 新增 training plan offerings 的 search 文档
 
 ## 3. API 网关 YAML 配置
 
@@ -26,3 +28,5 @@
 - [x] 3.4 校验 YAML 中的 backend path、operationId 与 cloud-server 路由实现一致
 - [x] 3.5 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 apps 的 list / get 开放接口
 - [x] 3.6 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 clusters 和 cluster nodes 的 list / get 开放接口
+- [x] 3.7 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 training plans 的 list / get 开放接口
+- [x] 3.8 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 training plan offerings 的 search 开放接口

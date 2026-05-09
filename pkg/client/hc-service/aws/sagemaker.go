@@ -146,6 +146,24 @@ func (c *SageMakerClient) GetClusterNode(kt *kit.Kit,
 	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/cluster_nodes/get")
 }
 
+// ListTrainingPlans lists Training Plans via AssumeRole cross-account access.
+func (c *SageMakerClient) ListTrainingPlans(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListTrainingPlansReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/training_plans/list")
+}
+
+// GetTrainingPlan gets a Training Plan via AssumeRole cross-account access.
+func (c *SageMakerClient) GetTrainingPlan(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeTrainingPlanReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/training_plans/get")
+}
+
+// SearchTrainingPlanOfferings searches Training Plan offerings via AssumeRole cross-account access.
+func (c *SageMakerClient) SearchTrainingPlanOfferings(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/training_plan_offerings/search")
+}
+
 // requestRaw sends a passthrough POST request and returns the raw response body.
 func requestRaw[T any](cli rest.ClientInterface, kt *kit.Kit, req *T, path string) (stdjson.RawMessage, error) {
 	resp, err := common.Request[T, stdjson.RawMessage](cli, rest.POST, kt, req, path)

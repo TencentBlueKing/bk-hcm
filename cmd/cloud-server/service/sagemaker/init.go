@@ -79,5 +79,12 @@ func InitService(c *capability.Capability) {
 	h.Add("GetClusterNodeInRes", http.MethodPost,
 		"/vendors/aws/assume_role/sagemaker/cluster_nodes/get", svc.GetClusterNodeInRes)
 
+	h.Add("ListTrainingPlansInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/training_plans/list", svc.ListTrainingPlansInRes)
+	h.Add("GetTrainingPlanInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/training_plans/get", svc.GetTrainingPlanInRes)
+	h.Add("SearchTrainingPlanOfferingsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/training_plan_offerings/search", svc.SearchTrainingPlanOfferingsInRes)
+
 	h.Load(c.WebService)
 }

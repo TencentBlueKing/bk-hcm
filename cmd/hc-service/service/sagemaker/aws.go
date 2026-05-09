@@ -525,3 +525,100 @@ func (s *sageMakerSvc) GetClusterNodeForAws(cts *rest.Contexts) (interface{}, er
 	}
 	return result, nil
 }
+
+func (s *sageMakerSvc) ListTrainingPlansForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListTrainingPlansReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListTrainingPlans(cts.Kit, &adaptorsm.AwsListTrainingPlansOption{
+		Region:          req.Region,
+		Filters:         convertTrainingPlanFilters(req.Filters),
+		MaxResults:      req.MaxResults,
+		NextToken:       stringPtr(req.NextToken),
+		SortBy:          req.SortBy,
+		SortOrder:       req.SortOrder,
+		StartTimeAfter:  req.StartTimeAfter,
+		StartTimeBefore: req.StartTimeBefore,
+	})
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker training plans failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) GetTrainingPlanForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeTrainingPlanReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeTrainingPlan(cts.Kit, &adaptorsm.AwsDescribeTrainingPlanOption{
+		Region:           req.Region,
+		TrainingPlanName: req.TrainingPlanName,
+	})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker training plan failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) SearchTrainingPlanOfferingsForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.SearchTrainingPlanOfferings(cts.Kit, &adaptorsm.AwsSearchTrainingPlanOfferingsOption{
+		Region:           req.Region,
+		DurationHours:    req.DurationHours,
+		EndTimeBefore:    req.EndTimeBefore,
+		InstanceCount:    req.InstanceCount,
+		InstanceType:     req.InstanceType,
+		StartTimeAfter:   req.StartTimeAfter,
+		TargetResources:  req.TargetResources,
+		TrainingPlanArn:  req.TrainingPlanArn,
+		UltraServerCount: req.UltraServerCount,
+		UltraServerType:  req.UltraServerType,
+	})
+	if err != nil {
+		logs.Errorf("search aws assume role sagemaker training plan offerings failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func convertTrainingPlanFilters(
+	filters []proto.AwsTrainingPlanFilter,
+) []adaptorsm.AwsTrainingPlanFilter {
+	if len(filters) == 0 {
+		return nil
+	}
+	result := make([]adaptorsm.AwsTrainingPlanFilter, 0, len(filters))
+	for _, filter := range filters {
+		result = append(result, adaptorsm.AwsTrainingPlanFilter{Name: filter.Name, Value: filter.Value})
+	}
+	return result
+}

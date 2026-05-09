@@ -85,6 +85,13 @@ func InitService(cap *capability.Capability) {
 		"/vendors/aws/assume_role/sagemaker/cluster_nodes/list", svc.ListClusterNodesForAws)
 	h.Add("GetClusterNodeForAws", "POST",
 		"/vendors/aws/assume_role/sagemaker/cluster_nodes/get", svc.GetClusterNodeForAws)
+
+	h.Add("ListTrainingPlansForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/training_plans/list", svc.ListTrainingPlansForAws)
+	h.Add("GetTrainingPlanForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/training_plans/get", svc.GetTrainingPlanForAws)
+	h.Add("SearchTrainingPlanOfferingsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/training_plan_offerings/search", svc.SearchTrainingPlanOfferingsForAws)
 	h.Load(cap.WebService)
 }
 
