@@ -56,13 +56,13 @@ func (req *SubAccountBatchUpdateReq) Validate() error {
 // Pointer fields use nil to indicate "no change"; non-nil means update to that value.
 type SubAccountUpdateReq struct {
 	ID                    string   `json:"id" validate:"required"`
-	BkBizID               *int64   `json:"bk_biz_id" validate:"omitempty,gt=0"`
-	Email                 *string  `json:"email" validate:"omitempty,email"`
-	PhoneNum              *string  `json:"phone_num" validate:"omitempty"`
-	CountryCode           *string  `json:"country_code" validate:"omitempty"`
-	Managers              []string `json:"managers" validate:"omitempty"`
-	Memo                  *string  `json:"memo" validate:"omitempty"`
-	PermissionTemplateIDs []string `json:"permission_template_ids" validate:"omitempty"`
+	BkBizID               *int64   `json:"bk_biz_id,omitempty" validate:"omitempty,gt=0"`
+	Email                 *string  `json:"email,omitempty" validate:"omitempty,email"`
+	PhoneNum              *string  `json:"phone_num,omitempty" validate:"omitempty"`
+	CountryCode           *string  `json:"country_code,omitempty" validate:"omitempty"`
+	Managers              []string `json:"managers,omitempty" validate:"omitempty"`
+	Memo                  *string  `json:"memo,omitempty" validate:"omitempty"`
+	PermissionTemplateIDs []string `json:"permission_template_ids,omitempty" validate:"omitempty"`
 }
 
 // Validate sub account update request.
@@ -82,8 +82,8 @@ func (item *SubAccountUpdateReq) Validate() error {
 			// 校验手机号格式，前端请求中的country code是不带+的
 			if !validator.ValidatePhoneWithCountryCode("+"+converter.PtrToVal(item.CountryCode),
 				converter.PtrToVal(item.PhoneNum)) {
-				return fmt.Errorf("invalid phone number with country code: +%s%s",
-					item.CountryCode, mask.MaskPhone(converter.PtrToVal(item.PhoneNum)))
+				return fmt.Errorf("invalid phone number, country code: %s, phone: %s",
+					converter.PtrToVal(item.CountryCode), mask.MaskPhone(converter.PtrToVal(item.PhoneNum)))
 			}
 		}
 	}

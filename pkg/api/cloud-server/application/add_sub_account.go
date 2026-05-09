@@ -93,7 +93,7 @@ func (item *SubAccountAddReq) Validate() error {
 
 		// 校验手机号格式，前端请求中的country code是不带+的
 		if !validator.ValidatePhoneWithCountryCode("+"+item.CountryCode, item.PhoneNum) {
-			return fmt.Errorf("invalid phone number with country code: +%s%s",
+			return fmt.Errorf("invalid phone number, country code: %s, phone number: %s",
 				item.CountryCode, mask.MaskPhone(item.PhoneNum))
 		}
 	}
