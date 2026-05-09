@@ -244,3 +244,83 @@ type AwsSearchTrainingPlanOfferingsOption struct {
 	UltraServerCount *int32
 	UltraServerType  string
 }
+
+// AwsListInferenceComponentsOption defines list filters for inference components.
+type AwsListInferenceComponentsOption struct {
+	Region                 string
+	CreationTimeAfter      *time.Time
+	CreationTimeBefore     *time.Time
+	EndpointNameEquals     string
+	LastModifiedTimeAfter  *time.Time
+	LastModifiedTimeBefore *time.Time
+	MaxResults             *int32
+	NameContains           string
+	NextToken              *string
+	SortBy                 string
+	SortOrder              string
+	StatusEquals           string
+	VariantNameEquals      string
+}
+
+// AwsDescribeInferenceComponentOption defines the inference component to describe.
+type AwsDescribeInferenceComponentOption struct {
+	Region                 string
+	InferenceComponentName string
+}
+
+// AwsListOptimizationJobsOption defines list filters for optimization jobs.
+type AwsListOptimizationJobsOption struct {
+	Region                 string
+	CreationTimeAfter      *time.Time
+	CreationTimeBefore     *time.Time
+	LastModifiedTimeAfter  *time.Time
+	LastModifiedTimeBefore *time.Time
+	MaxResults             *int32
+	NameContains           string
+	NextToken              *string
+	OptimizationContains   string
+	SortBy                 string
+	SortOrder              string
+	StatusEquals           string
+}
+
+// AwsDescribeOptimizationJobOption defines the optimization job to describe.
+type AwsDescribeOptimizationJobOption struct {
+	Region              string
+	OptimizationJobName string
+}
+
+// AwsListComputeQuotasOption defines list filters for compute quotas.
+type AwsListComputeQuotasOption struct {
+	Region        string
+	ClusterArn    string
+	CreatedAfter  *time.Time
+	CreatedBefore *time.Time
+	MaxResults    *int32
+	NameContains  string
+	NextToken     *string
+	SortBy        string
+	SortOrder     string
+	Status        string
+}
+
+// AwsDescribeComputeQuotaOption defines the compute quota to describe.
+type AwsDescribeComputeQuotaOption struct {
+	Region              string
+	ComputeQuotaID      string
+	ComputeQuotaVersion *int32
+}
+
+// AwsDescribeReservedCapacityOption defines the reserved capacity to describe.
+type AwsDescribeReservedCapacityOption struct {
+	Region              string
+	ReservedCapacityArn string
+}
+
+// AwsListUltraServersByReservedCapacityOption defines list filters for reserved capacity UltraServers.
+type AwsListUltraServersByReservedCapacityOption struct {
+	Region              string
+	ReservedCapacityArn string
+	MaxResults          *int32
+	NextToken           *string
+}

@@ -392,3 +392,123 @@ type AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq struct {
 func (req *AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// AwsAssumeRoleSageMakerListInferenceComponentsReq lists inference components via AssumeRole.
+type AwsAssumeRoleSageMakerListInferenceComponentsReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
+	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
+	EndpointNameEquals            string     `json:"endpoint_name_equals,omitempty"`
+	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
+	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NameContains                  string     `json:"name_contains,omitempty"`
+	NextToken                     string     `json:"next_token,omitempty"`
+	SortBy                        string     `json:"sort_by,omitempty"`
+	SortOrder                     string     `json:"sort_order,omitempty"`
+	StatusEquals                  string     `json:"status_equals,omitempty"`
+	VariantNameEquals             string     `json:"variant_name_equals,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListInferenceComponentsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeInferenceComponentReq describes an inference component via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeInferenceComponentReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	InferenceComponentName        string `json:"inference_component_name" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeInferenceComponentReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerListOptimizationJobsReq lists optimization jobs via AssumeRole.
+type AwsAssumeRoleSageMakerListOptimizationJobsReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
+	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
+	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
+	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NameContains                  string     `json:"name_contains,omitempty"`
+	NextToken                     string     `json:"next_token,omitempty"`
+	OptimizationContains          string     `json:"optimization_contains,omitempty"`
+	SortBy                        string     `json:"sort_by,omitempty"`
+	SortOrder                     string     `json:"sort_order,omitempty"`
+	StatusEquals                  string     `json:"status_equals,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListOptimizationJobsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeOptimizationJobReq describes an optimization job via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeOptimizationJobReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	OptimizationJobName           string `json:"optimization_job_name" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeOptimizationJobReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerListComputeQuotasReq lists compute quotas via AssumeRole.
+type AwsAssumeRoleSageMakerListComputeQuotasReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	ClusterArn                    string     `json:"cluster_arn,omitempty"`
+	CreatedAfter                  *time.Time `json:"created_after,omitempty"`
+	CreatedBefore                 *time.Time `json:"created_before,omitempty"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NameContains                  string     `json:"name_contains,omitempty"`
+	NextToken                     string     `json:"next_token,omitempty"`
+	SortBy                        string     `json:"sort_by,omitempty"`
+	SortOrder                     string     `json:"sort_order,omitempty"`
+	Status                        string     `json:"status,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListComputeQuotasReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeComputeQuotaReq describes a compute quota via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeComputeQuotaReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	ComputeQuotaID                string `json:"compute_quota_id" validate:"required"`
+	ComputeQuotaVersion           *int32 `json:"compute_quota_version,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeComputeQuotaReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeReservedCapacityReq describes a reserved capacity via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeReservedCapacityReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	ReservedCapacityArn           string `json:"reserved_capacity_arn" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeReservedCapacityReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq lists reserved capacity UltraServers.
+type AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	ReservedCapacityArn           string `json:"reserved_capacity_arn" validate:"required"`
+	MaxResults                    *int32 `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NextToken                     string `json:"next_token,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

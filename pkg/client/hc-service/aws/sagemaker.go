@@ -164,6 +164,54 @@ func (c *SageMakerClient) SearchTrainingPlanOfferings(kt *kit.Kit,
 	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/training_plan_offerings/search")
 }
 
+// ListInferenceComponents lists inference components via AssumeRole cross-account access.
+func (c *SageMakerClient) ListInferenceComponents(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListInferenceComponentsReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/inference_components/list")
+}
+
+// GetInferenceComponent gets an inference component via AssumeRole cross-account access.
+func (c *SageMakerClient) GetInferenceComponent(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeInferenceComponentReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/inference_components/get")
+}
+
+// ListOptimizationJobs lists optimization jobs via AssumeRole cross-account access.
+func (c *SageMakerClient) ListOptimizationJobs(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListOptimizationJobsReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/optimization_jobs/list")
+}
+
+// GetOptimizationJob gets an optimization job via AssumeRole cross-account access.
+func (c *SageMakerClient) GetOptimizationJob(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeOptimizationJobReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/optimization_jobs/get")
+}
+
+// ListComputeQuotas lists compute quotas via AssumeRole cross-account access.
+func (c *SageMakerClient) ListComputeQuotas(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListComputeQuotasReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/compute_quotas/list")
+}
+
+// GetComputeQuota gets a compute quota via AssumeRole cross-account access.
+func (c *SageMakerClient) GetComputeQuota(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeComputeQuotaReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/compute_quotas/get")
+}
+
+// GetReservedCapacity gets a reserved capacity via AssumeRole cross-account access.
+func (c *SageMakerClient) GetReservedCapacity(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeReservedCapacityReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/reserved_capacities/get")
+}
+
+// ListUltraServersByReservedCapacity lists reserved capacity UltraServers via AssumeRole cross-account access.
+func (c *SageMakerClient) ListUltraServersByReservedCapacity(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq) (stdjson.RawMessage, error) {
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/reserved_capacity_ultra_servers/list")
+}
+
 // requestRaw sends a passthrough POST request and returns the raw response body.
 func requestRaw[T any](cli rest.ClientInterface, kt *kit.Kit, req *T, path string) (stdjson.RawMessage, error) {
 	resp, err := common.Request[T, stdjson.RawMessage](cli, rest.POST, kt, req, path)

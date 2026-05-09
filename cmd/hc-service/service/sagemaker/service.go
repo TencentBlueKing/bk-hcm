@@ -92,6 +92,23 @@ func InitService(cap *capability.Capability) {
 		"/vendors/aws/assume_role/sagemaker/training_plans/get", svc.GetTrainingPlanForAws)
 	h.Add("SearchTrainingPlanOfferingsForAws", "POST",
 		"/vendors/aws/assume_role/sagemaker/training_plan_offerings/search", svc.SearchTrainingPlanOfferingsForAws)
+	h.Add("ListInferenceComponentsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/inference_components/list", svc.ListInferenceComponentsForAws)
+	h.Add("GetInferenceComponentForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/inference_components/get", svc.GetInferenceComponentForAws)
+	h.Add("ListOptimizationJobsForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/optimization_jobs/list", svc.ListOptimizationJobsForAws)
+	h.Add("GetOptimizationJobForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/optimization_jobs/get", svc.GetOptimizationJobForAws)
+	h.Add("ListComputeQuotasForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/compute_quotas/list", svc.ListComputeQuotasForAws)
+	h.Add("GetComputeQuotaForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/compute_quotas/get", svc.GetComputeQuotaForAws)
+	h.Add("GetReservedCapacityForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/reserved_capacities/get", svc.GetReservedCapacityForAws)
+	h.Add("ListUltraServersByReservedCapacityForAws", "POST",
+		"/vendors/aws/assume_role/sagemaker/reserved_capacity_ultra_servers/list",
+		svc.ListUltraServersByReservedCapacityForAws)
 	h.Load(cap.WebService)
 }
 

@@ -85,6 +85,23 @@ func InitService(c *capability.Capability) {
 		"/vendors/aws/assume_role/sagemaker/training_plans/get", svc.GetTrainingPlanInRes)
 	h.Add("SearchTrainingPlanOfferingsInRes", http.MethodPost,
 		"/vendors/aws/assume_role/sagemaker/training_plan_offerings/search", svc.SearchTrainingPlanOfferingsInRes)
+	h.Add("ListInferenceComponentsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/inference_components/list", svc.ListInferenceComponentsInRes)
+	h.Add("GetInferenceComponentInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/inference_components/get", svc.GetInferenceComponentInRes)
+	h.Add("ListOptimizationJobsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/optimization_jobs/list", svc.ListOptimizationJobsInRes)
+	h.Add("GetOptimizationJobInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/optimization_jobs/get", svc.GetOptimizationJobInRes)
+	h.Add("ListComputeQuotasInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/compute_quotas/list", svc.ListComputeQuotasInRes)
+	h.Add("GetComputeQuotaInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/compute_quotas/get", svc.GetComputeQuotaInRes)
+	h.Add("GetReservedCapacityInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/reserved_capacities/get", svc.GetReservedCapacityInRes)
+	h.Add("ListUltraServersByReservedCapacityInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/reserved_capacity_ultra_servers/list",
+		svc.ListUltraServersByReservedCapacityInRes)
 
 	h.Load(c.WebService)
 }

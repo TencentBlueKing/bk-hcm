@@ -178,6 +178,79 @@ func TestAwsAssumeRoleSageMakerDescribeRequestsValidate(t *testing.T) {
 				TrainingPlanName: "demo-training-plan",
 			},
 		},
+
+		{
+			name: "describe inference component valid",
+			request: &AwsAssumeRoleSageMakerDescribeInferenceComponentReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+				InferenceComponentName: "demo-component",
+			},
+		},
+		{
+			name: "describe inference component missing name",
+			request: &AwsAssumeRoleSageMakerDescribeInferenceComponentReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "describe optimization job valid",
+			request: &AwsAssumeRoleSageMakerDescribeOptimizationJobReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+				OptimizationJobName: "demo-optimization-job",
+			},
+		},
+		{
+			name: "describe compute quota valid",
+			request: &AwsAssumeRoleSageMakerDescribeComputeQuotaReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-west-2",
+				},
+				ComputeQuotaID: "cq-123",
+			},
+		},
+		{
+			name: "describe reserved capacity valid",
+			request: &AwsAssumeRoleSageMakerDescribeReservedCapacityReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+				ReservedCapacityArn: "arn:aws:sagemaker:us-east-1:123456789012:reserved-capacity/demo",
+			},
+		},
+		{
+			name: "list ultra servers missing reserved capacity arn",
+			request: &AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq{
+				AwsAssumeRoleSageMakerBaseReq: AwsAssumeRoleSageMakerBaseReq{
+					RootAccountID: "root-account-id",
+					MainAccountID: "main-account-id",
+					RoleChain:     []string{"OrgAccountAccessRole"},
+					Region:        "us-east-1",
+				},
+			},
+			wantErr: true,
+		},
 		{
 			name: "describe training plan missing name",
 			request: &AwsAssumeRoleSageMakerDescribeTrainingPlanReq{

@@ -482,6 +482,182 @@ func (svc *service) SearchTrainingPlanOfferingsInRes(cts *rest.Contexts) (interf
 	return data, nil
 }
 
+func (svc *service) ListInferenceComponentsInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListInferenceComponentsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListInferenceComponents(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker inference components failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) GetInferenceComponentInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeInferenceComponentReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetInferenceComponent(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker inference component failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) ListOptimizationJobsInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListOptimizationJobsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListOptimizationJobs(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker optimization jobs failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) GetOptimizationJobInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeOptimizationJobReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetOptimizationJob(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker optimization job failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) ListComputeQuotasInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListComputeQuotasReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListComputeQuotas(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker compute quotas failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) GetComputeQuotaInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeComputeQuotaReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetComputeQuota(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker compute quota failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) GetReservedCapacityInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeReservedCapacityReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetReservedCapacity(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker reserved capacity failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+func (svc *service) ListUltraServersByReservedCapacityInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListUltraServersByReservedCapacity(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker reserved capacity ultra servers failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
 func (svc *service) authRootAccount(cts *rest.Contexts, accountID string) error {
 	return handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
 		Authorizer:        svc.authorizer,

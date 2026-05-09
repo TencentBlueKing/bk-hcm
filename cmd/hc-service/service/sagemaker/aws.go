@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 func (s *sageMakerSvc) ListNotebookInstancesForAws(cts *rest.Contexts) (interface{}, error) {
@@ -48,7 +49,7 @@ func (s *sageMakerSvc) ListNotebookInstancesForAws(cts *rest.Contexts) (interfac
 		LastModifiedTimeBefore:              req.LastModifiedTimeBefore,
 		MaxResults:                          req.MaxResults,
 		NameContains:                        req.NameContains,
-		NextToken:                           stringPtr(req.NextToken),
+		NextToken:                           converter.StrNilPtr(req.NextToken),
 		NotebookLifecycleConfigNameContains: req.NotebookLifecycleConfigNameContains,
 		SortBy:                              req.SortBy,
 		SortOrder:                           req.SortOrder,
@@ -104,7 +105,7 @@ func (s *sageMakerSvc) ListEndpointsForAws(cts *rest.Contexts) (interface{}, err
 		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
 		MaxResults:             req.MaxResults,
 		NameContains:           req.NameContains,
-		NextToken:              stringPtr(req.NextToken),
+		NextToken:              converter.StrNilPtr(req.NextToken),
 		SortBy:                 req.SortBy,
 		SortOrder:              req.SortOrder,
 		StatusEquals:           req.StatusEquals,
@@ -157,7 +158,7 @@ func (s *sageMakerSvc) ListEndpointConfigsForAws(cts *rest.Contexts) (interface{
 		CreationTimeBefore: req.CreationTimeBefore,
 		MaxResults:         req.MaxResults,
 		NameContains:       req.NameContains,
-		NextToken:          stringPtr(req.NextToken),
+		NextToken:          converter.StrNilPtr(req.NextToken),
 		SortBy:             req.SortBy,
 		SortOrder:          req.SortOrder,
 	})
@@ -211,7 +212,7 @@ func (s *sageMakerSvc) ListTrainingJobsForAws(cts *rest.Contexts) (interface{}, 
 		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
 		MaxResults:             req.MaxResults,
 		NameContains:           req.NameContains,
-		NextToken:              stringPtr(req.NextToken),
+		NextToken:              converter.StrNilPtr(req.NextToken),
 		SortBy:                 req.SortBy,
 		SortOrder:              req.SortOrder,
 		StatusEquals:           req.StatusEquals,
@@ -267,7 +268,7 @@ func (s *sageMakerSvc) ListProcessingJobsForAws(cts *rest.Contexts) (interface{}
 		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
 		MaxResults:             req.MaxResults,
 		NameContains:           req.NameContains,
-		NextToken:              stringPtr(req.NextToken),
+		NextToken:              converter.StrNilPtr(req.NextToken),
 		SortBy:                 req.SortBy,
 		SortOrder:              req.SortOrder,
 		StatusEquals:           req.StatusEquals,
@@ -322,7 +323,7 @@ func (s *sageMakerSvc) ListTransformJobsForAws(cts *rest.Contexts) (interface{},
 		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
 		MaxResults:             req.MaxResults,
 		NameContains:           req.NameContains,
-		NextToken:              stringPtr(req.NextToken),
+		NextToken:              converter.StrNilPtr(req.NextToken),
 		SortBy:                 req.SortBy,
 		SortOrder:              req.SortOrder,
 		StatusEquals:           req.StatusEquals,
@@ -357,13 +358,6 @@ func (s *sageMakerSvc) GetTransformJobForAws(cts *rest.Contexts) (interface{}, e
 	return result, nil
 }
 
-func stringPtr(v string) *string {
-	if v == "" {
-		return nil
-	}
-	return &v
-}
-
 func (s *sageMakerSvc) ListAppsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListAppsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -380,7 +374,7 @@ func (s *sageMakerSvc) ListAppsForAws(cts *rest.Contexts) (interface{}, error) {
 		Region:                req.Region,
 		DomainIDEquals:        req.DomainIDEquals,
 		MaxResults:            req.MaxResults,
-		NextToken:             stringPtr(req.NextToken),
+		NextToken:             converter.StrNilPtr(req.NextToken),
 		SortBy:                req.SortBy,
 		SortOrder:             req.SortOrder,
 		SpaceNameEquals:       req.SpaceNameEquals,
@@ -438,7 +432,7 @@ func (s *sageMakerSvc) ListClustersForAws(cts *rest.Contexts) (interface{}, erro
 		CreationTimeBefore: req.CreationTimeBefore,
 		MaxResults:         req.MaxResults,
 		NameContains:       req.NameContains,
-		NextToken:          stringPtr(req.NextToken),
+		NextToken:          converter.StrNilPtr(req.NextToken),
 		SortBy:             req.SortBy,
 		SortOrder:          req.SortOrder,
 	})
@@ -491,7 +485,7 @@ func (s *sageMakerSvc) ListClusterNodesForAws(cts *rest.Contexts) (interface{}, 
 		CreationTimeBefore:        req.CreationTimeBefore,
 		InstanceGroupNameContains: req.InstanceGroupNameContains,
 		MaxResults:                req.MaxResults,
-		NextToken:                 stringPtr(req.NextToken),
+		NextToken:                 converter.StrNilPtr(req.NextToken),
 		SortBy:                    req.SortBy,
 		SortOrder:                 req.SortOrder,
 	})
@@ -542,7 +536,7 @@ func (s *sageMakerSvc) ListTrainingPlansForAws(cts *rest.Contexts) (interface{},
 		Region:          req.Region,
 		Filters:         convertTrainingPlanFilters(req.Filters),
 		MaxResults:      req.MaxResults,
-		NextToken:       stringPtr(req.NextToken),
+		NextToken:       converter.StrNilPtr(req.NextToken),
 		SortBy:          req.SortBy,
 		SortOrder:       req.SortOrder,
 		StartTimeAfter:  req.StartTimeAfter,
@@ -605,6 +599,229 @@ func (s *sageMakerSvc) SearchTrainingPlanOfferingsForAws(cts *rest.Contexts) (in
 	if err != nil {
 		logs.Errorf("search aws assume role sagemaker training plan offerings failed, err: %v, rid: %s", err,
 			cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) ListInferenceComponentsForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListInferenceComponentsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListInferenceComponents(cts.Kit, &adaptorsm.AwsListInferenceComponentsOption{
+		Region:                 req.Region,
+		CreationTimeAfter:      req.CreationTimeAfter,
+		CreationTimeBefore:     req.CreationTimeBefore,
+		EndpointNameEquals:     req.EndpointNameEquals,
+		LastModifiedTimeAfter:  req.LastModifiedTimeAfter,
+		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
+		MaxResults:             req.MaxResults,
+		NameContains:           req.NameContains,
+		NextToken:              converter.StrNilPtr(req.NextToken),
+		SortBy:                 req.SortBy,
+		SortOrder:              req.SortOrder,
+		StatusEquals:           req.StatusEquals,
+		VariantNameEquals:      req.VariantNameEquals,
+	})
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker inference components failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) GetInferenceComponentForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeInferenceComponentReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeInferenceComponent(cts.Kit, &adaptorsm.AwsDescribeInferenceComponentOption{
+		Region:                 req.Region,
+		InferenceComponentName: req.InferenceComponentName,
+	})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker inference component failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) ListOptimizationJobsForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListOptimizationJobsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListOptimizationJobs(cts.Kit, &adaptorsm.AwsListOptimizationJobsOption{
+		Region:                 req.Region,
+		CreationTimeAfter:      req.CreationTimeAfter,
+		CreationTimeBefore:     req.CreationTimeBefore,
+		LastModifiedTimeAfter:  req.LastModifiedTimeAfter,
+		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
+		MaxResults:             req.MaxResults,
+		NameContains:           req.NameContains,
+		NextToken:              converter.StrNilPtr(req.NextToken),
+		OptimizationContains:   req.OptimizationContains,
+		SortBy:                 req.SortBy,
+		SortOrder:              req.SortOrder,
+		StatusEquals:           req.StatusEquals,
+	})
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker optimization jobs failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) GetOptimizationJobForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeOptimizationJobReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeOptimizationJob(cts.Kit, &adaptorsm.AwsDescribeOptimizationJobOption{
+		Region:              req.Region,
+		OptimizationJobName: req.OptimizationJobName,
+	})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker optimization job failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) ListComputeQuotasForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListComputeQuotasReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListComputeQuotas(cts.Kit, &adaptorsm.AwsListComputeQuotasOption{
+		Region:        req.Region,
+		ClusterArn:    req.ClusterArn,
+		CreatedAfter:  req.CreatedAfter,
+		CreatedBefore: req.CreatedBefore,
+		MaxResults:    req.MaxResults,
+		NameContains:  req.NameContains,
+		NextToken:     converter.StrNilPtr(req.NextToken),
+		SortBy:        req.SortBy,
+		SortOrder:     req.SortOrder,
+		Status:        req.Status,
+	})
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker compute quotas failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) GetComputeQuotaForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeComputeQuotaReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeComputeQuota(cts.Kit, &adaptorsm.AwsDescribeComputeQuotaOption{
+		Region:              req.Region,
+		ComputeQuotaID:      req.ComputeQuotaID,
+		ComputeQuotaVersion: req.ComputeQuotaVersion,
+	})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker compute quota failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) GetReservedCapacityForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeReservedCapacityReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeReservedCapacity(cts.Kit, &adaptorsm.AwsDescribeReservedCapacityOption{
+		Region:              req.Region,
+		ReservedCapacityArn: req.ReservedCapacityArn,
+	})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker reserved capacity failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (s *sageMakerSvc) ListUltraServersByReservedCapacityForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListUltraServersByReservedCapacity(
+		cts.Kit,
+		&adaptorsm.AwsListUltraServersByReservedCapacityOption{
+			Region:              req.Region,
+			ReservedCapacityArn: req.ReservedCapacityArn,
+			MaxResults:          req.MaxResults,
+			NextToken:           converter.StrNilPtr(req.NextToken),
+		},
+	)
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker reserved capacity ultra servers failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
 		return nil, err
 	}
 	return result, nil

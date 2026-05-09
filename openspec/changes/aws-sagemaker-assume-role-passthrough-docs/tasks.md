@@ -19,6 +19,11 @@
 - [x] 2.9 新增 cluster nodes 的 list / get 文档
 - [x] 2.10 新增 training plans 的 list / get 文档
 - [x] 2.11 新增 training plan offerings 的 search 文档
+- [x] 2.12 新增 inference components 的 list / get 文档
+- [x] 2.13 新增 optimization jobs 的 list / get 文档
+- [x] 2.14 新增 compute quotas 的 list / get 文档
+- [x] 2.15 新增 reserved capacities 的 get 文档
+- [x] 2.16 新增 reserved capacity ultra servers 的 list 文档
 
 ## 3. API 网关 YAML 配置
 
@@ -30,3 +35,7 @@
 - [x] 3.6 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 clusters 和 cluster nodes 的 list / get 开放接口
 - [x] 3.7 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 training plans 的 list / get 开放接口
 - [x] 3.8 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 training plan offerings 的 search 开放接口
+- [x] 3.9 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 inference components 的 list / get 开放接口
+- [x] 3.10 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 optimization jobs 的 list / get 开放接口
+- [x] 3.11 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 compute quotas 的 list / get 开放接口
+- [x] 3.12 在 `bk_apigw_resources_bk-hcm.yaml` 中注册 reserved capacities 的 get 和 reserved capacity ultra servers 的 list 开放接口
