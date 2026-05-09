@@ -23,6 +23,8 @@ import (
 	"fmt"
 
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/mask"
 )
 
 // SubAccountBatchUpdateReq define sub account batch update request.
@@ -65,5 +67,26 @@ type SubAccountUpdateReq struct {
 
 // Validate sub account update request.
 func (item *SubAccountUpdateReq) Validate() error {
+	// 修改手机号码
+	if item.PhoneNum != nil || item.CountryCode != nil {
+		// country code 和 phone num 必须同时不为空字符串
+		if converter.PtrToVal(item.PhoneNum) == "" && converter.PtrToVal(item.CountryCode) != "" {
+			return fmt.Errorf("country_code phone_num must be provided at the same time")
+		}
+		if converter.PtrToVal(item.PhoneNum) != "" && converter.PtrToVal(item.CountryCode) == "" {
+			return fmt.Errorf("country_code phone_num must be provided at the same time")
+		}
+
+		// 同时不为空进行校验，同时为空但不为nil代表清空手机账号，所以不进行格式校验
+		if converter.PtrToVal(item.PhoneNum) != "" && converter.PtrToVal(item.CountryCode) != "" {
+			// 校验手机号格式，前端请求中的country code是不带+的
+			if !validator.ValidatePhoneWithCountryCode("+"+converter.PtrToVal(item.CountryCode),
+				converter.PtrToVal(item.PhoneNum)) {
+				return fmt.Errorf("invalid phone number with country code: +%s%s",
+					item.CountryCode, mask.MaskPhone(converter.PtrToVal(item.PhoneNum)))
+			}
+		}
+	}
+
 	return validator.Validate.Struct(item)
 }

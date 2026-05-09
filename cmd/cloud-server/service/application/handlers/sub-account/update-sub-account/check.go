@@ -38,13 +38,7 @@ func (a *ApplicationOfUpdateSubAccount) CheckReq() error {
 	if err := a.CheckSubAccountExists(a.req.ID); err != nil {
 		return err
 	}
-
-	if err := a.ValidatePhoneNum(converter.PtrToVal(a.req.CountryCode),
-		converter.PtrToVal(a.req.PhoneNum)); err != nil {
-		logs.Errorf("validate phone num failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
-		return err
-	}
-
+	
 	account, err := a.GetAccount(a.AccountID())
 	if err != nil {
 		return fmt.Errorf("found parent account(%s) failed, err: %w", a.AccountID(), err)

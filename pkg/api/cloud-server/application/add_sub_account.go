@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/mask"
 )
 
 // SubAccountBaseReq is the common base for all sub-account application requests.
@@ -79,7 +80,25 @@ type SubAccountAddReq struct {
 
 // Validate sub account create request.
 func (item *SubAccountAddReq) Validate() error {
-	return validator.Validate.Struct(item)
+	if err := validator.Validate.Struct(item); err != nil {
+		return err
+	}
+
+	if !(item.PhoneNum == "" && item.CountryCode == "") {
+		// 如果有手机号，那么必须有国家码
+		if (item.PhoneNum != "" && item.CountryCode == "") ||
+			(item.PhoneNum == "" && item.CountryCode != "") {
+			return fmt.Errorf("country_code phone_num must be provided at the same time")
+		}
+
+		// 校验手机号格式，前端请求中的country code是不带+的
+		if !validator.ValidatePhoneWithCountryCode("+"+item.CountryCode, item.PhoneNum) {
+			return fmt.Errorf("invalid phone number with country code: +%s%s",
+				item.CountryCode, mask.MaskPhone(item.PhoneNum))
+		}
+	}
+
+	return nil
 }
 
 // TCloudSubAccountAddExtension defines the TCloud-specific extension fields for sub account creation.

@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 )
 
@@ -49,11 +48,6 @@ func (a *ApplicationOfCreateSubAccount) CheckReq() error {
 	if a.BkBizID() != account.BkBizID {
 		return fmt.Errorf("account(%s)'s biz_id is %d,biz_id(%d) no perssion to operate subaccount of it",
 			a.req.AccountID, account.BkBizID, a.BkBizID())
-	}
-
-	if err := a.ValidatePhoneNum(a.req.CountryCode, a.req.PhoneNum); err != nil {
-		logs.Errorf("validate phone num failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
-		return err
 	}
 
 	if err := a.checkDuplicateName(); err != nil {
