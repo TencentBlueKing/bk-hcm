@@ -3,6 +3,7 @@ import { ref, inject, computed, watch, nextTick, h, type Ref } from 'vue';
 import { Message, Select } from 'bkui-vue';
 import { Ediatable, InputColumn, SelectColumn } from '@blueking/ediatable';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import isEmail from 'validator/lib/isEmail';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
 import { useTertiaryAccountStore, type ISubAccountCreateParams } from '@/store/cloud-account-manage/tertiary-account';
@@ -124,11 +125,13 @@ const nameRefs = ref<Record<number, InputColumnExpose>>({});
 const permissionTemplateRefs = ref<Record<number, { getValue: () => Promise<any> }>>({});
 const managerRefs = ref<Record<number, { getValue: () => Promise<any> }>>({});
 const receiveEmailRefs = ref<Record<number, InputColumnExpose>>({});
+const phoneRefs = ref<Record<number, InputColumnExpose>>({});
+const emailRefs = ref<Record<number, InputColumnExpose>>({});
 
 const secondaryAccountSelectList = computed(() =>
   secondaryAccountList.value.map((item) => ({
     value: item.id,
-    label: `${item.name}(${item.id})`,
+    label: `${item.name}(${item?.extension?.cloud_main_account_id})`,
   })),
 );
 
@@ -281,6 +284,8 @@ const handleSubmit = async () => {
         permissionTemplateRefs.value[index],
         managerRefs.value[index],
         receiveEmailRefs.value[index],
+        phoneRefs.value[index],
+        emailRefs.value[index],
       ])
       .filter(Boolean);
     await Promise.all(allRefs.map((r) => r.getValue()));
@@ -340,6 +345,17 @@ const handleChangeSecondaryAccount = (index: number) => {
   // 变更二级账号时，清空权限模板选择数据
   tableData.value[index].permission_template_ids = [];
 };
+
+const receiveEmailRules = computed(() => [
+  { validator: (v: any) => Boolean(v), message: '请输入账号开通接收邮箱' },
+  {
+    validator: (v: any) => {
+      if (!v || !v.trim()) return true;
+      return isEmail(v.trim());
+    },
+    message: '邮箱格式不正确',
+  },
+]);
 </script>
 
 <template>
@@ -401,10 +417,33 @@ const handleChangeSecondaryAccount = (index: number) => {
                   ></hcm-form-list>
                 </td>
                 <td>
-                  <InputColumn v-model="row.phone_num" placeholder="请输入" />
+                  <InputColumn
+                    v-model="row.phone_num"
+                    :ref="(el: any) => (phoneRefs[index] = el)"
+                    :rules="[{
+                      validator: (v: any) => {
+                        if (!v || !v.trim()) return true;
+                        const phoneNumber = parsePhoneNumberFromString(v.trim());
+                        return phoneNumber?.isValid() === true;
+                      },
+                      message: '手机号格式不正确'
+                    }]"
+                    placeholder="请输入"
+                  />
                 </td>
                 <td>
-                  <InputColumn v-model="row.email" placeholder="请输入" />
+                  <InputColumn
+                    v-model="row.email"
+                    :ref="(el: any) => (emailRefs[index] = el)"
+                    :rules="[{
+                      validator: (v: any) => {
+                        if (!v || !v.trim()) return true;
+                        return isEmail(v.trim());
+                      },
+                      message: '邮箱格式不正确'
+                    }]"
+                    placeholder="请输入"
+                  />
                 </td>
                 <td>
                   <hcm-form-user
@@ -420,7 +459,7 @@ const handleChangeSecondaryAccount = (index: number) => {
                   <InputColumn
                     v-model="row.receive_email"
                     :ref="(el: any) => (receiveEmailRefs[index] = el)"
-                    :rules="[{ validator: (v: any) => Boolean(v), message: '请输入账号开通接收邮箱' }]"
+                    :rules="receiveEmailRules"
                     placeholder="请输入"
                   />
                 </td>
