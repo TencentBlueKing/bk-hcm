@@ -105,5 +105,4 @@ export const AUTH_BIZ_CREATE_SUB_ACCOUNT = Symbol.for('auth_biz_create_sub_accou
 export const AUTH_BIZ_UPDATE_SUB_ACCOUNT = Symbol.for('auth_biz_update_sub_account');
 export const AUTH_BIZ_DELETE_SUB_ACCOUNT = Symbol.for('auth_biz_delete_sub_account');
 export const AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT = Symbol.for('auth_biz_update_secondary_account');
-export const AUTH_BIZ_CREATE_SECONDARY_ACCOUNT = Symbol.for('auth_biz_create_secondary_account');
 export const AUTH_BIZ_DELETE_SECONDARY_ACCOUNT = Symbol.for('auth_biz_delete_secondary_account');

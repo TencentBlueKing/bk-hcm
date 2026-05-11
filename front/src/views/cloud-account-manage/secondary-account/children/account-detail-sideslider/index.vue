@@ -13,8 +13,8 @@ import AccountCreateSideslider from '@/views/cloud-account-manage/tertiary-accou
 import type { ModelProperty } from '@/model/typings';
 import type { DisplayType } from '@/components/display-value/typings';
 import {
+  AUTH_BIZ_CREATE_SUB_ACCOUNT,
   AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT,
-  AUTH_BIZ_CREATE_SECONDARY_ACCOUNT,
   AUTH_BIZ_DELETE_SECONDARY_ACCOUNT,
 } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store/account';
@@ -394,10 +394,16 @@ const handleSyncAccount = () => {
         <template #header>
           <div class="card-header">
             <span class="card-title">三级账号</span>
-            <bk-button theme="primary" text class="add-btn" @click="showCreateSubAccount = true">
-              <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
-              新建三级账号
-            </bk-button>
+            <hcm-auth
+              v-if="getBizsId()"
+              :sign="{ type: AUTH_BIZ_CREATE_SUB_ACCOUNT, relation: [getBizsId()] }"
+              v-slot="{ noPerm }"
+            >
+              <bk-button theme="primary" text class="add-btn" :disabled="noPerm" @click="showCreateSubAccount = true">
+                <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
+                新建三级账号
+              </bk-button>
+            </hcm-auth>
           </div>
         </template>
         <div class="sub-account-info">
@@ -413,7 +419,7 @@ const handleSyncAccount = () => {
           <div class="card-header">
             <span class="card-title">资源密钥</span>
             <hcm-auth
-              :sign="{ type: AUTH_BIZ_CREATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
+              :sign="{ type: AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT, relation: [accountStore.bizs] }"
               v-slot="{ noPerm }"
             >
               <bk-button theme="primary" text class="add-btn" :disabled="noPerm" @click="handleAddSecret">

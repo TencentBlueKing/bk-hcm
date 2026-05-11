@@ -412,12 +412,6 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'account',
     transform: bizTransform,
   },
-  [authSymbol.AUTH_BIZ_CREATE_SECONDARY_ACCOUNT]: {
-    id: 'biz_account_operate',
-    action: 'create',
-    resourceType: 'account',
-    transform: bizTransform,
-  },
   [authSymbol.AUTH_BIZ_DELETE_SECONDARY_ACCOUNT]: {
     id: 'biz_account_operate',
     action: 'delete',
