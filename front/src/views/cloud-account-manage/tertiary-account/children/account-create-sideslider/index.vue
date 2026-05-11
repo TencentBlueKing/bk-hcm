@@ -387,8 +387,10 @@ const handleChangeSecondaryAccount = (index: number) => {
                   />
                 </td>
                 <td>
+                  <!-- 添加key是为了解决SelectColumn组件内不会响应list的变化 -->
                   <hcm-form-list
                     v-model="row.permission_template_ids"
+                    :key="row.account_id"
                     :list-generator="getRowPermTemplateListGenerator(row)"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
                     placeholder="请选择"
