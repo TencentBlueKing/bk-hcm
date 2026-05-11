@@ -47,5 +47,10 @@ const appearanceComps: Partial<Record<AppearanceType, any>> = {
     :display-on="displayOn"
     :value="value"
     v-bind="appearanceProps"
-  />
+  >
+    <!-- 继承插槽 -->
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot :name="slot" v-bind="scope" />
+    </template>
+  </component>
 </template>

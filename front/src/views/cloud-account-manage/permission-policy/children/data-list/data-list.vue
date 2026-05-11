@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, h } from 'vue';
+import { computed, h, inject, ref, type Ref } from 'vue';
 import { PaginationType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import { Button } from 'bkui-vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 import {
   AUTH_UPDATE_PERMISSION_POLICY_LIBRARY,
   AUTH_APPLY_PERMISSION_POLICY_LIBRARY,
@@ -40,6 +42,8 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 const { isBusinessPage, getBizsId } = useWhereAmI();
+
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 
 const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 
@@ -82,11 +86,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   }
   return null;
 };
-
-const getAccountLoadFn = (row: IPermissionPolicyItem) => async (): Promise<LinkPopoverItem[]> => {
-  // TODO: 等接口提供云id
-  return row.related_accounts.map((id) => ({ id, label: id }));
-};
 </script>
 
 <template>
@@ -124,12 +123,22 @@ const getAccountLoadFn = (row: IPermissionPolicyItem) => async (): Promise<LinkP
               :display="{
                 appearance: 'link-popover',
                 appearanceProps: {
-                  loadFn: getAccountLoadFn(row),
                   onLinkClick: handleGoToAccount,
-                  emptyText: '未查询到关联三级账号',
+                  emptyText: '未查询到关联二级账号',
+                  list: row?.related_accounts.map((id: string) => ({ id, label: id })),
                 },
               }"
-            />
+            >
+              <template #item-label="{ item }">
+                <SecondaryAccountValue
+                  :value="item.id"
+                  :vendor="currentVendor"
+                  :res-type="SecondaryAccountResourceTypeEnum.PERMISSION"
+                  :biz-id="bizId"
+                  :label-formatter="(item) => item?.extension?.cloud_main_account_id"
+                />
+              </template>
+            </display-value>
           </template>
           <!-- 其他自定义渲染列 -->
           <template v-else-if="getColumnRender(column)">

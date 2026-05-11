@@ -101,8 +101,14 @@ const handleLinkClick = (item: LinkPopoverItem) => {
         :style="{ width: `${popoverWidth}px`, maxHeight: `${popoverMaxHeight}px` }"
       >
         <li v-for="item in renderList" :key="item.id" class="link-popover-item">
-          <span class="link-popover-label" v-bk-tooltips="{ content: item.label }">{{ item.label }}</span>
-          <Share class="link-popover-icon" @click="handleLinkClick(item)" />
+          <slot name="item-label" :item="item">
+            <span class="link-popover-label" v-bk-tooltips="{ content: item.label }">{{ item.label }}</span>
+          </slot>
+          <span class="link-popover-trigger" @click="handleLinkClick(item)">
+            <slot name="item-icon">
+              <Share class="link-popover-icon" />
+            </slot>
+          </span>
         </li>
       </ul>
       <div v-else class="link-popover-empty">{{ emptyText }}</div>

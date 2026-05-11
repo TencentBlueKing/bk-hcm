@@ -82,6 +82,10 @@ const attrs = useAttrs();
     :option="property.option"
     :display="props.display"
     v-bind="attrs"
-  />
+  >
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot :name="slot" v-bind="scope" />
+    </template>
+  </component>
   <span v-else>unknown type</span>
 </template>

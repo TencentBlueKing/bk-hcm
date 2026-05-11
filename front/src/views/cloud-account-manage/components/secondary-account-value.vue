@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
 import CombineRequest from '@blueking/combine-request';
-import { useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
+import { ISecondaryAccountItem, useSecondaryAccountStore } from '@/store/cloud-account-manage/secondary-account';
 import { SecondaryAccountResourceTypeEnum, VendorEnum } from '@/common/constant';
 
-const props = defineProps<{ value: string | string[]; vendor: VendorEnum; resType: string; bizId?: number }>();
+const props = defineProps<{
+  value: string | string[];
+  vendor: VendorEnum;
+  resType: string;
+  bizId?: number;
+  labelFormatter?: (account: ISecondaryAccountItem) => string;
+}>();
 
 const localValue = computed(() => {
   if (!props.value) {
@@ -19,6 +25,9 @@ const displayValue = computed(() => {
     const account = secondaryAccountStore.allSecondaryAccountCacheList.get(`${id}@${resType.value}@${bizId.value}`);
     if (!account) {
       return '';
+    }
+    if (props.labelFormatter) {
+      return props.labelFormatter(account);
     }
     return `${account?.extension?.cloud_main_account_id} (${account.name})`;
   });
