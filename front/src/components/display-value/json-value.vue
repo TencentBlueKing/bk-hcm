@@ -36,6 +36,7 @@ const displayValue = computed(() => formatJSON(props.value, displayOn.value === 
   font-size: 12px;
   line-height: 20px;
   overflow-x: auto;
+  color: #000;
 
   .copy-btn {
     position: absolute;

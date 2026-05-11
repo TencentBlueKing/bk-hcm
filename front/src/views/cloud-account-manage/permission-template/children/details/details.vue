@@ -102,7 +102,7 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
 .permission-template-details {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 
   .details-panel {
     background: #fff;
@@ -116,6 +116,22 @@ const getSubAccountLoadFn = (data: IPermissionTemplateItem) => async (): Promise
       color: #313238;
       line-height: 22px;
       margin-bottom: 8px;
+    }
+
+    :deep(.grid-container) {
+      .grid-item {
+        align-items: center;
+
+        .item-label,
+        .item-content {
+          font-size: 12px;
+          padding: 7px 0;
+        }
+
+        .item-label {
+          color: #4d4f56;
+        }
+      }
     }
   }
 }
