@@ -81,6 +81,13 @@ const getConfig = (custom = {}) => ({
       config.plugin('buildHash').use(BuildHashPlugin);
     }
 
+    // fix: too many open files
+    config.watchOptions({
+      ignored: ['**/node_modules', '**/.git'],
+      aggregateTimeout: 300,
+      poll: 1000,
+    });
+
     return config;
   },
 });
