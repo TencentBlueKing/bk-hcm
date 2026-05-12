@@ -30,10 +30,12 @@ import (
 	"sync"
 	"time"
 
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 
 	"github.com/emicklei/go-restful/v3"
 	prm "github.com/prometheus/client_golang/prometheus"
@@ -128,75 +130,139 @@ func (r *Handler) Load(ws *restful.WebService) {
 }
 
 func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp *restful.Response) {
-	return func(req *restful.Request, resp *restful.Response) {
-		cts := new(Contexts)
-		cts.Request = req
-		cts.resp = resp
+	// component is the service name (e.g. cloud-server, hc-service, data-service);
+	// fixed for all requests on this process so we cache it once at action build time.
+	component := string(cc.ServiceName())
+	endpointTemplate := r.endpointTemplate(action)
 
-		kt, err := kit.FromHeader(req.Request.Context(), req.Request.Header)
+	return func(req *restful.Request, resp *restful.Response) {
+		cts := newRequestContexts(req, resp)
+		startReq := time.Now()
+		errType := metrics.ErrTypeOK
+		defer func() {
+			metrics.ObserveHTTPRequest(component, endpointTemplate, action.Verb,
+				metrics.VendorNone, time.Since(startReq), errType)
+		}()
+
+		kt, err := initRequestKit(action, req, cts)
 		if err != nil {
-			rid := req.Request.Header.Get(constant.RidKey)
-			logs.Errorf("invalid request for %s, err: %v, rid: %s", action.Alias, err, rid)
-			cts.WithStatusCode(http.StatusBadRequest)
-			cts.respError(err)
-			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
+			errType = metrics.ErrTypeInvalidParam
 			return
 		}
 
-		defer func() {
-			if fatalErr := recover(); fatalErr != nil {
-				cts.respError(fmt.Errorf("panic err: %v", fatalErr))
-				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid, debug.Stack())
-				logs.CloseLogs()
-			}
-		}()
+		defer recoverActionPanic(cts, kt, &errType)
 
 		cts.Kit = kt
-
-		// print request log when log level is 4 or request is write request
-		if (bool(logs.V(4)) || (!strings.Contains(req.Request.URL.Path, "/list/") &&
-			!strings.Contains(req.Request.URL.Path, "/find/"))) && req.Request.Body != nil {
-
-			byt, err := ioutil.ReadAll(req.Request.Body)
-			if err != nil {
-				logs.Errorf("restful request %s peek failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
-
-				cts.WithStatusCode(http.StatusBadRequest)
-				cts.respError(errf.NewFromErr(errf.InvalidParameter, err))
-				restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
-				return
-			}
-
-			req.Request.Body = ioutil.NopCloser(bytes.NewBuffer(byt))
-
-			compactJson := new(bytes.Buffer)
-			compactBody := string(byt)
-			if err := json.Compact(compactJson, byt); err == nil {
-				compactBody = compactJson.String()
-			}
-			logs.Infof("%s received restful request, body: %s, rid: %s", action.Alias, compactBody, kt.Rid)
+		if err := logRequestBody(action, req, cts); err != nil {
+			errType = metrics.ErrTypeInvalidParam
+			return
 		}
 
 		start := time.Now()
 		reply, err := action.Handler(cts)
-		if err != nil {
-			if logs.V(2) {
-				logs.Errorf("do restful request %s failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
-			}
-
-			if reply != nil {
-				cts.respErrorWithEntity(reply, err)
-			} else {
-				cts.respError(err)
-			}
-
-			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
+		if errType = handleActionReply(action, cts, reply, err, start); errType != metrics.ErrTypeOK {
 			return
 		}
-
-		cts.respEntity(reply)
-
-		restMetric.lagMS.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).
-			Observe(float64(time.Since(start).Milliseconds()))
 	}
+}
+
+func newRequestContexts(req *restful.Request, resp *restful.Response) *Contexts {
+	cts := new(Contexts)
+	cts.Request = req
+	cts.resp = resp
+	return cts
+}
+
+func initRequestKit(action *action, req *restful.Request, cts *Contexts) (*kit.Kit, error) {
+	kt, err := kit.FromHeader(req.Request.Context(), req.Request.Header)
+	if err != nil {
+		rid := req.Request.Header.Get(constant.RidKey)
+		logs.Errorf("invalid request for %s, err: %v, rid: %s", action.Alias, err, rid)
+		cts.WithStatusCode(http.StatusBadRequest)
+		cts.respError(err)
+		restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
+		return nil, err
+	}
+	return kt, nil
+}
+
+func recoverActionPanic(cts *Contexts, kt *kit.Kit, errType *metrics.ErrType) {
+	if fatalErr := recover(); fatalErr != nil {
+		cts.respError(fmt.Errorf("panic err: %v", fatalErr))
+		logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid, debug.Stack())
+		logs.CloseLogs()
+		*errType = metrics.ErrTypeHCMError
+	}
+}
+
+func logRequestBody(action *action, req *restful.Request, cts *Contexts) error {
+	if !shouldLogRequestBody(req) {
+		return nil
+	}
+
+	byt, err := ioutil.ReadAll(req.Request.Body)
+	if err != nil {
+		logs.Errorf("restful request %s peek failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
+		cts.WithStatusCode(http.StatusBadRequest)
+		cts.respError(errf.NewFromErr(errf.InvalidParameter, err))
+		restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
+		return err
+	}
+
+	req.Request.Body = ioutil.NopCloser(bytes.NewBuffer(byt))
+
+	compactJSON := new(bytes.Buffer)
+	compactBody := string(byt)
+	if err := json.Compact(compactJSON, byt); err == nil {
+		compactBody = compactJSON.String()
+	}
+	logs.Infof("%s received restful request, body: %s, rid: %s", action.Alias, compactBody, cts.Kit.Rid)
+	return nil
+}
+
+func shouldLogRequestBody(req *restful.Request) bool {
+	if req.Request.Body == nil {
+		return false
+	}
+	return bool(logs.V(4)) || (!strings.Contains(req.Request.URL.Path, "/list/") &&
+		!strings.Contains(req.Request.URL.Path, "/find/"))
+}
+
+func handleActionReply(action *action, cts *Contexts, reply interface{}, err error, start time.Time) metrics.ErrType {
+	if err != nil {
+		if logs.V(2) {
+			logs.Errorf("do restful request %s failed, err: %v, rid: %s", action.Alias, err, cts.Kit.Rid)
+		}
+		if reply != nil {
+			cts.respErrorWithEntity(reply, err)
+		} else {
+			cts.respError(err)
+		}
+		restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
+		return metrics.ClassifyError(err)
+	}
+
+	cts.respEntity(reply)
+	restMetric.lagMS.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).
+		Observe(float64(time.Since(start).Milliseconds()))
+	return metrics.ErrTypeOK
+}
+
+// endpointTemplate returns the route template used as the `endpoint` label
+// value for unified http_request_* metrics. It joins the handler's root path
+// with the action path so the final value is the full route template (e.g.
+// "/api/v1/cloud/load_balancers/{lb_id}/listeners/create"). Empty values are
+// avoided so the metric label stays low-cardinality and self-describing.
+func (r *Handler) endpointTemplate(action *action) string {
+	if action == nil {
+		return "unknown"
+	}
+	path := action.Path
+	if r.rootPath != "" {
+		path = fmt.Sprintf("%s/%s", r.rootPath, strings.TrimLeft(path, "/"))
+	}
+	if path == "" {
+		path = "/"
+	}
+	return path
 }

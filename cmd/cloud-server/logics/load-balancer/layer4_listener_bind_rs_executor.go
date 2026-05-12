@@ -256,7 +256,7 @@ func (c *Layer4ListenerBindRSExecutor) createFlowTask(kt *kit.Kit, lbID string,
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowTargetGroupAddRS,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, Layer4ListenerBindRs, map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,

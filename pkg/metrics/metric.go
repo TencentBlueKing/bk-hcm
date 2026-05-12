@@ -71,6 +71,15 @@ const (
 
 	// CronSubSys defines all the cron related sub system.
 	CronSubSys = "cron"
+
+	// HTTPSubSys defines unified http request sub system. Used for
+	// cross-service http_request_* metrics (api-server / hc-service /
+	// data-service service-side requests, and adaptor cloud API calls).
+	HTTPSubSys = "http"
+
+	// CLBSubSys defines clb business related sub system. Used for
+	// CLB submit entry metrics, e.g. hcm_clb_submit_*.
+	CLBSubSys = "clb"
 )
 
 // labels

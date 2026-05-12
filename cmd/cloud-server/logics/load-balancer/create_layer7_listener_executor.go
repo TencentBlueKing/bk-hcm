@@ -432,7 +432,7 @@ func (c *CreateLayer7ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowLoadBalancerCreateListener,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, CreateLayer7Listener, map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,
