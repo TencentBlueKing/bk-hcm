@@ -89,10 +89,9 @@ const loadList = async () => {
       page: { ...pageParams },
       filter: { ...vendorFilter },
     });
-    tableData.value = data.list;
-    pagination.count = data.count;
     // 获取关联的账号列表
-    getAssociationAccountList(data.list);
+    tableData.value = await getAssociationAccountList(data.list);
+    pagination.count = data.count;
   } catch (error) {
     console.error('获取权限策略库列表失败:', error);
     tableData.value = [];
@@ -100,9 +99,10 @@ const loadList = async () => {
   }
 };
 
-const getAssociationAccountList = async (list: { id: string; associated_account_count: number }[]) => {
+const getAssociationAccountList = async (list: IPermissionPolicyItem[]) => {
+  const data = [...list];
   const res = await Promise.allSettled(
-    list.map((item: { id: string; associated_account_count: number }) =>
+    data.map((item) =>
       permissionPolicyStore.getPermissionAssoAccountList(
         bizId.value,
         currentVendor.value,
@@ -112,8 +112,9 @@ const getAssociationAccountList = async (list: { id: string; associated_account_
     ),
   );
   res.forEach((item: any, index) => {
-    list[index]['related_accounts'] = item?.value || [];
+    data[index]['related_accounts'] = item?.value || [];
   });
+  return data;
 };
 
 // 监听路由变化，获取列表数据
@@ -153,7 +154,7 @@ const isLoading = ref(false);
 
 const showApplySideslider = ref(false);
 const showPolicyInfoSideslider = ref(false);
-const currentApplyPolicy = ref<IPermissionPolicyItem | null>(null);
+const currentApplyPolicy = ref<IPermissionPolicyItem | undefined>(undefined);
 
 // 应用日志相关
 const applyReason = ref<IApplyResultItem[]>([]);

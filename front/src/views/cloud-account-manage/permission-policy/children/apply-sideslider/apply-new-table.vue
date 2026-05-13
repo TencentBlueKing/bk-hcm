@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, Ref, ref, inject } from 'vue';
 import type { ISelectableAccount } from '../../typings';
 import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
@@ -13,6 +13,7 @@ const props = defineProps<{
 const bizId = computed(() => props.bizId);
 const vendor = computed(() => props.vendor);
 const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
 
 // 已选账号列表
 const selectedAccounts = ref<{ account_id: string }[]>([]);
@@ -110,7 +111,12 @@ defineExpose({
           closable
           @close="handleRemoveSelected(account.account_id)"
         >
-          {{ account.account_id }}
+          <SecondaryAccountValue
+            :value="account.account_id"
+            :vendor="currentVendor"
+            :res-type="SecondaryAccountResourceTypeEnum.PERMISSION"
+            :biz-id="bizId"
+          />
         </bk-tag>
       </div>
     </div>

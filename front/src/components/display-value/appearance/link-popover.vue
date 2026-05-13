@@ -74,7 +74,7 @@ watch(
       isLoaded.value = true;
     }
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
 const handleLinkClick = (item: LinkPopoverItem) => {

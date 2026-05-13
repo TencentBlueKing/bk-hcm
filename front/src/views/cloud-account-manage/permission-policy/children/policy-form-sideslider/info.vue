@@ -15,16 +15,20 @@ import { useRoute } from 'vue-router';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import { FieldFactory } from './field-factory';
-import type { InfoFieldTcloud } from './field-tcloud';
 import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 import type { LinkPopoverItem } from '@/components/display-value/appearance/link-popover.vue';
 
 // 双向绑定控制显示状态
 const model = defineModel<boolean>();
 
-const props = defineProps<{
-  policyData: IPermissionPolicyItem & InfoFieldTcloud;
-}>();
+const props = withDefaults(
+  defineProps<{
+    policyData?: IPermissionPolicyItem;
+  }>(),
+  {
+    policyData: undefined,
+  },
+);
 
 const emit = defineEmits<{
   'apply-to-account': [row: IPermissionPolicyItem];
@@ -72,7 +76,7 @@ const handleApplyToAccount = () => {
         <div class="title">
           权限策略库详情
           <div class="separator"></div>
-          <span class="name">{{ props.policyData.name }}</span>
+          <span class="name">{{ props.policyData?.name }}</span>
         </div>
         <hcm-auth
           :sign="
@@ -97,7 +101,7 @@ const handleApplyToAccount = () => {
               <template v-if="field.id === 'associated_account_count'">
                 <display-value
                   :property="field"
-                  :value="props.policyData.associated_account_count"
+                  :value="props.policyData?.associated_account_count"
                   :display="{
                     appearance: 'link-popover',
                     appearanceProps: {
@@ -122,7 +126,7 @@ const handleApplyToAccount = () => {
               <display-value
                 v-else
                 :property="field"
-                :value="props.policyData[field.id as keyof typeof props.policyData]"
+                :value="props.policyData?.[field.id]"
                 :display="{ ...field.meta?.display, on: 'info' }"
               />
             </grid-item>

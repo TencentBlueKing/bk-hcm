@@ -125,7 +125,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
                 appearanceProps: {
                   onLinkClick: handleGoToAccount,
                   emptyText: '未查询到关联二级账号',
-                  list: row?.related_accounts.map((id: string) => ({ id, label: id })),
+                  list: row?.related_accounts?.map((id: string) => ({ id, label: id })),
                 },
               }"
             >

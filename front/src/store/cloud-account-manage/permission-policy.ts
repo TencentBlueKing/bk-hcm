@@ -21,6 +21,7 @@ export interface IPermissionPolicyItem {
   policy_document: string; // 当前版本的策略JSON内容
   policy_hash: string; // 当前版本的策略HASH
   associated_account_count: number; // 关联二级账号数
+  related_accounts?: string[]; // 关联的二级账号ID列表（前端补充）
 }
 
 // 已应用账号列表
