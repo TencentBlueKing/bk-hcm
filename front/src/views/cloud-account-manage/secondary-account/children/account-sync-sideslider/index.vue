@@ -105,14 +105,13 @@ const hasUnfinished = computed(() => rows.value.some((r) => r.status === 'syncin
           show-overflow-tooltip
           :max-height="'calc(100vh - 160px)'"
         >
-          <bk-table-column label="账号名称" min-width="280">
+          <bk-table-column label="账号名称" width="280">
             <template #default="{ row }: { row: ISyncRow }">
-              <!-- <SecondaryAccountValue :value="row.id" :biz-id="props.bizId" :vendor="props.vendor" res-type="sub_account" /> -->
               {{ row.account.name }}({{ row.account.extension.cloud_main_account_id }})
             </template>
           </bk-table-column>
 
-          <bk-table-column label="同步状态" width="180">
+          <bk-table-column label="同步状态" width="80">
             <template #default="{ row }: { row: ISyncRow }">
               <Status
                 :value="STATUS_VALUE_MAP[row.status]"
@@ -128,7 +127,7 @@ const hasUnfinished = computed(() => rows.value.some((r) => r.status === 'syncin
             </template>
           </bk-table-column>
 
-          <bk-table-column label="请求完成时间" width="220" prop="finishTime">
+          <bk-table-column label="请求完成时间" width="120" prop="finishTime">
             <template #default="{ row }: { row: ISyncRow }">
               {{ row.finishTime }}
             </template>
