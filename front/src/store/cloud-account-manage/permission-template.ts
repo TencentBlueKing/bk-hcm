@@ -202,11 +202,18 @@ export const usePermissionTemplateStore = defineStore('permission-template', () 
   ): ListGeneratorFactory => {
     return async function* (keywordOrOptions) {
       const api = `/api/v1/cloud/bizs/${bizId}/vendors/${vendor}/permission_templates/list`;
-      const params: Record<string, any> = { ...defaultParams };
+      let params: Record<string, any> = { ...defaultParams };
       const keyword = typeof keywordOrOptions === 'string' ? keywordOrOptions : undefined;
       const options = typeof keywordOrOptions === 'object' ? keywordOrOptions : undefined;
       if (keyword) params.names = [keyword];
-      if (options?.ids?.length) params.ids = options.ids;
+
+      // 如果传递ids将丢弃其它条件只保留ids条件，在真实的使用场景中存在ids指定的值与其它条件不兼容导致查询不到数据
+      // 但业务逻辑允许这种情况，所以采用这种策略
+      if (options?.ids?.length) {
+        params = {
+          ids: options.ids,
+        };
+      }
 
       const gen = await rollRequest({ httpClient: http, pageEnableCountKey: 'count' }).rollReqUseCount<
         IListResData<IPermissionTemplateItem[]>

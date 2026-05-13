@@ -46,20 +46,20 @@ const loadFirstPage = async (generator: AsyncGenerator<Record<string, any>[], vo
   const result = await generator.next();
   localList.value = result.done ? [] : (result.value as Record<string, any>[]);
 };
-const supplementSelectedItems = async () => {
+const appendSelectedItems = async () => {
   if (!model.value) return;
   const ids = (Array.isArray(model.value) ? model.value : [model.value]).filter(
     (id) => !localList.value.some((item) => item[idKey.value] === id),
   );
   if (ids.length === 0) return;
-  const supplementGen = props.listGenerator?.({ ids });
-  const supplementList: Record<string, any>[] = [];
-  for await (const items of supplementGen) {
-    supplementList.push(...(items as Record<string, any>[]));
+  const dataGen = props.listGenerator?.({ ids });
+  const dataList: Record<string, any>[] = [];
+  for await (const items of dataGen) {
+    dataList.push(...items);
   }
-  if (supplementList.length > 0) {
-    localList.value = [...supplementList, ...localList.value];
-    supplementList.forEach((item) => pinnedIds.value.add(item[idKey.value]));
+  if (dataList.length > 0) {
+    localList.value = [...dataList, ...localList.value];
+    dataList.forEach((item) => pinnedIds.value.add(item[idKey.value]));
   }
 };
 
@@ -70,7 +70,7 @@ watchEffect(async () => {
     try {
       currentGenerator = props.listGenerator?.();
       await loadFirstPage(currentGenerator);
-      await supplementSelectedItems();
+      await appendSelectedItems();
     } finally {
       loading.value = false;
     }
@@ -92,7 +92,6 @@ const handleRemoteMethod = async (keyword: string) => {
   try {
     currentGenerator = props.listGenerator?.(keyword);
     await loadFirstPage(currentGenerator);
-    await supplementSelectedItems();
   } finally {
     loading.value = false;
   }

@@ -29,6 +29,7 @@ export class TableColumn {
     name: '账号邮箱',
     index: 2,
     width: 180,
+    hidden: true,
   })
   email: string;
 
@@ -159,6 +160,7 @@ export class TableColumn {
     sort: true,
     index: 14,
     width: 170,
+    hidden: true,
   })
   cloud_created_at: string;
 

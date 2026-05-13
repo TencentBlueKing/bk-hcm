@@ -48,29 +48,35 @@ export default defineComponent({
     const isCancelBtnLoading = ref(false);
     const route = useRoute();
     let interval: NodeJS.Timeout;
+    const bizId = computed(() => Number(route.query.bizs));
 
     // 获取单据详情
     const getMyApplyDetail = async (id: string) => {
       isLoading.value = true;
       try {
-        const res = await accountStore.getApplyAccountDetail(id);
+        const res = await accountStore.getApplyAccountDetail(id, bizId.value);
         currentApplyData.value = res.data;
         curApplyKey.value = res.data.id;
 
         if ([ApplicationStatus.pending, ApplicationStatus.delivering].includes(res.data.status)) {
-          clearInterval(interval);
-          interval = setInterval(() => getMyApplyDetail(route.query.id as string), 5000);
+          // 避免重复创建 interval
+          if (!interval) {
+            interval = setInterval(() => getMyApplyDetail(route.query.id as string), 5000);
+          }
         } else {
-          clearInterval(interval);
+          clearTimer();
         }
       } finally {
         isLoading.value = false;
       }
     };
 
-    onUnmounted(() => {
+    const clearTimer = () => {
       clearInterval(interval);
-    });
+      interval = null as unknown as NodeJS.Timeout;
+    };
+
+    onUnmounted(clearTimer);
 
     // 撤销单据
     const handleCancel = async (id: string) => {

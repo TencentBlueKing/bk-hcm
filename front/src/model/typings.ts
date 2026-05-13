@@ -54,6 +54,7 @@ export type ModelProperty = {
   index?: number;
   group?: string;
   apiOnly?: boolean;
+  hidden?: boolean;
 };
 
 export type PropertyColumnConfig = {

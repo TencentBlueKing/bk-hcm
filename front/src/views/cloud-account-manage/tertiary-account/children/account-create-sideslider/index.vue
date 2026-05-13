@@ -17,6 +17,7 @@ import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
 import routerAction from '@/router/utils/action';
 import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import { PERMISSION_TEMPLATE_TYPES } from '@/views/cloud-account-manage/permission-template/constants';
 
 interface IRowData {
   account_id: string;
@@ -142,6 +143,7 @@ const getRowPermTemplateListGenerator = (row: IRowData) => {
     extension: {
       cloud_main_account_ids: [secondaryAccount.extension.cloud_main_account_id],
     },
+    permission_template_type: PERMISSION_TEMPLATE_TYPES.SYNC_WITH_LIBRARY,
   };
   return permissionTemplateStore.createPermissionTemplateListGenerator(getBizsId(), currentVendor.value, defaultParams);
 };
@@ -403,10 +405,8 @@ const receiveEmailRules = computed(() => [
                   />
                 </td>
                 <td>
-                  <!-- 添加key是为了解决SelectColumn组件内不会响应list的变化 -->
                   <hcm-form-list
                     v-model="row.permission_template_ids"
-                    :key="row.account_id"
                     :list-generator="getRowPermTemplateListGenerator(row)"
                     :ref="(el: any) => (permissionTemplateRefs[index] = el)"
                     placeholder="请选择"

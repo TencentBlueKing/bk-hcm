@@ -16,6 +16,7 @@ import BusinessSelector from '@/components/business-selector/business.vue';
 import { usePermissionTemplateStore } from '@/store/cloud-account-manage/permission-template';
 import routerAction from '@/router/utils/action';
 import { MENU_SERVICE_TICKET_DETAILS, MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
+import { PERMISSION_TEMPLATE_TYPES } from '@/views/cloud-account-manage/permission-template/constants';
 
 const model = defineModel<boolean>();
 
@@ -169,6 +170,7 @@ const listGenerator = computed(() => {
     extension: {
       cloud_main_account_ids: [props.accountData.extension.cloud_main_account_id],
     },
+    permission_template_type: PERMISSION_TEMPLATE_TYPES.SYNC_WITH_LIBRARY,
   });
 });
 </script>

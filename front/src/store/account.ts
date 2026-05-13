@@ -4,6 +4,7 @@ import http from '@/http';
 import { shallowRef } from 'vue';
 import { defineStore } from 'pinia';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { resolveBizApiPath } from '@/utils/search';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const useAccountStore = defineStore({
@@ -181,13 +182,12 @@ export const useAccountStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/list`, data);
     },
     /**
-     * @description: 查询申请账号列表
+     * @description: 查询单据详情
      * @param {number} data
      * @return {*}
      */
-    async getApplyAccountDetail(id: string) {
-      const { getBusinessApiPath } = useWhereAmI();
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}applications/${id}`);
+    async getApplyAccountDetail(id: string, bizId?: number) {
+      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${resolveBizApiPath(bizId)}applications/${id}`);
     },
     /**
      * @description: 撤销申请

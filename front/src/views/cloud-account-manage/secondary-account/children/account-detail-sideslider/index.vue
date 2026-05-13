@@ -134,16 +134,6 @@ const baseInfoFields = computed<Array<{ label: string; value: any; property: Mod
       display: { appearance: 'tag' },
     },
     {
-      label: '账号邮箱',
-      value: currentRowData.value?.email,
-      property: { id: 'email', name: '账号邮箱', type: 'string' },
-    },
-    {
-      label: '创建时间',
-      value: currentRowData.value?.cloud_created_at,
-      property: { id: 'cloud_created_at', name: '创建时间', type: 'datetime' },
-    },
-    {
       label: '负责人',
       value: currentRowData.value?.managers,
       property: { id: 'managers', name: '负责人', type: 'user' },

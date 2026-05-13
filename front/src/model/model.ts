@@ -19,7 +19,9 @@ export class Model<M> {
       (item: IColumnMetadata) => item.target === this.target || this.target.prototype instanceof (item.target as any),
     );
     const properties = columnMetadata.map((item: IColumnMetadata) => item.def);
-    return properties.sort((a: ModelPropertyGeneric, b: ModelPropertyGeneric) => a.index - b.index);
+    return properties
+      .filter((item: ModelPropertyGeneric) => item.hidden !== true)
+      .sort((a: ModelPropertyGeneric, b: ModelPropertyGeneric) => a.index - b.index);
   }
 
   getPropertiesByGroup<T extends ModelPropertyGeneric>(): Record<string, (T & { id: string & keyof M })[]> {
