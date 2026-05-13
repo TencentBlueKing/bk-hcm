@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -41,8 +42,8 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// ListPermissionTemplate lists business-scoped cloud permission templates.
-func (svc *service) ListPermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+// ListBizPermissionTemplate lists business-scoped cloud permission templates.
+func (svc *service) ListBizPermissionTemplate(cts *rest.Contexts) (interface{}, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -101,16 +102,29 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 		}, nil
 	}
 
+	// Translate PermissionTemplateType: inject CloudType into ext and derive PolicyLibraryIDIsNull.
+	policyLibraryIDIsNull, ext, err := convertPermTmplType(kt, req.PermissionTemplateType, ext)
+	if err != nil {
+		logs.Errorf("apply tcloud permission template type to ext failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	fwdExtBytes, err := json.Marshal(ext)
+	if err != nil {
+		return nil, fmt.Errorf("marshal tcloud extension failed: %w", err)
+	}
+
 	dsReq := &protocloud.PermissionTmplJoinExtListReq{
 		BkBizID: bizID,
 		PermissionTemplateFilters: protocloud.PermissionTemplateFilters{
-			IDs:        req.IDs,
-			CloudIDs:   req.CloudIDs,
-			Names:      req.Names,
-			AccountIDs: accountIDs,
-			Creator:    req.Creator,
-			Reviser:    req.Reviser,
-			Extension:  req.Extension,
+			IDs:                   req.IDs,
+			CloudIDs:              req.CloudIDs,
+			Names:                 req.Names,
+			AccountIDs:            accountIDs,
+			Creator:               req.Creator,
+			Reviser:               req.Reviser,
+			Extension:             tabletypes.JsonField(fwdExtBytes),
+			PolicyLibraryIDIsNull: policyLibraryIDIsNull,
 		},
 		Page: req.Page,
 	}
@@ -126,6 +140,38 @@ func (svc *service) listBizPermissionTmplForTCloud(kt *kit.Kit, bizID int64,
 	}
 
 	return svc.convBizPermTmplListResult(kt, results)
+}
+
+// convertPermTmplType injects CloudType into ext and returns PolicyLibraryIDIsNull
+// based on PermissionTemplateType. If tmplType is nil, ext is unchanged and nil is returned.
+//
+//   - custom:            ext.CloudType = 1, PolicyLibraryIDIsNull = true  (IS NULL)
+//   - preset:            ext.CloudType = 2, PolicyLibraryIDIsNull = true  (IS NULL)
+//   - sync_with_library: ext.CloudType = 1, PolicyLibraryIDIsNull = false (IS NOT NULL)
+func convertPermTmplType(kt *kit.Kit, tmplType *enumor.PermissionTemplateType,
+	ext *corecloud.TCloudPermissionTemplateListExt) (*bool, *corecloud.TCloudPermissionTemplateListExt, error) {
+
+	if tmplType == nil {
+		return nil, ext, nil
+	}
+
+	if ext == nil {
+		ext = new(corecloud.TCloudPermissionTemplateListExt)
+	}
+	switch converter.PtrToVal(tmplType) {
+	case enumor.PermissionTemplateTypeCustom:
+		ext.CloudType = converter.ValToPtr(enumor.TCloudCustomPolicy)
+		return converter.ValToPtr(true), ext, nil
+	case enumor.PermissionTemplateTypePreset:
+		ext.CloudType = converter.ValToPtr(enumor.TCloudPresetPolicy)
+		return converter.ValToPtr(true), ext, nil
+	case enumor.PermissionTemplateTypeSyncWithLibrary:
+		ext.CloudType = converter.ValToPtr(enumor.TCloudCustomPolicy)
+		return converter.ValToPtr(false), ext, nil
+	default:
+		logs.Infof("unsupported permission template type: %s, skip, rid: %s", converter.PtrToVal(tmplType), kt.Rid)
+		return nil, ext, nil
+	}
 }
 
 // convBizPermTmplListResult assembles the cloud-server response from data-service result.

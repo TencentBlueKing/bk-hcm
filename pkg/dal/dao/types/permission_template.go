@@ -50,6 +50,9 @@ type ListPermTmplJoinOption struct {
 	Page       *core.BasePage
 	// Extension is vendor-specific JSON from upper layer; DAO parses for TCloud.
 	Extension tabletypes.JsonField
+	// PolicyLibraryIDIsNull filters by policy_library_id nullability:
+	//   nil   → no filter  true  → IS NULL   false → IS NOT NULL
+	PolicyLibraryIDIsNull *bool
 }
 
 // PermissionTmplJoinRow is one row of permission_template with associated sub_account count

@@ -42,6 +42,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
@@ -392,6 +393,13 @@ func buildPermTmplJoinWhere(opt *types.ListPermTmplJoinOption) (
 		}
 	}
 
+	if opt.PolicyLibraryIDIsNull != nil {
+		if *opt.PolicyLibraryIDIsNull {
+			whereExprs = append(whereExprs, "pt.policy_library_id IS NULL")
+		} else {
+			whereExprs = append(whereExprs, "pt.policy_library_id IS NOT NULL")
+		}
+	}
 	if len(whereExprs) == 0 {
 		return "", args, nil
 	}
@@ -430,6 +438,11 @@ func buildPermTmplExtWhereForTCloud(whereExprs []string, args map[string]interfa
 				` AND JSON_CONTAINS(sa.permission_template_ids, JSON_QUOTE(pt.id)))`,
 				table.SubAccountTable))
 		args["cloud_sub_account_ids"] = tc.CloudSubAccountIDs
+	}
+
+	if tc.CloudType != nil {
+		whereExprs = append(whereExprs, "JSON_EXTRACT(pt.extension, '$.cloud_type') = :cloud_type")
+		args["cloud_type"] = int(converter.PtrToVal(tc.CloudType))
 	}
 
 	return whereExprs, nil

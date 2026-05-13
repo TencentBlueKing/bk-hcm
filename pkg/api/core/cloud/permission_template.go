@@ -33,9 +33,11 @@ type PermissionTemplateExtension interface {
 // join list. Used in data-service request extension JSON and in DAO join filter options (same shape).
 // CloudMainAccountIDs is resolved to account_ids in cloud-server and NOT forwarded to data-service.
 // CloudSubAccountIDs matches sub_account.cloud_id (UIN string) and is forwarded to data-service.
+// CloudType is injected by data-service based on PermissionTemplateType and applied as a JSON extract filter.
 type TCloudPermissionTemplateListExt struct {
-	CloudMainAccountIDs []string `json:"cloud_main_account_ids" validate:"omitempty,max=500,dive,lte=255"`
-	CloudSubAccountIDs  []string `json:"cloud_sub_account_ids" validate:"omitempty,max=500,dive,lte=255"`
+	CloudMainAccountIDs []string                 `json:"cloud_main_account_ids" validate:"omitempty,max=500,dive,lte=255"`
+	CloudSubAccountIDs  []string                 `json:"cloud_sub_account_ids" validate:"omitempty,max=500,dive,lte=255"`
+	CloudType           *enumor.TCloudPolicyType `json:"cloud_type,omitempty" validate:"omitempty"`
 }
 
 // TCloudPermissionTemplateExtension defines tcloud permission template extension.

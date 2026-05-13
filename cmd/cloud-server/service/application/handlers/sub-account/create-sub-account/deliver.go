@@ -277,6 +277,7 @@ func (a *ApplicationOfCreateSubAccount) saveSubAccountBasicInfo(cloudResult *hss
 		AccountID:             a.req.AccountID,
 		Managers:              a.req.Managers,
 		BkBizIDs:              types.Int64Array{a.BkBizID()},
+		CountryCode:           converter.ValToPtr(a.req.CountryCode),
 		PermissionTemplateIDs: a.req.PermissionTemplateIDs,
 		Email:                 converter.ValToPtr(a.req.Email),
 		PhoneNum:              converter.ValToPtr(a.req.PhoneNum),

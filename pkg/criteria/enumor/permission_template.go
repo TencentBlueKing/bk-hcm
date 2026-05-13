@@ -41,6 +41,28 @@ func (t TCloudPolicyType) Validate() error {
 	}
 }
 
+// PermissionTemplateType 权限模版类型
+type PermissionTemplateType string
+
+const (
+	// PermissionTemplateTypeCustom 自定义策略
+	PermissionTemplateTypeCustom PermissionTemplateType = "custom"
+	// PermissionTemplateTypePreset 预设策略
+	PermissionTemplateTypePreset PermissionTemplateType = "preset"
+	// PermissionTemplateTypeSyncWithLibrary 同步策略库
+	PermissionTemplateTypeSyncWithLibrary PermissionTemplateType = "sync_with_library"
+)
+
+// Validate whether the PermissionTemplateType is valid.
+func (t PermissionTemplateType) Validate() error {
+	switch t {
+	case PermissionTemplateTypeCustom, PermissionTemplateTypePreset, PermissionTemplateTypeSyncWithLibrary:
+		return nil
+	default:
+		return fmt.Errorf("unsupported permission template type: %s", t)
+	}
+}
+
 // OperatePermTemplateAction is the action type for operate permission template application.
 type OperatePermTemplateAction string
 

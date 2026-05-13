@@ -156,6 +156,9 @@ type PermissionTemplateFilters struct {
 	Creator    string               `json:"creator" validate:"omitempty,lte=64"`
 	Reviser    string               `json:"reviser" validate:"omitempty,lte=64"`
 	Extension  tabletypes.JsonField `json:"extension,omitempty"`
+	// PolicyLibraryIDIsNull filters by policy_library_id nullability:
+	//   nil   → no filter    true  → IS NULL   false → IS NOT NULL
+	PolicyLibraryIDIsNull *bool `json:"policy_library_id_is_null,omitempty"`
 }
 
 // Validate validates PermissionTemplateFilters.

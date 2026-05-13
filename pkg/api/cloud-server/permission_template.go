@@ -22,19 +22,21 @@ package cloudserver
 import (
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	tabletypes "hcm/pkg/dal/table/types"
 )
 
 // ListBizPermissionTemplateReq defines the cloud-server request for listing business permission templates.
 type ListBizPermissionTemplateReq struct {
-	IDs       []string             `json:"ids" validate:"omitempty,max=500"`
-	CloudIDs  []string             `json:"cloud_ids" validate:"omitempty,max=500"`
-	Names     []string             `json:"names" validate:"omitempty,max=500"`
-	Extension tabletypes.JsonField `json:"extension,omitempty"`
-	Creator   string               `json:"creator" validate:"omitempty,lte=64"`
-	Reviser   string               `json:"reviser" validate:"omitempty,lte=64"`
-	Page      *core.BasePage       `json:"page" validate:"required"`
+	IDs                    []string                       `json:"ids" validate:"omitempty,max=500"`
+	CloudIDs               []string                       `json:"cloud_ids" validate:"omitempty,max=500"`
+	PermissionTemplateType *enumor.PermissionTemplateType `json:"permission_template_type" validate:"omitempty"`
+	Names                  []string                       `json:"names" validate:"omitempty,max=500"`
+	Extension              tabletypes.JsonField           `json:"extension,omitempty"`
+	Creator                string                         `json:"creator" validate:"omitempty,lte=64"`
+	Reviser                string                         `json:"reviser" validate:"omitempty,lte=64"`
+	Page                   *core.BasePage                 `json:"page" validate:"required"`
 }
 
 // Validate validates ListBizPermissionTemplateReq.

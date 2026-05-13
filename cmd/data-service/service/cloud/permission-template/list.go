@@ -178,16 +178,17 @@ func (svc *service) listPermTmplJoinExtTCloud(cts *rest.Contexts, vendor enumor.
 	req *protocloud.PermissionTmplJoinExtListReq) (interface{}, error) {
 
 	daoOpt := &types.ListPermTmplJoinOption{
-		BkBizID:    req.BkBizID,
-		IDs:        req.IDs,
-		CloudIDs:   req.CloudIDs,
-		Names:      req.Names,
-		AccountIDs: req.AccountIDs,
-		Creator:    req.Creator,
-		Reviser:    req.Reviser,
-		Page:       req.Page,
-		Vendor:     enumor.TCloud,
-		Extension:  req.Extension,
+		BkBizID:               req.BkBizID,
+		IDs:                   req.IDs,
+		CloudIDs:              req.CloudIDs,
+		Names:                 req.Names,
+		AccountIDs:            req.AccountIDs,
+		Creator:               req.Creator,
+		Reviser:               req.Reviser,
+		Page:                  req.Page,
+		Vendor:                enumor.TCloud,
+		Extension:             req.Extension,
+		PolicyLibraryIDIsNull: req.PolicyLibraryIDIsNull,
 	}
 
 	result, err := svc.dao.PermissionTemplate().ListJoinSubAccount(cts.Kit, daoOpt)
@@ -208,7 +209,6 @@ func (svc *service) listPermTmplJoinExtTCloud(cts *rest.Contexts, vendor enumor.
 		}
 		details = append(details, *d)
 	}
-
 	return &protocloud.PermissionTmplJoinExtListResult{Details: details}, nil
 }
 

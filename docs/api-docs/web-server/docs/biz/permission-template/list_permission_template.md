@@ -22,6 +22,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/list
 | cloud_ids             | string array   | 否    | 权限模板云上ID列表，精确匹配，最多500个               |
 | names                 | string array   | 否    | 权限模板名称列表，模糊匹配，最多500个                 |
 | extension             | object[vendor] | 否    | 云产商扩展字段                              |
+| permission_template_type| string       | 否    | 模版类型，为空代表不作为查询条件，枚举：云自定义（custom）,云系统预设（preset）、与策略库同步（sync_with_library） |
 | creator               | string         | 否    | 创建人，精确匹配                             |
 | reviser               | string         | 否    | 更新人，精确匹配                             |
 | page                  | object         | 是    | 分页设置                                 |
@@ -55,6 +56,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/permission_templates/list
     "cloud_main_account_ids":["10012345"],
     "cloud_sub_account_ids":["10012555"]
   },
+  "permission_template_type": "sync_with_library",
   "names": ["ReadOnly"],
   "page": {
     "count": false,

@@ -25,6 +25,7 @@ import (
 
 	typeaccount "hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -110,7 +111,9 @@ func (t *TCloudImpl) DescribeSubAccounts(kt *kit.Kit, opt *typeaccount.DescribeS
 	req := cam.NewDescribeSubAccountsRequest()
 	req.FilterSubAccountUin = converter.SliceToPtr(opt.SubUin)
 
-	resp, err := camClient.DescribeSubAccountsWithContext(kt.Ctx, req)
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	resp, err := LimitExceededErrRetry(camClient.DescribeSubAccountsWithContext, kt, req,
+		constant.TCloudClientErrRetryTimes, rangeMS)
 	if err != nil {
 		logs.Errorf("describe sub accounts failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("describe sub accounts failed, err: %v", err)
@@ -390,7 +393,9 @@ func (t *TCloudImpl) DescribeSafeAuthFlagColl(kt *kit.Kit, opt *typeaccount.Desc
 		req := cam.NewDescribeSafeAuthFlagCollRequest()
 		req.SubUin = converter.ValToPtr(subUin)
 
-		resp, err := camClient.DescribeSafeAuthFlagCollWithContext(kt.Ctx, req)
+		rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+		resp, err := LimitExceededErrRetry(camClient.DescribeSafeAuthFlagCollWithContext, kt, req,
+			constant.TCloudClientErrRetryTimes, rangeMS)
 		if err != nil {
 			logs.Errorf("describe safe auth flag coll failed, sub_uin: %d, err: %v, rid: %s", subUin, err, kt.Rid)
 			return nil, fmt.Errorf("describe safe auth flag coll failed for sub_uin %d, err: %v", subUin, err)
@@ -639,7 +644,9 @@ func (t *TCloudImpl) ListAccessKeys(kt *kit.Kit,
 	req := cam.NewListAccessKeysRequest()
 	req.TargetUin = converter.ValToPtr(opt.TargetUin)
 
-	resp, err := camClient.ListAccessKeysWithContext(kt.Ctx, req)
+	rangeMS := [2]uint{constant.TCloudRetryDelayMinMS, constant.TCloudRetryDelayMaxMS}
+	resp, err := LimitExceededErrRetry(camClient.ListAccessKeysWithContext, kt, req,
+		constant.TCloudClientErrRetryTimes, rangeMS)
 	if err != nil {
 		logs.Errorf("list access keys failed, target_uin: %d, err: %v, rid: %s",
 			opt.TargetUin, err, kt.Rid)
