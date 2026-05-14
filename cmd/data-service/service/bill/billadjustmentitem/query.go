@@ -71,6 +71,7 @@ func convBillAdjustment(m *tablebill.AccountBillAdjustmentItem) *bill.Adjustment
 		BillMonth:     m.BillMonth,
 		BillDay:       m.BillDay,
 		Type:          enumor.BillAdjustmentType(m.Type),
+		ResClass:      m.ResClass,
 		Memo:          cvt.PtrToVal(m.Memo),
 		Operator:      m.Operator,
 		Currency:      m.Currency,

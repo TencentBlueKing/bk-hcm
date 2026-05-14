@@ -47,6 +47,7 @@ var AccountBillAdjustmentItemColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
 	{Column: "bill_day", NamedC: "bill_day", Type: enumor.Numeric},
 	{Column: "type", NamedC: "type", Type: enumor.String},
+	{Column: "res_class", NamedC: "res_class", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "operator", NamedC: "operator", Type: enumor.String},
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
@@ -80,6 +81,8 @@ type AccountBillAdjustmentItem struct {
 	BillDay int `db:"bill_day" json:"bill_day"`
 	// Type 调账类型
 	Type string `db:"type" json:"type"`
+	// ResClass 调账资源类别
+	ResClass enumor.BillAdjustmentResClass `db:"res_class" json:"res_class"`
 	// Memo 注解
 	Memo *string `db:"memo" json:"memo"`
 	// Operator 操作人

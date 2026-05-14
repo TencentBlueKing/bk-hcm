@@ -44,6 +44,7 @@ POST /api/v1/account/bills/adjustment_items/list
 | bill_month      | int    | 所属月份                           |
 | bill_day        | int    | 所属日期                           |
 | type            | string | 调账类型 increase/decrease         |
+| res_class       | string | 资源类别 cpu/gpu                   |
 | memo            | string | 备注                             |
 | operator        | string | 操作人                            |
 | currency        | string | 币种 RMB/USD                     |
@@ -58,27 +59,12 @@ POST /api/v1/account/bills/adjustment_items/list
 
 ```json
 {
-  "count": 0,
-  "details": [
+  "op": "and",
+  "rules": [
     {
-      "id": "0000000b",
-      "root_account_id": "00000001",
-      "main_account_id": "00000001",
-      "product_id": 3043,
-      "bk_biz_id": 100857,
-      "bill_year": 2024,
-      "bill_month": 6,
-      "bill_day": 18,
-      "type": "increase",
-      "memo": "",
-      "operator": "ryanjrchen",
-      "currency": "RMB",
-      "cost": "42.67512105",
-      "rmb_cost": "42.67512105",
-      "state": "已确定",
-      "creator": "ryanjrchen",
-      "created_at": "2024-06-18T13:09:34Z",
-      "updated_at": "2024-06-18T13:09:34Z"
+      "field": "id",
+      "op": "eq",
+      "value": "00000001"
     }
   ]
 }
@@ -103,6 +89,7 @@ POST /api/v1/account/bills/adjustment_items/list
         "bill_month": 6,
         "bill_day": 18,
         "type": "increase",
+        "res_class": "cpu",
         "memo": "",
         "operator": "admin",
         "currency": "RMB",
@@ -139,6 +126,7 @@ POST /api/v1/account/bills/adjustment_items/list
 | bill_month      | int    | 所属月份                           |
 | bill_day        | int    | 所属日期                           |
 | type            | string | 调账类型 increase/decrease         |
+| res_class       | string | 资源类别 cpu/gpu                   |
 | memo            | string | 备注                             |
 | operator        | string | 操作人                            |
 | currency        | string | 币种 RMB/USD                     |

@@ -41,22 +41,32 @@ type BatchBillAdjustmentItemCreateReq struct {
 
 // Validate ...
 func (r *BatchBillAdjustmentItemCreateReq) Validate() error {
-	return validator.Validate.Struct(r)
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	for _, item := range r.Items {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // BillAdjustmentItemCreateReq create request
 type BillAdjustmentItemCreateReq struct {
-	RootAccountID string                    `json:"root_account_id" validate:"omitempty"`
-	MainAccountID string                    `json:"main_account_id" validate:"required"`
-	ProductID     int64                     `json:"product_id" validate:"omitempty"`
-	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
-	BillYear      int                       `json:"bill_year" validate:"omitempty"`
-	BillMonth     int                       `json:"bill_month" validate:"omitempty"`
-	Type          enumor.BillAdjustmentType `json:"type" validate:"required"`
-	Currency      enumor.CurrencyCode       `json:"currency" validate:"required"`
-	Cost          decimal.Decimal           `json:"cost" validate:"required"`
-	RmbCost       decimal.Decimal           `json:"rmb_cost" validate:"required"`
-	Memo          *string                   `json:"memo,omitempty"`
+	RootAccountID string                        `json:"root_account_id" validate:"omitempty"`
+	MainAccountID string                        `json:"main_account_id" validate:"required"`
+	ProductID     int64                         `json:"product_id" validate:"omitempty"`
+	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int                           `json:"bill_year" validate:"omitempty"`
+	BillMonth     int                           `json:"bill_month" validate:"omitempty"`
+	Type          enumor.BillAdjustmentType     `json:"type" validate:"required"`
+	ResClass      enumor.BillAdjustmentResClass `json:"res_class" validate:"required"`
+	Currency      enumor.CurrencyCode           `json:"currency" validate:"required"`
+	Cost          decimal.Decimal               `json:"cost" validate:"required"`
+	RmbCost       decimal.Decimal               `json:"rmb_cost" validate:"required"`
+	Memo          *string                       `json:"memo,omitempty"`
 }
 
 // Validate ...
@@ -65,23 +75,38 @@ func (r *BillAdjustmentItemCreateReq) Validate() error {
 	if r.ProductID < 0 && r.BkBizID < 0 {
 		return errors.New("both product_id and bk_biz_id are invalid")
 	}
+
+	if err := r.ResClass.Validate(); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(r)
 }
 
 // BillAdjustmentItemUpdateReq update request
 type BillAdjustmentItemUpdateReq struct {
-	MainAccountID string                    `json:"main_account_id"`
-	ProductID     int64                     `json:"product_id" validate:"omitempty"`
-	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
-	Type          enumor.BillAdjustmentType `json:"type"`
-	Cost          *decimal.Decimal          `json:"cost"`
-	RmbCost       *decimal.Decimal          `json:"rmb_cost"`
-	Memo          *string                   `json:"memo"`
+	MainAccountID string                        `json:"main_account_id"`
+	ProductID     int64                         `json:"product_id" validate:"omitempty"`
+	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
+	Type          enumor.BillAdjustmentType     `json:"type"`
+	ResClass      enumor.BillAdjustmentResClass `json:"res_class"`
+	Cost          *decimal.Decimal              `json:"cost"`
+	RmbCost       *decimal.Decimal              `json:"rmb_cost"`
+	Memo          *string                       `json:"memo"`
 }
 
 // Validate ...
 func (r *BillAdjustmentItemUpdateReq) Validate() error {
-	return validator.Validate.Struct(r)
+	if err := validator.Validate.Struct(r); err != nil {
+		return err
+	}
+
+	if r.ResClass != "" {
+		if err := r.ResClass.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // AdjustmentItemExportReq ...

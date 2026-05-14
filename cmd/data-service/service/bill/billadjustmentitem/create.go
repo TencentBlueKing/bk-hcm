@@ -57,6 +57,7 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 				BillMonth:     item.BillMonth,
 				BillDay:       item.BillDay,
 				Type:          string(item.Type),
+				ResClass:      item.ResClass,
 				Memo:          item.Memo,
 				Currency:      item.Currency,
 				Cost:          &types.Decimal{Decimal: item.Cost},
