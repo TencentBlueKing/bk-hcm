@@ -457,18 +457,22 @@ watch(
 .btn {
   min-width: 88px;
 }
+
 .adjust-title {
   display: inline-block;
   margin-bottom: 20px;
 }
+
 .adjust-info {
   margin-bottom: 20px;
+
   .adjust-name {
     display: inline-block;
     width: 120px;
     color: #979ba5;
   }
 }
+
 .bind-title {
   display: inline-block;
   margin: 10px 0;

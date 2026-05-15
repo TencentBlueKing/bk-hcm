@@ -44,6 +44,10 @@ const (
 	AccountTable Name = "account"
 	// SubAccountTable is sub account table's name.
 	SubAccountTable Name = "sub_account"
+	// SubAccountSecretTable is sub account secret table's name.
+	SubAccountSecretTable Name = "sub_account_secret"
+	// AccountSecretTable is account secret table's name.
+	AccountSecretTable Name = "account_secret"
 	// AccountBizRelTable is account and biz relation table's name.
 	AccountBizRelTable Name = "account_biz_rel"
 	// SecurityGroupTable is security group table's name.
@@ -210,6 +214,9 @@ const (
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
 
+	// PermissionTemplateTable is permission_template table's name.
+	PermissionTemplateTable Name = "permission_template"
+
 	// PermissionPolicyLibraryTable is permission_policy_library table's name.
 	PermissionPolicyLibraryTable Name = "permission_policy_library"
 )
@@ -239,6 +246,8 @@ var TableMap = map[Name]TableConfig{
 	AuditTable:                   {EnableTenant: true},
 	AccountTable:                 {EnableTenant: true},
 	SubAccountTable:              {},
+	SubAccountSecretTable:        {EnableTenant: true},
+	AccountSecretTable:           {EnableTenant: true},
 	AccountBizRelTable:           {},
 	VpcTable:                     {EnableTenant: true},
 	SubnetTable:                  {EnableTenant: true},
@@ -325,6 +334,8 @@ var TableMap = map[Name]TableConfig{
 	GlobalConfigTable: {},
 
 	ResUsageBizRelTable: {},
+
+	PermissionTemplateTable: {EnableTenant: true},
 
 	PermissionPolicyLibraryTable: {EnableTenant: true},
 }

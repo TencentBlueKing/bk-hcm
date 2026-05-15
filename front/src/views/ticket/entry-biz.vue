@@ -28,7 +28,7 @@ const { t } = useI18n();
 const applyType = ref(route.query?.type || 'all');
 
 const saveActiveType = (val: string) => {
-  router.replace({ query: { type: val } });
+  router.replace({ query: { ...route.query, type: val, filter: undefined } });
 };
 
 const tabList = ref<ApplicationsType[]>([
@@ -63,6 +63,7 @@ const tabList = ref<ApplicationsType[]>([
           'update_main_account',
           'create_sub_account',
           'update_sub_account',
+          'delete_sub_account',
           'create_sub_account_secret',
           'delete_sub_account_secret',
           'update_sub_account_secret',

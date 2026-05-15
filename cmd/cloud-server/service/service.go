@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	accountsecret "hcm/cmd/cloud-server/service/account-secret"
 	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
@@ -55,12 +56,14 @@ import (
 	"hcm/cmd/cloud-server/service/monitoring"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
+	permissiontemplates "hcm/cmd/cloud-server/service/permission-template"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
 	routetable "hcm/cmd/cloud-server/service/route-table"
 	securitygroup "hcm/cmd/cloud-server/service/security-group"
 	subaccount "hcm/cmd/cloud-server/service/sub-account"
+	subaccountsecret "hcm/cmd/cloud-server/service/subaccount-secret"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/sync/lock"
@@ -305,6 +308,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	}
 
 	account.InitAccountService(c)
+	accountsecret.InitService(c)
 	securitygroup.InitSecurityGroupService(c)
 	firewall.InitFirewallService(c)
 	vpc.InitVpcService(c)
@@ -321,6 +325,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	monitoring.InitMonitoringService(c)
 	networkinterface.InitNetworkInterfaceService(c)
 	subaccount.InitService(c)
+	subaccountsecret.InitService(c)
 
 	application.InitApplicationService(c, bkHcmUrl)
 	audit.InitService(c)
@@ -345,6 +350,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 
 	admin.InitAdminService(c)
 	permissionpolicylibrary.InitService(c)
+	permissiontemplates.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue';
+import { computed, ref, useAttrs } from 'vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 import { type IBusinessItem } from '@/store/business-global';
+import { DisplayType } from './typings';
+import type { Rules } from '@blueking/ediatable';
 
 defineOptions({ name: 'hcm-form-business' });
 
@@ -14,6 +16,8 @@ const props = withDefaults(
     filterable?: boolean;
     collapseTags?: boolean;
     optionDisabled?: (item: IBusinessItem) => boolean;
+    display?: DisplayType;
+    rules?: Rules;
   }>(),
   {
     multiple: false,
@@ -24,6 +28,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits(['change']);
+const attrs = useAttrs();
+
+const businessSelectorRef = ref<InstanceType<typeof BusinessSelector>>();
 
 const localModel = computed({
   get() {
@@ -36,15 +43,24 @@ const localModel = computed({
     model.value = val;
   },
 });
+
 const handleChange = (val: number | number[]) => {
   emit('change', val);
 };
 
-const attrs = useAttrs();
+defineExpose({
+  getValue() {
+    if (businessSelectorRef.value?.getValue) {
+      return businessSelectorRef.value.getValue();
+    }
+    return model.value;
+  },
+});
 </script>
 
 <template>
   <business-selector
+    ref="businessSelectorRef"
     v-model="localModel"
     :multiple="multiple"
     :clearable="clearable"
@@ -52,6 +68,8 @@ const attrs = useAttrs();
     :collapse-tags="collapseTags"
     :option-disabled="optionDisabled"
     @change="handleChange"
+    :display="display"
+    :rules="rules"
     v-bind="attrs"
   />
 </template>

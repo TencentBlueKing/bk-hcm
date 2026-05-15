@@ -20,14 +20,9 @@
 package cloudserver
 
 import (
-	"fmt"
-	"regexp"
-
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/validator"
 )
-
-var permissionPolicyLibraryNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 // PermissionPolicyLibraryCreateReq defines create permission policy library request.
 type PermissionPolicyLibraryCreateReq struct {
@@ -42,11 +37,7 @@ func (req *PermissionPolicyLibraryCreateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
-	if !permissionPolicyLibraryNameRegexp.MatchString(req.Name) {
-		return fmt.Errorf("invalid name: %s, only allows english letters, numbers, underscore (_) and hyphen (-)",
-			req.Name)
-	}
-	return nil
+	return validator.ValidatePermTmplName(req.Name)
 }
 
 // PermissionPolicyLibraryUpdateReq defines update permission policy library request.
@@ -62,9 +53,8 @@ func (req *PermissionPolicyLibraryUpdateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
-	if len(req.Name) > 0 && !permissionPolicyLibraryNameRegexp.MatchString(req.Name) {
-		return fmt.Errorf("invalid name: %s, only allows english letters, numbers, underscore (_) and hyphen (-)",
-			req.Name)
+	if len(req.Name) > 0 {
+		return validator.ValidatePermTmplName(req.Name)
 	}
 	return nil
 }
@@ -84,4 +74,65 @@ type PermissionPolicyLibraryResult struct {
 type PermissionPolicyLibraryListResult struct {
 	Count   uint64                          `json:"count"`
 	Details []PermissionPolicyLibraryResult `json:"details"`
+}
+
+// ApplyPermissionPolicyLibraryCreateReq defines request for applying a permission policy library (create action).
+type ApplyPermissionPolicyLibraryCreateReq struct {
+	AccountIDs []string `json:"account_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ApplyPermissionPolicyLibraryCreateReq.
+func (req *ApplyPermissionPolicyLibraryCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ApplyPermissionPolicyLibraryUpdateReq defines request for applying a permission policy library (update action).
+type ApplyPermissionPolicyLibraryUpdateReq struct {
+	PermissionTemplateIDs []string `json:"permission_template_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ApplyPermissionPolicyLibraryUpdateReq.
+func (req *ApplyPermissionPolicyLibraryUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ApplyAccountResult defines the apply result for a single account (used in create action).
+type ApplyAccountResult struct {
+	AccountID string `json:"account_id"`
+	Status    string `json:"status"`
+	Reason    string `json:"reason,omitempty"`
+}
+
+// ApplyTemplateResult defines the apply result for a single permission template (used in update action).
+type ApplyTemplateResult struct {
+	PermissionTemplateID string `json:"permission_template_id"`
+	Status               string `json:"status"`
+	Reason               string `json:"reason,omitempty"`
+}
+
+const (
+	// ApplyStatusSuccess indicates the apply operation succeeded.
+	ApplyStatusSuccess = "success"
+	// ApplyStatusFailed indicates the apply operation failed.
+	ApplyStatusFailed = "failed"
+)
+
+// ApplyPermissionPolicyLibraryResult defines the result of applying a permission policy library (create action).
+type ApplyPermissionPolicyLibraryResult struct {
+	Results []ApplyAccountResult `json:"results"`
+}
+
+// ApplyPermissionPolicyLibraryUpdateResult defines the result of applying a permission policy library (update action).
+type ApplyPermissionPolicyLibraryUpdateResult struct {
+	Results []ApplyTemplateResult `json:"results"`
+}
+
+// PermissionPolicyLibraryAccountIDsResult defines the result for account IDs query.
+type PermissionPolicyLibraryAccountIDsResult struct {
+	AccountIDs []string `json:"account_ids"`
+}
+
+// PermissionPolicyLibraryPermTmplResult defines the result for listing permission templates under a policy library.
+type PermissionPolicyLibraryPermTmplResult struct {
+	Details any `json:"details"`
 }

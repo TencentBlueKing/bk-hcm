@@ -1,40 +1,55 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
-import type { IAppliedAccountItem } from '../../typings';
+import { computed, reactive, ref } from 'vue';
+import type { IPermissionPolicyItem } from '../../typings';
 import { PolicyApplyStatus } from '../../typings';
 import usePage from '@/hooks/use-page';
 import ModelInfoDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/info.vue';
 import PolicyDiffDialog from '@/views/cloud-account-manage/permission-policy/children/dialog/diff.vue';
+import { IPermissionAppliedItem } from '@/store/cloud-account-manage/permission-policy';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
 
 const props = defineProps<{
-  policyId: string;
-  appliedCount: number;
+  policyData: IPermissionPolicyItem | null;
+  list: IPermissionAppliedItem[];
+  bizId: number;
+  vendor: VendorEnum;
 }>();
 
-// 表格数据
-const tableData = ref<IAppliedAccountItem[]>([]);
+const bizId = computed(() => props.bizId);
+const vendor = computed(() => props.vendor);
+const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
+
+const tableData = computed(() => [...props.list]);
 const isLoading = ref(false);
 const { pagination } = usePage();
 
 // 已选账号（用于批量更新）
-const selectedAccounts = ref<IAppliedAccountItem[]>([]);
-const tableRef = ref();
+const selectedAccounts = ref<IPermissionAppliedItem[]>([]);
 
 // 模板详情数据
 const modelInfo = reactive({
   show: false,
-  json: '{"version":"2.0","statement":[{"effect":"allow","action":["cvm:Describe*","cvm:Query*"],"resource":"*"},{"effect":"allow","action":["cbs:Describe*"],"resource":"*"},{"effect":"allow","action":["vpc:Describe*","vpc:Query*"],"resource":"*"}]}',
-  accountId: '100012345678 (游戏业务主账号)',
-  id: 'policy-abc123xyz',
-  name: 'HCM_只读权限策略库_v3',
+  json: '',
+  accountId: '',
+  id: '',
+  name: '',
 });
 
 // 策略内容对比数据
 const policyDiffInfo = reactive({
   show: false,
-  id: '',
   accountId: '',
+  cloudContent: {
+    version: 1,
+    json: '',
+  },
 });
+
+const policyContent = computed(() => ({
+  version: props.policyData?.version,
+  json: props.policyData?.policy_document,
+}));
 
 // 状态映射
 const statusMap: Record<string, { text: string; dotClass: string }> = {
@@ -45,29 +60,14 @@ const statusMap: Record<string, { text: string; dotClass: string }> = {
 
 const getStatusInfo = (status: PolicyApplyStatus) => statusMap[status] || { text: status, dotClass: '' };
 
-// 加载已应用账号列表
-const loadAppliedAccounts = async () => {
-  isLoading.value = true;
-  try {
-    // TODO: 替换为真实 API
-    tableData.value = [];
-    pagination.count = 0;
-  } catch (error) {
-    console.error('加载已应用账号列表失败:', error);
-    tableData.value = [];
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 // 选择变化
-const handleSelectionChange = ({ row, checked }: { row: IAppliedAccountItem; checked: boolean }) => {
+const handleSelectionChange = ({ row, checked }: { row: IPermissionAppliedItem; checked: boolean }) => {
   if (checked) {
-    if (!selectedAccounts.value.find((item) => item.account_id === row.account_id)) {
+    if (!selectedAccounts.value.find((item) => item.id === row.id)) {
       selectedAccounts.value.push(row);
     }
   } else {
-    selectedAccounts.value = selectedAccounts.value.filter((item) => item.account_id !== row.account_id);
+    selectedAccounts.value = selectedAccounts.value.filter((item) => item.id !== row.id);
   }
 };
 
@@ -79,38 +79,22 @@ const handleSelectAll = ({ checked }: { checked: boolean }) => {
   }
 };
 
-// 分页处理
-const handlePageChange = (page: number) => {
-  pagination.current = page;
-  // TODO: 真实分页时需要重新请求
-};
-
-const handlePageSizeChange = (limit: number) => {
-  pagination.limit = limit;
-  pagination.current = 1;
-};
-
-const handleModelInfo = (row: IAppliedAccountItem) => {
-  modelInfo.name = row.cloud_template_name;
-  modelInfo.accountId = `${row.account_id}(${row.alias})`;
+const handleModelInfo = (row: IPermissionAppliedItem) => {
+  modelInfo.name = row.name;
+  modelInfo.id = row.cloud_id;
+  modelInfo.accountId = row.account_id;
+  modelInfo.json = row.policy_document;
   modelInfo.show = true;
 };
 
-const handlePolicyDiff = (row: IAppliedAccountItem) => {
+const handlePolicyDiff = (row: IPermissionAppliedItem) => {
   policyDiffInfo.show = true;
-  policyDiffInfo.accountId = `${row.account_id}(${row.alias})`;
+  policyDiffInfo.accountId = row.account_id;
+  policyDiffInfo.cloudContent = {
+    version: row.policy_library_version,
+    json: row.policy_document,
+  };
 };
-
-// 监听策略ID变化
-watch(
-  () => props.policyId,
-  () => {
-    if (props.policyId) {
-      loadAppliedAccounts();
-    }
-  },
-  { immediate: true },
-);
 
 // 暴露已选数据给父组件（defineExpose 必须是 <script setup> 的最后语句）
 defineExpose({
@@ -132,16 +116,24 @@ defineExpose({
         show-overflow-tooltip
         @select="handleSelectionChange"
         @select-all="handleSelectAll"
-        @page-value-change="handlePageChange"
-        @page-limit-change="handlePageSizeChange"
       >
         <bk-table-column type="selection" align="center" />
         <bk-table-column label="二级账号" min-width="180">
-          <template #default="{ row }">{{ row.account_id }} ({{ row.alias }})</template>
+          <template #default="{ row }">
+            <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
+          </template>
         </bk-table-column>
-        <bk-table-column label="云上模版名称" prop="cloud_template_name" min-width="180" />
-        <bk-table-column label="云模版同步时间" prop="cloud_sync_time" min-width="160" />
-        <bk-table-column label="策略库应用版本" prop="applied_version" width="120" />
+        <bk-table-column label="云上模板名称" prop="name" min-width="150" />
+        <bk-table-column label="云模板同步时间" prop="policy_library_sync_time" min-width="150">
+          <template #default="{ row }">
+            <display-value class="info-value" :property="{ type: 'datetime' }" :value="row.policy_library_sync_time" />
+          </template>
+        </bk-table-column>
+        <bk-table-column label="策略库应用版本" prop="policy_library_version" min-width="120">
+          <template #default="{ row }">
+            <span class="version">v{{ row.policy_library_version }}</span>
+          </template>
+        </bk-table-column>
         <bk-table-column label="策略库应用状态" min-width="150">
           <template #default="{ row }">
             <span class="status-cell">
@@ -152,10 +144,14 @@ defineExpose({
             </span>
           </template>
         </bk-table-column>
-        <bk-table-column label="策略库应用时间" prop="apply_time" min-width="160" />
+        <bk-table-column label="策略库应用时间" prop="created_at" min-width="160">
+          <template #default="{ row }">
+            <display-value class="info-value" :property="{ type: 'datetime' }" :value="row.created_at" />
+          </template>
+        </bk-table-column>
         <bk-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <bk-button theme="primary" text class="mr8" @click="handleModelInfo(row)">模版详情</bk-button>
+            <bk-button theme="primary" text class="mr8" @click="handleModelInfo(row)">模板详情</bk-button>
             <bk-button
               v-if="
                 row.apply_status === PolicyApplyStatus.PENDING || row.apply_status === PolicyApplyStatus.DATA_MISMATCH
@@ -171,9 +167,22 @@ defineExpose({
       </bk-table>
     </bk-loading>
     <!--模版详情弹框-->
-    <ModelInfoDialog v-bind="modelInfo" @close="modelInfo.show = false" />
+    <ModelInfoDialog
+      v-bind="modelInfo"
+      @close="modelInfo.show = false"
+      :res-type="resType"
+      :biz-id="bizId"
+      :vendor="vendor"
+    />
     <!--策略对比弹框-->
-    <PolicyDiffDialog v-bind="policyDiffInfo" @close="policyDiffInfo.show = false" />
+    <PolicyDiffDialog
+      v-bind="policyDiffInfo"
+      :res-type="resType"
+      :biz-id="bizId"
+      :vendor="vendor"
+      @close="policyDiffInfo.show = false"
+      :policy-content="policyContent"
+    />
   </div>
 </template>
 
@@ -183,6 +192,12 @@ defineExpose({
     font-size: 12px;
     color: #63656e;
     margin-bottom: 8px;
+  }
+
+  .version {
+    background: #eaebf0;
+    padding: 3px 8px;
+    border-radius: 5px;
   }
 
   .status-cell {

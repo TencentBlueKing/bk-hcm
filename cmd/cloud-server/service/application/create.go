@@ -37,6 +37,17 @@ import (
 	lbtcloud "hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
+	applycreate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-create"
+	applyupdate "hcm/cmd/cloud-server/service/application/handlers/permission-policy-library/apply-update"
+	createpermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/create"
+	deletepermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/delete"
+	updatepermtemplate "hcm/cmd/cloud-server/service/application/handlers/permission-template/update"
+	subaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account"
+	createsubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/create-sub-account"
+	deletesecretkey "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-secret-key"
+	deletesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/delete-sub-account"
+	updatesecretstatus "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-secret-status"
+	updatesubaccount "hcm/cmd/cloud-server/service/application/handlers/sub-account/update-sub-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -51,10 +62,12 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -130,8 +143,8 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult,
-	error) {
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
+	*core.CreateResult, error) {
 
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
@@ -144,11 +157,22 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 
 	// 主机、硬盘、VPC、负载均衡需要记录业务ID
 	var needBkBizIDsOps = map[enumor.ApplicationOperation]struct{}{
-		enumor.OpCreateCvm:          {},
-		enumor.OpCreateDisk:         {},
-		enumor.OpCreateVpc:          {},
-		enumor.OpCreateLoadBalancer: {},
-		enumor.OpAddAccount:         {},
+		enumor.OpCreateCvm:                          {},
+		enumor.OpCreateDisk:                         {},
+		enumor.OpCreateVpc:                          {},
+		enumor.OpCreateLoadBalancer:                 {},
+		enumor.OpAddAccount:                         {},
+		enumor.OpCreateSubAccount:                   {},
+		enumor.OpUpdateSubAccount:                   {},
+		enumor.OpDeleteSubAccount:                   {},
+		enumor.OpCreateSubAccountSecret:             {},
+		enumor.OpUpdateSubAccountSecretStatus:       {},
+		enumor.OpDeleteSubAccountSecret:             {},
+		enumor.OpCreatePermTemplate:                 {},
+		enumor.OpUpdatePermTemplate:                 {},
+		enumor.OpDeletePermTemplate:                 {},
+		enumor.OpApplyPermissionPolicyLibraryCreate: {},
+		enumor.OpApplyPermissionPolicyLibraryUpdate: {},
 	}
 
 	var bkBizIDs = make([]int64, 0)
@@ -178,6 +202,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 // createItsmTicket 调用ITSM创建单据
 func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
 	applicationType enumor.ApplicationType) (string, error) {
+
 	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {
 		return "", fmt.Errorf("get approval process service id and managers failed, err: %v", err)
@@ -233,6 +258,13 @@ func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
 
 // CreateForAddAccount ...
 func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, error) {
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
+	err := a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	commReq, err := decodeCommonReqAndValidate(cts)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -244,12 +276,42 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 	}
 	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Account, Action: meta.Import}}
-	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	return a.create(cts, commReq, handler)
+}
+
+// CreateBizForAddAccount create biz for add account
+func (a *applicationSvc) CreateBizForAddAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
 	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	commReq, err := decodeCommonReqAndValidate(cts)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.AccountAddReq](cts)
+	if err != nil {
+		return nil, err
+	}
+	if req.BkBizID != bizID {
+		return nil, errf.Newf(errf.InvalidParameter,
+			"path bk_biz_id(%d) does not match request body bk_biz_id(%d)", bizID, req.BkBizID)
+	}
+	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)
 
 	return a.create(cts, commReq, handler)
 }
@@ -315,7 +377,6 @@ func (a *applicationSvc) CreateForCreateCvm(cts *rest.Contexts) (interface{}, er
 
 // CreateForCreateVpc ...
 func (a *applicationSvc) CreateForCreateVpc(cts *rest.Contexts) (interface{}, error) {
-
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -541,4 +602,648 @@ func (a *applicationSvc) CreateForUpdateMainAccount(cts *rest.Contexts) (interfa
 	}
 
 	return a.create(cts, commReq, handler)
+}
+
+// CreateBizForAddSubAccount create application for adding subaccount.
+func (a *applicationSvc) CreateBizForAddSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Create},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchAddReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForAddSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForAddSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchAddReq,
+) (interface{}, error) {
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.SubAccounts))
+	for i, subAccount := range req.SubAccounts {
+		base := &subaccount.BaseSubAccountContent{
+			Operation: enumor.OpCreateSubAccount,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: subAccount.AccountID,
+		}
+
+		handler := createsubaccount.NewApplicationOfCreateSubAccount(opt, base, &req.SubAccounts[i])
+		commReq := &proto.CreateCommonReq{Remark: subAccount.Memo}
+
+		result, err := a.create(cts, commReq, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for sub_account[%d](%s) failed, err: %w", i, subAccount.Name, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForUpdateSubAccount create application for updating subaccount.
+func (a *applicationSvc) CreateBizForUpdateSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Update},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchUpdateReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForUpdateSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForUpdateSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchUpdateReq,
+) (interface{}, error) {
+
+	subAccountIDs := make([]string, 0, len(req.SubAccounts))
+	for _, item := range req.SubAccounts {
+		subAccountIDs = append(subAccountIDs, item.ID)
+	}
+
+	subAccountMap, err := a.listSubAccountBasicInfo(cts, subAccountIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.SubAccounts))
+	for i := range req.SubAccounts {
+		info, ok := subAccountMap[req.SubAccounts[i].ID]
+		if !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", req.SubAccounts[i].ID)
+		}
+
+		base := &subaccount.BaseSubAccountContent{
+			Operation: enumor.OpUpdateSubAccount,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
+		handler := updatesubaccount.NewApplicationOfUpdateSubAccount(
+			opt, base, info.Name, &req.SubAccounts[i],
+		)
+
+		commReq := &proto.CreateCommonReq{Remark: req.SubAccounts[i].Memo}
+		result, err := a.create(cts, commReq, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for update sub_account[%d](%s) failed, err: %w",
+					i, req.SubAccounts[i].ID, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForDeleteSubAccount create application for deleting subaccount.
+func (a *applicationSvc) CreateBizForDeleteSubAccount(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccount, Action: meta.Delete},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountBatchDeleteReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForDeleteSubAccount(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, req *proto.SubAccountBatchDeleteReq,
+) (interface{}, error) {
+
+	infoMap, err := a.listSubAccountBasicInfo(cts, req.IDs)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := a.getHandlerOption(cts)
+
+	ids := make([]string, 0, len(req.IDs))
+	for _, subAccountID := range req.IDs {
+		info, ok := infoMap[subAccountID]
+		if !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "sub account(%s) not found", subAccountID)
+		}
+
+		base := &subaccount.BaseSubAccountContent{
+			Operation: enumor.OpDeleteSubAccount,
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: info.AccountID,
+		}
+		handler := deletesubaccount.NewApplicationOfDeleteSubAccount(opt, base,
+			&proto.SubAccountDeleteReq{SubAccountBasicInfo: converter.PtrToVal(info)},
+		)
+
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for delete sub_account(%s) failed, err: %w",
+					subAccountID, err))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// listSubAccountBasicInfo batch queries subaccounts by IDs and returns a map keyed by sub-account ID.
+func (a *applicationSvc) listSubAccountBasicInfo(cts *rest.Contexts, subAccountIDs []string,
+) (map[string]*proto.SubAccountBasicInfo, error) {
+
+	result, err := a.client.DataService().Global.SubAccount.List(
+		cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", subAccountIDs)),
+			Page:   &core.BasePage{Start: 0, Limit: uint(len(subAccountIDs))},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list sub accounts failed, err: %w", err)
+	}
+
+	if len(result.Details) != len(subAccountIDs) {
+		return nil, fmt.Errorf("some sub accounts not found, expected %d but got %d",
+			len(subAccountIDs), len(result.Details))
+	}
+
+	infoMap := make(map[string]*proto.SubAccountBasicInfo, len(result.Details))
+	for _, sa := range result.Details {
+		infoMap[sa.ID] = &proto.SubAccountBasicInfo{
+			ID:        sa.ID,
+			AccountID: sa.AccountID,
+			Name:      sa.Name,
+			CloudID:   sa.CloudID,
+		}
+	}
+
+	return infoMap, nil
+}
+
+// CreateBizForApplyPermissionPolicyLibraryCreate creates ITSM applications for applying a
+// permission policy library (create action) to multiple accounts.
+func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryCreate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply},
+		BizID: bizID}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizApplyPermissionPolicyLibraryCreateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.createBizForApplyPermPolicyLibCreate(cts, bizID, vendor, req)
+}
+
+func (a *applicationSvc) createBizForApplyPermPolicyLibCreate(cts *rest.Contexts, bizID int64, vendor enumor.Vendor,
+	req *proto.BizApplyPermissionPolicyLibraryCreateReq) (*core.BatchCreateResult, error) {
+
+	opt := a.getHandlerOption(cts)
+	ids := make([]string, 0, len(req.AccountIDs))
+
+	for _, accountID := range req.AccountIDs {
+		content := applycreate.BuildContent(bizID, vendor, req, accountID)
+		handler := applycreate.NewApplicationOfApplyPermPolicyLibCreate(opt, content)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for account %s failed, err: %w", accountID, err))
+		}
+
+		createResult, ok := result.(*core.CreateResult)
+		if !ok {
+			return nil, errf.New(errf.Aborted, "create application result type assertion failed")
+		}
+
+		ids = append(ids, createResult.ID)
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForApplyPermissionPolicyLibraryUpdate creates ITSM applications for applying a
+// permission policy library (update action) to multiple accounts.
+func (a *applicationSvc) CreateBizForApplyPermissionPolicyLibraryUpdate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.PermissionPolicyLibrary, Action: meta.Apply},
+		BizID: bizID}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizApplyPermissionPolicyLibraryUpdateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.createBizForApplyPermPolicyLibUpdate(cts, bizID, vendor, req)
+}
+
+func (a *applicationSvc) createBizForApplyPermPolicyLibUpdate(cts *rest.Contexts, bizID int64, vendor enumor.Vendor,
+	req *proto.BizApplyPermissionPolicyLibraryUpdateReq) (*core.BatchCreateResult, error) {
+
+	opt := a.getHandlerOption(cts)
+	ids := make([]string, 0, len(req.PermissionTemplateIDs))
+
+	for _, templateID := range req.PermissionTemplateIDs {
+		content := applyupdate.BuildContent(bizID, vendor, req, templateID)
+		handler := applyupdate.NewApplicationOfApplyPermPolicyLibUpdate(opt, content)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted,
+				fmt.Errorf("create application for permission_template %s failed, err: %w", templateID, err))
+		}
+
+		createResult, ok := result.(*core.CreateResult)
+		if !ok {
+			return nil, errf.New(errf.Aborted, "create application result type assertion failed")
+		}
+
+		ids = append(ids, createResult.ID)
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForUpdateSubAccountSecretStatus create application for updating sub account secret status.
+func (a *applicationSvc) CreateBizForUpdateSubAccountSecretStatus(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Update},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountSecretStatusBatchUpdateReq](cts)
+	if err != nil {
+		logs.Errorf("parse req from request body failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForUpdateSecretKeyStatus(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForUpdateSecretKeyStatus(cts *rest.Contexts,
+	req *proto.SubAccountSecretStatusBatchUpdateReq) (interface{}, error) {
+
+	opt := a.getHandlerOption(cts)
+	base := &subaccount.BaseSubAccountContent{
+		Operation: enumor.OpUpdateSubAccountSecretStatus,
+		Vendor:    req.Vendor,
+		BkBizID:   req.BkBizID,
+	}
+
+	ids := make([]string, 0, len(req.SubAccountSecrets))
+	for i, item := range req.SubAccountSecrets {
+		handler := updatesecretstatus.NewApplicationOfUpdateSecretKeyStatus(opt, base, &item)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted, fmt.Errorf(
+				"create application for update secret[%d](%s) status failed, err: %w", i, item.ID, err,
+			))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForDeleteSubAccountSecret create application for deleting sub account secret.
+func (a *applicationSvc) CreateBizForDeleteSubAccountSecret(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.SubAccountSecret, Action: meta.Delete},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	req, err := parseReqFromRequestBody[proto.SubAccountSecretBatchDeleteReq](cts)
+	if err != nil {
+		logs.Errorf(
+			"parse req from request body failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	req.Vendor = vendor
+	req.BkBizID = bizID
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return a.batchCreateBizForDeleteSecretKey(cts, req)
+}
+
+func (a *applicationSvc) batchCreateBizForDeleteSecretKey(cts *rest.Contexts, req *proto.SubAccountSecretBatchDeleteReq,
+) (interface{}, error) {
+
+	opt := a.getHandlerOption(cts)
+	base := &subaccount.BaseSubAccountContent{
+		Operation: enumor.OpDeleteSubAccountSecret,
+		Vendor:    req.Vendor,
+		BkBizID:   req.BkBizID,
+	}
+
+	ids := make([]string, 0, len(req.IDs))
+	for i, secretID := range req.IDs {
+		handler := deletesecretkey.NewApplicationOfDeleteSecretKey(opt, base, secretID)
+		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)
+		if err != nil {
+			return nil, errf.NewFromErr(errf.Aborted, fmt.Errorf(
+				"create application for delete secret[%d](%s) failed, err: %w", i, secretID, err,
+			))
+		}
+
+		if createResult, ok := result.(*core.CreateResult); ok {
+			ids = append(ids, createResult.ID)
+		}
+	}
+
+	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+// CreateBizForCreatePermissionTemplate creates an ITSM application for creating a
+// permission template from a policy library for a single account.
+func (a *applicationSvc) CreateBizForCreatePermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.PermissionTemplate, Action: meta.Create},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizCreatePermissionTemplateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	base := &proto.BasePermTemplateContent{
+		Operation: enumor.OpCreatePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
+	}
+	handler := createpermtemplate.NewApplicationOfCreatePermTemplate(a.getHandlerOption(cts), base, req)
+	return a.create(cts, &proto.CreateCommonReq{}, handler)
+}
+
+// CreateBizForUpdatePermissionTemplate creates an ITSM application for updating a
+// custom permission template to use a new policy library.
+func (a *applicationSvc) CreateBizForUpdatePermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.PermissionTemplate, Action: meta.Update},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizUpdatePermissionTemplateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	base := &proto.BasePermTemplateContent{
+		Operation: enumor.OpUpdatePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
+	}
+	handler := updatepermtemplate.NewApplicationOfUpdatePermTemplate(a.getHandlerOption(cts), base, req)
+	return a.create(cts, &proto.CreateCommonReq{}, handler)
+}
+
+// CreateBizForDeletePermissionTemplate creates an ITSM application for deleting a
+// custom permission template.
+func (a *applicationSvc) CreateBizForDeletePermissionTemplate(cts *rest.Contexts) (interface{}, error) {
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.PermissionTemplate, Action: meta.Delete},
+		BizID: bizID,
+	}
+	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		return nil, err
+	}
+
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err = vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req, err := parseReqFromRequestBody[proto.BizDeletePermissionTemplateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	base := &proto.BasePermTemplateContent{
+		Operation: enumor.OpDeletePermTemplate,
+		Vendor:    vendor,
+		BkBizID:   bizID,
+	}
+	handler := deletepermtemplate.NewApplicationOfDeletePermTemplate(a.getHandlerOption(cts), base, req)
+	return a.create(cts, &proto.CreateCommonReq{}, handler)
 }

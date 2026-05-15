@@ -28,7 +28,11 @@ type AuditResourceType string
 
 // AuditResourceType 资源审计类型
 const (
-	SubAccountAuditResType              AuditResourceType = "sub_account"
+	SubAccountAuditResType AuditResourceType = "sub_account"
+	// SubAccountSecretAuditResType is sub account secret audit resource type
+	SubAccountSecretAuditResType AuditResourceType = "sub_account_secret"
+	// AccountSecretAuditResType is account secret audit resource type
+	AccountSecretAuditResType           AuditResourceType = "account_secret"
 	AccountAuditResType                 AuditResourceType = "account"
 	SecurityGroupAuditResType           AuditResourceType = "security_group"
 	SecurityGroupRuleAuditResType       AuditResourceType = "security_group_rule"
@@ -50,12 +54,15 @@ const (
 	UrlRuleDomainAuditResType           AuditResourceType = "url_rule_domain"
 	MainAccountAuditResType             AuditResourceType = "main_account"
 	RootAccountAuditResType             AuditResourceType = "root_account"
+	PermissionTemplateAuditResType      AuditResourceType = "permission_template"
 	PermissionPolicyLibraryAuditResType AuditResourceType = "permission_policy_library"
 )
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	SubAccountAuditResType:              {},
+	SubAccountSecretAuditResType:        {},
+	AccountSecretAuditResType:           {},
 	AccountAuditResType:                 {},
 	SecurityGroupAuditResType:           {},
 	SecurityGroupRuleAuditResType:       {},
@@ -76,6 +83,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	UrlRuleDomainAuditResType:           {},
 	MainAccountAuditResType:             {},
 	RootAccountAuditResType:             {},
+	PermissionTemplateAuditResType:      {},
 	PermissionPolicyLibraryAuditResType: {},
 }
 
@@ -117,6 +125,8 @@ const (
 	Bind AuditAction = "bind"
 	// Deliver 交付
 	Deliver AuditAction = "deliver"
+	// Apply 应用
+	Apply AuditAction = "apply"
 )
 
 // AuditActionEnums op type map.
@@ -135,6 +145,7 @@ var AuditActionEnums = map[AuditAction]struct{}{
 	Disassociate: {},
 	Bind:         {},
 	Deliver:      {},
+	Apply:        {},
 }
 
 // Exist judge enum value exist.

@@ -25,10 +25,10 @@ import (
 	"reflect"
 	"strings"
 
-	gvalidator "github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10"
 )
 
-var Validate = gvalidator.New()
+var Validate = validator.New()
 
 // Interface ...
 type Interface interface {

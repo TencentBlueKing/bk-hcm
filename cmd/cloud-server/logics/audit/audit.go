@@ -54,6 +54,8 @@ type Interface interface {
 	ResRecycleAudit(kt *kit.Kit, req *protoaudit.CloudResourceRecycleAuditReq) error
 	// BatchResOperationAudit 资源操作审计，如绑定、解绑、挂载、卸载等。
 	BatchResOperationAudit(kt *kit.Kit, infos []protoaudit.CloudResourceOperationInfo) error
+	// BatchCreateAudit 通用审计批量创建，支持完整字段（含 bk_biz_id），供上层业务逻辑直接构建审计记录使用。
+	BatchCreateAudit(kt *kit.Kit, req *protoaudit.BatchCreateAuditReq) error
 }
 
 var _ Interface = new(audit)
@@ -294,5 +296,14 @@ func (a audit) ResRecycleAudit(kt *kit.Kit, req *protoaudit.CloudResourceRecycle
 		return err
 	}
 
+	return nil
+}
+
+// BatchCreateAudit 通用审计批量创建，支持完整字段（含 bk_biz_id）。
+func (a audit) BatchCreateAudit(kt *kit.Kit, req *protoaudit.BatchCreateAuditReq) error {
+	if err := a.dataCli.Global.Audit.BatchCreateAudit(kt, req); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 	return nil
 }

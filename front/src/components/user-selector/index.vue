@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, h, ref, watchEffect, useId } from 'vue';
+import { computed, h, ref, watchEffect, useId, nextTick, useAttrs } from 'vue';
 import debounce from 'lodash/debounce';
+import { TagInputColumn } from '@blueking/ediatable';
 import { useUserStore, type IUserItem } from '@/store/user';
 import { userSelectorRecentSelectedKey } from '@/constants/storage-symbols';
+import type { DisplayType } from '@/components/form/typings';
+import type { Rules } from '@blueking/ediatable';
 
 defineOptions({ name: 'user-selector' });
 
@@ -27,7 +30,14 @@ export interface IUserSelectorProps {
   trigger?: 'focus' | 'search';
   collapseTags?: boolean;
   placeholder?: string;
+  display?: DisplayType;
+  rules?: Rules;
+  copyable?: boolean;
 }
+
+const attrs = useAttrs();
+
+const comp = computed(() => (props.display?.on === 'cell' ? TagInputColumn : 'bk-tag-input'));
 
 const id = useId();
 const activeSearchId = ref<string | null>(null);
@@ -67,7 +77,7 @@ const localModel = computed<string[]>({
 
 const userList = ref<IUserItem[]>([]);
 
-const tagInputRef = ref(null);
+const tagInputRef = ref();
 
 const listTpl = (node: IUserItem, hl: (value: string) => string) => {
   const innerHTML = `${hl(node.username)}${node.display_name ? `(${hl(node.display_name)})` : ''}`;
@@ -168,54 +178,82 @@ const handleClickMe = () => {
     localModel.value = [userStore.username];
   }
 
-  // blur触发强制隐藏，由于组件的实现问题，不隐藏当只有一个“我”选项时会出现一个空白
-  tagInputRef.value?.handleBlur();
+  // 如果是在 cell 模式下 还要触发一次 getValue 校验
+  if (props.display?.on === 'cell') {
+    nextTick(() => {
+      tagInputRef.value?.getValue();
+    });
+  } else {
+    // blur触发强制隐藏，由于组件的实现问题，不隐藏当只有一个"我"选项时会出现一个空白
+    tagInputRef.value?.handleBlur(); // FIXME: 这里需要确认一下
+  }
 };
 
 const focus = () => {
   tagInputRef.value?.focusInputTrigger?.();
 };
 
-defineExpose({ focus });
+defineExpose({
+  getValue() {
+    if (tagInputRef.value?.getValue) {
+      return tagInputRef.value.getValue().then(() => model.value);
+    }
+    return model.value;
+  },
+  focus,
+});
 </script>
 
 <template>
-  <bk-tag-input
-    class="user-selector"
-    v-model="localModel"
-    ref="tagInputRef"
-    :list="userList"
-    :tpl="listTpl"
-    :tag-tpl="tagTpl"
-    :max-data="multiple ? -1 : 1"
-    :allow-next-focus="multiple"
-    :allow-auto-match="!multiple"
-    :disabled="disabled"
-    :clearable="clearable"
-    :allow-create="allowCreate"
-    :has-delete-icon="hasDeleteIcon"
-    :trigger="trigger"
-    :collapse-tags="collapseTags"
-    :placeholder="placeholder"
-    :show-clear-only-hover="true"
-    :is-async-list="true"
-    :display-key="'display_name'"
-    :save-key="'username'"
-    :search-key="['username', 'display_name']"
-    @input="handleInput"
-    @select="handleSelect"
-  >
-    <template #suffix>
-      <div class="suffix">
-        <div class="me" v-show="!(activeSearchId === id && userStore.searchLoading)" @click.stop="handleClickMe">
-          我
+  <div class="user-selector-wrap" :class="{ 'is-cell': display?.on === 'cell' }">
+    <component
+      :is="comp"
+      class="user-selector"
+      v-model="localModel"
+      ref="tagInputRef"
+      :list="userList"
+      :tpl="listTpl"
+      :tag-tpl="tagTpl"
+      :max-data="multiple ? -1 : 1"
+      :allow-next-focus="multiple"
+      :allow-auto-match="!multiple"
+      :disabled="disabled"
+      :clearable="clearable"
+      :allow-create="allowCreate"
+      :has-delete-icon="hasDeleteIcon"
+      :trigger="trigger"
+      :collapse-tags="collapseTags"
+      :placeholder="placeholder"
+      :show-clear-only-hover="true"
+      :is-async-list="true"
+      :display-key="'display_name'"
+      :save-key="'username'"
+      :search-key="['username', 'display_name']"
+      :rules="rules"
+      :copyable="false"
+      v-bind="attrs"
+      @input="handleInput"
+      @select="handleSelect"
+    >
+      <template #suffix>
+        <div class="suffix">
+          <div class="me" v-show="!(activeSearchId === id && userStore.searchLoading)" @click.stop="handleClickMe">
+            我
+          </div>
+          <div class="loading" v-show="activeSearchId === id && userStore.searchLoading">
+            <bk-loading :loading="userStore.searchLoading" mode="spin" size="mini" />
+          </div>
         </div>
-        <div class="loading" v-show="activeSearchId === id && userStore.searchLoading">
-          <bk-loading :loading="userStore.searchLoading" mode="spin" size="mini" />
-        </div>
+      </template>
+    </component>
+    <!-- cell 模式：TagInputColumn 不支持 suffix 插槽，用绝对定位模拟 -->
+    <div v-if="display?.on === 'cell'" class="suffix-absolute">
+      <div class="me" v-show="!(activeSearchId === id && userStore.searchLoading)" @click.stop="handleClickMe">我</div>
+      <div class="loading" v-show="activeSearchId === id && userStore.searchLoading">
+        <bk-loading :loading="userStore.searchLoading" mode="spin" size="mini" />
       </div>
-    </template>
-  </bk-tag-input>
+    </div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -234,6 +272,36 @@ defineExpose({ focus });
 
     .loading {
       transform: scale(0.75);
+    }
+  }
+}
+
+.user-selector-wrap {
+  position: relative;
+  width: 100%;
+
+  &.is-cell {
+    :deep(.bk-tag-input-trigger .tag-list) {
+      height: auto;
+    }
+
+    .suffix-absolute {
+      position: absolute;
+      right: 26px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      z-index: 1;
+
+      .me {
+        color: $default-color;
+        cursor: pointer;
+      }
+
+      .loading {
+        transform: scale(0.75);
+      }
     }
   }
 }

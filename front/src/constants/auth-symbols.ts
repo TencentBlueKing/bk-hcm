@@ -76,5 +76,33 @@ export const AUTH_BIZ_DELETE_CLB = Symbol.for('auth_biz_delete_clb');
  * 权限策略库
  */
 export const AUTH_FIND_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_find_permission_policy_library');
+export const AUTH_BIZ_FIND_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_biz_find_permission_policy_library');
 export const AUTH_CREATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_create_permission_policy_library');
+export const AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_biz_create_permission_policy_library');
 export const AUTH_UPDATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_update_permission_policy_library');
+export const AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_biz_update_permission_policy_library');
+export const AUTH_APPLY_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_apply_permission_policy_library');
+export const AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY = Symbol.for('auth_biz_apply_permission_policy_library');
+
+/**
+ * 权限模板
+ */
+export const AUTH_BIZ_CREATE_PERMISSION_TEMPLATE = Symbol.for('auth_create_permission_template');
+export const AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE = Symbol.for('auth_update_permission_template');
+export const AUTH_BIZ_DELETE_PERMISSION_TEMPLATE = Symbol.for('auth_delete_permission_template');
+
+/**
+ * 云密钥
+ */
+export const AUTH_BIZ_CREATE_SUB_ACCOUNT_SECRET = Symbol.for('auth_biz_create_sub_account_secret');
+export const AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET = Symbol.for('auth_biz_update_sub_account_secret');
+export const AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET = Symbol.for('auth_biz_delete_sub_account_secret');
+
+/**
+ * 二级账号
+ */
+export const AUTH_BIZ_CREATE_SUB_ACCOUNT = Symbol.for('auth_biz_create_sub_account');
+export const AUTH_BIZ_UPDATE_SUB_ACCOUNT = Symbol.for('auth_biz_update_sub_account');
+export const AUTH_BIZ_DELETE_SUB_ACCOUNT = Symbol.for('auth_biz_delete_sub_account');
+export const AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT = Symbol.for('auth_biz_update_secondary_account');
+export const AUTH_BIZ_DELETE_SECONDARY_ACCOUNT = Symbol.for('auth_biz_delete_secondary_account');

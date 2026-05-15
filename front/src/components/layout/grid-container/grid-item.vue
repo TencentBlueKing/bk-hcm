@@ -2,6 +2,7 @@
   <div
     :class="{
       'grid-item': true,
+      'non-label': !($slots.label || label),
       span,
     }"
     :style="{
@@ -21,27 +22,26 @@
   </div>
 </template>
 <script setup lang="ts">
-import { type VNode, PropType } from 'vue';
+import { type VNode } from 'vue';
 
 export interface IGridItemProps {
   label?: (() => string | VNode) | string;
   span?: number;
 }
 
-defineProps({
-  label: {
-    type: [String, Function] as PropType<IGridItemProps['label']>,
-  },
-  span: {
-    type: Number as PropType<IGridItemProps['span']>,
-  },
-});
+defineProps<IGridItemProps>();
 </script>
 
 <style lang="scss" scoped>
+/* stylelint-disable */
 .grid-item {
   display: grid;
   grid-column: var(--span) span;
+
+  // 使用 1/-1 替代 span N，确保无论实际列数如何都能跨满整行
+  &.span {
+    grid-column: 1 / -1;
+  }
 
   .item-label,
   .item-content {
@@ -71,7 +71,7 @@ defineProps({
       align-items: center;
       top: 4px;
       left: 0;
-      z-index: 1;
+      z-index: 3; // fix 被 bk-table header遮挡
       width: 100%; // 表单控件宽度铺满
       gap: 4px;
 
@@ -101,6 +101,11 @@ defineProps({
           font-size: 18px;
         }
       }
+    }
+
+    // 当前聚焦的元素 z-index 更高，解决被非聚焦元素遮挡的问题
+    &:focus-within :deep(.form-element) {
+      z-index: 10;
     }
 
     :deep(.form-text) {

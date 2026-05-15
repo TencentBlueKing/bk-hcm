@@ -103,7 +103,7 @@ func (a *accountSvc) listResource(cts *rest.Contexts, typ meta.ResourceType) (in
 	for _, one := range accounts.Details {
 		respIDs = append(respIDs, one.ID)
 	}
-	accountDetailsMap, err := a.getAccountsSyncDetail(cts, respIDs...)
+	accountDetailsMap, err := a.getAccountsSyncDetail(cts.Kit, respIDs...)
 	if err != nil {
 		logs.Errorf("get account sync detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -252,7 +252,7 @@ func (a *accountSvc) fillAccountSyncDetail(cts *rest.Contexts, accounts []*cloud
 	if len(syncAccountMap) == 0 {
 		return nil
 	}
-	syncDetails, err := a.getAccountsSyncDetail(cts, converter.MapKeyToSlice(syncAccountMap)...)
+	syncDetails, err := a.getAccountsSyncDetail(cts.Kit, converter.MapKeyToSlice(syncAccountMap)...)
 	if err != nil {
 		logs.Errorf("get account sync detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return err
@@ -367,7 +367,7 @@ func (a *accountSvc) listAccountByManager(cts *rest.Contexts) ([]string, error) 
 	return converter.MapKeyToSlice(resultMap), nil
 }
 
-func (a *accountSvc) getAccountsSyncDetail(cts *rest.Contexts, accountIDs ...string) (
+func (a *accountSvc) getAccountsSyncDetail(kt *kit.Kit, accountIDs ...string) (
 	map[string][]coresync.AccountSyncDetailTable, error) {
 
 	if len(accountIDs) == 0 {
@@ -382,9 +382,9 @@ func (a *accountSvc) getAccountsSyncDetail(cts *rest.Contexts, accountIDs ...str
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-		accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(cts.Kit, listReq)
+		accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(kt, listReq)
 		if err != nil {
-			logs.Errorf("list account sync detail failed, err: %v, req: %v, rid: %s", err, listReq, cts.Kit.Rid)
+			logs.Errorf("list account sync detail failed, err: %v, req: %v, rid: %s", err, listReq, kt.Rid)
 			return nil, err
 		}
 		for _, detail := range accountSyncDetail.Details {
@@ -393,4 +393,245 @@ func (a *accountSvc) getAccountsSyncDetail(cts *rest.Contexts, accountIDs ...str
 	}
 
 	return result, nil
+}
+
+// ListBizAccount list biz account
+func (a *accountSvc) ListBizAccount(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AccountBizListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	finalFilter := tools.ExpressionAnd(
+		tools.RuleEqual("type", string(enumor.ResourceAccount)),
+		tools.RuleEqual("bk_biz_id", bizID),
+	)
+	if req.Filter != nil && !req.Filter.IsEmpty() {
+		finalFilter, err = tools.And(req.Filter, finalFilter)
+		if err != nil {
+			logs.Errorf("merge filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	listReq := &dataproto.AccountListReq{
+		Filter: finalFilter,
+		Page:   req.Page,
+	}
+	resp, err := a.client.DataService().Global.Account.ListWithExtension(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if req.Page.Count {
+		return &proto.AccountBizListResult{Count: resp.Count}, nil
+	}
+
+	if len(resp.Details) == 0 {
+		return &proto.AccountBizListResult{Details: make([]*proto.AccountWithOtherInfo, 0)}, nil
+	}
+
+	// 去除secretKey
+	for i, detail := range resp.Details {
+		secretKeyField := detail.Vendor.GetSecretField()
+		if _, ok := detail.Extension[secretKeyField]; ok {
+			delete(resp.Details[i].Extension, secretKeyField)
+		}
+	}
+
+	accountWithOtherInfoList, err := a.fillAccountInfo(cts.Kit, resp.Details)
+	if err != nil {
+		logs.Errorf("fill account info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &proto.AccountBizListResult{Details: accountWithOtherInfoList}, nil
+}
+
+func (a *accountSvc) fillAccountInfo(kt *kit.Kit, accounts []*dataproto.BaseAccountWithExtensionListResp) (
+	[]*proto.AccountWithOtherInfo, error) {
+
+	result := make([]*proto.AccountWithOtherInfo, 0, len(accounts))
+	for _, account := range accounts {
+		result = append(result, &proto.AccountWithOtherInfo{
+			BaseAccountWithExtensionListResp: account,
+			SubAccountCount:                  0,
+			AccountSecretCount:               0,
+		})
+	}
+
+	result, err := a.fillAccountCloudSyncStatus(kt, result)
+	if err != nil {
+		logs.Errorf("fill account cloud sync status failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result, err = a.fillAccountSubAccountCount(kt, result)
+	if err != nil {
+		logs.Errorf("fill account sub account count failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	result, err = a.fillSubAccountSecretCount(kt, result)
+	if err != nil {
+		logs.Errorf("fill account secret count failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// fillAccountCloudSyncStatus 补充账号的同步状态
+func (a *accountSvc) fillAccountCloudSyncStatus(kt *kit.Kit, accounts []*proto.AccountWithOtherInfo) (
+	[]*proto.AccountWithOtherInfo, error) {
+
+	if len(accounts) == 0 {
+		return accounts, nil
+	}
+
+	accountIDs := make([]string, 0, len(accounts))
+	for _, acc := range accounts {
+		accountIDs = append(accountIDs, acc.ID)
+	}
+
+	syncDetails, err := a.getAccountsSyncDetail(kt, accountIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	// 填充同步状态, 暂时只取 res_name = "sub_account" 的状态
+	for i, account := range accounts {
+		details, ok := syncDetails[account.ID]
+		if !ok {
+			continue
+		}
+		for _, detail := range details {
+			if detail.ResName != string(enumor.SubAccountCloudResType) {
+				continue
+			}
+			accounts[i].SyncStatus = detail.ResStatus
+			if detail.ResStatus == string(enumor.SyncFailed) {
+				accounts[i].SyncFailedReason = string(detail.ResFailedReason)
+			}
+			break
+		}
+	}
+
+	return accounts, nil
+}
+
+// fillAccountSubAccountCount 补充账号的子账号数量
+func (a *accountSvc) fillAccountSubAccountCount(kt *kit.Kit, accounts []*proto.AccountWithOtherInfo) (
+	[]*proto.AccountWithOtherInfo, error) {
+
+	if len(accounts) == 0 {
+		return accounts, nil
+	}
+
+	accountIDs := make([]string, 0, len(accounts))
+	for _, acc := range accounts {
+		accountIDs = append(accountIDs, acc.ID)
+	}
+
+	// 统计每个账号的子账号数量
+	countMap := make(map[string]uint64)
+	for _, ids := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("account_id", ids),
+				tools.RuleNotEqual("account_type", enumor.MainAccount),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		for {
+			resp, err := a.client.DataService().Global.SubAccount.List(kt, listReq)
+			if err != nil {
+				logs.Errorf("list sub account failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+
+			for _, subAccount := range resp.Details {
+				countMap[subAccount.AccountID]++
+			}
+
+			if len(resp.Details) < int(listReq.Page.Limit) {
+				break
+			}
+			listReq.Page.Start += uint32(listReq.Page.Limit)
+		}
+	}
+
+	// 填充到账号
+	for i, account := range accounts {
+		if count, ok := countMap[account.ID]; ok {
+			accounts[i].SubAccountCount = count
+		}
+	}
+
+	return accounts, nil
+}
+
+// fillSubAccountSecretCount 补充二级账号下的三级账号的密钥数量
+func (a *accountSvc) fillSubAccountSecretCount(kt *kit.Kit, accounts []*proto.AccountWithOtherInfo) (
+	[]*proto.AccountWithOtherInfo, error) {
+
+	if len(accounts) == 0 {
+		return accounts, nil
+	}
+
+	accountIDs := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		accountIDs = append(accountIDs, account.ID)
+	}
+
+	// 统计每个账号的密钥数量
+	countMap := make(map[string]uint64)
+	for _, ids := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &dataproto.SubAccountSecretListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("account_id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		for {
+			resp, err := a.client.DataService().Global.SubAccountSecret.ListSubAccountSecret(kt, listReq)
+			if err != nil {
+				logs.Errorf("list sub account secret failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+
+			for _, secret := range resp.Details {
+				countMap[secret.AccountID]++
+			}
+
+			if len(resp.Details) < int(listReq.Page.Limit) {
+				break
+			}
+			listReq.Page.Start += uint32(listReq.Page.Limit)
+		}
+	}
+
+	// 填充到账号
+	for i, account := range accounts {
+		if count, ok := countMap[account.ID]; ok {
+			accounts[i].AccountSecretCount = count
+		}
+	}
+
+	return accounts, nil
 }

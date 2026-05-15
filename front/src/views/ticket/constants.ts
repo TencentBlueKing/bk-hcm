@@ -17,7 +17,7 @@ export const APPLICATION_TYPE_MAP: Record<string, string> = {
   delete_sub_account_secret: '删除三级账号密钥',
   update_sub_account_secret: '修改三级账号密钥状态',
   apply_permission_policy_library_create: '策略库应用到模板',
-  apply_permission_policy_library_update: '策略库更新到模版',
+  apply_permission_policy_library_update: '策略库更新到模板',
   create_permission_template: '创建权限模板',
   update_permission_template: '修改权限模板',
   delete_permission_template: '删除权限模板',

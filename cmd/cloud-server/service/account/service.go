@@ -49,10 +49,12 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("GetAccountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/secret", svc.GetAccountBySecret)
 	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
 	h.Add("ListAccount", http.MethodPost, "/accounts/list", svc.ListAccount)
+	h.Add("ListBizAccount", http.MethodPost, "/bizs/{bk_biz_id}/accounts/list", svc.ListBizAccount)
 	h.Add("ResourceList", http.MethodPost, "/accounts/resources/accounts/list", svc.ResourceList)
 	h.Add("GetAccount", http.MethodGet, "/accounts/{account_id}", svc.GetAccount)
 	h.Add("GetSyncDetail", http.MethodGet, "/accounts/sync_details/{account_id}", svc.GetSyncDetail)
 	h.Add("UpdateAccount", http.MethodPatch, "/accounts/{account_id}", svc.UpdateAccount)
+	h.Add("UpdateBizAccount", http.MethodPatch, "/bizs/{bk_biz_id}/accounts/{account_id}", svc.UpdateBizAccount)
 	h.Add("UpdateBuiltInAccount", http.MethodPatch, "/account/builtIn", svc.UpdateBuiltInAccount)
 	h.Add("SyncCloudResource", http.MethodPost, "/accounts/{account_id}/sync", svc.SyncCloudResource)
 	h.Add("DeleteAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
@@ -85,6 +87,12 @@ func InitAccountService(c *capability.Capability) {
 	// 安全所需OpenAPI
 	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)
 	h.Add("ListSecretKey", http.MethodPost, "/accounts/secrets/list", svc.ListSecretKey)
+
+	// 根据资源类型批量查询二级账号元数据信息
+	h.Add("ListBizAccountByResType", http.MethodPost,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/accounts/list/by/res_type", svc.ListBizAccountByResType)
+	h.Add("ListAccountByResType", http.MethodPost,
+		"/vendors/{vendor}/accounts/list/by/res_type", svc.ListAccountByResType)
 
 	// 通过密钥获取账号权限策略
 	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",

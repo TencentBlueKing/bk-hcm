@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
+	tableaudit "hcm/pkg/dal/table/audit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -56,6 +57,7 @@ func InitAuditService(cap *capability.Capability) {
 		svc.cloudAudit.CloudResourceOperationAudit)
 	h.Add("CloudResourceRecycleAudit", http.MethodPost, "/cloud/resources/recycle_audits/create",
 		svc.cloudAudit.CloudResourceRecycleAudit)
+	h.Add("BatchCreateAudit", http.MethodPost, "/audits/batch/create", svc.BatchCreateAudit)
 	h.Add("ListAudit", http.MethodPost, "/audits/list", svc.ListAudit)
 	h.Add("GetAudit", http.MethodGet, "/audits/{id}", svc.GetAudit)
 
@@ -66,6 +68,45 @@ func InitAuditService(cap *capability.Capability) {
 type svc struct {
 	cloudAudit *cloud.Audit
 	dao        dao.Set
+}
+
+// BatchCreateAudit batch create audit records directly with full field control.
+func (svc *svc) BatchCreateAudit(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.BatchCreateAuditReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	audits := make([]*tableaudit.AuditTable, 0, len(req.Audits))
+	for _, a := range req.Audits {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:     a.ResID,
+			CloudResID: a.CloudResID,
+			ResName:   a.ResName,
+			ResType:   a.ResType,
+			Action:    a.Action,
+			BkBizID:   a.BkBizID,
+			Vendor:    a.Vendor,
+			AccountID: a.AccountID,
+			Operator:  cts.Kit.User,
+			Source:    cts.Kit.GetRequestSource(),
+			Rid:       cts.Kit.Rid,
+			AppCode:   cts.Kit.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: a.Detail,
+			},
+		})
+	}
+
+	if err := svc.dao.Audit().BatchCreate(cts.Kit, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 // ListAudit list audits.

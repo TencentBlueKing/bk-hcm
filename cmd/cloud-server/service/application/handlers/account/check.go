@@ -36,6 +36,10 @@ func (a *ApplicationOfAddAccount) CheckReq() error {
 		return err
 	}
 
+	if a.req.Vendor == enumor.TCloud && a.req.Type == enumor.ResourceAccount && len(a.req.SecurityManagers) == 0 {
+		return fmt.Errorf("security_managers is required")
+	}
+
 	// 检查名称是否重复
 	if err := a.isDuplicateName(a.req.Name); err != nil {
 		return err

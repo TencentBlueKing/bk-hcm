@@ -32,15 +32,31 @@ import (
 
 // TCloudAccountExtensionUpdateReq ...
 type TCloudAccountExtensionUpdateReq struct {
-	CloudSubAccountID string `json:"cloud_sub_account_id" validate:"required"`
-	CloudSecretID     string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey    string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudSubAccountID string                        `json:"cloud_sub_account_id" validate:"required"`
+	CloudSecretID     string                        `json:"cloud_secret_id" validate:"omitempty"`
+	CloudSecretKey    string                        `json:"cloud_secret_key" validate:"omitempty"`
+	LoginFlag         *enumor.AccountProtectionFlag `json:"login_flag" validate:"omitempty"`
+	ActionFlag        *enumor.AccountProtectionFlag `json:"action_flag" validate:"omitempty"`
 }
 
 // Validate ...
 func (req *TCloudAccountExtensionUpdateReq) Validate(accountType enumor.AccountType) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
+	}
+
+	// 校验 LoginFlag
+	if req.LoginFlag != nil {
+		if err := req.LoginFlag.Validate(); err != nil {
+			return fmt.Errorf("invalid login_flag: %w", err)
+		}
+	}
+
+	// 校验 ActionFlag
+	if req.ActionFlag != nil {
+		if err := req.ActionFlag.Validate(); err != nil {
+			return fmt.Errorf("invalid action_flag: %w", err)
+		}
 	}
 
 	// 登记账号密钥可为空，其他类型则必填
@@ -187,6 +203,7 @@ type OtherAccountExtensionUpdateReq struct {
 type AccountUpdateReq struct {
 	Name               string          `json:"name" validate:"omitempty"`
 	Managers           []string        `json:"managers" validate:"omitempty,max=5"`
+	SecurityManagers   []string        `json:"security_managers" validate:"omitempty,max=5"`
 	Memo               *string         `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int             `json:"recycle_reserve_time" validate:"omitempty"`
 	BkBizID            int64           `json:"bk_biz_id" validate:"omitempty"`

@@ -49,6 +49,11 @@ func (a ApplicationType) Validate() error {
 	case UpdateMainAccount:
 
 	case CreateLoadBalancer:
+
+	case OperateSubAccount:
+
+	case ApplyPermissionPolicyLibrary:
+	case OperatePermissionTemplate:
 	default:
 		return fmt.Errorf("unsupported application type: %s", a)
 	}
@@ -72,6 +77,12 @@ const (
 	// CreateLoadBalancer 创建负载均衡
 	CreateLoadBalancer ApplicationType = "create_load_balancer"
 
+	// ApplyPermissionPolicyLibrary 应用权限策略库
+	ApplyPermissionPolicyLibrary ApplicationType = "apply_permission_policy_library"
+
+	// OperatePermissionTemplate 操作云权限模板
+	OperatePermissionTemplate ApplicationType = "operate_permission_template"
+
 	// CreateSecurityGroup 创建安全组
 	CreateSecurityGroup ApplicationType = "create_security_group"
 	// UpdateSecurityGroup 更新安全组
@@ -89,6 +100,9 @@ const (
 	UpdateSecurityGroupRule ApplicationType = "update_security_group_rule"
 	// DeleteSecurityGroupRule 删除安全组规则
 	DeleteSecurityGroupRule ApplicationType = "delete_security_group_rule"
+
+	// OperateSubAccount 操作三级账号
+	OperateSubAccount ApplicationType = "operate_sub_account"
 )
 
 // ApplicationStatus 单据状态
@@ -146,6 +160,22 @@ func (a ApplicationOperation) Validate() error {
 	case OpCreateSecurityGroupRule:
 	case OpUpdateSecurityGroupRule:
 	case OpDeleteSecurityGroupRule:
+
+	case OpCreateSubAccount:
+	case OpUpdateSubAccount:
+	case OpDeleteSubAccount:
+
+	case OpCreateSubAccountSecret:
+	case OpDeleteSubAccountSecret:
+	case OpUpdateSubAccountSecretStatus:
+
+	case OpApplyPermissionPolicyLibraryCreate:
+	case OpApplyPermissionPolicyLibraryUpdate:
+
+	case OpCreatePermTemplate:
+	case OpUpdatePermTemplate:
+	case OpDeletePermTemplate:
+
 	default:
 		return fmt.Errorf("unsupported application operation: %s", a)
 	}
@@ -184,4 +214,30 @@ const (
 	OpUpdateSecurityGroupRule ApplicationOperation = "update_security_group_rule"
 	// OpDeleteSecurityGroupRule 删除安全组规则
 	OpDeleteSecurityGroupRule ApplicationOperation = "delete_security_group_rule"
+
+	// OpCreateSubAccount 新增三级账号
+	OpCreateSubAccount ApplicationOperation = "create_sub_account"
+	// OpUpdateSubAccount 修改三级账号
+	OpUpdateSubAccount ApplicationOperation = "update_sub_account"
+	// OpDeleteSubAccount 删除三级账号
+	OpDeleteSubAccount ApplicationOperation = "delete_sub_account"
+
+	// OpCreateSubAccountSecret 新增三级账号密钥
+	OpCreateSubAccountSecret ApplicationOperation = "create_sub_account_secret"
+	// OpDeleteSubAccountSecret 删除三级账号密钥
+	OpDeleteSubAccountSecret ApplicationOperation = "delete_sub_account_secret"
+	// OpUpdateSubAccountSecretStatus 修改三级账号密钥状态
+	OpUpdateSubAccountSecretStatus ApplicationOperation = "update_sub_account_secret"
+
+	// OpApplyPermissionPolicyLibraryCreate 策略库应用到模板
+	OpApplyPermissionPolicyLibraryCreate ApplicationOperation = "apply_permission_policy_library_create"
+	// OpApplyPermissionPolicyLibraryUpdate 策略库更新到模板
+	OpApplyPermissionPolicyLibraryUpdate ApplicationOperation = "apply_permission_policy_library_update"
+
+	// OpCreatePermTemplate 创建权限模版.
+	OpCreatePermTemplate ApplicationOperation = "create_permission_template"
+	// OpUpdatePermTemplate 修改权限模版.
+	OpUpdatePermTemplate ApplicationOperation = "update_permission_template"
+	// OpDeletePermTemplate 删除权限模版.
+	OpDeletePermTemplate ApplicationOperation = "delete_permission_template"
 )
