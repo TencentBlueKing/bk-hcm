@@ -354,6 +354,7 @@ func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, v
 	v4Cvms, err := batchListCvmByIPs(kt, cli, v4IPs,
 		[]string{"private_ipv4_addresses", "public_ipv4_addresses"}, vendor, bkBizID, accountID)
 	if err != nil {
+		logs.Errorf("batch list cvm by ipv4 failed, bkBizID: %d, err: %v, rid: %s", bkBizID, err, kt.Rid)
 		return nil, err
 	}
 	cvmList = append(cvmList, v4Cvms...)
@@ -361,6 +362,7 @@ func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, v
 	v6Cvms, err := batchListCvmByIPs(kt, cli, v6IPs,
 		[]string{"private_ipv6_addresses", "public_ipv6_addresses"}, vendor, bkBizID, accountID)
 	if err != nil {
+		logs.Errorf("batch list cvm by ipv6 failed, bkBizID: %d, err: %v, rid: %s", bkBizID, err, kt.Rid)
 		return nil, err
 	}
 	cvmList = append(cvmList, v6Cvms...)
@@ -380,8 +382,8 @@ func batchListCvmByIPs(kt *kit.Kit, cli *dataservice.Client, ips []string, ipFie
 	for _, partIPs := range slice.Split(ips, cvmIPBatchSize) {
 		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, ipFields, vendor, bkBizID, accountID)
 		start := uint32(0)
+		listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
 		for {
-			listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
 			cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
 			if err != nil {
 				logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
