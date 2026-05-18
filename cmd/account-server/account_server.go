@@ -20,6 +20,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -33,7 +34,7 @@ func main() {
 	cc.InitService(cc.AccountServerName)
 
 	opts := options.InitOptions()
-	if err := app.Run(opts); err != nil {
+	if err := app.Run(context.Background(), opts); err != nil {
 		fmt.Fprintf(os.Stderr, "start account server failed, err: %v", err)
 		logs.CloseLogs()
 		os.Exit(1)

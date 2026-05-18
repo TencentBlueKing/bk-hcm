@@ -25,4 +25,6 @@ const (
 
 	// BackendOperationAppCodeKey hcm后端操作AppCode
 	BackendOperationAppCodeKey = "hcm"
+	// TraceSystemName trace系统名称
+	TraceSystemName = "hcm"
 )

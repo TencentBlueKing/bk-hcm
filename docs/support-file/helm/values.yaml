@@ -987,3 +987,12 @@ compatibility:
 
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
+
+# defines trace's related configuration
+trace:
+  # trace enable
+  enable: false
+  # trace endpoint in bk-monitor
+  endpoint: demo.com:4318
+  # token of APM in bk-monitor
+  token: xxx

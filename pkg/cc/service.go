@@ -82,6 +82,7 @@ type ApiServerSetting struct {
 	Service Service      `yaml:"service"`
 	Log     LogOption    `yaml:"log"`
 	Tenant  TenantConfig `yaml:"tenant"`
+	Trace   Trace     `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -109,6 +110,9 @@ func (s ApiServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -144,6 +148,7 @@ type CloudServerSetting struct {
 	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
 	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
 	TmpFileDir       string           `yaml:"tmpFileDir"`
+	Trace            Trace          `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -214,6 +219,10 @@ func (s CloudServerSetting) Validate() error {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -232,6 +241,7 @@ type DataServiceSetting struct {
 	Crypto      Crypto       `yaml:"crypto"`
 	Cmdb        ApiGateway   `yaml:"cmdb"`
 	Tenant      TenantConfig `yaml:"tenant"`
+	Trace       Trace       `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -271,6 +281,10 @@ func (s DataServiceSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -288,6 +302,7 @@ type HCServiceSetting struct {
 	Tenant        TenantConfig `yaml:"tenant"`
 	Cmdb          ApiGateway   `yaml:"cmdb"`
 	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
+	Trace         Trace      `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -327,6 +342,9 @@ func (s HCServiceSetting) Validate() error {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -343,6 +361,7 @@ type AuthServerSetting struct {
 	Esb     Esb          `yaml:"esb"`
 	Cmdb    ApiGateway   `yaml:"cmdb"`
 	Tenant  TenantConfig `yaml:"tenant"`
+	Trace   Trace     `yaml:"trace"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -383,6 +402,10 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -404,6 +427,7 @@ type WebServerSetting struct {
 	TemplatePath  string        `yaml:"templatePath"`
 	Tenant        TenantConfig  `yaml:"tenant"`
 	Cmdb          ApiGateway    `yaml:"cmdb"`
+	Trace         Trace         `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -455,6 +479,10 @@ func (s WebServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -476,6 +504,7 @@ type TaskServerSetting struct {
 	Log      LogOption    `yaml:"log"`
 	Async    Async        `yaml:"async"`
 	Tenant   TenantConfig `yaml:"tenant"`
+	Trace    Trace        `yaml:"trace"`
 
 	UseLabel LabelSwitch `yaml:"useLabel"`
 }
@@ -510,6 +539,10 @@ func (s TaskServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -528,6 +561,7 @@ type AccountServerSetting struct {
 	TmpFileDir     string               `yaml:"tmpFileDir"`
 	Tenant         TenantConfig         `yaml:"tenant"`
 	Cmdb           ApiGateway           `yaml:"cmdb"`
+	Trace          Trace                `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -562,6 +596,10 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Trace.validate(); err != nil {
 		return err
 	}
 
