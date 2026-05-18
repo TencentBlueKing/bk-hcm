@@ -381,8 +381,7 @@ func batchListCvmByIPs(kt *kit.Kit, cli *dataservice.Client, ips []string, ipFie
 	cvmList := make([]corecvm.BaseCvm, 0)
 	for _, partIPs := range slice.Split(ips, cvmIPBatchSize) {
 		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, ipFields, vendor, bkBizID, accountID)
-		start := uint32(0)
-		listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
+		listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit}}
 		for {
 			cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
 			if err != nil {
@@ -394,7 +393,7 @@ func batchListCvmByIPs(kt *kit.Kit, cli *dataservice.Client, ips []string, ipFie
 			if uint(len(cvms.Details)) < core.DefaultMaxPageLimit {
 				break
 			}
-			start += uint32(core.DefaultMaxPageLimit)
+			listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
 	}
 	return cvmList, nil
