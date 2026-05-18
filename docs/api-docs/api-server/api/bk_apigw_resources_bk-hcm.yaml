@@ -363,7 +363,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Notebook Instance 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -389,7 +389,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Notebook Instance 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -415,7 +415,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Endpoint 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -441,7 +441,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Endpoint 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -467,7 +467,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Endpoint Config 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -493,7 +493,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Endpoint Config 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -519,7 +519,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Training Job 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -545,7 +545,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Training Job 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -571,7 +571,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Processing Job 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -597,7 +597,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Processing Job 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -623,7 +623,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Transform Job 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -649,7 +649,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Transform Job 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -675,7 +675,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Studio App 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -701,7 +701,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Studio App 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -727,7 +727,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Cluster 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -753,7 +753,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Cluster 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -779,7 +779,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Cluster Node 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -805,7 +805,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Cluster Node 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -831,7 +831,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Training Plan 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -857,7 +857,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Training Plan 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -883,7 +883,7 @@ paths:
       description: 搜索 AWS 成员账号 SageMaker Training Plan Offering（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -909,7 +909,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Inference Component 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -935,7 +935,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Inference Component 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -961,7 +961,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Optimization Job 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -987,7 +987,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Optimization Job 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -1013,7 +1013,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Compute Quota 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -1039,7 +1039,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker HyperPod Compute Quota 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -1065,7 +1065,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Reserved Capacity 详情（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
@@ -1091,7 +1091,7 @@ paths:
       description: 查询 AWS 成员账号 SageMaker Reserved Capacity 关联 UltraServer 列表（通过 AssumeRole 跨账号访问）
       tags:
         - SageMaker
-        - AWS
+        - Aws
       responses:
         default:
           description: ''
