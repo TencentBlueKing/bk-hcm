@@ -57,7 +57,7 @@ export default defineComponent({
     const { CommonTable, getListData, filter } = useTable({
       searchOptions: {
         searchData: [
-          { name: '一级账号ID', id: 'root_account_id' },
+          { name: '一级账号ID', id: 'root_account_cloud_id' },
           { name: '一级账号名称', id: 'root_account_name' },
         ],
       },
