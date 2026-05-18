@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0051,HCMVER=v1.8.14
 
     Notes:
     1. 添加权限模板表 permission_template
@@ -52,6 +52,6 @@ CREATE TABLE IF NOT EXISTS `permission_template` (
 INSERT INTO id_generator(`resource`, `max_id`) VALUES ('permission_template', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.14' as `hcm_ver`, '0051' as `sql_ver`;
 
 COMMIT;

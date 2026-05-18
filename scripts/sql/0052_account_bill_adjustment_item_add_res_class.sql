@@ -18,22 +18,19 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+ SQLVER=0052,HCMVER=v1.8.14
 
-    Notes:
-    1. 子账号表新增字段：email（邮箱）、phone_num（手机号）、country_code（手机区域代码）、cloud_created_at（云上创建时间）
+ Notes:
+ 账单调整明细表新增资源类别字段
 */
 
 START TRANSACTION;
 
-ALTER TABLE `sub_account`
-    ADD COLUMN `email` varchar(64) DEFAULT NULL COMMENT '邮箱',
-    ADD COLUMN `phone_num` varchar(64) DEFAULT NULL COMMENT '手机号',
-    ADD COLUMN `country_code` varchar(16) DEFAULT NULL COMMENT '手机区域代码',
-    ADD COLUMN `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间'
-    ADD COLUMN `permission_template_ids` json DEFAULT NULL COMMENT '权限模板ID列表';
+ALTER TABLE `account_bill_adjustment_item`
+    ADD COLUMN `res_class` varchar(32) NOT NULL DEFAULT '' COMMENT '调账资源类别' AFTER `type`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.14' as `hcm_ver`,
+       '0052'   as `sql_ver`;
 
 COMMIT;

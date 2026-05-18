@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0049,HCMVER=v1.8.14
 
     Notes:
     1. 账号表新增字段：email（邮箱）、security_managers（安全负责人）、cloud_created_at（云上创建时间）
@@ -29,9 +29,9 @@ START TRANSACTION;
 ALTER TABLE `account`
     ADD COLUMN `email` varchar(64) DEFAULT NULL COMMENT '邮箱',
     ADD COLUMN `security_managers` json DEFAULT NULL COMMENT '安全负责人',
-    ADD COLUMN `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间'
+    ADD COLUMN `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.14' as `hcm_ver`, '0049' as `sql_ver`;
 
 COMMIT;
