@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref } from 'vue';
+import { PropType, defineComponent, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { AccountLevelEnum, searchData, secondarySearchData } from '../constants';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 export default defineComponent({
   props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
@@ -19,6 +20,34 @@ export default defineComponent({
     const { t } = useI18n();
 
     const { columns } = useColumns(props.accountLevel);
+
+    const businessMapStore = useBusinessMapStore();
+
+    // 加载业务列表
+    onMounted(async () => {
+      await businessMapStore.fetchBusinessMap();
+    });
+
+    // 响应式 searchData 函数
+    const getSearchData = () => {
+      if (props.accountLevel === AccountLevelEnum.FirstLevel) {
+        return searchData;
+      }
+
+      // 动态构建二级账号的搜索条件
+      return secondarySearchData.map((item) => {
+        if (item.id === 'bk_biz_id') {
+          return {
+            ...item,
+            children: businessMapStore.businessList.map((biz) => ({
+              id: biz.id,
+              name: biz.name,
+            })),
+          };
+        }
+        return { ...item };
+      });
+    };
 
     const isSideSliderShow = ref(false);
     const curAccount = ref<any>({});
@@ -46,7 +75,7 @@ export default defineComponent({
         ],
       },
       searchOptions: {
-        searchData: props.accountLevel === AccountLevelEnum.FirstLevel ? searchData : secondarySearchData,
+        searchData: getSearchData,
       },
       requestOption: {
         type: props.accountLevel === AccountLevelEnum.FirstLevel ? 'account/root_accounts' : 'account/main_accounts',

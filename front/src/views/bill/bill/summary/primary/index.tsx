@@ -58,7 +58,7 @@ export default defineComponent({
       searchOptions: {
         searchData: [
           { name: '一级账号ID', id: 'root_account_cloud_id' },
-          { name: '一级账号名称', id: 'root_account_name' },
+          // { name: '一级账号名称', id: 'root_account_name' }, // 待接口支持
         ],
       },
       tableOptions: {
