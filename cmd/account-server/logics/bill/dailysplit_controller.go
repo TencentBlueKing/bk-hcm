@@ -252,6 +252,15 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 				continue
 			}
 		}
+		if flow.State == enumor.FlowSuccess {
+			logs.Warnf("detected pull task state regression: split flow already success, but state is still pulled, "+
+				"restore to split, id: %s, rid: %s", task.ID, kt.Rid)
+			if err := msdc.updateDailyPullTaskState(kt, task.ID, enumor.MainAccountRawBillPullStateSplit); err != nil {
+				logs.Warnf("restore pull task %s state to split failed, err %s, rid: %s",
+					task.ID, err.Error(), kt.Rid)
+				continue
+			}
+		}
 	}
 	return nil
 }
@@ -302,5 +311,14 @@ func (msdc *MainDailySplitController) updateDailyPullTaskFlowID(kt *kit.Kit, dat
 	return msdc.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, &dsbillapi.BillDailyPullTaskUpdateReq{
 		ID:          dataID,
 		SplitFlowID: flowID,
+	})
+}
+
+func (msdc *MainDailySplitController) updateDailyPullTaskState(kt *kit.Kit, dataID string,
+	state enumor.MainRawBillPullState) error {
+
+	return msdc.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, &dsbillapi.BillDailyPullTaskUpdateReq{
+		ID:    dataID,
+		State: state,
 	})
 }
