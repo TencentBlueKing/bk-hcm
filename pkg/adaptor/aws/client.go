@@ -25,7 +25,6 @@ import (
 	awsv2 "github.com/aws/aws-sdk-go-v2/aws"
 	v2credentials "github.com/aws/aws-sdk-go-v2/credentials"
 	smv2 "github.com/aws/aws-sdk-go-v2/service/sagemaker"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -36,7 +35,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/organizations"
 	"github.com/aws/aws-sdk-go/service/s3"
-	awssm "github.com/aws/aws-sdk-go/service/sagemaker"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -228,23 +226,6 @@ func (c *clientSet) sageMakerV2Client(region string) (*smv2.Client, error) {
 	}
 
 	return smv2.NewFromConfig(cfg), nil
-}
-
-func (c *clientSet) sageMakerClient(region string) (*awssm.SageMaker, error) {
-	cfg := &aws.Config{
-		Credentials: c.credentials,
-	}
-
-	if len(region) != 0 {
-		cfg.Region = aws.String(region)
-	}
-
-	sess, err := session.NewSession(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return awssm.New(sess), nil
 }
 
 func (c *clientSet) cloudFormationClient(region string) (*cloudformation.CloudFormation, error) {

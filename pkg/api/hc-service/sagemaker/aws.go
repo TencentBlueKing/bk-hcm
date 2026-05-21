@@ -72,7 +72,7 @@ type AwsAssumeRoleSageMakerListNotebookInstancesReq struct {
 	DefaultCodeRepositoryContains       string     `json:"default_code_repository_contains,omitempty"`
 	LastModifiedTimeAfter               *time.Time `json:"last_modified_time_after,omitempty"`
 	LastModifiedTimeBefore              *time.Time `json:"last_modified_time_before,omitempty"`
-	MaxResults                          *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                          *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                        string     `json:"name_contains,omitempty"`
 	NextToken                           string     `json:"next_token,omitempty"`
 	NotebookLifecycleConfigNameContains string     `json:"notebook_instance_lifecycle_config_name_contains,omitempty"`
@@ -104,7 +104,7 @@ type AwsAssumeRoleSageMakerListEndpointsReq struct {
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
 	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
 	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -133,7 +133,7 @@ type AwsAssumeRoleSageMakerListEndpointConfigsReq struct {
 	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
 	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -163,7 +163,7 @@ type AwsAssumeRoleSageMakerListTrainingJobsReq struct {
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
 	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
 	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -195,7 +195,7 @@ type AwsAssumeRoleSageMakerListProcessingJobsReq struct {
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
 	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
 	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -226,7 +226,7 @@ type AwsAssumeRoleSageMakerListTransformJobsReq struct {
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
 	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
 	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -254,7 +254,7 @@ func (req *AwsAssumeRoleSageMakerDescribeTransformJobReq) Validate() error {
 type AwsAssumeRoleSageMakerListAppsReq struct {
 	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
 	DomainIDEquals                string `json:"domain_id_equals,omitempty"`
-	MaxResults                    *int64 `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32 `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NextToken                     string `json:"next_token,omitempty"`
 	SortBy                        string `json:"sort_by,omitempty"`
 	SortOrder                     string `json:"sort_order,omitempty"`
@@ -287,7 +287,7 @@ type AwsAssumeRoleSageMakerListClustersReq struct {
 	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
 	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NameContains                  string     `json:"name_contains,omitempty"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
@@ -317,7 +317,7 @@ type AwsAssumeRoleSageMakerListClusterNodesReq struct {
 	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
 	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
 	InstanceGroupNameContains     string     `json:"instance_group_name_contains,omitempty"`
-	MaxResults                    *int64     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
 	NextToken                     string     `json:"next_token,omitempty"`
 	SortBy                        string     `json:"sort_by,omitempty"`
 	SortOrder                     string     `json:"sort_order,omitempty"`

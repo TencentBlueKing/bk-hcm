@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.8.11+。
+- 该接口提供版本：9.9.9。
 - 该接口所需权限：资源查看。
 - 该接口功能描述：查询 AWS 成员账号的 SageMaker Training Job 列表。通过 STS AssumeRole 跨账号访问成员账号的 SageMaker 原生列表接口，透传返回 AWS 原始响应。
 
@@ -21,7 +21,7 @@ POST /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/list
 | creation_time_before | string | 否 | 创建时间上界，RFC3339 时间格式 |
 | last_modified_time_after | string | 否 | 最后修改时间下界，RFC3339 时间格式 |
 | last_modified_time_before | string | 否 | 最后修改时间上界，RFC3339 时间格式 |
-| max_results | int64 | 否 | 分页大小，最小值 1 |
+| max_results | int32 | 否 | 分页大小，最小值 1 |
 | name_contains | string | 否 | Training Job 名称模糊匹配 |
 | next_token | string | 否 | AWS 分页 token |
 | sort_by | string | 否 | AWS 原生排序字段 |

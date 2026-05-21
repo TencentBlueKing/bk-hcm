@@ -29,7 +29,7 @@ type AwsListNotebookInstancesOption struct {
 	DefaultCodeRepositoryContains       string
 	LastModifiedTimeAfter               *time.Time
 	LastModifiedTimeBefore              *time.Time
-	MaxResults                          *int64
+	MaxResults                          *int32
 	NameContains                        string
 	NextToken                           *string
 	NotebookLifecycleConfigNameContains string
@@ -51,7 +51,7 @@ type AwsListEndpointsOption struct {
 	CreationTimeBefore     *time.Time
 	LastModifiedTimeAfter  *time.Time
 	LastModifiedTimeBefore *time.Time
-	MaxResults             *int64
+	MaxResults             *int32
 	NameContains           string
 	NextToken              *string
 	SortBy                 string
@@ -70,7 +70,7 @@ type AwsListEndpointConfigsOption struct {
 	Region             string
 	CreationTimeAfter  *time.Time
 	CreationTimeBefore *time.Time
-	MaxResults         *int64
+	MaxResults         *int32
 	NameContains       string
 	NextToken          *string
 	SortBy             string
@@ -90,7 +90,7 @@ type AwsListTrainingJobsOption struct {
 	CreationTimeBefore     *time.Time
 	LastModifiedTimeAfter  *time.Time
 	LastModifiedTimeBefore *time.Time
-	MaxResults             *int64
+	MaxResults             *int32
 	NameContains           string
 	NextToken              *string
 	SortBy                 string
@@ -112,7 +112,7 @@ type AwsListProcessingJobsOption struct {
 	CreationTimeBefore     *time.Time
 	LastModifiedTimeAfter  *time.Time
 	LastModifiedTimeBefore *time.Time
-	MaxResults             *int64
+	MaxResults             *int32
 	NameContains           string
 	NextToken              *string
 	SortBy                 string
@@ -133,7 +133,7 @@ type AwsListTransformJobsOption struct {
 	CreationTimeBefore     *time.Time
 	LastModifiedTimeAfter  *time.Time
 	LastModifiedTimeBefore *time.Time
-	MaxResults             *int64
+	MaxResults             *int32
 	NameContains           string
 	NextToken              *string
 	SortBy                 string
@@ -151,7 +151,7 @@ type AwsDescribeTransformJobOption struct {
 type AwsListAppsOption struct {
 	Region                string
 	DomainIDEquals        string
-	MaxResults            *int64
+	MaxResults            *int32
 	NextToken             *string
 	SortBy                string
 	SortOrder             string
@@ -174,7 +174,7 @@ type AwsListClustersOption struct {
 	Region             string
 	CreationTimeAfter  *time.Time
 	CreationTimeBefore *time.Time
-	MaxResults         *int64
+	MaxResults         *int32
 	NameContains       string
 	NextToken          *string
 	SortBy             string
@@ -194,7 +194,7 @@ type AwsListClusterNodesOption struct {
 	CreationTimeAfter         *time.Time
 	CreationTimeBefore        *time.Time
 	InstanceGroupNameContains string
-	MaxResults                *int64
+	MaxResults                *int32
 	NextToken                 *string
 	SortBy                    string
 	SortOrder                 string

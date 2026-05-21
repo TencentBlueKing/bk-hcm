@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
+// ListNotebookInstancesForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListNotebookInstancesForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListNotebookInstancesReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -62,6 +63,7 @@ func (s *sageMakerSvc) ListNotebookInstancesForAws(cts *rest.Contexts) (interfac
 	return result, nil
 }
 
+// GetNotebookInstanceForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetNotebookInstanceForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeNotebookInstanceReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -85,6 +87,7 @@ func (s *sageMakerSvc) GetNotebookInstanceForAws(cts *rest.Contexts) (interface{
 	return result, nil
 }
 
+// ListEndpointsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListEndpointsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListEndpointsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -117,6 +120,7 @@ func (s *sageMakerSvc) ListEndpointsForAws(cts *rest.Contexts) (interface{}, err
 	return result, nil
 }
 
+// GetEndpointForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetEndpointForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeEndpointReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -140,6 +144,7 @@ func (s *sageMakerSvc) GetEndpointForAws(cts *rest.Contexts) (interface{}, error
 	return result, nil
 }
 
+// ListEndpointConfigsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListEndpointConfigsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListEndpointConfigsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -169,6 +174,7 @@ func (s *sageMakerSvc) ListEndpointConfigsForAws(cts *rest.Contexts) (interface{
 	return result, nil
 }
 
+// GetEndpointConfigForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetEndpointConfigForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeEndpointConfigReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -192,6 +198,7 @@ func (s *sageMakerSvc) GetEndpointConfigForAws(cts *rest.Contexts) (interface{},
 	return result, nil
 }
 
+// ListTrainingJobsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListTrainingJobsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListTrainingJobsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -225,6 +232,7 @@ func (s *sageMakerSvc) ListTrainingJobsForAws(cts *rest.Contexts) (interface{}, 
 	return result, nil
 }
 
+// GetTrainingJobForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetTrainingJobForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeTrainingJobReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -248,6 +256,7 @@ func (s *sageMakerSvc) GetTrainingJobForAws(cts *rest.Contexts) (interface{}, er
 	return result, nil
 }
 
+// ListProcessingJobsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListProcessingJobsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListProcessingJobsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -280,6 +289,7 @@ func (s *sageMakerSvc) ListProcessingJobsForAws(cts *rest.Contexts) (interface{}
 	return result, nil
 }
 
+// GetProcessingJobForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetProcessingJobForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeProcessingJobReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -303,6 +313,7 @@ func (s *sageMakerSvc) GetProcessingJobForAws(cts *rest.Contexts) (interface{}, 
 	return result, nil
 }
 
+// ListTransformJobsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListTransformJobsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListTransformJobsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -335,6 +346,7 @@ func (s *sageMakerSvc) ListTransformJobsForAws(cts *rest.Contexts) (interface{},
 	return result, nil
 }
 
+// GetTransformJobForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetTransformJobForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeTransformJobReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -358,6 +370,7 @@ func (s *sageMakerSvc) GetTransformJobForAws(cts *rest.Contexts) (interface{}, e
 	return result, nil
 }
 
+// ListAppsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListAppsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListAppsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -387,6 +400,7 @@ func (s *sageMakerSvc) ListAppsForAws(cts *rest.Contexts) (interface{}, error) {
 	return result, nil
 }
 
+// GetAppForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetAppForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeAppReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -414,6 +428,7 @@ func (s *sageMakerSvc) GetAppForAws(cts *rest.Contexts) (interface{}, error) {
 	return result, nil
 }
 
+// ListClustersForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListClustersForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListClustersReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -443,6 +458,7 @@ func (s *sageMakerSvc) ListClustersForAws(cts *rest.Contexts) (interface{}, erro
 	return result, nil
 }
 
+// GetClusterForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetClusterForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeClusterReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -466,6 +482,7 @@ func (s *sageMakerSvc) GetClusterForAws(cts *rest.Contexts) (interface{}, error)
 	return result, nil
 }
 
+// ListClusterNodesForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListClusterNodesForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListClusterNodesReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -496,6 +513,7 @@ func (s *sageMakerSvc) ListClusterNodesForAws(cts *rest.Contexts) (interface{}, 
 	return result, nil
 }
 
+// GetClusterNodeForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetClusterNodeForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeClusterNodeReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -520,6 +538,7 @@ func (s *sageMakerSvc) GetClusterNodeForAws(cts *rest.Contexts) (interface{}, er
 	return result, nil
 }
 
+// ListTrainingPlansForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListTrainingPlansForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListTrainingPlansReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -549,6 +568,7 @@ func (s *sageMakerSvc) ListTrainingPlansForAws(cts *rest.Contexts) (interface{},
 	return result, nil
 }
 
+// GetTrainingPlanForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetTrainingPlanForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeTrainingPlanReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -572,6 +592,7 @@ func (s *sageMakerSvc) GetTrainingPlanForAws(cts *rest.Contexts) (interface{}, e
 	return result, nil
 }
 
+// SearchTrainingPlanOfferingsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) SearchTrainingPlanOfferingsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerSearchTrainingPlanOfferingsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -604,6 +625,7 @@ func (s *sageMakerSvc) SearchTrainingPlanOfferingsForAws(cts *rest.Contexts) (in
 	return result, nil
 }
 
+// ListInferenceComponentsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListInferenceComponentsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListInferenceComponentsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -639,6 +661,7 @@ func (s *sageMakerSvc) ListInferenceComponentsForAws(cts *rest.Contexts) (interf
 	return result, nil
 }
 
+// GetInferenceComponentForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetInferenceComponentForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeInferenceComponentReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -663,6 +686,7 @@ func (s *sageMakerSvc) GetInferenceComponentForAws(cts *rest.Contexts) (interfac
 	return result, nil
 }
 
+// ListOptimizationJobsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListOptimizationJobsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListOptimizationJobsReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -696,6 +720,7 @@ func (s *sageMakerSvc) ListOptimizationJobsForAws(cts *rest.Contexts) (interface
 	return result, nil
 }
 
+// GetOptimizationJobForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetOptimizationJobForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeOptimizationJobReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -719,6 +744,7 @@ func (s *sageMakerSvc) GetOptimizationJobForAws(cts *rest.Contexts) (interface{}
 	return result, nil
 }
 
+// ListComputeQuotasForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListComputeQuotasForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListComputeQuotasReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -750,6 +776,7 @@ func (s *sageMakerSvc) ListComputeQuotasForAws(cts *rest.Contexts) (interface{},
 	return result, nil
 }
 
+// GetComputeQuotaForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetComputeQuotaForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeComputeQuotaReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -774,6 +801,7 @@ func (s *sageMakerSvc) GetComputeQuotaForAws(cts *rest.Contexts) (interface{}, e
 	return result, nil
 }
 
+// GetReservedCapacityForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) GetReservedCapacityForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerDescribeReservedCapacityReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -798,6 +826,7 @@ func (s *sageMakerSvc) GetReservedCapacityForAws(cts *rest.Contexts) (interface{
 	return result, nil
 }
 
+// ListUltraServersByReservedCapacityForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListUltraServersByReservedCapacityForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListUltraServersByReservedCapacityReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -827,9 +856,9 @@ func (s *sageMakerSvc) ListUltraServersByReservedCapacityForAws(cts *rest.Contex
 	return result, nil
 }
 
-func convertTrainingPlanFilters(
-	filters []proto.AwsTrainingPlanFilter,
+func convertTrainingPlanFilters(filters []proto.AwsTrainingPlanFilter,
 ) []adaptorsm.AwsTrainingPlanFilter {
+
 	if len(filters) == 0 {
 		return nil
 	}

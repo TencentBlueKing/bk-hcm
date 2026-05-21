@@ -30,9 +30,9 @@ import (
 )
 
 // ListTrainingPlans lists SageMaker Training Plans.
-func (a *Aws) ListTrainingPlans(kt *kit.Kit, opt *adtsm.AwsListTrainingPlansOption) (
-	*smv2.ListTrainingPlansOutput, error,
-) {
+func (a *Aws) ListTrainingPlans(kt *kit.Kit,
+	opt *adtsm.AwsListTrainingPlansOption) (*smv2.ListTrainingPlansOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -69,9 +69,9 @@ func (a *Aws) ListTrainingPlans(kt *kit.Kit, opt *adtsm.AwsListTrainingPlansOpti
 }
 
 // DescribeTrainingPlan describes a SageMaker Training Plan.
-func (a *Aws) DescribeTrainingPlan(kt *kit.Kit, opt *adtsm.AwsDescribeTrainingPlanOption) (
-	*smv2.DescribeTrainingPlanOutput, error,
-) {
+func (a *Aws) DescribeTrainingPlan(kt *kit.Kit,
+	opt *adtsm.AwsDescribeTrainingPlanOption) (*smv2.DescribeTrainingPlanOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -88,9 +88,9 @@ func (a *Aws) DescribeTrainingPlan(kt *kit.Kit, opt *adtsm.AwsDescribeTrainingPl
 }
 
 // SearchTrainingPlanOfferings searches SageMaker Training Plan offerings.
-func (a *Aws) SearchTrainingPlanOfferings(kt *kit.Kit, opt *adtsm.AwsSearchTrainingPlanOfferingsOption) (
-	*smv2.SearchTrainingPlanOfferingsOutput, error,
-) {
+func (a *Aws) SearchTrainingPlanOfferings(kt *kit.Kit,
+	opt *adtsm.AwsSearchTrainingPlanOfferingsOption) (*smv2.SearchTrainingPlanOfferingsOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -128,9 +128,9 @@ func (a *Aws) SearchTrainingPlanOfferings(kt *kit.Kit, opt *adtsm.AwsSearchTrain
 }
 
 // ListInferenceComponents lists SageMaker inference components.
-func (a *Aws) ListInferenceComponents(kt *kit.Kit, opt *adtsm.AwsListInferenceComponentsOption) (
-	*smv2.ListInferenceComponentsOutput, error,
-) {
+func (a *Aws) ListInferenceComponents(kt *kit.Kit,
+	opt *adtsm.AwsListInferenceComponentsOption) (*smv2.ListInferenceComponentsOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -166,9 +166,9 @@ func (a *Aws) ListInferenceComponents(kt *kit.Kit, opt *adtsm.AwsListInferenceCo
 }
 
 // DescribeInferenceComponent describes a SageMaker inference component.
-func (a *Aws) DescribeInferenceComponent(kt *kit.Kit, opt *adtsm.AwsDescribeInferenceComponentOption) (
-	*smv2.DescribeInferenceComponentOutput, error,
-) {
+func (a *Aws) DescribeInferenceComponent(kt *kit.Kit,
+	opt *adtsm.AwsDescribeInferenceComponentOption) (*smv2.DescribeInferenceComponentOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -185,9 +185,9 @@ func (a *Aws) DescribeInferenceComponent(kt *kit.Kit, opt *adtsm.AwsDescribeInfe
 }
 
 // ListOptimizationJobs lists SageMaker optimization jobs.
-func (a *Aws) ListOptimizationJobs(kt *kit.Kit, opt *adtsm.AwsListOptimizationJobsOption) (
-	*smv2.ListOptimizationJobsOutput, error,
-) {
+func (a *Aws) ListOptimizationJobs(kt *kit.Kit,
+	opt *adtsm.AwsListOptimizationJobsOption) (*smv2.ListOptimizationJobsOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -222,9 +222,9 @@ func (a *Aws) ListOptimizationJobs(kt *kit.Kit, opt *adtsm.AwsListOptimizationJo
 }
 
 // DescribeOptimizationJob describes a SageMaker optimization job.
-func (a *Aws) DescribeOptimizationJob(kt *kit.Kit, opt *adtsm.AwsDescribeOptimizationJobOption) (
-	*smv2.DescribeOptimizationJobOutput, error,
-) {
+func (a *Aws) DescribeOptimizationJob(kt *kit.Kit,
+	opt *adtsm.AwsDescribeOptimizationJobOption) (*smv2.DescribeOptimizationJobOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -241,9 +241,9 @@ func (a *Aws) DescribeOptimizationJob(kt *kit.Kit, opt *adtsm.AwsDescribeOptimiz
 }
 
 // ListComputeQuotas lists SageMaker HyperPod compute quotas.
-func (a *Aws) ListComputeQuotas(kt *kit.Kit, opt *adtsm.AwsListComputeQuotasOption) (
-	*smv2.ListComputeQuotasOutput, error,
-) {
+func (a *Aws) ListComputeQuotas(kt *kit.Kit,
+	opt *adtsm.AwsListComputeQuotasOption) (*smv2.ListComputeQuotasOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -276,9 +276,9 @@ func (a *Aws) ListComputeQuotas(kt *kit.Kit, opt *adtsm.AwsListComputeQuotasOpti
 }
 
 // DescribeComputeQuota describes a SageMaker HyperPod compute quota.
-func (a *Aws) DescribeComputeQuota(kt *kit.Kit, opt *adtsm.AwsDescribeComputeQuotaOption) (
-	*smv2.DescribeComputeQuotaOutput, error,
-) {
+func (a *Aws) DescribeComputeQuota(kt *kit.Kit,
+	opt *adtsm.AwsDescribeComputeQuotaOption) (*smv2.DescribeComputeQuotaOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -296,9 +296,9 @@ func (a *Aws) DescribeComputeQuota(kt *kit.Kit, opt *adtsm.AwsDescribeComputeQuo
 }
 
 // DescribeReservedCapacity describes a SageMaker reserved capacity.
-func (a *Aws) DescribeReservedCapacity(kt *kit.Kit, opt *adtsm.AwsDescribeReservedCapacityOption) (
-	*smv2.DescribeReservedCapacityOutput, error,
-) {
+func (a *Aws) DescribeReservedCapacity(kt *kit.Kit,
+	opt *adtsm.AwsDescribeReservedCapacityOption) (*smv2.DescribeReservedCapacityOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err
@@ -315,10 +315,9 @@ func (a *Aws) DescribeReservedCapacity(kt *kit.Kit, opt *adtsm.AwsDescribeReserv
 }
 
 // ListUltraServersByReservedCapacity lists UltraServers in a SageMaker reserved capacity.
-func (a *Aws) ListUltraServersByReservedCapacity(
-	kt *kit.Kit,
-	opt *adtsm.AwsListUltraServersByReservedCapacityOption,
-) (*smv2.ListUltraServersByReservedCapacityOutput, error) {
+func (a *Aws) ListUltraServersByReservedCapacity(kt *kit.Kit,
+	opt *adtsm.AwsListUltraServersByReservedCapacityOption) (*smv2.ListUltraServersByReservedCapacityOutput, error) {
+
 	client, err := a.clientSet.sageMakerV2Client(opt.Region)
 	if err != nil {
 		return nil, err

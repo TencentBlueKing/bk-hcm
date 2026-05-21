@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v1.8.11+。
+- 该接口提供版本：9.9.9。
 - 该接口所需权限：资源查看。
 - 该接口功能描述：查询 AWS 成员账号 SageMaker Optimization Job 详情。通过 STS AssumeRole 跨账号访问成员账号的 SageMaker 原生接口，透传返回 AWS 原始响应。
 
