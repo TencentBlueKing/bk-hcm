@@ -124,6 +124,10 @@ var ApplicationWorkflow = map[ApplicationType]WorkflowKey{
 	CreateSecurityGroupRule: CommonWorkflow,
 	UpdateSecurityGroupRule: CommonWorkflow,
 	DeleteSecurityGroupRule: CommonWorkflow,
+
+	OperateSubAccount:            SubAccountWorkflow,
+	ApplyPermissionPolicyLibrary: PermissionPolicyLibraryWorkflow,
+	OperatePermissionTemplate:    PermissionTemplateWorkflow,
 }
 
 // WorkflowKey 获取申请单对应的流程标识
@@ -140,6 +144,12 @@ const (
 	AddAccountWorkflow WorkflowKey = "add_account"
 	// MainAccountWorkflow 账号登记流程
 	MainAccountWorkflow WorkflowKey = "main_account"
+	// SubAccountWorkflow 子级账号流程
+	SubAccountWorkflow WorkflowKey = "sub_account"
+	// PermissionPolicyLibraryWorkflow 权限策略库流程
+	PermissionPolicyLibraryWorkflow WorkflowKey = "permission_policy_library"
+	// PermissionTemplateWorkflow 权限模板流程
+	PermissionTemplateWorkflow WorkflowKey = "permission_template"
 	// CommonWorkflow 资源申请通用流程
 	CommonWorkflow WorkflowKey = "common"
 )

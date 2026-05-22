@@ -30,10 +30,22 @@ import (
 	apigateway "hcm/pkg/thirdparty/api-gateway"
 )
 
-// SystemMigrate 系统流程导入
-func (i *itsm) SystemMigrate(kt *kit.Kit, systemID string) error {
+// MigrateTemplate ITSM 流程注册模板
+type MigrateTemplate struct {
+	Name    string
+	Content string
+}
 
-	tmpl, err := template.New("itsm_init_temp").Parse(processInitTemplate)
+// MigrateTemplates 有序的 ITSM 流程注册模板列表，按注册顺序排列
+var MigrateTemplates = []MigrateTemplate{
+	{Name: "processInitTemplate", Content: processInitTemplate},
+	{Name: "processInitTemplate20260520", Content: processInitTemplate20260520},
+}
+
+// SystemMigrate 系统流程导入，使用指定的模板内容注册
+func (i *itsm) SystemMigrate(kt *kit.Kit, systemID string, templateContent string) error {
+
+	tmpl, err := template.New("itsm_init_temp").Parse(templateContent)
 	if err != nil {
 		logs.Errorf("failed to parse itsm init template, err: %v, rid: %s", err, kt.Rid)
 		return err

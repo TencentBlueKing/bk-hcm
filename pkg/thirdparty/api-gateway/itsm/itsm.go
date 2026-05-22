@@ -39,8 +39,8 @@ import (
 
 // Client Itsm api.
 type Client interface {
-	// SystemMigrate 系统流程初始化，租户初始化时也需要通过该方法初始化租户的流程。
-	SystemMigrate(kt *kit.Kit, systemID string) error
+	// SystemMigrate 系统流程初始化，使用指定的模板内容注册。
+	SystemMigrate(kt *kit.Kit, systemID string, templateContent string) error
 	// CreateTicket 创建单据。
 	CreateTicket(kt *kit.Kit, params *CreateTicketParams) (*CreateTicketResult, error)
 	// GetTicketResult 获取单据结果。

@@ -20,12 +20,15 @@
 package logicsadmin
 
 import (
+	"encoding/json"
 	"fmt"
 
 	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/api/core"
+	gccore "hcm/pkg/api/core/global-config"
 	proto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	datagconf "hcm/pkg/api/data-service/global_config"
 	"hcm/pkg/api/data-service/tenant"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -177,6 +180,10 @@ func (a *admin) GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error) {
 
 // InitItsmProcess 初始化itsm流程
 func (a *admin) InitItsmProcess(kt *kit.Kit, systemID string) error {
+	if err := a.migrateItsmTemplates(kt, systemID); err != nil {
+		logs.Errorf("migrate itsm template failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	// 单租户流程不会超过500个，不关心分页
 	req := &proto.ApprovalProcessListReq{
@@ -188,29 +195,24 @@ func (a *admin) InitItsmProcess(kt *kit.Kit, systemID string) error {
 		logs.Errorf("fail to list approval process, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-
-	// itsm系统无法多次初始化，如果租户已初始化过，直接返回
-	if len(existProcess.Details) > 0 {
-		logs.Infof("itsm process already init, tenant id: %s, rid: %s", kt.TenantID, kt.Rid)
-		return nil
+	processMap := make(map[string]struct{}, len(existProcess.Details))
+	for _, process := range existProcess.Details {
+		processMap[process.WorkflowKey] = struct{}{}
 	}
 
-	// 创建ITSM流程
-	err = a.itsmCli.SystemMigrate(kt, systemID)
-	if err != nil {
-		logs.Errorf("init itsm process failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	// 创建本地process规则
 	createItems := make([]proto.ApprovalProcessCreateReq, 0, len(enumor.ApplicationWorkflow))
 	for applicationName := range enumor.ApplicationWorkflow {
+		workflowKey := applicationName.WorkflowKey(kt.TenantID)
+		if _, exists := processMap[workflowKey]; exists {
+			continue
+		}
 		createItems = append(createItems, proto.ApprovalProcessCreateReq{
 			ApplicationType: applicationName,
-			WorkflowKey:     applicationName.WorkflowKey(kt.TenantID),
-			// TODO 目前无法自动获取租户下的管理员bk_username
-			// Managers: "",
+			WorkflowKey:     workflowKey,
 		})
+	}
+	if len(createItems) == 0 {
+		return nil
 	}
 	batchCreateReq := &proto.ApprovalProcessBatchCreateReq{
 		Items: createItems,
@@ -222,5 +224,103 @@ func (a *admin) InitItsmProcess(kt *kit.Kit, systemID string) error {
 		return err
 	}
 
+	return nil
+}
+
+// migrateItsmTemplates 按进度批量注册ITSM流程模板
+func (a *admin) migrateItsmTemplates(kt *kit.Kit, systemID string) error {
+	configKey := fmt.Sprintf("%s_%s", enumor.GlobalConfigKeyItsmMigrateVersionPrefix, kt.TenantID)
+
+	lastApplied, configID, err := a.getItsmMigrateProgress(kt, configKey)
+	if err != nil {
+		logs.Errorf("get itsm migrate progress failed, config_key: %s, err: %v, rid: %s", configKey, err, kt.Rid)
+		return err
+	}
+
+	startIdx := 0
+	if lastApplied != "" {
+		for i, tmpl := range itsm.MigrateTemplates {
+			if tmpl.Name == lastApplied {
+				startIdx = i + 1
+				break
+			}
+		}
+	}
+
+	if startIdx >= len(itsm.MigrateTemplates) {
+		logs.Infof("all itsm templates already migrated, tenant: %s, rid: %s", kt.TenantID, kt.Rid)
+		return nil
+	}
+
+	for i := startIdx; i < len(itsm.MigrateTemplates); i++ {
+		tmpl := itsm.MigrateTemplates[i]
+		logs.Infof("migrating itsm template %s (%d/%d), rid: %s", tmpl.Name, i+1, len(itsm.MigrateTemplates), kt.Rid)
+
+		if err = a.itsmCli.SystemMigrate(kt, systemID, tmpl.Content); err != nil {
+			logs.Errorf("migrate itsm template %s failed, err: %v, rid: %s", tmpl.Name, err, kt.Rid)
+			return err
+		}
+
+		if err = a.saveItsmMigrateProgress(kt, configKey, configID, tmpl.Name); err != nil {
+			logs.Errorf("save itsm migrate progress failed, template: %s, err: %v, rid: %s", tmpl.Name, err, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// getItsmMigrateProgress 从 global_config 读取当前租户的 ITSM 流程注册进度
+func (a *admin) getItsmMigrateProgress(kt *kit.Kit, configKey string) (string, string, error) {
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", string(enumor.GlobalConfigTypeITSM)),
+			tools.RuleEqual("config_key", configKey),
+		),
+		Page: &core.BasePage{Limit: 1},
+	}
+	result, err := a.c.DataService().Global.GlobalConfig.List(kt, req)
+	if err != nil {
+		return "", "", fmt.Errorf("list itsm migrate progress failed, err: %v", err)
+	}
+	if len(result.Details) == 0 {
+		return "", "", nil
+	}
+
+	var templateName string
+	if err := json.Unmarshal([]byte(result.Details[0].ConfigValue), &templateName); err != nil {
+		return "", "", fmt.Errorf("unmarshal itsm migrate progress failed, err: %v", err)
+	}
+	return templateName, result.Details[0].ID, nil
+}
+
+// saveItsmMigrateProgress 创建或更新 ITSM 迁移进度记录
+func (a *admin) saveItsmMigrateProgress(kt *kit.Kit, configKey, configID, templateName string) error {
+	if configID == "" {
+		createReq := &datagconf.BatchCreateReq{
+			Configs: []gccore.GlobalConfig{{
+				ConfigKey:   configKey,
+				ConfigValue: templateName,
+				ConfigType:  string(enumor.GlobalConfigTypeITSM),
+			}},
+		}
+		_, err := a.c.DataService().Global.GlobalConfig.BatchCreate(kt, createReq)
+		if err != nil {
+			logs.Errorf("create itsm migrate progress failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		return nil
+	}
+
+	updateReq := &datagconf.BatchUpdateReq{
+		Configs: []gccore.GlobalConfig{{
+			ID:          configID,
+			ConfigValue: templateName,
+		}},
+	}
+	if err := a.c.DataService().Global.GlobalConfig.BatchUpdate(kt, updateReq); err != nil {
+		logs.Errorf("update itsm migrate progress failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 	return nil
 }

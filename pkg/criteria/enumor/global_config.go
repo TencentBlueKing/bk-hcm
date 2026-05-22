@@ -25,6 +25,8 @@ type GlobalConfigType string
 const (
 	// GlobalConfigTypeCloudSync 云资源同步相关配置
 	GlobalConfigTypeCloudSync GlobalConfigType = "cloud_sync"
+	// GlobalConfigTypeITSM ITSM 流程相关配置
+	GlobalConfigTypeITSM GlobalConfigType = "itsm"
 )
 
 // GlobalConfigKeyCloudSync cloud sync global config key
@@ -33,4 +35,12 @@ type GlobalConfigKeyCloudSync string
 const (
 	// GlobalConfigKeyCloudSyncBizIDs 云资源同步业务白名单，config_value 为 JSON 对象 {"tenantID": [bizID1, bizID2], ...}
 	GlobalConfigKeyCloudSyncBizIDs GlobalConfigKeyCloudSync = "sync_biz_ids"
+)
+
+// GlobalConfigKeyITSM ITSM global config key
+type GlobalConfigKeyITSM string
+
+const (
+	// GlobalConfigKeyItsmMigrateVersionPrefix ITSM 流程注册进度，config_key 格式为 "itsm_migrate_version_{tenantID}"
+	GlobalConfigKeyItsmMigrateVersionPrefix GlobalConfigKeyITSM = "itsm_migrate_version"
 )
