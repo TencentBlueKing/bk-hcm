@@ -209,6 +209,8 @@ func (a *admin) InitItsmProcess(kt *kit.Kit, systemID string) error {
 		createItems = append(createItems, proto.ApprovalProcessCreateReq{
 			ApplicationType: applicationName,
 			WorkflowKey:     workflowKey,
+			// TODO 目前无法自动获取租户下的管理员bk_username
+			// Managers: "",
 		})
 	}
 	if len(createItems) == 0 {
@@ -261,7 +263,8 @@ func (a *admin) migrateItsmTemplates(kt *kit.Kit, systemID string) error {
 			return err
 		}
 
-		if err = a.saveItsmMigrateProgress(kt, configKey, configID, tmpl.Name); err != nil {
+		configID, err = a.saveItsmMigrateProgress(kt, configKey, configID, tmpl.Name)
+		if err != nil {
 			logs.Errorf("save itsm migrate progress failed, template: %s, err: %v, rid: %s", tmpl.Name, err, kt.Rid)
 			return err
 		}
@@ -281,6 +284,7 @@ func (a *admin) getItsmMigrateProgress(kt *kit.Kit, configKey string) (string, s
 	}
 	result, err := a.c.DataService().Global.GlobalConfig.List(kt, req)
 	if err != nil {
+		logs.Errorf("get itsm migrate progress failed, config_key: %s, err: %v, rid: %s", configKey, err, kt.Rid)
 		return "", "", fmt.Errorf("list itsm migrate progress failed, err: %v", err)
 	}
 	if len(result.Details) == 0 {
@@ -289,13 +293,14 @@ func (a *admin) getItsmMigrateProgress(kt *kit.Kit, configKey string) (string, s
 
 	var templateName string
 	if err := json.Unmarshal([]byte(result.Details[0].ConfigValue), &templateName); err != nil {
+		logs.Errorf("unmarshal itsm migrate progress failed, config_key: %s, err: %v, rid: %s", configKey, err, kt.Rid)
 		return "", "", fmt.Errorf("unmarshal itsm migrate progress failed, err: %v", err)
 	}
 	return templateName, result.Details[0].ID, nil
 }
 
-// saveItsmMigrateProgress 创建或更新 ITSM 迁移进度记录
-func (a *admin) saveItsmMigrateProgress(kt *kit.Kit, configKey, configID, templateName string) error {
+// saveItsmMigrateProgress 创建或更新 ITSM 迁移进度记录，返回最新的 configID
+func (a *admin) saveItsmMigrateProgress(kt *kit.Kit, configKey, configID, templateName string) (string, error) {
 	if configID == "" {
 		createReq := &datagconf.BatchCreateReq{
 			Configs: []gccore.GlobalConfig{{
@@ -304,12 +309,15 @@ func (a *admin) saveItsmMigrateProgress(kt *kit.Kit, configKey, configID, templa
 				ConfigType:  string(enumor.GlobalConfigTypeITSM),
 			}},
 		}
-		_, err := a.c.DataService().Global.GlobalConfig.BatchCreate(kt, createReq)
+		created, err := a.c.DataService().Global.GlobalConfig.BatchCreate(kt, createReq)
 		if err != nil {
 			logs.Errorf("create itsm migrate progress failed, err: %v, rid: %s", err, kt.Rid)
-			return err
+			return "", err
 		}
-		return nil
+		if len(created.IDs) == 0 {
+			return "", fmt.Errorf("create itsm migrate progress but no id returned")
+		}
+		return created.IDs[0], nil
 	}
 
 	updateReq := &datagconf.BatchUpdateReq{
@@ -320,7 +328,7 @@ func (a *admin) saveItsmMigrateProgress(kt *kit.Kit, configKey, configID, templa
 	}
 	if err := a.c.DataService().Global.GlobalConfig.BatchUpdate(kt, updateReq); err != nil {
 		logs.Errorf("update itsm migrate progress failed, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return "", err
 	}
-	return nil
+	return configID, nil
 }
