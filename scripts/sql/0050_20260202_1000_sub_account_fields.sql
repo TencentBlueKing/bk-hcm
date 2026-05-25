@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0050,HCMVER=v1.8.14
+    SQLVER=0050,HCMVER=v1.9.0
 
     Notes:
     1. 子账号表新增字段：email（邮箱）、phone_num（手机号）、country_code（手机区域代码）、cloud_created_at（云上创建时间）、
@@ -35,6 +35,6 @@ ALTER TABLE `sub_account`
     ADD COLUMN `permission_template_ids` json DEFAULT NULL COMMENT '权限模板ID列表';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v1.8.14' as `hcm_ver`, '0050' as `sql_ver`;
+SELECT 'v1.9.0' as `hcm_ver`, '0050' as `sql_ver`;
 
 COMMIT;

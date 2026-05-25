@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0048,HCMVER=v1.8.14
+    SQLVER=0048,HCMVER=v1.9.0
 
     Notes:
     1. 添加子账号密钥表 sub_account_secret
@@ -53,6 +53,6 @@ INSERT INTO id_generator(`resource`, `max_id`)
 VALUES ('sub_account_secret', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v1.8.14' as `hcm_ver`, '0048' as `sql_ver`;
+SELECT 'v1.9.0' as `hcm_ver`, '0048' as `sql_ver`;
 
 COMMIT;

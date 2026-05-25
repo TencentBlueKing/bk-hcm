@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0049,HCMVER=v1.8.14
+    SQLVER=0049,HCMVER=v1.9.0
 
     Notes:
     1. 账号表新增字段：email（邮箱）、security_managers（安全负责人）、cloud_created_at（云上创建时间）
@@ -32,6 +32,6 @@ ALTER TABLE `account`
     ADD COLUMN `cloud_created_at` varchar(64) NULL COMMENT '云上创建时间';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v1.8.14' as `hcm_ver`, '0049' as `sql_ver`;
+SELECT 'v1.9.0' as `hcm_ver`, '0049' as `sql_ver`;
 
 COMMIT;
