@@ -41,6 +41,10 @@ data:
       bkComponentApiUrl: {{ .Values.bkComponentApiUrl }}
       # ITSM 地址
       bkItsmUrl: {{ .Values.bkItsmUrl }}
+      # 权限中心地址
+      bkAuthCenterUrl: {{ .Values.bkAuthCenterUrl }}
+      # 用户中心地址
+      bkUserCenterUrl: {{ .Values.bkUserCenterUrl }}
       # 中英文持久化
       bkDomain: {{ .Values.bkDomain }}
       # 蓝鲸配置平台创建业务页面跳转链接

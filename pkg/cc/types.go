@@ -566,6 +566,8 @@ type Web struct {
 	BkLoginUrl             string `yaml:"bkLoginUrl"`
 	BkComponentApiUrl      string `yaml:"bkComponentApiUrl"`
 	BkItsmUrl              string `yaml:"bkItsmUrl"`
+	BkAuthCenterUrl        string `yaml:"bkAuthCenterUrl"`
+	BkUserCenterUrl        string `yaml:"bkUserCenterUrl"`
 	BkDomain               string `yaml:"bkDomain"`
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
@@ -584,6 +586,14 @@ func (s Web) validate() error {
 
 	if len(s.BkItsmUrl) == 0 {
 		return errors.New("bk_itsm_url is not set")
+	}
+
+	if len(s.BkAuthCenterUrl) == 0 {
+		return errors.New("bk_auth_center_url is not set")
+	}
+
+	if len(s.BkUserCenterUrl) == 0 {
+		return errors.New("bk_user_center_url is not set")
 	}
 
 	if len(s.BkDomain) == 0 {

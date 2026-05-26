@@ -641,6 +641,10 @@ bkLoginUrl: http://example.com/login
 bkLoginCookieName: ""
 # ITSM 地址
 bkItsmUrl: http://itsm.bk.com
+# 权限中心地址
+bkAuthCenterUrl: http://bk-auth-center.bk.com
+# 用户中心地址
+bkUserCenterUrl: http://bk-user-center.bk.com
 # HCM 地址
 bkHCMUrl: http://hcm.bk.com
 # HCM 网关地址

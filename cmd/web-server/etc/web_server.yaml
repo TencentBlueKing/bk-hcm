@@ -71,6 +71,10 @@ web:
   bkComponentApiUrl: http://paas.bk.com
   # ITSM 地址
   bkItsmUrl: http://itsm.bk.com
+  # 权限中心地址
+  bkAuthCenterUrl: http://bk-auth-center.bk.com
+  # 用户中心地址
+  bkUserCenterUrl: http://bk-user-center.bk.com
   # 蓝鲸登录Cookie获取名称(bk_token/bk_ticket)，国内和海外不同。
   bkLoginCookieName: "bk_token"
   # 中英文持久化设置cookie使用，一般设置为 .域名

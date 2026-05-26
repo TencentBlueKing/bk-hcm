@@ -22,6 +22,7 @@ package user
 
 import (
 	"hcm/cmd/web-server/service/capability"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/rest"
 )
@@ -43,6 +44,11 @@ type userSvc struct {
 }
 
 // GetUser get user info
-func (u *userSvc) GetUser(cts *rest.Contexts) (interface{}, error) {
-	return map[string]string{"username": cts.Kit.User}, nil
+func (u *userSvc) GetUser(cts *rest.Contexts) (any, error) {
+	webSetting := cc.WebServer().Web
+	return map[string]string{
+		"username":        cts.Kit.User,
+		"auth_center_url": webSetting.BkAuthCenterUrl,
+		"user_center_url": webSetting.BkUserCenterUrl,
+	}, nil
 }
