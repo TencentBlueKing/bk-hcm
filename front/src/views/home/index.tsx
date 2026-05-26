@@ -26,6 +26,7 @@ import { classes } from '@/common/util';
 
 import { headRouteConfig } from '@/router/header-config';
 import logo from '@/assets/image/logo.png';
+import '@blueking/login-userinfo/vue3/vue3.css';
 import './index.scss';
 
 import http from '@/http';
@@ -38,6 +39,7 @@ import {
   MENU_BUSINESS_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 
+import BkLoginUserinfo from '@blueking/login-userinfo';
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -129,10 +131,52 @@ export default defineComponent({
       );
     };
 
+    const userinfo = ref({
+      name: '',
+      email: '',
+      organization: '',
+      timezone: '',
+    });
+
+    // 获取当前用户信息
+    const fetchUserInfo = async () => {
+      const data = await userStore.userInfo();
+      userinfo.value = {
+        name: data.display_name || data.bk_username || '',
+        email: '', // 接口暂未返回 email
+        organization: data.tenant_id,
+        timezone: data.time_zone || '',
+      };
+    };
+
+    const handleClick = (action: string) => {
+      console.warn(action);
+    };
+
+    const actionList = [
+      {
+        text: '权限中心',
+        icon: 'AngleDoubleLeftLine',
+        handle: () => handleClick('权限中心'),
+      },
+      {
+        text: '个人设置',
+        icon: 'weixin',
+        handle: () => handleClick('个人设置'),
+      },
+      {
+        text: '退出登录',
+        icon: 'weixin',
+        theme: 'danger' as const,
+        handle: logout,
+      },
+    ];
+
     /**
      * 在这里获取项目公共数据并缓存
      */
-    onMounted(() => {
+    onMounted(async () => {
+      await fetchUserInfo();
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
       fetchBusinessMap();
@@ -249,21 +293,7 @@ export default defineComponent({
                 </aside>
                 <ReleaseNote />
                 <aside class='header-user'>
-                  <Dropdown>
-                    {{
-                      default: () => (
-                        <span class='cursor-pointer flex-row align-items-center '>
-                          <hcm-user-value value={userStore.username} />
-                          <span class='hcm-icon bkhcm-icon-down-shape pl5'></span>
-                        </span>
-                      ),
-                      content: () => (
-                        <DropdownMenu>
-                          <DropdownItem onClick={logout}>{t('退出登录')}</DropdownItem>
-                        </DropdownMenu>
-                      ),
-                    }}
-                  </Dropdown>
+                  <BkLoginUserinfo userinfo={userinfo.value} actionList={actionList} />
                 </aside>
               </header>
             ),

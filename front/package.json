@@ -29,6 +29,7 @@
     "@blueking/combine-request": "1.0.1",
     "@blueking/ediatable": "0.0.1-beta.32",
     "@blueking/login-modal": "1.0.1",
+    "@blueking/login-userinfo": "0.0.13",
     "@blueking/notice-component": "2.0.5",
     "@blueking/release-note": "0.0.1-beta.17",
     "@blueking/roll-request": "1.0.2",
