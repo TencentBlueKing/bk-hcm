@@ -134,10 +134,8 @@ watch(
     // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
     const newCondition = searchQs.get(query, {});
     const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
-    const isRefresh = query._t !== undefined;
 
-    if (conditionChanged || fullList.value.length === 0 || isRefresh) {
-      // 搜索条件变化或首次加载或刷新，重新拉取全量数据
+    if (conditionChanged || fullList.value.length === 0) {
       await loadFullList();
     } else {
       // 仅分页/排序变化，前端处理
@@ -216,7 +214,9 @@ const handleDetailUpdateSuccess = () => {
 };
 
 const refreshList = () => {
+  fullList.value = [];
   const query = { ...route.query };
+  delete query._t;
   query._t = String(Date.now());
   router.replace({ query });
 };
