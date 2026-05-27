@@ -19,6 +19,8 @@
 
 package meta
 
+import "fmt"
+
 // ResourceType 表示 hcm 这一侧的资源类型， 对应的有 client.TypeID 表示 iam 一侧的资源类型
 // 两者之间有映射关系，详情见 AdaptAuthOptions
 type ResourceType string
@@ -33,6 +35,8 @@ const (
 	Account ResourceType = "account"
 	// SubAccount defines cloud sub account resource's hcm auth resource type
 	SubAccount ResourceType = "sub_account"
+	// SubAccountSecret defines sub account secret resource's hcm auth resource type
+	SubAccountSecret ResourceType = "sub_account_secret"
 	// Vpc defines vpc hcm auth resource type
 	Vpc ResourceType = "vpc"
 	// Subnet defines subnet hcm auth resource type
@@ -116,9 +120,69 @@ const (
 	// CosBucket cos桶
 	CosBucket ResourceType = "cos_bucket"
 
+	// PermissionTemplate 云权限模板
+	PermissionTemplate ResourceType = "permission_template"
+
 	// GlobalConfig 全局配置
 	GlobalConfig ResourceType = "global_config"
 
 	// PermissionPolicyLibrary 权限策略库
 	PermissionPolicyLibrary ResourceType = "permission_policy_library"
 )
+
+// resourceTypes 所有合法的 ResourceType 枚举值
+var resourceTypes = map[ResourceType]struct{}{
+	Account:                  {},
+	SubAccount:               {},
+	SubAccountSecret:         {},
+	Vpc:                      {},
+	Subnet:                   {},
+	Disk:                     {},
+	SecurityGroup:            {},
+	SecurityGroupRule:        {},
+	GcpFirewallRule:          {},
+	Eip:                      {},
+	Cvm:                      {},
+	RouteTable:               {},
+	Route:                    {},
+	RecycleBin:               {},
+	NetworkInterface:         {},
+	Audit:                    {},
+	Biz:                      {},
+	CloudResource:            {},
+	Quota:                    {},
+	InstanceType:             {},
+	CostManage:               {},
+	BizCollection:            {},
+	CloudSelectionScheme:     {},
+	CloudSelectionIdc:        {},
+	CloudSelectionBizType:    {},
+	CloudSelectionDataSource: {},
+	ArgumentTemplate:         {},
+	Cert:                     {},
+	LoadBalancer:             {},
+	Listener:                 {},
+	TargetGroup:              {},
+	UrlRuleAuditResType:      {},
+	MainAccount:              {},
+	RootAccount:              {},
+	Monitoring:               {},
+	AccountBill:              {},
+	Application:              {},
+	AccountBillThirdParty:    {},
+	Image:                    {},
+	TaskManagement:           {},
+	CosBucket:                {},
+	PermissionTemplate:       {},
+	GlobalConfig:             {},
+	PermissionPolicyLibrary:  {},
+}
+
+// Validate 验证 ResourceType
+func (r ResourceType) Validate() error {
+	if _, ok := resourceTypes[r]; !ok {
+		return fmt.Errorf("unsupported resource type: %s", r)
+	}
+
+	return nil
+}

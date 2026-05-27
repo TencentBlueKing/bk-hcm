@@ -85,23 +85,6 @@ func ParseAndCheckTCloudExtension(
 		return nil, err
 	}
 
-	// 检查联通性，账号是否正确
-	if accountType != enumor.RegistrationAccount || extension.IsFull() {
-		err := client.HCService().TCloud.Account.Check(
-			cts.Kit.Ctx,
-			cts.Kit.Header(),
-			&hcproto.TCloudAccountCheckReq{
-				CloudMainAccountID: extension.CloudMainAccountID,
-				CloudSubAccountID:  extension.CloudSubAccountID,
-				CloudSecretID:      extension.CloudSecretID,
-				CloudSecretKey:     extension.CloudSecretKey,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return extension, nil
 }
 

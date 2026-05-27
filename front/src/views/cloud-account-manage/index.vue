@@ -1,48 +1,45 @@
 <script setup lang="ts">
-import { ref, computed, defineAsyncComponent, provide } from 'vue';
-import { VendorEnum } from '@/common/constant';
+import { computed, defineAsyncComponent, provide, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import VendorSelector from './components/vendor-selector.vue';
 
 // Tab面板配置
 const tabPanels = [
-  // { name: 'secondary-account', label: '二级账号' },
-  // { name: 'tertiary-account', label: '三级账号' },
-  // { name: 'cloud-secret', label: '云密钥' },
-  // { name: 'cloud-permission', label: '云权限模版' },
+  { name: 'secondary-account', label: '二级账号' },
+  { name: 'tertiary-account', label: '三级账号' },
+  { name: 'cloud-secret', label: '云密钥' },
+  { name: 'permission-template', label: '云权限模板' },
   { name: 'permission-policy', label: '权限策略库' },
 ];
 
-// 当前激活的Tab
-const tabActive = ref('secondary-account');
+const route = useRoute();
+const router = useRouter();
+
+// tab 状态直接从 URL query.type 派生，单向数据流
+const tabActive = computed(() => (route.query.type as string) || 'secondary-account');
 
 // 当前选中的云厂商
 const currentVendor = ref<VendorEnum>(VendorEnum.TCLOUD);
 
-// 异步加载Tab对应的组件
 const tabComponents: Record<string, ReturnType<typeof defineAsyncComponent>> = {
-  // 'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
+  'secondary-account': defineAsyncComponent(() => import('./secondary-account/index.vue')),
+  'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
   'cloud-secret': defineAsyncComponent(() => import('./cloud-secret/index.vue')),
   'permission-policy': defineAsyncComponent(() => import('./permission-policy/index.vue')),
-  // 其他Tab组件待开发
-  // 'tertiary-account': defineAsyncComponent(() => import('./tertiary-account/index.vue')),
-  // 'cloud-permission': defineAsyncComponent(() => import('./cloud-permission/index.vue')),
+  'permission-template': defineAsyncComponent(() => import('./permission-template/index.vue')),
 };
+const currentComponent = computed(() => tabComponents[tabActive.value as string]);
 
-// 当前Tab对应的组件
-const currentComponent = computed(() => tabComponents[tabActive.value]);
-
-// Tab切换
+// 用户点击 tab 时，更新 URL query.type（@change 仅在用户点击时触发，不会在代码修改 active 时触发）
 const handleTabChange = (name: string) => {
-  tabActive.value = name;
+  router.replace({ query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], type: name } });
 };
 
 // 云厂商切换
 const handleVendorChange = (vendor: VendorEnum) => {
   currentVendor.value = vendor;
-  // TODO: 触发数据刷新
 };
-
-// 提供云厂商信息给子组件
 provide('currentVendor', currentVendor);
 </script>
 
@@ -118,8 +115,6 @@ provide('currentVendor', currentVendor);
         height: calc(100% - 42px);
         padding: 0;
         background: none;
-
-        // padding: 16px 24px;
         overflow: auto;
       }
     }

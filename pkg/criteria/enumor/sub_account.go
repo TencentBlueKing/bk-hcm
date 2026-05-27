@@ -21,6 +21,8 @@ package enumor
 
 import (
 	"fmt"
+
+	"hcm/pkg/tools/converter"
 )
 
 // SubAccountType is sub account type.
@@ -44,3 +46,86 @@ const (
 	// CurrentAccount 当前账号
 	CurrentAccount SubAccountType = "current_account"
 )
+
+// SubAccountSecretStatus is sub account secret status.
+type SubAccountSecretStatus string
+
+// Validate the SubAccountSecretStatus is valid or not
+func (s SubAccountSecretStatus) Validate() error {
+	switch s {
+	case EnabledSecretStatus:
+	case DisabledSecretStatus:
+	default:
+		return fmt.Errorf("unsupported sub account secret status: %s", s)
+	}
+
+	return nil
+}
+
+const (
+	// EnabledSecretStatus 启用状态
+	EnabledSecretStatus SubAccountSecretStatus = "enabled"
+	// DisabledSecretStatus 禁用状态
+	DisabledSecretStatus SubAccountSecretStatus = "disabled"
+)
+
+// GetNameZh get the chinese name of the sub account secret status.
+func (s SubAccountSecretStatus) GetNameZh() string {
+	switch s {
+	case EnabledSecretStatus:
+		return "启用"
+	case DisabledSecretStatus:
+		return "禁用"
+	}
+	return ""
+}
+
+// SubAccountConsoleLogin is sub account console login type.
+type SubAccountConsoleLogin int64
+
+// Validate the SubAccountConsoleLogin is valid or not
+func (s SubAccountConsoleLogin) Validate() error {
+	switch s {
+	case ProgramAccount:
+	case ConsoleAccount:
+	default:
+		return fmt.Errorf("unsupported sub account console login type: %d", s)
+	}
+
+	return nil
+}
+
+// GetNameZh get the chinese name of the sub account console login type.
+func (s SubAccountConsoleLogin) GetNameZh() string {
+	switch s {
+	case ProgramAccount:
+		return "编程账号"
+	case ConsoleAccount:
+		return "控制台账号"
+	}
+
+	return ""
+}
+
+const (
+	// ProgramAccount 编程账号，无法登录控制台
+	ProgramAccount SubAccountConsoleLogin = 0
+	// ConsoleAccount 控制台账号，可登录控制台
+	ConsoleAccount SubAccountConsoleLogin = 1
+)
+
+// GenfromConsoleLogin generate console login from raw login.
+func GenfromConsoleLogin(rawLogin *uint64) *SubAccountConsoleLogin {
+	if rawLogin == nil {
+		return nil
+	}
+
+	switch converter.PtrToVal(rawLogin) {
+	case 0:
+		return converter.ValToPtr(ProgramAccount)
+	case 1:
+		return converter.ValToPtr(ConsoleAccount)
+	default:
+		return nil
+	}
+}

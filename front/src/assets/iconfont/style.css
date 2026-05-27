@@ -104,6 +104,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-jiantou_fanhui:before {
 	content: "\e14c";
 }
+.bkhcm-icon-warning:before {
+	content: "\e187";
+}
 .bkhcm-icon-cc-clear:before {
 	content: "\e16b";
 }
@@ -160,6 +163,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-shezhi:before {
 	content: "\e121";
+}
+.bkhcm-icon-trend:before {
+	content: "\e185";
 }
 .bkhcm-icon-cuo:before {
 	content: "\e119";
@@ -367,4 +373,34 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-other:before {
 	content: "\e17a";
+}
+.bkhcm-icon-short-rental:before {
+	content: "\e17d";
+}
+.bkhcm-icon-stats-menu:before {
+	content: "\e17e";
+}
+.bkhcm-icon-chart-empty-bar:before {
+	content: "\e17f";
+}
+.bkhcm-icon-chart-empty-other:before {
+	content: "\e180";
+}
+.bkhcm-icon-chart-empty-line:before {
+	content: "\e181";
+}
+.bkhcm-icon-chart-empty-pie:before {
+	content: "\e182";
+}
+.bkhcm-icon-chart-empty-table:before {
+	content: "\e183";
+}
+.bkhcm-icon-chart-empty-bar-top:before {
+	content: "\e184";
+}
+.bkhcm-icon-spring-pool:before {
+	content: "\e186";
+}
+.bkhcm-icon-update:before {
+	content: "\e188";
 }

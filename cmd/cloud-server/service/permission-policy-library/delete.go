@@ -70,11 +70,21 @@ func (svc *svc) DeletePermissionPolicyLibrary(cts *rest.Contexts) (interface{}, 
 			vendor, result.Details[0].Vendor)
 	}
 
-	// TODO: 待云权限模板功能实现后补充关联检查，若关联了云权限模板则不允许删除
-
-	if err = svc.audit.ResDeleteAudit(cts.Kit, enumor.PermissionPolicyLibraryAuditResType, []string{id}); err != nil {
-		logs.Errorf("create delete audit failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+	tmplReq := &protocloud.PermissionTemplateListReq{
+		Filter: tools.EqualExpression("policy_library_id", id),
+		Page:   core.NewCountPage(),
+	}
+	tmplResult, err := svc.client.DataService().Global.PermissionTemplate.ListPermissionTemplate(cts.Kit, tmplReq)
+	if err != nil {
+		logs.Errorf("list permission template failed, libraryID: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
+	}
+	if tmplResult == nil {
+		return nil, errf.New(errf.InvalidParameter, "find permission template failed")
+	}
+	if tmplResult.Count > 0 {
+		return nil, errf.New(errf.InvalidParameter, "permission policy library has associated templates, "+
+			"please delete templates first")
 	}
 
 	deleteReq := &protocloud.PermissionPolicyLibraryBatchDeleteReq{

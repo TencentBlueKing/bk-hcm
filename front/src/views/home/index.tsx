@@ -32,6 +32,7 @@ import {
   MENU_BUSINESS_OPERATION_LOG,
   MENU_BUSINESS_TASK_MANAGEMENT,
   MENU_SERVICE_TICKET_MANAGEMENT,
+  MENU_BUSINESS_CLOUD_ACCOUNT,
   MENU_BUSINESS_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 import { jsonp } from '@/http';
@@ -86,6 +87,7 @@ export default defineComponent({
           MENU_SERVICE_TICKET_MANAGEMENT,
           MENU_BUSINESS_OPERATION_LOG,
           MENU_BUSINESS_LOAD_BALANCER,
+          MENU_BUSINESS_CLOUD_ACCOUNT,
           MENU_BUSINESS_TICKET_MANAGEMENT,
         ].includes(config.name)
       ) {

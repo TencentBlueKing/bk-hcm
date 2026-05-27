@@ -123,8 +123,16 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.listenerDeleteAuditBuild(kt, deletes)
 	case enumor.LoadBalancerAuditResType:
 		audits, err = ad.loadBalancer.LoadBalancerDeleteAuditBuild(kt, deletes)
+	case enumor.SubAccountSecretAuditResType:
+		audits, err = ad.subAccountSecretDeleteAuditBuild(kt, deletes)
 	case enumor.PermissionPolicyLibraryAuditResType:
 		audits, err = ad.permissionPolicyLibraryDeleteAuditBuild(kt, deletes)
+	case enumor.AccountSecretAuditResType:
+		audits, err = ad.accountSecretDeleteAuditBuild(kt, deletes)
+	case enumor.SubAccountAuditResType:
+		audits, err = ad.subAccountDeleteAuditBuild(kt, deletes)
+	case enumor.PermissionTemplateAuditResType:
+		audits, err = ad.permissionTemplateDeleteAuditBuild(kt, deletes)
 
 	default:
 		return nil, fmt.Errorf("build delete audit cloud resource type: %s not support", resType)

@@ -65,7 +65,12 @@ type Interface interface {
 
 	Region(kt *kit.Kit, opt *SyncRegionOption) (*SyncResult, error)
 
+	Account(kt *kit.Kit, opt *SyncAccountOption) (*SyncResult, error)
 	SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
+	SubAccountPermissionTemplate(kt *kit.Kit, opt *SyncSubAccountPermissionTmplOption) (*SyncResult, error)
+	SubAccountSecret(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResult, error)
+
+	PermissionTemplate(kt *kit.Kit, opt *SyncPermissionTemplateOption) (*SyncResult, error)
 
 	ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error)
 	RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID string, region string) error

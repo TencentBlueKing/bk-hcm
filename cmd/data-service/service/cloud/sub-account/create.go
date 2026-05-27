@@ -50,20 +50,27 @@ func (svc *service) BatchCreateSubAccount(cts *rest.Contexts) (interface{}, erro
 	accountIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]tablesubaccount.Table, 0, len(req.Items))
 		for _, item := range req.Items {
-			models = append(models, tablesubaccount.Table{
-				CloudID:     item.CloudID,
-				Name:        item.Name,
-				Vendor:      item.Vendor,
-				Site:        item.Site,
-				AccountID:   item.AccountID,
-				AccountType: item.AccountType,
-				Extension:   tabletype.JsonField(item.Extension),
-				Managers:    item.Managers,
-				BkBizIDs:    item.BkBizIDs,
-				Memo:        item.Memo,
-				Creator:     cts.Kit.User,
-				Reviser:     cts.Kit.User,
-			})
+			model := tablesubaccount.Table{
+				CloudID:               item.CloudID,
+				Name:                  item.Name,
+				Vendor:                item.Vendor,
+				Site:                  item.Site,
+				AccountID:             item.AccountID,
+				AccountType:           item.AccountType,
+				Extension:             tabletype.JsonField(item.Extension),
+				PermissionTemplateIDs: item.PermissionTemplateIDs,
+				Managers:              item.Managers,
+				BkBizIDs:              item.BkBizIDs,
+				Email:                 item.Email,
+				PhoneNum:              item.PhoneNum,
+				CountryCode:           item.CountryCode,
+				Memo:                  item.Memo,
+				Creator:               cts.Kit.User,
+				Reviser:               cts.Kit.User,
+				CloudCreatedAt:        item.CloudCreatedAt,
+			}
+
+			models = append(models, model)
 		}
 		ids, err := svc.dao.SubAccount().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {

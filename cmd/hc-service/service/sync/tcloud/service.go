@@ -20,7 +20,9 @@
 package tcloud
 
 import (
-	"hcm/cmd/hc-service/logics/cloud-adaptor"
+	"net/http"
+
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/client"
@@ -40,24 +42,26 @@ func InitService(cap *capability.Capability) {
 	h := rest.NewHandler()
 	h.Path("/vendors/tcloud")
 
-	h.Add("SyncVpc", "POST", "/vpcs/sync", v.SyncVpc)
-	h.Add("SyncSubnet", "POST", "/subnets/sync", v.SyncSubnet)
-	h.Add("SyncDisk", "POST", "/disks/sync", v.SyncDisk)
-	h.Add("SyncCvmWithRelRes", "POST", "/cvms/with/relation_resources/sync", v.SyncCvmWithRelRes)
-	h.Add("SyncSecurityGroup", "POST", "/security_groups/sync", v.SyncSecurityGroup)
-	h.Add("SyncSecurityGroupUsageBiz", "POST", "/security_groups/usage_biz_rels/sync", v.SyncSecurityGroupUsageBiz)
-	h.Add("SyncEip", "POST", "/eips/sync", v.SyncEip)
-	h.Add("SyncRoute", "POST", "/route_tables/sync", v.SyncRouteTable)
-	h.Add("SyncZone", "POST", "/zones/sync", v.SyncZone)
-	h.Add("SyncRegion", "POST", "/regions/sync", v.SyncRegion)
-	h.Add("SyncImage", "POST", "/images/sync", v.SyncImage)
-	h.Add("SyncSubAccount", "POST", "/sub_accounts/sync", v.SyncSubAccount)
-	h.Add("SyncArgsTpl", "POST", "/argument_templates/sync", v.SyncArgsTpl)
-	h.Add("SyncCert", "POST", "/certs/sync", v.SyncCert)
-	h.Add("SyncLoadBalancer", "POST", "/load_balancers/sync", v.SyncLoadBalancer)
-	h.Add("SyncLoadBalancerListener", "POST", "/listeners/sync", v.SyncLoadBalancerListener)
-	h.Add("SyncCvmCCInfo", "POST", "/cvms/cc_info/sync", v.SyncCvmCCInfo)
-	h.Add("SyncCvmCCInfoByCond", "POST", "/cvms/cc_info/by_condition/sync", v.SyncCvmCCInfoByCond)
+	h.Add("SyncVpc", http.MethodPost, "/vpcs/sync", v.SyncVpc)
+	h.Add("SyncSubnet", http.MethodPost, "/subnets/sync", v.SyncSubnet)
+	h.Add("SyncDisk", http.MethodPost, "/disks/sync", v.SyncDisk)
+	h.Add("SyncCvmWithRelRes", http.MethodPost, "/cvms/with/relation_resources/sync", v.SyncCvmWithRelRes)
+	h.Add("SyncSecurityGroup", http.MethodPost, "/security_groups/sync", v.SyncSecurityGroup)
+	h.Add("SyncSecurityGroupUsageBiz", http.MethodPost,
+		"/security_groups/usage_biz_rels/sync", v.SyncSecurityGroupUsageBiz)
+	h.Add("SyncEip", http.MethodPost, "/eips/sync", v.SyncEip)
+	h.Add("SyncRoute", http.MethodPost, "/route_tables/sync", v.SyncRouteTable)
+	h.Add("SyncZone", http.MethodPost, "/zones/sync", v.SyncZone)
+	h.Add("SyncRegion", http.MethodPost, "/regions/sync", v.SyncRegion)
+	h.Add("SyncImage", http.MethodPost, "/images/sync", v.SyncImage)
+	h.Add("SyncSubAccount", http.MethodPost, "/sub_accounts/sync", v.SyncSubAccount)
+	h.Add("SyncArgsTpl", http.MethodPost, "/argument_templates/sync", v.SyncArgsTpl)
+	h.Add("SyncCert", http.MethodPost, "/certs/sync", v.SyncCert)
+	h.Add("SyncLoadBalancer", http.MethodPost, "/load_balancers/sync", v.SyncLoadBalancer)
+	h.Add("SyncLoadBalancerListener", http.MethodPost, "/listeners/sync", v.SyncLoadBalancerListener)
+	h.Add("SyncCvmCCInfo", http.MethodPost, "/cvms/cc_info/sync", v.SyncCvmCCInfo)
+	h.Add("SyncCvmCCInfoByCond", http.MethodPost, "/cvms/cc_info/by_condition/sync", v.SyncCvmCCInfoByCond)
+	h.Add("SyncPermissionTemplate", http.MethodPost, "/permission_templates/sync", v.SyncPermissionTemplate)
 
 	h.Load(cap.WebService)
 }

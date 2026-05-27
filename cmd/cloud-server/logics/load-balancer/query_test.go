@@ -36,7 +36,8 @@ import (
 
 func TestBuildBatchGetCvmWithoutVpcExpr_ShouldUseJSONOverlapsForIPArrays(t *testing.T) {
 	ips := []string{"10.0.0.1", "10.0.0.2"}
-	expr := buildBatchGetCvmWithoutVpcExpr(ips, enumor.TCloud, 2, "acc-1")
+	ipFields := []string{"private_ipv4_addresses", "public_ipv4_addresses"}
+	expr := buildBatchGetCvmWithoutVpcExpr(ips, ipFields, enumor.TCloud, 2, "acc-1")
 
 	require.NotNil(t, expr)
 	require.Equal(t, filter.And, expr.Op)
@@ -45,14 +46,25 @@ func TestBuildBatchGetCvmWithoutVpcExpr_ShouldUseJSONOverlapsForIPArrays(t *test
 	ipExpr, ok := expr.Rules[0].(*filter.Expression)
 	require.True(t, ok)
 	require.Equal(t, filter.Or, ipExpr.Op)
-	require.Len(t, ipExpr.Rules, 4)
+	require.Len(t, ipExpr.Rules, len(ipFields))
 
+	gotFields := make([]string, 0, len(ipExpr.Rules))
 	for _, rule := range ipExpr.Rules {
 		atom, ok := rule.(*filter.AtomRule)
 		require.True(t, ok)
 		require.Equal(t, filter.JSONOverlaps.Factory(), atom.Op)
 		require.Equal(t, ips, atom.Value)
+		gotFields = append(gotFields, atom.Field)
 	}
+	require.ElementsMatch(t, ipFields, gotFields)
+}
+
+func TestSplitIPsByVersion(t *testing.T) {
+	ips := []string{"10.0.0.1", "fe80::1", "192.168.1.2", "::1", "invalid-ip"}
+	v4IPs, v6IPs := splitIPsByVersion(&kit.Kit{}, ips)
+
+	require.ElementsMatch(t, []string{"10.0.0.1", "192.168.1.2"}, v4IPs)
+	require.ElementsMatch(t, []string{"fe80::1", "::1"}, v6IPs)
 }
 
 func TestValidateCvmExist_ShouldFindMatchedCVMForDifferentIPsInSameBatch(t *testing.T) {
@@ -84,18 +96,46 @@ func TestValidateCvmExist_ShouldFindMatchedCVMForDifferentIPsInSameBatch(t *test
 }
 
 func TestBuildBatchGetCvmWithoutVpcExpr_SQLShouldUseJSONOverlaps(t *testing.T) {
+	tests := []struct {
+		name        string
+		ipFields    []string
+		wantFields  []string
+		notContains []string
+	}{
+		{
+			name:        "ipv4 fields only",
+			ipFields:    []string{"private_ipv4_addresses", "public_ipv4_addresses"},
+			wantFields:  []string{"private_ipv4_addresses", "public_ipv4_addresses"},
+			notContains: []string{"private_ipv6_addresses", "public_ipv6_addresses"},
+		},
+		{
+			name:        "ipv6 fields only",
+			ipFields:    []string{"private_ipv6_addresses", "public_ipv6_addresses"},
+			wantFields:  []string{"private_ipv6_addresses", "public_ipv6_addresses"},
+			notContains: []string{"private_ipv4_addresses", "public_ipv4_addresses"},
+		},
+	}
+
 	ips := []string{"10.0.0.1", "10.0.0.2"}
-	expr := buildBatchGetCvmWithoutVpcExpr(ips, enumor.TCloud, 2, "acc-1")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			expr := buildBatchGetCvmWithoutVpcExpr(ips, tt.ipFields, enumor.TCloud, 2, "acc-1")
 
-	where, _, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
-	require.NoError(t, err)
+			where, _, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+			require.NoError(t, err)
+			require.True(t, strings.HasPrefix(where, "WHERE "))
 
-	require.True(t, strings.HasPrefix(where, "WHERE "))
-	require.Regexp(t, `JSON_OVERLAPS\(private_ipv4_addresses, JSON_ARRAY\(:private_ipv4_addresses_[A-Za-z0-9]+_0,:private_ipv4_addresses_[A-Za-z0-9]+_1\)\)`, where)
-	require.Regexp(t, `JSON_OVERLAPS\(private_ipv6_addresses, JSON_ARRAY\(:private_ipv6_addresses_[A-Za-z0-9]+_0,:private_ipv6_addresses_[A-Za-z0-9]+_1\)\)`, where)
-	require.Regexp(t, `JSON_OVERLAPS\(public_ipv4_addresses, JSON_ARRAY\(:public_ipv4_addresses_[A-Za-z0-9]+_0,:public_ipv4_addresses_[A-Za-z0-9]+_1\)\)`, where)
-	require.Regexp(t, `JSON_OVERLAPS\(public_ipv6_addresses, JSON_ARRAY\(:public_ipv6_addresses_[A-Za-z0-9]+_0,:public_ipv6_addresses_[A-Za-z0-9]+_1\)\)`, where)
-	require.Contains(t, where, "vendor = :vendor")
-	require.Contains(t, where, "bk_biz_id = :bk_biz_id")
-	require.Contains(t, where, "account_id = :account_id")
+			for _, field := range tt.wantFields {
+				require.Regexp(t,
+					`JSON_OVERLAPS\(`+field+`, JSON_ARRAY\(:`+field+`_[A-Za-z0-9]+_0,:`+field+`_[A-Za-z0-9]+_1\)\)`,
+					where)
+			}
+			for _, field := range tt.notContains {
+				require.NotContains(t, where, field)
+			}
+			require.Contains(t, where, "vendor = :vendor")
+			require.Contains(t, where, "bk_biz_id = :bk_biz_id")
+			require.Contains(t, where, "account_id = :account_id")
+		})
+	}
 }

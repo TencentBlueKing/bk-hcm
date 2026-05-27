@@ -7,7 +7,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   usePermissionPolicyStore,
   type IOperationPermissionPolicyParams,
-} from '@/store/clount-account-manage/permission-policy';
+} from '@/store/cloud-account-manage/permission-policy';
 import { VendorEnum } from '@/common/constant';
 import { isJSON } from '@/utils';
 
@@ -65,7 +65,7 @@ const formRules = {
   bk_biz_ids: [{ required: true, message: '请选择使用业务', trigger: 'blur' }],
   policy_document: [
     { required: true, message: '请输入权限策略', trigger: 'blur' },
-    { validator: isJSON, trigger: 'change', message: '请输入正确得JSON' },
+    { validator: isJSON, trigger: 'change', message: '请输入正确的JSON格式' },
   ],
 };
 

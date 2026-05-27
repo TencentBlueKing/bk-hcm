@@ -80,5 +80,14 @@ export const OPERATION_LOG_SOURCE_NAME = {
   [OPERATION_LOG_SOURCE.WEB_CALL]: '页面操作',
 };
 
-// res_type为负载均衡时的相关资源
-export const CLB_RES_TYPES = ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'];
+export const OPERATION_LOG_RES_TYPES = {
+  [OPERATION_LOG_RESOURCE_TYPE.CLB]: ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'],
+  [OPERATION_LOG_RESOURCE_TYPE.ACCOUNT]: [
+    'account',
+    'permission_template',
+    'permission_policy_library',
+    'sub_account',
+    'sub_account_secret',
+    'account_secret',
+  ],
+};

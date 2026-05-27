@@ -29,7 +29,12 @@ export type AuthResourceType =
   | 'main_account'
   | 'account_bill'
   | 'load_balancer'
-  | 'permission_policy_library';
+  | 'sub_account_secret'
+  | 'sub_account'
+  | 'permission_policy_library'
+  | 'permission_template'
+  | 'sub_account_secret'
+  | 'sub_account';
 
 // 权限校验参数
 export interface IVerifyResourceItem {
@@ -109,6 +114,9 @@ export const getVerifyParams = (sign: IAuthSign | IAuthSign[]) => {
   const resources = getAuthResources(sign);
   return { resources };
 };
+
+const bizTransform = (definition: IAuthDefinition, relation: IAuthSign['relation']) =>
+  basicTransform(definition, relation[0] ? { bk_biz_id: relation[0] as number } : {});
 
 export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
   [authSymbol.AUTH_CREATE_CLOUD_SELECTION_SCHEME]: {
@@ -300,19 +308,114 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'load_balancer',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
+  [authSymbol.AUTH_APPLY_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'apply',
+    resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_APPLY_PERMISSION_POLICY_LIBRARY]: {
+    id: 'biz_perm_policy_lib_operate',
+    action: 'apply',
+    resourceType: 'permission_policy_library',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
   [authSymbol.AUTH_FIND_PERMISSION_POLICY_LIBRARY]: {
     id: 'cloud_vendor_config',
     action: 'find',
     resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_FIND_PERMISSION_POLICY_LIBRARY]: {
+    id: 'cloud_vendor_config',
+    action: 'find',
+    resourceType: 'permission_policy_library',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_CREATE_PERMISSION_POLICY_LIBRARY]: {
     id: 'cloud_vendor_config',
     action: 'create',
     resourceType: 'permission_policy_library',
   },
+  [authSymbol.AUTH_BIZ_CREATE_PERMISSION_POLICY_LIBRARY]: {
+    id: 'biz_perm_policy_lib_operate',
+    action: 'create',
+    resourceType: 'permission_policy_library',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
   [authSymbol.AUTH_UPDATE_PERMISSION_POLICY_LIBRARY]: {
     id: 'cloud_vendor_config',
     action: 'update',
     resourceType: 'permission_policy_library',
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_PERMISSION_POLICY_LIBRARY]: {
+    id: 'biz_perm_policy_lib_operate',
+    action: 'update',
+    resourceType: 'permission_policy_library',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_BIZ_CREATE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
+    action: 'create',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
+    action: 'update',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_BIZ_DELETE_PERMISSION_TEMPLATE]: {
+    id: 'biz_perm_template_operate',
+    action: 'delete',
+    resourceType: 'permission_template',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+  },
+  [authSymbol.AUTH_BIZ_CREATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'create',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'update',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_DELETE_SUB_ACCOUNT_SECRET]: {
+    id: 'biz_sub_account_secret_operate',
+    action: 'delete',
+    resourceType: 'sub_account_secret',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_CREATE_SUB_ACCOUNT]: {
+    id: 'biz_sub_account_operate',
+    action: 'create',
+    resourceType: 'sub_account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_SUB_ACCOUNT]: {
+    id: 'biz_sub_account_operate',
+    action: 'update',
+    resourceType: 'sub_account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_DELETE_SUB_ACCOUNT]: {
+    id: 'biz_sub_account_operate',
+    action: 'delete',
+    resourceType: 'sub_account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_UPDATE_SECONDARY_ACCOUNT]: {
+    id: 'biz_account_operate',
+    action: 'update',
+    resourceType: 'account',
+    transform: bizTransform,
+  },
+  [authSymbol.AUTH_BIZ_DELETE_SECONDARY_ACCOUNT]: {
+    id: 'biz_account_operate',
+    action: 'delete',
+    resourceType: 'account',
+    transform: bizTransform,
   },
 });

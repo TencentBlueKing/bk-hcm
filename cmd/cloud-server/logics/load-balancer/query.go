@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/cidr"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -296,18 +297,25 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 	return cvms.Details, nil
 }
 
-func buildBatchGetCvmWithoutVpcExpr(partIPs []string, vendor enumor.Vendor, bkBizID int64,
+// cvmIPBatchSize 单次按 IP 批量查询 CVM 的批次大小。
+// JSON_OVERLAPS 走不了索引，单次评估的元素数（批次大小 × OR 字段数）越大越容易触发 data-service 超时，
+// 故此处取小于 core.DefaultMaxPageLimit 的值，平衡查询次数与单次执行耗时。
+const cvmIPBatchSize = 100
+
+// buildBatchGetCvmWithoutVpcExpr 按指定的 IP 字段集合构建查询条件。
+// ipFields 仅包含与 partIPs 版本匹配的字段（v4 或 v6），避免无意义的 JSON_OVERLAPS。
+func buildBatchGetCvmWithoutVpcExpr(partIPs []string, ipFields []string, vendor enumor.Vendor, bkBizID int64,
 	accountID string) *filter.Expression {
+
+	ipRules := make([]*filter.AtomRule, 0, len(ipFields))
+	for _, field := range ipFields {
+		ipRules = append(ipRules, tools.RuleJsonOverlaps(field, partIPs))
+	}
 
 	return &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			tools.ExpressionOr(
-				tools.RuleJsonOverlaps("private_ipv4_addresses", partIPs),
-				tools.RuleJsonOverlaps("private_ipv6_addresses", partIPs),
-				tools.RuleJsonOverlaps("public_ipv4_addresses", partIPs),
-				tools.RuleJsonOverlaps("public_ipv6_addresses", partIPs),
-			),
+			tools.ExpressionOr(ipRules...),
 			tools.RuleEqual("vendor", vendor),
 			tools.RuleEqual("bk_biz_id", bkBizID),
 			tools.RuleEqual("account_id", accountID),
@@ -315,16 +323,66 @@ func buildBatchGetCvmWithoutVpcExpr(partIPs []string, vendor enumor.Vendor, bkBi
 	}
 }
 
+// splitIPsByVersion 按 IP 版本拆分，非法 IP 直接丢弃（上层对未匹配 IP 已有兜底报错逻辑）
+func splitIPsByVersion(kt *kit.Kit, ips []string) (v4IPs, v6IPs []string) {
+	v4IPs = make([]string, 0, len(ips))
+	v6IPs = make([]string, 0, len(ips))
+	for _, ip := range ips {
+		switch {
+		case cidr.IsIPv4(ip):
+			v4IPs = append(v4IPs, ip)
+		case cidr.IsIPv6(ip):
+			v6IPs = append(v6IPs, ip)
+		default:
+			logs.Warnf("skip invalid rs ip: %s, rid: %s", ip, kt.Rid)
+		}
+	}
+	return v4IPs, v6IPs
+}
+
 // batchGetCvmWithoutVpc 不指定VPC批量查询主机
 func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, vendor enumor.Vendor, bkBizID int64,
 	accountID string) ([]corecvm.BaseCvm, error) {
 
+	// 同一个 RS IP 可能因多端口/多监听器绑定而重复，先去重避免无意义的重复查询
+	ips = slice.Unique(ips)
+
+	// 按 IP 版本拆分，使每次查询的 OR 条件从 4 个减为 2 个，降低 data-service 单次查询负载
+	v4IPs, v6IPs := splitIPsByVersion(kt, ips)
+
 	cvmList := make([]corecvm.BaseCvm, 0)
-	for _, partIPs := range slice.Split(ips, int(core.DefaultMaxPageLimit)) {
-		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, vendor, bkBizID, accountID)
-		start := uint32(0)
+	v4Cvms, err := batchListCvmByIPs(kt, cli, v4IPs,
+		[]string{"private_ipv4_addresses", "public_ipv4_addresses"}, vendor, bkBizID, accountID)
+	if err != nil {
+		logs.Errorf("batch list cvm by ipv4 failed, bkBizID: %d, err: %v, rid: %s", bkBizID, err, kt.Rid)
+		return nil, err
+	}
+	cvmList = append(cvmList, v4Cvms...)
+
+	v6Cvms, err := batchListCvmByIPs(kt, cli, v6IPs,
+		[]string{"private_ipv6_addresses", "public_ipv6_addresses"}, vendor, bkBizID, accountID)
+	if err != nil {
+		logs.Errorf("batch list cvm by ipv6 failed, bkBizID: %d, err: %v, rid: %s", bkBizID, err, kt.Rid)
+		return nil, err
+	}
+	cvmList = append(cvmList, v6Cvms...)
+
+	return cvmList, nil
+}
+
+// batchListCvmByIPs 按 cvmIPBatchSize 分批查询匹配指定 IP 列表的 CVM。
+func batchListCvmByIPs(kt *kit.Kit, cli *dataservice.Client, ips []string, ipFields []string,
+	vendor enumor.Vendor, bkBizID int64, accountID string) ([]corecvm.BaseCvm, error) {
+
+	if len(ips) == 0 {
+		return nil, nil
+	}
+
+	cvmList := make([]corecvm.BaseCvm, 0)
+	for _, partIPs := range slice.Split(ips, cvmIPBatchSize) {
+		expr := buildBatchGetCvmWithoutVpcExpr(partIPs, ipFields, vendor, bkBizID, accountID)
+		listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit}}
 		for {
-			listReq := &core.ListReq{Filter: expr, Page: &core.BasePage{Start: start, Limit: core.DefaultMaxPageLimit}}
 			cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
 			if err != nil {
 				logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
@@ -335,7 +393,7 @@ func batchGetCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ips []string, v
 			if uint(len(cvms.Details)) < core.DefaultMaxPageLimit {
 				break
 			}
-			start += uint32(core.DefaultMaxPageLimit)
+			listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
 	}
 	return cvmList, nil

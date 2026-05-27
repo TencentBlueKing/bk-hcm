@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
@@ -35,6 +33,8 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // CreateAccount account with options
@@ -98,6 +98,9 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			RecycleReserveTime: constant.UnsetRecycleTime,
 			Creator:            cts.Kit.User,
 			Reviser:            cts.Kit.User,
+			Email:              req.Email,
+			SecurityManagers:   req.SecurityManagers,
+			CloudCreatedAt:     req.CloudCreatedAt,
 		}
 
 		accountID, err := svc.dao.Account().CreateWithTx(cts.Kit, txn, account)

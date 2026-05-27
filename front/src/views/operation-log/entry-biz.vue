@@ -9,7 +9,7 @@ import { IAuditItem, useAuditStore } from '@/store/audit';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
-import { CLB_RES_TYPES, OPERATION_LOG_RESOURCE_TYPE_NAME } from './constants';
+import { OPERATION_LOG_RES_TYPES, OPERATION_LOG_RESOURCE_TYPE, OPERATION_LOG_RESOURCE_TYPE_NAME } from './constants';
 import { type ISearchCondition } from './typings';
 import { SearchConditionFactory } from './children/search/condition-factory';
 import { TableColumnFactory } from './children/data-list/column-factory';
@@ -103,7 +103,12 @@ const handleViewDetails = (row: IAuditItem) => {
   const { id, res_type, res_name, res_id, bk_biz_id } = row;
   const flowId = row.detail?.data?.res_flow?.flow_id;
 
-  if (CLB_RES_TYPES.includes(res_type) && flowId) {
+  if (
+    OPERATION_LOG_RES_TYPES[OPERATION_LOG_RESOURCE_TYPE.CLB as keyof typeof OPERATION_LOG_RES_TYPES].includes(
+      res_type,
+    ) &&
+    flowId
+  ) {
     routerAction.redirect(
       {
         name: MENU_BUSINESS_OPERATION_LOG_DETAILS,

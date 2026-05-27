@@ -61,6 +61,9 @@ var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "recycle_reserve_time", NamedC: "recycle_reserve_time", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
+	{Column: "email", NamedC: "email", Type: enumor.String},
+	{Column: "security_managers", NamedC: "security_managers", Type: enumor.Json},
+	{Column: "cloud_created_at", NamedC: "cloud_created_at", Type: enumor.String},
 }
 
 // AccountTable 云账号表
@@ -99,6 +102,12 @@ type AccountTable struct {
 	RecycleReserveTime int `db:"recycle_reserve_time" json:"recycle_reserve_time"`
 	// BkBizID 管理业务
 	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
+	// Email 邮箱
+	Email *string `db:"email" json:"email"`
+	// SecurityManagers 安全负责人
+	SecurityManagers types.StringArray `db:"security_managers" json:"security_managers"`
+	// CloudCreatedAt 云上创建时间
+	CloudCreatedAt *string `db:"cloud_created_at" json:"cloud_created_at"`
 }
 
 // TableName return account table name.

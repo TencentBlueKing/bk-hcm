@@ -17,12 +17,12 @@ import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 const { FormItem } = Form;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
-export const VENDORS_INFO = [
-  {
-    vendor: VendorEnum.TCLOUD,
-    name: '腾讯云',
-    icon: tcloudVendor,
-  },
+export const VENDORS_INFO: Array<{
+  vendor: VendorEnum;
+  name: string;
+  icon: string;
+  disabled?: boolean;
+}> = [
   {
     vendor: VendorEnum.AWS,
     name: '亚马逊云',
@@ -42,6 +42,12 @@ export const VENDORS_INFO = [
     vendor: VendorEnum.HUAWEI,
     name: '华为云',
     icon: huaweiVendor,
+  },
+  {
+    vendor: VendorEnum.TCLOUD,
+    name: '腾讯云',
+    icon: tcloudVendor,
+    disabled: true,
   },
 ];
 
@@ -68,7 +74,7 @@ export default defineComponent({
     const userStore = useUserStore();
     const formModel = reactive({
       site: 'international' as 'china' | 'international', // 站点
-      vendor: VendorEnum.TCLOUD, // 云厂商
+      vendor: VendorEnum.AWS, // 云厂商
       name: '', // 账号别名
       managers: [], // 责任人
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
@@ -185,13 +191,26 @@ export default defineComponent({
             <Form formType='vertical'>
               <FormItem label='厂商选择' required>
                 <div class={'account-vendor-selector'}>
-                  {VENDORS_INFO.map(({ vendor, name, icon }) => (
+                  {VENDORS_INFO.map(({ vendor, name, icon, disabled }) => (
                     <div
-                      class={`account-vendor-option ${
-                        vendor === formModel.vendor ? 'account-vendor-option-active' : ''
-                      }`}
-                      onClick={() => (formModel.vendor = vendor)}
-                    >
+                      v-bk-tooltips={{
+                        content:
+                          vendor === VendorEnum.TCLOUD && disabled
+                            ? '腾讯云资源账号接入已迁移到菜单“资源管理-云账号管理-二级账号-录入账号”'
+                            : '',
+                        disabled: !disabled,
+                      }}
+                      class={[
+                        'account-vendor-option',
+                        vendor === formModel.vendor && 'account-vendor-option-active',
+                        disabled && 'account-vendor-option-disabled',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      onClick={() => {
+                        if (disabled) return;
+                        formModel.vendor = vendor;
+                      }}>
                       <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                       <p class={'account-vendor-option-text'}>{name}</p>
                       {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
@@ -204,8 +223,7 @@ export default defineComponent({
                   <Radio
                     label={'china'}
                     v-model={formModel.site}
-                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}
-                  >
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}>
                     中国站
                   </Radio>
                 ) : null}
@@ -256,8 +274,7 @@ export default defineComponent({
                       class={'api-form-btn'}
                       onClick={() => {
                         isAuthDialogShow.value = true;
-                      }}
-                    >
+                      }}>
                       <TextFile fill='#3A84FF' />
                       查看账号权限
                     </Button>
@@ -277,8 +294,7 @@ export default defineComponent({
                 class={'account-validate-btn'}
                 onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
                 disabled={isValidateDiasbled.value}
-                loading={isValidateLoading.value}
-              >
+                loading={isValidateLoading.value}>
                 账号校验
               </Button>
               {curExtension.value.validatedStatus === ValidateStatus.YES ? (
@@ -317,8 +333,7 @@ export default defineComponent({
                     },
                   },
                 ],
-              }}
-            >
+              }}>
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([, { label, value, placeholder }]) => (
                 <FormItem label={label}>
@@ -332,8 +347,7 @@ export default defineComponent({
                 property='name'
                 description={
                   '必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'
-                }
-              >
+                }>
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
@@ -374,8 +388,7 @@ export default defineComponent({
           dialogType='show'
           theme='primary'
           title='账号权限详情'
-          width={900}
-        >
+          width={900}>
           <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
             <Button
@@ -384,8 +397,7 @@ export default defineComponent({
               onClick={() => {
                 isAuthDialogShow.value = false;
                 window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
-              }}
-            >
+              }}>
               云控制台
             </Button>
             调整

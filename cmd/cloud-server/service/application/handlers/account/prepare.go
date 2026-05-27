@@ -24,15 +24,15 @@ import (
 
 	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
-
-	"github.com/TencentBlueKing/gopkg/conv"
 )
 
 // PrepareReq 预处理请求参数，比如敏感数据加密，Note: 实际应该在DB层面去加密，但是DB层面加密又涉及到Dao需要理解各个云要加密的字段
 func (a *ApplicationOfAddAccount) PrepareReq() error {
 	// 密钥加密
 	secretKeyField := a.req.Vendor.GetSecretField()
-	a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(conv.ToString(a.req.Extension[secretKeyField]))
+	if secretKey, exists := a.req.Extension[secretKeyField]; exists && secretKey != "" {
+		a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(secretKey)
+	}
 	return nil
 }
 
@@ -45,11 +45,13 @@ func (a *ApplicationOfAddAccount) GenerateApplicationContent() interface{} {
 func (a *ApplicationOfAddAccount) PrepareReqFromContent() error {
 	// 解密密钥
 	secretKeyField := a.req.Vendor.GetSecretField()
-	secretKey, err := a.Cipher.DecryptFromBase64(a.req.Extension[secretKeyField])
-	if err != nil {
-		return fmt.Errorf("decrypt secret key failed, err: %w", err)
+	if secretKey, exists := a.req.Extension[secretKeyField]; exists && secretKey != "" {
+		decrypted, err := a.Cipher.DecryptFromBase64(secretKey)
+		if err != nil {
+			return fmt.Errorf("decrypt secret key failed, err: %w", err)
+		}
+		a.req.Extension[secretKeyField] = decrypted
 	}
-	a.req.Extension[secretKeyField] = secretKey
 
 	return nil
 }

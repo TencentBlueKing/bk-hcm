@@ -91,6 +91,8 @@ func (ad Audit) buildOperationAuditInfo(kt *kit.Kit, resType enumor.AuditResourc
 		audits, err = ad.diskOperationAuditBuild(kt, operations)
 	case enumor.TargetGroupAuditResType:
 		audits, err = ad.loadBalancer.TargetGroupOperationAuditBuild(kt, operations)
+	case enumor.PermissionPolicyLibraryAuditResType:
+		audits, err = ad.permissionPolicyLibraryApplyAuditBuild(kt, operations)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

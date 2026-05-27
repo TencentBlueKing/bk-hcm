@@ -119,6 +119,7 @@ func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, summaryRoot *b
 			BillDay:       1,
 			State:         enumor.BillAdjustmentStateUnconfirmed,
 			Type:          item.Type,
+			ResClass:      item.ResClass,
 			Operator:      kt.User,
 			Currency:      summaryRoot.Currency,
 			Cost:          item.Cost,
@@ -246,6 +247,7 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		ProductID:     req.ProductID,
 		BkBizID:       req.BkBizID,
 		Type:          req.Type,
+		ResClass:      req.ResClass,
 		Memo:          req.Memo,
 		Cost:          req.Cost,
 	}

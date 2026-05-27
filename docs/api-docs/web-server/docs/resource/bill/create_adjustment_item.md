@@ -28,6 +28,7 @@ POST /api/v1/account/vendors/{vendor}/bills/adjustment_items/create
 | bill_month      | int    | 否  | 所属月份                        |
 | bill_day        | int    | 是  | 所属日期                        |
 | type            | string | 是  | 调账类型 枚举值（increase、decrease） |
+| res_class       | string | 是  | 资源类别 枚举值（cpu、gpu）           |
 | currency        | string | 是  | 币种                          |
 | cost            | string | 是  | 金额                          |
 | memo            | string | 否  | 备注信息                        |
@@ -47,6 +48,7 @@ POST /api/v1/account/vendors/{vendor}/bills/adjustment_items/create
       "bill_year": 2024,
       "bill_month": 6,
       "type": "increase",
+      "res_class": "cpu",
       "memo": "",
       "currency": "RMB",
       "cost": "123",

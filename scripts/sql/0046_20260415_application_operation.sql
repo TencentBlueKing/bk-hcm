@@ -21,6 +21,6 @@ START TRANSACTION;
 
 ALTER TABLE `application` ADD COLUMN `operation` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '细粒度操作类型' AFTER `type`;
 
-UPDATE application SET operation = type WHERE operation IS '';
+UPDATE application SET operation = type WHERE operation = '';
 
 COMMIT;

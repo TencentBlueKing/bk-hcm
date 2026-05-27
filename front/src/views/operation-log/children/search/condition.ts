@@ -1,8 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Model, Column } from '@/decorator';
 import { QueryRuleOPEnum } from '@/typings';
-import { OPERATION_LOG_SOURCE_NAME } from '@/views/operation-log/constants';
-import type { OperationLogSource } from '@/views/operation-log/typings';
+import {
+  OPERATION_LOG_RESOURCE_TYPE_NAME,
+  OPERATION_LOG_RES_TYPES,
+  OPERATION_LOG_SOURCE_NAME,
+} from '@/views/operation-log/constants';
+import type { OperationLogResourceType, OperationLogSource } from '@/views/operation-log/typings';
 
 @Model('operation-log/search-condition')
 export class SearchCondition {
@@ -42,4 +45,24 @@ export class SearchCondition {
 
   @Column('business', { name: '所属业务', index: 3 })
   bk_biz_id: number;
+
+  @Column('enum', {
+    apiOnly: true,
+    name: '资源类型',
+    option: OPERATION_LOG_RESOURCE_TYPE_NAME,
+    index: 1,
+    meta: {
+      search: {
+        filterRules(value: OperationLogResourceType) {
+          const val = OPERATION_LOG_RES_TYPES[value as keyof typeof OPERATION_LOG_RES_TYPES] || [value];
+          return {
+            field: 'res_type',
+            op: QueryRuleOPEnum.IN,
+            value: val,
+          };
+        },
+      },
+    },
+  })
+  res_type: OperationLogResourceType;
 }

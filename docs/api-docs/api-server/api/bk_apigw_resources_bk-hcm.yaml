@@ -357,3 +357,757 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn: List AWS member account CloudWatch available metrics via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/notebook_instances/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_notebook_instances
+      description: 查询 AWS 成员账号 SageMaker Notebook Instance 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/notebook_instances/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker notebook instances via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/notebook_instances/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_notebook_instance
+      description: 查询 AWS 成员账号 SageMaker Notebook Instance 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/notebook_instances/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker notebook instance via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_endpoints
+      description: 查询 AWS 成员账号 SageMaker Endpoint 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker endpoints via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_endpoint
+      description: 查询 AWS 成员账号 SageMaker Endpoint 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker endpoint via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_endpoint_configs
+      description: 查询 AWS 成员账号 SageMaker Endpoint Config 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker endpoint configs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_endpoint_config
+      description: 查询 AWS 成员账号 SageMaker Endpoint Config 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker endpoint config via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_training_jobs
+      description: 查询 AWS 成员账号 SageMaker Training Job 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker training jobs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_training_job
+      description: 查询 AWS 成员账号 SageMaker Training Job 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker training job via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_processing_jobs
+      description: 查询 AWS 成员账号 SageMaker Processing Job 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker processing jobs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_processing_job
+      description: 查询 AWS 成员账号 SageMaker Processing Job 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker processing job via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_transform_jobs
+      description: 查询 AWS 成员账号 SageMaker Transform Job 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker transform jobs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_transform_job
+      description: 查询 AWS 成员账号 SageMaker Transform Job 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker transform job via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_apps
+      description: 查询 AWS 成员账号 SageMaker Studio App 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker Studio apps via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_app
+      description: 查询 AWS 成员账号 SageMaker Studio App 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker Studio app via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_clusters
+      description: 查询 AWS 成员账号 SageMaker HyperPod Cluster 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker HyperPod clusters via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_cluster
+      description: 查询 AWS 成员账号 SageMaker HyperPod Cluster 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker HyperPod cluster via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_cluster_nodes
+      description: 查询 AWS 成员账号 SageMaker HyperPod Cluster Node 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker HyperPod cluster nodes via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_cluster_node
+      description: 查询 AWS 成员账号 SageMaker HyperPod Cluster Node 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker HyperPod cluster node via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_training_plans
+      description: 查询 AWS 成员账号 SageMaker Training Plan 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker training plans via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_training_plan
+      description: 查询 AWS 成员账号 SageMaker Training Plan 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker training plan via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plan_offerings/search:
+    post:
+      operationId: search_aws_assume_role_sagemaker_training_plan_offerings
+      description: 搜索 AWS 成员账号 SageMaker Training Plan Offering（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plan_offerings/search
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Search AWS member account SageMaker training plan offerings via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_inference_components
+      description: 查询 AWS 成员账号 SageMaker Inference Component 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker inference components via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_inference_component
+      description: 查询 AWS 成员账号 SageMaker Inference Component 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker inference component via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_optimization_jobs
+      description: 查询 AWS 成员账号 SageMaker Optimization Job 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker optimization jobs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_optimization_job
+      description: 查询 AWS 成员账号 SageMaker Optimization Job 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker optimization job via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_compute_quotas
+      description: 查询 AWS 成员账号 SageMaker HyperPod Compute Quota 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker compute quotas via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_compute_quota
+      description: 查询 AWS 成员账号 SageMaker HyperPod Compute Quota 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker compute quota via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacities/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_reserved_capacity
+      description: 查询 AWS 成员账号 SageMaker Reserved Capacity 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacities/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker reserved capacity via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacity_ultra_servers/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_reserved_capacity_ultra_servers
+      description: 查询 AWS 成员账号 SageMaker Reserved Capacity 关联 UltraServer 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacity_ultra_servers/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: true
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker reserved capacity UltraServers via AssumeRole

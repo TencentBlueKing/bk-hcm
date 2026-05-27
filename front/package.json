@@ -13,7 +13,10 @@
     "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack build",
     "serve": "node ./paas-server/index.js",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache",
-    "lint:style": "stylelint --fix ./**/*.{scss,css,vue} --custom-syntax",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache --fix",
+    "lint:style": "stylelint \"./src/**/*.{css,scss,vue}\" --cache",
+    "lint:style:fix": "stylelint \"./src/**/*.{css,scss,vue}\" --cache --fix",
+    "format": "prettier --config ./.prettierrc.js --write \"./src/**/*.{js,jsx,ts,tsx,vue,scss,css}\"",
     "prepare": "cd .. && husky install front/.husky"
   },
   "dependencies": {
@@ -22,7 +25,7 @@
     "@blueking/app-select": "0.0.1-beta.6",
     "@blueking/collapsible-tag": "1.1.0-beta.4",
     "@blueking/combine-request": "1.0.1",
-    "@blueking/ediatable": "0.0.1-beta.16",
+    "@blueking/ediatable": "0.0.1-beta.32",
     "@blueking/login-modal": "1.0.1",
     "@blueking/notice-component": "2.0.5",
     "@blueking/release-note": "0.0.1-beta.17",
@@ -35,6 +38,7 @@
     "highlight.js": "~11.5.0",
     "ipaddr.js": "2.1.0",
     "js-cookie": "3.0.5",
+    "libphonenumber-js": "1.12.41",
     "lodash": "4.18.1",
     "mitt": "3.0.0",
     "moment": "2.29.4",
@@ -97,9 +101,12 @@
     "dist"
   ],
   "lint-staged": {
-    "src/**/*.{js,ts,tsx,vue}": [
+    "src/**/*.{js,jsx,ts,tsx,vue}": [
       "prettier --config ./.prettierrc.js --write",
-      "eslint --fix -c ./.eslintrc.js --debug"
+      "eslint --fix -c ./.eslintrc.js --cache"
+    ],
+    "src/**/*.{css,scss,vue}": [
+      "stylelint --fix --cache"
     ]
   }
 }

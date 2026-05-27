@@ -20,6 +20,7 @@ export enum QueryRuleOPEnum {
   JSON_EQ = 'json_eq',
   JSON_NEQ = 'json_neq',
   JSON_OVERLAPS = 'json_overlaps',
+  JSON_IN = 'json_in',
   OR = 'or',
   AND = 'and',
   JSON_CONTAINS = 'json_contains',
@@ -40,6 +41,7 @@ export enum QueryRuleOPEnumLegacy {
   JSON_EQ = 'json_eq',
   JSON_NEQ = 'json_neq',
   JSON_OVERLAPS = 'json_overlaps',
+  JSON_IN = 'json_in',
   OR = 'or',
   AND = 'and',
   JSON_CONTAINS = 'json_contains',
@@ -100,16 +102,15 @@ interface IBaseResData {
   result: boolean;
 }
 
-// list 接口响应
 export interface IListResData<T> extends IBaseResData {
   data: { details: T; count: number; info?: T };
 }
 
-// todo: 改名为 ICommonResData / APIResponse
-// query 接口响应
 export interface IQueryResData<T> extends IBaseResData {
   data: T;
 }
+
+export type IAPIResData<T> = IQueryResData<T>;
 
 export interface IOverviewListResData<T, D> extends IBaseResData {
   data: { details: T; count: number; overview: D };

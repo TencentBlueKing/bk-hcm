@@ -306,8 +306,8 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 
 // getTCloudTargetHealth 查询目标组绑定的负载均衡的健康状态
 func (svc *lbSvc) getTCloudTargetHealth(kit *kit.Kit, tgID string, req *hcproto.TCloudTargetHealthReq,
-	healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp,
-		error)) (*hcproto.TCloudTargetHealthResp, error) {
+	healthFunc func(*kit.Kit, *hcproto.TCloudTargetHealthReq) (*hcproto.TCloudTargetHealthResp, error)) (
+	*hcproto.TCloudTargetHealthResp, error) {
 
 	tgInfo, newCloudLbIDs, err := svc.checkBindGetTargetGroupInfo(kit, tgID, req.CloudLbIDs)
 	if err != nil {
@@ -725,7 +725,46 @@ func (svc *lbSvc) listTGRelatedInfoByRels(kt *kit.Kit, vendor enumor.Vendor, rel
 	return result, nil
 }
 
-func (svc *lbSvc) getListenerByCloudID(kt *kit.Kit, cloudID string) (*corelb.BaseListener, error) {
+func (svc *lbSvc) getListenerDetailByIDAndBiz(kt *kit.Kit, vendor enumor.Vendor, bizID int64, lblID string) (
+	*corelb.TCloudListener, *types.CloudResourceBasicInfo, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", lblID),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bizID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+
+	var lblInfo *corelb.TCloudListener
+	switch vendor {
+	case enumor.TCloud:
+		lblResp, err := svc.client.DataService().TCloud.LoadBalancer.ListListener(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to list tcloud listener(%s), err: %v, rid: %s", lblID, err, kt.Rid)
+			return nil, nil, err
+		}
+		if len(lblResp.Details) == 0 {
+			return nil, nil, errf.Newf(errf.RecordNotFound, "listener not found, id: %s", lblID)
+		}
+		lblInfo = &lblResp.Details[0]
+	default:
+		return nil, nil, errf.Newf(errf.InvalidParameter, "vendor: %s not support", vendor)
+	}
+
+	basicInfo := &types.CloudResourceBasicInfo{
+		ResType:   enumor.ListenerCloudResType,
+		ID:        lblID,
+		Vendor:    vendor,
+		AccountID: lblInfo.AccountID,
+		BkBizID:   lblInfo.BkBizID,
+	}
+
+	return lblInfo, basicInfo, nil
+}
+
+func (svc *lbSvc) getListenerByCloudID(kt *kit.Kit, cloudID string) (*corelb.TCloudListener, error) {
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("cloud_id", cloudID),
@@ -740,7 +779,19 @@ func (svc *lbSvc) getListenerByCloudID(kt *kit.Kit, cloudID string) (*corelb.Bas
 	if len(lblResp.Details) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "listener not found, id: "+cloudID)
 	}
-	lblInfo := &lblResp.Details[0]
 
-	return lblInfo, nil
+	lblInfo := &lblResp.Details[0]
+	switch lblInfo.Vendor {
+	case enumor.TCloud:
+		listenerDetail, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, lblInfo.ID)
+		if err != nil {
+			logs.Errorf("get tcloud listener detail failed, lblID: %s, cloudID: %s, err: %v, rid: %s",
+				lblInfo.ID, cloudID, err, kt.Rid)
+			return nil, err
+		}
+		return listenerDetail, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "listener vendor: %s not support, cloudID: %s",
+			lblInfo.Vendor, cloudID)
+	}
 }

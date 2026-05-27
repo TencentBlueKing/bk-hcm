@@ -43,10 +43,12 @@ type CondSyncParams struct {
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.RegionCloudResType:        CondSyncRegion,
-	enumor.ZoneCloudResType:          CondSyncZone,
-	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
-	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
+	enumor.RegionCloudResType:             CondSyncRegion,
+	enumor.ZoneCloudResType:               CondSyncZone,
+	enumor.LoadBalancerCloudResType:       CondSyncLoadBalancer,
+	enumor.SecurityGroupCloudResType:      CondSyncSecurityGroup,
+	enumor.SubAccountCloudResType:         CondSyncSubAccount,
+	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
 }
 
 // GetCondSyncFunc ...
@@ -126,5 +128,40 @@ func CondSyncZone(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams)
 		}
 		logs.Infof("[%s] conditional sync zone end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
 	}
+	return nil
+}
+
+// CondSyncSubAccount ...
+func CondSyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := &sync.TCloudGlobalSyncReq{
+		AccountID: params.AccountID,
+	}
+	err := cliSet.HCService().TCloud.Account.SyncSubAccount(kt, syncReq)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync sub account failed, err: %v, req: %+v, rid: %s",
+			enumor.TCloud, err, syncReq, kt.Rid)
+		return err
+	}
+
+	logs.Infof("[%s] conditional sync sub account end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+
+	return nil
+}
+
+// CondSyncPermissionTemplate ...
+func CondSyncPermissionTemplate(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := &sync.TCloudGlobalSyncReq{
+		AccountID: params.AccountID,
+	}
+	err := cliSet.HCService().TCloud.Account.SyncPermissionTemplate(kt, syncReq)
+	if err != nil {
+		logs.Errorf("[%s] conditional sync permission template failed, err: %v, req: %+v, rid: %s",
+			enumor.TCloud, err, syncReq, kt.Rid)
+		return err
+	}
+
+	logs.Infof("[%s] conditional sync permission template end, req: %+v, rid: %s",
+		enumor.TCloud, syncReq, kt.Rid)
+
 	return nil
 }

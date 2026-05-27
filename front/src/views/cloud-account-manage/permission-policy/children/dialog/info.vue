@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import JSON from '@/views/cloud-account-manage/components/json.vue';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
+import { VendorEnum } from '@/common/constant';
 
 interface IProps {
   show: boolean;
@@ -8,6 +10,9 @@ interface IProps {
   accountId: string;
   id: string;
   name: string;
+  resType: string;
+  bizId: number;
+  vendor: VendorEnum;
 }
 
 const props = withDefaults(defineProps<IProps>(), {
@@ -21,6 +26,7 @@ const props = withDefaults(defineProps<IProps>(), {
 const emit = defineEmits(['close']);
 
 const show = computed(() => props.show);
+const resType = computed(() => props.resType);
 
 const handleClose = () => {
   emit('close');
@@ -35,7 +41,15 @@ const handleClose = () => {
     class="model-info-dialog"
     @closed="handleClose"
   >
-    <div class="model-info-item">二级账号: {{ props.accountId }}</div>
+    <div class="model-info-item">
+      二级账号:
+      <SecondaryAccountValue
+        :value="props.accountId"
+        :res-type="resType"
+        :biz-id="props.bizId"
+        :vendor="props.vendor"
+      />
+    </div>
     <div class="model-info-item">模板名称: {{ props.name }}</div>
     <div class="model-info-item">云上策略ID: {{ props.id }}</div>
     <div class="model-info-json">
@@ -47,17 +61,19 @@ const handleClose = () => {
 <style lang="scss" scoped>
 .model-info-dialog {
   .model-info-json {
-    background: hsl(216, 33%, 97%);
+    background: hsl(216deg 33% 97%);
     height: 350px;
     overflow-y: auto;
     padding: 20px;
   }
+
   .model-info-item {
     font-weight: 400;
     font-size: 12px;
     line-height: 20px;
     margin-bottom: 8px;
   }
+
   :deep(.bk-modal-footer) {
     display: none;
   }

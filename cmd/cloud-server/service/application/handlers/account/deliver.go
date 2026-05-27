@@ -82,29 +82,28 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 }
 
 func (a *ApplicationOfAddAccount) createForTCloud() (string, error) {
-	result, err := a.Client.DataService().TCloud.Account.Create(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&dataprotocloud.AccountCreateReq[dataprotocloud.TCloudAccountExtensionCreateReq]{
-			Name:        a.req.Name,
-			Managers:    a.req.Managers,
-			Type:        a.req.Type,
-			Site:        a.req.Site,
-			Memo:        a.req.Memo,
-			BkBizID:     a.req.BkBizID,
-			UsageBizIDs: a.req.UsageBizIDs,
-			Extension: &dataprotocloud.TCloudAccountExtensionCreateReq{
-				CloudMainAccountID: a.req.Extension["cloud_main_account_id"],
-				CloudSubAccountID:  a.req.Extension["cloud_sub_account_id"],
-				CloudSecretID:      a.req.Extension["cloud_secret_id"],
-				CloudSecretKey:     a.req.Extension["cloud_secret_key"],
-			},
+	req := &dataprotocloud.AccountCreateReq[dataprotocloud.TCloudAccountExtensionCreateReq]{
+		Name:             a.req.Name,
+		Managers:         a.req.Managers,
+		SecurityManagers: a.req.SecurityManagers,
+		Type:             a.req.Type,
+		Site:             a.req.Site,
+		Memo:             a.req.Memo,
+		BkBizID:          a.req.BkBizID,
+		UsageBizIDs:      a.req.UsageBizIDs,
+		Extension: &dataprotocloud.TCloudAccountExtensionCreateReq{
+			CloudMainAccountID: a.req.Extension["cloud_main_account_id"],
 		},
-	)
+	}
+	// 之前会将登记账号和安全审计账号这两种三级账号也录入到account中，如果是资源账号，不应该有三级账号信息
+	if a.req.Type != enumor.ResourceAccount {
+		req.Extension.CloudSubAccountID = a.req.Extension["cloud_sub_account_id"]
+	}
+	result, err := a.Client.DataService().TCloud.Account.Create(a.Cts.Kit.Ctx, a.Cts.Kit.Header(), req)
 	if err != nil {
 		return "", err
 	}
-	return result.ID, err
+	return result.ID, nil
 }
 
 func (a *ApplicationOfAddAccount) createForAws() (string, error) {

@@ -2331,3 +2331,125 @@ func (c *TCloudUpdateVpcCall) DoAndReturn(f func(*kit.Kit, *types.TCloudVpcUpdat
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
+
+// DetachUserPolicy mocks base method.
+func (m *MockTCloud) DetachUserPolicy(kt *kit.Kit, opt *account.TCloudDetachUserPolicyOption) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DetachUserPolicy", kt, opt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DetachUserPolicy indicates an expected call of DetachUserPolicy.
+func (mr *MockTCloudMockRecorder) DetachUserPolicy(kt, opt interface{}) *TCloudDetachUserPolicyCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DetachUserPolicy",
+		reflect.TypeOf((*MockTCloud)(nil).DetachUserPolicy), kt, opt)
+	return &TCloudDetachUserPolicyCall{Call: call}
+}
+
+// TCloudDetachUserPolicyCall wrap *gomock.Call
+type TCloudDetachUserPolicyCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TCloudDetachUserPolicyCall) Return(arg0 error) *TCloudDetachUserPolicyCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TCloudDetachUserPolicyCall) Do(
+	f func(*kit.Kit, *account.TCloudDetachUserPolicyOption) error) *TCloudDetachUserPolicyCall {
+
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TCloudDetachUserPolicyCall) DoAndReturn(
+	f func(*kit.Kit, *account.TCloudDetachUserPolicyOption) error) *TCloudDetachUserPolicyCall {
+
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// AttachUserPolicy mocks base method.
+func (m *MockTCloud) AttachUserPolicy(kt *kit.Kit, opt *account.TCloudAttachUserPolicyOption) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AttachUserPolicy", kt, opt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AttachUserPolicy indicates an expected call of AttachUserPolicy.
+func (mr *MockTCloudMockRecorder) AttachUserPolicy(kt, opt interface{}) *TCloudAttachUserPolicyCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttachUserPolicy",
+		reflect.TypeOf((*MockTCloud)(nil).AttachUserPolicy), kt, opt)
+	return &TCloudAttachUserPolicyCall{Call: call}
+}
+
+// TCloudAttachUserPolicyCall wrap *gomock.Call
+type TCloudAttachUserPolicyCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TCloudAttachUserPolicyCall) Return(arg0 error) *TCloudAttachUserPolicyCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TCloudAttachUserPolicyCall) Do(f func(*kit.Kit, *account.TCloudAttachUserPolicyOption) error) *TCloudAttachUserPolicyCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TCloudAttachUserPolicyCall) DoAndReturn(
+	f func(*kit.Kit, *account.TCloudAttachUserPolicyOption) error) *TCloudAttachUserPolicyCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// ListAttachedUserAllPolicies mocks base method.
+func (m *MockTCloud) ListAttachedUserAllPolicies(kt *kit.Kit, opt *account.TCloudListAttachedUserAllPoliciesOption) (*account.TCloudListAttachedUserAllPoliciesResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAttachedUserAllPolicies", kt, opt)
+	ret0, _ := ret[0].(*account.TCloudListAttachedUserAllPoliciesResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAttachedUserAllPolicies indicates an expected call of ListAttachedUserAllPolicies.
+func (mr *MockTCloudMockRecorder) ListAttachedUserAllPolicies(kt, opt interface{}) *TCloudListAttachedUserAllPoliciesCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAttachedUserAllPolicies", reflect.TypeOf((*MockTCloud)(nil).ListAttachedUserAllPolicies), kt, opt)
+	return &TCloudListAttachedUserAllPoliciesCall{Call: call}
+}
+
+// TCloudListAttachedUserAllPoliciesCall wrap *gomock.Call
+type TCloudListAttachedUserAllPoliciesCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TCloudListAttachedUserAllPoliciesCall) Return(arg0 *account.TCloudListAttachedUserAllPoliciesResult, arg1 error) *TCloudListAttachedUserAllPoliciesCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TCloudListAttachedUserAllPoliciesCall) Do(f func(*kit.Kit, *account.TCloudListAttachedUserAllPoliciesOption) (*account.TCloudListAttachedUserAllPoliciesResult, error)) *TCloudListAttachedUserAllPoliciesCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TCloudListAttachedUserAllPoliciesCall) DoAndReturn(f func(*kit.Kit, *account.TCloudListAttachedUserAllPoliciesOption) (*account.TCloudListAttachedUserAllPoliciesResult, error)) *TCloudListAttachedUserAllPoliciesCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}

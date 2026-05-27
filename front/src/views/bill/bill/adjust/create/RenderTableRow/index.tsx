@@ -1,6 +1,7 @@
 import { PropType, defineComponent, ref, watch } from 'vue';
-import { InputColumn, OperationColumn, TextPlainColumn } from '@blueking/ediatable';
+import { InputColumn, OperationColumn, SelectColumn, TextPlainColumn } from '@blueking/ediatable';
 import AdjustTypeSelector, { AdjustTypeEnum } from './components/AdjustTypeSelector';
+import { ResClassEnum, ResClassList } from '@/constants';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import SubAccountSelector from '../../../components/search/sub-account-selector';
 import { VendorEnum } from '@/common/constant';
@@ -35,6 +36,7 @@ export default defineComponent({
   setup(props, { emit, expose }) {
     const { formModel, resetForm, setFormValues } = useFormModel({
       type: AdjustTypeEnum.Increase,
+      res_class: ResClassEnum.Gpu,
       bk_biz_id: '',
       main_account_id: '',
       cost: '',
@@ -122,6 +124,9 @@ export default defineComponent({
           </td>
           <td>
             <TextPlainColumn>人工调账</TextPlainColumn>
+          </td>
+          <td>
+            <SelectColumn list={ResClassList} v-model={formModel.res_class} />
           </td>
           <td>
             <InputColumn
