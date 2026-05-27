@@ -404,3 +404,24 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-update:before {
 	content: "\e188";
 }
+.bkhcm-icon-warn-triangle:before {
+	content: "\e189";
+}
+.bkhcm-icon-quanbu:before {
+	content: "\e18a";
+}
+.bkhcm-icon-yuan-bohui:before {
+	content: "\e18b";
+}
+.bkhcm-icon-upload:before {
+	content: "\e18c";
+}
+.bkhcm-icon-export:before {
+	content: "\e18d";
+}
+.bkhcm-icon-user:before {
+	content: "\e18e";
+}
+.bkhcm-icon-permission:before {
+	content: "\e18f";
+}

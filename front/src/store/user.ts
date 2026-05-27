@@ -28,6 +28,8 @@ export interface IGetUserData {
   display_name?: string;
   language?: string;
   time_zone?: string;
+  auth_center_url?: string;
+  user_center_url?: string;
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -36,6 +38,8 @@ export const useUserStore = defineStore('user', () => {
 
   const tenantId = ref('');
   const timeZone = ref('');
+
+  const userData = ref<IGetUserData>({});
 
   const searchLoading = ref(false);
   const userList = ref<IUserItem[]>([]);
@@ -49,6 +53,7 @@ export const useUserStore = defineStore('user', () => {
     tenantId.value = data.tenant_id;
     timeZone.value = data.time_zone;
     window.PROJECT_CONFIG.TIMEZONE = data.time_zone;
+    userData.value = data;
     return data;
   };
 
@@ -122,5 +127,6 @@ export const useUserStore = defineStore('user', () => {
     userList,
     userInfo,
     search,
+    userData,
   };
 });

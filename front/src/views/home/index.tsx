@@ -39,7 +39,7 @@ import {
   MENU_BUSINESS_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 
-import BkLoginUserinfo from '@blueking/login-userinfo';
+import BkLoginUserinfo, { ActionItem } from '@blueking/login-userinfo';
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -132,51 +132,16 @@ export default defineComponent({
     };
 
     const userinfo = ref({
-      name: '',
+      name: userStore.userData?.display_name,
       email: '',
-      organization: '',
-      timezone: '',
+      organization: userStore.userData?.tenant_id,
+      timezone: userStore.userData?.time_zone,
     });
-
-    // 获取当前用户信息
-    const fetchUserInfo = async () => {
-      const data = await userStore.userInfo();
-      userinfo.value = {
-        name: data.display_name || data.bk_username || '',
-        email: '', // 接口暂未返回 email
-        organization: data.tenant_id,
-        timezone: data.time_zone || '',
-      };
-    };
-
-    const handleClick = (action: string) => {
-      console.warn(action);
-    };
-
-    const actionList = [
-      {
-        text: '权限中心',
-        icon: 'AngleDoubleLeftLine',
-        handle: () => handleClick('权限中心'),
-      },
-      {
-        text: '个人设置',
-        icon: 'weixin',
-        handle: () => handleClick('个人设置'),
-      },
-      {
-        text: '退出登录',
-        icon: 'weixin',
-        theme: 'danger' as const,
-        handle: logout,
-      },
-    ];
 
     /**
      * 在这里获取项目公共数据并缓存
      */
     onMounted(async () => {
-      await fetchUserInfo();
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
       fetchBusinessMap();
@@ -293,7 +258,32 @@ export default defineComponent({
                 </aside>
                 <ReleaseNote />
                 <aside class='header-user'>
-                  <BkLoginUserinfo userinfo={userinfo.value} actionList={actionList} />
+                  <BkLoginUserinfo userinfo={userinfo.value}>
+                    {{
+                      action: () => (
+                        <>
+                          <ActionItem {...{ onClick: () => window.open(userStore.userData?.user_center_url) }}>
+                            {{
+                              icon: () => <span class='hcm-icon bkhcm-icon-user'></span>,
+                              default: () => '个人中心',
+                            }}
+                          </ActionItem>
+                          <ActionItem {...{ onClick: () => window.open(userStore.userData?.auth_center_url) }}>
+                            {{
+                              icon: () => <span class='hcm-icon bkhcm-icon-permission'></span>,
+                              default: () => '权限中心',
+                            }}
+                          </ActionItem>
+                          <ActionItem theme={'danger' as const} {...{ onClick: logout }}>
+                            {{
+                              icon: () => <span class='hcm-icon bkhcm-icon-export'></span>,
+                              default: () => '退出登录',
+                            }}
+                          </ActionItem>
+                        </>
+                      ),
+                    }}
+                  </BkLoginUserinfo>
                 </aside>
               </header>
             ),

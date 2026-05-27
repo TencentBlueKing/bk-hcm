@@ -262,7 +262,11 @@
 
 .bk-navigation-header {
   background-color: #182132 !important;
-  overflow: visible;
+  overflow: visible !important;
+
+  .bk-login-userinfo-panel {
+    z-index: 99;
+  }
 }
 
 .bk-navigation-wrapper .navigation-nav .nav-slider-list {
