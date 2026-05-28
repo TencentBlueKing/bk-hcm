@@ -33,5 +33,14 @@ defineExpose({
 </script>
 
 <template>
-  <user-selector ref="userSelectorRef" v-model="model" :allow-create="false" :multiple="true" v-bind="attrs" />
+  <user-selector
+    ref="userSelectorRef"
+    v-model="model"
+    :display="display"
+    :rules="rules"
+    :collapse-tags="true"
+    :allow-create="false"
+    :multiple="true"
+    v-bind="attrs"
+  />
 </template>
