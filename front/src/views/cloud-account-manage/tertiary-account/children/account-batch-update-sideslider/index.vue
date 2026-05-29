@@ -240,7 +240,7 @@ const headList = computed(() => [
                   <hcm-form-business
                     v-model="row.bk_biz_ids"
                     :ref="(el: any) => (bizRefs[index] = el)"
-                    :rules="[{ validator: (v: any) => Boolean(v?.length), message: '请选择业务' }]"
+                    :rules="[{ validator: (v: any) => Array.isArray(v) ? v.length > 0 : v != null && v !== '', message: '请选择业务' }]"
                     :display="{ on: 'cell' }"
                   />
                 </td>
