@@ -46,9 +46,12 @@ func (a *ApplicationOfUpdateSubAccount) Deliver() (enumor.ApplicationStatus, map
 }
 
 func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (enumor.ApplicationStatus, map[string]interface{}, error) {
-	if err := a.updateCloudSubAccount(); err != nil {
-		return enumor.DeliverError,
-			map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)}, err
+	// 仅当有需要同步到云端的字段时，才调用云上接口更新账号基本信息（Email、PhoneNum、CountryCode、Memo）
+	if a.hasCloudUpdatableFields() {
+		if err := a.updateCloudSubAccount(); err != nil {
+			return enumor.DeliverError,
+				map[string]interface{}{"error": fmt.Sprintf("update cloud sub account failed, err: %v", err)}, err
+		}
 	}
 
 	if err := a.updatePermissionTemplateOnCloud(); err != nil {
@@ -73,9 +76,16 @@ func (a *ApplicationOfUpdateSubAccount) deliverForTCloud() (enumor.ApplicationSt
 	}, nil
 }
 
+// hasCloudUpdatableFields 判断请求中是否包含需要同步到云端的字段（邮箱、手机号、国际区号、备注）。
+func (a *ApplicationOfUpdateSubAccount) hasCloudUpdatableFields() bool {
+	return a.req.Email != nil || a.req.PhoneNum != nil ||
+		a.req.CountryCode != nil || a.req.Memo != nil
+}
+
 func (a *ApplicationOfUpdateSubAccount) updateCloudSubAccount() error {
 	req := &hssubaccount.TCloudUpdateSubAccountReq{
-		AccountID:   a.AccountID(),
+		AccountID: a.AccountID(),
+		// Name 为云 API 必填项，取自 prepare 阶段获取的现有账号名，非用户变更字段。
 		Name:        a.subAccountName,
 		Email:       a.req.Email,
 		PhoneNum:    a.req.PhoneNum,
