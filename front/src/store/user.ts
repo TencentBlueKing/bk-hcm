@@ -22,7 +22,7 @@ export interface ISearchResponse {
   [key: string]: any;
 }
 
-export interface IGetUserData {
+export interface IUserInfo {
   bk_username?: string;
   tenant_id?: string;
   display_name?: string;
@@ -39,7 +39,7 @@ export const useUserStore = defineStore('user', () => {
   const tenantId = ref('');
   const timeZone = ref('');
 
-  const userData = ref<IGetUserData>({});
+  const userData = ref<IUserInfo>({});
 
   const searchLoading = ref(false);
   const userList = ref<IUserItem[]>([]);
@@ -47,7 +47,7 @@ export const useUserStore = defineStore('user', () => {
   // 获取当前用户信息
   const userInfo = async () => {
     const res = await http.get('/api/v1/web/users');
-    const data: IGetUserData = res?.data ?? {};
+    const data: IUserInfo = res?.data ?? {};
     username.value = data.bk_username;
     displayName.value = data.display_name;
     tenantId.value = data.tenant_id;

@@ -131,17 +131,17 @@ export default defineComponent({
       );
     };
 
-    const userinfo = ref({
+    const userinfo = computed(() => ({
       name: userStore.userData?.display_name,
       email: '',
       organization: userStore.userData?.tenant_id,
       timezone: userStore.userData?.time_zone,
-    });
+    }));
 
     /**
      * 在这里获取项目公共数据并缓存
      */
-    onMounted(async () => {
+    onMounted(() => {
       fetchRegions(VendorEnum.TCLOUD);
       fetchRegions(VendorEnum.HUAWEI);
       fetchBusinessMap();
