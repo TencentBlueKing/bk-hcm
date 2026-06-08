@@ -377,18 +377,22 @@ func (a *accountSvc) getAccountsSyncDetail(kt *kit.Kit, accountIDs ...string) (
 	result := make(map[string][]coresync.AccountSyncDetailTable)
 	for _, ids := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleIn("account_id", ids),
-			),
-			Page: core.NewDefaultBasePage(),
+			Filter: tools.ContainersExpression("account_id", ids),
+			Page:   core.NewDefaultBasePage(),
 		}
-		accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(kt, listReq)
-		if err != nil {
-			logs.Errorf("list account sync detail failed, err: %v, req: %v, rid: %s", err, listReq, kt.Rid)
-			return nil, err
-		}
-		for _, detail := range accountSyncDetail.Details {
-			result[detail.AccountID] = append(result[detail.AccountID], detail)
+		for {
+			accountSyncDetail, err := a.client.DataService().Global.AccountSyncDetail.List(kt, listReq)
+			if err != nil {
+				logs.Errorf("list account sync detail failed, err: %v, req: %v, rid: %s", err, listReq, kt.Rid)
+				return nil, err
+			}
+			for _, detail := range accountSyncDetail.Details {
+				result[detail.AccountID] = append(result[detail.AccountID], detail)
+			}
+			if len(accountSyncDetail.Details) < int(listReq.Page.Limit) {
+				break
+			}
+			listReq.Page.Start += uint32(listReq.Page.Limit)
 		}
 	}
 

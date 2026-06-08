@@ -125,10 +125,7 @@ func (mgr *CvmRelManger) getCvmNetworkInterfaceRelMapFromDB(kt *kit.Kit, cvmIDs 
 
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Page:   core.NewDefaultBasePage(),
 	}
 	result := make(map[string]map[string]cvmRelInfo)
 	for {
@@ -149,9 +146,11 @@ func (mgr *CvmRelManger) getCvmNetworkInterfaceRelMapFromDB(kt *kit.Kit, cvmIDs 
 			}
 		}
 
-		if len(respResult.Details) < int(core.DefaultMaxPageLimit) {
+		if len(respResult.Details) < int(listReq.Page.Limit) {
 			break
 		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
 	return result, nil

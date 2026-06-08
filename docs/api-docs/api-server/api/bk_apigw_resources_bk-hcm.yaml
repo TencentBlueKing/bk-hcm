@@ -1136,3 +1136,29 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn: List AWS member account SageMaker reserved capacity UltraServers via AssumeRole
+  /api/v1/account/main_accounts/list:
+    post:
+      operationId: list_main_account
+      description: 主账号列表接口
+      tags:
+        - Account
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: true
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/account/main_accounts/list
+          matchSubpath: false
+          timeout: 30
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: List main accounts
+
