@@ -315,6 +315,7 @@ func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap ma
 			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
 			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.SubnetId)]},
 			CloudImageID:   converter.PtrToVal(one.ImageId),
+			MachineType:    converter.PtrToVal(one.InstanceType),
 			ImageID:        imageID,
 			// 云上不支持该字段
 			Memo:                 nil,

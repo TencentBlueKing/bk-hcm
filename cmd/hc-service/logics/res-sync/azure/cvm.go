@@ -335,15 +335,15 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 
 		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.AzureCvmExtension]{
 			CvmBatchUpdate: dataproto.CvmBatchUpdate{
-				ID:             id,
-				Name:           converter.PtrToVal(one.Name),
-				CloudVpcIDs:    []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
-				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
-				CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
-				SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
-				CloudImageID:   converter.PtrToVal(one.CloudImageID),
-				ImageID:        imageID,
-				// 云上不支持该字段
+				ID:                   id,
+				Name:                 converter.PtrToVal(one.Name),
+				CloudVpcIDs:          []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
+				VpcIDs:               []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
+				CloudSubnetIDs:       cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
+				SubnetIDs:            subnetMap[converter.PtrToVal(one.ID)],
+				CloudImageID:         converter.PtrToVal(one.CloudImageID),
+				MachineType:          string(converter.PtrToVal(one.VMSize)),
+				ImageID:              imageID, // 云上不支持该字段
 				Memo:                 nil,
 				Status:               converter.PtrToVal(one.Status),
 				PrivateIPv4Addresses: cloudMap[converter.PtrToVal(one.ID)].PrivateIPv4Addresses,

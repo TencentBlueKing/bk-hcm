@@ -184,6 +184,7 @@ func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap m
 				SubnetIDs:      []string{subnetID},
 				CloudImageID:   converter.PtrToVal(one.ImageId),
 				ImageID:        imageID,
+				MachineType:    converter.PtrToVal(one.InstanceType),
 				// 备注字段云上没有，仅限hcm内部使用
 				Memo:                 nil,
 				Status:               converter.PtrToVal(one.InstanceState),

@@ -414,6 +414,7 @@ func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageI
 			CloudExpiredTime:     "",
 			CloudImageID:         one.SourceMachineImage,
 			ImageID:              imageID,
+			MachineType:          gcp.GetMachineType(one.MachineType),
 		},
 		Extension: &corecvm.GcpCvmExtension{
 			VpcSelfLinks:             vpcSelfLinks,
