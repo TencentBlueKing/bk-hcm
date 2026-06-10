@@ -86,6 +86,21 @@ const (
 const (
 	LabelProcessName = "process_name"
 	LabelHost        = "host"
+	// LabelBKCCBizID is the HCM business ID label. It avoids using
+	// "bk_biz_id", which is reserved by BK Monitor for the collection biz.
+	LabelBKCCBizID = "bkcc_biz_id"
+	// LabelVendor vendor标签
+	LabelVendor = "vendor"
+	// LabelOperation operation标签
+	LabelOperation = "operation"
+	// LabelState state标签
+	LabelState = "state"
+	// LabelErrType errType标签
+	LabelErrType = "err_type"
+	// LabelFlowName flowName标签
+	LabelFlowName = "flow_name"
+	// LabelActionName actionName标签
+	LabelActionName = "action_name"
 )
 
 // InitMetrics init metrics registerer and http handler
@@ -123,4 +138,10 @@ func InitMetrics(endpoint string) {
 
 	// set up metrics http handler
 	httpHandler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+
+	// 主动注册所有服务公共的 hcm_http_request_* 指标，确保 /metrics 在启动后
+	// 立刻暴露 # HELP/# TYPE 元信息，避免依赖首次 Observe 的惰性注册导致的
+	// metric 短暂缺失。该指标由 pkg/rest/handler.go middleware、api-server
+	// proxy 以及 pkg/adaptor/metric 共同上报，所有服务进程都会暴露。
+	EnsureHTTPRequestMetric()
 }

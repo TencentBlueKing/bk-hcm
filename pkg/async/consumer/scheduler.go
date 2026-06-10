@@ -40,6 +40,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/tools/concurrence"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
@@ -309,13 +310,15 @@ func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) (working bool, err error) 
 
 		// 新增通用流程失败指标：将“取消”视为一种非成功的终止状态。
 		// 在清除“进入时间”之前对其进行计数，以便在“进入时间”可用时，也能观测到相应的成本数据。
+		dims := getShareDataMetricDims(flow.ShareData)
 		if entryTime, exists := sch.flowEntryTimeMap.Load(flow.ID); exists {
 			if t, ok := entryTime.(time.Time); ok {
-				sch.mc.flowExecCostSec.WithLabelValues(string(flow.Name), string(enumor.FlowCancel)).
-					Observe(time.Since(t).Seconds())
+				sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+					string(flow.Name), string(enumor.FlowCancel)).Observe(time.Since(t).Seconds())
 			}
 		}
-		sch.mc.flowFailTotal.WithLabelValues(string(flow.Name), string(enumor.FlowCancel)).Inc()
+		sch.mc.flowFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation, string(flow.Name),
+			string(enumor.FlowCancel), metrics.ErrTypeCancel.String()).Inc()
 
 		// 清空任务树，阻止继续调度
 		sch.DeleteFlowTaskTree(flow.ID)
@@ -764,10 +767,13 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 				}
 				cost := time.Since(t)
 				// existing legacy metric (kept for backward compatibility).
-				sch.mc.flowTypeExecTime.WithLabelValues(string(task.Flow.Name)).Observe(cost.Seconds())
+				sch.mc.flowTypeExecTime.WithLabelValues(string(task.Flow.Name)).Observe(
+					float64(cost) / float64(time.Millisecond),
+				)
 				// new generic flow exec metric (terminal-state cost).
-				sch.mc.flowExecCostSec.WithLabelValues(string(task.Flow.Name), string(enumor.FlowSuccess)).
-					Observe(cost.Seconds())
+				dims := getShareDataMetricDims(task.Flow.ShareData)
+				sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+					string(task.Flow.Name), string(enumor.FlowSuccess)).Observe(cost.Seconds())
 			}
 
 			sch.DeleteFlowTaskTree(task.FlowID)
@@ -782,13 +788,15 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 			}
 
 			// new generic flow fail metric: count + cost on terminal failure.
+			dims := getShareDataMetricDims(task.Flow.ShareData)
 			if entryTime, exists := sch.flowEntryTimeMap.Load(task.FlowID); exists {
 				if t, ok := entryTime.(time.Time); ok {
-					sch.mc.flowExecCostSec.WithLabelValues(string(task.Flow.Name), string(enumor.FlowFailed)).
-						Observe(time.Since(t).Seconds())
+					sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+						string(task.Flow.Name), string(enumor.FlowFailed)).Observe(time.Since(t).Seconds())
 				}
 			}
-			sch.mc.flowFailTotal.WithLabelValues(string(task.Flow.Name), string(enumor.FlowFailed)).Inc()
+			sch.mc.flowFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(enumor.FlowFailed), metrics.ErrTypeHCMError.String()).Inc()
 
 			sch.DeleteFlowTaskTree(task.FlowID)
 			sch.flowTypeRunningNumMap.Inc(string(task.Flow.Name), -1)

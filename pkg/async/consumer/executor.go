@@ -363,6 +363,7 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 		// label is the resulting state of this attempt (success / failed /
 		// cancel); err_type normalizes failure causes for fail_total.
 		cost := time.Since(taskStartTime)
+		dims := getShareDataMetricDims(task.Flow.ShareData)
 		if err != nil {
 			state := enumor.TaskFailed
 			errType := metrics.ClassifyError(err)
@@ -370,10 +371,10 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				state = enumor.TaskCancel
 				errType = metrics.ErrTypeCancel
 			}
-			exec.mc.taskExecCostSec.WithLabelValues(string(task.ActionName), string(state)).
-				Observe(cost.Seconds())
-			exec.mc.taskFailTotal.WithLabelValues(string(task.ActionName), string(state),
-				errType.String()).Inc()
+			exec.mc.taskExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(task.ActionName), string(state)).Observe(cost.Seconds())
+			exec.mc.taskFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(task.ActionName), string(state), errType.String()).Inc()
 			if errf.IsContextCanceled(err) {
 				// 被取消不需要重试
 				return false, result, err
@@ -382,8 +383,8 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				err, times.ConvStdTimeNow())
 		}
 
-		exec.mc.taskExecCostSec.WithLabelValues(string(task.ActionName), string(enumor.TaskSuccess)).
-			Observe(cost.Seconds())
+		exec.mc.taskExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+			string(task.Flow.Name), string(task.ActionName), string(enumor.TaskSuccess)).Observe(cost.Seconds())
 		// 只记录task执行成功的执行时间
 		exec.getTimeWindow(task.ActionName).Push(cost.Seconds())
 

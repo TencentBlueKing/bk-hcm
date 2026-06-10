@@ -40,18 +40,6 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// ShareData keys carrying business context across CLB submit Flows / Tasks.
-//
-// These keys are read by downstream observers (e.g. async framework /
-// task_manage / task_detail metrics, debugging tooling) to enrich emitted
-// observations without changing database schema. Always set them when
-// creating CLB-related custom flows in this package.
-const (
-	ShareDataKeyBkBizID       = "bk_biz_id"
-	ShareDataKeyVendor        = "vendor"
-	ShareDataKeyOperationType = "operation_type"
-)
-
 // NewSubmitFlowShareData builds a ShareData seed for CLB submit Flows. It
 // merges the business context (bk_biz_id, vendor, operation_type) with any
 // flow-specific extras (e.g. lb_id) so all CLB Flows carry a consistent
@@ -60,9 +48,9 @@ func NewSubmitFlowShareData(bkBizID int64, vendor enumor.Vendor, operation Opera
 	extra map[string]string) *tableasync.ShareData {
 
 	data := map[string]string{
-		ShareDataKeyBkBizID:       strconv.FormatInt(bkBizID, 10),
-		ShareDataKeyVendor:        string(vendor),
-		ShareDataKeyOperationType: string(operation),
+		tableasync.ShareDataKeyBkBizID:       strconv.FormatInt(bkBizID, 10),
+		tableasync.ShareDataKeyVendor:        string(vendor),
+		tableasync.ShareDataKeyOperationType: string(operation),
 	}
 	for k, v := range extra {
 		// extras override only when the key is not one of the reserved

@@ -137,7 +137,7 @@ func refreshTaskMgmtState(kt *kit.Kit, c *client.ClientSet, data coretask.Manage
 		return "", err
 	}
 
-	emitTaskProgressMetrics(data, summary.details, finalState)
+	emitTaskProgressMetrics(kt, data, summary.details, finalState)
 	return finalState, nil
 }
 
@@ -223,7 +223,7 @@ func updateTaskMgmtState(kt *kit.Kit, c *client.ClientSet, taskManagementID stri
 // is taken from data.Vendors[0] (CLB managements always carry exactly one
 // vendor). Operation is taken from data.Operations[0] for the management
 // and from each detail.Operation for the details.
-func emitTaskProgressMetrics(data coretask.Management, details []coretask.Detail,
+func emitTaskProgressMetrics(kt *kit.Kit, data coretask.Management, details []coretask.Detail,
 	finalState enumor.TaskManagementState) {
 
 	vendor := ""
@@ -234,9 +234,17 @@ func emitTaskProgressMetrics(data coretask.Management, details []coretask.Detail
 	if len(data.Operations) > 0 {
 		mgmtOp = string(data.Operations[0])
 	}
-	mgmtCost := terminalCost(data.CreatedAt, "")
-	mgmtErrType := classifyManagementState(finalState)
-	metrics.ObserveTaskManagement(data.BkBizID, vendor, mgmtOp, string(finalState), mgmtCost, mgmtErrType)
+	if !validManagementMetricDims(data, vendor, mgmtOp) {
+		logs.Warnf("skip task management progress metric for incomplete dimensions, taskID: %s, bkBizID: %d, "+
+			"vendor: %s, operation: %s, createdAt: %s, rid: %s", data.ID, data.BkBizID, vendor, mgmtOp,
+			data.CreatedAt, kt.Rid)
+	} else if mgmtCost, ok := terminalCost(data.CreatedAt, ""); !ok {
+		logs.Warnf("skip task management progress metric for invalid cost, taskID: %s, createdAt: %s, "+
+			"rid: %s", data.ID, data.CreatedAt, kt.Rid)
+	} else {
+		mgmtErrType := classifyManagementState(finalState)
+		metrics.ObserveTaskManagement(data.BkBizID, vendor, mgmtOp, string(finalState), mgmtCost, mgmtErrType)
+	}
 
 	for _, detail := range details {
 		// detail rows whose state is not a recognized terminal value are
@@ -246,31 +254,53 @@ func emitTaskProgressMetrics(data coretask.Management, details []coretask.Detail
 		default:
 			continue
 		}
-		cost := terminalCost(detail.CreatedAt, detail.UpdatedAt)
+		if !validDetailMetricDims(detail) {
+			logs.Warnf("skip task detail progress metric for incomplete dimensions, taskID: %s, detailID: %s, "+
+				"bkBizID: %d, operation: %s, createdAt: %s, updatedAt: %s, rid: %s", data.ID, detail.ID,
+				detail.BkBizID, detail.Operation, detail.CreatedAt, detail.UpdatedAt, kt.Rid)
+			continue
+		}
+		cost, ok := terminalCost(detail.CreatedAt, detail.UpdatedAt)
+		if !ok {
+			logs.Warnf("skip task detail progress metric for invalid cost, taskID: %s, detailID: %s, "+
+				"createdAt: %s, updatedAt: %s, rid: %s", data.ID, detail.ID, detail.CreatedAt, detail.UpdatedAt,
+				kt.Rid)
+			continue
+		}
 		errType := classifyDetailState(detail.State, detail.Reason)
 		metrics.ObserveTaskDetail(detail.BkBizID, vendor, string(detail.Operation),
 			string(detail.State), cost, errType)
 	}
 }
 
+func validManagementMetricDims(data coretask.Management, vendor, operation string) bool {
+	return data.BkBizID > 0 && vendor != "" && operation != "" && data.CreatedAt != ""
+}
+
+func validDetailMetricDims(detail coretask.Detail) bool {
+	return detail.BkBizID > 0 && detail.Operation != "" && detail.CreatedAt != "" && detail.UpdatedAt != ""
+}
+
 // terminalCost returns the duration between two RFC3339 timestamp strings.
-// If `end` is empty, time.Now() is used. Parse failures result in a zero
-// duration (the histogram observation is still safely emitted).
-func terminalCost(start, end string) time.Duration {
+// If `end` is empty, time.Now() is used. Parse failures return ok=false so
+// callers can skip invalid histogram observations.
+func terminalCost(start, end string) (cost time.Duration, ok bool) {
 	startT, err := time.Parse(time.RFC3339, start)
 	if err != nil {
-		return 0
+		return 0, false
 	}
 	endT := time.Now()
 	if end != "" {
-		if t, err := time.Parse(time.RFC3339, end); err == nil {
-			endT = t
+		t, err := time.Parse(time.RFC3339, end)
+		if err != nil {
+			return 0, false
 		}
+		endT = t
 	}
 	if !endT.After(startT) {
-		return 0
+		return 0, false
 	}
-	return endT.Sub(startT)
+	return endT.Sub(startT), true
 }
 
 // classifyManagementState maps a task management terminal state into a

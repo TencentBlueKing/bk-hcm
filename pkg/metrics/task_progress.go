@@ -30,13 +30,14 @@ import (
 // Task progress metrics: hcm_async_task_manage_* and hcm_async_task_detail_*.
 //
 // First-iteration scope (per design.md "Resolved Clarifications"):
-//   * only end-state cost and failure counters are emitted;
-//   * status Gauge / periodic aggregation are deferred;
-//   * task_detail cost uses (updated_at - created_at) by callers.
+//   - only end-state cost and failure counters are emitted;
+//   - status Gauge / periodic aggregation are deferred;
+//   - task_detail cost uses (updated_at - created_at) by callers.
 //
-// Label cardinality is intentionally bounded: bk_biz_id (subscribed business
-// spaces), vendor (~5 enum values), operation (enumor.TaskOperation enum,
-// ~10 values), state (terminal enum, ~5 values), err_type (closed enum).
+// Label cardinality is intentionally bounded: bkcc_biz_id (subscribed
+// business spaces), vendor (~5 enum values), operation
+// (enumor.TaskOperation enum, ~10 values), state (terminal enum, ~5 values),
+// err_type (closed enum).
 // task_action_id is intentionally NOT used as a label because it is a UUID
 // allocated per task instance and would explode label cardinality; the
 // `operation` label provides the equivalent type-level grouping.
@@ -55,8 +56,8 @@ var (
 func initTaskProgressMetric() {
 	taskProgressOnce.Do(func() {
 		labels := prometheus.Labels{}
-		base := []string{"bk_biz_id", "vendor", "operation", "state"}
-		failLabels := []string{"bk_biz_id", "vendor", "operation", "state", "err_type"}
+		base := []string{LabelBKCCBizID, LabelVendor, LabelOperation, LabelState}
+		failLabels := []string{LabelBKCCBizID, LabelVendor, LabelOperation, LabelState, LabelErrType}
 		costBuckets := []float64{1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200}
 
 		m := &taskProgressMetric{}
@@ -122,19 +123,19 @@ func ObserveTaskManagement(bkBizID int64, vendor, operation, state string, cost 
 	state = nonEmpty(state)
 
 	labels := prometheus.Labels{
-		"bk_biz_id": bizLabel,
-		"vendor":    vendor,
-		"operation": operation,
-		"state":     state,
+		LabelBKCCBizID: bizLabel,
+		"vendor":       vendor,
+		"operation":    operation,
+		"state":        state,
 	}
 	taskProgress.manageCost.With(labels).Observe(cost.Seconds())
 	if errType != ErrTypeOK {
 		failLabels := prometheus.Labels{
-			"bk_biz_id": bizLabel,
-			"vendor":    vendor,
-			"operation": operation,
-			"state":     state,
-			"err_type":  errType.String(),
+			LabelBKCCBizID: bizLabel,
+			"vendor":       vendor,
+			"operation":    operation,
+			"state":        state,
+			"err_type":     errType.String(),
 		}
 		taskProgress.manageFail.With(failLabels).Inc()
 	}
@@ -152,19 +153,19 @@ func ObserveTaskDetail(bkBizID int64, vendor, operation, state string, cost time
 	state = nonEmpty(state)
 
 	labels := prometheus.Labels{
-		"bk_biz_id": bizLabel,
-		"vendor":    vendor,
-		"operation": operation,
-		"state":     state,
+		LabelBKCCBizID: bizLabel,
+		"vendor":       vendor,
+		"operation":    operation,
+		"state":        state,
 	}
 	taskProgress.detailCost.With(labels).Observe(cost.Seconds())
 	if errType != ErrTypeOK {
 		failLabels := prometheus.Labels{
-			"bk_biz_id": bizLabel,
-			"vendor":    vendor,
-			"operation": operation,
-			"state":     state,
-			"err_type":  errType.String(),
+			LabelBKCCBizID: bizLabel,
+			"vendor":       vendor,
+			"operation":    operation,
+			"state":        state,
+			"err_type":     errType.String(),
 		}
 		taskProgress.detailFail.With(failLabels).Inc()
 	}

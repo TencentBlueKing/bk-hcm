@@ -20,21 +20,15 @@
 package consumer
 
 import (
+	"strconv"
+
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// initMetric registers the async consumer's metrics. Existing metrics
-// (taskInitQueueSize / flowTypeRunningNum / flowTypeExecTime) are kept
-// unchanged for backward compatibility. New flow_exec_* / task_exec_* /
-// *_fail_total metrics are added per the fine-grained monitoring change.
-//
-// Generic flow/task metrics intentionally only carry framework-level
-// dimensions (flow_name / action_name / err_type) and MUST NOT carry
-// business-context labels (bk_biz_id / vendor / operation_type). Business
-// context is observed separately by the task_manage / task_detail metrics
-// in the higher-level task pipeline.
+// initMetric registers the async consumer's metrics.
 func initMetric(register prometheus.Registerer) *metric {
 	m := new(metric)
 	labels := prometheus.Labels{}
@@ -90,6 +84,9 @@ func initLegacyMetrics(m *metric, register prometheus.Registerer, labels prometh
 
 func initExecutionMetrics(m *metric, register prometheus.Registerer, labels prometheus.Labels) {
 	// New: flow execution cost / failure metrics.
+	flowLabels := []string{metrics.LabelBKCCBizID, metrics.LabelVendor, metrics.LabelOperation, metrics.LabelFlowName,
+		metrics.LabelState}
+	flowFailLabels := append(flowLabels, metrics.LabelErrType)
 	m.flowExecCostSec = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace:   metrics.Namespace,
@@ -99,7 +96,7 @@ func initExecutionMetrics(m *metric, register prometheus.Registerer, labels prom
 			ConstLabels: labels,
 			Buckets:     []float64{0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300, 600, 1800, 3600},
 		},
-		[]string{"flow_name", "state"},
+		flowLabels,
 	)
 	register.MustRegister(m.flowExecCostSec)
 
@@ -108,17 +105,18 @@ func initExecutionMetrics(m *metric, register prometheus.Registerer, labels prom
 			Namespace: metrics.Namespace,
 			Subsystem: metrics.AsyncSubSys,
 			Name:      "flow_fail_total",
-			Help: "Total count of flows ending in non-success terminal state, by flow_name and " +
-				"state. err_type is intentionally omitted because at flow level we only know " +
-				"`some task failed` without re-walking the tree; precise error attribution is " +
-				"available via task_fail_total{action_name,state,err_type}.",
+			Help: "Total count of flows ending in non-success terminal state, by business dimensions, flow_name, " +
+				"state and err_type.",
 			ConstLabels: labels,
 		},
-		[]string{"flow_name", "state"},
+		flowFailLabels,
 	)
 	register.MustRegister(m.flowFailTotal)
 
 	// New: task action execution cost / failure metrics.
+	taskLabels := []string{metrics.LabelBKCCBizID, metrics.LabelVendor, metrics.LabelOperation, metrics.LabelFlowName,
+		metrics.LabelActionName, metrics.LabelState}
+	taskFailLabels := append(taskLabels, metrics.LabelErrType)
 	m.taskExecCostSec = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace:   metrics.Namespace,
@@ -128,7 +126,7 @@ func initExecutionMetrics(m *metric, register prometheus.Registerer, labels prom
 			ConstLabels: labels,
 			Buckets:     []float64{0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 300, 600},
 		},
-		[]string{"action_name", "state"},
+		taskLabels,
 	)
 	register.MustRegister(m.taskExecCostSec)
 
@@ -140,7 +138,7 @@ func initExecutionMetrics(m *metric, register prometheus.Registerer, labels prom
 			Help:        "Total count of task action attempts ending in non-success state, by err_type.",
 			ConstLabels: labels,
 		},
-		[]string{"action_name", "state", "err_type"},
+		taskFailLabels,
 	)
 	register.MustRegister(m.taskFailTotal)
 }
@@ -157,4 +155,41 @@ type metric struct {
 	// Task level: per-attempt cost & failure (act.Run wall time).
 	taskExecCostSec *prometheus.HistogramVec
 	taskFailTotal   *prometheus.CounterVec
+}
+
+type shareDataMetricDims struct {
+	bkBizID      int64
+	bkBizIDValid bool
+	vendor       string
+	operation    string
+}
+
+func (dims shareDataMetricDims) bkBizIDLabel() string {
+	if !dims.bkBizIDValid {
+		return "unknown"
+	}
+	return strconv.FormatInt(dims.bkBizID, 10)
+}
+
+func getShareDataMetricDims(shareData *tableasync.ShareData) shareDataMetricDims {
+	dims := shareDataMetricDims{
+		vendor:    "unknown",
+		operation: "unknown",
+	}
+	if shareData == nil {
+		return dims
+	}
+	if bkBizIDStr, ok := shareData.Get(tableasync.ShareDataKeyBkBizID); ok && bkBizIDStr != "" {
+		if bkBizID, err := strconv.ParseInt(bkBizIDStr, 10, 64); err == nil {
+			dims.bkBizID = bkBizID
+			dims.bkBizIDValid = true
+		}
+	}
+	if vendor, ok := shareData.Get(tableasync.ShareDataKeyVendor); ok && vendor != "" {
+		dims.vendor = vendor
+	}
+	if operation, ok := shareData.Get(tableasync.ShareDataKeyOperationType); ok && operation != "" {
+		dims.operation = operation
+	}
+	return dims
 }

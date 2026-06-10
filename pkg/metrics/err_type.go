@@ -37,7 +37,7 @@ type ErrType string
 // New values MUST be added here intentionally; arbitrary error texts must
 // never be passed as label values.
 const (
-	ErrTypeOK           ErrType = ""
+	ErrTypeOK           ErrType = "ok"
 	ErrTypeTimeout      ErrType = "timeout"
 	ErrTypeNetwork      ErrType = "network"
 	ErrTypeCloudError   ErrType = "cloud_error"
@@ -50,9 +50,6 @@ const (
 
 // String returns the metric label value for the err_type.
 func (e ErrType) String() string {
-	if e == ErrTypeOK {
-		return string(ErrTypeUnknown)
-	}
 	return string(e)
 }
 
