@@ -76,22 +76,27 @@ func SyncCvmToCmdb(kt *kit.Kit, accountID string, bkBizID int64) error {
 			result.Details[index].BkBizID = bkBizID
 		}
 
+		models := converter.SliceToPtr(result.Details)
+
+		// AssignResourceToBiz 同样是"分配主机到业务"链路（创建语义）：推导并下发 operator
+		// （购买机取 creator、云上同步增量机取二级账号负责人）。
+		operators, err := buildCmdbOperators(svc, kt, models)
+		if err != nil {
+			logs.Errorf("build cmdb operators failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
 		switch vendor {
 		case enumor.TCloud:
-			err = upsertCmdbHosts[corecvm.TCloudCvmExtension](svc, kt, enumor.TCloud,
-				converter.SliceToPtr(result.Details))
+			err = upsertCmdbHosts[corecvm.TCloudCvmExtension](svc, kt, enumor.TCloud, models, operators)
 		case enumor.Aws:
-			err = upsertCmdbHosts[corecvm.AwsCvmExtension](svc, kt, enumor.Aws,
-				converter.SliceToPtr(result.Details))
+			err = upsertCmdbHosts[corecvm.AwsCvmExtension](svc, kt, enumor.Aws, models, operators)
 		case enumor.HuaWei:
-			err = upsertCmdbHosts[corecvm.HuaWeiCvmExtension](svc, kt, enumor.HuaWei,
-				converter.SliceToPtr(result.Details))
+			err = upsertCmdbHosts[corecvm.HuaWeiCvmExtension](svc, kt, enumor.HuaWei, models, operators)
 		case enumor.Gcp:
-			err = upsertCmdbHosts[corecvm.GcpCvmExtension](svc, kt, enumor.Gcp,
-				converter.SliceToPtr(result.Details))
+			err = upsertCmdbHosts[corecvm.GcpCvmExtension](svc, kt, enumor.Gcp, models, operators)
 		case enumor.Azure:
-			err = upsertCmdbHosts[corecvm.AzureCvmExtension](svc, kt, enumor.Azure,
-				converter.SliceToPtr(result.Details))
+			err = upsertCmdbHosts[corecvm.AzureCvmExtension](svc, kt, enumor.Azure, models, operators)
 		}
 		if err != nil {
 			logs.Errorf("upsertCmdbHosts failed, err: %v, rid; %s", err, kt.Rid)
@@ -104,8 +109,8 @@ func SyncCvmToCmdb(kt *kit.Kit, accountID string, bkBizID int64) error {
 		}
 	}
 
-	logs.Infof("sync cmdb to cmdb success, account: %s, bkBizID: %d, cvmCount: %d, cost: %v", accountID,
-		bkBizID, totalCount, time.Since(start))
+	logs.Infof("sync cvm to cmdb success, account: %s, bkBizID: %d, cvmCount: %d, cost: %v, rid: %s",
+		accountID, bkBizID, totalCount, time.Since(start), kt.Rid)
 
 	return nil
 }

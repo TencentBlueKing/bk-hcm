@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -66,7 +67,6 @@ func (svc *cvmSvc) BatchUpdateCvm(cts *rest.Contexts) (interface{}, error) {
 }
 
 func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor enumor.Vendor) (interface{}, error) {
-
 	req := new(protocloud.CvmBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -82,6 +82,11 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 	}
 	// TODO list extension and cloud id
 	existCvmMap, err := listCvmInfo(cts, svc, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	gpuMachineTypes, err := svc.buildGPUMachineTypes(cts.Kit, vendor)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +108,12 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				update.Extension = tabletype.JsonField(merge)
 			}
 
-			if err := svc.dao.Cvm().UpdateByIDWithTx(cts.Kit, txn, one.ID, update); err != nil {
-				logs.Errorf("update cvm by id failed, err: %v, id: %s, rid: %s", err, one.ID, cts.Kit.Rid)
-				return nil, fmt.Errorf("update cvm failed, err: %v", err)
+			if update.MachineType != "" {
+				update.IsGPU = isGPUMachine(vendor, update.MachineType, gpuMachineTypes)
+				logs.Infof("recalc cvm is_gpu, id: %s, cloudID: %s, machineType: %s, isGPU: %v, rid: %s",
+					one.ID, existCvm.CloudID, update.MachineType, update.IsGPU, cts.Kit.Rid)
+			} else {
+				update.IsGPU = existCvm.IsGPU
 			}
 
 			if update.BkCloudID == nil {
@@ -129,9 +137,10 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// upsert cmdb cloud hosts
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		// 修改语义（云上同步更新）：不下发 operator，CMDB 侧 operator 以已有值为准，传 nil。
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, nil)
 		if err != nil {
-			logs.Errorf("upsert cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
 		}
 		return nil, nil
@@ -260,9 +269,22 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 		return nil, fmt.Errorf("list cvm failed, err: %v", err)
 	}
 
-	err = upsertBaseCmdbHosts(svc, cts.Kit, converter.SliceToPtr(listResp.Details))
+	models := converter.SliceToPtr(listResp.Details)
+
+	// 仅"分配主机到业务"（创建语义，上层置 SetOperator）才复用 buildCmdbOperators 推导并下发 operator；
+	// res-sync 等修改语义场景 SetOperator 为 false，传 nil 不改动 CMDB 侧 operator。
+	var operators map[string]*string
+	if req.SetOperator {
+		operators, err = buildCmdbOperators(svc, cts.Kit, models)
+		if err != nil {
+			logs.Errorf("[%s] build cmdb operators failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
+			return nil, nil
+		}
+	}
+
+	err = upsertBaseCmdbHosts(svc, cts.Kit, models, operators)
 	if err != nil {
-		logs.Errorf("upsert base cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("[%s] upsert base cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 		return nil, nil
 	}
 

@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
@@ -70,12 +71,18 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 			BkCloudInstID:     host.CloudID,
 			BkCloudHostStatus: status,
 			BkCloudID:         host.BkCloudID,
+			BkCloudRegion:     host.Region,
 			BkHostInnerIP:     strings.Join(host.PrivateIPv4Addresses, ","),
 			BkHostOuterIP:     strings.Join(host.PublicIPv4Addresses, ","),
 			BkHostInnerIPv6:   strings.Join(host.PrivateIPv6Addresses, ","),
 			BkHostOuterIPv6:   strings.Join(host.PublicIPv6Addresses, ","),
 			BkHostName:        host.Name,
 			BkComment:         host.Memo,
+			IsGPU:             host.IsGPU,
+			OnShelfDate:       onShelfDate(host.CloudCreatedTime, host.CloudLaunchedTime),
+			// Operator 仅对首次新增到 cmdb 的主机下发（由上层 buildCmdbOperators 推导后放入 req.Operators）。
+			// 未命中 map 时取到的是 nil 指针，配合 omitempty 不会下发该字段，从而保留 cmdb 侧已有的 operator。
+			Operator: req.Operators[host.ID],
 		})
 	}
 
@@ -83,12 +90,29 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
+	logs.Infof("add cmdb cloud host to biz, vendor: %s, bizID: %d, hostCount: %d, operatorCount: %d, rid: %s",
+		req.Vendor, req.BizID, len(hosts), len(req.Operators), kt.Rid)
 	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
+		logs.Errorf("add cmdb cloud host to biz failed, err: %v, vendor: %s, bizID: %d, rid: %s",
+			err, req.Vendor, req.BizID, kt.Rid)
 		return nil, err
 	}
 
 	return result.IDs, nil
+}
+
+// onShelfDate 返回用作 cmdb on_shelf_date 的主机上架时间。
+//
+// 优先取 cloud_created_time（tcloud/azure/gcp/huawei 同步时均会填充）。AWS 云 API 不返回实例创建时间，
+// 同步时 cloud_created_time 恒为空、只填入 LaunchTime 到 cloud_launched_time，若不兜底则所有 AWS 主机的
+// on_shelf_date 都会为空。因此当 cloud_created_time 为空时回退到 cloud_launched_time——实际只影响 AWS，
+// 同时对将来其他厂商缺失创建时间的情况也更健壮。
+func onShelfDate(cloudCreatedTime, cloudLaunchedTime string) string {
+	if cloudCreatedTime != "" {
+		return cloudCreatedTime
+	}
+	return cloudLaunchedTime
 }
 
 // AddBaseCloudHostToBiz add cmdb cloud host basic info to biz, update cmdb host if exists.
@@ -119,6 +143,11 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 			BkHostOuterIPv6:   strings.Join(host.PublicIPv6Addresses, ","),
 			BkHostName:        host.Name,
 			BkComment:         host.Memo,
+			IsGPU:             host.IsGPU,
+			OnShelfDate:       onShelfDate(host.CloudCreatedTime, host.CloudLaunchedTime),
+			// Operator 仅对首次新增到 cmdb 的主机下发（由上层 buildCmdbOperators 推导后放入 req.Operators）。
+			// 未命中 map 时取到的是 nil 指针，配合 omitempty 不会下发该字段，从而保留 cmdb 侧已有的 operator。
+			Operator: req.Operators[host.ID],
 		})
 	}
 
@@ -126,8 +155,12 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
+	logs.Infof("add cmdb base cloud host to biz, bizID: %d, hostCount: %d, operatorCount: %d, rid: %s",
+		req.BizID, len(hosts), len(req.Operators), kt.Rid)
 	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
+		logs.Errorf("add cmdb base cloud host to biz failed, err: %v, bizID: %d, rid: %s",
+			err, req.BizID, kt.Rid)
 		return nil, err
 	}
 

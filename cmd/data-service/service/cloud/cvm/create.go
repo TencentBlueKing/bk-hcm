@@ -74,6 +74,11 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	gpuMachineTypes, err := svc.buildGPUMachineTypes(cts.Kit, vendor)
+	if err != nil {
+		return nil, err
+	}
+
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]*tablecvm.Table, 0, len(req.Cvms))
 		for _, one := range req.Cvms {
@@ -81,6 +86,10 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
+
+			isGPU := isGPUMachine(vendor, one.MachineType, gpuMachineTypes)
+			logs.Infof("judge cvm is gpu machine, cloudID: %s, machineType: %s, isGPU: %v, rid: %s",
+				one.CloudID, one.MachineType, isGPU, cts.Kit.Rid)
 
 			models = append(models, &tablecvm.Table{
 				CloudID:              one.CloudID,
@@ -107,6 +116,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				PublicIPv4Addresses:  one.PublicIPv4Addresses,
 				PublicIPv6Addresses:  one.PublicIPv6Addresses,
 				MachineType:          one.MachineType,
+				IsGPU:                isGPU,
 				Extension:            tabletype.JsonField(extension),
 				CloudCreatedTime:     one.CloudCreatedTime,
 				CloudLaunchedTime:    one.CloudLaunchedTime,
@@ -123,7 +133,8 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 
 		// create cmdb cloud hosts
 		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		// 创建主机本身不写 operator，operator 仅在"分配业务"链路下发，故传 nil。
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, nil)
 		if err != nil {
 			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
