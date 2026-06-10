@@ -94,6 +94,20 @@ func (c *SageMakerClient) GetTrainingJob(kt *kit.Kit,
 	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/training_jobs/get")
 }
 
+// ListHyperParameterTuningJobs lists hyperparameter tuning jobs via AssumeRole cross-account access.
+func (c *SageMakerClient) ListHyperParameterTuningJobs(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq) (stdjson.RawMessage, error) {
+
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/hyper_parameter_tuning_jobs/list")
+}
+
+// GetHyperParameterTuningJob gets a hyperparameter tuning job via AssumeRole cross-account access.
+func (c *SageMakerClient) GetHyperParameterTuningJob(kt *kit.Kit,
+	request *proto.AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq) (stdjson.RawMessage, error) {
+
+	return requestRaw(c.client, kt, request, "/assume_role/sagemaker/hyper_parameter_tuning_jobs/get")
+}
+
 // ListProcessingJobs lists processing jobs via AssumeRole cross-account access.
 func (c *SageMakerClient) ListProcessingJobs(kt *kit.Kit,
 	request *proto.AwsAssumeRoleSageMakerListProcessingJobsReq) (stdjson.RawMessage, error) {

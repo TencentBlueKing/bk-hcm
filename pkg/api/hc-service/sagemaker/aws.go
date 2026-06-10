@@ -188,6 +188,37 @@ func (req *AwsAssumeRoleSageMakerDescribeTrainingJobReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq lists hyperparameter tuning jobs via AssumeRole.
+type AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	CreationTimeAfter             *time.Time `json:"creation_time_after,omitempty"`
+	CreationTimeBefore            *time.Time `json:"creation_time_before,omitempty"`
+	LastModifiedTimeAfter         *time.Time `json:"last_modified_time_after,omitempty"`
+	LastModifiedTimeBefore        *time.Time `json:"last_modified_time_before,omitempty"`
+	MaxResults                    *int32     `json:"max_results,omitempty" validate:"omitempty,min=1"`
+	NameContains                  string     `json:"name_contains,omitempty"`
+	NextToken                     string     `json:"next_token,omitempty"`
+	SortBy                        string     `json:"sort_by,omitempty"`
+	SortOrder                     string     `json:"sort_order,omitempty"`
+	StatusEquals                  string     `json:"status_equals,omitempty"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq describes a hyperparameter tuning job via AssumeRole.
+type AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq struct {
+	AwsAssumeRoleSageMakerBaseReq `json:",inline"`
+	HyperParameterTuningJobName   string `json:"hyper_parameter_tuning_job_name" validate:"required"`
+}
+
+// Validate validates the request.
+func (req *AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // AwsAssumeRoleSageMakerListProcessingJobsReq lists processing jobs via AssumeRole.
 type AwsAssumeRoleSageMakerListProcessingJobsReq struct {
 	AwsAssumeRoleSageMakerBaseReq `json:",inline"`

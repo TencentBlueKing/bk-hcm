@@ -256,6 +256,66 @@ func (s *sageMakerSvc) GetTrainingJobForAws(cts *rest.Contexts) (interface{}, er
 	return result, nil
 }
 
+// ListHyperParameterTuningJobsForAws handles the hc-service SageMaker assume-role passthrough request.
+func (s *sageMakerSvc) ListHyperParameterTuningJobsForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.ListHyperParameterTuningJobs(cts.Kit, &adaptorsm.AwsListHyperParameterTuningJobsOption{
+		Region:                 req.Region,
+		CreationTimeAfter:      req.CreationTimeAfter,
+		CreationTimeBefore:     req.CreationTimeBefore,
+		LastModifiedTimeAfter:  req.LastModifiedTimeAfter,
+		LastModifiedTimeBefore: req.LastModifiedTimeBefore,
+		MaxResults:             req.MaxResults,
+		NameContains:           req.NameContains,
+		NextToken:              converter.StrNilPtr(req.NextToken),
+		SortBy:                 req.SortBy,
+		SortOrder:              req.SortOrder,
+		StatusEquals:           req.StatusEquals,
+	})
+	if err != nil {
+		logs.Errorf("list aws assume role sagemaker hyperparameter tuning jobs failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetHyperParameterTuningJobForAws handles the hc-service SageMaker assume-role passthrough request.
+func (s *sageMakerSvc) GetHyperParameterTuningJobForAws(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	client, err := s.assumeRoleClient(cts.Kit, req)
+	if err != nil {
+		return nil, err
+	}
+	result, err := client.DescribeHyperParameterTuningJob(cts.Kit,
+		&adaptorsm.AwsDescribeHyperParameterTuningJobOption{
+			Region:                      req.Region,
+			HyperParameterTuningJobName: req.HyperParameterTuningJobName,
+		})
+	if err != nil {
+		logs.Errorf("describe aws assume role sagemaker hyperparameter tuning job failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
 // ListProcessingJobsForAws handles the hc-service SageMaker assume-role passthrough request.
 func (s *sageMakerSvc) ListProcessingJobsForAws(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListProcessingJobsReq)
