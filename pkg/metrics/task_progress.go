@@ -124,18 +124,18 @@ func ObserveTaskManagement(bkBizID int64, vendor, operation, state string, cost 
 
 	labels := prometheus.Labels{
 		LabelBKCCBizID: bizLabel,
-		"vendor":       vendor,
-		"operation":    operation,
-		"state":        state,
+		LabelVendor:    vendor,
+		LabelOperation: operation,
+		LabelState:     state,
 	}
 	taskProgress.manageCost.With(labels).Observe(cost.Seconds())
 	if errType != ErrTypeOK {
 		failLabels := prometheus.Labels{
 			LabelBKCCBizID: bizLabel,
-			"vendor":       vendor,
-			"operation":    operation,
-			"state":        state,
-			"err_type":     errType.String(),
+			LabelVendor:    vendor,
+			LabelOperation: operation,
+			LabelState:     state,
+			LabelErrType:   errType.String(),
 		}
 		taskProgress.manageFail.With(failLabels).Inc()
 	}
@@ -154,18 +154,18 @@ func ObserveTaskDetail(bkBizID int64, vendor, operation, state string, cost time
 
 	labels := prometheus.Labels{
 		LabelBKCCBizID: bizLabel,
-		"vendor":       vendor,
-		"operation":    operation,
-		"state":        state,
+		LabelVendor:    vendor,
+		LabelOperation: operation,
+		LabelState:     state,
 	}
 	taskProgress.detailCost.With(labels).Observe(cost.Seconds())
 	if errType != ErrTypeOK {
 		failLabels := prometheus.Labels{
 			LabelBKCCBizID: bizLabel,
-			"vendor":       vendor,
-			"operation":    operation,
-			"state":        state,
-			"err_type":     errType.String(),
+			LabelVendor:    vendor,
+			LabelOperation: operation,
+			LabelState:     state,
+			LabelErrType:   errType.String(),
 		}
 		taskProgress.detailFail.With(failLabels).Inc()
 	}
