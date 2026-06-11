@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -95,11 +96,11 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		models := make([]*tablecvm.Table, 0, len(req.Cvms))
 
 		for _, one := range req.Cvms {
-			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, cts.Kit.User)
 			existCvm, exist := existCvmMap[one.ID]
 			if !exist {
 				continue
 			}
+			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, existCvm, cts.Kit.User)
 			if one.Extension != nil {
 				merge, err := json.UpdateMerge(one.Extension, string(existCvm.Extension))
 				if err != nil {
@@ -142,8 +143,8 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// upsert cmdb cloud hosts
-		// 修改语义（云上同步更新）：不下发 operator，CMDB 侧 operator 以已有值为准，传 nil。
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, nil)
+		// 修改语义（云上同步更新）：不下发 operator，CMDB 侧 operator 以已有值为准，传空的map
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, make(map[string]*string))
 		if err != nil {
 			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
@@ -156,7 +157,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 	return nil, nil
 }
 
-func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *tablecvm.Table {
+func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, oldCvm tablecvm.Table, user string) *tablecvm.Table {
 	update := &tablecvm.Table{
 		ID:                   one.ID,
 		Name:                 one.Name,
@@ -178,6 +179,9 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		Reviser:              user,
 		VpcIDs:               one.VpcIDs,
 		SubnetIDs:            one.SubnetIDs,
+		// CloudCreatedTime 和 Zone不变，可以从已有数据中获取
+		CloudCreatedTime: oldCvm.CloudCreatedTime,
+		Zone:             oldCvm.Zone,
 		// 升降配可能会修改机型
 		MachineType: one.MachineType,
 		// 重装可能修改操作系统名称
@@ -187,6 +191,24 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		update.BkCloudID = one.BkCloudID
 	}
 	return update
+}
+
+// listCvmByIDsBatched fetches CVMs matching the given IDs in batches to avoid query size limits.
+func listCvmByIDsBatched(cts *rest.Contexts, svc *cvmSvc, ids []string) ([]tablecvm.Table, error) {
+	result := make([]tablecvm.Table, 0, len(ids))
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		opt := &types.ListOption{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := svc.dao.Cvm().List(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		}
+		result = append(result, list.Details...)
+	}
+	return result, nil
 }
 
 func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {
@@ -265,26 +287,24 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 	}
 
 	// upsert cmdb cloud hosts
-	opt := &types.ListOption{Filter: tools.ContainersExpression("id", ids), Page: core.NewDefaultBasePage()}
-	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
+	allDetails, err := listCvmByIDsBatched(cts, svc, ids)
 	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		return nil, err
 	}
 
 	// 仅"分配主机到业务"（创建语义，上层置 SetOperator为true）通过 buildCmdbOperators 推导并传递 operator；
 	// res-sync 等修改语义场景 SetOperator 为 false，传 nil 不改动 CMDB 侧 operator。
-	models := converter.SliceToPtr(listResp.Details)
-	var operators map[string]*string
+	models := converter.SliceToPtr(allDetails)
+	var cvmIDOperatorMap map[string]*string
 	if req.SetOperator {
-		operators, err = buildCmdbOperators(svc, cts.Kit, models)
+		cvmIDOperatorMap, err = buildCvmIDOperatorMap(svc, cts.Kit, models)
 		if err != nil {
 			logs.Errorf("[%s] build cmdb operators failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
 		}
 	}
 
-	err = upsertBaseCmdbHosts(svc, cts.Kit, models, operators)
+	err = upsertBaseCmdbHosts(svc, cts.Kit, models, cvmIDOperatorMap)
 	if err != nil {
 		logs.Errorf("[%s] upsert base cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 		return nil, nil

@@ -96,8 +96,8 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// create cmdb cloud hosts
-		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。创建主机本身不写 operator，operator 仅在"分配业务"链路下发，故传 nil。
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, nil)
+		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。创建主机本身不写 operator，operator 仅在"分配业务"链路下发，故传空的map
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, make(map[string]*string))
 		if err != nil {
 			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
@@ -119,8 +119,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 }
 
 func buildCreateCvmTableModel[T corecvm.Extension](one protocloud.CvmBatchCreate[T], vendor enumor.Vendor,
-	gpuMachineTypes map[string]struct{}, extension string, user string,
-) *tablecvm.Table {
+	gpuMachineTypes map[string]struct{}, extension string, user string) *tablecvm.Table {
 
 	return &tablecvm.Table{
 		CloudID:              one.CloudID,

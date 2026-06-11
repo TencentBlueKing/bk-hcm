@@ -255,9 +255,7 @@ type Host struct {
 	BkHostOuterIP   string  `json:"bk_host_outerip"`
 	BkHostInnerIPv6 string  `json:"bk_host_innerip_v6"`
 	BkHostOuterIPv6 string  `json:"bk_host_outerip_v6"`
-	IsGPU           bool    `json:"is_gpu,omitempty"`
 	Operator        string  `json:"operator"`
-	OnShelfDate     string  `json:"on_shelf_date,omitempty"`
 	BkBakOperator   string  `json:"bk_bak_operator"`
 	BkHostName      string  `json:"bk_host_name"`
 	BkComment       *string `json:"bk_comment,omitempty"`

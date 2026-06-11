@@ -67,7 +67,7 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		if !exists {
 			status = "1"
 		}
-		onShelfDate, err := getOnShelfDate(host.BaseCvm)
+		onShelfDate, err := getOnShelfDate(kt, host.BaseCvm)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +110,11 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 }
 
 // getOnShelfDate 返回用作 cmdb on_shelf_date 的主机上架时间。
-func getOnShelfDate(host cvm.BaseCvm) (string, error) {
+func getOnShelfDate(kt *kit.Kit, host cvm.BaseCvm) (string, error) {
+	if host.Vendor == enumor.Other {
+		return "", nil
+	}
+
 	var shelfTime string
 	shelfTime = host.CloudCreatedTime
 	if host.Vendor == enumor.Aws {
@@ -120,7 +124,7 @@ func getOnShelfDate(host cvm.BaseCvm) (string, error) {
 
 	formDate, err := time.Parse(constant.TimeStdFormat, shelfTime)
 	if err != nil {
-		logs.Errorf("parse shelf time failed, err: %v, shelfTime: %s", err, shelfTime)
+		logs.Errorf("parse shelf time failed, err: %v, shelfTime: %s, rid: %s", err, shelfTime, kt.Rid)
 		return "", err
 	}
 
@@ -143,7 +147,7 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		if !exists {
 			status = "1"
 		}
-		onShelfDate, err := getOnShelfDate(host)
+		onShelfDate, err := getOnShelfDate(kt, host)
 		if err != nil {
 			return nil, err
 		}

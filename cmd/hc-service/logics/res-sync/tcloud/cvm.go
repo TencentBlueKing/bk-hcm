@@ -550,7 +550,6 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 	if db.Name != converter.PtrToVal(cloud.InstanceName) {
 		return true
 	}
-
 	if len(db.CloudVpcIDs) == 0 || (db.CloudVpcIDs[0] !=
 		converter.PtrToVal(cloud.VirtualPrivateCloud.VpcId)) {
 		return true

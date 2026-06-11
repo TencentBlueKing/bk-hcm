@@ -332,7 +332,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		if id, exsit := imageMap[converter.PtrToVal(one.CloudImageID)]; exsit {
 			imageID = id
 		}
-
 		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.AzureCvmExtension]{
 			CvmBatchUpdate: dataproto.CvmBatchUpdate{
 				ID:                   id,

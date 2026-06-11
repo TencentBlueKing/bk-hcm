@@ -58,9 +58,6 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 		bizHostMap[model.BkBizID] = append(bizHostMap[model.BkBizID], converter.PtrToVal(host))
 	}
 
-	logs.Infof("upsert cmdb hosts, vendor: %s, hostCount: %d, operatorCount: %d, rid: %s",
-		vendor, len(models), len(operators), kt.Rid)
-
 	needCheckHostIDs := make([]int64, 0)
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{Vendor: vendor, BizID: bizID, Hosts: hosts, Operators: operators}
@@ -148,14 +145,14 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table, operator
 	return nil
 }
 
-// buildCmdbOperators 为"分配主机到业务"链路按主机推导同步到 CMDB 的 operator（以 cvm id 为键），
+// buildCvmIDOperatorMap 为"分配主机到业务"链路按主机推导同步到 CMDB 的 operator（以 cvm id 为键），
 // 由 SyncCvmToCmdb 与 BatchUpdateCvmCommonInfo（上层置 SetOperator 时）复用：购买机（creator 非后台用户）
 // 取 creator；云上同步的增量机（creator 为后台用户）取二级账号第一个负责人。
 //
 // 保留 bk_host_id <= 0 的主机级守卫：分配链路可能重推账号下全部主机，已在 CMDB 的主机（bk_host_id>0）不入 map，
 // 避免覆盖 CMDB 侧已有 operator。返回值仅包含需要下发 operator 的主机，未出现的经下层 omitempty 不下发该字段。
-func buildCmdbOperators(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) (map[string]*string, error) {
-	operators := make(map[string]*string)
+func buildCvmIDOperatorMap(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) (map[string]*string, error) {
+	cvmIDOperatorMap := make(map[string]*string)
 	// accountCvmIDs 记录后台创建（云上同步）主机所属二级账号到其 cvm id 列表的映射
 	accountCvmIDs := make(map[string][]string)
 	for _, model := range models {
@@ -165,8 +162,8 @@ func buildCmdbOperators(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) (map[stri
 		}
 		// bk_host_id>0 表示已在 CMDB，不下发 operator，避免覆盖 CMDB 侧已有值。
 		if model.BkHostID > 0 {
-			logs.Infof("skip build cmdb operator for host already in cmdb, cvmID: %s, cloudID: %s, rid: %s",
-				model.ID, model.CloudID, kt.Rid)
+			logs.Infof("skip build cmdb operator for host already in cmdb, bk_host_id: %d, "+
+				"cvmID: %s, cloudID: %s, rid: %s", model.BkHostID, model.ID, model.CloudID, kt.Rid)
 			continue
 		}
 		if model.Creator == "" {
@@ -182,11 +179,11 @@ func buildCmdbOperators(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) (map[stri
 			accountCvmIDs[model.AccountID] = append(accountCvmIDs[model.AccountID], model.ID)
 			continue
 		}
-		operators[model.ID] = &model.Creator
+		cvmIDOperatorMap[model.ID] = &model.Creator
 	}
 
 	if len(accountCvmIDs) == 0 {
-		return operators, nil
+		return cvmIDOperatorMap, nil
 	}
 
 	// 需要用二级账号负责人替代BackendOperationUserKey作为operator
@@ -215,12 +212,12 @@ func buildCmdbOperators(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) (map[stri
 			// 二级账号负责人取第一个 manager 作为 operator
 			manager := account.Managers[0]
 			for _, cvmID := range accountCvmIDs[account.ID] {
-				operators[cvmID] = &manager
+				cvmIDOperatorMap[cvmID] = &manager
 			}
 		}
 	}
 
-	return operators, nil
+	return cvmIDOperatorMap, nil
 }
 
 func deleteOtherVendorHost(svc *cvmSvc, kt *kit.Kit, hostIDs []int64) error {

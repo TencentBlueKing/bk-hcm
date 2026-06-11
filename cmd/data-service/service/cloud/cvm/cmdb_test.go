@@ -46,7 +46,7 @@ func TestBuildCmdbOperatorsWithoutAccountLookup(t *testing.T) {
 		{ID: "cvm-5", CloudID: "cloud-5", BkBizID: 100, BkHostID: 0, Vendor: enumor.Other, Creator: "zhaoliu"},
 	}
 
-	operators, err := buildCmdbOperators(svc, kit.New(), models)
+	operators, err := buildCvmIDOperatorMap(svc, kit.New(), models)
 	if err != nil {
 		t.Fatalf("build cmdb operators failed, err: %v", err)
 	}
