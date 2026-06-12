@@ -18,7 +18,7 @@
  */
 
 /*
- SQLVER=9999,HCMVER=v9.9.9
+ SQLVER=0053,HCMVER=v1.9.2
 
  Notes:
  cvm 表新增 is_gpu 字段，标识主机是否为 GPU 机器
@@ -30,6 +30,6 @@ ALTER TABLE `cvm`
     ADD COLUMN `is_gpu` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否GPU机器：0-否，1-是' AFTER `machine_type`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.9.2' as `hcm_ver`, '0053' as `sql_ver`;
 
 COMMIT;
