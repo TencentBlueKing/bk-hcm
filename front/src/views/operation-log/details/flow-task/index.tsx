@@ -153,13 +153,15 @@ export default defineComponent({
             disabled={isEndDisabled.value}
             loading={isEndLoading.value}
             class={'info-card-btn'}
-            onClick={handleEndTask}>
+            onClick={handleEndTask}
+          >
             终止任务
           </Button>
         </div>
         <div
           class={'main-wrapper'}
-          style={isResourcePage ? { margin: '16px 0 0', height: 'calc(100% - 120px)' } : null}>
+          style={isResourcePage ? { margin: '16px 0 0', height: 'calc(100% - 120px)' } : null}
+        >
           <div class={'main-side-card'}>
             <p class={'main-side-card-title'}>执行步骤</p>
             <TimeLine class={'main-side-card-timeline'} list={nodes.value}></TimeLine>

@@ -37,6 +37,7 @@ var ApprovalProcessColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "application_type", NamedC: "application_type", Type: enumor.String},
 	{Column: "service_id", NamedC: "service_id", Type: enumor.Numeric},
+	{Column: "workflow_key", NamedC: "workflow_key", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -51,7 +52,9 @@ type ApprovalProcessTable struct {
 	// ApplicationType 申请类型（新增账号、新增CVM等）
 	ApplicationType string `db:"application_type" json:"application_type" validate:"max=64"`
 	// ServiceID ITSM流程的服务ID
-	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=1"`
+	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=0"`
+	// WorkflowKey ITSM流程的key
+	WorkflowKey string `db:"workflow_key" json:"workflow_key" validate:"max=128"`
 	// TenantID 租户ID
 	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
@@ -85,8 +88,8 @@ func (a ApprovalProcessTable) InsertValidate() error {
 		return errors.New("application type is required")
 	}
 
-	if a.ServiceID <= 0 {
-		return errors.New("service id should be gt 0")
+	if len(a.WorkflowKey) == 0 {
+		return errors.New("workflow key is required")
 	}
 
 	if len(a.Creator) == 0 {
@@ -97,9 +100,10 @@ func (a ApprovalProcessTable) InsertValidate() error {
 		return errors.New("reviser is required")
 	}
 
-	if len(a.Managers) == 0 {
-		return errors.New("managers is required")
-	}
+	// TODO 目前无法自动获取租户下的管理员bk_username
+	// if len(a.Managers) == 0 {
+	// 	return errors.New("managers is required")
+	// }
 
 	return nil
 }

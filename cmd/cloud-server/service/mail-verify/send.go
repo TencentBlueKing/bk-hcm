@@ -86,7 +86,7 @@ func (svc *MailVerifySvc) SendVerifyCode(cts *rest.Contexts) (interface{}, error
 }
 
 // GenMailByScene generate mail by scene
-func (svc *MailVerifySvc) GenMailByScene(req *SendVerifyCodeReq, verifyCode string) (*cmsi.CmsiMail, error) {
+func (svc *MailVerifySvc) GenMailByScene(req *SendVerifyCodeReq, verifyCode string) (*cmsi.CmsiMailParams, error) {
 	info := new(SecondAccountApplicationInfo)
 	if err := json.Unmarshal(req.Info, info); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -104,8 +104,8 @@ func (svc *MailVerifySvc) GenMailByScene(req *SendVerifyCodeReq, verifyCode stri
 			info.Vendor, info.AccountName, req.Mail, verifyCode, SecAccountAppCodeTTL/60)
 	}
 
-	mail := &cmsi.CmsiMail{
-		Receiver: req.Mail,
+	mail := &cmsi.CmsiMailParams{
+		Receiver: []string{req.Mail},
 		Title:    title,
 		Content:  content,
 	}

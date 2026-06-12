@@ -1,7 +1,8 @@
 import { showLoginModal as showModal } from '@blueking/login-modal';
 
 export const showLoginModal = () => {
-  const successUrl = `${window.location.origin}/static/login_success.html`;
+  const { origin, pathname } = window.location;
+  const successUrl = `${origin}${pathname.endsWith('/') ? pathname : `${pathname}/`}static/login_success.html`;
 
   const loginBaseUrl = window.PROJECT_CONFIG.BK_LOGIN_URL || '';
   if (!loginBaseUrl) {
@@ -11,8 +12,8 @@ export const showLoginModal = () => {
 
   const loginURL = new URL(loginBaseUrl);
   loginURL.searchParams.set('c_url', successUrl);
-  const pathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`;
-  const loginUrl = `${loginURL.origin}${pathname}plain/${loginURL.search}`;
+  const loginPathname = loginURL.pathname.endsWith('/') ? loginURL.pathname : `${loginURL.pathname}/`;
+  const loginUrl = `${loginURL.origin}${loginPathname}plain/${loginURL.search}`;
 
   showModal({
     loginUrl,

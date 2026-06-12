@@ -11,8 +11,8 @@ import hintIcon from '@/assets/image/hint.svg';
 import DeleteButton from './single-delete-button.plugin.vue';
 
 defineOptions({ name: 'security-group-delete-dialog' });
-const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const model = defineModel<boolean>();
+const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const emit = defineEmits(['success']);
 
 const { t } = useI18n();

@@ -96,6 +96,7 @@ export default defineComponent({
       {
         label: t('操作人'),
         field: 'operator',
+        render: ({ cell }: any) => <hcm-user-value value={cell} />,
       },
       {
         label: t('金额'),

@@ -29,16 +29,17 @@ import (
 
 // ApplicationCreateReq ...
 type ApplicationCreateReq struct {
-	Source         enumor.ApplicationSource    `json:"source" validate:"required"`
-	SN             string                      `json:"sn" validate:"required"`
-	Type           enumor.ApplicationType      `json:"type" validate:"required"`
+	Source enumor.ApplicationSource `json:"source" validate:"required"`
+	// SN Notice：v4版本的SN和v3不是一个含义，虽然我们本地依然沿用SN的叫法，但是在v4版本中，SN并不使用，而是用ticket_id进行查询
+	SN             string                   `json:"sn" validate:"required"`
+	Type           enumor.ApplicationType   `json:"type" validate:"required"`
 	Operation      enumor.ApplicationOperation `json:"operation" validate:"required"`
-	Status         enumor.ApplicationStatus    `json:"status" validate:"required"`
-	BkBizIDs       []int64                     `json:"bk_biz_ids" validate:"required"`
-	Applicant      string                      `json:"applicant" validate:"required"`
-	Content        string                      `json:"content" validate:"required"`
-	DeliveryDetail string                      `json:"delivery_detail" validate:"required"`
-	Memo           *string                     `json:"memo" validate:"omitempty"`
+	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
+	BkBizIDs       []int64                  `json:"bk_biz_ids" validate:"required"`
+	Applicant      string                   `json:"applicant" validate:"required"`
+	Content        string                   `json:"content" validate:"required"`
+	DeliveryDetail string                   `json:"delivery_detail" validate:"required"`
+	Memo           *string                  `json:"memo" validate:"omitempty"`
 }
 
 // Validate ...
@@ -71,17 +72,18 @@ func (req *ApplicationUpdateReq) Validate() error {
 
 // ApplicationResp ...
 type ApplicationResp struct {
-	ID             string                      `json:"id"`
-	Source         enumor.ApplicationSource    `json:"source"`
-	SN             string                      `json:"sn"`
-	Type           enumor.ApplicationType      `json:"type"`
+	ID             string                   `json:"id"`
+	TenantID       string                   `json:"tenant_id"`
+	Source         enumor.ApplicationSource `json:"source"`
+	SN             string                   `json:"sn"`
+	Type           enumor.ApplicationType   `json:"type"`
 	Operation      enumor.ApplicationOperation `json:"operation"`
-	Status         enumor.ApplicationStatus    `json:"status"`
-	BkBizIDs       []int64                     `json:"bk_biz_ids"`
-	Applicant      string                      `json:"applicant"`
-	Content        string                      `json:"content"`
-	DeliveryDetail string                      `json:"delivery_detail"`
-	Memo           *string                     `json:"memo"`
+	Status         enumor.ApplicationStatus `json:"status"`
+	BkBizIDs       []int64                  `json:"bk_biz_ids"`
+	Applicant      string                   `json:"applicant"`
+	Content        string                   `json:"content"`
+	DeliveryDetail string                   `json:"delivery_detail"`
+	Memo           *string                  `json:"memo"`
 	core.Revision  `json:",inline"`
 }
 

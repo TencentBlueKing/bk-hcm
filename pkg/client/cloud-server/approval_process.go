@@ -37,17 +37,17 @@ func NewApprovalProcessClient(client rest.ClientInterface) *ApprovalProcessClien
 	}
 }
 
-// GetApprovalProcessServiceID ...
-func (cli *ApprovalProcessClient) GetApprovalProcessServiceID(kt *kit.Kit) ([]int64, error) {
+// GetApprovalProcessWorkflowKey ...
+func (cli *ApprovalProcessClient) GetApprovalProcessWorkflowKey(kt *kit.Kit) ([]string, error) {
 
 	resp := &struct {
 		rest.BaseResp `json:",inline"`
-		Data          []int64 `json:"data"`
+		Data          []string `json:"data"`
 	}{}
 
 	err := cli.client.Get().
 		WithContext(kt.Ctx).
-		SubResourcef("/approval_processes/service_id").
+		SubResourcef("/approval_processes/workflow_key").
 		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)

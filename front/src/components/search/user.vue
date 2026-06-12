@@ -10,5 +10,5 @@ const attrs = useAttrs();
 </script>
 
 <template>
-  <user-selector v-model="model" :collapse-tags="true" :allow-create="true" :multiple="true" v-bind="attrs" />
+  <user-selector v-model="model" :allow-create="true" :multiple="true" v-bind="attrs" />
 </template>

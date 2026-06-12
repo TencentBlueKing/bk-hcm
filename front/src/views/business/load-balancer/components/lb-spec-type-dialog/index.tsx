@@ -53,7 +53,8 @@ export default defineComponent({
           <bk-radio
             v-model={selectedLbSpecType.value}
             label={row.SpecType}
-            disabled={row.Availability === 'Unavailable'}>
+            disabled={row.Availability === 'Unavailable'}
+          >
             　
           </bk-radio>
         ),
@@ -126,7 +127,8 @@ export default defineComponent({
         title='选择实例规格'
         width='60vw'
         onConfirm={handleSelectClbSpecType}
-        onHidden={() => emit('hidden')}>
+        onHidden={() => emit('hidden')}
+      >
         <CommonLocalTable
           searchOptions={{ searchData }}
           tableOptions={{

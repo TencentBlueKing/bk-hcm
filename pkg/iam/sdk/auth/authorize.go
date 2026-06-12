@@ -20,71 +20,69 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync"
 
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sdk/operator"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/iam"
+	"hcm/pkg/tools/converter"
 )
 
 // Authorize is the instance for the Authorizer factory.
 type Authorize struct {
 	// iam client.
-	client *client.Client
+	client iam.Client
 	// fetch resource if needed
 	fetcher ResourceFetcher
-	// esb client.
-	esbClient esb.Client
 }
 
 // Authorize check if a user's operate resource is already authorized or not.
-func (a *Authorize) Authorize(ctx context.Context, opts *client.AuthOptions) (*client.Decision, error) {
+func (a *Authorize) Authorize(kt *kit.Kit, opts *iam.AuthOptions) (*iam.Decision, error) {
 	if err := opts.Validate(); err != nil {
 		return nil, err
 	}
 
 	// find user's policy with action
-	getOpt := client.GetPolicyOption{
+	getOpt := iam.GetPolicyOption{
 		System:  opts.System,
 		Subject: opts.Subject,
 		Action:  opts.Action,
 		// do not use user's policy, so that we can get all the user's policy.
-		Resources: make([]client.Resource, 0),
+		Resources: make([]iam.Resource, 0),
 	}
 
-	policy, err := a.client.GetUserPolicy(ctx, &getOpt)
+	policy, err := a.client.GetUserPolicy(kt, &getOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	authorized, err := a.calculatePolicy(ctx, opts.Resources, policy)
+	authorized, err := a.calculatePolicy(kt, opts.Resources, policy)
 	if err != nil {
 		return nil, fmt.Errorf("calculate user's auth policy failed, err: %v", err)
 	}
 
-	return &client.Decision{Authorized: authorized}, nil
+	return &iam.Decision{Authorized: authorized}, nil
 }
 
 // AuthorizeBatch check if a user's operate resources is authorized or not batch.
 // Note: being authorized resources must be the same resource.
-func (a *Authorize) AuthorizeBatch(ctx context.Context, opts *client.AuthBatchOptions) ([]*client.Decision, error) {
-	return a.authorizeBatch(ctx, opts, true)
+func (a *Authorize) AuthorizeBatch(kt *kit.Kit, opts *iam.AuthBatchOptions) ([]*iam.Decision, error) {
+	return a.authorizeBatch(kt, opts, true)
 }
 
 // AuthorizeAnyBatch check if a user have any authority of the operate actions batch.
-func (a *Authorize) AuthorizeAnyBatch(ctx context.Context, opts *client.AuthBatchOptions) ([]*client.Decision, error) {
-	return a.authorizeBatch(ctx, opts, false)
+func (a *Authorize) AuthorizeAnyBatch(kt *kit.Kit, opts *iam.AuthBatchOptions) ([]*iam.Decision, error) {
+	return a.authorizeBatch(kt, opts, false)
 }
 
-func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOptions, exact bool) (
-	[]*client.Decision, error) {
+func (a *Authorize) authorizeBatch(kt *kit.Kit, opts *iam.AuthBatchOptions, exact bool) (
+	[]*iam.Decision, error) {
 
 	if err := opts.Validate(); err != nil {
 		return nil, err
@@ -94,13 +92,13 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOp
 		return nil, errors.New("no resource instance need to authorize")
 	}
 
-	policies, err := a.listUserPolicyBatchWithCompress(ctx, opts)
+	policies, err := a.listUserPolicyBatchWithCompress(kt, opts)
 	if err != nil {
 		return nil, fmt.Errorf("list user policy failed, err: %v", err)
 	}
 
 	var hitError error
-	decisions := make([]*client.Decision, len(opts.Batch))
+	decisions := make([]*iam.Decision, len(opts.Batch))
 
 	pipe := make(chan struct{}, 50)
 	wg := sync.WaitGroup{}
@@ -108,7 +106,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOp
 		wg.Add(1)
 
 		pipe <- struct{}{}
-		go func(idx int, resources []client.Resource, policy *operator.Policy) {
+		go func(idx int, resources []iam.Resource, policy *operator.Policy) {
 			defer func() {
 				wg.Done()
 				<-pipe
@@ -117,9 +115,9 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOp
 			var authorized bool
 			var err error
 			if exact {
-				authorized, err = a.calculatePolicy(ctx, resources, policy)
+				authorized, err = a.calculatePolicy(kt, resources, policy)
 			} else {
-				authorized, err = a.calculateAnyPolicy(ctx, resources, policy)
+				authorized, err = a.calculateAnyPolicy(kt, resources, policy)
 			}
 			if err != nil {
 				hitError = err
@@ -127,7 +125,7 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOp
 			}
 
 			// save the result with index
-			decisions[idx] = &client.Decision{Authorized: authorized}
+			decisions[idx] = &iam.Decision{Authorized: authorized}
 		}(idx, b.Resources, policies[idx])
 	}
 	// wait all the policy are calculated
@@ -140,8 +138,8 @@ func (a *Authorize) authorizeBatch(ctx context.Context, opts *client.AuthBatchOp
 	return decisions, nil
 }
 
-func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
-	opts *client.AuthBatchOptions) ([]*operator.Policy, error) {
+func (a *Authorize) listUserPolicyBatchWithCompress(kt *kit.Kit,
+	opts *iam.AuthBatchOptions) ([]*operator.Policy, error) {
 
 	if len(opts.Batch) == 0 {
 		return make([]*operator.Policy, 0), nil
@@ -149,12 +147,12 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 
 	// because hcm actions are attached to cc biz resource, we need to get policy for each action separately
 	// group external resources by action, so that we can cut off the request to iam, and improve the performance.
-	actionIDMap := make(map[string]client.Action)
-	actionResMap := make(map[string]map[string]client.Resource)
+	actionIDMap := make(map[string]iam.Action)
+	actionResMap := make(map[string]map[string]iam.Resource)
 	for _, b := range opts.Batch {
 		actionIDMap[b.Action.ID] = b.Action
 		if _, exists := actionResMap[b.Action.ID]; !exists {
-			actionResMap[b.Action.ID] = make(map[string]client.Resource)
+			actionResMap[b.Action.ID] = make(map[string]iam.Resource)
 		}
 
 		for _, resource := range b.Resources {
@@ -167,19 +165,19 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 	// query user policy by actions
 	policyMap := make(map[string]*operator.Policy)
 	for actionID, action := range actionIDMap {
-		// parse resources in action to client.ExtResource form
-		extResources := make([]client.ExtResource, 0)
-		resMap := make(map[string]map[client.TypeID][]string)
+		// parse resources in action to iam.ExtResource form
+		extResources := make([]iam.ExtResource, 0)
+		resMap := make(map[string]map[iam.TypeID][]string)
 		for _, resource := range actionResMap[actionID] {
 			if _, exists := resMap[resource.System]; !exists {
-				resMap[resource.System] = make(map[client.TypeID][]string)
+				resMap[resource.System] = make(map[iam.TypeID][]string)
 			}
 			resMap[resource.System][resource.Type] = append(resMap[resource.System][resource.Type], resource.ID)
 		}
 
 		for system, resTypeMap := range resMap {
 			for resType, ids := range resTypeMap {
-				extResources = append(extResources, client.ExtResource{
+				extResources = append(extResources, iam.ExtResource{
 					System: system,
 					Type:   resType,
 					IDs:    ids,
@@ -188,8 +186,8 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 		}
 
 		// get action policy by external resources
-		getOpts := &client.GetPolicyByExtResOption{
-			AuthOptions: client.AuthOptions{
+		getOpts := &iam.GetPolicyByExtResOption{
+			AuthOptions: iam.AuthOptions{
 				System:  opts.System,
 				Subject: opts.Subject,
 				Action:  action,
@@ -197,7 +195,7 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 			ExtResources: extResources,
 		}
 
-		policyRes, err := a.client.GetUserPolicyByExtRes(ctx, getOpts)
+		policyRes, err := a.client.GetUserPolicyByExtRes(kt, getOpts)
 		if err != nil {
 			return nil, fmt.Errorf("get user policy failed, opts: %#v, err: %v", getOpts, err)
 		}
@@ -211,7 +209,7 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 		if !exist {
 			// when user has no permission to this action, iam would return an empty policy
 			if logs.V(2) {
-				rid := ctx.Value(constant.RidKey)
+				rid := kt.Ctx.Value(constant.RidKey)
 				logs.Infof("list user's policy, but can not find action id %s in response, rid: %s", b.Action.ID, rid)
 			}
 			continue
@@ -225,20 +223,20 @@ func (a *Authorize) listUserPolicyBatchWithCompress(ctx context.Context,
 // ListAuthorizedInstances list a user's all the authorized resource instance list with an action.
 // Note: opts.Resources are not required.
 // the returned list may be huge, we do not do result paging
-func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *client.AuthOptions,
-	resourceType client.TypeID) (*client.AuthorizeList, error) {
+func (a *Authorize) ListAuthorizedInstances(kt *kit.Kit, opts *iam.AuthOptions,
+	resourceType iam.TypeID) (*iam.AuthorizeList, error) {
 
 	// find user's policy with action
-	getOpts := &client.GetPolicyByExtResOption{
-		AuthOptions: client.AuthOptions{
+	getOpts := &iam.GetPolicyByExtResOption{
+		AuthOptions: iam.AuthOptions{
 			System:  opts.System,
 			Subject: opts.Subject,
 			Action:  opts.Action,
 		},
-		ExtResources: make([]client.ExtResource, 0),
+		ExtResources: make([]iam.ExtResource, 0),
 	}
 
-	policyRes, err := a.client.GetUserPolicyByExtRes(ctx, getOpts)
+	policyRes, err := a.client.GetUserPolicyByExtRes(kt, getOpts)
 	if err != nil {
 		return nil, fmt.Errorf("get user policy failed, opts: %#v, err: %v", getOpts, err)
 	}
@@ -246,26 +244,26 @@ func (a *Authorize) ListAuthorizedInstances(ctx context.Context, opts *client.Au
 	policy := policyRes.Expression
 
 	if policy == nil || policy.Operator == "" {
-		return &client.AuthorizeList{}, nil
+		return &iam.AuthorizeList{}, nil
 	}
-	return a.countPolicy(ctx, policy, resourceType)
+	return a.countPolicy(kt, policy, resourceType)
 }
 
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
-func (a *Authorize) RegisterResourceCreatorAction(ctx context.Context, opts *client.InstanceWithCreator) (
-	[]client.CreatorActionPolicy, error) {
+func (a *Authorize) RegisterResourceCreatorAction(kt *kit.Kit, opts *iam.InstanceWithCreator) (
+	[]iam.CreatorActionPolicy, error) {
 
-	policies, err := a.esbClient.Iam().RegisterResourceCreatorAction(ctx, opts)
+	policies, err := a.client.RegisterResourceCreatorAction(kt, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return converter.PtrToVal(policies), nil
 }
 
 // GetApplyPermUrl get iam apply permission url.
-func (a *Authorize) GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (string, error) {
-	url, err := a.esbClient.Iam().GetApplyPermUrl(ctx, opts)
+func (a *Authorize) GetApplyPermUrl(kt *kit.Kit, opts *meta.IamPermission) (string, error) {
+	url, err := a.client.GetApplyPermUrl(kt, opts)
 	if err != nil {
 		return "", err
 	}

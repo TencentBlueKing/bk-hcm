@@ -1,5 +1,5 @@
 import { timeFormatter } from '@/common/util';
-import { Ref, VNode, h, ref, watchEffect } from 'vue';
+import { Ref, VNode, ref, watchEffect } from 'vue';
 import { Close, RightTurnLine, Spinner, Success } from 'bkui-vue/lib/icon';
 import { Button, Message } from 'bkui-vue';
 import './index.scss';

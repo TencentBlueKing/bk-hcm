@@ -17,39 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package itsm
+package jwttoken
 
-import (
-	"fmt"
-
-	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/api-gateway"
+const (
+	// JWTSecretKeyConfigType jwt secret key config type
+	JWTSecretKeyConfigType = "jwt_secret_key"
+	// JWTSecretKeyConfigKey jwt secret key config key
+	JWTSecretKeyConfigKey = "itsm_callback_token"
 )
-
-type tokenVerifiedResp struct {
-	apigateway.BaseResponse `json:",inline"`
-	Data                    struct {
-		IsPassed bool `json:"is_passed"`
-	} `json:"data"`
-}
-
-func (i *itsm) VerifyToken(kt *kit.Kit, token string) (bool, error) {
-	req := map[string]string{"token": token}
-	resp := new(tokenVerifiedResp)
-
-	err := i.client.Post().
-		SubResourcef("/token/verify/").
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Body(req).
-		Do().Into(resp)
-	if err != nil {
-		return false, err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return false, fmt.Errorf("verify token failed, code: %d, msg: %s", resp.Code, resp.Message)
-	}
-
-	return resp.Data.IsPassed, nil
-}

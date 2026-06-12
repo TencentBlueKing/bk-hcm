@@ -86,6 +86,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -107,6 +108,7 @@ type Service struct {
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
 	cmdbCli   cmdb.Client
+	bkUserCli pkgbkuser.Client
 }
 
 // NewService create a service instance.
@@ -145,7 +147,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli, svr.bkUserCli)
 
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
@@ -184,13 +186,6 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		return nil, nil, err
 	}
 
-	itsmCfg := cc.CloudServer().Itsm
-	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, nil, err
-	}
-
 	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
 	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
 	if err != nil {
@@ -198,15 +193,28 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		return nil, nil, err
 	}
 
+	bkUserCfg := cc.CloudServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	itsmCfg := cc.CloudServer().Itsm
+	itsmCli, err := itsm.NewClient(&itsmCfg, apiClientSet.DataService(), bkUserCli, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create itsm client, err: %v", err)
+		return nil, nil, err
+	}
+
 	cmsiCfg := cc.CloudServer().Cmsi
-	cmsiCli, err := cmsi.NewClient(&cmsiCfg, metrics.Register())
+	cmsiCli, err := cmsi.NewClient(&cmsiCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create cmsi client, err: %v", err)
 		return nil, nil, err
 	}
 
 	cmdbCfg := cc.CloudServer().Cmdb
-	err = cmdb.InitCmdbClient(&cmdbCfg, metrics.Register())
+	err = cmdb.InitCmdbClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -219,6 +227,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
+		bkUserCli:  bkUserCli,
 		cmdbCli:    cmdb.CmdbClient(),
 	}
 
@@ -235,7 +244,7 @@ func newCipherFromConfig(cryptoConfig cc.Crypto) (cryptography.Crypto, error) {
 // ListenAndServeRest listen and serve the restful server
 func (s *Service) ListenAndServeRest() error {
 	root := http.NewServeMux()
-	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkHcmUrl).ServeHTTP)
+	root.HandleFunc("/", s.apiSet(cc.CloudServer().BkApigwHCMURL).ServeHTTP)
 	root.HandleFunc("/healthz", s.Healthz)
 	root.HandleFunc("/alivez", s.Alivez)
 	handler.SetCommonHandler(root)
@@ -290,7 +299,7 @@ func (s *Service) ListenAndServeRest() error {
 	return nil
 }
 
-func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
+func (s *Service) apiSet(bkApigwHCMURL string) *restful.Container {
 	ws := new(restful.WebService)
 	ws.Path("/api/v1/cloud")
 	ws.Produces(restful.MIME_JSON)
@@ -301,11 +310,12 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 		Cipher:     s.cipher,
-		Logics:     logics.NewLogics(s.client, s.cmdbCli),
+		Logics:     logics.NewLogics(s.client, s.cmdbCli, s.bkUserCli, s.itsmCli),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
 		CmdbCli:    s.cmdbCli,
+		BKUserCli:  s.bkUserCli,
 	}
 
 	account.InitAccountService(c)
@@ -329,7 +339,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	subaccount.InitService(c)
 	subaccountsecret.InitService(c)
 
-	application.InitApplicationService(c, bkHcmUrl)
+	application.InitApplicationService(c, bkApigwHCMURL)
 	audit.InitService(c)
 	assign.InitService(c)
 	recycle.InitService(c)

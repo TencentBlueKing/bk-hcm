@@ -28,7 +28,7 @@ import (
 // GetCurAnn get current announcements
 func (n *notice) GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp, error) {
 
-	resp, err := apigateway.ApiGatewayCallWithoutReq[GetCurAnnResp](n.client, n.config, rest.GET,
+	resp, err := apigateway.ApiGatewayCallWithoutReq[GetCurAnnResp](n.client, n.bkUserCli, n.config, rest.GET,
 		kt, params, "/announcement/get_current_announcements")
 	if err != nil {
 		return nil, err
@@ -38,6 +38,6 @@ func (n *notice) GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp
 
 // RegApp register application
 func (n *notice) RegApp(kt *kit.Kit) (*RegAppData, error) {
-	return apigateway.ApiGatewayCallWithoutReq[RegAppData](n.client, n.config, rest.POST,
+	return apigateway.ApiGatewayCallWithoutReq[RegAppData](n.client, n.bkUserCli, n.config, rest.POST,
 		kt, nil, "/register")
 }

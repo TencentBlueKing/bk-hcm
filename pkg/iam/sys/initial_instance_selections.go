@@ -19,16 +19,18 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 // GenerateStaticInstanceSelections return need registered static instance selection.
-func GenerateStaticInstanceSelections() []client.InstanceSelection {
-	return []client.InstanceSelection{
+func GenerateStaticInstanceSelections() []iam.InstanceSelection {
+	return []iam.InstanceSelection{
 		{
 			ID:     AccountSelection,
 			Name:   "账号列表",
 			NameEn: "Account List",
-			ResourceTypeChain: []client.ResourceChain{
+			ResourceTypeChain: []iam.ResourceChain{
 				{
 					SystemID: SystemIDHCM,
 					ID:       Account,
@@ -39,7 +41,7 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 			ID:     CloudSelectionSchemeSelection,
 			Name:   "方案列表",
 			NameEn: "Scheme List",
-			ResourceTypeChain: []client.ResourceChain{
+			ResourceTypeChain: []iam.ResourceChain{
 				{
 					SystemID: SystemIDHCM,
 					ID:       CloudSelectionScheme,
@@ -50,7 +52,7 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 			ID:     MainAccountSelection,
 			Name:   "二级账号列表",
 			NameEn: "Main Account List",
-			ResourceTypeChain: []client.ResourceChain{
+			ResourceTypeChain: []iam.ResourceChain{
 				{
 					SystemID: SystemIDHCM,
 					ID:       MainAccount,
@@ -61,7 +63,7 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 			ID:     BillCloudVendorSelection,
 			Name:   "账单云厂商列表",
 			NameEn: "Bill Cloud Vendor List",
-			ResourceTypeChain: []client.ResourceChain{
+			ResourceTypeChain: []iam.ResourceChain{
 				{
 					SystemID: SystemIDHCM,
 					ID:       BillCloudVendor,

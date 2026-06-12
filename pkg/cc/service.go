@@ -135,11 +135,12 @@ type CloudServerSetting struct {
 	CloudResource    CloudResource    `yaml:"cloudResource"`
 	Recycle          Recycle          `yaml:"recycle"`
 	BillConfig       BillConfig       `yaml:"billConfig"`
-	Itsm             ApiGateway       `yaml:"itsm"`
+	Itsm             ITSM             `yaml:"itsm"`
 	CloudSelection   CloudSelection   `yaml:"cloudSelection"`
 	Cmsi             CMSI             `yaml:"cmsi"`
 	TaskManagement   TaskManagement   `yaml:"taskManagement"`
 	Tenant           TenantConfig     `yaml:"tenant"`
+	BkUser           ApiGateway       `yaml:"bkUser"`
 	Cmdb             ApiGateway       `yaml:"cmdb"`
 	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
 	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
@@ -183,7 +184,7 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
 	if s.BkHcmUrl == "" {
@@ -203,11 +204,15 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.Itsm.validate(); err != nil {
-		return err
+		return fmt.Errorf("itsm: %w", err)
 	}
 
 	if err := s.Cmsi.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmsi: %w", err)
+	}
+
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	if s.CCHostPoolBiz == 0 {
@@ -231,6 +236,7 @@ type DataServiceSetting struct {
 	Objectstore ObjectStore  `yaml:"objectstore"`
 	Crypto      Crypto       `yaml:"crypto"`
 	Cmdb        ApiGateway   `yaml:"cmdb"`
+	BkUser      ApiGateway   `yaml:"bkUser"`
 	Tenant      TenantConfig `yaml:"tenant"`
 }
 
@@ -268,9 +274,12 @@ func (s DataServiceSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
+	}
 	return nil
 }
 
@@ -286,6 +295,7 @@ type HCServiceSetting struct {
 	Log           LogOption    `yaml:"log"`
 	SyncConfig    SyncConfig   `yaml:"sync"`
 	Tenant        TenantConfig `yaml:"tenant"`
+	BkUser        ApiGateway   `yaml:"bkUser"`
 	Cmdb          ApiGateway   `yaml:"cmdb"`
 	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
 }
@@ -320,7 +330,11 @@ func (s HCServiceSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
+	}
+
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	if s.CCHostPoolBiz == 0 {
@@ -342,9 +356,9 @@ type AuthServerSetting struct {
 	Log     LogOption    `yaml:"log"`
 	Esb     Esb          `yaml:"esb"`
 	Cmdb    ApiGateway   `yaml:"cmdb"`
+	Iam     ApiGateway   `yaml:"iam"`
 	Tenant  TenantConfig `yaml:"tenant"`
-
-	IAM IAM `yaml:"iam"`
+	BkUser  ApiGateway   `yaml:"bkUser"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -371,15 +385,15 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
-	if err := s.Esb.validate(); err != nil {
-		return err
-	}
-
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
-	if err := s.IAM.validate(); err != nil {
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
+	}
+
+	if err := s.Iam.validate(); err != nil {
 		return err
 	}
 
@@ -398,12 +412,14 @@ type WebServerSetting struct {
 	Log           LogOption     `yaml:"log"`
 	Web           Web           `yaml:"web"`
 	Esb           Esb           `yaml:"esb"`
-	Itsm          ApiGateway    `yaml:"itsm"`
+	Itsm          ITSM          `yaml:"itsm"`
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
 	Tenant        TenantConfig  `yaml:"tenant"`
 	Cmdb          ApiGateway    `yaml:"cmdb"`
+	BkUser        ApiGateway    `yaml:"bkUser"`
+	Login         ApiGateway    `yaml:"login"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -444,15 +460,23 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
+	}
+
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	if err := s.Itsm.validate(); err != nil {
-		return err
+		return fmt.Errorf("itsm: %w", err)
 	}
 
 	if err := s.Notice.validate(); err != nil {
-		return err
+		return fmt.Errorf("notice: %w", err)
+	}
+
+	if err := s.Login.validate(); err != nil {
+		return fmt.Errorf("login: %w", err)
 	}
 
 	return nil
@@ -527,6 +551,7 @@ type AccountServerSetting struct {
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
 	Tenant         TenantConfig         `yaml:"tenant"`
+	BkUser         ApiGateway           `yaml:"bkUser"`
 	Cmdb           ApiGateway           `yaml:"cmdb"`
 }
 
@@ -562,9 +587,12 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
+	}
 	return nil
 }
 

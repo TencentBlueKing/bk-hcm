@@ -64,6 +64,7 @@ import (
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
@@ -94,7 +95,13 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		logs.Infof("sync concurrent[%d]: %s", i, rule.String())
 	}
 
-	if err = cmdb.InitCmdbClient(cvt.ValToPtr(cc.HCService().Cmdb), metrics.Register()); err != nil {
+	bkUserCfg := cc.HCService().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cmdb.InitCmdbClient(cvt.ValToPtr(cc.HCService().Cmdb), bkUserCli, metrics.Register()); err != nil {
 		return nil, err
 	}
 

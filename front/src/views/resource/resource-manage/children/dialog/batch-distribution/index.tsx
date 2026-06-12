@@ -133,8 +133,7 @@ export const BatchDistribution = defineComponent({
               isShow.value = true;
             }}
             v-bk-tooltips={{ content: '所选资源处于不同账号，不允许分配', disabled: !hasDiffAccount.value }}
-            disabled={!props.selections.length || hasDiffAccount.value}
-          >
+            disabled={!props.selections.length || hasDiffAccount.value}>
             批量分配
           </Button>
         ) : null}
@@ -146,8 +145,7 @@ export const BatchDistribution = defineComponent({
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}
-        >
+          isLoading={isLoading.value}>
           <p class='selected-host-count-tip'>
             已选择
             <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}

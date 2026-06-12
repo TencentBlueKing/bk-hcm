@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -48,4 +49,5 @@ type Capability struct {
 	BKBaseCli  bkbase.Client
 	CmsiCli    cmsi.Client
 	CmdbCli    cmdb.Client
+	BKUserCli  bkuser.Client
 }

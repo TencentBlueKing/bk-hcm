@@ -211,11 +211,7 @@ func (c *Contexts) respEntity(data interface{}) {
 	}
 
 	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
-	resp := &Response{
-		Code:    errf.OK,
-		Message: "",
-		Data:    data,
-	}
+	resp := NewResponse(errf.OK, "", data)
 
 	if err := json.NewEncoder(c.resp.ResponseWriter).Encode(resp); err != nil {
 		logs.ErrorDepthf(1, "do response failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
@@ -256,11 +252,7 @@ func (c *Contexts) respErrorWithEntity(data interface{}, err error) {
 	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
 
 	parsedErr := errf.Error(err)
-	resp := &Response{
-		Code:    parsedErr.Code,
-		Message: parsedErr.Message,
-		Data:    data,
-	}
+	resp := NewResponse(parsedErr.Code, parsedErr.Message, data)
 
 	if err := json.NewEncoder(c.resp.ResponseWriter).Encode(resp); err != nil {
 		logs.ErrorDepthf(1, "do response failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)

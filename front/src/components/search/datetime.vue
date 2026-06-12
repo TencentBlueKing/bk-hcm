@@ -4,6 +4,8 @@ import type { DatePickerValueType } from 'bkui-vue/lib/date-picker/interface';
 
 defineOptions({ name: 'hcm-search-datetime' });
 
+const model = defineModel<DatePickerValueType>();
+
 withDefaults(
   defineProps<{
     format: string;
@@ -16,8 +18,6 @@ withDefaults(
     appendToBody: true,
   },
 );
-
-const model = defineModel<DatePickerValueType>();
 </script>
 
 <template>

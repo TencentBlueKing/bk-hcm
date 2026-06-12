@@ -21,25 +21,27 @@
 package cmsi
 
 import (
+	"net/http"
+
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
-	apigateway "hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/thirdparty/api-gateway/discovery"
 	"hcm/pkg/tools/ssl"
-	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Client cmsi client
 type Client interface {
-	SendMail(kt *kit.Kit, m *CmsiMail) (err error)
+	SendMail(kt *kit.Kit, m *CmsiMailParams) error
 }
 
 // NewClient return a new cmsi client
-func NewClient(cfg *cc.CMSI, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.CMSI, bkUserCli bkuser.Client, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -54,29 +56,45 @@ func NewClient(cfg *cc.CMSI, reg prometheus.Registerer) (Client, error) {
 
 	c := &client.Capability{
 		Client: cli,
-		Discover: &apigateway.Discovery{
+		Discover: &discovery.Discovery{
 			Name:    "cmsi",
 			Servers: cfg.Endpoints,
 		},
 		MetricOpts: client.MetricOption{Register: reg},
 	}
-	restCli := rest.NewClient(c, "/v2/cmsi")
+	restCli := rest.NewClient(c, "/v1")
 	return &cmsi{
-		client: restCli,
-		config: &cfg.ApiGateway,
-		sender: cfg.Sender,
-		cc:     cfg.CC,
+		client:    restCli,
+		bkUserCli: bkUserCli,
+		config:    &cfg.ApiGateway,
+		sender:    cfg.Sender,
+		cc:        cfg.CC,
 	}, nil
 }
 
 type cmsi struct {
 	config *cc.ApiGateway
 	// http client instance
-	client rest.ClientInterface
+	client    rest.ClientInterface
+	bkUserCli bkuser.Client
 	// email sender 需要加入白名单
 	sender string
 	// cc 抄送人
 	cc []string
+}
+
+// CmsiMailResult cmsi服务成功响应的完整结构
+type CmsiMailResult struct {
+	Summary Summary                `json:"summary"`
+	Message string                 `json:"message"`
+	Details map[string]interface{} `json:"details"`
+}
+
+// Summary cmsi服务返回的汇总信息
+type Summary struct {
+	Total     int `json:"total"`     // 邮件总数
+	Succeeded int `json:"succeeded"` // 成功发送邮件数量
+	Failed    int `json:"failed"`    // 失败发送邮件数量
 }
 
 func (i *cmsi) header(kt *kit.Kit) http.Header {

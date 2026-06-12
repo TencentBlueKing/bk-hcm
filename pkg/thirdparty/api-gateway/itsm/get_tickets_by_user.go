@@ -24,6 +24,8 @@ import (
 	"strconv"
 
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway"
 )
 
@@ -48,9 +50,8 @@ const (
 // GetTicketsByUserReq define get tickets by user req.
 type GetTicketsByUserReq struct {
 	User        string   `json:"user" validate:"required"`
-	ViewType    ViewType `json:"view_type" validate:"required"`
-	CatalogID   int64    `json:"catalog_id" validate:"omitempty"`
-	ServiceID   int64    `json:"service_id" validate:"omitempty"`
+	ViewType    ViewType `json:"view_type" validate:"omitempty"`
+	WorkflowID  string   `json:"workflow_id" validate:"omitempty"`
 	CreateAtGte string   `json:"create_at__gte" validate:"omitempty"`
 	CreateAtLte string   `json:"create_at__lte" validate:"omitempty"`
 	Page        int64    `json:"page" validate:"omitempty"`
@@ -61,27 +62,19 @@ type GetTicketsByUserReq struct {
 func (req *GetTicketsByUserReq) Encode() map[string]string {
 	v := make(map[string]string)
 	if len(req.User) != 0 {
-		v["user"] = req.User
+		v["current_processors__in"] = req.User
 	}
 
 	if len(req.ViewType) != 0 {
 		v["view_type"] = string(req.ViewType)
 	}
 
-	if req.CatalogID != 0 {
-		v["catalog_id"] = strconv.FormatInt(req.CatalogID, 10)
+	if len(req.WorkflowID) != 0 {
+		v["workflow_key__in"] = req.WorkflowID
 	}
 
-	if req.ServiceID != 0 {
-		v["service_id"] = strconv.FormatInt(req.ServiceID, 10)
-	}
-
-	if len(req.CreateAtGte) != 0 {
-		v["create_at__gte"] = req.CreateAtGte
-	}
-
-	if len(req.CreateAtLte) != 0 {
-		v["create_at__lte"] = req.CreateAtLte
+	if len(req.CreateAtGte) != 0 && len(req.CreateAtLte) != 0 {
+		v["created_at__range"] = fmt.Sprintf("%s,%s", req.CreateAtGte, req.CreateAtLte)
 	}
 
 	if req.Page != 0 {
@@ -97,77 +90,53 @@ func (req *GetTicketsByUserReq) Encode() map[string]string {
 
 // GetTicketsByUserRespData define get ticket by user resp data.
 type GetTicketsByUserRespData struct {
-	Page      int64    `json:"page"`
-	TotalPage int64    `json:"total_page"`
-	Count     int64    `json:"count"`
-	Next      string   `json:"next"`
-	Previous  string   `json:"previous"`
-	Items     []Ticket `json:"items"`
+	Page     int64    `json:"page"`
+	PageSize int64    `json:"page_size"`
+	Count    int64    `json:"count"`
+	Results  []Ticket `json:"results"`
 }
 
 // Ticket define ticket.
 type Ticket struct {
-	Sn          string `json:"sn"`
-	ID          int64  `json:"id"`
-	Title       string `json:"title"`
-	ServiceId   int64  `json:"service_id"`
-	ServiceType string `json:"service_type"`
-	Meta        struct {
-		Priority struct {
-			Key   string `json:"key"`
-			Name  string `json:"name"`
-			Order int64  `json:"order"`
-		} `json:"priority"`
-	} `json:"meta"`
-	BkBizId              int64  `json:"bk_biz_id"`
-	CurrentStatus        string `json:"current_status"`
-	CreateAt             string `json:"create_at"`
-	Creator              string `json:"creator"`
-	IsSuperviseNeeded    bool   `json:"is_supervise_needed"`
-	FlowId               int64  `json:"flow_id"`
-	SuperviseType        string `json:"supervise_type"`
-	Supervisor           string `json:"supervisor"`
-	ServiceName          string `json:"service_name"`
-	CurrentStatusDisplay string `json:"current_status_display"`
-	CurrentSteps         []struct {
-		Id      int64  `json:"id"`
-		Tag     string `json:"tag"`
-		Name    string `json:"name"`
-		StateID int64  `json:"state_id"`
+	Sn            string `json:"sn"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Status        string `json:"status"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+	EndAt         string `json:"end_at"`
+	WorkflowID    string `json:"workflow_id"`
+	StatusDisplay string `json:"status_display"`
+	CurrentSteps  []struct {
+		TicketID    string `json:"ticket_id"`
+		Name        string `json:"name"`
+		ActivityKey string `json:"activity_key"`
 	} `json:"current_steps"`
-	PriorityName      string   `json:"priority_name"`
-	CurrentProcessors string   `json:"current_processors"`
-	CanComment        bool     `json:"can_comment"`
-	CanOperate        bool     `json:"can_operate"`
-	WaitingApprove    bool     `json:"waiting_approve"`
-	Followers         []string `json:"followers"`
-	CommentId         string   `json:"comment_id"`
-	CanSupervise      bool     `json:"can_supervise"`
-	CanWithdraw       bool     `json:"can_withdraw"`
-	Sla               []string `json:"sla"`
-	SlaColor          string   `json:"sla_color"`
+	CurrentProcessors []struct {
+		TicketID      string `json:"ticket_id"`
+		Processor     string `json:"processor"`
+		ProcessorType string `json:"processor_type"`
+	} `json:"current_processors"`
+	FrontendURL   string `json:"frontend_url"`
+	ApproveResult bool   `json:"approve_result"`
 }
 
 // GetTicketsByUser get tickets by user.
 func (i *itsm) GetTicketsByUser(kt *kit.Kit, req *GetTicketsByUserReq) (*GetTicketsByUserRespData, error) {
-	resp := &struct {
-		apigateway.BaseResponse `json:",inline"`
-		Data                    *GetTicketsByUserRespData `json:"data"`
-	}{}
 
-	err := i.client.Get().
-		SubResourcef("/get_tickets_by_user/").
-		WithParams(req.Encode()).
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Do().Into(resp)
+	code, msg, res, err := apigateway.ApiGatewayCallOriginalWithoutReq[GetTicketsByUserRespData](i.client, i.bkUserCli,
+		i.config, rest.GET, kt, req.Encode(), "/ticket/list/")
+
 	if err != nil {
 		return nil, err
 	}
 
-	if !resp.Result || resp.Code != 0 {
-		return nil, fmt.Errorf("get tickets by user failed, code: %d, msg: %s", resp.Code, resp.Message)
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to get ticket by user, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
+		return nil, err
 	}
 
-	return resp.Data, nil
+	return res, nil
 }

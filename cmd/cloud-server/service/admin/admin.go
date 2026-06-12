@@ -21,14 +21,17 @@
 package admin
 
 import (
+	"fmt"
 	"net/http"
 
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/service/capability"
 	apisysteminit "hcm/pkg/api/cloud-server/system-init"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -37,6 +40,7 @@ import (
 func InitAdminService(c *capability.Capability) {
 	svc := &adminService{
 		client:      c.ApiClient,
+		itsmCli:     c.ItsmCli,
 		adminLogics: c.Logics.Admin,
 	}
 
@@ -50,10 +54,12 @@ func (s *adminService) registerAdminService(c *restful.WebService) {
 
 	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
 	adminH.Add("Init", http.MethodPost, "/init", s.Init)
+	adminH.Add("InitTenant", http.MethodPost, "/tenant/init", s.InitTenant)
 }
 
 type adminService struct {
 	client      *client.ClientSet
+	itsmCli     itsm.Client
 	adminLogics logicsadmin.Interface
 }
 
@@ -70,5 +76,41 @@ func (s *adminService) Init(cts *rest.Contexts) (any, error) {
 	resp := apisysteminit.SystemInitResult{
 		OtherAccountInitResult: result,
 	}
+	return resp, nil
+}
+
+// InitTenant 租户初始化
+func (s *adminService) InitTenant(cts *rest.Contexts) (any, error) {
+	// 检查租户是否合法
+	targetTenant, err := s.adminLogics.GetTenantFromBkUser(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// other init processes...
+
+	// 1. ITSM流程初始化
+	err = s.adminLogics.InitItsmProcess(cts.Kit, cc.CloudServer().Itsm.AppCode)
+	if err != nil {
+		logs.Errorf("init itsm process failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("itsm process init error: %w", err)
+	}
+
+	// 2. 其他云厂商内置账号初始化
+	_, err = s.adminLogics.InitVendorOtherAccount(cts.Kit)
+	if err != nil {
+		logs.Errorf("init vendor other account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 租户表插入/更新租户数据
+	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)
+	if err != nil {
+		logs.Errorf("upsert local tenant failed, err: %v, tenant: %s, rid: %s",
+			err, targetTenant.String(), cts.Kit.Rid)
+		return nil, fmt.Errorf("tenant data init error: %w", err)
+	}
+
+	resp := &apisysteminit.TenantInitResult{Message: msg}
 	return resp, nil
 }

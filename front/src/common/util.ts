@@ -1,7 +1,8 @@
 import dayjs, { OpUnitType, QUnitType } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-
+import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // 获取 cookie object
 export function getCookies(strCookie = document.cookie): any {
@@ -52,13 +53,25 @@ export function deepMerge(...objectArray: any) {
 }
 
 /**
- * 时间格式化，自动转换成本地时区
- * @param val 待格式化时间
- * @param format 格式
- * @returns 格式化后的时间
+ * 日期时间格式化
+ * @param {string | number | Date} val - 输入时间 (兼容 UTC 'Z' 和带偏移量 '+08:00')
+ * @param {string} [format='YYYY-MM-DD HH:mm:ssZZ'] - 输出格式
+ * @param {string} [timezone] - 目标时区。不传则使用配置的时区，否则为浏览器当前时区。
+ * @returns {string}
  */
-export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = '--') {
-  return val ? dayjs(val).format(format) : defaultVal;
+export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ssZZ', timezone?: string, defaultVal = '--') {
+  if (!val) return defaultVal;
+
+  // dayjs(value) 能够自动解析 ISO 8601 格式（包括 UTC 的 Z 和带偏移量的时间）
+  const dateObj = dayjs(val);
+
+  if (!dateObj.isValid()) return 'Invalid Date';
+
+  // 优先使用传入的 timezone，如果没有传，则使用配置的时区，否则为浏览器当前时区
+  const targetZone = timezone || window.PROJECT_CONFIG.TIMEZONE || dayjs.tz.guess();
+
+  // 转换时区并格式化
+  return dateObj.tz(targetZone).format(format);
 }
 
 /**

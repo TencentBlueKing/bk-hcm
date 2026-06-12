@@ -83,7 +83,7 @@ export default defineComponent({
     const formData = reactive(getDefaultFormData());
     function resetFormData() {
       const defaultData = getDefaultFormData();
-      for (const key in formData) {
+      for (const key of Object.keys(formData)) {
         formData[key] = defaultData[key];
       }
     }

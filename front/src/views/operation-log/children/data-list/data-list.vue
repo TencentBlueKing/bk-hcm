@@ -14,11 +14,11 @@ export interface IDataListProps {
 
 const props = withDefaults(defineProps<IDataListProps>(), {});
 
-const isResourcePage = inject('isResourcePage');
-
 const emit = defineEmits<{
   'view-details': [row: IAuditItem];
 }>();
+
+const isResourcePage = inject('isResourcePage');
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 

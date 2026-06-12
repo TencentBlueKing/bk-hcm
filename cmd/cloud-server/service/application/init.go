@@ -43,13 +43,14 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	jwttoken "hcm/pkg/thirdparty/api-gateway/itsm/jwt-token"
 	"hcm/pkg/thirdparty/esb"
 
 	"github.com/tidwall/gjson"
 )
 
 // InitApplicationService ...
-func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
+func InitApplicationService(c *capability.Capability, bkApigwHCMURL string) {
 	svc := &applicationSvc{
 		client:     c.ApiClient,
 		audit:      c.Audit,
@@ -57,7 +58,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		cipher:     c.Cipher,
 		itsmCli:    c.ItsmCli,
 		esbCli:     c.EsbClient,
-		bkHcmUrl:   bkHcmUrl,
+		bkHcmUrl:   bkApigwHCMURL,
 		cmsiCli:    c.CmsiCli,
 		cmdbCli:    c.CmdbCli,
 	}
@@ -148,6 +149,14 @@ func (a *applicationSvc) getCallbackUrl() string {
 	return fmt.Sprintf("%s/api/v1/cloud/applications/approve", strings.TrimRight(a.bkHcmUrl, "/"))
 }
 
+func (a *applicationSvc) getCallbackToken(userName string, workflowID, title string) (string, error) {
+	return jwttoken.GenerateToken(userName, workflowID, title)
+}
+
+func (a *applicationSvc) parseCallbackToken(token string) (userName, workflowID, title string, err error) {
+	return jwttoken.ParseToken(token)
+}
+
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
 	return &handlers.HandlerOption{
 		Cts:     cts,
@@ -162,7 +171,7 @@ func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerO
 
 func (a *applicationSvc) getApprovalProcessInfo(
 	cts *rest.Contexts, applicationType enumor.ApplicationType,
-) (int64, []string, error) {
+) (*dataproto.ApprovalProcessResp, error) {
 	// DB中添加4条记录，分别对应add_account、create_cvm、create_vpc、create_disk
 	// Note：目前4条记录对应一个itsm流程id，后续如果要使用其它流程可直接修改数据库适配
 	// 新增类型只需要增加对应的tye和DB记录
@@ -174,13 +183,13 @@ func (a *applicationSvc) getApprovalProcessInfo(
 		},
 	)
 	if err != nil {
-		return 0, nil, err
+		return nil, err
 	}
 	if result.Details == nil || len(result.Details) != 1 {
-		return 0, nil, fmt.Errorf("approval process of [%s] not init", applicationType)
+		return nil, fmt.Errorf("approval process of [%s] not init", applicationType)
 	}
 
-	return result.Details[0].ServiceID, strings.Split(result.Details[0].Managers, ","), nil
+	return result.Details[0], nil
 }
 
 func (a *applicationSvc) updateStatusWithDetail(
@@ -194,6 +203,7 @@ func (a *applicationSvc) updateStatusWithDetail(
 	return err
 }
 
+// getApplicationBySN 根据sn查询申请单，在ITSMv4版本中，实际使用的是ticket_id
 func (a *applicationSvc) getApplicationBySN(cts *rest.Contexts, sn string) (*dataproto.ApplicationResp, error) {
 	// 构造过滤条件，只能查询自己的单据
 	reqFilter := &filter.Expression{

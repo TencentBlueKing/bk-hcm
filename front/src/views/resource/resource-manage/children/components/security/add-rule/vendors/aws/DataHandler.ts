@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash';
 import { AwsSecurityGroupRule, AwsSourceAddressType, AwsSourceTypeArr } from '.';
 
 const SPLIT_SIGN = '-';
@@ -7,7 +7,7 @@ export const AWS_PORT_ALL = 'ALL';
 export enum AWS_PROTOCOL {
   ALL = '-1',
   ICMP = 'icmp',
-  ICMPv6 = 'icmpv6'
+  ICMPv6 = 'icmpv6',
 }
 
 export const awsHandler = (

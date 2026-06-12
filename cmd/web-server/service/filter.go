@@ -27,12 +27,13 @@ import (
 	"regexp"
 	"strings"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/login"
 	"hcm/pkg/tools/uuid"
 
 	"github.com/emicklei/go-restful/v3"
@@ -40,6 +41,7 @@ import (
 
 type loginVerifyRespData struct {
 	UserName string `json:"username"`
+	TenantID string `json:"tenant_id"`
 }
 
 func isITSMCallbackRequest(req *restful.Request) bool {
@@ -55,10 +57,10 @@ func isSystemAdminRequest(req *restful.Request) bool {
 	return strings.Contains(req.Request.RequestURI, "/api/v1/cloud/admin/system")
 }
 
-func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) func(
+func newCheckLogin(loginCli login.Client, bkLoginUrl, bkLoginCookieName string) func(
 	*restful.Request) (*rest.Response, error) {
 
-	if bkLoginCookieName == "bk_ticket" {
+	if bkLoginCookieName == constant.BKTicket {
 		// 解析Login URL
 		oaLoginClient, err := newOALoginClient(bkLoginUrl)
 		if err != nil {
@@ -83,7 +85,7 @@ func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) f
 	}
 
 	// 默认只能是bk_token,不支持其他的
-	bkLoginCookieName = "bk_token"
+	bkLoginCookieName = constant.BKToken
 
 	return func(req *restful.Request) (*rest.Response, error) {
 		// 获取cookie
@@ -93,24 +95,26 @@ func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) f
 			return nil, fmt.Errorf("%s cookie don't exists", bkLoginCookieName)
 		}
 		// 校验bk_token是否有效
-		resp, err := esbClient.Login().IsLogin(req.Request.Context(), cookie.Value)
+		kt := core.NewBackendKit()
+		kt.SetBackendTenantID()
+		resp, err := loginCli.VerifyToken(kt, cookie.Value)
 		if err != nil {
+			logs.Errorf("verify token failed, err: %v, cookie value: %s, rid: %s", err, cookie.Value, kt.Rid)
 			return nil, err
 		}
 		return &rest.Response{
-			Code:    int32(resp.Code),
-			Message: resp.Message,
 			Data: loginVerifyRespData{
-				UserName: resp.Data.Username,
+				UserName: resp.Username,
+				TenantID: resp.TenantID,
 			},
 		}, nil
 	}
 }
 
 // NewUserAuthenticateFilter ...
-func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) restful.FilterFunction {
+func NewUserAuthenticateFilter(loginCli login.Client, bkLoginUrl, bkLoginCookieName string) restful.FilterFunction {
 
-	checkLogin := newCheckLogin(esbClient, bkLoginUrl, bkLoginCookieName)
+	checkLogin := newCheckLogin(loginCli, bkLoginUrl, bkLoginCookieName)
 
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 		var err error
@@ -136,6 +140,7 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 				dataContent, ok := ret.Data.(loginVerifyRespData)
 				if ok {
 					username = dataContent.UserName
+					req.Request.Header.Set(constant.TenantIDKey, dataContent.TenantID)
 				} else {
 					logs.Errorf("change ret data to loginVerifyRespData failed")
 				}
@@ -160,8 +165,8 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 			return
 		}
 		// request and response details landing log for monitoring and troubleshooting problem.
-		logs.Infof("uri: %s, method: %s, body: %s, appcode: %s, user: %s, remote addr: %s, "+
-			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User,
+		logs.Infof("uri: %s, method: %s, body: %s, appcode: %s, user: %s, tenant: %s, remote addr: %s, "+
+			"rid: %s", req.Request.RequestURI, req.Request.Method, body, kt.AppCode, kt.User, kt.TenantID,
 			req.Request.RemoteAddr, kt.Rid)
 
 		chain.ProcessFilter(req, resp)

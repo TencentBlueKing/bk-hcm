@@ -25,6 +25,8 @@ export interface ISecurityGroupSelectorDialogProps {
 
 export type RuleGroup = Pick<ISecurityGroupItem, 'id' | 'name'>[];
 
+const model = defineModel<boolean>();
+
 const props = withDefaults(defineProps<ISecurityGroupSelectorDialogProps>(), {
   checked: () => [],
   multiple: true,
@@ -41,8 +43,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const securityGroupStore = useSecurityGroupStore();
-
-const model = defineModel<boolean>();
 
 const localChecked = ref<string[]>(structuredClone(props.checked));
 

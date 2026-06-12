@@ -27,9 +27,9 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // Auth only used for auth.
@@ -64,7 +64,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	}
 
 	// enable unlimited query, because this is iam pull resource callback.
-	po := &core.PageOption{MaxLimit: client.BkIAMMaxPageSize}
+	po := &core.PageOption{MaxLimit: iam.BkIAMMaxPageSize}
 	if err := opts.Validate(po); err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	if opts.Page.Count {
 		// count instance data by whereExpr
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, opts.TableName, whereExpr)
-		count, err := r.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := r.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			return nil, err
 		}
@@ -99,7 +99,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	sql = fmt.Sprintf(`SELECT %s as id, %s as name FROM %s %s %s`,
 		opts.ResourceIDField, opts.DisplayNameField, opts.TableName, whereExpr, pageExpr)
 	list := make([]types.InstanceResource, 0)
-	err = r.Orm.Do().Select(kt.Ctx, &list, sql, whereValue)
+	err = r.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &list, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}

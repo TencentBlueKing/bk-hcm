@@ -20,7 +20,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -28,11 +27,12 @@ import (
 	"time"
 
 	"hcm/cmd/auth-server/types"
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 	"hcm/pkg/tools/uuid"
 
 	"github.com/emicklei/go-restful/v3"
@@ -102,7 +102,7 @@ func iamRequestFilter(sysCli *sys.Sys, w http.ResponseWriter, req *http.Request)
 	req.Header.Set(constant.RidKey, rid)
 
 	// set rid to response header, used to troubleshoot the problem.
-	w.Header().Set(client.RequestIDHeader, rid)
+	w.Header().Set(iam.RequestIDHeader, rid)
 
 	// use sys language as hcm language
 	req.Header.Set(constant.LanguageKey, req.Header.Get("Blueking-Language"))
@@ -114,7 +114,7 @@ func iamRequestFilter(sysCli *sys.Sys, w http.ResponseWriter, req *http.Request)
 
 	appCode := req.Header.Get(constant.AppCodeKey)
 	if len(appCode) == 0 {
-		req.Header.Set(constant.AppCodeKey, client.SystemIDIAM)
+		req.Header.Set(constant.AppCodeKey, iam.SystemIDIAM)
 	}
 
 	return nil
@@ -122,7 +122,7 @@ func iamRequestFilter(sysCli *sys.Sys, w http.ResponseWriter, req *http.Request)
 
 // getRid get request id from header. if rid is empty, generate a rid to return.
 func getRid(h http.Header) string {
-	if rid := h.Get(client.RequestIDHeader); len(rid) != 0 {
+	if rid := h.Get(iam.RequestIDHeader); len(rid) != 0 {
 		return rid
 	}
 
@@ -146,9 +146,9 @@ var iamToken = struct {
 }{}
 
 func checkRequestAuthorization(cli *sys.Sys, req *http.Request) (bool, error) {
-	rid := req.Header.Get(client.RequestIDHeader)
+	rid := req.Header.Get(iam.RequestIDHeader)
 	name, pwd, ok := req.BasicAuth()
-	if !ok || name != client.SystemIDIAM {
+	if !ok || name != iam.SystemIDIAM {
 		logs.Errorf("request have no basic authorization, rid: %s", rid)
 		return false, nil
 	}
@@ -159,7 +159,7 @@ func checkRequestAuthorization(cli *sys.Sys, req *http.Request) (bool, error) {
 	}
 
 	var err error
-	iamToken.token, err = cli.GetSystemToken(context.Background())
+	iamToken.token, err = cli.GetSystemToken(core.NewBackendKit())
 	if err != nil {
 		logs.Errorf("check request authorization get system token failed, error: %s, rid: %s", err.Error(), rid)
 		return false, err

@@ -10,8 +10,6 @@ import { PaginationType } from '@/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import { SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
-const { getColumns } = columnFactory();
-
 const props = withDefaults(
   defineProps<{
     resourceName: SecurityGroupRelatedResourceName;
@@ -32,7 +30,11 @@ const props = withDefaults(
     loading: false,
   },
 );
+
 const emit = defineEmits<(e: 'select', data: any[]) => void>();
+
+const { getColumns } = columnFactory();
+
 const slots = useSlots();
 const { whereAmI } = useWhereAmI();
 

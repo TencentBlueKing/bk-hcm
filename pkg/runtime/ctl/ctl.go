@@ -84,24 +84,24 @@ func WithBasics(sd serviced.Service) []cmd.Cmd {
 }
 
 func (b *Ctl) httpHandler(w http.ResponseWriter, req *http.Request) {
-
 	// get the command to run from url parameters, returns help message if not set or is 'help'.
 	urlParams := req.URL.Query()
 	cmdName := urlParams.Get("cmd")
 	if len(cmdName) == 0 || cmdName == "help" {
-		rest.WriteResp(w, &rest.Response{Code: errf.OK, Data: cmd.CtlHelp(b.commands)})
+		rest.WriteResp(w, rest.NewResponse(errf.OK, "", cmd.CtlHelp(b.commands)))
 		return
 	}
 
 	command, exists := b.commands[cmdName]
 	if !exists {
-		rest.WriteResp(w, &rest.Response{Code: errf.InvalidParameter, Data: cmd.CtlHelp(b.commands),
-			Message: "'cmd' not set or not supported, please check your command, or refer to help command!"})
+		rest.WriteResp(w, rest.NewResponse(errf.InvalidParameter,
+			"'cmd' not set or not supported, please check your command, or refer to help command!",
+			cmd.CtlHelp(b.commands)))
 		return
 	}
 
 	if urlParams.Get("sub-cmd") == "help" {
-		rest.WriteResp(w, &rest.Response{Code: errf.OK, Data: command.Help()})
+		rest.WriteResp(w, rest.NewResponse(errf.OK, "", command.Help()))
 		return
 	}
 
@@ -162,6 +162,6 @@ func (b *Ctl) httpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	rest.WriteResp(w, &rest.Response{Code: errf.OK, Data: data})
+	rest.WriteResp(w, rest.NewResponse(errf.OK, "", data))
 	return
 }

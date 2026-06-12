@@ -34,6 +34,8 @@ spec:
               value: {{ .Values.appSecret }}
             - name: BK_APP_TENANT_ID
               value: {{ include "bk-hcm.tenantID" . }}
+            - name: BK_API_ITSM_APP_CODE
+              value: {{ .Values.apigwRegister.grantPerm.bkApiITSMAppCode | default "cw_aitsm" | quote }}
             - name: BK_HCM_STAGE_NAME
               value: {{ .Values.apigwRegister.stageName }}
             - name: BK_HCM_STAGE_DESCRIPTION

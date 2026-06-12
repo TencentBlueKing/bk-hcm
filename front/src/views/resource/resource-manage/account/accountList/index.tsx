@@ -72,7 +72,8 @@ export default defineComponent({
           placeholder='搜索云账号'
           type='search'
           clearable
-          v-model={searchVal.value}></Input>
+          v-model={searchVal.value}
+        ></Input>
         <div class={'account-list-header'}>
           <p class={'header-title'}>账号列表</p>
           <div class={'header-btn'}>
@@ -91,7 +92,8 @@ export default defineComponent({
                     },
                   });
                 }
-              }}>
+              }}
+            >
               <div class={'flex-row align-items-center'}>
                 <i class={'hcm-icon bkhcm-icon-plus-circle mr3'} />
                 接入
@@ -126,7 +128,8 @@ export default defineComponent({
               onClick={() => {
                 setAccountId('');
                 resourceAccountStore.clear();
-              }}>
+              }}
+            >
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>
             </div>

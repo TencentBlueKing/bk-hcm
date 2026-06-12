@@ -1,5 +1,6 @@
 .account-form {
   margin-top: 72px;
+
   .account-form-card {
     margin-bottom: 16px;
     background-color: #fff;
@@ -10,6 +11,26 @@
       color: #313238;
       letter-spacing: 0;
       margin-right: 16px;
+    }
+
+    .api-secret-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafbfd;
+      height: 100%;
+
+      .bk-form-item {
+        margin-bottom: 0 !important;
+      }
+
+      .api-secret-footer-content {
+        width: 209px;
+        height: 32px;
+        background: #f0f1f5;
+        border-radius: 2px;
+        margin-right: 36px;
+      }
     }
 
     .account-form-card-content {
@@ -35,11 +56,13 @@
     .api-secret-header {
       display: flex;
       align-items: center;
+
       .header-text {
         margin-left: 9px;
         color: #63656e;
         font-size: 12px;
       }
+
       .header-btn {
         font-size: 12px;
       }
@@ -64,32 +87,16 @@
       margin-top: -16px;
       display: flex;
       align-items: center;
+
       .account-validate-btn {
         margin: 0 12px 0 28px;
         min-width: 88px;
       }
+
       .validate-icon {
         margin-right: 8px;
         height: 14px;
         width: 14px;
-      }
-    }
-
-    .api-secret-footer {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #fafbfd;
-      height: 100%;
-      .bk-form-item {
-        margin-bottom: 0 !important;
-      }
-      .api-secret-footer-content {
-        width: 209px;
-        height: 32px;
-        background: #f0f1f5;
-        border-radius: 2px;
-        margin-right: 36px;
       }
     }
   }

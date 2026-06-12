@@ -384,8 +384,8 @@ func (a *ApplicationOfCreateSubAccount) sendSubAccountMail(result *hssubaccount.
 		content += fmt.Sprintf("\n密码: %s", result.Password)
 	}
 
-	err := a.SendMail(&cmsi.CmsiMail{
-		Receiver:   a.req.ReceiveEmail,
+	err := a.SendMail(&cmsi.CmsiMailParams{
+		Receiver:   []string{a.req.ReceiveEmail},
 		Title:      fmt.Sprintf("三级账号(%s)开通通知", converter.PtrToVal(result.Name)),
 		Content:    content,
 		BodyFormat: "Text",

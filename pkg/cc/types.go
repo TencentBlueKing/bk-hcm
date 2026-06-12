@@ -526,38 +526,6 @@ func (s SysOption) CheckV() {
 	}
 }
 
-// IAM defines all the iam related runtime.
-type IAM struct {
-	// Endpoints is a seed list of host:port addresses of iam nodes.
-	Endpoints []string `yaml:"endpoints"`
-	// AppCode blueking belong to hcm's appcode.
-	AppCode string `yaml:"appCode"`
-	// AppSecret blueking belong to hcm app's secret.
-	AppSecret string    `yaml:"appSecret"`
-	TLS       TLSConfig `yaml:"tls"`
-}
-
-// validate iam runtime.
-func (s IAM) validate() error {
-	if len(s.Endpoints) == 0 {
-		return errors.New("iam endpoints is not set")
-	}
-
-	if len(s.AppCode) == 0 {
-		return errors.New("iam appcode is not set")
-	}
-
-	if len(s.AppSecret) == 0 {
-		return errors.New("iam app secret is not set")
-	}
-
-	if err := s.TLS.validate(); err != nil {
-		return fmt.Errorf("iam tls validate failed, err: %v", err)
-	}
-
-	return nil
-}
-
 // Web 服务依赖所需特有配置， 包括登录、静态文件等配置的定义
 type Web struct {
 	StaticFileDirPath string `yaml:"staticFileDirPath"`
@@ -566,11 +534,15 @@ type Web struct {
 	BkLoginUrl             string `yaml:"bkLoginUrl"`
 	BkComponentApiUrl      string `yaml:"bkComponentApiUrl"`
 	BkItsmUrl              string `yaml:"bkItsmUrl"`
+	BkAuthCenterUrl        string `yaml:"bkAuthCenterUrl"`
+	BkUserCenterUrl        string `yaml:"bkUserCenterUrl"`
 	BkDomain               string `yaml:"bkDomain"`
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
+	BkUserManageUrl        string `yaml:"bkUserManageUrl"`
 	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
 	EnableAccountBill      bool   `yaml:"enableAccountBill"`
+	SubPath                string `yaml:"subPath"`
 }
 
 func (s Web) validate() error {
@@ -586,8 +558,20 @@ func (s Web) validate() error {
 		return errors.New("bk_itsm_url is not set")
 	}
 
+	if len(s.BkAuthCenterUrl) == 0 {
+		return errors.New("bk_auth_center_url is not set")
+	}
+
+	if len(s.BkUserCenterUrl) == 0 {
+		return errors.New("bk_user_center_url is not set")
+	}
+
 	if len(s.BkDomain) == 0 {
 		return errors.New("bk_domain is not set")
+	}
+
+	if len(s.BkUserManageUrl) == 0 {
+		return errors.New("bkUserManageUrl is not set")
 	}
 
 	return nil
@@ -1051,6 +1035,16 @@ func (c *Notice) validate() error {
 	}
 
 	return nil
+}
+
+// ITSM ...
+type ITSM struct {
+	DisableEncodeToken bool `yaml:"disableEncodeToken"`
+	ApiGateway         `yaml:"-,inline"`
+}
+
+func (s *ITSM) validate() error {
+	return s.ApiGateway.validate()
 }
 
 // SyncConfig defines sync config.

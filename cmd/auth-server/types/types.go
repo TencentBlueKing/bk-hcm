@@ -26,9 +26,9 @@ import (
 	"strings"
 
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 const (
@@ -63,16 +63,16 @@ type Method string
 
 // PullResourceReq blueking iam pull resource request.
 type PullResourceReq struct {
-	Type   client.TypeID `json:"type"`
-	Method Method        `json:"method"`
-	Filter interface{}   `json:"filter,omitempty"`
-	Page   Page          `json:"page,omitempty"`
+	Type   iam.TypeID  `json:"type"`
+	Method Method      `json:"method"`
+	Filter interface{} `json:"filter,omitempty"`
+	Page   Page        `json:"page,omitempty"`
 }
 
 // UnmarshalJSON unmarshal json to PullResourceReq.
 func (req *PullResourceReq) UnmarshalJSON(raw []byte) error {
 	data := struct {
-		Type   client.TypeID   `json:"type"`
+		Type   iam.TypeID      `json:"type"`
 		Method Method          `json:"method"`
 		Filter json.RawMessage `json:"filter,omitempty"`
 		Page   Page            `json:"page,omitempty"`
@@ -143,7 +143,7 @@ type ListInstanceFilter struct {
 }
 
 // GetFilter get filter from list instance filter.
-func (f *ListInstanceFilter) GetFilter(resType client.TypeID) (*filter.Expression, error) {
+func (f *ListInstanceFilter) GetFilter(resType iam.TypeID) (*filter.Expression, error) {
 	expr := &filter.Expression{
 		Op:    filter.And,
 		Rules: make([]filter.RuleFactory, 0),
@@ -178,7 +178,7 @@ func (f *ListInstanceFilter) GetFilter(resType client.TypeID) (*filter.Expressio
 }
 
 // getResourceIDField get the query instance id field corresponding to the resource type.
-func getResourceIDField(resType client.TypeID) (string, error) {
+func getResourceIDField(resType iam.TypeID) (string, error) {
 	switch resType {
 	case sys.Account:
 		return "id", nil
@@ -195,7 +195,7 @@ func getResourceIDField(resType client.TypeID) (string, error) {
 }
 
 // getResourceKeywordField get the query instance keyword field corresponding to the resource type.
-func getResourceKeywordField(resType client.TypeID) (string, error) {
+func getResourceKeywordField(resType iam.TypeID) (string, error) {
 	switch resType {
 	case sys.Account:
 		return "name", nil
@@ -212,14 +212,14 @@ func getResourceKeywordField(resType client.TypeID) (string, error) {
 
 // ParentFilter parent filter.
 type ParentFilter struct {
-	Type client.TypeID `json:"type"`
-	ID   InstanceID    `json:"id"`
+	Type iam.TypeID `json:"type"`
+	ID   InstanceID `json:"id"`
 }
 
 // ResourceTypeChainFilter resource type chain filter.
 type ResourceTypeChainFilter struct {
-	SystemID string        `json:"system_id"`
-	ID       client.TypeID `json:"id"`
+	SystemID string     `json:"system_id"`
+	ID       iam.TypeID `json:"id"`
 }
 
 // FetchInstanceInfoFilter fetch instance info filter.

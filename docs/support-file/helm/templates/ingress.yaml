@@ -14,8 +14,12 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     {{- if .Values.ingress.webserver.enabled }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      rewrite ^/static/(.*)$ /web/static/$1 last;
-      rewrite ^/api/(.*)$ /web/api/$1 last;
+      {{- $rootPrefix := "" }}
+      {{- if eq .Values.bkWebSiteAccess.mode "subpath" }}
+      {{- $rootPrefix = .Values.bkWebSiteAccess.subpath.rootPrefix }}
+      {{- end }}
+      rewrite ^{{$rootPrefix}}/static/(.*)$ {{$rootPrefix}}/web/static/$1 last;
+      rewrite ^{{$rootPrefix}}/api/(.*)$ {{$rootPrefix}}/web/api/$1 last;
     {{- end }}
 spec:
   rules:
@@ -23,26 +27,26 @@ spec:
       http:
         paths:
           {{- if .Values.ingress.webserver.enabled }}
-          - path: "/web(/|$)(.*)"
+          - path: "{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/web(/|$)(.*)"
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: ImplementationSpecific
             {{- end }}
             backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 14 }}
-          - path: "/"
+          - path: "{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}(/|$)(.*){{- else }}/{{- end }}"
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: ImplementationSpecific
             {{- end }}
             backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 14 }}
           {{- end }}
           {{- if .Values.ingress.authserver.enabled }}
-          - path: "/auth(/|$)(.*)"
+          - path: "{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/auth(/|$)(.*)"
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: ImplementationSpecific
             {{- end }}
             backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-authserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.authserver.service.ports )) | int) "context" $) | nindent 14 }}
           {{- end }}
           {{- if .Values.ingress.apiserver.enabled }}
-          - path: "/apigw(/|$)(.*)"
+          - path: "{{- if eq .Values.bkWebSiteAccess.mode "subpath" }}{{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}/apigw(/|$)(.*)"
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: ImplementationSpecific
             {{- end }}

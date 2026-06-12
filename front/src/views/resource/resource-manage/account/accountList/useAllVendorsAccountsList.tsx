@@ -2,7 +2,7 @@ import { VendorEnum } from '@/common/constant';
 import { useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import { reactive, ref } from 'vue';
-import { debounce } from 'lodash-es';
+import { debounce } from 'lodash';
 import tcloudVendor from '@/assets/image/vendor-tcloud.svg';
 import awsVendor from '@/assets/image/vendor-aws.svg';
 import azureVendor from '@/assets/image/vendor-azure.svg';

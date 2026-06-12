@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/thirdparty/api-gateway/login"
 	"hcm/pkg/thirdparty/api-gateway/notice"
 
 	"github.com/emicklei/go-restful/v3"
@@ -37,5 +38,6 @@ type Capability struct {
 	Authorizer auth.Authorizer
 	ItsmCli    itsm.Client
 	NoticeCli  notice.Client
+	LoginCli   login.Client
 	CmdbCli    cmdb.Client
 }

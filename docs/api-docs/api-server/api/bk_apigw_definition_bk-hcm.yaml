@@ -85,3 +85,7 @@ resource_docs:
 grant_permissions:
   - bk_app_code: "{{ environ.BK_APP_CODE }}"
     grant_dimension: "gateway"
+  - bk_app_code: "{{ environ.BK_API_ITSM_APP_CODE }}"
+    grant_dimension: "resource"
+    resource_names:
+      - "approve_application"

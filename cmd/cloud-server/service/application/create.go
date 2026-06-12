@@ -21,6 +21,7 @@ package application
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	accounthandler "hcm/cmd/cloud-server/service/application/handlers/account"
@@ -60,14 +61,16 @@ import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -121,32 +124,72 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	if err := handler.CheckReq(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
 	// 预处理数据
 	if err := handler.PrepareReq(); err != nil {
 		return nil, err
 	}
+
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
+	processInfo, err := a.getApprovalProcessInfo(cts, applicationType)
+	if err != nil {
+		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
+	}
+
+	// 渲染ITSM单据标题
+	itsmTitle, err := handler.RenderItsmTitle()
+	if err != nil {
+		return nil, fmt.Errorf("render itsm ticket title error: %w", err)
+	}
+
+	// 渲染ITSM单据申请内容
+	itsmForm, err := handler.RenderItsmForm()
+	if err != nil {
+		return nil, fmt.Errorf("render itsm ticket form error: %w", err)
+	}
+
+	// 生成ITSM的回调地址
+	callbackUrl := a.getCallbackUrl()
+	callbackToken, err := a.getCallbackToken(cts.Kit.User, processInfo.WorkflowKey, itsmTitle)
+	if err != nil {
+		return nil, fmt.Errorf("get callback token failed, err: %w", err)
+	}
+
+	// 获取ITSM单据涉及到的各个节点审批人
+	approvers, err := handler.GetItsmApprover(cts.Kit, strings.Split(processInfo.Managers, ","))
+	if err != nil {
+		logs.Errorf("get itsm approver failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return "", fmt.Errorf("get itsm approver failed, err: %v", err)
+	}
 
 	// 调用ITSM创建单据
-	sn, err := a.createItsmTicket(cts, handler, applicationType)
+	itsmTicketRes, err := a.itsmCli.CreateTicket(
+		cts.Kit,
+		&itsm.CreateTicketParams{
+			SystemID:       cc.CloudServer().Itsm.AppCode,
+			WorkflowKey:    processInfo.WorkflowKey,
+			Creator:        cts.Kit.User,
+			CallbackURL:    callbackUrl,
+			CallbackToken:  callbackToken,
+			Title:          itsmTitle,
+			ContentDisplay: itsmForm,
+			// ITSM流程里使用变量引用的方式设置各个节点审批人
+			VariableApprovers: approvers,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
-	result, err := a.createApplication(cts, req, handler, sn, applicationType)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	// 调用DB创建单据
+	return a.createWithDataService(cts.Kit, itsmTicketRes.ID, handler, cvt.PtrToVal(req.Remark))
 }
 
-// createApplicationRequest ...
-func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
-	*core.CreateResult, error) {
+func (a *applicationSvc) createWithDataService(kt *kit.Kit, itsmTicketID string, handler handlers.ApplicationHandler,
+	memo string) (interface{}, error) {
 
-	// 调用DB创建单据
+	applicationType := handler.GetType()
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
 		return nil, errf.NewFromErr(
@@ -181,71 +224,27 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 	}
 	operation := handler.GetOperation()
 
-	return a.client.DataService().Global.Application.CreateApplication(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+	result, err := a.client.DataService().Global.Application.CreateApplication(
+		kt.Ctx,
+		kt.Header(),
 		&dataproto.ApplicationCreateReq{
-			SN:             sn,
+			SN:             itsmTicketID,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Operation:      operation,
 			Status:         enumor.Pending,
 			BkBizIDs:       bkBizIDs,
-			Applicant:      cts.Kit.User,
+			Applicant:      kt.User,
 			Content:        content,
 			DeliveryDetail: "{}",
-			Memo:           req.Remark,
-		},
-	)
-}
-
-// createItsmTicket 调用ITSM创建单据
-func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
-	applicationType enumor.ApplicationType) (string, error) {
-
-	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
-	if err != nil {
-		return "", fmt.Errorf("get approval process service id and managers failed, err: %v", err)
-	}
-
-	// 生成ITSM的回调地址
-	callbackUrl := a.getCallbackUrl()
-
-	// 渲染ITSM单据标题
-	itsmTitle, err := handler.RenderItsmTitle()
-	if err != nil {
-		return "", fmt.Errorf("render itsm ticket title error: %w", err)
-	}
-
-	// 渲染ITSM单据申请内容
-	itsmForm, err := handler.RenderItsmForm()
-	if err != nil {
-		return "", fmt.Errorf("render itsm ticket form error: %w", err)
-	}
-
-	// 获取ITSM单据涉及到的各个节点审批人
-	approvers, err := handler.GetItsmApprover(cts.Kit, managers)
-	if err != nil {
-		logs.Errorf("get itsm approver failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return "", fmt.Errorf("get itsm approver failed, err: %v", err)
-	}
-
-	sn, err := a.itsmCli.CreateTicket(
-		cts.Kit,
-		&itsm.CreateTicketParams{
-			ServiceID:      serviceID,
-			Creator:        cts.Kit.User,
-			CallbackURL:    callbackUrl,
-			Title:          itsmTitle,
-			ContentDisplay: itsmForm,
-			// ITSM流程里使用变量引用的方式设置各个节点审批人
-			VariableApprovers: approvers,
+			Memo:           &memo,
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("call itsm create ticket api failed, err: %w", err)
+		return nil, err
 	}
-	return sn, nil
+
+	return result, nil
 }
 
 func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {
@@ -818,7 +817,7 @@ func (a *applicationSvc) batchCreateBizForDeleteSubAccount(cts *rest.Contexts, r
 			AccountID: info.AccountID,
 		}
 		handler := deletesubaccount.NewApplicationOfDeleteSubAccount(opt, base,
-			&proto.SubAccountDeleteReq{SubAccountBasicInfo: converter.PtrToVal(info)},
+			&proto.SubAccountDeleteReq{SubAccountBasicInfo: cvt.PtrToVal(info)},
 		)
 
 		result, err := a.create(cts, &proto.CreateCommonReq{}, handler)

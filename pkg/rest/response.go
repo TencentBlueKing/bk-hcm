@@ -24,18 +24,21 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 )
 
 // BaseResp http response.
 type BaseResp struct {
+	Result  bool   `json:"result"`
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }
 
 // Response is a http standard response
 type Response struct {
+	Result      bool                `json:"result"`
 	Code        int32               `json:"code"`
 	Message     string              `json:"message"`
 	Permissions *meta.IamPermission `json:"permission,omitempty"`
@@ -44,9 +47,30 @@ type Response struct {
 
 // NewBaseResp new BaseResp.
 func NewBaseResp(code int32, msg string) *BaseResp {
+	var result bool
+	if code == errf.OK {
+		result = true
+	}
+
 	return &BaseResp{
+		Result:  result,
 		Code:    code,
 		Message: msg,
+	}
+}
+
+// NewResponse new Response.
+func NewResponse(code int32, msg string, data interface{}) *Response {
+	var result bool
+	if code == errf.OK {
+		result = true
+	}
+
+	return &Response{
+		Result:  result,
+		Code:    code,
+		Message: msg,
+		Data:    data,
 	}
 }
 

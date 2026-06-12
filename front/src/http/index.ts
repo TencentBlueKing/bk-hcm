@@ -8,8 +8,8 @@ import Cookies from 'js-cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { showLoginModal } from '@/utils/login-helper';
 import bus from '@/common/bus';
+import { showLoginModal } from '@/utils/login-helper';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
 

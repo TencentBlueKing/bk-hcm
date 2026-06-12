@@ -101,6 +101,8 @@ require github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor
 
 require github.com/nyaruka/phonenumbers v1.7.2
 
+require github.com/patrickmn/go-cache v2.1.0+incompatible
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.16

@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
+	itsmCli "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 )
 
@@ -43,7 +43,7 @@ type HandlerOption struct {
 	EsbClient esb.Client
 	Cipher    cryptography.Crypto
 	Audit     audit.Interface
-	ItsmCli   itsm2.Client
+	ItsmCli   itsmCli.Client
 	CmsiCli   cmsi.Client
 	CmdbCli   cmdb.Client
 }
@@ -109,9 +109,9 @@ func (a *BaseApplicationHandler) getPageOfOneLimit() *core.BasePage {
 
 // GetItsmPlatformAndAccountApprover get itsm platform and account approver.
 func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, managers []string,
-	accountID string) ([]itsm2.VariableApprover, error) {
+	accountID string) ([]itsmCli.VariableApprover, error) {
 
-	allManagers := []itsm2.VariableApprover{
+	allManagers := []itsmCli.VariableApprover{
 		{
 			Variable:  "platform_manager",
 			Approvers: managers,
@@ -124,7 +124,7 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(kt *kit.Kit, 
 		return allManagers, nil
 	}
 
-	allManagers = append(allManagers, itsm2.VariableApprover{
+	allManagers = append(allManagers, itsmCli.VariableApprover{
 		Variable:  "account_manager",
 		Approvers: accountData.Managers,
 	})
@@ -140,7 +140,7 @@ func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, de
 }
 
 // GetAccountApprover get account approver.
-func (a *BaseApplicationHandler) GetAccountApprover(kt *kit.Kit, accountID string) ([]itsm2.VariableApprover, error) {
+func (a *BaseApplicationHandler) GetAccountApprover(kt *kit.Kit, accountID string) ([]itsmCli.VariableApprover, error) {
 	accountData, err := a.GetAccount(accountID)
 	if err != nil {
 		logs.Errorf("get account failed, err: %v, account id: %s, rid: %s", err, accountID, kt.Rid)
@@ -152,5 +152,5 @@ func (a *BaseApplicationHandler) GetAccountApprover(kt *kit.Kit, accountID strin
 		return nil, fmt.Errorf("account %s has no managers", accountID)
 	}
 
-	return []itsm2.VariableApprover{{Variable: "account_manager", Approvers: accountData.Managers}}, nil
+	return []itsmCli.VariableApprover{{Variable: "account_manager", Approvers: accountData.Managers}}, nil
 }

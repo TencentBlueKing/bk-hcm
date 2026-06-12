@@ -60,6 +60,7 @@ webpack-stats.json
 
 webpack_cache/
 dist/
+dist.zip
 
 test/unit/coverage
 
@@ -86,3 +87,4 @@ index.dev.js
 *.pem
 
 .stylelintcache
+

@@ -106,7 +106,13 @@ func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
 	// 查询审批链接
 	ticket, err := a.itsmCli.GetTicketResult(cts.Kit, application.SN)
 	if err != nil {
+		logs.Errorf("failed to get ticket url, err: %v, ticket_id: %s, rid: %s", err, application.SN, cts.Kit.Rid)
 		return nil, fmt.Errorf("call itsm get ticket url failed, err: %v", err)
+	}
+
+	if ticket == nil {
+		logs.Errorf("call itsm get ticket url get empty result, ticket_id: %s, rid: %s", application.SN, cts.Kit.Rid)
+		return nil, fmt.Errorf("call itsm get ticket url get empty result, ticket_id: %s", application.SN)
 	}
 
 	return &proto.ApplicationGetResp{
@@ -121,6 +127,6 @@ func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
 		DeliveryDetail: application.DeliveryDetail,
 		Memo:           application.Memo,
 		Revision:       application.Revision,
-		TicketUrl:      ticket.TicketURL,
+		TicketUrl:      ticket.FrontendURL,
 	}, nil
 }

@@ -61,11 +61,12 @@ export default () => {
     {
       label: t('负责人'),
       field: 'managers',
-      render: ({ data }: any) => data?.managers?.join(',') || '--',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: t('更新人'),
       field: 'reviser',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: t('更新时间'),

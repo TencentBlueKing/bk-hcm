@@ -27,6 +27,8 @@ const (
 	GlobalConfigTypeCloudSync GlobalConfigType = "cloud_sync"
 	// GlobalConfigTypeGPUMachineType GPU 机型清单配置，config_key 为云厂商，config_value 为机型字符串数组
 	GlobalConfigTypeGPUMachineType GlobalConfigType = "gpu_machine_type"
+	// GlobalConfigTypeITSM ITSM 流程相关配置
+	GlobalConfigTypeITSM GlobalConfigType = "itsm"
 )
 
 // GlobalConfigKeyCloudSync cloud sync global config key
@@ -53,3 +55,10 @@ const (
 	GlobalConfigKeyAzureGPUPrefix GlobalConfigKeyGPUMachineType = "azure_gpu_machine_prefix"
 )
 
+// GlobalConfigKeyITSM ITSM global config key
+type GlobalConfigKeyITSM string
+
+const (
+	// GlobalConfigKeyItsmMigrateVersionPrefix ITSM 流程注册进度，config_key 格式为 "itsm_migrate_version_{tenantID}"
+	GlobalConfigKeyItsmMigrateVersionPrefix GlobalConfigKeyITSM = "itsm_migrate_version"
+)

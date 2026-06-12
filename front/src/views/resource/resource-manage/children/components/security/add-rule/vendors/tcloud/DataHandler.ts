@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash';
 import { TcloudSecurityGroupRule, TcloudSourceTypeArr, TcloudTemplatePort, TcloudTemplatePortArr } from '.';
 import { TcloudSourceAddressType } from './SourceAddress';
 

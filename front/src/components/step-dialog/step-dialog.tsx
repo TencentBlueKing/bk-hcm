@@ -99,7 +99,8 @@ export default defineComponent({
           isShow={this.isShow}
           quick-close={false}
           close-icon={false}
-          onClosed={this.handleClose}>
+          onClosed={this.handleClose}
+        >
           {{
             default: () => {
               return (
@@ -129,7 +130,8 @@ export default defineComponent({
                       class='mr10 dialog-button'
                       theme='primary'
                       disabled={this.steps[this.curStep - 1].disableNext || (this.curStep > 1 ? !this.business : false)}
-                      onClick={this.handleNextStep}>
+                      onClick={this.handleNextStep}
+                    >
                       {this.t('下一步')}
                     </bk-button>
                   ) : (
@@ -141,7 +143,8 @@ export default defineComponent({
                       theme='primary'
                       disabled={this.confirmDisabled}
                       loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}
-                      onClick={this.handleConfirm}>
+                      onClick={this.handleConfirm}
+                    >
                       {this.t('确认')}
                     </bk-button>
                   ) : (
@@ -150,7 +153,8 @@ export default defineComponent({
                   <bk-button
                     class='dialog-button'
                     onClick={this.handleClose}
-                    disabled={this.steps[this.curStep - 1].isConfirmLoading || this.loading}>
+                    disabled={this.steps[this.curStep - 1].isConfirmLoading || this.loading}
+                  >
                     {this.t('取消')}
                   </bk-button>
                 </>

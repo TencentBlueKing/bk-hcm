@@ -41,17 +41,26 @@ data:
       bkComponentApiUrl: {{ .Values.bkComponentApiUrl }}
       # ITSM 地址
       bkItsmUrl: {{ .Values.bkItsmUrl }}
+      # 权限中心地址
+      bkAuthCenterUrl: {{ .Values.bkAuthCenterUrl }}
+      # 用户中心地址
+      bkUserCenterUrl: {{ .Values.bkUserCenterUrl }}
       # 中英文持久化
       bkDomain: {{ .Values.bkDomain }}
       # 蓝鲸配置平台创建业务页面跳转链接
       bkCmdbCreateBizUrl: {{ .Values.bkCmdbCreateBizUrl }}
       # 蓝鲸配置平台创建业务文档跳转链接
       bkCmdbCreateBizDocsUrl: {{ .Values.bkCmdbCreateBizDocsUrl }}
+      # 蓝鲸用户管理前端服务网关地址
+      bkUserManageUrl: {{ .Values.bkUserManageUrl }}
       # 启用云选型
       enableCloudSelection: {{ .Values.enableCloudSelection }}
       # 启用账单账号
       enableAccountBill: {{ .Values.enableAccountBill }}
+      ## 子路径，默认配置：空
+      subPath: {{- if eq .Values.bkWebSiteAccess.mode "subpath" }} {{ .Values.bkWebSiteAccess.subpath.rootPrefix }}{{- end }}
     itsm:
+      disableEncodeToken: {{ .Values.webserver.itsm.disableEncodeToken }}
       {{- toYaml .Values.itsm | nindent 6 }}
     changeLogPath:
       {{- toYaml .Values.webserver.changeLogPath | nindent 6 }}
@@ -60,5 +69,9 @@ data:
     templatePath: {{ .Values.webserver.templatePath }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
+    bkUser:
+      {{- toYaml .Values.bkUser | nindent 6 }}
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
+    login:
+      {{- toYaml .Values.login | nindent 6 }}

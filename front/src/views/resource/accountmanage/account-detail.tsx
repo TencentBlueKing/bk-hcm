@@ -538,7 +538,7 @@ export default defineComponent({
             label: t('创建人'),
             required: false,
             property: 'creator',
-            component: () => <span>{projectModel.creator}</span>,
+            component: () => <hcm-user-value value={projectModel.creator} />,
           },
           {
             label: t('创建时间'),
@@ -550,7 +550,7 @@ export default defineComponent({
             label: t('修改人'),
             required: false,
             property: 'reviser',
-            component: () => <span>{projectModel.reviser}</span>,
+            component: () => <hcm-user-value value={projectModel.reviser} />,
           },
           {
             label: t('修改时间'),

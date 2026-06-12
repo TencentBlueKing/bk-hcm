@@ -42,20 +42,22 @@ import (
 	templateSvc "hcm/cmd/web-server/service/template"
 	"hcm/cmd/web-server/service/user"
 	"hcm/cmd/web-server/service/version"
+	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	apiclient "hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	pkgcmdb "hcm/pkg/thirdparty/api-gateway/cmdb"
 	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/thirdparty/api-gateway/login"
 	pkgnotice "hcm/pkg/thirdparty/api-gateway/notice"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
@@ -79,6 +81,9 @@ type Service struct {
 	// noticeCli notification center client
 	noticeCli pkgnotice.Client
 	cmdbCli   pkgcmdb.Client
+	bkUserCli pkgbkuser.Client
+	// loginCli login client.
+	loginCli login.Client
 }
 
 // NewService create a service instance.
@@ -111,12 +116,6 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	itsmCfg := cc.WebServer().Itsm
-	itsmCli, err := pkgitsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		return nil, err
-	}
-
 	// create authorizer
 	authorizer, err := auth.NewAuthorizer(dis, network.TLS)
 	if err != nil {
@@ -129,40 +128,69 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	noticeCli, err := newNotificationClient()
-	if err != nil {
-		logs.Errorf("failed to create notice client, err: %v", err)
-		return nil, err
-	}
-
-	cmdbCfg := cc.WebServer().Cmdb
-	cmdbCli, err := pkgcmdb.NewClient(&cmdbCfg, metrics.Register())
-	if err != nil {
-		return nil, err
-	}
-
-	return &Service{
+	service := &Service{
 		client:     apiClientSet,
 		esbClient:  esbClient,
 		proxy:      p,
 		authorizer: authorizer,
-		itsmCli:    itsmCli,
-		noticeCli:  noticeCli,
-		cmdbCli:    cmdbCli,
-	}, nil
+	}
+
+	return newOtherClient(service)
 }
 
-func newNotificationClient() (pkgnotice.Client, error) {
-	noticeCfg := cc.WebServer().Notice
-	if !noticeCfg.Enable {
-		return nil, nil
+func newOtherClient(svc *Service) (*Service, error) {
+	bkUserCfg := cc.WebServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
 	}
-	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, metrics.Register())
+
+	itsmCfg := cc.WebServer().Itsm
+	itsmCli, err := pkgitsm.NewClient(&itsmCfg, svc.client.DataService(), bkUserCli, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	noticeCli, err := newNotificationClient(bkUserCli)
 	if err != nil {
 		logs.Errorf("failed to create notice client, err: %v", err)
 		return nil, err
 	}
-	_, err = noticeCli.RegApp(kit.New())
+
+	loginCfg := cc.WebServer().Login
+	loginCli, err := login.NewClient(&loginCfg, bkUserCli, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	cmdbCfg := cc.WebServer().Cmdb
+	cmdbCli, err := pkgcmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	svc.itsmCli = itsmCli
+	svc.noticeCli = noticeCli
+	svc.cmdbCli = cmdbCli
+	svc.bkUserCli = bkUserCli
+	svc.loginCli = loginCli
+	return svc, nil
+}
+
+func newNotificationClient(bkUserCli pkgbkuser.Client) (pkgnotice.Client, error) {
+	noticeCfg := cc.WebServer().Notice
+	if !noticeCfg.Enable {
+		return nil, nil
+	}
+	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, bkUserCli, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create notice client, err: %v", err)
+		return nil, err
+	}
+
+	// 用系统租户注册一次 // TODO 需要通知中心再梳理一下是否如此
+	kt := core.NewBackendKit()
+	_, err = noticeCli.RegApp(kt)
 	if err != nil {
 		// 无api gateway权限可能会导致注册失败，阻塞服务启动
 		logs.Errorf("register notice app failed, err: %v", err)
@@ -262,7 +290,7 @@ func (s *Service) apiSet() *restful.WebService {
 	ws.Filter(NewCompleteRequestIDFilter())
 	// Note: 所有API接口都需要经过用户认证
 	ws.Path("/api/v1/web").Filter(
-		NewUserAuthenticateFilter(s.esbClient, cc.WebServer().Web.BkLoginUrl, cc.WebServer().Web.BkLoginCookieName),
+		NewUserAuthenticateFilter(s.loginCli, cc.WebServer().Web.BkLoginUrl, cc.WebServer().Web.BkLoginCookieName),
 	)
 
 	c := &capability.Capability{
@@ -271,6 +299,7 @@ func (s *Service) apiSet() *restful.WebService {
 		Authorizer: s.authorizer,
 		ItsmCli:    s.itsmCli,
 		NoticeCli:  s.noticeCli,
+		LoginCli:   s.loginCli,
 		CmdbCli:    s.cmdbCli,
 	}
 
@@ -297,7 +326,7 @@ func (s *Service) proxyApiSet(apiPath string) *restful.WebService {
 	ws.Filter(NewCompleteRequestIDFilter())
 	// Note: 所有API接口都需要经过用户认证
 	ws.Path(apiPath).Filter(
-		NewUserAuthenticateFilter(s.esbClient, cc.WebServer().Web.BkLoginUrl, cc.WebServer().Web.BkLoginCookieName),
+		NewUserAuthenticateFilter(s.loginCli, cc.WebServer().Web.BkLoginUrl, cc.WebServer().Web.BkLoginCookieName),
 	)
 	ws.Route(ws.GET("{.*}").To(s.proxy.Do))
 	ws.Route(ws.POST("{.*}").To(s.proxy.Do))
@@ -394,6 +423,8 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"ENABLE_CLOUD_SELECTION":      cc.WebServer().Web.EnableCloudSelection,
 		"ENABLE_ACCOUNT_BILL":         cc.WebServer().Web.EnableAccountBill,
 		"ENABLE_NOTICE":               cc.WebServer().Notice.Enable,
+		"USER_MANAGE_URL":             cc.WebServer().Web.BkUserManageUrl,
+		"PUBLIC_PATH":                 cc.WebServer().Web.SubPath + "/",
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {
