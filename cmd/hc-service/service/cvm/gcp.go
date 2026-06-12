@@ -145,7 +145,7 @@ func buildGcpCreateOption(req *protocvm.GcpBatchCreateReq, cloudImageSelfLink, v
 		DataDisk:            req.DataDisk,
 	}
 	if isGPU {
-		createOpt.OnHostMaintenance = typecvm.GcpOnHostMaintenanceTerminate
+		createOpt.OnHostMaintenance = enumor.GcpOnHostMaintenanceTerminate
 	}
 	return createOpt
 }

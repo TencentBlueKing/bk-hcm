@@ -396,7 +396,7 @@ func buildCreateCvmReq(opt *typecvm.GcpCreateOption, script string) *compute.Bul
 	// GPU 机型不支持热迁移，上层会指定为 TERMINATE，否则 GCP 会拒绝创建请求。
 	if opt.OnHostMaintenance != "" {
 		req.InstanceProperties.Scheduling = &compute.Scheduling{
-			OnHostMaintenance: opt.OnHostMaintenance,
+			OnHostMaintenance: string(opt.OnHostMaintenance),
 		}
 	}
 	return req
