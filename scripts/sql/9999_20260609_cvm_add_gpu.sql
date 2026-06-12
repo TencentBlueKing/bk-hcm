@@ -17,26 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+/*
+ SQLVER=9999,HCMVER=v9.9.9
 
-// CvmMatchType cvm匹配类型
-type CvmMatchType string
+ Notes:
+ cvm 表新增 is_gpu 字段，标识主机是否为 GPU 机器
+*/
 
-const (
-	// AutoMatchCvm 自动匹配cvm
-	AutoMatchCvm CvmMatchType = "auto"
-	// ManualMatchCvm 手动匹配cvm
-	ManualMatchCvm CvmMatchType = "manual"
-	// NoMatchCvm 待关联cvm
-	NoMatchCvm = "no_match"
-)
+START TRANSACTION;
 
-// GcpOnHostMaintenance GCP 主机维护策略
-type GcpOnHostMaintenance string
+ALTER TABLE `cvm`
+    ADD COLUMN `is_gpu` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否GPU机器：0-否，1-是' AFTER `machine_type`;
 
-const (
-	// GcpOnHostMaintenanceTerminate 主机维护时终止实例，GPU 机型必须使用该值
-	GcpOnHostMaintenanceTerminate GcpOnHostMaintenance = "TERMINATE"
-	// GcpOnHostMaintenanceMigrate 主机维护时热迁移实例，为 GCP 普通机型的默认值
-	GcpOnHostMaintenanceMigrate GcpOnHostMaintenance = "MIGRATE"
-)
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+
+COMMIT;

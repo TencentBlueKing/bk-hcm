@@ -42,8 +42,37 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[corecvm.GcpCvmExtension])
 		isCvmDiskChange(cloud, db) ||
 		isCvmReservationAffinityChange(cloud, db) ||
 		isCvmAdvanceMacheFeaturesChange(cloud, db) ||
+		isCvmGuestAcceleratorChange(cloud, db) ||
 		isCvmExtensionInfoChange(cloud, db) {
 		return true
+	}
+
+	return false
+}
+
+// isCvmGuestAcceleratorChange checks if the attached guest accelerators (GPU) of the GCP CVM have changed.
+func isCvmGuestAcceleratorChange(cloud typescvm.GcpCvm, db corecvm.Cvm[corecvm.GcpCvmExtension]) bool {
+	cloudMap := make(map[string]int64)
+	for _, acc := range cloud.GuestAccelerators {
+		if acc == nil {
+			continue
+		}
+		cloudMap[acc.AcceleratorType] += acc.AcceleratorCount
+	}
+
+	dbMap := make(map[string]int64)
+	for _, acc := range db.Extension.GuestAccelerators {
+		dbMap[acc.AcceleratorType] += acc.AcceleratorCount
+	}
+
+	if len(cloudMap) != len(dbMap) {
+		return true
+	}
+
+	for accType, count := range cloudMap {
+		if dbMap[accType] != count {
+			return true
+		}
 	}
 
 	return false

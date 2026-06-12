@@ -97,6 +97,9 @@ type BaseCvm struct {
 	// MachineType 设备类型
 	MachineType string `json:"machine_type"`
 
+	// IsGPU 是否为 GPU 机器
+	IsGPU bool `json:"is_gpu"`
+
 	CloudCreatedTime  string `json:"cloud_created_time"`
 	CloudLaunchedTime string `json:"cloud_launched_time"`
 	CloudExpiredTime  string `json:"cloud_expired_time"`
