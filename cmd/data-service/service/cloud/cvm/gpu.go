@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"hcm/pkg/api/core"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -75,18 +76,55 @@ func (svc *cvmSvc) buildGPUMachineTypes(kt *kit.Kit, vendor enumor.Vendor) (map[
 }
 
 // isGPUMachine reports whether the given machine type belongs to the GPU machine type
-// list configured in the global_config table for the vendor. Azure always returns false
-// since its GPU detection is not driven by machine type.
-func isGPUMachine(vendor enumor.Vendor, machineType string, machineTypes map[string]struct{}) bool {
+// list configured in the global_config table for the vendor. extension is the cvm extension
+// json, which is only consumed by GCP (to read the attached GPU card count) and ignored otherwise.
+func isGPUMachine(vendor enumor.Vendor, machineType string, machineTypes map[string]struct{},
+	extension string) bool {
+
 	switch vendor {
-	case enumor.HuaWei, enumor.TCloud, enumor.Gcp, enumor.Azure:
+	case enumor.Gcp:
+		return isGcpGPUMachine(machineType, machineTypes, extension)
+	case enumor.HuaWei, enumor.TCloud, enumor.Azure:
+		// 这些厂商的 GPU 机型均按机型前缀识别
 		return matchGPUMachineTypeByPrefix(machineType, machineTypes)
 	case enumor.Aws:
+		// AWS 按机型全名精确匹配
 		_, hit := machineTypes[machineType]
 		return hit
 	default:
 		return false
 	}
+}
+
+// isGcpGPUMachine reports whether a GCP instance is a GPU machine.
+// GCP 需双重判断：A2/A3/A4/G2/G4 等专用 GPU 机型的 GPU 与机型绑定（实例不返回 guestAccelerators），
+// 按机型前缀识别；N1 等通用机型可额外挂载 GPU，其机型不含 GPU 前缀，只能依据挂载的 GPU 卡数识别。
+func isGcpGPUMachine(machineType string, machineTypes map[string]struct{}, extension string) bool {
+	if matchGPUMachineTypeByPrefix(machineType, machineTypes) {
+		return true
+	}
+	return gcpGPUCardCount(extension) > 0
+}
+
+// gcpGPUCardCount sums the attached GPU card count from the GCP cvm extension json. It returns 0
+// for an empty extension or when the instance has no attached guest accelerators.
+func gcpGPUCardCount(extension string) int {
+	if len(extension) == 0 {
+		return 0
+	}
+
+	ext := new(corecvm.GcpCvmExtension)
+	if err := json.Unmarshal([]byte(extension), ext); err != nil {
+		logs.Errorf("unmarshal gcp cvm extension for gpu card count failed, err: %v", err)
+		return 0
+	}
+
+	// 累加实例上挂载的所有 guest accelerator（GPU）卡数
+	count := 0
+	for _, acc := range ext.GuestAccelerators {
+		count += int(acc.AcceleratorCount)
+	}
+	return count
 }
 
 func getGPUMachineKey(vendor enumor.Vendor) (enumor.GlobalConfigKeyGPUMachineType, error) {

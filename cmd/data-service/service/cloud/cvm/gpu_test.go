@@ -61,6 +61,7 @@ func TestIsGPUMachine(t *testing.T) {
 		vendor       enumor.Vendor
 		machineType  string
 		machineTypes map[string]struct{}
+		extension    string
 		want         bool
 	}{
 		{name: "tcloud prefix hit", vendor: enumor.TCloud, machineType: "GN10X.2XLARGE40",
@@ -97,16 +98,28 @@ func TestIsGPUMachine(t *testing.T) {
 		{name: "gcp prefix miss", vendor: enumor.Gcp, machineType: "n2-standard-8", machineTypes: gcpPrefixes,
 			want: false,
 		},
+		{name: "gcp n1 with attached gpu by card count", vendor: enumor.Gcp, machineType: "n1-standard-8",
+			machineTypes: gcpPrefixes, extension: `{"guest_accelerators":[{"accelerator_count":1}]}`, want: true,
+		},
+		{name: "gcp prefix hit ignores empty extension", vendor: enumor.Gcp, machineType: "g2-standard-16",
+			machineTypes: gcpPrefixes, extension: "", want: true,
+		},
+		{name: "gcp non gpu with no accelerators", vendor: enumor.Gcp, machineType: "n1-standard-8",
+			machineTypes: gcpPrefixes, extension: `{"guest_accelerators":[]}`, want: false,
+		},
+		{name: "non gcp extension ignored", vendor: enumor.TCloud, machineType: "S5.LARGE8",
+			machineTypes: tcloudPrefixes, extension: `{"guest_accelerators":[{"accelerator_count":8}]}`, want: false,
+		},
 		{name: "azure prefix hit", vendor: enumor.Azure, machineType: "Standard_NC6s_v3", machineTypes: azurePrefixes,
 			want: true,
 		},
 		{name: "azure nv prefix hit", vendor: enumor.Azure, machineType: "Standard_NV36ads_A10_v5",
 			machineTypes: azurePrefixes, want: true,
 		},
-		{name: "azure prefix miss", vendor: enumor.Azure, machineType: "Standard_NC6s_v3", machineTypes: azurePrefixes,
+		{name: "azure prefix miss", vendor: enumor.Azure, machineType: "Standard_D2s_v5", machineTypes: azurePrefixes,
 			want: false,
 		},
-		{name: "azure nv prefix miss", vendor: enumor.Azure, machineType: "Standard_NV36ads_A10_v5",
+		{name: "azure e-series prefix miss", vendor: enumor.Azure, machineType: "Standard_E4s_v5",
 			machineTypes: azurePrefixes, want: false,
 		},
 		{name: "azure d prefix miss", vendor: enumor.Azure, machineType: "Standard_D4s_v5",
@@ -125,7 +138,7 @@ func TestIsGPUMachine(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := isGPUMachine(tt.vendor, tt.machineType, tt.machineTypes)
+			got := isGPUMachine(tt.vendor, tt.machineType, tt.machineTypes, tt.extension)
 			if got != tt.want {
 				t.Errorf("isGPUMachine() = %v, want %v", got, tt.want)
 			}
@@ -134,7 +147,7 @@ func TestIsGPUMachine(t *testing.T) {
 
 	t.Run("aws full config all hit", func(t *testing.T) {
 		for _, machineType := range awsMachineTypes {
-			if !isGPUMachine(enumor.Aws, machineType, awsTypes) {
+			if !isGPUMachine(enumor.Aws, machineType, awsTypes, "") {
 				t.Errorf("aws machine type should match: %s", machineType)
 			}
 		}

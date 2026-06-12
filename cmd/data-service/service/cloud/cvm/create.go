@@ -121,6 +121,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 func buildCreateCvmTableModel[T corecvm.Extension](one protocloud.CvmBatchCreate[T], vendor enumor.Vendor,
 	gpuMachineTypes map[string]struct{}, extension string, user string) *tablecvm.Table {
 
+	isGPU := isGPUMachine(vendor, one.MachineType, gpuMachineTypes, extension)
 	return &tablecvm.Table{
 		CloudID:              one.CloudID,
 		Name:                 one.Name,
@@ -146,7 +147,7 @@ func buildCreateCvmTableModel[T corecvm.Extension](one protocloud.CvmBatchCreate
 		PublicIPv4Addresses:  one.PublicIPv4Addresses,
 		PublicIPv6Addresses:  one.PublicIPv6Addresses,
 		MachineType:          one.MachineType,
-		IsGPU:                isGPUMachine(vendor, one.MachineType, gpuMachineTypes),
+		IsGPU:                isGPU,
 		Extension:            tabletype.JsonField(extension),
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudLaunchedTime:    one.CloudLaunchedTime,

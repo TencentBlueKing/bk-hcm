@@ -131,7 +131,18 @@ type GcpCreateOption struct {
 	SystemDisk       *GcpOsDisk          `json:"system_disk" validate:"required"`
 	DataDisk         []GcpDataDisk       `json:"data_disk" validate:"omitempty"`
 	PublicIPAssigned bool                `json:"public_ip_assigned" validate:"omitempty"`
+	// OnHostMaintenance 主机维护策略，为空时使用 GCP 默认值（MIGRATE）。
+	// GPU 机型不支持热迁移，需由上层指定为 TERMINATE。
+	OnHostMaintenance string `json:"on_host_maintenance" validate:"omitempty"`
 }
+
+// GCP onHostMaintenance 取值。
+const (
+	// GcpOnHostMaintenanceTerminate 主机维护时终止实例，GPU 机型必须使用该值。
+	GcpOnHostMaintenanceTerminate = "TERMINATE"
+	// GcpOnHostMaintenanceMigrate 主机维护时热迁移实例，为 GCP 普通机型的默认值。
+	GcpOnHostMaintenanceMigrate = "MIGRATE"
+)
 
 // Validate gcp cvm operation option.
 func (opt GcpCreateOption) Validate() error {

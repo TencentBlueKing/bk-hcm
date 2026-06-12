@@ -109,13 +109,9 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				update.Extension = tabletype.JsonField(merge)
 			}
 
-			if update.MachineType != "" {
-				update.IsGPU = isGPUMachine(vendor, update.MachineType, gpuMachineTypes)
-				logs.Infof("update cvm is_gpu flag, id: %s, cloudID: %s, machineType: %s, isGPU: %v, rid: %s",
-					one.ID, existCvm.CloudID, update.MachineType, update.IsGPU, cts.Kit.Rid)
-			} else {
-				update.IsGPU = isGPUMachine(vendor, existCvm.MachineType, gpuMachineTypes)
-			}
+			update.IsGPU = recalcUpdateIsGPU(vendor, existCvm, update, gpuMachineTypes)
+			logs.Infof("update cvm is_gpu flag, id: %s, cloudID: %s, machineType: %s, isGPU: %v, rid: %s",
+				one.ID, existCvm.CloudID, update.MachineType, update.IsGPU, cts.Kit.Rid)
 
 			if err := svc.dao.Cvm().UpdateByIDWithTx(cts.Kit, txn, one.ID, update); err != nil {
 				logs.Errorf("update cvm by id failed, err: %v, id: %s, rid: %s", err, one.ID, cts.Kit.Rid)
@@ -192,6 +188,25 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		update.BkCloudID = one.BkCloudID
 	}
 	return update
+}
+
+// recalcUpdateIsGPU recomputes the is_gpu flag for an update. Machine type and GPU card count
+// changes (resize, GCP N1 attach/detach GPU) both affect the result; when the machine type or
+// extension is not carried by the update, the existing value is used as the fallback.
+func recalcUpdateIsGPU(vendor enumor.Vendor, existCvm tablecvm.Table, update *tablecvm.Table,
+	gpuMachineTypes map[string]struct{}) bool {
+
+	machineType := existCvm.MachineType
+	if update.MachineType != "" {
+		machineType = update.MachineType
+	}
+
+	extension := string(existCvm.Extension)
+	if len(update.Extension) > 0 {
+		extension = string(update.Extension)
+	}
+
+	return isGPUMachine(vendor, machineType, gpuMachineTypes, extension)
 }
 
 // listCvmByIDsBatched fetches CVMs matching the given IDs in batches to avoid query size limits.

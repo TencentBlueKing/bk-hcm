@@ -21,17 +21,23 @@ package cvm
 
 import (
 	"net/http"
+	"strings"
 
 	syncgcp "hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/adaptor/gcp"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	datagconf "hcm/pkg/api/data-service/global_config"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/json"
 )
 
 func (svc *cvmSvc) initGcpCvmService(cap *capability.Capability) {
@@ -82,21 +88,13 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	createOpt := &typecvm.GcpCreateOption{
-		NamePrefix:          req.NamePrefix,
-		Zone:                req.Zone,
-		InstanceType:        req.InstanceType,
-		CloudImageSelfLink:  image.Extension.SelfLink,
-		Password:            req.Password,
-		RequiredCount:       req.RequiredCount,
-		RequestID:           req.RequestID,
-		CloudVpcSelfLink:    vpcSelfLink,
-		CloudSubnetSelfLink: subnetSelfLink,
-		Description:         req.Description,
-		ImageProjectType:    platform,
-		SystemDisk:          req.SystemDisk,
-		DataDisk:            req.DataDisk,
+	// GPU 机型不支持热迁移，需指定 onHostMaintenance 为 TERMINATE，否则 GCP 会拒绝创建。
+	isGPU, err := svc.isGcpGPUInstanceType(cts.Kit, req.InstanceType)
+	if err != nil {
+		return nil, err
 	}
+
+	createOpt := buildGcpCreateOption(req, image.Extension.SelfLink, vpcSelfLink, subnetSelfLink, platform, isGPU)
 	result, err := gcpCli.CreateCvm(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("create cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -104,10 +102,8 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	respData := &protocvm.BatchCreateResult{
-		UnknownCloudIDs: result.UnknownCloudIDs,
-		SuccessCloudIDs: result.SuccessCloudIDs,
-		FailedCloudIDs:  result.FailedCloudIDs,
-		FailedMessage:   result.FailedMessage,
+		UnknownCloudIDs: result.UnknownCloudIDs, SuccessCloudIDs: result.SuccessCloudIDs,
+		FailedCloudIDs: result.FailedCloudIDs, FailedMessage: result.FailedMessage,
 	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
@@ -126,6 +122,70 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return respData, nil
+}
+
+// buildGcpCreateOption builds the GcpCreateOption for creating cvm. GPU instances do not support
+// live migration, so OnHostMaintenance must be set to TERMINATE for them.
+func buildGcpCreateOption(req *protocvm.GcpBatchCreateReq, cloudImageSelfLink, vpcSelfLink, subnetSelfLink string,
+	platform typecvm.GcpImageProjectType, isGPU bool) *typecvm.GcpCreateOption {
+
+	createOpt := &typecvm.GcpCreateOption{
+		NamePrefix:          req.NamePrefix,
+		Zone:                req.Zone,
+		InstanceType:        req.InstanceType,
+		CloudImageSelfLink:  cloudImageSelfLink,
+		Password:            req.Password,
+		RequiredCount:       req.RequiredCount,
+		RequestID:           req.RequestID,
+		CloudVpcSelfLink:    vpcSelfLink,
+		CloudSubnetSelfLink: subnetSelfLink,
+		Description:         req.Description,
+		ImageProjectType:    platform,
+		SystemDisk:          req.SystemDisk,
+		DataDisk:            req.DataDisk,
+	}
+	if isGPU {
+		createOpt.OnHostMaintenance = typecvm.GcpOnHostMaintenanceTerminate
+	}
+	return createOpt
+}
+
+// isGcpGPUInstanceType reports whether the instance type is a GPU machine type, based on
+// the GPU machine prefixes configured in global_config (the same source used by the GPU
+// recognition logic). GPU instances do not support live migration.
+func (svc *cvmSvc) isGcpGPUInstanceType(kt *kit.Kit, instanceType string) (bool, error) {
+	listReq := &datagconf.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", string(enumor.GlobalConfigTypeGPUMachineType)),
+			tools.RuleEqual("config_key", string(enumor.GlobalConfigKeyGcpGPUPrefix)),
+		),
+		Page: &core.BasePage{Limit: 1},
+	}
+
+	resp, err := svc.dataCli.Global.GlobalConfig.List(kt, listReq)
+	if err != nil {
+		logs.Errorf("list gcp gpu machine prefix config failed, err: %v, rid: %s", err, kt.Rid)
+		return false, err
+	}
+
+	if len(resp.Details) == 0 {
+		logs.Warnf("gcp gpu machine prefix config not found, rid: %s", kt.Rid)
+		return false, nil
+	}
+
+	prefixes := make([]string, 0)
+	if err = json.Unmarshal([]byte(resp.Details[0].ConfigValue), &prefixes); err != nil {
+		logs.Errorf("unmarshal gcp gpu machine prefix config failed, err: %v, rid: %s", err, kt.Rid)
+		return false, err
+	}
+
+	lowerType := strings.ToLower(instanceType)
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(lowerType, strings.ToLower(prefix)) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // StartGcpCvm ...

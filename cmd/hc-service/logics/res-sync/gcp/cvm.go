@@ -43,7 +43,29 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/times"
+
+	"google.golang.org/api/compute/v1"
 )
+
+// convGcpGuestAccelerators converts the cloud guest accelerator configs to the cvm extension type.
+// 将云上的 GPU 加速器配置转换为 cvm extension 中存储的类型，用于落库与 GPU 识别。
+func convGcpGuestAccelerators(accelerators []*compute.AcceleratorConfig) []corecvm.GcpAcceleratorConfig {
+	if len(accelerators) == 0 {
+		return nil
+	}
+
+	result := make([]corecvm.GcpAcceleratorConfig, 0, len(accelerators))
+	for _, one := range accelerators {
+		if one == nil {
+			continue
+		}
+		result = append(result, corecvm.GcpAcceleratorConfig{
+			AcceleratorType:  one.AcceleratorType,
+			AcceleratorCount: one.AcceleratorCount,
+		})
+	}
+	return result
+}
 
 // SyncCvmOption ...
 type SyncCvmOption struct {
@@ -261,6 +283,7 @@ func buildCvmCreateReq(one typescvm.GcpCvm, imageID, startTime, createTime, acco
 			ReservationAffinity:      nil,
 			Fingerprint:              one.Fingerprint,
 			AdvancedMachineFeatures:  nil,
+			GuestAccelerators:        convGcpGuestAccelerators(one.GuestAccelerators),
 		},
 	}
 
@@ -442,6 +465,7 @@ func buildCvmUpdateReq(id string, one typescvm.GcpCvm, region, zone, vpcCloudID,
 			ReservationAffinity:      nil,
 			Fingerprint:              one.Fingerprint,
 			AdvancedMachineFeatures:  nil,
+			GuestAccelerators:        convGcpGuestAccelerators(one.GuestAccelerators),
 		},
 	}
 
