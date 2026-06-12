@@ -22,10 +22,14 @@ package cmdb
 
 import (
 	"strings"
+	"time"
 
 	"hcm/pkg/api/core/cloud/cvm"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
@@ -49,7 +53,6 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 	if !exists {
 		return nil, errf.Newf(errf.InvalidParameter, "vendor %s is invalid", req.Vendor)
 	}
-
 	hosts := make([]cmdb.HostCreateParam, 0, len(req.Hosts))
 	for _, host := range req.Hosts {
 		if host.Vendor != "" && req.Vendor != host.Vendor {
@@ -64,7 +67,10 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		if !exists {
 			status = "1"
 		}
-
+		onShelfDate, err := getOnShelfDate(kt, host.BaseCvm)
+		if err != nil {
+			return nil, err
+		}
 		hosts = append(hosts, cmdb.HostCreateParam{
 			BkCloudVendor:     cmdb.HcmCmdbVendorMap[req.Vendor],
 			BkCloudInstID:     host.CloudID,
@@ -76,6 +82,14 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 			BkHostOuterIPv6:   strings.Join(host.PublicIPv6Addresses, ","),
 			BkHostName:        host.Name,
 			BkComment:         host.Memo,
+			IsGPU:             host.IsGPU,
+			OnShelfDate:       onShelfDate,
+			BkCloudRegion:     host.Region,
+			BkCloudZone:       host.Zone,
+			InstanceType:      host.MachineType,
+			// Operator 仅对首次新增到 cmdb 的主机下发（由上层 buildCmdbOperators 推导后放入 req.Operators）。
+			// 未命中 map 时取到的是 nil 指针，配合 omitempty 不会下发该字段，从而保留 cmdb 侧已有的 operator。
+			Operator: req.Operators[host.ID],
 		})
 	}
 
@@ -83,12 +97,38 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
+	logs.Infof("add cmdb cloud host to biz, vendor: %s, bizID: %d, hostCount: %d, operatorCount: %d, rid: %s",
+		req.Vendor, req.BizID, len(hosts), len(req.Operators), kt.Rid)
 	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
+		logs.Errorf("add cmdb cloud host to biz failed, err: %v, vendor: %s, bizID: %d, rid: %s",
+			err, req.Vendor, req.BizID, kt.Rid)
 		return nil, err
 	}
 
 	return result.IDs, nil
+}
+
+// getOnShelfDate 返回用作 cmdb on_shelf_date 的主机上架时间。
+func getOnShelfDate(kt *kit.Kit, host cvm.BaseCvm) (string, error) {
+	if host.Vendor == enumor.Other {
+		return "", nil
+	}
+
+	var shelfTime string
+	shelfTime = host.CloudCreatedTime
+	if host.Vendor == enumor.Aws {
+		// AWS 是只有CloudLaunchedTime，代表购买时间
+		shelfTime = host.CloudLaunchedTime
+	}
+
+	formDate, err := time.Parse(constant.TimeStdFormat, shelfTime)
+	if err != nil {
+		logs.Errorf("parse shelf time failed, err: %v, shelfTime: %s, rid: %s", err, shelfTime, kt.Rid)
+		return "", err
+	}
+
+	return formDate.Format(constant.DateLayout), nil
 }
 
 // AddBaseCloudHostToBiz add cmdb cloud host basic info to biz, update cmdb host if exists.
@@ -107,7 +147,10 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		if !exists {
 			status = "1"
 		}
-
+		onShelfDate, err := getOnShelfDate(kt, host)
+		if err != nil {
+			return nil, err
+		}
 		hosts = append(hosts, cmdb.HostCreateParam{
 			BkCloudVendor:     cmdb.HcmCmdbVendorMap[host.Vendor],
 			BkCloudInstID:     host.CloudID,
@@ -119,6 +162,14 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 			BkHostOuterIPv6:   strings.Join(host.PublicIPv6Addresses, ","),
 			BkHostName:        host.Name,
 			BkComment:         host.Memo,
+			IsGPU:             host.IsGPU,
+			BkCloudRegion:     host.Region,
+			BkCloudZone:       host.Zone,
+			InstanceType:      host.MachineType,
+			OnShelfDate:       onShelfDate,
+			// Operator 仅对首次新增到 cmdb 的主机下发（由上层 buildCmdbOperators 推导后放入 req.Operators）。
+			// 未命中 map 时取到的是 nil 指针，配合 omitempty 不会下发该字段，从而保留 cmdb 侧已有的 operator。
+			Operator: req.Operators[host.ID],
 		})
 	}
 
@@ -126,8 +177,12 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
+	logs.Infof("add cmdb base cloud host to biz, bizID: %d, hostCount: %d, operatorCount: %d, rid: %s",
+		req.BizID, len(hosts), len(req.Operators), kt.Rid)
 	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
+		logs.Errorf("add cmdb base cloud host to biz failed, err: %v, bizID: %d, rid: %s",
+			err, req.BizID, kt.Rid)
 		return nil, err
 	}
 

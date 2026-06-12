@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 
 	"google.golang.org/api/compute/v1"
@@ -131,6 +132,9 @@ type GcpCreateOption struct {
 	SystemDisk       *GcpOsDisk          `json:"system_disk" validate:"required"`
 	DataDisk         []GcpDataDisk       `json:"data_disk" validate:"omitempty"`
 	PublicIPAssigned bool                `json:"public_ip_assigned" validate:"omitempty"`
+	// OnHostMaintenance 主机维护策略，为空时使用 GCP 默认值（MIGRATE）。
+	// GPU 机型不支持热迁移，需由上层指定为 TERMINATE。
+	OnHostMaintenance enumor.GcpOnHostMaintenance `json:"on_host_maintenance" validate:"omitempty"`
 }
 
 // Validate gcp cvm operation option.

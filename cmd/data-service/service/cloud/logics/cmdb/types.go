@@ -31,6 +31,9 @@ type AddCloudHostToBizReq[T cvm.Extension] struct {
 	Vendor enumor.Vendor `json:"vendor" validate:"required"`
 	BizID  int64         `json:"bk_biz_id" validate:"min=1"`
 	Hosts  []cvm.Cvm[T]  `json:"hosts" validate:"min=1,max=100"`
+	// Operators host operator to set on cmdb, keyed by cvm id. Only set for hosts newly added to cmdb.
+	// Value is nil only when the key is absent; hosts not in this map must not update operator on cmdb.
+	Operators map[string]*string `json:"operators"`
 }
 
 // Validate AddCloudHostToBizReq.
@@ -45,6 +48,9 @@ func (c *AddCloudHostToBizReq[T]) Validate() error {
 type AddBaseCloudHostToBizReq struct {
 	BizID int64         `json:"bk_biz_id" validate:"required"`
 	Hosts []cvm.BaseCvm `json:"hosts" validate:"min=1,max=100"`
+	// Operators host operator to set on cmdb, keyed by cvm id. Only set for hosts newly added to cmdb.
+	// Value is nil only when the key is absent; hosts not in this map must not update operator on cmdb.
+	Operators map[string]*string `json:"operators"`
 }
 
 // Validate AddBaseCloudHostToBizReq.

@@ -156,6 +156,7 @@ func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 		PublicIPv4Addresses:  one.PublicIPv4Addresses,
 		PublicIPv6Addresses:  one.PublicIPv6Addresses,
 		MachineType:          one.MachineType,
+		IsGPU:                one.IsGPU,
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudLaunchedTime:    one.CloudLaunchedTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
