@@ -40,7 +40,7 @@ import (
 // upsertCmdbHosts upsert cmdb hosts. operators 由调用方按"创建/修改"语义构建（修改场景传 nil）。
 // TODO add previous hosts params to transfer across biz when supported.
 func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumor.Vendor, models []*cvm.Table,
-	operators map[string]*string) error {
+	cvmIDOperatorMap map[string]*string) error {
 
 	bizHostMap := make(map[int64][]corecvm.Cvm[T])
 	for _, model := range models {
@@ -60,7 +60,8 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 
 	needCheckHostIDs := make([]int64, 0)
 	for bizID, hosts := range bizHostMap {
-		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{Vendor: vendor, BizID: bizID, Hosts: hosts, Operators: operators}
+		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{
+			Vendor: vendor, BizID: bizID, Hosts: hosts, Operators: cvmIDOperatorMap}
 		hostIDs, err := cmdb.AddCloudHostToBiz[T](svc.cmdbLogics, kt, addCmdbReq)
 		if err != nil {
 			logs.Errorf("[%s] add cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed, err,
@@ -95,7 +96,7 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 
 // upsertCmdbBaseHosts upsert cmdb hosts' basic info. operators 由调用方按"创建/修改"语义构建（修改场景传 nil）。
 // TODO add previous hosts params to transfer across biz when supported.
-func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table, operators map[string]*string) error {
+func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table, cvmIDOperatorMap map[string]*string) error {
 	bizHostMap := make(map[int64][]corecvm.BaseCvm)
 	for _, model := range models {
 		if model.BkBizID == constant.UnassignedBiz || model.Vendor == enumor.Other {
@@ -107,11 +108,11 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table, operator
 	}
 
 	logs.Infof("upsert cmdb base hosts, hostCount: %d, operatorCount: %d, rid: %s",
-		len(models), len(operators), kt.Rid)
+		len(models), len(cvmIDOperatorMap), kt.Rid)
 
 	needCheckHostIDs := make([]int64, 0)
 	for bizID, hosts := range bizHostMap {
-		addCmdbReq := &cmdb.AddBaseCloudHostToBizReq{BizID: bizID, Hosts: hosts, Operators: operators}
+		addCmdbReq := &cmdb.AddBaseCloudHostToBizReq{BizID: bizID, Hosts: hosts, Operators: cvmIDOperatorMap}
 		hostIDs, err := cmdb.AddBaseCloudHostToBiz(svc.cmdbLogics, kt, addCmdbReq)
 		if err != nil {
 			logs.Errorf("[%s] add cmdb base cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed,

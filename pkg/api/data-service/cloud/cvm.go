@@ -108,6 +108,12 @@ type CvmBatchUpdate struct {
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
 	OsName               string   `json:"os_name"`
 	MachineType          string   `json:"machine_type"`
+	// Region 云上地域，由上游同步直接下发
+	Region string `json:"region"`
+	// Zone 云上可用区，由上游同步直接下发
+	Zone string `json:"zone"`
+	// CloudCreatedTime 云上创建时间，由上游同步直接下发
+	CloudCreatedTime string `json:"cloud_created_time"`
 }
 
 // CvmBatchUpdateWithExtension cvm batch update with extension.

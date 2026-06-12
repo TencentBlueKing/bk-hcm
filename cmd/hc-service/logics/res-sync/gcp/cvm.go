@@ -301,7 +301,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 		return err
 	}
 
-	lists, err := buildCvmUpdateReqList(updateMap, vpcMap, subnetMap, diskMap, vpcSelfLinks,
+	lists, err := buildCvmUpdateReqList(updateMap, region, zone, vpcMap, subnetMap, diskMap, vpcSelfLinks,
 		subnetSelfLinks, imageMap)
 	if err != nil {
 		logs.Errorf("[%s] build cvm create req list failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
@@ -323,8 +323,9 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 }
 
 // buildCvmUpdateReqList builds cvm update request list
-func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]*SubnetDB, diskMap map[string]string, vpcSelfLinks []string, subnetSelfLinks []string,
+func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, region, zone string,
+	vpcMap map[string]*common.VpcDB, subnetMap map[string]*SubnetDB, diskMap map[string]string,
+	vpcSelfLinks []string, subnetSelfLinks []string,
 	imageMap map[string]string) ([]protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension], error) {
 
 	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension], 0)
@@ -378,21 +379,27 @@ func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, vpcMap map[stri
 			return nil, fmt.Errorf("conv start time failed, err: %v", err)
 		}
 
+		createTime, err := times.ParseToStdTime(time.RFC3339Nano, one.CreationTimestamp)
+		if err != nil {
+			return nil, fmt.Errorf("conv create time failed, err: %v", err)
+		}
+
 		imageID := ""
 		if id, exsit := imageMap[one.SourceMachineImage]; exsit {
 			imageID = id
 		}
 
-		req := buildCvmUpdateReq(id, one, vpcMap[inVpcSelfLinks[0]].VpcCloudID, vpcMap[inVpcSelfLinks[0]].VpcID,
-			imageID, startTime, cloudSubIDs, subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs, disks)
+		req := buildCvmUpdateReq(id, one, region, zone, vpcMap[inVpcSelfLinks[0]].VpcCloudID,
+			vpcMap[inVpcSelfLinks[0]].VpcID, imageID, startTime, createTime, cloudSubIDs, subnetIDs, vpcSelfLinks,
+			subnetSelfLinks, cloudNetWorkInterfaceIDs, disks)
 		lists = append(lists, req)
 	}
 	return lists, nil
 }
 
 // buildCvmUpdateReq builds cvm update request
-func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageID, startTime string, cloudSubIDs,
-	subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
+func buildCvmUpdateReq(id string, one typescvm.GcpCvm, region, zone, vpcCloudID, vpcID, imageID, startTime,
+	createTime string, cloudSubIDs, subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
 	disks []corecvm.GcpAttachedDisk) protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension] {
 
 	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
@@ -400,6 +407,9 @@ func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageI
 		CvmBatchUpdate: dataproto.CvmBatchUpdate{
 			ID:                   id,
 			Name:                 one.Name,
+			Region:               region,
+			Zone:                 zone,
+			CloudCreatedTime:     createTime,
 			CloudVpcIDs:          []string{vpcCloudID},
 			VpcIDs:               []string{vpcID},
 			CloudSubnetIDs:       cloudSubIDs,

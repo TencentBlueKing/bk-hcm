@@ -100,7 +100,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 			if !exist {
 				continue
 			}
-			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, existCvm, cts.Kit.User)
+			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, cts.Kit.User)
 			if one.Extension != nil {
 				merge, err := json.UpdateMerge(one.Extension, string(existCvm.Extension))
 				if err != nil {
@@ -157,7 +157,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 	return nil, nil
 }
 
-func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, oldCvm tablecvm.Table, user string) *tablecvm.Table {
+func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *tablecvm.Table {
 	update := &tablecvm.Table{
 		ID:                   one.ID,
 		Name:                 one.Name,
@@ -179,9 +179,10 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, oldCvm tablecvm.Tab
 		Reviser:              user,
 		VpcIDs:               one.VpcIDs,
 		SubnetIDs:            one.SubnetIDs,
-		// CloudCreatedTime 和 Zone不变，可以从已有数据中获取
-		CloudCreatedTime: oldCvm.CloudCreatedTime,
-		Zone:             oldCvm.Zone,
+		// Region、Zone、CloudCreatedTime 由上游同步直接下发
+		Region:           one.Region,
+		Zone:             one.Zone,
+		CloudCreatedTime: one.CloudCreatedTime,
 		// 升降配可能会修改机型
 		MachineType: one.MachineType,
 		// 重装可能修改操作系统名称

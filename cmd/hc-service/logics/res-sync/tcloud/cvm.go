@@ -176,15 +176,18 @@ func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap m
 		extension := BuildCVMExtension(one)
 		updateOne := dataproto.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension]{
 			CvmBatchUpdate: dataproto.CvmBatchUpdate{
-				ID:             id,
-				Name:           converter.PtrToVal(one.InstanceName),
-				CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
-				VpcIDs:         []string{vpcID},
-				CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
-				SubnetIDs:      []string{subnetID},
-				CloudImageID:   converter.PtrToVal(one.ImageId),
-				ImageID:        imageID,
-				MachineType:    converter.PtrToVal(one.InstanceType),
+				ID:               id,
+				Name:             converter.PtrToVal(one.InstanceName),
+				Region:           region,
+				Zone:             converter.PtrToVal(one.Placement.Zone),
+				CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
+				CloudVpcIDs:      []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
+				VpcIDs:           []string{vpcID},
+				CloudSubnetIDs:   []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
+				SubnetIDs:        []string{subnetID},
+				CloudImageID:     converter.PtrToVal(one.ImageId),
+				ImageID:          imageID,
+				MachineType:      converter.PtrToVal(one.InstanceType),
 				// 备注字段云上没有，仅限hcm内部使用
 				Memo:                 nil,
 				Status:               converter.PtrToVal(one.InstanceState),

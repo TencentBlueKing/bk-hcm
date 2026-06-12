@@ -257,7 +257,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
 		}
 
-		req := buildCvmUpdateReqWithAwsExtension(id, one, vpcMap, subnetMap, imageMap)
+		req := buildCvmUpdateReqWithAwsExtension(id, one, region, vpcMap, subnetMap, imageMap)
 		lists = append(lists, req)
 	}
 
@@ -276,8 +276,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
-func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string,
+func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, region string,
+	vpcMap map[string]*common.VpcDB, subnetMap map[string]string,
 	imageMap map[string]string) protocloud.CvmBatchUpdateWithExtension[corecvm.AwsCvmExtension] {
 
 	sgIDs := make([]string, 0)
@@ -310,6 +310,8 @@ func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap ma
 		CvmBatchUpdate: dataproto.CvmBatchUpdate{
 			ID:             id,
 			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
+			Region:         region,
+			Zone:           converter.PtrToVal(one.Placement.AvailabilityZone),
 			CloudVpcIDs:    []string{converter.PtrToVal(one.VpcId)},
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VpcId)].VpcID},
 			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
