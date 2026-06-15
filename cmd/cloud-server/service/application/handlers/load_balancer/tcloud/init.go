@@ -37,7 +37,8 @@ func NewApplicationOfCreateTCloudLB(opt *handlers.HandlerOption,
 	req *hclb.TCloudLoadBalancerCreateReq) *ApplicationOfCreateTCloudLB {
 
 	return &ApplicationOfCreateTCloudLB{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateLoadBalancer, enumor.TCloud),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
+			opt, enumor.CreateLoadBalancer, enumor.OpCreateLoadBalancer, enumor.TCloud),
 		req:                    req,
 	}
 }

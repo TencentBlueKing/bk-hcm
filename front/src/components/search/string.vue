@@ -16,7 +16,7 @@ const props = withDefaults(
     separator: ',',
   },
 );
-const attr = useAttrs();
+const attrs = useAttrs();
 
 const appearance = computed(() => props.display?.appearance);
 
@@ -45,10 +45,11 @@ const localModel = computed({
     <bk-select
       v-if="appearance === 'select'"
       v-model="localModel"
-      v-bind="attr"
+      v-bind="attrs"
       :multiple="multiple"
       :multiple-mode="multiple ? 'tag' : 'default'"
       :collapse-tags="true"
+      filterable
     >
       <bk-option v-for="(name, id) in option" :key="id" :id="id" :name="name"></bk-option>
     </bk-select>
@@ -56,14 +57,15 @@ const localModel = computed({
     <bk-tag-input
       v-else-if="appearance === 'tag-input'"
       v-model="localModel"
-      v-bind="attr"
+      :collapse-tags="true"
+      v-bind="attrs"
       clearable
       allow-create
       allow-auto-match
     ></bk-tag-input>
   </template>
   <!-- input -->
-  <bk-input v-else v-model="localModel" clearable v-bind="attr"></bk-input>
+  <bk-input v-else v-model="localModel" clearable v-bind="attrs"></bk-input>
 </template>
 
 <style scoped></style>

@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/dal/dao/bill"
 	"hcm/pkg/dal/dao/cloud"
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
+	daoaccountsecret "hcm/pkg/dal/dao/cloud/account-secret"
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
 	cloudbill "hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cert"
@@ -47,6 +48,7 @@ import (
 	loadbalancer "hcm/pkg/dal/dao/cloud/load-balancer"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
+	permissiontemplate "hcm/pkg/dal/dao/cloud/permission-template"
 	permissionpolicylibrary "hcm/pkg/dal/dao/cloud/permission-policy-library"
 	"hcm/pkg/dal/dao/cloud/region"
 	resflow "hcm/pkg/dal/dao/cloud/resource-flow"
@@ -56,6 +58,7 @@ import (
 	sgcomrel "hcm/pkg/dal/dao/cloud/security-group-common-rel"
 	sgcvmrel "hcm/pkg/dal/dao/cloud/security-group-cvm-rel"
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
+	daosubaccountsecret "hcm/pkg/dal/dao/cloud/sub-account-secret"
 	daosync "hcm/pkg/dal/dao/cloud/sync"
 	"hcm/pkg/dal/dao/cloud/zone"
 	globalconfig "hcm/pkg/dal/dao/global-config"
@@ -78,6 +81,8 @@ type Set interface {
 	Auth() auth.Auth
 	Account() cloud.Account
 	SubAccount() daosubaccount.SubAccount
+	SubAccountSecret() daosubaccountsecret.SubAccountSecret
+	AccountSecret() daoaccountsecret.AccountSecret
 	SecurityGroup() securitygroup.SecurityGroup
 	SGCvmRel() sgcvmrel.Interface
 	TCloudSGRule() securitygroup.TCloudSGRule
@@ -146,6 +151,7 @@ type Set interface {
 	GlobalConfig() globalconfig.Interface
 	ResUsageBizRel() cloud.ResUsageBizRel
 	Tenant() tenant.Tenant
+	PermissionTemplate() permissiontemplate.PermissionTemplate
 	PermissionPolicyLibrary() permissionpolicylibrary.PermissionPolicyLibrary
 
 	Txn() *Txn
@@ -345,6 +351,24 @@ func (s *set) Account() cloud.Account {
 // SubAccount return sub account dao.
 func (s *set) SubAccount() daosubaccount.SubAccount {
 	return &daosubaccount.SubAccountDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// SubAccountSecret return sub account secret dao.
+func (s *set) SubAccountSecret() daosubaccountsecret.SubAccountSecret {
+	return &daosubaccountsecret.SubAccountSecretDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// AccountSecret return account secret dao.
+func (s *set) AccountSecret() daoaccountsecret.AccountSecret {
+	return &daoaccountsecret.AccountSecretDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
@@ -817,6 +841,15 @@ func (s *set) GlobalConfig() globalconfig.Interface {
 func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
 	return &cloud.ResUsageBizRelDao{
 		Orm: s.orm,
+	}
+}
+
+// PermissionTemplate return permission template dao.
+func (s *set) PermissionTemplate() permissiontemplate.PermissionTemplate {
+	return &permissiontemplate.PermissionTemplateDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }
 

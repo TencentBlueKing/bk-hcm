@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/api/core"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
@@ -141,7 +142,8 @@ func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (in
 		return reason, nil
 	}
 
-	if err = batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
@@ -150,7 +152,7 @@ func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (in
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
-		if err = batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+		if err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
 			result, err); err != nil {
 			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		}
@@ -165,7 +167,6 @@ func (act AddTargetToGroupAction) Run(kt run.ExecuteKit, params interface{}) (in
 			LbID:          opt.TCloudBatchOperateTargetReq.LbID,
 			RsList:        rsBatch,
 		}
-
 		var batchResult *hclb.BatchCreateResult
 		switch opt.Vendor {
 		case enumor.TCloud:
@@ -248,7 +249,8 @@ func (act RemoveTargetAction) Run(kt run.ExecuteKit, params interface{}) (interf
 	if len(reason) > 0 {
 		return reason, nil
 	}
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
@@ -256,7 +258,7 @@ func (act RemoveTargetAction) Run(kt run.ExecuteKit, params interface{}) (interf
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
-		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+		if err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
 			result, err); err != nil {
 			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		}
@@ -326,7 +328,8 @@ func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (in
 	if len(reason) > 0 {
 		return reason, nil
 	}
-	if err = batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
@@ -335,7 +338,7 @@ func (act ModifyTargetPortAction) Run(kt run.ExecuteKit, params interface{}) (in
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
-		if err = batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+		if err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
 			nil, err); err != nil {
 			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		}
@@ -406,7 +409,8 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 	if len(reason) > 0 {
 		return reason, nil
 	}
-	if err = batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
@@ -415,7 +419,7 @@ func (act ModifyTargetWeightAction) Run(kt run.ExecuteKit, params interface{}) (
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
-		if err = batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+		if err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
 			nil, err); err != nil {
 			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		}
@@ -455,7 +459,7 @@ func (act ModifyTargetWeightAction) Rollback(kt run.ExecuteKit, params interface
 
 func validateDetailListStatus(kt *kit.Kit, detailIDs []string) (string, error) {
 	// detail 状态检查
-	detailList, err := listTaskDetail(kt, detailIDs)
+	detailList, err := actionflow.ListTaskDetail(kt, detailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}

@@ -85,6 +85,7 @@ export default defineComponent({
       <Select
         class='target-group-selector'
         v-model={targetGroupId.value}
+        filterable
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isScrollLoading.value}

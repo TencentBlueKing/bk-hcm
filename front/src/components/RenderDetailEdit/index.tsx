@@ -72,7 +72,7 @@ export default defineComponent({
     );
 
     const handleChange = (val: any) => {
-      const value = props.trim ? val.trim() : val;
+      const value = props.trim && typeof val === 'string' ? val.trim() : val;
       ctx.emit('change', value, props.fromKey);
       ctx.emit('input', value);
       ctx.emit('update:modelValue', value);
@@ -155,8 +155,7 @@ export default defineComponent({
               multiple-mode='tag'
               placeholder={props.fromPlaceholder}
               onChange={handleChange}
-              onBlur={() => handleBlur(props.fromKey)}
-            >
+              onBlur={() => handleBlur(props.fromKey)}>
               {props.selectData.map((item: any) => (
                 <Option key={item.id} id={item.id} name={item.name}>
                   {item.name}

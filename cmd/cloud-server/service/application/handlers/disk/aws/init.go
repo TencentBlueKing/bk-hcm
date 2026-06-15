@@ -37,7 +37,7 @@ func NewApplicationOfCreateAwsDisk(
 	req *csdisk.AwsDiskCreateReq,
 ) *ApplicationOfCreateAwsDisk {
 	return &ApplicationOfCreateAwsDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Aws),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.Aws),
 		req:                    req,
 	}
 }

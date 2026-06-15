@@ -22,6 +22,9 @@ package aws
 import (
 	"hcm/pkg/adaptor/types"
 
+	awsv2 "github.com/aws/aws-sdk-go-v2/aws"
+	v2credentials "github.com/aws/aws-sdk-go-v2/credentials"
+	smv2 "github.com/aws/aws-sdk-go-v2/service/sagemaker"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -209,6 +212,20 @@ func (c *clientSet) cloudWatchClient(region string) (*cloudwatch.CloudWatch, err
 	}
 
 	return cloudwatch.New(sess), nil
+}
+
+func (c *clientSet) sageMakerV2Client(region string) (*smv2.Client, error) {
+	creds, err := c.credentials.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := awsv2.Config{
+		Credentials: v2credentials.NewStaticCredentialsProvider(creds.AccessKeyID, creds.SecretAccessKey, creds.SessionToken),
+		Region:      region,
+	}
+
+	return smv2.NewFromConfig(cfg), nil
 }
 
 func (c *clientSet) cloudFormationClient(region string) (*cloudformation.CloudFormation, error) {

@@ -16,6 +16,7 @@ import { useUserStore, preload } from '@/store';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
+import './assets/iconfont/iconcool.js';
 import '@blueking/ediatable/vue3/vue3.css';
 
 // 全量引入 bkui-vue

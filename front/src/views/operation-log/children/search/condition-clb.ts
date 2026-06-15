@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Model, Column } from '@/decorator';
 import { QueryRuleOPEnum } from '@/typings';
 import { OPERATION_LOG_ACTION, OPERATION_LOG_ACTION_NAME } from '@/views/operation-log/constants';
-import type { OperationLogAction, OperationLogResourceType } from '@/views/operation-log/typings';
+import type { OperationLogAction } from '@/views/operation-log/typings';
 import { SearchCondition } from './condition';
 
 @Model('operation-log/search-condition-clb')
@@ -24,20 +23,4 @@ export class SearchConditionClb extends SearchCondition {
     index: 3,
   })
   'detail.data.res_flow.flow_id': string;
-
-  @Column('enum', {
-    apiOnly: true,
-    meta: {
-      search: {
-        filterRules() {
-          return {
-            field: 'res_type',
-            op: QueryRuleOPEnum.IN,
-            value: ['load_balancer', 'url_rule', 'listener', 'url_rule_domain', 'target_group'],
-          };
-        },
-      },
-    },
-  })
-  res_type: OperationLogResourceType;
 }

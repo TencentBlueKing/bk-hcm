@@ -54,6 +54,8 @@ func SyncAzureImage(kt *kit.Kit, hcCli *hcservice.Client, accountID string, regi
 				return err
 			}
 
+			// TODO feature: 因前端查询时未带资源组、地域参数，且全量同步数据量过大；
+			//      Azure暂时只同步一个地域下的一个资源组，用于所有场景；后续设计方案存储全量
 			break
 		}
 

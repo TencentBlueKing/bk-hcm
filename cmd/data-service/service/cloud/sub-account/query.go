@@ -87,7 +87,7 @@ func convCoreSubAccount[T coresubaccount.Extension](db *tablesubaccount.Table) (
 	}, nil
 }
 
-// ListSubAccount list sub account.
+// ListSubAccount list subaccount.
 func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -121,24 +121,31 @@ func (svc *service) ListSubAccount(cts *rest.Contexts) (interface{}, error) {
 }
 
 func convCoreBaseSubAccount(one tablesubaccount.Table) coresubaccount.BaseSubAccount {
-	return coresubaccount.BaseSubAccount{
-		ID:          one.ID,
-		CloudID:     one.CloudID,
-		Name:        one.Name,
-		Vendor:      one.Vendor,
-		Site:        one.Site,
-		AccountID:   one.AccountID,
-		AccountType: one.AccountType,
-		Managers:    one.Managers,
-		BkBizIDs:    one.BkBizIDs,
-		Memo:        one.Memo,
+	baseAccount := coresubaccount.BaseSubAccount{
+		ID:                    one.ID,
+		CloudID:               one.CloudID,
+		Name:                  one.Name,
+		Vendor:                one.Vendor,
+		Site:                  one.Site,
+		AccountID:             one.AccountID,
+		AccountType:           one.AccountType,
+		Managers:              one.Managers,
+		BkBizIDs:              one.BkBizIDs,
+		PermissionTemplateIDs: one.PermissionTemplateIDs,
+		Email:                 one.Email,
+		PhoneNum:              one.PhoneNum,
+		CountryCode:           one.CountryCode,
+		Memo:                  one.Memo,
 		Revision: core.Revision{
 			Creator:   one.Creator,
 			Reviser:   one.Reviser,
 			CreatedAt: one.CreatedAt.String(),
 			UpdatedAt: one.UpdatedAt.String(),
 		},
+		CloudCreatedAt: one.CloudCreatedAt,
 	}
+
+	return baseAccount
 }
 
 // ListSubAccountExt list account with extension.
@@ -189,8 +196,8 @@ func (svc *service) ListSubAccountExt(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func convListExtResult[T coresubaccount.Extension](models []tablesubaccount.Table) (
-	*dssubaccount.ListExtResult[T], error) {
+func convListExtResult[T coresubaccount.Extension](models []tablesubaccount.Table,
+) (*dssubaccount.ListExtResult[T], error) {
 
 	details := make([]coresubaccount.SubAccount[T], 0, len(models))
 	for _, one := range models {

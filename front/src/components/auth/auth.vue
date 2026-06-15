@@ -149,7 +149,15 @@ const handleClick = async () => {
               resources.some((resource) =>
                 [String(resource.bk_biz_id), String(resource.resource_id)].includes(String(instance.id)),
               ),
-            ),
+            )
+            .reduce((acc, current) => {
+              // 创建唯一的标识符，去重
+              const key = current.type + current.id;
+              if (!acc.find((item) => item.type + item.id === key)) {
+                acc.push(current);
+              }
+              return acc;
+            }, []),
         ].filter(Boolean),
       })),
     }));
@@ -189,10 +197,7 @@ const handleClick = async () => {
     &::after {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       z-index: 1;
     }
   }

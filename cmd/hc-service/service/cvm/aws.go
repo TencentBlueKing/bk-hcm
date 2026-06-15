@@ -60,6 +60,7 @@ func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 
 	h.Add("ListAwsCvmNetworkInterface", http.MethodPost, "/vendors/aws/cvms/network_interfaces/list",
 		svc.ListAwsCvmNetworkInterface)
+	h.Add("GetAwsMonitorData", http.MethodPost, "/vendors/aws/cvms/monitor/data", svc.GetAwsMonitorData)
 
 	h.Load(cap.WebService)
 }
@@ -591,4 +592,57 @@ func (svc *cvmSvc) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, acco
 		nextToken = resp.NextToken
 	}
 	return result, nil
+}
+
+// GetAwsMonitorData get aws cvm monitor data.
+func (svc *cvmSvc) GetAwsMonitorData(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.AwsMonitorDataReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	awsCli, err := svc.ad.Aws(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &typecvm.AwsMonitorDataOption{
+		Region:      req.Region,
+		MetricName:  req.MetricName,
+		Period:      req.Period,
+		StartTime:   req.StartTime,
+		EndTime:     req.EndTime,
+		InstanceIDs: req.InstanceIDs,
+	}
+	result, err := awsCli.GetMonitorData(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("get aws monitor data failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp := &protocvm.AwsMonitorDataResp{
+		DataPoints: make([]*protocvm.MonitorDataPointResp, 0, len(result.DataPoints)),
+	}
+	for _, dp := range result.DataPoints {
+		dataPoint := &protocvm.MonitorDataPointResp{
+			Dimensions: make([]*protocvm.MonitorDimensionResp, 0, len(dp.Dimensions)),
+			Timestamps: dp.Timestamps,
+			Values:     dp.Values,
+			Extensions: dp.Extensions,
+		}
+		for _, dim := range dp.Dimensions {
+			dataPoint.Dimensions = append(dataPoint.Dimensions, &protocvm.MonitorDimensionResp{
+				Name:  dim.Name,
+				Value: dim.Value,
+			})
+		}
+
+		resp.DataPoints = append(resp.DataPoints, dataPoint)
+	}
+
+	return resp, nil
 }

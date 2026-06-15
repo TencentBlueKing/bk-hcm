@@ -1,5 +1,6 @@
 import { IListResData, IPageQuery, IQueryResData } from './common';
 import { FilterType } from './resource';
+import { ResClassEnum } from '@/constants';
 
 // 账单汇总
 export type BillsSummarySumReqParams = { bill_year: number; bill_month: number; filter: FilterType };
@@ -129,6 +130,7 @@ export interface AdjustmentItem {
   bill_month: number; // 所属月份
   bill_day: number; // 所属日期
   type: 'increase' | 'decrease'; // 调账类型 枚举值（increase、decrease）
+  res_class: ResClassEnum; // 资源类别 枚举值（cpu、gpu）
   currency: string; // 币种
   cost: string; // 金额
   rmb_cost: string; // 对应人民币金额

@@ -151,6 +151,7 @@ func (cli *client) createImage(kt *kit.Kit, opt *SyncImageOption,
 				State:        one.State,
 				Type:         one.Type,
 				OsType:       one.OsType,
+				Region:       opt.Region,
 				Extension: &coreimage.AzureExtension{
 					Region:    opt.Region,
 					Publisher: opt.Publisher,

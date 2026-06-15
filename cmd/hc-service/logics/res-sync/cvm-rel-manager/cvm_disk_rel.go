@@ -123,10 +123,7 @@ func (mgr *CvmRelManger) getCvmDiskRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+		Page:   core.NewDefaultBasePage(),
 		Fields: nil,
 	}
 	result := make(map[string]map[string]cvmRelInfo)
@@ -148,9 +145,11 @@ func (mgr *CvmRelManger) getCvmDiskRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 			}
 		}
 
-		if len(respResult.Details) < int(core.DefaultMaxPageLimit) {
+		if len(respResult.Details) < int(listReq.Page.Limit) {
 			break
 		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
 	}
 
 	return result, nil

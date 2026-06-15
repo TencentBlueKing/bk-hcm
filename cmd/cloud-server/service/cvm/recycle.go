@@ -502,7 +502,7 @@ func (svc *cvmSvc) validateRecycleRecord(records *core.ListResultT[corerecord.Cv
 		}
 
 		if one.ResType != enumor.CvmCloudResType {
-			return fmt.Errorf("record: %d not is cvm recycle record", one.ID)
+			return fmt.Errorf("record: %s not is cvm recycle record", one.ID)
 		}
 	}
 

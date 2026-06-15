@@ -86,6 +86,39 @@ func networkRetryable(err error) bool {
 	return true
 }
 
+func limitExceededRetryable(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode)
+}
+
+// LimitExceededErrRetry retries read-only TCloud API calls when the error indicates rate limiting
+// (RequestLimitExceeded). retryTime is the maximum number of attempts; rangeMS sets random sleep bounds in ms.
+func LimitExceededErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error), kt *kit.Kit, req *I,
+	retryTime uint32, rangeMS [2]uint,
+) (resp *O, err error) {
+
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < retryTime {
+		resp, err = apiCall(kt.Ctx, req)
+		if err == nil {
+			break
+		}
+		if policy.RetryCount() < retryTime && limitExceededRetryable(err) {
+			logs.ErrorDepthf(1, "call tcloud api rate limited, req: %+v, retry times: %d, err: %v, rid: %s",
+				req, policy.RetryCount(), err, kt.Rid)
+			policy.Sleep()
+			continue
+		}
+		return nil, err
+	}
+	if resp == nil {
+		return nil, errors.New("empty response from tcloud")
+	}
+	return resp, nil
+}
+
 // NetworkErrRetry auto retry for "ClientError.NetworkError", for read only api
 func NetworkErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error), kt *kit.Kit, req *I) (resp *O,
 	err error) {

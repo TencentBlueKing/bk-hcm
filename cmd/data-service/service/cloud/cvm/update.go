@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -36,6 +37,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -66,7 +68,6 @@ func (svc *cvmSvc) BatchUpdateCvm(cts *rest.Contexts) (interface{}, error) {
 }
 
 func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor enumor.Vendor) (interface{}, error) {
-
 	req := new(protocloud.CvmBatchUpdateReq[T])
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -86,15 +87,20 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		return nil, err
 	}
 
+	gpuMachineTypes, err := svc.buildGPUMachineTypes(cts.Kit, vendor)
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]*tablecvm.Table, 0, len(req.Cvms))
 
 		for _, one := range req.Cvms {
-			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, cts.Kit.User)
 			existCvm, exist := existCvmMap[one.ID]
 			if !exist {
 				continue
 			}
+			update := buildUpdateCvmTableModel(one.CvmBatchUpdate, cts.Kit.User)
 			if one.Extension != nil {
 				merge, err := json.UpdateMerge(one.Extension, string(existCvm.Extension))
 				if err != nil {
@@ -102,6 +108,10 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				}
 				update.Extension = tabletype.JsonField(merge)
 			}
+
+			update.IsGPU = recalcUpdateIsGPU(vendor, existCvm, update, gpuMachineTypes)
+			logs.Infof("update cvm is_gpu flag, id: %s, cloudID: %s, machineType: %s, isGPU: %v, rid: %s",
+				one.ID, existCvm.CloudID, update.MachineType, update.IsGPU, cts.Kit.Rid)
 
 			if err := svc.dao.Cvm().UpdateByIDWithTx(cts.Kit, txn, one.ID, update); err != nil {
 				logs.Errorf("update cvm by id failed, err: %v, id: %s, rid: %s", err, one.ID, cts.Kit.Rid)
@@ -129,9 +139,10 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// upsert cmdb cloud hosts
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		// 修改语义（云上同步更新）：不下发 operator，CMDB 侧 operator 以已有值为准，传空的map
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, make(map[string]*string))
 		if err != nil {
-			logs.Errorf("upsert cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
 		}
 		return nil, nil
@@ -144,6 +155,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 
 func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *tablecvm.Table {
 	update := &tablecvm.Table{
+		ID:                   one.ID,
 		Name:                 one.Name,
 		BkBizID:              one.BkBizID,
 		BkHostID:             one.BkHostID,
@@ -163,6 +175,10 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		Reviser:              user,
 		VpcIDs:               one.VpcIDs,
 		SubnetIDs:            one.SubnetIDs,
+		// Region、Zone、CloudCreatedTime 由上游同步直接下发
+		Region:           one.Region,
+		Zone:             one.Zone,
+		CloudCreatedTime: one.CloudCreatedTime,
 		// 升降配可能会修改机型
 		MachineType: one.MachineType,
 		// 重装可能修改操作系统名称
@@ -172,6 +188,43 @@ func buildUpdateCvmTableModel(one protocloud.CvmBatchUpdate, user string) *table
 		update.BkCloudID = one.BkCloudID
 	}
 	return update
+}
+
+// recalcUpdateIsGPU recomputes the is_gpu flag for an update. Machine type and GPU card count
+// changes (resize, GCP N1 attach/detach GPU) both affect the result; when the machine type or
+// extension is not carried by the update, the existing value is used as the fallback.
+func recalcUpdateIsGPU(vendor enumor.Vendor, existCvm tablecvm.Table, update *tablecvm.Table,
+	gpuMachineTypes map[string]struct{}) bool {
+
+	machineType := existCvm.MachineType
+	if update.MachineType != "" {
+		machineType = update.MachineType
+	}
+
+	extension := string(existCvm.Extension)
+	if len(update.Extension) > 0 {
+		extension = string(update.Extension)
+	}
+
+	return isGPUMachine(vendor, machineType, gpuMachineTypes, extension)
+}
+
+// listCvmByIDsBatched fetches CVMs matching the given IDs in batches to avoid query size limits.
+func listCvmByIDsBatched(cts *rest.Contexts, svc *cvmSvc, ids []string) ([]tablecvm.Table, error) {
+	result := make([]tablecvm.Table, 0, len(ids))
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		opt := &types.ListOption{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := svc.dao.Cvm().List(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		}
+		result = append(result, list.Details...)
+	}
+	return result, nil
 }
 
 func listCvmInfo(cts *rest.Contexts, svc *cvmSvc, ids []string) (map[string]tablecvm.Table, error) {
@@ -250,19 +303,26 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 	}
 
 	// upsert cmdb cloud hosts
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.NewDefaultBasePage(),
-	}
-	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
+	allDetails, err := listCvmByIDsBatched(cts, svc, ids)
 	if err != nil {
-		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list cvm failed, err: %v", err)
+		return nil, err
 	}
 
-	err = upsertBaseCmdbHosts(svc, cts.Kit, converter.SliceToPtr(listResp.Details))
+	// 仅"分配主机到业务"（创建语义，上层置 SetOperator为true）通过 buildCmdbOperators 推导并传递 operator；
+	// res-sync 等修改语义场景 SetOperator 为 false，传 nil 不改动 CMDB 侧 operator。
+	models := converter.SliceToPtr(allDetails)
+	var cvmIDOperatorMap map[string]*string
+	if req.SetOperator {
+		cvmIDOperatorMap, err = buildCvmIDOperatorMap(svc, cts.Kit, models)
+		if err != nil {
+			logs.Errorf("[%s] build cmdb operators failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
+			return nil, nil
+		}
+	}
+
+	err = upsertBaseCmdbHosts(svc, cts.Kit, models, cvmIDOperatorMap)
 	if err != nil {
-		logs.Errorf("upsert base cmdb hosts failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("[%s] upsert base cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 		return nil, nil
 	}
 

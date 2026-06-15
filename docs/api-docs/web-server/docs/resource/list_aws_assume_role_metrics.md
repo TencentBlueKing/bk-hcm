@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9+。
+- 该接口提供版本：v1.8.11+。
 - 该接口所需权限：资源查看。
 - 该接口功能描述：查询 AWS 成员账号在 CloudWatch 中实际存在的指标列表。通过 STS AssumeRole 跨账号访问成员账号的 CloudWatch ListMetrics 接口，透传返回 AWS 原始 Metric 对象。可用于发现实例上 CloudWatch Agent 实际采集了哪些指标。
 

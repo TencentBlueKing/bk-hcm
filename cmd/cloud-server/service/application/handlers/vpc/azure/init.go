@@ -37,7 +37,7 @@ func NewApplicationOfCreateAzureVpc(
 	opt *handlers.HandlerOption, req *csvpc.AzureVpcCreateReq,
 ) *ApplicationOfCreateAzureVpc {
 	return &ApplicationOfCreateAzureVpc{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.Azure),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateVpc, enumor.OpCreateVpc, enumor.Azure),
 		req:                    req,
 	}
 }

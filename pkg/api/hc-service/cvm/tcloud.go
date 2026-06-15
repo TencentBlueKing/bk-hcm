@@ -268,6 +268,7 @@ type MonitorDataPointResp struct {
 	Dimensions []*MonitorDimensionResp `json:"dimensions"`
 	Timestamps []int64                 `json:"timestamps"`
 	Values     []float64               `json:"values"`
+	Extensions map[string]interface{}  `json:"extensions,omitempty"`
 }
 
 // MonitorDimensionResp defines monitor dimension response.

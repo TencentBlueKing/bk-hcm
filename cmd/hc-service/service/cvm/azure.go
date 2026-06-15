@@ -48,6 +48,7 @@ func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h.Add("StopAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/stop", svc.StopAzureCvm)
 	h.Add("RebootAzureCvm", http.MethodPost, "/vendors/azure/cvms/{id}/reboot", svc.RebootAzureCvm)
 	h.Add("DeleteAzureCvm", http.MethodDelete, "/vendors/azure/cvms/{id}", svc.DeleteAzureCvm)
+	h.Add("GetAzureMonitorData", http.MethodPost, "/vendors/azure/cvms/monitor/data", svc.GetAzureMonitorData)
 
 	h.Load(cap.WebService)
 }
@@ -376,4 +377,62 @@ func (svc *cvmSvc) DeleteAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// GetAzureMonitorData get azure cvm monitor data.
+func (svc *cvmSvc) GetAzureMonitorData(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.AzureMonitorDataReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	azureCli, err := svc.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &typecvm.AzureMonitorDataOption{
+		Region:              req.Region,
+		MetricName:          req.MetricName,
+		Period:              req.Period,
+		StartTime:           req.StartTime,
+		EndTime:             req.EndTime,
+		MetricNamespace:     req.MetricNamespace,
+		Aggregation:         req.Aggregation,
+		AutoAdjustTimegrain: req.AutoAdjustTimegrain,
+		Top:                 req.Top,
+		OrderBy:             req.OrderBy,
+		Filter:              req.Filter,
+		ResultType:          typecvm.AzureResultType(req.ResultType),
+		InstanceIDs:         req.InstanceIDs,
+	}
+	result, err := azureCli.GetMonitorData(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("get azure monitor data failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp := &protocvm.AzureMonitorDataResp{
+		DataPoints: make([]*protocvm.MonitorDataPointResp, 0, len(result.DataPoints)),
+	}
+	for _, dp := range result.DataPoints {
+		dataPoint := &protocvm.MonitorDataPointResp{
+			Dimensions: make([]*protocvm.MonitorDimensionResp, 0, len(dp.Dimensions)),
+			Timestamps: dp.Timestamps,
+			Values:     dp.Values,
+			Extensions: dp.Extensions,
+		}
+		for _, dim := range dp.Dimensions {
+			dataPoint.Dimensions = append(dataPoint.Dimensions, &protocvm.MonitorDimensionResp{
+				Name:  dim.Name,
+				Value: dim.Value,
+			})
+		}
+		resp.DataPoints = append(resp.DataPoints, dataPoint)
+	}
+
+	return resp, nil
 }

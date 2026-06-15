@@ -39,10 +39,13 @@ type BaseAccount struct {
 	BkBizID     int64                  `json:"bk_biz_id"`
 	UsageBizIDs []int64                `json:"usage_biz_ids"`
 	// 旧的业务字段，用于兼容旧的api
-	BkBizIDs           []int64 `json:"bk_biz_ids"`
-	SyncStatus         string  `json:"sync_status"`
-	SyncFailedReason   string  `json:"sync_failed_reason"`
-	RecycleReserveTime int     `json:"recycle_reserve_time"`
+	BkBizIDs           []int64  `json:"bk_biz_ids"`
+	SyncStatus         string   `json:"sync_status"`
+	SyncFailedReason   string   `json:"sync_failed_reason"`
+	RecycleReserveTime int      `json:"recycle_reserve_time"`
+	Email              *string  `json:"email"`
+	SecurityManagers   []string `json:"security_managers"`
+	CloudCreatedAt     *string  `json:"cloud_created_at"`
 	core.Revision      `json:",inline"`
 }
 
@@ -52,6 +55,10 @@ type TCloudAccountExtension struct {
 	CloudSubAccountID  string `json:"cloud_sub_account_id"`
 	CloudSecretID      string `json:"cloud_secret_id"`
 	CloudSecretKey     string `json:"cloud_secret_key,omitempty"`
+	// LoginFlag 登录保护设置
+	LoginFlag *enumor.AccountProtectionFlag `json:"login_flag,omitempty"`
+	// ActionFlag 敏感操作保护设置
+	ActionFlag *enumor.AccountProtectionFlag `json:"action_flag,omitempty"`
 }
 
 // DecryptSecretKey ...

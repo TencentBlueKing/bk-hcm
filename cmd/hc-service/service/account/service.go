@@ -23,7 +23,7 @@ package account
 import (
 	"net/http"
 
-	"hcm/cmd/hc-service/logics/cloud-adaptor"
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/rest"
 )
@@ -77,9 +77,59 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
 		svc.GetTCloudNetworkAccountType)
 
+	tcloudAccountService(h, svc)
+	// 访问密钥管理
+	tcloudSecretService(h, svc)
+
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)
+}
+
+// 腾讯云密钥管理
+func tcloudAccountService(h *rest.Handler, svc *service) {
+	// 查询账号列表
+	h.Add("TCloudListAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/list", svc.TCloudListAccount)
+	// 创建子账号
+	h.Add("TCloudCreateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/create", svc.TCloudCreateSubAccount)
+	// 更新子账号
+	h.Add("TCloudUpdateSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/update", svc.TCloudUpdateSubAccount)
+	// 删除子账号
+	h.Add("TCloudDeleteSubAccount", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/delete", svc.TCloudDeleteSubAccount)
+	// 通过子用户UIN列表查询子用户
+	h.Add("TCloudDescribeSubAccounts", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/describe", svc.TCloudDescribeSubAccounts)
+	// 获取子账号安全设置 (CAM DescribeSafeAuthFlagColl)
+	h.Add("TCloudDescribeSafeAuthFlagColl", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/safe_auth_flag", svc.TCloudDescribeSafeAuthFlagColl)
+	// 设置子账号登录保护和敏感操作保护
+	h.Add("TCloudSetMfaFlag", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/set_mfa_flag", svc.TCloudSetMfaFlag)
+
+	// 腾讯云权限策略绑定和解绑
+	h.Add("TCloudAttachUserPolicies", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/attach_user_policies", svc.TCloudAttachUserPolicies)
+	h.Add("TCloudDetachUserPolicies", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/detach_user_policies", svc.TCloudDetachUserPolicies)
+}
+
+// 密钥管理
+func tcloudSecretService(h *rest.Handler, svc *service) {
+	// TCloud 密钥管理
+	h.Add("TCloudCreateAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/create", svc.TCloudCreateAccessKey)
+	h.Add("TCloudDeleteAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/delete", svc.TCloudDeleteAccessKey)
+	h.Add("TCloudUpdateAccessKey", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/update", svc.TCloudUpdateAccessKey)
+	h.Add("TCloudGetSecurityLastUsed", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/last_used", svc.TCloudGetSecurityLastUsed)
+	h.Add("TCloudListAccessKeys", http.MethodPost,
+		"/vendors/tcloud/sub_accounts/secrets/list", svc.TCloudListAccessKeys)
 }
 
 type service struct {

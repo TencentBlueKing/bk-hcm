@@ -105,6 +105,8 @@ api: pre
 	@cp -f docs/api-docs/api-server/api/bk_apigw_definition_bk-hcm.yaml ${OUTPUT_DIR}/bk-hcm-apigwregister/support-files/definition.yaml
 	@cp -rf docs/api-docs/api-server/docs/zh ${OUTPUT_DIR}/bk-hcm-apigwregister/support-files/apidocs
 	@cp -rf docs/api-docs/api-server/bin ${OUTPUT_DIR}/bk-hcm-apigwregister/support-files/
+	@mkdir -p ${OUTPUT_DIR}/bk-hcm-authregister/support-files/bin/
+	@cp -f docs/api-docs/auth-server/bin/auth-register.sh ${OUTPUT_DIR}/bk-hcm-authregister/support-files/bin/
 	@echo -e "\033[32;1mPackaging API Docs Done\n\033[0m"
 
 # 添加版本信息到编译文件中

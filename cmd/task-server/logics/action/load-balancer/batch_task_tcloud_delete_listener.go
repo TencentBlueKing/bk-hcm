@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/async/action"
@@ -89,7 +90,7 @@ func (act BatchTaskDeleteListenerAction) Run(kt run.ExecuteKit, params any) (res
 	}
 
 	// 批量查询并检查任务详情状态
-	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
+	detailList, err := actionflow.ListTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed, mdIDs: %v", opt.ManagementDetailIDs), err
 	}
@@ -125,7 +126,8 @@ func (act BatchTaskDeleteListenerAction) Run(kt run.ExecuteKit, params any) (res
 	})
 
 	// 更新任务状态为 running
-	if err = batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		return fmt.Sprintf("failed to update detail task to running, mdIDs: %v", opt.ManagementDetailIDs), err
 	}
 
@@ -136,7 +138,7 @@ func (act BatchTaskDeleteListenerAction) Run(kt run.ExecuteKit, params any) (res
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err = batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, targetState, nil, taskErr)
+		err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, targetState, nil, taskErr)
 		if err != nil {
 			logs.Errorf("failed to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)

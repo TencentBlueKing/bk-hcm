@@ -57,6 +57,7 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		BillMonth:     req.BillMonth,
 		BillDay:       req.BillDay,
 		Type:          string(req.Type),
+		ResClass:      req.ResClass,
 		Memo:          req.Memo,
 		Operator:      req.Operator,
 		Currency:      req.Currency,

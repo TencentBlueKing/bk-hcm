@@ -20,8 +20,10 @@
 package cvm
 
 import (
+	"fmt"
 	"time"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
@@ -209,4 +211,99 @@ type AzureCvm struct {
 // GetCloudID ...
 func (cvm AzureCvm) GetCloudID() string {
 	return converter.PtrToVal(cvm.ID)
+}
+
+// -------------------------- Monitor --------------------------
+
+// AzureMonitorDataOption defines options to get monitor data from azure.
+type AzureMonitorDataOption struct {
+	Region              string          `json:"region" validate:"required"`
+	MetricName          string          `json:"metric_name" validate:"required"`
+	Period              int64           `json:"period" validate:"required,min=1"`
+	StartTime           string          `json:"start_time" validate:"required"` // RFC3339 UTC
+	EndTime             string          `json:"end_time" validate:"required"`   // RFC3339 UTC
+	MetricNamespace     string          `json:"metric_namespace" validate:"omitempty"`
+	Aggregation         string          `json:"aggregation" validate:"omitempty"`
+	AutoAdjustTimegrain *bool           `json:"auto_adjust_timegrain" validate:"omitempty"`
+	Top                 *int32          `json:"top" validate:"omitempty"`
+	OrderBy             string          `json:"orderby" validate:"omitempty"`
+	Filter              string          `json:"filter" validate:"omitempty"`
+	ResultType          AzureResultType `json:"result_type" validate:"omitempty"`
+	InstanceIDs         []string        `json:"instance_ids" validate:"required,min=1,max=20"`
+}
+
+// AzureResultType defines azure monitor query result type.
+type AzureResultType string
+
+const (
+	// AzureResultTypeData returns metric datapoints.
+	AzureResultTypeData AzureResultType = "Data"
+	// AzureResultTypeMetadata returns metric metadata only.
+	AzureResultTypeMetadata AzureResultType = "Metadata"
+)
+
+// Validate validates azure monitor result type.
+func (t AzureResultType) Validate() error {
+	if len(t) == 0 {
+		return nil
+	}
+
+	switch t {
+	case AzureResultTypeData:
+	case AzureResultTypeMetadata:
+	default:
+		return fmt.Errorf("result_type should be one of: %s, %s", AzureResultTypeData, AzureResultTypeMetadata)
+	}
+
+	return nil
+}
+
+// Validate azure monitor data option.
+func (opt AzureMonitorDataOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	startTime, err := time.Parse(time.RFC3339, opt.StartTime)
+	if err != nil {
+		return fmt.Errorf("start_time should be RFC3339 format")
+	}
+
+	endTime, err := time.Parse(time.RFC3339, opt.EndTime)
+	if err != nil {
+		return fmt.Errorf("end_time should be RFC3339 format")
+	}
+
+	if !startTime.Before(endTime) {
+		return fmt.Errorf("start_time should < end_time")
+	}
+
+	_, startOffset := startTime.Zone()
+	_, endOffset := endTime.Zone()
+	if startOffset != 0 || endOffset != 0 {
+		return fmt.Errorf("start_time and end_time should be UTC timezone")
+	}
+
+	if opt.Top != nil && *opt.Top <= 0 {
+		return fmt.Errorf("top should > 0")
+	}
+
+	if len(opt.OrderBy) != 0 && opt.Top == nil {
+		return fmt.Errorf("orderby requires top")
+	}
+
+	if err = opt.ResultType.Validate(); err != nil {
+		return err
+	}
+
+	if len(opt.InstanceIDs) > constant.MonitorMaxInstanceLimit {
+		return fmt.Errorf("instances count should <= %d", constant.MonitorMaxInstanceLimit)
+	}
+
+	return nil
+}
+
+// AzureMonitorDataResult defines azure monitor data result.
+type AzureMonitorDataResult struct {
+	DataPoints []*MonitorDataPoint `json:"data_points"`
 }

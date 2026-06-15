@@ -27,4 +27,9 @@ const (
 	MinRetryInterval = 600
 	// MaxRetryInterval minimum retry interval
 	MaxRetryInterval = 1000
+
+	// TCloudRetryDelayMinMS tcloud minimum retry interval
+	TCloudRetryDelayMinMS = 200
+	// TCloudRetryDelayMaxMS tcloud maximum retry interval
+	TCloudRetryDelayMaxMS = 500
 )

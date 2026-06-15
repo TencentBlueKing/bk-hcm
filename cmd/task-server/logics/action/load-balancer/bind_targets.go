@@ -22,6 +22,7 @@ package actionlb
 
 import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -78,7 +79,8 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 	if len(reason) > 0 {
 		return reason, nil
 	}
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err = actionflow.BatchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs,
+		enumor.TaskDetailRunning); err != nil {
 		logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		return nil, err
 	}
@@ -94,7 +96,7 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 	taskDetailState := enumor.TaskDetailSuccess
 	defer func() {
 		// 更新任务状态
-		if err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
+		if err = actionflow.BatchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, taskDetailState,
 			nil, err); err != nil {
 			logs.Errorf("fail to update task detail state, err: %v, opt: %+v rid: %s", err, opt, kt.Kit().Rid)
 		}

@@ -134,6 +134,7 @@ export default defineComponent({
         {...ctx.attrs}
         disabled={props.disabled}
         customContent
+        filterable
         modelValue={dispalyValue.value}
         multipleMode='tag'
         multiple={false}

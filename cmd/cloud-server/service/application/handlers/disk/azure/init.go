@@ -37,7 +37,7 @@ func NewApplicationOfCreateAzureDisk(
 	req *csdisk.AzureDiskCreateReq,
 ) *ApplicationOfCreateAzureDisk {
 	return &ApplicationOfCreateAzureDisk{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.Azure),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateDisk, enumor.OpCreateDisk, enumor.Azure),
 		req:                    req,
 	}
 }

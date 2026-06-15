@@ -241,7 +241,7 @@ export default defineComponent({
           property: 'name',
           component: () => (
             <section class='flex-row'>
-              <Select v-model={state.protocol}>
+              <Select v-model={state.protocol} filterable>
                 {GCP_PROTOCOL_LIST.map((item) => (
                   <Option key={item.id} value={item.id} label={item.name}>
                     {item.name}

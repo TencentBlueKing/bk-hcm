@@ -20,6 +20,7 @@
 package sync
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -56,6 +57,13 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		start := time.Now()
 		logs.Infof("cloud resource all sync start, time: %v, rid: %s", start, syncKit.Rid)
 
+		tenantSyncBizIDs, err := fetchSyncBizIDs(syncKit, cliSet)
+		if err != nil {
+			logs.Errorf("fetch sync biz ids failed, err: %v, rid: %s", err, syncKit.Rid)
+			continue
+		}
+		logs.Infof("cloud resource sync tenant biz ids config: %v, rid: %s", tenantSyncBizIDs, syncKit.Rid)
+
 		tenantIDs, err := listAllTenantIDs(syncKit, cliSet)
 		if err != nil {
 			logs.Errorf("list tenant failed, err: %v, rid: %s", err, syncKit.Rid)
@@ -67,13 +75,14 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 			waitGroup := new(sync.WaitGroup)
 			syncers := account.GetAvailableVendorSyncers()
 
+			syncBizIDs := tenantSyncBizIDs[tenantID]
 			waitGroup.Add(len(syncers))
 			for _, vendorSyncer := range syncers {
 				go func(vendor account.VendorSyncer) {
 					kt := core.NewTenantBackendKit(tenantID)
 					// for retry
 					kt.RequestSource = enumor.AsynchronousTasks
-					allAccountSync(kt, cliSet, vendor)
+					allAccountSync(kt, cliSet, vendor, syncBizIDs)
 					waitGroup.Done()
 				}(vendorSyncer)
 			}
@@ -112,7 +121,7 @@ func listAllTenantIDs(kt *kit.Kit, cliSet *client.ClientSet) ([]string, error) {
 }
 
 // allAccountSync all account sync.
-func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer) {
+func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer, syncBizIDs []int64) {
 	startTime := time.Now()
 	logs.Infof("%s start sync all cloud resource, tenant: %s, time: %v, rid: %s",
 		syncer.Vendor(), kt.TenantID, startTime, kt.Rid)
@@ -122,11 +131,16 @@ func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.Vendor
 			syncer.Vendor(), kt.TenantID, time.Since(startTime), kt.Rid)
 	}()
 
+	filterRules := []filter.RuleFactory{
+		&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: syncer.Vendor()},
+		&filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: enumor.ResourceAccount},
+	}
+	if len(syncBizIDs) > 0 {
+		filterRules = append(filterRules, buildBizFilter(syncBizIDs))
+	}
 	listReq := &protocloud.AccountListReq{
-		Filter: &filter.Expression{Op: filter.And, Rules: []filter.RuleFactory{
-			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: syncer.Vendor()},
-			&filter.AtomRule{Field: "type", Op: filter.Equal.Factory(), Value: enumor.ResourceAccount}}},
-		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+		Filter: &filter.Expression{Op: filter.And, Rules: filterRules},
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	start := uint32(0)
 	syncPublicResource := true
@@ -191,4 +205,45 @@ func listAccountWithRetry(kt *kit.Kit, cli *dataservice.Client, req *protocloud.
 
 		return list.Details, nil
 	}
+}
+
+// fetchSyncBizIDs 从 global_config 读取云资源同步业务白名单。
+// config_value 格式为 JSON 对象：{"tenantID": [bizID1, bizID2], ...}。
+// 若配置不存在或为空对象，返回 nil（各租户全量同步）；
+// 若租户不在 map 中，该租户也执行全量同步。
+func fetchSyncBizIDs(kt *kit.Kit, cliSet *client.ClientSet) (map[string][]int64, error) {
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("config_type", string(enumor.GlobalConfigTypeCloudSync)),
+			tools.RuleEqual("config_key", string(enumor.GlobalConfigKeyCloudSyncBizIDs)),
+		),
+		Page: &core.BasePage{Limit: 1},
+	}
+	result, err := cliSet.DataService().Global.GlobalConfig.List(kt, req)
+	if err != nil {
+		return nil, fmt.Errorf("list global config sync_biz_ids failed, err: %v", err)
+	}
+	if len(result.Details) == 0 {
+		return nil, nil
+	}
+	tenantBizIDs := make(map[string][]int64)
+	if err = json.Unmarshal([]byte(result.Details[0].ConfigValue), &tenantBizIDs); err != nil {
+		return nil, fmt.Errorf("unmarshal sync_biz_ids failed, err: %v", err)
+	}
+	return tenantBizIDs, nil
+}
+
+func buildBizFilter(syncBizIDs []int64) filter.RuleFactory {
+	if len(syncBizIDs) <= int(filter.DefaultMaxInLimit) {
+		return tools.RuleIn("bk_biz_id", syncBizIDs)
+	}
+	rules := make([]*filter.AtomRule, 0)
+	for i := 0; i < len(syncBizIDs); i += int(filter.DefaultMaxInLimit) {
+		end := i + int(filter.DefaultMaxInLimit)
+		if end > len(syncBizIDs) {
+			end = len(syncBizIDs)
+		}
+		rules = append(rules, tools.RuleIn("bk_biz_id", syncBizIDs[i:end]))
+	}
+	return tools.ExpressionOr(rules...)
 }

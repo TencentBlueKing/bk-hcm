@@ -496,9 +496,10 @@ type TCloudMonitorDataResult struct {
 
 // MonitorDataPoint defines a single monitor data point.
 type MonitorDataPoint struct {
-	Dimensions []*MonitorDimension `json:"dimensions"`
-	Timestamps []int64             `json:"timestamps"`
-	Values     []float64           `json:"values"`
+	Dimensions []*MonitorDimension    `json:"dimensions"`
+	Timestamps []int64                `json:"timestamps"`
+	Values     []float64              `json:"values"`
+	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
 // MonitorDimension defines monitor dimension.

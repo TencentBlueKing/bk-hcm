@@ -39,7 +39,7 @@ func NewApplicationOfCreateHuaWeiCvm(
 	opt *handlers.HandlerOption, req *proto.HuaWeiCvmCreateReq,
 ) *ApplicationOfCreateHuaWeiCvm {
 	return &ApplicationOfCreateHuaWeiCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.HuaWei),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.OpCreateCvm, enumor.HuaWei),
 		req:                    req,
 	}
 }

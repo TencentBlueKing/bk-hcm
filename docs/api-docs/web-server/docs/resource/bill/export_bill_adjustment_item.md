@@ -99,6 +99,7 @@ POST /api/v1/account/bills/adjustment_items/export
 | bill_month      | int     | 账单月份                                 |
 | bill_day        | int     | 账单日期                                 |
 | type            | string  | 调账类型                                 |
+| res_class       | string  | 资源类别 cpu/gpu                         |
 | memo            | string  | 备注                                   |
 | operator        | string  | 操作人                                  |
 | currency        | string  | 货币                                   |

@@ -22,6 +22,7 @@ package azure
 import (
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -50,8 +51,8 @@ func (a *ApplicationOfCreateAzureVpc) PrepareReqFromContent() error {
 }
 
 // GetItsmApprover 获取itsm审批人
-func (a *ApplicationOfCreateAzureVpc) GetItsmApprover(managers []string) []itsm.VariableApprover {
-	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
+func (a *ApplicationOfCreateAzureVpc) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
+	return a.GetItsmPlatformAndAccountApprover(kt, managers, a.req.AccountID)
 }
 
 // GetBkBizIDs 获取当前的业务IDs

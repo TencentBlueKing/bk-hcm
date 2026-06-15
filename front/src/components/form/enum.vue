@@ -52,5 +52,6 @@ defineExpose({
     :multiple="multiple"
     :multiple-mode="multiple ? 'tag' : 'default'"
     v-bind="attrs"
+    filterable
   />
 </template>

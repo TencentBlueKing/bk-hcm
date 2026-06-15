@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -67,15 +68,15 @@ func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 
 	// 限制一次只能创建一条规则
 	req := new(cslb.TCloudRuleCreate)
-	if err := cts.DecodeInto(req); err != nil {
+	if err = cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	// 参数校验
-	if err := req.Validate(); err != nil {
+	if err = req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
+	listenerDetail, _, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 	}
 
 	// 预检测-是否有执行中的负载均衡
-	_, err = svc.checkResFlowRel(cts.Kit, lblInfo.LbID, enumor.LoadBalancerCloudResType)
+	_, err = svc.checkResFlowRel(cts.Kit, listenerDetail.LbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	_, err = svc.applyTargetToRule(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], lblInfo, bizID)
+	_, err = svc.applyTargetToRule(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], listenerDetail, bizID)
 	if err != nil {
 		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -130,12 +131,12 @@ func (svc *lbSvc) batchCreateUrlRule(kt *kit.Kit, vendor enumor.Vendor, lblID st
 }
 
 // 构建异步任务将目标组中的RS绑定到对应规则上
-func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblInfo *corelb.BaseListener,
+func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, listenerDetail *corelb.TCloudListener,
 	bkBizID int64) (string, error) {
 
-	lb, err := svc.getLoadBalancerByID(kt, lblInfo.LbID)
+	lb, err := svc.getLoadBalancerByID(kt, listenerDetail.LbID)
 	if err != nil {
-		logs.Errorf("fail to get load balancer by id, id: %s, err: %v, rid: %s", lblInfo.LbID, err, kt.Rid)
+		logs.Errorf("fail to get load balancer by id, id: %s, err: %v, rid: %s", listenerDetail.LbID, err, kt.Rid)
 		return "", err
 	}
 	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, lb.Vendor, lb.AccountID,
@@ -151,24 +152,26 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 			return
 		}
 		// update task management state to failed
-		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); err != nil {
+		if tmErr := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); tmErr != nil {
 			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
-				err, taskManagementID, kt.Rid)
+				tmErr, taskManagementID, kt.Rid)
 		}
 		// update task details state to failed
 		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
 			return item.taskDetailID
 		})
-		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
-			logs.Errorf("update task details state to failed, err: %v, taskDetails: %+v, rid: %s", err,
+		if tdErr := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); tdErr != nil {
+			logs.Errorf("update task details state to failed, err: %v, taskDetails: %+v, rid: %s", tdErr,
 				taskDetails, kt.Rid)
 		}
 	}()
 
-	tasks, taskDetails, err := svc.buildRuleAddTargetTasks(kt, tgID, ruleCloudID, taskManagementID, lblInfo, bkBizID)
+	tasks, taskDetails, err := svc.buildRuleAddTargetTasks(kt, tgID, ruleCloudID, taskManagementID, listenerDetail,
+		bkBizID)
 	if err != nil {
 		logs.Errorf("fail to build rule add target tasks, err: %v, tgID: %s, ruleCloudID: %s, taskManagementID: %s, "+
-			"lblInfo: %+v, bkBizID: %d, rid: %s", err, tgID, ruleCloudID, taskManagementID, lblInfo, bkBizID, kt.Rid)
+			"listenerDetail: %+v, bkBizID: %d, rid: %s", err, tgID, ruleCloudID, taskManagementID, listenerDetail,
+			bkBizID, kt.Rid)
 		return "", err
 	}
 
@@ -187,7 +190,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 		return "", nil
 	}
 
-	if err := svc.createApplyTGFlow(kt, tgID, taskManagementID, lblInfo, tasks, taskDetails); err != nil {
+	if err := svc.createApplyTGFlow(kt, tgID, taskManagementID, listenerDetail, tasks, taskDetails); err != nil {
 		logs.Errorf("fail to create apply target group flow, err: %v, tgID: %s, taskManagementID: %s, tasks: %+v, rid: %s",
 			err, tgID, taskManagementID, tasks, kt.Rid)
 		return "", err
@@ -196,30 +199,19 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 }
 
 func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskManagementID string,
-	lblInfo *corelb.BaseListener, bkBizID int64) ([]apits.CustomFlowTask, []*taskManagementDetail, error) {
+	listenerDetail *corelb.TCloudListener, bkBizID int64) ([]apits.CustomFlowTask, []*taskManagementDetail, error) {
 
 	listRsReq := &core.ListReq{
 		Filter: tools.EqualExpression("target_group_id", tgID),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: constant.BatchAddRSCloudMaxLimit,
-		},
+		Page:   &core.BasePage{Start: 0, Limit: constant.BatchAddRSCloudMaxLimit},
 	}
-	// 判断规则类型
-	var ruleType enumor.RuleType
-	if lblInfo.Protocol.IsLayer7Protocol() {
-		ruleType = enumor.Layer7RuleType
-	} else {
-		ruleType = enumor.Layer4RuleType
-	}
-	// Build Task
 	getNextID := counter.NewNumberCounterWithPrev(1, 10)
-	taskDetails := make([]*taskManagementDetail, 0)
-	updateTask, err := svc.buildUpdateUrlRuleHealthCheckTask(kt, lblInfo.ID, ruleCloudID, tgID, lblInfo.Vendor, getNextID)
+	tasks, ruleType, err := svc.buildRuleAddTargetPrepareTasks(kt, tgID, ruleCloudID, listenerDetail, getNextID)
 	if err != nil {
 		return nil, nil, err
 	}
-	tasks := []apits.CustomFlowTask{updateTask}
+
+	taskDetails := make([]*taskManagementDetail, 0)
 	for {
 		rsResp, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listRsReq)
 		if err != nil {
@@ -230,52 +222,110 @@ func (svc *lbSvc) buildRuleAddTargetTasks(kt *kit.Kit, tgID, ruleCloudID, taskMa
 			break
 		}
 
-		rsReq := &hcproto.BatchRegisterTCloudTargetReq{
-			CloudListenerID: lblInfo.CloudID,
-			CloudRuleID:     ruleCloudID,
-			TargetGroupID:   tgID,
-			RuleType:        ruleType,
-			Targets:         make([]*hcproto.RegisterTarget, 0, len(rsResp.Details)),
-		}
-		for _, target := range rsResp.Details {
-			rsReq.Targets = append(rsReq.Targets, buildRegisterTarget(target))
-		}
-		details, err := svc.createListenerAddRsTaskDetails(kt, taskManagementID, bkBizID, rsReq.Targets)
+		task, details, err := svc.buildRuleAddTargetBatchTask(kt, taskManagementID, bkBizID, tgID, ruleCloudID,
+			listenerDetail, ruleType, getNextID, rsResp.Details)
 		if err != nil {
 			return nil, nil, err
 		}
-
-		cur, prev := getNextID()
-		actionID := action.ActIDType(cur)
-		tmp := apits.CustomFlowTask{
-			ActionID:   actionID,
-			ActionName: enumor.ActionListenerRuleAddTarget,
-			Params: actionlb.ListenerRuleAddTargetOption{
-				LoadBalancerID:               lblInfo.LbID,
-				BatchRegisterTCloudTargetReq: rsReq,
-				ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
-					return item.taskDetailID
-				}),
-			},
-			Retry: tableasync.NewRetryWithPolicy(10, 100, 500),
-		}
-		if prev != "" {
-			tmp.DependOn = []action.ActIDType{action.ActIDType(prev)}
-		}
-		tasks = append(tasks, tmp)
-		for _, detail := range details {
-			detail.actionID = string(actionID)
-		}
+		tasks = append(tasks, task)
 		taskDetails = append(taskDetails, details...)
 		if len(rsResp.Details) < constant.BatchAddRSCloudMaxLimit {
 			break
 		}
 		listRsReq.Page.Start += constant.BatchAddRSCloudMaxLimit
 	}
-	// 绑定rs完成后，同步clb
+
 	tasks = append(tasks,
-		buildSyncClbFlowTask(lblInfo.Vendor, lblInfo.CloudLbID, lblInfo.AccountID, lblInfo.Region, getNextID))
+		buildSyncClbFlowTask(listenerDetail.Vendor, listenerDetail.CloudLbID, listenerDetail.AccountID,
+			listenerDetail.Region, getNextID))
 	return tasks, taskDetails, nil
+}
+
+func (svc *lbSvc) buildRuleAddTargetPrepareTasks(kt *kit.Kit, tgID, ruleCloudID string,
+	listenerDetail *corelb.TCloudListener, getNextID func() (cur string, prev string)) (
+	[]apits.CustomFlowTask, enumor.RuleType, error) {
+
+	ruleType := getRuleTypeByProtocol(listenerDetail.Protocol)
+	if isPortRangeListener(listenerDetail) {
+		return make([]apits.CustomFlowTask, 0), ruleType, nil
+	}
+
+	updateTask, err := svc.buildUpdateUrlRuleHealthCheckTask(
+		kt, listenerDetail.ID, ruleCloudID, tgID, listenerDetail.Vendor, getNextID)
+	if err != nil {
+		logs.Errorf("fail to build update url rule health check task, tgID: %s, err: %v, listenerDetail: %+v, rid: %s",
+			tgID, err, converter.PtrToVal(listenerDetail), kt.Rid)
+		return nil, "", err
+	}
+	return []apits.CustomFlowTask{updateTask}, ruleType, nil
+}
+
+func (svc *lbSvc) buildRuleAddTargetBatchTask(kt *kit.Kit, taskManagementID string, bkBizID int64, tgID,
+	ruleCloudID string, listenerDetail *corelb.TCloudListener, ruleType enumor.RuleType,
+	getNextID func() (cur string, prev string), targets []corelb.BaseTarget) (apits.CustomFlowTask,
+	[]*taskManagementDetail, error) {
+
+	rsReq := buildBatchRegisterTCloudTargetReq(listenerDetail, tgID, ruleCloudID, ruleType, targets)
+	details, err := svc.createListenerAddRsTaskDetails(kt, taskManagementID, bkBizID, rsReq.Targets)
+	if err != nil {
+		logs.Errorf("fail to build url rule add target task, bkBizID: %d, taskManagementID: %s, tgID: %s, err: %v, "+
+			"listenerDetail: %+v, rid: %s", bkBizID, taskManagementID, tgID, err,
+			converter.PtrToVal(listenerDetail), kt.Rid)
+		return apits.CustomFlowTask{}, nil, err
+	}
+
+	cur, prev := getNextID()
+	actionID := action.ActIDType(cur)
+	task := apits.CustomFlowTask{
+		ActionID:   actionID,
+		ActionName: enumor.ActionListenerRuleAddTarget,
+		Params: actionlb.ListenerRuleAddTargetOption{
+			LoadBalancerID:               listenerDetail.LbID,
+			BatchRegisterTCloudTargetReq: rsReq,
+			ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+				return item.taskDetailID
+			}),
+		},
+		Retry: tableasync.NewRetryWithPolicy(10, 100, 500),
+	}
+	if prev != "" {
+		task.DependOn = []action.ActIDType{action.ActIDType(prev)}
+	}
+	for _, detail := range details {
+		detail.actionID = string(actionID)
+	}
+	return task, details, nil
+}
+
+func buildBatchRegisterTCloudTargetReq(listenerDetail *corelb.TCloudListener, tgID, ruleCloudID string,
+	ruleType enumor.RuleType, targets []corelb.BaseTarget) *hcproto.BatchRegisterTCloudTargetReq {
+
+	rsReq := &hcproto.BatchRegisterTCloudTargetReq{
+		CloudListenerID: listenerDetail.CloudID,
+		CloudRuleID:     ruleCloudID,
+		TargetGroupID:   tgID,
+		RuleType:        ruleType,
+		Targets:         make([]*hcproto.RegisterTarget, 0, len(targets)),
+	}
+	for _, target := range targets {
+		rsReq.Targets = append(rsReq.Targets, buildRegisterTarget(target))
+	}
+	return rsReq
+}
+
+func getRuleTypeByProtocol(protocol enumor.ProtocolType) enumor.RuleType {
+	if protocol.IsLayer7Protocol() {
+		return enumor.Layer7RuleType
+	}
+	return enumor.Layer4RuleType
+}
+
+// isPortRangeListener 是否是端口段监听器
+func isPortRangeListener(listenerDetail *corelb.TCloudListener) bool {
+	if listenerDetail == nil || listenerDetail.Extension == nil {
+		return false
+	}
+	return converter.PtrToVal(listenerDetail.Extension.EndPort) > 0
 }
 
 func buildRegisterTarget(target corelb.BaseTarget) *hcproto.RegisterTarget {
@@ -312,7 +362,7 @@ func (svc *lbSvc) createListenerAddRsTaskDetails(kt *kit.Kit, taskManagementID s
 	return details, nil
 }
 
-func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID, taskManagementID string, lblInfo *corelb.BaseListener,
+func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID, taskManagementID string, listenerDetail *corelb.TCloudListener,
 	tasks []apits.CustomFlowTask, taskDetails []*taskManagementDetail) error {
 
 	flowID, err := svc.buildFlow(kt, enumor.FlowApplyTargetGroupToListenerRule, nil, tasks)
@@ -334,16 +384,17 @@ func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID, taskManagementID string, 
 		return err
 	}
 
-	if err = svc.buildSubFlow(kt, flowID, lblInfo.LbID, []string{tgID}, enumor.TargetGroupCloudResType,
+	if err = svc.buildSubFlow(kt, flowID, listenerDetail.LbID, []string{tgID}, enumor.TargetGroupCloudResType,
 		enumor.ApplyTargetGroupType); err != nil {
 		return err
 	}
 
 	// 锁定负载均衡跟Flow的状态
-	err = svc.lockResFlowStatus(kt, lblInfo.LbID, enumor.LoadBalancerCloudResType, flowID, enumor.ApplyTargetGroupType)
+	err = svc.lockResFlowStatus(kt, listenerDetail.LbID, enumor.LoadBalancerCloudResType, flowID,
+		enumor.ApplyTargetGroupType)
 	if err != nil {
 		logs.Errorf("fail to lock load balancer(%s) for flow(%s), err: %v, rid: %s",
-			lblInfo.LbID, flowID, err, kt.Rid)
+			listenerDetail.LbID, flowID, err, kt.Rid)
 		return err
 	}
 	return nil
@@ -632,11 +683,12 @@ func (svc *lbSvc) tcloudUrlBindTargetGroup(cts *rest.Contexts, bizID int64, req 
 	}
 	rule := resp.Details[0]
 	if rule.RuleType != enumor.Layer7RuleType {
-		logs.Errorf("url rule is not layer7 rule, id: %s, ruleType: %s, rid: %s", req.UrlRuleID, rule.RuleType, cts.Kit.Rid)
+		logs.Errorf("url rule is not layer7 rule, id: %s, ruleType: %s, rid: %s", req.UrlRuleID, rule.RuleType,
+			cts.Kit.Rid)
 		return "", errf.Newf(errf.InvalidParameter, "url rule(%s) is not layer7 rule", req.UrlRuleID)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, enumor.TCloud, bizID, rule.LblID)
+	listenerDetail, lblBasicInfo, err := svc.getListenerDetailByIDAndBiz(cts.Kit, enumor.TCloud, bizID, rule.LblID)
 	if err != nil {
 		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
 			bizID, rule.LblID, err, cts.Kit.Rid)
@@ -655,12 +707,12 @@ func (svc *lbSvc) tcloudUrlBindTargetGroup(cts *rest.Contexts, bizID int64, req 
 	}
 
 	// 预检测-是否有执行中的负载均衡
-	_, err = svc.checkResFlowRel(cts.Kit, lblInfo.LbID, enumor.LoadBalancerCloudResType)
+	_, err = svc.checkResFlowRel(cts.Kit, listenerDetail.LbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return "", err
 	}
 
-	taskManagementID, err := svc.applyTargetToRule(cts.Kit, req.TargetGroupID, rule.CloudID, lblInfo, bizID)
+	taskManagementID, err := svc.applyTargetToRule(cts.Kit, req.TargetGroupID, rule.CloudID, listenerDetail, bizID)
 	if err != nil {
 		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, cts.Kit.Rid)
 		return "", err
@@ -689,21 +741,21 @@ func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error
 	}
 
 	req := new(cslb.TCloudRuleCreateWithoutBinding)
-	if err := cts.DecodeInto(req); err != nil {
+	if err = cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	// 参数校验
-	if err := req.Validate(); err != nil {
+	if err = req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
+	listenerDetail, _, err := svc.validateListenerCertAndAuth(cts, vendor, bizID, lblID, req.Certificate)
 	if err != nil {
 		return nil, err
 	}
 
 	// 预检测-是否有执行中的负载均衡
-	_, err = svc.checkResFlowRel(cts.Kit, lblInfo.LbID, enumor.LoadBalancerCloudResType)
+	_, err = svc.checkResFlowRel(cts.Kit, listenerDetail.LbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		return nil, err
 	}
@@ -718,18 +770,18 @@ func (svc *lbSvc) CreateBizUrlRuleWithoutBinding(cts *rest.Contexts) (any, error
 }
 
 func (svc *lbSvc) validateListenerCertAndAuth(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string,
-	certificate *corelb.TCloudCertificateInfo) (*corelb.BaseListener, error) {
+	certificate *corelb.TCloudCertificateInfo) (*corelb.TCloudListener, *types.CloudResourceBasicInfo, error) {
 
-	lblInfo, lblBasicInfo, err := svc.getListenerByIDAndBiz(cts.Kit, vendor, bizID, lblID)
+	listenerDetail, lblBasicInfo, err := svc.getListenerDetailByIDAndBiz(cts.Kit, vendor, bizID, lblID)
 	if err != nil {
 		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
 			bizID, lblID, err, cts.Kit.Rid)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// if SNI Switch is off, certificates can only be set in listener not its rule
-	if lblInfo.SniSwitch == enumor.SniTypeClose && certificate != nil {
-		return nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
+	if listenerDetail.SniSwitch == enumor.SniTypeClose && certificate != nil {
+		return nil, nil, errf.New(errf.InvalidParameter, "can not set certificate on rule of sni_switch off listener")
 	}
 
 	// 业务校验、鉴权
@@ -740,9 +792,9 @@ func (svc *lbSvc) validateListenerCertAndAuth(cts *rest.Contexts, vendor enumor.
 		BasicInfo:  lblBasicInfo,
 	}
 	if err = handler.BizOperateAuth(cts, valOpt); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return lblInfo, nil
+	return listenerDetail, lblBasicInfo, nil
 }
 
 // batchCreateUrlRuleWithoutTG 仅批量创建url规则, 不创建目标组

@@ -21,6 +21,19 @@ export type ModelPropertyType =
   | 'json'
   | 'cloud-area';
 
+export type AppearanceType =
+  | 'status'
+  | 'link'
+  | 'wxwork-link'
+  | 'tag'
+  | 'cvm-status'
+  | 'clb-status'
+  | 'business-assign-tag'
+  | 'dynamic-status'
+  | 'link-button'
+  | 'radio'
+  | 'link-popover';
+
 export type ModelPropertyMeta = {
   display?: PropertyDisplayConfig;
   search?: PropertySearchConfig;
@@ -39,7 +52,9 @@ export type ModelProperty = {
   meta?: ModelPropertyMeta;
   unit?: string;
   index?: number;
+  group?: string;
   apiOnly?: boolean;
+  hidden?: boolean;
 };
 
 export type PropertyColumnConfig = {
@@ -66,6 +81,8 @@ export type PropertyColumnConfig = {
 };
 
 export type PropertyFormConfig = {
+  required?: boolean;
+  readonly?: boolean;
   rules?: object;
 };
 
@@ -79,11 +96,13 @@ export type PropertySearchConfig = {
 };
 
 export type PropertyDisplayConfig = {
-  appearance?: string;
+  on?: 'cell' | 'info' | 'search';
+  appearance?: AppearanceType;
   appearanceProps?: Record<string, any>;
   format?: (value: any) => any;
-  render?: (value: any) => VNode | string;
+  render?: (value: any) => VNode | boolean | number | string;
   showOverflowTooltip?: boolean;
+  props?: Record<string, any>;
 };
 
 // 与列展示场景相关，联合列的配置属性

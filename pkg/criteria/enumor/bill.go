@@ -96,6 +96,26 @@ const (
 	BillAdjustmentDecrease BillAdjustmentType = "decrease"
 )
 
+// BillAdjustmentResClass 调账资源类别
+type BillAdjustmentResClass string
+
+// Validate checks if the BillAdjustmentResClass is valid.
+func (b BillAdjustmentResClass) Validate() error {
+	switch b {
+	case BillAdjustmentResClassCPU, BillAdjustmentResClassGPU:
+	default:
+		return fmt.Errorf("unsupported bill adjustment res class: %s", b)
+	}
+	return nil
+}
+
+const (
+	// BillAdjustmentResClassCPU CPU 资源类别
+	BillAdjustmentResClassCPU BillAdjustmentResClass = "cpu"
+	// BillAdjustmentResClassGPU GPU 资源类别
+	BillAdjustmentResClassGPU BillAdjustmentResClass = "gpu"
+)
+
 // BillAdjustmentState 调账明细状态
 type BillAdjustmentState string
 
@@ -266,6 +286,12 @@ var (
 	BillAdjustmentTypeNameMap = map[BillAdjustmentType]string{
 		BillAdjustmentIncrease: "增加",
 		BillAdjustmentDecrease: "减少",
+	}
+
+	// BillAdjustmentResClassNameMap is the map of bill adjustment res class name
+	BillAdjustmentResClassNameMap = map[BillAdjustmentResClass]string{
+		BillAdjustmentResClassCPU: "CPU",
+		BillAdjustmentResClassGPU: "GPU",
 	}
 
 	// RootAccountBillSummaryStateMap 一级账号账单汇总状态中文名

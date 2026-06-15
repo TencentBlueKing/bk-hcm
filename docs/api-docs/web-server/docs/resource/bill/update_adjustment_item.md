@@ -17,6 +17,7 @@ PATCH /api/v1/account/bills/adjustment_items/{id}
 | product_id      | int    | 否  | 运营产品id                      |
 | bk_biz_id       | int    | 否  | 业务id                        |
 | type            | string | 否  | 调账类型 枚举值（increase、decrease） |
+| res_class       | string | 否  | 资源类别 枚举值（cpu、gpu）           |
 | currency        | string | 否  | 币种                          |
 | cost            | string | 否  | 金额                          |
 | memo            | string | 否  | 备注信息                        |
@@ -26,19 +27,7 @@ PATCH /api/v1/account/bills/adjustment_items/{id}
 
 ```json
 {
-  "count": 0,
-  "details": [
-    {
-      "id": "0000000a",
-      "main_account_id": "00000001",
-      "product_id": 1234,
-      "bk_biz_id": 5678,
-      "type": "increase",
-      "memo": "",
-      "currency": "RMB",
-      "cost": "42.67512105"
-    }
-  ]
+  "main_account_id": "0000001"
 }
 ```
 

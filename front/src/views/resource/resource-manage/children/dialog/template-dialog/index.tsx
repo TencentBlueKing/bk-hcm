@@ -470,7 +470,7 @@ export default defineComponent({
                 </FormItem>
                 {[TemplateType.IP_GROUP].includes(formData.value.type) ? (
                   <FormItem label='IP地址'>
-                    <Select v-model={ipGroupData.value} multiple multipleMode='tag'>
+                    <Select v-model={ipGroupData.value} multiple multipleMode='tag' filterable>
                       {ipGroupList.value.map((v) => (
                         <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
                       ))}
@@ -479,7 +479,7 @@ export default defineComponent({
                 ) : null}
                 {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
                   <FormItem label='协议端口'>
-                    <Select v-model={portGroupData.value} multiple multipleMode='tag'>
+                    <Select v-model={portGroupData.value} multiple multipleMode='tag' filterable>
                       {portGroupList.value.map((v) => (
                         <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
                       ))}

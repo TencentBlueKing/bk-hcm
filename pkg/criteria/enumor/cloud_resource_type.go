@@ -47,7 +47,7 @@ var typeMapping = map[CloudResourceType]table.Name{
 	LoadBalancerCloudResType:     table.LoadBalancerTable,
 	ListenerCloudResType:         table.LoadBalancerListenerTable,
 	TargetGroupCloudResType:      table.LoadBalancerTargetGroupTable,
-	TCLoudUrlRuleCloudResType:    table.TCloudLbUrlRuleTable,
+	TCloudUrlRuleCloudResType:    table.TCloudLbUrlRuleTable,
 }
 
 // ConvTableName conv CloudResourceType to table.Name.
@@ -87,16 +87,20 @@ const (
 	LoadBalancerCloudResType     CloudResourceType = "load_balancer"
 	ListenerCloudResType         CloudResourceType = "listener"
 	TargetGroupCloudResType      CloudResourceType = "target_group"
-	TCLoudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
+	TCloudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
 	// SecurityGroupUsageBizRelResType 安全组使用业务关联关系
 	SecurityGroupUsageBizRelResType CloudResourceType = "security_group_usage_biz_rel"
 	CvmCCInfoResType                CloudResourceType = "cvm_cc_info"
+	// PermissionTemplateCloudResType 权限模板
+	PermissionTemplateCloudResType CloudResourceType = "permission_template"
 )
 
 // allowedSyncAllResTypes 标记允许全量同步的资源类型（条件同步时允许不指定regions）
 var allowedSyncAllResTypes = map[CloudResourceType]bool{
-	RegionCloudResType: true,
-	ZoneCloudResType:   true,
+	RegionCloudResType:             true,
+	ZoneCloudResType:               true,
+	SubAccountCloudResType:         true,
+	PermissionTemplateCloudResType: true,
 }
 
 // IsAllowedSyncAll 资源是否允许全量同步

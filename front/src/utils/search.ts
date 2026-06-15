@@ -134,7 +134,10 @@ export const transformSimpleCondition = (
       //* 如果是search-select，可能需要配合validateValues使用，避免无效请求
       const filterRules = property.meta.search.filterRules(value);
       // 判断构建的条件是否有效，filterRules的结构为 { field, op, value } | { op, rules }
-      if (filterRules && (filterRules.value || filterRules.rules.length > 0)) {
+      if (
+        filterRules &&
+        ((filterRules.value !== undefined && filterRules.value !== null) || filterRules.rules?.length > 0)
+      ) {
         queryFilter.rules.push(filterRules);
       }
       continue;

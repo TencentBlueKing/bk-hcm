@@ -36,6 +36,22 @@ export const BILL_ADJUSTMENT_TYPE__MAP = {
   decrease: '减少',
 };
 
+// 资源类别
+export enum ResClassEnum {
+  Cpu = 'cpu',
+  Gpu = 'gpu',
+}
+
+export const ResClassList = [
+  { label: 'CPU', value: ResClassEnum.Cpu },
+  { label: 'GPU', value: ResClassEnum.Gpu },
+];
+
+export const RES_CLASS_MAP = {
+  [ResClassEnum.Cpu]: 'CPU',
+  [ResClassEnum.Gpu]: 'GPU',
+};
+
 // 币种
 export const CURRENCY_ALIAS_MAP = {
   USD: 'USD',

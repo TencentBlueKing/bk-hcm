@@ -97,6 +97,7 @@
 <script setup lang="ts">
 import { PropType, h, withDirectives, ref, reactive, computed } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
 import BatchDeleteDialog from '@/views/load-balancer/clb/children/batch-delete-dialog.vue';
 import Confirm from '@/components/confirm';
@@ -279,7 +280,11 @@ const clbsSearchData = [
   },
 ];
 
-const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
+const getMenuList = async (item: ISearchItem, keyword: string) => {
+  const { id, async: isAsync, children = [] } = item;
+  if (!isAsync) return children;
+  if (id === 'region') return getAllVendorRegion(keyword);
+};
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);

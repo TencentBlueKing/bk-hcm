@@ -10,27 +10,25 @@ POST /api/v1/cloud/applications/types/add_account
 
 ### 输入参数
 
-| 参数名称          | 参数类型         | 必选 | 描述                                                               |
-|---------------|--------------|----|------------------------------------------------------------------|
-| vendor        | string       | 是  | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure）                             |
-| name          | string       | 是  | 名称                                                               |
-| managers      | string array | 是  | 账号管理者                                                            |
+| 参数名称          | 参数类型         | 必选 | 描述                                                        |
+|---------------|--------------|----|-----------------------------------------------------------|
+| vendor        | string       | 是  | 云厂商（枚举值：tcloud、aws、huawei、gcp、azure）                      |
+| name          | string       | 是  | 名称                                                        |
+| managers      | string array | 是  | 账号管理者                                                     |
+| security_managers | string array | 否  | 账号安全管理者，当云厂商为tcloud时，该字段必填                                |
 | type          | string       | 是  | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
-| site          | string       | 是  | 站点（枚举值：china:中国站、international:国际站）                              |
-| memo          | string       | 否  | 备注                                                               |
-| bk_biz_id     | int64        | 是  | 管理业务，非资源账号不允许传递该参数                                                            |
-| usage_biz_ids | int64 array  | 是  | 使用业务，非资源账号的该字段长度必须为1                                             |
-| extension     | object       | 是  | 混合云差异字段                                                          |
-| remark        | string       | 否  | 单据备注                                                             |
+| site          | string       | 是  | 站点（枚举值：china:中国站、international:国际站）                       |
+| memo          | string       | 否  | 备注                                                        |
+| bk_biz_id     | int64        | 是  | 管理业务，非资源账号不允许传递该参数                                        |
+| usage_biz_ids | int64 array  | 是  | 使用业务，非资源账号的该字段长度必须为1                                      |
+| extension     | object       | 是  | 混合云差异字段                                                   |
+| remark        | string       | 否  | 单据备注                                                      |
 
 ##### extension[tcloud]
 
 | 参数名称                  | 参数类型   | 描述     |
 |-----------------------|--------|--------|
 | cloud_main_account_id | string | 云主账户ID |
-| cloud_sub_account_id  | string | 云子账户ID |
-| cloud_secret_id       | string | 云加密ID  |
-| cloud_secret_key      | string | 云密钥    |
 
 ##### extension[aws]
 
@@ -56,7 +54,7 @@ POST /api/v1/cloud/applications/types/add_account
 
 | 参数名称                       | 参数类型   | 必选 | 描述      |
 |----------------------------|--------|----|---------|
-| Email                      | string | 否  | 邮箱地址    |
+| email                      | string | 否  | 邮箱地址    |
 | cloud_project_id           | string | 是  | 云项目ID   |
 | cloud_project_name         | string | 是  | 云项目名称   |
 | cloud_service_account_id   | string | 否  | 云服务账户ID |
@@ -87,6 +85,9 @@ POST /api/v1/cloud/applications/types/add_account
   "managers": [
     "hcm"
   ],
+  "security_managers": [
+    "hcm"
+  ],
   "type": "resource",
   "site": "china",
   "bk_biz_id": 1010011010,
@@ -94,10 +95,7 @@ POST /api/v1/cloud/applications/types/add_account
     1010011010
   ],
   "extension": {
-    "cloud_main_account_id": "main-xxxxxx",
-    "cloud_sub_account_id": "sub-xxxxxx",
-    "cloud_secret_id": "xxxxx",
-    "cloud_secret_key": "xxxxxxxx"
+    "cloud_main_account_id": "main-xxxxxx"
   },
   "memo": ""
 }

@@ -6,6 +6,8 @@ import { Button, Form, Input, Message } from 'bkui-vue';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import CommonDialog from '@/components/common-dialog';
+import HcmFormUser from '@/components/form/user.vue';
+import isEqual from 'lodash/isEqual';
 import {
   ValidateStatus,
   useSecretExtension,
@@ -31,8 +33,74 @@ export default defineComponent({
       setDetail(data);
     };
     const isEditDialogShow = ref(false);
+    const isAccountEditDialogShow = ref(false);
     const buttonLoading = ref(false);
     const formDiaRef = ref(null);
+    const accountFormRef = ref(null);
+
+    // 账号信息编辑表单
+    const accountEditForm = reactive({
+      name: '',
+      email: '',
+      managers: [] as string[],
+      bak_managers: [] as string[],
+      memo: '',
+    });
+
+    // 重置账号编辑表单
+    const resetAccountEditForm = () => {
+      accountEditForm.name = detail.name || '';
+      accountEditForm.email = detail.email || '';
+      accountEditForm.managers = detail.managers ? [...detail.managers] : [];
+      accountEditForm.bak_managers = detail.bak_managers ? [...detail.bak_managers] : [];
+      accountEditForm.memo = detail.memo || '';
+    };
+
+    // 判断表单数据是否有变化
+    const isFormChanged = computed(
+      () =>
+        !isEqual(
+          {
+            name: accountEditForm.name,
+            managers: accountEditForm.managers,
+            bak_managers: accountEditForm.bak_managers,
+            memo: accountEditForm.memo,
+          },
+          {
+            name: detail.name || '',
+            managers: detail.managers || [],
+            bak_managers: detail.bak_managers || [],
+            memo: detail.memo || '',
+          },
+        ),
+    );
+
+    // 打开账号信息编辑弹窗
+    const openAccountEditDialog = () => {
+      resetAccountEditForm();
+      isAccountEditDialogShow.value = true;
+    };
+
+    // 提交账号信息编辑
+    const handleAccountUpdate = async () => {
+      try {
+        buttonLoading.value = true;
+        await billStore.root_account_update(props.accountId, {
+          name: accountEditForm.name,
+          managers: accountEditForm.managers,
+          bak_managers: accountEditForm.bak_managers,
+          memo: accountEditForm.memo,
+        });
+        Message({
+          message: '更新成功',
+          theme: 'success',
+        });
+        isAccountEditDialogShow.value = false;
+        getDetail();
+      } finally {
+        buttonLoading.value = false;
+      }
+    };
 
     const initSecretModel: SecretModel = {
       secretId: '',
@@ -175,19 +243,24 @@ export default defineComponent({
     };
     return () => (
       <div class={'account-detail-wrapper'}>
-        <p class={'sub-title'}>帐号信息</p>
+        <p class={'sub-title'}>
+          帐号信息
+          <span class={'edit-icon'} onClick={openAccountEditDialog}>
+            <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
+            编辑
+          </span>
+        </p>
 
         <DetailInfo
           col={1}
           detail={detail}
-          onChange={handleUpdate}
           fields={[
-            { prop: 'name', name: '一级账号名称', edit: true },
+            { prop: 'name', name: '一级账号名称' },
             { prop: 'cloud_id', name: '一级账号ID' },
             { prop: 'email', name: '账号邮箱' },
-            { prop: 'managers', name: '主负责人', edit: true, type: 'member' },
-            { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member' },
-            { prop: 'memo', name: '备注', edit: true },
+            { prop: 'managers', name: '主负责人' },
+            { prop: 'bak_managers', name: '备份负责人' },
+            { prop: 'memo', name: '备注' },
             { prop: 'creator', name: '创建者' },
             { prop: 'reviser', name: '修改者' },
             { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.created_at) },
@@ -268,6 +341,46 @@ export default defineComponent({
                 </Button>
                 <Button class='ml10' onClick={() => (isEditDialogShow.value = false)}>
                   {'取消'}
+                </Button>
+              </div>
+            ),
+          }}
+        </CommonDialog>
+
+        {/* 账号信息编辑弹窗 */}
+        <CommonDialog
+          v-model:isShow={isAccountEditDialogShow.value}
+          title={'编辑账号信息'}
+          dialogType='operation'
+          width={680}>
+          {{
+            default: () => (
+              <Form labelWidth={130} model={accountEditForm} ref={accountFormRef} formType='vertical'>
+                <FormItem label='一级账号名称' property='name'>
+                  <Input v-model={accountEditForm.name} placeholder='请输入一级账号名称' />
+                </FormItem>
+                <FormItem label='主负责人' property='managers'>
+                  <HcmFormUser v-model={accountEditForm.managers} />
+                </FormItem>
+                <FormItem label='备份负责人' property='bak_managers'>
+                  <HcmFormUser v-model={accountEditForm.bak_managers} />
+                </FormItem>
+                <FormItem label='备注' property='memo'>
+                  <Input v-model={accountEditForm.memo} type='textarea' placeholder='请输入备注' rows={3} />
+                </FormItem>
+              </Form>
+            ),
+            footer: () => (
+              <div class={'validate-btn-container'}>
+                <Button
+                  theme='primary'
+                  loading={buttonLoading.value}
+                  disabled={!isFormChanged.value}
+                  onClick={handleAccountUpdate}>
+                  提交
+                </Button>
+                <Button class='ml10' onClick={() => (isAccountEditDialogShow.value = false)}>
+                  取消
                 </Button>
               </div>
             ),

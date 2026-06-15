@@ -85,6 +85,7 @@ func batchCreateImageExt[T coreimage.Extension](cts *rest.Contexts, svc *imageSv
 				OsType:       one.OsType,
 				State:        one.State,
 				Type:         one.Type,
+				Region:       one.Region,
 				Extension:    tabletype.JsonField(extensionJson),
 				Creator:      cts.Kit.User,
 				Reviser:      cts.Kit.User,

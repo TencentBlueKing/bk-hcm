@@ -13,29 +13,49 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    // 值类型: string/number
     valueType: {
       type: String as PropType<'string' | 'number'>,
       default: 'number',
     },
-    // 当valueType='number'时, 可以设置min,max
     min: Number,
     max: Number,
     disabledTip: String,
   },
   emits: ['updateValue'],
-  setup(props, { emit }) {
-    const inputValue = ref('');
+  setup(props, { emit, slots }) {
+    const inputValue = ref<any>('');
     const handleConfirm = () => {
       emit('updateValue', inputValue.value);
-      inputValue.value = '';
+      if (Array.isArray(inputValue.value)) {
+        inputValue.value = [];
+      } else {
+        inputValue.value = '';
+      }
     };
+
+    const renderDefaultInput = () => {
+      if (props.valueType === 'number') {
+        return (
+          <Input
+            v-model_number={inputValue.value}
+            type='number'
+            class='no-number-control'
+            min={props.min}
+            max={props.max}
+            placeholder={`${props.min}-${props.max}`}
+          />
+        );
+      }
+      return <Input v-model={inputValue.value} />;
+    };
+
     return () => (
       <PopConfirm
         width={280}
         trigger='click'
         placement='bottom-start'
         extCls='batch-update-popconfirm'
+        popoverOptions={slots.content ? { disableOutsideClick: true } : {}}
         onConfirm={handleConfirm}
         disabled={props.disabled}>
         {{
@@ -50,18 +70,9 @@ export default defineComponent({
           content: () => (
             <div class='batch-update-popconfirm-content'>
               <div class='title'>批量修改{props.title}</div>
-              {props.valueType === 'number' ? (
-                <Input
-                  v-model_number={inputValue.value}
-                  type='number'
-                  class='no-number-control'
-                  min={props.min}
-                  max={props.max}
-                  placeholder={`${props.min}-${props.max}`}
-                />
-              ) : (
-                <Input v-model={inputValue.value} />
-              )}
+              {slots.content
+                ? slots.content({ value: inputValue.value, updateValue: (v: any) => (inputValue.value = v) })
+                : renderDefaultInput()}
             </div>
           ),
         }}

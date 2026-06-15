@@ -234,6 +234,7 @@ defineExpose({ currentDisplayList });
     :disabled="disabled"
     :loading="loading"
     :clearable="false"
+    filterable
     :scroll-height="popoverMaxHeight"
     :custom-content="true"
     :filter-option="optionFilter"

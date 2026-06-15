@@ -8,7 +8,6 @@ import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import DetailHeader from '../resource-manage/common/header/detail-header';
 import './account-detail.scss';
-import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import {
@@ -61,13 +60,6 @@ export default defineComponent({
       usage_biz_ids: [],
     });
     const accountForm = ref(null);
-
-    const computedManagers = computed(() =>
-      accountFormModel.managers.map((name) => ({
-        username: name,
-        display_name: name,
-      })),
-    );
 
     const isResourceAccount = computed(() => projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE);
 
@@ -842,7 +834,7 @@ export default defineComponent({
             theme='primary'>
             <Form v-model={accountFormModel} formType='vertical' model={accountFormModel} ref={accountForm}>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
+                <hcm-form-user v-model={accountFormModel.managers} />
               </FormItem>
               {isResourceAccount.value && (
                 <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>

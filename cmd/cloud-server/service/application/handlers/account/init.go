@@ -39,8 +39,9 @@ func NewApplicationOfAddAccount(opt *handlers.HandlerOption, authorizer auth.Aut
 	req *proto.AccountAddReq) *ApplicationOfAddAccount {
 
 	return &ApplicationOfAddAccount{
-		authorizer:             authorizer,
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.AddAccount, req.Vendor),
-		req:                    req,
+		authorizer: authorizer,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
+			opt, enumor.AddAccount, enumor.OpAddAccount, req.Vendor),
+		req: req,
 	}
 }

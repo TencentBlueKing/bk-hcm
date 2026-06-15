@@ -48,6 +48,7 @@ func (svc *cvmSvc) initHuaWeiCvmService(cap *capability.Capability) {
 	h.Add("BatchRebootHuaWeiCvm", http.MethodPost, "/vendors/huawei/cvms/batch/reboot", svc.BatchRebootHuaWeiCvm)
 	h.Add("BatchDeleteHuaWeiCvm", http.MethodDelete, "/vendors/huawei/cvms/batch", svc.BatchDeleteHuaWeiCvm)
 	h.Add("BatchResetHuaWeiCvmPwd", http.MethodPost, "/vendors/huawei/cvms/batch/reset/pwd", svc.BatchResetHuaWeiCvmPwd)
+	h.Add("GetHuaWeiMonitorData", http.MethodPost, "/vendors/huawei/cvms/monitor/data", svc.GetHuaWeiMonitorData)
 
 	h.Load(cap.WebService)
 }
@@ -473,6 +474,62 @@ func (svc *cvmSvc) BatchDeleteHuaWeiCvm(cts *rest.Contexts) (interface{}, error)
 	}
 
 	return nil, nil
+}
+
+// GetHuaWeiMonitorData get huawei cvm monitor data.
+func (svc *cvmSvc) GetHuaWeiMonitorData(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.HuaWeiMonitorDataReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	huawei, err := svc.ad.HuaWei(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &typecvm.HuaWeiMonitorDataOption{
+		Region:      req.Region,
+		MetricName:  req.MetricName,
+		Period:      req.Period,
+		StartTime:   req.StartTime,
+		EndTime:     req.EndTime,
+		Namespace:   req.Namespace,
+		Filter:      req.Filter,
+		Dimension:   req.Dimension,
+		InstanceIDs: req.InstanceIDs,
+	}
+
+	result, err := huawei.GetMonitorData(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("get huawei monitor data failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp := &protocvm.HuaWeiMonitorDataResp{
+		DataPoints: make([]*protocvm.MonitorDataPointResp, 0, len(result.DataPoints)),
+	}
+	for _, dp := range result.DataPoints {
+		dataPoint := &protocvm.MonitorDataPointResp{
+			Dimensions: make([]*protocvm.MonitorDimensionResp, 0, len(dp.Dimensions)),
+			Timestamps: dp.Timestamps,
+			Values:     dp.Values,
+			Extensions: dp.Extensions,
+		}
+		for _, dim := range dp.Dimensions {
+			dataPoint.Dimensions = append(dataPoint.Dimensions, &protocvm.MonitorDimensionResp{
+				Name:  dim.Name,
+				Value: dim.Value,
+			})
+		}
+		resp.DataPoints = append(resp.DataPoints, dataPoint)
+	}
+
+	return resp, nil
 }
 
 // syncCvmRelEip sync cvm rel eip

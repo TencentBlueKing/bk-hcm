@@ -1,0 +1,195 @@
+<script setup lang="ts">
+import { computed, Ref, ref, inject } from 'vue';
+import type { ISelectableAccount } from '../../typings';
+import { VendorEnum, SecondaryAccountResourceTypeEnum } from '@/common/constant';
+import SecondaryAccountValue from '@/views/cloud-account-manage/components/secondary-account-value.vue';
+
+const props = defineProps<{
+  list: string[];
+  bizId: number;
+  vendor: VendorEnum;
+}>();
+
+const bizId = computed(() => props.bizId);
+const vendor = computed(() => props.vendor);
+const resType = computed(() => SecondaryAccountResourceTypeEnum.PERMISSION);
+const currentVendor = inject<Ref<VendorEnum>>('currentVendor', ref(VendorEnum.TCLOUD));
+
+// 已选账号列表
+const selectedAccounts = ref<{ account_id: string }[]>([]);
+
+// 表格数据
+const tableData = computed(() => props.list.map((item) => ({ account_id: item })));
+const isLoading = ref(false);
+
+// 表格引用
+const tableRef = ref();
+
+// 选择变化
+const handleSelectionChange = ({ row, checked }: { row: ISelectableAccount; checked: boolean }) => {
+  if (checked) {
+    // 判断是否已存在
+    if (!selectedAccounts.value.find((item) => item.account_id === row.account_id)) {
+      selectedAccounts.value.push(row);
+    }
+  } else {
+    selectedAccounts.value = selectedAccounts.value.filter((item) => item.account_id !== row.account_id);
+  }
+};
+
+// 全选/取消全选
+const handleSelectAll = ({ checked }: { checked: boolean }) => {
+  if (checked) {
+    selectedAccounts.value = [...tableData.value];
+  } else {
+    selectedAccounts.value = [];
+  }
+};
+
+// 移除已选账号
+const handleRemoveSelected = (accountId: string) => {
+  selectedAccounts.value = selectedAccounts.value.filter((item) => item.account_id !== accountId);
+  // 同步取消表格中的选中状态 - 通过 clearSelection 后重新选中来实现
+  // bk-table 没有直接取消某行选中的 API，这里通过 ref 操作
+  const allSelections = tableRef.value?.getSelection?.();
+  const targetRow = allSelections.filter((item: { account_id: string }) => item.account_id === accountId);
+  tableRef.value?.toggleRowSelection?.(targetRow?.[0]);
+};
+
+// 清空已选
+const handleClearAll = () => {
+  selectedAccounts.value = [];
+  tableRef.value?.clearSelection?.();
+};
+
+// 暴露已选数据给父组件（defineExpose 必须是 <script setup> 的最后语句）
+defineExpose({
+  getSelectedAccounts: () => selectedAccounts.value,
+});
+</script>
+
+<template>
+  <div class="apply-new-table">
+    <div class="section-label">选择要应用的二级账号</div>
+    <bk-loading :loading="isLoading">
+      <bk-table
+        ref="tableRef"
+        :data="tableData"
+        :max-height="400"
+        :border="['outer', 'row']"
+        row-key="account_id"
+        @select="handleSelectionChange"
+        @select-all="handleSelectAll"
+      >
+        <bk-table-column type="selection" align="center" />
+        <bk-table-column label="二级账号" min-width="1000">
+          <template #default="{ row }">
+            <SecondaryAccountValue :value="row.account_id" :biz-id="bizId" :vendor="vendor" :res-type="resType" />
+          </template>
+        </bk-table-column>
+      </bk-table>
+    </bk-loading>
+
+    <!-- 底部已选标签区 -->
+    <div class="selected-footer">
+      <div class="selected-header">
+        <div class="selected-left">
+          <span class="selected-label">已选账号</span>
+          <span class="selected-count">{{ selectedAccounts.length }}</span>
+        </div>
+        <div v-if="selectedAccounts.length > 0" class="selected-right">
+          <span class="clear-btn" @click="handleClearAll">
+            <i class="hcm-icon bkhcm-icon-delete mr2"></i>
+            清空
+          </span>
+        </div>
+      </div>
+      <div v-if="selectedAccounts.length > 0" class="selected-tags">
+        <bk-tag
+          v-for="account in selectedAccounts"
+          :key="account.account_id"
+          closable
+          @close="handleRemoveSelected(account.account_id)"
+        >
+          <SecondaryAccountValue
+            :value="account.account_id"
+            :vendor="currentVendor"
+            :res-type="SecondaryAccountResourceTypeEnum.PERMISSION"
+            :biz-id="bizId"
+          />
+        </bk-tag>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.apply-new-table {
+  .section-label {
+    font-size: 12px;
+    color: #63656e;
+    margin-bottom: 8px;
+  }
+
+  .selected-footer {
+    border-top: 1px solid #dcdee5;
+    padding: 12px 48px;
+    position: fixed;
+    bottom: 48px;
+    background: white;
+    display: inline-block;
+    right: 0;
+    left: calc(100% - 1200px);
+
+    .selected-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+
+      .selected-left {
+        display: flex;
+        align-items: center;
+
+        .selected-label {
+          font-size: 12px;
+          font-weight: 700;
+          color: #313238;
+          margin-right: 8px;
+        }
+
+        .selected-count {
+          font-size: 12px;
+          color: #3a84ff;
+          font-weight: 700;
+        }
+      }
+
+      .selected-right {
+        .clear-btn {
+          display: flex;
+          align-items: center;
+          font-size: 12px;
+          color: #979ba5;
+          cursor: pointer;
+
+          &:hover {
+            color: #3a84ff;
+          }
+
+          i {
+            margin-right: 4px;
+            font-size: 14px;
+          }
+        }
+      }
+    }
+
+    .selected-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+  }
+}
+</style>

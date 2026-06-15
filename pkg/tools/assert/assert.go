@@ -205,54 +205,53 @@ func IsPtrInt32Equal(a, b *int32) bool {
 
 // IsPtrStringSliceEqual 判断指针数组是否相等
 func IsPtrStringSliceEqual(a []*string, b []*string) bool {
-	if len(a) == 0 && len(b) != 0 {
+	// 长度不同，直接返回 false
+	if len(a) != len(b) {
 		return false
 	}
 
-	if len(a) != 0 && len(b) == 0 {
-		return false
-	}
-
-	if len(a) == 0 && len(b) == 0 {
+	// 都为空的情况
+	if len(a) == 0 {
 		return true
 	}
 
+	// 将 a 转换为 map，用于检查 b 中是否有 a 不存在的元素
 	tmp := converter.StringSliceToMap(converter.PtrToSlice(a))
 	for _, one := range b {
+		if _, ok := tmp[*one]; !ok {
+			// b 中有 a 不存在的元素
+			return false
+		}
 		delete(tmp, *one)
 	}
 
-	if len(tmp) != 0 {
-		return false
-	}
-
-	return true
+	// 如果 tmp 不为空，说明 a 中有 b 不存在的元素
+	return len(tmp) == 0
 }
 
 // IsStringSliceEqual 判断字符串数组是否相等
 func IsStringSliceEqual(a []string, b []string) bool {
-	if len(a) == 0 && len(b) != 0 {
+	// 长度不同，直接返回 false
+	if len(a) != len(b) {
 		return false
 	}
 
-	if len(a) != 0 && len(b) == 0 {
-		return false
-	}
-
-	if len(a) == 0 && len(b) == 0 {
+	// 都为空的情况
+	if len(a) == 0 {
 		return true
 	}
 
+	// 将 a 转换为 map，用于检查 b 中是否有 a 不存在的元素
 	tmp := converter.StringSliceToMap(a)
 	for _, one := range b {
+		if _, ok := tmp[one]; !ok {
+			return false
+		}
 		delete(tmp, one)
 	}
 
-	if len(tmp) != 0 {
-		return false
-	}
-
-	return true
+	// 如果 tmp 不为空，说明 a 中有 b 不存在的元素
+	return len(tmp) == 0
 }
 
 // IsStringMapEqual 判断字符字典是否相等
@@ -285,4 +284,21 @@ func IsStringMapEqual(a map[string]string, b map[string]string) bool {
 // ContainsUpperCase 判断字符串中是否存在英文大写字符
 func ContainsUpperCase(s string) bool {
 	return strings.ContainsAny(s, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+}
+
+// IsPtrEqual 判断指针是否相同（泛型版本）
+func IsPtrEqual[T comparable](a, b *T) bool {
+	if (a != nil && b != nil) && *a != *b {
+		return false
+	}
+
+	if (a != nil && b != nil) && *a == *b {
+		return true
+	}
+
+	if a != nil || b != nil {
+		return false
+	}
+
+	return true
 }

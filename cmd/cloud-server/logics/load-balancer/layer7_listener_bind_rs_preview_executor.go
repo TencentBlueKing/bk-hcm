@@ -159,6 +159,18 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
+	// 非ENI类型的RS，需要查询CVM表，校验RS是否存在
+	rsIPs := make([]string, 0)
+	for _, detail := range l.details {
+		if detail.InstType != enumor.EniInstType {
+			rsIPs = append(rsIPs, detail.RsIp)
+		}
+	}
+	cvmList, err := batchGetCvmWithoutVpc(kt, l.dataServiceCli, rsIPs, l.vendor, l.bkBizID, l.accountID)
+	if err != nil {
+		return err
+	}
+
 	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer7ListenerBindRSDetail) error {
 
@@ -193,7 +205,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 				return err
 			}
 
-			err = l.validateRS(kt, detail, lb)
+			err = l.validateRS(kt, detail, lb, cvmList)
 			if err != nil {
 				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
 				return err
@@ -276,7 +288,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 }
 
 func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer7ListenerBindRSDetail,
-	lb corelb.LoadBalancerRaw) error {
+	lb corelb.LoadBalancerRaw, cvmList []cloudCvm.BaseCvm) error {
 
 	if curDetail.InstType == enumor.EniInstType {
 		// ENI 不做校验
@@ -290,7 +302,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 	}
 
 	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
-		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID)
+		isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, cvmList)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())

@@ -50,6 +50,7 @@ import (
 	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
 	cloudcoreroutetable "hcm/pkg/api/core/cloud/route-table"
 	coresubaccount "hcm/pkg/api/core/cloud/sub-account"
+	coresass "hcm/pkg/api/core/cloud/sub-account-secret"
 	corezone "hcm/pkg/api/core/cloud/zone"
 	corerecyclerecord "hcm/pkg/api/core/recycle-record"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
@@ -62,102 +63,107 @@ type CloudResType interface {
 
 	TestCloudRes |
 
-		typesregion.HuaWeiRegionModel |
-		typesregion.AzureRegion |
-		typesregion.TCloudRegion |
-		typesregion.AwsRegion |
-		typesregion.GcpRegion |
+	typesregion.HuaWeiRegionModel |
+	typesregion.AzureRegion |
+	typesregion.TCloudRegion |
+	typesregion.AwsRegion |
+	typesregion.GcpRegion |
 
-		typesresourcegroup.AzureResourceGroup |
+	typesresourcegroup.AzureResourceGroup |
 
-		typeszone.TCloudZone |
-		typeszone.HuaWeiZone |
-		typeszone.GcpZone |
-		typeszone.AwsZone |
+	typeszone.TCloudZone |
+	typeszone.HuaWeiZone |
+	typeszone.GcpZone |
+	typeszone.AwsZone |
 
-		typesimage.TCloudImage |
-		typesimage.HuaWeiImage |
-		typesimage.AwsImage |
-		typesimage.AzureImage |
-		typesimage.GcpImage |
+	typesimage.TCloudImage |
+	typesimage.HuaWeiImage |
+	typesimage.AwsImage |
+	typesimage.AzureImage |
+	typesimage.GcpImage |
 
-		typessecuritygrouprule.HuaWeiSGRule |
-		typessecuritygrouprule.AwsSGRule |
-		typessecuritygrouprule.AzureSGRule |
+	typessecuritygrouprule.HuaWeiSGRule |
+	typessecuritygrouprule.AwsSGRule |
+	typessecuritygrouprule.AzureSGRule |
 
-		types.TCloudVpc |
-		types.AwsVpc |
-		types.GcpVpc |
-		types.HuaWeiVpc |
-		types.AzureVpc |
+	types.TCloudVpc |
+	types.AwsVpc |
+	types.GcpVpc |
+	types.HuaWeiVpc |
+	types.AzureVpc |
 
-		adtysubnet.TCloudSubnet |
-		adtysubnet.AwsSubnet |
-		adtysubnet.HuaWeiSubnet |
-		adtysubnet.GcpSubnet |
-		adtysubnet.AzureSubnet |
+	adtysubnet.TCloudSubnet |
+	adtysubnet.AwsSubnet |
+	adtysubnet.HuaWeiSubnet |
+	adtysubnet.GcpSubnet |
+	adtysubnet.AzureSubnet |
 
-		typesdisk.TCloudDisk |
-		typesdisk.HuaWeiDisk |
-		typesdisk.AwsDisk |
-		typesdisk.GcpDisk |
-		typesdisk.AzureDisk |
+	typesdisk.TCloudDisk |
+	typesdisk.HuaWeiDisk |
+	typesdisk.AwsDisk |
+	typesdisk.GcpDisk |
+	typesdisk.AzureDisk |
 
-		securitygroup.TCloudSG |
-		securitygroup.HuaWeiSG |
-		securitygroup.AwsSG |
-		securitygroup.AzureSecurityGroup |
+	securitygroup.TCloudSG |
+	securitygroup.HuaWeiSG |
+	securitygroup.AwsSG |
+	securitygroup.AzureSecurityGroup |
 
-		firewallrule.GcpFirewall |
+	firewallrule.GcpFirewall |
 
-		typescvm.TCloudCvm |
-		typescvm.HuaWeiCvm |
-		typescvm.HuaWeiCvmWrapper |
-		typescvm.AwsCvm |
-		typescvm.GcpCvm |
-		typescvm.AzureCvm |
-		cmdb.HostWithCloudID |
+	typescvm.TCloudCvm |
+	typescvm.HuaWeiCvm |
+	typescvm.HuaWeiCvmWrapper |
+	typescvm.AwsCvm |
+	typescvm.GcpCvm |
+	typescvm.AzureCvm |
+	cmdb.HostWithCloudID |
 
-		*typeseip.TCloudEip |
-		*typeseip.HuaWeiEip |
-		*typeseip.GcpEip |
-		*typeseip.AwsEip |
-		*typeseip.AzureEip |
+	*typeseip.TCloudEip |
+	*typeseip.HuaWeiEip |
+	*typeseip.GcpEip |
+	*typeseip.AwsEip |
+	*typeseip.AzureEip |
 
-		typesroutetable.TCloudRouteTable |
-		typesroutetable.HuaWeiRouteTable |
-		typesroutetable.AwsRouteTable |
-		typesroutetable.AzureRouteTable |
+	typesroutetable.TCloudRouteTable |
+	typesroutetable.HuaWeiRouteTable |
+	typesroutetable.AwsRouteTable |
+	typesroutetable.AzureRouteTable |
 
-		typesni.HuaWeiNI |
-		typesni.GcpNI |
-		typesni.AzureNI |
+	typesni.HuaWeiNI |
+	typesni.GcpNI |
+	typesni.AzureNI |
 
-		typesroutetable.GcpRoute |
-		typesroutetable.TCloudRoute |
-		typesroutetable.HuaWeiRoute |
-		typesroutetable.AzureRoute |
-		typesroutetable.AwsRoute |
+	typesroutetable.GcpRoute |
+	typesroutetable.TCloudRoute |
+	typesroutetable.HuaWeiRoute |
+	typesroutetable.AzureRoute |
+	typesroutetable.AwsRoute |
 
-		account.TCloudAccount |
-		account.HuaWeiAccount |
-		account.AwsAccount |
-		account.AzureAccount |
-		account.GcpAccount |
+	account.TCloudAccount |
+	account.TCloudAccountWithExt |
+	account.HuaWeiAccount |
+	account.AwsAccount |
+	account.AzureAccount |
+	account.GcpAccount |
+	account.TCloudSubAccountSecret |
 
-		corerecyclerecord.EipBindInfo |
-		corerecyclerecord.DiskAttachInfo |
+	corerecyclerecord.EipBindInfo |
+	corerecyclerecord.DiskAttachInfo |
 
-		typeargstpl.TCloudArgsTplAddress |
-		typeargstpl.TCloudArgsTplAddressGroup |
-		typeargstpl.TCloudArgsTplService |
-		typeargstpl.TCloudArgsTplServiceGroup |
+	typeargstpl.TCloudArgsTplAddress |
+	typeargstpl.TCloudArgsTplAddressGroup |
+	typeargstpl.TCloudArgsTplService |
+	typeargstpl.TCloudArgsTplServiceGroup |
 
-		cert.TCloudCert |
-		typeslb.TCloudClb |
-		typeslb.TCloudListener |
-		typeslb.TCloudUrlRule |
-		typeslb.Backend
+	cert.TCloudCert |
+	typeslb.TCloudClb |
+	typeslb.TCloudListener |
+	typeslb.TCloudUrlRule |
+	typeslb.Backend |
+
+	*account.TCloudPolicyDetail |
+	account.TCloudPolicyDetail
 }
 
 // TestCloudRes 测试云资源类型
@@ -176,95 +182,99 @@ type DBResType interface {
 	GetCloudID() string
 
 	coreregion.HuaWeiRegion |
-		coreregion.AzureRegion |
-		coreregion.TCloudRegion |
-		coreregion.AwsRegion |
-		coreregion.GcpRegion |
+	coreregion.AzureRegion |
+	coreregion.TCloudRegion |
+	coreregion.AwsRegion |
+	coreregion.GcpRegion |
 
-		coreresourcegroup.AzureRG |
+	coreresourcegroup.AzureRG |
 
-		corezone.BaseZone |
+	corezone.BaseZone |
 
-		coreimage.Image[coreimage.TCloudExtension] |
-		coreimage.Image[coreimage.HuaWeiExtension] |
-		coreimage.Image[coreimage.AwsExtension] |
-		coreimage.Image[coreimage.AzureExtension] |
-		coreimage.Image[coreimage.GcpExtension] |
+	coreimage.Image[coreimage.TCloudExtension] |
+	coreimage.Image[coreimage.HuaWeiExtension] |
+	coreimage.Image[coreimage.AwsExtension] |
+	coreimage.Image[coreimage.AzureExtension] |
+	coreimage.Image[coreimage.GcpExtension] |
 
-		cloudcore.HuaWeiSecurityGroupRule |
-		cloudcore.AwsSecurityGroupRule |
-		cloudcore.AzureSecurityGroupRule |
+	cloudcore.HuaWeiSecurityGroupRule |
+	cloudcore.AwsSecurityGroupRule |
+	cloudcore.AzureSecurityGroupRule |
 
-		cloudcore.Vpc[cloudcore.TCloudVpcExtension] |
-		cloudcore.Vpc[cloudcore.AwsVpcExtension] |
-		cloudcore.Vpc[cloudcore.GcpVpcExtension] |
-		cloudcore.Vpc[cloudcore.HuaWeiVpcExtension] |
-		cloudcore.Vpc[cloudcore.AzureVpcExtension] |
+	cloudcore.Vpc[cloudcore.TCloudVpcExtension] |
+	cloudcore.Vpc[cloudcore.AwsVpcExtension] |
+	cloudcore.Vpc[cloudcore.GcpVpcExtension] |
+	cloudcore.Vpc[cloudcore.HuaWeiVpcExtension] |
+	cloudcore.Vpc[cloudcore.AzureVpcExtension] |
 
-		cloudcore.Subnet[cloudcore.TCloudSubnetExtension] |
-		cloudcore.Subnet[cloudcore.AwsSubnetExtension] |
-		cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension] |
-		cloudcore.Subnet[cloudcore.GcpSubnetExtension] |
-		cloudcore.Subnet[cloudcore.AzureSubnetExtension] |
+	cloudcore.Subnet[cloudcore.TCloudSubnetExtension] |
+	cloudcore.Subnet[cloudcore.AwsSubnetExtension] |
+	cloudcore.Subnet[cloudcore.HuaWeiSubnetExtension] |
+	cloudcore.Subnet[cloudcore.GcpSubnetExtension] |
+	cloudcore.Subnet[cloudcore.AzureSubnetExtension] |
 
-		*coredisk.Disk[coredisk.TCloudExtension] |
-		*coredisk.Disk[coredisk.HuaWeiExtension] |
-		*coredisk.Disk[coredisk.AwsExtension] |
-		*coredisk.Disk[coredisk.GcpExtension] |
-		*coredisk.Disk[coredisk.AzureExtension] |
+	*coredisk.Disk[coredisk.TCloudExtension] |
+	*coredisk.Disk[coredisk.HuaWeiExtension] |
+	*coredisk.Disk[coredisk.AwsExtension] |
+	*coredisk.Disk[coredisk.GcpExtension] |
+	*coredisk.Disk[coredisk.AzureExtension] |
 
-		cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension] |
-		cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension] |
-		cloudcore.SecurityGroup[cloudcore.AwsSecurityGroupExtension] |
-		cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension] |
+	cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension] |
+	cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension] |
+	cloudcore.SecurityGroup[cloudcore.AwsSecurityGroupExtension] |
+	cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension] |
 
-		cloudcore.GcpFirewallRule |
+	cloudcore.GcpFirewallRule |
 
-		corecvm.Cvm[corecvm.TCloudCvmExtension] |
-		corecvm.Cvm[corecvm.HuaWeiCvmExtension] |
-		corecvm.Cvm[corecvm.AwsCvmExtension] |
-		corecvm.Cvm[corecvm.GcpCvmExtension] |
-		corecvm.Cvm[corecvm.AzureCvmExtension] |
-		corecvm.Cvm[corecvm.OtherCvmExtension] |
+	corecvm.Cvm[corecvm.TCloudCvmExtension] |
+	corecvm.Cvm[corecvm.HuaWeiCvmExtension] |
+	corecvm.Cvm[corecvm.AwsCvmExtension] |
+	corecvm.Cvm[corecvm.GcpCvmExtension] |
+	corecvm.Cvm[corecvm.AzureCvmExtension] |
+	corecvm.Cvm[corecvm.OtherCvmExtension] |
 
-		*dataeip.EipExtResult[dataeip.TCloudEipExtensionResult] |
-		*dataeip.EipExtResult[dataeip.HuaWeiEipExtensionResult] |
-		*dataeip.EipExtResult[dataeip.GcpEipExtensionResult] |
-		*dataeip.EipExtResult[dataeip.AwsEipExtensionResult] |
-		*dataeip.EipExtResult[dataeip.AzureEipExtensionResult] |
+	*dataeip.EipExtResult[dataeip.TCloudEipExtensionResult] |
+	*dataeip.EipExtResult[dataeip.HuaWeiEipExtensionResult] |
+	*dataeip.EipExtResult[dataeip.GcpEipExtensionResult] |
+	*dataeip.EipExtResult[dataeip.AwsEipExtensionResult] |
+	*dataeip.EipExtResult[dataeip.AzureEipExtensionResult] |
 
-		cloudcoreroutetable.TCloudRouteTable |
-		cloudcoreroutetable.HuaWeiRouteTable |
-		cloudcoreroutetable.AwsRouteTable |
-		cloudcoreroutetable.AzureRouteTable |
+	cloudcoreroutetable.TCloudRouteTable |
+	cloudcoreroutetable.HuaWeiRouteTable |
+	cloudcoreroutetable.AwsRouteTable |
+	cloudcoreroutetable.AzureRouteTable |
 
-		corecloudni.NetworkInterface[corecloudni.HuaWeiNIExtension] |
-		corecloudni.NetworkInterface[corecloudni.GcpNIExtension] |
-		corecloudni.NetworkInterface[corecloudni.AzureNIExtension] |
+	corecloudni.NetworkInterface[corecloudni.HuaWeiNIExtension] |
+	corecloudni.NetworkInterface[corecloudni.GcpNIExtension] |
+	corecloudni.NetworkInterface[corecloudni.AzureNIExtension] |
 
-		cloudcoreroutetable.GcpRoute |
-		cloudcoreroutetable.TCloudRoute |
-		cloudcoreroutetable.HuaWeiRoute |
-		cloudcoreroutetable.AzureRoute |
-		cloudcoreroutetable.AwsRoute |
+	cloudcoreroutetable.GcpRoute |
+	cloudcoreroutetable.TCloudRoute |
+	cloudcoreroutetable.HuaWeiRoute |
+	cloudcoreroutetable.AzureRoute |
+	cloudcoreroutetable.AwsRoute |
 
-		coresubaccount.SubAccount[coresubaccount.TCloudExtension] |
-		coresubaccount.SubAccount[coresubaccount.HuaWeiExtension] |
-		coresubaccount.SubAccount[coresubaccount.AwsExtension] |
-		coresubaccount.SubAccount[coresubaccount.AzureExtension] |
-		coresubaccount.SubAccount[coresubaccount.GcpExtension] |
+	coresubaccount.SubAccount[coresubaccount.TCloudExtension] |
+	coresubaccount.SubAccount[coresubaccount.HuaWeiExtension] |
+	coresubaccount.SubAccount[coresubaccount.AwsExtension] |
+	coresubaccount.SubAccount[coresubaccount.AzureExtension] |
+	coresubaccount.SubAccount[coresubaccount.GcpExtension] |
 
-		corerecyclerecord.EipBindInfo |
-		corerecyclerecord.DiskAttachInfo |
+	coresass.SubAccountSecret[coresass.TCloudSubAccountSecretExtension] |
 
-		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension] |
+	corerecyclerecord.EipBindInfo |
+	corerecyclerecord.DiskAttachInfo |
 
-		*corecert.Cert[corecert.TCloudCertExtension] |
+	*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension] |
 
-		corelb.TCloudLoadBalancer |
-		corelb.TCloudLbUrlRule |
-		corelb.TCloudListener |
-		corelb.BaseTarget
+	*corecert.Cert[corecert.TCloudCertExtension] |
+
+	corelb.TCloudLoadBalancer |
+	corelb.TCloudLbUrlRule |
+	corelb.TCloudListener |
+	corelb.BaseTarget |
+
+	cloudcore.PermissionTemplate[cloudcore.TCloudPermissionTemplateExtension]
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

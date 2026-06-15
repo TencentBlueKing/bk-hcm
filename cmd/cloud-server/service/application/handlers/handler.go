@@ -21,6 +21,7 @@ package handlers
 
 import (
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -31,9 +32,11 @@ import (
 // 更好的方式是Handler拆分成两种抽象：申请单创建者Creator、申请单交付者Deliverer，然后定义各自的数据结构
 type ApplicationHandler interface {
 	GetType() enumor.ApplicationType
+	// GetOperation 获取细粒度操作类型，对应 application 表的 operation 字段
+	GetOperation() enumor.ApplicationOperation
 
 	// GetItsmApprover 获取itsm审批人信息
-	GetItsmApprover(managers []string) []itsm.VariableApprover
+	GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error)
 
 	// CheckReq 申请单的表单校验
 	CheckReq() error

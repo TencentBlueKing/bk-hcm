@@ -51,16 +51,21 @@ func (req CreateReq) Validate() error {
 
 // CreateField define sub account create field.
 type CreateField struct {
-	CloudID     string                 `json:"cloud_id" validate:"required"`
-	Name        string                 `json:"name" validate:"required"`
-	Vendor      enumor.Vendor          `json:"vendor" validate:"required"`
-	Site        enumor.AccountSiteType `json:"site" validate:"required"`
-	AccountID   string                 `json:"account_id" validate:"required"`
-	AccountType string                 `json:"account_type" validate:"omitempty"`
-	Extension   core.ExtMessage        `json:"extension" validate:"required"`
-	Managers    types.StringArray      `json:"managers" validate:"omitempty"`
-	BkBizIDs    types.Int64Array       `json:"bk_biz_ids" validate:"omitempty"`
-	Memo        *string                `json:"memo" validate:"omitempty"`
+	CloudID               string                 `json:"cloud_id" validate:"required"`
+	Name                  string                 `json:"name" validate:"required"`
+	Vendor                enumor.Vendor          `json:"vendor" validate:"required"`
+	Site                  enumor.AccountSiteType `json:"site" validate:"required"`
+	AccountID             string                 `json:"account_id" validate:"required"`
+	AccountType           string                 `json:"account_type" validate:"omitempty"`
+	Extension             core.ExtMessage        `json:"extension" validate:"required"`
+	Managers              types.StringArray      `json:"managers" validate:"omitempty"`
+	BkBizIDs              types.Int64Array       `json:"bk_biz_ids" validate:"omitempty"`
+	PermissionTemplateIDs types.StringArray      `json:"permission_template_ids" validate:"omitempty"`
+	Email                 *string                `json:"email" validate:"omitempty"`
+	PhoneNum              *string                `json:"phone_num" validate:"omitempty"`
+	CountryCode           *string                `json:"country_code" validate:"omitempty"`
+	CloudCreatedAt        *string                `json:"cloud_created_at" validate:"omitempty"`
+	Memo                  *string                `json:"memo" validate:"omitempty"`
 }
 
 // Validate CreateField.
@@ -92,17 +97,21 @@ func (req UpdateReq) Validate() error {
 
 // UpdateField define sub account update field.
 type UpdateField struct {
-	ID string `json:"id" validate:"required"`
-
-	Name        string                 `json:"name" validate:"omitempty"`
-	Vendor      enumor.Vendor          `json:"vendor" validate:"omitempty"`
-	Site        enumor.AccountSiteType `json:"site" validate:"omitempty"`
-	AccountID   string                 `json:"account_id" validate:"omitempty"`
-	AccountType string                 `json:"account_type" validate:"omitempty"`
-	Managers    types.StringArray      `json:"managers" validate:"omitempty"`
-	BkBizIDs    types.Int64Array       `json:"bk_biz_ids" validate:"omitempty"`
-	Extension   core.ExtMessage        `json:"extension" validate:"omitempty"`
-	Memo        *string                `json:"memo" validate:"omitempty"`
+	ID                    string                 `json:"id" validate:"required"`
+	Name                  string                 `json:"name" validate:"omitempty"`
+	Vendor                enumor.Vendor          `json:"vendor" validate:"omitempty"`
+	Site                  enumor.AccountSiteType `json:"site" validate:"omitempty"`
+	AccountID             string                 `json:"account_id" validate:"omitempty"`
+	AccountType           string                 `json:"account_type" validate:"omitempty"`
+	Managers              types.StringArray      `json:"managers" validate:"omitempty"`
+	BkBizIDs              types.Int64Array       `json:"bk_biz_ids" validate:"omitempty"`
+	PermissionTemplateIDs types.StringArray      `json:"permission_template_ids" validate:"omitempty"`
+	Extension             *core.ExtMessage       `json:"extension" validate:"omitempty"`
+	Email                 *string                `json:"email" validate:"omitempty"`
+	PhoneNum              *string                `json:"phone_num" validate:"omitempty"`
+	CountryCode           *string                `json:"country_code" validate:"omitempty"`
+	CloudCreatedAt        *string                `json:"cloud_created_at" validate:"omitempty"`
+	Memo                  *string                `json:"memo" validate:"omitempty"`
 }
 
 // Validate UpdateField.

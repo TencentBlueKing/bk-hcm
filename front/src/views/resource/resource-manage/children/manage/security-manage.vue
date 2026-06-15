@@ -1221,7 +1221,11 @@ const securityGroupAssignDialogState = reactive({
   isHidden: true,
 });
 
-const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
+const getMenuList = async (item: ISearchItem, keyword: string) => {
+  const { id, async: isAsync, children = [] } = item;
+  if (!isAsync) return children;
+  if (id === 'region') return getAllVendorRegion(keyword);
+};
 const handleSecurityGroupAssign = () => {
   securityGroupAssignDialogState.isShow = true;
   securityGroupAssignDialogState.isHidden = false;

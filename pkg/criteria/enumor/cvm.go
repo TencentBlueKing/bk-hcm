@@ -30,3 +30,13 @@ const (
 	// NoMatchCvm 待关联cvm
 	NoMatchCvm = "no_match"
 )
+
+// GcpOnHostMaintenance GCP 主机维护策略
+type GcpOnHostMaintenance string
+
+const (
+	// GcpOnHostMaintenanceTerminate 主机维护时终止实例，GPU 机型必须使用该值
+	GcpOnHostMaintenanceTerminate GcpOnHostMaintenance = "TERMINATE"
+	// GcpOnHostMaintenanceMigrate 主机维护时热迁移实例，为 GCP 普通机型的默认值
+	GcpOnHostMaintenanceMigrate GcpOnHostMaintenance = "MIGRATE"
+)

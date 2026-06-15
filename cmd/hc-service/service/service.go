@@ -46,7 +46,9 @@ import (
 	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
 	mainaccount "hcm/cmd/hc-service/service/main-account"
 	"hcm/cmd/hc-service/service/monitoring"
+	"hcm/cmd/hc-service/service/permission-template"
 	routetable "hcm/cmd/hc-service/service/route-table"
+	sagemaker "hcm/cmd/hc-service/service/sagemaker"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/sync"
@@ -184,6 +186,7 @@ func (s *Service) apiSet() *restful.Container {
 	routetable.InitRouteTableService(c)
 	eip.InitEipService(c)
 	instancetype.InitInstanceTypeService(c)
+	sagemaker.InitService(c)
 	sync.InitService(c)
 	bill.InitBillService(c)
 	argstpl.InitArgsTplService(c)
@@ -195,6 +198,7 @@ func (s *Service) apiSet() *restful.Container {
 	tag.InitTagService(c)
 	cos.InitCosService(c)
 	monitoring.InitMonitoringService(c)
+	permissiontemplate.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

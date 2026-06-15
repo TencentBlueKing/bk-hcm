@@ -25,48 +25,26 @@ import (
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 )
 
-// UpdateAccount ...
+// UpdateAccount update account
 func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	// 根据accountID拿到账户类型然后才进行请求参数校验，因为资源账号需要额外的校验
+
 	accountID := cts.PathParameter("account_id").String()
-	listReq := &dataproto.AccountListReq{
-		Filter: tools.EqualExpression("id", accountID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	result, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list account failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if len(result.Details) == 0 {
-		logs.Errorf("account: %s not found, rid: %s", accountID, cts.Kit.Rid)
-		return nil, errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
-	}
-
-	accountInfo := result.Details[0]
-	if err := req.Validate(accountInfo); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 内置账号不允许通过UpdateAccount接口修改
-	if accountInfo.Vendor == enumor.Other {
-		return nil, fmt.Errorf("built-in account is not allowed to be updated")
-	}
-
 	action := meta.Update
 	if req.RecycleReserveTime != 0 {
 		action = meta.UpdateRRT
@@ -74,6 +52,79 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	// 校验用户有该账号的更新权限
 	if err := a.checkPermission(cts, action, accountID); err != nil {
 		return nil, err
+	}
+	accountInfo, err := a.getAccountInfo(cts.Kit, accountID)
+	if err != nil {
+		return nil, err
+	}
+	return a.updateAccount(cts, req, accountID, accountInfo)
+}
+
+// UpdateBizAccount update biz account
+func (a *accountSvc) UpdateBizAccount(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AccountUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	attribute := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bizID}
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, attribute)
+	if err != nil {
+		return nil, err
+	}
+	if !authorized {
+		return nil, errf.New(errf.PermissionDenied, "biz permission denied")
+	}
+
+	// 获取账号信息
+	accountID := cts.PathParameter("account_id").String()
+	accountInfo, err := a.getAccountInfo(cts.Kit, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 校验业务归属
+	if accountInfo.BkBizID != bizID {
+		return nil, errf.Newf(errf.InvalidParameter, "account %s does not belong to biz %d", accountID, bizID)
+	}
+
+	return a.updateAccount(cts, req, accountID, accountInfo)
+}
+
+// getAccountInfo 获取账号信息
+func (a *accountSvc) getAccountInfo(kt *kit.Kit, accountID string) (*cloud.BaseAccount, error) {
+	listReq := &dataproto.AccountListReq{
+		Filter: tools.EqualExpression("id", accountID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := a.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(result.Details) == 0 {
+		logs.Errorf("account: %s not found, rid: %s", accountID, kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
+	}
+	return result.Details[0], nil
+}
+
+// updateAccount 账号更新通用逻辑
+func (a *accountSvc) updateAccount(cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
+	accountInfo *cloud.BaseAccount) (interface{}, error) {
+
+	// 参数校验
+	if err := req.Validate(accountInfo); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 内置账号不允许通过UpdateAccount接口修改
+	if accountInfo.Vendor == enumor.Other {
+		return nil, fmt.Errorf("built-in account is not allowed to be updated")
 	}
 
 	// 查询该账号对应的Vendor
@@ -125,40 +176,41 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func (a *accountSvc) updateForTCloud(
-	cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string,
-) (
-	interface{}, error,
-) {
+func (a *accountSvc) updateForTCloud(cts *rest.Contexts, req *proto.AccountUpdateReq, accountID string) (
+	interface{}, error) {
+
 	// 解析Extension
-	var (
-		extension *proto.TCloudAccountExtensionUpdateReq
-		err       error
-	)
+	var shouldUpdatedExtension *dataproto.TCloudAccountExtensionUpdateReq
 	if req.Extension != nil {
-		extension, err = a.parseAndCheckTCloudExtensionByID(cts, accountID, req.Extension)
+		accountInfo, err := a.getAccountInfo(cts.Kit, accountID)
+		if err != nil {
+			return nil, err
+		}
+		if accountInfo.Type == enumor.ResourceAccount {
+			return nil, fmt.Errorf("tcloud resource account extension cannot be updated")
+		}
+
+		extension, err := a.parseAndCheckTCloudExtensionByID(cts, accountID, req.Extension)
 		if err != nil {
 			return nil, errf.NewFromErr(errf.InvalidParameter, err)
 		}
-	}
 
-	var shouldUpdatedExtension *dataproto.TCloudAccountExtensionUpdateReq = nil
-	if req.Extension != nil {
 		shouldUpdatedExtension = &dataproto.TCloudAccountExtensionUpdateReq{
-			CloudSubAccountID: extension.CloudSubAccountID,
+			CloudSubAccountID: &extension.CloudSubAccountID,
 			CloudSecretID:     &extension.CloudSecretID,
 			CloudSecretKey:    &extension.CloudSecretKey,
 		}
 	}
 
 	// 更新
-	_, err = a.client.DataService().TCloud.Account.Update(
+	_, err := a.client.DataService().TCloud.Account.Update(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		accountID,
 		&dataproto.AccountUpdateReq[dataproto.TCloudAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			RecycleReserveTime: req.RecycleReserveTime,
 			Memo:               req.Memo,
 			BkBizID:            req.BkBizID,
@@ -170,7 +222,6 @@ func (a *accountSvc) updateForTCloud(
 	}
 
 	return nil, nil
-
 }
 
 func (a *accountSvc) updateForAws(
@@ -207,6 +258,7 @@ func (a *accountSvc) updateForAws(
 		&dataproto.AccountUpdateReq[dataproto.AwsAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
 			BkBizID:            req.BkBizID,
@@ -257,6 +309,7 @@ func (a *accountSvc) updateForHuaWei(
 		&dataproto.AccountUpdateReq[dataproto.HuaWeiAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
 			BkBizID:            req.BkBizID,
@@ -307,6 +360,7 @@ func (a *accountSvc) updateForGcp(
 		&dataproto.AccountUpdateReq[dataproto.GcpAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
 			BkBizID:            req.BkBizID,
@@ -357,6 +411,7 @@ func (a *accountSvc) updateForAzure(
 		&dataproto.AccountUpdateReq[dataproto.AzureAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
 			BkBizID:            req.BkBizID,
@@ -396,15 +451,6 @@ func (a *accountSvc) UpdateBuiltInAccount(cts *rest.Contexts) (interface{}, erro
 
 	// 获取内置账号ID
 	accountID := result.Details[0].ID
-
-	action := meta.Update
-	if req.RecycleReserveTime != 0 {
-		action = meta.UpdateRRT
-	}
-	// 校验用户有该账号的更新权限
-	if err := a.checkPermission(cts, action, accountID); err != nil {
-		return nil, err
-	}
 
 	// create update audit.
 	updateFields, err := converter.StructToMap(req)
@@ -468,6 +514,7 @@ func (a *accountSvc) updateForOther(
 		&dataproto.AccountUpdateReq[dataproto.OtherAccountExtensionUpdateReq]{
 			Name:               req.Name,
 			Managers:           req.Managers,
+			SecurityManagers:   req.SecurityManagers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
 			BkBizID:            req.BkBizID,

@@ -22,7 +22,10 @@ export default defineComponent({
                 {t('二级账号')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                {t('资源类型')}
+                {t('调账模式')}
+              </HeadColumn>
+              <HeadColumn required minWidth={120} width={450}>
+                {t('资源类别')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
                 {t('金额')}

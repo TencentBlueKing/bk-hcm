@@ -64,7 +64,7 @@ export default defineComponent({
             空白磁盘
           </FormItem>
           <FormItem label='磁盘类型' property='disk_type' required>
-            <Select v-model={localFormData.disk_type}>
+            <Select v-model={localFormData.disk_type} filterable>
               {props.dataDiskTypes.map(({ id, name }: IOption) => (
                 <Option key={id} value={id} label={name}></Option>
               ))}

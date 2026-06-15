@@ -41,6 +41,7 @@ export interface RouteMetaConfig {
   activeKey?: symbol | string;
   isShowBreadcrumb?: boolean;
   icon?: string;
+  checkAuth?: string;
 }
 
 export default class Meta {

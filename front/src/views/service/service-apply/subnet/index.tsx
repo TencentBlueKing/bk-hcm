@@ -222,7 +222,11 @@ export default defineComponent({
                   <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host1.value} />.
                   <Input class={'cidr-selector'} placeholder='16' v-model={cidr_host2.value} />
                   <p>/</p>
-                  <Select class={'cidr-selector'} placeholder={`${subIpv4cidr.value[2]}-31`} v-model={cidr_mask.value}>
+                  <Select
+                    class={'cidr-selector'}
+                    placeholder={`${subIpv4cidr.value[2]}-31`}
+                    v-model={cidr_mask.value}
+                    filterable>
                     {new Array(31 - subIpv4cidr.value[2] + 1)
                       .fill(0)
                       .map((_, idx) => idx + +subIpv4cidr.value[2])

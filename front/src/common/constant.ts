@@ -29,6 +29,14 @@ export enum ResourceTypeEnum {
   CLB = 'clb',
 }
 
+// 二级账号资源类型
+export enum SecondaryAccountResourceTypeEnum {
+  PERMISSION = 'permission_policy_library',
+  TEMPLATE = 'permission_template',
+  SECRET = 'sub_account_secret',
+  SUB = 'sub_account',
+}
+
 // 资源类型
 export const RESOURCE_TYPES = [
   {
@@ -219,7 +227,7 @@ export const FILTER_DATA = [
   {
     name: '云账号ID',
     id: 'account_id',
-    children: [],
+    children: [] as any[],
     meta: {
       search: {
         filterRules: () => ({}),
@@ -475,7 +483,7 @@ export const NET_CHARGE_MAP: ConstantMapRecord = {
   BANDWIDTH_PACKAGE: '按带宽包计费',
 };
 
-export const SITE_TYPE_MAP = {
+export const SITE_TYPE_MAP: Record<string, string> = {
   china: '中国站',
   international: '国际站',
 };
@@ -545,6 +553,7 @@ export const RESOURCE_TYPES_MAP = {
   load_balancer: '负载均衡',
   security_group_usage_biz_rel: '安全组使用业务',
   cvm_cc_info: '主机资产数据',
+  permission_template: '权限模板',
 };
 
 export const RESOURCES_SYNC_STATUS_MAP = {

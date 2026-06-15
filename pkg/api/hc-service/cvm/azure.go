@@ -21,6 +21,8 @@ package hccvm
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
@@ -94,4 +96,68 @@ func (req *AzureCreateReq) Validate() error {
 // AzureCreateResp define azure create resp.
 type AzureCreateResp struct {
 	CloudID string `json:"cloud_id"`
+}
+
+// AzureMonitorDataReq defines request to get azure monitor data.
+type AzureMonitorDataReq struct {
+	AccountID           string   `json:"account_id" validate:"required"`
+	Region              string   `json:"region" validate:"required"`
+	MetricName          string   `json:"metric_name" validate:"required"`
+	Period              int64    `json:"period" validate:"required,min=1"`
+	StartTime           string   `json:"start_time" validate:"required"` // RFC3339 UTC
+	EndTime             string   `json:"end_time" validate:"required"`   // RFC3339 UTC
+	MetricNamespace     string   `json:"metric_namespace" validate:"omitempty"`
+	Aggregation         string   `json:"aggregation" validate:"omitempty"`
+	AutoAdjustTimegrain *bool    `json:"auto_adjust_timegrain" validate:"omitempty"`
+	Top                 *int32   `json:"top" validate:"omitempty"`
+	OrderBy             string   `json:"orderby" validate:"omitempty"`
+	Filter              string   `json:"filter" validate:"omitempty"`
+	ResultType          string   `json:"result_type" validate:"omitempty"`
+	InstanceIDs         []string `json:"instance_ids" validate:"required,min=1,max=20"`
+}
+
+// Validate request.
+func (req *AzureMonitorDataReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		return fmt.Errorf("start_time should be RFC3339 format")
+	}
+	endTime, err := time.Parse(time.RFC3339, req.EndTime)
+	if err != nil {
+		return fmt.Errorf("end_time should be RFC3339 format")
+	}
+	if !startTime.Before(endTime) {
+		return fmt.Errorf("start_time should < end_time")
+	}
+	_, startOffset := startTime.Zone()
+	_, endOffset := endTime.Zone()
+	if startOffset != 0 || endOffset != 0 {
+		return fmt.Errorf("start_time and end_time should be UTC timezone")
+	}
+	if req.Top != nil && *req.Top <= 0 {
+		return fmt.Errorf("top should > 0")
+	}
+	if len(req.OrderBy) != 0 && req.Top == nil {
+		return fmt.Errorf("orderby requires top")
+	}
+	if len(req.ResultType) != 0 {
+		resultType := strings.ToLower(req.ResultType)
+		if resultType != "data" && resultType != "metadata" {
+			return fmt.Errorf("result_type should be one of: Data, Metadata")
+		}
+	}
+	if len(req.InstanceIDs) > constant.MonitorMaxInstanceLimit {
+		return fmt.Errorf("instances count should <= %d", constant.MonitorMaxInstanceLimit)
+	}
+
+	return nil
+}
+
+// AzureMonitorDataResp defines response of azure monitor data.
+type AzureMonitorDataResp struct {
+	DataPoints []*MonitorDataPointResp `json:"data_points"`
 }

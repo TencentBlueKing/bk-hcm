@@ -39,7 +39,7 @@ func NewApplicationOfCreateAzureCvm(opt *handlers.HandlerOption, req *proto.Azur
 ) *ApplicationOfCreateAzureCvm {
 
 	return &ApplicationOfCreateAzureCvm{
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.Azure),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateCvm, enumor.OpCreateCvm, enumor.Azure),
 		req:                    req,
 	}
 }

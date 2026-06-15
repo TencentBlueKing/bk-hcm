@@ -21,6 +21,7 @@ package hccvm
 
 import (
 	"fmt"
+	"time"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/constant"
@@ -151,4 +152,46 @@ type AwsCvmBatchAssociateSecurityGroupReq struct {
 // Validate ...
 func (req *AwsCvmBatchAssociateSecurityGroupReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// AwsMonitorDataReq defines request to get aws monitor data.
+type AwsMonitorDataReq struct {
+	AccountID   string   `json:"account_id" validate:"required"`
+	Region      string   `json:"region" validate:"required"`
+	MetricName  string   `json:"metric_name" validate:"required"`
+	Period      int64    `json:"period" validate:"required,min=1"`
+	StartTime   string   `json:"start_time" validate:"required"` // RFC3339 UTC
+	EndTime     string   `json:"end_time" validate:"required"`   // RFC3339 UTC
+	InstanceIDs []string `json:"instance_ids" validate:"required,min=1,max=20"`
+}
+
+// Validate request.
+func (req *AwsMonitorDataReq) Validate() error {
+	startTime, err := time.Parse(time.RFC3339, req.StartTime)
+	if err != nil {
+		return fmt.Errorf("start_time should be RFC3339 format")
+	}
+	endTime, err := time.Parse(time.RFC3339, req.EndTime)
+	if err != nil {
+		return fmt.Errorf("end_time should be RFC3339 format")
+	}
+	if !startTime.Before(endTime) {
+		return fmt.Errorf("start_time should < end_time")
+	}
+
+	_, startOffset := startTime.Zone()
+	_, endOffset := endTime.Zone()
+	if startOffset != 0 || endOffset != 0 {
+		return fmt.Errorf("start_time and end_time should be UTC timezone")
+	}
+	if len(req.InstanceIDs) > constant.MonitorMaxInstanceLimit {
+		return fmt.Errorf("instances count should <= %d", constant.MonitorMaxInstanceLimit)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// AwsMonitorDataResp defines response of aws monitor data.
+type AwsMonitorDataResp struct {
+	DataPoints []*MonitorDataPointResp `json:"data_points"`
 }

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/runtime/ctl"
+	"hcm/pkg/runtime/ctl/cmd"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 )
@@ -97,7 +98,7 @@ func (ds *taskServer) prepare(opt *options.Option) error {
 	ds.svc = svc
 
 	// init hcm control tool
-	if err := ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
+	if err := ctl.LoadCtl(cmd.WithLog()); err != nil {
 		return fmt.Errorf("load control tool failed, err: %v", err)
 	}
 

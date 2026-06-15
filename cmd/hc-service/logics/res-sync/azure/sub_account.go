@@ -138,7 +138,7 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 			Site:        account.Site,
 			AccountID:   account.ID,
 			AccountType: accountType,
-			Extension:   ext,
+			Extension:   converter.ValToPtr(ext),
 			// Managers/BizIDs由用户设置不继承资源账号。
 			Managers: nil,
 			BkBizIDs: nil,

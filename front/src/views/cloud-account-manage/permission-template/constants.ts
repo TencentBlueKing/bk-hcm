@@ -1,0 +1,11 @@
+export const PERMISSION_TEMPLATE_TYPES = {
+  CUSTOM: 'custom',
+  PRESET: 'preset',
+  SYNC_WITH_LIBRARY: 'sync_with_library',
+} as const;
+
+export const PERMISSION_TEMPLATE_TYPE_MAP = {
+  [PERMISSION_TEMPLATE_TYPES.CUSTOM]: '云自定义',
+  [PERMISSION_TEMPLATE_TYPES.PRESET]: '云系统预设',
+  [PERMISSION_TEMPLATE_TYPES.SYNC_WITH_LIBRARY]: '与策略库同步',
+};

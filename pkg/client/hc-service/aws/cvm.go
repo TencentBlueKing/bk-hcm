@@ -208,3 +208,11 @@ func (cli *CvmClient) SyncCCInfoByCond(kt *kit.Kit, req *sync.SyncCvmByCondReq) 
 	return common.RequestNoResp[sync.SyncCvmByCondReq](cli.client, rest.POST, kt, req,
 		"/cvms/cc_info/by_condition/sync")
 }
+
+// GetMonitorData gets aws cvm monitor data.
+func (cli *CvmClient) GetMonitorData(kt *kit.Kit, req *protocvm.AwsMonitorDataReq) (
+	*protocvm.AwsMonitorDataResp, error) {
+
+	return common.Request[protocvm.AwsMonitorDataReq, protocvm.AwsMonitorDataResp](
+		cli.client, rest.POST, kt, req, "/cvms/monitor/data")
+}

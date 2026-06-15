@@ -20,6 +20,7 @@
 package mainaccount
 
 import (
+	"hcm/pkg/kit"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
@@ -40,13 +41,13 @@ func (a *ApplicationOfUpdateMainAccount) PrepareReqFromContent() error {
 }
 
 // GetItsmApprover 获取itsm审批人信息
-func (a *ApplicationOfUpdateMainAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
+func (a *ApplicationOfUpdateMainAccount) GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error) {
 	return []itsm.VariableApprover{
 		{
 			Variable:  "platform_manager",
 			Approvers: managers,
 		},
-	}
+	}, nil
 }
 
 // GetBkBizIDs 获取当前的业务IDs

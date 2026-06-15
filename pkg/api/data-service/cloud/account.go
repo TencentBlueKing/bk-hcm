@@ -53,7 +53,7 @@ func (req *OtherAccountExtensionCreateReq) EncryptSecretKey(_ cryptography.Crypt
 // TCloudAccountExtensionCreateReq ...
 type TCloudAccountExtensionCreateReq struct {
 	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
-	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"required"`
+	CloudSubAccountID  string `json:"cloud_sub_account_id" validate:"omitempty"`
 	CloudSecretID      string `json:"cloud_secret_id" validate:"omitempty"`
 	CloudSecretKey     string `json:"cloud_secret_key" validate:"omitempty"`
 }
@@ -125,14 +125,17 @@ func (req *AzureAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountCreateReq ...
 type AccountCreateReq[T AccountExtensionCreateReq] struct {
-	Name        string                 `json:"name" validate:"required"`
-	Managers    []string               `json:"managers" validate:"required"`
-	Type        enumor.AccountType     `json:"type" validate:"required"`
-	Site        enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo        *string                `json:"memo" validate:"required"`
-	Extension   *T                     `json:"extension" validate:"required"`
-	BkBizID     int64                  `json:"bk_biz_id" validate:"omitempty"`
-	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
+	Name             string                 `json:"name" validate:"required"`
+	Managers         []string               `json:"managers" validate:"required"`
+	Type             enumor.AccountType     `json:"type" validate:"required"`
+	Site             enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo             *string                `json:"memo" validate:"required"`
+	Extension        *T                     `json:"extension" validate:"required"`
+	BkBizID          int64                  `json:"bk_biz_id" validate:"omitempty"`
+	UsageBizIDs      []int64                `json:"usage_biz_ids" validate:"required"`
+	Email            *string                `json:"email" validate:"omitempty"`
+	SecurityManagers []string               `json:"security_managers" validate:"omitempty"`
+	CloudCreatedAt   *string                `json:"cloud_created_at" validate:"omitempty"`
 }
 
 // Validate ...
@@ -151,10 +154,12 @@ type AccountExtensionUpdateReq interface {
 
 // TCloudAccountExtensionUpdateReq ...
 type TCloudAccountExtensionUpdateReq struct {
-	CloudMainAccountID string  `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
-	CloudSubAccountID  string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
-	CloudSecretID      *string `json:"cloud_secret_id,omitempty" validate:"omitempty"`
-	CloudSecretKey     *string `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	CloudMainAccountID string                        `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
+	CloudSubAccountID  *string                       `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
+	CloudSecretID      *string                       `json:"cloud_secret_id,omitempty" validate:"omitempty"`
+	CloudSecretKey     *string                       `json:"cloud_secret_key,omitempty" validate:"omitempty"`
+	LoginFlag          *enumor.AccountProtectionFlag `json:"login_flag" validate:"omitempty"`
+	ActionFlag         *enumor.AccountProtectionFlag `json:"action_flag" validate:"omitempty"`
 }
 
 // EncryptSecretKey ...
@@ -258,6 +263,9 @@ type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
 	BkBizID            int64    `json:"bk_biz_id" validate:"omitempty"`
 	Extension          *T       `json:"extension" validate:"omitempty"`
+	Email              *string  `json:"email" validate:"omitempty"`
+	SecurityManagers   []string `json:"security_managers" validate:"omitempty"`
+	CloudCreatedAt     *string  `json:"cloud_created_at" validate:"omitempty"`
 }
 
 // Validate ...

@@ -90,6 +90,7 @@ export default defineComponent({
         class='primary-stand-zone-selector'
         modelValue={selectedValue.value}
         multiple
+        filterable
         multipleMode='tag'
         onScroll-end={handleScrollEnd}
         onSelect={handleSelect}

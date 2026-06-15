@@ -183,7 +183,9 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().
+		AddBlankedFields("memo", "extension.login_flag", "extension.action_flag").
+		AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

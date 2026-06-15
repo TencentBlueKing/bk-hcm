@@ -2,12 +2,15 @@
 import { computed } from 'vue';
 import { AppearanceType, DisplayType } from './typings';
 import Link from './appearance/link.vue';
+import LinkButton from './appearance/link-button.vue';
+import LinkPopover from './appearance/link-popover.vue';
 import { isNil, isString } from 'lodash';
 
 const props = defineProps<{ value: string | number | string[] | number[]; display: DisplayType }>();
 
 const displayOn = computed(() => props.display?.on || 'cell');
 const appearance = computed(() => props.display?.appearance);
+const appearanceProps = computed(() => props.display?.appearanceProps);
 const format = computed(() => props.display?.format);
 
 const displayValue = computed(() => {
@@ -25,6 +28,8 @@ const displayValue = computed(() => {
 
 const appearanceComps: Partial<Record<AppearanceType, any>> = {
   link: Link,
+  'link-button': LinkButton,
+  'link-popover': LinkPopover,
 };
 </script>
 
@@ -41,5 +46,11 @@ const appearanceComps: Partial<Record<AppearanceType, any>> = {
     :display-value="displayValue"
     :display-on="displayOn"
     :value="value"
-  />
+    v-bind="appearanceProps"
+  >
+    <!-- 继承插槽 -->
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot :name="slot" v-bind="scope" />
+    </template>
+  </component>
 </template>

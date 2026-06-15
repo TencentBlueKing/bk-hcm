@@ -10,20 +10,20 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 
 ### 输入参数
 
-| 参数名称       | 参数类型   | 必选 | 描述                                                  |
-|------------|--------|----|-----------------------------------------------------|
-| bk_biz_id  | int    | 是  | 同步业务                                                |
-| vendor     | string | 是  | 云厂商                                                 |
-| account_id | string | 是  | 账号ID                                                |
-| res        | string | 是  | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud) |
+| 参数名称       | 参数类型   | 必选 | 描述                                                   |
+|------------|--------|----|------------------------------------------------------|
+| bk_biz_id  | int    | 是  | 同步业务                                                 |
+| vendor     | string | 是  | 云厂商                                                  |
+| account_id | string | 是  | 账号ID                                                 |
+| res        | string | 是  | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud)、sub_account |
 
 #### vendor=tcloud
 
-| 参数名称        | 参数类型                | 必选 | 描述               |
-|-------------|---------------------|----|------------------|
-| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
-| cloud_ids   | []string            | 否  | 资源id，数量上限20      |
-| tag_filters | map[string][]string | 否  | 指定同步标签过滤器标签，上限5  |
+| 参数名称        | 参数类型                | 必选 | 描述                                          |
+|-------------|---------------------|----|---------------------------------------------|
+| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5，当同步的资源为sub_account时，该字段非必填 |
+| cloud_ids   | []string            | 否  | 资源id，数量上限20                                 |
+| tag_filters | map[string][]string | 否  | 指定同步标签过滤器标签，上限5                             |
 
 #### vendor=huawei
 

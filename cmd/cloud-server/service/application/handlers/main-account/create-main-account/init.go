@@ -41,7 +41,8 @@ func NewApplicationOfCreateMainAccount(opt *handlers.HandlerOption, authorizer a
 
 	return &ApplicationOfCreateMainAccount{
 		authorizer:             authorizer,
-		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateMainAccount, req.Vendor),
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(
+			opt, enumor.CreateMainAccount, enumor.OpCreateMainAccount, req.Vendor),
 		req:                    req,
 		completeReq:            completeReq,
 	}

@@ -75,6 +75,16 @@ export const useCommonStore = defineStore({
       { type: 'load_balancer', action: 'update', id: 'biz_clb_resource_operate', bk_biz_id: 0 }, // 业务-负载均衡操作
       { type: 'load_balancer', action: 'delete', id: 'clb_resource_delete' }, // 资源-负载均衡删除
       { type: 'load_balancer', action: 'delete', id: 'biz_clb_resource_delete', bk_biz_id: 0 }, // 业务-负载均衡删除
+
+      // 权限策略库
+      {
+        // hcm权限type
+        type: 'permission_policy_library',
+        action: 'find',
+        // iam的permission.actions[number].id，用于从authVerifyData.permissionAction中获取权限
+        id: 'cloud_vendor_config',
+        path: /^\/service\/permission-policy/,
+      },
     ],
     isNoticeAlert: false, // 消息通知的显示状态
   }),

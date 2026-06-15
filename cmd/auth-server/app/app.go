@@ -110,7 +110,7 @@ func (as *authService) prepare(opt *options.Option) error {
 	}
 
 	// init hcm control tool
-	if err := ctl.LoadCtl(append(ctl.WithBasics(sd), cmd.WithAuth(as.disableWriteOpt)...)...); err != nil {
+	if err := ctl.LoadCtl(cmd.WithLog()); err != nil {
 		return fmt.Errorf("load control tool failed, err: %v", err)
 	}
 

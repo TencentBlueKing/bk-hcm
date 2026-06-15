@@ -3,6 +3,7 @@
     <bk-select
       v-model="zones"
       prefix="主"
+      filterable
       :loading="isDataLoad"
       :scroll-loading="isDataLoad"
       @scroll-end="handleScrollEnd"
@@ -12,6 +13,7 @@
     </bk-select>
     <bk-select
       v-model="backupZones"
+      filterable
       prefix="备"
       :disabled="!displayBackupZoneList.length"
       v-bk-tooltips="{ content: '当前可用区不支持主备模式', disabled: displayBackupZoneList.length }"
@@ -38,10 +40,9 @@ interface IProps {
   currentResourceListMap: Record<string, any>;
 }
 
-const props = defineProps<IProps>();
 const zones = defineModel<string>('zones');
 const backupZones = defineModel<string>('backupZones');
-
+const props = defineProps<IProps>();
 const { dataList, isDataLoad, handleScrollEnd } = useSingleList({
   url: () => `/api/v1/cloud/vendors/${props.vendor}/regions/${props.region}/zones/list`,
   rules: () => [

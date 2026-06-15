@@ -109,7 +109,7 @@ const formModel = reactive<IListenerModel & { port_segment: string }>({
   protocol: ListenerProtocol.TCP,
   port: undefined,
   end_port: undefined,
-  port_segment: undefined,
+  port_segment: '',
   scheduler: undefined,
   session_open: false,
   session_type: SessionType.NORMAL,
@@ -136,7 +136,7 @@ watchEffect(() => {
       ca_cloud_id: '',
       cert_cloud_ids: [],
     },
-    port_segment: end_port ? `${port}-${end_port}` : port,
+    port_segment: end_port ? `${port}-${end_port}` : String(port),
   });
   bindingTargetGroupName.value = target_group_name;
   isSniOpen.value = !!sni_switch;
@@ -262,7 +262,7 @@ const handleConfirm = async () => {
     Message({ theme: 'success', message: '更新成功' });
   } else {
     // 将port_segment分解成port和end_port
-    const [port, end_port] = formModel.port_segment.split('-');
+    const [port, end_port] = formModel.port_segment?.split('-') ?? [];
     formModel.port = port ? +port : undefined;
     formModel.end_port = end_port ? +end_port : undefined;
     await loadBalancerListenerStore.addListener(

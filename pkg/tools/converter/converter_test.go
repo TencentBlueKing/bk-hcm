@@ -141,3 +141,17 @@ func TestPtrToSlice(t *testing.T) {
 		return
 	}
 }
+
+func TestInt64PtrToInt32Ptr(t *testing.T) {
+	if Int64PtrToInt32Ptr(nil) != nil {
+		t.Errorf("test nil int64 pointer to int32 pointer failed")
+		return
+	}
+
+	int64V := int64(100)
+	int32Ptr := Int64PtrToInt32Ptr(&int64V)
+	if int32Ptr == nil || *int32Ptr != int32(100) {
+		t.Errorf("test int64 pointer to int32 pointer failed, got: %+v", int32Ptr)
+		return
+	}
+}

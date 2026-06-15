@@ -8,6 +8,10 @@ import { debounce } from 'lodash';
 
 defineOptions({ name: 'hcm-form-region' });
 
+const model = defineModel<string | string[]>();
+
+const props = defineProps<{ accountId: string; vendor: string; multiple?: boolean; clearable?: boolean }>();
+
 interface IResourceGroupItem {
   id: string;
   name: string;
@@ -20,8 +24,6 @@ interface IResourceGroupItem {
   updated_at: string;
 }
 
-const props = defineProps<{ accountId: string; vendor: string; multiple?: boolean; clearable?: boolean }>();
-const model = defineModel<string | string[]>();
 const attrs = useAttrs();
 
 const localModel = computed({
@@ -85,6 +87,7 @@ watchEffect(
     :id-key="'name'"
     :display-key="'name'"
     :loading="loading"
+    filterable
     v-bind="attrs"
   />
 </template>

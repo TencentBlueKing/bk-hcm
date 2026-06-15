@@ -34,23 +34,23 @@ import (
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/adaptor/types/eip"
 	"hcm/pkg/adaptor/types/image"
-	"hcm/pkg/adaptor/types/instance-type"
+	instancetype "hcm/pkg/adaptor/types/instance-type"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/adaptor/types/region"
-	"hcm/pkg/adaptor/types/route-table"
-	"hcm/pkg/adaptor/types/security-group"
-	"hcm/pkg/adaptor/types/security-group-rule"
-	"hcm/pkg/adaptor/types/subnet"
+	routetable "hcm/pkg/adaptor/types/route-table"
+	securitygroup "hcm/pkg/adaptor/types/security-group"
+	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
+	adtysubnet "hcm/pkg/adaptor/types/subnet"
 	typestag "hcm/pkg/adaptor/types/tag"
 	"hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
+	v20190116 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
+	v20170312 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // TCloud adaptor interface for tencent cloud
@@ -83,9 +83,25 @@ type TCloud interface {
 
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)
 	CountAccount(kt *kit.Kit) (int32, error)
+	DescribeSubAccounts(kt *kit.Kit, opt *account.DescribeSubAccountsOption) (
+		[]account.TCloudSubAccountUser, error)
+	AddUser(kt *kit.Kit, opt *account.AddUserOption) (*account.AddUserResult, error)
+	UpdateUser(kt *kit.Kit, opt *account.UpdateUserOption) error
+	DeleteUser(kt *kit.Kit, name string) error
 	GetAccountZoneQuota(kt *kit.Kit, opt *account.GetTCloudAccountZoneQuotaOption) (
 		*account.TCloudAccountQuota, error)
 	GetAccountInfoBySecret(kt *kit.Kit) (*cloud.TCloudInfoBySecret, error)
+	DescribeSafeAuthFlagColl(kt *kit.Kit, opt *account.DescribeSafeAuthFlagCollOption) (
+		[]account.SafeAuthFlagCollResult, error)
+	SetMfaFlag(kt *kit.Kit, opt *account.SetMfaFlagOption) error
+	CreateAccessKey(kt *kit.Kit, opt *account.CreateAccessKeyOption) (
+		*account.CreateAccessKeyResult, error)
+	DeleteAccessKey(kt *kit.Kit, opt *account.DeleteAccessKeyOption) error
+	UpdateAccessKey(kt *kit.Kit, opt *account.UpdateAccessKeyOption) error
+	GetSecurityLastUsed(kt *kit.Kit, opt *account.GetSecurityLastUsedOption) (
+		[]account.SecretIdLastUsed, error)
+	ListAccessKeys(kt *kit.Kit, opt *account.ListAccessKeysOption) (
+		[]account.AccessKeyInfo, error)
 	CreateDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (*poller.BaseDoneResult, error)
 	InquiryPriceDisk(kt *kit.Kit, opt *disk.TCloudDiskCreateOption) (
 		*cvm.InquiryPriceResult, error)
@@ -134,6 +150,16 @@ type TCloud interface {
 		*cvm.InquiryPriceResult, error)
 	ListPoliciesGrantingServiceAccess(kt *kit.Kit, opt *account.TCloudListPolicyOption) (
 		[]*v20190116.ListGrantServiceAccessNode, error)
+	CreatePolicy(kt *kit.Kit, opt *account.TCloudCreatePolicyOption) (
+		*account.TCloudCreatePolicyResult, error)
+	UpdatePolicy(kt *kit.Kit, opt *account.TCloudUpdatePolicyOption) error
+	ListPolicies(kt *kit.Kit, opt *account.TCloudListPoliciesOption) ([]account.TCloudPolicyItem, uint64, error)
+	GetPolicyDetail(kt *kit.Kit, opt *account.TCloudGetPolicyDetailOption) (*account.TCloudPolicyDetail, error)
+	ListAttachedUserAllPolicies(kt *kit.Kit, opt *account.TCloudListAttachedUserAllPoliciesOption) (
+		*account.TCloudListAttachedUserAllPoliciesResult, error)
+	AttachUserPolicy(kt *kit.Kit, opt *account.TCloudAttachUserPolicyOption) error
+	DetachUserPolicy(kt *kit.Kit, opt *account.TCloudDetachUserPolicyOption) error
+	DeletePolicy(kt *kit.Kit, opt *account.TCloudDeletePolicyOption) error
 	ListArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudListOption) (
 		[]typeargstpl.TCloudArgsTplAddress, uint64, error)
 	CreateArgsTplAddress(kt *kit.Kit, opt *typeargstpl.TCloudCreateAddressOption) (*v20170312.AddressTemplate, error)

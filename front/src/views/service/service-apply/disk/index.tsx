@@ -145,7 +145,11 @@ export default defineComponent({
             required: true,
             property: 'disk_type',
             content: () => (
-              <Select v-model={formData.disk_type} clearable={false} onChange={() => (formData.disk_size = null)}>
+              <Select
+                v-model={formData.disk_type}
+                clearable={false}
+                onChange={() => (formData.disk_size = null)}
+                filterable>
                 {diskTypes.value.map(({ id, name }: IOption) => (
                   <Option key={id} value={id} label={name}></Option>
                 ))}
@@ -198,7 +202,7 @@ export default defineComponent({
               {
                 property: 'purchase_duration.unit',
                 content: () => (
-                  <Select v-model={formData.purchase_duration.unit} clearable={false}>
+                  <Select v-model={formData.purchase_duration.unit} clearable={false} filterable>
                     {purchaseDurationUnits.map(({ id, name }: IOption) => (
                       <Option key={id} value={id} label={name}></Option>
                     ))}

@@ -55,6 +55,7 @@ type ImageCreate[T coreimage.Extension] struct {
 	State        string        `json:"state"`
 	Type         string        `json:"type"`
 	OsType       enumor.OsType `json:"os_type"`
+	Region       string        `json:"region"`
 	Extension    *T            `json:"extension"`
 }
 

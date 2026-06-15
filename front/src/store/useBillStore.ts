@@ -1,4 +1,5 @@
 import { VendorEnum } from '@/common/constant';
+import { ResClassEnum } from '@/constants';
 import http from '@/http';
 import { defineStore } from 'pinia';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -57,9 +58,9 @@ export default defineStore('billStore', () => {
       name: string; // 名字
       managers: string[]; // 负责人，最大5个
       bak_managers: string[]; // 备份负责人
-      dept_id: number; // 组织架构ID
+      dept_id?: number; // 组织架构ID
       memo: string; // 备忘录
-      extension: Extension; // Extension对象
+      extension?: Extension; // Extension对象
     },
   ) => {
     return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/root_accounts/${id}`, data);
@@ -403,8 +404,8 @@ export interface IMainAccountDetail {
   cloud_id?: string;
   site?: string;
   email?: string;
-  managers?: string;
-  bak_managers?: string;
+  managers?: string[];
+  bak_managers?: string[];
   business_type?: string;
   op_product_id?: number;
   status?: string;
@@ -445,8 +446,8 @@ export interface IRootAccountDetail {
   vendor: VendorEnum;
   cloud_id?: string;
   email?: string;
-  managers?: string;
-  bak_managers?: string;
+  managers?: string[];
+  bak_managers?: string[];
   site?: string;
   memo?: string;
   creator?: string;
@@ -488,6 +489,7 @@ export interface UpdateAdjustmentItemParams {
   bill_month?: number; // 所属月份
   bill_day?: number; // 所属日期
   type?: 'increase' | 'decrease'; // 调账类型
+  res_class?: ResClassEnum; // 资源类别
   currency?: string; // 币种
   cost?: string; // 金额
   rmb_cost?: string; // 对应人民币金额
