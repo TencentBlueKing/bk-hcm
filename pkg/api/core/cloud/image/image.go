@@ -30,6 +30,7 @@ type BaseImage struct {
 	Vendor        string        `json:"vendor"`
 	CloudID       string        `json:"cloud_id"`
 	Region        string        `json:"region"`
+	BkBizID       int64         `json:"bk_biz_id"`
 	Name          string        `json:"name"`
 	Architecture  string        `json:"architecture"`
 	Platform      string        `json:"platform"`
