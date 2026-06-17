@@ -89,6 +89,7 @@ type ImageUpdate[T coreimage.Extension] struct {
 	ID        string        `json:"id" validate:"required"`
 	State     string        `json:"state"`
 	OsType    enumor.OsType `json:"os_type"`
+	Type      string        `json:"type"`
 	Extension *T            `json:"extension"`
 }
 
