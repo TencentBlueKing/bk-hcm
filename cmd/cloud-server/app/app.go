@@ -76,6 +76,11 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 	network := cc.CloudServer().Network
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
+	// 主动注册 cloud-server 独有的指标，确保 /metrics 在启动后立刻暴露
+	// # HELP/# TYPE 元信息，避免依赖首次 Observe 的惰性注册导致的 metric 短暂缺失。
+	metrics.EnsureCLBSubmitMetric()
+	metrics.EnsureTaskProgressMetric()
+
 	// init service discovery.
 	svcOpt := serviced.NewServiceOption(cc.CloudServerName, cc.CloudServer().Network, opt.Sys)
 	discOpt := serviced.DiscoveryOption{

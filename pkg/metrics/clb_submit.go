@@ -30,7 +30,7 @@ import (
 // CLB submit metrics. See openspec/changes/add-sops-fine-grained-metrics/specs/spec.md
 // for the canonical label set definition. Label cardinality is bounded
 // because operation_type is an enum (~10 values), vendor is an enum (~5),
-// and bk_biz_id is bounded by the number of subscribed business spaces.
+// and bkcc_biz_id is bounded by the number of subscribed business spaces.
 type clbSubmitMetric struct {
 	cost      *prometheus.HistogramVec
 	total     *prometheus.CounterVec
@@ -45,8 +45,8 @@ var (
 func initCLBSubmitMetric() {
 	clbSubmitOnce.Do(func() {
 		labels := prometheus.Labels{}
-		base := []string{"bk_biz_id", "vendor", "operation_type"}
-		failLabels := []string{"bk_biz_id", "vendor", "operation_type", "err_type"}
+		base := []string{LabelBKCCBizID, "vendor", "operation_type"}
+		failLabels := []string{LabelBKCCBizID, "vendor", "operation_type", "err_type"}
 
 		m := &clbSubmitMetric{}
 		m.cost = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -63,7 +63,7 @@ func initCLBSubmitMetric() {
 			Namespace:   Namespace,
 			Subsystem:   CLBSubSys,
 			Name:        "submit_total",
-			Help:        "the total count of CLB submit requests by bk_biz_id / vendor / operation_type.",
+			Help:        "the total count of CLB submit requests by bkcc_biz_id / vendor / operation_type.",
 			ConstLabels: labels,
 		}, base)
 		Register().MustRegister(m.total)
@@ -72,7 +72,7 @@ func initCLBSubmitMetric() {
 			Namespace:   Namespace,
 			Subsystem:   CLBSubSys,
 			Name:        "submit_fail_total",
-			Help:        "the total count of failed CLB submit requests by bk_biz_id / vendor / operation_type / err_type.",
+			Help:        "the total count of failed CLB submit requests by bkcc_biz_id / vendor / operation_type / err_type.",
 			ConstLabels: labels,
 		}, failLabels)
 		Register().MustRegister(m.failTotal)
@@ -101,7 +101,7 @@ func ObserveCLBSubmit(bkBizID int64, vendor, operationType string, cost time.Dur
 	}
 	bizLabel := strconv.FormatInt(bkBizID, 10)
 	labels := prometheus.Labels{
-		"bk_biz_id":      bizLabel,
+		LabelBKCCBizID:   bizLabel,
 		"vendor":         vendor,
 		"operation_type": operationType,
 	}
@@ -109,7 +109,7 @@ func ObserveCLBSubmit(bkBizID int64, vendor, operationType string, cost time.Dur
 	clbSubmit.cost.With(labels).Observe(cost.Seconds())
 	if errType != ErrTypeOK {
 		failLabels := prometheus.Labels{
-			"bk_biz_id":      bizLabel,
+			LabelBKCCBizID:   bizLabel,
 			"vendor":         vendor,
 			"operation_type": operationType,
 			"err_type":       errType.String(),

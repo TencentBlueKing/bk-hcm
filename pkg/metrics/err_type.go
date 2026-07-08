@@ -24,6 +24,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"hcm/pkg/criteria/errf"
@@ -57,7 +58,7 @@ func (e ErrType) String() string {
 // ErrTypeOK; callers should treat ErrTypeOK as "no fail metric should be
 // emitted". Unknown / unclassified errors fall back to ErrTypeUnknown.
 //
-// The mapping rules:
+// The mapping rules (evaluated in order):
 //   - context.DeadlineExceeded / "deadline exceeded" / "timeout" → timeout
 //   - context.Canceled / "context canceled" → cancel
 //   - net.Error with Timeout() true → timeout
@@ -66,6 +67,8 @@ func (e ErrType) String() string {
 //   - errf.ErrorF with PermissionDenied / DoAuthorizeFailed / UserNoAppAccess → auth
 //   - errf.ErrorF with CloudVendorError → cloud_error
 //   - errf.ErrorF other codes → hcm_error
+//   - cloud vendor SDK errors (tcloud / huawei / aws / azure / gcp) → cloud_error
+//   - common message patterns ("4xx", "5xx", "context canceled" 等) → 对应类型
 //   - everything else → unknown
 func ClassifyError(err error) ErrType {
 	if err == nil {
@@ -92,6 +95,10 @@ func ClassifyError(err error) ErrType {
 		return classifyErrorF(ef)
 	}
 
+	if et := classifyCloudVendorError(err); et != ErrTypeOK {
+		return et
+	}
+
 	if et := classifyByMessage(err.Error()); et != ErrTypeOK {
 		return et
 	}
@@ -114,6 +121,69 @@ func classifyErrorF(ef *errf.ErrorF) ErrType {
 	}
 }
 
+// awsErrorLike matches the github.com/aws/aws-sdk-go/aws/awserr.Error
+// interface contract. We declare the interface locally so that pkg/metrics
+// stays free of cloud-vendor SDK imports; any AWS SDK error implements
+// this shape implicitly.
+type awsErrorLike interface {
+	Code() string
+	Message() string
+	OrigErr() error
+}
+
+// tcloudErrorLike matches github.com/tencentcloud/tencentcloud-sdk-go's
+// TencentCloudSDKError shape (GetCode / GetMessage / GetRequestId). All
+// TCloud SDK errors satisfy this interface.
+type tcloudErrorLike interface {
+	GetCode() string
+	GetMessage() string
+	GetRequestId() string
+}
+
+// cloudVendorErrorTypes is a closed allowlist of cloud-vendor SDK error
+// type names (as returned by reflect.TypeOf(err).String()). Listed types
+// MUST be classified as ErrTypeCloudError. Keep this list small and
+// vendor-rooted to avoid cardinality leak.
+var cloudVendorErrorTypes = map[string]struct{}{
+	// Huawei Cloud SDK v3 (github.com/huaweicloud/huaweicloud-sdk-go-v3/core/sdkerr)
+	"*sdkerr.ServiceResponseError": {},
+	"*sdkerr.CredentialsTypeError": {},
+	"*sdkerr.RequestError":         {},
+	// Azure SDK (github.com/Azure/azure-sdk-for-go/sdk/azcore)
+	"*azcore.ResponseError": {},
+	// GCP API client (google.golang.org/api/googleapi)
+	"*googleapi.Error": {},
+}
+
+// classifyCloudVendorError detects common cloud vendor SDK error types and
+// classifies them as ErrTypeCloudError. Detection avoids importing any
+// vendor SDK package by combining:
+//
+//   - interface-shape assertion for AWS (awserr.Error) and TCloud
+//     (TencentCloudSDKError), since both expose stable method sets;
+//   - reflect type-name allowlist for Huawei / Azure / GCP, whose error
+//     types are concrete structs without a shared interface.
+//
+// Returns ErrTypeOK when err is not a recognized vendor SDK error so the
+// caller can fall through to the next classification rule.
+func classifyCloudVendorError(err error) ErrType {
+	var awsErr awsErrorLike
+	if errors.As(err, &awsErr) {
+		return ErrTypeCloudError
+	}
+
+	var tcErr tcloudErrorLike
+	if errors.As(err, &tcErr) {
+		return ErrTypeCloudError
+	}
+
+	if _, ok := cloudVendorErrorTypes[reflect.TypeOf(err).String()]; ok {
+		return ErrTypeCloudError
+	}
+
+	return ErrTypeOK
+}
+
 func classifyByMessage(msg string) ErrType {
 	lower := strings.ToLower(msg)
 	switch {
@@ -127,6 +197,17 @@ func classifyByMessage(msg string) ErrType {
 		strings.Contains(lower, "broken pipe"),
 		strings.Contains(lower, "eof"):
 		return ErrTypeNetwork
+	// 兜底：当云 SDK error 被深层包装、type assertion 失效时，按错误文本
+	// 中常见的厂商签名词识别为 cloud_error。关键字尽量保守，避免误伤业务
+	// 错误。
+	case strings.Contains(lower, "tencentcloudsdkerror"),
+		strings.Contains(lower, "[apigateway-error]"),
+		strings.Contains(lower, "huaweicloudsdkerror"),
+		strings.Contains(lower, "responseerror"),
+		strings.Contains(lower, "googleapi: error"),
+		strings.Contains(lower, "awserr:"),
+		strings.Contains(lower, "requestid:"):
+		return ErrTypeCloudError
 	default:
 		return ErrTypeOK
 	}
