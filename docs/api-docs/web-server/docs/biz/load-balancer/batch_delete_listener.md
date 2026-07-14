@@ -14,7 +14,7 @@ DELETE /api/v1/cloud/bizs/{bk_biz_id}/listeners/batch
 |------------|--------------|----|------------------------|
 | bk_biz_id  | int          | 是  | 业务ID                   |
 | account_id | string       | 是  | 账号ID                   |
-| ids        | string array | 是  | 监听器ID数组, 最大可传入1000个监听器 |
+| ids        | string array | 是  | 监听器ID数组, 最大可传入5000个监听器 |
 
 ### 调用示例
 

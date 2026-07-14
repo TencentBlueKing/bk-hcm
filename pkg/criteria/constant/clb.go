@@ -101,7 +101,7 @@ const (
 	// BatchOperateModifyTargetWeightLimit 批量修改目标权重限制
 	BatchOperateModifyTargetWeightLimit = 5000
 	// BatchOperateDeleteListenerLimit 批量删除监听器数量限制
-	BatchOperateDeleteListenerLimit = 1000
+	BatchOperateDeleteListenerLimit = 5000
 	// BatchOperateRemoveTargetLimit 批量移除RS数量限制
 	BatchOperateRemoveTargetLimit = 5000
 )
