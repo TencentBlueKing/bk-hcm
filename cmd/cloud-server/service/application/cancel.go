@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -41,6 +42,14 @@ func (a *applicationSvc) CancelApplication(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(
 			errf.PermissionDenied, fmt.Errorf("you can not operate other people's application"),
 		)
+	}
+
+	// 非 ITSM 来源单据没有对应审批单，不支持撤销
+	if application.Source != enumor.ApplicationSourceITSM {
+		logs.Errorf("cancel application failed, application without itsm ticket can not be cancelled, "+
+			"id: %s, source: %s, rid: %s", application.ID, application.Source, cts.Kit.Rid)
+		return nil, errf.Newf(errf.InvalidParameter,
+			"cancel application failed, application without itsm ticket can not be cancelled, rid: %s", cts.Kit.Rid)
 	}
 
 	// 根据SN调用ITSM接口撤销单据
