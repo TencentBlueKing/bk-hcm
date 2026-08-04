@@ -458,24 +458,33 @@ func (l *listenerExporter) getTCloudListenersByProtocol(kt *kit.Kit, lbIDs []str
 	// lbIDs 的数量受勾选的负载均衡数量约束，无需分批；lblIDs 的数量不受限制，需按分页大小分批查询，
 	// 避免单个 in 条件的元素数量超过 data-service 的上限
 	if len(lbIDs) != 0 {
-		if err := l.listTCloudListeners(kt, tools.RuleIn("lb_id", lbIDs), protocols, result); err != nil {
+		listeners, err := l.listTCloudListeners(kt, tools.RuleIn("lb_id", lbIDs), protocols)
+		if err != nil {
 			return nil, err
+		}
+		for id, listener := range listeners {
+			result[id] = listener
 		}
 	}
 
 	for _, batch := range slice.Split(lblIDs, int(core.DefaultMaxPageLimit)) {
-		if err := l.listTCloudListeners(kt, tools.RuleIn("id", batch), protocols, result); err != nil {
+		listeners, err := l.listTCloudListeners(kt, tools.RuleIn("id", batch), protocols)
+		if err != nil {
 			return nil, err
+		}
+		for id, listener := range listeners {
+			result[id] = listener
 		}
 	}
 
 	return result, nil
 }
 
-// listTCloudListeners 按给定条件分页查询监听器，并以监听器id为键合并到 result 中
+// listTCloudListeners 按给定条件分页查询监听器，返回以监听器id为键的映射
 func (l *listenerExporter) listTCloudListeners(kt *kit.Kit, rule *filter.AtomRule,
-	protocols []enumor.ProtocolType, result map[string]corelb.TCloudListener) error {
+	protocols []enumor.ProtocolType) (map[string]corelb.TCloudListener, error) {
 
+	result := make(map[string]corelb.TCloudListener)
 	req := core.ListReq{
 		Filter: tools.ExpressionAnd(rule, tools.RuleIn("protocol", protocols)),
 		Page:   core.NewDefaultBasePage(),
@@ -487,11 +496,11 @@ func (l *listenerExporter) listTCloudListeners(kt *kit.Kit, rule *filter.AtomRul
 		case enumor.TCloud:
 			resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
 		default:
-			return fmt.Errorf("unsupported vendor: %s", l.vendor)
+			return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
 		}
 		if err != nil {
 			logs.Errorf("list listener failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req, kt.Rid)
-			return err
+			return nil, err
 		}
 
 		for _, detail := range resp.Details {
@@ -503,7 +512,7 @@ func (l *listenerExporter) listTCloudListeners(kt *kit.Kit, rule *filter.AtomRul
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	return nil
+	return result, nil
 }
 
 func (l *listenerExporter) getLbs(kt *kit.Kit) (map[string]corelb.BaseLoadBalancer, error) {
