@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	"hcm/pkg/adaptor/types/load-balancer"
+	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
@@ -911,7 +911,7 @@ func (r *ExportListenerReq) Validate() error {
 	}
 
 	for _, l := range r.Listeners {
-		if err := l.validateCount(); err != nil {
+		if err := l.Validate(); err != nil {
 			return err
 		}
 	}
@@ -965,15 +965,6 @@ type ExportListener struct {
 func (r *ExportListener) Validate() error {
 	if len(r.LbID) == 0 {
 		return errors.New("lb_id required")
-	}
-
-	return nil
-}
-
-// validateCount 校验单个元素的监听器id数量，是否需要校验由 ExportListenerReq.Validate 决定
-func (r *ExportListener) validateCount() error {
-	if len(r.LblIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("lbl_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
