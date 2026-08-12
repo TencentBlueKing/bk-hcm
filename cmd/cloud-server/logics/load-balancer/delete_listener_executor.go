@@ -503,16 +503,12 @@ func (c *BatchDeleteListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 			},
 		}},
 	}
-	watchResult, err := c.taskCli.CreateTemplateFlow(kt, flowWatchReq)
+	_, err = c.taskCli.CreateTemplateFlow(kt, flowWatchReq)
 	if err != nil {
 		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, lbID: %s, "+
 			"rid: %s", err, flowID, lbID, kt.Rid)
 		return "", err
 	}
-
-	logs.Infof("create res flow status watch flow success, watchFlowID: %s, mainFlowID: %s, resID: %s, "+
-		"resType: %s, taskType: %s, rid: %s", watchResult.ID, flowID, lbID,
-		enumor.LoadBalancerCloudResType, c.taskType, kt.Rid)
 
 	return flowID, nil
 }
