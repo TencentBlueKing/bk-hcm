@@ -17,28 +17,11 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package enumor
 
-import (
-	"hcm/cmd/task-server/logics/asyncflowcleanup"
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-	"hcm/pkg/criteria/enumor"
-	croncore "hcm/pkg/cron/core"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/iam/auth"
+// CronTask 定时任务
+type CronTask string
 
-	"github.com/emicklei/go-restful/v3"
+const (
+	CronTaskAsyncFlowAndTaskCleanup CronTask = "async_flow_and_task_cleanup"
 )
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService    *restful.WebService
-	ApiClient     *client.ClientSet
-	Async         async.Async
-	Dao           dao.Set
-	Authorizer    auth.Authorizer
-	Tasks         map[enumor.CronTask]croncore.Task
-	CleanupLogics *asyncflowcleanup.Logics
-}

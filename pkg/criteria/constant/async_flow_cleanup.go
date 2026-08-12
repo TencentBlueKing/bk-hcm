@@ -17,28 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package constant
 
-import (
-	"hcm/cmd/task-server/logics/asyncflowcleanup"
-	"hcm/pkg/async"
-	"hcm/pkg/client"
-	"hcm/pkg/criteria/enumor"
-	croncore "hcm/pkg/cron/core"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/iam/auth"
-
-	"github.com/emicklei/go-restful/v3"
+// 异步任务（async_flow / async_flow_task）历史数据清理的默认值与边界值。
+const (
+	// DefaultAsyncFlowCleanupIntervalMin 清理任务默认执行周期，单位：分钟。
+	DefaultAsyncFlowCleanupIntervalMin = 60
+	// DefaultAsyncFlowCleanupRetentionDays 默认保留天数，updated_at 早于该天数的记录视为超期。
+	DefaultAsyncFlowCleanupRetentionDays = 180
+	// DefaultAsyncFlowCleanupBatchIntervalMs 默认批间隔，单位：毫秒。
+	DefaultAsyncFlowCleanupBatchIntervalMs = 100
 )
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService    *restful.WebService
-	ApiClient     *client.ClientSet
-	Async         async.Async
-	Dao           dao.Set
-	Authorizer    auth.Authorizer
-	Tasks         map[enumor.CronTask]croncore.Task
-	CleanupLogics *asyncflowcleanup.Logics
-}

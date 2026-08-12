@@ -477,6 +477,9 @@ type TaskServerSetting struct {
 	Async    Async        `yaml:"async"`
 	Tenant   TenantConfig `yaml:"tenant"`
 
+	// AsyncFlowAndTaskCleanup 异步任务历史数据定时清理配置
+	AsyncFlowAndTaskCleanup AsyncFlowAndTaskCleanup `yaml:"asyncFlowAndTaskCleanup"`
+
 	UseLabel LabelSwitch `yaml:"useLabel"`
 }
 
@@ -492,6 +495,8 @@ func (s *TaskServerSetting) trySetDefault() {
 	s.Database.trySetDefault()
 	s.Log.trySetDefault()
 	s.Async.trySetDefault()
+	s.AsyncFlowAndTaskCleanup.trySetDefault()
+
 	return
 }
 
@@ -507,6 +512,10 @@ func (s TaskServerSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	if err := s.AsyncFlowAndTaskCleanup.validate(); err != nil {
 		return err
 	}
 
