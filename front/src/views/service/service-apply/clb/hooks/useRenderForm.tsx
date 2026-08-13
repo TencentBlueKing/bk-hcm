@@ -142,8 +142,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     name: [
       {
         validator: (value: string) =>
-          /^(?=.{1,60}$)[\u4E00-\u9FA5A-Za-z0-9]([\u4E00-\u9FA5A-Za-z0-9-]*[\u4E00-\u9FA5A-Za-z0-9])?$/.test(value),
-        message: '60个字符，支持中文、字母、数字、“-”，且必须以中文、字母、数字开头和结尾。',
+          /^(?=.{1,60}$)[\u4E00-\u9FA5A-Za-z0-9]([\u4E00-\u9FA5A-Za-z0-9.-]*[\u4E00-\u9FA5A-Za-z0-9])?$/.test(value),
+        message: '60个字符，支持中文、字母、数字、“-”与“.”，且必须以中文、字母、数字开头和结尾。',
         trigger: 'change',
       },
     ],
