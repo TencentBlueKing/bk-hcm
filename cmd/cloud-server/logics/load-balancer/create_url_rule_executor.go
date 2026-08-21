@@ -248,7 +248,7 @@ func (c *CreateUrlRuleExecutor) createFlowTask(kt *kit.Kit, lbID string,
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowLoadBalancerCreateUrlRule,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, CreateUrlRule, map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,

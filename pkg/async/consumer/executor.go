@@ -40,6 +40,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/times"
 )
@@ -358,7 +359,22 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 		}
 		taskStartTime := time.Now()
 		result, err := act.Run(task.ExecuteKit, params)
+		// observe one task action attempt regardless of outcome. The state
+		// label is the resulting state of this attempt (success / failed /
+		// cancel); err_type normalizes failure causes for fail_total.
+		cost := time.Since(taskStartTime)
+		dims := getShareDataMetricDims(task.Flow.ShareData)
 		if err != nil {
+			state := enumor.TaskFailed
+			errType := metrics.ClassifyError(err)
+			if errf.IsContextCanceled(err) {
+				state = enumor.TaskCancel
+				errType = metrics.ErrTypeCancel
+			}
+			exec.mc.taskExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(task.ActionName), string(state)).Observe(cost.Seconds())
+			exec.mc.taskFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(task.ActionName), string(state), errType.String()).Inc()
 			if errf.IsContextCanceled(err) {
 				// 被取消不需要重试
 				return false, result, err
@@ -367,8 +383,10 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				err, times.ConvStdTimeNow())
 		}
 
+		exec.mc.taskExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+			string(task.Flow.Name), string(task.ActionName), string(enumor.TaskSuccess)).Observe(cost.Seconds())
 		// 只记录task执行成功的执行时间
-		exec.getTimeWindow(task.ActionName).Push(time.Since(taskStartTime).Seconds())
+		exec.getTimeWindow(task.ActionName).Push(cost.Seconds())
 
 		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
 		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。

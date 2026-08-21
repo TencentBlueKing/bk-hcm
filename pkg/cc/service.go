@@ -66,6 +66,8 @@ const (
 	TaskServerName Name = "task-server"
 	// AccountServerName is account server's name
 	AccountServerName Name = "account-server"
+	// AgentServerName is agent server's name
+	AgentServerName Name = "agent-server"
 )
 
 // Setting defines all service Setting interface.
