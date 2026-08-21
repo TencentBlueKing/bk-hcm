@@ -70,7 +70,15 @@ func (l *listenerExporter) PreCheck(kt *kit.Kit) error {
 		return err
 	}
 
-	// 2. 判断监听器数量是否超过限制
+	// 2. 勾选的负载均衡数量不超过阈值时，属于精确导出场景，不做数量限制
+	if l.params.SkipCountLimit() {
+		_, lblIDs := l.params.GetPartLbAndLblIDs()
+		logs.Infof("skip export count limit, lb count: %d, lbl count: %d, rid: %s", len(l.params.GetAllLbIDs()),
+			len(lblIDs), kt.Rid)
+		return nil
+	}
+
+	// 3. 判断监听器数量是否超过限制
 	if err := l.checkListenerCount(kt); err != nil {
 		logs.Errorf("check listener count failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -80,13 +88,13 @@ func (l *listenerExporter) PreCheck(kt *kit.Kit) error {
 		return nil
 	}
 
-	// 3. 判断规则数量是否超过限制
+	// 4. 判断规则数量是否超过限制
 	if err := l.checkRuleCount(kt); err != nil {
 		logs.Errorf("check rule count failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	// 4. 判断RS是否超过限制
+	// 5. 判断RS是否超过限制
 	if err := l.checkRsCount(kt); err != nil {
 		logs.Errorf("check rs count failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -166,6 +174,9 @@ func (l *listenerExporter) getListenerCount(kt *kit.Kit, protocols []enumor.Prot
 	return resp.Count, nil
 }
 
+// getListenerCountRule 构造监听器数量统计的查询条件。id/lb_id 未分批，其前提是数量校验仅在未跳过
+// 数量限制时执行，此时参数层已保证 id 数量不超过 constant.ExportListenerParamLimit，
+// 调整 constant.ExportSkipLimitLbCount 或参数层上限时需同步评估是否需要分批。
 func (l *listenerExporter) getListenerCountRule(protocols []enumor.ProtocolType) []filter.RuleFactory {
 	rules := make([]filter.RuleFactory, 0)
 	rules = append(rules, tools.RuleIn("protocol", protocols))
@@ -190,6 +201,7 @@ func (l *listenerExporter) getListenerCountRule(protocols []enumor.ProtocolType)
 	return rules
 }
 
+// checkRuleCount 校验导出的七层规则数量。lb_id/lbl_id 未分批，前提同 getListenerCountRule。
 func (l *listenerExporter) checkRuleCount(kt *kit.Kit) error {
 	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
 	var count uint64
@@ -299,6 +311,7 @@ func (l *listenerExporter) getRsCount(kt *kit.Kit, ruleType enumor.RuleType) (ui
 	return count, nil
 }
 
+// getRsCountRule 构造RS数量统计的关联关系查询条件。lb_id/lbl_id 未分批，前提同 getListenerCountRule。
 func (l *listenerExporter) getRsCountRule(ruleType enumor.RuleType) []filter.RuleFactory {
 	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
 	rules := make([]filter.RuleFactory, 0)
@@ -442,62 +455,61 @@ func (l *listenerExporter) getTCloudListenersByProtocol(kt *kit.Kit, lbIDs []str
 	protocols []enumor.ProtocolType) (map[string]corelb.TCloudListener, error) {
 
 	result := make(map[string]corelb.TCloudListener)
+	// lbIDs 的数量受勾选的负载均衡数量约束，无需分批；lblIDs 的数量不受限制，需按分页大小分批查询，
+	// 避免单个 in 条件的元素数量超过 data-service 的上限
 	if len(lbIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewDefaultBasePage(),
+		listeners, err := l.listTCloudListeners(kt, tools.RuleIn("lb_id", lbIDs), protocols)
+		if err != nil {
+			return nil, err
 		}
-		for {
-			resp := &cloud.TCloudListenerListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-				if err != nil {
-					logs.Errorf("get listener by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
-						req, kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
+		for id, listener := range listeners {
+			result[id] = listener
 		}
 	}
 
-	if len(lblIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("id", lblIDs), tools.RuleIn("protocol", protocols)),
-			Page:   core.NewDefaultBasePage(),
+	for _, batch := range slice.Split(lblIDs, int(core.DefaultMaxPageLimit)) {
+		listeners, err := l.listTCloudListeners(kt, tools.RuleIn("id", batch), protocols)
+		if err != nil {
+			return nil, err
 		}
-		for {
-			resp := &cloud.TCloudListenerListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
-				if err != nil {
-					logs.Errorf("get listener by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err,
-						l.vendor, req, kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
+		for id, listener := range listeners {
+			result[id] = listener
 		}
+	}
+
+	return result, nil
+}
+
+// listTCloudListeners 按给定条件分页查询监听器，返回以监听器id为键的映射
+func (l *listenerExporter) listTCloudListeners(kt *kit.Kit, rule *filter.AtomRule,
+	protocols []enumor.ProtocolType) (map[string]corelb.TCloudListener, error) {
+
+	result := make(map[string]corelb.TCloudListener)
+	req := core.ListReq{
+		Filter: tools.ExpressionAnd(rule, tools.RuleIn("protocol", protocols)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		var resp *cloud.TCloudListenerListResult
+		var err error
+		switch l.vendor {
+		case enumor.TCloud:
+			resp, err = l.client.DataService().TCloud.LoadBalancer.ListListener(kt, &req)
+		default:
+			return nil, fmt.Errorf("unsupported vendor: %s", l.vendor)
+		}
+		if err != nil {
+			logs.Errorf("list listener failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req, kt.Rid)
+			return nil, err
+		}
+
+		for _, detail := range resp.Details {
+			result[detail.ID] = detail
+		}
+		if len(resp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return result, nil
@@ -528,61 +540,70 @@ func (l *listenerExporter) getLbs(kt *kit.Kit) (map[string]corelb.BaseLoadBalanc
 func (l *listenerExporter) getTgLblRelClassifyProtocol(kt *kit.Kit) ([]corelb.BaseTargetListenerRuleRel,
 	[]corelb.BaseTargetListenerRuleRel, error) {
 
+	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
+	// lblIDs 的数量不受限制，需按分页大小分批查询，因此拆分为负载均衡维度、监听器维度两组条件分别查询
+	rules := make([]*filter.AtomRule, 0)
+	if len(lbIDs) != 0 {
+		rules = append(rules, tools.RuleIn("lb_id", lbIDs))
+	}
+	for _, batch := range slice.Split(lblIDs, int(core.DefaultMaxPageLimit)) {
+		rules = append(rules, tools.RuleIn("lbl_id", batch))
+	}
+
 	layer4TgLblRel := make([]corelb.BaseTargetListenerRuleRel, 0)
 	layer7TgLblRel := make([]corelb.BaseTargetListenerRuleRel, 0)
-
-	relReq := core.ListReq{
-		Filter: &filter.Expression{
-			Op:    filter.And,
-			Rules: l.getTgLblRelRule(),
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	for {
-		relResp, err := l.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, &relReq)
+	existRelIDs := make(map[string]struct{})
+	for _, rule := range rules {
+		rels, err := l.listTgLblRel(kt, rule)
 		if err != nil {
-			logs.Errorf("get target group listener rel failed, err: %v, req: %+v, rid: %s", err, relReq, kt.Rid)
 			return nil, nil, err
 		}
-		for _, detail := range relResp.Details {
-			switch detail.ListenerRuleType {
+
+		for _, rel := range rels {
+			// 同一条关联关系可能同时命中负载均衡维度与监听器维度，需去重，避免导出的RS重复
+			if _, ok := existRelIDs[rel.ID]; ok {
+				continue
+			}
+			existRelIDs[rel.ID] = struct{}{}
+
+			switch rel.ListenerRuleType {
 			case enumor.Layer4RuleType:
-				layer4TgLblRel = append(layer4TgLblRel, detail)
+				layer4TgLblRel = append(layer4TgLblRel, rel)
 			case enumor.Layer7RuleType:
-				layer7TgLblRel = append(layer7TgLblRel, detail)
+				layer7TgLblRel = append(layer7TgLblRel, rel)
 			default:
-				return nil, nil, fmt.Errorf("invalid listener rule type: %s", detail.ListenerRuleType)
+				return nil, nil, fmt.Errorf("invalid listener rule type: %s", rel.ListenerRuleType)
 			}
 		}
-		if len(relResp.Details) < int(core.DefaultMaxPageLimit) {
-			break
-		}
-		relReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return layer4TgLblRel, layer7TgLblRel, nil
 }
 
-func (l *listenerExporter) getTgLblRelRule() []filter.RuleFactory {
-	lbIDs, lblIDs := l.params.GetPartLbAndLblIDs()
-	rules := make([]filter.RuleFactory, 0)
-	rules = append(rules, tools.RuleEqual("binding_status", enumor.SuccessBindingStatus))
+// listTgLblRel 按给定条件分页查询绑定成功的目标组与监听器的关联关系
+func (l *listenerExporter) listTgLblRel(kt *kit.Kit, rule *filter.AtomRule) ([]corelb.BaseTargetListenerRuleRel,
+	error) {
 
-	if len(lbIDs) != 0 && len(lblIDs) != 0 {
-		rules = append(rules, tools.ExpressionOr(tools.RuleIn("lb_id", lbIDs), tools.RuleIn("lbl_id", lblIDs)))
-		return rules
+	req := core.ListReq{
+		Filter: tools.ExpressionAnd(rule, tools.RuleEqual("binding_status", enumor.SuccessBindingStatus)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	rels := make([]corelb.BaseTargetListenerRuleRel, 0)
+	for {
+		resp, err := l.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, &req)
+		if err != nil {
+			logs.Errorf("get target group listener rel failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, err
+		}
+
+		rels = append(rels, resp.Details...)
+		if len(resp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	if len(lbIDs) != 0 {
-		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs)))
-		return rules
-	}
-
-	if len(lblIDs) != 0 {
-		rules = append(rules, tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs)))
-		return rules
-	}
-	return rules
+	return rels, nil
 }
 
 func (l *listenerExporter) getRsClassifyProtocol(kt *kit.Kit, layer4TgLblRel,
@@ -671,63 +692,52 @@ func (l *listenerExporter) getTCloudRulesByRuleType(kt *kit.Kit, lbIDs []string,
 	ruleType enumor.RuleType) (map[string]corelb.TCloudLbUrlRule, error) {
 
 	result := make(map[string]corelb.TCloudLbUrlRule)
+	// lblIDs 的数量不受限制，需按分页大小分批查询，避免单个 in 条件的元素数量超过 data-service 的上限
 	if len(lbIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lb_id", lbIDs), tools.RuleEqual("rule_type", ruleType)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		for {
-			resp := &cloud.TCloudURLRuleListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-				if err != nil {
-					logs.Errorf("get rule by lb id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req,
-						kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("not support vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
+		if err := l.listTCloudRules(kt, tools.RuleIn("lb_id", lbIDs), ruleType, result); err != nil {
+			return nil, err
 		}
 	}
 
-	if len(lblIDs) != 0 {
-		req := core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("lbl_id", lblIDs), tools.RuleEqual("rule_type", ruleType)),
-			Page:   core.NewDefaultBasePage(),
-		}
-		for {
-			resp := &cloud.TCloudURLRuleListResult{}
-			var err error
-			switch l.vendor {
-			case enumor.TCloud:
-				resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
-				if err != nil {
-					logs.Errorf("get rule by listener id failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor,
-						req, kt.Rid)
-					return nil, err
-				}
-			default:
-				return nil, fmt.Errorf("not support vendor: %s", l.vendor)
-			}
-			for _, detail := range resp.Details {
-				result[detail.ID] = detail
-			}
-			if len(resp.Details) < int(core.DefaultMaxPageLimit) {
-				break
-			}
-			req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	for _, batch := range slice.Split(lblIDs, int(core.DefaultMaxPageLimit)) {
+		if err := l.listTCloudRules(kt, tools.RuleIn("lbl_id", batch), ruleType, result); err != nil {
+			return nil, err
 		}
 	}
 
 	return result, nil
+}
+
+// listTCloudRules 按给定条件分页查询url规则，并以规则id为键合并到 result 中
+func (l *listenerExporter) listTCloudRules(kt *kit.Kit, rule *filter.AtomRule, ruleType enumor.RuleType,
+	result map[string]corelb.TCloudLbUrlRule) error {
+
+	req := core.ListReq{
+		Filter: tools.ExpressionAnd(rule, tools.RuleEqual("rule_type", ruleType)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		var resp *cloud.TCloudURLRuleListResult
+		var err error
+		switch l.vendor {
+		case enumor.TCloud:
+			resp, err = l.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, &req)
+		default:
+			return fmt.Errorf("not support vendor: %s", l.vendor)
+		}
+		if err != nil {
+			logs.Errorf("list url rule failed, err: %v, vendor: %s, req: %+v, rid: %s", err, l.vendor, req, kt.Rid)
+			return err
+		}
+
+		for _, detail := range resp.Details {
+			result[detail.ID] = detail
+		}
+		if len(resp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return nil
 }

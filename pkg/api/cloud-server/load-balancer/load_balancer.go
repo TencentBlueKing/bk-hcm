@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	"hcm/pkg/adaptor/types/load-balancer"
+	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
@@ -894,6 +894,18 @@ func (r *ExportListenerReq) Validate() error {
 	if len(r.Listeners) == 0 {
 		return errors.New("listeners required")
 	}
+
+	for _, l := range r.Listeners {
+		if err := l.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// 勾选的负载均衡数量不超过阈值时，属于精确导出场景，不做数量限制
+	if r.SkipCountLimit() {
+		return nil
+	}
+
 	if len(r.Listeners) > constant.ExportListenerParamLimit {
 		return fmt.Errorf("listeners count should <= %d", constant.ExportListenerParamLimit)
 	}
@@ -910,6 +922,12 @@ func (r *ExportListenerReq) Validate() error {
 	}
 
 	return nil
+}
+
+// SkipCountLimit 判断本次导出是否跳过数量限制，勾选的负载均衡数量不超过
+// constant.ExportSkipLimitLbCount 时跳过，参数层与业务预检层共用该判定。
+func (r *ExportListenerReq) SkipCountLimit() bool {
+	return len(r.GetAllLbIDs()) <= constant.ExportSkipLimitLbCount
 }
 
 // GetAllLbIDs 获取所有负载均衡id
@@ -947,10 +965,6 @@ type ExportListener struct {
 func (r *ExportListener) Validate() error {
 	if len(r.LbID) == 0 {
 		return errors.New("lb_id required")
-	}
-
-	if len(r.LblIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("lbl_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil

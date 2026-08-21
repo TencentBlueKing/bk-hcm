@@ -58,6 +58,9 @@ const (
 	ExportClbOneFileRowLimit = 5000
 	// ExportListenerParamLimit 导出监听器参数限制
 	ExportListenerParamLimit = 5000
+	// ExportSkipLimitLbCount 勾选负载均衡数量不超过该值时，导出不做数量限制。
+	// 参数层与业务预检层共用该阈值，两者口径必须一致；置为 0 可关闭该特性，恢复全量限制。
+	ExportSkipLimitLbCount = 5
 )
 
 const (
