@@ -163,7 +163,6 @@ AWS 每个账号可以独立禁用region，因此获取AWS的region信息需要�
         "region_name": "ap-south-1",
         "status": "opt-in-not-required",
         "endpoint": "ec2.ap-south-1.amazonaws.com",
-        "sync_enable": true,
         "creator": "hcm-backend-sync",
         "reviser": "hcm-backend-sync",
         "created_at": "2023-08-03T13:43:41Z",
@@ -189,7 +188,6 @@ AWS 每个账号可以独立禁用region，因此获取AWS的region信息需要�
 | region_name | string | 地域名称                                          |
 | status      | string | 状态（opt-in-not-required,opted-in,not-opted-in） |
 | endpoint    | string | 服务端点                                          |
-| sync_enable | bool   | 是否启用同步（true: 启用，false: 禁用），默认为 true          |
 | creator     | string | 创建者                                           |
 | reviser     | string | 更新者                                           |
 | created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z                |

@@ -43,7 +43,7 @@ func (req *RegionListReq) Validate() error {
 // RegionBatchUpdateSyncEnableReq define region batch update sync_enable request.
 type RegionBatchUpdateSyncEnableReq struct {
 	IDs        []string `json:"ids" validate:"required,min=1"`
-	SyncEnable bool     `json:"sync_enable"`
+	SyncEnable *bool    `json:"sync_enable" validate:"required"`
 }
 
 // Validate validate RegionBatchUpdateSyncEnableReq.

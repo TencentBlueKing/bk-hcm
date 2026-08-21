@@ -25,10 +25,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func boolPtr(v bool) *bool {
+	return &v
+}
+
 func TestRegionBatchUpdateSyncEnableReq_Validate_EmptyIDs(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{},
-		SyncEnable: false,
+		SyncEnable: boolPtr(false),
 	}
 
 	err := req.Validate()
@@ -39,7 +43,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_EmptyIDs(t *testing.T) {
 func TestRegionBatchUpdateSyncEnableReq_Validate_NilIDs(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        nil,
-		SyncEnable: true,
+		SyncEnable: boolPtr(true),
 	}
 
 	err := req.Validate()
@@ -55,7 +59,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_TooManyIDs(t *testing.T) {
 
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        ids,
-		SyncEnable: false,
+		SyncEnable: boolPtr(false),
 	}
 
 	err := req.Validate()
@@ -63,10 +67,21 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_TooManyIDs(t *testing.T) {
 	require.Contains(t, err.Error(), "ids count should <= 100")
 }
 
+func TestRegionBatchUpdateSyncEnableReq_Validate_NilSyncEnable(t *testing.T) {
+	req := &RegionBatchUpdateSyncEnableReq{
+		IDs:        []string{"id-1"},
+		SyncEnable: nil,
+	}
+
+	err := req.Validate()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "SyncEnable")
+}
+
 func TestRegionBatchUpdateSyncEnableReq_Validate_ValidRequest(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{"id-1", "id-2"},
-		SyncEnable: true,
+		SyncEnable: boolPtr(true),
 	}
 
 	err := req.Validate()
@@ -81,7 +96,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_MaxIDs(t *testing.T) {
 
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        ids,
-		SyncEnable: false,
+		SyncEnable: boolPtr(false),
 	}
 
 	err := req.Validate()
@@ -91,7 +106,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_MaxIDs(t *testing.T) {
 func TestRegionBatchUpdateSyncEnableReq_Validate_SingleID(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{"region-id-1"},
-		SyncEnable: false,
+		SyncEnable: boolPtr(false),
 	}
 
 	err := req.Validate()

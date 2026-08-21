@@ -114,7 +114,7 @@ func (v *awsRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model 
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo", "sync_enable").
+	opts := utils.NewFieldOptions().AddBlankedFields("name", "memo").
 		AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {

@@ -32,10 +32,12 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/kit"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitRegionService initialize the region service.
@@ -104,8 +106,8 @@ func (svc *RegionSvc) ListRegion(cts *rest.Contexts) (interface{}, error) {
 // BatchUpdateRegionSyncEnable batch update region sync_enable.
 func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
-	if len(vendor) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	req := new(protoregion.RegionBatchUpdateSyncEnableReq)
@@ -119,38 +121,59 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 
 	switch vendor {
 	case enumor.Aws:
-		return svc.batchUpdateAwsRegionSyncEnable(cts.Kit, req)
+		return svc.batchUpdateAwsRegionSyncEnable(cts, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 }
 
 // batchUpdateAwsRegionSyncEnable batch update aws region sync_enable field.
-func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(kt *kit.Kit,
+func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	req *protoregion.RegionBatchUpdateSyncEnableReq) (interface{}, error) {
 
+	kt := cts.Kit
+
 	// 检查所有 region 是否存在
-	checkReq := &core.ListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", req.IDs),
-		Page:   &core.BasePage{Count: true},
+		Page:   core.NewDefaultBasePage(),
 	}
-	checkResp, err := svc.client.DataService().Aws.Region.ListRegion(kt.Ctx, kt.Header(), checkReq)
+	listResp, err := svc.client.DataService().Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
 		logs.Errorf("list aws region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list aws region failed, err: %v", err)
 	}
 
-	if checkResp.Count != uint64(len(req.IDs)) {
-		return nil, errf.Newf(errf.InvalidParameter, "some region(ids=%+v) doesn't exist", req.IDs)
+	if len(listResp.Details) != len(req.IDs) {
+		return nil, errf.Newf(errf.InvalidParameter,
+			"some regions don't exist, expected: %d, found: %d", len(req.IDs), len(listResp.Details))
+	}
+
+	basicInfoMap := make(map[string]types.CloudResourceBasicInfo, len(listResp.Details))
+	for _, region := range listResp.Details {
+		basicInfoMap[region.ID] = types.CloudResourceBasicInfo{
+			ResType:   enumor.RegionCloudResType,
+			ID:        region.ID,
+			Vendor:    region.Vendor,
+			AccountID: region.AccountID,
+		}
+	}
+
+	if err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Vpc,
+		Action:     meta.Update,
+		BasicInfos: basicInfoMap,
+	}); err != nil {
+		return nil, err
 	}
 
 	// 构建批量更新请求
 	regions := make([]dataprotoregion.AwsRegionBatchUpdate, 0, len(req.IDs))
-	syncEnable := req.SyncEnable
+	syncEnable := *req.SyncEnable
 	for _, id := range req.IDs {
 		regions = append(regions, dataprotoregion.AwsRegionBatchUpdate{
 			ID:         id,
-			Vendor:     enumor.Aws,
 			SyncEnable: &syncEnable,
 		})
 	}

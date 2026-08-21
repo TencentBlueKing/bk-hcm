@@ -30,10 +30,6 @@ START TRANSACTION;
 ALTER TABLE `aws_region`
     ADD COLUMN `sync_enable` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用同步(0:禁用 1:启用)' AFTER `endpoint`;
 
--- 添加索引，便于查询启用/禁用的地域
-ALTER TABLE `aws_region`
-    ADD INDEX `idx_sync_enable` (`sync_enable`);
-
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 

@@ -73,7 +73,6 @@ type AwsRegionBatchUpdateReq struct {
 // AwsRegionBatchUpdate aws region batch update option.
 type AwsRegionBatchUpdate struct {
 	ID         string        `json:"id" validate:"required"`
-	Vendor     enumor.Vendor `json:"vendor" validate:"required"`
 	AccountID  string        `json:"account_id"`
 	RegionID   string        `json:"region_id"`
 	RegionName string        `json:"region_name"`
