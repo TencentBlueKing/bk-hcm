@@ -41,6 +41,13 @@ func InitSecurityGroupService(c *capability.Capability) {
 		cmdbClient: c.CmdbCli,
 	}
 	h := rest.NewHandler()
+	resService(h, svc)
+	bizService(h, svc)
+	initSecurityGroupServiceHooks(svc, h)
+	h.Load(c.WebService)
+}
+
+func resService(h *rest.Handler, svc *securityGroupSvc) {
 	// 资源下安全组相关接口
 	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
@@ -112,9 +119,6 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSGRelLB", http.MethodPost,
 		"/security_groups/{sg_id}/related_resources/load_balancers/list",
 		svc.ListSGRelLB)
-	bizService(h, svc)
-	initSecurityGroupServiceHooks(svc, h)
-	h.Load(c.WebService)
 }
 
 func bizService(h *rest.Handler, svc *securityGroupSvc) {
