@@ -57,6 +57,10 @@ func InitService(c *capability.Capability) {
 		"/vendors/aws/assume_role/sagemaker/training_jobs/list", svc.ListTrainingJobsInRes)
 	h.Add("GetTrainingJobInRes", http.MethodPost,
 		"/vendors/aws/assume_role/sagemaker/training_jobs/get", svc.GetTrainingJobInRes)
+	h.Add("ListHyperParameterTuningJobsInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/list", svc.ListHyperParameterTuningJobsInRes)
+	h.Add("GetHyperParameterTuningJobInRes", http.MethodPost,
+		"/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/get", svc.GetHyperParameterTuningJobInRes)
 	h.Add("ListProcessingJobsInRes", http.MethodPost,
 		"/vendors/aws/assume_role/sagemaker/processing_jobs/list", svc.ListProcessingJobsInRes)
 	h.Add("GetProcessingJobInRes", http.MethodPost,
