@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -57,7 +58,7 @@ func (svc *securityGroupSvc) overwriteSGRule(cts *rest.Contexts, validHandler ha
 	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group basic info failed, err: %s, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -65,7 +66,7 @@ func (svc *securityGroupSvc) overwriteSGRule(cts *rest.Contexts, validHandler ha
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
 		Action: meta.Update, BasicInfo: sgBaseInfo})
 	if err != nil {
-		logs.Errorf("validate biz and authorize failed, err: %s, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("validate biz and authorize failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -96,6 +97,18 @@ func (svc *securityGroupSvc) overwriteTCloudSGRule(cts *rest.Contexts, sgBaseInf
 	if err := req.Validate(); err != nil {
 		logs.Errorf("validate overwrite tcloud security group rule request failed, err: %s, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// create update audit.
+	updateFields, err := converter.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert request to map failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = svc.audit.ResUpdateAudit(cts.Kit, enumor.SecurityGroupAuditResType, sgBaseInfo.ID, updateFields)
+	if err != nil {
+		logs.Errorf("create update audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	overwriteReq := &hcproto.TCloudSGRuleOverwriteReq{

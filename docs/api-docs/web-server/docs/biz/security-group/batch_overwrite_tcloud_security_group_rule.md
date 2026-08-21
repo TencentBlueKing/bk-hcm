@@ -15,12 +15,6 @@ PUT /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_gr
 | bk_biz_id         | int64  | 是  | 业务ID                    |
 | vendor            | string | 是  | 云厂商，当前仅支持 tcloud        |
 | security_group_id | string | 是  | 安全组规则所属安全组ID            |
-| request body      | object | 是  | 请求体                     |
-
-#### 请求体参数说明
-
-| 参数名称             | 参数类型  | 必选 | 描述                             |
-|------------------|-------|----|--------------------------------|
 | egress_rule_set  | object array | 是  | 出方向规则列表，至少1条，最多100条           |
 | ingress_rule_set | object array | 是  | 入方向规则列表，至少1条，最多100条           |
 
@@ -88,3 +82,4 @@ PUT /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_gr
 |---------|--------|------|
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
+

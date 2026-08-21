@@ -217,6 +217,8 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
+		logs.Errorf("sync tcloud security group rule failed, err: %v, syncParam: %+v, rid: %s",
+			syncErr, syncParam, cts.Kit.Rid)
 		return nil, syncErr
 	}
 	return nil, nil
@@ -276,12 +278,16 @@ func (g *securityGroup) BatchUpdateTCloudSGRule(cts *rest.Contexts) (interface{}
 		return nil, err
 	}
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
+		logs.Errorf("sync tcloud security group rule failed, err: %v, syncParam: %+v, rid: %s",
+			syncErr, syncParam, cts.Kit.Rid)
 		return nil, syncErr
 	}
 	return nil, nil
 }
 
-func convertTCloudUpdateSpec(items []hcservice.TCloudSGRuleUpdateReqWithPolicyIndex) []securitygrouprule.TCloudUpdateSpec {
+func convertTCloudUpdateSpec(items []hcservice.TCloudSGRuleUpdateReqWithPolicyIndex,
+) []securitygrouprule.TCloudUpdateSpec {
+
 	result := make([]securitygrouprule.TCloudUpdateSpec, 0, len(items))
 	for _, item := range items {
 		result = append(result, securitygrouprule.TCloudUpdateSpec{
@@ -302,7 +308,8 @@ func convertTCloudUpdateSpec(items []hcservice.TCloudSGRuleUpdateReqWithPolicyIn
 	return result
 }
 
-func (g *securityGroup) getTCloudSGRulesVersion(kt *kit.Kit, client tcloud.TCloud, region, sgCloudID string) (string, error) {
+func (g *securityGroup) getTCloudSGRulesVersion(kt *kit.Kit, client tcloud.TCloud, region, sgCloudID string) (
+	string, error) {
 
 	listOpt := &securitygrouprule.TCloudListOption{
 		Region:               region,
@@ -318,7 +325,7 @@ func (g *securityGroup) getTCloudSGRulesVersion(kt *kit.Kit, client tcloud.TClou
 }
 
 func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
-TCloudSecurityGroupRule, error) {
+	TCloudSecurityGroupRule, error) {
 
 	listReq := &protocloud.TCloudSGRuleListReq{
 		Filter: tools.EqualExpression("id", id),
@@ -385,6 +392,8 @@ func (g *securityGroup) OverwriteTCloudSGRule(cts *rest.Contexts) (interface{}, 
 	}
 
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
+		logs.Errorf("sync tcloud security group rule failed, err: %v, syncParam: %+v, rid: %s",
+			syncErr, syncParam, cts.Kit.Rid)
 		return nil, syncErr
 	}
 
@@ -462,6 +471,8 @@ func (g *securityGroup) DeleteTCloudSGRule(cts *rest.Contexts) (interface{}, err
 	}
 
 	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
+		logs.Errorf("sync tcloud security group rule failed, err: %v, syncParam: %+v, rid: %s",
+			syncErr, syncParam, cts.Kit.Rid)
 		return nil, syncErr
 	}
 
