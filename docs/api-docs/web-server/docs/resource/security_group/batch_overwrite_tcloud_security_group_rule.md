@@ -14,12 +14,6 @@ PUT /api/v1/cloud/vendors/{vendor}/security_groups/{security_group_id}/rules/bat
 |-------------------|--------|----|-------------------------|
 | vendor            | string | 是  | 云厂商，当前仅支持 tcloud        |
 | security_group_id | string | 是  | 安全组规则所属安全组ID            |
-| request body      | object | 是  | 请求体                     |
-
-#### 请求体参数说明
-
-| 参数名称             | 参数类型  | 必选 | 描述                             |
-|------------------|-------|----|--------------------------------|
 | egress_rule_set  | array | 是  | 出方向规则列表，至少1条，最多100条           |
 | ingress_rule_set | array | 是  | 入方向规则列表，至少1条，最多100条           |
 
