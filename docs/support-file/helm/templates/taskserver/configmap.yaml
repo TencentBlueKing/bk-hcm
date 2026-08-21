@@ -23,6 +23,8 @@ data:
       {{- toYaml .Values.taskserver.log | nindent 6 }}
     async:
       {{- toYaml .Values.taskserver.async | nindent 6 }}
+    asyncFlowAndTaskCleanup:
+      {{- toYaml .Values.taskserver.asyncFlowAndTaskCleanup | nindent 6 }}
     useLabel:
       {{- toYaml .Values.taskserver.useLabel | nindent 6 }}
     tenant:
