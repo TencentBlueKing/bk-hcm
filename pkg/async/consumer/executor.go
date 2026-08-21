@@ -212,6 +212,10 @@ func (exec *executor) watchInitQueue() {
 			exec.initWg.Done()
 			return
 		}
+		// 记录 initQueue 的排队时长，用于观测任务从入队到开始预处理的等待
+		logs.Infof("task pop from init queue, taskID: %s, flowID: %s, action: %s, initQueueWaitSec: %.3f, rid: %s",
+			payload.task.ID, payload.task.FlowID, payload.task.ActionName,
+			time.Since(payload.entryTime).Seconds(), taskRid(payload.task))
 		exec.initWorkerTask(payload.flow, payload.task)
 	}
 }
@@ -241,10 +245,16 @@ func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 	exec.cancelMap.Store(task.ID, cancel)
 
 	// 根据task所属tasktype平均执行时间将任务推送到对应的队列，第一次执行的tasktype先放慢任务队列
+	// 入队日志与 workerDo 的 start execute task 日志的时间戳差即为该队列内的排队时长
 	if task.ExecTime >= exec.fastTaskThresholdSec {
+		logs.Infof("task push to slow task queue, taskID: %s, flowID: %s, action: %s, execTime: %.3f, rid: %s",
+			task.ID, task.FlowID, task.ActionName, task.ExecTime, taskRid(task))
 		exec.slowTaskQueue <- task
 		return
 	}
+
+	logs.Infof("task push to fast task queue, taskID: %s, flowID: %s, action: %s, execTime: %.3f, rid: %s",
+		task.ID, task.FlowID, task.ActionName, task.ExecTime, taskRid(task))
 	exec.fastTaskQueue <- task
 }
 
@@ -252,8 +262,7 @@ func (exec *executor) initWorkerTask(flow *Flow, task *Task) {
 func (exec *executor) workerDo(task *Task) (err error) {
 	// cancelMap清理执行成功/失败的任务
 	defer exec.cancelMap.Delete(task.ID)
-	// 无论任务成功还是失败，都需要交给scheduler分析任务流的状态
-	// 执行完的任务回写到scheduler用于获取待执行的任务
+	// 无论任务成功还是失败，都需要交给scheduler分析任务流的状态,执行完的任务回写到scheduler用于获取待执行的任务
 	defer exec.GetSchedulerFunc().EntryTask(task)
 	var runErr error
 	var failedRet any
@@ -271,8 +280,9 @@ func (exec *executor) workerDo(task *Task) (err error) {
 		task.ID, task.ActionID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
 		if fatalErr := recover(); fatalErr != nil {
-			logs.Errorf("[hcm server panic], taskID: %s, flowID: %s, err: %v, rid: %s, debug strace: %s",
-				task.ID, task.Flow.ID, err, task.Kit.Rid, debug.Stack())
+			logs.Errorf("[hcm server panic], err: %v, taskID: %s, flowID: %s, action: %s, debug strace: %s, "+
+				"exeRid: %s, rid: %s", err, task.ID, task.FlowID, task.ActionName, debug.Stack(),
+				exec.kt.Rid, taskRid(task))
 			if fErr, ok := fatalErr.(error); ok {
 				runErr = fErr
 			} else {
@@ -283,16 +293,18 @@ func (exec *executor) workerDo(task *Task) (err error) {
 			return
 		}
 		err = runErr
-		logs.Errorf("task %s run failed, err: %v, task: %+v, result: %+v, rid: %s",
-			task.ID, runErr, task, failedRet, exec.kt.Rid)
+		logs.Errorf("task run failed, err: %v, taskID: %s, flowID: %s, action: %s, task: %+v, result: %+v, "+
+			"exeRid: %s, rid: %s", runErr, task.ID, task.FlowID, task.ActionName, task, failedRet, exec.kt.Rid,
+			taskRid(task))
 		if errf.IsContextCanceled(runErr) {
 			task.State = enumor.TaskCancel
 			return
 		}
 		nextState := enumor.TaskFailed
 		if patchErr := exec.UpdateTask(task, nextState, runErr.Error(), failedRet); patchErr != nil {
-			logs.Errorf("task %s set %s state failed after run failed, err: %v, patchErr: %v, exeRid: %s, taskRid: %s",
-				task.ID, nextState, runErr, patchErr, exec.kt.Rid, task.Kit.Rid)
+			logs.Errorf("task set state failed after run failed, err: %v, patchErr: %v, taskID: %s, flowID: %s, "+
+				"state: %s, exeRid: %s, rid: %s", runErr, patchErr, task.ID, task.FlowID, nextState,
+				exec.kt.Rid, taskRid(task))
 			err = fmt.Errorf("task %s set %s state failed, after run failed, err: %v, patchErr: %v",
 				task.ID, nextState, runErr, patchErr)
 			return
@@ -316,7 +328,6 @@ func (exec *executor) workerDo(task *Task) (err error) {
 		if err == nil {
 			return false, nil, nil
 		}
-
 		if !needRetry {
 			return true, failRet, err
 		}
@@ -375,6 +386,9 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 				string(task.Flow.Name), string(task.ActionName), string(state)).Observe(cost.Seconds())
 			exec.mc.taskFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
 				string(task.Flow.Name), string(task.ActionName), string(state), errType.String()).Inc()
+			logs.Errorf("task action run failed, err: %v, taskID: %s, flowID: %s, action: %s, state: %s, "+
+				"costSec: %.3f, exeRid: %s, rid: %s", err, task.ID, task.FlowID, task.ActionName, state,
+				cost.Seconds(), exec.kt.Rid, taskRid(task))
 			if errf.IsContextCanceled(err) {
 				// 被取消不需要重试
 				return false, result, err
@@ -387,6 +401,9 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 			string(task.Flow.Name), string(task.ActionName), string(enumor.TaskSuccess)).Observe(cost.Seconds())
 		// 只记录task执行成功的执行时间
 		exec.getTimeWindow(task.ActionName).Push(cost.Seconds())
+
+		logs.Infof("task action run success, taskID: %s, flowID: %s, action: %s, costSec: %.3f, exeRid: %s, rid: %s",
+			task.ID, task.FlowID, task.ActionName, cost.Seconds(), exec.kt.Rid, taskRid(task))
 
 		// 如果执行成功，返回 result 属于成功结果，设置成功状态时，同时设置成功结果。如果执行失败，
 		// 结果属于失败结果，交与上层更新失败或回滚等操作，更新失败结果。
@@ -480,8 +497,10 @@ func (exec *executor) CancelFlow(kt *kit.Kit, flowId string) error {
 
 		case enumor.TaskPending, enumor.TaskInit, enumor.TaskRollback, enumor.TaskFailed, enumor.TaskRunning:
 			// 	更新数据库状态
-			err := exec.UpdateTask(&Task{Task: task}, enumor.TaskCancel, string(task.State), nil)
-			logs.Errorf("fail to update task(%s) state for cancel, err: %v, rid: %s", task.ID, err, kt.Rid)
+			if err := exec.UpdateTask(&Task{Task: task}, enumor.TaskCancel, string(task.State), nil); err != nil {
+				logs.Errorf("fail to update task state for cancel, err: %v, taskID: %s, flowID: %s, rid: %s",
+					err, task.ID, flowId, kt.Rid)
+			}
 			cancelIDs = append(cancelIDs, task.ID)
 		case enumor.TaskSuccess, enumor.TaskCancel:
 			// 	跳过
@@ -535,19 +554,33 @@ func (exec *executor) UpdateTask(task *Task, state enumor.TaskState, reason stri
 		return err
 	}
 
+	srcState := task.State
 	rty := retry.NewRetryPolicy(DefRetryCount, DefRetryRangeMS)
 	err = rty.BaseExec(exec.kt, func() error {
 		return exec.backend.UpdateTask(exec.kt, md)
 	})
 	if err != nil {
-		logs.Errorf("task update state failed, err: %v, retryCount: %d, id: %s, state: %s, reason: %s, rid: %s",
-			err, DefRetryCount, task.ID, state, reason, exec.kt.Rid)
+		logs.Errorf("task update state failed, err: %v, retryCount: %d, taskID: %s, flowID: %s, action: %s, "+
+			"state: %s -> %s, reason: %s, exeRid: %s, rid: %s", err, DefRetryCount, task.ID, task.FlowID,
+			task.ActionName, srcState, state, reason, exec.kt.Rid, taskRid(task))
 		return err
 	}
 
 	task.State = state
 
+	logs.Infof("task update state success, taskID: %s, flowID: %s, action: %s, state: %s -> %s, exeRid: %s, rid: %s",
+		task.ID, task.FlowID, task.ActionName, srcState, state, exec.kt.Rid, taskRid(task))
+
 	return nil
+}
+
+// taskRid 返回 task 自身的 rid。取消流程中会构造不带 Kit 的临时 Task，因此需要判空。
+func taskRid(task *Task) string {
+	if task == nil || task.Kit == nil {
+		return ""
+	}
+
+	return task.Kit.Rid
 }
 
 // GetTaskTypeAvgExecTime get task type avg exec time by corresponding timewindow

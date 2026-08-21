@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
@@ -521,8 +522,19 @@ func updateFlowStateAndReason(kt *kit.Kit, bd backend.Backend, flowID string, so
 		return bd.BatchUpdateFlowStateByCAS(kt, []backend.UpdateFlowInfo{info})
 	})
 	if err != nil {
+		// CAS影响行数为0，说明源状态已被其他执行路径抢先改写，是重要的竞争线索，与通用错误区分开
+		if ef := errf.Error(err); ef != nil && ef.Code == errf.RecordNotUpdate {
+			logs.Warnf("update flow state by cas not updated, err: %v, flowID: %s, state: %s -> %s, rid: %s",
+				err, flowID, source, dest, kt.Rid)
+			return err
+		}
+
+		logs.Errorf("update flow state failed, err: %v, flowID: %s, state: %s -> %s, rid: %s",
+			err, flowID, source, dest, kt.Rid)
 		return err
 	}
+
+	logs.Infof("update flow state success, flowID: %s, state: %s -> %s, rid: %s", flowID, source, dest, kt.Rid)
 
 	return nil
 }
@@ -585,10 +597,20 @@ func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
 
 	allTasks := make([]*Task, 0)
 	for _, flow := range flows {
+		// UpdatedAt是flow变成scheduled态那一刻，scheduledWaitSec即该flow在Scheduled队列中的等待时长
+		scheduledWaitSec := -1.0
+		if updatedTime, parseErr := time.Parse(time.RFC3339, flow.UpdatedAt); parseErr == nil {
+			scheduledWaitSec = time.Since(updatedTime).Seconds()
+		}
+
 		if err = updateFlowState(flow.Kit, sch.backend, flow.ID, enumor.FlowScheduled, enumor.FlowRunning); err != nil {
-			logs.Errorf("update flow state failed, err: %v, rid: %s", err, flow.Kit.Rid)
+			logs.Errorf("update flow state failed, err: %v, flowID: %s, rid: %s", err, flow.ID, flow.Kit.Rid)
 			return false, err
 		}
+
+		logs.Infof("flow selected to run, flowID: %s, flowName: %s, scheduledWaitSec: %.3f, candidateNum: %d, "+
+			"selectedNum: %d, rid: %s", flow.ID, flow.Name, scheduledWaitSec, len(allFlows), len(flows),
+			flow.Kit.Rid)
 
 		tasks, err := sch.parseFlow(flow.Kit, flow)
 		if err != nil {
