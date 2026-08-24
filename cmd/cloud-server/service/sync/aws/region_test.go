@@ -22,128 +22,59 @@ package aws
 import (
 	"testing"
 
-	"hcm/pkg/dal/dao/tools"
+	protocore "hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/runtime/filter"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// TestListRegion_FilterConditionValidation 验证过滤条件包含 account_id 和 sync_enable 字段
-func TestListRegion_FilterConditionValidation(t *testing.T) {
+func TestBuildAccountRegionListFilter(t *testing.T) {
 	accountID := "test-account-123"
+	filterExpr := buildAccountRegionListFilter(accountID)
 
-	// 构建与 ListRegion 中相同的过滤条件
-	filterExpr := tools.ExpressionAnd(
-		tools.RuleEqual("account_id", accountID),
-		tools.RuleEqual("sync_enable", true),
-	)
+	require.NotNil(t, filterExpr)
+	require.Len(t, filterExpr.Rules, 1)
 
-	// 验证过滤表达式不为空
-	assert.NotNil(t, filterExpr)
-
-	// 验证操作符为 And
-	assert.Equal(t, filter.And, filterExpr.Op)
-
-	// 验证规则数量为 2
-	assert.Len(t, filterExpr.Rules, 2)
-
-	// 验证第一个规则是 account_id
-	rule1, ok := filterExpr.Rules[0].(*filter.AtomRule)
-	assert.True(t, ok)
-	assert.Equal(t, "account_id", rule1.Field)
-	assert.Equal(t, accountID, rule1.Value)
-
-	// 验证第二个规则是 sync_enable
-	rule2, ok := filterExpr.Rules[1].(*filter.AtomRule)
-	assert.True(t, ok)
-	assert.Equal(t, "sync_enable", rule2.Field)
-	assert.Equal(t, true, rule2.Value)
+	rule, ok := filterExpr.Rules[0].(filter.AtomRule)
+	require.True(t, ok)
+	assert.Equal(t, "account_id", rule.Field)
+	assert.Equal(t, accountID, rule.Value)
 }
 
-// TestListRegion_FilterWithDifferentAccountIDs 验证不同 account_id 生成不同的过滤条件
-func TestListRegion_FilterWithDifferentAccountIDs(t *testing.T) {
-	testCases := []struct {
-		name      string
-		accountID string
-	}{
-		{"empty account id", ""},
-		{"normal account id", "account-001"},
-		{"uuid format", "550e8400-e29b-41d4-a716-446655440000"},
-		{"special chars", "account_with-special.chars"},
+func TestListRegion_OnlyEnabledRegions(t *testing.T) {
+	details := []protocore.AwsRegion{
+		{RegionID: "us-east-1", SyncEnable: true},
+		{RegionID: "me-south-1", SyncEnable: false},
+		{RegionID: "us-west-2", SyncEnable: true},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			filterExpr := tools.ExpressionAnd(
-				tools.RuleEqual("account_id", tc.accountID),
-				tools.RuleEqual("sync_enable", true),
-			)
-
-			assert.NotNil(t, filterExpr)
-			assert.Len(t, filterExpr.Rules, 2)
-
-			rule1, ok := filterExpr.Rules[0].(*filter.AtomRule)
-			assert.True(t, ok)
-			assert.Equal(t, tc.accountID, rule1.Value)
-		})
-	}
+	regions, disabledRegions, err := parseSyncEnabledRegions(details)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"us-east-1", "us-west-2"}, regions)
+	assert.Equal(t, []string{"me-south-1"}, disabledRegions)
 }
 
-// TestListRegion_SyncEnableFilterValue 验证 sync_enable 过滤值为 true
-func TestListRegion_SyncEnableFilterValue(t *testing.T) {
-	accountID := "test-account"
-
-	filterExpr := tools.ExpressionAnd(
-		tools.RuleEqual("account_id", accountID),
-		tools.RuleEqual("sync_enable", true),
-	)
-
-	// 找到 sync_enable 规则
-	var syncEnableRule *filter.AtomRule
-	for _, rule := range filterExpr.Rules {
-		atomRule, ok := rule.(*filter.AtomRule)
-		if ok && atomRule.Field == "sync_enable" {
-			syncEnableRule = atomRule
-			break
-		}
+func TestListRegion_AllDisabled_ReturnsError(t *testing.T) {
+	details := []protocore.AwsRegion{
+		{RegionID: "me-south-1", SyncEnable: false},
 	}
 
-	assert.NotNil(t, syncEnableRule)
-	assert.Equal(t, true, syncEnableRule.Value)
-	// 确保不是 false
-	assert.NotEqual(t, false, syncEnableRule.Value)
+	regions, disabledRegions, err := parseSyncEnabledRegions(details)
+	require.Error(t, err)
+	assert.Equal(t, "aws region is empty", err.Error())
+	assert.Nil(t, regions)
+	assert.Equal(t, []string{"me-south-1"}, disabledRegions)
 }
 
-// TestListRegion_FilterExpressionType 验证过滤表达式类型
-func TestListRegion_FilterExpressionType(t *testing.T) {
-	filterExpr := tools.ExpressionAnd(
-		tools.RuleEqual("account_id", "test"),
-		tools.RuleEqual("sync_enable", true),
-	)
-
-	// 验证是 Expression 类型
-	assert.Equal(t, filter.ExpressionType, filterExpr.WithType())
-
-	// 验证每个规则是 AtomRule 类型
-	for _, rule := range filterExpr.Rules {
-		assert.Equal(t, filter.AtomType, rule.WithType())
+func TestListRegion_AllEnabled(t *testing.T) {
+	details := []protocore.AwsRegion{
+		{RegionID: "us-east-1", SyncEnable: true},
+		{RegionID: "us-west-2", SyncEnable: true},
 	}
-}
 
-// TestListRegion_FilterOperator 验证过滤条件的操作符
-func TestListRegion_FilterOperator(t *testing.T) {
-	filterExpr := tools.ExpressionAnd(
-		tools.RuleEqual("account_id", "test"),
-		tools.RuleEqual("sync_enable", true),
-	)
-
-	// 验证顶层操作符是 And
-	assert.Equal(t, filter.And, filterExpr.Op)
-
-	// 验证每个 AtomRule 的操作符是 Equal
-	for _, rule := range filterExpr.Rules {
-		atomRule, ok := rule.(*filter.AtomRule)
-		assert.True(t, ok)
-		assert.Equal(t, filter.Equal.Factory(), atomRule.Op)
-	}
+	regions, disabledRegions, err := parseSyncEnabledRegions(details)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"us-east-1", "us-west-2"}, regions)
+	assert.Empty(t, disabledRegions)
 }

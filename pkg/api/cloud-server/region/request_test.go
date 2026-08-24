@@ -20,7 +20,10 @@
 package region
 
 import (
+	"fmt"
 	"testing"
+
+	"hcm/pkg/criteria/constant"
 
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +40,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_EmptyIDs(t *testing.T) {
 
 	err := req.Validate()
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "ids is required")
+	require.Contains(t, err.Error(), "ids")
 }
 
 func TestRegionBatchUpdateSyncEnableReq_Validate_NilIDs(t *testing.T) {
@@ -48,12 +51,12 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_NilIDs(t *testing.T) {
 
 	err := req.Validate()
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "ids is required")
+	require.Contains(t, err.Error(), "ids")
 }
 
 func TestRegionBatchUpdateSyncEnableReq_Validate_TooManyIDs(t *testing.T) {
-	ids := make([]string, 101)
-	for i := 0; i < 101; i++ {
+	ids := make([]string, constant.BatchOperationMaxLimit+1)
+	for i := 0; i < constant.BatchOperationMaxLimit+1; i++ {
 		ids[i] = "id-" + string(rune(i))
 	}
 
@@ -64,7 +67,8 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_TooManyIDs(t *testing.T) {
 
 	err := req.Validate()
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "ids count should <= 100")
+	require.Contains(t, err.Error(), "ids count should <=")
+	require.Contains(t, err.Error(), fmt.Sprintf("%d", constant.BatchOperationMaxLimit))
 }
 
 func TestRegionBatchUpdateSyncEnableReq_Validate_NilSyncEnable(t *testing.T) {
@@ -89,8 +93,8 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_ValidRequest(t *testing.T) {
 }
 
 func TestRegionBatchUpdateSyncEnableReq_Validate_MaxIDs(t *testing.T) {
-	ids := make([]string, 100)
-	for i := 0; i < 100; i++ {
+	ids := make([]string, constant.BatchOperationMaxLimit)
+	for i := 0; i < constant.BatchOperationMaxLimit; i++ {
 		ids[i] = "id-" + string(rune(i))
 	}
 

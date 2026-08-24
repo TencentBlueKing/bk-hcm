@@ -21,7 +21,6 @@
 package region
 
 import (
-	"fmt"
 	"net/http"
 
 	"hcm/cmd/cloud-server/service/capability"
@@ -37,7 +36,9 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // InitRegionService initialize the region service.
@@ -132,21 +133,22 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	req *protoregion.RegionBatchUpdateSyncEnableReq) (interface{}, error) {
 
 	kt := cts.Kit
+	ids := slice.Unique(req.IDs)
 
 	// 检查所有 region 是否存在
 	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", req.IDs),
+		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.client.DataService().Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
 		logs.Errorf("list aws region failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("list aws region failed, err: %v", err)
+		return nil, err
 	}
 
-	if len(listResp.Details) != len(req.IDs) {
+	if len(listResp.Details) != len(ids) {
 		return nil, errf.Newf(errf.InvalidParameter,
-			"some regions don't exist, expected: %d, found: %d", len(req.IDs), len(listResp.Details))
+			"some regions don't exist, expected: %d, found: %d", len(ids), len(listResp.Details))
 	}
 
 	basicInfoMap := make(map[string]types.CloudResourceBasicInfo, len(listResp.Details))
@@ -169,12 +171,11 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	}
 
 	// 构建批量更新请求
-	regions := make([]dataprotoregion.AwsRegionBatchUpdate, 0, len(req.IDs))
-	syncEnable := *req.SyncEnable
-	for _, id := range req.IDs {
+	regions := make([]dataprotoregion.AwsRegionBatchUpdate, 0, len(ids))
+	for _, id := range ids {
 		regions = append(regions, dataprotoregion.AwsRegionBatchUpdate{
 			ID:         id,
-			SyncEnable: &syncEnable,
+			SyncEnable: converter.ValToPtr(*req.SyncEnable),
 		})
 	}
 
@@ -185,11 +186,11 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	err = svc.client.DataService().Aws.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq)
 	if err != nil {
 		logs.Errorf("batch update aws region sync_enable failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, fmt.Errorf("batch update aws region sync_enable failed, err: %v", err)
+		return nil, err
 	}
 
 	logs.Infof("batch update aws region sync_enable success, ids: %v, sync_enable: %v, rid: %s",
-		req.IDs, req.SyncEnable, kt.Rid)
+		ids, req.SyncEnable, kt.Rid)
 
 	return nil, nil
 }

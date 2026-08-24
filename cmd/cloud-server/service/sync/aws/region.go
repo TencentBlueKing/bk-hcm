@@ -24,12 +24,14 @@ import (
 	"time"
 
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud/region"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
 // SyncRegion sync region
@@ -59,11 +61,8 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 // ListRegion 获取某个账号的region
 func ListRegion(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]string, error) {
 	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("sync_enable", true),
-		),
-		Page: core.NewDefaultBasePage(),
+		Filter: buildAccountRegionListFilter(accountID),
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
@@ -71,16 +70,38 @@ func ListRegion(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]s
 		return nil, err
 	}
 
-	if len(result.Details) == 0 {
-		return nil, errors.New("aws region is empty")
+	regions, disabledRegions, err := parseSyncEnabledRegions(result.Details)
+	if err != nil {
+		return nil, err
 	}
 
-	regions := make([]string, 0, len(result.Details))
-	for _, one := range result.Details {
-		regions = append(regions, one.RegionID)
-	}
-
-	logs.Infof("aws account[%s] sync enabled regions: %v, rid: %s", accountID, regions, kt.Rid)
+	logs.Infof("aws account[%s] sync enabled region count: %d, disabled regions: %v, rid: %s",
+		accountID, len(regions), disabledRegions, kt.Rid)
 
 	return regions, nil
+}
+
+func buildAccountRegionListFilter(accountID string) *filter.Expression {
+	return tools.EqualExpression("account_id", accountID)
+}
+
+func parseSyncEnabledRegions(details []protocore.AwsRegion) (enabled, disabled []string, err error) {
+	enabled, disabled = splitRegionsBySyncEnable(details)
+	if len(enabled) == 0 {
+		return nil, disabled, errors.New("aws region is empty")
+	}
+	return enabled, disabled, nil
+}
+
+func splitRegionsBySyncEnable(details []protocore.AwsRegion) (enabled, disabled []string) {
+	enabled = make([]string, 0, len(details))
+	disabled = make([]string, 0)
+	for _, one := range details {
+		if one.SyncEnable {
+			enabled = append(enabled, one.RegionID)
+		} else {
+			disabled = append(disabled, one.RegionID)
+		}
+	}
+	return enabled, disabled
 }

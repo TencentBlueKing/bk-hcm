@@ -20,7 +20,6 @@
 package region
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -48,12 +47,8 @@ type RegionBatchUpdateSyncEnableReq struct {
 
 // Validate validate RegionBatchUpdateSyncEnableReq.
 func (req *RegionBatchUpdateSyncEnableReq) Validate() error {
-	if len(req.IDs) == 0 {
-		return errors.New("ids is required")
-	}
-
 	if len(req.IDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("ids count should <= 100")
+		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return validator.Validate.Struct(req)

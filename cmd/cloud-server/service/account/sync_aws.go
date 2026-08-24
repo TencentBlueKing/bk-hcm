@@ -117,6 +117,7 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 
 	var rules []*filter.AtomRule
 	rules = append(rules, tools.RuleEqual("account_id", accountID))
+	rules = append(rules, tools.RuleEqual("sync_enable", true))
 	if len(req.Regions) > 0 {
 		rules = append(rules, tools.RuleIn("region_id", req.Regions))
 	}
@@ -140,7 +141,9 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
 	}
 	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
-		return nil, nil, errors.New("request regions mismatch regions on db")
+		return nil, nil, errf.Newf(errf.InvalidParameter,
+			"some request regions don't exist or sync is disabled, expected: %d, found: %d",
+			len(req.Regions), len(regionList))
 	}
 	req.Regions = slice.Unique(req.Regions)
 	return req, syncFunc, nil
