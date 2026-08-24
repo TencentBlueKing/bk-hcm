@@ -139,6 +139,21 @@ type TCloudUpdateSpec struct {
 	Description                *string `json:"memo"`
 }
 
+// -------------------------- Overwrite --------------------------
+
+// TCloudOverwriteOption tcloud security group rule overwrite option.
+type TCloudOverwriteOption struct {
+	Region               string   `json:"region" validate:"required"`
+	CloudSecurityGroupID string   `json:"cloud_security_group_id" validate:"required"`
+	EgressRuleSet        []TCloud `json:"egress_rule_set" validate:"required,min=1,max=100"`
+	IngressRuleSet       []TCloud `json:"ingress_rule_set" validate:"required,min=1,max=100"`
+}
+
+// Validate tcloud security group rule overwrite option.
+func (opt TCloudOverwriteOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
 // -------------------------- List --------------------------
 
 // TCloudListOption define tcloud security group rule list option.

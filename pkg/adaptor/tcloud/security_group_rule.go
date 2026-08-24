@@ -336,6 +336,79 @@ func (t *TCloudImpl) BatchUpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrou
 	return nil
 }
 
+// OverwriteSecurityGroupRule overwrite all tcloud security group rules atomically.
+// reference: https://cloud.tencent.com/document/api/215/15810
+func (t *TCloudImpl) OverwriteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudOverwriteOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "security group rule overwrite option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.VpcClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewModifySecurityGroupPoliciesRequest()
+	req.SecurityGroupId = common.StringPtr(opt.CloudSecurityGroupID)
+	req.SecurityGroupPolicySet = new(vpc.SecurityGroupPolicySet)
+
+	egressPolicies := make([]*vpc.SecurityGroupPolicy, 0, len(opt.EgressRuleSet))
+	for _, rule := range opt.EgressRuleSet {
+		egressPolicies = append(egressPolicies, &vpc.SecurityGroupPolicy{
+			Protocol: rule.Protocol,
+			Port:     rule.Port,
+			ServiceTemplate: &vpc.ServiceTemplateSpecification{
+				ServiceId:      rule.CloudServiceID,
+				ServiceGroupId: rule.CloudServiceGroupID,
+			},
+			CidrBlock:     rule.IPv4Cidr,
+			Ipv6CidrBlock: rule.IPv6Cidr,
+			AddressTemplate: &vpc.AddressTemplateSpecification{
+				AddressId:      rule.CloudAddressID,
+				AddressGroupId: rule.CloudAddressGroupID,
+			},
+			SecurityGroupId:   rule.CloudTargetSecurityGroupID,
+			Action:            common.StringPtr(rule.Action),
+			PolicyDescription: rule.Description,
+		})
+	}
+	req.SecurityGroupPolicySet.Egress = egressPolicies
+
+	ingressPolicies := make([]*vpc.SecurityGroupPolicy, 0, len(opt.IngressRuleSet))
+	for _, rule := range opt.IngressRuleSet {
+		ingressPolicies = append(ingressPolicies, &vpc.SecurityGroupPolicy{
+			Protocol: rule.Protocol,
+			Port:     rule.Port,
+			ServiceTemplate: &vpc.ServiceTemplateSpecification{
+				ServiceId:      rule.CloudServiceID,
+				ServiceGroupId: rule.CloudServiceGroupID,
+			},
+			CidrBlock:     rule.IPv4Cidr,
+			Ipv6CidrBlock: rule.IPv6Cidr,
+			AddressTemplate: &vpc.AddressTemplateSpecification{
+				AddressId:      rule.CloudAddressID,
+				AddressGroupId: rule.CloudAddressGroupID,
+			},
+			SecurityGroupId:   rule.CloudTargetSecurityGroupID,
+			Action:            common.StringPtr(rule.Action),
+			PolicyDescription: rule.Description,
+		})
+	}
+	req.SecurityGroupPolicySet.Ingress = ingressPolicies
+
+	_, err = client.ModifySecurityGroupPoliciesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("overwrite tcloud security group rules failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
 // ListSecurityGroupRule list tcloud security group rule.
 // reference: https://cloud.tencent.com/document/api/215/15804
 func (t *TCloudImpl) ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
