@@ -20,13 +20,11 @@
 package cvm
 
 import (
-	"fmt"
 	"strings"
 
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
@@ -40,6 +38,10 @@ func (svc *cvmSvc) buildGPUMachineTypes(kt *kit.Kit, vendor enumor.Vendor) (map[
 	if err != nil {
 		logs.Errorf("get gpu machine key failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 		return nil, err
+	}
+	if key == "" {
+		logs.Warnf("gpu machine key is empty, vendor: %s, rid: %s", vendor, kt.Rid)
+		return make(map[string]struct{}), nil
 	}
 
 	opt := &types.ListOption{
@@ -140,7 +142,7 @@ func getGPUMachineKey(vendor enumor.Vendor) (enumor.GlobalConfigKeyGPUMachineTyp
 	case enumor.Azure:
 		return enumor.GlobalConfigKeyAzureGPUPrefix, nil
 	default:
-		return "", errf.New(errf.InvalidParameter, fmt.Sprintf("unsupported vendor: %s", vendor))
+		return "", nil
 	}
 }
 
