@@ -27,7 +27,7 @@ const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOp
 
 const { pagination, getPageParams } = usePage();
 
-let allList: IRsItem[] = [];
+const allList = ref<IRsItem[]>([]);
 const rsList = ref<IRsItem[]>([]);
 const rsCurrentPageList = ref<IRsItem[]>([]);
 const rsIpGroupRef = ref(null);
@@ -108,7 +108,7 @@ const getList = async (condition: ILoadBalanceDeviceCondition) => {
     pagination.count = count;
     rsList.value = newList;
     rsCurrentPageList.value = localPaginate(newList, getPageParams(pagination));
-    allList = [...newList];
+    allList.value = [...newList];
   } catch (error) {
     console.error(error);
     rsList.value = [];

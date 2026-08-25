@@ -119,12 +119,16 @@ watch(
       if (!value.length) {
         continue;
       }
+      // 先累计选中RS数量，不依赖 allList 命中，避免 allList 找不到对应IP时抛错导致计数卡住
+      count += value.length;
       const item = props.allList.find((item) => item.rowKey === key);
+      if (!item) {
+        continue;
+      }
       result.push({
         ...item,
         targets: item.targets.filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
       });
-      count += value.length;
     }
     selections.value = result;
     selectedCount.value = count;
