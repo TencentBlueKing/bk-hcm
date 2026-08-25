@@ -63,11 +63,11 @@ export class DisplayFieldListener {
   @Column('enum', { name: '认证方式', index: 0, option: SSL_MODE_NAME, width: 120 })
   'certificate.ssl_mode': string;
 
-  @Column('string', { name: '服务器证书', index: 0, width: 120 })
-  'certificate.ca_cloud_id': string;
-
-  @Column('array', { name: 'CA证书', index: 0, width: 120 })
+  @Column('array', { name: '服务器证书', index: 0, width: 120 })
   'certificate.cert_cloud_ids': string[];
+
+  @Column('string', { name: 'CA证书', index: 0, width: 120 })
+  'certificate.ca_cloud_id': string;
 
   // 组合字段
   @Column('json', { name: 'RS权重不为0数 / RS总数', width: 120 })
