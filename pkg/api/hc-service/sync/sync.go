@@ -39,7 +39,7 @@ func (req *TCloudGlobalSyncReq) Validate() error {
 type TCloudSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持load_balancer security_group
+	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持 load_balancer security_group subnet
 	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 	// 指定同步并发，仅特定资源支持
 	Concurrent uint `json:"concurrent,omitempty"`
@@ -66,7 +66,7 @@ func (req *AwsGlobalSyncReq) Validate() error {
 type AwsSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持security_group
+	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持 security_group subnet
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
 }
 
