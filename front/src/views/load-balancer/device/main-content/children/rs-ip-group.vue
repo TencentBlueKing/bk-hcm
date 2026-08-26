@@ -119,16 +119,16 @@ watch(
       if (!value.length) {
         continue;
       }
-      // 先累计选中RS数量，不依赖 allList 命中，避免 allList 找不到对应IP时抛错导致计数卡住
-      count += value.length;
       const item = props.allList.find((item) => item.rowKey === key);
+      // allList 更新后（如清空重搜）可能不再包含旧的 key，此时跳过，避免访问 undefined.targets 报错
       if (!item) {
         continue;
       }
       result.push({
         ...item,
-        targets: item.targets.filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
+        targets: (item.targets || []).filter((rs: any) => value.includes(rs[RS_ROW_KEY])),
       });
+      count += value.length;
     }
     selections.value = result;
     selectedCount.value = count;
@@ -151,10 +151,15 @@ watch(
 watch(
   () => props.allList,
   (list) => {
+    // 清空重搜后 allList 变化，重置选中状态，仅保留当前列表存在的 key，避免残留旧 key 引发访问 undefined
+    const newSelectedRsMap = new Map<string, string[]>();
+    const newIPCheckStatus: { [key: string]: boolean } = {};
     list.forEach((item) => {
-      selectedRsMap.value.set(item.rowKey, []);
-      IPCheckStatus.value[item.rowKey] = false;
+      newSelectedRsMap.set(item.rowKey, []);
+      newIPCheckStatus[item.rowKey] = false;
     });
+    selectedRsMap.value = newSelectedRsMap;
+    IPCheckStatus.value = newIPCheckStatus;
   },
 );
 
