@@ -195,6 +195,14 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupRule(kt *kit.Kit, sgID s
 		"/security_groups/%s/rules/batch/update", sgID)
 }
 
+// OverwriteSecurityGroupRule overwrites all tcloud security group rules atomically.
+func (cli *SecurityGroupClient) OverwriteSecurityGroupRule(kt *kit.Kit, sgID string,
+	request *proto.TCloudSGRuleOverwriteReq) error {
+
+	return common.RequestNoResp[proto.TCloudSGRuleOverwriteReq](cli.client, rest.PUT, kt, request,
+		"/security_groups/%s/rules/batch/overwrite", sgID)
+}
+
 // DeleteSecurityGroupRule delete security group rule.
 func (cli *SecurityGroupClient) DeleteSecurityGroupRule(ctx context.Context, h http.Header, sgID, id string) error {
 

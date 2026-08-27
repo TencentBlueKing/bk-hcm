@@ -511,7 +511,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createFlowTask(kt *kit.Kit, lbID s
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowTargetGroupModifyWeight,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, OperationType(c.operationType), map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,

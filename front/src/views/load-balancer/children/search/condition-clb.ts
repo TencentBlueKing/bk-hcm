@@ -26,7 +26,7 @@ export class SearchConditionClb {
     meta: {
       search: {
         filterRules(value) {
-          return buildFilterRulesWithSearchSelect(value, 'domain', QueryRuleOPEnum.JSON_CONTAINS);
+          return buildFilterRulesWithSearchSelect(value, 'domain', QueryRuleOPEnum.CS);
         },
       },
     },

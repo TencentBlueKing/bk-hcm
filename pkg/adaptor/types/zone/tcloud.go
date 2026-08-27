@@ -32,7 +32,7 @@ type TCloudZoneListOption struct {
 func (opt TCloudZoneListOption) Validate() error {
 
 	if err := validator.Validate.Struct(opt); err != nil {
-		return nil
+		return err
 	}
 
 	return nil

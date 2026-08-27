@@ -393,8 +393,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -405,7 +405,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker notebook instances via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/notebook_instances/get:
@@ -419,8 +419,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -431,7 +431,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker notebook instance via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/list:
@@ -445,8 +445,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -457,7 +457,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker endpoints via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoints/get:
@@ -471,8 +471,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -483,7 +483,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker endpoint via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/list:
@@ -497,8 +497,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -509,7 +509,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker endpoint configs via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/endpoint_configs/get:
@@ -523,8 +523,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -535,7 +535,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker endpoint config via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/list:
@@ -549,8 +549,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -561,7 +561,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker training jobs via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_jobs/get:
@@ -575,8 +575,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -587,9 +587,61 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker training job via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/list:
+    post:
+      operationId: list_aws_assume_role_sagemaker_hyper_parameter_tuning_jobs
+      description: 查询 AWS 成员账号 SageMaker HyperParameterTuningJob 列表（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/list
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: List AWS member account SageMaker hyperparameter tuning jobs via AssumeRole
+  /api/v1/cloud/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/get:
+    post:
+      operationId: get_aws_assume_role_sagemaker_hyper_parameter_tuning_job
+      description: 查询 AWS 成员账号 SageMaker HyperParameterTuningJob 详情（通过 AssumeRole 跨账号访问）
+      tags:
+        - SageMaker
+        - Aws
+      responses:
+        default:
+          description: ''
+      x-bk-apigateway-resource:
+        isPublic: false
+        allowApplyPermission: false
+        matchSubpath: false
+        backend:
+          type: HTTP
+          method: post
+          path: /api/v1/cloud/vendors/aws/assume_role/sagemaker/hyper_parameter_tuning_jobs/get
+          matchSubpath: false
+          timeout: 60
+          upstreams: {}
+          transformHeaders: {}
+        authConfig:
+          userVerifiedRequired: false
+        disabledStages: []
+        descriptionEn: Get AWS member account SageMaker hyperparameter tuning job via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/list:
     post:
       operationId: list_aws_assume_role_sagemaker_processing_jobs
@@ -601,8 +653,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -613,7 +665,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker processing jobs via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/processing_jobs/get:
@@ -627,8 +679,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -639,7 +691,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker processing job via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/list:
@@ -653,8 +705,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -665,7 +717,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker transform jobs via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/transform_jobs/get:
@@ -679,8 +731,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -691,7 +743,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker transform job via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/list:
@@ -705,8 +757,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -717,7 +769,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker Studio apps via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/apps/get:
@@ -731,8 +783,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -743,7 +795,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker Studio app via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/list:
@@ -757,8 +809,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -769,7 +821,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker HyperPod clusters via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/clusters/get:
@@ -783,8 +835,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -795,7 +847,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker HyperPod cluster via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/list:
@@ -809,8 +861,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -821,7 +873,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker HyperPod cluster nodes via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/cluster_nodes/get:
@@ -835,8 +887,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -847,7 +899,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker HyperPod cluster node via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/list:
@@ -861,8 +913,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -873,7 +925,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker training plans via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plans/get:
@@ -887,8 +939,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -899,7 +951,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker training plan via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/training_plan_offerings/search:
@@ -913,8 +965,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -925,7 +977,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Search AWS member account SageMaker training plan offerings via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/list:
@@ -939,8 +991,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -951,7 +1003,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker inference components via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/inference_components/get:
@@ -965,8 +1017,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -977,7 +1029,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker inference component via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/list:
@@ -991,8 +1043,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1003,7 +1055,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker optimization jobs via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/optimization_jobs/get:
@@ -1017,8 +1069,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1029,7 +1081,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker optimization job via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/list:
@@ -1043,8 +1095,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1055,7 +1107,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker compute quotas via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/compute_quotas/get:
@@ -1069,8 +1121,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1081,7 +1133,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker compute quota via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacities/get:
@@ -1095,8 +1147,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1107,7 +1159,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: Get AWS member account SageMaker reserved capacity via AssumeRole
   /api/v1/cloud/vendors/aws/assume_role/sagemaker/reserved_capacity_ultra_servers/list:
@@ -1121,8 +1173,8 @@ paths:
         default:
           description: ''
       x-bk-apigateway-resource:
-        isPublic: true
-        allowApplyPermission: true
+        isPublic: false
+        allowApplyPermission: false
         matchSubpath: false
         backend:
           type: HTTP
@@ -1133,7 +1185,7 @@ paths:
           upstreams: {}
           transformHeaders: {}
         authConfig:
-          userVerifiedRequired: true
+          userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List AWS member account SageMaker reserved capacity UltraServers via AssumeRole
   /api/v1/account/main_accounts/list:
@@ -1161,4 +1213,3 @@ paths:
           userVerifiedRequired: false
         disabledStages: []
         descriptionEn: List main accounts
-

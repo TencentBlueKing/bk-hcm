@@ -131,6 +131,17 @@ async:
     # workerNumber 负责处理异常任务的协程数量
     workerNumber: 1
 
+# asyncFlowAndTaskCleanup 异步任务历史数据定时清理配置
+asyncFlowAndTaskCleanup:
+  # enabled 是否开启清理，缺省为 true
+  enabled: true
+  # intervalMin 清理任务执行周期，单位分钟，必须大于 0，缺省为 60
+  intervalMin: 60
+  # retentionDays 保留天数，updated_at 早于「当前时间 - retentionDays」的记录被清理，必须大于 0，缺省为 180
+  retentionDays: 180
+  # batchIntervalMs 相邻两批之间的间隔，单位毫秒，必须为正整数，缺省为 100
+  batchIntervalMs: 100
+
 # defines log's related configuration
 log:
   # log storage directory.

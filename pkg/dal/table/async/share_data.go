@@ -31,6 +31,13 @@ import (
 	"hcm/pkg/tools/maps"
 )
 
+// Common ShareData keys used to pass business context between async flow producers and consumers.
+const (
+	ShareDataKeyBkBizID       = "bk_biz_id"
+	ShareDataKeyVendor        = "vendor"
+	ShareDataKeyOperationType = "operation_type"
+)
+
 // NewShareData new share data.
 func NewShareData(initData map[string]string) *ShareData {
 	if initData == nil {

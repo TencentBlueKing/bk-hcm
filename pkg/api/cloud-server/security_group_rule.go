@@ -116,6 +116,27 @@ func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudSGRuleOverwriteReq define tcloud security group rule overwrite req.
+type TCloudSGRuleOverwriteReq struct {
+	EgressRuleSet  []TCloudSecurityGroupRule `json:"egress_rule_set" validate:"required,min=1,max=100"`
+	IngressRuleSet []TCloudSecurityGroupRule `json:"ingress_rule_set" validate:"required,min=1,max=100"`
+}
+
+// Validate tcloud security group rule overwrite request.
+func (req *TCloudSGRuleOverwriteReq) Validate() error {
+	for _, item := range req.EgressRuleSet {
+		if err := item.ValidateSGRule(); err != nil {
+			return err
+		}
+	}
+	for _, item := range req.IngressRuleSet {
+		if err := item.ValidateSGRule(); err != nil {
+			return err
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
 // AwsSGRuleUpdateReq define aws security group rule update req.
 type AwsSGRuleUpdateReq struct {
 	IPv4Cidr                   *string `json:"ipv4_cidr"`

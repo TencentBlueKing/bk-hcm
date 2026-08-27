@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"hcm/cmd/task-server/logics/asyncflowcleanup"
 	"hcm/cmd/task-server/service/capability"
 	"hcm/pkg/api/core"
 	gccore "hcm/pkg/api/core/global-config"
@@ -33,6 +34,7 @@ import (
 	"hcm/pkg/async/producer"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/auth"
@@ -46,10 +48,11 @@ import (
 // Init initial the async service
 func Init(cap *capability.Capability) {
 	svc := &service{
-		pro:        cap.Async.GetProducer(),
-		csm:        cap.Async.GetConsumer(),
-		cs:         cap.ApiClient,
-		authorizer: cap.Authorizer,
+		pro:           cap.Async.GetProducer(),
+		csm:           cap.Async.GetConsumer(),
+		cs:            cap.ApiClient,
+		authorizer:    cap.Authorizer,
+		cleanupLogics: cap.CleanupLogics,
 	}
 
 	h := rest.NewHandler()
@@ -64,14 +67,19 @@ func Init(cap *capability.Capability) {
 	h.Add("ResetFlowTypePriority", http.MethodPost,
 		"/flows/flow_type/priority/reset", svc.ResetFlowTypePriority)
 
+	// 异步任务历史数据清理
+	h.Add("CleanupAsyncFlowAndTask", http.MethodPost,
+		cap.Tasks[enumor.CronTaskAsyncFlowAndTaskCleanup].GetURL(), svc.CleanupAsyncFlowAndTask)
+
 	h.Load(cap.WebService)
 }
 
 type service struct {
-	pro        producer.Producer
-	csm        consumer.Consumer
-	cs         *client.ClientSet
-	authorizer auth.Authorizer
+	pro           producer.Producer
+	csm           consumer.Consumer
+	cs            *client.ClientSet
+	authorizer    auth.Authorizer
+	cleanupLogics *asyncflowcleanup.Logics
 }
 
 // UpdateCustomFlowState update custom flow state
@@ -232,4 +240,20 @@ func (p service) ResetFlowTypePriority(cts *rest.Contexts) (interface{}, error) 
 		},
 	}
 	return nil, p.cs.DataService().Global.GlobalConfig.BatchDelete(cts.Kit, deleteReq)
+}
+
+// CleanupAsyncFlowAndTask clean up async flow and task
+func (p service) CleanupAsyncFlowAndTask(cts *rest.Contexts) (any, error) {
+	result, err := p.cleanupLogics.Cleanup(cts.Kit)
+	if err != nil {
+		if asyncflowcleanup.IsSkipped(err) {
+			logs.Infof("cleanup async flow and task skipped, reason: %s, rid: %s", err.Error(), cts.Kit.Rid)
+			return nil, err
+		}
+
+		logs.Errorf("cleanup async flow and task failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
 }
