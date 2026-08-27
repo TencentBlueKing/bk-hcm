@@ -27,7 +27,7 @@ const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOp
 
 const { pagination, getPageParams } = usePage();
 
-let allList: IRsItem[] = [];
+const allList = ref<IRsItem[]>([]);
 const rsList = ref<IRsItem[]>([]);
 const rsCurrentPageList = ref<IRsItem[]>([]);
 const rsIpGroupRef = ref(null);
@@ -93,10 +93,15 @@ const actionList = computed<ActionItemType[]>(() => {
   }, []);
 });
 
+let requestId = 0;
 const getList = async (condition: ILoadBalanceDeviceCondition) => {
   if (!condition.account_id) return;
+  requestId += 1;
+  const currentRequestId = requestId;
   try {
     const { list, count, rsCount } = await loadBalancerRsStore.getRsList(condition, currentGlobalBusinessId.value);
+    // 忽略已过期（被后续搜索覆盖）的请求，避免重复渲染导致组件状态错乱
+    if (currentRequestId !== requestId) return;
 
     // 生成 rowKey
     const newList = list.map((item, index) => ({
@@ -108,18 +113,21 @@ const getList = async (condition: ILoadBalanceDeviceCondition) => {
     pagination.count = count;
     rsList.value = newList;
     rsCurrentPageList.value = localPaginate(newList, getPageParams(pagination));
-    allList = [...newList];
+    allList.value = [...newList];
   } catch (error) {
+    if (currentRequestId !== requestId) return;
     console.error(error);
     rsList.value = [];
     pagination.count = 0;
   } finally {
-    emit('list-data-loaded', DeviceTabEnum.RS, {
-      type: 'rsCount',
-      data: {
-        count: nowRsCount,
-      },
-    });
+    if (currentRequestId === requestId) {
+      emit('list-data-loaded', DeviceTabEnum.RS, {
+        type: 'rsCount',
+        data: {
+          count: nowRsCount,
+        },
+      });
+    }
   }
 };
 const handlePageChange = (page: number) => {
