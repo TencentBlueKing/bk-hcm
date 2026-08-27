@@ -58,6 +58,9 @@ const (
 	ExportClbOneFileRowLimit = 5000
 	// ExportListenerParamLimit 导出监听器参数限制
 	ExportListenerParamLimit = 5000
+	// ExportSkipLimitLbCount 勾选负载均衡数量不超过该值时，导出不做数量限制。
+	// 参数层与业务预检层共用该阈值，两者口径必须一致；置为 0 可关闭该特性，恢复全量限制。
+	ExportSkipLimitLbCount = 5
 )
 
 const (
@@ -101,7 +104,7 @@ const (
 	// BatchOperateModifyTargetWeightLimit 批量修改目标权重限制
 	BatchOperateModifyTargetWeightLimit = 5000
 	// BatchOperateDeleteListenerLimit 批量删除监听器数量限制
-	BatchOperateDeleteListenerLimit = 1000
+	BatchOperateDeleteListenerLimit = 5000
 	// BatchOperateRemoveTargetLimit 批量移除RS数量限制
 	BatchOperateRemoveTargetLimit = 5000
 )

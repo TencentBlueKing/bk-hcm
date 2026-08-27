@@ -129,6 +129,7 @@ type TCloud interface {
 	DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error
 	UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error
 	BatchUpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error
+	OverwriteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudOverwriteOption) error
 	ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
 		*v20170312.SecurityGroupPolicySet, error)
 

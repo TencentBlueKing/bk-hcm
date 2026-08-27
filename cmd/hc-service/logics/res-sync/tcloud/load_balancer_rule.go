@@ -196,6 +196,34 @@ func (cli *client) listL7RuleFromDB(kt *kit.Kit, listenerID string) ([]corelb.TC
 	return ruleResp.Details, nil
 }
 
+// listL7RuleFromDBByLbID lists all layer-7 rules of the given load balancer from db.
+// The orphan-rule cleanup needs a load-balancer-wide view of layer-7 rules, unlike listL7RuleFromDB
+// which is scoped by a single listener.
+func (cli *client) listL7RuleFromDBByLbID(kt *kit.Kit, lbID string) ([]corelb.TCloudLbUrlRule, error) {
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+
+	rules := make([]corelb.TCloudLbUrlRule, 0)
+	for {
+		ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to list l7 rule of lb(%s) for sync, err: %v, rid: %s", lbID, err, kt.Rid)
+			return nil, err
+		}
+		rules = append(rules, ruleResp.Details...)
+		if uint(len(ruleResp.Details)) < listReq.Page.Limit {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+	return rules, nil
+}
+
 func (cli *client) updateLayer4Rule(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption,
 	updateMap map[string]typeslb.TCloudListener) error {
 
@@ -244,7 +272,53 @@ func (cli *client) deleteLayer7Rule(kt *kit.Kit, region string, cloudIds []strin
 		err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
 		if err != nil {
 			logs.Errorf("fail to delete listeners while sync, err: %v, ids:%v, rid: %s",
-				cloudIdsBatch, err, kt.Rid)
+				err, cloudIdsBatch, kt.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+// deleteLayer4Rule deletes layer-4 rules of the given load balancer by their cloud ids.
+// Only used by the orphan-rule cleanup in listener sync. Layer-4 rules are virtual and their
+// cloud_id equals the listener cloud_id, so they are scoped by lb_id rather than by listener.
+func (cli *client) deleteLayer4Rule(kt *kit.Kit, lbID string, cloudIds []string) error {
+	if len(cloudIds) == 0 {
+		return nil
+	}
+	for _, batch := range slice.Split(cloudIds, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", batch),
+				tools.RuleEqual("lb_id", lbID),
+			),
+		}
+		if err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq); err != nil {
+			logs.Errorf("fail to delete l4 rule while sync, err: %v, lbID: %s, cloud_ids: %v, rid: %s",
+				err, lbID, batch, kt.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+// deleteLayer7RuleByLbIDAndCloudIDs deletes layer-7 rules of the given load balancer by their cloud ids.
+// Used by the orphan-rule cleanup which scopes rules with lb_id, unlike deleteLayer7Rule which is scoped
+// by region.
+func (cli *client) deleteLayer7RuleByLbIDAndCloudIDs(kt *kit.Kit, lbID string, cloudIDs []string) error {
+	if len(cloudIDs) == 0 {
+		return nil
+	}
+	for _, batch := range slice.Split(cloudIDs, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", batch),
+				tools.RuleEqual("lb_id", lbID),
+			),
+		}
+		if err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq); err != nil {
+			logs.Errorf("fail to delete l7 rule while sync, err: %v, lbID: %s, cloud_ids: %v, rid: %s",
+				err, lbID, batch, kt.Rid)
 			return err
 		}
 	}

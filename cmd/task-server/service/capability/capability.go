@@ -21,8 +21,11 @@
 package capability
 
 import (
+	"hcm/cmd/task-server/logics/asyncflowcleanup"
 	"hcm/pkg/async"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	croncore "hcm/pkg/cron/core"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/iam/auth"
 
@@ -31,9 +34,11 @@ import (
 
 // Capability defines the service's capability
 type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Async      async.Async
-	Dao        dao.Set
-	Authorizer auth.Authorizer
+	WebService    *restful.WebService
+	ApiClient     *client.ClientSet
+	Async         async.Async
+	Dao           dao.Set
+	Authorizer    auth.Authorizer
+	Tasks         map[enumor.CronTask]croncore.Task
+	CleanupLogics *asyncflowcleanup.Logics
 }

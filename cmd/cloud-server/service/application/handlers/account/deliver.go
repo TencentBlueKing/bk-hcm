@@ -24,6 +24,7 @@ import (
 
 	"hcm/cmd/cloud-server/logics/account"
 	dataprotocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
@@ -78,7 +79,7 @@ func (a *ApplicationOfAddAccount) Deliver() (enumor.ApplicationStatus, map[strin
 	// TODO: 之后考虑如果添加权限失败，账号回滚
 
 	// 交付成功，记录交付的账号ID
-	return enumor.Completed, map[string]interface{}{"account_id": accountID}, nil
+	return enumor.Completed, map[string]interface{}{constant.ApplicationDeliverAccountIDKey: accountID}, nil
 }
 
 func (a *ApplicationOfAddAccount) createForTCloud() (string, error) {

@@ -13,14 +13,20 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/listeners/export/pre_check
 | 参数名称      | 参数类型   | 必选 | 描述    |
 |-----------|--------|----|-------|
 | bk_biz_id | int64  | 是  | 业务ID  |
-| listeners | object array | 是  | 监听器信息，长度限制100 |
+| listeners | object array | 是  | 监听器信息，长度限制5000 |
 
 #### listeners
 
 | 参数名称 | 参数类型   | 必选 | 描述   |
 |------|--------|----|------|
 | lb_id | string | 是  | 负载均衡id，当只传该参数时，代表负载均衡下的全部监听器 |
-| lbl_ids | string array | 否  | 负载均衡监听器id列表，加上不同listeners该参数的总和，长度限制为100 |
+| lbl_ids | string array | 否  | 负载均衡监听器id列表，单个元素长度限制为100，加上不同listeners该参数的总和，长度限制为5000 |
+
+### 数量限制说明
+
+- 当 listeners 中去重后的 lb_id 数量不超过 5 个时，视为精确导出场景，上述参数长度限制以及监听器、规则、RS 的数量限制均不生效，预检直接通过。
+- 当 listeners 中去重后的 lb_id 数量超过 5 个时，按上述参数长度限制校验，并校验四层监听器、七层监听器、七层规则、四层RS、七层RS 的数量各自不超过 5000。
+- 无论勾选多少负载均衡，都会校验传入的 lbl_ids 是否属于对应的 lb_id。
 
 ### 调用示例
 

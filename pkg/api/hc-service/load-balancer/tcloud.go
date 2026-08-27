@@ -114,7 +114,7 @@ func (req *TCloudLoadBalancerCreateReq) Validate(bizRequired bool) error {
 		return errors.New("bk_biz_id is required")
 	}
 
-	// 校验名称格式：支持中文、英文、数字、连字符(-)，且必须以中文、英文或数字开头和结尾
+	// 校验名称格式：支持中文、英文、数字、连字符(-)、英文点号(.)，且必须以中文、英文或数字开头和结尾
 	if err := validator.ValidateLoadBalancerName(converter.PtrToVal(req.Name)); err != nil {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
