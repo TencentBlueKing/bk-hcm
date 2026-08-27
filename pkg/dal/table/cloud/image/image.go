@@ -36,6 +36,7 @@ var ImageColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "region", NamedC: "region", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "architecture", NamedC: "architecture", Type: enumor.String},
 	{Column: "platform", NamedC: "platform", Type: enumor.String},
@@ -55,6 +56,7 @@ type ImageModel struct {
 	Vendor       string          `db:"vendor" json:"vendor"`
 	CloudID      string          `db:"cloud_id" json:"cloud_id"`
 	Region       string          `db:"region" json:"region"`
+	BkBizID      int64           `db:"bk_biz_id" json:"bk_biz_id"`
 	Name         string          `db:"name" json:"name"`
 	Architecture string          `db:"architecture" json:"architecture"`
 	Platform     string          `db:"platform" json:"platform"`
