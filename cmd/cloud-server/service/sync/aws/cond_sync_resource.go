@@ -43,12 +43,32 @@ var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.RegionCloudResType:        CondSyncRegion,
 	enumor.ZoneCloudResType:          CondSyncZone,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
+	enumor.SubnetCloudResType:        CondSyncSubnet,
 }
 
 // GetCondSyncFunc ...
 func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bool) {
 	syncFunc, ok = condSyncFuncMap[res]
 	return syncFunc, ok
+}
+
+// CondSyncSubnet ...
+func CondSyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.AwsSyncReq{
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().Aws.Subnet.SyncSubnet(kt.Ctx, kt.Header(), &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync subnet failed, err: %v, req: %+v, rid: %s",
+				enumor.Aws, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync subnet end, req: %+v, rid: %s", enumor.Aws, syncReq, kt.Rid)
+	}
+	return nil
 }
 
 // CondSyncSecurityGroup ...

@@ -36,6 +36,9 @@ type ResCondSyncReq struct {
 
 // Validate ...
 func (r *ResCondSyncReq) Validate(needRegion bool) error {
+	if len(r.CloudIDs) > 0 && len(r.TagFilters) > 0 {
+		return fmt.Errorf("cloud_ids and tag_filters cannot be specified at the same time")
+	}
 	if len(r.CloudIDs) > 0 {
 		if len(r.Regions) > 1 {
 			return fmt.Errorf("regions must be one when cloud_ids is specified, got: %v", r.Regions)
