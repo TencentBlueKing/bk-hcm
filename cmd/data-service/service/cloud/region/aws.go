@@ -63,6 +63,9 @@ func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, err
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,
 			}
+			if createReq.SyncEnable != nil {
+				tmpRegion.SyncEnable = createReq.SyncEnable
+			}
 			regions = append(regions, tmpRegion)
 		}
 
@@ -125,12 +128,12 @@ func (svc *regionSvc) BatchUpdateAwsRegion(cts *rest.Contexts) error {
 	}
 
 	for _, updateReq := range req.Regions {
-		tmpRegion.Vendor = updateReq.Vendor
 		tmpRegion.AccountID = updateReq.AccountID
 		tmpRegion.RegionID = updateReq.RegionID
 		tmpRegion.RegionName = updateReq.RegionName
 		tmpRegion.Status = updateReq.Status
 		tmpRegion.Endpoint = updateReq.Endpoint
+		tmpRegion.SyncEnable = updateReq.SyncEnable
 
 		err = svc.dao.AwsRegion().Update(cts.Kit, tools.EqualExpression("id", updateReq.ID), tmpRegion)
 		if err != nil {
@@ -211,6 +214,7 @@ func convertAwsBaseRegion(dbRegion *tableregion.AwsRegionTable) *protocore.AwsRe
 		RegionName: dbRegion.RegionName,
 		Status:     dbRegion.Status,
 		Endpoint:   dbRegion.Endpoint,
+		SyncEnable: *dbRegion.SyncEnable,
 		Creator:    dbRegion.Creator,
 		Reviser:    dbRegion.Reviser,
 		CreatedAt:  dbRegion.CreatedAt.String(),
