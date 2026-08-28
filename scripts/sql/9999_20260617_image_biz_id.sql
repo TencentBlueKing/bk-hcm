@@ -26,9 +26,9 @@
 
 START TRANSACTION;
 
---  增加`bk_biz_id`字段
+--  增加`bk_biz_id`字段，-1 表示未分配
 ALTER TABLE `image`
-    ADD COLUMN `bk_biz_id` bigint NOT NULL DEFAULT 0 COMMENT '业务ID' AFTER `region`,
+    ADD COLUMN `bk_biz_id` bigint NOT NULL DEFAULT -1 COMMENT '业务ID，-1表示未分配，>0表示绑定的业务' AFTER `region`,
     ADD INDEX `idx_bk_biz_id` (`bk_biz_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS

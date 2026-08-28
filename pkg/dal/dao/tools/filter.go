@@ -172,6 +172,11 @@ func RuleJSONContains[T any](fieldName string, values T) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.JSONContains.Factory(), Value: values}
 }
 
+// RuleCis 生成资源字段不区分大小写匹配查询的AtomRule，即LOWER(fieldName) like value
+func RuleCis[T any](fieldName string, value T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.ContainsInsensitive.Factory(), Value: value}
+}
+
 // ExpressionAnd expression with op and
 func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
 	// for type transformation

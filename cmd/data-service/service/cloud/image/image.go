@@ -42,6 +42,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
 	h.Add("BatchUpdateImageExt", http.MethodPatch, "/vendors/{vendor}/images", pSvc.BatchUpdateImageExt)
 	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
+	h.Add("UpdateImageBizTag", http.MethodPut, "/images/{id}/biz_tag", pSvc.UpdateImageBizTag)
 
 	h.Load(cap.WebService)
 }

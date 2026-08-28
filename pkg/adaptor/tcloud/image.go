@@ -33,7 +33,7 @@ import (
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
-// ListImage 查询公共镜像列表
+// ListImage 查询镜像列表（支持公共镜像、私有镜像等类型）
 // reference: https://cloud.tencent.com/document/api/213/15715
 func (t *TCloudImpl) ListImage(kt *kit.Kit,
 	opt *image.TCloudImageListOption) (*image.TCloudImageListResult, error) {
@@ -76,7 +76,7 @@ func (t *TCloudImpl) ListImage(kt *kit.Kit,
 			State:        *pImage.ImageState,
 			Platform:     *pImage.Platform,
 			Architecture: changeArchitecture(pImage.Architecture),
-			Type:         *pImage.ImageType,
+			Type:         enumor.NormalizeImageType(*pImage.ImageType),
 			ImageSize:    *pImage.ImageSize,
 			ImageSource:  *pImage.ImageSource,
 			OsType:       image.GetOsTypeByPlatform(enumor.TCloud, *pImage.Platform),
