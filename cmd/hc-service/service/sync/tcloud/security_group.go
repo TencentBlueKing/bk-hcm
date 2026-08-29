@@ -23,11 +23,14 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/sync/handler"
 	typecore "hcm/pkg/adaptor/types/core"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -104,6 +107,13 @@ func (hd *sgHandler) Sync(kt *kit.Kit, instances []securitygroup.TCloudSG) error
 		return err
 	}
 
+	// 额外从安全组视角拉取并同步关联的 CVM，补齐关联关系
+	if err := hd.syncCvmBySecurityGroups(kt, params.CloudIDs); err != nil {
+		logs.Errorf("sync cvm by security groups failed, err: %v, sgIDs: %v, rid: %s",
+			err, params.CloudIDs, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -133,5 +143,64 @@ func (hd *sgHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[strin
 		return err
 	}
 
+	return nil
+}
+
+// syncCvmBySecurityGroups pulls CVMs associated with the given security groups and syncs their relations.
+func (hd *sgHandler) syncCvmBySecurityGroups(kt *kit.Kit, sgCloudIDs []string) error {
+	if len(sgCloudIDs) == 0 {
+		return nil
+	}
+
+	cvmIDSet := make(map[string]struct{})
+
+	// 按批次拆分 SGIDs，避免请求过大
+	for _, partSGIDs := range slice.Split(sgCloudIDs, constant.BatchOperationMaxLimit) {
+		offset := uint64(0)
+		for {
+			listOpt := &typecvm.ListCvmWithCountOption{
+				Region: hd.request.Region,
+				SGIDs:  partSGIDs,
+				Page: &typecore.TCloudPage{
+					Offset: offset,
+					Limit:  typecore.TCloudQueryLimit,
+				},
+			}
+
+			resp, err := hd.syncCli.CloudCli().ListCvmWithCount(kt, listOpt)
+			if err != nil {
+				return err
+			}
+
+			for _, one := range resp.Cvms {
+				cvmIDSet[converter.PtrToVal(one.InstanceId)] = struct{}{}
+			}
+
+			// 分页终止条件：当前批次少于 Limit 或已达到总数
+			if uint64(len(resp.Cvms)) < typecore.TCloudQueryLimit ||
+				offset+typecore.TCloudQueryLimit >= uint64(resp.TotalCount) {
+				break
+			}
+			offset += typecore.TCloudQueryLimit
+		}
+	}
+
+	if len(cvmIDSet) == 0 {
+		return nil
+	}
+
+	cloudIDs := make([]string, 0, len(cvmIDSet))
+	for id := range cvmIDSet {
+		cloudIDs = append(cloudIDs, id)
+	}
+
+	params := &tcloud.SyncBaseParams{
+		AccountID: hd.request.AccountID,
+		Region:    hd.request.Region,
+		CloudIDs:  cloudIDs,
+	}
+	if _, err := hd.syncCli.CvmWithRelRes(kt, params, new(tcloud.SyncCvmWithRelResOption)); err != nil {
+		return err
+	}
 	return nil
 }

@@ -97,14 +97,17 @@ func (t *TCloudImpl) ListCvmWithCount(kt *kit.Kit, opt *typecvm.ListCvmWithCount
 	}
 
 	req := cvm.NewDescribeInstancesRequest()
-	if len(opt.CloudIDs) != 0 || len(opt.SGIDs) != 0 {
+	// 仅在有 CloudIDs 时设置 InstanceIds，避免传递空数组导致格式错误
+	if len(opt.CloudIDs) != 0 {
 		req.InstanceIds = common.StringPtrs(opt.CloudIDs)
-		if len(opt.SGIDs) != 0 {
-			req.Filters = []*cvm.Filter{{
-				Name:   common.StringPtr("security-group-id"),
-				Values: common.StringPtrs(opt.SGIDs),
-			}}
-		}
+	}
+	if len(opt.SGIDs) != 0 {
+		req.Filters = []*cvm.Filter{{
+			Name:   common.StringPtr("security-group-id"),
+			Values: common.StringPtrs(opt.SGIDs),
+		}}
+	}
+	if len(opt.CloudIDs) != 0 || len(opt.SGIDs) != 0 {
 		req.Limit = common.Int64Ptr(int64(core.TCloudQueryLimit))
 	}
 

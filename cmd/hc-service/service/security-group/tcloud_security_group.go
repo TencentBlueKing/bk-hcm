@@ -310,9 +310,23 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	// 预置所有请求的安全组，避免云端未返回某些 SG 时导致缺失
+	sgIDToResourceCountMap := make(map[string]map[string]int64, len(cloudIDToSgIDMap))
+	for _, sgID := range cloudIDToSgIDMap {
+		sgIDToResourceCountMap[sgID] = map[string]int64{
+			tcloudStatisticResTypeCVM: 0,
+			tcloudStatisticResTypeCDB: 0,
+			tcloudStatisticResTypeENI: 0,
+			tcloudStatisticResTypeSG:  0,
+			tcloudStatisticResTypeCLB: 0,
+		}
+	}
+
 	for _, one := range resp {
 		sgID := cloudIDToSgIDMap[converter.PtrToVal(one.SecurityGroupId)]
+		if sgID == "" {
+			continue
+		}
 		sgIDToResourceCountMap[sgID] = tcloudSGAssociateStatisticToResourceCountMap(one)
 	}
 
