@@ -60,6 +60,12 @@ import AccountSelector from '@/components/account-selector/index-new.vue';
 import ResourceGroupSelector from '@/views/service/service-apply/components/common/resource-group-selector.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 
+interface ISyncResponse {
+  code?: number;
+  message?: string;
+  data?: Record<string, unknown>;
+}
+
 interface IProps {
   title: string;
   desc: string;
@@ -69,7 +75,8 @@ interface IProps {
   multipleRegion?: boolean;
   multipleResourceGroup?: boolean;
   initialModel?: IModel;
-  errorHandler?: (error: any) => void; // 业务报错catch
+  successHandler?: (res: ISyncResponse) => void;
+  errorHandler?: (error: ISyncResponse) => void;
 }
 
 interface IModel {
@@ -83,7 +90,10 @@ interface IModel {
 
 const model = defineModel<boolean>();
 const props = defineProps<IProps>();
-const emit = defineEmits<{ success: []; hidden: [] }>();
+const emit = defineEmits<{
+  (e: 'success', res: ISyncResponse): void;
+  (e: 'hidden'): void;
+}>();
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
@@ -135,6 +145,7 @@ const buildRequestBody = () => {
 
   return { cloud_ids: cloudIds, ...extensionParams };
 };
+
 const handleConfirm = async () => {
   const { resourceName } = props;
   const { account_id: accountId, vendor } = formModel;
@@ -150,11 +161,18 @@ const handleConfirm = async () => {
       return;
     }
 
-    Message({ theme: 'success', message: t('已同步成功') });
+    if (props.successHandler) {
+      props.successHandler(res);
+    } else {
+      Message({ theme: 'success', message: t('已同步成功') });
+    }
     handleClosed();
-    emit('success');
+    emit('success', res);
   } catch (error) {
     console.error(error);
+    if (props.errorHandler) {
+      props.errorHandler(error as ISyncResponse);
+    }
     return Promise.reject();
   } finally {
     loading.value = false;

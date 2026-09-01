@@ -45,6 +45,7 @@ import SingleExportButton from '../children/export/single-button.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import HoverCopy from '@/components/copy-to-clipboard/hover-copy.vue';
+import { useClbSyncFeedback } from '@/views/load-balancer/use-clb-sync-feedback';
 
 defineOptions({ name: 'load-balancer-table' });
 
@@ -57,6 +58,7 @@ const loadBalancerClbStore = useLoadBalancerClbStore();
 
 const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
 const isBusinessPage = computed(() => currentGlobalBusinessId.value);
+const { handleClbSyncSuccess, handleClbSyncError } = useClbSyncFeedback(() => currentGlobalBusinessId.value);
 
 // 操作的基础配置，这里作打平处理，支持直接通过value索引访问
 const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
@@ -464,6 +466,8 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
         :resource-type="ResourceTypeEnum.CLB"
         :business-id="currentGlobalBusinessId"
         resource-name="load_balancer"
+        :success-handler="handleClbSyncSuccess"
+        :error-handler="handleClbSyncError"
         @hidden="syncDialogState.isHidden = true"
       />
     </template>
