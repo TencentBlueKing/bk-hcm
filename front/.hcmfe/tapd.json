@@ -1,0 +1,91 @@
+{
+  "workspaces": {
+    "69995598": {
+      "workspaceId": "69995598",
+      "statusModel": {
+        "story": [
+          {
+            "semantic": "backlog",
+            "key": "status_8",
+            "label": "backlog(新)"
+          },
+          {
+            "semantic": "todo",
+            "key": "status_10",
+            "label": "todo(已规划)"
+          },
+          {
+            "semantic": "doing",
+            "key": "status_11",
+            "label": "doing(开发中)"
+          },
+          {
+            "semantic": "for_test",
+            "key": "status_12",
+            "label": "for test(提测)"
+          },
+          {
+            "semantic": "tested",
+            "key": "status_13",
+            "label": "tested(测试通过)"
+          },
+          {
+            "semantic": "done",
+            "key": "status_14",
+            "label": "done(已上线)"
+          }
+        ]
+      },
+      "statusOptions": {
+        "story": {
+          "status_8": "backlog(新)",
+          "status_9": "挂起",
+          "status_10": "todo(已规划)",
+          "status_11": "doing(开发中)",
+          "status_12": "for test(提测)",
+          "status_13": "tested(测试通过)",
+          "status_14": "done(已上线)",
+          "status_15": "refuse(已拒绝)",
+          "status_16": "testing(测试中)",
+          "status_17": "for approve(echo 审批)",
+          "status_18": "approved",
+          "status_19": "for gray",
+          "status_20": "grayed",
+          "status_21": "accepted",
+          "status_22": "for accept",
+          "status_23": "designing",
+          "status_24": "design approved"
+        }
+      },
+      "statusTransitions": {
+        "story": {
+          "status_9": {
+            "key": "status_9",
+            "label": "挂起",
+            "satisfies": [
+              "backlog"
+            ],
+            "excludedFromRollup": true
+          },
+          "status_15": {
+            "key": "status_15",
+            "label": "refuse(已拒绝)",
+            "satisfies": [
+              "backlog"
+            ],
+            "excludedFromRollup": true
+          },
+          "status_18": {
+            "key": "status_18",
+            "label": "approved",
+            "satisfies": [
+              "backlog"
+            ],
+            "nextSemantic": "todo"
+          }
+        }
+      },
+      "syncedAt": "2026-08-31T08:14:03.500Z"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "feat-clb-sync-task",
+  "title": "CLB任务管理同步进度前端",
+  "currentStage": "coding",
+  "createdAt": "2026-08-31T08:12:39.147Z",
+  "updatedAt": "2026-08-31T12:35:39.621Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-sync-task/coding.md",
+        "kind": "file",
+        "addedAt": "2026-08-31T08:18:22.517Z"
+      }
+    ]
+  },
+  "approvals": {},
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-08-31T08:12:39.147Z",
+      "gitHead": "9fec870b298ca73ae00ee15f23b43d2c761db51d"
+    }
+  ],
+  "branch": "feat-clb-sync-task",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598137677539"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-08-31T08:16:10.613Z",
+      "note": "user chose skip: TAPD story already has clarification in description; reuse existing task-management UI; this iteration is coding-only lite"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/components/sync-account-resource/index.vue",
+        "src/views/load-balancer/use-clb-sync-feedback.ts",
+        "src/views/load-balancer/clb/load-balancer-table.vue",
+        "src/views/load-balancer/listener/listener-table.vue",
+        "src/views/resource/resource-manage/children/manage/load-balancer-manage.vue",
+        "src/views/load-balancer/device/main-content/listener-table.vue",
+        "src/views/load-balancer/clb/children/batch-import/index.vue",
+        "src/views/task/details/children/action-list/fields.ts",
+        "src/views/task/details/clb.vue",
+        "src/model/task/detail.view.ts",
+        "src/views/task/typings.ts",
+        "src/views/task/constants.ts",
+        "src/views/task/details/children/action-list/action-list.vue"
+      ],
+      "contentFingerprint": "e1f230b51f6f05fb6172740ed293fa3bffd44e00",
+      "codeBaseline": "82b7cd57948133cfa03a74f1fc9addf3784486d1",
+      "seatedAt": "2026-08-31T12:35:39.621Z"
+    }
+  }
+}
