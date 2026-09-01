@@ -1031,6 +1031,7 @@ const lang: ILANG = {
   子网名称: ['Subnet name'],
   安全组ID: ['Security group ID'],
   安全组名称: ['Security group name'],
+  '已克隆至 {region}！': ['Cloned to {region}!'],
   本地存储ID: ['Local storage ID'],
   本地存储名称: ['Local storage name'],
   对象存储ID: ['Object Storage ID'],
