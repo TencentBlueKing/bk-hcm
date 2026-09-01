@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { Dialog, Form, Message } from 'bkui-vue';
 import { ref, computed, h, reactive, watch, useTemplateRef } from 'vue';
-import { useResourceStore, useBusinessStore, useRegionStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
+import { useRegionStore } from '@/store/region';
 
 import UsageBizValue from '../../components/security/usage-biz-value.vue';
 import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
@@ -213,12 +214,12 @@ const inColumns: any = computed(() =>
       render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[row.action]
+            ? (HuaweiSecurityRuleEnum as Record<string, string>)[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[row.access]
+            ? (AzureSecurityRuleEnum as Record<string, string>)[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[row.action] || '--',
+            : (SecurityRuleEnum as Record<string, string>)[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
@@ -381,12 +382,12 @@ const outColumns: any = computed(() =>
       render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[row.action]
+            ? (HuaweiSecurityRuleEnum as Record<string, string>)[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[row.access]
+            ? (AzureSecurityRuleEnum as Record<string, string>)[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[row.action] || '--',
+            : (SecurityRuleEnum as Record<string, string>)[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
