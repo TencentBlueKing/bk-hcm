@@ -3,7 +3,7 @@
   "title": "CLB任务管理同步进度前端",
   "currentStage": "coding",
   "createdAt": "2026-08-31T08:12:39.147Z",
-  "updatedAt": "2026-08-31T12:35:39.621Z",
+  "updatedAt": "2026-09-01T03:35:49.482Z",
   "artifacts": {
     "coding": [
       {
@@ -44,6 +44,7 @@
   "artifactFreshness": {
     "coding": {
       "boundFiles": [
+        "src/model/task/search.view.ts",
         "src/components/sync-account-resource/index.vue",
         "src/views/load-balancer/use-clb-sync-feedback.ts",
         "src/views/load-balancer/clb/load-balancer-table.vue",
@@ -58,9 +59,9 @@
         "src/views/task/constants.ts",
         "src/views/task/details/children/action-list/action-list.vue"
       ],
-      "contentFingerprint": "e1f230b51f6f05fb6172740ed293fa3bffd44e00",
-      "codeBaseline": "82b7cd57948133cfa03a74f1fc9addf3784486d1",
-      "seatedAt": "2026-08-31T12:35:39.621Z"
+      "contentFingerprint": "b5b780051f5bfb1f2fe859bbf15610f1ed3bb099",
+      "codeBaseline": "818359a7fb532d8d4d24de2ad313eaab7dfa8369",
+      "seatedAt": "2026-09-01T03:35:49.482Z"
     }
   }
 }

@@ -111,7 +111,7 @@ lite：无独立 PRD/Design/API 阶段。需求以 TAPD [#1069995598137677539](h
 
 ## 文件
 
-`src/components/sync-account-resource/index.vue` `src/views/load-balancer/use-clb-sync-feedback.ts` `src/views/load-balancer/clb/load-balancer-table.vue` `src/views/load-balancer/listener/listener-table.vue` `src/views/resource/resource-manage/children/manage/load-balancer-manage.vue` `src/views/task/typings.ts` `src/views/task/constants.ts` `src/views/task/details/clb.vue` `src/views/task/details/children/action-list/fields.ts` `src/views/task/details/children/action-list/action-list.vue` `src/model/task/detail.view.ts`
+`src/model/task/search.view.ts` `src/components/sync-account-resource/index.vue` `src/views/load-balancer/use-clb-sync-feedback.ts` `src/views/load-balancer/clb/load-balancer-table.vue` `src/views/load-balancer/listener/listener-table.vue` `src/views/resource/resource-manage/children/manage/load-balancer-manage.vue` `src/views/task/typings.ts` `src/views/task/constants.ts` `src/views/task/details/clb.vue` `src/views/task/details/children/action-list/fields.ts` `src/views/task/details/children/action-list/action-list.vue` `src/model/task/detail.view.ts`
 
 ## 已拍板
 
@@ -121,3 +121,4 @@ lite：无独立 PRD/Design/API 阶段。需求以 TAPD [#1069995598137677539](h
 4. 重执行：协议未给契约，**默认不支持**（待你若要支持再补 API）
 5. 公共同步弹窗不承载具体资源的成功/失败文案；CLB 通过 `successHandler` / `errorHandler` 注入（与安全组 `errorHandler` 同一扩展点）
 6. CLB 反馈 hook 放在 `views/load-balancer/`，不进全局 `src/hooks`（`/views` 独立模块）
+7. 任务列表账号条件：`account_ids` 是 JSON 数组，搜索 op 用 `json_overlaps`，不能用 `in`（与 `operations` 同）
