@@ -12,6 +12,7 @@ export const TASK_CLB_TYPE_NAME = {
   [TaskClbType.MODIFY_LAYER7_RS_WEIGHT]: '权重调整-HTTP/HTTPS',
   [TaskClbType.TARGET_GROUP_MODIFY_WEIGHT]: '权重调整',
   [TaskClbType.TARGET_GROUP_REMOVE_RS]: '解绑RS',
+  [TaskClbType.SYNC_LOAD_BALANCER]: '同步',
 };
 
 export const TASK_TYPE_NAME = {
