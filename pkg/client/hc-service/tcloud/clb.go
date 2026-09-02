@@ -50,9 +50,38 @@ func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error
 	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
 }
 
+// DeleteLoadBalancerByCond delete load balancer by condition.
+func (c *ClbClient) DeleteLoadBalancerByCond(kt *kit.Kit, req *sync.TCloudDelLoadBalancerByCondReq) error {
+
+	return common.RequestNoResp[sync.TCloudDelLoadBalancerByCondReq](
+		c.client, http.MethodDelete, kt, req, "/load_balancers/by_condition/delete")
+}
+
+// SyncLoadBalancerByCond sync load balancer by condition.
+func (c *ClbClient) SyncLoadBalancerByCond(kt *kit.Kit, req *sync.TCloudSyncLoadBalancerByCondReq) error {
+
+	return common.RequestNoResp[sync.TCloudSyncLoadBalancerByCondReq](
+		c.client, http.MethodPost, kt, req, "/load_balancers/by_condition/sync")
+}
+
 // SyncLoadBalancerListener 同步负载均衡下监听器
 func (c *ClbClient) SyncLoadBalancerListener(kt *kit.Kit, req *sync.TCloudListenerSyncReq) error {
 	return common.RequestNoResp[sync.TCloudListenerSyncReq](c.client, http.MethodPost, kt, req, "/listeners/sync")
+}
+
+// ListLoadBalancer 查询云上负载均衡列表
+func (c *ClbClient) ListLoadBalancer(kt *kit.Kit, req *hcproto.TCloudListOption) (*[]typelb.TCloudClb, error) {
+
+	return common.Request[hcproto.TCloudListOption, []typelb.TCloudClb](
+		c.client, http.MethodPost, kt, req, "/load_balancers/list")
+}
+
+// ListLoadBalancerWithCount 查询云上负载均衡列表及总数
+func (c *ClbClient) ListLoadBalancerWithCount(kt *kit.Kit, req *hcproto.TCloudListOption) (
+	*hcproto.TCloudListResult, error) {
+
+	return common.Request[hcproto.TCloudListOption, hcproto.TCloudListResult](
+		c.client, http.MethodPost, kt, req, "/load_balancers/list_with_count")
 }
 
 // DescribeResources ...

@@ -29,10 +29,13 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/rand"
 	"hcm/pkg/tools/uuid"
 )
+
+const maxRidLength = 50
 
 // New initial a kit with rid and context.
 func New() *Kit {
@@ -84,6 +87,12 @@ func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 
 	newSubKit := converter.ValToPtr(*kt)
 	subRid := kt.Rid + "/" + suffix
+	if len(subRid) > maxRidLength {
+		// Keep the original rid when appending suffix would make the child request invalid.
+		logs.Warnf("skip sub rid suffix because rid length exceeds limit, parentRid: %s, suffix: %s, rid: %s",
+			kt.Rid, suffix, kt.Rid)
+		subRid = kt.Rid
+	}
 	newSubKit.Rid = subRid
 	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
 	return newSubKit
@@ -163,7 +172,7 @@ func (kt *Kit) Validate() error {
 		return errors.New("rid is required")
 	}
 
-	if ridLen < 16 || ridLen > 50 {
+	if ridLen < 16 || ridLen > maxRidLength {
 		return errors.New("rid length not right, length should in 16~50")
 	}
 

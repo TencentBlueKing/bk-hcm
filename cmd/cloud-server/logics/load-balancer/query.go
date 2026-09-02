@@ -24,11 +24,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	typecore "hcm/pkg/adaptor/types/core"
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -38,6 +45,8 @@ import (
 	"hcm/pkg/tools/cidr"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // ListLoadBalancerMap 批量获取负载均衡列表信息
@@ -53,7 +62,7 @@ func ListLoadBalancerMap(kt *kit.Kit, cli *dataservice.Client, lbIDs []string) (
 	}
 	lbList, err := cli.Global.LoadBalancer.ListLoadBalancer(kt, clbReq)
 	if err != nil {
-		logs.Errorf("list load balancer failed, lbIDs: %v, err: %v, rid: %s", lbIDs, err, kt.Rid)
+		logs.Errorf("list load balancer failed, err: %v, count: %d, rid: %s", err, len(lbIDs), kt.Rid)
 		return nil, err
 	}
 
@@ -467,4 +476,252 @@ func parseSnapInfoTCloudLBExtension(kt *kit.Kit, raw json.RawMessage) (
 	targetCloudVpcID = converter.PtrToVal(extension.TargetCloudVpcID)
 	lbTargetRegion = converter.PtrToVal(extension.TargetRegion)
 	return
+}
+
+// -------------------------- 负载均衡简要信息查询 --------------------------
+
+// ListLoadBalancerBriefOption 查询单个地域负载均衡简要信息的条件
+type ListLoadBalancerBriefOption struct {
+	// Vendor 云厂商，当前支持 tcloud
+	Vendor enumor.Vendor
+	// AccountID 账号ID
+	AccountID string
+	// Region 地域，单次查询只处理一个地域
+	Region string
+	// BkBizID 业务ID，为空表示不按业务过滤
+	BkBizID *int64
+	// CloudIDs 云上ID，为空表示查询该地域全部
+	CloudIDs []string
+	// TagFilters 标签过滤条件
+	TagFilters core.MultiValueTagMap
+}
+
+// loadBalancerBriefQuery 单次云上查询的可变参数。
+// 指定云上ID时按云上单次ID上限分批，未指定时按 offset 翻页，两种方式共用同一套并发执行逻辑。
+type loadBalancerBriefQuery struct {
+	// cloudIDs 本次查询的云上ID，为空表示按 offset 翻页
+	cloudIDs []string
+	// offset 本次查询的分页偏移
+	offset uint64
+}
+
+// ListLoadBalancerBriefFromCloud 查询云上单个地域的负载均衡简要信息。
+// 指定云上ID时批次一开始即可确定，按云上单次ID上限分批后并发拉取；
+// 未指定云上ID时云上单页上限100，先查第一页获得 TotalCount，再按 offset 并发拉取剩余页。
+func ListLoadBalancerBriefFromCloud(kt *kit.Kit, cliSet *client.ClientSet, opt *ListLoadBalancerBriefOption) (
+	[]corelb.LoadBalancerBrief, error) {
+
+	if len(opt.CloudIDs) > 0 {
+		idBatches := slice.Split(opt.CloudIDs, constant.TCLBDescribeMax)
+		queries := make([]loadBalancerBriefQuery, 0, len(idBatches))
+		for _, cloudIDs := range idBatches {
+			queries = append(queries, loadBalancerBriefQuery{cloudIDs: cloudIDs})
+		}
+
+		return concurrentListLoadBalancerBrief(kt, cliSet, opt, queries)
+	}
+
+	start := time.Now()
+	firstPage, totalCount, err := listLoadBalancerBriefPage(kt, cliSet, opt, loadBalancerBriefQuery{})
+	if err != nil {
+		logs.Errorf("list load balancer brief from cloud failed, err: %v, account: %s, region: %s, rid: %s",
+			err, opt.AccountID, opt.Region, kt.Rid)
+		return nil, err
+	}
+	if totalCount <= typecore.TCloudQueryLimit {
+		return firstPage, nil
+	}
+
+	pageCount := int((totalCount + typecore.TCloudQueryLimit - 1) / typecore.TCloudQueryLimit)
+	queries := make([]loadBalancerBriefQuery, 0, pageCount-1)
+	for pageIndex := 1; pageIndex < pageCount; pageIndex++ {
+		queries = append(queries, loadBalancerBriefQuery{offset: uint64(typecore.TCloudQueryLimit * pageIndex)})
+	}
+	restPages, err := concurrentListLoadBalancerBrief(kt, cliSet, opt, queries)
+	if err != nil {
+		return nil, err
+	}
+
+	briefs := make([]corelb.LoadBalancerBrief, 0, int(totalCount))
+	briefs = append(briefs, firstPage...)
+	briefs = append(briefs, restPages...)
+
+	logs.Infof("list load balancer brief all pages from cloud success, account: %s, region: %s, total_count: %d, "+
+		"page_count: %d, count: %d, cost: %s, rid: %s",
+		opt.AccountID, opt.Region, totalCount, pageCount, len(briefs), time.Since(start), kt.Rid)
+
+	return briefs, nil
+}
+
+// concurrentListLoadBalancerBrief 并发执行给定的云上查询，并按给定顺序合并结果。
+func concurrentListLoadBalancerBrief(kt *kit.Kit, cliSet *client.ClientSet, opt *ListLoadBalancerBriefOption,
+	queries []loadBalancerBriefQuery) ([]corelb.LoadBalancerBrief, error) {
+
+	clbCondSync := cc.CloudServer().ConcurrentConfig.ClbCondSync
+	listConcurrent := converter.PtrToVal(clbCondSync.ListConcurrent)
+	if listConcurrent <= 0 {
+		listConcurrent = constant.DefaultCondSyncLbListConcurrent
+	}
+
+	start := time.Now()
+	results := make([][]corelb.LoadBalancerBrief, len(queries))
+	eg, _ := errgroup.WithContext(kt.Ctx)
+	eg.SetLimit(listConcurrent)
+	for index, query := range queries {
+		eg.Go(func() error {
+			page, _, err := listLoadBalancerBriefPage(kt, cliSet, opt, query)
+			if err != nil {
+				logs.Errorf("list load balancer brief from cloud failed, err: %v, account: %s, region: %s, "+
+					"offset: %d, cloud_id_count: %d, rid: %s", err, opt.AccountID, opt.Region, query.offset,
+					len(query.cloudIDs), kt.Rid)
+				return err
+			}
+			results[index] = page
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+
+	briefs := make([]corelb.LoadBalancerBrief, 0, len(queries)*typecore.TCloudQueryLimit)
+	for i := range results {
+		briefs = append(briefs, results[i]...)
+	}
+
+	logs.Infof("concurrent list load balancer brief from cloud success, account: %s, region: %s, query_count: %d, "+
+		"concurrent: %d, count: %d, cost: %s, rid: %s", opt.AccountID, opt.Region, len(queries), listConcurrent,
+		len(briefs), time.Since(start), kt.Rid)
+
+	return briefs, nil
+}
+
+func listLoadBalancerBriefPage(kt *kit.Kit, cliSet *client.ClientSet, opt *ListLoadBalancerBriefOption,
+	query loadBalancerBriefQuery) ([]corelb.LoadBalancerBrief, uint64, error) {
+
+	orderBy := typeslb.TCloudOrderByCreateTime
+	orderType := typeslb.TCloudCLBOrderAscending
+	req := &hcproto.TCloudListOption{
+		AccountID:  opt.AccountID,
+		Region:     opt.Region,
+		CloudIDs:   query.cloudIDs,
+		OrderBy:    &orderBy,
+		OrderType:  &orderType,
+		TagFilters: opt.TagFilters,
+		Page: &typecore.TCloudPage{
+			Offset: query.offset,
+			Limit:  typecore.TCloudQueryLimit,
+		},
+	}
+
+	start := time.Now()
+	var result *hcproto.TCloudListResult
+	var err error
+	switch opt.Vendor {
+	case enumor.TCloud:
+		result, err = cliSet.HCService().TCloud.Clb.ListLoadBalancerWithCount(kt, req)
+	default:
+		return nil, 0, errf.Newf(errf.InvalidParameter, "vendor: %s not support list load balancer brief", opt.Vendor)
+	}
+	if err != nil {
+		return nil, 0, err
+	}
+	if result == nil {
+		return nil, 0, nil
+	}
+
+	briefs := convCloudLoadBalancerBrief(opt.Region, result.Details)
+	logs.Infof("list load balancer brief page from cloud success, account: %s, region: %s, offset: %d, "+
+		"limit: %d, cloud_id_count: %d, count: %d, total_count: %d, cost: %s, rid: %s",
+		opt.AccountID, opt.Region, query.offset, typecore.TCloudQueryLimit, len(query.cloudIDs), len(briefs),
+		result.TotalCount, time.Since(start), kt.Rid)
+
+	return briefs, result.TotalCount, nil
+}
+
+func convCloudLoadBalancerBrief(region string, lbs []typeslb.TCloudClb) []corelb.LoadBalancerBrief {
+	briefs := make([]corelb.LoadBalancerBrief, 0, len(lbs))
+	for _, one := range lbs {
+		if one.LoadBalancer == nil {
+			continue
+		}
+		briefs = append(briefs, corelb.LoadBalancerBrief{
+			CloudID:     converter.PtrToVal(one.LoadBalancerId),
+			Region:      region,
+			Address:     slice.First(converter.PtrToSlice(one.LoadBalancerVips)),
+			AddressIPv6: converter.PtrToVal(one.AddressIPv6),
+			Domain:      converter.PtrToVal(one.LoadBalancerDomain),
+		})
+	}
+
+	return briefs
+}
+
+// ListLoadBalancerBriefFromDB 查询DB中单个地域的负载均衡简要信息
+func ListLoadBalancerBriefFromDB(kt *kit.Kit, cli *dataservice.Client, opt *ListLoadBalancerBriefOption) (
+	[]corelb.LoadBalancerBrief, error) {
+
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("vendor", opt.Vendor),
+		tools.RuleEqual("account_id", opt.AccountID),
+		tools.RuleEqual("region", opt.Region),
+	}
+	if opt.BkBizID != nil {
+		rules = append(rules, tools.RuleEqual("bk_biz_id", *opt.BkBizID))
+	}
+	if len(opt.CloudIDs) > 0 {
+		rules = append(rules, tools.RuleIn("cloud_id", opt.CloudIDs))
+	}
+	for k := range opt.TagFilters {
+		rules = append(rules, tools.RuleJsonIn("tags."+k, opt.TagFilters[k]))
+	}
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(rules...),
+		Fields: corelb.LoadBalancerBriefFields,
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+
+	briefs := make([]corelb.LoadBalancerBrief, 0)
+	for {
+		result, err := cli.Global.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("list load balancer brief from db failed, err: %v, account: %s, region: %s, "+
+				"cloud_id_count: %d, rid: %s", err, opt.AccountID, opt.Region, len(opt.CloudIDs), kt.Rid)
+			return nil, err
+		}
+
+		for _, one := range result.Details {
+			briefs = append(briefs, convDBLoadBalancerBrief(one))
+		}
+
+		if uint(len(result.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	return briefs, nil
+}
+
+// convDBLoadBalancerBrief DB中公网、内网地址分开存储，取值规则与云上VIP对齐：优先取公网，没有再取内网
+func convDBLoadBalancerBrief(lb corelb.BaseLoadBalancer) corelb.LoadBalancerBrief {
+	return corelb.LoadBalancerBrief{
+		CloudID:     lb.CloudID,
+		Region:      lb.Region,
+		Address:     firstAddress(lb.PublicIPv4Addresses, lb.PrivateIPv4Addresses),
+		AddressIPv6: firstAddress(lb.PublicIPv6Addresses, lb.PrivateIPv6Addresses),
+		Domain:      lb.Domain,
+	}
+}
+
+func firstAddress(publicAddresses, privateAddresses []string) string {
+	if len(publicAddresses) > 0 {
+		return publicAddresses[0]
+	}
+	if len(privateAddresses) > 0 {
+		return privateAddresses[0]
+	}
+
+	return ""
 }

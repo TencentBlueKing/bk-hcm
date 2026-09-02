@@ -31,6 +31,17 @@ const (
 	ListenerMinSessionExpire = 30
 	// ResFlowLockExpireDays 锁定资源与Flow的最大超时时间，默认7天
 	ResFlowLockExpireDays = 7
+	// DefaultCondSyncLbDeleteBatchSize 负载均衡条件同步中，单个清理任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbDeleteBatchSize = 100
+	// DefaultCondSyncLbUpsertBatchSize 负载均衡条件同步中，单个同步任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbUpsertBatchSize = 500
+	// DefaultCondSyncLbLargeUpsertThreshold 负载均衡条件同步中，判定本次同步为大规模的负载均衡数量默认阈值
+	DefaultCondSyncLbLargeUpsertThreshold = 10000
+	// DefaultCondSyncLbLargeUpsertBatchSize 负载均衡条件同步中，
+	// 待同步数量超过阈值后单个同步任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbLargeUpsertBatchSize = 2500
+	// DefaultCondSyncLbListConcurrent 负载均衡条件同步中，启动阶段拉取云上简要信息的分页并发默认值
+	DefaultCondSyncLbListConcurrent = 5
 	// FlowRetryTimeout Flow重试的最大重试超时
 	FlowRetryTimeout = 7 * 24 * time.Hour
 )
@@ -39,6 +50,9 @@ const (
 const (
 	// TCLBDescribeMax 腾讯云CLB默认查询大小
 	TCLBDescribeMax = 20
+	// TCLBDescribeQPSLimit 腾讯云查询负载均衡接口的出云QPS上限。
+	// 云上对 DescribeLoadBalancers 限频20次/秒，此处留出余量给同账号下的其他CLB接口调用。
+	TCLBDescribeQPSLimit = 20
 	// TCLBDeleteProtect 腾讯云负载均衡删除保护
 	TCLBDeleteProtect = "DeleteProtect"
 )

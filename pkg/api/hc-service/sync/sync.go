@@ -21,6 +21,8 @@
 package sync
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
 )
@@ -49,6 +51,40 @@ type TCloudSyncReq struct {
 
 // Validate tcloud sync request.
 func (req *TCloudSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDelLoadBalancerByCondReq tcloud delete load balancer by condition request.
+type TCloudDelLoadBalancerByCondReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (req *TCloudDelLoadBalancerByCondReq) Validate() error {
+	if len(req.CloudIDs) == 0 {
+		return fmt.Errorf("cloud_ids is required")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TCloudSyncLoadBalancerByCondReq tcloud sync load balancer by condition request.
+type TCloudSyncLoadBalancerByCondReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1,dive,required"`
+	// 指定标签同步，与创建同步任务时的条件保持一致
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty"`
+}
+
+// Validate ...
+func (req *TCloudSyncLoadBalancerByCondReq) Validate() error {
+	if len(req.CloudIDs) == 0 {
+		return fmt.Errorf("cloud_ids is required")
+	}
+
 	return validator.Validate.Struct(req)
 }
 

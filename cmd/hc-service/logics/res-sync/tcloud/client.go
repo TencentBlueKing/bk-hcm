@@ -85,6 +85,7 @@ type Interface interface {
 	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 
 	LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
+	BatchDeleteLoadBalancer(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error
 	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, params *SyncRemovedParams) error
 
 	// LoadBalancerWithListener 同步负载均衡及监听器
