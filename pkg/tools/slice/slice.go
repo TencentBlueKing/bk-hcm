@@ -92,6 +92,16 @@ func Split[T any](list []T, length int) [][]T {
 	return lists
 }
 
+// First returns the first item in list, or zero value when list is empty.
+func First[T any](list []T) T {
+	var zero T
+	if len(list) == 0 {
+		return zero
+	}
+
+	return list[0]
+}
+
 // Map 对slice里面的每个元素执行mapFunc函数，返回新slice
 func Map[IType any, OType any](source []IType, mapFunc func(IType) OType) []OType {
 	target := make([]OType, 0, len(source))

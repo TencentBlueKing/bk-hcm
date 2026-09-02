@@ -242,7 +242,31 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list
 
 #### detail.param 参数说明
 
-param的内容和operation对应
+param的内容和operation对应。
+
+##### operation=sync_load_balancer
+
+示例数据
+
+```json
+{
+  "op": "update",
+  "account_id": "0000002b",
+  "cloud_lb_id": "lb-2ita2syu",
+  "clb_vip_domain": "9.131.91.86",
+  "domain": "",
+  "region": "ap-hongkong"
+}
+```
+
+| 参数名称         | 参数类型   | 描述                                                          |
+|--------------|--------|--------------------------------------------------------------------|
+| op           | string | 本条 CLB 的同步类别，前端「类别」列：`create`（新增）、`update`（修改）、`delete`（删除） |
+| account_id   | string | 账号ID                                                               |
+| cloud_lb_id  | string | 云上负载均衡ID，前端「CLB ID」列，与其他 CLB 任务字段名一致                |
+| clb_vip_domain | string | 负载均衡 VIP，前端「CLB VIP/域名」列。优先 IPv4，无 IPv4 时写 IPv6      |
+| domain       | string | 负载均衡域名                                                          |
+| region       | string | 地域                                                                 |
 
 ##### operation=target_group_remove_rs
 

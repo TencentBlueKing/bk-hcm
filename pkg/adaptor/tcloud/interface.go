@@ -187,6 +187,7 @@ type TCloud interface {
 		*poller.BaseDoneResult, error)
 	CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
 	ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error)
+	ListLoadBalancerWithCount(kt *kit.Kit, opt *typelb.TCloudListOption) (*typelb.TCloudListResult, error)
 	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)

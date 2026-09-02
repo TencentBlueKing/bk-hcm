@@ -89,6 +89,8 @@ func register() {
 	action.RegisterAction(actionlb.BatchTaskUnBindTargetAction{})
 	action.RegisterAction(actionlb.BatchTaskModifyRsWeightAction{})
 	action.RegisterAction(actionlb.BatchTaskDeleteListenerAction{})
+	action.RegisterAction(actionlb.BatchTaskSyncLbDeleteAction{})
+	action.RegisterAction(actionlb.BatchTaskSyncLbUpsertAction{})
 
 	action.RegisterAction(actionlb.SyncTCloudLoadBalancerAction{})
 	action.RegisterAction(actionlb.SyncTCloudLoadBalancerListenerAction{})

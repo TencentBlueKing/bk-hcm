@@ -164,4 +164,7 @@ const (
 	TaskTargetGroupModifyWeight TaskOperation = "target_group_modify_weight"
 	// TaskListenerAddTarget is a task indicating that add target to listener rule.
 	TaskListenerAddTarget TaskOperation = "listener_add_target"
+
+	// TaskSyncLoadBalancer is a task indicating that sync load balancer.
+	TaskSyncLoadBalancer TaskOperation = "sync_load_balancer"
 )

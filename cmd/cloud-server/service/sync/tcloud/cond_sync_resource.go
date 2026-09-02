@@ -36,11 +36,23 @@ type CondSyncParams struct {
 	Regions   []string `json:"regions,omitempty" validate:"max=20"`
 	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
+	BkBizID    int64                 `json:"bk_biz_id,omitempty"`
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
 }
 
 // CondSyncFunc sync resource by given condition
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
+
+// CondAsyncFunc asynchronously syncs a resource by the given condition.
+type CondAsyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) (any, error)
+
+// CondSyncRoute defines the selected conditional sync route.
+type CondSyncRoute struct {
+	// SyncFunc is the synchronous conditional sync function.
+	SyncFunc CondSyncFunc
+	// AsyncFunc is the asynchronous conditional sync function.
+	AsyncFunc CondAsyncFunc
+}
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.RegionCloudResType:             CondSyncRegion,
@@ -51,10 +63,27 @@ var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
 }
 
-// GetCondSyncFunc ...
-func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bool) {
-	syncFunc, ok = condSyncFuncMap[res]
-	return syncFunc, ok
+var condAsyncFuncMap = map[enumor.CloudResourceType]CondAsyncFunc{
+	enumor.LoadBalancerCloudResType: AsyncCondSyncLoadBalancer,
+}
+
+// GetCondSyncRoute gets the conditional sync route for a resource.
+func GetCondSyncRoute(res enumor.CloudResourceType) (*CondSyncRoute, bool) {
+	syncFunc, syncOK := condSyncFuncMap[res]
+	asyncFunc, asyncOK := condAsyncFuncMap[res]
+	if !syncOK && !asyncOK {
+		return nil, false
+	}
+
+	return &CondSyncRoute{
+		SyncFunc:  syncFunc,
+		AsyncFunc: asyncFunc,
+	}, true
+}
+
+// HasAsync checks whether the selected route has an asynchronous override.
+func (r *CondSyncRoute) HasAsync() bool {
+	return r != nil && r.AsyncFunc != nil
 }
 
 // CondSyncLoadBalancer ...

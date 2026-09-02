@@ -92,7 +92,7 @@ func (a *accountSvc) SyncCloudResourceByCond(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudCondSyncRes(cts, accountID, resName)
+		return a.tcloudCondSyncRes(cts, accountID, constant.UnassignedBiz, resName)
 	case enumor.HuaWei:
 		return a.huaweiCondSyncRes(cts, accountID, resName)
 	case enumor.Aws:
@@ -158,7 +158,7 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 
 	switch vendor {
 	case enumor.TCloud:
-		return a.tcloudCondSyncRes(cts, accountID, resName)
+		return a.tcloudCondSyncRes(cts, accountID, bkBizId, resName)
 	case enumor.HuaWei:
 		return a.huaweiCondSyncRes(cts, accountID, resName)
 	case enumor.Aws:

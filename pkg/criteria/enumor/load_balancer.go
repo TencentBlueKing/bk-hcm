@@ -24,6 +24,18 @@ import (
 	"fmt"
 )
 
+// CondSyncLbOperation is the operation of a single CLB in a conditional sync task.
+type CondSyncLbOperation string
+
+const (
+	// CondSyncLbOpCreate 云上存在、DB不存在，需要新增
+	CondSyncLbOpCreate CondSyncLbOperation = "create"
+	// CondSyncLbOpUpdate 云上与DB都存在，需要更新
+	CondSyncLbOpUpdate CondSyncLbOperation = "update"
+	// CondSyncLbOpDelete 云上不存在、DB存在，需要清理
+	CondSyncLbOpDelete CondSyncLbOperation = "delete"
+)
+
 // RuleType 负载均衡类型
 type RuleType string
 
