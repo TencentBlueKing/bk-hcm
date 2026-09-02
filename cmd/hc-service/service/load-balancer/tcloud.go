@@ -51,6 +51,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("InquiryPriceTCloudLB", http.MethodPost,
 		"/vendors/tcloud/load_balancers/prices/inquiry", svc.InquiryPriceTCloudLB)
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
+	h.Add("ListTCloudClbWithCount", http.MethodPost,
+		"/vendors/tcloud/load_balancers/list_with_count", svc.ListTCloudClbWithCount)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
@@ -236,22 +238,70 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if req.Page.Limit > adcore.TCloudQueryLimit {
-		req.Page.Limit = adcore.TCloudQueryLimit
-	}
+	normalizeTCloudListPage(req)
 	opt := &typelb.TCloudListOption{
-		Region:   req.Region,
-		CloudIDs: req.CloudIDs,
-		Page:     req.Page,
+		Region:     req.Region,
+		CloudIDs:   req.CloudIDs,
+		Page:       req.Page,
+		OrderBy:    req.OrderBy,
+		OrderType:  req.OrderType,
+		TagFilters: req.TagFilters,
 	}
 	result, err := tcloudAdpt.ListLoadBalancer(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("[%s] list tcloud clb failed, req: %+v, err: %v, rid: %s",
-			enumor.TCloud, req, err, cts.Kit.Rid)
+		logs.Errorf("[%s] list tcloud clb failed, err: %v, account: %s, region: %s, cloud_id_count: %d, rid: %s",
+			enumor.TCloud, err, req.AccountID, req.Region, len(req.CloudIDs), cts.Kit.Rid)
 		return nil, err
 	}
 
 	return result, nil
+}
+
+// ListTCloudClbWithCount list tcloud clb with total count.
+func (svc *clbSvc) ListTCloudClbWithCount(cts *rest.Contexts) (interface{}, error) {
+	req := new(protolb.TCloudListOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	normalizeTCloudListPage(req)
+	opt := &typelb.TCloudListOption{
+		Region:     req.Region,
+		CloudIDs:   req.CloudIDs,
+		Page:       req.Page,
+		OrderBy:    req.OrderBy,
+		OrderType:  req.OrderType,
+		TagFilters: req.TagFilters,
+	}
+	result, err := tcloudAdpt.ListLoadBalancerWithCount(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("[%s] list tcloud clb with count failed, err: %v, account: %s, region: %s, "+
+			"cloud_id_count: %d, rid: %s", enumor.TCloud, err, req.AccountID, req.Region, len(req.CloudIDs),
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &protolb.TCloudListResult{Details: result.Details, TotalCount: result.TotalCount}, nil
+}
+
+func normalizeTCloudListPage(req *protolb.TCloudListOption) {
+	if req.Page == nil {
+		req.Page = &adcore.TCloudPage{Limit: adcore.TCloudQueryLimit}
+		return
+	}
+
+	if req.Page.Limit > adcore.TCloudQueryLimit {
+		req.Page.Limit = adcore.TCloudQueryLimit
+	}
 }
 
 // TCloudDescribeResources 查询clb地域下可用资源

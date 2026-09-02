@@ -305,6 +305,18 @@ ccHostPoolBiz: 1
 
 concurrentConfig:
   clbImportCount: 10
+  # clbCondSync 负载均衡条件同步的任务分批与启动拉云配置，缺省时使用默认值
+  clbCondSync:
+    # deleteBatchSize 单个清理任务动作处理的负载均衡数量，默认 100
+    deleteBatchSize: 100
+    # upsertBatchSize 单个同步任务动作处理的负载均衡数量，默认 500
+    upsertBatchSize: 500
+    # largeUpsertThreshold 待同步负载均衡数量超过该阈值时改用 largeUpsertBatchSize 分批，默认 10000
+    largeUpsertThreshold: 10000
+    # largeUpsertBatchSize 待同步数量超过阈值后，单个同步任务动作处理的负载均衡数量，默认 2500
+    largeUpsertBatchSize: 2500
+    # listConcurrent 启动阶段单地域拉取云上简要信息的分页并发，默认 5
+    listConcurrent: 5
 
 # tmp file dir, default: /tmp
 tmpFileDir: /tmp

@@ -29,6 +29,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFirst(t *testing.T) {
+	assert.Equal(t, "a", First([]string{"a", "b"}))
+	assert.Equal(t, "", First([]string{}))
+	assert.Equal(t, 1, First([]int{1, 2}))
+	assert.Equal(t, 0, First([]int{}))
+}
+
 func TestTopK(t *testing.T) {
 
 	type testCase[T any, SL []T] struct {

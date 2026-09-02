@@ -40,6 +40,19 @@ import (
 // ListLoadBalancer 查询clb列表：如果指定的LoadBalancerIds不存在，该接口不会报错
 // reference: https://cloud.tencent.com/document/api/214/30685
 func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error) {
+	result, err := t.ListLoadBalancerWithCount(kt, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Details, nil
+}
+
+// ListLoadBalancerWithCount 查询clb列表及总数：如果指定的LoadBalancerIds不存在，该接口不会报错
+// reference: https://cloud.tencent.com/document/api/214/30685
+func (t *TCloudImpl) ListLoadBalancerWithCount(kt *kit.Kit, opt *typelb.TCloudListOption) (
+	*typelb.TCloudListResult, error) {
+
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
@@ -76,7 +89,13 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 
 	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("fail to describe lodabalancer from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		var offset, limit uint64
+		if opt.Page != nil {
+			offset = opt.Page.Offset
+			limit = opt.Page.Limit
+		}
+		logs.Errorf("fail to describe load balancer from tcloud, err: %v, region: %s, offset: %d, limit: %d, "+
+			"cloud_id_count: %d, rid: %s", err, opt.Region, offset, limit, len(opt.CloudIDs), kt.Rid)
 		return nil, err
 	}
 
@@ -88,7 +107,10 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 		clbs = append(clbs, typelb.TCloudClb{LoadBalancer: one})
 	}
 
-	return clbs, nil
+	return &typelb.TCloudListResult{
+		Details:    clbs,
+		TotalCount: cvt.PtrToVal(resp.Response.TotalCount),
+	}, nil
 }
 
 // CountClb count clb of region

@@ -92,7 +92,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list_by_cond
 | task_management_id | string       | 关联的任务管理数据的唯一标识                                                             |
 | flow_id            | string       | 关联的异步任务flow的唯一标识                                                            |
 | task_action_ids    | string array | 关联的异步任务task的aciton id数组                                                       |
-| operation          | string       | 操作（创建4层监听器：create_layer4_listener、创建7层监听器：create_layer7_listener、绑定4层RS：binding_layer4_rs、绑定7层RS：binding_layer7_rs、创建URL规则：create_layer7_rule、解绑4层RS：listener_layer4_unbind_rs、解绑7层RS：listener_layer7_unbind_rs、调整4层权重：listener_layer4_rs_weight、调整7层权重：listener_layer7_rs_weight、删除监听器：listener_delete、开机：start_cvm、关机：stop_cvm、重启：reboot_cvm、重装：cvm_reset_system） |
+| operation          | string       | 操作（创建4层监听器：create_layer4_listener、创建7层监听器：create_layer7_listener、绑定4层RS：binding_layer4_rs、绑定7层RS：binding_layer7_rs、创建URL规则：create_layer7_rule、解绑4层RS：listener_layer4_unbind_rs、解绑7层RS：listener_layer7_unbind_rs、调整4层权重：listener_layer4_rs_weight、调整7层权重：listener_layer7_rs_weight、删除监听器：listener_delete、同步负载均衡：sync_load_balancer、开机：start_cvm、关机：stop_cvm、重启：reboot_cvm、重装：cvm_reset_system） |
 | param              | json         | 任务详情数据                                                                          |
 | result             | json         | 任务详情执行结果                                                                       |
 | state              | string       | 任务状态，如：init（待执行）、running（运行）、failed（失败）、success（成功）、cancel（取消） |

@@ -285,6 +285,12 @@ cloudserver:
   port: 80
   concurrentConfig:
     clbImportCount: 10
+    clbCondSync:
+      deleteBatchSize: 100
+      upsertBatchSize: 500
+      largeUpsertThreshold: 10000
+      largeUpsertBatchSize: 2500
+      listConcurrent: 5
 
 dataservice:
   ## 镜像
