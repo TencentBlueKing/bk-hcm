@@ -232,7 +232,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list
 | state      | string       | 任务状态，如：为running（运行中）、failed（失败）、success（成功）、deliver_partial（部分成功）、cancel（取消） |
 | account_id | string       | 账号ID                                                                         |
 | resource   | string       | 资源类型，如: clb、host                                                             |
-| operations | string array | 操作                                                                           |
+| operations | string array | 操作。CLB 条件同步为 `sync_load_balancer`                                          |
 | flow_ids   | string array | 关联的后台异步任务flow id数组                                                           |
 | extension  | object       | 扩展字段                                                                         |
 | creator    | string       | 创建者                                  |

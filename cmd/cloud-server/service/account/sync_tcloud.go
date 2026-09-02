@@ -40,12 +40,31 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, resType enumor.CloudResourceType) (
+func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, bkBizID int64,
+	resType enumor.CloudResourceType) (
 	any, error) {
 
-	req, syncFunc, err := a.decodeTCloudCondSyncRequest(cts, resType)
+	req, syncRoute, err := a.decodeTCloudCondSyncRequest(cts, resType)
 	if err != nil {
 		return nil, err
+	}
+
+	syncParams := &tcloud.CondSyncParams{
+		AccountID:  accountID,
+		BkBizID:    bkBizID,
+		Regions:    req.Regions,
+		CloudIDs:   req.CloudIDs,
+		TagFilters: req.TagFilters,
+	}
+
+	if syncRoute.HasAsync() {
+		result, err := syncRoute.AsyncFunc(cts.Kit, a.client, syncParams)
+		if err != nil {
+			logs.Errorf("conditional async sync failed, err: %v, vendor: %s, resource: %s, account: %s, "+
+				"req: %+v, rid: %s", err, enumor.TCloud, resType, accountID, req, cts.Kit.Rid)
+			return nil, err
+		}
+		return result, nil
 	}
 
 	resLockKey := lock.Key(accountID)
@@ -72,19 +91,12 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 	}()
 
 	logs.Infof("lock account sync key: %s, resType: %s, rid: %s", resLockKey, resType, cts.Kit.Rid)
-	syncParams := &tcloud.CondSyncParams{
-		AccountID:  accountID,
-		Regions:    req.Regions,
-		CloudIDs:   req.CloudIDs,
-		TagFilters: req.TagFilters,
-	}
-
 	startAt := time.Now()
 	kt := cts.Kit.NewSubKit()
 	// 设置超时控制
 	cancel := kt.CtxWithTimeoutMS(int(AccountSyncDefaultTimeout / time.Millisecond))
 	defer cancel()
-	err = syncFunc(kt, a.client, syncParams)
+	err = syncRoute.SyncFunc(kt, a.client, syncParams)
 	if err != nil {
 		logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, "+
 			"cost: %s, rid: %s", enumor.TCloud, resType, err, accountID, req, time.Since(startAt), cts.Kit.Rid)
@@ -97,7 +109,7 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 }
 
 func (a *accountSvc) decodeTCloudCondSyncRequest(cts *rest.Contexts, resType enumor.CloudResourceType) (
-	*cloudaccount.ResCondSyncReq, tcloud.CondSyncFunc, error) {
+	*cloudaccount.ResCondSyncReq, *tcloud.CondSyncRoute, error) {
 
 	req := new(cloudaccount.ResCondSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -112,7 +124,7 @@ func (a *accountSvc) decodeTCloudCondSyncRequest(cts *rest.Contexts, resType enu
 		return nil, nil, err
 	}
 
-	syncFunc, ok := tcloud.GetCondSyncFunc(resType)
+	route, ok := tcloud.GetCondSyncRoute(resType)
 	if !ok {
 		return nil, nil, fmt.Errorf("tcloud conditional sync resource does not support %s", resType)
 	}
@@ -144,5 +156,5 @@ func (a *accountSvc) decodeTCloudCondSyncRequest(cts *rest.Contexts, resType enu
 		return nil, nil, errors.New("request regions mismatch regions on db")
 	}
 	req.Regions = slice.Map(regionList, region.TCloudRegion.GetCloudID)
-	return req, syncFunc, nil
+	return req, route, nil
 }
