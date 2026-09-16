@@ -58,6 +58,10 @@ func InitService(c *capability.Capability) {
 	h.Add("GetLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetLoadBalancerLockStatus)
 	h.Add("ListResLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListResLoadBalancerQuotas)
+	h.Add("ListExclusiveCluster", http.MethodPost,
+		"/load_balancers/exclusive_clusters/list", svc.ListExclusiveCluster)
+	h.Add("AssignExclusiveClusterToBiz", http.MethodPost,
+		"/load_balancers/exclusive_clusters/assign/bizs", svc.AssignExclusiveClusterToBiz)
 
 	bizH := rest.NewHandler()
 	bizH.Path("/bizs/{bk_biz_id}")
