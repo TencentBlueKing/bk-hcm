@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -58,4 +59,99 @@ func (req *AssignExclusiveClusterToBizReq) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// -------------------------- List Tags --------------------------
+
+// ListExclusiveClusterTagsReq define list biz load balancer exclusive cluster tags req, used by purchase page
+// to render cluster_tag/cluster dropdowns for exclusive load balancer spec. bk_biz_id is taken from the path
+// parameter only, the request body does not accept a bk_biz_id field.
+type ListExclusiveClusterTagsReq struct {
+	AccountID   string             `json:"account_id" validate:"required"`
+	Region      string             `json:"region" validate:"required"`
+	Isp         enumor.ClusterIsp  `json:"isp" validate:"required"`
+	Zone        string             `json:"zone" validate:"omitempty"`
+	ClusterType enumor.ClusterType `json:"cluster_type" validate:"omitempty"`
+}
+
+// Validate list biz load balancer exclusive cluster tags request.
+func (req *ListExclusiveClusterTagsReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
+	}
+
+	if len(req.Region) == 0 {
+		return errors.New("region is required")
+	}
+
+	switch req.Isp {
+	case enumor.BGPClusterIsp, enumor.CMCCClusterIsp, enumor.CUCCClusterIsp, enumor.CTCCClusterIsp:
+	default:
+		return fmt.Errorf("isp must be one of BGP/CMCC/CUCC/CTCC, got: %s", req.Isp)
+	}
+
+	switch req.ClusterType {
+	case "", enumor.TGWClusterType, enumor.STGWClusterType:
+	default:
+		return fmt.Errorf("cluster_type must be TGW or STGW if set, got: %s", req.ClusterType)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// ListExclusiveClusterTagsResult define list biz load balancer exclusive cluster tags result.
+type ListExclusiveClusterTagsResult struct {
+	Details []ExclusiveClusterTagGroup `json:"details"`
+}
+
+// ExclusiveClusterTagGroup define a load balancer exclusive cluster group aggregated by cluster_tag+cluster_type.
+type ExclusiveClusterTagGroup struct {
+	ClusterTag  string                    `json:"cluster_tag"`
+	ClusterType enumor.ClusterType        `json:"cluster_type"`
+	Clusters    []ExclusiveClusterTagItem `json:"clusters"`
+}
+
+// ExclusiveClusterTagItem define a single load balancer exclusive cluster info within a tag group.
+type ExclusiveClusterTagItem struct {
+	CloudClusterID string            `json:"cloud_cluster_id"`
+	ClusterID      string            `json:"cluster_id"`
+	ClusterName    string            `json:"cluster_name"`
+	Egress         string            `json:"egress"`
+	Isp            enumor.ClusterIsp `json:"isp"`
+	Zone           string            `json:"zone"`
+}
+
+// -------------------------- List Idle Vips --------------------------
+
+// ListExclusiveClusterIdleVipsReq define list biz load balancer exclusive cluster idle vips req, used by purchase
+// page to render the "specify ip" dropdown after a TGW(layer-4) cluster is chosen. bk_biz_id is taken from the
+// path parameter only, the request body does not accept a bk_biz_id field.
+type ListExclusiveClusterIdleVipsReq struct {
+	AccountID      string `json:"account_id" validate:"required"`
+	Region         string `json:"region" validate:"required"`
+	CloudClusterID string `json:"cloud_cluster_id" validate:"required"`
+}
+
+// Validate list biz load balancer exclusive cluster idle vips request.
+func (req *ListExclusiveClusterIdleVipsReq) Validate() error {
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id is required")
+	}
+
+	if len(req.Region) == 0 {
+		return errors.New("region is required")
+	}
+
+	if len(req.CloudClusterID) == 0 {
+		return errors.New("cloud_cluster_id is required")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// ListExclusiveClusterIdleVipsResult define list biz load balancer exclusive cluster idle vips result. this is a
+// real-time query result, not persisted, and may become stale immediately after the response is returned.
+type ListExclusiveClusterIdleVipsResult struct {
+	Count   uint64   `json:"count"`
+	Details []string `json:"details"`
 }

@@ -280,6 +280,25 @@ func (req TCloudDescribeClusterResourcesReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudDescribeClusterIdleVipsReq 查询独占集群当前闲置的VIP列表（业务视角闲置VIP查询接口用），内部按固定
+// 页大小翻页取全并去重后返回，调用方无需关心翻页细节。
+type TCloudDescribeClusterIdleVipsReq struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	ClusterID string `json:"cluster_id" validate:"required"`
+}
+
+// Validate tcloud describe cluster idle vips req.
+func (req TCloudDescribeClusterIdleVipsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDescribeClusterIdleVipsResult 查询独占集群当前闲置的VIP列表结果，实时查云、不落库。
+type TCloudDescribeClusterIdleVipsResult struct {
+	Count   uint64   `json:"count"`
+	Details []string `json:"details"`
+}
+
 // --------------------------[Associate 设置负载均衡实例的安全组]--------------------------
 
 // TCloudSetLbSecurityGroupReq defines options to set tcloud lb security-group request.

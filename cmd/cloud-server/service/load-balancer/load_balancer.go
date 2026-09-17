@@ -94,6 +94,10 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 	h.Add("ListBizLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListBizLoadBalancerQuotas)
+	h.Add("ListBizExclusiveClusterTags", http.MethodPost,
+		"/load_balancers/exclusive_clusters/tags/list", svc.ListBizExclusiveClusterTags)
+	h.Add("ListBizExclusiveClusterIdleVips", http.MethodPost,
+		"/load_balancers/exclusive_clusters/idle_vips/list", svc.ListBizExclusiveClusterIdleVips)
 
 	h.Add("TCloudCreateSnatIps", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips/create", svc.TCloudCreateSnatIps)
