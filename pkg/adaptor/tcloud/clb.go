@@ -22,6 +22,8 @@ package tcloud
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
@@ -255,6 +257,59 @@ func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeRe
 		return nil, err
 	}
 	return resp.Response, nil
+}
+
+// DescribeClusterResources 查询独占集群内的资源列表（含 VIP 闲置状态），供下云前 VIP 闲置复核使用
+// https://cloud.tencent.com/document/api/214/95012
+func (t *TCloudImpl) DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
+	*typelb.TCloudDescribeClusterResourcesResult, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe cluster resources option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewDescribeClusterResourcesRequest()
+	req.Filters = append(req.Filters, &clb.Filter{
+		Name:   common.StringPtr("cluster-id"),
+		Values: common.StringPtrs([]string{opt.ClusterID}),
+	})
+	if opt.Idle != nil {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("idle"),
+			Values: common.StringPtrs([]string{strconv.FormatBool(*opt.Idle)}),
+		})
+	}
+	req.Limit = opt.Limit
+	req.Offset = opt.Offset
+
+	resp, err := client.DescribeClusterResourcesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe cluster resources failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty describe cluster resources response from tcloud")
+	}
+
+	result := &typelb.TCloudDescribeClusterResourcesResult{TotalCount: cvt.PtrToVal(resp.Response.TotalCount)}
+	for _, one := range resp.Response.ClusterResourceSet {
+		result.Resources = append(result.Resources, typelb.TCloudClusterResource{
+			ClusterID:      cvt.PtrToVal(one.ClusterId),
+			Vip:            cvt.PtrToVal(one.Vip),
+			LoadBalancerID: cvt.PtrToVal(one.LoadBalancerId),
+			Idle:           strings.EqualFold(cvt.PtrToVal(one.Idle), "True"),
+		})
+	}
+	return result, nil
 }
 
 func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {

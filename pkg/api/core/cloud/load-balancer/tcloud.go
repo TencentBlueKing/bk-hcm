@@ -125,11 +125,32 @@ type TCloudClbExtension struct {
 	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 	// 负载均衡类型，0 传统负载均衡，1 负载均衡
 	Forward *uint64 `json:"forward,omitempty"`
+
+	// Exclusive 是否为独占型实例，数据来源于云上 DescribeLoadBalancers 返回的 ClusterTag/ClusterIds 两个平级
+	// 字段（注意不是 ExclusiveCluster 字段，该字段是内网独占集群，与本字段的公网独占集群场景无关）
+	Exclusive *bool `json:"exclusive"`
+	// Clusters 独占集群信息列表，非独占型为空数组
+	Clusters []TCloudExtensionCluster `json:"clusters"`
 }
 
 // IsTraditional 是否是传统型负载均衡
 func (ext *TCloudClbExtension) IsTraditional() bool {
 	return cvt.PtrToVal(ext.Forward) == uint64(TCloudTraditionalClbType)
+}
+
+// TCloudExtensionCluster 独占型负载均衡关联的独占集群信息（详情回显用），本地表未同步或已删除的集群，
+// ClusterID/ClusterName 为空字符串，CloudClusterID 仍返回云上原值。
+type TCloudExtensionCluster struct {
+	// CloudClusterID 集群云上 ID，七层集群云侧未返回具体落地 ID 时为空字符串
+	CloudClusterID string `json:"cloud_cluster_id"`
+	// ClusterID 集群本地 ID
+	ClusterID string `json:"cluster_id"`
+	// ClusterName 集群名称
+	ClusterName string `json:"cluster_name"`
+	// ClusterTag 七层独占集群标签，四层集群该字段为空字符串
+	ClusterTag string `json:"cluster_tag"`
+	// ClusterType 集群类型，TGW（四层）或 STGW（七层）
+	ClusterType string `json:"cluster_type"`
 }
 
 // SnatIp ...

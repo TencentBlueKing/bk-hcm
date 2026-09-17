@@ -53,6 +53,9 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
+	// 内部测试端点：查询独占集群资源（含VIP闲置状态），仅供联调/测试直接验证，不对外暴露
+	h.Add("TCloudDescribeClusterResources", http.MethodPost,
+		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/query", svc.TCloudDescribeClusterResources)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
 	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
@@ -131,6 +134,13 @@ func buildTCloudCreateClbOption(kt *kit.Kit, req *protolb.TCloudLoadBalancerCrea
 		Tags:                     req.Tags,
 		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
 	}
+	// 独占型：cloud_cluster_ids/cluster_tag 原样透传给云侧四层/七层集群参数；exclusive 本身不下传云侧
+	if len(req.CloudClusterIDs) != 0 {
+		createOpt.ClusterIds = cvt.SliceToPtr(req.CloudClusterIDs)
+	}
+	if cvt.PtrToVal(req.ClusterTag) != "" {
+		createOpt.ClusterTag = req.ClusterTag
+	}
 
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
@@ -175,6 +185,14 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	}
 
 	createOpt := buildTCloudCreateClbOption(cts.Kit, req)
+
+	if req.IsExclusive() {
+		if err := svc.recheckExclusiveBeforeDeliver(cts.Kit, tcloudAdpt, req); err != nil {
+			logs.Errorf("recheck exclusive cluster before deliver failed, err: %v, req: %+v, rid: %s",
+				err, req, cts.Kit.Rid)
+			return nil, err
+		}
+	}
 
 	result, err := tcloudAdpt.CreateLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
@@ -279,6 +297,26 @@ func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	}
 
 	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
+}
+
+// TCloudDescribeClusterResources 查询独占集群内的资源（含VIP闲置状态），仅供内部联调/测试使用，不经
+// cloud-server/web-server 对外暴露
+func (svc *clbSvc) TCloudDescribeClusterResources(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudDescribeClusterResourcesReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DescribeClusterResources(cts.Kit, req.TCloudDescribeClusterResourcesOption)
 }
 
 // TCloudUpdateCLB 更新clb属性

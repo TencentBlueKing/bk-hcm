@@ -329,10 +329,18 @@ func (cli *client) createLoadBalancer(kt *kit.Kit, accountID string, region stri
 		return nil, err
 	}
 
+	clusterMap, err := cli.buildExclusiveClusterMap(kt, addSlice)
+	if err != nil {
+		logs.Errorf("fail to build exclusive cluster map for create lb, err: %v, account: %s, rid: %s",
+			err, accountID, kt.Rid)
+		return nil, err
+	}
+
 	var lbCreateReq protocloud.TCloudCLBCreateReq
 
 	for _, cloud := range addSlice {
-		lbCreateReq.Lbs = append(lbCreateReq.Lbs, convCloudToDBCreate(cloud, accountID, region, vpcMap, subnetMap))
+		lbCreateReq.Lbs = append(lbCreateReq.Lbs,
+			convCloudToDBCreate(cloud, accountID, region, vpcMap, subnetMap, clusterMap))
 	}
 
 	if _, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudClb(kt, &lbCreateReq); err != nil {
@@ -345,6 +353,41 @@ func (cli *client) createLoadBalancer(kt *kit.Kit, accountID string, region stri
 		enumor.TCloud, accountID, len(addSlice), kt.Rid)
 
 	return nil, nil
+}
+
+// buildExclusiveClusterMap 收集给定负载均衡列表中云上返回的独占集群 ID（ClusterIds，可能混合 TGW/STGW），批量
+// 查询本地独占集群表，返回 cloud_id -> 本地记录 映射，用于回填 extension.clusters。列表中没有任何独占集群 ID
+// 时返回空 map，不发起查询。
+func (cli *client) buildExclusiveClusterMap(kt *kit.Kit, lbs []typeslb.TCloudClb) (
+	map[string]corelb.BaseExclusiveCluster, error) {
+
+	cloudIDSet := make(map[string]struct{})
+	for _, lb := range lbs {
+		for _, id := range cvt.PtrToSlice(lb.ClusterIds) {
+			if id != "" {
+				cloudIDSet[id] = struct{}{}
+			}
+		}
+	}
+	if len(cloudIDSet) == 0 {
+		return make(map[string]corelb.BaseExclusiveCluster), nil
+	}
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleIn("cloud_id", cvt.MapKeyToSlice(cloudIDSet))),
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := cli.dbCli.Global.ListExclusiveCluster(kt, req)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterMap := make(map[string]corelb.BaseExclusiveCluster, len(result.Details))
+	for _, one := range result.Details {
+		clusterMap[one.CloudID] = one.BaseExclusiveCluster
+	}
+
+	return clusterMap, nil
 }
 
 // getLoadBalancerRelatedRes return vpc map and subnet map of given cloud id
@@ -387,10 +430,17 @@ func (cli *client) updateLoadBalancer(kt *kit.Kit, accountID string, region stri
 		return err
 	}
 
+	clusterMap, err := cli.buildExclusiveClusterMap(kt, cvt.MapValueToSlice(updateMap))
+	if err != nil {
+		logs.Errorf("fail to build exclusive cluster map for update lb, err: %v, account: %s, rid: %s",
+			err, accountID, kt.Rid)
+		return err
+	}
+
 	var updateReq protocloud.TCloudClbBatchUpdateReq
 
 	for id, clb := range updateMap {
-		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap, region))
+		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap, region, clusterMap))
 	}
 	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
 		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
@@ -518,7 +568,8 @@ func (cli *client) updateLoadBalancerSyncTime(kt *kit.Kit, ids []string) error {
 }
 
 func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) protocloud.LbBatchCreate[corelb.TCloudClbExtension] {
+	subnetMap map[string]string,
+	clusterMap map[string]corelb.BaseExclusiveCluster) protocloud.LbBatchCreate[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
@@ -568,12 +619,16 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
 	}
 
-	lb.Extension = convertTCloudExtension(cloud, region)
+	lb.Extension = convertTCloudExtension(cloud, region, clusterMap)
 
 	return lb
 }
 
-func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TCloudClbExtension {
+// convertTCloudExtension 转换云上负载均衡数据为本地扩展字段。clusterMap 为按云上独占集群 ID 批量查询本地独占
+// 集群表得到的 cloud_id -> 本地记录映射，用于填充独占集群 clusters 回显信息。
+func convertTCloudExtension(cloud typeslb.TCloudClb, region string,
+	clusterMap map[string]corelb.BaseExclusiveCluster) *corelb.TCloudClbExtension {
+
 	ext := &corelb.TCloudClbExtension{
 		Forward:                  cloud.Forward,
 		SlaType:                  cloud.SlaType,
@@ -618,11 +673,56 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 		ext.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
 	}
 
+	// 独占集群信息：数据来源于 ClusterTag（7层独占标签）与 ClusterIds（集群ID数组，可能混合TGW/STGW落地ID）这两个
+	// 平级字段，注意不是 ExclusiveCluster 字段（该字段是内网独占集群，与本单公网独占集群场景无关）
+	ext.Exclusive, ext.Clusters = buildExclusiveClusterExtension(cloud, clusterMap)
+
 	return ext
 }
 
+// buildExclusiveClusterExtension 根据云上 ClusterTag/ClusterIds 与本地独占集群表批量查询结果，构建
+// extension.exclusive 与 extension.clusters。
+func buildExclusiveClusterExtension(cloud typeslb.TCloudClb,
+	clusterMap map[string]corelb.BaseExclusiveCluster) (*bool, []corelb.TCloudExtensionCluster) {
+
+	clusterTag := cvt.PtrToVal(cloud.ClusterTag)
+	cloudClusterIDs := cvt.PtrToSlice(cloud.ClusterIds)
+
+	clusters := make([]corelb.TCloudExtensionCluster, 0, len(cloudClusterIDs)+1)
+
+	sawSTGW := false
+	for _, cloudID := range cloudClusterIDs {
+		item := corelb.TCloudExtensionCluster{CloudClusterID: cloudID}
+		if local, ok := clusterMap[cloudID]; ok {
+			item.ClusterID = local.ID
+			item.ClusterName = local.Name
+			item.ClusterTag = local.ClusterTag
+			item.ClusterType = string(local.ClusterType)
+			if local.ClusterType == enumor.STGWClusterType {
+				sawSTGW = true
+			}
+		} else {
+			// 本地表未同步/已删除：无法判定层级，暂按 TGW 兜底展示（云侧公网 ClusterIds 场景下绝大多数为四层落地 ID）
+			item.ClusterType = string(enumor.TGWClusterType)
+		}
+		clusters = append(clusters, item)
+	}
+
+	// 云侧只回传七层标签、未回传具体落地 STGW ID 时，补一条只有 cluster_tag/cluster_type 有值的元素
+	if len(clusterTag) != 0 && !sawSTGW {
+		clusters = append(clusters, corelb.TCloudExtensionCluster{
+			ClusterTag:  clusterTag,
+			ClusterType: string(enumor.STGWClusterType),
+		})
+	}
+
+	exclusive := len(clusterTag) != 0 || len(cloudClusterIDs) != 0
+	return cvt.ValToPtr(exclusive), clusters
+}
+
 func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string, region string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
+	subnetMap map[string]string, region string,
+	clusterMap map[string]corelb.BaseExclusiveCluster) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
@@ -640,7 +740,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
 		Tags:             cloud.GetTagMap(),
-		Extension:        convertTCloudExtension(cloud, region),
+		Extension:        convertTCloudExtension(cloud, region, clusterMap),
 		Isp:              cvt.PtrToVal(cloud.VipIsp),
 	}
 	if cloud.NetworkAttributes != nil {

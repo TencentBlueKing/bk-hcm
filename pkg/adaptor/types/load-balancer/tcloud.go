@@ -361,6 +361,43 @@ func (opt TCloudDescribeResourcesOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// -------------------------- Describe Cluster Resources --------------------------
+
+// TCloudDescribeClusterResourcesOption defines options to query resources(vip) within a tcloud exclusive cluster.
+type TCloudDescribeClusterResourcesOption struct {
+	// Region 地域
+	Region string `json:"region" validate:"required"`
+	// ClusterID 独占集群云上ID，如tgw-38feq8c6/stgw-7d81ka3f
+	ClusterID string `json:"cluster_id" validate:"required"`
+	// Idle 按是否闲置过滤，不传表示不过滤
+	Idle   *bool   `json:"idle" validate:"omitempty"`
+	Limit  *uint64 `json:"limit" validate:"omitempty"`
+	Offset *uint64 `json:"offset" validate:"omitempty"`
+}
+
+// Validate tcloud describe cluster resources option.
+func (opt TCloudDescribeClusterResourcesOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
+
+// TCloudClusterResource 独占集群内的资源（VIP）信息
+type TCloudClusterResource struct {
+	// ClusterID 集群唯一ID
+	ClusterID string `json:"cluster_id"`
+	// Vip ip地址
+	Vip string `json:"vip"`
+	// LoadBalancerID 负载均衡唯一ID，未绑定负载均衡时为空
+	LoadBalancerID string `json:"load_balancer_id"`
+	// Idle 资源是否闲置
+	Idle bool `json:"idle"`
+}
+
+// TCloudDescribeClusterResourcesResult 查询独占集群资源结果
+type TCloudDescribeClusterResourcesResult struct {
+	TotalCount uint64                  `json:"total_count"`
+	Resources  []TCloudClusterResource `json:"resources"`
+}
+
 // --------------------------[设置负载均衡实例的安全组]--------------------------
 
 // TCloudSetClbSecurityGroupOption defines options to set tcloud clb security-group option.

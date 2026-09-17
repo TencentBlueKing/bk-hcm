@@ -61,6 +61,83 @@ type TCloudLoadBalancerSpec struct {
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
 	// LoadBalancerPassToTarget 安全组放通模式
 	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target" validate:"required"`
+
+	// Exclusive 是否独占型：1是、0否，默认0，详见独占型规格说明
+	Exclusive *int64 `json:"exclusive" validate:"omitempty,oneof=0 1"`
+	// ClusterTag 七层独占集群标签
+	ClusterTag *string `json:"cluster_tag" validate:"omitempty"`
+	// CloudClusterIDs 四层（TGW）独占集群的云上ID列表，取自标签聚合查询接口返回的 cloud_cluster_id
+	CloudClusterIDs []string `json:"cloud_cluster_ids" validate:"omitempty,max=100"`
+}
+
+// cloudClusterIDsMaxLimit cloud_cluster_ids 数量上限
+const cloudClusterIDsMaxLimit = 100
+
+// singleLineClusterIsp 单线运营商类型集合，使用该类型时必须走共享带宽包计费
+var singleLineClusterIsp = map[string]bool{"CMCC": true, "CUCC": true, "CTCC": true}
+
+// IsExclusive 是否独占型请求
+func (spec *TCloudLoadBalancerSpec) IsExclusive() bool {
+	return converter.PtrToVal(spec.Exclusive) == 1
+}
+
+// validateExclusive 校验独占型相关的结构互斥规则
+func (spec *TCloudLoadBalancerSpec) validateExclusive() error {
+	hasClusterTag := converter.PtrToVal(spec.ClusterTag) != ""
+	hasClusterIDs := len(spec.CloudClusterIDs) != 0
+
+	if !spec.IsExclusive() {
+		if hasClusterTag || hasClusterIDs {
+			return errors.New("cluster_tag/cloud_cluster_ids must be empty when exclusive is not 1")
+		}
+		return nil
+	}
+
+	if spec.LoadBalancerType != typelb.OpenLoadBalancerType {
+		return errors.New("exclusive load balancer only supports load_balancer_type 'OPEN'")
+	}
+	if converter.PtrToVal(spec.SlaType) != "" {
+		return errors.New("sla_type must be empty when exclusive is 1")
+	}
+	if !hasClusterTag && !hasClusterIDs {
+		return errors.New("cluster_tag/cloud_cluster_ids can not be both empty when exclusive is 1")
+	}
+	if len(spec.CloudClusterIDs) > cloudClusterIDsMaxLimit {
+		return fmt.Errorf("cloud_cluster_ids count should <= %d", cloudClusterIDsMaxLimit)
+	}
+
+	if err := spec.validateExclusiveVip(); err != nil {
+		return err
+	}
+
+	return spec.validateExclusiveCharge()
+}
+
+// validateExclusiveVip 校验独占型下指定vip时的结构约束
+func (spec *TCloudLoadBalancerSpec) validateExclusiveVip() error {
+	if converter.PtrToVal(spec.Vip) == "" {
+		return nil
+	}
+	if len(spec.CloudClusterIDs) != 1 {
+		return errors.New("cloud_cluster_ids must contain exactly one id when vip is specified")
+	}
+	if converter.PtrToVal(spec.RequireCount) != 1 {
+		return errors.New("require_count must be 1 when vip is specified")
+	}
+	return nil
+}
+
+// validateExclusiveCharge 校验独占型计费方式结构规则
+func (spec *TCloudLoadBalancerSpec) validateExclusiveCharge() error {
+	isp := converter.PtrToVal(spec.VipIsp)
+	chargeType := converter.PtrToVal(spec.InternetChargeType)
+	if singleLineClusterIsp[isp] && chargeType != typelb.BandwidthPackage {
+		return errors.New("internet_charge_type must be 'BANDWIDTH_PACKAGE' for single line isp")
+	}
+	if chargeType == typelb.BandwidthPackage && converter.PtrToVal(spec.BandwidthPackageID) == "" {
+		return errors.New("bandwidth_package_id is required when internet_charge_type is 'BANDWIDTH_PACKAGE'")
+	}
+	return nil
 }
 
 // ValidateSpec 校验规格/计费字段
@@ -89,6 +166,10 @@ func (spec *TCloudLoadBalancerSpec) ValidateSpec() error {
 	// ipv6模式下，不允许修改安全组的放通模式，默认为关闭
 	if spec.AddressIPVersion == typelb.IPV6FullChainIPVersion && converter.PtrToVal(spec.LoadBalancerPassToTarget) {
 		return fmt.Errorf("ipv6 mode does not support load_balancer_pass_to_target")
+	}
+
+	if err := spec.validateExclusive(); err != nil {
+		return err
 	}
 
 	return validator.Validate.Struct(spec)
@@ -186,6 +267,17 @@ type TCloudDescribeResourcesOption struct {
 // Validate tcloud clb list option.
 func (opt TCloudDescribeResourcesOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// TCloudDescribeClusterResourcesReq 查询独占集群资源（内部测试端点用）
+type TCloudDescribeClusterResourcesReq struct {
+	AccountID                                    string `json:"account_id" validate:"required"`
+	*typelb.TCloudDescribeClusterResourcesOption `json:",inline" validate:"required"`
+}
+
+// Validate tcloud describe cluster resources req.
+func (req TCloudDescribeClusterResourcesReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // --------------------------[Associate 设置负载均衡实例的安全组]--------------------------
