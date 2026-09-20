@@ -103,8 +103,10 @@ import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useRegionStore } from '@/store/region';
 import { buildVIPFilterRules } from '@/utils/search';
-import { LOAD_BALANCER_INSTANCE_SPEC_NAME } from '@/views/load-balancer/constants';
-import { buildLoadBalancerInstanceSpecFilterRules } from '@/views/load-balancer/utils';
+import {
+  buildLoadBalancerInstanceSpecFilterRules,
+  LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME,
+} from '@/views/load-balancer/utils';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
 const props = defineProps({
@@ -240,7 +242,7 @@ const clbsSearchData = [
     id: 'instance_spec',
     name: t('实例规格'),
     async: false,
-    children: Object.entries(LOAD_BALANCER_INSTANCE_SPEC_NAME).map(([id, name]) => ({ id, name })),
+    children: Object.entries(LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME).map(([id, name]) => ({ id, name })),
   },
   {
     id: 'ip_version',

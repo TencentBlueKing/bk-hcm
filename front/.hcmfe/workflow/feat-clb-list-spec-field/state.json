@@ -3,7 +3,7 @@
   "title": "CLB 列表实例规格字段",
   "currentStage": "test",
   "createdAt": "2026-09-16T09:55:29.448Z",
-  "updatedAt": "2026-09-17T03:40:20.849Z",
+  "updatedAt": "2026-09-20T09:36:40.193Z",
   "artifacts": {
     "coding": [
       {
@@ -88,11 +88,12 @@
         "use-table-settings.ts",
         "batch-delete-dialog.vue",
         "load-balancer-list.vue",
-        "details.vue"
+        "details.vue",
+        "children/search/search.vue"
       ],
-      "contentFingerprint": "3663cb0014609bffa1dd44ecd83a2d0e7e7e394d",
-      "codeBaseline": "91d395a7aa337e932ff076c4b0681218fbd4368f",
-      "seatedAt": "2026-09-17T03:33:25.497Z"
+      "contentFingerprint": "ad4e06553408687281fba4bbab30fef01e94b392",
+      "codeBaseline": "4eb5ad5f30cfe5a28036cc932a98a9fa085abc0a",
+      "seatedAt": "2026-09-20T09:36:40.193Z"
     }
   }
 }
