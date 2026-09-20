@@ -1,9 +1,23 @@
 import { computed, type Reactive, ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { reqExclusiveClusterIdleVips, reqExclusiveClusterTags } from '@/api/load_balancers/apply-clb';
-import type { ApplyClbModel, ExclusiveClusterItem, ExclusiveClusterTag } from '@/api/load_balancers/apply-clb/types';
+import type {
+  ApplyClbModel,
+  ExclusiveClusterIsp,
+  ExclusiveClusterItem,
+  ExclusiveClusterTag,
+} from '@/api/load_balancers/apply-clb/types';
 
 export const RANDOM_ALLOCATION = '__random__';
+
+/**
+ * 独占集群标签接口（tags/list）的 isp 入参只支持三网直连：CMCC / CUCC / CTCC。
+ * BGP（含自研云按 TypeSet 拆分出的 BGP 系取值）等其它运营商均不支持选择独占型。
+ */
+export const EXCLUSIVE_CLUSTER_ISP_TYPES: ExclusiveClusterIsp[] = ['CMCC', 'CUCC', 'CTCC'];
+
+export const isExclusiveClusterIsp = (isp?: string): isp is ExclusiveClusterIsp =>
+  EXCLUSIVE_CLUSTER_ISP_TYPES.includes(isp as ExclusiveClusterIsp);
 
 const uniqueEgresses = (clusters: ExclusiveClusterItem[] = []) => [
   ...new Set(clusters.map(({ egress }) => egress).filter(Boolean)),
@@ -31,7 +45,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     () =>
       isBusinessPage &&
       formModel.load_balancer_type === 'OPEN' &&
-      Boolean(formModel.account_id && formModel.region && formModel.vip_isp && formModel.zones) &&
+      Boolean(formModel.account_id && formModel.region && formModel.zones) &&
+      isExclusiveClusterIsp(formModel.vip_isp) &&
       !isTagsLoadFailed.value &&
       exclusiveClusterTags.value.length > 0,
   );
@@ -90,8 +105,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
       !bk_biz_id ||
       !account_id ||
       !region ||
-      !vip_isp ||
-      !zones
+      !zones ||
+      !isExclusiveClusterIsp(vip_isp)
     ) {
       isTagsLoading.value = false;
       return;

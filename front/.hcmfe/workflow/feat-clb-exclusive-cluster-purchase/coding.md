@@ -112,3 +112,22 @@
 - 视觉副作用：该字段不再显示必填星号（BKUI `FormItem` 无独立控制星号的属性，`required` 同时承担判空与星号），校验行为由项级 validator 承担。
 
 **验证**: `e2e.spec.ts` 共 22 条用例全部通过，含此前被 D-01 阻塞的 `P0-02`、`P0-03`、`P0-04`、`P0-05`、`P1-08`、`P1-09`。
+
+## isp 入参收窄为三网直连（2026-09-20）
+
+**TAPD**: [#1069995598138114049](https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138114049)
+
+**背景**: 独占集群标签接口 `POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/tags/list` 的 `isp` 入参只支持三网直连，BGP（含自研云按 `TypeSet` 拆分出的 BGP 系取值）等其它运营商不支持独占集群。
+
+**改动点**:
+
+- `src/api/load_balancers/apply-clb/types.ts`: 新增 `ExclusiveClusterIsp = 'CMCC' | 'CUCC' | 'CTCC'`，`ExclusiveClusterTagsReqData.isp` 由 `string` 收窄为 `ExclusiveClusterIsp`。
+- `src/views/service/service-apply/clb/hooks/useExclusiveCluster.ts`: 新增 `EXCLUSIVE_CLUSTER_ISP_TYPES` 与类型谓词 `isExclusiveClusterIsp`；`isExclusiveAvailable` 的运营商条件改为 `isExclusiveClusterIsp(formModel.vip_isp)`；`loadExclusiveClusterTags` 前置校验改用同一谓词——非三网运营商**不发请求**，并按既有逻辑清空标签与 `formModel.exclusive_cluster_tags`。
+- `src/views/service/service-apply/clb/hooks/useRenderForm.tsx`: `exclusiveConfigRules` 增加运营商兜底校验（`slaType === '2'` 且运营商非三网时判定不通过），防止克隆 / 编辑配置等入口带入独占态。
+
+**行为**:
+
+- 「独占型」选项仅在运营商为 `CMCC` / `CUCC` / `CTCC` 时出现；切换到 BGP 等其它运营商后 `isExclusiveAvailable` 变为 false，既有 `watch` 自动回退为共享型（`slaType='0'`、`sla_type='shared'`、`exclusive=0`）并清空独占选择。
+- 自研云仅在运营商选择移动 / 联通 / 电信（原样 `Isp` 值）时支持独占型；选择 BGP 系（`ziyan` / `ziyan_normal_bgp` / `ziyan_mianliu` 等 `TypeSet[0].Type` 取值）时不支持。免流 / 直通开关与 `tgw_group_name` 推导链不受影响。
+
+**校验**: 改动文件 ESLint 0 error、IDE 诊断 0、生产构建通过；`api.md` §2 的 `isp` 参数表已同步为枚举口径。

@@ -16,7 +16,7 @@
 | 路径 `bk_biz_id` | number | 当前业务，接口仅返回已分配给该业务的公网独占集群 |
 | `account_id` | string | 云账号 |
 | `region` | string | 地域 |
-| `isp` | string | 运营商：BGP/CMCC/CUCC/CTCC |
+| `isp` | `CMCC`/`CUCC`/`CTCC` 枚举 | 运营商：**仅支持三网直连**；BGP（含自研云 BGP 系取值）等其它类型不支持独占集群，前端据此不展示「独占型」 |
 | `zones` | string[] | 当前选中可用区；单可用区传单元素数组 |
 | `cluster_type` | `TGW`/`STGW`/空 | 空值同时查询四层与七层 |
 

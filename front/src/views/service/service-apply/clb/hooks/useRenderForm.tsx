@@ -40,7 +40,7 @@ import RegionSelector from '../../components/common/region-selector.vue';
 import { cloneDeep } from 'lodash';
 import CalcPrice from '../children/calc-price';
 import cssModule from '../index.module.scss';
-import useExclusiveCluster, { RANDOM_ALLOCATION } from './useExclusiveCluster';
+import useExclusiveCluster, { RANDOM_ALLOCATION, isExclusiveClusterIsp } from './useExclusiveCluster';
 
 const { Option } = Select;
 const { FormItem } = Form;
@@ -183,6 +183,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     {
       validator: () => {
         if (formModel.slaType !== '2') return true;
+        // 运营商仅支持三网直连时才能选择独占型，防止克隆配置等入口带入独占态
+        if (!isExclusiveClusterIsp(formModel.vip_isp)) return false;
         if (!formModel.enable_l4 && !formModel.enable_l7) return false;
         if (formModel.enable_l4 && (!formModel.l4_cluster_tag || !formModel.l4_cluster_id || !formModel.l4_vip)) {
           return false;
