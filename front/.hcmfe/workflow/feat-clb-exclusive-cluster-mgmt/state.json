@@ -3,7 +3,7 @@
   "title": "CLB exclusive cluster management list",
   "currentStage": "test",
   "createdAt": "2026-09-14T10:25:58.830Z",
-  "updatedAt": "2026-09-17T09:20:16.040Z",
+  "updatedAt": "2026-09-20T11:58:12.973Z",
   "artifacts": {
     "prd": [
       {
@@ -141,6 +141,13 @@
         "src/components/resource-search-select/index.vue",
         "src/components/resource-search-select/map-search-fields.ts",
         "src/components/resource-search-select/option-common.ts",
+        "src/style/override/bkpopover.scss",
+        "src/common/auth-service.ts",
+        "src/constants/auth-symbols.ts",
+        "src/components/permission/apply-dialog.vue",
+        "src/common/constant.ts",
+        "src/views/resource/resource-manage/accountInfo/component/resourceStatus/index.tsx",
+        "src/utils/interval.ts",
         "views/load-balancer/constants.ts",
         "children/resource-subtype-switch.vue",
         "search-condition.ts",
@@ -151,16 +158,17 @@
         "api.ts",
         "constants.ts",
         ".vue",
-        "src/style/override/bkpopover.scss",
         "views/task/clb.vue",
         "permission-template/index.vue",
         "load-balancer/clb/load-balancer-table.vue",
         "data-list.vue",
-        "index.vue"
+        "index.vue",
+        "apply-dialog.vue",
+        "app.vue"
       ],
-      "contentFingerprint": "fd031debd3abf2cb037f8c091f702671751273a7",
-      "codeBaseline": "35649d328f0be27bd324f8e7d91fca3c0e20ab27",
-      "seatedAt": "2026-09-17T09:20:16.040Z"
+      "contentFingerprint": "4a08f98a9ca2265f5c75fc8a22611b4017151e10",
+      "codeBaseline": "c25458eb87ac92891666a44371528528bc785f24",
+      "seatedAt": "2026-09-20T11:58:12.973Z"
     }
   }
 }

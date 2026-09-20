@@ -25,7 +25,7 @@
 
 **TAPD**: [#1069995598138113967](https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138113967)
 
-**文件**: `src/views/load-balancer/entry-rsc.vue` `src/views/load-balancer/children/resource-subtype-switch.vue` `src/views/load-balancer/constants.ts` `src/views/resource/resource-manage/children/manage/load-balancer-manage.vue` `src/views/load-balancer/exclusive-cluster/index.vue` `src/views/load-balancer/exclusive-cluster/data-list.vue` `src/views/load-balancer/exclusive-cluster/column.ts` `src/views/load-balancer/exclusive-cluster/search-condition.ts` `src/views/load-balancer/exclusive-cluster/constants.ts` `src/store/load-balancer/exclusive-cluster.ts` `src/views/resource/resource-manage/children/dialog/batch-distribution/index.tsx` `src/common/resource-constant.ts` `src/components/resource-search-select/index.vue` `src/components/resource-search-select/map-search-fields.ts` `src/components/resource-search-select/option-common.ts`
+**文件**: `src/views/load-balancer/entry-rsc.vue` `src/views/load-balancer/children/resource-subtype-switch.vue` `src/views/load-balancer/constants.ts` `src/views/resource/resource-manage/children/manage/load-balancer-manage.vue` `src/views/load-balancer/exclusive-cluster/index.vue` `src/views/load-balancer/exclusive-cluster/data-list.vue` `src/views/load-balancer/exclusive-cluster/column.ts` `src/views/load-balancer/exclusive-cluster/search-condition.ts` `src/views/load-balancer/exclusive-cluster/constants.ts` `src/store/load-balancer/exclusive-cluster.ts` `src/views/resource/resource-manage/children/dialog/batch-distribution/index.tsx` `src/common/resource-constant.ts` `src/components/resource-search-select/index.vue` `src/components/resource-search-select/map-search-fields.ts` `src/components/resource-search-select/option-common.ts` `src/style/override/bkpopover.scss` `src/common/auth-service.ts` `src/constants/auth-symbols.ts` `src/components/permission/apply-dialog.vue` `src/common/constant.ts` `src/views/resource/resource-manage/accountInfo/component/resourceStatus/index.tsx` `src/utils/interval.ts`
 
 **改动点**:
 
@@ -52,6 +52,34 @@
   - `rows.length === 1` 时标题/文案用「独占集群分配」并展示该行名称；多条仍用「批量分配」+ 已选数量。
   - 确认走注入的 `submit`（store 的 `assignExclusiveClusterToBiz`）；id 列表来自本次 `open` 的 rows（批量则来自 selections）。不走通用 `assignBusiness`，因为独占集群路径挂在 `load_balancers/` 下，body 是 `cluster_ids`。
 - 不改菜单、不新建容量管理、不改购买/单据/CLB 列表规格字段。
+
+### 追加：分配操作预鉴权（在 PR #2079 之后补做，PR #2081）
+
+独占集群把分配收敛到通用 `BatchDistribution` 之后才发现这个入口一直没有预鉴权，属于同一条分配链路的欠账，所以并入本单（提交带同一 `--story`），分支 `feat-resource-assign-preauth`，已合入 `feat-clb-exclusive-cluster`。
+
+- 权限定义此前是错的：`AUTH_ASSIGN_IAAS_RESOURCE` 指向删除类 action 且无人使用，真正的 `resource_assign` 被错挂在 `AUTH_BIZ_FIND_IAAS_RESOURCE` 上且 `transform` 被注释掉。现改为 `AUTH_ASSIGN_IAAS_RESOURCE → { id: 'resource_assign', action: 'assign', resourceType: 'cloud_resource' }`，并删掉冗余的 `AUTH_BIZ_FIND_IAAS_RESOURCE`（symbol 一并移除）。
+- `resource_assign` 是**唯一**同时关联两个资源实例的 action（云账号 + CMDB 业务），`relation` 必须传 `[accountId, targetBizId]`。目标业务是用户在弹窗里才选的，所以预鉴权**不能**包在工具栏「批量分配」按钮上（那时 `BizID=0`，IAM 侧必然无权限）——`hcm-auth` 只能包在弹窗的「确定」上，未选业务时用 `ignore` 跳过鉴权并禁用按钮（顺带修掉了"没选业务也能点确定"）。
+- `resourceType` 只决定后端 `adaptor.go` 的 `genResourceFuncMap` 用哪个生成函数，不参与 IAM 判定。`cloud_resource`（`meta.CloudResource`，注释即「涵盖全部云资源」）直连 `genCloudResResource`；写 `cvm` 也能通但要靠 `genCvmResource` 的 `default` 兜回 `genIaaSResourceResource`，绕且会让人误以为只管主机。
+- 无权限弹窗补全后半段：`apply-dialog.vue` 原先只读 `related_resource_types[0]`，分配会丢掉「业务」那条实例。改为遍历全部 `related_resource_types`、`flatMap` 收集 `instances` 后按 `${type}_${id}` 复合键去重，`v-for` key 同步换成复合键。
+- 负载均衡列表行内的单条分配原本是 `BatchDistribution` 单条模式的逐字复制（含 `{ cvm_ids }` 这类过期请求体），直接删掉内联 dialog 改调 `open([lb])`，行内入口因此自动获得同一套预鉴权。
+- 本轮**未**接 403 兜底：`app.vue` 的 `window.hcmPermissionDialog` 只有赋值没有消费方、`http/index.ts` 的 `bus.$emit('show-forbidden')` 无监听，属全局改动，用户明确要求不动。主机批量/单个与安全组批量两个自研分配弹窗交互不同，也不在本轮。
+
+## 验收问题处理（分支 `feat-clb-exclusive-cluster-mgmt-patch1`，基于 `origin/feat-clb-exclusive-cluster`）
+
+功能开发已随 PR #2079 / #2081 合入，本节记录 test 阶段验收暴露的问题及其修复，逐条按「现象 / 根因 / 修复 / 验收」补写；文件路径同步并入上面单据 1 的 `**文件**`（引擎与 git-commit 只认那一处）。
+
+### 附带：独占集群同步相关（未开放入口，只补前端可见部分）
+
+后端已具备独占集群同步能力，前端本轮不加功能入口，只让账号「资源状态」页能认出这个资源。做的时候连带撞出一个存量缺陷，一并修掉。
+
+- **译名**：`RESOURCE_TYPES_MAP` 补 `load_balancer_exclusive_cluster: '负载均衡独占集群'`。资源状态表的「资源名称」列直接用这个 map 转译 `sync_details` 返回的 `res_name`，加一行即可，不动组件。
+- **轮询用错 accountId（存量缺陷，与独占集群无关，影响所有资源类型）**
+  - 现象：进入 `/resource/resource/account/resource?accountId=0000002d` 首次请求 `sync_details/0000002d` 正常，之后每 10s 的轮询却打到上一个账号 `0000002a`。
+  - 根因：`interval` 的回调只在 `timeInterval.set` 为空时创建一次，把当次 watch 回调的 `account` **形参**永久固定在闭包里。而 `resourceAccount` 是 `useResourceAccount` 里异步 `getAccountDetail` 之后才写进 store 的，且 `clear()` 只在离开 resource 页时执行——所以从 A 账号页切到 B 账号时，组件挂载那次 immediate 触发拿到的还是 store 里残留的 A，轮询就钉在 A 上；随后 B 的详情返回、watch 再触发一次，那次 `getList` 参数才是 B，正是"第一次正常、之后全错"的来源。
+  - 修复：账号不进闭包——`getList` 无参，调用时现取 `resourceAccountStore.resourceAccount?.id`。同时把自研的 `@/utils/interval` 换成项目既有的 `@/hooks/use-timeout-poll`（`useTimeoutPoll(getList, 10000, { max: 60 })` 等价于原来的 10s 一轮、10 分钟上限），watch 里 `reset()` + `resume()` 重置轮次，卸载由 hook 自己的 `onScopeDispose` 负责。`timeInterval` 那个 `reactive` 壳、`init` 与 `onBeforeUnmount` 一并删除；`utils/interval` 至此在本仓已无调用方，标记 `@deprecated`（内部版可能仍在用，故不删文件）。
+  - 验收：两个账号之间来回切资源状态页，看 Network 里连续几轮 `sync_details/{id}` 的 id 是否始终跟随当前 `accountId`；独占集群那行显示「负载均衡独占集群」而不是空白。
+
+> 其余验收问题逐条进入本节。
 
 ## 不做
 
