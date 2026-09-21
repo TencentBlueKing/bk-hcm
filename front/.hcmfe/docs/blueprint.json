@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "e10a9271832a734e024d00f42b9579f1107344d3"
+        "rootHash": "4a72cf266d932623f18c369dbfaaf04e13ca4d31"
       }
     },
     {
@@ -138,7 +138,7 @@
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "8fa4debcddd455d5e0cbe1f5a9df2635a36e2a80"
+        "rootHash": "eb22f6d1d44f878cda60c90c928d0c0d4d4ef367"
       }
     },
     {
@@ -194,7 +194,7 @@
         "business"
       ],
       "fingerprint": {
-        "rootHash": "16553ac1fbcb9db8bfb1374e63fa1fdc314fd2ce"
+        "rootHash": "a54f68e06a9d40d604d095809171913bc1b62519"
       }
     },
     {

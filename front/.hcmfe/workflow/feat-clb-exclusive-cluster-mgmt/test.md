@@ -2,7 +2,7 @@
 
 > 工作流: `feat-clb-exclusive-cluster-mgmt`
 > 关联文档: [prd.md](./prd.md) / [design.md](./design.md) / [api.md](./api.md) / [coding.md](./coding.md)
-> TAPD: 独占集群管理页面 #1069995598138113967
+> 需求单: 独占集群管理页面
 
 ## 验证范围
 
@@ -51,6 +51,17 @@
 | P1-05 | 全部账号 / 只选云厂商时的分配 | 左树停在「全部」或只选到云厂商 | 打开分配弹窗 | 目标业务下拉按行自身 `account_id` 取，不因树未选账号而报错 | |
 | P1-06 | 搜索条件回填展示名 | 带 `filter` 的 URL 直接打开 | 观察搜索框 | 业务等异步字段回填出**名称**而非 ID，且回填不触发额外一次列表请求 | |
 
+### P0（验收补充，分支 `feat-clb-exclusive-cluster-mgmt-patch1`）
+
+| ID | 场景 | 前置 | 操作 | 期望 | covered-by | 回滚 |
+|----|------|------|------|------|------------|------|
+| P0-13 | 分配按钮预鉴权 | 用无 `resource_assign` 权限的账号 | 打开分配弹窗、选目标业务后点「确定」 | 弹出无权限申请弹窗（`apply-dialog`，非老 `permission-dialog`），资源实例表格同时列出云账号与目标业务两条，点「去申请」跳 IAM；有权限时行为不变 | | — |
+| P0-14 | 行内分配复用通用组件 | 存在未分配行 | 点某行「分配」 | 弹窗与「批量分配」同一形态（标题带该行名称），提交后列表刷新、分配状态变更；与 P0-08 结果一致 | | 操作不可逆，用可弃集群 |
+| P0-15 | 同步资源译名 | 打开账号-资源状态页（`?type=clb`） | 找独占集群那一行 | 显示「负载均衡独占集群」，不是 `load_balancer_exclusive_cluster` | | — |
+| P0-16 | 同步状态轮询用当前账号 | Network 面板已打开，停在资源状态页 | 切到另一个账号，等一轮轮询 | 每次 `sync_details/{accountId}` 都打当前账号 id（不再固定在首次进入的那个 id）；离开页面后轮询停止 | | — |
+| P0-17 | 窄屏 toolbar 不裁左侧 | 把窗口压到 1280 以下（或缩放到 ~1100） | 观察两个列表的工具栏 | 「负载均衡 / 独占集群」radio 与按钮完整可见，只有搜索框收窄（下限 240px），文字不被压掉 | | 恢复窗口 |
+| P0-18 | 独占集群列宽 | 独占集群列表有数据 | 看集群ID / 集群名称两列 | 集群ID（`tgw-` + 8 位）不留大片空白；名称形如 `shanghai-zone6-M40-S4-IP-DIANXIN` 能显示完整或超出有 tooltip；横向滚动条出现在表格**底部**而非表头下 | | — |
+
 ### P2 - UI 细节（按需）
 
 - [ ] 独占集群页高度与「负载均衡」页一致，工具栏+表格包在 Loading 内，无二次滚动条
@@ -62,28 +73,37 @@
 
 > 每条填写：PASS / FAIL / Skipped + 简要说明（FAIL 附复现步骤与截图/日志）
 
+> 本轮为**开发自测**，执行人：开发。依据分三类，已在备注标注：`实测` = 浏览器实操并核对 Network/DOM；`mock 期实测` = 开发期用占位数据/响应改写验过，mock 已在提交前删除；`代码复核` = 环境不具备前置条件，只做了实现走查。
+
 | ID | 结果 | 备注 |
 |----|------|------|
-| P0-01 | <PASS / FAIL / Skipped> | |
-| P0-02 | <PASS / FAIL / Skipped> | |
-| P0-03 | <PASS / FAIL / Skipped> | |
-| P0-04 | <PASS / FAIL / Skipped> | |
-| P0-05 | <PASS / FAIL / Skipped> | |
-| P0-06 | <PASS / FAIL / Skipped> | |
-| P0-07 | <PASS / FAIL / Skipped> | |
-| P0-08 | <PASS / FAIL / Skipped> | |
-| P0-09 | <PASS / FAIL / Skipped> | |
-| P0-10 | <PASS / FAIL / Skipped> | |
-| P0-11 | <PASS / FAIL / Skipped> | |
-| P0-12 | <PASS / FAIL / Skipped> | |
-| P1-01 | <PASS / FAIL / Skipped> | |
-| P1-02 | <PASS / FAIL / Skipped> | |
-| P1-03 | <PASS / FAIL / Skipped> | |
-| P1-04 | <PASS / FAIL / Skipped> | |
-| P1-05 | <PASS / FAIL / Skipped> | |
-| P1-06 | <PASS / FAIL / Skipped> | |
+| P0-01 | PASS | 实测。radio 在工具栏同一行，默认负载均衡，URL 不带 `subtype` |
+| P0-02 | PASS | 实测。`activeType` 改为可写 computed（URL 唯一来源）后由 2 次收敛为 1 次 |
+| P0-03 | PASS | 实测 |
+| P0-04 | PASS | 实测。切换入口清 `filter`/`page`，两页搜索不串台 |
+| P0-05 | PASS | mock 期实测。列顺序与空值 `--` 一致；真实响应待后端 |
+| P0-06 | PASS | 实测。选中账号时 `vendor` 曾被下拉逻辑吞掉，修复后两者同时下发 |
+| P0-07 | PASS | 实测。`bk_biz_id eq/neq -1` 正确下发（原先独占集群没吃到该条件） |
+| P0-08 | Skipped | 待后端。mock 期已验目标业务下拉非空（原为空，取数改按行 `account_id`）与弹窗标题；真实落库无法验 |
+| P0-09 | Skipped | 待后端。同 P0-08，仅验到弹窗形态与已选数量 |
+| P0-10 | PASS | mock 期实测。复选框禁用 + `bk-popover` 提示「已分配」 |
+| P0-11 | PASS | 实测下发规则与所选条件一致；「仅展示命中行」待后端 |
+| P0-12 | PASS | 实测 |
+| P0-13 | Skipped | 代码复核。环境无「缺 `resource_assign` 权限」的账号；已确认鉴权点在弹窗「确定」（relation 传 `[account_id, 目标业务]`）、走 `hcm-auth` + `apply-dialog`，且 `apply-dialog` 已改为展开全部 `related_resource_types` |
+| P0-14 | Skipped | 待后端。行内分配已改为复用 `BatchDistribution`，与 P0-08 同一条链路 |
+| P0-15 | PASS | 实测。资源状态页显示「负载均衡独占集群」 |
+| P0-16 | PASS | 实测。切账号后 `sync_details/{accountId}` 跟随当前 id（原固定在首次进入的 id），离开页面 `onScopeDispose` 停止 |
+| P0-17 | PASS | 实测。1100 左右宽度下 radio 与按钮完整，仅搜索框收窄到下限 |
+| P0-18 | PASS | 实测。列宽调整后名称列可读，横向滚动条落在表格底部 |
+| P1-01 | PASS | 实测（拦 500）。表格常挂、列表清空、空态可见，不白屏 |
+| P1-02 | Skipped | 待后端 |
+| P1-03 | PASS | 实测。排序参数进 URL 与 `page`，未点排序时不带 |
+| P1-04 | PASS | 实测 |
+| P1-05 | Skipped | 待后端。取数已按行 `account_id`，不依赖左树选中账号 |
+| P1-06 | PASS | 实测。业务回填名称且不触发额外列表请求 |
 
-- 执行日期: <YYYY-MM-DD>
-- 总体结论: PASS / FAIL
-- 待后端复验（不阻塞本轮）: P0-11 的命中结果、P0-08/P0-09 的真实分配落库
-- 后续行动: <例如：回 coding 修 P0-xx / 提测 / 开 MR>
+- 执行日期: 2026-09-21
+- 总体结论: PASS（前端可验范围内无 FAIL；5 条 Skipped 均因后端接口未上环境）
+- 待后端复验（不阻塞本轮）: P0-05 真实响应下的列与空值、P0-11 的命中结果、P0-08 / P0-09 / P0-14 / P1-02 / P1-05 的真实分配落库
+- 待权限环境复验: P0-13 的无权限弹窗（需一个缺 `resource_assign` 的账号）
+- 后续行动: 提测（子单已到 for test）；后端接口上环境后按上面两组清单复验
