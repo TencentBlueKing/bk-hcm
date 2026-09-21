@@ -84,6 +84,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
   );
 
   const resetExclusiveSelections = () => {
+    idleVipsRequestId += 1;
+    isIdleVipsLoading.value = false;
     formModel.l4_cluster_tag = '';
     formModel.l4_cluster_id = '';
     formModel.l4_vip = '';
@@ -150,6 +152,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     idleVipsRequestId += 1;
     const requestId = idleVipsRequestId;
     idleVips.value = [];
+    // 重新加载时清掉上一次的失败态：否则失败过一次后即使后续成功也一直是失败态，校验永远不过
+    isIdleVipsLoadFailed.value = false;
     if (resetSelection) formModel.l4_vip = RANDOM_ALLOCATION;
     if (!cloudClusterId || cloudClusterId === RANDOM_ALLOCATION) {
       isIdleVipsLoading.value = false;
@@ -180,6 +184,9 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
   };
 
   const handleL4TagChange = () => {
+    idleVipsRequestId += 1;
+    isIdleVipsLoading.value = false;
+    isIdleVipsLoadFailed.value = false;
     formModel.l4_cluster_id = RANDOM_ALLOCATION;
     formModel.l4_vip = RANDOM_ALLOCATION;
     idleVips.value = [];

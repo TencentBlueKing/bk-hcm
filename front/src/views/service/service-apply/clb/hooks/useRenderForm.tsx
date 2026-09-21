@@ -179,6 +179,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   // 独占集群校验：独占配置由「勾选状态 + 标签 + 集群 + IP」多个字段组合而成，
   // 没有单一模型字段可表达，因此用 FormItem 的项级 rules 承载校验，
   // 不依赖不存在的 exclusive_config 字段判空。
+  const isExclusiveConfigLoading = computed(
+    () => formModel.slaType === '2' && (isTagsLoading.value || (formModel.enable_l4 && isIdleVipsLoading.value)),
+  );
   const exclusiveConfigRules = [
     {
       validator: () => {
@@ -203,19 +206,53 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         ) {
           return false;
         }
-        if (
-          formModel.enable_l4 &&
-          formModel.l4_cluster_id !== RANDOM_ALLOCATION &&
-          (isIdleVipsLoading.value || isIdleVipsLoadFailed.value)
-        ) {
-          return false;
-        }
-        return !isTagsLoadFailed.value;
+        // 注意：不要把 isIdleVipsLoading（选择集群后的瞬时加载态）当作「配置错误」。
+        // change 触发的校验会在请求返回前跑一次，误判会让用户刚选完集群就看到报错，
+        // 而保存时（请求已完成）又校验通过——错误信息还会残留到下一次 change 才消失。
+        return true;
       },
       message: '请至少启用并完整配置一个独占集群',
       trigger: 'change',
     },
+    {
+      // 「接口失败」与「配置不完整」是两回事，单独一条规则给出准确提示
+      validator: () => {
+        if (formModel.slaType !== '2') return true;
+        if (isTagsLoadFailed.value) return false;
+        return !(formModel.enable_l4 && formModel.l4_cluster_id !== RANDOM_ALLOCATION && isIdleVipsLoadFailed.value);
+      },
+      message: '独占集群信息获取失败，请重新选择或稍后重试',
+      trigger: 'change',
+    },
+    {
+      validator: () => {
+        if (
+          formModel.slaType !== '2' ||
+          !formModel.enable_l4 ||
+          isIdleVipsLoading.value ||
+          isIdleVipsLoadFailed.value ||
+          formModel.l4_vip === RANDOM_ALLOCATION
+        ) {
+          return true;
+        }
+        return formModel.l4_cluster_id !== RANDOM_ALLOCATION && idleVips.value.includes(formModel.l4_vip);
+      },
+      message: '所选 IP 已不在当前集群的空闲 IP 列表中，请重新选择',
+      trigger: 'change',
+    },
   ];
+
+  watch(
+    [isTagsLoading, isIdleVipsLoading],
+    ([tagsLoading, vipsLoading], [wasTagsLoading, wasVipsLoading]) => {
+      if (!sideSliderOptions.value.show || formModel.slaType !== '2' || isExclusiveConfigLoading.value) return;
+      if ((wasTagsLoading && !tagsLoading) || (wasVipsLoading && !vipsLoading)) {
+        // 异步结果不触发 Select change，完成后刷新组合字段校验，保留各规则的独立错误提示。
+        formRef.value?.validate(['exclusive_config']).catch(() => undefined);
+      }
+    },
+    { flush: 'post' },
+  );
 
   // change-handle - 更新 sla_type
   const handleSlaTypeChange = (v: '0' | '1' | '2') => {
@@ -761,6 +798,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   };
   const handleConfirm = async () => {
     await formRef.value.validate();
+    if (isExclusiveConfigLoading.value) return;
     if (sideSliderOptions.value.type === 'add') {
       configureList.push({ ...formModel, rowKey: new Date().getTime() });
     } else {
@@ -898,7 +936,11 @@ export default (formModel: Reactive<ApplyClbModel>) => {
               footer: (
                 <>
                   <div>
-                    <Button theme='primary' onClick={handleConfirm} class={'mr10'}>
+                    <Button
+                      theme='primary'
+                      onClick={handleConfirm}
+                      disabled={isExclusiveConfigLoading.value}
+                      class={'mr10'}>
                       {t('保存')}
                     </Button>
                     <Button onClick={handleClose}>{t('取消')}</Button>
