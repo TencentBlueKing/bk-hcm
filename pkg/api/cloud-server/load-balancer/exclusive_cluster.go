@@ -66,11 +66,15 @@ func (req *AssignExclusiveClusterToBizReq) Validate() error {
 // ListExclusiveClusterTagsReq define list biz load balancer exclusive cluster tags req, used by purchase page
 // to render cluster_tag/cluster dropdowns for exclusive load balancer spec. bk_biz_id is taken from the path
 // parameter only, the request body does not accept a bk_biz_id field.
+// Zones and BackZones decide the DB zone filter: one zone with empty back_zones
+// matches the top-level zone column; two zones or any back_zones match
+// extension.clusters_zone arrays.
 type ListExclusiveClusterTagsReq struct {
 	AccountID   string             `json:"account_id" validate:"required"`
 	Region      string             `json:"region" validate:"required"`
 	Isp         enumor.ClusterIsp  `json:"isp" validate:"required"`
-	Zone        string             `json:"zone" validate:"omitempty"`
+	Zones       []string           `json:"zones" validate:"omitempty,dive,min=1"`
+	BackZones   []string           `json:"back_zones" validate:"omitempty,dive,min=1"`
 	ClusterType enumor.ClusterType `json:"cluster_type" validate:"omitempty"`
 }
 
@@ -113,12 +117,12 @@ type ExclusiveClusterTagGroup struct {
 
 // ExclusiveClusterTagItem define a single load balancer exclusive cluster info within a tag group.
 type ExclusiveClusterTagItem struct {
-	CloudClusterID string            `json:"cloud_cluster_id"`
-	ClusterID      string            `json:"cluster_id"`
-	ClusterName    string            `json:"cluster_name"`
-	Egress         string            `json:"egress"`
-	Isp            enumor.ClusterIsp `json:"isp"`
-	Zone           string            `json:"zone"`
+	CloudClusterID string                            `json:"cloud_cluster_id"`
+	ClusterID      string                            `json:"cluster_id"`
+	ClusterName    string                            `json:"cluster_name"`
+	Egress         string                            `json:"egress"`
+	Isp            enumor.ClusterIsp                 `json:"isp"`
+	ClusterZone    corelb.TCloudExclusiveClusterZone `json:"cluster_zone"`
 }
 
 // -------------------------- List Idle Vips --------------------------

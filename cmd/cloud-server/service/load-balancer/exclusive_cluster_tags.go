@@ -53,6 +53,7 @@ func (svc *lbSvc) ListBizExclusiveClusterTags(cts *rest.Contexts) (any, error) {
 	if len(req.ClusterType) != 0 {
 		rules = append(rules, tools.RuleEqual("cluster_type", req.ClusterType))
 	}
+	rules = append(rules, lblogic.BuildExclusiveClusterZoneRules(req.Zones, req.BackZones)...)
 
 	// list authorized instances, ListBizAuthRes ANDs the returned filter with a bk_biz_id(from path) condition.
 	expr, noPermFlag, err := handler.ListBizAuthRes(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
@@ -67,5 +68,5 @@ func (svc *lbSvc) ListBizExclusiveClusterTags(cts *rest.Contexts) (any, error) {
 		return &cslb.ListExclusiveClusterTagsResult{Details: make([]cslb.ExclusiveClusterTagGroup, 0)}, nil
 	}
 
-	return lblogic.AggregateExclusiveClusterTags(cts.Kit, svc.client.DataService(), expr, req)
+	return lblogic.AggregateExclusiveClusterTags(cts.Kit, svc.client.DataService(), expr)
 }

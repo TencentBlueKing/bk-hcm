@@ -22,6 +22,7 @@ package loadbalancer
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -130,6 +131,13 @@ func writeOKRespCS(t *testing.T, w http.ResponseWriter, data any) {
 	require.NoError(t, json.NewEncoder(w).Encode(map[string]any{"code": 0, "message": "", "data": data}))
 }
 
+func readRequestBody(t *testing.T, r *http.Request) string {
+	t.Helper()
+	b, err := io.ReadAll(r.Body)
+	require.NoError(t, err)
+	return string(b)
+}
+
 // TestListBizExclusiveClusterTags_InvalidParameter 必填参数缺失（isp 未传）时直接返回 InvalidParameter，
 // 不发起任何下游调用。
 func TestListBizExclusiveClusterTags_InvalidParameter(t *testing.T) {
@@ -169,6 +177,79 @@ func TestListBizExclusiveClusterTags_RequestBodyIgnoresBkBizID(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, strings.Contains(string(raw), "bk_biz_id"),
 		"ListExclusiveClusterTagsReq must not contain bk_biz_id field")
+}
+
+// TestListBizExclusiveClusterTags_SingleZoneFiltersTopLevelZone 查询单可用区集群时，
+// zones 只有一个元素且 back_zones 为空，下游 list 过滤条件应使用顶层 zone 等值匹配。
+func TestListBizExclusiveClusterTags_SingleZoneFiltersTopLevelZone(t *testing.T) {
+	var gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotBody = readRequestBody(t, r)
+		writeOKRespCS(t, w, map[string]any{"count": 0, "details": []any{}})
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+	cts := newBizContext(t, "213", map[string]any{
+		"account_id": "acc-1", "region": "ap-guangzhou", "isp": "BGP",
+		"zones": []string{"ap-guangzhou-3"},
+	})
+
+	_, err := svc.ListBizExclusiveClusterTags(cts)
+	require.NoError(t, err)
+	require.Contains(t, gotBody, `"field":"zone"`)
+	require.Contains(t, gotBody, `"value":"ap-guangzhou-3"`)
+	require.NotContains(t, gotBody, "extension.clusters_zone")
+}
+
+// TestListBizExclusiveClusterTags_HAFiltersExtension 查询主备集群时，zones + back_zones 应下沉为
+// extension.clusters_zone.master_zone / slave_zone 的 JSON 包含过滤，而不是顶层 zone。
+func TestListBizExclusiveClusterTags_HAFiltersExtension(t *testing.T) {
+	var gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotBody = readRequestBody(t, r)
+		writeOKRespCS(t, w, map[string]any{"count": 0, "details": []any{}})
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+	cts := newBizContext(t, "213", map[string]any{
+		"account_id": "acc-1", "region": "ap-guangzhou", "isp": "BGP",
+		"zones": []string{"ap-guangzhou-3"}, "back_zones": []string{"ap-guangzhou-4"},
+	})
+
+	_, err := svc.ListBizExclusiveClusterTags(cts)
+	require.NoError(t, err)
+	require.Contains(t, gotBody, `"field":"extension.clusters_zone.master_zone"`)
+	require.Contains(t, gotBody, `"field":"extension.clusters_zone.slave_zone"`)
+	require.Contains(t, gotBody, `"value":"ap-guangzhou-3"`)
+	require.Contains(t, gotBody, `"value":"ap-guangzhou-4"`)
+	require.NotContains(t, gotBody, `"field":"zone"`)
+}
+
+// TestListBizExclusiveClusterTags_TwoZonesFiltersExtension 查询双主可用区集群时，
+// zones 有两个元素且 back_zones 为空，下游 list 过滤条件应按 extension master_zone 包含匹配。
+func TestListBizExclusiveClusterTags_TwoZonesFiltersExtension(t *testing.T) {
+	var gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotBody = readRequestBody(t, r)
+		writeOKRespCS(t, w, map[string]any{"count": 0, "details": []any{}})
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+	cts := newBizContext(t, "213", map[string]any{
+		"account_id": "acc-1", "region": "ap-guangzhou", "isp": "BGP",
+		"zones": []string{"ap-guangzhou-3", "ap-guangzhou-4"},
+	})
+
+	_, err := svc.ListBizExclusiveClusterTags(cts)
+	require.NoError(t, err)
+	require.Contains(t, gotBody, `"field":"extension.clusters_zone.master_zone"`)
+	require.Contains(t, gotBody, `"value":"ap-guangzhou-3"`)
+	require.Contains(t, gotBody, `"value":"ap-guangzhou-4"`)
+	require.NotContains(t, gotBody, `"field":"extension.clusters_zone.slave_zone"`)
+	require.NotContains(t, gotBody, `"field":"zone"`)
 }
 
 // TestListBizExclusiveClusterIdleVips_InvalidParameter 必填参数缺失（cloud_cluster_id 未传）时直接返回

@@ -28,9 +28,17 @@ import (
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+)
+
+const (
+	// exclusiveClusterMasterZoneJSONField is the JSON path of exclusive cluster master zones.
+	exclusiveClusterMasterZoneJSONField = "extension.clusters_zone.master_zone"
+	// exclusiveClusterSlaveZoneJSONField is the JSON path of exclusive cluster slave zones.
+	exclusiveClusterSlaveZoneJSONField = "extension.clusters_zone.slave_zone"
 )
 
 // exclusiveClusterTagGroupKey 独占集群标签聚合分组的键，由集群标签+集群类型两个维度组成。
@@ -39,11 +47,34 @@ type exclusiveClusterTagGroupKey struct {
 	clusterType enumor.ClusterType
 }
 
-// AggregateExclusiveClusterTags 按 (cluster_tag, cluster_type) 对独占集群做分组聚合，供业务视角标签聚合查询接口
-// （N-04）使用。bizFilterExpr 由调用方通过 handler.ListBizAuthRes 生成（已包含 bk_biz_id 归属过滤及 account_id/
-// region/isp/cluster_type 等业务过滤条件），本函数只负责取数后的内存聚合与 zone 过滤，不重复拼装归属过滤条件。
-func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilterExpr *filter.Expression,
-	req *cslb.ListExclusiveClusterTagsReq) (*cslb.ListExclusiveClusterTagsResult, error) {
+// BuildExclusiveClusterZoneRules 按购买页传入的主/备可用区拼装独占集群 DB 过滤条件。
+// 仅传入一个 zones 且 back_zones 为空时，按顶层 zone 等值匹配单可用区集群；
+// zones 有两个元素或 back_zones 非空时，按 extension.clusters_zone 数组包含匹配主备集群。
+func BuildExclusiveClusterZoneRules(zones, backZones []string) []*filter.AtomRule {
+	if len(zones) == 0 && len(backZones) == 0 {
+		return nil
+	}
+
+	if len(zones) == 1 && len(backZones) == 0 {
+		return []*filter.AtomRule{tools.RuleEqual("zone", zones[0])}
+	}
+
+	rules := make([]*filter.AtomRule, 0, len(zones)+len(backZones))
+	for _, zone := range zones {
+		rules = append(rules, tools.RuleJSONContains(exclusiveClusterMasterZoneJSONField, zone))
+	}
+	for _, zone := range backZones {
+		rules = append(rules, tools.RuleJSONContains(exclusiveClusterSlaveZoneJSONField, zone))
+	}
+	return rules
+}
+
+// AggregateExclusiveClusterTags 按 (cluster_tag, cluster_type) 对独占集群做分组聚合，供业务视角
+// 标签聚合查询接口（N-04）使用。bizFilterExpr 由调用方通过 handler.ListBizAuthRes 生成，已包含
+// bk_biz_id 归属过滤及 account_id/region/isp/cluster_type/zones/back_zones 等业务过滤条件。
+// 本函数只负责取数后的内存聚合，不重复拼装过滤条件。
+func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilterExpr *filter.Expression) (
+	*cslb.ListExclusiveClusterTagsResult, error) {
 
 	listReq := &core.ListReq{
 		Filter: bizFilterExpr,
@@ -64,17 +95,11 @@ func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilt
 			continue
 		}
 
-		if len(req.Zone) != 0 {
-			matched, err := exclusiveClusterMatchesZone(one.Extension, req.Zone)
-			if err != nil {
-				logs.Errorf("unmarshal exclusive cluster(id=%s) extension failed, err: %v, rid: %s",
-					one.ID, err, kt.Rid)
-				return nil, fmt.Errorf("unmarshal exclusive cluster(id=%s) extension failed, err: %v", one.ID, err)
-			}
-			// R-005: zone 不命中该集群的 master_zone 时跳过该集群。
-			if !matched {
-				continue
-			}
+		clusterZone, err := convExclusiveClusterTagZone(one.Extension)
+		if err != nil {
+			logs.Errorf("unmarshal exclusive cluster(id=%s) extension failed, err: %v, rid: %s",
+				one.ID, err, kt.Rid)
+			return nil, fmt.Errorf("unmarshal exclusive cluster(id=%s) extension failed, err: %v", one.ID, err)
 		}
 
 		key := exclusiveClusterTagGroupKey{tag: one.ClusterTag, clusterType: one.ClusterType}
@@ -87,7 +112,7 @@ func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilt
 			ClusterName:    one.Name,
 			Egress:         one.Egress,
 			Isp:            one.Isp,
-			Zone:           one.Zone,
+			ClusterZone:    clusterZone,
 		})
 	}
 
@@ -103,18 +128,17 @@ func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilt
 	return &cslb.ListExclusiveClusterTagsResult{Details: details}, nil
 }
 
-// exclusiveClusterMatchesZone 判断独占集群的 extension.clusters_zone.master_zone 是否包含指定可用区。
-func exclusiveClusterMatchesZone(rawExt json.RawMessage, zone string) (bool, error) {
+// convExclusiveClusterTagZone 从独占集群 extension.clusters_zone 取出主/备可用区，
+// 回填到标签聚合结果。
+func convExclusiveClusterTagZone(rawExt json.RawMessage) (corelb.TCloudExclusiveClusterZone, error) {
+	if len(rawExt) == 0 {
+		return corelb.TCloudExclusiveClusterZone{}, nil
+	}
+
 	ext := new(corelb.TCloudExclusiveClusterExtension)
 	if err := json.Unmarshal(rawExt, ext); err != nil {
-		return false, err
+		return corelb.TCloudExclusiveClusterZone{}, err
 	}
 
-	for _, one := range ext.ClustersZone.MasterZone {
-		if one == zone {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return ext.ClustersZone, nil
 }

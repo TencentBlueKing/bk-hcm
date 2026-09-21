@@ -23,8 +23,8 @@ import (
 	"net/http"
 	"testing"
 
-	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/runtime/filter"
 
 	"github.com/stretchr/testify/require"
 )
@@ -38,17 +38,24 @@ func TestAggregateExclusiveClusterTags_GroupsByTagAndType(t *testing.T) {
 			"details": []map[string]any{
 				{
 					"id": "id-1", "cloud_id": "stgw-1", "name": "cluster-1", "cluster_tag": "tagA",
-					"cluster_type": "STGW", "egress": "1.1.1.1", "isp": "BGP", "zone": "ap-guangzhou-1",
-					"extension": map[string]any{},
+					"cluster_type": "STGW", "egress": "1.1.1.1", "isp": "BGP",
+					"extension": map[string]any{
+						"clusters_zone": map[string]any{
+							"master_zone": []string{"ap-guangzhou-1"},
+							"slave_zone":  []string{"ap-guangzhou-2"},
+						},
+					},
 				},
 				{
 					"id": "id-2", "cloud_id": "stgw-2", "name": "cluster-2", "cluster_tag": "tagA",
-					"cluster_type": "STGW", "egress": "1.1.1.2", "isp": "BGP", "zone": "ap-guangzhou-2",
-					"extension": map[string]any{},
+					"cluster_type": "STGW", "egress": "1.1.1.2", "isp": "BGP",
+					"extension": map[string]any{
+						"clusters_zone": map[string]any{"master_zone": []string{"ap-guangzhou-3"}},
+					},
 				},
 				{
 					"id": "id-3", "cloud_id": "tgw-1", "name": "cluster-3", "cluster_tag": "tagA",
-					"cluster_type": "TGW", "egress": "1.1.1.3", "isp": "BGP", "zone": "ap-guangzhou-1",
+					"cluster_type": "TGW", "egress": "1.1.1.3", "isp": "BGP",
 					"extension": map[string]any{},
 				},
 			},
@@ -56,9 +63,8 @@ func TestAggregateExclusiveClusterTags_GroupsByTagAndType(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	req := &cslb.ListExclusiveClusterTagsReq{AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP"}
 	result, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
+		tools.RuleEqual("account_id", "acc-1")))
 	require.NoError(t, err)
 	require.Len(t, result.Details, 2)
 
@@ -66,7 +72,10 @@ func TestAggregateExclusiveClusterTags_GroupsByTagAndType(t *testing.T) {
 	require.EqualValues(t, "STGW", result.Details[0].ClusterType)
 	require.Len(t, result.Details[0].Clusters, 2)
 	require.Equal(t, "stgw-1", result.Details[0].Clusters[0].CloudClusterID)
+	require.Equal(t, []string{"ap-guangzhou-1"}, result.Details[0].Clusters[0].ClusterZone.MasterZone)
+	require.Equal(t, []string{"ap-guangzhou-2"}, result.Details[0].Clusters[0].ClusterZone.SlaveZone)
 	require.Equal(t, "stgw-2", result.Details[0].Clusters[1].CloudClusterID)
+	require.Equal(t, []string{"ap-guangzhou-3"}, result.Details[0].Clusters[1].ClusterZone.MasterZone)
 
 	require.Equal(t, "tagA", result.Details[1].ClusterTag)
 	require.EqualValues(t, "TGW", result.Details[1].ClusterType)
@@ -82,9 +91,8 @@ func TestAggregateExclusiveClusterTags_EmptyResult(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	req := &cslb.ListExclusiveClusterTagsReq{AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP"}
 	result, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
+		tools.RuleEqual("account_id", "acc-1")))
 	require.NoError(t, err)
 	require.NotNil(t, result.Details)
 	require.Len(t, result.Details, 0)
@@ -109,48 +117,100 @@ func TestAggregateExclusiveClusterTags_SkipsEmptyClusterTag(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	req := &cslb.ListExclusiveClusterTagsReq{AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP"}
 	result, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
+		tools.RuleEqual("account_id", "acc-1")))
 	require.NoError(t, err)
 	require.Len(t, result.Details, 1)
 	require.Equal(t, "tagA", result.Details[0].ClusterTag)
 }
 
-// TestAggregateExclusiveClusterTags_FiltersByZone zone 过滤场景：仅保留 extension.clusters_zone.master_zone
-// 命中指定可用区的集群，未命中的集群整个跳过（R-005）。
-func TestAggregateExclusiveClusterTags_FiltersByZone(t *testing.T) {
+// TestAggregateExclusiveClusterTags_ForwardsCallerFilter 聚合函数原样转发调用方传入的过滤条件。
+// 其中已包含 handler.ListBizAuthRes 拼装的 bk_biz_id 归属条件与业务过滤条件。
+// 本函数不重复拼装、也不放宽这些条件，从而保证跨业务数据不会被聚合进结果。
+func TestAggregateExclusiveClusterTags_ForwardsCallerFilter(t *testing.T) {
+	var gotBody string
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		writeOKResp(t, w, map[string]any{
-			"count": 2,
-			"details": []map[string]any{
-				{
-					"id": "id-1", "cloud_id": "stgw-1", "name": "cluster-1", "cluster_tag": "tagA",
-					"cluster_type": "STGW",
-					"extension":    map[string]any{"clusters_zone": map[string]any{"master_zone": []string{"ap-guangzhou-1"}}},
-				},
-				{
-					"id": "id-2", "cloud_id": "stgw-2", "name": "cluster-2", "cluster_tag": "tagA",
-					"cluster_type": "STGW",
-					"extension":    map[string]any{"clusters_zone": map[string]any{"master_zone": []string{"ap-guangzhou-2"}}},
-				},
-			},
-		})
+		gotBody = readBody(t, r)
+		writeOKResp(t, w, map[string]any{"count": 0, "details": []any{}})
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	req := &cslb.ListExclusiveClusterTagsReq{
-		AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP", Zone: "ap-guangzhou-1",
-	}
-	result, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
+	callerFilter := tools.ExpressionAnd(
+		tools.RuleEqual("bk_biz_id", int64(213)),
+		tools.RuleEqual("cluster_type", "TGW"),
+	)
+	_, err := AggregateExclusiveClusterTags(testKit(), cli, callerFilter)
 	require.NoError(t, err)
-	require.Len(t, result.Details, 1)
-	require.Len(t, result.Details[0].Clusters, 1)
-	require.Equal(t, "stgw-1", result.Details[0].Clusters[0].CloudClusterID)
+	require.Contains(t, gotBody, `"field":"bk_biz_id"`)
+	require.Contains(t, gotBody, `"field":"cluster_type"`)
 }
 
-// TestAggregateExclusiveClusterTags_InvalidExtension extension 无法反序列化时返回错误，而不是静默丢弃数据。
+// TestAggregateExclusiveClusterTags_DataServiceError 底层 data-service 调用失败时错误直接透传。
+func TestAggregateExclusiveClusterTags_DataServiceError(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"code":1,"message":"mock server error","data":null}`))
+	})
+	cli := newTestDataServiceClient(t, handler)
+
+	_, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
+		tools.RuleEqual("account_id", "acc-1")))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mock server error")
+}
+
+// TestBuildExclusiveClusterZoneRules 覆盖单可用区走顶层 zone、
+// 主备/多主可用区走 extension JSON 数组的 DB 过滤口径。
+func TestBuildExclusiveClusterZoneRules(t *testing.T) {
+	testCases := []struct {
+		name      string
+		zones     []string
+		backZones []string
+		want      []*filter.AtomRule
+	}{
+		{
+			name: "empty zones and back_zones returns no rule",
+		},
+		{
+			name:  "single zone without back_zones filters top-level zone",
+			zones: []string{"ap-guangzhou-1"},
+			want:  []*filter.AtomRule{tools.RuleEqual("zone", "ap-guangzhou-1")},
+		},
+		{
+			name:  "two zones without back_zones filters extension master_zone",
+			zones: []string{"ap-guangzhou-1", "ap-guangzhou-2"},
+			want: []*filter.AtomRule{
+				tools.RuleJSONContains(exclusiveClusterMasterZoneJSONField, "ap-guangzhou-1"),
+				tools.RuleJSONContains(exclusiveClusterMasterZoneJSONField, "ap-guangzhou-2"),
+			},
+		},
+		{
+			name:      "single zone with back_zones filters extension master and slave",
+			zones:     []string{"ap-guangzhou-1"},
+			backZones: []string{"ap-guangzhou-2"},
+			want: []*filter.AtomRule{
+				tools.RuleJSONContains(exclusiveClusterMasterZoneJSONField, "ap-guangzhou-1"),
+				tools.RuleJSONContains(exclusiveClusterSlaveZoneJSONField, "ap-guangzhou-2"),
+			},
+		},
+		{
+			name:      "only back_zones filters extension slave_zone",
+			backZones: []string{"ap-guangzhou-2"},
+			want: []*filter.AtomRule{
+				tools.RuleJSONContains(exclusiveClusterSlaveZoneJSONField, "ap-guangzhou-2"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, BuildExclusiveClusterZoneRules(tc.zones, tc.backZones))
+		})
+	}
+}
+
+// TestAggregateExclusiveClusterTags_InvalidExtension extension 无法反序列化时返回错误，
+// 而不是静默丢弃数据。
 func TestAggregateExclusiveClusterTags_InvalidExtension(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeOKResp(t, w, map[string]any{
@@ -165,49 +225,7 @@ func TestAggregateExclusiveClusterTags_InvalidExtension(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	req := &cslb.ListExclusiveClusterTagsReq{
-		AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP", Zone: "ap-guangzhou-1",
-	}
 	_, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
+		tools.RuleEqual("account_id", "acc-1")))
 	require.Error(t, err)
-}
-
-// TestAggregateExclusiveClusterTags_ForwardsCallerFilter 聚合函数原样转发调用方传入的过滤条件（其中已包含由
-// handler.ListBizAuthRes 拼装的 bk_biz_id 归属条件与 account_id/region/isp/cluster_type 等业务条件），本函数
-// 不重复拼装、也不放宽这些条件，从而保证跨业务数据不会被聚合进结果（AC 跨业务不可见）。
-func TestAggregateExclusiveClusterTags_ForwardsCallerFilter(t *testing.T) {
-	var gotBody string
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotBody = readBody(t, r)
-		writeOKResp(t, w, map[string]any{"count": 0, "details": []any{}})
-	})
-	cli := newTestDataServiceClient(t, handler)
-
-	req := &cslb.ListExclusiveClusterTagsReq{
-		AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP", ClusterType: "TGW",
-	}
-	callerFilter := tools.ExpressionAnd(
-		tools.RuleEqual("bk_biz_id", int64(213)),
-		tools.RuleEqual("cluster_type", "TGW"),
-	)
-	_, err := AggregateExclusiveClusterTags(testKit(), cli, callerFilter, req)
-	require.NoError(t, err)
-	require.Contains(t, gotBody, `"field":"bk_biz_id"`)
-	require.Contains(t, gotBody, `"field":"cluster_type"`)
-}
-
-// TestAggregateExclusiveClusterTags_DataServiceError 底层 data-service 调用失败时错误直接透传。
-func TestAggregateExclusiveClusterTags_DataServiceError(t *testing.T) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"code":1,"message":"mock server error","data":null}`))
-	})
-	cli := newTestDataServiceClient(t, handler)
-
-	req := &cslb.ListExclusiveClusterTagsReq{AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP"}
-	_, err := AggregateExclusiveClusterTags(testKit(), cli, tools.ExpressionAnd(
-		tools.RuleEqual("account_id", req.AccountID)), req)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "mock server error")
 }

@@ -187,6 +187,8 @@ func (dao *ExclusiveClusterDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	columnTypes := tablelb.LoadBalancerExclusiveClusterColumns.ColumnTypes()
+	columnTypes["extension.clusters_zone.master_zone"] = enumor.Json
+	columnTypes["extension.clusters_zone.slave_zone"] = enumor.Json
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
