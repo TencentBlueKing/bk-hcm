@@ -95,7 +95,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
   const loadExclusiveClusterTags = async () => {
     tagsRequestId += 1;
     const requestId = tagsRequestId;
-    const { bk_biz_id, account_id, region, vip_isp, zones, load_balancer_type } = formModel;
+    const { bk_biz_id, account_id, region, vip_isp, zones, backup_zones, load_balancer_type } = formModel;
     exclusiveClusterTags.value = [];
     formModel.exclusive_cluster_tags = [];
     isTagsLoadFailed.value = false;
@@ -113,7 +113,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     }
 
     isTagsLoading.value = true;
-    const snapshot = [bk_biz_id, account_id, region, vip_isp, zones].join('|');
+    const snapshot = [bk_biz_id, account_id, region, vip_isp, zones, backup_zones].join('|');
     try {
       const { data } = await reqExclusiveClusterTags({
         bk_biz_id,
@@ -121,6 +121,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
         region,
         isp: vip_isp,
         zones: Array.isArray(zones) ? zones : [zones],
+        // 主备可用区：backup_zones 有值时查主备集群（zones=主、back_zones=备），否则传空数组按单可用区查
+        back_zones: backup_zones ? [backup_zones] : [],
         cluster_type: '',
       });
       const currentSnapshot = [
@@ -129,6 +131,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
         formModel.region,
         formModel.vip_isp,
         formModel.zones,
+        formModel.backup_zones,
       ].join('|');
       if (requestId !== tagsRequestId || snapshot !== currentSnapshot) return;
       exclusiveClusterTags.value = data?.details ?? [];
@@ -188,6 +191,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
       () => formModel.account_id,
       () => formModel.region,
       () => formModel.zones,
+      // 主备可用区变化也要重新拉取集群列表（back_zones 参与查询条件）
+      () => formModel.backup_zones,
       () => formModel.vip_isp,
       () => formModel.load_balancer_type,
     ],

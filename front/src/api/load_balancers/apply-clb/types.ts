@@ -108,7 +108,10 @@ export interface ExclusiveClusterTagsReqData {
   region: string;
   // 运营商类型，仅支持 CMCC / CUCC / CTCC
   isp: ExclusiveClusterIsp;
+  // 主可用区：单可用区集群填一个元素；主备集群填主可用区
   zones: string[];
+  // 备可用区：主备集群填备可用区，单可用区集群传空数组
+  back_zones: string[];
   cluster_type?: ExclusiveClusterType | '';
 }
 
