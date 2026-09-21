@@ -99,10 +99,17 @@ func enrichExclusiveClusterContent(kt *kit.Kit, lister exclusiveClusterLister, a
 	return injectJSONField(content, "clusters", string(clustersRaw))
 }
 
+// localTgwCluster 四层独占集群本地表反查结果，用于补齐申请单详情 clusters 中 TGW 元素的展示字段。
+type localTgwCluster struct {
+	ID         string
+	Name       string
+	ClusterTag string
+}
+
 // buildExclusiveClusterContentInfos 按 cluster_tag/cloud_cluster_ids 拼出 clusters 数组：cluster_tag 对应七层
 // 独占集群，提单时通常没有具体落地集群 ID，只填 cluster_tag/cluster_type；cloud_cluster_ids 里每个 ID 对应一个四层
-// 独占集群，按 ID 反查本地表补齐 cluster_id/cluster_name，本地表未同步或已删除时对应字段留空，cloud_cluster_id 仍
-// 返回原值。
+// 独占集群，按 ID 反查本地表补齐 cluster_id/cluster_name/cluster_tag，本地表未同步或已删除时对应字段留空，
+// cloud_cluster_id 仍返回原值。
 func buildExclusiveClusterContentInfos(kt *kit.Kit, lister exclusiveClusterLister, bkBizID int64, clusterTag string,
 	cloudClusterIDs []string) ([]exclusiveClusterContentInfo, error) {
 
@@ -120,7 +127,7 @@ func buildExclusiveClusterContentInfos(kt *kit.Kit, lister exclusiveClusterListe
 	}
 
 	req := &core.ListReq{
-		Fields: []string{"id", "cloud_id", "name"},
+		Fields: []string{"id", "cloud_id", "name", "cluster_tag"},
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("bk_biz_id", bkBizID),
 			tools.RuleEqual("cluster_type", enumor.TGWClusterType),
@@ -133,9 +140,9 @@ func buildExclusiveClusterContentInfos(kt *kit.Kit, lister exclusiveClusterListe
 		return nil, err
 	}
 
-	localByCloudID := make(map[string]struct{ ID, Name string }, len(result.Details))
+	localByCloudID := make(map[string]localTgwCluster, len(result.Details))
 	for _, one := range result.Details {
-		localByCloudID[one.CloudID] = struct{ ID, Name string }{ID: one.ID, Name: one.Name}
+		localByCloudID[one.CloudID] = localTgwCluster{ID: one.ID, Name: one.Name, ClusterTag: one.ClusterTag}
 	}
 
 	for _, cloudID := range cloudClusterIDs {
@@ -143,6 +150,7 @@ func buildExclusiveClusterContentInfos(kt *kit.Kit, lister exclusiveClusterListe
 		if local, ok := localByCloudID[cloudID]; ok {
 			info.ClusterID = local.ID
 			info.ClusterName = local.Name
+			info.ClusterTag = local.ClusterTag
 		}
 		clusters = append(clusters, info)
 	}

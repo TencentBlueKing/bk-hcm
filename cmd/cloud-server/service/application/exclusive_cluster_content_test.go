@@ -88,7 +88,7 @@ func TestEnrichExclusiveClusterContent_OnlyClusterTag(t *testing.T) {
 }
 
 // TestEnrichExclusiveClusterContent_ClusterIDsFoundLocally 四层集群 ID 在本地表命中时补齐 cluster_id/
-// cluster_name。
+// cluster_name/cluster_tag。
 func TestEnrichExclusiveClusterContent_ClusterIDsFoundLocally(t *testing.T) {
 	lister := &fakeExclusiveClusterLister{
 		result: &dataproto.ExclusiveClusterListResult{
@@ -96,6 +96,7 @@ func TestEnrichExclusiveClusterContent_ClusterIDsFoundLocally(t *testing.T) {
 			Details: []corelb.ExclusiveClusterRaw{
 				{BaseExclusiveCluster: corelb.BaseExclusiveCluster{
 					ID: "00000001", CloudID: "tgw-38feq8c6", Name: "tgw-cluster-1",
+					ClusterTag: "ziyan-chiji",
 				}},
 			},
 		},
@@ -109,6 +110,7 @@ func TestEnrichExclusiveClusterContent_ClusterIDsFoundLocally(t *testing.T) {
 	require.Equal(t, "tgw-38feq8c6", clusters[0].Get("cloud_cluster_id").String())
 	require.Equal(t, "00000001", clusters[0].Get("cluster_id").String())
 	require.Equal(t, "tgw-cluster-1", clusters[0].Get("cluster_name").String())
+	require.Equal(t, "ziyan-chiji", clusters[0].Get("cluster_tag").String())
 	require.Equal(t, "TGW", clusters[0].Get("cluster_type").String())
 }
 
@@ -125,6 +127,7 @@ func TestEnrichExclusiveClusterContent_ClusterIDNotSyncedLocally(t *testing.T) {
 	require.Equal(t, "tgw-deleted", clusters[0].Get("cloud_cluster_id").String())
 	require.Equal(t, "", clusters[0].Get("cluster_id").String())
 	require.Equal(t, "", clusters[0].Get("cluster_name").String())
+	require.Equal(t, "", clusters[0].Get("cluster_tag").String())
 }
 
 // TestEnrichExclusiveClusterContent_PreservesOtherFields 富化不影响 content 中原有字段。

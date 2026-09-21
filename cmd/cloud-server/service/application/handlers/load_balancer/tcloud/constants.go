@@ -23,6 +23,17 @@ import (
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
 )
 
+const (
+	// exclusiveSlaTypeName 独占型规格在 ITSM / 展示层的名称
+	exclusiveSlaTypeName = "独占型"
+	// sharedSlaTypeName 共享型规格在 ITSM / 展示层的名称
+	sharedSlaTypeName = "共享型"
+	// emptyItsmValue ITSM 表单空值占位
+	emptyItsmValue = "--"
+	// localUnsyncedName 四层集群本地表未同步时的名称占位
+	localUnsyncedName = "本地未同步"
+)
+
 var (
 	// LoadBalancerTypeMap 负载均衡类型翻译
 	LoadBalancerTypeMap = map[typeslb.TCloudLoadBalancerType]string{

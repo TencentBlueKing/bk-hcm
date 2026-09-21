@@ -24,6 +24,11 @@ import (
 	"strings"
 
 	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
+	"hcm/pkg/api/core"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
 )
 
@@ -49,6 +54,12 @@ func (a *ApplicationOfCreateTCloudLB) RenderItsmForm() (string, error) {
 		return "", err
 	}
 	formItems = append(formItems, baseInfoFormItems...)
+
+	exclusiveFormItems, err := a.renderExclusiveClusterForm()
+	if err != nil {
+		return "", err
+	}
+	formItems = append(formItems, exclusiveFormItems...)
 
 	// 网络
 	networkFormItems, err := a.renderNetwork()
@@ -133,12 +144,8 @@ func (a *ApplicationOfCreateTCloudLB) renderBaseInfo() ([]formItem, error) {
 	// 名称
 	formItems = append(formItems, formItem{Label: "名称", Value: cvt.PtrToVal(req.Name)})
 
-	// 规格
-	slaType := "共享型"
-	if req.SlaType != nil {
-		slaType = *req.SlaType
-	}
-	formItems = append(formItems, formItem{Label: "规格", Value: slaType})
+	// 规格：独占型由 exclusive 合成，空 sla_type 展示共享型，其余透传性能容量档位
+	formItems = append(formItems, formItem{Label: "规格", Value: renderSlaType(req)})
 
 	// 运营商
 	isp := "BGP"
@@ -229,4 +236,105 @@ func (a *ApplicationOfCreateTCloudLB) renderInstanceChargeForm() []formItem {
 	}
 
 	return formItems
+}
+
+// renderSlaType 合成 ITSM「规格」展示：独占型优先于 sla_type；空 sla_type 视为共享型。
+func renderSlaType(req *hclb.TCloudLoadBalancerCreateReq) string {
+	if req.IsExclusive() {
+		return exclusiveSlaTypeName
+	}
+	if slaType := cvt.PtrToVal(req.SlaType); slaType != "" {
+		return slaType
+	}
+	return sharedSlaTypeName
+}
+
+// renderExclusiveClusterForm 独占型申请单追加七层标签、指定 VIP、四层集群信息；非独占型不追加。
+func (a *ApplicationOfCreateTCloudLB) renderExclusiveClusterForm() ([]formItem, error) {
+	if !a.req.IsExclusive() {
+		return nil, nil
+	}
+
+	return renderExclusiveClusterItems(cvt.PtrToVal(a.req.ClusterTag), cvt.PtrToVal(a.req.Vip),
+		a.listTgwClusterItsmLines()), nil
+}
+
+// renderExclusiveClusterItems 组装独占集群相关的 ITSM 表单项，便于单测覆盖展示口径。
+func renderExclusiveClusterItems(clusterTag, vip string, tgwLines []string) []formItem {
+	tgwValue := emptyItsmValue
+	if len(tgwLines) != 0 {
+		tgwValue = strings.Join(tgwLines, "；")
+	}
+
+	return []formItem{
+		{Label: "七层独占集群标签", Value: emptyOrItsmValue(clusterTag)},
+		{Label: "指定VIP", Value: emptyOrItsmValue(vip)},
+		{Label: "四层独占集群", Value: tgwValue},
+	}
+}
+
+// listTgwClusterItsmLines 按 cloud_cluster_ids 查本地四层独占集群，拼出 ITSM 展示行；查询失败或本地未命中时名称
+// 使用「本地未同步」，仍带上云上 ID，不阻断提单。
+func (a *ApplicationOfCreateTCloudLB) listTgwClusterItsmLines() []string {
+	cloudClusterIDs := a.req.CloudClusterIDs
+	if len(cloudClusterIDs) == 0 {
+		return nil
+	}
+
+	localByCloudID := a.listLocalTgwClusters(cloudClusterIDs)
+	lines := make([]string, 0, len(cloudClusterIDs))
+	for _, cloudID := range cloudClusterIDs {
+		local := localByCloudID[cloudID]
+		lines = append(lines, formatTgwClusterItsmLine(local.Name, cloudID, local.ClusterTag))
+	}
+	return lines
+}
+
+// listLocalTgwClusters 按云上 ID 查询当前业务下的四层独占集群，查询失败返回空映射。
+func (a *ApplicationOfCreateTCloudLB) listLocalTgwClusters(cloudClusterIDs []string) map[string]localTgwItsmCluster {
+	req := &core.ListReq{
+		Fields: []string{"cloud_id", "name", "cluster_tag"},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bk_biz_id", a.req.BkBizID),
+			tools.RuleEqual("cluster_type", enumor.TGWClusterType),
+			tools.RuleIn("cloud_id", cloudClusterIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	result, err := a.Client.DataService().Global.ListExclusiveCluster(a.Cts.Kit, req)
+	if err != nil {
+		logs.Errorf("list exclusive cluster for itsm form failed, err: %v, rid: %s", err, a.Cts.Kit.Rid)
+		return nil
+	}
+
+	localByCloudID := make(map[string]localTgwItsmCluster, len(result.Details))
+	for _, one := range result.Details {
+		localByCloudID[one.CloudID] = localTgwItsmCluster{Name: one.Name, ClusterTag: one.ClusterTag}
+	}
+	return localByCloudID
+}
+
+// localTgwItsmCluster 四层独占集群用于 ITSM 展示的本地字段。
+type localTgwItsmCluster struct {
+	Name       string
+	ClusterTag string
+}
+
+// formatTgwClusterItsmLine 格式化单条四层独占集群 ITSM 展示，口径与申请单详情页一致。
+func formatTgwClusterItsmLine(name, cloudID, clusterTag string) string {
+	if name == "" {
+		name = localUnsyncedName
+	}
+	if clusterTag == "" {
+		return fmt.Sprintf("%s（云上ID：%s）", name, cloudID)
+	}
+	return fmt.Sprintf("%s（云上ID：%s，标签：%s）", name, cloudID, clusterTag)
+}
+
+// emptyOrItsmValue 空字符串时返回 ITSM 占位符。
+func emptyOrItsmValue(value string) string {
+	if value == "" {
+		return emptyItsmValue
+	}
+	return value
 }
