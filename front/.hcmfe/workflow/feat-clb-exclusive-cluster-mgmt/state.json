@@ -3,7 +3,7 @@
   "title": "CLB exclusive cluster management list",
   "currentStage": "test",
   "createdAt": "2026-09-14T10:25:58.830Z",
-  "updatedAt": "2026-09-20T11:58:12.973Z",
+  "updatedAt": "2026-09-21T07:54:56.498Z",
   "artifacts": {
     "prd": [
       {
@@ -166,9 +166,9 @@
         "apply-dialog.vue",
         "app.vue"
       ],
-      "contentFingerprint": "4a08f98a9ca2265f5c75fc8a22611b4017151e10",
-      "codeBaseline": "c25458eb87ac92891666a44371528528bc785f24",
-      "seatedAt": "2026-09-20T11:58:12.973Z"
+      "contentFingerprint": "a0915f0292ee25c459e4e69759c5fd9e1edb139b",
+      "codeBaseline": "4c34e9b5d3134c616763d040d20bb0c7005ea945",
+      "seatedAt": "2026-09-21T07:54:56.498Z"
     }
   }
 }

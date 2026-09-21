@@ -164,8 +164,14 @@ watch(
     margin-bottom: 16px;
     flex-shrink: 0;
 
+    // 窄屏时只让搜索框让宽，左侧操作按钮保持原宽，否则会被挤出可视区
+    > *:not(.search-selector-container) {
+      flex-shrink: 0;
+    }
+
     .search-selector-container {
       margin-left: auto;
+      min-width: 0;
     }
   }
 }

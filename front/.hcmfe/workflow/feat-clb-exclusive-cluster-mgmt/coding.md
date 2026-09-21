@@ -79,6 +79,21 @@
   - 修复：账号不进闭包——`getList` 无参，调用时现取 `resourceAccountStore.resourceAccount?.id`。同时把自研的 `@/utils/interval` 换成项目既有的 `@/hooks/use-timeout-poll`（`useTimeoutPoll(getList, 10000, { max: 60 })` 等价于原来的 10s 一轮、10 分钟上限），watch 里 `reset()` + `resume()` 重置轮次，卸载由 hook 自己的 `onScopeDispose` 负责。`timeInterval` 那个 `reactive` 壳、`init` 与 `onBeforeUnmount` 一并删除；`utils/interval` 至此在本仓已无调用方，标记 `@deprecated`（内部版可能仍在用，故不删文件）。
   - 验收：两个账号之间来回切资源状态页，看 Network 里连续几轮 `sync_details/{id}` 的 id 是否始终跟随当前 `accountId`；独占集群那行显示「负载均衡独占集群」而不是空白。
 
+### 窄屏下 toolbar 左侧被裁
+
+- 现象：极小屏宽下资源页负载均衡 toolbar 最左侧的子类型切换被切掉一半。
+- 根因：资源页 toolbar 取 `justify-content-end`（`isResourcePage ? 'justify-content-end' : 'justify-content-between'`），溢出会往**左**溢并被裁掉，而不是常见的右侧溢出。整行没有可压缩项：`resource-subtype-switch` 自身 `flex-shrink: 0`，搜索框是 `w500`（`width: 500px !important`），加上按钮后总宽必然超出。
+- 修复：让右侧搜索框自适应。`w500` 换成局部类（`!important` 会压掉后续调整），给搜索容器补 `min-width: 0`——flex 项的自动最小宽度等于内容的 500px，不放开根本压不下去；搜索框 `width: 500px; max-width: 100%; min-width: 240px`，240 是可用下限。同时给 toolbar 里非搜索的直接子元素加 `flex-shrink: 0`，否则收缩量会按 basis 摊到按钮上、把按钮文字压掉。独占集群侧宽度写在 `ResourceSearchSelect` 自己的 scoped 样式里，所以改在组件上（`max-width: 100%` + `min-width: 240px`），其它使用方容器未放开收缩、仍保持 500px 不变。
+- 不用 `:slotted(*)` 兜 slot 内容（购买按钮等）：stylelint 的 `selector-pseudo-class-no-unknown` 不认，仓库也零使用，不值得为此改 lint 配置；子类型切换本身已是 `flex-shrink: 0`。
+- 验收：拖窄窗口，左侧 radio 与按钮保持完整，搜索框从 500 缩到 240。
+
+### 独占集群列表列宽
+
+- 现象：集群ID 列留白过多，集群名称列过早省略。
+- 修复：收窄内容短的列——ID 160 → 120（`tgw-` + 8 位随机串是固定形态，12 字符加内边距够用）、类型 100 → 90、分配状态 100 → 90（都是两三个字的枚举值）；放宽 集群名称 160 → 180、集群内实例数 120 → 130（表头 6 个字加排序箭头，原宽会挤）。
+- 名称列没有按"完整显示"取值（实际形如 `shanghai-zone6-M40-S4-IP-DIANXIN`，30～40 字符约需 300px）：那样会把后面的列挤出首屏，超长部分仍走 `show-overflow-tooltip`。
+- 列宽总和 1260 → 1230，比原先略窄，横向滚动出现的时机不会提前。
+
 > 其余验收问题逐条进入本节。
 
 ## 不做

@@ -25,7 +25,7 @@
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
-          class="w500"
+          class="search-select"
           clearable
           :conditions="[]"
           :get-menu-list="getMenuList"
@@ -338,9 +338,21 @@ const handleSync = (inTable: boolean, data?: any) => {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  // 窄屏时只让搜索框让宽，左侧操作按钮保持原宽，否则会被挤出可视区
+  > *:not(.search-selector-container) {
+    flex-shrink: 0;
+  }
 }
 
 .search-selector-container {
   margin-left: auto;
+  min-width: 0;
+
+  .search-select {
+    width: 500px;
+    max-width: 100%;
+    min-width: 240px;
+  }
 }
 </style>
