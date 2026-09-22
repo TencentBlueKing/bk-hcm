@@ -145,6 +145,7 @@
 - 执行方式: E2E（Playwright + mock 数据），工作流内 spec 单跑
 - 本轮结果: **23 passed / 0 failed**（D-01 修复后复验，含此前 Blocked 的全部用例）
 - 报告路径: `front/e2e/playwright-report`（失败证据归档在 `front/e2e/test-results`）
-- 总体结论: PASS —— 三张单据的展示与提交路径均通过
-- 后续行动: 待用户确认后 approve test；如需留脚本可另走 `verify-e2e` 固化 P0；合入前补齐真实环境联调（见 api.md §8 联调重点）
+- 总体结论: PASS（自动化 / mock 口径）—— 三张单据的展示与提交路径均通过。`L-01`~`L-10` 的真实环境联调**本轮未执行**，转由联调 / QA 阶段覆盖，本文不做 PASS 认定。
+- 交付: 代码已提交，按需求拆分为 6 条提交；已向 `TencentBlueKing/bk-hcm` 提 PR [#2080](https://github.com/TencentBlueKing/bk-hcm/pull/2080)（base `feat-clb-exclusive-cluster`）。
+- 后续行动: 合入前在联调环境按 `L-01`~`L-10` 复核并回填结论；P2 项与表中标注「未覆盖」的用例由 QA 覆盖；某个 P0 需固化脚本时再走 `verify-e2e`。
 
