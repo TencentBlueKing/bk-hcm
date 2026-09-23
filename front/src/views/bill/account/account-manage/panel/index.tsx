@@ -1,5 +1,5 @@
 import { PropType, defineComponent, ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { Button } from 'bkui-vue';
 import FirstLevelAccountDetail from '../../account-detail/first-level-account-detail';
@@ -11,11 +11,12 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { AccountLevelEnum, searchData, secondarySearchData } from '../constants';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import routerAction from '@/router/utils/action';
+import { MENU_BILL_MAIN_ACCOUNT_CREATE, MENU_BILL_ROOT_ACCOUNT_CREATE } from '@/constants/menu-symbol';
 
 export default defineComponent({
   props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
   setup(props) {
-    const router = useRouter();
     const route = useRoute();
     const { t } = useI18n();
 
@@ -92,11 +93,11 @@ export default defineComponent({
               <Button
                 theme='primary'
                 onClick={() => {
-                  router.push({
-                    path:
+                  routerAction.redirect({
+                    name:
                       props.accountLevel === AccountLevelEnum.FirstLevel
-                        ? '/bill/account-manage/first-account'
-                        : '/bill/account-manage/second-account',
+                        ? MENU_BILL_ROOT_ACCOUNT_CREATE
+                        : MENU_BILL_MAIN_ACCOUNT_CREATE,
                     query: { ...route.query },
                   });
                 }}>
