@@ -24,7 +24,7 @@
 - [x] 4.2 在 `pkg/adaptor/tcloud/clb.go` 新增 `DescribeClusterResources` adaptor 方法（映射腾讯云 CLB `DescribeClusterResources` API），入参含集群云上 ID，出参含闲置 VIP 列表；对应在 `pkg/adaptor/types/load-balancer/tcloud.go` 新增 `TCloudDescribeClusterResourcesOption`/结果类型
 - [x] 4.3 在 `cmd/hc-service/service/load-balancer/tcloud.go` 新增一个内部测试用 HTTP 端点（如 `POST /vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/query`），薄封装调用 4.2 的 adaptor 方法并注册路由；仅供联调/测试直接验证闲置 VIP 数据，不经 cloud-server/web-server 转发，不需要额外鉴权改造
 - [x] 4.4 `BatchCreateTCloudClb` 调用云创建前，若 `req.Exclusive=1`：**重新执行归属校验**（判定逻辑与 2.1 一致，按 `cluster_tag`/`cloud_cluster_ids` 再查一次本地表；因 hc-service 与 cloud-server 是不同服务、不能直接跨包调用 2.1 函数，需在 hc-service 层新增一份等价实现，通过 `Client.DataService().Global.LoadBalancer.ListExclusiveCluster` 查询，与既有 `cs.DataService().Global.*` 用法一致），不通过返回 `PermissionDenied`、不调用创建——覆盖「提单后审批等待期间集群被重新分配」的场景
-- [x] 4.5 `BatchCreateTCloudClb` 调用云创建前，若 `req.Exclusive=1` 且指定了 `vip`：调用 4.2 的方法复核该 VIP 仍在 `CloudClusterIDs[0]` 的闲置列表内，不闲置则返回 `InvalidParameter`、不调用创建
+- [x] 4.5 `BatchCreateTCloudClb` 调用云创建前，若 `req.Exclusive=1` 且指定了 `vip`：调用 4.2 的方法按 `cluster-id` + `vip` + `idle=True` 过滤，复核该 VIP 仍在 `CloudClusterIDs[0]` 内闲置（云上 idle 过滤值为 `True`/`False`），无结果则返回 `InvalidParameter`、不调用创建
 - [x] 4.6 `BatchCreateTCloudClb` 调用云创建前，若 `req.Exclusive=1` 且计费为 `BANDWIDTH_PACKAGE`：重新执行第 3 节的出口一致性校验（复用 3.1/3.2 的辅助函数），不通过则返回 `InvalidParameter`、不调用创建
 - [x] 4.7 确认审批流程中 `content`（`GenerateApplicationContent`）已经通过 `TCloudLoadBalancerCreateReq` 内联结构自动带上新增字段，无需额外改动（`cmd/cloud-server/service/application/handlers/load_balancer/tcloud/prepare.go`）
 

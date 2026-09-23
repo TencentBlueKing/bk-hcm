@@ -369,6 +369,8 @@ type TCloudDescribeClusterResourcesOption struct {
 	Region string `json:"region" validate:"required"`
 	// ClusterID 独占集群云上ID，如tgw-38feq8c6/stgw-7d81ka3f
 	ClusterID string `json:"cluster_id" validate:"required"`
+	// Vip 按VIP过滤，为空表示不过滤
+	Vip string `json:"vip" validate:"omitempty"`
 	// Idle 按是否闲置过滤，不传表示不过滤
 	Idle   *bool   `json:"idle" validate:"omitempty"`
 	Limit  *uint64 `json:"limit" validate:"omitempty"`

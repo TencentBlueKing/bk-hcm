@@ -22,7 +22,6 @@ package tcloud
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
@@ -282,10 +281,21 @@ func (t *TCloudImpl) DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDes
 		Name:   common.StringPtr("cluster-id"),
 		Values: common.StringPtrs([]string{opt.ClusterID}),
 	})
+	if opt.Vip != "" {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("vip"),
+			Values: common.StringPtrs([]string{opt.Vip}),
+		})
+	}
+	// 云上 idle 过滤值要求首字母大写："True"/"False"
 	if opt.Idle != nil {
+		idleValue := "False"
+		if *opt.Idle {
+			idleValue = "True"
+		}
 		req.Filters = append(req.Filters, &clb.Filter{
 			Name:   common.StringPtr("idle"),
-			Values: common.StringPtrs([]string{strconv.FormatBool(*opt.Idle)}),
+			Values: common.StringPtrs([]string{idleValue}),
 		})
 	}
 	req.Limit = opt.Limit

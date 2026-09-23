@@ -2,7 +2,7 @@
 
 业务用户在「购买负载均衡」选择独占型规格时，需要先看到本业务已分配的四层（TGW）/七层（STGW）独占集群标签、标签下的具体集群，并在选定具体四层集群后查看该集群当前闲置的 VIP，才能完成规格选择与提单。当前 HCM 完全没有面向业务视角的独占集群查询能力——已有的独占集群列表接口（`load-balancer-exclusive-cluster-list` 变更产出）是资源视角（管理员纳管用途），不做"仅返回已分配给当前业务"的过滤，也不做标签聚合，无法直接服务购买页；上线前购买页可购买覆盖率为 0%（即便集群已分配给业务，用户也看不到任何独占型规格信息）。
 
-已批准需求文档（`docs/reqs/独占集群购买查询.md`，TAPD [1069995598138281929](https://tapd.woa.com/tapd_fe/69995598/story/detail/1069995598138281929)）与已定稿接口文档（`docs/api-docs/web-server/docs/biz/load-balancer/list_exclusive_cluster_tags.md`、`list_exclusive_cluster_idle_vips.md`）已经明确了两个接口的契约，需要据此落地后端实现。
+已批准需求文档（`docs/reqs/独占集群购买查询.md`，TAPD 1069995598138281929）与已定稿接口文档（`docs/api-docs/web-server/docs/biz/load-balancer/list_exclusive_cluster_tags.md`、`list_exclusive_cluster_idle_vips.md`）已经明确了两个接口的契约，需要据此落地后端实现。
 
 ## What Changes
 

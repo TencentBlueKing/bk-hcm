@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 )
@@ -220,26 +221,27 @@ func intersectEgressSet(a, b map[string]struct{}) map[string]struct{} {
 	return result
 }
 
-// checkVipIdle 复核指定 vip 在对应四层集群下是否仍然闲置。
+// checkVipIdle 复核指定 vip 在对应四层集群下是否仍然闲置。按 cluster-id + vip + idle 在云上过滤，
+// 避免集群资源较多时因分页导致目标 vip 未返回而误判。
 func (svc *clbSvc) checkVipIdle(kt *kit.Kit, tcloudAdpt exclusiveClusterAdaptor, region, clusterID,
 	vip string) error {
 	result, err := tcloudAdpt.DescribeClusterResources(kt, &typelb.TCloudDescribeClusterResourcesOption{
 		Region:    region,
 		ClusterID: clusterID,
+		Vip:       vip,
+		Idle:      cvt.ValToPtr(true),
 	})
 	if err != nil {
+		logs.Errorf("describe cluster resources failed, cluster_id: %s, vip: %s, err: %v, rid: %s",
+			clusterID, vip, err, kt.Rid)
 		return err
 	}
 
 	for _, one := range result.Resources {
-		if one.Vip != vip {
-			continue
+		if one.Vip == vip && one.Idle {
+			return nil
 		}
-		if !one.Idle {
-			return errf.Newf(errf.InvalidParameter, "vip(%s) is not idle in cluster(%s)", vip, clusterID)
-		}
-		return nil
 	}
 
-	return errf.Newf(errf.InvalidParameter, "vip(%s) not found in cluster(%s)", vip, clusterID)
+	return errf.Newf(errf.InvalidParameter, "vip(%s) is not idle or not found in cluster(%s)", vip, clusterID)
 }

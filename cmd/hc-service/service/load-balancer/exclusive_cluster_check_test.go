@@ -97,6 +97,7 @@ type fakeExclusiveAdaptor struct {
 	bwPkgErr         error
 	clusterResources *typelb.TCloudDescribeClusterResourcesResult
 	clusterErr       error
+	clusterOpt       *typelb.TCloudDescribeClusterResourcesOption
 }
 
 func (f *fakeExclusiveAdaptor) ListBandwidthPackage(_ *kit.Kit, _ *adtypes.TCloudListBwPkgOption) (
@@ -105,7 +106,8 @@ func (f *fakeExclusiveAdaptor) ListBandwidthPackage(_ *kit.Kit, _ *adtypes.TClou
 }
 
 func (f *fakeExclusiveAdaptor) DescribeClusterResources(_ *kit.Kit,
-	_ *typelb.TCloudDescribeClusterResourcesOption) (*typelb.TCloudDescribeClusterResourcesResult, error) {
+	opt *typelb.TCloudDescribeClusterResourcesOption) (*typelb.TCloudDescribeClusterResourcesResult, error) {
+	f.clusterOpt = opt
 	return f.clusterResources, f.clusterErr
 }
 
@@ -148,6 +150,24 @@ func TestRecheckExclusiveBeforeDeliver_VipIdleStillAvailable(t *testing.T) {
 	}
 
 	require.NoError(t, svc.recheckExclusiveBeforeDeliver(testKit(), adaptor, req))
+	require.NotNil(t, adaptor.clusterOpt)
+	require.Equal(t, "1.1.1.1", adaptor.clusterOpt.Vip)
+	require.True(t, cvt.PtrToVal(adaptor.clusterOpt.Idle))
+}
+
+// TestRecheckExclusiveBeforeDeliver_VipNotReturned 云上按 vip+idle 过滤后无结果（已被占用或不存在），复核失败。
+func TestRecheckExclusiveBeforeDeliver_VipNotReturned(t *testing.T) {
+	req := baseExclusiveCreateReq()
+	req.Vip = cvt.ValToPtr("1.1.1.1")
+	req.RequireCount = cvt.ValToPtr(uint64(1))
+
+	svc := &clbSvc{dataCli: newTestDataServiceClient(t, ownershipOKHandler(t, req.CloudClusterIDs, ""))}
+	adaptor := &fakeExclusiveAdaptor{
+		clusterResources: &typelb.TCloudDescribeClusterResourcesResult{},
+	}
+
+	err := svc.recheckExclusiveBeforeDeliver(testKit(), adaptor, req)
+	require.Error(t, err)
 }
 
 // TestRecheckExclusiveBeforeDeliver_VipNoLongerIdle AC-013：指定 VIP 在提单时闲置、下云前已被占用。

@@ -1,5 +1,8 @@
-## ADDED Requirements
+# load-balancer-exclusive-cluster-purchase Specification
 
+## Purpose
+TBD - created by archiving change load-balancer-exclusive-cluster-purchase. Update Purpose after archive.
+## Requirements
 ### Requirement: 独占型入参接收与规格互斥校验
 业务视角申请单（`POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer`）与系统提单（`POST /api/v1/cloud/vendors/tcloud/system/applications/types/create_load_balancer`）SHALL 接收 `exclusive`（0/1，缺省 0）、`cluster_tag`（七层独占集群标签）、`cloud_cluster_ids`（四层独占集群云上 ID 数组）三个新增入参，并对以下互斥关系做结构校验，不合法时返回 `InvalidParameter` 且不创建申请单：
 - `exclusive=1` 时 `sla_type` 必须为空，且 `cluster_tag`/`cloud_cluster_ids` 不能都为空
@@ -143,7 +146,7 @@ hc-service SHALL 新增一个内部 HTTP 端点，薄封装调用新增的 `Desc
 下云前（真正调用云创建之前，`exclusive=1` 时）SHALL 完整重跑一遍提单时的校验，并额外增加一项只在下云前才有意义的检查；任一失败则交付失败（`InvalidParameter`/`PermissionDenied`），不调用云创建：
 - 重新校验 `cluster_tag`/`cloud_cluster_ids` 是否仍属于当前 `bk_biz_id` 已分配的独占集群（规则同「独占集群业务归属校验」），覆盖「提单后审批等待期间集群被重新分配给其它业务」的场景，不通过返回 `PermissionDenied`
 - 计费方式为 `BANDWIDTH_PACKAGE` 时，重新校验带宽包出口与本次可能分配集群出口的一致性（规则同「共享带宽包出口一致性校验」）
-- 指定了 `vip` 时，复核该 VIP 在对应四层集群的闲置列表内仍然闲置（这一项在提单阶段不做，因为审批等待期间闲置状态几乎必然变化，提单时查询没有意义）
+- 指定了 `vip` 时，按 `cluster-id` + `vip` + `idle=True` 在云上过滤，复核该 VIP 在对应四层集群内仍然闲置（这一项在提单阶段不做，因为审批等待期间闲置状态几乎必然变化，提单时查询没有意义）
 未使用共享带宽包时不做出口比对；未指定 `vip` 时不做闲置复核。
 
 #### Scenario: 归属在审批等待期间被改变
@@ -157,3 +160,4 @@ hc-service SHALL 新增一个内部 HTTP 端点，薄封装调用新增的 `Desc
 #### Scenario: 指定 VIP 复核仍闲置可正常下云
 - **WHEN** `exclusive=1`、恰好一个已分配四层 ID、该集群下 VIP 闲置、`require_count=1`，提单并指定该 VIP
 - **THEN** 申请单创建成功，审批通过后下云前复核归属仍有效、仍闲置，创建调用发出
+
