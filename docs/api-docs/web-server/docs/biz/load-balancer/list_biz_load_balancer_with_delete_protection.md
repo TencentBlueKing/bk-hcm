@@ -207,7 +207,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/with/delete_protection/list
 | 参数名称           | 参数类型    | 描述                                          |
 |----------------|---------|---------------------------------------------|
 | delete_protect | boolean | 是否开启删除保护，仅tcloud，非tcloud固定为false            |
-| exclusive      | int     | 是否独占型实例（1是、0否），仅tcloud         |
+| exclusive      | int     | 是否独占型实例（1是、0否），仅tcloud，云上取不到有效值时无该字段 |
 | sla_type       | string  | 性能容量型规格档位，空字符串表示非性能容量型，仅tcloud |
 
 #### 实例规格展示说明：
