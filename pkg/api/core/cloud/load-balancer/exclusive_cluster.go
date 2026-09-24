@@ -99,6 +99,16 @@ type ExclusiveCluster[Ext ExclusiveClusterExtension] struct {
 	Extension            *Ext `json:"extension"`
 }
 
+// GetID ...
+func (cluster ExclusiveCluster[T]) GetID() string {
+	return cluster.BaseExclusiveCluster.ID
+}
+
+// GetCloudID ...
+func (cluster ExclusiveCluster[T]) GetCloudID() string {
+	return cluster.BaseExclusiveCluster.CloudID
+}
+
 // ExclusiveClusterRaw define load balancer exclusive cluster with raw json extension, used by list interface
 // that is not vendor-scoped.
 type ExclusiveClusterRaw struct {
