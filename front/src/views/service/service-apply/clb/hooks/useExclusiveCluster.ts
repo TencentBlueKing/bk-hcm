@@ -45,7 +45,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     () =>
       isBusinessPage &&
       formModel.load_balancer_type === 'OPEN' &&
-      Boolean(formModel.account_id && formModel.region && formModel.zones) &&
+      Boolean(formModel.account_id && formModel.region) &&
       isExclusiveClusterIsp(formModel.vip_isp) &&
       !isTagsLoadFailed.value &&
       exclusiveClusterTags.value.length > 0,
@@ -86,6 +86,8 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
   const resetExclusiveSelections = () => {
     idleVipsRequestId += 1;
     isIdleVipsLoading.value = false;
+    formModel.enable_l4 = false;
+    formModel.enable_l7 = false;
     formModel.l4_cluster_tag = '';
     formModel.l4_cluster_id = '';
     formModel.l4_vip = '';
@@ -107,7 +109,6 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
       !bk_biz_id ||
       !account_id ||
       !region ||
-      !zones ||
       !isExclusiveClusterIsp(vip_isp)
     ) {
       isTagsLoading.value = false;
@@ -122,7 +123,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
         account_id,
         region,
         isp: vip_isp,
-        zones: Array.isArray(zones) ? zones : [zones],
+        ...(zones ? { zones: Array.isArray(zones) ? zones : [zones] } : {}),
         // 主备可用区：backup_zones 有值时查主备集群（zones=主、back_zones=备），否则传空数组按单可用区查
         back_zones: backup_zones ? [backup_zones] : [],
         cluster_type: '',
@@ -249,5 +250,6 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     egressFilterKey,
     handleL4TagChange,
     loadIdleVips,
+    resetExclusiveSelections,
   };
 };

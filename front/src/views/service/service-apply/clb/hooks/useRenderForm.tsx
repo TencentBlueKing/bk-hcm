@@ -78,6 +78,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     egressFilterKey,
     handleL4TagChange,
     loadIdleVips,
+    resetExclusiveSelections,
   } = useExclusiveCluster(formModel, isBusinessPage, () => noResetParams.value);
 
   // define data
@@ -176,9 +177,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     ],
   };
 
-  // 独占集群校验：独占配置由「勾选状态 + 标签 + 集群 + IP」多个字段组合而成，
-  // 没有单一模型字段可表达，因此用 FormItem 的项级 rules 承载校验，
-  // 不依赖不存在的 exclusive_config 字段判空。
+  // 独占集群配置由勾选状态、标签、集群和 IP 共同决定，校验信息显示在规格类型下。
   const isExclusiveConfigLoading = computed(
     () => formModel.slaType === '2' && (isTagsLoading.value || (formModel.enable_l4 && isIdleVipsLoading.value)),
   );
@@ -188,30 +187,37 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         if (formModel.slaType !== '2') return true;
         // 运营商仅支持三网直连时才能选择独占型，防止克隆配置等入口带入独占态
         if (!isExclusiveClusterIsp(formModel.vip_isp)) return false;
-        if (!formModel.enable_l4 && !formModel.enable_l7) return false;
-        if (formModel.enable_l4 && (!formModel.l4_cluster_tag || !formModel.l4_cluster_id || !formModel.l4_vip)) {
+        return formModel.enable_l4 || formModel.enable_l7;
+      },
+      message: '请至少启用并完整配置一个独占集群',
+      trigger: 'change',
+    },
+    {
+      validator: () => {
+        if (formModel.slaType !== '2' || !formModel.enable_l4) return true;
+        if (!formModel.l4_cluster_tag || !formModel.l4_cluster_id || !formModel.l4_vip) {
           return false;
         }
-        if (formModel.enable_l4 && !selectedL4Tag.value) return false;
+        if (!selectedL4Tag.value) return false;
         if (
-          formModel.enable_l4 &&
           formModel.l4_cluster_id !== RANDOM_ALLOCATION &&
           !selectedL4Tag.value?.clusters.some(({ cloud_cluster_id }) => cloud_cluster_id === formModel.l4_cluster_id)
         ) {
           return false;
         }
-        if (
-          formModel.enable_l7 &&
-          (!formModel.cluster_tag || !l7TagList.value.some(({ cluster_tag }) => cluster_tag === formModel.cluster_tag))
-        ) {
-          return false;
-        }
-        // 注意：不要把 isIdleVipsLoading（选择集群后的瞬时加载态）当作「配置错误」。
-        // change 触发的校验会在请求返回前跑一次，误判会让用户刚选完集群就看到报错，
-        // 而保存时（请求已完成）又校验通过——错误信息还会残留到下一次 change 才消失。
         return true;
       },
-      message: '请至少启用并完整配置一个独占集群',
+      message: '请完整配置四层集群',
+      trigger: 'change',
+    },
+    {
+      validator: () =>
+        formModel.slaType !== '2' ||
+        !formModel.enable_l7 ||
+        Boolean(
+          formModel.cluster_tag && l7TagList.value.some(({ cluster_tag }) => cluster_tag === formModel.cluster_tag),
+        ),
+      message: '请选择七层集群标签',
       trigger: 'change',
     },
     {
@@ -242,14 +248,50 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     },
   ];
 
+  const handleL4EnabledChange = (enabled: boolean) => {
+    formModel.l4_cluster_tag = enabled ? l4TagList.value[0]?.cluster_tag ?? '' : '';
+    if (enabled) {
+      handleL4TagChange();
+    } else {
+      formModel.l4_cluster_id = '';
+      formModel.l4_vip = '';
+    }
+  };
+  const handleL7EnabledChange = (enabled: boolean) => {
+    formModel.cluster_tag = enabled ? l7TagList.value[0]?.cluster_tag ?? '' : '';
+  };
+
   watch(
     [isTagsLoading, isIdleVipsLoading],
     ([tagsLoading, vipsLoading], [wasTagsLoading, wasVipsLoading]) => {
       if (!sideSliderOptions.value.show || formModel.slaType !== '2' || isExclusiveConfigLoading.value) return;
       if ((wasTagsLoading && !tagsLoading) || (wasVipsLoading && !vipsLoading)) {
         // 异步结果不触发 Select change，完成后刷新组合字段校验，保留各规则的独立错误提示。
-        formRef.value?.validate(['exclusive_config']).catch(() => undefined);
+        formRef.value?.validate(['slaType']).catch(() => undefined);
       }
+    },
+    { flush: 'post' },
+  );
+
+  watch(
+    [
+      () => formModel.enable_l4,
+      () => formModel.enable_l7,
+      () => formModel.l4_cluster_tag,
+      () => formModel.l4_cluster_id,
+      () => formModel.l4_vip,
+      () => formModel.cluster_tag,
+    ],
+    () => {
+      if (
+        !sideSliderOptions.value.show ||
+        formModel.slaType !== '2' ||
+        isExclusiveConfigLoading.value ||
+        noResetParams.value
+      ) {
+        return;
+      }
+      formRef.value?.validate(['slaType']).catch(() => undefined);
     },
     { flush: 'post' },
   );
@@ -267,6 +309,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
       formModel.exclusive = value === '2' ? 1 : 0;
       if (value === '0') formModel.sla_type = 'shared';
       if (value === '2') formModel.sla_type = '';
+      if (value !== '2' && !noResetParams.value) resetExclusiveSelections();
     },
   );
 
@@ -554,6 +597,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             label: '负载均衡规格类型',
             required: true,
             property: 'slaType',
+            rules: exclusiveConfigRules,
             description:
               '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
             content: () => {
@@ -595,13 +639,13 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         ],
         {
           label: '独占集群',
-          property: 'exclusive_config',
-          rules: exclusiveConfigRules,
           hidden: formModel.slaType !== '2',
           content: () => (
             <div class={cssModule['exclusive-cluster-config']}>
               <div class={cssModule['exclusive-cluster-row']}>
-                <Checkbox v-model={formModel.enable_l4}>四层集群</Checkbox>
+                <Checkbox v-model={formModel.enable_l4} onChange={handleL4EnabledChange}>
+                  四层集群
+                </Checkbox>
                 <Select
                   v-model={formModel.l4_cluster_tag}
                   class='w220'
@@ -637,7 +681,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 </Select>
               </div>
               <div class={cssModule['exclusive-cluster-row']}>
-                <Checkbox v-model={formModel.enable_l7}>七层标签</Checkbox>
+                <Checkbox v-model={formModel.enable_l7} onChange={handleL7EnabledChange}>
+                  七层标签
+                </Checkbox>
                 <Select
                   v-model={formModel.cluster_tag}
                   class='w220'
@@ -893,7 +939,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                         if (Array.isArray(item)) {
                           contentVNode = (
                             <div class={cssModule.flexRow}>
-                              {item.map(({ label, required, property, content, description, hidden }) => {
+                              {item.map(({ label, required, property, content, description, hidden, rules }) => {
                                 if (hidden) return null;
                                 return (
                                   <FormItem
@@ -901,6 +947,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                                     label={t(label)}
                                     required={required}
                                     property={property}
+                                    rules={rules}
                                     description={description}>
                                     {content()}
                                   </FormItem>

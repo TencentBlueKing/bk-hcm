@@ -100,7 +100,7 @@ const paramInfoFields = computed(() => [
 
 const navigateTo: RouteLocationRaw = {
   name: MENU_SERVICE_TICKET_MANAGEMENT,
-  query: { type: 'load_balancer' },
+  query: { type: 'load-balancer' },
 };
 </script>
 
