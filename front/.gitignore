@@ -56,6 +56,7 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.local
 webpack-stats.json
 
 webpack_cache/
@@ -94,3 +95,8 @@ test-results/
 playwright-report/
 e2e/.e2e-runs/
 .env.local
+# e2e 骨架文件（由 bkdevbuddy e2e-setup 安装同步，不入库；mocks 与用例 spec 为实质文件仍跟踪）
+e2e/.e2e-kit-manifest.json
+e2e/README.md
+e2e/playwright.config.ts
+e2e/scripts/
