@@ -24,6 +24,8 @@
 
 菜单项读取的 meta：`title` 展示名、`icon` 图标类名、`activeKey` 高亮、`notMenu` 排除出菜单、`checkAuth` 按权限 action 过滤（整组子项都无权限时该分组自动隐藏）。`icon` 与 `notMenu` 全仓唯一消费方就是这里。
 
+面包屑不归侧栏管，由 `hooks/use-breadcrumb.ts` 读路由：`meta.layout.breadcrumb.show ?? meta.isShowBreadcrumb` 决定显示，标题取 `meta.title`，返回箭头来自 `meta.menu.relative`（或 `_f` 历史栈）。字段名已对齐整体重构的 `layout.breadcrumb`（单数），新路由用它，不再写已废弃的 `isShowBreadcrumb`；但本分支 `Meta` **默认不显示**，与整体重构默认显示不同，需要面包屑的页面必须显式写 `show: true`。
+
 `meta.hasPageRoute` 是给顶层元素用的反例标记（「我的 children 是页签子路由，别当分组」），目前全仓已无设置点，只剩判定式。
 
 ## 分组的两种写法
@@ -56,6 +58,7 @@
 3. **菜单在 menu-service 声明**：按写法二加 `IMenu` 项，`useChangeHeaderTab` 里用 `toLegacyMenus(getXxxMenus(), xxxViews)` 喂给侧栏。
 4. **把新符号加进 `views/home/index.tsx` 的 `getRouteLinkParams` 白名单**。该函数白名单内走 `{ name }` 跳转、其余走 `{ path: config.path }`；**路由改成相对 path 后不进白名单，侧栏 RouterLink 会拿相对路径去跳，直接跳错**。这一步最容易漏。
 5. **一级视图要有承载相对路径的父路由**：`{ name, path: '/xxx', children: xxxViews }`，URL 不变，旧地址继续可用。
+6. **地址变了就补旧地址兼容**，并核对 `header-config.ts` 里的顶栏入口地址是否也是旧地址。固定目标用 `redirect: { name }`（默认保留 query）；目标取决于权限时用 `beforeEnter` 返回 `{ name, query: to.query, replace: true }`，不能用 `redirect` 函数，因为它在全局守卫加载权限之前求值。实例见 `bill` 模块「旧地址兼容」。整体重构分支搬地址时漏了这一步，从那边移植时要补上。
 
 **`children` 不是禁区**。任务管理、操作记录是平的，因为列表与详情是彼此独立的整页；负载均衡（`entry-biz.vue`）和云账单管理（`bill/index.tsx`）有真实布局层——提供页签栏与 `provide` 上下文、内含 `<RouterView>`——所以保留嵌套。禁止的是**拿 children 当菜单分组**。
 

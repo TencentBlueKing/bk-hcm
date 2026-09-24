@@ -15,7 +15,7 @@ import routerAction from '@/router/utils/action';
 import { MENU_BILL_MAIN_ACCOUNT_CREATE, MENU_BILL_ROOT_ACCOUNT_CREATE } from '@/constants/menu-symbol';
 
 export default defineComponent({
-  props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
+  props: { accountLevel: String as PropType<AccountLevelEnum> },
   setup(props) {
     const route = useRoute();
     const { t } = useI18n();

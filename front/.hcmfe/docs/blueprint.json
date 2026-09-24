@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "7c3898fcd88a30023dc712842e5683521cd57329"
+        "rootHash": "42c9d23a27d3a3addd78a8c835e9f6d06d1114a3"
       }
     },
     {
@@ -212,7 +212,7 @@
       "doc": "modules/bill.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "06ad180ee9e372d8712f761a58ab0e964111d3ec"
+        "rootHash": "3d4fd654cc8ebe385b587f9bafbfd6569801151c"
       }
     },
     {

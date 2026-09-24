@@ -10,6 +10,7 @@
 4. 改名 — `header-config.ts` 两个 `name` + `lang.ts` 补词条
 5. 清理 — 删除已搬空的 `router/module/bill.ts`
 6. 自测前跑 `bkdevbuddy_lint`
+7. PRD v2 — 「云账号管理」拆成一级账号、二级账号两个菜单项（见 §7）
 
 > 排序依据：2 依赖 1，3 依赖 2，5 必须等 3 全部改完（还有引用就不能删）。4 与其余互不依赖，放在后面单独验证更好定位问题。
 
@@ -34,7 +35,7 @@
 
 **TAPD**: [#1069995598138543785](https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138543785)
 
-**文件**: `src/constants/menu-symbol.ts` `src/views/bill/route-config.ts` `src/views/index.ts` `src/common/menu-service.ts` `src/views/home/hooks/to-legacy-menus.ts` `src/router/index.ts` `src/views/home/hooks/useChangeHeaderTab.ts` `src/views/home/index.tsx` `src/router/header-config.ts` `src/language/lang.ts` `src/views/bill/bill/header/index.tsx` `src/views/bill/bill/summary/primary/index.tsx` `src/views/bill/account/account-manage/panel/index.tsx` `src/router/module/bill.ts`
+**文件**: `src/constants/menu-symbol.ts` `src/views/bill/route-config.ts` `src/views/index.ts` `src/common/menu-service.ts` `src/views/home/hooks/to-legacy-menus.ts` `src/router/index.ts` `src/views/home/hooks/useChangeHeaderTab.ts` `src/views/home/index.tsx` `src/router/header-config.ts` `src/language/lang.ts` `src/views/bill/bill/header/index.tsx` `src/views/bill/bill/summary/primary/index.tsx` `src/views/bill/account/account-manage/panel/index.tsx` `src/router/module/bill.ts` `src/store/common.ts` `src/views/bill/account/account-manage/root-account-list.vue` `src/views/bill/account/account-manage/main-account-list.vue` `src/views/bill/account/account-manage/account-list.scss` `src/views/bill/account/account-manage/index.tsx` `src/views/bill/account/account-manage/index.scss` `src/router/meta.ts` `src/hooks/use-breadcrumb.ts` `src/router/module/business.ts` `src/views/bill/account/create-account/create-first-account/index.tsx` `src/views/bill/account/create-account/create-first-account/index.scss` `src/views/bill/account/create-account/create-second-account/index.tsx` `src/views/bill/account/create-account/create-second-account/index.scss` `src/views/error-pages/403.tsx`
 
 **改动点**:
 
@@ -46,7 +47,7 @@
 
 | 当前 name | 新符号 | 来源 |
 |-----------|--------|------|
-| `'account-manage'` | `MENU_BILL_ACCOUNT_MANAGE` | 新增。PR #1897 把账号页拆成 `MENU_BILL_ROOT_ACCOUNT` / `MENU_BILL_MAIN_ACCOUNT` 两个菜单，本基线是一个合并页，没有对应项 |
+| `'account-manage'` | ~~`MENU_BILL_ACCOUNT_MANAGE`~~ → `MENU_BILL_ROOT_ACCOUNT` / `MENU_BILL_MAIN_ACCOUNT` | v1 为合并页新增过 `MENU_BILL_ACCOUNT_MANAGE`；v2 拆页后删除，改为复用 PR #1897 的两个符号（见 §7） |
 | `'录入一级账号'` | `MENU_BILL_ROOT_ACCOUNT_CREATE` | 复用 PR #1897 |
 | `'创建二级账号'` | `MENU_BILL_MAIN_ACCOUNT_CREATE` | 复用 PR #1897 |
 | `'bill-manage'` | `MENU_BILL_MANAGE` | 复用 PR #1897 |
@@ -64,20 +65,9 @@
 
 ### 2. 模块路由（新建 `src/views/bill/route-config.ts`）
 
-把 `router/module/bill.ts` 的四条路由按新模式重写，**component 一个不换、URL 一个不变**：
+把 `router/module/bill.ts` 的四条路由按新模式重写。v1 时 component 一个不换、URL 一个不变；v2 把账号那三条换成拆页后的五条（§7），下面只列云账单管理：
 
 ```ts
-export const billAccountManage: RouteRecordRaw[] = [
-  {
-    name: MENU_BILL_ACCOUNT_MANAGE,
-    path: 'account-manage',                       // 相对，解析后仍是 /bill/account-manage
-    component: () => import('./account/account-manage/index'),
-    meta: { ...new Meta({ title: '云账号管理', activeKey: MENU_BILL_ACCOUNT_MANAGE }) },
-  },
-  { name: MENU_BILL_ROOT_ACCOUNT_CREATE, path: 'account-manage/first-account',  /* activeKey 指向 ACCOUNT_MANAGE */ },
-  { name: MENU_BILL_MAIN_ACCOUNT_CREATE, path: 'account-manage/second-account', /* 同上 */ },
-];
-
 export const billManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_MANAGE,
@@ -102,15 +92,16 @@ export const billManage: RouteRecordRaw[] = [
 路由侧回归纯路由，菜单侧写成目标形态（PR #1897 的 `IMenu`），中间用一层过渡适配喂给现有侧栏渲染器，渲染器不改。
 
 ```ts
-// src/views/index.ts —— 纯路由，不再有分组假节点
-export const billViews = [...billAccountManage, ...billManage];
+// src/views/index.ts —— 纯路由，不再有分组假节点（v2 追加旧地址兼容 billAccountManageLegacy）
+export const billViews = [...billAccountManage, ...billManage, ...billAccountManageLegacy];
 
 // src/router/index.ts —— { name: MENU_BILL, path: '/bill', children: billViews }   替代  ...bill
 
 // src/common/menu-service.ts —— IMenu 接口、getMenuRoute、visibility 过滤与 PR #1897 一致；文件头注明本期只收录资源运营
 const billMenus: IMenu[] = [
-  { id: MENU_BILL_ACCOUNT_MANAGE, i18n: '云账号管理', icon: 'bkhcm-icon-account-manage', group: '云账单管理', route: getMenuRoute(billViews, MENU_BILL_ACCOUNT_MANAGE) },
-  { id: MENU_BILL_MANAGE,         i18n: '云账单管理', icon: 'bkhcm-icon-bill-manage',    group: '云账单管理', route: getMenuRoute(billViews, MENU_BILL_MANAGE) },
+  { id: MENU_BILL_ROOT_ACCOUNT, i18n: '一级账号',   icon: 'bkhcm-icon-account-manage', group: '云账单管理', route: getMenuRoute(billViews, MENU_BILL_ROOT_ACCOUNT) },
+  { id: MENU_BILL_MAIN_ACCOUNT, i18n: '二级账号',   icon: 'bkhcm-icon-account-manage', group: '云账单管理', route: getMenuRoute(billViews, MENU_BILL_MAIN_ACCOUNT) },
+  { id: MENU_BILL_MANAGE,       i18n: '云账单管理', icon: 'bkhcm-icon-bill-manage',    group: '云账单管理', route: getMenuRoute(billViews, MENU_BILL_MANAGE) },
 ];
 export const getBillMenus = () => filterVisible(billMenus);
 
@@ -119,7 +110,7 @@ export const getBillMenus = () => filterVisible(billMenus);
 // 该结构只用于渲染，不注册进路由
 
 // useChangeHeaderTab.ts —— case 'bill': menus.value = toLegacyMenus(getBillMenus(), billViews)
-// views/home/index.tsx   —— getRouteLinkParams 白名单 += MENU_BILL_ACCOUNT_MANAGE, MENU_BILL_MANAGE
+// views/home/index.tsx   —— getRouteLinkParams 白名单 += MENU_BILL_ROOT_ACCOUNT, MENU_BILL_MAIN_ACCOUNT, MENU_BILL_MANAGE
 ```
 
 适配规则：
@@ -129,7 +120,7 @@ export const getBillMenus = () => filterVisible(billMenus);
 - 未设 `group` 的菜单项原样平铺为一级菜单项；设了 `group` 的聚合成分组，分组顺序按首次出现。
 - `title`、`checkAuth`、`activeKey` 仍在路由上，渲染器照旧读取；权限过滤不迁。
 
-结果：「资源运营」侧栏只有一个分组「云账单管理」，下挂两项（F-003 / F-004 / F-005），分组与子项同名（R-002）。
+结果：「资源运营」侧栏只有一个分组「云账单管理」，下挂一级账号、二级账号、云账单管理三项（F-003 / F-004 / F-005），分组与子项同名（R-002）。
 
 边界：
 
@@ -165,6 +156,54 @@ export const getBillMenus = () => filterVisible(billMenus);
 
 `router/module/bill.ts` 搬空后删除。确认 `router/index.ts` 与 `useChangeHeaderTab.ts` 两处 import 都已改掉再删。
 
+### 7. PRD v2：一级 / 二级账号拆成菜单项（F-004 / F-007 / F-008）
+
+形态、符号、地址对齐 PR #1897（`refactor-router-menu`），但 #1897 没做的旧地址兼容本期补上。
+
+**路由**（`views/bill/route-config.ts`）：
+
+| name | path | component | meta |
+|------|------|-----------|------|
+| `MENU_BILL_ROOT_ACCOUNT` | `root-account` | `account-manage/root-account-list` | title 一级账号，`checkAuth: 'root_account_find'` |
+| `MENU_BILL_ROOT_ACCOUNT_CREATE` | `root-account/create` | `create-account/create-first-account`（不变） | `activeKey` → `MENU_BILL_ROOT_ACCOUNT` |
+| `MENU_BILL_MAIN_ACCOUNT` | `main-account` | `account-manage/main-account-list` | title 二级账号，**不配 `checkAuth`**（v2.1：面向普通用户，菜单始终显示，无权限点进去由 403 引导申请） |
+| `MENU_BILL_MAIN_ACCOUNT_CREATE` | `main-account/create` | `create-account/create-second-account`（不变） | `activeKey` → `MENU_BILL_MAIN_ACCOUNT` |
+
+**旧地址兼容**（新导出 `billAccountManageLegacy`，汇入 `billViews`）：
+
+- `account-manage`：`beforeEnter` 读 `useCommonStore().authVerifyData`，有 `root_account_find` 去 `MENU_BILL_ROOT_ACCOUNT`，否则去 `MENU_BILL_MAIN_ACCOUNT`，带 `query: to.query, replace: true`。不能用 `redirect` 函数：它在全局守卫拉权限之前求值，首次加载拿不到权限。记录带 `children: []`，只为满足类型（`component` / `children` / `redirect` 三选一，带 `redirect` 的记录不执行 `beforeEnter`）。
+- `account-manage/first-account` → `redirect: { name: MENU_BILL_ROOT_ACCOUNT_CREATE }`，`second-account` 同理，默认保留 query。
+- `header-config.ts` 的顶栏入口仍是 `/bill/account-manage`，**不改**，默认入口和旧书签走同一条分流。
+
+**直接访问拦截**（`store/common.ts`）：`pageAuthData` 里原有的 `root_account_find`、`main_account_find` 两项补上 `path: '/bill/root-account'`、`'/bill/main-account'`，由 `router/index.ts` 现成的全局守卫拦到 `/403/:id`。`useVerify` 拼权限请求时不读 `path`，加上它只影响拦截。新建页不加拦截（PRD：新建页权限规则不变）。
+
+**一级账号的无权限页（PRD v2.2 / Q-006）**：该权限需由管理员主动授权。`views/error-pages/403.tsx` 新增 `NO_SELF_APPLY_KEYS = ['root_account_find']`，命中时顶部提示改为「请联系管理员授权」、补一段管理员权限说明（权限名取 IAM 注册名「云账号-一级账号管理」），并隐藏「申请权限」按钮。其余权限点和嵌入 403 的资源选型页不受影响（`urlKey` 不在列表里）。本分支 `PROJECT_CONFIG` 没有管理员联系地址，只给文字，不做可点击的联系入口；其它构建变体若已有联系人组件，合并时在这一处替换即可，这块与它们的 403 页改动相邻，合并时注意冲突。
+
+**云账单管理的权限不动**：历来只有侧栏 `checkAuth: 'account_bill_find'`（IAM 动作 `account_bill_manage`），`pageAuthData` 无 `path`，直接访问页面能打开、接口由后端拒绝并弹错误提示，本期保持原样。
+
+**页面**：`root-account-list.vue` / `main-account-list.vue` 是两个薄壳（新功能页面用 `.vue`），外层 `account-list.scss` 给出原页签面板的留白，内容都是 `<Panel :account-level=... />`。不照搬 #1897 新写的两个 TSX 列表文件：本分支 `Panel` 的二级账号搜索会动态填充业务下拉候选，#1897 的版本没有，照搬会退化。必须是两个组件文件，不能一个组件靠路由 props 区分：`Panel` 只在 `setup` 时读一次 `accountLevel`，在两路由间复用实例时列表不会刷新。原页签页 `account-manage/index.tsx` 与 `index.scss` 删除（`.account-sideslider-header` 全仓无引用）；`Panel` 去掉已无人传入的 `authVerifyData` prop。
+
+**面包屑（对齐 #1897 新模式）**：拆页后原页签页自画的「云账号管理」标题没了，改用布局面包屑。
+
+- 四个账号路由都加 `layout: { breadcrumb: { show: true } }`；两个新建页补 `title`（录入一级账号 / 创建二级账号）和 `menu: { relative: 列表符号 }`，面包屑返回箭头据此指回列表。
+- 两个新建页删掉顶部固定定位的 `DetailHeader`，scss 按 #1897 改成 `height: 100%` 加 `padding: 24px`，去掉为固定标题栏预留的 `margin-top` / `calc(100vh - …)` 与按钮、提示条上的 `ml24` / `mr-24`。与布局无关的 #1897 改动（另一套目录的 import 路径、去掉 `filterable`、颜色写法）不带。
+- meta 字段名对齐 #1897：`layout.breadcrumbs` → `layout.breadcrumb`，同步改 `router/meta.ts`、`hooks/use-breadcrumb.ts` 和 `router/module/business.ts` 里仅有的一处用法。**默认值不跟**：#1897 的 `Meta` 默认显示面包屑，本分支仍默认不显示（沿用 `?? meta.isShowBreadcrumb`），否则全站没配的路由都会冒出面包屑。
+
+**菜单与白名单**：`billMenus` 与 `getRouteLinkParams` 白名单都换成两个新符号（见 §3）；`MENU_BILL_ACCOUNT_MANAGE` 删除，全仓已无引用。两项图标都沿用 `bkhcm-icon-account-manage`。
+
+**分流与权限实跑结果**（内存 history 跑真实 `billViews`，全局守卫按 `router/index.ts` 同逻辑复刻，`pageAuthData` 取自真实 `store/common.ts`）：
+
+| 权限 | 旧 `/bill/account-manage` | 直接访问 | 侧栏 |
+|------|---------------------------|----------|------|
+| 全有 | → `/bill/root-account`（query 保留） | 两个列表都可进 | 一级账号、二级账号、云账单管理 |
+| 只有二级 | → `/bill/main-account` | 一级账号 → `/403/root_account_find` | 二级账号 |
+| 只有一级 | → `/bill/root-account` | 二级账号 → `/403/main_account_find` | 一级账号、二级账号 |
+| 都没有 | → `/403/main_account_find` | — | 二级账号 |
+
+v2.1 去掉二级账号的 `checkAuth` 后，侧栏列按渲染逻辑更新（二级账号不再参与过滤）；`checkAuth` 不参与路由，前三列实跑结果不变。
+
+另验：两个旧新建页地址带 query 落到新建页、`activeKey` 正确；`Panel` 的 `{ name, query }` 跳转、侧栏 `{ name }` 跳转、云账单管理及页签旧地址均不变。临时脚本已删除。
+
 ## 关于 hasPageRoute 与 children
 
 **`hasPageRoute` 删除。** 它只有一个消费点：`views/home/index.tsx:274` 的分组判定 `Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute`，语义是「我的 children 是页面内子路由，不要把我当分组渲染」。该判定**只对 `menus.value` 的顶层元素生效**；迁移后 `bill-manage` 降成分组的子项，渲染子项时只读 `child.meta.title`，不会再看它的 `children` 或 `hasPageRoute`。全仓也只有 `router/module/bill.ts` 这一处设置过它，删掉不影响其它一级视图（它们从来没设过）。
@@ -178,8 +217,10 @@ export const getBillMenus = () => filterVisible(billMenus);
 ## 不改的东西
 
 - `views/home/index.tsx` 的分组渲染逻辑（能力已具备，只加白名单成员）。
-- 任何路由的 URL、component、`checkAuth`、`icon`。
-- 「业务资源」下的四个分组与菜单项（R-004）。
+- 云账单管理及其页签的 URL、component、`checkAuth`（账号页的地址与权限按 v2 调整，见 §7）。
+- `header-config.ts` 的顶栏入口地址（仍指向旧地址，由分流承接）。
+- 「录入一级账号 / 创建二级账号」按钮的操作级权限（PRD 范围外）。
+- 「业务资源」下的四个分组与菜单项（R-004）。`business.ts` 只做了面包屑键名的机械改名，行为不变。
 - 不新增父单列出的第三个账单类菜单项（R-003，该菜单项不在本分支注册范围内）。
 - `useWhereAmI` 的 `/^\/bill\/.+$/` 判定（URL 不变，无需调整）。
 
@@ -187,11 +228,15 @@ export const getBillMenus = () => filterVisible(billMenus);
 
 | 风险 | 说明 | 怎么验 |
 |------|------|--------|
-| 相对路径 + 白名单漏配 | 漏加白名单则侧栏 RouterLink 拿相对 path 跳转，跳错或跳空 | 从侧栏点两个菜单项，确认落到 `/bill/account-manage`、`/bill/bill-manage/summary/manage` |
+| 相对路径 + 白名单漏配 | 漏加白名单则侧栏 RouterLink 拿相对 path 跳转，跳错或跳空 | 从侧栏点三个菜单项，确认落到 `/bill/root-account`、`/bill/main-account`、`/bill/bill-manage/summary/manage` |
+| 旧地址分流 | 首次加载时权限数据未就绪会分错 | 分别用「有一级权限」「只有二级权限」的账号刷新 `/bill/account-manage`，以及点顶栏「资源运营」 |
+| 访问拦截 | `checkAuth` 只管侧栏、`pageAuthData.path` 只管路由，按页面面向谁分别配 | 无一级权限：侧栏无「一级账号」、直接访问进 403 且只提示联系管理员、无申请按钮；无二级权限：侧栏仍有「二级账号」，点击或直接访问都进 403 且可申请 |
+| 新建页布局 | 去掉固定 `DetailHeader` 后改由面包屑占位，scss 偏移若没清干净会留白或被遮挡 | 两个新建页：面包屑显示标题与返回箭头、表单顶部不留空、二级账号右侧指引栏高度铺满、页面可滚动到提交按钮 |
+| 刷新旧地址多一次权限请求 | 重定向产生的导航 `from` 仍是 `/`，全局守卫会再拉一次 | 可接受；Network 面板里看到两次 `auth/verify` 属预期 |
 | 父路由无 component | `{ name: MENU_BILL, path: '/bill', children }` 与 business 同构，但 bill 原来是顶层平铺 | 控制台无 vue-router 警告；直接输入旧 URL 能打开 |
 | 高亮失效 | `activeKey` 换成新常量，层级也变了 | 逐项点击 + 旧 URL 直接进入，两种方式都要正确高亮 |
 | 页面内三个页签 | name 全换，`RouterLink` 与 `routerAction` 两处引用 | 汇总/明细/调整互相切换；汇总页「操作记录」跳转正常 |
-| 权限过滤 | `checkAuth: 'account_bill_find'` | 无该权限时云账单管理不出现、分组仍在；两项都无权限时整组隐藏（AC-007 / AC-S01） |
+| 权限过滤 | 一级账号、云账单管理各自的 `checkAuth`；二级账号不过滤 | 无一级 / 云账单权限时对应项不出现；二级账号始终在，分组始终可见（AC-007 / AC-011 / AC-012） |
 | 英文环境 | 新名称缺词条会回退中文 | 切英文确认两个一级菜单显示新译名 |
 | 一级菜单顺序 | 只改 name 不动数组 | 对照改动前顺序（AC-010） |
 

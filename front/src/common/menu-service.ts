@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { MENU_BILL_ACCOUNT_MANAGE, MENU_BILL_MANAGE } from '@/constants/menu-symbol';
+import { MENU_BILL_ROOT_ACCOUNT, MENU_BILL_MAIN_ACCOUNT, MENU_BILL_MANAGE } from '@/constants/menu-symbol';
 import { billViews } from '@/views';
 
 /**
@@ -35,11 +35,18 @@ const filterVisible = (items: IMenu[]): IMenu[] =>
 
 const billMenus: IMenu[] = [
   {
-    id: MENU_BILL_ACCOUNT_MANAGE,
-    i18n: '云账号管理',
+    id: MENU_BILL_ROOT_ACCOUNT,
+    i18n: '一级账号',
     icon: 'bkhcm-icon-account-manage',
     group: '云账单管理',
-    route: getMenuRoute(billViews, MENU_BILL_ACCOUNT_MANAGE),
+    route: getMenuRoute(billViews, MENU_BILL_ROOT_ACCOUNT),
+  },
+  {
+    id: MENU_BILL_MAIN_ACCOUNT,
+    i18n: '二级账号',
+    icon: 'bkhcm-icon-account-manage',
+    group: '云账单管理',
+    route: getMenuRoute(billViews, MENU_BILL_MAIN_ACCOUNT),
   },
   {
     id: MENU_BILL_MANAGE,

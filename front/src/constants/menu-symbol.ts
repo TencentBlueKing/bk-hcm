@@ -79,8 +79,9 @@ export const MENU_SERVICE_PERMISSION_POLICY = 'menu_service_permission_policy';
  * 命名与取值对齐 refactor-router-menu 分支的 menu-symbol.ts，便于后续合流
  */
 export const MENU_BILL = 'menu_bill';
-export const MENU_BILL_ACCOUNT_MANAGE = 'menu_bill_account_manage';
+export const MENU_BILL_ROOT_ACCOUNT = 'menu_bill_root_account';
 export const MENU_BILL_ROOT_ACCOUNT_CREATE = 'menu_bill_root_account_create';
+export const MENU_BILL_MAIN_ACCOUNT = 'menu_bill_main_account';
 export const MENU_BILL_MAIN_ACCOUNT_CREATE = 'menu_bill_main_account_create';
 export const MENU_BILL_MANAGE = 'menu_bill_manage';
 export const MENU_BILL_MANAGE_SUMMARY = 'menu_bill_manage_summary';

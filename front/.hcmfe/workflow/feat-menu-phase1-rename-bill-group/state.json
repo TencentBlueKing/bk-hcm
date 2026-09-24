@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase1-rename-bill-group",
   "title": "菜单整合一期：一级菜单更名与云账单分组",
-  "currentStage": "test",
+  "currentStage": "coding",
   "createdAt": "2026-09-22T09:13:46.572Z",
-  "updatedAt": "2026-09-23T08:39:16.668Z",
+  "updatedAt": "2026-09-24T03:18:32.784Z",
   "artifacts": {
     "prd": [
       {
@@ -30,13 +30,8 @@
   "approvals": {
     "prd": {
       "stage": "prd",
-      "approvedAt": "2026-09-22T11:51:23.473Z",
-      "note": "用户确认「prd 可以过」。已按变体口径修订 F-004/R-003/AC-007/Q-002 措辞，并在约束里固定落码基线（当前分支的现存菜单实现，早先整体重构未合入、不作基线）。"
-    },
-    "coding": {
-      "stage": "coding",
-      "approvedAt": "2026-09-23T04:10:55.417Z",
-      "note": "用户确认「继续推动工作流」。coding 完成：bill 路由迁至去中心化模式并按 name 跳转/重定向；menu-service 雏形只覆盖资源运营侧栏，经适配层喂给现有渲染器；一级菜单更名与 i18n 词条；旧地址与跳转经新旧路由表实跑对比全部一致。"
+      "approvedAt": "2026-09-23T10:02:42.830Z",
+      "note": "用户确认「ok 继续」。PRD v2：云账号管理拆为一级账号/二级账号菜单项；各自查看权限显隐+直接访问 403；旧「云账号管理」地址按先一级后二级分流，旧新建页地址落到新建页；新增 F-008、AC-011~014、Q-005。"
     }
   },
   "history": [
@@ -57,6 +52,19 @@
       "to": "test",
       "at": "2026-09-23T04:10:55.417Z",
       "note": "用户确认「继续推动工作流」。coding 完成：bill 路由迁至去中心化模式并按 name 跳转/重定向；menu-service 雏形只覆盖资源运营侧栏，经适配层喂给现有渲染器；一级菜单更名与 i18n 词条；旧地址与跳转经新旧路由表实跑对比全部一致。"
+    },
+    {
+      "from": "test",
+      "to": "prd",
+      "at": "2026-09-23T10:00:25.762Z",
+      "note": "需求变更：「云账号管理」拆为「一级账号」「二级账号」两个菜单项。已与用户确定：两项各自按 root_account_find / main_account_find 显隐并做路由级 403 拦截；地址对齐 #1897（/bill/root-account[/create]、/bill/main-account[/create]），旧新建页地址重定向；/bill/account-manage 按权限分流（有一级权限去一级，否则二级）。TAPD 保持提测不回退。"
+    },
+    {
+      "from": "prd",
+      "to": "coding",
+      "at": "2026-09-23T10:02:42.830Z",
+      "gitHead": "806e09e001562f0374e67c11cc72d92841297c42",
+      "note": "用户确认「ok 继续」。PRD v2：云账号管理拆为一级账号/二级账号菜单项；各自查看权限显隐+直接访问 403；旧「云账号管理」地址按先一级后二级分流，旧新建页地址落到新建页；新增 F-008、AC-011~014、Q-005。"
     }
   ],
   "requirementId": "req-menu-integration",
@@ -83,6 +91,8 @@
   "artifactFreshness": {
     "coding": {
       "boundFiles": [
+        "src/views/bill/account/account-manage/root-account-list.vue",
+        "src/views/bill/account/account-manage/main-account-list.vue",
         "menu-symbol.ts",
         "views/bill/route-config.ts",
         "views/index.ts",
@@ -109,16 +119,40 @@
         "src/views/bill/bill/summary/primary/index.tsx",
         "src/views/bill/account/account-manage/panel/index.tsx",
         "src/router/module/bill.ts",
+        "src/store/common.ts",
+        "src/views/bill/account/account-manage/account-list.scss",
+        "src/views/bill/account/account-manage/index.tsx",
+        "src/views/bill/account/account-manage/index.scss",
+        "src/router/meta.ts",
+        "src/hooks/use-breadcrumb.ts",
+        "src/router/module/business.ts",
+        "src/views/bill/account/create-account/create-first-account/index.tsx",
+        "src/views/bill/account/create-account/create-first-account/index.scss",
+        "src/views/bill/account/create-account/create-second-account/index.tsx",
+        "src/views/bill/account/create-account/create-second-account/index.scss",
+        "src/views/error-pages/403.tsx",
         "views/bill/account/account-manage/panel/index.tsx",
         "views/bill/bill/header/index.tsx",
+        "store/common.ts",
+        "views/error-pages/403.tsx",
+        "root-account-list.vue",
+        "main-account-list.vue",
+        ".vue",
+        "account-list.scss",
+        "account-manage/index.tsx",
+        "index.scss",
+        "router/meta.ts",
+        "hooks/use-breadcrumb.ts",
+        "router/module/business.ts",
         "views/bill/bill/index.tsx",
         "views/load-balancer/route-config.ts",
         "entry-biz.vue",
-        "summary/index.tsx"
+        "summary/index.tsx",
+        "business.ts"
       ],
-      "contentFingerprint": "8a6a86e422da20f7df8694e4da89309450e753fa",
-      "codeBaseline": "e1725eeec49003034ffb4f182621cbbc593ed55a",
-      "seatedAt": "2026-09-23T08:39:16.668Z"
+      "contentFingerprint": "40e7b0212d52fade6595bb4b1793697931c1a58c",
+      "codeBaseline": "56ffaf2b855eadfbffd4202049fe6f4cf85d3357",
+      "seatedAt": "2026-09-24T03:18:32.784Z"
     }
   }
 }

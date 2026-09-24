@@ -45,7 +45,7 @@ const businessMenus: RouteRecordRaw[] = [
               ...new Meta({
                 activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
                 layout: {
-                  breadcrumbs: {
+                  breadcrumb: {
                     show: false,
                   },
                 },
