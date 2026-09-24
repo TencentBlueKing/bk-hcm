@@ -22,13 +22,14 @@
   "overwrittenScripts": {},
   "dependencyAdded": true,
   "dependencyInstalled": true,
-  "lockFileExisted": false,
+  "lockFileExisted": true,
   "gitignoreLines": [
     "test-results/",
     "playwright-report/",
     "e2e/.e2e-runs/"
   ],
   "envKeys": [
+    "E2E_DEV_SERVER_COMMAND",
     "E2E_BASE_URL",
     "E2E_REUSE_SERVER",
     "E2E_PORT"
