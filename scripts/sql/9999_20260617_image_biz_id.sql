@@ -21,15 +21,20 @@
    SQLVER=0054,HCMVER=v1.9.x
 
    Notes:
-   1. 修改`image`表，增加`bk_biz_id`字段
+   1. 为image表添加bk_biz_id字段，用于私有镜像关联业务
+   2. 将bk_biz_id加入现有idx_vendor_region联合索引，优化厂商+地域+业务维度查询效率
 */
 
 START TRANSACTION;
 
---  增加`bk_biz_id`字段，-1 表示未分配
+-- 添加bk_biz_id字段，用于镜像关联业务（-1表示未分配/公共镜像，>0表示绑定到具体业务的私有镜像）
 ALTER TABLE `image`
-    ADD COLUMN `bk_biz_id` bigint NOT NULL DEFAULT -1 COMMENT '业务ID，-1表示未分配，>0表示绑定的业务' AFTER `region`,
-    ADD INDEX `idx_bk_biz_id` (`bk_biz_id`);
+    ADD COLUMN `bk_biz_id` bigint DEFAULT -1 COMMENT '业务ID，-1表示未分配，>0表示绑定的业务' AFTER `os_type`;
+
+-- 删除原有的idx_vendor_region索引，重建为包含bk_biz_id的联合索引
+ALTER TABLE `image`
+    DROP INDEX `idx_vendor_region`,
+    ADD INDEX `idx_vendor_region_biz` (`vendor`, `region`, `bk_biz_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v1.9.x' as `hcm_ver`, '0054' as `sql_ver`;

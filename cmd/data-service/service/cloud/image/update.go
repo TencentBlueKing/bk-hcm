@@ -178,7 +178,7 @@ func (svc *imageSvc) UpdateImageBizTag(cts *rest.Contexts) (interface{}, error) 
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		updateData := &tablecloud.ImageModel{
-			BkBizID: req.BkBizID,
+			BkBizID: &req.BkBizID,
 		}
 
 		if err := svc.dao.Image().UpdateByIDWithTx(cts.Kit, txn, imageID, updateData); err != nil {

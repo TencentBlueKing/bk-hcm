@@ -59,7 +59,6 @@ type ImageCreate[T coreimage.Extension] struct {
 	Type         string        `json:"type"`
 	OsType       enumor.OsType `json:"os_type"`
 	Region       string        `json:"region"`
-	BkBizID      int64         `json:"bk_biz_id"`
 	Extension    *T            `json:"extension"`
 }
 
@@ -94,7 +93,6 @@ type ImageUpdate[T coreimage.Extension] struct {
 	State     string        `json:"state"`
 	OsType    enumor.OsType `json:"os_type"`
 	Type      string        `json:"type"`
-	BkBizID   int64         `json:"bk_biz_id"`
 	Extension *T            `json:"extension"`
 }
 

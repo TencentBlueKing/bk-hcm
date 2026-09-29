@@ -27,6 +27,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud/image"
 	"hcm/pkg/dal/dao/types/cloud"
 	tablecloud "hcm/pkg/dal/table/cloud/image"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -58,13 +59,13 @@ func toProtoImageExtResult[T coreimage.Extension](m *tablecloud.ImageModel) (*co
 			Vendor:       m.Vendor,
 			CloudID:      m.CloudID,
 			Region:       m.Region,
-			BkBizID:      m.BkBizID,
 			Name:         m.Name,
 			Architecture: m.Architecture,
 			Platform:     m.Platform,
 			State:        m.State,
 			Type:         m.Type,
 			OsType:       m.OsType,
+			BkBizID:      converter.PtrToVal(m.BkBizID),
 			Revision: core.Revision{
 				Creator:   m.Creator,
 				Reviser:   m.Reviser,
@@ -82,13 +83,13 @@ func toProtoImageResult(m *tablecloud.ImageModel) *coreimage.BaseImage {
 		Vendor:       m.Vendor,
 		CloudID:      m.CloudID,
 		Region:       m.Region,
-		BkBizID:      m.BkBizID,
 		Name:         m.Name,
 		Architecture: m.Architecture,
 		Platform:     m.Platform,
 		State:        m.State,
 		Type:         m.Type,
 		OsType:       m.OsType,
+		BkBizID:      converter.PtrToVal(m.BkBizID),
 		Revision: core.Revision{
 			Creator:   m.Creator,
 			Reviser:   m.Reviser,
