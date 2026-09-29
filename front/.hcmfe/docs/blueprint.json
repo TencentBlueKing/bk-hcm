@@ -1,0 +1,302 @@
+{
+  "version": 1,
+  "project": "hcm",
+  "generatedAt": "2026-09-01T03:52:11.562Z",
+  "modules": [
+    {
+      "id": "base",
+      "kind": "base",
+      "title": "基础/共享接缝",
+      "summary": "跨模块共享层：HTTP 客户端、API 封装、全局组件、hooks、store、常量/类型、样式与工具函数等。已拆出 model/menu-route/auth 三个基础能力模块。",
+      "globs": [
+        "src/api/**",
+        "src/assets/**",
+        "src/common/**",
+        "src/components/**",
+        "src/constants/**",
+        "src/css/**",
+        "src/decorator/**",
+        "src/directive/**",
+        "src/hooks/**",
+        "src/http/**",
+        "src/language/**",
+        "src/store/**",
+        "src/style/**",
+        "src/types/**",
+        "src/typings/**",
+        "src/utils/**",
+        "src/vendor/**"
+      ],
+      "doc": "modules/base.md",
+      "status": "drafted",
+      "relates": [
+        "menu-route",
+        "auth"
+      ],
+      "fingerprint": {
+        "rootHash": "4a72cf266d932623f18c369dbfaaf04e13ca4d31"
+      }
+    },
+    {
+      "id": "component-variant",
+      "kind": "module",
+      "title": "组件级多云与变体差异化",
+      "summary": "单组件同时应对多云与构建变体。典范：account-selector。",
+      "globs": [
+        "src/**/*.plugin.ts",
+        "src/**/*-internal.plugin.ts"
+      ],
+      "doc": "modules/component-variant.md",
+      "status": "stub",
+      "relates": [
+        "model",
+        "plugin-handler",
+        "page-variant"
+      ],
+      "fingerprint": null
+    },
+    {
+      "id": "page-variant",
+      "kind": "module",
+      "title": "页面级变体差异化",
+      "summary": "用 .plugin 替换整块 UI 片段，承载页面级变体差异。",
+      "globs": [
+        "src/**/*.plugin.vue",
+        "src/**/*-internal.plugin.vue",
+        "src/**/*.plugin.tsx",
+        "src/**/*-internal.plugin.tsx"
+      ],
+      "doc": "modules/page-variant.md",
+      "status": "stub",
+      "relates": [
+        "component-variant",
+        "plugin-handler"
+      ],
+      "fingerprint": null
+    },
+    {
+      "id": "menu-route",
+      "kind": "module",
+      "title": "菜单与路由",
+      "summary": "三级一级视图、去中心化路由、菜单与路由解耦、routerAction 统一跳转。",
+      "globs": [
+        "src/router/**",
+        "src/constants/menu-symbol.ts",
+        "src/common/menu-service.ts",
+        "src/views/home/hooks/to-legacy-menus.ts"
+      ],
+      "doc": "modules/menu-route.md",
+      "status": "drafted",
+      "relates": [
+        "base",
+        "auth"
+      ],
+      "fingerprint": {
+        "rootHash": "42c9d23a27d3a3addd78a8c835e9f6d06d1114a3"
+      }
+    },
+    {
+      "id": "auth",
+      "kind": "module",
+      "title": "权限控制",
+      "summary": "视图级权限与操作级权限。旧 useVerify/PermissionDialog 已废弃。",
+      "globs": [
+        "src/common/auth-service.ts",
+        "src/constants/auth-symbols.ts",
+        "src/components/auth/**",
+        "src/components/permission/**",
+        "src/hooks/useVerify.ts",
+        "src/store/common.ts",
+        "src/views/error-pages/403.tsx"
+      ],
+      "doc": "modules/auth.md",
+      "status": "drafted",
+      "relates": [
+        "base",
+        "menu-route"
+      ],
+      "fingerprint": {
+        "rootHash": "2c786dfb8f0a6380df8f985abb4b71ef4be6d601"
+      }
+    },
+    {
+      "id": "operation-log",
+      "kind": "module",
+      "title": "操作记录",
+      "summary": "操作审计日志。",
+      "globs": [
+        "src/views/operation-log/**"
+      ],
+      "doc": "modules/operation-log.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "resource",
+      "kind": "module",
+      "title": "资源运营一级视图（容器·待拆解）",
+      "summary": "一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。",
+      "globs": [
+        "src/views/resource/**"
+      ],
+      "doc": "modules/resource.md",
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "eb22f6d1d44f878cda60c90c928d0c0d4d4ef367"
+      }
+    },
+    {
+      "id": "business",
+      "kind": "module",
+      "title": "业务一级视图（容器·待拆解）",
+      "summary": "一级视图 /business/:bizId 容器，待拆解。",
+      "globs": [
+        "src/views/business/**"
+      ],
+      "doc": "modules/business.md",
+      "status": "stub",
+      "relates": [
+        "load-balancer"
+      ],
+      "fingerprint": null
+    },
+    {
+      "id": "service",
+      "kind": "module",
+      "title": "工作台一级视图（容器·待拆解）",
+      "summary": "一级视图 /service/ 容器，待拆解。",
+      "globs": [
+        "src/views/service/**"
+      ],
+      "doc": "modules/service.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "cloud-account-manage",
+      "kind": "module",
+      "title": "云账号管理",
+      "summary": "云账号密钥、权限策略/模板、二级/三级账号管理。",
+      "globs": [
+        "src/views/cloud-account-manage/**"
+      ],
+      "doc": "modules/cloud-account-manage.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "load-balancer",
+      "kind": "module",
+      "title": "负载均衡",
+      "summary": "CLB/监听器/目标组/设备。",
+      "globs": [
+        "src/views/load-balancer/**"
+      ],
+      "doc": "modules/load-balancer.md",
+      "status": "drafted",
+      "relates": [
+        "business"
+      ],
+      "fingerprint": {
+        "rootHash": "a54f68e06a9d40d604d095809171913bc1b62519"
+      }
+    },
+    {
+      "id": "bill",
+      "kind": "module",
+      "title": "账单",
+      "summary": "账单与账号账单视图。",
+      "globs": [
+        "src/views/bill/**"
+      ],
+      "doc": "modules/bill.md",
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "3d4fd654cc8ebe385b587f9bafbfd6569801151c"
+      }
+    },
+    {
+      "id": "ticket",
+      "kind": "module",
+      "title": "单据/工单",
+      "summary": "工单流程，含业务/服务两套入口。",
+      "globs": [
+        "src/views/ticket/**"
+      ],
+      "doc": "modules/ticket.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "scheme",
+      "kind": "module",
+      "title": "资源选型方案",
+      "summary": "选型方案列表/详情/推荐。",
+      "globs": [
+        "src/views/scheme/**"
+      ],
+      "doc": "modules/scheme.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "task",
+      "kind": "module",
+      "title": "任务管理",
+      "summary": "异步任务（cvm/clb 等）列表与详情。",
+      "globs": [
+        "src/views/task/**"
+      ],
+      "doc": "modules/task.md",
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "9e9717c51fa9a922671011a77c5b27ed5bb00fe8"
+      }
+    },
+    {
+      "id": "app-shell",
+      "kind": "module",
+      "title": "门户框架/首页/错误页/通知",
+      "summary": "应用外壳与通用页面：首页、错误页、全局通知。",
+      "globs": [
+        "src/views/home/**",
+        "src/views/error-pages/**",
+        "src/views/notice/**",
+        "src/views/index.ts"
+      ],
+      "doc": "modules/app-shell.md",
+      "status": "stub",
+      "fingerprint": null
+    },
+    {
+      "id": "model",
+      "kind": "module",
+      "title": "模型驱动与页面模式",
+      "summary": "装饰器字段元数据模型与多云 Factory、展示/表单/列表三场景模式。",
+      "globs": [
+        "src/model/**"
+      ],
+      "doc": "modules/model.md",
+      "status": "drafted",
+      "relates": [
+        "menu-route",
+        "auth"
+      ],
+      "fingerprint": {
+        "rootHash": "0de6e5767929ce26998edb532f1faf302fb7a9ff"
+      }
+    },
+    {
+      "id": "plugin-handler",
+      "kind": "module",
+      "title": "变体插件模式（退场中）",
+      "summary": "退场中。按变体分目录的历史插件式组织。原则：只迁不增。",
+      "globs": [
+        "src/plugin-handler/**"
+      ],
+      "doc": "modules/plugin-handler.md",
+      "status": "stub",
+      "fingerprint": null
+    }
+  ]
+}

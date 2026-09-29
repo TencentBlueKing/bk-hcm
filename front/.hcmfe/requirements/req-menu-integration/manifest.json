@@ -1,0 +1,23 @@
+{
+  "id": "req-menu-integration",
+  "title": "菜单整合总体规划（四期）",
+  "createdAt": "2026-09-22T09:13:36.657Z",
+  "updatedAt": "2026-09-22T09:13:46.606Z",
+  "external": {
+    "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
+  },
+  "iterations": [
+    {
+      "wfId": "feat-menu-phase1-rename-bill-group",
+      "status": "prd",
+      "branch": "feat-menu-phase1-rename-bill-group",
+      "title": "菜单整合一期：一级菜单更名与云账单分组",
+      "createdAt": "2026-09-22T09:13:46.572Z"
+    }
+  ],
+  "aggregatedArtifacts": {},
+  "codeScope": {
+    "globs": [],
+    "autoLearned": true
+  }
+}

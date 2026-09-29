@@ -1,0 +1,11 @@
+# Regenerable fingerprint detail (bkdevbuddy docs); recomputed by `docs deepen`, not for review.
+blueprint.lock.json
+
+# 经验晋升的本地过程状态。落成的知识在 bk-devbuddy 的 know-how 仓，这里只是草稿。
+# 两者必须同进同退：promotions.jsonl 是由 promotions/*/meta.json 反向生成的投影，
+# 只忽略目录会让 migrateLegacyJsonl 照着 jsonl 把目录重建回来。
+promotions/
+promotions.jsonl
+
+# Ephemeral full body for experience-promotion update ships (bkdevbuddy); must not enter git.
+promotions/*/SHIP_BODY.md

@@ -5,8 +5,8 @@ import {
   createWebHashHistory,
   RouteLocationNormalized,
 } from 'vue-router';
-import { MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT, MENU_SERVICE } from '@/constants/menu-symbol';
-import { businessViews, serviceViews } from '@/views';
+import { MENU_BILL, MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT, MENU_SERVICE } from '@/constants/menu-symbol';
+import { billViews, businessViews, serviceViews } from '@/views';
 import common from './module/common';
 import resource from './module/resource';
 import resourceInside from './module/resource-inside';
@@ -14,7 +14,6 @@ import resourceInside from './module/resource-inside';
 import serviceInside from './module/service-inside';
 // import business from './module/business';
 import scheme from './module/scheme';
-import bill from './module/bill';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { isArray, isRegExp, isString } from 'lodash';
@@ -26,7 +25,11 @@ const routes: RouteRecordRaw[] = [
   // ...service,
   ...serviceInside,
   ...scheme,
-  ...bill,
+  {
+    name: MENU_BILL,
+    path: '/bill',
+    children: billViews,
+  },
   {
     path: '/',
     redirect: '/business/host',

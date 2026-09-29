@@ -19,7 +19,7 @@ export const provideBreadcrumb = () => {
       // 视之后的使用情况，如果比较不能满足所有场景可以考虑通过route.name判断或者重新赋值title时优先取当前data.title
       if (!isEqual(meta, oldMeta)) {
         data.title = meta.title;
-        data.display = meta?.layout?.breadcrumbs?.show ?? meta.isShowBreadcrumb;
+        data.display = meta?.layout?.breadcrumb?.show ?? meta.isShowBreadcrumb;
       }
     },
     { deep: true },

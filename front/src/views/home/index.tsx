@@ -34,6 +34,9 @@ import {
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_BUSINESS_CLOUD_ACCOUNT,
   MENU_BUSINESS_TICKET_MANAGEMENT,
+  MENU_BILL_ROOT_ACCOUNT,
+  MENU_BILL_MAIN_ACCOUNT,
+  MENU_BILL_MANAGE,
 } from '@/constants/menu-symbol';
 import { jsonp } from '@/http';
 import i18n from '@/language/i18n';
@@ -89,6 +92,9 @@ export default defineComponent({
           MENU_BUSINESS_LOAD_BALANCER,
           MENU_BUSINESS_CLOUD_ACCOUNT,
           MENU_BUSINESS_TICKET_MANAGEMENT,
+          MENU_BILL_ROOT_ACCOUNT,
+          MENU_BILL_MAIN_ACCOUNT,
+          MENU_BILL_MANAGE,
         ].includes(config.name)
       ) {
         return { name: config.name };

@@ -7,6 +7,9 @@ import { useRoute } from 'vue-router';
 import permissions from '@/assets/image/403.png';
 import './403.scss';
 
+// 需由管理员主动授权的权限：只提示联系管理员，不提供自助申请入口
+const NO_SELF_APPLY_KEYS = ['root_account_find'];
+
 export default defineComponent({
   props: {
     urlKeyId: String as PropType<string>,
@@ -86,18 +89,31 @@ export default defineComponent({
   },
 
   render() {
+    const selfApply = !NO_SELF_APPLY_KEYS.includes(this.urlKey);
     return (
       <div class='error-page-container'>
         <div class='forbid-layout'>
           <img src={permissions} alt='403' />
           <h2>{this.t('抱歉，您暂无该功能的权限')}</h2>
-          <p class='mt10'>{this.t('您还没有该功能的权限，可以点击下方的"申请权限"获得权限')}</p>
+          <p class='mt10'>
+            {selfApply
+              ? this.t('您还没有该功能的权限，可以点击下方的"申请权限"获得权限')
+              : this.t('您还没有该功能的权限，请联系管理员授权')}
+          </p>
         </div>
         <div class='describe'>
           <h2 class='mt20'>权限申请说明：</h2>
           {this.urlKey === 'main_account_find' && (
             <>
               <p class='mt5 sub-describe'>{'当前无"账号-二级账号查看"权限'}</p>
+            </>
+          )}
+          {this.urlKey === 'root_account_find' && (
+            <>
+              <p class='mt5 sub-describe'>{this.t('当前无"云账号-一级账号管理"权限')}</p>
+              <p class='mt5 sub-describe'>
+                {this.t('该功能面向平台管理员，属于管理员的权限，不支持自助申请，如需使用请联系管理员授权')}
+              </p>
             </>
           )}
           {this.urlKey === 'cloud_selection_recommend' && (
@@ -240,11 +256,13 @@ export default defineComponent({
             </>
           )}
         </div>
-        <div class='btn-warp'>
-          <Button class='mt20' theme='primary' loading={this.urlLoading} onClick={this.handlePermissionJump}>
-            {this.t('申请权限')}
-          </Button>
-        </div>
+        {selfApply && (
+          <div class='btn-warp'>
+            <Button class='mt20' theme='primary' loading={this.urlLoading} onClick={this.handlePermissionJump}>
+              {this.t('申请权限')}
+            </Button>
+          </div>
+        )}
       </div>
     );
   },
