@@ -47,10 +47,49 @@ func (s MigrationStatus) Validate() error {
 type MigrationSkipReason string
 
 const (
-	// MigrationSkipApplied means a success record of the same ID exists.
+	// MigrationSkipApplied means the migration ID has a success record, or
+	// an earlier migration of the same ID runs in the same run.
 	MigrationSkipApplied MigrationSkipReason = "applied"
 	// MigrationSkipAboveMaxVersion means the migration is above the version limit of the run.
 	MigrationSkipAboveMaxVersion MigrationSkipReason = "above_max_version"
 	// MigrationSkipBaseline means init adopt records the migration as success without running it.
 	MigrationSkipBaseline MigrationSkipReason = "baseline"
+)
+
+// MigrationAction is the decision on one migration in a plan.
+type MigrationAction string
+
+const (
+	// MigrationActionExecute runs the migration.
+	MigrationActionExecute MigrationAction = "EXECUTE"
+	// MigrationActionSkipSuccess skips the migration because its ID is applied.
+	MigrationActionSkipSuccess MigrationAction = "SKIP-SUCCESS"
+	// MigrationActionSkipBackfill skips the migration and replaces the recorded
+	// PENDING version with the registered version.
+	MigrationActionSkipBackfill MigrationAction = "SKIP-BACKFILL"
+	// MigrationActionAboveMaxVersion leaves the migration out because it is above the version limit.
+	MigrationActionAboveMaxVersion MigrationAction = "ABOVE-MAX-VERSION"
+	// MigrationActionMissing marks a missed migration; the plan fails.
+	MigrationActionMissing MigrationAction = "MISSING"
+	// MigrationActionIDReuse marks a suspected ID reuse; the plan fails.
+	MigrationActionIDReuse MigrationAction = "ID-REUSE"
+	// MigrationActionPendingDenied marks a PENDING migration without --allow-pending;
+	// the plan fails.
+	MigrationActionPendingDenied MigrationAction = "PENDING-DENIED"
+)
+
+// MigrationIssueKind is the kind of a problem found before execution. It
+// decides the exit code of the run.
+type MigrationIssueKind string
+
+const (
+	// MigrationIssueMissed is a missed migration in the default mode, exit code 4.
+	MigrationIssueMissed MigrationIssueKind = "missed"
+	// MigrationIssuePending is a PENDING migration without --allow-pending, exit code 5.
+	MigrationIssuePending MigrationIssueKind = "pending"
+	// MigrationIssueLabels is more than one version label in a registry, exit code 5.
+	MigrationIssueLabels MigrationIssueKind = "labels"
+	// MigrationIssueIDReuse is a migration skipped by an ID that a package with
+	// another migration suffix applied, exit code 6.
+	MigrationIssueIDReuse MigrationIssueKind = "id_reuse"
 )

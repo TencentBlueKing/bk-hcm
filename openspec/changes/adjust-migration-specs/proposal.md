@@ -7,7 +7,7 @@
 - **BREAKING** Migration ID 从 UUID 改为全大写的 `日期-分钟-tag-4 位随机`。`Regist` 不再单独收语义描述。
 - 每条迁移一个目录、一个包、一处 `Regist`。`package` 子句统一为 `migration`。`imports.go` 每条迁移一行。`check-imports` 增加对同 ID、不同迁移后缀的失败项。
 - 删除「相同 ID 的动作名一致」这条待确认需求。不拿目录 tag 去对 ID 的 tag 段。
-- `Regist` 从传入值的类型取导入路径，写入 `Pkg`。记录表增加 `applied_pkg`。按 ID 跳过时比迁移后缀，对不上以退出码 4 失败。
+- `Regist` 从传入值的类型取导入路径，写入 `Pkg`。记录表增加 `applied_pkg`。按 ID 跳过时比迁移后缀，对不上以退出码 6 失败。
 - `PENDING` 改为全局开关 `--allow-pending`（默认关）。打开时执行一次，记录写 `PENDING`，不计入库当前版本，定版后回填。
 - 执行判定从 for 循环里挪到执行前校验：读完记录表、算出库当前版本后一次列全问题，一条都不执行。多个库先全部校验完再执行。
 - 新增能力 `migrate-audit`：每库一张 `hcm_migration_audit`。一次进程运行在每个库一行，开头插入、结尾更新。执行层不调用审计器；由 CLI 调用。
@@ -27,8 +27,8 @@
 - `migrate-registry`: ID 格式与 `Regist` 签名、导入路径校验、一目录一包与 `check-imports`、删除动作名需求。
 - `migrate-record`: `applied_pkg` 列、写入时机、`PENDING` 不计入库当前版本、定版回填、空 `applied_pkg` 的失败。
 - `migrate-version`: `PENDING` 不再一律在执行前失败，改为受 `--allow-pending` 控制。
-- `migrate-executor`: 执行前校验、疑似 ID 复用、跳过时比迁移后缀、`PENDING` 的执行与回填。
-- `migrate-cli`: `--allow-pending`、退出码 3 与 4 的范围、`--plan` 与实跑使用同一套判定。
+- `migrate-executor`: 执行前校验、疑似 ID 复用（退出码 6）、跳过时比迁移后缀、`PENDING` 的执行与回填。
+- `migrate-cli`: `--allow-pending`、退出码 0–6、`--plan` 与实跑使用同一套判定。
 
 ## Impact
 

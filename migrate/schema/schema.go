@@ -17,7 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+// Package schema owns the migration record table and the migration audit table.
+package schema
 
 import (
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/migrate"
 )
 
 // recordTableDDL is the CREATE TABLE statement for the migration record table.
@@ -73,6 +75,10 @@ var auditTableDDL = fmt.Sprintf("CREATE TABLE `%s` ("+
 	constant.MigrationAuditTable, constant.MigrationAuditArgsMaxBytes, constant.MigrationAuditBuildMaxBytes,
 	constant.MigrationAuditBuildMaxBytes, constant.MigrationVersionMaxLen, constant.MigrationVersionMaxLen)
 
+// initTables are the tables InitTables creates. A database is initialized
+// only when all of them exist.
+var initTables = []string{constant.MigrationAuditTable, constant.MigrationRecordTable}
+
 // InitResult is the result of InitTables on one database.
 type InitResult struct {
 	// RecordCreated reports whether this call created the record table.
@@ -111,6 +117,28 @@ func InitTables(kt *kit.Kit, o orm.Interface, baseline *register.Version,
 		logs.Infof("migration tables already exist, skip init, rid: %s", kt.Rid)
 	}
 	return InitResult{RecordCreated: recordCreated, AuditCreated: auditCreated, Adopted: adopted}, nil
+}
+
+// CheckInitialized returns a migrate.ErrPrecondition error naming every missing
+// table when the database is not initialized.
+func CheckInitialized(kt *kit.Kit, o orm.Interface) error {
+	meta := util.NewMetaOrm(o)
+	var missing []string
+	for _, table := range initTables {
+		exists, err := meta.HasTable(kt.Ctx, table)
+		if err != nil {
+			logs.Errorf("check migration table failed, err: %v, table: %s, rid: %s", err, table, kt.Rid)
+			return fmt.Errorf("check migration table %s failed, err: %v", table, err)
+		}
+		if !exists {
+			missing = append(missing, table)
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: migration tables %v do not exist, run init first", migrate.ErrPrecondition, missing)
+	}
+	return nil
 }
 
 // initRecordTable creates the record table and, when it is created with a

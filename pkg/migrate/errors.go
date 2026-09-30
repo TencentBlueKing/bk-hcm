@@ -17,22 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package engine runs registered migrations against the databases and keeps
-// the per-database migration records.
-package engine
+package migrate
 
 import "errors"
 
 // Errors wrapping these sentinels with %w are told apart by the CLI through
-// errors.Is and mapped to exit codes; any other error is a plain failure.
+// errors.Is and mapped to exit codes; any other error is a plain failure,
+// exit code 1. An error wraps at most one of them.
 var (
 	// ErrUsage marks argument or config errors, exit code 2.
 	ErrUsage = errors.New("usage error")
-	// ErrPrecondition marks unmet preconditions, exit code 3. Load returns it
-	// for an unknown status, an unparsable version, or a success record
-	// without applied_pkg.
+	// ErrPrecondition marks a database whose migration tables are missing or
+	// hold invalid records, exit code 3. CheckInitialized returns it for a
+	// missing table; RecordStore.Load returns it for an unknown status, an
+	// unparsable version, or a success record without applied_pkg.
 	ErrPrecondition = errors.New("precondition failed")
 	// ErrMissed marks a migration below the database version missed in the
-	// default mode, exit code 4.
+	// default mode, exit code 4. Rerunning with --catch-up runs it.
 	ErrMissed = errors.New("missed migration")
+	// ErrRegistry marks invalid registry content, exit code 5: a PENDING
+	// migration without --allow-pending, or more than one version label.
+	ErrRegistry = errors.New("invalid registry")
+	// ErrIDReuse marks a migration skipped by an ID applied by a package with
+	// another migration suffix, exit code 6.
+	ErrIDReuse = errors.New("suspected migration id reuse")
 )

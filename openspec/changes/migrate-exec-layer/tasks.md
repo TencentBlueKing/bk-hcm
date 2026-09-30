@@ -20,8 +20,8 @@
 
 ## 3. 记录表与记录读写
 
-- [x] 3.1 `util.CreateTableIfNotExists` 增加返回值 `created bool`（表已存在时为 false 且不执行语句）。`migrate/engine/schema.go` 放不含 `IF NOT EXISTS` 的 `CREATE TABLE`；`init` 只调用这个函数，不自己探测 `information_schema`。仅 `created && mode==adopt` 时插入基线记录
-- [x] 3.2 在 `migrate/engine/recordstore.go` 定义记录结构与状态常量（`running` / `success` / `failed`）
+- [x] 3.1 `util.CreateTableIfNotExists` 增加返回值 `created bool`（表已存在时为 false 且不执行语句）。`migrate/schema/schema.go` 放不含 `IF NOT EXISTS` 的 `CREATE TABLE`；`init` 只调用这个函数，不自己探测 `information_schema`。仅 `created && mode==adopt` 时插入基线记录
+- [x] 3.2 在 `migrate/schema/recordstore.go` 定义记录结构与状态常量（`running` / `success` / `failed`）
 - [x] 3.3 实现按库读取全部记录，并按 `migration_id` 建索引供判定使用
 - [x] 3.4 实现 `running` 写入：`INSERT ... ON DUPLICATE KEY UPDATE` 回到 `running` 并清空 `message`
 - [x] 3.5 实现 `success` 写入：更新状态并把 `version` 刷成此刻注册的版本
@@ -41,14 +41,14 @@
 
 ## 5. 执行器
 
-- [ ] 5.1 在 `migrate/engine/executor.go` 实现执行前扫描：发现常量 `PENDING` 即返回映射为退出码 3 的错误并列出 ID；发现两个及以上不同的非空标签同样以退出码 3 失败并列出标签与 ID，不连库、不执行。只有一个非空标签或全是数字第四段时不因此失败
+- [ ] 5.1 在 `migrate/engine/executor.go` 实现执行前扫描：未开 `--allow-pending` 时 PENDING → 退出码 5；两个及以上不同非空标签 → 退出码 5；与漏执行 / ID 复用同一轮汇总（不再「连库前退出码 3」）。引擎层已由 `adjust-migration-specs` 落地，本项随 CLI 接线关闭
 - [ ] 5.1.1 实现记录表缺失检查：`up` 在表不存在时返回映射为退出码 3 的错误并提示先跑 `init`，不建表、不执行任何迁移
 - [ ] 5.2 实现版本上限解析与过滤（`Compare(m.Version, ceiling) <= 0`），上限非法映射为退出码 2
 - [ ] 5.3 实现逐条判定循环：已 success 跳过、默认模式漏执行失败、补跑模式一律执行，`running` 与 `failed` 同等视为无成功记录
 - [ ] 5.4 实现执行单条迁移：写 `running` → 调 `up()` → 写 `success` 或 `failed`，记录写入在迁移事务之外，且不包裹外层事务
 - [ ] 5.5 实现失败即中断：该库后续迁移不执行，错误向上返回
 - [ ] 5.6 实现按库循环：固定先主库后 OBS，主库失败不再连 OBS，OBS 失败不回滚主库
-- [ ] 5.7 实现 `--plan`：打印 `EXECUTE` / `SKIP-SUCCESS` / `OVER-CEILING` / `MISSING`，不建表、不写记录、不调 `up()`
+- [ ] 5.7 实现 `--plan`：打印 `EXECUTE` / `SKIP-SUCCESS` / `ABOVE-MAX-VERSION` / `MISSING`，不建表、不写记录、不调 `up()`
 - [ ] 5.8 写判定循环单元测试：表驱动覆盖判定表全部分支（已成功、超上限、默认模式高于/低于库当前、补跑模式、running、failed）
 - [ ] 5.9 写测试覆盖断点续跑：模拟第三条失败后重跑，断言前两条被跳过
 - [ ] 5.10 写测试覆盖 `--plan` 在默认模式与补跑模式下对同一批迁移给出不同判定
@@ -62,7 +62,7 @@
 - [ ] 6.3 实现 `status`：按库打印当前版本、各状态计数、未执行清单，并标出 `version ≤ 库当前` 的未执行项；不接收也不推断模式；只读不建表
 - [ ] 6.4 实现 `list`：按执行顺序打印，不连库，版本为 `PENDING` 的项照常打印且退出码 0
 - [ ] 6.5 核对 `init --mode=adopt` 只写记录、不调用任何 `up()`
-- [ ] 6.6 统一退出码映射：0 / 1 / 2 / 3 / 4，确认漏执行与执行失败可区分
+- [ ] 6.6 统一退出码映射：0 / 1 / 2 / 3 / 4 / 5 / 6，确认漏执行、注册表问题、ID 复用与执行失败可区分
 - [ ] 6.7 分离输出：判定结果与汇总走 stdout，过程日志与错误详情走 `pkg/logs`
 - [ ] 6.8 写命令层测试：参数校验、非法 `--database`、`--to` 非法、`init` 缺 `--mode`、`adopt` 缺 `--baseline`、`up` 缺记录表、退出码映射
 

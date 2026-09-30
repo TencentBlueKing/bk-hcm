@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
+	"hcm/pkg/migrate"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -111,7 +112,7 @@ func TestSelectRegistries(t *testing.T) {
 			if tc.wantErr {
 				require.Error(t, err)
 				assert.Nil(t, got)
-				assert.ErrorIs(t, err, ErrUsage)
+				assert.ErrorIs(t, err, migrate.ErrUsage)
 				for _, part := range tc.errHas {
 					assert.Contains(t, err.Error(), part)
 				}
@@ -203,7 +204,7 @@ func TestDataSource_Open(t *testing.T) {
 		assert.False(t, ok)
 		assert.Nil(t, o)
 		assert.Equal(t, 0, opened)
-		assert.ErrorIs(t, err, ErrUsage)
+		assert.ErrorIs(t, err, migrate.ErrUsage)
 		assert.Contains(t, err.Error(), "has no config mapping")
 	})
 
@@ -336,7 +337,7 @@ func TestLoadDataSource(t *testing.T) {
 			ds, err := LoadDataSource(tc.path)
 			require.Error(t, err)
 			assert.Nil(t, ds)
-			assert.ErrorIs(t, err, ErrUsage)
+			assert.ErrorIs(t, err, migrate.ErrUsage)
 			assert.Contains(t, err.Error(), "load config file")
 			if tc.path != "" {
 				assert.Contains(t, err.Error(), tc.path)

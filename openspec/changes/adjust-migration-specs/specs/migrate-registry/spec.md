@@ -60,7 +60,7 @@
 
 ### Requirement: 重复 ID 允许注册
 
-同一个注册表内 SHALL 允许两条迁移使用相同的 Migration ID。注册期 MUST NOT 因 ID 重复终止进程。迁移后缀相同是内部四位与外部三位、pending 定版、归档的正常形态。迁移后缀不同 MUST NOT 在单次 `Regist` 里失败，由执行前校验以退出码 4 拒绝。不同库的记录表相互独立。
+同一个注册表内 SHALL 允许两条迁移使用相同的 Migration ID。注册期 MUST NOT 因 ID 重复终止进程。迁移后缀相同是内部四位与外部三位、pending 定版、归档的正常形态。迁移后缀不同 MUST NOT 在单次 `Regist` 里失败，由执行前校验以退出码 6 拒绝。不同库的记录表相互独立。
 
 #### Scenario: 同库相同 ID 且后缀相同可以注册
 

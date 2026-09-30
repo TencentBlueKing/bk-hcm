@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+package schema
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 	"reflect"
 	"strings"
 
-	"hcm/migrate/schema"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
 
@@ -51,7 +50,7 @@ type countReply struct {
 	err error
 }
 
-// fakeDo is an in-memory stand-in for orm.DoOrm. Select fills *[]schema.Record, or
+// fakeDo is an in-memory stand-in for orm.DoOrm. Select fills *[]Record, or
 // when selectNonRecord is set, any other pointer-to-slice dest whose element
 // type matches. Update returns updateAffected unless updateErr is set. Count
 // answers from countQueue and then falls back to countErr or countDefault.
@@ -65,7 +64,7 @@ type fakeDo struct {
 	execErr      error
 	execErrMatch string
 
-	selectRows      []schema.Record
+	selectRows      []Record
 	selectNonRecord interface{}
 	selectErr       error
 
@@ -112,8 +111,8 @@ func (f *fakeDo) Select(_ context.Context, dest interface{}, expr string, arg ma
 	if f.selectErr != nil {
 		return f.selectErr
 	}
-	if rows, ok := dest.(*[]schema.Record); ok {
-		copied := make([]schema.Record, len(f.selectRows))
+	if rows, ok := dest.(*[]Record); ok {
+		copied := make([]Record, len(f.selectRows))
 		copy(copied, f.selectRows)
 		*rows = copied
 		return nil
@@ -133,7 +132,7 @@ func (f *fakeDo) Select(_ context.Context, dest interface{}, expr string, arg ma
 		dv.Elem().Set(src)
 		return nil
 	}
-	return fmt.Errorf("fakeDo: Select dest %T, want *[]schema.Record", dest)
+	return fmt.Errorf("fakeDo: Select dest %T, want *[]Record", dest)
 }
 
 func (f *fakeDo) Count(_ context.Context, expr string, arg map[string]interface{}) (uint64, error) {

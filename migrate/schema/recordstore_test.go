@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+package schema
 
 import (
 	"errors"
@@ -117,7 +117,7 @@ func TestRecordStore_Load(t *testing.T) {
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 		require.Error(t, err)
 		assert.Nil(t, records)
-		assert.ErrorIs(t, err, ErrPrecondition)
+		assert.ErrorIs(t, err, migrate.ErrPrecondition)
 		assert.Contains(t, err.Error(), migA)
 		assert.Contains(t, err.Error(), "empty applied_pkg")
 	})
@@ -154,7 +154,7 @@ func TestRecordStore_Load(t *testing.T) {
 			records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 			require.Error(t, err)
 			assert.Nil(t, records)
-			assert.ErrorIs(t, err, ErrPrecondition)
+			assert.ErrorIs(t, err, migrate.ErrPrecondition)
 			assert.Contains(t, err.Error(), migB)
 			assert.Contains(t, err.Error(), string(tc.status))
 		})
@@ -175,7 +175,7 @@ func TestRecordStore_Load(t *testing.T) {
 				records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 				require.Error(t, err)
 				assert.Nil(t, records)
-				assert.ErrorIs(t, err, ErrPrecondition)
+				assert.ErrorIs(t, err, migrate.ErrPrecondition)
 				assert.Contains(t, err.Error(), migB)
 				assert.Contains(t, err.Error(), "unparsable version")
 				if bad == "" {
@@ -197,7 +197,7 @@ func TestRecordStore_Load(t *testing.T) {
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 		require.Error(t, err)
 		assert.Nil(t, records)
-		assert.ErrorIs(t, err, ErrPrecondition)
+		assert.ErrorIs(t, err, migrate.ErrPrecondition)
 		assert.Contains(t, err.Error(), migB)
 		assert.Contains(t, err.Error(), "unknown status")
 		assert.Contains(t, err.Error(), "done")
@@ -231,7 +231,7 @@ func TestRecordStore_Load(t *testing.T) {
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 		require.Error(t, err)
 		assert.Nil(t, records)
-		assert.ErrorIs(t, err, ErrPrecondition)
+		assert.ErrorIs(t, err, migrate.ErrPrecondition)
 		assert.Contains(t, err.Error(), migA)
 		assert.Contains(t, err.Error(), "empty applied_pkg")
 	})
@@ -568,7 +568,7 @@ func TestCurrentVersion(t *testing.T) {
 			require.Error(t, err)
 			assert.False(t, ok)
 			assert.Equal(t, register.Version{}, current)
-			assert.ErrorIs(t, err, ErrPrecondition)
+			assert.ErrorIs(t, err, migrate.ErrPrecondition)
 			assert.Contains(t, err.Error(), migB)
 		})
 	}
@@ -585,60 +585,6 @@ func TestCurrentVersionEqualRawIsStable(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, ok)
 		assert.Equal(t, "v1.9.3", current.Raw)
-	}
-}
-
-func TestWarnVersionDrift(t *testing.T) {
-	kt := kit.New()
-	testCases := []struct {
-		name       string
-		status     enumor.MigrationStatus
-		recorded   string
-		registered string
-		want       bool
-	}{
-		{
-			name: "success same version", status: enumor.MigrationStatusSuccess,
-			recorded: "v1.9.3", registered: "v1.9.3", want: false,
-		},
-		{
-			name: "success same labeled version", status: enumor.MigrationStatusSuccess,
-			recorded: "v1.9.3-tenant.1", registered: "v1.9.3-tenant.1", want: false,
-		},
-		{
-			name: "success drift from feature label to three segments", status: enumor.MigrationStatusSuccess,
-			recorded: "v1.9.3-tenant.1", registered: "v1.9.3", want: true,
-		},
-		{
-			name: "running different version", status: enumor.MigrationStatusRunning,
-			recorded: "v1.9.3-tenant.1", registered: "v1.9.3", want: false,
-		},
-		{
-			name: "failed different version", status: enumor.MigrationStatusFailed,
-			recorded: "v1.9.2", registered: "v1.9.3", want: false,
-		},
-		{
-			name:     "success PENDING recorded vs released registered is not drift",
-			status:   enumor.MigrationStatusSuccess,
-			recorded: constant.MigrationPendingVersion, registered: "v1.9.3", want: false,
-		},
-		{
-			name:     "success released recorded vs PENDING registered is drift",
-			status:   enumor.MigrationStatusSuccess,
-			recorded: "v1.9.3", registered: constant.MigrationPendingVersion, want: true,
-		},
-		{
-			name:     "success PENDING recorded vs PENDING registered is not drift",
-			status:   enumor.MigrationStatusSuccess,
-			recorded: constant.MigrationPendingVersion, registered: constant.MigrationPendingVersion, want: false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			rec := Record{MigrationID: migA, Status: tc.status, Version: tc.recorded}
-			m := register.Migration{ID: migA, Version: tc.registered}
-			assert.Equal(t, tc.want, WarnVersionDrift(kt, rec, m))
-		})
 	}
 }
 

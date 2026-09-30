@@ -1,5 +1,7 @@
 ## ADDED Requirements
 
+> 本文件中退出码、执行前校验、ID 复用、计划动作以 `openspec/changes/adjust-migration-specs/specs/migrate-executor/spec.md` 为准（退出码 4=漏执行、5=PENDING/多 label、6=ID 复用；计划动作含 `SKIP-BACKFILL` / `ID-REUSE` / `PENDING-DENIED`）。以下保留原稿结构，已过时处已就地改正。
+
 ### Requirement: 遍历顺序
 
 执行器 SHALL 遍历注册表中的全量迁移，顺序为版本号从旧到新、同版本比时间戳、再比 Migration ID。补跑 MUST NOT 另行排序，也 MUST NOT 另切一批文件。执行器 MUST NOT 按版本线或标签筛选候选，编译进二进制的迁移一律进入判定。
@@ -21,17 +23,17 @@
 
 ### Requirement: 逐条执行判定
 
-对每条不超过版本上限的迁移，执行器 SHALL 按以下规则判定：已有 `success` 记录则跳过（只认 Migration ID）；无成功记录时，默认模式下 `version <= 库当前` 判为漏执行并以退出码 4 失败，`version > 库当前` 则执行；补跑模式下一律执行。无记录、`running`、`failed` 三种情形 MUST 同等视为「无成功记录」。
+对每条迁移，执行器 SHALL 先产出计划再照计划执行：已有 `success` 或本次已有同 ID owner 则按 ID 跳过（后缀相同为 `SKIP-SUCCESS` / `SKIP-BACKFILL`，不同为 `ID-REUSE` 退出码 6）；无成功记录时，默认模式下 `version <= 库当前` 判为漏执行并以退出码 4 失败，`version > 库当前` 则执行；补跑模式下一律执行。超过 `--to` 的为 `ABOVE-MAX-VERSION`，不占 ID。无记录、`running`、`failed` 三种情形 MUST 同等视为「无成功记录」。
 
 #### Scenario: 已成功的按 ID 跳过
 
-- **WHEN** 某迁移在记录表中已是 `success`
+- **WHEN** 某迁移在记录表中已是 `success`，且迁移后缀与 `applied_pkg` 相同
 - **THEN** 跳过该迁移，MUST NOT 重新执行
 
 #### Scenario: 相同 ID 的另一份文件跳过
 
-- **WHEN** 同一个库的注册表里有两条相同 Migration ID 的迁移，排序靠前的那条执行成功
-- **THEN** 后一条读到该 ID 的 `success` 记录后跳过，MUST NOT 调用它的 `up()`
+- **WHEN** 同一个库的注册表里有两条相同 Migration ID、相同迁移后缀的迁移，排序靠前的那条执行成功
+- **THEN** 后一条按 ID 跳过，MUST NOT 调用它的 `up()`
 
 #### Scenario: 默认模式执行更新的迁移
 
@@ -102,7 +104,7 @@
 
 ### Requirement: plan
 
-`--plan` SHALL 打印每条迁移的判定结果（`EXECUTE` / `SKIP-SUCCESS` / `OVER-CEILING` / `MISSING`），MUST NOT 写记录表、MUST NOT 调用 `up()`。默认 / 补跑模式与版本上限在 `--plan` 中同样生效。默认模式下判出 `MISSING` 时 `--plan` SHALL 同样返回退出码 4。
+`--plan` SHALL 打印每条迁移的判定结果（`EXECUTE` / `SKIP-SUCCESS` / `SKIP-BACKFILL` / `ABOVE-MAX-VERSION` / `MISSING` / `ID-REUSE` / `PENDING-DENIED`），MUST NOT 写记录表、MUST NOT 调用 `up()`。默认 / 补跑模式与版本上限在 `--plan` 中同样生效。校验失败时 `--plan` 的退出码 MUST 与实跑相同。
 
 #### Scenario: plan 不改库
 

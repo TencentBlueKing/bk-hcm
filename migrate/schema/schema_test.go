@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+package schema
 
 import (
 	"context"
@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
+	"hcm/pkg/migrate"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -100,9 +101,11 @@ func mustVersion(t *testing.T, raw string) register.Version {
 func assertNoSentinel(t *testing.T, err error) {
 	t.Helper()
 	assert.Error(t, err)
-	assert.NotErrorIs(t, err, ErrUsage)
-	assert.NotErrorIs(t, err, ErrPrecondition)
-	assert.NotErrorIs(t, err, ErrMissed)
+	assert.NotErrorIs(t, err, migrate.ErrUsage)
+	assert.NotErrorIs(t, err, migrate.ErrPrecondition)
+	assert.NotErrorIs(t, err, migrate.ErrMissed)
+	assert.NotErrorIs(t, err, migrate.ErrRegistry)
+	assert.NotErrorIs(t, err, migrate.ErrIDReuse)
 }
 
 func TestRecordTableDDL(t *testing.T) {

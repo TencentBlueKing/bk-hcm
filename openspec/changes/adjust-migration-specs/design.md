@@ -1,8 +1,8 @@
 ## Context
 
-`migrate-exec-layer` 的 spec 已经写完，代码已落地 `util/`、`register/`、`engine/` 的 `InitTables` / 记录表 / 审计读写（`schema.go`、`recordstore.go`、`auditstore.go`），执行器与 CLI 接线还没写。方案调整记在 `.cursor/docs/iwiki/4039435213-hcm-migration/adjustments-2026-09-23.md`，这些能力尚未同步到 `openspec/specs/`，现行需求就在那个变更的 `specs/` 里。
+`migrate-exec-layer` 的 spec 已经写完，代码已落地 `util/`、`register/`、`schema/`（`InitTables`、记录表、审计读写）以及 `engine/`（`plan.go` / `executor.go`：`Prepare` / `BuildPlan` / `CollectPlanErrors` / `Execute`）。CLI 接线（第 6 组）还没写。方案调整记在 `.cursor/docs/iwiki/4039435213-hcm-migration/adjustments-2026-09-23.md`，这些能力尚未同步到 `openspec/specs/`，现行需求就在那个变更的 `specs/` 里。
 
-本变更写 delta spec，并把已实现与未实现对齐到同一份文档。
+本变更写 delta spec，并把已实现与未实现对齐到同一份文档。涉及退出码、ID 复用、label、执行前校验时，以本变更为准，`migrate-exec-layer/design.md` 里旧的「有 4 用 4 / 连库前 label 退出码 3」叙述已被取代。
 
 ## Goals / Non-Goals
 
@@ -14,7 +14,7 @@
 
 **Non-Goals:**
 
-- 不在本变更里写执行器、CLI、`--allow-pending` 接线（见实现进度）。
+- 不在本变更里写 CLI、`--allow-pending` 接线（见实现进度；引擎层已落地）。
 - 不改 `migrate/util/` 的幂等工具。
 - 不引入「迁移版本不能高于发布版本」这道闸。方案里没有定。
 - 不规定跳过和疑似 ID 复用的具体排版，只规定必须出现的字段。
@@ -27,27 +27,27 @@
 
 目录名保持现有规范，不改成这串 ID。
 
-### 2. 用导入路径的迁移后缀发现粘错的 ID
+### 2. 用导入路径的迁移后缀发现粘错的 ID（统一 owner 模型）
 
 包的身份是导入路径，`package` 子句统一写 `migration`。`Regist` 对传入值做 `reflect`，取 `PkgPath()`，去掉 `hcm/migrate/migrations/` 前缀后存进 `Pkg`。去掉前缀后长度不超过 `constant.MigrationPkgMaxLen`（255）。不用 `runtime.Caller`：它的路径形态随 `-trimpath` 变化。`NewMigration` 导出给测试与包外工具；进注册表仍只走 `Regist`。迁移后缀用 `hcm/pkg/migrate` 的 `PkgSuffix`。
 
-比对只看迁移后缀，即迁移目录名里从 14 位时间戳起到结尾。版本前缀和分组目录（`v1.9.3/`、`v1.9.3.x/`、`pending/`）不参与。内部提到外部、pending 定版、归档都只改版本前缀，后缀相同，按 ID 跳过。
+每个迁移 ID 有一个 owner：优先是 `success` 记录的 `applied_pkg`；否则是本次按执行顺序第一个计划执行（`EXECUTE`）或判为漏执行（`MISSING`）的副本。之后遇到同 ID 才是「按 ID 跳过」：比较 owner 包与当前包的迁移后缀，不同则疑似 ID 复用（退出码 6）；相同则跳过，若 owner 记录版本为 `PENDING` 而当前已定版则回填。超过 `--to` 的迁移不执行、不参与比较、也不占有 ID。只在真正发生「按 ID 跳过」时检查，注册表内同 ID 与记录表比对共用这一条规则。
 
-对不上以退出码 4 失败，和漏执行列在同一份报告里，一条都不执行。修正方式是给复制出来的那条换新 ID，不改记录表来凑后缀。
-
-同一注册表里同 ID、后缀不同，也在执行前校验失败，不在单次 `Regist` 里做，因为另一条可能还没注册。后缀相同只警告。
+版本前缀和分组目录（`v1.9.3/`、`v1.9.3.x/`、`pending/`）不参与后缀比较。修正方式是给复制出来的那条换新 ID，不改记录表来凑后缀。版本漂移由计划阶段统一 WARN；原 `RecordStore.WarnVersionDrift` 已删除。`PENDING` 记录对已定版注册是回填而不是漂移。
 
 曾考虑拿目录 tag 对 ID 的 tag 段，以及另注册一个动作名。两者都是手写字符串，复制注册代码时会一起被带走，不采用。
 
-### 3. 执行前校验在 Load 和库当前版本之后
+### 3. 执行前校验在 Load 和库当前版本之后；退出码 0–6
 
-每个库：连库、Load、算一次库当前版本、校验、产出计划、循环只照计划执行。只看注册表的检查也放在这一步，不单独在连库前做。多个库先全部校验完再执行。`--plan` 用同一套判定，不写库，退出码与实跑一致。
+每个库：连库、`CheckInitialized`（两张表都存在才算已初始化）、Load、算一次库当前版本、校验、产出计划、循环只照计划执行。只看注册表的检查也放在这一步，不单独在连库前做。多个库先全部 `Prepare` / `CollectPlanErrors` 通过再执行。`--plan` 用同一套判定，不写库，退出码与实跑一致。
 
-多项同时失败时，有退出码 4 就用 4，否则用 3。
+退出码：0 成功；1 执行期失败；2 参数/配置；3 记录表问题（缺表或内容非法，在计划之前返回）；4 漏执行；5 注册表内容（未开开关的 `PENDING`，或两个及以上不同非空 label）；6 疑似 ID 复用。计划阶段多项同时失败时优先级 6 > 5 > 4；错误信息仍列出全部问题。3 不与 4/5/6 同时出现。
+
+label 检查与其它检查一起在执行前校验汇总，不再是「连库前退出码 3」。
 
 ### 4. PENDING 用开关，不在注册期拒绝
 
-`--allow-pending` 默认关，由 Helm values 按环境传入。关着时执行前校验以退出码 3 失败。开着时执行一次，`version` 写 `PENDING`，不计入库当前版本。定版后按 ID 跳过，并把记录里的 `PENDING` 回填成此刻注册的版本。改了已执行的 `up()` 不自动重跑，由开发者恢复结构并删记录。
+`--allow-pending` 默认关，由 Helm values 按环境传入。关着时执行前校验以退出码 5 失败。开着时执行一次，`version` 写 `PENDING`，不计入库当前版本。定版后按 ID 跳过，并把记录里的 `PENDING` 回填成此刻注册的版本。改了已执行的 `up()` 不自动重跑，由开发者恢复结构并删记录。
 
 `Parse("PENDING")` 仍然报错，`IsPending` 单独判定。`Load` 放行 `PENDING`，与开关无关。给了版本上限时不执行 PENDING。adopt 不写入 PENDING。
 
@@ -55,7 +55,7 @@
 
 每个库一张 `hcm_migration_audit`。一次进程运行在每个库一行，`run_id` 用 `uuid.UUID()`，也就是这次进程的 `Rid`，与 agent 的 `runId` 同一套。
 
-`InitTables` 一次处理两张表：先建缺失的审计表，再建缺失的记录表；仅当本次新建了记录表且带基线时写入 adopt；基线插入失败只删记录表。两张表都在则无改动；只缺一张则只建那张。`NewAudit().Begin` 在连库后插入 `running`，结束时 `End` 更新一次。执行层不 import、不调用审计器；由 CLI 接线。交给审计器的结果里带两个版本变量：开始时赋成库当前版本；每条 `MarkSuccess` 之后，版本更高且不是 `PENDING` 就更新 `version_after`。出错也写入当时的值。
+`InitTables` 一次处理两张表：先建缺失的审计表，再建缺失的记录表；仅当本次新建了记录表且带基线时写入 adopt；基线插入失败只删记录表。两张表都在则无改动；只缺一张则只建那张。`up` 执行前同样要求两张表都在。`NewAudit().Begin` 在连库后尽早插入 `running`，所有路径（含检查失败）都 `End` 更新一次，检查问题全部写入 `message`。执行层不 import、不调用审计器；由 CLI 接线。交给审计器的结果里带两个版本变量：开始时赋成库当前版本；成功执行或回填得到更高的已定版版本时更新 `version_after`；`PENDING` 不抬高。出错也写入当时的值。
 
 `NewAudit().Begin` 按 `id` 降序看最新一条仍为 `running` 的行，把那次 `run_id` 放进本次 warnings。`Rid` 为空或插入失败只打警告并返回空操作。
 

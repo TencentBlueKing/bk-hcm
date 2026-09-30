@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+package schema
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ func NewRecordStore(o orm.Interface) *RecordStore {
 	return &RecordStore{o: o}
 }
 
-// Load reads every record of the database. Returns ErrPrecondition for an
+// Load reads every record of the database. Returns migrate.ErrPrecondition for an
 // unknown status, an unparsable version, or a success record without applied_pkg.
 func (s *RecordStore) Load(kt *kit.Kit) (Records, error) {
 	expr := fmt.Sprintf("SELECT `id`, `migration_id`, `version`, `applied_pkg`, `status`, `message`, "+
@@ -74,18 +74,18 @@ func (s *RecordStore) Load(kt *kit.Kit) (Records, error) {
 	for _, r := range rows {
 		if err := r.Status.Validate(); err != nil {
 			return nil, fmt.Errorf("%w: migration record %s has unknown status %q",
-				ErrPrecondition, r.MigrationID, r.Status)
+				migrate.ErrPrecondition, r.MigrationID, r.Status)
 		}
 		if !register.IsPending(r.Version) {
 			if _, err := register.Parse(r.Version); err != nil {
 				return nil, fmt.Errorf("%w: migration record %s has unparsable version %q, err: %v",
-					ErrPrecondition, r.MigrationID, r.Version, err)
+					migrate.ErrPrecondition, r.MigrationID, r.Version, err)
 			}
 		}
 
 		if r.Status == enumor.MigrationStatusSuccess && r.AppliedPkg == "" {
 			return nil, fmt.Errorf("%w: success migration record %s has empty applied_pkg",
-				ErrPrecondition, r.MigrationID)
+				migrate.ErrPrecondition, r.MigrationID)
 		}
 		records[r.MigrationID] = r
 	}
@@ -193,7 +193,7 @@ func (s *RecordStore) update(kt *kit.Kit, m register.Migration, expr string, arg
 // CurrentVersion returns the highest version among the success records,
 // compared with register.Compare. PENDING records ran but belong to no
 // release, so they are skipped. ok is false when no success record is left.
-// An unparsable version returns ErrPrecondition.
+// An unparsable version returns migrate.ErrPrecondition.
 func CurrentVersion(records Records) (current register.Version, ok bool, err error) {
 	for _, r := range records {
 		if r.Status != enumor.MigrationStatusSuccess || register.IsPending(r.Version) {
@@ -202,7 +202,7 @@ func CurrentVersion(records Records) (current register.Version, ok bool, err err
 		v, err := register.Parse(r.Version)
 		if err != nil {
 			return register.Version{}, false, fmt.Errorf("%w: migration record %s has unparsable version %q, err: %v",
-				ErrPrecondition, r.MigrationID, r.Version, err)
+				migrate.ErrPrecondition, r.MigrationID, r.Version, err)
 		}
 		// Equal versions keep the smaller Raw.
 		if !ok || register.Compare(v, current) > 0 ||
@@ -211,16 +211,4 @@ func CurrentVersion(records Records) (current register.Version, ok bool, err err
 		}
 	}
 	return current, ok, nil
-}
-
-// WarnVersionDrift logs a WARN and returns true when rec is a success record
-// whose version differs from m's registered version. A PENDING record is
-// backfilled instead and is not drift. It never fails the run.
-func WarnVersionDrift(kt *kit.Kit, rec Record, m register.Migration) bool {
-	if rec.Status != enumor.MigrationStatusSuccess || rec.Version == m.Version || register.IsPending(rec.Version) {
-		return false
-	}
-	logs.Warnf("migration version drift, recorded: %s, registered: %s, id: %s, skip as success, rid: %s",
-		rec.Version, m.Version, m.ID, kt.Rid)
-	return true
 }

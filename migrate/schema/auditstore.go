@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package engine
+package schema
 
 import (
 	"fmt"
@@ -46,7 +46,8 @@ type SkippedMigration struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
 	Pkg     string `json:"pkg"`
-	// AppliedPkg is the recorded applied_pkg for enumor.MigrationSkipApplied, empty otherwise.
+	// AppliedPkg is the package owning the ID for enumor.MigrationSkipApplied,
+	// the recorded applied_pkg or an earlier migration of the run, empty otherwise.
 	AppliedPkg string                     `json:"applied_pkg"`
 	Reason     enumor.MigrationSkipReason `json:"reason"`
 }

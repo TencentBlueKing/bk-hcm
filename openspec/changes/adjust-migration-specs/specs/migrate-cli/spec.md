@@ -27,7 +27,7 @@
 #### Scenario: 默认拒绝未定版
 
 - **WHEN** 执行 `up` 且未传 `--allow-pending`，注册表中有 `PENDING`
-- **THEN** 命令以退出码 3 失败
+- **THEN** 命令以退出码 5 失败
 
 ### Requirement: up 参数
 
@@ -89,7 +89,21 @@
 
 ### Requirement: 退出码
 
-命令 SHALL 使用固定退出码：`0` 成功；`1` 执行失败；`2` 参数或配置错误；`3` 前置校验失败（含开关关闭时的 `PENDING`、记录表中无法解析的版本、未知 `status`、`success` 行的 `applied_pkg` 为空、记录表不存在）；`4` 默认模式检出漏执行，或检出疑似 ID 复用。退出码 `4` MUST 与 `1` 区分，使出包工具能判断本包是否需要开补跑。同一次校验里既有退出码 3 的项又有退出码 4 的项时，MUST 使用 4。
+命令 SHALL 使用固定退出码：
+
+| 码 | 含义 |
+| --- | --- |
+| 0 | 成功 |
+| 1 | 执行期失败：迁移 `Up` 返回错误或 panic（panic 转成错误并记 `failed`）、执行中记录表读写失败（running/success/failed/回填）、`MarkSuccess` 影响 0 行、连接断开或 context 取消 |
+| 2 | 参数或配置错误 |
+| 3 | 记录表问题：`hcm_migration_record` 或 `hcm_migration_audit` 任一不存在（提示先 `init`），或记录内容非法（未知 `status`、版本不可解析、`success` 行 `applied_pkg` 为空） |
+| 4 | 漏执行：默认模式下存在低于等于库当前版本且未成功的迁移；加 `--catch-up` 重跑可修复 |
+| 5 | 注册表内容问题：未开 `--allow-pending` 却注册了 `PENDING`（不论是否指定 `--to`），或注册表出现两个及以上不同的非空版本 label |
+| 6 | 疑似 ID 复用 |
+
+退出码 `4` MUST 与 `1` 区分，使出包工具能判断本包是否需要开补跑。「已初始化」SHALL 定义为两张表都存在；`init` 创建两张表；`up`（含 `--plan`）执行前用同一套 `CheckInitialized`，任一缺失即退出码 3。审计写入失败 SHALL 只 WARN，MUST NOT 影响退出码。
+
+多个库同时存在计划阶段问题时，优先级 MUST 为 6 > 5 > 4（只返回最高优先级对应的退出码，但错误信息列出所有库的全部问题）。退出码 3 在 Load / Prepare 阶段返回，在生成计划之前，MUST NOT 与 4 / 5 / 6 同时出现。`errors.Is` 到退出码的映射由 CLI 完成：`ErrPrecondition`→3、`ErrMissed`→4、`ErrRegistry`→5、`ErrIDReuse`→6、`ErrUsage`→2；其余非 nil 为 1。
 
 #### Scenario: 漏执行返回专用退出码
 
@@ -99,12 +113,22 @@
 #### Scenario: 疑似 ID 复用返回专用退出码
 
 - **WHEN** 检出迁移后缀不同的同 ID
-- **THEN** 退出码为 4
+- **THEN** 退出码为 6
 
-#### Scenario: 占位符在开关关闭时返回前置校验退出码
+#### Scenario: 占位符在开关关闭时返回注册表退出码
 
 - **WHEN** 未传 `--allow-pending`，注册表中存在常量 `PENDING`
-- **THEN** 退出码为 3
+- **THEN** 退出码为 5
+
+#### Scenario: 两个非空 label 返回注册表退出码
+
+- **WHEN** 注册表出现两个及以上不同的非空版本 label
+- **THEN** 退出码为 5
+
+#### Scenario: 缺表返回记录表问题退出码
+
+- **WHEN** `hcm_migration_record` 或 `hcm_migration_audit` 任一不存在
+- **THEN** 退出码为 3，提示先执行 `init`
 
 #### Scenario: 迁移执行失败返回 1
 

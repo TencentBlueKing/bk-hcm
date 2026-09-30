@@ -95,12 +95,12 @@
 
 ### Requirement: 同一注册表只允许一个非空标签
 
-第四段表示该分支自己的特有提交。`init` 与 `up` MUST 在连接数据库之前扫描注册表中的非空 `Label`。出现两个及以上不同的非空标签时，命令 MUST 以退出码 3 失败，列出这些标签和对应的 Migration ID，且 MUST NOT 执行任何迁移。只有一个非空标签、或全是空标签的数字第四段，SHALL 照常执行。此检查 MUST NOT 按标签挑掉其中一部分文件。
+第四段表示该分支自己的特有提交。`up` MUST 在连库之后的执行前校验中扫描注册表中的非空 `Label`。出现两个及以上不同的非空标签时，命令 MUST 以退出码 5 失败，列出这些标签和对应的 Migration ID（排序），且 MUST NOT 执行任何迁移。只有一个非空标签、或全是空标签的数字第四段，SHALL 照常执行。此检查 MUST NOT 按标签挑掉其中一部分文件。权威细则见 `adjust-migration-specs`。
 
 #### Scenario: 两个标签拒绝执行
 
 - **WHEN** 同一注册表中同时有 `v1.9.3-tenant.1` 与 `v1.9.3-woa.1`，执行 `up`
-- **THEN** 命令在连库之前以退出码 3 失败，输出两个标签及对应 Migration ID，两条迁移都不执行
+- **THEN** 命令在执行前校验以退出码 5 失败，输出两个标签及对应 Migration ID，两条迁移都不执行
 
 #### Scenario: 单个标签照常执行
 
@@ -114,7 +114,7 @@
 
 ### Requirement: PENDING 占位符
 
-未定版的迁移 SHALL 以 `register` 包中的常量作为注册版本，常量值为 `PENDING`。调用方 MUST NOT 写这个字符串字面量。目录名 SHALL 保持小写 `pending/`。`Parse` MUST 对 `PENDING` 返回错误，另由 `IsPending` 判定。`init` 与 `up` MUST 在连接数据库之前扫描全部注册项，发现占位符即以退出码 3 失败并列出对应 Migration ID。
+未定版的迁移 SHALL 以 `register` 包中的常量作为注册版本，常量值为 `PENDING`。调用方 MUST NOT 写这个字符串字面量。目录名 SHALL 保持小写 `pending/`。`Parse` MUST 对 `PENDING` 返回错误，另由 `IsPending` 判定。未开 `--allow-pending` 时，`up` MUST 在执行前校验以退出码 5 失败并列出对应 Migration ID（不再在连库前一律拒绝）。权威细则见 `adjust-migration-specs` 的 `migrate-version` / `migrate-cli`。
 
 #### Scenario: 占位符不是合法版本
 
@@ -128,8 +128,8 @@
 
 #### Scenario: 执行前检出占位符
 
-- **WHEN** 注册表中存在版本为 `PENDING` 的迁移，执行 `up`
-- **THEN** 命令在连库之前失败，退出码为 3，输出列出占位项的 Migration ID
+- **WHEN** 未传 `--allow-pending`，注册表中存在版本为 `PENDING` 的迁移，执行 `up`
+- **THEN** 命令在执行前校验失败，退出码为 5，输出列出占位项的 Migration ID
 
 #### Scenario: list 允许展示占位项
 

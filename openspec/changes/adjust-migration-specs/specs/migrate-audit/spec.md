@@ -32,11 +32,11 @@
 
 ### Requirement: 写入时机与失败隔离
 
-审计器 SHALL 在连上库之后、`Load` 之前插入一行 `status=running`。运行结束后 SHALL 更新这一行，写入 `end_at`、`status`、`exit_code`、`version_before`、`version_after`、`skipped`、`warnings`、`message`。`status` 为 `success` 当且仅当 `exit_code` 为 0，否则为 `failed`。JSON 列 MUST 在结束时一次写入；`running` 期间为空；结束时空列表 MUST 写成 `[]` 而不是 `null`。执行层 MUST NOT import 审计器，也 MUST NOT 在迁移循环里调用它。审计器由 CLI 调用。
+审计器 SHALL 在连上库之后尽早插入一行 `status=running`（所有路径含检查失败都须在结束时更新）。运行结束后 SHALL 更新这一行，写入 `end_at`、`status`、`exit_code`、`version_before`、`version_after`、`skipped`、`warnings`、`message`。检查问题 MUST 全部写入 `message`。`status` 为 `success` 当且仅当 `exit_code` 为 0，否则为 `failed`。JSON 列 MUST 在结束时一次写入；`running` 期间为空；结束时空列表 MUST 写成 `[]` 而不是 `null`。执行层 MUST NOT import 审计器，也 MUST NOT 在迁移循环里调用它。审计器由 CLI 调用。
 
 插入或更新失败时，审计器 SHALL 只打警告，MUST NOT 改变命令的退出码。`kit` 的 `Rid` 为空时，SHALL 只打警告并跳过整次审计，MUST NOT 插入。插入失败后，结束时的更新 MUST NOT 再写。对 `nil` 审计句柄调用结束更新 MUST 什么都不做。
 
-`version_before` SHALL 是执行开始时算出的库当前版本。`version_after` SHALL 是执行结果上的变量：开始时等于 `version_before`；每条迁移记为 `success` 之后，若其版本更高且不是 `PENDING`，则更新为该版本。命令出错时 MUST 仍写入当时的 `version_after`。
+`version_before` SHALL 是执行开始时算出的库当前版本。`version_after` SHALL 是执行结果上的变量：开始时等于 `version_before`；成功执行或回填得到更高的已定版版本时更新；`PENDING` MUST NOT 抬高。命令出错时 MUST 仍写入当时的 `version_after`。
 
 #### Scenario: 校验失败仍留下一行
 

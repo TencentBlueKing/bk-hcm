@@ -17,7 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package migrate provides the format checks and string helpers of hcm-migrate.
+// Package migrate provides the format checks, string helpers, and exit-code
+// errors of hcm-migrate.
 package migrate
 
 import (

@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/migrate"
 )
 
 // DataSource holds the database configs loaded from the data-service config
@@ -47,7 +48,7 @@ type DataSource struct {
 func LoadDataSource(configFile string) (*DataSource, error) {
 	cc.InitService(cc.DataServiceName)
 	if err := cc.LoadSettings(&cc.SysOption{ConfigFile: configFile}); err != nil {
-		return nil, fmt.Errorf("%w: load config file %q failed, err: %v", ErrUsage, configFile, err)
+		return nil, fmt.Errorf("%w: load config file %q failed, err: %v", migrate.ErrUsage, configFile, err)
 	}
 	return newDataSource(cc.DataService(), openOrm), nil
 }
@@ -69,7 +70,7 @@ func newDataSource(setting cc.DataServiceSetting, open func(opt cc.DataBase) (or
 func (d *DataSource) Open(kt *kit.Kit, reg *register.Registry) (o orm.Interface, ok bool, err error) {
 	opt, known := d.configs[reg.Database()]
 	if !known {
-		return nil, false, fmt.Errorf("%w: database %s has no config mapping", ErrUsage, reg.Database())
+		return nil, false, fmt.Errorf("%w: database %s has no config mapping", migrate.ErrUsage, reg.Database())
 	}
 	if opt == nil {
 		logs.Warnf("database %s is not configured in config file, skip it and all its migrations, rid: %s",
@@ -124,11 +125,11 @@ func selectRegistries(known []*register.Registry, values []string) ([]*register.
 		for _, name := range strings.Split(value, ",") {
 			name = strings.TrimSpace(name)
 			if name == "" {
-				return nil, fmt.Errorf("%w: --database %q contains an empty database name", ErrUsage, value)
+				return nil, fmt.Errorf("%w: --database %q contains an empty database name", migrate.ErrUsage, value)
 			}
 			if !slices.Contains(names, name) {
 				return nil, fmt.Errorf("%w: unknown database %q, supported: %s",
-					ErrUsage, name, strings.Join(names, ", "))
+					migrate.ErrUsage, name, strings.Join(names, ", "))
 			}
 			wanted[name] = struct{}{}
 		}
