@@ -104,9 +104,21 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 	ctx := context.Background()
 	db, o, counter := openIsolatedMySQL(t)
 
+	t.Run("created flag", func(t *testing.T) {
+		const ddl = "CREATE TABLE `created_flag` (`id` bigint NOT NULL, PRIMARY KEY (`id`))"
+		created, err := CreateTableIfNotExists(ctx, o, "created_flag", ddl)
+		require.NoError(t, err)
+		assert.True(t, created)
+
+		created, err = CreateTableIfNotExists(ctx, o, "created_flag", ddl)
+		require.NoError(t, err)
+		assert.False(t, created)
+	})
+
 	runTwiceNoExtraExec(t, counter, func() error {
-		return CreateTableIfNotExists(ctx, o, "probe",
+		_, err := CreateTableIfNotExists(ctx, o, "probe",
 			"CREATE TABLE `probe` (`id` bigint NOT NULL, `cloud_id` varchar(64) NOT NULL DEFAULT '', PRIMARY KEY (`id`))")
+		return err
 	})
 
 	has, err := NewMetaOrm(o).HasTable(ctx, "probe")
@@ -245,10 +257,12 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 	})
 
 	t.Run("foreign key", func(t *testing.T) {
-		require.NoError(t, CreateTableIfNotExists(ctx, o, "parent_row",
-			"CREATE TABLE `parent_row` (`id` bigint NOT NULL, PRIMARY KEY (`id`))"))
-		require.NoError(t, CreateTableIfNotExists(ctx, o, "child_row",
-			"CREATE TABLE `child_row` (`id` bigint NOT NULL, `parent_id` bigint NULL, PRIMARY KEY (`id`))"))
+		_, err := CreateTableIfNotExists(ctx, o, "parent_row",
+			"CREATE TABLE `parent_row` (`id` bigint NOT NULL, PRIMARY KEY (`id`))")
+		require.NoError(t, err)
+		_, err = CreateTableIfNotExists(ctx, o, "child_row",
+			"CREATE TABLE `child_row` (`id` bigint NOT NULL, `parent_id` bigint NULL, PRIMARY KEY (`id`))")
+		require.NoError(t, err)
 		add := "ALTER TABLE `child_row` ADD CONSTRAINT `fk_parent` FOREIGN KEY (`parent_id`) REFERENCES `parent_row` (`id`)"
 		runTwiceNoExtraExec(t, counter, func() error {
 			return AddConstraint(ctx, o, "child_row", "fk_parent", add)
@@ -267,23 +281,25 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 	})
 
 	t.Run("id generator insert", func(t *testing.T) {
-		require.NoError(t, CreateTableIfNotExists(ctx, o, "id_generator",
-			"CREATE TABLE `id_generator` (`resource` varchar(64) NOT NULL, `max_id` varchar(64) NOT NULL, PRIMARY KEY (`resource`))"))
+		_, err := CreateTableIfNotExists(ctx, o, "id_generator",
+			"CREATE TABLE `id_generator` (`resource` varchar(64) NOT NULL, `max_id` varchar(64) NOT NULL, PRIMARY KEY (`resource`))")
+		require.NoError(t, err)
 		require.NoError(t, InsertIDGenerator(ctx, o, "account", "0"))
 		require.NoError(t, InsertIDGenerator(ctx, o, "account", "999"))
 		var row struct {
 			Count int    `db:"cnt"`
 			MaxID string `db:"max_id"`
 		}
-		err := db.Get(&row, "SELECT COUNT(*) AS cnt, MAX(`max_id`) AS max_id FROM `id_generator` WHERE `resource` = ?", "account")
+		err = db.Get(&row, "SELECT COUNT(*) AS cnt, MAX(`max_id`) AS max_id FROM `id_generator` WHERE `resource` = ?", "account")
 		require.NoError(t, err)
 		assert.Equal(t, 1, row.Count)
 		assert.Equal(t, "0", row.MaxID)
 	})
 
 	t.Run("drop table", func(t *testing.T) {
-		require.NoError(t, CreateTableIfNotExists(ctx, o, "gone",
-			"CREATE TABLE `gone` (`id` bigint NOT NULL, PRIMARY KEY (`id`))"))
+		_, err := CreateTableIfNotExists(ctx, o, "gone",
+			"CREATE TABLE `gone` (`id` bigint NOT NULL, PRIMARY KEY (`id`))")
+		require.NoError(t, err)
 		runTwiceNoExtraExec(t, counter, func() error {
 			return DropTable(ctx, o, "gone")
 		})

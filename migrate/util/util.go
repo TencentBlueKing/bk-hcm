@@ -137,25 +137,29 @@ func exec(ctx context.Context, o orm.Interface, ddl string) error {
 // exist yet. ddl is the caller's full `CREATE TABLE ...` statement: unlike
 // the other helpers in this package, the statement is not parameter-built,
 // because a table definition (columns, keys, engine, charset) is too varied
-// to model generically.
-func CreateTableIfNotExists(ctx context.Context, o orm.Interface, table, ddl string) error {
+// to model generically. created reports whether this call ran ddl; it is
+// false when the table already existed or on error.
+func CreateTableIfNotExists(ctx context.Context, o orm.Interface, table, ddl string) (created bool, err error) {
 	if err := validateIdent("table", table); err != nil {
-		return err
+		return false, err
 	}
 	if strings.TrimSpace(ddl) == "" {
-		return errors.New("create table: ddl is required")
+		return false, errors.New("create table: ddl is required")
 	}
 
 	exist, err := NewMetaOrm(o).HasTable(ctx, table)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if exist {
 		logs.V(1).Infof("table %s already exists, skip create", table)
-		return nil
+		return false, nil
 	}
 
-	return exec(ctx, o, ddl)
+	if err := exec(ctx, o, ddl); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // DropTable drops table if it exists.

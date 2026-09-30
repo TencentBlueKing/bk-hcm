@@ -40,18 +40,22 @@ func countFnFor(exist bool) func(string, map[string]interface{}) (uint64, error)
 
 func TestCreateTableIfNotExists(t *testing.T) {
 	testCases := []struct {
-		name       string
-		table      string
-		ddl        string
-		tableExist bool
-		wantExec   bool
-		wantErr    bool
+		name        string
+		table       string
+		ddl         string
+		tableExist  bool
+		countErr    error
+		execErr     error
+		wantExec    bool
+		wantCreated bool
+		wantErr     bool
 	}{
 		{
-			name:     "create when absent",
-			table:    "cvm",
-			ddl:      "CREATE TABLE `cvm` (id BIGINT)",
-			wantExec: true,
+			name:        "create when absent",
+			table:       "cvm",
+			ddl:         "CREATE TABLE `cvm` (id BIGINT)",
+			wantExec:    true,
+			wantCreated: true,
 		},
 		{
 			name:       "skip when present",
@@ -62,10 +66,11 @@ func TestCreateTableIfNotExists(t *testing.T) {
 		},
 		{
 			// scripts/sql/0001_20230227_2045_init_db.sql
-			name:     "0001_id_generator create when absent",
-			table:    "id_generator",
-			ddl:      "create table if not exists `id_generator` (`resource` varchar(64) not null, `max_id` varchar(64) not null, primary key (`resource`))",
-			wantExec: true,
+			name:        "0001_id_generator create when absent",
+			table:       "id_generator",
+			ddl:         "create table if not exists `id_generator` (`resource` varchar(64) not null, `max_id` varchar(64) not null, primary key (`resource`))",
+			wantExec:    true,
+			wantCreated: true,
 		},
 		{
 			name:       "0001_id_generator skip when present",
@@ -75,10 +80,11 @@ func TestCreateTableIfNotExists(t *testing.T) {
 		},
 		{
 			// scripts/sql/0047_20260130_1800_account_secret.sql
-			name:     "0047_account_secret create when absent",
-			table:    "account_secret",
-			ddl:      "CREATE TABLE IF NOT EXISTS `account_secret` (`id` varchar(64) NOT NULL COMMENT '密钥ID', `account_id` varchar(64) NOT NULL COMMENT '账号ID')",
-			wantExec: true,
+			name:        "0047_account_secret create when absent",
+			table:       "account_secret",
+			ddl:         "CREATE TABLE IF NOT EXISTS `account_secret` (`id` varchar(64) NOT NULL COMMENT '密钥ID', `account_id` varchar(64) NOT NULL COMMENT '账号ID')",
+			wantExec:    true,
+			wantCreated: true,
 		},
 		{
 			name:    "invalid table name",
@@ -92,18 +98,45 @@ func TestCreateTableIfNotExists(t *testing.T) {
 			ddl:     "  ",
 			wantErr: true,
 		},
+		{
+			name:    "empty string ddl",
+			table:   "cvm",
+			ddl:     "",
+			wantErr: true,
+		},
+		{
+			name:    "exec error",
+			table:   "cvm",
+			ddl:     "CREATE TABLE `cvm` (id BIGINT)",
+			execErr: errors.New("disk full"),
+			wantErr: true,
+			// The statement is attempted; created stays false.
+			wantExec: true,
+		},
+		{
+			name:     "count error",
+			table:    "cvm",
+			ddl:      "CREATE TABLE `cvm` (id BIGINT)",
+			countErr: errors.New("information_schema down"),
+			wantErr:  true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			do := &fakeDo{countFn: countFnFor(tc.tableExist)}
-			err := CreateTableIfNotExists(context.Background(), newFakeOrm(do), tc.table, tc.ddl)
+			do := &fakeDo{countFn: countFnFor(tc.tableExist), execErr: tc.execErr}
+			if tc.countErr != nil {
+				do.countFn = func(string, map[string]interface{}) (uint64, error) {
+					return 0, tc.countErr
+				}
+			}
+			created, err := CreateTableIfNotExists(context.Background(), newFakeOrm(do), tc.table, tc.ddl)
+			assert.Equal(t, tc.wantCreated, created)
 			if tc.wantErr {
 				assert.Error(t, err)
-				assert.Empty(t, do.execCalls)
-				return
+			} else {
+				assert.NoError(t, err)
 			}
-			assert.NoError(t, err)
 			if tc.wantExec {
 				assert.Equal(t, []string{tc.ddl}, do.execCalls)
 			} else {
