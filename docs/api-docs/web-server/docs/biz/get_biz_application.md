@@ -22,6 +22,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
 
 ### 响应示例
 
+#### 成功响应
+
 ```json
 {
   "code": 0,
@@ -45,6 +47,16 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
 }
 ```
 
+#### 错误响应（单据不存在/无权限/不归属该业务）
+
+```json
+{
+  "code": 2000003,
+  "message": "application not found",
+  "data": null
+}
+```
+
 ### 响应参数说明
 
 | 参数名称    | 参数类型   | 描述   |
@@ -58,7 +70,7 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
 | 参数名称            | 参数类型   | 描述                                                                                           |
 |-----------------|--------|----------------------------------------------------------------------------------------------|
 | id              | string | 申请ID                                                                                         |
-| source          | string | 来源（枚举值：itsm、bpaas）                                                                          |
+| source          | string | 来源（枚举值：itsm）                                                                                  |
 | sn              | string | 序列号                                                                                          |
 | type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
 | status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
