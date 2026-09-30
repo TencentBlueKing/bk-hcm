@@ -26,6 +26,8 @@ import (
 	"strconv"
 	"testing"
 
+	"hcm/pkg/criteria/constant"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -134,7 +136,7 @@ func TestParse(t *testing.T) {
 		{name: "leading zero in fourth segment", raw: "v1.9.3.01", wantErr: true},
 		{name: "leading zero in labeled seq", raw: "v1.9.3-tenant.01", wantErr: true},
 		{name: "empty", raw: "", wantErr: true},
-		{name: "placeholder is not a version", raw: PendingVersion, wantErr: true},
+		{name: "placeholder is not a version", raw: constant.MigrationPendingVersion, wantErr: true},
 		{name: "lowercase pending is not a version", raw: "pending", wantErr: true},
 		{name: "trailing space", raw: "v1.9.3 ", wantErr: true},
 		{name: "leading space", raw: " v1.9.3", wantErr: true},
@@ -157,9 +159,9 @@ func TestParse(t *testing.T) {
 		// make v1.9.3.00 a third spelling of v1.9.3.
 		{name: "double zero is a leading zero", raw: "v1.9.3.00", wantErr: true},
 		{name: "double zero in a labeled seq", raw: "v1.9.3-tenant.00", wantErr: true},
-		{name: "placeholder with a suffix", raw: PendingVersion + ".1", wantErr: true},
-		{name: "placeholder glued to a version", raw: "v1.9.3" + PendingVersion, wantErr: true},
-		{name: "placeholder with surrounding space", raw: " " + PendingVersion, wantErr: true},
+		{name: "placeholder with a suffix", raw: constant.MigrationPendingVersion + ".1", wantErr: true},
+		{name: "placeholder glued to a version", raw: "v1.9.3" + constant.MigrationPendingVersion, wantErr: true},
+		{name: "placeholder with surrounding space", raw: " " + constant.MigrationPendingVersion, wantErr: true},
 	}
 
 	for _, tc := range testCases {
@@ -189,17 +191,17 @@ func TestIsPending(t *testing.T) {
 		raw  string
 		want bool
 	}{
-		{name: "placeholder constant", raw: PendingVersion, want: true},
+		{name: "placeholder constant", raw: constant.MigrationPendingVersion, want: true},
 		{name: "uppercase literal", raw: "PENDING", want: true},
 		{name: "lowercase is not the placeholder", raw: "pending", want: false},
 		{name: "mixed case is not the placeholder", raw: "Pending", want: false},
 		{name: "a real version", raw: "v1.9.3", want: false},
 		{name: "empty", raw: "", want: false},
-		{name: "trailing space", raw: PendingVersion + " ", want: false},
-		{name: "leading space", raw: " " + PendingVersion, want: false},
-		{name: "trailing newline", raw: PendingVersion + "\n", want: false},
-		{name: "longer string with the placeholder as a prefix", raw: PendingVersion + "x", want: false},
-		{name: "longer string with the placeholder as a suffix", raw: "x" + PendingVersion, want: false},
+		{name: "trailing space", raw: constant.MigrationPendingVersion + " ", want: false},
+		{name: "leading space", raw: " " + constant.MigrationPendingVersion, want: false},
+		{name: "trailing newline", raw: constant.MigrationPendingVersion + "\n", want: false},
+		{name: "longer string with the placeholder as a prefix", raw: constant.MigrationPendingVersion + "x", want: false},
+		{name: "longer string with the placeholder as a suffix", raw: "x" + constant.MigrationPendingVersion, want: false},
 	}
 
 	for _, tc := range testCases {

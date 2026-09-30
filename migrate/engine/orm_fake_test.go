@@ -22,6 +22,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"hcm/pkg/dal/dao/orm"
@@ -49,9 +50,10 @@ type countReply struct {
 	err error
 }
 
-// fakeDo is an in-memory stand-in for orm.DoOrm. Select fills *[]Record.
-// Update returns updateAffected unless updateErr is set. Count answers from
-// countQueue and then falls back to countErr or countDefault.
+// fakeDo is an in-memory stand-in for orm.DoOrm. Select fills *[]Record, or
+// when selectNonRecord is set, any other pointer-to-slice dest whose element
+// type matches. Update returns updateAffected unless updateErr is set. Count
+// answers from countQueue and then falls back to countErr or countDefault.
 type fakeDo struct {
 	calls []fakeCall
 
@@ -62,11 +64,12 @@ type fakeDo struct {
 	execErr      error
 	execErrMatch string
 
-	selectRows []Record
-	selectErr  error
+	selectRows      []Record
+	selectNonRecord interface{}
+	selectErr       error
 
-	insertErr error
-
+	insertErr      error
+	insertErrs     []error
 	updateAffected int64
 	updateErr      error
 
@@ -108,14 +111,28 @@ func (f *fakeDo) Select(_ context.Context, dest interface{}, expr string, arg ma
 	if f.selectErr != nil {
 		return f.selectErr
 	}
-	rows, ok := dest.(*[]Record)
-	if !ok {
-		return fmt.Errorf("fakeDo: Select dest %T, want *[]Record", dest)
+	if rows, ok := dest.(*[]Record); ok {
+		copied := make([]Record, len(f.selectRows))
+		copy(copied, f.selectRows)
+		*rows = copied
+		return nil
 	}
-	copied := make([]Record, len(f.selectRows))
-	copy(copied, f.selectRows)
-	*rows = copied
-	return nil
+	if f.selectNonRecord != nil {
+		dv := reflect.ValueOf(dest)
+		if dv.Kind() != reflect.Pointer || dv.Elem().Kind() != reflect.Slice {
+			return fmt.Errorf("fakeDo: Select dest %T not a pointer to slice", dest)
+		}
+		src := reflect.ValueOf(f.selectNonRecord)
+		if src.Kind() != reflect.Slice {
+			return fmt.Errorf("fakeDo: selectNonRecord %T is not a slice", f.selectNonRecord)
+		}
+		if !src.Type().AssignableTo(dv.Elem().Type()) {
+			return fmt.Errorf("fakeDo: Select dest %T, selectNonRecord is %T", dest, f.selectNonRecord)
+		}
+		dv.Elem().Set(src)
+		return nil
+	}
+	return fmt.Errorf("fakeDo: Select dest %T, want *[]Record", dest)
 }
 
 func (f *fakeDo) Count(_ context.Context, expr string, arg map[string]interface{}) (uint64, error) {
@@ -154,6 +171,11 @@ func (f *fakeDo) Exec(_ context.Context, expr string) (int64, error) {
 
 func (f *fakeDo) Insert(_ context.Context, expr string, data interface{}) error {
 	f.record("insert", expr, data)
+	if len(f.insertErrs) > 0 {
+		err := f.insertErrs[0]
+		f.insertErrs = f.insertErrs[1:]
+		return err
+	}
 	return f.insertErr
 }
 

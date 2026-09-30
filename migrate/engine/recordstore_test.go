@@ -28,17 +28,20 @@ import (
 	"unicode/utf8"
 
 	"hcm/migrate/register"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/migrate"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRecordDBTags(t *testing.T) {
-	assert.Equal(t, Status("running"), StatusRunning)
-	assert.Equal(t, Status("success"), StatusSuccess)
-	assert.Equal(t, Status("failed"), StatusFailed)
-	assert.Equal(t, 1024, maxMessageBytes)
+	assert.Equal(t, enumor.MigrationStatus("running"), enumor.MigrationStatusRunning)
+	assert.Equal(t, enumor.MigrationStatus("success"), enumor.MigrationStatusSuccess)
+	assert.Equal(t, enumor.MigrationStatus("failed"), enumor.MigrationStatusFailed)
+	assert.Equal(t, 1024, constant.MigrationRecordMessageMaxBytes)
 
 	want := []struct {
 		field string
@@ -47,6 +50,7 @@ func TestRecordDBTags(t *testing.T) {
 		{field: "ID", tag: "id"},
 		{field: "MigrationID", tag: "migration_id"},
 		{field: "Version", tag: "version"},
+		{field: "AppliedPkg", tag: "applied_pkg"},
 		{field: "Status", tag: "status"},
 		{field: "Message", tag: "message"},
 		{field: "CreatedAt", tag: "created_at"},
@@ -85,27 +89,53 @@ func TestRecordStore_Load(t *testing.T) {
 		selects := do.callsOf("select")
 		require.Len(t, selects, 1)
 		assert.Contains(t, selects[0].expr, "FROM `hcm_migration_record`")
+		assert.Contains(t, selects[0].expr, "`applied_pkg`")
 	})
 
 	t.Run("indexes known statuses by migration id", func(t *testing.T) {
 		do := newFakeDo()
 		do.selectRows = []Record{
-			{ID: 1, MigrationID: migA, Version: "v1.9.3", Status: StatusRunning},
-			{ID: 2, MigrationID: migB, Version: "v1.9.4", Status: StatusSuccess, Message: "ok"},
-			{ID: 3, MigrationID: migC, Version: "v1.9.5", Status: StatusFailed, Message: "boom"},
+			{ID: 1, MigrationID: migA, Version: "v1.9.3", Status: enumor.MigrationStatusRunning},
+			{ID: 2, MigrationID: migB, Version: "v1.9.4", AppliedPkg: "main/pending/20260101120000_ok",
+				Status: enumor.MigrationStatusSuccess, Message: "ok"},
+			{ID: 3, MigrationID: migC, Version: "v1.9.5", Status: enumor.MigrationStatusFailed, Message: "boom"},
 		}
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 		require.NoError(t, err)
 		require.Len(t, records, 3)
 		assert.Equal(t, do.selectRows[0], records[migA])
 		assert.Equal(t, do.selectRows[1], records[migB])
-		assert.Equal(t, StatusFailed, records[migC].Status)
+		assert.Equal(t, enumor.MigrationStatusFailed, records[migC].Status)
 		assert.Equal(t, "boom", records[migC].Message)
+	})
+
+	t.Run("success with empty applied_pkg is precondition", func(t *testing.T) {
+		do := newFakeDo()
+		do.selectRows = []Record{
+			{MigrationID: migA, Version: "v1.9.3", AppliedPkg: "", Status: enumor.MigrationStatusSuccess},
+		}
+		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
+		require.Error(t, err)
+		assert.Nil(t, records)
+		assert.ErrorIs(t, err, ErrPrecondition)
+		assert.Contains(t, err.Error(), migA)
+		assert.Contains(t, err.Error(), "empty applied_pkg")
+	})
+
+	t.Run("running and failed with empty applied_pkg are ok", func(t *testing.T) {
+		do := newFakeDo()
+		do.selectRows = []Record{
+			{MigrationID: migA, Version: "v1.9.3", AppliedPkg: "", Status: enumor.MigrationStatusRunning},
+			{MigrationID: migB, Version: "v1.9.4", AppliedPkg: "", Status: enumor.MigrationStatusFailed},
+		}
+		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
+		require.NoError(t, err)
+		require.Len(t, records, 2)
 	})
 
 	testCases := []struct {
 		name   string
-		status Status
+		status enumor.MigrationStatus
 	}{
 		{name: "empty status", status: ""},
 		{name: "uppercase success", status: "SUCCESS"},
@@ -116,9 +146,10 @@ func TestRecordStore_Load(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			do := newFakeDo()
 			do.selectRows = []Record{
-				{MigrationID: migA, Version: "v1.9.3", Status: StatusSuccess},
+				{MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/pending/20260101120000_a",
+					Status: enumor.MigrationStatusSuccess},
 				{MigrationID: migB, Version: "v1.9.4", Status: tc.status},
-				{MigrationID: migC, Version: "v1.9.5", Status: StatusFailed},
+				{MigrationID: migC, Version: "v1.9.5", Status: enumor.MigrationStatusFailed},
 			}
 			records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 			require.Error(t, err)
@@ -129,14 +160,17 @@ func TestRecordStore_Load(t *testing.T) {
 		})
 	}
 
-	badVersions := []string{"1.9.3", "PENDING", "", "v1.9", "v1.9.3-Tenant.1", "v01.9.3"}
-	for _, status := range []Status{StatusRunning, StatusFailed, StatusSuccess} {
+	// Exact "PENDING" is accepted; only case/space variants stay unparsable.
+	badVersions := []string{"1.9.3", "", "v1.9", "v1.9.3-Tenant.1", "v01.9.3",
+		"pending", "Pending", " PENDING", "PENDING "}
+	for _, status := range []enumor.MigrationStatus{enumor.MigrationStatusRunning, enumor.MigrationStatusFailed, enumor.MigrationStatusSuccess} {
 		for _, bad := range badVersions {
 			t.Run(fmt.Sprintf("unparsable %s version %q", status, bad), func(t *testing.T) {
 				do := newFakeDo()
 				do.selectRows = []Record{
-					{MigrationID: migA, Version: "v1.9.3", Status: StatusSuccess},
-					{MigrationID: migB, Version: bad, Status: status},
+					{MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/pending/20260101120000_a",
+						Status: enumor.MigrationStatusSuccess},
+					{MigrationID: migB, Version: bad, AppliedPkg: "main/pending/20260101120000_b", Status: status},
 				}
 				records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 				require.Error(t, err)
@@ -156,7 +190,8 @@ func TestRecordStore_Load(t *testing.T) {
 	t.Run("unknown status is reported before an unparsable version", func(t *testing.T) {
 		do := newFakeDo()
 		do.selectRows = []Record{
-			{MigrationID: migA, Version: "v1.9.3", Status: StatusSuccess},
+			{MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/pending/20260101120000_a",
+				Status: enumor.MigrationStatusSuccess},
 			{MigrationID: migB, Version: "PENDING", Status: "done"},
 		}
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
@@ -169,12 +204,65 @@ func TestRecordStore_Load(t *testing.T) {
 		assert.NotContains(t, err.Error(), "unparsable version")
 	})
 
+	t.Run("accepts PENDING on every known status", func(t *testing.T) {
+		do := newFakeDo()
+		do.selectRows = []Record{
+			{ID: 1, MigrationID: migA, Version: constant.MigrationPendingVersion,
+				Status: enumor.MigrationStatusRunning},
+			{ID: 2, MigrationID: migB, Version: constant.MigrationPendingVersion,
+				AppliedPkg: "main/pending/20260101120000_b", Status: enumor.MigrationStatusSuccess},
+			{ID: 3, MigrationID: migC, Version: constant.MigrationPendingVersion,
+				Status: enumor.MigrationStatusFailed, Message: "boom"},
+		}
+		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
+		require.NoError(t, err)
+		require.Len(t, records, 3)
+		assert.Equal(t, do.selectRows[0], records[migA])
+		assert.Equal(t, do.selectRows[1], records[migB])
+		assert.Equal(t, do.selectRows[2], records[migC])
+	})
+
+	t.Run("PENDING success with empty applied_pkg is precondition", func(t *testing.T) {
+		do := newFakeDo()
+		do.selectRows = []Record{
+			{MigrationID: migA, Version: constant.MigrationPendingVersion, AppliedPkg: "",
+				Status: enumor.MigrationStatusSuccess},
+		}
+		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
+		require.Error(t, err)
+		assert.Nil(t, records)
+		assert.ErrorIs(t, err, ErrPrecondition)
+		assert.Contains(t, err.Error(), migA)
+		assert.Contains(t, err.Error(), "empty applied_pkg")
+	})
+
+	t.Run("mix of PENDING and versioned rows loads fine", func(t *testing.T) {
+		do := newFakeDo()
+		do.selectRows = []Record{
+			{ID: 1, MigrationID: migA, Version: "v1.9.2", AppliedPkg: "main/pending/20260101120000_a",
+				Status: enumor.MigrationStatusSuccess},
+			{ID: 2, MigrationID: migB, Version: constant.MigrationPendingVersion,
+				AppliedPkg: "main/pending/20260101120000_b", Status: enumor.MigrationStatusSuccess},
+			{ID: 3, MigrationID: migC, Version: constant.MigrationPendingVersion,
+				Status: enumor.MigrationStatusRunning},
+			{ID: 4, MigrationID: migD, Version: "v1.9.3", Status: enumor.MigrationStatusFailed},
+		}
+		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
+		require.NoError(t, err)
+		require.Len(t, records, 4)
+		assert.Equal(t, do.selectRows[0], records[migA])
+		assert.Equal(t, do.selectRows[1], records[migB])
+		assert.Equal(t, do.selectRows[2], records[migC])
+		assert.Equal(t, do.selectRows[3], records[migD])
+	})
+
 	t.Run("indexes labeled and folded versions of every status", func(t *testing.T) {
 		do := newFakeDo()
 		do.selectRows = []Record{
-			{ID: 1, MigrationID: migA, Version: "v1.9.3-tenant.1", Status: StatusRunning},
-			{ID: 2, MigrationID: migB, Version: "v1.9.3.0", Status: StatusSuccess},
-			{ID: 3, MigrationID: migC, Version: "v1.9.4", Status: StatusFailed},
+			{ID: 1, MigrationID: migA, Version: "v1.9.3-tenant.1", Status: enumor.MigrationStatusRunning},
+			{ID: 2, MigrationID: migB, Version: "v1.9.3.0", AppliedPkg: "main/pending/20260101120000_b",
+				Status: enumor.MigrationStatusSuccess},
+			{ID: 3, MigrationID: migC, Version: "v1.9.4", Status: enumor.MigrationStatusFailed},
 		}
 		records, err := NewRecordStore(newFakeOrm(do)).Load(kt)
 		require.NoError(t, err)
@@ -187,7 +275,7 @@ func TestRecordStore_Load(t *testing.T) {
 
 func TestRecordStore_MarkRunning(t *testing.T) {
 	kt := kit.New()
-	m := register.Migration{ID: migA, Version: "v1.9.3"}
+	m := register.Migration{ID: migA, Version: "v1.9.3", Pkg: "main/pending/20260101120000_add_x"}
 
 	t.Run("insert upsert", func(t *testing.T) {
 		do := newFakeDo()
@@ -197,12 +285,16 @@ func TestRecordStore_MarkRunning(t *testing.T) {
 		assert.Contains(t, inserts[0].expr, "ON DUPLICATE KEY UPDATE")
 		assert.Contains(t, inserts[0].expr, "`status` = :status")
 		assert.Contains(t, inserts[0].expr, "`message` = ''")
+		assert.Contains(t, inserts[0].expr, "`applied_pkg`")
+		assert.Contains(t, inserts[0].expr, ":applied_pkg")
 		assert.Contains(t, inserts[0].expr, "INSERT INTO `hcm_migration_record`")
+		assert.Contains(t, inserts[0].expr, "ON DUPLICATE KEY UPDATE `applied_pkg` = :applied_pkg")
 		arg, ok := inserts[0].arg.(map[string]interface{})
 		require.True(t, ok)
 		assert.Equal(t, m.ID, arg["migration_id"])
 		assert.Equal(t, m.Version, arg["version"])
-		assert.Equal(t, StatusRunning, arg["status"])
+		assert.Equal(t, m.Pkg, arg["applied_pkg"])
+		assert.Equal(t, enumor.MigrationStatusRunning, arg["status"])
 		assert.NotContains(t, arg, "message")
 	})
 
@@ -220,7 +312,7 @@ func TestRecordStore_MarkRunning(t *testing.T) {
 
 func TestRecordStore_MarkSuccess(t *testing.T) {
 	kt := kit.New()
-	m := register.Migration{ID: migA, Version: "v1.9.4"}
+	m := register.Migration{ID: migA, Version: "v1.9.4", Pkg: "main/pending/20260101120000_add_x"}
 
 	t.Run("updates status and registered version", func(t *testing.T) {
 		do := newFakeDo()
@@ -231,11 +323,13 @@ func TestRecordStore_MarkSuccess(t *testing.T) {
 		assert.Contains(t, updates[0].expr, "`message` = ''")
 		assert.Contains(t, updates[0].expr, "`version` = :version")
 		assert.Contains(t, updates[0].expr, "WHERE `migration_id` = :migration_id")
+		assert.NotContains(t, updates[0].expr, "applied_pkg")
 		arg, ok := updates[0].arg.(map[string]interface{})
 		require.True(t, ok)
 		assert.Equal(t, m.ID, arg["migration_id"])
 		assert.Equal(t, m.Version, arg["version"])
-		assert.Equal(t, StatusSuccess, arg["status"])
+		assert.Equal(t, enumor.MigrationStatusSuccess, arg["status"])
+		assert.NotContains(t, arg, "applied_pkg")
 	})
 
 	t.Run("zero affected rows", func(t *testing.T) {
@@ -263,35 +357,36 @@ func TestRecordStore_MarkSuccess(t *testing.T) {
 
 func TestRecordStore_MarkFailed(t *testing.T) {
 	kt := kit.New()
-	m := register.Migration{ID: migB, Version: "v1.9.3"}
+	m := register.Migration{ID: migB, Version: "v1.9.3", Pkg: "main/pending/20260101120000_add_x"}
 
 	t.Run("nil error stores empty message", func(t *testing.T) {
 		do := newFakeDo()
 		require.NoError(t, NewRecordStore(newFakeOrm(do)).MarkFailed(kt, m, nil))
 		arg := updateArg(t, do)
 		assert.Equal(t, "", arg["message"])
-		assert.Equal(t, StatusFailed, arg["status"])
+		assert.Equal(t, enumor.MigrationStatusFailed, arg["status"])
 		assert.Equal(t, m.ID, arg["migration_id"])
 		_, hasVersion := arg["version"]
 		assert.False(t, hasVersion)
 		expr := do.callsOf("update")[0].expr
 		assert.Contains(t, expr, "`message` = :message")
 		assert.NotContains(t, expr, "`version`")
+		assert.NotContains(t, expr, "applied_pkg")
 	})
 
 	t.Run("truncates message", func(t *testing.T) {
 		do := newFakeDo()
 		raw := strings.Repeat("迁移失败，磁盘已满。", 80)
-		require.Greater(t, len(raw), maxMessageBytes)
+		require.Greater(t, len(raw), constant.MigrationRecordMessageMaxBytes)
 		require.NoError(t, NewRecordStore(newFakeOrm(do)).MarkFailed(kt, m, errors.New(raw)))
 		arg := updateArg(t, do)
 		msg, ok := arg["message"].(string)
 		require.True(t, ok)
-		assert.LessOrEqual(t, len(msg), maxMessageBytes)
+		assert.LessOrEqual(t, len(msg), constant.MigrationRecordMessageMaxBytes)
 		assert.True(t, utf8.ValidString(msg))
 		assert.True(t, strings.HasPrefix(raw, msg))
 		assert.NotEqual(t, raw, msg)
-		assert.Equal(t, truncateMessage(raw, maxMessageBytes), msg)
+		assert.Equal(t, migrate.TruncateUTF8(raw, constant.MigrationRecordMessageMaxBytes), msg)
 	})
 
 	t.Run("zero affected rows", func(t *testing.T) {
@@ -324,97 +419,12 @@ func updateArg(t *testing.T, do *fakeDo) map[string]interface{} {
 	return arg
 }
 
-func TestTruncateMessage(t *testing.T) {
-	han := "中"
-	require.Equal(t, 3, len(han))
-	emoji := "😀"
-	require.Equal(t, 4, len(emoji))
-
-	testCases := []struct {
-		name  string
-		msg   string
-		limit int
-		want  string
-	}{
-		{name: "empty", msg: "", limit: maxMessageBytes, want: ""},
-		{
-			name:  "exactly 1024 ascii",
-			msg:   strings.Repeat("a", maxMessageBytes),
-			limit: maxMessageBytes,
-			want:  strings.Repeat("a", maxMessageBytes),
-		},
-		{
-			name:  "1025 ascii",
-			msg:   strings.Repeat("a", maxMessageBytes+1),
-			limit: maxMessageBytes,
-			want:  strings.Repeat("a", maxMessageBytes),
-		},
-		{
-			// Index 1024 is byte 1 of 中, a rune start, so the rune is excluded.
-			name:  "cut on byte 1 of han",
-			msg:   strings.Repeat("a", 1024) + han,
-			limit: 1024,
-			want:  strings.Repeat("a", 1024),
-		},
-		{
-			// Index 1024 is byte 2 of 中. The cut walks back to the rune start.
-			name:  "cut on byte 2 of han",
-			msg:   strings.Repeat("a", 1023) + han,
-			limit: 1024,
-			want:  strings.Repeat("a", 1023),
-		},
-		{
-			// Index 1024 is byte 3 of 中.
-			name:  "cut on byte 3 of han",
-			msg:   strings.Repeat("a", 1022) + han,
-			limit: 1024,
-			want:  strings.Repeat("a", 1022),
-		},
-		{
-			// 😀 occupies indexes 1021..1024, so the limit falls inside the rune.
-			name:  "emoji straddles the limit",
-			msg:   strings.Repeat("a", 1021) + emoji + "tail",
-			limit: 1024,
-			want:  strings.Repeat("a", 1021),
-		},
-		{
-			name:  "invalid utf-8 replaced",
-			msg:   "bad\xff\xfebytes",
-			limit: maxMessageBytes,
-			want:  "bad?bytes",
-		},
-		{
-			name:  "invalid utf-8 past the limit is dropped",
-			msg:   strings.Repeat("a", 1024) + "\xff",
-			limit: 1024,
-			want:  strings.Repeat("a", 1024),
-		},
-		{name: "limit zero", msg: "中文", limit: 0, want: ""},
-		{name: "limit zero on empty", msg: "", limit: 0, want: ""},
-		{name: "shorter multibyte unchanged", msg: "库当前版本", limit: maxMessageBytes, want: "库当前版本"},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := truncateMessage(tc.msg, tc.limit)
-			assert.Equal(t, tc.want, got)
-			assert.True(t, utf8.ValidString(got))
-			assert.LessOrEqual(t, len(got), tc.limit)
-			sanitized := strings.ToValidUTF8(tc.msg, "?")
-			assert.True(t, strings.HasPrefix(sanitized, got), "got %q is not a prefix of %q", got, sanitized)
-			if utf8.ValidString(tc.msg) {
-				assert.True(t, strings.HasPrefix(tc.msg, got))
-			}
-		})
-	}
-}
-
 func TestCurrentVersion(t *testing.T) {
 	success := func(versions ...string) Records {
 		out := make(Records, len(versions))
 		for i, version := range versions {
 			id := fmt.Sprintf("id-%d", i)
-			out[id] = Record{MigrationID: id, Version: version, Status: StatusSuccess}
+			out[id] = Record{MigrationID: id, Version: version, Status: enumor.MigrationStatusSuccess}
 		}
 		return out
 	}
@@ -431,8 +441,8 @@ func TestCurrentVersion(t *testing.T) {
 		{
 			name: "only running and failed",
 			records: Records{
-				migA: {MigrationID: migA, Status: StatusRunning, Version: "v1.9.10"},
-				migB: {MigrationID: migB, Status: StatusFailed, Version: "v1.9.9"},
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusRunning, Version: "v1.9.10"},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusFailed, Version: "v1.9.9"},
 			},
 		},
 		{
@@ -444,9 +454,9 @@ func TestCurrentVersion(t *testing.T) {
 		{
 			name: "backfill does not lower current",
 			records: Records{
-				"current":  {MigrationID: "current", Status: StatusSuccess, Version: "v1.9.4"},
-				"backfill": {MigrationID: "backfill", Status: StatusSuccess, Version: "v1.9.3"},
-				"running":  {MigrationID: "running", Status: StatusRunning, Version: "v9.9.9"},
+				"current":  {MigrationID: "current", Status: enumor.MigrationStatusSuccess, Version: "v1.9.4"},
+				"backfill": {MigrationID: "backfill", Status: enumor.MigrationStatusSuccess, Version: "v1.9.3"},
+				"running":  {MigrationID: "running", Status: enumor.MigrationStatusRunning, Version: "v9.9.9"},
 			},
 			wantRaw: "v1.9.4",
 			wantOK:  true,
@@ -476,10 +486,10 @@ func TestCurrentVersion(t *testing.T) {
 			// rejects an unparsable version on any status.
 			name: "CurrentVersion ignores unparsable versions on failed and running",
 			records: Records{
-				migA: {MigrationID: migA, Status: StatusFailed, Version: "PENDING"},
-				migB: {MigrationID: migB, Status: StatusRunning, Version: ""},
-				migC: {MigrationID: migC, Status: StatusRunning, Version: "1.9.3"},
-				migD: {MigrationID: migD, Status: StatusSuccess, Version: "v1.9.3"},
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusFailed, Version: "PENDING"},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusRunning, Version: ""},
+				migC: {MigrationID: migC, Status: enumor.MigrationStatusRunning, Version: "1.9.3"},
+				migD: {MigrationID: migD, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3"},
 			},
 			wantRaw: "v1.9.3",
 			wantOK:  true,
@@ -487,9 +497,49 @@ func TestCurrentVersion(t *testing.T) {
 		{
 			name: "CurrentVersion ignores only unparsable non-success records",
 			records: Records{
-				migA: {MigrationID: migA, Status: StatusFailed, Version: "nope"},
-				migB: {MigrationID: migB, Status: StatusRunning, Version: "v1.9"},
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusFailed, Version: "nope"},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusRunning, Version: "v1.9"},
 			},
+		},
+		{
+			name: "success PENDING skipped beside released success",
+			records: Records{
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusSuccess, Version: "v1.9.2"},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusSuccess,
+					Version: constant.MigrationPendingVersion},
+			},
+			wantRaw: "v1.9.2",
+			wantOK:  true,
+		},
+		{
+			name: "only PENDING success yields no current",
+			records: Records{
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusSuccess,
+					Version: constant.MigrationPendingVersion},
+			},
+		},
+		{
+			name: "PENDING on failed and running is ignored",
+			records: Records{
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusFailed,
+					Version: constant.MigrationPendingVersion},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusRunning,
+					Version: constant.MigrationPendingVersion},
+				migC: {MigrationID: migC, Status: enumor.MigrationStatusSuccess, Version: "v1.9.2"},
+			},
+			wantRaw: "v1.9.2",
+			wantOK:  true,
+		},
+		{
+			name: "PENDING success skipped among higher released versions",
+			records: Records{
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusSuccess,
+					Version: constant.MigrationPendingVersion},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusSuccess, Version: "v1.9.10"},
+				migC: {MigrationID: migC, Status: enumor.MigrationStatusSuccess, Version: "v1.9.9"},
+			},
+			wantRaw: "v1.9.10",
+			wantOK:  true,
 		},
 	}
 
@@ -506,13 +556,13 @@ func TestCurrentVersion(t *testing.T) {
 		})
 	}
 
-	badVersions := []string{"1.9.3", "PENDING", "", "v1.9"}
+	badVersions := []string{"1.9.3", "", "v1.9"}
 	for _, bad := range badVersions {
 		t.Run("unparsable success "+bad, func(t *testing.T) {
 			records := Records{
-				migA: {MigrationID: migA, Status: StatusSuccess, Version: "v1.9.10"},
-				migB: {MigrationID: migB, Status: StatusSuccess, Version: bad},
-				migC: {MigrationID: migC, Status: StatusFailed, Version: "v1.9.4"},
+				migA: {MigrationID: migA, Status: enumor.MigrationStatusSuccess, Version: "v1.9.10"},
+				migB: {MigrationID: migB, Status: enumor.MigrationStatusSuccess, Version: bad},
+				migC: {MigrationID: migC, Status: enumor.MigrationStatusFailed, Version: "v1.9.4"},
 			}
 			current, ok, err := CurrentVersion(records)
 			require.Error(t, err)
@@ -527,9 +577,9 @@ func TestCurrentVersion(t *testing.T) {
 func TestCurrentVersionEqualRawIsStable(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		records := Records{
-			fmt.Sprintf("folded-%d", i): {MigrationID: migA, Status: StatusSuccess, Version: "v1.9.3.0"},
-			fmt.Sprintf("plain-%d", i):  {MigrationID: migB, Status: StatusSuccess, Version: "v1.9.3"},
-			fmt.Sprintf("older-%d", i):  {MigrationID: migC, Status: StatusSuccess, Version: "v1.9.2"},
+			fmt.Sprintf("folded-%d", i): {MigrationID: migA, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3.0"},
+			fmt.Sprintf("plain-%d", i):  {MigrationID: migB, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3"},
+			fmt.Sprintf("older-%d", i):  {MigrationID: migC, Status: enumor.MigrationStatusSuccess, Version: "v1.9.2"},
 		}
 		current, ok, err := CurrentVersion(records)
 		require.NoError(t, err)
@@ -542,30 +592,45 @@ func TestWarnVersionDrift(t *testing.T) {
 	kt := kit.New()
 	testCases := []struct {
 		name       string
-		status     Status
+		status     enumor.MigrationStatus
 		recorded   string
 		registered string
 		want       bool
 	}{
 		{
-			name: "success same version", status: StatusSuccess,
+			name: "success same version", status: enumor.MigrationStatusSuccess,
 			recorded: "v1.9.3", registered: "v1.9.3", want: false,
 		},
 		{
-			name: "success same labeled version", status: StatusSuccess,
+			name: "success same labeled version", status: enumor.MigrationStatusSuccess,
 			recorded: "v1.9.3-tenant.1", registered: "v1.9.3-tenant.1", want: false,
 		},
 		{
-			name: "success drift from feature label to three segments", status: StatusSuccess,
+			name: "success drift from feature label to three segments", status: enumor.MigrationStatusSuccess,
 			recorded: "v1.9.3-tenant.1", registered: "v1.9.3", want: true,
 		},
 		{
-			name: "running different version", status: StatusRunning,
+			name: "running different version", status: enumor.MigrationStatusRunning,
 			recorded: "v1.9.3-tenant.1", registered: "v1.9.3", want: false,
 		},
 		{
-			name: "failed different version", status: StatusFailed,
+			name: "failed different version", status: enumor.MigrationStatusFailed,
 			recorded: "v1.9.2", registered: "v1.9.3", want: false,
+		},
+		{
+			name:     "success PENDING recorded vs released registered is not drift",
+			status:   enumor.MigrationStatusSuccess,
+			recorded: constant.MigrationPendingVersion, registered: "v1.9.3", want: false,
+		},
+		{
+			name:     "success released recorded vs PENDING registered is drift",
+			status:   enumor.MigrationStatusSuccess,
+			recorded: "v1.9.3", registered: constant.MigrationPendingVersion, want: true,
+		},
+		{
+			name:     "success PENDING recorded vs PENDING registered is not drift",
+			status:   enumor.MigrationStatusSuccess,
+			recorded: constant.MigrationPendingVersion, registered: constant.MigrationPendingVersion, want: false,
 		},
 	}
 	for _, tc := range testCases {
@@ -573,6 +638,82 @@ func TestWarnVersionDrift(t *testing.T) {
 			rec := Record{MigrationID: migA, Status: tc.status, Version: tc.recorded}
 			m := register.Migration{ID: migA, Version: tc.registered}
 			assert.Equal(t, tc.want, WarnVersionDrift(kt, rec, m))
+		})
+	}
+}
+
+func TestRecordStore_BackfillPendingVersion(t *testing.T) {
+	kt := kit.New()
+
+	t.Run("updates only PENDING success row version", func(t *testing.T) {
+		do := newFakeDo()
+		m := register.Migration{ID: migA, Version: "v1.9.3", Pkg: "main/pending/20260101120000_a"}
+		require.NoError(t, NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m))
+		updates := do.callsOf("update")
+		require.Len(t, updates, 1)
+		expr := updates[0].expr
+		assert.Contains(t, expr, "UPDATE `hcm_migration_record` SET `version` = :version")
+		assert.Contains(t, expr, "WHERE `migration_id` = :migration_id AND `status` = :status AND `version` = :pending")
+		assert.NotContains(t, expr, "applied_pkg")
+		assert.NotContains(t, expr, "SET `status`")
+		arg, ok := updates[0].arg.(map[string]interface{})
+		require.True(t, ok)
+		assert.Equal(t, map[string]interface{}{
+			"migration_id": m.ID,
+			"version":      m.Version,
+			"status":       enumor.MigrationStatusSuccess,
+			"pending":      constant.MigrationPendingVersion,
+		}, arg)
+	})
+
+	t.Run("zero affected rows is nil", func(t *testing.T) {
+		do := newFakeDo()
+		do.updateAffected = 0
+		m := register.Migration{ID: migA, Version: "v1.9.3"}
+		require.NoError(t, NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m))
+		require.Len(t, do.callsOf("update"), 1)
+	})
+
+	t.Run("one affected row is nil", func(t *testing.T) {
+		do := newFakeDo()
+		do.updateAffected = 1
+		m := register.Migration{ID: migA, Version: "v1.9.3"}
+		require.NoError(t, NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m))
+		require.Len(t, do.callsOf("update"), 1)
+	})
+
+	t.Run("update error wraps id version and cause", func(t *testing.T) {
+		do := newFakeDo()
+		do.updateErr = errors.New("deadlock")
+		m := register.Migration{ID: migA, Version: "v1.9.3"}
+		err := NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), m.ID)
+		assert.Contains(t, err.Error(), m.Version)
+		assert.Contains(t, err.Error(), "deadlock")
+		assertNoSentinel(t, err)
+	})
+
+	t.Run("PENDING registered version issues no SQL", func(t *testing.T) {
+		do := newFakeDo()
+		m := register.Migration{ID: migA, Version: constant.MigrationPendingVersion}
+		err := NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), m.ID)
+		assert.Contains(t, err.Error(), constant.MigrationPendingVersion)
+		assertNoSentinel(t, err)
+		assert.Empty(t, do.callsOf("update"))
+	})
+
+	passThrough := []string{"v1.9.3.2", "v1.9.3-tenant.1"}
+	for _, version := range passThrough {
+		t.Run("passes "+version+" as :version", func(t *testing.T) {
+			do := newFakeDo()
+			m := register.Migration{ID: migA, Version: version}
+			require.NoError(t, NewRecordStore(newFakeOrm(do)).BackfillPendingVersion(kt, m))
+			arg := updateArg(t, do)
+			assert.Equal(t, version, arg["version"])
+			assert.Equal(t, constant.MigrationPendingVersion, arg["pending"])
 		})
 	}
 }

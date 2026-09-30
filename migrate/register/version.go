@@ -17,9 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package register holds the in-process migration registries for hcm-migrate,
-// plus the version grammar every migration file is keyed by. Migration files
-// import only this package and hcm/migrate/util, never hcm/migrate/engine.
+// Package register holds the in-process migration registries and the version
+// grammar. Migration files must not import hcm/migrate/engine.
 package register
 
 import (
@@ -27,33 +26,20 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+
+	"hcm/pkg/criteria/constant"
 )
 
-// PendingVersion is the placeholder registered by a migration whose release
-// version is not decided yet. Migration files must use this constant instead
-// of writing the literal. It is not a parsable version on purpose: init and
-// up scan for it and refuse to run, so an undecided migration can never be
-// executed under a guessed version. The directory holding those files stays
-// lowercase, "pending/".
-const PendingVersion = "PENDING"
-
-// versionRe matches the three accepted spellings in one pass:
-//
-//	v1.9.3              three segments, no fourth
-//	v1.9.3.1            numeric fourth segment
-//	v1.9.3-tenant.1     labeled fourth segment
-//
-// A label must be lowercase and must be followed by a sequence number, so
-// "v1.9.3-tenant" and "v1.9.3-Tenant.1" are rejected.
+// versionRe matches vX.Y.Z, vX.Y.Z.N, or vX.Y.Z-<label>.N. A label must be
+// lowercase and followed by a sequence number.
 var versionRe = regexp.MustCompile(`^v(\d+)\.(\d+)\.(\d+)(?:\.(\d+)|-([a-z][a-z0-9]*)\.(\d+))?$`)
 
-// Suffix is the optional fourth segment of a version. An empty Label means a
-// plain numeric sequence used by the internal line (".1"); a non-empty Label
-// marks a feature branch ("-tenant.1").
+// Suffix is the optional fourth segment of a version. An empty Label is a
+// numeric sequence (".1"); a non-empty Label is a labeled sequence ("-tenant.1").
 type Suffix struct {
-	// Label is the feature branch name, empty for the internal numeric line.
+	// Label is the feature label, empty for the numeric line.
 	Label string
-	// Seq orders the specific changes within one line, compared numerically.
+	// Seq orders changes within one line, compared numerically.
 	Seq int
 }
 
@@ -70,17 +56,14 @@ type Version struct {
 
 // IsPending reports whether raw is the undecided-version placeholder.
 func IsPending(raw string) bool {
-	return raw == PendingVersion
+	return raw == constant.MigrationPendingVersion
 }
 
-// Parse turns a version string into a Version. It rejects anything the
-// grammar does not allow, including the PendingVersion placeholder: callers
-// that accept undecided migrations must check IsPending separately.
-//
-// A numeric fourth segment of 0 is folded away, so "v1.9.3.0" parses to the
-// same version as "v1.9.3" and the two compare equal. A labeled segment is
-// never folded: "v1.9.3-tenant.0" keeps its label and still sorts after
-// "v1.9.3".
+// Parse turns a version string into a Version. It rejects anything outside
+// the grammar, including constant.MigrationPendingVersion; callers that
+// accept undecided migrations must check IsPending separately. A numeric
+// fourth segment of 0 is folded away so "v1.9.3.0" equals "v1.9.3". A
+// labeled segment is never folded.
 func Parse(raw string) (Version, error) {
 	m := versionRe.FindStringSubmatch(raw)
 	if m == nil {
@@ -104,8 +87,7 @@ func Parse(raw string) (Version, error) {
 		if err != nil {
 			return Version{}, fmt.Errorf("invalid version %q, fourth segment: %v", raw, err)
 		}
-		// A plain ".0" carries no ordering information, fold it away so that
-		// v1.9.3.0 and v1.9.3 are one version rather than two adjacent ones.
+
 		if seq != 0 {
 			v.Suffix = &Suffix{Seq: seq}
 		}
@@ -120,9 +102,7 @@ func Parse(raw string) (Version, error) {
 	return v, nil
 }
 
-// parseSegment converts one numeric segment, rejecting leading zeros so that
-// a version string and its parsed form stay one to one ("v1.09.3" would
-// otherwise be a second spelling of "v1.9.3").
+// parseSegment converts one numeric segment. Leading zeros are rejected.
 func parseSegment(seg string) (int, error) {
 	if len(seg) > 1 && seg[0] == '0' {
 		return 0, fmt.Errorf("leading zero in %q", seg)
@@ -134,24 +114,9 @@ func parseSegment(seg string) (int, error) {
 	return n, nil
 }
 
-// Compare returns -1, 0 or +1 ordering a before b, equal, or a after b. It
-// compares P1, P2 and P3 numerically, then the fourth segment: absent sorts
-// before present, so within one prefix the three-segment file runs first;
-// two present segments compare by Label and then by Seq numerically.
-//
-// Label is compared before Seq because the empty label is the internal
-// numeric line, and the whole numeric line must run before a feature branch
-// line on the same prefix: v1.9.3.9 before v1.9.3-tenant.1. Comparing Seq
-// alone would call those two equal and interleave the lines.
-//
-// Between two different non-empty labels the lexicographic result carries no
-// meaning. A registry holding two labels is rejected before anything is
-// sorted. It is kept so that 0 always means "the same version", which the
-// --to ceiling and the database current version both rely on.
-//
-// Migrations sharing a version are further ordered by timestamp and then
-// migration ID. Those two fields live on the migration, not on the version,
-// so the registry applies them on top of this result.
+// Compare returns -1, 0 or +1 ordering a before b. It compares P1, P2 and P3
+// numerically, then the fourth segment: absent before present; then Label,
+// then Seq. Empty Label sorts before a non-empty Label.
 func Compare(a, b Version) int {
 	if c := cmp.Or(cmp.Compare(a.P1, b.P1), cmp.Compare(a.P2, b.P2), cmp.Compare(a.P3, b.P3)); c != 0 {
 		return c

@@ -33,8 +33,11 @@ import (
 
 	"hcm/migrate/register"
 	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/kit"
+	"hcm/pkg/migrate"
 
 	// import mysql driver, used to create conn.
 	_ "github.com/go-sql-driver/mysql"
@@ -111,11 +114,14 @@ func TestLocalMySQLEngine(t *testing.T) {
 	db, o, dbName, _, _ := openIsolatedMySQL(t)
 	_ = dbName
 
-	t.Run("init empty", func(t *testing.T) {
-		created, adopted, err := InitRecordTable(kt, o, nil, nil)
+	t.Run("fresh init creates both tables", func(t *testing.T) {
+		result, err := InitTables(kt, o, nil, nil)
 		require.NoError(t, err)
-		assert.True(t, created)
-		assert.Nil(t, adopted)
+		assert.True(t, result.AuditCreated)
+		assert.True(t, result.RecordCreated)
+		assert.Nil(t, result.Adopted)
+		assert.True(t, tableExists(t, db, constant.MigrationAuditTable))
+		assert.True(t, tableExists(t, db, constant.MigrationRecordTable))
 		assert.Equal(t, 0, countRecords(t, db))
 
 		records, err := NewRecordStore(o).Load(kt)
@@ -132,10 +138,11 @@ func TestLocalMySQLEngine(t *testing.T) {
 		migrations := []register.Migration{
 			mustMigration(t, migA, "v1.9.3", "20260101120000", "would be adopted"),
 		}
-		created, adopted, err := InitRecordTable(kt, o, &baseline, migrations)
+		result, err := InitTables(kt, o, &baseline, migrations)
 		require.NoError(t, err)
-		assert.False(t, created)
-		assert.Nil(t, adopted)
+		assert.False(t, result.AuditCreated)
+		assert.False(t, result.RecordCreated)
+		assert.Nil(t, result.Adopted)
 		assert.Equal(t, 0, countRecords(t, db))
 	})
 
@@ -146,24 +153,27 @@ func TestLocalMySQLEngine(t *testing.T) {
 		mustMigration(t, migA, "v1.9.2", "20260101120000", "duplicate"),
 		mustMigration(t, migB, "v1.9.3.0", "20260101120000", "folded"),
 		mustMigration(t, migC, "v1.9.3.1", "20260101120000", "fourth"),
-		mustMigration(t, migD, register.PendingVersion, "20260101120000", "pending"),
+		mustMigration(t, migD, constant.MigrationPendingVersion, "20260101120000", "pending"),
 		mustMigration(t, migE, "v1.9.4", "20260101120000", "later"),
 	}
 
 	t.Run("init adopt", func(t *testing.T) {
 		dropRecordTable(t, db)
-		created, adopted, err := InitRecordTable(kt, o, &baseline, migrations)
+		result, err := InitTables(kt, o, &baseline, migrations)
 		require.NoError(t, err)
-		assert.True(t, created)
-		require.Equal(t, []string{migA, migB}, migrationIDs(adopted))
+		assert.False(t, result.AuditCreated)
+		assert.True(t, result.RecordCreated)
+		require.Equal(t, []string{migA, migB}, migrationIDs(result.Adopted))
 
 		rows := loadRows(t, db)
 		require.Len(t, rows, 2)
 		assert.Equal(t, "v1.9.3", rows[migA].Version)
-		assert.Equal(t, StatusSuccess, rows[migA].Status)
+		assert.Equal(t, enumor.MigrationStatusSuccess, rows[migA].Status)
 		assert.Equal(t, "", rows[migA].Message)
+		assert.Equal(t, result.Adopted[0].Pkg, rows[migA].AppliedPkg)
 		assert.Equal(t, "v1.9.3.0", rows[migB].Version)
-		assert.Equal(t, StatusSuccess, rows[migB].Status)
+		assert.Equal(t, enumor.MigrationStatusSuccess, rows[migB].Status)
+		assert.Equal(t, result.Adopted[1].Pkg, rows[migB].AppliedPkg)
 		_, hasFourth := rows[migC]
 		assert.False(t, hasFourth)
 		_, hasPending := rows[migD]
@@ -183,59 +193,94 @@ func TestLocalMySQLEngine(t *testing.T) {
 	t.Run("second adopt does not raise the baseline", func(t *testing.T) {
 		higher := mustVersion(t, "v1.9.10")
 		before := countRecords(t, db)
-		created, adopted, err := InitRecordTable(kt, o, &higher, migrations)
+		result, err := InitTables(kt, o, &higher, migrations)
 		require.NoError(t, err)
-		assert.False(t, created)
-		assert.Nil(t, adopted)
+		assert.False(t, result.AuditCreated)
+		assert.False(t, result.RecordCreated)
+		assert.Nil(t, result.Adopted)
 		assert.Equal(t, before, countRecords(t, db))
 		rows := loadRows(t, db)
 		_, hasLater := rows[migE]
 		assert.False(t, hasLater)
 	})
 
+	t.Run("drop audit only then rerun recreates audit leaves records", func(t *testing.T) {
+		beforeRows := loadRows(t, db)
+		require.NotEmpty(t, beforeRows)
+		dropAuditTable(t, db)
+		assert.False(t, tableExists(t, db, constant.MigrationAuditTable))
+		assert.True(t, tableExists(t, db, constant.MigrationRecordTable))
+
+		result, err := InitTables(kt, o, &baseline, migrations)
+		require.NoError(t, err)
+		assert.True(t, result.AuditCreated)
+		assert.False(t, result.RecordCreated)
+		assert.Nil(t, result.Adopted)
+		assert.True(t, tableExists(t, db, constant.MigrationAuditTable))
+		assert.Equal(t, beforeRows, loadRows(t, db))
+	})
+
 	t.Run("mark running failed and success", func(t *testing.T) {
 		store := NewRecordStore(o)
-		running := register.Migration{ID: migF, Version: "v1.9.3"}
+		running := register.Migration{
+			ID: migF, Version: "v1.9.3", Pkg: "main/pending/20260101120000_mig_f",
+		}
 		require.NoError(t, store.MarkRunning(kt, running))
 		rows := loadRows(t, db)
 		require.Contains(t, rows, migF)
-		assert.Equal(t, StatusRunning, rows[migF].Status)
+		assert.Equal(t, enumor.MigrationStatusRunning, rows[migF].Status)
 		assert.Equal(t, "v1.9.3", rows[migF].Version)
+		assert.Equal(t, running.Pkg, rows[migF].AppliedPkg)
 		assert.Equal(t, "", rows[migF].Message)
 		assert.Equal(t, 1, countByID(t, db, migF))
 
 		raw := strings.Repeat("迁移失败，磁盘已满。", 80)
-		require.Greater(t, len(raw), maxMessageBytes)
+		require.Greater(t, len(raw), constant.MigrationRecordMessageMaxBytes)
 		require.NoError(t, store.MarkFailed(kt, running, fmt.Errorf("%s", raw)))
 		rows = loadRows(t, db)
 		msg := rows[migF].Message
-		assert.Equal(t, StatusFailed, rows[migF].Status)
-		assert.LessOrEqual(t, len(msg), maxMessageBytes)
+		assert.Equal(t, enumor.MigrationStatusFailed, rows[migF].Status)
+		assert.Equal(t, running.Pkg, rows[migF].AppliedPkg)
+		assert.LessOrEqual(t, len(msg), constant.MigrationRecordMessageMaxBytes)
 		assert.True(t, utf8.ValidString(msg))
 		assert.True(t, strings.HasPrefix(raw, msg))
 		assert.NotEqual(t, raw, msg)
-		assert.Equal(t, truncateMessage(raw, maxMessageBytes), msg)
+		assert.Equal(t, migrate.TruncateUTF8(raw, constant.MigrationRecordMessageMaxBytes), msg)
 
-		refreshed := register.Migration{ID: migF, Version: "v1.9.4"}
+		refreshed := register.Migration{
+			ID: migF, Version: "v1.9.4", Pkg: "main/pending/20260101120000_mig_f_v2",
+		}
 		require.NoError(t, store.MarkRunning(kt, refreshed))
 		rows = loadRows(t, db)
-		assert.Equal(t, StatusRunning, rows[migF].Status)
+		assert.Equal(t, enumor.MigrationStatusRunning, rows[migF].Status)
 		assert.Equal(t, "", rows[migF].Message)
+		assert.Equal(t, refreshed.Pkg, rows[migF].AppliedPkg)
 		// ON DUPLICATE KEY UPDATE clears the message and leaves the version.
 		assert.Equal(t, "v1.9.3", rows[migF].Version)
 		assert.Equal(t, 1, countByID(t, db, migF))
 
 		require.NoError(t, store.MarkSuccess(kt, refreshed))
 		rows = loadRows(t, db)
-		assert.Equal(t, StatusSuccess, rows[migF].Status)
+		assert.Equal(t, enumor.MigrationStatusSuccess, rows[migF].Status)
 		assert.Equal(t, "v1.9.4", rows[migF].Version)
+		assert.Equal(t, refreshed.Pkg, rows[migF].AppliedPkg)
 		assert.Equal(t, "", rows[migF].Message)
 
-		require.NoError(t, store.MarkRunning(kt, register.Migration{ID: migC, Version: "v1.9.9"}))
-		require.NoError(t, store.MarkSuccess(kt, register.Migration{ID: migC, Version: "v1.9.9"}))
-		require.NoError(t, store.MarkRunning(kt, register.Migration{ID: migD, Version: "v1.9.10"}))
-		require.NoError(t, store.MarkSuccess(kt, register.Migration{ID: migD, Version: "v1.9.10"}))
-		require.NoError(t, store.MarkRunning(kt, register.Migration{ID: migE, Version: "v9.0.0"}))
+		require.NoError(t, store.MarkRunning(kt, register.Migration{
+			ID: migC, Version: "v1.9.9", Pkg: "main/pending/20260101120000_mig_c",
+		}))
+		require.NoError(t, store.MarkSuccess(kt, register.Migration{
+			ID: migC, Version: "v1.9.9", Pkg: "main/pending/20260101120000_mig_c",
+		}))
+		require.NoError(t, store.MarkRunning(kt, register.Migration{
+			ID: migD, Version: "v1.9.10", Pkg: "main/pending/20260101120000_mig_d",
+		}))
+		require.NoError(t, store.MarkSuccess(kt, register.Migration{
+			ID: migD, Version: "v1.9.10", Pkg: "main/pending/20260101120000_mig_d",
+		}))
+		require.NoError(t, store.MarkRunning(kt, register.Migration{
+			ID: migE, Version: "v9.0.0", Pkg: "main/pending/20260101120000_mig_e",
+		}))
 
 		records, err := store.Load(kt)
 		require.NoError(t, err)
@@ -245,15 +290,48 @@ func TestLocalMySQLEngine(t *testing.T) {
 		assert.Equal(t, "v1.9.10", current.Raw)
 	})
 
+	t.Run("rerun with different pkg overwrites applied_pkg", func(t *testing.T) {
+		store := NewRecordStore(o)
+		first := register.Migration{
+			ID: "20260101-1200-Z-0001", Version: "v1.9.3",
+			Pkg: "main/pending/20260101120000_first_pkg",
+		}
+		second := register.Migration{
+			ID: first.ID, Version: "v1.9.3",
+			Pkg: "main/pending/20260101120000_second_pkg",
+		}
+		require.NoError(t, store.MarkRunning(kt, first))
+		require.NoError(t, store.MarkSuccess(kt, first))
+		assert.Equal(t, first.Pkg, loadRows(t, db)[first.ID].AppliedPkg)
+
+		require.NoError(t, store.MarkRunning(kt, second))
+		assert.Equal(t, second.Pkg, loadRows(t, db)[first.ID].AppliedPkg)
+		require.NoError(t, store.MarkSuccess(kt, second))
+		assert.Equal(t, second.Pkg, loadRows(t, db)[first.ID].AppliedPkg)
+	})
+
+	t.Run("255-char applied_pkg stored whole", func(t *testing.T) {
+		store := NewRecordStore(o)
+		pkg := "main/g/" + "20260101120000_" + strings.Repeat("a", 233)
+		require.Equal(t, constant.MigrationPkgMaxLen, len(pkg))
+		m := register.Migration{
+			ID: "20260101-1200-Y-0001", Version: "v1.9.3", Pkg: pkg,
+		}
+		require.NoError(t, store.MarkRunning(kt, m))
+		require.NoError(t, store.MarkSuccess(kt, m))
+		assert.Equal(t, pkg, loadRows(t, db)[m.ID].AppliedPkg)
+	})
+
 	t.Run("load rejects a raw running row with an unparsable version", func(t *testing.T) {
 		dropRecordTable(t, db)
-		created, adopted, err := InitRecordTable(kt, o, nil, nil)
+		result, err := InitTables(kt, o, nil, nil)
 		require.NoError(t, err)
-		assert.True(t, created)
-		assert.Nil(t, adopted)
+		assert.False(t, result.AuditCreated)
+		assert.True(t, result.RecordCreated)
+		assert.Nil(t, result.Adopted)
 
 		_, err = db.Exec("INSERT INTO `hcm_migration_record` (`migration_id`, `version`, `status`) VALUES (?, ?, ?)",
-			migA, "garbage", string(StatusRunning))
+			migA, "garbage", string(enumor.MigrationStatusRunning))
 		require.NoError(t, err)
 
 		records, err := NewRecordStore(o).Load(kt)
@@ -263,6 +341,155 @@ func TestLocalMySQLEngine(t *testing.T) {
 		assert.Contains(t, err.Error(), migA)
 		assert.Contains(t, err.Error(), "garbage")
 		assert.Contains(t, err.Error(), "unparsable version")
+	})
+}
+
+func TestLocalMySQLPendingBackfill(t *testing.T) {
+	kt := kit.New()
+	db, o, _, _, _ := openIsolatedMySQL(t)
+
+	result, err := InitTables(kt, o, nil, nil)
+	require.NoError(t, err)
+	assert.True(t, result.AuditCreated)
+	assert.True(t, result.RecordCreated)
+
+	store := NewRecordStore(o)
+	pending := mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "pending_backfill")
+	released := mustMigration(t, migB, "v1.9.2", "20260101120000", "released")
+
+	require.NoError(t, store.MarkRunning(kt, pending))
+	require.NoError(t, store.MarkSuccess(kt, pending))
+	rows := loadRows(t, db)
+	require.Contains(t, rows, migA)
+	assert.Equal(t, constant.MigrationPendingVersion, rows[migA].Version)
+	assert.Equal(t, enumor.MigrationStatusSuccess, rows[migA].Status)
+	assert.Equal(t, pending.Pkg, rows[migA].AppliedPkg)
+
+	require.NoError(t, store.MarkRunning(kt, released))
+	require.NoError(t, store.MarkSuccess(kt, released))
+
+	records, err := store.Load(kt)
+	require.NoError(t, err)
+	require.Contains(t, records, migA)
+	assert.Equal(t, constant.MigrationPendingVersion, records[migA].Version)
+	current, ok, err := CurrentVersion(records)
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "v1.9.2", current.Raw)
+
+	backfill := register.Migration{ID: migA, Version: "v1.9.3", Pkg: pending.Pkg}
+	require.NoError(t, store.BackfillPendingVersion(kt, backfill))
+	rows = loadRows(t, db)
+	assert.Equal(t, "v1.9.3", rows[migA].Version)
+	assert.Equal(t, pending.Pkg, rows[migA].AppliedPkg)
+	assert.Equal(t, enumor.MigrationStatusSuccess, rows[migA].Status)
+	assert.Equal(t, 1, countByID(t, db, migA))
+
+	// Conditional update is idempotent: a second call (even with a newer
+	// registered version) leaves the already-backfilled row alone.
+	again := register.Migration{ID: migA, Version: "v1.9.4", Pkg: pending.Pkg}
+	require.NoError(t, store.BackfillPendingVersion(kt, again))
+	assert.Equal(t, "v1.9.3", loadRows(t, db)[migA].Version)
+
+	failedPending := mustMigration(t, migC, constant.MigrationPendingVersion, "20260102120000", "failed_pending")
+	require.NoError(t, store.MarkRunning(kt, failedPending))
+	require.NoError(t, store.MarkFailed(kt, failedPending, fmt.Errorf("boom")))
+	assert.Equal(t, constant.MigrationPendingVersion, loadRows(t, db)[migC].Version)
+	assert.Equal(t, enumor.MigrationStatusFailed, loadRows(t, db)[migC].Status)
+
+	require.NoError(t, store.BackfillPendingVersion(kt, register.Migration{
+		ID: migC, Version: "v1.9.3", Pkg: failedPending.Pkg,
+	}))
+	assert.Equal(t, constant.MigrationPendingVersion, loadRows(t, db)[migC].Version)
+	assert.Equal(t, enumor.MigrationStatusFailed, loadRows(t, db)[migC].Status)
+}
+
+func TestLocalMySQLAudit(t *testing.T) {
+	kt := kit.New()
+	db, o, _, _, _ := openIsolatedMySQL(t)
+
+	result, err := InitTables(kt, o, nil, nil)
+	require.NoError(t, err)
+	assert.True(t, result.AuditCreated)
+	assert.True(t, result.RecordCreated)
+
+	t.Run("full cycle begin and end", func(t *testing.T) {
+		runKT := kit.New()
+		runKT.Rid = "audit-run-1"
+		a := NewAudit(runKT, o).Begin(runKT, AuditMeta{Command: "up", Args: []string{"--db=main"}})
+		require.NotNil(t, a)
+
+		var before struct {
+			Status   string         `db:"status"`
+			ExitCode sql.NullInt64  `db:"exit_code"`
+			EndAt    sql.NullTime   `db:"end_at"`
+			Skipped  sql.NullString `db:"skipped"`
+		}
+		require.NoError(t, db.Get(&before,
+			"SELECT `status`, `exit_code`, `end_at`, `skipped` FROM `hcm_migration_audit` WHERE `run_id` = ?",
+			runKT.Rid))
+		assert.Equal(t, string(enumor.MigrationStatusRunning), before.Status)
+		assert.False(t, before.ExitCode.Valid)
+		assert.False(t, before.EndAt.Valid)
+
+		a.End(runKT, AuditResult{
+			ExitCode: 0,
+			Skipped: []SkippedMigration{{
+				ID: migA, Version: "v1.9.3", Pkg: "main/pending/20260101120000_a",
+				Reason: enumor.MigrationSkipBaseline,
+			}},
+			Warnings: []string{"note"},
+			Messages: []string{},
+		})
+
+		var after struct {
+			Status   string        `db:"status"`
+			ExitCode sql.NullInt64 `db:"exit_code"`
+			EndAt    sql.NullTime  `db:"end_at"`
+			Skipped  string        `db:"skipped"`
+			Warnings string        `db:"warnings"`
+			Message  string        `db:"message"`
+		}
+		require.NoError(t, db.Get(&after,
+			"SELECT `status`, `exit_code`, `end_at`, `skipped`, `warnings`, `message` "+
+				"FROM `hcm_migration_audit` WHERE `run_id` = ?", runKT.Rid))
+		assert.Equal(t, string(enumor.MigrationStatusSuccess), after.Status)
+		require.True(t, after.ExitCode.Valid)
+		assert.Equal(t, int64(0), after.ExitCode.Int64)
+		assert.True(t, after.EndAt.Valid)
+
+		var skippedOK, warningsOK, messageOK int
+		require.NoError(t, db.Get(&skippedOK, "SELECT JSON_VALID(?)", after.Skipped))
+		require.NoError(t, db.Get(&warningsOK, "SELECT JSON_VALID(?)", after.Warnings))
+		require.NoError(t, db.Get(&messageOK, "SELECT JSON_VALID(?)", after.Message))
+		assert.Equal(t, 1, skippedOK)
+		assert.Equal(t, 1, warningsOK)
+		assert.Equal(t, 1, messageOK)
+	})
+
+	t.Run("second Begin with same rid returns nil", func(t *testing.T) {
+		runKT := kit.New()
+		runKT.Rid = "audit-run-dup"
+		a1 := NewAudit(runKT, o).Begin(runKT, AuditMeta{Command: "up"})
+		require.NotNil(t, a1)
+		a2 := NewAudit(runKT, o).Begin(runKT, AuditMeta{Command: "up"})
+		assert.Nil(t, a2)
+	})
+
+	t.Run("unended run appears in next warnings", func(t *testing.T) {
+		first := kit.New()
+		first.Rid = "audit-run-orphan"
+		a1 := NewAudit(first, o).Begin(first, AuditMeta{Command: "up"})
+		require.NotNil(t, a1)
+
+		second := kit.New()
+		second.Rid = "audit-run-next"
+		a2 := NewAudit(second, o).Begin(second, AuditMeta{Command: "up"})
+		require.NotNil(t, a2)
+		require.NotEmpty(t, a2.warnings)
+		assert.Contains(t, a2.warnings[0], first.Rid)
+
+		a2.End(second, AuditResult{ExitCode: 0})
 	})
 }
 
@@ -303,6 +530,21 @@ func dropRecordTable(t *testing.T, db *sqlx.DB) {
 	require.NoError(t, err)
 }
 
+func dropAuditTable(t *testing.T, db *sqlx.DB) {
+	t.Helper()
+	_, err := db.Exec("DROP TABLE IF EXISTS `hcm_migration_audit`")
+	require.NoError(t, err)
+}
+
+func tableExists(t *testing.T, db *sqlx.DB, name string) bool {
+	t.Helper()
+	var n int
+	err := db.Get(&n, "SELECT COUNT(*) FROM information_schema.tables "+
+		"WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE' AND table_name = ?", name)
+	require.NoError(t, err)
+	return n > 0
+}
+
 func countRecords(t *testing.T, db *sqlx.DB) int {
 	t.Helper()
 	var n int
@@ -322,8 +564,8 @@ func countByID(t *testing.T, db *sqlx.DB, id string) int {
 func loadRows(t *testing.T, db *sqlx.DB) map[string]Record {
 	t.Helper()
 	var rows []Record
-	err := db.Select(&rows, "SELECT `id`, `migration_id`, `version`, `status`, `message`, `created_at`, `updated_at` "+
-		"FROM `hcm_migration_record`")
+	err := db.Select(&rows, "SELECT `id`, `migration_id`, `version`, `applied_pkg`, `status`, `message`, "+
+		"`created_at`, `updated_at` FROM `hcm_migration_record`")
 	require.NoError(t, err)
 	out := make(map[string]Record, len(rows))
 	for _, row := range rows {

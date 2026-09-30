@@ -64,10 +64,8 @@ func newDataSource(setting cc.DataServiceSetting, open func(opt cc.DataBase) (or
 }
 
 // Open connects to the database of reg and returns the orm migrations run
-// with. ok is false when the database is not configured, e.g. obs on an
-// edition without obsDatabase; the caller skips that database and it is not
-// an error. The connection is probed once, with no retry: waiting for the
-// database is the job of the deployment's initContainer.
+// with. ok is false when the database is not configured; that is not an
+// error. The connection is probed once with no retry.
 func (d *DataSource) Open(kt *kit.Kit, reg *register.Registry) (o orm.Interface, ok bool, err error) {
 	opt, known := d.configs[reg.Database()]
 	if !known {
@@ -90,8 +88,7 @@ func (d *DataSource) Open(kt *kit.Kit, reg *register.Registry) (o orm.Interface,
 }
 
 // openOrm connects with a single ping inside dao.NewDaoSet and returns the
-// set's orm. That orm has no ModifySQLOpts attached, so its Do() sends every
-// statement as built and tenant SQL rewriting never renames a table.
+// set's orm. The orm has no ModifySQLOpts attached.
 func openOrm(opt cc.DataBase) (orm.Interface, error) {
 	set, err := dao.NewDaoSet(opt)
 	if err != nil {
@@ -101,7 +98,7 @@ func openOrm(opt cc.DataBase) (orm.Interface, error) {
 }
 
 // registries lists every migrated database in execution order: main first,
-// then obs, so logs and troubleshooting are predictable.
+// then obs.
 var registries = []*register.Registry{register.Main, register.Obs}
 
 // SelectRegistries returns the registries named by the --database values, in

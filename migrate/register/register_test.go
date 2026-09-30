@@ -21,22 +21,29 @@ package register
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"strings"
 	"testing"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/dal/dao/orm"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// Sample IDs in canonical lowercase form, ordered so that idA < idB < idC as
+// Sample IDs in the readable uppercase form, ordered so that idA < idB < idC as
 // strings, which is how the last sort key compares them.
 const (
-	idA = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
-	idB = "1a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
-	idC = "2a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+	idA = "20260101-1200-A-0001"
+	idB = "20260101-1200-B-0002"
+	idC = "20260101-1200-C-0003"
+)
+
+const (
+	tsDefault  = "20260905160000"
+	tagDefault = "add_x"
 )
 
 // noopUp is a valid up function for registration tests.
@@ -44,217 +51,227 @@ func noopUp(_ context.Context, _ orm.Interface) error {
 	return nil
 }
 
-func TestRegistValidation(t *testing.T) {
+// releasedPkg builds a released migration import path under database.
+func releasedPkg(database, version, timestamp, tag string) string {
+	return fmt.Sprintf("%s%s/%s/%s_%s_%s", constant.MigrationPkgPrefix, database, version, version, timestamp, tag)
+}
+
+// pendingPkg builds a pending migration import path under database.
+func pendingPkg(database, timestamp, tag string) string {
+	return fmt.Sprintf("%s%s/pending/%s_%s", constant.MigrationPkgPrefix, database, timestamp, tag)
+}
+
+func mustRegist(t *testing.T, r *Registry, id, version, timestamp, tag string) {
+	t.Helper()
+	var pkgPath string
+	if IsPending(version) {
+		pkgPath = pendingPkg(r.database, timestamp, tag)
+	} else {
+		pkgPath = releasedPkg(r.database, version, timestamp, tag)
+	}
+	require.NotPanics(t, func() {
+		r.regist(pkgPath, id, version, timestamp, noopUp)
+	})
+}
+
+func TestNewMigrationSurfacesValidatorErrors(t *testing.T) {
+	validPkg := releasedPkg("main", "v1.9.3", tsDefault, tagDefault)
+
+	t.Run("invalid id", func(t *testing.T) {
+		m, err := NewMigration("main", validPkg, "bad-id", "v1.9.3", tsDefault, noopUp)
+		require.Error(t, err)
+		assert.Equal(t, Migration{}, m)
+		assert.Contains(t, err.Error(), "invalid migration id")
+		assert.Contains(t, err.Error(), "id: \"bad-id\"")
+		assert.Contains(t, err.Error(), "version: \"v1.9.3\"")
+		assert.Contains(t, err.Error(), "timestamp: \""+tsDefault+"\"")
+		assert.Contains(t, err.Error(), "package: \""+validPkg+"\"")
+	})
+
+	t.Run("invalid timestamp", func(t *testing.T) {
+		m, err := NewMigration("main", validPkg, idA, "v1.9.3", "2026090516", noopUp)
+		require.Error(t, err)
+		assert.Equal(t, Migration{}, m)
+		assert.Contains(t, err.Error(), "invalid timestamp")
+		assert.Contains(t, err.Error(), "id: \""+idA+"\"")
+		assert.Contains(t, err.Error(), "timestamp: \"2026090516\"")
+		assert.Contains(t, err.Error(), "package: \""+validPkg+"\"")
+	})
+
+	t.Run("invalid package", func(t *testing.T) {
+		badPkg := "main/v1.9.3/v1.9.3_" + tsDefault + "_add_x"
+		m, err := NewMigration("main", badPkg, idA, "v1.9.3", tsDefault, noopUp)
+		require.Error(t, err)
+		assert.Equal(t, Migration{}, m)
+		assert.Contains(t, err.Error(), "is not under")
+		assert.Contains(t, err.Error(), "id: \""+idA+"\"")
+		assert.Contains(t, err.Error(), "package: \""+badPkg+"\"")
+	})
+
+	t.Run("valid builds migration", func(t *testing.T) {
+		m, err := NewMigration("main", validPkg, idA, "v1.9.3", tsDefault, noopUp)
+		require.NoError(t, err)
+		assert.Equal(t, idA, m.ID)
+		assert.Equal(t, "v1.9.3", m.Version)
+		assert.Equal(t, tsDefault, m.Timestamp)
+		assert.Equal(t, "main/v1.9.3/v1.9.3_"+tsDefault+"_"+tagDefault, m.Pkg)
+		assert.NotNil(t, m.Up)
+	})
+}
+
+func TestNewMigrationVersion(t *testing.T) {
+	pkgOf := func(timestamp string) string {
+		return releasedPkg("main", "v1.9.3", timestamp, tagDefault)
+	}
+
 	testCases := []struct {
-		name        string
-		id          string
-		version     string
-		timestamp   string
-		description string
-		up          UpFunc
-		wantPanic   bool
+		name      string
+		version   string
+		timestamp string
+		pkgPath   string
+		wantErr   bool
 	}{
-		{
-			name:        "three segment version",
-			id:          idA,
-			version:     "v1.9.3",
-			timestamp:   "20260905160000",
-			description: "add bk_asset_id",
-			up:          noopUp,
-		},
-		{
-			name:        "numeric fourth segment",
-			id:          idA,
-			version:     "v1.9.3.1",
-			timestamp:   "20260905160000",
-			description: "ziyan backfill",
-			up:          noopUp,
-		},
-		{
-			name:        "labeled fourth segment",
-			id:          idA,
-			version:     "v1.9.3-tenant.1",
-			timestamp:   "20260905160000",
-			description: "tenant only change",
-			up:          noopUp,
-		},
-		{
-			// Accepted at registration, rejected later by the pre-execution scan.
-			name:        "pending placeholder",
-			id:          idA,
-			version:     PendingVersion,
-			timestamp:   "20260905160000",
-			description: "not released yet",
-			up:          noopUp,
-		},
-		{
-			name:        "empty description is allowed",
-			id:          idA,
-			version:     "v1.9.3",
-			timestamp:   "20260905160000",
-			description: "",
-			up:          noopUp,
-		},
-		{
-			name:        "leap day",
-			id:          idA,
-			version:     "v1.9.3",
-			timestamp:   "20240229000000",
-			description: "d",
-			up:          noopUp,
-		},
-		{
-			name:        "last second of a day",
-			id:          idA,
-			version:     "v1.9.3",
-			timestamp:   "20261231235959",
-			description: "d",
-			up:          noopUp,
-		},
-		{
-			name: "invalid version", id: idA, version: "v1.9.3-Tenant.1",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			// v1.0.0- + 55 chars + .1 is 64 characters, the column width.
-			name: "version of exactly 64 characters", id: idA,
-			version: "v1.0.0-" + strings.Repeat("a", 55) + ".1", timestamp: "20260905160000",
-			description: "d", up: noopUp,
-		},
-		{
-			name: "version of 65 characters", id: idA,
-			version: "v1.0.0-" + strings.Repeat("a", 56) + ".1", timestamp: "20260905160000",
-			description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "empty version", id: idA, version: "",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			// Only the uppercase constant is the placeholder.
-			name: "lowercase pending", id: idA, version: "pending",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "timestamp too short", id: idA, version: "v1.9.3",
-			timestamp: "2026090516", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "timestamp too long", id: idA, version: "v1.9.3",
-			timestamp: "202609051600000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "empty timestamp", id: idA, version: "v1.9.3",
-			timestamp: "", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "timestamp with a non digit", id: idA, version: "v1.9.3",
-			timestamp: "2026090516000a", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "timestamp with a space", id: idA, version: "v1.9.3",
-			timestamp: "2026090516000 ", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "all zero timestamp", id: idA, version: "v1.9.3",
-			timestamp: "00000000000000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "month 13", id: idA, version: "v1.9.3",
-			timestamp: "20261301000000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "day 00", id: idA, version: "v1.9.3",
-			timestamp: "20260900000000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "september 31", id: idA, version: "v1.9.3",
-			timestamp: "20260931000000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "february 29 outside a leap year", id: idA, version: "v1.9.3",
-			timestamp: "20260229000000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "hour 24", id: idA, version: "v1.9.3",
-			timestamp: "20260905240000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "minute 60", id: idA, version: "v1.9.3",
-			timestamp: "20260905166000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "second 60", id: idA, version: "v1.9.3",
-			timestamp: "20260905160060", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "id is not a uuid", id: "add-bk-asset-id", version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "empty id", id: "", version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			// MySQL compares the recorded ID case-insensitively, Go does not.
-			// One migration must have exactly one spelling.
-			name: "uppercase uuid", id: strings.ToUpper(idA), version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "uuid without hyphens", id: strings.ReplaceAll(idA, "-", ""), version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "uuid in braces", id: "{" + idA + "}", version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "uuid with a urn prefix", id: "urn:uuid:" + idA, version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "uuid with trailing space", id: idA + " ", version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "uuid with a non hex character", id: "g0000000-0000-4000-8000-000000000000", version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
-		},
-		{
-			name: "nil up", id: idA, version: "v1.9.3",
-			timestamp: "20260905160000", description: "d", up: nil, wantPanic: true,
-		},
+		{name: "three segment version", version: "v1.9.3", timestamp: tsDefault},
+		{name: "numeric fourth segment", version: "v1.9.3.1", timestamp: tsDefault,
+			pkgPath: releasedPkg("main", "v1.9.3.1", tsDefault, tagDefault)},
+		{name: "labeled fourth segment", version: "v1.9.3-tenant.1", timestamp: tsDefault,
+			pkgPath: releasedPkg("main", "v1.9.3-tenant.1", tsDefault, tagDefault)},
+		{name: "pending placeholder", version: constant.MigrationPendingVersion, timestamp: tsDefault,
+			pkgPath: pendingPkg("main", tsDefault, tagDefault)},
+		{name: "version of exactly 64 characters",
+			version: "v1.0.0-" + strings.Repeat("a", 55) + ".1", timestamp: tsDefault,
+			pkgPath: releasedPkg("main", "v1.0.0-"+strings.Repeat("a", 55)+".1", tsDefault, tagDefault)},
+		{name: "invalid version", version: "v1.9.3-Tenant.1", timestamp: tsDefault, wantErr: true},
+		{name: "version of 65 characters",
+			version: "v1.0.0-" + strings.Repeat("a", 56) + ".1", timestamp: tsDefault, wantErr: true},
+		{name: "empty version", version: "", timestamp: tsDefault, wantErr: true},
+		{name: "lowercase pending", version: "pending", timestamp: tsDefault, wantErr: true},
+		{name: "nil up", version: "v1.9.3", timestamp: tsDefault, wantErr: true},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := &Registry{database: "test"}
-			call := func() { r.Regist(tc.id, tc.version, tc.timestamp, tc.description, tc.up) }
-
-			if tc.wantPanic {
-				assert.Panics(t, call)
-				// A rejected migration must not end up half registered.
-				assert.Empty(t, r.All())
+			pkgPath := tc.pkgPath
+			if pkgPath == "" {
+				pkgPath = pkgOf(tc.timestamp)
+			}
+			var up UpFunc = noopUp
+			if tc.name == "nil up" {
+				up = nil
+			}
+			m, err := NewMigration("main", pkgPath, idA, tc.version, tc.timestamp, up)
+			if tc.wantErr {
+				require.Error(t, err)
+				assert.Equal(t, Migration{}, m)
 				return
 			}
-
-			require.NotPanics(t, call)
-			all := r.All()
-			require.Len(t, all, 1)
-			assert.Equal(t, tc.id, all[0].ID)
-			assert.Equal(t, tc.version, all[0].Version)
-			assert.Equal(t, tc.timestamp, all[0].Timestamp)
-			assert.Equal(t, tc.description, all[0].Description)
-			assert.NotNil(t, all[0].Up)
+			require.NoError(t, err)
+			assert.Equal(t, tc.version, m.Version)
+			assert.Equal(t, tc.timestamp, m.Timestamp)
+			assert.NotNil(t, m.Up)
 		})
 	}
+}
+
+type valueMigrator struct{}
+
+func (valueMigrator) Up(_ context.Context, _ orm.Interface) error { return nil }
+
+type ptrMigrator struct{}
+
+func (*ptrMigrator) Up(_ context.Context, _ orm.Interface) error { return nil }
+
+type flagMigrator struct {
+	called *bool
+}
+
+func (f *flagMigrator) Up(_ context.Context, _ orm.Interface) error {
+	*f.called = true
+	return nil
+}
+
+func TestRegistMigrator(t *testing.T) {
+	t.Run("nil migrator panics with database and id", func(t *testing.T) {
+		r := &Registry{database: "main"}
+		defer func() {
+			rec := recover()
+			require.NotNil(t, rec)
+			msg, ok := rec.(string)
+			require.True(t, ok)
+			assert.Contains(t, msg, "main")
+			assert.Contains(t, msg, idA)
+			assert.Contains(t, msg, "migrator is nil")
+			assert.Empty(t, r.All())
+		}()
+		r.Regist(idA, "v1.9.3", tsDefault, nil)
+	})
+
+	t.Run("typed nil pointer panics", func(t *testing.T) {
+		r := &Registry{database: "main"}
+		var m *ptrMigrator
+		defer func() {
+			rec := recover()
+			require.NotNil(t, rec)
+			msg, ok := rec.(string)
+			require.True(t, ok)
+			assert.Contains(t, msg, "nil")
+			assert.Contains(t, msg, idA)
+			assert.Empty(t, r.All())
+		}()
+		r.Regist(idA, "v1.9.3", tsDefault, m)
+	})
+
+	t.Run("value and pointer receivers share package path", func(t *testing.T) {
+		for _, tc := range []struct {
+			name string
+			m    Migrator
+		}{
+			{name: "value", m: valueMigrator{}},
+			{name: "pointer", m: &ptrMigrator{}},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				r := &Registry{database: "main"}
+				defer func() {
+					rec := recover()
+					require.NotNil(t, rec)
+					msg, ok := rec.(string)
+					require.True(t, ok)
+					assert.Contains(t, msg, "hcm/migrate/register")
+					assert.Contains(t, msg, "main")
+					assert.Empty(t, r.All())
+				}()
+				r.Regist(idA, "v1.9.3", tsDefault, tc.m)
+			})
+		}
+	})
+
+	t.Run("success via regist with injected path", func(t *testing.T) {
+		r := &Registry{database: "main"}
+		pkgPath := releasedPkg("main", "v1.9.3", tsDefault, "add_bk_asset_id")
+		require.NotPanics(t, func() {
+			r.regist(pkgPath, idA, "v1.9.3", tsDefault, noopUp)
+		})
+		all := r.All()
+		require.Len(t, all, 1)
+		assert.Equal(t, idA, all[0].ID)
+		assert.Equal(t, "main/v1.9.3/v1.9.3_"+tsDefault+"_add_bk_asset_id", all[0].Pkg)
+	})
+
+	t.Run("Migration.Up invokes Migrator.Up", func(t *testing.T) {
+		r := &Registry{database: "main"}
+		called := false
+		_, up, err := migratorOf(&flagMigrator{called: &called})
+		require.NoError(t, err)
+		r.regist(releasedPkg("main", "v1.9.3", tsDefault, tagDefault), idA, "v1.9.3", tsDefault, up)
+		require.NoError(t, r.All()[0].Up(context.Background(), nil))
+		assert.True(t, called)
+	})
 }
 
 func TestRegistRejectsVersionLongerThanColumn(t *testing.T) {
 	r := &Registry{database: "main"}
 	version := "v1.0.0-" + strings.Repeat("a", 56) + ".1"
-	require.Greater(t, len(version), MaxVersionLen)
+	require.Greater(t, len(version), constant.MigrationVersionMaxLen)
 
 	defer func() {
 		rec := recover()
@@ -266,11 +283,12 @@ func TestRegistRejectsVersionLongerThanColumn(t *testing.T) {
 		assert.Empty(t, r.All())
 	}()
 
-	r.Regist(idA, version, "20260905160000", "d", noopUp)
+	r.regist(releasedPkg("main", version, tsDefault, tagDefault), idA, version, tsDefault, noopUp)
 }
 
 func TestRegistPanicMessageLocatesTheFile(t *testing.T) {
 	r := &Registry{database: "main"}
+	pkgPath := releasedPkg("main", "v1.9.3", tsDefault, "add_bk_asset_id")
 
 	defer func() {
 		rec := recover()
@@ -279,22 +297,20 @@ func TestRegistPanicMessageLocatesTheFile(t *testing.T) {
 		msg, ok := rec.(string)
 		require.True(t, ok, "panic value should be a string, got %T", rec)
 
-		// The panic text is all the reader gets to find the offending file,
-		// so it must carry every field that was registered.
 		assert.Contains(t, msg, "main")
 		assert.Contains(t, msg, idA)
 		assert.Contains(t, msg, "v1.9.3-Tenant.1")
-		assert.Contains(t, msg, "20260905160000")
-		assert.Contains(t, msg, "add bk_asset_id")
+		assert.Contains(t, msg, tsDefault)
+		assert.Contains(t, msg, pkgPath)
 	}()
 
-	r.Regist(idA, "v1.9.3-Tenant.1", "20260905160000", "add bk_asset_id", noopUp)
+	r.regist(pkgPath, idA, "v1.9.3-Tenant.1", tsDefault, noopUp)
 }
 
 func TestMigrationParsedVersion(t *testing.T) {
-	r := &Registry{database: "test"}
-	r.Regist(idA, "v1.9.3.0", "20260905160000", "folded", noopUp)
-	r.Regist(idB, PendingVersion, "20260905160001", "undecided", noopUp)
+	r := &Registry{database: "main"}
+	mustRegist(t, r, idA, "v1.9.3.0", tsDefault, "folded")
+	mustRegist(t, r, idB, constant.MigrationPendingVersion, "20260905160001", "undecided")
 
 	all := r.All()
 	require.Len(t, all, 2)
@@ -304,7 +320,6 @@ func TestMigrationParsedVersion(t *testing.T) {
 	assert.False(t, versioned.IsPending())
 	got, ok := versioned.ParsedVersion()
 	require.True(t, ok)
-	// ".0" folds away, so this compares equal to the three segment version.
 	assert.Equal(t, 0, Compare(got, mustParseVersion(t, "v1.9.3")))
 	assert.Equal(t, "v1.9.3.0", versioned.Version, "Raw version string is kept as registered")
 
@@ -317,11 +332,9 @@ func TestMigrationParsedVersion(t *testing.T) {
 func TestRegistDuplicateID(t *testing.T) {
 	t.Run("same registry same id both register", func(t *testing.T) {
 		r := &Registry{database: "main"}
-		// The normal result of merging one change from another line: same
-		// ID, one copy three-segment and one with a fourth segment.
 		require.NotPanics(t, func() {
-			r.Regist(idA, "v1.9.3", "20260905160000", "external copy", noopUp)
-			r.Regist(idA, "v1.9.3.1", "20260905160000", "internal copy", noopUp)
+			mustRegist(t, r, idA, "v1.9.3", tsDefault, "external_copy")
+			mustRegist(t, r, idA, "v1.9.3.1", tsDefault, "internal_copy")
 		})
 
 		all := r.All()
@@ -334,8 +347,8 @@ func TestRegistDuplicateID(t *testing.T) {
 	t.Run("same id same version both register", func(t *testing.T) {
 		r := &Registry{database: "main"}
 		require.NotPanics(t, func() {
-			r.Regist(idA, "v1.9.3", "20260905160000", "first", noopUp)
-			r.Regist(idA, "v1.9.3", "20260905160000", "second", noopUp)
+			mustRegist(t, r, idA, "v1.9.3", tsDefault, "first")
+			mustRegist(t, r, idA, "v1.9.3", tsDefault, "second")
 		})
 		assert.Len(t, r.All(), 2)
 	})
@@ -344,8 +357,8 @@ func TestRegistDuplicateID(t *testing.T) {
 		main := &Registry{database: "main"}
 		obs := &Registry{database: "obs"}
 		require.NotPanics(t, func() {
-			main.Regist(idA, "v1.9.3", "20260905160000", "main copy", noopUp)
-			obs.Regist(idA, "v1.9.3", "20260905160000", "obs copy", noopUp)
+			mustRegist(t, main, idA, "v1.9.3", tsDefault, "main_copy")
+			mustRegist(t, obs, idA, "v1.9.3", tsDefault, "obs_copy")
 		})
 
 		assert.Len(t, main.All(), 1)
@@ -360,14 +373,13 @@ func TestRegistryInstances(t *testing.T) {
 }
 
 func TestAllReturnsACopy(t *testing.T) {
-	r := &Registry{database: "test"}
-	r.Regist(idA, "v1.9.3", "20260905160000", "first", noopUp)
-	r.Regist(idB, "v1.9.4", "20260905160000", "second", noopUp)
+	r := &Registry{database: "main"}
+	mustRegist(t, r, idA, "v1.9.3", tsDefault, "first")
+	mustRegist(t, r, idB, "v1.9.4", tsDefault, "second")
 
 	got := r.All()
 	require.Len(t, got, 2)
 
-	// Reorder, overwrite and extend the returned slice.
 	got[0], got[1] = got[1], got[0]
 	got[0].Version = "v9.9.9"
 	got = append(got, Migration{ID: idC})
@@ -385,25 +397,19 @@ func TestAllOrder(t *testing.T) {
 		timestamp string
 	}
 
-	// Expected execution order: version first, then timestamp, then ID.
-	// Pending has no version to compare and goes last.
 	want := []entry{
-		{id: idA, version: "v1.9.3", timestamp: "20260905160000"},
-		// Same version, earlier timestamp wins over a smaller ID.
+		{id: idA, version: "v1.9.3", timestamp: tsDefault},
 		{id: idC, version: "v1.9.3.0", timestamp: "20260905160001"},
 		{id: idA, version: "v1.9.3.0", timestamp: "20260905160002"},
-		// Same version and timestamp, the ID decides.
-		{id: idA, version: "v1.9.3.1", timestamp: "20260905160000"},
-		{id: idB, version: "v1.9.3.1", timestamp: "20260905160000"},
-		{id: idC, version: "v1.9.3.1", timestamp: "20260905160000"},
-		{id: idA, version: "v1.9.3-tenant.1", timestamp: "20260905160000"},
+		{id: idA, version: "v1.9.3.1", timestamp: tsDefault},
+		{id: idB, version: "v1.9.3.1", timestamp: tsDefault},
+		{id: idC, version: "v1.9.3.1", timestamp: tsDefault},
+		{id: idA, version: "v1.9.3-tenant.1", timestamp: tsDefault},
 		{id: idA, version: "v1.9.4", timestamp: "20260101000000"},
-		// Numeric, not lexical: v1.9.10 is after v1.9.4.
 		{id: idA, version: "v1.9.10", timestamp: "20260101000000"},
-		// Pending last, and among themselves by timestamp then ID.
-		{id: idA, version: PendingVersion, timestamp: "20260905160000"},
-		{id: idB, version: PendingVersion, timestamp: "20260905160000"},
-		{id: idA, version: PendingVersion, timestamp: "20260905160001"},
+		{id: idA, version: constant.MigrationPendingVersion, timestamp: tsDefault},
+		{id: idB, version: constant.MigrationPendingVersion, timestamp: tsDefault},
+		{id: idA, version: constant.MigrationPendingVersion, timestamp: "20260905160001"},
 	}
 
 	key := func(m Migration) entry {
@@ -425,9 +431,9 @@ func TestAllOrder(t *testing.T) {
 				shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 			})
 
-			r := &Registry{database: "test"}
-			for _, e := range shuffled {
-				r.Regist(e.id, e.version, e.timestamp, "d", noopUp)
+			r := &Registry{database: "main"}
+			for i, e := range shuffled {
+				mustRegist(t, r, e.id, e.version, e.timestamp, fmt.Sprintf("t%d", i))
 			}
 
 			assert.Equal(t, want, keys(r.All()), "seed %d", seed)
@@ -435,9 +441,9 @@ func TestAllOrder(t *testing.T) {
 	})
 
 	t.Run("repeated calls return the same order", func(t *testing.T) {
-		r := &Registry{database: "test"}
-		for _, e := range want {
-			r.Regist(e.id, e.version, e.timestamp, "d", noopUp)
+		r := &Registry{database: "main"}
+		for i, e := range want {
+			mustRegist(t, r, e.id, e.version, e.timestamp, fmt.Sprintf("r%d", i))
 		}
 
 		first := keys(r.All())
@@ -446,10 +452,10 @@ func TestAllOrder(t *testing.T) {
 		}
 	})
 
-	t.Run("description does not affect the order", func(t *testing.T) {
-		r := &Registry{database: "test"}
-		r.Regist(idA, "v1.9.3", "20260905160000", "zzz runs first", noopUp)
-		r.Regist(idB, "v1.9.4", "20260905160000", "aaa runs second", noopUp)
+	t.Run("pkg does not affect the order", func(t *testing.T) {
+		r := &Registry{database: "main"}
+		mustRegist(t, r, idA, "v1.9.3", tsDefault, "zzz_runs_first")
+		mustRegist(t, r, idB, "v1.9.4", tsDefault, "aaa_runs_second")
 
 		all := r.All()
 		require.Len(t, all, 2)
@@ -457,18 +463,18 @@ func TestAllOrder(t *testing.T) {
 	})
 
 	t.Run("identical sort keys keep registration order", func(t *testing.T) {
-		r := &Registry{database: "test"}
-		r.Regist(idA, "v1.9.3", "20260905160000", "registered first", noopUp)
-		r.Regist(idA, "v1.9.3", "20260905160000", "registered second", noopUp)
+		r := &Registry{database: "main"}
+		mustRegist(t, r, idA, "v1.9.3", tsDefault, "registered_first")
+		mustRegist(t, r, idA, "v1.9.3", tsDefault, "registered_second")
 
 		all := r.All()
 		require.Len(t, all, 2)
-		assert.Equal(t, "registered first", all[0].Description)
-		assert.Equal(t, "registered second", all[1].Description)
+		assert.Contains(t, all[0].Pkg, "registered_first")
+		assert.Contains(t, all[1].Pkg, "registered_second")
 	})
 
 	t.Run("empty registry", func(t *testing.T) {
-		r := &Registry{database: "test"}
+		r := &Registry{database: "main"}
 		assert.Empty(t, r.All())
 	})
 }
@@ -477,11 +483,9 @@ func TestAllOrder(t *testing.T) {
 // comparator: whenever Compare says one version is smaller, the migration
 // carrying it comes first, regardless of timestamp and ID.
 func TestAllOrderMatchesComparator(t *testing.T) {
-	r := &Registry{database: "test"}
-	// The later version deliberately gets the earlier timestamp and the
-	// smaller ID, so only the version can produce the expected order.
-	r.Regist(idC, "v1.9.10", "20260101000000", "later version", noopUp)
-	r.Regist(idA, "v1.9.9", "20261231235959", "earlier version", noopUp)
+	r := &Registry{database: "main"}
+	mustRegist(t, r, idC, "v1.9.10", "20260101000000", "later_version")
+	mustRegist(t, r, idA, "v1.9.9", "20261231235959", "earlier_version")
 
 	all := r.All()
 	require.Len(t, all, 2)

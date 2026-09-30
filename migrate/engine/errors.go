@@ -29,9 +29,8 @@ var (
 	// ErrUsage marks argument or config errors, exit code 2.
 	ErrUsage = errors.New("usage error")
 	// ErrPrecondition marks unmet preconditions, exit code 3. Load returns it
-	// for an unknown status or an unparsable version. A missing record table
-	// is a query error from Load and maps to exit code 1; the executor checks
-	// the table before Load and wraps this sentinel.
+	// for an unknown status, an unparsable version, or a success record
+	// without applied_pkg.
 	ErrPrecondition = errors.New("precondition failed")
 	// ErrMissed marks a migration below the database version missed in the
 	// default mode, exit code 4.
