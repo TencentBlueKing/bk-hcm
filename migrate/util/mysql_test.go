@@ -117,7 +117,8 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 
 	runTwiceNoExtraExec(t, counter, func() error {
 		_, err := CreateTableIfNotExists(ctx, o, "probe",
-			"CREATE TABLE `probe` (`id` bigint NOT NULL, `cloud_id` varchar(64) NOT NULL DEFAULT '', PRIMARY KEY (`id`))")
+			"CREATE TABLE `probe` (`id` bigint NOT NULL, `cloud_id` varchar(64) NOT NULL DEFAULT '', "+
+				"PRIMARY KEY (`id`))")
 		return err
 	})
 
@@ -263,7 +264,8 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 		_, err = CreateTableIfNotExists(ctx, o, "child_row",
 			"CREATE TABLE `child_row` (`id` bigint NOT NULL, `parent_id` bigint NULL, PRIMARY KEY (`id`))")
 		require.NoError(t, err)
-		add := "ALTER TABLE `child_row` ADD CONSTRAINT `fk_parent` FOREIGN KEY (`parent_id`) REFERENCES `parent_row` (`id`)"
+		add := "ALTER TABLE `child_row` ADD CONSTRAINT `fk_parent` FOREIGN KEY (`parent_id`) " +
+			"REFERENCES `parent_row` (`id`)"
 		runTwiceNoExtraExec(t, counter, func() error {
 			return AddConstraint(ctx, o, "child_row", "fk_parent", add)
 		})
@@ -282,7 +284,8 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 
 	t.Run("id generator insert", func(t *testing.T) {
 		_, err := CreateTableIfNotExists(ctx, o, "id_generator",
-			"CREATE TABLE `id_generator` (`resource` varchar(64) NOT NULL, `max_id` varchar(64) NOT NULL, PRIMARY KEY (`resource`))")
+			"CREATE TABLE `id_generator` (`resource` varchar(64) NOT NULL, `max_id` varchar(64) NOT NULL, "+
+				"PRIMARY KEY (`resource`))")
 		require.NoError(t, err)
 		require.NoError(t, InsertIDGenerator(ctx, o, "account", "0"))
 		require.NoError(t, InsertIDGenerator(ctx, o, "account", "999"))
@@ -290,7 +293,8 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 			Count int    `db:"cnt"`
 			MaxID string `db:"max_id"`
 		}
-		err = db.Get(&row, "SELECT COUNT(*) AS cnt, MAX(`max_id`) AS max_id FROM `id_generator` WHERE `resource` = ?", "account")
+		err = db.Get(&row, "SELECT COUNT(*) AS cnt, MAX(`max_id`) AS max_id FROM `id_generator` "+
+			"WHERE `resource` = ?", "account")
 		require.NoError(t, err)
 		assert.Equal(t, 1, row.Count)
 		assert.Equal(t, "0", row.MaxID)

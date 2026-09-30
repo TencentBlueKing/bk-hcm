@@ -66,23 +66,26 @@ func TestCreateTableIfNotExists(t *testing.T) {
 		},
 		{
 			// scripts/sql/0001_20230227_2045_init_db.sql
-			name:        "0001_id_generator create when absent",
-			table:       "id_generator",
-			ddl:         "create table if not exists `id_generator` (`resource` varchar(64) not null, `max_id` varchar(64) not null, primary key (`resource`))",
+			name:  "0001_id_generator create when absent",
+			table: "id_generator",
+			ddl: "create table if not exists `id_generator` (`resource` varchar(64) not null, " +
+				"`max_id` varchar(64) not null, primary key (`resource`))",
 			wantExec:    true,
 			wantCreated: true,
 		},
 		{
-			name:       "0001_id_generator skip when present",
-			table:      "id_generator",
-			ddl:        "create table if not exists `id_generator` (`resource` varchar(64) not null, `max_id` varchar(64) not null, primary key (`resource`))",
+			name:  "0001_id_generator skip when present",
+			table: "id_generator",
+			ddl: "create table if not exists `id_generator` (`resource` varchar(64) not null, " +
+				"`max_id` varchar(64) not null, primary key (`resource`))",
 			tableExist: true,
 		},
 		{
 			// scripts/sql/0047_20260130_1800_account_secret.sql
-			name:        "0047_account_secret create when absent",
-			table:       "account_secret",
-			ddl:         "CREATE TABLE IF NOT EXISTS `account_secret` (`id` varchar(64) NOT NULL COMMENT '密钥ID', `account_id` varchar(64) NOT NULL COMMENT '账号ID')",
+			name:  "0047_account_secret create when absent",
+			table: "account_secret",
+			ddl: "CREATE TABLE IF NOT EXISTS `account_secret` (`id` varchar(64) NOT NULL COMMENT '密钥ID', " +
+				"`account_id` varchar(64) NOT NULL COMMENT '账号ID')",
 			wantExec:    true,
 			wantCreated: true,
 		},
@@ -419,7 +422,8 @@ func TestAddColumn(t *testing.T) {
 				After:   "res_class",
 			},
 			wantDDL: "ALTER TABLE `account_bill_adjustment_item` ADD COLUMN `res_sub_class` varchar(64) " +
-				"DEFAULT NULL COMMENT '调账资源子类，gpu_card 下为卡型、gpu_api 下为模型厂商' AFTER `res_class`",
+				"DEFAULT NULL COMMENT '调账资源子类，gpu_card 下为卡型、gpu_api 下为模型厂商' " +
+				"AFTER `res_class`",
 		},
 		{
 			// scripts/sql/0087_20260603_1558_aiagent_session_bk_biz_id.sql
@@ -479,7 +483,8 @@ func TestDropColumn(t *testing.T) {
 		},
 		{
 			// scripts/sql/0025_20240814_1145_bill_account_cloud_id.sql
-			name: "0025_root_account_name", table: "account_bill_summary_main", column: "root_account_name", exist: true,
+			name: "0025_root_account_name", table: "account_bill_summary_main",
+			column: "root_account_name", exist: true,
 			want: "ALTER TABLE `account_bill_summary_main` DROP COLUMN `root_account_name`",
 		},
 	}
@@ -724,14 +729,16 @@ func TestAddConstraint(t *testing.T) {
 			name:       "add when absent",
 			table:      "cvm",
 			constraint: "fk_account",
-			ddl:        "ALTER TABLE `cvm` ADD CONSTRAINT `fk_account` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)",
+			ddl: "ALTER TABLE `cvm` ADD CONSTRAINT `fk_account` FOREIGN KEY (`account_id`) " +
+				"REFERENCES `account` (`id`)",
 		},
 		{
 			name:       "skip when present",
 			table:      "cvm",
 			constraint: "fk_account",
-			ddl:        "ALTER TABLE `cvm` ADD CONSTRAINT `fk_account` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)",
-			exist:      true,
+			ddl: "ALTER TABLE `cvm` ADD CONSTRAINT `fk_account` FOREIGN KEY (`account_id`) " +
+				"REFERENCES `account` (`id`)",
+			exist: true,
 		},
 		{
 			name:       "empty ddl",
@@ -753,7 +760,8 @@ func TestAddConstraint(t *testing.T) {
 			name:       "0033_idx_uk_cloud_id_vendor_region",
 			table:      "load_balancer",
 			constraint: "idx_uk_cloud_id_vendor_region",
-			ddl:        "alter table load_balancer add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region)",
+			ddl: "alter table load_balancer add constraint idx_uk_cloud_id_vendor_region " +
+				"unique (cloud_id, vendor, region)",
 		},
 	}
 

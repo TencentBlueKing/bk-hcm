@@ -59,7 +59,8 @@ func escapeLiteral(s string) string {
 	return replacer.Replace(s)
 }
 
-// ColumnDefault is the DEFAULT clause emitted by AddColumn. Pick the constructor from the SQL text. Do not collapse both forms into one string.
+// ColumnDefault is the DEFAULT clause emitted by AddColumn. Pick the
+// constructor from the SQL text. Do not collapse both forms into one string.
 //
 //	SQL has no DEFAULT                 leave Default nil; do not pass an empty string
 //	DEFAULT ''                         StringDefault("")
@@ -70,7 +71,8 @@ func escapeLiteral(s string) string {
 //	DEFAULT CURRENT_TIMESTAMP          ExprDefault("CURRENT_TIMESTAMP")
 //
 // StringDefault("NULL") emits the string literal DEFAULT 'NULL', not the NULL keyword.
-// Do not add quotes inside ExprDefault: ExprDefault("''") and ExprDefault("'itsm'") are wrong.
+// Do not add quotes inside ExprDefault: an expr that carries its own single quotes, such as
+// an empty quoted string or 'itsm', is wrong.
 // Construct values only with StringDefault or ExprDefault, never a ColumnDefault literal.
 type ColumnDefault struct {
 	quoted bool
@@ -88,7 +90,8 @@ func StringDefault(v string) *ColumnDefault {
 	return &ColumnDefault{quoted: true, value: v}
 }
 
-// ExprDefault returns an unquoted DEFAULT. expr must match the text after DEFAULT in the SQL and must be a constant in the migration.
+// ExprDefault returns an unquoted DEFAULT. expr must match the text after
+// DEFAULT in the SQL and must be a constant in the migration.
 //
 //	DEFAULT NULL                  -> ExprDefault("NULL")
 //	DEFAULT 0                     -> ExprDefault("0")
@@ -96,7 +99,7 @@ func StringDefault(v string) *ColumnDefault {
 //	DEFAULT false                 -> ExprDefault("false")
 //	DEFAULT CURRENT_TIMESTAMP     -> ExprDefault("CURRENT_TIMESTAMP")
 //
-// An empty expr is rejected. Use StringDefault for string literals, including DEFAULT ''.
+// An empty expr is rejected. Use StringDefault for string literals, including an empty-string DEFAULT.
 func ExprDefault(expr string) *ColumnDefault {
 	return &ColumnDefault{value: expr}
 }
@@ -195,7 +198,7 @@ type AddColumnOpt struct {
 // AddColumn adds the column when it does not exist yet. The statement is built from opt; do not pass a full ALTER.
 //
 // Fill Default from the SQL text; see ColumnDefault. Leave it nil when the SQL has no DEFAULT.
-// varchar DEFAULT '' uses StringDefault(""). json DEFAULT NULL uses ExprDefault("NULL").
+// varchar with an empty-string DEFAULT uses StringDefault(""). json DEFAULT NULL uses ExprDefault("NULL").
 // bigint NOT NULL DEFAULT 0 uses NotNull: true and ExprDefault("0").
 func AddColumn(ctx context.Context, o orm.Interface, opt AddColumnOpt) error {
 	if err := validateIdent("table", opt.Table); err != nil {
