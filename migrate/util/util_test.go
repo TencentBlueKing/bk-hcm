@@ -345,7 +345,6 @@ func TestAddColumn(t *testing.T) {
 			wantDDL: "ALTER TABLE `account` ADD COLUMN `security_managers` json DEFAULT NULL COMMENT '安全负责人'",
 		},
 		{
-			// scripts/sql/0062_20251205_1445_tcloud_ziyan_region_zone.sql
 			name: "0062_zone_source",
 			opt: AddColumnOpt{
 				Table: "zone", Column: "source", Type: "varchar(64)", NotNull: true,
@@ -375,7 +374,6 @@ func TestAddColumn(t *testing.T) {
 		},
 		{
 			// scripts/sql/0070_20260121_1600_add_exempted_returned_core.sql
-			// same shape as scripts/obssql/0003_20260121_1600_add_exempted_returned_core.sql
 			name: "0070_exempted_returned_core",
 			opt: AddColumnOpt{
 				Table: "rolling_fine_detail", Column: "exempted_returned_core", Type: "bigint unsigned",
@@ -434,15 +432,6 @@ func TestAddColumn(t *testing.T) {
 			},
 			wantDDL: "ALTER TABLE `aiagent_session` ADD COLUMN `bk_biz_id` BIGINT NOT NULL DEFAULT -1 " +
 				"COMMENT '会话所属业务；-1=未分配' AFTER `user`",
-		},
-		{
-			// scripts/obssql/0004_add_city_res_class_fields.sql
-			name: "obssql_0004_CityId",
-			opt: AddColumnOpt{
-				Table: "obs_aws_bills", Column: "CityId", Type: "int(11)", NotNull: true,
-				Default: ExprDefault("0"),
-			},
-			wantDDL: "ALTER TABLE `obs_aws_bills` ADD COLUMN `CityId` int(11) NOT NULL DEFAULT 0",
 		},
 	}
 

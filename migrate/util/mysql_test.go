@@ -75,7 +75,6 @@ func TestValidateTestDatabase(t *testing.T) {
 		{name: "generated name", dbName: "hcm_migrate_util_test_1_1"},
 		{name: "app database", dbName: "hcm", wantErr: true},
 		{name: "app database upper", dbName: "HCM", wantErr: true},
-		{name: "obs database", dbName: "hcm_obs", wantErr: true},
 		{name: "mysql system", dbName: "mysql", wantErr: true},
 		{name: "information_schema", dbName: "information_schema", wantErr: true},
 		{name: "empty", dbName: "", wantErr: true},
@@ -367,7 +366,7 @@ func runTwiceNoExtraExec(t *testing.T, counter *execCounter, fn func() error) {
 func validateTestDatabase(name string) error {
 	lower := strings.ToLower(name)
 	switch lower {
-	case "hcm", "hcm_obs", "mysql", "information_schema", "performance_schema", "sys":
+	case "hcm", "mysql", "information_schema", "performance_schema", "sys":
 		return fmt.Errorf("refusing application or system database %q", name)
 	}
 	if !testDatabaseRe.MatchString(name) {
