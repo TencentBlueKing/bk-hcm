@@ -20,18 +20,18 @@
 
 #### Scenario: 默认作用于全部已启用的库
 
-- **WHEN** 执行 `up` 且未指定 `--database`，配置里启用了主库与 OBS 库
-- **THEN** 主库与 OBS 库依次处理
+- **WHEN** 执行 `up` 且未指定 `--database`，配置里启用了主库与 aux 库
+- **THEN** 主库与 aux 库依次处理
 
 #### Scenario: 只执行其中两个库
 
-- **WHEN** 配置里启用了三个库，执行 `up --database main,obs`
-- **THEN** 只处理主库与 OBS 库，第三个库不被连接
+- **WHEN** 配置里启用了三个库，执行 `up --database main,aux`
+- **THEN** 只处理主库与 aux 库，第三个库不被连接
 
 #### Scenario: 重复传参与逗号等价
 
-- **WHEN** 执行 `up -d main -d obs`
-- **THEN** 处理的库与 `up --database main,obs` 相同
+- **WHEN** 执行 `up -d main -d aux`
+- **THEN** 处理的库与 `up --database main,aux` 相同
 
 #### Scenario: 非法库名报错
 
@@ -83,8 +83,8 @@
 
 #### Scenario: 混合场景按库区分
 
-- **WHEN** 主库为存量库、OBS 为新库，执行 `init --mode=adopt --baseline main=v1.9.2`
-- **THEN** 主库建表并垫到 `v1.9.2`，OBS 库只建空表
+- **WHEN** 主库为存量库、aux 为新库，执行 `init --mode=adopt --baseline main=v1.9.2`
+- **THEN** 主库建表并垫到 `v1.9.2`，aux 库只建空表
 
 #### Scenario: init 支持预演
 

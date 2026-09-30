@@ -6,7 +6,7 @@
 
 参考实现是 bk-cmdb 的 `admin_server/upgrader`（仓库内 `migrationV2/cmdb-src`）。它每一层单看都很弱——无锁、无事务、无逐条记录、无重试——组合起来五年没出大事故，前提是 MongoDB 的宽容语义、慢发布节奏、migration 单源头。HCM 三条都不满足：MySQL 的加列 / 加索引依赖倒挂是硬报错，发布节奏快，且内外部双源头合入。所以本设计在两处加厚（逐条记录、明确事务策略），其余分层直接借鉴。
 
-权威输入是本地记忆 `.cursor/docs/iwiki/4039435213-hcm-migration/understanding.md`（iWiki 文档 4039435213 的图文理解，含 2026-09-22 补入的特性分支 / 归档 / 默认与补跑，以及同日的执行层纠正）。
+权威输入是 HCM Migration 技术方案，含特性分支 / 归档 / 默认与补跑，以及执行层的纠正。
 
 约束：
 
@@ -22,7 +22,7 @@
 - 定义版本号的解析与**全序**比较，使执行顺序在任意文件组合下确定且可复现。
 - 定义注册表的 `init()` 期强校验，把「版本写错、ID 重复、未定版占位」从运行期错误提前成启动期失败。
 - 定义 `hcm_migration_record` 的结构、建表时机、写入时机，以及「库当前版本」的计算方式。
-- 定义主库与 OBS 两份连接的构造、缺省跳过、失败隔离。
+- 定义库连接的构造、缺省跳过、失败隔离。
 - 定义逐条执行判定（默认 / 补跑、版本上限、断点续跑、`--plan`）与每迁移的事务策略。
 
 **Non-Goals:**
@@ -45,7 +45,7 @@
 | 参数                     | 类型                | 默认  | 说明                                                                                                                     |
 | ---------------------- | ----------------- | --- | ---------------------------------------------------------------------------------------------------------------------- |
 | `--config-file` / `-c` | string            | 无   | 配置文件路径，沿用 `pkg/cc` 的加载方式                                                                                               |
-| `--database` / `-d`    | 字符串列表，可重复，也可用逗号分隔 | 不传  | 选择本次作用的库。不传表示配置里已启用的全部库。传入名字的子集，例如 `--database main,obs` 或 `-d main -d obs`。名字必须对应已有的 Registry，未知名字退出码 2。没有 `all` 这个取值 |
+| `--database` / `-d`    | 字符串列表，可重复，也可用逗号分隔 | 不传  | 选择本次作用的库。不传表示配置里已启用的全部库。传入名字的子集，例如 `--database main,aux` 或 `-d main -d aux`。名字必须对应已有的 Registry，未知名字退出码 2。没有 `all` 这个取值 |
 
 
 `up`：执行迁移。
@@ -64,7 +64,7 @@
 | 参数           | 类型          | 默认      | 说明                                                                       |
 | ------------ | ----------- | ------- | ------------------------------------------------------------------------ |
 | `--mode`     | string      | 无（必填）   | `empty`（空库：只建表）或 `adopt`（存量库：建表 + 插入执行记录）                                |
-| `--baseline` | `库名=版本`，可重复 | 无       | `--mode=adopt` 时指定各库基线，例如 `--baseline main=v1.9.3 --baseline obs=v1.9.3` |
+| `--baseline` | `库名=版本`，可重复 | 无       | `--mode=adopt` 时指定各库基线，例如 `--baseline main=v1.9.3 --baseline aux=v1.9.3` |
 | `--plan`     | bool        | `false` | 只打印将建的表和将标记的 ID、版本                                                       |
 
 
@@ -107,11 +107,11 @@ stdout 只打人要看的判定结果与汇总表，便于 `kubectl logs` 直接
 
 `--mode` 必填无默认。这一步是人对「这个环境是空库还是存量库」的确认，不给默认值就是不让它被猜。
 
-`--baseline` 按库给：`--baseline main=v1.9.3 --baseline obs=v1.9.3`。两个库的 schema 进度可以不同，所以基线是每库一个值，不是全局一个。`--mode=adopt` 却一个 `--baseline` 都没给时以退出码 2 失败，否则等于悄悄退化成 `empty`。被选中的库里没有对应基线条目的，按 `empty` 处理（建空表），这样「主库是存量、OBS 是新库」这种混合情况不用跑两次命令。
+`--baseline` 按库给：`--baseline main=v1.9.3 --baseline aux=v1.9.3`。两个库的 schema 进度可以不同，所以基线是每库一个值，不是全局一个。`--mode=adopt` 却一个 `--baseline` 都没给时以退出码 2 失败，否则等于悄悄退化成 `empty`。被选中的库里没有对应基线条目的，按 `empty` 处理（建空表），这样「主库是存量、aux 是新库」这种混合情况不用跑两次命令。
 
 `**up` 不自举建表**：记录表或审计表任一不存在时 `up` 以退出码 3 失败，提示先跑 `init`（「已初始化」= 两表都在）。这条比自动建表重要得多。设想一个还没接入框架的存量库，有人单独跑了 `up`：若 `up` 自动建出一张空账本，库当前版本就是空，于是全部历史迁移都判定为「高于库当前」，在一个有数据的生产库上从头重放一遍。让 `up` 在缺表时直接失败，这条路就被堵死了。
 
-曾考虑取消 `init`、让 `up` 自举并把基线折进 `up`（类似 Flyway 的 `baselineOnMigrate`，只在「无记录表且库里已有业务表」时盖章）。否决，两个原因：一是「库里已有业务表」判不准——迁移本身也建表，半截状态、空 OBS 库都会让这个启发式出错，而它守的偏偏是全系统唯一能静默跳过的操作；二是划定基线是人的决策，折进 `up` 等于绕过人工确认隐式执行。`init --mode` 不够优雅，但判据可靠、决策显式。
+曾考虑取消 `init`、让 `up` 自举并把基线折进 `up`（类似 Flyway 的 `baselineOnMigrate`，只在「无记录表且库里已有业务表」时盖章）。否决，两个原因：一是「库里已有业务表」判不准——迁移本身也建表，半截状态、空的新库都会让这个启发式出错，而它守的偏偏是全系统唯一能静默跳过的操作；二是划定基线是人的决策，折进 `up` 等于绕过人工确认隐式执行。`init --mode` 不够优雅，但判据可靠、决策显式。
 
 二进制只打进迁移镜像，**不进业务 Pod**。业务进程里没有这份程序。Helm hook Job 每次部署跑 `init && up`，`--mode` 与 `--baseline` 由该环境的 values 提供。存量环境第一次部署时 `init` 建表并垫好库版本，之后每次部署 `init` 都是 no-op，values 里那几个参数留着也无害。非 Kubernetes 的二进制部署同理，部署脚本里就是 `init && up` 这条链。
 
@@ -137,7 +137,7 @@ migrate/
 │   ├── check-migrate.sh       出包门禁：目录与空白 import 一致；依赖门禁（禁 import engine|schema|cli）也在此
 │   └── archive-feat-migrate.sh 特性分支归档：-label 版本收成主线三位版本
 ├── register/
-│   ├── register.go            Migration / Registry / Regist / All；Main 与 Obs 两个实例
+│   ├── register.go            Migration / Registry / Regist / All；Main 实例（主库）
 │   ├── version.go             Version / Suffix / Parse / Compare / IsPending
 │   ├── register_test.go
 │   └── version_test.go
@@ -147,14 +147,13 @@ migrate/
 │   ├── auditstore.go          NewAudit().Begin / End
 │   └── *_test.go
 ├── engine/
-│   ├── datasource.go          cc 配置 → 主库与 OBS 的 dao.Set；缺省跳过
+│   ├── datasource.go          cc 配置 → 主库的 dao.Set；缺省跳过
 │   ├── plan.go                Prepare / BuildPlan / CollectPlanErrors；Plan 含 Records
 │   ├── executor.go            Execute / NewBlockedResult
 │   └── *_test.go
 └── migrations/
     ├── imports.go             空白 import，把版本包拉进编译
-    ├── main/                  → register.Main
-    └── obs/                   → register.Obs
+    └── main/                  → register.Main
 ```
 
 退出码哨兵（`ErrUsage` / `ErrPrecondition` / `ErrMissed` / `ErrRegistry` / `ErrIDReuse`）与 `ExitCode` 映射放在 `pkg/migrate/errors.go`，不在 `engine` 内。
@@ -179,7 +178,7 @@ Migration ID 只收小写标准格式的 UUID，不收大写、不带连字符�
 
 ```text
 v1.9.3_20260905160000_add_bk_asset_id.go
-v1.9.3.1_20260904090000_ziyan_backfill.go
+v1.9.3.1_20260904090000_example_backfill.go
 v1.9.3-tenant.1_20260905160000_foo.go
 ```
 
@@ -234,7 +233,7 @@ v1.9.10
 | `v1.9.3` 与 `v1.9.3.0`                                   | 同一版本。两者都在时，顺序看时间戳，再看 Migration ID                           |
 | `v1.9.9` 与 `v1.9.10`                                    | 按数值，`v1.9.9 < v1.9.10`                                      |
 | `v1.9.3.2` 与 `v1.9.3-tenant.1`                          | 数字第四段整体先于带标签第四段                                             |
-| `v1.9.3-tenant.1` 与 `v1.9.3-woa.1`                      | 比较器按标签字典序给出先后；注册表里同时出现这两个标签时，执行前校验以退出码 5 失败，不会按这个顺序执行 |
+| `v1.9.3-tenant.1` 与 `v1.9.3-zone.1`                      | 比较器按标签字典序给出先后；注册表里同时出现这两个标签时，执行前校验以退出码 5 失败，不会按这个顺序执行 |
 | `1.9.3` / `v1.9` / `v1.9.3.1.2`                         | 非法                                                          |
 | `v1.9.3.tenant.1` / `v1.9.3-Tenant.1` / `v1.9.3-tenant` | 非法                                                          |
 | `v01.9.3`                                               | 非法（前导零）                                                     |
@@ -249,7 +248,7 @@ v1.9.10
 
 ### D5 记录表
 
-表名 `hcm_migration_record`，**每库一份**，建在对应库内。不是在主库开一张总表加 DB 字段区分——OBS 库被重建后，主库账本仍显示已执行，缺表就发现不了。
+表名 `hcm_migration_record`，**每库一份**，建在对应库内。不是在主库开一张总表加 DB 字段区分——另一个库被重建后，主库账本仍显示已执行，缺表就发现不了。
 
 ```sql
 CREATE TABLE `hcm_migration_record` (
@@ -296,14 +295,14 @@ CREATE TABLE `hcm_migration_record` (
 
 配置沿用 dataservice 的那份 yaml。Job 与 dataservice Deployment 共用 ConfigMap，挂成一个文件，`--config-file` 指向这个路径。迁移镜像里没有 data-service，也不 import `cmd/data-service`，不访问它的进程。
 
-读配置只有一条路径：`cc.InitService(cc.DataServiceName)`，然后 `cc.LoadSettings` 用 `ReadFile` 读这个文件并 `yaml.Unmarshal`。`loadFromFile` 按进程里的 `ServiceName()` 决定反序列化成哪种结构；只有先登记成 `data-service`，文件才会进 `*DataServiceSetting`。`cc.DataService()` 不读文件，它只是把已经载入内存的配置做类型断言。断言成功后取 `Database`（`cc.DataBase`）和 `OBSDatabase`（`*cc.DataBase`，yaml 里没有这一段就是 `nil`），各调一次 `dao.NewDaoSet`。
+读配置只有一条路径：`cc.InitService(cc.DataServiceName)`，然后 `cc.LoadSettings` 用 `ReadFile` 读这个文件并 `yaml.Unmarshal`。`loadFromFile` 按进程里的 `ServiceName()` 决定反序列化成哪种结构；只有先登记成 `data-service`，文件才会进 `*DataServiceSetting`。`cc.DataService()` 不读文件，它只是把已经载入内存的配置做类型断言。断言成功后取 `Database`（`cc.DataBase`），调一次 `dao.NewDaoSet`。
 
-`LoadSettings` 会跑 `DataServiceSetting.Validate()`。除了两个库，它还检查 `network`、`service`、`crypto`、`cmdb`。所以挂进去的必须是 dataservice 的完整配置文件，不能是只含数据库段的片段。这些检查是 `pkg/cc` 里的字段校验，随迁移二进制编译进来，不是 data-service 的启动逻辑。
+`LoadSettings` 会跑 `DataServiceSetting.Validate()`。除了库配置，它还检查 `network`、`service`、`crypto`、`cmdb`。所以挂进去的必须是 dataservice 的完整配置文件，不能是只含数据库段的片段。这些检查是 `pkg/cc` 里的字段校验，随迁移二进制编译进来，不是 data-service 的启动逻辑。
 
 - 迁移函数拿到的是 `dao.Set` 的 `GetOrm()` 裸 `Do()`，不挂 `ModifySQLOpts`。租户 SQL 改写会把语句重写到别的表上，对 DDL 是灾难。
-- `OBSDatabase` 为 `nil`（外部版）时整段跳过，打一条显眼的 Warn 日志说明「未配置 OBS 库，跳过」，退出码仍为 0。不能静默跳过。
-- 顺序固定先主库、后 OBS。两库之间无顺序依赖，固定顺序只为让日志和排障可预期。
-- 失败隔离：主库失败则直接退出，不再连 OBS；OBS 失败则主库已写的 success 记录保留，**不回滚**。跨库没有事务，也不做补偿。任一库失败整个进程非 0 退出，Job 失败，阻断发布。
+- 某个库没有配置（配置对象为 `nil`）时整段跳过该库，打一条显眼的 Warn 日志说明「未配置，跳过」，退出码仍为 0。不能静默跳过。当前只注册主库，主库配置是必填项。
+- 顺序固定先主库、后其他库。库之间无顺序依赖，固定顺序只为让日志和排障可预期。
+- 失败隔离：主库失败则直接退出，不再连其他库；其他库失败则主库已写的 success 记录保留，**不回滚**。跨库没有事务，也不做补偿。任一库失败整个进程非 0 退出，Job 失败，阻断发布。
 - 以后加库：多一个配置对象 + 一个 `Registry` 实例 + 一棵目录，执行器按「有连接才跑」循环，不需要改判定逻辑。
 
 DB 就绪：靠 Job 的 initContainer（busybox `nc`）等端口通，程序自身只做一次连接探测，失败就带明确错误退出。不在进程内加重试轮询——重试会把「配置写错」和「DB 还没起来」两种错误都拖成超时，反而更难排查，而部署顺序本来就是部署层该管的事。
@@ -350,7 +349,7 @@ for 每个已排序、且不超过版本上限的 m:
 9. **复用 dataservice 的 `cc` 配置段**，不新增 migrate 专属配置段。
 10. **新增退出码 4 / 5 / 6** 区分漏执行、注册表内容问题与疑似 ID 复用（详见文首权威性说明与 `adjust-migration-specs`），使出包工具和 `--plan` 能前置判断。
 11. **预演参数叫 `--plan`**，方案文档里的 `dry-run` 指的是同一件事。
-12. `**--database` 是库名列表**，不传表示已启用的全部库，不设 `all` / `main` / `obs` 三选一。库数量增加时不用改参数形态。
+12. `**--database` 是库名列表**，不传表示已启用的全部库，不设 `all` / `main` 二选一。库数量增加时不用改参数形态。
 13. **拒绝版本号前导零**。数字第四段 0 收成无第四段，所以 `v1.9.3` 与 `v1.9.3.0` 等同；前导零仍然拒绝。
 14. **文件名里版本和时间戳用下划线分隔**，不用点。版本号自身已有点号，且 `.0` 与三位等同，点号切不开。
 15. **Migration ID 限定为小写标准 UUID**。方案只说「合法 UUID」。理由见 D3：多种写法会和记录表的比对打架。
@@ -360,7 +359,7 @@ for 每个已排序、且不超过版本上限的 m:
 19. **基线选择跳过 `PENDING`，并按 migration ID 去重，保留执行顺序里的第一次出现**。同一个 ID 插两行会被 `migration_id` 唯一键拒绝，整批插入失败。高于基线的那一份不占这个名额，后面一份不高于基线的仍会写入。
 20. **记录表里未知的 `status` 是前置条件失败（退出码 3）**。和无法解析的版本同一个理由：这张表是别的东西写的。`running` / `success` / `failed` 以外的值，包括空串和大小写不同的写法，一律拒绝。
 21. **相等版本的库当前版本取字典序较小的原文**。例如同时有 `v1.9.3` 和 `v1.9.3.0` 时，`CurrentVersion` 固定返回原文 `v1.9.3`，结果不依赖 map 的遍历顺序。只有 `.0` 那一条时，原文保持 `v1.9.3.0`，不会被改写成三位。
-22. **`--database` 的空元素、重复和大小写**。空元素（如 `main,`、单独的空串或纯空白）是退出码 2；重复名字合并成一个；输出顺序始终先 main 后 obs，与输入顺序无关；名字大小写敏感，`MAIN` 不是 `main`。
+22. **`--database` 的空元素、重复和大小写**。空元素（如 `main,`、单独的空串或纯空白）是退出码 2；重复名字合并成一个；输出顺序始终与注册顺序一致（先 main），与输入顺序无关；名字大小写敏感，`MAIN` 不是 `main`。
 23. **退出码不在 engine 里映射**。项目里没有进程退出码框架，`errf` 是接口业务错误码（错误文本是 JSON、`NewFromErr` 只留 message、断链），不适用。哨兵错误 `ErrUsage` / `ErrPrecondition` / `ErrMissed` / `ErrRegistry` / `ErrIDReuse` 与 `ExitCode` 放在 `pkg/migrate/errors.go`，产生处用 `%w` 包装。CLI（`migrate/cli`）经 `errors.Is` 映射到退出码 2/3/4/5/6，链上没有哨兵错误时为 1，nil 为 0。
 24. **success / failed 写入把影响行数 0 当成错误（记录不存在）**。`MarkRunning` 总是先执行，而且状态一定会变，所以更新到 0 行说明该走的那一行不在。
 25. **`Load` 对每一行校验 `version`，不限状态**。未知 `status` 仍先拒绝。通过之后，`running` / `success` / `failed` 的 `version` 都要能解析，失败同样是前置条件错误（退出码 3），并且不返回已经读到的记录。`CurrentVersion` 的行为不变：只在 `success` 行里取最大，解析失败仍拒绝，用来挡住没有经过 `Load` 拼出来的记录。
@@ -379,6 +378,6 @@ for 每个已排序、且不超过版本上限的 m:
 - 归档进来的老文件打在已经演进过的库上 → 加列靠幂等能过，但删列、按旧列回填会中途失败 → 缓解：Job 失败即阻断发布、业务不启动，人工处理；已执行的变更无法逆转。
 - 基线定错，或空库环境误配成 `--mode=adopt` → 该跑的迁移被标成 success 永不执行，得到残缺的库 → 缓解：`--mode` 必填、`adopt` 缺 `--baseline` 直接失败、支持 `--plan` 先看清单、接入说明里写明如何选定基线。这是首次安装时的人为配置错误，`init` 的表存在即 no-op 保证它不会随后续每次部署反复发生。
 - `message` 截断吞掉根因 → 缓解：完整错误进 `pkg/logs`，表里只留摘要。
-- 复用 dataservice 配置文件意味着 migrate 跟着它的结构走 → `Validate()` 还检查 `network`、`service`、`crypto`、`cmdb`，dataservice 配置重构会连带影响加载 → 缓解：运行时只用 `Database` / `OBSDatabase`；不 import `cmd/data-service`。
+- 复用 dataservice 配置文件意味着 migrate 跟着它的结构走 → `Validate()` 还检查 `network`、`service`、`crypto`、`cmdb`，dataservice 配置重构会连带影响加载 → 缓解：运行时只用 `Database`；不 import `cmd/data-service`。
 - adopt 的基线本身不落库 → 库当前版本只取已写入的 success 记录的最大值。注册表里没有不超过基线的迁移时一行都不写，库当前为空，与 empty 相同；有记录时最大值也可能低于基线。之后带进来版本不超过基线、却高于这些记录的文件，会被默认模式当成新迁移执行，而不是判为漏执行 → 缓解：当前接受此风险（首次接入时基线以内的历史变更应已作为迁移文件注册，此时最大记录贴近基线）；`init --plan` 会打印将标记的 ID 与版本，从中能看出接入后的库当前版本是多少、离基线有多远。
 

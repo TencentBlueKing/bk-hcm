@@ -14,7 +14,7 @@
 - [x] 2.2 实现 `Registry` 与 `Regist`：校验 UUID（小写标准写法）、版本（合法或常量 `PENDING`）、14 位时间戳、`up` 非空
 - [x] 2.3 同库相同 Migration ID 允许注册，不在启动期拒绝
 - [x] 2.4 校验失败时在 `init()` 阶段 panic 终止进程，panic 文本带上全部五个注册字段以定位到具体迁移文件
-- [x] 2.5 暴露 `Main` 与 `Obs` 两个实例；实现返回排序后副本的 `All`，`PENDING` 排在最后
+- [x] 2.5 暴露 `Main` 实例；实现返回排序后副本的 `All`，`PENDING` 排在最后
 - [x] 2.6 写 `register_test.go`：合法注册、各类非法参数拒绝、同库相同 ID 两条都注册成功、不同库相同 ID 注册成功、`All` 返回副本
 - [x] 2.7 写测试断言 `All` 的顺序与第 1 组比较器一致（版本 → 时间戳 → ID）
 
@@ -32,12 +32,12 @@
 
 ## 4. 数据库连接管理
 
-- [x] 4.1 启动时 `cc.InitService(cc.DataServiceName)`，再 `cc.LoadSettings` 按 `--config-file` 读文件。从载入结果取 `Database` 与 `OBSDatabase`，各调一次 `dao.NewDaoSet`。不 import `cmd/data-service`
+- [x] 4.1 启动时 `cc.InitService(cc.DataServiceName)`，再 `cc.LoadSettings` 按 `--config-file` 读文件。从载入结果取 `Database`，调一次 `dao.NewDaoSet`。不 import `cmd/data-service`
 - [x] 4.2 取 `GetOrm()` 的裸 `Do()` 交给迁移，确认未挂 `ModifySQLOpts`
-- [x] 4.3 实现 `OBSDatabase` 为 `nil` 时整段跳过并打 Warn 日志，退出码保持 0
+- [x] 4.3 实现库配置为 `nil` 时整段跳过并打 Warn 日志，退出码保持 0
 - [x] 4.4 实现 `--database` 库名列表（可重复、可逗号分隔），不传表示已启用的全部库，未知名字映射为退出码 2
 - [x] 4.5 实现单次连接探测，失败返回可定位的错误，不做进程内重试轮询
-- [x] 4.6 写测试覆盖库选择与 OBS 缺省跳过的分支判断
+- [x] 4.6 写测试覆盖库选择与缺省跳过的分支判断
 
 ## 5. 执行器
 
@@ -47,7 +47,7 @@
 - [x] 5.3 实现逐条判定循环：已 success 跳过、默认模式漏执行失败、补跑模式一律执行，`running` 与 `failed` 同等视为无成功记录
 - [x] 5.4 实现执行单条迁移：写 `running` → 调 `up()` → 写 `success` 或 `failed`，记录写入在迁移事务之外，且不包裹外层事务
 - [x] 5.5 实现失败即中断：该库后续迁移不执行，错误向上返回
-- [x] 5.6 实现按库循环：固定先主库后 OBS，主库失败不再连 OBS，OBS 失败不回滚主库
+- [x] 5.6 实现按库循环：固定先主库后其他库，主库失败不再连其他库，其他库失败不回滚主库
 - [x] 5.7 实现 `--plan`：打印 `EXECUTE` / `SKIP-SUCCESS` / `ABOVE-MAX-VERSION` / `MISSING`，不建表、不写记录、不调 `up()`
 - [x] 5.8 写判定循环单元测试：表驱动覆盖判定表全部分支（已成功、超上限、默认模式高于/低于库当前、补跑模式、running、failed）——`TestBuildPlan`
 - [x] 5.9 写测试覆盖断点续跑：模拟第三条失败后重跑，断言前两条被跳过——`TestExecute`（失败即停）+ `TestLocalMySQLExecutor`（failing up / rerun resumes）+ `TestBuildPlan`（success 跳过）
@@ -73,7 +73,7 @@
 - [x] 7.3 写建表集成测试：`init --mode=empty` 建空表、重复 `init` 无副作用、`up` 在缺表时失败且不建表——`TestLocalMySQLEngine` / `TestLocalMySQLExecutor` / `TestLocalMySQLCLI`（`status` 在未初始化库上退出码 3 且不建表）
 - [x] 7.4 写记录读写集成测试：`running` → `success`、`running` → `failed`、重跑回到 `running`、唯一键保证一条迁移只有一行——`TestLocalMySQLEngine`（mark running failed and success）
 - [ ] 7.5 写执行器集成测试：注册若干假迁移，覆盖空库全跑、断点续跑、默认模式漏执行失败、补跑模式补齐、版本上限（`TestLocalMySQLExecutor` 已覆盖空库全跑与断点续跑；漏执行 / 补跑 / 版本上限仍在 `plan_test` 单元层）
-- [x] 7.6 写 `init` 集成测试：`adopt` 垫起库版本且 `up()` 未被调用、表已存在时 no-op——`TestLocalMySQLEngine`、`TestLocalMySQLCLI`（init adopt / second init / `init` 后 `up`；混合主库 adopt、OBS empty 尚无独立用例）
+- [x] 7.6 写 `init` 集成测试：`adopt` 垫起库版本且 `up()` 未被调用、表已存在时 no-op——`TestLocalMySQLEngine`、`TestLocalMySQLCLI`（init adopt / second init / `init` 后 `up`；混合主库 adopt、其他库 empty 尚无独立用例）
 - [x] 7.7 按同一隔离方式（临时库 + 无条件清理）补 `migrate/util` 的本地 MySQL 集成测试，验证幂等助手在真实 MySQL 上的执行正确性与重复执行无副作用——`TestLocalMySQLIdempotent`（同样无 DSN 环境变量开关）
 
 ## 8. 构建与部署接入
@@ -82,7 +82,7 @@
 - [x] 8.2 加 `check-migrate` 门禁（`migrate/scripts/check-migrate.sh`，纯 shell）：校验迁移目录与 `imports.go` 空白 import 一致，并覆盖目录结构、`Regist` 次数、库与 Registry 对应、同 ID 后缀冲突等
 - [x] 8.3 依赖门禁并入 `check-migrate.sh`（不再单独做 Makefile 目标）：`migrations/` 子树不得 import `hcm/migrate/engine|schema|cli`
 - [ ] 8.4 在 `cmd/Makefile` 与根 `Makefile` 挂接独立迁移镜像的构建目标
-- [x] 8.5 建 `migrations/` 目录骨架与 `imports.go`；`migrate/migrate.go` 空白 import `hcm/migrate/migrations`。当前有若干 SAMPLE 迁移（`migrate_sample` / `migrate_obs_sample`），仅作联调，后续删除
+- [x] 8.5 建 `migrations/` 目录骨架与 `imports.go`；`migrate/migrate.go` 空白 import `hcm/migrate/migrations`。当前没有迁移，`imports.go` 为空
 - [ ] 8.6 编写 Helm hook Job：命令为 `init && up`、三个 hook 注解、`backoffLimit: 0`、`parallelism: 1`、`restartPolicy: Never`、`ttlSecondsAfterFinished`、initContainer 等 DB 就绪、复用 dataservice ConfigMap 与 chart 的 ServiceAccount。迁移镜像不打进业务 Pod
 - [ ] 8.7 在 chart values 就近注释说明补跑开关是按包一次性开关，并注明 `parallelism` 必须保持为 1
 - [ ] 8.8 在 values 里暴露 `--mode` 与 `--baseline`，并写接入说明：空库填 `empty`、存量库填 `adopt` 并如何选定各库基线、误填 `adopt` 到空库的后果、`--plan` 如何预演

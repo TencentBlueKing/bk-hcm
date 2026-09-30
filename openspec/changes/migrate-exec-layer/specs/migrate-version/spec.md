@@ -75,8 +75,8 @@
 
 #### Scenario: 跨标签按字典序比较
 
-- **WHEN** 比较 `v1.9.3-tenant.1` 与 `v1.9.3-woa.1`
-- **THEN** `v1.9.3-tenant.1` 排在 `v1.9.3-woa.1` 之前
+- **WHEN** 比较 `v1.9.3-tenant.1` 与 `v1.9.3-zone.1`
+- **THEN** `v1.9.3-tenant.1` 排在 `v1.9.3-zone.1` 之前
 
 #### Scenario: 同版本按时间戳比较
 
@@ -99,7 +99,7 @@
 
 #### Scenario: 两个标签拒绝执行
 
-- **WHEN** 同一注册表中同时有 `v1.9.3-tenant.1` 与 `v1.9.3-woa.1`，执行 `up`
+- **WHEN** 同一注册表中同时有 `v1.9.3-tenant.1` 与 `v1.9.3-zone.1`，执行 `up`
 - **THEN** 命令在执行前校验以退出码 5 失败，输出两个标签及对应 Migration ID，两条迁移都不执行
 
 #### Scenario: 单个标签照常执行

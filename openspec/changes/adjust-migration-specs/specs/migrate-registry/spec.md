@@ -40,7 +40,7 @@
 
 #### Scenario: 注册进错误的库拒绝启动
 
-- **WHEN** 导入路径以 `hcm/migrate/migrations/main/` 开头的迁移调用 `register.Obs.Regist`
+- **WHEN** 导入路径以 `hcm/migrate/migrations/main/` 开头的迁移调用其他库的 `Regist`
 - **THEN** 进程在启动阶段终止
 
 #### Scenario: nil migrator 拒绝启动
@@ -74,7 +74,7 @@
 
 #### Scenario: 不同库相同 ID 可以注册
 
-- **WHEN** `Main` 与 `Obs` 各有一条迁移使用了相同的 Migration ID
+- **WHEN** 两个不同库的注册表各有一条迁移使用了相同的 Migration ID
 - **THEN** 注册成功，两个库的记录表相互独立，互不影响跳过判定
 
 ### Requirement: 排序后的执行序列
@@ -98,9 +98,9 @@
 
 ### Requirement: 漏导入防护
 
-每条迁移 SHALL 在 `imports.go` 里有一行空白 import，指向该迁移目录。空白 import MUST NOT 依赖 `package` 子句的名字。SHALL 提供 `check-migrate`：比较含 `migrate.go` 的目录与 `imports.go` 里的空白 import，不采用重新生成再 diff。下列情况 MUST 失败：漏 import；多余 import；版本目录或 `pending/` 的直接子项不是目录，或迁移目录里还有子目录；迁移目录没有 `migrate.go`，或全目录里 `Regist(` 不是恰好一次且不在 `migrate.go`；`main/` 下出现 `register.Obs`，或 `obs/` 下出现 `register.Main`；同一个库内多条迁移的 ID 相同且迁移后缀不同。
+每条迁移 SHALL 在 `imports.go` 里有一行空白 import，指向该迁移目录。空白 import MUST NOT 依赖 `package` 子句的名字。SHALL 提供 `check-migrate`：比较含 `migrate.go` 的目录与 `imports.go` 里的空白 import，不采用重新生成再 diff。下列情况 MUST 失败：漏 import；多余 import；版本目录或 `pending/` 的直接子项不是目录，或迁移目录里还有子目录；迁移目录没有 `migrate.go`，或全目录里 `Regist(` 不是恰好一次且不在 `migrate.go`；`main/` 下出现非 `register.Main` 的注册；同一个库内多条迁移的 ID 相同且迁移后缀不同。
 
-同一个库内 ID 相同且迁移后缀相同 SHALL 只警告，打印目录和 ID，MUST NOT 因此失败。`main` 与 `obs` MUST 分开看。
+同一个库内 ID 相同且迁移后缀相同 SHALL 只警告，打印目录和 ID，MUST NOT 因此失败。不同库 MUST 分开看。
 
 #### Scenario: 新建迁移自动写入导入
 

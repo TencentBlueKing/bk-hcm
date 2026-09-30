@@ -34,5 +34,4 @@
 
 - 不改动 Access、Service、Resource 层任何在跑服务。影响范围是独立二进制 `hcm-migrate` 的 spec。
 - 要改的 spec：`openspec/changes/migrate-exec-layer/specs/` 下的 `migrate-registry`、`migrate-record`、`migrate-version`、`migrate-executor`、`migrate-cli`。本变更新增 `specs/migrate-audit/spec.md`。
-- 方案来源：`.cursor/docs/iwiki/4039435213-hcm-migration/adjustments-2026-09-23.md`。
 - 后续实现会改 `migrate/register`、`migrate/engine`，并在每个被迁移的库增加 `hcm_migration_audit`。记录表 `applied_pkg` 随尚未合入的建表语句一起加，不另写 ALTER。

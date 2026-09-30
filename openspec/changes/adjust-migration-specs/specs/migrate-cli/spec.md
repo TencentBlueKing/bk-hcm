@@ -27,18 +27,18 @@ CLI SHALL 提供四个子命令：`init` / `up` / `status` / `list`。`help`、`
 
 #### Scenario: 默认作用于全部已启用的库
 
-- **WHEN** 执行 `up` 且未指定 `--database`，配置里启用了主库与 OBS 库
-- **THEN** 主库与 OBS 库依次处理
+- **WHEN** 执行 `up` 且未指定 `--database`，配置里启用了主库与 aux 库
+- **THEN** 主库与 aux 库依次处理
 
 #### Scenario: 只执行其中两个库
 
-- **WHEN** 配置里启用了三个库，执行 `up --database main,obs`
-- **THEN** 只处理主库与 OBS 库，第三个库不被连接
+- **WHEN** 配置里启用了三个库，执行 `up --database main,aux`
+- **THEN** 只处理主库与 aux 库，第三个库不被连接
 
 #### Scenario: 重复传参与逗号等价
 
-- **WHEN** 执行 `up -d main -d obs`
-- **THEN** 处理的库与 `up --database main,obs` 相同
+- **WHEN** 执行 `up -d main -d aux`
+- **THEN** 处理的库与 `up --database main,aux` 相同
 
 #### Scenario: 非法库名报错
 
@@ -90,22 +90,22 @@ stdout SHALL 承载模式行、计划、汇总、`status` 与 `list` 的表格�
 
 ### Requirement: up 执行顺序
 
-`up` SHALL 按主库再 OBS 的顺序连接每个被选中的库；无配置的库 SHALL 跳过（仅 DataSource.Open 打警告日志，MUST NOT 向 stdout 打印跳过说明）。非 `--plan` 时，审计行 MUST 在连上库之后、`Prepare` 之前 `Begin`。`Prepare` 失败时 MUST 停止后续库的连接与准备，已成功准备的库标记为未执行。全部准备完成后 SHALL 打印每个库的计划，再 `CollectPlanErrors`；任一计划有问题 MUST NOT 执行任何库。执行阶段 SHALL 按序执行并在第一个失败的库处停止，其后库未执行。每个已 `Begin` 的审计行在所有路径上 MUST 以进程退出码 `End`。
+`up` SHALL 按主库再其他库的顺序连接每个被选中的库；无配置的库 SHALL 跳过（仅 DataSource.Open 打警告日志，MUST NOT 向 stdout 打印跳过说明）。非 `--plan` 时，审计行 MUST 在连上库之后、`Prepare` 之前 `Begin`。`Prepare` 失败时 MUST 停止后续库的连接与准备，已成功准备的库标记为未执行。全部准备完成后 SHALL 打印每个库的计划，再 `CollectPlanErrors`；任一计划有问题 MUST NOT 执行任何库。执行阶段 SHALL 按序执行并在第一个失败的库处停止，其后库未执行。每个已 `Begin` 的审计行在所有路径上 MUST 以进程退出码 `End`。
 
 #### Scenario: 先全部准备再执行
 
-- **WHEN** 主库计划通过、OBS 计划检出漏执行
+- **WHEN** 主库计划通过、aux 计划检出漏执行
 - **THEN** 两个库都不执行任何迁移，退出码为 4
 
 #### Scenario: 执行中途停在失败库
 
-- **WHEN** 主库与 OBS 计划均通过，主库执行失败
-- **THEN** OBS 不被执行，主库审计 `exit_code` 为 1
+- **WHEN** 主库与 aux 计划均通过，主库执行失败
+- **THEN** aux 不被执行，主库审计 `exit_code` 为 1
 
 #### Scenario: 已完成库仍以进程退出码结束审计
 
-- **WHEN** 主库执行成功、OBS 执行失败
-- **THEN** 主库与 OBS 审计行 `exit_code` 均为进程退出码
+- **WHEN** 主库执行成功、aux 执行失败
+- **THEN** 主库与 aux 审计行 `exit_code` 均为进程退出码
 
 #### Scenario: plan 不写审计
 
@@ -164,13 +164,13 @@ stdout SHALL 承载模式行、计划、汇总、`status` 与 `list` 的表格�
 
 #### Scenario: 未选中库的基线被忽略
 
-- **WHEN** 执行 `init --mode=adopt -d main --baseline main=v1.9.2 --baseline obs=v1.9.2`，OBS 未被选中
-- **THEN** 主库按基线处理，OBS 不被连接，命令成功
+- **WHEN** 执行 `init --mode=adopt -d main --baseline main=v1.9.2 --baseline aux=v1.9.2`，aux 未被选中
+- **THEN** 主库按基线处理，aux 不被连接，命令成功
 
 #### Scenario: 混合场景按库区分
 
-- **WHEN** 主库为存量库、OBS 为新库，执行 `init --mode=adopt --baseline main=v1.9.2`
-- **THEN** 主库建表并垫到 `v1.9.2`，OBS 库只建空表
+- **WHEN** 主库为存量库、aux 为新库，执行 `init --mode=adopt --baseline main=v1.9.2`
+- **THEN** 主库建表并垫到 `v1.9.2`，aux 库只建空表
 
 #### Scenario: init 支持预演
 
@@ -188,8 +188,8 @@ stdout SHALL 承载模式行、计划、汇总、`status` 与 `list` 的表格�
 
 #### Scenario: 未初始化库不影响其余展示
 
-- **WHEN** 主库未初始化、OBS 已初始化，执行 `status`
-- **THEN** 主库打印缺表提示，OBS 正常打印进度，退出码为 3
+- **WHEN** 主库未初始化、aux 已初始化，执行 `status`
+- **THEN** 主库打印缺表提示，aux 正常打印进度，退出码为 3
 
 ### Requirement: list 命令
 

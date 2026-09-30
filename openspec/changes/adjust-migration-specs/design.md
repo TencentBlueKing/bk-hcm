@@ -1,6 +1,6 @@
 ## Context
 
-`migrate-exec-layer` 的 spec 已经写完，代码已落地 `util/`、`register/`、`schema/`（`InitTables`、记录表、审计读写）以及 `engine/`（`plan.go` / `executor.go`：`Prepare` / `BuildPlan` / `CollectPlanErrors` / `Execute`）。CLI 接线（第 6 组）还没写。方案调整记在 `.cursor/docs/iwiki/4039435213-hcm-migration/adjustments-2026-09-23.md`，这些能力尚未同步到 `openspec/specs/`，现行需求就在那个变更的 `specs/` 里。
+`migrate-exec-layer` 的 spec 已经写完，代码已落地 `util/`、`register/`、`schema/`（`InitTables`、记录表、审计读写）以及 `engine/`（`plan.go` / `executor.go`：`Prepare` / `BuildPlan` / `CollectPlanErrors` / `Execute`）。CLI 接线（第 6 组）还没写。这些能力尚未同步到 `openspec/specs/`，现行需求就在那个变更的 `specs/` 里。
 
 本变更写 delta spec，并把已实现与未实现对齐到同一份文档。涉及退出码、ID 复用、label、执行前校验时，以本变更为准，`migrate-exec-layer/design.md` 里旧的「有 4 用 4 / 连库前 label 退出码 3」叙述已被取代。
 

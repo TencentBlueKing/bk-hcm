@@ -6,7 +6,7 @@
 
 #### Scenario: 一次运行在每个库一行
 
-- **WHEN** 一次 `up` 依次处理主库与 OBS 库
+- **WHEN** 一次 `up` 依次处理主库与 aux 库
 - **THEN** 两个库各有一行 `hcm_migration_audit`，且两行的 `run_id` 相同
 
 #### Scenario: plan 不写运行记录
@@ -54,7 +54,7 @@ JSON 列 MUST 在结束时一次写入；`running` 期间为空；结束时空�
 
 #### Scenario: 各库 exit_code 均为进程退出码
 
-- **WHEN** 主库迁移成功、OBS 迁移失败，进程退出码为 1
+- **WHEN** 主库迁移成功、aux 迁移失败，进程退出码为 1
 - **THEN** 两个库的审计行 `exit_code` 均为 1
 
 #### Scenario: 审计失败不改变退出码

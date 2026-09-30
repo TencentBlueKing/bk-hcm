@@ -2,16 +2,16 @@
 
 ### Requirement: 注册表与库归属
 
-系统 SHALL 提供 `Registry` 类型并暴露两个实例 `Main`（主库）与 `Obs`（OBS 库）。迁移的库归属 SHALL 由注册到哪个实例决定，MUST NOT 在运行期靠解析文件路径字符串分流。`migrations/main/**` 注册到 `Main`，`migrations/obs/**` 注册到 `Obs`。
+系统 SHALL 提供 `Registry` 类型并暴露实例 `Main`（主库）。迁移的库归属 SHALL 由注册到哪个实例决定，MUST NOT 在运行期靠解析文件路径字符串分流。`migrations/main/**` 注册到 `Main`。新增库时增加一个实例和一棵目录。
 
 #### Scenario: 按实例区分库归属
 
-- **WHEN** 某迁移在 `init()` 里调用 `register.Obs.Regist(...)`
-- **THEN** 该迁移只在 OBS 库的执行序列中出现，不出现在主库序列中
+- **WHEN** 某迁移在 `init()` 里调用 `register.Main.Regist(...)`
+- **THEN** 该迁移只在主库的执行序列中出现
 
 #### Scenario: 外部版靠未注册自然不跑
 
-- **WHEN** 外部版二进制不包含 `obs/` 与 `*.x/` 目录的空白 import
+- **WHEN** 二进制不包含 `*.x/` 目录的空白 import
 - **THEN** 这些迁移不在任何注册表中，执行时不会被处理，且 MUST NOT 需要任何范围开关
 
 ### Requirement: 注册参数与 init 期强校验
@@ -54,7 +54,7 @@
 
 #### Scenario: 不同库相同 ID 可以注册
 
-- **WHEN** `Main` 与 `Obs` 各有一条迁移使用了相同的 Migration ID
+- **WHEN** 两个不同库的注册表各有一条迁移使用了相同的 Migration ID
 - **THEN** 注册成功，两个库的记录表相互独立，互不影响跳过判定
 
 ### Requirement: 相同 ID 的动作名一致（待确认，review 前不实现）
