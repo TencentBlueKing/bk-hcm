@@ -125,85 +125,7 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, has)
 
-	testCases := []struct {
-		name string
-		opt  AddColumnOpt
-		want columnExpect
-	}{
-		{
-			name: "varchar not null no default",
-			opt:  AddColumnOpt{Table: "probe", Column: "managers", Type: "varchar(255)", NotNull: true},
-			want: columnExpect{typ: "varchar(255)", nullable: "NO", defNull: true},
-		},
-		{
-			name: "string default and after",
-			opt: AddColumnOpt{Table: "probe", Column: "source", Type: "varchar(64)",
-				Default: StringDefault("itsm"), After: "id"},
-			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "itsm"},
-		},
-		{
-			name: "empty string default",
-			opt: AddColumnOpt{Table: "probe", Column: "bk_asset_id", Type: "varchar(64)",
-				Default: StringDefault(""), Comment: "固资号"},
-			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "", comment: "固资号"},
-		},
-		{
-			name: "null keyword",
-			opt: AddColumnOpt{Table: "probe", Column: "security_managers", Type: "json",
-				Default: ExprDefault("NULL"), Comment: "安全负责人"},
-			want: columnExpect{typ: "json", nullable: "YES", defNull: true, comment: "安全负责人"},
-		},
-		{
-			name: "quoted null stays a string",
-			opt: AddColumnOpt{Table: "probe", Column: "memo", Type: "varchar(255)",
-				Default: StringDefault("NULL")},
-			want: columnExpect{typ: "varchar(255)", nullable: "YES", def: "NULL"},
-		},
-		{
-			name: "negative number",
-			opt: AddColumnOpt{Table: "probe", Column: "bk_host_id", Type: "bigint",
-				Default: ExprDefault("-1"), Comment: "主机ID"},
-			want: columnExpect{typ: "bigint", nullable: "YES", def: "-1", comment: "主机ID"},
-		},
-		{
-			name: "not null zero",
-			opt: AddColumnOpt{Table: "probe", Column: "bk_biz_id", Type: "bigint",
-				NotNull: true, Default: ExprDefault("0")},
-			want: columnExpect{typ: "bigint", nullable: "NO", def: "0"},
-		},
-		{
-			name: "boolean false",
-			opt: AddColumnOpt{Table: "probe", Column: "not_notice", Type: "boolean",
-				Default: ExprDefault("false")},
-			want: columnExpect{typ: "tinyint", nullable: "YES", def: "0"},
-		},
-		{
-			name: "current timestamp",
-			opt: AddColumnOpt{Table: "probe", Column: "created_at", Type: "timestamp",
-				NotNull: true, Default: ExprDefault("CURRENT_TIMESTAMP")},
-			want: columnExpect{typ: "timestamp", nullable: "NO", def: "CURRENT_TIMESTAMP"},
-		},
-		{
-			name: "unsigned zero",
-			opt: AddColumnOpt{Table: "probe", Column: "exempted_returned_core", Type: "bigint unsigned",
-				NotNull: true, Default: ExprDefault("0")},
-			want: columnExpect{typ: "bigint unsigned", nullable: "NO", def: "0"},
-		},
-		{
-			name: "decimal zero",
-			opt: AddColumnOpt{Table: "probe", Column: "tech_class_res_amt", Type: "decimal(10,2)",
-				NotNull: true, Default: ExprDefault("0")},
-			want: columnExpect{typ: "decimal(10,2)", nullable: "NO", def: "0.00"},
-		},
-		{
-			name: "comment with quote",
-			opt: AddColumnOpt{Table: "probe", Column: "note", Type: "varchar(64)",
-				Default: StringDefault("it's\\x"), Comment: "it's\\x"},
-			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "it's\\x", comment: "it's\\x"},
-		},
-	}
-
-	for _, tc := range testCases {
+	for _, tc := range append(mysqlTextColumnCases(), mysqlExprColumnCases()...) {
 		t.Run(tc.name, func(t *testing.T) {
 			counter.execs = 0
 			require.NoError(t, AddColumn(ctx, o, tc.opt))
@@ -215,6 +137,15 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 			assertColumn(t, db, tc.opt.Table, tc.opt.Column, tc.want)
 		})
 	}
+
+}
+
+func TestLocalMySQLIdempotentSchema(t *testing.T) {
+	ctx := context.Background()
+	db, o, counter := openIsolatedMySQL(t)
+	_, err := CreateTableIfNotExists(ctx, o, "probe",
+		"CREATE TABLE `probe` (`id` bigint NOT NULL, `cloud_id` varchar(64) NOT NULL DEFAULT '', PRIMARY KEY (`id`))")
+	require.NoError(t, err)
 
 	t.Run("add and drop index", func(t *testing.T) {
 		runTwiceNoExtraExec(t, counter, func() error {
@@ -310,6 +241,93 @@ func TestLocalMySQLIdempotent(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, exists)
 	})
+}
+
+type mysqlColumnCase struct {
+	name string
+	opt  AddColumnOpt
+	want columnExpect
+}
+
+func mysqlTextColumnCases() []mysqlColumnCase {
+	return []mysqlColumnCase{
+		{
+			name: "varchar not null no default",
+			opt:  AddColumnOpt{Table: "probe", Column: "managers", Type: "varchar(255)", NotNull: true},
+			want: columnExpect{typ: "varchar(255)", nullable: "NO", defNull: true},
+		},
+		{
+			name: "string default and after",
+			opt: AddColumnOpt{Table: "probe", Column: "source", Type: "varchar(64)",
+				Default: StringDefault("itsm"), After: "id"},
+			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "itsm"},
+		},
+		{
+			name: "empty string default",
+			opt: AddColumnOpt{Table: "probe", Column: "bk_asset_id", Type: "varchar(64)",
+				Default: StringDefault(""), Comment: "固资号"},
+			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "", comment: "固资号"},
+		},
+		{
+			name: "quoted null stays a string",
+			opt: AddColumnOpt{Table: "probe", Column: "memo", Type: "varchar(255)",
+				Default: StringDefault("NULL")},
+			want: columnExpect{typ: "varchar(255)", nullable: "YES", def: "NULL"},
+		},
+		{
+			name: "comment with quote",
+			opt: AddColumnOpt{Table: "probe", Column: "note", Type: "varchar(64)",
+				Default: StringDefault("it's\\x"), Comment: "it's\\x"},
+			want: columnExpect{typ: "varchar(64)", nullable: "YES", def: "it's\\x", comment: "it's\\x"},
+		},
+	}
+}
+
+func mysqlExprColumnCases() []mysqlColumnCase {
+	return []mysqlColumnCase{
+		{
+			name: "null keyword",
+			opt: AddColumnOpt{Table: "probe", Column: "security_managers", Type: "json",
+				Default: ExprDefault("NULL"), Comment: "安全负责人"},
+			want: columnExpect{typ: "json", nullable: "YES", defNull: true, comment: "安全负责人"},
+		},
+		{
+			name: "negative number",
+			opt: AddColumnOpt{Table: "probe", Column: "bk_host_id", Type: "bigint",
+				Default: ExprDefault("-1"), Comment: "主机ID"},
+			want: columnExpect{typ: "bigint", nullable: "YES", def: "-1", comment: "主机ID"},
+		},
+		{
+			name: "not null zero",
+			opt: AddColumnOpt{Table: "probe", Column: "bk_biz_id", Type: "bigint",
+				NotNull: true, Default: ExprDefault("0")},
+			want: columnExpect{typ: "bigint", nullable: "NO", def: "0"},
+		},
+		{
+			name: "boolean false",
+			opt: AddColumnOpt{Table: "probe", Column: "not_notice", Type: "boolean",
+				Default: ExprDefault("false")},
+			want: columnExpect{typ: "tinyint", nullable: "YES", def: "0"},
+		},
+		{
+			name: "current timestamp",
+			opt: AddColumnOpt{Table: "probe", Column: "created_at", Type: "timestamp",
+				NotNull: true, Default: ExprDefault("CURRENT_TIMESTAMP")},
+			want: columnExpect{typ: "timestamp", nullable: "NO", def: "CURRENT_TIMESTAMP"},
+		},
+		{
+			name: "unsigned zero",
+			opt: AddColumnOpt{Table: "probe", Column: "exempted_returned_core", Type: "bigint unsigned",
+				NotNull: true, Default: ExprDefault("0")},
+			want: columnExpect{typ: "bigint unsigned", nullable: "NO", def: "0"},
+		},
+		{
+			name: "decimal zero",
+			opt: AddColumnOpt{Table: "probe", Column: "tech_class_res_amt", Type: "decimal(10,2)",
+				NotNull: true, Default: ExprDefault("0")},
+			want: columnExpect{typ: "decimal(10,2)", nullable: "NO", def: "0.00"},
+		},
+	}
 }
 
 type columnExpect struct {

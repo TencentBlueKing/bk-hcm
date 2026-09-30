@@ -183,14 +183,45 @@ func TestDropTable(t *testing.T) {
 	}
 }
 
+type addColumnCase struct {
+	name        string
+	opt         AddColumnOpt
+	columnExist bool
+	wantDDL     string
+	wantErr     bool
+}
+
+func runAddColumnCases(t *testing.T, cases []addColumnCase) {
+	t.Helper()
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			do := &fakeDo{countFn: countFnFor(tc.columnExist)}
+			err := AddColumn(context.Background(), newFakeOrm(do), tc.opt)
+			if tc.wantErr {
+				assert.Error(t, err)
+				assert.Empty(t, do.execCalls)
+				return
+			}
+			assert.NoError(t, err)
+			if tc.wantDDL == "" {
+				assert.Empty(t, do.execCalls)
+				return
+			}
+			assert.Equal(t, []string{tc.wantDDL}, do.execCalls)
+		})
+	}
+}
+
 func TestAddColumn(t *testing.T) {
-	testCases := []struct {
-		name        string
-		opt         AddColumnOpt
-		columnExist bool
-		wantDDL     string
-		wantErr     bool
-	}{
+	runAddColumnCases(t, addColumnShapeCases())
+	runAddColumnCases(t, addColumnValueCases())
+	runAddColumnCases(t, addColumnEarlySQLCases())
+	runAddColumnCases(t, addColumnLateSQLCases())
+	runAddColumnCases(t, addColumnFinalSQLCases())
+}
+
+func addColumnShapeCases() []addColumnCase {
+	return []addColumnCase{
 		{
 			name:    "minimal",
 			opt:     AddColumnOpt{Table: "cvm", Column: "bk_asset_id", Type: "varchar(64)"},
@@ -245,6 +276,11 @@ func TestAddColumn(t *testing.T) {
 			opt:     AddColumnOpt{Table: "hcm.cvm", Column: "id", Type: "bigint"},
 			wantErr: true,
 		},
+	}
+}
+
+func addColumnValueCases() []addColumnCase {
+	return []addColumnCase{
 		{
 			name: "empty default expression",
 			opt: AddColumnOpt{
@@ -306,6 +342,11 @@ func TestAddColumn(t *testing.T) {
 			},
 			wantDDL: "ALTER TABLE `account` ADD COLUMN `bk_biz_id` bigint NOT NULL DEFAULT 0 COMMENT '管理业务ID'",
 		},
+	}
+}
+
+func addColumnEarlySQLCases() []addColumnCase {
+	return []addColumnCase{
 		{
 			// scripts/sql/0042_20251013_extract_bk_asset_id.sql
 			name: "0042_bk_asset_id",
@@ -362,6 +403,11 @@ func TestAddColumn(t *testing.T) {
 			},
 			wantDDL: "ALTER TABLE `image` ADD COLUMN `region` VARCHAR(64) DEFAULT '' AFTER `cloud_id`",
 		},
+	}
+}
+
+func addColumnLateSQLCases() []addColumnCase {
+	return []addColumnCase{
 		{
 			// scripts/sql/0068_20260227_1123_res_plan_sub_ticket.sql
 			name: "0068_operate_info",
@@ -392,6 +438,11 @@ func TestAddColumn(t *testing.T) {
 			wantDDL: "ALTER TABLE `device_type` ADD COLUMN `gpu_amount` DOUBLE NOT NULL DEFAULT 0 " +
 				"COMMENT 'GPU卡数' AFTER `memory`",
 		},
+	}
+}
+
+func addColumnFinalSQLCases() []addColumnCase {
+	return []addColumnCase{
 		{
 			// scripts/sql/0080_20260618_1004_resource_dissolve.sql
 			name: "0080_operators",
@@ -433,24 +484,6 @@ func TestAddColumn(t *testing.T) {
 			wantDDL: "ALTER TABLE `aiagent_session` ADD COLUMN `bk_biz_id` BIGINT NOT NULL DEFAULT -1 " +
 				"COMMENT '会话所属业务；-1=未分配' AFTER `user`",
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			do := &fakeDo{countFn: countFnFor(tc.columnExist)}
-			err := AddColumn(context.Background(), newFakeOrm(do), tc.opt)
-			if tc.wantErr {
-				assert.Error(t, err)
-				assert.Empty(t, do.execCalls)
-				return
-			}
-			assert.NoError(t, err)
-			if tc.wantDDL == "" {
-				assert.Empty(t, do.execCalls)
-				return
-			}
-			assert.Equal(t, []string{tc.wantDDL}, do.execCalls)
-		})
 	}
 }
 
