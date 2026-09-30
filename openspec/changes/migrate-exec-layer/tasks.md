@@ -20,24 +20,24 @@
 
 ## 3. 记录表与记录读写
 
-- [ ] 3.1 `util.CreateTableIfNotExists` 增加返回值 `created bool`（表已存在时为 false 且不执行语句）。`migrate/engine/schema.go` 放不含 `IF NOT EXISTS` 的 `CREATE TABLE`；`init` 只调用这个函数，不自己探测 `information_schema`。仅 `created && mode==adopt` 时插入基线记录
-- [ ] 3.2 在 `migrate/engine/recordstore.go` 定义记录结构与状态常量（`running` / `success` / `failed`）
-- [ ] 3.3 实现按库读取全部记录，并按 `migration_id` 建索引供判定使用
-- [ ] 3.4 实现 `running` 写入：`INSERT ... ON DUPLICATE KEY UPDATE` 回到 `running` 并清空 `message`
-- [ ] 3.5 实现 `success` 写入：更新状态并把 `version` 刷成此刻注册的版本
-- [ ] 3.6 实现 `failed` 写入：更新状态与 `message`，按字节安全截断到 1024 且不切断多字节字符，完整错误进日志
-- [ ] 3.7 实现库当前版本计算：解析全部 `success` 记录的版本后用比较器取最大；无记录返回空；解析失败返回可映射为退出码 3 的错误
-- [ ] 3.8 实现版本漂移 WARN：`success` 记录的版本与注册版本不一致时告警但不失败
-- [ ] 3.9 写 `recordstore` 单元测试：用 `migrate/util` 里已有的 `orm.Interface` 假实现思路覆盖库当前版本计算（含 `v1.9.9` 与 `v1.9.10`、补跑低版本不降低库当前、空记录、解析失败）与 `message` 截断
+- [x] 3.1 `util.CreateTableIfNotExists` 增加返回值 `created bool`（表已存在时为 false 且不执行语句）。`migrate/engine/schema.go` 放不含 `IF NOT EXISTS` 的 `CREATE TABLE`；`init` 只调用这个函数，不自己探测 `information_schema`。仅 `created && mode==adopt` 时插入基线记录
+- [x] 3.2 在 `migrate/engine/recordstore.go` 定义记录结构与状态常量（`running` / `success` / `failed`）
+- [x] 3.3 实现按库读取全部记录，并按 `migration_id` 建索引供判定使用
+- [x] 3.4 实现 `running` 写入：`INSERT ... ON DUPLICATE KEY UPDATE` 回到 `running` 并清空 `message`
+- [x] 3.5 实现 `success` 写入：更新状态并把 `version` 刷成此刻注册的版本
+- [x] 3.6 实现 `failed` 写入：更新状态与 `message`，按字节安全截断到 1024 且不切断多字节字符，完整错误进日志
+- [x] 3.7 实现库当前版本计算：解析全部 `success` 记录的版本后用比较器取最大；无记录返回空；解析失败返回可映射为退出码 3 的错误
+- [x] 3.8 实现版本漂移 WARN：`success` 记录的版本与注册版本不一致时告警但不失败
+- [x] 3.9 写 `recordstore` 单元测试：用 `migrate/util` 里已有的 `orm.Interface` 假实现思路覆盖库当前版本计算（含 `v1.9.9` 与 `v1.9.10`、补跑低版本不降低库当前、空记录、解析失败）与 `message` 截断
 
 ## 4. 数据库连接管理
 
-- [ ] 4.1 启动时 `cc.InitService(cc.DataServiceName)`，再 `cc.LoadSettings` 按 `--config-file` 读文件。从载入结果取 `Database` 与 `OBSDatabase`，各调一次 `dao.NewDaoSet`。不 import `cmd/data-service`
-- [ ] 4.2 取 `GetOrm()` 的裸 `Do()` 交给迁移，确认未挂 `ModifySQLOpts`
-- [ ] 4.3 实现 `OBSDatabase` 为 `nil` 时整段跳过并打 Warn 日志，退出码保持 0
-- [ ] 4.4 实现 `--database` 库名列表（可重复、可逗号分隔），不传表示已启用的全部库，未知名字映射为退出码 2
-- [ ] 4.5 实现单次连接探测，失败返回可定位的错误，不做进程内重试轮询
-- [ ] 4.6 写测试覆盖库选择与 OBS 缺省跳过的分支判断
+- [x] 4.1 启动时 `cc.InitService(cc.DataServiceName)`，再 `cc.LoadSettings` 按 `--config-file` 读文件。从载入结果取 `Database` 与 `OBSDatabase`，各调一次 `dao.NewDaoSet`。不 import `cmd/data-service`
+- [x] 4.2 取 `GetOrm()` 的裸 `Do()` 交给迁移，确认未挂 `ModifySQLOpts`
+- [x] 4.3 实现 `OBSDatabase` 为 `nil` 时整段跳过并打 Warn 日志，退出码保持 0
+- [x] 4.4 实现 `--database` 库名列表（可重复、可逗号分隔），不传表示已启用的全部库，未知名字映射为退出码 2
+- [x] 4.5 实现单次连接探测，失败返回可定位的错误，不做进程内重试轮询
+- [x] 4.6 写测试覆盖库选择与 OBS 缺省跳过的分支判断
 
 ## 5. 执行器
 

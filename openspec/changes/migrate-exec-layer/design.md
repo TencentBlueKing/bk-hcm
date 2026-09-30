@@ -235,21 +235,23 @@ v1.9.10
 
 ```sql
 CREATE TABLE `hcm_migration_record` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `migration_id` VARCHAR(64) NOT NULL,
-  `version` VARCHAR(32) NOT NULL,
-  `status` VARCHAR(16) NOT NULL,
-  `message` VARCHAR(1024) NOT NULL DEFAULT '',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+  `migration_id` VARCHAR(64) NOT NULL COMMENT '迁移 ID',
+  `version` VARCHAR(64) NOT NULL COMMENT '最近一次成功时注册的版本',
+  `status` VARCHAR(16) NOT NULL COMMENT '执行状态，取值 running/success/failed',
+  `message` VARCHAR(1024) NOT NULL DEFAULT '' COMMENT '失败摘要',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uidx_migration_id` (`migration_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='migration 执行记录表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='migration 执行记录表';
 ```
+
+`version` 宽 64，和注册时的长度上限是同一个数：超长的版本在 `init()` 注册时就 panic，不会等到写库时被截断或拒绝。排序规则用 `utf8mb4_bin`，`migration_id` 的唯一索引按字节比较，和 Go 的字符串比较一致。查重和状态更新都走这个唯一索引，不另建索引。
 
 建表时机（先有鸡还是先有蛋）：记录表**不写成一条迁移**，否则「建账本」这件事没法记在账本里。`init` 调用 `util.CreateTableIfNotExists`，把上面这条 `CREATE TABLE` 原样传进去。存在性判断和跳过都在这个工具里，`engine` 不自己拼 `IF NOT EXISTS`，也不直接查 `information_schema`。
 
-工具现在只返回 `error`，表已存在时静默跳过，`init` 分不清「这次新建」和「本来就在」。`adopt` 只有在这次新建时才能插入基线记录，表已经在就必须整库 no-op。所以这个函数再返回一个 `created bool`：`true` 表示这次建出来的，`false` 表示表已存在、语句没执行。`init` 只在 `created && mode==adopt` 时插入基线记录。
+`CreateTableIfNotExists` 返回 `(created bool, err error)`。`created` 为 true 表示这次执行了 DDL、表是新建的；表已存在，或任一错误，都是 false。`init` 只在 `created` 且 `--mode=adopt` 时插入基线记录，表已经在就整库 no-op。
 
 `up` / `status` / `list` 都不建表。`up` 在缺表时以退出码 3 失败并提示先跑 `init`（理由见 D2：自动建表会让未接入的存量库被整段重放）；`status` 报「尚未初始化」。
 
@@ -268,7 +270,7 @@ CREATE TABLE `hcm_migration_record` (
 
 **库当前版本**必须在 Go 里算：取本库全部 `success` 记录，逐条 `Parse`，用比较器取最大。不能用 SQL 的 `ORDER BY version DESC LIMIT 1`——版本串的字典序和版本序不一致，`v1.9.10` 会排在 `v1.9.9` 前面。也不是「最后写入的那一条」：补跑写入的成功记录版本偏低，不应该把库当前改小。
 
-记录表里出现解析不了的 `version` 时以退出码 3 失败，不是跳过。账本里有本工具不认识的行，意味着它被别的东西写过；此时算出来的「库当前」偏小，会让本该报错的漏执行伪装成「> 库当前」而被执行，比直接拒绝危险得多。
+读取记录时，不论该行是 `running`、`success` 还是 `failed`，只要 `version` 解析不了就以退出码 3 失败，不是跳过。检查发生在装载记录的时候，和未知 `status` 放在一起。账本里有本工具不认识的行，意味着它被别的东西写过；此时算出来的「库当前」偏小，会让本该报错的漏执行伪装成「> 库当前」而被执行，比直接拒绝危险得多。
 
 `message` 截断到 1024：按字节截断且不能把多字节字符切一半。完整错误进 `pkg/logs`，表里只留摘要。
 
@@ -334,7 +336,16 @@ for 每个已排序、且不超过版本上限的 m:
 13. **拒绝版本号前导零**。数字第四段 0 收成无第四段，所以 `v1.9.3` 与 `v1.9.3.0` 等同；前导零仍然拒绝。
 14. **文件名里版本和时间戳用下划线分隔**，不用点。版本号自身已有点号，且 `.0` 与三位等同，点号切不开。
 15. **Migration ID 限定为小写标准 UUID**。方案只说「合法 UUID」。理由见 D3：多种写法会和记录表的比对打架。
-16. `**All` 把 PENDING 的迁移排在最后**，它们之间再按时间戳和 ID。方案没定义占位符在排序里的位置。占位符没有版本可比，当成零值会被排到最前面，正好排在最该先跑的位置上；`init` / `up` 本来就会在连库前因占位符失败，这个顺序只影响 `list` 的显示。
+16. **`All` 把 PENDING 的迁移排在最后**，它们之间再按时间戳和 ID。方案没定义占位符在排序里的位置。占位符没有版本可比，当成零值会被排到最前面，正好排在最该先跑的位置上；`init` / `up` 本来就会在连库前因占位符失败，这个顺序只影响 `list` 的显示。
+17. **`util.CreateTableIfNotExists` 现在返回 `(created bool, err error)`**。`created` 仅在本次真正执行了 DDL 时为 true；表已存在，或任一错误（非法表名、空 DDL、`HasTable` 失败、`Exec` 失败）都是 false。`init` 靠这个返回值区分「这次新建」和「本来就在」。
+18. **基线记录用一条多行 INSERT 写入，全成或全不成**。插入失败时 `InitRecordTable` 删掉刚建的 `hcm_migration_record`，让 init 可以整段重试。否则留下一张空表，下次 init 会当成已初始化而 no-op，随后 `up` 会把基线以内的迁移全部重跑。删除也失败时，错误信息要求操作者手工删掉这张表再重试。
+19. **基线选择跳过 `PENDING`，并按 migration ID 去重，保留执行顺序里的第一次出现**。同一个 ID 插两行会被 `migration_id` 唯一键拒绝，整批插入失败。高于基线的那一份不占这个名额，后面一份不高于基线的仍会写入。
+20. **记录表里未知的 `status` 是前置条件失败（退出码 3）**。和无法解析的版本同一个理由：这张表是别的东西写的。`running` / `success` / `failed` 以外的值，包括空串和大小写不同的写法，一律拒绝。
+21. **相等版本的库当前版本取字典序较小的原文**。例如同时有 `v1.9.3` 和 `v1.9.3.0` 时，`CurrentVersion` 固定返回原文 `v1.9.3`，结果不依赖 map 的遍历顺序。只有 `.0` 那一条时，原文保持 `v1.9.3.0`，不会被改写成三位。
+22. **`--database` 的空元素、重复和大小写**。空元素（如 `main,`、单独的空串或纯空白）是退出码 2；重复名字合并成一个；输出顺序始终先 main 后 obs，与输入顺序无关；名字大小写敏感，`MAIN` 不是 `main`。
+23. **退出码不在 engine 里映射**。项目里没有进程退出码框架，`errf` 是接口业务错误码（错误文本是 JSON、`NewFromErr` 只留 message、断链），不适用。engine 只导出三个哨兵错误 `ErrUsage` / `ErrPrecondition` / `ErrMissed`，产生处用 `%w` 包装。`errors.Is` 到退出码的映射放在第 6 组 CLI 的 main 里，链上没有哨兵错误时为 1，nil 为 0。
+24. **success / failed 写入把影响行数 0 当成错误（记录不存在）**。`MarkRunning` 总是先执行，而且状态一定会变，所以更新到 0 行说明该走的那一行不在。
+25. **`Load` 对每一行校验 `version`，不限状态**。未知 `status` 仍先拒绝。通过之后，`running` / `success` / `failed` 的 `version` 都要能解析，失败同样是前置条件错误（退出码 3），并且不返回已经读到的记录。`CurrentVersion` 的行为不变：只在 `success` 行里取最大，解析失败仍拒绝，用来挡住没有经过 `Load` 拼出来的记录。
 
 ## 待确认
 
@@ -351,4 +362,5 @@ for 每个已排序、且不超过版本上限的 m:
 - 基线定错，或空库环境误配成 `--mode=adopt` → 该跑的迁移被标成 success 永不执行，得到残缺的库 → 缓解：`--mode` 必填、`adopt` 缺 `--baseline` 直接失败、支持 `--plan` 先看清单、接入说明里写明如何选定基线。这是首次安装时的人为配置错误，`init` 的表存在即 no-op 保证它不会随后续每次部署反复发生。
 - `message` 截断吞掉根因 → 缓解：完整错误进 `pkg/logs`，表里只留摘要。
 - 复用 dataservice 配置文件意味着 migrate 跟着它的结构走 → `Validate()` 还检查 `network`、`service`、`crypto`、`cmdb`，dataservice 配置重构会连带影响加载 → 缓解：运行时只用 `Database` / `OBSDatabase`；不 import `cmd/data-service`。
+- adopt 的基线本身不落库 → 库当前版本只取已写入的 success 记录的最大值。注册表里没有不超过基线的迁移时一行都不写，库当前为空，与 empty 相同；有记录时最大值也可能低于基线。之后带进来版本不超过基线、却高于这些记录的文件，会被默认模式当成新迁移执行，而不是判为漏执行 → 缓解：当前接受此风险（首次接入时基线以内的历史变更应已作为迁移文件注册，此时最大记录贴近基线）；`init --plan` 会打印将标记的 ID 与版本，从中能看出接入后的库当前版本是多少、离基线有多远。
 

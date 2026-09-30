@@ -49,6 +49,13 @@ var migrationIDRe = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-
 // plain string comparison.
 var timestampRe = regexp.MustCompile(`^\d{14}$`)
 
+// MaxVersionLen is the most characters a version string may have. It is also
+// the width of the record table's version column: a longer value would be
+// rejected or silently truncated on insert, and the truncated text would
+// then fail to parse. Versions are ASCII, so this byte length is the
+// character length MySQL counts.
+const MaxVersionLen = 64
+
 // Migration is one registered migration file.
 type Migration struct {
 	// ID is the canonical lowercase UUID minted when the file was created.
@@ -148,6 +155,10 @@ func newMigration(id, version, timestamp, description string, up UpFunc) (Migrat
 
 	if up == nil {
 		return Migration{}, fmt.Errorf("up function is nil, %s", where)
+	}
+
+	if len(version) > MaxVersionLen {
+		return Migration{}, fmt.Errorf("invalid version, longer than %d characters, %s", MaxVersionLen, where)
 	}
 
 	m := Migration{

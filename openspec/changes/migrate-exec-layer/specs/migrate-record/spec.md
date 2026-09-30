@@ -2,7 +2,7 @@
 
 ### Requirement: 记录表结构与放置
 
-系统 SHALL 在每个被迁移的库内各建一张 `hcm_migration_record` 表，字段为 `id`（BIGINT UNSIGNED 自增主键）、`migration_id`（VARCHAR(64) 唯一键）、`version`（VARCHAR(32)）、`status`（VARCHAR(16)）、`message`（VARCHAR(1024)）、`created_at`、`updated_at`（DATETIME）。MUST NOT 只在主库建一张总表靠字段区分库。一条迁移在表中 SHALL 只有一行，查重 MUST 只看 `migration_id`，不看 `version`。
+系统 SHALL 在每个被迁移的库内各建一张 `hcm_migration_record` 表，字段为 `id`（BIGINT UNSIGNED 自增主键）、`migration_id`（VARCHAR(64)，唯一索引 `uidx_migration_id`）、`version`（VARCHAR(64)，最近一次成功时注册的版本）、`status`（VARCHAR(16)，取值 running/success/failed）、`message`（VARCHAR(1024)）、`created_at`、`updated_at`（DATETIME）。表排序规则 SHALL 为 `utf8mb4_bin`，使唯一索引按字节比较。除主键和这个唯一索引外 MUST NOT 再建索引。MUST NOT 只在主库建一张总表靠字段区分库。一条迁移在表中 SHALL 只有一行，查重 MUST 只看 `migration_id`，不看 `version`。注册的版本字符串 MUST NOT 超过 64 个字符，超长在注册时失败。
 
 #### Scenario: 每库各有一张记录表
 
@@ -74,7 +74,7 @@
 
 ### Requirement: 库当前版本的计算
 
-库当前版本 SHALL 定义为本库全部 `success` 记录中版本号最大的那一条，MUST 在 Go 中逐条解析后用版本比较器求最大值，MUST NOT 使用 SQL 的 `ORDER BY version` 取最大，也 MUST NOT 取最后写入的那一条。
+库当前版本 SHALL 定义为本库全部 `success` 记录中版本号最大的那一条，MUST 在 Go 中逐条解析后用版本比较器求最大值，MUST NOT 使用 SQL 的 `ORDER BY version` 取最大，也 MUST NOT 取最后写入的那一条。读取记录时，`running`、`success`、`failed` 任一状态的 `version` 无法解析，SHALL 与未知 `status` 一样以退出码 3 失败，MUST NOT 跳过该行。
 
 #### Scenario: 不按字典序取最大
 
@@ -93,8 +93,13 @@
 
 #### Scenario: 无法解析的版本导致失败
 
-- **WHEN** 记录表中某条 `success` 记录的 `version` 无法解析
+- **WHEN** 读取记录时，记录表中某条 `running`、`success` 或 `failed` 记录的 `version` 无法解析
 - **THEN** 命令以退出码 3 失败，MUST NOT 跳过该行继续计算库当前版本
+
+#### Scenario: 失败记录的版本无法解析
+
+- **WHEN** 读取记录时，某条 `failed` 记录的 `version` 无法解析
+- **THEN** 命令以退出码 3 失败，MUST NOT 跳过该行
 
 ### Requirement: 版本漂移告警
 

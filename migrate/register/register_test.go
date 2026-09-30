@@ -116,6 +116,17 @@ func TestRegistValidation(t *testing.T) {
 			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
 		},
 		{
+			// v1.0.0- + 55 chars + .1 is 64 characters, the column width.
+			name: "version of exactly 64 characters", id: idA,
+			version: "v1.0.0-" + strings.Repeat("a", 55) + ".1", timestamp: "20260905160000",
+			description: "d", up: noopUp,
+		},
+		{
+			name: "version of 65 characters", id: idA,
+			version: "v1.0.0-" + strings.Repeat("a", 56) + ".1", timestamp: "20260905160000",
+			description: "d", up: noopUp, wantPanic: true,
+		},
+		{
 			name: "empty version", id: idA, version: "",
 			timestamp: "20260905160000", description: "d", up: noopUp, wantPanic: true,
 		},
@@ -238,6 +249,24 @@ func TestRegistValidation(t *testing.T) {
 			assert.NotNil(t, all[0].Up)
 		})
 	}
+}
+
+func TestRegistRejectsVersionLongerThanColumn(t *testing.T) {
+	r := &Registry{database: "main"}
+	version := "v1.0.0-" + strings.Repeat("a", 56) + ".1"
+	require.Greater(t, len(version), MaxVersionLen)
+
+	defer func() {
+		rec := recover()
+		require.NotNil(t, rec)
+		msg, ok := rec.(string)
+		require.True(t, ok)
+		assert.Contains(t, msg, "longer than 64 characters")
+		assert.Contains(t, msg, version)
+		assert.Empty(t, r.All())
+	}()
+
+	r.Regist(idA, version, "20260905160000", "d", noopUp)
 }
 
 func TestRegistPanicMessageLocatesTheFile(t *testing.T) {
