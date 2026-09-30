@@ -21,6 +21,7 @@ package aws
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"hcm/pkg/api/core"
@@ -31,7 +32,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/runtime/filter"
 )
 
 // SyncRegion sync region
@@ -61,7 +61,7 @@ func SyncRegion(kt *kit.Kit, hcCli *hcservice.Client, accountID string) error {
 // ListRegion 获取某个账号的region
 func ListRegion(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]string, error) {
 	listReq := &core.ListReq{
-		Filter: buildAccountRegionListFilter(accountID),
+		Filter: tools.EqualExpression("account_id", accountID),
 		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := dataCli.Aws.Region.ListRegion(kt.Ctx, kt.Header(), listReq)
@@ -81,19 +81,11 @@ func ListRegion(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]s
 	return regions, nil
 }
 
-func buildAccountRegionListFilter(accountID string) *filter.Expression {
-	return tools.EqualExpression("account_id", accountID)
-}
-
 func parseSyncEnabledRegions(details []protocore.AwsRegion) (enabled, disabled []string, err error) {
-	enabled, disabled = splitRegionsBySyncEnable(details)
-	if len(enabled) == 0 {
-		return nil, disabled, errors.New("aws region is empty")
+	if len(details) == 0 {
+		return nil, nil, errors.New("aws region is empty")
 	}
-	return enabled, disabled, nil
-}
 
-func splitRegionsBySyncEnable(details []protocore.AwsRegion) (enabled, disabled []string) {
 	enabled = make([]string, 0, len(details))
 	disabled = make([]string, 0)
 	for _, one := range details {
@@ -103,5 +95,8 @@ func splitRegionsBySyncEnable(details []protocore.AwsRegion) (enabled, disabled 
 			disabled = append(disabled, one.RegionID)
 		}
 	}
-	return enabled, disabled
+	if len(enabled) == 0 {
+		return nil, disabled, fmt.Errorf("all aws regions are disabled, disabled regions: %v", disabled)
+	}
+	return enabled, disabled, nil
 }

@@ -53,6 +53,11 @@ func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, err
 	regionIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		regions := make([]tableregion.AwsRegionTable, 0, len(req.Regions))
 		for _, createReq := range req.Regions {
+			// 未传 sync_enable 时默认启用，避免写入 NULL（列定义为 NOT NULL）。
+			syncEnable := converter.ValToPtr(true)
+			if createReq.SyncEnable != nil {
+				syncEnable = createReq.SyncEnable
+			}
 			tmpRegion := tableregion.AwsRegionTable{
 				Vendor:     createReq.Vendor,
 				AccountID:  createReq.AccountID,
@@ -60,11 +65,9 @@ func (svc *regionSvc) BatchCreateAwsRegion(cts *rest.Contexts) (interface{}, err
 				RegionName: createReq.RegionName,
 				Status:     createReq.Status,
 				Endpoint:   createReq.Endpoint,
+				SyncEnable: syncEnable,
 				Creator:    cts.Kit.User,
 				Reviser:    cts.Kit.User,
-			}
-			if createReq.SyncEnable != nil {
-				tmpRegion.SyncEnable = createReq.SyncEnable
 			}
 			regions = append(regions, tmpRegion)
 		}
@@ -214,7 +217,7 @@ func convertAwsBaseRegion(dbRegion *tableregion.AwsRegionTable) *protocore.AwsRe
 		RegionName: dbRegion.RegionName,
 		Status:     dbRegion.Status,
 		Endpoint:   dbRegion.Endpoint,
-		SyncEnable: *dbRegion.SyncEnable,
+		SyncEnable: converter.PtrToVal(dbRegion.SyncEnable),
 		Creator:    dbRegion.Creator,
 		Reviser:    dbRegion.Reviser,
 		CreatedAt:  dbRegion.CreatedAt.String(),

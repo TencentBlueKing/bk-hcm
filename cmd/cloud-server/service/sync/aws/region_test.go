@@ -23,24 +23,10 @@ import (
 	"testing"
 
 	protocore "hcm/pkg/api/core/cloud/region"
-	"hcm/pkg/runtime/filter"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestBuildAccountRegionListFilter(t *testing.T) {
-	accountID := "test-account-123"
-	filterExpr := buildAccountRegionListFilter(accountID)
-
-	require.NotNil(t, filterExpr)
-	require.Len(t, filterExpr.Rules, 1)
-
-	rule, ok := filterExpr.Rules[0].(filter.AtomRule)
-	require.True(t, ok)
-	assert.Equal(t, "account_id", rule.Field)
-	assert.Equal(t, accountID, rule.Value)
-}
 
 func TestListRegion_OnlyEnabledRegions(t *testing.T) {
 	details := []protocore.AwsRegion{
@@ -62,9 +48,17 @@ func TestListRegion_AllDisabled_ReturnsError(t *testing.T) {
 
 	regions, disabledRegions, err := parseSyncEnabledRegions(details)
 	require.Error(t, err)
-	assert.Equal(t, "aws region is empty", err.Error())
+	assert.Equal(t, "all aws regions are disabled, disabled regions: [me-south-1]", err.Error())
 	assert.Nil(t, regions)
 	assert.Equal(t, []string{"me-south-1"}, disabledRegions)
+}
+
+func TestListRegion_Empty_ReturnsError(t *testing.T) {
+	regions, disabledRegions, err := parseSyncEnabledRegions(nil)
+	require.Error(t, err)
+	assert.Equal(t, "aws region is empty", err.Error())
+	assert.Nil(t, regions)
+	assert.Nil(t, disabledRegions)
 }
 
 func TestListRegion_AllEnabled(t *testing.T) {

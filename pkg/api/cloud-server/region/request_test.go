@@ -24,18 +24,15 @@ import (
 	"testing"
 
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
 )
 
-func boolPtr(v bool) *bool {
-	return &v
-}
-
 func TestRegionBatchUpdateSyncEnableReq_Validate_EmptyIDs(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{},
-		SyncEnable: boolPtr(false),
+		SyncEnable: converter.ValToPtr(false),
 	}
 
 	err := req.Validate()
@@ -46,7 +43,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_EmptyIDs(t *testing.T) {
 func TestRegionBatchUpdateSyncEnableReq_Validate_NilIDs(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        nil,
-		SyncEnable: boolPtr(true),
+		SyncEnable: converter.ValToPtr(true),
 	}
 
 	err := req.Validate()
@@ -62,7 +59,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_TooManyIDs(t *testing.T) {
 
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        ids,
-		SyncEnable: boolPtr(false),
+		SyncEnable: converter.ValToPtr(false),
 	}
 
 	err := req.Validate()
@@ -85,7 +82,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_NilSyncEnable(t *testing.T) {
 func TestRegionBatchUpdateSyncEnableReq_Validate_ValidRequest(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{"id-1", "id-2"},
-		SyncEnable: boolPtr(true),
+		SyncEnable: converter.ValToPtr(true),
 	}
 
 	err := req.Validate()
@@ -100,7 +97,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_MaxIDs(t *testing.T) {
 
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        ids,
-		SyncEnable: boolPtr(false),
+		SyncEnable: converter.ValToPtr(false),
 	}
 
 	err := req.Validate()
@@ -110,7 +107,7 @@ func TestRegionBatchUpdateSyncEnableReq_Validate_MaxIDs(t *testing.T) {
 func TestRegionBatchUpdateSyncEnableReq_Validate_SingleID(t *testing.T) {
 	req := &RegionBatchUpdateSyncEnableReq{
 		IDs:        []string{"region-id-1"},
-		SyncEnable: boolPtr(false),
+		SyncEnable: converter.ValToPtr(false),
 	}
 
 	err := req.Validate()

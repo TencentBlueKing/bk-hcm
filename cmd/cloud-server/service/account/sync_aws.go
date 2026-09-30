@@ -115,11 +115,15 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		return nil, nil, fmt.Errorf("aws conditional sync resource does not support %s", resType)
 	}
 
+	// IN 查询是集合语义，数量校验必须用去重后的地域，否则重复入参会被误判为不存在。
+	req.Regions = slice.Unique(req.Regions)
+
 	var rules []*filter.AtomRule
 	rules = append(rules, tools.RuleEqual("account_id", accountID))
-	rules = append(rules, tools.RuleEqual("sync_enable", true))
 	if len(req.Regions) > 0 {
 		rules = append(rules, tools.RuleIn("region_id", req.Regions))
+	} else {
+		rules = append(rules, tools.RuleEqual("sync_enable", true))
 	}
 
 	// check region
@@ -140,11 +144,43 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		}
 		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
 	}
-	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
-		return nil, nil, errf.Newf(errf.InvalidParameter,
-			"some request regions don't exist or sync is disabled, expected: %d, found: %d",
-			len(req.Regions), len(regionList))
+	if len(req.Regions) > 0 {
+		if err := checkAwsRequestRegions(req.Regions, regionList); err != nil {
+			return nil, nil, err
+		}
 	}
-	req.Regions = slice.Unique(req.Regions)
 	return req, syncFunc, nil
+}
+
+// checkAwsRequestRegions 区分请求地域不存在和同步已禁用。
+func checkAwsRequestRegions(requestRegions []string, regionList []region.AwsRegion) error {
+	found := make(map[string]bool, len(regionList))
+	for _, one := range regionList {
+		found[one.RegionID] = one.SyncEnable
+	}
+
+	missing := make([]string, 0)
+	disabled := make([]string, 0)
+	for _, regionID := range requestRegions {
+		syncEnable, ok := found[regionID]
+		if !ok {
+			missing = append(missing, regionID)
+			continue
+		}
+		if !syncEnable {
+			disabled = append(disabled, regionID)
+		}
+	}
+
+	switch {
+	case len(missing) > 0 && len(disabled) > 0:
+		return errf.Newf(errf.InvalidParameter,
+			"some request regions don't exist: %v, sync is disabled: %v", missing, disabled)
+	case len(missing) > 0:
+		return errf.Newf(errf.InvalidParameter, "some request regions don't exist: %v", missing)
+	case len(disabled) > 0:
+		return errf.Newf(errf.InvalidParameter, "some request regions sync is disabled: %v", disabled)
+	default:
+		return nil
+	}
 }

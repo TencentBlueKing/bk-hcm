@@ -31,13 +31,10 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
 
@@ -120,12 +117,40 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 地域没有实例级权限，各云厂商共用这一处鉴权：只校验用户是否拥有「资源-IaaS资源操作」权限点。
+	if err := svc.authorizeRegionSyncEnable(cts); err != nil {
+		return nil, err
+	}
+
 	switch vendor {
 	case enumor.Aws:
 		return svc.batchUpdateAwsRegionSyncEnable(cts, req)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
+}
+
+// authorizeRegionSyncEnable 只校验「资源-IaaS资源操作」权限点，不校验具体地域或账号实例。
+// 该权限点在鉴权适配里由 IaaS 资源的 update 动作映射，这里不传入资源 ID。
+func (svc *RegionSvc) authorizeRegionSyncEnable(cts *rest.Contexts) error {
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Update}}
+	decisions, err := svc.authorizer.AuthorizeAny(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("authorize region sync_enable failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+
+	if len(decisions) > 0 && decisions[0].Authorized {
+		return nil
+	}
+
+	permission, err := svc.authorizer.GetPermissionToApply(cts.Kit, authRes)
+	if err != nil {
+		logs.Errorf("get region sync_enable permission to apply failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return errf.New(errf.DoAuthorizeFailed, "get permission to apply failed")
+	}
+
+	return errf.NewWithPerm(errf.PermissionDenied, "no permission", permission)
 }
 
 // batchUpdateAwsRegionSyncEnable batch update aws region sync_enable field.
@@ -151,31 +176,12 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 			"some regions don't exist, expected: %d, found: %d", len(ids), len(listResp.Details))
 	}
 
-	basicInfoMap := make(map[string]types.CloudResourceBasicInfo, len(listResp.Details))
-	for _, region := range listResp.Details {
-		basicInfoMap[region.ID] = types.CloudResourceBasicInfo{
-			ResType:   enumor.RegionCloudResType,
-			ID:        region.ID,
-			Vendor:    region.Vendor,
-			AccountID: region.AccountID,
-		}
-	}
-
-	if err := handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer,
-		ResType:    meta.Vpc,
-		Action:     meta.Update,
-		BasicInfos: basicInfoMap,
-	}); err != nil {
-		return nil, err
-	}
-
 	// 构建批量更新请求
 	regions := make([]dataprotoregion.AwsRegionBatchUpdate, 0, len(ids))
 	for _, id := range ids {
 		regions = append(regions, dataprotoregion.AwsRegionBatchUpdate{
 			ID:         id,
-			SyncEnable: converter.ValToPtr(*req.SyncEnable),
+			SyncEnable: req.SyncEnable,
 		})
 	}
 
@@ -190,7 +196,7 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	}
 
 	logs.Infof("batch update aws region sync_enable success, ids: %v, sync_enable: %v, rid: %s",
-		ids, req.SyncEnable, kt.Rid)
+		ids, *req.SyncEnable, kt.Rid)
 
 	return nil, nil
 }
