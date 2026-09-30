@@ -17,12 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package util provides idempotent DDL/DML helpers for hcm-migrate. MySQL has
-// no `IF [NOT] EXISTS` for most DDL statements, so every helper here probes
-// the current structure via MetaOrm first, then only executes the statement
-// when it would actually change something. Migration files must only import
-// this package (and hcm/migrate/register), never hcm/migrate/engine or
-// MetaOrm directly.
+// Package util provides idempotent DDL/DML helpers for hcm-migrate. Migration
+// files must only import this package and hcm/migrate/register, never
+// hcm/migrate/engine or MetaOrm directly.
 package util
 
 import (
@@ -33,14 +30,12 @@ import (
 	"strings"
 
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/logs"
 )
 
-// plainIdentifierRe matches a table/column/index/constraint name that is
-// safe to embed into DDL. MySQL cannot bind identifiers as query parameters,
-// so helpers concatenate names after quoting them with backticks; this
-// whitelist rejects anything that could break out of those backticks
-// (spaces, semicolons, quotes, dots, leading digits).
+// plainIdentifierRe matches a table/column/index/constraint name safe to
+// embed into DDL after backtick quoting.
 var plainIdentifierRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // validateIdent checks that name is a safe, plain identifier before it is
@@ -107,8 +102,7 @@ func ExprDefault(expr string) *ColumnDefault {
 }
 
 // formatDefault renders d as a leading-space DEFAULT clause. A nil d omits
-// the clause. A blank unquoted expression is rejected so DEFAULT NULL cannot
-// collapse into an empty clause.
+// the clause. A blank unquoted expression is rejected.
 func formatDefault(d *ColumnDefault) (string, error) {
 	if d == nil {
 		return "", nil
@@ -122,10 +116,8 @@ func formatDefault(d *ColumnDefault) (string, error) {
 	return " DEFAULT " + d.value, nil
 }
 
-// exec runs a DDL statement built by this package. It intentionally uses the
-// caller-provided bare orm.Interface: migration DDL must never go through
-// ModifySQLOpts (tenant SQL rewriting only applies to business data, not to
-// structure changes).
+// exec runs a DDL statement built by this package on the caller-provided
+// bare orm.Interface. Migration DDL must not go through ModifySQLOpts.
 func exec(ctx context.Context, o orm.Interface, ddl string) error {
 	if _, err := o.Do().Exec(ctx, ddl); err != nil {
 		return fmt.Errorf("exec %q failed, err: %v", ddl, err)
@@ -134,11 +126,8 @@ func exec(ctx context.Context, o orm.Interface, ddl string) error {
 }
 
 // CreateTableIfNotExists creates table by running ddl only if table does not
-// exist yet. ddl is the caller's full `CREATE TABLE ...` statement: unlike
-// the other helpers in this package, the statement is not parameter-built,
-// because a table definition (columns, keys, engine, charset) is too varied
-// to model generically. created reports whether this call ran ddl; it is
-// false when the table already existed or on error.
+// exist yet. ddl is the caller's full CREATE TABLE statement. created is true
+// only when this call ran ddl.
 func CreateTableIfNotExists(ctx context.Context, o orm.Interface, table, ddl string) (created bool, err error) {
 	if err := validateIdent("table", table); err != nil {
 		return false, err
@@ -187,8 +176,8 @@ type AddColumnOpt struct {
 	Table string
 	// Column is the column name to add.
 	Column string
-	// Type is the raw column type, e.g. "int(11)", "varchar(64)". It is
-	// concatenated as-is, so it must be a static literal, never user input.
+	// Type is the raw column type, e.g. "int(11)", "varchar(64)". Must be a
+	// static literal, never user input.
 	Type string
 	// NotNull adds a `NOT NULL` constraint when true.
 	NotNull bool
@@ -274,10 +263,8 @@ func DropColumn(ctx context.Context, o orm.Interface, table, column string) erro
 	return exec(ctx, o, ddl)
 }
 
-// RenameColumn renames oldColumn to newColumn on table. It is idempotent in
-// both directions: if newColumn already exists the rename is assumed to have
-// happened already and is skipped; if neither column exists it fails, since
-// there is nothing safe to infer.
+// RenameColumn renames oldColumn to newColumn on table. Skips if newColumn
+// already exists. Fails if neither column exists.
 func RenameColumn(ctx context.Context, o orm.Interface, table, oldColumn, newColumn string) error {
 	if err := validateIdent("table", table); err != nil {
 		return err
@@ -375,9 +362,8 @@ func DropIndex(ctx context.Context, o orm.Interface, table, index string) error 
 }
 
 // AddConstraint runs ddl to add constraint on table only if it does not
-// exist yet. ddl is the caller's full `ALTER TABLE ... ADD CONSTRAINT ...`
-// statement: constraints (e.g. foreign keys, checks) are rare enough and
-// varied enough that building them generically is not worthwhile.
+// exist yet. ddl is the caller's full ALTER TABLE ... ADD CONSTRAINT ...
+// statement.
 func AddConstraint(ctx context.Context, o orm.Interface, table, constraint, ddl string) error {
 	if err := validateIdent("table", table); err != nil {
 		return err
@@ -402,10 +388,7 @@ func AddConstraint(ctx context.Context, o orm.Interface, table, constraint, ddl 
 }
 
 // DropConstraint runs ddl to drop constraint from table only if it still
-// exists. ddl is the caller's full `ALTER TABLE ... DROP ...` statement:
-// like AddConstraint, the statement is not parameter-built, because dropping
-// a constraint needs a different clause depending on its kind (e.g.
-// `DROP FOREIGN KEY` vs `DROP CHECK`).
+// exists. ddl is the caller's full ALTER TABLE ... DROP ... statement.
 func DropConstraint(ctx context.Context, o orm.Interface, table, constraint, ddl string) error {
 	if err := validateIdent("table", table); err != nil {
 		return err
@@ -429,20 +412,13 @@ func DropConstraint(ctx context.Context, o orm.Interface, table, constraint, ddl
 	return exec(ctx, o, ddl)
 }
 
-// idGeneratorTable is the shared id_generator table name, see
-// hcm/pkg/dal/dao/id-generator.
-const idGeneratorTable = "id_generator"
-
 // idGeneratorInsertExpr inserts a resource row, swallowing a duplicate
 // `resource` primary key with a no-op update.
-const idGeneratorInsertExpr = "INSERT INTO `" + idGeneratorTable + "` (`resource`, `max_id`) " +
+const idGeneratorInsertExpr = "INSERT INTO `" + string(table.IDGenerator) + "` (`resource`, `max_id`) " +
 	"VALUES (:resource, :max_id) ON DUPLICATE KEY UPDATE `resource` = `resource`"
 
-// InsertIDGenerator inserts one hcm/pkg/dal/dao/id-generator seed row
-// (resource, maxID) into id_generator, used by migrations that introduce a
-// new ID-generated resource. It replaces the older, more generic
-// InsertIfAbsent: a duplicate `resource` key becomes a no-op update, so it is
-// safe to call repeatedly.
+// InsertIDGenerator inserts one id_generator seed row (resource, maxID). A
+// duplicate resource key is a no-op.
 func InsertIDGenerator(ctx context.Context, o orm.Interface, resource, maxID string) error {
 	if resource == "" || maxID == "" {
 		return errors.New("insert id_generator: resource and max_id are required")

@@ -26,10 +26,8 @@ import (
 	"hcm/pkg/dal/dao/orm"
 )
 
-// MetaOrm probes MySQL structure via information_schema. It is a tool used
-// internally by this package's idempotent Add*/Drop*/CreateTableIfNotExists
-// helpers, not a public API: migration files must call those helpers instead
-// of calling MetaOrm directly.
+// MetaOrm probes MySQL structure via information_schema. Migration files must
+// call the package helpers, not MetaOrm directly.
 type MetaOrm interface {
 	// HasTable reports whether table exists in the current database.
 	HasTable(ctx context.Context, table string) (bool, error)
@@ -46,8 +44,7 @@ type MetaOrm interface {
 }
 
 // NewMetaOrm creates a MetaOrm backed by the given orm.Interface. Callers must
-// pass in a bare orm (e.g. dal.GetOrm().Do() root, without ModifySQLOpts), so
-// structure probing is never affected by tenant SQL rewriting.
+// pass a bare orm without ModifySQLOpts.
 func NewMetaOrm(o orm.Interface) MetaOrm {
 	return &metaOrm{orm: o}
 }
