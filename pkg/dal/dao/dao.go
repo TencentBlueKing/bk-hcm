@@ -77,6 +77,7 @@ import (
 
 // Set defines all the DAO to be operated.
 type Set interface {
+	GetOrm() orm.Interface // 获取ORM实例（用于特殊场景，如数据迁移）
 	Audit() audit.Interface
 	Auth() auth.Auth
 	Account() cloud.Account
@@ -243,6 +244,11 @@ type set struct {
 	orm   orm.Interface
 	db    *sqlx.DB
 	audit audit.Interface
+}
+
+// GetOrm 获取ORM实例（用于特殊场景，如数据迁移）
+func (s *set) GetOrm() orm.Interface {
+	return s.orm
 }
 
 // EipCvmRel return EipCvmRel dao.
