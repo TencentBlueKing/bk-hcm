@@ -9,10 +9,10 @@ set -euo pipefail
 usage() {
 	cat <<'EOF'
 Usage:
-  release-migrate.sh --version <version> [--database main|obs]...
+  release-migrate.sh --version <version> [--database main]...
 
   --version    vX.Y.Z, vX.Y.Z.N or vX.Y.Z-<label>.N
-  --database   repeatable; default main and obs
+  --database   repeatable; default main
 EOF
 }
 
@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 if [[ ${#databases[@]} -eq 0 ]]; then
-	databases=(main obs)
+	databases=(main)
 fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -48,8 +48,8 @@ if [[ -z "$version" ]]; then
 fi
 group="$(version_group "$version")" || exit 2
 for db in "${databases[@]}"; do
-	if [[ "$db" != "main" && "$db" != "obs" ]]; then
-		echo "--database must be main or obs, got: $db" >&2
+	if [[ "$db" != "main" ]]; then
+		echo "--database must be main, got: $db" >&2
 		exit 2
 	fi
 done

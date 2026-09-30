@@ -2,7 +2,7 @@
 
 ## 快速上手
 
-给 HCM 的 MySQL 做表结构变更。变更写在 `migrate/migrations/` 里，随二进制一起编译。每个库自己记哪些已经跑过，主库和 OBS 库各算各的。写迁移不用先看后面的目录说明。
+给 HCM 的 MySQL 做表结构变更。变更写在 `migrate/migrations/` 里，随二进制一起编译。每个库自己记哪些已经跑过。写迁移不用先看后面的目录说明。
 
 在仓库根目录执行脚本。脚本会改 `migrate/migrations/`，结束时自己跑一遍检查。
 
@@ -12,10 +12,9 @@
 
 ```bash
 bash migrate/scripts/new-migrate.sh --database main --desc add_bk_asset_id
-bash migrate/scripts/new-migrate.sh --database obs --desc create_obs_bill
 ```
 
-`--database` 只填 `main`（主库）或 `obs`（OBS 库）。`--desc` 用小写单词，中间下划线，例如 `add_bk_asset_id`。不要加 `--version`。脚本会写好 ID、时间戳和 `imports.go` 里的引用。主库和 OBS 库各做一个目录，不要在一个文件里注册两个库。
+`--database` 只填 `main`（主库）。`--desc` 用小写单词，中间下划线，例如 `add_bk_asset_id`。不要加 `--version`。脚本会写好 ID、时间戳和 `imports.go` 里的引用。
 
 脚本生成的 `Up` 里是一段建表、加列、加索引的示例，用注释框住，换成实际变更。建表、加列、加索引、改列名、删列、往 `id_generator` 插一行，都用 `hcm/migrate/util` 里的函数，不要手写「先查再改」。这些函数发现已经做过就跳过，所以一条迁移中途失败后，改完再跑，前面成功的步骤可以再执行一遍。
 
@@ -33,7 +32,7 @@ bash migrate/scripts/check-migrate.sh
 - 迁移文件只能引用 `hcm/migrate/register`、`hcm/migrate/util` 和 `hcm/pkg/criteria/constant`。版本保持脚本写上的 `constant.MigrationPendingVersion`，不要改成版本字符串。
 - 不要引用 `engine`、`schema`、`cli`，也不要引用另一条迁移。
 - `package` 固定写 `migration`。一个目录只注册一次。
-- 外部版是对外发布的那一套代码，不含只在内部用的库和变更。两边都要的迁移，把整个目录（含 `migrate.go` 和同目录里的其他文件）拷到外部版的 `pending/`，不要重新生成。只在内部用的（例如只改 OBS 库）不要拷过去。拷目录不会改外部版的 `imports.go`，这一行很容易漏。漏了编译不会报错，这条迁移也不会进二进制，外部版上永远不跑。拷完必须在外部版仓库跑 `check-migrate.sh`。
+- 外部版是对外发布的那一套代码，不含只在内部用的库和变更。两边都要的迁移，把整个目录（含 `migrate.go` 和同目录里的其他文件）拷到外部版的 `pending/`，不要重新生成。只在内部用的不要拷过去。拷目录不会改外部版的 `imports.go`，这一行很容易漏。漏了编译不会报错，这条迁移也不会进二进制，外部版上永远不跑。拷完必须在外部版仓库跑 `check-migrate.sh`。
 - 内部提到外部的同一条迁移，ID 原样带过去。目录名也保持原样，从 14 位时间戳起到结尾的那一段必须一致，例如内部是 `pending/20260927160000_add_bk_asset_id/`，外部也是这个目录名。这段或 ID 有一边改了，程序会当成两条迁移复用了同一个 ID，拒绝执行。
 - 拷过去之后如果改了 `Up` 里的逻辑，内部和外部两份一起改。只改一边，另一边再跑会对不上。
 
@@ -44,7 +43,7 @@ bash migrate/scripts/check-migrate.sh
 
 ### 出包
 
-每次发布只做一件事：把这个库的 `pending/` 整目录定成一个版本号。不要手改版本字符串，不要按文件挑着定。OBS 库单独定一次，不和主库混在同一条命令里。
+每次发布只做一件事：把这个库的 `pending/` 整目录定成一个版本号。不要手改版本字符串，不要按文件挑着定。
 
 ① 合外部版代码进内部
 
@@ -64,7 +63,7 @@ bash migrate/scripts/check-migrate.sh
 | --- | --- | --- |
 | `v1.9.3` | `v1.9.3/` | 外部版，三位主线版本 |
 | `v1.9.3.1` | `v1.9.3.x/` | 内部版。`.1`、`.2` 是内部在这个主线版本上的第几包 |
-| `v1.9.3-tenant.1` | `v1.9.3.x/` | 特性分支。同一次发布不要再混进另一个标签，例如 `-woa` |
+| `v1.9.3-tenant.1` | `v1.9.3.x/` | 特性分支。同一次发布不要再混进另一个标签，例如 `-feat` |
 
 内部主库：
 
@@ -84,18 +83,11 @@ bash migrate/scripts/release-migrate.sh --database main --version v1.9.3
 bash migrate/scripts/release-migrate.sh --database main --version v1.9.3-tenant.1
 ```
 
-OBS 库单独再跑一次，版本号用这一包自己的版本。内部包用 `v1.9.3.1`，特性分支包用 `v1.9.3-tenant.1`：
-
-```bash
-bash migrate/scripts/release-migrate.sh --database obs --version v1.9.3.1
-bash migrate/scripts/release-migrate.sh --database obs --version v1.9.3-tenant.1
-```
-
 一次只定一个版本号。下一包再从那时的 `pending/` 定为 `v1.9.3.2`，不要把两包收进同一个版本。
 
 ④ 检查 `imports.go`
 
-定版脚本会改 `imports.go`。从内部拷到外部版的目录不会改这一行，这是最容易漏的地方。提交前再跑一次 `check-migrate.sh`，确认这一版的 `v1.9.3/`、`v1.9.3.x/` 和 `obs/` 下每个迁移目录都有一行引用。漏了这行，编译不会报错，这条迁移也不会进二进制，环境上永远不跑。同一个 ID、「时间戳_名称」也相同、只是版本前缀不同，检查会警告但不会失败，这是内外两份都留时的正常结果。
+定版脚本会改 `imports.go`。从内部拷到外部版的目录不会改这一行，这是最容易漏的地方。提交前再跑一次 `check-migrate.sh`，确认这一版的 `v1.9.3/` 和 `v1.9.3.x/` 下每个迁移目录都有一行引用。漏了这行，编译不会报错，这条迁移也不会进二进制，环境上永远不跑。同一个 ID、「时间戳_名称」也相同、只是版本前缀不同，检查会警告但不会失败，这是内外两份都留时的正常结果。
 
 特性分支合回主线时，再用 `archive-feat-migrate` 把 `v1.9.3-tenant.1` 这类目录收到对应的主线版本下。这不是每次定版都要做的步骤。
 
@@ -122,8 +114,7 @@ migrate/
 │   └── lib.sh                 上面几个脚本共用的函数，不要单独执行
 ├── migrations/
 │   ├── imports.go             每条迁移一行引用，把它们编进二进制
-│   ├── main/                  主库
-│   └── obs/                   OBS 库
+│   └── main/                  主库
 ├── util/                      建表、加列、加索引这些可重复执行的函数
 ├── register/                  启动时收集迁移，并按版本排序
 ├── engine/                    决定执行、跳过还是失败，然后真正跑 Up
@@ -131,7 +122,7 @@ migrate/
 └── cli/                       init / up / status / list
 ```
 
-`migrations/main` 和 `migrations/obs` 下面只有三种分组：`pending/`、`v1.9.3/` 这种三位版本、`v1.9.3.x/` 这种带第四段的版本。分组目录本身不是 Go 包，真正的代码在它下一层的迁移目录里。
+`migrations/main` 下面只有三种分组：`pending/`、`v1.9.3/` 这种三位版本、`v1.9.3.x/` 这种带第四段的版本。分组目录本身不是 Go 包，真正的代码在它下一层的迁移目录里。
 
 二进制编进当前这棵树里的全部迁移。环境上怎么跑，只看这个库自己的记录，不看别的库，也不看代码里的版本号大小本身：
 
@@ -151,7 +142,7 @@ migrate/
 
 ## 记录表和审计表
 
-`init` 在每个库里各建这两张表。主库和 OBS 库各有一份，互不代替。查问题先分清库。
+`init` 在每个库里各建这两张表。
 
 `hcm_migration_record` 回答「这条迁移在这个库上跑过没有」。一个迁移 ID 一行。
 

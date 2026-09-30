@@ -6,9 +6,9 @@ set -euo pipefail
 usage() {
 	cat <<'EOF'
 Usage:
-  new-migrate.sh --database main|obs --desc <name> [--version <version>]
+  new-migrate.sh --database main --desc <name> [--version <version>]
 
-  --database   main or obs
+  --database   main
   --desc       lowercase words joined by "_", e.g. add_bk_asset_id
   --version    vX.Y.Z, vX.Y.Z.N or vX.Y.Z-<label>.N; omit to create it in pending/
 
@@ -39,8 +39,8 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [[ "$database" != "main" && "$database" != "obs" ]]; then
-	echo "--database must be main or obs" >&2
+if [[ "$database" != "main" ]]; then
+	echo "--database must be main" >&2
 	exit 2
 fi
 if [[ ! "$desc" =~ ^[a-z][a-z0-9]*(_[a-z0-9]+)*$ ]]; then
@@ -66,11 +66,7 @@ fi
 
 migrations="$root/migrations"
 imports="$migrations/imports.go"
-if [[ "$database" == "main" ]]; then
-	registry="register.Main"
-else
-	registry="register.Obs"
-fi
+registry="register.Main"
 
 # 同一秒再建一条会撞上同一个「时间戳_名称」，所以等到下一秒。
 ts="$(date +%Y%m%d%H%M%S)"

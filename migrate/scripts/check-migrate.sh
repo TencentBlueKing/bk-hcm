@@ -6,7 +6,7 @@
 # 第一次用，先看这六项在查什么：
 #
 #   1. 目录结构
-#      migrations/ 下只能有 imports.go、main/、obs/。
+#      migrations/ 下只能有 imports.go、main/。
 #      每个库下面的分组只能是 pending、vX.Y.Z、vX.Y.Z.x。
 #      分组里只能放迁移目录，迁移目录里不能再有子目录。
 #
@@ -79,7 +79,7 @@ print_result() {
 		fi
 		echo
 	done <<'EOF'
-layout	目录结构	migrations/ 下只有 imports.go、main/、obs/，分组和迁移目录合法
+layout	目录结构	migrations/ 下只有 imports.go、main/，分组和迁移目录合法
 name	目录名	pending 与已定版的目录名、版本分组、时间戳一致
 regist	注册	每个目录一份 migrate.go，只注册一次，库、版本、时间戳、ID 与目录一致
 imports	imports.go	每个迁移目录有且只有一行空白 import
@@ -106,17 +106,17 @@ if [[ ! -f "$imports" ]]; then
 	fail_item imports "migrations/imports.go 不存在"
 fi
 
-# Only imports.go, main/ and obs/ live directly under migrations/.
+# Only imports.go and main/ live directly under migrations/.
 for entry in "$migrations"/*; do
 	case "$(basename "$entry")" in
-	imports.go | main | obs) ;;
+	imports.go | main) ;;
 	*) fail_item layout "migrations/ 下有多余项 $(basename "$entry")" ;;
 	esac
 done
 
-for db in main obs; do
+for db in main; do
 	[[ -d "$migrations/$db" ]] || continue
-	if [[ "$db" == "main" ]]; then registry="Main"; other="Obs"; else registry="Obs"; other="Main"; fi
+	registry="Main"
 
 	for group in "$migrations/$db"/*; do
 		[[ -e "$group" ]] || continue
@@ -179,11 +179,9 @@ for db in main obs; do
 			in_main=0
 			call=""
 			id=""
-			uses_other=0
 			for go_file in "$dir"/*.go; do
 				[[ -f "$go_file" ]] || continue
 				while IFS= read -r line || [[ -n "$line" ]]; do
-					[[ "$line" == *"register.$other"* ]] && uses_other=1
 					[[ "$line" =~ ^[[:space:]]*// ]] && continue
 					rest="$line"
 					while [[ "$rest" == *".Regist("* ]]; do
@@ -215,9 +213,6 @@ for db in main obs; do
 			call_ts="${BASH_REMATCH[3]}"
 			if [[ "$call_registry" != "$registry" ]]; then
 				fail_item regist "$rel 在 $db/ 下，却注册到了 register.$call_registry"
-			fi
-			if [[ "$uses_other" == 1 ]]; then
-				fail_item regist "$rel 在 $db/ 下，却用了 register.$other"
 			fi
 			if [[ -z "$dir_version" && "$call_version" != "constant.MigrationPendingVersion" ]]; then
 				fail_item regist "$rel 在 pending/ 下，版本必须是 constant.MigrationPendingVersion，实际是 $call_version"
@@ -285,7 +280,7 @@ sort "$work/ids" | awk -v errfile="$work/err.id" -v warnfile="$work/warn.id" '
 '
 
 # 迁移只能依赖 register、util 和 constant，不能依赖执行层，也不能依赖别的迁移。
-for db in main obs; do
+for db in main; do
 	[[ -d "$migrations/$db" ]] || continue
 	grep -rlE '"hcm/migrate/(engine|schema|cli|migrations)(/|")' "$migrations/$db" >"$work/bad_deps" || true
 	while read -r file; do

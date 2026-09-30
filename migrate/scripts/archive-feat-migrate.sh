@@ -24,10 +24,10 @@ set -euo pipefail
 usage() {
 	cat <<'EOF'
 Usage:
-  archive-feat-migrate.sh --label <label> [--database main|obs]... [--dry-run]
+  archive-feat-migrate.sh --label <label> [--database main]... [--dry-run]
 
   --label      特性分支标签，例如 tenant，对应版本 vX.Y.Z-tenant.N
-  --database   可重复；不写时主库和 OBS 库一起处理
+  --database   可重复；不写时处理主库
   --dry-run    只打印报告，不改任何文件
 EOF
 }
@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 if [[ ${#databases[@]} -eq 0 ]]; then
-	databases=(main obs)
+	databases=(main)
 fi
 
 if [[ ! "$label" =~ ^[a-z][a-z0-9]*$ ]]; then
@@ -59,8 +59,8 @@ if [[ ! "$label" =~ ^[a-z][a-z0-9]*$ ]]; then
 	exit 2
 fi
 for db in "${databases[@]}"; do
-	if [[ "$db" != "main" && "$db" != "obs" ]]; then
-		echo "--database must be main or obs, got: $db" >&2
+	if [[ "$db" != "main" ]]; then
+		echo "--database must be main, got: $db" >&2
 		exit 2
 	fi
 done
