@@ -56,3 +56,26 @@ const (
 	// MigrationAuditMaxItems is the maximum items of the audit warnings and message columns.
 	MigrationAuditMaxItems = 200
 )
+
+// MigrationLogLineMaxKB is the maximum size of one hcm-migrate log line, the
+// default of the services' maxPerLineSizeKB.
+const MigrationLogLineMaxKB = 5
+
+// Process exit codes of hcm-migrate.
+const (
+	// MigrationExitSuccess means the command succeeded.
+	MigrationExitSuccess = 0
+	// MigrationExitFailure means a migration or a record write failed during execution.
+	MigrationExitFailure = 1
+	// MigrationExitUsage means an argument or config error.
+	MigrationExitUsage = 2
+	// MigrationExitPrecondition means a migration table is missing or holds invalid records.
+	MigrationExitPrecondition = 3
+	// MigrationExitMissed means a missed migration in the default mode.
+	MigrationExitMissed = 4
+	// MigrationExitRegistry means invalid registry content: PENDING without
+	// --allow-pending, or more than one version label.
+	MigrationExitRegistry = 5
+	// MigrationExitIDReuse means a suspected migration ID reuse.
+	MigrationExitIDReuse = 6
+)

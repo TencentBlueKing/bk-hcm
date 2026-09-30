@@ -121,10 +121,17 @@ stdout 只打人要看的判定结果与汇总表，便于 `kubectl logs` 直接
 
 ```text
 migrate/
-├── migrate.go                 入口：root 命令 + init / up / status / list 装配
+├── migrate.go                 入口：pkg/logs 打 stderr，调用 cli.Run
+├── cli/                       子命令装配：init / up / status / list
+│   ├── cli.go                 Run、全局参数、退出码接线
+│   ├── init.go
+│   ├── up.go
+│   ├── status.go
+│   ├── list.go
+│   └── output.go              计划 / status / list / 汇总的 stdout 表格
 ├── Makefile                   build / test / check-imports / check-migration-deps
 ├── scripts/
-│   ├── new-migrate.sh         建模板（UUID + 时间戳 + 目录）并写 imports.go
+│   ├── new-migrate.sh         建模板（时间戳 + 目录）并写 imports.go
 │   ├── release-migrate.sh     pending 整目录定版
 │   ├── archive.sh             特性分支归档
 │   └── check-imports.sh       出包门禁：版本目录是否都被空白 import
@@ -133,17 +140,23 @@ migrate/
 │   ├── version.go             Version / Suffix / Parse / Compare / IsPending
 │   ├── register_test.go
 │   └── version_test.go
+├── schema/                    与 engine 平级：记录表与运行审计表
+│   ├── schema.go              两表 DDL、InitTables、MissingTables、BaselineMigrations、CheckInitialized
+│   ├── recordstore.go         记录读写 + 库当前版本计算
+│   ├── auditstore.go          NewAudit().Begin / End
+│   └── *_test.go
 ├── engine/
 │   ├── datasource.go          cc 配置 → 主库与 OBS 的 dao.Set；缺省跳过
-│   ├── schema.go              记录表 DDL；init 经 util.CreateTableIfNotExists 建表建表
-│   ├── recordstore.go         记录读写 + 库当前版本计算
-│   ├── executor.go            按库循环 + 逐条判定 + 默认 / 补跑 + plan
+│   ├── plan.go                Prepare / BuildPlan / CollectPlanErrors；Plan 含 Records
+│   ├── executor.go            Execute / NewBlockedResult
 │   └── *_test.go
 └── migrations/
     ├── imports.go             空白 import，把版本包拉进编译
     ├── main/                  → register.Main
     └── obs/                   → register.Obs
 ```
+
+退出码哨兵（`ErrUsage` / `ErrPrecondition` / `ErrMissed` / `ErrRegistry` / `ErrIDReuse`）与 `ExitCode` 映射放在 `pkg/migrate/errors.go`，不在 `engine` 内。
 
 `Regist(id, version, timestamp, description string, up UpFunc)` 五个位置参数，`up` 的签名是 `func(ctx context.Context, o orm.Interface) error`，和 `migrate/util` 里每个幂等辅助函数对齐。校验不过时 `panic`，沿用仓库里 `pkg/async/action` 注册失败的写法；这些调用都在 `init()` 里，panic 即进程在 `main` 之前终止。panic 文本带上全部五个字段，因为这是读日志的人定位到具体文件的唯一线索。
 
@@ -347,7 +360,7 @@ for 每个已排序、且不超过版本上限的 m:
 20. **记录表里未知的 `status` 是前置条件失败（退出码 3）**。和无法解析的版本同一个理由：这张表是别的东西写的。`running` / `success` / `failed` 以外的值，包括空串和大小写不同的写法，一律拒绝。
 21. **相等版本的库当前版本取字典序较小的原文**。例如同时有 `v1.9.3` 和 `v1.9.3.0` 时，`CurrentVersion` 固定返回原文 `v1.9.3`，结果不依赖 map 的遍历顺序。只有 `.0` 那一条时，原文保持 `v1.9.3.0`，不会被改写成三位。
 22. **`--database` 的空元素、重复和大小写**。空元素（如 `main,`、单独的空串或纯空白）是退出码 2；重复名字合并成一个；输出顺序始终先 main 后 obs，与输入顺序无关；名字大小写敏感，`MAIN` 不是 `main`。
-23. **退出码不在 engine 里映射**。项目里没有进程退出码框架，`errf` 是接口业务错误码（错误文本是 JSON、`NewFromErr` 只留 message、断链），不适用。engine 导出哨兵错误 `ErrUsage` / `ErrPrecondition` / `ErrMissed` / `ErrRegistry` / `ErrIDReuse`，产生处用 `%w` 包装。`errors.Is` 到退出码的映射放在第 6 组 CLI 的 main 里（2/3/4/5/6），链上没有哨兵错误时为 1，nil 为 0。
+23. **退出码不在 engine 里映射**。项目里没有进程退出码框架，`errf` 是接口业务错误码（错误文本是 JSON、`NewFromErr` 只留 message、断链），不适用。哨兵错误 `ErrUsage` / `ErrPrecondition` / `ErrMissed` / `ErrRegistry` / `ErrIDReuse` 与 `ExitCode` 放在 `pkg/migrate/errors.go`，产生处用 `%w` 包装。CLI（`migrate/cli`）经 `errors.Is` 映射到退出码 2/3/4/5/6，链上没有哨兵错误时为 1，nil 为 0。
 24. **success / failed 写入把影响行数 0 当成错误（记录不存在）**。`MarkRunning` 总是先执行，而且状态一定会变，所以更新到 0 行说明该走的那一行不在。
 25. **`Load` 对每一行校验 `version`，不限状态**。未知 `status` 仍先拒绝。通过之后，`running` / `success` / `failed` 的 `version` 都要能解析，失败同样是前置条件错误（退出码 3），并且不返回已经读到的记录。`CurrentVersion` 的行为不变：只在 `success` 行里取最大，解析失败仍拒绝，用来挡住没有经过 `Load` 拼出来的记录。
 

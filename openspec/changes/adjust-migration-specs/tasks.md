@@ -15,11 +15,11 @@
 ## 3. 执行与命令
 
 - [x] 3.1 按 `specs/migrate-executor/spec.md`：执行前校验、疑似 ID 复用（统一 owner / `migrate.PkgSuffix`，退出码 6）、label 与 `--allow-pending`（退出码 5）、漏执行（退出码 4）；`Prepare` / `BuildPlan` / `CollectPlanErrors` / `Execute`；循环只照计划执行
-- [ ] 3.2 按 `specs/migrate-cli/spec.md`：`--allow-pending`；`init` 调用 `InitTables`；CLI 接线 `NewAudit().Begin` / `End`；退出码 0–6 映射（哨兵 `ErrUsage`/`ErrPrecondition`/`ErrMissed`/`ErrRegistry`/`ErrIDReuse`）
-- [x] 3.3 按 delta 改 `openspec/changes/migrate-exec-layer/specs/migrate-executor/spec.md` 与 `migrate-cli/spec.md`（退出码 / ID 复用 / label / PENDING 与本变更对齐；实现仍待 3.2）
+- [x] 3.2 按 `specs/migrate-cli/spec.md`：`--allow-pending`；`init` 调用 `InitTables`；CLI 接线 `NewAudit().Begin` / `End`；退出码 0–6 映射（哨兵 `ErrUsage`/`ErrPrecondition`/`ErrMissed`/`ErrRegistry`/`ErrIDReuse`）
+- [x] 3.3 按 delta 改 `openspec/changes/migrate-exec-layer/specs/migrate-executor/spec.md` 与 `migrate-cli/spec.md`（退出码 / ID 复用 / label / PENDING 与本变更对齐）
 
 ## 4. 运行审计与旧叙述
 
 - [x] 4.1 `migrate/schema/auditstore.go`：`NewAudit().Begin`、`(*Audit).End`；最新仍为 `running` 的行进 warnings；空 rid / 插入失败只警告并空操作；JSON 空列表写 `[]`；warnings/message 200 项与 1024 字节上限
-- [ ] 4.2 确认 `specs/migrate-audit/spec.md` 仍只放在本变更下，不复制进 `migrate-exec-layer`
+- [x] 4.2 确认 `specs/migrate-audit/spec.md` 仍只放在本变更下，不复制进 `migrate-exec-layer`
 - [ ] 4.3 在 `openspec/changes/migrate-exec-layer/proposal.md` 与 `design.md` 里，把仍写着 UUID、连库前一律拒绝 `PENDING`、动作名必须一致的段落改成指向本变更，避免和 spec 矛盾

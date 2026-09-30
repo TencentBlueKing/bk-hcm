@@ -19,7 +19,11 @@
 
 package migrate
 
-import "errors"
+import (
+	"errors"
+
+	"hcm/pkg/criteria/constant"
+)
 
 // Errors wrapping these sentinels with %w are told apart by the CLI through
 // errors.Is and mapped to exit codes; any other error is a plain failure,
@@ -42,3 +46,24 @@ var (
 	// another migration suffix, exit code 6.
 	ErrIDReuse = errors.New("suspected migration id reuse")
 )
+
+// ExitCode returns the process exit code of err: constant.MigrationExitSuccess
+// for nil, the code of the sentinel err wraps, or constant.MigrationExitFailure.
+func ExitCode(err error) int {
+	switch {
+	case err == nil:
+		return constant.MigrationExitSuccess
+	case errors.Is(err, ErrUsage):
+		return constant.MigrationExitUsage
+	case errors.Is(err, ErrPrecondition):
+		return constant.MigrationExitPrecondition
+	case errors.Is(err, ErrMissed):
+		return constant.MigrationExitMissed
+	case errors.Is(err, ErrRegistry):
+		return constant.MigrationExitRegistry
+	case errors.Is(err, ErrIDReuse):
+		return constant.MigrationExitIDReuse
+	default:
+		return constant.MigrationExitFailure
+	}
+}

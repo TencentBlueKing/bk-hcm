@@ -32,16 +32,30 @@
 
 ### Requirement: 写入时机与失败隔离
 
-审计器 SHALL 在连上库之后尽早插入一行 `status=running`（所有路径含检查失败都须在结束时更新）。运行结束后 SHALL 更新这一行，写入 `end_at`、`status`、`exit_code`、`version_before`、`version_after`、`skipped`、`warnings`、`message`。检查问题 MUST 全部写入 `message`。`status` 为 `success` 当且仅当 `exit_code` 为 0，否则为 `failed`。JSON 列 MUST 在结束时一次写入；`running` 期间为空；结束时空列表 MUST 写成 `[]` 而不是 `null`。执行层 MUST NOT import 审计器，也 MUST NOT 在迁移循环里调用它。审计器由 CLI 调用。
+对 `up`，审计器 SHALL 在连上库之后、`Prepare` 之前插入一行 `status=running`（所有路径含检查失败都须在结束时更新）。对 `init`，审计行 MUST 在该库 `InitTables` 返回之后再插入：首次 init 时审计表在建表前可能尚不存在。运行结束后 SHALL 更新这一行，写入 `end_at`、`status`、`exit_code`、`version_before`、`version_after`、`skipped`、`warnings`、`message`。检查问题 MUST 全部写入 `message`。
+
+对 `up`，每一行的 `exit_code` MUST 是本次进程的退出码（不是该库自身是否成功的局部码）；一次进程内所有已 `Begin` 的 up 审计行 MUST 以同一进程退出码一并 `End`。对 `init`，每个库的审计行在该库 `InitTables` 返回后 `Begin` 并立即以该库自身结果 `End`，`exit_code` 为该库结果对应的退出码（成功为 0）。`status` 为 `success` 当且仅当 `exit_code` 为 0，否则为 `failed`。
+
+JSON 列 MUST 在结束时一次写入；`running` 期间为空；结束时空列表 MUST 写成 `[]` 而不是 `null`。执行层 MUST NOT import 审计器，也 MUST NOT 在迁移循环里调用它。审计器由 CLI 调用。
 
 插入或更新失败时，审计器 SHALL 只打警告，MUST NOT 改变命令的退出码。`kit` 的 `Rid` 为空时，SHALL 只打警告并跳过整次审计，MUST NOT 插入。插入失败后，结束时的更新 MUST NOT 再写。对 `nil` 审计句柄调用结束更新 MUST 什么都不做。
 
-`version_before` SHALL 是执行开始时算出的库当前版本。`version_after` SHALL 是执行结果上的变量：开始时等于 `version_before`；成功执行或回填得到更高的已定版版本时更新；`PENDING` MUST NOT 抬高。命令出错时 MUST 仍写入当时的 `version_after`。
+`version_before` SHALL 是执行开始时算出的库当前版本。`version_after` SHALL 是执行结果上的变量：开始时等于 `version_before`；成功执行或回填得到更高的已定版版本时更新；`PENDING` MUST NOT 抬高。`init` 的审计行 `version_after` MUST 保持为空。命令出错时 MUST 仍写入当时的 `version_after`。
 
 #### Scenario: 校验失败仍留下一行
 
 - **WHEN** `Load` 因未知 status 以退出码 3 失败
 - **THEN** 该库仍有一行 `hcm_migration_audit`，`status` 为 `failed`，`exit_code` 为 3
+
+#### Scenario: init 在建表后再写审计
+
+- **WHEN** 对两张表都不存在的空库执行 `init --mode=empty`
+- **THEN** 先完成 `InitTables`，再插入 `status=running` 的审计行，并以该库自身结果立即更新（成功时 `exit_code` 为 0）
+
+#### Scenario: 各库 exit_code 均为进程退出码
+
+- **WHEN** 主库迁移成功、OBS 迁移失败，进程退出码为 1
+- **THEN** 两个库的审计行 `exit_code` 均为 1
 
 #### Scenario: 审计失败不改变退出码
 

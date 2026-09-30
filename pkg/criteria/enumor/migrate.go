@@ -56,6 +56,27 @@ const (
 	MigrationSkipBaseline MigrationSkipReason = "baseline"
 )
 
+// MigrationInitMode is the --mode of hcm-migrate init.
+type MigrationInitMode string
+
+const (
+	// MigrationInitModeEmpty only creates the migration tables.
+	MigrationInitModeEmpty MigrationInitMode = "empty"
+	// MigrationInitModeAdopt creates the migration tables and records the
+	// migrations at or below each database baseline as success.
+	MigrationInitModeAdopt MigrationInitMode = "adopt"
+)
+
+// Validate checks whether the init mode is one of the declared values.
+func (m MigrationInitMode) Validate() error {
+	switch m {
+	case MigrationInitModeEmpty, MigrationInitModeAdopt:
+		return nil
+	default:
+		return fmt.Errorf("unsupported migration init mode: %q, want empty or adopt", m)
+	}
+}
+
 // MigrationAction is the decision on one migration in a plan.
 type MigrationAction string
 

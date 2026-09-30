@@ -65,9 +65,10 @@ func Prepare(kt *kit.Kit, o orm.Interface, reg *register.Registry, opts Options)
 }
 
 // CollectPlanErrors returns nil when every plan passed. Otherwise it logs every
-// issue of every plan and returns one error listing them all, wrapping only the
-// sentinel of the highest priority: migrate.ErrIDReuse, then migrate.ErrRegistry, then
-// migrate.ErrMissed.
+// issue of every plan and returns one error listing them all. The wrapped
+// sentinel is the highest priority present: migrate.ErrIDReuse, then
+// migrate.ErrRegistry, then migrate.ErrMissed. An issue kind outside that list
+// is a plain failure and wraps none of them.
 func CollectPlanErrors(kt *kit.Kit, plans []*Plan) error {
 	kinds := make(map[enumor.MigrationIssueKind]bool)
 	var lines []string
@@ -83,16 +84,17 @@ func CollectPlanErrors(kt *kit.Kit, plans []*Plan) error {
 		return nil
 	}
 
-	var sentinel error
+	detail := fmt.Sprintf("%d problems found before execution, %s", len(lines), strings.Join(lines, "; "))
 	switch {
 	case kinds[enumor.MigrationIssueIDReuse]:
-		sentinel = migrate.ErrIDReuse
+		return fmt.Errorf("%w: %s", migrate.ErrIDReuse, detail)
 	case kinds[enumor.MigrationIssuePending], kinds[enumor.MigrationIssueLabels]:
-		sentinel = migrate.ErrRegistry
+		return fmt.Errorf("%w: %s", migrate.ErrRegistry, detail)
+	case kinds[enumor.MigrationIssueMissed]:
+		return fmt.Errorf("%w: %s", migrate.ErrMissed, detail)
 	default:
-		sentinel = migrate.ErrMissed
+		return fmt.Errorf("migration plan has an unknown issue kind, %s", detail)
 	}
-	return fmt.Errorf("%w: %d problems found before execution, %s", sentinel, len(lines), strings.Join(lines, "; "))
 }
 
 // ExecuteResult is the outcome of one database in a run.
@@ -171,10 +173,11 @@ func Execute(kt *kit.Kit, o orm.Interface, p *Plan) *ExecuteResult {
 	}
 
 	store := schema.NewRecordStore(o)
-	after, hasAfter := p.Current, p.HasReleasedVersion
-	raise := func(m register.Migration) {
-		if v, ok := m.ParsedVersion(); ok && (!hasAfter || register.Compare(v, after) > 0) {
-			after, hasAfter = v, true
+	after, hasReleasedAfter := p.Current, p.HasReleasedVersion
+	// advanceVersion sets version_after when m has a higher released version.
+	advanceVersion := func(m register.Migration) {
+		if v, ok := m.ParsedVersion(); ok && (!hasReleasedAfter || register.Compare(v, after) > 0) {
+			after, hasReleasedAfter = v, true
 			r.VersionAfter = v.Raw
 		}
 	}
@@ -187,13 +190,13 @@ func Execute(kt *kit.Kit, o orm.Interface, p *Plan) *ExecuteResult {
 				return r.fail(err)
 			}
 			r.Executed = append(r.Executed, m.ID)
-			raise(m)
+			advanceVersion(m)
 		case enumor.MigrationActionSkipBackfill:
 			if err := store.BackfillPendingVersion(kt, m); err != nil {
 				return r.fail(err)
 			}
 			r.skip(kt, item, enumor.MigrationSkipApplied)
-			raise(m)
+			advanceVersion(m)
 		case enumor.MigrationActionSkipSuccess:
 			r.skip(kt, item, enumor.MigrationSkipApplied)
 		case enumor.MigrationActionAboveMaxVersion:

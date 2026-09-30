@@ -69,6 +69,8 @@ type Plan struct {
 	// is empty, or it holds only running, failed, and PENDING rows. The
 	// missed-migration check applies only when HasReleasedVersion is true.
 	HasReleasedVersion bool
+	// Records are the records the plan was built from.
+	Records schema.Records
 	// Items follow the execution order, one per registered migration.
 	Items    []PlanItem
 	Issues   []Issue
@@ -95,11 +97,9 @@ type idOwner struct {
 	// version is the version recorded for the ID after this plan, updated when
 	// a planned backfill replaces PENDING.
 	version string
-	// fromRecord is true when this owner comes from a success record. It is
-	// false when this owner is the earlier copy of the same ID in this walk,
-	// the copy that claimed the ID. The migration checked against it is the
-	// later copy.
-	fromRecord bool
+	// recorded is true when this owner is a success record. False means an
+	// earlier copy in this walk claimed the ID.
+	recorded bool
 }
 
 // BuildPlan checks one database and decides every migration. migrations must
@@ -114,13 +114,13 @@ type idOwner struct {
 func BuildPlan(database string, migrations []register.Migration, records schema.Records, current register.Version,
 	hasReleasedVersion bool, opts Options) *Plan {
 
-	p := &Plan{Database: database, Current: current, HasReleasedVersion: hasReleasedVersion}
+	p := &Plan{Database: database, Current: current, HasReleasedVersion: hasReleasedVersion, Records: records}
 	p.Issues = append(p.Issues, labelIssues(migrations)...)
 
 	owners := make(map[string]*idOwner, len(records))
 	for id, r := range records {
 		if r.Status == enumor.MigrationStatusSuccess {
-			owners[id] = &idOwner{pkg: r.AppliedPkg, version: r.Version, fromRecord: true}
+			owners[id] = &idOwner{pkg: r.AppliedPkg, version: r.Version, recorded: true}
 		}
 	}
 
@@ -152,15 +152,16 @@ func (p *Plan) checkOne(m register.Migration, owners map[string]*idOwner, opts O
 		return p.skipByID(m, owner)
 	}
 
-	// An allowed PENDING migration belongs to no release, so it is not
-	// compared with the current version. Catch-up only turns a missed
-	// released migration into an execution. It does not run PENDING by
-	// itself: a PENDING migration reaches this line only when --allow-pending
-	// is on and no ceiling excluded it.
 	switch {
-	case m.IsPending(), opts.CatchUp:
+	case m.IsPending():
+		// Allowed PENDING belongs to no release, so it is not compared with the
+		// current version. It reaches here only with --allow-pending, and only
+		// when no ceiling excluded it.
 		item.Action = enumor.MigrationActionExecute
-	case p.HasReleasedVersion && register.Compare(parsedVersion(m), p.Current) <= 0:
+	case opts.CatchUp:
+		// Catch-up runs a released migration that the default mode would call missed.
+		item.Action = enumor.MigrationActionExecute
+	case p.missed(m):
 		item.Action = enumor.MigrationActionMissing
 		p.addIssue(enumor.MigrationIssueMissed, fmt.Sprintf("missed migration, id: %s, version: %s, current: %s, pkg: %s",
 			m.ID, m.Version, p.Current.Raw, m.Pkg))
@@ -179,7 +180,7 @@ func (p *Plan) skipByID(m register.Migration, owner *idOwner) PlanItem {
 
 	if !sameSuffix(owner.pkg, m.Pkg) {
 		item.Action = enumor.MigrationActionIDReuse
-		if owner.fromRecord {
+		if owner.recorded {
 			p.addIssue(enumor.MigrationIssueIDReuse, fmt.Sprintf("suspected migration id reuse, id: %s, recorded version: %s, "+
 				"applied_pkg: %s, pkg: %s", m.ID, owner.version, owner.pkg, m.Pkg))
 		} else {
@@ -191,6 +192,8 @@ func (p *Plan) skipByID(m register.Migration, owner *idOwner) PlanItem {
 
 	if register.IsPending(owner.version) && !m.IsPending() {
 		item.Action = enumor.MigrationActionSkipBackfill
+		// Later copies of this ID in this walk compare against the released
+		// version, so a different version is drift instead of another backfill.
 		owner.version = m.Version
 		return item
 	}
@@ -247,10 +250,12 @@ func aboveMaxVersion(m register.Migration, ceiling *register.Version) bool {
 	return !ok || register.Compare(v, *ceiling) > 0
 }
 
-// parsedVersion returns the parsed version of a released migration.
-func parsedVersion(m register.Migration) register.Version {
-	v, _ := m.ParsedVersion()
-	return v
+// missed reports whether a released migration is at or below the database
+// version. PENDING never reaches here. A migration whose version does not
+// parse is not treated as missed.
+func (p *Plan) missed(m register.Migration) bool {
+	v, ok := m.ParsedVersion()
+	return ok && p.HasReleasedVersion && register.Compare(v, p.Current) <= 0
 }
 
 // sameSuffix reports whether two migration packages share a migration suffix.

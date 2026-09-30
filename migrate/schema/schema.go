@@ -122,23 +122,32 @@ func InitTables(kt *kit.Kit, o orm.Interface, baseline *register.Version,
 // CheckInitialized returns a migrate.ErrPrecondition error naming every missing
 // table when the database is not initialized.
 func CheckInitialized(kt *kit.Kit, o orm.Interface) error {
+	missing, err := MissingTables(kt, o)
+	if err != nil {
+		return err
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%w: migration tables %v do not exist, run init first", migrate.ErrPrecondition, missing)
+	}
+	return nil
+}
+
+// MissingTables returns the tables InitTables would create, in the order it
+// creates them. It writes nothing.
+func MissingTables(kt *kit.Kit, o orm.Interface) ([]string, error) {
 	meta := util.NewMetaOrm(o)
 	var missing []string
 	for _, table := range initTables {
 		exists, err := meta.HasTable(kt.Ctx, table)
 		if err != nil {
 			logs.Errorf("check migration table failed, err: %v, table: %s, rid: %s", err, table, kt.Rid)
-			return fmt.Errorf("check migration table %s failed, err: %v", table, err)
+			return nil, fmt.Errorf("check migration table %s failed, err: %v", table, err)
 		}
 		if !exists {
 			missing = append(missing, table)
 		}
 	}
-
-	if len(missing) > 0 {
-		return fmt.Errorf("%w: migration tables %v do not exist, run init first", migrate.ErrPrecondition, missing)
-	}
-	return nil
+	return missing, nil
 }
 
 // initRecordTable creates the record table and, when it is created with a
@@ -159,7 +168,7 @@ func initRecordTable(kt *kit.Kit, o orm.Interface, baseline *register.Version,
 		return true, nil, nil
 	}
 
-	adopted = baselineMigrations(*baseline, migrations)
+	adopted = BaselineMigrations(*baseline, migrations)
 	if err = insertBaseline(kt, o, adopted); err != nil {
 		// Drop the record table created by this call so init can be retried.
 		if dropErr := util.DropTable(kt.Ctx, o, constant.MigrationRecordTable); dropErr != nil {
@@ -175,10 +184,10 @@ func initRecordTable(kt *kit.Kit, o orm.Interface, baseline *register.Version,
 	return true, adopted, nil
 }
 
-// baselineMigrations returns the migrations at or below baseline. PENDING
-// migrations are never included. A duplicate migration ID is kept only at
-// its first position.
-func baselineMigrations(baseline register.Version, migrations []register.Migration) []register.Migration {
+// BaselineMigrations returns the migrations at or below baseline, the ones
+// init --mode=adopt records as success. PENDING migrations are never
+// included. A duplicate migration ID is kept only at its first position.
+func BaselineMigrations(baseline register.Version, migrations []register.Migration) []register.Migration {
 	seen := make(map[string]struct{}, len(migrations))
 	out := make([]register.Migration, 0, len(migrations))
 	for _, m := range migrations {

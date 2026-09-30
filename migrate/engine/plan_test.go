@@ -556,6 +556,20 @@ func TestCollectPlanErrors(t *testing.T) {
 		assert.Contains(t, err.Error(), "[obs] labels")
 	})
 
+	t.Run("unknown kind is a plain failure", func(t *testing.T) {
+		err := CollectPlanErrors(kt, []*Plan{{
+			Database: "main",
+			Issues:   []Issue{{Kind: "other", Message: "x"}},
+		}})
+		require.Error(t, err)
+		assert.Equal(t, constant.MigrationExitFailure, migrate.ExitCode(err))
+		assert.NotErrorIs(t, err, migrate.ErrMissed)
+		assert.NotErrorIs(t, err, migrate.ErrRegistry)
+		assert.NotErrorIs(t, err, migrate.ErrIDReuse)
+		assert.Contains(t, err.Error(), "unknown issue kind")
+		assert.Contains(t, err.Error(), "[main] x")
+	})
+
 	t.Run("only missed", func(t *testing.T) {
 		err := CollectPlanErrors(kt, []*Plan{{
 			Database: "main",

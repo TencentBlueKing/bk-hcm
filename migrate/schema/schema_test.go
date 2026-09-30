@@ -108,6 +108,146 @@ func assertNoSentinel(t *testing.T, err error) {
 	assert.NotErrorIs(t, err, migrate.ErrIDReuse)
 }
 
+func TestMissingTables(t *testing.T) {
+	kt := kit.New()
+
+	testCases := []struct {
+		name      string
+		setup     func(*fakeDo)
+		want      []string
+		wantErr   bool
+		wantSent  bool
+		errHas    []string
+		wantCount int
+	}{
+		{
+			name: "both missing order audit then record",
+			setup: func(do *fakeDo) {
+				do.countDefault = 0
+			},
+			want:      []string{constant.MigrationAuditTable, constant.MigrationRecordTable},
+			wantCount: 2,
+		},
+		{
+			name: "audit missing only",
+			setup: func(do *fakeDo) {
+				do.countQueue = []countReply{{n: 0}, {n: 1}}
+			},
+			want:      []string{constant.MigrationAuditTable},
+			wantCount: 2,
+		},
+		{
+			name: "record missing only",
+			setup: func(do *fakeDo) {
+				do.countQueue = []countReply{{n: 1}, {n: 0}}
+			},
+			want:      []string{constant.MigrationRecordTable},
+			wantCount: 2,
+		},
+		{
+			name: "none missing",
+			setup: func(do *fakeDo) {
+				do.countDefault = 1
+			},
+			want:      nil,
+			wantCount: 2,
+		},
+		{
+			name: "HasTable error is plain",
+			setup: func(do *fakeDo) {
+				do.countErr = errors.New("schema down")
+			},
+			wantErr:   true,
+			wantSent:  false,
+			errHas:    []string{"check migration table", constant.MigrationAuditTable, "schema down"},
+			wantCount: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			do := newFakeDo()
+			tc.setup(do)
+			got, err := MissingTables(kt, newFakeOrm(do))
+			assert.Len(t, do.callsOf("count"), tc.wantCount)
+			if tc.wantErr {
+				require.Error(t, err)
+				assert.Nil(t, got)
+				if tc.wantSent {
+					assert.ErrorIs(t, err, migrate.ErrPrecondition)
+				} else {
+					assertNoSentinel(t, err)
+				}
+				for _, s := range tc.errHas {
+					assert.Contains(t, err.Error(), s)
+				}
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestCheckInitialized(t *testing.T) {
+	kt := kit.New()
+
+	testCases := []struct {
+		name     string
+		setup    func(*fakeDo)
+		wantErr  bool
+		wantSent bool
+		errHas   []string
+	}{
+		{
+			name: "both tables exist",
+			setup: func(do *fakeDo) {
+				do.countDefault = 1
+			},
+		},
+		{
+			name: "both missing wraps ErrPrecondition",
+			setup: func(do *fakeDo) {
+				do.countDefault = 0
+			},
+			wantErr:  true,
+			wantSent: true,
+			errHas: []string{constant.MigrationAuditTable, constant.MigrationRecordTable,
+				"do not exist", "run init first"},
+		},
+		{
+			name: "HasTable error is plain no ErrPrecondition",
+			setup: func(do *fakeDo) {
+				do.countErr = errors.New("schema down")
+			},
+			wantErr:  true,
+			wantSent: false,
+			errHas:   []string{"check migration table", "schema down"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			do := newFakeDo()
+			tc.setup(do)
+			err := CheckInitialized(kt, newFakeOrm(do))
+			if !tc.wantErr {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			if tc.wantSent {
+				assert.ErrorIs(t, err, migrate.ErrPrecondition)
+			} else {
+				assertNoSentinel(t, err)
+			}
+			for _, s := range tc.errHas {
+				assert.Contains(t, err.Error(), s)
+			}
+		})
+	}
+}
+
 func TestRecordTableDDL(t *testing.T) {
 	assert.Equal(t, "hcm_migration_record", constant.MigrationRecordTable)
 	assert.True(t, strings.HasPrefix(recordTableDDL, "CREATE TABLE `"+constant.MigrationRecordTable+"`"))
@@ -249,7 +389,7 @@ func TestBaselineMigrations(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := baselineMigrations(mustVersion(t, tc.baseline), tc.in)
+			got := BaselineMigrations(mustVersion(t, tc.baseline), tc.in)
 			require.Len(t, got, len(tc.wantID))
 			for i := range tc.wantID {
 				assert.Equal(t, tc.wantID[i], got[i].ID)
