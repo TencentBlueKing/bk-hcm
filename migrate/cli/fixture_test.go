@@ -39,8 +39,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Readable migration IDs. These tests must not mutate register.Main or
-// register.Obs.
+// Readable migration IDs. These tests must not mutate register.Main.
 const (
 	migA = "20260101-1200-A-0001"
 	migB = "20260101-1200-B-0002"

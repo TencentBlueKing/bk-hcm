@@ -25,8 +25,6 @@ const (
 
 	// MigrationDatabaseMain is the migration database name of the main database.
 	MigrationDatabaseMain = "main"
-	// MigrationDatabaseObs is the migration database name of the OBS database.
-	MigrationDatabaseObs = "obs"
 
 	// MigrationPendingVersion is the version of a migration whose release version is not decided yet.
 	MigrationPendingVersion = "PENDING"

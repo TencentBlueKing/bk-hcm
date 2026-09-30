@@ -188,8 +188,8 @@ func TestParsePkgPath(t *testing.T) {
 			wantErr:  true,
 		},
 		{
-			name:     "obs registry with main path",
-			database: "obs",
+			name:     "aux registry with main path",
+			database: "aux",
 			pkgPath:  releasedPkg("main", "v1.9.3", tsDefault, tagDefault),
 			ts:       tsDefault,
 			wantErr:  true,

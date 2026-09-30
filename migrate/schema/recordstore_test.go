@@ -163,7 +163,10 @@ func TestRecordStore_Load(t *testing.T) {
 	// Exact "PENDING" is accepted; only case/space variants stay unparsable.
 	badVersions := []string{"1.9.3", "", "v1.9", "v1.9.3-Tenant.1", "v01.9.3",
 		"pending", "Pending", " PENDING", "PENDING "}
-	for _, status := range []enumor.MigrationStatus{enumor.MigrationStatusRunning, enumor.MigrationStatusFailed, enumor.MigrationStatusSuccess} {
+	statuses := []enumor.MigrationStatus{
+		enumor.MigrationStatusRunning, enumor.MigrationStatusFailed, enumor.MigrationStatusSuccess,
+	}
+	for _, status := range statuses {
 		for _, bad := range badVersions {
 			t.Run(fmt.Sprintf("unparsable %s version %q", status, bad), func(t *testing.T) {
 				do := newFakeDo()
@@ -577,9 +580,13 @@ func TestCurrentVersion(t *testing.T) {
 func TestCurrentVersionEqualRawIsStable(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		records := Records{
-			fmt.Sprintf("folded-%d", i): {MigrationID: migA, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3.0"},
-			fmt.Sprintf("plain-%d", i):  {MigrationID: migB, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3"},
-			fmt.Sprintf("older-%d", i):  {MigrationID: migC, Status: enumor.MigrationStatusSuccess, Version: "v1.9.2"},
+			fmt.Sprintf("folded-%d", i): {
+				MigrationID: migA, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3.0",
+			},
+			fmt.Sprintf("plain-%d", i): {
+				MigrationID: migB, Status: enumor.MigrationStatusSuccess, Version: "v1.9.3",
+			},
+			fmt.Sprintf("older-%d", i): {MigrationID: migC, Status: enumor.MigrationStatusSuccess, Version: "v1.9.2"},
 		}
 		current, ok, err := CurrentVersion(records)
 		require.NoError(t, err)

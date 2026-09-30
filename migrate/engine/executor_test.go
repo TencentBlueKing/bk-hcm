@@ -530,7 +530,7 @@ func TestNewBlockedResult(t *testing.T) {
 	})
 
 	t.Run("passed plan blocked by another database", func(t *testing.T) {
-		p := &Plan{Database: "obs", HasReleasedVersion: false}
+		p := &Plan{Database: "aux", HasReleasedVersion: false}
 		r := NewBlockedResult(p, cause)
 		assert.Equal(t, cause, r.Err)
 		require.Len(t, r.Messages, 1)

@@ -58,7 +58,6 @@ func newDataSource(setting cc.DataServiceSetting, open func(opt cc.DataBase) (or
 	return &DataSource{
 		configs: map[string]*cc.DataBase{
 			register.Main.Database(): &setting.Database,
-			register.Obs.Database():  setting.OBSDatabase,
 		},
 		open: open,
 	}
@@ -98,9 +97,8 @@ func openOrm(opt cc.DataBase) (orm.Interface, error) {
 	return set.GetOrm(), nil
 }
 
-// registries lists every migrated database in execution order: main first,
-// then obs.
-var registries = []*register.Registry{register.Main, register.Obs}
+// registries lists every migrated database in execution order.
+var registries = []*register.Registry{register.Main}
 
 // SelectRegistries returns the registries named by the --database values, in
 // execution order. Each value may hold several comma separated names and may

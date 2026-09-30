@@ -35,16 +35,17 @@ import (
 )
 
 func TestSelectRegistries(t *testing.T) {
-	// register.Registry.database is unexported, so this package cannot build a
-	// third database name. Selection is tested with the two real registries.
-	// A reversed known list, passed to selectRegistries, checks that output
-	// order follows the known list rather than the flag order.
+	// register.Registry.database is unexported, so the second database is built
+	// with mustRegistry. A reversed known list, passed to selectRegistries,
+	// checks that output order follows the known list rather than the flag
+	// order.
+	known := []*register.Registry{register.Main, mustRegistry(t, "aux", nil)}
 
 	t.Run("nil values", func(t *testing.T) {
-		assertRegistryNames(t, nil, []string{"main", "obs"})
+		assertRegistryNames(t, known, nil, []string{"main", "aux"})
 	})
 	t.Run("empty slice", func(t *testing.T) {
-		assertRegistryNames(t, []string{}, []string{"main", "obs"})
+		assertRegistryNames(t, known, []string{}, []string{"main", "aux"})
 	})
 
 	testCases := []struct {
@@ -55,15 +56,15 @@ func TestSelectRegistries(t *testing.T) {
 		errHas  []string
 	}{
 		{name: "main", values: []string{"main"}, want: []string{"main"}},
-		{name: "obs", values: []string{"obs"}, want: []string{"obs"}},
-		{name: "comma main obs", values: []string{"main,obs"}, want: []string{"main", "obs"}},
-		{name: "comma obs main still main first", values: []string{"obs,main"}, want: []string{"main", "obs"}},
-		{name: "repeated flags", values: []string{"obs", "main"}, want: []string{"main", "obs"}},
+		{name: "aux", values: []string{"aux"}, want: []string{"aux"}},
+		{name: "comma main aux", values: []string{"main,aux"}, want: []string{"main", "aux"}},
+		{name: "comma aux main still main first", values: []string{"aux,main"}, want: []string{"main", "aux"}},
+		{name: "repeated flags", values: []string{"aux", "main"}, want: []string{"main", "aux"}},
 		{name: "duplicate flags", values: []string{"main", "main"}, want: []string{"main"}},
 		{name: "duplicate in one value", values: []string{"main,main"}, want: []string{"main"}},
-		{name: "whitespace around names", values: []string{" main , obs "}, want: []string{"main", "obs"}},
+		{name: "whitespace around names", values: []string{" main , aux "}, want: []string{"main", "aux"}},
 		{name: "padded single flag", values: []string{" main "}, want: []string{"main"}},
-		{name: "tab and newline", values: []string{"\tmain\n,\tobs\n"}, want: []string{"main", "obs"}},
+		{name: "tab and newline", values: []string{"\tmain\n,\taux\n"}, want: []string{"main", "aux"}},
 		{
 			name: "trailing comma", values: []string{"main,"}, wantErr: true,
 			errHas: []string{"empty database name"},
@@ -73,7 +74,7 @@ func TestSelectRegistries(t *testing.T) {
 			errHas: []string{"empty database name"},
 		},
 		{
-			name: "double comma", values: []string{"main,,obs"}, wantErr: true,
+			name: "double comma", values: []string{"main,,aux"}, wantErr: true,
 			errHas: []string{"empty database name"},
 		},
 		{
@@ -86,29 +87,29 @@ func TestSelectRegistries(t *testing.T) {
 		},
 		{
 			name: "unknown foo", values: []string{"foo"}, wantErr: true,
-			errHas: []string{"foo", "main, obs"},
+			errHas: []string{"foo", "main, aux"},
 		},
 		{
 			name: "uppercase MAIN", values: []string{"MAIN"}, wantErr: true,
-			errHas: []string{"MAIN", "main, obs"},
+			errHas: []string{"MAIN", "main, aux"},
 		},
 		{
-			name: "uppercase OBS", values: []string{"OBS"}, wantErr: true,
-			errHas: []string{"OBS", "supported"},
+			name: "uppercase AUX", values: []string{"AUX"}, wantErr: true,
+			errHas: []string{"AUX", "supported"},
 		},
 		{
 			name: "main then unknown", values: []string{"main,foo"}, wantErr: true,
-			errHas: []string{"foo", "main, obs"},
+			errHas: []string{"foo", "main, aux"},
 		},
 		{
 			name: "all is not a keyword", values: []string{"all"}, wantErr: true,
-			errHas: []string{"all", "main, obs"},
+			errHas: []string{"all", "main, aux"},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := SelectRegistries(tc.values)
+			got, err := selectRegistries(known, tc.values)
 			if tc.wantErr {
 				require.Error(t, err)
 				assert.Nil(t, got)
@@ -126,32 +127,39 @@ func TestSelectRegistries(t *testing.T) {
 	t.Run("result is a copy of registries", func(t *testing.T) {
 		got, err := SelectRegistries(nil)
 		require.NoError(t, err)
-		require.Equal(t, []*register.Registry{register.Main, register.Obs}, got)
-		got[0] = register.Obs
+		require.Equal(t, []*register.Registry{register.Main}, got)
+		got[0] = nil
 		assert.Same(t, register.Main, registries[0])
-		assert.Same(t, register.Obs, registries[1])
 
-		filtered, err := SelectRegistries([]string{"obs", "main"})
+		filtered, err := SelectRegistries([]string{"main"})
 		require.NoError(t, err)
-		require.Equal(t, []string{"main", "obs"}, registryNames(filtered))
+		require.Equal(t, []string{"main"}, registryNames(filtered))
 		filtered[0] = nil
 		assert.Same(t, register.Main, registries[0])
 	})
 
+	t.Run("only main is registered", func(t *testing.T) {
+		got, err := SelectRegistries([]string{"aux"})
+		require.Error(t, err)
+		assert.Nil(t, got)
+		assert.ErrorIs(t, err, migrate.ErrUsage)
+	})
+
 	t.Run("order follows the known list", func(t *testing.T) {
-		known := []*register.Registry{register.Obs, register.Main}
-		got, err := selectRegistries(known, []string{"main", "obs"})
+		aux := mustRegistry(t, "aux", nil)
+		reversed := []*register.Registry{aux, register.Main}
+		got, err := selectRegistries(reversed, []string{"main", "aux"})
 		require.NoError(t, err)
-		assert.Equal(t, []string{"obs", "main"}, registryNames(got))
+		assert.Equal(t, []string{"aux", "main"}, registryNames(got))
 		got[0] = nil
-		assert.Same(t, register.Obs, known[0])
-		assert.Same(t, register.Main, known[1])
+		assert.Same(t, aux, reversed[0])
+		assert.Same(t, register.Main, reversed[1])
 	})
 }
 
-func assertRegistryNames(t *testing.T, values []string, want []string) {
+func assertRegistryNames(t *testing.T, known []*register.Registry, values []string, want []string) {
 	t.Helper()
-	got, err := SelectRegistries(values)
+	got, err := selectRegistries(known, values)
 	require.NoError(t, err)
 	assert.Equal(t, want, registryNames(got))
 }
@@ -176,13 +184,13 @@ func TestDataSource_Open(t *testing.T) {
 	t.Run("nil config skips without opening", func(t *testing.T) {
 		opened := 0
 		ds := &DataSource{
-			configs: map[string]*cc.DataBase{"obs": nil},
+			configs: map[string]*cc.DataBase{"aux": nil},
 			open: func(cc.DataBase) (orm.Interface, error) {
 				opened++
 				return newFakeOrm(newFakeDo()), nil
 			},
 		}
-		o, ok, err := ds.Open(kt, register.Obs)
+		o, ok, err := ds.Open(kt, mustRegistry(t, "aux", nil))
 		require.NoError(t, err)
 		assert.False(t, ok)
 		assert.Nil(t, o)
@@ -257,7 +265,7 @@ func TestNewDataSource(t *testing.T) {
 		Password:  "main-pw",
 	}}
 
-	t.Run("obs not configured", func(t *testing.T) {
+	t.Run("main only", func(t *testing.T) {
 		opened := 0
 		marker := errors.New("open marker")
 		ds := newDataSource(cc.DataServiceSetting{Database: mainDB}, func(cc.DataBase) (orm.Interface, error) {
@@ -269,56 +277,18 @@ func TestNewDataSource(t *testing.T) {
 		assert.Equal(t, mainDB.Resource.Endpoints, ds.configs["main"].Resource.Endpoints)
 		assert.Equal(t, mainDB.Resource.Database, ds.configs["main"].Resource.Database)
 		assert.Equal(t, mainDB.Resource.Password, ds.configs["main"].Resource.Password)
-		assert.Nil(t, ds.configs["obs"])
 
 		_, err := ds.open(cc.DataBase{})
 		require.ErrorIs(t, err, marker)
 		assert.Equal(t, 1, opened)
 	})
-
-	t.Run("obs configured", func(t *testing.T) {
-		obsDB := &cc.DataBase{Resource: cc.ResourceDB{
-			Endpoints: []string{"10.9.9.9:3306"},
-			Database:  "hcm_obs_app",
-			Password:  "obs-pw",
-		}}
-		var got cc.DataBase
-		opened := 0
-		ds := newDataSource(cc.DataServiceSetting{Database: mainDB, OBSDatabase: obsDB}, func(opt cc.DataBase) (orm.Interface, error) {
-			opened++
-			got = opt
-			return newFakeOrm(newFakeDo()), nil
-		})
-		assertConfigKeys(t, ds)
-		require.NotNil(t, ds.configs["main"])
-		assert.Equal(t, mainDB.Resource.Endpoints, ds.configs["main"].Resource.Endpoints)
-		assert.Equal(t, mainDB.Resource.Database, ds.configs["main"].Resource.Database)
-		assert.Equal(t, mainDB.Resource.Password, ds.configs["main"].Resource.Password)
-		require.NotNil(t, ds.configs["obs"])
-		assert.Equal(t, obsDB.Resource.Endpoints, ds.configs["obs"].Resource.Endpoints)
-		assert.Equal(t, obsDB.Resource.Database, ds.configs["obs"].Resource.Database)
-		assert.Equal(t, obsDB.Resource.Password, ds.configs["obs"].Resource.Password)
-
-		o, ok, err := ds.Open(kit.New(), register.Obs)
-		require.NoError(t, err)
-		assert.True(t, ok)
-		assert.NotNil(t, o)
-		assert.Equal(t, 1, opened)
-		assert.Equal(t, obsDB.Resource.Endpoints, got.Resource.Endpoints)
-		assert.Equal(t, obsDB.Resource.Database, got.Resource.Database)
-		assert.Equal(t, obsDB.Resource.Password, got.Resource.Password)
-		assert.NotEqual(t, mainDB.Resource.Database, got.Resource.Database)
-		assert.NotEqual(t, mainDB.Resource.Password, got.Resource.Password)
-	})
 }
 
 func assertConfigKeys(t *testing.T, ds *DataSource) {
 	t.Helper()
-	require.Len(t, ds.configs, 2)
+	require.Len(t, ds.configs, 1)
 	_, mainOK := ds.configs["main"]
-	_, obsOK := ds.configs["obs"]
 	assert.True(t, mainOK)
-	assert.True(t, obsOK)
 }
 
 func TestLoadDataSource(t *testing.T) {

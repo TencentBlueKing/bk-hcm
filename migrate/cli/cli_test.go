@@ -41,10 +41,10 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 		mustMigration(t, "main", migA, "v1.9.3", "20260101120000", "a"),
 		mustMigration(t, "main", migB, constant.MigrationPendingVersion, "20260102120000", "pending"),
 	})
-	obsReg := mustRegistry(t, "obs", []register.Migration{
-		mustMigration(t, "obs", migC, "v1.9.3", "20260101120000", "c"),
+	auxReg := mustRegistry(t, "aux", []register.Migration{
+		mustMigration(t, "aux", migC, "v1.9.3", "20260101120000", "c"),
 	})
-	regs := []*register.Registry{mainReg, obsReg}
+	regs := []*register.Registry{mainReg, auxReg}
 	fakeSrc := &mapSource{orms: map[string]orm.Interface{}}
 
 	type tc struct {

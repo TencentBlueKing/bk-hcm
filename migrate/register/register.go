@@ -85,11 +85,7 @@ type Registry struct {
 }
 
 // Main is the registry of the main database.
-// Obs is the registry of the OBS database.
-var (
-	Main = &Registry{database: constant.MigrationDatabaseMain}
-	Obs  = &Registry{database: constant.MigrationDatabaseObs}
-)
+var Main = &Registry{database: constant.MigrationDatabaseMain}
 
 // Database returns the database this registry belongs to. It is the name
 // --database selects registries by.

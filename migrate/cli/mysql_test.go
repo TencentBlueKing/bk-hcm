@@ -71,7 +71,6 @@ func TestValidateCLITestDatabase(t *testing.T) {
 	}{
 		{name: "generated name", dbName: "hcm_migrate_cli_test_1_1"},
 		{name: "app database", dbName: "hcm", wantErr: true},
-		{name: "obs database", dbName: "hcm_obs", wantErr: true},
 		{name: "engine prefix", dbName: "hcm_migrate_engine_test_1_1", wantErr: true},
 		{name: "empty", dbName: "", wantErr: true},
 		{name: "injection", dbName: "hcm_migrate_cli_test_1_1`; DROP DATABASE hcm; --", wantErr: true},
@@ -92,9 +91,9 @@ func TestLocalMySQLCLI(t *testing.T) {
 	skipIfNoCLIMySQL(t)
 
 	mainDB, mainOrm, _, _, _ := openCLIIsolatedMySQL(t)
-	obsDB, obsOrm, _, _, _ := openCLIIsolatedMySQL(t)
+	auxDB, auxOrm, _, _, _ := openCLIIsolatedMySQL(t)
 
-	var mainUpCalls, obsUpCalls, obsFailCalls atomic.Int32
+	var mainUpCalls, auxUpCalls, auxFailCalls atomic.Int32
 	mainA := mustMigration(t, "main", migA, "v1.9.3", "20260101120000", "main_a")
 	mainB := mustMigration(t, "main", migB, "v1.9.4", "20260101120000", "main_b")
 	mainA.Up = func(_ context.Context, _ orm.Interface) error {
@@ -105,23 +104,23 @@ func TestLocalMySQLCLI(t *testing.T) {
 		mainUpCalls.Add(1)
 		return nil
 	}
-	obsOK := mustMigration(t, "obs", migC, "v1.9.3", "20260101120000", "obs_ok")
-	obsFail := mustMigration(t, "obs", migD, "v1.9.4", "20260101120000", "obs_fail")
-	obsOK.Up = func(_ context.Context, _ orm.Interface) error {
-		obsUpCalls.Add(1)
+	auxOK := mustMigration(t, "aux", migC, "v1.9.3", "20260101120000", "aux_ok")
+	auxFail := mustMigration(t, "aux", migD, "v1.9.4", "20260101120000", "aux_fail")
+	auxOK.Up = func(_ context.Context, _ orm.Interface) error {
+		auxUpCalls.Add(1)
 		return nil
 	}
-	obsFail.Up = func(_ context.Context, _ orm.Interface) error {
-		obsFailCalls.Add(1)
-		return fmt.Errorf("obs boom")
+	auxFail.Up = func(_ context.Context, _ orm.Interface) error {
+		auxFailCalls.Add(1)
+		return fmt.Errorf("aux boom")
 	}
 
 	mainReg := mustRegistry(t, "main", []register.Migration{mainA, mainB})
-	obsReg := mustRegistry(t, "obs", []register.Migration{obsOK, obsFail})
-	regs := []*register.Registry{mainReg, obsReg}
+	auxReg := mustRegistry(t, "aux", []register.Migration{auxOK, auxFail})
+	regs := []*register.Registry{mainReg, auxReg}
 	source := &mapSource{orms: map[string]orm.Interface{
 		"main": mainOrm,
-		"obs":  obsOrm,
+		"aux":  auxOrm,
 	}}
 
 	runCLI := func(t *testing.T, args []string) (int, string, string) {
@@ -253,40 +252,40 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assert.Equal(t, "v1.9.4", last.VersionAfter)
 	})
 
-	t.Run("multi-db shared run_id and failing obs", func(t *testing.T) {
-		// Reset obs DB; main already migrated. Init obs only.
-		code, _, _ := runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "obs"})
+	t.Run("multi-db shared run_id and failing aux", func(t *testing.T) {
+		// Reset aux DB; main already migrated. Init aux only.
+		code, _, _ := runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "aux"})
 		require.Equal(t, constant.MigrationExitSuccess, code)
 
 		mainUpCalls.Store(0)
-		obsUpCalls.Store(0)
-		obsFailCalls.Store(0)
-		// main has nothing left to run; obs runs ok then fails.
+		auxUpCalls.Store(0)
+		auxFailCalls.Store(0)
+		// main has nothing left to run; aux runs ok then fails.
 		code, out, _ := runCLI(t, []string{"up", "-c", "fake.yaml"})
 		assert.Equal(t, constant.MigrationExitFailure, code)
 		assert.Contains(t, out, "summary:")
 		assert.Equal(t, int32(0), mainUpCalls.Load())
-		assert.Equal(t, int32(1), obsUpCalls.Load())
-		assert.Equal(t, int32(1), obsFailCalls.Load())
+		assert.Equal(t, int32(1), auxUpCalls.Load())
+		assert.Equal(t, int32(1), auxFailCalls.Load())
 
-		obsRows := cliLoadRecords(t, obsDB)
-		require.Contains(t, obsRows, migC)
-		assert.Equal(t, enumor.MigrationStatusSuccess, obsRows[migC].Status)
-		require.Contains(t, obsRows, migD)
-		assert.Equal(t, enumor.MigrationStatusFailed, obsRows[migD].Status)
+		auxRows := cliLoadRecords(t, auxDB)
+		require.Contains(t, auxRows, migC)
+		assert.Equal(t, enumor.MigrationStatusSuccess, auxRows[migC].Status)
+		require.Contains(t, auxRows, migD)
+		assert.Equal(t, enumor.MigrationStatusFailed, auxRows[migD].Status)
 
 		mainAudits := cliLoadAudits(t, mainDB)
-		obsAudits := cliLoadAudits(t, obsDB)
+		auxAudits := cliLoadAudits(t, auxDB)
 		mainLast := mainAudits[len(mainAudits)-1]
-		obsLast := obsAudits[len(obsAudits)-1]
+		auxLast := auxAudits[len(auxAudits)-1]
 		assert.Equal(t, "up", mainLast.Command)
-		assert.Equal(t, "up", obsLast.Command)
-		assert.Equal(t, mainLast.RunID, obsLast.RunID, "both databases share the run kit rid")
+		assert.Equal(t, "up", auxLast.Command)
+		assert.Equal(t, mainLast.RunID, auxLast.RunID, "both databases share the run kit rid")
 		require.True(t, mainLast.ExitCode.Valid)
 		assert.Equal(t, int64(1), mainLast.ExitCode.Int64)
 		assert.Equal(t, string(enumor.MigrationStatusFailed), mainLast.Status)
-		require.True(t, obsLast.ExitCode.Valid)
-		assert.Equal(t, int64(1), obsLast.ExitCode.Int64)
+		require.True(t, auxLast.ExitCode.Valid)
+		assert.Equal(t, int64(1), auxLast.ExitCode.Int64)
 	})
 
 	t.Run("missed migration default mode → exit 4 then catch-up", func(t *testing.T) {
@@ -316,44 +315,44 @@ func TestLocalMySQLCLI(t *testing.T) {
 
 		// Second: registry has missed low below current; default up fails.
 		regBoth := mustRegistry(t, "main", []register.Migration{low, high})
-		obsFreshDB, obsFreshOrm, _, _, _ := openCLIIsolatedMySQL(t)
-		obsM := mustMigration(t, "obs", migC, "v1.9.5", "20260101120000", "obs_later")
-		var obsCalls atomic.Int32
-		obsM.Up = func(_ context.Context, _ orm.Interface) error {
-			obsCalls.Add(1)
+		auxFreshDB, auxFreshOrm, _, _, _ := openCLIIsolatedMySQL(t)
+		auxM := mustMigration(t, "aux", migC, "v1.9.5", "20260101120000", "aux_later")
+		var auxCalls atomic.Int32
+		auxM.Up = func(_ context.Context, _ orm.Interface) error {
+			auxCalls.Add(1)
 			return nil
 		}
-		obsFreshReg := mustRegistry(t, "obs", []register.Migration{obsM})
+		auxFreshReg := mustRegistry(t, "aux", []register.Migration{auxM})
 		multiSrc := &mapSource{orms: map[string]orm.Interface{
 			"main": freshOrm,
-			"obs":  obsFreshOrm,
+			"aux":  auxFreshOrm,
 		}}
-		initObs := []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "obs"}
-		r, _, _ = newTestRunner(t, initObs, multiSrc, []*register.Registry{regBoth, obsFreshReg})
-		require.Equal(t, constant.MigrationExitSuccess, r.run(initObs))
+		initAux := []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "aux"}
+		r, _, _ = newTestRunner(t, initAux, multiSrc, []*register.Registry{regBoth, auxFreshReg})
+		require.Equal(t, constant.MigrationExitSuccess, r.run(initAux))
 
 		args = []string{"up", "-c", "fake.yaml"}
-		r, stdout, stderr := newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, obsFreshReg})
+		r, stdout, stderr := newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, auxFreshReg})
 		code := r.run(args)
 		assertExit(t, code, constant.MigrationExitMissed, stdout, stderr)
 		assert.Equal(t, int32(0), lowCalls.Load())
-		assert.Equal(t, int32(0), obsCalls.Load(), "nothing executed in any db")
+		assert.Equal(t, int32(0), auxCalls.Load(), "nothing executed in any db")
 		assert.Equal(t, 1, cliCountRecords(t, freshDB), "main still only high")
-		assert.Equal(t, 0, cliCountRecords(t, obsFreshDB))
+		assert.Equal(t, 0, cliCountRecords(t, auxFreshDB))
 
 		mainAudits := cliLoadAudits(t, freshDB)
-		obsAudits := cliLoadAudits(t, obsFreshDB)
+		auxAudits := cliLoadAudits(t, auxFreshDB)
 		mainLast := mainAudits[len(mainAudits)-1]
-		obsLast := obsAudits[len(obsAudits)-1]
-		assert.Equal(t, mainLast.RunID, obsLast.RunID)
+		auxLast := auxAudits[len(auxAudits)-1]
+		assert.Equal(t, mainLast.RunID, auxLast.RunID)
 		assert.Equal(t, int64(4), mainLast.ExitCode.Int64)
-		assert.Equal(t, int64(4), obsLast.ExitCode.Int64)
+		assert.Equal(t, int64(4), auxLast.ExitCode.Int64)
 		assert.Equal(t, string(enumor.MigrationStatusFailed), mainLast.Status)
 		assert.Contains(t, mainLast.Message.String, "missed migration")
 
 		// status shows <= current version mark
 		args = []string{"status", "-c", "fake.yaml", "-d", "main"}
-		r, stdout, stderr = newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, obsFreshReg})
+		r, stdout, stderr = newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, auxFreshReg})
 		code = r.run(args)
 		assertExit(t, code, constant.MigrationExitSuccess, stdout, stderr)
 		assert.Contains(t, stdout.String(), "<= current version")
@@ -467,7 +466,7 @@ func cliLoadRecords(t *testing.T, db *sqlx.DB) map[string]cliRecordRow {
 func validateCLITestDatabase(name string) error {
 	lower := strings.ToLower(name)
 	switch lower {
-	case "hcm", "hcm_obs", "mysql", "information_schema", "performance_schema", "sys":
+	case "hcm", "mysql", "information_schema", "performance_schema", "sys":
 		return fmt.Errorf("refusing application or system database %q", name)
 	}
 	if !cliTestDatabaseRe.MatchString(name) {
@@ -566,7 +565,6 @@ func openCLIIsolatedMySQL(t *testing.T) (db *sqlx.DB, o orm.Interface, dbName, u
 	require.True(t, current.Valid)
 	require.Equal(t, dbName, current.String)
 	require.NotEqual(t, "hcm", strings.ToLower(current.String))
-	require.NotEqual(t, "hcm_obs", strings.ToLower(current.String))
 
 	o = orm.InitOrm(db, orm.MetricsRegisterer(prometheus.NewRegistry()))
 	return db, o, dbName, user, pass

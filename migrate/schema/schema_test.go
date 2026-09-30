@@ -37,8 +37,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Readable migration IDs. These tests must not touch register.Main or
-// register.Obs.
+// Readable migration IDs. These tests must not touch register.Main.
 const (
 	migA = "20260101-1200-A-0001"
 	migB = "20260101-1200-B-0002"
@@ -255,7 +254,8 @@ func TestRecordTableDDL(t *testing.T) {
 	assert.Contains(t, recordTableDDL, fmt.Sprintf("`migration_id` VARCHAR(%d) NOT NULL", constant.MigrationIDMaxLen))
 	assert.Contains(t, recordTableDDL, "`migration_id` VARCHAR(64) NOT NULL")
 	assert.Contains(t, recordTableDDL, fmt.Sprintf("`version` VARCHAR(%d) NOT NULL", constant.MigrationVersionMaxLen))
-	assert.Contains(t, recordTableDDL, fmt.Sprintf("`applied_pkg` VARCHAR(%d) NOT NULL DEFAULT ''", constant.MigrationPkgMaxLen))
+	assert.Contains(t, recordTableDDL,
+		fmt.Sprintf("`applied_pkg` VARCHAR(%d) NOT NULL DEFAULT ''", constant.MigrationPkgMaxLen))
 	assert.Contains(t, recordTableDDL, "`message` VARCHAR(1024) NOT NULL DEFAULT ''")
 	assert.Contains(t, recordTableDDL, "PRIMARY KEY (`id`)")
 	assert.Contains(t, recordTableDDL, "UNIQUE KEY `uidx_migration_id` (`migration_id`)")

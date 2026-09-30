@@ -200,8 +200,8 @@ func TestIsPending(t *testing.T) {
 		{name: "trailing space", raw: constant.MigrationPendingVersion + " ", want: false},
 		{name: "leading space", raw: " " + constant.MigrationPendingVersion, want: false},
 		{name: "trailing newline", raw: constant.MigrationPendingVersion + "\n", want: false},
-		{name: "longer string with the placeholder as a prefix", raw: constant.MigrationPendingVersion + "x", want: false},
-		{name: "longer string with the placeholder as a suffix", raw: "x" + constant.MigrationPendingVersion, want: false},
+		{name: "placeholder as a prefix of a longer string", raw: constant.MigrationPendingVersion + "x", want: false},
+		{name: "placeholder as a suffix of a longer string", raw: "x" + constant.MigrationPendingVersion, want: false},
 	}
 
 	for _, tc := range testCases {
@@ -229,8 +229,8 @@ func TestCompare(t *testing.T) {
 		{name: "numeric fourth before labeled fourth", a: "v1.9.3.2", b: "v1.9.3-tenant.1", want: -1},
 		{name: "same label by seq", a: "v1.9.3-tenant.2", b: "v1.9.3-tenant.10", want: -1},
 		{name: "same numeric line by seq", a: "v1.9.3.2", b: "v1.9.3.10", want: -1},
-		{name: "across labels lexical", a: "v1.9.3-tenant.1", b: "v1.9.3-woa.1", want: -1},
-		{name: "across labels ignores seq", a: "v1.9.3-tenant.9", b: "v1.9.3-woa.1", want: -1},
+		{name: "across labels lexical", a: "v1.9.3-tenant.1", b: "v1.9.3-zone.1", want: -1},
+		{name: "across labels ignores seq", a: "v1.9.3-tenant.9", b: "v1.9.3-zone.1", want: -1},
 		{name: "fourth segment loses to next release", a: "v1.9.3-tenant.9", b: "v1.9.4", want: -1},
 		{name: "equal labeled versions", a: "v1.9.3-tenant.1", b: "v1.9.3-tenant.1", want: 0},
 		{name: "equal numeric fourth", a: "v1.9.3.2", b: "v1.9.3.2", want: 0},
@@ -253,7 +253,7 @@ func TestCompare(t *testing.T) {
 		// the larger seq.
 		{name: "label beats seq", a: "v1.9.3-a.9", b: "v1.9.3-b.0", want: -1},
 		// "tenant" is a prefix of "tenant2" and must still sort first.
-		{name: "shorter label before a longer one sharing the prefix", a: "v1.9.3-tenant.9", b: "v1.9.3-tenant2.0", want: -1},
+		{name: "shorter label before a longer sharing prefix", a: "v1.9.3-tenant.9", b: "v1.9.3-tenant2.0", want: -1},
 	}
 
 	for _, tc := range testCases {
@@ -384,7 +384,7 @@ var boundaryVersions = []string{
 	"v1.9.3-tenant.0",
 	"v1.9.3-tenant.1",
 	"v1.9.3-tenant2.0",
-	"v1.9.3-woa.0",
+	"v1.9.3-zone.0",
 	"v1.9.4",
 	"v1.9.10",
 	"v1.10.0",
@@ -460,7 +460,7 @@ func TestSortTotalOrder(t *testing.T) {
 		before("v1.9.3.99", "v1.9.3-a.0")
 		before("v1.9.3-a.0", "v1.9.3-tenant.0")
 		before("v1.9.3-tenant.1", "v1.9.3-tenant2.0")
-		before("v1.9.3-tenant2.0", "v1.9.3-woa.0")
+		before("v1.9.3-tenant2.0", "v1.9.3-zone.0")
 		before("v1.9.10", "v1.10.0")
 		before("v9.0.0", "v10.0.0")
 		assert.Equal(t, 0, Compare(got[index["v1.9.3"]], got[index["v1.9.3.0"]]))

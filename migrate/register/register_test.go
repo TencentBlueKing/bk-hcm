@@ -355,21 +355,19 @@ func TestRegistDuplicateID(t *testing.T) {
 
 	t.Run("different registries same id", func(t *testing.T) {
 		main := &Registry{database: "main"}
-		obs := &Registry{database: "obs"}
+		other := &Registry{database: "other"}
 		require.NotPanics(t, func() {
 			mustRegist(t, main, idA, "v1.9.3", tsDefault, "main_copy")
-			mustRegist(t, obs, idA, "v1.9.3", tsDefault, "obs_copy")
+			mustRegist(t, other, idA, "v1.9.3", tsDefault, "other_copy")
 		})
 
 		assert.Len(t, main.All(), 1)
-		assert.Len(t, obs.All(), 1)
+		assert.Len(t, other.All(), 1)
 	})
 }
 
 func TestRegistryInstances(t *testing.T) {
 	assert.Equal(t, "main", Main.Database())
-	assert.Equal(t, "obs", Obs.Database())
-	assert.NotSame(t, Main, Obs, "the two databases must not share one registry")
 }
 
 func TestAllReturnsACopy(t *testing.T) {

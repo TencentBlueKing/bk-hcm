@@ -82,7 +82,6 @@ func TestValidateTestDatabase(t *testing.T) {
 		{name: "generated name", dbName: "hcm_migrate_engine_test_1_1"},
 		{name: "app database", dbName: "hcm", wantErr: true},
 		{name: "app database upper", dbName: "HCM", wantErr: true},
-		{name: "obs database", dbName: "hcm_obs", wantErr: true},
 		{name: "mysql system", dbName: "mysql", wantErr: true},
 		{name: "information_schema", dbName: "information_schema", wantErr: true},
 		{name: "performance_schema", dbName: "performance_schema", wantErr: true},
@@ -637,7 +636,6 @@ func TestOpenOrm(t *testing.T) {
 	require.Len(t, rows, 1)
 	assert.Equal(t, dbName, rows[0].Name)
 	assert.NotEqual(t, "hcm", strings.ToLower(rows[0].Name))
-	assert.NotEqual(t, "hcm_obs", strings.ToLower(rows[0].Name))
 }
 
 func dropRecordTable(t *testing.T, db *sqlx.DB) {
@@ -713,7 +711,7 @@ func testDBOpt(user, pass, name string) cc.DataBase {
 func validateTestDatabase(name string) error {
 	lower := strings.ToLower(name)
 	switch lower {
-	case "hcm", "hcm_obs", "mysql", "information_schema", "performance_schema", "sys":
+	case "hcm", "mysql", "information_schema", "performance_schema", "sys":
 		return fmt.Errorf("refusing application or system database %q", name)
 	}
 	if !testDatabaseRe.MatchString(name) {

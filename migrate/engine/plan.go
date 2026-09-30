@@ -138,8 +138,8 @@ func (p *Plan) checkOne(m register.Migration, owners map[string]*idOwner, opts O
 
 	if m.IsPending() && !opts.AllowPending {
 		item.Action = enumor.MigrationActionPendingDenied
-		p.addIssue(enumor.MigrationIssuePending, fmt.Sprintf("pending migration is not allowed without --allow-pending, "+
-			"id: %s, pkg: %s", m.ID, m.Pkg))
+		p.addIssue(enumor.MigrationIssuePending, fmt.Sprintf(
+			"pending migration is not allowed without --allow-pending, id: %s, pkg: %s", m.ID, m.Pkg))
 		return item
 	}
 
@@ -163,7 +163,8 @@ func (p *Plan) checkOne(m register.Migration, owners map[string]*idOwner, opts O
 		item.Action = enumor.MigrationActionExecute
 	case p.missed(m):
 		item.Action = enumor.MigrationActionMissing
-		p.addIssue(enumor.MigrationIssueMissed, fmt.Sprintf("missed migration, id: %s, version: %s, current: %s, pkg: %s",
+		p.addIssue(enumor.MigrationIssueMissed, fmt.Sprintf(
+			"missed migration, id: %s, version: %s, current: %s, pkg: %s",
 			m.ID, m.Version, p.Current.Raw, m.Pkg))
 	default:
 		item.Action = enumor.MigrationActionExecute
@@ -181,11 +182,13 @@ func (p *Plan) skipByID(m register.Migration, owner *idOwner) PlanItem {
 	if !sameSuffix(owner.pkg, m.Pkg) {
 		item.Action = enumor.MigrationActionIDReuse
 		if owner.recorded {
-			p.addIssue(enumor.MigrationIssueIDReuse, fmt.Sprintf("suspected migration id reuse, id: %s, recorded version: %s, "+
-				"applied_pkg: %s, pkg: %s", m.ID, owner.version, owner.pkg, m.Pkg))
+			p.addIssue(enumor.MigrationIssueIDReuse, fmt.Sprintf(
+				"suspected migration id reuse, id: %s, recorded version: %s, applied_pkg: %s, pkg: %s",
+				m.ID, owner.version, owner.pkg, m.Pkg))
 		} else {
-			p.addIssue(enumor.MigrationIssueIDReuse, fmt.Sprintf("suspected migration id reuse, id: %s, registered by pkg: %s "+
-				"and pkg: %s", m.ID, owner.pkg, m.Pkg))
+			p.addIssue(enumor.MigrationIssueIDReuse, fmt.Sprintf(
+				"suspected migration id reuse, id: %s, registered by pkg: %s and pkg: %s",
+				m.ID, owner.pkg, m.Pkg))
 		}
 		return item
 	}
@@ -237,8 +240,8 @@ func labelIssues(migrations []register.Migration) []Issue {
 	for _, name := range names {
 		parts = append(parts, fmt.Sprintf("%s: [%s]", name, strings.Join(labels[name], ", ")))
 	}
-	return []Issue{{Kind: enumor.MigrationIssueLabels, Message: fmt.Sprintf("more than one version label in registry, %s",
-		strings.Join(parts, "; "))}}
+	return []Issue{{Kind: enumor.MigrationIssueLabels, Message: fmt.Sprintf(
+		"more than one version label in registry, %s", strings.Join(parts, "; "))}}
 }
 
 // aboveMaxVersion reports whether m is out of --to. A PENDING migration belongs

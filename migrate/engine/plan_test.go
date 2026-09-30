@@ -61,8 +61,10 @@ func TestBuildPlan(t *testing.T) {
 			name: "empty registry empty records",
 		},
 		{
-			name:               "empty registry with success records ignored",
-			records:            schema.Records{migA: {MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/x", Status: enumor.MigrationStatusSuccess}},
+			name: "empty registry with success records ignored",
+			records: schema.Records{migA: {
+				MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/x", Status: enumor.MigrationStatusSuccess,
+			}},
 			current:            current,
 			hasReleasedVersion: true,
 		},
@@ -117,8 +119,10 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "a"),
 				mustMigration(t, migB, "v1.9.3", "20260101120000", "b"),
 			},
-			opts:       Options{Ceiling: &lowCeiling},
-			wantAction: []enumor.MigrationAction{enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion},
+			opts: Options{Ceiling: &lowCeiling},
+			wantAction: []enumor.MigrationAction{
+				enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion,
+			},
 		},
 		{
 			name: "over ceiling not compared with owner",
@@ -354,8 +358,10 @@ func TestBuildPlan(t *testing.T) {
 			},
 			current:            current,
 			hasReleasedVersion: true,
-			wantAction:         []enumor.MigrationAction{enumor.MigrationActionMissing, enumor.MigrationActionSkipSuccess},
-			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueMissed},
+			wantAction: []enumor.MigrationAction{
+				enumor.MigrationActionMissing, enumor.MigrationActionSkipSuccess,
+			},
+			wantIssues: []enumor.MigrationIssueKind{enumor.MigrationIssueMissed},
 		},
 		{
 			name: "missing claims id so later different suffix is id reuse",
@@ -383,7 +389,9 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.4", "20260101120000", "first"),
 				mustMigration(t, migA, "v1.9.4", "20260103120000", "third"),
 			},
-			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionSkipSuccess, enumor.MigrationActionIDReuse},
+			wantAction: []enumor.MigrationAction{
+				enumor.MigrationActionExecute, enumor.MigrationActionSkipSuccess, enumor.MigrationActionIDReuse,
+			},
 			wantIssues: []enumor.MigrationIssueKind{enumor.MigrationIssueIDReuse},
 		},
 		{
@@ -393,8 +401,10 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.4", "20260101120000", "same"),
 				mustMigration(t, migA, "v1.9.5", "20260101120000", "same"),
 			},
-			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionSkipSuccess, enumor.MigrationActionSkipSuccess},
-			wantWarn:   1,
+			wantAction: []enumor.MigrationAction{
+				enumor.MigrationActionExecute, enumor.MigrationActionSkipSuccess, enumor.MigrationActionSkipSuccess,
+			},
+			wantWarn: 1,
 		},
 		{
 			name: "two version labels one issue listing sorted labels",
@@ -458,8 +468,10 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.4-alpha.1", "20260101120000", "a"),
 				mustMigration(t, migB, "v1.9.4-beta.1", "20260101120000", "b"),
 			},
-			opts:       Options{Ceiling: &ceiling},
-			wantAction: []enumor.MigrationAction{enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion},
+			opts: Options{Ceiling: &ceiling},
+			wantAction: []enumor.MigrationAction{
+				enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion,
+			},
 			wantIssues: []enumor.MigrationIssueKind{enumor.MigrationIssueLabels},
 		},
 		{
@@ -528,7 +540,7 @@ func TestCollectPlanErrors(t *testing.T) {
 	t.Run("all passed", func(t *testing.T) {
 		require.NoError(t, CollectPlanErrors(kt, []*Plan{
 			{Database: "main"},
-			{Database: "obs"},
+			{Database: "aux"},
 		}))
 	})
 
@@ -567,7 +579,7 @@ func TestCollectPlanErrors(t *testing.T) {
 
 	t.Run("labels beats missed", func(t *testing.T) {
 		err := CollectPlanErrors(kt, []*Plan{{
-			Database: "obs",
+			Database: "aux",
 			Issues: []Issue{
 				{Kind: enumor.MigrationIssueMissed, Message: "missed"},
 				{Kind: enumor.MigrationIssueLabels, Message: "labels"},
@@ -576,7 +588,7 @@ func TestCollectPlanErrors(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, migrate.ErrRegistry)
 		assert.NotErrorIs(t, err, migrate.ErrMissed)
-		assert.Contains(t, err.Error(), "[obs] labels")
+		assert.Contains(t, err.Error(), "[aux] labels")
 	})
 
 	t.Run("unknown kind is a plain failure", func(t *testing.T) {
@@ -608,13 +620,13 @@ func TestCollectPlanErrors(t *testing.T) {
 	t.Run("issues across databases", func(t *testing.T) {
 		err := CollectPlanErrors(kt, []*Plan{
 			{Database: "main", Issues: []Issue{{Kind: enumor.MigrationIssueMissed, Message: "a"}}},
-			{Database: "obs", Issues: []Issue{{Kind: enumor.MigrationIssueMissed, Message: "b"}}},
+			{Database: "aux", Issues: []Issue{{Kind: enumor.MigrationIssueMissed, Message: "b"}}},
 		})
 		require.Error(t, err)
 		assert.ErrorIs(t, err, migrate.ErrMissed)
 		assert.Contains(t, err.Error(), "2 problems found")
 		assert.Contains(t, err.Error(), "[main] a")
-		assert.Contains(t, err.Error(), "[obs] b")
+		assert.Contains(t, err.Error(), "[aux] b")
 	})
 
 	t.Run("wraps exactly one sentinel", func(t *testing.T) {
