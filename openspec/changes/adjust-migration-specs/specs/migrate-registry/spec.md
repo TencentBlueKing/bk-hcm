@@ -98,7 +98,7 @@
 
 ### Requirement: 漏导入防护
 
-每条迁移 SHALL 在 `imports.go` 里有一行空白 import，指向该迁移目录。空白 import MUST NOT 依赖 `package` 子句的名字。SHALL 提供 `check-imports`：比较含 `migrate.go` 的目录与 `imports.go` 里的空白 import，不采用重新生成再 diff。下列情况 MUST 失败：漏 import；多余 import；版本目录或 `pending/` 的直接子项不是目录，或迁移目录里还有子目录；迁移目录没有 `migrate.go`，或全目录里 `Regist(` 不是恰好一次且不在 `migrate.go`；`main/` 下出现 `register.Obs`，或 `obs/` 下出现 `register.Main`；同一个库内多条迁移的 ID 相同且迁移后缀不同。
+每条迁移 SHALL 在 `imports.go` 里有一行空白 import，指向该迁移目录。空白 import MUST NOT 依赖 `package` 子句的名字。SHALL 提供 `check-migrate`：比较含 `migrate.go` 的目录与 `imports.go` 里的空白 import，不采用重新生成再 diff。下列情况 MUST 失败：漏 import；多余 import；版本目录或 `pending/` 的直接子项不是目录，或迁移目录里还有子目录；迁移目录没有 `migrate.go`，或全目录里 `Regist(` 不是恰好一次且不在 `migrate.go`；`main/` 下出现 `register.Obs`，或 `obs/` 下出现 `register.Main`；同一个库内多条迁移的 ID 相同且迁移后缀不同。
 
 同一个库内 ID 相同且迁移后缀相同 SHALL 只警告，打印目录和 ID，MUST NOT 因此失败。`main` 与 `obs` MUST 分开看。
 
@@ -109,17 +109,17 @@
 
 #### Scenario: 门禁检出漏导入
 
-- **WHEN** `migrations/main/v1.9.4/v1.9.4_20260925103000_add_host_index/` 存在但 `imports.go` 未导入它，执行 `check-imports`
+- **WHEN** `migrations/main/v1.9.4/v1.9.4_20260925103000_add_host_index/` 存在但 `imports.go` 未导入它，执行 `check-migrate`
 - **THEN** 校验失败并指出该目录
 
 #### Scenario: 同 ID 不同后缀在门禁失败
 
-- **WHEN** 同一个库下两个迁移目录的 `const ID` 相同，迁移后缀不同，执行 `check-imports`
+- **WHEN** 同一个库下两个迁移目录的 `const ID` 相同，迁移后缀不同，执行 `check-migrate`
 - **THEN** 校验失败并打印这两个目录和该 ID
 
 #### Scenario: 同 ID 同后缀只警告
 
-- **WHEN** 内部四位目录与外部三位目录的 `const ID` 相同且迁移后缀相同，执行 `check-imports`
+- **WHEN** 内部四位目录与外部三位目录的 `const ID` 相同且迁移后缀相同，执行 `check-migrate`
 - **THEN** 校验成功，并打印警告，含这两个目录和该 ID
 
 ## REMOVED Requirements
@@ -127,7 +127,7 @@
 ### Requirement: 相同 ID 的动作名一致（待确认，review 前不实现）
 
 **Reason**: 动作名和 ID 写在同一次注册里，复制时会一起被带走，对不上粘错的 ID。目录 tag 对 ID tag 段同样不采用。改为比较导入路径的迁移后缀，见 `migrate-executor` 的疑似 ID 复用。
-**Migration**: 删除本条及其三个场景。不要在 `Regist` 或 `check-imports` 里实现动作名比对。
+**Migration**: 删除本条及其三个场景。不要在 `Regist` 或 `check-migrate` 里实现动作名比对。
 
 ## ADDED Requirements
 

@@ -210,14 +210,15 @@ func (p *Plan) addIssue(kind enumor.MigrationIssueKind, msg string) {
 	p.Issues = append(p.Issues, Issue{Kind: kind, Message: msg})
 }
 
-// labelIssues reports every version label when the registry holds more than
-// one. The order between two labels exists only to make Compare total, so
-// such a registry must not run.
+// labelIssues reports every version line when the registry holds more than
+// one. A fourth segment with an empty label is a line too. A version with no
+// fourth segment is not. The order between two lines exists only to make
+// Compare total, so such a registry must not run.
 func labelIssues(migrations []register.Migration) []Issue {
 	labels := make(map[string][]string)
 	for _, m := range migrations {
 		v, ok := m.ParsedVersion()
-		if !ok || v.Suffix == nil || v.Suffix.Label == "" {
+		if !ok || v.Suffix == nil {
 			continue
 		}
 		labels[v.Suffix.Label] = append(labels[v.Suffix.Label], m.ID)

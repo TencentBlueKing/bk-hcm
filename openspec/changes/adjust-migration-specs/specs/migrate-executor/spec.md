@@ -73,7 +73,7 @@
 
 `hcm_migration_record` 或 `hcm_migration_audit` 任一不存在，或记录内容非法（未知 `status`、版本不可解析、`success` 行 `applied_pkg` 为空），SHALL 在 Load / Prepare 阶段以退出码 3 返回，发生在生成计划之前，MUST NOT 与退出码 4 / 5 / 6 同时出现。
 
-计划阶段的校验项与退出码 SHALL 为：未开 `--allow-pending` 却注册了 `PENDING`（不论是否指定 `--to`），或注册表出现两个及以上不同的非空版本 label，退出码 5；默认模式下已定版、无 success、版本小于等于库当前，退出码 4；按 ID 跳过时迁移后缀与 owner 不同，退出码 6。多项同时失败时，优先级 MUST 为 6 > 5 > 4（只返回最高优先级对应的退出码，但错误信息列出所有库的全部问题）。补跑模式 MUST 关掉漏执行这道闸，MUST NOT 关掉疑似 ID 复用与 label 检查。
+计划阶段的校验项与退出码 SHALL 为：未开 `--allow-pending` 却注册了 `PENDING`（不论是否指定 `--to`），或注册表出现两条及以上版本线，退出码 5。空 label 的数字第四段也算一条线，每个非空 label 各算一条线；没有第四段的版本不单独成线。默认模式下已定版、无 success、版本小于等于库当前，退出码 4；按 ID 跳过时迁移后缀与 owner 不同，退出码 6。多项同时失败时，优先级 MUST 为 6 > 5 > 4（只返回最高优先级对应的退出码，但错误信息列出所有库的全部问题）。补跑模式 MUST 关掉漏执行这道闸，MUST NOT 关掉疑似 ID 复用与 label 检查。
 
 失败输出 MUST 含完整 ID。疑似 ID 复用的输出还 MUST 含 owner 的版本（若来自记录）、owner 包和当前 `Pkg`。label 问题 MUST 列出每个 label 及其迁移 ID（排序）。跳过日志 MUST 打出两边的 pkg。
 
@@ -91,6 +91,11 @@
 
 - **WHEN** 注册表中同时存在 `v1.9.3-tenant.1` 与 `v1.9.3-woa.1`
 - **THEN** 退出码为 5，输出列出每个 label 及其迁移 ID，一条迁移都不执行
+
+#### Scenario: 数字第四段与具名标签
+
+- **WHEN** 注册表中同时存在 `v1.9.4.1` 与 `v1.9.4-tenant.1`
+- **THEN** 退出码为 5，输出列出这两条线及其迁移 ID，一条迁移都不执行
 
 #### Scenario: 主库已通过时 OBS 的校验仍先于执行
 

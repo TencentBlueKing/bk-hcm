@@ -108,7 +108,8 @@ const (
 	MigrationIssueMissed MigrationIssueKind = "missed"
 	// MigrationIssuePending is a PENDING migration without --allow-pending, exit code 5.
 	MigrationIssuePending MigrationIssueKind = "pending"
-	// MigrationIssueLabels is more than one version label in a registry, exit code 5.
+	// MigrationIssueLabels is more than one version line in a registry, exit code 5.
+	// A numeric fourth segment is its own line.
 	MigrationIssueLabels MigrationIssueKind = "labels"
 	// MigrationIssueIDReuse is a migration skipped by an ID that a package with
 	// another migration suffix applied, exit code 6.

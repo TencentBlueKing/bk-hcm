@@ -145,7 +145,7 @@
 
 ### Requirement: 退出码
 
-命令 SHALL 使用固定退出码：`0` 成功；`1` 执行期失败；`2` 参数或配置错误；`3` 记录表问题（两表任一不存在，或记录内容非法）；`4` 默认模式检出漏执行；`5` 注册表内容问题（未开 `--allow-pending` 的 `PENDING`，或两个及以上不同非空 label）；`6` 疑似 ID 复用。退出码 `4` MUST 与 `1` 区分，使出包工具能判断本包是否需要开补跑。计划阶段多项问题优先级 MUST 为 6 > 5 > 4。权威全文见 `openspec/changes/adjust-migration-specs/specs/migrate-cli/spec.md`。
+命令 SHALL 使用固定退出码：`0` 成功；`1` 执行期失败；`2` 参数或配置错误；`3` 记录表问题（两表任一不存在，或记录内容非法）；`4` 默认模式检出漏执行；`5` 注册表内容问题（未开 `--allow-pending` 的 `PENDING`，或两条及以上版本线。空 label 的数字第四段也算一条线，每个非空 label 各算一条线；没有第四段的版本不单独成线）；`6` 疑似 ID 复用。退出码 `4` MUST 与 `1` 区分，使出包工具能判断本包是否需要开补跑。计划阶段多项问题优先级 MUST 为 6 > 5 > 4。权威全文见 `openspec/changes/adjust-migration-specs/specs/migrate-cli/spec.md`。
 
 #### Scenario: 漏执行返回专用退出码
 

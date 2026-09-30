@@ -211,7 +211,7 @@ stdout SHALL 承载模式行、计划、汇总、`status` 与 `list` 的表格�
 | 2 | 参数或配置错误 |
 | 3 | 记录表问题：`hcm_migration_record` 或 `hcm_migration_audit` 任一不存在（提示先 `init`），或记录内容非法（未知 `status`、版本不可解析、`success` 行 `applied_pkg` 为空） |
 | 4 | 漏执行：默认模式下存在低于等于库当前版本且未成功的迁移；加 `--catch-up` 重跑可修复 |
-| 5 | 注册表内容问题：未开 `--allow-pending` 却注册了 `PENDING`（不论是否指定 `--to`），或注册表出现两个及以上不同的非空版本 label |
+| 5 | 注册表内容问题：未开 `--allow-pending` 却注册了 `PENDING`（不论是否指定 `--to`），或注册表出现两条及以上版本线。空 label 的数字第四段也算一条线，每个非空 label 各算一条线；没有第四段的版本不单独成线 |
 | 6 | 疑似 ID 复用 |
 
 退出码 `4` MUST 与 `1` 区分，使出包工具能判断本包是否需要开补跑。「已初始化」SHALL 定义为两张表都存在；`init` 创建两张表；`up`（含 `--plan`）执行前用同一套 `CheckInitialized`，任一缺失即退出码 3。审计写入失败 SHALL 只 WARN，MUST NOT 影响退出码。
@@ -235,7 +235,7 @@ stdout SHALL 承载模式行、计划、汇总、`status` 与 `list` 的表格�
 
 #### Scenario: 两个非空 label 返回注册表退出码
 
-- **WHEN** 注册表出现两个及以上不同的非空版本 label
+- **WHEN** 注册表出现两条及以上版本线，包括数字第四段与一个具名 label
 - **THEN** 退出码为 5
 
 #### Scenario: 缺表返回记录表问题退出码

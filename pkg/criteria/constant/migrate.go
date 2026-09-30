@@ -74,7 +74,8 @@ const (
 	// MigrationExitMissed means a missed migration in the default mode.
 	MigrationExitMissed = 4
 	// MigrationExitRegistry means invalid registry content: PENDING without
-	// --allow-pending, or more than one version label.
+	// --allow-pending, or more than one version line. A numeric fourth
+	// segment counts as a line.
 	MigrationExitRegistry = 5
 	// MigrationExitIDReuse means a suspected migration ID reuse.
 	MigrationExitIDReuse = 6

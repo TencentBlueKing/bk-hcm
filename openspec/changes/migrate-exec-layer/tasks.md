@@ -41,7 +41,7 @@
 
 ## 5. 执行器
 
-- [x] 5.1 在 `migrate/engine/executor.go` 实现执行前扫描：未开 `--allow-pending` 时 PENDING → 退出码 5；两个及以上不同非空标签 → 退出码 5；与漏执行 / ID 复用同一轮汇总（不再「连库前退出码 3」）。引擎层已由 `adjust-migration-specs` 落地，本项随 CLI 接线关闭
+- [x] 5.1 在 `migrate/engine/executor.go` 实现执行前扫描：未开 `--allow-pending` 时 PENDING → 退出码 5；两条及以上版本线（空 label 的数字第四段也算一条线）→ 退出码 5；与漏执行 / ID 复用同一轮汇总（不再「连库前退出码 3」）。引擎层已由 `adjust-migration-specs` 落地，本项随 CLI 接线关闭
 - [x] 5.1.1 实现记录表缺失检查：`up` 在表不存在时返回映射为退出码 3 的错误并提示先跑 `init`，不建表、不执行任何迁移
 - [x] 5.2 实现版本上限解析与过滤（`Compare(m.Version, ceiling) <= 0`），上限非法映射为退出码 2
 - [x] 5.3 实现逐条判定循环：已 success 跳过、默认模式漏执行失败、补跑模式一律执行，`running` 与 `failed` 同等视为无成功记录
@@ -79,10 +79,10 @@
 ## 8. 构建与部署接入
 
 - [ ] 8.1 写 `migrate/Makefile`：`build` / `test` 目标
-- [ ] 8.2 加 `check-imports` 门禁：校验 `migrations/` 下每个版本目录都已被 `imports.go` 空白 import
-- [ ] 8.3 加 `check-migration-deps` 门禁：校验 `migrations/` 子树未 import `migrate/engine`
+- [x] 8.2 加 `check-migrate` 门禁（`migrate/scripts/check-migrate.sh`，纯 shell）：校验迁移目录与 `imports.go` 空白 import 一致，并覆盖目录结构、`Regist` 次数、库与 Registry 对应、同 ID 后缀冲突等
+- [x] 8.3 依赖门禁并入 `check-migrate.sh`（不再单独做 Makefile 目标）：`migrations/` 子树不得 import `hcm/migrate/engine|schema|cli`
 - [ ] 8.4 在 `cmd/Makefile` 与根 `Makefile` 挂接独立迁移镜像的构建目标
-- [ ] 8.5 建 `migrations/` 目录骨架与初始 `imports.go`（`main/` 与 `obs/` 各留空目录结构）
+- [x] 8.5 建 `migrations/` 目录骨架与 `imports.go`；`migrate/migrate.go` 空白 import `hcm/migrate/migrations`。当前有若干 SAMPLE 迁移（`migrate_sample` / `migrate_obs_sample`），仅作联调，后续删除
 - [ ] 8.6 编写 Helm hook Job：命令为 `init && up`、三个 hook 注解、`backoffLimit: 0`、`parallelism: 1`、`restartPolicy: Never`、`ttlSecondsAfterFinished`、initContainer 等 DB 就绪、复用 dataservice ConfigMap 与 chart 的 ServiceAccount。迁移镜像不打进业务 Pod
 - [ ] 8.7 在 chart values 就近注释说明补跑开关是按包一次性开关，并注明 `parallelism` 必须保持为 1
 - [ ] 8.8 在 values 里暴露 `--mode` 与 `--baseline`，并写接入说明：空库填 `empty`、存量库填 `adopt` 并如何选定各库基线、误填 `adopt` 到空库的后果、`--plan` 如何预演

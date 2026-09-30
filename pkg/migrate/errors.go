@@ -40,7 +40,8 @@ var (
 	// default mode, exit code 4. Rerunning with --catch-up runs it.
 	ErrMissed = errors.New("missed migration")
 	// ErrRegistry marks invalid registry content, exit code 5: a PENDING
-	// migration without --allow-pending, or more than one version label.
+	// migration without --allow-pending, or more than one version line.
+	// A numeric fourth segment counts as a line.
 	ErrRegistry = errors.New("invalid registry")
 	// ErrIDReuse marks a migration skipped by an ID applied by a package with
 	// another migration suffix, exit code 6.

@@ -84,7 +84,7 @@
 | 2   | 参数或配置错误（`--to` 解析不了、`--database` 取值非法、配置缺字段）    | 同左 |
 | 3   | 前置校验失败（注册表里有 `pending` 占位符、记录表不存在、记录表里有解析不了的版本） | 仅记录表问题：两表任一缺失，或记录内容非法；**不再**含 PENDING / label |
 | 4   | 默认模式检出漏执行（无 success 且 version ≤ 库当前）            | 同左（仅漏执行） |
-| 5   | （原稿无） | 注册表内容：未开 `--allow-pending` 的 `PENDING`，或两个及以上不同非空 label |
+| 5   | （原稿无） | 注册表内容：未开 `--allow-pending` 的 `PENDING`，或两条及以上版本线。空 label 的数字第四段也算一条线，每个非空 label 各算一条线；没有第四段的版本不单独成线 |
 | 6   | （原稿无） | 疑似 ID 复用 |
 
 
@@ -129,12 +129,13 @@ migrate/
 │   ├── status.go
 │   ├── list.go
 │   └── output.go              计划 / status / list / 汇总的 stdout 表格
-├── Makefile                   build / test / check-imports / check-migration-deps
+├── Makefile                   build / test（挂接 scripts/check-migrate.sh）
 ├── scripts/
+│   ├── lib.sh                 共用 version_group / replace_in_file
 │   ├── new-migrate.sh         建模板（时间戳 + 目录）并写 imports.go
 │   ├── release-migrate.sh     pending 整目录定版
-│   ├── archive.sh             特性分支归档
-│   └── check-imports.sh       出包门禁：版本目录是否都被空白 import
+│   ├── check-migrate.sh       出包门禁：目录与空白 import 一致；依赖门禁（禁 import engine|schema|cli）也在此
+│   └── archive-feat-migrate.sh 特性分支归档：-label 版本收成主线三位版本
 ├── register/
 │   ├── register.go            Migration / Registry / Regist / All；Main 与 Obs 两个实例
 │   ├── version.go             Version / Suffix / Parse / Compare / IsPending
@@ -162,7 +163,7 @@ migrate/
 
 Migration ID 只收小写标准格式的 UUID，不收大写、不带连字符、花括号或 `urn:uuid:` 前缀的写法。执行器是拿这个串和记录表里的值比对来判断「已执行」的，MySQL 比较时大小写不敏感而 Go 敏感，同一个 ID 允许多种写法会让它要么撞唯一键、要么被当成两条重跑一遍。
 
-`engine` 依赖 `register`，`register` 不依赖 `engine`。迁移文件只 import `register` + `util`，这条靠 Makefile 目标 `check-migration-deps` 检查 `migrations/` 子树里是否出现 `migrate/engine` 导入——Go 编译器不会阻止这种导入（没有环），所以必须有门禁。
+`engine` 依赖 `register`，`register` 不依赖 `engine`。迁移文件只 import `register` + `util`，这条靠 `scripts/check-migrate.sh` 检查 `migrations/` 子树里是否出现 `migrate/engine`、`migrate/schema`、`migrate/cli` 导入——Go 编译器不会阻止这种导入（没有环），所以必须有门禁。
 
 ### D4 版本解析与比较器
 
@@ -209,7 +210,7 @@ type Version struct {
 
 前 3 级只看版本号，由 `register.Compare(a, b Version) int` 给出。第 4、5 级的时间戳和 Migration ID 是迁移的字段、不是版本的字段，由注册表的 `All` 在 `Compare` 返回 0 时接着比（见 D3 的 `Migration` 结构）。两处同在 `register` 包，合起来就是上面这个全序。
 
-第四段（数字序号或标签）表示这条分支自己的特有提交。一棵正常的树里非空标签最多一个：内部主线是空标签的 `.N`，tenant 分支是 `-tenant.N`。同一个注册表里出现两个非空标签，说明别的分支的特有提交混进来了，或者归档没做完。这不是排序能收拾的情况。**现行规则（取代「连库前退出码 3」）**：`up` / `init` 在连库之后的执行前校验中发现两个及以上不同的非空 `Label`，以退出码 5 失败，列出每个 label 及其 Migration ID（排序），一条都不执行；与 PENDING、漏执行、ID 复用同一轮汇总，优先级见 D1。
+第四段（数字序号或标签）表示这条分支自己的特有提交。一棵正常的树里版本线最多一条：内部主线是空标签的 `.N`，tenant 分支是 `-tenant.N`。同一个注册表里出现两条线，说明别的分支的特有提交混进来了，或者归档没做完。这不是排序能收拾的情况。**现行规则（取代「连库前退出码 3」）**：`up` 在连库之后的执行前校验中发现两条及以上版本线，以退出码 5 失败，列出每条线及其 Migration ID（排序），一条都不执行。空 label 的数字第四段也算一条线，每个非空 label 各算一条线；没有第四段的版本不单独成线。与 PENDING、漏执行、ID 复用同一轮汇总，优先级见 D1。
 
 所以第 3 条不是为了「把两条线排得好看」。跨标签的先后只让 `Compare` 在任何输入上都有确定结果，避免比较函数本身不确定。先比 `Label` 再比 `Seq` 是这个全序里最简单的写法。它不会被执行到：那种输入在排序之前就已经失败了。
 
@@ -340,7 +341,7 @@ for 每个已排序、且不超过版本上限的 m:
 
 1. `**init --mode` 的取值与语义**：保留方案的 `init --mode` 与 `init && up` 命令链，但取值从 `full` / `existing` 改为 `empty` / `adopt`。`empty` 只建空表，`adopt` 建表加垫库版本。幂等判据是记录表是否存在，`--mode` 必填无默认，`--baseline` 按库给且 `adopt` 缺基线即失败。另外 `up` 在缺表时失败而不是自举建表。理由见 D2。
 2. **执行层不按版本线 / 标签过滤候选**。编译进二进制的迁移一律要执行，只受「按 ID 跳过已成功、版本上限、默认 / 补跑判定」三件事约束；主线不跑 `-tenant` 靠这些文件不合进主线（git 目录与分支合入纪律）保证。据此 `migrationV2/docs/migration-version.md` 里「先留下当前线该跑的」一段作废，执行器也没有「当前线」这类配置项。
-3. **比较器补全跨标签全序和 ID 末位决胜，但两个非空标签共存时直接失败**。方案只定义了同标签之间比 `Seq`。跨标签先后只为让比较函数确定，不作为可执行的顺序；同一注册表出现两个非空标签视为特有提交混入或归档未完成，**现行为退出码 5**（执行前校验，非连库前 3）。
+3. **比较器补全跨标签全序和 ID 末位决胜，但两条版本线共存时直接失败**。方案只定义了同标签之间比 `Seq`。跨标签先后只为让比较函数确定，不作为可执行的顺序；同一注册表出现两条版本线（数字第四段与具名 label，或两个非空 label）视为特有提交混入或归档未完成，**现行为退出码 5**（执行前校验，非连库前 3）。
 4. **明确 `--to` 的边界语义**：`--to v1.9.3` 包含 `v1.9.3.0`，不包含 `v1.9.3.1`。方案提了版本上限但没展开这条边界，也把 `.0` 当成了另一个版本。
 5. **记录表里出现无法解析的 `version` 时硬失败**（退出码 3），方案未提这种情形。
 6. `**--mode` 必填无默认，`adopt` 缺 `--baseline` 即失败**。方案未规定缺省行为，留默认会让「空库还是存量库」这个人工判断被猜。
@@ -373,7 +374,7 @@ for 每个已排序、且不超过版本上限的 m:
 ## Risks / Trade-offs
 
 - 补跑开关发完忘记改回默认 → 「漏执行直接失败」对后续每次发布都失效，版本填错的文件会被静默执行掉 → 缓解：`status` 标出「无 success 且 version ≤ 库当前」的清单，让人看得出默认模式会不会失败；`up` 开头打印自己这次收到的模式。`--plan` 与实跑用退出码 4 明确区分需要补跑的场景。chart values 里就近写注释说明它是按包一次性开关。模式不落库，`status` 推断不了下一次 `up` 会不会带 `--catch-up`。
-- `imports.go` 漏空白 import → 该迁移永远不跑且不报错，这是全系统唯一的静默失效点 → 缓解：`new-migrate.sh` 自动写入、出包门禁 `check-imports`、`list` 输出可人工对照目录。
+- `imports.go` 漏空白 import → 该迁移永远不跑且不报错，这是全系统唯一的静默失效点 → 缓解：`new-migrate.sh` 自动写入、出包门禁 `check-migrate`、`list` 输出可人工对照目录。
 - 单写者假设被破坏（给 Job 加副本或并行度）→ 两个进程同时执行同一条迁移 → 缓解：chart 里固定 `parallelism: 1` 并加注释；后续可加 MySQL `GET_LOCK`。
 - 归档进来的老文件打在已经演进过的库上 → 加列靠幂等能过，但删列、按旧列回填会中途失败 → 缓解：Job 失败即阻断发布、业务不启动，人工处理；已执行的变更无法逆转。
 - 基线定错，或空库环境误配成 `--mode=adopt` → 该跑的迁移被标成 success 永不执行，得到残缺的库 → 缓解：`--mode` 必填、`adopt` 缺 `--baseline` 直接失败、支持 `--plan` 先看清单、接入说明里写明如何选定基线。这是首次安装时的人为配置错误，`init` 的表存在即 no-op 保证它不会随后续每次部署反复发生。

@@ -104,7 +104,7 @@
 
 ### Requirement: 漏导入防护
 
-`imports.go` 漏掉某个版本目录的空白 import SHALL 导致该目录下的迁移永不执行且不报错，这是系统唯一的静默失效点。因此 SHALL 提供两道防护：`new-migrate.sh` 创建迁移时自动写入空白 import；出包门禁 `check-imports` 校验 `migrations/` 下每个版本目录都已被导入，缺失即失败。
+`imports.go` 漏掉某个版本目录的空白 import SHALL 导致该目录下的迁移永不执行且不报错，这是系统唯一的静默失效点。因此 SHALL 提供两道防护：`new-migrate.sh` 创建迁移时自动写入空白 import；出包门禁 `check-migrate` 校验 `migrations/` 下每个版本目录都已被导入，缺失即失败。
 
 #### Scenario: 新建迁移自动写入导入
 
@@ -113,7 +113,7 @@
 
 #### Scenario: 门禁检出漏导入
 
-- **WHEN** `migrations/main/v1.9.4/` 存在但 `imports.go` 未导入它，执行 `check-imports`
+- **WHEN** `migrations/main/v1.9.4/` 存在但 `imports.go` 未导入它，执行 `check-migrate`
 - **THEN** 校验失败并指出缺失的目录
 
 ### Requirement: 迁移文件的依赖边界

@@ -3,7 +3,7 @@
 - [x] 1.1 按 `specs/migrate-registry/spec.md`：ID 改为可读格式；`Regist(id, version, timestamp, Migrator)`；`PkgPath`（指针先 Elem）写入 `Pkg`；去掉 description；导出 `NewMigration`；`migrate.PkgSuffix`；`constant.MigrationPkgMaxLen` 255；拒绝 nil / typed-nil；常量与格式校验分别落在 `pkg/criteria/constant` 与 `pkg/migrate`
 - [x] 1.2 从 `migrate-registry` spec 删除「相同 ID 的动作名一致」整节（delta 已 REMOVED；代码未实现该比对）
 - [x] 1.3 按 `specs/migrate-version/spec.md`：`Load` 放行 `PENDING`；`CurrentVersion` 跳过 `PENDING`
-- [ ] 1.4 按 `specs/migrate-registry/spec.md` 改 `openspec/changes/migrate-exec-layer/specs/migrate-registry/spec.md`，并同步 `check-imports`、一目录一包叙述
+- [ ] 1.4 按 `specs/migrate-registry/spec.md` 改 `openspec/changes/migrate-exec-layer/specs/migrate-registry/spec.md`，并同步 `check-migrate`、一目录一包叙述
 
 ## 2. 记录表
 

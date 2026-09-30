@@ -422,6 +422,29 @@ func TestBuildPlan(t *testing.T) {
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionExecute},
 		},
 		{
+			name: "three segment and one label is one line",
+			migrations: []register.Migration{
+				mustMigration(t, migA, "v1.9.3", "20260101120000", "a"),
+				mustMigration(t, migB, "v1.9.4-tenant.1", "20260101120000", "b"),
+			},
+			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionExecute},
+		},
+		{
+			name: "numeric fourth and one label is two lines",
+			migrations: []register.Migration{
+				mustMigration(t, migA, "v1.9.4.1", "20260101120000", "a"),
+				mustMigration(t, migB, "v1.9.4-tenant.1", "20260101120000", "b"),
+			},
+			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionExecute},
+			wantIssues: []enumor.MigrationIssueKind{enumor.MigrationIssueLabels},
+			check: func(t *testing.T, p *Plan) {
+				require.Len(t, p.Issues, 1)
+				assert.Contains(t, p.Issues[0].Message, ": ["+migA+"]")
+				assert.Contains(t, p.Issues[0].Message, "tenant: ["+migB+"]")
+				assert.Less(t, indexOf(p.Issues[0].Message, ": ["), indexOf(p.Issues[0].Message, "tenant"))
+			},
+		},
+		{
 			name: "no labels no issue",
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.3", "20260101120000", "a"),
