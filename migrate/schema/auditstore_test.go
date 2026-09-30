@@ -283,6 +283,9 @@ func TestAuditEnd(t *testing.T) {
 		assert.Equal(t, string(enumor.MigrationSkipApplied), items[0]["reason"])
 	})
 
+}
+
+func TestAuditEndUpdate(t *testing.T) {
 	t.Run("update error does not panic", func(t *testing.T) {
 		do := newFakeDo()
 		do.updateErr = errors.New("deadlock")

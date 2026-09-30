@@ -407,6 +407,20 @@ func TestInsertBaselineEmpty(t *testing.T) {
 	assert.Empty(t, do.callsOf("bulk-insert"))
 }
 
+func initTablesCounted(do *fakeDo) []string {
+	out := make([]string, 0)
+	for _, c := range do.callsOf("count") {
+		arg, ok := c.arg.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if name, ok := arg["table"].(string); ok {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
 func TestInitTables(t *testing.T) {
 	kt := kit.New()
 	sample := []register.Migration{
@@ -419,20 +433,6 @@ func TestInitTables(t *testing.T) {
 	}
 	baseline := mustVersion(t, "v1.9.3")
 
-	countTables := func(do *fakeDo) []string {
-		out := make([]string, 0)
-		for _, c := range do.callsOf("count") {
-			arg, ok := c.arg.(map[string]interface{})
-			if !ok {
-				continue
-			}
-			if name, ok := arg["table"].(string); ok {
-				out = append(out, name)
-			}
-		}
-		return out
-	}
-
 	t.Run("neither exists empty mode creates both without baseline", func(t *testing.T) {
 		do := newFakeDo()
 		result, err := InitTables(kt, newFakeOrm(do), nil, sample)
@@ -442,7 +442,7 @@ func TestInitTables(t *testing.T) {
 		assert.Nil(t, result.Adopted)
 		assert.Equal(t, []string{auditTableDDL, recordTableDDL}, execExprs(do))
 		assert.Empty(t, do.callsOf("bulk-insert"))
-		assert.Equal(t, []string{constant.MigrationAuditTable, constant.MigrationRecordTable}, countTables(do))
+		assert.Equal(t, []string{constant.MigrationAuditTable, constant.MigrationRecordTable}, initTablesCounted(do))
 	})
 
 	t.Run("neither exists adopt mode inserts baseline with applied_pkg", func(t *testing.T) {
@@ -481,7 +481,7 @@ func TestInitTables(t *testing.T) {
 		assert.Nil(t, result.Adopted)
 		assert.Empty(t, do.callsOf("exec"))
 		assert.Empty(t, do.callsOf("bulk-insert"))
-		assert.Equal(t, []string{constant.MigrationAuditTable, constant.MigrationRecordTable}, countTables(do))
+		assert.Equal(t, []string{constant.MigrationAuditTable, constant.MigrationRecordTable}, initTablesCounted(do))
 	})
 
 	t.Run("record exists audit missing creates only audit no baseline", func(t *testing.T) {
@@ -508,6 +508,20 @@ func TestInitTables(t *testing.T) {
 		require.Len(t, do.callsOf("bulk-insert"), 1)
 	})
 
+}
+
+func TestInitTablesFailures(t *testing.T) {
+	kt := kit.New()
+	sample := []register.Migration{
+		mustMigration(t, migA, "v1.9.3", "20260101120000", "three"),
+		mustMigration(t, migA, "v1.9.2", "20260102120000", "dup"),
+		mustMigration(t, migB, "v1.9.3.0", "20260101120000", "folded"),
+		mustMigration(t, migC, "v1.9.3.1", "20260101120000", "fourth"),
+		mustMigration(t, migD, "v1.9.4", "20260101120000", "later"),
+		mustMigration(t, migE, constant.MigrationPendingVersion, "20260101120000", "pending"),
+	}
+	baseline := mustVersion(t, "v1.9.3")
+
 	t.Run("audit create error never checks record table", func(t *testing.T) {
 		do := newFakeDo()
 		do.countErr = errors.New("audit schema down")
@@ -516,7 +530,7 @@ func TestInitTables(t *testing.T) {
 		assert.Equal(t, InitResult{}, result)
 		assert.Contains(t, err.Error(), "audit schema down")
 		assert.Empty(t, do.callsOf("exec"))
-		assert.Equal(t, []string{constant.MigrationAuditTable}, countTables(do))
+		assert.Equal(t, []string{constant.MigrationAuditTable}, initTablesCounted(do))
 		assertNoSentinel(t, err)
 	})
 
@@ -529,7 +543,7 @@ func TestInitTables(t *testing.T) {
 		assert.Equal(t, InitResult{}, result)
 		assert.Contains(t, err.Error(), "audit disk full")
 		assert.Equal(t, []string{auditTableDDL}, execExprs(do))
-		assert.Equal(t, []string{constant.MigrationAuditTable}, countTables(do))
+		assert.Equal(t, []string{constant.MigrationAuditTable}, initTablesCounted(do))
 	})
 
 	t.Run("record create error still reports AuditCreated", func(t *testing.T) {

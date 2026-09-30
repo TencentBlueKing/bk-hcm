@@ -353,6 +353,11 @@ func TestExecute(t *testing.T) {
 		assert.Contains(t, arg["message"], "panic: kaboom")
 	})
 
+}
+
+func TestExecuteSkip(t *testing.T) {
+	kt := kit.New()
+
 	t.Run("skip backfill", func(t *testing.T) {
 		do := newFakeDo()
 		m := mustMigration(t, migA, "v1.9.3", "20260101120000", "same")
@@ -429,6 +434,11 @@ func TestExecute(t *testing.T) {
 		assert.Contains(t, r.Err.Error(), "not executable")
 		assert.Empty(t, do.calls)
 	})
+
+}
+
+func TestExecuteVersion(t *testing.T) {
+	kt := kit.New()
 
 	t.Run("pending execute does not raise version", func(t *testing.T) {
 		do := newFakeDo()

@@ -224,6 +224,13 @@ func TestLocalMySQLEngine(t *testing.T) {
 		assert.Equal(t, beforeRows, loadRows(t, db))
 	})
 
+	testLocalMySQLMarks(t, kt, db, o)
+	testLocalMySQLPkg(t, kt, db, o)
+}
+
+func testLocalMySQLMarks(t *testing.T, kt *kit.Kit, db *sqlx.DB, o orm.Interface) {
+	t.Helper()
+
 	t.Run("mark running failed and success", func(t *testing.T) {
 		store := schema.NewRecordStore(o)
 		running := register.Migration{
@@ -293,6 +300,10 @@ func TestLocalMySQLEngine(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, "v1.9.10", current.Raw)
 	})
+}
+
+func testLocalMySQLPkg(t *testing.T, kt *kit.Kit, db *sqlx.DB, o orm.Interface) {
+	t.Helper()
 
 	t.Run("rerun with different pkg overwrites applied_pkg", func(t *testing.T) {
 		store := schema.NewRecordStore(o)

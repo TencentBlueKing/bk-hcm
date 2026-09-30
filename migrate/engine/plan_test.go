@@ -34,6 +34,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type buildPlanCase struct {
+	name               string
+	migrations         []register.Migration
+	records            schema.Records
+	current            register.Version
+	hasReleasedVersion bool
+	opts               Options
+	wantAction         []enumor.MigrationAction
+	wantPkg            []string // AppliedPkg per item; empty string means unset
+	wantIssues         []enumor.MigrationIssueKind
+	wantWarn           int
+	check              func(t *testing.T, p *Plan)
+}
+
+type planBuildFix struct {
+	current    register.Version
+	ceiling    register.Version
+	lowCeiling register.Version
+	successRec func(register.Migration) schema.Record
+}
+
 func TestBuildPlan(t *testing.T) {
 	current := mustVersion(t, "v1.9.3")
 	ceiling := mustVersion(t, "v1.9.3")
@@ -44,19 +65,59 @@ func TestBuildPlan(t *testing.T) {
 			Status: enumor.MigrationStatusSuccess}
 	}
 
-	testCases := []struct {
-		name               string
-		migrations         []register.Migration
-		records            schema.Records
-		current            register.Version
-		hasReleasedVersion bool
-		opts               Options
-		wantAction         []enumor.MigrationAction
-		wantPkg            []string // AppliedPkg per item; empty string means unset
-		wantIssues         []enumor.MigrationIssueKind
-		wantWarn           int
-		check              func(t *testing.T, p *Plan)
-	}{
+	fx := planBuildFix{current: current, ceiling: ceiling, lowCeiling: lowCeiling, successRec: successRec}
+	var testCases []buildPlanCase
+	testCases = append(testCases, buildPlanCases1(t, fx)...)
+	testCases = append(testCases, buildPlanCases2(t, fx)...)
+	testCases = append(testCases, buildPlanCases3(t, fx)...)
+	testCases = append(testCases, buildPlanCases4(t, fx)...)
+	testCases = append(testCases, buildPlanCases5(t, fx)...)
+	testCases = append(testCases, buildPlanCases6(t, fx)...)
+	testCases = append(testCases, buildPlanCases7(t, fx)...)
+	testCases = append(testCases, buildPlanCases8(t, fx)...)
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := BuildPlan("main", tc.migrations, tc.records, tc.current, tc.hasReleasedVersion, tc.opts)
+			require.Equal(t, "main", p.Database)
+			assert.Equal(t, tc.hasReleasedVersion, p.HasReleasedVersion)
+			if tc.hasReleasedVersion {
+				assert.Equal(t, tc.current, p.Current)
+			}
+			require.Len(t, p.Items, len(tc.migrations))
+			if tc.wantAction != nil {
+				require.Len(t, p.Items, len(tc.wantAction))
+				for i, want := range tc.wantAction {
+					assert.Equal(t, want, p.Items[i].Action, "item %d id=%s", i, p.Items[i].Migration.ID)
+				}
+			}
+			if tc.wantPkg != nil {
+				require.Len(t, p.Items, len(tc.wantPkg))
+				for i, want := range tc.wantPkg {
+					assert.Equal(t, want, p.Items[i].AppliedPkg, "item %d AppliedPkg", i)
+				}
+			}
+			gotKinds := make([]enumor.MigrationIssueKind, 0, len(p.Issues))
+			for _, issue := range p.Issues {
+				gotKinds = append(gotKinds, issue.Kind)
+			}
+			if tc.wantIssues == nil {
+				assert.Empty(t, p.Issues)
+				assert.True(t, p.Passed())
+			} else {
+				assert.Equal(t, tc.wantIssues, gotKinds)
+				assert.False(t, p.Passed())
+			}
+			assert.Len(t, p.Warnings, tc.wantWarn)
+			if tc.check != nil {
+				tc.check(t, p)
+			}
+		})
+	}
+}
+
+func buildPlanCases1(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "empty registry empty records",
 		},
@@ -65,7 +126,7 @@ func TestBuildPlan(t *testing.T) {
 			records: schema.Records{migA: {
 				MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/x", Status: enumor.MigrationStatusSuccess,
 			}},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 		},
 		{
@@ -73,7 +134,7 @@ func TestBuildPlan(t *testing.T) {
 			migrations: []register.Migration{
 				mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "pending"),
 			},
-			opts:       Options{Ceiling: &ceiling},
+			opts:       Options{Ceiling: &fx.ceiling},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionPendingDenied},
 			wantIssues: []enumor.MigrationIssueKind{enumor.MigrationIssuePending},
 			check: func(t *testing.T, p *Plan) {
@@ -86,7 +147,7 @@ func TestBuildPlan(t *testing.T) {
 			migrations: []register.Migration{
 				mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "pending"),
 			},
-			opts:       Options{AllowPending: true, Ceiling: &ceiling},
+			opts:       Options{AllowPending: true, Ceiling: &fx.ceiling},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionAboveMaxVersion},
 		},
 		{
@@ -102,7 +163,7 @@ func TestBuildPlan(t *testing.T) {
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.3", "20260101120000", "eq"),
 			},
-			opts:       Options{Ceiling: &ceiling},
+			opts:       Options{Ceiling: &fx.ceiling},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute},
 		},
 		{
@@ -110,16 +171,21 @@ func TestBuildPlan(t *testing.T) {
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.4", "20260101120000", "above"),
 			},
-			opts:       Options{Ceiling: &ceiling},
+			opts:       Options{Ceiling: &fx.ceiling},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionAboveMaxVersion},
 		},
+	}
+}
+
+func buildPlanCases2(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "ceiling below everything",
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "a"),
 				mustMigration(t, migB, "v1.9.3", "20260101120000", "b"),
 			},
-			opts: Options{Ceiling: &lowCeiling},
+			opts: Options{Ceiling: &fx.lowCeiling},
 			wantAction: []enumor.MigrationAction{
 				enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion,
 			},
@@ -134,9 +200,9 @@ func TestBuildPlan(t *testing.T) {
 					AppliedPkg: "main/v1.9.3/v1.9.3_20260101120000_owner_tag",
 					Status:     enumor.MigrationStatusSuccess},
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
-			opts:               Options{Ceiling: &ceiling},
+			opts:               Options{Ceiling: &fx.ceiling},
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionAboveMaxVersion},
 			wantPkg:            []string{""},
 		},
@@ -148,7 +214,7 @@ func TestBuildPlan(t *testing.T) {
 			records: schema.Records{
 				migA: {MigrationID: migA, Version: "v1.9.4", Status: enumor.MigrationStatusRunning},
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionExecute},
 		},
@@ -160,10 +226,15 @@ func TestBuildPlan(t *testing.T) {
 			records: schema.Records{
 				migA: {MigrationID: migA, Version: "v1.9.4", Status: enumor.MigrationStatusFailed, Message: "boom"},
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionExecute},
 		},
+	}
+}
+
+func buildPlanCases3(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "record owned different suffix is id reuse",
 			migrations: func() []register.Migration {
@@ -172,9 +243,9 @@ func TestBuildPlan(t *testing.T) {
 			}(),
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, "v1.9.3", "20260101120000", "recorded")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionIDReuse},
 			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueIDReuse},
@@ -208,12 +279,17 @@ func TestBuildPlan(t *testing.T) {
 				migA: {MigrationID: migA, Version: "v1.9.3", AppliedPkg: "main/v1.9.3/not-a-migration-dir",
 					Status: enumor.MigrationStatusSuccess},
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionIDReuse},
 			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueIDReuse},
 			wantPkg:            []string{"main/v1.9.3/not-a-migration-dir"},
 		},
+	}
+}
+
+func buildPlanCases4(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "migration suffix unreadable never matches owner",
 			migrations: func() []register.Migration {
@@ -223,9 +299,9 @@ func TestBuildPlan(t *testing.T) {
 			}(),
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, "v1.9.3", "20260101120000", "ok")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionIDReuse},
 			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueIDReuse},
@@ -239,7 +315,7 @@ func TestBuildPlan(t *testing.T) {
 			}(),
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "same")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionSkipBackfill},
 			check: func(t *testing.T, p *Plan) {
@@ -255,7 +331,7 @@ func TestBuildPlan(t *testing.T) {
 			},
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "same")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionSkipBackfill, enumor.MigrationActionSkipSuccess},
 			wantWarn:   1,
@@ -265,6 +341,11 @@ func TestBuildPlan(t *testing.T) {
 				assert.Contains(t, p.Warnings[0], "registered: v1.9.4")
 			},
 		},
+	}
+}
+
+func buildPlanCases5(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "same suffix success skip with version drift warning",
 			migrations: []register.Migration{
@@ -272,9 +353,9 @@ func TestBuildPlan(t *testing.T) {
 			},
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, "v1.9.3", "20260101120000", "same")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionSkipSuccess},
 			wantWarn:           1,
@@ -289,9 +370,9 @@ func TestBuildPlan(t *testing.T) {
 			},
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, "v1.9.3", "20260101120000", "same")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionSkipSuccess},
 			wantWarn:           0,
@@ -303,7 +384,7 @@ func TestBuildPlan(t *testing.T) {
 			},
 			records: func() schema.Records {
 				owner := mustMigration(t, migA, constant.MigrationPendingVersion, "20260101120000", "same")
-				return schema.Records{migA: successRec(owner)}
+				return schema.Records{migA: fx.successRec(owner)}
 			}(),
 			opts:       Options{AllowPending: true},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionSkipSuccess},
@@ -315,7 +396,7 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "missed"),
 				mustMigration(t, migB, "v1.9.3", "20260101120000", "equal"),
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionMissing, enumor.MigrationActionMissing},
 			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueMissed, enumor.MigrationIssueMissed},
@@ -324,12 +405,17 @@ func TestBuildPlan(t *testing.T) {
 				assert.Contains(t, p.Issues[0].Message, "current: v1.9.3")
 			},
 		},
+	}
+}
+
+func buildPlanCases6(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "catch-up executes missed",
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "missed"),
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			opts:               Options{CatchUp: true},
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionExecute},
@@ -339,7 +425,7 @@ func TestBuildPlan(t *testing.T) {
 			migrations: []register.Migration{
 				mustMigration(t, migA, "v1.9.4", "20260101120000", "next"),
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionExecute},
 		},
@@ -356,7 +442,7 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "same"),
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "same"),
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction: []enumor.MigrationAction{
 				enumor.MigrationActionMissing, enumor.MigrationActionSkipSuccess,
@@ -369,7 +455,7 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.2", "20260101120000", "first"),
 				mustMigration(t, migA, "v1.9.2", "20260102120000", "second"),
 			},
-			current:            current,
+			current:            fx.current,
 			hasReleasedVersion: true,
 			wantAction:         []enumor.MigrationAction{enumor.MigrationActionMissing, enumor.MigrationActionIDReuse},
 			wantIssues:         []enumor.MigrationIssueKind{enumor.MigrationIssueMissed, enumor.MigrationIssueIDReuse},
@@ -382,6 +468,11 @@ func TestBuildPlan(t *testing.T) {
 			},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionSkipSuccess},
 		},
+	}
+}
+
+func buildPlanCases7(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "three duplicate ids execute skip id reuse",
 			migrations: []register.Migration{
@@ -439,6 +530,11 @@ func TestBuildPlan(t *testing.T) {
 			},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionExecute},
 		},
+	}
+}
+
+func buildPlanCases8(t *testing.T, fx planBuildFix) []buildPlanCase {
+	return []buildPlanCase{
 		{
 			name: "numeric fourth and one label is two lines",
 			migrations: []register.Migration{
@@ -468,7 +564,7 @@ func TestBuildPlan(t *testing.T) {
 				mustMigration(t, migA, "v1.9.4-alpha.1", "20260101120000", "a"),
 				mustMigration(t, migB, "v1.9.4-beta.1", "20260101120000", "b"),
 			},
-			opts: Options{Ceiling: &ceiling},
+			opts: Options{Ceiling: &fx.ceiling},
 			wantAction: []enumor.MigrationAction{
 				enumor.MigrationActionAboveMaxVersion, enumor.MigrationActionAboveMaxVersion,
 			},
@@ -483,45 +579,6 @@ func TestBuildPlan(t *testing.T) {
 			opts:       Options{AllowPending: true},
 			wantAction: []enumor.MigrationAction{enumor.MigrationActionExecute, enumor.MigrationActionExecute},
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			p := BuildPlan("main", tc.migrations, tc.records, tc.current, tc.hasReleasedVersion, tc.opts)
-			require.Equal(t, "main", p.Database)
-			assert.Equal(t, tc.hasReleasedVersion, p.HasReleasedVersion)
-			if tc.hasReleasedVersion {
-				assert.Equal(t, tc.current, p.Current)
-			}
-			require.Len(t, p.Items, len(tc.migrations))
-			if tc.wantAction != nil {
-				require.Len(t, p.Items, len(tc.wantAction))
-				for i, want := range tc.wantAction {
-					assert.Equal(t, want, p.Items[i].Action, "item %d id=%s", i, p.Items[i].Migration.ID)
-				}
-			}
-			if tc.wantPkg != nil {
-				require.Len(t, p.Items, len(tc.wantPkg))
-				for i, want := range tc.wantPkg {
-					assert.Equal(t, want, p.Items[i].AppliedPkg, "item %d AppliedPkg", i)
-				}
-			}
-			gotKinds := make([]enumor.MigrationIssueKind, 0, len(p.Issues))
-			for _, issue := range p.Issues {
-				gotKinds = append(gotKinds, issue.Kind)
-			}
-			if tc.wantIssues == nil {
-				assert.Empty(t, p.Issues)
-				assert.True(t, p.Passed())
-			} else {
-				assert.Equal(t, tc.wantIssues, gotKinds)
-				assert.False(t, p.Passed())
-			}
-			assert.Len(t, p.Warnings, tc.wantWarn)
-			if tc.check != nil {
-				tc.check(t, p)
-			}
-		})
 	}
 }
 

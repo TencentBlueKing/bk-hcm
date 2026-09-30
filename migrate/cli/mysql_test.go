@@ -130,22 +130,83 @@ func TestLocalMySQLCLI(t *testing.T) {
 		return code, stdout.String(), stderr.String()
 	}
 
+	env := &cliMySQLEnv{
+		mainDB: mainDB, auxDB: auxDB,
+		mainUpCalls: &mainUpCalls, auxUpCalls: &auxUpCalls, auxFailCalls: &auxFailCalls,
+		mainA: mainA, mainB: mainB, runCLI: runCLI,
+	}
+	testCLIInit(t, env)
+	testCLIAdopt(t)
+	testCLIUp(t, env)
+	testCLIMultiDB(t, env)
+	testCLIMissed(t)
+	testCLIStatus(t, env)
+}
+
+type cliMySQLEnv struct {
+	mainDB       *sqlx.DB
+	auxDB        *sqlx.DB
+	mainUpCalls  *atomic.Int32
+	auxUpCalls   *atomic.Int32
+	auxFailCalls *atomic.Int32
+	mainA        register.Migration
+	mainB        register.Migration
+	runCLI       func(t *testing.T, args []string) (int, string, string)
+}
+
+type cliAuditRow struct {
+	RunID         string         `db:"run_id"`
+	Command       string         `db:"command"`
+	Status        string         `db:"status"`
+	ExitCode      sql.NullInt64  `db:"exit_code"`
+	VersionBefore string         `db:"version_before"`
+	VersionAfter  string         `db:"version_after"`
+	Skipped       sql.NullString `db:"skipped"`
+	Message       sql.NullString `db:"message"`
+}
+
+type cliRecordRow struct {
+	MigrationID string                 `db:"migration_id"`
+	Version     string                 `db:"version"`
+	AppliedPkg  string                 `db:"applied_pkg"`
+	Status      enumor.MigrationStatus `db:"status"`
+	Message     string                 `db:"message"`
+}
+
+func testCLIMissedCatchUp(t *testing.T, multiSrc dataSource, regBoth, auxFreshReg *register.Registry,
+	lowCalls *atomic.Int32, freshDB *sqlx.DB) {
+	args := []string{"status", "-c", "fake.yaml", "-d", "main"}
+	r, stdout, stderr := newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, auxFreshReg})
+	code := r.run(args)
+	assertExit(t, code, constant.MigrationExitSuccess, stdout, stderr)
+	assert.Contains(t, stdout.String(), "<= current version")
+	assert.Contains(t, stdout.String(), migA)
+
+	args = []string{"up", "-c", "fake.yaml", "--catch-up", "-d", "main"}
+	r, stdout, stderr = newTestRunner(t, args, multiSrc, []*register.Registry{regBoth})
+	code = r.run(args)
+	assertExit(t, code, constant.MigrationExitSuccess, stdout, stderr)
+	assert.Equal(t, int32(1), lowCalls.Load())
+	assert.Contains(t, cliLoadRecords(t, freshDB), migA)
+}
+
+func testCLIInit(t *testing.T, env *cliMySQLEnv) {
 	t.Run("up before init → exit 3 and audit not written", func(t *testing.T) {
-		code, _, _ := runCLI(t, []string{"up", "-c", "fake.yaml", "-d", "main"})
+		code, _, _ := env.runCLI(t, []string{"up", "-c", "fake.yaml", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitPrecondition, code)
-		assert.False(t, cliTableExists(t, mainDB, constant.MigrationAuditTable))
-		assert.False(t, cliTableExists(t, mainDB, constant.MigrationRecordTable))
-		assert.Equal(t, 0, cliCountAudits(t, mainDB))
+		assert.False(t, cliTableExists(t, env.mainDB, constant.MigrationAuditTable))
+		assert.False(t, cliTableExists(t, env.mainDB, constant.MigrationRecordTable))
+		assert.Equal(t, 0, cliCountAudits(t, env.mainDB))
 	})
 
 	t.Run("init --mode=empty creates both tables and one audit row", func(t *testing.T) {
-		code, out, _ := runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "main"})
+		code, out, _ := env.runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitSuccess, code)
 		assert.Contains(t, out, "created")
-		assert.True(t, cliTableExists(t, mainDB, constant.MigrationAuditTable))
-		assert.True(t, cliTableExists(t, mainDB, constant.MigrationRecordTable))
-		assert.Equal(t, 0, cliCountRecords(t, mainDB))
-		rows := cliLoadAudits(t, mainDB)
+		assert.True(t, cliTableExists(t, env.mainDB, constant.MigrationAuditTable))
+		assert.True(t, cliTableExists(t, env.mainDB, constant.MigrationRecordTable))
+		assert.Equal(t, 0, cliCountRecords(t, env.mainDB))
+		rows := cliLoadAudits(t, env.mainDB)
 		require.Len(t, rows, 1)
 		assert.Equal(t, "init", rows[0].Command)
 		assert.Equal(t, string(enumor.MigrationStatusSuccess), rows[0].Status)
@@ -154,14 +215,17 @@ func TestLocalMySQLCLI(t *testing.T) {
 	})
 
 	t.Run("init again → no change and another audit row", func(t *testing.T) {
-		before := cliCountAudits(t, mainDB)
-		code, out, _ := runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "main"})
+		before := cliCountAudits(t, env.mainDB)
+		code, out, _ := env.runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitSuccess, code)
 		assert.Contains(t, out, "already initialized")
-		assert.Equal(t, 0, cliCountRecords(t, mainDB))
-		assert.Equal(t, before+1, cliCountAudits(t, mainDB))
+		assert.Equal(t, 0, cliCountRecords(t, env.mainDB))
+		assert.Equal(t, before+1, cliCountAudits(t, env.mainDB))
 	})
 
+}
+
+func testCLIAdopt(t *testing.T) {
 	t.Run("init --mode=adopt records baseline without calling Up", func(t *testing.T) {
 		freshDB, freshOrm, _, _, _ := openCLIIsolatedMySQL(t)
 		freshA := mustMigration(t, "main", migA, "v1.9.3", "20260101120000", "adopt_a")
@@ -214,34 +278,37 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assert.False(t, cliTableExists(t, freshDB, constant.MigrationRecordTable))
 	})
 
+}
+
+func testCLIUp(t *testing.T, env *cliMySQLEnv) {
 	t.Run("up --plan writes no record and no audit row", func(t *testing.T) {
-		beforeAudits := cliCountAudits(t, mainDB)
-		beforeRecords := cliCountRecords(t, mainDB)
-		code, out, _ := runCLI(t, []string{"up", "-c", "fake.yaml", "--plan", "-d", "main"})
+		beforeAudits := cliCountAudits(t, env.mainDB)
+		beforeRecords := cliCountRecords(t, env.mainDB)
+		code, out, _ := env.runCLI(t, []string{"up", "-c", "fake.yaml", "--plan", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitSuccess, code)
 		assert.Contains(t, out, "EXECUTE")
-		assert.Equal(t, beforeAudits, cliCountAudits(t, mainDB))
-		assert.Equal(t, beforeRecords, cliCountRecords(t, mainDB))
-		assert.Equal(t, int32(0), mainUpCalls.Load())
+		assert.Equal(t, beforeAudits, cliCountAudits(t, env.mainDB))
+		assert.Equal(t, beforeRecords, cliCountRecords(t, env.mainDB))
+		assert.Equal(t, int32(0), env.mainUpCalls.Load())
 	})
 
 	t.Run("up executes and records success with applied_pkg", func(t *testing.T) {
-		mainUpCalls.Store(0)
-		beforeAudits := cliCountAudits(t, mainDB)
-		code, out, _ := runCLI(t, []string{"up", "-c", "fake.yaml", "-d", "main"})
+		env.mainUpCalls.Store(0)
+		beforeAudits := cliCountAudits(t, env.mainDB)
+		code, out, _ := env.runCLI(t, []string{"up", "-c", "fake.yaml", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitSuccess, code)
 		assert.Contains(t, out, "summary:")
 		assert.Contains(t, out, "success")
-		assert.Equal(t, int32(2), mainUpCalls.Load())
-		rows := cliLoadRecords(t, mainDB)
+		assert.Equal(t, int32(2), env.mainUpCalls.Load())
+		rows := cliLoadRecords(t, env.mainDB)
 		require.Contains(t, rows, migA)
 		require.Contains(t, rows, migB)
 		assert.Equal(t, enumor.MigrationStatusSuccess, rows[migA].Status)
-		assert.Equal(t, mainA.Pkg, rows[migA].AppliedPkg)
+		assert.Equal(t, env.mainA.Pkg, rows[migA].AppliedPkg)
 		assert.Equal(t, enumor.MigrationStatusSuccess, rows[migB].Status)
-		assert.Equal(t, mainB.Pkg, rows[migB].AppliedPkg)
+		assert.Equal(t, env.mainB.Pkg, rows[migB].AppliedPkg)
 
-		audits := cliLoadAudits(t, mainDB)
+		audits := cliLoadAudits(t, env.mainDB)
 		require.Equal(t, beforeAudits+1, len(audits))
 		last := audits[len(audits)-1]
 		assert.Equal(t, "up", last.Command)
@@ -252,30 +319,33 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assert.Equal(t, "v1.9.4", last.VersionAfter)
 	})
 
+}
+
+func testCLIMultiDB(t *testing.T, env *cliMySQLEnv) {
 	t.Run("multi-db shared run_id and failing aux", func(t *testing.T) {
 		// Reset aux DB; main already migrated. Init aux only.
-		code, _, _ := runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "aux"})
+		code, _, _ := env.runCLI(t, []string{"init", "-c", "fake.yaml", "--mode=empty", "-d", "aux"})
 		require.Equal(t, constant.MigrationExitSuccess, code)
 
-		mainUpCalls.Store(0)
-		auxUpCalls.Store(0)
-		auxFailCalls.Store(0)
+		env.mainUpCalls.Store(0)
+		env.auxUpCalls.Store(0)
+		env.auxFailCalls.Store(0)
 		// main has nothing left to run; aux runs ok then fails.
-		code, out, _ := runCLI(t, []string{"up", "-c", "fake.yaml"})
+		code, out, _ := env.runCLI(t, []string{"up", "-c", "fake.yaml"})
 		assert.Equal(t, constant.MigrationExitFailure, code)
 		assert.Contains(t, out, "summary:")
-		assert.Equal(t, int32(0), mainUpCalls.Load())
-		assert.Equal(t, int32(1), auxUpCalls.Load())
-		assert.Equal(t, int32(1), auxFailCalls.Load())
+		assert.Equal(t, int32(0), env.mainUpCalls.Load())
+		assert.Equal(t, int32(1), env.auxUpCalls.Load())
+		assert.Equal(t, int32(1), env.auxFailCalls.Load())
 
-		auxRows := cliLoadRecords(t, auxDB)
+		auxRows := cliLoadRecords(t, env.auxDB)
 		require.Contains(t, auxRows, migC)
 		assert.Equal(t, enumor.MigrationStatusSuccess, auxRows[migC].Status)
 		require.Contains(t, auxRows, migD)
 		assert.Equal(t, enumor.MigrationStatusFailed, auxRows[migD].Status)
 
-		mainAudits := cliLoadAudits(t, mainDB)
-		auxAudits := cliLoadAudits(t, auxDB)
+		mainAudits := cliLoadAudits(t, env.mainDB)
+		auxAudits := cliLoadAudits(t, env.auxDB)
 		mainLast := mainAudits[len(mainAudits)-1]
 		auxLast := auxAudits[len(auxAudits)-1]
 		assert.Equal(t, "up", mainLast.Command)
@@ -288,6 +358,9 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assert.Equal(t, int64(1), auxLast.ExitCode.Int64)
 	})
 
+}
+
+func testCLIMissed(t *testing.T) {
 	t.Run("missed migration default mode → exit 4 then catch-up", func(t *testing.T) {
 		freshDB, freshOrm, _, _, _ := openCLIIsolatedMySQL(t)
 		high := mustMigration(t, "main", migB, "v1.9.4", "20260101120000", "high")
@@ -350,25 +423,14 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assert.Equal(t, string(enumor.MigrationStatusFailed), mainLast.Status)
 		assert.Contains(t, mainLast.Message.String, "missed migration")
 
-		// status shows <= current version mark
-		args = []string{"status", "-c", "fake.yaml", "-d", "main"}
-		r, stdout, stderr = newTestRunner(t, args, multiSrc, []*register.Registry{regBoth, auxFreshReg})
-		code = r.run(args)
-		assertExit(t, code, constant.MigrationExitSuccess, stdout, stderr)
-		assert.Contains(t, stdout.String(), "<= current version")
-		assert.Contains(t, stdout.String(), migA)
-
-		// catch-up runs the missed one
-		args = []string{"up", "-c", "fake.yaml", "--catch-up", "-d", "main"}
-		r, stdout, stderr = newTestRunner(t, args, multiSrc, []*register.Registry{regBoth})
-		code = r.run(args)
-		assertExit(t, code, constant.MigrationExitSuccess, stdout, stderr)
-		assert.Equal(t, int32(1), lowCalls.Load())
-		assert.Contains(t, cliLoadRecords(t, freshDB), migA)
+		testCLIMissedCatchUp(t, multiSrc, regBoth, auxFreshReg, &lowCalls, freshDB)
 	})
 
+}
+
+func testCLIStatus(t *testing.T, env *cliMySQLEnv) {
 	t.Run("status after runs shows counts", func(t *testing.T) {
-		code, out, _ := runCLI(t, []string{"status", "-c", "fake.yaml", "-d", "main"})
+		code, out, _ := env.runCLI(t, []string{"status", "-c", "fake.yaml", "-d", "main"})
 		assert.Equal(t, constant.MigrationExitSuccess, code)
 		assert.Contains(t, out, "current version: v1.9.4")
 		assert.Contains(t, out, "records: success")
@@ -391,25 +453,6 @@ func TestLocalMySQLCLI(t *testing.T) {
 		assertExit(t, code, constant.MigrationExitPrecondition, stdout, stderr)
 		assert.Contains(t, stdout.String(), "do not exist")
 	})
-}
-
-type cliAuditRow struct {
-	RunID         string         `db:"run_id"`
-	Command       string         `db:"command"`
-	Status        string         `db:"status"`
-	ExitCode      sql.NullInt64  `db:"exit_code"`
-	VersionBefore string         `db:"version_before"`
-	VersionAfter  string         `db:"version_after"`
-	Skipped       sql.NullString `db:"skipped"`
-	Message       sql.NullString `db:"message"`
-}
-
-type cliRecordRow struct {
-	MigrationID string                 `db:"migration_id"`
-	Version     string                 `db:"version"`
-	AppliedPkg  string                 `db:"applied_pkg"`
-	Status      enumor.MigrationStatus `db:"status"`
-	Message     string                 `db:"message"`
 }
 
 func cliTableExists(t *testing.T, db *sqlx.DB, name string) bool {

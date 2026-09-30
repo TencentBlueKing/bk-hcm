@@ -36,6 +36,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type usageCase struct {
+	name       string
+	args       []string
+	wantCode   int
+	stdoutHas  []string
+	stderrHas  []string
+	stdoutMiss []string
+	setup      func(*runner)
+}
+
 func TestRunUsageAndExitCodes(t *testing.T) {
 	mainReg := mustRegistry(t, "main", []register.Migration{
 		mustMigration(t, "main", migA, "v1.9.3", "20260101120000", "a"),
@@ -47,17 +57,34 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 	regs := []*register.Registry{mainReg, auxReg}
 	fakeSrc := &mapSource{orms: map[string]orm.Interface{}}
 
-	type tc struct {
-		name       string
-		args       []string
-		wantCode   int
-		stdoutHas  []string
-		stderrHas  []string
-		stdoutMiss []string
-		setup      func(*runner)
-	}
+	testCases := usageCases1()
+	testCases = append(testCases, usageCases2()...)
+	testCases = append(testCases, usageCases3()...)
+	testCases = append(testCases, usageCases4()...)
 
-	testCases := []tc{
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			r, stdout, stderr := newTestRunner(t, tc.args, fakeSrc, regs)
+			if tc.setup != nil {
+				tc.setup(r)
+			}
+			code := r.run(tc.args)
+			assertExit(t, code, tc.wantCode, stdout, stderr)
+			for _, s := range tc.stdoutHas {
+				assert.Contains(t, stdout.String(), s)
+			}
+			for _, s := range tc.stdoutMiss {
+				assert.NotContains(t, stdout.String(), s)
+			}
+			for _, s := range tc.stderrHas {
+				assert.Contains(t, stderr.String(), s)
+			}
+		})
+	}
+}
+
+func usageCases1() []usageCase {
+	return []usageCase{
 		{
 			name: "no args", args: nil, wantCode: constant.MigrationExitUsage,
 			stderrHas: []string{"Usage: hcm-migrate"},
@@ -118,6 +145,11 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 			name: "status missing config", args: []string{"status"},
 			wantCode: constant.MigrationExitUsage,
 		},
+	}
+}
+
+func usageCases2() []usageCase {
+	return []usageCase{
 		{
 			name:     "bad database via engine.SelectRegistries",
 			args:     []string{"list", "-d", "unknown"},
@@ -181,6 +213,11 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 			args:     []string{"init", "-c", "x.yaml", "--mode=adopt", "--baseline", "=v1.9.3"},
 			wantCode: constant.MigrationExitUsage,
 		},
+	}
+}
+
+func usageCases3() []usageCase {
+	return []usageCase{
 		{
 			name:     "init baseline malformed trailing equals",
 			args:     []string{"init", "-c", "x.yaml", "--mode=adopt", "--baseline", "main="},
@@ -241,6 +278,11 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 				}
 			},
 		},
+	}
+}
+
+func usageCases4() []usageCase {
+	return []usageCase{
 		{
 			name:       "not-configured database skipped silently on stdout",
 			args:       []string{"status", "-c", "x.yaml", "-d", "main"},
@@ -252,26 +294,6 @@ func TestRunUsageAndExitCodes(t *testing.T) {
 				}
 			},
 		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			r, stdout, stderr := newTestRunner(t, tc.args, fakeSrc, regs)
-			if tc.setup != nil {
-				tc.setup(r)
-			}
-			code := r.run(tc.args)
-			assertExit(t, code, tc.wantCode, stdout, stderr)
-			for _, s := range tc.stdoutHas {
-				assert.Contains(t, stdout.String(), s)
-			}
-			for _, s := range tc.stdoutMiss {
-				assert.NotContains(t, stdout.String(), s)
-			}
-			for _, s := range tc.stderrHas {
-				assert.Contains(t, stderr.String(), s)
-			}
-		})
 	}
 }
 

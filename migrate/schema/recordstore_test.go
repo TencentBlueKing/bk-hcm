@@ -190,6 +190,11 @@ func TestRecordStore_Load(t *testing.T) {
 		}
 	}
 
+}
+
+func TestRecordStore_LoadVersions(t *testing.T) {
+	kt := kit.New()
+
 	t.Run("unknown status is reported before an unparsable version", func(t *testing.T) {
 		do := newFakeDo()
 		do.selectRows = []Record{

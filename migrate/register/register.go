@@ -17,6 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package register holds the in-process migration registries and the version
+// grammar. Migration files must not import hcm/migrate/engine.
 package register
 
 import (
