@@ -558,10 +558,8 @@ func concurrentListLoadBalancerBrief(kt *kit.Kit, cliSet *client.ClientSet, opt 
 	queries []loadBalancerBriefQuery) ([]corelb.LoadBalancerBrief, error) {
 
 	clbCondSync := cc.CloudServer().ConcurrentConfig.ClbCondSync
+	// ListConcurrent 已在配置加载时校验大于 0，此处无需兜底
 	listConcurrent := converter.PtrToVal(clbCondSync.ListConcurrent)
-	if listConcurrent <= 0 {
-		listConcurrent = constant.DefaultCondSyncLbListConcurrent
-	}
 
 	start := time.Now()
 	results := make([][]corelb.LoadBalancerBrief, len(queries))

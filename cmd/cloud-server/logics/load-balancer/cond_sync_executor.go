@@ -127,9 +127,17 @@ func (opt *CondSyncLoadBalancerOption) bkBizID() int64 {
 }
 
 // Run 执行器执行入口
-func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (string, error) {
+func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (_ string, err error) {
+	var taskID, flowID string
+
+	defer func() {
+		if err != nil {
+			c.cancelFailedTask(kt, taskID, flowID)
+		}
+	}()
+
 	// 创建异步管理任务、任务详情列表
-	taskID, err := c.buildTaskManagementAndDetails(kt)
+	taskID, err = c.buildTaskManagementAndDetails(kt)
 	if err != nil {
 		logs.Errorf("create task management and details failed, err: %v, account: %s, rid: %s",
 			err, c.opt.AccountID, kt.Rid)
@@ -137,7 +145,7 @@ func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (string, error) {
 	}
 
 	// 创建Flow
-	flowID, err := c.buildFlow(kt)
+	flowID, err = c.buildFlow(kt)
 	if err != nil {
 		logs.Errorf("build conditional sync load balancer flow failed, err: %v, account: %s, taskID: %s, rid: %s",
 			err, c.opt.AccountID, taskID, kt.Rid)
@@ -247,7 +255,8 @@ func (c *CondSyncLoadBalancerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 
 	if err = c.createTaskDetails(kt, taskID); err != nil {
 		logs.Errorf("create task details failed, err: %v, taskID: %s, rid: %s", err, taskID, kt.Rid)
-		return "", err
+		// 返回已创建的 taskID，供调用方取消这条没有 flow 的任务
+		return taskID, err
 	}
 
 	return taskID, nil
@@ -317,6 +326,8 @@ func (c *CondSyncLoadBalancerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 			c.operationType, len(items), len(detailIDs))
 	}
 
+	// details 里的元素是指针，与 c.batches[*].details 指向同一批对象，
+	// 这里回填 taskDetailID 后，后续 updateTaskDetails 和构建 flow 任务时可直接从 c.batches 读到
 	for i, detail := range details {
 		detail.taskDetailID = detailIDs[i]
 	}
@@ -478,6 +489,40 @@ func (c *CondSyncLoadBalancerExecutor) updateTaskDetails(kt *kit.Kit, flowID str
 	}
 
 	return nil
+}
+
+// cancelFailedTask 创建流程中途失败时把仍处于 init 的 flow 置为 cancel，并取消任务管理记录。
+// 没有补偿的话，init 状态的 flow 不会被任何组件处理，会一直占着账号+业务的互斥检查，
+// 而任务详情停在 init 也会让任务管理记录永远停在 running。
+// 若 flow 已被其他环节推进（置 cancel 的 CAS 失败），说明它会自行走到终态，此时不再取消任务管理记录。
+func (c *CondSyncLoadBalancerExecutor) cancelFailedTask(kt *kit.Kit, taskID, flowID string) {
+	if taskID == "" {
+		return
+	}
+
+	if flowID != "" {
+		req := &producer.UpdateCustomFlowStateOption{
+			FlowInfos: []backend.UpdateFlowInfo{{
+				ID:     flowID,
+				Source: enumor.FlowInit,
+				Target: enumor.FlowCancel,
+			}},
+		}
+		if err := c.taskCli.UpdateCustomFlowState(kt, req); err != nil {
+			logs.Errorf("cancel init flow failed, skip cancel task management, err: %v, taskID: %s, flowID: %s, "+
+				"rid: %s", err, taskID, flowID, kt.Rid)
+			return
+		}
+	}
+
+	if err := c.dataServiceCli.Global.TaskManagement.Cancel(kt, &task.CancelReq{IDs: []string{taskID}}); err != nil {
+		logs.Errorf("cancel task management failed, err: %v, taskID: %s, flowID: %s, rid: %s",
+			err, taskID, flowID, kt.Rid)
+		return
+	}
+
+	logs.Infof("cancel failed conditional sync load balancer task success, taskID: %s, flowID: %s, rid: %s",
+		taskID, flowID, kt.Rid)
 }
 
 // taskManagementLister 查询 task_management 的接口。
