@@ -50,9 +50,6 @@ const (
 const (
 	// TCLBDescribeMax 腾讯云CLB默认查询大小
 	TCLBDescribeMax = 20
-	// TCLBDescribeQPSLimit 腾讯云查询负载均衡接口的出云QPS上限。
-	// 云上对 DescribeLoadBalancers 限频20次/秒，此处留出余量给同账号下的其他CLB接口调用。
-	TCLBDescribeQPSLimit = 20
 	// TCLBDeleteProtect 腾讯云负载均衡删除保护
 	TCLBDeleteProtect = "DeleteProtect"
 )
