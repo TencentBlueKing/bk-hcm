@@ -127,7 +127,7 @@ func (opt *CondSyncLoadBalancerOption) bkBizID() int64 {
 }
 
 // Run 执行器执行入口
-func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (_ string, err error) {
+func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (result string, err error) {
 	var taskID, flowID string
 
 	defer func() {
