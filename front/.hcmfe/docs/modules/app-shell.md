@@ -9,13 +9,13 @@
 
 - **`app.vue`**（无额外 `layout/index.vue`，对齐 PR #1897）：
   - 布局：`bk-navigation`（`top-bottom`、`hover-width=240`）的 `#header` / `#menu` / `#default` / `#footer` 分别放 `HcmHeader` / `HcmMenu` / `HcmMainContent` / `HcmFooter`；`need-menu` = 当前一级菜单声明了 `menu`（见 menu-route）；页脚只在主机列表页（`MENU_BUSINESS_HOST_MANAGEMENT`）渲染。
-  - 全局副作用（原旧壳 `views/home/index.tsx` 的职责，旧壳已删除）：挂 `window.hcmPermissionDialog`、`useChromeNotice()`；预取地域（腾讯云 / 华为云）、业务映射、云区域；`accountStore.bizs` 变化时重算 `pageAuthData` 的业务 ID 并 `getAuthVerifyData`；按所属一级菜单初始化全局业务 ID（资源接入、资源选型置 0，无归属页面置空）；`usePagePermissionStore` 无页面权限时整页显示 `NoPermission`、渲染旧的 `GlobalPermissionDialog`（两者在视图权限体系改造中删除）。
+  - 全局副作用（原旧壳 `views/home/index.tsx` 的职责，旧壳已删除）：挂 `window.hcmPermissionDialog`、`useChromeNotice()`；预取地域（腾讯云 / 华为云）、业务映射、云区域；`accountStore.bizs` 变化时重算 `pageAuthData` 的业务 ID 并 `getAuthVerifyData`；按所属一级菜单初始化全局业务 ID（资源接入、资源选型置 0，无归属页面置空）。页面无权限不再整页替换，由主区的状态页承接（见 auth 模块「视图级」）。
   - `isRouterAlive` + `reload()`：业务选择器切换业务时由侧栏调用，主区卸载再挂载 `RouterView`。
 - **`components/layout/`**：`header.vue`（一级菜单、语言、版本日志、用户）、`menu.vue` / `menu-item.vue`（侧栏）、`main-content.vue`（面包屑 + 主视图）、`breadcrumb.vue`、`footer.vue`、`business-selector.tsx`（原旧壳业务选择器）。
 - **`main-content.vue`**：主视图最小宽度 1089px（状态页除外），本身无内边距（由页面容器 `page-container` / `detail-content-wrap` 提供）；保留 `#breadcrumbLeft`（云账号管理页 Teleport 目标）与 `#breadcrumbExtra` 挂载点。
 - **最小宽度**：`style/common.scss` 中页面最小宽度 1366px；`app.vue` 覆盖导航容器组件内联的 `max-width: calc(100vw - 60px)`，使其跟随文档宽度。
 - **`style/app-shell.scss`**：原旧壳 `index.scss` 中仍被页面依赖的全局样式（如 `.menu-warp .menu-icon`、`.home-menu`、资源接入左侧账号树容器）。不要把旧壳的失效选择器或旧页脚 52px 高度规则带回来——组件库总会渲染页脚容器，那条规则会让所有页面底部多出 52px 空白。
-- **状态页**：`views/status/404.vue`（未知地址兜底，返回首页用 `routerAction`）、`views/status/error.vue`；不显示侧栏与面包屑。旧的 `views/error-pages/403.tsx` 仍是 `/403/:id` 的页面（视图权限体系改造前）。
+- **状态页**：`views/status/404.vue`（未知地址兜底，返回首页用 `routerAction`）、`views/status/error.vue`、`permission.vue`、`business.vue`。404 / error 既是独立路由，也和两个无权限页一起作为 named view 注入各页面路由；`main-content.vue` 的出口按 `route.meta.view` 渲染（`default` 之外即状态页，居中、免最小宽度，资源接入此时不渲染云账号树）。旧的 `views/error-pages/403.tsx` 仍是 `/403/:id` 的页面，只保留可直接打开。
 
 ## 注意事项
 

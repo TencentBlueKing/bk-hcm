@@ -1,4 +1,4 @@
-import { withDirectives, Ref } from 'vue';
+import { withDirectives, Ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Button, Dropdown, Message, bkTooltips } from 'bkui-vue';
@@ -7,6 +7,15 @@ import HostOperations, { OperationActions, operationMap } from '@/views/business
 import useSingleOperation from '@/views/business/host/children/host-operations/use-single-operation';
 import defaultUseTableListQuery from '@/hooks/useTableListQuery';
 import type { PropsType } from '@/hooks/useTableListQuery';
+import HcmAuth from '@/components/auth/auth.vue';
+import {
+  AUTH_UPDATE_IAAS_RESOURCE,
+  AUTH_DELETE_IAAS_RESOURCE,
+  AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+  AUTH_BIZ_DELETE_IAAS_RESOURCE,
+} from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { getAuthSignByBusinessId } from '@/utils';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -25,6 +34,15 @@ type UseColumnsParams = {
 const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }: UseColumnsParams) => {
   const { t } = useI18n();
   const router = useRouter();
+  const { getBizsId } = useWhereAmI();
+
+  const bizId = computed(() => getBizsId());
+  const operateAuthSign = computed(() =>
+    getAuthSignByBusinessId(bizId.value, AUTH_UPDATE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE),
+  );
+  const deleteAuthSign = computed(() =>
+    getAuthSignByBusinessId(bizId.value, AUTH_DELETE_IAAS_RESOURCE, AUTH_BIZ_DELETE_IAAS_RESOURCE),
+  );
 
   const { getOperationConfig, currentOperateRowIndex } = useSingleOperation({
     beforeConfirm() {
@@ -60,59 +78,73 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
         width: 120,
         showOverflowTooltip: false,
         render: ({ data, index }: { data: any; index: number }) => {
+          const recycleConfig = getOperationConfig(OperationActions.RECYCLE, data);
           return (
             <div class={'operation-column'}>
-              {[
-                withDirectives(
-                  <Button
-                    text
-                    theme={'primary'}
-                    class={`mr10 ${
-                      getOperationConfig(OperationActions.RECYCLE, data).noPermission ? 'hcm-no-permision-text-btn' : ''
-                    }`}
-                    onClick={getOperationConfig(OperationActions.RECYCLE, data).clickHandler}
-                    disabled={getOperationConfig(OperationActions.RECYCLE, data).disabled}>
-                    {operationMap[OperationActions.RECYCLE].label}
-                  </Button>,
-                  [[bkTooltips, getOperationConfig(OperationActions.RECYCLE, data).tooltips]],
-                ),
-                <Dropdown
-                  trigger='click'
-                  popoverOptions={{
-                    renderType: 'shown',
-                    clickContentAutoHide: true,
-                    onAfterShow: () => (currentOperateRowIndex.value = index),
-                    onAfterHidden: () => (currentOperateRowIndex.value = -1),
-                  }}>
-                  {{
-                    default: () => (
-                      <div
-                        class={[`more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`]}>
-                        <i class={'hcm-icon bkhcm-icon-more-fill'}></i>
-                      </div>
+              <HcmAuth sign={deleteAuthSign.value} tag='span'>
+                {{
+                  default: ({ noPerm }: { noPerm: boolean }) =>
+                    withDirectives(
+                      <Button
+                        text
+                        theme={'primary'}
+                        class={'mr10'}
+                        onClick={recycleConfig.clickHandler}
+                        disabled={noPerm || recycleConfig.disabled}>
+                        {operationMap[OperationActions.RECYCLE].label}
+                      </Button>,
+                      [[bkTooltips, recycleConfig.tooltips]],
                     ),
-                    content: () => (
-                      <DropdownMenu>
-                        {operationDropdownList.map(({ label, type }) => {
-                          const { disabled, tooltips, noPermission, clickHandler } = getOperationConfig(
-                            type as OperationActions,
-                            data,
-                          );
-                          return withDirectives(
-                            <DropdownItem
-                              key={type}
-                              onClick={clickHandler}
-                              extCls={`more-action-item${disabled || noPermission ? ' disabled' : ''}`}>
-                              {label}
-                            </DropdownItem>,
-                            [[bkTooltips, tooltips]],
-                          );
-                        })}
-                      </DropdownMenu>
-                    ),
-                  }}
-                </Dropdown>,
-              ]}
+                }}
+              </HcmAuth>
+              <HcmAuth sign={operateAuthSign.value} tag='span'>
+                {{
+                  default: ({ noPerm }: { noPerm: boolean }) => (
+                    <Dropdown
+                      trigger='click'
+                      popoverOptions={{
+                        renderType: 'shown',
+                        clickContentAutoHide: true,
+                        onAfterShow: () => (currentOperateRowIndex.value = index),
+                        onAfterHidden: () => (currentOperateRowIndex.value = -1),
+                      }}>
+                      {{
+                        default: () => (
+                          <div
+                            class={[
+                              'more-action',
+                              {
+                                'current-operate-row': currentOperateRowIndex.value === index,
+                                disabled: noPerm,
+                              },
+                            ]}>
+                            <i class={'hcm-icon bkhcm-icon-more-fill'}></i>
+                          </div>
+                        ),
+                        content: () => (
+                          <DropdownMenu>
+                            {operationDropdownList.map(({ label, type }) => {
+                              const { disabled, tooltips, clickHandler } = getOperationConfig(
+                                type as OperationActions,
+                                data,
+                              );
+                              return withDirectives(
+                                <DropdownItem
+                                  key={type}
+                                  onClick={clickHandler}
+                                  extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
+                                  {label}
+                                </DropdownItem>,
+                                [[bkTooltips, tooltips]],
+                              );
+                            })}
+                          </DropdownMenu>
+                        ),
+                      }}
+                    </Dropdown>
+                  ),
+                }}
+              </HcmAuth>
             </div>
           );
         },

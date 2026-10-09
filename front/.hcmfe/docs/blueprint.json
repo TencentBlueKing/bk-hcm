@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "d05cde8ecebae2d2021d742fd52454db5c09b423"
+        "rootHash": "d6984fb9123539fed0bcf9a268add5237892f686"
       }
     },
     {
@@ -107,6 +107,11 @@
         "src/components/permission/**",
         "src/hooks/useVerify.ts",
         "src/store/common.ts",
+        "src/store/auth.ts",
+        "src/constants/view-auth.ts",
+        "src/router/business-interceptor.ts",
+        "src/views/status/permission.vue",
+        "src/views/status/business.vue",
         "src/views/error-pages/403.tsx"
       ],
       "doc": "modules/auth.md",
@@ -116,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "2c786dfb8f0a6380df8f985abb4b71ef4be6d601"
+        "rootHash": "066ea81eecd98bb2f59224787f1521d02053d08d"
       }
     },
     {
@@ -212,7 +217,7 @@
       "doc": "modules/bill.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "3d4fd654cc8ebe385b587f9bafbfd6569801151c"
+        "rootHash": "33e9f6377483fa5b52b0bce598c03ccb35d842fb"
       }
     },
     {
@@ -267,7 +272,7 @@
       "doc": "modules/app-shell.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "74a6d3ec4c26d5d09ca64ded9ce5a75addd0e344"
+        "rootHash": "f204aa9483648c59b3bad9ca2277fe8fa6e0c53d"
       }
     },
     {

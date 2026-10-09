@@ -13,7 +13,6 @@ import { useAccountStore, useCommonStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-import usePagePermissionStore from '@/store/usePagePermissionStore';
 import { useChromeNotice } from '@/utils/chrome-notice';
 import logo from '@/assets/image/logo.png';
 import HcmHeader from '@/components/layout/header.vue';
@@ -21,8 +20,6 @@ import HcmMenu from '@/components/layout/menu.vue';
 import HcmMainContent from '@/components/layout/main-content.vue';
 import HcmFooter from '@/components/layout/footer.vue';
 import Notice from '@/views/notice/index.vue';
-import NoPermission from '@/views/resource/NoPermission';
-import GlobalPermissionDialog from '@/components/global-permission-dialog';
 import PermissionApplyDialog from '@/components/permission/apply-dialog.vue';
 
 const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
@@ -31,7 +28,6 @@ const { t } = useI18n();
 const route = useRoute();
 const accountStore = useAccountStore();
 const { getAuthVerifyData } = useVerify();
-const { hasPagePermission, permissionMsg } = usePagePermissionStore();
 const { isNoticeAlert } = storeToRefs(useCommonStore());
 
 // 面包屑
@@ -113,35 +109,31 @@ onMounted(() => {
 <template>
   <!-- 跑马灯公告在文档流中占 40px，必须排在导航之前 -->
   <Notice v-if="ENABLE_NOTICE === 'true'" />
-  <NoPermission v-if="!hasPagePermission" :message="permissionMsg" />
-  <template v-else>
-    <bk-navigation
-      :class="['hcm-app', { 'has-notice': isNoticeAlert }]"
-      navigation-type="top-bottom"
-      :side-title="t('海垒')"
-      :hover-width="240"
-      :need-menu="needMenu"
-      :default-open="isMenuOpen"
-      @toggle="handleToggle"
-    >
-      <template #side-icon>
-        <img class="hcm-app-logo" :src="logo" />
-      </template>
-      <template #header>
-        <HcmHeader />
-      </template>
-      <template #menu>
-        <HcmMenu :is-open="isMenuOpen" :reload="reload" />
-      </template>
-      <template #default>
-        <HcmMainContent :is-router-alive="isRouterAlive" />
-      </template>
-      <template v-if="hasFooter" #footer>
-        <HcmFooter />
-      </template>
-    </bk-navigation>
-    <GlobalPermissionDialog />
-  </template>
+  <bk-navigation
+    :class="['hcm-app', { 'has-notice': isNoticeAlert }]"
+    navigation-type="top-bottom"
+    :side-title="t('海垒')"
+    :hover-width="240"
+    :need-menu="needMenu"
+    :default-open="isMenuOpen"
+    @toggle="handleToggle"
+  >
+    <template #side-icon>
+      <img class="hcm-app-logo" :src="logo" />
+    </template>
+    <template #header>
+      <HcmHeader />
+    </template>
+    <template #menu>
+      <HcmMenu :is-open="isMenuOpen" :reload="reload" />
+    </template>
+    <template #default>
+      <HcmMainContent :is-router-alive="isRouterAlive" />
+    </template>
+    <template v-if="hasFooter" #footer>
+      <HcmFooter />
+    </template>
+  </bk-navigation>
   <PermissionApplyDialog
     ref="permission-dialog"
     v-model="permissionDialogContext.isShow"

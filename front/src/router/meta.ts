@@ -1,17 +1,21 @@
+import type { RouteLocationNormalized } from 'vue-router';
+import type { IAuthSign, IPermission } from '@/common/auth-service';
+
 interface Menu {
   i18n?: string;
   parent?: any;
   relative?: string | symbol;
 }
 
-interface AuthView {
-  type: string;
-  relation?: number[] | string[];
-}
+// 视图权限配置函数，接收完整的路由信息
+export type AuthViewFn = (to: RouteLocationNormalized) => IAuthSign;
+
+// available 支持静态布尔值或动态函数
+export type AvailableFn = (to: RouteLocationNormalized) => boolean;
 
 interface Auth {
   superView?: any;
-  view?: AuthView | (() => AuthView);
+  view?: IAuthSign | AuthViewFn;
   operation?: any;
   permission?: any;
 }
@@ -28,7 +32,7 @@ interface Extra {
 }
 
 export interface RouteMetaConfig {
-  available?: boolean;
+  available?: boolean | AvailableFn;
   owner?: symbol;
   /** @deprecated 使用 menu.i18n 代替 */
   title?: string;
@@ -41,7 +45,8 @@ export interface RouteMetaConfig {
   notMenu?: boolean;
   activeKey?: symbol | string;
   icon?: string;
-  checkAuth?: string;
+  permissionData?: IPermission;
+  errorMessage?: string;
 }
 
 /**
@@ -49,7 +54,7 @@ export interface RouteMetaConfig {
  * 子记录若产出默认值会遮住父记录的配置（如父记录的 layout.breadcrumb.show = false）。
  */
 export default class Meta {
-  available = true;
+  available: boolean | AvailableFn = true;
 
   title = '';
 

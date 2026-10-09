@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router';
+import { AUTH_CREATE_CLOUD_SELECTION_SCHEME, AUTH_FIND_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
 
 // 资源选型模块路由
 const scheme: RouteRecordRaw[] = [
@@ -16,6 +17,7 @@ const scheme: RouteRecordRaw[] = [
         component: () => import('@/views/scheme/scheme-recommendation/index'),
         meta: {
           notMenu: true,
+          auth: { view: { type: AUTH_CREATE_CLOUD_SELECTION_SCHEME } },
         },
       },
       {
@@ -24,6 +26,7 @@ const scheme: RouteRecordRaw[] = [
         component: () => import('@/views/scheme/scheme-list/index'),
         meta: {
           notMenu: true,
+          auth: { view: { type: AUTH_FIND_CLOUD_SELECTION_SCHEME } },
         },
       },
       {

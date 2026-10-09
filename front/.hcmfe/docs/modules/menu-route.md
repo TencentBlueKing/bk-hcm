@@ -13,12 +13,12 @@
   - `getCurrentTopMenu(route)`：侧栏与顶栏激活用。**一级菜单本身不按 `visibility` 过滤**（开关只管顶栏入口，直接访问地址时侧栏照常），子项照常过滤。
   - `getMenuRoute(views, id)`：在路由树里递归按 name 找记录，菜单项只按 name 引用路由。
   - `toMenuKey(id)`：Symbol 取 `description` 作 `bk-menu` 的 key；侧栏 `active-key` 用同一函数处理 `route.meta.activeKey`。
-- **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由，子路由可写绝对路径，地址不受包装影响。状态路由 `404` / `error` 与 `/403/:id` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址兜底进 `404`（不再跳回首页）。
+- **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由，子路由可写绝对路径，地址不受包装影响。状态路由 `404` / `error` 与 `/403/:id` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址兜底进 `404`（不再跳回首页）。各父路由的 `children` 来自 `views/index.ts`，导出时已经 `injectStatusComponents` 注入状态页 named view；新增视图集合也必须经它包一层。全局 `beforeEach` 只做视图级权限（业务拦截器 → `available` → `meta.auth.view`），不改地址。
 - **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceAccessViews` / `schemeViews` / `billViews`，路由注册与菜单服务共用同一份。
 
 ## 侧栏与顶栏渲染
 
-- `components/layout/menu.vue`：取 `getCurrentTopMenu(route).menu`，按 `group` 聚合（首次出现顺序），分组用 `bk-menu-group`（**不可折叠**，不做 #1897 的折叠交互与收藏）。菜单项权限过滤仍读目标路由 `meta.checkAuth` 对应的 `authVerifyData.permissionAction`；整组为空时分组隐藏。业务资源下顶部显示 `BusinessSelector`（侧栏展开时），菜单链接带 `?bizs=`。
+- `components/layout/menu.vue`：取 `getCurrentTopMenu(route).menu`，按 `group` 聚合（首次出现顺序），分组用 `bk-menu-group`（**不可折叠**，不做 #1897 的折叠交互与收藏）。菜单项权限过滤读 `constants/view-auth.ts` 中 `hideMenu` 项的视图权限缓存（菜单 id = `viewId`，见 auth 模块）；整组为空时分组隐藏。业务资源下顶部显示 `BusinessSelector`（侧栏展开时），菜单链接带 `?bizs=`。
 - `components/layout/menu-item.vue`：一律按 `{ name }` 跳转（一期为相对路径路由维护的 `getRouteLinkParams` 白名单已随旧壳删除）。显示名取 `IMenu.i18n` 原文；需要翻译的项（单据管理、权限策略库）在 menu-service 里已用 `t()` 求值，渲染器不再套 `t()`。
 - `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页；业务资源额外带 `?bizs=`。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。顶栏若要加只做跳转的入口（如资源接入），给它注册独立的具名转址记录并以入口 id 为 name，不要让链接直接指向目标页面路由，否则会和目标所属一级菜单同时点亮。点击非资源接入时清空资源账号选择。
 

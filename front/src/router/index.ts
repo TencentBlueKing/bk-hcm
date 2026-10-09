@@ -1,6 +1,7 @@
 import {
   createRouter,
   RouteRecordRaw,
+  RouteRecordName,
   NavigationGuardNext,
   createWebHashHistory,
   RouteLocationNormalized,
@@ -15,11 +16,19 @@ import {
   MENU_SERVICE,
   MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
-import { billViews, businessViews, resourceAccessViews, schemeViews, serviceViews } from '@/views';
+import {
+  billViews,
+  businessViews,
+  injectStatusComponents,
+  resourceAccessViews,
+  schemeViews,
+  serviceViews,
+} from '@/views';
 import common from './module/common';
+import { before as businessBeforeInterceptor } from './business-interceptor';
 import { useCommonStore } from '@/store';
+import { useAuthStore } from '@/store/auth';
 import { useVerify } from '@/hooks';
-import { isArray, isRegExp, isString } from 'lodash';
 
 // 状态页面路由（不属于任何一级菜单，不显示侧栏和面包屑）
 const statusRouters: RouteRecordRaw[] = [
@@ -39,8 +48,8 @@ const statusRouters: RouteRecordRaw[] = [
 
 // 顶层记录的 name 即一级菜单 id，顶栏高亮与侧栏按 route.matched[0].name 判定
 const routes: RouteRecordRaw[] = [
-  ...statusRouters,
-  ...common,
+  ...injectStatusComponents(statusRouters),
+  ...injectStatusComponents(common),
   {
     name: MENU_BUSINESS,
     path: '/business',
@@ -92,69 +101,69 @@ const router = createRouter({
   routes,
 });
 
-// 进入目标页面
-const toCurrentPage = (
-  authVerifyData: {
-    permissionAction: Record<string, boolean>;
-    urlParams: {
-      system_id: string;
-      actions: Array<{
-        id: string;
-        name: string;
-        related_resource_types: Array<any>;
-      }>;
-    };
-  },
-  currentFindAuthData: {
-    action: string;
-    id: string;
-    path: string;
-    type: string;
-  },
-  next: NavigationGuardNext,
-  to?: RouteLocationNormalized,
-) => {
-  // 是否需要鉴权
-  const needAuth = !!currentFindAuthData?.id;
-  // 是否有权限
-  const hasAuth = !!authVerifyData?.permissionAction?.[currentFindAuthData?.id];
+let isFirstNavigation = true;
 
-  if (!needAuth) {
-    if (to?.name === '403') next(!!authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
-    else next();
+router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
+  const commonStore = useCommonStore();
+  const isFirst = isFirstNavigation;
+  isFirstNavigation = false;
+
+  // 旧按钮鉴权数据预取：只供页面按钮级的 useVerify().authVerifyData 使用，不参与路由拦截，失败不阻断导航
+  if (isFirst) {
+    try {
+      await useVerify().getAuthVerifyData(commonStore.pageAuthData);
+    } catch (err) {
+      console.error('[router] getAuthVerifyData error:', err);
+    }
+  }
+
+  // 旧 403 页（/403/:id）仅保留可打开：首次进入且有业务访问权限时回首页，与改造前一致
+  if (to.name === '403') {
+    next(isFirst && commonStore.authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
     return;
   }
 
-  if (hasAuth) next();
-  else next({ name: '403', params: { id: currentFindAuthData?.id } });
-};
+  try {
+    const authStore = useAuthStore();
 
-router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  const commonStore = useCommonStore();
-  const { pageAuthData, authVerifyData } = commonStore; // 所有需要检验的查看权限数据
-  const currentFindAuthData = pageAuthData.find((e: any) => {
-    const { path } = e;
-    if (isString(path)) return path === to.path;
-    if (isArray(path)) return path.includes(to.path);
-    if (isRegExp(path)) return path.test(to.path);
-    return undefined;
-  });
+    // 1. 业务路由拦截器（业务访问权限检查）
+    const canContinue = await businessBeforeInterceptor(to);
+    if (!canContinue) {
+      next();
+      return;
+    }
 
-  // if (to.path === '/service/my-approval') {
-  //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
-  //   window.location.reload();
-  // }
-  if (from.path === '/') {
-    // 刷新或者首次进入请求权限接口
-    const { getAuthVerifyData } = useVerify(); // 权限中心权限
-    getAuthVerifyData(pageAuthData).then(() => {
-      const { authVerifyData } = commonStore;
-      toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
-    });
-  } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
+    // 2. 默认恢复为 default 视图
+    to.meta.view = 'default';
+    to.meta.errorMessage = '';
+
+    // 3. 检查 available（功能是否开放）
+    const { available } = to.meta;
+    const isAvailable = typeof available === 'function' ? available(to) : available;
+    if (isAvailable === false) {
+      to.meta.view = 'notFound';
+      next();
+      return;
+    }
+
+    // 4. 检查视图权限：路由 name 原样作缓存键（Symbol 不能转字符串）
+    const viewAuthConfig = to.meta?.auth?.view;
+    if (viewAuthConfig) {
+      const authSign = typeof viewAuthConfig === 'function' ? viewAuthConfig(to) : viewAuthConfig;
+      const { authorized, permissionData } = await authStore.checkViewPermission(to.name as RouteRecordName, authSign);
+
+      if (!authorized) {
+        to.meta.view = 'permission';
+        to.meta.permissionData = permissionData;
+      }
+    }
+
     next();
-  } else {
-    toCurrentPage(authVerifyData, currentFindAuthData as any, next);
+  } catch (err) {
+    console.error('[router] beforeEach error:', err);
+    to.meta.view = 'error';
+    to.meta.errorMessage = err instanceof Error ? err.message : String(err);
+    next();
   }
 });
 

@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
 import Meta from '@/router/meta';
 import { MENU_SERVICE_PERMISSION_POLICY } from '@/constants/menu-symbol';
+import { AUTH_FIND_PERMISSION_POLICY_LIBRARY } from '@/constants/auth-symbols';
 
 const { t } = i18n.global;
 
@@ -15,7 +16,7 @@ export const permissionPolicyRoutes: RouteRecordRaw[] = [
         activeKey: MENU_SERVICE_PERMISSION_POLICY,
         title: t('权限策略库'),
         icon: 'hcm-icon bkhcm-icon-my-apply',
-        checkAuth: 'cloud_vendor_config',
+        auth: { view: { type: AUTH_FIND_PERMISSION_POLICY_LIBRARY } },
       }),
     },
   },

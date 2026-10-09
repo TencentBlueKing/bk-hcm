@@ -1957,6 +1957,28 @@ const lang: ILANG = {
   返回首页: ['Back to home'],
   '页面加载出错，请稍后重试': ['Failed to load the page, please try again later'],
   刷新页面: ['Refresh page'],
+  '抱歉，您暂无该功能的权限': ['Sorry, you do not have permission to access this feature'],
+  您还没有该功能的权限: ['You do not have permission to access this feature yet'],
+  '您还没有该功能的权限，可以点击下方的"去申请"获得权限': [
+    'You do not have permission to access this feature yet. Click "Apply" below to request it',
+  ],
+  '您还没有该功能的权限，请联系管理员授权': [
+    'You do not have permission to access this feature yet. Please contact the administrator for authorization',
+  ],
+  权限申请说明: ['Permission application'],
+  功能说明: ['Feature description'],
+  去申请: ['Apply'],
+  '已申请，刷新页面': ['Applied, refresh page'],
+  无任何业务权限: ['No business permission'],
+  业务不存在: ['Business does not exist'],
+  无当前业务权限: ['No permission for the current business'],
+  '你没有任何业务的访问权限，请先申请业务权限后再访问': [
+    'You do not have access to any business. Please apply for business permission first',
+  ],
+  '你访问的业务不存在，请确认后重试': ['The business you visited does not exist. Please check and try again'],
+  '你没有当前业务的访问权限，可以申请权限后再访问': [
+    'You do not have access to the current business. Please apply for permission first',
+  ],
   存储数量: ['Storage quantity'],
   虚拟机数量: ['Virtual Machines'],
   网络数量: ['networks'],

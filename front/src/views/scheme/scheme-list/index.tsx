@@ -10,7 +10,6 @@ import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from '../components/cloud-service-tag';
 import SchemeEditDialog from '../components/scheme-edit-dialog';
 import { useVerify } from '@/hooks';
-import ErrorPage from '@/views/error-pages/403';
 import moment from 'moment';
 
 import './index.scss';
@@ -60,7 +59,6 @@ export default defineComponent({
       showPermissionDialog,
       permissionParams,
     } = useVerify();
-    if (!authVerifyData.value.permissionAction.cloud_selection_find) return () => <ErrorPage />;
 
     const tableCols = ref([
       {

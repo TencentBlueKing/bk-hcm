@@ -27,16 +27,16 @@
 
 ## 查看权限
 
-| 页面 | 面向 | 侧栏显隐（路由 `meta.checkAuth`） | 访问拦截（`store/common.ts` 的 `pageAuthData.path`） |
+| 页面 | 面向 | 侧栏显隐（`constants/view-auth.ts` 的 `hideMenu`） | 访问拦截（路由 `meta.auth.view`） |
 | --- | --- | --- | --- |
-| 一级账号 | 管理员 | `root_account_find`，无权限隐藏 | `/bill/root-account` → 无权限进 `/403/root_account_find`（联系管理员，无申请按钮） |
-| 二级账号 | 普通用户 | **不配**，始终显示 | `/bill/main-account` → 无权限进 `/403/main_account_find` |
-| 云账单管理 | 管理员 | `account_bill_find`，无权限隐藏 | 不拦截（历来如此：页面能打开，接口由后端 `AuthorizeWithPerm` 拒绝，只弹错误提示） |
+| 一级账号 | 管理员 | `AUTH_FIND_ROOT_ACCOUNT`，无权限隐藏 | 声明，无权限显示框架内无权限页（联系管理员，无申请按钮） |
+| 二级账号 | 普通用户 | 预鉴权但**不配** `hideMenu`，始终显示 | 声明，无权限显示无权限页（可申请） |
+| 云账单管理 | 管理员 | `AUTH_FIND_ACCOUNT_BILL`，无权限隐藏 | 不声明（历来如此：页面能打开，接口由后端 `AuthorizeWithPerm` 拒绝，由接口兜底弹申请） |
 | 两个新建页 | — | — | 不拦截 |
 
-- `checkAuth` 只管侧栏显隐，`pageAuthData.path` 只管路由拦截，两者互不替代，按页面面向谁分别决定配不配。
-- 二级账号是普通用户的自助入口：菜单必须始终可见，无权限的人点进去在 403 页自行申请。**不要**给它加 `checkAuth`，否则零权限用户连申请入口都找不到。
-- 一级账号的权限需由管理员主动授权，`root_account_find` 在 403 页的 `NO_SELF_APPLY_KEYS` 里：只提示联系管理员授权，不显示「申请权限」按钮。
+- `hideMenu` 只管侧栏显隐，`meta.auth.view` 只管页面拦截，两者互不替代，按页面面向谁分别决定配不配。
+- 二级账号是普通用户的自助入口：菜单必须始终可见，无权限的人点进去在无权限页自行申请。**不要**给它配 `hideMenu`，否则零权限用户连申请入口都找不到。
+- 一级账号的权限需由管理员主动授权，`AUTH_FIND_ROOT_ACCOUNT` 在 `views/status/permission.vue` 的 `NO_SELF_APPLY_SIGNS` 里：只提示联系管理员授权，不显示「去申请」按钮。
 - 云账单的前端权限点是 `account_bill_find`，后端映射到 IAM 动作 `account_bill_manage`（「云账单-云账单管理」）。
 - `main_account_find` 是不带实例的校验，后端走 `AuthorizeAny`，含义是「至少对一个二级账号有查看权限」。二级账号列表本身由后端按账号实例过滤（`cmd/account-server/.../main-account/list.go`），零权限时返回空数组而不报错，所以前端拦截只是把「空表格」换成「403 引导申请」，不改变数据范围。
 - 一级账号列表后端是整体校验 `root_account` 查看权限，无权限直接报错。
@@ -45,10 +45,10 @@
 
 `billAccountManageLegacy` 承接旧「云账号管理」时期的地址：
 
-- `/bill/account-manage`（旧书签，**也是顶栏「资源运营」的入口地址**：顶栏按 name 跳 `MENU_BILL`，其父路由 `redirect` 到这里）→ 有 `root_account_find` 去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截进 403 申请。
+- `/bill/account-manage`（旧书签，**也是顶栏「资源运营」的入口地址**：顶栏按 name 跳 `MENU_BILL`，其父路由 `redirect` 到这里）→ 一级账号视图权限已缓存且有权限去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截显示无权限页申请。
 - `/bill/account-manage/first-account`、`/second-account` → 按 name 重定向到两个新建页，vue-router 默认保留 query。
 
-分流要读权限数据，所以写在 `beforeEnter` 而不是 `redirect`：`redirect` 在全局守卫加载权限之前求值，首次加载时拿不到。这条记录还要带 `children: []`，因为 vue-router 类型要求 `component` / `children` / `redirect` 三选一，而带 `redirect` 的记录不执行 `beforeEnter`。副作用是刷新旧地址时，权限接口会多请求一次：重定向产生的那次导航，`from` 仍是起始位置 `/`。
+分流读 `preload` 预鉴权的视图权限缓存（`authStore.isViewPermissionCached` + `hasViewPermission`），写在 `beforeEnter`。这条记录要带 `children: []`，因为 vue-router 类型要求 `component` / `children` / `redirect` 三选一，而带 `redirect` 的记录不执行 `beforeEnter`。预鉴权接口失败时缓存为空，按无权限去二级账号。
 
 ## 云账单管理是布局型页面
 

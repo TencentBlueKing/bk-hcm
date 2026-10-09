@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
-import { useCommonStore } from '@/store';
+import { useAuthStore } from '@/store/auth';
+import { AUTH_FIND_ROOT_ACCOUNT, AUTH_FIND_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 import {
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_ROOT_ACCOUNT_CREATE,
@@ -14,8 +15,8 @@ import {
   MENU_BILL_MANAGE_ADJUST,
 } from '@/constants/menu-symbol';
 
-// 直接访问列表地址时的查看权限拦截在 store/common.ts 的 pageAuthData（按 path 匹配）
-// 二级账号面向普通用户：无权限也要显示菜单，点进去由 403 页引导自行申请，所以不配 checkAuth
+// 列表页的查看权限由 meta.auth.view 拦截；侧栏显隐由 constants/view-auth.ts 的 hideMenu 决定
+// 二级账号面向普通用户：无权限也要显示菜单，点进去由无权限页引导自行申请，所以不配 hideMenu
 const billAccountManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_ROOT_ACCOUNT,
@@ -25,7 +26,7 @@ const billAccountManage: RouteRecordRaw[] = [
       ...new Meta({
         title: '一级账号',
         activeKey: MENU_BILL_ROOT_ACCOUNT,
-        checkAuth: 'root_account_find',
+        auth: { view: { type: AUTH_FIND_ROOT_ACCOUNT } },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -51,6 +52,7 @@ const billAccountManage: RouteRecordRaw[] = [
       ...new Meta({
         title: '二级账号',
         activeKey: MENU_BILL_MAIN_ACCOUNT,
+        auth: { view: { type: AUTH_FIND_MAIN_ACCOUNT } },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -71,17 +73,17 @@ const billAccountManage: RouteRecordRaw[] = [
 ];
 
 // 旧地址兼容。account-manage 同时是顶栏「资源运营」的入口地址。
-// 分流依赖权限数据：redirect 在全局守卫加载权限之前求值，拿不到，所以放在 beforeEnter（全局守卫放行之后才执行）
+// 分流读 preload 预鉴权的一级账号视图权限；未取到（接口失败）时按无权限去二级账号
 const billAccountManageLegacy: RouteRecordRaw[] = [
   {
     path: 'account-manage',
     // 类型要求 component/children/redirect 之一；带 redirect 的记录不会执行 beforeEnter
     children: [],
     beforeEnter: (to) => {
-      const { authVerifyData } = useCommonStore();
-      const name = authVerifyData?.permissionAction?.root_account_find
-        ? MENU_BILL_ROOT_ACCOUNT
-        : MENU_BILL_MAIN_ACCOUNT;
+      const authStore = useAuthStore();
+      const hasRootAccount =
+        authStore.isViewPermissionCached(MENU_BILL_ROOT_ACCOUNT) && authStore.hasViewPermission(MENU_BILL_ROOT_ACCOUNT);
+      const name = hasRootAccount ? MENU_BILL_ROOT_ACCOUNT : MENU_BILL_MAIN_ACCOUNT;
       return { name, query: to.query, replace: true };
     },
   },
@@ -137,7 +139,6 @@ const billManage: RouteRecordRaw[] = [
       ...new Meta({
         title: '云账单管理',
         activeKey: MENU_BILL_MANAGE,
-        checkAuth: 'account_bill_find',
         layout: { breadcrumb: { show: false } },
       }),
     },

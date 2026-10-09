@@ -1,26 +1,28 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { getCurrentTopMenu, toMenuKey, type IMenu } from '@/common/menu-service';
 import { MENU_BUSINESS } from '@/constants/menu-symbol';
-import { useVerify } from '@/hooks';
+import { viewAuthConfig } from '@/constants/view-auth';
+import { useAuthStore } from '@/store/auth';
 import BusinessSelector from './business-selector';
 import MenuItem from './menu-item.vue';
 
 defineProps<{ isOpen: boolean; reload: () => void }>();
 
 const route = useRoute();
-const router = useRouter();
-const { authVerifyData } = useVerify();
+const authStore = useAuthStore();
 
 const ungrouped = Symbol('ungrouped');
 
 const isBusiness = computed(() => route.matched[0]?.name === MENU_BUSINESS);
 
-const isMenuAuthorized = (menu: IMenu) => {
-  const { checkAuth } = router.resolve({ name: menu.route.name }).meta;
-  return !checkAuth || !!authVerifyData.value?.permissionAction?.[checkAuth];
-};
+// 菜单 id 与 viewId 是同一个 Symbol 常量，按引用比较
+const hideMenuIds = new Set(viewAuthConfig.filter((config) => config.hideMenu).map((config) => config.viewId));
+
+// 受控菜单需权限数据已返回且有权限才显示，接口失败时不显示
+const isMenuAuthorized = (menu: IMenu) =>
+  !hideMenuIds.has(menu.id) || (authStore.isViewPermissionCached(menu.id) && authStore.hasViewPermission(menu.id));
 
 const menuGroups = computed(() => {
   const groups = new Map<string | symbol, IMenu[]>();

@@ -6,6 +6,7 @@ import AppSelect from '@blueking/app-select';
 import '@blueking/app-select/dist/style.css';
 
 import { useAccountStore } from '@/store';
+import { useBusinessGlobalStore } from '@/store/business-global';
 import { localStorageActions } from '@/common/util';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Button, Dialog, Exception } from 'bkui-vue';
@@ -18,6 +19,7 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     const accountStore = useAccountStore();
+    const businessGlobalStore = useBusinessGlobalStore();
 
     const businessId = ref<number>();
     const businessList = ref([]);
@@ -90,7 +92,8 @@ export default defineComponent({
     watch(
       () => businessId.value,
       async (val) => {
-        if (!val) return;
+        // 收藏接口按地址中的业务鉴权，业务不存在或无权限时会返回无权限并触发全局申请弹窗
+        if (!val || !businessGlobalStore.businessAuthorizedList.some((biz) => biz.id === val)) return;
         favoriteList.value = await getFavoriteList(businessId.value);
         for (const id of favoriteList.value) favoriteSet.value.add(id);
       },

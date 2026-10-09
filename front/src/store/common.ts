@@ -11,29 +11,19 @@ export const useCommonStore = defineStore({
     list: shallowRef([]),
     authVerifyData: null as any,
     authVerifyParams: null as any,
+    // 旧按钮鉴权预取（useVerify().authVerifyData），不参与路由拦截；页面查看权限见路由 meta.auth.view
     pageAuthData: [
-      // { type: 'cloud_selection_scheme', action: 'create', id: 'cloud_selection_recommend' },
-      {
-        type: 'cloud_selection_scheme',
-        action: 'create',
-        id: 'cloud_selection_recommend',
-        path: '/scheme/recommendation',
-      },
-      { type: 'cloud_selection_scheme', action: 'find', id: 'cloud_selection_find', path: '/scheme/deployment/list' },
-      { type: 'cloud_selection_scheme', action: 'update', id: 'cloud_selection_edit', path: '/scheme/recommendation' },
-      {
-        type: 'cloud_selection_scheme',
-        action: 'delete',
-        id: 'cloud_selection_delete',
-        path: '/scheme/recommendation',
-      },
+      { type: 'cloud_selection_scheme', action: 'create', id: 'cloud_selection_recommend' },
+      { type: 'cloud_selection_scheme', action: 'find', id: 'cloud_selection_find' },
+      { type: 'cloud_selection_scheme', action: 'update', id: 'cloud_selection_edit' },
+      { type: 'cloud_selection_scheme', action: 'delete', id: 'cloud_selection_delete' },
 
-      { type: 'account', action: 'find', id: 'account_find', path: '/resource/account' }, // 如果是列表查看权限 需要加上path
+      { type: 'account', action: 'find', id: 'account_find' },
       { type: 'account', action: 'import', id: 'account_import' },
       { type: 'account', action: 'update', id: 'account_edit' },
 
       // 业务访问权限
-      { type: 'biz', action: 'access', id: 'biz_access', path: /^\/business/ },
+      { type: 'biz', action: 'access', id: 'biz_access' },
 
       // 目前资源下主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个iaas鉴权
       { type: 'cvm', action: 'find', id: 'resource_find' }, // 业务 资源对应的路径
@@ -54,7 +44,7 @@ export const useCommonStore = defineStore({
 
       { type: 'biz_audit', action: 'find', id: 'resource_audit_find' }, // 审计查看权限
 
-      { type: 'recycle_bin', action: 'find', id: 'recycle_bin_find', path: '/resource/recyclebin' }, // 回收站查看权限
+      { type: 'recycle_bin', action: 'find', id: 'recycle_bin_find' }, // 回收站查看权限
       { type: 'recycle_bin', action: 'recycle', id: 'recycle_bin_manage' }, // 回收站管理
 
       // 证书权限
@@ -64,8 +54,8 @@ export const useCommonStore = defineStore({
       { type: 'cert', action: 'delete', id: 'biz_cert_resource_delete', bk_biz_id: 0 }, // 业务 证书删除
 
       // 账号管理
-      { type: 'root_account', action: 'find', id: 'root_account_find', path: '/bill/root-account' }, // 资源运营 - 一级账号
-      { type: 'main_account', action: 'find', id: 'main_account_find', path: '/bill/main-account' }, // 资源运营 - 二级账号
+      { type: 'root_account', action: 'find', id: 'root_account_find' }, // 资源运营 - 一级账号
+      { type: 'main_account', action: 'find', id: 'main_account_find' }, // 资源运营 - 二级账号
       { type: 'main_account', action: 'update', id: 'main_account_edit' }, // 云账号管理 - 二级账号编辑
       { type: 'account_bill', action: 'find', id: 'account_bill_find' }, // 云账单管理
 
@@ -83,7 +73,6 @@ export const useCommonStore = defineStore({
         action: 'find',
         // iam的permission.actions[number].id，用于从authVerifyData.permissionAction中获取权限
         id: 'cloud_vendor_config',
-        path: /^\/service\/permission-policy/,
       },
     ],
     isNoticeAlert: false, // 消息通知的显示状态

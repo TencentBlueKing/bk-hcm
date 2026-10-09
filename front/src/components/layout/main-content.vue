@@ -19,9 +19,11 @@ defineProps<{ isRouterAlive: boolean }>();
 const route = useRoute();
 const breadcrumb = useBreadcrumb();
 
+// 守卫按权限 / 异常把 meta.view 切到 permission、error、notFound，对应 views/index.ts 注入的 named view
+const view = computed(() => (route.meta.view as string) ?? 'default');
 // TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
 const isLegacyResourceAccess = computed(() => route.matched[0]?.name === MENU_RESOURCE);
-const isStatusView = computed(() => route.name === '404' || route.name === 'error');
+const isStatusView = computed(() => view.value !== 'default' || route.name === '404' || route.name === 'error');
 const showBreadcrumb = computed(() => !isLegacyResourceAccess.value && breadcrumb.data.display);
 // TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除，由资源纳管入口右栏的面包屑承担
 // 资源接入的详情 / 申请页在右侧内容区显示面包屑；详情返回列表时带上资源类型以回到对应页签
@@ -45,7 +47,8 @@ const legacyBackConfig = computed(() =>
     <HcmBreadcrumb v-if="showBreadcrumb" />
     <div :class="['main-view', 'view-warp', { 'status-view': isStatusView }]">
       <template v-if="isRouterAlive">
-        <div v-if="isLegacyResourceAccess" class="resource-manage-container">
+        <!-- 状态页不展示云账号树，避免无权限时露出页面数据 -->
+        <div v-if="isLegacyResourceAccess && view === 'default'" class="resource-manage-container">
           <div class="fixed-account-list-container">
             <AccountVendorGroup />
           </div>
@@ -55,7 +58,7 @@ const legacyBackConfig = computed(() =>
           </div>
           <RouterView v-else class="router-view-content" />
         </div>
-        <RouterView v-else />
+        <RouterView v-else :name="view" />
       </template>
     </div>
   </div>

@@ -11,6 +11,7 @@ import {
   MENU_RESOURCE_SUBNET_APPLY,
   MENU_RESOURCE_VPC_APPLY,
 } from '@/constants/menu-symbol';
+import { AUTH_FIND_ACCOUNT, AUTH_FIND_RECYCLE_BIN } from '@/constants/auth-symbols';
 
 const { t } = i18n.global;
 
@@ -64,6 +65,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           action: 'account_find',
+          auth: { view: { type: AUTH_FIND_ACCOUNT } },
         },
       },
       {
@@ -151,6 +153,9 @@ const resourceMenus: RouteRecordRaw[] = [
         path: '/resource/recyclebin',
         name: t('回收站'),
         component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
+        meta: {
+          auth: { view: { type: AUTH_FIND_RECYCLE_BIN } },
+        },
       },
     ],
   },
