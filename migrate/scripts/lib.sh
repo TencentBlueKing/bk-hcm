@@ -43,16 +43,68 @@ version_group() {
 	echo "$group_of"
 }
 
-# imported_paths 抽出 imports.go 里的空白 import，输出 migrations/ 下的相对路径。
+# stable_path_re 匹配三位版本分组下的迁移路径，例如 main/v1.9.3/xxx。
+# 这类路径写在 imports.go，pending 和带第四段的版本（.N 或 -label.N）写在 imports_extra.go。
+stable_path_re='^[^/]+/v[0-9]+[.][0-9]+[.][0-9]+/'
+
+# imported_paths_in 抽出一个 Go 文件里的空白 import，输出 migrations/ 下的相对路径。
 # 行尾注释、import 写在同一行都认。
-imported_paths() {
+imported_paths_in() {
 	sed -nE 's#^[[:space:]]*(import[[:space:]]+)?_[[:space:]]+"hcm/migrate/migrations/([^"]*)".*$#\2#p' "$1"
 }
 
-# write_imports 用标准输入给出的路径重写 imports.go 的 import 声明，
+# imported_paths 抽出 imports.go 和同目录 imports_extra.go 里的空白 import，输出 migrations/ 下的相对路径。
+# 参数是 imports.go 的路径，imports_extra.go 不存在时只读 imports.go。
+imported_paths() {
+	local extra
+	extra="$(dirname "$1")/imports_extra.go"
+	imported_paths_in "$1"
+	if [[ -f "$extra" ]]; then
+		imported_paths_in "$extra"
+	fi
+}
+
+# create_extra_imports 以 imports.go 的版权头为模板新建空的 imports_extra.go。
+create_extra_imports() {
+	{
+		sed -n '1,/^ \*\//p' "$1"
+		echo
+		echo "// This file blank-imports the migrations that imports.go does not: the pending ones and"
+		echo "// the ones under a four-segment version group (vX.Y.Z.x)."
+		echo
+		echo "package migrations"
+		echo
+	} >"$2"
+}
+
+# write_imports 用标准输入给出的路径重写 imports.go 和 imports_extra.go 的 import 声明。
+# 参数是 imports.go 的路径。三位版本分组下的路径写进 imports.go，其余写进 imports_extra.go，
+# imports_extra.go 不存在且没有这类路径时不新建。
+write_imports() {
+	local extra tmp
+	extra="$(dirname "$1")/imports_extra.go"
+	tmp="$(mktemp)"
+	: >"$tmp.main"
+	: >"$tmp.extra"
+	awk -v re="$stable_path_re" -v main="$tmp.main" -v extra="$tmp.extra" '
+		NF == 0 { next }
+		$0 ~ re { print > main; next }
+		{ print > extra }
+	'
+	write_import_block "$1" <"$tmp.main"
+	if [[ ! -f "$extra" && -s "$tmp.extra" ]]; then
+		create_extra_imports "$1" "$extra"
+	fi
+	if [[ -f "$extra" ]]; then
+		write_import_block "$extra" <"$tmp.extra"
+	fi
+	rm -f "$tmp" "$tmp.main" "$tmp.extra"
+}
+
+# write_import_block 用标准输入给出的路径重写一个 Go 文件的 import 声明，
 # 声明前后的内容保留。没有 import 块时会新建一块，所以迁移被删光后仍能再追加。
 # 只按现有 import 行重写，不扫描目录，漏写的 import 仍由 check-migrate 报出来。
-write_imports() {
+write_import_block() {
 	local tmp
 	tmp="$(mktemp)"
 	sort -u >"$tmp.paths"

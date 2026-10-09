@@ -14,7 +14,7 @@
 bash migrate/scripts/new-migrate.sh --database main --desc add_bk_asset_id
 ```
 
-`--database` 只填 `main`（主库）。`--desc` 用小写单词，中间下划线，例如 `add_bk_asset_id`。不要加 `--version`。脚本会写好 ID、时间戳和 `imports.go` 里的引用。
+`--database` 只填 `main`（主库）。`--desc` 用小写单词，中间下划线，例如 `add_bk_asset_id`。不要加 `--version`。脚本会写好 ID、时间戳和 `imports.go` 或 `imports_extra.go` 里的引用。
 
 脚本生成的 `Up` 里是一段建表、加列、加索引的示例，用注释框住，换成实际变更。建表、加列、加索引、改列名、删列、往 `id_generator` 插一行，都用 `hcm/migrate/util` 里的函数，不要手写「先查再改」。这些函数发现已经做过就跳过，所以一条迁移中途失败后，改完再跑，前面成功的步骤可以再执行一遍。
 
@@ -24,7 +24,7 @@ bash migrate/scripts/new-migrate.sh --database main --desc add_bk_asset_id
 bash migrate/scripts/check-migrate.sh
 ```
 
-它会逐项打印结果，通过打勾，失败打叉并写明原因。它不编译、不连数据库，查这六件事：目录是不是规定的样子、目录名和版本是否匹配、每个目录是不是只在 `migrate.go` 里注册一次、`imports.go` 有没有漏或多、同一个库里同一个 ID 是不是被接到了两段不同的「时间戳_名称」上、迁移有没有去依赖不该依赖的包。
+它会逐项打印结果，通过打勾，失败打叉并写明原因。它不编译、不连数据库，查这六件事：目录是不是规定的样子、目录名和版本是否匹配、每个目录是不是只在 `migrate.go` 里注册一次、`imports.go` 和 `imports_extra.go` 有没有漏或多、引用是不是写在了该写的文件里、同一个库里同一个 ID 是不是被接到了两段不同的「时间戳_名称」上、迁移有没有去依赖不该依赖的包。
 
 开发时遵守这些约定：
 
@@ -32,7 +32,7 @@ bash migrate/scripts/check-migrate.sh
 - 迁移文件只能引用 `hcm/migrate/register`、`hcm/migrate/util` 和 `hcm/pkg/criteria/constant`。版本保持脚本写上的 `constant.MigrationPendingVersion`，不要改成版本字符串。
 - 不要引用 `engine`、`schema`、`cli`，也不要引用另一条迁移。
 - `package` 固定写 `migration`。一个目录只注册一次。
-- 外部版是对外发布的那一套代码，不含只在内部用的库和变更。两边都要的迁移，把整个目录（含 `migrate.go` 和同目录里的其他文件）拷到外部版的 `pending/`，不要重新生成。只在内部用的不要拷过去。拷目录不会改外部版的 `imports.go`，这一行很容易漏。漏了编译不会报错，这条迁移也不会进二进制，外部版上永远不跑。拷完必须在外部版仓库跑 `check-migrate.sh`。
+- 外部版是对外发布的那一套代码，不含只在内部用的库和变更。两边都要的迁移，把整个目录（含 `migrate.go` 和同目录里的其他文件）拷到外部版的 `pending/`，不要重新生成。只在内部用的不要拷过去。拷目录不会改外部版的 `imports_extra.go`，这一行很容易漏。漏了编译不会报错，这条迁移也不会进二进制，外部版上永远不跑。拷完必须在外部版仓库跑 `check-migrate.sh`。
 - 内部提到外部的同一条迁移，ID 原样带过去。目录名也保持原样，从 14 位时间戳起到结尾的那一段必须一致，例如内部是 `pending/20260927160000_add_bk_asset_id/`，外部也是这个目录名。这段或 ID 有一边改了，程序会当成两条迁移复用了同一个 ID，拒绝执行。
 - 拷过去之后如果改了 `Up` 里的逻辑，内部和外部两份一起改。只改一边，另一边再跑会对不上。
 
@@ -85,9 +85,9 @@ bash migrate/scripts/release-migrate.sh --database main --version v1.9.3-tenant.
 
 一次只定一个版本号。下一包再从那时的 `pending/` 定为 `v1.9.3.2`，不要把两包收进同一个版本。
 
-④ 检查 `imports.go`
+④ 检查 `imports.go` 和 `imports_extra.go`
 
-定版脚本会改 `imports.go`。从内部拷到外部版的目录不会改这一行，这是最容易漏的地方。提交前再跑一次 `check-migrate.sh`，确认这一版的 `v1.9.3/` 和 `v1.9.3.x/` 下每个迁移目录都有一行引用。漏了这行，编译不会报错，这条迁移也不会进二进制，环境上永远不跑。同一个 ID、「时间戳_名称」也相同、只是版本前缀不同，检查会警告但不会失败，这是内外两份都留时的正常结果。
+三位版本分组（`v1.9.3/`）的引用写在 `imports.go`，`pending/` 和第四段版本（`v1.9.3.x/`，含 `-label.N`）的引用写在 `imports_extra.go`。这样特性分支、内部四位版本和主线新增的行不在同一个文件里，合并时不会挤在一起。定版和归档脚本会按目录把这一行在两个文件间挪动，不用手改。从内部拷到外部版的目录不会改这些行，这是最容易漏的地方。提交前再跑一次 `check-migrate.sh`，确认这一版的 `v1.9.3/` 和 `v1.9.3.x/` 下每个迁移目录都有一行引用。漏了这行，编译不会报错，这条迁移也不会进二进制，环境上永远不跑。同一个 ID、「时间戳_名称」也相同、只是版本前缀不同，检查会警告但不会失败，这是内外两份都留时的正常结果。
 
 特性分支合回主线时，再用 `archive-feat-migrate` 把 `v1.9.3-tenant.1` 这类目录收到对应的主线版本下。这不是每次定版都要做的步骤。
 
@@ -113,7 +113,8 @@ migrate/
 │   ├── check-migrate.sh       提交前检查目录和注册
 │   └── lib.sh                 上面几个脚本共用的函数，不要单独执行
 ├── migrations/
-│   ├── imports.go             每条迁移一行引用，把它们编进二进制
+│   ├── imports.go             三位版本迁移的引用，把它们编进二进制
+│   ├── imports_extra.go       pending 和第四段版本迁移的引用，没有这类迁移时可以不存在
 │   └── main/                  主库
 ├── util/                      建表、加列、加索引这些可重复执行的函数
 ├── register/                  启动时收集迁移，并按版本排序

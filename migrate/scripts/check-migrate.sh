@@ -6,7 +6,7 @@
 # 第一次用，先看这六项在查什么：
 #
 #   1. 目录结构
-#      migrations/ 下只能有 imports.go、main/。
+#      migrations/ 下只能有 imports.go、imports_extra.go、main/。
 #      每个库下面的分组只能是 pending、vX.Y.Z、vX.Y.Z.x。
 #      分组里只能放迁移目录，迁移目录里不能再有子目录。
 #
@@ -21,8 +21,9 @@
 #      pending 的版本必须是常量 constant.MigrationPendingVersion。
 #      ID 不超过 64 个字符，格式是 <date>-<time>-<desc>-<random>。
 #
-#   4. imports.go
+#   4. imports.go 和 imports_extra.go
 #      每个迁移目录有一行空白 import。
+#      三位版本分组的写在 imports.go，pending 和带第四段的版本写在 imports_extra.go。
 #      不能重复，也不能 import 一个不存在的目录。
 #
 #   5. migration ID
@@ -42,6 +43,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 source "$root/scripts/lib.sh"
 migrations="$root/migrations"
 imports="$migrations/imports.go"
+imports_extra="$migrations/imports_extra.go"
 export LC_ALL=C
 
 # fail_item 把一条失败记到对应检查项上，最后和通过项一起打出来。
@@ -79,10 +81,10 @@ print_result() {
 		fi
 		echo
 	done <<'EOF'
-layout	目录结构	migrations/ 下只有 imports.go、main/，分组和迁移目录合法
+layout	目录结构	migrations/ 下只有 imports.go、imports_extra.go、main/，分组和迁移目录合法
 name	目录名	pending 与已定版的目录名、版本分组、时间戳一致
 regist	注册	每个目录一份 migrate.go，只注册一次，库、版本、时间戳、ID 与目录一致
-imports	imports.go	每个迁移目录有且只有一行空白 import
+imports	imports.go	每个迁移目录有且只有一行空白 import，且写在该写的文件里
 id	migration ID	同一个库里，同一个 ID 不能出现在两份「时间戳_名称」不同的目录里
 deps	依赖	迁移不依赖 engine、schema、cli，也不依赖别的迁移
 EOF
@@ -106,10 +108,10 @@ if [[ ! -f "$imports" ]]; then
 	fail_item imports "migrations/imports.go 不存在"
 fi
 
-# Only imports.go and main/ live directly under migrations/.
+# Only imports.go, imports_extra.go and main/ live directly under migrations/.
 for entry in "$migrations"/*; do
 	case "$(basename "$entry")" in
-	imports.go | main) ;;
+	imports.go | imports_extra.go | main) ;;
 	*) fail_item layout "migrations/ 下有多余项 $(basename "$entry")" ;;
 	esac
 done
@@ -240,17 +242,30 @@ done
 # 目录集合和 import 集合对差：只在目录里的是漏 import，只在 import 里的是多余 import。
 # 管道右边的 while 跑在子 shell 里，失败写进文件，最后和别的项一起打出来。
 if [[ -f "$imports" ]]; then
+	# 三位版本分组的路径必须在 imports.go，其余（pending、带第四段的版本）必须在 imports_extra.go。
+	while IFS= read -r rel; do
+		if [[ ! "$rel" =~ $stable_path_re ]]; then
+			fail_item imports "$rel 不是三位版本分组，应写进 migrations/imports_extra.go"
+		fi
+	done < <(imported_paths_in "$imports")
+	if [[ -f "$imports_extra" ]]; then
+		while IFS= read -r rel; do
+			if [[ "$rel" =~ $stable_path_re ]]; then
+				fail_item imports "$rel 是三位版本分组，应写进 migrations/imports.go"
+			fi
+		done < <(imported_paths_in "$imports_extra")
+	fi
 	imported_paths "$imports" | sort >"$work/imported"
 	uniq -d "$work/imported" | while read -r rel; do
-		fail_item imports "migrations/imports.go 重复 import 了 $rel"
+		fail_item imports "migrations/imports.go 或 imports_extra.go 重复 import 了 $rel"
 	done
 	sort -u "$work/imported" >"$work/imported.uniq"
 	sort "$work/dirs" >"$work/dirs.sorted"
 	comm -23 "$work/dirs.sorted" "$work/imported.uniq" | while read -r rel; do
-		fail_item imports "$rel 没有写进 migrations/imports.go"
+		fail_item imports "$rel 没有写进 migrations/imports.go 或 imports_extra.go"
 	done
 	comm -13 "$work/dirs.sorted" "$work/imported.uniq" | while read -r rel; do
-		fail_item imports "migrations/imports.go 引用了不存在的迁移目录 $rel"
+		fail_item imports "migrations/imports.go 或 imports_extra.go 引用了不存在的迁移目录 $rel"
 	done
 fi
 

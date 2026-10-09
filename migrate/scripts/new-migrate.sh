@@ -187,5 +187,5 @@ else
 	say_ok "版本" "$version"
 fi
 say_ok "ID" "$id" "执行过后不能再改"
-say_ok "imports.go" "已写入空白 import"
+say_ok "imports" "已写入空白 import"
 "$root/scripts/check-migrate.sh"
