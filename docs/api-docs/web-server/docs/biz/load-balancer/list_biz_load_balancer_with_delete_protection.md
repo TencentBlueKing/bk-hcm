@@ -1,6 +1,6 @@
 ### 描述
 
-- 该接口提供版本：v9.9.9.9+。
+- 该接口提供版本：v1.5.0+。
 - 该接口所需权限：业务访问。
 - 该接口功能描述：查询业务下的负载均衡列表，额外返回删除保护、实例规格等拓展字段。
 
@@ -60,8 +60,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/with/delete_protection/list
 | order | string | 否  | 排序顺序（枚举值：ASC、DESC）                                                                                                                                  |
 
 #### 查询参数介绍：
-
-查询参数与资源视角一致，详见 `resource/load-balancer/list_load_balancer_with_delete_protection.md`，其中与独占集群相关的新增字段如下：
 
 | 参数名称                | 参数类型   | 描述                                                |
 |---------------------|--------|---------------------------------------------------|
@@ -206,13 +204,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/with/delete_protection/list
 
 #### data.details[n]
 
-除以下字段外，其余字段与 `/api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list` 返回一致。
-
 | 参数名称           | 参数类型    | 描述                                          |
 |----------------|---------|---------------------------------------------|
 | delete_protect | boolean | 是否开启删除保护，仅tcloud，非tcloud固定为false            |
-| exclusive      | int     | 是否独占型实例（1是、0否），仅tcloud，取自 extension         |
-| sla_type       | string  | 性能容量型规格档位，空字符串表示非性能容量型，仅tcloud，取自 extension |
+| exclusive      | int     | 是否独占型实例（1是、0否），仅tcloud         |
+| sla_type       | string  | 性能容量型规格档位，空字符串表示非性能容量型，仅tcloud |
 
 #### 实例规格展示说明：
 

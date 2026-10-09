@@ -12,13 +12,12 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/assign/bizs
 
 | 参数名称        | 参数类型         | 必选 | 描述                                          |
 |-------------|--------------|----|---------------------------------------------|
-| cluster_ids | string array | 是  | 独占集群的本地ID列表，取自集群列表接口返回的 `id`，最多100个         |
+| cluster_ids | string array | 是  | 独占集群的本地ID列表，最多100个         |
 | bk_biz_id   | int64        | 是  | 业务的ID，必须大于0                                 |
 
 说明：
 
 - 仅未分配（`bk_biz_id` 为 -1）的集群可被分配，列表中存在已分配集群时整批拒绝，返回 `InvalidParameter`。
-- 分配操作会记录审计。
 
 ### 调用示例
 

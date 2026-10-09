@@ -162,7 +162,6 @@ status 状态含义：
 
 ##### data.extension.clusters[n]
 
-负载均衡关联的独占集群列表。集群名称与本地ID由服务端用云上集群ID关联本地独占集群表得到，前端无需再查集群接口。通过 `cluster_type` 区分四层（TGW）与七层（STGW）。
 
 | 参数名称             | 参数类型   | 描述                          |
 |------------------|--------|-----------------------------|
@@ -172,10 +171,4 @@ status 状态含义：
 | cluster_tag      | string | 集群标签                        |
 | cluster_type     | string | 集群类型（枚举值：TGW、STGW）          |
 
-说明：
-
-- 非独占型实例（`exclusive` 为 0）`clusters` 为空数组。
-- 仅使用四层或七层独占集群时，数组中只返回对应类型的元素。
-- 七层集群由云侧调度决定，若云上未返回具体的 STGW 集群ID，则该元素仅 `cluster_tag`、`cluster_type` 有值，其余字段为空字符串。
-- 集群在本地表被删除或尚未同步时，`cluster_id`、`cluster_name` 为空字符串，`cloud_cluster_id` 仍返回。
 

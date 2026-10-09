@@ -34,9 +34,9 @@ POST /api/v1/cloud/vendors/tcloud/system/applications/types/create_load_balancer
 | bandwidth_package_id         | string       | 否  | 带宽包id，计费模式为带宽包计费时必填                                           |
 | egress                       | string       | 否  | 网络出口                                                          |
 | sla_type                     | string       | 否  | 性能容量型规格, 留空为共享型                                               |
-| exclusive                    | int          | 否  | 是否独占型：1是、0否，默认0，详见独占型规格说明                                     |
-| cloud_cluster_ids            | string array | 否  | 四层（TGW）独占集群的云上ID列表，详见独占型规格说明                        |
-| cluster_tag                  | string       | 否  | 独占集群标签，详见独占型规格说明                                    |
+| exclusive                    | int          | 否  | 是否独占型：1是、0否，默认0                                     |
+| cloud_cluster_ids            | string array | 否  | 四层（TGW）独占集群的云上ID列表                        |
+| cluster_tag                  | string       | 否  | 独占集群标签                                    |
 | auto_renew                   | boolean      | 否  | 按月付费自动续费                                                      |
 | require_count	               | int          | 是  | 购买数量                                                          |
 | memo                         | string       | 否  | 备注                                                            |
@@ -61,13 +61,9 @@ POST /api/v1/cloud/vendors/tcloud/system/applications/types/create_load_balancer
 
 #### 独占型规格说明：
 
-参数组合与校验规则与业务视角提单接口一致，详见 `create_application_for_create_tcloud_load_balancer.md` 的「独占型规格说明」。要点：
-
 - 独占型需传 `exclusive=1`，该字段为纯校验字段、不下传云侧；`exclusive=0` 或不传时 `cluster_tag`、`cloud_cluster_ids` 必须为空。
 - 独占型仅支持公网（`load_balancer_type` 为 `OPEN`），`sla_type` 必须留空，`cluster_tag` 必填。
-- `cloud_cluster_ids` 传入多个云上集群ID，会随机从列表中挑选；七层（STGW）标签不支持指定 `cloud_cluster_ids`。
-- 指定 `vip` 时 `cloud_cluster_ids`必须唯一且和vip对应否则云上会报错。
-- `cluster_tag` 必须属于 `bk_biz_id` 对应业务已分配的集群。
+
 
 ### 调用示例
 

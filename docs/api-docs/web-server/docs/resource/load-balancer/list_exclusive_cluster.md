@@ -1,7 +1,7 @@
 ### 描述
 
 - 该接口提供版本：v9.9.9.9+。
-- 该接口所需权限：资源查看。
+- 该接口所需权限：资源-资源查看。
 - 该接口功能描述：查询负载均衡独占集群列表。
 
 ### URL
@@ -83,8 +83,8 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/list
 
 | 参数名称                | 参数类型   | 描述                                     |
 |---------------------|--------|----------------------------------------|
-| id                  | string | 集群本地ID，即其它接口中的 `cluster_id`            |
-| cloud_id            | string | 集群云上ID，即其它接口中的 `cloud_cluster_id`，如tgw-xxxxxxxx |
+| id                  | string | 集群本地ID  |
+| cloud_id            | string | 集群云上ID |
 | name                | string | 集群名称                                   |
 | vendor              | string | 供应商（枚举值：tcloud）                        |
 | account_id          | string | 账号ID                                   |
@@ -106,11 +106,6 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/list
 | updated_at          | string | 修改时间，标准格式：2006-01-02T15:04:05Z         |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
-
-说明：
-
-- 未分配的集群 bk_biz_id 为 -1，查询"未分配"筛选条件为 `bk_biz_id eq -1`。
-- 本接口会返回 cluster_tag 为空字符串的集群，此类集群不可用于购买，购买页请使用业务视角的标签聚合查询接口。
 
 ### 调用示例
 
@@ -260,8 +255,8 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/list
 
 | 参数名称                | 参数类型   | 描述                                     |
 |---------------------|--------|----------------------------------------|
-| id                  | string | 集群本地ID，即其它接口中的 `cluster_id`            |
-| cloud_id            | string | 集群云上ID，即其它接口中的 `cloud_cluster_id`      |
+| id                  | string | 集群本地ID            |
+| cloud_id            | string | 集群云上ID      |
 | name                | string | 集群名称                                   |
 | vendor              | string | 供应商（枚举值：tcloud）                        |
 | account_id          | string | 账号ID                                   |
