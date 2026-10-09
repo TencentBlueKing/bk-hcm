@@ -21,8 +21,6 @@
 package lblogic
 
 import (
-	"time"
-
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/client"
@@ -75,15 +73,14 @@ func ListAndDiffLoadBalancerByRegion(kt *kit.Kit, cliSet *client.ClientSet, opt 
 		listOpt.BkBizID = cvt.ValToPtr(opt.BkBizID)
 	}
 	// DB查询先于云上查询，一是收敛云上范围需要DB结果，二是同步期间入库的实例只会被判为新增而非删除。
-	dbStartedAt := time.Now()
 	dbLBs, err := ListLoadBalancerBriefFromDB(kt, cliSet.DataService(), listOpt)
 	if err != nil {
 		logs.Errorf("list db load balancer brief failed, err: %v, account: %s, region: %s, rid: %s",
 			err, opt.AccountID, region, kt.Rid)
 		return nil, err
 	}
-	logs.Infof("list db load balancer brief done, account: %s, region: %s, count: %d, cost: %s, rid: %s",
-		opt.AccountID, region, len(dbLBs), time.Since(dbStartedAt), kt.Rid)
+	logs.Infof("list db load balancer brief done, account: %s, region: %s, count: %d, rid: %s",
+		opt.AccountID, region, len(dbLBs), kt.Rid)
 
 	if isBizEntry && opt.Vendor == enumor.TCloud {
 		// 业务下没有负载均衡时无需查询云上，云上多出来的实例不属于本业务，其新建由资源侧入口负责。
@@ -93,15 +90,14 @@ func ListAndDiffLoadBalancerByRegion(kt *kit.Kit, cliSet *client.ClientSet, opt 
 		listOpt.CloudIDs = slice.Map(dbLBs, func(one corelb.LoadBalancerBrief) string { return one.CloudID })
 	}
 
-	cloudStartedAt := time.Now()
 	cloudLBs, err := ListLoadBalancerBriefFromCloud(kt, cliSet, listOpt)
 	if err != nil {
 		logs.Errorf("list cloud load balancer brief failed, err: %v, account: %s, region: %s, rid: %s",
 			err, opt.AccountID, region, kt.Rid)
 		return nil, err
 	}
-	logs.Infof("list cloud load balancer brief done, account: %s, region: %s, count: %d, cost: %s, rid: %s",
-		opt.AccountID, region, len(cloudLBs), time.Since(cloudStartedAt), kt.Rid)
+	logs.Infof("list cloud load balancer brief done, account: %s, region: %s, count: %d, rid: %s",
+		opt.AccountID, region, len(cloudLBs), kt.Rid)
 
 	diff := DiffLoadBalancerBrief(region, cloudLBs, dbLBs)
 	logs.Infof("diff conditional sync load balancer done, account: %s, region: %s, create: %d, update: %d, "+

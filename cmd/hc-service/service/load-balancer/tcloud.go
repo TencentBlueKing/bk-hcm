@@ -238,7 +238,9 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	normalizeTCloudListPage(req)
+	if req.Page.Limit > adcore.TCloudQueryLimit {
+		req.Page.Limit = adcore.TCloudQueryLimit
+	}
 	opt := &typelb.TCloudListOption{
 		Region:     req.Region,
 		CloudIDs:   req.CloudIDs,
@@ -273,7 +275,6 @@ func (svc *clbSvc) ListTCloudClbWithCount(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	normalizeTCloudListPage(req)
 	opt := &typelb.TCloudListOption{
 		Region:     req.Region,
 		CloudIDs:   req.CloudIDs,
@@ -291,17 +292,6 @@ func (svc *clbSvc) ListTCloudClbWithCount(cts *rest.Contexts) (interface{}, erro
 	}
 
 	return &protolb.TCloudListResult{Details: result.Details, TotalCount: result.TotalCount}, nil
-}
-
-func normalizeTCloudListPage(req *protolb.TCloudListOption) {
-	if req.Page == nil {
-		req.Page = &adcore.TCloudPage{Limit: adcore.TCloudQueryLimit}
-		return
-	}
-
-	if req.Page.Limit > adcore.TCloudQueryLimit {
-		req.Page.Limit = adcore.TCloudQueryLimit
-	}
 }
 
 // TCloudDescribeResources 查询clb地域下可用资源

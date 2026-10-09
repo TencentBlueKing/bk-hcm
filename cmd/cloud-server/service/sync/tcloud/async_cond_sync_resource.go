@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 // taskManagementAdapter adapts dataservice.Client to lblogic.taskManagementLister.
@@ -79,7 +80,7 @@ func AsyncCondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *Co
 				enumor.TCloud, err, opt.AccountID, region, kt.Rid)
 			return nil, err
 		}
-		regionDiffs = append(regionDiffs, *diff)
+		regionDiffs = append(regionDiffs, converter.PtrToVal(diff))
 		total += len(diff.Create) + len(diff.Update) + len(diff.Delete)
 	}
 

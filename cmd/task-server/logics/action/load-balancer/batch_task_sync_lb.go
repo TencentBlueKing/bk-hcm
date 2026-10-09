@@ -111,7 +111,7 @@ func (act BatchTaskSyncLbDeleteAction) Run(kt run.ExecuteKit, params any) (resul
 
 // deleteLoadBalancer 调用hc-service删除本批负载均衡，云上ID由上游条件同步比对得出
 func (act BatchTaskSyncLbDeleteAction) deleteLoadBalancer(kt *kit.Kit, opt *BatchTaskSyncLbDeleteOption) error {
-	req := &hcsync.TCloudDelLoadBalancerByCondReq{
+	req := &hcsync.TCloudDelLocalLBReq{
 		AccountID: opt.AccountID,
 		Region:    opt.Region,
 		CloudIDs:  opt.CloudIDs,
@@ -119,7 +119,7 @@ func (act BatchTaskSyncLbDeleteAction) deleteLoadBalancer(kt *kit.Kit, opt *Batc
 
 	switch opt.Vendor {
 	case enumor.TCloud:
-		return actcli.GetHCService().TCloud.Clb.DeleteLoadBalancerByCond(kt, req)
+		return actcli.GetHCService().TCloud.Clb.BatchDeleteLocalLoadBalancer(kt, req)
 	default:
 		return fmt.Errorf("unsupport vendor for batch sync load balancer delete: %s", opt.Vendor)
 	}

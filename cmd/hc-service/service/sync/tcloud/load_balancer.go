@@ -21,7 +21,6 @@ package tcloud
 
 import (
 	"sync"
-	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/sync/handler"
@@ -51,15 +50,15 @@ func (svc *service) SyncLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	return nil, handler.ResourceSyncV2(cts, hd)
 }
 
-// DeleteLoadBalancerByCond 按条件删除负载均衡接口
-func (svc *service) DeleteLoadBalancerByCond(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteLocalLoadBalancer 批量删除本地负载均衡数据接口，不会删除云上资源
+func (svc *service) BatchDeleteLocalLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	hd := &lbHandler{
 		baseHandler: baseHandler{
 			resType: enumor.LoadBalancerCloudResType,
 			cli:     svc.syncCli,
 		},
 	}
-	return hd.DeleteLoadBalancerByCond(cts)
+	return hd.BatchDeleteLocalLoadBalancer(cts)
 }
 
 // SyncLoadBalancerByCond 按条件同步负载均衡接口
@@ -79,9 +78,9 @@ type lbHandler struct {
 	offset uint64
 }
 
-// DeleteLoadBalancerByCond 按条件删除负载均衡
-func (hd *lbHandler) DeleteLoadBalancerByCond(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcsync.TCloudDelLoadBalancerByCondReq)
+// BatchDeleteLocalLoadBalancer 批量删除本地负载均衡数据，不会删除云上资源
+func (hd *lbHandler) BatchDeleteLocalLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcsync.TCloudDelLocalLBReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -95,14 +94,13 @@ func (hd *lbHandler) DeleteLoadBalancerByCond(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	startedAt := time.Now()
-	if err = syncCli.BatchDeleteLoadBalancer(cts.Kit, req.AccountID, req.Region, req.CloudIDs); err != nil {
-		logs.Errorf("delete load balancer by condition failed, err: %v, account: %s, region: %s, "+
+	if err = syncCli.BatchDeleteLocalLoadBalancer(cts.Kit, req.AccountID, req.Region, req.CloudIDs); err != nil {
+		logs.Errorf("batch delete local load balancer failed, err: %v, account: %s, region: %s, "+
 			"count: %d, rid: %s", err, req.AccountID, req.Region, len(req.CloudIDs), cts.Kit.Rid)
 		return nil, err
 	}
-	logs.Infof("delete load balancer by condition success, account: %s, region: %s, count: %d, cost: %s, rid: %s",
-		req.AccountID, req.Region, len(req.CloudIDs), time.Since(startedAt), cts.Kit.Rid)
+	logs.Infof("batch delete local load balancer success, account: %s, region: %s, count: %d, rid: %s",
+		req.AccountID, req.Region, len(req.CloudIDs), cts.Kit.Rid)
 
 	return nil, nil
 }
@@ -129,7 +127,6 @@ func (hd *lbHandler) SyncLoadBalancerByCond(cts *rest.Contexts) (interface{}, er
 		TagFilters: req.TagFilters,
 	}
 
-	listStartedAt := time.Now()
 	instances, err := hd.listLoadBalancerByCloudIDs(cts.Kit, req.CloudIDs)
 	if err != nil {
 		logs.Errorf("list load balancer by cloud ids failed, err: %v, account: %s, region: %s, "+
@@ -137,8 +134,7 @@ func (hd *lbHandler) SyncLoadBalancerByCond(cts *rest.Contexts) (interface{}, er
 		return nil, err
 	}
 	logs.Infof("list load balancer by cloud ids done, account: %s, region: %s, count: %d, found: %d, "+
-		"cost: %s, rid: %s", req.AccountID, req.Region, len(req.CloudIDs), len(instances),
-		time.Since(listStartedAt), cts.Kit.Rid)
+		"rid: %s", req.AccountID, req.Region, len(req.CloudIDs), len(instances), cts.Kit.Rid)
 	if len(instances) == 0 {
 		// 云上已不存在的实例由删除动作负责清理，此处直接跳过
 		logs.Infof("no load balancer found on cloud, account: %s, region: %s, count: %d, rid: %s",
@@ -148,14 +144,13 @@ func (hd *lbHandler) SyncLoadBalancerByCond(cts *rest.Contexts) (interface{}, er
 
 	// 按单次同步上限切分，保持与全量同步一致的下发粒度，避免每批都被当作最后一批再按并发拆细
 	allInstances := slice.Split(instances, constant.CloudResourceSyncMaxLimit)
-	syncStartedAt := time.Now()
 	if _, _, err = handler.SyncResourcesDetail(cts.Kit, hd, len(instances), allInstances); err != nil {
 		logs.Errorf("sync load balancer detail failed, err: %v, account: %s, region: %s, count: %d, rid: %s",
 			err, req.AccountID, req.Region, len(instances), cts.Kit.Rid)
 		return nil, err
 	}
-	logs.Infof("sync load balancer by condition success, account: %s, region: %s, count: %d, cost: %s, rid: %s",
-		req.AccountID, req.Region, len(instances), time.Since(syncStartedAt), cts.Kit.Rid)
+	logs.Infof("sync load balancer by condition success, account: %s, region: %s, count: %d, rid: %s",
+		req.AccountID, req.Region, len(instances), cts.Kit.Rid)
 
 	return nil, nil
 }

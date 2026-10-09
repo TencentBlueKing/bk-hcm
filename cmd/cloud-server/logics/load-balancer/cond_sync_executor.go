@@ -174,9 +174,7 @@ func (c *CondSyncLoadBalancerExecutor) Run(kt *kit.Kit) (result string, err erro
 
 // buildBatches 把各地域差异按先清理后同步的顺序拆成任务批次。
 // 批大小在此处读取配置，不作为编排参数逐层透传。
-func (c *CondSyncLoadBalancerExecutor) buildBatches(
-	regionDiffs []LoadBalancerRegionDiff) []*condSyncLoadBalancerBatch {
-
+func (c *CondSyncLoadBalancerExecutor) buildBatches(regionDiffs []LoadBalancerRegionDiff) []*condSyncLoadBalancerBatch {
 	clbCondSync := cc.CloudServer().ConcurrentConfig.ClbCondSync
 	deleteBatchSize := cvt.PtrToVal(clbCondSync.DeleteBatchSize)
 

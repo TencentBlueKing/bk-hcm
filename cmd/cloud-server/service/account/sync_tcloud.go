@@ -41,8 +41,7 @@ import (
 )
 
 func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, bkBizID int64,
-	resType enumor.CloudResourceType) (
-	any, error) {
+	resType enumor.CloudResourceType) (any, error) {
 
 	req, syncRoute, err := a.decodeTCloudCondSyncRequest(cts, resType)
 	if err != nil {

@@ -54,15 +54,16 @@ func (req *TCloudSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// TCloudDelLoadBalancerByCondReq tcloud delete load balancer by condition request.
-type TCloudDelLoadBalancerByCondReq struct {
+// TCloudDelLocalLBReq tcloud batch delete local load balancer request,
+// it only removes the local db records and never touches the cloud resources.
+type TCloudDelLocalLBReq struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1,dive,required"`
 }
 
 // Validate ...
-func (req *TCloudDelLoadBalancerByCondReq) Validate() error {
+func (req *TCloudDelLocalLBReq) Validate() error {
 	if len(req.CloudIDs) == 0 {
 		return fmt.Errorf("cloud_ids is required")
 	}

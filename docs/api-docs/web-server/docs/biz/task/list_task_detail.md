@@ -253,7 +253,7 @@ param的内容和operation对应。
   "op": "update",
   "account_id": "0000002b",
   "cloud_lb_id": "lb-2ita2syu",
-  "clb_vip_domain": "9.131.91.86",
+  "clb_vip_domain": "127.0.0.1",
   "domain": "",
   "region": "ap-hongkong"
 }
