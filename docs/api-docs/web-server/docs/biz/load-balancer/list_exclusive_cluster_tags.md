@@ -68,13 +68,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/tags/list
   "data": {
     "details": [
       {
-        "cluster_tag": "ziyan_chiji",
+        "cluster_tag": "demo_tag",
         "cluster_type": "TGW",
         "clusters": [
           {
-            "cloud_cluster_id": "tgw-38feq8c6",
+            "cloud_cluster_id": "tgw-xxxxxxxx",
             "cluster_id": "00000001",
-            "cluster_name": "ziyan-l4-1",
+            "cluster_name": "cluster-l4-1",
             "egress": "center_egress1",
             "isp": "BGP",
             "cluster_zone": {
@@ -83,9 +83,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/tags/list
             }
           },
           {
-            "cloud_cluster_id": "tgw-9k2lq7b1",
+            "cloud_cluster_id": "tgw-yyyyyyyy",
             "cluster_id": "00000003",
-            "cluster_name": "ziyan-l4-2",
+            "cluster_name": "cluster-l4-2",
             "egress": "center_egress1",
             "isp": "BGP",
             "cluster_zone": {
@@ -96,13 +96,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/tags/list
         ]
       },
       {
-        "cluster_tag": "ziyan_chiji",
+        "cluster_tag": "demo_tag",
         "cluster_type": "STGW",
         "clusters": [
           {
-            "cloud_cluster_id": "stgw-38feq8c6",
+            "cloud_cluster_id": "stgw-xxxxxxxx",
             "cluster_id": "00000001",
-            "cluster_name": "ziyan-l4-1",
+            "cluster_name": "cluster-l7-1",
             "egress": "center_egress1",
             "isp": "BGP",
             "cluster_zone": {
@@ -111,9 +111,9 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/tags/list
             }
           },
           {
-            "cloud_cluster_id": "stgw-9k2lq7b1",
+            "cloud_cluster_id": "stgw-yyyyyyyy",
             "cluster_id": "00000003",
-            "cluster_name": "ziyan-l4-2",
+            "cluster_name": "cluster-l7-2",
             "egress": "center_egress1",
             "isp": "BGP",
             "cluster_zone": {

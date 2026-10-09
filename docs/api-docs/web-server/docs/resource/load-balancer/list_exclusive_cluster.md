@@ -84,7 +84,7 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/list
 | 参数名称                | 参数类型   | 描述                                     |
 |---------------------|--------|----------------------------------------|
 | id                  | string | 集群本地ID，即其它接口中的 `cluster_id`            |
-| cloud_id            | string | 集群云上ID，即其它接口中的 `cloud_cluster_id`，如tgw-38feq8c6 |
+| cloud_id            | string | 集群云上ID，即其它接口中的 `cloud_cluster_id`，如tgw-xxxxxxxx |
 | name                | string | 集群名称                                   |
 | vendor              | string | 供应商（枚举值：tcloud）                        |
 | account_id          | string | 账号ID                                   |
@@ -183,15 +183,15 @@ POST /api/v1/cloud/load_balancers/exclusive_clusters/list
     "details": [
       {
         "id": "00000001",
-        "cloud_id": "tgw-38feq8c6",
-        "name": "ziyan-l4-1",
+        "cloud_id": "tgw-xxxxxxxx",
+        "name": "cluster-l4-1",
         "vendor": "tcloud",
         "account_id": "00000001",
         "bk_biz_id": -1,
         "region": "ap-guangzhou",
         "zone": "ap-guangzhou-3",
         "cluster_type": "TGW",
-        "cluster_tag": "ziyan_chiji",
+        "cluster_tag": "demo_tag",
         "network": "Public",
         "isp": "BGP",
         "egress": "center_egress1",

@@ -124,7 +124,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "bandwidthpkg_sub_type": "BGP",
   "internet_max_bandwidth_out": 10,
   "cloud_cluster_ids": [
-    "tgw-38feq8c6"
+    "tgw-xxxxxxxx"
   ],
   "sla_type":"", // sla_type为“”+exclusive 表示独占型
   "exclusive": 1,
@@ -155,9 +155,9 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "bandwidth_package_id": "bwp-1234556",
   "bandwidthpkg_sub_type": "BGP",
   "internet_max_bandwidth_out": 10,
-  "cluster_tag": "ziyan-serven", // 七层集群标签
+  "cluster_tag": "cluster_l7", // 七层集群标签
   "cloud_cluster_ids": [
-    "tgw-38feq8c6"
+    "tgw-xxxxxxxx"
   ],
   "sla_type":"", // sla_type为“”+exclusive 表示独占型
   "exclusive": 1,
@@ -188,11 +188,11 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "bandwidth_package_id": "bwp-1234556",
   "bandwidthpkg_sub_type": "BGP",
   "internet_max_bandwidth_out": 10,
-  "cluster_tag": "ziyan-serven", // 七层集群标签
+  "cluster_tag": "cluster_l7", // 七层集群标签
   "cloud_cluster_ids": [ // 列表是通过四层集群标签过滤出来的
-    "tgw-38feq8c6",
-    "tgw-48feq8c6",
-    "tgw-022eq8c6",
+    "tgw-xxxxxxxx",
+    "tgw-yyyyyyyy",
+    "tgw-zzzzzzzz",
   ],
   "sla_type":"", // sla_type为“”+exclusive 表示独占型
   "exclusive": 1,
@@ -223,7 +223,7 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
   "bandwidth_package_id": "bwp-1234556",
   "bandwidthpkg_sub_type": "BGP",
   "internet_max_bandwidth_out": 10,
-  "cluster_tag": "ziyan-serven", // 七层集群标签
+  "cluster_tag": "cluster_l7", // 七层集群标签
   "cloud_cluster_ids": null,
   "sla_type":"", // sla_type为“”+exclusive 表示独占型
   "exclusive": 1,

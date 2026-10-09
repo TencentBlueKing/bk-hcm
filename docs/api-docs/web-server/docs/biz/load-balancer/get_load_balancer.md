@@ -65,17 +65,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
       "exclusive": 1,
       "clusters": [
         {
-          "cloud_cluster_id": "tgw-38feq8c6",
+          "cloud_cluster_id": "tgw-xxxxxxxx",
           "cluster_id": "00000001",
-          "cluster_name": "ziyan-l4-1",
-          "cluster_tag": "ziyan_chiji",
+          "cluster_name": "cluster-l4-1",
+          "cluster_tag": "cluster_l4",
           "cluster_type": "TGW"
         },
         {
-          "cloud_cluster_id": "stgw-7d81ka3f",
+          "cloud_cluster_id": "stgw-xxxxxxxx",
           "cluster_id": "00000002",
-          "cluster_name": "ziyan-l7-1",
-          "cluster_tag": "ziyan_chiji",
+          "cluster_name": "cluster-l7-1",
+          "cluster_tag": "cluster_l7",
           "cluster_type": "STGW"
         }
       ]
@@ -170,7 +170,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
 
 | 参数名称             | 参数类型   | 描述                          |
 |------------------|--------|-----------------------------|
-| cloud_cluster_id | string | 集群云上ID，如tgw-38feq8c6        |
+| cloud_cluster_id | string | 集群云上ID，如tgw-xxxxxxxx        |
 | cluster_id       | string | 集群本地ID，本地表未同步到该集群时为空字符串     |
 | cluster_name     | string | 集群名称，本地表未同步到该集群时为空字符串       |
 | cluster_tag      | string | 集群标签                        |

@@ -30,7 +30,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/exclusive_clusters/idle_vips/
 {
   "account_id": "00000001",
   "region": "ap-guangzhou",
-  "cloud_cluster_id": "tgw-38feq8c6"
+  "cloud_cluster_id": "tgw-xxxxxxxx"
 }
 ```
 

@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/audit"
@@ -65,11 +64,6 @@ func (dao *ExclusiveClusterDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 
 	if len(models) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "models to create is required")
-	}
-
-	if len(models) > constant.BatchOperationMaxLimit {
-		return nil, errf.Newf(errf.InvalidParameter, "models to create length should <= %d",
-			constant.BatchOperationMaxLimit)
 	}
 
 	tableName := table.LoadBalancerExclusiveClusterTable
@@ -132,11 +126,6 @@ func (dao *ExclusiveClusterDao) BatchUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 
 	if len(models) == 0 {
 		return errf.New(errf.InvalidParameter, "models to update is required")
-	}
-
-	if len(models) > constant.BatchOperationMaxLimit {
-		return errf.Newf(errf.InvalidParameter, "models to update length should <= %d",
-			constant.BatchOperationMaxLimit)
 	}
 
 	for _, model := range models {
