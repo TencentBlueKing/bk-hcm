@@ -1,8 +1,12 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, type RouteLocationRaw } from 'vue-router';
+import { merge } from 'lodash';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { useBack } from '@/router/hooks/use-back';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
+const props = defineProps<{ backConfig?: Partial<RouteLocationRaw> }>();
 
 const breadcrumb = useBreadcrumb();
 const route = useRoute();
@@ -12,8 +16,10 @@ const currentTitle = computed(() => breadcrumb.data.title ?? route.meta.menu?.i1
 
 const showBack = computed(() => breadcrumb.data.back !== false && !!from.value);
 
+// 业务 ID 在 query 中，返回所属列表（menu.relative）时需要带上
 const handleBackClick = () => {
-  handleBack();
+  const bizs = route.query[GLOBAL_BIZS_KEY];
+  handleBack(merge({}, bizs ? { query: { [GLOBAL_BIZS_KEY]: bizs } } : {}, props.backConfig));
 };
 </script>
 

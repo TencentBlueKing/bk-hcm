@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import HostInfo from '../components/host/host-info/index.vue';
 import HostNetwork from '../components/host/host-network/index.vue';
@@ -15,13 +14,15 @@ import { useI18n } from 'vue-i18n';
 import { InfoBox, Message } from 'bkui-vue';
 import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
-import { ref, inject, computed } from 'vue';
+import { ref, inject, computed, watchEffect } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { VendorEnum, CLOUD_HOST_STATUS } from '@/common/constant';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
 
 const router = useRouter();
 const { t } = useI18n();
+const { setTitle } = useBreadcrumb();
 
 const route = useRoute();
 
@@ -56,6 +57,12 @@ const actionName = computed(() => {
 });
 
 const { loading, detail, getDetail } = useDetail('cvms', hostId.value);
+
+watchEffect(() => {
+  if (hostId.value) {
+    setTitle(`主机详情 - ID ${hostId.value}`);
+  }
+});
 
 const hostTabs = computed(() => {
   const allTabs = [
@@ -204,79 +211,70 @@ const bktoolTipsOptions = computed(() => {
 </script>
 
 <template>
-  <detail-header>
-    <span class="header-title-prefix">主机详情</span>
-    <span class="header-title-content">&nbsp;- ID {{ `${hostId}` }}</span>
-    <!-- <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
-      【已绑定】
-    </span> -->
-    <template #right v-if="!isOtherVendor">
-      <span>
-        <bk-button
-          v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
-          class="btn"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
-          theme="primary"
-          :disabled="disabledOption"
-          @click="
-            () => {
-              if (authVerifyData.permissionAction?.[actionName]) isDialogShow = true;
-              else showAuthDialog(actionName);
-            }
-          "
-          v-if="whereAmI === Senarios.resource"
-        >
-          {{ t('分配') }}
-        </bk-button>
-      </span>
-      <span @click="showAuthDialog(actionName)">
-        <bk-button
-          v-bk-tooltips="
-            bktoolTipsOptions || {
-              content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
-              disabled: !cvmInfo.start.status.includes(detail.status),
-            }
-          "
-          class="btn"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
-          :disabled="disabledOption || cvmInfo.start.status.includes(detail.status)"
-          :loading="cvmInfo.start.loading"
-          @click="
-            () => {
-              if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('start');
-              else showAuthDialog(actionName);
-            }
-          "
-        >
-          {{ t('开机') }}
-        </bk-button>
-      </span>
-      <span @click="showAuthDialog(actionName)">
-        <bk-button
-          v-bk-tooltips="
-            bktoolTipsOptions || {
-              content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
-              disabled: !cvmInfo.stop.status.includes(detail.status),
-            }
-          "
-          class="btn"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
-          :disabled="
-            disabledOption ||
-            (authVerifyData.permissionAction?.[actionName] && cvmInfo.stop.status.includes(detail.status))
-          "
-          :loading="cvmInfo.stop.loading"
-          @click="
-            () => {
-              if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('stop');
-              else showAuthDialog(actionName);
-            }
-          "
-        >
-          {{ t('关机') }}
-        </bk-button>
-      </span>
-      <!-- <span @click="showAuthDialog(actionName)">
+  <Teleport defer to="#breadcrumbExtra" v-if="!isOtherVendor">
+    <span>
+      <bk-button
+        v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
+        :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
+        theme="primary"
+        :disabled="disabledOption"
+        @click="
+          () => {
+            if (authVerifyData.permissionAction?.[actionName]) isDialogShow = true;
+            else showAuthDialog(actionName);
+          }
+        "
+        v-if="whereAmI === Senarios.resource"
+      >
+        {{ t('分配') }}
+      </bk-button>
+    </span>
+    <span @click="showAuthDialog(actionName)">
+      <bk-button
+        v-bk-tooltips="
+          bktoolTipsOptions || {
+            content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
+            disabled: !cvmInfo.start.status.includes(detail.status),
+          }
+        "
+        :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
+        :disabled="disabledOption || cvmInfo.start.status.includes(detail.status)"
+        :loading="cvmInfo.start.loading"
+        @click="
+          () => {
+            if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('start');
+            else showAuthDialog(actionName);
+          }
+        "
+      >
+        {{ t('开机') }}
+      </bk-button>
+    </span>
+    <span @click="showAuthDialog(actionName)">
+      <bk-button
+        v-bk-tooltips="
+          bktoolTipsOptions || {
+            content: `当前主机处于 ${CLOUD_HOST_STATUS[detail.status]} 状态`,
+            disabled: !cvmInfo.stop.status.includes(detail.status),
+          }
+        "
+        :class="{ 'hcm-no-permision-btn': !authVerifyData.permissionAction?.[actionName] }"
+        :disabled="
+          disabledOption ||
+          (authVerifyData.permissionAction?.[actionName] && cvmInfo.stop.status.includes(detail.status))
+        "
+        :loading="cvmInfo.stop.loading"
+        @click="
+          () => {
+            if (authVerifyData.permissionAction?.[actionName]) handleCvmOperate('stop');
+            else showAuthDialog(actionName);
+          }
+        "
+      >
+        {{ t('关机') }}
+      </bk-button>
+    </span>
+    <!-- <span @click="showAuthDialog(actionName)">
         <bk-button
           class="w100 ml10"
           theme="primary"
@@ -290,58 +288,58 @@ const bktoolTipsOptions = computed(() => {
           {{ t('重启') }}
         </bk-button>
       </span> -->
-      <!-- <bk-button
+    <!-- <bk-button
         class="w100 ml10"
         theme="primary"
         @click="handlePassword"
       >
         {{ t('重置密码') }}
       </bk-button> -->
-      <span @click="showAuthDialog(actionName)">
-        <bk-dropdown
-          trigger="click"
+    <span @click="showAuthDialog(actionName)">
+      <bk-dropdown
+        trigger="click"
+        :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
+        :popover-options="{ clickContentAutoHide: true }"
+      >
+        <bk-button
+          v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
           :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
-          :popover-options="{ clickContentAutoHide: true }"
         >
-          <bk-button
-            v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
-            :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
-          >
-            ⋮
-          </bk-button>
-          <template #content>
-            <bk-dropdown-menu>
-              <bk-dropdown-item
-                @click="
-                  () => {
-                    if (authVerifyData.permissionAction?.[actionName]) {
-                      handleCvmOperate('destroy');
-                    } else {
-                      showAuthDialog(actionName);
-                    }
+          ⋮
+        </bk-button>
+        <template #content>
+          <bk-dropdown-menu>
+            <bk-dropdown-item
+              @click="
+                () => {
+                  if (authVerifyData.permissionAction?.[actionName]) {
+                    handleCvmOperate('destroy');
+                  } else {
+                    showAuthDialog(actionName);
                   }
-                "
-              >
-                {{ t('回收') }}
-              </bk-dropdown-item>
-              <bk-dropdown-item
-                @click="
-                  () => {
-                    if (authVerifyData.permissionAction?.[actionName]) {
-                      handleCvmOperate('reboot');
-                    } else {
-                      showAuthDialog(actionName);
-                    }
+                }
+              "
+            >
+              {{ t('回收') }}
+            </bk-dropdown-item>
+            <bk-dropdown-item
+              @click="
+                () => {
+                  if (authVerifyData.permissionAction?.[actionName]) {
+                    handleCvmOperate('reboot');
+                  } else {
+                    showAuthDialog(actionName);
                   }
-                "
-              >
-                {{ t('重启') }}
-              </bk-dropdown-item>
-            </bk-dropdown-menu>
-          </template>
-        </bk-dropdown>
-      </span>
-      <!-- <span @click="showAuthDialog(actionName)">
+                }
+              "
+            >
+              {{ t('重启') }}
+            </bk-dropdown-item>
+          </bk-dropdown-menu>
+        </template>
+      </bk-dropdown>
+    </span>
+    <!-- <span @click="showAuthDialog(actionName)">
         <bk-button
           class="w100 ml10"
           theme="primary"
@@ -355,10 +353,9 @@ const bktoolTipsOptions = computed(() => {
           {{ t('回收') }}
         </bk-button>
       </span> -->
-    </template>
-  </detail-header>
+  </Teleport>
 
-  <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
+  <div class="detail-content-wrap">
     <detail-tab :tabs="hostTabs">
       <template #default="type">
         <bk-loading :loading="loading">

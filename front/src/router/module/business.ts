@@ -44,11 +44,8 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
-                layout: {
-                  breadcrumb: {
-                    show: false,
-                  },
-                },
+                title: '主机详情',
+                menu: { relative: MENU_BUSINESS_HOST_MANAGEMENT },
               }),
             },
           },
@@ -88,7 +85,8 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
-                layout: { breadcrumb: { show: false } },
+                title: '云硬盘详情',
+                menu: { relative: MENU_BUSINESS_DISK_MANAGEMENT },
               }),
             },
           },
@@ -126,6 +124,8 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
+              menu: { i18n: '镜像详情', relative: MENU_BUSINESS_IMAGE_MANAGEMENT },
+              layout: { breadcrumb: { show: true } },
             },
           },
         ],
@@ -155,7 +155,8 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
-                layout: { breadcrumb: { show: false } },
+                title: 'VPC详情',
+                menu: { relative: MENU_BUSINESS_VPC_MANAGEMENT },
               }),
             },
           },
@@ -184,7 +185,8 @@ const businessMenus: RouteRecordRaw[] = [
             meta: {
               ...new Meta({
                 activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
-                layout: { breadcrumb: { show: false } },
+                title: '子网详情',
+                menu: { relative: MENU_BUSINESS_SUBNET_MANAGEMENT },
               }),
             },
           },
@@ -212,7 +214,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
-              layout: { breadcrumb: { show: false } },
+              menu: { i18n: '弹性IP详情', relative: MENU_BUSINESS_EIP_MANAGEMENT },
             },
           },
         ],
@@ -239,7 +241,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
-              layout: { breadcrumb: { show: false } },
+              menu: { i18n: '网络接口详情', relative: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT },
             },
           },
         ],
@@ -266,7 +268,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
-              layout: { breadcrumb: { show: false } },
+              menu: { i18n: '路由表详情', relative: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT },
             },
           },
         ],
@@ -293,7 +295,7 @@ const businessMenus: RouteRecordRaw[] = [
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
-              layout: { breadcrumb: { show: false } },
+              menu: { i18n: '安全组详情', relative: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT },
             },
           },
         ],
@@ -309,8 +311,8 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
           activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+          menu: { i18n: 'GCP防火墙详情', relative: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT },
           notMenu: true,
-          layout: { breadcrumb: { show: false } },
         },
       },
       {
@@ -319,8 +321,8 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
           activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+          menu: { i18n: '参数模板详情', relative: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT },
           notMenu: true,
-          layout: { breadcrumb: { show: false } },
         },
       },
       loadBalancerBizRouteConfig[0],
@@ -373,12 +375,12 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/cvm'),
         meta: {
           ...new Meta({
+            title: '购买主机',
             activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
             notMenu: true,
             menu: {
               relative: MENU_BUSINESS_HOST_MANAGEMENT,
             },
-            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -388,12 +390,12 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/vpc'),
         meta: {
           ...new Meta({
+            title: '购买VPC',
             activeKey: MENU_BUSINESS_VPC_MANAGEMENT,
             notMenu: true,
             menu: {
               relative: MENU_BUSINESS_VPC_MANAGEMENT,
             },
-            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -403,12 +405,12 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/disk'),
         meta: {
           ...new Meta({
+            title: '购买硬盘',
             activeKey: MENU_BUSINESS_DISK_MANAGEMENT,
             notMenu: true,
             menu: {
               relative: MENU_BUSINESS_DISK_MANAGEMENT,
             },
-            layout: { breadcrumb: { show: false } },
           }),
         },
       },
@@ -418,12 +420,12 @@ const businessMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/subnet'),
         meta: {
           ...new Meta({
+            title: '新建子网',
             activeKey: MENU_BUSINESS_SUBNET_MANAGEMENT,
             notMenu: true,
             menu: {
               relative: MENU_BUSINESS_SUBNET_MANAGEMENT,
             },
-            layout: { breadcrumb: { show: false } },
           }),
         },
       },

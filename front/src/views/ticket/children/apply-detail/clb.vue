@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RouteLocationRaw } from 'vue-router';
 import { ModelProperty } from '@/model/typings';
 import { APPLICATION_TYPE_MAP } from '@/views/ticket/constants';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -9,11 +8,9 @@ import { LB_NETWORK_TYPE_MAP } from '@/constants';
 import { IApplicationDetail } from './index';
 
 import panel from '@/components/panel';
-import detailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import gridContainer from '@/components/layout/grid-container/grid-container.vue';
 import gridItem from '@/components/layout/grid-container/grid-item.vue';
 import status from './components/status.vue';
-import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 
 const props = defineProps<{ applicationDetail: IApplicationDetail; loading: boolean }>();
 
@@ -79,55 +76,45 @@ const paramInfoFields: ModelProperty[] = [
   { id: 'require_count', name: '需求数量', type: 'number' },
   { id: 'name', name: '实例名称', type: 'string' },
 ];
-
-const navigateTo: RouteLocationRaw = {
-  name: MENU_SERVICE_TICKET_MANAGEMENT,
-  query: { type: 'load_balancer' },
-};
 </script>
 
 <template>
   <bk-loading v-if="loading" loading style="width: 100%; height: 100%"><div></div></bk-loading>
-  <div v-else>
-    <detail-header :to="navigateTo"><span>负载均衡申请单详情</span></detail-header>
-    <div class="container">
-      <status :application-detail="applicationDetail" />
-      <panel title="基本信息">
-        <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
-          <grid-item label="业务名称">
-            {{ clbDetail?.bk_biz_id !== -1 ? getNameFromBusinessMap(clbDetail.bk_biz_id) : '未分配' }}
-          </grid-item>
-          <grid-item v-for="field in baseInfoFields" :key="field.id" :label="field.name">
-            <display-value
-              :property="field"
-              :value="applicationDetail[field.id]"
-              :display="{ ...field.meta?.display, on: 'info' }"
-            />
-          </grid-item>
-        </grid-container>
-      </panel>
-      <panel title="参数信息">
-        <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
-          <grid-item v-for="field in paramInfoFields" :key="field.id" :label="field.name">
-            <display-value
-              :property="field"
-              :value="clbDetail[field.id]"
-              :display="{ ...field.meta?.display, on: 'info' }"
-            />
-          </grid-item>
-        </grid-container>
-      </panel>
-    </div>
+  <div v-else class="page-container clb-detail-page">
+    <status :application-detail="applicationDetail" />
+    <panel title="基本信息">
+      <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
+        <grid-item label="业务名称">
+          {{ clbDetail?.bk_biz_id !== -1 ? getNameFromBusinessMap(clbDetail.bk_biz_id) : '未分配' }}
+        </grid-item>
+        <grid-item v-for="field in baseInfoFields" :key="field.id" :label="field.name">
+          <display-value
+            :property="field"
+            :value="applicationDetail[field.id]"
+            :display="{ ...field.meta?.display, on: 'info' }"
+          />
+        </grid-item>
+      </grid-container>
+    </panel>
+    <panel title="参数信息">
+      <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
+        <grid-item v-for="field in paramInfoFields" :key="field.id" :label="field.name">
+          <display-value
+            :property="field"
+            :value="clbDetail[field.id]"
+            :display="{ ...field.meta?.display, on: 'info' }"
+          />
+        </grid-item>
+      </grid-container>
+    </panel>
   </div>
 </template>
 
 <style scoped lang="scss">
-.container {
+.clb-detail-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 52px;
-  background-color: #f5f7fa;
-  padding: 24px;
+  overflow-y: auto;
 }
 </style>

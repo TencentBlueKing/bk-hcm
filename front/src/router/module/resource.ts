@@ -72,6 +72,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
         meta: {
           notMenu: true,
+          menu: { i18n: '资源详情', relative: MENU_RESOURCE_RESOURCE_MANAGEMENT },
         },
       },
       operationLogRscRouteConfig[1],
@@ -81,6 +82,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/cvm'),
         meta: {
           ...new Meta({
+            title: '购买主机',
             notMenu: true,
             menu: {
               relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
@@ -94,6 +96,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/vpc'),
         meta: {
           ...new Meta({
+            title: '购买VPC',
             notMenu: true,
             menu: {
               relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
@@ -107,6 +110,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/disk'),
         meta: {
           ...new Meta({
+            title: '购买硬盘',
             notMenu: true,
             menu: {
               relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
@@ -120,6 +124,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/subnet'),
         meta: {
           ...new Meta({
+            title: '新建子网',
             notMenu: true,
             menu: {
               relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
@@ -133,6 +138,7 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/service/service-apply/clb'),
         meta: {
           ...new Meta({
+            title: '购买负载均衡',
             notMenu: true,
             isFilterAccount: true,
             menu: {

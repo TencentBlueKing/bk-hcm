@@ -35,9 +35,8 @@ const operationLogBiz: RouteRecordRaw[] = [
         title: '操作记录详情',
         notMenu: true,
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        layout: { breadcrumb: { show: false } },
         menu: {
-          relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+          relative: MENU_BUSINESS_OPERATION_LOG,
         },
       }),
     },
@@ -68,7 +67,6 @@ const operationLogRsc: RouteRecordRaw[] = [
         title: '操作记录详情',
         notMenu: true,
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        layout: { breadcrumb: { show: false } },
         menu: {
           relative: MENU_RESOURCE_OPERATION_LOG,
         },

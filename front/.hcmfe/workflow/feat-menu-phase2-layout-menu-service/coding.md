@@ -182,6 +182,43 @@ copy(JSON.stringify(r.getRoutes().filter((x) => x.components?.default && !x.redi
 - `useCalcTopWithNotice` 按 PR 移到 `hooks/use-calc-top-with-notice.ts`，同步改 3 处 import。
 - 实施补充：`router/module/common.ts` 删除三条兜底时一并删掉文件尾部注释掉的旧路由（其中引用 `@/views/home/RootPath`），使 `rg views/home src` 为 0。
 
+## 7. 修订（2026-10-09）：页面标题栏改用全局面包屑
+
+**背景**：首条提交只改了路由的面包屑配置，19 个页面仍自带 `position: fixed` 的 `DetailHeader`（对应路由 `breadcrumb.show: false`），新布局下底部间距异常、写法不统一。PR #1897 的意图（`ffd4c674b8` 单据详情、`25696ea07b` 申请页、`5c513eb559` 资源详情等）是页面不再自带标题栏：标题交给全局面包屑，动态标题 `useBreadcrumb().setTitle()`，右侧操作 `Teleport defer to="#breadcrumbExtra"`，内容区 `page-container` / `detail-content-wrap`。本节作为本单后续提交（`--story=138702243`），用户 2026-10-09 确认。
+
+**文件**：`src/views/ticket/children/apply-detail/index.tsx`、`src/views/ticket/children/apply-detail/index.scss`、`src/views/ticket/children/apply-detail/clb.vue`、`src/views/ticket/children/apply-detail/components/status.vue`、`src/views/operation-log/details/flow-task/index.tsx`、`src/views/operation-log/details/flow-task/index.scss`、`src/views/service/service-apply/{cvm,vpc,disk,subnet,clb}/index.scss`、`src/views/resource/resource-manage/children/detail/template-detail/index.scss`、`src/views/resource/resource-manage/children/detail/{host,vpc,subnet,drive,ip,network-interface,routing,image,security,gcp}-detail.vue`、`src/views/resource/resource-manage/children/detail/template-detail/index.tsx`、`src/views/service/service-apply/{cvm,vpc,disk,subnet,clb}/index.tsx`、`src/components/layout/sticky-bottom-container/sticky-bottom-container.vue`、`src/views/ticket/entry-srv.vue`、`src/views/ticket/entry-biz.vue`、`src/views/ticket/children/common-table.vue`、`src/style/app-shell.scss`、`src/components/layout/breadcrumb.vue`、`src/components/layout/main-content.vue`、`src/router/module/business.ts`、`src/router/module/resource.ts`、`src/views/ticket/route-config.ts`、`src/views/operation-log/route-config.ts`
+
+**页面**（只取 PR 中与标题栏 / 面包屑 / 内容区容器 / 吸底栏相关的改动；同文件里的按钮级鉴权迁移（`c573e933b5`）、详情页其它布局调整不取）：
+
+| 页面 | 改法 |
+|---|---|
+| 单据详情 `apply-detail/index.tsx`、`clb.vue` | 删 `DetailHeader`；`setTitle('申请单详情 - <类型>')`；容器加 `page-container` |
+| 操作记录任务详情 `flow-task/index.tsx` | 删 `DetailHeader`；`setTitle` |
+| 资源详情 11 个（`children/detail/*`） | 删 `<detail-header>`；`setTitle`（文案与原标题栏逐字一致）；原 `#right` 插槽的操作按钮 `Teleport defer to="#breadcrumbExtra"`；根容器 `detail-content-wrap` |
+| 申请页 5 个（`service-apply/*`） | 删 `DetailHeader` 与 `fromConfig`；照 PR 引入 `components/layout/sticky-bottom-container` 包裹表单与底部按钮；去掉为固定标题栏预留的偏移 |
+
+`resource/accountmanage/account-detail.tsx`（旧账号详情）PR 同样保留，由 ⑤ 处理；⑤ 完成后 `DetailHeader` 组件无引用，由 ⑤ 删除。
+
+**路由**：
+- 业务资源：11 个详情路由与 4 个申请路由去掉 `breadcrumb.show: false`，补 `menu.i18n`（静态标题，如「主机详情」「申请主机」）与 `menu.relative`（所属列表，返回目标）。
+- 单据详情、操作记录任务详情路由同上。
+- 资源接入（`resource.ts` 的 `resourceDetail`、5 个 `MENU_RESOURCE_*_APPLY`，以及 `MENU_RESOURCE_OPERATION_LOG_DETAILS`）：全局面包屑仍隐藏（资源接入过渡布局），改为在 `main-content.vue` 的资源接入右侧内容区内渲染 `HcmBreadcrumb`，仅这 7 个路由显示（对应 PR `resource-entry.vue` 的 `!isListPage`；过渡布局下列表 / 页签路由杂，改为显式名单）；右侧内容区去掉全局的 24px 内边距、改纵向 flex，面包屑固定、页面独立滚动，避免与 `detail-content-wrap` / `sticky-bottom-container` 的内边距叠加、保证吸底有确定高度。PR 无此代码（PR 没有资源接入过渡期）。【⑦删：代码与样式均标 `TODO(菜单整合二期·组装)`，⑦ 用 ③ 的 `resource-entry.vue` 替代】
+
+**返回**：面包屑返回沿用 PR 的 `useBack`（站内历史优先，否则 `menu.relative`）。补两处，保持与原标题栏一致：
+- `breadcrumb.vue` 返回时若当前地址带 `?bizs=`，合并到返回目标（原申请页 `fromConfig` 透传 query；PR 用路径业务 ID 无此问题）。
+- 资源接入详情返回资源列表时带 `type`（取 `route.params.type`，原标题栏 `router.back()` 回到对应页签），由 `main-content.vue` 通过 `breadcrumb.vue` 的 `back-config` 传入。
+- 有意变化（同 PR）：直接打开详情页（无站内来源）时，原标题栏回首页，现回所属列表。
+- 有意变化（同 PR）：负载均衡申请单详情（`apply-detail/clb.vue`）原标题栏固定返回「单据管理 · 负载均衡」页签（`type=load_balancer`），现由面包屑返回来源页或所属单据列表默认页签；标题由「负载均衡申请单详情」变为「申请单详情 - 创建负载均衡」（与其它单据详情统一由 `index.tsx` 的 `setTitle` 设置）。
+
+**实施记录**：单据详情类型字段沿用 HEAD 的 `operation`（PR 为 `type`）；`flow-task` 标题 `操作记录详情 - <流程名>`；`apply-detail/components/status.vue` 照 PR 加 `flex-shrink: 0`（配合 `clb.vue` 纵向 flex 布局）。申请页保留 HEAD 的 `filterable`（c1938521b9）；不取 PR 的 clb `goBack` 目标改为 `MENU_RESOURCE`、vpc 改为监听 `route.query.accountId`（业务 / 路由变更）。`sticky-bottom-container.vue` 与 PR 逐字一致。资源接入右侧面包屑容器 `padding: 0`，页面根节点 `flex: 1` 独立滚动，避免与 `sticky-bottom-container` / `detail-content-wrap` 的内边距叠加。
+
+资源详情 11 个：标题在 `watchEffect` 中有 id 才 `setTitle`（文案沿用原标题栏，如「主机详情 - ID x」「VPC：（x）」「云硬盘：ID（x）」）；host / vpc / subnet / drive / ip / security 的右侧按钮 `Teleport` 到 `#breadcrumbExtra`（条件与原插槽一致），按钮去掉 `w100 ml10` / `btn`（目标容器自带 8px 间距）；gcp 原右侧插槽全是注释，随标题栏删除；根容器统一 `detail-content-wrap`，`bk-loading` 位置照 PR 调整。删 `network-interface-detail.vue` 一行遗留 `console.log`（PR 同删）。`template-detail/index.scss` 去掉 `margin-top: 52px` 与业务视图补偿用的 `.m24`（超出 PR：PR 未动此文件样式，但 `.m24` 只为固定标题栏补位，`detail-content-wrap` 已提供 24px 内边距）。不取：`HcmAuth` / `useVerify` 增删、`route.params.id`、路由 name、`routerAction` 跳转、`countSubnetIps` 时机等（属 ⑥ 或按钮鉴权）。`cvm/index.scss` 展平后两条 `.hcm-icon` 规则调换顺序以过 stylelint（优先级不同，效果不变）。`flow-task` 的 `FlowNodeNameMap[...]` 补 `keyof` 收窄。
+
+**单据列表页**（`views/ticket/entry-srv.vue`、`entry-biz.vue`、`children/common-table.vue`，用户 2026-10-09 实测：页签头随页面滚动、底部无边距）：照 PR `entry-srv.vue` 改为 `page-container ticket-page`（纵向 flex）+ `bk-tab.ticket-tab`（`flex: 1; overflow: hidden`），`:deep(.bk-tab-content)` 为 `height: calc(100% - 42px); padding: 16px 24px`，表格在页签内容区内滚动、页签头固定、底部留 `page-container` 的 24px；同时去掉原 `:global(.bk-tab) { height: 100% }`（会在访问过单据页后泄漏到全站所有 `bk-tab`）。`entry-biz.vue` 为 HEAD 新增（PR 无），同法处理。`common-table.vue` 进详情照 PR 改 `routerAction.redirect(..., { history: true })`，从详情经面包屑返回时回到原页签与筛选（含负载均衡单据）。不取 PR 把硬盘页签筛选值改成 `create_vpc`（疑为笔误，且 HEAD 已改按 `operation` 筛选）。
+**清理**：`main-content.vue` 删 `isNoPadding`（`/service/ticket` 加 `no-padding`，但 `.view-warp` 本身无内边距，原规则不生效；PR 无此判断）；`style/app-shell.scss` 删 `.no-padding` 与已无使用方的 `.i-detail-tap-wrap`（为旧固定标题栏补 52px）。
+
+**验证**：`bkdevbuddy_lint` 0 error（剩 vpc 原有 `prefer-destructuring` warning）；`npm run build` 通过；`tsc` 与 HEAD 对比 `src` 无新增错误；`rg "common/header/detail-header" src` 只剩 `resource/accountmanage/account-detail.tsx`。
+
 ## 从 PR #1897 取 / 不取
 
 | 项 | 处理 |

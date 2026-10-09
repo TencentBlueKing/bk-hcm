@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-layout-menu-service",
   "title": "菜单整合二期：页面布局与菜单服务化",
-  "currentStage": "test",
+  "currentStage": "coding",
   "createdAt": "2026-10-08T08:05:12.432Z",
-  "updatedAt": "2026-10-09T06:56:43.303Z",
+  "updatedAt": "2026-10-09T12:02:22.215Z",
   "artifacts": {
     "coding": [
       {
@@ -20,12 +20,7 @@
       }
     ]
   },
-  "approvals": {
-    "coding": {
-      "stage": "coding",
-      "approvedAt": "2026-10-09T06:55:01.192Z"
-    }
-  },
+  "approvals": {},
   "history": [
     {
       "from": "init",
@@ -37,6 +32,13 @@
       "from": "coding",
       "to": "test",
       "at": "2026-10-09T06:55:01.192Z"
+    },
+    {
+      "from": "test",
+      "to": "coding",
+      "at": "2026-10-09T10:05:31.139Z",
+      "gitHead": "943fd921edd5a367ddec5ec74369c9919510ce20",
+      "note": "用户要求：页面标题栏替换应与 PR #1897 意图对齐（ffd4c674b8 等）——去掉页面内 DetailHeader，改用全局面包屑 + setTitle；申请页引入 sticky-bottom-container；作为 ① 的后续提交"
     }
   ],
   "requirementId": "req-menu-phase2",
@@ -162,13 +164,47 @@
         "router/header-config.ts",
         "hooks/use-calc-top-with-notice.ts",
         "router/module/common.ts",
+        "src/views/ticket/children/apply-detail/index.tsx",
+        "src/views/ticket/children/apply-detail/index.scss",
+        "src/views/ticket/children/apply-detail/clb.vue",
+        "src/views/ticket/children/apply-detail/components/status.vue",
+        "src/views/operation-log/details/flow-task/index.tsx",
+        "src/views/operation-log/details/flow-task/index.scss",
+        "src/views/service/service-apply/{cvm,vpc,disk,subnet,clb}/index.scss",
+        "src/views/resource/resource-manage/children/detail/template-detail/index.scss",
+        "src/views/resource/resource-manage/children/detail/{host,vpc,subnet,drive,ip,network-interface,routing,image,security,gcp}-detail.vue",
+        "src/views/resource/resource-manage/children/detail/template-detail/index.tsx",
+        "src/views/service/service-apply/{cvm,vpc,disk,subnet,clb}/index.tsx",
+        "src/components/layout/sticky-bottom-container/sticky-bottom-container.vue",
+        "src/views/ticket/entry-srv.vue",
+        "src/views/ticket/entry-biz.vue",
+        "src/views/ticket/children/common-table.vue",
+        "src/router/module/resource.ts",
+        "apply-detail/index.tsx",
+        "clb.vue",
+        "flow-task/index.tsx",
+        "resource/accountmanage/account-detail.tsx",
+        "resource.ts",
+        "resource-entry.vue",
+        "apply-detail/clb.vue",
+        "index.tsx",
+        "apply-detail/components/status.vue",
+        "sticky-bottom-container.vue",
+        "network-interface-detail.vue",
+        "template-detail/index.scss",
+        "cvm/index.scss",
+        "views/ticket/entry-srv.vue",
+        "entry-biz.vue",
+        "children/common-table.vue",
+        "entry-srv.vue",
+        "common-table.vue",
         "business-interceptor.ts",
         "business-selector/global.vue",
         "bkui-vue/dist/style.css"
       ],
-      "contentFingerprint": "5a38f309bfb052f8413f1164be8d73d06c7f3d2b",
-      "codeBaseline": "b16584a19d624340e7e3756b27fca7760ffaf1db",
-      "seatedAt": "2026-10-09T06:56:43.303Z"
+      "contentFingerprint": "a68fed8177207fa4ab08396c8570008b4439ec08",
+      "codeBaseline": "06d3a724aa0cbe1f367590d7afc6db7cc62c20b6",
+      "seatedAt": "2026-10-09T12:02:22.215Z"
     }
   }
 }

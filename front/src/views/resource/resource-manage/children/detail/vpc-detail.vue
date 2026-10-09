@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 import VPCCidr from '../components/vpc/vpc-cidr.vue';
@@ -9,7 +8,7 @@ import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
 import bus from '@/common/bus';
 
-import { ref, inject, computed, watch } from 'vue';
+import { ref, inject, computed, watch, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -18,13 +17,13 @@ import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = [
   {
@@ -275,6 +274,12 @@ const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail:
   }
 });
 
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`VPC：（${detail.value.id}）`);
+  }
+});
+
 const vpcRelateSubnetCount = ref(0);
 watch(
   () => detail.value.id,
@@ -396,45 +401,41 @@ const handleDeleteVpc = (data: any) => {
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      VPC：（{{ detail.id }}）
-      <template #right>
-        <div @click="showAuthDialog(actionName)">
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            @click="handleDeleteVpc(detail)"
-            :disabled="disabledOption"
-            v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-      </template>
-    </detail-header>
+  <Teleport defer to="#breadcrumbExtra">
+    <div @click="showAuthDialog(actionName)">
+      <bk-button
+        theme="primary"
+        @click="handleDeleteVpc(detail)"
+        :disabled="disabledOption"
+        v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </div>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-tab :tabs="hostTabs">
-        <template #default>
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default>
+        <bk-loading :loading="loading">
           <detail-info
             :detail="detail"
             :fields="VPCFields"
             :label-width="VendorEnum.GCP === detail.vendor ? '200px' : '120px'"
             global-copyable
           />
-        </template>
-      </detail-tab>
+        </bk-loading>
+      </template>
+    </detail-tab>
 
-      <detail-tab class="mt16" :tabs="VPCTabs">
-        <template #default="type">
-          <VPCCidr v-if="type === 'cidr'" :detail="detail" />
-          <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
-          <VPCRoute v-if="type === 'route'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+    <detail-tab class="mt16" :tabs="VPCTabs">
+      <template #default="type">
+        <VPCCidr v-if="type === 'cidr'" :detail="detail" />
+        <VPCSubnet v-if="type === 'subnet'" :detail="detail" />
+        <VPCRoute v-if="type === 'route'" :detail="detail" />
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>

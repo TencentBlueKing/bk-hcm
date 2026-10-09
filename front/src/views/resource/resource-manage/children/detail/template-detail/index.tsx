@@ -1,6 +1,5 @@
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
-import DetailHeader from '../../../common/header/detail-header';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { computed, defineComponent, onMounted, ref, watch, watchEffect } from 'vue';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { useRoute } from 'vue-router';
 import useQueryListCommon from '../../../hooks/use-query-list-common';
 import { QueryRuleOPEnum } from '@/typings';
@@ -11,9 +10,15 @@ import { Table } from 'bkui-vue';
 
 export default defineComponent({
   setup() {
-    const { whereAmI } = useWhereAmI();
+    const { setTitle } = useBreadcrumb();
     const route = useRoute();
     const templateId = ref(route.query?.id);
+
+    watchEffect(() => {
+      if (templateId.value) {
+        setTitle(`参数模板: ID ${templateId.value}`);
+      }
+    });
     const singleTableData = ref([]);
     const fetchUrl = ref('argument_templates/list');
     const multipleFilter = ref({
@@ -88,10 +93,8 @@ export default defineComponent({
     );
 
     return () => (
-      <div class={'template-detail-container'}>
-        <DetailHeader>参数模板: ID {templateId.value}</DetailHeader>
-
-        <div class={`detial-wrap ${whereAmI.value === Senarios.business ? 'm24' : ''}`}>
+      <div class={'template-detail-container detail-content-wrap'}>
+        <div class={'detial-wrap'}>
           <p class={'title'}>基本信息</p>
           <DetailInfo
             class={'mb16'}
