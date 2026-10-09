@@ -11,7 +11,6 @@ export default [
       ...new Meta({
         title: '云账号管理',
         activeKey: MENU_BUSINESS_CLOUD_ACCOUNT,
-        isShowBreadcrumb: true,
         icon: 'hcm-icon bkhcm-icon-account-manage',
       }),
     },

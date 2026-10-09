@@ -5,51 +5,85 @@ import {
   createWebHashHistory,
   RouteLocationNormalized,
 } from 'vue-router';
-import { MENU_BILL, MENU_BUSINESS, MENU_BUSINESS_HOST_MANAGEMENT, MENU_SERVICE } from '@/constants/menu-symbol';
-import { billViews, businessViews, serviceViews } from '@/views';
+import {
+  MENU_BILL,
+  MENU_BUSINESS,
+  MENU_BUSINESS_HOST_MANAGEMENT,
+  MENU_RESOURCE,
+  MENU_RESOURCE_RESOURCE_MANAGEMENT,
+  MENU_SCHEME,
+  MENU_SERVICE,
+  MENU_SERVICE_TICKET_MANAGEMENT,
+} from '@/constants/menu-symbol';
+import { billViews, businessViews, resourceAccessViews, schemeViews, serviceViews } from '@/views';
 import common from './module/common';
-import resource from './module/resource';
-import resourceInside from './module/resource-inside';
-// import service from './module/service';
-import serviceInside from './module/service-inside';
-// import business from './module/business';
-import scheme from './module/scheme';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { isArray, isRegExp, isString } from 'lodash';
 
+// 状态页面路由（不属于任何一级菜单，不显示侧栏和面包屑）
+const statusRouters: RouteRecordRaw[] = [
+  {
+    name: '404',
+    path: '/404',
+    component: () => import('@/views/status/404.vue'),
+    meta: { layout: { breadcrumb: { show: false } } },
+  },
+  {
+    name: 'error',
+    path: '/error',
+    component: () => import('@/views/status/error.vue'),
+    meta: { layout: { breadcrumb: { show: false } } },
+  },
+];
+
+// 顶层记录的 name 即一级菜单 id，顶栏高亮与侧栏按 route.matched[0].name 判定
 const routes: RouteRecordRaw[] = [
+  ...statusRouters,
   ...common,
-  ...resource,
-  ...resourceInside,
-  // ...service,
-  ...serviceInside,
-  ...scheme,
+  {
+    name: MENU_BUSINESS,
+    path: '/business',
+    redirect: { name: MENU_BUSINESS_HOST_MANAGEMENT },
+    children: businessViews,
+  },
+  {
+    name: MENU_SERVICE,
+    path: '/service',
+    redirect: { name: MENU_SERVICE_TICKET_MANAGEMENT },
+    children: serviceViews,
+  },
+  // TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
+  {
+    name: MENU_RESOURCE,
+    path: '/resource',
+    redirect: { name: MENU_RESOURCE_RESOURCE_MANAGEMENT },
+    children: resourceAccessViews,
+  },
+  {
+    name: MENU_SCHEME,
+    path: '/scheme',
+    redirect: { name: 'scheme-recommendation' },
+    children: schemeViews,
+  },
+  // TODO(菜单整合二期·组装)：资源运营改为最终结构后删除
   {
     name: MENU_BILL,
     path: '/bill',
+    redirect: { path: '/bill/account-manage' },
     children: billViews,
-  },
-  {
-    path: '/',
-    redirect: '/business/host',
-    meta: {
-      activeKey: MENU_BUSINESS_HOST_MANAGEMENT,
-    },
   },
   {
     path: '/403',
     redirect: '/403',
   },
   {
-    name: MENU_BUSINESS,
-    path: '/business',
-    children: businessViews,
+    path: '/',
+    redirect: { name: MENU_BUSINESS },
   },
   {
-    name: MENU_SERVICE,
-    path: '/service',
-    children: serviceViews,
+    path: '/:pathMatch(.*)*',
+    redirect: () => ({ name: '404', query: {} }),
   },
 ];
 

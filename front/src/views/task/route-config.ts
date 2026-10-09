@@ -19,6 +19,7 @@ export default [
           relative: MENU_BUSINESS_TASK_MANAGEMENT,
         },
         icon: 'hcm-icon bkhcm-icon-bushu',
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },
@@ -31,7 +32,6 @@ export default [
         title: '任务详情',
         notMenu: true,
         activeKey: MENU_BUSINESS_TASK_MANAGEMENT,
-        isShowBreadcrumb: true,
         menu: {
           relative: MENU_BUSINESS_TASK_MANAGEMENT,
         },

@@ -23,6 +23,6 @@
 - [单据/工单](modules/ticket.md) — 工单流程，含业务/服务两套入口。 · `stub`
 - [资源选型方案](modules/scheme.md) — 选型方案列表/详情/推荐。 · `stub`
 - [任务管理](modules/task.md) — 异步任务（cvm/clb 等）列表与详情。 · `drafted`
-- [门户框架/首页/错误页/通知](modules/app-shell.md) — 应用外壳与通用页面：首页、错误页、全局通知。 · `stub`
+- [门户框架/首页/错误页/通知](modules/app-shell.md) — 应用外壳与通用页面：首页、错误页、全局通知。 · `drafted`
 - [模型驱动与页面模式](modules/model.md) — 装饰器字段元数据模型与多云 Factory、展示/表单/列表三场景模式。 · `drafted`  (relates: menu-route, auth)
 - [变体插件模式（退场中）](modules/plugin-handler.md) — 退场中。按变体分目录的历史插件式组织。原则：只迁不增。 · `stub`

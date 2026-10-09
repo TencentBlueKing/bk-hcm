@@ -12,6 +12,7 @@ const serviceInside: RouteRecordRaw[] = [
       backRouter: -1,
       activeKey: 'serviceApply',
       breadcrumb: ['服务', '服务申请', '账号'],
+      layout: { breadcrumb: { show: false } },
     },
   },
   // {

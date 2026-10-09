@@ -1,7 +1,7 @@
 interface Menu {
   i18n?: string;
   parent?: any;
-  relative?: any;
+  relative?: string | symbol;
 }
 
 interface AuthView {
@@ -29,7 +29,8 @@ interface Extra {
 
 export interface RouteMetaConfig {
   available?: boolean;
-  owner?: symbol | string;
+  owner?: symbol;
+  /** @deprecated 使用 menu.i18n 代替 */
   title?: string;
   authKey?: string;
   view?: string;
@@ -39,15 +40,16 @@ export interface RouteMetaConfig {
   layout?: Layout;
   notMenu?: boolean;
   activeKey?: symbol | string;
-  isShowBreadcrumb?: boolean;
   icon?: string;
   checkAuth?: string;
 }
 
+/**
+ * layout、activeKey、owner 只在传入时出现在 meta 上：route.meta 是 matched 链上各记录 meta 的浅合并，
+ * 子记录若产出默认值会遮住父记录的配置（如父记录的 layout.breadcrumb.show = false）。
+ */
 export default class Meta {
   available = true;
-
-  owner = '';
 
   title = '';
 
@@ -61,8 +63,6 @@ export default class Meta {
 
   auth: Auth = {};
 
-  layout: Layout = {};
-
   constructor(data: RouteMetaConfig) {
     Object.keys(data).forEach((key) => {
       const typedKey = key as keyof RouteMetaConfig;
@@ -74,8 +74,6 @@ export default class Meta {
     this.menu = Object.assign(this.menu, data.menu);
 
     this.auth = Object.assign(this.auth, data.auth);
-
-    this.layout = Object.assign(this.layout, data.layout);
 
     this.extra = Object.assign(this.extra, data.extra);
   }

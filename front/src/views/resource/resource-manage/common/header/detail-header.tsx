@@ -1,7 +1,7 @@
 import { defineComponent, PropType } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
+import { useCalcTopWithNotice } from '@/hooks/use-calc-top-with-notice';
 import { useBack } from '@/router/hooks/use-back';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 

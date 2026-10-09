@@ -45,7 +45,7 @@
 
 `billAccountManageLegacy` 承接旧「云账号管理」时期的地址：
 
-- `/bill/account-manage`（旧书签，**也是 `header-config.ts` 里顶栏「资源运营」的入口地址**）→ 有 `root_account_find` 去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截进 403 申请。
+- `/bill/account-manage`（旧书签，**也是顶栏「资源运营」的入口地址**：顶栏按 name 跳 `MENU_BILL`，其父路由 `redirect` 到这里）→ 有 `root_account_find` 去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截进 403 申请。
 - `/bill/account-manage/first-account`、`/second-account` → 按 name 重定向到两个新建页，vue-router 默认保留 query。
 
 分流要读权限数据，所以写在 `beforeEnter` 而不是 `redirect`：`redirect` 在全局守卫加载权限之前求值，首次加载时拿不到。这条记录还要带 `children: []`，因为 vue-router 类型要求 `component` / `children` / `redirect` 三选一，而带 `redirect` 的记录不执行 `beforeEnter`。副作用是刷新旧地址时，权限接口会多请求一次：重定向产生的那次导航，`from` 仍是起始位置 `/`。

@@ -14,7 +14,6 @@ export const permissionPolicyRoutes: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_SERVICE_PERMISSION_POLICY,
         title: t('权限策略库'),
-        isShowBreadcrumb: true,
         icon: 'hcm-icon bkhcm-icon-my-apply',
         checkAuth: 'cloud_vendor_config',
       }),

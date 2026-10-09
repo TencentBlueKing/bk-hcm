@@ -6,6 +6,9 @@ const scheme: RouteRecordRaw[] = [
     path: '/scheme',
     name: 'resource-scheme',
     component: () => import('@/views/scheme/index'),
+    meta: {
+      layout: { breadcrumb: { show: false } },
+    },
     children: [
       {
         path: 'recommendation',

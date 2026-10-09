@@ -25,6 +25,7 @@ const loadBalancerBiz: RouteRecordRaw[] = [
         activeKey: MENU_BUSINESS_LOAD_BALANCER,
         menu: {},
         icon: 'hcm-icon bkhcm-icon-loadbalancer',
+        layout: { breadcrumb: { show: false } },
       }),
     },
     children: [
@@ -120,6 +121,7 @@ const loadBalancerBiz: RouteRecordRaw[] = [
           relative: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
         },
         notMenu: true,
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },

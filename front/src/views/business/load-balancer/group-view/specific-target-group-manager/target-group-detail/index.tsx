@@ -1,7 +1,7 @@
 import { ComputedRef, PropType, computed, defineComponent, inject } from 'vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessStore } from '@/store';
-import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
+import { useCalcTopWithNotice } from '@/hooks/use-calc-top-with-notice';
 import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';

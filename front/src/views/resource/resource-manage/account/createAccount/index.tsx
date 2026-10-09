@@ -5,7 +5,7 @@ import AccountForm from './components/accountForm';
 import AccountResource from './components/accountResource';
 import ResultPage from './components/resultPage';
 import { useAccountStore } from '@/store';
-import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
+import { useCalcTopWithNotice } from '@/hooks/use-calc-top-with-notice';
 
 export default defineComponent({
   props: {

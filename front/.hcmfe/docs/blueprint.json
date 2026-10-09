@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "42c9d23a27d3a3addd78a8c835e9f6d06d1114a3"
+        "rootHash": "d05cde8ecebae2d2021d742fd52454db5c09b423"
       }
     },
     {
@@ -265,8 +265,10 @@
         "src/views/index.ts"
       ],
       "doc": "modules/app-shell.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "74a6d3ec4c26d5d09ca64ded9ce5a75addd0e344"
+      }
     },
     {
       "id": "model",

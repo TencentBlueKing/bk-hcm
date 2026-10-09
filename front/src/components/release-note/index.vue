@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+// @ts-expect-error
 import ReleaseNote from '@blueking/release-note';
 import '@blueking/release-note/vue3/vue3.css';
 import http from '@/http';
@@ -70,7 +71,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .header-release-note {
-  margin-right: 25px;
+  color: #96a2b9;
   font-size: 16px;
 
   &:hover {

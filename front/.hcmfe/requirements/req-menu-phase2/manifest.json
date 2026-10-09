@@ -1,0 +1,65 @@
+{
+  "id": "req-menu-phase2",
+  "title": "菜单整合二期：云资源与资源纳管迁移",
+  "createdAt": "2026-10-08T08:05:02.163Z",
+  "updatedAt": "2026-10-08T12:19:20.614Z",
+  "external": {
+    "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
+  },
+  "iterations": [
+    {
+      "wfId": "feat-menu-phase2-layout-menu-service",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：页面布局与菜单服务化",
+      "createdAt": "2026-10-08T08:05:12.432Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-view-auth",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：视图权限体系",
+      "createdAt": "2026-10-08T11:31:10.337Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-resource-manage",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：资源纳管主体",
+      "createdAt": "2026-10-08T11:31:12.301Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-recyclebin-oplog",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：回收管理与操作记录独立菜单",
+      "createdAt": "2026-10-08T11:31:15.650Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-account-manage",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：账号管理独立菜单",
+      "createdAt": "2026-10-08T11:31:18.714Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-resource-ops",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：资源运营一级视图重组与资源接入跳转",
+      "createdAt": "2026-10-08T11:31:22.704Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-resource-detail",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：资源详情页迁移",
+      "createdAt": "2026-10-08T12:19:20.574Z"
+    }
+  ],
+  "aggregatedArtifacts": {},
+  "codeScope": {
+    "globs": [],
+    "autoLearned": true
+  }
+}

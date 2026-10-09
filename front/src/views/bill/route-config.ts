@@ -138,6 +138,7 @@ const billManage: RouteRecordRaw[] = [
         title: '云账单管理',
         activeKey: MENU_BILL_MANAGE,
         checkAuth: 'account_bill_find',
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },

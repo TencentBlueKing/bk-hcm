@@ -1,4 +1,4 @@
-@import "./variables.scss";
+@import "./variables";
 
 * {
   box-sizing: border-box;
@@ -17,7 +17,7 @@
 
   ::-webkit-scrollbar-thumb {
     border-radius: 4px;
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, .1);
+    box-shadow: inset 0 0 6px rgb(0 0 0 / 10%);
     background-color: $color-scrollbar-thumb;
 
     &:hover {
@@ -26,7 +26,7 @@
   }
 
   ::-webkit-scrollbar-track {
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, .1);
+    box-shadow: inset 0 0 6px rgb(0 0 0 / 10%);
     border-radius: 4px;
     background-color: $color-scrollbar;
   }
@@ -38,20 +38,22 @@ ul, ol, li {
 
 html, body {
   width: 100%;
+  min-width: 1366px;
   height: 100%;
   scroll-behavior: smooth;
 }
 
 body {
-  overflow-x: auto;
-  overflow-y: hidden;
-  font: 400 14px/1.5 "Microsoft YaHei", "SF Pro Text", "Helvetica Neue", "Helvetica", Tahoma, SimHei, sans-serif;
+  overflow: auto hidden;
+  font: 400 14px/1.5 "Microsoft YaHei", "SF Pro Text", "Helvetica Neue", Helvetica, Tahoma, SimHei, sans-serif;
   color: $font-normal-color;
   background: $white;
 }
+
 #app{
   height: 100%;
 }
+
 .vue-grid-item > .vue-resizable-handle {
   z-index: 9999;
 }
@@ -76,6 +78,7 @@ a {
 .w280{
   width: 280px !important;
 }
+
 .w90 {
   width: 90px !important;
 }
@@ -131,6 +134,7 @@ a {
       & > button {
           margin-right: 12px;
       }
+
       .bk-button-text {
           div {
               display: flex;
@@ -141,10 +145,12 @@ a {
 
 .g-scroller {
   overflow: auto;
+
   &::-webkit-scrollbar {
     width: 4px;
     height: 4px;
   }
+
   &::-webkit-scrollbar-thumb {
       height: 5px;
       border-radius: 3px;
@@ -163,6 +169,7 @@ a {
   color: #fff!important;
   cursor: not-allowed!important;
 }
+
 .hcm-no-permision-text-btn {
   color: #dcdee5!important;
   cursor: not-allowed!important;

@@ -21,7 +21,6 @@ const operationLogBiz: RouteRecordRaw[] = [
       ...new Meta({
         title: '操作记录',
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: true,
         menu: {},
         icon: 'hcm-icon bkhcm-icon-operation-record',
       }),
@@ -36,7 +35,7 @@ const operationLogBiz: RouteRecordRaw[] = [
         title: '操作记录详情',
         notMenu: true,
         activeKey: MENU_BUSINESS_OPERATION_LOG,
-        isShowBreadcrumb: false,
+        layout: { breadcrumb: { show: false } },
         menu: {
           relative: MENU_BUSINESS_OPERATION_LOG_DETAILS,
         },
@@ -69,7 +68,7 @@ const operationLogRsc: RouteRecordRaw[] = [
         title: '操作记录详情',
         notMenu: true,
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        isShowBreadcrumb: false,
+        layout: { breadcrumb: { show: false } },
         menu: {
           relative: MENU_RESOURCE_OPERATION_LOG,
         },

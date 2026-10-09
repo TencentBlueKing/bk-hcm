@@ -1,0 +1,174 @@
+{
+  "id": "feat-menu-phase2-layout-menu-service",
+  "title": "菜单整合二期：页面布局与菜单服务化",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T08:05:12.432Z",
+  "updatedAt": "2026-10-09T06:56:43.303Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-layout-menu-service/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T08:11:37.171Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-layout-menu-service/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-09T06:56:42.197Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-09T06:55:01.192Z"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T08:05:12.432Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-09T06:55:01.192Z"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702243",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T08:06:06.573Z",
+      "note": "用户选择跳过：本单 2026-09-29 已通过 tapd-story-clarification 完成澄清并回写规范文档（含原需求描述），状态 approved；本地文档 docs/reqs/二期布局菜单服务化.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "views/home/index.tsx",
+        "app.vue",
+        "components/layout/index.vue",
+        "common/menu-service.ts",
+        "constants/menu-symbol.ts",
+        "views/index.ts",
+        "menu.vue",
+        "meta.ts",
+        "views/bill/route-config.ts",
+        "router/index.ts",
+        "src/constants/menu-symbol.ts",
+        "src/router/utils/history-storage.ts",
+        "src/router/meta.ts",
+        "src/vue-router.d.ts",
+        "src/router/hooks/use-back.ts",
+        "menu-symbol.ts",
+        "views/scheme/index.tsx",
+        "menu-item.vue",
+        "router/utils/history-storage.ts",
+        "bill/bill/header/index.tsx",
+        "vue-router.d.ts",
+        "use-back.ts",
+        "src/router/index.ts",
+        "src/router/module/common.ts",
+        "src/views/index.ts",
+        "router/module/resource.ts",
+        "resource-inside.ts",
+        "common.ts",
+        "src/common/menu-service.ts",
+        "src/hooks/use-breadcrumb.ts",
+        "src/typings/common.ts",
+        "src/router/module/business.ts",
+        "src/router/module/scheme.ts",
+        "src/router/module/service-inside.ts",
+        "src/views/load-balancer/route-config.ts",
+        "src/views/task/route-config.ts",
+        "src/views/ticket/route-config.ts",
+        "src/views/operation-log/route-config.ts",
+        "src/views/cloud-account-manage/route-config.ts",
+        "src/views/cloud-account-manage/permission-policy/route-config.ts",
+        "src/views/bill/route-config.ts",
+        "use-breadcrumb.ts",
+        "task/details/clb.vue",
+        "business.ts",
+        "scheme.ts",
+        "service-inside.ts",
+        "router/module/resource*.ts",
+        "main-content.vue",
+        "main.ts",
+        "src/components/layout/header.vue",
+        "src/components/layout/menu.vue",
+        "src/components/layout/menu-item.vue",
+        "src/components/layout/main-content.vue",
+        "src/components/layout/breadcrumb.vue",
+        "src/components/layout/footer.vue",
+        "src/components/layout/business-selector.tsx",
+        "src/components/release-note/index.vue",
+        "src/views/status/404.vue",
+        "src/views/status/error.vue",
+        "src/style/app-shell.scss",
+        "src/style/index.scss",
+        "src/style/common.scss",
+        "src/language/lang.ts",
+        "header.vue",
+        "utils/login-helper.ts",
+        "breadcrumb.vue",
+        "cloud-account-manage/index.vue",
+        "footer.vue",
+        "views/status/404.vue",
+        "error.vue",
+        "lang.ts",
+        "components/release-note/index.vue",
+        "views/home/release-note/index.vue",
+        "business-selector.tsx",
+        "views/home/business-selector/index.tsx",
+        "global.vue",
+        "components/business-selector/global.vue",
+        "style/app-shell.scss",
+        "views/home/index.scss",
+        "style/index.scss",
+        "style/common.scss",
+        "src/app.vue",
+        "src/views/home/index.tsx",
+        "src/views/home/index.scss",
+        "src/views/home/breadcrumb.tsx",
+        "src/views/home/breadcrumb.scss",
+        "src/views/home/hooks/useChangeHeaderTab.ts",
+        "src/views/home/hooks/to-legacy-menus.ts",
+        "src/views/home/hooks/useCalcTopWithNotice.ts",
+        "src/views/home/release-note/index.vue",
+        "src/views/home/business-selector/index.tsx",
+        "src/router/header-config.ts",
+        "src/hooks/use-calc-top-with-notice.ts",
+        "src/views/business/load-balancer/group-view/specific-target-group-manager/target-group-detail/index.tsx",
+        "src/views/resource/resource-manage/common/header/detail-header.tsx",
+        "src/views/resource/resource-manage/account/createAccount/index.tsx",
+        "router/header-config.ts",
+        "hooks/use-calc-top-with-notice.ts",
+        "router/module/common.ts",
+        "business-interceptor.ts",
+        "business-selector/global.vue",
+        "bkui-vue/dist/style.css"
+      ],
+      "contentFingerprint": "5a38f309bfb052f8413f1164be8d73d06c7f3d2b",
+      "codeBaseline": "b16584a19d624340e7e3756b27fca7760ffaf1db",
+      "seatedAt": "2026-10-09T06:56:43.303Z"
+    }
+  }
+}

@@ -30,7 +30,6 @@ export const ticketRoutes: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
         title: t('单据管理'),
-        isShowBreadcrumb: true,
         icon: 'hcm-icon bkhcm-icon-my-apply',
       }),
     },
@@ -43,6 +42,7 @@ export const ticketRoutes: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
         notMenu: true,
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },
@@ -57,7 +57,6 @@ export const ticketRoutesBiz: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
         title: t('单据管理'),
-        isShowBreadcrumb: true,
         icon: 'hcm-icon bkhcm-icon-my-apply',
       }),
     },
@@ -70,6 +69,7 @@ export const ticketRoutesBiz: RouteRecordRaw[] = [
       ...new Meta({
         activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
         notMenu: true,
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },
