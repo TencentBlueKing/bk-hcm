@@ -56,17 +56,6 @@ type SummaryBalancer struct {
 	PublicIPv6Addresses []string `json:"public_ipv6_addresses"`
 }
 
-// LoadBalancerBriefFields defines db fields needed by LoadBalancerBrief.
-var LoadBalancerBriefFields = []string{
-	"cloud_id",
-	"region",
-	"domain",
-	"private_ipv4_addresses",
-	"private_ipv6_addresses",
-	"public_ipv4_addresses",
-	"public_ipv6_addresses",
-}
-
 // LoadBalancerBrief defines load balancer brief info.
 type LoadBalancerBrief struct {
 	CloudID     string `json:"cloud_id"`

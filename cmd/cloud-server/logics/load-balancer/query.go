@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	typecore "hcm/pkg/adaptor/types/core"
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
@@ -521,7 +520,6 @@ func ListLoadBalancerBriefFromCloud(kt *kit.Kit, cliSet *client.ClientSet, opt *
 		return concurrentListLoadBalancerBrief(kt, cliSet, opt, queries)
 	}
 
-	start := time.Now()
 	firstPage, totalCount, err := listLoadBalancerBriefPage(kt, cliSet, opt, loadBalancerBriefQuery{})
 	if err != nil {
 		logs.Errorf("list load balancer brief from cloud failed, err: %v, account: %s, region: %s, rid: %s",
@@ -547,8 +545,8 @@ func ListLoadBalancerBriefFromCloud(kt *kit.Kit, cliSet *client.ClientSet, opt *
 	briefs = append(briefs, restPages...)
 
 	logs.Infof("list load balancer brief all pages from cloud success, account: %s, region: %s, total_count: %d, "+
-		"page_count: %d, count: %d, cost: %s, rid: %s",
-		opt.AccountID, opt.Region, totalCount, pageCount, len(briefs), time.Since(start), kt.Rid)
+		"page_count: %d, count: %d, rid: %s",
+		opt.AccountID, opt.Region, totalCount, pageCount, len(briefs), kt.Rid)
 
 	return briefs, nil
 }
@@ -561,7 +559,6 @@ func concurrentListLoadBalancerBrief(kt *kit.Kit, cliSet *client.ClientSet, opt 
 	// ListConcurrent 已在配置加载时校验大于 0，此处无需兜底
 	listConcurrent := converter.PtrToVal(clbCondSync.ListConcurrent)
 
-	start := time.Now()
 	results := make([][]corelb.LoadBalancerBrief, len(queries))
 	eg, _ := errgroup.WithContext(kt.Ctx)
 	eg.SetLimit(listConcurrent)
@@ -588,8 +585,8 @@ func concurrentListLoadBalancerBrief(kt *kit.Kit, cliSet *client.ClientSet, opt 
 	}
 
 	logs.Infof("concurrent list load balancer brief from cloud success, account: %s, region: %s, query_count: %d, "+
-		"concurrent: %d, count: %d, cost: %s, rid: %s", opt.AccountID, opt.Region, len(queries), listConcurrent,
-		len(briefs), time.Since(start), kt.Rid)
+		"concurrent: %d, count: %d, rid: %s", opt.AccountID, opt.Region, len(queries), listConcurrent,
+		len(briefs), kt.Rid)
 
 	return briefs, nil
 }
@@ -612,7 +609,6 @@ func listLoadBalancerBriefPage(kt *kit.Kit, cliSet *client.ClientSet, opt *ListL
 		},
 	}
 
-	start := time.Now()
 	var result *hcproto.TCloudListResult
 	var err error
 	switch opt.Vendor {
@@ -630,9 +626,9 @@ func listLoadBalancerBriefPage(kt *kit.Kit, cliSet *client.ClientSet, opt *ListL
 
 	briefs := convCloudLoadBalancerBrief(opt.Region, result.Details)
 	logs.Infof("list load balancer brief page from cloud success, account: %s, region: %s, offset: %d, "+
-		"limit: %d, cloud_id_count: %d, count: %d, total_count: %d, cost: %s, rid: %s",
+		"limit: %d, cloud_id_count: %d, count: %d, total_count: %d, rid: %s",
 		opt.AccountID, opt.Region, query.offset, typecore.TCloudQueryLimit, len(query.cloudIDs), len(briefs),
-		result.TotalCount, time.Since(start), kt.Rid)
+		result.TotalCount, kt.Rid)
 
 	return briefs, result.TotalCount, nil
 }
@@ -643,16 +639,30 @@ func convCloudLoadBalancerBrief(region string, lbs []typeslb.TCloudClb) []corelb
 		if one.LoadBalancer == nil {
 			continue
 		}
-		briefs = append(briefs, corelb.LoadBalancerBrief{
+		brief := corelb.LoadBalancerBrief{
 			CloudID:     converter.PtrToVal(one.LoadBalancerId),
 			Region:      region,
-			Address:     slice.First(converter.PtrToSlice(one.LoadBalancerVips)),
 			AddressIPv6: converter.PtrToVal(one.AddressIPv6),
 			Domain:      converter.PtrToVal(one.LoadBalancerDomain),
-		})
+		}
+		if vips := converter.PtrToSlice(one.LoadBalancerVips); len(vips) > 0 {
+			brief.Address = vips[0]
+		}
+		briefs = append(briefs, brief)
 	}
 
 	return briefs
+}
+
+// loadBalancerBriefFields defines db fields needed by corelb.LoadBalancerBrief.
+var loadBalancerBriefFields = []string{
+	"cloud_id",
+	"region",
+	"domain",
+	"private_ipv4_addresses",
+	"private_ipv6_addresses",
+	"public_ipv4_addresses",
+	"public_ipv6_addresses",
 }
 
 // ListLoadBalancerBriefFromDB 查询DB中单个地域的负载均衡简要信息
@@ -676,7 +686,7 @@ func ListLoadBalancerBriefFromDB(kt *kit.Kit, cli *dataservice.Client, opt *List
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(rules...),
-		Fields: corelb.LoadBalancerBriefFields,
+		Fields: loadBalancerBriefFields,
 		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 

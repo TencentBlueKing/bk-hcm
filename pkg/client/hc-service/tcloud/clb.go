@@ -50,11 +50,11 @@ func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error
 	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
 }
 
-// DeleteLoadBalancerByCond delete load balancer by condition.
-func (c *ClbClient) DeleteLoadBalancerByCond(kt *kit.Kit, req *sync.TCloudDelLoadBalancerByCondReq) error {
+// BatchDeleteLocalLoadBalancer batch delete local load balancer records, it does not delete cloud resources.
+func (c *ClbClient) BatchDeleteLocalLoadBalancer(kt *kit.Kit, req *sync.TCloudDelLocalLBReq) error {
 
-	return common.RequestNoResp[sync.TCloudDelLoadBalancerByCondReq](
-		c.client, http.MethodDelete, kt, req, "/load_balancers/by_condition/delete")
+	return common.RequestNoResp[sync.TCloudDelLocalLBReq](
+		c.client, http.MethodDelete, kt, req, "/load_balancers/local/batch_delete")
 }
 
 // SyncLoadBalancerByCond sync load balancer by condition.

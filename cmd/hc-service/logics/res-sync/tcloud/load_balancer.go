@@ -216,7 +216,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 
 	logs.Infof("[%s] will remove %d deleted load balancer from cloud, account: %s, region: %s, rid: %s",
 		enumor.TCloud, len(delCloudIDs), params.AccountID, params.Region, kt.Rid)
-	if err := cli.BatchDeleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+	if err := cli.BatchDeleteLocalLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 		logs.Errorf("fail to delete removed clb, err: %v, account: %s, region: %s, cloudIds: %v, rid: %s",
 			err, params.AccountID, params.Region, delCloudIDs, kt.Rid)
 		return err
@@ -225,9 +225,8 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 	return nil
 }
 
-// BatchDeleteLoadBalancer 按云上ID分批删除负载均衡，每批复用同步删除逻辑
-func (cli *client) BatchDeleteLoadBalancer(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
-
+// BatchDeleteLocalLoadBalancer 按云上ID分批删除本地负载均衡数据，每批复用同步删除逻辑，不会删除云上资源
+func (cli *client) BatchDeleteLocalLoadBalancer(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteLoadBalancer(kt, accountID, region, idBatch); err != nil {
 			logs.Errorf("[%s] fail to batch delete lb, err: %v, account: %s, region: %s, cloudIDs: %v, rid: %s",
