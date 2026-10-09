@@ -73,7 +73,7 @@ type CertExtUpdateReq[T corecert.Extension] struct {
 	ID               string          `json:"id" validate:"required"`
 	Name             string          `json:"name"`
 	Vendor           string          `json:"vendor"`
-	BkBizID          uint64          `json:"bk_biz_id"`
+	BkBizID          int64           `json:"bk_biz_id"`
 	AccountID        string          `json:"account_id"`
 	Domain           types.JsonField `json:"domain"`
 	CertType         enumor.CertType `json:"cert_type"`

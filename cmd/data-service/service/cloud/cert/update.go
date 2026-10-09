@@ -108,7 +108,7 @@ func batchUpdateCertExt[T corecert.Extension](cts *rest.Contexts, svc *certSvc) 
 		for _, item := range *req {
 			updateData := &tablecert.SslCertTable{
 				Name:             item.Name,
-				BkBizID:          int64(item.BkBizID),
+				BkBizID:          item.BkBizID,
 				Domain:           item.Domain,
 				CertType:         item.CertType,
 				CertStatus:       item.CertStatus,
