@@ -46,7 +46,7 @@ func (svc *imageSvc) UpdateImageBizTag(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
-		Basic: &meta.Basic{Type: meta.Image, Action: meta.Update},
+		Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Update},
 	}); err != nil {
 		logs.Errorf("update image biz tag auth failed, bkBizID: %d, err: %v, rid: %s",
 			req.BkBizID, err, cts.Kit.Rid)
