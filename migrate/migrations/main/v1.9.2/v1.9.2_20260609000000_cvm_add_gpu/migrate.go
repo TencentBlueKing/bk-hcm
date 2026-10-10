@@ -17,25 +17,40 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// hcm-migrate runs the database migrations of HCM.
-package main
+// Package migration is the migration cvm_add_gpu.
+package migration
 
 import (
-	"os"
+	"context"
 
-	"hcm/migrate/cli"
-	// import migrations, used to register every migration into the build.
-	_ "hcm/migrate/migrations"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/logs"
+	"hcm/migrate/register"
+	"hcm/migrate/util"
+	"hcm/pkg/dal/dao/orm"
 )
 
-func main() {
-	// Process logs go to stderr so they stay in the job log after the pod is
-	// gone; stdout only carries the plan and the summary.
-	logs.InitLogger(logs.LogConfig{ToStdErr: true, LogLineMaxSize: constant.MigrationLogLineMaxKB})
+// ID is the unique identifier of this migration file, in the form
+// <date>-<time>-<desc>-<random>. It must never change once executed.
+// Migrations that share an ID run only the earlier one in execution order.
+const ID = "20260609-0000-CVM-ADD-GPU-22BE"
 
-	code := cli.Run(os.Args[1:], os.Stdout, os.Stderr)
-	logs.CloseLogs()
-	os.Exit(code)
+func init() {
+	register.Main.Regist(ID, "v1.9.2", "20260609000000", &migration{})
+}
+
+type migration struct{}
+
+// Up applies the migration. Generated from external 0053_20260609_cvm_add_gpu.sql.
+func (m *migration) Up(ctx context.Context, o orm.Interface) error {
+	if err := util.AddColumn(ctx, o, util.AddColumnOpt{
+		Table:   "cvm",
+		Column:  "is_gpu",
+		Type:    "tinyint(1)",
+		NotNull: true,
+		Default: util.ExprDefault("0"),
+		Comment: "是否GPU机器：0-否，1-是",
+		After:   "machine_type",
+	}); err != nil {
+		return err
+	}
+	return nil
 }

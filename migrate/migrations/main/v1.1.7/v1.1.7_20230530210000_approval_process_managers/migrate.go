@@ -17,25 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// hcm-migrate runs the database migrations of HCM.
-package main
+// Package migration is the migration approval_process_managers.
+package migration
 
 import (
-	"os"
+	"context"
 
-	"hcm/migrate/cli"
-	// import migrations, used to register every migration into the build.
-	_ "hcm/migrate/migrations"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/logs"
+	"hcm/migrate/register"
+	"hcm/migrate/util"
+	"hcm/pkg/dal/dao/orm"
 )
 
-func main() {
-	// Process logs go to stderr so they stay in the job log after the pod is
-	// gone; stdout only carries the plan and the summary.
-	logs.InitLogger(logs.LogConfig{ToStdErr: true, LogLineMaxSize: constant.MigrationLogLineMaxKB})
+// ID is the unique identifier of this migration file, in the form
+// <date>-<time>-<desc>-<random>. It must never change once executed.
+// Migrations that share an ID run only the earlier one in execution order.
+const ID = "20230530-2100-APPROVAL-PROCESS-MANAGERS-9435"
 
-	code := cli.Run(os.Args[1:], os.Stdout, os.Stderr)
-	logs.CloseLogs()
-	os.Exit(code)
+func init() {
+	register.Main.Regist(ID, "v1.1.7", "20230530210000", &migration{})
+}
+
+type migration struct{}
+
+// Up applies the migration. Generated from external 0005_20230530_2100.sql.
+func (m *migration) Up(ctx context.Context, o orm.Interface) error {
+	if err := util.AddColumn(ctx, o, util.AddColumnOpt{
+		Table:   "approval_process",
+		Column:  "managers",
+		Type:    "varchar(255)",
+		NotNull: true,
+	}); err != nil {
+		return err
+	}
+	return nil
 }

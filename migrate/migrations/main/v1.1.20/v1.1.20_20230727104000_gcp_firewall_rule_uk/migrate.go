@@ -17,25 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// hcm-migrate runs the database migrations of HCM.
-package main
+// Package migration is the migration gcp_firewall_rule_uk.
+package migration
 
 import (
-	"os"
+	"context"
 
-	"hcm/migrate/cli"
-	// import migrations, used to register every migration into the build.
-	_ "hcm/migrate/migrations"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/logs"
+	"hcm/migrate/register"
+	"hcm/migrate/util"
+	"hcm/pkg/dal/dao/orm"
 )
 
-func main() {
-	// Process logs go to stderr so they stay in the job log after the pod is
-	// gone; stdout only carries the plan and the summary.
-	logs.InitLogger(logs.LogConfig{ToStdErr: true, LogLineMaxSize: constant.MigrationLogLineMaxKB})
+// ID is the unique identifier of this migration file, in the form
+// <date>-<time>-<desc>-<random>. It must never change once executed.
+// Migrations that share an ID run only the earlier one in execution order.
+const ID = "20230727-1040-GCP-FIREWALL-RULE-UK-3673"
 
-	code := cli.Run(os.Args[1:], os.Stdout, os.Stderr)
-	logs.CloseLogs()
-	os.Exit(code)
+func init() {
+	register.Main.Regist(ID, "v1.1.20", "20230727104000", &migration{})
+}
+
+type migration struct{}
+
+// Up applies the migration. Generated from external 0007_20230727_1040.sql.
+func (m *migration) Up(ctx context.Context, o orm.Interface) error {
+	if err := util.DropIndex(ctx, o, "gcp_firewall_rule", "idx_uk_name"); err != nil {
+		return err
+	}
+	if err := util.AddIndex(ctx, o, "gcp_firewall_rule", "idx_uk_account_id_name", []string{"account_id", "name"}, true); err != nil {
+		return err
+	}
+	return nil
 }

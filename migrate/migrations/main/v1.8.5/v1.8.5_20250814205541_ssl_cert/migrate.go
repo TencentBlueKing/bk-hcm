@@ -17,25 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// hcm-migrate runs the database migrations of HCM.
-package main
+// Package migration is the migration ssl_cert.
+package migration
 
 import (
-	"os"
+	"context"
 
-	"hcm/migrate/cli"
-	// import migrations, used to register every migration into the build.
-	_ "hcm/migrate/migrations"
-	"hcm/pkg/criteria/constant"
-	"hcm/pkg/logs"
+	"hcm/migrate/register"
+	"hcm/migrate/util"
+	"hcm/pkg/dal/dao/orm"
 )
 
-func main() {
-	// Process logs go to stderr so they stay in the job log after the pod is
-	// gone; stdout only carries the plan and the summary.
-	logs.InitLogger(logs.LogConfig{ToStdErr: true, LogLineMaxSize: constant.MigrationLogLineMaxKB})
+// ID is the unique identifier of this migration file, in the form
+// <date>-<time>-<desc>-<random>. It must never change once executed.
+// Migrations that share an ID run only the earlier one in execution order.
+const ID = "20250814-2055-SSL-CERT-21D7"
 
-	code := cli.Run(os.Args[1:], os.Stdout, os.Stderr)
-	logs.CloseLogs()
-	os.Exit(code)
+func init() {
+	register.Main.Regist(ID, "v1.8.5", "20250814205541", &migration{})
+}
+
+type migration struct{}
+
+// Up applies the migration. Generated from external 0040_ssl_cert.sql.
+func (m *migration) Up(ctx context.Context, o orm.Interface) error {
+	if err := util.AddColumn(ctx, o, util.AddColumnOpt{
+		Table:  "ssl_cert",
+		Column: "tags",
+		Type:   "JSON",
+		After:  "memo",
+	}); err != nil {
+		return err
+	}
+	return nil
 }
