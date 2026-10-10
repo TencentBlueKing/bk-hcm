@@ -20,6 +20,8 @@
 package tcloud
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
@@ -80,10 +82,13 @@ func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyn
 
 // CondSyncSubnet ...
 func CondSyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	if len(params.TagFilters) > 0 {
+		return fmt.Errorf("tcloud subnet conditional sync does not support tag_filters")
+	}
+
 	syncReq := sync.TCloudSyncReq{
-		AccountID:  params.AccountID,
-		CloudIDs:   params.CloudIDs,
-		TagFilters: params.TagFilters,
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
 	}
 	for i := range params.Regions {
 		syncReq.Region = params.Regions[i]

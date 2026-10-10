@@ -66,9 +66,8 @@ func (hd *subnetHandler) Prepare(cts *rest.Contexts) error {
 func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
 	if len(hd.request.CloudIDs) > 0 {
 		listOpt := &typecore.TCloudListOption{
-			Region:     hd.request.Region,
-			CloudIDs:   hd.request.CloudIDs,
-			TagFilters: hd.request.TagFilters,
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
 			Page: &typecore.TCloudPage{
 				Limit: constant.CloudResourceSyncMaxLimit,
 			},
@@ -86,8 +85,7 @@ func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
 	}
 
 	listOpt := &typecore.TCloudListOption{
-		Region:     hd.request.Region,
-		TagFilters: hd.request.TagFilters,
+		Region: hd.request.Region,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  constant.CloudResourceSyncMaxLimit,

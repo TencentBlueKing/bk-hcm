@@ -22,7 +22,6 @@ package core
 import (
 	"fmt"
 
-	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 )
@@ -84,8 +83,6 @@ type TCloudListOption struct {
 	Region   string      `json:"region" validate:"required"`
 	CloudIDs []string    `json:"cloud_ids" validate:"omitempty"`
 	Page     *TCloudPage `json:"page" validate:"required"`
-	// 指定标签过滤，仅部分 List 接口支持（如子网 DescribeSubnets）
-	TagFilters apicore.MultiValueTagMap `json:"tag_filters,omitempty"`
 }
 
 // Validate tcloud list option.
