@@ -160,6 +160,17 @@ type TCloudListOption struct {
 	Region    string           `json:"region" validate:"required"`
 	CloudIDs  []string         `json:"cloud_ids" validate:"omitempty,max=200"`
 	Page      *core.TCloudPage `json:"page" validate:"omitempty"`
+
+	OrderBy   *typelb.TCloudClbListOrderByField `json:"order_by" validate:"omitempty"`
+	OrderType *int64                            `json:"order_type" validate:"omitempty"`
+
+	TagFilters apicore.MultiValueTagMap `json:"tag_filters" validate:"omitempty"`
+}
+
+// TCloudListResult defines the result of list tcloud clb instances.
+type TCloudListResult struct {
+	Details    []typelb.TCloudClb `json:"details"`
+	TotalCount uint64             `json:"total_count"`
 }
 
 // Validate tcloud clb list option.

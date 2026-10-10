@@ -163,6 +163,12 @@ type TCloudListOption struct {
 	TagFilters apicore.MultiValueTagMap `json:"tag_filters"`
 }
 
+// TCloudListResult defines the result of list tcloud clb instances.
+type TCloudListResult struct {
+	Details    []TCloudClb `json:"details"`
+	TotalCount uint64      `json:"total_count"`
+}
+
 // Validate tcloud clb list option.
 func (opt TCloudListOption) Validate() error {
 	if err := validator.Validate.Struct(opt); err != nil {

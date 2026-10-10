@@ -216,6 +216,10 @@ func (s CloudServerSetting) Validate() error {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
 	}
 
+	if err := s.ConcurrentConfig.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
