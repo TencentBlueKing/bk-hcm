@@ -533,9 +533,6 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	case meta.Find:
 		// find resource is related to hcm account resource
 		return sys.ResourceFind, []client.Resource{res}, nil
-	case meta.Update:
-		// 无具体实例的「资源-IaaS资源操作」权限点，例如地域同步开关。调用方不传资源 ID。
-		return sys.IaaSResOperate, []client.Resource{res}, nil
 	case meta.Assign:
 		// assign resource to biz is related to hcm account & cmdb biz resource
 		bizRes := client.Resource{

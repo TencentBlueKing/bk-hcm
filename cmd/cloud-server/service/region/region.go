@@ -117,8 +117,8 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 地域没有实例级权限，各云厂商共用这一处鉴权，只校验「资源-IaaS资源操作」权限点。
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.CloudResource, Action: meta.Update}}
+	// 地域没有实例级权限，各云厂商共用这一处。只校验已有的「平台-全局配置」权限点，不绑定具体资源。
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.GlobalConfig, Action: meta.Update}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
