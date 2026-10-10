@@ -14,6 +14,7 @@ export enum TaskClbType {
   MODIFY_LAYER7_RS_WEIGHT = 'listener_layer7_rs_weight',
   TARGET_GROUP_MODIFY_WEIGHT = 'target_group_modify_weight',
   TARGET_GROUP_REMOVE_RS = 'target_group_remove_rs',
+  SYNC_LOAD_BALANCER = 'sync_load_balancer',
 }
 
 export type TaskType = TaskClbType;

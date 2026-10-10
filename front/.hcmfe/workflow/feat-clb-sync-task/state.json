@@ -1,0 +1,107 @@
+{
+  "id": "feat-clb-sync-task",
+  "title": "CLB任务管理同步进度前端",
+  "currentStage": "done",
+  "createdAt": "2026-08-31T08:12:39.147Z",
+  "updatedAt": "2026-09-01T09:38:04.294Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-sync-task/coding.md",
+        "kind": "file",
+        "addedAt": "2026-08-31T08:18:22.517Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-sync-task/test.md",
+        "kind": "file",
+        "addedAt": "2026-09-01T07:03:00.346Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-09-01T07:01:51.657Z",
+      "note": "用户要求查看工作流并继续推进；coding 过门已通，前进 test"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-09-01T09:36:46.484Z",
+      "note": "用户确认自测ok；test.md P0/P1 结论已写回；docs closeout 完成"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-08-31T08:12:39.147Z",
+      "gitHead": "9fec870b298ca73ae00ee15f23b43d2c761db51d"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-09-01T07:01:51.657Z",
+      "note": "用户要求查看工作流并继续推进；coding 过门已通，前进 test"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-09-01T09:36:46.484Z",
+      "note": "用户确认自测ok；test.md P0/P1 结论已写回；docs closeout 完成"
+    }
+  ],
+  "branch": "feat-clb-sync-task",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598137677539"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-08-31T08:16:10.613Z",
+      "note": "user chose skip: TAPD story already has clarification in description; reuse existing task-management UI; this iteration is coding-only lite"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-09-01T09:36:41.175Z",
+      "note": "gaps=base/resource/load-balancer/task/model(stub)；已增量写职责与同步/任务约定并 deepen 为 drafted。无新 promote。promotionQueue.totalOpen=0"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-09-01T09:38:04.294Z",
+      "note": "story 1069995598137677539 → status_14 (done)；owner 未变更。parent 1069995598136313446 rollup shouldAdvance：status_8 → status_18 → status_10；其余子项仍 status_8。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/model/task/search.view.ts",
+        "src/components/sync-account-resource/index.vue",
+        "src/views/load-balancer/use-clb-sync-feedback.ts",
+        "src/views/load-balancer/clb/load-balancer-table.vue",
+        "src/views/load-balancer/listener/listener-table.vue",
+        "src/views/resource/resource-manage/children/manage/load-balancer-manage.vue",
+        "src/views/load-balancer/device/main-content/listener-table.vue",
+        "src/views/load-balancer/clb/children/batch-import/index.vue",
+        "src/views/task/details/children/action-list/fields.ts",
+        "src/views/task/details/clb.vue",
+        "src/model/task/detail.view.ts",
+        "src/views/task/typings.ts",
+        "src/views/task/constants.ts",
+        "src/views/task/details/children/action-list/action-list.vue"
+      ],
+      "contentFingerprint": "b5b780051f5bfb1f2fe859bbf15610f1ed3bb099",
+      "codeBaseline": "818359a7fb532d8d4d24de2ad313eaab7dfa8369",
+      "seatedAt": "2026-09-01T03:35:49.482Z"
+    }
+  }
+}

@@ -49,19 +49,20 @@ const rerunState = reactive({
   isShow: false,
 });
 
-const isSopsOperation = computed(() =>
+const isRerunUnsupported = computed(() =>
   taskDetails.value?.operations?.some?.((op) =>
     [
       TaskClbType.DELETE_LISTENER,
       TaskClbType.MODIFY_LAYER4_RS_WEIGHT,
       TaskClbType.MODIFY_LAYER7_RS_WEIGHT,
       TaskClbType.UNBIND_LAYER4_RS,
+      TaskClbType.SYNC_LOAD_BALANCER,
     ].includes(op),
   ),
 );
 
 const rerunButtonDisabled = computed(() => {
-  return !selections.value.length || isSopsOperation.value;
+  return !selections.value.length || isRerunUnsupported.value;
 });
 
 // 本任务的状态
@@ -207,7 +208,7 @@ onMounted(() => {
       <bk-button
         theme="primary"
         :disabled="rerunButtonDisabled"
-        v-bk-tooltips="{ content: '暂不支持', disabled: !isSopsOperation }"
+        v-bk-tooltips="{ content: '暂不支持', disabled: !isRerunUnsupported }"
         @click="handleClickRerun"
       >
         失败任务重执行

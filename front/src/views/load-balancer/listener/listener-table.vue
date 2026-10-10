@@ -32,6 +32,7 @@ import ListenerBatchExportButton from '../children/export/listener-batch-button.
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import DetailsSideslider from './details.vue';
+import { useClbSyncFeedback } from '@/views/load-balancer/use-clb-sync-feedback';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 //* 接口请求使用lbId，避免details暂无数据，导致接口报错
@@ -44,6 +45,7 @@ const loadBalancerListenerStore = useLoadBalancerListenerStore();
 
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
+const { handleClbSyncSuccess, handleClbSyncError } = useClbSyncFeedback(() => currentGlobalBusinessId.value);
 
 const actionConfig: Record<ListenerActionType, ActionItemType> = {
   [ListenerActionType.ADD]: {
@@ -441,6 +443,8 @@ const handleUpdateListenerSuccess = async (id: string) => {
           regions: details.region,
           cloud_ids: [details.cloud_id],
         }"
+        :success-handler="handleClbSyncSuccess"
+        :error-handler="handleClbSyncError"
         @hidden="syncDialogState.isHidden = true"
       />
     </template>
