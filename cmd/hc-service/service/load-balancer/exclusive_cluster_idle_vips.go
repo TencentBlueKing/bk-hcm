@@ -30,6 +30,8 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
 // clusterResourceDescriber 查询独占集群闲置VIP翻页所需的最小 adaptor 能力集合，从完整的 tcloud.TCloud 接口中
@@ -37,7 +39,7 @@ import (
 type clusterResourceDescriber interface {
 	// DescribeClusterResources 查询独占集群内资源（含 VIP 闲置状态）
 	DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
-		*typelb.TCloudDescribeClusterResourcesResult, error)
+		*tclb.DescribeClusterResourcesResponseParams, error)
 }
 
 // TCloudDescribeClusterIdleVips 查询独占集群当前闲置的VIP列表，内部自动翻页取全并对结果去重，供cloud-server
@@ -74,6 +76,11 @@ func listAllClusterIdleVips(kt *kit.Kit, client clusterResourceDescriber, region
 	offset := uint64(0)
 	vipSet := make(map[string]struct{})
 
+	var vipFilter []string
+	if vip != "" {
+		vipFilter = []string{vip}
+	}
+
 	for page := 0; ; page++ {
 		if page >= constant.ExclusiveClusterIdleVipMaxPages {
 			return nil, fmt.Errorf("describe cluster(%s) idle vips exceeds max pages(%d)", clusterID,
@@ -82,8 +89,8 @@ func listAllClusterIdleVips(kt *kit.Kit, client clusterResourceDescriber, region
 
 		result, err := client.DescribeClusterResources(kt, &typelb.TCloudDescribeClusterResourcesOption{
 			Region:    region,
-			ClusterID: clusterID,
-			Vip:       vip,
+			ClusterID: []string{clusterID},
+			Vip:       vipFilter,
 			Idle:      &idle,
 			Limit:     &limit,
 			Offset:    &offset,
@@ -93,13 +100,19 @@ func listAllClusterIdleVips(kt *kit.Kit, client clusterResourceDescriber, region
 				err, kt.Rid)
 			return nil, err
 		}
+		if result == nil {
+			break
+		}
 
-		for _, one := range result.Resources {
-			vipSet[one.Vip] = struct{}{}
+		for _, one := range result.ClusterResourceSet {
+			if one == nil || cvt.PtrToVal(one.Vip) == "" {
+				continue
+			}
+			vipSet[cvt.PtrToVal(one.Vip)] = struct{}{}
 		}
 
 		// 翻页过程中闲置状态可能变化导致云侧 TotalCount 不稳定，以本页是否取满作为终止依据
-		if uint64(len(result.Resources)) < limit {
+		if uint64(len(result.ClusterResourceSet)) < limit {
 			break
 		}
 		offset += limit

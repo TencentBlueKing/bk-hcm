@@ -190,7 +190,7 @@ type TCloud interface {
 	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
 	DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
-		*typelb.TCloudDescribeClusterResourcesResult, error)
+		*tclb.DescribeClusterResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error

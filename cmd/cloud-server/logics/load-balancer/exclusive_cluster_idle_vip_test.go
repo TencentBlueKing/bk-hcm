@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest/client"
 
@@ -141,7 +142,7 @@ func TestCheckExclusiveClusterVipIdle_VipIdle(t *testing.T) {
 		writeOKResp(t, w, map[string]any{"count": 1, "details": []string{"1.1.1.2"}})
 	}))
 
-	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, enumor.TCloud, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
 	require.NoError(t, err)
 }
 
@@ -151,7 +152,7 @@ func TestCheckExclusiveClusterVipIdle_VipNotIdle(t *testing.T) {
 		writeOKResp(t, w, map[string]any{"count": 0, "details": []string{}})
 	}))
 
-	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, enumor.TCloud, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
 	require.Error(t, err)
 	require.Equal(t, errf.InvalidParameter, err.(*errf.ErrorF).Code)
 }
@@ -164,6 +165,17 @@ func TestCheckExclusiveClusterVipIdle_DescribeFailed(t *testing.T) {
 		require.NoError(t, err)
 	}))
 
-	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, enumor.TCloud, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
 	require.Error(t, err)
+}
+
+// TestCheckExclusiveClusterVipIdle_UnsupportedVendor 不支持的云厂商直接返回错误，不调用 hc-service。
+func TestCheckExclusiveClusterVipIdle_UnsupportedVendor(t *testing.T) {
+	cli := newTestHCServiceClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("hc-service should not be called for unsupported vendor")
+	}))
+
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, enumor.Aws, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "not support")
 }

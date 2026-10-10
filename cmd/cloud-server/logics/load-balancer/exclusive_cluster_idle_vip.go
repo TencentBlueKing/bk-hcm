@@ -20,6 +20,8 @@
 package lblogic
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
@@ -81,15 +83,25 @@ func CheckExclusiveClusterIdleVipQueryable(kt *kit.Kit, cli *dataservice.Client,
 }
 
 // CheckExclusiveClusterVipIdle 实时查云校验指定VIP在四层独占集群中当前是否仍然闲置，只查询该VIP本身。
-func CheckExclusiveClusterVipIdle(kt *kit.Kit, cli *hcservice.Client, accountID, region, cloudClusterID,
-	vip string) error {
+// The vendor parameter decides which hc-service client to call.
+func CheckExclusiveClusterVipIdle(kt *kit.Kit, cli *hcservice.Client, vendor enumor.Vendor, accountID, region,
+	cloudClusterID, vip string) error {
 
-	result, err := cli.TCloud.Clb.DescribeClusterIdleVips(kt, &hcproto.TCloudDescribeClusterIdleVipsReq{
+	req := &hcproto.TCloudDescribeClusterIdleVipsReq{
 		AccountID: accountID,
 		Region:    region,
 		ClusterID: cloudClusterID,
 		Vip:       vip,
-	})
+	}
+
+	var result *hcproto.TCloudDescribeClusterIdleVipsResult
+	var err error
+	switch vendor {
+	case enumor.TCloud:
+		result, err = cli.TCloud.Clb.DescribeClusterIdleVips(kt, req)
+	default:
+		return fmt.Errorf("vendor: %s not support describe cluster idle vips", vendor)
+	}
 	if err != nil {
 		logs.Errorf("describe exclusive cluster(cloud_cluster_id=%s) idle vips failed, err: %v, rid: %s",
 			cloudClusterID, err, kt.Rid)

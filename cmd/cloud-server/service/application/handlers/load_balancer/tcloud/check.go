@@ -25,6 +25,7 @@ import (
 	adcore "hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	hcbwpkg "hcm/pkg/api/hc-service/bandwidth-packages"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
@@ -66,8 +67,8 @@ func (a *ApplicationOfCreateTCloudLB) checkVipIdle() error {
 		return errf.New(errf.InvalidParameter, "cloud_cluster_ids must contain exactly one id when vip is specified")
 	}
 
-	return lblogic.CheckExclusiveClusterVipIdle(a.Cts.Kit, a.Client.HCService(), a.req.AccountID, a.req.Region,
-		a.req.CloudClusterIDs[0], vip)
+	return lblogic.CheckExclusiveClusterVipIdle(a.Cts.Kit, a.Client.HCService(), enumor.TCloud, a.req.AccountID,
+		a.req.Region, a.req.CloudClusterIDs[0], vip)
 }
 
 // checkBandwidthPackageEgress 计费方式为共享带宽包时，校验带宽包出口与可能被分配到的独占集群出口是否一致。

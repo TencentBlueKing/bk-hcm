@@ -259,14 +259,16 @@ func (opt TCloudDescribeResourcesOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// TCloudDescribeClusterResourcesReq 查询独占集群资源（内部测试端点用）
-type TCloudDescribeClusterResourcesReq struct {
+// TCloudDescribeClusterIdleVipsRawReq 查询独占集群资源（内部测试端点用，复用集群资源列表查询能力
+// DescribeClusterResources）。命名区别于 TCloudDescribeClusterIdleVipsReq（业务视角闲置VIP查询接口，
+// 自动翻页取全并去重）。
+type TCloudDescribeClusterIdleVipsRawReq struct {
 	AccountID                                    string `json:"account_id" validate:"required"`
 	*typelb.TCloudDescribeClusterResourcesOption `json:",inline" validate:"required"`
 }
 
-// Validate tcloud describe cluster resources req.
-func (req TCloudDescribeClusterResourcesReq) Validate() error {
+// Validate tcloud describe cluster idle vips raw req.
+func (req TCloudDescribeClusterIdleVipsRawReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

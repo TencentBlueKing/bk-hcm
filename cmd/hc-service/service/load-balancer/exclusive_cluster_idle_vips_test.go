@@ -29,8 +29,10 @@ import (
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
+	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
 func testKit() *kit.Kit {
@@ -39,17 +41,19 @@ func testKit() *kit.Kit {
 
 // fakeClusterResourceDescriber clusterResourceDescriber 的 fake 实现，按调用次数依次返回预置的分页结果。
 type fakeClusterResourceDescriber struct {
-	pages   []*typelb.TCloudDescribeClusterResourcesResult
-	err     error
-	offsets []uint64
-	vips    []string
+	pages      []*tclb.DescribeClusterResourcesResponseParams
+	err        error
+	offsets    []uint64
+	vips       [][]string
+	clusterIDs [][]string
 }
 
 func (f *fakeClusterResourceDescriber) DescribeClusterResources(_ *kit.Kit,
-	opt *typelb.TCloudDescribeClusterResourcesOption) (*typelb.TCloudDescribeClusterResourcesResult, error) {
+	opt *typelb.TCloudDescribeClusterResourcesOption) (*tclb.DescribeClusterResourcesResponseParams, error) {
 
 	f.offsets = append(f.offsets, *opt.Offset)
 	f.vips = append(f.vips, opt.Vip)
+	f.clusterIDs = append(f.clusterIDs, opt.ClusterID)
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -61,17 +65,24 @@ func (f *fakeClusterResourceDescriber) DescribeClusterResources(_ *kit.Kit,
 	return f.pages[idx], nil
 }
 
-// TestListAllClusterIdleVips_SinglePage 单页即可取全：total_count 小于等于页大小时只请求一页。
+// idleResource 构造一条闲置 VIP 资源。
+func idleResource(vip string) *tclb.ClusterResource {
+	return &tclb.ClusterResource{Vip: cvt.ValToPtr(vip), Idle: cvt.ValToPtr("True")}
+}
+
+// resourcePage 构造一页查询结果。
+func resourcePage(total uint64, items ...*tclb.ClusterResource) *tclb.DescribeClusterResourcesResponseParams {
+	return &tclb.DescribeClusterResourcesResponseParams{
+		TotalCount:         cvt.ValToPtr(total),
+		ClusterResourceSet: items,
+	}
+}
+
+// TestListAllClusterIdleVips_SinglePage 单页即可取全：本页未取满时只请求一页，查询条件带上集群ID且不带 vip。
 func TestListAllClusterIdleVips_SinglePage(t *testing.T) {
 	fake := &fakeClusterResourceDescriber{
-		pages: []*typelb.TCloudDescribeClusterResourcesResult{
-			{
-				TotalCount: 2,
-				Resources: []typelb.TCloudClusterResource{
-					{Vip: "1.1.1.1", Idle: true},
-					{Vip: "1.1.1.2", Idle: true},
-				},
-			},
+		pages: []*tclb.DescribeClusterResourcesResponseParams{
+			resourcePage(2, idleResource("1.1.1.1"), idleResource("1.1.1.2")),
 		},
 	}
 
@@ -81,27 +92,24 @@ func TestListAllClusterIdleVips_SinglePage(t *testing.T) {
 	require.Equal(t, []string{"1.1.1.1", "1.1.1.2"}, vips)
 	require.Len(t, fake.offsets, 1)
 	require.EqualValues(t, 0, fake.offsets[0])
+	require.Equal(t, []string{"tgw-1"}, fake.clusterIDs[0])
+	require.Empty(t, fake.vips[0])
 }
 
-// TestListAllClusterIdleVips_MultiPage 多页翻页取全：total_count 超过单页大小时自动翻页直到取全，且对重复
-// VIP 去重。
+// TestListAllClusterIdleVips_MultiPage 多页翻页取全：上一页取满时自动翻页直到取全，且对重复 VIP 去重。
 func TestListAllClusterIdleVips_MultiPage(t *testing.T) {
 	pageLimit := uint64(constant.BatchOperationMaxLimit)
 	total := pageLimit + 1
-	page1 := make([]typelb.TCloudClusterResource, 0, pageLimit)
+	page1 := make([]*tclb.ClusterResource, 0, pageLimit)
 	for i := uint64(0); i < pageLimit; i++ {
-		page1 = append(page1, typelb.TCloudClusterResource{Vip: "vip-" + strconv.FormatUint(i, 10), Idle: true})
-	}
-	// 第二页与第一页有一个重复 VIP，验证去重逻辑。
-	page2 := []typelb.TCloudClusterResource{
-		{Vip: "vip-0", Idle: true},
-		{Vip: "vip-last", Idle: true},
+		page1 = append(page1, idleResource("vip-"+strconv.FormatUint(i, 10)))
 	}
 
 	fake := &fakeClusterResourceDescriber{
-		pages: []*typelb.TCloudDescribeClusterResourcesResult{
-			{TotalCount: total, Resources: page1},
-			{TotalCount: total, Resources: page2},
+		pages: []*tclb.DescribeClusterResourcesResponseParams{
+			resourcePage(total, page1...),
+			// 第二页与第一页有一个重复 VIP，验证去重逻辑。
+			resourcePage(total, idleResource("vip-0"), idleResource("vip-last")),
 		},
 	}
 
@@ -116,9 +124,7 @@ func TestListAllClusterIdleVips_MultiPage(t *testing.T) {
 // TestListAllClusterIdleVips_TotalCountZero total_count 为 0 时，只请求一页且返回空列表。
 func TestListAllClusterIdleVips_TotalCountZero(t *testing.T) {
 	fake := &fakeClusterResourceDescriber{
-		pages: []*typelb.TCloudDescribeClusterResourcesResult{
-			{TotalCount: 0, Resources: []typelb.TCloudClusterResource{}},
-		},
+		pages: []*tclb.DescribeClusterResourcesResponseParams{resourcePage(0)},
 	}
 
 	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
@@ -140,34 +146,32 @@ func TestListAllClusterIdleVips_AdaptorError(t *testing.T) {
 // TestListAllClusterIdleVips_WithVip 指定 vip 时只查询该 VIP：查询条件带上 vip，且一次请求即可结束。
 func TestListAllClusterIdleVips_WithVip(t *testing.T) {
 	fake := &fakeClusterResourceDescriber{
-		pages: []*typelb.TCloudDescribeClusterResourcesResult{
-			{TotalCount: 1, Resources: []typelb.TCloudClusterResource{{Vip: "1.1.1.2", Idle: true}}},
-		},
+		pages: []*tclb.DescribeClusterResourcesResponseParams{resourcePage(1, idleResource("1.1.1.2"))},
 	}
 
 	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "1.1.1.2")
 	require.NoError(t, err)
 	require.Equal(t, []string{"1.1.1.2"}, vips)
-	require.Equal(t, []string{"1.1.1.2"}, fake.vips)
+	require.Equal(t, [][]string{{"1.1.1.2"}}, fake.vips)
 	require.Len(t, fake.offsets, 1)
 }
 
 // fullIdleVipPage 构造一页取满的闲置 VIP 结果，totalCount 由调用方指定，用于模拟云侧返回的总数不可信。
-func fullIdleVipPage(prefix string, totalCount uint64) *typelb.TCloudDescribeClusterResourcesResult {
-	resources := make([]typelb.TCloudClusterResource, 0, constant.BatchOperationMaxLimit)
+func fullIdleVipPage(prefix string, totalCount uint64) *tclb.DescribeClusterResourcesResponseParams {
+	resources := make([]*tclb.ClusterResource, 0, constant.BatchOperationMaxLimit)
 	for i := 0; i < constant.BatchOperationMaxLimit; i++ {
-		resources = append(resources, typelb.TCloudClusterResource{Vip: prefix + strconv.Itoa(i), Idle: true})
+		resources = append(resources, idleResource(prefix+strconv.Itoa(i)))
 	}
-	return &typelb.TCloudDescribeClusterResourcesResult{TotalCount: totalCount, Resources: resources}
+	return resourcePage(totalCount, resources...)
 }
 
 // TestListAllClusterIdleVips_StopsOnPartialPage 以本页是否取满作为终止依据：即使云侧返回的 total_count 偏小，
 // 只要上一页取满就继续翻页，直到出现未取满的页才结束。
 func TestListAllClusterIdleVips_StopsOnPartialPage(t *testing.T) {
 	fake := &fakeClusterResourceDescriber{
-		pages: []*typelb.TCloudDescribeClusterResourcesResult{
+		pages: []*tclb.DescribeClusterResourcesResponseParams{
 			fullIdleVipPage("a-", 0),
-			{TotalCount: 0, Resources: []typelb.TCloudClusterResource{{Vip: "last", Idle: true}}},
+			resourcePage(0, idleResource("last")),
 		},
 	}
 
@@ -179,7 +183,7 @@ func TestListAllClusterIdleVips_StopsOnPartialPage(t *testing.T) {
 
 // TestListAllClusterIdleVips_ExceedMaxPages 云侧一直返回满页时，翻页次数达到上限后返回错误，不无限翻页。
 func TestListAllClusterIdleVips_ExceedMaxPages(t *testing.T) {
-	pages := make([]*typelb.TCloudDescribeClusterResourcesResult, 0, constant.ExclusiveClusterIdleVipMaxPages+1)
+	pages := make([]*tclb.DescribeClusterResourcesResponseParams, 0, constant.ExclusiveClusterIdleVipMaxPages+1)
 	for i := 0; i <= constant.ExclusiveClusterIdleVipMaxPages; i++ {
 		pages = append(pages, fullIdleVipPage(strconv.Itoa(i)+"-", 0))
 	}
@@ -193,12 +197,12 @@ func TestListAllClusterIdleVips_ExceedMaxPages(t *testing.T) {
 
 // TestListAllClusterIdleVips_ExactlyMaxPages 恰好在最后一个允许的页取完（该页未取满）时不报错。
 func TestListAllClusterIdleVips_ExactlyMaxPages(t *testing.T) {
-	pages := make([]*typelb.TCloudDescribeClusterResourcesResult, 0, constant.ExclusiveClusterIdleVipMaxPages)
+	pages := make([]*tclb.DescribeClusterResourcesResponseParams, 0, constant.ExclusiveClusterIdleVipMaxPages)
 	for i := 0; i < constant.ExclusiveClusterIdleVipMaxPages-1; i++ {
 		pages = append(pages, fullIdleVipPage(strconv.Itoa(i)+"-", 0))
 	}
-	pages = append(pages, &typelb.TCloudDescribeClusterResourcesResult{
-		Resources: []typelb.TCloudClusterResource{{Vip: "last", Idle: true}},
+	pages = append(pages, &tclb.DescribeClusterResourcesResponseParams{
+		ClusterResourceSet: []*tclb.ClusterResource{idleResource("last")},
 	})
 	fake := &fakeClusterResourceDescriber{pages: pages}
 

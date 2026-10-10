@@ -54,8 +54,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
 	// 内部测试端点：查询独占集群资源（含VIP闲置状态），仅供联调/测试直接验证，不对外暴露
-	h.Add("TCloudDescribeClusterResources", http.MethodPost,
-		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/query", svc.TCloudDescribeClusterResources)
+	h.Add("TCloudDescribeClusterIdleVipsRaw", http.MethodPost,
+		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/query", svc.TCloudDescribeClusterIdleVipsRaw)
 	// 业务视角闲置VIP查询接口用：自动翻页取全并去重后返回
 	h.Add("TCloudDescribeClusterIdleVips", http.MethodPost,
 		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/describe", svc.TCloudDescribeClusterIdleVips)
@@ -296,10 +296,10 @@ func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
 }
 
-// TCloudDescribeClusterResources 查询独占集群内的资源（含VIP闲置状态），仅供内部联调/测试使用，不经
-// cloud-server/web-server 对外暴露
-func (svc *clbSvc) TCloudDescribeClusterResources(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudDescribeClusterResourcesReq)
+// TCloudDescribeClusterIdleVipsRaw 查询独占集群内的资源（含VIP闲置状态），仅供内部联调/测试使用，不经
+// cloud-server/web-server 对外暴露。复用集群资源列表查询能力（DescribeClusterResources），原样透传云端响应。
+func (svc *clbSvc) TCloudDescribeClusterIdleVipsRaw(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudDescribeClusterIdleVipsRawReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
