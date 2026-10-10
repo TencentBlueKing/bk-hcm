@@ -25,8 +25,10 @@ import (
 	"net/http"
 	"testing"
 
+	protolb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
 )
@@ -43,16 +45,40 @@ func testKit() *kit.Kit {
 	return &kit.Kit{Ctx: context.Background()}
 }
 
+// requireBodyHasFields 断言请求体的过滤条件里包含所有给定字段。
+func requireBodyHasFields(t *testing.T, body string, fields ...string) {
+	t.Helper()
+	for _, field := range fields {
+		require.Contains(t, body, `"field":"`+field+`"`)
+	}
+}
+
+// newOwnershipReq 构造归属校验用的创建请求，clusterTag 为空表示不指定标签。
+func newOwnershipReq(clusterTag string, cloudClusterIDs []string) *protolb.TCloudLoadBalancerCreateReq {
+	req := &protolb.TCloudLoadBalancerCreateReq{
+		AccountID: "0000001",
+		BkBizID:   213,
+		Region:    "ap-guangzhou",
+	}
+	req.CloudClusterIDs = cloudClusterIDs
+	if clusterTag != "" {
+		req.ClusterTag = cvt.ValToPtr(clusterTag)
+	}
+	return req
+}
+
 // TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz cluster_tag 归属当前业务，校验通过。
 func TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
 		require.Contains(t, body, `"field":"cluster_tag"`)
+		// 标签归属校验必须同时限定业务、账号和地域
+		requireBodyHasFields(t, body, "bk_biz_id", "account_id", "region")
 		writeOKResp(t, w, map[string]any{"count": 1, "details": []any{}})
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "ziyan-serven", nil)
+	err := CheckExclusiveClusterOwnership(testKit(), cli, newOwnershipReq("ziyan-serven", nil))
 	require.NoError(t, err)
 }
 
@@ -64,7 +90,7 @@ func TestCheckExclusiveClusterOwnership_ClusterTagNotBelongToBiz(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "other-biz-tag", nil)
+	err := CheckExclusiveClusterOwnership(testKit(), cli, newOwnershipReq("other-biz-tag", nil))
 	require.Error(t, err)
 	require.Equal(t, errf.PermissionDenied, err.(*errf.ErrorF).Code)
 	require.NotContains(t, err.Error(), "other-biz-tag")
@@ -75,6 +101,8 @@ func TestCheckExclusiveClusterOwnership_AllClusterIDsBelongToBiz(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
 		require.Contains(t, body, `"field":"cloud_id"`)
+		// 四层集群归属校验必须同时限定业务、账号和地域
+		requireBodyHasFields(t, body, "bk_biz_id", "account_id", "region")
 		writeOKResp(t, w, map[string]any{
 			"count": 2,
 			"details": []map[string]any{
@@ -85,7 +113,7 @@ func TestCheckExclusiveClusterOwnership_AllClusterIDsBelongToBiz(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "", []string{"tgw-1", "tgw-2"})
+	err := CheckExclusiveClusterOwnership(testKit(), cli, newOwnershipReq("", []string{"tgw-1", "tgw-2"}))
 	require.NoError(t, err)
 }
 
@@ -101,7 +129,7 @@ func TestCheckExclusiveClusterOwnership_SomeClusterIDNotBelongToBiz(t *testing.T
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "", []string{"tgw-1", "tgw-2"})
+	err := CheckExclusiveClusterOwnership(testKit(), cli, newOwnershipReq("", []string{"tgw-1", "tgw-2"}))
 	require.Error(t, err)
 	require.Equal(t, errf.PermissionDenied, err.(*errf.ErrorF).Code)
 	require.Contains(t, err.Error(), "tgw-2")
@@ -115,6 +143,6 @@ func TestCheckExclusiveClusterOwnership_BothEmpty(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "", nil)
+	err := CheckExclusiveClusterOwnership(testKit(), cli, newOwnershipReq("", nil))
 	require.NoError(t, err)
 }

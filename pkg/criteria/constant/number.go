@@ -53,9 +53,6 @@ const (
 	// ExcelImportRowLimit five thousand 五千
 	ExcelImportRowLimit = 5000
 
-	// CloudClusterIDsMaxLimit 单次请求携带的独占集群云上ID数量上限
-	CloudClusterIDsMaxLimit = 100
-
 	// BatchTaskMaxLimit 批量操作最大的限制数量
 	BatchTaskMaxLimit = 20
 	// MonitorMaxInstanceLimit 监控数据获取的实例数量上限

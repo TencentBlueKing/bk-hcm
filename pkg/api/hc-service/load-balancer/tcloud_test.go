@@ -20,10 +20,10 @@
 package hclb
 
 import (
+	"strconv"
 	"testing"
 
 	typelb "hcm/pkg/adaptor/types/load-balancer"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
@@ -182,16 +182,16 @@ func TestValidateSpec_LegacySharedRequestUnaffected(t *testing.T) {
 	require.NoError(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_CloudClusterIDsExceedLimit cloud_cluster_ids 数量超过上限时返回错误。
-func TestValidateSpec_CloudClusterIDsExceedLimit(t *testing.T) {
+// TestValidateSpec_ManyCloudClusterIDs cloud_cluster_ids 数量没有上限限制，大量四层集群ID时校验通过。
+func TestValidateSpec_ManyCloudClusterIDs(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 
-	ids := make([]string, constant.CloudClusterIDsMaxLimit+1)
+	ids := make([]string, 1200)
 	for i := range ids {
-		ids[i] = "tgw-" + string(rune('a'+i%26))
+		ids[i] = "tgw-" + strconv.Itoa(i)
 	}
 	spec.CloudClusterIDs = ids
 
-	require.Error(t, spec.ValidateSpec())
+	require.NoError(t, spec.ValidateSpec())
 }

@@ -20,6 +20,7 @@
 package lblogic
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -53,11 +54,33 @@ func newEgressMockHandler(t *testing.T, tgwEgresses, stgwEgresses []string) http
 	}
 }
 
+// TestComputeExclusiveClusterEgressSet_QueryConditions 四层按业务、集群类型和云上集群ID查询，七层按业务、集群类型、
+// 标签、账号和地域查询。
+func TestComputeExclusiveClusterEgressSet_QueryConditions(t *testing.T) {
+	inner := newEgressMockHandler(t, []string{"center_egress1"}, []string{"center_egress1"})
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := readBody(t, r)
+		if strings.Contains(body, `"TGW"`) {
+			requireBodyHasFields(t, body, "bk_biz_id", "cluster_type", "cloud_id")
+		} else {
+			requireBodyHasFields(t, body, "bk_biz_id", "cluster_type", "cluster_tag", "account_id", "region")
+		}
+		r.Body = io.NopCloser(strings.NewReader(body))
+		inner(w, r)
+	})
+	cli := newTestDataServiceClient(t, handler)
+
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli,
+		newOwnershipReq("ziyan-serven", []string{"tgw-1"}))
+	require.NoError(t, err)
+	require.Equal(t, []string{"center_egress1"}, allowed)
+}
+
 // TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch 只传四层，带宽包出口不在 TGW 出口集合内。
 func TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, []string{"center_egress1"}, nil))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "", []string{"tgw-1"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("", []string{"tgw-1"}))
 	require.NoError(t, err)
 	require.False(t, slice.IsItemInSlice(allowed, "center_egress2"))
 }
@@ -66,7 +89,7 @@ func TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch(t *testing.T) {
 func TestComputeExclusiveClusterEgressSet_OnlyL4MultiEgressMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, []string{"center_egress1", "center_egress2"}, nil))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "", []string{"tgw-1", "tgw-2"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("", []string{"tgw-1", "tgw-2"}))
 	require.NoError(t, err)
 	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
@@ -75,7 +98,7 @@ func TestComputeExclusiveClusterEgressSet_OnlyL4MultiEgressMatch(t *testing.T) {
 func TestComputeExclusiveClusterEgressSet_OnlyL7NotMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, nil, []string{"center_egress1"}))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", nil)
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", nil))
 	require.NoError(t, err)
 	require.False(t, slice.IsItemInSlice(allowed, "center_egress2"))
 }
@@ -85,7 +108,7 @@ func TestComputeExclusiveClusterEgressSet_OnlyL7Match(t *testing.T) {
 	cli := newTestDataServiceClient(t,
 		newEgressMockHandler(t, nil, []string{"center_egress1", "center_egress2"}))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", nil)
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", nil))
 	require.NoError(t, err)
 	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
@@ -97,7 +120,7 @@ func TestComputeExclusiveClusterEgressSet_BothWithinIntersection(t *testing.T) {
 		[]string{"center_egress1", "center_egress3"},
 	))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", []string{"tgw-1"}))
 	require.NoError(t, err)
 	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
@@ -109,7 +132,7 @@ func TestComputeExclusiveClusterEgressSet_BothOnlyInL4(t *testing.T) {
 		[]string{"center_egress3"},
 	))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", []string{"tgw-1"}))
 	require.NoError(t, err)
 	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
@@ -121,7 +144,7 @@ func TestComputeExclusiveClusterEgressSet_BothOnlyInL7(t *testing.T) {
 		[]string{"center_egress1", "center_egress3"},
 	))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", []string{"tgw-1"}))
 	require.NoError(t, err)
 	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
@@ -133,7 +156,7 @@ func TestComputeExclusiveClusterEgressSet_BothIntersectionEmpty(t *testing.T) {
 		[]string{"center_egress2"},
 	))
 
-	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
+	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, newOwnershipReq("ziyan-serven", []string{"tgw-1"}))
 	require.NoError(t, err)
 	require.Empty(t, allowed)
 	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))

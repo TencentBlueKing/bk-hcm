@@ -37,12 +37,14 @@ import (
 // "类型非TGW"（均返回InvalidParameter）与"存在但不归属当前业务"（返回PermissionDenied，且不在错误信息中
 // 回显该集群实际归属的业务）两类错误语义。
 func CheckExclusiveClusterIdleVipQueryable(kt *kit.Kit, cli *dataservice.Client, bkBizID int64,
-	cloudClusterID string) error {
+	accountID, region, cloudClusterID string) error {
 
 	listReq := &core.ListReq{
 		Fields: []string{"bk_biz_id", "cluster_type"},
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("cloud_id", cloudClusterID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("region", region),
 		),
 		Page: core.NewDefaultBasePage(),
 	}

@@ -151,3 +151,59 @@ func TestListAllClusterIdleVips_WithVip(t *testing.T) {
 	require.Equal(t, []string{"1.1.1.2"}, fake.vips)
 	require.Len(t, fake.offsets, 1)
 }
+
+// fullIdleVipPage 构造一页取满的闲置 VIP 结果，totalCount 由调用方指定，用于模拟云侧返回的总数不可信。
+func fullIdleVipPage(prefix string, totalCount uint64) *typelb.TCloudDescribeClusterResourcesResult {
+	resources := make([]typelb.TCloudClusterResource, 0, constant.BatchOperationMaxLimit)
+	for i := 0; i < constant.BatchOperationMaxLimit; i++ {
+		resources = append(resources, typelb.TCloudClusterResource{Vip: prefix + strconv.Itoa(i), Idle: true})
+	}
+	return &typelb.TCloudDescribeClusterResourcesResult{TotalCount: totalCount, Resources: resources}
+}
+
+// TestListAllClusterIdleVips_StopsOnPartialPage 以本页是否取满作为终止依据：即使云侧返回的 total_count 偏小，
+// 只要上一页取满就继续翻页，直到出现未取满的页才结束。
+func TestListAllClusterIdleVips_StopsOnPartialPage(t *testing.T) {
+	fake := &fakeClusterResourceDescriber{
+		pages: []*typelb.TCloudDescribeClusterResourcesResult{
+			fullIdleVipPage("a-", 0),
+			{TotalCount: 0, Resources: []typelb.TCloudClusterResource{{Vip: "last", Idle: true}}},
+		},
+	}
+
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
+	require.NoError(t, err)
+	require.Len(t, vips, constant.BatchOperationMaxLimit+1)
+	require.Len(t, fake.offsets, 2)
+}
+
+// TestListAllClusterIdleVips_ExceedMaxPages 云侧一直返回满页时，翻页次数达到上限后返回错误，不无限翻页。
+func TestListAllClusterIdleVips_ExceedMaxPages(t *testing.T) {
+	pages := make([]*typelb.TCloudDescribeClusterResourcesResult, 0, constant.ExclusiveClusterIdleVipMaxPages+1)
+	for i := 0; i <= constant.ExclusiveClusterIdleVipMaxPages; i++ {
+		pages = append(pages, fullIdleVipPage(strconv.Itoa(i)+"-", 0))
+	}
+	fake := &fakeClusterResourceDescriber{pages: pages}
+
+	_, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "exceeds max pages")
+	require.Len(t, fake.offsets, constant.ExclusiveClusterIdleVipMaxPages)
+}
+
+// TestListAllClusterIdleVips_ExactlyMaxPages 恰好在最后一个允许的页取完（该页未取满）时不报错。
+func TestListAllClusterIdleVips_ExactlyMaxPages(t *testing.T) {
+	pages := make([]*typelb.TCloudDescribeClusterResourcesResult, 0, constant.ExclusiveClusterIdleVipMaxPages)
+	for i := 0; i < constant.ExclusiveClusterIdleVipMaxPages-1; i++ {
+		pages = append(pages, fullIdleVipPage(strconv.Itoa(i)+"-", 0))
+	}
+	pages = append(pages, &typelb.TCloudDescribeClusterResourcesResult{
+		Resources: []typelb.TCloudClusterResource{{Vip: "last", Idle: true}},
+	})
+	fake := &fakeClusterResourceDescriber{pages: pages}
+
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
+	require.NoError(t, err)
+	require.Len(t, vips, (constant.ExclusiveClusterIdleVipMaxPages-1)*constant.BatchOperationMaxLimit+1)
+	require.Len(t, fake.offsets, constant.ExclusiveClusterIdleVipMaxPages)
+}

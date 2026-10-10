@@ -67,7 +67,7 @@ type TCloudLoadBalancerSpec struct {
 	// ClusterTag 七层独占集群标签
 	ClusterTag *string `json:"cluster_tag" validate:"omitempty"`
 	// CloudClusterIDs 四层（TGW）独占集群的云上ID列表，取自标签聚合查询接口返回的 cloud_cluster_id
-	CloudClusterIDs []string `json:"cloud_cluster_ids" validate:"omitempty,max=100"`
+	CloudClusterIDs []string `json:"cloud_cluster_ids" validate:"omitempty"`
 }
 
 // IsExclusive 是否独占型请求
@@ -96,10 +96,6 @@ func (spec *TCloudLoadBalancerSpec) validateExclusive() error {
 	if !hasClusterTag && !hasClusterIDs {
 		return errors.New("cluster_tag/cloud_cluster_ids can not be both empty when exclusive is 1")
 	}
-	if len(spec.CloudClusterIDs) > constant.CloudClusterIDsMaxLimit {
-		return fmt.Errorf("cloud_cluster_ids count should <= %d", constant.CloudClusterIDsMaxLimit)
-	}
-
 	if err := spec.validateExclusiveVip(); err != nil {
 		return err
 	}

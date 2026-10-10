@@ -61,7 +61,7 @@ func (svc *lbSvc) ListBizExclusiveClusterIdleVips(cts *rest.Contexts) (any, erro
 	}
 
 	if err := lblogic.CheckExclusiveClusterIdleVipQueryable(cts.Kit, svc.client.DataService(), bkBizID,
-		req.CloudClusterID); err != nil {
+		req.AccountID, req.Region, req.CloudClusterID); err != nil {
 		return nil, err
 	}
 

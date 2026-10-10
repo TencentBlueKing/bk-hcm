@@ -40,7 +40,7 @@ func TestCheckExclusiveClusterIdleVipQueryable_NotFound(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "tgw-not-exist")
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "tgw-not-exist")
 	require.Error(t, err)
 	require.Equal(t, errf.InvalidParameter, err.(*errf.ErrorF).Code)
 }
@@ -55,7 +55,7 @@ func TestCheckExclusiveClusterIdleVipQueryable_NotTGWType(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "stgw-1")
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "stgw-1")
 	require.Error(t, err)
 	require.Equal(t, errf.InvalidParameter, err.(*errf.ErrorF).Code)
 }
@@ -71,10 +71,29 @@ func TestCheckExclusiveClusterIdleVipQueryable_NotBelongToBiz(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "tgw-1")
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "tgw-1")
 	require.Error(t, err)
 	require.Equal(t, errf.PermissionDenied, err.(*errf.ErrorF).Code)
 	require.NotContains(t, err.Error(), "999")
+}
+
+// TestCheckExclusiveClusterIdleVipQueryable_FilterByAccountAndRegion 查询本地集群时同时按云上集群ID、账号和地域过滤，
+// 避免不同账号下同名云上集群ID相互干扰。
+func TestCheckExclusiveClusterIdleVipQueryable_FilterByAccountAndRegion(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := readBody(t, r)
+		requireBodyHasFields(t, body, "cloud_id", "account_id", "region")
+		require.Contains(t, body, `"0000001"`)
+		require.Contains(t, body, `"ap-guangzhou"`)
+		writeOKResp(t, w, map[string]any{
+			"count":   1,
+			"details": []map[string]any{{"bk_biz_id": 213, "cluster_type": "TGW"}},
+		})
+	})
+	cli := newTestDataServiceClient(t, handler)
+
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "tgw-1")
+	require.NoError(t, err)
 }
 
 // TestCheckExclusiveClusterIdleVipQueryable_Pass 集群存在、类型为TGW、且归属当前业务，校验通过。
@@ -87,7 +106,7 @@ func TestCheckExclusiveClusterIdleVipQueryable_Pass(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "tgw-1")
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "tgw-1")
 	require.NoError(t, err)
 }
 
@@ -99,7 +118,7 @@ func TestCheckExclusiveClusterIdleVipQueryable_DataServiceError(t *testing.T) {
 	})
 	cli := newTestDataServiceClient(t, handler)
 
-	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "tgw-1")
+	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "0000001", "ap-guangzhou", "tgw-1")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "mock server error")
 }

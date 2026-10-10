@@ -44,8 +44,7 @@ func (a *ApplicationOfCreateTCloudLB) CheckReq() error {
 		return nil
 	}
 
-	if err := lblogic.CheckExclusiveClusterOwnership(a.Cts.Kit, a.Client.DataService(), a.req.BkBizID,
-		cvt.PtrToVal(a.req.ClusterTag), a.req.CloudClusterIDs); err != nil {
+	if err := lblogic.CheckExclusiveClusterOwnership(a.Cts.Kit, a.Client.DataService(), a.req); err != nil {
 		return err
 	}
 
@@ -82,15 +81,14 @@ func (a *ApplicationOfCreateTCloudLB) checkBandwidthPackageEgress() error {
 		return err
 	}
 
-	allowedEgresses, err := lblogic.ComputeExclusiveClusterEgressSet(a.Cts.Kit, a.Client.DataService(), a.req.BkBizID,
-		cvt.PtrToVal(a.req.ClusterTag), a.req.CloudClusterIDs)
+	allowedEgresses, err := lblogic.ComputeExclusiveClusterEgressSet(a.Cts.Kit, a.Client.DataService(), a.req)
 	if err != nil {
 		return err
 	}
 
 	if !slice.IsItemInSlice(allowedEgresses, egress) {
 		return errf.Newf(errf.InvalidParameter,
-			"bandwidth package egress(%s) is not allowed by the selected exclusive cluster(s)", egress)
+			"bandwidth package egress(%s) is not allowed by the selected exclusive clusters", egress)
 	}
 
 	return nil
