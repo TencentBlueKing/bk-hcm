@@ -683,7 +683,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string,
 // buildExclusiveClusterExtension 根据云上 ClusterTag/ClusterIds 与本地独占集群表批量查询结果，构建
 // extension.exclusive 与 extension.clusters。
 func buildExclusiveClusterExtension(cloud typeslb.TCloudClb,
-	clusterMap map[string]corelb.BaseExclusiveCluster) (*bool, []corelb.TCloudExtensionCluster) {
+	clusterMap map[string]corelb.BaseExclusiveCluster) (bool, []corelb.TCloudExtensionCluster) {
 
 	clusterTag := cvt.PtrToVal(cloud.ClusterTag)
 	cloudClusterIDs := cvt.PtrToSlice(cloud.ClusterIds)
@@ -717,7 +717,7 @@ func buildExclusiveClusterExtension(cloud typeslb.TCloudClb,
 	}
 
 	exclusive := len(clusterTag) != 0 || len(cloudClusterIDs) != 0
-	return cvt.ValToPtr(exclusive), clusters
+	return exclusive, clusters
 }
 
 func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*common.VpcDB,

@@ -44,7 +44,7 @@ func TestBuildExclusiveClusterExtension_NonExclusive(t *testing.T) {
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, map[string]corelb.BaseExclusiveCluster{})
 
-	require.False(t, cvt.PtrToVal(exclusive))
+	require.False(t, exclusive)
 	require.NotNil(t, clusters)
 	require.Len(t, clusters, 0)
 }
@@ -58,7 +58,7 @@ func TestBuildExclusiveClusterExtension_OnlyL4(t *testing.T) {
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
 
-	require.True(t, cvt.PtrToVal(exclusive))
+	require.True(t, exclusive)
 	require.Len(t, clusters, 1)
 	require.Equal(t, "tgw-1", clusters[0].CloudClusterID)
 	require.Equal(t, "000001", clusters[0].ClusterID)
@@ -77,7 +77,7 @@ func TestBuildExclusiveClusterExtension_MixedL4AndL7ClusterIds(t *testing.T) {
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
 
-	require.True(t, cvt.PtrToVal(exclusive))
+	require.True(t, exclusive)
 	require.Len(t, clusters, 2)
 
 	byID := make(map[string]corelb.TCloudExtensionCluster, len(clusters))
@@ -99,7 +99,7 @@ func TestBuildExclusiveClusterExtension_ClusterTagWithoutLandingSTGW(t *testing.
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
 
-	require.True(t, cvt.PtrToVal(exclusive))
+	require.True(t, exclusive)
 	require.Len(t, clusters, 2)
 
 	var stgwElem *corelb.TCloudExtensionCluster
@@ -121,7 +121,7 @@ func TestBuildExclusiveClusterExtension_ClusterIDNotSyncedLocally(t *testing.T) 
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, map[string]corelb.BaseExclusiveCluster{})
 
-	require.True(t, cvt.PtrToVal(exclusive))
+	require.True(t, exclusive)
 	require.Len(t, clusters, 1)
 	require.Equal(t, "tgw-deleted", clusters[0].CloudClusterID)
 	require.Equal(t, "", clusters[0].ClusterID)
@@ -138,7 +138,7 @@ func TestBuildExclusiveClusterExtension_ClusterTagWithLandingSTGW(t *testing.T) 
 
 	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
 
-	require.True(t, cvt.PtrToVal(exclusive))
+	require.True(t, exclusive)
 	require.Len(t, clusters, 1)
 	require.Equal(t, "stgw-1", clusters[0].CloudClusterID)
 }
