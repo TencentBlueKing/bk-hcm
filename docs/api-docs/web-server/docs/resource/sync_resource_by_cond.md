@@ -10,39 +10,55 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 
 ### 输入参数
 
-| 参数名称       | 参数类型   | 必选 | 描述                                                  |
-|------------|--------|----|-----------------------------------------------------|
-| vendor     | string | 是  | 云厂商                                                 |
-| account_id | string | 是  | 账号ID                                                |
-| res        | string | 是  | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud) |
+
+| 参数名称       | 参数类型   | 必选  | 描述                                                  |
+| ---------- | ------ | --- | --------------------------------------------------- |
+| vendor     | string | 是   | 云厂商                                                 |
+| account_id | string | 是   | 账号ID                                                |
+| res        | string | 是   | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud) |
+
 
 #### vendor=tcloud
 
-| 参数名称        | 参数类型                | 必选 | 描述               |
-|-------------|---------------------|----|------------------|
-| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
-| cloud_ids   | []string            | 否  | 资源id，数量上限20      |
-| tag_filters | map[string][]string | 否  | 指定同步标签过滤器标签，上限5  |
+
+| 参数名称        | 参数类型                | 必选  | 描述               |
+| ----------- | ------------------- | --- | ---------------- |
+| regions     | []string            | 是   | 指定资源同步地域，最少1，最大5 |
+| cloud_ids   | []string            | 否   | 资源id，数量上限20      |
+| tag_filters | map[string][]string | 否   | 指定同步标签过滤器标签，上限5  |
+
+
 
 
 #### vendor=huawei
 
-| 参数名称        | 参数类型                | 必选 | 描述               |
-|-------------|---------------------|----|------------------|
-| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
+
+| 参数名称    | 参数类型     | 必选  | 描述               |
+| ------- | -------- | --- | ---------------- |
+| regions | []string | 是   | 指定资源同步地域，最少1，最大5 |
+
+
+
 
 #### vendor=azure
 
-| 参数名称                 | 参数类型     | 必选 | 描述                 |
-|----------------------|----------|----|--------------------|
-| resource_group_names | []string | 是  | 指定资源同步的资源组，最少1，最大5 |
+
+| 参数名称                 | 参数类型     | 必选  | 描述                 |
+| -------------------- | -------- | --- | ------------------ |
+| resource_group_names | []string | 是   | 指定资源同步的资源组，最少1，最大5 |
+
+
 
 
 #### vendor=aws
 
-| 参数名称        | 参数类型                | 必选 | 描述               |
-|-------------|---------------------|----|------------------|
-| regions     | []string            | 否  | 云上地域 ID（如 `us-east-1`），不是地域表主键。`security_group` 必填，最少 1、最多 5。`region`、`zone` 可不传，表示同步该账号下 `sync_enable=true` 的全部地域。显式传入已屏蔽地域（`sync_enable=false`）会返回错误，提示该地域已屏蔽，不会静默跳过，也不会调用该地域的云厂商 API。 |
+
+| 参数名称    | 参数类型     | 必选  | 描述                                                                                                                                                                        |
+| ------- | -------- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| regions | []string | 否   | 云上地域 ID，不是地域表主键。`security_group` 必填，最少 1、最多 5。`region`、`zone` 可不传，表示同步该账号下 `sync_enable=true` 的全部地域。显式传入已屏蔽地域（`sync_enable=false`）会返回错误，提示该地域已屏蔽，不会静默跳过，也不会调用该地域的云厂商 API。 |
+
+
+
 
 ### 调用示例
 
@@ -59,7 +75,7 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 }
 ```
 
-2. 同步'ap-guangzhou'地域下，标签biz='1234'的资源
+1. 同步'ap-guangzhou'地域下，标签biz='1234'的资源
 
 ```json
 {
@@ -74,6 +90,8 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 }
 ```
 
+
+
 ### 响应示例
 
 ```json
@@ -83,9 +101,14 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 }
 ```
 
+
+
 ### 响应参数说明
 
+
 | 参数名称    | 参数类型   | 描述   |
-|---------|--------|------|
+| ------- | ------ | ---- |
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
+
+
