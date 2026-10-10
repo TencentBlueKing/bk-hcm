@@ -117,6 +117,10 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 
 	// IN 查询是集合语义，数量校验必须用去重后的地域，否则重复入参会被误判为不存在。
 	req.Regions = slice.Unique(req.Regions)
+	// 不传 regions 时上游不使用该字段，查询结果没有调用方。
+	if len(req.Regions) == 0 {
+		return req, syncFunc, nil
+	}
 
 	rules := buildAwsCondSyncRegionRules(accountID, req.Regions)
 
@@ -138,48 +142,19 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		}
 		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
 	}
-	regions, err := resolveAwsCondSyncRegions(req.Regions, regionList)
-	if err != nil {
+	if err := checkAwsRequestRegions(req.Regions, regionList); err != nil {
 		return nil, nil, err
 	}
-	req.Regions = regions
 	return req, syncFunc, nil
 }
 
 // buildAwsCondSyncRegionRules 构造条件同步的地域查询条件。
-// 未指定地域（全量同步）时加上 sync_enable=true，查询结果即待同步地域，被屏蔽地域不会进入逐地域调用。
-// 显式指定地域时不按 sync_enable 过滤，便于区分不存在和已屏蔽；已屏蔽地域直接报错，不静默跳过。
+// 只在显式指定地域时调用。不按 sync_enable 过滤，便于区分不存在和已屏蔽。
 func buildAwsCondSyncRegionRules(accountID string, regions []string) []*filter.AtomRule {
-	rules := []*filter.AtomRule{tools.RuleEqual("account_id", accountID)}
-	if len(regions) > 0 {
-		rules = append(rules, tools.RuleIn("region_id", regions))
-		return rules
+	return []*filter.AtomRule{
+		tools.RuleEqual("account_id", accountID),
+		tools.RuleIn("region_id", regions),
 	}
-	rules = append(rules, tools.RuleEqual("sync_enable", true))
-	return rules
-}
-
-// resolveAwsCondSyncRegions 得到本次条件同步实际要调用的云地域 ID。
-// 未指定地域时只返回 sync_enable=true 的地域；显式指定时保留原请求，但已屏蔽或不存在则报错。
-func resolveAwsCondSyncRegions(requestRegions []string, regionList []region.AwsRegion) ([]string, error) {
-	if len(requestRegions) > 0 {
-		if err := checkAwsRequestRegions(requestRegions, regionList); err != nil {
-			return nil, err
-		}
-		return requestRegions, nil
-	}
-
-	enabled := make([]string, 0, len(regionList))
-	for _, one := range regionList {
-		if !one.SyncEnable {
-			continue
-		}
-		enabled = append(enabled, one.RegionID)
-	}
-	if len(enabled) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "aws region is empty")
-	}
-	return enabled, nil
 }
 
 // checkAwsRequestRegions 区分请求地域不存在和同步已禁用。
