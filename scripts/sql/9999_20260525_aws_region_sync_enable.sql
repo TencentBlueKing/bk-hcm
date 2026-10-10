@@ -17,32 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package region
+/*
+    SQLVER=9999,HCMVER=v9.9.9
 
-import "hcm/pkg/criteria/enumor"
+    Notes:
+    1. aws_region 表添加 sync_enable 字段，用于控制地域是否参与资源同步
+    2. 默认值为 1（启用同步），存量数据自动兼容
+*/
 
-// AwsRegion define aws region.
-type AwsRegion struct {
-	ID         string        `json:"id"`
-	Vendor     enumor.Vendor `json:"vendor"`
-	AccountID  string        `json:"account_id"`
-	RegionID   string        `json:"region_id"`
-	RegionName string        `json:"region_name"`
-	Status     string        `json:"status"`
-	Endpoint   string        `json:"endpoint"`
-	SyncEnable bool          `json:"sync_enable"`
-	Creator    string        `json:"creator"`
-	Reviser    string        `json:"reviser"`
-	CreatedAt  string        `json:"created_at"`
-	UpdatedAt  string        `json:"updated_at"`
-}
+START TRANSACTION;
 
-// GetID ...
-func (region AwsRegion) GetID() string {
-	return region.ID
-}
+ALTER TABLE `aws_region`
+    ADD COLUMN `sync_enable` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用同步(0:禁用 1:启用)' AFTER `endpoint`;
 
-// GetCloudID ...
-func (region AwsRegion) GetCloudID() string {
-	return region.RegionID
-}
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+
+COMMIT;

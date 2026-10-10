@@ -42,7 +42,7 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 
 | 参数名称        | 参数类型                | 必选 | 描述               |
 |-------------|---------------------|----|------------------|
-| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
+| regions     | []string            | 否  | 云上地域 ID（如 `us-east-1`），不是地域表主键。`security_group` 必填，最少 1、最多 5。`region`、`zone` 可不传，表示同步该账号下 `sync_enable=true` 的全部地域。显式传入已屏蔽地域（`sync_enable=false`）会返回错误，提示该地域已屏蔽，不会静默跳过，也不会调用该地域的云厂商 API。 |
 
 ### 调用示例
 

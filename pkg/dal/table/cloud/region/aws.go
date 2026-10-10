@@ -41,6 +41,7 @@ var AwsRegionColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "region_name", NamedC: "region_name", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "endpoint", NamedC: "endpoint", Type: enumor.String},
+	{Column: "sync_enable", NamedC: "sync_enable", Type: enumor.Boolean},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -63,6 +64,8 @@ type AwsRegionTable struct {
 	Status string `db:"status" validate:"max=32"`
 	// Endpoint Aws的Endpoint
 	Endpoint string `db:"endpoint" validate:"max=64"`
+	// SyncEnable 是否启用同步
+	SyncEnable *bool `db:"sync_enable"`
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64"`
 	// Reviser 更新者
