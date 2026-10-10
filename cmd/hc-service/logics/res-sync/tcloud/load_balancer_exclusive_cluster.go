@@ -108,12 +108,12 @@ func (cli *client) listExclusiveClusterFromCloud(kt *kit.Kit, params *SyncBasePa
 		ClusterTypes: exclusiveClusterTypes,
 		Page: &adcore.TCloudPage{
 			Offset: 0,
-			Limit:  constant.TCLBDescribeMax,
+			Limit:  constant.CloudResourceSyncMaxLimit,
 		},
 	}
 	result := make([]typeslb.TCloudExclusiveCluster, 0, len(params.CloudIDs))
 
-	for _, cloudIDs := range slice.Split(params.CloudIDs, constant.TCLBDescribeMax) {
+	for _, cloudIDs := range slice.Split(params.CloudIDs, constant.CloudResourceSyncMaxLimit) {
 		opt.CloudIDs = cloudIDs
 		batch, err := cli.cloudCli.ListExclusiveClusters(kt, opt)
 		if err != nil {
