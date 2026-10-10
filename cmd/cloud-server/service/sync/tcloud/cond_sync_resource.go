@@ -20,6 +20,8 @@
 package tcloud
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
@@ -47,6 +49,7 @@ var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.ZoneCloudResType:               CondSyncZone,
 	enumor.LoadBalancerCloudResType:       CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType:      CondSyncSecurityGroup,
+	enumor.SubnetCloudResType:             CondSyncSubnet,
 	enumor.SubAccountCloudResType:         CondSyncSubAccount,
 	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
 }
@@ -73,6 +76,29 @@ func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyn
 			return err
 		}
 		logs.Infof("[%s] conditional sync load balancer end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncSubnet ...
+func CondSyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	if len(params.TagFilters) > 0 {
+		return fmt.Errorf("tcloud subnet conditional sync does not support tag_filters")
+	}
+
+	syncReq := sync.TCloudSyncReq{
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloud.Subnet.SyncSubnet(kt.Ctx, kt.Header(), &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync subnet failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync subnet end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
 	}
 	return nil
 }

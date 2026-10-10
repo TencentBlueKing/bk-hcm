@@ -64,6 +64,26 @@ func (hd *subnetHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *subnetHandler) Next(kt *kit.Kit) ([]string, error) {
+	if len(hd.request.CloudIDs) > 0 {
+		listOpt := &typecore.TCloudListOption{
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
+			Page: &typecore.TCloudPage{
+				Limit: constant.CloudResourceSyncMaxLimit,
+			},
+		}
+		subnetResult, err := hd.syncCli.CloudCli().ListSubnet(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list tcloud subnet failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+			return nil, err
+		}
+		cloudIDs := make([]string, 0, len(subnetResult.Details))
+		for _, one := range subnetResult.Details {
+			cloudIDs = append(cloudIDs, one.CloudID)
+		}
+		return cloudIDs, nil
+	}
+
 	listOpt := &typecore.TCloudListOption{
 		Region: hd.request.Region,
 		Page: &typecore.TCloudPage{
