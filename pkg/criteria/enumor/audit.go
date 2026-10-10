@@ -56,35 +56,38 @@ const (
 	RootAccountAuditResType             AuditResourceType = "root_account"
 	PermissionTemplateAuditResType      AuditResourceType = "permission_template"
 	PermissionPolicyLibraryAuditResType AuditResourceType = "permission_policy_library"
+	// LoadBalancerExclusiveClusterAuditResType is load balancer exclusive cluster audit resource type
+	LoadBalancerExclusiveClusterAuditResType AuditResourceType = "load_balancer_exclusive_cluster"
 )
 
 // AuditResourceTypeEnums resource type map.
 var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
-	SubAccountAuditResType:              {},
-	SubAccountSecretAuditResType:        {},
-	AccountSecretAuditResType:           {},
-	AccountAuditResType:                 {},
-	SecurityGroupAuditResType:           {},
-	SecurityGroupRuleAuditResType:       {},
-	VpcCloudAuditResType:                {},
-	SubnetAuditResType:                  {},
-	DiskAuditResType:                    {},
-	CvmAuditResType:                     {},
-	RouteTableAuditResType:              {},
-	EipAuditResType:                     {},
-	GcpFirewallRuleAuditResType:         {},
-	NetworkInterfaceAuditResType:        {},
-	ArgumentTemplateAuditResType:        {},
-	SslCertAuditResType:                 {},
-	LoadBalancerAuditResType:            {},
-	TargetGroupAuditResType:             {},
-	ListenerAuditResType:                {},
-	UrlRuleAuditResType:                 {},
-	UrlRuleDomainAuditResType:           {},
-	MainAccountAuditResType:             {},
-	RootAccountAuditResType:             {},
-	PermissionTemplateAuditResType:      {},
-	PermissionPolicyLibraryAuditResType: {},
+	SubAccountAuditResType:                   {},
+	SubAccountSecretAuditResType:             {},
+	AccountSecretAuditResType:                {},
+	AccountAuditResType:                      {},
+	SecurityGroupAuditResType:                {},
+	SecurityGroupRuleAuditResType:            {},
+	VpcCloudAuditResType:                     {},
+	SubnetAuditResType:                       {},
+	DiskAuditResType:                         {},
+	CvmAuditResType:                          {},
+	RouteTableAuditResType:                   {},
+	EipAuditResType:                          {},
+	GcpFirewallRuleAuditResType:              {},
+	NetworkInterfaceAuditResType:             {},
+	ArgumentTemplateAuditResType:             {},
+	SslCertAuditResType:                      {},
+	LoadBalancerAuditResType:                 {},
+	TargetGroupAuditResType:                  {},
+	ListenerAuditResType:                     {},
+	UrlRuleAuditResType:                      {},
+	UrlRuleDomainAuditResType:                {},
+	MainAccountAuditResType:                  {},
+	RootAccountAuditResType:                  {},
+	PermissionTemplateAuditResType:           {},
+	PermissionPolicyLibraryAuditResType:      {},
+	LoadBalancerExclusiveClusterAuditResType: {},
 }
 
 // Exist judge enum value exist.

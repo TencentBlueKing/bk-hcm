@@ -1,0 +1,229 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package loadbalancer
+
+import (
+	"fmt"
+
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/audit"
+	idgenerator "hcm/pkg/dal/dao/id-generator"
+	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/dal/table"
+	tableaudit "hcm/pkg/dal/table/audit"
+	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+	"hcm/pkg/dal/table/utils"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+
+	"github.com/jmoiron/sqlx"
+)
+
+// ExclusiveCluster only used for load balancer exclusive cluster.
+type ExclusiveCluster interface {
+	List(kt *kit.Kit, opt *types.ListOption) (*types.ListLoadBalancerExclusiveClusterDetails, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tablelb.LoadBalancerExclusiveClusterTable) ([]string, error)
+	BatchUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tablelb.LoadBalancerExclusiveClusterTable) error
+	BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+}
+
+var _ ExclusiveCluster = new(ExclusiveClusterDao)
+
+// ExclusiveClusterDao load balancer exclusive cluster dao.
+type ExclusiveClusterDao struct {
+	Orm   orm.Interface
+	IDGen idgenerator.IDGenInterface
+	Audit audit.Interface
+}
+
+// BatchCreateWithTx create load balancer exclusive cluster with tx.
+func (dao *ExclusiveClusterDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
+	models []tablelb.LoadBalancerExclusiveClusterTable) ([]string, error) {
+
+	if len(models) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "models to create is required")
+	}
+
+	tableName := table.LoadBalancerExclusiveClusterTable
+	ids, err := dao.IDGen.Batch(kt, tableName, len(models))
+	if err != nil {
+		return nil, err
+	}
+
+	for index := range models {
+		if err = models[index].InsertValidate(); err != nil {
+			return nil, err
+		}
+		models[index].ID = ids[index]
+	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES(%s)`, tableName,
+		tablelb.LoadBalancerExclusiveClusterColumns.ColumnExpr(),
+		tablelb.LoadBalancerExclusiveClusterColumns.ColonNameExpr())
+
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
+		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", tableName, err, sql, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
+	}
+
+	// create audit
+	audits := make([]*tableaudit.AuditTable, 0, len(models))
+	for _, model := range models {
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:      model.ID,
+			CloudResID: model.CloudID,
+			ResName:    model.Name,
+			ResType:    enumor.LoadBalancerExclusiveClusterAuditResType,
+			Action:     enumor.Create,
+			BkBizID:    model.BkBizID,
+			Vendor:     model.Vendor,
+			AccountID:  model.AccountID,
+			Operator:   kt.User,
+			Source:     kt.GetRequestSource(),
+			Rid:        kt.Rid,
+			AppCode:    kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: model,
+			},
+		})
+	}
+	if err = dao.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create load balancer exclusive cluster audit failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+// BatchUpdateWithTx update load balancer exclusive cluster with tx. It is the only update method, reused by both
+// cloud attribute sync and bk_biz_id assignment, isolated by the fields the caller assigns on the model (zero
+// value fields are skipped by utils.RearrangeSQLDataWithOption).
+func (dao *ExclusiveClusterDao) BatchUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx,
+	models []tablelb.LoadBalancerExclusiveClusterTable) error {
+
+	if len(models) == 0 {
+		return errf.New(errf.InvalidParameter, "models to update is required")
+	}
+
+	for _, model := range models {
+		if len(model.ID) == 0 {
+			return errf.New(errf.InvalidParameter, "id is required")
+		}
+
+		if err := model.UpdateValidate(); err != nil {
+			return err
+		}
+
+		opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+		setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(&model, opts)
+		if err != nil {
+			return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+		}
+
+		sql := fmt.Sprintf(`UPDATE %s %s WHERE id = :id`, model.TableName(), setExpr)
+		toUpdate["id"] = model.ID
+
+		_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
+		if err != nil {
+			logs.Errorf("update load balancer exclusive cluster failed, err: %v, id: %s, rid: %s", err,
+				model.ID, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// BatchDeleteWithTx delete load balancer exclusive cluster with tx.
+func (dao *ExclusiveClusterDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return err
+	}
+
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerExclusiveClusterTable, whereExpr)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
+		logs.Errorf("delete load balancer exclusive cluster failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// List load balancer exclusive clusters.
+func (dao *ExclusiveClusterDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*types.ListLoadBalancerExclusiveClusterDetails, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list load balancer exclusive cluster options is nil")
+	}
+
+	columnTypes := tablelb.LoadBalancerExclusiveClusterColumns.ColumnTypes()
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
+		core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerExclusiveClusterTable, whereExpr)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.Errorf("count load balancer exclusive cluster failed, err: %v, filter: %s, rid: %s", err,
+				opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListLoadBalancerExclusiveClusterDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`,
+		tablelb.LoadBalancerExclusiveClusterColumns.FieldsNamedExpr(opt.Fields),
+		table.LoadBalancerExclusiveClusterTable, whereExpr, pageExpr)
+
+	details := make([]tablelb.LoadBalancerExclusiveClusterTable, 0)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
+		logs.Errorf("select load balancer exclusive cluster failed, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
+		return nil, err
+	}
+
+	return &types.ListLoadBalancerExclusiveClusterDetails{Details: details}, nil
+}

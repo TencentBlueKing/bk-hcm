@@ -174,6 +174,8 @@ const (
 	ResourceFlowRelTable Name = "resource_flow_rel"
 	// ResourceFlowLockTable is resource_flow_lock table's name.
 	ResourceFlowLockTable Name = "resource_flow_lock"
+	// LoadBalancerExclusiveClusterTable is load_balancer_exclusive_cluster table's name.
+	LoadBalancerExclusiveClusterTable Name = "load_balancer_exclusive_cluster"
 
 	// MainAccountTable is main_account table's name
 	MainAccountTable Name = "main_account"
@@ -303,26 +305,27 @@ var TableMap = map[Name]TableConfig{
 
 	ArgumentTemplateTable: {EnableTenant: true},
 
-	AccountBillMonthTaskTable:       {},
-	AccountBillDailyPullTaskTable:   {},
-	AccountBillSummaryMainTable:     {},
-	AccountBillSummaryVersionTable:  {},
-	AccountBillSummaryDailyTable:    {},
-	AccountBillItemTable:            {},
-	AccountBillAdjustmentItemTable:  {},
-	AccountBillSummaryRootTable:     {},
-	RootAccountBillConfigTable:      {EnableTenant: true},
-	AccountBillExchangeRateTable:    {EnableTenant: true},
-	AccountBillSyncRecordTable:      {EnableTenant: true},
-	LoadBalancerTable:               {EnableTenant: true},
-	SecurityGroupCommonRelTable:     {},
-	LoadBalancerListenerTable:       {},
-	TCloudLbUrlRuleTable:            {},
-	LoadBalancerTargetTable:         {},
-	LoadBalancerTargetGroupTable:    {},
-	TargetGroupListenerRuleRelTable: {},
-	ResourceFlowRelTable:            {},
-	ResourceFlowLockTable:           {},
+	AccountBillMonthTaskTable:         {},
+	AccountBillDailyPullTaskTable:     {},
+	AccountBillSummaryMainTable:       {},
+	AccountBillSummaryVersionTable:    {},
+	AccountBillSummaryDailyTable:      {},
+	AccountBillItemTable:              {},
+	AccountBillAdjustmentItemTable:    {},
+	AccountBillSummaryRootTable:       {},
+	RootAccountBillConfigTable:        {EnableTenant: true},
+	AccountBillExchangeRateTable:      {EnableTenant: true},
+	AccountBillSyncRecordTable:        {EnableTenant: true},
+	LoadBalancerTable:                 {EnableTenant: true},
+	SecurityGroupCommonRelTable:       {},
+	LoadBalancerListenerTable:         {},
+	TCloudLbUrlRuleTable:              {},
+	LoadBalancerTargetTable:           {},
+	LoadBalancerTargetGroupTable:      {},
+	TargetGroupListenerRuleRelTable:   {},
+	ResourceFlowRelTable:              {},
+	ResourceFlowLockTable:             {},
+	LoadBalancerExclusiveClusterTable: {EnableTenant: true},
 
 	MainAccountTable: {EnableTenant: true},
 	RootAccountTable: {EnableTenant: true},

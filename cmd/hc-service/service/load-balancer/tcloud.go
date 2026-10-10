@@ -109,21 +109,9 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// BatchCreateTCloudClb ...
-func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error) {
-	req := new(protolb.TCloudLoadBalancerCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(false); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
+// buildTCloudCreateClbOption 构造创建负载均衡的云上请求参数，
+// 当req.AddressIPVersion为空时会被设置为默认的IPv4
+func buildTCloudCreateClbOption(kt *kit.Kit, req *protolb.TCloudLoadBalancerCreateReq) *typelb.TCloudCreateClbOption {
 	createOpt := &typelb.TCloudCreateClbOption{
 		Region:                   req.Region,
 		LoadBalancerType:         req.LoadBalancerType,
@@ -137,7 +125,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		BandwidthPackageID:       req.BandwidthPackageID,
 		SlaType:                  req.SlaType,
 		Number:                   req.RequireCount,
-		ClientToken:              cvt.StrNilPtr(cts.Kit.Rid),
+		ClientToken:              cvt.StrNilPtr(kt.Rid),
 		Egress:                   req.Egress,
 		BandwidthpkgSubType:      req.BandwidthpkgSubType,
 		Tags:                     req.Tags,
@@ -167,6 +155,26 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 			createOpt.ZoneID = cvt.ValToPtr(req.Zones[0])
 		}
 	}
+
+	return createOpt
+}
+
+// BatchCreateTCloudClb ...
+func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error) {
+	req := new(protolb.TCloudLoadBalancerCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(false); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	createOpt := buildTCloudCreateClbOption(cts.Kit, req)
 
 	result, err := tcloudAdpt.CreateLoadBalancer(cts.Kit, createOpt)
 	if err != nil {

@@ -242,3 +242,78 @@ const (
 	// DisableListenerHealthCheck 关闭监听器健康检查
 	DisableListenerHealthCheck ListenerHealthCheckStr = "disable"
 )
+
+// ClusterType CLB独占集群类型
+type ClusterType string
+
+// CLB独占集群类型
+const (
+	// TGWClusterType 集群类型-TGW四层
+	TGWClusterType ClusterType = "TGW"
+	// STGWClusterType 集群类型-STGW七层
+	STGWClusterType ClusterType = "STGW"
+	// VPCGWClusterType 集群类型-VPCGW内网
+	VPCGWClusterType ClusterType = "VPCGW"
+)
+
+// Validate 校验独占集群类型是否合法
+func (c ClusterType) Validate() error {
+	switch c {
+	case TGWClusterType, STGWClusterType, VPCGWClusterType:
+		return nil
+	default:
+		return fmt.Errorf("unsupported cluster_type: %s", c)
+	}
+}
+
+// ClusterNetwork CLB独占集群网络类型
+type ClusterNetwork string
+
+// CLB独占集群网络类型
+const (
+	// PublicClusterNetwork 网络类型-公网
+	PublicClusterNetwork ClusterNetwork = "Public"
+	// PrivateClusterNetwork 网络类型-内网
+	PrivateClusterNetwork ClusterNetwork = "Private"
+	// HybridClusterNetwork 网络类型-混合
+	HybridClusterNetwork ClusterNetwork = "Hybrid"
+)
+
+// Validate 校验独占集群网络类型是否合法，空字符串视为未指定，同样合法
+func (c ClusterNetwork) Validate() error {
+	switch c {
+	case "", PublicClusterNetwork, PrivateClusterNetwork, HybridClusterNetwork:
+		return nil
+	default:
+		return fmt.Errorf("unsupported cluster network: %s", c)
+	}
+}
+
+// ClusterIsp CLB独占集群运营商类型
+type ClusterIsp string
+
+// CLB独占集群运营商类型
+const (
+	// BGPClusterIsp 运营商类型-BGP
+	BGPClusterIsp ClusterIsp = "BGP"
+	// CMCCClusterIsp 运营商类型-移动
+	CMCCClusterIsp ClusterIsp = "CMCC"
+	// CUCCClusterIsp 运营商类型-联通
+	CUCCClusterIsp ClusterIsp = "CUCC"
+	// CTCCClusterIsp 运营商类型-电信
+	CTCCClusterIsp ClusterIsp = "CTCC"
+	// InternalClusterIsp 运营商类型-内部
+	InternalClusterIsp ClusterIsp = "INTERNAL"
+	// MIXClusterIsp 运营商类型-混合
+	MIXClusterIsp ClusterIsp = "MIX"
+)
+
+// Validate 校验独占集群运营商类型是否合法，空字符串视为未指定，同样合法
+func (c ClusterIsp) Validate() error {
+	switch c {
+	case "", BGPClusterIsp, CMCCClusterIsp, CUCCClusterIsp, CTCCClusterIsp, InternalClusterIsp, MIXClusterIsp:
+		return nil
+	default:
+		return fmt.Errorf("unsupported cluster isp: %s", c)
+	}
+}
