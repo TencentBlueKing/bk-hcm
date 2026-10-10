@@ -19,10 +19,10 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 #### vendor=tcloud
 
 | 参数名称        | 参数类型                | 必选  | 描述               |
-| ----------- | ------------------- | --- | ---------------- |
+| ----------- | ------------------- | --- |------------------|
 | regions     | []string            | 是   | 指定资源同步地域，最少1，最大5 |
 | cloud_ids   | []string            | 否   | 资源id，数量上限20      |
-| tag_filters | map[string][]string | 否   | 指定同步标签过滤器标签，上限5（ |
+| tag_filters | map[string][]string | 否   | 指定同步标签过滤器标签，上限5  |
 
 #### vendor=huawei
 
