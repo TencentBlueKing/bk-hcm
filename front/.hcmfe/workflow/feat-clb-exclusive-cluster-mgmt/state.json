@@ -1,9 +1,9 @@
 {
   "id": "feat-clb-exclusive-cluster-mgmt",
   "title": "CLB exclusive cluster management list",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-09-14T10:25:58.830Z",
-  "updatedAt": "2026-09-17T09:20:16.040Z",
+  "updatedAt": "2026-09-21T08:45:09.197Z",
   "artifacts": {
     "prd": [
       {
@@ -61,6 +61,11 @@
       "stage": "coding",
       "approvedAt": "2026-09-17T03:32:45.747Z",
       "note": "用户确认：独占集群管理页面开发完成，coding.md 可作为 test 阶段唯一依据，推进到 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-09-21T08:44:29.526Z",
+      "note": "用户确认：开发自测收口。test.md 结论已回填，P0/P1 可验范围 PASS；依赖 exclusive_clusters 接口的分配落库与无权限账号弹窗标 Skipped 并注明待后端/权限环境。patch1 验收项（预鉴权、行内复用、同步译名与轮询、toolbar 自适应、列宽）已补进清单。"
     }
   },
   "history": [
@@ -93,6 +98,12 @@
       "to": "test",
       "at": "2026-09-17T03:32:45.747Z",
       "note": "用户确认：独占集群管理页面开发完成，coding.md 可作为 test 阶段唯一依据，推进到 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-09-21T08:44:29.526Z",
+      "note": "用户确认：开发自测收口。test.md 结论已回填，P0/P1 可验范围 PASS；依赖 exclusive_clusters 接口的分配落库与无权限账号弹窗标 Skipped 并注明待后端/权限环境。patch1 验收项（预鉴权、行内复用、同步译名与轮询、toolbar 自适应、列宽）已补进清单。"
     }
   ],
   "requirementId": "req-feat-clb-exclusive-cluster",
@@ -118,6 +129,16 @@
       "status": "skipped",
       "at": "2026-09-15T02:15:14.477Z",
       "note": "用户选择 2：都跳过。组件落码入口留到 coding 再定，不在 design 回填。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-09-21T08:02:07.622Z",
+      "note": "gaps=base/resource/load-balancer（touched 且 hasDrift），均已补正文并 deepen：base 补 resource-search-select 宽度契约（容器需 min-width:0）、轮询统一 use-timeout-poll（utils/interval 已废弃）、style/override 与 .hcm-tooltips-popover 用途；resource 补资源页 toolbar justify-content-end 往左裁的坑与可压缩项约定；load-balancer 补独占集群列宽取值原则并指回 resource 的 toolbar 条目。auth 已 drafted 无漂移；task/model 漂移不属本次改动，不动。promotionQueue totalOpen=13，用户已确认接着走 promotions-review。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-09-21T08:45:09.197Z",
+      "note": "story 1069995598138113967 status_12→status_13→status_14；owner 未变更。parent 1069995598133757341 仍 status_11（rollup shouldAdvance=false，兄弟单仍有 status_10 / status_12）。"
     }
   },
   "artifactFreshness": {
@@ -141,6 +162,13 @@
         "src/components/resource-search-select/index.vue",
         "src/components/resource-search-select/map-search-fields.ts",
         "src/components/resource-search-select/option-common.ts",
+        "src/style/override/bkpopover.scss",
+        "src/common/auth-service.ts",
+        "src/constants/auth-symbols.ts",
+        "src/components/permission/apply-dialog.vue",
+        "src/common/constant.ts",
+        "src/views/resource/resource-manage/accountInfo/component/resourceStatus/index.tsx",
+        "src/utils/interval.ts",
         "views/load-balancer/constants.ts",
         "children/resource-subtype-switch.vue",
         "search-condition.ts",
@@ -151,16 +179,17 @@
         "api.ts",
         "constants.ts",
         ".vue",
-        "src/style/override/bkpopover.scss",
         "views/task/clb.vue",
         "permission-template/index.vue",
         "load-balancer/clb/load-balancer-table.vue",
         "data-list.vue",
-        "index.vue"
+        "index.vue",
+        "apply-dialog.vue",
+        "app.vue"
       ],
-      "contentFingerprint": "fd031debd3abf2cb037f8c091f702671751273a7",
-      "codeBaseline": "35649d328f0be27bd324f8e7d91fca3c0e20ab27",
-      "seatedAt": "2026-09-17T09:20:16.040Z"
+      "contentFingerprint": "a0915f0292ee25c459e4e69759c5fd9e1edb139b",
+      "codeBaseline": "4c34e9b5d3134c616763d040d20bb0c7005ea945",
+      "seatedAt": "2026-09-21T07:54:56.498Z"
     }
   }
 }

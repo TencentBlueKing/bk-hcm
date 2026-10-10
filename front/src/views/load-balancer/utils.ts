@@ -15,24 +15,40 @@ export const getLoadBalancerInstanceSpecName = (data: InstanceSpecSource) => {
   return '--';
 };
 
-// 共享型需要排除性能容量型，因此是两条规则
-const buildInstanceSpecRule = (spec: string): RulesItem =>
-  spec === LoadBalancerInstanceSpec.EXCLUSIVE
-    ? { field: 'extension.exclusive', op: QueryRuleOPEnum.JSON_EQ, value: 1 }
-    : {
-        op: QueryRuleOPEnum.AND,
-        rules: [
-          { field: 'extension.exclusive', op: QueryRuleOPEnum.JSON_EQ, value: 0 },
-          { field: 'extension.sla_type', op: QueryRuleOPEnum.JSON_EQ, value: '' },
-        ],
-      };
+/**
+ * 实例规格筛选项
+ * 先给独占型 / 共享型两个粗粒度分类，再列各性能容量型档位
+ */
+export const LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME: Record<string, string> = {
+  ...LOAD_BALANCER_INSTANCE_SPEC_NAME,
+  ...CLB_SPECS,
+};
+
+// 档位与共享型都只对非独占实例成立：展示时 exclusive === 1 优先判独占型，筛选不叠加这条会筛出列里显示「独占型」的行
+const buildNonExclusiveRule = (slaTypeRule: RulesItem): RulesItem => ({
+  op: QueryRuleOPEnum.AND,
+  rules: [{ field: 'extension.exclusive', op: QueryRuleOPEnum.JSON_EQ, value: 0 }, slaTypeRule],
+});
 
 /**
  * 实例规格查询条件
- * 展示值来自 exclusive / sla_type，筛选则统一走 extension 内字段的 json_eq
+ * 展示值来自 exclusive / sla_type，筛选则统一走 extension 内字段
  */
 export const buildLoadBalancerInstanceSpecFilterRules = (value: string | string[]): RulesItem => {
   const specs = (Array.isArray(value) ? value : [value]).filter(Boolean);
-  if (specs.length === 1) return buildInstanceSpecRule(specs[0]);
-  return { op: QueryRuleOPEnum.OR, rules: specs.map(buildInstanceSpecRule) };
+  const slaTypes = specs.filter((spec) => spec in CLB_SPECS);
+  const rules: RulesItem[] = [];
+
+  if (specs.includes(LoadBalancerInstanceSpec.EXCLUSIVE)) {
+    rules.push({ field: 'extension.exclusive', op: QueryRuleOPEnum.JSON_EQ, value: 1 });
+  }
+  if (specs.includes(LoadBalancerInstanceSpec.SHARED)) {
+    rules.push(buildNonExclusiveRule({ field: 'extension.sla_type', op: QueryRuleOPEnum.JSON_EQ, value: '' }));
+  }
+  // 档位不论选几个都合成一条 json_in：pkg/runtime/filter 每层 rules 上限 10 条，逐档 json_eq 全选时会被撑满
+  if (slaTypes.length) {
+    rules.push(buildNonExclusiveRule({ field: 'extension.sla_type', op: QueryRuleOPEnum.JSON_IN, value: slaTypes }));
+  }
+
+  return rules.length === 1 ? rules[0] : { op: QueryRuleOPEnum.OR, rules };
 };

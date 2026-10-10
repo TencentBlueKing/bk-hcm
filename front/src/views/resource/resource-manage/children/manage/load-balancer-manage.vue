@@ -25,7 +25,7 @@
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
-          class="w500"
+          class="search-select"
           clearable
           :conditions="[]"
           :get-menu-list="getMenuList"
@@ -103,8 +103,10 @@ import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useRegionStore } from '@/store/region';
 import { buildVIPFilterRules } from '@/utils/search';
-import { LOAD_BALANCER_INSTANCE_SPEC_NAME } from '@/views/load-balancer/constants';
-import { buildLoadBalancerInstanceSpecFilterRules } from '@/views/load-balancer/utils';
+import {
+  buildLoadBalancerInstanceSpecFilterRules,
+  LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME,
+} from '@/views/load-balancer/utils';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
 const props = defineProps({
@@ -240,7 +242,7 @@ const clbsSearchData = [
     id: 'instance_spec',
     name: t('实例规格'),
     async: false,
-    children: Object.entries(LOAD_BALANCER_INSTANCE_SPEC_NAME).map(([id, name]) => ({ id, name })),
+    children: Object.entries(LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME).map(([id, name]) => ({ id, name })),
   },
   {
     id: 'ip_version',
@@ -336,9 +338,21 @@ const handleSync = (inTable: boolean, data?: any) => {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  // 窄屏时只让搜索框让宽，左侧操作按钮保持原宽，否则会被挤出可视区
+  > *:not(.search-selector-container) {
+    flex-shrink: 0;
+  }
 }
 
 .search-selector-container {
   margin-left: auto;
+  min-width: 0;
+
+  .search-select {
+    width: 500px;
+    max-width: 100%;
+    min-width: 240px;
+  }
 }
 </style>
