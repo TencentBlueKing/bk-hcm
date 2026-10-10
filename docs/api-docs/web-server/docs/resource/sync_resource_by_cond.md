@@ -10,18 +10,13 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 
 ### 输入参数
 
-
 | 参数名称       | 参数类型   | 必选  | 描述                                                                                    |
 | ---------- | ------ | --- | ------------------------------------------------------------------------------------- |
 | vendor     | string | 是   | 云厂商                                                                                   |
 | account_id | string | 是   | 账号ID                                                                                  |
 | res        | string | 是   | 资源名称。tcloud 支持 security_group、load_balancer、subnet；huawei/aws/azure 支持 security_group |
 
-
-
-
 #### vendor=tcloud
-
 
 | 参数名称        | 参数类型                | 必选  | 描述               |
 | ----------- | ------------------- | --- | ---------------- |
@@ -29,38 +24,23 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 | cloud_ids   | []string            | 否   | 资源id，数量上限20      |
 | tag_filters | map[string][]string | 否   | 指定同步标签过滤器标签，上限5（ |
 
-
-
-
 #### vendor=huawei
-
 
 | 参数名称    | 参数类型     | 必选  | 描述               |
 | ------- | -------- | --- | ---------------- |
 | regions | []string | 是   | 指定资源同步地域，最少1，最大5 |
 
-
-
-
 #### vendor=azure
-
 
 | 参数名称                 | 参数类型     | 必选  | 描述                 |
 | -------------------- | -------- | --- | ------------------ |
 | resource_group_names | []string | 是   | 指定资源同步的资源组，最少1，最大5 |
 
-
-
-
 #### vendor=aws
-
 
 | 参数名称    | 参数类型     | 必选  | 描述               |
 | ------- | -------- | --- | ---------------- |
 | regions | []string | 是   | 指定资源同步地域，最少1，最大5 |
-
-
-
 
 ### 调用示例
 
@@ -92,8 +72,6 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 }
 ```
 
-
-
 ### 响应示例
 
 ```json
@@ -103,14 +81,9 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 }
 ```
 
-
-
 ### 响应参数说明
-
 
 | 参数名称    | 参数类型   | 描述   |
 | ------- | ------ | ---- |
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
-
-
