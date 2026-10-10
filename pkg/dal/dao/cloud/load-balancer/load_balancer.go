@@ -198,6 +198,8 @@ func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Li
 
 	columnTypes := tablelb.LoadBalancerColumns.ColumnTypes()
 	columnTypes["tags.*"] = enumor.String
+	columnTypes["extension.exclusive"] = enumor.Numeric
+	columnTypes["extension.sla_type"] = enumor.String
 
 	expr := filter.NewExprOption(
 		filter.RuleFields(columnTypes),

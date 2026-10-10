@@ -50,6 +50,12 @@ func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error
 	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
 }
 
+// SyncExclusiveCluster 同步独占集群
+func (c *ClbClient) SyncExclusiveCluster(kt *kit.Kit, req *sync.TCloudSyncReq) error {
+	return common.RequestNoResp[sync.TCloudSyncReq](
+		c.client, http.MethodPost, kt, req, "/load_balancer_exclusive_clusters/sync")
+}
+
 // SyncLoadBalancerListener 同步负载均衡下监听器
 func (c *ClbClient) SyncLoadBalancerListener(kt *kit.Kit, req *sync.TCloudListenerSyncReq) error {
 	return common.RequestNoResp[sync.TCloudListenerSyncReq](c.client, http.MethodPost, kt, req, "/listeners/sync")
@@ -61,6 +67,14 @@ func (c *ClbClient) DescribeResources(kt *kit.Kit, req *hcproto.TCloudDescribeRe
 
 	return common.Request[hcproto.TCloudDescribeResourcesOption, tclb.DescribeResourcesResponseParams](
 		c.client, http.MethodPost, kt, req, "/load_balancers/resources/describe")
+}
+
+// DescribeClusterIdleVips 查询独占集群当前闲置的VIP列表，供cloud-server业务视角闲置VIP查询接口调用。
+func (c *ClbClient) DescribeClusterIdleVips(kt *kit.Kit, req *hcproto.TCloudDescribeClusterIdleVipsReq) (
+	*hcproto.TCloudDescribeClusterIdleVipsResult, error) {
+
+	return common.Request[hcproto.TCloudDescribeClusterIdleVipsReq, hcproto.TCloudDescribeClusterIdleVipsResult](
+		c.client, http.MethodPost, kt, req, "/load_balancers/exclusive_clusters/idle_vips/describe")
 }
 
 // BatchCreate ...

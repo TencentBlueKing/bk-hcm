@@ -155,7 +155,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
 | delete_protect               | string | 删除保护                                        |
 | egress                       | string | 网络出口                                        |
 | mix_ip_target                | string | 双栈混绑                                        |
-| exclusive                    | int    | 是否独占型实例：1是、0否                     |
+| exclusive                    | int    | 是否独占型实例：1是、0否，云上取不到有效值时无该字段 |
 | clusters                     | array  | 独占集群信息列表，非独占型实例为空数组                       |
 
 说明：

@@ -116,6 +116,15 @@ type TCloudClbExtension struct {
 	// 网络出口
 	Egress *string `json:"egress,omitempty"`
 
+	// Exclusive 是否独占型实例，1是、0否。云上可能返回null表示取不到有效值，同步时原样落库，不按0处理。
+	Exclusive *uint64 `json:"exclusive,omitempty"`
+	// ClusterIds 负载均衡落在的独占集群云上ID列表，不区分四层/七层。云上可能返回null，同步时按空数组落库。
+	ClusterIds []*string `json:"cluster_ids"`
+	// ClusterTag 七层（STGW）独占集群标签。云上可能返回null，同步时按空串落库。
+	ClusterTag *string `json:"cluster_tag,omitempty"`
+	// Clusters 详情接口用云上集群ID反查本地独占集群表后拼接，非独占型为空数组，不落库。
+	Clusters []TCloudClbExclusiveCluster `json:"clusters,omitempty"`
+
 	// 双栈混绑 开启IPv6FullChain负载均衡7层监听器支持混绑IPv4/IPv6目标功能。
 	MixIpTarget *bool `json:"mix_ip_target,omitempty"`
 
@@ -125,6 +134,39 @@ type TCloudClbExtension struct {
 	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 	// 负载均衡类型，0 传统负载均衡，1 负载均衡
 	Forward *uint64 `json:"forward,omitempty"`
+
+	// ClassicalCluster vpcgw集群
+	ClassicalCluster *ClusterItem `json:"classical_cluster"`
+	// L4Clusters 4层独占集群列表
+	L4Clusters *[]*ClusterItem `json:"l4_clusters"`
+	// L7Clusters 7层独占集群列表
+	L7Clusters *[]*ClusterItem `json:"l7_clusters"`
+	// TgwGroupName 4层独占集群标签
+	TgwGroupName *string `json:"tgw_group_name"`
+}
+
+// TCloudClbExclusiveCluster 详情接口派生的独占集群信息，由云上集群ID关联本地表得到。
+type TCloudClbExclusiveCluster struct {
+	// CloudClusterID 集群云上ID
+	CloudClusterID string `json:"cloud_cluster_id"`
+	// ClusterID 集群本地ID，本地表未同步到该集群时为空字符串
+	ClusterID string `json:"cluster_id"`
+	// ClusterName 集群名称，本地表未同步到该集群时为空字符串
+	ClusterName string `json:"cluster_name"`
+	// ClusterTag 集群标签
+	ClusterTag string `json:"cluster_tag"`
+	// ClusterType 集群类型，enumeration values such as: TGW/STGW
+	ClusterType string `json:"cluster_type"`
+}
+
+// ClusterItem 云上独占集群元素，四层、七层和 vpcgw 共用。
+type ClusterItem struct {
+	// ClusterId 集群云上ID
+	ClusterId string `json:"cluster_id"`
+	// ClusterName 集群名称
+	ClusterName string `json:"cluster_name"`
+	// Zone 可用区
+	Zone string `json:"zone"`
 }
 
 // IsTraditional 是否是传统型负载均衡

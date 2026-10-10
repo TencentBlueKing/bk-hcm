@@ -109,6 +109,10 @@ type LoadBalancerRaw struct {
 type LoadBalancerWithDeleteProtect struct {
 	BaseLoadBalancer `json:",inline"`
 	DeleteProtect    bool `json:"delete_protect"`
+	// Exclusive 是否独占型实例，1是、0否，仅tcloud，取自 extension。云上取不到有效值时为空。
+	Exclusive *uint64 `json:"exclusive,omitempty"`
+	// SlaType 性能容量型规格档位，空字符串表示非性能容量型，仅tcloud，取自 extension。
+	SlaType string `json:"sla_type"`
 }
 
 // GetID ...

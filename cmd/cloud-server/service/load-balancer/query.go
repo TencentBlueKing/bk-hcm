@@ -139,7 +139,9 @@ func (svc *lbSvc) listLoadBalancerWithDeleteProtect(cts *rest.Contexts, authHand
 		Count: dataResp.Count,
 	}
 	for _, detail := range dataResp.Details {
-		lb := &corelb.LoadBalancerWithDeleteProtect{BaseLoadBalancer: detail.BaseLoadBalancer}
+		// 非tcloud没有独占型概念，按非独占返回
+		lb := &corelb.LoadBalancerWithDeleteProtect{BaseLoadBalancer: detail.BaseLoadBalancer,
+			Exclusive: cvt.ValToPtr(uint64(0))}
 
 		// 目前仅支持tcloud 的删除保护
 		if detail.Vendor == enumor.TCloud {
@@ -150,6 +152,8 @@ func (svc *lbSvc) listLoadBalancerWithDeleteProtect(cts *rest.Contexts, authHand
 				return nil, err
 			}
 			lb.DeleteProtect = cvt.PtrToVal(extension.DeleteProtect)
+			lb.Exclusive = extension.Exclusive
+			lb.SlaType = cvt.PtrToVal(extension.SlaType)
 		}
 		lbResult.Details = append(lbResult.Details, lb)
 
@@ -192,11 +196,115 @@ func (svc *lbSvc) getLoadBalancer(cts *rest.Contexts, validHandler handler.ListA
 
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		return svc.client.DataService().TCloud.LoadBalancer.Get(cts.Kit, id)
+		lb, err := svc.client.DataService().TCloud.LoadBalancer.Get(cts.Kit, id)
+		if err != nil {
+			return nil, err
+		}
+		if err = svc.fillTCloudClbExclusiveClusters(cts.Kit, lb); err != nil {
+			return nil, err
+		}
+		return lb, nil
 
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
+}
+
+// fillTCloudClbExclusiveClusters 用 extension 里 ExclusiveCluster 拆出的云上集群 ID 反查本地独占集群表，拼接 clusters。
+// L7Clusters 为空时仍按 cluster_tag 补一条没有云上 ID 的 STGW。
+func (svc *lbSvc) fillTCloudClbExclusiveClusters(kt *kit.Kit, lb *corelb.TCloudLoadBalancer) error {
+	if lb == nil || lb.Extension == nil {
+		return nil
+	}
+
+	lb.Extension.Clusters = make([]corelb.TCloudClbExclusiveCluster, 0)
+	if cvt.PtrToVal(lb.Extension.Exclusive) != 1 {
+		return nil
+	}
+
+	cloudIDs, dbClusterMap, err := svc.listExclusiveClusterMap(kt, lb.AccountID, lb.Extension)
+	if err != nil {
+		logs.Errorf("list exclusive cluster for clb detail failed, err: %v, lb_id: %s, rid: %s", err, lb.ID, kt.Rid)
+		return err
+	}
+
+	lb.Extension.Clusters = slice.Map(cloudIDs, func(cloudID string) corelb.TCloudClbExclusiveCluster {
+		dbCluster, ok := dbClusterMap[cloudID]
+		if !ok {
+			// 本地表未同步到该集群时，只返回云上ID
+			return corelb.TCloudClbExclusiveCluster{CloudClusterID: cloudID}
+		}
+		return corelb.TCloudClbExclusiveCluster{
+			CloudClusterID: cloudID,
+			ClusterID:      dbCluster.ID,
+			ClusterName:    dbCluster.Name,
+			ClusterTag:     dbCluster.ClusterTag,
+			ClusterType:    string(dbCluster.ClusterType),
+		}
+	})
+
+	// CLB extension.cluster_tag 仅表示七层（STGW）独占集群标签，不含四层（TGW）。
+	// 七层集群由云侧调度，云上未返回 STGW 集群ID时，仅回 cluster_tag 与 cluster_type。
+	clusterTag := cvt.PtrToVal(lb.Extension.ClusterTag)
+	if clusterTag != "" && !hasClusterType(dbClusterMap, enumor.STGWClusterType) {
+		lb.Extension.Clusters = append(lb.Extension.Clusters, corelb.TCloudClbExclusiveCluster{
+			ClusterTag:  clusterTag,
+			ClusterType: string(enumor.STGWClusterType),
+		})
+	}
+
+	return nil
+}
+
+// listExclusiveClusterMap 从 extension 的四层、七层字段收集云上集群 ID，并按账号反查本地独占集群。
+// 返回去重后的云上 ID，以及以云上 ID 为键的本地记录。不读 cluster_ids。
+func (svc *lbSvc) listExclusiveClusterMap(kt *kit.Kit, accountID string, ext *corelb.TCloudClbExtension) (
+	[]string, map[string]corelb.ExclusiveClusterRaw, error) {
+
+	cloudIDs := make([]string, 0)
+	if ext != nil {
+		for _, clusters := range []*[]*corelb.ClusterItem{ext.L4Clusters, ext.L7Clusters} {
+			if clusters == nil {
+				continue
+			}
+			for _, cluster := range *clusters {
+				if cluster == nil || cluster.ClusterId == "" {
+					continue
+				}
+				cloudIDs = append(cloudIDs, cluster.ClusterId)
+			}
+		}
+	}
+	cloudIDs = slice.Unique(cloudIDs)
+	if len(cloudIDs) == 0 {
+		return cloudIDs, nil, nil
+	}
+
+	resp, err := svc.client.DataService().Global.ListExclusiveCluster(kt, &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", cloudIDs),
+			tools.RuleEqual("account_id", accountID),
+		),
+		Page: core.NewDefaultBasePage(),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dbClusterMap := cvt.SliceToMap(resp.Details, func(one corelb.ExclusiveClusterRaw) (string, corelb.ExclusiveClusterRaw) {
+		return one.CloudID, one
+	})
+	return cloudIDs, dbClusterMap, nil
+}
+
+// hasClusterType 判断反查结果中是否存在指定类型的独占集群。
+func hasClusterType(clusterMap map[string]corelb.ExclusiveClusterRaw, clusterType enumor.ClusterType) bool {
+	for _, one := range clusterMap {
+		if one.ClusterType == clusterType {
+			return true
+		}
+	}
+	return false
 }
 
 // ListTargetsByTGID ...

@@ -180,6 +180,10 @@ func (t LoadBalancerExclusiveClusterTable) UpdateValidate() error {
 		return err
 	}
 
+	if len(t.ID) == 0 {
+		return errors.New("id is required")
+	}
+
 	if len(t.ClusterType) != 0 {
 		if err := t.ClusterType.Validate(); err != nil {
 			return err

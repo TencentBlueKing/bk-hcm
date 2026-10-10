@@ -84,6 +84,10 @@ type Interface interface {
 	Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption) (*SyncResult, error)
 	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 
+	ExclusiveCluster(kt *kit.Kit, params *SyncBaseParams, opt *SyncExclusiveClusterOption) (*SyncResult, error)
+	RemoveExclusiveClusterDeleteFromCloud(kt *kit.Kit, param *SyncRemovedParams,
+		allCloudIDMap map[string]struct{}) error
+
 	LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
 	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, params *SyncRemovedParams) error
 

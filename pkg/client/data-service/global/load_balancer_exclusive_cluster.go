@@ -20,11 +20,15 @@
 package global
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
 // ListExclusiveCluster list load balancer exclusive cluster, extension is returned as raw json.
@@ -35,12 +39,27 @@ func (cli *restClient) ListExclusiveCluster(kt *kit.Kit, req *core.ListReq) (
 		cli.client, rest.POST, kt, req, "/load_balancer_exclusive_clusters/list")
 }
 
-// BatchUpdateExclusiveClusterBizID batch assign load balancer exclusive cluster to a business.
-func (cli *restClient) BatchUpdateExclusiveClusterBizID(kt *kit.Kit,
-	req *dataproto.ExclusiveClusterBatchUpdateBizIDReq) error {
+// ListAllExclusiveCluster 翻页查询满足过滤条件的全部独占集群，extension 以原始 json 返回。
+func (cli *restClient) ListAllExclusiveCluster(kt *kit.Kit, expr *filter.Expression, fields []string) (
+	[]corelb.ExclusiveClusterRaw, error) {
 
-	return common.RequestNoResp[dataproto.ExclusiveClusterBatchUpdateBizIDReq](
-		cli.client, rest.PATCH, kt, req, "/load_balancer_exclusive_clusters/biz")
+	details := make([]corelb.ExclusiveClusterRaw, 0)
+	page := core.NewDefaultBasePage()
+	for {
+		result, err := cli.ListExclusiveCluster(kt, &core.ListReq{Filter: expr, Fields: fields, Page: page})
+		if err != nil {
+			return nil, err
+		}
+		if result == nil {
+			return nil, fmt.Errorf("list exclusive cluster got empty response")
+		}
+
+		details = append(details, result.Details...)
+		if uint(len(result.Details)) < page.Limit {
+			return details, nil
+		}
+		page.Start += uint32(page.Limit)
+	}
 }
 
 // BatchDeleteExclusiveCluster batch delete load balancer exclusive cluster.

@@ -53,6 +53,12 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("ListTCloudClb", http.MethodPost, "/vendors/tcloud/load_balancers/list", svc.ListTCloudClb)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
+	// 内部测试端点：查询独占集群资源（含VIP闲置状态），仅供联调/测试直接验证，不对外暴露
+	h.Add("TCloudDescribeClusterIdleVipsRaw", http.MethodPost,
+		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/query", svc.TCloudDescribeClusterIdleVipsRaw)
+	// 业务视角闲置VIP查询接口用：自动翻页取全并去重后返回
+	h.Add("TCloudDescribeClusterIdleVips", http.MethodPost,
+		"/vendors/tcloud/load_balancers/exclusive_clusters/idle_vips/describe", svc.TCloudDescribeClusterIdleVips)
 	h.Add("TCloudUpdateCLB", http.MethodPatch, "/vendors/tcloud/load_balancers/{id}", svc.TCloudUpdateCLB)
 	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
@@ -118,7 +124,6 @@ func buildTCloudCreateClbOption(kt *kit.Kit, req *protolb.TCloudLoadBalancerCrea
 		LoadBalancerName:         req.Name,
 		VpcID:                    req.CloudVpcID,
 		SubnetID:                 req.CloudSubnetID,
-		Vip:                      req.Vip,
 		VipIsp:                   req.VipIsp,
 		InternetChargeType:       req.InternetChargeType,
 		InternetMaxBandwidthOut:  req.InternetMaxBandwidthOut,
@@ -130,6 +135,16 @@ func buildTCloudCreateClbOption(kt *kit.Kit, req *protolb.TCloudLoadBalancerCrea
 		BandwidthpkgSubType:      req.BandwidthpkgSubType,
 		Tags:                     req.Tags,
 		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
+	}
+	if cvt.PtrToVal(req.Vip) != "" {
+		createOpt.Vip = req.Vip
+	}
+	// 独占型：cloud_cluster_ids/cluster_tag 原样透传给云侧四层/七层集群参数；exclusive 本身不下传云侧
+	if len(req.CloudClusterIDs) != 0 {
+		createOpt.ClusterIds = cvt.SliceToPtr(req.CloudClusterIDs)
+	}
+	if cvt.PtrToVal(req.ClusterTag) != "" {
+		createOpt.ClusterTag = req.ClusterTag
 	}
 
 	if cvt.PtrToVal(req.CloudEipID) != "" {
@@ -279,6 +294,26 @@ func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	}
 
 	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
+}
+
+// TCloudDescribeClusterIdleVipsRaw 查询独占集群内的资源（含VIP闲置状态），仅供内部联调/测试使用，不经
+// cloud-server/web-server 对外暴露。复用集群资源列表查询能力（DescribeClusterResources），原样透传云端响应。
+func (svc *clbSvc) TCloudDescribeClusterIdleVipsRaw(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudDescribeClusterIdleVipsRawReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DescribeClusterResources(cts.Kit, req.TCloudDescribeClusterResourcesOption)
 }
 
 // TCloudUpdateCLB 更新clb属性
