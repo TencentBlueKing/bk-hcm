@@ -66,7 +66,7 @@ func (req *AwsGlobalSyncReq) Validate() error {
 type AwsSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持 security_group subnet
+	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持 security_group
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
 }
 

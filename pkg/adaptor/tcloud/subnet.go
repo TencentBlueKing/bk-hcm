@@ -168,6 +168,13 @@ func (t *TCloudImpl) ListSubnet(kt *kit.Kit, opt *core.TCloudListOption) (*adtys
 		req.Limit = converter.ValToPtr(strconv.FormatUint(opt.Page.Limit, 10))
 	}
 
+	for k, v := range opt.TagFilters {
+		req.Filters = append(req.Filters, &vpc.Filter{
+			Name:   getTagFilterKey(k),
+			Values: common.StringPtrs(v),
+		})
+	}
+
 	resp, err := VpcClient.DescribeSubnetsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tencent cloud subnet failed, err: %v, rid: %s", err, kt.Rid)
