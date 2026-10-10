@@ -30,6 +30,7 @@ import (
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -230,13 +231,24 @@ func buildLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo) (task
 	}
 	getNextID := counter.NewNumStringCounter(1, 10)
 	for _, req := range reqMap {
-		tasks = append(tasks, ts.CustomFlowTask{
-			ActionID:   action.ActIDType(getNextID()),
-			ActionName: enumor.ActionDeleteLoadBalancer,
-			Params:     cvt.PtrToVal(req),
-			Retry:      tableasync.NewRetryWithPolicy(3, 1000, 5000),
-		})
-
+		for i := 0; i < len(req.IDs); i += constant.BatchListenerMaxLimit {
+			end := min(i+constant.BatchListenerMaxLimit, len(req.IDs))
+			batchIDs := req.IDs[i:end]
+			batchOpt := actionlb.DeleteLoadBalancerOption{
+				Vendor: req.Vendor,
+				BatchDeleteLoadBalancerReq: hcproto.BatchDeleteLoadBalancerReq{
+					AccountID: req.AccountID,
+					Region:    req.Region,
+					IDs:       batchIDs,
+				},
+			}
+			tasks = append(tasks, ts.CustomFlowTask{
+				ActionID:   action.ActIDType(getNextID()),
+				ActionName: enumor.ActionDeleteLoadBalancer,
+				Params:     batchOpt,
+				Retry:      tableasync.NewRetryWithPolicy(3, 1000, 5000),
+			})
+		}
 	}
 	return tasks
 }
