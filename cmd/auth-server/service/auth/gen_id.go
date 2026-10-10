@@ -886,6 +886,8 @@ func genImageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 			return genBizIaaSResResource(a)
 		}
 		return sys.AccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action of image resource: %s", a.Basic.Action)
 	}
