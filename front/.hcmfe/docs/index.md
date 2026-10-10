@@ -13,7 +13,7 @@
 - [页面级变体差异化](modules/page-variant.md) — 用 .plugin 替换整块 UI 片段，承载页面级变体差异。 · `stub`  (relates: component-variant, plugin-handler)
 - [菜单与路由](modules/menu-route.md) — 三级一级视图、去中心化路由、菜单与路由解耦、routerAction 统一跳转。 · `drafted`  (relates: base, auth)
 - [权限控制](modules/auth.md) — 视图级权限与操作级权限。旧 useVerify/PermissionDialog 已废弃。 · `drafted`  (relates: base, menu-route)
-- [操作记录](modules/operation-log.md) — 操作审计日志。 · `stub`
+- [操作记录](modules/operation-log.md) — 操作审计日志。 · `drafted`
 - [资源运营一级视图（容器·待拆解）](modules/resource.md) — 一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。 · `drafted`
 - [业务一级视图（容器·待拆解）](modules/business.md) — 一级视图 /business/:bizId 容器，待拆解。 · `stub`  (relates: load-balancer)
 - [工作台一级视图（容器·待拆解）](modules/service.md) — 一级视图 /service/ 容器，待拆解。 · `stub`

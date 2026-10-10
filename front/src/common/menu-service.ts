@@ -22,6 +22,8 @@ import {
   MENU_RESOURCE,
   MENU_RESOURCE_ACCESS,
   MENU_RESOURCE_MANAGE,
+  MENU_RESOURCE_OPERATION_LOG,
+  MENU_RESOURCE_RECYCLEBIN,
   MENU_SCHEME,
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_MAIN_ACCOUNT,
@@ -193,7 +195,7 @@ const serviceMenus: IMenu[] = [
 
 const isAccountBillEnabled = () => ENABLE_ACCOUNT_BILL === 'true';
 
-// TODO(菜单整合二期)：账号管理、回收管理（云资源组）与操作记录（不分组，末项）随各自的独立页面上线时加入
+// TODO(菜单整合二期)：账号管理（云资源组，资源纳管之后）随其独立页面上线时加入
 const resourceMenus: IMenu[] = [
   {
     id: MENU_RESOURCE_MANAGE,
@@ -202,6 +204,13 @@ const resourceMenus: IMenu[] = [
     group: '云资源',
     groupIcon: 'bkhcm-icon-vpc',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE),
+  },
+  {
+    id: MENU_RESOURCE_RECYCLEBIN,
+    i18n: '回收管理',
+    icon: 'bkhcm-icon-recyclebin',
+    group: '云资源',
+    route: getMenuRoute(resourceViews, MENU_RESOURCE_RECYCLEBIN),
   },
   {
     id: MENU_BILL_ROOT_ACCOUNT,
@@ -227,6 +236,12 @@ const resourceMenus: IMenu[] = [
     group: '云账号管理',
     visibility: isAccountBillEnabled,
     route: getMenuRoute(resourceViews, MENU_BILL_MANAGE),
+  },
+  {
+    id: MENU_RESOURCE_OPERATION_LOG,
+    i18n: '操作记录',
+    icon: 'bkhcm-icon-operation-record',
+    route: getMenuRoute(resourceViews, MENU_RESOURCE_OPERATION_LOG),
   },
 ];
 

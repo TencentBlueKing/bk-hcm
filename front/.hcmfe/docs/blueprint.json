@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "9f0aa8e5c1a2dd736750c25e1aaf4ce9d2ab46cb"
+        "rootHash": "396edad9661c67186f2c5b52824ebe6b6c3b16f2"
       }
     },
     {
@@ -121,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "066ea81eecd98bb2f59224787f1521d02053d08d"
+        "rootHash": "1dd69574e7deba2d53eccae0d23bff8c507fea72"
       }
     },
     {
@@ -133,8 +133,10 @@
         "src/views/operation-log/**"
       ],
       "doc": "modules/operation-log.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "20ddd9ff2c07a2ffc716d1e73b4a4a2838fc18ad"
+      }
     },
     {
       "id": "resource",
@@ -143,12 +145,13 @@
       "summary": "一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。",
       "globs": [
         "src/views/resource/**",
-        "src/views/resource-manage/**"
+        "src/views/resource-manage/**",
+        "src/views/recyclebin/**"
       ],
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "de1b97400c529c2539a70e1109413351d8c107cf"
+        "rootHash": "907e4fc63839f066bb9a15927fdf7ef09e7a24cb"
       }
     },
     {

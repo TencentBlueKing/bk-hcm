@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import { MENU_RESOURCE_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import HcmBreadcrumb from './breadcrumb.vue';
 
@@ -17,9 +16,9 @@ const view = computed(() => (route.meta.view as string) ?? 'default');
 const isLegacyResourceAccess = computed(() => !!route.meta.legacyResourceAccess);
 const isStatusView = computed(() => view.value !== 'default' || route.name === '404' || route.name === 'error');
 const showBreadcrumb = computed(() => !isLegacyResourceAccess.value && breadcrumb.data.display);
-// TODO(菜单整合二期·组装)：原资源详情、操作记录详情迁出后删除
-// 原资源接入的详情页在右侧内容区显示面包屑；详情返回列表时带上资源类型以回到对应页签
-const legacyBreadcrumbRoutes = ['resourceDetail', MENU_RESOURCE_OPERATION_LOG_DETAILS];
+// TODO(菜单整合二期·组装)：原资源详情迁出后删除
+// 原资源详情页在右侧内容区显示面包屑；返回列表时带上资源类型以回到对应页签
+const legacyBreadcrumbRoutes = ['resourceDetail'];
 const showLegacyBreadcrumb = computed(() => legacyBreadcrumbRoutes.includes(route.name));
 // 原详情类型与资源纳管页签不同名的映射
 const legacyDetailTabMap: Record<string, string> = {

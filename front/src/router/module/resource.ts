@@ -1,18 +1,17 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
-import { operationLogRsc as operationLogRscRouteConfig } from '@/views/operation-log/route-config';
 import { toResourceList } from '@/views/resource-manage/route-config';
 import {
   MENU_RESOURCE_MANAGE,
   MENU_RESOURCE_RESOURCE_LIST,
   MENU_RESOURCE_RESOURCE_MANAGEMENT,
 } from '@/constants/menu-symbol';
-import { AUTH_FIND_ACCOUNT, AUTH_FIND_RECYCLE_BIN } from '@/constants/auth-symbols';
+import { AUTH_FIND_ACCOUNT } from '@/constants/auth-symbols';
 
 const { t } = i18n.global;
 
-// 原资源接入页面，只承接旧地址（侧栏无入口），随账号管理、回收管理与操作记录、资源详情迁出后逐条删除
+// 原资源接入页面，只承接旧地址（侧栏无入口），随账号管理、资源详情迁出后逐条删除
 const resourceMenus: RouteRecordRaw[] = [
   {
     path: '/resource',
@@ -28,7 +27,6 @@ const resourceMenus: RouteRecordRaw[] = [
         children: [
           // 资源列表已迁到资源纳管
           { path: '', redirect: toResourceList },
-          operationLogRscRouteConfig[0],
           {
             path: 'account',
             name: t('账号详情'),
@@ -51,11 +49,6 @@ const resourceMenus: RouteRecordRaw[] = [
               },
             ],
           },
-          {
-            path: 'recycle',
-            name: '资源接入回收站',
-            component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
-          },
         ],
         meta: {
           notMenu: true,
@@ -77,15 +70,6 @@ const resourceMenus: RouteRecordRaw[] = [
         meta: {
           notMenu: true,
           menu: { i18n: '资源详情', relative: MENU_RESOURCE_RESOURCE_LIST },
-        },
-      },
-      operationLogRscRouteConfig[1],
-      {
-        path: '/resource/recyclebin',
-        name: t('回收站'),
-        component: () => import('@/views/resource/recyclebin-manager/recyclebin-manager.vue'),
-        meta: {
-          auth: { view: { type: AUTH_FIND_RECYCLE_BIN } },
         },
       },
     ],

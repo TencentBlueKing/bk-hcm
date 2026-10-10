@@ -7,6 +7,8 @@ import resource from '@/router/module/resource';
 import resourceInside from '@/router/module/resource-inside';
 import scheme from '@/router/module/scheme';
 import resourceManage from '@/views/resource-manage/route-config';
+import { recyclebinRsc } from '@/views/recyclebin/route-config';
+import { operationLogRsc } from '@/views/operation-log/route-config';
 import { billAccountManage, billAccountManageLegacy, billManage } from '@/views/bill/route-config';
 
 import statusNotFound from '@/views/status/404.vue';
@@ -50,6 +52,8 @@ export const serviceViews = injectStatusComponents([...service.flatMap((group) =
 // 资源运营：resource / resourceInside 为原资源接入页面，随各模块迁出后删除
 export const resourceViews = injectStatusComponents([
   ...resourceManage,
+  ...recyclebinRsc,
+  ...operationLogRsc,
   ...resource,
   ...resourceInside,
   ...billAccountManage,

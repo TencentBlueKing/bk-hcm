@@ -49,6 +49,7 @@ export const MENU_RESOURCE_MANAGE = Symbol('menu_resource_manage');
 export const MENU_RESOURCE_RESOURCE_LIST = Symbol('menu_resource_resource_list');
 // 顶栏「资源接入」入口，资源接入下线时删除
 export const MENU_RESOURCE_ACCESS = Symbol('menu_resource_access');
+export const MENU_RESOURCE_RECYCLEBIN = Symbol('menu_resource_recyclebin');
 export const MENU_RESOURCE_OPERATION_LOG = Symbol('menu_resource_operation_log');
 export const MENU_RESOURCE_OPERATION_LOG_DETAILS = Symbol('menu_resource_operation_log_details');
 export const MENU_RESOURCE_RESOURCE_MANAGEMENT = Symbol('menu_resource_resource_management');

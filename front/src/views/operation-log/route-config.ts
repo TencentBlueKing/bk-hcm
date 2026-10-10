@@ -1,5 +1,8 @@
 import type { RouteRecordRaw, RouteLocationNormalized } from 'vue-router';
+import qs from 'qs';
 import Meta from '@/router/meta';
+import { getDateRange } from '@/utils/search';
+import { AUTH_BIZ_FIND_AUDIT } from '@/constants/auth-symbols';
 import {
   MENU_RESOURCE,
   MENU_BUSINESS_OPERATION_LOG,
@@ -53,10 +56,9 @@ const operationLogRsc: RouteRecordRaw[] = [
         owner: MENU_RESOURCE,
         title: '操作记录',
         activeKey: MENU_RESOURCE_OPERATION_LOG,
-        menu: {},
+        auth: { view: { type: AUTH_BIZ_FIND_AUDIT } },
       }),
     },
-    // beforeEnter: removeQueryParams,
   },
   {
     name: MENU_RESOURCE_OPERATION_LOG_DETAILS,
@@ -64,8 +66,8 @@ const operationLogRsc: RouteRecordRaw[] = [
     component: () => import('@/views/operation-log/details/flow-task/index'),
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '操作记录详情',
-        notMenu: true,
         activeKey: MENU_RESOURCE_OPERATION_LOG,
         menu: {
           relative: MENU_RESOURCE_OPERATION_LOG,
@@ -75,4 +77,19 @@ const operationLogRsc: RouteRecordRaw[] = [
   },
 ];
 
-export { operationLogBiz, operationLogRsc };
+// 原资源接入「操作记录」页签：accountId 转成搜索条件。entry-rsc 读到地址上的 filter 后不再套默认时间，所以一并写入近 30 天
+const toRecordList = (to: RouteLocationNormalized) => {
+  const { accountId, ...query } = to.query;
+  const id = Array.isArray(accountId) ? accountId[0] : accountId;
+  if (id) {
+    query.filter = qs.stringify(
+      { account_id: id, created_at: getDateRange('last30d') },
+      { arrayFormat: 'comma', encode: false },
+    );
+  }
+  return { name: MENU_RESOURCE_OPERATION_LOG, query };
+};
+
+const operationLogRscLegacy: RouteRecordRaw[] = [{ path: '/resource/resource/record', redirect: toRecordList }];
+
+export { operationLogBiz, operationLogRsc, operationLogRscLegacy };

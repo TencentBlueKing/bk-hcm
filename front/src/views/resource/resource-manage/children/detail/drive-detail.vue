@@ -17,6 +17,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
+import { MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
 import { FieldList } from '../../common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
@@ -274,12 +275,11 @@ const handleShowDelete = () => {
           infos: [{ id: detail.value.id }],
         })
         .then(() => {
-          router.replace({
-            path: location.href.includes('business') ? 'recyclebin/disk' : '/resource/resource/recycle',
-            query: {
-              type: 'disk',
-            },
-          });
+          router.replace(
+            location.href.includes('business')
+              ? { path: 'recyclebin/disk', query: { type: 'disk' } }
+              : { name: MENU_RESOURCE_RECYCLEBIN, query: { type: 'disk' } },
+          );
         });
     },
   });

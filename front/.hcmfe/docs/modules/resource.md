@@ -1,7 +1,7 @@
 # 资源运营一级视图（容器·待拆解）
 
 > status: stub · kind: module
-> globs: `src/views/resource/**`, `src/views/resource-manage/**`
+> globs: `src/views/resource/**`, `src/views/resource-manage/**`, `src/views/recyclebin/**`
 
 一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。
 
@@ -19,6 +19,10 @@
 - 云账号树 `account/vendor-group/` 是原资源接入树的副本（过渡，改用 `account/use-resource-account.ts`：列表 / 新建页切账号只改 query，其它子页回对应类型列表）；筛选写入地址单会替换为 PR 版地址驱动的树。
 - 账号摘要条 `account/account-summary.vue` 只读 store、不发请求；「查看账号状态」打开只读侧滑 `account/account-status/`（打开时才拉详情，`render-directive="if"` 关闭即停轮询）。地址带 `showAccountStatus=1` 且有 `accountId` 时自动打开并立刻去掉该参数。
 - 账号接入弹窗在 `account/account-import/`（原 `createAccount`），`use-secret-extension` 也被账单录入一级账号等页面引用。
+
+## 回收管理（`views/recyclebin/`）
+
+资源侧回收站独立页面（`/resource/recyclebin`，`MENU_RESOURCE_RECYCLEBIN`），无云账号树：页签右侧的账号下拉只改地址 `accountId`，列表条件与回收保留时间都跟随它（账号详情失败视为无效账号，回到全部账号）；`type`（cvm / disk）、`cvm`（所属主机跳转的搜索值）也在地址里。原资源接入「回收站」页签地址 `/resource/resource/recycle` 经 `recyclebinRscLegacy` 原样带参转来。业务回收站仍用 `views/resource/recyclebin-manager/`。`useQueryCommonList` 只深度监听 `filter`、不立即请求，页面靠之后注册的 `immediate` 监听改写规则触发首屏请求。
 
 ## 关键流程 / 注意事项
 
