@@ -553,7 +553,11 @@ export default defineComponent({
               property: 'subAccount',
               rules: [{ pattern: /^\d+$/, message: '必须为数值', trigger: 'change' }],
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号')} v-model_trim={projectModel.subAccount} />
+                <Input
+                  class='w450'
+                  placeholder={t('请输入子账号【提醒：主账号录入场景下，子账号ID与主账号ID相同】')}
+                  v-model_trim={projectModel.subAccount}
+                />
               ),
             },
             {
