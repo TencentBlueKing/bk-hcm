@@ -138,16 +138,17 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		}
 		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
 	}
-	if len(req.Regions) > 0 {
-		if err := checkAwsRequestRegions(req.Regions, regionList); err != nil {
-			return nil, nil, err
-		}
+	regions, err := resolveAwsCondSyncRegions(req.Regions, regionList)
+	if err != nil {
+		return nil, nil, err
 	}
+	req.Regions = regions
 	return req, syncFunc, nil
 }
 
 // buildAwsCondSyncRegionRules 构造条件同步的地域查询条件。
-// 指定地域时不按 sync_enable 过滤，便于区分不存在和已禁用；未指定地域时只查启用同步的地域。
+// 未指定地域（全量同步）时加上 sync_enable=true，查询结果即待同步地域，被屏蔽地域不会进入逐地域调用。
+// 显式指定地域时不按 sync_enable 过滤，便于区分不存在和已屏蔽；已屏蔽地域直接报错，不静默跳过。
 func buildAwsCondSyncRegionRules(accountID string, regions []string) []*filter.AtomRule {
 	rules := []*filter.AtomRule{tools.RuleEqual("account_id", accountID)}
 	if len(regions) > 0 {
@@ -158,7 +159,31 @@ func buildAwsCondSyncRegionRules(accountID string, regions []string) []*filter.A
 	return rules
 }
 
+// resolveAwsCondSyncRegions 得到本次条件同步实际要调用的云地域 ID。
+// 未指定地域时只返回 sync_enable=true 的地域；显式指定时保留原请求，但已屏蔽或不存在则报错。
+func resolveAwsCondSyncRegions(requestRegions []string, regionList []region.AwsRegion) ([]string, error) {
+	if len(requestRegions) > 0 {
+		if err := checkAwsRequestRegions(requestRegions, regionList); err != nil {
+			return nil, err
+		}
+		return requestRegions, nil
+	}
+
+	enabled := make([]string, 0, len(regionList))
+	for _, one := range regionList {
+		if !one.SyncEnable {
+			continue
+		}
+		enabled = append(enabled, one.RegionID)
+	}
+	if len(enabled) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "aws region is empty")
+	}
+	return enabled, nil
+}
+
 // checkAwsRequestRegions 区分请求地域不存在和同步已禁用。
+// 显式指定了已屏蔽地域时返回错误，不静默跳过，也不调用该地域的云厂商 API。
 func checkAwsRequestRegions(requestRegions []string, regionList []region.AwsRegion) error {
 	found := make(map[string]bool, len(regionList))
 	for _, one := range regionList {

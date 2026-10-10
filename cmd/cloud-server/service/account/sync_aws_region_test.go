@@ -45,6 +45,35 @@ func TestBuildAwsCondSyncRegionRules(t *testing.T) {
 	})
 }
 
+func TestResolveAwsCondSyncRegions(t *testing.T) {
+	regionList := []region.AwsRegion{
+		{RegionID: "us-east-1", SyncEnable: true},
+		{RegionID: "me-south-1", SyncEnable: false},
+		{RegionID: "us-west-2", SyncEnable: true},
+	}
+
+	t.Run("empty request only keeps enabled", func(t *testing.T) {
+		got, err := resolveAwsCondSyncRegions(nil, regionList)
+		require.NoError(t, err)
+		require.Equal(t, []string{"us-east-1", "us-west-2"}, got)
+	})
+
+	t.Run("empty request and no enabled region", func(t *testing.T) {
+		_, err := resolveAwsCondSyncRegions(nil, []region.AwsRegion{
+			{RegionID: "me-south-1", SyncEnable: false},
+		})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "aws region is empty")
+	})
+
+	t.Run("specified disabled region errors", func(t *testing.T) {
+		_, err := resolveAwsCondSyncRegions([]string{"me-south-1"}, regionList)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "sync is disabled")
+		require.Contains(t, err.Error(), "me-south-1")
+	})
+}
+
 func TestCheckAwsRequestRegions(t *testing.T) {
 	regionList := []region.AwsRegion{
 		{RegionID: "us-east-1", SyncEnable: true},
