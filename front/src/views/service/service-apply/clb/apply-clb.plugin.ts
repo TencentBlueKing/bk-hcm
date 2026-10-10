@@ -6,7 +6,7 @@ import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 export const applyClbSuccessHandler = (isBusinessPage: boolean, goBack: () => void, args?: { bizId: number }) => {
   Message({ theme: 'success', message: '购买成功' });
   if (isBusinessPage) {
-    routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'load_balancer' } });
+    routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT, query: { type: 'load-balancer' } });
   } else {
     goBack();
   }

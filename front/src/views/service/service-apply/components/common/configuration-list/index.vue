@@ -37,9 +37,10 @@ import { Plus } from 'bkui-vue/lib/icon';
 import { useI18n } from 'vue-i18n';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { LB_ISP, VendorEnum, CLB_SPECS, NET_CHARGE_MAP } from '@/common/constant';
+import { LB_ISP, VendorEnum, NET_CHARGE_MAP } from '@/common/constant';
 import { LB_NETWORK_TYPE_MAP } from '@/constants';
 import { IP_VERSION_DISPLAY_NAME, IpVersionType } from '@/views/load-balancer/constants';
+import { getLoadBalancerInstanceSpecName } from '@/views/load-balancer/utils';
 import { type Settings } from 'bkui-vue/lib/table/props';
 
 const props = withDefaults(defineProps<IConfigurationListProps>(), {
@@ -122,9 +123,13 @@ const configListColumns = [
   },
   {
     label: '规格',
-    field: 'sla_type',
+    field: 'instance_spec',
     isDefaultShow: true,
-    render: ({ cell }: { cell: any }) => CLB_SPECS[cell] ?? '--',
+    render: ({ row }: { row: ApplyClbModel }) =>
+      getLoadBalancerInstanceSpecName({
+        exclusive: row.exclusive,
+        sla_type: row.sla_type === 'shared' ? '' : row.sla_type,
+      }),
   },
   {
     label: '带宽上限',
@@ -209,6 +214,7 @@ const actionData = ref<ApplyClbModel>({
   vendor: VendorEnum.TCLOUD,
   account_type: 'STANDARD',
   slaType: '0',
+  exclusive: 0,
 });
 
 // 初始化popover, 并显示

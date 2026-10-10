@@ -17,7 +17,12 @@
     "lint:style": "stylelint \"./src/**/*.{css,scss,vue}\" --cache",
     "lint:style:fix": "stylelint \"./src/**/*.{css,scss,vue}\" --cache --fix",
     "format": "prettier --config ./.prettierrc.js --write \"./src/**/*.{js,jsx,ts,tsx,vue,scss,css}\"",
-    "prepare": "cd .. && husky install front/.husky"
+    "prepare": "cd .. && husky install front/.husky",
+    "e2e": "node e2e/scripts/run-e2e.cjs",
+    "e2e:ci": "node e2e/scripts/ci-e2e.cjs",
+    "e2e:report": "playwright show-report e2e/playwright-report",
+    "e2e:codegen": "playwright codegen",
+    "e2e:headed": "node e2e/scripts/run-e2e.cjs --headed --workers=1"
   },
   "dependencies": {
     "@antv/l7": "2.20.2",
@@ -87,7 +92,8 @@
     "stylelint-config-html": "1.1.0",
     "stylelint-config-standard-scss": "14.0.0",
     "stylelint-config-standard-vue": "1.0.0",
-    "typescript": "4.7.4"
+    "typescript": "4.7.4",
+    "@playwright/test": "^1.62.1"
   },
   "overrides": {
     "less": "$less",

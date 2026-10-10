@@ -8,7 +8,7 @@ import { useRouteLinkBtn, TypeEnum } from '@/hooks/useRouteLinkBtn';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import { timeFormatter, formatTags, parseTimeFromNow } from '@/common/util';
-import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
+import { CHARGE_TYPE, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
 import { useBusinessStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { IP_VERSION_MAP } from '@/constants';
@@ -19,6 +19,7 @@ import './index.scss';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 import { useLoadBalancerClbStore, ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IAuthSign } from '@/common/auth-service';
+import { getLoadBalancerInstanceSpecName } from '@/views/load-balancer/utils';
 
 export default defineComponent({
   props: {
@@ -165,47 +166,66 @@ export default defineComponent({
       },
     ];
 
-    const configFields: FieldList = [
-      {
-        name: '负载均衡域名',
-        prop: 'domain',
-      },
-      {
-        name: '实例计费模式',
-        render() {
-          return CHARGE_TYPE[props.detail.extension?.charge_type] || '--';
+    const l4Cluster = computed(() =>
+      props.detail?.extension?.clusters?.find(({ cluster_type }) => cluster_type === 'TGW'),
+    );
+    const l7Cluster = computed(() =>
+      props.detail?.extension?.clusters?.find(({ cluster_type }) => cluster_type === 'STGW'),
+    );
+    const configFields = computed<FieldList>(() => {
+      const fields: FieldList = [
+        {
+          name: '负载均衡域名',
+          prop: 'domain',
         },
-      },
-      {
-        name: '负载均衡VIP',
-        render: () => {
-          return getInstVip(props.detail);
+        {
+          name: '实例计费模式',
+          render() {
+            return CHARGE_TYPE[props.detail.extension?.charge_type] || '--';
+          },
         },
-      },
-      {
-        name: '带宽计费模式',
-        render: () => {
-          return props.detail.extension?.internet_charge_type || '--';
+        {
+          name: '负载均衡VIP',
+          render: () => {
+            return getInstVip(props.detail);
+          },
         },
-      },
-      {
-        name: '规格类型',
-        render: () => {
-          return CLB_SPECS[props.detail.extension?.sla_type] || '--';
+        {
+          name: '带宽计费模式',
+          render: () => {
+            return props.detail.extension?.internet_charge_type || '--';
+          },
         },
-      },
-      {
-        name: '带宽上限',
-        render: () => formatBandwidth(props.detail.bandwidth),
-      },
-      {
-        name: '运营商',
-        render: () => {
-          const displayValue = props.detail.isp ? LB_ISP[props.detail.isp] ?? props.detail.isp : '--';
-          return displayValue;
+        {
+          name: '带宽上限',
+          render: () => formatBandwidth(props.detail.bandwidth),
         },
-      },
-    ];
+        {
+          name: '运营商',
+          render: () => {
+            const displayValue = props.detail.isp ? LB_ISP[props.detail.isp] ?? props.detail.isp : '--';
+            return displayValue;
+          },
+        },
+        {
+          name: '实例规格',
+          render: () =>
+            getLoadBalancerInstanceSpecName({
+              exclusive: props.detail?.extension?.exclusive ?? 0,
+              sla_type: props.detail?.extension?.sla_type,
+            }),
+        },
+      ];
+      if (props.detail?.extension?.exclusive === 1) {
+        fields.push(
+          { name: '四层集群标签', render: () => l4Cluster.value?.cluster_tag || '--' },
+          { name: '四层集群名称', render: () => l4Cluster.value?.cluster_name || '--' },
+          { name: '四层集群 IP', render: () => getInstVip(props.detail) },
+          { name: '七层集群标签', render: () => l7Cluster.value?.cluster_tag || '--' },
+        );
+      }
+      return fields;
+    });
 
     watch(
       () => props.detail,
@@ -362,7 +382,7 @@ export default defineComponent({
         </div>
         <div class='mb32'>
           <p class={'clb-detail-info-title'}>{t('配置信息')}</p>
-          <DetailInfo fields={configFields} detail={props.detail} globalCopyable />
+          <DetailInfo fields={configFields.value} detail={props.detail} globalCopyable />
         </div>
         <div>
           <p class={'clb-detail-info-title'}>{t('跨域配置')}</p>

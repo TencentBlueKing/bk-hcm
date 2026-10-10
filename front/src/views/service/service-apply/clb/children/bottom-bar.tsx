@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_CREATE_CLB, AUTH_CREATE_CLB } from '@/constants/auth-symbols';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
+import { RANDOM_ALLOCATION } from '../hooks/useExclusiveCluster';
 
 export default defineComponent({
   props: {
@@ -47,11 +48,28 @@ export default defineComponent({
       // eslint-disable-next-line
       const zones = hasZonesConfig(formModel) ? (formModel.zones ? [formModel.zones] : []) : undefined;
       const vipIsp = isOpenVal ? formModel.vip_isp : undefined;
+      const isExclusive = formModel.slaType === '2';
+      const l4Tag = formModel.exclusive_cluster_tags?.find(
+        (item) => item.cluster_type === 'TGW' && item.cluster_tag === formModel.l4_cluster_tag,
+      );
+      let cloudClusterIds: string[] | undefined;
+      let vip: string | undefined;
+      if (isExclusive && formModel.enable_l4) {
+        cloudClusterIds =
+          formModel.l4_cluster_id === RANDOM_ALLOCATION
+            ? l4Tag?.clusters.map(({ cloud_cluster_id }) => cloud_cluster_id) ?? []
+            : [formModel.l4_cluster_id].filter(Boolean);
+        vip = formModel.l4_vip === RANDOM_ALLOCATION ? '' : formModel.l4_vip;
+      }
 
       return {
         ...formModel,
         bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
         sla_type: formModel.sla_type === 'shared' ? '' : formModel.sla_type,
+        exclusive: isExclusive ? 1 : 0,
+        cloud_cluster_ids: cloudClusterIds,
+        cluster_tag: isExclusive && formModel.enable_l7 ? formModel.cluster_tag : undefined,
+        vip,
         // 只有公网下可以配置
         address_ip_version: isOpenVal ? formModel.address_ip_version : undefined,
         vip_isp: vipIsp,
@@ -84,6 +102,12 @@ export default defineComponent({
         account_type: undefined as undefined,
         zoneType: undefined as undefined,
         slaType: undefined as undefined,
+        enable_l4: undefined as undefined,
+        enable_l7: undefined as undefined,
+        l4_cluster_tag: undefined as undefined,
+        l4_cluster_id: undefined as undefined,
+        l4_vip: undefined as undefined,
+        exclusive_cluster_tags: undefined as undefined,
       };
     };
     const handleConfirm = async () => {

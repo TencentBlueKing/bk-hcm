@@ -12,6 +12,7 @@ import {
 import { IQueryResData } from '@/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import rollRequest from '@blueking/roll-request';
 
 const { Option } = Select;
 
@@ -47,6 +48,8 @@ export default defineComponent({
     // 带宽包是同region下的zone可用，上海的南昌一区特殊处理，通过带宽包的egress字段，只能选择值前缀为edge的带宽包；反过来说，上海的可用区也不能选择这个特殊的带宽包。
     zones: String,
     resourceType: Object as PropType<ResourceTypeEnum>,
+    egresses: Array as PropType<string[]>,
+    reloadKey: String,
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
@@ -58,33 +61,59 @@ export default defineComponent({
     const page = reactive(getDefaultPage());
     const isDataLoad = ref(false);
     const isDataRefresh = ref(false);
-    let networkTypes: string[];
+    let requestId = 0;
 
     const getBandwidthPackageList = async () => {
+      requestId += 1;
+      const currentRequestId = requestId;
       const { accountId, region, vipIsp } = props;
-      if (!accountId || !region) return;
-      vipIsp && (networkTypes = LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[vipIsp]);
+      if (!accountId || !region) {
+        isDataLoad.value = false;
+        return;
+      }
+      const networkTypes = vipIsp ? LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[vipIsp] : undefined;
+
+      const useEgressFilter = Array.isArray(props.egresses);
+      if (useEgressFilter && props.egresses.length === 0) {
+        bandwidthPackageList.value = [];
+        totalCount.value = 0;
+        isDataLoad.value = false;
+        return;
+      }
 
       isDataLoad.value = true;
       try {
-        const res: IQueryResData<{ packages: IBandwidthPackage[]; total_count: number }> = await http.post(
-          `/api/v1/cloud/${getBusinessApiPath()}bandwidth_packages/query`,
-          {
-            account_id: accountId,
-            region,
-            network_types: networkTypes,
+        const url = `/api/v1/cloud/${getBusinessApiPath()}bandwidth_packages/query`;
+        const params = { account_id: accountId, region, network_types: networkTypes };
+        if (useEgressFilter) {
+          const list = await rollRequest({
+            httpClient: http,
+            pageStartKey: 'offset',
+            pageLimitKey: 'limit',
+          }).rollReq<IBandwidthPackage>(url, params, {
+            limit: 100,
+            countGetter: (res) => res.data.total_count,
+            listGetter: (res) => res.data.packages,
+          });
+          if (currentRequestId !== requestId) return;
+          bandwidthPackageList.value = list.filter(({ egress }) => props.egresses.includes(egress));
+          totalCount.value = bandwidthPackageList.value.length;
+        } else {
+          const res: IQueryResData<{ packages: IBandwidthPackage[]; total_count: number }> = await http.post(url, {
+            ...params,
             page,
-          },
-        );
-
-        bandwidthPackageList.value = res.data.packages;
-        totalCount.value = res.data.total_count;
+          });
+          if (currentRequestId !== requestId) return;
+          bandwidthPackageList.value = [...bandwidthPackageList.value, ...res.data.packages];
+          totalCount.value = res.data.total_count;
+        }
       } finally {
-        isDataLoad.value = false;
+        if (currentRequestId === requestId) isDataLoad.value = false;
       }
     };
 
     const handleScrollEnd = () => {
+      if (Array.isArray(props.egresses)) return;
       if (bandwidthPackageList.value.length >= totalCount.value) return;
       page.offset += page.limit;
       getBandwidthPackageList();
@@ -98,8 +127,11 @@ export default defineComponent({
     const handleRefresh = async () => {
       handleReset();
       isDataRefresh.value = true;
-      await getBandwidthPackageList();
-      isDataRefresh.value = false;
+      try {
+        await getBandwidthPackageList();
+      } finally {
+        isDataRefresh.value = false;
+      }
     };
 
     // 检查带宽包可用性
@@ -117,10 +149,20 @@ export default defineComponent({
       return true;
     };
 
-    watch([() => props.accountId, () => props.region, () => props.vipIsp], () => {
-      emit('update:modelValue', undefined);
-      getBandwidthPackageList();
-    });
+    watch(
+      [
+        () => props.accountId,
+        () => props.region,
+        () => props.vipIsp,
+        () => props.egresses?.join('|'),
+        () => props.reloadKey,
+      ],
+      () => {
+        emit('update:modelValue', undefined);
+        handleReset();
+        getBandwidthPackageList();
+      },
+    );
 
     watch(
       () => props.modelValue,

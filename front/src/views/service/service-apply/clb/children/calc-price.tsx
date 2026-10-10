@@ -102,9 +102,13 @@ export default defineComponent({
         }
         const backup_zones = formModel.backup_zones ? [formModel.backup_zones] : undefined;
         const bandwidthpkg_sub_type = BGP_VIP_ISP_TYPES.includes(formModel.vip_isp) ? 'BGP' : 'SINGLEISP';
+        const pricePayload = { ...formModel };
+        ['exclusive_cluster_tags', 'enable_l4', 'enable_l7', 'l4_cluster_tag', 'l4_cluster_id', 'l4_vip'].forEach(
+          (key) => Reflect.deleteProperty(pricePayload, key),
+        );
 
         const { data } = await businessStore.lbPricesInquiry({
-          ...formModel,
+          ...pricePayload,
           bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
           zones,
           backup_zones,
