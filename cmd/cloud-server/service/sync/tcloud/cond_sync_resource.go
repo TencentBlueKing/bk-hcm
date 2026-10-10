@@ -36,7 +36,8 @@ type CondSyncParams struct {
 	Regions   []string `json:"regions,omitempty" validate:"max=20"`
 	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
-	BkBizID    int64                 `json:"bk_biz_id,omitempty"`
+	// BkBizID 业务入口下的业务ID，为 nil 表示资源入口
+	BkBizID    *int64                `json:"bk_biz_id,omitempty"`
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
 }
 

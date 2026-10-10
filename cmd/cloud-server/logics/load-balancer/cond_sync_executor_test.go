@@ -20,22 +20,15 @@ package lblogic
 
 import (
 	"encoding/json"
-	"errors"
 	"math"
 	"testing"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	"hcm/pkg/api/core"
-	coreasync "hcm/pkg/api/core/async"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	coretask "hcm/pkg/api/core/task"
-	"hcm/pkg/api/data-service/task"
-	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
@@ -228,9 +221,10 @@ func TestCondSyncLoadBalancerOptionBkBizID(t *testing.T) {
 		want int64
 	}{
 		{name: "nil option", opt: nil, want: constant.UnassignedBiz},
-		{name: "nil bk_biz_id", opt: &CondSyncLoadBalancerOption{}, want: constant.UnassignedBiz},
-		{name: "biz entry", opt: &CondSyncLoadBalancerOption{BkBizID: 213}, want: 213},
-		{name: "unassigned", opt: &CondSyncLoadBalancerOption{BkBizID: constant.UnassignedBiz},
+		{name: "resource entry", opt: &CondSyncLoadBalancerOption{}, want: constant.UnassignedBiz},
+		{name: "biz entry with value", opt: &CondSyncLoadBalancerOption{BkBizID: cvt.ValToPtr(int64(213))},
+			want: 213},
+		{name: "unassigned", opt: &CondSyncLoadBalancerOption{BkBizID: cvt.ValToPtr(int64(constant.UnassignedBiz))},
 			want: constant.UnassignedBiz},
 	}
 
@@ -244,7 +238,7 @@ func TestCondSyncLoadBalancerOptionBkBizID(t *testing.T) {
 func TestNewTaskDetails(t *testing.T) {
 	opt := &CondSyncLoadBalancerOption{
 		AccountID: "acc-1",
-		BkBizID:   213,
+		BkBizID:   cvt.ValToPtr(int64(213)),
 	}
 	executor := &CondSyncLoadBalancerExecutor{opt: opt, bkBizID: opt.bkBizID()}
 	briefs := []corelb.LoadBalancerBrief{
@@ -354,129 +348,31 @@ func makeBriefs(cloudIDs ...string) []corelb.LoadBalancerBrief {
 	return briefs
 }
 
-// stubTaskManagementLister stubs taskManagementLister for testing.
-type stubTaskManagementLister struct {
-	resp *task.ListManagementResult
-	err  error
-}
-
-func (s *stubTaskManagementLister) List(kt *kit.Kit, req *core.ListReq) (*task.ListManagementResult, error) {
-	return s.resp, s.err
-}
-
-// stubFlowLister stubs flowLister for testing.
-type stubFlowLister struct {
-	resp *ts.ListFlowResult
-	err  error
-}
-
-func (s *stubFlowLister) ListFlow(kt *kit.Kit, req *core.ListReq) (*ts.ListFlowResult, error) {
-	return s.resp, s.err
-}
-
-func TestCheckRunningCondSyncTask(t *testing.T) {
-	kt := kit.New()
-
+func TestRunningCondSyncTaskFilterBizDimension(t *testing.T) {
 	tests := []struct {
-		name        string
-		opt         *CondSyncLoadBalancerOption
-		mgmtResp    *task.ListManagementResult
-		mgmtErr     error
-		flowResp    *ts.ListFlowResult
-		flowErr     error
-		wantErr     bool
-		wantErrCode int32
+		name string
+		opt  *CondSyncLoadBalancerOption
+		want int64
 	}{
-		{
-			name: "no running management, allow",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtResp: &task.ListManagementResult{Details: []coretask.Management{}},
-			wantErr:  false,
-		},
-		{
-			name: "running management with empty flow_ids, allow",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtResp: &task.ListManagementResult{Details: []coretask.Management{
-				{ID: "task-1", FlowIDs: []string{}},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "running management with all terminal flows, allow",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtResp: &task.ListManagementResult{Details: []coretask.Management{
-				{ID: "task-1", FlowIDs: []string{"flow-1", "flow-2"}},
-			}},
-			flowResp: &ts.ListFlowResult{Details: []coreasync.AsyncFlow{
-				{ID: "flow-1", State: enumor.FlowSuccess},
-				{ID: "flow-2", State: enumor.FlowFailed},
-			}},
-			wantErr: false,
-		},
-		{
-			name: "running management with non-terminal flow, reject",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtResp: &task.ListManagementResult{Details: []coretask.Management{
-				{ID: "task-1", FlowIDs: []string{"flow-1"}},
-			}},
-			flowResp: &ts.ListFlowResult{Details: []coreasync.AsyncFlow{
-				{ID: "flow-1", State: enumor.FlowRunning},
-			}},
-			wantErr:     true,
-			wantErrCode: errf.TooManyRequest,
-		},
-		{
-			name: "management list error",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtErr: errors.New("db error"),
-			wantErr: true,
-		},
-		{
-			name: "flow list error",
-			opt: &CondSyncLoadBalancerOption{
-				Vendor:    enumor.TCloud,
-				AccountID: "acc-1",
-			},
-			mgmtResp: &task.ListManagementResult{Details: []coretask.Management{
-				{ID: "task-1", FlowIDs: []string{"flow-1"}},
-			}},
-			flowErr: errors.New("task server error"),
-			wantErr: true,
-		},
+		{name: "resource entry", opt: &CondSyncLoadBalancerOption{Vendor: enumor.TCloud, AccountID: "acc-1"},
+			want: constant.UnassignedBiz},
+		{name: "biz entry",
+			opt: &CondSyncLoadBalancerOption{Vendor: enumor.TCloud, AccountID: "acc-1",
+				BkBizID: cvt.ValToPtr(int64(213))},
+			want: 213},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mgmtCli := &stubTaskManagementLister{resp: tt.mgmtResp, err: tt.mgmtErr}
-			flowCli := &stubFlowLister{resp: tt.flowResp, err: tt.flowErr}
-
-			err := CheckRunningCondSyncTask(kt, mgmtCli, flowCli, tt.opt)
-
-			if tt.wantErr {
-				require.Error(t, err)
-				if tt.wantErrCode != 0 {
-					ef := errf.Error(err)
-					require.NotNil(t, ef)
-					require.Equal(t, tt.wantErrCode, ef.Code)
+			expr := runningCondSyncTaskFilter(tt.opt)
+			var bizRule *filter.AtomRule
+			for _, one := range expr.Rules {
+				if rule, ok := one.(*filter.AtomRule); ok && rule.Field == "bk_biz_id" {
+					bizRule = rule
 				}
-			} else {
-				require.NoError(t, err)
 			}
+			require.NotNil(t, bizRule)
+			require.Equal(t, tt.want, bizRule.Value)
 		})
 	}
 }

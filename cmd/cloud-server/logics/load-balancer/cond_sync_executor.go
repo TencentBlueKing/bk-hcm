@@ -43,6 +43,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -117,13 +118,13 @@ type condSyncTaskDetailParam struct {
 	Region string `json:"region"`
 }
 
-// bkBizID 任务记录落库用的业务ID。
+// bkBizID 任务记录落库与互斥检查用的业务ID，资源入口没有业务，固定为 constant.UnassignedBiz。
 func (opt *CondSyncLoadBalancerOption) bkBizID() int64 {
-	if opt == nil || opt.BkBizID == 0 {
+	if opt == nil || opt.BkBizID == nil {
 		return constant.UnassignedBiz
 	}
 
-	return opt.BkBizID
+	return *opt.BkBizID
 }
 
 // Run 执行器执行入口
@@ -523,37 +524,17 @@ func (c *CondSyncLoadBalancerExecutor) cancelFailedTask(kt *kit.Kit, taskID, flo
 		taskID, flowID, kt.Rid)
 }
 
-// taskManagementLister 查询 task_management 的接口。
-type taskManagementLister interface {
-	List(kt *kit.Kit, req *core.ListReq) (*task.ListManagementResult, error)
-}
-
-// flowLister 查询 flow 的接口。
-type flowLister interface {
-	ListFlow(kt *kit.Kit, req *core.ListReq) (*ts.ListFlowResult, error)
-}
-
 // CheckRunningCondSyncTask rejects duplicate CLB conditional sync tasks before doing diff.
-// 按账号维度互斥。
-func CheckRunningCondSyncTask(kt *kit.Kit, mgmtCli taskManagementLister, flowCli flowLister,
-	opt *CondSyncLoadBalancerOption) error {
-
-	expr := tools.ExpressionAnd(
-		tools.RuleEqual("state", enumor.TaskManagementRunning),
-		tools.RuleEqual("resource", enumor.TaskManagementResClb),
-		tools.RuleJsonOverlaps("operations", []enumor.TaskOperation{enumor.TaskSyncLoadBalancer}),
-		tools.RuleJsonOverlaps("vendors", []enumor.Vendor{opt.Vendor}),
-		tools.RuleJsonOverlaps("account_ids", []string{opt.AccountID}),
-	)
-
+// 按账号+业务维度互斥，资源入口的业务ID为 constant.UnassignedBiz，与业务入口互不拦截。
+func CheckRunningCondSyncTask(kt *kit.Kit, cliSet *client.ClientSet, opt *CondSyncLoadBalancerOption) error {
 	req := &core.ListReq{
-		Filter: expr,
+		Filter: runningCondSyncTaskFilter(opt),
 		Fields: []string{"id", "flow_ids"},
 		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	flowIDs := make([]string, 0)
 	for {
-		resp, err := mgmtCli.List(kt, req)
+		resp, err := cliSet.DataService().Global.TaskManagement.List(kt, req)
 		if err != nil {
 			logs.Errorf("list conditional sync load balancer task management failed, err: %v, req: %+v, rid: %s",
 				err, req, kt.Rid)
@@ -570,7 +551,7 @@ func CheckRunningCondSyncTask(kt *kit.Kit, mgmtCli taskManagementLister, flowCli
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	runningFlowID, err := findRunningCondSyncFlow(kt, flowCli, slice.Unique(flowIDs))
+	runningFlowID, err := findRunningCondSyncFlow(kt, cliSet.TaskServer(), slice.Unique(flowIDs))
 	if err != nil {
 		return err
 	}
@@ -585,8 +566,23 @@ func CheckRunningCondSyncTask(kt *kit.Kit, mgmtCli taskManagementLister, flowCli
 		"account: %s, bk_biz_id: %d", opt.Vendor, opt.AccountID, opt.bkBizID())
 }
 
-// findRunningCondSyncFlow 返回首个未进入终态的flow id，全部终态时返回空串
-func findRunningCondSyncFlow(kt *kit.Kit, flowCli flowLister, flowIDs []string) (string, error) {
+// runningCondSyncTaskFilter 构造查询同账号、同业务下运行中的条件同步任务的过滤条件
+func runningCondSyncTaskFilter(opt *CondSyncLoadBalancerOption) *filter.Expression {
+	return tools.ExpressionAnd(
+		tools.RuleEqual("state", enumor.TaskManagementRunning),
+		tools.RuleEqual("resource", enumor.TaskManagementResClb),
+		tools.RuleEqual("bk_biz_id", opt.bkBizID()),
+		tools.RuleJsonOverlaps("operations", []enumor.TaskOperation{enumor.TaskSyncLoadBalancer}),
+		tools.RuleJsonOverlaps("vendors", []enumor.Vendor{opt.Vendor}),
+		tools.RuleJsonOverlaps("account_ids", []string{opt.AccountID}),
+	)
+}
+
+// findRunningCondSyncFlow 返回首个未进入终态的flow id，全部终态时返回空串。
+// task_management 的 running 状态由后台定时任务刷新，要等 flow 结束且任务详情全部终态后才会变更，
+// 滞后于 flow 的实际执行情况。仅凭 running 的任务管理记录互斥，会在 flow 已结束后仍拒绝新的同步请求，
+// 因此以 flow 状态为准：只有存在未进入终态的 flow 才视为同步仍在进行。
+func findRunningCondSyncFlow(kt *kit.Kit, taskCli *taskserver.Client, flowIDs []string) (string, error) {
 	if len(flowIDs) == 0 {
 		return "", nil
 	}
@@ -597,7 +593,7 @@ func findRunningCondSyncFlow(kt *kit.Kit, flowCli flowLister, flowIDs []string) 
 			Fields: []string{"id", "state"},
 			Page:   core.NewDefaultBasePage(),
 		}
-		resp, err := flowCli.ListFlow(kt, req)
+		resp, err := taskCli.ListFlow(kt, req)
 		if err != nil {
 			logs.Errorf("list conditional sync load balancer flow failed, err: %v, req: %+v, rid: %s",
 				err, req, kt.Rid)
