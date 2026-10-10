@@ -12,7 +12,12 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import CommonSideslider from '@/components/common-sideslider';
 import AccountSelector from '@/components/account-selector/index-new.vue';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import {
+  BatchDistribution,
+  DResourceType,
+  DResourceTypeMap,
+} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 import Confirm from '@/components/confirm';
 import { getTableNewRowClass } from '@/common/util';
 import {
@@ -42,6 +47,33 @@ export default defineComponent({
 
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
+    // 分配单个证书（复用负载均衡单个分配弹窗交互）
+    const isDialogShow = ref(false);
+    const currentOperateItem = ref<any>(null);
+    const isDialogBtnLoading = ref(false);
+    const selectedBizId = ref(0);
+    const accountId = computed(() => currentOperateItem.value?.account_id);
+    const { accountBizList } = useAccountBusiness(accountId);
+
+    const handleSingleDistribution = (cert: any) => {
+      isDialogShow.value = true;
+      currentOperateItem.value = cert;
+    };
+    const handleSingleDistributionConfirm = async () => {
+      isDialogBtnLoading.value = true;
+      try {
+        await resourceStore.assignBusiness(DResourceType.certs, {
+          [DResourceTypeMap[DResourceType.certs].key]: [currentOperateItem.value.id],
+          bk_biz_id: selectedBizId.value,
+        });
+        Message({ message: '分配成功', theme: 'success' });
+        getListData();
+      } finally {
+        isDialogShow.value = false;
+        isDialogBtnLoading.value = false;
+      }
+    };
+
     const rules = computed(() => {
       const rules = [...(props.filter?.rules || [])];
       if (isResourcePage) {
@@ -68,25 +100,43 @@ export default defineComponent({
         ...columns,
         {
           label: '操作',
-          width: 120,
+          width: isResourcePage ? 140 : 120,
           render: ({ data }: { data: any }) => (
-            <hcm-auth sign={{ type: authTypeMap.value.delete, relation: [currentBusinessId.value] }}>
-              {{
-                default: ({ noPerm }: { noPerm: boolean }) => (
+            <>
+              {isResourcePage && (
+                <span
+                  v-bk-tooltips={{
+                    content: '该证书已分配业务, 仅可在业务下操作',
+                    disabled: data.bk_biz_id === -1,
+                  }}>
                   <Button
                     text
                     theme='primary'
-                    onClick={() => handleDeleteCert(data)}
-                    disabled={noPerm || (isResourcePage && data.bk_biz_id !== -1)}
-                    v-bk-tooltips={{
-                      content: '该证书已分配业务, 仅可在业务下操作',
-                      disabled: isResourcePage && data.bk_biz_id !== -1,
-                    }}>
-                    删除
+                    style={{ marginRight: '10px' }}
+                    onClick={() => handleSingleDistribution(data)}
+                    disabled={data.bk_biz_id !== -1}>
+                    分配
                   </Button>
-                ),
-              }}
-            </hcm-auth>
+                </span>
+              )}
+              <hcm-auth sign={{ type: authTypeMap.value.delete, relation: [currentBusinessId.value] }}>
+                {{
+                  default: ({ noPerm }: { noPerm: boolean }) => (
+                    <Button
+                      text
+                      theme='primary'
+                      onClick={() => handleDeleteCert(data)}
+                      disabled={noPerm || (isResourcePage && data.bk_biz_id !== -1)}
+                      v-bk-tooltips={{
+                        content: '该证书已分配业务, 仅可在业务下操作',
+                        disabled: isResourcePage && data.bk_biz_id !== -1,
+                      }}>
+                      删除
+                    </Button>
+                  ),
+                }}
+              </hcm-auth>
+            </>
           ),
         },
       ];
@@ -376,6 +426,18 @@ export default defineComponent({
             }}
           </CommonTable>
         </div>
+        {/* 分配单个证书（复用负载均衡单个分配弹窗交互） */}
+        <bk-dialog
+          isShow={isDialogShow.value}
+          title='证书分配'
+          quickClose
+          onClosed={() => (isDialogShow.value = false)}
+          onConfirm={handleSingleDistributionConfirm}
+          isLoading={isDialogBtnLoading.value}>
+          <p class='mb16'>当前操作证书为：{currentOperateItem.value?.name}</p>
+          <p class='mb6'>请选择所需分配的目标业务</p>
+          <hcm-form-business data={accountBizList.value} v-model={selectedBizId.value} />
+        </bk-dialog>
         <CommonSideslider
           v-model:isShow={isCertUploadSidesliderShow.value}
           title='证书上传'
