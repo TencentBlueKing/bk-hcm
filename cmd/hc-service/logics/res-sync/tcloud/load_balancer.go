@@ -622,7 +622,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 		ext.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
 	}
 
-	// 内网独占集群（VPCGW），与公网 ClusterTag/ClusterIds 无关
+	// 负载均衡独占集群
 	if cloud.ExclusiveCluster != nil {
 		ext.L4Clusters = convClusterItemList(cloud.ExclusiveCluster.L4Clusters)
 		ext.L7Clusters = convClusterItemList(cloud.ExclusiveCluster.L7Clusters)

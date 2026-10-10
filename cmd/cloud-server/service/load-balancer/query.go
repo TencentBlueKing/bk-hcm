@@ -256,7 +256,7 @@ func (svc *lbSvc) fillTCloudClbExclusiveClusters(kt *kit.Kit, lb *corelb.TCloudL
 	return nil
 }
 
-// listExclusiveClusterMap 从 extension 的四层、七层、vpcgw 字段收集云上集群 ID，并按账号反查本地独占集群。
+// listExclusiveClusterMap 从 extension 的四层、七层字段收集云上集群 ID，并按账号反查本地独占集群。
 // 返回去重后的云上 ID，以及以云上 ID 为键的本地记录。不读 cluster_ids。
 func (svc *lbSvc) listExclusiveClusterMap(kt *kit.Kit, accountID string, ext *corelb.TCloudClbExtension) (
 	[]string, map[string]corelb.ExclusiveClusterRaw, error) {
@@ -273,9 +273,6 @@ func (svc *lbSvc) listExclusiveClusterMap(kt *kit.Kit, accountID string, ext *co
 				}
 				cloudIDs = append(cloudIDs, cluster.ClusterId)
 			}
-		}
-		if ext.ClassicalCluster != nil && ext.ClassicalCluster.ClusterId != "" {
-			cloudIDs = append(cloudIDs, ext.ClassicalCluster.ClusterId)
 		}
 	}
 	cloudIDs = slice.Unique(cloudIDs)
