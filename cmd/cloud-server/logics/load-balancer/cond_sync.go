@@ -24,7 +24,6 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -38,8 +37,8 @@ type CondSyncLoadBalancerOption struct {
 	Vendor enumor.Vendor
 	// AccountID 账号ID
 	AccountID string
-	// BkBizID 业务ID，未分配业务时为 constant.UnassignedBiz
-	BkBizID int64
+	// BkBizID 业务入口下的业务ID，为 nil 表示资源入口
+	BkBizID *int64
 	// Regions 本次同步的地域列表
 	Regions []string
 	// CloudIDs 本次同步指定的云上ID，为空表示地域全量
@@ -68,10 +67,7 @@ func ListAndDiffLoadBalancerByRegion(kt *kit.Kit, cliSet *client.ClientSet, opt 
 		TagFilters: opt.TagFilters,
 	}
 	// 腾讯云上没有业务概念，业务入口下先按 bk_biz_id 查DB，再用查出的云上ID收敛云上查询范围。
-	isBizEntry := opt.BkBizID != 0 && opt.BkBizID != constant.UnassignedBiz
-	if isBizEntry {
-		listOpt.BkBizID = cvt.ValToPtr(opt.BkBizID)
-	}
+	listOpt.BkBizID = opt.BkBizID
 	// DB查询先于云上查询，一是收敛云上范围需要DB结果，二是同步期间入库的实例只会被判为新增而非删除。
 	dbLBs, err := ListLoadBalancerBriefFromDB(kt, cliSet.DataService(), listOpt)
 	if err != nil {
@@ -82,7 +78,7 @@ func ListAndDiffLoadBalancerByRegion(kt *kit.Kit, cliSet *client.ClientSet, opt 
 	logs.Infof("list db load balancer brief done, account: %s, region: %s, count: %d, rid: %s",
 		opt.AccountID, region, len(dbLBs), kt.Rid)
 
-	if isBizEntry && opt.Vendor == enumor.TCloud {
+	if opt.BkBizID != nil && opt.Vendor == enumor.TCloud {
 		// 业务下没有负载均衡时无需查询云上，云上多出来的实例不属于本业务，其新建由资源侧入口负责。
 		if len(dbLBs) == 0 {
 			return &LoadBalancerRegionDiff{Region: region}, nil

@@ -40,7 +40,8 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, bkBizID int64,
+// tcloudCondSyncRes 条件同步腾讯云资源。资源入口的 bkBizID 为 nil。
+func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, bkBizID *int64,
 	resType enumor.CloudResourceType) (any, error) {
 
 	req, syncRoute, err := a.decodeTCloudCondSyncRequest(cts, resType)
