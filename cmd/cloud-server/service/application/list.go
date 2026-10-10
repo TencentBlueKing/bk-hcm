@@ -115,14 +115,24 @@ func (a *applicationSvc) listApplications(cts *rest.Contexts, req *proto.Applica
 
 // RemoveSenseField 申请单据内容移除敏感信息，如主机密码等
 func RemoveSenseField(content string) string {
+	return rebuildContent(content, func(key string) bool {
+		return strings.Contains(key, "password")
+	}, nil)
+}
+
+// rebuildContent 按顶层字段重新组装申请单据内容：丢弃 skip 返回 true 的字段，其余字段原样保留，
+// 再追加 extras 中的字段（key 为字段名，value 为已序列化的 JSON 值）。
+func rebuildContent(content string, skip func(key string) bool, extras map[string]string) string {
 	buffer := bytes.Buffer{}
 
-	m := gjson.Parse(content).Map()
-	for key, value := range m {
-		if strings.Contains(key, "password") {
+	for key, value := range gjson.Parse(content).Map() {
+		if skip(key) {
 			continue
 		}
 		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, value.Raw))
+	}
+	for key, raw := range extras {
+		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, raw))
 	}
 
 	ext := buffer.String()

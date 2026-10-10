@@ -58,6 +58,10 @@ func InitService(c *capability.Capability) {
 	h.Add("GetLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetLoadBalancerLockStatus)
 	h.Add("ListResLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListResLoadBalancerQuotas)
+	h.Add("ListExclusiveCluster", http.MethodPost,
+		"/load_balancers/exclusive_clusters/list", svc.ListExclusiveCluster)
+	h.Add("AssignExclusiveClusterToBiz", http.MethodPost,
+		"/load_balancers/exclusive_clusters/assign/bizs", svc.AssignExclusiveClusterToBiz)
 
 	bizH := rest.NewHandler()
 	bizH.Path("/bizs/{bk_biz_id}")
@@ -90,6 +94,10 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("GetBizLoadBalancerLockStatus", http.MethodGet,
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 	h.Add("ListBizLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListBizLoadBalancerQuotas)
+	h.Add("ListBizExclusiveClusterTags", http.MethodPost,
+		"/load_balancers/exclusive_clusters/tags/list", svc.ListBizExclusiveClusterTags)
+	h.Add("ListBizExclusiveClusterIdleVips", http.MethodPost,
+		"/load_balancers/exclusive_clusters/idle_vips/list", svc.ListBizExclusiveClusterIdleVips)
 
 	h.Add("TCloudCreateSnatIps", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips/create", svc.TCloudCreateSnatIps)
