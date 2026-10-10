@@ -118,13 +118,7 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 	// IN 查询是集合语义，数量校验必须用去重后的地域，否则重复入参会被误判为不存在。
 	req.Regions = slice.Unique(req.Regions)
 
-	var rules []*filter.AtomRule
-	rules = append(rules, tools.RuleEqual("account_id", accountID))
-	if len(req.Regions) > 0 {
-		rules = append(rules, tools.RuleIn("region_id", req.Regions))
-	} else {
-		rules = append(rules, tools.RuleEqual("sync_enable", true))
-	}
+	rules := buildAwsCondSyncRegionRules(accountID, req.Regions)
 
 	// check region
 	regionListReq := &core.ListReq{
@@ -150,6 +144,18 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID stri
 		}
 	}
 	return req, syncFunc, nil
+}
+
+// buildAwsCondSyncRegionRules 构造条件同步的地域查询条件。
+// 指定地域时不按 sync_enable 过滤，便于区分不存在和已禁用；未指定地域时只查启用同步的地域。
+func buildAwsCondSyncRegionRules(accountID string, regions []string) []*filter.AtomRule {
+	rules := []*filter.AtomRule{tools.RuleEqual("account_id", accountID)}
+	if len(regions) > 0 {
+		rules = append(rules, tools.RuleIn("region_id", regions))
+		return rules
+	}
+	rules = append(rules, tools.RuleEqual("sync_enable", true))
+	return rules
 }
 
 // checkAwsRequestRegions 区分请求地域不存在和同步已禁用。

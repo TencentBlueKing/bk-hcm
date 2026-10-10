@@ -26,6 +26,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestBuildAwsCondSyncRegionRules(t *testing.T) {
+	t.Run("specified regions", func(t *testing.T) {
+		rules := buildAwsCondSyncRegionRules("acc-1", []string{"us-east-1", "us-west-2"})
+		require.Len(t, rules, 2)
+		require.Equal(t, "account_id", rules[0].Field)
+		require.Equal(t, "acc-1", rules[0].Value)
+		require.Equal(t, "region_id", rules[1].Field)
+		require.Equal(t, []string{"us-east-1", "us-west-2"}, rules[1].Value)
+	})
+
+	t.Run("empty regions", func(t *testing.T) {
+		rules := buildAwsCondSyncRegionRules("acc-1", nil)
+		require.Len(t, rules, 2)
+		require.Equal(t, "account_id", rules[0].Field)
+		require.Equal(t, "sync_enable", rules[1].Field)
+		require.Equal(t, true, rules[1].Value)
+	})
+}
+
 func TestCheckAwsRequestRegions(t *testing.T) {
 	regionList := []region.AwsRegion{
 		{RegionID: "us-east-1", SyncEnable: true},

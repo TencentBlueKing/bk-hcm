@@ -117,8 +117,10 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 地域没有实例级权限，各云厂商共用这一处鉴权：只校验用户是否拥有「资源-IaaS资源操作」权限点。
-	if err := svc.authorizeRegionSyncEnable(cts); err != nil {
+	// 地域没有实例级权限，各云厂商共用这一处鉴权，只校验「资源-IaaS资源操作」权限点。
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.CloudResource, Action: meta.Update}}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -128,29 +130,6 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
-}
-
-// authorizeRegionSyncEnable 只校验「资源-IaaS资源操作」权限点，不校验具体地域或账号实例。
-// 该权限点在鉴权适配里由 IaaS 资源的 update 动作映射，这里不传入资源 ID。
-func (svc *RegionSvc) authorizeRegionSyncEnable(cts *rest.Contexts) error {
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Vpc, Action: meta.Update}}
-	decisions, err := svc.authorizer.AuthorizeAny(cts.Kit, authRes)
-	if err != nil {
-		logs.Errorf("authorize region sync_enable failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return err
-	}
-
-	if len(decisions) > 0 && decisions[0].Authorized {
-		return nil
-	}
-
-	permission, err := svc.authorizer.GetPermissionToApply(cts.Kit, authRes)
-	if err != nil {
-		logs.Errorf("get region sync_enable permission to apply failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return errf.New(errf.DoAuthorizeFailed, "get permission to apply failed")
-	}
-
-	return errf.NewWithPerm(errf.PermissionDenied, "no permission", permission)
 }
 
 // batchUpdateAwsRegionSyncEnable batch update aws region sync_enable field.
