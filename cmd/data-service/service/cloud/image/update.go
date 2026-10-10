@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud/image"
 	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
@@ -86,6 +87,7 @@ func batchUpdateImageExt[T coreimage.Extension](cts *rest.Contexts, svc *imageSv
 			updateData := &tablecloud.ImageModel{
 				State:  one.State,
 				OsType: one.OsType,
+				Type:   one.Type,
 			}
 
 			if one.Extension != nil {
@@ -134,4 +136,64 @@ func (svc *imageSvc) rawExtensions(cts *rest.Contexts, filterExp *filter.Express
 	}
 
 	return extensions, nil
+}
+
+// UpdateImageBizTag 更新镜像业务标签
+func (svc *imageSvc) UpdateImageBizTag(cts *rest.Contexts) (interface{}, error) {
+	imageID := cts.PathParameter("id").String()
+	if len(imageID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "image id is required")
+	}
+
+	req := new(dataproto.UpdateImageBizTagReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &types.ListOption{
+		Filter: tools.EqualExpression("id", imageID),
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+	}
+
+	data, err := svc.dao.Image().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list image failed, err: %v, imageID: %s, rid: %s", err, imageID, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if len(data.Details) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "image id (%s) not found", imageID)
+	}
+
+	imageData := data.Details[0]
+
+	if imageData.Type != string(enumor.ImageTypePrivate) {
+		return nil, errf.Newf(errf.InvalidParameter,
+			"only private image can set bk_biz_id, current image type is %s", imageData.Type)
+	}
+
+	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		updateData := &tablecloud.ImageModel{
+			BkBizID: &req.BkBizID,
+		}
+
+		if err := svc.dao.Image().UpdateByIDWithTx(cts.Kit, txn, imageID, updateData); err != nil {
+			logs.Errorf("update image bk_biz_id failed, err: %v, imageID: %s, bkBizID: %d, rid: %s",
+				err, imageID, req.BkBizID, cts.Kit.Rid)
+			return nil, errf.New(errf.Aborted, fmt.Sprintf("update image bk_biz_id failed, err: %v", err))
+		}
+		return nil, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	logs.Infof("update image bk_biz_id success, imageID: %s, bkBizID: %d, rid: %s", imageID, req.BkBizID, cts.Kit.Rid)
+
+	return nil, nil
 }

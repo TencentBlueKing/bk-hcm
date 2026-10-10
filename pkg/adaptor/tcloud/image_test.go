@@ -17,36 +17,35 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package image ...
-package image
+package tcloud
 
 import (
-	"net/http"
+	"testing"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"hcm/pkg/criteria/constant"
+
+	"github.com/stretchr/testify/require"
 )
 
-// InitService ...
-func InitService(cap *capability.Capability) {
-	pSvc := &imageSvc{
-		dao: cap.Dao,
+func TestChangeArchitecture(t *testing.T) {
+	arm := "arm"
+	x86 := "x86_64"
+	other := "other"
+
+	tests := []struct {
+		name         string
+		architecture *string
+		want         string
+	}{
+		{name: "nil defaults to x86_64", architecture: nil, want: constant.X86},
+		{name: "arm maps to arm64", architecture: &arm, want: constant.Arm64},
+		{name: "x86_64 stays unchanged", architecture: &x86, want: constant.X86},
+		{name: "other value stays unchanged", architecture: &other, want: other},
 	}
 
-	h := rest.NewHandler()
-
-	h.Add("BatchCreateImageExt", http.MethodPost, "/vendors/{vendor}/images/batch/create", pSvc.BatchCreateImageExt)
-	h.Add("GetImageExt", http.MethodGet, "/vendors/{vendor}/images/{id}", pSvc.GetImageExt)
-	h.Add("ListImage", http.MethodPost, "/images/list", pSvc.ListImage)
-	h.Add("ListImageExt", http.MethodPost, "/vendors/{vendor}/images/list", pSvc.ListImageExt)
-	h.Add("BatchUpdateImageExt", http.MethodPatch, "/vendors/{vendor}/images", pSvc.BatchUpdateImageExt)
-	h.Add("BatchDeleteImage", http.MethodDelete, "/images/batch", pSvc.BatchDeleteImage)
-	h.Add("UpdateImageBizTag", http.MethodPut, "/images/{id}/biz_tag", pSvc.UpdateImageBizTag)
-
-	h.Load(cap.WebService)
-}
-
-type imageSvc struct {
-	dao dao.Set
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, changeArchitecture(tt.architecture))
+		})
+	}
 }

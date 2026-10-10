@@ -71,3 +71,24 @@ func (rc *restClient) DeleteImage(kt *kit.Kit, request *dataproto.DeleteReq) err
 
 	return nil
 }
+
+// UpdateImageBizTag 更新镜像业务标签
+func (rc *restClient) UpdateImageBizTag(kt *kit.Kit, imageID string, request *dataproto.UpdateImageBizTagReq) error {
+	resp := new(core.UpdateResp)
+	err := rc.client.Put().
+		WithContext(kt.Ctx).
+		Body(request).
+		SubResourcef("/images/%s/biz_tag", imageID).
+		WithHeaders(kt.Header()).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
