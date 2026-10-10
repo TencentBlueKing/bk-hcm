@@ -1,9 +1,9 @@
 import { Button, Dialog, Steps } from 'bkui-vue';
 import { PropType, defineComponent, ref } from 'vue';
 import './index.scss';
-import AccountForm from './components/accountForm';
-import AccountResource from './components/accountResource';
-import ResultPage from './components/resultPage';
+import AccountForm from './components/account-form';
+import AccountResource from './components/account-resource';
+import ResultPage from './components/result-page';
 import { useAccountStore } from '@/store';
 import { useCalcTopWithNotice } from '@/hooks/use-calc-top-with-notice';
 

@@ -42,9 +42,13 @@ export const MENU_SERVICE_HOST_RECYCLE = Symbol('menu_service_host_recycle');
 export const MENU_PLATFORM_MANAGEMENT = Symbol('menu_platform_management');
 
 /**
- * 资源接入
+ * 资源运营
  */
 export const MENU_RESOURCE = Symbol('menu_resource');
+export const MENU_RESOURCE_MANAGE = Symbol('menu_resource_manage');
+export const MENU_RESOURCE_RESOURCE_LIST = Symbol('menu_resource_resource_list');
+// 顶栏「资源接入」入口，资源接入下线时删除
+export const MENU_RESOURCE_ACCESS = Symbol('menu_resource_access');
 export const MENU_RESOURCE_OPERATION_LOG = Symbol('menu_resource_operation_log');
 export const MENU_RESOURCE_OPERATION_LOG_DETAILS = Symbol('menu_resource_operation_log_details');
 export const MENU_RESOURCE_RESOURCE_MANAGEMENT = Symbol('menu_resource_resource_management');
@@ -83,7 +87,6 @@ export const MENU_SERVICE_PERMISSION_POLICY = Symbol('menu_service_permission_po
  * 账单与账号（一级菜单「资源运营」）
  * 命名与取值对齐 refactor-router-menu 分支的 menu-symbol.ts，便于后续合流
  */
-export const MENU_BILL = Symbol('menu_bill');
 export const MENU_BILL_ROOT_ACCOUNT = Symbol('menu_bill_root_account');
 export const MENU_BILL_ROOT_ACCOUNT_CREATE = Symbol('menu_bill_root_account_create');
 export const MENU_BILL_MAIN_ACCOUNT = Symbol('menu_bill_main_account');

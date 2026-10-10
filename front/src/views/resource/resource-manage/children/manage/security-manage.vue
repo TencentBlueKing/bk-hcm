@@ -1092,12 +1092,15 @@ watch(
     // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
     const isResourcePage = whereAmIRef.value === Senarios.resource;
     const isBusinessPage = whereAmIRef.value === Senarios.business;
-    const path = isResourcePage ? '/resource/resource' : '/business/security';
     const bizId = isBusinessPage ? getBizsId() : undefined;
     const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
 
-    // 更新路由
-    router.replace({ path, query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v, accountId } });
+    // 更新路由：资源纳管的资源类型在地址 params 里，只改 query 留在当前列表
+    if (isResourcePage) {
+      router.replace({ query: { scene: v, accountId } });
+    } else {
+      router.replace({ path: '/business/security', query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v } });
+    }
   },
   {
     immediate: true,

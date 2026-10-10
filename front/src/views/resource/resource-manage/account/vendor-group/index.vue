@@ -9,8 +9,8 @@ import { AUTH_IMPORT_ACCOUNT } from '@/constants/auth-symbols';
 import { useAccountSelectorStore } from '@/store/account-selector';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useResourceAccount } from '../accountList/useResourceAccount';
-import CreateAccount from '../createAccount';
-import { vendorProperty } from './vendor.plugin';
+import CreateAccount from '@/views/resource-manage/account/account-import';
+import { vendorProperty } from '@/views/resource-manage/account/vendor-group/vendor.plugin';
 
 const route = useRoute();
 const router = useRouter();
@@ -213,8 +213,9 @@ const handleCreateCancel = () => {
 
     .search-input {
       border-radius: 2px;
-      border-width: 0px;
+      border-width: 0;
 
+      // stylelint-disable-next-line selector-class-pattern
       :deep(.bk-input--text),
       :deep(.bk-input--suffix-icon) {
         background-color: #f0f1f5;

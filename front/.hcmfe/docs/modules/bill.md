@@ -7,11 +7,11 @@
 
 ## 职责
 
-一级菜单「资源运营」下「云账单管理」分组里的三个入口页：
+一级菜单「资源运营」下「云账号管理」分组里的三个入口页：
 
 - **一级账号** — `account/account-manage/root-account-list.vue`（`/bill/root-account`）。
 - **二级账号** — `account/account-manage/main-account-list.vue`（`/bill/main-account`）。
-- **云账单管理** — `bill/index.tsx`，账单汇总 / 明细 / 调整。
+- **账单管理** — `bill/index.tsx`，账单汇总 / 明细 / 调整（页内页签栏标题仍为「云账单管理」，与 PR 一致）。
 
 一级 / 二级账号原本是「云账号管理」页里的两个页签，现在各自独立成页。两个列表页只是薄壳，内容都复用 `account/account-manage/panel`，按 `accountLevel` 区分搜索项、列、接口和详情侧滑。`Panel` 只在 `setup` 时读一次 `accountLevel`，所以两条路由必须挂**不同的组件文件**：共用一个组件、靠路由 props 传级别时，两路由间切换会复用实例，列表不会刷新。
 
@@ -23,7 +23,7 @@
 
 ## 路由
 
-`views/bill/route-config.ts` 导出 `billAccountManage` / `billManage` / `billAccountManageLegacy`，由 `views/index.ts` 汇成纯路由数组 `billViews`；路由名用 `constants/menu-symbol.ts` 的 `MENU_BILL_*`（命名对齐未合入的整体重构）。侧栏菜单（显示名、图标、「云账单管理」分组）不在路由里，在 `common/menu-service.ts` 的 `billMenus` 声明，所以改菜单名或分组去那里，改页面标题、权限、高亮才动路由。通用约定见 `menu-route` 模块。
+`views/bill/route-config.ts` 导出 `billAccountManage` / `billManage` / `billAccountManageLegacy`，并入 `views/index.ts` 的 `resourceViews`（资源运营 `/resource` 根的子路由）。各记录写**绝对路径** `/bill/*`：地址不变，但 `matched[0]` 是 `MENU_RESOURCE`，顶栏高亮资源运营、侧栏为资源运营菜单树；迁到 `/resource/bill/*` 留给资源运营重组单。裸 `/bill` 由 `router/index.ts` 的顶层记录转到 `/bill/account-manage`。路由名用 `constants/menu-symbol.ts` 的 `MENU_BILL_*`（命名对齐未合入的整体重构；一级父路由 `MENU_BILL` 已删除）。侧栏菜单（显示名、图标、「云账号管理」分组、`ENABLE_ACCOUNT_BILL` 显隐）不在路由里，在 `common/menu-service.ts` 的资源运营菜单树声明，所以改菜单名或分组去那里，改页面标题、权限、高亮才动路由。通用约定见 `menu-route` 模块。
 
 ## 查看权限
 
@@ -45,7 +45,7 @@
 
 `billAccountManageLegacy` 承接旧「云账号管理」时期的地址：
 
-- `/bill/account-manage`（旧书签，**也是顶栏「资源运营」的入口地址**：顶栏按 name 跳 `MENU_BILL`，其父路由 `redirect` 到这里）→ 一级账号视图权限已缓存且有权限去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截显示无权限页申请。
+- `/bill/account-manage`（旧书签，裸 `/bill` 也转到这里）→ 一级账号视图权限已缓存且有权限去一级账号，否则去二级账号，保留 query。没有二级权限的人落到二级账号后，由上表的拦截显示无权限页申请。
 - `/bill/account-manage/first-account`、`/second-account` → 按 name 重定向到两个新建页，vue-router 默认保留 query。
 
 分流读 `preload` 预鉴权的视图权限缓存（`authStore.isViewPermissionCached` + `hasViewPermission`），写在 `beforeEnter`。这条记录要带 `children: []`，因为 vue-router 类型要求 `component` / `children` / `redirect` 三选一，而带 `redirect` 的记录不执行 `beforeEnter`。预鉴权接口失败时缓存为空，按无权限去二级账号。

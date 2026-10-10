@@ -7,23 +7,16 @@ import {
   RouteLocationNormalized,
 } from 'vue-router';
 import {
-  MENU_BILL,
   MENU_BUSINESS,
   MENU_BUSINESS_HOST_MANAGEMENT,
   MENU_RESOURCE,
-  MENU_RESOURCE_RESOURCE_MANAGEMENT,
+  MENU_RESOURCE_MANAGE,
   MENU_SCHEME,
   MENU_SERVICE,
   MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
-import {
-  billViews,
-  businessViews,
-  injectStatusComponents,
-  resourceAccessViews,
-  schemeViews,
-  serviceViews,
-} from '@/views';
+import { businessViews, injectStatusComponents, resourceViews, schemeViews, serviceViews } from '@/views';
+import { resourceManageLegacy } from '@/views/resource-manage/route-config';
 import common from './module/common';
 import { before as businessBeforeInterceptor } from './business-interceptor';
 import { useCommonStore } from '@/store';
@@ -62,12 +55,11 @@ const routes: RouteRecordRaw[] = [
     redirect: { name: MENU_SERVICE_TICKET_MANAGEMENT },
     children: serviceViews,
   },
-  // TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
   {
     name: MENU_RESOURCE,
     path: '/resource',
-    redirect: { name: MENU_RESOURCE_RESOURCE_MANAGEMENT },
-    children: resourceAccessViews,
+    redirect: { name: MENU_RESOURCE_MANAGE },
+    children: resourceViews,
   },
   {
     name: MENU_SCHEME,
@@ -75,12 +67,10 @@ const routes: RouteRecordRaw[] = [
     redirect: { name: 'scheme-recommendation' },
     children: schemeViews,
   },
-  // TODO(菜单整合二期·组装)：资源运营改为最终结构后删除
+  ...resourceManageLegacy,
   {
-    name: MENU_BILL,
     path: '/bill',
     redirect: { path: '/bill/account-manage' },
-    children: billViews,
   },
   {
     path: '/403',

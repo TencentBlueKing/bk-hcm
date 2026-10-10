@@ -8,7 +8,8 @@ import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { useAccountStore, useBusinessStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import CommonCard from '@/components/CommonCard';
 import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 
@@ -19,6 +20,7 @@ export default defineComponent({
   props: {},
   setup() {
     const router = useRouter();
+    const route = useRoute();
     const { getBizsId, whereAmI } = useWhereAmI();
     const formModel = reactive({
       biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
@@ -121,10 +123,9 @@ export default defineComponent({
         router.back();
       } else {
         router.replace({
-          path: '/resource/resource',
-          query: {
-            type: 'subnet',
-          },
+          name: MENU_RESOURCE_RESOURCE_LIST,
+          params: { resourceType: 'subnet' },
+          query: { accountId: route.query.accountId },
         });
       }
     };

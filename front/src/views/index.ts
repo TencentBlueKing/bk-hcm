@@ -6,6 +6,7 @@ import serviceInside from '@/router/module/service-inside';
 import resource from '@/router/module/resource';
 import resourceInside from '@/router/module/resource-inside';
 import scheme from '@/router/module/scheme';
+import resourceManage from '@/views/resource-manage/route-config';
 import { billAccountManage, billAccountManageLegacy, billManage } from '@/views/bill/route-config';
 
 import statusNotFound from '@/views/status/404.vue';
@@ -46,7 +47,13 @@ export const businessViews = injectStatusComponents(
   statusBusiness,
 );
 export const serviceViews = injectStatusComponents([...service.flatMap((group) => group.children), ...serviceInside]);
-// TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
-export const resourceAccessViews = injectStatusComponents([...resource, ...resourceInside]);
+// 资源运营：resource / resourceInside 为原资源接入页面，随各模块迁出后删除
+export const resourceViews = injectStatusComponents([
+  ...resourceManage,
+  ...resource,
+  ...resourceInside,
+  ...billAccountManage,
+  ...billManage,
+  ...billAccountManageLegacy,
+]);
 export const schemeViews = injectStatusComponents(scheme);
-export const billViews = injectStatusComponents([...billAccountManage, ...billManage, ...billAccountManageLegacy]);

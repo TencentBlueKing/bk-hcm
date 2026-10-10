@@ -46,7 +46,6 @@ export default defineComponent({
     watch(
       [() => props.bizId, () => props.accountId, () => props.vendor, () => props.region, () => props.zone],
       async ([bizId, accountId, vendor, region, zone]) => {
-        console.log(accountId, region, zone, bizId);
         if (!accountId || !region || !zone || (whereAmI.value === Senarios.business && !bizId)) {
           list.value = [];
           return;
@@ -171,7 +170,7 @@ export default defineComponent({
               theme='primary'
               text
               onClick={() => {
-                const url = whereAmI.value === Senarios.business ? '/#/business/vpc' : '/#/resource/resource?type=vpc';
+                const url = whereAmI.value === Senarios.business ? '/#/business/vpc' : '/#/resource/manage/vpc';
                 window.open(url, '_blank');
               }}>
               新建

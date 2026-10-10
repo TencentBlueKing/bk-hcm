@@ -2,15 +2,7 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import {
-  MENU_RESOURCE,
-  MENU_RESOURCE_DISK_APPLY,
-  MENU_RESOURCE_HOST_APPLY,
-  MENU_RESOURCE_LOAD_BALANCER_APPLY,
-  MENU_RESOURCE_OPERATION_LOG_DETAILS,
-  MENU_RESOURCE_SUBNET_APPLY,
-  MENU_RESOURCE_VPC_APPLY,
-} from '@/constants/menu-symbol';
+import { MENU_RESOURCE_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import HcmBreadcrumb from './breadcrumb.vue';
 
@@ -21,25 +13,26 @@ const breadcrumb = useBreadcrumb();
 
 // 守卫按权限 / 异常把 meta.view 切到 permission、error、notFound，对应 views/index.ts 注入的 named view
 const view = computed(() => (route.meta.view as string) ?? 'default');
-// TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
-const isLegacyResourceAccess = computed(() => route.matched[0]?.name === MENU_RESOURCE);
+// TODO(菜单整合二期·组装)：原资源接入页面全部迁出后删除
+const isLegacyResourceAccess = computed(() => !!route.meta.legacyResourceAccess);
 const isStatusView = computed(() => view.value !== 'default' || route.name === '404' || route.name === 'error');
 const showBreadcrumb = computed(() => !isLegacyResourceAccess.value && breadcrumb.data.display);
-// TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除，由资源纳管入口右栏的面包屑承担
-// 资源接入的详情 / 申请页在右侧内容区显示面包屑；详情返回列表时带上资源类型以回到对应页签
-const legacyBreadcrumbRoutes = [
-  'resourceDetail',
-  MENU_RESOURCE_OPERATION_LOG_DETAILS,
-  MENU_RESOURCE_HOST_APPLY,
-  MENU_RESOURCE_VPC_APPLY,
-  MENU_RESOURCE_DISK_APPLY,
-  MENU_RESOURCE_SUBNET_APPLY,
-  MENU_RESOURCE_LOAD_BALANCER_APPLY,
-];
+// TODO(菜单整合二期·组装)：原资源详情、操作记录详情迁出后删除
+// 原资源接入的详情页在右侧内容区显示面包屑；详情返回列表时带上资源类型以回到对应页签
+const legacyBreadcrumbRoutes = ['resourceDetail', MENU_RESOURCE_OPERATION_LOG_DETAILS];
 const showLegacyBreadcrumb = computed(() => legacyBreadcrumbRoutes.includes(route.name));
-const legacyBackConfig = computed(() =>
-  route.name === 'resourceDetail' ? { query: { type: route.params.type as string } } : undefined,
-);
+// 原详情类型与资源纳管页签不同名的映射
+const legacyDetailTabMap: Record<string, string> = {
+  eips: 'ip',
+  route: 'routing',
+  gcp: 'security',
+  template: 'security',
+};
+const legacyBackConfig = computed(() => {
+  if (route.name !== 'resourceDetail') return undefined;
+  const type = route.params.type as string;
+  return { params: { resourceType: legacyDetailTabMap[type] ?? type }, query: { accountId: route.query.accountId } };
+});
 </script>
 
 <template>

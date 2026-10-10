@@ -20,13 +20,14 @@ import {
   MENU_SERVICE_PERMISSION_POLICY,
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_RESOURCE,
+  MENU_RESOURCE_ACCESS,
+  MENU_RESOURCE_MANAGE,
   MENU_SCHEME,
-  MENU_BILL,
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_MAIN_ACCOUNT,
   MENU_BILL_MANAGE,
 } from '@/constants/menu-symbol';
-import { billViews, businessViews, serviceViews } from '@/views';
+import { businessViews, resourceViews, serviceViews } from '@/views';
 
 /**
  * 菜单定义，与路由解耦：菜单只按 name 引用路由，显示名、图标、分组、显隐归菜单。
@@ -190,27 +191,42 @@ const serviceMenus: IMenu[] = [
   },
 ];
 
-const billMenus: IMenu[] = [
+const isAccountBillEnabled = () => ENABLE_ACCOUNT_BILL === 'true';
+
+// TODO(菜单整合二期)：账号管理、回收管理（云资源组）与操作记录（不分组，末项）随各自的独立页面上线时加入
+const resourceMenus: IMenu[] = [
+  {
+    id: MENU_RESOURCE_MANAGE,
+    i18n: '资源纳管',
+    icon: 'bkhcm-icon-vpc',
+    group: '云资源',
+    groupIcon: 'bkhcm-icon-vpc',
+    route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE),
+  },
   {
     id: MENU_BILL_ROOT_ACCOUNT,
     i18n: '一级账号',
     icon: 'bkhcm-icon-account-manage',
-    group: '云账单管理',
-    route: getMenuRoute(billViews, MENU_BILL_ROOT_ACCOUNT),
+    group: '云账号管理',
+    groupIcon: 'bkhcm-icon-account-manage',
+    visibility: isAccountBillEnabled,
+    route: getMenuRoute(resourceViews, MENU_BILL_ROOT_ACCOUNT),
   },
   {
     id: MENU_BILL_MAIN_ACCOUNT,
     i18n: '二级账号',
     icon: 'bkhcm-icon-account-manage',
-    group: '云账单管理',
-    route: getMenuRoute(billViews, MENU_BILL_MAIN_ACCOUNT),
+    group: '云账号管理',
+    visibility: isAccountBillEnabled,
+    route: getMenuRoute(resourceViews, MENU_BILL_MAIN_ACCOUNT),
   },
   {
     id: MENU_BILL_MANAGE,
-    i18n: '云账单管理',
+    i18n: '账单管理',
     icon: 'bkhcm-icon-bill-manage',
-    group: '云账单管理',
-    route: getMenuRoute(billViews, MENU_BILL_MANAGE),
+    group: '云账号管理',
+    visibility: isAccountBillEnabled,
+    route: getMenuRoute(resourceViews, MENU_BILL_MANAGE),
   },
 ];
 
@@ -218,11 +234,10 @@ const billMenus: IMenu[] = [
 const menus: IMenu[] = [
   { id: MENU_BUSINESS, i18n: '业务资源', menu: businessMenus },
   { id: MENU_SERVICE, i18n: '服务请求', menu: serviceMenus },
-  // TODO(菜单整合二期·组装)：资源接入迁入资源运营后删除
-  { id: MENU_RESOURCE, i18n: '资源接入' },
+  // 只做跳转，资源接入下线时删除
+  { id: MENU_RESOURCE_ACCESS, i18n: '资源接入', route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE) },
   { id: MENU_SCHEME, i18n: '资源选型', visibility: () => ENABLE_CLOUD_SELECTION === 'true' },
-  // TODO(菜单整合二期·组装)：改为资源运营最终结构
-  { id: MENU_BILL, i18n: '资源运营', visibility: () => ENABLE_ACCOUNT_BILL === 'true', menu: billMenus },
+  { id: MENU_RESOURCE, i18n: '资源运营', menu: resourceMenus },
 ];
 
 const filter = (items: IMenu[]): IMenu[] =>

@@ -81,7 +81,6 @@ watch(
   () => route.path,
   () => {
     const topMenuId = currentTopMenu.value?.id;
-    // TODO(菜单整合二期·组装)：资源接入迁入资源运营后去掉 MENU_RESOURCE
     if (topMenuId === MENU_RESOURCE || topMenuId === MENU_SCHEME) {
       accountStore.updateBizsId(0);
     } else if (!topMenuId) {

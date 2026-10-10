@@ -2,7 +2,7 @@ import { computed, defineComponent, ref, watch } from 'vue';
 import { Button, Exception, Input, Loading } from 'bkui-vue';
 import './index.scss';
 import allVendors from '@/assets/image/all-vendors.png';
-import CreateAccount from '../createAccount';
+import CreateAccount from '@/views/resource-manage/account/account-import';
 import VendorAccounts from './components/VendorAccounts';
 import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';

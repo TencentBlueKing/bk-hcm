@@ -9,18 +9,18 @@
 
 - **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。未迁移的老路由仍有字符串 name（如 `'resourceDetail'`、`'businessRecyclebin'`、`'scheme-recommendation'`），二者并存。
 - **一级菜单与侧栏** — `common/menu-service.ts` 的 `menus: IMenu[]`。顶层每项的 `id` 必须等于 `router/index.ts` 里对应顶层父路由的 `name`；数组顺序即顶栏从左到右的顺序；声明了 `menu` 的一级菜单才显示侧栏。
-  - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`、资源运营受 `ENABLE_ACCOUNT_BILL`）。
+  - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`；资源运营始终显示，`ENABLE_ACCOUNT_BILL` 只控其下「云账号管理」三项）。
   - `getCurrentTopMenu(route)`：侧栏与顶栏激活用。**一级菜单本身不按 `visibility` 过滤**（开关只管顶栏入口，直接访问地址时侧栏照常），子项照常过滤。
   - `getMenuRoute(views, id)`：在路由树里递归按 name 找记录，菜单项只按 name 引用路由。
   - `toMenuKey(id)`：Symbol 取 `description` 作 `bk-menu` 的 key；侧栏 `active-key` 用同一函数处理 `route.meta.activeKey`。
 - **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由，子路由可写绝对路径，地址不受包装影响。状态路由 `404` / `error` 与 `/403/:id` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址兜底进 `404`（不再跳回首页）。各父路由的 `children` 来自 `views/index.ts`，导出时已经 `injectStatusComponents` 注入状态页 named view；新增视图集合也必须经它包一层。全局 `beforeEach` 只做视图级权限（业务拦截器 → `available` → `meta.auth.view`），不改地址。
-- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceAccessViews` / `schemeViews` / `billViews`，路由注册与菜单服务共用同一份。
+- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 原资源接入页面 + 账单；账单记录写绝对路径 `/bill/*`，地址不变但归属资源运营。
 
 ## 侧栏与顶栏渲染
 
 - `components/layout/menu.vue`：取 `getCurrentTopMenu(route).menu`，按 `group` 聚合（首次出现顺序），分组用 `bk-menu-group`（**不可折叠**，不做 #1897 的折叠交互与收藏）。菜单项权限过滤读 `constants/view-auth.ts` 中 `hideMenu` 项的视图权限缓存（菜单 id = `viewId`，见 auth 模块）；整组为空时分组隐藏。业务资源下顶部显示 `BusinessSelector`（侧栏展开时），菜单链接带 `?bizs=`。
 - `components/layout/menu-item.vue`：一律按 `{ name }` 跳转（一期为相对路径路由维护的 `getRouteLinkParams` 白名单已随旧壳删除）。显示名取 `IMenu.i18n` 原文；需要翻译的项（单据管理、权限策略库）在 menu-service 里已用 `t()` 求值，渲染器不再套 `t()`。
-- `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页；业务资源额外带 `?bizs=`。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。顶栏若要加只做跳转的入口（如资源接入），给它注册独立的具名转址记录并以入口 id 为 name，不要让链接直接指向目标页面路由，否则会和目标所属一级菜单同时点亮。点击非资源接入时清空资源账号选择。
+- `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页；业务资源额外带 `?bizs=`。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。只做跳转的一级入口（资源接入 `MENU_RESOURCE_ACCESS`）不注册路由，菜单项声明 `route`（目标页面）：`header.vue` 对带 `route` 的一级菜单链到 `route.name`、`hasRoute` 按它过滤，并传空的 `active-class` / `exact-active-class`，否则会和目标所属一级菜单同时点亮。点击资源运营、资源接入之外的一级菜单时清空资源账号选择。
 
 ## 面包屑
 
@@ -49,7 +49,7 @@
 
 ## 过渡形态（菜单整合二期进行中）
 
-二期首批按「先模块、后组装」分 commit 合入，组装 commit 之前存在以下过渡代码（均标 `TODO(菜单整合二期·组装)`）：资源接入 `MENU_RESOURCE` 仍是 `/resource/*` 的顶层父路由、无侧栏、`main-content.vue` 为它渲染左侧云账号树；资源运营仍是 `/bill` 下的 `MENU_BILL`。组装完成后 `MENU_RESOURCE` 改为资源运营根（`/resource`），账单迁到 `/resource/bill/*`。
+二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，账号管理、回收管理、操作记录由各自的单加入，不用原页面临时顶替）。尚未迁出的原资源接入页面（账号列表 / 页签、回收站、操作记录、资源详情）只承接旧地址，仍在 `router/module/resource.ts`，作为根的子记录挂在外壳记录下：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 让 `main-content.vue` 为这些页面渲染原云账号树两栏布局。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
 
 ## 明细目录
 

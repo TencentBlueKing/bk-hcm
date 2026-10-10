@@ -13,7 +13,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import {
   ValidateStatus,
   useSecretExtension,
-} from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+} from '@/views/resource-manage/account/account-import/components/account-form/use-secret-extension';
 import { VendorEnum } from '@/common/constant';
 import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
 import { timeFormatter } from '@/common/util';

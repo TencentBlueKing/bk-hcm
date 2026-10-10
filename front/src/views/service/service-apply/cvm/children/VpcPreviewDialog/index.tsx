@@ -48,7 +48,7 @@ export default defineComponent({
                 if (!props.data.cloud_id) return;
                 const url =
                   whereAmI.value === Senarios.resource
-                    ? `/#/resource/resource?cloud_id=${props.data.cloud_id}&type=vpc`
+                    ? `/#/resource/manage/vpc?cloud_id=${props.data.cloud_id}`
                     : `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
                 window.open(url, '_blank');
               }}

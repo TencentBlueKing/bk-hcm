@@ -9,6 +9,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import bus from '@/common/bus';
 
 import { Button, Message, OverflowTitle } from 'bkui-vue';
@@ -148,9 +149,10 @@ const columns: any = [
       const jump = () => {
         if (isResourcePage.value) {
           routerAction.open({
-            path: '/resource/resource',
+            name: MENU_RESOURCE_RESOURCE_LIST,
+            params: { resourceType: 'security' },
             // accountId用于左侧账号列表定位账号
-            query: { type: 'security', accountId: data.account_id },
+            query: { accountId: data.account_id },
           });
         } else {
           routerAction.open({
@@ -245,9 +247,10 @@ if (props.data.vendor === 'azure') {
       const jump = () => {
         if (isResourcePage.value) {
           routerAction.open({
-            path: '/resource/resource',
+            name: MENU_RESOURCE_RESOURCE_LIST,
+            params: { resourceType: 'network-interface' },
             // accountId用于左侧账号列表定位账号
-            query: { type: 'network-interface', accountId: data.account_id },
+            query: { accountId: data.account_id },
           });
         } else {
           routerAction.open({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } });

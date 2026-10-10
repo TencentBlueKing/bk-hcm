@@ -178,17 +178,17 @@
   }
 }
 
+// TODO(菜单整合二期·组装)：原资源接入页面全部迁出后删除
 .resource-manage-container {
   height: 100%;
   display: flex;
 
   .router-view-content {
+    flex: 1;
+    min-width: 0;
     padding: 24px;
     height: 100%;
-    width: 85%;
-    margin-left: 15%;
     overflow-y: auto;
-    z-index: 1;
 
     .apply-clb-form-container {
       padding: 0 !important;
@@ -197,11 +197,8 @@
 
   .fixed-account-list-container {
     flex-shrink: 0;
-    position: fixed;
-    left: 0;
-    height: calc(100vh - 52px);
-    width: 15%;
+    width: 240px;
+    height: 100%;
     border-right: 1px solid #eaebf0;
-    z-index: 99;
   }
 }

@@ -20,7 +20,7 @@ import {
 const billAccountManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_ROOT_ACCOUNT,
-    path: 'root-account',
+    path: '/bill/root-account',
     component: () => import('./account/account-manage/root-account-list.vue'),
     meta: {
       ...new Meta({
@@ -33,7 +33,7 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_ROOT_ACCOUNT_CREATE,
-    path: 'root-account/create',
+    path: '/bill/root-account/create',
     component: () => import('./account/create-account/create-first-account'),
     meta: {
       ...new Meta({
@@ -46,7 +46,7 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT,
-    path: 'main-account',
+    path: '/bill/main-account',
     component: () => import('./account/account-manage/main-account-list.vue'),
     meta: {
       ...new Meta({
@@ -59,7 +59,7 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT_CREATE,
-    path: 'main-account/create',
+    path: '/bill/main-account/create',
     component: () => import('./account/create-account/create-second-account'),
     meta: {
       ...new Meta({
@@ -72,11 +72,11 @@ const billAccountManage: RouteRecordRaw[] = [
   },
 ];
 
-// 旧地址兼容。account-manage 同时是顶栏「资源运营」的入口地址。
+// 旧地址兼容（裸 /bill 也转到 account-manage）。
 // 分流读 preload 预鉴权的一级账号视图权限；未取到（接口失败）时按无权限去二级账号
 const billAccountManageLegacy: RouteRecordRaw[] = [
   {
-    path: 'account-manage',
+    path: '/bill/account-manage',
     // 类型要求 component/children/redirect 之一；带 redirect 的记录不会执行 beforeEnter
     children: [],
     beforeEnter: (to) => {
@@ -88,11 +88,11 @@ const billAccountManageLegacy: RouteRecordRaw[] = [
     },
   },
   {
-    path: 'account-manage/first-account',
+    path: '/bill/account-manage/first-account',
     redirect: { name: MENU_BILL_ROOT_ACCOUNT_CREATE },
   },
   {
-    path: 'account-manage/second-account',
+    path: '/bill/account-manage/second-account',
     redirect: { name: MENU_BILL_MAIN_ACCOUNT_CREATE },
   },
 ];
@@ -102,7 +102,7 @@ const billAccountManageLegacy: RouteRecordRaw[] = [
 const billManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_MANAGE,
-    path: 'bill-manage',
+    path: '/bill/bill-manage',
     component: () => import('./bill/index'),
     redirect: { name: MENU_BILL_MANAGE_SUMMARY },
     children: [
@@ -137,7 +137,7 @@ const billManage: RouteRecordRaw[] = [
     ],
     meta: {
       ...new Meta({
-        title: '云账单管理',
+        title: '账单管理',
         activeKey: MENU_BILL_MANAGE,
         layout: { breadcrumb: { show: false } },
       }),

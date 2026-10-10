@@ -2,29 +2,32 @@
 import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
 import { operationLogRsc as operationLogRscRouteConfig } from '@/views/operation-log/route-config';
-import Meta from '../meta';
+import { toResourceList } from '@/views/resource-manage/route-config';
 import {
-  MENU_RESOURCE_LOAD_BALANCER_APPLY,
-  MENU_RESOURCE_DISK_APPLY,
-  MENU_RESOURCE_HOST_APPLY,
+  MENU_RESOURCE_MANAGE,
+  MENU_RESOURCE_RESOURCE_LIST,
   MENU_RESOURCE_RESOURCE_MANAGEMENT,
-  MENU_RESOURCE_SUBNET_APPLY,
-  MENU_RESOURCE_VPC_APPLY,
 } from '@/constants/menu-symbol';
 import { AUTH_FIND_ACCOUNT, AUTH_FIND_RECYCLE_BIN } from '@/constants/auth-symbols';
 
 const { t } = i18n.global;
 
+// 原资源接入页面，只承接旧地址（侧栏无入口），随账号管理、回收管理与操作记录、资源详情迁出后逐条删除
 const resourceMenus: RouteRecordRaw[] = [
   {
     path: '/resource',
     component: () => import('@/views/resource/resource-manage/resource-entry.vue'),
+    // 与资源运营根同路径，vue-router 优先匹配子记录，不转址时裸 /resource 会渲染空白外壳
+    redirect: { name: MENU_RESOURCE_MANAGE },
+    meta: { legacyResourceAccess: true },
     children: [
       {
         path: 'resource',
         name: MENU_RESOURCE_RESOURCE_MANAGEMENT,
         component: () => import('@/views/resource/resource-manage/resource-manage.vue'),
         children: [
+          // 资源列表已迁到资源纳管
+          { path: '', redirect: toResourceList },
           operationLogRscRouteConfig[0],
           {
             path: 'account',
@@ -61,7 +64,6 @@ const resourceMenus: RouteRecordRaw[] = [
       {
         path: '/resource/account',
         name: t('账户'),
-        alias: '',
         component: () => import('@/views/resource/accountmanage/index.vue'),
         meta: {
           action: 'account_find',
@@ -74,81 +76,10 @@ const resourceMenus: RouteRecordRaw[] = [
         component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
         meta: {
           notMenu: true,
-          menu: { i18n: '资源详情', relative: MENU_RESOURCE_RESOURCE_MANAGEMENT },
+          menu: { i18n: '资源详情', relative: MENU_RESOURCE_RESOURCE_LIST },
         },
       },
       operationLogRscRouteConfig[1],
-      {
-        path: '/resource/service-apply/cvm',
-        name: MENU_RESOURCE_HOST_APPLY,
-        component: () => import('@/views/service/service-apply/cvm'),
-        meta: {
-          ...new Meta({
-            title: '购买主机',
-            notMenu: true,
-            menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
-            },
-          }),
-        },
-      },
-      {
-        path: '/resource/service-apply/vpc',
-        name: MENU_RESOURCE_VPC_APPLY,
-        component: () => import('@/views/service/service-apply/vpc'),
-        meta: {
-          ...new Meta({
-            title: '购买VPC',
-            notMenu: true,
-            menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
-            },
-          }),
-        },
-      },
-      {
-        path: '/resource/service-apply/disk',
-        name: MENU_RESOURCE_DISK_APPLY,
-        component: () => import('@/views/service/service-apply/disk'),
-        meta: {
-          ...new Meta({
-            title: '购买硬盘',
-            notMenu: true,
-            menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
-            },
-          }),
-        },
-      },
-      {
-        path: '/resource/service-apply/subnet',
-        name: MENU_RESOURCE_SUBNET_APPLY,
-        component: () => import('@/views/service/service-apply/subnet'),
-        meta: {
-          ...new Meta({
-            title: '新建子网',
-            notMenu: true,
-            menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
-            },
-          }),
-        },
-      },
-      {
-        path: '/resource/service-apply/clb',
-        name: MENU_RESOURCE_LOAD_BALANCER_APPLY,
-        component: () => import('@/views/service/service-apply/clb'),
-        meta: {
-          ...new Meta({
-            title: '购买负载均衡',
-            notMenu: true,
-            isFilterAccount: true,
-            menu: {
-              relative: MENU_RESOURCE_RESOURCE_MANAGEMENT,
-            },
-          }),
-        },
-      },
       {
         path: '/resource/recyclebin',
         name: t('回收站'),

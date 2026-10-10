@@ -1,5 +1,6 @@
 .account-form {
   margin-top: 72px;
+
   .account-form-card {
     margin-bottom: 16px;
     background-color: #fff;
@@ -35,11 +36,13 @@
     .api-secret-header {
       display: flex;
       align-items: center;
+
       .header-text {
         margin-left: 9px;
         color: #63656e;
         font-size: 12px;
       }
+
       .header-btn {
         font-size: 12px;
       }
@@ -64,10 +67,12 @@
       margin-top: -16px;
       display: flex;
       align-items: center;
+
       .account-validate-btn {
         margin: 0 12px 0 28px;
         min-width: 88px;
       }
+
       .validate-icon {
         margin-right: 8px;
         height: 14px;
@@ -81,9 +86,11 @@
       justify-content: center;
       background: #fafbfd;
       height: 100%;
+      // stylelint-disable-next-line no-descending-specificity
       .bk-form-item {
         margin-bottom: 0 !important;
       }
+
       .api-secret-footer-content {
         width: 209px;
         height: 32px;

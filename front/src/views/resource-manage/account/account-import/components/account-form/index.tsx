@@ -12,7 +12,7 @@ import http from '@/http';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
 import { useAccountStore, useUserStore } from '@/store';
-import { ValidateStatus, useSecretExtension } from './useSecretExtension';
+import { ValidateStatus, useSecretExtension } from './use-secret-extension';
 
 const { FormItem } = Form;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;

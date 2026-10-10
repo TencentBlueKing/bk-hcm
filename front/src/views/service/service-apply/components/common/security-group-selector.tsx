@@ -245,9 +245,7 @@ export default defineComponent({
                   text
                   onClick={() => {
                     const url =
-                      whereAmI.value === Senarios.business
-                        ? '/#/business/security'
-                        : '/#/resource/resource?type=security';
+                      whereAmI.value === Senarios.business ? '/#/business/security' : '/#/resource/manage/security';
                     window.open(url, '_blank');
                   }}>
                   {t('新建安全组')}

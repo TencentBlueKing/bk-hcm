@@ -4,29 +4,35 @@
     padding: 0 auto;
     display: flex;
     justify-content: center;
+
     .result-page-content {
       text-align: center;
+
       .result-page-title {
-        font-family: MicrosoftYaHei-Bold;
+        font-family: MicrosoftYaHei-Bold, sans-serif;
         font-weight: 700;
         font-size: 16px;
         color: #313238;
         margin-bottom: 8px;
       }
+
       .result-page-text {
         font-size: 14px;
         color: #63656e;
         margin-bottom: 16px;
       }
+
       .result-page-icon-success {
         width: 84px;
         height: 84px;
         margin-bottom: 22px;
       }
+
       .result-page-success-btn {
         margin-right: 12px;
         min-width: 88px;
       }
+
       .result-page-failure-box {
         width: 640px;
         height: 160px;

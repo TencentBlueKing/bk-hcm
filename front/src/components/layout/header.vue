@@ -6,7 +6,7 @@ import { jsonp } from '@/http';
 import i18n from '@/language/i18n';
 import { GLOBAL_BIZS_KEY, LANGUAGE_TYPE } from '@/common/constant';
 import { getMenus, type IMenu } from '@/common/menu-service';
-import { MENU_BUSINESS, MENU_RESOURCE } from '@/constants/menu-symbol';
+import { MENU_BUSINESS, MENU_RESOURCE, MENU_RESOURCE_ACCESS } from '@/constants/menu-symbol';
 import { useAccountStore, useUserStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { gotoLoginPage } from '@/utils/login-helper';
@@ -21,17 +21,20 @@ const accountStore = useAccountStore();
 
 const language = Cookies.get('blueking_language') || i18n.global.locale.value;
 
+// 声明了 route 的一级菜单是跳转入口：链到其它一级菜单下的页面，自身不高亮
+const getNavTarget = (nav: IMenu) => nav.route?.name ?? nav.id;
+
 // 一级菜单对应的路由不存在时只隐藏该项
-const menus = getMenus().filter((menu) => router.hasRoute(menu.id));
+const menus = getMenus().filter((menu) => router.hasRoute(getNavTarget(menu)));
 
 const getNavLink = (nav: IMenu): RouteLocationRaw => {
   if (nav.id === MENU_BUSINESS) return { name: nav.id, query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } };
-  return { name: nav.id };
+  return { name: getNavTarget(nav) };
 };
 
 const handleNavClick = (nav: IMenu) => {
-  // TODO(菜单整合二期·组装)：资源接入下线后去掉账号选择的清理
-  if (nav.id !== MENU_RESOURCE) useResourceAccountStore().clear();
+  // TODO(菜单整合二期·筛选写入地址)：云账号树改为地址驱动后去掉账号选择的清理
+  if (![MENU_RESOURCE, MENU_RESOURCE_ACCESS].includes(nav.id as symbol)) useResourceAccountStore().clear();
 };
 
 const handleLogout = () => {
@@ -54,6 +57,8 @@ const handleChangeLang = async (lang: string) => {
         :key="nav.id"
         class="header-nav-link"
         :to="getNavLink(nav)"
+        :active-class="nav.route ? '' : undefined"
+        :exact-active-class="nav.route ? '' : undefined"
         @click="handleNavClick(nav)"
       >
         {{ t(nav.i18n) }}
