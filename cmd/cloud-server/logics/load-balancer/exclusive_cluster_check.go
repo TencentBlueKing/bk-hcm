@@ -20,6 +20,8 @@
 package lblogic
 
 import (
+	"sort"
+
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -99,7 +101,11 @@ func checkClusterIDsOwnership(kt *kit.Kit, cli *dataservice.Client, bkBizID int6
 	}
 
 	if len(remaining) != 0 {
-		return errf.Newf(errf.PermissionDenied, "cloud_cluster_ids does not belong to biz(id=%d)", bkBizID)
+		missing := cvt.MapKeyToStringSlice(remaining)
+		sort.Strings(missing)
+		logs.Errorf("cloud_cluster_ids(%v) does not belong to biz(id=%d), rid: %s", missing, bkBizID, kt.Rid)
+		return errf.Newf(errf.PermissionDenied, "cloud_cluster_ids(%v) does not belong to biz(id=%d)", missing,
+			bkBizID)
 	}
 
 	return nil

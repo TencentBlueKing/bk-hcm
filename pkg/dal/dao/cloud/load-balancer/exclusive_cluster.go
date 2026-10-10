@@ -118,9 +118,8 @@ func (dao *ExclusiveClusterDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	return ids, nil
 }
 
-// BatchUpdateWithTx update load balancer exclusive cluster with tx. It is the only update method, reused by both
-// cloud attribute sync and bk_biz_id assignment, isolated by the fields the caller assigns on the model (zero
-// value fields are skipped by utils.RearrangeSQLDataWithOption).
+// BatchUpdateWithTx update load balancer exclusive cluster with tx. Zero value fields of the model are skipped
+// by utils.RearrangeSQLDataWithOption.
 func (dao *ExclusiveClusterDao) BatchUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	models []tablelb.LoadBalancerExclusiveClusterTable) error {
 
@@ -129,10 +128,6 @@ func (dao *ExclusiveClusterDao) BatchUpdateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	}
 
 	for _, model := range models {
-		if len(model.ID) == 0 {
-			return errf.New(errf.InvalidParameter, "id is required")
-		}
-
 		if err := model.UpdateValidate(); err != nil {
 			return err
 		}

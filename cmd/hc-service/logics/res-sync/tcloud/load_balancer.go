@@ -674,7 +674,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string,
 	}
 
 	// 独占集群信息：数据来源于 ClusterTag（7层独占标签）与 ClusterIds（集群ID数组，可能混合TGW/STGW落地ID）这两个
-	// 平级字段，注意不是 ExclusiveCluster 字段（该字段是内网独占集群，与本单公网独占集群场景无关）
+	// 平级字段，注意不是 ExclusiveCluster 字段（该字段是内网独占集群，与公网独占集群无关）
 	ext.Exclusive, ext.Clusters = buildExclusiveClusterExtension(cloud, clusterMap)
 
 	return ext

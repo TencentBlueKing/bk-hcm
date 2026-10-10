@@ -53,8 +53,6 @@ func InitExclusiveClusterService(cap *capability.Capability) {
 		"/vendors/{vendor}/load_balancer_exclusive_clusters/batch/create", svc.BatchCreateExclusiveCluster)
 	h.Add("BatchUpdateExclusiveCluster", http.MethodPatch, "/vendors/{vendor}/load_balancer_exclusive_clusters",
 		svc.BatchUpdateExclusiveCluster)
-	h.Add("BatchUpdateExclusiveClusterBizID", http.MethodPatch, "/load_balancer_exclusive_clusters/biz",
-		svc.BatchUpdateExclusiveClusterBizID)
 	h.Add("BatchDeleteExclusiveCluster", http.MethodDelete, "/load_balancer_exclusive_clusters/batch",
 		svc.BatchDeleteExclusiveCluster)
 
@@ -137,7 +135,7 @@ func convExclusiveClusterTableToBase(one *tablelb.LoadBalancerExclusiveClusterTa
 }
 
 // BatchCreateExclusiveCluster batch create load balancer exclusive cluster, bk_biz_id is fixed to
-// constant.UnassignedBiz, business assignment is done by BatchUpdateExclusiveClusterBizID.
+// constant.UnassignedBiz, business assignment is done by BatchUpdateExclusiveCluster.
 func (svc *lbSvc) BatchCreateExclusiveCluster(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
@@ -227,8 +225,8 @@ func convExclusiveClusterCreateToTable[T corelb.ExclusiveClusterExtension](kt *k
 	}, nil
 }
 
-// BatchUpdateExclusiveCluster batch update load balancer exclusive cluster's cloud attributes, bk_biz_id is not
-// touched by this interface, keep its zero value on the model so it is skipped by RearrangeSQLDataWithOption.
+// BatchUpdateExclusiveCluster batch update load balancer exclusive cluster, zero value fields (including
+// bk_biz_id) are skipped by RearrangeSQLDataWithOption.
 func (svc *lbSvc) BatchUpdateExclusiveCluster(cts *rest.Contexts) (any, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
@@ -283,6 +281,7 @@ func convExclusiveClusterUpdateToTable[T corelb.ExclusiveClusterExtension](kt *k
 	model := &tablelb.LoadBalancerExclusiveClusterTable{
 		ID:               cluster.ID,
 		Name:             cluster.Name,
+		BkBizID:          cluster.BkBizID,
 		Zone:             cluster.Zone,
 		ClusterType:      cluster.ClusterType,
 		ClusterTag:       cluster.ClusterTag,
@@ -305,45 +304,6 @@ func convExclusiveClusterUpdateToTable[T corelb.ExclusiveClusterExtension](kt *k
 	}
 
 	return model, nil
-}
-
-// BatchUpdateExclusiveClusterBizID batch assign load balancer exclusive cluster to a business. This interface
-// does NOT do "whether already assigned" business pre-check, authentication or audit, it is only supposed to be
-// called internally by cloud-server, and it reuses the same DAO BatchUpdateWithTx as cloud attribute update,
-// isolated purely by the narrow field set (id/bk_biz_id/reviser) of the model built here.
-func (svc *lbSvc) BatchUpdateExclusiveClusterBizID(cts *rest.Contexts) (any, error) {
-	req := new(dataproto.ExclusiveClusterBatchUpdateBizIDReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
-		models := make([]tablelb.LoadBalancerExclusiveClusterTable, 0, len(req.ClusterIDs))
-		for _, id := range req.ClusterIDs {
-			models = append(models, tablelb.LoadBalancerExclusiveClusterTable{
-				ID:      id,
-				BkBizID: req.BkBizID,
-				Reviser: cts.Kit.User,
-			})
-		}
-
-		if err := svc.dao.LoadBalancerExclusiveCluster().BatchUpdateWithTx(cts.Kit, txn, models); err != nil {
-			logs.Errorf("batch update load balancer exclusive cluster bk_biz_id failed, err: %v, rid: %s",
-				err, cts.Kit.Rid)
-			return nil, fmt.Errorf("batch update load balancer exclusive cluster bk_biz_id failed, err: %v", err)
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
 }
 
 // BatchDeleteExclusiveCluster batch delete load balancer exclusive cluster.

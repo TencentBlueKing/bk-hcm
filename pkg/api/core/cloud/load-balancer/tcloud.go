@@ -127,7 +127,7 @@ type TCloudClbExtension struct {
 	Forward *uint64 `json:"forward,omitempty"`
 
 	// Exclusive 是否为独占型实例，数据来源于云上 DescribeLoadBalancers 返回的 ClusterTag/ClusterIds 两个平级
-	// 字段（注意不是 ExclusiveCluster 字段，该字段是内网独占集群，与本字段的公网独占集群场景无关）
+	// 字段（注意不是 ExclusiveCluster 字段，该字段是内网独占集群，与公网独占集群无关）
 	Exclusive *bool `json:"exclusive"`
 	// Clusters 独占集群信息列表，非独占型为空数组
 	Clusters []TCloudExtensionCluster `json:"clusters"`

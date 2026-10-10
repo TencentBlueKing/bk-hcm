@@ -26,6 +26,7 @@ import (
 	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
@@ -241,12 +242,12 @@ func (a *ApplicationOfCreateTCloudLB) renderInstanceChargeForm() []formItem {
 // renderSlaType 合成 ITSM「规格」展示：独占型优先于 sla_type；空 sla_type 视为共享型。
 func renderSlaType(req *hclb.TCloudLoadBalancerCreateReq) string {
 	if req.IsExclusive() {
-		return exclusiveSlaTypeName
+		return constant.ExclusiveSlaTypeName
 	}
 	if slaType := cvt.PtrToVal(req.SlaType); slaType != "" {
 		return slaType
 	}
-	return sharedSlaTypeName
+	return constant.SharedSlaTypeName
 }
 
 // renderExclusiveClusterForm 独占型申请单追加七层标签、指定 VIP、四层集群信息；非独占型不追加。
@@ -261,7 +262,7 @@ func (a *ApplicationOfCreateTCloudLB) renderExclusiveClusterForm() ([]formItem, 
 
 // renderExclusiveClusterItems 组装独占集群相关的 ITSM 表单项，便于单测覆盖展示口径。
 func renderExclusiveClusterItems(clusterTag, vip string, tgwLines []string) []formItem {
-	tgwValue := emptyItsmValue
+	tgwValue := constant.EmptyItsmValue
 	if len(tgwLines) != 0 {
 		tgwValue = strings.Join(tgwLines, "；")
 	}
@@ -323,7 +324,7 @@ type localTgwItsmCluster struct {
 // formatTgwClusterItsmLine 格式化单条四层独占集群 ITSM 展示，口径与申请单详情页一致。
 func formatTgwClusterItsmLine(name, cloudID, clusterTag string) string {
 	if name == "" {
-		name = localUnsyncedName
+		name = constant.ClusterLocalUnsyncedName
 	}
 	if clusterTag == "" {
 		return fmt.Sprintf("%s（云上ID：%s）", name, cloudID)
@@ -334,7 +335,7 @@ func formatTgwClusterItsmLine(name, cloudID, clusterTag string) string {
 // emptyOrItsmValue 空字符串时返回 ITSM 占位符。
 func emptyOrItsmValue(value string) string {
 	if value == "" {
-		return emptyItsmValue
+		return constant.EmptyItsmValue
 	}
 	return value
 }

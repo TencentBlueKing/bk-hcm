@@ -62,19 +62,13 @@ type TCloudLoadBalancerSpec struct {
 	// LoadBalancerPassToTarget 安全组放通模式
 	LoadBalancerPassToTarget *bool `json:"load_balancer_pass_to_target" validate:"required"`
 
-	// Exclusive 是否独占型：1是、0否，默认0，详见独占型规格说明
+	// Exclusive 是否独占型：1是、0否，默认0
 	Exclusive *int64 `json:"exclusive" validate:"omitempty,oneof=0 1"`
 	// ClusterTag 七层独占集群标签
 	ClusterTag *string `json:"cluster_tag" validate:"omitempty"`
 	// CloudClusterIDs 四层（TGW）独占集群的云上ID列表，取自标签聚合查询接口返回的 cloud_cluster_id
 	CloudClusterIDs []string `json:"cloud_cluster_ids" validate:"omitempty,max=100"`
 }
-
-// cloudClusterIDsMaxLimit cloud_cluster_ids 数量上限
-const cloudClusterIDsMaxLimit = 100
-
-// singleLineClusterIsp 单线运营商类型集合，使用该类型时必须走共享带宽包计费
-var singleLineClusterIsp = map[string]bool{"CMCC": true, "CUCC": true, "CTCC": true}
 
 // IsExclusive 是否独占型请求
 func (spec *TCloudLoadBalancerSpec) IsExclusive() bool {
@@ -102,8 +96,8 @@ func (spec *TCloudLoadBalancerSpec) validateExclusive() error {
 	if !hasClusterTag && !hasClusterIDs {
 		return errors.New("cluster_tag/cloud_cluster_ids can not be both empty when exclusive is 1")
 	}
-	if len(spec.CloudClusterIDs) > cloudClusterIDsMaxLimit {
-		return fmt.Errorf("cloud_cluster_ids count should <= %d", cloudClusterIDsMaxLimit)
+	if len(spec.CloudClusterIDs) > constant.CloudClusterIDsMaxLimit {
+		return fmt.Errorf("cloud_cluster_ids count should <= %d", constant.CloudClusterIDsMaxLimit)
 	}
 
 	if err := spec.validateExclusiveVip(); err != nil {
@@ -129,9 +123,9 @@ func (spec *TCloudLoadBalancerSpec) validateExclusiveVip() error {
 
 // validateExclusiveCharge 校验独占型计费方式结构规则
 func (spec *TCloudLoadBalancerSpec) validateExclusiveCharge() error {
-	isp := converter.PtrToVal(spec.VipIsp)
+	isp := enumor.ClusterIsp(converter.PtrToVal(spec.VipIsp))
 	chargeType := converter.PtrToVal(spec.InternetChargeType)
-	if singleLineClusterIsp[isp] && chargeType != typelb.BandwidthPackage {
+	if isp.IsSingleLine() && chargeType != typelb.BandwidthPackage {
 		return errors.New("internet_charge_type must be 'BANDWIDTH_PACKAGE' for single line isp")
 	}
 	if chargeType == typelb.BandwidthPackage && converter.PtrToVal(spec.BandwidthPackageID) == "" {
@@ -286,6 +280,8 @@ type TCloudDescribeClusterIdleVipsReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	ClusterID string `json:"cluster_id" validate:"required"`
+	// Vip 可选，指定后只查询该VIP，返回结果非空表示该VIP闲置
+	Vip string `json:"vip" validate:"omitempty"`
 }
 
 // Validate tcloud describe cluster idle vips req.

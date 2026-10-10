@@ -149,22 +149,18 @@ TBD - created by archiving change load-balancer-exclusive-cluster-dao. Update Pu
 
 ### Requirement: data-service 按 vendor 批量更新云属性接口
 
-系统 SHALL 提供 `PATCH /vendors/{vendor}/load_balancer_exclusive_clusters` 接口，请求体结构体 `BatchUpdateReq` SHALL NOT 包含 `bk_biz_id` 字段，用于同步逻辑更新集群云属性（如 `egress`、`max_conn`、`clb_resource_count`、`extension`）。handler 内部构造的 `Table` model SHALL NOT 赋值 `BkBizID` 字段，调用 DAO 层统一的 `BatchUpdateWithTx`。
+系统 SHALL 提供 `PATCH /vendors/{vendor}/load_balancer_exclusive_clusters` 接口，请求体结构体 `BatchUpdateReq` 的每个元素包含 `id` 以及可选的更新字段（如 `egress`、`max_conn`、`clb_resource_count`、`extension`、`bk_biz_id`），零值字段不更新。该接口同时用于同步逻辑更新集群云属性与分配业务（赋值 `bk_biz_id`），handler 将请求元素转换为 `Table` model 后调用 DAO 层统一的 `BatchUpdateWithTx`，不额外定义专属的分配业务接口。该接口 SHALL NOT 做"是否已分配"业务前置校验、鉴权与审计（由上层 cloud-server 负责），仅保证按传入参数正确写库。
 
 #### Scenario: 更新云属性不影响 bk_biz_id
-- **WHEN** 已存在记录 `bk_biz_id=213`，发送 PATCH 请求更新该记录的 `clb_resource_count`
-- **THEN** `clb_resource_count` 更新成功，`bk_biz_id` 仍为 `213`（因 handler 未对 model 的 `BkBizID` 赋值，DAO 层零值跳过）
-
-### Requirement: data-service 批量更新 bk_biz_id 接口（分配业务）
-
-系统 SHALL 提供 `PATCH /load_balancer_exclusive_clusters/biz` 接口（无 vendor 路径参数），请求体 `BatchUpdateBizIDReq` 仅含 `cluster_ids`（本地 ID 数组，最多 100 个）与 `bk_biz_id`（必须大于 0），用于把集群分配给业务。handler 内部为每个 `cluster_id` 构造一个只赋值 `ID`/`BkBizID`/`Reviser` 的 `Table` model（其余字段保持零值），调用与云属性更新**同一个** DAO 层 `BatchUpdateWithTx`，不额外定义专属的分配业务 DAO 方法。本接口 SHALL NOT 做"是否已分配"业务前置校验、鉴权与审计（由上层 cloud-server 负责），仅保证按传入参数正确写库。
+- **WHEN** 已存在记录 `bk_biz_id=213`，发送 PATCH 请求更新该记录的 `clb_resource_count`（不传 `bk_biz_id`）
+- **THEN** `clb_resource_count` 更新成功，`bk_biz_id` 仍为 `213`（`bk_biz_id` 为零值，DAO 层跳过）
 
 #### Scenario: 分配业务写库成功
-- **WHEN** 发送 PATCH 请求，`cluster_ids=["00000001"]`，`bk_biz_id=213`
+- **WHEN** 发送 PATCH 请求，`clusters=[{"id":"00000001","bk_biz_id":213}]`
 - **THEN** 对应记录的 `bk_biz_id` 更新为 `213`，其余列不变
 
-#### Scenario: cluster_ids 超过上限
-- **WHEN** 发送 PATCH 请求，`cluster_ids` 长度超过 100
+#### Scenario: clusters 超过上限
+- **WHEN** 发送 PATCH 请求，`clusters` 长度超过 100
 - **THEN** 返回参数校验错误
 
 ### Requirement: data-service 批量删除接口
@@ -189,13 +185,8 @@ TBD - created by archiving change load-balancer-exclusive-cluster-dao. Update Pu
 
 ### Requirement: Client 封装
 
-`pkg/client/data-service/global/load_balancer_exclusive_cluster.go` SHALL 提供 Global client 方法：`List`、`BatchDelete`、`BatchUpdateBizID`；vendor-scoped 方法（`BatchCreate`、`BatchUpdate`）SHALL 按 vendor 路径封装。
+`pkg/client/data-service/global/load_balancer_exclusive_cluster.go` SHALL 提供 Global client 方法：`List`、`BatchDelete`；vendor-scoped 方法（`BatchCreate`、`BatchUpdate`）SHALL 按 vendor 路径封装。
 
 #### Scenario: Global client 调用 List
 - **WHEN** 调用 `global.LoadBalancerExclusiveCluster.List(kt, req)`
 - **THEN** 发送 POST 到 `/load_balancer_exclusive_clusters/list`，返回 `ListResult`
-
-#### Scenario: Global client 调用 BatchUpdateBizID
-- **WHEN** 调用 `global.LoadBalancerExclusiveCluster.BatchUpdateBizID(kt, req)`
-- **THEN** 发送 PATCH 到 `/load_balancer_exclusive_clusters/biz`
-

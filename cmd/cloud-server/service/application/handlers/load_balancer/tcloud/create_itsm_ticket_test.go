@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/constant"
 	cvt "hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
@@ -34,14 +35,14 @@ func TestRenderSlaType_Exclusive(t *testing.T) {
 	req.Exclusive = cvt.ValToPtr(int64(1))
 	req.SlaType = cvt.ValToPtr("")
 
-	require.Equal(t, exclusiveSlaTypeName, renderSlaType(req))
+	require.Equal(t, constant.ExclusiveSlaTypeName, renderSlaType(req))
 }
 
 // TestRenderSlaType_SharedWhenSlaTypeEmpty 非独占且 sla_type 为空时展示共享型。
 func TestRenderSlaType_SharedWhenSlaTypeEmpty(t *testing.T) {
 	req := &hclb.TCloudLoadBalancerCreateReq{}
 
-	require.Equal(t, sharedSlaTypeName, renderSlaType(req))
+	require.Equal(t, constant.SharedSlaTypeName, renderSlaType(req))
 }
 
 // TestRenderSlaType_PerformanceCapacity 非独占且指定性能容量档位时透传档位编码。
@@ -101,8 +102,8 @@ func TestRenderExclusiveClusterItems_EmptyFields(t *testing.T) {
 	items := renderExclusiveClusterItems("", "", nil)
 
 	require.Equal(t, []formItem{
-		{Label: "七层独占集群标签", Value: emptyItsmValue},
-		{Label: "指定VIP", Value: emptyItsmValue},
-		{Label: "四层独占集群", Value: emptyItsmValue},
+		{Label: "七层独占集群标签", Value: constant.EmptyItsmValue},
+		{Label: "指定VIP", Value: constant.EmptyItsmValue},
+		{Label: "四层独占集群", Value: constant.EmptyItsmValue},
 	}, items)
 }

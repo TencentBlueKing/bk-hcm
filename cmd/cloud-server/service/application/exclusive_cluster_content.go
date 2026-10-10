@@ -20,9 +20,7 @@
 package application
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -34,8 +32,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// exclusiveClusterContentInfo 申请单详情 content 中富化的单个独占集群信息，字段含义详见
-// openspec/changes/load-balancer-exclusive-cluster-purchase 的 load-balancer-exclusive-cluster-detail 规格。
+// exclusiveClusterContentInfo 申请单详情 content 中富化的单个独占集群信息。
 type exclusiveClusterContentInfo struct {
 	CloudClusterID string `json:"cloud_cluster_id"`
 	ClusterID      string `json:"cluster_id"`
@@ -96,7 +93,9 @@ func enrichExclusiveClusterContent(kt *kit.Kit, lister exclusiveClusterLister, a
 		return content
 	}
 
-	return injectJSONField(content, "clusters", string(clustersRaw))
+	return rebuildContent(content, func(key string) bool {
+		return key == "clusters"
+	}, map[string]string{"clusters": string(clustersRaw)})
 }
 
 // localTgwCluster 四层独占集群本地表反查结果，用于补齐申请单详情 clusters 中 TGW 元素的展示字段。
@@ -156,22 +155,4 @@ func buildExclusiveClusterContentInfos(kt *kit.Kit, lister exclusiveClusterListe
 	}
 
 	return clusters, nil
-}
-
-// injectJSONField 将一个已序列化的 JSON 值以指定 key 注入到 content 顶层对象中，写法与 RemoveSenseField 保持
-// 一致，避免引入额外的 JSON 写库依赖。
-func injectJSONField(content, key, rawValue string) string {
-	buffer := bytes.Buffer{}
-
-	m := gjson.Parse(content).Map()
-	for k, v := range m {
-		if k == key {
-			continue
-		}
-		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, k, v.Raw))
-	}
-	buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, rawValue))
-
-	ext := buffer.String()
-	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
 }

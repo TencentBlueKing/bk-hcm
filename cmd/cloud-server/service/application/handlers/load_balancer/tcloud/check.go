@@ -27,6 +27,7 @@ import (
 	hcbwpkg "hcm/pkg/api/hc-service/bandwidth-packages"
 	"hcm/pkg/criteria/errf"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // CheckReq 检查申请单的数据是否正确
@@ -48,10 +49,29 @@ func (a *ApplicationOfCreateTCloudLB) CheckReq() error {
 		return err
 	}
 
-	return a.checkBandwidthPackageEgress()
+	if err := a.checkBandwidthPackageEgress(); err != nil {
+		return err
+	}
+
+	return a.checkVipIdle()
 }
 
-// checkBandwidthPackageEgress 计费方式为共享带宽包时，校验带宽包出口与本次可能分配到的独占集群出口是否一致（R-008）。
+// checkVipIdle 指定了VIP时，实时查云校验该VIP在所选四层独占集群中仍然闲置。
+func (a *ApplicationOfCreateTCloudLB) checkVipIdle() error {
+	vip := cvt.PtrToVal(a.req.Vip)
+	if vip == "" {
+		return nil
+	}
+
+	if len(a.req.CloudClusterIDs) != 1 {
+		return errf.New(errf.InvalidParameter, "cloud_cluster_ids must contain exactly one id when vip is specified")
+	}
+
+	return lblogic.CheckExclusiveClusterVipIdle(a.Cts.Kit, a.Client.HCService(), a.req.AccountID, a.req.Region,
+		a.req.CloudClusterIDs[0], vip)
+}
+
+// checkBandwidthPackageEgress 计费方式为共享带宽包时，校验带宽包出口与可能被分配到的独占集群出口是否一致。
 func (a *ApplicationOfCreateTCloudLB) checkBandwidthPackageEgress() error {
 	if cvt.PtrToVal(a.req.InternetChargeType) != typelb.BandwidthPackage {
 		return nil
@@ -62,14 +82,15 @@ func (a *ApplicationOfCreateTCloudLB) checkBandwidthPackageEgress() error {
 		return err
 	}
 
-	allowedSet, err := lblogic.ComputeExclusiveClusterEgressSet(a.Cts.Kit, a.Client.DataService(), a.req.BkBizID,
+	allowedEgresses, err := lblogic.ComputeExclusiveClusterEgressSet(a.Cts.Kit, a.Client.DataService(), a.req.BkBizID,
 		cvt.PtrToVal(a.req.ClusterTag), a.req.CloudClusterIDs)
 	if err != nil {
 		return err
 	}
 
-	if err := lblogic.CheckBandwidthPackageEgress(allowedSet, egress); err != nil {
-		return errf.NewFromErr(errf.InvalidParameter, err)
+	if !slice.IsItemInSlice(allowedEgresses, egress) {
+		return errf.Newf(errf.InvalidParameter,
+			"bandwidth package egress(%s) is not allowed by the selected exclusive cluster(s)", egress)
 	}
 
 	return nil

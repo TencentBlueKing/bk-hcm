@@ -21,9 +21,12 @@ package lblogic
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest/client"
 
 	"github.com/stretchr/testify/require"
 )
@@ -99,4 +102,49 @@ func TestCheckExclusiveClusterIdleVipQueryable_DataServiceError(t *testing.T) {
 	err := CheckExclusiveClusterIdleVipQueryable(testKit(), cli, 213, "tgw-1")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "mock server error")
+}
+
+// newTestHCServiceClient 启动一个 httptest server 承载给定 handler，返回指向该 server 的 hc-service 客户端。
+func newTestHCServiceClient(t *testing.T, handler http.Handler) *hcservice.Client {
+	t.Helper()
+
+	srv := httptest.NewServer(handler)
+	t.Cleanup(srv.Close)
+
+	cap := &client.Capability{Client: srv.Client(), Discover: staticServerDiscovery{addr: srv.URL}}
+	return hcservice.NewClient(cap, "v1")
+}
+
+// TestCheckExclusiveClusterVipIdle_VipIdle 指定VIP闲置时云上返回该VIP，校验通过，且请求中带上了 vip 条件。
+func TestCheckExclusiveClusterVipIdle_VipIdle(t *testing.T) {
+	cli := newTestHCServiceClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Contains(t, readBody(t, r), `"vip":"1.1.1.2"`)
+		writeOKResp(t, w, map[string]any{"count": 1, "details": []string{"1.1.1.2"}})
+	}))
+
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	require.NoError(t, err)
+}
+
+// TestCheckExclusiveClusterVipIdle_VipNotIdle 指定VIP已被占用时云上不返回该VIP，返回 InvalidParameter。
+func TestCheckExclusiveClusterVipIdle_VipNotIdle(t *testing.T) {
+	cli := newTestHCServiceClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeOKResp(t, w, map[string]any{"count": 0, "details": []string{}})
+	}))
+
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	require.Error(t, err)
+	require.Equal(t, errf.InvalidParameter, err.(*errf.ErrorF).Code)
+}
+
+// TestCheckExclusiveClusterVipIdle_DescribeFailed 查云失败时直接返回错误。
+func TestCheckExclusiveClusterVipIdle_DescribeFailed(t *testing.T) {
+	cli := newTestHCServiceClient(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write([]byte(`{"code": 1, "message": "mock server error"}`))
+		require.NoError(t, err)
+	}))
+
+	err := CheckExclusiveClusterVipIdle(testKit(), cli, "acc-1", "ap-guangzhou", "tgw-1", "1.1.1.2")
+	require.Error(t, err)
 }

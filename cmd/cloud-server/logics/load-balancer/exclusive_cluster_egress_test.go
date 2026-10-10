@@ -24,6 +24,8 @@ import (
 	"strings"
 	"testing"
 
+	"hcm/pkg/tools/slice"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,44 +53,44 @@ func newEgressMockHandler(t *testing.T, tgwEgresses, stgwEgresses []string) http
 	}
 }
 
-// TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch AC-014：只传四层，带宽包出口不在 TGW 出口集合内。
+// TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch 只传四层，带宽包出口不在 TGW 出口集合内。
 func TestComputeExclusiveClusterEgressSet_OnlyL4NotMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, []string{"center_egress1"}, nil))
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "", []string{"tgw-1"})
 	require.NoError(t, err)
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress2"))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress2"))
 }
 
-// TestComputeExclusiveClusterEgressSet_OnlyL4MultiEgressMatch AC-026：只传四层多个出口，带宽包出口命中其一。
+// TestComputeExclusiveClusterEgressSet_OnlyL4MultiEgressMatch 只传四层多个出口，带宽包出口命中其一。
 func TestComputeExclusiveClusterEgressSet_OnlyL4MultiEgressMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, []string{"center_egress1", "center_egress2"}, nil))
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "", []string{"tgw-1", "tgw-2"})
 	require.NoError(t, err)
-	require.NoError(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
+	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
 
-// TestComputeExclusiveClusterEgressSet_OnlyL7NotMatch AC-022：只传七层，带宽包出口不在标签出口集合内。
+// TestComputeExclusiveClusterEgressSet_OnlyL7NotMatch 只传七层，带宽包出口不在标签出口集合内。
 func TestComputeExclusiveClusterEgressSet_OnlyL7NotMatch(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t, nil, []string{"center_egress1"}))
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", nil)
 	require.NoError(t, err)
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress2"))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress2"))
 }
 
-// TestComputeExclusiveClusterEgressSet_OnlyL7Match AC-023/AC-025：只传七层，带宽包出口属于标签出口集合。
+// TestComputeExclusiveClusterEgressSet_OnlyL7Match 只传七层，带宽包出口属于标签出口集合。
 func TestComputeExclusiveClusterEgressSet_OnlyL7Match(t *testing.T) {
 	cli := newTestDataServiceClient(t,
 		newEgressMockHandler(t, nil, []string{"center_egress1", "center_egress2"}))
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", nil)
 	require.NoError(t, err)
-	require.NoError(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
+	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
 
-// TestComputeExclusiveClusterEgressSet_BothWithinIntersection AC-020/AC-024：四层七层都选，出口落在交集内。
+// TestComputeExclusiveClusterEgressSet_BothWithinIntersection 四层七层都选，出口落在交集内。
 func TestComputeExclusiveClusterEgressSet_BothWithinIntersection(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t,
 		[]string{"center_egress1", "center_egress2"},
@@ -97,10 +99,10 @@ func TestComputeExclusiveClusterEgressSet_BothWithinIntersection(t *testing.T) {
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
 	require.NoError(t, err)
-	require.NoError(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
+	require.True(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
 
-// TestComputeExclusiveClusterEgressSet_BothOnlyInL4 AC-021：出口只属于 E4_set，不在交集内。
+// TestComputeExclusiveClusterEgressSet_BothOnlyInL4 出口只属于四层出口集合，不在交集内。
 func TestComputeExclusiveClusterEgressSet_BothOnlyInL4(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t,
 		[]string{"center_egress1", "center_egress2"},
@@ -109,10 +111,10 @@ func TestComputeExclusiveClusterEgressSet_BothOnlyInL4(t *testing.T) {
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
 	require.NoError(t, err)
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
 
-// TestComputeExclusiveClusterEgressSet_BothOnlyInL7 AC-028：出口只属于 E7_set，不在交集内。
+// TestComputeExclusiveClusterEgressSet_BothOnlyInL7 出口只属于七层出口集合，不在交集内。
 func TestComputeExclusiveClusterEgressSet_BothOnlyInL7(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t,
 		[]string{"center_egress2"},
@@ -121,10 +123,10 @@ func TestComputeExclusiveClusterEgressSet_BothOnlyInL7(t *testing.T) {
 
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
 	require.NoError(t, err)
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))
 }
 
-// TestComputeExclusiveClusterEgressSet_BothIntersectionEmpty AC-027：四层七层出口集合交集为空。
+// TestComputeExclusiveClusterEgressSet_BothIntersectionEmpty 四层七层出口集合交集为空。
 func TestComputeExclusiveClusterEgressSet_BothIntersectionEmpty(t *testing.T) {
 	cli := newTestDataServiceClient(t, newEgressMockHandler(t,
 		[]string{"center_egress1"},
@@ -134,16 +136,6 @@ func TestComputeExclusiveClusterEgressSet_BothIntersectionEmpty(t *testing.T) {
 	allowed, err := ComputeExclusiveClusterEgressSet(testKit(), cli, 213, "ziyan-serven", []string{"tgw-1"})
 	require.NoError(t, err)
 	require.Empty(t, allowed)
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress1"))
-	require.Error(t, CheckBandwidthPackageEgress(allowed, "center_egress2"))
-}
-
-// TestIntersectEgressSet 交集计算的边界场景：空集合、无交集、有交集。
-func TestIntersectEgressSet(t *testing.T) {
-	a := map[string]struct{}{"e1": {}, "e2": {}}
-	b := map[string]struct{}{"e2": {}, "e3": {}}
-
-	require.Equal(t, map[string]struct{}{"e2": {}}, intersectEgressSet(a, b))
-	require.Empty(t, intersectEgressSet(a, map[string]struct{}{"e4": {}}))
-	require.Empty(t, intersectEgressSet(map[string]struct{}{}, b))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress1"))
+	require.False(t, slice.IsItemInSlice(allowed, "center_egress2"))
 }

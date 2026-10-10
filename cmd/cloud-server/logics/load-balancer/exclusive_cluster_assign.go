@@ -22,16 +22,20 @@ package lblogic
 
 import (
 	"fmt"
+	"sort"
 
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // AssignExclusiveClusterToBiz 分配独占集群到业务下，独占集群没有关联子资源，不需要级联分配。
@@ -53,9 +57,17 @@ func AssignExclusiveClusterToBiz(kt *kit.Kit, cli *dataservice.Client, ids []str
 	}
 
 	// 分配独占集群
-	update := &dataproto.ExclusiveClusterBatchUpdateBizIDReq{ClusterIDs: ids, BkBizID: bizID}
-	if err := cli.Global.BatchUpdateExclusiveClusterBizID(kt, update); err != nil {
-		logs.Errorf("BatchUpdateExclusiveClusterBizID failed, err: %v, req: %+v, rid: %s", err, update, kt.Rid)
+	clusters := make([]dataproto.ExclusiveClusterUpdate[corelb.TCloudExclusiveClusterExtension], 0, len(ids))
+	for _, id := range ids {
+		clusters = append(clusters, dataproto.ExclusiveClusterUpdate[corelb.TCloudExclusiveClusterExtension]{
+			ID:      id,
+			BkBizID: bizID,
+		})
+	}
+	update := &dataproto.TCloudExclusiveClusterBatchUpdateReq{Clusters: clusters}
+	if err := cli.TCloud.BatchUpdateExclusiveCluster(kt, update); err != nil {
+		logs.Errorf("assign exclusive cluster to biz failed, err: %v, ids: %v, biz_id: %d, rid: %s", err, ids,
+			bizID, kt.Rid)
 		return err
 	}
 
@@ -79,12 +91,22 @@ func ValidateExclusiveClusterBeforeAssign(kt *kit.Kit, cli *dataservice.Client, 
 		return fmt.Errorf("list exclusive cluster got empty response, ids: %v, rid: %s", ids, kt.Rid)
 	}
 
+	// 入参中不存在的独占集群ID，后续更新对其是空操作，必须在这里拦截，避免调用方收到成功响应但实际未分配
+	missingIDs := cvt.StringSliceToMap(ids)
 	// 判断是否已经分配到其它业务下
 	assignedIDs := make([]string, 0)
 	for _, one := range result.Details {
+		delete(missingIDs, one.ID)
 		if one.BkBizID != constant.UnassignedBiz && one.BkBizID != bizID {
 			assignedIDs = append(assignedIDs, one.ID)
 		}
+	}
+
+	if len(missingIDs) != 0 {
+		missing := cvt.MapKeyToStringSlice(missingIDs)
+		sort.Strings(missing)
+		logs.Errorf("exclusive cluster(ids=%v) not found, rid: %s", missing, kt.Rid)
+		return errf.Newf(errf.InvalidParameter, "exclusive cluster(ids=%v) not found", missing)
 	}
 
 	// 存在已经分配到其它业务下的独占集群，整批拒绝

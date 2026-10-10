@@ -24,7 +24,6 @@ import (
 	"fmt"
 
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
-	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -70,17 +69,13 @@ func BuildExclusiveClusterZoneRules(zones, backZones []string) []*filter.AtomRul
 }
 
 // AggregateExclusiveClusterTags 按 (cluster_tag, cluster_type) 对独占集群做分组聚合，供业务视角
-// 标签聚合查询接口（N-04）使用。bizFilterExpr 由调用方通过 handler.ListBizAuthRes 生成，已包含
+// 标签聚合查询接口使用。bizFilterExpr 由调用方通过 handler.ListBizAuthRes 生成，已包含
 // bk_biz_id 归属过滤及 account_id/region/isp/cluster_type/zones/back_zones 等业务过滤条件。
 // 本函数只负责取数后的内存聚合，不重复拼装过滤条件。
 func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilterExpr *filter.Expression) (
 	*cslb.ListExclusiveClusterTagsResult, error) {
 
-	listReq := &core.ListReq{
-		Filter: bizFilterExpr,
-		Page:   core.NewDefaultBasePage(),
-	}
-	result, err := cli.Global.ListExclusiveCluster(kt, listReq)
+	clusters, err := cli.Global.ListAllExclusiveCluster(kt, bizFilterExpr, nil)
 	if err != nil {
 		logs.Errorf("list exclusive cluster for tags aggregation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -89,8 +84,8 @@ func AggregateExclusiveClusterTags(kt *kit.Kit, cli *dataservice.Client, bizFilt
 	groupOrder := make([]exclusiveClusterTagGroupKey, 0)
 	groups := make(map[exclusiveClusterTagGroupKey][]cslb.ExclusiveClusterTagItem)
 
-	for _, one := range result.Details {
-		// R-002: 集群标签为空的记录不参与聚合。
+	for _, one := range clusters {
+		// 集群标签为空的记录不参与聚合
 		if len(one.ClusterTag) == 0 {
 			continue
 		}

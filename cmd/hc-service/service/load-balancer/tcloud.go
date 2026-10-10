@@ -191,14 +191,6 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 
 	createOpt := buildTCloudCreateClbOption(cts.Kit, req)
 
-	if req.IsExclusive() {
-		if err := svc.recheckExclusiveBeforeDeliver(cts.Kit, tcloudAdpt, req); err != nil {
-			logs.Errorf("recheck exclusive cluster before deliver failed, err: %v, req: %+v, rid: %s",
-				err, req, cts.Kit.Rid)
-			return nil, err
-		}
-	}
-
 	result, err := tcloudAdpt.CreateLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("create tcloud clb failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -322,81 +314,6 @@ func (svc *clbSvc) TCloudDescribeClusterResources(cts *rest.Contexts) (any, erro
 	}
 
 	return client.DescribeClusterResources(cts.Kit, req.TCloudDescribeClusterResourcesOption)
-}
-
-// clusterIdleVipPageLimit 独占集群闲置VIP查询翻页页大小
-const clusterIdleVipPageLimit = uint64(100)
-
-// clusterResourceDescriber 查询独占集群闲置VIP翻页所需的最小 adaptor 能力集合，从完整的 tcloud.TCloud 接口中
-// 按需截取，便于单元测试注入 fake 实现，无需实现整个 tcloud.TCloud 接口。
-type clusterResourceDescriber interface {
-	// DescribeClusterResources 查询独占集群内资源（含 VIP 闲置状态）
-	DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
-		*typelb.TCloudDescribeClusterResourcesResult, error)
-}
-
-// TCloudDescribeClusterIdleVips 查询独占集群当前闲置的VIP列表，内部自动翻页取全并对结果去重，供cloud-server
-// 业务视角闲置VIP查询接口（N-05）调用，实时查云、不落库。
-func (svc *clbSvc) TCloudDescribeClusterIdleVips(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudDescribeClusterIdleVipsReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
-	if err != nil {
-		return nil, err
-	}
-
-	vips, err := listAllClusterIdleVips(cts.Kit, client, req.Region, req.ClusterID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &protolb.TCloudDescribeClusterIdleVipsResult{Count: uint64(len(vips)), Details: vips}, nil
-}
-
-// listAllClusterIdleVips 按固定页大小翻页查询独占集群内全部闲置VIP，对结果按VIP去重后返回。
-func listAllClusterIdleVips(kt *kit.Kit, client clusterResourceDescriber, region, clusterID string) (
-	[]string, error) {
-	idle := true
-	limit := clusterIdleVipPageLimit
-	offset := uint64(0)
-	vipSet := make(map[string]struct{})
-
-	for {
-		result, err := client.DescribeClusterResources(kt, &typelb.TCloudDescribeClusterResourcesOption{
-			Region:    region,
-			ClusterID: clusterID,
-			Idle:      &idle,
-			Limit:     &limit,
-			Offset:    &offset,
-		})
-		if err != nil {
-			logs.Errorf("describe cluster(%s) idle vips failed, offset: %d, err: %v, rid: %s", clusterID, offset,
-				err, kt.Rid)
-			return nil, err
-		}
-
-		for _, one := range result.Resources {
-			vipSet[one.Vip] = struct{}{}
-		}
-
-		offset += limit
-		if result.TotalCount == 0 || offset >= result.TotalCount {
-			break
-		}
-	}
-
-	vips := make([]string, 0, len(vipSet))
-	for vip := range vipSet {
-		vips = append(vips, vip)
-	}
-	return vips, nil
 }
 
 // TCloudUpdateCLB 更新clb属性

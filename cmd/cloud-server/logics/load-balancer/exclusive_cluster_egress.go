@@ -20,95 +20,66 @@
 package lblogic
 
 import (
-	"fmt"
-
-	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
-// ComputeExclusiveClusterEgressSet 计算「本次可能分配到的集群」允许的出口集合（R-008）：只选四层返回
-// cloud_cluster_ids 对应 TGW 的出口去重集合（E4_set）；只选七层返回当前业务已分配该标签下全部 STGW 的出口去重集合
-// （E7_set）；四层七层都选返回 E4_set 与 E7_set 的交集。
+// ComputeExclusiveClusterEgressSet 计算可能被分配到的独占集群允许的出口列表：只传四层集群ID时返回这些 TGW 集群的
+// 出口去重列表；只传七层标签时返回当前业务下该标签的全部 STGW 集群的出口去重列表；两者都传时返回两个列表的交集。
 func ComputeExclusiveClusterEgressSet(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, clusterTag string,
-	cloudClusterIDs []string) (map[string]struct{}, error) {
+	cloudClusterIDs []string) ([]string, error) {
 
-	var e4Set, e7Set map[string]struct{}
+	var tgwEgresses, stgwEgresses []string
 	var err error
 
 	if len(cloudClusterIDs) != 0 {
-		e4Filter := tools.ExpressionAnd(
+		tgwFilter := tools.ExpressionAnd(
 			tools.RuleEqual("bk_biz_id", bkBizID),
 			tools.RuleEqual("cluster_type", enumor.TGWClusterType),
 			tools.RuleIn("cloud_id", cloudClusterIDs),
 		)
-		if e4Set, err = queryExclusiveClusterEgressSet(kt, cli, e4Filter); err != nil {
+		if tgwEgresses, err = queryExclusiveClusterEgresses(kt, cli, tgwFilter); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(clusterTag) != 0 {
-		e7Filter := tools.ExpressionAnd(
+		stgwFilter := tools.ExpressionAnd(
 			tools.RuleEqual("bk_biz_id", bkBizID),
 			tools.RuleEqual("cluster_type", enumor.STGWClusterType),
 			tools.RuleEqual("cluster_tag", clusterTag),
 		)
-		if e7Set, err = queryExclusiveClusterEgressSet(kt, cli, e7Filter); err != nil {
+		if stgwEgresses, err = queryExclusiveClusterEgresses(kt, cli, stgwFilter); err != nil {
 			return nil, err
 		}
 	}
 
 	switch {
 	case len(cloudClusterIDs) != 0 && len(clusterTag) != 0:
-		return intersectEgressSet(e4Set, e7Set), nil
+		return slice.Intersection(tgwEgresses, stgwEgresses), nil
 	case len(cloudClusterIDs) != 0:
-		return e4Set, nil
+		return tgwEgresses, nil
 	default:
-		return e7Set, nil
+		return stgwEgresses, nil
 	}
 }
 
-// queryExclusiveClusterEgressSet 按过滤条件查询本地独占集群表，返回去重后的出口集合。
-func queryExclusiveClusterEgressSet(kt *kit.Kit, cli *dataservice.Client, expr *filter.Expression) (
-	map[string]struct{}, error) {
-
-	req := &core.ListReq{
-		Fields: []string{"egress"},
-		Filter: expr,
-		Page:   core.NewDefaultBasePage(),
-	}
-	result, err := cli.Global.ListExclusiveCluster(kt, req)
+// queryExclusiveClusterEgresses 按过滤条件查询本地独占集群表，返回去重后的出口列表。
+func queryExclusiveClusterEgresses(kt *kit.Kit, cli *dataservice.Client, expr *filter.Expression) ([]string, error) {
+	clusters, err := cli.Global.ListAllExclusiveCluster(kt, expr, []string{"egress"})
 	if err != nil {
 		return nil, err
 	}
 
-	set := make(map[string]struct{}, len(result.Details))
-	for _, one := range result.Details {
+	egresses := make([]string, 0, len(clusters))
+	for _, one := range clusters {
 		if len(one.Egress) != 0 {
-			set[one.Egress] = struct{}{}
+			egresses = append(egresses, one.Egress)
 		}
 	}
-	return set, nil
-}
-
-// intersectEgressSet 返回两个出口集合的交集。
-func intersectEgressSet(a, b map[string]struct{}) map[string]struct{} {
-	result := make(map[string]struct{})
-	for egress := range a {
-		if _, ok := b[egress]; ok {
-			result[egress] = struct{}{}
-		}
-	}
-	return result
-}
-
-// CheckBandwidthPackageEgress 校验带宽包出口是否落在允许的出口集合内，不满足返回错误信息。
-func CheckBandwidthPackageEgress(allowedSet map[string]struct{}, egress string) error {
-	if _, ok := allowedSet[egress]; !ok {
-		return fmt.Errorf("bandwidth package egress(%s) is not allowed by the selected exclusive cluster(s)", egress)
-	}
-	return nil
+	return slice.Unique(egresses), nil
 }

@@ -98,7 +98,7 @@ func TestAggregateExclusiveClusterTags_EmptyResult(t *testing.T) {
 	require.Len(t, result.Details, 0)
 }
 
-// TestAggregateExclusiveClusterTags_SkipsEmptyClusterTag 集群标签为空的记录不参与聚合（R-002）。
+// TestAggregateExclusiveClusterTags_SkipsEmptyClusterTag 集群标签为空的记录不参与聚合。
 func TestAggregateExclusiveClusterTags_SkipsEmptyClusterTag(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeOKResp(t, w, map[string]any{

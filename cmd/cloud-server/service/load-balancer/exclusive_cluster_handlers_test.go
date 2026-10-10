@@ -22,6 +22,7 @@ package loadbalancer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +32,7 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
@@ -71,9 +73,17 @@ func (f *fakeAuthorizer) ListAuthorizedInstances(_ *kit.Kit, _ *meta.ListAuthRes
 	return nil, nil
 }
 
-func (f *fakeAuthorizer) ListAuthInstWithFilter(_ *kit.Kit, _ *meta.ListAuthResInput, _ *filter.Expression,
+// ListAuthInstWithFilter 返回值同样由 authorized/err 控制：鉴权报错返回错误，无权限返回 noPermFlag=true，
+// 有权限则原样回传入参 filter。
+func (f *fakeAuthorizer) ListAuthInstWithFilter(_ *kit.Kit, _ *meta.ListAuthResInput, expr *filter.Expression,
 	_ string) (*filter.Expression, bool, error) {
-	return nil, false, nil
+	if f.err != nil {
+		return nil, false, f.err
+	}
+	if !f.authorized {
+		return nil, true, nil
+	}
+	return expr, false, nil
 }
 
 func (f *fakeAuthorizer) RegisterResourceCreatorAction(_ *kit.Kit, _ *meta.RegisterResCreatorActionInst) error {
@@ -168,15 +178,6 @@ func TestListBizExclusiveClusterTags_NoPermission(t *testing.T) {
 	tagsResult, ok := result.(*cslb.ListExclusiveClusterTagsResult)
 	require.True(t, ok)
 	require.Len(t, tagsResult.Details, 0)
-}
-
-// TestListBizExclusiveClusterTags_RequestBodyIgnoresBkBizID 请求体结构体不包含 bk_biz_id 字段，bk_biz_id 只能
-// 来自路径参数，避免越权指定业务。
-func TestListBizExclusiveClusterTags_RequestBodyIgnoresBkBizID(t *testing.T) {
-	raw, err := json.Marshal(cslb.ListExclusiveClusterTagsReq{AccountID: "acc-1", Region: "ap-guangzhou", Isp: "BGP"})
-	require.NoError(t, err)
-	require.False(t, strings.Contains(string(raw), "bk_biz_id"),
-		"ListExclusiveClusterTagsReq must not contain bk_biz_id field")
 }
 
 // TestListBizExclusiveClusterTags_SingleZoneFiltersTopLevelZone 查询单可用区集群时，
@@ -332,4 +333,94 @@ func TestListBizExclusiveClusterIdleVips_Success(t *testing.T) {
 	require.True(t, ok)
 	require.EqualValues(t, 2, vipsResult.Count)
 	require.ElementsMatch(t, []string{"1.1.1.1", "1.1.1.2"}, vipsResult.Details)
+}
+
+// resourceListBody 资源视角列表接口的合法请求体。
+func resourceListBody() map[string]any {
+	return map[string]any{
+		"filter": map[string]any{"op": "and", "rules": []any{
+			map[string]any{"field": "vendor", "op": "eq", "value": "tcloud"},
+		}},
+		"page": map[string]any{"count": false, "start": 0, "limit": 10},
+	}
+}
+
+// TestListExclusiveCluster_NoPermission 资源视角无权限时返回空结果，不查询 data-service。
+func TestListExclusiveCluster_NoPermission(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("should not query data service when unauthorized, got request: %s", r.URL.Path)
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: false})
+	cts := newBizContext(t, "", resourceListBody())
+
+	result, err := svc.ListExclusiveCluster(cts)
+	require.NoError(t, err)
+	listResult, ok := result.(*cslb.ListExclusiveClusterResult)
+	require.True(t, ok)
+	require.Len(t, listResult.Details, 0)
+}
+
+// TestListExclusiveCluster_AuthError 资源视角鉴权报错时返回错误，不查询 data-service。
+func TestListExclusiveCluster_AuthError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("should not query data service when auth failed, got request: %s", r.URL.Path)
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{err: errors.New("auth failed")})
+	cts := newBizContext(t, "", resourceListBody())
+
+	_, err := svc.ListExclusiveCluster(cts)
+	require.Error(t, err)
+}
+
+// TestListExclusiveCluster_Success 资源视角有权限时按鉴权返回的过滤条件查询并返回集群列表。
+func TestListExclusiveCluster_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeOKRespCS(t, w, map[string]any{
+			"details": []map[string]any{{"id": "00000001", "cloud_id": "tgw-1", "extension": map[string]any{}}},
+		})
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+	cts := newBizContext(t, "", resourceListBody())
+
+	result, err := svc.ListExclusiveCluster(cts)
+	require.NoError(t, err)
+	listResult, ok := result.(*cslb.ListExclusiveClusterResult)
+	require.True(t, ok)
+	require.Len(t, listResult.Details, 1)
+	require.Equal(t, "tgw-1", listResult.Details[0].CloudID)
+}
+
+// TestAssignExclusiveClusterToBiz_InvalidParameter 必填参数缺失（cluster_ids 未传）时直接返回错误，
+// 不发起任何下游调用。
+func TestAssignExclusiveClusterToBiz_InvalidParameter(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("should not call downstream, got request: %s", r.URL.Path)
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+	cts := newBizContext(t, "", map[string]any{"bk_biz_id": 213})
+
+	_, err := svc.AssignExclusiveClusterToBiz(cts)
+	require.Error(t, err)
+}
+
+// TestBatchCreateTCloudLB_ExclusiveRejected 资源视角不支持创建独占型负载均衡，入口直接拒绝，不发起任何下游调用。
+func TestBatchCreateTCloudLB_ExclusiveRejected(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatalf("should not call downstream, got request: %s", r.URL.Path)
+	}))
+	t.Cleanup(srv.Close)
+
+	svc := newTestLbSvc(t, srv, &fakeAuthorizer{authorized: true})
+
+	_, err := svc.batchCreateTCloudLB(kit.New(), json.RawMessage(`{"exclusive": 1}`))
+	require.Error(t, err)
+	require.Equal(t, errf.InvalidParameter, err.(*errf.ErrorF).Code)
 }

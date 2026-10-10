@@ -23,7 +23,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 
 	"hcm/pkg/criteria/errf"
@@ -44,7 +43,7 @@ func testKit() *kit.Kit {
 	return &kit.Kit{Ctx: context.Background()}
 }
 
-// TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz cluster_tag 归属当前业务，校验通过（AC-010 反例）。
+// TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz cluster_tag 归属当前业务，校验通过。
 func TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := readBody(t, r)
@@ -58,7 +57,7 @@ func TestCheckExclusiveClusterOwnership_ClusterTagBelongsToBiz(t *testing.T) {
 }
 
 // TestCheckExclusiveClusterOwnership_ClusterTagNotBelongToBiz cluster_tag 不属于当前业务，返回 PermissionDenied
-// 且不泄露其它业务的集群清单（AC-010）。
+// 且不泄露其它业务的集群清单。
 func TestCheckExclusiveClusterOwnership_ClusterTagNotBelongToBiz(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeOKResp(t, w, map[string]any{"count": 0, "details": []any{}})
@@ -91,7 +90,7 @@ func TestCheckExclusiveClusterOwnership_AllClusterIDsBelongToBiz(t *testing.T) {
 }
 
 // TestCheckExclusiveClusterOwnership_SomeClusterIDNotBelongToBiz 某个四层集群 ID 不属于当前业务时返回
-// PermissionDenied，越权访问不泄露其它业务集群信息（AC-010、越权场景）。
+// PermissionDenied，错误信息只列出不属于当前业务的那部分入参 ID，不含已归属的 ID，也不回显集群实际归属信息。
 func TestCheckExclusiveClusterOwnership_SomeClusterIDNotBelongToBiz(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 本地表只命中 tgw-1，tgw-2 属于业务 B，不应出现在响应中
@@ -105,8 +104,8 @@ func TestCheckExclusiveClusterOwnership_SomeClusterIDNotBelongToBiz(t *testing.T
 	err := CheckExclusiveClusterOwnership(testKit(), cli, 213, "", []string{"tgw-1", "tgw-2"})
 	require.Error(t, err)
 	require.Equal(t, errf.PermissionDenied, err.(*errf.ErrorF).Code)
-	require.False(t, strings.Contains(err.Error(), "tgw-2"),
-		"error message must not leak other biz's cluster ids")
+	require.Contains(t, err.Error(), "tgw-2")
+	require.NotContains(t, err.Error(), "tgw-1")
 }
 
 // TestCheckExclusiveClusterOwnership_BothEmpty 两个集群标识都为空时直接通过（结构校验已保证独占型下不会出现该组合）。

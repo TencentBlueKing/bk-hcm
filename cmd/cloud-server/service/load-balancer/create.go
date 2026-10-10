@@ -81,6 +81,10 @@ func (svc *lbSvc) batchCreateTCloudLB(kt *kit.Kit, rawReq json.RawMessage) (any,
 	if err := json.Unmarshal(rawReq, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	// 独占型负载均衡只支持在业务视角下通过申请单购买
+	if req.IsExclusive() {
+		return nil, errf.New(errf.InvalidParameter, "exclusive load balancer is not supported in resource view")
+	}
 	// 参数校验
 	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

@@ -41,7 +41,7 @@ type ListExclusiveClusterResult = core.ListResultT[corelb.ExclusiveCluster[corel
 // AssignExclusiveClusterToBizReq define assign load balancer exclusive cluster to biz req.
 type AssignExclusiveClusterToBizReq struct {
 	ClusterIDs []string `json:"cluster_ids" validate:"required,min=1"`
-	BkBizID    int64    `json:"bk_biz_id" validate:"required,min=0"`
+	BkBizID    int64    `json:"bk_biz_id" validate:"required"`
 }
 
 // Validate assign load balancer exclusive cluster to biz request.

@@ -21,12 +21,15 @@ package lblogic
 
 import (
 	"hcm/pkg/api/core"
+	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
+	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // CheckExclusiveClusterIdleVipQueryable 校验独占集群闲置VIP查询目标集群是否可查询：集群必须存在于本地独占
@@ -51,19 +54,51 @@ func CheckExclusiveClusterIdleVipQueryable(kt *kit.Kit, cli *dataservice.Client,
 	}
 
 	if len(result.Details) == 0 {
+		logs.Errorf("exclusive cluster(cloud_cluster_id=%s) not found, biz_id: %d, rid: %s", cloudClusterID, bkBizID,
+			kt.Rid)
 		return errf.Newf(errf.InvalidParameter, "exclusive cluster(cloud_cluster_id=%s) not found", cloudClusterID)
 	}
 
 	one := result.Details[0]
 	if one.ClusterType != enumor.TGWClusterType {
+		logs.Errorf("exclusive cluster(cloud_cluster_id=%s) type(%s) does not support idle vip query, biz_id: %d, "+
+			"rid: %s", cloudClusterID, one.ClusterType, bkBizID, kt.Rid)
 		return errf.Newf(errf.InvalidParameter,
 			"exclusive cluster(cloud_cluster_id=%s) type(%s) does not support idle vip query", cloudClusterID,
 			one.ClusterType)
 	}
 
 	if one.BkBizID != bkBizID {
+		logs.Errorf("exclusive cluster(cloud_cluster_id=%s) does not belong to biz(id=%d), actual biz_id: %d, rid: %s",
+			cloudClusterID, bkBizID, one.BkBizID, kt.Rid)
 		return errf.Newf(errf.PermissionDenied,
 			"exclusive cluster(cloud_cluster_id=%s) does not belong to biz(id=%d)", cloudClusterID, bkBizID)
+	}
+
+	return nil
+}
+
+// CheckExclusiveClusterVipIdle 实时查云校验指定VIP在四层独占集群中当前是否仍然闲置，只查询该VIP本身。
+func CheckExclusiveClusterVipIdle(kt *kit.Kit, cli *hcservice.Client, accountID, region, cloudClusterID,
+	vip string) error {
+
+	result, err := cli.TCloud.Clb.DescribeClusterIdleVips(kt, &hcproto.TCloudDescribeClusterIdleVipsReq{
+		AccountID: accountID,
+		Region:    region,
+		ClusterID: cloudClusterID,
+		Vip:       vip,
+	})
+	if err != nil {
+		logs.Errorf("describe exclusive cluster(cloud_cluster_id=%s) idle vips failed, err: %v, rid: %s",
+			cloudClusterID, err, kt.Rid)
+		return err
+	}
+
+	if !slice.IsItemInSlice(result.Details, vip) {
+		logs.Errorf("vip(%s) is not idle in exclusive cluster(cloud_cluster_id=%s), rid: %s", vip, cloudClusterID,
+			kt.Rid)
+		return errf.Newf(errf.InvalidParameter, "vip(%s) is not idle in exclusive cluster(cloud_cluster_id=%s)", vip,
+			cloudClusterID)
 	}
 
 	return nil

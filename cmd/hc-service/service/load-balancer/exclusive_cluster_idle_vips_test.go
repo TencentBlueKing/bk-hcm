@@ -20,28 +20,36 @@
 package loadbalancer
 
 import (
+	"context"
 	"errors"
 	"sort"
 	"strconv"
 	"testing"
 
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 
 	"github.com/stretchr/testify/require"
 )
+
+func testKit() *kit.Kit {
+	return &kit.Kit{Ctx: context.Background()}
+}
 
 // fakeClusterResourceDescriber clusterResourceDescriber 的 fake 实现，按调用次数依次返回预置的分页结果。
 type fakeClusterResourceDescriber struct {
 	pages   []*typelb.TCloudDescribeClusterResourcesResult
 	err     error
 	offsets []uint64
+	vips    []string
 }
 
 func (f *fakeClusterResourceDescriber) DescribeClusterResources(_ *kit.Kit,
 	opt *typelb.TCloudDescribeClusterResourcesOption) (*typelb.TCloudDescribeClusterResourcesResult, error) {
 
 	f.offsets = append(f.offsets, *opt.Offset)
+	f.vips = append(f.vips, opt.Vip)
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -67,7 +75,7 @@ func TestListAllClusterIdleVips_SinglePage(t *testing.T) {
 		},
 	}
 
-	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1")
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
 	require.NoError(t, err)
 	sort.Strings(vips)
 	require.Equal(t, []string{"1.1.1.1", "1.1.1.2"}, vips)
@@ -78,9 +86,10 @@ func TestListAllClusterIdleVips_SinglePage(t *testing.T) {
 // TestListAllClusterIdleVips_MultiPage 多页翻页取全：total_count 超过单页大小时自动翻页直到取全，且对重复
 // VIP 去重。
 func TestListAllClusterIdleVips_MultiPage(t *testing.T) {
-	total := clusterIdleVipPageLimit + 1
-	page1 := make([]typelb.TCloudClusterResource, 0, clusterIdleVipPageLimit)
-	for i := uint64(0); i < clusterIdleVipPageLimit; i++ {
+	pageLimit := uint64(constant.BatchOperationMaxLimit)
+	total := pageLimit + 1
+	page1 := make([]typelb.TCloudClusterResource, 0, pageLimit)
+	for i := uint64(0); i < pageLimit; i++ {
 		page1 = append(page1, typelb.TCloudClusterResource{Vip: "vip-" + strconv.FormatUint(i, 10), Idle: true})
 	}
 	// 第二页与第一页有一个重复 VIP，验证去重逻辑。
@@ -96,12 +105,12 @@ func TestListAllClusterIdleVips_MultiPage(t *testing.T) {
 		},
 	}
 
-	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1")
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
 	require.NoError(t, err)
-	require.Len(t, vips, int(clusterIdleVipPageLimit)+1)
+	require.Len(t, vips, int(pageLimit)+1)
 	require.Len(t, fake.offsets, 2)
 	require.EqualValues(t, 0, fake.offsets[0])
-	require.EqualValues(t, clusterIdleVipPageLimit, fake.offsets[1])
+	require.EqualValues(t, pageLimit, fake.offsets[1])
 }
 
 // TestListAllClusterIdleVips_TotalCountZero total_count 为 0 时，只请求一页且返回空列表。
@@ -112,7 +121,7 @@ func TestListAllClusterIdleVips_TotalCountZero(t *testing.T) {
 		},
 	}
 
-	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1")
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
 	require.NoError(t, err)
 	require.Len(t, vips, 0)
 	require.Len(t, fake.offsets, 1)
@@ -122,8 +131,23 @@ func TestListAllClusterIdleVips_TotalCountZero(t *testing.T) {
 func TestListAllClusterIdleVips_AdaptorError(t *testing.T) {
 	fake := &fakeClusterResourceDescriber{err: errors.New("mock adaptor error")}
 
-	_, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1")
+	_, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "")
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "mock adaptor error")
+	require.Len(t, fake.offsets, 1)
+}
+
+// TestListAllClusterIdleVips_WithVip 指定 vip 时只查询该 VIP：查询条件带上 vip，且一次请求即可结束。
+func TestListAllClusterIdleVips_WithVip(t *testing.T) {
+	fake := &fakeClusterResourceDescriber{
+		pages: []*typelb.TCloudDescribeClusterResourcesResult{
+			{TotalCount: 1, Resources: []typelb.TCloudClusterResource{{Vip: "1.1.1.2", Idle: true}}},
+		},
+	}
+
+	vips, err := listAllClusterIdleVips(testKit(), fake, "ap-guangzhou", "tgw-1", "1.1.1.2")
+	require.NoError(t, err)
+	require.Equal(t, []string{"1.1.1.2"}, vips)
+	require.Equal(t, []string{"1.1.1.2"}, fake.vips)
 	require.Len(t, fake.offsets, 1)
 }

@@ -258,7 +258,7 @@ func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeRe
 	return resp.Response, nil
 }
 
-// DescribeClusterResources 查询独占集群内的资源列表（含 VIP 闲置状态），供下云前 VIP 闲置复核使用
+// DescribeClusterResources 查询独占集群内的资源列表（含 VIP 闲置状态），供独占集群闲置 VIP 查询使用
 // https://cloud.tencent.com/document/api/214/95012
 func (t *TCloudImpl) DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
 	*typelb.TCloudDescribeClusterResourcesResult, error) {

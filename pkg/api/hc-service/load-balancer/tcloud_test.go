@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/converter"
 
 	"github.com/stretchr/testify/require"
@@ -38,8 +39,8 @@ func baseValidSpec() *TCloudLoadBalancerSpec {
 	}
 }
 
-// TestValidateSpec_AC001_OnlyCloudClusterIDs 只传四层集群的独占型请求通过结构校验。
-func TestValidateSpec_AC001_OnlyCloudClusterIDs(t *testing.T) {
+// TestValidateSpec_OnlyCloudClusterIDs 只传四层集群的独占型请求通过结构校验。
+func TestValidateSpec_OnlyCloudClusterIDs(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.CloudClusterIDs = []string{"tgw-38feq8c6"}
@@ -47,16 +48,16 @@ func TestValidateSpec_AC001_OnlyCloudClusterIDs(t *testing.T) {
 	require.NoError(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC002_BothClusterIdentifiersEmpty 独占型但 cluster_tag/cloud_cluster_ids 都为空。
-func TestValidateSpec_AC002_BothClusterIdentifiersEmpty(t *testing.T) {
+// TestValidateSpec_BothClusterIdentifiersEmpty 独占型但 cluster_tag/cloud_cluster_ids 都为空。
+func TestValidateSpec_BothClusterIdentifiersEmpty(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC003_OnlyClusterTag 只传七层标签的独占型请求通过结构校验。
-func TestValidateSpec_AC003_OnlyClusterTag(t *testing.T) {
+// TestValidateSpec_OnlyClusterTag 只传七层标签的独占型请求通过结构校验。
+func TestValidateSpec_OnlyClusterTag(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.ClusterTag = converter.ValToPtr("ziyan-serven")
@@ -64,8 +65,8 @@ func TestValidateSpec_AC003_OnlyClusterTag(t *testing.T) {
 	require.NoError(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC004_NonExclusiveWithClusterIdentifiers 非独占型却传了集群标识。
-func TestValidateSpec_AC004_NonExclusiveWithClusterIdentifiers(t *testing.T) {
+// TestValidateSpec_NonExclusiveWithClusterIdentifiers 非独占型却传了集群标识。
+func TestValidateSpec_NonExclusiveWithClusterIdentifiers(t *testing.T) {
 	t.Run("cluster_tag set", func(t *testing.T) {
 		spec := baseValidSpec()
 		spec.ClusterTag = converter.ValToPtr("ziyan-serven")
@@ -79,8 +80,8 @@ func TestValidateSpec_AC004_NonExclusiveWithClusterIdentifiers(t *testing.T) {
 	})
 }
 
-// TestValidateSpec_AC005_ExclusiveInternal 独占型请求为内网负载均衡。
-func TestValidateSpec_AC005_ExclusiveInternal(t *testing.T) {
+// TestValidateSpec_ExclusiveInternal 独占型请求为内网负载均衡。
+func TestValidateSpec_ExclusiveInternal(t *testing.T) {
 	spec := baseValidSpec()
 	spec.LoadBalancerType = typelb.InternalLoadBalancerType
 	spec.CloudSubnetID = converter.ValToPtr("subnet-1")
@@ -90,8 +91,8 @@ func TestValidateSpec_AC005_ExclusiveInternal(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC006_ExclusiveWithSlaType 独占型请求同时指定性能容量档位。
-func TestValidateSpec_AC006_ExclusiveWithSlaType(t *testing.T) {
+// TestValidateSpec_ExclusiveWithSlaType 独占型请求同时指定性能容量档位。
+func TestValidateSpec_ExclusiveWithSlaType(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.CloudClusterIDs = []string{"tgw-38feq8c6"}
@@ -100,8 +101,8 @@ func TestValidateSpec_AC006_ExclusiveWithSlaType(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC007_VipWithoutCloudClusterIDs 仅七层场景指定 VIP。
-func TestValidateSpec_AC007_VipWithoutCloudClusterIDs(t *testing.T) {
+// TestValidateSpec_VipWithoutCloudClusterIDs 仅七层场景指定 VIP。
+func TestValidateSpec_VipWithoutCloudClusterIDs(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.ClusterTag = converter.ValToPtr("ziyan-serven")
@@ -110,8 +111,8 @@ func TestValidateSpec_AC007_VipWithoutCloudClusterIDs(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC008_VipWithNonUniqueClusterIDs 指定 VIP 但四层集群 ID 不唯一（0 个或 2 个以上）。
-func TestValidateSpec_AC008_VipWithNonUniqueClusterIDs(t *testing.T) {
+// TestValidateSpec_VipWithNonUniqueClusterIDs 指定 VIP 但四层集群 ID 不唯一（0 个或 2 个以上）。
+func TestValidateSpec_VipWithNonUniqueClusterIDs(t *testing.T) {
 	t.Run("two cloud_cluster_ids", func(t *testing.T) {
 		spec := baseValidSpec()
 		spec.Exclusive = converter.ValToPtr(int64(1))
@@ -123,8 +124,8 @@ func TestValidateSpec_AC008_VipWithNonUniqueClusterIDs(t *testing.T) {
 	})
 }
 
-// TestValidateSpec_AC009_VipWithRequireCountGreaterThanOne 指定 VIP 但购买数量大于 1。
-func TestValidateSpec_AC009_VipWithRequireCountGreaterThanOne(t *testing.T) {
+// TestValidateSpec_VipWithRequireCountGreaterThanOne 指定 VIP 但购买数量大于 1。
+func TestValidateSpec_VipWithRequireCountGreaterThanOne(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.CloudClusterIDs = []string{"tgw-38feq8c6"}
@@ -134,8 +135,8 @@ func TestValidateSpec_AC009_VipWithRequireCountGreaterThanOne(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC016_MultipleClusterIDsWithoutVip 多个四层集群 ID 表示随机分配，不传 VIP 时创建成功。
-func TestValidateSpec_AC016_MultipleClusterIDsWithoutVip(t *testing.T) {
+// TestValidateSpec_MultipleClusterIDsWithoutVip 多个四层集群 ID 表示随机分配，不传 VIP 时创建成功。
+func TestValidateSpec_MultipleClusterIDsWithoutVip(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.CloudClusterIDs = []string{"tgw-1", "tgw-2"}
@@ -143,8 +144,8 @@ func TestValidateSpec_AC016_MultipleClusterIDsWithoutVip(t *testing.T) {
 	require.NoError(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC017_VipHappyPath 指定 VIP 的合法组合可以通过结构校验。
-func TestValidateSpec_AC017_VipHappyPath(t *testing.T) {
+// TestValidateSpec_VipHappyPath 指定 VIP 的合法组合可以通过结构校验。
+func TestValidateSpec_VipHappyPath(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.CloudClusterIDs = []string{"tgw-38feq8c6"}
@@ -154,8 +155,8 @@ func TestValidateSpec_AC017_VipHappyPath(t *testing.T) {
 	require.NoError(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC018_SingleLineIspNotBandwidthPackage 单线运营商未使用共享带宽包计费。
-func TestValidateSpec_AC018_SingleLineIspNotBandwidthPackage(t *testing.T) {
+// TestValidateSpec_SingleLineIspNotBandwidthPackage 单线运营商未使用共享带宽包计费。
+func TestValidateSpec_SingleLineIspNotBandwidthPackage(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.ClusterTag = converter.ValToPtr("ziyan-serven")
@@ -164,8 +165,8 @@ func TestValidateSpec_AC018_SingleLineIspNotBandwidthPackage(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC019_BandwidthPackageChargeWithoutID 共享带宽包计费但未传带宽包 ID。
-func TestValidateSpec_AC019_BandwidthPackageChargeWithoutID(t *testing.T) {
+// TestValidateSpec_BandwidthPackageChargeWithoutID 共享带宽包计费但未传带宽包 ID。
+func TestValidateSpec_BandwidthPackageChargeWithoutID(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 	spec.ClusterTag = converter.ValToPtr("ziyan-serven")
@@ -174,8 +175,8 @@ func TestValidateSpec_AC019_BandwidthPackageChargeWithoutID(t *testing.T) {
 	require.Error(t, spec.ValidateSpec())
 }
 
-// TestValidateSpec_AC015_LegacySharedRequestUnaffected 存量共享型请求（不传任何独占字段）不受影响。
-func TestValidateSpec_AC015_LegacySharedRequestUnaffected(t *testing.T) {
+// TestValidateSpec_LegacySharedRequestUnaffected 存量共享型请求（不传任何独占字段）不受影响。
+func TestValidateSpec_LegacySharedRequestUnaffected(t *testing.T) {
 	spec := baseValidSpec()
 
 	require.NoError(t, spec.ValidateSpec())
@@ -186,7 +187,7 @@ func TestValidateSpec_CloudClusterIDsExceedLimit(t *testing.T) {
 	spec := baseValidSpec()
 	spec.Exclusive = converter.ValToPtr(int64(1))
 
-	ids := make([]string, cloudClusterIDsMaxLimit+1)
+	ids := make([]string, constant.CloudClusterIDsMaxLimit+1)
 	for i := range ids {
 		ids[i] = "tgw-" + string(rune('a'+i%26))
 	}
