@@ -109,6 +109,9 @@ func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
 		return nil, fmt.Errorf("call itsm get ticket url failed, err: %v", err)
 	}
 
+	content := RemoveSenseField(application.Content)
+	content = a.enrichExclusiveClusterContent(cts.Kit, application.Type, content)
+
 	return &proto.ApplicationGetResp{
 		ID:             application.ID,
 		Source:         application.Source,
@@ -117,7 +120,7 @@ func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
 		Operation:      application.Operation,
 		Status:         application.Status,
 		Applicant:      application.Applicant,
-		Content:        RemoveSenseField(application.Content),
+		Content:        content,
 		DeliveryDetail: application.DeliveryDetail,
 		Memo:           application.Memo,
 		Revision:       application.Revision,

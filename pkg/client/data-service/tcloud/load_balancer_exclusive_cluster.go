@@ -35,7 +35,7 @@ func (rc *restClient) BatchCreateExclusiveCluster(kt *kit.Kit,
 		rc.client, rest.POST, kt, req, "/load_balancer_exclusive_clusters/batch/create")
 }
 
-// BatchUpdateExclusiveCluster batch update tcloud load balancer exclusive cluster's cloud attributes.
+// BatchUpdateExclusiveCluster batch update tcloud load balancer exclusive cluster.
 func (rc *restClient) BatchUpdateExclusiveCluster(kt *kit.Kit,
 	req *dataproto.TCloudExclusiveClusterBatchUpdateReq) error {
 

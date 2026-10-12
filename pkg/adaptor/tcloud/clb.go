@@ -257,6 +257,69 @@ func (t *TCloudImpl) DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeRe
 	return resp.Response, nil
 }
 
+// DescribeClusterResources 查询负载均衡集群中资源列表
+// https://cloud.tencent.com/document/product/214/49279
+func (t *TCloudImpl) DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
+	*clb.DescribeClusterResourcesResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe cluster resources option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := clb.NewDescribeClusterResourcesRequest()
+	if len(opt.ClusterID) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("cluster-id"),
+			Values: common.StringPtrs(opt.ClusterID),
+		})
+	}
+	if len(opt.Vip) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("vip"),
+			Values: common.StringPtrs(opt.Vip),
+		})
+	}
+	if len(opt.LoadBalancerID) != 0 {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("loadblancer-id"),
+			Values: common.StringPtrs(opt.LoadBalancerID),
+		})
+	}
+	// 云上 idle 过滤值要求首字母大写："True"/"False"
+	if opt.Idle != nil {
+		idleValue := "False"
+		if *opt.Idle {
+			idleValue = "True"
+		}
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   common.StringPtr("idle"),
+			Values: common.StringPtrs([]string{idleValue}),
+		})
+	}
+	req.Limit = opt.Limit
+	req.Offset = opt.Offset
+
+	resp, err := client.DescribeClusterResourcesWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tencent cloud describe cluster resources failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		return nil, err
+	}
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty describe cluster resources response from tcloud")
+	}
+
+	return resp.Response, nil
+}
+
 func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *clb.CreateLoadBalancerRequest {
 	req := clb.NewCreateLoadBalancerRequest()
 	// 负载均衡实例的名称

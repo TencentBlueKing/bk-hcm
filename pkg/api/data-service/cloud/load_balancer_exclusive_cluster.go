@@ -20,7 +20,6 @@
 package cloud
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -80,12 +79,12 @@ func (req *ExclusiveClusterBatchCreateReq[T]) Validate() error {
 
 // -------------------------- Update --------------------------
 
-// ExclusiveClusterUpdate define load balancer exclusive cluster update, bk_biz_id is not included, it is only
-// updated through ExclusiveClusterBatchUpdateBizIDReq.
+// ExclusiveClusterUpdate define load balancer exclusive cluster update, zero value fields are not updated.
 type ExclusiveClusterUpdate[T corelb.ExclusiveClusterExtension] struct {
 	ID string `json:"id" validate:"required"`
 
 	Name        string                `json:"name"`
+	BkBizID     int64                 `json:"bk_biz_id"`
 	Zone        string                `json:"zone"`
 	ClusterType enumor.ClusterType    `json:"cluster_type"`
 	ClusterTag  string                `json:"cluster_tag"`
@@ -101,45 +100,18 @@ type ExclusiveClusterUpdate[T corelb.ExclusiveClusterExtension] struct {
 	Extension *T `json:"extension"`
 }
 
-// ExclusiveClusterBatchUpdateReq load balancer exclusive cluster batch update req, used by sync logic to update
-// cloud attributes, it does NOT contain bk_biz_id field.
+// ExclusiveClusterBatchUpdateReq load balancer exclusive cluster batch update req.
 type ExclusiveClusterBatchUpdateReq[T corelb.ExclusiveClusterExtension] struct {
 	Clusters []ExclusiveClusterUpdate[T] `json:"clusters" validate:"required,min=1"`
 }
 
-// TCloudExclusiveClusterBatchUpdateReq batch update tcloud load balancer exclusive cluster cloud attributes req.
+// TCloudExclusiveClusterBatchUpdateReq batch update tcloud load balancer exclusive cluster req.
 type TCloudExclusiveClusterBatchUpdateReq = ExclusiveClusterBatchUpdateReq[corelb.TCloudExclusiveClusterExtension]
 
 // Validate load balancer exclusive cluster batch update request.
 func (req *ExclusiveClusterBatchUpdateReq[T]) Validate() error {
 	if len(req.Clusters) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("clusters count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	return validator.Validate.Struct(req)
-}
-
-// ExclusiveClusterBatchUpdateBizIDReq load balancer exclusive cluster batch update bk_biz_id req(assign to biz).
-// This interface does NOT do "whether already assigned" business pre-check, authentication or audit, it is only
-// supposed to be called internally by cloud-server, and it reuses the same DAO BatchUpdateWithTx as cloud
-// attribute update, isolated purely by the narrow field set of this request body.
-type ExclusiveClusterBatchUpdateBizIDReq struct {
-	ClusterIDs []string `json:"cluster_ids" validate:"required,min=1,max=100"`
-	BkBizID    int64    `json:"bk_biz_id" validate:"required,gt=0"`
-}
-
-// Validate load balancer exclusive cluster batch update bk_biz_id request.
-func (req *ExclusiveClusterBatchUpdateBizIDReq) Validate() error {
-	if len(req.ClusterIDs) == 0 {
-		return errors.New("cluster_ids is required")
-	}
-
-	if len(req.ClusterIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cluster_ids count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
-	if req.BkBizID <= 0 {
-		return errors.New("bk_biz_id should > 0")
 	}
 
 	return validator.Validate.Struct(req)

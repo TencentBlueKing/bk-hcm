@@ -43,6 +43,18 @@ const (
 	TCLBDeleteProtect = "DeleteProtect"
 )
 
+// 负载均衡规格与展示相关的常量
+const (
+	// ExclusiveSlaTypeName 独占型规格在 ITSM / 展示层的名称
+	ExclusiveSlaTypeName = "独占型"
+	// SharedSlaTypeName 共享型规格在 ITSM / 展示层的名称
+	SharedSlaTypeName = "共享型"
+	// EmptyItsmValue ITSM 表单空值占位
+	EmptyItsmValue = "--"
+	// ClusterLocalUnsyncedName 四层集群本地表未同步时的名称占位
+	ClusterLocalUnsyncedName = "本地未同步"
+)
+
 const (
 	// ExportLayer7ListenerLimit 导出七层监听器数量限制
 	ExportLayer7ListenerLimit = 5000
@@ -98,6 +110,9 @@ const (
 	CLBTopoFindPageLimit = 100000
 	// CLBDataByTopoCondReturnLimit 根据负载均衡拓扑条件查询返回的详情数量限制
 	CLBDataByTopoCondReturnLimit = 10000
+
+	// ExclusiveClusterIdleVipMaxPages 查询独占集群闲置VIP时的最大翻页次数，避免云侧返回异常时无限翻页
+	ExclusiveClusterIdleVipMaxPages = 100
 )
 
 const (

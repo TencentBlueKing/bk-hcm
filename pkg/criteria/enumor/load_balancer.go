@@ -308,6 +308,16 @@ const (
 	MIXClusterIsp ClusterIsp = "MIX"
 )
 
+// IsSingleLine 是否单线运营商（移动、联通、电信）
+func (c ClusterIsp) IsSingleLine() bool {
+	switch c {
+	case CMCCClusterIsp, CUCCClusterIsp, CTCCClusterIsp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Validate 校验独占集群运营商类型是否合法，空字符串视为未指定，同样合法
 func (c ClusterIsp) Validate() error {
 	switch c {
