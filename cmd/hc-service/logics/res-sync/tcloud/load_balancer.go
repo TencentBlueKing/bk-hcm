@@ -752,32 +752,14 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 		return true
 	}
 
-	if cloud.NetworkAttributes != nil {
-		if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
-			cloud.NetworkAttributes.InternetMaxBandwidthOut) {
-			return true
-		}
-		if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
-			return true
-		}
-		if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {
-			return true
-		}
-		if !assert.IsPtrStringEqual(db.Extension.BandwidthpkgSubType, cloud.NetworkAttributes.BandwidthpkgSubType) {
-			return true
-		}
+	if isLBNetworkAttrChange(cloud, db) {
+		return true
 	}
 
 	if !assert.IsPtrStringEqual(db.Extension.SlaType, cloud.SlaType) {
 		return true
 	}
-	if !assert.IsPtrUint64Equal(db.Extension.Exclusive, cloud.Exclusive) {
-		return true
-	}
-	if !assert.IsPtrStringSliceEqual(db.Extension.ClusterIds, cloud.ClusterIds) {
-		return true
-	}
-	if !assert.IsPtrStringEqual(db.Extension.ClusterTag, cvt.ValToPtr(cvt.PtrToVal(cloud.ClusterTag))) {
+	if isLBExclusiveChange(cloud, db) {
 		return true
 	}
 	var cloudTgwGroupName *string
@@ -830,6 +812,46 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 		return true
 	}
 	if !assert.IsPtrStringEqual(db.Extension.TargetCloudVpcID, cloud.TargetRegionInfo.VpcId) {
+		return true
+	}
+
+	return false
+}
+
+// isLBNetworkAttrChange checks whether the network attributes of the load balancer changed.
+// The db.Extension parameter must not be nil.
+func isLBNetworkAttrChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
+	if cloud.NetworkAttributes == nil {
+		return false
+	}
+
+	if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
+		cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+		return true
+	}
+	if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.BandwidthpkgSubType, cloud.NetworkAttributes.BandwidthpkgSubType) {
+		return true
+	}
+
+	return false
+}
+
+// isLBExclusiveChange checks whether the exclusive related extension fields of the load balancer changed.
+// The db.Extension parameter must not be nil.
+func isLBExclusiveChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
+	if !assert.IsPtrUint64Equal(db.Extension.Exclusive, cloud.Exclusive) {
+		return true
+	}
+	if !assert.IsPtrStringSliceEqual(db.Extension.ClusterIds, cloud.ClusterIds) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.ClusterTag, cvt.ValToPtr(cvt.PtrToVal(cloud.ClusterTag))) {
 		return true
 	}
 
