@@ -6,4 +6,5 @@ export enum ResourceTypeEnum {
   CLB = 'clb',
   ACCOUNT = 'account',
   SECURITY_GROUP = 'security_group',
+  EXCLUSIVE_CLUSTER = 'exclusive_cluster',
 }

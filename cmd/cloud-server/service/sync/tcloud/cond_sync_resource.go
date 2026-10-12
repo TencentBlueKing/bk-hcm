@@ -58,13 +58,13 @@ type CondSyncRoute struct {
 }
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.RegionCloudResType:             CondSyncRegion,
-	enumor.ZoneCloudResType:               CondSyncZone,
-	enumor.LoadBalancerCloudResType:       CondSyncLoadBalancer,
-	enumor.SecurityGroupCloudResType:      CondSyncSecurityGroup,
-	enumor.SubnetCloudResType:             CondSyncSubnet,
-	enumor.SubAccountCloudResType:         CondSyncSubAccount,
-	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
+	enumor.RegionCloudResType:                       CondSyncRegion,
+	enumor.ZoneCloudResType:                         CondSyncZone,
+	enumor.LoadBalancerExclusiveClusterCloudResType: CondSyncExclusiveCluster,
+	enumor.LoadBalancerCloudResType:                 CondSyncLoadBalancer,
+	enumor.SecurityGroupCloudResType:                CondSyncSecurityGroup,
+	enumor.SubAccountCloudResType:                   CondSyncSubAccount,
+	enumor.PermissionTemplateCloudResType:           CondSyncPermissionTemplate,
 }
 
 var condAsyncFuncMap = map[enumor.CloudResourceType]CondAsyncFunc{
@@ -90,8 +90,38 @@ func (r *CondSyncRoute) HasAsync() bool {
 	return r != nil && r.AsyncFunc != nil
 }
 
+// CondSyncExclusiveCluster ...
+func CondSyncExclusiveCluster(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.TCloudSyncReq{
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloud.Clb.SyncExclusiveCluster(kt, &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync exclusive cluster failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync exclusive cluster end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+	}
+	return nil
+}
+
 // CondSyncLoadBalancer ...
 func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	// 同步CLB前先同步独占集群，保证独占集群数据不落后于CLB，失败则阻断本次CLB同步。
+	// 只传 account_id/regions，不透传 CLB 的 cloud_ids/tag_filters。
+	if err := CondSyncExclusiveCluster(kt, cliSet, &CondSyncParams{
+		AccountID: params.AccountID,
+		Regions:   params.Regions,
+	}); err != nil {
+		logs.Errorf("[%s] sync exclusive cluster before conditional sync load balancer failed, err: %v, "+
+			"account: %s, regions: %v, rid: %s", enumor.TCloud, err, params.AccountID, params.Regions, kt.Rid)
+		return err
+	}
+
 	syncReq := sync.TCloudSyncReq{
 		AccountID:  params.AccountID,
 		CloudIDs:   params.CloudIDs,

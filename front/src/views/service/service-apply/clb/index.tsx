@@ -42,6 +42,14 @@ export default defineComponent({
       vendor: null,
       account_type: 'STANDARD',
       slaType: '0',
+      exclusive: 0,
+      enable_l4: false,
+      enable_l7: false,
+      l4_cluster_tag: '',
+      l4_cluster_id: '',
+      l4_vip: '',
+      cluster_tag: '',
+      exclusive_cluster_tags: [],
       egress: undefined,
     });
 

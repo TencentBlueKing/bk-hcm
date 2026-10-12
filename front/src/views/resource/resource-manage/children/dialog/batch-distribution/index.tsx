@@ -4,6 +4,8 @@ import './index.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceStore } from '@/store';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_ASSIGN_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 export enum DResourceType {
   cvms = 'cvms',
@@ -18,6 +20,7 @@ export enum DResourceType {
   templates = 'argument_templates',
   load_balancers = 'load_balancers',
   certs = 'certs',
+  exclusive_clusters = 'load_balancers/exclusive_clusters',
 }
 
 export const DResourceTypeMap = {
@@ -69,6 +72,10 @@ export const DResourceTypeMap = {
     key: 'cert_ids',
     name: '证书',
   },
+  [DResourceType.exclusive_clusters]: {
+    key: 'cluster_ids',
+    name: '独占集群',
+  },
 };
 
 export const BatchDistribution = defineComponent({
@@ -85,76 +92,151 @@ export const BatchDistribution = defineComponent({
       type: Function as PropType<() => void>,
       required: true,
     },
+    submit: {
+      type: Function as PropType<(ids: string[], bkBizId: number) => Promise<void>>,
+    },
   },
-  setup(props) {
+  setup(props, { expose }) {
     const { whereAmI } = useWhereAmI();
     const selectedBizId = ref('');
     const isShow = ref(false);
     const isLoading = ref(false);
+    const pendingRows = ref<any[] | null>(null);
     const resourceStore = useResourceStore();
+    const resourceMeta = computed(() => DResourceTypeMap[props.type]);
+    const targetRows = computed(() => (pendingRows.value !== null ? pendingRows.value : props.selections) || []);
+    const isSingle = computed(() => targetRows.value.length === 1);
 
     const hasDiffAccount = computed(() => {
       const accountSet = new Set();
       props.selections?.forEach((item) => accountSet.add(item.account_id));
       return accountSet.size > 1;
     });
-    const accountId = computed(() => props.selections[0]?.account_id);
+    const accountId = computed(() => targetRows.value[0]?.account_id);
 
     const { accountBizList } = useAccountBusiness(accountId);
 
+    // 分配的权限同时关联云账号与目标业务，未选目标业务时无法鉴权，此时跳过校验由按钮的禁用态兜住
+    const assignSign = computed(() => ({
+      type: AUTH_ASSIGN_IAAS_RESOURCE,
+      relation: [accountId.value, Number(selectedBizId.value)],
+    }));
+
+    const handleOpenBatch = () => {
+      pendingRows.value = null;
+      selectedBizId.value = '';
+      isShow.value = true;
+    };
+
+    const open = (rows: any[] = []) => {
+      pendingRows.value = rows;
+      selectedBizId.value = '';
+      isShow.value = true;
+    };
+
+    const handleClosed = () => {
+      isShow.value = false;
+      pendingRows.value = null;
+    };
+
     const handleConfirm = async () => {
       isLoading.value = true;
+      const ids = targetRows.value.map((item) => item.id);
+      const bkBizId = Number(selectedBizId.value);
       try {
-        await resourceStore.assignBusiness(props.type, {
-          [DResourceTypeMap[props.type].key]: props.selections?.map((v) => v.id) || [],
-          bk_biz_id: selectedBizId.value,
-        });
+        if (props.submit) {
+          await props.submit(ids, bkBizId);
+        } else {
+          await resourceStore.assignBusiness(props.type, {
+            [resourceMeta.value.key]: ids,
+            bk_biz_id: selectedBizId.value,
+          });
+        }
         Message({
           theme: 'success',
-          message: '批量分配成功！',
+          message: isSingle.value ? '分配成功' : '批量分配成功！',
         });
         props.getData?.();
-      } catch (error) {
-        Message({
-          theme: 'error',
-          message: '批量分配失败！',
-        });
+      } catch (error: any) {
+        if (props.submit) {
+          Message({
+            theme: 'error',
+            message: error?.message || '分配失败',
+          });
+        } else {
+          Message({
+            theme: 'error',
+            message: '批量分配失败！',
+          });
+        }
       } finally {
         isLoading.value = false;
-        isShow.value = false;
+        handleClosed();
       }
     };
+
+    expose({ open });
+
     return () => (
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
             class={'mw88'}
-            onClick={() => {
-              isShow.value = true;
-            }}
+            onClick={handleOpenBatch}
             v-bk-tooltips={{ content: '所选资源处于不同账号，不允许分配', disabled: !hasDiffAccount.value }}
-            disabled={!props.selections.length || hasDiffAccount.value}
-          >
+            disabled={!props.selections.length || hasDiffAccount.value}>
             批量分配
           </Button>
         ) : null}
         <Dialog
           class={'batch-dialog'}
           isShow={isShow.value}
-          title={`批量分配/${DResourceTypeMap[props.type].name}分配`}
-          theme={'primary'}
+          title={isSingle.value ? `${resourceMeta.value.name}分配` : `批量分配/${resourceMeta.value.name}分配`}
           quickClose
-          onClosed={() => (isShow.value = false)}
-          onConfirm={handleConfirm}
-          isLoading={isLoading.value}
-        >
-          <p class='selected-host-count-tip'>
-            已选择
-            <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}
-            ，可选择所需分配的目标业务
-          </p>
-          <p class='mb6'>目标业务</p>
-          <hcm-form-business data={accountBizList.value} v-model={selectedBizId.value} />
+          onClosed={handleClosed}
+          isLoading={isLoading.value}>
+          {{
+            default: () => (
+              <>
+                {isSingle.value ? (
+                  <>
+                    <p class='mb16'>
+                      当前操作{resourceMeta.value.name}为：{targetRows.value[0]?.name}
+                    </p>
+                    <p class='mb6'>请选择所需分配的目标业务</p>
+                  </>
+                ) : (
+                  <>
+                    <p class='selected-host-count-tip'>
+                      已选择
+                      <span class='selected-host-count'>{targetRows.value.length}</span>个{resourceMeta.value.name}
+                      ，可选择所需分配的目标业务
+                    </p>
+                    <p class='mb6'>目标业务</p>
+                  </>
+                )}
+                <hcm-form-business data={accountBizList.value} v-model={selectedBizId.value} />
+              </>
+            ),
+            footer: () => (
+              <>
+                <HcmAuth class='mr10' sign={assignSign.value} ignore={!selectedBizId.value}>
+                  {{
+                    default: ({ noPerm }: { noPerm: boolean }) => (
+                      <Button
+                        theme='primary'
+                        loading={isLoading.value}
+                        disabled={noPerm || !selectedBizId.value}
+                        onClick={handleConfirm}>
+                        确定
+                      </Button>
+                    ),
+                  }}
+                </HcmAuth>
+                <Button onClick={handleClosed}>取消</Button>
+              </>
+            ),
+          }}
         </Dialog>
       </>
     );

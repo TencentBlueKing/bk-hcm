@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server/application"
+	dataproto "hcm/pkg/api/data-service"
 	dsProto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -141,5 +142,34 @@ func (a *applicationSvc) GetBizApplication(cts *rest.Contexts) (interface{}, err
 		return nil, errf.New(errf.RecordNotFound, "application not found")
 	}
 
-	return a.buildApplicationResponse(cts, application)
+	return a.buildApplicationGetResp(cts, application)
+}
+
+// buildApplicationGetResp 构建单据详情响应体
+func (a *applicationSvc) buildApplicationGetResp(cts *rest.Contexts,
+	application *dataproto.ApplicationResp) (*proto.ApplicationGetResp, error) {
+
+	// 查询审批链接
+	ticket, err := a.itsmCli.GetTicketResult(cts.Kit, application.SN)
+	if err != nil {
+		return nil, fmt.Errorf("call itsm get ticket url failed, err: %v", err)
+	}
+
+	content := RemoveSenseField(application.Content)
+	content = a.enrichExclusiveClusterContent(cts.Kit, application.Type, content)
+
+	return &proto.ApplicationGetResp{
+		ID:             application.ID,
+		Source:         application.Source,
+		SN:             application.SN,
+		Type:           application.Type,
+		Operation:      application.Operation,
+		Status:         application.Status,
+		Applicant:      application.Applicant,
+		Content:        content,
+		DeliveryDetail: application.DeliveryDetail,
+		Memo:           application.Memo,
+		Revision:       application.Revision,
+		TicketUrl:      ticket.TicketURL,
+	}, nil
 }

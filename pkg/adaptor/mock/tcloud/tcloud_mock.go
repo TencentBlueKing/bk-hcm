@@ -15,6 +15,7 @@ import (
 	eip "hcm/pkg/adaptor/types/eip"
 	image "hcm/pkg/adaptor/types/image"
 	instancetype "hcm/pkg/adaptor/types/instance-type"
+	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	region "hcm/pkg/adaptor/types/region"
 	routetable "hcm/pkg/adaptor/types/route-table"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -1520,6 +1521,45 @@ func (c *TCloudListEipCall) Do(f func(*kit.Kit, *eip.TCloudEipListOption) (*eip.
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *TCloudListEipCall) DoAndReturn(f func(*kit.Kit, *eip.TCloudEipListOption) (*eip.TCloudEipListResult, error)) *TCloudListEipCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// ListExclusiveClusters mocks base method.
+func (m *MockTCloud) ListExclusiveClusters(kt *kit.Kit, opt *loadbalancer.TCloudExclusiveClusterListOption) ([]loadbalancer.TCloudExclusiveCluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListExclusiveClusters", kt, opt)
+	ret0, _ := ret[0].([]loadbalancer.TCloudExclusiveCluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListExclusiveClusters indicates an expected call of ListExclusiveClusters.
+func (mr *MockTCloudMockRecorder) ListExclusiveClusters(kt, opt interface{}) *TCloudListExclusiveClustersCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListExclusiveClusters", reflect.TypeOf((*MockTCloud)(nil).ListExclusiveClusters), kt, opt)
+	return &TCloudListExclusiveClustersCall{Call: call}
+}
+
+// TCloudListExclusiveClustersCall wrap *gomock.Call
+type TCloudListExclusiveClustersCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *TCloudListExclusiveClustersCall) Return(arg0 []loadbalancer.TCloudExclusiveCluster, arg1 error) *TCloudListExclusiveClustersCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *TCloudListExclusiveClustersCall) Do(f func(*kit.Kit, *loadbalancer.TCloudExclusiveClusterListOption) ([]loadbalancer.TCloudExclusiveCluster, error)) *TCloudListExclusiveClustersCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *TCloudListExclusiveClustersCall) DoAndReturn(f func(*kit.Kit, *loadbalancer.TCloudExclusiveClusterListOption) ([]loadbalancer.TCloudExclusiveCluster, error)) *TCloudListExclusiveClustersCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

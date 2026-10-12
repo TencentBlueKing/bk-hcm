@@ -595,6 +595,10 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 		SnatPro:                  cloud.SnatPro,
 		MixIpTarget:              cloud.MixIpTarget,
 		ChargeType:               cloud.ChargeType,
+		Egress:                   cloud.Egress,
+		Exclusive:                cloud.Exclusive,
+		ClusterIds:               append([]*string{}, cloud.ClusterIds...),
+		ClusterTag:               cvt.ValToPtr(cvt.PtrToVal(cloud.ClusterTag)),
 		// 该接口无法获取下列字段
 		BandwidthPackageId: nil,
 	}
@@ -627,6 +631,18 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
 		ext.TargetRegion = cloud.TargetRegionInfo.Region
 		ext.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
+	}
+
+	// 负载均衡独占集群
+	if cloud.ExclusiveCluster != nil {
+		ext.L4Clusters = convClusterItemList(cloud.ExclusiveCluster.L4Clusters)
+		ext.L7Clusters = convClusterItemList(cloud.ExclusiveCluster.L7Clusters)
+		ext.ClassicalCluster = convClusterItem(cloud.ExclusiveCluster.ClassicalCluster)
+	}
+
+	// 4层独占集群标签
+	if cloud.ExtraInfo != nil {
+		ext.TgwGroupName = cloud.ExtraInfo.TgwGroupName
 	}
 
 	return ext
@@ -747,23 +763,21 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 		return true
 	}
 
-	if cloud.NetworkAttributes != nil {
-		if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
-			cloud.NetworkAttributes.InternetMaxBandwidthOut) {
-			return true
-		}
-		if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
-			return true
-		}
-		if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {
-			return true
-		}
-		if !assert.IsPtrStringEqual(db.Extension.BandwidthpkgSubType, cloud.NetworkAttributes.BandwidthpkgSubType) {
-			return true
-		}
+	if isLBNetworkAttrChange(cloud, db) {
+		return true
 	}
 
 	if !assert.IsPtrStringEqual(db.Extension.SlaType, cloud.SlaType) {
+		return true
+	}
+	if isLBExclusiveChange(cloud, db) {
+		return true
+	}
+	var cloudTgwGroupName *string
+	if cloud.ExtraInfo != nil {
+		cloudTgwGroupName = cloud.ExtraInfo.TgwGroupName
+	}
+	if !assert.IsPtrStringEqual(db.Extension.TgwGroupName, cloudTgwGroupName) {
 		return true
 	}
 	if !assert.IsPtrStringEqual(db.Extension.VipIsp, cloud.VipIsp) {
@@ -815,6 +829,46 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 	return false
 }
 
+// isLBNetworkAttrChange checks whether the network attributes of the load balancer changed.
+// The db.Extension parameter must not be nil.
+func isLBNetworkAttrChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
+	if cloud.NetworkAttributes == nil {
+		return false
+	}
+
+	if !assert.IsPtrInt64Equal(db.Extension.InternetMaxBandwidthOut,
+		cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+		return true
+	}
+	if db.BandWidth != cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.InternetChargeType, cloud.NetworkAttributes.InternetChargeType) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.BandwidthpkgSubType, cloud.NetworkAttributes.BandwidthpkgSubType) {
+		return true
+	}
+
+	return false
+}
+
+// isLBExclusiveChange checks whether the exclusive related extension fields of the load balancer changed.
+// The db.Extension parameter must not be nil.
+func isLBExclusiveChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
+	if !assert.IsPtrUint64Equal(db.Extension.Exclusive, cloud.Exclusive) {
+		return true
+	}
+	if !assert.IsPtrStringSliceEqual(db.Extension.ClusterIds, cloud.ClusterIds) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.ClusterTag, cvt.ValToPtr(cvt.PtrToVal(cloud.ClusterTag))) {
+		return true
+	}
+
+	return false
+}
+
 func isTagsChange(localTag core.TagMap, cloudTags []*tclb.TagInfo) bool {
 	if len(localTag) != len(cloudTags) {
 		return true
@@ -854,6 +908,25 @@ func cloudSnatSliceToMap(cloudSlice []*tclb.SnatIp) map[string]struct{} {
 		cloudSnatMap[hashCloudSnatIP(ip)] = struct{}{}
 	}
 	return cloudSnatMap
+}
+
+func convClusterItemList(clusters []*tclb.ClusterItem) *[]*corelb.ClusterItem {
+	var localList []*corelb.ClusterItem
+	for _, cluster := range clusters {
+		localList = append(localList, convClusterItem(cluster))
+	}
+	return cvt.ValToPtr(localList)
+}
+
+func convClusterItem(cluster *tclb.ClusterItem) *corelb.ClusterItem {
+	if cluster == nil {
+		return nil
+	}
+	return &corelb.ClusterItem{
+		ClusterId:   cvt.PtrToVal(cluster.ClusterId),
+		ClusterName: cvt.PtrToVal(cluster.ClusterName),
+		Zone:        cvt.PtrToVal(cluster.Zone),
+	}
 }
 
 // hashCloudSnatIP key为 {SubnetId},{Ip}
