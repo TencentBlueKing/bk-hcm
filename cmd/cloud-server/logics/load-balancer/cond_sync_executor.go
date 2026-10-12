@@ -525,11 +525,12 @@ func (c *CondSyncLoadBalancerExecutor) cancelFailedTask(kt *kit.Kit, taskID, flo
 }
 
 // CheckRunningCondSyncTask rejects duplicate CLB conditional sync tasks before doing diff.
-// 按账号+业务维度互斥，资源入口的业务ID为 constant.UnassignedBiz，与业务入口互不拦截。
+// 按账号+业务+地域维度互斥：同账号同业务下地域有交集的任务互斥，地域不重叠的任务互不拦截。
+// 资源入口的业务ID为 constant.UnassignedBiz，与业务入口互不拦截。
 func CheckRunningCondSyncTask(kt *kit.Kit, cliSet *client.ClientSet, opt *CondSyncLoadBalancerOption) error {
 	req := &core.ListReq{
 		Filter: runningCondSyncTaskFilter(opt),
-		Fields: []string{"id", "flow_ids"},
+		Fields: []string{"id", "flow_ids", "extension"},
 		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	flowIDs := make([]string, 0)
@@ -542,6 +543,9 @@ func CheckRunningCondSyncTask(kt *kit.Kit, cliSet *client.ClientSet, opt *CondSy
 		}
 
 		for _, management := range resp.Details {
+			if !isCondSyncRegionOverlap(management.Extension, opt.Regions) {
+				continue
+			}
 			flowIDs = append(flowIDs, management.FlowIDs...)
 		}
 
@@ -560,10 +564,19 @@ func CheckRunningCondSyncTask(kt *kit.Kit, cliSet *client.ClientSet, opt *CondSy
 	}
 
 	logs.Infof("conditional sync load balancer task is running, vendor: %s, account: %s, bk_biz_id: %d, "+
-		"flow: %s, rid: %s", opt.Vendor, opt.AccountID, opt.bkBizID(), runningFlowID, kt.Rid)
+		"regions: %v, flow: %s, rid: %s", opt.Vendor, opt.AccountID, opt.bkBizID(), opt.Regions, runningFlowID, kt.Rid)
 
 	return errf.Newf(errf.TooManyRequest, "load balancer conditional sync task is running, vendor: %s, "+
-		"account: %s, bk_biz_id: %d", opt.Vendor, opt.AccountID, opt.bkBizID())
+		"account: %s, bk_biz_id: %d, regions: %v", opt.Vendor, opt.AccountID, opt.bkBizID(), opt.Regions)
+}
+
+// isCondSyncRegionOverlap 判断运行中任务的地域与本次请求的地域是否有交集。
+// 任务未记录地域时无法确定其范围，按有交集处理。
+func isCondSyncRegionOverlap(ext *coretask.ManagementExt, regions []string) bool {
+	if ext == nil || len(ext.RegionIDs) == 0 {
+		return true
+	}
+	return len(slice.Intersection(ext.RegionIDs, regions)) > 0
 }
 
 // runningCondSyncTaskFilter 构造查询同账号、同业务下运行中的条件同步任务的过滤条件

@@ -25,6 +25,7 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -373,6 +374,30 @@ func TestRunningCondSyncTaskFilterBizDimension(t *testing.T) {
 			}
 			require.NotNil(t, bizRule)
 			require.Equal(t, tt.want, bizRule.Value)
+		})
+	}
+}
+
+func TestIsCondSyncRegionOverlap(t *testing.T) {
+	tests := []struct {
+		name    string
+		ext     *coretask.ManagementExt
+		regions []string
+		want    bool
+	}{
+		{name: "same region", ext: &coretask.ManagementExt{RegionIDs: []string{"ap-guangzhou"}},
+			regions: []string{"ap-guangzhou"}, want: true},
+		{name: "partial overlap", ext: &coretask.ManagementExt{RegionIDs: []string{"ap-guangzhou", "ap-shanghai"}},
+			regions: []string{"ap-shanghai", "ap-beijing"}, want: true},
+		{name: "no overlap", ext: &coretask.ManagementExt{RegionIDs: []string{"ap-guangzhou"}},
+			regions: []string{"ap-shanghai"}, want: false},
+		{name: "nil extension", ext: nil, regions: []string{"ap-shanghai"}, want: true},
+		{name: "empty task regions", ext: &coretask.ManagementExt{}, regions: []string{"ap-shanghai"}, want: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, isCondSyncRegionOverlap(tt.ext, tt.regions))
 		})
 	}
 }
