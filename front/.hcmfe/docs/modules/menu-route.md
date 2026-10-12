@@ -14,7 +14,7 @@
   - `getMenuRoute(views, id)`：在路由树里递归按 name 找记录，菜单项只按 name 引用路由。
   - `toMenuKey(id)`：Symbol 取 `description` 作 `bk-menu` 的 key；侧栏 `active-key` 用同一函数处理 `route.meta.activeKey`。
 - **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由，子路由可写绝对路径，地址不受包装影响。状态路由 `404` / `error` 与 `/403/:id` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址兜底进 `404`（不再跳回首页）。各父路由的 `children` 来自 `views/index.ts`，导出时已经 `injectStatusComponents` 注入状态页 named view；新增视图集合也必须经它包一层。全局 `beforeEach` 只做视图级权限（业务拦截器 → `available` → `meta.auth.view`），不改地址。
-- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 原资源接入页面 + 账单；账单记录写绝对路径 `/bill/*`，地址不变但归属资源运营。
+- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 账号管理 + 回收管理 + 操作记录 + 账单（`/resource/bill/*`）。各模块的旧地址数组（`*Legacy`）由 `router/index.ts` 在顶层注册。
 
 ## 侧栏与顶栏渲染
 
@@ -47,9 +47,9 @@
 
 菜单项集合随构建变体不同。**判断「有没有某个菜单」一律以当前分支实际注册的数据为准**：上游需求文档提到、而本分支没有注册的菜单项，不代表需求写错，也不要照文字凭空新增；反之本分支有而文档没提的，也不要顺手删。核对时要连 menu-service 的 `visibility` 开关一起看。
 
-## 过渡形态（菜单整合二期进行中）
+## 旧地址兼容（菜单整合二期）
 
-二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，各由自己的单加入，不用原页面临时顶替；账号管理、回收管理、操作记录均已上线）。原资源接入页面已全部迁出（资源详情挂到资源纳管下，旧 `/resource/detail/:type` 由 `resourceDetailLegacy` 转址）；`router/module/resource.ts` 只剩外壳记录与原资源列表转址：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 与 `main-content.vue` 的原云账号树两栏随资源接入下线删除。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
+二期首批每单上线即用新地址，资源运营各模块在自己的 `route-config.ts` 导出旧地址数组，由 `router/index.ts` 在 catch-all 之前注册：`resourceManageLegacy`（`/resource/resource?type=` 与旧新建页）、`resourceDetailLegacy`、`recyclebinRscLegacy`、`operationLogRscLegacy`、`accountManageLegacy`、`billLegacy`。原资源接入的路由文件 `router/module/resource.ts` / `resource-inside.ts` / `service-inside.ts` 已删除；侧栏按最终菜单树结构，除资源纳管外都是无云账号树的独立页面。
 
 ## 明细目录
 

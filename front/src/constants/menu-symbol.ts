@@ -68,7 +68,6 @@ export const MENU_RESOURCE_ACCOUNT_DETAIL_BASIC = Symbol('menu_resource_account_
 export const MENU_RESOURCE_RECYCLEBIN = Symbol('menu_resource_recyclebin');
 export const MENU_RESOURCE_OPERATION_LOG = Symbol('menu_resource_operation_log');
 export const MENU_RESOURCE_OPERATION_LOG_DETAILS = Symbol('menu_resource_operation_log_details');
-export const MENU_RESOURCE_RESOURCE_MANAGEMENT = Symbol('menu_resource_resource_management');
 export const MENU_RESOURCE_HOST_APPLY = Symbol('menu_resource_host_apply');
 export const MENU_RESOURCE_VPC_APPLY = Symbol('menu_resource_vpc_apply');
 export const MENU_RESOURCE_DISK_APPLY = Symbol('menu_resource_disk_apply');

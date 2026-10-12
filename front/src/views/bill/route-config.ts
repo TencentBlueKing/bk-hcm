@@ -1,8 +1,9 @@
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
 import { useAuthStore } from '@/store/auth';
 import { AUTH_FIND_ROOT_ACCOUNT, AUTH_FIND_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 import {
+  MENU_RESOURCE,
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_ROOT_ACCOUNT_CREATE,
   MENU_BILL_MAIN_ACCOUNT,
@@ -20,10 +21,11 @@ import {
 const billAccountManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_ROOT_ACCOUNT,
-    path: '/bill/root-account',
+    path: 'bill/root-account',
     component: () => import('./account/account-manage/root-account-list.vue'),
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '一级账号',
         activeKey: MENU_BILL_ROOT_ACCOUNT,
         auth: { view: { type: AUTH_FIND_ROOT_ACCOUNT } },
@@ -33,10 +35,11 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_ROOT_ACCOUNT_CREATE,
-    path: '/bill/root-account/create',
+    path: 'bill/root-account/create',
     component: () => import('./account/create-account/create-first-account'),
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '录入一级账号',
         activeKey: MENU_BILL_ROOT_ACCOUNT,
         menu: { relative: MENU_BILL_ROOT_ACCOUNT },
@@ -46,10 +49,11 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT,
-    path: '/bill/main-account',
+    path: 'bill/main-account',
     component: () => import('./account/account-manage/main-account-list.vue'),
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '二级账号',
         activeKey: MENU_BILL_MAIN_ACCOUNT,
         auth: { view: { type: AUTH_FIND_MAIN_ACCOUNT } },
@@ -59,10 +63,11 @@ const billAccountManage: RouteRecordRaw[] = [
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT_CREATE,
-    path: '/bill/main-account/create',
+    path: 'bill/main-account/create',
     component: () => import('./account/create-account/create-second-account'),
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '创建二级账号',
         activeKey: MENU_BILL_MAIN_ACCOUNT,
         menu: { relative: MENU_BILL_MAIN_ACCOUNT },
@@ -72,9 +77,10 @@ const billAccountManage: RouteRecordRaw[] = [
   },
 ];
 
-// 旧地址兼容（裸 /bill 也转到 account-manage）。
-// 分流读 preload 预鉴权的一级账号视图权限；未取到（接口失败）时按无权限去二级账号
-const billAccountManageLegacy: RouteRecordRaw[] = [
+// 旧地址 /bill/*（账单迁到资源运营 /resource/bill/* 之前），query 原样保留；裸 /bill 不再注册，落 404
+// /bill/account-manage 分流读 preload 预鉴权的一级账号视图权限；未取到（接口失败）时按无权限去二级账号
+const toName = (name: symbol) => (to: RouteLocationNormalized) => ({ name, query: to.query });
+const billLegacy: RouteRecordRaw[] = [
   {
     path: '/bill/account-manage',
     // 类型要求 component/children/redirect 之一；带 redirect 的记录不会执行 beforeEnter
@@ -87,14 +93,18 @@ const billAccountManageLegacy: RouteRecordRaw[] = [
       return { name, query: to.query, replace: true };
     },
   },
-  {
-    path: '/bill/account-manage/first-account',
-    redirect: { name: MENU_BILL_ROOT_ACCOUNT_CREATE },
-  },
-  {
-    path: '/bill/account-manage/second-account',
-    redirect: { name: MENU_BILL_MAIN_ACCOUNT_CREATE },
-  },
+  { path: '/bill/account-manage/first-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT_CREATE) },
+  { path: '/bill/account-manage/second-account', redirect: toName(MENU_BILL_MAIN_ACCOUNT_CREATE) },
+  { path: '/bill/root-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT) },
+  { path: '/bill/root-account/create', redirect: toName(MENU_BILL_ROOT_ACCOUNT_CREATE) },
+  { path: '/bill/main-account', redirect: toName(MENU_BILL_MAIN_ACCOUNT) },
+  { path: '/bill/main-account/create', redirect: toName(MENU_BILL_MAIN_ACCOUNT_CREATE) },
+  { path: '/bill/bill-manage', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary/manage', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary/operation-record', redirect: toName(MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD) },
+  { path: '/bill/bill-manage/detail', redirect: toName(MENU_BILL_MANAGE_DETAIL) },
+  { path: '/bill/bill-manage/adjust', redirect: toName(MENU_BILL_MANAGE_ADJUST) },
 ];
 
 // 云账单管理是布局型页面：./bill/index 提供页签栏与 currentMonth/bill_year/bill_month 上下文，
@@ -102,7 +112,7 @@ const billAccountManageLegacy: RouteRecordRaw[] = [
 const billManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_MANAGE,
-    path: '/bill/bill-manage',
+    path: 'bill/manage',
     component: () => import('./bill/index'),
     redirect: { name: MENU_BILL_MANAGE_SUMMARY },
     children: [
@@ -137,6 +147,7 @@ const billManage: RouteRecordRaw[] = [
     ],
     meta: {
       ...new Meta({
+        owner: MENU_RESOURCE,
         title: '账单管理',
         activeKey: MENU_BILL_MANAGE,
         layout: { breadcrumb: { show: false } },
@@ -145,4 +156,4 @@ const billManage: RouteRecordRaw[] = [
   },
 ];
 
-export { billAccountManage, billAccountManageLegacy, billManage };
+export { billAccountManage, billLegacy, billManage };

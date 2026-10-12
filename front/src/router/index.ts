@@ -20,6 +20,7 @@ import { resourceManageLegacy, resourceDetailLegacy } from '@/views/resource-man
 import { recyclebinRscLegacy } from '@/views/recyclebin/route-config';
 import { accountManageLegacy } from '@/views/account-manage/route-config';
 import { operationLogRscLegacy } from '@/views/operation-log/route-config';
+import { billLegacy } from '@/views/bill/route-config';
 import common from './module/common';
 import { before as businessBeforeInterceptor } from './business-interceptor';
 import { useCommonStore } from '@/store';
@@ -75,10 +76,7 @@ const routes: RouteRecordRaw[] = [
   ...recyclebinRscLegacy,
   ...operationLogRscLegacy,
   ...accountManageLegacy,
-  {
-    path: '/bill',
-    redirect: { path: '/bill/account-manage' },
-  },
+  ...billLegacy,
   {
     path: '/403',
     redirect: '/403',

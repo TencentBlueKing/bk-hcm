@@ -1,0 +1,106 @@
+{
+  "id": "feat-menu-phase2-resource-ops",
+  "title": "菜单整合二期：资源运营一级视图重组与资源接入跳转",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T11:31:22.704Z",
+  "updatedAt": "2026-10-12T07:21:32.833Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-ops/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T11:51:46.593Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-ops/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-12T07:16:09.820Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-12T07:21:32.833Z",
+      "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T11:31:22.704Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-12T07:21:32.833Z",
+      "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702368",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T11:32:30.782Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6 轮结论修订并回写；本地文档 docs/reqs/二期资源运营重组.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "resource.ts",
+        "resource-inside.ts",
+        "service-inside.ts",
+        "main-content.vue",
+        "views/bill/route-config.ts",
+        "router/index.ts",
+        "router/module/resource.ts",
+        "app-shell.scss",
+        "header.vue",
+        "src/views/bill/route-config.ts",
+        "src/router/index.ts",
+        "plugin-handler/bill-manage.tsx",
+        "src/hooks/useWhereAmI.ts",
+        "views/index.ts",
+        "resource-entry.vue",
+        "views/resource/resource-manage/resource-manage.vue",
+        "vendor-group/index.vue",
+        "vendor.plugin.ts",
+        "vendor-property.ts",
+        "views/resource/resource-manage/resource-entry.vue",
+        "resource-list.vue",
+        "src/views/index.ts",
+        "src/router/module/resource.ts",
+        "src/router/module/resource-inside.ts",
+        "src/router/module/service-inside.ts",
+        "src/views/resource-manage/route-config.ts",
+        "src/components/layout/main-content.vue",
+        "src/style/app-shell.scss",
+        "src/constants/menu-symbol.ts",
+        "root-account-list.vue",
+        "main-account-list.vue",
+        "menu-service.ts"
+      ],
+      "contentFingerprint": "50f38ee373d4a81235d71baa06ce1586536510ef",
+      "codeBaseline": "0ee7c1f3fca3e8d8518beb4e786b69fc6b4165af",
+      "seatedAt": "2026-10-12T07:16:08.712Z"
+    }
+  }
+}

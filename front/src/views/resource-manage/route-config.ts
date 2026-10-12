@@ -79,7 +79,7 @@ const resourceManageRoutes: RouteRecordRaw[] = [
 ];
 
 // 旧资源列表 /resource/resource?type=&accountId=：type 进 params，其余参数保留
-export const toResourceList = (to: RouteLocationNormalized) => {
+const toResourceList = (to: RouteLocationNormalized) => {
   const { type, ...query } = to.query;
   return { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: (type as string) || 'host' }, query };
 };
@@ -92,11 +92,14 @@ const applyPairs: [string, symbol][] = [
   ['clb', MENU_RESOURCE_LOAD_BALANCER_APPLY],
 ];
 
-// 旧新建页地址 /resource/service-apply/*，参数保留
-export const resourceManageLegacy: RouteRecordRaw[] = applyPairs.map(([slug, name]) => ({
-  path: `/resource/service-apply/${slug}`,
-  redirect: (to: RouteLocationNormalized) => ({ name, query: to.query }),
-}));
+// 旧资源列表 /resource/resource 与旧新建页地址 /resource/service-apply/*，参数保留
+export const resourceManageLegacy: RouteRecordRaw[] = [
+  { path: '/resource/resource', redirect: toResourceList },
+  ...applyPairs.map(([slug, name]) => ({
+    path: `/resource/service-apply/${slug}`,
+    redirect: (to: RouteLocationNormalized) => ({ name, query: to.query }),
+  })),
+];
 
 const legacyDetailTypeMap: Record<string, string> = { eips: 'eip', route: 'routing' };
 

@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import HcmBreadcrumb from './breadcrumb.vue';
 
 defineProps<{ isRouterAlive: boolean }>();
@@ -12,26 +11,15 @@ const breadcrumb = useBreadcrumb();
 
 // 守卫按权限 / 异常把 meta.view 切到 permission、error、notFound，对应 views/index.ts 注入的 named view
 const view = computed(() => (route.meta.view as string) ?? 'default');
-// TODO(菜单整合二期·组装)：原资源接入页面全部迁出后删除
-const isLegacyResourceAccess = computed(() => !!route.meta.legacyResourceAccess);
 const isStatusView = computed(() => view.value !== 'default' || route.name === '404' || route.name === 'error');
-const showBreadcrumb = computed(() => !isLegacyResourceAccess.value && breadcrumb.data.display);
+const showBreadcrumb = computed(() => breadcrumb.data.display);
 </script>
 
 <template>
   <div class="main-content">
     <HcmBreadcrumb v-if="showBreadcrumb" />
     <div :class="['main-view', 'view-warp', { 'status-view': isStatusView }]">
-      <template v-if="isRouterAlive">
-        <!-- 状态页不展示云账号树，避免无权限时露出页面数据 -->
-        <div v-if="isLegacyResourceAccess && view === 'default'" class="resource-manage-container">
-          <div class="fixed-account-list-container">
-            <AccountVendorGroup />
-          </div>
-          <RouterView class="router-view-content" />
-        </div>
-        <RouterView v-else :name="view" />
-      </template>
+      <RouterView v-if="isRouterAlive" :name="view" />
     </div>
   </div>
 </template>
