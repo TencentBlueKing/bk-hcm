@@ -84,6 +84,8 @@
       :resource-type="ResourceTypeEnum.CLB"
       resource-name="load_balancer"
       :initial-model="syncDialogState.initialModel"
+      :success-handler="handleClbSyncSuccess"
+      :error-handler="handleClbSyncError"
       @hidden="
         () => {
           syncDialogState.isHidden = true;
@@ -113,6 +115,7 @@ import { useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import { useClbSyncFeedback } from '@/views/load-balancer/use-clb-sync-feedback';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 import { useRegionStore } from '@/store/region';
@@ -131,6 +134,7 @@ const props = defineProps({
 const { t } = useI18n();
 // eslint-disable-next-line vue/no-dupe-keys
 const { whereAmI } = useWhereAmI();
+const { handleClbSyncSuccess, handleClbSyncError } = useClbSyncFeedback();
 const { getAllVendorRegion } = useRegionStore();
 const { searchValue, filter } = useFilter(props, {
   conditionFormatterMapper: {

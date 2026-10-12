@@ -85,4 +85,7 @@ index.dev.js
 # cert
 *.pem
 
+# Stylelint 缓存
 .stylelintcache
+
+.hcmfe/know-how
