@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2024 THL A29 Limited,
+ * Copyright (C) 2022 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,121 +24,172 @@ import (
 
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
-	"hcm/pkg/criteria/enumor"
 	cvt "hcm/pkg/tools/converter"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
-func newTestClb(clusterTag *string, clusterIDs []string) typeslb.TCloudClb {
-	return typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
-		ClusterTag: clusterTag,
-		ClusterIds: cvt.SliceToPtr(clusterIDs),
+// newTestLBPair returns a cloud load balancer and a db load balancer which have no difference.
+// A null cluster tag from cloud is stored as an empty string, so the db side holds an empty string pointer.
+func newTestLBPair() (typeslb.TCloudClb, corelb.TCloudLoadBalancer) {
+	cloud := typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+		TargetRegionInfo: &tclb.TargetRegionInfo{},
 	}}
+	db := corelb.TCloudLoadBalancer{}
+	db.Extension = &corelb.TCloudClbExtension{ClusterTag: cvt.ValToPtr("")}
+
+	return cloud, db
 }
 
-// TestBuildExclusiveClusterExtension_NonExclusive 非独占型实例 exclusive 为 false，clusters 为空数组。
-func TestBuildExclusiveClusterExtension_NonExclusive(t *testing.T) {
-	cloud := newTestClb(nil, nil)
+func TestIsLBExclusiveChange(t *testing.T) {
+	tests := []struct {
+		name   string
+		modify func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer)
+		want   bool
+	}{
+		{name: "no difference", modify: func(_ *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {}, want: false},
+		{
+			name: "exclusive equal",
+			modify: func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				cloud.Exclusive = cvt.ValToPtr(uint64(1))
+				db.Extension.Exclusive = cvt.ValToPtr(uint64(1))
+			},
+			want: false,
+		},
+		{
+			name: "exclusive changed",
+			modify: func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				cloud.Exclusive = cvt.ValToPtr(uint64(1))
+				db.Extension.Exclusive = cvt.ValToPtr(uint64(0))
+			},
+			want: true,
+		},
+		{
+			name: "exclusive changed from null to value",
+			modify: func(cloud *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {
+				cloud.Exclusive = cvt.ValToPtr(uint64(0))
+			},
+			want: true,
+		},
+		{
+			name: "cluster ids changed",
+			modify: func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				cloud.ClusterIds = []*string{cvt.ValToPtr("tgw-a")}
+				db.Extension.ClusterIds = []*string{cvt.ValToPtr("tgw-b")}
+			},
+			want: true,
+		},
+		{
+			name: "cluster tag changed",
+			modify: func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				cloud.ClusterTag = cvt.ValToPtr("tag-a")
+				db.Extension.ClusterTag = cvt.ValToPtr("tag-b")
+			},
+			want: true,
+		},
+	}
 
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, map[string]corelb.BaseExclusiveCluster{})
-
-	require.False(t, exclusive)
-	require.NotNil(t, clusters)
-	require.Len(t, clusters, 0)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cloud, db := newTestLBPair()
+			tt.modify(&cloud, &db)
+			assert.Equal(t, tt.want, isLBExclusiveChange(cloud, db))
+		})
+	}
 }
 
-// TestBuildExclusiveClusterExtension_OnlyL4 只使用四层独占集群时数组只含 TGW 类型元素。
-func TestBuildExclusiveClusterExtension_OnlyL4(t *testing.T) {
-	cloud := newTestClb(nil, []string{"tgw-1"})
-	clusterMap := map[string]corelb.BaseExclusiveCluster{
-		"tgw-1": {ID: "000001", Name: "tgw-cluster-1", ClusterType: enumor.TGWClusterType},
-	}
-
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
-
-	require.True(t, exclusive)
-	require.Len(t, clusters, 1)
-	require.Equal(t, "tgw-1", clusters[0].CloudClusterID)
-	require.Equal(t, "000001", clusters[0].ClusterID)
-	require.Equal(t, "tgw-cluster-1", clusters[0].ClusterName)
-	require.Equal(t, string(enumor.TGWClusterType), clusters[0].ClusterType)
-}
-
-// TestBuildExclusiveClusterExtension_MixedL4AndL7ClusterIds 云上 ClusterIds 混合了四层与七层落地 ID，按本地表
-// 记录的 cluster_type 分别正确标注。
-func TestBuildExclusiveClusterExtension_MixedL4AndL7ClusterIds(t *testing.T) {
-	cloud := newTestClb(nil, []string{"tgw-1", "stgw-1"})
-	clusterMap := map[string]corelb.BaseExclusiveCluster{
-		"tgw-1":  {ID: "000001", Name: "tgw-cluster-1", ClusterType: enumor.TGWClusterType},
-		"stgw-1": {ID: "000002", Name: "stgw-cluster-1", ClusterType: enumor.STGWClusterType, ClusterTag: "tag-1"},
-	}
-
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
-
-	require.True(t, exclusive)
-	require.Len(t, clusters, 2)
-
-	byID := make(map[string]corelb.TCloudExtensionCluster, len(clusters))
-	for _, c := range clusters {
-		byID[c.CloudClusterID] = c
-	}
-	require.Equal(t, string(enumor.TGWClusterType), byID["tgw-1"].ClusterType)
-	require.Equal(t, string(enumor.STGWClusterType), byID["stgw-1"].ClusterType)
-	require.Equal(t, "tag-1", byID["stgw-1"].ClusterTag)
-}
-
-// TestBuildExclusiveClusterExtension_ClusterTagWithoutLandingSTGW 云侧只回传七层标签、未回传具体落地 ID 时，
-// 补一条只有 cluster_tag/cluster_type 有值的元素。
-func TestBuildExclusiveClusterExtension_ClusterTagWithoutLandingSTGW(t *testing.T) {
-	cloud := newTestClb(cvt.ValToPtr("tag-1"), []string{"tgw-1"})
-	clusterMap := map[string]corelb.BaseExclusiveCluster{
-		"tgw-1": {ID: "000001", Name: "tgw-cluster-1", ClusterType: enumor.TGWClusterType},
-	}
-
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
-
-	require.True(t, exclusive)
-	require.Len(t, clusters, 2)
-
-	var stgwElem *corelb.TCloudExtensionCluster
-	for i := range clusters {
-		if clusters[i].ClusterType == string(enumor.STGWClusterType) {
-			stgwElem = &clusters[i]
+func TestIsLBNetworkAttrChange(t *testing.T) {
+	newNetworkPair := func() (typeslb.TCloudClb, corelb.TCloudLoadBalancer) {
+		cloud, db := newTestLBPair()
+		cloud.NetworkAttributes = &tclb.InternetAccessible{
+			InternetMaxBandwidthOut: cvt.ValToPtr(int64(10)),
+			InternetChargeType:      cvt.ValToPtr("BANDWIDTH_POSTPAID_BY_HOUR"),
+			BandwidthpkgSubType:     cvt.ValToPtr("BGP"),
 		}
-	}
-	require.NotNil(t, stgwElem)
-	require.Equal(t, "tag-1", stgwElem.ClusterTag)
-	require.Equal(t, "", stgwElem.CloudClusterID)
-	require.Equal(t, "", stgwElem.ClusterID)
-}
+		db.BandWidth = 10
+		db.Extension.InternetMaxBandwidthOut = cvt.ValToPtr(int64(10))
+		db.Extension.InternetChargeType = cvt.ValToPtr("BANDWIDTH_POSTPAID_BY_HOUR")
+		db.Extension.BandwidthpkgSubType = cvt.ValToPtr("BGP")
 
-// TestBuildExclusiveClusterExtension_ClusterIDNotSyncedLocally 本地表未同步或已删除时仍返回云上原值，层级按
-// TGW 兜底。
-func TestBuildExclusiveClusterExtension_ClusterIDNotSyncedLocally(t *testing.T) {
-	cloud := newTestClb(nil, []string{"tgw-deleted"})
-
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, map[string]corelb.BaseExclusiveCluster{})
-
-	require.True(t, exclusive)
-	require.Len(t, clusters, 1)
-	require.Equal(t, "tgw-deleted", clusters[0].CloudClusterID)
-	require.Equal(t, "", clusters[0].ClusterID)
-	require.Equal(t, "", clusters[0].ClusterName)
-}
-
-// TestBuildExclusiveClusterExtension_ClusterTagWithLandingSTGW 云侧已回传具体落地 STGW ID 时，不再额外补占位
-// 元素。
-func TestBuildExclusiveClusterExtension_ClusterTagWithLandingSTGW(t *testing.T) {
-	cloud := newTestClb(cvt.ValToPtr("tag-1"), []string{"stgw-1"})
-	clusterMap := map[string]corelb.BaseExclusiveCluster{
-		"stgw-1": {ID: "000002", Name: "stgw-cluster-1", ClusterType: enumor.STGWClusterType, ClusterTag: "tag-1"},
+		return cloud, db
 	}
 
-	exclusive, clusters := buildExclusiveClusterExtension(cloud, clusterMap)
+	tests := []struct {
+		name   string
+		modify func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer)
+		want   bool
+	}{
+		{name: "equal", modify: func(_ *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {}, want: false},
+		{
+			name: "cloud network attributes null",
+			modify: func(cloud *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				cloud.NetworkAttributes = nil
+				db.BandWidth = 99
+			},
+			want: false,
+		},
+		{
+			name: "extension bandwidth changed",
+			modify: func(cloud *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {
+				cloud.NetworkAttributes.InternetMaxBandwidthOut = cvt.ValToPtr(int64(20))
+			},
+			want: true,
+		},
+		{
+			name: "db bandwidth changed",
+			modify: func(_ *typeslb.TCloudClb, db *corelb.TCloudLoadBalancer) {
+				db.BandWidth = 20
+			},
+			want: true,
+		},
+		{
+			name: "charge type changed",
+			modify: func(cloud *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {
+				cloud.NetworkAttributes.InternetChargeType = cvt.ValToPtr("TRAFFIC_POSTPAID_BY_HOUR")
+			},
+			want: true,
+		},
+		{
+			name: "bandwidth package sub type changed",
+			modify: func(cloud *typeslb.TCloudClb, _ *corelb.TCloudLoadBalancer) {
+				cloud.NetworkAttributes.BandwidthpkgSubType = cvt.ValToPtr("SINGLEISP")
+			},
+			want: true,
+		},
+	}
 
-	require.True(t, exclusive)
-	require.Len(t, clusters, 1)
-	require.Equal(t, "stgw-1", clusters[0].CloudClusterID)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cloud, db := newNetworkPair()
+			tt.modify(&cloud, &db)
+			assert.Equal(t, tt.want, isLBNetworkAttrChange(cloud, db))
+		})
+	}
+}
+
+// TestIsLBExtensionChange checks the extracted helpers are still wired into isLBExtensionChange.
+func TestIsLBExtensionChange(t *testing.T) {
+	t.Run("extension null", func(t *testing.T) {
+		cloud, db := newTestLBPair()
+		db.Extension = nil
+		assert.True(t, isLBExtensionChange(cloud, db))
+	})
+
+	t.Run("no difference", func(t *testing.T) {
+		cloud, db := newTestLBPair()
+		assert.False(t, isLBExtensionChange(cloud, db))
+	})
+
+	t.Run("exclusive changed", func(t *testing.T) {
+		cloud, db := newTestLBPair()
+		cloud.Exclusive = cvt.ValToPtr(uint64(1))
+		assert.True(t, isLBExtensionChange(cloud, db))
+	})
+
+	t.Run("network attributes changed", func(t *testing.T) {
+		cloud, db := newTestLBPair()
+		cloud.NetworkAttributes = &tclb.InternetAccessible{InternetMaxBandwidthOut: cvt.ValToPtr(int64(5))}
+		assert.True(t, isLBExtensionChange(cloud, db))
+	})
 }

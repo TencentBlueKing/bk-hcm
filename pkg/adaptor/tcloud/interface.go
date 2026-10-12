@@ -221,6 +221,8 @@ type TCloud interface {
 	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
 	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
 		[]typelb.TCloudLoadBalancerQuota, error)
+	ListExclusiveClusters(kt *kit.Kit, opt *typelb.TCloudExclusiveClusterListOption) (
+		[]typelb.TCloudExclusiveCluster, error)
 
 	ListBandwidthPackage(kt *kit.Kit, opt *types.TCloudListBwPkgOption) (
 		*types.TCloudListBwPkgResult, error)
