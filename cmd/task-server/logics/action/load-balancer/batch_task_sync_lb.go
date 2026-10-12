@@ -97,7 +97,7 @@ func (act BatchTaskSyncLbDeleteAction) Run(kt run.ExecuteKit, params any) (resul
 		finishSyncLbTaskDetails(kt.Kit(), opt.ManagementDetailIDs, taskErr)
 	}()
 
-	if taskErr = act.deleteLoadBalancer(kt.Kit(), opt); taskErr != nil {
+	if taskErr = act.deleteLoadBalancer(kt.AsyncKit(), opt); taskErr != nil {
 		logs.Errorf("batch delete load balancer failed, err: %v, account: %s, region: %s, cloudIDs: %v, rid: %s",
 			taskErr, opt.AccountID, opt.Region, opt.CloudIDs, kt.Kit().Rid)
 		return nil, taskErr
@@ -196,7 +196,7 @@ func (act BatchTaskSyncLbUpsertAction) Run(kt run.ExecuteKit, params any) (resul
 		finishSyncLbTaskDetails(kt.Kit(), opt.ManagementDetailIDs, taskErr)
 	}()
 
-	if taskErr = act.syncLoadBalancer(kt.Kit(), opt); taskErr != nil {
+	if taskErr = act.syncLoadBalancer(kt.AsyncKit(), opt); taskErr != nil {
 		logs.Errorf("batch sync load balancer failed, err: %v, account: %s, region: %s, cloudIDs: %v, rid: %s",
 			taskErr, opt.AccountID, opt.Region, opt.CloudIDs, kt.Kit().Rid)
 		return nil, taskErr
