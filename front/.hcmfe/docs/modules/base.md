@@ -14,6 +14,9 @@
 - 弹窗只做通用提交、默认成功提示和关窗。可选 `successHandler` / `errorHandler` 给调用方。
 - **禁止**按 `resourceName` 在弹窗内写死某一业务的成功/失败文案、错误码或跳转（CLB 反馈在 `views/load-balancer/use-clb-sync-feedback.ts`；安全组走默认「已同步成功」+ 已有 `errorHandler`）。
 - `src/hooks` 只放跨模块 hook。
+- `resource-search-select` 自带宽度：`width: 500px` 是上限，配 `max-width: 100%` + `min-width: 240px`。要它在窄屏收缩，**调用方容器必须给 `min-width: 0`**——flex 项的自动最小宽度等于内容宽（500px），不放开根本压不下去；未放开的使用方仍是固定 500px。
+- 轮询统一用 `src/hooks/use-timeout-poll`（`resume`/`pause`/`reset`，`onScopeDispose` 自动停）。`src/utils/interval` 已 `@deprecated`：回调在创建时被闭包固定，取不到后续变化的参数（账号/ID 切换场景会一直打到上一个 id），也没有次数重置与 scope 销毁。
+- 全局组件样式覆盖放 `src/style/override/`（`index.scss` 汇总）。`bkpopover.scss` 的 `.hcm-tooltips-popover` 用来让组件式 `bk-popover` 对齐 `v-bk-tooltips` 指令的紧凑暗色外观（两者默认 placement、arrow、内边距、背景都不同），表格单元格内应用组件而非指令。
 
 ## 明细目录
 

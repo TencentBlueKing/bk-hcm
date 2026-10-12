@@ -1,11 +1,6 @@
 import { Column, Model } from '@/decorator';
-import {
-  CLB_STATUS_NAME,
-  IP_VERSION_DISPLAY_NAME,
-  LB_TYPE_NAME,
-  LOAD_BALANCER_INSTANCE_SPEC_NAME,
-} from '../../constants';
-import { buildLoadBalancerInstanceSpecFilterRules } from '../../utils';
+import { CLB_STATUS_NAME, IP_VERSION_DISPLAY_NAME, LB_TYPE_NAME } from '../../constants';
+import { buildLoadBalancerInstanceSpecFilterRules, LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME } from '../../utils';
 import { LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import { buildVIPFilterRules, buildFilterRulesWithSearchSelect } from '@/utils/search';
@@ -56,7 +51,7 @@ export class SearchConditionClb {
 
   @Column('enum', {
     name: '实例规格',
-    option: LOAD_BALANCER_INSTANCE_SPEC_NAME,
+    option: LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME,
     meta: {
       search: {
         filterRules(value) {

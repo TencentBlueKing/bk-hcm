@@ -2,7 +2,7 @@
 
 > 工作流: `feat-clb-list-spec-field`（lite，无 prd/design/api）
 > 关联文档: [coding.md](./coding.md)
-> TAPD: CLB列表实例规格字段 #1069995598138114064（F-004 / AC-001~AC-004）
+> 需求单: CLB列表实例规格字段（F-004 / AC-001~AC-004）
 
 ## 验证范围
 
@@ -42,8 +42,10 @@
 
 | ID | 场景 | 前置 | 操作 | 期望 | covered-by |
 |----|------|------|------|------|------------|
-| P1-01 | 筛选项只有两项 | 打开搜索的「实例规格」下拉 | 观察选项 | 只有「独占型」「共享型」，没有 7 个性能容量型档位 | |
+| P1-01 | 筛选项 10 项且顺序正确 | 打开搜索的「实例规格」下拉 | 观察选项 | 依次为独占型、共享型，再 8 个档位（简约型…超强型4规格），共 10 项（验收阶段扩项，见 coding.md[验收调整]） | |
 | P1-02 | 多选实例规格 | 支持多选时 | 同时选独占型 + 共享型 | 请求 filter 是 `or` 包住两条子规则，且各子规则内部结构不变；接口 200 | |
+| P1-07 | 档位筛选叠加 exclusive=0 | Network 面板已打开 | 只选一个档位（如标准型规格） | filter 为 `and`：`extension.exclusive json_eq 0` + `extension.sla_type json_in ['clb.c2.medium']`（单值也走 `json_in`，不退回 `json_eq`）；不能只下发 sla_type，否则会把展示为「独占型」的行筛出来 | |
+| P1-08 | 多档位合并成一条 in | 同上 | 一个 tag 内勾 3 个档位（业务侧）/ 加 3 个 tag（资源接入侧） | 档位合成**一条** `json_in` 三元数组，不是 3 条 `json_eq`；同层 rules 不超过 `pkg/runtime/filter` 的 10 条上限；接口 200 | |
 | P1-03 | 未知档位兜底 | 造一行 `sla_type: 'clb.cX.unknown'` + `exclusive: 0` | 看该行 | 直接显示原始值 `clb.cX.unknown`，不显示空白也不报错 | |
 | P1-04 | 搜索条件 URL 闭环（业务下列表） | 选好实例规格条件后 | 刷新页面 / 复制 URL 新开 | 条件从 URL 还原，搜索框回填「实例规格 独占型」，列表请求带同样的规则 | |
 | P1-05 | 与其它条件组合 | Network 面板已打开 | 实例规格 + 网络类型 + 地域 一起筛 | 各条件在同一个 `and` 下并存，互不覆盖 | |
@@ -60,26 +62,30 @@
 
 > 每条填写：PASS / FAIL / Skipped + 简要说明（FAIL 附复现步骤与截图/日志）
 
+> 本轮为**开发自测**，执行人：开发。依据分两类：`实测` = 浏览器实操并核对 Network/DOM；`代码复核` = 需要响应改写造数据、本轮未造，只做实现走查。
+
 | ID | 结果 | 备注 |
 |----|------|------|
-| P0-01 | <PASS / FAIL / Skipped> | |
-| P0-02 | <PASS / FAIL / Skipped> | |
-| P0-03 | <PASS / FAIL / Skipped> | |
-| P0-04 | <PASS / FAIL / Skipped> | |
-| P0-05 | <PASS / FAIL / Skipped> | |
-| P0-06 | <PASS / FAIL / Skipped> | |
-| P0-07 | <PASS / FAIL / Skipped> | |
-| P0-08 | <PASS / FAIL / Skipped> | |
-| P0-09 | <PASS / FAIL / Skipped> | |
-| P0-10 | <PASS / FAIL / Skipped> | |
-| P1-01 | <PASS / FAIL / Skipped> | |
-| P1-02 | <PASS / FAIL / Skipped> | |
-| P1-03 | <PASS / FAIL / Skipped> | |
-| P1-04 | <PASS / FAIL / Skipped> | |
-| P1-05 | <PASS / FAIL / Skipped> | |
-| P1-06 | <PASS / FAIL / Skipped> | |
+| P0-01 | PASS | 实测。「实例规格」紧跟「网络类型」，默认可见 |
+| P0-02 | PASS | 实测。同上 |
+| P0-03 | PASS | 代码复核。`exclusive === 1` 先判，优先于 `sla_type` |
+| P0-04 | PASS | 代码复核。档位文案取 `CLB_SPECS`，与详情页一致 |
+| P0-05 | PASS | 代码复核。`exclusive=0` 且 `sla_type` 为空 → 共享型 |
+| P0-06 | PASS | 实测。真实响应当前就不返回这两个字段，两个列表该列均 `--`，无报错（AC-004 预期态） |
+| P0-07 | PASS | 实测。单条 `extension.exclusive json_eq 1` |
+| P0-08 | PASS | 实测。`and` 组含 `exclusive json_eq 0` + `sla_type json_eq ''` |
+| P0-09 | PASS | 实测。资源接入侧多包一层 `or`，接口 200（3 层嵌套未被后端拒） |
+| P0-10 | PASS | 实测。表头无排序控件 |
+| P1-01 | PASS | 实测。10 项，顺序为独占型 / 共享型 / 8 个档位 |
+| P1-02 | PASS | 实测。`or` 包两条子规则，子规则结构不变 |
+| P1-03 | Skipped | 代码复核。未落 `CLB_SPECS` 时兜原始值，需响应改写才能实测 |
+| P1-04 | PASS | 实测。刷新后条件从 URL 还原并回填 |
+| P1-05 | PASS | 实测。与网络类型、地域同处一个 `and`，互不覆盖 |
+| P1-06 | PASS | 实测。批量删除弹窗与详情页不受影响 |
+| P1-07 | PASS | 实测。档位规则叠加 `exclusive json_eq 0`，单值也走 `json_in` |
+| P1-08 | PASS | 实测。多档位合并为一条 `json_in`，同层 rules ≤ 3 条 |
 
-- 执行日期: <YYYY-MM-DD>
-- 总体结论: PASS / FAIL
+- 执行日期: 2026-09-21
+- 总体结论: PASS（唯一 Skipped 为未知档位兜底，需造数据）
 - 待后端复验（不阻塞本轮）: 真实响应下的三段式展示；`extension.exclusive` / `extension.sla_type` 两个 `json_eq` 是否被列表接口 RuleFields 放行；筛选命中结果
-- 后续行动: <例如：回 coding 修 P0-xx / 提测 / 开 MR>
+- 后续行动: 提测（子单已到 for test）；后端返回 `exclusive` / `sla_type` 后复验三段式展示与筛选命中

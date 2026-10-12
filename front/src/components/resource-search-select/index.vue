@@ -124,5 +124,9 @@ const handleUpdate = (val: ISearchValue[]) => {
 <style lang="scss" scoped>
 .resource-search-select {
   width: 500px;
+
+  // 容器比 500 窄时自适应收缩（需容器允许收缩，如 flex 项加 min-width: 0）
+  max-width: 100%;
+  min-width: 240px;
 }
 </style>
