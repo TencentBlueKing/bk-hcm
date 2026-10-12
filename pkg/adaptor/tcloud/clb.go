@@ -202,6 +202,10 @@ func (t *TCloudImpl) CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClb
 	if err != nil {
 		return nil, err
 	}
+	if result == nil {
+		return nil, errf.Newf(errf.CloudVendorError, "poll create lb task timeout, task still running, "+
+			"TencentCloudSDK RequestId: %s", cvt.PtrToVal(reqID))
+	}
 	if len(result.SuccessCloudIDs) == 0 {
 		return nil, errf.Newf(errf.CloudVendorError,
 			"no any lb being created, TencentCloudSDK RequestId: %s", cvt.PtrToVal(reqID))

@@ -184,40 +184,21 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
-	// 数据库创建失败也继续同步
-	_ = svc.createTCloudDBLoadBalancer(cts, req, result.SuccessCloudIDs)
-	if err := svc.lbSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
-		return nil, err
+	// 本地记录只由同步按云上数据新建，云上查不到的不会被建出，也不会被删除
+	invisibleIDs := tcloud.WaitLoadBalancerVisible(cts.Kit, tcloudAdpt, req.Region, result.SuccessCloudIDs, nil)
+	if err = svc.lbSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
+		return nil, fmt.Errorf("lb instances have been created on cloud, but sync failed, cloud_ids: %v, err: %v",
+			result.SuccessCloudIDs, err)
+	}
+	if err = svc.fillTCloudLBBiz(cts.Kit, req, result.SuccessCloudIDs); err != nil {
+		return nil, fmt.Errorf("lb instances have been created on cloud, but fill biz failed, cloud_ids: %v, err: %v",
+			result.SuccessCloudIDs, err)
+	}
+	if len(invisibleIDs) > 0 {
+		return nil, fmt.Errorf("lb instances have been created on cloud, but still not visible after waiting, "+
+			"invisible: %v, cloud_ids: %v", invisibleIDs, result.SuccessCloudIDs)
 	}
 	return respData, nil
-}
-
-func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.TCloudLoadBalancerCreateReq,
-	cloudIDs []string) (err error) {
-
-	dataReq := &dataproto.TCloudCLBCreateReq{Lbs: make([]dataproto.TCloudCLBCreate, len(cloudIDs))}
-	for i, cloudID := range cloudIDs {
-		dataReq.Lbs[i].CloudID = cloudID
-		dataReq.Lbs[i].Vendor = enumor.TCloud
-		dataReq.Lbs[i].BkBizID = req.BkBizID
-
-		dataReq.Lbs[i].Name = fmt.Sprintf("%s-%d", cvt.PtrToVal(req.Name), i)
-		dataReq.Lbs[i].AccountID = req.AccountID
-		dataReq.Lbs[i].Region = req.Region
-		dataReq.Lbs[i].LoadBalancerType = string(req.LoadBalancerType)
-		dataReq.Lbs[i].IPVersion = req.AddressIPVersion.Convert()
-		dataReq.Lbs[i].Zones = req.Zones
-		dataReq.Lbs[i].BackupZones = req.BackupZones
-		dataReq.Lbs[i].Tags = cvt.SliceToMap(req.Tags, core.TagPair.GetKeyValue)
-
-	}
-	// 创建本地数据，保存业务信息
-	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudClb(cts.Kit, dataReq)
-	if err != nil {
-		logs.Errorf("fail to create db load balancer after cloud create, err: %v, rid: %s", err, cts.Kit.Rid)
-		// 	失败也继续尝试同步
-	}
-	return err
 }
 
 // ListTCloudClb list tcloud clb

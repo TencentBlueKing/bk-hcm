@@ -41,6 +41,15 @@ const (
 	TCLBDescribeMax = 20
 	// TCLBDeleteProtect 腾讯云负载均衡删除保护
 	TCLBDeleteProtect = "DeleteProtect"
+
+	// TCLBVisibleWaitTimeoutSec 创建CLB后等待云上可查询的总上限，单位秒
+	TCLBVisibleWaitTimeoutSec = 30
+	// TCLBVisibleWaitImmuneCount 等待云上可查询时，间隔线性递增的重试次数
+	TCLBVisibleWaitImmuneCount = 4
+	// TCLBVisibleWaitMinIntervalMS 等待云上可查询的线性步长及随机间隔下限，单位毫秒
+	TCLBVisibleWaitMinIntervalMS = 500
+	// TCLBVisibleWaitMaxIntervalMS 等待云上可查询的随机间隔上限，单位毫秒
+	TCLBVisibleWaitMaxIntervalMS = 2000
 )
 
 const (

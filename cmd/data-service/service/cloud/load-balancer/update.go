@@ -97,6 +97,7 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				PublicIPv6Addresses:  lb.PublicIPv6Addresses,
 				BandWidth:            lb.BandWidth,
 				Isp:                  lb.Isp,
+				BackupZones:          lb.BackupZones,
 
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
