@@ -7,7 +7,7 @@
 ## 2. res-sync 独占集群
 
 - [x] 2.1 `cmd/hc-service/logics/res-sync/common/diff.go` 的 `CloudResType` 联合类型加入 `typeslb.TCloudExclusiveCluster`
-- [x] 2.2 新增 `cmd/hc-service/logics/res-sync/tcloud/load_balancer_exclusive_cluster.go`：`SyncExclusiveClusterOption`、`isExclusiveClusterChange`、`clb_resource_count` 派生（负值钳 0）、云 `Tag` 不落库
+- [x] 2.2 新增 `cmd/hc-service/logics/res-sync/tcloud/load_balancer_exclusive_cluster.go`：`SyncExclusiveClusterOption`、`isExclusiveClusterChange`、`clb_resource_count` 派生（结果小于 0 时按 0 处理）、云 `Tag` 不落库
 - [x] 2.3 实现 `listExclusiveClusterFromDB`：`Global.ListExclusiveCluster` 按 `account_id+region+vendor` 与可选 `cloud_ids` 查询，Raw extension 反序列化为 `TCloudExclusiveClusterExtension`
 - [x] 2.4 实现 create / update / delete：分别调 `TCloud.BatchCreateExclusiveCluster`、`TCloud.BatchUpdateExclusiveCluster`（model 不赋 `BkBizID`）、`Global.BatchDeleteExclusiveCluster`；create 请求不含 `bk_biz_id`
 - [x] 2.5 实现 `ExclusiveCluster` 主方法（按 `cloud_ids` 调 adaptor）+ `RemoveExclusiveClusterDeleteFromCloud`（DB 过滤 `account_id+region+vendor=TCloud+network=Public+cluster_type IN (TGW,STGW)`）

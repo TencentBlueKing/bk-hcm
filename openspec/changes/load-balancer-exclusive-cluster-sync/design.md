@@ -74,7 +74,7 @@ Wave 1 DAO 已落地：`load_balancer_exclusive_cluster` 表、data-service 5 �
 ## Risks / Trade-offs
 
 - **[Risk] Public+TGW/STGW 漏掉账号下其它集群** → **Mitigation**：与 iWiki 6.1 产品范围一致；删除过滤与拉数同集合，避免误删。后续若要 Private/VPCGW，单独开变更扩 filter。
-- **[Risk] `IdleResourceCount`/`ResourceCount` 为 nil 或差值异常** → **Mitigation**：`PtrToVal` 后相减，负值钳 0 并 Warn；购买页仍实时查闲置数。
+- **[Risk] `IdleResourceCount`/`ResourceCount` 为 nil 或差值异常** → **Mitigation**：`PtrToVal` 后相减，结果小于 0 时按 0 处理并 Warn；购买页仍实时查闲置数。
 - **[Risk] 独占集群同步失败导致整轮 `SyncAllResource` 在 CLB 前失败** → **Mitigation**：这是排序的刻意代价；监控同步详情状态即可，不改为 continue。
 - **[Trade-off] adaptor 嵌 SDK Cluster 会带上不同步的 Tag 指针** → 仅内存，不写库。
 - **[Trade-off] 不落 idle 数** → 表无法直接算剩余 VIP；购买链路必须调 `DescribeClusterResources`（本变更不做）。

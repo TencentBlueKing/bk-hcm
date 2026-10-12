@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
 
@@ -127,46 +128,50 @@ func (cli *client) listExclusiveClusterFromCloud(kt *kit.Kit, params *SyncBasePa
 	return result, nil
 }
 
-// listExclusiveClusterFromDB 按account_id+region+vendor+cloud_id列出DB独占集群，Raw extension反序列化为强类型
+// listExclusiveClusterFromDB 按account_id+region+vendor+cloud_id列出DB独占集群，Raw extension反序列化为强类型。
+// cloud_id按单页上限分批查询，同一账号、地域下一个cloud_id最多对应一条记录，所以每批一页即可取完。
 func (cli *client) listExclusiveClusterFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]corelb.ExclusiveCluster[corelb.TCloudExclusiveClusterExtension], error) {
 
-	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("account_id", params.AccountID),
-			tools.RuleEqual("region", params.Region),
-			tools.RuleEqual("vendor", enumor.TCloud),
-			tools.RuleIn("cloud_id", params.CloudIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := cli.dbCli.Global.ListExclusiveCluster(kt, req)
-	if err != nil {
-		logs.Errorf("[%s] list exclusive cluster from db failed, err: %v, account: %s, req: %v, rid: %s",
-			enumor.TCloud, err, params.AccountID, req, kt.Rid)
-		return nil, err
-	}
+	list := make([]corelb.ExclusiveCluster[corelb.TCloudExclusiveClusterExtension], 0, len(params.CloudIDs))
 
-	list := make([]corelb.ExclusiveCluster[corelb.TCloudExclusiveClusterExtension], 0, len(result.Details))
-	for _, raw := range result.Details {
-		ext := new(corelb.TCloudExclusiveClusterExtension)
-		if len(raw.Extension) != 0 {
-			if err := json.Unmarshal(raw.Extension, ext); err != nil {
-				logs.Errorf("[%s] unmarshal exclusive cluster extension failed, err: %v, id: %s, rid: %s",
-					enumor.TCloud, err, raw.ID, kt.Rid)
-				return nil, err
-			}
+	for _, cloudIDs := range slice.Split(params.CloudIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", params.AccountID),
+				tools.RuleEqual("region", params.Region),
+				tools.RuleEqual("vendor", enumor.TCloud),
+				tools.RuleIn("cloud_id", cloudIDs),
+			),
+			Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 		}
-		list = append(list, corelb.ExclusiveCluster[corelb.TCloudExclusiveClusterExtension]{
-			BaseExclusiveCluster: raw.BaseExclusiveCluster,
-			Extension:            ext,
-		})
+		result, err := cli.dbCli.Global.ListExclusiveCluster(kt, req)
+		if err != nil {
+			logs.Errorf("[%s] list exclusive cluster from db failed, err: %v, account: %s, req: %v, rid: %s",
+				enumor.TCloud, err, params.AccountID, req, kt.Rid)
+			return nil, err
+		}
+
+		for _, raw := range result.Details {
+			ext := new(corelb.TCloudExclusiveClusterExtension)
+			if len(raw.Extension) != 0 {
+				if err := json.Unmarshal(raw.Extension, ext); err != nil {
+					logs.Errorf("[%s] unmarshal exclusive cluster extension failed, err: %v, id: %s, rid: %s",
+						enumor.TCloud, err, raw.ID, kt.Rid)
+					return nil, err
+				}
+			}
+			list = append(list, corelb.ExclusiveCluster[corelb.TCloudExclusiveClusterExtension]{
+				BaseExclusiveCluster: raw.BaseExclusiveCluster,
+				Extension:            ext,
+			})
+		}
 	}
 
 	return list, nil
 }
 
-// createExclusiveCluster 调用data-service新增独占集群，请求体不含bk_biz_id，由data-service写-1
+// createExclusiveCluster 调用data-service分批新增独占集群，请求体不含bk_biz_id，由data-service写-1
 func (cli *client) createExclusiveCluster(kt *kit.Kit, accountID, region string,
 	addSlice []typeslb.TCloudExclusiveCluster) error {
 
@@ -174,32 +179,34 @@ func (cli *client) createExclusiveCluster(kt *kit.Kit, accountID, region string,
 		return nil
 	}
 
-	createReq := new(protocloud.TCloudExclusiveClusterBatchCreateReq)
-	for _, cloud := range addSlice {
-		createReq.Clusters = append(createReq.Clusters,
-			protocloud.ExclusiveClusterCreate[corelb.TCloudExclusiveClusterExtension]{
-				CloudID:          cloud.GetCloudID(),
-				Name:             cvt.PtrToVal(cloud.ClusterName),
-				AccountID:        accountID,
-				Region:           region,
-				Zone:             cvt.PtrToVal(cloud.Zone),
-				ClusterType:      enumor.ClusterType(cvt.PtrToVal(cloud.ClusterType)),
-				ClusterTag:       cvt.PtrToVal(cloud.ClusterTag),
-				Network:          enumor.ClusterNetwork(cvt.PtrToVal(cloud.Network)),
-				Isp:              enumor.ClusterIsp(cvt.PtrToVal(cloud.Isp)),
-				Egress:           cvt.PtrToVal(cloud.Egress),
-				IPVersion:        cvt.PtrToVal(cloud.IPVersion),
-				MaxConn:          cloud.MaxConn,
-				ClbResourceCount: deriveClbResourceCount(cloud),
-				Extension:        convertTCloudExclusiveClusterExtension(cloud),
-			})
-	}
+	for _, batch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
+		createReq := new(protocloud.TCloudExclusiveClusterBatchCreateReq)
+		for _, cloud := range batch {
+			createReq.Clusters = append(createReq.Clusters,
+				protocloud.ExclusiveClusterCreate[corelb.TCloudExclusiveClusterExtension]{
+					CloudID:          cloud.GetCloudID(),
+					Name:             cvt.PtrToVal(cloud.ClusterName),
+					AccountID:        accountID,
+					Region:           region,
+					Zone:             cvt.PtrToVal(cloud.Zone),
+					ClusterType:      enumor.ClusterType(cvt.PtrToVal(cloud.ClusterType)),
+					ClusterTag:       cvt.PtrToVal(cloud.ClusterTag),
+					Network:          enumor.ClusterNetwork(cvt.PtrToVal(cloud.Network)),
+					Isp:              enumor.ClusterIsp(cvt.PtrToVal(cloud.Isp)),
+					Egress:           cvt.PtrToVal(cloud.Egress),
+					IPVersion:        cvt.PtrToVal(cloud.IPVersion),
+					MaxConn:          cloud.MaxConn,
+					ClbResourceCount: deriveClbResourceCount(cloud),
+					Extension:        convertTCloudExclusiveClusterExtension(cloud),
+				})
+		}
 
-	if _, err := cli.dbCli.TCloud.BatchCreateExclusiveCluster(kt, createReq); err != nil {
-		logs.Errorf("[%s] request dataservice to create tcloud exclusive cluster failed, err: %v, "+
-			"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
-			len(addSlice), kt.Rid)
-		return err
+		if _, err := cli.dbCli.TCloud.BatchCreateExclusiveCluster(kt, createReq); err != nil {
+			logs.Errorf("[%s] request dataservice to create tcloud exclusive cluster failed, err: %v, "+
+				"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
+				len(batch), kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync exclusive cluster to create success, account: %s, region: %s, count: %d, rid: %s",
@@ -208,7 +215,7 @@ func (cli *client) createExclusiveCluster(kt *kit.Kit, accountID, region string,
 	return nil
 }
 
-// updateExclusiveCluster 调用data-service更新独占集群云属性，请求体不含bk_biz_id
+// updateExclusiveCluster 调用data-service分批更新独占集群云属性，请求体不含bk_biz_id
 func (cli *client) updateExclusiveCluster(kt *kit.Kit, accountID, region string,
 	updateMap map[string]typeslb.TCloudExclusiveCluster) error {
 
@@ -216,30 +223,33 @@ func (cli *client) updateExclusiveCluster(kt *kit.Kit, accountID, region string,
 		return nil
 	}
 
-	updateReq := new(protocloud.TCloudExclusiveClusterBatchUpdateReq)
-	for id, cloud := range updateMap {
-		updateReq.Clusters = append(updateReq.Clusters,
-			protocloud.ExclusiveClusterUpdate[corelb.TCloudExclusiveClusterExtension]{
-				ID:               id,
-				Name:             cvt.PtrToVal(cloud.ClusterName),
-				Zone:             cvt.PtrToVal(cloud.Zone),
-				ClusterType:      enumor.ClusterType(cvt.PtrToVal(cloud.ClusterType)),
-				ClusterTag:       cvt.PtrToVal(cloud.ClusterTag),
-				Network:          enumor.ClusterNetwork(cvt.PtrToVal(cloud.Network)),
-				Isp:              enumor.ClusterIsp(cvt.PtrToVal(cloud.Isp)),
-				Egress:           cvt.PtrToVal(cloud.Egress),
-				IPVersion:        cvt.PtrToVal(cloud.IPVersion),
-				MaxConn:          cloud.MaxConn,
-				ClbResourceCount: deriveClbResourceCount(cloud),
-				Extension:        convertTCloudExclusiveClusterExtension(cloud),
-			})
-	}
+	for _, idBatch := range slice.Split(maps.Keys(updateMap), constant.BatchOperationMaxLimit) {
+		updateReq := new(protocloud.TCloudExclusiveClusterBatchUpdateReq)
+		for _, id := range idBatch {
+			cloud := updateMap[id]
+			updateReq.Clusters = append(updateReq.Clusters,
+				protocloud.ExclusiveClusterUpdate[corelb.TCloudExclusiveClusterExtension]{
+					ID:               id,
+					Name:             cvt.PtrToVal(cloud.ClusterName),
+					Zone:             cvt.PtrToVal(cloud.Zone),
+					ClusterType:      enumor.ClusterType(cvt.PtrToVal(cloud.ClusterType)),
+					ClusterTag:       cvt.PtrToVal(cloud.ClusterTag),
+					Network:          enumor.ClusterNetwork(cvt.PtrToVal(cloud.Network)),
+					Isp:              enumor.ClusterIsp(cvt.PtrToVal(cloud.Isp)),
+					Egress:           cvt.PtrToVal(cloud.Egress),
+					IPVersion:        cvt.PtrToVal(cloud.IPVersion),
+					MaxConn:          cloud.MaxConn,
+					ClbResourceCount: deriveClbResourceCount(cloud),
+					Extension:        convertTCloudExclusiveClusterExtension(cloud),
+				})
+		}
 
-	if err := cli.dbCli.TCloud.BatchUpdateExclusiveCluster(kt, updateReq); err != nil {
-		logs.Errorf("[%s] request dataservice to update tcloud exclusive cluster failed, err: %v, "+
-			"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
-			len(updateMap), kt.Rid)
-		return err
+		if err := cli.dbCli.TCloud.BatchUpdateExclusiveCluster(kt, updateReq); err != nil {
+			logs.Errorf("[%s] request dataservice to update tcloud exclusive cluster failed, err: %v, "+
+				"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
+				len(idBatch), kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync exclusive cluster to update success, account: %s, region: %s, count: %d, rid: %s",
@@ -248,25 +258,27 @@ func (cli *client) updateExclusiveCluster(kt *kit.Kit, accountID, region string,
 	return nil
 }
 
-// deleteExclusiveCluster 调用data-service删除云上已不存在的独占集群
+// deleteExclusiveCluster 调用data-service分批删除云上已不存在的独占集群
 func (cli *client) deleteExclusiveCluster(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return nil
 	}
 
-	deleteReq := &protocloud.ExclusiveClusterBatchDeleteReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("cloud_id", delCloudIDs),
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("region", region),
-			tools.RuleEqual("vendor", enumor.TCloud),
-		),
-	}
-	if err := cli.dbCli.Global.BatchDeleteExclusiveCluster(kt, deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete exclusive cluster failed, err: %v, "+
-			"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
-			len(delCloudIDs), kt.Rid)
-		return err
+	for _, cloudIDs := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
+		deleteReq := &protocloud.ExclusiveClusterBatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", cloudIDs),
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("region", region),
+				tools.RuleEqual("vendor", enumor.TCloud),
+			),
+		}
+		if err := cli.dbCli.Global.BatchDeleteExclusiveCluster(kt, deleteReq); err != nil {
+			logs.Errorf("[%s] request dataservice to batch delete exclusive cluster failed, err: %v, "+
+				"account: %s, region: %s, count: %d, rid: %s", enumor.TCloud, err, accountID, region,
+				len(cloudIDs), kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync to delete exclusive cluster success, account: %s, region: %s, count: %d, rid: %s",
@@ -330,7 +342,7 @@ func (cli *client) RemoveExclusiveClusterDeleteFromCloud(kt *kit.Kit, params *Sy
 	return cli.deleteExclusiveCluster(kt, params.AccountID, params.Region, delCloudIDs)
 }
 
-// deriveClbResourceCount 计算集群内已用CLB资源数：resourceCount - idleResourceCount，负值钳为0
+// deriveClbResourceCount 计算集群内已用CLB资源数，即总资源数减去空闲资源数，云上数据异常导致结果小于0时按0处理。
 func deriveClbResourceCount(cloud typeslb.TCloudExclusiveCluster) int64 {
 	count := cvt.PtrToVal(cloud.ResourceCount) - cvt.PtrToVal(cloud.IdleResourceCount)
 	if count < 0 {
