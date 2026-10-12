@@ -2,8 +2,8 @@
 import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import usePage from '@/hooks/use-page';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useVerify } from '@/hooks';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
 import {
   type ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
@@ -34,15 +34,11 @@ const props = defineProps<{
 const emit = defineEmits(['operate-success']);
 
 const { t } = useI18n();
-const { getBizsId, whereAmI } = useWhereAmI();
+const { getBizsId } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
 const { getBusinessNames } = useBusinessGlobalStore();
 
-// 预鉴权
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
-});
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.detail?.account_id));
 
 const isExpand = ref(props.bkBizId === getBizsId());
 const iconClass = computed(() => (isExpand.value ? 'bkhcm-icon-angle-up-fill' : 'bkhcm-icon-right-shape'));
@@ -97,10 +93,6 @@ const handleShowOperateDialog = (
   operate: 'bind' | 'single-unbind' | 'batch-unbind',
   row?: SecurityGroupRelResourceByBizItem,
 ) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
   switch (operate) {
     case 'bind':
       bindVisible.value = true;
@@ -147,34 +139,36 @@ defineExpose({ isExpand, reload });
       <!-- 只允许对本业务的实例进行绑定和解绑 -->
       <template v-if="isCurrentBusiness">
         <bk-tag class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
-        <bk-button
-          theme="primary"
-          text
-          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="isOperateDisabled"
-          v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
-            disabled: !isOperateDisabled,
-          }"
-          @click="handleShowOperateDialog('bind')"
-        >
-          <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
-          {{ t('新增绑定') }}
-        </bk-button>
-        <bk-button
-          theme="primary"
-          text
-          class="unbind-btn"
-          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || isOperateDisabled"
-          v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
-            disabled: !isOperateDisabled,
-          }"
-          @click="handleShowOperateDialog('batch-unbind')"
-        >
-          {{ t('批量解绑') }}
-        </bk-button>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            theme="primary"
+            text
+            :disabled="noPerm || authPending || isOperateDisabled"
+            v-bk-tooltips="{
+              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
+              disabled: !isOperateDisabled,
+            }"
+            @click="handleShowOperateDialog('bind')"
+          >
+            <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
+            {{ t('新增绑定') }}
+          </bk-button>
+        </hcm-auth>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            theme="primary"
+            text
+            class="unbind-btn"
+            :disabled="noPerm || authPending || !selected.length || isOperateDisabled"
+            v-bk-tooltips="{
+              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
+              disabled: !isOperateDisabled,
+            }"
+            @click="handleShowOperateDialog('batch-unbind')"
+          >
+            {{ t('批量解绑') }}
+          </bk-button>
+        </hcm-auth>
       </template>
       <!-- 其他业务的实例，在当前业务只读，不可以操作 -->
       <template v-else>
@@ -198,19 +192,20 @@ defineExpose({ isExpand, reload });
       @select="(selections) => (selected = selections)"
     >
       <template v-if="isCurrentBusiness" #operate="{ row }">
-        <bk-button
-          theme="primary"
-          text
-          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="isOperateDisabled"
-          v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
-            disabled: !isOperateDisabled,
-          }"
-          @click="handleShowOperateDialog('single-unbind', row)"
-        >
-          {{ t('解绑') }}
-        </bk-button>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            theme="primary"
+            text
+            :disabled="noPerm || authPending || isOperateDisabled"
+            v-bk-tooltips="{
+              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
+              disabled: !isOperateDisabled,
+            }"
+            @click="handleShowOperateDialog('single-unbind', row)"
+          >
+            {{ t('解绑') }}
+          </bk-button>
+        </hcm-auth>
       </template>
     </data-list>
 
@@ -268,6 +263,7 @@ defineExpose({ isExpand, reload });
 
     .overview {
       margin-left: 50px;
+
       .number {
         color: #313238;
       }

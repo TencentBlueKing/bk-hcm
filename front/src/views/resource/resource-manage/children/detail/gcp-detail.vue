@@ -10,7 +10,7 @@ import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
 // import bus from '@/common/bus';
 
-import { useRoute } from 'vue-router';
+import { useResourceDetailRoute } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
 
 import { useResourceStore } from '@/store/resource';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -22,7 +22,7 @@ import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
-const route = useRoute();
+const { detailId } = useResourceDetailRoute();
 const resourceStore = useResourceStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { setTitle } = useBreadcrumb();
@@ -36,7 +36,7 @@ const hostTabs = [
   },
 ];
 
-const id = route.query?.id;
+const id = detailId.value;
 
 watchEffect(() => {
   if (id) {

@@ -81,14 +81,14 @@
 |------|------|
 | `MENU_RESOURCE_RECYCLEBIN` 的 Symbol 定义 | 取（① 已切到 Symbol） |
 | `recyclebinRsc` 路由形态（`recyclebin`、owner、activeKey、`auth.view`、`menu.i18n`） | 取；加 `title` 兼容 HEAD 面包屑 |
-| `recyclebinBiz` 和业务侧改用 `views/recyclebin/index.vue` | 不取（业务侧不动） |
+| `recyclebinBiz` 和业务侧改用 `views/recyclebin/index.vue` | 不取（业务侧不动），归二期收尾体验 F-010 |
 | `recyclebin/index.vue` 的列表、页签、恢复/销毁、`hcm-auth`、`routerAction` | 取 |
 | 回收站从 `route.query.accountId` 读账号、没有选择入口 | 不取；改为页内选择器写入 query |
 | `MENU_RESOURCE_DETAIL`、`resourceType` 参数的详情跳转 | 本单不取，保持 `resourceDetail`；由 ⑥ 统一改 |
 | `BK_HCM_AJAX_URL_PREFIX` 拼接、`splice(idx)`、`if (recycle_reserve_time)` | 不取（修正） |
 | `.recycle-manager-page` 的 `padding: 24px`、`entry-rsc` 的 padding | 取：回收管理用 `page-container`（`main-content` 统一给 24px），`entry-rsc` 照 PR 自带 24px |
 | `operationLogRsc` meta 去 `title`、`notMenu`、`isShowBreadcrumb`，加 `auth.view`、`menu.i18n` | 取，但保留 `title`；`isShowBreadcrumb` 换成 `layout.breadcrumb` |
-| `operationLogBiz` 的 meta 改造 | 不取（业务侧不动） |
+| `operationLogBiz` 的 meta 改造 | 不取（业务侧不动），归二期收尾体验 F-010 |
 | `entry-rsc` / `entry-biz` 详情链接去掉 `name`、`bizs` 参数，`search.vue` 和 `flow-task` 的样式改动 | 不取（不在本单范围，且会覆盖 HEAD 的改动） |
 | `recyclebin-manager.vue` 加 `@deprecated` | 不取：本分支不留废弃副本；业务侧仍在用，资源侧引用本单撤掉，文件保留到业务侧迁移 |
 

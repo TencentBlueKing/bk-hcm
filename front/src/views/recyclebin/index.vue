@@ -12,7 +12,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { AUTH_MANAGE_RECYCLE_BIN } from '@/constants/auth-symbols';
-import { MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
+import { MENU_RESOURCE_DETAIL, MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -193,7 +193,14 @@ const handleLink = (cvmId: string) => {
 };
 
 const handleClick = (vendor: VendorEnum, id: string, type: 'drive' | 'host') => {
-  routerAction.redirect({ name: 'resourceDetail', params: { type }, query: { id, type: vendor } }, { history: true });
+  routerAction.redirect(
+    {
+      name: MENU_RESOURCE_DETAIL,
+      params: { resourceType: type, id },
+      query: { accountId: route.query.accountId, vendor },
+    },
+    { history: true },
+  );
 };
 
 const operateState = reactive({

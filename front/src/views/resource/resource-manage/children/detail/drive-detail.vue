@@ -17,8 +17,12 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
-import { MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_DETAIL, MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
+import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -108,27 +112,22 @@ const settingFields = ref<FieldList>([
     name: '挂载主机',
     prop: 'instance_id',
     txtBtn(id: string) {
-      const type = 'host';
-      const routeInfo: any = {
-        query: {
-          id,
-          type: detail.value.vendor,
-        },
-      };
-      // 业务下
-      if (route.path.includes('business')) {
+      const routeInfo: any = {};
+      if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
-          name: `${type}BusinessDetail`,
+          name: MENU_BUSINESS_HOST_DETAILS,
+          params: { id },
+          query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: detail.value.vendor },
         });
       } else {
+        // 挂载主机与硬盘厂商相同
         Object.assign(routeInfo, {
-          name: 'resourceDetail',
-          params: {
-            type,
-          },
+          name: MENU_RESOURCE_DETAIL,
+          params: { resourceType: 'host', id },
+          query: { accountId: route.query.accountId, vendor: detail.value.vendor },
         });
       }
-      router.push(routeInfo);
+      routerAction.redirect(routeInfo, { history: true });
     },
   },
   {
@@ -152,6 +151,7 @@ const settingFields = ref<FieldList>([
 ]);
 const resourceStore = useResourceStore();
 const route = useRoute();
+const { whereAmI } = useWhereAmI();
 const router = useRouter();
 // const accountStore = useAccountStore();
 
@@ -165,7 +165,8 @@ const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive
 
 const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
 
-const { loading, detail, getDetail } = useDetail('disks', route.query.id as string, (detail: any) => {
+const { detailId } = useResourceDetailRoute();
+const { loading, detail, getDetail } = useDetail('disks', detailId.value, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       settingFields.value.push(

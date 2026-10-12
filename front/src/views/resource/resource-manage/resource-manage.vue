@@ -128,7 +128,7 @@ const handleTabChange = (path: string) => {
 const isFormDataChanged = ref(false);
 
 const formMap = {
-  ip: EipForm,
+  eip: EipForm,
   subnet: subnetForm,
   security: securityForm,
 };
@@ -150,7 +150,7 @@ const componentMap: Record<string, any> = {
   subnet: SubnetManage,
   security: SecurityManage,
   drive: DriveManage,
-  ip: IpManage,
+  eip: IpManage,
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
@@ -164,7 +164,7 @@ const topTabs = computed(() =>
 );
 
 // 标签相关数据
-const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
+const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'eip', 'routing', 'image', 'network-interface'];
 const specialTabTypes = ['clb', 'certs'];
 const tabs = computed(() => {
   let types = commonTabTypes;
@@ -478,7 +478,9 @@ onMounted(() => {
               v-model:is-form-data-changed="isFormDataChanged"
             >
               <template
-                v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab) && !isOtherVendor"
+                v-if="
+                  ['host', 'vpc', 'drive', 'security', 'subnet', 'eip', 'clb'].includes(activeTab) && !isOtherVendor
+                "
               >
                 <hcm-auth
                   :sign="{ type: AUTH_CREATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }"
@@ -602,7 +604,7 @@ onMounted(() => {
 }
 
 .resource-title {
-  font-family: MicrosoftYaHei;
+  font-family: MicrosoftYaHei, sans-serif;
   font-size: 16px;
   color: #313238;
   letter-spacing: 0;

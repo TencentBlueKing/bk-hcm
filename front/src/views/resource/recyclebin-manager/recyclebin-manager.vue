@@ -246,7 +246,7 @@ import { Message, SearchSelect } from 'bkui-vue';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import { useResourceStore, useAccountStore } from '@/store';
 import { CloudType, FilterType, QueryRuleOPEnum } from '@/typings';
-import { VENDORS, VendorEnum } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VENDORS, VendorEnum } from '@/common/constant';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import HostInfo from '@/views/resource/resource-manage/children/components/host/host-info/index.vue';
 import HostDrive from '@/views/resource/resource-manage/children/components/host/host-drive.vue';
@@ -258,6 +258,8 @@ import moment from 'moment';
 import http from '@/http';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_DRIVE_DETAILS, MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 
 export default defineComponent({
   name: 'RecyclebinManageList',
@@ -602,28 +604,26 @@ export default defineComponent({
       state.showResourceInfo = true;
     };
 
+    const RECYCLEBIN_DETAIL_MAP: Record<string, symbol> = {
+      host: MENU_BUSINESS_HOST_DETAILS,
+      drive: MENU_BUSINESS_DRIVE_DETAILS,
+    };
     const handleClick = (vendor: VendorEnum, id: number, type: 'drive' | 'host') => {
-      const routeInfo: any = {
-        query: {
-          id,
-          type: vendor,
-        },
-      };
-      // 业务下
-      if (route.path.includes('business')) {
-        routeInfo.query.bizs = accountStore.bizs;
+      const routeInfo: any = {};
+      if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
-          name: `${type}BusinessDetail`,
+          name: RECYCLEBIN_DETAIL_MAP[type],
+          params: { id },
+          query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor },
         });
       } else {
         Object.assign(routeInfo, {
-          name: 'resourceDetail',
-          params: {
-            type,
-          },
+          name: MENU_RESOURCE_DETAIL,
+          params: { resourceType: type, id },
+          query: { vendor },
         });
       }
-      router.push(routeInfo);
+      routerAction.redirect(routeInfo, { history: true });
     };
 
     // 权限hook
@@ -685,15 +685,18 @@ export default defineComponent({
 .recycle-manager-page {
   :deep(.bk-tab) {
     height: calc(100vh - 200px);
+
     .bk-tab-header-item {
       height: 42px;
     }
+
     .bk-tab-content {
       padding: 16px 24px;
       height: calc(100% - 42px);
 
       .bk-nested-loading {
         height: calc(100% - 48px);
+
         .bk-table {
           max-height: 100%;
         }
@@ -701,6 +704,7 @@ export default defineComponent({
     }
   }
 }
+
 .operate-warp {
   :deep(.bk-tab-header) {
     line-height: normal !important;
@@ -710,22 +714,27 @@ export default defineComponent({
     }
   }
 }
+
 .sync-dialog-warp {
   height: 150px;
+
   .t-icon {
     height: 42px;
     width: 110px;
   }
+
   .logo-icon {
     height: 42px;
     width: 42px;
   }
+
   .arrow-icon {
     position: relative;
     flex: 1;
     overflow: hidden;
     height: 13px;
     line-height: 13px;
+
     .content {
       width: 130px;
       position: absolute;
@@ -734,10 +743,11 @@ export default defineComponent({
     }
   }
 }
+
 .setting-icon-container {
   width: 32px;
   height: 32px;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 2px 4px 0 #1919290d;
   border-radius: 2px;
   display: flex;
@@ -745,26 +755,20 @@ export default defineComponent({
   align-items: center;
   cursor: pointer;
 }
+
 .mt6 {
   margin-top: 6px;
 }
+
 .related-cvm-link {
   margin-left: 4px;
   cursor: pointer;
   color: #3a84ff;
 }
+
 .header-container {
   display: flex;
   justify-content: space-between;
-}
-@-webkit-keyframes move {
-  from {
-    left: 0%;
-  }
-
-  to {
-    left: 100%;
-  }
 }
 
 @keyframes move {

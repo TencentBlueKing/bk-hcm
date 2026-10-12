@@ -1,0 +1,126 @@
+{
+  "id": "feat-menu-phase2-resource-detail",
+  "title": "菜单整合二期：资源详情页迁移",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T12:19:20.574Z",
+  "updatedAt": "2026-10-12T06:27:40.463Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-detail/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T12:35:49.072Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-detail/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-12T02:18:21.717Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-12T02:54:22.251Z",
+      "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T12:19:20.574Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-12T02:54:22.251Z",
+      "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702819",
+    "parentId": "1069995598138393455"
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/common/constant.ts",
+        "src/views/resource/resource-manage/resource-manage.vue",
+        "resource-entry.vue",
+        "src/constants/menu-symbol.ts",
+        "history-storage.ts",
+        "views/resource-manage/route-config.ts",
+        "router/module/resource.ts",
+        "router/index.ts",
+        "resource-detail.vue",
+        "main-content.vue",
+        "business-detail.vue",
+        "menu-symbol.ts",
+        "use-resource-detail-route.ts",
+        "route-config.ts",
+        "security-rule.vue",
+        "src/views/resource/resource-manage/hooks/use-resource-detail-route.ts",
+        "use-detail.ts",
+        "src/views/resource/resource-manage/children/detail/{host,vpc,subnet,security,gcp,drive,ip,routing,image,network-interface}-detail.vue",
+        "src/views/resource/resource-manage/children/detail/template-detail/index.tsx",
+        "src/views/resource/resource-manage/children/components/vpc/{vpc-route,vpc-subnet}.vue",
+        "src/views/resource/resource-manage/children/components/host/{host-drive,host-ip,host-security}.vue",
+        "src/views/resource/resource-manage/children/components/security/{security-rule,security-info}.vue",
+        "src/views/resource/resource-manage/children/components/security/security-relate/platform.vue",
+        "src/views/resource/resource-manage/children/components/security/security-relate/data-list/collapse-data-list.vue",
+        "host-security.vue",
+        "platform.vue",
+        "collapse-data-list.vue",
+        "drive-detail.vue",
+        "gcp-detail.vue",
+        "info-list.tsx",
+        "detail-tab.scss",
+        "src/views/resource/resource-manage/resource-detail.vue",
+        "src/views/resource-manage/route-config.ts",
+        "src/views/resource-manage/resource-list.vue",
+        "router/module/business.ts",
+        "router/utils/normalize-detail-id.ts",
+        "business-selector.tsx",
+        "use-columns.tsx",
+        "security-manage.vue",
+        "ip-info.vue",
+        "route-info.vue",
+        "host-drive.vue",
+        "useRouteLinkBtn.tsx",
+        "recyclebin-manager.vue",
+        "load-balancer/.../rs-ip-group.vue",
+        "network-interface-info-gcp.vue",
+        "business-manage.vue",
+        "src/views/recyclebin/index.vue",
+        "src/router/module/resource.ts",
+        "security-detail.vue",
+        "host-detail.vue",
+        "host-ip.vue"
+      ],
+      "contentFingerprint": "a1b248f02cbef0d702c199122a48a94d0f2e03eb",
+      "codeBaseline": "7b954a7cd543e5ca6bdcd90505d49acdd467d396",
+      "seatedAt": "2026-10-12T06:27:40.463Z"
+    }
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T12:37:51.720Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6、7 轮结论修订（并入首批）；本地文档 docs/reqs/二期资源详情迁移.md"
+    }
+  }
+}

@@ -16,7 +16,7 @@ import {
   MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
 import { businessViews, injectStatusComponents, resourceViews, schemeViews, serviceViews } from '@/views';
-import { resourceManageLegacy } from '@/views/resource-manage/route-config';
+import { resourceManageLegacy, resourceDetailLegacy } from '@/views/resource-manage/route-config';
 import { recyclebinRscLegacy } from '@/views/recyclebin/route-config';
 import { accountManageLegacy } from '@/views/account-manage/route-config';
 import { operationLogRscLegacy } from '@/views/operation-log/route-config';
@@ -71,6 +71,7 @@ const routes: RouteRecordRaw[] = [
     children: schemeViews,
   },
   ...resourceManageLegacy,
+  ...resourceDetailLegacy,
   ...recyclebinRscLegacy,
   ...operationLogRscLegacy,
   ...accountManageLegacy,

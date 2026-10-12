@@ -2,17 +2,19 @@
 import DetailTab from '../../common/tab/detail-tab';
 import ImageInfo from '../components/image/image-info.vue';
 
-import { ref, watchEffect } from 'vue';
+import { ref, computed, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
+import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
 const route = useRoute();
 const { t } = useI18n();
 const { setTitle } = useBreadcrumb();
+const { detailId } = useResourceDetailRoute();
 
-const imageId = ref<string>(route.query?.id as string);
-const vendor = ref<string>(route.query?.type as string);
+const imageId = ref<string>(detailId.value);
+const vendor = computed(() => route.query?.vendor as string);
 
 watchEffect(() => {
   setTitle(`${t('镜像')}：ID（${imageId.value}）`);

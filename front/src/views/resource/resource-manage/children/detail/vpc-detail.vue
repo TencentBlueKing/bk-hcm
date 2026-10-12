@@ -6,11 +6,11 @@ import DetailTab from '../../common/tab/detail-tab';
 import VPCCidr from '../components/vpc/vpc-cidr.vue';
 import VPCRoute from '../components/vpc/vpc-route.vue';
 import VPCSubnet from '../components/vpc/vpc-subnet.vue';
-import bus from '@/common/bus';
+import { useResourceDetailAuth, useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
 import { ref, inject, computed, watch, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
@@ -103,25 +103,16 @@ const VPCTabs = ref([
   },
 ]);
 
-const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
-
 const resourceStore = useResourceStore();
-const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
+const { detailId } = useResourceDetailRoute();
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
 
-const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail: any) => {
+const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
   switch (detail.vendor) {
     case 'tcloud':
       VPCFields.value.push(
@@ -303,20 +294,14 @@ watch(
 
 // VPC删除只需要判断 vpc 下是否有子网
 const disabledOption = computed(() => {
-  // 无权限，直接禁用按钮
-  if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
+  // 鉴权未就绪，直接禁用按钮
+  if (authPending.value) return true;
   // 业务下，判断vpc下是否有关联子网
   if (!isResourcePage.value) return vpcRelateSubnetCount.value > 0;
   // 资源下，判断是否分配业务，vpc下是否有关联子网
   return detail.value?.bk_biz_id !== -1 || vpcRelateSubnetCount.value > 0;
 });
 const bkTooltipsOptions = computed(() => {
-  // 无权限
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value.permissionAction[actionName.value],
-    };
   // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {
@@ -402,16 +387,16 @@ const handleDeleteVpc = (data: any) => {
 
 <template>
   <Teleport defer to="#breadcrumbExtra">
-    <div @click="showAuthDialog(actionName)">
+    <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
       <bk-button
         theme="primary"
         @click="handleDeleteVpc(detail)"
-        :disabled="disabledOption"
-        v-bk-tooltips="bkTooltipsOptions || { disabled: true }"
+        :disabled="noPerm || disabledOption"
+        v-bk-tooltips="(!noPerm && bkTooltipsOptions) || { disabled: true }"
       >
         {{ t('删除') }}
       </bk-button>
-    </div>
+    </hcm-auth>
   </Teleport>
 
   <div class="detail-content-wrap">

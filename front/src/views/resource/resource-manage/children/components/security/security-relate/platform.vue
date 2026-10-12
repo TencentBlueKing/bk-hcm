@@ -12,7 +12,7 @@ import { useBusinessGlobalStore } from '@/store/business-global';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
-import { useVerify } from '@/hooks';
+import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
 import { transformSimpleCondition } from '@/utils/search';
 import {
   RELATED_RES_KEY_MAP,
@@ -48,11 +48,7 @@ const regionStore = useRegionsStore();
 
 const isBusinessPage = computed(() => whereAmI.value === Senarios.business);
 
-// 预鉴权
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
-});
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.detail?.account_id));
 
 const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
@@ -144,10 +140,6 @@ const handleShowOperateDialog = (
   operate: 'bind' | 'single-unbind' | 'batch-unbind',
   row?: SecurityGroupRelResourceByBizItem,
 ) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
   switch (operate) {
     case 'bind':
       bindVisible.value = true;
@@ -215,24 +207,26 @@ watch(
 
       <!-- TODO：目前只支持CVM -->
       <div class="operate-btn-wrap">
-        <bk-button
-          theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="(!isBusinessPage && isAssigned) || isClb"
-          v-bk-tooltips="bindDisabledTooltipsOption"
-          @click="handleShowOperateDialog('bind')"
-        >
-          <plus width="26" height="26" />
-          {{ t('新增绑定') }}
-        </bk-button>
-        <bk-button
-          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || (!isBusinessPage && isAssigned) || isClb"
-          v-bk-tooltips="unbindDisabledTooltipsOption"
-          @click="handleShowOperateDialog('batch-unbind')"
-        >
-          {{ t('批量解绑') }}
-        </bk-button>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            theme="primary"
+            :disabled="noPerm || authPending || (!isBusinessPage && isAssigned) || isClb"
+            v-bk-tooltips="bindDisabledTooltipsOption"
+            @click="handleShowOperateDialog('bind')"
+          >
+            <plus width="26" height="26" />
+            {{ t('新增绑定') }}
+          </bk-button>
+        </hcm-auth>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            :disabled="noPerm || authPending || !selected.length || (!isBusinessPage && isAssigned) || isClb"
+            v-bk-tooltips="unbindDisabledTooltipsOption"
+            @click="handleShowOperateDialog('batch-unbind')"
+          >
+            {{ t('批量解绑') }}
+          </bk-button>
+        </hcm-auth>
       </div>
 
       <search
@@ -266,16 +260,17 @@ watch(
         @select="(selections) => (selected = selections)"
       >
         <template #operate="{ row }">
-          <bk-button
-            :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-            theme="primary"
-            text
-            :disabled="(!isBusinessPage && isAssigned) || isClb"
-            v-bk-tooltips="unbindDisabledTooltipsOption"
-            @click="handleShowOperateDialog('single-unbind', row)"
-          >
-            {{ t('解绑') }}
-          </bk-button>
+          <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm || authPending || (!isBusinessPage && isAssigned) || isClb"
+              v-bk-tooltips="unbindDisabledTooltipsOption"
+              @click="handleShowOperateDialog('single-unbind', row)"
+            >
+              {{ t('解绑') }}
+            </bk-button>
+          </hcm-auth>
         </template>
       </data-list>
     </div>

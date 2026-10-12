@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, PropType, reactive, h, watch, computed, inject } from 'vue';
+import { ref, PropType, reactive, h, watch, computed, resolveComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -10,7 +10,7 @@ import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
-import bus from '@/common/bus';
+import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
 
 import { Button, Message, OverflowTitle } from 'bkui-vue';
 import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
@@ -71,12 +71,8 @@ const state = reactive<any>({
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
-const authVerifyData: any = inject('authVerifyData');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.data?.account_id));
+const HcmAuthComp = resolveComponent('hcm-auth');
 
 const authSign = computed(() => {
   return isResourcePage.value
@@ -100,11 +96,6 @@ const multiple = computed(() => {
   const isMultiple = [VendorEnum.TCLOUD, VendorEnum.AWS];
   return isMultiple.includes(props.data.vendor);
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
@@ -204,34 +195,32 @@ const columns: any = [
             ['绑定'],
           ),
         h(
-          'span',
+          HcmAuthComp,
+          { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
           {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled:
-                  (data.vendor === 'azure' && !data.extension?.cloud_security_group_id) ||
-                  !authVerifyData.value?.permissionAction[actionName.value], // 如果没有安全组id 就不可以解绑
-                onClick() {
-                  if (data.vendor === 'azure') {
-                    securityId.value = data.extension.security_group_id;
-                    curreClickId.value = data.id;
-                  } else {
-                    securityId.value = data.id;
-                  }
-                  unBind(data);
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled:
+                    (data.vendor === 'azure' && !data.extension?.cloud_security_group_id) || // 如果没有安全组id 就不可以解绑
+                    noPerm ||
+                    authPending.value,
+                  onClick() {
+                    if (data.vendor === 'azure') {
+                      securityId.value = data.extension.security_group_id;
+                      curreClickId.value = data.id;
+                    } else {
+                      securityId.value = data.id;
+                    }
+                    unBind(data);
+                  },
                 },
-              },
-              ['解绑'],
-            ),
-          ],
+                ['解绑'],
+              ),
+          },
         ),
       ]);
     },

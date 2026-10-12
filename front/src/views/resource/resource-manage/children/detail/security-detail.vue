@@ -16,15 +16,18 @@ import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { SecurityGroupManageType } from '@/constants/security-group';
 import routerAction from '@/router/utils/action';
+import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
 const route = useRoute();
+const { detailId } = useResourceDetailRoute();
 const resourceStore = useResourceStore();
 const { t } = useI18n();
 const { whereAmI, getBizsId } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
-const securityId = ref(route.query?.id);
-const vendor = ref(route.query?.vendor);
+const securityId = ref(detailId.value);
+// vendor 不是详情接口的前置参数，地址未带时取详情返回值
+const vendor = computed(() => route.query?.vendor || detail.value?.vendor);
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
   ipList: [],
@@ -214,6 +217,7 @@ provide('operateTooltipsOption', operateTooltipsOption);
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
+          :account-id="detail.account_id"
         />
         <security-relate v-else :detail="detail" />
       </template>

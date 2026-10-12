@@ -7,7 +7,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { RsInstType, RsDeviceType } from '@/views/load-balancer/constants';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_HOST_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
 
 const props = defineProps<{ rsList: any[]; allList: any[]; vendor: VendorEnum; type: RsDeviceType }>();
 
@@ -201,8 +201,9 @@ const handleTableSelectChange = (value: TableProps['selectedRowKeys'], ctx: Sele
 const handleIPClick = (instId: string, rowKey: string) => {
   visitedIpSet.add(rowKey);
   routerAction.open({
-    name: 'hostBusinessDetail',
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, id: instId, type: props.vendor },
+    name: MENU_BUSINESS_HOST_DETAILS,
+    params: { id: instId },
+    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, vendor: props.vendor },
   });
 };
 

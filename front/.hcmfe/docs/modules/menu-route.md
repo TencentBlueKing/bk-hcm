@@ -7,7 +7,7 @@
 
 ## 关键文件与职责
 
-- **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。未迁移的老路由仍有字符串 name（如 `'resourceDetail'`、`'businessRecyclebin'`、`'scheme-recommendation'`），二者并存。
+- **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。未迁移的老路由仍有字符串 name（如 `'businessRecyclebin'`、`'scheme-recommendation'`、业务申请页 `'applyCvm'` 等），二者并存；业务详情已改为 `MENU_BUSINESS_*_DETAILS`。
 - **一级菜单与侧栏** — `common/menu-service.ts` 的 `menus: IMenu[]`。顶层每项的 `id` 必须等于 `router/index.ts` 里对应顶层父路由的 `name`；数组顺序即顶栏从左到右的顺序；声明了 `menu` 的一级菜单才显示侧栏。
   - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`；资源运营始终显示，`ENABLE_ACCOUNT_BILL` 只控其下「云账号管理」三项）。
   - `getCurrentTopMenu(route)`：侧栏与顶栏激活用。**一级菜单本身不按 `visibility` 过滤**（开关只管顶栏入口，直接访问地址时侧栏照常），子项照常过滤。
@@ -49,7 +49,7 @@
 
 ## 过渡形态（菜单整合二期进行中）
 
-二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，各由自己的单加入，不用原页面临时顶替；账号管理、回收管理、操作记录均已上线）。尚未迁出的原资源接入页面（资源详情）只承接旧地址，仍在 `router/module/resource.ts`，作为根的子记录挂在外壳记录下：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 让 `main-content.vue` 为这些页面渲染原云账号树两栏布局。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
+二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，各由自己的单加入，不用原页面临时顶替；账号管理、回收管理、操作记录均已上线）。原资源接入页面已全部迁出（资源详情挂到资源纳管下，旧 `/resource/detail/:type` 由 `resourceDetailLegacy` 转址）；`router/module/resource.ts` 只剩外壳记录与原资源列表转址：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 与 `main-content.vue` 的原云账号树两栏随资源接入下线删除。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
 
 ## 明细目录
 

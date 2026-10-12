@@ -8,20 +8,20 @@ import NetworkInterfaceIpconfigHuawei from '../components/network-interface/netw
 import NetworkInterfaceDnssvr from '../components/network-interface/network-interface-dnssvr.vue';
 import NetworkInterfaceNetsecgroup from '../components/network-interface/network-interface-netsecgroup.vue';
 
-import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
+import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 import { computed, inject, watchEffect } from 'vue';
 
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 
-const route = useRoute();
+const { detailId } = useResourceDetailRoute();
 const { t } = useI18n();
 const { setTitle } = useBreadcrumb();
 
 const isResourcePage: any = inject('isResourcePage');
 
-const { loading, detail } = useDetail('network_interfaces', route.query.id as string, (data: any) => {
+const { loading, detail } = useDetail('network_interfaces', detailId.value, (data: any) => {
   data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
   switch (data.vendor) {
     case 'azure':

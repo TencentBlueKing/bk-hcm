@@ -1,13 +1,9 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
 import type { RouteRecordRaw } from 'vue-router';
 import { toResourceList } from '@/views/resource-manage/route-config';
-import {
-  MENU_RESOURCE_MANAGE,
-  MENU_RESOURCE_RESOURCE_LIST,
-  MENU_RESOURCE_RESOURCE_MANAGEMENT,
-} from '@/constants/menu-symbol';
+import { MENU_RESOURCE_MANAGE, MENU_RESOURCE_RESOURCE_MANAGEMENT } from '@/constants/menu-symbol';
 
-// 原资源接入页面，只承接旧地址（侧栏无入口），随资源详情迁出后删除
+// 原资源接入页面，只承接旧地址（侧栏无入口），随资源接入下线删除
 const resourceMenus: RouteRecordRaw[] = [
   {
     path: '/resource',
@@ -26,15 +22,6 @@ const resourceMenus: RouteRecordRaw[] = [
         ],
         meta: {
           notMenu: true,
-        },
-      },
-      {
-        path: '/resource/detail/:type',
-        name: 'resourceDetail',
-        component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
-        meta: {
-          notMenu: true,
-          menu: { i18n: '资源详情', relative: MENU_RESOURCE_RESOURCE_LIST },
         },
       },
     ],

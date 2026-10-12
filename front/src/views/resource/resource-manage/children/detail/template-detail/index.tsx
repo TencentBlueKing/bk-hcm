@@ -1,18 +1,18 @@
 import { computed, defineComponent, onMounted, ref, watch, watchEffect } from 'vue';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import { useRoute } from 'vue-router';
 import useQueryListCommon from '../../../hooks/use-query-list-common';
 import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
 import DetailInfo from '../../../common/info/detail-info';
 import { TemplateType, TemplateTypeMap } from '../../dialog/template-dialog';
 import { Table } from 'bkui-vue';
+import { useResourceDetailRoute } from '../../../hooks/use-resource-detail-route';
 
 export default defineComponent({
   setup() {
     const { setTitle } = useBreadcrumb();
-    const route = useRoute();
-    const templateId = ref(route.query?.id);
+    const { detailId } = useResourceDetailRoute();
+    const templateId = ref(detailId.value);
 
     watchEffect(() => {
       if (templateId.value) {
@@ -51,7 +51,7 @@ export default defineComponent({
             {
               field: 'cloud_id',
               op: QueryRuleOPEnum.CS,
-              value: route.query?.id,
+              value: detailId.value,
             },
           ],
         },

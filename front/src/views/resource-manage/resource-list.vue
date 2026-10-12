@@ -73,7 +73,7 @@ provide('isOtherVendor', isOtherVendor);
 const activeTab = computed(() => (route.params.resourceType as string) || 'host');
 
 const formMap = {
-  ip: EipForm,
+  eip: EipForm,
   subnet: subnetForm,
   security: securityForm,
 };
@@ -95,7 +95,7 @@ const componentMap: Record<string, any> = {
   subnet: SubnetManage,
   security: SecurityManage,
   drive: DriveManage,
-  ip: IpManage,
+  eip: IpManage,
   routing: RoutingManage,
   image: ImageManage,
   'network-interface': NetworkInterfaceManage,
@@ -104,7 +104,7 @@ const componentMap: Record<string, any> = {
 };
 
 // 标签相关数据
-const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
+const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'eip', 'routing', 'image', 'network-interface'];
 const specialTabTypes = ['clb', 'certs'];
 const tabs = computed(() => {
   let types = commonTabTypes;
@@ -133,10 +133,31 @@ const handleActiveTabChange = (value: string) => {
   );
 };
 
+// 旧地址的类型名（ip、eips、route）与 GCP 防火墙、安全组模板详情带回的类型，转成对应页签
+const DETAIL_TYPE_TO_TAB: Record<string, { tab: string; scene?: string }> = {
+  ip: { tab: 'eip' },
+  eips: { tab: 'eip' },
+  route: { tab: 'routing' },
+  gcp: { tab: 'security', scene: 'gcp' },
+  template: { tab: 'security', scene: 'template' },
+};
+
 // 地址里的资源类型不存在或当前云厂商不支持时，回到第一个可用页签
 watch(
   [tabs, activeTab],
   ([tabList, active]) => {
+    const target = DETAIL_TYPE_TO_TAB[active];
+    if (target) {
+      routerAction.redirect(
+        {
+          name: MENU_RESOURCE_RESOURCE_LIST,
+          params: { resourceType: target.tab },
+          query: { accountId: accountId.value || undefined, scene: target.scene },
+        },
+        { replace: true },
+      );
+      return;
+    }
     if (!tabList.length || tabList.some((item) => item.name === active)) return;
     handleActiveTabChange(tabList[0].name);
   },
@@ -371,7 +392,7 @@ onMounted(() => {
             v-model:is-form-data-changed="isFormDataChanged"
           >
             <template
-              v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab) && !isOtherVendor"
+              v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'eip', 'clb'].includes(activeTab) && !isOtherVendor"
             >
               <hcm-auth
                 :sign="{ type: AUTH_CREATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }"

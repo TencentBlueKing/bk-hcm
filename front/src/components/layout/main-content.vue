@@ -16,22 +16,6 @@ const view = computed(() => (route.meta.view as string) ?? 'default');
 const isLegacyResourceAccess = computed(() => !!route.meta.legacyResourceAccess);
 const isStatusView = computed(() => view.value !== 'default' || route.name === '404' || route.name === 'error');
 const showBreadcrumb = computed(() => !isLegacyResourceAccess.value && breadcrumb.data.display);
-// TODO(菜单整合二期·组装)：原资源详情迁出后删除
-// 原资源详情页在右侧内容区显示面包屑；返回列表时带上资源类型以回到对应页签
-const legacyBreadcrumbRoutes = ['resourceDetail'];
-const showLegacyBreadcrumb = computed(() => legacyBreadcrumbRoutes.includes(route.name));
-// 原详情类型与资源纳管页签不同名的映射
-const legacyDetailTabMap: Record<string, string> = {
-  eips: 'ip',
-  route: 'routing',
-  gcp: 'security',
-  template: 'security',
-};
-const legacyBackConfig = computed(() => {
-  if (route.name !== 'resourceDetail') return undefined;
-  const type = route.params.type as string;
-  return { params: { resourceType: legacyDetailTabMap[type] ?? type }, query: { accountId: route.query.accountId } };
-});
 </script>
 
 <template>
@@ -44,11 +28,7 @@ const legacyBackConfig = computed(() => {
           <div class="fixed-account-list-container">
             <AccountVendorGroup />
           </div>
-          <div v-if="showLegacyBreadcrumb" class="router-view-content legacy-breadcrumb-view">
-            <HcmBreadcrumb :back-config="legacyBackConfig" />
-            <RouterView class="legacy-breadcrumb-page" />
-          </div>
-          <RouterView v-else class="router-view-content" />
+          <RouterView class="router-view-content" />
         </div>
         <RouterView v-else :name="view" />
       </template>
@@ -95,21 +75,6 @@ const legacyBackConfig = computed(() => {
       .detail-tab-main .info-title {
         margin-bottom: 8px;
         font-size: 14px;
-      }
-    }
-
-    // TODO(菜单整合二期·组装)：随资源接入过渡布局删除
-    // 资源接入右侧内容区：面包屑固定在顶部，页面自带内边距并独立滚动
-    .resource-manage-container .legacy-breadcrumb-view {
-      display: flex;
-      flex-direction: column;
-      padding: 0;
-      overflow: hidden;
-
-      .legacy-breadcrumb-page {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
       }
     }
   }

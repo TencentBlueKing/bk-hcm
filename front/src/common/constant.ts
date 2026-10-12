@@ -65,7 +65,7 @@ export const RESOURCE_TYPES = [
   },
   {
     name: '弹性 IP',
-    type: 'ip',
+    type: 'eip',
   },
   {
     name: '路由表',

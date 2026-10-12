@@ -11,6 +11,33 @@ import { localStorageActions } from '@/common/util';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Button, Dialog, Exception } from 'bkui-vue';
 import { GLOBAL_BIZS_KEY, GLOBAL_BIZS_VERSION, GLOBAL_BIZS_VERSION_KEY } from '@/common/constant';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_EIP_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+  MENU_BUSINESS_GCP_DETAILS,
+  MENU_BUSINESS_TEMPLATE_DETAILS,
+} from '@/constants/menu-symbol';
+
+const BUSINESS_DETAIL_ROUTE_NAMES: symbol[] = [
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_EIP_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+  MENU_BUSINESS_GCP_DETAILS,
+  MENU_BUSINESS_TEMPLATE_DETAILS,
+];
 
 export default defineComponent({
   name: 'BusinessSelector',
@@ -43,12 +70,11 @@ export default defineComponent({
       businessId.value = val.id;
       // 存储全局业务id
       const globalBizsQueryParams = saveGlobalBizsId(businessId.value);
-      // @ts-ignore
       // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
-      const isBusinessDetail = route.name?.includes?.('BusinessDetail');
+      const isBusinessDetail = BUSINESS_DETAIL_ROUTE_NAMES.includes(route.name as symbol);
       const query = { ...route.query, ...globalBizsQueryParams };
       if (isBusinessDetail) {
-        router.push({ path: route.path.split('/detail')[0], query });
+        router.push({ name: (route.meta.menu as { relative?: symbol })?.relative, query: globalBizsQueryParams });
       } else {
         await router.push({ path: (route.meta.rootRoutePath as string) || route.path, query });
         props.reload();

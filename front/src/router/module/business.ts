@@ -18,7 +18,19 @@ import {
   MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
   MENU_BUSINESS_SUBNET_MANAGEMENT,
   MENU_BUSINESS_VPC_MANAGEMENT,
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_EIP_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+  MENU_BUSINESS_GCP_DETAILS,
+  MENU_BUSINESS_TEMPLATE_DETAILS,
 } from '@/constants/menu-symbol';
+import { normalizeDetailId } from '../utils/normalize-detail-id';
 
 const businessMenus: RouteRecordRaw[] = [
   {
@@ -37,9 +49,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            // TODO: details后续优化name，注意use-column里面的跳转
-            name: 'hostBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_HOST_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
@@ -79,8 +91,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'driveBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_DRIVE_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
@@ -119,8 +132,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'imageBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_IMAGE_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_IMAGE_MANAGEMENT,
@@ -149,8 +163,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'vpcBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_VPC_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
@@ -179,8 +194,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'subnetBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_SUBNET_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               ...new Meta({
@@ -209,8 +225,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'eipsBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_EIP_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_EIP_MANAGEMENT,
@@ -236,8 +253,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'network-interfaceBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_NIF_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
@@ -263,8 +281,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'routeBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_ROUTE_TABLE_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
@@ -290,8 +309,9 @@ const businessMenus: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'detail',
-            name: 'securityBusinessDetail',
+            path: 'detail/:id?',
+            beforeEnter: normalizeDetailId,
+            name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
             component: () => import('@/views/business/business-detail.vue'),
             meta: {
               activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
@@ -306,8 +326,9 @@ const businessMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'gcp/detail',
-        name: 'gcpBusinessDetail',
+        path: 'gcp/detail/:id?',
+        name: MENU_BUSINESS_GCP_DETAILS,
+        beforeEnter: normalizeDetailId,
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
           activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
@@ -316,8 +337,9 @@ const businessMenus: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'template/detail',
-        name: 'templateBusinessDetail',
+        path: 'template/detail/:id?',
+        name: MENU_BUSINESS_TEMPLATE_DETAILS,
+        beforeEnter: normalizeDetailId,
         component: () => import('@/views/business/business-detail.vue'),
         meta: {
           activeKey: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,

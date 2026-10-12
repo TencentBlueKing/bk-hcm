@@ -4,6 +4,7 @@ import {
   MENU_RESOURCE,
   MENU_RESOURCE_MANAGE,
   MENU_RESOURCE_RESOURCE_LIST,
+  MENU_RESOURCE_DETAIL,
   MENU_RESOURCE_HOST_APPLY,
   MENU_RESOURCE_VPC_APPLY,
   MENU_RESOURCE_DISK_APPLY,
@@ -29,6 +30,13 @@ const resourceManageRoutes: RouteRecordRaw[] = [
     redirect: { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'host' } },
     meta: { ...getMeta('资源纳管') },
     children: [
+      // 无 _f 返回时按 name 回退会沿用当前的 resourceType，回到同类型列表
+      {
+        name: MENU_RESOURCE_DETAIL,
+        path: ':resourceType/details/:id',
+        component: () => import('@/views/resource/resource-manage/resource-detail.vue'),
+        meta: { ...getMeta('资源详情', MENU_RESOURCE_RESOURCE_LIST) },
+      },
       {
         name: MENU_RESOURCE_RESOURCE_LIST,
         path: ':resourceType',
@@ -89,5 +97,26 @@ export const resourceManageLegacy: RouteRecordRaw[] = applyPairs.map(([slug, nam
   path: `/resource/service-apply/${slug}`,
   redirect: (to: RouteLocationNormalized) => ({ name, query: to.query }),
 }));
+
+const legacyDetailTypeMap: Record<string, string> = { eips: 'eip', route: 'routing' };
+
+// 旧资源详情 /resource/detail/:resourceType?id=&type=<云厂商>：类型改用新名，云厂商改用 vendor；缺 id 回对应列表
+export const resourceDetailLegacy: RouteRecordRaw[] = [
+  {
+    path: '/resource/detail/:resourceType',
+    redirect: (to: RouteLocationNormalized) => {
+      const { id, type, _f, ...query } = to.query;
+      const resourceType = legacyDetailTypeMap[to.params.resourceType as string] || to.params.resourceType;
+      if (!id) {
+        return { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType }, query: { accountId: query.accountId } };
+      }
+      return {
+        name: MENU_RESOURCE_DETAIL,
+        params: { resourceType, id: id as string },
+        query: { ...query, vendor: type },
+      };
+    },
+  },
+];
 
 export default resourceManageRoutes;

@@ -19,6 +19,9 @@
 - 云账号树 `account/vendor-group/` 是原资源接入树的副本（过渡，改用 `account/use-resource-account.ts`：列表 / 新建页切账号只改 query，其它子页回对应类型列表）；筛选写入地址单会替换为 PR 版地址驱动的树。
 - 账号摘要条 `account/account-summary.vue` 只读 store、不发请求；「查看账号状态」打开只读侧滑 `account/account-status/`（打开时才拉详情，`render-directive="if"` 关闭即停轮询）。地址带 `showAccountStatus=1` 且有 `accountId` 时自动打开并立刻去掉该参数。
 - 账号接入弹窗在 `account/account-import/`（原 `createAccount`），`use-secret-extension` 也被账单录入一级账号等页面引用。
+- 资源详情 `:resourceType/details/:id`（`MENU_RESOURCE_DETAIL`，排在列表之前）渲染共用的 `views/resource/resource-manage/resource-detail.vue`；列表页签与详情地址同一套类型名（`RESOURCE_TYPES`：弹性 IP 为 `eip`、路由表为 `routing`；GCP 防火墙、安全组模板详情另为 `gcp`、`template`）。旧名只做兼容：`resource-detail.vue` 的 `resourceTypeToComponentKey`（`ip` / `eips → eip`、`route → routing`），列表 `resource-list.vue` 的 `DETAIL_TYPE_TO_TAB`（同上，另把 gcp / template 转到安全组对应 `scene`）。注意 `eips` 仍是接口路径与 `useColumns` 的列配置 key，与路由类型名无关。站内跳详情按 PR 内联路由对象，云厂商 query 键统一 `vendor`（详情组件读 `query.vendor || detail.vendor`）。旧地址 `/resource/detail/:resourceType?id=&type=` 由 `resourceDetailLegacy` 转址（`type` 转 `vendor`，缺 id 回对应列表）。
+- 详情组件与业务详情共用：取 ID、按钮鉴权都经 `hooks/use-resource-detail-route.ts`，两侧都是 `hcm-auth`——按路由选签名：资源纳管详情 `AUTH_*_IAAS_RESOURCE` + 账号 ID，业务详情 `AUTH_BIZ_*_IAAS_RESOURCE` + 业务 ID（不能按「有无业务 ID」判断，`getBizsId()` 会回退 localStorage）；关联 ID 未就绪时不鉴权、按钮禁用。
+- 业务详情（`router/module/business.ts`，组件 `views/business/business-detail.vue` 按路由 name 取详情组件）：name 为 `MENU_BUSINESS_*_DETAILS`，路径 `<类型>/detail/:id?`，`normalizeDetailId` 把旧 `?id=` 转成路径参数；站内跳转按 PR 内联 `{ name, params: { id } }`，另带当前 `?bizs=`（`/business/:bizId` 前业务 ID 在 query，按 name 跳转不会自动带上）；切换业务时 `business-selector.tsx` 按业务详情 name 列表回 `menu.relative` 列表。
 
 ## 回收管理（`views/recyclebin/`）
 
