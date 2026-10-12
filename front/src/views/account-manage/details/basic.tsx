@@ -6,10 +6,13 @@ import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
-import DetailHeader from '../resource-manage/common/header/detail-header';
-import './account-detail.scss';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
+import routerAction from '@/router/utils/action';
+import { AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
+import { MENU_RESOURCE_ACCOUNT_MANAGEMENT } from '@/constants/menu-symbol';
+import { type IAuthSign } from '@/common/auth-service';
+import './basic.scss';
 import http from '@/http';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import {
   ValidateStatus,
   useSecretExtension,
@@ -25,11 +28,13 @@ export default defineComponent({
   name: 'AccountManageDetail',
   setup() {
     const { t } = useI18n();
+    const { setTitle } = useBreadcrumb();
     const formRef = ref<InstanceType<typeof Form>>(null);
     const accountStore = useAccountStore();
     const route = useRoute();
     const formDiaRef = ref(null);
-    const isDetail = ref(route.query.isDetail);
+    const accountId = computed(() => route.params.accountId as string);
+    const accountEditSign = computed<IAuthSign>(() => ({ type: AUTH_UPDATE_ACCOUNT, relation: [accountId.value] }));
 
     const initProjectModel: ProjectModel = {
       id: 1,
@@ -63,8 +68,6 @@ export default defineComponent({
 
     const isResourceAccount = computed(() => projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE);
 
-    const resourceAccountStore = useResourceAccountStore();
-
     const initSecretModel: SecretModel = {
       secretId: '',
       secretKey: '',
@@ -89,15 +92,24 @@ export default defineComponent({
     });
 
     const isLoading = ref(false);
+    const isNotFound = ref(false);
     const getDetail = async () => {
+      if (!accountId.value) return;
       isLoading.value = true;
+      isNotFound.value = false;
       try {
-        const { id, accountId } = route.query;
-        const res = await accountStore.getAccountDetail((id || accountId) as string);
+        const res = await accountStore.getAccountDetail(accountId.value);
+        if (!res?.data) {
+          isNotFound.value = true;
+          return;
+        }
         await getBusinessList();
-        Object.assign(projectModel, res?.data);
-        initProjectModel.name = res?.data?.name;
+        Object.assign(projectModel, res.data);
+        initProjectModel.name = res.data.name;
         renderBaseInfoForm(projectModel);
+        setTitle(`${t('账号详情')}：ID（${accountId.value}）`);
+      } catch {
+        isNotFound.value = true;
       } finally {
         isLoading.value = false;
       }
@@ -107,15 +119,16 @@ export default defineComponent({
       getDetail(); // 请求数据
     });
 
-    watch(
-      () => route.query.accountId,
-      (id, oldId) => {
-        if (!oldId && id) return;
-        if (id) {
-          getDetail();
-        }
-      },
-    );
+    watch(accountId, (id, oldId) => {
+      if (!oldId && id) return;
+      if (id) {
+        getDetail();
+      }
+    });
+
+    const handleBackToList = () => {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_MANAGEMENT });
+    };
 
     // 获取业务列表
     const getBusinessList = async () => {
@@ -480,7 +493,7 @@ export default defineComponent({
       await accountForm.value.validate();
       isAccountDialogLoading.value = true;
       // Select单选下，不返回数组，需要进行转换
-      await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
+      await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${accountId.value}`, {
         managers: accountFormModel.managers,
         memo: accountFormModel.memo,
         bk_biz_id: isResourceAccount.value ? accountFormModel.bk_biz_id : undefined,
@@ -514,7 +527,7 @@ export default defineComponent({
                   v-model={projectModel.name}
                   fromPlaceholder={t('请输入名称')}
                   fromKey={this.property}
-                  hideEdit={!!isDetail.value}
+                  authSign={accountEditSign.value}
                   isEdit={this.isEdit}
                   onBlur={handleblur}
                 />
@@ -664,18 +677,6 @@ export default defineComponent({
       },
     ]);
 
-    const isSyncLoading = ref(false);
-    const handleSync = async () => {
-      isSyncLoading.value = true;
-      try {
-        await accountStore.accountSync(projectModel.id);
-        Message({ message: t('本次同步任务触发成功。如需再次同步，请在20分钟后重试'), theme: 'success' });
-      } catch (error) {
-      } finally {
-        isSyncLoading.value = false;
-      }
-    };
-
     const handleChangeManage = (val: number) => {
       const usageVal = accountFormModel.usage_biz_ids;
       // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
@@ -698,48 +699,40 @@ export default defineComponent({
       }
     };
 
-    return () =>
-      isLoading.value ? (
-        <Loading />
-      ) : (
+    return () => {
+      if (isLoading.value) return <Loading />;
+      if (isNotFound.value) {
+        return (
+          <bk-exception type='404' scene='part' description={t('账号不存在')}>
+            <Button theme='primary' onClick={handleBackToList}>
+              {t('返回账号列表')}
+            </Button>
+          </bk-exception>
+        );
+      }
+      return (
         <div class='detail-wrap'>
-          {!route.path.includes('resource/resource/account/detail') && (
-            <>
-              <DetailHeader>
-                {{
-                  default: () => (
-                    <>
-                      <span class='header-title-prefix'>{t('账号详情')}</span>
-                      <span class='header-title-content'>&nbsp;- ID {projectModel.id}</span>
-                    </>
-                  ),
-                  right:
-                    projectModel.type === 'resource' ? (
-                      <bk-pop-confirm
-                        content={t('同步该账号下的资源，点击确定后，立即触发同步任务')}
-                        trigger='click'
-                        onConfirm={handleSync}>
-                        <bk-button loading={isSyncLoading.value}>{t('同步')}</bk-button>
-                      </bk-pop-confirm>
-                    ) : undefined,
-                }}
-              </DetailHeader>
-              <div class='h16'></div>
-            </>
-          )}
           {/* 基本信息 */}
           {formBaseInfo.map((baseItem, index) => (
             <div class={index < formBaseInfo.length - 1 ? 'mb32' : 'mb16'}>
               <div class='font-bold pb8'>
                 {baseItem.name}
                 {index > 0 ? (
-                  <span
-                    class={'account-detail-edit-icon-font'}
-                    onClick={index === 2 ? handleModifyScret : handleModifyAccount}>
-                    {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
-                    <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
-                    编辑
-                  </span>
+                  <hcm-auth sign={accountEditSign.value}>
+                    {{
+                      default: ({ noPerm }: { noPerm: boolean }) => (
+                        <span
+                          class={['account-detail-edit-icon-font', { 'is-disabled': noPerm }]}
+                          onClick={() => {
+                            if (noPerm) return;
+                            index === 2 ? handleModifyScret() : handleModifyAccount();
+                          }}>
+                          <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
+                          编辑
+                        </span>
+                      ),
+                    }}
+                  </hcm-auth>
                 ) : (
                   ''
                 )}
@@ -750,7 +743,7 @@ export default defineComponent({
                     .filter((item) => !item?.isHidden?.())
                     .map((formItem) => (
                       <FormItem
-                        class='formItem-cls info-value'
+                        class='form-item-cls info-value'
                         label={`${formItem.label} ：`}
                         required={formItem.required}
                         property={formItem.property}>
@@ -866,5 +859,6 @@ export default defineComponent({
           </Dialog>
         </div>
       );
+    };
   },
 });

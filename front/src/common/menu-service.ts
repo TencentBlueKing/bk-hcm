@@ -21,6 +21,7 @@ import {
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_RESOURCE,
   MENU_RESOURCE_ACCESS,
+  MENU_RESOURCE_ACCOUNT_MANAGEMENT,
   MENU_RESOURCE_MANAGE,
   MENU_RESOURCE_OPERATION_LOG,
   MENU_RESOURCE_RECYCLEBIN,
@@ -195,7 +196,6 @@ const serviceMenus: IMenu[] = [
 
 const isAccountBillEnabled = () => ENABLE_ACCOUNT_BILL === 'true';
 
-// TODO(菜单整合二期)：账号管理（云资源组，资源纳管之后）随其独立页面上线时加入
 const resourceMenus: IMenu[] = [
   {
     id: MENU_RESOURCE_MANAGE,
@@ -204,6 +204,14 @@ const resourceMenus: IMenu[] = [
     group: '云资源',
     groupIcon: 'bkhcm-icon-vpc',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE),
+  },
+  // 过渡位置：三期迁至工作台
+  {
+    id: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+    i18n: '账号管理',
+    icon: 'bkhcm-icon-account-manage',
+    group: '云资源',
+    route: getMenuRoute(resourceViews, MENU_RESOURCE_ACCOUNT_MANAGEMENT),
   },
   {
     id: MENU_RESOURCE_RECYCLEBIN,

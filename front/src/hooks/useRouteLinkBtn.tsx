@@ -1,6 +1,7 @@
 import { VendorEnum } from '@/common/constant';
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 
 export interface IDetail {
   vendor: VendorEnum;
@@ -37,6 +38,11 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   });
 
   const handleClick = () => {
+    // 账号详情在资源运营 → 账号管理下，业务、资源两侧同一地址
+    if (type === TypeEnum.ACCOUNT) {
+      router.push({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: computedId.value } });
+      return;
+    }
     const routeInfo = {
       query: {
         ...route.query,
@@ -45,19 +51,9 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
       },
     };
     if (route.path.includes('business')) {
-      Object.assign(routeInfo, {
-        name: type === TypeEnum.ACCOUNT ? 'accountDetail' : `${type}BusinessDetail`,
-      });
+      Object.assign(routeInfo, { name: `${type}BusinessDetail` });
     } else {
-      Object.assign(routeInfo, {
-        name: type === TypeEnum.ACCOUNT ? 'accountDetail' : 'resourceDetail',
-        params: {
-          type,
-        },
-      });
-    }
-    if (id === 'account_id') {
-      Object.assign(routeInfo.query, { accountId: computedId.value });
+      Object.assign(routeInfo, { name: 'resourceDetail', params: { type } });
     }
     router.push(routeInfo);
   };

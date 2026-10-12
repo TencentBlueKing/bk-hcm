@@ -1,7 +1,7 @@
 # 资源运营一级视图（容器·待拆解）
 
 > status: stub · kind: module
-> globs: `src/views/resource/**`, `src/views/resource-manage/**`, `src/views/recyclebin/**`
+> globs: `src/views/resource/**`, `src/views/resource-manage/**`, `src/views/recyclebin/**`, `src/views/account-manage/**`
 
 一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。
 
@@ -23,6 +23,10 @@
 ## 回收管理（`views/recyclebin/`）
 
 资源侧回收站独立页面（`/resource/recyclebin`，`MENU_RESOURCE_RECYCLEBIN`），无云账号树：页签右侧的账号下拉只改地址 `accountId`，列表条件与回收保留时间都跟随它（账号详情失败视为无效账号，回到全部账号）；`type`（cvm / disk）、`cvm`（所属主机跳转的搜索值）也在地址里。原资源接入「回收站」页签地址 `/resource/resource/recycle` 经 `recyclebinRscLegacy` 原样带参转来。业务回收站仍用 `views/resource/recyclebin-manager/`。`useQueryCommonList` 只深度监听 `filter`、不立即请求，页面靠之后注册的 `immediate` 监听改写规则触发首屏请求。
+
+## 账号管理（`views/account-manage/`）
+
+资源运营 → 云资源 → 账号管理（过渡位置，三期迁工作台）：列表 `/resource/account`（`MENU_RESOURCE_ACCOUNT_MANAGEMENT`，三类账号都展示）、登记 `/resource/account/check-in`（复用 `views/service/service-apply/account-add`）、详情 `/resource/account/details/<ID>` 自动进 `/basic`（只有基本信息页签，账号 ID 在 params）。列表与详情声明 `auth.view: AUTH_FIND_ACCOUNT`，详情子路由要重复 `auth.view` / `owner` / `activeKey`（meta 浅合并，子路由 `Meta` 的空 `auth` 会盖掉父路由）。编辑 / 删除按实例鉴权（`AUTH_UPDATE_ACCOUNT` / `AUTH_DELETE_ACCOUNT` + `relation: [账号 ID]`），`RenderDetailEdit` 传 `authSign` 即用 `hcm-auth` 包编辑按钮。旧地址（原账号页签、资源状态、旧详情、两个旧登记入口）由 `accountManageLegacy` 转址：带账号的「账号信息 / 资源状态」进资源纳管并带 `showAccountStatus=1` 打开账号状态侧滑。站内跳账号详情一律按 `MENU_RESOURCE_ACCOUNT_DETAIL`（资源详情里的 `link` 用字符串 `/#/resource/account/details/<ID>`）。
 
 ## 关键流程 / 注意事项
 

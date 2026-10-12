@@ -1,0 +1,116 @@
+{
+  "id": "feat-menu-phase2-account-manage",
+  "title": "菜单整合二期：账号管理独立菜单",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T11:31:18.714Z",
+  "updatedAt": "2026-10-10T10:33:25.060Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-account-manage/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T11:51:46.312Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-account-manage/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-10T10:33:25.060Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-10T10:32:45.271Z"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T11:31:18.714Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-10T10:32:45.271Z"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702746",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T11:32:27.931Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6 轮结论修订并回写；本地文档 docs/reqs/二期账号管理菜单.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/constants/menu-symbol.ts",
+        "src/views/account-manage/route-config.ts",
+        "src/constants/view-auth.ts",
+        "views/index.ts",
+        "router/index.ts",
+        "router/module/resource.ts",
+        "router/module/resource-inside.ts",
+        "router/module/service-inside.ts",
+        "common/menu-service.ts",
+        "route-config.ts",
+        "view-auth.ts",
+        "src/constants/auth-symbols.ts",
+        "src/common/auth-service.ts",
+        "menu-symbol.ts",
+        "auth-symbols.ts",
+        "auth-service.ts",
+        "src/components/RenderDetailEdit/index.tsx",
+        "src/views/account-manage/list.vue",
+        "views/resource/accountmanage/index.vue",
+        "src/views/account-manage/details/index.tsx",
+        "src/views/account-manage/details/index.scss",
+        "src/views/account-manage/details/basic.tsx",
+        "src/views/account-manage/details/basic.scss",
+        "details/index.tsx",
+        "accountInfo/index.tsx",
+        "main-content.vue",
+        "details/basic.tsx",
+        "views/resource/accountmanage/account-detail.tsx",
+        "views/resource/resource-manage/common/header/detail-header.tsx",
+        "detail-header.scss",
+        "basic.scss",
+        "account-detail.scss",
+        "account-detail.tsx",
+        "src/views/resource/resource-manage/children/detail/{vpc,subnet,drive}-detail.vue",
+        "src/views/resource/resource-manage/children/components/{ip/ip-info,route/route-info,network-interface/network-interface-info,network-interface/network-interface-info-gcp,network-interface/network-interface-info-huawei}.vue",
+        "src/hooks/useRouteLinkBtn.tsx",
+        "resource-detail-link.ts",
+        "service-apply/components/resource-card/index.vue",
+        "basic-resource/index.vue",
+        ".scss",
+        "resource-manage.vue",
+        "components/form/user.vue",
+        "components/auth/auth.vue",
+        "use-breadcrumb.ts"
+      ],
+      "contentFingerprint": "520110088de256ad901a347340bb1ef513818c65",
+      "codeBaseline": "cd1376346b24af7270a282f3b5b619a3097cfbcb",
+      "seatedAt": "2026-10-10T10:32:43.907Z"
+    }
+  }
+}

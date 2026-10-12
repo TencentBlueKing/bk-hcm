@@ -1,0 +1,106 @@
+import type { LocationQuery, RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
+import Meta from '@/router/meta';
+import { AUTH_FIND_ACCOUNT } from '@/constants/auth-symbols';
+import {
+  MENU_RESOURCE,
+  MENU_RESOURCE_ACCOUNT_CHECK_IN,
+  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_RESOURCE_ACCOUNT_DETAIL_BASIC,
+  MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+  MENU_RESOURCE_RESOURCE_LIST,
+} from '@/constants/menu-symbol';
+
+// 子路由要重复 auth.view / owner / activeKey：meta 沿 matched 浅合并，子路由 Meta 自带的空 auth 会盖掉父路由的
+const getDetailMeta = () =>
+  new Meta({
+    owner: MENU_RESOURCE,
+    title: '账号详情',
+    activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+    auth: { view: { type: AUTH_FIND_ACCOUNT } },
+    menu: { relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
+    layout: { breadcrumb: { show: true } },
+  });
+
+const accountManageRsc: RouteRecordRaw[] = [
+  {
+    name: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+    path: 'account',
+    component: () => import('@/views/account-manage/list.vue'),
+    meta: {
+      ...new Meta({
+        owner: MENU_RESOURCE,
+        title: '账号管理',
+        activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+        auth: { view: { type: AUTH_FIND_ACCOUNT } },
+        layout: { breadcrumb: { show: true } },
+      }),
+    },
+  },
+  {
+    name: MENU_RESOURCE_ACCOUNT_CHECK_IN,
+    path: 'account/check-in',
+    component: () => import('@/views/service/service-apply/account-add/index'),
+    meta: {
+      ...new Meta({
+        owner: MENU_RESOURCE,
+        title: '账号登记',
+        activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+        menu: { relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
+        layout: { breadcrumb: { show: false } },
+      }),
+    },
+  },
+  {
+    name: MENU_RESOURCE_ACCOUNT_DETAIL,
+    path: 'account/details/:accountId',
+    redirect: { name: MENU_RESOURCE_ACCOUNT_DETAIL_BASIC },
+    component: () => import('@/views/account-manage/details/index'),
+    meta: { ...getDetailMeta() },
+    children: [
+      {
+        name: MENU_RESOURCE_ACCOUNT_DETAIL_BASIC,
+        path: 'basic',
+        component: () => import('@/views/account-manage/details/basic'),
+        meta: { ...getDetailMeta() },
+      },
+    ],
+  },
+];
+
+// query 值可能是数组，取第一个非空值
+const pickQuery = (value: LocationQuery[string]) => {
+  const val = Array.isArray(value) ? value.find(Boolean) : value;
+  return val || undefined;
+};
+
+// 原「账号信息」页签与「资源状态」：带账号进资源纳管并打开账号状态侧滑，不带账号进账号列表
+const toAccountStatus = (to: RouteLocationNormalized) => {
+  const { accountId, id, isDetail, ...query } = to.query;
+  const targetId = pickQuery(accountId) ?? pickQuery(id);
+  if (!targetId) return { name: MENU_RESOURCE_ACCOUNT_MANAGEMENT, query };
+  return {
+    name: MENU_RESOURCE_RESOURCE_LIST,
+    params: { resourceType: 'host' },
+    query: { ...query, accountId: targetId, showAccountStatus: '1' },
+  };
+};
+
+// 原「基本信息」「用户列表」与旧账号详情：进账号管理里该账号的详情
+const toDetail = (to: RouteLocationNormalized) => {
+  const { accountId, id, isDetail, ...query } = to.query;
+  const targetId = pickQuery(accountId) ?? pickQuery(id);
+  if (!targetId) return { name: MENU_RESOURCE_ACCOUNT_MANAGEMENT, query };
+  return { name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: targetId }, query };
+};
+
+const accountManageLegacy: RouteRecordRaw[] = [
+  { path: '/resource/resource/account', redirect: toAccountStatus },
+  { path: '/resource/resource/account/resource', redirect: toAccountStatus },
+  { path: '/resource/resource/account/detail', redirect: toDetail },
+  { path: '/resource/resource/account/manage', redirect: toDetail },
+  { path: '/resource/account/detail', redirect: toDetail },
+  { path: '/resource/account/add', redirect: { name: MENU_RESOURCE_ACCOUNT_CHECK_IN } },
+  { path: '/service/service-apply/account-add', redirect: { name: MENU_RESOURCE_ACCOUNT_CHECK_IN } },
+];
+
+export { accountManageRsc, accountManageLegacy };

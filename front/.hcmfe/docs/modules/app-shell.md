@@ -19,7 +19,7 @@
 
 ## 注意事项
 
-- **页面标题统一走全局面包屑**，页面不要自带固定定位的标题栏（旧 `views/resource/resource-manage/common/header/detail-header.tsx` 已废弃，只剩旧账号详情在用，随账号管理迁移删除）：静态标题写路由 `title`（用 `new Meta` 时写 `title`，构造函数会用它覆盖 `menu.i18n`；普通 meta 对象写 `menu.i18n`），动态标题 `useBreadcrumb().setTitle()`；右侧操作按钮 `<Teleport defer to="#breadcrumbExtra">`；返回目标靠路由 `menu.relative`，面包屑返回时自动带上 `?bizs=`。内容区容器用 `page-container`（列表 / 普通页）或 `detail-content-wrap`（详情页），新建 / 申请页用 `components/layout/sticky-bottom-container` 让底部按钮吸底。
+- **页面标题统一走全局面包屑**，页面不要自带固定定位的标题栏（旧 `DetailHeader` 已随账号管理迁移删除）：静态标题写路由 `title`（用 `new Meta` 时写 `title`，构造函数会用它覆盖 `menu.i18n`；普通 meta 对象写 `menu.i18n`），动态标题 `useBreadcrumb().setTitle()`；右侧操作按钮 `<Teleport defer to="#breadcrumbExtra">`；返回目标靠路由 `menu.relative`，面包屑返回时自动带上 `?bizs=`。内容区容器用 `page-container`（列表 / 普通页）或 `detail-content-wrap`（详情页），新建 / 申请页用 `components/layout/sticky-bottom-container` 让底部按钮吸底。
 - 原资源接入页面（路由 `meta.legacyResourceAccess`，由 `router/module/resource.ts` 外壳记录继承给子路由）的过渡布局下全局面包屑隐藏，原资源详情 / 操作记录详情的面包屑由 `main-content.vue` 渲染在右侧内容区（`legacyBreadcrumbRoutes`），随这些页面迁出删除。资源纳管自己的面包屑在入口 `resource-entry.vue` 右栏，不经 `main-content`。
 
 - 语言切换沿用 HEAD 写法：写 `blueking_language` cookie（`domain=BK_DOMAIN`）并调用户语言接口后刷新。PR #1897 用的 `BK_HCM_DOMAIN` 在本分支的 `index.html` 中不存在。

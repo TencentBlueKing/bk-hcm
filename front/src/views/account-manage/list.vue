@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { h, reactive, ref, watchEffect } from 'vue';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useTableSettings from '@/hooks/use-table-settings';
 import usePage from '@/hooks/use-page';
-import { useVerify } from '@/hooks';
+import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
+import { AUTH_DELETE_ACCOUNT, AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
 
 import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/common/constant';
 import type { ModelPropertyColumn } from '@/model/typings';
@@ -22,11 +23,11 @@ interface IState {
   filter: FilterType;
 }
 
-const router = useRouter();
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
+// TODO(菜单整合三期)：迁至工作台后按 PR 不展示资源账号（账号类型去掉资源账号、请求追加 type neq resource）
 const searchData = [
   { name: t('名称'), id: 'name' },
   { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES },
@@ -51,7 +52,7 @@ const columns = reactive([
           text: true,
           theme: 'primary',
           onClick() {
-            handleJump('accountDetail', row.id, true);
+            handleJump(row.id);
           },
         },
         cell,
@@ -144,21 +145,9 @@ const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
   }
 };
 
-// 跳转页面
-const handleJump = (routerName: string, id?: string, isDetail?: boolean) => {
-  const routerConfig = { query: {}, name: routerName };
-  if (id) {
-    routerConfig.query = { accountId: id, isDetail };
-  }
-  router.push(routerConfig);
-};
-
-const handleEdit = (id: string) => {
-  if (authVerifyData?.value?.permissionAction?.account_edit) {
-    handleJump('accountDetail', id);
-  } else {
-    handleAuth('account_edit');
-  }
+// 名称与「编辑」都进账号详情（基本信息可编辑）
+const handleJump = (id: string) => {
+  routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: id } }, { history: true });
 };
 
 // 删除
@@ -201,65 +190,57 @@ watchEffect(() => {
 
   getAccountList();
 });
-
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 </script>
 
 <template>
   <div class="account-manage-page">
-    <!-- search -->
-    <div class="tools">
-      <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
-      <bk-search-select v-model="searchVal" :data="searchData" />
-    </div>
-    <!-- table -->
-    <div class="table-wrap">
-      <bk-table
-        max-height="100%"
-        :data="state.dataList"
-        row-key="id"
-        row-hover="auto"
-        show-overflow-tooltip
-        :pagination="pagination"
-        :settings="settings"
-        v-bkloading="{ loading: state.loading }"
-      >
-        <bk-table-column
-          v-for="column in columns"
-          :key="column.id"
-          :label="column.name"
-          :prop="column.id"
-          :render="column.render"
-          :width="column.width"
-          :filter="column.filter"
+    <div class="account-manage-content">
+      <!-- search -->
+      <div class="tools">
+        <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
+        <bk-search-select v-model="searchVal" :data="searchData" />
+      </div>
+      <!-- table -->
+      <div class="table-wrap">
+        <bk-table
+          max-height="100%"
+          :data="state.dataList"
+          row-key="id"
+          row-hover="auto"
+          show-overflow-tooltip
+          :pagination="pagination"
+          :settings="settings"
+          v-bkloading="{ loading: state.loading }"
         >
-          <template #default="{ row }">
-            <display-value :property="column" :value="row[column.id]" :vendor="row?.vendor" />
-          </template>
-        </bk-table-column>
-        <bk-table-column :label="t('操作')" fixed="right" width="120">
-          <template #default="{ row }">
-            <bk-button
-              text
-              theme="primary"
-              @click="handleEdit(row.id)"
-              :disabled="!authVerifyData?.permissionAction?.account_edit"
-              :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.account_edit }"
-            >
-              {{ t('编辑') }}
-            </bk-button>
-            <bk-button class="ml8" theme="primary" text @click="handleDelete(row.id)">{{ t('删除') }}</bk-button>
-          </template>
-        </bk-table-column>
-      </bk-table>
+          <bk-table-column
+            v-for="column in columns"
+            :key="column.id"
+            :label="column.name"
+            :prop="column.id"
+            :render="column.render"
+            :width="column.width"
+            :filter="column.filter"
+          >
+            <template #default="{ row }">
+              <display-value :property="column" :value="row[column.id]" :vendor="row?.vendor" />
+            </template>
+          </bk-table-column>
+          <bk-table-column :label="t('操作')" fixed="right" width="120">
+            <template #default="{ row }">
+              <hcm-auth :sign="{ type: AUTH_UPDATE_ACCOUNT, relation: [row.id] }" tag="span" v-slot="{ noPerm }">
+                <bk-button text theme="primary" :disabled="noPerm" @click="handleJump(row.id)">
+                  {{ t('编辑') }}
+                </bk-button>
+              </hcm-auth>
+              <hcm-auth :sign="{ type: AUTH_DELETE_ACCOUNT, relation: [row.id] }" tag="span" v-slot="{ noPerm }">
+                <bk-button class="ml8" theme="primary" text :disabled="noPerm" @click="handleDelete(row.id)">
+                  {{ t('删除') }}
+                </bk-button>
+              </hcm-auth>
+            </template>
+          </bk-table-column>
+        </bk-table>
+      </div>
     </div>
     <!-- dialog -->
     <bk-dialog
@@ -270,19 +251,19 @@ const {
     >
       {{ t('删除之后无法恢复账户信息') }}
     </bk-dialog>
-
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
 .account-manage-page {
   height: 100%;
+  padding: 24px;
+
+  .account-manage-content {
+    height: 100%;
+    padding: 16px 24px;
+    background: #fff;
+  }
 
   .tools {
     margin-bottom: 16px;

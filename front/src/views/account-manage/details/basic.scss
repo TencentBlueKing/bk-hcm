@@ -1,11 +1,13 @@
 .detail-wrap {
   overflow: auto;
   background-color: #fff;
-  .formItem-cls {
+
+  .form-item-cls {
     width: 50%;
     margin-bottom: 0;
-    
-    .bk-form-label, .bk-form-content {
+
+    .bk-form-label,
+    .bk-form-content {
       line-height: 40px;
     }
   }
@@ -15,11 +17,11 @@
   position: relative;
   top: -1px;
   margin: 0 6px 0 25px;
-  color: #3A84FF;
+  color: #3a84ff;
   cursor: pointer;
 
   &:hover {
-    color: #3A84FF !important;
+    color: #3a84ff !important;
   }
 }
 
@@ -36,14 +38,20 @@
 }
 
 .account-detail-edit-icon-font {
-  color: #3A84FF;
+  color: #3a84ff;
   font-weight: normal;
   cursor: pointer;
+
+  &.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
 .validate-btn-container {
   width: 100%;
   display: flex;
+
   .validate-btn {
     margin-right: auto;
     min-width: 88px;
@@ -52,9 +60,4 @@
 
 .mb32 {
   margin-bottom: 32px;
-} 
-
-.h16 {
-  height: 16px;
-  margin-top: 30px;
 }

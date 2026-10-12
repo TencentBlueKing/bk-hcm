@@ -49,7 +49,7 @@
 
 ## 过渡形态（菜单整合二期进行中）
 
-二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，各由自己的单加入，不用原页面临时顶替；回收管理、操作记录已上线，账号管理待加入）。尚未迁出的原资源接入页面（账号列表 / 页签、资源详情）只承接旧地址，仍在 `router/module/resource.ts`，作为根的子记录挂在外壳记录下：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 让 `main-content.vue` 为这些页面渲染原云账号树两栏布局。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
+二期首批每单上线即用新地址。资源纳管单起 `MENU_RESOURCE` 已是资源运营根；侧栏按最终菜单树结构只放已有最终页面的项（除资源纳管外都是无云账号树的独立页面，各由自己的单加入，不用原页面临时顶替；账号管理、回收管理、操作记录均已上线）。尚未迁出的原资源接入页面（资源详情）只承接旧地址，仍在 `router/module/resource.ts`，作为根的子记录挂在外壳记录下：外壳 `path: '/resource'` 与根同路径（vue-router 优先匹配子记录，所以外壳带 `redirect` 到资源纳管），`meta.legacyResourceAccess` 让 `main-content.vue` 为这些页面渲染原云账号树两栏布局。原资源列表 `/resource/resource` 由外壳下的空路径子路由转到资源纳管（按 name 跳 `MENU_RESOURCE_RESOURCE_MANAGEMENT` 不会触发转址，站内已全部改走新 name）。过渡代码标 `TODO(菜单整合二期·组装)`，随各模块迁出逐步删除；账单迁到 `/resource/bill/*` 由资源运营重组单完成。
 
 ## 明细目录
 

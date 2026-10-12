@@ -2,12 +2,11 @@ import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import business from '@/router/module/business';
 import service from '@/router/module/service';
-import serviceInside from '@/router/module/service-inside';
 import resource from '@/router/module/resource';
-import resourceInside from '@/router/module/resource-inside';
 import scheme from '@/router/module/scheme';
 import resourceManage from '@/views/resource-manage/route-config';
 import { recyclebinRsc } from '@/views/recyclebin/route-config';
+import { accountManageRsc } from '@/views/account-manage/route-config';
 import { operationLogRsc } from '@/views/operation-log/route-config';
 import { billAccountManage, billAccountManageLegacy, billManage } from '@/views/bill/route-config';
 
@@ -48,14 +47,14 @@ export const businessViews = injectStatusComponents(
   business.flatMap((group) => group.children),
   statusBusiness,
 );
-export const serviceViews = injectStatusComponents([...service.flatMap((group) => group.children), ...serviceInside]);
-// 资源运营：resource / resourceInside 为原资源接入页面，随各模块迁出后删除
+export const serviceViews = injectStatusComponents(service.flatMap((group) => group.children));
+// 资源运营：resource 为原资源接入页面，随资源详情迁出后删除
 export const resourceViews = injectStatusComponents([
   ...resourceManage,
+  ...accountManageRsc,
   ...recyclebinRsc,
   ...operationLogRsc,
   ...resource,
-  ...resourceInside,
   ...billAccountManage,
   ...billManage,
   ...billAccountManageLegacy,
