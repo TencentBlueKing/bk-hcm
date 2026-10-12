@@ -17,6 +17,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 | account_id | string | 是  | 账号ID                                                 |
 | res        | string | 是  | 资源名称。tcloud 支持 security_group、load_balancer、subnet、sub_account；huawei/aws/azure 支持 security_group |
 
+> `res=load_balancer` 且 vendor 为 `tcloud` 时走异步任务：接口立即返回 `task_management_id`，实际同步在任务中心执行。其他资源仍为同步接口，`data` 为空。
+
 #### vendor=tcloud
 
 | 参数名称        | 参数类型                | 必选 | 描述                                          |
@@ -83,10 +85,24 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 
 ### 响应示例
 
+#### 同步资源（非负载均衡）
+
 ```json
 {
   "code": 0,
   "message": "ok"
+}
+```
+
+#### 异步同步负载均衡（res=load_balancer）
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "task_management_id": "000000xw"
+  }
 }
 ```
 
@@ -96,3 +112,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 |---------|--------|------|
 | code    | int32  | 状态码  |
 | message | string | 请求信息 |
+| data    | object | CLB 异步同步时返回任务信息，其他资源为空 |
+
+#### data（仅 res=load_balancer）
+
+| 参数名称               | 参数类型   | 描述                          |
+|--------------------|--------|-----------------------------|
+| task_management_id | string | 任务管理 ID。请求条件下没有任何可处理的 CLB 时不创建任务，该字段为空字符串 |

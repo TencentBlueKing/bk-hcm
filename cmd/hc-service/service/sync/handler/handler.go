@@ -173,7 +173,7 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	logs.Infof("[ResourceSyncV2] %s remove deleted done, rid: %s", handler.Describe(), kt.Rid)
 
 	// 4. 同步实例详情
-	success, failed, errs := syncResourcesDetail(kt, handler, total, allInstanceList)
+	success, failed, errs := SyncResourcesDetail(kt, handler, total, allInstanceList)
 	cost := time.Since(startedAt)
 	logs.Infof("[ResourceSyncV2] %s sync done, total/success/failed: %d/%d/%d, avg: %.2f res/s, cost: %s, rid: %s",
 		handler.Describe(), total, success, failed, float64(total)/cost.Seconds(), cost, kt.Rid)
@@ -183,7 +183,8 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	return nil
 }
 
-func syncResourcesDetail[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], total int, allInstances [][]T) (
+// SyncResourcesDetail 并发同步资源实例详情，倒序下发批次以保证新建实例先同步，返回成功与失败数量。
+func SyncResourcesDetail[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], total int, allInstances [][]T) (
 	success int, failed int, err error) {
 
 	// 并发同步资源实例
