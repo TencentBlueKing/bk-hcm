@@ -62,7 +62,7 @@ func (svc *lbSvc) CreateResFlowLock(cts *rest.Contexts) (any, error) {
 		}
 		err := svc.dao.ResourceFlowLock().CreateWithTx(cts.Kit, txn, model)
 		if err != nil {
-			logs.Errorf("[%s]fail to create load balancer flow lock, req: %+v, err: %v, rid:%s", req, err, cts.Kit.Rid)
+			logs.Errorf("fail to create load balancer flow lock, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 			return nil, fmt.Errorf("create load balancer flow lock failed, err: %v", err)
 		}
 		return nil, nil
@@ -70,6 +70,9 @@ func (svc *lbSvc) CreateResFlowLock(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logs.Infof("create res flow lock success, resID: %s, resType: %s, owner: %s, rid: %s",
+		req.ResID, req.ResType, req.Owner, cts.Kit.Rid)
 
 	return nil, nil
 }
@@ -100,7 +103,7 @@ func (svc *lbSvc) BatchCreateResFlowRel(cts *rest.Contexts) (any, error) {
 		}
 		ids, err := svc.dao.ResourceFlowRel().BatchCreateWithTx(cts.Kit, txn, models)
 		if err != nil {
-			logs.Errorf("[%s]fail to batch create load balancer flow rel, err: %v, rid:%s", err, cts.Kit.Rid)
+			logs.Errorf("fail to batch create load balancer flow rel, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("batch create load balancer flow rel failed, err: %v", err)
 		}
 		return ids, nil
@@ -172,6 +175,9 @@ func (svc *lbSvc) ResFlowLock(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logs.Infof("res flow lock success, resID: %s, resType: %s, owner: %s, taskType: %s, status: %s, rid: %s",
+		req.ResID, req.ResType, req.FlowID, req.TaskType, req.Status, cts.Kit.Rid)
 
 	return nil, nil
 }
@@ -263,9 +269,12 @@ func (svc *lbSvc) ResFlowUnLock(cts *rest.Contexts) (interface{}, error) {
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("res flow unlock failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
+		logs.Errorf("res flow unlock failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
+
+	logs.Infof("res flow unlock success, resID: %s, resType: %s, owner: %s, status: %s, rid: %s",
+		req.ResID, req.ResType, req.FlowID, req.Status, cts.Kit.Rid)
 
 	return nil, nil
 }

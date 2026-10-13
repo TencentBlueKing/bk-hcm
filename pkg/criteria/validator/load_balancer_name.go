@@ -26,9 +26,9 @@ import (
 )
 
 const (
-	// loadBalancerNameExtFmt CLB名称中间部分字符类：支持中文、英文、数字、连字符(-)
-	loadBalancerNameExtFmt string = "[\u4E00-\u9FA5A-Za-z0-9-]"
-	// loadBalancerNameFmt CLB名称格式：支持中文、英文、数字、连字符(-)，且必须以中文、英文或数字开头和结尾
+	// loadBalancerNameExtFmt CLB名称中间部分字符类：支持中文、英文、数字、连字符(-)、英文点号(.)
+	loadBalancerNameExtFmt string = "[\u4E00-\u9FA5A-Za-z0-9.-]"
+	// loadBalancerNameFmt CLB名称格式：支持中文、英文、数字、连字符(-)、英文点号(.)，且必须以中文、英文或数字开头和结尾
 	loadBalancerNameFmt = chineseEnglishNumberFmt + "(" + loadBalancerNameExtFmt + "*" + chineseEnglishNumberFmt + ")?"
 )
 
@@ -42,7 +42,7 @@ func ValidateLoadBalancerName(name string) error {
 	}
 
 	if !loadBalancerNameRegexp.MatchString(name) {
-		return fmt.Errorf("invalid name: %s, only allows to include chinese、english、numbers、hyphen (-), "+
+		return fmt.Errorf("invalid name: %s, only allows to include chinese、english、numbers、hyphen (-)、period (.), "+
 			"and must start and end with chinese、english or numbers", name)
 	}
 

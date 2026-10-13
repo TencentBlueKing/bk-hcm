@@ -22,15 +22,27 @@ export interface ISearchResponse {
   [key: string]: any;
 }
 
+export interface IUserInfo {
+  username?: string;
+  auth_center_url?: string;
+  user_center_url?: string;
+}
+
 export const useUserStore = defineStore('user', () => {
   const username = ref('');
+
+  const userData = ref<IUserInfo>({});
+
   const searchLoading = ref(false);
   const userList = ref<IUserItem[]>([]);
 
   // 获取当前用户信息
   const userInfo = async () => {
     const res = await http.get('/api/v1/web/users');
-    username.value = res?.data?.username;
+    const data: IUserInfo = res?.data ?? {};
+    username.value = data.username ?? '';
+    userData.value = data;
+    return data;
   };
 
   const searchUseBK = (value: string) => {
@@ -100,5 +112,6 @@ export const useUserStore = defineStore('user', () => {
     userList,
     userInfo,
     search,
+    userData,
   };
 });

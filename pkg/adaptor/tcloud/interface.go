@@ -129,6 +129,7 @@ type TCloud interface {
 	DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error
 	UpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error
 	BatchUpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error
+	OverwriteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudOverwriteOption) error
 	ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
 		*v20170312.SecurityGroupPolicySet, error)
 
@@ -186,8 +187,11 @@ type TCloud interface {
 		*poller.BaseDoneResult, error)
 	CreateLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*poller.BaseDoneResult, error)
 	ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error)
+	ListLoadBalancerWithCount(kt *kit.Kit, opt *typelb.TCloudListOption) (*typelb.TCloudListResult, error)
 	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
+	DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
+		*tclb.DescribeClusterResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
 	CreateCert(kt *kit.Kit, opt *cert.TCloudCreateOption) (*poller.BaseDoneResult, error)
 	DeleteCert(kt *kit.Kit, opt *cert.TCloudDeleteOption) error
@@ -218,6 +222,8 @@ type TCloud interface {
 	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
 	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
 		[]typelb.TCloudLoadBalancerQuota, error)
+	ListExclusiveClusters(kt *kit.Kit, opt *typelb.TCloudExclusiveClusterListOption) (
+		[]typelb.TCloudExclusiveCluster, error)
 
 	ListBandwidthPackage(kt *kit.Kit, opt *types.TCloudListBwPkgOption) (
 		*types.TCloudListBwPkgResult, error)

@@ -61,6 +61,7 @@ var TableColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "public_ipv4_addresses", NamedC: "public_ipv4_addresses", Type: enumor.Json},
 	{Column: "public_ipv6_addresses", NamedC: "public_ipv6_addresses", Type: enumor.Json},
 	{Column: "machine_type", NamedC: "machine_type", Type: enumor.String},
+	{Column: "is_gpu", NamedC: "is_gpu", Type: enumor.Boolean},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_launched_time", NamedC: "cloud_launched_time", Type: enumor.String},
@@ -99,6 +100,7 @@ type Table struct {
 	PublicIPv4Addresses  types.StringArray `db:"public_ipv4_addresses" json:"public_ipv4_addresses"`
 	PublicIPv6Addresses  types.StringArray `db:"public_ipv6_addresses" json:"public_ipv6_addresses"`
 	MachineType          string            `db:"machine_type" json:"machine_type"`
+	IsGPU                bool              `db:"is_gpu" json:"is_gpu"`
 	Extension            types.JsonField   `db:"extension" json:"extension"`
 	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudLaunchedTime    string            `db:"cloud_launched_time" json:"cloud_launched_time"`

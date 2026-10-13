@@ -60,6 +60,7 @@ import (
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -128,23 +129,65 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
 
+	// 判断该笔申请是否命中免审白名单，命中则跳过ITSM与申请单落库，同步交付资源
+	needApproval, err := handler.NeedApproval(cts.Kit)
+	if err != nil {
+		logs.Errorf("check application need approval failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.Aborted, err)
+	}
+	if !needApproval {
+		return a.directDeliver(cts, handler, applicationType)
+	}
+
 	// 调用ITSM创建单据
 	sn, err := a.createItsmTicket(cts, handler, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
-	result, err := a.createApplication(cts, req, handler, sn, applicationType)
+	result, err := a.createApplication(cts, req, handler, sn, enumor.ApplicationSourceITSM, applicationType)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
+// directDeliver 免审场景：不创建ITSM单、不落申请单，同步执行资源交付。
+// 返回的 CreateResult.ID 为交付产物 ID（账号录入场景为 account_id），不是申请单 ID。
+func (a *applicationSvc) directDeliver(cts *rest.Contexts, handler handlers.ApplicationHandler,
+	applicationType enumor.ApplicationType) (*core.CreateResult, error) {
+
+	logs.Infof("skip itsm approval and deliver directly, type: %s, operation: %s, applicant: %s, rid: %s",
+		applicationType, handler.GetOperation(), cts.Kit.User, cts.Kit.Rid)
+
+	status, detail, err := handler.Deliver()
+	if err != nil {
+		logs.Errorf("deliver directly failed, err: %v, type: %s, detail: %+v, rid: %s",
+			err, applicationType, detail, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.Aborted, err)
+	}
+	if status != enumor.Completed {
+		logs.Errorf("deliver directly failed, status: %s, type: %s, detail: %+v, rid: %s",
+			status, applicationType, detail, cts.Kit.Rid)
+		return nil, errf.Newf(errf.Aborted, "deliver failed, status: %s, detail: %v", status, detail)
+	}
+
+	accountID, _ := detail[constant.ApplicationDeliverAccountIDKey].(string)
+	if accountID == "" {
+		logs.Errorf("deliver directly success but account id missing, type: %s, detail: %+v, rid: %s",
+			applicationType, detail, cts.Kit.Rid)
+		return nil, errf.New(errf.Aborted, "deliver success but account id missing")
+	}
+
+	logs.Infof("deliver directly success, account_id: %s, type: %s, rid: %s",
+		accountID, applicationType, cts.Kit.Rid)
+	return &core.CreateResult{ID: accountID}, nil
+}
+
 // createApplicationRequest ...
 func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
-	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (
-	*core.CreateResult, error) {
+	handler handlers.ApplicationHandler, sn string, source enumor.ApplicationSource,
+	applicationType enumor.ApplicationType) (*core.CreateResult, error) {
 
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
@@ -186,7 +229,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
 			SN:             sn,
-			Source:         enumor.ApplicationSourceITSM,
+			Source:         source,
 			Type:           applicationType,
 			Operation:      operation,
 			Status:         enumor.Pending,

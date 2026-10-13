@@ -63,6 +63,22 @@ type GcpCvmExtension struct {
 	Fingerprint string `json:"fingerprint,omitempty"`
 
 	AdvancedMachineFeatures *GcpAdvancedMachineFeatures `json:"advanced_machine_features,omitempty"`
+
+	// GuestAccelerators A list of the type and count of accelerator (GPU) cards attached to the instance.
+	// 仅 N1 等通用机型挂载 GPU 时返回；A2/A3/A4/G2/G4 等专用 GPU 机型的 GPU 与机型绑定，实例不返回该字段。
+	GuestAccelerators []GcpAcceleratorConfig `json:"guest_accelerators,omitempty"`
+}
+
+// GcpAcceleratorConfig GCP guest accelerator (GPU) type and count attached to the instance.
+// 实例挂载的 GPU 加速器类型与卡数。
+type GcpAcceleratorConfig struct {
+	// AcceleratorType Full or partial URL of the accelerator type resource attached to this instance.
+	// 加速器类型资源的全量或部分 URL，例如 .../acceleratorTypes/nvidia-tesla-t4
+	AcceleratorType string `json:"accelerator_type,omitempty"`
+
+	// AcceleratorCount The number of the guest accelerator cards exposed to this instance.
+	// 暴露给该实例的 GPU 卡数
+	AcceleratorCount int64 `json:"accelerator_count,omitempty"`
 }
 
 // GcpAttachedDisk An instance-attached disk resource.

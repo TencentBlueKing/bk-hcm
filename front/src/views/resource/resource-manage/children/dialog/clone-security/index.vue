@@ -3,6 +3,7 @@
 import { Dialog, Form, Message } from 'bkui-vue';
 import { ref, computed, h, reactive, watch, useTemplateRef } from 'vue';
 import { useResourceStore, useBusinessStore } from '@/store';
+import { useRegionStore } from '@/store/region';
 
 import UsageBizValue from '../../components/security/usage-biz-value.vue';
 import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
@@ -49,13 +50,30 @@ const states = reactive<any>({
 });
 const filter = ref({ op: QueryRuleOPEnum.AND, rules: [{ field: 'type', op: QueryRuleOPEnum.EQ, value: 'ingress' }] });
 const personSelectorRef = ref(null);
-const formModel = reactive({ name: `${props.data.name}-copy` });
+const formModel = reactive({ name: `${props.data.name}-copy`, targetRegion: props?.data?.region });
 const formRef = useTemplateRef<typeof Form>('formRef');
 const rules = {
   name: [{ validator: (val: string) => val.length <= 60, message: t('名称超过60个字符的长度限制，请调整后重试') }],
+  targetRegion: [{ validator: (val: string) => !!val, message: t('目标地域不能为空') }],
 };
 
 const vendor = computed(() => props?.data?.vendor);
+
+// 目标地域
+const regionStore = useRegionStore();
+const regionList = ref<{ id: string; name: string }[]>([]);
+const regionLoading = ref(false);
+const getRegionList = async () => {
+  regionLoading.value = true;
+  try {
+    regionList.value = (await regionStore.getRegionList({ vendor: vendor.value as VendorEnum })) || [];
+  } catch (e) {
+    console.error(e);
+    regionList.value = [];
+  } finally {
+    regionLoading.value = false;
+  }
+};
 
 const inColumns: any = computed(() =>
   [
@@ -196,12 +214,12 @@ const inColumns: any = computed(() =>
       render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[row.action]
+            ? (HuaweiSecurityRuleEnum as Record<string, string>)[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[row.access]
+            ? (AzureSecurityRuleEnum as Record<string, string>)[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[row.action] || '--',
+            : (SecurityRuleEnum as Record<string, string>)[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
@@ -364,12 +382,12 @@ const outColumns: any = computed(() =>
       render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[row.action]
+            ? (HuaweiSecurityRuleEnum as Record<string, string>)[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[row.access]
+            ? (AzureSecurityRuleEnum as Record<string, string>)[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[row.action] || '--',
+            : (SecurityRuleEnum as Record<string, string>)[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
@@ -420,8 +438,13 @@ const handleConfirm = async () => {
       name: formModel.name,
       bak_manager,
       manager,
+      target_region: formModel.targetRegion,
     });
-    Message({ theme: 'success', message: t('克隆成功！') });
+    const targetRegionName = regionList.value.find((item) => item.id === formModel.targetRegion)?.name;
+    Message({
+      theme: 'success',
+      message: t('已克隆至 {region}！', { region: targetRegionName || formModel.targetRegion }),
+    });
     handleClose();
     emit('success');
   } finally {
@@ -432,7 +455,10 @@ const handleConfirm = async () => {
 watch(
   () => props.isShow,
   (val: boolean) => {
-    if (val) getList();
+    if (val) {
+      getList();
+      getRegionList();
+    }
   },
   {
     immediate: true,
@@ -474,6 +500,11 @@ watch(
     <bk-form ref="formRef" :model="formModel" :rules="rules" form-type="vertical">
       <bk-form-item :label="t('安全组名称')" property="name" label-width="100">
         <bk-input v-model.trim="formModel.name" />
+      </bk-form-item>
+      <bk-form-item :label="t('目标地域')" property="targetRegion" label-width="100">
+        <bk-select v-model="formModel.targetRegion" filterable :loading="regionLoading">
+          <bk-option v-for="item in regionList" :key="item.id" :id="item.id" :name="item.name" />
+        </bk-select>
       </bk-form-item>
     </bk-form>
     <SecurityGroupManagerSelector

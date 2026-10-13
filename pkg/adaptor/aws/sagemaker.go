@@ -262,6 +262,63 @@ func (a *Aws) DescribeTrainingJob(kt *kit.Kit,
 	return resp, nil
 }
 
+// ListHyperParameterTuningJobs lists SageMaker hyperparameter tuning jobs.
+func (a *Aws) ListHyperParameterTuningJobs(kt *kit.Kit,
+	opt *adtsm.AwsListHyperParameterTuningJobsOption) (*smv2.ListHyperParameterTuningJobsOutput, error) {
+
+	client, err := a.clientSet.sageMakerV2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	input := &smv2.ListHyperParameterTuningJobsInput{
+		CreationTimeAfter:      opt.CreationTimeAfter,
+		CreationTimeBefore:     opt.CreationTimeBefore,
+		LastModifiedTimeAfter:  opt.LastModifiedTimeAfter,
+		LastModifiedTimeBefore: opt.LastModifiedTimeBefore,
+		MaxResults:             opt.MaxResults,
+		NextToken:              opt.NextToken,
+	}
+	if opt.NameContains != "" {
+		input.NameContains = converter.StrNilPtr(opt.NameContains)
+	}
+	if opt.SortBy != "" {
+		input.SortBy = smtypes.HyperParameterTuningJobSortByOptions(opt.SortBy)
+	}
+	if opt.SortOrder != "" {
+		input.SortOrder = smtypes.SortOrder(opt.SortOrder)
+	}
+	if opt.StatusEquals != "" {
+		input.StatusEquals = smtypes.HyperParameterTuningJobStatus(opt.StatusEquals)
+	}
+
+	resp, err := client.ListHyperParameterTuningJobs(kt.Ctx, input)
+	if err != nil {
+		logs.Errorf("list aws sagemaker hyperparameter tuning jobs failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return resp, nil
+}
+
+// DescribeHyperParameterTuningJob describes a SageMaker hyperparameter tuning job.
+func (a *Aws) DescribeHyperParameterTuningJob(kt *kit.Kit,
+	opt *adtsm.AwsDescribeHyperParameterTuningJobOption) (*smv2.DescribeHyperParameterTuningJobOutput, error) {
+
+	client, err := a.clientSet.sageMakerV2Client(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.DescribeHyperParameterTuningJob(kt.Ctx, &smv2.DescribeHyperParameterTuningJobInput{
+		HyperParameterTuningJobName: converter.StrNilPtr(opt.HyperParameterTuningJobName),
+	})
+	if err != nil {
+		logs.Errorf("describe aws sagemaker hyperparameter tuning job failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return resp, nil
+}
+
 // ListProcessingJobs lists SageMaker processing jobs.
 func (a *Aws) ListProcessingJobs(kt *kit.Kit,
 	opt *adtsm.AwsListProcessingJobsOption) (*smv2.ListProcessingJobsOutput, error) {

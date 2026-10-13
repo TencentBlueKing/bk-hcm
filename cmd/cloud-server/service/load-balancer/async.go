@@ -174,12 +174,16 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 	}
 
 	// 锁定成功，创建从flow
-	_, err = svc.client.TaskServer().CreateTemplateFlow(cts.Kit, flowWatchReq)
+	watchResult, err := svc.client.TaskServer().CreateTemplateFlow(cts.Kit, flowWatchReq)
 	if err != nil {
 		logs.Errorf("call task server to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, req.FlowID, cts.Kit.Rid)
 		return nil, err
 	}
+
+	logs.Infof("create res flow status watch flow success, watchFlowID: %s, mainFlowID: %s, clonedFromFlowID: %s, "+
+		"resID: %s, resType: %s, taskType: %s, rid: %s", watchResult.ID, flowRet.ID, req.FlowID, lbInfo.ID,
+		enumor.LoadBalancerCloudResType, rel.TaskType, cts.Kit.Rid)
 
 	return flowRet, nil
 }

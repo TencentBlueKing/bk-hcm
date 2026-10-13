@@ -146,6 +146,11 @@ func (d *Dispatcher) Do(kt *kit.Kit) error {
 		return err
 	}
 
+	for index, one := range flows {
+		logs.Infof("flow dispatched to worker, flowID: %s, flowName: %s, worker: %s, state: %s -> %s, rid: %s",
+			one.ID, one.Name, nodes[index%len(nodes)], enumor.FlowPending, enumor.FlowScheduled, kt.Rid)
+	}
+
 	return nil
 }
 

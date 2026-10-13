@@ -248,7 +248,7 @@ func (c *CreateUrlRuleExecutor) createFlowTask(kt *kit.Kit, lbID string,
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowLoadBalancerCreateUrlRule,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, CreateUrlRule, map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,
@@ -274,12 +274,16 @@ func (c *CreateUrlRuleExecutor) createFlowTask(kt *kit.Kit, lbID string,
 			},
 		}},
 	}
-	_, err = c.taskCli.CreateTemplateFlow(kt, flowWatchReq)
+	watchResult, err := c.taskCli.CreateTemplateFlow(kt, flowWatchReq)
 	if err != nil {
 		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, flowID, kt.Rid)
 		return "", err
 	}
+
+	logs.Infof("create res flow status watch flow success, watchFlowID: %s, mainFlowID: %s, resID: %s, "+
+		"resType: %s, taskType: %s, rid: %s", watchResult.ID, flowID, lbID,
+		enumor.LoadBalancerCloudResType, enumor.CreateUrlRuleTaskType, kt.Rid)
 
 	return flowID, nil
 }

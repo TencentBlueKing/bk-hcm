@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 func lockResFlowStatus(kt *kit.Kit, dataCli *dataservice.Client, taskCli *taskserver.Client, resID string,
@@ -65,6 +66,9 @@ func lockResFlowStatus(kt *kit.Kit, dataCli *dataservice.Client, taskCli *taskse
 		return err
 	}
 
+	logs.Infof("lock res flow success, resID: %s, resType: %s, owner: %s, taskType: %s, rid: %s",
+		resID, resType, flowID, taskType, kt.Rid)
+
 	return nil
 }
 
@@ -85,7 +89,11 @@ func checkResFlowRel(kt *kit.Kit, dataCli *dataservice.Client, resID string, res
 		return nil, err
 	}
 	if len(lockRet.Details) > 0 {
-		return &lockRet.Details[0], errf.Newf(errf.LoadBalancerTaskExecuting, "resID: %s is processing", resID)
+		lock := lockRet.Details[0]
+		// 锁仍被持有，owner 即持锁的flow，用于定位是哪个flow未释放锁
+		logs.Errorf("res is locked by another flow, resID: %s, resType: %s, owner: %s, lockCreatedAt: %s, rid: %s",
+			resID, resType, lock.Owner, converter.PtrToVal(lock.Revision).CreatedAt, kt.Rid)
+		return &lock, errf.Newf(errf.LoadBalancerTaskExecuting, "resID: %s is processing", resID)
 	}
 
 	// 预检测-当前资源是否有未终态的状态
@@ -103,6 +111,9 @@ func checkResFlowRel(kt *kit.Kit, dataCli *dataservice.Client, resID string, res
 		return nil, err
 	}
 	if len(flowRelRet.Details) > 0 {
+		// 锁已释放但关联记录未收尾，与上面的持锁分支根因不同，需要区分
+		logs.Errorf("res flow rel is still executing while lock released, resID: %s, resType: %s, flowID: %s, "+
+			"rid: %s", resID, resType, flowRelRet.Details[0].FlowID, kt.Rid)
 		return &corelb.BaseResFlowLock{
 				ResID:   resID,
 				ResType: resType,
@@ -110,6 +121,9 @@ func checkResFlowRel(kt *kit.Kit, dataCli *dataservice.Client, resID string, res
 			},
 			errf.Newf(errf.LoadBalancerTaskExecuting, "%s of resID: %s is processing", resType, resID)
 	}
+
+	// 资源未被持锁且无执行中的关联记录，说明上一个flow已完成解锁，记录该时刻用于对比解锁延迟
+	logs.Infof("res flow check passed, no lock held, resID: %s, resType: %s, rid: %s", resID, resType, kt.Rid)
 
 	return nil, nil
 }

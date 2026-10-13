@@ -29,7 +29,9 @@ import (
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 func (ad Audit) listenerDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
@@ -75,19 +77,20 @@ func (ad Audit) listenerDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.Cloud
 }
 
 func (ad Audit) listListener(kt *kit.Kit, ids []string) (map[string]*tablelb.LoadBalancerListenerTable, error) {
-	opt := &types.ListOption{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.NewDefaultBasePage(),
-	}
-	list, err := ad.dao.LoadBalancerListener().List(kt, opt)
-	if err != nil {
-		logs.Errorf("list listener db failed, ids: %v, err: %v, rid: %s", ids, err, kt.Rid)
-		return nil, err
-	}
-
-	result := make(map[string]*tablelb.LoadBalancerListenerTable, len(list.Details))
-	for _, one := range list.Details {
-		result[one.ID] = converter.ValToPtr(one)
+	result := make(map[string]*tablelb.LoadBalancerListenerTable, len(ids))
+	for _, batch := range slice.Split(ids, int(filter.DefaultMaxInLimit)) {
+		opt := &types.ListOption{
+			Filter: tools.ContainersExpression("id", batch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := ad.dao.LoadBalancerListener().List(kt, opt)
+		if err != nil {
+			logs.Errorf("list listener db failed, ids: %v, err: %v, rid: %s", batch, err, kt.Rid)
+			return nil, err
+		}
+		for _, one := range list.Details {
+			result[one.ID] = converter.ValToPtr(one)
+		}
 	}
 
 	return result, nil

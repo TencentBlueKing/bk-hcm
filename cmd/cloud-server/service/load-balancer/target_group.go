@@ -235,17 +235,30 @@ func (svc *lbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) (*corelb
 }
 
 func (svc *lbSvc) getTargetByTGIDs(kt *kit.Kit, targetGroupIDs []string) ([]corelb.BaseTarget, error) {
+	if len(targetGroupIDs) == 0 {
+		return make([]corelb.BaseTarget, 0), nil
+	}
+
+	result := make([]corelb.BaseTarget, 0)
 	tgReq := &core.ListReq{
 		Filter: tools.ContainersExpression("target_group_id", targetGroupIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	targetResult, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
-	if err != nil {
-		logs.Errorf("list target by tgIDs failed, tgIDs: %v, err: %v, rid: %s", targetGroupIDs, err, kt.Rid)
-		return nil, err
+	for {
+		targetResult, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, tgReq)
+		if err != nil {
+			logs.Errorf("list target by tgIDs failed, tgIDs: %v, err: %v, rid: %s", targetGroupIDs, err, kt.Rid)
+			return nil, err
+		}
+
+		result = append(result, targetResult.Details...)
+		if len(targetResult.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		tgReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	return targetResult.Details, nil
+	return result, nil
 }
 
 // StatBizTargetWeight 统计目标组下的RS权重情况

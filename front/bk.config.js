@@ -53,6 +53,9 @@ const getConfig = (custom = {}) => ({
         hot: true, // 启用热模块替换
         liveReload: false, // 禁用整页刷新
         server: custom.server && custom.server,
+        static: {
+          watch: false,
+        },
       },
     };
   },
@@ -80,13 +83,6 @@ const getConfig = (custom = {}) => ({
     if (process.env.NODE_ENV === 'production') {
       config.plugin('buildHash').use(BuildHashPlugin);
     }
-
-    // fix: too many open files
-    config.watchOptions({
-      ignored: ['**/node_modules', '**/.git'],
-      aggregateTimeout: 300,
-      poll: 1000,
-    });
 
     return config;
   },

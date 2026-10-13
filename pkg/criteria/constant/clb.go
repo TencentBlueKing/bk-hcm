@@ -31,6 +31,17 @@ const (
 	ListenerMinSessionExpire = 30
 	// ResFlowLockExpireDays 锁定资源与Flow的最大超时时间，默认7天
 	ResFlowLockExpireDays = 7
+	// DefaultCondSyncLbDeleteBatchSize 负载均衡条件同步中，单个清理任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbDeleteBatchSize = 100
+	// DefaultCondSyncLbUpsertBatchSize 负载均衡条件同步中，单个同步任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbUpsertBatchSize = 500
+	// DefaultCondSyncLbLargeUpsertThreshold 负载均衡条件同步中，判定本次同步为大规模的负载均衡数量默认阈值
+	DefaultCondSyncLbLargeUpsertThreshold = 10000
+	// DefaultCondSyncLbLargeUpsertBatchSize 负载均衡条件同步中，
+	// 待同步数量超过阈值后单个同步任务动作处理的负载均衡数量默认值
+	DefaultCondSyncLbLargeUpsertBatchSize = 2500
+	// DefaultCondSyncLbListConcurrent 负载均衡条件同步中，启动阶段拉取云上简要信息的分页并发默认值
+	DefaultCondSyncLbListConcurrent = 5
 	// FlowRetryTimeout Flow重试的最大重试超时
 	FlowRetryTimeout = 7 * 24 * time.Hour
 )
@@ -41,6 +52,18 @@ const (
 	TCLBDescribeMax = 20
 	// TCLBDeleteProtect 腾讯云负载均衡删除保护
 	TCLBDeleteProtect = "DeleteProtect"
+)
+
+// 负载均衡规格与展示相关的常量
+const (
+	// ExclusiveSlaTypeName 独占型规格在 ITSM / 展示层的名称
+	ExclusiveSlaTypeName = "独占型"
+	// SharedSlaTypeName 共享型规格在 ITSM / 展示层的名称
+	SharedSlaTypeName = "共享型"
+	// EmptyItsmValue ITSM 表单空值占位
+	EmptyItsmValue = "--"
+	// ClusterLocalUnsyncedName 四层集群本地表未同步时的名称占位
+	ClusterLocalUnsyncedName = "本地未同步"
 )
 
 const (
@@ -58,6 +81,9 @@ const (
 	ExportClbOneFileRowLimit = 5000
 	// ExportListenerParamLimit 导出监听器参数限制
 	ExportListenerParamLimit = 5000
+	// ExportSkipLimitLbCount 勾选负载均衡数量不超过该值时，导出不做数量限制。
+	// 参数层与业务预检层共用该阈值，两者口径必须一致；置为 0 可关闭该特性，恢复全量限制。
+	ExportSkipLimitLbCount = 5
 )
 
 const (
@@ -95,13 +121,16 @@ const (
 	CLBTopoFindPageLimit = 100000
 	// CLBDataByTopoCondReturnLimit 根据负载均衡拓扑条件查询返回的详情数量限制
 	CLBDataByTopoCondReturnLimit = 10000
+
+	// ExclusiveClusterIdleVipMaxPages 查询独占集群闲置VIP时的最大翻页次数，避免云侧返回异常时无限翻页
+	ExclusiveClusterIdleVipMaxPages = 100
 )
 
 const (
 	// BatchOperateModifyTargetWeightLimit 批量修改目标权重限制
 	BatchOperateModifyTargetWeightLimit = 5000
 	// BatchOperateDeleteListenerLimit 批量删除监听器数量限制
-	BatchOperateDeleteListenerLimit = 1000
+	BatchOperateDeleteListenerLimit = 5000
 	// BatchOperateRemoveTargetLimit 批量移除RS数量限制
 	BatchOperateRemoveTargetLimit = 5000
 )

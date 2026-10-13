@@ -29,10 +29,12 @@ import (
 	"time"
 
 	logicsaction "hcm/cmd/task-server/logics/action"
+	"hcm/cmd/task-server/logics/asyncflowcleanup"
 	"hcm/cmd/task-server/service/capability"
 	"hcm/cmd/task-server/service/controller"
 	"hcm/cmd/task-server/service/producer"
 	"hcm/cmd/task-server/service/viewer"
+	crontask "hcm/cmd/task-server/task"
 	"hcm/pkg/async"
 	"hcm/pkg/async/backend"
 	"hcm/pkg/async/consumer"
@@ -42,6 +44,8 @@ import (
 	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/cron"
+	croncore "hcm/pkg/cron/core"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
@@ -51,6 +55,7 @@ import (
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -58,11 +63,14 @@ import (
 
 // Service do all the task server's work
 type Service struct {
-	client     *client.ClientSet
-	dao        dao.Set
-	serve      *http.Server
-	async      async.Async
-	authorizer auth.Authorizer
+	client        *client.ClientSet
+	dao           dao.Set
+	serve         *http.Server
+	async         async.Async
+	authorizer    auth.Authorizer
+	sd            serviced.State
+	cleanupLogics *asyncflowcleanup.Logics
+	tasks         map[enumor.CronTask]croncore.Task
 }
 
 // NewService create a service instance.
@@ -102,16 +110,74 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 	// 鉴权
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	svr := &Service{
-		client:     apiClientSet,
-		dao:        dao,
-		async:      async,
-		authorizer: authorizer,
+		client:        apiClientSet,
+		dao:           dao,
+		async:         async,
+		authorizer:    authorizer,
+		sd:            sd,
+		cleanupLogics: asyncflowcleanup.NewLogics(dao, apiClientSet.DataService()),
+	}
+
+	if err = svr.initCronTask(); err != nil {
+		logs.Errorf("init cron task failed, err: %v", err)
+		return nil, err
 	}
 
 	return svr, nil
 }
 
-func createAndStartAsync(sd serviced.ServiceDiscover, globalCfgCli *global.GlobalConfigsClient, dao dao.Set, shutdownWaitTimeSec int) (async.Async, error) {
+// initCronTask 初始化定时任务。
+func (s *Service) initCronTask() error {
+	if err := cron.Init(context.Background(), metrics.Register()); err != nil {
+		logs.Errorf("init cron scheduler failed, err: %v", err)
+		return err
+	}
+	s.tasks = make(map[enumor.CronTask]croncore.Task)
+
+	cleanupTask, err := crontask.NewAsyncFlowAndTaskCleanupTask(s.cleanupLogics, s.sd)
+	if err != nil {
+		logs.Errorf("init async flow and task cleanup task failed, err: %v", err)
+		return err
+	}
+	// 无论开关是否开启都放进 s.tasks：人工触发的路由要从这里取任务的 URL
+	s.tasks[enumor.CronTaskAsyncFlowAndTaskCleanup] = cleanupTask
+
+	if err = registerCleanupCronTask(cleanupTask); err != nil {
+		return err
+	}
+
+	go func() {
+		notifier := shutdown.AddNotifier()
+		<-notifier.Signal
+		defer notifier.Done()
+		logs.Infof("start shutdown cron scheduler gracefully...")
+		if err := cron.Stop(); err != nil {
+			logs.Errorf("shutdown cron scheduler failed, err: %v", err)
+			return
+		}
+		logs.Infof("shutdown cron scheduler success...")
+	}()
+
+	return nil
+}
+
+// registerCleanupCronTask 只在清理开关开启时把清理任务注册进 cron 调度器。
+func registerCleanupCronTask(cleanupTask croncore.Task) error {
+	if !converter.PtrToVal(cc.TaskServer().AsyncFlowAndTaskCleanup.Enabled) {
+		logs.Infof("async flow and task cleanup is disabled, skip registering its cron task")
+		return nil
+	}
+
+	if err := cron.Register([]croncore.Task{cleanupTask}); err != nil {
+		logs.Errorf("register cron tasks failed, err: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func createAndStartAsync(sd serviced.ServiceDiscover, globalCfgCli *global.GlobalConfigsClient, dao dao.Set,
+	shutdownWaitTimeSec int) (async.Async, error) {
 	// 创建async框架使用的backend
 	bd, err := backend.Factory(enumor.BackendMysql, dao)
 	if err != nil {
@@ -238,11 +304,13 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Produces(restful.MIME_JSON)
 
 	c := &capability.Capability{
-		WebService: ws,
-		ApiClient:  s.client,
-		Async:      s.async,
-		Dao:        s.dao,
-		Authorizer: s.authorizer,
+		WebService:    ws,
+		ApiClient:     s.client,
+		Async:         s.async,
+		Dao:           s.dao,
+		Authorizer:    s.authorizer,
+		Tasks:         s.tasks,
+		CleanupLogics: s.cleanupLogics,
 	}
 
 	producer.Init(c)

@@ -132,6 +132,11 @@ func RuleGreaterThan(fieldName string, value any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: value}
 }
 
+// RuleLessThan 生成资源字段小于查询的AtomRule，即fieldName < values
+func RuleLessThan(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.LessThan.Factory(), Value: value}
+}
+
 // RuleGreaterThanEqual 生成资源字段大于等于给定值的AtomRule，即fieldName >= values
 func RuleGreaterThanEqual(fieldName string, value any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThanEqual.Factory(), Value: value}

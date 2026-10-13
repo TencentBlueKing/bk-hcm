@@ -47,6 +47,7 @@ const dataListColumns = computed<ModelPropertyColumn[]>(() => columnModel.getPro
 const templateList = ref<IPermissionTemplateItem[]>([]);
 
 const searchQs = useSearchQs({ key: 'filter', properties: searchFields.value });
+const sortParams = ref<{ sort: string; order: string }>({ sort: 'created_at', order: 'DESC' });
 
 const createState = reactive({
   isShow: false,
@@ -71,6 +72,19 @@ const deleteState = reactive({
 const createFormRef = useTemplateRef<typeof CreateForm>('createFormRef');
 const editFormRef = useTemplateRef<typeof EditForm>('editFormRef');
 
+const fetchList = async () => {
+  const { list = [], count } = await permissionTemplateStore.getPermissionTemplateList(
+    bizId.value,
+    currentVendor.value,
+    {
+      ...transformFlatCondition(condition.value, searchFields.value),
+      page: getPageParams(pagination, sortParams.value),
+    },
+  );
+  pagination.count = count;
+  templateList.value = list;
+};
+
 watch(
   () => route.query,
   async (query) => {
@@ -79,25 +93,13 @@ watch(
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
 
-    const sort = (query.sort || 'created_at') as string;
-    const order = (query.order || 'DESC') as string;
+    sortParams.value = {
+      sort: (query.sort || 'created_at') as string,
+      order: (query.order || 'DESC') as string,
+    };
 
-    // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
-    const newCondition = searchQs.get(query, {});
-    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
-    const isRefresh = query._t !== undefined;
-
-    if (conditionChanged || templateList.value.length === 0 || isRefresh) {
-      const { list = [], count } = await permissionTemplateStore.getPermissionTemplateList(
-        bizId.value,
-        currentVendor.value,
-        {
-          ...transformFlatCondition(condition.value, searchFields.value),
-          page: getPageParams(pagination, { sort, order }),
-        },
-      );
-      pagination.count = count;
-      templateList.value = list;
+    if (!query?.id) {
+      await fetchList();
     }
   },
   { immediate: true },

@@ -1,5 +1,5 @@
-import { PropType, defineComponent, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { PropType, defineComponent, ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { Button } from 'bkui-vue';
 import FirstLevelAccountDetail from '../../account-detail/first-level-account-detail';
@@ -10,15 +10,45 @@ import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { AccountLevelEnum, searchData, secondarySearchData } from '../constants';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
+import routerAction from '@/router/utils/action';
+import { MENU_BILL_MAIN_ACCOUNT_CREATE, MENU_BILL_ROOT_ACCOUNT_CREATE } from '@/constants/menu-symbol';
 
 export default defineComponent({
-  props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
+  props: { accountLevel: String as PropType<AccountLevelEnum> },
   setup(props) {
-    const router = useRouter();
     const route = useRoute();
     const { t } = useI18n();
 
     const { columns } = useColumns(props.accountLevel);
+
+    const businessMapStore = useBusinessMapStore();
+
+    // 加载业务列表
+    onMounted(async () => {
+      await businessMapStore.fetchBusinessMap();
+    });
+
+    // 响应式 searchData 函数
+    const getSearchData = () => {
+      if (props.accountLevel === AccountLevelEnum.FirstLevel) {
+        return searchData;
+      }
+
+      // 动态构建二级账号的搜索条件
+      return secondarySearchData.map((item) => {
+        if (item.id === 'bk_biz_id') {
+          return {
+            ...item,
+            children: businessMapStore.businessList.map((biz) => ({
+              id: biz.id,
+              name: biz.name,
+            })),
+          };
+        }
+        return { ...item };
+      });
+    };
 
     const isSideSliderShow = ref(false);
     const curAccount = ref<any>({});
@@ -46,7 +76,7 @@ export default defineComponent({
         ],
       },
       searchOptions: {
-        searchData: props.accountLevel === AccountLevelEnum.FirstLevel ? searchData : secondarySearchData,
+        searchData: getSearchData,
       },
       requestOption: {
         type: props.accountLevel === AccountLevelEnum.FirstLevel ? 'account/root_accounts' : 'account/main_accounts',
@@ -63,11 +93,11 @@ export default defineComponent({
               <Button
                 theme='primary'
                 onClick={() => {
-                  router.push({
-                    path:
+                  routerAction.redirect({
+                    name:
                       props.accountLevel === AccountLevelEnum.FirstLevel
-                        ? '/bill/account-manage/first-account'
-                        : '/bill/account-manage/second-account',
+                        ? MENU_BILL_ROOT_ACCOUNT_CREATE
+                        : MENU_BILL_MAIN_ACCOUNT_CREATE,
                     query: { ...route.query },
                   });
                 }}>

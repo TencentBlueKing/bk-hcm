@@ -72,11 +72,18 @@ type metric struct {
 	errCounter *prometheus.CounterVec
 }
 
-// GetTCloudRecordRoundTripper get record round tripper for tcloud
+// GetTCloudRecordRoundTripper get record round tripper for tcloud.
+//
+// This RoundTripper is wired into the TCloud SDK's HTTP transport (see
+// pkg/adaptor/tcloud/client.go), so the vendor dimension is fixed to
+// enumor.TCloud by design. For other clouds (huawei / aws / azure / gcp)
+// that don't expose a RoundTripper hook, use ObserveCloudAPI directly at
+// the SDK call site with the matching enumor.Vendor.
 func GetTCloudRecordRoundTripper(next http.RoundTripper) promhttp.RoundTripperFunc {
 	if next == nil {
 		next = http.DefaultTransport
 	}
+	const vendor = string(enumor.TCloud)
 	return func(req *http.Request) (*http.Response, error) {
 		action := strings.Join(req.Header["X-TC-Action"], ",")
 		region := strings.Join(req.Header["X-TC-Region"], ",")
@@ -87,24 +94,59 @@ func GetTCloudRecordRoundTripper(next http.RoundTripper) promhttp.RoundTripperFu
 			code = ret.Status
 		}
 
-		if err != nil || (ret != nil && ret.StatusCode != http.StatusOK) {
-			cloudApiMetric.errCounter.With(prometheus.Labels{
-				"vendor":    string(enumor.TCloud),
-				"endpoint":  req.Host,
-				"region":    region,
-				"api_name":  action,
-				"http_code": code,
-			}).Inc()
+		labels := prometheus.Labels{
+			"vendor":    vendor,
+			"endpoint":  req.Host,
+			"region":    region,
+			"api_name":  action,
+			"http_code": code,
 		}
-		cost := time.Since(start).Seconds()
-		cloudApiMetric.lagSec.With(
-			prometheus.Labels{
-				"vendor":    string(enumor.TCloud),
-				"endpoint":  req.Host,
-				"region":    region,
-				"api_name":  action,
-				"http_code": code,
-			}).Observe(cost)
+		if err != nil || (ret != nil && ret.StatusCode != http.StatusOK) {
+			cloudApiMetric.errCounter.With(labels).Inc()
+		}
+		cost := time.Since(start)
+		cloudApiMetric.lagSec.With(labels).Observe(cost.Seconds())
+
+		// Also emit the unified hcm_http_request_* metrics so cross-vendor
+		// dashboards can consume a single metric family. We intentionally
+		// keep the cloudapi_* metrics above for backward compatibility (kept
+		// label set unchanged) while adding the unified family with a
+		// bounded label cardinality (no http_code / region label here).
+		ObserveCloudAPI(vendor, action, cost, classifyCloudErr(err, ret))
 		return ret, err
 	}
+}
+
+// ObserveCloudAPI records a unified hcm_http_request_* sample for one
+// adaptor cloud API call. It can be called directly by SDK call-site
+// instrumentation in adaptors that don't use a RoundTripper hook (e.g.
+// huawei / aws / azure / gcp).
+//
+// vendor MUST be one of enumor.Vendor values (e.g. "tcloud", "huawei").
+// apiName MUST be a stable cloud API name (e.g. "DescribeLoadBalancers").
+// Raw URL paths or vendor-specific opaque ids MUST NOT be used.
+func ObserveCloudAPI(vendor, apiName string, cost time.Duration, errType metrics.ErrType) {
+	metrics.ObserveHTTPRequest(metrics.ComponentAdaptor, apiNameOrUnknown(apiName),
+		metrics.MethodSDK, vendor, cost, errType)
+}
+
+func apiNameOrUnknown(name string) string {
+	if name == "" {
+		return "unknown"
+	}
+	return name
+}
+
+// classifyCloudErr maps the (err, http.Response) pair from a RoundTrip into a
+// normalized metrics.ErrType. Non-2xx responses are classified as cloud_error
+// because the cloud API returned a structured error envelope; transport
+// errors fall through metrics.ClassifyError for timeout / network detection.
+func classifyCloudErr(err error, resp *http.Response) metrics.ErrType {
+	if err != nil {
+		return metrics.ClassifyError(err)
+	}
+	if resp != nil && resp.StatusCode != http.StatusOK {
+		return metrics.ErrTypeCloudError
+	}
+	return metrics.ErrTypeOK
 }

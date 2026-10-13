@@ -29,8 +29,10 @@ import (
 	"strings"
 	"time"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/version"
 
@@ -1187,11 +1189,135 @@ type TenantConfig struct {
 
 // ConcurrentConfig CLB import config
 type ConcurrentConfig struct {
-	CLBImportCount int `yaml:"clbImportCount"`
+	CLBImportCount int         `yaml:"clbImportCount"`
+	ClbCondSync    ClbCondSync `yaml:"clbCondSync"`
 }
 
 func (c *ConcurrentConfig) trySetDefault() {
 	if c.CLBImportCount == 0 {
 		c.CLBImportCount = 10
 	}
+	c.ClbCondSync.trySetDefault()
+}
+
+// validate ConcurrentConfig option.
+func (c ConcurrentConfig) validate() error {
+	return c.ClbCondSync.validate()
+}
+
+// ClbCondSync 负载均衡条件同步配置。
+type ClbCondSync struct {
+	// DeleteBatchSize 单个清理任务动作处理的负载均衡数量，必须大于 0。
+	DeleteBatchSize *int `yaml:"deleteBatchSize"`
+	// UpsertBatchSize 单个同步任务动作处理的负载均衡数量，必须大于 0。
+	UpsertBatchSize *int `yaml:"upsertBatchSize"`
+	// LargeUpsertThreshold 待同步负载均衡数量超过该阈值时改用 LargeUpsertBatchSize 分批，必须大于 0。
+	LargeUpsertThreshold *int `yaml:"largeUpsertThreshold"`
+	// LargeUpsertBatchSize 待同步数量超过阈值后，单个同步任务动作处理的负载均衡数量，必须大于 0。
+	LargeUpsertBatchSize *int `yaml:"largeUpsertBatchSize"`
+	// ListConcurrent 启动阶段单地域拉取云上简要信息的分页并发，必须大于 0。
+	ListConcurrent *int `yaml:"listConcurrent"`
+}
+
+func (c *ClbCondSync) trySetDefault() {
+	if c.DeleteBatchSize == nil {
+		c.DeleteBatchSize = cvt.ValToPtr(constant.DefaultCondSyncLbDeleteBatchSize)
+	}
+	if c.UpsertBatchSize == nil {
+		c.UpsertBatchSize = cvt.ValToPtr(constant.DefaultCondSyncLbUpsertBatchSize)
+	}
+	if c.LargeUpsertThreshold == nil {
+		c.LargeUpsertThreshold = cvt.ValToPtr(constant.DefaultCondSyncLbLargeUpsertThreshold)
+	}
+	if c.LargeUpsertBatchSize == nil {
+		c.LargeUpsertBatchSize = cvt.ValToPtr(constant.DefaultCondSyncLbLargeUpsertBatchSize)
+	}
+	if c.ListConcurrent == nil {
+		c.ListConcurrent = cvt.ValToPtr(constant.DefaultCondSyncLbListConcurrent)
+	}
+}
+
+// validate ClbCondSync option.
+func (c ClbCondSync) validate() error {
+	deleteBatchSize := cvt.PtrToVal(c.DeleteBatchSize)
+	if deleteBatchSize <= 0 {
+		return fmt.Errorf("clbCondSync.deleteBatchSize should be greater than 0, but got %d", deleteBatchSize)
+	}
+
+	upsertBatchSize := cvt.PtrToVal(c.UpsertBatchSize)
+	if upsertBatchSize <= 0 {
+		return fmt.Errorf("clbCondSync.upsertBatchSize should be greater than 0, but got %d", upsertBatchSize)
+	}
+
+	largeUpsertThreshold := cvt.PtrToVal(c.LargeUpsertThreshold)
+	if largeUpsertThreshold <= 0 {
+		return fmt.Errorf("clbCondSync.largeUpsertThreshold should be greater than 0, but got %d",
+			largeUpsertThreshold)
+	}
+
+	largeUpsertBatchSize := cvt.PtrToVal(c.LargeUpsertBatchSize)
+	if largeUpsertBatchSize <= 0 {
+		return fmt.Errorf("clbCondSync.largeUpsertBatchSize should be greater than 0, but got %d",
+			largeUpsertBatchSize)
+	}
+
+	listConcurrent := cvt.PtrToVal(c.ListConcurrent)
+	if listConcurrent <= 0 {
+		return fmt.Errorf("clbCondSync.listConcurrent should be greater than 0, but got %d", listConcurrent)
+	}
+
+	return nil
+}
+
+// AsyncFlowAndTaskCleanup 异步任务（async_flow / async_flow_task）历史数据定时清理配置。
+type AsyncFlowAndTaskCleanup struct {
+	// Enabled 是否开启清理，缺省视为开启。
+	Enabled *bool `yaml:"enabled"`
+	// IntervalMin 清理任务执行周期，单位：分钟，必须大于 0。
+	IntervalMin *int `yaml:"intervalMin"`
+	// RetentionDays 保留天数，updated_at 早于「当前时间 - RetentionDays」的记录被清理，必须大于 0。
+	RetentionDays *int `yaml:"retentionDays"`
+	// BatchIntervalMs 相邻两批之间的间隔，单位：毫秒，必须大于 0。
+	BatchIntervalMs *int `yaml:"batchIntervalMs"`
+}
+
+func (c *AsyncFlowAndTaskCleanup) trySetDefault() {
+	if c.Enabled == nil {
+		c.Enabled = cvt.ValToPtr(true)
+	}
+	if c.IntervalMin == nil {
+		c.IntervalMin = cvt.ValToPtr(constant.DefaultAsyncFlowCleanupIntervalMin)
+	}
+	if c.RetentionDays == nil {
+		c.RetentionDays = cvt.ValToPtr(constant.DefaultAsyncFlowCleanupRetentionDays)
+	}
+	if c.BatchIntervalMs == nil {
+		c.BatchIntervalMs = cvt.ValToPtr(constant.DefaultAsyncFlowCleanupBatchIntervalMs)
+	}
+}
+
+// validate AsyncFlowAndTaskCleanup option. 关闭清理开关时不再校验其余项。
+func (c AsyncFlowAndTaskCleanup) validate() error {
+	if !cvt.PtrToVal(c.Enabled) {
+		return nil
+	}
+
+	intervalMin := cvt.PtrToVal(c.IntervalMin)
+	if intervalMin <= 0 {
+		return fmt.Errorf("asyncFlowAndTaskCleanup.intervalMin should be greater than 0, but got %d", intervalMin)
+	}
+
+	retentionDays := cvt.PtrToVal(c.RetentionDays)
+	if retentionDays <= 0 {
+		return fmt.Errorf("asyncFlowAndTaskCleanup.retentionDays should be greater than 0, but got %d",
+			retentionDays)
+	}
+
+	batchIntervalMs := cvt.PtrToVal(c.BatchIntervalMs)
+	if batchIntervalMs <= 0 {
+		return fmt.Errorf("asyncFlowAndTaskCleanup.batchIntervalMs should be greater than 0, but got %d",
+			batchIntervalMs)
+	}
+
+	return nil
 }

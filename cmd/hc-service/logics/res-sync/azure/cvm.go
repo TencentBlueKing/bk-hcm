@@ -332,17 +332,20 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		if id, exsit := imageMap[converter.PtrToVal(one.CloudImageID)]; exsit {
 			imageID = id
 		}
-
 		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.AzureCvmExtension]{
 			CvmBatchUpdate: dataproto.CvmBatchUpdate{
-				ID:             id,
-				Name:           converter.PtrToVal(one.Name),
-				CloudVpcIDs:    []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
-				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
-				CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
-				SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
-				CloudImageID:   converter.PtrToVal(one.CloudImageID),
-				ImageID:        imageID,
+				ID:   id,
+				Name: converter.PtrToVal(one.Name),
+				// azure 可用区非地域概念，zone 不下发
+				Region:           converter.PtrToVal(one.Location),
+				CloudCreatedTime: times.ConvStdTimeFormat(converter.PtrToVal(one.TimeCreated)),
+				CloudVpcIDs:      []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
+				VpcIDs:           []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
+				CloudSubnetIDs:   cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
+				SubnetIDs:        subnetMap[converter.PtrToVal(one.ID)],
+				CloudImageID:     converter.PtrToVal(one.CloudImageID),
+				MachineType:      string(converter.PtrToVal(one.VMSize)),
+				ImageID:          imageID,
 				// 云上不支持该字段
 				Memo:                 nil,
 				Status:               converter.PtrToVal(one.Status),

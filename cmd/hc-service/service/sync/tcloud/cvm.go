@@ -99,6 +99,7 @@ func (hd *cvmHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
+
 	if _, err := hd.syncCli.CvmWithRelRes(kt, params, new(tcloud.SyncCvmWithRelResOption)); err != nil {
 		logs.Errorf("sync tcloud cvm with rel res failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err

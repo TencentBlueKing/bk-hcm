@@ -210,6 +210,52 @@ func (svc *service) GetTrainingJobInRes(cts *rest.Contexts) (interface{}, error)
 	return data, nil
 }
 
+// ListHyperParameterTuningJobsInRes handles the cloud-server SageMaker assume-role passthrough request.
+func (svc *service) ListHyperParameterTuningJobsInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerListHyperParameterTuningJobsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.ListHyperParameterTuningJobs(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to list aws assume role sagemaker hyperparameter tuning jobs failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
+// GetHyperParameterTuningJobInRes handles the cloud-server SageMaker assume-role passthrough request.
+func (svc *service) GetHyperParameterTuningJobInRes(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.AwsAssumeRoleSageMakerDescribeHyperParameterTuningJobReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := svc.authRootAccount(cts, req.RootAccountID); err != nil {
+		return nil, err
+	}
+	data, err := svc.client.HCService().Aws.SageMaker.GetHyperParameterTuningJob(cts.Kit, req)
+	if err != nil {
+		logs.Errorf(
+			"call hc-service to describe aws assume role sagemaker hyperparameter tuning job failed, err: %v, rid: %s",
+			err, cts.Kit.Rid,
+		)
+		return nil, err
+	}
+	return data, nil
+}
+
 // ListProcessingJobsInRes handles the cloud-server SageMaker assume-role passthrough request.
 func (svc *service) ListProcessingJobsInRes(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AwsAssumeRoleSageMakerListProcessingJobsReq)

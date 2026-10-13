@@ -22,6 +22,8 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
 
 ### 响应示例
 
+#### 成功响应
+
 ```json
 {
   "code": 0,
@@ -30,18 +32,29 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
     "id": "00000001",
     "source": "itsm",
     "sn": "REQ20260401000001",
-    "type": "create_cvm",
-    "status": "completed",
+    "type": "create_load_balancer",
+    "operation": "create_load_balancer",
+    "status": "pending",
     "applicant": "admin",
     "content": "{...}",
     "delivery_detail": "{...}",
-    "memo": "申请云主机",
+    "memo": "申请负载均衡",
     "creator": "admin",
     "reviser": "admin",
     "created_at": "2026-04-01T10:00:00Z",
     "updated_at": "2026-04-01T10:30:00Z",
     "ticket_url": "https://itsm.example.com/ticket/xxx"
   }
+}
+```
+
+#### 错误响应（单据不存在/无权限/不归属该业务）
+
+```json
+{
+  "code": 2000003,
+  "message": "application not found",
+  "data": null
 }
 ```
 
@@ -58,9 +71,10 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/applications/{application_id}
 | 参数名称            | 参数类型   | 描述                                                                                           |
 |-----------------|--------|----------------------------------------------------------------------------------------------|
 | id              | string | 申请ID                                                                                         |
-| source          | string | 来源（枚举值：itsm、bpaas）                                                                          |
+| source          | string | 来源（枚举值：itsm）                                                                                  |
 | sn              | string | 序列号                                                                                          |
-| type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk）                                      |
+| type            | string | 申请类型（枚举值：add_account、create_cvm、create_vpc、create_disk、create_load_balancer）                 |
+| operation       | string | 操作类型（枚举值：add_account、create_cvm、create_vpc、create_disk、create_load_balancer）                 |
 | status          | string | 申请状态（枚举值：pending、pass、rejected、cancelled、delivering、completed、deliver_partial、deliver_error） |
 | applicant       | string | 申请人                                                                                          |
 | content         | string | 申请内容（已脱敏）                                                                                    |

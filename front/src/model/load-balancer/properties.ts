@@ -34,13 +34,13 @@ export default [
           if (Array.isArray(value) && value.length > 1) {
             return {
               op: QueryRuleOPEnum.OR,
-              rules: value.map((val) => ({ field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: val })),
+              rules: value.map((val) => ({ field: 'domain', op: QueryRuleOPEnum.CS, value: val })),
             };
           }
           if (Array.isArray(value) && value.length === 1) {
-            return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: value[0] };
+            return { field: 'domain', op: QueryRuleOPEnum.CS, value: value[0] };
           }
-          return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value };
+          return { field: 'domain', op: QueryRuleOPEnum.CS, value };
         },
       },
     },

@@ -162,3 +162,11 @@ defineExpose({
     </template>
   </component>
 </template>
+
+<style lang="scss" scoped>
+.bk-ediatable-select {
+  :deep(.bk-select-tag) {
+    background-color: transparent;
+  }
+}
+</style>

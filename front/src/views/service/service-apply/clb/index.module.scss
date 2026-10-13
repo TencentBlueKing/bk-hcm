@@ -39,6 +39,28 @@
     }
   }
 
+  .exclusive-cluster-config {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .exclusive-cluster-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    :global(.bk-select) {
+      flex: 1;
+      min-width: 0;
+    }
+
+    :global(.bk-checkbox) {
+      width: 88px;
+      flex-shrink: 0;
+    }
+  }
+
   .simpleShowContainer {
     display: flex;
     height: 40px;

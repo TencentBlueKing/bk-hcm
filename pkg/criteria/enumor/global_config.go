@@ -25,6 +25,8 @@ type GlobalConfigType string
 const (
 	// GlobalConfigTypeCloudSync 云资源同步相关配置
 	GlobalConfigTypeCloudSync GlobalConfigType = "cloud_sync"
+	// GlobalConfigTypeGPUMachineType GPU 机型清单配置，config_key 为云厂商，config_value 为机型字符串数组
+	GlobalConfigTypeGPUMachineType GlobalConfigType = "gpu_machine_type"
 )
 
 // GlobalConfigKeyCloudSync cloud sync global config key
@@ -34,3 +36,20 @@ const (
 	// GlobalConfigKeyCloudSyncBizIDs 云资源同步业务白名单，config_value 为 JSON 对象 {"tenantID": [bizID1, bizID2], ...}
 	GlobalConfigKeyCloudSyncBizIDs GlobalConfigKeyCloudSync = "sync_biz_ids"
 )
+
+// GlobalConfigKeyGPUMachineType GPU 机型清单配置，config_key 为云厂商
+type GlobalConfigKeyGPUMachineType string
+
+const (
+	// GlobalConfigKeyHuaweiGPUPrefix 华为云GPU机型前缀
+	GlobalConfigKeyHuaweiGPUPrefix GlobalConfigKeyGPUMachineType = "huawei_gpu_machine_prefix"
+	// GlobalConfigKeyTcloudGPUPrefix 腾讯云 GPU 机型清单配置，config_key 为云厂商
+	GlobalConfigKeyTcloudGPUPrefix GlobalConfigKeyGPUMachineType = "tcloud_gpu_machine_prefix"
+	// GlobalConfigKeyGcpGPUPrefix 谷歌云 GPU 机型清单配置，config_key 为云厂商
+	GlobalConfigKeyGcpGPUPrefix GlobalConfigKeyGPUMachineType = "gcp_gpu_machine_prefix"
+	// GlobalConfigKeyAws 亚马逊云 GPU 机型清单配置，config_key 为云厂商
+	GlobalConfigKeyAws GlobalConfigKeyGPUMachineType = "aws"
+	// GlobalConfigKeyAzureGPUPrefix 微软 Azure 云 GPU 机型清单配置，config_key 为云厂商
+	GlobalConfigKeyAzureGPUPrefix GlobalConfigKeyGPUMachineType = "azure_gpu_machine_prefix"
+)
+

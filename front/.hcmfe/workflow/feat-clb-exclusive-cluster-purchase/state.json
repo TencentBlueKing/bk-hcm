@@ -1,0 +1,166 @@
+{
+  "id": "feat-clb-exclusive-cluster-purchase",
+  "title": "CLB 独占集群购买、单据与详情适配",
+  "currentStage": "test",
+  "createdAt": "2026-09-16T06:57:07.740Z",
+  "updatedAt": "2026-09-18T02:48:23.906Z",
+  "artifacts": {
+    "prd": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/prd.md",
+        "kind": "file",
+        "addedAt": "2026-09-16T07:03:45.973Z"
+      }
+    ],
+    "design": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/design.md",
+        "kind": "file",
+        "addedAt": "2026-09-16T07:09:49.221Z"
+      }
+    ],
+    "api": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/api.md",
+        "kind": "file",
+        "addedAt": "2026-09-16T07:22:27.628Z"
+      }
+    ],
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/coding.md",
+        "kind": "file",
+        "addedAt": "2026-09-17T02:20:42.158Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/test.md",
+        "kind": "file",
+        "addedAt": "2026-09-18T01:58:12.098Z"
+      },
+      {
+        "ref": ".hcmfe/workflow/feat-clb-exclusive-cluster-purchase/e2e.spec.ts",
+        "kind": "file",
+        "addedAt": "2026-09-18T02:21:02.122Z"
+      }
+    ]
+  },
+  "approvals": {
+    "prd": {
+      "stage": "prd",
+      "approvedAt": "2026-09-16T07:06:55.548Z",
+      "note": "用户确认 PRD 可作为 Design 阶段唯一依据"
+    },
+    "design": {
+      "stage": "design",
+      "approvedAt": "2026-09-16T07:20:33.434Z",
+      "note": "用户确认 Design 可作为 API 阶段唯一依据"
+    },
+    "api": {
+      "stage": "api",
+      "approvedAt": "2026-09-17T02:18:38.499Z",
+      "note": "用户确认更新后的 API 文档可作为 Coding 阶段唯一依据；本次口径暂不记录经验候选"
+    },
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-09-18T02:48:23.904Z",
+      "note": "用户确认：D-01 修复（独占集群 FormItem 校验改为项级 rules）已复验，23 条 E2E 全绿，coding 结果推进回 test"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "prd",
+      "at": "2026-09-16T06:57:07.740Z"
+    },
+    {
+      "from": "prd",
+      "to": "design",
+      "at": "2026-09-16T07:06:55.548Z",
+      "note": "用户确认 PRD 可作为 Design 阶段唯一依据"
+    },
+    {
+      "from": "design",
+      "to": "api",
+      "at": "2026-09-16T07:20:33.434Z",
+      "note": "用户确认 Design 可作为 API 阶段唯一依据"
+    },
+    {
+      "from": "api",
+      "to": "coding",
+      "at": "2026-09-17T02:18:38.499Z",
+      "gitHead": "c5b61eff7862234851230f61cbb1b2cf0317d5e0",
+      "note": "用户确认更新后的 API 文档可作为 Coding 阶段唯一依据；本次口径暂不记录经验候选"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-09-18T01:53:18.727Z",
+      "note": "用户确认 Coding 结果进入 Test，先生成验证清单"
+    },
+    {
+      "from": "test",
+      "to": "coding",
+      "at": "2026-09-18T02:27:09.593Z",
+      "gitHead": "d12901a61014407e87e4b8508d91575d681840a1",
+      "note": "Test 阶段发现 P0 缺陷 D-01：独占集群 FormItem 的 required 恒判为空，独占型无法保存/提交（P0-02 自动化失败）。用户确认回退 coding 修复后重跑 e2e.spec.ts 并补齐被阻塞用例。"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-09-18T02:48:23.904Z",
+      "note": "用户确认：D-01 修复（独占集群 FormItem 校验改为项级 rules）已复验，23 条 E2E 全绿，coding 结果推进回 test"
+    }
+  ],
+  "branch": "feat-clb-exclusive-cluster-purchase",
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138114049",
+    "parentId": "1069995598133757341",
+    "items": [
+      {
+        "workspaceId": "69995598",
+        "objectType": "story",
+        "itemId": "1069995598138114049",
+        "parentId": "1069995598133757341"
+      },
+      {
+        "workspaceId": "69995598",
+        "objectType": "story",
+        "itemId": "1069995598138114062",
+        "parentId": "1069995598133757341"
+      },
+      {
+        "workspaceId": "69995598",
+        "objectType": "story",
+        "itemId": "1069995598138114066",
+        "parentId": "1069995598133757341"
+      }
+    ]
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/api/load_balancers/apply-clb/types.ts",
+        "src/api/load_balancers/apply-clb/index.ts",
+        "src/views/service/service-apply/clb/index.tsx",
+        "src/views/service/service-apply/clb/hooks/useRenderForm.tsx",
+        "src/views/service/service-apply/clb/hooks/useExclusiveCluster.ts",
+        "src/views/service/service-apply/clb/children/bottom-bar.tsx",
+        "src/views/service/service-apply/clb/children/calc-price.tsx",
+        "src/views/service/service-apply/components/common/BandwidthPackageSelector/index.tsx",
+        "src/views/service/service-apply/components/common/configuration-list/index.vue",
+        "src/views/service/service-apply/clb/index.module.scss",
+        "src/views/ticket/children/apply-detail/clb.vue",
+        "src/store/load-balancer/clb.ts",
+        "src/views/business/load-balancer/clb-view/specific-clb-manager/clb-detail/index.tsx",
+        "e2e.spec.ts"
+      ],
+      "contentFingerprint": "1103f36efac9b9a2fb3e8a625c525a11975b7c70",
+      "codeBaseline": "82b095ef095ca1198ebb45e98d82dea7502371d7",
+      "seatedAt": "2026-09-18T02:31:55.878Z"
+    }
+  }
+}

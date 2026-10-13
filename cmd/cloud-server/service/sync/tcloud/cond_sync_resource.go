@@ -20,6 +20,8 @@
 package tcloud
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/region"
 	"hcm/pkg/api/hc-service/sync"
@@ -36,29 +38,90 @@ type CondSyncParams struct {
 	Regions   []string `json:"regions,omitempty" validate:"max=20"`
 	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
+	// BkBizID 业务入口下的业务ID，为 nil 表示资源入口
+	BkBizID    *int64                `json:"bk_biz_id,omitempty"`
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
 }
 
 // CondSyncFunc sync resource by given condition
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
-var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.RegionCloudResType:             CondSyncRegion,
-	enumor.ZoneCloudResType:               CondSyncZone,
-	enumor.LoadBalancerCloudResType:       CondSyncLoadBalancer,
-	enumor.SecurityGroupCloudResType:      CondSyncSecurityGroup,
-	enumor.SubAccountCloudResType:         CondSyncSubAccount,
-	enumor.PermissionTemplateCloudResType: CondSyncPermissionTemplate,
+// CondAsyncFunc asynchronously syncs a resource by the given condition.
+type CondAsyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) (any, error)
+
+// CondSyncRoute defines the selected conditional sync route.
+type CondSyncRoute struct {
+	// SyncFunc is the synchronous conditional sync function.
+	SyncFunc CondSyncFunc
+	// AsyncFunc is the asynchronous conditional sync function.
+	AsyncFunc CondAsyncFunc
 }
 
-// GetCondSyncFunc ...
-func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bool) {
-	syncFunc, ok = condSyncFuncMap[res]
-	return syncFunc, ok
+var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
+	enumor.RegionCloudResType:                       CondSyncRegion,
+	enumor.ZoneCloudResType:                         CondSyncZone,
+	enumor.LoadBalancerExclusiveClusterCloudResType: CondSyncExclusiveCluster,
+	enumor.LoadBalancerCloudResType:                 CondSyncLoadBalancer,
+	enumor.SecurityGroupCloudResType:                CondSyncSecurityGroup,
+	enumor.SubAccountCloudResType:                   CondSyncSubAccount,
+	enumor.PermissionTemplateCloudResType:           CondSyncPermissionTemplate,
+}
+
+var condAsyncFuncMap = map[enumor.CloudResourceType]CondAsyncFunc{
+	enumor.LoadBalancerCloudResType: AsyncCondSyncLoadBalancer,
+}
+
+// GetCondSyncRoute gets the conditional sync route for a resource.
+func GetCondSyncRoute(res enumor.CloudResourceType) (*CondSyncRoute, bool) {
+	syncFunc, syncOK := condSyncFuncMap[res]
+	asyncFunc, asyncOK := condAsyncFuncMap[res]
+	if !syncOK && !asyncOK {
+		return nil, false
+	}
+
+	return &CondSyncRoute{
+		SyncFunc:  syncFunc,
+		AsyncFunc: asyncFunc,
+	}, true
+}
+
+// HasAsync checks whether the selected route has an asynchronous override.
+func (r *CondSyncRoute) HasAsync() bool {
+	return r != nil && r.AsyncFunc != nil
+}
+
+// CondSyncExclusiveCluster ...
+func CondSyncExclusiveCluster(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.TCloudSyncReq{
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloud.Clb.SyncExclusiveCluster(kt, &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync exclusive cluster failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync exclusive cluster end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+	}
+	return nil
 }
 
 // CondSyncLoadBalancer ...
 func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	// 同步CLB前先同步独占集群，保证独占集群数据不落后于CLB，失败则阻断本次CLB同步。
+	// 只传 account_id/regions，不透传 CLB 的 cloud_ids/tag_filters。
+	if err := CondSyncExclusiveCluster(kt, cliSet, &CondSyncParams{
+		AccountID: params.AccountID,
+		Regions:   params.Regions,
+	}); err != nil {
+		logs.Errorf("[%s] sync exclusive cluster before conditional sync load balancer failed, err: %v, "+
+			"account: %s, regions: %v, rid: %s", enumor.TCloud, err, params.AccountID, params.Regions, kt.Rid)
+		return err
+	}
+
 	syncReq := sync.TCloudSyncReq{
 		AccountID:  params.AccountID,
 		CloudIDs:   params.CloudIDs,
@@ -73,6 +136,29 @@ func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyn
 			return err
 		}
 		logs.Infof("[%s] conditional sync load balancer end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncSubnet ...
+func CondSyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	if len(params.TagFilters) > 0 {
+		return fmt.Errorf("tcloud subnet conditional sync does not support tag_filters")
+	}
+
+	syncReq := sync.TCloudSyncReq{
+		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloud.Subnet.SyncSubnet(kt.Ctx, kt.Header(), &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync subnet failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync subnet end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
 	}
 	return nil
 }

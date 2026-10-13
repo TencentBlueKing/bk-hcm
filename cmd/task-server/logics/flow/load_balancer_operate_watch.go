@@ -86,9 +86,16 @@ func (act FlowSlaveOperateWatchAction) Run(kt run.ExecuteKit, params interface{}
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	end := time.Now().Add(OperateWatchTimeout)
+	logs.Infof("flow slave operate watch start, mainFlowID: %s, resID: %s, resType: %s, subResType: %s, "+
+		"taskType: %s, rid: %s", opt.FlowID, opt.ResID, opt.ResType, opt.SubResType, opt.TaskType, kt.Kit().Rid)
+
+	start := time.Now()
+	end := start.Add(OperateWatchTimeout)
 	for {
 		if time.Now().After(end) {
+			logs.Errorf("flow slave operate watch wait timeout, mainFlowID: %s, resID: %s, resType: %s, "+
+				"taskType: %s, waitedSec: %.3f, rid: %s", opt.FlowID, opt.ResID, opt.ResType, opt.TaskType,
+				time.Since(start).Seconds(), kt.Kit().Rid)
 			return nil, fmt.Errorf("wait timeout, async task flow: %s is running", opt.FlowID)
 		}
 
@@ -127,12 +134,21 @@ func (act FlowSlaveOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *Fl
 
 	switch flowInfo.State {
 	case enumor.FlowSuccess, enumor.FlowCancel, enumor.FlowFailed:
+		// 主flow已终态，terminalObservedDelaySec 是主flow终态到watch观察到该终态的延迟
+		logs.Infof("watch observed main flow terminal state, mainFlowID: %s, resID: %s, resType: %s, state: %s, "+
+			"terminalObservedDelaySec: %.3f, rid: %s", opt.FlowID, opt.ResID, opt.ResType, flowInfo.State,
+			elapsedSecSince(string(flowInfo.UpdatedAt)), kt.Kit().Rid)
+
 		// 当Flow失败时，检查资源锁定是否超时
 		resFlowLockList, err := act.queryResFlowLock(kt, opt)
 		if err != nil {
 			return false, err
 		}
 		if len(resFlowLockList) == 0 {
+			// 主flow已终态，但该flow名下没有锁记录，说明锁已被提前释放或从未创建成功，属异常
+			logs.Warnf("main flow reached terminal state but no res flow lock owned by it, mainFlowID: %s, "+
+				"resID: %s, resType: %s, state: %s, rid: %s", opt.FlowID, opt.ResID, opt.ResType, flowInfo.State,
+				kt.Kit().Rid)
 			return true, nil
 		}
 
@@ -149,8 +165,18 @@ func (act FlowSlaveOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *Fl
 		}
 
 		// 解锁资源
-		err = act.processUnlockResFlow(kt, opt, resStatus)
-		return true, err
+		if err = act.processUnlockResFlow(kt, opt, resStatus); err != nil {
+			logs.Errorf("unlock res flow failed, err: %v, mainFlowID: %s, resID: %s, resType: %s, resStatus: %s, "+
+				"rid: %s", err, opt.FlowID, opt.ResID, opt.ResType, resStatus, kt.Kit().Rid)
+			return true, err
+		}
+
+		// terminalToUnlockSec 是主flow终态到锁真正释放的总延迟，撞锁问题的时间窗即落在这段
+		logs.Infof("unlock res flow success, mainFlowID: %s, resID: %s, resType: %s, resStatus: %s, "+
+			"terminalToUnlockSec: %.3f, rid: %s", opt.FlowID, opt.ResID, opt.ResType, resStatus,
+			elapsedSecSince(string(flowInfo.UpdatedAt)), kt.Kit().Rid)
+
+		return true, nil
 	case enumor.FlowInit:
 		// 需要检查资源是否已锁定
 		resFlowLockList, err := act.queryResFlowLock(kt, opt)
@@ -164,9 +190,14 @@ func (act FlowSlaveOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *Fl
 		// 如已锁定资源，则需要更新Flow状态为Pending
 		err = act.updateFlowStateByCAS(kt.Kit(), opt.FlowID, enumor.FlowInit, enumor.FlowPending)
 		if err != nil {
-			logs.Errorf("call taskserver to update flow state failed, err: %v, flowID: %s", err, opt.FlowID)
+			logs.Errorf("call taskserver to update flow state failed, err: %v, mainFlowID: %s, resID: %s, "+
+				"resType: %s, rid: %s", err, opt.FlowID, opt.ResID, opt.ResType, kt.Kit().Rid)
 			return false, err
 		}
+
+		logs.Infof("main flow state updated to pending after lock confirmed, mainFlowID: %s, resID: %s, "+
+			"resType: %s, rid: %s", opt.FlowID, opt.ResID, opt.ResType, kt.Kit().Rid)
+
 		return false, nil
 	default:
 		return false, nil
@@ -182,6 +213,17 @@ func (act FlowSlaveOperateWatchAction) processUnlockResFlow(kt run.ExecuteKit, o
 		Status:  status,
 	}
 	return actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
+}
+
+// elapsedSecSince 返回从 timeStr 表示的时刻到当前的秒数，timeStr 为 DB 时间字段（RFC3339）。
+// 解析失败时返回 -1，表示该耗时不可用，避免因日志取值影响主流程。
+func elapsedSecSince(timeStr string) float64 {
+	t, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return -1
+	}
+
+	return time.Since(t).Seconds()
 }
 
 func (act FlowSlaveOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *FlowSlaveOperateWatchOption) (
@@ -223,6 +265,10 @@ func (act FlowSlaveOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID 
 			"source: %s, target: %s, rid: %s", err, flowID, source, target, kt.Rid)
 		return err
 	}
+
+	logs.Infof("flow state updated by cas success, flowID: %s, state: %s -> %s, rid: %s",
+		flowID, source, target, kt.Rid)
+
 	return nil
 }
 

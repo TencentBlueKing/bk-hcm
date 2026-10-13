@@ -82,6 +82,50 @@ export interface SpecAvailability {
   Availability?: string;
 }
 
+export type ExclusiveClusterType = 'TGW' | 'STGW';
+
+export interface ExclusiveClusterItem {
+  cloud_cluster_id: string;
+  cluster_id: string;
+  cluster_name: string;
+  egress: string;
+  isp: string;
+  zone: string;
+}
+
+export interface ExclusiveClusterTag {
+  cluster_tag: string;
+  cluster_type: ExclusiveClusterType;
+  clusters: ExclusiveClusterItem[];
+}
+
+// 独占集群标签查询支持的运营商，仅三网直连；BGP 等其它类型不支持独占集群
+export type ExclusiveClusterIsp = 'CMCC' | 'CUCC' | 'CTCC';
+
+export interface ExclusiveClusterTagsReqData {
+  bk_biz_id: number;
+  account_id: string;
+  region: string;
+  // 运营商类型，仅支持 CMCC / CUCC / CTCC
+  isp: ExclusiveClusterIsp;
+  // 主可用区：随机可用区不传；单可用区集群填一个元素；主备集群填主可用区
+  zones?: string[];
+  // 备可用区：主备集群填备可用区，单可用区集群传空数组
+  back_zones: string[];
+  cluster_type?: ExclusiveClusterType | '';
+}
+
+export type ExclusiveClusterTagsResp = IQueryResData<{ details: ExclusiveClusterTag[] }>;
+
+export interface ExclusiveClusterIdleVipsReqData {
+  bk_biz_id: number;
+  account_id: string;
+  region: string;
+  cloud_cluster_id: string;
+}
+
+export type ExclusiveClusterIdleVipsResp = IQueryResData<{ count: number; details: string[] }>;
+
 // 申请负载均衡 - 输入参数
 export interface ApplyClbModel {
   // 业务ID
@@ -120,6 +164,12 @@ export interface ApplyClbModel {
   bandwidth_package_id?: string;
   // 负载均衡规格类型: 性能容量型规格, 留空为共享型
   sla_type?: string;
+  // 是否独占型：1是、0否
+  exclusive?: 0 | 1;
+  // 四层独占集群云上ID
+  cloud_cluster_ids?: string[];
+  // 七层独占集群标签
+  cluster_tag?: string;
   // // 按月付费自动续费(暂不支持包月)
   // auto_renew?: boolean;
   // 购买数量
@@ -132,7 +182,14 @@ export interface ApplyClbModel {
   vendor: VendorEnum;
   // 用户网络类型
   account_type: NetworkAccountType;
-  // 负载均衡规格类型, 0：共享型 1：性能容量型（仅前端使用）
-  slaType: '0' | '1';
+  // 负载均衡规格类型, 0：共享型 1：性能容量型 2：独占型（仅前端使用）
+  slaType: '0' | '1' | '2';
+  // 四层/七层独占集群配置（仅前端使用）
+  enable_l4?: boolean;
+  enable_l7?: boolean;
+  l4_cluster_tag?: string;
+  l4_cluster_id?: string;
+  l4_vip?: string;
+  exclusive_cluster_tags?: ExclusiveClusterTag[];
   [key: string]: any;
 }

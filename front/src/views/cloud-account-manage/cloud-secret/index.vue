@@ -108,12 +108,7 @@ watch(
       order: (query.order || 'DESC') as string,
     };
 
-    // 判断是否只是分页/排序变化（不需要重新拉取全量数据）
-    const newCondition = searchQs.get(query, {});
-    const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(condition.value);
-    const isRefresh = query._t !== undefined;
-
-    if (conditionChanged || tableData.value.length === 0 || isRefresh) {
+    if (!query?.id) {
       await fetchList();
     }
   },

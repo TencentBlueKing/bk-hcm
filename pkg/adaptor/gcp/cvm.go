@@ -391,6 +391,14 @@ func buildCreateCvmReq(opt *typecvm.GcpCreateOption, script string) *compute.Bul
 			})
 		}
 	}
+
+	// onHostMaintenance 由上层指定，为空时不下发、使用 GCP 默认值（MIGRATE）。
+	// GPU 机型不支持热迁移，上层会指定为 TERMINATE，否则 GCP 会拒绝创建请求。
+	if opt.OnHostMaintenance != "" {
+		req.InstanceProperties.Scheduling = &compute.Scheduling{
+			OnHostMaintenance: string(opt.OnHostMaintenance),
+		}
+	}
 	return req
 }
 
@@ -513,25 +521,52 @@ func (h *createCvmPollingHandler) Done(items []*compute.Operation) (bool, *polle
 	}
 	flag := true
 	for _, item := range items {
-		if item.OperationType == "insert" && item.Status == "DONE" {
-			result.SuccessCloudIDs = append(result.SuccessCloudIDs, strconv.FormatUint(item.TargetId, 10))
+		if item.OperationType != "insert" {
 			continue
 		}
 
-		if item.OperationType == "insert" && item.Status == "PENDING" {
+		cloudID := strconv.FormatUint(item.TargetId, 10)
+		switch item.Status {
+		case "DONE":
+			// 操作虽已结束，但仍可能失败（如配额不足、GPU 资源不可用、机型校验失败等），
+			// 失败详情在 item.Error 中，需识别并归类为失败，避免把失败实例误判为创建成功。
+			if item.Error != nil {
+				result.FailedCloudIDs = append(result.FailedCloudIDs, cloudID)
+				result.FailedMessage = gcpOperationErrMsg(item)
+				continue
+			}
+			result.SuccessCloudIDs = append(result.SuccessCloudIDs, cloudID)
+		case "PENDING", "RUNNING":
 			flag = false
-			result.UnknownCloudIDs = append(result.UnknownCloudIDs, strconv.FormatUint(item.TargetId, 10))
-			continue
-		}
-
-		if item.OperationType == "insert" && item.Status == "RUNNING" {
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, cloudID)
+		default:
 			flag = false
-			result.UnknownCloudIDs = append(result.UnknownCloudIDs, strconv.FormatUint(item.TargetId, 10))
-			continue
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, cloudID)
 		}
 	}
 
 	return flag, result
+}
+
+// gcpOperationErrMsg extracts a human-readable error message from a failed compute operation.
+func gcpOperationErrMsg(op *compute.Operation) string {
+	if op == nil {
+		return ""
+	}
+
+	msgs := make([]string, 0)
+	if op.HttpErrorMessage != "" {
+		msgs = append(msgs, op.HttpErrorMessage)
+	}
+	if op.Error != nil {
+		for _, e := range op.Error.Errors {
+			if e == nil {
+				continue
+			}
+			msgs = append(msgs, fmt.Sprintf("code: %s, message: %s", e.Code, e.Message))
+		}
+	}
+	return strings.Join(msgs, "; ")
 }
 
 func (h *createCvmPollingHandler) Poll(client *Gcp, kt *kit.Kit, operGroupIDs []*string) ([]*compute.Operation, error) {

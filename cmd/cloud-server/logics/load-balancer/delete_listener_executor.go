@@ -474,7 +474,7 @@ func (c *BatchDeleteListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowBatchTaskDeleteListener,
-		ShareData: tableasync.NewShareData(map[string]string{
+		ShareData: NewSubmitFlowShareData(c.bkBizID, c.vendor, ListenerDelete, map[string]string{
 			"lb_id": lbID,
 		}),
 		Tasks:       flowTasks,

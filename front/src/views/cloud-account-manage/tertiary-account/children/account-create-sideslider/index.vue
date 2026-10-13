@@ -415,7 +415,7 @@ const receiveEmailRules = computed(() => [
                     :display="{ on: 'cell' }"
                     collapse-tags
                     multiple
-                    :rules="[{ validator: (v: any) => (Boolean(v?.length)), message: '请选择权限模板' }]"
+                    :rules="[{ validator: (v: any) => Array.isArray(v) ? v.length > 0 : v != null && v !== '', message: '请选择权限模板' }]"
                   ></hcm-form-list>
                 </td>
                 <td>

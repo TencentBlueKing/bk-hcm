@@ -41,6 +41,13 @@ func InitSecurityGroupService(c *capability.Capability) {
 		cmdbClient: c.CmdbCli,
 	}
 	h := rest.NewHandler()
+	resService(h, svc)
+	bizService(h, svc)
+	initSecurityGroupServiceHooks(svc, h)
+	h.Load(c.WebService)
+}
+
+func resService(h *rest.Handler, svc *securityGroupSvc) {
 	// 资源下安全组相关接口
 	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
@@ -71,6 +78,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateSecurityGroupRule)
 	h.Add("BatchUpdateSecurityGroupRule", http.MethodPut,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update", svc.BatchUpdateSecurityGroupRule)
+	h.Add("OverwriteSecurityGroupRule", http.MethodPut,
+		"/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/overwrite", svc.OverwriteSecurityGroupRule)
 	h.Add("DeleteSecurityGroupRule", http.MethodDelete,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
@@ -110,9 +119,6 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListSGRelLB", http.MethodPost,
 		"/security_groups/{sg_id}/related_resources/load_balancers/list",
 		svc.ListSGRelLB)
-	bizService(h, svc)
-	initSecurityGroupServiceHooks(svc, h)
-	h.Load(c.WebService)
 }
 
 func bizService(h *rest.Handler, svc *securityGroupSvc) {
@@ -155,6 +161,9 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("BatchUpdateBizSGRule", http.MethodPut,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update",
 		svc.BatchUpdateBizSGRule)
+	h.Add("OverwriteBizSGRule", http.MethodPut,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/overwrite",
+		svc.OverwriteBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 

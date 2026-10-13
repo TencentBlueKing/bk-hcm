@@ -64,8 +64,8 @@ export const useCommonStore = defineStore({
       { type: 'cert', action: 'delete', id: 'biz_cert_resource_delete', bk_biz_id: 0 }, // 业务 证书删除
 
       // 账号管理
-      { type: 'root_account', action: 'find', id: 'root_account_find' }, // 云账号管理 - 一级账号
-      { type: 'main_account', action: 'find', id: 'main_account_find' }, // 云账号管理 - 二级账号
+      { type: 'root_account', action: 'find', id: 'root_account_find', path: '/bill/root-account' }, // 资源运营 - 一级账号
+      { type: 'main_account', action: 'find', id: 'main_account_find', path: '/bill/main-account' }, // 资源运营 - 二级账号
       { type: 'main_account', action: 'update', id: 'main_account_edit' }, // 云账号管理 - 二级账号编辑
       { type: 'account_bill', action: 'find', id: 'account_bill_find' }, // 云账单管理
 

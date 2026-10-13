@@ -105,7 +105,8 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error 
 				BkCloudID: converter.ValToPtr(cvmInfo.BkCloudID),
 			})
 		}
-		update := &dataproto.CvmCommonInfoBatchUpdateReq{Cvms: updateCvms}
+		// 考虑代码复用性将填充operator放到了下层，这里SetOperator为true代表下游设置operator。
+		update := &dataproto.CvmCommonInfoBatchUpdateReq{Cvms: updateCvms, SetOperator: true}
 		if err := cli.Global.Cvm.BatchUpdateCvmCommonInfo(kt, update); err != nil {
 			logs.Errorf("batch update cvm common info failed, err: %v, req: %v, rid: %s", err, update, kt.Rid)
 			return err

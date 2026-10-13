@@ -105,6 +105,27 @@ type AwsDescribeTrainingJobOption struct {
 	TrainingJobName string
 }
 
+// AwsListHyperParameterTuningJobsOption defines list filters for hyperparameter tuning jobs.
+type AwsListHyperParameterTuningJobsOption struct {
+	Region                 string
+	CreationTimeAfter      *time.Time
+	CreationTimeBefore     *time.Time
+	LastModifiedTimeAfter  *time.Time
+	LastModifiedTimeBefore *time.Time
+	MaxResults             *int32
+	NameContains           string
+	NextToken              *string
+	SortBy                 string
+	SortOrder              string
+	StatusEquals           string
+}
+
+// AwsDescribeHyperParameterTuningJobOption defines the hyperparameter tuning job to describe.
+type AwsDescribeHyperParameterTuningJobOption struct {
+	Region                      string
+	HyperParameterTuningJobName string
+}
+
 // AwsListProcessingJobsOption defines list filters for processing jobs.
 type AwsListProcessingJobsOption struct {
 	Region                 string

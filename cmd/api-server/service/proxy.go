@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/serviced"
 
 	"github.com/emicklei/go-restful/v3"
@@ -82,9 +83,21 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	rid := r.Header.Get(constant.RidKey)
 	start := time.Now()
 
+	// http_request_* observation: api-server doesn't have static route templates,
+	// so the request URL path is normalized (id-like segments replaced with {id})
+	// to keep label cardinality bounded. errType is set on each early-return path
+	// or derived from the upstream response status code on success path.
+	endpoint := metrics.NormalizeEndpoint(r.URL.Path)
+	errType := metrics.ErrTypeOK
+	defer func() {
+		metrics.ObserveHTTPRequest(metrics.ComponentAPIServer, endpoint, r.Method,
+			metrics.VendorNone, time.Since(start), errType)
+	}()
+
 	if err := p.prepareRequest(req); err != nil {
 		_, _ = fmt.Fprintf(w, errf.NewFromErr(http.StatusNotFound, err).Error())
 		logs.Errorf("prepare request to proxy failed, err: %v, rid: %s", err, rid)
+		errType = metrics.ErrTypeInvalidParam
 		return
 	}
 
@@ -93,6 +106,7 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("new proxy request[%s] failed, err: %v, rid: %s", url, err, rid)
+		errType = metrics.ErrTypeHCMError
 		return
 	}
 
@@ -106,6 +120,7 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	if err != nil {
 		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("do request[%s url: %s] failed, err: %v, rid: %s", r.Method, url, err, rid)
+		errType = metrics.ClassifyError(err)
 		return
 	}
 	defer response.Body.Close()
@@ -121,8 +136,11 @@ func (p *proxy) Do(req *restful.Request, resp *restful.Response) {
 	if _, err := io.Copy(resp, response.Body); err != nil {
 		_, _ = fmt.Fprintf(w, err.Error())
 		logs.Errorf("response request[url: %s] failed, err: %v, rid: %s", r.RequestURI, err, rid)
+		errType = metrics.ClassifyError(err)
 		return
 	}
+
+	errType = metrics.ClassifyHTTPStatusCode(response.StatusCode)
 
 	if logs.V(4) {
 		logs.Infof("cost: %dms, action: %s, status code: %d, user: %s, app code: %s, url: %s, rid: %s",

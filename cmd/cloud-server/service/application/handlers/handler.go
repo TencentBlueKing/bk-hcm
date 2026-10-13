@@ -26,7 +26,8 @@ import (
 )
 
 // ApplicationHandler 定义了申请单的表单校验，与itsm对接、审批通过后的资源交付函数
-// 创建申请单：CheckReq -> PrepareReq -> CreateITSMTicket -> GenerateApplicationContent -> "SaveToDB"
+// 创建申请单：CheckReq -> PrepareReq -> NeedApproval -> [CreateITSMTicket] -> GenerateApplicationContent -> "SaveToDB"
+// 免审直连：CheckReq -> PrepareReq -> NeedApproval=false -> Deliver（不落申请单）
 // 审批通过交付："LoadApplicationFromDB" -> PrepareReqForContent-> CheckReq -> Deliver -> "UpdateStatusToDB"
 // Note: 这里创建申请单的请求数据和交付资源的请求数据结构是一样的，这是一种"偷懒"行为，
 // 更好的方式是Handler拆分成两种抽象：申请单创建者Creator、申请单交付者Deliverer，然后定义各自的数据结构
@@ -34,6 +35,11 @@ type ApplicationHandler interface {
 	GetType() enumor.ApplicationType
 	// GetOperation 获取细粒度操作类型，对应 application 表的 operation 字段
 	GetOperation() enumor.ApplicationOperation
+
+	// NeedApproval 判断该笔申请是否需要走ITSM人工审批。
+	// 返回 false 时跳过 ITSM 与申请单落库，同步调用 Deliver 完成交付（免审直连）
+	// 默认实现见 BaseApplicationHandler，具体业务如需支持免审白名单，可覆写该方法
+	NeedApproval(kt *kit.Kit) (bool, error)
 
 	// GetItsmApprover 获取itsm审批人信息
 	GetItsmApprover(kt *kit.Kit, managers []string) ([]itsm.VariableApprover, error)

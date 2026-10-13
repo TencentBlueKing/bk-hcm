@@ -48,8 +48,8 @@ import (
 	loadbalancer "hcm/pkg/dal/dao/cloud/load-balancer"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
-	permissiontemplate "hcm/pkg/dal/dao/cloud/permission-template"
 	permissionpolicylibrary "hcm/pkg/dal/dao/cloud/permission-policy-library"
+	permissiontemplate "hcm/pkg/dal/dao/cloud/permission-template"
 	"hcm/pkg/dal/dao/cloud/region"
 	resflow "hcm/pkg/dal/dao/cloud/resource-flow"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
@@ -141,6 +141,7 @@ type Set interface {
 	LoadBalancerTargetGroup() loadbalancer.TargetGroupInterface
 	LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupListenerRuleRelInterface
 	LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface
+	LoadBalancerExclusiveCluster() loadbalancer.ExclusiveCluster
 	ResourceFlowRel() resflow.ResourceFlowRelInterface
 	ResourceFlowLock() resflow.ResourceFlowLockInterface
 	SGCommonRel() sgcomrel.Interface
@@ -765,6 +766,15 @@ func (s *set) LoadBalancerTargetGroupListenerRuleRel() loadbalancer.TargetGroupL
 // LoadBalancerTCloudUrlRule return load balancer tcloud url rule dao.
 func (s *set) LoadBalancerTCloudUrlRule() loadbalancer.LbTCloudUrlRuleInterface {
 	return &loadbalancer.LbTCloudUrlRuleDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// LoadBalancerExclusiveCluster return load balancer exclusive cluster dao.
+func (s *set) LoadBalancerExclusiveCluster() loadbalancer.ExclusiveCluster {
+	return &loadbalancer.ExclusiveClusterDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,

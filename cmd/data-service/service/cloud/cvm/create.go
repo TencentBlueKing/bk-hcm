@@ -74,6 +74,11 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	gpuMachineTypes, err := svc.buildGPUMachineTypes(cts.Kit, vendor)
+	if err != nil {
+		return nil, err
+	}
+
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]*tablecvm.Table, 0, len(req.Cvms))
 		for _, one := range req.Cvms {
@@ -82,38 +87,7 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
 
-			models = append(models, &tablecvm.Table{
-				CloudID:              one.CloudID,
-				Name:                 one.Name,
-				Vendor:               vendor,
-				BkBizID:              one.BkBizID,
-				BkHostID:             one.BkHostID,
-				BkAssetID:            one.BkAssetID,
-				BkCloudID:            &one.BkCloudID,
-				AccountID:            one.AccountID,
-				Region:               one.Region,
-				Zone:                 one.Zone,
-				CloudVpcIDs:          one.CloudVpcIDs,
-				VpcIDs:               one.VpcIDs,
-				CloudSubnetIDs:       one.CloudSubnetIDs,
-				SubnetIDs:            one.SubnetIDs,
-				CloudImageID:         one.CloudImageID,
-				ImageID:              one.ImageID,
-				OsName:               one.OsName,
-				Memo:                 one.Memo,
-				Status:               one.Status,
-				PrivateIPv4Addresses: one.PrivateIPv4Addresses,
-				PrivateIPv6Addresses: one.PrivateIPv6Addresses,
-				PublicIPv4Addresses:  one.PublicIPv4Addresses,
-				PublicIPv6Addresses:  one.PublicIPv6Addresses,
-				MachineType:          one.MachineType,
-				Extension:            tabletype.JsonField(extension),
-				CloudCreatedTime:     one.CloudCreatedTime,
-				CloudLaunchedTime:    one.CloudLaunchedTime,
-				CloudExpiredTime:     one.CloudExpiredTime,
-				Creator:              cts.Kit.User,
-				Reviser:              cts.Kit.User,
-			})
+			models = append(models, buildCreateCvmTableModel(one, vendor, gpuMachineTypes, extension, cts.Kit.User))
 		}
 
 		ids, err := svc.dao.Cvm().BatchCreateWithTx(cts.Kit, txn, models)
@@ -122,8 +96,8 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 		}
 
 		// create cmdb cloud hosts
-		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。
-		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models)
+		// 如果主机同步Cmdb失败，但写入HCM成功，忽略该错误。创建主机本身不写 operator，operator 仅在"分配业务"链路下发，故传空的map
+		err = upsertCmdbHosts[T](svc, cts.Kit, vendor, models, make(map[string]*string))
 		if err != nil {
 			logs.Errorf("[%s] upsert cmdb hosts failed, err: %v, rid: %s", constant.CmdbSyncFailed, err, cts.Kit.Rid)
 			return nil, nil
@@ -142,4 +116,43 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func buildCreateCvmTableModel[T corecvm.Extension](one protocloud.CvmBatchCreate[T], vendor enumor.Vendor,
+	gpuMachineTypes map[string]struct{}, extension string, user string) *tablecvm.Table {
+
+	isGPU := isGPUMachine(vendor, one.MachineType, gpuMachineTypes, extension)
+	return &tablecvm.Table{
+		CloudID:              one.CloudID,
+		Name:                 one.Name,
+		Vendor:               vendor,
+		BkBizID:              one.BkBizID,
+		BkHostID:             one.BkHostID,
+		BkAssetID:            one.BkAssetID,
+		BkCloudID:            &one.BkCloudID,
+		AccountID:            one.AccountID,
+		Region:               one.Region,
+		Zone:                 one.Zone,
+		CloudVpcIDs:          one.CloudVpcIDs,
+		VpcIDs:               one.VpcIDs,
+		CloudSubnetIDs:       one.CloudSubnetIDs,
+		SubnetIDs:            one.SubnetIDs,
+		CloudImageID:         one.CloudImageID,
+		ImageID:              one.ImageID,
+		OsName:               one.OsName,
+		Memo:                 one.Memo,
+		Status:               one.Status,
+		PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+		PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+		PublicIPv4Addresses:  one.PublicIPv4Addresses,
+		PublicIPv6Addresses:  one.PublicIPv6Addresses,
+		MachineType:          one.MachineType,
+		IsGPU:                isGPU,
+		Extension:            tabletype.JsonField(extension),
+		CloudCreatedTime:     one.CloudCreatedTime,
+		CloudLaunchedTime:    one.CloudLaunchedTime,
+		CloudExpiredTime:     one.CloudExpiredTime,
+		Creator:              user,
+		Reviser:              user,
+	}
 }

@@ -51,7 +51,8 @@ func (t *TCloudImpl) ListZone(kt *kit.Kit, opt *typeszone.TCloudZoneListOption) 
 	req := cvm.NewDescribeZonesRequest()
 	resp, err := client.DescribeZones(req)
 	if err != nil {
-		logs.Errorf("list tcloud zone failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("list tcloud zone failed, err: %v, region: %s, rid: %s", err, opt.Region, kt.Rid)
+		return nil, err
 	}
 
 	if resp == nil || resp.Response == nil {

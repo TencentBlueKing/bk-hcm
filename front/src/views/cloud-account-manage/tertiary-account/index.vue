@@ -174,8 +174,7 @@ watch(
     };
     const newCondition = searchQs.get(query, {});
     const conditionChanged = JSON.stringify(newCondition) !== JSON.stringify(urlCondition.value);
-    const isRefresh = query._t !== undefined;
-    if (conditionChanged || fullList.value.length === 0 || isRefresh) {
+    if (conditionChanged || fullList.value.length === 0) {
       await loadFullList();
     } else {
       updateTableData();
@@ -229,7 +228,9 @@ const handleSelectionChange = (selection: ISubAccountItem[]) => {
 };
 
 const refreshList = () => {
+  fullList.value = [];
   const query = { ...route.query };
+  delete query._t;
   query._t = String(Date.now());
   router.replace({ query });
 };

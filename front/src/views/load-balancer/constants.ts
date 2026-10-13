@@ -87,6 +87,15 @@ export const LOAD_BALANCER_ISP_NAME = {
   [LoadBalancerIsp.INTERNAL]: '内网流量',
 };
 
+export enum LoadBalancerInstanceSpec {
+  EXCLUSIVE = 'exclusive',
+  SHARED = 'shared',
+}
+export const LOAD_BALANCER_INSTANCE_SPEC_NAME = {
+  [LoadBalancerInstanceSpec.EXCLUSIVE]: '独占型',
+  [LoadBalancerInstanceSpec.SHARED]: '共享型',
+};
+
 export enum LoadBalancerBatchImportOperationType {
   create_layer4_listener = 'create_layer4_listener',
   create_layer7_listener = 'create_layer7_listener',
@@ -160,3 +169,10 @@ export enum RsInstType {
 }
 
 export const DOMAIN_REGEX = /^([a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/;
+
+export const LOAD_BALANCER_SUBTYPE = {
+  CLB: 'clb',
+  EXCLUSIVE_CLUSTER: 'exclusive-cluster',
+} as const;
+
+export type LoadBalancerSubtype = (typeof LOAD_BALANCER_SUBTYPE)[keyof typeof LOAD_BALANCER_SUBTYPE];

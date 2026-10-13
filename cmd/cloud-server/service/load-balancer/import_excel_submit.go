@@ -21,6 +21,8 @@
 package loadbalancer
 
 import (
+	"time"
+
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/cloud-server/task"
@@ -28,21 +30,40 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
 )
 
 // ImportSubmit CLB数据导入接口
-func (svc *lbSvc) ImportSubmit(cts *rest.Contexts) (interface{}, error) {
+//
+// This entry point is the canonical CLB submit boundary observed by the
+// hcm_clb_submit_* metric family. The deferred observation captures total
+// elapsed time from request entry until the task management ID is returned
+// (or any failure path is taken). err_type is normalized via
+// metrics.ClassifyError to keep label cardinality bounded.
+func (svc *lbSvc) ImportSubmit(cts *rest.Contexts) (resp interface{}, err error) {
 	operationType := cts.PathParameter("operation_type").String()
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	bizID, parseErr := cts.PathParameter("bk_biz_id").Int64()
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 
-	req := new(cslb.ImportExcelReq)
-	if err := cts.DecodeInto(req); err != nil {
+	start := time.Now()
+	defer func() {
+		// observe regardless of which return path was taken.
+		errType := metrics.ClassifyError(err)
+		metrics.ObserveCLBSubmit(bizID, string(vendor), operationType, time.Since(start), errType)
+	}()
+
+	if parseErr != nil {
+		err = parseErr
 		return nil, err
 	}
-	if err := req.Validate(); err != nil {
+
+	req := new(cslb.ImportExcelReq)
+	if err = cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err = req.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -56,14 +77,16 @@ func (svc *lbSvc) ImportSubmit(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	executor, err := lblogic.NewImportExecutor(lblogic.OperationType(operationType), svc.client.DataService(),
+	executor, execErr := lblogic.NewImportExecutor(lblogic.OperationType(operationType), svc.client.DataService(),
 		svc.client.TaskServer(), vendor, bizID, req.AccountID, req.RegionIDs)
-	if err != nil {
+	if execErr != nil {
+		err = execErr
 		logs.Errorf("new ImportExecutor failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	taskID, err := executor.Execute(cts.Kit, req.Source, req.Details)
-	if err != nil {
+	taskID, runErr := executor.Execute(cts.Kit, req.Source, req.Details)
+	if runErr != nil {
+		err = runErr
 		logs.Errorf("execute ImportExecutor failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}

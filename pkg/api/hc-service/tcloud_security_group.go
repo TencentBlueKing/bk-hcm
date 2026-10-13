@@ -142,6 +142,18 @@ func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// TCloudSGRuleOverwriteReq define tcloud security group rule overwrite request.
+type TCloudSGRuleOverwriteReq struct {
+	AccountID      string               `json:"account_id" validate:"required"`
+	EgressRuleSet  []TCloudSGRuleCreate `json:"egress_rule_set" validate:"required,min=1,max=100"`
+	IngressRuleSet []TCloudSGRuleCreate `json:"ingress_rule_set" validate:"required,min=1,max=100"`
+}
+
+// Validate tcloud security group rule overwrite request.
+func (req *TCloudSGRuleOverwriteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // TCloudListSecurityGroupStatisticResult ...
 type TCloudListSecurityGroupStatisticResult = []TCloudListSecurityGroupStatisticItem
 

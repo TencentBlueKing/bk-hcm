@@ -116,6 +116,8 @@ func tcloudService(h *rest.Handler, sg *securityGroup) {
 		sg.UpdateTCloudSGRule)
 	h.Add("BatchUpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/update",
 		sg.BatchUpdateTCloudSGRule)
+	h.Add("OverwriteTCloudSGRule", "PUT",
+		"/vendors/tcloud/security_groups/{security_group_id}/rules/batch/overwrite", sg.OverwriteTCloudSGRule)
 	h.Add("DeleteTCloudSGRule", "DELETE", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteTCloudSGRule)
 	h.Add("TCloudSGBatchAssociateCloudCvm", "POST",

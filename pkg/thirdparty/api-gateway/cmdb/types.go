@@ -190,11 +190,15 @@ type HostCreateParam struct {
 	BkCloudID         int64           `json:"bk_cloud_id" validate:"required"`
 	// 云上地域，如 "ap-guangzhou"
 	BkCloudRegion   string  `json:"bk_cloud_region"`
+	BkCloudZone     string  `json:"bk_cloud_zone"`
 	BkHostInnerIP   string  `json:"bk_host_innerip" validate:"required"`
 	BkHostOuterIP   string  `json:"bk_host_outerip"`
 	BkHostInnerIPv6 string  `json:"bk_host_innerip_v6"`
 	BkHostOuterIPv6 string  `json:"bk_host_outerip_v6"`
-	Operator        string  `json:"operator"`
+	InstanceType    string  `json:"instance_type"`
+	IsGPU           bool    `json:"is_gpu"`
+	Operator        *string `json:"operator,omitempty"`
+	OnShelfDate     string  `json:"onshelf_date"`
 	BkBakOperator   string  `json:"bk_bak_operator"`
 	BkHostName      string  `json:"bk_host_name"`
 	BkComment       *string `json:"bk_comment,omitempty"`
