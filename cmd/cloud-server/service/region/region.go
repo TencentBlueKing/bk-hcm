@@ -117,11 +117,20 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 地域没有实例级权限，各云厂商共用这一处。Region 的 Update 映射到已有的「资源-IaaS资源操作」，不绑定具体资源。
+	// 地域没有实例级权限，只校验用户是否拥有「资源-IaaS资源操作」这个权限点。
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Region, Action: meta.Update}}
-	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	decisions, err := svc.authorizer.AuthorizeAny(cts.Kit, authRes)
+	if err != nil {
 		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	if len(decisions) == 0 || !decisions[0].Authorized {
+		permission, permErr := svc.authorizer.GetPermissionToApply(cts.Kit, authRes)
+		if permErr != nil {
+			logs.Errorf("get region sync_enable permission to apply failed, err: %v, rid: %s", permErr, cts.Kit.Rid)
+			return nil, permErr
+		}
+		return nil, errf.NewWithPerm(errf.PermissionDenied, "no permission", permission)
 	}
 
 	switch vendor {
