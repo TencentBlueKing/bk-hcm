@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0054,HCMVER=v1.9.4
 
     Notes:
     1. 新增 CLB 独占集群表 load_balancer_exclusive_cluster
@@ -65,6 +65,6 @@ INSERT INTO id_generator(`resource`, `max_id`)
 VALUES ('load_balancer_exclusive_cluster', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.9.4' as `hcm_ver`, '0054' as `sql_ver`;
 
 COMMIT;
