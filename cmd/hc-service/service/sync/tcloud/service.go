@@ -57,6 +57,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncSubAccount", http.MethodPost, "/sub_accounts/sync", v.SyncSubAccount)
 	h.Add("SyncArgsTpl", http.MethodPost, "/argument_templates/sync", v.SyncArgsTpl)
 	h.Add("SyncCert", http.MethodPost, "/certs/sync", v.SyncCert)
+	h.Add("SyncExclusiveCluster", http.MethodPost, "/load_balancer_exclusive_clusters/sync", v.SyncExclusiveCluster)
 	h.Add("SyncLoadBalancer", http.MethodPost, "/load_balancers/sync", v.SyncLoadBalancer)
 	h.Add("BatchDeleteLocalLoadBalancer", http.MethodDelete, "/load_balancers/local/batch_delete",
 		v.BatchDeleteLocalLoadBalancer)

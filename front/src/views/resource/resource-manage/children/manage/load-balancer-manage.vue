@@ -1,8 +1,10 @@
 <template>
   <Loading :loading="isLoading" :opacity="1">
     <section class="toolbar" :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+      <slot name="toolbar-prefix"></slot>
       <slot></slot>
       <BatchDistribution
+        ref="batch-distribution"
         :selections="selections"
         :type="DResourceType.load_balancers"
         :get-data="
@@ -23,7 +25,7 @@
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
-          class="w500"
+          class="search-select"
           clearable
           :conditions="[]"
           :get-menu-list="getMenuList"
@@ -61,21 +63,6 @@
     />
   </template>
 
-  <!-- 单个负载均衡分配业务 -->
-  <bk-dialog
-    :is-show="isDialogShow"
-    title="负载均衡分配"
-    :theme="'primary'"
-    quick-close
-    @closed="() => (isDialogShow = false)"
-    @confirm="handleSingleDistributionConfirm"
-    :is-loading="isDialogBtnLoading"
-  >
-    <p class="mb16">当前操作负载均衡为：{{ currentOperateItem.name }}</p>
-    <p class="mb6">请选择所需分配的目标业务</p>
-    <hcm-form-business :data="accountBizList" v-model="selectedBizId" />
-  </bk-dialog>
-
   <template v-if="!syncDialogState.isHidden">
     <sync-account-resource
       v-model="syncDialogState.isShow"
@@ -97,10 +84,10 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, h, withDirectives, ref, reactive, computed } from 'vue';
+import { PropType, h, withDirectives, reactive, useTemplateRef } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
+import { BatchDistribution, DResourceType } from '../dialog/batch-distribution';
 import BatchDeleteDialog from '@/views/load-balancer/clb/children/batch-delete-dialog.vue';
 import Confirm from '@/components/confirm';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -117,9 +104,12 @@ import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { useClbSyncFeedback } from '@/views/load-balancer/use-clb-sync-feedback';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
-import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 import { useRegionStore } from '@/store/region';
 import { buildVIPFilterRules } from '@/utils/search';
+import {
+  buildLoadBalancerInstanceSpecFilterRules,
+  LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME,
+} from '@/views/load-balancer/utils';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
 const props = defineProps({
@@ -132,13 +122,13 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
-// eslint-disable-next-line vue/no-dupe-keys
 const { whereAmI } = useWhereAmI();
 const { handleClbSyncSuccess, handleClbSyncError } = useClbSyncFeedback();
 const { getAllVendorRegion } = useRegionStore();
 const { searchValue, filter } = useFilter(props, {
   conditionFormatterMapper: {
     lb_vip: (value: string) => buildVIPFilterRules(value),
+    instance_spec: (value: string | string[]) => buildLoadBalancerInstanceSpecFilterRules(value),
   },
 });
 
@@ -170,6 +160,7 @@ const asyncQueryListenerCount = async (list: ILoadBalancerWithDeleteProtectionIt
 };
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
+const batchDistributionRef = useTemplateRef<{ open: (rows: any[]) => void }>('batch-distribution');
 const { columns, settings } = useColumns('lb');
 const renderColumns = [
   ...columns,
@@ -252,6 +243,12 @@ const clbsSearchData = [
     })),
   },
   {
+    id: 'instance_spec',
+    name: t('实例规格'),
+    async: false,
+    children: Object.entries(LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME).map(([id, name]) => ({ id, name })),
+  },
+  {
     id: 'ip_version',
     name: t('IP版本'),
     async: false,
@@ -320,33 +317,9 @@ const handleDelete = (data: any) => {
   });
 };
 
-// 分配单个负载均衡
-const isDialogShow = ref(false);
-const currentOperateItem = ref(null);
-const isDialogBtnLoading = ref(false);
-const selectedBizId = ref(0);
-
-const accountId = computed(() => currentOperateItem.value?.account_id);
-
-const { accountBizList } = useAccountBusiness(accountId);
-
+// 分配单个负载均衡，复用批量分配组件的单个模式（弹窗内容、目标业务数据源与分配接口都一致）
 const handleSingleDistribution = (lb: any) => {
-  isDialogShow.value = true;
-  currentOperateItem.value = lb;
-};
-const handleSingleDistributionConfirm = async () => {
-  isDialogBtnLoading.value = true;
-  try {
-    await resourceStore.assignBusiness(DResourceType.load_balancers, {
-      [DResourceTypeMap[DResourceType.load_balancers].key]: [currentOperateItem.value.id],
-      bk_biz_id: selectedBizId.value,
-    });
-    Message({ message: t('分配成功'), theme: 'success' });
-    triggerApi();
-  } finally {
-    isDialogShow.value = false;
-    isDialogBtnLoading.value = false;
-  }
+  batchDistributionRef.value.open([lb]);
 };
 
 const syncDialogState = reactive({ isShow: false, isHidden: true, initialModel: null });
@@ -369,9 +342,21 @@ const handleSync = (inTable: boolean, data?: any) => {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  // 窄屏时只让搜索框让宽，左侧操作按钮保持原宽，否则会被挤出可视区
+  > *:not(.search-selector-container) {
+    flex-shrink: 0;
+  }
 }
 
 .search-selector-container {
   margin-left: auto;
+  min-width: 0;
+
+  .search-select {
+    width: 500px;
+    max-width: 100%;
+    min-width: 240px;
+  }
 }
 </style>

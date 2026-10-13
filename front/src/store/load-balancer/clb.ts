@@ -11,6 +11,14 @@ import { LoadBalancerBatchImportOperationType } from '@/views/load-balancer/cons
 
 type Tags = Record<string, any>;
 
+export interface ILoadBalancerExclusiveCluster {
+  cloud_cluster_id: string;
+  cluster_id: string;
+  cluster_name: string;
+  cluster_tag: string;
+  cluster_type: 'TGW' | 'STGW';
+}
+
 export interface ILoadBalancerWithDeleteProtectionItem {
   id: string;
   cloud_id: string;
@@ -45,6 +53,8 @@ export interface ILoadBalancerWithDeleteProtectionItem {
   created_at: string;
   updated_at: string;
   delete_protect: boolean;
+  exclusive?: number; // 是否独占型实例（1是、0否），仅tcloud
+  sla_type?: string; // 性能容量型规格档位，空字符串表示非性能容量型，仅tcloud
   listener_count?: number; // 异步加载
   [key: string]: any;
 }
@@ -81,6 +91,8 @@ export interface ILoadBalancerDetails {
   created_at: string;
   updated_at: string;
   extension: {
+    exclusive?: number;
+    clusters?: ILoadBalancerExclusiveCluster[];
     sla_type: string;
     charge_type: string;
     load_balancer_pass_to_target: boolean;

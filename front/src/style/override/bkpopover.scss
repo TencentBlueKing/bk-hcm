@@ -1,0 +1,9 @@
+// bk-popover 组件和 v-bk-tooltips 指令是两套样式：组件 .bk-pop2-content 是 12px 内边距、#26323d 底色、
+// 无边框（气泡高 42px）；指令 .bk-popper 是 7px 14px、#333 底色、1px #dcdee5 边框（气泡高 34px）。
+// 表格单元格里的提示只能用组件（指令的 beforeMount 会让表格滚动条初始化在游离 DOM 上），
+// 套这个类即可与现网其余列表的提示同款。
+.hcm-tooltips-popover.bk-popover.bk-pop2-content {
+  padding: 7px 14px;
+  background: #333;
+  border: 1px solid #dcdee5;
+}

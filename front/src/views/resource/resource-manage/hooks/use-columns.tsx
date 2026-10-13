@@ -40,6 +40,7 @@ import {
   IpVersionType,
   LISTENER_PROTOCOL_LIST,
 } from '@/views/load-balancer/constants';
+import { getLoadBalancerInstanceSpecName } from '@/views/load-balancer/utils';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
@@ -918,7 +919,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '协议端口',
       render({ data }: any) {
         return h('span', {}, [
-          // eslint-disable-next-line no-nested-ternary
           vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
             ? t('全部')
             : vendor === 'huawei' && !data.protocol && !data.port
@@ -933,7 +933,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: t('策略'),
       render({ data }: any) {
         return h('span', {}, [
-          // eslint-disable-next-line no-nested-ternary
           vendor === 'huawei'
             ? HuaweiSecurityRuleEnum[data.action]
             : vendor === 'azure'
@@ -1188,6 +1187,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         ],
       },
       render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '--',
+    },
+    {
+      label: '实例规格',
+      field: 'instance_spec',
+      isDefaultShow: true,
+      width: 100,
+      render: ({ data }: { data: { exclusive?: number; sla_type?: string } }) => getLoadBalancerInstanceSpecName(data),
     },
     {
       label: '监听器数量',

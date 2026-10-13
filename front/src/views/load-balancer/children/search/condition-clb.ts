@@ -1,5 +1,6 @@
 import { Column, Model } from '@/decorator';
 import { CLB_STATUS_NAME, IP_VERSION_DISPLAY_NAME, LB_TYPE_NAME } from '../../constants';
+import { buildLoadBalancerInstanceSpecFilterRules, LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME } from '../../utils';
 import { LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import { buildVIPFilterRules, buildFilterRulesWithSearchSelect } from '@/utils/search';
@@ -47,6 +48,19 @@ export class SearchConditionClb {
 
   @Column('enum', { name: '网络类型', option: LB_TYPE_NAME })
   lb_type: string;
+
+  @Column('enum', {
+    name: '实例规格',
+    option: LOAD_BALANCER_INSTANCE_SPEC_SEARCH_NAME,
+    meta: {
+      search: {
+        filterRules(value) {
+          return buildLoadBalancerInstanceSpecFilterRules(value);
+        },
+      },
+    },
+  })
+  instance_spec: string;
 
   @Column('enum', { name: 'IP版本', option: IP_VERSION_DISPLAY_NAME })
   ip_version: string;
