@@ -44,6 +44,16 @@ func AsyncCondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *Co
 		return nil, err
 	}
 
+	// 同步CLB前先同步独占集群，保证独占集群数据不落后于CLB，失败则阻断本次CLB同步。
+	if err := CondSyncExclusiveCluster(kt, cliSet, &CondSyncParams{
+		AccountID: params.AccountID,
+		Regions:   params.Regions,
+	}); err != nil {
+		logs.Errorf("[%s] sync exclusive cluster before conditional sync load balancer failed, err: %v, "+
+			"account: %s, regions: %v, rid: %s", enumor.TCloud, err, params.AccountID, params.Regions, kt.Rid)
+		return nil, err
+	}
+
 	regionDiffs := make([]lblogic.LoadBalancerRegionDiff, 0, len(opt.Regions))
 	total := 0
 	for _, region := range opt.Regions {
