@@ -206,6 +206,14 @@ func genVpcResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 	return genIaaSResourceResource(a)
 }
 
+// genRegionResource 地域属性更新鉴权。不绑定具体资源，Update 复用已有的「资源-IaaS资源操作」权限点。
+func genRegionResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.Basic.Action != meta.Update {
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+	return genIaaSResourceResource(a)
+}
+
 // genSubnetResource generate subnet related iam resource.
 func genSubnetResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)

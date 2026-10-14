@@ -126,6 +126,9 @@ const (
 	// GlobalConfig 全局配置
 	GlobalConfig ResourceType = "global_config"
 
+	// Region 地域。没有实例级权限，Update 复用「资源-IaaS资源操作」。
+	Region ResourceType = "region"
+
 	// PermissionPolicyLibrary 权限策略库
 	PermissionPolicyLibrary ResourceType = "permission_policy_library"
 )
@@ -176,6 +179,7 @@ var resourceTypes = map[ResourceType]struct{}{
 	PermissionTemplate:       {},
 	GlobalConfig:             {},
 	PermissionPolicyLibrary:  {},
+	Region:                   {},
 }
 
 // Validate 验证 ResourceType
