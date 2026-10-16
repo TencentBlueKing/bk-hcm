@@ -4,6 +4,8 @@ import { ref } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { FieldList } from '../../../common/info-list/types';
+import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 
 const props = defineProps({
   detail: {
@@ -36,8 +38,8 @@ const fields = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/details/${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

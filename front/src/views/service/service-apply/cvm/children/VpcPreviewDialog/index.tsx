@@ -2,6 +2,8 @@ import { Dialog, Form } from 'bkui-vue';
 import { PropType, defineComponent } from 'vue';
 import './index.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_VPC_MANAGEMENT, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 
 const { FormItem } = Form;
 
@@ -32,7 +34,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const { whereAmI } = useWhereAmI();
+    const { whereAmI, getBizsId } = useWhereAmI();
     return () => (
       <Dialog
         class='preview-dialog'
@@ -46,11 +48,12 @@ export default defineComponent({
             <svg
               onClick={() => {
                 if (!props.data.cloud_id) return;
-                const url =
+                const query = { cloud_id: props.data.cloud_id };
+                routerAction.open(
                   whereAmI.value === Senarios.resource
-                    ? `/#/resource/manage/vpc?cloud_id=${props.data.cloud_id}`
-                    : `/#/business/vpc?cloud_id=${props.data.cloud_id}`;
-                window.open(url, '_blank');
+                    ? { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'vpc' }, query }
+                    : { name: MENU_BUSINESS_VPC_MANAGEMENT, params: { bizId: getBizsId() }, query },
+                );
               }}
               class='vpc-dialog-highligt-icon'
               viewBox='0 0 1024 1024'

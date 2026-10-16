@@ -7,7 +7,7 @@ import useMountedDrive from '../../../hooks/use-mounted-drive';
 import useUninstallDrive from '../../../hooks/use-uninstall-drive';
 import useQueryList from '../../../hooks/use-query-list';
 import { useResourceStore } from '@/store/resource';
-import { GLOBAL_BIZS_KEY, INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
+import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -83,8 +83,8 @@ const columns = ref([
             if (whereAmI.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_DRIVE_DETAILS,
-                params: { id: cell },
-                query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: props.data.vendor },
+                params: { bizId: route.params.bizId, id: cell },
+                query: { vendor: props.data.vendor },
               });
             } else {
               // 挂载硬盘与主机厂商相同

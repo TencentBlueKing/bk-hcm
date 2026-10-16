@@ -152,6 +152,7 @@ const modifyCvmStatus = async (type: string) => {
       // 回收成功跳转回收记录
       router.push({
         name: whereAmI.value === Senarios.business ? MENU_BUSINESS_RECYCLEBIN : MENU_RESOURCE_RECYCLEBIN,
+        params: route.params.bizId ? { bizId: route.params.bizId } : {},
         query: { type: 'cvm' },
       });
     } else {

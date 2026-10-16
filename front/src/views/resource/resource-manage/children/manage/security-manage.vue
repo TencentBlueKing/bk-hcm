@@ -37,11 +37,12 @@ import {
 } from '@/utils/search';
 import http from '@/http';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
+import { VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { ModelProperty } from '@/model/typings';
 import routerAction from '@/router/utils/action';
 import {
+  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
   MENU_BUSINESS_SECURITY_GROUP_DETAILS,
   MENU_BUSINESS_GCP_DETAILS,
   MENU_BUSINESS_TEMPLATE_DETAILS,
@@ -401,8 +402,8 @@ const groupColumns = [
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
-                params: { id: data.id },
-                query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: data.vendor },
+                params: { bizId: route.params.bizId, id: data.id },
+                query: { vendor: data.vendor },
               });
             } else {
               Object.assign(routeInfo, {
@@ -679,7 +680,7 @@ const groupColumns = [
                       { text: true, theme: 'primary', disabled: noPerm || disabled, onClick: () => handleClick(type) },
                       name,
                     ),
-                    [[bkTooltips, tooltipsOption]],
+                    [[bkTooltips, noPerm ? { disabled: true } : tooltipsOption]],
                   ),
               },
             );
@@ -714,8 +715,7 @@ const gcpColumns = [
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_GCP_DETAILS,
-                params: { id: data.id },
-                query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] },
+                params: { bizId: route.params.bizId, id: data.id },
               });
             } else {
               Object.assign(routeInfo, {
@@ -920,8 +920,7 @@ const templateColumns = [
             if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
                 name: MENU_BUSINESS_TEMPLATE_DETAILS,
-                params: { id: data.cloud_id },
-                query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] },
+                params: { bizId: route.params.bizId, id: data.cloud_id },
               });
             } else {
               Object.assign(routeInfo, {
@@ -1103,7 +1102,11 @@ watch(
     if (isResourcePage) {
       router.replace({ query: { scene: v, accountId } });
     } else {
-      router.replace({ path: '/business/security', query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v } });
+      router.replace({
+        name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+        params: { bizId },
+        query: { type: 'security', scene: v },
+      });
     }
   },
   {
@@ -1140,8 +1143,8 @@ const handleChangeEffectConfirm = () => {
   if (whereAmIRef.value === Senarios.business) {
     Object.assign(routeInfo, {
       name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
-      params: { id },
-      query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor, activeTab: 'rule' },
+      params: { bizId: route.params.bizId, id },
+      query: { vendor, activeTab: 'rule' },
     });
   } else {
     Object.assign(routeInfo, {

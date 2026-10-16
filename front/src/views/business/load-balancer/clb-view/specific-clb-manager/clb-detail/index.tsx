@@ -404,10 +404,14 @@ export default defineComponent({
                               theme='primary'
                               onChange={handleChangeSnatPro}
                               disabled={noPerm || props.detail.extension?.snat_ips?.length > 0 || isSnatproChange.value}
-                              v-bk-tooltips={{
-                                content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
-                                disabled: props.detail.extension?.snat_ips?.length === 0,
-                              }}
+                              v-bk-tooltips={
+                                noPerm
+                                  ? { disabled: true }
+                                  : {
+                                      content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
+                                      disabled: props.detail.extension?.snat_ips?.length === 0,
+                                    }
+                              }
                             />
                           ),
                         }}

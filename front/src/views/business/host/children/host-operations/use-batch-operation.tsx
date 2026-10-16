@@ -1,5 +1,5 @@
 import { computed, ref, type Ref, watch, reactive, VNode } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Message, Checkbox } from 'bkui-vue';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useBusinessStore } from '@/store';
@@ -21,6 +21,7 @@ export type Params = {
 };
 
 const useBatchOperation = ({ selections, onFinished }: Params) => {
+  const route = useRoute();
   const router = useRouter();
   const operationType = ref<OperationActions>(OperationActions.NONE);
 
@@ -265,7 +266,7 @@ const useBatchOperation = ({ selections, onFinished }: Params) => {
       });
       onFinished?.('confirm');
       if (isRecycle) {
-        router.push({ name: MENU_BUSINESS_RECYCLEBIN });
+        router.push({ name: MENU_BUSINESS_RECYCLEBIN, params: { bizId: route.params.bizId } });
       }
     } finally {
       isLoading.value = false;

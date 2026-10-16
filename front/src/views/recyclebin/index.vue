@@ -209,7 +209,7 @@ const handleClick = (vendor: VendorEnum, id: string, type: 'drive' | 'host') => 
   const routeInfo = isBusiness.value
     ? {
         name: type === 'host' ? MENU_BUSINESS_HOST_DETAILS : MENU_BUSINESS_DRIVE_DETAILS,
-        params: { id },
+        params: { bizId: route.params.bizId, id },
         query: { vendor },
       }
     : {
@@ -308,20 +308,22 @@ onMounted(() => {
         <section class="header-container">
           <hcm-auth :sign="recycleManageSign" v-slot="{ noPerm }">
             <span
-              v-bk-tooltips="{
-                content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-                disabled: selections.length,
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : { content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`, disabled: selections.length }
+              "
             >
               <bk-button :disabled="!selections.length || noPerm" @click="handleOperate('destroy')">
                 {{ t('立即销毁') }}
               </bk-button>
             </span>
             <span
-              v-bk-tooltips="{
-                content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`,
-                disabled: selections.length,
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : { content: `请勾选${selectedType === 'cvm' ? '主机' : '硬盘'}信息`, disabled: selections.length }
+              "
             >
               <bk-button class="ml8" :disabled="!selections.length || noPerm" @click="handleOperate('recover')">
                 {{ t('立即恢复') }}
@@ -406,7 +408,7 @@ onMounted(() => {
                     class="mr10"
                     theme="primary"
                     @click="handleOperate('destroy', [data.id])"
-                    v-bk-tooltips="generateTooltipsOptions(data)"
+                    v-bk-tooltips="noPerm ? { disabled: true } : generateTooltipsOptions(data)"
                     :disabled="noPerm || !isCurRowSelectEnable(data)"
                   >
                     销毁
@@ -415,7 +417,7 @@ onMounted(() => {
                     text
                     theme="primary"
                     @click="handleOperate('recover', [data.id])"
-                    v-bk-tooltips="generateTooltipsOptions(data)"
+                    v-bk-tooltips="noPerm ? { disabled: true } : generateTooltipsOptions(data)"
                     :disabled="noPerm || !isCurRowSelectEnable(data)"
                   >
                     恢复

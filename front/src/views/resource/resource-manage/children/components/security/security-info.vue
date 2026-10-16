@@ -336,7 +336,7 @@ const handleChange = async (val: any) => {
             theme="primary"
             style="font-weight: 400; margin-left: 12px"
             :disabled="noPerm || authPending || !hasEditScopeInBusiness"
-            v-bk-tooltips="operateTooltipsOption"
+            v-bk-tooltips="noPerm ? { disabled: true } : operateTooltipsOption"
             @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
           >
             <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />

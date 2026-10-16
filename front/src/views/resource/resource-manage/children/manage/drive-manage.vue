@@ -142,7 +142,7 @@ const renderColumns = [
                 },
                 [t('回收')],
               ),
-              [[bkTooltips, generateTooltipsOptions(data)]],
+              [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions(data)]],
             ),
         },
       );
@@ -251,18 +251,23 @@ const isCurRowSelectEnable = (row: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .mr15 {
   margin-right: 15px;
 }
+
 .mlauto {
   margin-left: auto;
 }
+
 .toolbar {
   display: flex;
   align-items: center;

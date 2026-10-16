@@ -1,12 +1,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
-import { useRoute, type RouteLocationRaw } from 'vue-router';
-import { merge } from 'lodash';
+import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { useBack } from '@/router/hooks/use-back';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
-
-const props = defineProps<{ backConfig?: Partial<RouteLocationRaw> }>();
 
 const breadcrumb = useBreadcrumb();
 const route = useRoute();
@@ -15,18 +11,12 @@ const { from, handleBack } = useBack();
 const currentTitle = computed(() => breadcrumb.data.title ?? route.meta.menu?.i18n);
 
 const showBack = computed(() => breadcrumb.data.back !== false && !!from.value);
-
-// 业务 ID 在 query 中，返回所属列表（menu.relative）时需要带上
-const handleBackClick = () => {
-  const bizs = route.query[GLOBAL_BIZS_KEY];
-  handleBack(merge({}, bizs ? { query: { [GLOBAL_BIZS_KEY]: bizs } } : {}, props.backConfig));
-};
 </script>
 
 <template>
   <div class="hcm-breadcrumb">
     <div class="breadcrumb-content">
-      <i v-if="showBack" class="hcm-icon bkhcm-icon-arrows--left-line back-icon" @click="handleBackClick" />
+      <i v-if="showBack" class="hcm-icon bkhcm-icon-arrows--left-line back-icon" @click="() => handleBack()" />
       <span class="breadcrumb-name">{{ currentTitle }}</span>
       <div id="breadcrumbLeft"></div>
     </div>

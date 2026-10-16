@@ -4,8 +4,6 @@ import { useRoute } from 'vue-router';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import HcmBreadcrumb from './breadcrumb.vue';
 
-defineProps<{ isRouterAlive: boolean }>();
-
 const route = useRoute();
 const breadcrumb = useBreadcrumb();
 
@@ -18,8 +16,8 @@ const showBreadcrumb = computed(() => breadcrumb.data.display);
 <template>
   <div class="main-content">
     <HcmBreadcrumb v-if="showBreadcrumb" />
-    <div :class="['main-view', 'view-warp', { 'status-view': isStatusView }]">
-      <RouterView v-if="isRouterAlive" :name="view" />
+    <div :class="['main-view', { 'status-view': isStatusView }]">
+      <RouterView :name="view" />
     </div>
   </div>
 </template>

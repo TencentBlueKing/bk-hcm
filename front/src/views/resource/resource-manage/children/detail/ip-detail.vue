@@ -151,10 +151,11 @@ const bkToolTipsOptions = computed(() => {
         theme="primary"
         @click="handleShowAssignEip"
         :disabled="disableOperation || noPerm || authPending"
-        v-bk-tooltips="{
-          content: '该弹性IP已分配到业务，仅可在业务下操作',
-          disabled: !disableOperation,
-        }"
+        v-bk-tooltips="
+          noPerm
+            ? { disabled: true }
+            : { content: '该弹性IP已分配到业务，仅可在业务下操作', disabled: !disableOperation }
+        "
       >
         {{ t('绑定') }}
       </bk-button>

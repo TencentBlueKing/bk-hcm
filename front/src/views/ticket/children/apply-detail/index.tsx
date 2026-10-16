@@ -49,7 +49,7 @@ export default defineComponent({
     const isCancelBtnLoading = ref(false);
     const route = useRoute();
     let interval: NodeJS.Timeout;
-    const bizId = computed(() => Number(route.query.bizs));
+    const bizId = computed(() => Number(route.params.bizId));
 
     // 获取单据详情
     const getMyApplyDetail = async (id: string) => {

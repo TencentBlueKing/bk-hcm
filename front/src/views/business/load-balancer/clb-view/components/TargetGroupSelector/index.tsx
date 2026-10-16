@@ -1,14 +1,11 @@
 import { PropType, defineComponent, ref, watch, watchEffect } from 'vue';
 import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
-import { useAccountStore } from '@/store';
 import { useSingleList } from '@/hooks/useSingleList';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { Protocol, QueryRuleOPEnum } from '@/typings';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
-
+import { MENU_BUSINESS_LOAD_BALANCER_TG_VIEW } from '@/constants/menu-symbol';
 const { Option } = Select;
 
 /**
@@ -31,9 +28,7 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, { emit, expose }) {
-    const { getBusinessApiPath } = useWhereAmI();
-    const accountStore = useAccountStore();
-
+    const { getBusinessApiPath, getBizsId } = useWhereAmI();
     const targetGroupId = ref(props.modelValue);
     const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh, isScrollLoading, loadDataList } =
       useSingleList({
@@ -66,10 +61,7 @@ export default defineComponent({
 
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {
-      routerAction.open({
-        name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
-        query: { [GLOBAL_BIZS_KEY]: accountStore.bizs },
-      });
+      routerAction.open({ name: MENU_BUSINESS_LOAD_BALANCER_TG_VIEW, params: { bizId: getBizsId() } });
     };
 
     // select-handler - 选择目标组后更新 props.modelValue

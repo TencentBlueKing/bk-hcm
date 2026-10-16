@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import type { RouteLocationRaw, RouteRecordName } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 import * as menuSymbols from '@/constants/menu-symbol';
 
 const symbolRegistry = new Map<string, symbol>();
@@ -53,18 +53,15 @@ export class HistoryStorage {
     window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
   }
 
-  static remove(name: RouteRecordName) {
+  // 删除最后一条记录（即后退的目标页）
+  static removeLast() {
     const historyList = this.get();
-    const index = historyList.findIndex((item) => {
-      const history = this.deserialize(item) as Record<string, any>;
-      return history?.name === name;
-    });
-    if (index !== -1) {
-      historyList.splice(index, 1);
-      window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
-    }
+    if (!historyList.length) return;
+    historyList.pop();
+    window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
   }
 
+  // 只读取最后一条记录，不会从栈中删除
   static pop(): RouteLocationRaw {
     const historyList = this.get();
     const record = historyList.pop();

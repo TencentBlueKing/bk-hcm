@@ -6,11 +6,16 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useResourceStore, useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
-import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routerAction from '@/router/utils/action';
-import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
+import {
+  MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+  MENU_RESOURCE_RESOURCE_LIST,
+} from '@/constants/menu-symbol';
 import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 import { Button, Message, OverflowTitle } from 'bkui-vue';
 import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
@@ -71,6 +76,7 @@ const state = reactive<any>({
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const { getBizsId } = useWhereAmI();
 const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.data?.account_id));
 const HcmAuthComp = resolveComponent('hcm-auth');
 
@@ -147,8 +153,9 @@ const columns: any = [
           });
         } else {
           routerAction.open({
-            path: '/business/security',
-            query: { [GLOBAL_BIZS_KEY]: accountStore.bizs, type: 'security', scene: 'group' },
+            name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+            params: { bizId: getBizsId() },
+            query: { type: 'security', scene: 'group' },
           });
         }
       };
@@ -242,7 +249,7 @@ if (props.data.vendor === 'azure') {
             query: { accountId: data.account_id },
           });
         } else {
-          routerAction.open({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } });
+          routerAction.open({ name: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT, params: { bizId: getBizsId() } });
         }
       };
 

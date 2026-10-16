@@ -211,7 +211,7 @@ watch(
           <bk-button
             theme="primary"
             :disabled="noPerm || authPending || (!isBusinessPage && isAssigned) || isClb"
-            v-bk-tooltips="bindDisabledTooltipsOption"
+            v-bk-tooltips="noPerm ? { disabled: true } : bindDisabledTooltipsOption"
             @click="handleShowOperateDialog('bind')"
           >
             <plus width="26" height="26" />
@@ -221,7 +221,7 @@ watch(
         <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
           <bk-button
             :disabled="noPerm || authPending || !selected.length || (!isBusinessPage && isAssigned) || isClb"
-            v-bk-tooltips="unbindDisabledTooltipsOption"
+            v-bk-tooltips="noPerm ? { disabled: true } : unbindDisabledTooltipsOption"
             @click="handleShowOperateDialog('batch-unbind')"
           >
             {{ t('批量解绑') }}
@@ -265,7 +265,7 @@ watch(
               theme="primary"
               text
               :disabled="noPerm || authPending || (!isBusinessPage && isAssigned) || isClb"
-              v-bk-tooltips="unbindDisabledTooltipsOption"
+              v-bk-tooltips="noPerm ? { disabled: true } : unbindDisabledTooltipsOption"
               @click="handleShowOperateDialog('single-unbind', row)"
             >
               {{ t('解绑') }}

@@ -9,8 +9,6 @@ import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import Panel from '@/components/panel';
 import RsPreviewTable from '../children/rs-preview-table.vue';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
-
 const props = defineProps<{ listenerRowData: IListenerItem }>();
 
 const loadBalancerTargetGroupStore = useLoadBalancerTargetGroupStore();
@@ -59,8 +57,8 @@ const jumpToTargetGroupDetails = () => {
   const { id, vendor } = targetGroupDetails.value;
   routerAction.open({
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-    params: { id },
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, type: 'detail', vendor },
+    params: { bizId: currentGlobalBusinessId.value, id },
+    query: { type: 'detail', vendor },
   });
 };
 </script>

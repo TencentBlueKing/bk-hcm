@@ -22,9 +22,8 @@ import { accountManageLegacy } from '@/views/account-manage/route-config';
 import { operationLogRscLegacy } from '@/views/operation-log/route-config';
 import { billLegacy } from '@/views/bill/route-config';
 import { before as businessBeforeInterceptor } from './business-interceptor';
-import { useCommonStore } from '@/store';
+import { useAccountStore } from '@/store';
 import { useAuthStore } from '@/store/auth';
-import { useVerify } from '@/hooks';
 
 // 状态页面路由（不属于任何一级菜单，不显示侧栏和面包屑）
 const statusRouters: RouteRecordRaw[] = [
@@ -47,7 +46,7 @@ const routes: RouteRecordRaw[] = [
   ...statusRouters,
   {
     name: MENU_BUSINESS,
-    path: '/business',
+    path: '/business/:bizId(\\d+)?',
     redirect: { name: MENU_BUSINESS_HOST_MANAGEMENT },
     children: businessViews,
   },
@@ -90,31 +89,13 @@ const router = createRouter({
   routes,
 });
 
-let isFirstNavigation = true;
-
-router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) => {
-  const commonStore = useCommonStore();
-  const isFirst = isFirstNavigation;
-  isFirstNavigation = false;
-
-  // 旧按钮鉴权数据预取：只供页面按钮级的 useVerify().authVerifyData 使用，不参与路由拦截，失败不阻断导航
-  if (isFirst) {
-    try {
-      await useVerify().getAuthVerifyData(commonStore.pageAuthData);
-    } catch (err) {
-      console.error('[router] getAuthVerifyData error:', err);
-    }
-  }
-
+router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   try {
     const authStore = useAuthStore();
 
-    // 1. 业务路由拦截器（业务访问权限检查）
-    const canContinue = await businessBeforeInterceptor(to);
-    if (!canContinue) {
-      next();
-      return;
-    }
+    // 1. 业务路由拦截器（业务 ID 兼容与默认值、业务访问权限检查）。false 表示拦截器已调用 next
+    const canContinue = await businessBeforeInterceptor(to, from, next);
+    if (!canContinue) return;
 
     // 2. 默认恢复为 default 视图
     to.meta.view = 'default';
@@ -147,6 +128,14 @@ router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormal
     to.meta.view = 'error';
     to.meta.errorMessage = err instanceof Error ? err.message : String(err);
     next();
+  }
+});
+
+// accountStore.bizs 是业务 ID 的镜像（业务页由业务拦截器写入）；资源运营、资源选型与无归属页面清零，旧代码按它为空判断「非业务」
+router.afterEach((to) => {
+  const topMenuId = to.matched[0]?.name;
+  if (!topMenuId || topMenuId === MENU_RESOURCE || topMenuId === MENU_SCHEME) {
+    useAccountStore().updateBizsId(0);
   }
 });
 

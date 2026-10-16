@@ -9,7 +9,6 @@ import { useRoute, useRouter } from 'vue-router';
 import BottomBar from './children/bottom-bar';
 import StickyBottomContainer from '@/components/layout/sticky-bottom-container/sticky-bottom-container.vue';
 import http from '@/http';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { MENU_BUSINESS_LOAD_BALANCER, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import { applyClbSuccessHandler } from './apply-clb.plugin';
 
@@ -51,7 +50,7 @@ export default defineComponent({
 
     const goBack = () => {
       const to = isBusinessPage
-        ? { name: MENU_BUSINESS_LOAD_BALANCER, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } }
+        ? { name: MENU_BUSINESS_LOAD_BALANCER, params: { bizId: route.params.bizId } }
         : {
             name: MENU_RESOURCE_RESOURCE_LIST,
             params: { resourceType: 'clb' },

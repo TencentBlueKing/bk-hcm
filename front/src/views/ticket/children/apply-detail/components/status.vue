@@ -6,9 +6,8 @@ import StatusUnknown from '@/assets/image/Status-unknown.png';
 import share from 'bkui-vue/lib/icon/share';
 import copyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { APPLICATION_STATUS_MAP } from '@/views/ticket/constants';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import qs from 'qs';
 
 const props = defineProps<{ applicationDetail: IApplicationDetail }>();
@@ -24,7 +23,6 @@ const handleGotoClbList = () => {
     if (!load_balancer_id || !bk_biz_id) return;
 
     const query: LocationQueryRaw = {
-      [GLOBAL_BIZS_KEY]: bk_biz_id,
       filter: qs.stringify(
         {
           cloud_id: load_balancer_id.join(','),
@@ -36,7 +34,7 @@ const handleGotoClbList = () => {
         },
       ),
     };
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW, params: { bizId: bk_biz_id }, query });
   } catch (e) {
     console.error(e);
   }

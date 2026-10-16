@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { PrimaryTable, TableColumn, type TableProps, type SelectOptions } from '@blueking/tdesign-ui';
 import { ModelPropertyColumn } from '@/model/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import { RsInstType, RsDeviceType } from '@/views/load-balancer/constants';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_HOST_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
@@ -202,8 +202,8 @@ const handleIPClick = (instId: string, rowKey: string) => {
   visitedIpSet.add(rowKey);
   routerAction.open({
     name: MENU_BUSINESS_HOST_DETAILS,
-    params: { id: instId },
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, vendor: props.vendor },
+    params: { bizId: currentGlobalBusinessId.value, id: instId },
+    query: { vendor: props.vendor },
   });
 };
 
@@ -233,9 +233,10 @@ const handleViewTargetGroupDetails = (row: any) => {
   routerAction.open({
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
     params: {
+      bizId: currentGlobalBusinessId.value,
       id: row.target_group_id,
     },
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, type: 'list', vendor: props.vendor },
+    query: { type: 'list', vendor: props.vendor },
   });
 };
 

@@ -22,7 +22,7 @@
   "dependencies": {
     "@antv/l7": "2.20.2",
     "@antv/l7-maps": "2.20.2",
-    "@blueking/app-select": "0.0.1-beta.6",
+    "@blueking/app-select": "0.0.1-beta.19",
     "@blueking/collapsible-tag": "1.1.0-beta.4",
     "@blueking/combine-request": "1.0.1",
     "@blueking/ediatable": "0.0.1-beta.32",
@@ -58,7 +58,7 @@
     "@blueking/babel-preset-bk": "2.1.0",
     "@blueking/cli-service-webpack": "0.0.7",
     "@blueking/eslint-config-bk": "2.1.0",
-    "@types/cookie": "0.5.1",
+    "@types/js-cookie": "3.0.6",
     "@types/lodash": "4.17.24",
     "@types/node": "18.19.68",
     "@types/qs": "6.9.7",

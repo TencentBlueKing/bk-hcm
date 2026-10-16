@@ -144,10 +144,14 @@ defineExpose({ isExpand, reload });
             theme="primary"
             text
             :disabled="noPerm || authPending || isOperateDisabled"
-            v-bk-tooltips="{
-              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
-              disabled: !isOperateDisabled,
-            }"
+            v-bk-tooltips="
+              noPerm
+                ? { disabled: true }
+                : {
+                    content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
+                    disabled: !isOperateDisabled,
+                  }
+            "
             @click="handleShowOperateDialog('bind')"
           >
             <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
@@ -160,10 +164,14 @@ defineExpose({ isExpand, reload });
             text
             class="unbind-btn"
             :disabled="noPerm || authPending || !selected.length || isOperateDisabled"
-            v-bk-tooltips="{
-              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
-              disabled: !isOperateDisabled,
-            }"
+            v-bk-tooltips="
+              noPerm
+                ? { disabled: true }
+                : {
+                    content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
+                    disabled: !isOperateDisabled,
+                  }
+            "
             @click="handleShowOperateDialog('batch-unbind')"
           >
             {{ t('批量解绑') }}
@@ -197,10 +205,14 @@ defineExpose({ isExpand, reload });
             theme="primary"
             text
             :disabled="noPerm || authPending || isOperateDisabled"
-            v-bk-tooltips="{
-              content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
-              disabled: !isOperateDisabled,
-            }"
+            v-bk-tooltips="
+              noPerm
+                ? { disabled: true }
+                : {
+                    content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
+                    disabled: !isOperateDisabled,
+                  }
+            "
             @click="handleShowOperateDialog('single-unbind', row)"
           >
             {{ t('解绑') }}

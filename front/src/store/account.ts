@@ -12,6 +12,7 @@ export const useAccountStore = defineStore({
   state: () => ({
     fetching: false,
     list: shallowRef([]),
+    // 地址中业务 ID 的镜像，由业务路由拦截器写入，供取不到路由的代码读取；新代码读 route.params.bizId
     bizs: 0 as number,
     accountList: shallowRef([]),
     accountCached: new Map<string, any>(),

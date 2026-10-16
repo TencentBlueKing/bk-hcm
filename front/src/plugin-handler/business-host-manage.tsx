@@ -8,6 +8,7 @@ import useSingleOperation from '@/views/business/host/children/host-operations/u
 import defaultUseTableListQuery from '@/hooks/useTableListQuery';
 import type { PropsType } from '@/hooks/useTableListQuery';
 import HcmAuth from '@/components/auth/auth.vue';
+import { MENU_BUSINESS_RECYCLEBIN } from '@/constants/menu-symbol';
 import {
   AUTH_UPDATE_IAAS_RESOURCE,
   AUTH_DELETE_IAAS_RESOURCE,
@@ -15,7 +16,6 @@ import {
   AUTH_BIZ_DELETE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { MENU_BUSINESS_RECYCLEBIN } from '@/constants/menu-symbol';
 import { getAuthSignByBusinessId } from '@/utils';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -52,7 +52,7 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
     confirmSuccess(type: string) {
       Message({ message: t('操作成功'), theme: 'success' });
       if (type === OperationActions.RECYCLE) {
-        router.push({ name: MENU_BUSINESS_RECYCLEBIN });
+        router.push({ name: MENU_BUSINESS_RECYCLEBIN, params: { bizId: bizId.value } });
       } else {
         extra.triggerApi();
       }
@@ -94,7 +94,7 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                         disabled={noPerm || recycleConfig.disabled}>
                         {operationMap[OperationActions.RECYCLE].label}
                       </Button>,
-                      [[bkTooltips, recycleConfig.tooltips]],
+                      [[bkTooltips, noPerm ? { disabled: true } : recycleConfig.tooltips]],
                     ),
                 }}
               </HcmAuth>

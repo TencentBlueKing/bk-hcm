@@ -8,7 +8,7 @@ import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, LB_ISP, GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import { CLOUD_HOST_STATUS, LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -130,11 +130,10 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         const defaultClickHandler = () => {
           const routeInfo: any = {};
           if (whereAmI.value === Senarios.business) {
-            // 业务仍在 ?bizs= 里，按 name 跳转不会自动带上
             Object.assign(routeInfo, {
               name: BUSINESS_DETAIL_ROUTE_MAP[type],
-              params: { id: data[idFiled] },
-              query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: data.vendor },
+              params: { bizId: route.params.bizId, id: data[idFiled] },
+              query: { vendor: data.vendor },
             });
           } else {
             // accountId 保留侧边栏选中状态
@@ -1372,7 +1371,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           onClick={renderFieldPushState(
             {
               name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-              params: { id },
+              params: { bizId: route.params.bizId, id },
               query: { ...route.query, type: 'detail', vendor },
             },
             () => {
@@ -1552,9 +1551,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             theme='primary'
             onClick={renderFieldPushState({
               name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
-              params: { id: row.lb_id },
+              params: { bizId: route.params.bizId, id: row.lb_id },
               query: {
-                [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
                 filter: QueryString.stringify(
                   { cloud_id: row.cloud_lbl_id },
                   { arrayFormat: 'comma', encode: false, allowEmptyArrays: true },

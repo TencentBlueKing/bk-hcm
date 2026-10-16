@@ -1,43 +1,78 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ComputedRef, inject } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { toMenuKey, type IMenu } from '@/common/menu-service';
-import { useAccountStore } from '@/store';
+import { useMenuFavorite } from '@/hooks/use-menu-favorite';
 
-const props = defineProps<{ menu: IMenu; isBusiness: boolean }>();
+const props = defineProps<{ menu: IMenu; topMenuId: symbol }>();
 
-const accountStore = useAccountStore();
+const isBusinessNav = inject<ComputedRef<boolean>>('isBusinessNav');
+const bizId = inject<ComputedRef<number>>('bizId');
 
-const link = computed<RouteLocationRaw>(() => ({
-  name: props.menu.route.name,
-  query: props.isBusiness ? { [GLOBAL_BIZS_KEY]: accountStore.bizs } : undefined,
-}));
+const { isFavorite, toggleFavorite, setClickSource } = useMenuFavorite();
+
+const favorited = computed(() => isFavorite(props.topMenuId, props.menu.id as symbol));
+
+const link = computed<RouteLocationRaw>(() =>
+  isBusinessNav.value
+    ? { name: props.menu.route.name, params: { bizId: bizId.value } }
+    : { name: props.menu.route.name },
+);
+
+const handleToggleFavorite = (e: MouseEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+  toggleFavorite(props.topMenuId, props.menu.id as symbol);
+};
+
+const handleItemClick = () => {
+  setClickSource('menu');
+};
 </script>
 
 <template>
-  <RouterLink :to="link">
-    <bk-menu-item :key="toMenuKey(menu.id)">
+  <RouterLink :to="link" @click="handleItemClick">
+    <bk-menu-item :key="toMenuKey(menu.id)" class="hcm-menu-item">
       <template #icon v-if="menu.icon">
         <i :class="['hcm-icon', menu.icon]" />
       </template>
-      <p class="menu-item-content">
-        <span class="text-ov">{{ menu.i18n }}</span>
-      </p>
+      <template #default>
+        {{ menu.i18n }}
+        <span :class="['collect', { collected: favorited }]" @click="handleToggleFavorite">
+          <i :class="['hcm-icon', favorited ? 'bkhcm-icon-collect' : 'bkhcm-icon-not-favorited']" />
+        </span>
+      </template>
     </bk-menu-item>
   </RouterLink>
 </template>
 
 <style lang="scss" scoped>
-.menu-item-content {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  min-width: 0;
-  padding-right: 16px;
+.hcm-menu-item {
+  .collect {
+    display: none;
+    margin-left: auto;
+    margin-right: 24px;
+    cursor: pointer;
 
-  .text-ov {
-    flex: 1;
+    .hcm-icon {
+      font-size: 16px;
+    }
+
+    .bkhcm-icon-not-favorited {
+      color: #fff;
+    }
+
+    .bkhcm-icon-collect {
+      color: #f8b64f;
+    }
+
+    &.collected {
+      display: block;
+    }
+  }
+
+  &:hover .collect {
+    display: block;
   }
 }
 </style>

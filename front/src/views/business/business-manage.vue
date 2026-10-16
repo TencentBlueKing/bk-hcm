@@ -129,7 +129,7 @@ const handleAdd = () => {
   ]);
   const applyRouteName = applyRouteMap.get(renderComponent.value!);
   if (applyRouteName) {
-    routerAction.redirect({ name: applyRouteName }, { history: true });
+    routerAction.redirect({ name: applyRouteName, params: { bizId: route.params.bizId } }, { history: true });
     return;
   }
   isEdit.value = false;

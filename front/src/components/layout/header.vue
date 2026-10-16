@@ -3,12 +3,9 @@ import { useRouter, type RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import Cookies from 'js-cookie';
 import { jsonp } from '@/http';
-import i18n from '@/language/i18n';
-import { GLOBAL_BIZS_KEY, LANGUAGE_TYPE } from '@/common/constant';
+import { LANGUAGE_TYPE } from '@/common/constant';
 import { getMenus, type IMenu } from '@/common/menu-service';
-import { MENU_BUSINESS, MENU_RESOURCE, MENU_RESOURCE_ACCESS } from '@/constants/menu-symbol';
-import { useAccountStore, useUserStore } from '@/store';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useUserStore } from '@/store';
 import { gotoLoginPage } from '@/utils/login-helper';
 import ReleaseNote from '@/components/release-note/index.vue';
 
@@ -17,9 +14,10 @@ const { BK_COMPONENT_API_URL, BK_DOMAIN } = window.PROJECT_CONFIG;
 const { t } = useI18n();
 const router = useRouter();
 const userStore = useUserStore();
-const accountStore = useAccountStore();
 
-const language = Cookies.get('blueking_language') || i18n.global.locale.value;
+const LANG_COOKIE_NAME = 'blueking_language';
+
+const language = Cookies.get(LANG_COOKIE_NAME) || LANGUAGE_TYPE.zh_cn;
 
 // 声明了 route 的一级菜单是跳转入口：链到其它一级菜单下的页面，自身不高亮
 const getNavTarget = (nav: IMenu) => nav.route?.name ?? nav.id;
@@ -27,25 +25,32 @@ const getNavTarget = (nav: IMenu) => nav.route?.name ?? nav.id;
 // 一级菜单对应的路由不存在时只隐藏该项
 const menus = getMenus().filter((menu) => router.hasRoute(getNavTarget(menu)));
 
-const getNavLink = (nav: IMenu): RouteLocationRaw => {
-  if (nav.id === MENU_BUSINESS) return { name: nav.id, query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } };
-  return { name: getNavTarget(nav) };
-};
+const getNavLink = (nav: IMenu): RouteLocationRaw => ({ name: getNavTarget(nav) });
 
-const handleNavClick = (nav: IMenu) => {
-  // TODO(菜单整合二期·筛选写入地址)：云账号树改为地址驱动后去掉账号选择的清理
-  if (![MENU_RESOURCE, MENU_RESOURCE_ACCESS].includes(nav.id as symbol)) useResourceAccountStore().clear();
+// 写到蓝鲸统一域名，与其它蓝鲸系统共用语言设置（#1897 用的 BK_HCM_DOMAIN 已在 #1647 改名为 BK_DOMAIN）
+const handleChangeLang = async (lang: string) => {
+  Cookies.remove(LANG_COOKIE_NAME, { path: '' });
+  const cookieValue = lang;
+
+  Cookies.set(LANG_COOKIE_NAME, cookieValue, {
+    expires: 366,
+    domain: BK_DOMAIN,
+  });
+
+  if (BK_COMPONENT_API_URL) {
+    const url = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language`;
+    try {
+      await jsonp(url, { language: cookieValue });
+    } finally {
+      window.location.reload();
+    }
+  }
+
+  window.location.reload();
 };
 
 const handleLogout = () => {
   gotoLoginPage(undefined, true);
-};
-
-const handleChangeLang = async (lang: string) => {
-  if (lang === language) return;
-  document.cookie = `blueking_language=${lang}; domain=${BK_DOMAIN}`;
-  await jsonp(`${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language`, { language: lang });
-  window.location.reload();
 };
 </script>
 
@@ -59,7 +64,6 @@ const handleChangeLang = async (lang: string) => {
         :to="getNavLink(nav)"
         :active-class="nav.route ? '' : undefined"
         :exact-active-class="nav.route ? '' : undefined"
-        @click="handleNavClick(nav)"
       >
         {{ t(nav.i18n) }}
       </RouterLink>

@@ -15,6 +15,8 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import router from '@/router';
+import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
@@ -49,8 +51,8 @@ const settingFields = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/details/${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

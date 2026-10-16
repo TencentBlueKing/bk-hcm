@@ -27,16 +27,14 @@ export const MENU_BUSINESS_SECURITY_GROUP_DETAILS = Symbol('menu_business_securi
 export const MENU_BUSINESS_GCP_DETAILS = Symbol('menu_business_gcp_details');
 export const MENU_BUSINESS_TEMPLATE_DETAILS = Symbol('menu_business_template_details');
 export const MENU_BUSINESS_LOAD_BALANCER = Symbol('menu_business_load_balancer');
-export const MENU_BUSINESS_LOAD_BALANCER_OVERVIEW = Symbol('menu_business_load_balancer_overview');
+export const MENU_BUSINESS_LOAD_BALANCER_LB_VIEW = Symbol('menu_business_load_balancer_lb_view');
+export const MENU_BUSINESS_LOAD_BALANCER_TG_VIEW = Symbol('menu_business_load_balancer_tg_view');
 export const MENU_BUSINESS_LOAD_BALANCER_DETAILS = Symbol('menu_business_load_balancer_details');
-export const MENU_BUSINESS_TARGET_GROUP_OVERVIEW = Symbol('menu_business_target_group_overview');
 export const MENU_BUSINESS_TARGET_GROUP_DETAILS = Symbol('menu_business_target_group_details');
-export const MENU_BUSINESS_LOAD_BALANCER_APPLY = Symbol('menu_business_load_balancer_apply');
 export const MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH = Symbol('menu_business_device_search');
 
 export const MENU_BUSINESS_CERT_MANAGEMENT = Symbol('menu_business_cert_management');
-export const MENU_BUSINESS_HOST_APPLICATION = Symbol('menu_business_host_application');
-export const MENU_BUSINESS_HOST_RECYCLE = Symbol('menu_business_host_recycle');
+
 export const MENU_BUSINESS_RECYCLEBIN = Symbol('menu_business_recyclebin');
 
 /**
@@ -46,6 +44,7 @@ export const MENU_BUSINESS_APPLY_CVM = Symbol('menu_business_apply_cvm');
 export const MENU_BUSINESS_APPLY_VPC = Symbol('menu_business_apply_vpc');
 export const MENU_BUSINESS_APPLY_DISK = Symbol('menu_business_apply_disk');
 export const MENU_BUSINESS_APPLY_SUBNET = Symbol('menu_business_apply_subnet');
+export const MENU_BUSINESS_APPLY_CLB = Symbol('menu_business_apply_clb');
 
 /**
  * 运营（服务请求）
@@ -54,11 +53,6 @@ export const MENU_SERVICE = Symbol('menu_service');
 export const MENU_SERVICE_HOST_APPLICATION = Symbol('menu_service_host_application');
 export const MENU_SERVICE_HOST_RECYCLE_ENTRY = Symbol('menu_service_host_recycle_entry');
 export const MENU_SERVICE_HOST_RECYCLE = Symbol('menu_service_host_recycle');
-
-/**
- * 平台管理
- */
-export const MENU_PLATFORM_MANAGEMENT = Symbol('menu_platform_management');
 
 /**
  * 资源运营

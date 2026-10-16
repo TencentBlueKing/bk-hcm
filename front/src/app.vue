@@ -1,15 +1,14 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, onMounted, reactive, useTemplateRef } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { provideBreadcrumb } from '@/hooks/use-breadcrumb';
 import { providePermissionDialog } from '@/hooks/use-permission-dialog';
-import { useVerify } from '@/hooks';
 import { getCurrentTopMenu } from '@/common/menu-service';
 import { VendorEnum } from '@/common/constant';
-import { MENU_BUSINESS_HOST_MANAGEMENT, MENU_RESOURCE, MENU_SCHEME } from '@/constants/menu-symbol';
-import { useAccountStore, useCommonStore } from '@/store';
+import { MENU_BUSINESS_HOST_MANAGEMENT } from '@/constants/menu-symbol';
+import { useCommonStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -26,8 +25,6 @@ const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
 
 const { t } = useI18n();
 const route = useRoute();
-const accountStore = useAccountStore();
-const { getAuthVerifyData } = useVerify();
 const { isNoticeAlert } = storeToRefs(useCommonStore());
 
 // 面包屑
@@ -38,57 +35,19 @@ const permissionDialogContext = providePermissionDialog();
 
 const permissionDialogRef = useTemplateRef<InstanceType<typeof PermissionApplyDialog>>('permission-dialog');
 
-const isMenuOpen = ref(true);
-const isRouterAlive = ref(true);
+// 导航布局状态
+const navigationState = reactive({
+  collapse: false,
+});
 
-const currentTopMenu = computed(() => getCurrentTopMenu(route));
-// 资源接入、资源选型不声明侧栏，状态页与 403 不属于任何一级菜单
-const needMenu = computed(() => !!currentTopMenu.value?.menu?.length);
+// 侧栏只看当前一级菜单是否声明了 menu：资源接入、资源选型不声明；404、error 等状态页不属于任何一级菜单，取不到即不显示
+const needMenu = computed(() => !!getCurrentTopMenu(route)?.menu?.length);
 const hasFooter = computed(() => route.name === MENU_BUSINESS_HOST_MANAGEMENT);
 
-const reload = () => {
-  isRouterAlive.value = false;
-  nextTick(() => {
-    isRouterAlive.value = true;
-  });
+// toggle 回传侧栏当前是否展开（含悬停临时展开）
+const handleCollapse = (expanded: boolean) => {
+  navigationState.collapse = !expanded;
 };
-
-const handleToggle = (open: boolean) => {
-  isMenuOpen.value = open;
-};
-
-watch(
-  () => accountStore.bizs,
-  async (bizs) => {
-    if (!bizs) return;
-    const commonStore = useCommonStore();
-    const { pageAuthData } = commonStore; // 所有需要检验的查看权限数据
-    const bizsPageAuthData = pageAuthData.map((e: any) => {
-      // eslint-disable-next-line no-prototype-builtins
-      if (e.hasOwnProperty('bk_biz_id')) {
-        e.bk_biz_id = bizs;
-      }
-      return e;
-    });
-    commonStore.updatePageAuthData(bizsPageAuthData);
-    await getAuthVerifyData(bizsPageAuthData);
-  },
-  { immediate: true },
-);
-
-// 切换一级菜单时初始化全局业务 ID
-watch(
-  () => route.path,
-  () => {
-    const topMenuId = currentTopMenu.value?.id;
-    if (topMenuId === MENU_RESOURCE || topMenuId === MENU_SCHEME) {
-      accountStore.updateBizsId(0);
-    } else if (!topMenuId) {
-      accountStore.updateBizsId('');
-    }
-  },
-  { immediate: true },
-);
 
 onMounted(() => {
   window.hcmPermissionDialog = permissionDialogRef.value;
@@ -112,10 +71,9 @@ onMounted(() => {
     :class="['hcm-app', { 'has-notice': isNoticeAlert }]"
     navigation-type="top-bottom"
     :side-title="t('海垒')"
-    :hover-width="240"
     :need-menu="needMenu"
-    :default-open="isMenuOpen"
-    @toggle="handleToggle"
+    :default-open="!navigationState.collapse"
+    @toggle="handleCollapse"
   >
     <template #side-icon>
       <img class="hcm-app-logo" :src="logo" />
@@ -124,10 +82,10 @@ onMounted(() => {
       <HcmHeader />
     </template>
     <template #menu>
-      <HcmMenu :is-open="isMenuOpen" :reload="reload" />
+      <HcmMenu />
     </template>
     <template #default>
-      <HcmMainContent :is-router-alive="isRouterAlive" />
+      <HcmMainContent />
     </template>
     <template v-if="hasFooter" #footer>
       <HcmFooter />
@@ -153,6 +111,10 @@ onMounted(() => {
   // 覆盖组件的 max-width: calc(100vw - 60px)，使导航容器跟随文档宽度（html/body 最小 1366px）而非视口宽度
   :deep(.bk-navigation-wrapper .navigation-container) {
     max-width: none !important;
+  }
+
+  :deep(.bk-navigation-wrapper .navigation-nav .nav-slider .business-selector-global) {
+    margin: 0 8px 10px;
   }
 
   :deep(.bk-navigation-title .title-desc) {

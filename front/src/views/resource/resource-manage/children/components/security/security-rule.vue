@@ -332,9 +332,10 @@ const inColumns: any = computed(() =>
                 [
                   [
                     bkTooltips,
-                    props.vendor === 'huawei'
-                      ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
-                      : operateTooltipsOption.value,
+                    (!noPerm &&
+                      (props.vendor === 'huawei'
+                        ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
+                        : operateTooltipsOption.value)) || { disabled: true },
                   ],
                 ],
               ),
@@ -356,7 +357,7 @@ const inColumns: any = computed(() =>
                   },
                   [t('删除')],
                 ),
-                [[bkTooltips, operateTooltipsOption.value]],
+                [[bkTooltips, noPerm ? { disabled: true } : operateTooltipsOption.value]],
               ),
             ],
           },
@@ -569,9 +570,10 @@ const outColumns: any = computed(() =>
                 [
                   [
                     bkTooltips,
-                    props.vendor === 'huawei'
-                      ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
-                      : operateTooltipsOption.value,
+                    (!noPerm &&
+                      (props.vendor === 'huawei'
+                        ? { content: '该功能当前未支持', disabled: props.vendor !== 'huawei' }
+                        : operateTooltipsOption.value)) || { disabled: true },
                   ],
                 ],
               ),
@@ -593,7 +595,7 @@ const outColumns: any = computed(() =>
                   },
                   [t('删除')],
                 ),
-                [[bkTooltips, operateTooltipsOption.value]],
+                [[bkTooltips, noPerm ? { disabled: true } : operateTooltipsOption.value]],
               ),
             ],
           },
@@ -640,7 +642,7 @@ const types = [
             (isResourcePage && !hasEditScopeInResource) ||
             (!isResourcePage && !hasEditScopeInBusiness)
           "
-          v-bk-tooltips="operateTooltipsOption"
+          v-bk-tooltips="noPerm ? { disabled: true } : operateTooltipsOption"
           theme="primary"
           @click="handleSecurityRuleDialog({})"
         >

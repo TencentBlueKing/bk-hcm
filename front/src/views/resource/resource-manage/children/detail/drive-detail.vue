@@ -20,12 +20,12 @@ import { timeFormatter } from '@/common/util';
 import {
   MENU_BUSINESS_HOST_DETAILS,
   MENU_BUSINESS_RECYCLEBIN,
+  MENU_RESOURCE_ACCOUNT_DETAIL,
   MENU_RESOURCE_DETAIL,
   MENU_RESOURCE_RECYCLEBIN,
 } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
 import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
@@ -63,8 +63,8 @@ const settingFields = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/details/${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {
@@ -121,8 +121,8 @@ const settingFields = ref<FieldList>([
       if (whereAmI.value === Senarios.business) {
         Object.assign(routeInfo, {
           name: MENU_BUSINESS_HOST_DETAILS,
-          params: { id },
-          query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: detail.value.vendor },
+          params: { bizId: route.params.bizId, id },
+          query: { vendor: detail.value.vendor },
         });
       } else {
         // 挂载主机与硬盘厂商相同
@@ -283,6 +283,7 @@ const handleShowDelete = () => {
         .then(() => {
           router.replace({
             name: isResourcePage.value ? MENU_RESOURCE_RECYCLEBIN : MENU_BUSINESS_RECYCLEBIN,
+            params: route.params.bizId ? { bizId: route.params.bizId } : {},
             query: { type: 'disk' },
           });
         });
@@ -291,19 +292,12 @@ const handleShowDelete = () => {
 };
 
 const disabledOption = computed(() => {
-  // 无权限，直接禁用按钮
-  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return true;
   // 业务下，判断是否已被回收
   if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
   // 资源下，判断是否分配业务，是否已被回收
   return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
 });
 const bkTooltipsOptions = computed(() => {
-  // 无权限
-  // if (!authVerifyData.value?.permissionAction?.[actionName.value]) return {
-  //     content: '当前用户无权限操作该按钮',
-  //     disabled: authVerifyData.value.permissionAction[actionName.value],
-  // }
   // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
     return {

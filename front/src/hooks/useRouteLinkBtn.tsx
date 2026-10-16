@@ -1,4 +1,4 @@
-import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import {
@@ -62,8 +62,8 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
     if (whereAmI.value === Senarios.business) {
       Object.assign(routeInfo, {
         name: BUSINESS_DETAIL_ROUTE_MAP[type],
-        params: { id: computedId.value },
-        query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor },
+        params: { bizId: route.params.bizId, id: computedId.value },
+        query: { vendor },
       });
     } else {
       Object.assign(routeInfo, {

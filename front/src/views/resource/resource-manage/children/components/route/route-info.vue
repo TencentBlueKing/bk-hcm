@@ -8,8 +8,7 @@ import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../../common/info-list/types';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
-import { MENU_BUSINESS_VPC_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_VPC_DETAILS, MENU_RESOURCE_ACCOUNT_DETAIL, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 
 const props = defineProps({
   detail: {
@@ -40,8 +39,8 @@ const fileds = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/details/${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
 ]);
@@ -105,8 +104,8 @@ const vpcField = {
     if (whereAmI.value === Senarios.business) {
       Object.assign(routeInfo, {
         name: MENU_BUSINESS_VPC_DETAILS,
-        params: { id },
-        query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], vendor: props.detail.vendor },
+        params: { bizId: route.params.bizId, id },
+        query: { vendor: props.detail.vendor },
       });
     } else {
       Object.assign(routeInfo, {
