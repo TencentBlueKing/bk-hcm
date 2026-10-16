@@ -9,11 +9,14 @@ import { VENDORS } from '@/common/constant';
 import { DEPLOYMENT_ARCHITECTURE_MAP } from '@/constants';
 import CloudServiceTag from '../components/cloud-service-tag';
 import SchemeEditDialog from '../components/scheme-edit-dialog';
-import { useVerify } from '@/hooks';
+import {
+  AUTH_CREATE_CLOUD_SELECTION_SCHEME,
+  AUTH_UPDATE_CLOUD_SELECTION_SCHEME,
+  AUTH_DELETE_CLOUD_SELECTION_SCHEME,
+} from '@/constants/auth-symbols';
 import moment from 'moment';
 
 import './index.scss';
-import PermissionDialog from '@/components/permission-dialog';
 
 export default defineComponent({
   name: 'SchemeListPage',
@@ -51,15 +54,6 @@ export default defineComponent({
       // { id: 'bk_biz_id', name: '业务id' },
       { id: 'creator', name: '创建人' },
     ]);
-    const {
-      authVerifyData,
-      handleAuth,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      showPermissionDialog,
-      permissionParams,
-    } = useVerify();
-
     const tableCols = ref([
       {
         label: '方案名称',
@@ -85,16 +79,15 @@ export default defineComponent({
                 }}>
                 {data.name}
               </span>
-              <span
-                class={`edit-icon ${
-                  authVerifyData.value.permissionAction.cloud_selection_edit ? '' : 'hcm-no-permision-text-btn'
-                }`}
-                onClick={() => {
-                  if (authVerifyData.value.permissionAction.cloud_selection_edit) handleOpenEditDialog(data);
-                  else handleAuth('cloud_selection_edit');
-                }}>
-                <EditLine />
-              </span>
+              <hcm-auth sign={{ type: AUTH_UPDATE_CLOUD_SELECTION_SCHEME }}>
+                {{
+                  default: ({ noPerm }: { noPerm: boolean }) => (
+                    <bk-button text disabled={noPerm} onClick={() => handleOpenEditDialog(data)} class='edit-icon'>
+                      <EditLine />
+                    </bk-button>
+                  ),
+                }}
+              </hcm-auth>
             </div>
           );
         },
@@ -191,16 +184,15 @@ export default defineComponent({
         width: 120,
         render: ({ data }: { data: ISchemeListItem }) => {
           return (
-            <bk-button
-              text
-              theme='primary'
-              onClick={() => {
-                if (!authVerifyData.value.permissionAction.cloud_selection_delete) handleAuth('cloud_selection_delete');
-                else handleDelScheme(data);
+            <hcm-auth sign={{ type: AUTH_DELETE_CLOUD_SELECTION_SCHEME }}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <bk-button text theme='primary' disabled={noPerm} onClick={() => handleDelScheme(data)}>
+                    删除
+                  </bk-button>
+                ),
               }}
-              class={authVerifyData.value.permissionAction.cloud_selection_delete ? '' : 'hcm-no-permision-text-btn'}>
-              删除
-            </bk-button>
+            </hcm-auth>
           );
         },
       },
@@ -539,18 +531,16 @@ export default defineComponent({
     return () => (
       <div class='scheme-list-page'>
         <div class='operate-wrapper'>
-          <bk-button
-            class={`create-btn ${
-              authVerifyData.value.permissionAction.cloud_selection_recommend ? '' : 'hcm-no-permision-btn'
-            }`}
-            theme='primary'
-            onClick={() => {
-              if (authVerifyData.value.permissionAction.cloud_selection_recommend) goToCreate();
-              else handleAuth('cloud_selection_create');
-            }}>
-            <Plus class='plus-icon' />
-            创建选型方案
-          </bk-button>
+          <hcm-auth sign={{ type: AUTH_CREATE_CLOUD_SELECTION_SCHEME }}>
+            {{
+              default: ({ noPerm }: { noPerm: boolean }) => (
+                <bk-button class='create-btn' theme='primary' disabled={noPerm} onClick={goToCreate}>
+                  <Plus class='plus-icon' />
+                  创建选型方案
+                </bk-button>
+              ),
+            }}
+          </hcm-auth>
           <bk-search-select
             v-model={searchValue.value}
             class={'scheme-search-select'}
@@ -577,12 +567,6 @@ export default defineComponent({
           schemeData={selectedScheme.value || {}}
           confirmFn={saveSchemeFn}
           onConfirm={handleConfirm}
-        />
-        <PermissionDialog
-          isShow={showPermissionDialog.value}
-          onConfirm={handlePermissionConfirm}
-          onCancel={handlePermissionDialog}
-          params={permissionParams.value}
         />
       </div>
     );
