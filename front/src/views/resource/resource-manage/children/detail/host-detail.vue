@@ -19,6 +19,7 @@ import {
 
 import { ref, inject, computed, watchEffect } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { MENU_BUSINESS_RECYCLEBIN, MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { VendorEnum, CLOUD_HOST_STATUS } from '@/common/constant';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
@@ -150,7 +151,8 @@ const modifyCvmStatus = async (type: string) => {
     if (type === 'destroy') {
       // 回收成功跳转回收记录
       router.push({
-        path: '/business/host/recyclebin/cvm',
+        name: whereAmI.value === Senarios.business ? MENU_BUSINESS_RECYCLEBIN : MENU_RESOURCE_RECYCLEBIN,
+        query: { type: 'cvm' },
       });
     } else {
       getDetail();

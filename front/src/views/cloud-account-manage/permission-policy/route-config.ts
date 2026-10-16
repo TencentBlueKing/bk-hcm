@@ -14,8 +14,7 @@ export const permissionPolicyRoutes: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         activeKey: MENU_SERVICE_PERMISSION_POLICY,
-        title: t('权限策略库'),
-        icon: 'hcm-icon bkhcm-icon-my-apply',
+        menu: { i18n: t('权限策略库') },
         auth: { view: { type: AUTH_FIND_PERMISSION_POLICY_LIBRARY } },
       }),
     },

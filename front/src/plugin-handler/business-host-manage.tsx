@@ -15,6 +15,7 @@ import {
   AUTH_BIZ_DELETE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { MENU_BUSINESS_RECYCLEBIN } from '@/constants/menu-symbol';
 import { getAuthSignByBusinessId } from '@/utils';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -51,7 +52,7 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
     confirmSuccess(type: string) {
       Message({ message: t('操作成功'), theme: 'success' });
       if (type === OperationActions.RECYCLE) {
-        router.push({ name: 'businessRecyclebin' });
+        router.push({ name: MENU_BUSINESS_RECYCLEBIN });
       } else {
         extra.triggerApi();
       }

@@ -19,8 +19,7 @@ export const provideBreadcrumb = () => {
       // oldMeta 为 undefined 时是首次调用（immediate），必须初始化；
       // 后续变更通过 isEqual 比较，防止 query 变化时覆盖 setTitle 设置的 title
       if (!oldMeta || !isEqual(meta, oldMeta)) {
-        // 未用 Meta 构造的路由没有 menu，标题回退到 title
-        data.title = meta.menu?.i18n || meta.title;
+        data.title = meta.menu?.i18n;
         data.display = meta.layout?.breadcrumb?.show !== false;
         data.back = meta.layout?.breadcrumb?.back ?? true;
       }

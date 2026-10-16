@@ -16,7 +16,6 @@ const scheme: RouteRecordRaw[] = [
         name: 'scheme-recommendation',
         component: () => import('@/views/scheme/scheme-recommendation/index'),
         meta: {
-          notMenu: true,
           auth: { view: { type: AUTH_CREATE_CLOUD_SELECTION_SCHEME } },
         },
       },
@@ -25,7 +24,6 @@ const scheme: RouteRecordRaw[] = [
         name: 'scheme-list',
         component: () => import('@/views/scheme/scheme-list/index'),
         meta: {
-          notMenu: true,
           auth: { view: { type: AUTH_FIND_CLOUD_SELECTION_SCHEME } },
         },
       },
@@ -33,9 +31,6 @@ const scheme: RouteRecordRaw[] = [
         path: 'deployment/detail',
         name: 'scheme-detail',
         component: () => import('@/views/scheme/scheme-detail/index'),
-        meta: {
-          notMenu: true,
-        },
       },
     ],
   },

@@ -1,12 +1,25 @@
 import type { Component } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
-import business from '@/router/module/business';
+import host from '@/views/host/route-config';
+import drive from '@/views/drive/route-config';
+import image from '@/views/image/route-config';
+import vpc from '@/views/vpc/route-config';
+import subnet from '@/views/subnet/route-config';
+import eip from '@/views/eip/route-config';
+import networkInterface from '@/views/network-interface/route-config';
+import routeTable from '@/views/route-table/route-config';
+import securityGroup from '@/views/security-group/route-config';
+import { loadBalancerBiz } from '@/views/load-balancer/route-config';
+import cert from '@/views/cert/route-config';
+import { ticketRoutesBiz } from '@/views/ticket/route-config';
+import { operationLogBiz, operationLogRsc } from '@/views/operation-log/route-config';
+import task from '@/views/task/route-config';
+import cloudAccountManage from '@/views/cloud-account-manage/route-config';
 import service from '@/router/module/service';
 import scheme from '@/router/module/scheme';
 import resourceManage from '@/views/resource-manage/route-config';
-import { recyclebinRsc } from '@/views/recyclebin/route-config';
+import { recyclebinBiz, recyclebinRsc } from '@/views/recyclebin/route-config';
 import { accountManageRsc } from '@/views/account-manage/route-config';
-import { operationLogRsc } from '@/views/operation-log/route-config';
 import { billAccountManage, billManage } from '@/views/bill/route-config';
 
 import statusNotFound from '@/views/status/404.vue';
@@ -43,7 +56,24 @@ export const injectStatusComponents = (routes: RouteRecordRaw[], permission: Com
 };
 
 export const businessViews = injectStatusComponents(
-  business.flatMap((group) => group.children),
+  [
+    ...host,
+    ...drive,
+    ...image,
+    ...vpc,
+    ...subnet,
+    ...eip,
+    ...networkInterface,
+    ...routeTable,
+    ...securityGroup,
+    ...loadBalancerBiz,
+    ...cert,
+    ...ticketRoutesBiz,
+    ...operationLogBiz,
+    ...task,
+    ...cloudAccountManage,
+    ...recyclebinBiz,
+  ],
   statusBusiness,
 );
 export const serviceViews = injectStatusComponents(service.flatMap((group) => group.children));

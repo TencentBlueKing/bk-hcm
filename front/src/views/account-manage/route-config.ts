@@ -10,14 +10,14 @@ import {
   MENU_RESOURCE_RESOURCE_LIST,
 } from '@/constants/menu-symbol';
 
-// 子路由要重复 auth.view / owner / activeKey：meta 沿 matched 浅合并，子路由 Meta 自带的空 auth 会盖掉父路由的
+// 详情父路由与子路由共用同一份 meta：to.meta 由 matched 从父到子浅合并，子路由 new Meta 的默认值
+// （auth: {}、owner / activeKey: Symbol.for('')、menu: {}）会整项盖掉父路由的，守卫读 to.meta.auth.view 时就丢了查看权限
 const getDetailMeta = () =>
   new Meta({
     owner: MENU_RESOURCE,
-    title: '账号详情',
     activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
     auth: { view: { type: AUTH_FIND_ACCOUNT } },
-    menu: { relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
+    menu: { i18n: '账号详情', relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
     layout: { breadcrumb: { show: true } },
   });
 
@@ -29,9 +29,9 @@ const accountManageRsc: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '账号管理',
         activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
         auth: { view: { type: AUTH_FIND_ACCOUNT } },
+        menu: { i18n: '账号管理' },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -43,9 +43,8 @@ const accountManageRsc: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '账号登记',
         activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
-        menu: { relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
+        menu: { i18n: '账号登记', relative: MENU_RESOURCE_ACCOUNT_MANAGEMENT },
         layout: { breadcrumb: { show: false } },
       }),
     },

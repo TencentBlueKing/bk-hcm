@@ -13,12 +13,11 @@ import {
 } from '@/constants/menu-symbol';
 
 // 模块内的面包屑由 resource-entry.vue 在右栏渲染，整页顶部不再画一条
-const getMeta = (title: string, relative?: symbol) =>
+const getMeta = (i18n: string, relative?: symbol) =>
   new Meta({
     owner: MENU_RESOURCE,
     activeKey: MENU_RESOURCE_MANAGE,
-    title,
-    menu: { relative },
+    menu: { i18n, relative },
     layout: { breadcrumb: { show: false } },
   });
 

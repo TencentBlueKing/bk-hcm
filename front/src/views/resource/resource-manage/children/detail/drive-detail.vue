@@ -17,7 +17,12 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { timeFormatter } from '@/common/util';
-import { MENU_BUSINESS_HOST_DETAILS, MENU_RESOURCE_DETAIL, MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_RECYCLEBIN,
+  MENU_RESOURCE_DETAIL,
+  MENU_RESOURCE_RECYCLEBIN,
+} from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
@@ -276,11 +281,10 @@ const handleShowDelete = () => {
           infos: [{ id: detail.value.id }],
         })
         .then(() => {
-          router.replace(
-            location.href.includes('business')
-              ? { path: 'recyclebin/disk', query: { type: 'disk' } }
-              : { name: MENU_RESOURCE_RECYCLEBIN, query: { type: 'disk' } },
-          );
+          router.replace({
+            name: isResourcePage.value ? MENU_RESOURCE_RECYCLEBIN : MENU_BUSINESS_RECYCLEBIN,
+            query: { type: 'disk' },
+          });
         });
     },
   });

@@ -15,13 +15,12 @@ import {
   MENU_SERVICE,
   MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
-import { businessViews, injectStatusComponents, resourceViews, schemeViews, serviceViews } from '@/views';
+import { businessViews, resourceViews, schemeViews, serviceViews } from '@/views';
 import { resourceManageLegacy, resourceDetailLegacy } from '@/views/resource-manage/route-config';
 import { recyclebinRscLegacy } from '@/views/recyclebin/route-config';
 import { accountManageLegacy } from '@/views/account-manage/route-config';
 import { operationLogRscLegacy } from '@/views/operation-log/route-config';
 import { billLegacy } from '@/views/bill/route-config';
-import common from './module/common';
 import { before as businessBeforeInterceptor } from './business-interceptor';
 import { useCommonStore } from '@/store';
 import { useAuthStore } from '@/store/auth';
@@ -45,8 +44,7 @@ const statusRouters: RouteRecordRaw[] = [
 
 // 顶层记录的 name 即一级菜单 id，顶栏高亮与侧栏按 route.matched[0].name 判定
 const routes: RouteRecordRaw[] = [
-  ...injectStatusComponents(statusRouters),
-  ...injectStatusComponents(common),
+  ...statusRouters,
   {
     name: MENU_BUSINESS,
     path: '/business',
@@ -78,10 +76,6 @@ const routes: RouteRecordRaw[] = [
   ...accountManageLegacy,
   ...billLegacy,
   {
-    path: '/403',
-    redirect: '/403',
-  },
-  {
     path: '/',
     redirect: { name: MENU_BUSINESS },
   },
@@ -110,12 +104,6 @@ router.beforeEach(async (to: RouteLocationNormalized, _from: RouteLocationNormal
     } catch (err) {
       console.error('[router] getAuthVerifyData error:', err);
     }
-  }
-
-  // 旧 403 页（/403/:id）仅保留可打开：首次进入且有业务访问权限时回首页，与改造前一致
-  if (to.name === '403') {
-    next(isFirst && commonStore.authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
-    return;
   }
 
   try {

@@ -37,7 +37,15 @@ export const MENU_BUSINESS_LOAD_BALANCE_DEVICE_SEARCH = Symbol('menu_business_de
 export const MENU_BUSINESS_CERT_MANAGEMENT = Symbol('menu_business_cert_management');
 export const MENU_BUSINESS_HOST_APPLICATION = Symbol('menu_business_host_application');
 export const MENU_BUSINESS_HOST_RECYCLE = Symbol('menu_business_host_recycle');
-export const MENU_BUSINESS_RECYCLE_BIN_MANAGEMENT = Symbol('menu_business_recycle_bin_management');
+export const MENU_BUSINESS_RECYCLEBIN = Symbol('menu_business_recyclebin');
+
+/**
+ * 资源申请
+ */
+export const MENU_BUSINESS_APPLY_CVM = Symbol('menu_business_apply_cvm');
+export const MENU_BUSINESS_APPLY_VPC = Symbol('menu_business_apply_vpc');
+export const MENU_BUSINESS_APPLY_DISK = Symbol('menu_business_apply_disk');
+export const MENU_BUSINESS_APPLY_SUBNET = Symbol('menu_business_apply_subnet');
 
 /**
  * 运营（服务请求）

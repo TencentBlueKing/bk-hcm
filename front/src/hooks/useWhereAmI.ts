@@ -22,7 +22,6 @@ export const useWhereAmI = (): {
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
-    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
 

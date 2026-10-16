@@ -26,9 +26,9 @@ const billAccountManage: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '一级账号',
         activeKey: MENU_BILL_ROOT_ACCOUNT,
         auth: { view: { type: AUTH_FIND_ROOT_ACCOUNT } },
+        menu: { i18n: '一级账号' },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -40,9 +40,8 @@ const billAccountManage: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '录入一级账号',
         activeKey: MENU_BILL_ROOT_ACCOUNT,
-        menu: { relative: MENU_BILL_ROOT_ACCOUNT },
+        menu: { i18n: '录入一级账号', relative: MENU_BILL_ROOT_ACCOUNT },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -54,9 +53,9 @@ const billAccountManage: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '二级账号',
         activeKey: MENU_BILL_MAIN_ACCOUNT,
         auth: { view: { type: AUTH_FIND_MAIN_ACCOUNT } },
+        menu: { i18n: '二级账号' },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -68,9 +67,8 @@ const billAccountManage: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '创建二级账号',
         activeKey: MENU_BILL_MAIN_ACCOUNT,
-        menu: { relative: MENU_BILL_MAIN_ACCOUNT },
+        menu: { i18n: '创建二级账号', relative: MENU_BILL_MAIN_ACCOUNT },
         layout: { breadcrumb: { show: true } },
       }),
     },
@@ -148,8 +146,8 @@ const billManage: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         owner: MENU_RESOURCE,
-        title: '账单管理',
         activeKey: MENU_BILL_MANAGE,
+        menu: { i18n: '账单管理' },
         layout: { breadcrumb: { show: false } },
       }),
     },

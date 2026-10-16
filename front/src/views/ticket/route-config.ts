@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import i18n from '@/language/i18n';
 import Meta from '@/router/meta';
 import {
+  MENU_BUSINESS,
   MENU_SERVICE_TICKET_DETAILS,
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_BUSINESS_TICKET_MANAGEMENT,
@@ -15,12 +16,10 @@ export const ticketRoutes: RouteRecordRaw[] = [
   {
     path: '/service/my-apply',
     redirect: '/service/ticket',
-    meta: { ...new Meta({ notMenu: true }) },
   },
   {
     path: '/service/my-apply/detail',
     redirect: '/service/ticket/detail',
-    meta: { ...new Meta({ notMenu: true }) },
   },
   {
     path: 'ticket',
@@ -29,8 +28,7 @@ export const ticketRoutes: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
-        title: t('单据管理'),
-        icon: 'hcm-icon bkhcm-icon-my-apply',
+        menu: { i18n: t('单据管理') },
       }),
     },
   },
@@ -41,9 +39,7 @@ export const ticketRoutes: RouteRecordRaw[] = [
     meta: {
       ...new Meta({
         activeKey: MENU_SERVICE_TICKET_MANAGEMENT,
-        title: '申请单详情',
-        notMenu: true,
-        menu: { relative: MENU_SERVICE_TICKET_MANAGEMENT },
+        menu: { i18n: '申请单详情', relative: MENU_SERVICE_TICKET_MANAGEMENT },
       }),
     },
   },
@@ -56,9 +52,9 @@ export const ticketRoutesBiz: RouteRecordRaw[] = [
     component: () => import('@/views/ticket/entry-biz.vue'),
     meta: {
       ...new Meta({
+        owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
-        title: t('单据管理'),
-        icon: 'hcm-icon bkhcm-icon-my-apply',
+        menu: { i18n: t('单据管理') },
       }),
     },
   },
@@ -68,10 +64,9 @@ export const ticketRoutesBiz: RouteRecordRaw[] = [
     component: () => import('@/views/ticket/children/apply-detail'),
     meta: {
       ...new Meta({
+        owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_TICKET_MANAGEMENT,
-        title: '申请单详情',
-        notMenu: true,
-        menu: { relative: MENU_BUSINESS_TICKET_MANAGEMENT },
+        menu: { i18n: '申请单详情', relative: MENU_BUSINESS_TICKET_MANAGEMENT },
       }),
     },
   },

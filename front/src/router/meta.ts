@@ -34,29 +34,21 @@ interface Extra {
 export interface RouteMetaConfig {
   available?: boolean | AvailableFn;
   owner?: symbol;
-  /** @deprecated 使用 menu.i18n 代替 */
-  title?: string;
   authKey?: string;
   view?: string;
   extra?: Extra;
   menu?: Menu;
   auth?: Auth;
   layout?: Layout;
-  notMenu?: boolean;
-  activeKey?: symbol | string;
-  icon?: string;
+  activeKey?: symbol;
   permissionData?: IPermission;
   errorMessage?: string;
 }
 
-/**
- * layout、activeKey、owner 只在传入时出现在 meta 上：route.meta 是 matched 链上各记录 meta 的浅合并，
- * 子记录若产出默认值会遮住父记录的配置（如父记录的 layout.breadcrumb.show = false）。
- */
 export default class Meta {
   available: boolean | AvailableFn = true;
 
-  title = '';
+  owner = Symbol.for('');
 
   authKey = 'view';
 
@@ -68,17 +60,35 @@ export default class Meta {
 
   auth: Auth = {};
 
+  layout: Layout = {
+    breadcrumb: {
+      show: true,
+      back: true,
+    },
+  };
+
+  activeKey = Symbol.for('');
+
+  permissionData: IPermission = null;
+
+  errorMessage = '';
+
   constructor(data: RouteMetaConfig) {
-    Object.keys(data).forEach((key) => {
-      const typedKey = key as keyof RouteMetaConfig;
-      Reflect.set(this, typedKey, data[typedKey]);
-    });
+    // 设置非嵌套对象属性
+    this.available = data.available ?? this.available;
+    this.owner = data.owner ?? this.owner;
+    this.authKey = data.authKey ?? this.authKey;
+    this.view = data.view ?? this.view;
+    this.activeKey = data.activeKey ?? this.activeKey;
+    this.permissionData = data.permissionData ?? this.permissionData;
+    this.errorMessage = data.errorMessage ?? this.errorMessage;
 
-    this.menu.i18n = this.title;
-
+    // 合并嵌套对象（保留默认值，只覆盖传入的属性）
     this.menu = Object.assign(this.menu, data.menu);
 
     this.auth = Object.assign(this.auth, data.auth);
+
+    this.layout = Object.assign(this.layout, data.layout);
 
     this.extra = Object.assign(this.extra, data.extra);
   }

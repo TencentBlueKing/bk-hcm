@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import { Message, Checkbox } from 'bkui-vue';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useBusinessStore } from '@/store';
+import { MENU_BUSINESS_RECYCLEBIN } from '@/constants/menu-symbol';
 import { OperationActions, operationMap, HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from './index';
 import cssModule from './index.module.scss';
 
@@ -264,7 +265,7 @@ const useBatchOperation = ({ selections, onFinished }: Params) => {
       });
       onFinished?.('confirm');
       if (isRecycle) {
-        router.push({ name: 'businessRecyclebin' });
+        router.push({ name: MENU_BUSINESS_RECYCLEBIN });
       }
     } finally {
       isLoading.value = false;

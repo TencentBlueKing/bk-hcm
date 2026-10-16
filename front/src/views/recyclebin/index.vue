@@ -12,7 +12,14 @@ import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { AUTH_MANAGE_RECYCLE_BIN } from '@/constants/auth-symbols';
-import { MENU_RESOURCE_DETAIL, MENU_RESOURCE_RECYCLEBIN } from '@/constants/menu-symbol';
+import {
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_RECYCLEBIN,
+  MENU_RESOURCE_DETAIL,
+  MENU_RESOURCE_RECYCLEBIN,
+} from '@/constants/menu-symbol';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import routerAction from '@/router/utils/action';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -25,6 +32,11 @@ const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 const accountSelectorStore = useAccountSelectorStore();
 const { getRegionName } = useRegionsStore();
+const { whereAmI } = useWhereAmI();
+
+// 业务回收站与资源回收管理共用本页：业务侧不按账号筛选、不配置保留时间、不提供单行操作
+const isBusiness = computed(() => whereAmI.value === Senarios.business);
+const listRouteName = computed(() => (isBusiness.value ? MENU_BUSINESS_RECYCLEBIN : MENU_RESOURCE_RECYCLEBIN));
 
 const recycleTypeData: { name: string; value: RecycleType }[] = [
   { name: t('主机回收'), value: 'cvm' },
@@ -59,13 +71,13 @@ const searchData = computed(() => [
 // 账号以地址为准：选择器只改 query，列表条件与回收保留时间都跟随 accountId
 const accountId = computed(() => {
   const id = route.query.accountId;
-  return typeof id === 'string' && id ? id : '';
+  return !isBusiness.value && typeof id === 'string' && id ? id : '';
 });
 const accountOptions = computed(() => accountSelectorStore.authorizedResourceAccountList);
 
 const setAccountId = (val?: string) => {
   routerAction.redirect(
-    { name: MENU_RESOURCE_RECYCLEBIN, query: { ...route.query, accountId: val || undefined } },
+    { name: listRouteName.value, params: route.params, query: { ...route.query, accountId: val || undefined } },
     { replace: true },
   );
 };
@@ -127,8 +139,9 @@ const handleSettingConfirm = async () => {
   }
 };
 
-// 资源侧：随主机回收的硬盘、已分配到业务的资源不可在此操作
-const isCurRowSelectEnable = (row: any) => !(row?.recycle_type === 'related' || row?.bk_biz_id !== -1);
+// 随主机回收的硬盘不可单独操作；资源侧另外不可操作已分配到业务的资源
+const isCurRowSelectEnable = (row: any) =>
+  !(row?.recycle_type === 'related' || (!isBusiness.value && row?.bk_biz_id !== -1));
 const isRowSelectEnable = ({ row, isCheckAll }: any) => isCheckAll || isCurRowSelectEnable(row);
 
 const generateTooltipsOptions = (data: any) => {
@@ -158,7 +171,7 @@ watch(
     // 手动切页签：带上类型，清掉所属主机跳转带来的 cvm 条件
     if (oldType) searchVal.value = [];
     routerAction.redirect(
-      { name: MENU_RESOURCE_RECYCLEBIN, query: { ...route.query, type, cvm: undefined } },
+      { name: listRouteName.value, params: route.params, query: { ...route.query, type, cvm: undefined } },
       { replace: true },
     );
   },
@@ -187,20 +200,24 @@ watch(
 // 硬盘的所属主机：切到主机页签并按主机 ID 搜索
 const handleLink = (cvmId: string) => {
   routerAction.redirect(
-    { name: MENU_RESOURCE_RECYCLEBIN, query: { ...route.query, type: 'cvm', cvm: cvmId } },
+    { name: listRouteName.value, params: route.params, query: { ...route.query, type: 'cvm', cvm: cvmId } },
     { replace: true },
   );
 };
 
 const handleClick = (vendor: VendorEnum, id: string, type: 'drive' | 'host') => {
-  routerAction.redirect(
-    {
-      name: MENU_RESOURCE_DETAIL,
-      params: { resourceType: type, id },
-      query: { accountId: route.query.accountId, vendor },
-    },
-    { history: true },
-  );
+  const routeInfo = isBusiness.value
+    ? {
+        name: type === 'host' ? MENU_BUSINESS_HOST_DETAILS : MENU_BUSINESS_DRIVE_DETAILS,
+        params: { id },
+        query: { vendor },
+      }
+    : {
+        name: MENU_RESOURCE_DETAIL,
+        params: { resourceType: type, id },
+        query: { accountId: route.query.accountId, vendor },
+      };
+  routerAction.redirect(routeInfo, { history: true });
 };
 
 const operateState = reactive({
@@ -235,9 +252,11 @@ const handleOperateConfirm = async () => {
 };
 
 onMounted(() => {
-  accountSelectorStore.getAuthorizedResourceAccountList({
-    filter: { op: 'and', rules: [{ field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' }] },
-  });
+  if (!isBusiness.value) {
+    accountSelectorStore.getAuthorizedResourceAccountList({
+      filter: { op: 'and', rules: [{ field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' }] },
+    });
+  }
   moment.updateLocale('zh-cn', {
     relativeTime: {
       future: '余%s',
@@ -264,7 +283,7 @@ onMounted(() => {
 <template>
   <div class="page-container recycle-manager-page">
     <bk-tab type="card-grid" v-model:active="selectedType" :label-height="42">
-      <template #setting>
+      <template v-if="!isBusiness" #setting>
         <div class="setting-container">
           <bk-select
             class="account-select"
@@ -379,7 +398,7 @@ onMounted(() => {
                 {{ timeFormatter(cell) }}
               </template>
             </bk-table-column>
-            <bk-table-column :label="t('操作')" :min-width="150">
+            <bk-table-column v-if="!isBusiness" :label="t('操作')" :min-width="150">
               <template #default="{ data }">
                 <hcm-auth :sign="recycleManageSign" tag="span" v-slot="{ noPerm }">
                   <bk-button

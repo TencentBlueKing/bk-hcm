@@ -10,6 +10,7 @@ import {
   MENU_BUSINESS_LOAD_BALANCER,
   MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
   MENU_BUSINESS_OPERATION_LOG,
+  MENU_BUSINESS_RECYCLEBIN,
   MENU_BUSINESS_ROUTEING_TABLE_MANAGEMENT,
   MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
   MENU_BUSINESS_SUBNET_MANAGEMENT,
@@ -169,11 +170,11 @@ const businessMenus: IMenu[] = [
     route: getMenuRoute(businessViews, MENU_BUSINESS_CLOUD_ACCOUNT),
   },
   {
-    id: 'businessRecyclebin',
+    id: MENU_BUSINESS_RECYCLEBIN,
     i18n: '回收站',
     icon: 'bkhcm-icon-recyclebin',
     group: '回收站',
-    route: getMenuRoute(businessViews, 'businessRecyclebin'),
+    route: getMenuRoute(businessViews, MENU_BUSINESS_RECYCLEBIN),
   },
 ];
 
