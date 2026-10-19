@@ -31,10 +31,12 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
 
@@ -117,22 +119,6 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 地域没有实例级权限，只校验用户是否拥有「资源-IaaS资源操作」这个权限点。
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.Region, Action: meta.Update}}
-	decisions, err := svc.authorizer.AuthorizeAny(cts.Kit, authRes)
-	if err != nil {
-		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if len(decisions) == 0 || !decisions[0].Authorized {
-		permission, permErr := svc.authorizer.GetPermissionToApply(cts.Kit, authRes)
-		if permErr != nil {
-			logs.Errorf("get region sync_enable permission to apply failed, err: %v, rid: %s", permErr, cts.Kit.Rid)
-			return nil, permErr
-		}
-		return nil, errf.NewWithPerm(errf.PermissionDenied, "no permission", permission)
-	}
-
 	switch vendor {
 	case enumor.Aws:
 		return svc.batchUpdateAwsRegionSyncEnable(cts, req)
@@ -162,6 +148,25 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 	if len(listResp.Details) != len(ids) {
 		return nil, errf.Newf(errf.InvalidParameter,
 			"some regions don't exist, expected: %d, found: %d", len(ids), len(listResp.Details))
+	}
+
+	basicInfos := make(map[string]types.CloudResourceBasicInfo, len(listResp.Details))
+	for _, one := range listResp.Details {
+		basicInfos[one.ID] = types.CloudResourceBasicInfo{
+			ID:        one.ID,
+			AccountID: one.AccountID,
+			Vendor:    enumor.Aws,
+		}
+	}
+	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Region,
+		Action:     meta.Update,
+		BasicInfos: basicInfos,
+	})
+	if err != nil {
+		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	// 构建批量更新请求
