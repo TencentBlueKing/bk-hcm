@@ -43,7 +43,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 	"github.com/tidwall/gjson"
 )
 

@@ -42,7 +42,7 @@ import (
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/times"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // InitRecycleRecordService initialize the recycle record service.

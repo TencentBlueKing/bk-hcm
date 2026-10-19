@@ -22,7 +22,7 @@ package resusagebizrel
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"

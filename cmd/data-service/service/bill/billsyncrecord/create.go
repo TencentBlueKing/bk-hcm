@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateBillSyncRecord account bill sync record with options

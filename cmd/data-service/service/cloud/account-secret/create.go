@@ -35,7 +35,7 @@ import (
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateAccountSecret batch create account secret.
