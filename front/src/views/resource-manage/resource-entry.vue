@@ -5,7 +5,6 @@ import HcmBreadcrumb from '@/components/layout/breadcrumb.vue';
 import { MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import AccountVendorGroup from './account/vendor-group/index.vue';
-import MigrationNotice from './children/migration-notice.vue';
 
 const route = useRoute();
 const resourceAccountStore = useResourceAccountStore();
@@ -22,9 +21,8 @@ onBeforeUnmount(() => resourceAccountStore.clear());
       <AccountVendorGroup />
     </div>
     <div class="resource-entry-main">
-      <MigrationNotice />
       <HcmBreadcrumb v-if="!isListPage" />
-      <div class="resource-entry-content">
+      <div class="resource-entry-content" :class="{ 'is-list-page': isListPage }">
         <RouterView />
       </div>
     </div>
@@ -55,7 +53,12 @@ onBeforeUnmount(() => resourceAccountStore.clear());
 
 .resource-entry-content {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
+
+  &.is-list-page {
+    overflow: hidden;
+  }
 }
 </style>

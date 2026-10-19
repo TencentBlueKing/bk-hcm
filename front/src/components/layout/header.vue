@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n';
 import Cookies from 'js-cookie';
 import { jsonp } from '@/http';
 import { LANGUAGE_TYPE } from '@/common/constant';
+import { Message } from 'bkui-vue';
 import { getMenus, type IMenu } from '@/common/menu-service';
+import { MENU_RESOURCE_ACCESS } from '@/constants/menu-symbol';
 import { useUserStore } from '@/store';
 import { gotoLoginPage } from '@/utils/login-helper';
 import ReleaseNote from '@/components/release-note/index.vue';
@@ -26,6 +28,27 @@ const getNavTarget = (nav: IMenu) => nav.route?.name ?? nav.id;
 const menus = getMenus().filter((menu) => router.hasRoute(getNavTarget(menu)));
 
 const getNavLink = (nav: IMenu): RouteLocationRaw => ({ name: getNavTarget(nav) });
+
+// 资源接入是跳转型过渡入口：点击时（含已在资源纳管的重复导航）都用 Message 提示迁移去向。
+// 原生 click 每次点击都会触发，资源接入下线时连同本入口一并清理。
+// bkui 的 Message 没有 close/closeAll 之类的实例控制 API（内部 id 也由组件自己生成），
+// 所以用 onClose 复位标记，保证连续点击时同屏只保留一条提示
+let isMigrationMessageShowing = false;
+
+const handleNavClick = (nav: IMenu) => {
+  if (nav.id !== MENU_RESOURCE_ACCESS || isMigrationMessageShowing) return;
+  isMigrationMessageShowing = true;
+  Message({
+    theme: 'primary',
+    // 默认宽度写死 560px 会折行：auto + min-width: max-content 让文案保持单行
+    width: 'auto',
+    minWidth: 'max-content',
+    message: '「资源接入」已迁移至 「资源运营 → 云资源 → 资源纳管」，原入口将于 2026-10-30 下线',
+    onClose: () => {
+      isMigrationMessageShowing = false;
+    },
+  });
+};
 
 // 写到蓝鲸统一域名，与其它蓝鲸系统共用语言设置（#1897 用的 BK_HCM_DOMAIN 已在 #1647 改名为 BK_DOMAIN）
 const handleChangeLang = async (lang: string) => {
@@ -64,6 +87,7 @@ const handleLogout = () => {
         :to="getNavLink(nav)"
         :active-class="nav.route ? '' : undefined"
         :exact-active-class="nav.route ? '' : undefined"
+        @click="handleNavClick(nav)"
       >
         {{ t(nav.i18n) }}
       </RouterLink>
