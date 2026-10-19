@@ -1,6 +1,5 @@
 import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
-import { useAuthStore } from '@/store/auth';
 import { AUTH_FIND_ROOT_ACCOUNT, AUTH_FIND_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 import {
   MENU_RESOURCE,
@@ -76,21 +75,10 @@ const billAccountManage: RouteRecordRaw[] = [
 ];
 
 // 旧地址 /bill/*（账单迁到资源运营 /resource/bill/* 之前），query 原样保留；裸 /bill 不再注册，落 404
-// /bill/account-manage 分流读 preload 预鉴权的一级账号视图权限；未取到（接口失败）时按无权限去二级账号
+// /bill/account-manage 统一默认跳二级账号（不再按一级账号权限分流）
 const toName = (name: symbol) => (to: RouteLocationNormalized) => ({ name, query: to.query });
 const billLegacy: RouteRecordRaw[] = [
-  {
-    path: '/bill/account-manage',
-    // 类型要求 component/children/redirect 之一；带 redirect 的记录不会执行 beforeEnter
-    children: [],
-    beforeEnter: (to) => {
-      const authStore = useAuthStore();
-      const hasRootAccount =
-        authStore.isViewPermissionCached(MENU_BILL_ROOT_ACCOUNT) && authStore.hasViewPermission(MENU_BILL_ROOT_ACCOUNT);
-      const name = hasRootAccount ? MENU_BILL_ROOT_ACCOUNT : MENU_BILL_MAIN_ACCOUNT;
-      return { name, query: to.query, replace: true };
-    },
-  },
+  { path: '/bill/account-manage', redirect: toName(MENU_BILL_MAIN_ACCOUNT) },
   { path: '/bill/account-manage/first-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT_CREATE) },
   { path: '/bill/account-manage/second-account', redirect: toName(MENU_BILL_MAIN_ACCOUNT_CREATE) },
   { path: '/bill/root-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT) },
