@@ -118,6 +118,8 @@ func (ad Audit) buildAssignAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.certAssignAuditBuild(kt, assigns)
 	case enumor.LoadBalancerAuditResType:
 		audits, err = ad.loadBalancer.LoadBalancerAssignAuditBuild(kt, assigns)
+	case enumor.LoadBalancerExclusiveClusterAuditResType:
+		audits, err = ad.loadBalancer.LoadBalancerExclusiveClusterAssignAuditBuild(kt, assigns)
 	default:
 		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
 	}

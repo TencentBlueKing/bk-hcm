@@ -1,9 +1,18 @@
 .selected-host-count-tip {
   margin-bottom: 24px;
+
   .selected-host-count {
     color: #3A84FF;
     font-weight: bold;
   }
+}
+
+.mb16 {
+  margin-bottom: 16px;
+}
+
+.mb6 {
+  margin-bottom: 6px;
 }
 
 .mb32 {
@@ -14,6 +23,7 @@
   .bk-dialog-header { 
     padding: 16px 24px 20px !important;
   }
+
   .bk-modal-content {
     padding-top: 0 !important;
   }

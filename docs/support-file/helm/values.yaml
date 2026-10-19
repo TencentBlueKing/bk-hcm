@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.9.3-tenant.1
+  tag: 1.9.4-tenant.1
 
 apigwReleaseVersion: 1.0.0
 
@@ -285,6 +285,12 @@ cloudserver:
   port: 80
   concurrentConfig:
     clbImportCount: 10
+    clbCondSync:
+      deleteBatchSize: 100
+      upsertBatchSize: 500
+      largeUpsertThreshold: 10000
+      largeUpsertBatchSize: 2500
+      listConcurrent: 5
 
 dataservice:
   ## 镜像

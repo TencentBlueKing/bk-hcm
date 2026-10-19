@@ -1,5 +1,4 @@
 import { Ref, defineComponent, inject, ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
 import Amount from '../../components/amount';
@@ -14,12 +13,13 @@ import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@
 import { BillsRootAccountSummaryState } from '@/typings/bill';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
 import pluginHandler from '@pluginHandler/bill-manage';
+import routerAction from '@/router/utils/action';
+import { MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD } from '@/constants/menu-symbol';
 
 export default defineComponent({
   name: 'PrimaryAccountTabPanel',
   setup() {
     const { t } = useI18n();
-    const router = useRouter();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
 
@@ -116,7 +116,7 @@ export default defineComponent({
     });
 
     const goOperationRecord = () => {
-      router.push({ name: 'billSummaryOperationRecord' });
+      routerAction.redirect({ name: MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD });
     };
 
     watch([bill_year, bill_month], () => {

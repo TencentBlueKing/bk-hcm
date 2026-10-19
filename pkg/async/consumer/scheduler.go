@@ -794,9 +794,9 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 				)
 				// new generic flow exec metric (terminal-state cost).
 				dims := getShareDataMetricDims(task.Flow.ShareData)
-				sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
-					string(task.Flow.Name), string(enumor.FlowSuccess)).Observe(cost.Seconds())
-			}
+			sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+				string(task.Flow.Name), string(enumor.FlowSuccess)).Observe(cost.Seconds())
+		}
 
 			sch.DeleteFlowTaskTree(task.FlowID)
 			sch.flowTypeRunningNumMap.Inc(string(task.Flow.Name), -1)
@@ -813,9 +813,10 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 			dims := getShareDataMetricDims(task.Flow.ShareData)
 			if entryTime, exists := sch.flowEntryTimeMap.Load(task.FlowID); exists {
 				if t, ok := entryTime.(time.Time); ok {
-					sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
-						string(task.Flow.Name), string(enumor.FlowFailed)).Observe(time.Since(t).Seconds())
-				}
+					cost := time.Since(t)
+				sch.mc.flowExecCostSec.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
+					string(task.Flow.Name), string(enumor.FlowFailed)).Observe(cost.Seconds())
+			}
 			}
 			sch.mc.flowFailTotal.WithLabelValues(dims.bkBizIDLabel(), dims.vendor, dims.operation,
 				string(task.Flow.Name), string(enumor.FlowFailed), metrics.ErrTypeHCMError.String()).Inc()

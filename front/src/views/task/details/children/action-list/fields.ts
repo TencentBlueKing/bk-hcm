@@ -22,12 +22,21 @@ export const baseColumnConfig: Record<string, PropertyColumnConfig> = {
   'param.cloud_lb_id': {
     minWidth: 110,
   },
+  'param.op': {
+    minWidth: 90,
+  },
+  'param.sync_clb_vip_domain': {
+    minWidth: 210,
+  },
   'param.cloud_clb_id': {
     minWidth: 110,
   },
   state: {
     minWidth: 110,
     sort: true,
+  },
+  sync_failed_reason: {
+    minWidth: 140,
   },
 };
 
@@ -144,6 +153,15 @@ const clbFieldIds = {
     'param.weight',
     'state',
     'reason',
+  ],
+  [TaskClbType.SYNC_LOAD_BALANCER]: [
+    'created_at',
+    'updated_at',
+    'param.sync_clb_vip_domain',
+    'param.cloud_lb_id',
+    'param.op',
+    'state',
+    'sync_failed_reason',
   ],
 };
 

@@ -5,7 +5,7 @@
 export const headRouteConfig = [
   {
     id: 'business',
-    name: '资源管理',
+    name: '业务资源',
     path: '/business/host',
   },
   {
@@ -25,7 +25,7 @@ export const headRouteConfig = [
   },
   {
     id: 'bill',
-    name: '账号管理',
+    name: '资源运营',
     path: '/bill/account-manage',
   },
 ];

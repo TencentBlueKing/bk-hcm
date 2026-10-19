@@ -3,10 +3,11 @@ import { useRoute, useRouter, type RouteRecordRaw } from 'vue-router';
 // import routes
 import resource from '@/router/module/resource';
 import service from '@/router/module/service';
-import { businessViews } from '@/views';
+import { billViews, businessViews } from '@/views';
+import { getBillMenus } from '@/common/menu-service';
+import { toLegacyMenus } from './to-legacy-menus';
 
 import scheme from '@/router/module/scheme';
-import bill from '@/router/module/bill';
 // import stores
 import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -57,7 +58,7 @@ export default () => {
         accountStore.updateBizsId(0); // 初始化业务ID
         break;
       case 'bill':
-        menus.value = bill;
+        menus.value = toLegacyMenus(getBillMenus(), billViews);
         break;
       default:
         if (subPath[0] === 'biz_access') {

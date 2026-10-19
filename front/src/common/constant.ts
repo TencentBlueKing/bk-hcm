@@ -551,6 +551,7 @@ export const RESOURCE_TYPES_MAP = {
   argument_template: '参数模板',
   cert: '证书',
   load_balancer: '负载均衡',
+  load_balancer_exclusive_cluster: '负载均衡独占集群',
   security_group_usage_biz_rel: '安全组使用业务',
   cvm_cc_info: '主机资产数据',
   permission_template: '权限模板',

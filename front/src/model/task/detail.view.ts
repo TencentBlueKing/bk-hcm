@@ -43,6 +43,44 @@ export default [
     type: 'string',
   },
   {
+    id: 'sync_failed_reason',
+    name: '失败原因',
+    type: 'string',
+    meta: {
+      display: {
+        render: (row: ITaskDetailItem) => row.reason || '--',
+      },
+    },
+  },
+  {
+    id: 'param.op',
+    name: '类别',
+    type: 'enum',
+    option: {
+      create: '新增',
+      update: '修改',
+      delete: '删除',
+    },
+  },
+  {
+    id: 'param.sync_clb_vip_domain',
+    name: 'CLB VIP/域名',
+    type: 'string',
+    meta: {
+      display: {
+        render: (row: ITaskDetailItem) => {
+          const vip = row.param?.clb_vip_domain;
+          const domain = row.param?.domain;
+          if (!vip && !domain) return '--';
+          if (vip && domain) {
+            return h('span', { style: { whiteSpace: 'pre-line' } }, `${vip}\n${domain}`);
+          }
+          return vip || domain;
+        },
+      },
+    },
+  },
+  {
     id: 'param.clb_vip_domain',
     name: 'CLB VIP/域名',
     type: 'string',

@@ -95,7 +95,6 @@ const handleClosed = () => {
 
 <style scoped lang="scss">
 .hint-wrap {
-  margin-top: -35px;
   text-align: center;
 
   img {

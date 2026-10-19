@@ -1,0 +1,15 @@
+{
+  "project": "hcm",
+  "dir": ".hcmfe",
+  "ide": ["cursor", "codebuddy", "codex"],
+  "ideRoot": "..",
+  "lint": {
+    "script": ["prettier --config ./.prettierrc.js --write", "eslint --fix -c ./.eslintrc.js --cache"],
+    "style": "stylelint --fix --cache"
+  },
+  "e2e": {
+    "cwd": ".",
+    "testResultsDir": "e2e/test-results",
+    "reportDir": "e2e/playwright-report"
+  }
+}

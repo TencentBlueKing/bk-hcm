@@ -34,6 +34,9 @@ import (
 	"hcm/pkg/tools/uuid"
 )
 
+// maxRidLength is the max length of rid, it must not exceed the rid column width(64) of the audit table.
+const maxRidLength = 57
+
 // New initial a kit with rid and context.
 func New() *Kit {
 	rid := uuid.UUID()
@@ -163,8 +166,8 @@ func (kt *Kit) Validate() error {
 		return errors.New("rid is required")
 	}
 
-	if ridLen < 16 || ridLen > 50 {
-		return errors.New("rid length not right, length should in 16~50")
+	if ridLen < 16 || ridLen > maxRidLength {
+		return errors.New("rid length not right, length should in 16~57")
 	}
 
 	if len(kt.AppCode) == 0 {

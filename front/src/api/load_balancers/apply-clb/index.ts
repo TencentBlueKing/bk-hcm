@@ -4,7 +4,15 @@
 // import http
 import http from '@/http';
 // import types
-import { NetworkAccountTypeResp, ResourceOfCurrentRegionReqData, ResourceOfCurrentRegionResp } from './types';
+import {
+  ExclusiveClusterIdleVipsReqData,
+  ExclusiveClusterIdleVipsResp,
+  ExclusiveClusterTagsReqData,
+  ExclusiveClusterTagsResp,
+  NetworkAccountTypeResp,
+  ResourceOfCurrentRegionReqData,
+  ResourceOfCurrentRegionResp,
+} from './types';
 import { VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -24,3 +32,21 @@ export const reqResourceListOfCurrentRegion = async (
 ): Promise<ResourceOfCurrentRegionResp> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${vendor}/load_balancers/resources/describe`, data);
 };
+
+export const reqExclusiveClusterTags = async ({
+  bk_biz_id,
+  ...data
+}: ExclusiveClusterTagsReqData): Promise<ExclusiveClusterTagsResp> =>
+  http.post(
+    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/load_balancers/exclusive_clusters/tags/list`,
+    data,
+  );
+
+export const reqExclusiveClusterIdleVips = async ({
+  bk_biz_id,
+  ...data
+}: ExclusiveClusterIdleVipsReqData): Promise<ExclusiveClusterIdleVipsResp> =>
+  http.post(
+    `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bk_biz_id}/load_balancers/exclusive_clusters/idle_vips/list`,
+    data,
+  );
