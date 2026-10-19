@@ -284,14 +284,21 @@ onMounted(() => {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 12px 24px;
   margin: 16px 0;
+
+  > .bk-button {
+    flex-shrink: 0;
+  }
 }
 
 .stats {
   display: flex;
-  gap: 16px;
-  margin-left: 24px;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 8px 16px;
 
   .count-item {
     display: flex;

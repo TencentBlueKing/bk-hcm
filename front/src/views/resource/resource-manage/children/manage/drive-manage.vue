@@ -213,7 +213,7 @@ const isCurRowSelectEnable = (row: any) => {
         </bk-button>
       </hcm-auth>
 
-      <div class="flex-row align-items-center justify-content-arround mlauto">
+      <div class="flex-row align-items-center mlauto">
         <bk-search-select
           class="w500"
           clearable

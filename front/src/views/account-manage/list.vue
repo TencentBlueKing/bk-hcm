@@ -260,25 +260,40 @@ watchEffect(() => {
   padding: 24px;
 
   .account-manage-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
     height: 100%;
     padding: 16px 24px;
     background: #fff;
   }
 
   .tools {
+    flex-shrink: 0;
     margin-bottom: 16px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     align-items: center;
+    gap: 12px 24px;
 
+    :deep(.bk-checkbox) {
+      flex-shrink: 0;
+    }
+
+    // 与资源列表一致：flex-basis 与 min-width 同为 180px（否则会提前换行）、最多 500px
     :deep(.bk-search-select) {
-      margin-left: 24px;
-      width: 300px;
+      flex: 1 1 180px;
+      min-width: 180px;
+      max-width: 500px;
     }
   }
 
   .table-wrap {
-    height: calc(100% - 48px);
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
   }
 }
 </style>

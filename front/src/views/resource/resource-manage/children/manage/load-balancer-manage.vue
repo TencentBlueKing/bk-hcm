@@ -21,7 +21,7 @@
       >
         {{ t('同步负载均衡') }}
       </bk-button>
-      <div class="flex-row align-items-center justify-content-arround search-selector-container">
+      <div class="flex-row align-items-center search-selector-container">
         <bk-search-select
           class="w500"
           clearable

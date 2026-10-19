@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, provide, watch, onMounted } from 'vue';
+import { ref, computed, provide, watch, useTemplateRef, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { InfoBox } from 'bkui-vue';
@@ -35,6 +35,7 @@ import {
   MENU_RESOURCE_VPC_APPLY,
   MENU_RESOURCE_RESOURCE_LIST,
 } from '@/constants/menu-symbol';
+import { useWrapDetect } from '@/hooks/use-wrap-detect';
 import AccountSummary from './account/account-summary.vue';
 
 const { t } = useI18n();
@@ -347,13 +348,17 @@ const computedSecurityText = computed(() => {
   }
 });
 
+// 工具栏换行检测：单行时搜索区靠右（保持原有观感），一旦换行则整行统一切到左对齐
+const pageRef = useTemplateRef<HTMLElement>('pageRef');
+useWrapDetect(pageRef, { selector: '.toolbar, .top-bar', scope: '.resource-main' });
+
 onMounted(() => {
   getResourceAccountList();
 });
 </script>
 
 <template>
-  <div class="resource-list-page">
+  <div class="resource-list-page" ref="pageRef">
     <AccountSummary />
     <bk-alert
       theme="error"
@@ -379,7 +384,7 @@ onMounted(() => {
         </div>
       </template>
       <template v-for="item in tabs" :key="item.name">
-        <bk-tab-panel :name="item.name" :label="item.type">
+        <bk-tab-panel :name="item.name" :label="item.type" class="resource-list-panel">
           <component
             v-if="item.name === activeTab"
             :is="item.component"
@@ -447,6 +452,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .resource-list-page {
+  min-width: 0;
+  min-height: 0;
   height: 100%;
   box-sizing: border-box;
   display: flex;
@@ -459,12 +466,27 @@ onMounted(() => {
 }
 
 .resource-main {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   margin: 0 24px 24px;
 
   :deep(.bk-tab-header) {
+    flex-shrink: 0;
+    min-width: 0;
     line-height: normal !important;
+
+    .bk-tab-header-nav {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bk-tab-header-setting {
+      flex-shrink: 0;
+    }
 
     .bk-tab-header-item {
       padding: 0 24px;
@@ -473,16 +495,137 @@ onMounted(() => {
   }
 
   :deep(.bk-tab-content) {
-    height: calc(100% - 42px);
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
     padding: 16px 24px;
+  }
 
-    & > .bk-tab-panel > .bk-nested-loading {
+  :deep(.resource-list-panel) {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+
+    > .bk-nested-loading,
+    .security-manager-page,
+    .remote-table-container {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
       height: 100%;
+    }
 
-      .bk-table {
-        margin-top: 16px;
-        max-height: calc(100% - 52px);
+    .security-manager-page > .bk-nested-loading,
+    .remote-table-container > .bk-nested-loading {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      height: auto;
+    }
+
+    .remote-table-container > .bk-nested-loading {
+      height: auto !important;
+    }
+
+    // 页面级搜索（镜像 / 路由表 / 网络接口）直接挂在 loading 下，不参与纵向 flex 分配，避免被撑高
+    .bk-nested-loading > .search,
+    .bk-nested-loading > .bk-search-select {
+      flex: none;
+      align-self: flex-end;
+      height: auto;
+      max-width: 100%;
+    }
+
+    // 工具栏：按钮多时允许换行，搜索框可单独占一行，避免被压到不可用
+    // 单行时搜索框仍靠右；换行后由脚本给工具栏加 is-wrapped，整行统一切到左对齐
+    .toolbar,
+    .top-bar {
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 0;
+      gap: 10px;
+    }
+
+    .toolbar > .bk-button,
+    .toolbar > .bk-radio-group,
+    .top-bar > .bk-button {
+      flex-shrink: 0;
+    }
+
+    // 搜索区：各列表外层结构不统一（.search / .flex-row / .search-selector-container / 直接是 bk-search-select），
+    // 这里统一成 180–500px 区间，未换行时贴右，保证各类型列表搜索框宽度与位置一致。
+    // flex-basis 必须与 min-width 相同（都是 180px）：换行是按 flex-basis 判定的，basis 写 320 会在剩余不足 320 时就换行
+    .toolbar > .search,
+    .toolbar > .bk-search-select,
+    .toolbar > .flex-row,
+    .toolbar .search-selector-container,
+    .top-bar .table-search-selector {
+      flex: 1 1 180px;
+      min-width: 180px;
+      max-width: 500px;
+
+      // 未换行时贴右，与拆分前的工具栏观感保持一致
+      margin-left: auto;
+    }
+
+    // 换行后整行左对齐，避免第二行只剩一个右浮的搜索框
+    .toolbar.is-wrapped,
+    .top-bar.is-wrapped {
+      justify-content: flex-start;
+    }
+
+    .toolbar.is-wrapped > .search,
+    .toolbar.is-wrapped > .bk-search-select,
+    .toolbar.is-wrapped > .flex-row,
+    .toolbar.is-wrapped .search-selector-container,
+    .top-bar.is-wrapped .table-search-selector {
+      margin-left: 0;
+    }
+
+    // 覆盖工具栏内搜索框写死的 500px 宽度，交由上面的弹性规则控制
+    .toolbar .w500,
+    .top-bar .w500 {
+      width: auto !important;
+    }
+
+    // 搜索输入吃满外层容器：覆盖 .w500 / .resource-search-select 写死的 500px。
+    // 云硬盘、负载均衡等列表在搜索框外多包了一层 .flex-row，不铺满就会按内容宽度收缩，
+    // 表现为搜索框比其它列表窄、且贴不到右侧
+    .toolbar > .search .bk-search-select,
+    .toolbar > .flex-row .bk-search-select,
+    .toolbar .search-selector-container .bk-search-select,
+    .toolbar .search-selector-container .resource-search-select,
+    .top-bar .table-search-selector .bk-search-select {
+      flex: 1 1 auto;
+      width: auto !important;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .bk-table {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+      max-height: 100%;
+      margin-top: 16px;
+
+      // 保留路由表自身声明的表格间距
+      &.mt20 {
+        margin-top: 20px;
       }
+    }
+
+    .security-manager-page .bk-table,
+    .remote-table-container .bk-table {
+      margin-top: 0;
     }
   }
 }

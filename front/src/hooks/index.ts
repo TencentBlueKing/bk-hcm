@@ -4,3 +4,4 @@
 // export * from './useRecommendStatus';
 // export * from './usePermission';
 export * from './useDepartment';
+export * from './use-wrap-detect';

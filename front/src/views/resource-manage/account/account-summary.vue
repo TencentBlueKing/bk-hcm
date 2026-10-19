@@ -97,7 +97,7 @@ watch(
 <template>
   <div class="account-summary">
     <div class="account-summary-title">
-      <span class="main-account-name">{{ title }}</span>
+      <span class="main-account-name" :title="title">{{ title }}</span>
       <div
         v-if="selectedAccountId && resourceAccountStore.resourceAccount?.extension && !isOtherVendor"
         class="account-summary-extension"
@@ -127,38 +127,56 @@ watch(
 <style lang="scss" scoped>
 .account-summary {
   display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
   align-items: center;
-  gap: 20px;
-  height: 52px;
-  padding: 0 24px;
+  gap: 8px 20px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 12px 24px;
   background: #fff;
   border-bottom: 1px solid #dcdee5;
+
+  > .bk-button {
+    flex-shrink: 0;
+  }
 }
 
 .account-summary-title {
   display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 20px;
+  gap: 8px 20px;
   min-width: 0;
 }
 
 .main-account-name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 16px;
   color: #313238;
 }
 
 .account-summary-extension {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 20px;
+  min-width: 0;
+  gap: 8px 20px;
   font-size: 14px;
   color: #63656e;
 
   .extension-item {
-    display: flex;
-    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 
     .info-text {
+      overflow-wrap: anywhere;
       font-size: 14px;
       color: #313238;
     }
