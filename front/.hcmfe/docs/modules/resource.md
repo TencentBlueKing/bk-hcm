@@ -14,7 +14,7 @@
 ## 资源纳管（`views/resource-manage/`）
 
 - 路由 `route-config.ts`：`manage`（`MENU_RESOURCE_MANAGE`，入口 `resource-entry.vue`）下挂列表 `:resourceType`（`MENU_RESOURCE_RESOURCE_LIST`，资源类型 = 页签 key，在 params 里）与 5 个新建页 `service-apply/{cvm,vpc,disk,subnet,clb}`。旧地址：`toResourceList`（`/resource/resource?type=` → 列表，挂在原资源接入记录的空路径子路由上）、`resourceManageLegacy`（旧新建页地址）。
-- 入口两栏：左侧云账号树（240px），右侧迁移提示条 + 非列表页的面包屑 + 内容区；内容区无内边距，列表 / 详情 / 新建页各自留白。入口卸载时清空 `useResourceAccountStore`。
+- 入口两栏：左侧云账号树（240px），右侧非列表页的面包屑 + 内容区；内容区无内边距，列表 / 详情 / 新建页各自留白。入口卸载时清空 `useResourceAccountStore`。原「资源接入已迁移」提示条已移除，迁移提示只在顶栏 `header.vue` 点击「资源接入」时用 `Message`（`theme: 'primary'`）展示，连续点击用标记 + `onClose` 保证同屏只有一条。
 - 列表 `resource-list.vue`：筛选沿用原资源接入机制——账号、云厂商由云账号树写入 `useResourceAccountStore`，列表把它们拼进 `filter` 传给共用的 `children/manage/*-manage.vue`；分配状态为页内状态。切页签只保留 `accountId`；地址里的类型不可用时 replace 到第一个可用页签。
 - 云账号树 `account/vendor-group/` 是原资源接入树的副本（过渡，改用 `account/use-resource-account.ts`：列表 / 新建页切账号只改 query，其它子页回对应类型列表）；筛选写入地址单会替换为 PR 版地址驱动的树。
 - 账号摘要条 `account/account-summary.vue` 只读 store、不发请求；「查看账号状态」打开只读侧滑 `account/account-status/`（打开时才拉详情，`render-directive="if"` 关闭即停轮询）。地址带 `showAccountStatus=1` 且有 `accountId` 时自动打开并立刻去掉该参数。

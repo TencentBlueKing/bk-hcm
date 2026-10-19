@@ -7,7 +7,7 @@
 
 ## 职责
 
-一级菜单「资源运营」下「云账号管理」分组里的三个入口页：
+一级菜单「资源运营」下「云账单管理」分组里的三个入口页：
 
 - **一级账号** — `account/account-manage/root-account-list.vue`（`/resource/bill/root-account`）。
 - **二级账号** — `account/account-manage/main-account-list.vue`（`/resource/bill/main-account`）。
@@ -17,13 +17,13 @@
 
 「录入一级账号」「创建二级账号」是两个非菜单页（`account/create-account/*`，`/resource/bill/root-account/create`、`/resource/bill/main-account/create`），`activeKey` 分别指向一级 / 二级账号菜单。
 
-四个账号页的页头都用布局面包屑（路由 `meta.layout.breadcrumb.show: true`，标题取 `meta.title`），页面里不再自己画标题或 `DetailHeader`。两个新建页用 `meta.menu.relative` 指回各自列表，面包屑上的返回箭头由 `useBack` 按它生成。页面根节点按「面包屑之下的 `view-warp` 无留白」来写：`height: 100%` 加自带 `padding: 24px`，不要再为固定标题栏留 `margin-top`。云账单管理整组不显示面包屑，页签栏就是它的页头。`Panel` 用 `routerAction.redirect` 按路由名（`MENU_BILL_ROOT_ACCOUNT_CREATE` / `MENU_BILL_MAIN_ACCOUNT_CREATE`）跳过去，并透传当前 query。本模块内跳转与重定向一律按路由名，不写路径串。
+四个账号页的页头都用布局面包屑（路由 `meta.layout.breadcrumb.show: true`，标题取 `meta.menu.i18n`），页面里不再自己画标题或 `DetailHeader`。两个新建页用 `meta.menu.relative` 指回各自列表，面包屑上的返回箭头由 `useBack` 按它生成。页面根节点按「面包屑之下的主视图 `.main-view` 无留白」来写：`height: 100%` 加自带 `padding: 24px`，不要再为固定标题栏留 `margin-top`。云账单管理整组不显示面包屑，页签栏就是它的页头。`Panel` 用 `routerAction.redirect` 按路由名（`MENU_BILL_ROOT_ACCOUNT_CREATE` / `MENU_BILL_MAIN_ACCOUNT_CREATE`）跳过去，并透传当前 query。本模块内跳转与重定向一律按路由名，不写路径串。
 
-注意与「业务资源 → 账号 → 云账号管理」（`views/cloud-account-manage`）无关，那是资源账号的管理页。
+注意与「业务资源 → 云账号」（`views/cloud-account-manage`）无关，那是资源账号的管理页。
 
 ## 路由
 
-`views/bill/route-config.ts` 导出 `billAccountManage` / `billManage`（并入 `views/index.ts` 的 `resourceViews`，相对资源运营 `/resource` 根的 `bill/*`，即 `/resource/bill/root-account`、`/resource/bill/manage/summary/manage` 等，各记录 `owner: MENU_RESOURCE`）与 `billLegacy`（旧 `/bill/*` 绝对路径转址，由 `router/index.ts` 顶层注册）。`useWhereAmI` 先匹配 `/resource/bill/` 判为 `Senarios.bill`（`useTable` 据此切账单接口），再匹配 `/resource/`。裸 `/bill` 不再注册，落 404。路由名用 `constants/menu-symbol.ts` 的 `MENU_BILL_*`（命名对齐未合入的整体重构；一级父路由 `MENU_BILL` 已删除）。侧栏菜单（显示名、图标、「云账号管理」分组、`ENABLE_ACCOUNT_BILL` 显隐）不在路由里，在 `common/menu-service.ts` 的资源运营菜单树声明，所以改菜单名或分组去那里，改页面标题、权限、高亮才动路由。通用约定见 `menu-route` 模块。
+`views/bill/route-config.ts` 导出 `billAccountManage` / `billManage`（并入 `views/index.ts` 的 `resourceViews`，相对资源运营 `/resource` 根的 `bill/*`，即 `/resource/bill/root-account`、`/resource/bill/manage/summary/manage` 等，各记录 `owner: MENU_RESOURCE`）与 `billLegacy`（旧 `/bill/*` 绝对路径转址，由 `router/index.ts` 顶层注册）。`useWhereAmI` 先匹配 `/resource/bill/` 判为 `Senarios.bill`（`useTable` 据此切账单接口），再匹配 `/resource/`。裸 `/bill` 不再注册，落 404。路由名用 `constants/menu-symbol.ts` 的 `MENU_BILL_*`（命名对齐未合入的整体重构；一级父路由 `MENU_BILL` 已删除）。侧栏菜单（显示名、图标、「云账单管理」分组、`ENABLE_ACCOUNT_BILL` 显隐）不在路由里，在 `common/menu-service.ts` 的资源运营菜单树声明，所以改菜单名或分组去那里，改页面标题、权限、高亮才动路由。通用约定见 `menu-route` 模块。
 
 ## 查看权限
 

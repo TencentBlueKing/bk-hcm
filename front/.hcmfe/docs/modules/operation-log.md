@@ -12,7 +12,7 @@
 ## 关键流程 / 注意事项
 
 - 列表条件全在地址 `filter`（`useSearchQs`，`qs` 逗号格式、不编码）。`entry-rsc` / `entry-biz` 读到地址上有 `filter` 就不再套默认「近 30 天」，所以任何拼 `filter` 的跳转（如旧地址 `/resource/resource/record?accountId=` 的转址 `toRecordList`）都要把 `created_at` 一起写进去。
-- 两个入口都自带 `padding: 24px; height: 100%`（主区 `view-warp` 无内边距）。
+- 两个入口都自带 `padding: 24px; height: 100%`（主视图 `.main-view` 无内边距）。
 
 ## 明细目录
 

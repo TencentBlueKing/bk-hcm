@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "4a72cf266d932623f18c369dbfaaf04e13ca4d31"
+        "rootHash": "9b23a7893351334fe61e74a8ad85b4166f0c6de6"
       }
     },
     {
@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "d470976dd6253864bb3249341f0ae685fc18c2d1"
+        "rootHash": "9a2fff69f39047da8ef9f250e118d722143bfc01"
       }
     },
     {
@@ -121,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "2333cea6e36b761983255411fd2c07df365b5d34"
+        "rootHash": "e9159f5ba3bd7b3101d662b2341f80b86200f02f"
       }
     },
     {
@@ -135,7 +135,7 @@
       "doc": "modules/operation-log.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "20ddd9ff2c07a2ffc716d1e73b4a4a2838fc18ad"
+        "rootHash": "83c7eadbf60af149d1b90b46c2df83900863b262"
       }
     },
     {
@@ -152,7 +152,7 @@
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "4108d605fc7f24699cd76c0bd24644ae613d3c03"
+        "rootHash": "46e177552bb154e73592db9aaf184ff2f82928ea"
       }
     },
     {
@@ -222,7 +222,7 @@
       "doc": "modules/bill.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "828989209543c19665594ffb4a256b29e889c979"
+        "rootHash": "809f107be82ed1471f8ab1c228cf763cd94ee8bb"
       }
     },
     {
@@ -234,8 +234,10 @@
         "src/views/ticket/**"
       ],
       "doc": "modules/ticket.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "23f4ceb4706ef06d2b17314095fdba3bc88a5e92"
+      }
     },
     {
       "id": "scheme",
@@ -246,8 +248,10 @@
         "src/views/scheme/**"
       ],
       "doc": "modules/scheme.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "6b60e09f07de24fb0780765f14b434f6d329a08d"
+      }
     },
     {
       "id": "task",
@@ -260,7 +264,7 @@
       "doc": "modules/task.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "9e9717c51fa9a922671011a77c5b27ed5bb00fe8"
+        "rootHash": "397d29fc698b4f2a784c4968be3ca8599c64e531"
       }
     },
     {
@@ -277,7 +281,7 @@
       "doc": "modules/app-shell.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "465c2d1cf923eeb0ebe5d830ec836c18f11e561b"
+        "rootHash": "9ea44ec65c41d2727e829dfdf28e60a14b19f7b8"
       }
     },
     {

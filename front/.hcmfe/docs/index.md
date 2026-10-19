@@ -20,8 +20,8 @@
 - [云账号管理](modules/cloud-account-manage.md) — 云账号密钥、权限策略/模板、二级/三级账号管理。 · `stub`
 - [负载均衡](modules/load-balancer.md) — CLB/监听器/目标组/设备。 · `drafted`  (relates: business)
 - [账单](modules/bill.md) — 账单与账号账单视图。 · `drafted`
-- [单据/工单](modules/ticket.md) — 工单流程，含业务/服务两套入口。 · `stub`
-- [资源选型方案](modules/scheme.md) — 选型方案列表/详情/推荐。 · `stub`
+- [单据/工单](modules/ticket.md) — 工单流程，含业务/服务两套入口。 · `drafted`
+- [资源选型方案](modules/scheme.md) — 选型方案列表/详情/推荐。 · `drafted`
 - [任务管理](modules/task.md) — 异步任务（cvm/clb 等）列表与详情。 · `drafted`
 - [门户框架/首页/错误页/通知](modules/app-shell.md) — 应用外壳与通用页面：首页、错误页、全局通知。 · `drafted`
 - [模型驱动与页面模式](modules/model.md) — 装饰器字段元数据模型与多云 Factory、展示/表单/列表三场景模式。 · `drafted`  (relates: menu-route, auth)

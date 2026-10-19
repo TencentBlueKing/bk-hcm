@@ -2,7 +2,7 @@
   "id": "req-menu-phase2",
   "title": "菜单整合二期：云资源与资源纳管迁移",
   "createdAt": "2026-10-08T08:05:02.163Z",
-  "updatedAt": "2026-10-08T12:19:20.614Z",
+  "updatedAt": "2026-10-12T08:33:46.673Z",
   "external": {
     "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
   },
@@ -55,6 +55,13 @@
       "branch": "feat-menu-phase2-cloud-resource",
       "title": "菜单整合二期：资源详情页迁移",
       "createdAt": "2026-10-08T12:19:20.574Z"
+    },
+    {
+      "wfId": "feat-menu-phase2-closing",
+      "status": "coding",
+      "branch": "feat-menu-phase2-cloud-resource",
+      "title": "菜单整合二期：收尾体验（菜单收藏、业务路由、分组折叠）",
+      "createdAt": "2026-10-12T08:33:46.611Z"
     }
   ],
   "aggregatedArtifacts": {},
