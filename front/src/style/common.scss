@@ -1,4 +1,4 @@
-@import "./variables";
+@import './variables';
 
 * {
   box-sizing: border-box;
@@ -32,25 +32,32 @@
   }
 }
 
-ul, ol, li {
+ul,
+ol,
+li {
   list-style: none;
 }
 
-html, body {
+html,
+body {
   width: 100%;
-  min-width: 1366px;
+
+  // 页面级最小宽度兜底：窄视口时整页横滚，避免顶栏一级菜单被压缩重叠
+  // 980px 即可容纳 logo、4 个一级菜单与右侧工具区，比原先的 1366px 少触发无谓的整页横滚；
+  // main-content 里 .main-layout 也取 980px；主区在侧栏之后，非 fit 页面整页下限约 1240px
+  min-width: 980px;
   height: 100%;
   scroll-behavior: smooth;
 }
 
 body {
   overflow: auto hidden;
-  font: 400 14px/1.5 "Microsoft YaHei", "SF Pro Text", "Helvetica Neue", Helvetica, Tahoma, SimHei, sans-serif;
+  font: 400 14px/1.5 'Microsoft YaHei', 'SF Pro Text', 'Helvetica Neue', Helvetica, Tahoma, SimHei, sans-serif;
   color: $font-normal-color;
   background: $white;
 }
 
-#app{
+#app {
   height: 100%;
 }
 
@@ -71,11 +78,11 @@ a {
   display: inline-flex;
   width: 6px;
   height: 6px;
-  background-color: #EA3636;
+  background-color: #ea3636;
   border-radius: 50%;
 }
 
-.w280{
+.w280 {
   width: 280px !important;
 }
 
@@ -83,7 +90,7 @@ a {
   width: 90px !important;
 }
 
-.w320{
+.w320 {
   width: 320px !important;
 }
 
@@ -103,25 +110,25 @@ a {
   width: 800px !important;
 }
 
-.w1000{
+.w1000 {
   width: 1000px !important;
 }
 
-.w1400{
+.w1400 {
   width: 1400px !important;
 }
 
-.cursor{
-  cursor: pointer
+.cursor {
+  cursor: pointer;
 }
 
-.template-warp{
+.template-warp {
   height: 100%;
   background: #fff;
   padding: 20px;
 }
 
-.form-error-tip{
+.form-error-tip {
   position: absolute;
   padding-top: 4px;
   font-size: 12px;
@@ -131,15 +138,15 @@ a {
 
 .table-layout {
   .operate-button {
-      & > button {
-          margin-right: 12px;
-      }
+    & > button {
+      margin-right: 12px;
+    }
 
-      .bk-button-text {
-          div {
-              display: flex;
-          }
+    .bk-button-text {
+      div {
+        display: flex;
       }
+    }
   }
 }
 
@@ -152,9 +159,9 @@ a {
   }
 
   &::-webkit-scrollbar-thumb {
-      height: 5px;
-      border-radius: 3px;
-      background-color: #dcdee5;
+    height: 5px;
+    border-radius: 3px;
+    background-color: #dcdee5;
   }
 }
 
@@ -163,14 +170,15 @@ a {
   font-size: 12px;
 }
 
-.hcm-no-permision-btn, .hcm-no-permision-btn:hover {
-  background-color: #dcdee5!important;
-  border-color: #dcdee5!important;
-  color: #fff!important;
-  cursor: not-allowed!important;
+.hcm-no-permision-btn,
+.hcm-no-permision-btn:hover {
+  background-color: #dcdee5 !important;
+  border-color: #dcdee5 !important;
+  color: #fff !important;
+  cursor: not-allowed !important;
 }
 
 .hcm-no-permision-text-btn {
-  color: #dcdee5!important;
-  cursor: not-allowed!important;
+  color: #dcdee5 !important;
+  cursor: not-allowed !important;
 }

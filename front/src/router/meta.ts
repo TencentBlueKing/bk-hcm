@@ -21,6 +21,7 @@ interface Auth {
 }
 
 interface Layout {
+  contentWidth?: 'minimum' | 'fit';
   breadcrumb?: {
     show?: boolean;
     back?: boolean;

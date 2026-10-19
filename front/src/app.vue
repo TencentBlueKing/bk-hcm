@@ -108,9 +108,13 @@ onMounted(() => {
     height: calc(100% - 40px);
   }
 
-  // 覆盖组件的 max-width: calc(100vw - 60px)，使导航容器跟随文档宽度（html/body 最小 1366px）而非视口宽度
+  // 覆盖组件的 max-width: calc(100vw - 60px)，让导航容器跟随文档宽度（html/body 最小 1366px）而非视口，避免顶栏被压缩
   :deep(.bk-navigation-wrapper .navigation-container) {
     max-width: none !important;
+  }
+
+  :deep(.bk-navigation-wrapper .navigation-nav) {
+    flex-shrink: 0;
   }
 
   :deep(.bk-navigation-wrapper .navigation-nav .nav-slider .business-selector-global) {

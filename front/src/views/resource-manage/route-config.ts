@@ -40,7 +40,10 @@ const resourceManageRoutes: RouteRecordRaw[] = [
         name: MENU_RESOURCE_RESOURCE_LIST,
         path: ':resourceType',
         component: () => import('@/views/resource-manage/resource-list.vue'),
-        meta: { ...getMeta('资源列表', MENU_RESOURCE_MANAGE) },
+        meta: {
+          ...getMeta('资源列表', MENU_RESOURCE_MANAGE),
+          layout: { breadcrumb: { show: false }, contentWidth: 'fit' },
+        },
       },
       {
         name: MENU_RESOURCE_HOST_APPLY,

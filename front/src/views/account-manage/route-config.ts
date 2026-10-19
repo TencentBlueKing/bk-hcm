@@ -32,7 +32,7 @@ const accountManageRsc: RouteRecordRaw[] = [
         activeKey: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
         auth: { view: { type: AUTH_FIND_ACCOUNT } },
         menu: { i18n: '账号管理' },
-        layout: { breadcrumb: { show: true } },
+        layout: { breadcrumb: { show: true }, contentWidth: 'fit' },
       }),
     },
   },
