@@ -83,7 +83,7 @@ const paramInfoFields: ModelProperty[] = [
   <div v-else class="page-container clb-detail-page">
     <status :application-detail="applicationDetail" />
     <panel title="基本信息">
-      <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
+      <grid-container :column="2" :content-min-width="0" :label-width="150">
         <grid-item label="业务名称">
           {{ clbDetail?.bk_biz_id !== -1 ? getNameFromBusinessMap(clbDetail.bk_biz_id) : '未分配' }}
         </grid-item>
@@ -97,7 +97,7 @@ const paramInfoFields: ModelProperty[] = [
       </grid-container>
     </panel>
     <panel title="参数信息">
-      <grid-container fixed :column="2" :content-min-width="300" :label-width="150">
+      <grid-container :column="2" :content-min-width="0" :label-width="150">
         <grid-item v-for="field in paramInfoFields" :key="field.id" :label="field.name">
           <display-value
             :property="field"
@@ -116,5 +116,9 @@ const paramInfoFields: ModelProperty[] = [
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
+
+  :deep(.item-content) {
+    overflow-wrap: anywhere;
+  }
 }
 </style>

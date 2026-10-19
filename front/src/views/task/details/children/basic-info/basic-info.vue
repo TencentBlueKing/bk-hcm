@@ -24,15 +24,21 @@ watch(
 </script>
 
 <template>
-  <grid-container :column="3" :content-min-width="0" :label-width="110">
-    <grid-item v-for="field in fields" :key="field.id" :label="field.name">
+  <GridContainer class="task-basic-info" :column="3" :content-min-width="0" :label-width="110">
+    <GridItem v-for="field in fields" :key="field.id" :label="field.name">
       <display-value
         :property="field"
         :value="detailValues[field.id]"
         :display="{ ...field.meta?.display, on: 'info' }"
       />
-    </grid-item>
-  </grid-container>
+    </GridItem>
+  </GridContainer>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.task-basic-info {
+  :deep(.item-content) {
+    overflow-wrap: anywhere;
+  }
+}
+</style>

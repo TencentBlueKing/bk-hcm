@@ -271,6 +271,10 @@ const handleCancel = () => {
 <style lang="scss" scoped>
 .info-content {
   margin-top: 12px;
+
+  :deep(.item-content) {
+    overflow-wrap: anywhere;
+  }
 }
 
 .params-content {
