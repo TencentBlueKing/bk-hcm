@@ -7,6 +7,8 @@
 
 ## 职责
 
+`src/views/business/load-balancer/components/lb-spec-type-dialog/index.tsx` 为购买表单提供规格选择弹框：接收规格可用性列表，补充本地性能参数，确认时返回规格标识和可选带宽。未知规格的展示与参数缺失策略统一见 [购买带宽](load-balancer/purchase-bandwidth.md)。
+
 （待补充：本模块的核心职责、边界、关键文件与对外接口。）
 
 ## 关键流程 / 注意事项

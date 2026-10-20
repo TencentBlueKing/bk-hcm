@@ -61,27 +61,27 @@ export default defineComponent({
       {
         label: t('型号'),
         field: 'SpecType',
-        render: ({ data }: any) => CLB_SPECS[data.SpecType],
+        render: ({ row }: { row: SpecAvailability }) => CLB_SPECS[row.SpecType] ?? row.SpecType ?? '--',
       },
       {
         label: t('每分钟并发连接数（个）'),
         field: 'connectionsPerMinute',
-        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
+        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
       },
       {
         label: t('每秒新建连接数（个）'),
         field: 'newConnectionsPerSecond',
-        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
+        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
       },
       {
         label: t('每秒查询数（个）'),
         field: 'queriesPerSecond',
-        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
+        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
       },
       {
         label: t('带宽上限（Mbps）'),
         field: 'bandwidthLimit',
-        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
+        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
       },
       {
         label: t('可用性'),
@@ -104,20 +104,20 @@ export default defineComponent({
     const handleSelectClbSpecType = () => {
       emit('confirm', {
         slaType: selectedLbSpecType.value ? selectedLbSpecType.value : 'shared',
-        bandwidthLimit: CLB_SPEC_TYPE_COLUMNS_MAP[selectedLbSpecType.value].bandwidthLimit,
+        bandwidthLimit: CLB_SPEC_TYPE_COLUMNS_MAP[selectedLbSpecType.value]?.bandwidthLimit,
       });
     };
 
     watchEffect(() => {
-      tableData.value = props.specAvailabilitySet
+      tableData.value = (props.specAvailabilitySet ?? [])
         // shared不展示
         .filter((item) => item.SpecType !== 'shared')
         .map((item) => {
           const { connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit } =
-            CLB_SPEC_TYPE_COLUMNS_MAP[item.SpecType];
+            CLB_SPEC_TYPE_COLUMNS_MAP[item.SpecType] ?? {};
           return { ...item, connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit };
         })
-        .sort((a, b) => a.bandwidthLimit - b.bandwidthLimit);
+        .sort((a, b) => (a.bandwidthLimit ?? Infinity) - (b.bandwidthLimit ?? Infinity));
     });
 
     return () => (
