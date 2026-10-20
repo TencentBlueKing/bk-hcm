@@ -26,6 +26,7 @@ import {
   ZONE_TYPE,
   INTERNET_CHARGE_TYPE,
   LOAD_BALANCER_PASS_TO_TARGET_LIST,
+  CLB_SPEC_TYPE_COLUMNS_MAP,
 } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
@@ -127,10 +128,11 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   };
 
   const lbSpecTypeDialogState = reactive({ isHidden: true, isShow: false });
-  const selectedSlaTypeBandWidthLimit = ref<number>();
-  const handleLBSpecTypeChange = ({ slaType, bandwidthLimit }: { slaType: string; bandwidthLimit: number }) => {
+  // 按规格保存带宽上限，避免沿用上一次选过的规格。
+  const slaTypeBandWidthLimits = reactive<Record<string, number>>({});
+  const handleLBSpecTypeChange = ({ slaType, bandwidthLimit }: { slaType: string; bandwidthLimit?: number }) => {
     formModel.sla_type = slaType;
-    selectedSlaTypeBandWidthLimit.value = bandwidthLimit;
+    if (bandwidthLimit) slaTypeBandWidthLimits[slaType] = bandwidthLimit;
   };
 
   const getInternetMaxBandwidthOutContent = (min: number, max: number) => {
@@ -142,11 +144,27 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     };
   };
   const internetMaxBandwidthOutConfig = computed(() => {
-    const max = selectedSlaTypeBandWidthLimit.value ? selectedSlaTypeBandWidthLimit.value : 10240;
+    // 共享型带宽上限固定；性能容量型按当前规格取上限。
+    const isCapacitySpec = Boolean(formModel.sla_type) && formModel.sla_type !== 'shared';
+    const sharedBandwidthLimit = CLB_SPEC_TYPE_COLUMNS_MAP.shared.bandwidthLimit;
+    const max = isCapacitySpec
+      ? slaTypeBandWidthLimits[formModel.sla_type] ??
+        CLB_SPEC_TYPE_COLUMNS_MAP[formModel.sla_type]?.bandwidthLimit ??
+        sharedBandwidthLimit
+      : sharedBandwidthLimit;
     const content = getInternetMaxBandwidthOutContent(1, max);
 
     return { min: 1, max, content };
   });
+  // 上限下调时收敛超限值；上限增大不主动放大已填值。
+  watch(
+    () => internetMaxBandwidthOutConfig.value.max,
+    (max: number) => {
+      if (formModel.internet_max_bandwidth_out > max) {
+        formModel.internet_max_bandwidth_out = max;
+      }
+    },
+  );
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -626,7 +644,12 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 lbSpecTypeDialogState.isShow = true;
               };
               if (formModel.sla_type !== 'shared') {
-                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
+                return (
+                  <SelectedItemPreviewComp
+                    content={CLB_SPECS[formModel.sla_type] ?? formModel.sla_type ?? '--'}
+                    onClick={handleClick}
+                  />
+                );
               }
               return (
                 <Button onClick={handleClick}>

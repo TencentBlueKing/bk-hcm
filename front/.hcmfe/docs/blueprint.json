@@ -154,11 +154,13 @@
         "src/views/business/**"
       ],
       "doc": "modules/business.md",
-      "status": "stub",
+      "status": "drafted",
       "relates": [
         "load-balancer"
       ],
-      "fingerprint": null
+      "fingerprint": {
+        "rootHash": "d70e99ba211e994abe2046728ae0137eb50c7dfe"
+      }
     },
     {
       "id": "service",
@@ -169,8 +171,10 @@
         "src/views/service/**"
       ],
       "doc": "modules/service.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "5216d69017ca702d801b58f4bbbfa3d6d73fcd91"
+      }
     },
     {
       "id": "cloud-account-manage",
@@ -198,7 +202,7 @@
         "business"
       ],
       "fingerprint": {
-        "rootHash": "a54f68e06a9d40d604d095809171913bc1b62519"
+        "rootHash": "987b55703df42359fa01b6e084ead2fc37e6d25e"
       }
     },
     {
