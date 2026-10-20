@@ -16,7 +16,7 @@
 - [操作记录](modules/operation-log.md) — 操作审计日志。 · `stub`
 - [资源运营一级视图（容器·待拆解）](modules/resource.md) — 一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。 · `drafted`
 - [业务一级视图（容器·待拆解）](modules/business.md) — 一级视图 /business/:bizId 容器，待拆解。 · `stub`  (relates: load-balancer)
-- [工作台一级视图（容器·待拆解）](modules/service.md) — 一级视图 /service/ 容器，待拆解。 · `stub`
+- [工作台一级视图（容器·待拆解）](modules/service.md) — 一级视图 /service/ 容器，待拆解。 · `drafted`
 - [云账号管理](modules/cloud-account-manage.md) — 云账号密钥、权限策略/模板、二级/三级账号管理。 · `stub`
 - [负载均衡](modules/load-balancer.md) — CLB/监听器/目标组/设备。 · `drafted`  (relates: business)
 - [账单](modules/bill.md) — 账单与账号账单视图。 · `drafted`

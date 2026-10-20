@@ -169,8 +169,10 @@
         "src/views/service/**"
       ],
       "doc": "modules/service.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "66d1054958ae1ec178eecd6b34ec5956053ba985"
+      }
     },
     {
       "id": "cloud-account-manage",
