@@ -89,3 +89,15 @@ type TCloudCert struct {
 func (cert TCloudCert) GetCloudID() string {
 	return converter.PtrToVal(cert.CertificateId)
 }
+
+// GetTagMap collects cloud cert tags into a tag map.
+func (cert TCloudCert) GetTagMap() apicore.TagMap {
+	if len(cert.Tags) == 0 {
+		return nil
+	}
+	tagMap := make(apicore.TagMap, len(cert.Tags))
+	for _, tag := range cert.Tags {
+		tagMap.Set(converter.PtrToVal(tag.TagKey), converter.PtrToVal(tag.TagValue))
+	}
+	return tagMap
+}

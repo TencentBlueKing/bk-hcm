@@ -21,6 +21,7 @@ export type AuthResourceType =
   | 'cloud_selection_scheme'
   | 'account'
   | 'biz'
+  | 'cloud_resource'
   | 'cvm'
   | 'cert'
   | 'biz_audit'
@@ -185,16 +186,13 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
   },
   [authSymbol.AUTH_ASSIGN_IAAS_RESOURCE]: {
-    id: 'iaas_resource_delete',
-    action: 'delete',
-    resourceType: 'cvm',
-    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
-  },
-  [authSymbol.AUTH_BIZ_FIND_IAAS_RESOURCE]: {
     id: 'resource_assign',
     action: 'assign',
-    resourceType: 'cvm',
-    // transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    // 分配不区分具体资源，后端 cloud_resource 是涵盖全部云资源的特殊类型，直接对应 resource_assign
+    resourceType: 'cloud_resource',
+    // 分配同时关联云账号与目标业务两个实例，缺少目标业务时鉴权必然不通过，relation 为 [accountId, targetBizId]
+    transform: (definition, relation) =>
+      basicTransform(definition, { resource_id: relation[0], bk_biz_id: relation[1] as number }),
   },
   [authSymbol.AUTH_BIZ_CREATE_IAAS_RESOURCE]: {
     id: 'biz_iaas_resource_create',

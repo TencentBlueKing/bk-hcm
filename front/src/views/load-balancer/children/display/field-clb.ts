@@ -1,5 +1,6 @@
 import { Column, Model } from '@/decorator';
 import { CLB_STATUS_NAME, IP_VERSION_DISPLAY_NAME, LB_TYPE_NAME, LOAD_BALANCER_ISP_NAME } from '../../constants';
+import { getLoadBalancerInstanceSpecName } from '../../utils';
 import { formatTags } from '@/common/util';
 import { VendorMap } from '@/common/constant';
 
@@ -26,6 +27,14 @@ export class DisplayFieldClb {
 
   @Column('enum', { name: '网络类型', index: 0, width: 120, option: LB_TYPE_NAME, sort: true })
   lb_type: string;
+
+  @Column('string', {
+    name: '实例规格',
+    index: 0,
+    width: 100,
+    render: ({ row }: { row: { exclusive?: number; sla_type?: string } }) => getLoadBalancerInstanceSpecName(row),
+  })
+  instance_spec: string;
 
   @Column('number', { name: '监听器数量', index: 0, width: 100 })
   listener_count: number;

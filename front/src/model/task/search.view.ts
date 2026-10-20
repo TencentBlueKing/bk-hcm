@@ -10,7 +10,7 @@ export class SearchView {
   @Column('string')
   resource: ResourceTypeEnum;
 
-  @Column('account', { name: '云账号', index: 0 })
+  @Column('account', { name: '云账号', index: 0, op: QueryRuleOPEnum.JSON_OVERLAPS })
   account_ids: string;
 
   @Column('enum', { name: '任务状态', option: TASK_STATUS_NAME, index: 2 })

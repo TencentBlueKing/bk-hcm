@@ -1,0 +1,106 @@
+{
+  "id": "clb-random-zone-exclusive-cluster",
+  "title": "【CLB】独占集群允许随机可用区",
+  "currentStage": "done",
+  "createdAt": "2026-09-24T02:38:30.158Z",
+  "updatedAt": "2026-09-24T07:39:14.274Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/clb-random-zone-exclusive-cluster/coding.md",
+        "kind": "file",
+        "addedAt": "2026-09-24T02:53:46.366Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/clb-random-zone-exclusive-cluster/test.md",
+        "kind": "file",
+        "addedAt": "2026-09-24T04:09:58.575Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-09-24T04:08:43.115Z",
+      "note": "用户明确要求推进 test 阶段；coding.md 已对齐本轮代码且保鲜为 fresh。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-09-24T07:36:58.959Z",
+      "note": "用户确认推进 done：P0 7/7 全部 PASS（E2E+手测互补），P1-04/05 PASS，P1-01 失败分支/P1-02/P1-03 因网络环境受限标记 Skipped，P2 未单独执行。文档收口节点已完成。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-09-24T02:38:30.158Z",
+      "gitHead": "978201dfd094abbe5b3ec57952ea79d533cf2a9f"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-09-24T04:08:43.115Z",
+      "note": "用户明确要求推进 test 阶段；coding.md 已对齐本轮代码且保鲜为 fresh。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-09-24T07:36:58.959Z",
+      "note": "用户确认推进 done：P0 7/7 全部 PASS（E2E+手测互补），P1-04/05 PASS，P1-01 失败分支/P1-02/P1-03 因网络环境受限标记 Skipped，P2 未单独执行。文档收口节点已完成。"
+    }
+  ],
+  "branch": "feat-clus-accept-repair",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138577666"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "completed",
+      "at": "2026-09-24T02:52:31.006Z",
+      "note": "已完成需求澄清并回写描述；原需求描述完整保留，状态未在澄清时变更。"
+    },
+    "hcm-verify-e2e": {
+      "status": "completed",
+      "at": "2026-09-24T06:52:47.765Z",
+      "note": "已安装 E2E 骨架并运行当前工作流 spec：7/7 PASS。本地 mock 覆盖已回写 test.md，未覆盖的测试环境分支继续待验证。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-09-24T07:36:55.875Z",
+      "note": "touched=base/component-variant/service/ticket。service、ticket 中途已热写入并刷基线（无缺口）；base（types.ts 业务 API）、component-variant（plugin.ts 业务行为）属宽 glob 有意重叠，知识已归业务模块，按 base.md 记录的豁免条款正文不补，已逐个 deepen 刷新基线。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-09-24T07:39:14.274Z",
+      "note": "story 1069995598138577666 按分型验收完成：初态 status_12(for test)，按 planner 路径逐跳推进 status_13(tested) → status_20(grayed) → status_14(done)，最终 status_14，已复核。owner 未变更；无 parent_id，不需 rollup。状态映射歧义（status_20/22 同区间）已修正 for accept 非 done 前必经节点并重新同步。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/api/load_balancers/apply-clb/types.ts",
+        "src/views/service/service-apply/clb/hooks/useExclusiveCluster.ts",
+        "src/views/service/service-apply/clb/hooks/useRenderForm.tsx",
+        "src/views/service/service-apply/clb/apply-clb-internal.plugin.ts",
+        "src/views/ticket/children/apply-detail/clb.vue",
+        "src/components/zone-selector/index.vue",
+        "src/views/service/service-apply/clb/children/bottom-bar.tsx",
+        "src/views/ticket/entry-biz.vue"
+      ],
+      "contentFingerprint": "6739a76a5efeaf3f3ab40f5a36ce1f1975d6545a",
+      "codeBaseline": "5beaa434c6e4346c3a74bdf2547d6e02ddaffb33",
+      "seatedAt": "2026-09-24T03:51:48.007Z"
+    }
+  }
+}

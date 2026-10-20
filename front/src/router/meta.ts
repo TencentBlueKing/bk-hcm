@@ -17,7 +17,7 @@ interface Auth {
 }
 
 interface Layout {
-  breadcrumbs?: {
+  breadcrumb?: {
     show?: boolean;
     back?: boolean;
   };

@@ -1,0 +1,122 @@
+{
+  "id": "feat-clb-list-spec-field",
+  "title": "CLB 列表实例规格字段",
+  "currentStage": "done",
+  "createdAt": "2026-09-16T09:55:29.448Z",
+  "updatedAt": "2026-09-21T08:45:09.248Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-list-spec-field/coding.md",
+        "kind": "file",
+        "addedAt": "2026-09-17T01:59:47.445Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-list-spec-field/test.md",
+        "kind": "file",
+        "addedAt": "2026-09-17T03:40:20.849Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-09-17T03:33:36.861Z",
+      "note": "用户确认：CLB 列表实例规格字段开发完成，coding.md 可作为 test 阶段唯一依据，推进到 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-09-21T08:43:24.935Z",
+      "note": "用户确认：开发自测收口。test.md 结论已回填，18 条中 17 PASS、1 Skipped（未知档位兜底需造数据），总体 PASS；验收扩项（10 个筛选项 + json_in 合并）已补进清单并实测。coding 冻结点已 waive（stale 源于共享文件的 toolbar 改动，属另一个 wf）。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-09-16T09:55:29.448Z",
+      "gitHead": "c5b61eff7862234851230f61cbb1b2cf0317d5e0"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-09-17T03:33:36.861Z",
+      "note": "用户确认：CLB 列表实例规格字段开发完成，coding.md 可作为 test 阶段唯一依据，推进到 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-09-21T08:43:24.935Z",
+      "note": "用户确认：开发自测收口。test.md 结论已回填，18 条中 17 PASS、1 Skipped（未知档位兜底需造数据），总体 PASS；验收扩项（10 个筛选项 + json_in 合并）已补进清单并实测。coding 冻结点已 waive（stale 源于共享文件的 toolbar 改动，属另一个 wf）。"
+    }
+  ],
+  "requirementId": "req-feat-clb-exclusive-cluster",
+  "branch": "feat-clb-exclusive-cluster-mgmt",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138114064",
+    "parentId": "1069995598133757341"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-09-16T09:56:23.160Z",
+      "note": "用户选择跳过：绑定单「CLB列表实例规格字段」(1069995598138114064) 已处 approved(已评审)，确已完成澄清与评估，不重跑。仅绑定 1 张单。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-09-21T08:02:36.144Z",
+      "note": "touched=base/resource/load-balancer，gaps 为空：实例规格合成与筛选口径（utils.ts 单一实现 + 两套列表壳接线 + json_in 合并）已在 modules/load-balancer.md「实例规格」一节热写入，三个模块基线均已刷新、无漂移。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-09-21T08:45:09.248Z",
+      "note": "story 1069995598138114064 status_12→status_13→status_14；owner 未变更。parent 1069995598133757341 仍 status_11（rollup shouldAdvance=false，兄弟单仍有 status_10 / status_12）。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "children/display/field-clb.ts",
+        "children/search/condition-clb.ts",
+        "use-columns.tsx",
+        "views/load-balancer/utils.ts",
+        "constants.ts",
+        "views/load-balancer/constants.ts",
+        "src/views/load-balancer/constants.ts",
+        "src/views/load-balancer/utils.ts",
+        "src/views/load-balancer/children/display/field-clb.ts",
+        "src/views/load-balancer/children/search/condition-clb.ts",
+        "src/store/load-balancer/clb.ts",
+        "src/views/resource/resource-manage/hooks/use-columns.tsx",
+        "src/views/resource/resource-manage/children/manage/load-balancer-manage.vue",
+        "utils.ts",
+        "field-clb.ts",
+        "field-rs.ts",
+        "data-list.vue",
+        "condition-clb.ts",
+        "load-balancer-manage.vue",
+        "store/load-balancer/clb.ts",
+        "use-table-settings.ts",
+        "batch-delete-dialog.vue",
+        "load-balancer-list.vue",
+        "details.vue",
+        "children/search/search.vue"
+      ],
+      "contentFingerprint": "ad4e06553408687281fba4bbab30fef01e94b392",
+      "codeBaseline": "36f27bdb7ac351de0f0d72f5fe7612f8c0b3a351",
+      "seatedAt": "2026-09-21T08:39:12.325Z",
+      "waived": true,
+      "waiveNote": "stale 来自共享文件 load-balancer-manage.vue：09-20 冻结点之后它只被 toolbar 搜索框自适应（窄屏裁切修复）改过，属 feat-clb-clb-exclusive-cluster-mgmt 的改动并已记在那边 coding.md；本单的实例规格列与筛选口径未变，reconcile 的 fileDiffs 也为空，故不改本单 coding.md。"
+    }
+  }
+}

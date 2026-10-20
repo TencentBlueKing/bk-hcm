@@ -2,13 +2,13 @@ import { RESOURCES_SYNC_STATUS_MAP, RESOURCE_TYPES_MAP } from '@/common/constant
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { Loading, Table } from 'bkui-vue';
-import { defineComponent, ref, watch, onBeforeUnmount, reactive } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
 import loadingStatus from '@/assets/image/status_loading.png';
 import './index.scss';
 import { timeFormatter } from '@/common/util';
-import interval from '@/utils/interval';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -16,10 +16,6 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const statusList = ref([]);
     const isLoading = ref(false);
-    const timeInterval = reactive({
-      set: null,
-      clear: null,
-    });
 
     const tableColumns = [
       {
@@ -61,33 +57,27 @@ export default defineComponent({
         // rowspan: 7,
       },
     ];
-    const init = () => {
-      timeInterval.clear();
-      timeInterval.set();
-    };
-    const getList = async (account: any) => {
-      if (!account?.id) return;
+    // 账号只能在调用时现取：轮询回调只会创建一次，参数传入的账号会被闭包固定成首次的那个
+    const getList = async () => {
+      const accountId = resourceAccountStore.resourceAccount?.id;
+      if (!accountId) return;
       isLoading.value = true;
       try {
-        const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
+        const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${accountId}`);
         statusList.value = res.data.iass_res;
       } finally {
         isLoading.value = false;
       }
     };
-    onBeforeUnmount(() => {
-      timeInterval?.clear();
-    });
+    // 10s 一轮、最多 60 轮（沿用原先 10 分钟的轮询上限）
+    const { reset, resume } = useTimeoutPoll(getList, 10000, { max: 60 });
     watch(
       () => resourceAccountStore.resourceAccount,
-      async (account) => {
-        getList(account);
-        if (!timeInterval.set) {
-          const { clearTimeInterval, setTimeInterval } = interval(() => getList(account), 10000, 600000);
-          timeInterval.set = setTimeInterval;
-          timeInterval.clear = clearTimeInterval;
-        }
-        init();
+      () => {
+        getList();
+        // 换账号后重置轮次，不把上一个账号已消耗的轮询预算算进来
+        reset();
+        resume();
       },
       {
         immediate: true,

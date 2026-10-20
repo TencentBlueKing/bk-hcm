@@ -63,8 +63,8 @@ import (
 	loadbalancer "hcm/cmd/data-service/service/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
-	"hcm/cmd/data-service/service/cloud/permission-template"
-	"hcm/cmd/data-service/service/cloud/permission-policy-library"
+	permpolicylib "hcm/cmd/data-service/service/cloud/permission-policy-library"
+	permissiontemplate "hcm/cmd/data-service/service/cloud/permission-template"
 	"hcm/cmd/data-service/service/cloud/region"
 	resusagebizrel "hcm/cmd/data-service/service/cloud/res-usage-biz-rel"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
@@ -262,6 +262,7 @@ func (s *Service) apiSet() *restful.Container {
 	argstpl.InitService(capability)
 	cert.InitService(capability)
 	loadbalancer.InitService(capability)
+	loadbalancer.InitExclusiveClusterService(capability)
 	sgcomrel.InitService(capability)
 	mainaccount.InitService(capability)
 	rootaccount.InitService(capability)
@@ -286,13 +287,11 @@ func (s *Service) apiSet() *restful.Container {
 	billexchangerate.InitService(capability)
 	billsyncrecord.InitService(capability)
 	globalconfig.InitService(capability)
-
 	task.InitService(capability)
 	tenant.InitService(capability)
-
 	resusagebizrel.InitService(capability)
 	permissiontemplate.InitService(capability)
-	permissionpolicylibrary.InitService(capability)
+	permpolicylib.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

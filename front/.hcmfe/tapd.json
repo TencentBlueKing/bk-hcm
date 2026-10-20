@@ -1,0 +1,196 @@
+{
+  "workspaces": {
+    "69995598": {
+      "workspaceId": "69995598",
+      "statusModel": {
+        "story": [
+          {
+            "semantic": "backlog",
+            "key": "status_8",
+            "label": "backlog(新)"
+          },
+          {
+            "semantic": "todo",
+            "key": "status_10",
+            "label": "todo(已规划)"
+          },
+          {
+            "semantic": "doing",
+            "key": "status_11",
+            "label": "doing(开发中)"
+          },
+          {
+            "semantic": "for_test",
+            "key": "status_12",
+            "label": "for test(提测)"
+          },
+          {
+            "semantic": "tested",
+            "key": "status_13",
+            "label": "tested(测试通过)"
+          },
+          {
+            "semantic": "done",
+            "key": "status_14",
+            "label": "done(已上线)"
+          }
+        ],
+        "bug": [
+          {
+            "semantic": "backlog",
+            "key": "new",
+            "label": "backlog"
+          },
+          {
+            "semantic": "todo",
+            "key": "in_progress",
+            "label": "todo"
+          },
+          {
+            "semantic": "doing",
+            "key": "assigned",
+            "label": "doing"
+          },
+          {
+            "semantic": "for_test",
+            "key": "resolved",
+            "label": "for test"
+          },
+          {
+            "semantic": "tested",
+            "key": "TM_audited",
+            "label": "tested"
+          },
+          {
+            "semantic": "done",
+            "key": "closed",
+            "label": "done"
+          }
+        ]
+      },
+      "syncedAt": "2026-09-24T07:38:39.852Z",
+      "statusOptions": {
+        "story": {
+          "status_8": "backlog(新)",
+          "status_9": "挂起",
+          "status_10": "todo(已规划)",
+          "status_11": "doing(开发中)",
+          "status_12": "for test(提测)",
+          "status_13": "tested(测试通过)",
+          "status_14": "done(已上线)",
+          "status_15": "refuse(已拒绝)",
+          "status_16": "testing(测试中)",
+          "status_17": "for approve(echo 审批)",
+          "status_18": "approved",
+          "status_19": "for gray",
+          "status_20": "grayed",
+          "status_21": "accepted",
+          "status_22": "for accept",
+          "status_23": "designing",
+          "status_24": "design approved"
+        },
+        "bug": {
+          "new": "backlog",
+          "reopened": "reopen",
+          "in_progress": "todo",
+          "assigned": "doing",
+          "resolved": "for test",
+          "planning": "testing",
+          "TM_audited": "tested",
+          "postponed": "for accept(等待验收)",
+          "PMM_audited": "accepted(通过验收)",
+          "verified": "for gray(发布运维环境)",
+          "unconfirmed": "grayed(已在运维环境验收)",
+          "rejected": "refuse",
+          "closed": "done"
+        }
+      },
+      "statusTransitions": {
+        "story": {
+          "status_9": {
+            "key": "status_9",
+            "label": "挂起",
+            "satisfies": [
+              "backlog"
+            ],
+            "excludedFromRollup": true
+          },
+          "status_15": {
+            "key": "status_15",
+            "label": "refuse(已拒绝)",
+            "satisfies": [
+              "backlog"
+            ],
+            "excludedFromRollup": true
+          },
+          "status_16": {
+            "key": "status_16",
+            "label": "testing(测试中)",
+            "satisfies": [
+              "for_test"
+            ]
+          },
+          "status_17": {
+            "key": "status_17",
+            "label": "for approve(echo 审批)",
+            "satisfies": [
+              "backlog"
+            ]
+          },
+          "status_18": {
+            "key": "status_18",
+            "label": "approved",
+            "satisfies": [
+              "backlog"
+            ],
+            "nextSemantic": "todo"
+          },
+          "status_19": {
+            "key": "status_19",
+            "label": "for gray",
+            "satisfies": [
+              "tested"
+            ]
+          },
+          "status_20": {
+            "key": "status_20",
+            "label": "grayed",
+            "satisfies": [
+              "tested"
+            ],
+            "nextSemantic": "done"
+          },
+          "status_21": {
+            "key": "status_21",
+            "label": "accepted",
+            "satisfies": [
+              "done"
+            ]
+          },
+          "status_22": {
+            "key": "status_22",
+            "label": "for accept",
+            "satisfies": [
+              "tested"
+            ]
+          },
+          "status_23": {
+            "key": "status_23",
+            "label": "designing",
+            "satisfies": [
+              "todo"
+            ]
+          },
+          "status_24": {
+            "key": "status_24",
+            "label": "design approved",
+            "satisfies": [
+              "todo"
+            ]
+          }
+        },
+        "bug": {}
+      }
+    }
+  }
+}

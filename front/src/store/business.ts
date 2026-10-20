@@ -13,6 +13,7 @@ export interface ICloneSecurityParams {
   name: string;
   manager: string;
   bak_manager: string;
+  target_region: string;
 }
 // 获取
 const getBusinessApiPath = () => {
@@ -73,11 +74,12 @@ export const useBusinessStore = defineStore({
      * @return {*}
      */
     cloneSecurity(data: ICloneSecurityParams) {
-      const { id, name, manager, bak_manager } = data;
+      const { id, name, manager, bak_manager, target_region } = data;
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/clone`, {
         name,
         manager,
         bak_manager,
+        target_region,
       });
     },
     addEip(id: number, data: any, isRes = false) {

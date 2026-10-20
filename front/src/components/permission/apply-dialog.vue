@@ -11,9 +11,9 @@ export interface IPermApplyDialogProps {
 
 defineOptions({ name: 'permission-apply-dialog' });
 
-const props = defineProps<IPermApplyDialogProps>();
-
 const model = defineModel<boolean>();
+
+const props = defineProps<IPermApplyDialogProps>();
 
 const { t } = useI18n();
 
@@ -26,30 +26,25 @@ const permissionDialog = usePermissionDialog();
 const list = computed(() => {
   const { actions, system_name } = props.permission;
 
-  const list: { system: string; action: string; resources: IVerifyResourceInstance[] }[] = [];
-  actions.forEach((action) => {
-    // TODO: 支持多条
-    // 暂只取第一条，实际是一个多条的结构形如A/B/C的多条记录
-    const [firstResourceType] = action.related_resource_types;
-
+  return actions.map((action) => {
+    // 一个权限可能同时关联多种资源类型，如分配（resource_assign）需要云账号与目标业务两个实例，缺一条用户就不知道要申请什么
     // TODO: 支持多层级
-    // instances会有多个，可能重复，多个相同的资源鉴同一个权限的时候就会返回重复的实例
-    // instances也是多层级的形如A-B/C-D多条记录，这里暂简化打平处理
-    // 打平并且去复
-    const resources = firstResourceType?.instances?.flat().reduce((acc, cur) => {
-      const key = `${cur.type}_${cur.id}`;
-      const exists = acc.some((item) => `${item.type}_${item.id}` === key);
-      return exists ? acc : [...acc, cur];
-    }, []);
+    // instances 是形如A-B/C-D的多层级结构，当前注册的资源类型都没有父级，这里暂简化打平处理
+    // 多个相同的资源鉴同一个权限时会返回重复的实例，打平后需去重
+    const resources = action.related_resource_types
+      .flatMap((resourceType) => resourceType.instances?.flat() ?? [])
+      .reduce<IVerifyResourceInstance[]>((acc, cur) => {
+        const key = `${cur.type}_${cur.id}`;
+        const exists = acc.some((item) => `${item.type}_${item.id}` === key);
+        return exists ? acc : [...acc, cur];
+      }, []);
 
-    list.push({
-      resources: resources ?? [],
+    return {
+      resources,
       system: system_name,
       action: action.name,
-    });
+    };
   });
-
-  return list;
 });
 
 const handleApply = async () => {
@@ -107,7 +102,7 @@ defineExpose({ show: permissionDialog.show });
       <bk-table-column :label="t('关联的资源实例')" :width="342" prop="resources">
         <template #default="{ row }">
           <template v-if="row.resources?.length">
-            <div class="resource-item" v-for="instance in row.resources" :key="instance.id">
+            <div class="resource-item" v-for="instance in row.resources" :key="`${instance.type}_${instance.id}`">
               【{{ instance.type_name }}】{{ instance.name }}
             </div>
           </template>
@@ -136,17 +131,20 @@ defineExpose({ show: permissionDialog.show });
       padding: 0;
     }
   }
+
   :deep(.bk-modal-content) {
     .bk-dialog-content {
       margin-top: 0;
     }
   }
 }
+
 .permission-header {
   :deep(.bk-exception) {
     .bk-exception-img {
       height: 150px;
     }
+
     .bk-exception-title {
       font-size: 22px;
       color: #63656e;
@@ -155,11 +153,13 @@ defineExpose({ show: permissionDialog.show });
     }
   }
 }
+
 .permission-table {
   .resource-item {
     line-height: 24px;
   }
 }
+
 .permission-footer {
   display: flex;
   align-items: center;
