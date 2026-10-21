@@ -4,7 +4,7 @@
 
 - [x] 1.1 Add `github.com/hashicorp/terraform-json` to `go.mod` / `go.sum` and verify `go mod tidy` succeeds
 - [x] 1.2 Create the `iac_plugin_schema` DDL migration script in `scripts/sql/`, and verify the SQL syntax matches the schema specification
-- [x] 1.3 在 `pkg/api/core/plugin/schema.go` 和 `pkg/api/core/plugin/schema_validate.go` 中定义 `PluginSchema`、`RawSchema` 及可复用的导出校验与哈希函数（`ValidatePluginSchema`、`ValidateCapabilities`、`ComputeRawSchemaHash`）；data-service 列表响应直接复用 `IacPluginSchemaTable`，并通过单元测试验证 `json:",inline"` 序列化、反序列化及全部校验规则
+- [x] 1.3 在 `pkg/api/core/plugin/schema.go` 和 `pkg/api/core/plugin/schema_validate.go` 中定义 `PluginSchema`、`SchemaDetail` 及可复用的导出校验与哈希函数（`ValidatePluginSchema`、`ValidateCapabilities`、`ComputeSchemaHash`）；data-service 列表响应直接复用 `IacPluginSchemaTable`，并通过单元测试验证 `json:",inline"` 序列化、反序列化及全部校验规则
 
 ## 2. DAL Table and DAO Layer (`pkg/dal`)
 
@@ -20,7 +20,7 @@
 ## 4. HC-Service SchemaManager and SchemaCache
 
 - [x] 4.1 Define `SchemaGetter`, `SchemaManager`, and `SyncSchemaResult` in `cmd/hc-service/logics/plugin/schema/types.go` and implement `SchemaCache` (when cache misses, expires, or `schema_hash` mismatches DB, query full schema from DB via `singleflight`, spawn a goroutine to update `schemaCache` + `expireMap`, and concurrently return schema to caller; include structured English logging via `hcm/pkg/logs` with `kt.Rid`) in `cmd/hc-service/logics/plugin/schema/cache.go`, and verify cache hit/miss/TTL expiration/hash-mismatch/concurrent-singleflight scenarios pass unit tests in `cmd/hc-service/logics/plugin/schema/cache_test.go`
-- [x] 4.2 Implement `SchemaManager.SyncSchema` and `SchemaManager.GetSchema` in `cmd/hc-service/logics/plugin/schema/manager.go` (calling the exported `ValidatePluginSchema` function to validate against `iac_plugin`, `protocol_version`, `schema_hash` regex + local `RawSchema` SHA-256 recomputation match, southbound protocol `capabilities` rules, and `provider.block`, followed by idempotent write, tamper-resistant conflict rejection, and English logging via `hcm/pkg/logs`), and verify all `SyncSchema` and `GetSchema` scenarios pass unit tests in `cmd/hc-service/logics/plugin/schema/manager_test.go`
+- [x] 4.2 Implement `SchemaManager.SyncSchema` and `SchemaManager.GetSchema` in `cmd/hc-service/logics/plugin/schema/manager.go` (calling the exported `ValidatePluginSchema` function to validate against `iac_plugin`, `protocol_version`, `schema_hash` regex + local `SchemaDetail` SHA-256 recomputation match, southbound protocol `capabilities` rules, and `provider.block`, followed by idempotent write, tamper-resistant conflict rejection, and English logging via `hcm/pkg/logs`), and verify all `SyncSchema` and `GetSchema` scenarios pass unit tests in `cmd/hc-service/logics/plugin/schema/manager_test.go`
 
 ## Workflow follow-up
 
