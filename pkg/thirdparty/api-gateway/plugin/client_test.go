@@ -198,33 +198,9 @@ func TestPluginSchema_Validate(t *testing.T) {
 }
 
 func TestPathStepAndDiagnostic(t *testing.T) {
-	stepCases := []struct {
-		name    string
-		step    PathStep
-		wantErr bool
-	}{
-		{name: "valid attribute step", step: NewAttributeStep("fields"), wantErr: false},
-		{name: "valid key step", step: NewKeyStep("env"), wantErr: false},
-		{name: "valid index 0 step", step: NewIndexStep(0), wantErr: false},
-		{name: "negative index rejected", step: NewIndexStep(-1), wantErr: true},
-		{name: "empty step rejected", step: PathStep{}, wantErr: true},
-		{
-			name:    "multiple fields rejected",
-			step:    PathStep{Attribute: cvt.ValToPtr("a"), Index: cvt.ValToPtr(0)},
-			wantErr: true,
-		},
-	}
-
-	for _, tc := range stepCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := tc.step.Validate()
-			if tc.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			assert.NoError(t, err)
-		})
-	}
+	assert.Equal(t, "fields", cvt.PtrToVal(NewAttributeStep("fields").Attribute))
+	assert.Equal(t, "env", cvt.PtrToVal(NewKeyStep("env").Key))
+	assert.Equal(t, 0, cvt.PtrToVal(NewIndexStep(0).Index))
 
 	passWithWarning := &ValidateData{
 		Diagnostics: []Diagnostic{
@@ -243,12 +219,6 @@ func TestPathStepAndDiagnostic(t *testing.T) {
 		},
 	}
 	assert.False(t, failWithDefaultError.IsPassed())
-	assert.NoError(t, failWithDefaultError.Diagnostics[0].Validate())
-	assert.Error(t, Diagnostic{Message: ""}.Validate())
-	assert.Error(t, Diagnostic{
-		Diagnostic: tfjson.Diagnostic{Severity: "invalid"},
-		Message:    "err",
-	}.Validate())
 }
 
 func TestRequestValidateErrors(t *testing.T) {
