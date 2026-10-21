@@ -57,6 +57,17 @@ func (f JsonField) MarshalJSON() ([]byte, error) {
 	return []byte(f), nil
 }
 
+// ToRawMessage converts JsonField to json.RawMessage.
+// When fields does not include the json column, the column is not selected and stays empty.
+// An empty slice is not valid json for json.RawMessage and fails response encoding, so fall back to {}.
+func (f JsonField) ToRawMessage() json.RawMessage {
+	if len(f) == 0 {
+		return json.RawMessage("{}")
+	}
+
+	return json.RawMessage(f)
+}
+
 // UnmarshalJSON sets *m to a copy of data.
 func (f *JsonField) UnmarshalJSON(data []byte) error {
 	if f == nil {
