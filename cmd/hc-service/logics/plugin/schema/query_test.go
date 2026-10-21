@@ -29,37 +29,38 @@ import (
 )
 
 func TestToPluginSchema(t *testing.T) {
-	raw := coreplugin.RawSchema{
+	detail := coreplugin.SchemaDetail{
 		ProtocolVersion: "1.0",
-		Capabilities: map[string]bool{
-			coreplugin.CapabilityApply: true,
+		Capabilities: coreplugin.Capabilities{
+			Apply: true,
 		},
 	}
-	rawBytes, err := json.Marshal(raw)
+	detailBytes, err := json.Marshal(detail)
 	if err != nil {
-		t.Fatalf("marshal raw schema failed: %v", err)
+		t.Fatalf("marshal schema detail failed: %v", err)
 	}
 
 	record := tableplugin.IacPluginSchemaTable{
 		PluginName:    "tencentcloud",
 		PluginVersion: "1.81.5",
 		SchemaHash:    "sha256:test",
-		SchemaDetail:  types.JsonField(rawBytes),
+		SchemaDetail:  types.JsonField(detailBytes),
 	}
 	converted, err := toPluginSchema(record)
 	if err != nil {
 		t.Fatalf("convert plugin schema failed: %v", err)
 	}
 
-	if converted.PluginName != record.PluginName ||
-		converted.PluginVersion != record.PluginVersion ||
+	if converted.Plugin.Name != record.PluginName ||
+		converted.Plugin.Version != record.PluginVersion ||
 		converted.SchemaHash != record.SchemaHash ||
-		converted.ProtocolVersion != raw.ProtocolVersion {
+		converted.ProtocolVersion != detail.ProtocolVersion ||
+		!converted.Capabilities.Apply {
 		t.Fatalf("unexpected converted plugin schema: %+v", converted)
 	}
 }
 
-func TestToPluginSchemaNilRawSchema(t *testing.T) {
+func TestToPluginSchemaNilSchemaDetail(t *testing.T) {
 	record := tableplugin.IacPluginSchemaTable{
 		PluginName:    "tencentcloud",
 		PluginVersion: "1.81.5",
@@ -68,9 +69,9 @@ func TestToPluginSchemaNilRawSchema(t *testing.T) {
 
 	converted, err := toPluginSchema(record)
 	if err != nil {
-		t.Fatalf("convert empty raw schema failed: %v", err)
+		t.Fatalf("convert empty schema detail failed: %v", err)
 	}
-	if converted.PluginName != record.PluginName || converted.Capabilities != nil {
+	if converted.Plugin.Name != record.PluginName || converted.Capabilities != (coreplugin.Capabilities{}) {
 		t.Fatalf("unexpected converted plugin schema: %+v", converted)
 	}
 }
