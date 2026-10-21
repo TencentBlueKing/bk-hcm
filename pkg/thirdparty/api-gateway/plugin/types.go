@@ -25,6 +25,8 @@ import (
 	"strings"
 
 	cvt "hcm/pkg/tools/converter"
+
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 const (
@@ -32,16 +34,6 @@ const (
 	MinListLimit = 1
 	// MaxListLimit is the maximum allowed limit for POST /list.
 	MaxListLimit = 500
-)
-
-// DiagnosticSeverity represents the severity level of a Diagnostic item.
-type DiagnosticSeverity string
-
-const (
-	// DiagnosticSeverityError indicates an error that fails configuration validation.
-	DiagnosticSeverityError DiagnosticSeverity = "error"
-	// DiagnosticSeverityWarning indicates a warning that does not fail configuration validation.
-	DiagnosticSeverityWarning DiagnosticSeverity = "warning"
 )
 
 // TaskStatus represents the execution status of Apply, GetResult, and Stop.
@@ -107,19 +99,21 @@ func (s PathStep) Validate() error {
 }
 
 // Diagnostic describes a single validation issue in user configuration.
+// It embeds tfjson.Diagnostic to stay consistent with Terraform diagnostic JSON format,
+// and supplements southbound protocol fields Path and Message.
 type Diagnostic struct {
+	tfjson.Diagnostic
+
 	// Path is the ordered path from the root of config; empty array means not tied to a single field.
 	Path []PathStep `json:"path"`
 	// Message is the human-readable issue description without repeating the field name.
 	Message string `json:"message"`
-	// Severity is the optional severity level: error/warning (defaults to error when omitted).
-	Severity DiagnosticSeverity `json:"severity,omitempty"`
 }
 
 // EffectiveSeverity returns the diagnostic severity, defaulting to "error" when empty.
-func (d Diagnostic) EffectiveSeverity() DiagnosticSeverity {
+func (d Diagnostic) EffectiveSeverity() tfjson.DiagnosticSeverity {
 	if d.Severity == "" {
-		return DiagnosticSeverityError
+		return tfjson.DiagnosticSeverityError
 	}
 	return d.Severity
 }
@@ -130,7 +124,7 @@ func (d Diagnostic) Validate() error {
 		return errors.New("diagnostic message is required")
 	}
 	sev := d.EffectiveSeverity()
-	if sev != DiagnosticSeverityError && sev != DiagnosticSeverityWarning {
+	if sev != tfjson.DiagnosticSeverityError && sev != tfjson.DiagnosticSeverityWarning {
 		return fmt.Errorf("invalid diagnostic severity %q", d.Severity)
 	}
 	for i, step := range d.Path {
@@ -327,7 +321,7 @@ func (v *ValidateData) IsPassed() bool {
 		return true
 	}
 	for _, d := range v.Diagnostics {
-		if d.EffectiveSeverity() == DiagnosticSeverityError {
+		if d.EffectiveSeverity() == tfjson.DiagnosticSeverityError {
 			return false
 		}
 	}

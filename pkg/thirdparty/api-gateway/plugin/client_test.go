@@ -35,7 +35,9 @@ import (
 	"hcm/pkg/kit"
 	cvt "hcm/pkg/tools/converter"
 
+	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/zclconf/go-cty/cty"
 )
 
 func generateTestRSA3072Key(t *testing.T) (*rsa.PrivateKey, string) {
@@ -115,32 +117,34 @@ func newValidSampleSchema() *PluginSchema {
 			Import:     true,
 			List:       true,
 		},
-		Provider: Schema{
-			Version: 0,
-			Block: &Block{
-				Attributes: map[string]Attribute{
-					"access_token": {Type: json.RawMessage(`"string"`), Required: true, Sensitive: true},
-				},
-			},
-		},
-		ResourceSchemas: map[string]Schema{
-			"bkcmdb_host": {
+		ProviderSchema: tfjson.ProviderSchema{
+			ConfigSchema: &tfjson.Schema{
 				Version: 0,
-				Block: &Block{
-					Attributes: map[string]Attribute{
-						"bk_host_innerip": {Type: json.RawMessage(`"string"`), Required: true},
-						"bk_host_id":      {Type: json.RawMessage(`"number"`), Computed: true},
+				Block: &tfjson.SchemaBlock{
+					Attributes: map[string]*tfjson.SchemaAttribute{
+						"access_token": {AttributeType: cty.String, Required: true, Sensitive: true},
 					},
 				},
 			},
-		},
-		DataSourceSchemas: map[string]Schema{
-			"bkcmdb_biz": {
-				Version: 0,
-				Block: &Block{
-					Attributes: map[string]Attribute{
-						"bk_biz_name": {Type: json.RawMessage(`"string"`), Required: true},
-						"bk_biz_id":   {Type: json.RawMessage(`"number"`), Computed: true},
+			ResourceSchemas: map[string]*tfjson.Schema{
+				"bkcmdb_host": {
+					Version: 0,
+					Block: &tfjson.SchemaBlock{
+						Attributes: map[string]*tfjson.SchemaAttribute{
+							"bk_host_innerip": {AttributeType: cty.String, Required: true},
+							"bk_host_id":      {AttributeType: cty.Number, Computed: true},
+						},
+					},
+				},
+			},
+			DataSourceSchemas: map[string]*tfjson.Schema{
+				"bkcmdb_biz": {
+					Version: 0,
+					Block: &tfjson.SchemaBlock{
+						Attributes: map[string]*tfjson.SchemaAttribute{
+							"bk_biz_name": {AttributeType: cty.String, Required: true},
+							"bk_biz_id":   {AttributeType: cty.Number, Computed: true},
+						},
 					},
 				},
 			},
@@ -174,9 +178,8 @@ func TestPluginSchema_Validate(t *testing.T) {
 			s.Capabilities.AsyncApply = false
 			s.Capabilities.Stop = true
 		}, wantErr: true},
-		{name: "attribute required combined with computed", mutate: func(s *PluginSchema) {
-			s.Provider.Block.Attributes["bad"] = Attribute{Type: json.RawMessage(`"string"`), Required: true,
-				Computed: true}
+		{name: "missing provider block", mutate: func(s *PluginSchema) {
+			s.ConfigSchema = nil
 		}, wantErr: true},
 	}
 
@@ -225,8 +228,11 @@ func TestPathStepAndDiagnostic(t *testing.T) {
 
 	passWithWarning := &ValidateData{
 		Diagnostics: []Diagnostic{
-			{Path: []PathStep{NewAttributeStep("operator")}, Message: "deprecated",
-				Severity: DiagnosticSeverityWarning},
+			{
+				Diagnostic: tfjson.Diagnostic{Severity: tfjson.DiagnosticSeverityWarning},
+				Path:       []PathStep{NewAttributeStep("operator")},
+				Message:    "deprecated",
+			},
 		},
 	}
 	assert.True(t, passWithWarning.IsPassed())
@@ -239,7 +245,10 @@ func TestPathStepAndDiagnostic(t *testing.T) {
 	assert.False(t, failWithDefaultError.IsPassed())
 	assert.NoError(t, failWithDefaultError.Diagnostics[0].Validate())
 	assert.Error(t, Diagnostic{Message: ""}.Validate())
-	assert.Error(t, Diagnostic{Message: "err", Severity: "invalid"}.Validate())
+	assert.Error(t, Diagnostic{
+		Diagnostic: tfjson.Diagnostic{Severity: "invalid"},
+		Message:    "err",
+	}.Validate())
 }
 
 func TestRequestValidateErrors(t *testing.T) {
