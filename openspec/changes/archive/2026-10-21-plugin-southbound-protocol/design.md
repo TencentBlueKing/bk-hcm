@@ -11,7 +11,7 @@
 **Goals:**
 - 在 `pkg/cryptography` 中提供符合南向协议 §3.2.2 规范的 `RSAOaep` 公钥解析、密钥位数校验（>= 3072 位）、明文长度上限检查（`公钥字节数 - 66`）及 RSA-OAEP + 标准 Base64 加密实现。
 - 在 `pkg/thirdparty/api-gateway/plugin` 中提供 `crypto_type`（`RSA`）与 `crypto_config`（`public_key`）校验及 `LaunchConfigEncryptor` 封装，供南向请求加密及后续插件注册直接复用。
-- 定义南向协议完整数据结构（`PluginSchema`、`Capabilities`、`Block`/`Attribute`/`NestedBlock`、`Diagnostic`/`PathStep`、`TaskStatus`、`Progress` 及 11 个接口的 Req/Resp 模型）与参数/能力位校验逻辑。
+- 定义南向协议完整数据结构（基于 `github.com/hashicorp/terraform-json` 扩展 `PluginSchema` 与 `Diagnostic`，以及 `Capabilities`、`PathStep`、`TaskStatus`、`Progress` 和 11 个接口的 Req/Resp 模型）与参数/能力位校验逻辑。
 - 实现南向协议 11 个 HTTP 接口客户端（`Health`、`GetSchema`、`Apply`、`GetResult`、`Stop`、`Plan`、`Validate`、`Import`、`Refresh`、`ReadData`、`List`），直接复用 `apigateway.ApiGatewayCall` 与 `apigateway.ApiGatewayCallWithoutReq`。
 
 **Non-Goals:**
@@ -61,13 +61,9 @@
   - **明文长度上限**：最大明文字节数为 `公钥字节数 - 66`（`keyBytes - 2*32 - 2`），3072 位（384 字节）公钥最多支持 **318 字节**明文。
 
 ### 5. Schema 结构与约束校验规则
-Schema 复用 Terraform `providers schema -json` 的块结构并扩展 HCM 顶层元数据：
-- **顶层元数据**：`protocol_version`（必填，如 `"1.0"`）、`plugin.name`（必填，全局唯一且作为所有 `type_name` 的前缀）、`plugin.version`（必填，与 `/health` 的 `plugin_version` 一致）、`schema_hash`（必填，Schema 内容指纹）、`capabilities`、`provider`、`resource_schemas`、`data_source_schemas`。
+Schema 直接内嵌复用 `github.com/hashicorp/terraform-json` 的 `tfjson.ProviderSchema`（内部属性类型表达式在 JSON 反序列化时由 `cty.Type` 自动解析校验），并扩展 HCM 顶层元数据：
+- **顶层元数据与块非空**：`protocol_version`（必填，如 `"1.0"`）、`plugin.name`（必填，全局唯一且作为所有 `type_name` 的前缀）、`plugin.version`（必填，与 `/health` 的 `plugin_version` 一致）、`schema_hash`（必填，Schema 内容指纹）、`capabilities`、`provider`（`provider.block` 必填）、`resource_schemas`、`data_source_schemas`（各类型 `block` 必填）。
 - **类型名前缀强约束**：`resource_schemas` 与 `data_source_schemas` 中的所有 key 必须以 `plugin.name + "_"` 开头。
-- **属性修饰符（`Attribute`）组合规则**：
-  - `required: true`（用户必填）不得与 `optional: true` 或 `computed: true` 同时出现；
-  - `required`、`optional`、`computed` 三者至少有一个为 `true`（合法组合仅限：`required`、`optional`、`computed`、`optional + computed`）。
-- **嵌套块（`NestedBlock`）规则**：`nesting_mode` 仅允许 `single`（单对象）、`list`（有序数组）、`set`（无序数组）、`map`（键值对象）；`min_items` 与 `max_items` 必须 `>= 0`，且当 `max_items > 0` 时 `min_items <= max_items`。
 - **`capabilities` 声明正反向约束**：
   1. `resource_schemas` 非空时，`apply`、`plan`、`refresh` 必须全部为 `true`；
   2. `resource_schemas` 为空时，所有资源类能力位（`apply`、`plan`、`refresh`、`async_apply`、`stop`、`import`、`list`）均不得为 `true`；
