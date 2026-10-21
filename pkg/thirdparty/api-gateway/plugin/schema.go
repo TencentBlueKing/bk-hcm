@@ -124,16 +124,7 @@ func (s *PluginSchema) validateCapabilities() error {
 	if err := s.validateResourceCapabilities(); err != nil {
 		return err
 	}
-	if len(s.DataSourceSchemas) > 0 && !s.Capabilities.ReadData {
-		return errors.New("capabilities.read_data must be true when data_source_schemas is not empty")
-	}
-	if len(s.DataSourceSchemas) == 0 && s.Capabilities.ReadData {
-		return errors.New("capabilities.read_data must not be true when data_source_schemas is empty")
-	}
-	if s.Capabilities.Stop && !s.Capabilities.AsyncApply {
-		return errors.New("capabilities.async_apply must be true when capabilities.stop is true")
-	}
-	return nil
+	return s.validateDataSourceCapabilities()
 }
 
 func (s *PluginSchema) validateResourceCapabilities() error {
@@ -147,11 +138,24 @@ func (s *PluginSchema) validateResourceCapabilities() error {
 		if !s.Capabilities.Refresh {
 			return errors.New("capabilities.refresh must be true when resource_schemas is not empty")
 		}
+		if s.Capabilities.Stop && !s.Capabilities.AsyncApply {
+			return errors.New("capabilities.async_apply must be true when capabilities.stop is true")
+		}
 		return nil
 	}
 	if s.Capabilities.Apply || s.Capabilities.Plan || s.Capabilities.Refresh ||
 		s.Capabilities.AsyncApply || s.Capabilities.Stop || s.Capabilities.Import || s.Capabilities.List {
 		return errors.New("resource capabilities must not be true when resource_schemas is empty")
+	}
+	return nil
+}
+
+func (s *PluginSchema) validateDataSourceCapabilities() error {
+	if len(s.DataSourceSchemas) > 0 && !s.Capabilities.ReadData {
+		return errors.New("capabilities.read_data must be true when data_source_schemas is not empty")
+	}
+	if len(s.DataSourceSchemas) == 0 && s.Capabilities.ReadData {
+		return errors.New("capabilities.read_data must not be true when data_source_schemas is empty")
 	}
 	return nil
 }

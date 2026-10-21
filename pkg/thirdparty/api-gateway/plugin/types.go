@@ -74,30 +74,6 @@ func NewIndexStep(index int) PathStep {
 	return PathStep{Index: cvt.ValToPtr(index)}
 }
 
-// Validate checks that exactly one of Attribute, Key, or Index is set and valid.
-func (s PathStep) Validate() error {
-	count := 0
-	if s.Attribute != nil {
-		count++
-	}
-	if s.Key != nil {
-		count++
-	}
-	if s.Index != nil {
-		count++
-	}
-	if count != 1 {
-		return errors.New("path step must have exactly one of attribute, key, or index")
-	}
-	if s.Attribute != nil && strings.TrimSpace(cvt.PtrToVal(s.Attribute)) == "" {
-		return errors.New("path step attribute cannot be empty")
-	}
-	if s.Index != nil && cvt.PtrToVal(s.Index) < 0 {
-		return errors.New("path step index must be >= 0")
-	}
-	return nil
-}
-
 // Diagnostic describes a single validation issue in user configuration.
 // It embeds tfjson.Diagnostic to stay consistent with Terraform diagnostic JSON format,
 // and supplements southbound protocol fields Path and Message.
@@ -116,23 +92,6 @@ func (d Diagnostic) EffectiveSeverity() tfjson.DiagnosticSeverity {
 		return tfjson.DiagnosticSeverityError
 	}
 	return d.Severity
-}
-
-// Validate validates the Diagnostic structure and all its PathSteps.
-func (d Diagnostic) Validate() error {
-	if strings.TrimSpace(d.Message) == "" {
-		return errors.New("diagnostic message is required")
-	}
-	sev := d.EffectiveSeverity()
-	if sev != tfjson.DiagnosticSeverityError && sev != tfjson.DiagnosticSeverityWarning {
-		return fmt.Errorf("invalid diagnostic severity %q", d.Severity)
-	}
-	for i, step := range d.Path {
-		if err := step.Validate(); err != nil {
-			return fmt.Errorf("diagnostic path[%d] invalid: %v", i, err)
-		}
-	}
-	return nil
 }
 
 // HealthData is the response data of GET /health.
