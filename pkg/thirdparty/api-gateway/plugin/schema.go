@@ -20,24 +20,11 @@
 package plugin
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
-)
 
-// NestingMode defines the nesting mode of a nested block in Schema.
-type NestingMode string
-
-const (
-	// NestingModeSingle represents a single object nested block.
-	NestingModeSingle NestingMode = "single"
-	// NestingModeList represents an ordered array nested block.
-	NestingModeList NestingMode = "list"
-	// NestingModeSet represents an unordered array nested block.
-	NestingModeSet NestingMode = "set"
-	// NestingModeMap represents a map object nested block.
-	NestingModeMap NestingMode = "map"
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 // PluginInfo represents the plugin identity and version in Schema.
@@ -71,7 +58,11 @@ type Capabilities struct {
 }
 
 // PluginSchema represents the full southbound schema returned by GET /schema.
+// It embeds tfjson.ProviderSchema to stay consistent with Terraform provider schema JSON format,
+// and supplements HCM southbound protocol metadata fields.
 type PluginSchema struct {
+	tfjson.ProviderSchema
+
 	// ProtocolVersion is the southbound payload format version.
 	ProtocolVersion string `json:"protocol_version"`
 	// Plugin contains the plugin name and version.
@@ -80,58 +71,6 @@ type PluginSchema struct {
 	SchemaHash string `json:"schema_hash"`
 	// Capabilities declares the implemented southbound endpoints.
 	Capabilities Capabilities `json:"capabilities"`
-	// Provider defines the schema of launch_config plaintext parameters.
-	Provider Schema `json:"provider"`
-	// ResourceSchemas defines all managed resource types keyed by type_name.
-	ResourceSchemas map[string]Schema `json:"resource_schemas"`
-	// DataSourceSchemas defines all managed data source types keyed by type_name.
-	DataSourceSchemas map[string]Schema `json:"data_source_schemas"`
-}
-
-// Schema represents a provider, resource, or data source schema definition.
-type Schema struct {
-	// Version is the state migration version number (default 0).
-	Version int `json:"version"`
-	// Block is the root block definition of the schema.
-	Block *Block `json:"block"`
-}
-
-// Block represents a Terraform-compatible schema block containing attributes and nested blocks.
-type Block struct {
-	// Description is the optional description of the block.
-	Description string `json:"description,omitempty"`
-	// Attributes maps attribute names to their Attribute definitions.
-	Attributes map[string]Attribute `json:"attributes"`
-	// BlockTypes maps nested block names to their NestedBlock definitions.
-	BlockTypes map[string]NestedBlock `json:"block_types"`
-}
-
-// Attribute represents a single field definition in a schema block.
-type Attribute struct {
-	// Type is the Terraform JSON type representation (e.g., "string", ["list", "string"]).
-	Type json.RawMessage `json:"type"`
-	// Required indicates the attribute must be provided by the user.
-	Required bool `json:"required,omitempty"`
-	// Optional indicates the attribute may be omitted by the user.
-	Optional bool `json:"optional,omitempty"`
-	// Computed indicates the attribute value can be computed by the plugin.
-	Computed bool `json:"computed,omitempty"`
-	// Sensitive indicates the attribute contains sensitive data and should be masked.
-	Sensitive bool `json:"sensitive,omitempty"`
-	// Description is the optional description of the attribute.
-	Description string `json:"description,omitempty"`
-}
-
-// NestedBlock represents a nested block definition inside a Block.
-type NestedBlock struct {
-	// NestingMode specifies how nested instances are encoded: single/list/set/map.
-	NestingMode NestingMode `json:"nesting_mode"`
-	// MinItems is the optional minimum number of block items.
-	MinItems int `json:"min_items,omitempty"`
-	// MaxItems is the optional maximum number of block items.
-	MaxItems int `json:"max_items,omitempty"`
-	// Block is the inner block definition.
-	Block *Block `json:"block"`
 }
 
 // Validate validates the entire PluginSchema according to the southbound protocol rules.
@@ -151,7 +90,7 @@ func (s *PluginSchema) Validate() error {
 	if strings.TrimSpace(s.SchemaHash) == "" {
 		return errors.New("schema_hash is required")
 	}
-	if err := s.Provider.Validate("provider"); err != nil {
+	if err := validateSchema(s.ConfigSchema, "provider"); err != nil {
 		return err
 	}
 	if err := s.validateTypeSchemas(); err != nil {
@@ -166,7 +105,7 @@ func (s *PluginSchema) validateTypeSchemas() error {
 		if !strings.HasPrefix(typeName, prefix) {
 			return fmt.Errorf("resource type_name %q must start with %q", typeName, prefix)
 		}
-		if err := resSchema.Validate("resource_schemas." + typeName); err != nil {
+		if err := validateSchema(resSchema, "resource_schemas."+typeName); err != nil {
 			return err
 		}
 	}
@@ -174,7 +113,7 @@ func (s *PluginSchema) validateTypeSchemas() error {
 		if !strings.HasPrefix(typeName, prefix) {
 			return fmt.Errorf("data_source type_name %q must start with %q", typeName, prefix)
 		}
-		if err := dsSchema.Validate("data_source_schemas." + typeName); err != nil {
+		if err := validateSchema(dsSchema, "data_source_schemas."+typeName); err != nil {
 			return err
 		}
 	}
@@ -217,61 +156,9 @@ func (s *PluginSchema) validateResourceCapabilities() error {
 	return nil
 }
 
-// Validate validates a Schema and its root Block.
-func (s Schema) Validate(path string) error {
-	if s.Block == nil {
+func validateSchema(s *tfjson.Schema, path string) error {
+	if s == nil || s.Block == nil {
 		return fmt.Errorf("%s.block is required", path)
 	}
-	return s.Block.Validate(path + ".block")
-}
-
-// Validate validates a Block, its attributes, and its nested block_types recursively.
-func (b *Block) Validate(path string) error {
-	if b == nil {
-		return fmt.Errorf("%s is nil", path)
-	}
-	for attrName, attr := range b.Attributes {
-		if err := attr.Validate(fmt.Sprintf("%s.attributes.%s", path, attrName)); err != nil {
-			return err
-		}
-	}
-	for blockName, nested := range b.BlockTypes {
-		if err := nested.Validate(fmt.Sprintf("%s.block_types.%s", path, blockName)); err != nil {
-			return err
-		}
-	}
 	return nil
-}
-
-// Validate validates an Attribute's type and required/optional/computed modifier combinations.
-func (a Attribute) Validate(path string) error {
-	if len(a.Type) == 0 {
-		return fmt.Errorf("%s.type is required", path)
-	}
-	if a.Required && (a.Optional || a.Computed) {
-		return fmt.Errorf("%s: required cannot be combined with optional or computed", path)
-	}
-	if !a.Required && !a.Optional && !a.Computed {
-		return fmt.Errorf("%s: at least one of required, optional, or computed must be true", path)
-	}
-	return nil
-}
-
-// Validate validates a NestedBlock's nesting_mode, item bounds, and inner Block.
-func (nb NestedBlock) Validate(path string) error {
-	switch nb.NestingMode {
-	case NestingModeSingle, NestingModeList, NestingModeSet, NestingModeMap:
-	default:
-		return fmt.Errorf("%s: invalid nesting_mode %q", path, nb.NestingMode)
-	}
-	if nb.MinItems < 0 || nb.MaxItems < 0 {
-		return fmt.Errorf("%s: min_items and max_items must be >= 0", path)
-	}
-	if nb.MaxItems > 0 && nb.MinItems > nb.MaxItems {
-		return fmt.Errorf("%s: min_items (%d) cannot be greater than max_items (%d)", path, nb.MinItems, nb.MaxItems)
-	}
-	if nb.Block == nil {
-		return fmt.Errorf("%s.block is required", path)
-	}
-	return nb.Block.Validate(path + ".block")
 }

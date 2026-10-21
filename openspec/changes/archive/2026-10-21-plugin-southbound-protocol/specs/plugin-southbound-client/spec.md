@@ -1,23 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: 南向协议 Schema 结构与元数据校验
-系统 SHALL 支持解析南向协议 `GET /schema` 返回的 `PluginSchema`（对齐 Terraform `providers schema -json` 的 `Block` 结构与 HCM 扩展顶层字段），并按协议规则校验顶层元数据、类型名前缀、属性修饰符组合及嵌套块约束：
+系统 SHALL 支持解析南向协议 `GET /schema` 返回的 `PluginSchema`（内嵌 `github.com/hashicorp/terraform-json` 的 `tfjson.ProviderSchema` 并扩展 HCM 顶层字段），并按协议规则校验顶层元数据、顶层 `block` 非空及类型名前缀约束：
 - 顶层 `protocol_version`、`plugin.name`、`plugin.version`、`schema_hash`、`provider.block` 必须非空；
-- `resource_schemas` 与 `data_source_schemas` 中所有类型名（`type_name`）必须以 `plugin.name + "_"` 为前缀；
-- 每个 `Attribute` 的 `type` 必须非空；`required: true` 不得与 `optional: true` 或 `computed: true` 同时出现，且 `required`、`optional`、`computed` 三者至少有一个为 `true`；
-- 每个 `NestedBlock` 的 `nesting_mode` 必须为 `single`、`list`、`set` 或 `map` 之一，`min_items` 与 `max_items` 必须 `>= 0`，且当 `max_items > 0` 时 `min_items <= max_items`，内部 `block` 必须非空并递归通过校验。
+- `resource_schemas` 与 `data_source_schemas` 中所有类型名（`type_name`）必须以 `plugin.name + "_"` 为前缀，且各自的 `block` 必须非空（内部属性类型由 `tfjson` / `cty.Type` 在 JSON 反序列化时自动校验）。
 
 #### Scenario: 满足约束的完整 PluginSchema 校验通过
-- **WHEN** `PluginSchema` 的 `protocol_version`、`plugin.name`（如 `"bkcmdb"`）、`plugin.version`（如 `"1.2.0"`）、`schema_hash` 非空，`provider`、资源 `bkcmdb_host` 与数据源 `bkcmdb_biz` 的 `Block`/`Attribute`/`NestedBlock` 均满足类型与修饰符规则，且 `capabilities` 满足对应约束
+- **WHEN** `PluginSchema` 的 `protocol_version`、`plugin.name`（如 `"bkcmdb"`）、`plugin.version`（如 `"1.2.0"`）、`schema_hash` 非空，`provider`、资源 `bkcmdb_host` 与数据源 `bkcmdb_biz` 的 `block` 非空且类型名满足前缀规则，同时 `capabilities` 满足对应约束
 - **THEN** `PluginSchema.Validate()` 返回 `nil`
 
-#### Scenario: 顶层元数据缺失或类型名前缀不匹配时校验失败
-- **WHEN** `protocol_version`、`plugin.name`、`plugin.version` 或 `schema_hash` 为空，或 `resource_schemas` / `data_source_schemas` 中存在未以 `plugin.name + "_"` 开头的 key（例如插件名为 `"bkcmdb"` 但资源名为 `"other_host"`）
+#### Scenario: 顶层元数据或 block 缺失、类型名前缀不匹配时校验失败
+- **WHEN** `protocol_version`、`plugin.name`、`plugin.version`、`schema_hash` 或 `provider.block` 为空，或 `resource_schemas` / `data_source_schemas` 中存在未以 `plugin.name + "_"` 开头的 key（例如插件名为 `"bkcmdb"` 但资源名为 `"other_host"`）
 - **THEN** `PluginSchema.Validate()` 返回具体的元数据缺失或类型名前缀错误
-
-#### Scenario: 属性修饰符组合非法或嵌套块配置非法时校验失败
-- **WHEN** 任意 `Attribute` 的 `type` 为空、同时声明了 `required: true` 与 `optional: true`/`computed: true`、或 `required`/`optional`/`computed` 全为 `false`；或任意 `NestedBlock` 的 `nesting_mode` 不在 `single`/`list`/`set`/`map` 中、`min_items < 0`、或 `min_items > max_items`（当 `max_items > 0` 时）
-- **THEN** `PluginSchema.Validate()` 返回包含具体字段路径的校验错误
 
 ### Requirement: 南向协议 Capabilities 声明约束校验
 系统 SHALL 校验 `PluginSchema.Capabilities`（`apply`、`plan`、`refresh`、`read_data`、`async_apply`、`stop`、`validate`、`import`、`list` 共 9 个能力位）与 `resource_schemas`、`data_source_schemas` 的一致性：
