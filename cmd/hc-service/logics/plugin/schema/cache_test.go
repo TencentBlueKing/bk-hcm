@@ -45,8 +45,8 @@ import (
 
 type mockSchemaData struct {
 	mu            sync.RWMutex
-	plugins       map[cacheKey]*coreplugin.IaCPlugin
-	schemas       map[cacheKey]*coreplugin.PluginSchema
+	plugins       map[coreplugin.PluginInfo]*coreplugin.IaCPlugin
+	schemas       map[coreplugin.PluginInfo]*coreplugin.PluginSchema
 	hashCallCount int32
 	fullCallCount int32
 	fullQueryHook func()
@@ -54,8 +54,8 @@ type mockSchemaData struct {
 
 func newMockSchemaData() *mockSchemaData {
 	return &mockSchemaData{
-		plugins: make(map[cacheKey]*coreplugin.IaCPlugin),
-		schemas: make(map[cacheKey]*coreplugin.PluginSchema),
+		plugins: make(map[coreplugin.PluginInfo]*coreplugin.IaCPlugin),
+		schemas: make(map[coreplugin.PluginInfo]*coreplugin.PluginSchema),
 	}
 }
 
@@ -95,7 +95,7 @@ func newMockDataServiceClient(data *mockSchemaData) *dataservice.Client {
 			}
 			writeMockOK(w, &dataplugin.IaCPluginListResult{Details: details})
 
-		case strings.HasSuffix(path, "/iac_plugin_schemas/list"):
+		case strings.HasSuffix(path, "/iac_plugin_schema/list"):
 			req := new(dataplugin.IacPluginSchemaListReq)
 			_ = json.NewDecoder(r.Body).Decode(req)
 			key := extractCacheKeyFromFilter(req.Filter)
@@ -118,22 +118,30 @@ func newMockDataServiceClient(data *mockSchemaData) *dataservice.Client {
 			if ok && s != nil {
 				row := tableplugin.IacPluginSchemaTable{
 					ID:            "1",
-					PluginName:    s.PluginName,
-					PluginVersion: s.PluginVersion,
+					PluginName:    s.Plugin.Name,
+					PluginVersion: s.Plugin.Version,
 					SchemaHash:    s.SchemaHash,
 				}
 				if !isHashOnly {
-					rawBytes, _ := json.Marshal(s.RawSchema)
-					row.SchemaDetail = types.JsonField(rawBytes)
+					detailBytes, _ := json.Marshal(s.SchemaDetail)
+					row.SchemaDetail = types.JsonField(detailBytes)
 				}
 				details = []tableplugin.IacPluginSchemaTable{row}
 			}
 			writeMockOK(w, &dataplugin.IacPluginSchemaListResult{Details: details})
 
-		case strings.HasSuffix(path, "/iac_plugin_schemas/create"):
-			req := new(dataplugin.IacPluginSchemaCreateReq)
+		case strings.HasSuffix(path, "/iac_plugin_schema/batch/create"):
+			req := new(dataplugin.IacPluginSchemaBatchCreateReq)
 			_ = json.NewDecoder(r.Body).Decode(req)
-			key := cacheKey{PluginName: req.PluginName, PluginVersion: req.PluginVersion}
+			if len(req.Items) == 0 {
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"code":    errf.InvalidParameter,
+					"message": "empty items",
+				})
+				return
+			}
+			item := req.Items[0]
+			key := coreplugin.PluginInfo{Name: item.PluginName, Version: item.PluginVersion}
 
 			data.mu.Lock()
 			if _, exists := data.schemas[key]; exists {
@@ -144,17 +152,16 @@ func newMockDataServiceClient(data *mockSchemaData) *dataservice.Client {
 				})
 				return
 			}
-			var raw coreplugin.RawSchema
-			_ = json.Unmarshal([]byte(req.SchemaDetail), &raw)
+			var detail coreplugin.SchemaDetail
+			_ = json.Unmarshal([]byte(item.SchemaDetail), &detail)
 			data.schemas[key] = &coreplugin.PluginSchema{
-				PluginName:    req.PluginName,
-				PluginVersion: req.PluginVersion,
-				SchemaHash:    req.SchemaHash,
-				RawSchema:     raw,
+				Plugin:       key,
+				SchemaHash:   item.SchemaHash,
+				SchemaDetail: detail,
 			}
 			data.mu.Unlock()
 
-			writeMockOK(w, &core.CreateResult{ID: "1"})
+			writeMockOK(w, &core.BatchCreateResult{IDs: []string{"1"}})
 		}
 	}
 
@@ -165,8 +172,8 @@ func newMockDataServiceClient(data *mockSchemaData) *dataservice.Client {
 	return dataservice.NewClient(cap, "v1")
 }
 
-func extractCacheKeyFromFilter(expr *filter.Expression) cacheKey {
-	var key cacheKey
+func extractCacheKeyFromFilter(expr *filter.Expression) coreplugin.PluginInfo {
+	var key coreplugin.PluginInfo
 	if expr == nil {
 		return key
 	}
@@ -178,9 +185,9 @@ func extractCacheKeyFromFilter(expr *filter.Expression) cacheKey {
 		val, _ := rule.Value.(string)
 		switch rule.Field {
 		case "plugin_name":
-			key.PluginName = val
+			key.Name = val
 		case "plugin_version":
-			key.PluginVersion = val
+			key.Version = val
 		}
 	}
 	return key
@@ -207,40 +214,45 @@ func newSchemaManagerForTest(data *mockSchemaData, cache *SchemaCache) *SchemaMa
 
 func buildTestPluginSchema(t *testing.T, name, version, desc string) *coreplugin.PluginSchema {
 	t.Helper()
-	raw := coreplugin.RawSchema{
+	detail := coreplugin.SchemaDetail{
 		ProtocolVersion: "1.0",
-		Capabilities: map[string]bool{
-			coreplugin.CapabilityApply:   true,
-			coreplugin.CapabilityPlan:    true,
-			coreplugin.CapabilityRefresh: true,
+		Capabilities: coreplugin.Capabilities{
+			Apply:   true,
+			Plan:    true,
+			Refresh: true,
 		},
-		Provider: &tfjson.Schema{
-			Version: 0,
-			Block: &tfjson.SchemaBlock{
-				Description: desc,
-			},
-		},
-		ResourceSchemas: map[string]*tfjson.Schema{
-			"tencentcloud_vpc": {
+		ProviderSchema: tfjson.ProviderSchema{
+			ConfigSchema: &tfjson.Schema{
 				Version: 0,
-				Block:   &tfjson.SchemaBlock{},
+				Block: &tfjson.SchemaBlock{
+					Description: desc,
+				},
+			},
+			ResourceSchemas: map[string]*tfjson.Schema{
+				name + "_vpc": {
+					Version: 0,
+					Block:   &tfjson.SchemaBlock{},
+				},
 			},
 		},
 	}
-	hash, err := coreplugin.ComputeRawSchemaHash(&raw)
+	plugin := coreplugin.PluginInfo{
+		Name:    name,
+		Version: version,
+	}
+	hash, err := coreplugin.ComputeSchemaHash(plugin, &detail)
 	if err != nil {
-		t.Fatalf("compute raw schema hash failed: %v", err)
+		t.Fatalf("compute schema hash failed: %v", err)
 	}
 	return &coreplugin.PluginSchema{
-		PluginName:    name,
-		PluginVersion: version,
-		SchemaHash:    hash,
-		RawSchema:     raw,
+		Plugin:       plugin,
+		SchemaHash:   hash,
+		SchemaDetail: detail,
 	}
 }
 
 // waitSchemaCached 轮询同包可见的缓存，直到异步写入到达期望的 schema_hash 且尚未过期。
-func waitSchemaCached(t *testing.T, cache *SchemaCache, key cacheKey, hash string) {
+func waitSchemaCached(t *testing.T, cache *SchemaCache, key coreplugin.PluginInfo, hash string) {
 	t.Helper()
 
 	deadline := time.Now().Add(2 * time.Second)
@@ -254,13 +266,13 @@ func waitSchemaCached(t *testing.T, cache *SchemaCache, key cacheKey, hash strin
 		}
 		time.Sleep(time.Millisecond)
 	}
-	t.Fatalf("schema cache was not updated for %s@%s hash %s", key.PluginName, key.PluginVersion, hash)
+	t.Fatalf("schema cache was not updated for %s@%s hash %s", key.Name, key.Version, hash)
 }
 
 func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	data := newMockSchemaData()
 	s1 := buildTestPluginSchema(t, "tencentcloud", "1.81.5", "v1")
-	key := cacheKey{PluginName: "tencentcloud", PluginVersion: "1.81.5"}
+	key := coreplugin.PluginInfo{Name: "tencentcloud", Version: "1.81.5"}
 	data.schemas[key] = s1
 
 	cache := newSchemaCacheForTest(data, 7*24*time.Hour)
@@ -269,7 +281,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	kt := kit.New()
 
 	// 1. Cold start cache miss -> loads full schema from DB and asynchronously writes to cache
-	got, err := cache.Get(kt, "tencentcloud", "1.81.5")
+	got, err := cache.Get(kt, key)
 	if err != nil {
 		t.Fatalf("Get on cold start failed: %v", err)
 	}
@@ -282,7 +294,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	}
 
 	// 2. Cache hit & not expired & hash matches -> only queries schema_hash, refreshes TTL
-	got2, err := cache.Get(kt, "tencentcloud", "1.81.5")
+	got2, err := cache.Get(kt, key)
 	if err != nil {
 		t.Fatalf("Get on cache hit failed: %v", err)
 	}
@@ -300,7 +312,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	data.schemas[key] = s2
 	data.mu.Unlock()
 
-	got3, err := cache.Get(kt, "tencentcloud", "1.81.5")
+	got3, err := cache.Get(kt, key)
 	if err != nil {
 		t.Fatalf("Get on hash mismatch failed: %v", err)
 	}
@@ -317,7 +329,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	cache.expireMap[key] = time.Now().Add(-time.Second)
 	cache.mu.Unlock()
 
-	got4, err := cache.Get(kt, "tencentcloud", "1.81.5")
+	got4, err := cache.Get(kt, key)
 	if err != nil {
 		t.Fatalf("Get after expiration failed: %v", err)
 	}
@@ -334,7 +346,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	delete(data.schemas, key)
 	data.mu.Unlock()
 
-	if _, err = cache.Get(kt, "tencentcloud", "1.81.5"); err == nil {
+	if _, err = cache.Get(kt, key); err == nil {
 		t.Fatalf("expected error when schema record is missing in DB")
 	}
 }
@@ -342,7 +354,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 func TestSchemaCacheSingleflightConcurrency(t *testing.T) {
 	data := newMockSchemaData()
 	s1 := buildTestPluginSchema(t, "tencentcloud", "1.81.5", strings.Repeat("x", 16))
-	key := cacheKey{PluginName: "tencentcloud", PluginVersion: "1.81.5"}
+	key := coreplugin.PluginInfo{Name: "tencentcloud", Version: "1.81.5"}
 	data.schemas[key] = s1
 
 	data.fullQueryHook = func() {
@@ -358,7 +370,7 @@ func TestSchemaCacheSingleflightConcurrency(t *testing.T) {
 	for i := 0; i < workers; i++ {
 		go func() {
 			defer wg.Done()
-			res, err := cache.Get(kit.New(), "tencentcloud", "1.81.5")
+			res, err := cache.Get(kit.New(), key)
 			if err != nil {
 				t.Errorf("concurrent Get failed: %v", err)
 				return

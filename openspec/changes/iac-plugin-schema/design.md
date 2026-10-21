@@ -13,7 +13,7 @@
 
 **Goals:**
 - 在 `data-service` 建立系统级权威存储表 `iac_plugin_schema` 及其完整 DAL/DAO/Service/Global Client 链路，支持完整记录读写与 `schema_hash` 单字段轻量投影查询。
-- 使用 `github.com/hashicorp/terraform-json` 定义标准化的 `PluginSchema` 与 `RawSchema` 模型，支持 JSON 扁平化序列化（`json:",inline"`）与数据库列拆分存储。
+- 使用 `github.com/hashicorp/terraform-json` 定义标准化的 `PluginSchema` 与 `SchemaDetail` 模型，支持 JSON 扁平化序列化（`json:",inline"`）与数据库列拆分存储。
 - 在 `hc-service` 实现内部接口 `SchemaGetter`、`SchemaManager`（`SyncSchema` + `GetSchema`）与副本内 `SchemaCache`（双 Map 分离、事件驱动清理、`singleflight` 回源合并、异步写缓存、TTL 内轻量 `schema_hash` 比对续期）。
 
 **Non-Goals:**
@@ -23,33 +23,34 @@
 
 ## Decisions
 
-### 1. 数据模型与存储表拆分设计（`PluginSchema` + `RawSchema` + `iac_plugin_schema`）
+### 1. 数据模型与存储表拆分设计（`PluginSchema` + `SchemaDetail` + `iac_plugin_schema`）
 
 - **选择**：
-  - 将 `PluginSchema` 拆分为顶层独立字段（`PluginName`、`PluginVersion`、`SchemaHash`）与匿名内嵌的 `RawSchema`（带 `json:",inline"` 标签）：
+  - 将 `PluginSchema` 拆分为顶层插件标识结构体 `Plugin`（`PluginInfo`，包含 `Name`、`Version`）、`SchemaHash` 与匿名内嵌的 `SchemaDetail`（带 `json:",inline"` 标签，内部内嵌 `tfjson.ProviderSchema`）：
     ```go
-    type PluginSchema struct {
-        PluginName    string `json:"plugin_name"`
-        PluginVersion string `json:"plugin_version"`
-        SchemaHash    string `json:"schema_hash"`
-        RawSchema     `json:",inline"`
+    type PluginInfo struct {
+        Name    string `json:"name"`
+        Version string `json:"version"`
     }
 
-    type RawSchema struct {
-        ProtocolVersion         string                             `json:"protocol_version,omitempty"`
-        Capabilities            map[string]bool                    `json:"capabilities"`
-        Provider                *tfjson.Schema                     `json:"provider"`
-        ResourceSchemas         map[string]*tfjson.Schema          `json:"resource_schemas,omitempty"`
-        DataSourceSchemas       map[string]*tfjson.Schema          `json:"data_source_schemas,omitempty"`
-        ActionSchemas           map[string]*tfjson.Schema          `json:"action_schemas,omitempty"`
-        ResourceIdentitySchemas map[string]*tfjson.IdentitySchema  `json:"resource_identity_schemas,omitempty"`
+    type PluginSchema struct {
+        Plugin       PluginInfo `json:"plugin"`
+        SchemaHash   string     `json:"schema_hash"`
+        SchemaDetail `json:",inline"`
+    }
+
+    type SchemaDetail struct {
+        tfjson.ProviderSchema `json:",inline"`
+
+        ProtocolVersion string       `json:"protocol_version,omitempty"`
+        Capabilities    Capabilities `json:"capabilities"`
     }
     ```
-  - 数据库表 `iac_plugin_schema` 为系统级表（在 `pkg/dal/table/table.go` 中设置 `EnableTenant: false`），包含独立列 `id`、`plugin_name`、`plugin_version`、`schema_hash` 以及 `schema_detail` JSON 列（使用 `types.JsonField` 存放序列化后的 `RawSchema`），建立唯一键 `idx_uk_plugin_name_plugin_version (plugin_name, plugin_version)`。
+  - 数据库表 `iac_plugin_schema` 为系统级表（在 `pkg/dal/table/table.go` 中设置 `EnableTenant: false`），包含独立列 `id`、`plugin_name`、`plugin_version`、`schema_hash` 以及 `schema_detail` JSON 列（使用 `types.JsonField` 存放序列化后的 `SchemaDetail`），建立唯一键 `idx_uk_plugin_name_plugin_version (plugin_name, plugin_version)`。
 - **理由**：
   - 独立列 `plugin_name`、`plugin_version`、`schema_hash` 支持高频唯一索引检索与仅查询 71 字节 `schema_hash` 的轻量级字段投影（`SELECT schema_hash FROM iac_plugin_schema WHERE ...`），避免每次缓存校验加载数 MB 的 `schema_detail` JSON 列。
-  - `RawSchema` 使用 `json:",inline"` 内联到 `PluginSchema`，使得插件返回完整 Schema JSON 时可直接一次反序列化为 `PluginSchema`，入库时直接取 `&schema.RawSchema` 序列化写入 `schema_detail` 列，出库时将独立列与反序列化后的 `RawSchema` 组装还原，无需二次裁剪 JSON 树。
-  - 引入官方 `github.com/hashicorp/terraform-json`（`tfjson.Schema`、`tfjson.IdentitySchema` 等），与 Terraform Provider `GetProviderSchema` 输出格式天然兼容。
+  - `SchemaDetail` 使用 `json:",inline"` 内联到 `PluginSchema`，使得插件返回完整 Schema JSON 时可直接一次反序列化为 `PluginSchema`，入库时直接取 `schema.SchemaDetail` 序列化写入 `schema_detail` 列，出库时将独立列与反序列化后的 `SchemaDetail` 组装还原，无需二次裁剪 JSON 树。
+  - 引入官方 `github.com/hashicorp/terraform-json`（`tfjson.ProviderSchema`），与 Terraform Provider `GetProviderSchema` 输出格式天然兼容，且与 `pkg/thirdparty/api-gateway/plugin` 共享同一套结构体与校验逻辑。
 - **备选方案对比**：
   - *方案 B：自定义简化版 Schema Block 结构体* — 容易遗漏 `cty.Type`、嵌套块（`NestingMode`）、`Deprecated`、`Sensitive` 等标准 Terraform Schema 字段，后续演进维护成本高。
 
@@ -57,24 +58,19 @@
 
 - **选择**：
   - **抽离通用导出校验函数（供全局多处复用）**：
-    - 在 `pkg/api/core/plugin`（并在 `cmd/hc-service/logics/plugin/schema` 暴露便捷调用）提供通用导出函数：
-      - `ComputeRawSchemaHash(raw *RawSchema) (string, error)`：使用 `pkg/tools/json.Marshal`（已启用 `SortMapKeys: true`）对 `RawSchema` 序列化并计算 `"sha256:" + hex`；
-      - `ValidateCapabilities(raw *RawSchema) error`：按南向协议 §4.1 规则校验 `Capabilities`；
-      - `ValidatePluginSchema(schema *PluginSchema, expectedPluginName, expectedPluginVersion, protocol string) error`：执行完整的 Schema 基础校验（身份版本匹配、`protocol_version`、`schema_hash` 正则格式 + 本地重算一致性、`Capabilities` 协议规则、`Provider.Block` 非空）。
+    - 在 `pkg/api/core/plugin` 提供通用导出函数：
+      - `ComputeSchemaHash(plugin PluginInfo, detail *SchemaDetail) (string, error)`：使用 `pkg/tools/json.Marshal`（已启用 `SortMapKeys: true`）对包含 `plugin`（`name`、`version`）与 `SchemaDetail` 的载荷序列化并计算 `"sha256:" + hex`；
+      - `ValidateCapabilities(detail *SchemaDetail) error`：按南向协议 §4.1 规则校验 `Capabilities` 正反向约束；
+      - `ValidatePluginSchema(schema *PluginSchema, expectedPlugin PluginInfo, protocol enumor.IaCPluginProtocol) error`：执行完整的 Schema 基础校验（身份版本匹配、`protocol_version`、`schema_hash` 正则格式 + 本地重算一致性、`Capabilities` 协议规则、`ConfigSchema.Block` 及类型名 `<plugin.name>_` 前缀与 `Block` 非空）。
   - `SyncSchema(kt *kit.Kit, getter SchemaGetter) (*SyncSchemaResult, error)` 按固定四步执行，并在关键节点通过 `hcm/pkg/logs` 记录英文日志（附带 `kt.Rid`）：
     1. **获取 Schema**：调用 `getter.GetSchema(kt)` 获取 `*PluginSchema`。
     2. **基础校验**：
-       - 校验 `PluginName`、`PluginVersion` 非空，并通过 `data-service` 查询 `iac_plugin` 表中 `(plugin_name, plugin_version)` 登记记录是否存在且一致；
-       - 调用通用导出函数 `ValidatePluginSchema(schema, pluginRecord.PluginName, pluginRecord.PluginVersion, pluginRecord.Protocol)` 完成：
+       - 校验 `Plugin.Name`、`Plugin.Version` 非空，并通过 `data-service` 查询 `iac_plugin` 表中 `(plugin_name, plugin_version)` 登记记录是否存在且一致；
+       - 调用通用导出函数 `ValidatePluginSchema(schema, PluginInfo{Name: pluginRecord.PluginName, Version: pluginRecord.PluginVersion}, pluginRecord.Protocol)` 完成：
          - 根据 `iac_plugin.protocol` 校验 `ProtocolVersion`：当 `protocol == "http"` 时 `ProtocolVersion` 必须非空（如 `"1.0"`）；当 `protocol == "tf_provider"` 时允许为空字符串 `""`；
-         - 校验 `SchemaHash`：不仅校验格式符合正则 `^sha256:[0-9a-f]{64}$`（长度 71），还调用 `ComputeRawSchemaHash(&schema.RawSchema)` 计算本地 SHA-256 摘要，若与远端返回的 `SchemaHash` 不一致则记录错误日志并返回 `errf.InvalidParameter`；
-         - 校验 `Capabilities`（与海垒插件南向协议 §4.1 能力位规则对齐）：
-           - `len(Capabilities) > 0`，且所有 key 必须属于合法能力位集合（`apply`、`plan`、`refresh`、`read_data`、`async_apply`、`stop`、`validate`、`import`、`list`）；
-           - `resource_schemas` 非空（`len(ResourceSchemas) > 0`）时，`apply`、`plan`、`refresh` 必须全部为 `true`；
-           - `data_source_schemas` 非空（`len(DataSourceSchemas) > 0`）时，`read_data` 必须为 `true`；为空（`len(DataSourceSchemas) == 0`）时，不得声明 `read_data`（即 `Capabilities` 中不能包含 `read_data` 键）；
-           - 声明 `stop`（`Capabilities["stop"] == true`）时，必须同时声明 `async_apply`（`Capabilities["async_apply"] == true`）；
-           - 任一能力位规则不满足即拒绝同步，返回指明具体能力位与原因的 `errf.InvalidParameter`；
-         - 校验 `Provider != nil && Provider.Block != nil`。
+         - 校验 `SchemaHash`：不仅校验格式符合正则 `^sha256:[0-9a-f]{64}$`（长度 71），还调用 `ComputeSchemaHash(schema.Plugin, &schema.SchemaDetail)` 计算本地 SHA-256 摘要，若与远端返回的 `SchemaHash` 不一致则记录错误日志并返回 `errf.InvalidParameter`；
+         - 校验 `Capabilities`（与海垒插件南向协议 §4.1 能力位规则对齐）；
+         - 校验 `ConfigSchema != nil && ConfigSchema.Block != nil` 以及各类型名 `<plugin.name>_` 前缀与 `Block` 非空。
     3. **比对与写库**：
        - 通过 `data-service` 查询 `iac_plugin_schema` 中 `(plugin_name, plugin_version)` 的 `schema_hash`；
        - 若记录不存在：调用 `data-service` 创建记录，打印 Info 日志并返回 `sync_result = "success"`、`sync_message` 为空（若并发写入触发唯一键冲突，重新查询数据库记录并走哈希比对分支）；
@@ -82,7 +78,7 @@
        - 若记录已存在且 `db.SchemaHash != incoming.SchemaHash`，或拉取、基础校验失败：打印 Error 日志，拒绝覆盖，返回 `sync_result = "failed"`、`sync_message` 为原因、`schema` 为 nil。
     4. **懒加载原则**：`Sync` 阶段不写入本地 `SchemaCache`。
 - **理由**：
-  - 将 `ValidatePluginSchema`、`ValidateCapabilities`、`ComputeRawSchemaHash` 设计为通用导出函数，后续插件注册/升级、南向客户端或测试工具均可直接调用，避免重复实现校验规则。
+  - 将 `ValidatePluginSchema`、`ValidateCapabilities`、`ComputeSchemaHash` 设计为通用导出函数，后续插件注册/升级、南向客户端或测试工具均可直接调用，避免重复实现校验规则。
   - 同名同版本插件的 Schema 一旦发布即不可变（Immutable per version），若哈希不一致说明二进制或远端契约发生了未升版篡改，必须阻断并告警。
 
 ### 3. `SchemaCache` 读取流程、协程并发更新缓存与冷版本过期清理机制

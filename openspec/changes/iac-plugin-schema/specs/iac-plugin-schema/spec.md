@@ -7,29 +7,29 @@
 ## ADDED Requirements
 
 ### Requirement: Authoritative storage of plugin schemas by plugin name and version
-The system SHALL persist plugin schemas in the system-level `iac_plugin_schema` table in `data-service` without `tenant_id`, indexed uniquely by `(plugin_name, plugin_version)`. The storage layer MUST store `id`, `plugin_name`, `plugin_version`, and `schema_hash` in standalone columns, serialize `RawSchema` into the `schema_detail` JSON column, and support querying full records or lightweight `schema_hash` projections.
+The system SHALL persist plugin schemas in the system-level `iac_plugin_schema` table in `data-service` without `tenant_id`, indexed uniquely by `(plugin_name, plugin_version)`. The storage layer MUST store `id`, `plugin_name`, `plugin_version`, and `schema_hash` in standalone columns, serialize `SchemaDetail` into the `schema_detail` JSON column, and support querying full records or lightweight `schema_hash` projections.
 
 #### Scenario: Create a new plugin schema record in data-service
-- **WHEN** `data-service` receives a request to create a plugin schema for an unregistered `(plugin_name, plugin_version)` pair with valid `schema_hash` and `RawSchema`
+- **WHEN** `data-service` receives a request to create a plugin schema for an unregistered `(plugin_name, plugin_version)` pair with valid `schema_hash` and `SchemaDetail`
 - **THEN** `data-service` inserts the record into `iac_plugin_schema` with a generated primary key `id` and returns the created ID
 
 #### Scenario: Query only lightweight schema_hash from data-service
 - **WHEN** a caller queries `iac_plugin_schema` by `(plugin_name, plugin_version)` specifying `fields: ["schema_hash"]`
 - **THEN** `data-service` returns the matching record containing `schema_hash` without transferring the multi-megabyte `schema_detail` JSON column
 
-### Requirement: Unified PluginSchema data model with inlined RawSchema
-The system SHALL represent a plugin schema using `PluginSchema`, which combines top-level fields (`plugin_name`, `plugin_version`, `schema_hash`) with an inlined `RawSchema` (`protocol_version`, `capabilities`, `provider`, `resource_schemas`, `data_source_schemas`, `action_schemas`, `resource_identity_schemas`) backed by standard `terraform-json` schema structures.
+### Requirement: Unified PluginSchema data model with inlined SchemaDetail
+The system SHALL represent a plugin schema using `PluginSchema`, which combines top-level fields (`plugin` of type `PluginInfo{Name, Version}`, `schema_hash`) with an inlined `SchemaDetail` (embedding `tfjson.ProviderSchema` plus `protocol_version` and `capabilities`) backed by standard `terraform-json` schema structures.
 
 #### Scenario: Serialize and deserialize PluginSchema as flattened JSON
 - **WHEN** `PluginSchema` is serialized to or deserialized from JSON
-- **THEN** `plugin_name`, `plugin_version`, `schema_hash`, and all `RawSchema` fields appear at the same top-level JSON object hierarchy
+- **THEN** `plugin` (`name`, `version`), `schema_hash`, and all `SchemaDetail` fields appear at the same top-level JSON object hierarchy
 
-#### Scenario: Persist only RawSchema into the database JSON column
+#### Scenario: Persist only SchemaDetail into the database JSON column
 - **WHEN** `PluginSchema` is persisted into the `iac_plugin_schema.schema_detail` column
-- **THEN** only the `RawSchema` portion is serialized into the `schema_detail` JSON column while `plugin_name`, `plugin_version`, and `schema_hash` are stored in their respective table columns
+- **THEN** only the `SchemaDetail` portion is serialized into the `schema_detail` JSON column while `plugin.name`, `plugin.version`, and `schema_hash` are stored in the `plugin_name`, `plugin_version`, and `schema_hash` table columns
 
 ### Requirement: Reusable exported schema validation against plugin metadata and protocol rules
-The system MUST provide an exported validation function (`ValidatePluginSchema`) reusable across `SchemaManager.SyncSchema` and other modules. It MUST verify `plugin_name`/`plugin_version` against `iac_plugin`, check `protocol_version` (`http` non-empty, `tf_provider` allowed empty), verify `schema_hash` matches `^sha256:[0-9a-f]{64}$` and equals the computed SHA-256 of `RawSchema`, validate `capabilities` per southbound protocol rules, and verify `provider.block` is non-nil.
+The system MUST provide an exported validation function (`ValidatePluginSchema`) reusable across `SchemaManager.SyncSchema` and other modules. It MUST verify `plugin` (`name`, `version`) against `iac_plugin`, check `protocol_version` (`http` non-empty, `tf_provider` allowed empty), verify `schema_hash` matches `^sha256:[0-9a-f]{64}$` and equals the computed SHA-256 of `(plugin, SchemaDetail)`, validate `capabilities` per southbound protocol rules, and verify `provider.block` and type schemas are valid.
 
 #### Scenario: Reject schema when plugin name or version does not match iac_plugin
 - **WHEN** `SchemaManager.SyncSchema` receives a `PluginSchema` whose `plugin_name` or `plugin_version` is empty or does not exist in `iac_plugin`
@@ -44,7 +44,7 @@ The system MUST provide an exported validation function (`ValidatePluginSchema`)
 - **THEN** `SchemaManager.SyncSchema` passes protocol version validation
 
 #### Scenario: Reject schema when schema_hash format is invalid or does not match locally computed hash
-- **WHEN** `SchemaManager.SyncSchema` receives a schema whose `schema_hash` does not match `^sha256:[0-9a-f]{64}$` OR whose locally computed SHA-256 digest over canonical `RawSchema` JSON does not equal the returned `schema_hash`
+- **WHEN** `SchemaManager.SyncSchema` receives a schema whose `schema_hash` does not match `^sha256:[0-9a-f]{64}$` OR whose locally computed SHA-256 digest over canonical `(plugin, SchemaDetail)` JSON does not equal the returned `schema_hash`
 - **THEN** `SchemaManager.SyncSchema` rejects the schema and returns a validation error
 
 #### Scenario: Reject schema when capabilities violate southbound protocol rules

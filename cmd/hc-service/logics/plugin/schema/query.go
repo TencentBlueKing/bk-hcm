@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-func (c *SchemaCache) querySchemaHash(kt *kit.Kit, pluginName, pluginVersion string) (string, bool, error) {
+func (c *SchemaCache) querySchemaHash(kt *kit.Kit, plugin coreplugin.PluginInfo) (string, bool, error) {
 	if c == nil || c.dataCli == nil || c.dataCli.Global == nil || c.dataCli.Global.IacPluginSchema == nil {
 		return "", false, errf.New(errf.InvalidParameter, "data-service iac_plugin_schema client is not initialized")
 	}
@@ -41,8 +41,8 @@ func (c *SchemaCache) querySchemaHash(kt *kit.Kit, pluginName, pluginVersion str
 	req := &dataplugin.IacPluginSchemaListReq{
 		Fields: []string{"id", "plugin_name", "plugin_version", "schema_hash"},
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("plugin_name", pluginName),
-			tools.RuleEqual("plugin_version", pluginVersion),
+			tools.RuleEqual("plugin_name", plugin.Name),
+			tools.RuleEqual("plugin_version", plugin.Version),
 		),
 		Page: &core.BasePage{
 			Start: 0,
@@ -53,7 +53,7 @@ func (c *SchemaCache) querySchemaHash(kt *kit.Kit, pluginName, pluginVersion str
 	res, err := c.dataCli.Global.IacPluginSchema.List(kt, req)
 	if err != nil {
 		logs.Errorf("list iac_plugin_schema hash from data-service failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginName, pluginVersion, err, kt.Rid)
+			plugin.Name, plugin.Version, err, kt.Rid)
 		return "", false, err
 	}
 
@@ -64,7 +64,7 @@ func (c *SchemaCache) querySchemaHash(kt *kit.Kit, pluginName, pluginVersion str
 	return res.Details[0].SchemaHash, true, nil
 }
 
-func (c *SchemaCache) queryFullSchema(kt *kit.Kit, pluginName, pluginVersion string) (
+func (c *SchemaCache) queryFullSchema(kt *kit.Kit, plugin coreplugin.PluginInfo) (
 	*coreplugin.PluginSchema, bool, error) {
 
 	if c == nil || c.dataCli == nil || c.dataCli.Global == nil || c.dataCli.Global.IacPluginSchema == nil {
@@ -73,8 +73,8 @@ func (c *SchemaCache) queryFullSchema(kt *kit.Kit, pluginName, pluginVersion str
 
 	req := &dataplugin.IacPluginSchemaListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("plugin_name", pluginName),
-			tools.RuleEqual("plugin_version", pluginVersion),
+			tools.RuleEqual("plugin_name", plugin.Name),
+			tools.RuleEqual("plugin_version", plugin.Version),
 		),
 		Page: &core.BasePage{
 			Start: 0,
@@ -85,7 +85,7 @@ func (c *SchemaCache) queryFullSchema(kt *kit.Kit, pluginName, pluginVersion str
 	res, err := c.dataCli.Global.IacPluginSchema.List(kt, req)
 	if err != nil {
 		logs.Errorf("list full iac_plugin_schema from data-service failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginName, pluginVersion, err, kt.Rid)
+			plugin.Name, plugin.Version, err, kt.Rid)
 		return nil, false, err
 	}
 
@@ -96,7 +96,7 @@ func (c *SchemaCache) queryFullSchema(kt *kit.Kit, pluginName, pluginVersion str
 	pluginSchema, err := toPluginSchema(res.Details[0])
 	if err != nil {
 		logs.Errorf("convert iac_plugin_schema record to PluginSchema failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginName, pluginVersion, err, kt.Rid)
+			plugin.Name, plugin.Version, err, kt.Rid)
 		return nil, false, err
 	}
 
@@ -104,17 +104,19 @@ func (c *SchemaCache) queryFullSchema(kt *kit.Kit, pluginName, pluginVersion str
 }
 
 func toPluginSchema(record tableplugin.IacPluginSchemaTable) (*coreplugin.PluginSchema, error) {
-	var raw coreplugin.RawSchema
+	var detail coreplugin.SchemaDetail
 	if len(record.SchemaDetail) > 0 {
-		if err := json.Unmarshal([]byte(record.SchemaDetail), &raw); err != nil {
-			return nil, fmt.Errorf("unmarshal raw schema failed, err: %w", err)
+		if err := json.Unmarshal([]byte(record.SchemaDetail), &detail); err != nil {
+			return nil, fmt.Errorf("unmarshal schema detail failed, err: %w", err)
 		}
 	}
 
 	return &coreplugin.PluginSchema{
-		PluginName:    record.PluginName,
-		PluginVersion: record.PluginVersion,
-		SchemaHash:    record.SchemaHash,
-		RawSchema:     raw,
+		Plugin: coreplugin.PluginInfo{
+			Name:    record.PluginName,
+			Version: record.PluginVersion,
+		},
+		SchemaHash:   record.SchemaHash,
+		SchemaDetail: detail,
 	}, nil
 }
