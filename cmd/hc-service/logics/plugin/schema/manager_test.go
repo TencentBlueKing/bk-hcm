@@ -55,7 +55,7 @@ func TestSchemaManagerSyncSchemaAndGetSchema(t *testing.T) {
 	}
 
 	// Register plugin in iac_plugin
-	regKey := cacheKey{PluginName: "tencentcloud", PluginVersion: "1.81.5"}
+	regKey := coreplugin.PluginInfo{Name: "tencentcloud", Version: "1.81.5"}
 	data.plugins[regKey] = &coreplugin.IaCPlugin{
 		ID:            "p-1",
 		PluginName:    "tencentcloud",
@@ -100,7 +100,7 @@ func TestSchemaManagerSyncSchemaAndGetSchema(t *testing.T) {
 	}
 
 	// 5. GetSchema via SchemaManager -> loads from DB and returns validSchema
-	fetched, err := mgr.GetSchema(kt, "tencentcloud", "1.81.5")
+	fetched, err := mgr.GetSchema(kt, regKey)
 	if err != nil {
 		t.Fatalf("GetSchema failed: %v", err)
 	}

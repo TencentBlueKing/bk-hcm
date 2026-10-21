@@ -68,30 +68,33 @@ func (m *SchemaManager) SyncSchema(kt *kit.Kit, getter SchemaGetter) (*SyncSchem
 		return newSyncFailed("plugin schema is nil"), nil
 	}
 
-	regPlugin, found, err := m.getPlugin(kt, pluginSchema.PluginName, pluginSchema.PluginVersion)
+	regPlugin, found, err := m.getPlugin(kt, pluginSchema.Plugin)
 	if err != nil {
 		logs.Errorf("query iac_plugin registration failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginSchema.PluginName, pluginSchema.PluginVersion, err, kt.Rid)
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, err, kt.Rid)
 		return newSyncFailed(err.Error()), nil
 	}
 	if !found || regPlugin == nil {
 		logs.Errorf("plugin registration not found in iac_plugin, plugin: %s@%s, rid: %s",
-			pluginSchema.PluginName, pluginSchema.PluginVersion, kt.Rid)
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, kt.Rid)
 		return newSyncFailed(fmt.Sprintf("plugin %s@%s is not registered in iac_plugin",
-			pluginSchema.PluginName, pluginSchema.PluginVersion)), nil
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version)), nil
 	}
 
-	if err := coreplugin.ValidatePluginSchema(pluginSchema, regPlugin.PluginName, regPlugin.PluginVersion,
-		regPlugin.Protocol); err != nil {
+	expectedPlugin := coreplugin.PluginInfo{
+		Name:    regPlugin.PluginName,
+		Version: regPlugin.PluginVersion,
+	}
+	if err := coreplugin.ValidatePluginSchema(pluginSchema, expectedPlugin, regPlugin.Protocol); err != nil {
 		logs.Errorf("validate plugin schema failed, plugin: %s@%s, protocol: %s, err: %v, rid: %s",
-			pluginSchema.PluginName, pluginSchema.PluginVersion, regPlugin.Protocol, err, kt.Rid)
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, regPlugin.Protocol, err, kt.Rid)
 		return newSyncFailed(err.Error()), nil
 	}
 
-	existingHash, exists, err := m.cache.querySchemaHash(kt, pluginSchema.PluginName, pluginSchema.PluginVersion)
+	existingHash, exists, err := m.cache.querySchemaHash(kt, pluginSchema.Plugin)
 	if err != nil {
 		logs.Errorf("query existing plugin schema_hash failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginSchema.PluginName, pluginSchema.PluginVersion, err, kt.Rid)
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, err, kt.Rid)
 		return newSyncFailed(err.Error()), nil
 	}
 
@@ -101,19 +104,18 @@ func (m *SchemaManager) SyncSchema(kt *kit.Kit, getter SchemaGetter) (*SyncSchem
 
 	if _, createErr := m.createSchema(kt, pluginSchema); createErr != nil {
 		// Handle potential concurrent insert race on unique key (plugin_name, plugin_version)
-		recheckHash, recheckExists, recheckErr := m.cache.querySchemaHash(kt, pluginSchema.PluginName,
-			pluginSchema.PluginVersion)
+		recheckHash, recheckExists, recheckErr := m.cache.querySchemaHash(kt, pluginSchema.Plugin)
 		if recheckErr == nil && recheckExists {
 			return m.compareExistingSchemaHash(kt, pluginSchema, recheckHash)
 		}
 
 		logs.Errorf("create plugin schema failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginSchema.PluginName, pluginSchema.PluginVersion, createErr, kt.Rid)
+			pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, createErr, kt.Rid)
 		return newSyncFailed(createErr.Error()), nil
 	}
 
 	logs.Infof("sync plugin schema created new record, plugin: %s@%s, schema_hash: %s, rid: %s",
-		pluginSchema.PluginName, pluginSchema.PluginVersion, pluginSchema.SchemaHash, kt.Rid)
+		pluginSchema.Plugin.Name, pluginSchema.Plugin.Version, pluginSchema.SchemaHash, kt.Rid)
 	return newSyncSuccess(pluginSchema), nil
 }
 
@@ -122,15 +124,15 @@ func (m *SchemaManager) compareExistingSchemaHash(kt *kit.Kit, incoming *coreplu
 
 	if existingHash == incoming.SchemaHash {
 		logs.Infof("sync plugin schema skipped idempotently, plugin: %s@%s, schema_hash: %s, rid: %s",
-			incoming.PluginName, incoming.PluginVersion, incoming.SchemaHash, kt.Rid)
+			incoming.Plugin.Name, incoming.Plugin.Version, incoming.SchemaHash, kt.Rid)
 		return newSyncSuccess(incoming), nil
 	}
 
 	logs.Errorf("plugin schema_hash conflict detected, refuse to overwrite existing schema, "+
 		"plugin: %s@%s, existing_hash: %s, incoming_hash: %s, rid: %s",
-		incoming.PluginName, incoming.PluginVersion, existingHash, incoming.SchemaHash, kt.Rid)
+		incoming.Plugin.Name, incoming.Plugin.Version, existingHash, incoming.SchemaHash, kt.Rid)
 	return newSyncFailed(fmt.Sprintf("plugin schema_hash conflict for %s@%s: existing %s, incoming %s",
-		incoming.PluginName, incoming.PluginVersion, existingHash, incoming.SchemaHash)), nil
+		incoming.Plugin.Name, incoming.Plugin.Version, existingHash, incoming.SchemaHash)), nil
 }
 
 func newSyncSuccess(schema *coreplugin.PluginSchema) *SyncSchemaResult {
@@ -149,29 +151,27 @@ func newSyncFailed(message string) *SyncSchemaResult {
 	}
 }
 
-// GetSchema 通过 SchemaCache 按 (pluginName, pluginVersion) 读取 Schema。
-func (m *SchemaManager) GetSchema(kt *kit.Kit, pluginName, pluginVersion string) (*coreplugin.PluginSchema, error) {
-	schema, err := m.cache.Get(kt, pluginName, pluginVersion)
+// GetSchema 通过 SchemaCache 按 PluginInfo（name, version）读取 Schema。
+func (m *SchemaManager) GetSchema(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugin.PluginSchema, error) {
+	schema, err := m.cache.Get(kt, plugin)
 	if err != nil {
 		logs.Errorf("get plugin schema failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginName, pluginVersion, err, kt.Rid)
+			plugin.Name, plugin.Version, err, kt.Rid)
 		return nil, err
 	}
 	return schema, nil
 }
 
-// getPlugin 按 (plugin_name, plugin_version) 查询插件注册记录。
-func (m *SchemaManager) getPlugin(kt *kit.Kit, pluginName, pluginVersion string) (
-	*coreplugin.IaCPlugin, bool, error) {
-
+// getPlugin 按 PluginInfo（name, version）查询插件注册记录。
+func (m *SchemaManager) getPlugin(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugin.IaCPlugin, bool, error) {
 	if m.dataCli == nil || m.dataCli.Global == nil || m.dataCli.Global.IaCPlugin == nil {
 		return nil, false, errf.New(errf.InvalidParameter, "data-service iac_plugin client is not initialized")
 	}
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("plugin_name", pluginName),
-			tools.RuleEqual("plugin_version", pluginVersion),
+			tools.RuleEqual("plugin_name", plugin.Name),
+			tools.RuleEqual("plugin_version", plugin.Version),
 		),
 		Page: &core.BasePage{
 			Start: 0,
@@ -182,7 +182,7 @@ func (m *SchemaManager) getPlugin(kt *kit.Kit, pluginName, pluginVersion string)
 	res, err := m.dataCli.Global.IaCPlugin.List(kt, req)
 	if err != nil {
 		logs.Errorf("list iac_plugin from data-service failed, plugin: %s@%s, err: %v, rid: %s",
-			pluginName, pluginVersion, err, kt.Rid)
+			plugin.Name, plugin.Version, err, kt.Rid)
 		return nil, false, err
 	}
 
@@ -201,26 +201,34 @@ func (m *SchemaManager) createSchema(kt *kit.Kit, schema *coreplugin.PluginSchem
 		return "", errf.New(errf.InvalidParameter, "plugin schema is nil")
 	}
 
-	rawBytes, err := json.Marshal(schema.RawSchema)
+	detailBytes, err := json.Marshal(schema.SchemaDetail)
 	if err != nil {
-		logs.Errorf("marshal raw schema failed, plugin: %s@%s, err: %v, rid: %s",
-			schema.PluginName, schema.PluginVersion, err, kt.Rid)
+		logs.Errorf("marshal schema detail failed, plugin: %s@%s, err: %v, rid: %s",
+			schema.Plugin.Name, schema.Plugin.Version, err, kt.Rid)
 		return "", err
 	}
 
-	req := &dataplugin.IacPluginSchemaCreateReq{
-		PluginName:    schema.PluginName,
-		PluginVersion: schema.PluginVersion,
-		SchemaHash:    schema.SchemaHash,
-		SchemaDetail:  types.JsonField(rawBytes),
+	req := &dataplugin.IacPluginSchemaBatchCreateReq{
+		Items: []dataplugin.IacPluginSchemaCreateField{
+			{
+				PluginName:    schema.Plugin.Name,
+				PluginVersion: schema.Plugin.Version,
+				SchemaHash:    schema.SchemaHash,
+				SchemaDetail:  types.JsonField(detailBytes),
+			},
+		},
 	}
 
-	res, err := m.dataCli.Global.IacPluginSchema.Create(kt, req)
+	res, err := m.dataCli.Global.IacPluginSchema.BatchCreate(kt, req)
 	if err != nil {
 		logs.Errorf("create iac_plugin_schema in data-service failed, plugin: %s@%s, err: %v, rid: %s",
-			schema.PluginName, schema.PluginVersion, err, kt.Rid)
+			schema.Plugin.Name, schema.Plugin.Version, err, kt.Rid)
 		return "", err
 	}
+	if len(res.IDs) == 0 {
+		return "", fmt.Errorf("create iac_plugin_schema returned empty ids for %s@%s",
+			schema.Plugin.Name, schema.Plugin.Version)
+	}
 
-	return res.ID, nil
+	return res.IDs[0], nil
 }
