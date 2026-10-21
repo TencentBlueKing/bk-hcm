@@ -32,60 +32,65 @@ import (
 
 func newValidTestPluginSchema(t *testing.T) *PluginSchema {
 	t.Helper()
-	raw := RawSchema{
+	detail := SchemaDetail{
 		ProtocolVersion: "1.0",
-		Capabilities: map[string]bool{
-			CapabilityApply:      true,
-			CapabilityPlan:       true,
-			CapabilityRefresh:    true,
-			CapabilityReadData:   true,
-			CapabilityAsyncApply: true,
-			CapabilityStop:       true,
-			CapabilityValidate:   true,
+		Capabilities: Capabilities{
+			Apply:      true,
+			Plan:       true,
+			Refresh:    true,
+			ReadData:   true,
+			AsyncApply: true,
+			Stop:       true,
+			Validate:   true,
 		},
-		Provider: &tfjson.Schema{
-			Version: 0,
-			Block: &tfjson.SchemaBlock{
-				Attributes: map[string]*tfjson.SchemaAttribute{
-					"secret_id": {
-						AttributeType: cty.String,
-						Required:      true,
-						Description:   "TencentCloud Secret ID",
-					},
-				},
-			},
-		},
-		ResourceSchemas: map[string]*tfjson.Schema{
-			"tencentcloud_vpc": {
+		ProviderSchema: tfjson.ProviderSchema{
+			ConfigSchema: &tfjson.Schema{
 				Version: 0,
 				Block: &tfjson.SchemaBlock{
 					Attributes: map[string]*tfjson.SchemaAttribute{
-						"name": {
+						"secret_id": {
 							AttributeType: cty.String,
 							Required:      true,
+							Description:   "TencentCloud Secret ID",
 						},
 					},
 				},
 			},
-		},
-		DataSourceSchemas: map[string]*tfjson.Schema{
-			"tencentcloud_Availability_zones": {
-				Version: 0,
-				Block:   &tfjson.SchemaBlock{},
+			ResourceSchemas: map[string]*tfjson.Schema{
+				"tencentcloud_vpc": {
+					Version: 0,
+					Block: &tfjson.SchemaBlock{
+						Attributes: map[string]*tfjson.SchemaAttribute{
+							"name": {
+								AttributeType: cty.String,
+								Required:      true,
+							},
+						},
+					},
+				},
+			},
+			DataSourceSchemas: map[string]*tfjson.Schema{
+				"tencentcloud_availability_zones": {
+					Version: 0,
+					Block:   &tfjson.SchemaBlock{},
+				},
 			},
 		},
 	}
 
-	hash, err := ComputeRawSchemaHash(&raw)
+	pluginInfo := PluginInfo{
+		Name:    "tencentcloud",
+		Version: "1.81.5",
+	}
+	hash, err := ComputeSchemaHash(pluginInfo, &detail)
 	if err != nil {
-		t.Fatalf("compute raw schema hash failed: %v", err)
+		t.Fatalf("compute schema hash failed: %v", err)
 	}
 
 	return &PluginSchema{
-		PluginName:    "tencentcloud",
-		PluginVersion: "1.81.5",
-		SchemaHash:    hash,
-		RawSchema:     raw,
+		Plugin:       pluginInfo,
+		SchemaHash:   hash,
+		SchemaDetail: detail,
 	}
 }
 
@@ -104,7 +109,7 @@ func TestPluginSchemaInlineSerialization(t *testing.T) {
 	}
 
 	expectedTopKeys := []string{
-		"plugin_name", "plugin_version", "schema_hash",
+		"plugin", "schema_hash",
 		"protocol_version", "capabilities", "provider",
 		"resource_schemas", "data_source_schemas",
 	}
@@ -113,8 +118,10 @@ func TestPluginSchemaInlineSerialization(t *testing.T) {
 			t.Errorf("expected key %q at top level of serialized PluginSchema, got map: %v", key, topMap)
 		}
 	}
-	if _, hasRaw := topMap["RawSchema"]; hasRaw {
-		t.Errorf("unexpected nested RawSchema key in serialized PluginSchema")
+	for _, nestedKey := range []string{"SchemaDetail", "ProviderSchema"} {
+		if _, hasNested := topMap[nestedKey]; hasNested {
+			t.Errorf("unexpected nested %s key in serialized PluginSchema", nestedKey)
+		}
 	}
 
 	// 2. Test stdlib encoding/json round-trip
@@ -126,94 +133,123 @@ func TestPluginSchemaInlineSerialization(t *testing.T) {
 	if err := stdjson.Unmarshal(stdBytes, &roundTrip); err != nil {
 		t.Fatalf("stdjson.Unmarshal failed: %v", err)
 	}
-	if roundTrip.PluginName != ps.PluginName || roundTrip.SchemaHash != ps.SchemaHash ||
+	if roundTrip.Plugin != ps.Plugin || roundTrip.SchemaHash != ps.SchemaHash ||
 		roundTrip.ProtocolVersion != ps.ProtocolVersion {
 		t.Fatalf("round-trip mismatch: got %+v", roundTrip)
 	}
 
-	// 3. Test RawSchema standalone serialization excludes outer columns
-	rawBytes, err := json.Marshal(ps.RawSchema)
+	// 3. Test SchemaDetail standalone serialization excludes outer columns
+	detailBytes, err := json.Marshal(ps.SchemaDetail)
 	if err != nil {
-		t.Fatalf("json.Marshal RawSchema failed: %v", err)
+		t.Fatalf("json.Marshal SchemaDetail failed: %v", err)
 	}
-	var rawMap map[string]interface{}
-	if err := json.Unmarshal(rawBytes, &rawMap); err != nil {
-		t.Fatalf("json.Unmarshal RawSchema map failed: %v", err)
+	var detailMap map[string]interface{}
+	if err := json.Unmarshal(detailBytes, &detailMap); err != nil {
+		t.Fatalf("json.Unmarshal SchemaDetail map failed: %v", err)
 	}
-	for _, forbiddenKey := range []string{"plugin_name", "plugin_version", "schema_hash"} {
-		if _, exists := rawMap[forbiddenKey]; exists {
-			t.Errorf("RawSchema JSON must not contain %q", forbiddenKey)
+	for _, forbiddenKey := range []string{"plugin", "plugin_name", "plugin_version", "schema_hash"} {
+		if _, exists := detailMap[forbiddenKey]; exists {
+			t.Errorf("SchemaDetail JSON must not contain %q", forbiddenKey)
 		}
 	}
 }
 
 func TestValidatePluginSchemaAndCapabilities(t *testing.T) {
+	expectedPlugin := PluginInfo{Name: "tencentcloud", Version: "1.81.5"}
 	validSchema := newValidTestPluginSchema(t)
-	if err := ValidatePluginSchema(validSchema, "tencentcloud", "1.81.5", ProtocolHTTP); err != nil {
+	if err := ValidatePluginSchema(validSchema, expectedPlugin, ProtocolHTTP); err != nil {
 		t.Fatalf("expected valid schema to pass validation, got err: %v", err)
+	}
+
+	// Changing plugin version without recomputing schema_hash must fail hash check
+	versionChanged := newValidTestPluginSchema(t)
+	versionChanged.Plugin.Version = "1.81.6"
+	if err := ValidatePluginSchema(versionChanged, PluginInfo{Name: "tencentcloud", Version: "1.81.6"},
+		ProtocolHTTP); err == nil {
+		t.Fatalf("expected version change without hash recomputation to fail")
 	}
 
 	// tf_provider allows empty protocol_version
 	tfSchema := newValidTestPluginSchema(t)
 	tfSchema.ProtocolVersion = ""
-	hash, err := ComputeRawSchemaHash(&tfSchema.RawSchema)
+	hash, err := ComputeSchemaHash(tfSchema.Plugin, &tfSchema.SchemaDetail)
 	if err != nil {
 		t.Fatalf("compute hash failed: %v", err)
 	}
 	tfSchema.SchemaHash = hash
-	if err := ValidatePluginSchema(tfSchema, "tencentcloud", "1.81.5", ProtocolTFProvider); err != nil {
+	if err := ValidatePluginSchema(tfSchema, expectedPlugin, ProtocolTFProvider); err != nil {
 		t.Fatalf("expected tf_provider with empty protocol_version to pass, got: %v", err)
 	}
 
 	// http rejects empty protocol_version
-	if err := ValidatePluginSchema(tfSchema, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(tfSchema, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected http protocol with empty protocol_version to fail")
 	}
 
 	// schema_hash format invalid
 	badFormat := newValidTestPluginSchema(t)
 	badFormat.SchemaHash = "sha256:INVALID"
-	if err := ValidatePluginSchema(badFormat, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(badFormat, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected invalid schema_hash format to fail")
 	}
 
-	// schema_hash does not match RawSchema content
+	// unsupported schema_hash algorithm fails
+	unsupportedAlgo := newValidTestPluginSchema(t)
+	unsupportedAlgo.SchemaHash = "md5:" + strings.Repeat("a", 32)
+	if err := ValidatePluginSchema(unsupportedAlgo, expectedPlugin, ProtocolHTTP); err == nil ||
+		!strings.Contains(err.Error(), "unsupported schema_hash algorithm") {
+		t.Fatalf("expected unsupported schema_hash algorithm to fail, got: %v", err)
+	}
+
+	// sha512 prefix algorithm is dispatched and validated properly
+	sha512Schema := newValidTestPluginSchema(t)
+	sha512Hash, err := ComputeSchemaHashByAlgo(SchemaHashAlgoSHA512, sha512Schema.Plugin, &sha512Schema.SchemaDetail)
+	if err != nil {
+		t.Fatalf("compute sha512 schema hash failed: %v", err)
+	}
+	sha512Schema.SchemaHash = sha512Hash
+	if err := ValidatePluginSchema(sha512Schema, expectedPlugin, ProtocolHTTP); err != nil {
+		t.Fatalf("expected valid sha512 schema_hash to pass, got: %v", err)
+	}
+
+	// schema_hash does not match SchemaDetail content
 	badDigest := newValidTestPluginSchema(t)
 	badDigest.SchemaHash = "sha256:" + strings.Repeat("a", 64)
-	if err := ValidatePluginSchema(badDigest, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(badDigest, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected mismatched schema_hash digest to fail")
 	}
 
 	// resource_schemas non-empty requires apply, plan, refresh
 	missingPlan := newValidTestPluginSchema(t)
-	missingPlan.Capabilities[CapabilityPlan] = false
-	missingPlan.SchemaHash, _ = ComputeRawSchemaHash(&missingPlan.RawSchema)
-	if err := ValidatePluginSchema(missingPlan, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	missingPlan.Capabilities.Plan = false
+	missingPlan.SchemaHash, _ = ComputeSchemaHash(missingPlan.Plugin, &missingPlan.SchemaDetail)
+	if err := ValidatePluginSchema(missingPlan, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected missing plan capability with non-empty resource_schemas to fail")
 	}
 
-	// data_source_schemas empty forbids read_data declaration
+	// data_source_schemas empty forbids read_data=true
 	emptyDSWithReadData := newValidTestPluginSchema(t)
 	emptyDSWithReadData.DataSourceSchemas = nil
-	emptyDSWithReadData.Capabilities[CapabilityReadData] = false
-	emptyDSWithReadData.SchemaHash, _ = ComputeRawSchemaHash(&emptyDSWithReadData.RawSchema)
-	if err := ValidatePluginSchema(emptyDSWithReadData, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
-		t.Fatalf("expected read_data declared when data_source_schemas is empty to fail")
+	emptyDSWithReadData.Capabilities.ReadData = true
+	emptyDSWithReadData.SchemaHash, _ = ComputeSchemaHash(emptyDSWithReadData.Plugin,
+		&emptyDSWithReadData.SchemaDetail)
+	if err := ValidatePluginSchema(emptyDSWithReadData, expectedPlugin, ProtocolHTTP); err == nil {
+		t.Fatalf("expected read_data=true when data_source_schemas is empty to fail")
 	}
 
 	// stop=true requires async_apply=true
 	stopWithoutAsync := newValidTestPluginSchema(t)
-	stopWithoutAsync.Capabilities[CapabilityAsyncApply] = false
-	stopWithoutAsync.SchemaHash, _ = ComputeRawSchemaHash(&stopWithoutAsync.RawSchema)
-	if err := ValidatePluginSchema(stopWithoutAsync, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	stopWithoutAsync.Capabilities.AsyncApply = false
+	stopWithoutAsync.SchemaHash, _ = ComputeSchemaHash(stopWithoutAsync.Plugin, &stopWithoutAsync.SchemaDetail)
+	if err := ValidatePluginSchema(stopWithoutAsync, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected stop=true with async_apply=false to fail")
 	}
 
 	// nil provider.block fails
 	nilProviderBlock := newValidTestPluginSchema(t)
-	nilProviderBlock.Provider = &tfjson.Schema{}
-	nilProviderBlock.SchemaHash, _ = ComputeRawSchemaHash(&nilProviderBlock.RawSchema)
-	if err := ValidatePluginSchema(nilProviderBlock, "tencentcloud", "1.81.5", ProtocolHTTP); err == nil {
+	nilProviderBlock.ConfigSchema = &tfjson.Schema{}
+	nilProviderBlock.SchemaHash, _ = ComputeSchemaHash(nilProviderBlock.Plugin, &nilProviderBlock.SchemaDetail)
+	if err := ValidatePluginSchema(nilProviderBlock, expectedPlugin, ProtocolHTTP); err == nil {
 		t.Fatalf("expected nil provider.block to fail")
 	}
 }

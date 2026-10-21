@@ -33,16 +33,11 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-type cacheKey struct {
-	PluginName    string
-	PluginVersion string
-}
-
 // SchemaCache 进程内懒加载 Schema 缓存，支持滑动 TTL 与 DB schema_hash 校验。
 type SchemaCache struct {
 	mu          sync.RWMutex
-	schemaCache map[cacheKey]*coreplugin.PluginSchema
-	expireMap   map[cacheKey]time.Time
+	schemaCache map[coreplugin.PluginInfo]*coreplugin.PluginSchema
+	expireMap   map[coreplugin.PluginInfo]time.Time
 	ttl         time.Duration
 	evictCh     chan struct{}
 	stopCh      chan struct{}
@@ -58,8 +53,8 @@ func NewSchemaCache(dataCli *dataservice.Client, ttl time.Duration) *SchemaCache
 	}
 
 	c := &SchemaCache{
-		schemaCache: make(map[cacheKey]*coreplugin.PluginSchema),
-		expireMap:   make(map[cacheKey]time.Time),
+		schemaCache: make(map[coreplugin.PluginInfo]*coreplugin.PluginSchema),
+		expireMap:   make(map[coreplugin.PluginInfo]time.Time),
 		ttl:         ttl,
 		evictCh:     make(chan struct{}, 1),
 		stopCh:      make(chan struct{}),
@@ -77,81 +72,78 @@ func (c *SchemaCache) Close() {
 	})
 }
 
-// Get 按 (pluginName, pluginVersion) 获取 Schema，含命中/TTL/哈希校验。
-func (c *SchemaCache) Get(kt *kit.Kit, pluginName, pluginVersion string) (*coreplugin.PluginSchema, error) {
-	if len(pluginName) == 0 || len(pluginVersion) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "plugin_name and plugin_version are required")
-	}
-
-	key := cacheKey{
-		PluginName:    pluginName,
-		PluginVersion: pluginVersion,
+// Get 按 PluginInfo（name, version）获取 Schema，含命中/TTL/哈希校验。
+func (c *SchemaCache) Get(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugin.PluginSchema, error) {
+	if len(plugin.Name) == 0 || len(plugin.Version) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "plugin.name and plugin.version are required")
 	}
 
 	c.mu.RLock()
-	cached, hit := c.schemaCache[key]
-	expireAt := c.expireMap[key]
+	cached, hit := c.schemaCache[plugin]
+	expireAt := c.expireMap[plugin]
 	c.mu.RUnlock()
 
 	now := time.Now()
 	expired := hit && !now.Before(expireAt)
 	if expired {
 		logs.Infof("plugin schema cache entry expired, plugin: %s@%s, triggering async eviction, rid: %s",
-			pluginName, pluginVersion, kt.Rid)
+			plugin.Name, plugin.Version, kt.Rid)
 		c.triggerEvict()
 	}
 
 	if hit && !expired {
-		dbHash, found, err := c.querySchemaHash(kt, pluginName, pluginVersion)
+		dbHash, found, err := c.querySchemaHash(kt, plugin)
 		if err != nil {
 			logs.Errorf("query plugin schema_hash from db failed, plugin: %s@%s, err: %v, rid: %s",
-				pluginName, pluginVersion, err, kt.Rid)
+				plugin.Name, plugin.Version, err, kt.Rid)
 			return nil, err
 		}
 
 		if !found {
-			c.deleteKey(key)
+			c.deleteKey(plugin)
 			logs.Errorf("plugin schema not found in db during cache hash check, plugin: %s@%s, rid: %s",
-				pluginName, pluginVersion, kt.Rid)
+				plugin.Name, plugin.Version, kt.Rid)
 			return nil, errf.Newf(errf.RecordNotFound, "plugin schema not found for %s@%s",
-				pluginName, pluginVersion)
+				plugin.Name, plugin.Version)
 		}
 
 		if cached.SchemaHash == dbHash {
-			c.refreshExpire(key, cached.SchemaHash)
+			c.refreshExpire(plugin, cached.SchemaHash)
 			return cached, nil
 		}
 
 		logs.Warnf("plugin schema_hash mismatch between cache and db, plugin: %s@%s, "+
 			"cached: %s, db: %s, reloading full schema from db, rid: %s",
-			pluginName, pluginVersion, cached.SchemaHash, dbHash, kt.Rid)
+			plugin.Name, plugin.Version, cached.SchemaHash, dbHash, kt.Rid)
 	}
 
 	// 缓存未命中 / 已过期 / schema_hash 与 DB 不一致：经 singleflight 回源查全量 Schema。
-	return c.loadFromDBAndAsyncCache(kt, key)
+	return c.loadFromDBAndAsyncCache(kt, plugin)
 }
 
-func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, key cacheKey) (*coreplugin.PluginSchema, error) {
-	sfKey := fmt.Sprintf("%s:%s", key.PluginName, key.PluginVersion)
+func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, plugin coreplugin.PluginInfo) (
+	*coreplugin.PluginSchema, error) {
+
+	sfKey := fmt.Sprintf("%s:%s", plugin.Name, plugin.Version)
 
 	val, err, _ := c.sfGroup.Do(sfKey, func() (interface{}, error) {
-		fullSchema, found, queryErr := c.queryFullSchema(kt, key.PluginName, key.PluginVersion)
+		fullSchema, found, queryErr := c.queryFullSchema(kt, plugin)
 		if queryErr != nil {
 			logs.Errorf("load full plugin schema from db failed, plugin: %s@%s, err: %v, rid: %s",
-				key.PluginName, key.PluginVersion, queryErr, kt.Rid)
+				plugin.Name, plugin.Version, queryErr, kt.Rid)
 			return nil, queryErr
 		}
 
 		if !found {
-			c.deleteKey(key)
+			c.deleteKey(plugin)
 			logs.Errorf("plugin schema not found in db, plugin: %s@%s, rid: %s",
-				key.PluginName, key.PluginVersion, kt.Rid)
+				plugin.Name, plugin.Version, kt.Rid)
 			return nil, errf.Newf(errf.RecordNotFound, "plugin schema not found for %s@%s",
-				key.PluginName, key.PluginVersion)
+				plugin.Name, plugin.Version)
 		}
 
 		// 写缓存放在 singleflight 闭包内，同一次回源只更新一次，调用方不必等待写锁。
-		go c.asyncUpdateCache(key, fullSchema)
+		go c.asyncUpdateCache(plugin, fullSchema)
 		return fullSchema, nil
 	})
 	if err != nil {
@@ -161,36 +153,36 @@ func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, key cacheKey) (*corep
 	dbSchema, ok := val.(*coreplugin.PluginSchema)
 	if !ok || dbSchema == nil {
 		logs.Errorf("unexpected singleflight result for plugin schema %s@%s, rid: %s",
-			key.PluginName, key.PluginVersion, kt.Rid)
+			plugin.Name, plugin.Version, kt.Rid)
 		return nil, errf.New(errf.Aborted, "unexpected nil plugin schema loaded from db")
 	}
 
 	return dbSchema, nil
 }
 
-func (c *SchemaCache) asyncUpdateCache(key cacheKey, schema *coreplugin.PluginSchema) {
+func (c *SchemaCache) asyncUpdateCache(plugin coreplugin.PluginInfo, schema *coreplugin.PluginSchema) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.schemaCache[key] = schema
-	c.expireMap[key] = time.Now().Add(c.ttl)
+	c.schemaCache[plugin] = schema
+	c.expireMap[plugin] = time.Now().Add(c.ttl)
 }
 
-func (c *SchemaCache) refreshExpire(key cacheKey, expectedHash string) {
+func (c *SchemaCache) refreshExpire(plugin coreplugin.PluginInfo, expectedHash string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if cur, ok := c.schemaCache[key]; ok && cur.SchemaHash == expectedHash {
-		c.expireMap[key] = time.Now().Add(c.ttl)
+	if cur, ok := c.schemaCache[plugin]; ok && cur.SchemaHash == expectedHash {
+		c.expireMap[plugin] = time.Now().Add(c.ttl)
 	}
 }
 
-func (c *SchemaCache) deleteKey(key cacheKey) {
+func (c *SchemaCache) deleteKey(plugin coreplugin.PluginInfo) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	delete(c.schemaCache, key)
-	delete(c.expireMap, key)
+	delete(c.schemaCache, plugin)
+	delete(c.expireMap, plugin)
 }
 
 func (c *SchemaCache) triggerEvict() {
