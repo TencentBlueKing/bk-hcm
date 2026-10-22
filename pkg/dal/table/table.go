@@ -221,6 +221,9 @@ const (
 
 	// PermissionPolicyLibraryTable is permission_policy_library table's name.
 	PermissionPolicyLibraryTable Name = "permission_policy_library"
+
+	// IacPluginInstanceTable iac_plugin_instance 表名。
+	IacPluginInstanceTable Name = "iac_plugin_instance"
 )
 
 // Validate whether the table name is valid or not.
@@ -341,6 +344,8 @@ var TableMap = map[Name]TableConfig{
 	PermissionTemplateTable: {EnableTenant: true},
 
 	PermissionPolicyLibraryTable: {EnableTenant: true},
+
+	IacPluginInstanceTable: {EnableTenant: true},
 }
 
 // Register 注册表名
