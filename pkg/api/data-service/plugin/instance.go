@@ -22,11 +22,9 @@ package dataplugin
 
 import (
 	"errors"
-	"fmt"
 
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -36,15 +34,11 @@ import (
 
 // IacPluginInstanceBatchCreateReq 批量创建 iac_plugin_instance 请求。
 type IacPluginInstanceBatchCreateReq struct {
-	Items []IacPluginInstanceCreateField `json:"items" validate:"required,min=1"`
+	Items []IacPluginInstanceCreateField `json:"items" validate:"required,min=1,max=100"`
 }
 
 // Validate 校验 IacPluginInstanceBatchCreateReq。
 func (req *IacPluginInstanceBatchCreateReq) Validate() error {
-	if len(req.Items) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("items count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
@@ -85,15 +79,11 @@ func (req *IacPluginInstanceCreateField) Validate() error {
 
 // IacPluginInstanceBatchUpdateReq 批量更新 iac_plugin_instance 请求。
 type IacPluginInstanceBatchUpdateReq struct {
-	Items []IacPluginInstanceUpdateField `json:"items" validate:"required,min=1"`
+	Items []IacPluginInstanceUpdateField `json:"items" validate:"required,min=1,max=100"`
 }
 
 // Validate 校验 IacPluginInstanceBatchUpdateReq。
 func (req *IacPluginInstanceBatchUpdateReq) Validate() error {
-	if len(req.Items) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("items count should <= %d", constant.BatchOperationMaxLimit)
-	}
-
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
