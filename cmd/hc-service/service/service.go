@@ -26,9 +26,13 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
+	httpplugin "hcm/cmd/hc-service/logics/plugin/http"
+	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
+	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/account"
 	argstpl "hcm/cmd/hc-service/service/argument-template"
@@ -47,6 +51,7 @@ import (
 	mainaccount "hcm/cmd/hc-service/service/main-account"
 	"hcm/cmd/hc-service/service/monitoring"
 	"hcm/cmd/hc-service/service/permission-template"
+	"hcm/cmd/hc-service/service/plugin"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	sagemaker "hcm/cmd/hc-service/service/sagemaker"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
@@ -58,6 +63,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -76,6 +82,22 @@ type Service struct {
 	serve        *http.Server
 	clientSet    *client.ClientSet
 	cloudAdaptor *cloudadaptor.CloudAdaptorClient
+	// plugins 是启动时扫描到的本副本 tf 插件，之后只读。
+	plugins []discovery.Entry
+	// pluginReady 为 true 表示 IaC 插件已注册完成，可以接收流量；在此之前 /healthz 返回 503，/alivez 不受影响。
+	pluginReady atomic.Bool
+	// stopPluginVersionWatch 停止运行期插件版本检查，没有本地 tf 插件时为 nil。
+	stopPluginVersionWatch context.CancelFunc
+	// sd 用于巡检的 master 判定。
+	sd serviced.ServiceDiscover
+	// iacMutex 插件名锁，tf 启动注册、http 注册 / 升级 / 修改 / 巡检共用，进程内长期持有。
+	iacMutex *lock.EtcdMutex
+	// httpPlugin http 插件的注册、升级、修改与巡检。
+	httpPlugin *httpplugin.Service
+	// schemaMgr 插件 Schema 同步。tf 启动注册与 http 流程共用同一个 SchemaManager。
+	schemaMgr *pluginschema.SchemaManager
+	// stopHTTPPluginCheck 停止 http 插件巡检，未启动时为 nil。
+	stopHTTPPluginCheck context.CancelFunc
 }
 
 // NewService create a service instance.
@@ -101,6 +123,16 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	svr := &Service{
 		clientSet:    cliSet,
 		cloudAdaptor: cloudAdaptor,
+		sd:           sd,
+	}
+
+	// 插件目录检查失败不启动服务。
+	if err = svr.scanPlugins(); err != nil {
+		return nil, err
+	}
+
+	if err = svr.initIaCPlugin(); err != nil {
+		return nil, err
 	}
 
 	return svr, nil
@@ -174,6 +206,7 @@ func (s *Service) apiSet() *restful.Container {
 		ClientSet:    s.clientSet,
 		CloudAdaptor: s.cloudAdaptor,
 		ResSyncCli:   ressync.NewClient(s.cloudAdaptor, s.clientSet.DataService()),
+		HTTPPlugin:   s.httpPlugin,
 	}
 
 	account.InitAccountService(c)
@@ -199,6 +232,7 @@ func (s *Service) apiSet() *restful.Container {
 	cos.InitCosService(c)
 	monitoring.InitMonitoringService(c)
 	permissiontemplate.InitService(c)
+	plugin.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
@@ -210,6 +244,12 @@ func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
 		logs.Errorf("service healthz check failed, current service is shutting down")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "current service is shutting down"))
+		return
+	}
+
+	if !s.pluginReady.Load() {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "iac plugins are not registered yet"))
 		return
 	}
 

@@ -25,7 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
 	cloudaccount "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
@@ -34,6 +33,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -67,7 +67,7 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, bkB
 		return result, nil
 	}
 
-	resLockKey := lock.Key(accountID)
+	resLockKey := lock.AccountSyncKey(accountID)
 	leaseID, err := lock.Manager.TryLock(resLockKey)
 	if err != nil {
 		if errors.Is(err, lock.ErrLockFailed) {

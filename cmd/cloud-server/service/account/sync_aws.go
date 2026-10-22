@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"hcm/cmd/cloud-server/service/sync/aws"
-	"hcm/cmd/cloud-server/service/sync/lock"
 	cloudaccount "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/region"
@@ -34,6 +33,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -48,7 +48,7 @@ func (a *accountSvc) awsCondSyncRes(cts *rest.Contexts, accountID string, resTyp
 		return nil, err
 	}
 
-	resLockKey := lock.Key(fmt.Sprintf("%s", accountID))
+	resLockKey := lock.AccountSyncKey(fmt.Sprintf("%s", accountID))
 	leaseID, err := lock.Manager.TryLock(resLockKey)
 	if err != nil {
 		if errors.Is(err, lock.ErrLockFailed) {
