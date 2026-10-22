@@ -156,6 +156,7 @@ type Set interface {
 	PermissionTemplate() permissiontemplate.PermissionTemplate
 	PermissionPolicyLibrary() permissionpolicylibrary.PermissionPolicyLibrary
 	IaCPlugin() daoplugin.IaCPlugin
+	IacPluginSchema() daoplugin.IacPluginSchema
 
 	Txn() *Txn
 }
