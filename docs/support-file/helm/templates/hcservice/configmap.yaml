@@ -21,8 +21,12 @@ data:
       {{- toYaml .Values.hcservice.log | nindent 6 }}
     sync:
       {{- toYaml .Values.hcservice.sync | nindent 6 }}
+    iacPlugin:
+      {{- toYaml .Values.hcservice.iacPlugin | nindent 6 }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
+    iacGateway:
+      {{- toYaml .Values.iacGateway | nindent 6 }}
     ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}

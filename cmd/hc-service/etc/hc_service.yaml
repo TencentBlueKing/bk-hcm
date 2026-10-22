@@ -105,3 +105,51 @@ cmdb:
 
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
+
+# defines iac plugin related settings.
+iacPlugin:
+  # pluginDir is the root directory of the tf_provider plugins,
+  # layout: {pluginDir}/{plugin name}/{version}/{os}_{arch}/{executable}.
+  # NOTE: restart hc-service after changing the contents of this directory.
+  pluginDir: /data/hcm/plugins
+  # lockLeaseSeconds is the lease ttl of the plugin lock held during register/upgrade, in seconds.
+  # it must be greater than the longest time one registration takes.
+  lockLeaseSeconds: 600
+  # lockWaitTimeoutSeconds is the longest time to wait for the plugin lock, in seconds.
+  lockWaitTimeoutSeconds: 120
+  # versionCheckIntervalSeconds is the interval of the runtime version check, in seconds.
+  versionCheckIntervalSeconds: 60
+  # versionCheckThreshold is the consecutive times of version behind before exiting.
+  versionCheckThreshold: 3
+  # httpProbeTimeoutSeconds is the timeout of probing a http plugin, in seconds.
+  httpProbeTimeoutSeconds: 10
+  # httpCheckIntervalSeconds is the interval of the http plugin inspection, in seconds. only the master inspects.
+  httpCheckIntervalSeconds: 60
+  # httpCheckFailureThreshold is the consecutive probe failures before an enabled http plugin is set to failed.
+  httpCheckFailureThreshold: 3
+
+# defines the BlueKing api gateway used to access http iac plugins.
+# leave endpoints empty if no http plugin is used, tf_provider plugins are not affected.
+iacGateway:
+  # endpoints is the api gateway environment address prefix, exactly one address is allowed,
+  # e.g. https://bkapi.example.com. every http plugin request must stay under its scheme and host.
+  endpoints:
+  # appCode is the BlueKing app code of hcm to request api gateway.
+  appCode:
+  # appSecret is the BlueKing app secret of hcm to request api gateway.
+  appSecret:
+  # user is the BlueKing user of hcm to request api gateway.
+  user: admin
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+
