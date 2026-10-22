@@ -23,5 +23,8 @@ import (
 	tableplugin "hcm/pkg/dal/table/plugin"
 )
 
+// ListIacPluginSchemaDetails iac_plugin_schema 列表查询结果。
+type ListIacPluginSchemaDetails = ListResult[tableplugin.IacPluginSchemaTable]
+
 // ListIacPluginInstanceDetails iac_plugin_instance 列表查询结果。
 type ListIacPluginInstanceDetails = ListResult[tableplugin.IacPluginInstanceTable]

@@ -213,7 +213,7 @@ func (s *Service) apiSet() *restful.Container {
 	ws.Path("/api/v1/data")
 	ws.Produces(restful.MIME_JSON)
 
-	capability := &capability.Capability{
+	c := &capability.Capability{
 		WebService:  ws,
 		Dao:         s.dao,
 		Cipher:      s.cipher,
@@ -221,74 +221,105 @@ func (s *Service) apiSet() *restful.Container {
 		CmdbClient:  s.cmdbClient,
 	}
 
-	account.InitService(capability)
-	accountbizrel.InitService(capability)
-	securitygroup.InitSecurityGroupService(capability)
-	securitygroup.InitGcpFirewallRuleService(capability)
-	cloud.InitVpcService(capability)
-	cloud.InitSubnetService(capability)
-	cloud.InitCloudService(capability)
-	auth.InitAuthService(capability)
-	disk.InitService(capability)
-	region.InitRegionService(capability)
-	resourcegroup.InitAzureResourceGroupService(capability)
-	audit.InitAuditService(capability)
-	eip.InitEipService(capability)
-	zone.InitZoneService(capability)
-	image.InitService(capability)
-	cvm.InitService(capability)
-	accountsecret.InitService(capability)
-	subaccountsecret.InitService(capability)
-	sgcvmrel.InitService(capability)
-	routetable.InitRouteTableService(capability)
-	application.InitApplicationService(capability)
-	application.InitApprovalProcessService(capability)
-	diskcvmrel.InitService(capability)
-	eipcvmrel.InitService(capability)
-	networkinterface.InitNetInterfaceService(capability)
-	networkcvmrel.InitService(capability)
-	recyclerecord.InitRecycleRecordService(capability)
-	bill.InitBillConfigService(capability)
-	subaccount.InitService(capability)
-	sync.InitService(capability)
-	user.InitService(capability)
-	cloudselection.InitService(capability)
-	argstpl.InitService(capability)
-	cert.InitService(capability)
-	loadbalancer.InitService(capability)
-	loadbalancer.InitExclusiveClusterService(capability)
-	sgcomrel.InitService(capability)
-	mainaccount.InitService(capability)
-	rootaccount.InitService(capability)
+	initCloudServices(c)
+	initBillServices(c)
+	initAccountSetServices(c)
+	initApplicationServices(c)
+	initPlatformServices(c)
+	initPluginServices(c)
 
-	billmonthtask.InitService(capability)
-	billsummarymain.InitService(capability)
-	billsummaryversion.InitService(capability)
-	billitem.InitService(capability)
-	billdailytask.InitService(capability)
-	billadjustmentitem.InitService(capability)
-	billsummaryroot.InitService(capability)
-	billsummarydaily.InitService(capability)
-	rootaccountbillconfig.InitService(capability)
-	if capability.ObjectStore != nil {
-		rawbill.InitService(capability)
-		cos.InitService(capability)
+	return restful.NewContainer().Add(c.WebService)
+}
+
+// initCloudServices 注册云资源相关 API（账号、网络、计算、负载均衡、权限等）。
+func initCloudServices(c *capability.Capability) {
+	account.InitService(c)
+	accountbizrel.InitService(c)
+	accountsecret.InitService(c)
+	subaccount.InitService(c)
+	subaccountsecret.InitService(c)
+
+	securitygroup.InitSecurityGroupService(c)
+	securitygroup.InitGcpFirewallRuleService(c)
+	sgcvmrel.InitService(c)
+	sgcomrel.InitService(c)
+
+	cloud.InitVpcService(c)
+	cloud.InitSubnetService(c)
+	cloud.InitCloudService(c)
+	region.InitRegionService(c)
+	zone.InitZoneService(c)
+	resourcegroup.InitAzureResourceGroupService(c)
+	routetable.InitRouteTableService(c)
+	networkinterface.InitNetInterfaceService(c)
+	networkcvmrel.InitService(c)
+
+	disk.InitService(c)
+	diskcvmrel.InitService(c)
+	eip.InitEipService(c)
+	eipcvmrel.InitService(c)
+	image.InitService(c)
+	cvm.InitService(c)
+
+	argstpl.InitService(c)
+	cert.InitService(c)
+	loadbalancer.InitService(c)
+	loadbalancer.InitExclusiveClusterService(c)
+
+	bill.InitBillConfigService(c)
+	sync.InitService(c)
+	cloudselection.InitService(c)
+	resusagebizrel.InitService(c)
+	permissiontemplate.InitService(c)
+	permpolicylib.InitService(c)
+}
+
+// initBillServices 注册账单相关 API。
+func initBillServices(c *capability.Capability) {
+	billmonthtask.InitService(c)
+	billsummarymain.InitService(c)
+	billsummaryversion.InitService(c)
+	billitem.InitService(c)
+	billdailytask.InitService(c)
+	billadjustmentitem.InitService(c)
+	billsummaryroot.InitService(c)
+	billsummarydaily.InitService(c)
+	rootaccountbillconfig.InitService(c)
+	billexchangerate.InitService(c)
+	billsyncrecord.InitService(c)
+
+	if c.ObjectStore != nil {
+		rawbill.InitService(c)
+		cos.InitService(c)
 	}
-	cert.InitService(capability)
-	loadbalancer.InitService(capability)
-	sgcomrel.InitService(capability)
+}
 
-	billexchangerate.InitService(capability)
-	billsyncrecord.InitService(capability)
-	globalconfig.InitService(capability)
-	task.InitService(capability)
-	tenant.InitService(capability)
-	resusagebizrel.InitService(capability)
-	permissiontemplate.InitService(capability)
-	permpolicylib.InitService(capability)
-	plugin.InitService(capability)
+// initAccountSetServices 注册账号集相关 API。
+func initAccountSetServices(c *capability.Capability) {
+	mainaccount.InitService(c)
+	rootaccount.InitService(c)
+}
 
-	return restful.NewContainer().Add(capability.WebService)
+// initApplicationServices 注册申请单与审批流相关 API。
+func initApplicationServices(c *capability.Capability) {
+	application.InitApplicationService(c)
+	application.InitApprovalProcessService(c)
+}
+
+// initPlatformServices 注册平台通用能力 API（鉴权、审计、回收、用户、任务等）。
+func initPlatformServices(c *capability.Capability) {
+	auth.InitAuthService(c)
+	audit.InitAuditService(c)
+	recyclerecord.InitRecycleRecordService(c)
+	user.InitService(c)
+	globalconfig.InitService(c)
+	task.InitService(c)
+	tenant.InitService(c)
+}
+
+// initPluginServices 注册插件与插件 Schema 相关 API。
+func initPluginServices(c *capability.Capability) {
+	plugin.InitService(c)
 }
 
 // Healthz check whether the service is healthy.

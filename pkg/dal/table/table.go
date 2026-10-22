@@ -225,6 +225,9 @@ const (
 	// IaCPluginTable is iac_plugin table's name.
 	IaCPluginTable Name = "iac_plugin"
 
+	// IacPluginSchemaTable iac_plugin_schema 表名。
+	IacPluginSchemaTable Name = "iac_plugin_schema"
+
 	// IacPluginInstanceTable iac_plugin_instance 表名。
 	IacPluginInstanceTable Name = "iac_plugin_instance"
 )
@@ -350,6 +353,8 @@ var TableMap = map[Name]TableConfig{
 
 	// IaC 插件是平台级资源，不区分租户
 	IaCPluginTable: {},
+
+	IacPluginSchemaTable: {},
 
 	IacPluginInstanceTable: {EnableTenant: true},
 }
