@@ -76,6 +76,8 @@ type Client struct {
 	PermissionTemplate *PermissionTemplateClient
 
 	PermissionPolicyLibrary *PermissionPolicyLibraryClient
+
+	IaCPlugin *IaCPluginClient
 }
 
 type restClient struct {
@@ -129,5 +131,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		ResUsageBizRel:     NewResUsageBizRelRelClient(client),
 		PermissionTemplate: NewPermissionTemplateClient(client),
 		PermissionPolicyLibrary: NewPermissionPolicyLibraryClient(client),
+		IaCPlugin:               NewIaCPluginClient(client),
 	}
 }
