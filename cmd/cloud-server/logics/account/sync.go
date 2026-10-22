@@ -28,7 +28,6 @@ import (
 	"hcm/cmd/cloud-server/service/sync/azure"
 	"hcm/cmd/cloud-server/service/sync/gcp"
 	"hcm/cmd/cloud-server/service/sync/huawei"
-	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/other"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
 	"hcm/pkg/api/core"
@@ -39,6 +38,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
@@ -59,7 +59,7 @@ func Sync(kt *kit.Kit, cli *client.ClientSet, vendor enumor.Vendor, accountID st
 		return err
 	}
 
-	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
+	leaseID, err := lock.Manager.TryLock(lock.AccountSyncKey(accountID))
 	if err != nil {
 		if err == lock.ErrLockFailed {
 			return errors.New("synchronization is in progress")
