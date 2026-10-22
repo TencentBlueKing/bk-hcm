@@ -38,6 +38,12 @@ type SchemaGetter interface {
 	GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error)
 }
 
+// SchemaGetterFunc 把函数适配为 SchemaGetter。
+type SchemaGetterFunc func(kt *kit.Kit) (*coreplugin.PluginSchema, error)
+
+// GetSchema 实现 SchemaGetter。
+func (f SchemaGetterFunc) GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error) { return f(kt) }
+
 // SyncSchemaResult SchemaManager.SyncSchema 操作结果。
 // SyncResult 为 success 时 SyncMessage 为空且 Schema 有值；为 failed 时 SyncMessage 为原因且 Schema 为 nil。
 type SyncSchemaResult struct {
