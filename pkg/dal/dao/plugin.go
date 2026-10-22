@@ -31,3 +31,11 @@ func (s *set) IaCPlugin() daoplugin.IaCPlugin {
 		Audit: s.audit,
 	}
 }
+
+// IacPluginSchema 返回 IacPluginSchema DAO。
+func (s *set) IacPluginSchema() daoplugin.IacPluginSchema {
+	return &daoplugin.IacPluginSchemaDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
