@@ -35,12 +35,13 @@ import (
 
 // Client is hc-service api client.
 type Client struct {
-	TCloud *tcloud.Client
-	Aws    *aws.Client
-	HuaWei *huawei.Client
-	Gcp    *gcp.Client
-	Azure  *azure.Client
-	Other  *other.Client
+	TCloud         *tcloud.Client
+	Aws            *aws.Client
+	HuaWei         *huawei.Client
+	Gcp            *gcp.Client
+	Azure          *azure.Client
+	Other          *other.Client
+	PluginInstance *PluginInstanceClient
 }
 
 // NewClient create a new hc-service api client.
@@ -65,6 +66,9 @@ func NewClient(c *client.Capability, version string) *Client {
 		),
 		Other: other.NewClient(
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.Other)),
+		),
+		PluginInstance: NewPluginInstanceClient(
+			rest.NewClient(c, fmt.Sprintf("/api/%s/hc", version)),
 		),
 	}
 }

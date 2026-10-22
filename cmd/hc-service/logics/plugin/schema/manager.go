@@ -51,7 +51,7 @@ func NewSchemaManager(dataCli *dataservice.Client, cacheTTL time.Duration) *Sche
 }
 
 // SyncSchema 通过 getter 获取 Schema，对照 iac_plugin 与南向规则校验，
-// 幂等且防篡改地写入 iac_plugin_schema；本阶段不写入本地缓存。
+// 幂等且防篡改地写入 iac_plugin_schema，不写入本地缓存。
 func (m *SchemaManager) SyncSchema(kt *kit.Kit, getter SchemaGetter) (*SyncSchemaResult, error) {
 	if getter == nil {
 		logs.Errorf("sync plugin schema failed: schema getter is nil, rid: %s", kt.Rid)
