@@ -996,3 +996,14 @@ func genBizPermissionPolicyLibraryResource(a *meta.ResourceAttribute) (client.Ac
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// genIaCPluginResource generate iac plugin related iam resource.
+// IaC 插件是平台级资源，不关联任何业务或资源实例，查询、注册、启停、升级统一映射到平台-全局配置。
+func genIaCPluginResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Create, meta.Update:
+		return sys.GlobalConfiguration, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
