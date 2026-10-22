@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package plugin 提供 iac_plugin_instance 的 data-service REST 接口。
+// Package plugin 提供 iac_plugin 与 iac_plugin_schema 的 data-service REST 接口。
 package plugin
 
 import (
@@ -37,6 +37,7 @@ func InitService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
 	svc.initIacPluginInstanceRoutes(h)
+	svc.initIacPluginSchemaRoutes(h)
 
 	h.Load(cap.WebService)
 }
