@@ -34,11 +34,11 @@ var errPluginServerUnsupported = errors.New("terraform plugin grpc server is not
 
 // providerPlugin is the protocol 5 client adapter. It does not serve the protocol.
 type providerPlugin struct {
+	// 暂时不需要支持 net/rpc 协议（版本4以下）的旧插件，但是需要实现 Plugin interface
 	plugin.NetRPCUnsupportedPlugin
 }
 
 var (
-	_ plugin.Plugin     = (*providerPlugin)(nil)
 	_ plugin.GRPCPlugin = (*providerPlugin)(nil)
 )
 
