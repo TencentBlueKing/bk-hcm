@@ -24,21 +24,8 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
-)
 
-const (
-	// coreProtocolVersion is the go-plugin core handshake version.
-	coreProtocolVersion = 1
-	// pluginProtocolVersion is the only Terraform plugin protocol this process accepts.
-	pluginProtocolVersion = 5
-	// providerPluginName is the dispense name of the provider plugin.
-	providerPluginName = "provider"
-
-	magicCookieKey   = "TF_PLUGIN_MAGIC_COOKIE"
-	magicCookieValue = "d602bf8f470bc67ca7faa0386276bbdd4330efaf76d1a219cb4d6991ca9872b2"
-
-	// maxGRPCMsgSize is the minimum message size required by the plugin protocol.
-	maxGRPCMsgSize = 256 << 20
+	"hcm/pkg/criteria/constant"
 )
 
 // newPluginClientConfig returns the fixed handshake settings for one plugin process.
@@ -50,13 +37,13 @@ const (
 func newPluginClientConfig(cmd *exec.Cmd) *plugin.ClientConfig {
 	return &plugin.ClientConfig{
 		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  coreProtocolVersion,
-			MagicCookieKey:   magicCookieKey,
-			MagicCookieValue: magicCookieValue,
+			ProtocolVersion:  constant.TFPluginCoreProtocolVersion,
+			MagicCookieKey:   constant.TFPluginMagicCookieKey,
+			MagicCookieValue: constant.TFPluginMagicCookieValue,
 		},
 		VersionedPlugins: map[int]plugin.PluginSet{
-			pluginProtocolVersion: {
-				providerPluginName: &providerPlugin{},
+			constant.TFPluginProtocolVersion: {
+				constant.TFPluginProviderName: &providerPlugin{},
 			},
 		},
 		Cmd:              cmd,
@@ -64,8 +51,8 @@ func newPluginClientConfig(cmd *exec.Cmd) *plugin.ClientConfig {
 		AutoMTLS:         true,
 		GRPCDialOptions: []grpc.DialOption{
 			grpc.WithDefaultCallOptions(
-				grpc.MaxCallRecvMsgSize(maxGRPCMsgSize),
-				grpc.MaxCallSendMsgSize(maxGRPCMsgSize),
+				grpc.MaxCallRecvMsgSize(constant.TFPluginMaxGRPCMsgSize),
+				grpc.MaxCallSendMsgSize(constant.TFPluginMaxGRPCMsgSize),
 			),
 		},
 		UnixSocketConfig: &plugin.UnixSocketConfig{},
