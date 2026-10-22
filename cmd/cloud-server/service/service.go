@@ -57,6 +57,7 @@ import (
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
 	permissiontemplates "hcm/cmd/cloud-server/service/permission-template"
+	"hcm/cmd/cloud-server/service/plugin"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -353,6 +354,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	admin.InitAdminService(c)
 	permissionpolicylibrary.InitService(c)
 	permissiontemplates.InitService(c)
+	plugin.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
