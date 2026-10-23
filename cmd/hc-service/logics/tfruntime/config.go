@@ -22,19 +22,22 @@ package tfruntime
 import (
 	"os/exec"
 
+	"hcm/pkg/criteria/constant"
+
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
-
-	"hcm/pkg/criteria/constant"
 )
 
 // newPluginClientConfig returns the fixed handshake settings for one plugin process.
-// cmd is the unstarted plugin command. The caller owns its environment and stdio.
+// cmd is the unstarted plugin command. The caller sets its environment and the
+// stdio writers before plugin.NewClient.
 //
-// On non-Windows, go-plugin v1.6.3 makes the plugin process listen on a unix socket
-// and return that address in the handshake line. An empty UnixSocketConfig keeps
-// that default temporary directory and does not switch the transport to TCP.
-func newPluginClientConfig(cmd *exec.Cmd) *plugin.ClientConfig {
+// SkipHostEnv stops go-plugin from copying os.Environ into the plugin.
+// On non-Windows, go-plugin v1.6.3 makes the plugin process listen on a unix
+// socket and return that address in the handshake line. An empty UnixSocketConfig
+// keeps that default temporary directory and does not switch the transport to TCP.
+// minPort and maxPort are still read by this go-plugin version for the TCP fallback.
+func newPluginClientConfig(cmd *exec.Cmd, minPort, maxPort uint) *plugin.ClientConfig {
 	return &plugin.ClientConfig{
 		HandshakeConfig: plugin.HandshakeConfig{
 			ProtocolVersion:  constant.TFPluginCoreProtocolVersion,
@@ -49,6 +52,9 @@ func newPluginClientConfig(cmd *exec.Cmd) *plugin.ClientConfig {
 		Cmd:              cmd,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		AutoMTLS:         true,
+		SkipHostEnv:      true,
+		MinPort:          minPort,
+		MaxPort:          maxPort,
 		GRPCDialOptions: []grpc.DialOption{
 			grpc.WithDefaultCallOptions(
 				grpc.MaxCallRecvMsgSize(constant.TFPluginMaxGRPCMsgSize),

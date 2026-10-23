@@ -11,23 +11,23 @@
 
 ## 3. 进程拉起与关闭
 
-- [ ] 3.1 实现 `Start`：每次创建新的 `plugin.Client`，不复用已有 `Client`。协商版本为 5 时返回进程句柄；不是 5 时立即 `Kill` 并返回错误，不返回句柄。
-- [ ] 3.2 实现 `Call` 门闩：关闭开始前把 Provider 客户端交给回调；关闭开始后新的 `Call` 失败且不执行回调。
-- [ ] 3.3 实现 `Close`：拒绝新 `Call`，等待已进入的 `Call` 返回，调用 `StopProvider`，再调用 `plugin.Client.Kill()`。`StopProvider` 失败仍要 `Kill`。同一句柄重复 `Close` 只执行一次。
-- [ ] 3.4 组装插件环境变量：不复制 `os.Environ()`，包含执行所需的最小环境、`PLUGIN_PROTOCOL_VERSIONS=5` 和 `TF_LOG`。默认 `TF_LOG=ERROR`，只接受 `TRACE`、`DEBUG`、`INFO`、`WARN`、`ERROR`，其他取值拒绝启动。不传入云账号密钥。若该版本 `go-plugin` 读取端口区间，则设置一段不包含 hc-service 监听端口的固定区间。
+- [x] 3.1 实现 `Start`：成功时创建新的 `plugin.Client`，不复用已有 `Client`。同一个 `ProcessManager` 只能成功一次，再次调用返回错误且不创建 `Client`。协商版本为 5 时返回进程句柄；不是 5 时立即 `Kill` 并返回错误，不返回句柄。
+- [ ] 3.2 实现各业务 RPC 时，在方法内部加前置和后置门闩。不提供要求调用方使用的 `Call`。本迭代方法未实现，只记录 TODO。
+- [x] 3.3 实现 `Close`：拒绝新的方法进入，等待已进入门闩的调用返回，调用 `StopProvider`，再调用 `plugin.Client.Kill()`。`StopProvider` 失败仍要 `Kill`。同一句柄重复 `Close` 只执行一次。`StopProvider` 不再进入这道门闩。
+- [x] 3.4 组装插件环境变量：不复制 `os.Environ()`，包含执行所需的最小环境、`PLUGIN_PROTOCOL_VERSIONS=5` 和 `TF_LOG`。默认 `TF_LOG=ERROR`，只接受 `TRACE`、`DEBUG`、`INFO`、`WARN`、`ERROR`，其他取值拒绝启动。不传入云账号密钥。若该版本 `go-plugin` 读取端口区间，则使用配置项 `tfPlugin.minPort` / `tfPlugin.maxPort` 这一组区间，且不得包含 hc-service 监听端口。
 
 ## 4. 插件日志
 
-- [ ] 4.1 在 `Start` 前装上 `SyncStdout` 和 `SyncStderr`，并持续读取。握手后的两路输出写入 `{LogDir}/plugin/{safeName}-{safeVersion}-{pid}.log`，`LogDir` 默认取 hc-service 的日志目录。
-- [ ] 4.2 净化插件名和版本：非 `A-Za-z0-9._-` 替换为 `_`，版本为空时使用 `unknown`。pid 未知时先缓冲，pid 可用后写入该文件且不丢弃缓冲内容。每行包含 `plugin`、`plugin_version`、`pid` 以及 `stdout` 或 `stderr`。
-- [ ] 4.3 将 `go-plugin` 的 `Logger` 和握手前 stderr 写入 hc-service 日志，已知时带上插件名、版本和 pid。进程退出后不删除插件日志文件。
+- [x] 4.1 在 `Start` 前装上 `SyncStdout` 和 `SyncStderr`，并持续读取。握手后的两路输出写入 `{日志目录}/plugin` 下的独立日志文件。文件名、大小上限和保留个数复用 glog。
+- [x] 4.2 每行包含 `plugin`、`plugin_version`、`pid` 以及 `stdout` 或 `stderr`。版本为空时 `plugin_version` 使用 `unknown`。pid 未知时该行 pid 为空。文件名在 glog 的 `logName` 中插入插件名。
+- [x] 4.3 将 `go-plugin` 的 `Logger` 和握手前 stderr 写入 hc-service 日志，已知时带上插件名、版本和 pid。插件日志文件在进程关闭时保留，滚动和删除沿用 glog 的大小和个数。
 
 ## 5. 服务退出回收
 
-- [ ] 5.1 在第一次 `Start` 时注册 `shutdown.AddNotifier`。收到 `SIGTERM` 或优雅退出通知后，对登记表中的每个句柄执行 `Close`，然后 `Done`。登记表为空时立即 `Done`。
-- [ ] 5.2 不注册新的 `RegisterFirstShutdown`，不为 `SIGINT` 增加信号处理，不改现有 adaptor 与资源 Handler，不注册北向路由。
+- [x] 5.1 在管理器第一次 `Start` 成功时注册它自己的 `shutdown.AddNotifier`。收到 `SIGTERM` 或优雅退出通知后，对该管理器执行 `Close`，然后 `Done`。进程已经关闭时立即 `Done`。不维护跨管理器的进程登记表。
+- [x] 5.2 不注册新的 `RegisterFirstShutdown`，不为 `SIGINT` 增加信号处理，不改现有 adaptor 与资源 Handler，不注册北向路由。
 
 ## 6. 验证
 
 - [ ] 6.1 为协商版本不是 5、`Close` 顺序、`StopProvider` 失败仍 `Kill`、重复 `Close`、非法 `TF_LOG`、环境变量不含密钥补充单元测试。
-- [ ] 6.2 为日志文件名净化、空版本、pid 到达前的缓冲、行前缀、退出后文件仍保留、`GRPCServer` 返回错误补充单元测试。
+- [ ] 6.2 为空版本、行前缀、`GRPCServer` 返回错误补充单元测试。
