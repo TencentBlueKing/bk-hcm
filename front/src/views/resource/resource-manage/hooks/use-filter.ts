@@ -234,7 +234,8 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   watch(
     () => props.filter,
     () => {
-      if (/^\/resource\/resource/.test(route.path)) searchValue.value = [];
+      // 资源纳管列表（新 /resource/manage、旧 /resource/resource）的账号 / 云厂商变化后重算查询条件
+      if (/\/resource\/(resource|manage)/.test(route.path)) searchValue.value = [];
     },
     {
       deep: true,

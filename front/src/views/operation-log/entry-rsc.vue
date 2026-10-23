@@ -8,7 +8,6 @@ import { transformSimpleCondition, getDateRange } from '@/utils/search';
 import { IAuditItem, useAuditStore } from '@/store/audit';
 import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { OPERATION_LOG_RES_TYPES, OPERATION_LOG_RESOURCE_TYPE, OPERATION_LOG_RESOURCE_TYPE_NAME } from './constants';
 import { type ISearchCondition } from './typings';
 import { SearchConditionFactory } from './children/search/condition-factory';
@@ -38,7 +37,7 @@ const tabActive = computed({
   },
   set(value) {
     router.push({
-      query: { [GLOBAL_BIZS_KEY]: route.query?.[GLOBAL_BIZS_KEY], tab: value === 'all' ? undefined : value },
+      query: { tab: value === 'all' ? undefined : value },
     });
   },
 });
@@ -160,4 +159,9 @@ provide('isResourcePage', true);
   </template>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.entry-rsc {
+  height: 100%;
+  padding: 24px;
+}
+</style>

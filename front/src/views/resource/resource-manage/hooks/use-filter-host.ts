@@ -194,7 +194,7 @@ const useFilterHost = (props: PropsType) => {
   watch(
     () => props.filter,
     () => {
-      if (/^\/resource\/resource/.test(route.path)) {
+      if (/\/resource\/(resource|manage)/.test(route.path)) {
         searchValue.value = [];
       }
     },

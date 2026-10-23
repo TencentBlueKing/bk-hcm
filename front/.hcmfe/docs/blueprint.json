@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "4a72cf266d932623f18c369dbfaaf04e13ca4d31"
+        "rootHash": "9b23a7893351334fe61e74a8ad85b4166f0c6de6"
       }
     },
     {
@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "42c9d23a27d3a3addd78a8c835e9f6d06d1114a3"
+        "rootHash": "9a2fff69f39047da8ef9f250e118d722143bfc01"
       }
     },
     {
@@ -107,6 +107,11 @@
         "src/components/permission/**",
         "src/hooks/useVerify.ts",
         "src/store/common.ts",
+        "src/store/auth.ts",
+        "src/constants/view-auth.ts",
+        "src/router/business-interceptor.ts",
+        "src/views/status/permission.vue",
+        "src/views/status/business.vue",
         "src/views/error-pages/403.tsx"
       ],
       "doc": "modules/auth.md",
@@ -116,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "2c786dfb8f0a6380df8f985abb4b71ef4be6d601"
+        "rootHash": "e9159f5ba3bd7b3101d662b2341f80b86200f02f"
       }
     },
     {
@@ -128,8 +133,10 @@
         "src/views/operation-log/**"
       ],
       "doc": "modules/operation-log.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "83c7eadbf60af149d1b90b46c2df83900863b262"
+      }
     },
     {
       "id": "resource",
@@ -137,12 +144,15 @@
       "title": "资源运营一级视图（容器·待拆解）",
       "summary": "一级视图 /resource/ 容器，聚合账号/回收站/资源纳管，待拆解。",
       "globs": [
-        "src/views/resource/**"
+        "src/views/resource/**",
+        "src/views/resource-manage/**",
+        "src/views/recyclebin/**",
+        "src/views/account-manage/**"
       ],
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "eb22f6d1d44f878cda60c90c928d0c0d4d4ef367"
+        "rootHash": "46e177552bb154e73592db9aaf184ff2f82928ea"
       }
     },
     {
@@ -214,7 +224,7 @@
       "doc": "modules/bill.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "3d4fd654cc8ebe385b587f9bafbfd6569801151c"
+        "rootHash": "809f107be82ed1471f8ab1c228cf763cd94ee8bb"
       }
     },
     {
@@ -226,8 +236,10 @@
         "src/views/ticket/**"
       ],
       "doc": "modules/ticket.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "23f4ceb4706ef06d2b17314095fdba3bc88a5e92"
+      }
     },
     {
       "id": "scheme",
@@ -238,8 +250,10 @@
         "src/views/scheme/**"
       ],
       "doc": "modules/scheme.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "6b60e09f07de24fb0780765f14b434f6d329a08d"
+      }
     },
     {
       "id": "task",
@@ -252,7 +266,7 @@
       "doc": "modules/task.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "9e9717c51fa9a922671011a77c5b27ed5bb00fe8"
+        "rootHash": "397d29fc698b4f2a784c4968be3ca8599c64e531"
       }
     },
     {
@@ -267,8 +281,10 @@
         "src/views/index.ts"
       ],
       "doc": "modules/app-shell.md",
-      "status": "stub",
-      "fingerprint": null
+      "status": "drafted",
+      "fingerprint": {
+        "rootHash": "9ea44ec65c41d2727e829dfdf28e60a14b19f7b8"
+      }
     },
     {
       "id": "model",

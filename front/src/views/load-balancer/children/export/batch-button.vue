@@ -34,7 +34,11 @@ const handleExport = () => {
       text
       class="button"
       :disabled="!selections.length || vendorSet.size > 1 || noPerm"
-      v-bk-tooltips="{ content: '所选负载均衡需属于同一云厂商', disabled: !selections.length || vendorSet.size === 1 }"
+      v-bk-tooltips="
+        noPerm
+          ? { disabled: true }
+          : { content: '所选负载均衡需属于同一云厂商', disabled: !selections.length || vendorSet.size === 1 }
+      "
       @click="handleExport"
     >
       {{ t('批量导出') }}

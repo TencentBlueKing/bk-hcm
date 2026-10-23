@@ -19,7 +19,6 @@ import {
 import { goAsyncTaskDetail } from '@/utils';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { useSideslider } from '@/hooks/use-sideslider';
 
 import { Form, Message } from 'bkui-vue';
@@ -184,8 +183,8 @@ watch(
 const jumpToTargetGroupDetails = (id: string) => {
   routerAction.open({
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-    params: { id },
-    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, type: 'detail', vendor: props.initialModel.vendor },
+    params: { bizId: currentGlobalBusinessId.value, id },
+    query: { type: 'detail', vendor: props.initialModel.vendor },
   });
 };
 

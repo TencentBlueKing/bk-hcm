@@ -1,5 +1,6 @@
 import { PropType, defineComponent } from 'vue';
 import routerAction from '@/router/utils/action';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT } from '@/constants/menu-symbol';
 import QueryString from 'qs';
 
@@ -19,6 +20,8 @@ export default defineComponent({
     selectedSecuirtyGroupsSet: Set,
   },
   setup(props) {
+    const { getBizsId } = useWhereAmI();
+
     // 高亮命中关键词
     const getHighLightNameText = (name: string, rootCls: string) => {
       return (
@@ -34,6 +37,7 @@ export default defineComponent({
     const openSecurityGroupManagementPage = () => {
       routerAction.open({
         name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+        params: { bizId: getBizsId() },
         query: {
           filter: QueryString.stringify(
             { cloud_id: props.securityItem.cloud_id },

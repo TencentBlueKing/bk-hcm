@@ -1,19 +1,9 @@
 .apply-clb-page {
-  .apply-clb-header-title {
-    font-size: 16px;
-    color: #313238;
-  }
-
   .apply-clb-form-container {
-    margin-top: 52px;
-    padding: 24px !important;
+    padding: 0 !important;
 
     .form-card-container {
       margin-bottom: 16px;
-
-      &:last-of-type {
-        margin-bottom: 52px;
-      }
     }
 
     .flex-row .bk-form-item {
@@ -115,18 +105,10 @@
   }
 
   .apply-clb-bottom-bar {
-    position: fixed;
-    bottom: 0;
-    left: 240px;
-    padding: 0 27px 0 24px;
-    width: calc(100vw - 240px);
-    height: 52px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    border-top: 1px solid #dcdee5;
-    background-color: #fafbfd;
-    z-index: 9;
+    width: 100%;
 
     .info-wrap {
       position: relative;
@@ -175,11 +157,6 @@
         width: 88px;
       }
     }
-  }
-
-  .business-apply-clb-bottom-bar {
-    left: 15% !important;
-    width: calc(100vw - 15%) !important;
   }
 
   .bk-card {

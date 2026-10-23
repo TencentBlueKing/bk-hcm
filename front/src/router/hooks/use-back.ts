@@ -1,5 +1,5 @@
 import { computed } from 'vue';
-import { RouteLocationRaw, useRoute } from 'vue-router';
+import { RouteLocationNamedRaw, RouteLocationRaw, useRoute } from 'vue-router';
 import { RouteMetaConfig } from '../meta';
 import { HistoryStorage } from '../utils/history-storage';
 import routerAction from '../utils/action';
@@ -20,9 +20,10 @@ export const useBack = () => {
   const from = computed(() => {
     if (Object.hasOwn(route.query, '_f')) {
       try {
-        return HistoryStorage.pop();
-      } catch (error) {
-        return defaultFrom.value;
+        const history = HistoryStorage.pop();
+        if ((history as RouteLocationNamedRaw)?.name) return history;
+      } catch {
+        // 历史记录不可用时回退到 menu.relative
       }
     }
     return defaultFrom.value;

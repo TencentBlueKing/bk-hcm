@@ -5,6 +5,8 @@ import { Button, Select } from 'bkui-vue';
 import { QueryRuleOPEnum } from '@/typings/common';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_VPC_MANAGEMENT, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 import './vpc-selector.scss';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -32,7 +34,7 @@ export default defineComponent({
   setup(props, { emit, attrs }) {
     const list = ref([]);
     const loading = ref(false);
-    const { isResourcePage, whereAmI } = useWhereAmI();
+    const { isResourcePage, whereAmI, getBizsId } = useWhereAmI();
 
     const selected = computed({
       get() {
@@ -46,7 +48,6 @@ export default defineComponent({
     watch(
       [() => props.bizId, () => props.accountId, () => props.vendor, () => props.region, () => props.zone],
       async ([bizId, accountId, vendor, region, zone]) => {
-        console.log(accountId, region, zone, bizId);
         if (!accountId || !region || !zone || (whereAmI.value === Senarios.business && !bizId)) {
           list.value = [];
           return;
@@ -171,8 +172,11 @@ export default defineComponent({
               theme='primary'
               text
               onClick={() => {
-                const url = whereAmI.value === Senarios.business ? '/#/business/vpc' : '/#/resource/resource?type=vpc';
-                window.open(url, '_blank');
+                routerAction.open(
+                  whereAmI.value === Senarios.business
+                    ? { name: MENU_BUSINESS_VPC_MANAGEMENT, params: { bizId: getBizsId() } }
+                    : { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'vpc' } },
+                );
               }}>
               新建
             </Button>

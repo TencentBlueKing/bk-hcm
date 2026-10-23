@@ -1,17 +1,18 @@
 # 操作记录
 
-> status: stub · kind: module
+> status: drafted · kind: module
 > globs: `src/views/operation-log/**`
 
 操作审计日志。
 
 ## 职责
 
-（待补充：本模块的核心职责、边界、关键文件与对外接口。）
+业务侧与资源侧两套入口共用列表、搜索、详情组件：`entry-biz.vue`（业务资源 → 操作记录）、`entry-rsc.vue`（资源运营 → 操作记录，`/resource/record`），详情 `details/flow-task`。路由在 `route-config.ts`：`operationLogBiz` 挂业务资源；`operationLogRsc`（`MENU_RESOURCE_OPERATION_LOG(_DETAILS)`）挂资源运营根，列表声明 `auth.view: AUTH_BIZ_FIND_AUDIT`（不传业务时后端按资源审计、任一账号判定），侧栏按同一权限 `hideMenu`；`operationLogRscLegacy` 承接原资源接入「操作记录」页签地址。
 
 ## 关键流程 / 注意事项
 
-（待补充：由 workflow 在首次改动本模块时深化。）
+- 列表条件全在地址 `filter`（`useSearchQs`，`qs` 逗号格式、不编码）。`entry-rsc` / `entry-biz` 读到地址上有 `filter` 就不再套默认「近 30 天」，所以任何拼 `filter` 的跳转（如旧地址 `/resource/resource/record?accountId=` 的转址 `toRecordList`）都要把 `created_at` 一起写进去。
+- 两个入口都自带 `padding: 24px; height: 100%`（主视图 `.main-view` 无内边距）。
 
 ## 明细目录
 

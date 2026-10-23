@@ -150,7 +150,7 @@ const renderColumns = [
                 },
                 ['删除'],
               ),
-              [[bkTooltips, generateTooltipsOptions(data)]],
+              [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions(data)]],
             ),
         },
       );
@@ -236,15 +236,19 @@ defineExpose({ fetchComponentsData });
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .mlauto {
   margin-left: auto;
 }
+
 .toolbar {
   display: flex;
   align-items: center;

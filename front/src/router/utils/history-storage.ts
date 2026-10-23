@@ -1,11 +1,37 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import type { RouteLocationRaw, RouteRecordNameGeneric } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
+import * as menuSymbols from '@/constants/menu-symbol';
+
+const symbolRegistry = new Map<string, symbol>();
+for (const value of Object.values(menuSymbols)) {
+  if (typeof value === 'symbol') {
+    symbolRegistry.set(value.description, value);
+  }
+}
 
 export class HistoryStorage {
   private static key = 'history';
 
   get history() {
     return HistoryStorage.get();
+  }
+
+  private static serialize(data: RouteLocationRaw): string {
+    if (typeof data === 'string') return btoa(JSON.stringify(data));
+    const plain = { ...data } as Record<string, any>;
+    if (typeof plain.name === 'symbol') {
+      plain.name = plain.name.description;
+    }
+    return btoa(JSON.stringify(plain));
+  }
+
+  private static deserialize(encoded: string): RouteLocationRaw {
+    const data = JSON.parse(atob(encoded));
+    if (typeof data === 'string') return data;
+    if (typeof data.name === 'string' && symbolRegistry.has(data.name)) {
+      data.name = symbolRegistry.get(data.name);
+    }
+    return data;
   }
 
   static get() {
@@ -22,29 +48,24 @@ export class HistoryStorage {
   }
 
   static append(data: RouteLocationRaw) {
-    const base64 = btoa(JSON.stringify(data));
     const historyList = this.get();
-    historyList.push(base64);
+    historyList.push(this.serialize(data));
     window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
   }
 
-  static remove(name: RouteRecordNameGeneric) {
+  // 删除最后一条记录（即后退的目标页）
+  static removeLast() {
     const historyList = this.get();
-    const index = historyList.findIndex((item) => {
-      const history = JSON.parse(atob(item));
-      return history.name === name;
-    });
-    if (index !== -1) {
-      historyList.splice(index, 1);
-      window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
-    }
+    if (!historyList.length) return;
+    historyList.pop();
+    window.sessionStorage.setItem(this.key, JSON.stringify(historyList));
   }
 
+  // 只读取最后一条记录，不会从栈中删除
   static pop(): RouteLocationRaw {
     const historyList = this.get();
     const record = historyList.pop();
-    const route = JSON.parse(atob(record));
-    return route;
+    return this.deserialize(record);
   }
 
   static clear() {

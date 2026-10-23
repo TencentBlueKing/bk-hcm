@@ -4,26 +4,29 @@
  * @create andyzhou
  * @update 2022/1/20 by andyzhou
  */
-@import './common.scss';
-@import './exception.scss';
-@import './color.scss';
-@import './flex.scss';
-@import './layout.scss';
-@import './size.scss';
-@import './text.scss';
-@import './cursos-point-event.scss';
+@import './common';
+@import './exception';
+@import './color';
+@import './flex';
+@import './layout';
+@import './size';
+@import './text';
+@import './cursos-point-event';
 @import './fixedBkMagicBox';
-@import './page/setting.scss';
-@import './override/index.scss';
+@import './page/setting';
+@import './override/index';
+@import './app-shell';
 
 
 .spin-icon {
   animation: loading 2s linear infinite;
 }
+
 @keyframes loading {
   from {
       transform: rotate(0);
   }
+
   to {
       transform: rotate(360deg);
   }
@@ -38,6 +41,7 @@
   .bk-tag-input-trigger, .bk-tag-input {
     height: 32px !important;
     width: 100%;
+
     &.is-focus, &.active {
         height: auto !important;
         z-index: 9999;

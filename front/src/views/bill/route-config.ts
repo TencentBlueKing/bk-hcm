@@ -1,7 +1,8 @@
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
-import { useCommonStore } from '@/store';
+import { AUTH_FIND_ROOT_ACCOUNT, AUTH_FIND_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 import {
+  MENU_RESOURCE,
   MENU_BILL_ROOT_ACCOUNT,
   MENU_BILL_ROOT_ACCOUNT_CREATE,
   MENU_BILL_MAIN_ACCOUNT,
@@ -14,85 +15,82 @@ import {
   MENU_BILL_MANAGE_ADJUST,
 } from '@/constants/menu-symbol';
 
-// 直接访问列表地址时的查看权限拦截在 store/common.ts 的 pageAuthData（按 path 匹配）
-// 二级账号面向普通用户：无权限也要显示菜单，点进去由 403 页引导自行申请，所以不配 checkAuth
+// 列表页的查看权限由 meta.auth.view 拦截；侧栏显隐由 constants/view-auth.ts 的 hideMenu 决定
+// 二级账号面向普通用户：无权限也要显示菜单，点进去由无权限页引导自行申请，所以不配 hideMenu
 const billAccountManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_ROOT_ACCOUNT,
-    path: 'root-account',
+    path: 'bill/root-account',
     component: () => import('./account/account-manage/root-account-list.vue'),
     meta: {
       ...new Meta({
-        title: '一级账号',
+        owner: MENU_RESOURCE,
         activeKey: MENU_BILL_ROOT_ACCOUNT,
-        checkAuth: 'root_account_find',
+        auth: { view: { type: AUTH_FIND_ROOT_ACCOUNT } },
+        menu: { i18n: '一级账号' },
         layout: { breadcrumb: { show: true } },
       }),
     },
   },
   {
     name: MENU_BILL_ROOT_ACCOUNT_CREATE,
-    path: 'root-account/create',
+    path: 'bill/root-account/create',
     component: () => import('./account/create-account/create-first-account'),
     meta: {
       ...new Meta({
-        title: '录入一级账号',
+        owner: MENU_RESOURCE,
         activeKey: MENU_BILL_ROOT_ACCOUNT,
-        menu: { relative: MENU_BILL_ROOT_ACCOUNT },
+        menu: { i18n: '录入一级账号', relative: MENU_BILL_ROOT_ACCOUNT },
         layout: { breadcrumb: { show: true } },
       }),
     },
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT,
-    path: 'main-account',
+    path: 'bill/main-account',
     component: () => import('./account/account-manage/main-account-list.vue'),
     meta: {
       ...new Meta({
-        title: '二级账号',
+        owner: MENU_RESOURCE,
         activeKey: MENU_BILL_MAIN_ACCOUNT,
+        auth: { view: { type: AUTH_FIND_MAIN_ACCOUNT } },
+        menu: { i18n: '二级账号' },
         layout: { breadcrumb: { show: true } },
       }),
     },
   },
   {
     name: MENU_BILL_MAIN_ACCOUNT_CREATE,
-    path: 'main-account/create',
+    path: 'bill/main-account/create',
     component: () => import('./account/create-account/create-second-account'),
     meta: {
       ...new Meta({
-        title: '创建二级账号',
+        owner: MENU_RESOURCE,
         activeKey: MENU_BILL_MAIN_ACCOUNT,
-        menu: { relative: MENU_BILL_MAIN_ACCOUNT },
+        menu: { i18n: '创建二级账号', relative: MENU_BILL_MAIN_ACCOUNT },
         layout: { breadcrumb: { show: true } },
       }),
     },
   },
 ];
 
-// 旧地址兼容。account-manage 同时是顶栏「资源运营」的入口地址。
-// 分流依赖权限数据：redirect 在全局守卫加载权限之前求值，拿不到，所以放在 beforeEnter（全局守卫放行之后才执行）
-const billAccountManageLegacy: RouteRecordRaw[] = [
-  {
-    path: 'account-manage',
-    // 类型要求 component/children/redirect 之一；带 redirect 的记录不会执行 beforeEnter
-    children: [],
-    beforeEnter: (to) => {
-      const { authVerifyData } = useCommonStore();
-      const name = authVerifyData?.permissionAction?.root_account_find
-        ? MENU_BILL_ROOT_ACCOUNT
-        : MENU_BILL_MAIN_ACCOUNT;
-      return { name, query: to.query, replace: true };
-    },
-  },
-  {
-    path: 'account-manage/first-account',
-    redirect: { name: MENU_BILL_ROOT_ACCOUNT_CREATE },
-  },
-  {
-    path: 'account-manage/second-account',
-    redirect: { name: MENU_BILL_MAIN_ACCOUNT_CREATE },
-  },
+// 旧地址 /bill/*（账单迁到资源运营 /resource/bill/* 之前），query 原样保留；裸 /bill 不再注册，落 404
+// /bill/account-manage 统一默认跳二级账号（不再按一级账号权限分流）
+const toName = (name: symbol) => (to: RouteLocationNormalized) => ({ name, query: to.query });
+const billLegacy: RouteRecordRaw[] = [
+  { path: '/bill/account-manage', redirect: toName(MENU_BILL_MAIN_ACCOUNT) },
+  { path: '/bill/account-manage/first-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT_CREATE) },
+  { path: '/bill/account-manage/second-account', redirect: toName(MENU_BILL_MAIN_ACCOUNT_CREATE) },
+  { path: '/bill/root-account', redirect: toName(MENU_BILL_ROOT_ACCOUNT) },
+  { path: '/bill/root-account/create', redirect: toName(MENU_BILL_ROOT_ACCOUNT_CREATE) },
+  { path: '/bill/main-account', redirect: toName(MENU_BILL_MAIN_ACCOUNT) },
+  { path: '/bill/main-account/create', redirect: toName(MENU_BILL_MAIN_ACCOUNT_CREATE) },
+  { path: '/bill/bill-manage', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary/manage', redirect: toName(MENU_BILL_MANAGE_SUMMARY_MANAGE) },
+  { path: '/bill/bill-manage/summary/operation-record', redirect: toName(MENU_BILL_MANAGE_SUMMARY_OPERATION_RECORD) },
+  { path: '/bill/bill-manage/detail', redirect: toName(MENU_BILL_MANAGE_DETAIL) },
+  { path: '/bill/bill-manage/adjust', redirect: toName(MENU_BILL_MANAGE_ADJUST) },
 ];
 
 // 云账单管理是布局型页面：./bill/index 提供页签栏与 currentMonth/bill_year/bill_month 上下文，
@@ -100,7 +98,7 @@ const billAccountManageLegacy: RouteRecordRaw[] = [
 const billManage: RouteRecordRaw[] = [
   {
     name: MENU_BILL_MANAGE,
-    path: 'bill-manage',
+    path: 'bill/manage',
     component: () => import('./bill/index'),
     redirect: { name: MENU_BILL_MANAGE_SUMMARY },
     children: [
@@ -135,12 +133,13 @@ const billManage: RouteRecordRaw[] = [
     ],
     meta: {
       ...new Meta({
-        title: '云账单管理',
+        owner: MENU_RESOURCE,
         activeKey: MENU_BILL_MANAGE,
-        checkAuth: 'account_bill_find',
+        menu: { i18n: '账单管理' },
+        layout: { breadcrumb: { show: false } },
       }),
     },
   },
 ];
 
-export { billAccountManage, billAccountManageLegacy, billManage };
+export { billAccountManage, billLegacy, billManage };

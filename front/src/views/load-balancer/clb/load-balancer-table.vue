@@ -27,10 +27,10 @@ import {
   getSimpleConditionBySearchSelect,
   transformSimpleCondition,
 } from '@/utils/search';
-import { GLOBAL_BIZS_KEY, ResourceTypeEnum } from '@/common/constant';
+import { ResourceTypeEnum } from '@/common/constant';
 import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_APPLY, MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_APPLY_CLB, MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 import { parseTimeFromNow } from '@/common/util';
 
 import { Button, Message, Tag } from 'bkui-vue';
@@ -69,8 +69,8 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     displayProps: { theme: 'primary' },
     handleClick: () =>
       routerAction.redirect({
-        name: MENU_BUSINESS_LOAD_BALANCER_APPLY,
-        query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
+        name: MENU_BUSINESS_APPLY_CLB,
+        params: { bizId: currentGlobalBusinessId.value },
       }),
   },
   [LoadBalancerActionType.BATCH_OPERATION]: {
@@ -196,8 +196,7 @@ const displayFieldConfig: Record<string, Partial<ModelPropertyColumn>> = {
         routerAction.redirect(
           {
             name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
-            query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
-            params: { id: row.id },
+            params: { bizId: currentGlobalBusinessId.value, id: row.id },
           },
           { history: true },
         );

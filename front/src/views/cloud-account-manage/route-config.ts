@@ -1,6 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 import Meta from '@/router/meta';
-import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
+import { MENU_BUSINESS, MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 
 export default [
   {
@@ -9,10 +9,9 @@ export default [
     component: () => import('./index.vue'),
     meta: {
       ...new Meta({
-        title: '云账号管理',
+        owner: MENU_BUSINESS,
         activeKey: MENU_BUSINESS_CLOUD_ACCOUNT,
-        isShowBreadcrumb: true,
-        icon: 'hcm-icon bkhcm-icon-account-manage',
+        menu: { i18n: '云账号管理' },
       }),
     },
   },

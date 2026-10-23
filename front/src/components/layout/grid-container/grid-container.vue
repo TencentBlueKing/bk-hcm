@@ -74,7 +74,7 @@ const labelContainerWidth = computed(() => {
   column-gap: var(--col-gap, 60px);
 
   // 默认方式，自动填满容器
-  grid-template-columns: repeat(var(--column, auto-fill), 1fr);
+  grid-template-columns: repeat(var(--column, auto-fill), minmax(0, 1fr));
 
   // 固定方式，根据内容宽度，更可控
   &.fixed {
@@ -92,11 +92,11 @@ const labelContainerWidth = computed(() => {
 
       // span时，内容区域宽度填满不限最小最大宽度限制
       &.span {
-        grid-template-columns: var(--label-width) 1fr;
+        grid-template-columns: var(--label-width) minmax(0, 1fr);
       }
 
       &.non-label {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .item-label {
@@ -136,7 +136,7 @@ const labelContainerWidth = computed(() => {
       grid-auto-rows: auto minmax(var(--min-height, 32px), max-content);
 
       &.span {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
       }
 
       .item-label {
