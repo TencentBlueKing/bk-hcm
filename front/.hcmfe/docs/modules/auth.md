@@ -7,7 +7,7 @@
 
 ## 职责
 
-两层权限：视图级（能否进入页面）与操作级（能否执行某个操作，按钮禁用 + 权限申请弹窗）。
+两层权限：视图级（能否进入页面，路由 `meta.auth.view` + 路由守卫 + `views/status/permission.vue`）与操作级（能否执行某个操作，按钮禁用 + 权限申请弹窗）。
 
 ### 视图级
 
@@ -36,7 +36,7 @@
 | `components/permission/apply-dialog.vue` | 无权限弹窗：权限清单表格 + 去申请 |
 | `store/auth.ts` | `verify` 鉴权、`getApplyPermUrl` 取 IAM 申请链接 |
 
-旧链路（`hooks/useVerify.ts`、`components/permission-dialog/`、`provide('authAction')`）已删除（菜单整合二期收尾单），站内操作级权限只剩 `hcm-auth` 一套。详情字段级编辑鉴权用 `info-list` 的 `getAuthSign`。
+旧链路（`hooks/useVerify.ts`、`components/permission-dialog/`、`provide('authAction')`、`store/useGlobalPermissionDialog.ts`）已删除（菜单整合二期收尾单），站内操作级权限只剩 `hcm-auth` 一套。详情字段级编辑鉴权用 `info-list` 的 `getAuthSign`。迁移口径见 rule `fe-auth-migration`。
 
 ## 关键流程 / 注意事项
 

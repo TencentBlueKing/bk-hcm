@@ -53,7 +53,7 @@
 
 ## 旧地址兼容（菜单整合二期）
 
-二期首批每单上线即用新地址，资源运营各模块在自己的 `route-config.ts` 导出旧地址数组，由 `router/index.ts` 在 catch-all 之前注册：`resourceManageLegacy`（`/resource/resource?type=` 与旧新建页）、`resourceDetailLegacy`、`recyclebinRscLegacy`、`operationLogRscLegacy`、`accountManageLegacy`、`billLegacy`。原资源接入的路由文件 `router/module/resource.ts` / `resource-inside.ts` / `service-inside.ts` 与业务路由 `router/module/business.ts`、旧 403 路由 `router/module/common.ts` 已删除；侧栏按最终菜单树结构，除资源纳管外都是无云账号树的独立页面。首批删除 / 迁移的文件与合入 v1.9.x 时的冲突处置见 `../menu-phase2-merge-v1.9.x.md`。
+二期首批每单上线即用新地址，资源运营各模块在自己的 `route-config.ts` 导出旧地址数组，由 `router/index.ts` 在 catch-all 之前注册：`resourceManageLegacy`（`/resource/resource?type=` 与旧新建页）、`resourceDetailLegacy`、`recyclebinRscLegacy`、`operationLogRscLegacy`、`accountManageLegacy`、`billLegacy`。原资源接入的路由文件 `router/module/resource.ts` / `resource-inside.ts` / `service-inside.ts` 与业务路由 `router/module/business.ts`、旧 403 路由 `router/module/common.ts` 已删除；侧栏按最终菜单树结构，除资源纳管外都是无云账号树的独立页面。目标形态（菜单与路由解耦、侧栏与顶栏按 `IMenu` 渲染、`visibility` 一等字段）已由上文的 menu-service 落地；`header-config.ts`、`to-legacy-menus.ts`、`useChangeHeaderTab` 与路由上的 `groupTitle` 包装节点已删除，不再按「剩余工作」继续叠浅层改动。首批删除 / 迁移的文件与合入 v1.9.x 时的冲突处置见 `../menu-phase2-merge-v1.9.x.md`。
 
 ## 明细目录
 

@@ -5,9 +5,11 @@ import { useAccountStore } from '@/store';
 import type { FilterType } from '@/typings/resource';
 import { QueryRuleOPEnum } from '@/typings';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
+import { useBusinessGlobalStore } from '@/store/business-global';
 
 const accountStore = useAccountStore();
 const cloudAreaStore = useCloudAreaStore();
+const businessGlobalStore = useBusinessGlobalStore();
 
 const optionMap = new Map<ResourceTypeEnum, ISearchItem[]>();
 
@@ -101,10 +103,22 @@ const getOptionMenu = async (item: ISearchItem, keyword: string): Promise<any[]>
   if (id === 'bk_cloud_id') {
     return cloudAreaStore.fetchAllCloudAreas();
   }
+
+  if (id === 'bk_biz_id') {
+    const list = await businessGlobalStore.getBusinessFullList();
+    const options = list.map((biz) => ({ id: String(biz.id), name: biz.name }));
+    if (!keyword) {
+      return options;
+    }
+    const kw = keyword.toLowerCase();
+    return options.filter((opt) => opt.name.toLowerCase().includes(kw) || opt.id.includes(keyword));
+  }
+
+  return [];
 };
 
 const getOptionData = (type: ResourceTypeEnum) => {
-  return optionMap.get(type);
+  return optionMap.get(type) ?? [];
 };
 
 const factory = {

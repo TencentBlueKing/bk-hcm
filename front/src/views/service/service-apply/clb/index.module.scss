@@ -1,3 +1,5 @@
+/* 存量 CSS Module 类名是驼峰，给 cssModule.xxx 用；新增类名用短横线 */
+/* stylelint-disable selector-class-pattern */
 .addClbConfigureSideslider {
   .applyClbFormContainer {
     background-color: #f5f7fa;
@@ -36,6 +38,28 @@
 
     .previewBtn {
       margin-left: 16px;
+    }
+  }
+
+  .exclusive-cluster-config {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .exclusive-cluster-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    :global(.bk-select) {
+      flex: 1;
+      min-width: 0;
+    }
+
+    :global(.bk-checkbox) {
+      width: 88px;
+      flex-shrink: 0;
     }
   }
 
@@ -106,7 +130,7 @@
       width: auto;
       height: auto;
       display: inline-block;
-      border-top: 0px solid #dcdee5;
+      border-top: 0 solid #dcdee5;
 
       .infoWrap {
         position: relative;

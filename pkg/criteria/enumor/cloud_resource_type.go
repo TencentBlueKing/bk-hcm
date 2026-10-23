@@ -29,25 +29,26 @@ import (
 type CloudResourceType string
 
 var typeMapping = map[CloudResourceType]table.Name{
-	AccountCloudResType:          table.AccountTable,
-	SubAccountCloudResType:       table.SubAccountTable,
-	SecurityGroupCloudResType:    table.SecurityGroupTable,
-	GcpFirewallRuleCloudResType:  table.GcpFirewallRuleTable,
-	VpcCloudResType:              table.VpcTable,
-	SubnetCloudResType:           table.SubnetTable,
-	EipCloudResType:              table.EipTable,
-	DiskCloudResType:             table.DiskTable,
-	CvmCloudResType:              table.CvmTable,
-	RouteTableCloudResType:       table.RouteTableTable,
-	NetworkInterfaceCloudResType: table.NetworkInterfaceTable,
-	ZoneCloudResType:             table.ZoneTable,
-	AzureResourceGroup:           table.AzureRGTable,
-	ArgumentTemplateResType:      table.ArgumentTemplateTable,
-	CertCloudResType:             table.SslCertTable,
-	LoadBalancerCloudResType:     table.LoadBalancerTable,
-	ListenerCloudResType:         table.LoadBalancerListenerTable,
-	TargetGroupCloudResType:      table.LoadBalancerTargetGroupTable,
-	TCloudUrlRuleCloudResType:    table.TCloudLbUrlRuleTable,
+	AccountCloudResType:                      table.AccountTable,
+	SubAccountCloudResType:                   table.SubAccountTable,
+	SecurityGroupCloudResType:                table.SecurityGroupTable,
+	GcpFirewallRuleCloudResType:              table.GcpFirewallRuleTable,
+	VpcCloudResType:                          table.VpcTable,
+	SubnetCloudResType:                       table.SubnetTable,
+	EipCloudResType:                          table.EipTable,
+	DiskCloudResType:                         table.DiskTable,
+	CvmCloudResType:                          table.CvmTable,
+	RouteTableCloudResType:                   table.RouteTableTable,
+	NetworkInterfaceCloudResType:             table.NetworkInterfaceTable,
+	ZoneCloudResType:                         table.ZoneTable,
+	AzureResourceGroup:                       table.AzureRGTable,
+	ArgumentTemplateResType:                  table.ArgumentTemplateTable,
+	CertCloudResType:                         table.SslCertTable,
+	LoadBalancerCloudResType:                 table.LoadBalancerTable,
+	ListenerCloudResType:                     table.LoadBalancerListenerTable,
+	TargetGroupCloudResType:                  table.LoadBalancerTargetGroupTable,
+	TCloudUrlRuleCloudResType:                table.TCloudLbUrlRuleTable,
+	LoadBalancerExclusiveClusterCloudResType: table.LoadBalancerExclusiveClusterTable,
 }
 
 // ConvTableName conv CloudResourceType to table.Name.
@@ -88,6 +89,8 @@ const (
 	ListenerCloudResType         CloudResourceType = "listener"
 	TargetGroupCloudResType      CloudResourceType = "target_group"
 	TCloudUrlRuleCloudResType    CloudResourceType = "tcloud_url_rule"
+	// LoadBalancerExclusiveClusterCloudResType CLB独占集群
+	LoadBalancerExclusiveClusterCloudResType CloudResourceType = "load_balancer_exclusive_cluster"
 	// SecurityGroupUsageBizRelResType 安全组使用业务关联关系
 	SecurityGroupUsageBizRelResType CloudResourceType = "security_group_usage_biz_rel"
 	CvmCCInfoResType                CloudResourceType = "cvm_cc_info"

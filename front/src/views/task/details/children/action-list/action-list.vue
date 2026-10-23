@@ -77,7 +77,7 @@ watch(
       <template #default="{ row }">
         <display-value
           :property="column"
-          :value="get(row, column.id)"
+          :value="column.meta?.display?.render ? row : get(row, column.id)"
           :display="column?.meta?.display"
           :vendor="row?.param?.vendor"
         />

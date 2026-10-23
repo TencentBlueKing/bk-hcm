@@ -58,7 +58,6 @@ export default defineComponent({
         render: () => <div>20 分钟</div>,
       },
     ];
-
     // 每次现取 props.accountId，避免轮询回调闭包里留着切换前的账号
     const getList = async () => {
       const id = props.accountId;
@@ -74,7 +73,7 @@ export default defineComponent({
         isLoading.value = false;
       }
     };
-
+    // 10s 一轮、最多 60 轮。换账号后先重置轮次，不把上一个账号已消耗的轮询预算算进来
     const { resume, reset } = useTimeoutPoll(getList, 10000, { immediate: false, max: 60 });
 
     watch(

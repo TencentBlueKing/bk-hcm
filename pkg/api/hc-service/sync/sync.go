@@ -21,6 +21,8 @@
 package sync
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
 )
@@ -39,7 +41,7 @@ func (req *TCloudGlobalSyncReq) Validate() error {
 type TCloudSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持load_balancer security_group
+	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持load_balancer security_group load_balancer_exclusive_cluster
 	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 	// 指定同步并发，仅特定资源支持
 	Concurrent uint `json:"concurrent,omitempty"`
@@ -49,6 +51,41 @@ type TCloudSyncReq struct {
 
 // Validate tcloud sync request.
 func (req *TCloudSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudDelLocalLBReq tcloud batch delete local load balancer request,
+// it only removes the local db records and never touches the cloud resources.
+type TCloudDelLocalLBReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (req *TCloudDelLocalLBReq) Validate() error {
+	if len(req.CloudIDs) == 0 {
+		return fmt.Errorf("cloud_ids is required")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TCloudSyncLoadBalancerByCondReq tcloud sync load balancer by condition request.
+type TCloudSyncLoadBalancerByCondReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1,dive,required"`
+	// 指定标签同步，与创建同步任务时的条件保持一致
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty"`
+}
+
+// Validate ...
+func (req *TCloudSyncLoadBalancerByCondReq) Validate() error {
+	if len(req.CloudIDs) == 0 {
+		return fmt.Errorf("cloud_ids is required")
+	}
+
 	return validator.Validate.Struct(req)
 }
 
@@ -66,7 +103,7 @@ func (req *AwsGlobalSyncReq) Validate() error {
 type AwsSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
-	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持security_group
+	// 传入指定资源id进行同步，仅特定资源支持 目前仅支持 security_group
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
 }
 

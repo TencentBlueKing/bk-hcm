@@ -1,0 +1,35 @@
+{
+  "id": "req-feat-clb-exclusive-cluster",
+  "title": "CLB exclusive cluster",
+  "createdAt": "2026-09-14T10:25:46.638Z",
+  "updatedAt": "2026-09-20T09:58:02.055Z",
+  "external": {
+    "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598133757341"
+  },
+  "iterations": [
+    {
+      "wfId": "feat-clb-exclusive-cluster-mgmt",
+      "status": "test",
+      "branch": "feat-clb-exclusive-cluster-mgmt",
+      "title": "CLB exclusive cluster management list",
+      "createdAt": "2026-09-14T10:25:58.830Z"
+    },
+    {
+      "wfId": "feat-clb-list-spec-field",
+      "status": "test",
+      "branch": "feat-clb-exclusive-cluster-mgmt",
+      "title": "CLB 列表实例规格字段",
+      "createdAt": "2026-09-16T09:55:29.448Z"
+    }
+  ],
+  "aggregatedArtifacts": {},
+  "codeScope": {
+    "globs": [],
+    "autoLearned": true
+  },
+  "codeFingerprint": {
+    "computedAt": "2026-09-15T06:30:14.155Z",
+    "files": {},
+    "rootHash": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+  }
+}

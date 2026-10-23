@@ -66,9 +66,7 @@
 ## 注意事项
 
 - 请求仍走 `src/api/bill`，那是废弃层，只允许老代码继续调用；新增请求按项目约定进 `src/store/<模块>/`。
-- 汇总 / 调整等页面的部分操作栏、搜索组件与挂载逻辑经 `@pluginHandler/bill-manage` 注入，会随构建变体替换，改这些行为前先看 `plugin-handler` 模块。
-
-## 明细目录
+- 汇总 / 调整等页面的部分操作栏、搜索组件与挂载逻辑经 `@pluginHandler/bill-manage` 注入，会随构建变体替换，改这些行为前先看 `plugin-handler` 模块。## 明细目录
 
 <!-- bkdevbuddy:toc:start -->
 <!-- bkdevbuddy:toc:end -->

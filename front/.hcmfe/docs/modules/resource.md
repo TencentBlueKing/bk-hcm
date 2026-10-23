@@ -35,7 +35,7 @@
 
 - 资源接入各 `children/manage/*-manage.vue` 的 toolbar 在 `isResourcePage` 时取 `justify-content-end`：内容溢出会往**左**溢并被裁掉（先没的是 `toolbar-prefix` 里的 slot 前缀），不是常见的右侧溢出，也无法滚动看到。所以这一行必须留一个可压缩项——右侧搜索框容器给 `min-width: 0`、搜索框 `max-width: 100%` 加可用下限；同时给非搜索的直接子元素 `flex-shrink: 0`，否则收缩量会按 flex-basis 摊到按钮上把文字压掉。注意 slot 内容带的是父组件 scope id，子组件的 `> *` 选不中，需要在各自组件里自管（如 `resource-subtype-switch` 自带 `flex-shrink: 0`）。
 - 共用的 `*-manage.vue` 在资源纳管下不能再按 `route.query.type` 判断资源类型（类型在 `route.params.resourceType`）；`security-manage.vue` 切子场景只改 query 留在当前路由。`use-filter.ts` / `use-filter-host.ts` 靠「`props.filter` 变化 → 置空 `searchValue` → 重算内部 filter」把云账号树的账号 / 云厂商变化传给真正发请求的那份 filter，这一步按地址正则 `/\/resource\/(resource|manage)/` 放行；地址再变时必须同步，否则只剩「原地改同一条规则对象」的情况会请求（如账号之间切换），全部账号 → 账号、选云厂商都不请求。
-- 账号「资源状态」（`account/account-status/resource-status.tsx`，原 `accountInfo/component/resourceStatus/`）：表格「资源名称」列直接用 `RESOURCE_TYPES_MAP` 转译 `sync_details` 返回的 `res_name`，后端上新资源类型时前端只需在该 map 补一行（独占集群是 `load_balancer_exclusive_cluster`）。轮询回调**不能**吃 watch 回调的账号形参：轮询只创建一次，账号会被闭包永久固定，切账号后后续轮询全打到上一个账号。账号只能在 `getList` 内现取；轮询用 `useTimeoutPoll`，watch 里 `reset()` + `resume()` 重置轮次。
+- 账号「资源状态」（`account/account-status/resource-status.tsx`，原 `accountInfo/component/resourceStatus/`）：表格「资源名称」列直接用 `RESOURCE_TYPES_MAP` 转译 `sync_details` 返回的 `res_name`，后端上新资源类型时前端只需在该 map 补一行（独占集群是 `load_balancer_exclusive_cluster`）。轮询回调**不能**吃 watch 回调的账号形参：轮询只创建一次，账号会被闭包永久固定，切账号后后续轮询全打到上一个账号。旧实现从 `useResourceAccount` 异步写入的 `resourceAccount` 取账号，离开资源页前也不清空 store。现组件改为接收 `accountId`，账号只能在 `getList` 内现取 `props.accountId`；轮询用 `useTimeoutPoll`，watch 里 `reset()` + `resume()` 重置轮次。资源纳管入口卸载时清空 `useResourceAccountStore`。
 - 资源侧 CLB 同步复用业务侧同一套 `use-clb-sync-feedback`（成功 Toast、空 id、`2000002`、跳任务详情）。
 - 跳转进的是业务任务管理详情；`bizs` 取最近一次业务选择，没有单独的资源任务入口。
 
