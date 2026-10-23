@@ -19,6 +19,8 @@
 
 package enumor
 
+import "fmt"
+
 // OsType define os type
 type OsType string
 
@@ -28,7 +30,7 @@ const (
 	OtherOsType   OsType = "Other"
 )
 
-// TCloudImageTypeImageType 镜像
+// TCloudImageType is the Tencent Cloud API image type (cloud-side only).
 type TCloudImageType string
 
 const (
@@ -39,3 +41,40 @@ const (
 	// TCloudSharedImage 共享镜像(其他账户共享给本账户的镜像)
 	TCloudSharedImage TCloudImageType = "SHARED_IMAGE"
 )
+
+// ImageTypeNormalized is the unified image type stored locally and exposed by APIs.
+type ImageTypeNormalized string
+
+const (
+	// ImageTypePublic is the normalized public image type.
+	ImageTypePublic ImageTypeNormalized = "public"
+	// ImageTypePrivate is the normalized private image type.
+	ImageTypePrivate ImageTypeNormalized = "private"
+	// ImageTypeShared is the normalized shared image type.
+	ImageTypeShared ImageTypeNormalized = "shared"
+)
+
+// NormalizeImageType maps cloud-side type values to unified local format for storage.
+// Unknown values are returned as-is (fallback).
+func NormalizeImageType(rawType string) string {
+	switch rawType {
+	case string(TCloudPublicImage), string(ImageTypePublic):
+		return string(ImageTypePublic)
+	case string(TCloudPrivateImage), string(ImageTypePrivate):
+		return string(ImageTypePrivate)
+	case string(TCloudSharedImage), string(ImageTypeShared):
+		return string(ImageTypeShared)
+	default:
+		return rawType
+	}
+}
+
+// Validate validates unified type used by local storage / APIs.
+func (n ImageTypeNormalized) Validate() error {
+	switch n {
+	case ImageTypePublic, ImageTypePrivate, ImageTypeShared:
+		return nil
+	default:
+		return fmt.Errorf("unsupported image type: %s", n)
+	}
+}
