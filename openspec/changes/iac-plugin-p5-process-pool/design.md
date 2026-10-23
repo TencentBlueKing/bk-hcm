@@ -57,6 +57,10 @@
 - 每个进程同一时刻至多一个异步任务（I4），任务必定写回且仅写回一次（I5）；任务带超时；panic 经 `recover` 按传输错误处理并仍写回。
 - 写回顺序：核对进程仍在表中且 `pending` 属于本次任务 → 按返回原因写进程与请求 → 调一次 `scheduleLocked()`；任何分支不得直接 return 而丢下请求。
 - 进程独占靠状态（`starting / configuring`）表达，不设进程级锁。
+- 任务序号：每个进程记录当前任务序号 `task`，写回时 `endTaskLocked` 核对"记录仍在表中且序号一致"才写，避免过期写回改到别的任务。
+- 外部调用加看门狗：`Start` 与 `ConfigureProvider` 在独立协程中执行，超时即按失败写回、不再等待（实现未必响应 ctx）；随后关闭进程，由 `ProcessManager.Close` 让阻塞调用返回，迟到结果丢弃。为此 `NewProcessManager` 同步调用、只构造对象，保证 `Start` 超时时池已持有 manager、能关掉进程。
+- 外部调用的 panic 经 `safeCall` 转成错误，只包裹外部调用本身，写回代码不在 recover 范围内，从结构上保证写回恰好一次。
+- 关闭未能确认进程退出时（`Close` 报错且 `Exited()` 为假），记录保留为 closing 继续占用容量，不删除，避免实际进程数超过上限；由阶段二的退出检查再次确认后删除。
 
 ### D6 调度：取一个派一个，选进程单次遍历进程表
 `scheduleLocked` 整轮只取一次 `now`；循环 `Peek → pickLocked → PopFront → dispatchLocked`，选不出进程即结束本轮（不往后找）。`pickLocked` 只遍历进程表（O(进程数)），优先级：匹配可交付 > 可预约（阶段二）> 空闲未配置 / 已过期 > 空闲且配了别的 config > 新建 > 无。同类候选 `inflight` 少者优先，平局按 ID。阶段一的 `pickLocked` 不含"可预约"分支，阶段二只增加该分支。
@@ -90,7 +94,7 @@
 `Lease` 保存 `procID`、`pool`、业务方法入口与 `acquiredAt`，不保存进程记录指针；`Release` 用 `sync.Once`，进程不在表中则忽略，ID 单调不复用。阶段三仅对持有时长超阈值输出日志与指标，不强制回收。
 
 ### D12 配置：阶段零到三用 `PoolConfig`，阶段四再映射到 `pkg/cc`
-`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（1）、`startTimeout`（30s）、`configureTimeout`（30s）、`maxRetries`（2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（10m）、`maxConfigAge`（30m）、`poolCheckInterval`（30s）、`leaseHoldWarn`。全部由 `PoolConfig` 结构体承载，带 `trySetDefault / Validate`，构造池时传入。校验：`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、各时长大于 0。阶段四把这些参数加入 `IaCPluginConfig`（yaml `iacPlugin` 下，沿用 `trySetDefault / Validate` 约定），另加接入开关与 `registryCheckInterval`（默认 3 秒），由 hc-service 在构造池时映射成 `PoolConfig`；`Validate` 与 `PoolConfig.Validate` 的规则保持一致，避免两处各一套。yaml 与 helm 的 hcservice configmap / values 同步新增并写明含义与取值约束（`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲数下限，回收只处理超出部分）。开关默认关闭。
+`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（1）、`startTimeout`（30s）、`configureTimeout`（30s）、`closeTimeout`（30s，池内部关闭进程的时限；`Pool.Close` 用调用方 ctx）、`maxRetries`（2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（10m）、`maxConfigAge`（30m）、`poolCheckInterval`（30s）、`leaseHoldWarn`。全部由 `PoolConfig` 结构体承载，带 `trySetDefault / Validate`，构造池时传入。校验：`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、各时长大于 0。阶段四把这些参数加入 `IaCPluginConfig`（yaml `iacPlugin` 下，沿用 `trySetDefault / Validate` 约定），另加接入开关与 `registryCheckInterval`（默认 3 秒），由 hc-service 在构造池时映射成 `PoolConfig`；`Validate` 与 `PoolConfig.Validate` 的规则保持一致，避免两处各一套。yaml 与 helm 的 hcservice configmap / values 同步新增并写明含义与取值约束（`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲数下限，回收只处理超出部分）。开关默认关闭。
 
 ### D13 对接契约骨架（阶段零）：只落类型，桩方法返回 `ErrNotImplemented`
 包路径 `cmd/hc-service/logics/tfruntime`。越界范围严格限定为"结构体与接口 + 能让池编译和被调用的最小桩"，不写任何协议逻辑。

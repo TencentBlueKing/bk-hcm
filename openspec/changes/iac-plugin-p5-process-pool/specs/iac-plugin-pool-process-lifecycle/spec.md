@@ -24,7 +24,11 @@
 
 #### Scenario: 请求取消后进程保留
 - **WHEN** 触发创建的请求在进程启动期间被取消
-- **THEN** 进程仍创建并配置完成，回到空闲，供后续队首使用，不因请求取消而被关闭
+- **THEN** 进程仍创建完成并作为未配置的空闲进程保留，供后续队首使用，不因请求取消而被关闭；因已没有请求在等，MUST NOT 再执行 `ConfigureProvider`（避免无谓地把凭证写进进程）
+
+#### Scenario: 外部调用不响应 ctx
+- **WHEN** `Start` 或 `ConfigureProvider` 超过各自超时仍未返回（实现未响应 ctx）
+- **THEN** 池不再等待，按超时失败写回、请求收到可用 `errors.Is(err, context.DeadlineExceeded)` 识别的错误，并关闭该进程，由进程管理的 `Close` 让阻塞的调用返回；迟到的结果被丢弃
 
 #### Scenario: 配置开始即覆盖 binding
 - **WHEN** 进程开始重配为新 key

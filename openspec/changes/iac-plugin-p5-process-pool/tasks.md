@@ -24,36 +24,36 @@
 
 ## 2. 池骨架
 
-- [ ] 2.1 新建 `cmd/hc-service/logics/plugin/tf/pool`：错误变量（`ErrPoolClosed`、`ErrTooManyWaiters`）；池直接引用 `tfruntime.ProcessManager` / `Executor` / `Starter`；池包内定义窄接口 `ProviderIF`（仅 8 个业务方法）供 `Lease` 实现
-- [ ] 2.2 `PoolConfig` 结构体、默认值与校验（`maxProcesses`、`maxLeasesPerProcess`=1、`minIdleProcesses`、`maxQueueLength`、`maxQueueWait`、`startTimeout`、`configureTimeout`、`maxConfigAge`），构造池时传入，不依赖 `pkg/cc`
-- [ ] 2.3 `Config.Key()`：字段排序后的 JSON → SHA-256，口径集中在一个函数；日志只输出 key 前缀
+- [x] 2.1 新建 `cmd/hc-service/logics/plugin/tf/pool`：错误变量（`ErrPoolClosed`、`ErrTooManyWaiters`）；池直接引用 `tfruntime.ProcessManager` / `Executor` / `Starter`；池包内定义窄接口 `ProviderIF`（仅 8 个业务方法）供 `Lease` 实现
+- [x] 2.2 `PoolConfig` 结构体、默认值与校验（`maxProcesses`、`maxLeasesPerProcess`=1、`closeTimeout`、`maxQueueLength`、`maxQueueWait`、`startTimeout`、`configureTimeout`、`maxConfigAge`），构造池时传入，不依赖 `pkg/cc`
+- [x] 2.3 `Config.Key()`：字段排序后的 JSON → SHA-256，口径集中在一个函数；日志只输出 key 前缀
 
 ## 3. 队列与数据结构
 
-- [ ] 3.1 `sliceFIFO`（`PushBack / Peek / PopFront / Remove / Len / Drain`），取消延迟移除，失效元素多于有效元素时压缩
-- [ ] 3.2 `Pool`、`PluginProcess`、`Binding`（`configValid`）、`request`、`Lease` 数据结构；进程 ID 单调不复用；`Lease` 持有 `tfruntime.Executor` 并实现池包的 `ProviderIF`：逐个转发 8 个业务方法，不暴露 `ConfigureProvider` / `GetProviderSchema`；lease 已归还时转发前直接返回错误
-- [ ] 3.3 单测：FIFO 顺序、取消后 `Len`、队首失效元素被跳过、`Drain` 后为空、压缩后顺序不变；`configValid` 的 nil / 配置中 / 已生效 / 已过期
+- [x] 3.1 `sliceFIFO`（`PushBack / Peek / PopFront / Remove / Len / Drain`），取消延迟移除，失效元素多于有效元素时压缩
+- [x] 3.2 `Pool`、`PluginProcess`、`Binding`（`configValid`）、`request`、`Lease` 数据结构；进程 ID 单调不复用；`Lease` 持有 `tfruntime.Executor` 并实现池包的 `ProviderIF`：逐个转发 8 个业务方法，不暴露 `ConfigureProvider` / `GetProviderSchema`；lease 已归还时转发前直接返回错误
+- [x] 3.3 单测：FIFO 顺序、取消后 `Len`、队首失效元素被跳过、`Drain` 后为空、压缩后顺序不变；`configValid` 的 nil / 配置中 / 已生效 / 已过期
 
 ## 4. 调度与交付
 
-- [ ] 4.1 `Acquire`：入队前检查池关闭与队列上限；入队后触发调度；等待结果、`maxQueueWait` 与 `kt.Ctx` 超时
-- [ ] 4.2 `pickLocked`：单次遍历进程表，规则 1（匹配可交付）、2（未配置 / 已过期）、3（重配）、4（新建）、5（无）；同类候选按 `inflight` 少者、平局按 ID
-- [ ] 4.3 `scheduleLocked`：整轮只取一次 `now`；取一个派一个，选不出结束本轮
-- [ ] 4.4 `deliverLocked`、`cancel`（队列中 / 已交付）、`Release`（幂等、进程不存在忽略、归 0 记 `idleSince`、触发调度）
-- [ ] 4.5 表驱动单测（假进程表）：规则优先级、过期后降级为规则 2、正在配置不交付、有在途 lease 不重配、队首派不出去后面不越队、`inflight` 不超上限
+- [x] 4.1 `Acquire`：入队前检查池关闭与队列上限；入队后触发调度；等待结果、`maxQueueWait` 与 `kt.Ctx` 超时
+- [x] 4.2 `pickLocked`：单次遍历进程表，规则 1（匹配可交付）、2（未配置 / 已过期）、3（重配）、4（新建）、5（无）；同类候选按 `inflight` 少者、平局按 ID
+- [x] 4.3 `scheduleLocked`：整轮只取一次 `now`；取一个派一个，选不出结束本轮
+- [x] 4.4 `deliverLocked`、`cancel`（队列中 / 已交付）、`Release`（幂等、进程不存在忽略、归 0 记 `idleSince`、触发调度）
+- [x] 4.5 表驱动单测（假进程表）：规则优先级、过期后降级为规则 2、正在配置不交付、有在途 lease 不重配、队首派不出去后面不越队、`inflight` 不超上限
 
 ## 5. 异步创建、配置与写回
 
-- [ ] 5.1 `startCreateLocked` / `startConfigureLocked`：锁内改状态（`starting` / `configuring`、写 `binding`、`pending=[w]`），锁外调用 `Starter` → `Start` / `ConfigureProvider`，使用池 ctx + 超时
-- [ ] 5.2 写回：核对进程仍在表中与 `pending` 归属；成功设 `boundAt`、交付 `pending`、转 `running`；失败（阶段一语义）转 `closing`、请求直接失败；末尾触发一次调度
-- [ ] 5.3 `recover` 兜底：panic 按传输错误处理且写回一次；`wg` 计数
-- [ ] 5.4 假 `ProcessManager` / `Executor`（放在测试文件内）单测：配置成功交付、`Start` 失败（含 `ErrNotImplemented`）、`Configure` 超时、请求取消后进程保留、写回时进程已不在
+- [x] 5.1 `startCreateLocked` / `startConfigureLocked`：锁内改状态（`starting` / `configuring`、写 `binding`、`pending=[w]`），锁外调用 `Starter` → `Start` / `ConfigureProvider`，使用池 ctx + 超时
+- [x] 5.2 写回：核对进程仍在表中与 `pending` 归属；成功设 `boundAt`、交付 `pending`、转 `running`；失败（阶段一语义）转 `closing`、请求直接失败；末尾触发一次调度
+- [x] 5.3 `recover` 兜底：panic 按传输错误处理且写回一次；`wg` 计数；`Start` / `ConfigureProvider` 加看门狗（不响应 ctx 时超时即写回并关进程）
+- [x] 5.4 假 `ProcessManager` / `Executor`（放在测试文件内）单测：配置成功交付、`Start` 失败（含 `ErrNotImplemented`）、`Configure` 超时、请求取消后进程保留、写回时进程已不在
 
 ## 6. 关闭
 
-- [ ] 6.1 `Pool.Close(ctx)`：置关闭标志、`queue.Drain()` 全部返回 `ErrPoolClosed`、空闲进程转 `closing`、有 lease 的进程调 `ProcessManager.Close(ctx)`、`starting` / `configuring` 等写回后关闭、ctx 超时强制结束
-- [ ] 6.2 单测：排空队列、创建中关闭、关闭后 `Acquire` 立即失败、`closing` 进程归还不回到空闲
-- [ ] 6.3 阶段一收尾：`go test -race` 与 `go vet` 通过；不变式 I1、I2、I3、I6、I7、I10 在测试中以断言函数检查
+- [x] 6.1 `Pool.Close(ctx)`：置关闭标志、`queue.Drain()` 全部返回 `ErrPoolClosed`、空闲进程转 `closing`、有 lease 的进程调 `ProcessManager.Close(ctx)`、`starting` / `configuring` 等写回后关闭、ctx 超时强制结束
+- [x] 6.2 单测：排空队列、创建中关闭、关闭后 `Acquire` 立即失败、`closing` 进程归还不回到空闲
+- [x] 6.3 阶段一收尾：`go test -race` 与 `go vet` 通过；不变式 I1、I2、I3、I6、I7、I10 在测试中以断言函数检查
 
 ## 阶段二：并发利用率与自愈
 

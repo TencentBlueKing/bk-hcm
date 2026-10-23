@@ -67,11 +67,6 @@ func TestDefaultStarter(t *testing.T) {
 }
 
 func TestDiagnosticsError(t *testing.T) {
-	warnOnly := []Diagnostic{{Severity: SeverityWarning, Summary: "deprecated"}}
-	assert.False(t, HasError(warnOnly))
-	assert.NoError(t, DiagnosticsToError(warnOnly))
-	assert.NoError(t, DiagnosticsToError(nil))
-
 	diags := []Diagnostic{
 		{Severity: SeverityWarning, Summary: "deprecated"},
 		{
@@ -81,10 +76,9 @@ func TestDiagnosticsError(t *testing.T) {
 			Attribute: AttributePath{"auth", "secret"},
 		},
 	}
-	assert.True(t, HasError(diags))
 
 	// 业务错误经包装后仍可被 errors.As 识别，传输错误不能。
-	err := fmt.Errorf("configure failed: %w", DiagnosticsToError(diags))
+	err := fmt.Errorf("configure failed: %w", &DiagnosticsError{Diagnostics: diags})
 	var de *DiagnosticsError
 	require.True(t, errors.As(err, &de))
 	assert.Len(t, de.Diagnostics, 2)

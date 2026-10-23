@@ -39,7 +39,7 @@ hc-service SHALL 在插件注册完成并标记就绪之后建立池注册表，
 - **THEN** 不创建池注册表
 
 ### Requirement: 池配置项与 helm 同步
-`pkg/cc` 的 `IaCPluginConfig` SHALL 增加池相关配置项与接入开关，并提供默认值与校验：`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（默认 1）、`startTimeout`（默认 30 秒）、`configureTimeout`（默认 30 秒）、`maxRetries`（默认 2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（默认 10 分钟）、`maxConfigAge`（默认 30 分钟）、`poolCheckInterval`（默认 30 秒）、`registryCheckInterval`（默认 3 秒）、`leaseHoldWarn`、接入开关（默认关闭）。校验规则 MUST 与 `PoolConfig` 的校验一致：拒绝 `maxProcesses < 1`、`maxLeasesPerProcess < 1`、`minIdleProcesses > maxProcesses`、任何时长为 0。`hc_service.yaml` 与 helm 的 hcservice configmap / values MUST 同步，注释说明各项含义与取值约束：`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲进程数下限，回收只处理超出下限的部分。
+`pkg/cc` 的 `IaCPluginConfig` SHALL 增加池相关配置项与接入开关，并提供默认值与校验：`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（默认 1）、`startTimeout`（默认 30 秒）、`configureTimeout`（默认 30 秒）、`closeTimeout`（默认 30 秒）、`maxRetries`（默认 2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（默认 10 分钟）、`maxConfigAge`（默认 30 分钟）、`poolCheckInterval`（默认 30 秒）、`registryCheckInterval`（默认 3 秒）、`leaseHoldWarn`、接入开关（默认关闭）。校验规则 MUST 与 `PoolConfig` 的校验一致：拒绝 `maxProcesses < 1`、`maxLeasesPerProcess < 1`、`minIdleProcesses > maxProcesses`、任何时长为 0。`hc_service.yaml` 与 helm 的 hcservice configmap / values MUST 同步，注释说明各项含义与取值约束：`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲进程数下限，回收只处理超出下限的部分。
 
 #### Scenario: 缺省值
 - **WHEN** 配置文件未设置池相关项

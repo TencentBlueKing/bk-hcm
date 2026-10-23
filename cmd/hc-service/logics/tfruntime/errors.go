@@ -61,21 +61,3 @@ func (e *DiagnosticsError) Error() string {
 	}
 	return "tfruntime: provider returned error diagnostics: " + strings.Join(msgs, "; ")
 }
-
-// HasError 是否存在 Error 级 Diagnostic。Warning 不使调用失败。
-func HasError(diags []Diagnostic) bool {
-	for _, d := range diags {
-		if d.Severity == SeverityError {
-			return true
-		}
-	}
-	return false
-}
-
-// DiagnosticsToError 存在 Error 级 Diagnostic 时返回 *DiagnosticsError，否则返回 nil。
-func DiagnosticsToError(diags []Diagnostic) error {
-	if !HasError(diags) {
-		return nil
-	}
-	return &DiagnosticsError{Diagnostics: diags}
-}

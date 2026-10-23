@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: 池参数与校验
-池 SHALL 通过 `PoolConfig` 结构体接收参数，构造池时传入，池包 MUST NOT 依赖 `pkg/cc` 或任何配置文件；`pkg/cc` 与 yaml 的映射由阶段四（池接入能力）负责。参数及默认值：`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（默认 1）、`startTimeout`（默认 30 秒）、`configureTimeout`（默认 30 秒）、`maxRetries`（默认 2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（默认 10 分钟）、`maxConfigAge`（默认 30 分钟）、`poolCheckInterval`（默认 30 秒）、`leaseHoldWarn`。校验 MUST 拒绝：`maxProcesses < 1`、`maxLeasesPerProcess < 1`、`minIdleProcesses > maxProcesses`、任何时长为 0 或负数。校验失败时构造池 MUST 返回错误，MUST NOT 返回可用的池。
+池 SHALL 通过 `PoolConfig` 结构体接收参数，构造池时传入，池包 MUST NOT 依赖 `pkg/cc` 或任何配置文件；`pkg/cc` 与 yaml 的映射由阶段四（池接入能力）负责。参数及默认值：`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（默认 1）、`startTimeout`（默认 30 秒）、`configureTimeout`（默认 30 秒）、`closeTimeout`（默认 30 秒）、`maxRetries`（默认 2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（默认 10 分钟）、`maxConfigAge`（默认 30 分钟）、`poolCheckInterval`（默认 30 秒）、`leaseHoldWarn`。校验 MUST 拒绝：`maxProcesses < 1`、`maxLeasesPerProcess < 1`、`minIdleProcesses > maxProcesses`、任何时长为 0 或负数。校验失败时构造池 MUST 返回错误，MUST NOT 返回可用的池。
 
 #### Scenario: 缺省值
 - **WHEN** 仅设置 `maxProcesses` 与 `maxQueueLength`，其余参数未设置
