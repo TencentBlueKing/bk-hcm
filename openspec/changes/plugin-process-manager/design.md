@@ -20,7 +20,7 @@ hc-service 今天的云 API 调用走 `service` → `logics` → `pkg/adaptor`�
 - 将 `tfplugin5.proto` 生成的 gRPC 客户端纳入仓库，并用它实现只支持客户端的 `plugin.GRPCPlugin`。
 - `Close` 时先拒绝新调用并等待已发出的调用返回，再调用 `StopProvider`，最后 `Kill`。
 - hc-service 走现有优雅退出时，结束仍在运行的插件进程。
-- 握手后的 stdout / stderr 写入独立日志文件；`go-plugin` 自身日志和握手前 stderr 写入 hc-service 日志。
+- 握手后的 stdout / stderr 写入独立插件日志文件，命名、大小和保留个数复用 glog。`go-plugin` 自身日志和握手前 stderr 写入 hc-service 日志。
 - 插件环境变量使用显式清单。生产默认 `TF_LOG=ERROR`，不继承 hc-service 的日志级别，不传入云账号密钥。
 
 **Non-Goals:**
@@ -29,13 +29,13 @@ hc-service 今天的云 API 调用走 `service` → `logics` → `pkg/adaptor`�
 - 不实现执行器，不封装 GetSchema、Configure、Plan、Apply、Read、Import、ReadDataSource，不做 `DynamicValue` 编解码。
 - 不替换 `pkg/adaptor`，不修改已有资源 Handler。
 - 不在本变更里扩大进程监听的信号集合。`SIGINT` 仍不进入 `pkg/runtime/shutdown`。
-- 不删除已退出进程留下的日志文件，不做日志采集侧配置。
+- 不改 glog 的滚动和采集配置。
 
 ## Decisions
 
 ### 1. 进程生命周期使用 go-plugin，而不是自行握手拨号
 
-采用技术方案的方案 1。一个 `plugin.Client` 对应一个进程；连接关闭即终止进程。再次拉起必须 `plugin.NewClient`，不能对同一个 `Client` 再次 `Start`。
+采用技术方案的方案 1。一个 `plugin.Client` 对应一个进程；连接关闭即终止进程。再次拉起必须 `plugin.NewClient`，不能对同一个 `Client` 再次 `Start`。同一个 `ProcessManager` 只成功 `Start` 一次，再次调用返回错误，不新建 `Client`。另一个进程用另一个 `ProcessManager`。
 
 备选方案是自行解析握手行 `1|5|unix|路径|grpc` 并拨号。进程池的槽位本来就是一条连接绑一个进程，自行拨号换来的重连和保留进程没有收益，却要自己维护 cookie、stdio 和退出。
 
@@ -65,45 +65,34 @@ hc-service 今天的云 API 调用走 `service` → `logics` → `pkg/adaptor`�
 
 `tfprotov5` 的公开结构体本期不负责和生成桩互相拷贝。那一步属于执行器，不在本变更。
 
-### 3. 进程句柄提供调用门闩，Close 按固定顺序执行
+### 3. 每个 RPC 方法自带门闩，Close 按固定顺序执行
 
-`Start` 返回进程句柄，不返回执行器。句柄提供：
+调用方直接调用 `PluginExecutor` 的方法。不提供 `Call` 包装，因为包装约束不住直接调用的人。每个业务 RPC 在方法内部做前置和后置门闩：关闭已开始则失败，通过后记入在途调用，返回时离开。`StopProvider` 由 `Close` 在门闩关闭后调用，不再进入这道门闩。本迭代这些业务方法尚未实现，门闩记在 TODO 里。
 
-- `Call`：在门闩内把生成的 Provider 客户端交给回调。`Close` 开始后 `Call` 直接失败。
-- `Close`：同一句柄上重复调用只执行一次。
+`Close` 在同一句柄上重复调用只执行一次。顺序：
 
-`Close` 顺序：
-
-1. 标记关闭，拒绝新的 `Call`。
-2. 等待已经进入 `Call` 的回调返回。
+1. 标记关闭，拒绝新的方法进入。
+2. 等待已经进入门闩的方法返回。
 3. 调用 `StopProvider`。该调用失败只记日志，不跳过下一步。
 4. 调用 `plugin.Client.Kill()`。按 `go-plugin` 的 gRPC 客户端实现，这一步先请求插件 `Shutdown`，最多等待约 2 秒，再发送 `SIGKILL`。
 
-后续执行器必须经 `Call` 访问客户端。直接保存连接会让 `Close` 看不见在途请求。
-
 ### 4. 服务退出时用 shutdown notifier 回收进程，不占用 FirstShutdown
 
-`tfruntime` 在第一次 `Start` 成功路径上注册一个 `shutdown.AddNotifier`。收到退出通知后关闭登记表中的全部句柄，然后 `Done`。登记表为空时回调立即 `Done`，避免占满 `WaitShutdown(20)` 的 20 秒。
+每个 `ProcessManager` 在自己第一次 `Start` 成功时注册一个 `shutdown.AddNotifier`。收到退出通知后只关闭自己的进程，然后 `Done`。进程已经关闭时回调立即 `Done`，避免占满 `WaitShutdown(20)` 的 20 秒。多个管理器的统一回收属于进程池，不在本期。
 
 不把回收放进 `hcService.finalizer`。该回调已被占用，且文档要求它尽快返回；进程 `Close` 需要等待在途 RPC 和 `Kill`。
 
 本地 `SIGINT` 仍会跳过这套回收。生产环境由 `SIGTERM` 触发，与现有 hc-service 一致。
 
-### 5. 插件日志按进程落独立文件，框架日志留在 hc-service
-
-采用技术方案的方案 2。
+### 5. 插件标准输出复用 glog 的文件管理，单独落盘
 
 | 出口 | 去向 |
 |---|---|
 | `ClientConfig.Logger` | hc-service 日志，带插件名、版本、pid |
 | `ClientConfig.Stderr`（握手前） | hc-service 日志 |
-| `SyncStdout` / `SyncStderr`（握手后） | 同一个插件日志文件，行内标明 `stdout` 或 `stderr` |
+| `SyncStdout` / `SyncStderr`（握手后） | `{日志目录}/plugin` 下的插件日志文件，行内标明 `stdout` 或 `stderr` |
 
-文件路径：`{LogDir}/plugin/{safeName}-{safeVersion}-{pid}.log`。`LogDir` 默认 `cc.HCService().Log.LogDir`。插件名和版本里非 `A-Za-z0-9._-` 的字符替换为 `_`，版本为空时用 `unknown`。pid 在进程启动后才知道，写入器先缓冲，拿到 pid 再打开文件，避免握手阶段丢日志。每行前缀包含 `plugin`、`plugin_version`、`pid`。
-
-进程退出后不删除该文件，方便查看崩溃输出。目录增长由采集和运维清理负责。
-
-备选是三路都写入 hc-service 日志。独立文件更容易按插件检索，也避免插件输出撑大 hc-service 主日志。
+插件文件复用 glog 现有的 `logName`、`MaxSize` 和 `logKeeper`。文件名是 `{程序名}.{插件名}.{主机名}.{用户名}.log.INFO.{YYYYMMDD-HHMMSS}.{pid}`，后缀与服务日志相同，只在程序名后插入插件名。插件名、版本和插件进程 pid 写在行内，版本为空时用 `unknown`。pid 尚未可知的行把 pid 留空。进程关闭只关闭文件描述符，不删除文件。文件放在 `plugin` 子目录：服务日志的 `logKeeper.load` 只扫描日志目录本身，这样不必改它的匹配规则。
 
 ### 6. 环境变量使用显式清单，日志级别默认 ERROR
 
@@ -111,18 +100,18 @@ hc-service 今天的云 API 调用走 `service` → `logics` → `pkg/adaptor`�
 
 - `TF_LOG`：默认 `ERROR`。调用方可以在单次 `Start` 传入 `TRACE`、`DEBUG`、`INFO`、`WARN`、`ERROR` 之一，用于单独拉起一个更高日志级别的进程。其他取值拒绝启动。
 - `PLUGIN_PROTOCOL_VERSIONS=5`。
-- 若所固定的 `go-plugin` 仍读取 `PLUGIN_MIN_PORT` / `PLUGIN_MAX_PORT`，设置为不包含 hc-service 监听端口的固定区间。unix 套接字数据面不使用这两个值。
+- 若所固定的 `go-plugin` 仍读取 `PLUGIN_MIN_PORT` / `PLUGIN_MAX_PORT`，使用 hc-service 配置 `tfPlugin.minPort` / `tfPlugin.maxPort` 这一组区间。未填写时默认 `40000`–`40999`。该区间不得包含 `network.port`，否则配置校验失败。unix 套接字数据面不使用这两个值。
 
 `TF_PLUGIN_MAGIC_COOKIE` 由 `go-plugin` 按握手配置写入，业务代码不把云密钥放进环境变量。
 
 ## Risks / Trade-offs
 
-- [Risk] 握手后没有读者时，插件写 stdout / stderr 会堵住。→ Mitigation：`SyncStdout` / `SyncStderr` 在 `Start` 前装上，并持续写入独立文件。
-- [Risk] `Kill` 会打断仍在执行的插件调用，连接关闭即进程退出。→ Mitigation：`Close` 先拒绝新 `Call` 并等待已进入的回调；后续执行器不得绕过 `Call`。
+- [Risk] 握手后没有读者时，插件写 stdout / stderr 会堵住。→ Mitigation：`SyncStdout` / `SyncStderr` 在 `Start` 前装上，并持续写入插件日志文件。
+- [Risk] `Kill` 会打断仍在执行的插件调用，连接关闭即进程退出。→ Mitigation：每个业务 RPC 在方法内部进入门闩；`Close` 先拒绝新的进入并等待已进入的方法返回。
 - [Risk] `StopProvider` 失败或插件不响应时进程残留。→ Mitigation：无论 `StopProvider` 是否成功都执行 `Kill`；`go-plugin` 在约 2 秒后 `SIGKILL`。
 - [Risk] 优雅退出只有 20 秒，排空过久会被 `os.Exit` 打断。→ Mitigation：`Close` 服从这段预算；超时后进程随 hc-service 一起退出。不在本变更里加长全局退出时间。
 - [Risk] `SIGINT` 不触发 notifier，本地 Ctrl-C 可能留下插件进程。→ Mitigation：与现有服务一致，回收绑定 `SIGTERM` 和优雅退出。不在本变更修改全局信号。
-- [Risk] 按 pid 保留日志文件会占磁盘。→ Mitigation：一进程一文件，退出后不删除；采集按 `plugin/` 目录处理。本变更不做自动清理。
+- [Risk] 插件标准输出增大日志目录占用。→ Mitigation：单文件大小和保留个数沿用 glog。文件在 `plugin` 子目录，行内带插件名。
 - [Risk] 256MB 的 gRPC 消息上限提高单连接内存。→ Mitigation：按协议要求设置，一连接一进程，不在本变更再放大。
 - [Risk] 生成桩与上游 proto 不一致。→ Mitigation：proto 与生成文件一并提交，生成命令写入 `//go:generate`，版本以 proto 文件头中的 5.9 为准。
 
@@ -131,7 +120,7 @@ hc-service 今天的云 API 调用走 `service` → `logics` → `pkg/adaptor`�
 1. 固定 `terraform-plugin-go` 与 `go-plugin` 版本，放入协议 5.9 的 `tfplugin5.proto` 并生成桩代码。
 2. 实现客户端 `GRPCPlugin`、进程句柄和日志写入器。此时尚无业务调用，运行行为不变。
 3. 在第一次 `Start` 时登记 shutdown notifier。部署后若没有 `Start`，notifier 不会注册。
-4. 回滚时移除该包及其依赖即可。没有表结构、配置项和北向 API 变更。已写出的 `plugin/` 日志文件可留在磁盘上。
+4. 回滚时移除该包及其依赖即可。没有表结构、配置项和北向 API 变更。已写出的插件日志文件留在 `{日志目录}/plugin`。
 
 ## Open Questions
 

@@ -19,6 +19,8 @@
 
 package constant
 
+import "time"
+
 const (
 	// TFPluginCoreProtocolVersion 是 go-plugin 自身的握手版本，与 Terraform 插件协议版本无关
 	TFPluginCoreProtocolVersion = 1
@@ -36,4 +38,7 @@ const (
 
 	// TFPluginMaxGRPCMsgSize 是 gRPC 收发消息上限。
 	TFPluginMaxGRPCMsgSize = 256 << 20
+
+	// TFPluginStopProviderTimeout 是 StopProvider 的等待时间。超时后仍 Kill 进程，避免卡住服务退出。
+	TFPluginStopProviderTimeout = 5 * time.Second
 )
