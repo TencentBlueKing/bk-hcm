@@ -17,14 +17,15 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package instance 提供插件实例的业务管理与数据操作逻辑。
 package instance
 
 import (
-	"hcm/cmd/hc-service/logics/plugin/schema"
+	"hcm/cmd/hc-service/logics/iac-plugin/schema"
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
-	hcplugin "hcm/pkg/api/hc-service/plugin"
+	hcplugin "hcm/pkg/api/hc-service/iac-plugin"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -63,11 +64,10 @@ func (m *PluginInstanceManager) CreatePluginInstance(kt *kit.Kit, req *hcplugin.
 		return nil, err
 	}
 
-	pluginSchema, err := m.getActivePluginSchema(kt, req.PluginName)
+	pluginSchema, err := m.getLatestEnabledPluginSchema(kt, req.PluginName)
 	if err != nil {
 		return nil, err
 	}
-
 	attrs, secretAttrs, err := splitAndValidateProperties(pluginSchema.ConfigSchema.Block, req.Properties)
 	if err != nil {
 		logs.Errorf("split and validate plugin instance properties failed, plugin: %s, err: %v, rid: %s",
@@ -87,7 +87,6 @@ func (m *PluginInstanceManager) CreatePluginInstance(kt *kit.Kit, req *hcplugin.
 			},
 		},
 	}
-
 	res, err := m.dataCli.Global.IacPluginInstance.BatchCreate(kt, dsReq)
 	if err != nil {
 		logs.Errorf("create iac_plugin_instance in data-service failed, plugin: %s, name: %s, err: %v, rid: %s",
@@ -124,9 +123,8 @@ func (m *PluginInstanceManager) UpdatePluginInstance(kt *kit.Kit, id string, req
 		Extension: req.Extension,
 		Memo:      req.Memo,
 	}
-
 	if req.Properties != nil {
-		if err := m.populateUpdatedProperties(kt, id, req.Properties, &updateField); err != nil {
+		if err := m.updateProperties(kt, id, req.Properties, &updateField); err != nil {
 			return err
 		}
 	}
@@ -134,7 +132,6 @@ func (m *PluginInstanceManager) UpdatePluginInstance(kt *kit.Kit, id string, req
 	dsReq := &dataplugin.IacPluginInstanceBatchUpdateReq{
 		Items: []dataplugin.IacPluginInstanceUpdateField{updateField},
 	}
-
 	if err := m.dataCli.Global.IacPluginInstance.BatchUpdate(kt, dsReq); err != nil {
 		logs.Errorf("update iac_plugin_instance in data-service failed, id: %s, err: %v, rid: %s", id, err, kt.Rid)
 		return err
@@ -143,7 +140,7 @@ func (m *PluginInstanceManager) UpdatePluginInstance(kt *kit.Kit, id string, req
 	return nil
 }
 
-func (m *PluginInstanceManager) populateUpdatedProperties(kt *kit.Kit, id string, properties map[string]any,
+func (m *PluginInstanceManager) updateProperties(kt *kit.Kit, id string, properties map[string]any,
 	updateField *dataplugin.IacPluginInstanceUpdateField) error {
 
 	existing, err := m.getRawPluginInstanceByID(kt, id)
@@ -152,20 +149,19 @@ func (m *PluginInstanceManager) populateUpdatedProperties(kt *kit.Kit, id string
 		return err
 	}
 
-	pluginSchema, err := m.getActivePluginSchema(kt, existing.PluginName)
+	pluginSchema, err := m.getLatestEnabledPluginSchema(kt, existing.PluginName)
 	if err != nil {
 		return err
 	}
-
 	attrs, secretAttrs, err := splitAndValidateProperties(pluginSchema.ConfigSchema.Block, properties)
 	if err != nil {
 		logs.Errorf("split and validate updated properties failed, id: %s, plugin: %s, err: %v, rid: %s",
 			id, existing.PluginName, err, kt.Rid)
 		return err
 	}
-
 	updateField.Attrs = attrs
 	updateField.SecretAttrs = secretAttrs
+
 	return nil
 }
 
@@ -182,7 +178,6 @@ func (m *PluginInstanceManager) DeletePluginInstance(kt *kit.Kit, id string) err
 	dsReq := &dataplugin.IacPluginInstanceBatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
-
 	if err := m.dataCli.Global.IacPluginInstance.BatchDelete(kt, dsReq); err != nil {
 		logs.Errorf("delete iac_plugin_instance in data-service failed, id: %s, err: %v, rid: %s", id, err, kt.Rid)
 		return err
@@ -220,7 +215,6 @@ func (m *PluginInstanceManager) getRawPluginInstanceByID(kt *kit.Kit, id string)
 			Limit: 1,
 		},
 	}
-
 	res, err := m.dataCli.Global.IacPluginInstance.List(kt, listReq)
 	if err != nil {
 		return nil, err
@@ -253,7 +247,6 @@ func (m *PluginInstanceManager) ListPluginInstance(kt *kit.Kit, req *hcplugin.Pl
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
-
 	rawRes, err := m.dataCli.Global.IacPluginInstance.List(kt, dsReq)
 	if err != nil {
 		logs.Errorf("list iac_plugin_instance from data-service failed, err: %v, rid: %s", err, kt.Rid)
@@ -264,15 +257,14 @@ func (m *PluginInstanceManager) ListPluginInstance(kt *kit.Kit, req *hcplugin.Pl
 	for i := range rawRes.Details {
 		details = append(details, *toCorePluginInstance(&rawRes.Details[i]))
 	}
-
 	return &hcplugin.PluginInstanceListResult{
 		Count:   rawRes.Count,
 		Details: details,
 	}, nil
 }
 
-// getActivePluginSchema 查询当前处于 enabled 状态的活跃插件版本并加载其 Provider Schema。
-func (m *PluginInstanceManager) getActivePluginSchema(kt *kit.Kit, pluginName string) (
+// getLatestEnabledPluginSchema 按创建时间倒序查询当前处于 enabled 状态的最新插件版本并加载其 Provider Schema。
+func (m *PluginInstanceManager) getLatestEnabledPluginSchema(kt *kit.Kit, pluginName string) (
 	*coreplugin.PluginSchema, error) {
 
 	listReq := &core.ListReq{
@@ -283,9 +275,10 @@ func (m *PluginInstanceManager) getActivePluginSchema(kt *kit.Kit, pluginName st
 		Page: &core.BasePage{
 			Start: 0,
 			Limit: 1,
+			Sort:  "created_at",
+			Order: core.Descending,
 		},
 	}
-
 	res, err := m.dataCli.Global.IaCPlugin.List(kt, listReq)
 	if err != nil {
 		logs.Errorf("query active plugin from iac_plugin failed, plugin: %s, err: %v, rid: %s",

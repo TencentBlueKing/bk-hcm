@@ -28,11 +28,11 @@ import (
 	"testing"
 	"time"
 
-	"hcm/cmd/hc-service/logics/plugin/schema"
+	"hcm/cmd/hc-service/logics/iac-plugin/schema"
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
-	hcplugin "hcm/pkg/api/hc-service/plugin"
+	hcplugin "hcm/pkg/api/hc-service/iac-plugin"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -536,7 +536,6 @@ func TestPluginInstanceCRUDFullOverwriteAndMetadataPartialUpdate(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("full properties UpdatePluginInstance failed: %v", err)
 	}
-
 	gotAfterUpdate, err := logic.GetPluginInstance(kt, "pi-001")
 	if err != nil {
 		t.Fatalf("GetPluginInstance after update failed: %v", err)

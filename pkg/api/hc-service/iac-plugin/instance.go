@@ -57,7 +57,6 @@ func (req *PluginInstanceUpdateReq) Validate() error {
 	if len(req.Name) == 0 && req.Properties == nil && req.Extension == nil && req.Memo == nil {
 		return errors.New("at least one of name, properties, extension, memo must be set")
 	}
-
 	return validator.Validate.Struct(req)
 }
 

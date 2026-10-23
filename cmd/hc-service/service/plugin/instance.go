@@ -23,10 +23,10 @@ package plugin
 import (
 	"net/http"
 
-	"hcm/cmd/hc-service/logics/plugin/instance"
-	"hcm/cmd/hc-service/logics/plugin/schema"
+	"hcm/cmd/hc-service/logics/iac-plugin/instance"
+	"hcm/cmd/hc-service/logics/iac-plugin/schema"
 	"hcm/cmd/hc-service/service/capability"
-	hcplugin "hcm/pkg/api/hc-service/plugin"
+	hcplugin "hcm/pkg/api/hc-service/iac-plugin"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -41,9 +41,7 @@ func InitService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-
 	svc.initPluginInstanceRoutes(h)
-
 	h.Load(cap.WebService)
 }
 
@@ -67,7 +65,6 @@ func (svc *service) CreatePluginInstance(cts *rest.Contexts) (any, error) {
 		logs.Errorf("create plugin instance decode request failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		logs.Errorf("create plugin instance validate request failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -95,7 +92,6 @@ func (svc *service) UpdatePluginInstance(cts *rest.Contexts) (any, error) {
 		logs.Errorf("update plugin instance decode request failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		logs.Errorf("update plugin instance validate request failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -147,7 +143,6 @@ func (svc *service) ListPluginInstances(cts *rest.Contexts) (any, error) {
 		logs.Errorf("list plugin instances decode request failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		logs.Errorf("list plugin instances validate request failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

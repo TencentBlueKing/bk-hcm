@@ -22,7 +22,7 @@ package hcservice
 import (
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
-	hcplugin "hcm/pkg/api/hc-service/plugin"
+	hcplugin "hcm/pkg/api/hc-service/iac-plugin"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"

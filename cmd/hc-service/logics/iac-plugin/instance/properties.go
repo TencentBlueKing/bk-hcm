@@ -44,15 +44,14 @@ func splitAndValidateProperties(block *tfjson.SchemaBlock, properties map[string
 func splitBlockProperties(block *tfjson.SchemaBlock, props map[string]any, prefix string) (map[string]any,
 	map[string]any, error) {
 
-	attrs := make(map[string]any)
-	secretAttrs := make(map[string]any)
-
 	// 1. 校验当前 Block 层级声明的必填属性与最小数量大于 0 的嵌套子块是否缺失
 	if err := validateRequiredBlockFields(block, props, prefix); err != nil {
 		return nil, nil, err
 	}
 
 	// 2. 遍历调用方传入的属性键值，按 Attributes 或 NestedBlocks 递归校验并拆分
+	attrs := make(map[string]any)
+	secretAttrs := make(map[string]any)
 	for key, val := range props {
 		if val == nil {
 			continue
@@ -313,10 +312,8 @@ func splitNestedBlockValue(blockType *tfjson.SchemaBlockType, val any, fieldPath
 			return nil, nil, false, false, err
 		}
 		return subAttrs, subSecrets, len(subAttrs) > 0, len(subSecrets) > 0, nil
-
 	case tfjson.SchemaNestingModeMap:
 		return splitMapNestedBlock(blockType, val, fieldPath)
-
 	default:
 		return splitSliceNestedBlock(blockType, val, fieldPath)
 	}
@@ -330,7 +327,6 @@ func splitSliceNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath
 		return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 			"nested block %q expects array of objects", fieldPath)
 	}
-
 	if blockType.MinItems > 0 && uint64(len(sliceVal)) < blockType.MinItems {
 		return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 			"nested block %q requires at least %d items", fieldPath, blockType.MinItems)
@@ -344,7 +340,6 @@ func splitSliceNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath
 	secretSlice := make([]any, len(sliceVal))
 	hasAnyAttrs := false
 	hasAnySecrets := false
-
 	for i, item := range sliceVal {
 		itemPath := fmt.Sprintf("%s[%d]", fieldPath, i)
 		itemMap, ok := item.(map[string]any)
@@ -352,19 +347,16 @@ func splitSliceNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath
 			return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 				"nested block element %q expects object value", itemPath)
 		}
-
 		subAttrs, subSecrets, err := splitBlockProperties(blockType.Block, itemMap, itemPath)
 		if err != nil {
 			return nil, nil, false, false, err
 		}
-
 		if len(subAttrs) > 0 {
 			hasAnyAttrs = true
 			attrsSlice[i] = subAttrs
 		} else {
 			attrsSlice[i] = map[string]any{}
 		}
-
 		if len(subSecrets) > 0 {
 			hasAnySecrets = true
 			secretSlice[i] = subSecrets
@@ -383,7 +375,6 @@ func splitMapNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath s
 		return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 			"nested block %q expects map of objects", fieldPath)
 	}
-
 	if blockType.MinItems > 0 && uint64(len(outerMap)) < blockType.MinItems {
 		return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 			"nested block %q requires at least %d items", fieldPath, blockType.MinItems)
@@ -395,7 +386,6 @@ func splitMapNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath s
 
 	attrsMap := make(map[string]any)
 	secretMap := make(map[string]any)
-
 	for k, item := range outerMap {
 		itemPath := joinFieldPath(fieldPath, k)
 		itemMap, ok := item.(map[string]any)
@@ -403,7 +393,6 @@ func splitMapNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath s
 			return nil, nil, false, false, errf.Newf(errf.InvalidParameter,
 				"nested block element %q expects object value", itemPath)
 		}
-
 		subAttrs, subSecrets, err := splitBlockProperties(blockType.Block, itemMap, itemPath)
 		if err != nil {
 			return nil, nil, false, false, err
@@ -422,11 +411,9 @@ func splitMapNestedBlock(blockType *tfjson.SchemaBlockType, val any, fieldPath s
 // mergeInstanceProperties 将同构拆分的 attrs 与解密后的 secretAttrs 深度合并为完整 properties。
 func mergeInstanceProperties(attrs, secretAttrs map[string]any) map[string]any {
 	merged := make(map[string]any)
-
 	for k, v := range attrs {
 		merged[k] = v
 	}
-
 	for k, secretVal := range secretAttrs {
 		existing, exists := merged[k]
 		if !exists {
@@ -435,17 +422,19 @@ func mergeInstanceProperties(attrs, secretAttrs map[string]any) map[string]any {
 		}
 		merged[k] = mergeJSONNode(existing, secretVal)
 	}
-
 	return merged
 }
 
+// mergeJSONNode 按节点类型递归合并普通属性节点与敏感属性节点。
 func mergeJSONNode(attrNode, secretNode any) any {
+	// 1. 若两侧均为对象（map），按字段键递归深度合并
 	attrMap, attrIsMap := attrNode.(map[string]any)
 	secretMap, secretIsMap := secretNode.(map[string]any)
 	if attrIsMap && secretIsMap {
 		return mergeInstanceProperties(attrMap, secretMap)
 	}
 
+	// 2. 若两侧均为数组（slice），按下标对齐逐项合并（拆分时曾用空对象占位以保持下标对齐）
 	attrSlice, attrIsSlice := attrNode.([]any)
 	secretSlice, secretIsSlice := secretNode.([]any)
 	if attrIsSlice && secretIsSlice {
@@ -467,9 +456,11 @@ func mergeJSONNode(attrNode, secretNode any) any {
 		return res
 	}
 
+	// 3. 标量叶子节点或类型不一致时，以敏感属性节点值覆盖
 	return secretNode
 }
 
+// joinFieldPath 拼接带点号分隔的层级属性路径，用于错误提示定位。
 func joinFieldPath(prefix, key string) string {
 	if len(prefix) == 0 {
 		return key
