@@ -221,6 +221,12 @@ const (
 
 	// PermissionPolicyLibraryTable is permission_policy_library table's name.
 	PermissionPolicyLibraryTable Name = "permission_policy_library"
+
+	// IaCPluginTable is iac_plugin table's name.
+	IaCPluginTable Name = "iac_plugin"
+
+	// IacPluginSchemaTable iac_plugin_schema 表名。
+	IacPluginSchemaTable Name = "iac_plugin_schema"
 )
 
 // Validate whether the table name is valid or not.
@@ -341,6 +347,11 @@ var TableMap = map[Name]TableConfig{
 	PermissionTemplateTable: {EnableTenant: true},
 
 	PermissionPolicyLibraryTable: {EnableTenant: true},
+
+	// IaC 插件是平台级资源，不区分租户
+	IaCPluginTable: {},
+
+	IacPluginSchemaTable: {},
 }
 
 // Register 注册表名
