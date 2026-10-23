@@ -37,7 +37,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // initHuaWeiRouteService initialize the huawei route service.

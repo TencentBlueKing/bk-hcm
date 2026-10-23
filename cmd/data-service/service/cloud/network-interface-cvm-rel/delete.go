@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchDeleteNetworkCvmRels ...

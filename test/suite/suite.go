@@ -36,7 +36,7 @@ import (
 
 	// mysql driver for clear table
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 	"github.com/spf13/pflag"
 )
 

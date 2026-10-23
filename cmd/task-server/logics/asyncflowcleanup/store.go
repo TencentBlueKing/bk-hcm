@@ -32,7 +32,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // flowStore 定义清理逻辑依赖的 DB 操作，抽成接口是为了让主流程在单元测试中可以注入桩实现。

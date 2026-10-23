@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // UpdateBillSyncRecord account with options

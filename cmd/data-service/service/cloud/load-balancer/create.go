@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateLoadBalancer 批量创建负载均衡
