@@ -40,7 +40,6 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
   - 新增取消三态处理（队列中 / `pending` 中 / 已交付）、任务 panic 恢复与超时
   - 新增池内定时任务：**空闲进程数统一口径（`running && inflight == 0`，不论是否已配置）**；空闲数低于 `minIdleProcesses` 时预热补足，**仅当空闲数高于 `minIdleProcesses` 时才回收超时空闲进程，且最多回收到恰好剩 `minIdleProcesses` 个**；另有 `Exited()` 检查、`CheckHealth()` 检查，并无条件触发一次调度作为兜底
 - **阶段三：可观测性**
-  - 新增 lease 持有超时告警（只告警，不强制回收）
   - 新增池指标与日志（排队时长、队列长度、各状态进程数、空闲数、重试数、失败分类）；日志与指标不含 config / 凭证
 - **阶段四：接入与运维（前置：阶段三完成且分支已与注册 / Schema 分支合并）**
   - 新增池注册表：按本副本已启用的 tf 插件建池 / 预热，运行期按周期读取插件状态，停用时 `Close` 后移除，同一插件至多一个池
@@ -61,7 +60,7 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
 - `iac-plugin-pool-scheduling`：lease 交付模型、FIFO 队列、调度规则、配置有效期、容量与队列限制（阶段一，预约规则在阶段二补充）
 - `iac-plugin-pool-process-lifecycle`：进程状态与容量占用、异步创建 / 配置及写回、归还与关闭（阶段一）
 - `iac-plugin-pool-resilience`：准备期预约、失败分流与重试、取消处理、定时巡检与预热回收（阶段二）
-- `iac-plugin-pool-observability`：池参数校验、lease 泄漏告警、指标与脱敏（阶段三）
+- `iac-plugin-pool-observability`：池参数校验、指标与脱敏（阶段三）
 - `iac-plugin-pool-integration`：池注册表与启停、hc-service 接入与开关、配置项与 helm 同步（阶段四）
 
 ### Modified Capabilities
@@ -71,6 +70,7 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
 ## Impact
 
 - **cmd/hc-service/logics/tfruntime**（新增）：契约骨架，仅类型与桩方法
+- **pkg/metrics/plugin_pool.go**（新增）：进程池指标定义，沿用 `pkg/metrics` 的注册方式
 - **cmd/hc-service/logics/plugin/tf/pool**（新增）：`Pool`、`PluginProcess`、`Lease`、`request`、队列、调度、定时任务；直接使用 `tfruntime` 的接口
 - 阶段零到三：无既有文件被修改；无新增第三方依赖（`terraform-json` 已在 go.mod；go-plugin 等由对接方真实实现时引入）
 - 阶段四（合并后）：

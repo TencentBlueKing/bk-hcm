@@ -61,26 +61,26 @@
 
 ## 7. 准备期预约
 
-- [ ] 7.1 `pickLocked` 增加规则 1b（`starting` / `configuring`、key 一致、`boundAt` 为空、`len(pending) < maxLeasesPerProcess`），优先级位于直接交付之后、空闲配置之前；`dispatchLocked` 增加预约分支
-- [ ] 7.2 配置成功批量交付：先设 `boundAt`，按 `pending` 顺序交付、跳过已取消，清空 `pending`
-- [ ] 7.3 单测：同配置突发共享一个进程、预约已满转后续规则、预约不越队、已取消预约被跳过
+- [x] 7.1 `pickLocked` 增加规则 1b（`starting` / `configuring`、key 一致、`boundAt` 为空、`len(pending) < maxLeasesPerProcess`），优先级位于直接交付之后、空闲配置之前；`dispatchLocked` 增加预约分支
+- [x] 7.2 配置成功批量交付：先设 `boundAt`，按 `pending` 顺序交付、跳过已取消，清空 `pending`
+- [x] 7.3 单测：同配置突发共享一个进程、预约已满转后续规则、预约不越队、已取消预约被跳过
 
 ## 8. 失败分流与重试
 
-- [ ] 8.1 `failPendingLocked` / `retryOrFailLocked`：取走 `pending` 并置空、保持原相对顺序回队尾、`attempts > maxRetries` 或池关闭则失败
-- [ ] 8.2 写回按错误类型分流：`errors.As(*tfruntime.DiagnosticsError)` 为业务错误 → `running` + `binding=nil` + 整批失败；`Start` 失败 / 超时、`Configure` 超时 / 传输错误、准备期进程退出 → `closing` 或删记录 + 重试
-- [ ] 8.3 `Start` 失败后确认无残留（`Exited()` 为真，或 `Close(ctx)` 强制结束后确认），确认不了转 `closing`
-- [ ] 8.4 取消补全：请求在 `pending` 中只置 `done`，交付与回收时跳过；取消触发调度
-- [ ] 8.5 单测：失败表逐行（业务错误整批失败、传输错误回队尾保序、重试耗尽、重复回收不重复入队）、日志与错误不含 config
+- [x] 8.1 `failPendingLocked` / `retryOrFailLocked`：取走 `pending` 并置空、保持原相对顺序回队尾、`attempts > maxRetries` 或池关闭则失败
+- [x] 8.2 写回按错误类型分流：`errors.As(*tfruntime.DiagnosticsError)` 为业务错误 → `running` + `binding=nil` + 整批失败；`Start` 失败 / 超时、`Configure` 超时 / 传输错误、准备期进程退出 → `closing` 或删记录 + 重试
+- [x] 8.3 `Start` 失败后确认无残留（`Exited()` 为真，或 `Close(ctx)` 强制结束后确认），确认不了转 `closing`
+- [x] 8.4 取消补全：请求在 `pending` 中只置 `done`，交付与回收时跳过；取消触发调度
+- [x] 8.5 单测：失败表逐行（业务错误整批失败、传输错误回队尾保序、重试耗尽、重复回收不重复入队）、日志与错误不含 config
 
 ## 9. 定时巡检
 
-- [ ] 9.1 `idleCountLocked`：按统一口径统计空闲数（`running && inflight==0`，不论是否已配置 / 过期；加上未被认领的预热 `starting`）
-- [ ] 9.2 池内 ticker（`poolCheckInterval`）：`idle < min` 补足未配置进程（容量有余才补，失败退避，池满不挤占）；`idle > min` 才回收，只回收空闲时长超过 `idleReclaimTimeout` 的进程，空闲最久优先，一轮最多回收 `idle - min` 个
-- [ ] 9.3 `Exited()` 检查（删记录、释放容量、回收 `pending`、触发调度）与 `CheckHealth()` 检查（仅 `running`，报错转 `closing`）；每轮末尾无条件触发调度；`Close` 停止巡检
-- [ ] 9.4 单测：已配置空闲进程计入空闲数、`idle == min` 不回收、`idle=5,min=2` 全部超时只回收 3 个且空闲最久优先、部分未超时只回收超时者、回收后被占用由预热补回、池满不预热、退出进程释放容量并回收 `pending`、`CheckHealth` 失败转 `closing`、兜底调度能唤醒队首
-- [ ] 9.5 基准测试：`maxProcesses × maxLeasesPerProcess` 取典型值与较大值，度量 `scheduleLocked` 单轮耗时与排队 1000 / 10000 个请求时的 `Peek` 开销
-- [ ] 9.6 阶段二收尾：`go test -race`、`go vet` 通过；不变式 I4、I5、I8、I9 补断言
+- [x] 9.1 `idleCountLocked`：按统一口径统计空闲数（`running && inflight==0`，不论是否已配置 / 过期；加上未被认领的预热 `starting`）
+- [x] 9.2 池内 ticker（`poolCheckInterval`）：`idle < min` 补足未配置进程（容量有余才补，只在巡检时补建，池满不挤占）；`idle > min` 才回收，只回收空闲时长超过 `idleReclaimTimeout` 的进程，空闲最久优先，一轮最多回收 `idle - min` 个
+- [x] 9.3 `Exited()` 检查（删记录、释放容量、回收 `pending`、触发调度）与 `CheckHealth()` 检查（仅 `running`，报错转 `closing`）；每轮末尾无条件触发调度；`Close` 停止巡检
+- [x] 9.4 单测：已配置空闲进程计入空闲数、`idle == min` 不回收、`idle=5,min=2` 全部超时只回收 3 个且空闲最久优先、部分未超时只回收超时者、回收后被占用由预热补回、池满不预热、退出进程释放容量并回收 `pending`、`CheckHealth` 失败转 `closing`、兜底调度能唤醒队首
+- [x] 9.5 基准测试：`maxProcesses × maxLeasesPerProcess` 取典型值与较大值，度量 `scheduleLocked` 单轮耗时与排队 1000 / 10000 个请求时的 `Peek` 开销
+- [x] 9.6 阶段二收尾：`go test -race`、`go vet` 通过；不变式 I4、I5、I8、I9 补断言
 
 ## 阶段三：可观测性
 
@@ -88,21 +88,20 @@
 
 ## 10. 参数校验补全
 
-- [ ] 10.1 `PoolConfig` 补齐 `maxRetries`、`idleReclaimTimeout`、`poolCheckInterval`、`leaseHoldWarn` 的默认值与校验（`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、时长大于 0）；构造池时校验失败返回错误
-- [ ] 10.2 单测：缺省值通过校验、非法组合被拒绝
+- [x] 10.1 `PoolConfig` 补齐 `maxRetries`、`idleReclaimTimeout`、`poolCheckInterval` 的默认值与校验（`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、时长大于 0）；构造池时校验失败返回错误
+- [x] 10.2 单测：缺省值通过校验、非法组合被拒绝
 
-## 11. lease 泄漏告警与指标
+## 11. 指标
 
-- [ ] 11.1 `Lease` 记录 `acquiredAt`；巡检中对持有超过 `leaseHoldWarn` 的 lease 输出一次告警日志并增加指标，不强制回收；归还后不再告警
-- [ ] 11.2 指标：排队数、排队时长、各状态进程数、空闲进程数、`inflight` 总数、重试数、失败数（业务 / 传输 / 启动）、队列满拒绝与排队超时数；沿用 `pkg/metrics` 既有习惯，以插件名区分
-- [ ] 11.3 复核全部日志、错误与指标标签不含 config / 凭证，只出现 key 前缀
-- [ ] 11.4 单测：同一超时 lease 只告警一次、归还后不再告警（用可注入的时钟，不抽象接口）
+- [x] 11.1 ~~lease 持有超时告警~~：已移除（第一版不做，留作备选）
+- [x] 11.2 指标（11 个原子指标，5 个事件记录点 + 1 个抓取时 Collector）：`acquire_seconds{result}`、`lease_hold_seconds`、`start_seconds{result}`、`configure_seconds{result}`、`retries_total`；抓取时读取 `queue_length`、`queue_oldest_wait_seconds`、`processes{state}`、`inflight_leases`、`max_processes`、`max_leases_per_process`
+- [x] 11.3 复核全部日志、错误与指标标签不含 config / 凭证，只出现 key 前缀
 
 ## 12. 收尾
 
-- [ ] 12.1 `go build ./...`、`go vet`、新增包 `go test -race` 通过
-- [ ] 12.2 `git diff --stat upstream/feat-plugin` 确认只有新增文件，`go.mod` / `go.sum` 无变化
-- [ ] 12.3 阶段三完成。**此处停止**：阶段四必须等分支与注册 / Schema 分支（P1~P4）合并后才能开工
+- [x] 12.1 `go build ./...`、`go vet`、新增包 `go test -race` 通过
+- [x] 12.2 `git diff --stat upstream/feat-plugin` 确认只有新增文件，`go.mod` / `go.sum` 无变化
+- [x] 12.3 阶段三完成。**此处停止**：阶段四必须等分支与注册 / Schema 分支（P1~P4）合并后才能开工
 
 ## 阶段四：接入与运维（合并后）
 

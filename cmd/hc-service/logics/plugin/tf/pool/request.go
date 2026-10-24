@@ -38,21 +38,18 @@ const (
 )
 
 // request 一次 Acquire 的等待记录，除 ch 外的字段受 PluginPool.poolLock 保护。
-//
-// state 为 requestQueued 即在等待队列中；requestPending 即在某个进程的 pending 中；
-// requestDone 即已交付、已失败或已取消。
 type request struct {
 	// config 插件实例的 properties（含凭证），不得进入日志与错误信息。
 	config map[string]any
 	// key config 的匹配键，入队前算好。
 	key string
-	// kt 发起这次 Acquire 的 kit。后台任务不使用其中的 Ctx，只在日志里用 Rid。
+	// kt 发起这次 Acquire 的 kit。后台拉起和配置用自己的 taskKit，不用这个 Ctx。
 	kt         *kit.Kit
 	enqueuedAt time.Time
-
-	// state 请求所处位置，enumeration values such as: queued/pending/done。
-	state requestState
-	// ch 容量为 1，每个请求只写入一次（由 requestDone 保证），因此在锁内写入不会阻塞。
+	// attempts 进程侧失败后的重试次数。
+	attempts int
+	state    requestState
+	// ch 容量为 1，每个请求只写入一次（由 requestDone 保证），所以在锁内写入不会阻塞。
 	ch chan result
 }
 

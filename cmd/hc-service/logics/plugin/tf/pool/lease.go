@@ -57,9 +57,10 @@ var _ ProviderIF = (*Lease)(nil)
 //
 // lease 只记录进程 ID，不持有池内进程记录：进程退出后记录被删除，归还时按 ID 查不到即忽略。
 type Lease struct {
-	pool       *PluginPool
-	procID     uint64
-	exec       tfruntime.Executor
+	pool   *PluginPool
+	procID uint64
+	exec   tfruntime.Executor
+	// acquiredAt 交付时间，归还时用于记录持有时长。
 	acquiredAt time.Time
 	released   atomic.Bool
 }
@@ -69,7 +70,7 @@ func (l *Lease) Release() {
 	if l == nil || !l.released.CompareAndSwap(false, true) {
 		return
 	}
-	l.pool.release(l.procID)
+	l.pool.release(l)
 }
 
 // ValidateResourceTypeConfig 校验资源声明。

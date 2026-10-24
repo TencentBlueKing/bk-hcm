@@ -29,26 +29,23 @@ import (
 type procState string
 
 const (
-	// stateStarting 已占用容量，正在拉起进程与握手，尚无执行器。
+	// stateStarting 已占用容量，正在拉起进程，尚无执行器。
 	stateStarting procState = "starting"
 	// stateConfiguring 正在 ConfigureProvider（含重配），不能交付、不能重配、不能回收。
 	stateConfiguring procState = "configuring"
-	// stateRunning 可交付或可配置；空闲 / 使用中 / 已满由 binding 与 inflight 推导，不单独存储。
+	// stateRunning 可交付或可配置；空闲 / 使用中 / 已满由 binding 与 inflight 推导。
 	stateRunning procState = "running"
-	// stateClosing 已开始关闭，等待进程确认退出，仍占用容量。
+	// stateClosing 正在关闭，确认进程退出前仍占用容量。
 	stateClosing procState = "closing"
 )
 
-// binding 进程当前的 Provider 配置。
+// binding 进程上的 Provider 配置。
 //
-// 取值语义：
-//   - 进程上 binding 为 nil：未配置；
-//   - boundAt 为零值：正在配置成 key，尚未生效，只能等待，不能交付；
-//   - boundAt 非零：配置已生效，是否过期由 MaxConfigAge 判断。
-//
+// 进程的 binding 为 nil 表示未配置；boundAt 为零值表示正在配置成 key、尚未生效；
+// boundAt 非零表示已生效，是否过期由 MaxConfigAge 判断。
 // 配置开始时就写入目标（旧配置从此不可信），成功时补 boundAt，失败时整体清空。
 type binding struct {
-	// config 插件实例的 properties（含凭证），不得进入日志与错误信息。
+	// config 含凭证，不得进入日志与错误信息。
 	config  map[string]any
 	key     string
 	boundAt time.Time
@@ -66,31 +63,30 @@ func (b *binding) valid(now time.Time, maxAge time.Duration) bool {
 
 // pluginProcess 池内一个插件进程的记录，所有字段受 PluginPool.poolLock 保护。
 //
-// 不变式（每次释放锁时成立）：
-//   - 0 <= inflight <= MaxLeasesPerProcess；starting / configuring 期间 inflight == 0；
-//   - running 时 binding 为 nil 或已生效，pending 为空；
-//   - pending 只在 starting / configuring 期间非空，长度不超过 MaxLeasesPerProcess。
+// 每次释放锁时成立：
+//   - 0 <= inflight <= MaxLeasesPerProcess，starting / configuring 期间 inflight 为 0；
+//   - pending 只在 starting / configuring 期间非空，长度不超过 MaxLeasesPerProcess；
+//   - running 时 binding 为 nil 或已生效。
 type pluginProcess struct {
-	// id 池内单调递增，不复用：lease 按 id 归还，进程退出后同 id 不会指向新进程。
+	// id 单调递增、不复用：lease 按 id 归还，进程退出后同一个 id 不会指到新进程。
 	id    uint64
 	state procState
 
 	binding *binding
-	// inflight 已交付、未归还的 lease 数。判断并发空位只看它。
+	// inflight 已交付、未归还的 lease 数。
 	inflight int
-	// pending 本次准备（创建 / 配置）成功后要交付的请求，按到达顺序，含触发者。
-	// 已取消的请求留在其中，交付时跳过。
+	// pending 本次准备（创建或配置）成功后要交付的请求，按到达顺序，含触发者。已取消的留在其中，交付时跳过。
 	pending []*request
-	// idleSince 最近一次变为空闲（inflight 归 0）的时间，用于候选排序。
+	// idleSince 最近一次变为空闲的时间。
 	idleSince time.Time
 
-	// manager 在创建任务里由 Starter 返回后才写入；创建失败时可能为 nil。
+	// manager 创建任务拿到后写入，之后不再改变；starting 期间为 nil。
 	manager tfruntime.ProcessManager
-	// exec starting 期间为 nil。
+	// exec 进程拉起后写入；starting 期间为 nil。
 	exec tfruntime.Executor
 }
 
-// hasLivePending 本次准备是否还有未取消的请求在等。
+// hasLivePending 是否还有未取消的请求在等这次准备。
 func (proc *pluginProcess) hasLivePending() bool {
 	for _, w := range proc.pending {
 		if w.state != requestDone {
@@ -98,4 +94,9 @@ func (proc *pluginProcess) hasLivePending() bool {
 		}
 	}
 	return false
+}
+
+// idle 是否空闲：running 且没有在途 lease，不论是否已配置。
+func (proc *pluginProcess) idle() bool {
+	return proc.state == stateRunning && proc.inflight == 0
 }

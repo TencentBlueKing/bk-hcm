@@ -67,7 +67,7 @@
 每个池 SHALL 按 `poolCheckInterval` 周期巡检自己的进程，慢操作在锁外执行。
 
 **空闲进程**的口径 MUST 统一为：状态为 `running` 且 `inflight == 0` 的进程，不论是否已配置、配置是否已过期；尚未被任何请求认领的预热进程（`starting` 且 `pending` 为空）MUST 按"将成为空闲"计入。预热与回收 MUST 使用同一个空闲数 `idle` 与同一个下限 `minIdleProcesses`（记为 `min`）：
-- 预热：`idle < min` 时补建 `min - idle` 个未配置进程（缺口计入 `starting`，不计 `configuring`）；容量有余才补，失败按退避重试；池满时 MUST NOT 挤占服务中的进程。
+- 预热：`idle < min` 时补建 `min - idle` 个未配置进程（缺口计入 `starting`，不计 `configuring`）；容量有余才补，补建只在巡检时进行（巡检周期即重试间隔），不另设退避；池满时 MUST NOT 挤占服务中的进程。
 - 空闲回收：**仅当 `idle > min` 时才回收**；回收对象 MUST 是空闲时长超过 `idleReclaimTimeout` 的空闲进程，按空闲最久优先，**一轮最多回收 `idle - min` 个**，使回收后空闲数不低于 `min`；`idle <= min` 时 MUST NOT 回收任何进程。
 - 退出检查：`Exited()` 为真的进程 MUST 删记录、释放容量、回收其 `pending`，并触发调度。
 - 连接检查：对 `running` 状态的进程调用 `CheckHealth()`，报错则转 `closing`，确认退出后删记录；`starting` / `configuring` 的进程 MUST NOT 做健康检查，由任务超时处理。

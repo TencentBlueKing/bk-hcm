@@ -20,6 +20,7 @@
 package pool
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -43,16 +44,24 @@ type procSpec struct {
 func pickPool(t *testing.T, maxProcs, maxLeases int, specs ...procSpec) *PluginPool {
 	t.Helper()
 
+	minIdle := defaultMinIdleProcesses
+	if maxProcs < minIdle {
+		minIdle = maxProcs
+	}
 	p, err := NewPluginPool(Options{PluginName: "tcloud", ExecPath: "/bin/fake", Starter: &fakeStarter{},
-		Config: PoolConfig{MaxProcesses: maxProcs, MaxLeasesPerProcess: maxLeases, MaxQueueLength: 10,
-			MaxConfigAge: 30 * time.Minute}})
+		Config: PoolConfig{MaxProcesses: maxProcs, MaxLeasesPerProcess: maxLeases, MinIdleProcesses: minIdle,
+			MaxQueueLength: 10, MaxConfigAge: 30 * time.Minute, PoolCheckInterval: time.Hour}})
 	require.NoError(t, err)
+	t.Cleanup(func() { _ = p.Close(context.Background()) })
 
 	now := baseTime.Add(time.Hour)
 	for _, s := range specs {
 		proc := &pluginProcess{id: s.id, state: s.state, inflight: s.inflight, idleSince: baseTime.Add(s.idle)}
 		if s.pending > 0 {
 			proc.pending = make([]*request, s.pending)
+			for i := range proc.pending {
+				proc.pending[i] = &request{state: requestPending, ch: make(chan result, 1)}
+			}
 		}
 		if s.key != "" {
 			proc.binding = &binding{key: s.key}

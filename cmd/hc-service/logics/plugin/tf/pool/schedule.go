@@ -20,9 +20,8 @@
 package pool
 
 import (
+	"cmp"
 	"time"
-
-	"hcm/pkg/logs"
 )
 
 // action 调度器为队首选出的动作。
@@ -37,14 +36,13 @@ const (
 	actionReserve
 	// actionConfigure 规则 2 / 3：空闲进程（未配置、已过期，或配置了别的）配置成请求的配置。
 	actionConfigure
-	// actionCreate 规则 4：进程数未到上限，新建进程再配置。
+	// actionCreate 规则 4：进程数未到上限，新建进程。
 	actionCreate
 )
 
-// scheduleLocked 取一个、派一个：只看队首，为它选进程并派发，选不出即结束本轮，不越过队首。
+// scheduleLocked 只看队首：为它选进程并派发，再看下一个；选不出就结束，不越过队首。
 //
-// 一轮可以连续派发多个请求；慢操作都交给异步任务，本函数只做内存读写。
-// 整轮只取一次当前时间，避免配置在一轮中途过期导致前后判断不一致。
+// 慢操作都交给协程，这里只做内存读写。整轮只取一次当前时间，避免配置在一轮中途过期导致判断不一致。
 func (p *PluginPool) scheduleLocked() {
 	if p.closed {
 		return
@@ -53,7 +51,6 @@ func (p *PluginPool) scheduleLocked() {
 	now := p.now()
 	for {
 		w, ok := p.queue.Peek()
-		//没有可处理的请求，结束本轮调度
 		if !ok {
 			return
 		}
@@ -75,70 +72,60 @@ func (p *PluginPool) scheduleLocked() {
 			p.startConfigureLocked(proc, w)
 		case actionCreate:
 			p.startCreateLocked(w)
-		default:
-			logs.Errorf("plugin %s pool dispatched unknown action %d, rid: %s", p.pluginName, act, w.kt.Rid)
 		}
 	}
 }
 
-// pickLocked 为配置键 key 选进程，单次遍历进程表，耗时与队列长度无关。
+// pickLocked 为配置键 key 选进程，只遍历进程表，耗时与队列长度无关。
 //
 // 优先级：
 //
-//	1a. running、配置已生效未过期且 key 一致、inflight 未满：直接交付；多个候选取 inflight 少的，再取 boundAt 更新的；
-//	1b. starting / configuring、正在配置成同一个 key、pending 未满：加入 pending 预约；多个候选取 pending 少的；
-//	2.  running、inflight 为 0、未配置或配置已过期：配置；
-//	3.  running、inflight 为 0、配置了别的且未过期：重配；
-//	4.  以上都没有且进程数未到上限：新建；
-//	5.  都不满足：不派发。
+//	1a. running、配置已生效且 key 一致、inflight 未满：直接交付；取 inflight 少的，再取配置更新的；
+//	1b. starting / configuring、正在配置成同一个 key、pending 未满：预约；取 pending 少的；
+//	2.  running 空闲、未配置或配置已过期：配置；取空闲最久的；
+//	3.  running 空闲、配置了别的：重配；取空闲最久的；
+//	4.  进程数未到上限：新建；
+//	5.  都不满足：等待。
 //
-// 规则 2、3 要求 inflight 为 0：有在途 lease 时重配，会让这些 lease 后续的调用用上别人的配置。
-// 规则 2、3 的同类候选取空闲最久的；所有平局按进程 ID 取小，保证结果确定。
+// 规则 2、3 要求没有在途 lease，否则这些 lease 后续的调用会用上别人的配置。平局一律取进程 ID 小的。
 func (p *PluginPool) pickLocked(now time.Time, key string) (*pluginProcess, action) {
 	var matched, reserved, unbound, other *pluginProcess
 
 	for _, proc := range p.procs {
 		switch proc.state {
 		case stateRunning:
-			if proc.binding.valid(now, p.cfg.MaxConfigAge) {
-				switch {
-				case proc.binding.key == key:
-					if proc.inflight < p.cfg.MaxLeasesPerProcess && lessLoaded(proc, matched) {
-						matched = proc
-					}
-				case proc.inflight == 0:
-					if lessIdle(proc, other) {
-						other = proc
-					}
+			switch {
+			case !proc.binding.valid(now, p.cfg.MaxConfigAge):
+				if proc.inflight == 0 && idleLonger(proc, unbound) {
+					unbound = proc
 				}
-				continue
+			case proc.binding.key == key:
+				if proc.inflight < p.cfg.MaxLeasesPerProcess && lessLoaded(proc, matched) {
+					matched = proc
+				}
+			case proc.inflight == 0:
+				if idleLonger(proc, other) {
+					other = proc
+				}
 			}
 
-			if proc.inflight == 0 && lessIdle(proc, unbound) {
-				unbound = proc
-			}
 		case stateStarting, stateConfiguring:
 			if proc.binding.configuring() && proc.binding.key == key &&
-				len(proc.pending) < p.cfg.MaxLeasesPerProcess && lessPending(proc, reserved) {
+				len(proc.pending) < p.cfg.MaxLeasesPerProcess && fewerPending(proc, reserved) {
 				reserved = proc
 			}
 		}
 	}
 
 	switch {
-	//规则 1a：已按同样配置配好且有空位，直接交付。
 	case matched != nil:
 		return matched, actionDeliver
-	//规则 1b：正在按同样配置准备且预约未满，加入 pending。
 	case reserved != nil:
 		return reserved, actionReserve
-	//规则 2：空闲进程（未配置、已过期，或配置了别的）配置成请求的配置。
 	case unbound != nil:
 		return unbound, actionConfigure
-	//规则 3：running、inflight 为 0、配置了别的且未过期：重配。
 	case other != nil:
 		return other, actionConfigure
-	//规则 4：进程数未到上限，新建进程再配置。
 	case len(p.procs) < p.cfg.MaxProcesses:
 		return nil, actionCreate
 	default:
@@ -148,48 +135,35 @@ func (p *PluginPool) pickLocked(now time.Time, key string) (*pluginProcess, acti
 
 // deliverLocked 把进程上的一个名额交给请求。已结束的请求不占名额。
 func (p *PluginPool) deliverLocked(proc *pluginProcess, w *request) {
-	if w.state == requestDone {
-		return
-	}
-
-	proc.inflight++
 	lease := &Lease{pool: p, procID: proc.id, exec: proc.exec, acquiredAt: p.now()}
-	finishRequestLocked(w, result{lease: lease})
+	if finishRequestLocked(w, result{lease: lease}) {
+		proc.inflight++
+	}
 }
 
-// lessLoaded a 是否比当前候选 b 更适合直接交付：inflight 更少优先，inflight 相同取 boundAt 更新的，平局取 ID 小的。
-// b 为 nil 时为真。
+// lessLoaded a 是否比候选 b 更适合直接交付：inflight 少的优先，再取配置更新的（离过期更远）。
 func lessLoaded(a, b *pluginProcess) bool {
 	if b == nil {
 		return true
 	}
-	if a.inflight != b.inflight {
-		return a.inflight < b.inflight
-	}
-	if !a.binding.boundAt.Equal(b.binding.boundAt) {
-		return a.binding.boundAt.After(b.binding.boundAt)
-	}
-	return a.id < b.id
+	return cmp.Or(cmp.Compare(a.inflight, b.inflight), b.binding.boundAt.Compare(a.binding.boundAt),
+		cmp.Compare(a.id, b.id)) < 0
 }
 
-// lessPending a 是否比当前候选 b 更适合加入预约：pending 更少，平局取 ID 小的。b 为 nil 时为真。
-func lessPending(a, b *pluginProcess) bool {
+// fewerPending a 是否比候选 b 更适合预约：pending 少的优先。
+func fewerPending(a, b *pluginProcess) bool {
 	if b == nil {
 		return true
 	}
-	if len(a.pending) != len(b.pending) {
-		return len(a.pending) < len(b.pending)
-	}
-	return a.id < b.id
+	return cmp.Or(cmp.Compare(len(a.pending), len(b.pending)), cmp.Compare(a.id, b.id)) < 0
 }
 
-// lessIdle a 是否比当前候选 b 更适合被配置：空闲更久，平局取 ID 小的。b 为 nil 时为真。
-func lessIdle(a, b *pluginProcess) bool {
-	if b == nil {
-		return true
-	}
-	if !a.idleSince.Equal(b.idleSince) {
-		return a.idleSince.Before(b.idleSince)
-	}
-	return a.id < b.id
+// idleLonger a 是否比候选 b 空闲更久。
+func idleLonger(a, b *pluginProcess) bool {
+	return b == nil || compareIdle(a, b) < 0
+}
+
+// compareIdle 空闲最久的排在前面，平局按进程 ID。
+func compareIdle(a, b *pluginProcess) int {
+	return cmp.Or(a.idleSince.Compare(b.idleSince), cmp.Compare(a.id, b.id))
 }

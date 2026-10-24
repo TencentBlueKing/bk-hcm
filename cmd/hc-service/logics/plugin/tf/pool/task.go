@@ -30,237 +30,244 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 )
 
-// 异步任务约定：
-//   - 任务在锁内改好进程状态（starting / configuring / closing），在锁外执行慢操作，完成后回到锁内写回；
-//   - 每个进程同一时刻至多一个异步任务（状态本身即独占标志），每个任务恰好写回一次；
-//   - 任务使用池的 taskCtx 加超时，不跟随请求取消：进程是共享的，请求走了，后面的请求还能用；
-//   - 外部调用（Start、ConfigureProvider、Close）的 panic 被转成错误，按失败写回；
-//   - Start 与 ConfigureProvider 不响应 ctx 时，超时后仍按失败写回并关闭进程，由进程管理的 Close 让其返回。
+// 创建、配置、关闭进程都在锁外的协程中执行：
+//   - 锁内先把进程改成 starting / configuring / closing，协程结束后回到锁内写回，每个协程只写回一次；
+//   - 同一个进程同一时刻只有一个协程在处理它，由进程状态保证；
+//   - 协程用 taskCtx 加超时，不跟随请求取消：进程是共享的，请求走了，后面的请求还能用。
 
-// startCreateLocked 规则 4：登记一个 starting 进程占用容量，异步拉起后再为请求配置。
+// startCreateLocked 登记一个 starting 进程占用容量，在协程里拉起。
+// w 为触发创建的请求，拉起后为它配置；为 nil 时是预热，拉起后作为未配置的空闲进程。
 func (p *PluginPool) startCreateLocked(w *request) {
 	p.procSeq++
-	proc := &pluginProcess{
-		id:      p.procSeq,
-		state:   stateStarting,
-		binding: &binding{config: w.config, key: w.key},
-		pending: []*request{w},
+	proc := &pluginProcess{id: p.procSeq, state: stateStarting}
+	if w != nil {
+		proc.binding = &binding{config: w.config, key: w.key}
+		proc.pending = []*request{w}
 	}
 	p.procs[proc.id] = proc
 
 	p.wg.Add(1)
-	go p.runCreate(proc, w.kt.Rid)
+	go p.runCreate(proc)
 }
 
-// startConfigureLocked 规则 2 / 3：把空闲的 running 进程配置成请求的配置。
+// startConfigureLocked 把空闲的 running 进程配置成请求的配置。
 func (p *PluginPool) startConfigureLocked(proc *pluginProcess, w *request) {
-	proc.state = stateConfiguring
 	proc.binding = &binding{config: w.config, key: w.key}
 	proc.pending = []*request{w}
-
+	proc.state = stateConfiguring
 	p.wg.Add(1)
-	go p.runConfigure(proc, proc.exec, proc.binding.config, w.kt.Rid)
+	go p.runConfigure(proc, proc.exec, proc.binding.config)
 }
 
-func (p *PluginPool) runCreate(proc *pluginProcess, rid string) {
+func (p *PluginPool) runCreate(proc *pluginProcess) {
 	defer p.wg.Done()
 
 	kt, cancel := p.taskKit(p.cfg.StartTimeout)
 	defer cancel()
 
-	logs.Infof("plugin %s creating process %d, task rid: %s, rid: %s", p.pluginName, proc.id, kt.Rid, rid)
+	start := p.now()
+	manager, exec, err := p.startProcess(kt)
+	result := resultSuccess
+	if err != nil {
+		result = resultFailure
+	}
+	metrics.ObservePluginPoolStart(p.pluginName, result, p.now().Sub(start))
 
-	// NewProcessManager 只构造对象、不拉起进程，同步调用；拿到 manager 之后，Start 超时也能把进程关掉。
-	var manager tfruntime.ProcessManager
-	err := safeCall(func() error {
-		m, err := p.starter.NewProcessManager(kt, p.pluginName, p.pluginVersion, p.execPath)
-		if err != nil {
-			return fmt.Errorf("new process manager: %w", err)
-		}
-		if m == nil {
-			return errors.New("new process manager returned nil")
-		}
-		manager = m
-		return nil
+	p.finishCreate(proc, manager, exec, err, kt)
+}
+
+// startProcess 拉起一个进程。插件调用可能不响应 ctx，都经 callWithTimeout 执行。
+//
+// 只要 manager 构造出来就返回它，即使 Start 失败或超时：调用方要靠它关掉可能已拉起一半的进程，
+// 阻塞中的 Start 也随之返回。
+func (p *PluginPool) startProcess(kt *kit.Kit) (tfruntime.ProcessManager, tfruntime.Executor, error) {
+	manager, err := callWithTimeout(kt.Ctx, func() (tfruntime.ProcessManager, error) {
+		return p.starter.NewProcessManager(kt, p.pluginName, p.pluginVersion, p.execPath)
 	})
-
-	var exec tfruntime.Executor
-	if err == nil {
-		err = callWithTimeout(kt.Ctx, func() error {
-			e, err := manager.Start(kt)
-			if err != nil {
-				return err
-			}
-			if e == nil {
-				return errors.New("start returned nil executor")
-			}
-			exec = e
-			return nil
-		})
+	if err != nil {
+		return nil, nil, fmt.Errorf("new process manager: %w", err)
+	}
+	if manager == nil {
+		return nil, nil, errors.New("new process manager returned nil")
 	}
 
-	p.finishCreate(proc, manager, exec, err, rid)
+	exec, err := callWithTimeout(kt.Ctx, func() (tfruntime.Executor, error) {
+		return manager.Start(kt)
+	})
+	if err == nil && exec == nil {
+		err = errors.New("start returned nil executor")
+	}
+	return manager, exec, err
 }
 
 func (p *PluginPool) finishCreate(proc *pluginProcess, manager tfruntime.ProcessManager, exec tfruntime.Executor,
-	err error, rid string) {
+	err error, kt *kit.Kit) {
 
 	p.poolLock.Lock()
 	defer p.poolLock.Unlock()
 
+	// starting 的进程只会由这里移出进程表，所以不用核对记录是否还在。
 	proc.manager = manager
-	if err != nil {
-		logs.Errorf("plugin %s start process %d failed, err: %v, rid: %s", p.pluginName, proc.id, err, rid)
-		p.failProcessLocked(proc, fmt.Errorf("start plugin %s process failed: %w", p.pluginName, err))
-		p.scheduleLocked()
-		return
-	}
 	proc.exec = exec
 
-	if p.closed {
-		p.failProcessLocked(proc, ErrPoolClosed)
-		return
-	}
+	switch {
+	case err != nil:
+		logs.Errorf("plugin %s start process %d failed, err: %v, rid: %s", p.pluginName, proc.id, err, kt.Rid)
+		p.requeuePendingLocked(proc, fmt.Errorf("start plugin %s process failed: %w", p.pluginName, err))
+		p.closeProcessLocked(p.taskCtx, proc)
 
-	if proc.binding == nil || !proc.hasLivePending() {
-		// 等它的请求都已取消：不配置，避免无谓地把凭证写进进程，作为未配置的空闲进程留给后面的队首。
-		logs.Infof("plugin %s process %d started without live waiters, keep it idle, rid: %s", p.pluginName,
-			proc.id, rid)
+	case p.closed:
+		p.failPendingLocked(proc, ErrPoolClosed)
+		p.closeProcessLocked(p.taskCtx, proc)
+
+	case !proc.hasLivePending():
+		// 预热，或等它的请求都已取消：不配置，避免把凭证写进没人用的进程。
 		proc.binding = nil
 		proc.pending = nil
 		proc.state = stateRunning
 		proc.idleSince = p.now()
-		p.scheduleLocked()
-		return
+
+	default:
+		proc.state = stateConfiguring
+		p.wg.Add(1)
+		go p.runConfigure(proc, proc.exec, proc.binding.config)
 	}
 
-	proc.state = stateConfiguring
-	p.wg.Add(1)
-	go p.runConfigure(proc, proc.exec, proc.binding.config, rid)
+	p.scheduleLocked()
 }
 
-func (p *PluginPool) runConfigure(proc *pluginProcess, exec tfruntime.Executor, config map[string]any, rid string) {
+func (p *PluginPool) runConfigure(proc *pluginProcess, exec tfruntime.Executor, config map[string]any) {
 	defer p.wg.Done()
 
 	kt, cancel := p.taskKit(p.cfg.ConfigureTimeout)
 	defer cancel()
 
-	err := callWithTimeout(kt.Ctx, func() error {
-		_, err := exec.ConfigureProvider(kt, &tfruntime.ConfigureProviderRequest{Config: config})
-		return err
+	start := p.now()
+	_, err := callWithTimeout(kt.Ctx, func() (*tfruntime.ConfigureProviderResponse, error) {
+		return exec.ConfigureProvider(kt, &tfruntime.ConfigureProviderRequest{Config: config})
 	})
+	metrics.ObservePluginPoolConfigure(p.pluginName, configureResult(err), p.now().Sub(start))
 
-	p.finishConfigure(proc, err, kt.Rid, rid)
+	p.finishConfigure(proc, err, kt)
 }
 
-func (p *PluginPool) finishConfigure(proc *pluginProcess, err error, taskRid, rid string) {
+func (p *PluginPool) finishConfigure(proc *pluginProcess, err error, kt *kit.Kit) {
 	p.poolLock.Lock()
 	defer p.poolLock.Unlock()
 
-	key := proc.binding.key
-	if err != nil {
-		logs.Errorf("plugin %s configure process %d failed, err: %v, task rid: %s, rid: %s", p.pluginName,
-			proc.id, err, taskRid, rid)
-		p.failProcessLocked(proc, fmt.Errorf("configure plugin %s process failed: %w", p.pluginName, err))
-		p.scheduleLocked()
+	if p.procs[proc.id] != proc {
+		// 配置期间进程退出，巡检已删除记录并把请求放回队列。
 		return
 	}
 
-	if p.closed {
-		p.failProcessLocked(proc, ErrPoolClosed)
-		return
-	}
+	switch {
+	case p.closed:
+		p.failPendingLocked(proc, ErrPoolClosed)
+		p.closeProcessLocked(p.taskCtx, proc)
 
-	now := p.now()
-	proc.binding.boundAt = now
-	proc.state = stateRunning
-
-	pending := proc.pending
-	proc.pending = nil
-	for _, w := range pending {
-		if w.state == requestDone {
-			continue
-		}
-		// if proc.inflight >= p.cfg.MaxLeasesPerProcess {
-		// 	// pending 长度不超过 MaxLeasesPerProcess，兜底，正常情况不会执行到这；放回队列而不是丢弃。
-		// 	logs.Errorf("plugin %s process %d has more pending requests than capacity, rid: %s", p.pluginName,
-		// 		proc.id, w.kt.Rid)
-		// 	p.queue.PushBack(w)
-		// 	w.state = requestQueued
-		// 	continue
-		// }
-		p.deliverLocked(proc, w)
-	}
-	if proc.inflight == 0 {
+	case err == nil:
+		now := p.now()
+		proc.binding.boundAt = now
+		proc.state = stateRunning
 		proc.idleSince = now
+		for _, w := range proc.pending {
+			p.deliverLocked(proc, w)
+		}
+		proc.pending = nil
+		logs.Infof("plugin %s process %d configured, key: %.12s, inflight: %d, rid: %s", p.pluginName, proc.id,
+			proc.binding.key, proc.inflight, kt.Rid)
+
+	case isBusinessError(err):
+		// 插件拒绝了这份配置（缺密钥、鉴权失败等）：换进程也会失败，请求直接失败，进程完好、继续复用。
+		logs.Errorf("plugin %s rejected config on process %d, err: %v, rid: %s", p.pluginName, proc.id, err, kt.Rid)
+		p.failPendingLocked(proc, fmt.Errorf("configure plugin %s failed: %w", p.pluginName, err))
+		proc.binding = nil
+		proc.state = stateRunning
+		proc.idleSince = p.now()
+
+	default:
+		// 超时或传输错误：进程状态不可信，关掉它，请求放回队列重试。
+		logs.Errorf("plugin %s configure process %d failed, err: %v, rid: %s", p.pluginName, proc.id, err, kt.Rid)
+		p.requeuePendingLocked(proc, fmt.Errorf("configure plugin %s process failed: %w", p.pluginName, err))
+		p.closeProcessLocked(p.taskCtx, proc)
 	}
 
-	logs.Infof("plugin %s process %d configured, key: %.12s, inflight: %d, task rid: %s, rid: %s", p.pluginName,
-		proc.id, key, proc.inflight, taskRid, rid)
 	p.scheduleLocked()
 }
 
-// failPendingLocked 让本次准备的全部等待请求以 cause 失败（已结束的跳过），并清空 pending。
-func (p *PluginPool) failPendingLocked(proc *pluginProcess, cause error) {
-	pending := proc.pending
-	proc.pending = nil
-	for _, w := range pending {
-		finishRequestLocked(w, result{err: cause})
+// failPendingLocked 让等这次准备的请求都以 err 失败，不重试。
+func (p *PluginPool) failPendingLocked(proc *pluginProcess, err error) {
+	for _, w := range proc.pending {
+		finishRequestLocked(w, result{err: err})
 	}
+	proc.pending = nil
 }
 
-// failProcessLocked 进程侧失败：等待请求失败，进程状态不可信，关闭它。
-func (p *PluginPool) failProcessLocked(proc *pluginProcess, cause error) {
-	p.failPendingLocked(proc, cause)
-	p.closeProcessLocked(proc, p.taskCtx, p.cfg.CloseTimeout)
+// requeuePendingLocked 把等这次准备的请求按原顺序放回队尾重试；超过 MaxRetries 的以 err 失败。
+func (p *PluginPool) requeuePendingLocked(proc *pluginProcess, err error) {
+	for _, w := range proc.pending {
+		if w.state == requestDone {
+			continue
+		}
+
+		w.attempts++
+		metrics.IncPluginPoolRetry(p.pluginName)
+		switch {
+		case p.closed:
+			finishRequestLocked(w, result{err: ErrPoolClosed})
+		case w.attempts > p.cfg.MaxRetries:
+			finishRequestLocked(w, result{err: err})
+		default:
+			w.state = requestQueued
+			p.queue.PushBack(w)
+		}
+	}
+	proc.pending = nil
 }
 
-// closeProcessLocked 把进程标为 closing，并在锁外关闭。调用方已持有 poolLock。
-//
-// timeout 大于 0：在传入的 ctx（内部关闭用 taskCtx）上再加这个时限，到点强制结束进程。
-// timeout 为 0：只用传入的 ctx（PluginPool.Close 的调用方 ctx），池不能取消它。
-//
-// 关闭完成后才从进程表删除。删除前进程仍占着容量，避免实际进程数超过上限。
-func (p *PluginPool) closeProcessLocked(proc *pluginProcess, ctx context.Context, timeout time.Duration) {
+// closeProcessLocked 把进程转为 closing，在协程里关闭；确认退出后才删除记录、释放容量。
+// ctx 是关闭的上限：内部关闭传 taskCtx，Close 传调用方的 ctx；另受 CloseTimeout 约束。
+func (p *PluginPool) closeProcessLocked(ctx context.Context, proc *pluginProcess) {
 	proc.state = stateClosing
 	proc.binding = nil
 
-	// timeout 为 0 时没有自己的计时器，cancel 是空函数，避免误取消调用方的 ctx。
-	cancel := func() {}
-	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-	}
 	if proc.manager == nil {
-		// 进程还没拉起来，没有可关闭的对象。停掉计时器并立刻释放容量。
-		cancel()
+		// 进程管理对象都没创建出来，没有要关的进程。
 		delete(p.procs, proc.id)
 		return
 	}
 
-	manager := proc.manager
 	p.wg.Add(1)
-	// manager.Close 会等到在途调用结束，ctx 结束才强制杀进程，不能占着 poolLock 等。
-	go func() {
-		defer p.wg.Done()
-		defer cancel()
-
-		if err := safeCall(func() error { return manager.Close(ctx) }); err != nil {
-			logs.Errorf("plugin %s close process %d failed, err: %v", p.pluginName, proc.id, err)
-		} else {
-			logs.Infof("plugin %s process %d closed", p.pluginName, proc.id)
-		}
-
-		// Close 已返回，进程已退出或已被强制结束。这时才删记录并让出容量。
-		p.poolLock.Lock()
-		delete(p.procs, proc.id)
-		p.scheduleLocked()
-		p.poolLock.Unlock()
-	}()
+	go p.runClose(ctx, proc)
 }
 
-// taskKit 为异步任务创建 kit：新 rid，ctx 继承 taskCtx 并带超时。
+func (p *PluginPool) runClose(ctx context.Context, proc *pluginProcess) {
+	defer p.wg.Done()
+
+	ctx, cancel := context.WithTimeout(ctx, p.cfg.CloseTimeout)
+	defer cancel()
+
+	err := safeCall(func() error { return proc.manager.Close(ctx) })
+	exited := err == nil || processExited(proc.manager)
+
+	p.poolLock.Lock()
+	defer p.poolLock.Unlock()
+
+	if !exited {
+		// 进程可能还活着：保留 closing 记录继续占用容量，由巡检确认退出后删除。
+		logs.Errorf("plugin %s close process %d failed, err: %v", p.pluginName, proc.id, err)
+		return
+	}
+
+	logs.Infof("plugin %s process %d closed", p.pluginName, proc.id)
+	delete(p.procs, proc.id)
+	p.scheduleLocked()
+}
+
+// taskKit 为后台协程创建 kit：新 rid，ctx 继承 taskCtx 并带超时。
 func (p *PluginPool) taskKit(timeout time.Duration) (*kit.Kit, context.CancelFunc) {
 	kt := kit.New()
 	ctx, cancel := context.WithTimeout(p.taskCtx, timeout)
@@ -268,19 +275,39 @@ func (p *PluginPool) taskKit(timeout time.Duration) (*kit.Kit, context.CancelFun
 	return kt, cancel
 }
 
-// callWithTimeout 在独立协程中执行 fn；若 fn 未在 ctx 截止前返回，则直接返回超时错误，
-// 随后由调用方通过 manager.Close 关闭子进程以唤醒阻塞中的 fn。
-func callWithTimeout(ctx context.Context, fn func() error) error {
-	done := make(chan error, 1)
+// isBusinessError 是否为插件返回的业务错误（Error 级 Diagnostic）。
+func isBusinessError(err error) bool {
+	var diagErr *tfruntime.DiagnosticsError
+	return errors.As(err, &diagErr)
+}
+
+// callResult callWithTimeout 中 fn 的返回值。
+type callResult[T any] struct {
+	val T
+	err error
+}
+
+// callWithTimeout 在协程中执行 fn，ctx 结束时不再等待、直接返回超时错误。
+//
+// 用于不一定响应 ctx 的插件调用：超时后 fn 可能还在跑，它的结果被丢弃；调用方须关闭对应进程让它返回。
+func callWithTimeout[T any](ctx context.Context, fn func() (T, error)) (T, error) {
+	done := make(chan callResult[T], 1)
 	go func() {
-		done <- safeCall(fn)
+		var r callResult[T]
+		r.err = safeCall(func() error {
+			var err error
+			r.val, err = fn()
+			return err
+		})
+		done <- r
 	}()
 
 	select {
-	case err := <-done:
-		return err
+	case r := <-done:
+		return r.val, r.err
 	case <-ctx.Done():
-		return fmt.Errorf("call did not return in time: %w", ctx.Err())
+		var zero T
+		return zero, fmt.Errorf("call did not return in time: %w", ctx.Err())
 	}
 }
 
@@ -293,4 +320,14 @@ func safeCall(fn func() error) (err error) {
 		}
 	}()
 	return fn()
+}
+
+// processExited 进程是否已退出；Exited 发生 panic 时按未退出处理。
+func processExited(manager tfruntime.ProcessManager) bool {
+	exited := false
+	err := safeCall(func() error {
+		exited = manager.Exited()
+		return nil
+	})
+	return err == nil && exited
 }
