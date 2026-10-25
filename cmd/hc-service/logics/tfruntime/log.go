@@ -87,11 +87,12 @@ func (p *pluginLogs) setPID(pid string) error {
 	return nil
 }
 
-func (p *pluginLogs) close() {
+// Close flushes buffered plugin output and closes the log file.
+func (p *pluginLogs) Close() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
-		return
+		return nil
 	}
 	p.flushPartLocked(p.stdout)
 	p.flushPartLocked(p.stderr)
@@ -100,6 +101,7 @@ func (p *pluginLogs) close() {
 		_ = p.file.Close()
 		p.file = nil
 	}
+	return nil
 }
 
 func (p *pluginLogs) flushPartLocked(stream *streamBuf) {
