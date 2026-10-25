@@ -29,6 +29,7 @@ import (
 	"hcm/cmd/hc-service/logics/plugin/query"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
+	"hcm/cmd/hc-service/logics/tfruntime"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	dataservice "hcm/pkg/client/data-service"
@@ -44,7 +45,7 @@ import (
 
 // New 创建 Service。
 func New(dataCli *dataservice.Client, etcdMutex *lock.EtcdMutex, schemaMgr *pluginschema.SchemaManager,
-	starter PluginProcessStarter, opts Options) *Service {
+	starter tfruntime.Starter, opts Options) *Service {
 
 	return &Service{dataCli: dataCli, etcdMutex: etcdMutex, schemaMgr: schemaMgr, starter: starter, opts: opts}
 }
@@ -177,7 +178,6 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.Entry, id str
 // syncSchema 拉起一次性进程并同步插件的 Schema。Sync 只通过 SchemaGetter 取 Schema，不感知插件是本地进程还是 http 后端；
 // 这里的一次性进程是我们拉起的，所以由我们负责关闭：无论成败，只要拉起成功就一定 Close，拉起失败时不调用 Sync。
 func (s *Service) syncSchema(kt *kit.Kit, entry discovery.Entry) error {
-	// TODO: 接入插件进程管理实现后，由 Service.RegisterPlugins 注入 PluginProcessStarter。
 	if s.starter == nil {
 		return errors.New("plugin process starter is not configured")
 	}
@@ -187,7 +187,7 @@ func (s *Service) syncSchema(kt *kit.Kit, entry discovery.Entry) error {
 		return fmt.Errorf("start plugin process failed: %w", err)
 	}
 	defer func() {
-		if cerr := manager.Close(); cerr != nil {
+		if cerr := manager.Close(kt.Ctx); cerr != nil {
 			logs.Errorf("close plugin %s@%s process failed, err: %v, rid: %s", entry.PluginName,
 				entry.PluginVersion, cerr, kt.Rid)
 		}

@@ -2,7 +2,7 @@
 
 P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；运行期执行代理（Plan / Apply 等业务调用）需要反复使用 tf_provider 进程，而 `ConfigureProvider` 要带云凭证、进程启动与配置都是慢操作，不能一个请求拉一个进程。需要一个进程池：按"凭证配置"复用已配好的进程、控制进程数与并发、保证请求公平不饿死，并在进程异常时自愈。
 
-进程池本身相对独立：它只依赖"进程管理 / 执行器"这一组对接对象，不依赖插件注册、Schema 管理、插件表和配置。因此本 change 分两段推进：阶段零到三**单独开分支实现、不修改任何既有文件**；等池稳定并与注册 / Schema 等分支合并之后，再做**阶段四**（池注册表、hc-service 接入、`pkg/cc` 配置项、helm），阶段四依赖插件表与注册能力，在合并前不得开工。
+进程池本身相对独立：它只依赖"进程管理 / 执行器"这一组对接对象，不依赖插件注册、Schema 管理、插件表和配置。因此本 change 分两段推进：阶段零到三在 `feat/iac-plugin-process-pool` 上单独实现、不修改任何既有文件；阶段四（池注册表、hc-service 接入、`pkg/cc` 配置项、helm）依赖插件表与注册能力，在 `feat/iac-plugin-pool-integration` 上实现——该分支从 `feat/iac-plugin-register-submit` 切出，把阶段零到三的代码覆盖上去，并允许为接入而修改 P2 的代码。
 
 为了让池有真实类型可调用、可编译，本 change 越过边界，先落地对接方的**契约骨架**：接口、请求 / 响应结构体、进程管理结构体及其工厂，方法体不实现，返回"未实现"错误，由对接方后续填充。
 
@@ -16,7 +16,7 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
 - 在该基线上存在、本 change **会用到**的内容：`pkg/kit`、`pkg/logs`、`pkg/metrics`、`github.com/hashicorp/terraform-json`（已在 go.mod）、`pkg/thirdparty/api-gateway/plugin` 的 `PluginSchema`。
 - 阶段零到三只新增文件，不改动任何既有文件，不改动 `go.mod`。
 - 合并：阶段三完成后，将该分支与注册 / Schema 分支（P1~P4）合并；合并步骤见 design 的"合并计划"。
-- 阶段四：在合并后的分支上实现，会修改既有文件（`service/iac_plugin.go`、`pkg/cc`、`hc_service.yaml`、helm），只在此阶段允许。
+- 阶段四：在集成分支 `feat/iac-plugin-pool-integration`（基于 `feat/iac-plugin-register-submit`，含 P1~P4）上实现，会修改既有文件（`register`、`service/iac_plugin.go`、`pkg/cc`、`hc_service.yaml`、helm），只在此阶段允许。
 
 ## What Changes
 
@@ -49,7 +49,7 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
   - 联调：与对接方真实 `ProcessManager` 联调、并发验证、停用插件与服务退出验证
 - **不包含**：
   - 对接方真实实现（go-plugin 拉起 / 握手 / gRPC / 编解码 / 日志落盘 / `StopProvider`），本 change 只留骨架
-  - **P2 `register` / `watch` 的修改**：包括让 `register` 改用 `tfruntime` 类型，阶段四也不做；对接方真实实现同时满足两处的接口即可，`register` 现有的注入点保持不变
+  - **对 P2 的修改超出"改用 `tfruntime` 类型"的部分**：阶段四在集成分支上只做一件事——删除 `register` 自带的 `PluginExecutor / PluginProcessManager / PluginProcessStarter`，改用 `tfruntime` 的同语义类型（`Close` 改为带超时的 ctx）；注册、版本检查、http 插件的逻辑一律不动
   - Schema 同步、执行代理对 Plan / Apply 的编排与异步 Apply、lease 持有超时强制回收（方案待定 #10）、有限越队（待定 #7）、插件升级时池的切换（待定 #4）、每身份进程上限（方案明确不设）
 
 ## Capabilities
@@ -75,7 +75,8 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
 - 阶段零到三：无既有文件被修改；无新增第三方依赖（`terraform-json` 已在 go.mod；go-plugin 等由对接方真实实现时引入）
 - 阶段四（合并后）：
   - **cmd/hc-service/logics/plugin/tf/pool**：新增 `Registry`
-  - **cmd/hc-service/service/iac_plugin.go**、**cmd/hc-service/app**：建立 / 关闭注册表（新增调用，不改 P2 注册逻辑）
+  - **cmd/hc-service/logics/plugin/tf/register**：改用 `tfruntime` 的进程管理与执行器类型，删除自带的三个对接接口
+  - **cmd/hc-service/service/iac_plugin.go**、**cmd/hc-service/app**：
   - **pkg/cc**：`IaCPluginConfig` 增加池参数与开关
   - **cmd/hc-service/etc/hc_service.yaml**、**docs/support-file/helm** 的 hcservice configmap 与 values
 - 无表结构变化；无新增对外 API
@@ -85,5 +86,5 @@ P2 的注册流程只会为"读 Schema"拉起一次性进程、用完即关；�
 - 前置：`upstream/feat-plugin`（仅需其提供 `pkg/kit`、`pkg/logs`、`pkg/metrics`、`PluginSchema`）。
 - 对接方后续工作：在阶段零的骨架上填充 `processManager` 与 `Executor` 的真实实现。联调前池用测试内的假实现。
 - 阶段四依赖：与 P1~P4 所在分支合并完成（需要读取插件注册表的 data-service 客户端、`IaCPluginConfig`、`service/iac_plugin.go` 的就绪与退出钩子）。
-- 被依赖：执行代理通过注册表的 `Get(pluginName)` 取得池，再 `Acquire` 获取 lease。
+- 被依赖：执行代理通过注册表的 `GetPool(pluginName)` 取得池，再 `Acquire` 获取 lease。
 - 后续备选：lease 持有超时强制回收、有限越队、升级期池切换，待线上数据或对接方结论后另起 change。

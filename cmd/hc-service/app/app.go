@@ -61,6 +61,7 @@ func Run(opt *options.Option) error {
 	hs.svc.SetPluginReady()
 	hs.svc.StartPluginVersionWatch()
 	hs.svc.StartHTTPPluginCheck()
+	hs.svc.StartPluginPools()
 
 	shutdown.RegisterFirstShutdown(hs.finalizer)
 	shutdown.WaitShutdown(20)
@@ -127,6 +128,8 @@ func (ds *hcService) register() error {
 
 func (ds *hcService) finalizer() {
 	ds.svc.StopPluginTasks()
+	// 摘除流量之后再关闭进程池，不论摘除是否成功都要关闭，否则插件子进程会残留。
+	defer ds.svc.ClosePluginPools()
 
 	if err := ds.sd.Deregister(); err != nil {
 		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)

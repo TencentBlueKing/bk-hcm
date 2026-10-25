@@ -22,12 +22,12 @@ package tfruntime
 import (
 	"strings"
 
-	gwplugin "hcm/pkg/thirdparty/api-gateway/plugin"
+	coreplugin "hcm/pkg/api/core/plugin"
 )
 
 // ProviderSchema 是 GetProviderSchema 返回的统一 Schema，字段与对接方案 6.2 一致。
-// 当前指向南向协议已有的 PluginSchema，与其他分支合并时只需调整这一处别名。
-type ProviderSchema = gwplugin.PluginSchema
+// 与插件注册、Schema 同步使用同一个类型。
+type ProviderSchema = coreplugin.PluginSchema
 
 // Severity Diagnostic 的严重程度。
 type Severity string

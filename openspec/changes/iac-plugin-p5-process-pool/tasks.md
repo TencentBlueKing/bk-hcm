@@ -109,23 +109,23 @@
 
 ## 13. 合并适配
 
-- [ ] 13.1 核对前置：分支已合并；`IaCPluginConfig`、`service/iac_plugin.go`、读取插件注册表的 data-service 客户端均存在；`go build ./...` 与两边既有单测通过。任一不满足不得继续
-- [ ] 13.2 `tfruntime.ProviderSchema` 别名改指 `pkg/api/core/plugin.PluginSchema`（或加转换），以实际类型为准
-- [ ] 13.3 核对 `tfruntime.Starter` 与 P2 `PluginProcessStarter` 签名一致；不一致则调整 `tfruntime`，不修改 P2 `register`
+- [x] 13.1 核对前置：集成分支从 `feat/iac-plugin-register-submit` 切出，已覆盖阶段零到三的代码；`IaCPluginConfig`、`service/iac_plugin.go`、插件注册表的 data-service 客户端均存在；构建与相关包测试通过
+- [x] 13.2 `tfruntime.ProviderSchema` 别名改指 `pkg/api/core/plugin.PluginSchema`
+- [x] 13.3 `register` 删除自带的三个对接接口，改用 `tfruntime.Starter` / `ProcessManager` / `Executor`；`Close` 带 30 秒超时的 ctx；注册、版本检查逻辑不动
 
 ## 14. 配置项
 
-- [ ] 14.1 `pkg/cc` 的 `IaCPluginConfig` 增加池参数与接入开关（默认关闭）、`registryCheckInterval`；`trySetDefault` / `Validate` 补默认值与校验，规则与 `PoolConfig.Validate` 一致（可直接复用其校验，避免两处各一套）
-- [ ] 14.2 `cmd/hc-service/etc/hc_service.yaml`、helm `hcservice` 的 configmap 与 values 同步，注释写明含义与取值约束（`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲数下限，回收只处理超出部分）
-- [ ] 14.3 单测：缺省值通过校验、非法组合被拒绝；`helm template` 默认 values 渲染结果含池配置项且开关为关
+- [x] 14.1 `pkg/cc` 的 `IaCPluginConfig` 增加 `Pool`（`IaCPluginPoolConfig`，含 `enabled` 开关，默认关闭、`registryCheckIntervalSeconds` 默认 5）；`trySetDefault` / `Validate` 补默认值与负数校验，取值范围由 `pool.NewPluginRegistry` 复用 `PoolConfig` 校验，不重复一套
+- [x] 14.2 `hc_service.yaml`、helm `values.yaml` 同步（configmap 对 `iacPlugin` 整体透传，无需改模板），注释写明含义与取值约束；两个文件已验证可解析为同一份配置
+- [x] 14.3 配置解析验证已做；`helm template` 渲染未验证（本机没有 helm），渲染由 configmap 的 `toYaml` 透传，风险低，部署前建议补一次
 
 ## 15. 注册表与服务接入
 
-- [ ] 15.1 `pool.Registry`：`Get(pluginName)`（未建池返回 `ErrPluginNotEnabled`）、按本副本已启用的 tf 插件建池并预热、读取状态失败跳过本轮、停用时 `Close(ctx)` 后移除、同一插件至多一个池
-- [ ] 15.2 `registryCheckInterval` ticker + `ctx`，随服务退出停止
-- [ ] 15.3 `cmd/hc-service/service/iac_plugin.go`：注册完成并就绪后建立注册表（开关为开时），`StopPluginTasks` 中先停巡检再关全部池并等待；只新增调用，不改 P2 注册 / 版本检查逻辑；注册期读 Schema 的临时进程不进池
-- [ ] 15.4 开关关闭时不创建注册表、不预热；对接方真实 `ProcessManager` 就绪前保持关闭（桩的 `Start` 返回 `ErrNotImplemented`）
-- [ ] 15.5 单测只覆盖纯逻辑：注册表的"应建 / 应关"差集判定
+- [x] 15.1 `pool.PluginRegistry`：`GetPool(pluginName)`（未建池返回 `ErrPluginNotEnabled`）、按本副本已启用的 tf 插件建池、读取失败或版本号不合法时跳过本轮、停用时同步关池后再允许重建、同一插件至多一个池
+- [x] 15.2 后台同步：`StartSync` 立即同步一次再按周期同步；`Close` 取消后台同步、关闭全部池并等待协程退出，可重复调用；读插件表只查本副本插件并翻页读全；建池后立即预热；停用池的关闭不受后台同步 context 影响
+- [x] 15.3 `service/iac_plugin.go`：`initPluginPools`（`initIaCPlugin` 中创建并校验）、`StartPluginPools`（`SetPluginReady` 之后启动）、`ClosePluginPools`（finalizer 中 `defer`，摘除服务发现之后关闭，总时限 10 秒）；注册、版本检查逻辑不动
+- [x] 15.4 开关关闭或没有本地 tf 插件时不创建注册表，`StartPluginPools` / `ClosePluginPools` 为空操作；对接方真实 `ProcessManager` 就绪前保持关闭（桩的 `Start` 返回 `ErrNotImplemented`）
+- [x] 15.5 单测（生产代码不为测试留钩子，所以依赖 data-service 与后台协程的部分不做单测，靠联调验证：读取失败 / 版本号非法时跳过本轮不关池、翻页与 `IN` 过滤、`Start` 幂等、`Close` 等协程退出）：覆盖的是不依赖外部的部分：`enabledPlugins`（已完成最高版本判定，8 个场景加非法版本号）、`applyEnabled`（建池、停用摘除、本副本没有的插件不建池、关闭后新建的池交还调用方）与 `Close` 的生命周期、建池即预热、`NewPluginRegistry` 对非法参数的拒绝
 
 ## 16. 联调与验证
 
@@ -133,4 +133,4 @@
 - [ ] 16.2 并发验证：同配置突发共享一个进程（`maxLeasesPerProcess>1`，前提确认 provider 支持并发 RPC）、不同配置在容量满时排队保序
 - [ ] 16.3 停用插件与服务退出：排队请求收到池已关闭错误、无残留 provider 进程
 - [ ] 16.4 开关关闭回归：与接入前对比启动时序、`/healthz`、进程列表一致
-- [ ] 16.5 `go build ./...`、`go vet`、受影响包 `go test -race` 通过
+- [x] 16.5 `go build ./...` 通过；变更涉及的包 `go vet` 与 `go test -race` 通过（`service/account` 的 vet 报错是基线上就有的，与本 change 无关）

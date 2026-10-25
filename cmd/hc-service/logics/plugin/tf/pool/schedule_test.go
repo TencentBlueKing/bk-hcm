@@ -20,7 +20,6 @@
 package pool
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -44,15 +43,11 @@ type procSpec struct {
 func pickPool(t *testing.T, maxProcs, maxLeases int, specs ...procSpec) *PluginPool {
 	t.Helper()
 
-	minIdle := defaultMinIdleProcesses
-	if maxProcs < minIdle {
-		minIdle = maxProcs
+	// 只测选进程规则，不经过 NewPluginPool：它会启动后台协程预热进程，与这里手工构造的进程表互相干扰。
+	p := &PluginPool{
+		cfg:   PoolConfig{MaxProcesses: maxProcs, MaxLeasesPerProcess: maxLeases, MaxConfigAge: 30 * time.Minute},
+		procs: make(map[uint64]*pluginProcess),
 	}
-	p, err := NewPluginPool(Options{PluginName: "tcloud", ExecPath: "/bin/fake", Starter: &fakeStarter{},
-		Config: PoolConfig{MaxProcesses: maxProcs, MaxLeasesPerProcess: maxLeases, MinIdleProcesses: minIdle,
-			MaxQueueLength: 10, MaxConfigAge: 30 * time.Minute, PoolCheckInterval: time.Hour}})
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = p.Close(context.Background()) })
 
 	now := baseTime.Add(time.Hour)
 	for _, s := range specs {

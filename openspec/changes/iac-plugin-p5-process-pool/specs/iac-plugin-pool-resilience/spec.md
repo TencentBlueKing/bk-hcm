@@ -67,13 +67,17 @@
 每个池 SHALL 按 `poolCheckInterval` 周期巡检自己的进程，慢操作在锁外执行。
 
 **空闲进程**的口径 MUST 统一为：状态为 `running` 且 `inflight == 0` 的进程，不论是否已配置、配置是否已过期；尚未被任何请求认领的预热进程（`starting` 且 `pending` 为空）MUST 按"将成为空闲"计入。预热与回收 MUST 使用同一个空闲数 `idle` 与同一个下限 `minIdleProcesses`（记为 `min`）：
-- 预热：`idle < min` 时补建 `min - idle` 个未配置进程（缺口计入 `starting`，不计 `configuring`）；容量有余才补，补建只在巡检时进行（巡检周期即重试间隔），不另设退避；池满时 MUST NOT 挤占服务中的进程。
+- 预热：`idle < min` 时补建 `min - idle` 个未配置进程（缺口计入 `starting`，不计 `configuring`）；容量有余才补，池满时 MUST NOT 挤占服务中的进程。池 MUST 在创建时立即执行一次巡检，使空闲进程在池启动时就开始预热，MUST NOT 等到第一个请求或第一个巡检周期；之后补建按巡检周期进行，周期即失败后的重试间隔，不另设退避。
 - 空闲回收：**仅当 `idle > min` 时才回收**；回收对象 MUST 是空闲时长超过 `idleReclaimTimeout` 的空闲进程，按空闲最久优先，**一轮最多回收 `idle - min` 个**，使回收后空闲数不低于 `min`；`idle <= min` 时 MUST NOT 回收任何进程。
 - 退出检查：`Exited()` 为真的进程 MUST 删记录、释放容量、回收其 `pending`，并触发调度。
 - 连接检查：对 `running` 状态的进程调用 `CheckHealth()`，报错则转 `closing`，确认退出后删记录；`starting` / `configuring` 的进程 MUST NOT 做健康检查，由任务超时处理。
 - 每轮巡检末尾 MUST 无条件触发一次调度，作为事件遗漏的兜底。
 
 进程是否可用 MUST 只依据 `Exited()`、`CheckHealth()` 与 `ConfigureProvider` 失败，MUST NOT 依据业务调用失败判断。
+
+#### Scenario: 池创建即预热
+- **WHEN** 创建池，`minIdleProcesses=3` 且容量足够
+- **THEN** 不等任何请求和巡检周期，立即开始拉起 3 个未配置的进程
 
 #### Scenario: 预热补足
 - **WHEN** `minIdleProcesses=1`，池内没有任何空闲进程且容量有余

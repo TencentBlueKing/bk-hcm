@@ -28,12 +28,14 @@ import (
 )
 
 // checkLoop 按 PoolCheckInterval 巡检，池关闭后退出。
+// 启动时先巡检一次，让空闲进程在池创建时就开始预热，而不是等到第一个周期或第一个请求。
 func (p *PluginPool) checkLoop() {
 	defer p.wg.Done()
 
 	ticker := time.NewTicker(p.cfg.PoolCheckInterval)
 	defer ticker.Stop()
 
+	p.checkOnce()
 	for {
 		select {
 		case <-p.stopCheck:

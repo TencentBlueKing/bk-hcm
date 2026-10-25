@@ -32,13 +32,19 @@ import (
 	"hcm/pkg/kit"
 )
 
-func TestAcquireCreatesConfiguresAndReuses(t *testing.T) {
+// TestAcquireUsesPrewarmedProcessAndReuses 池启动时已预热空闲进程：第一个请求直接配置它，不用等拉起进程；
+// 同配置的后续请求复用已配好的进程。
+func TestAcquireUsesPrewarmedProcessAndReuses(t *testing.T) {
 	s := &fakeStarter{}
 	p := newTestPool(t, s, PoolConfig{MaxProcesses: 2})
+	waitPrewarmed(t, p, 2)
+	assert.EqualValues(t, 2, s.starts.Load())
+	assert.EqualValues(t, 0, s.configures.Load(), "prewarmed processes are not configured")
 
 	l1 := mustAcquire(t, p, "A")
-	assert.Equal(t, "1/A", identityOf(t, l1))
-	assert.EqualValues(t, 1, s.starts.Load())
+	id1 := identityOf(t, l1)
+	assert.True(t, strings.HasSuffix(id1, "/A"), "the prewarmed process is configured with the request config")
+	assert.EqualValues(t, 2, s.starts.Load(), "the first request does not start a process")
 	assert.EqualValues(t, 1, s.configures.Load())
 	assertInvariants(t, p)
 
@@ -46,8 +52,8 @@ func TestAcquireCreatesConfiguresAndReuses(t *testing.T) {
 	assert.Equal(t, 0, p.testStats().inflight)
 
 	l2 := mustAcquire(t, p, "A")
-	assert.Equal(t, "1/A", identityOf(t, l2), "same config reuses the configured process")
-	assert.EqualValues(t, 1, s.starts.Load())
+	assert.Equal(t, id1, identityOf(t, l2), "same config reuses the configured process")
+	assert.EqualValues(t, 2, s.starts.Load())
 	assert.EqualValues(t, 1, s.configures.Load(), "no reconfigure for the same config")
 	l2.Release()
 	assertInvariants(t, p)
@@ -174,5 +180,20 @@ func TestCancelAfterDeliveryReturnsLease(t *testing.T) {
 	p.cancel(w)
 
 	assert.Equal(t, 0, p.testStats().inflight, "the undelivered lease is released by cancel")
+	assertInvariants(t, p)
+}
+
+// TestPoolPrewarmsAtStartup 池一创建就开始补足空闲进程，不等第一个请求，也不等第一个巡检周期：
+// 否则服务刚启动时的第一个请求要自己等进程拉起。
+func TestPoolPrewarmsAtStartup(t *testing.T) {
+	s := &fakeStarter{}
+	p, err := NewPluginPool(Options{PluginName: "tcloud", ExecPath: "/bin/fake", Starter: s,
+		Config: PoolConfig{MaxProcesses: 4, MaxQueueLength: 10, MinIdleProcesses: 3, PoolCheckInterval: time.Hour}})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = p.Close(context.Background()) })
+
+	waitPrewarmed(t, p, 3)
+	assert.EqualValues(t, 3, s.starts.Load())
+	assert.EqualValues(t, 0, s.configures.Load(), "prewarmed processes are not configured")
 	assertInvariants(t, p)
 }

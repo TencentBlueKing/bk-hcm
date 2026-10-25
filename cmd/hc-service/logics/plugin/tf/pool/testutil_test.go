@@ -60,6 +60,29 @@ func newTestPool(t *testing.T, s *fakeStarter, cfg PoolConfig) *PluginPool {
 	return p
 }
 
+// waitPrewarmed 等池启动时的预热完成：minIdle 个空闲进程已拉起且不再有进程在准备。
+func waitPrewarmed(t *testing.T, p *PluginPool, minIdle int) {
+	t.Helper()
+	require.Eventually(t, func() bool {
+		st := p.testStats()
+		return st.states[stateRunning] == minIdle && st.settled()
+	}, waitTimeout, time.Millisecond, "idle processes are prewarmed when the pool starts")
+}
+
+// preparingWithPending 返回正在准备（拉起或配置）且等着交付的请求最多的进程的 pending 数。
+func preparingWithPending(p *PluginPool) int {
+	p.poolLock.Lock()
+	defer p.poolLock.Unlock()
+
+	most := 0
+	for _, proc := range p.procs {
+		if proc.state == stateConfiguring || proc.state == stateStarting {
+			most = max(most, len(proc.pending))
+		}
+	}
+	return most
+}
+
 func providerConfig(secretID string) map[string]any {
 	return map[string]any{"secret_id": secretID, "secret_key": "key-of-" + secretID}
 }

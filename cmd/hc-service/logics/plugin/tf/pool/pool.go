@@ -78,7 +78,8 @@ type PluginPool struct {
 	procSeq uint64
 }
 
-// NewPluginPool 创建进程池并启动巡检。进程按需创建，空闲进程由巡检补足。
+// NewPluginPool 创建进程池并启动巡检。巡检在启动时先执行一次：空闲进程在池创建时就开始预热，
+// 之后按 PoolCheckInterval 周期补足与回收；其余进程按需创建。
 func NewPluginPool(opts Options) (*PluginPool, error) {
 	if opts.PluginName == "" {
 		return nil, errors.New("plugin name should not be empty")

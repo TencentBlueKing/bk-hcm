@@ -28,6 +28,8 @@ var (
 	ErrTooManyWaiters = errors.New("too many requests waiting for plugin process")
 	// ErrAcquireTimeout 请求排队超过 MaxQueueWait 仍未拿到 lease。
 	ErrAcquireTimeout = errors.New("wait for plugin process timeout")
+	// ErrPluginNotEnabled 插件没有可用的池：未启用，或本副本没有该插件。
+	ErrPluginNotEnabled = errors.New("plugin is not enabled on this replica")
 	// ErrLeaseReleased lease 已归还，不能再通过它调用插件。
 	ErrLeaseReleased = errors.New("plugin process lease has been released")
 )

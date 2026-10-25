@@ -28,10 +28,13 @@ import (
 	httpplugin "hcm/cmd/hc-service/logics/plugin/http"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
+	"hcm/cmd/hc-service/logics/plugin/tf/pool"
 	"hcm/cmd/hc-service/logics/plugin/tf/register"
 	"hcm/cmd/hc-service/logics/plugin/tf/watch"
+	"hcm/cmd/hc-service/logics/tfruntime"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/shutdown"
@@ -45,8 +48,9 @@ type iacPluginManager struct {
 	// ready 为 true 表示 IaC 插件已注册完成，可以接收流量；在此之前 /healthz 返回 503，/alivez 不受影响。
 	ready atomic.Bool
 
-	tfRegister *register.Service
-	httpPlugin *httpplugin.Service
+	tfRegister   *register.Service
+	httpPlugin   *httpplugin.Service
+	poolRegistry *pool.PluginRegistry
 
 	// stopVersionWatch 停止运行期插件版本检查，没有本地 tf 插件时为 nil。
 	stopVersionWatch context.CancelFunc
@@ -68,8 +72,8 @@ func scanPlugins(pluginDir string) ([]discovery.Entry, error) {
 	return entries, nil
 }
 
-// initIaCPlugin 扫描本地 tf 插件目录，并初始化插件注册、Schema 同步与 http 插件。
-// 目录不合法、网关 TLS 配置错误或 etcd 配置错误时返回错误，进程不应启动服务。
+// initIaCPlugin 扫描本地 tf 插件目录，并初始化插件注册、Schema 同步、http 插件与 tf 进程池。
+// 目录不合法、网关 TLS 配置错误、etcd 配置错误或池参数不合法时返回错误，进程不应启动服务。
 func (s *Service) initIaCPlugin() error {
 	cfg := cc.HCService().IaCPlugin
 
@@ -88,9 +92,20 @@ func (s *Service) initIaCPlugin() error {
 	}
 
 	dataCli := s.clientSet.DataService()
+	// TODO: 对接方交付插件进程管理实现后，在这里补齐启动参数（Args、WorkDir、Env、LogDir）。
+	starter := tfruntime.NewStarter(tfruntime.StarterOptions{})
+
+	// 初始化插件进程池
+	poolRegistry, err := newPluginRegistry(dataCli, entries, starter)
+	if err != nil {
+		return err
+	}
+
+	// 初始化 schema 同步
 	schemaMgr := pluginschema.NewSchemaManager(dataCli, 0)
-	// TODO: 插件进程管理模块就绪后注入 PluginProcessStarter 实现，替换此处的 nil。
-	tfRegister := register.New(dataCli, iacMutex, schemaMgr, nil, register.Options{
+
+	// 初始化 tf 插件注册与 http 插件
+	tfRegister := register.New(dataCli, iacMutex, schemaMgr, starter, register.Options{
 		LockLeaseSeconds: cfg.LockLeaseSeconds,
 		LockWaitTimeout:  time.Duration(cfg.LockWaitTimeoutSeconds) * time.Second,
 	})
@@ -103,9 +118,10 @@ func (s *Service) initIaCPlugin() error {
 		})
 
 	s.iacPlugin = &iacPluginManager{
-		plugins:    entries,
-		tfRegister: tfRegister,
-		httpPlugin: httpPlugin,
+		plugins:      entries,
+		tfRegister:   tfRegister,
+		httpPlugin:   httpPlugin,
+		poolRegistry: poolRegistry,
 	}
 	return nil
 }
@@ -161,6 +177,69 @@ func (s *Service) StartHTTPPluginCheck() {
 	s.iacPlugin.stopHTTPCheck = cancel
 
 	go s.iacPlugin.httpPlugin.RunCheck(ctx, s.sd.IsMaster)
+}
+
+// newPluginRegistry 创建 tf 插件进程池的索引（pool.PluginRegistry），此时不建池。池参数不合法时返回错误，进程不应启动服务。
+// 开关关闭或没有本地 tf 插件时不创建。
+func newPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry,
+	starter tfruntime.Starter) (*pool.PluginRegistry, error) {
+
+	cfg := cc.HCService().IaCPlugin.Pool
+	if !cfg.Enabled || len(entries) == 0 {
+		return nil, nil
+	}
+
+	registry, err := pool.NewPluginRegistry(dataCli, entries, starter, pool.PluginRegistryOptions{
+		Pool:          toPoolConfig(cfg),
+		CheckInterval: time.Duration(cfg.RegistryCheckIntervalSeconds) * time.Second,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("new plugin pool registry failed, err: %v", err)
+	}
+	return registry, nil
+}
+
+// toPoolConfig 把配置文件里的池参数换算成进程池参数。
+func toPoolConfig(cfg cc.IaCPluginPoolConfig) pool.PoolConfig {
+	seconds := func(n uint) time.Duration { return time.Duration(n) * time.Second }
+
+	return pool.PoolConfig{
+		MaxProcesses:        cfg.MaxProcesses,
+		MaxLeasesPerProcess: cfg.MaxLeasesPerProcess,
+		MinIdleProcesses:    cfg.MinIdleProcesses,
+		MaxRetries:          cfg.MaxRetries,
+		MaxQueueLength:      cfg.MaxQueueLength,
+		MaxQueueWait:        seconds(cfg.MaxQueueWaitSeconds),
+		StartTimeout:        seconds(cfg.StartTimeoutSeconds),
+		ConfigureTimeout:    seconds(cfg.ConfigureTimeoutSeconds),
+		CloseTimeout:        seconds(cfg.CloseTimeoutSeconds),
+		IdleReclaimTimeout:  seconds(cfg.IdleReclaimSeconds),
+		MaxConfigAge:        seconds(cfg.MaxConfigAgeSeconds),
+		PoolCheckInterval:   seconds(cfg.CheckIntervalSeconds),
+	}
+}
+
+// StartPluginPools 启动 tf 插件进程池的后台检查：按插件表里已启用的插件建池、关池。未启用进程池时什么也不做。
+func (s *Service) StartPluginPools() {
+	if s.iacPlugin.poolRegistry != nil {
+		s.iacPlugin.poolRegistry.StartSync()
+	}
+}
+
+// pluginPoolShutdownTimeout 服务退出时关闭全部进程池的最长等待时间，须小于进程整体的退出等待时间。
+const pluginPoolShutdownTimeout = 10 * time.Second
+
+// ClosePluginPools 关闭全部 tf 插件进程池，结束池内的插件进程。应在摘除流量之后调用。
+func (s *Service) ClosePluginPools() {
+	if s.iacPlugin.poolRegistry == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), pluginPoolShutdownTimeout)
+	defer cancel()
+	if err := s.iacPlugin.poolRegistry.Close(ctx); err != nil {
+		logs.Errorf("close plugin pools failed, err: %v", err)
+	}
 }
 
 // StopPluginTasks 停止运行期插件版本检查与 http 插件巡检。

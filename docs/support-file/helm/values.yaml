@@ -435,6 +435,38 @@ hcservice:
           caFile:
           # the password to decrypt the certificate.
           password:
+    ## tf_provider 插件进程池，每个 tf 插件一个池，目前所有池使用以下参数，后续可能按插件类型差异化配置。
+    ## 除 enabled 外，值为 0 表示使用进程池包内默认值
+    ##
+    pool:
+      # 是否启用，默认关闭：不创建池，也不拉起任何插件进程
+      enabled: false
+      # 单个插件池的进程数上限
+      maxProcesses: 4
+      # 单个进程同时服务的 lease 数
+      maxLeasesPerProcess: 4
+      # 保持的最少空闲进程数，回收只处理超出该值的部分
+      minIdleProcesses: 2
+      # 进程侧失败后请求的最大重试次数
+      maxRetries: 2
+      # 单个插件池等待队列的长度上限
+      maxQueueLength: 100
+      # 单个请求的最长排队时间（秒）
+      maxQueueWaitSeconds: 180
+      # 拉起一个进程的超时（秒）
+      startTimeoutSeconds: 30
+      # 一次 ConfigureProvider 的超时（秒）
+      configureTimeoutSeconds: 30
+      # 关闭一个进程的时限（秒）
+      closeTimeoutSeconds: 30
+      # 空闲超过该时长的进程才可能被回收（秒）
+      idleReclaimSeconds: 600
+      # 一次配置可被复用的时长（秒），须短于云凭证有效期
+      maxConfigAgeSeconds: 1800
+      # 池内巡检周期（秒）
+      checkIntervalSeconds: 30
+      # 按已启用插件建池、关池的检查周期（秒）
+      registryCheckIntervalSeconds: 5
   ## 插件目录挂载，为空则使用镜像内的 /data/hcm/plugins。
   ## 例如挂载持久卷或 initContainer 拷贝的 emptyDir：
   ## pluginVolume:

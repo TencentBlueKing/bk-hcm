@@ -25,9 +25,8 @@ import (
 	"time"
 
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
-	coreplugin "hcm/pkg/api/core/plugin"
+	"hcm/cmd/hc-service/logics/tfruntime"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/kit"
 	"hcm/pkg/lock"
 )
 
@@ -36,23 +35,6 @@ var errPluginVersionConflict = errors.New("conflicts with the registered plugin"
 
 // errMissingPlugin 注册表里有已启用的 tf 插件，但本副本目录里没有，副本应当退出。
 var errMissingPlugin = errors.New("enabled plugin is missing in the local plugin directory")
-
-// PluginExecutor 插件进程实例的执行器。上游拿它取 Schema，不负责进程生命周期。
-type PluginExecutor interface {
-	// GetProviderSchema 取装配好的统一 Schema。
-	GetProviderSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error)
-}
-
-// PluginProcessManager 一个插件进程的生命周期：Start 拉起进程并返回执行器，Close 结束进程。
-type PluginProcessManager interface {
-	Start(kt *kit.Kit) (PluginExecutor, error)
-	Close() error
-}
-
-// PluginProcessStarter 进程管理工厂，每次 NewProcessManager 对应一个一次性进程。
-type PluginProcessStarter interface {
-	NewProcessManager(kt *kit.Kit, pluginName, pluginVersion, execPath string) (PluginProcessManager, error)
-}
 
 // Options 注册参数。
 type Options struct {
@@ -69,7 +51,7 @@ type Service struct {
 	dataCli   *dataservice.Client
 	etcdMutex *lock.EtcdMutex
 	schemaMgr *pluginschema.SchemaManager
-	starter   PluginProcessStarter
+	starter   tfruntime.Starter
 	opts      Options
 }
 

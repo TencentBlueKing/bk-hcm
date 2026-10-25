@@ -22,6 +22,7 @@ package pool
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -42,14 +43,12 @@ func TestStartFailureRetriesUntilExhaustedAndFreesCapacity(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "start plugin tcloud process failed")
 	assert.NotContains(t, err.Error(), "key-of-A")
-	// 初始 1 次 + 重试 2 次 = 3 次启动尝试。
-	assert.EqualValues(t, 3, s.starts.Load())
+	// 池启动时的预热失败 1 次，请求自己：初始 1 次 + 重试 2 次，共 4 次启动尝试，每个失败的进程都被关闭。
+	assert.GreaterOrEqual(t, s.starts.Load(), int64(3), "the request is retried until exhausted")
 
 	waitSettled(t, p)
 	assert.Equal(t, 0, p.testStats().total(), "failed process is removed")
-	ms := s.allManagers()
-	require.Len(t, ms, 3)
-	for _, m := range ms {
+	for _, m := range s.allManagers() {
 		assert.EqualValues(t, 1, m.closeCalls.Load(), "partially started process is closed")
 	}
 
@@ -278,26 +277,27 @@ func TestReserveDuringPreparationSharesProcess(t *testing.T) {
 		s.configureFn = func(*fakeManager, map[string]any) error { <-gate; return nil }
 	})
 	p := newTestPool(t, s, PoolConfig{MaxProcesses: 2, MaxLeasesPerProcess: 2})
+	waitPrewarmed(t, p, 2)
+	startsBefore := s.starts.Load()
 
 	ch1 := acquireAsync(p, kit.New(), "A")
 	require.Eventually(t, func() bool { return s.configures.Load() == 1 }, waitTimeout, time.Millisecond)
 
 	ch2 := acquireAsync(p, kit.New(), "A")
 	waitWaiters(t, p, 0)
-	assert.EqualValues(t, 1, s.starts.Load(), "second same-key request reserves the preparing process")
+	assert.Equal(t, startsBefore, s.starts.Load(), "second same-key request reserves the preparing process")
 
 	close(gate)
 	r1 := waitResult(t, ch1)
 	r2 := waitResult(t, ch2)
 	require.NoError(t, r1.err)
 	require.NoError(t, r2.err)
-	assert.Equal(t, "1/A", identityOf(t, r1.lease))
-	assert.Equal(t, "1/A", identityOf(t, r2.lease))
+	assert.Equal(t, identityOf(t, r1.lease), identityOf(t, r2.lease), "both requests share one process")
 	r1.lease.Release()
 	r2.lease.Release()
 }
 
-// TestReserveCanceledWaiterSkippedAndFullFallsThrough 预约中取消的请求在交付时被跳过；预约满时走后续规则新建第二个进程。
+// TestReserveCanceledWaiterSkippedAndFullFallsThrough 预约中取消的请求在交付时被跳过；预约满时同 key 的请求改为配置另一个空闲进程。
 func TestReserveCanceledWaiterSkippedAndFullFallsThrough(t *testing.T) {
 	gate := make(chan struct{})
 	s := &fakeStarter{}
@@ -305,6 +305,7 @@ func TestReserveCanceledWaiterSkippedAndFullFallsThrough(t *testing.T) {
 		s.configureFn = func(*fakeManager, map[string]any) error { <-gate; return nil }
 	})
 	p := newTestPool(t, s, PoolConfig{MaxProcesses: 2, MaxLeasesPerProcess: 2})
+	waitPrewarmed(t, p, 2)
 
 	ch1 := acquireAsync(p, kit.New(), "A")
 	require.Eventually(t, func() bool { return s.configures.Load() == 1 }, waitTimeout, time.Millisecond)
@@ -313,15 +314,11 @@ func TestReserveCanceledWaiterSkippedAndFullFallsThrough(t *testing.T) {
 	kt2 := kit.New()
 	kt2.Ctx = ctx2
 	ch2 := acquireAsync(p, kt2, "A")
-	require.Eventually(t, func() bool {
-		p.poolLock.Lock()
-		defer p.poolLock.Unlock()
-		return p.procs[1] != nil && len(p.procs[1].pending) == 2
-	}, waitTimeout, time.Millisecond)
+	require.Eventually(t, func() bool { return preparingWithPending(p) == 2 }, waitTimeout, time.Millisecond)
 
-	// 第三个同 key 请求：进程 1 的 pending 已满（2 个），按规则 4 新建进程 2。
+	// 第三个同 key 请求：正在准备的进程 pending 已满（2 个），改为配置另一个空闲的预热进程。
 	ch3 := acquireAsync(p, kit.New(), "A")
-	require.Eventually(t, func() bool { return s.starts.Load() == 2 }, waitTimeout, time.Millisecond)
+	require.Eventually(t, func() bool { return s.configures.Load() == 2 }, waitTimeout, time.Millisecond)
 
 	// 取消在进程 1 pending 里的第二个请求。
 	cancel2()
@@ -332,8 +329,8 @@ func TestReserveCanceledWaiterSkippedAndFullFallsThrough(t *testing.T) {
 	r3 := waitResult(t, ch3)
 	require.NoError(t, r1.err)
 	require.NoError(t, r3.err)
-	assert.Equal(t, "1/A", identityOf(t, r1.lease))
-	assert.Equal(t, "2/A", identityOf(t, r3.lease))
+	id1, id3 := identityOf(t, r1.lease), identityOf(t, r3.lease)
+	assert.NotEqual(t, id1[:strings.Index(id1, "/")], id3[:strings.Index(id3, "/")], "they run on different processes")
 	assert.Equal(t, 2, p.testStats().inflight, "canceled reserved request must not occupy inflight")
 	r1.lease.Release()
 	r3.lease.Release()

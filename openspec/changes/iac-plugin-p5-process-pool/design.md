@@ -22,7 +22,7 @@
 
 **Non-Goals:**
 - 对接方的进程管理 / 执行器真实逻辑（go-plugin、gRPC、协议适配、DynamicValue 编解码、日志落盘），本 change 只落契约骨架。
-- P2 `register` / `watch` 的修改（含让 `register` 改用 `tfruntime` 类型）：阶段四也不做，由对接方真实实现同时满足两处接口。
+- P2 注册、版本检查、http 插件的逻辑修改：阶段四在集成分支上只允许把 `register` 自带的三个对接接口换成 `tfruntime` 的同语义类型，其余不动。
 - Schema 同步；执行代理对 Plan / Apply 的编排、异步 Apply。
 - lease 持有超时强制回收、有限越队、升级期池切换、每身份进程上限（均为方案待定或明确不做）。
 
@@ -47,7 +47,7 @@
 
 "交付给调用方的是哪一部分"属于池的职责：池包自己定义窄接口 `ProviderIF`（仅 8 个业务方法，池包内类型），`Lease` 持有 `tfruntime.Executor` 并实现 `ProviderIF`——方法逐个转发给执行器，不暴露 `ConfigureProvider` 与 `GetProviderSchema`，从类型上保证调用方无法自行改配置。封装层还承担池的职责：lease 已归还或已失效（`Release` 之后、进程被关闭）时，转发前直接返回错误而不是打到可能已被重配的进程上。这一层随阶段一的 `Lease` 一起实现。
 
-`Starter` 的签名与 P2 分支（`feat/iac-plugin-register-submit`）里的 `PluginProcessStarter` 保持一致（`NewProcessManager(kt, pluginName, pluginVersion, execPath)`），合并时 P2 可以直接替换为 `tfruntime.Starter`。`Close` 与 P2 的差别是带 `ctx`（对接方案 6.3 的 `Close` 阻塞，池关闭又需要超时控制），该差异在合并计划里处理，本分支不碰 P2。
+`Starter` 的签名沿用 P2 分支（`feat/iac-plugin-register-submit`）里 `PluginProcessStarter` 的写法（`NewProcessManager(kt, pluginName, pluginVersion, execPath)`）。阶段四中 `register` 已直接改用 `tfruntime.Starter`，两处共用同一个类型；`Close` 带 `ctx`（对接方案 6.3 的 `Close` 阻塞，池关闭又需要超时控制），`register` 的一次性进程关闭使用 30 秒超时。
 
 ### D4 队列用具体类型，不抽 `FIFO` 接口
 方案给了 `FIFO` 接口并保留链表备选。按"只在确有多实现需求时才抽象"，本版直接实现 `sliceFIFO`（`PushBack / Peek / PopFront / Remove / Len / Drain`），取消靠延迟移除。需要换链表时再提接口，调度代码只依赖这六个方法，改动面很小。
@@ -78,7 +78,7 @@
 业务错误与传输错误的判别见 D13：`ConfigureProvider` 返回 `*tfruntime.DiagnosticsError` 为业务错误，其余为传输错误。
 
 ### D10 定时任务用本池 `time.Ticker`；预热与回收共用一个"空闲数"口径
-池内巡检（默认 30 秒）：预热 / 空闲回收、`Exited()`、`CheckHealth()`（仅 `running`），末尾无条件 `scheduleLocked()`。慢操作在锁外，用 `ctx` 控制退出，不引入 `pkg/cron`。池的 `Close` 会停掉自己的巡检。注册表（阶段四）另有一个周期更短的巡检（默认 3 秒），对照本副本已启用的 tf 插件建池 / 关池，同样用 `ticker + ctx`，随服务退出（`shutdown` 通知）停止。
+池内巡检（默认 30 秒）：预热 / 空闲回收、`Exited()`、`CheckHealth()`（仅 `running`），末尾无条件 `scheduleLocked()`。慢操作在锁外，用 `ctx` 控制退出，不引入 `pkg/cron`。池的 `Close` 会停掉自己的巡检。注册表（阶段四）另有一个周期更短的巡检（默认 5 秒），对照本副本已启用的 tf 插件建池 / 关池，同样用 `ticker + ctx`，随服务退出（`shutdown` 通知）停止。
 
 **空闲进程**统一定义为 `state == running && inflight == 0`，**不论是否已配置、配置是否过期**（已配置的空闲进程同样可被规则 ② ③ 复用）。此外，尚未被任何请求认领的预热进程（`starting` 且 `pending` 为空）按"将成为空闲"计入，避免重复补建。记 `idle` 为该数量，`min = minIdleProcesses`：
 
@@ -94,7 +94,7 @@
 `Lease` 保存 `procID`、`pool`、业务方法入口与 `acquiredAt`，不保存进程记录指针；`Release` 用 `sync.Once`，进程不在表中则忽略，ID 单调不复用。阶段三仅对持有时长超阈值输出日志与指标，不强制回收。
 
 ### D12 配置：阶段零到三用 `PoolConfig`，阶段四再映射到 `pkg/cc`
-`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（1）、`startTimeout`（30s）、`configureTimeout`（30s）、`closeTimeout`（30s，池内部关闭进程的时限；`Pool.Close` 用调用方 ctx）、`maxRetries`（2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（10m）、`maxConfigAge`（30m）、`poolCheckInterval`（30s）、`leaseHoldWarn`。全部由 `PoolConfig` 结构体承载，带 `trySetDefault / Validate`，构造池时传入。校验：`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、各时长大于 0。阶段四把这些参数加入 `IaCPluginConfig`（yaml `iacPlugin` 下，沿用 `trySetDefault / Validate` 约定），另加接入开关与 `registryCheckInterval`（默认 3 秒），由 hc-service 在构造池时映射成 `PoolConfig`；`Validate` 与 `PoolConfig.Validate` 的规则保持一致，避免两处各一套。yaml 与 helm 的 hcservice configmap / values 同步新增并写明含义与取值约束（`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲数下限，回收只处理超出部分）。开关默认关闭。
+`maxProcesses`、`maxLeasesPerProcess`（默认 1）、`minIdleProcesses`（1）、`startTimeout`（30s）、`configureTimeout`（30s）、`closeTimeout`（30s，池内部关闭进程的时限；`Pool.Close` 用调用方 ctx）、`maxRetries`（2）、`maxQueueWait`、`maxQueueLength`、`idleReclaimTimeout`（10m）、`maxConfigAge`（30m）、`poolCheckInterval`（30s）、`leaseHoldWarn`。全部由 `PoolConfig` 结构体承载，带 `trySetDefault / Validate`，构造池时传入。校验：`maxProcesses ≥ 1`、`maxLeasesPerProcess ≥ 1`、`minIdleProcesses ≤ maxProcesses`、各时长大于 0。阶段四把这些参数加入 `IaCPluginConfig`（yaml `iacPlugin` 下，沿用 `trySetDefault / Validate` 约定），另加接入开关与 `registryCheckInterval`（默认 5 秒），由 hc-service 在构造池时映射成 `PoolConfig`；`Validate` 与 `PoolConfig.Validate` 的规则保持一致，避免两处各一套。yaml 与 helm 的 hcservice configmap / values 同步新增并写明含义与取值约束（`maxConfigAge` 须短于云凭证有效期；`minIdleProcesses` 是空闲数下限，回收只处理超出部分）。开关默认关闭。
 
 ### D13 对接契约骨架（阶段零）：只落类型，桩方法返回 `ErrNotImplemented`
 包路径 `cmd/hc-service/logics/tfruntime`。越界范围严格限定为"结构体与接口 + 能让池编译和被调用的最小桩"，不写任何协议逻辑。
@@ -118,7 +118,7 @@ type ProcessManager interface {
 ```
 
 约定：
-- `GetProviderSchema` 返回 `*ProviderSchema`。该别名当前指向基线上已有的南向 `PluginSchema`，其形态与对接方案 6.2 的响应一致；P2 分支使用的是 `pkg/api/core/plugin.PluginSchema`，合并时只需调整这一处别名（或在合并 change 里加一次转换）。池本身不调用 `GetProviderSchema`。
+- `GetProviderSchema` 返回 `*ProviderSchema`，它是 `pkg/api/core/plugin.PluginSchema` 的类型别名，与插件注册、Schema 同步使用同一个类型（阶段零曾指向南向协议的 `PluginSchema`，阶段四按 P2 的实际类型改指）。池本身不调用 `GetProviderSchema`。
 - 请求 / 响应里的 `Config / State` 一律是 `Object`；DynamicValue 编解码、按 schema 校验由对接方在 `Executor` 实现里完成，契约不暴露 `tftypes`。未知值用 `Unknown{}` 表达，是否足够由对接方在实现时确认。
 - 桩实现 `processManager` 持有 `ProcessConfig` 与关闭标志位等必要字段，方法体直接 `return nil, ErrNotImplemented`（`Exited()` 返回 `false`、`CheckHealth()` 返回 `ErrNotImplemented`、`Close` 返回 `nil` 并幂等）。不实现 `Executor`：`Start` 在桩里返回 `ErrNotImplemented`，不提供假执行器；池的测试用例在测试文件内自带假实现。
 - 包级编译期断言 `var _ ProcessManager = (*processManager)(nil)`。
@@ -128,9 +128,14 @@ type ProcessManager interface {
 业务错误与传输错误的区分：契约约定 `ConfigureProvider` 的失败有两类——响应含 `Error` 级 `Diagnostics` 时返回 `*DiagnosticsError`（业务错误）；其余（超时、连接断开、进程退出）返回普通 `error`（传输错误）。池用 `errors.As` 判别。
 
 ### D14 池注册表与服务接入（阶段四，合并后）
-- **`Registry`**：`map[pluginName]*Pool`，一把锁保护；对外 `Get(pluginName)`（未建池返回 `ErrPluginNotEnabled`）、`Run(ctx)`（周期巡检）、`Close(ctx)`（关全部池）。巡检读取本副本已启用的 tf 插件（数据来自注册表 / data-service，副本本地只关心有本地二进制的插件），读到已启用且无池则建池并预热；读到停用则对池 `Close(ctx)` 后移除。读取失败只记日志、跳过本轮，不误关池。同一插件至多一个池。
-- **Starter 来源**：`Registry` 构造时接收 `tfruntime.Starter`，与 P2 注册流程使用同一个真实实现，但两处各自持有自己声明的接口类型；P2 `register` 现有的注入点保持不变（本 change 不修改 `register`）。
-- **接入时机**：沿用 P2 的启动时序——目录检查 → 注册 → 就绪（`SetPluginReady`）之后再建立注册表；服务退出时 `StopPluginTasks` 先停注册表巡检，再对全部池 `Close(ctx)` 并等待。注册期读 Schema 的临时进程不进池。
+- **`PluginRegistry`**：`map[pluginName]*Pool`，一把锁保护；对外 `GetPool(pluginName)`（未建池返回 `ErrPluginNotEnabled`）、`StartSync`（周期同步）、`Close(ctx)`（关全部池）。同步读取本副本已启用的 tf 插件（数据来自插件表 / data-service，副本本地只关心有本地二进制的插件），读到已启用且无池则建池并预热；读到停用则对池 `Close(ctx)` 后移除。读取失败只记日志、跳过本轮，不误关池。同一插件至多一个池。
+- **Starter 来源**：`Service.initIaCPlugin` 创建一个默认 `tfruntime.Starter`（当前是返回 `ErrNotImplemented` 的桩，启动参数 Args / WorkDir / Env / LogDir 留给对接方补齐），`register` 与 `Registry` 共用它。桩期间 `register` 在需要拉起进程时失败，与改动前"starter 未配置"的失败等价。
+- **接入时机**：分两步。`initIaCPlugin` 里创建并校验 `Registry`（池参数不合法则服务不启动，此时不建池、不起后台协程）；`SetPluginReady` 之后 `StartPluginPools` 才启动后台检查。服务退出时 `StopPluginTasks` 停止版本检查与 http 巡检，随后摘除服务发现，最后用 `defer` 关闭全部池——摘除之后再关，且不论摘除是否成功都要关，否则插件子进程会残留。关闭总时限 10 秒，小于进程整体 20 秒的退出等待。
+- **术语**：`pool.PluginRegistry` 指内存里"插件名 -> 池"的索引；数据库里的 `iac_plugin` 表一律称"插件表"，两者不混用。池参数目前所有插件共用一份，`PluginRegistryOptions.Pool` 是后续按插件类型差异化配置的扩展点。
+- **读插件表**：只查本副本有的插件（`plugin_name IN (...)`），并翻页读全；一个插件每升一次级就多一条记录，只读第一页（500 条）可能漏掉最新的 enabled 记录，把正在服务的池误判为停用而关掉。
+- **建池即预热**：预热是池自己的行为——池的巡检协程启动时先执行一次再进入周期循环，空闲进程在池创建时就开始拉起，第一个请求到来时已有空闲进程可配置，不必自己等进程拉起。因此所有创建池的路径（`Registry`、测试）都有此行为，`Registry` 不再单独触发；建池在锁外做，不挡 `Get`。
+- **关池的 context**：被停用的池摘出索引后在独立的 context（带超时）里关闭，不跟随后台检查的 context——服务退出时后者先被取消，会打断正在进行的优雅关闭。`Registry.Close` 在取消后台检查之后等待其协程退出，关闭期间新建的池交还调用方关闭，不登记不泄漏。
+- **应有哪些池**：本副本目录里有该插件、且注册表里该插件"已完成的最高版本"处于 enabled。只看已完成（enabled / disabled）的记录：新版本 init / failed 说明升级尚未成功，当前版本仍在服务，不能因此关池；已完成的最高版本是 disabled 才关池。读取失败或版本号不合法时跳过本轮，不据此关池。已停用插件的池在检查循环里同步关闭，关完下一轮才可能重建，避免新旧两个池的进程数叠加。
 - **开关**：`iacPlugin` 下新增接入开关，默认关闭；关闭时不创建注册表、不预热、不拉起任何进程，行为与接入前一致。真实 `ProcessManager` 就绪前开关保持关闭，否则桩的 `Start` 返回 `ErrNotImplemented` 会让所有 `Acquire` 失败。
 - **配置与 helm**：见 D12。
 
@@ -179,5 +184,5 @@ type ProcessManager interface {
 - provider 是否支持并发 RPC、Apply 是否必须独占（待定 #1）。
 - `Config` 规范化口径与脱敏（待定 #2）；`maxConfigAge` 与凭证有效期的取值（待定 #3）。
 - 池关闭时处于 Plan 与 Apply 之间的 lease，其后续调用返回错误（待定 #8，已定），执行代理需据此处理。
-- 合并时 `ProviderSchema` 到底指向哪个 `PluginSchema`：以合并时 P2 分支的实际类型为准。
-- 阶段四：插件"已启用"状态的读取方式（data-service 的列表接口还是复用 P2 `watch` 的读取路径）与开关键名，在合并后开工时确定。
+- 合并时 `ProviderSchema` 指向 `pkg/api/core/plugin.PluginSchema`，已在集成分支落实。
+- 阶段四："已启用"状态沿用 `register.CheckRegistered` 的 data-service 列表查询，只过滤 tf_provider 协议；开关键名为 `iacPlugin.pool.enabled`。已落实。
