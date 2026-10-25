@@ -84,7 +84,9 @@ func (e *PluginExecutor) loadSchemas(ctx context.Context) (*types.ProviderSchema
 // ConfigureProvider encodes Config, prepares it, then configures the plugin.
 // A missing schema cache is loaded here, so this method can be the first call after start.
 // A prepare error does not call configure. Credentials stay inside Config.
-func (e *PluginExecutor) ConfigureProvider(ctx context.Context, config any) (*types.ConfigureResult, error) {
+func (e *PluginExecutor) ConfigureProvider(ctx context.Context, config map[string]any) (
+	*types.ConfigureResult, error) {
+
 	return callRPC(e, func() (*types.ConfigureResult, error) {
 		if !e.schemasLoaded() {
 			if _, err := e.loadSchemas(ctx); err != nil {

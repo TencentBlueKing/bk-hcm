@@ -32,7 +32,9 @@ import (
 
 // ValidateResourceTypeConfig checks one resource config.
 // An error fails this call. It does not block a later plan.
-func (e *PluginExecutor) ValidateResourceTypeConfig(ctx context.Context, typeName string, config any) (*types.ValidateResult, error) {
+func (e *PluginExecutor) ValidateResourceTypeConfig(ctx context.Context, typeName string, config map[string]any) (
+	*types.ValidateResult, error) {
+
 	return callRPC(e, func() (*types.ValidateResult, error) {
 		schema, err := e.readyResource(typeName)
 		if err != nil {
@@ -57,7 +59,9 @@ func (e *PluginExecutor) ValidateResourceTypeConfig(ctx context.Context, typeNam
 
 // UpgradeResourceState sends RawState without treating it as a DynamicValue.
 // JSON and flatmap are mutually exclusive. The upgraded state is returned to the caller.
-func (e *PluginExecutor) UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64, raw *types.RawState) (*types.UpgradeResult, error) {
+func (e *PluginExecutor) UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64,
+	raw *types.RawState) (*types.UpgradeResult, error) {
+
 	return callRPC(e, func() (*types.UpgradeResult, error) {
 		schema, err := e.readyResource(typeName)
 		if err != nil {
@@ -76,7 +80,7 @@ func (e *PluginExecutor) UpgradeResourceState(ctx context.Context, typeName stri
 			return nil, err
 		}
 		diags := resp.GetDiagnostics()
-		upgraded, decErr := e.decode(schema, resp.GetUpgradedState())
+		upgraded, decErr := e.decodeObject(schema, resp.GetUpgradedState())
 		e.logWarnings(diags)
 		result := &types.UpgradeResult{UpgradedState: upgraded, Diagnostics: diags}
 		if decErr != nil {
@@ -87,7 +91,9 @@ func (e *PluginExecutor) UpgradeResourceState(ctx context.Context, typeName stri
 }
 
 // ReadResource reads one resource. A nil current state stays nil.
-func (e *PluginExecutor) ReadResource(ctx context.Context, typeName string, current any, private []byte) (*types.ReadResourceResult, error) {
+func (e *PluginExecutor) ReadResource(ctx context.Context, typeName string, current map[string]any, private []byte) (
+	*types.ReadResourceResult, error) {
+
 	return callRPC(e, func() (*types.ReadResourceResult, error) {
 		schema, err := e.readyResource(typeName)
 		if err != nil {
@@ -106,9 +112,10 @@ func (e *PluginExecutor) ReadResource(ctx context.Context, typeName string, curr
 			return nil, err
 		}
 		diags := resp.GetDiagnostics()
-		state, decErr := e.decode(schema, resp.GetNewState())
+		state, decErr := e.decodeObject(schema, resp.GetNewState())
 		e.logWarnings(diags)
-		result := &types.ReadResourceResult{NewState: state, Private: bytes.Clone(resp.GetPrivate()), Diagnostics: diags}
+		result := &types.ReadResourceResult{NewState: state, Private: bytes.Clone(resp.GetPrivate()),
+			Diagnostics: diags}
 		if decErr != nil {
 			return result, decErr
 		}
@@ -118,7 +125,9 @@ func (e *PluginExecutor) ReadResource(ctx context.Context, typeName string, curr
 
 // PlanResourceChange sends only the plan RPC.
 // Empty prior and proposed states send nothing. A delete plan returns an empty planned state.
-func (e *PluginExecutor) PlanResourceChange(ctx context.Context, typeName string, prior, proposed, config any, priorPrivate []byte) (*types.PlanResult, error) {
+func (e *PluginExecutor) PlanResourceChange(ctx context.Context, typeName string,
+	prior, proposed, config map[string]any, priorPrivate []byte) (*types.PlanResult, error) {
+
 	return callRPC(e, func() (*types.PlanResult, error) {
 		schema, err := e.readyResource(typeName)
 		if err != nil {
@@ -159,7 +168,7 @@ func (e *PluginExecutor) PlanResourceChange(ctx context.Context, typeName string
 		if prior != nil && proposed == nil {
 			return result, diagnosticFailure(diags)
 		}
-		planned, decErr := e.decode(schema, resp.GetPlannedState())
+		planned, decErr := e.decodeObject(schema, resp.GetPlannedState())
 		result.PlannedState = planned
 		if decErr != nil {
 			return result, decErr
@@ -171,7 +180,9 @@ func (e *PluginExecutor) PlanResourceChange(ctx context.Context, typeName string
 // ApplyResourceChange applies one plan.
 // A nil planned state is a delete and the returned state is empty.
 // An apply error still returns the plugin's new state.
-func (e *PluginExecutor) ApplyResourceChange(ctx context.Context, typeName string, prior, planned, config any, plannedPrivate []byte) (*types.ApplyResult, error) {
+func (e *PluginExecutor) ApplyResourceChange(ctx context.Context, typeName string,
+	prior, planned, config map[string]any, plannedPrivate []byte) (*types.ApplyResult, error) {
+
 	return callRPC(e, func() (*types.ApplyResult, error) {
 		schema, err := e.readyResource(typeName)
 		if err != nil {
@@ -205,7 +216,7 @@ func (e *PluginExecutor) ApplyResourceChange(ctx context.Context, typeName strin
 		if planned == nil {
 			return result, diagnosticFailure(diags)
 		}
-		state, decErr := e.decode(schema, resp.GetNewState())
+		state, decErr := e.decodeObject(schema, resp.GetNewState())
 		result.NewState = state
 		if decErr != nil {
 			return result, decErr
@@ -239,7 +250,7 @@ func (e *PluginExecutor) ImportResourceState(ctx context.Context, typeName, id s
 			if err != nil {
 				return &types.ImportResult{Diagnostics: diags}, err
 			}
-			state, err := e.decode(itemSchema, item.GetState())
+			state, err := e.decodeObject(itemSchema, item.GetState())
 			if err != nil && decErr == nil {
 				decErr = err
 			}
@@ -260,7 +271,9 @@ func (e *PluginExecutor) ImportResourceState(ctx context.Context, typeName, id s
 
 // ValidateDataSourceConfig checks one data source config.
 // An error fails this call. It does not block a later read.
-func (e *PluginExecutor) ValidateDataSourceConfig(ctx context.Context, typeName string, config any) (*types.ValidateResult, error) {
+func (e *PluginExecutor) ValidateDataSourceConfig(ctx context.Context, typeName string, config map[string]any) (
+	*types.ValidateResult, error) {
+
 	return callRPC(e, func() (*types.ValidateResult, error) {
 		schema, err := e.readyDataSource(typeName)
 		if err != nil {
@@ -284,7 +297,9 @@ func (e *PluginExecutor) ValidateDataSourceConfig(ctx context.Context, typeName 
 }
 
 // ReadDataSource reads one data source. It does not plan or apply.
-func (e *PluginExecutor) ReadDataSource(ctx context.Context, typeName string, config any) (*types.ReadDataSourceResult, error) {
+func (e *PluginExecutor) ReadDataSource(ctx context.Context, typeName string, config map[string]any) (
+	*types.ReadDataSourceResult, error) {
+
 	return callRPC(e, func() (*types.ReadDataSourceResult, error) {
 		schema, err := e.readyDataSource(typeName)
 		if err != nil {
@@ -302,7 +317,7 @@ func (e *PluginExecutor) ReadDataSource(ctx context.Context, typeName string, co
 			return nil, err
 		}
 		diags := resp.GetDiagnostics()
-		state, decErr := e.decode(schema, resp.GetState())
+		state, decErr := e.decodeObject(schema, resp.GetState())
 		e.logWarnings(diags)
 		result := &types.ReadDataSourceResult{State: state, Diagnostics: diags}
 		if decErr != nil {

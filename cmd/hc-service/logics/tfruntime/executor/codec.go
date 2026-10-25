@@ -23,7 +23,7 @@ import "hcm/pkg/plugin/tfplugin5"
 
 // ValueCodec encodes caller values and decodes plugin values for a schema.
 // Encode returns the generated DynamicValue so the executor can place it on a request.
-// The executor does not implement msgpack. A later change supplies the codec.
+// The executor does not implement msgpack. Callers install a ValueCodec.
 type ValueCodec interface {
 	Encode(schema *tfplugin5.Schema, value any) (*tfplugin5.DynamicValue, error)
 	Decode(schema *tfplugin5.Schema, value *tfplugin5.DynamicValue) (any, error)

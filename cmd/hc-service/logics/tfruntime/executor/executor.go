@@ -22,6 +22,7 @@ package executor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 
@@ -44,15 +45,20 @@ var errValueCodecRequired = errors.New("terraform plugin value codec is not set"
 type Executor interface {
 	Close() error
 	GetProviderSchema(ctx context.Context) (*types.ProviderSchema, error)
-	ConfigureProvider(ctx context.Context, config any) (*types.ConfigureResult, error)
-	ValidateResourceTypeConfig(ctx context.Context, typeName string, config any) (*types.ValidateResult, error)
-	UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64, raw *types.RawState) (*types.UpgradeResult, error)
-	ReadResource(ctx context.Context, typeName string, current any, private []byte) (*types.ReadResourceResult, error)
-	PlanResourceChange(ctx context.Context, typeName string, prior, proposed, config any, priorPrivate []byte) (*types.PlanResult, error)
-	ApplyResourceChange(ctx context.Context, typeName string, prior, planned, config any, plannedPrivate []byte) (*types.ApplyResult, error)
+	ConfigureProvider(ctx context.Context, config map[string]any) (*types.ConfigureResult, error)
+	ValidateResourceTypeConfig(ctx context.Context, typeName string, config map[string]any) (
+		*types.ValidateResult, error)
+	UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64, raw *types.RawState) (
+		*types.UpgradeResult, error)
+	ReadResource(ctx context.Context, typeName string, current map[string]any, private []byte) (
+		*types.ReadResourceResult, error)
+	PlanResourceChange(ctx context.Context, typeName string, prior, proposed, config map[string]any,
+		priorPrivate []byte) (*types.PlanResult, error)
+	ApplyResourceChange(ctx context.Context, typeName string, prior, planned, config map[string]any,
+		plannedPrivate []byte) (*types.ApplyResult, error)
 	ImportResourceState(ctx context.Context, typeName, id string) (*types.ImportResult, error)
-	ValidateDataSourceConfig(ctx context.Context, typeName string, config any) (*types.ValidateResult, error)
-	ReadDataSource(ctx context.Context, typeName string, config any) (*types.ReadDataSourceResult, error)
+	ValidateDataSourceConfig(ctx context.Context, typeName string, config map[string]any) (*types.ValidateResult, error)
+	ReadDataSource(ctx context.Context, typeName string, config map[string]any) (*types.ReadDataSourceResult, error)
 }
 
 // PluginExecutor is a running provider process.
@@ -110,6 +116,9 @@ func (e *PluginExecutor) encode(schema *tfplugin5.Schema, value any) (*tfplugin5
 	if value == nil {
 		return nil, nil
 	}
+	if object, ok := value.(map[string]any); ok && object == nil {
+		return nil, nil
+	}
 	codec := e.valueCodec()
 	if codec == nil {
 		return nil, errValueCodecRequired
@@ -128,6 +137,21 @@ func (e *PluginExecutor) decode(schema *tfplugin5.Schema, value *tfplugin5.Dynam
 		return nil, errValueCodecRequired
 	}
 	return codec.Decode(schema, value)
+}
+
+func (e *PluginExecutor) decodeObject(schema *tfplugin5.Schema, value *tfplugin5.DynamicValue) (map[string]any, error) {
+	decoded, err := e.decode(schema, value)
+	if err != nil {
+		return nil, err
+	}
+	if decoded == nil {
+		return nil, nil
+	}
+	object, ok := decoded.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("terraform value is %T, want map[string]any", decoded)
+	}
+	return object, nil
 }
 
 // Close rejects new RPCs, waits for RPCs already inside a method, calls StopProvider, then Kill.

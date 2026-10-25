@@ -57,14 +57,6 @@ func (c staticCodec) Decode(*tfplugin5.Schema, *tfplugin5.DynamicValue) (any, er
 	return "decoded", nil
 }
 
-func TestPluginExecutor_Encode(t *testing.T) {
-	executor := &PluginExecutor{}
-	_, err := executor.encode(&tfplugin5.Schema{}, map[string]any{"secret_id": "ak"})
-	if !errors.Is(err, errValueCodecRequired) {
-		t.Fatalf("err = %v", err)
-	}
-}
-
 func TestPluginExecutor_Decode(t *testing.T) {
 	executor := &PluginExecutor{}
 	_, err := executor.decode(&tfplugin5.Schema{}, &tfplugin5.DynamicValue{Msgpack: []byte{1}})

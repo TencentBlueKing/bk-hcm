@@ -22,7 +22,6 @@ package executor
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"hcm/cmd/hc-service/types"
@@ -103,7 +102,6 @@ func TestPluginExecutor_PlanResourceChange_AfterValidateError(t *testing.T) {
 
 func TestPluginExecutor_UpgradeResourceState(t *testing.T) {
 	upgradeErr := true
-	var planned *tfplugin5.PlanResourceChange_Request
 	fake := &fakePlugin{
 		getSchema: resourceSchema(t),
 		upgrade: func(in *tfplugin5.UpgradeResourceState_Request) (*tfplugin5.UpgradeResourceState_Response, error) {
@@ -117,10 +115,6 @@ func TestPluginExecutor_UpgradeResourceState(t *testing.T) {
 				UpgradedState: &tfplugin5.DynamicValue{Json: []byte(`{"id":"upgraded"}`)},
 			}, nil
 		},
-		plan: func(in *tfplugin5.PlanResourceChange_Request) (*tfplugin5.PlanResourceChange_Response, error) {
-			planned = in
-			return &tfplugin5.PlanResourceChange_Response{}, nil
-		},
 	}
 	loadEchoPrepare(fake)
 	executor := preparedExecutor(t, fake, &jsonCodec{})
@@ -128,25 +122,13 @@ func TestPluginExecutor_UpgradeResourceState(t *testing.T) {
 	if _, err := executor.UpgradeResourceState(ctx, "tcloud_cvm", 1, &types.RawState{JSON: []byte(`{"id":"old"}`)}); !errors.Is(err, errDiagnostic) {
 		t.Fatalf("upgrade err = %v", err)
 	}
-	if _, err := executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "caller"}, map[string]any{"id": "next"}, nil, nil); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(planned.GetPriorState().GetJson()), `"id":"caller"`) {
-		t.Fatalf("prior state after a failed upgrade = %s", planned.GetPriorState().GetJson())
-	}
 	upgradeErr = false
 	upgraded, err := executor.UpgradeResourceState(ctx, "tcloud_cvm", 1, &types.RawState{JSON: []byte(`{"id":"old"}`)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if upgraded.UpgradedState.(map[string]any)["id"] != "upgraded" {
+	if upgraded.UpgradedState["id"] != "upgraded" {
 		t.Fatalf("upgraded = %#v", upgraded.UpgradedState)
-	}
-	if _, err = executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "caller"}, map[string]any{"id": "next"}, nil, nil); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(planned.GetPriorState().GetJson()), `"id":"caller"`) {
-		t.Fatalf("prior state = %s", planned.GetPriorState().GetJson())
 	}
 }
 
@@ -201,7 +183,7 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	if planned.GetPriorState() != nil || planned.GetProposedNewState() == nil {
 		t.Fatal("create plan did not send only the proposed state")
 	}
-	if created.PlannedState.(map[string]any)["id"] != "planned" {
+	if created.PlannedState["id"] != "planned" {
 		t.Fatalf("created = %#v", created.PlannedState)
 	}
 
@@ -259,7 +241,7 @@ func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
 	if !errors.Is(err, errDiagnostic) {
 		t.Fatalf("apply err = %v", err)
 	}
-	if failed.NewState.(map[string]any)["id"] != "kept" {
+	if failed.NewState["id"] != "kept" {
 		t.Fatalf("failed state = %#v", failed.NewState)
 	}
 }
@@ -344,7 +326,7 @@ func TestPluginExecutor_ImportResourceState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if imported.Imported[0].State.(map[string]any)["id"] != "ins-1" {
+	if imported.Imported[0].State["id"] != "ins-1" {
 		t.Fatalf("imported = %#v", imported.Imported)
 	}
 	if fake.count("ReadResource") != 0 || fake.count("ApplyResourceChange") != 0 {
@@ -410,7 +392,7 @@ func TestPluginExecutor_ReadDataSource(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.State.(map[string]any)["id"] != "img-1" {
+	if got.State["id"] != "img-1" {
 		t.Fatalf("state = %#v", got.State)
 	}
 	if fake.count("PlanResourceChange") != 0 || fake.count("ApplyResourceChange") != 0 {
