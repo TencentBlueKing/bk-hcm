@@ -55,9 +55,8 @@ type Block struct {
 }
 
 // Attribute is an adapted schema attribute.
-// Type is the TF JSON type: a string or a nested array.
+// Type is the TF JSON type. A primitive decodes to a string. A compound type decodes to an array.
 type Attribute struct {
-	// TODO 这里所有 any 都应该是固定的类型，不应该由上层来猜
 	Type        any    `json:"type"`
 	Required    bool   `json:"required"`
 	Optional    bool   `json:"optional"`
@@ -86,20 +85,20 @@ type ValidateResult struct {
 
 // UpgradeResult is the outcome of UpgradeResourceState.
 type UpgradeResult struct {
-	UpgradedState any
+	UpgradedState map[string]any
 	Diagnostics   []*tfplugin5.Diagnostic
 }
 
 // ReadResourceResult is the outcome of ReadResource.
 type ReadResourceResult struct {
-	NewState    any
+	NewState    map[string]any
 	Private     []byte
 	Diagnostics []*tfplugin5.Diagnostic
 }
 
 // PlanResult is the outcome of PlanResourceChange.
 type PlanResult struct {
-	PlannedState    any
+	PlannedState    map[string]any
 	RequiresReplace []*tfplugin5.AttributePath
 	PlannedPrivate  []byte
 	Diagnostics     []*tfplugin5.Diagnostic
@@ -107,7 +106,7 @@ type PlanResult struct {
 
 // ApplyResult is the outcome of ApplyResourceChange.
 type ApplyResult struct {
-	NewState    any
+	NewState    map[string]any
 	Private     []byte
 	Diagnostics []*tfplugin5.Diagnostic
 }
@@ -121,13 +120,13 @@ type ImportResult struct {
 // ImportedResource is a resource returned by import.
 type ImportedResource struct {
 	TypeName string
-	State    any
+	State    map[string]any
 	Private  []byte
 }
 
 // ReadDataSourceResult is the outcome of ReadDataSource.
 type ReadDataSourceResult struct {
-	State       any
+	State       map[string]any
 	Diagnostics []*tfplugin5.Diagnostic
 }
 

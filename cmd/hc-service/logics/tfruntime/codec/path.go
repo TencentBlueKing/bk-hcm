@@ -17,36 +17,30 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tfruntime
+package codec
 
 import (
-	"testing"
-
-	"hcm/cmd/hc-service/logics/tfruntime/executor"
-	"hcm/pkg/plugin/tfplugin5"
+	"errors"
+	"fmt"
 )
 
-type staticCodec struct {
-	value *tfplugin5.DynamicValue
-}
-
-func (c staticCodec) Encode(*tfplugin5.Schema, any) (*tfplugin5.DynamicValue, error) {
-	return c.value, nil
-}
-
-func (c staticCodec) Decode(*tfplugin5.Schema, *tfplugin5.DynamicValue) (any, error) {
-	return "decoded", nil
-}
-
-func TestProcessManager_SetValueCodec(t *testing.T) {
-	manager := NewProcessManager("tencentcloud", "/bin/true", nil, "", "")
-	exec := &executor.PluginExecutor{}
-	manager.mu.Lock()
-	manager.executor = exec
-	manager.mu.Unlock()
-
-	manager.SetValueCodec(staticCodec{value: &tfplugin5.DynamicValue{Msgpack: []byte("packed")}})
-	if manager.codec == nil {
-		t.Fatal("codec was not stored")
+func joinPath(parent, name string) string {
+	if parent == "" {
+		return name
 	}
+	return parent + "." + name
+}
+
+func indexPath(parent string, index int) string {
+	if parent == "" {
+		return fmt.Sprintf("[%d]", index)
+	}
+	return fmt.Sprintf("%s[%d]", parent, index)
+}
+
+func pathError(path, reason string) error {
+	if path == "" {
+		return errors.New(reason)
+	}
+	return fmt.Errorf("%s: %s", path, reason)
 }

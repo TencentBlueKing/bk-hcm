@@ -22,6 +22,7 @@ package assert
 
 import (
 	"encoding/json"
+	"math/big"
 	"reflect"
 	"strings"
 
@@ -31,7 +32,7 @@ import (
 // IsNumeric test if an interface is a numeric value or not.
 func IsNumeric(val interface{}) bool {
 	switch val.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, json.Number:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, *big.Float, json.Number:
 		return true
 	}
 	return false
