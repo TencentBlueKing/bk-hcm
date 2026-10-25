@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"sync"
 
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/logs"
@@ -60,7 +61,8 @@ type ProcessManager struct {
 	// tfLog is TF_LOG for the process started by this manager. Empty means ERROR.
 	tfLog string
 
-	executor *PluginExecutor
+	executor *executor.PluginExecutor
+	codec    executor.ValueCodec
 	starting bool
 	// started stays set after a successful Start. Close does not clear it.
 	started bool
@@ -78,10 +80,22 @@ func NewProcessManager(name, path string, args []string, dir, tfLog string) *Pro
 	}
 }
 
+// SetValueCodec installs the codec used to encode config and state.
+// It does not change NewProcessManager's parameters. A codec set before Start
+// is copied onto the executor. A codec set after Start replaces the live one.
+func (m *ProcessManager) SetValueCodec(codec executor.ValueCodec) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.codec = codec
+	if m.executor != nil {
+		m.executor.SetCodec(codec)
+	}
+}
+
 // Start launches this manager's plugin process once. Another call returns an
 // error and does not create a plugin.Client. This manager stops the process
 // in Close.
-func (m *ProcessManager) Start(ctx context.Context) (*PluginExecutor, error) {
+func (m *ProcessManager) Start(ctx context.Context) (executor.Executor, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -101,18 +115,19 @@ func (m *ProcessManager) Start(ctx context.Context) (*PluginExecutor, error) {
 		m.mu.Unlock()
 	}()
 
-	executor, err := m.launch(ctx)
+	exec, err := m.launch(ctx)
 	if err != nil {
 		return nil, err
 	}
 	m.mu.Lock()
-	m.executor = executor
+	m.executor = exec
+	exec.SetCodec(m.codec)
 	m.starting = false
 	m.started = true
 	m.mu.Unlock()
 	succeeded = true
 	m.watchShutdown()
-	return executor, nil
+	return exec, nil
 }
 
 func (m *ProcessManager) beginStart() error {
@@ -125,7 +140,7 @@ func (m *ProcessManager) beginStart() error {
 	return nil
 }
 
-func (m *ProcessManager) launch(ctx context.Context) (*PluginExecutor, error) {
+func (m *ProcessManager) launch(ctx context.Context) (*executor.PluginExecutor, error) {
 	env, err := pluginEnv(m.tfLog)
 	if err != nil {
 		return nil, err
@@ -150,14 +165,15 @@ func (m *ProcessManager) launch(ctx context.Context) (*PluginExecutor, error) {
 	executor, err := connectPlugin(ctx, client, sink)
 	if err != nil {
 		client.Kill()
-		sink.close()
+		_ = sink.Close()
 		return nil, err
 	}
-	executor.attach(m, client, sink, m.name)
+	// TODO version 应该来自 GetSchema
+	executor.Attach(client, sink, m.name, "")
 	return executor, nil
 }
 
-func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs) (*PluginExecutor, error) {
+func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs) (*executor.PluginExecutor, error) {
 	rpcClient, err := client.Client()
 	if err != nil {
 		return nil, err
@@ -177,7 +193,7 @@ func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs)
 	if err != nil {
 		return nil, err
 	}
-	executor, ok := raw.(*PluginExecutor)
+	executor, ok := raw.(*executor.PluginExecutor)
 	if !ok {
 		return nil, fmt.Errorf("plugin %s returned %T", constant.TFPluginProviderName, raw)
 	}
@@ -200,22 +216,17 @@ func pluginPID(client *plugin.Client) (string, error) {
 }
 
 // Close stops this manager's process. It returns immediately when none is running.
+// The executor pointer is cleared here, including when Close runs after the executor
+// has already been closed.
 func (m *ProcessManager) Close() error {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
+	m.executor = nil
 	m.mu.Unlock()
-	if executor == nil {
+	if exec == nil {
 		return nil
 	}
-	return executor.Close()
-}
-
-func (m *ProcessManager) detach(executor *PluginExecutor) {
-	m.mu.Lock()
-	if m.executor == executor {
-		m.executor = nil
-	}
-	m.mu.Unlock()
+	return exec.Close()
 }
 
 // pluginEnv builds the explicit environment for one plugin process.
