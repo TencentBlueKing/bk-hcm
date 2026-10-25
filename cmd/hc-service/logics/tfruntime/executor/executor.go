@@ -111,13 +111,11 @@ func (e *PluginExecutor) valueCodec() ValueCodec {
 }
 
 // encode turns a caller value into a protocol DynamicValue.
-// A nil value stays nil and is not encoded. A missing codec returns an error and does not touch the plugin.
+// A nil value is the null value of the schema root. The protocol field stays present
+// so the plugin can read its msgpack. A missing codec returns an error and does not touch the plugin.
 func (e *PluginExecutor) encode(schema *tfplugin5.Schema, value any) (*tfplugin5.DynamicValue, error) {
-	if value == nil {
-		return nil, nil
-	}
 	if object, ok := value.(map[string]any); ok && object == nil {
-		return nil, nil
+		value = nil
 	}
 	codec := e.valueCodec()
 	if codec == nil {

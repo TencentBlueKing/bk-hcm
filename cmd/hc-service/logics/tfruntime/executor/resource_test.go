@@ -74,8 +74,8 @@ func TestPluginExecutor_ValidateResourceTypeConfig(t *testing.T) {
 	if _, err := executor.ValidateResourceTypeConfig(context.Background(), "tcloud_cvm", nil); err != nil {
 		t.Fatal(err)
 	}
-	if codec.calls != before || got.GetConfig() != nil {
-		t.Fatalf("nil config was encoded: calls=%d config=%v", codec.calls-before, got.GetConfig())
+	if codec.calls != before+1 || !nullJSON(got.GetConfig()) {
+		t.Fatalf("nil config = calls %d value %s", codec.calls-before, got.GetConfig().GetJson())
 	}
 }
 
@@ -180,8 +180,8 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if planned.GetPriorState() != nil || planned.GetProposedNewState() == nil {
-		t.Fatal("create plan did not send only the proposed state")
+	if !nullJSON(planned.GetPriorState()) || !nullJSON(planned.GetConfig()) || nullJSON(planned.GetProposedNewState()) {
+		t.Fatal("create plan did not send a null prior state and config")
 	}
 	if created.PlannedState["id"] != "planned" {
 		t.Fatalf("created = %#v", created.PlannedState)
@@ -202,6 +202,9 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if !nullJSON(planned.GetProposedNewState()) || !nullJSON(planned.GetConfig()) {
+		t.Fatal("delete plan did not send a null proposed state and config")
+	}
 	if deleted.PlannedState != nil {
 		t.Fatalf("delete planned state = %#v", deleted.PlannedState)
 	}
@@ -221,7 +224,7 @@ func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
 				NewState: &tfplugin5.DynamicValue{Json: []byte(`{"id":"kept"}`)},
 				Private:  []byte{8},
 			}
-			if in.GetPlannedState() != nil {
+			if !nullJSON(in.GetPlannedState()) {
 				resp.Diagnostics = errorDiagnostic("apply failed")
 			}
 			return resp, nil
