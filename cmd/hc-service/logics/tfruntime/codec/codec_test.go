@@ -69,6 +69,28 @@ func TestEncodeNullAndUnknown(t *testing.T) {
 	if state.(map[string]any)["id"] != Unknown {
 		t.Fatalf("id = %#v", state)
 	}
+	root, err := Codec{}.Encode(schema, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var nilMap map[string]any
+	nilRoot, err := Codec{}.Encode(schema, nilMap)
+	if err != nil || string(nilRoot.GetMsgpack()) != string(root.GetMsgpack()) {
+		t.Fatalf("nil map root = %v err=%v", nilRoot.GetMsgpack(), err)
+	}
+	decodedRoot, err := Codec{}.Decode(schema, root)
+	if err != nil || decodedRoot != nil {
+		t.Fatalf("root = %#v err=%v", decodedRoot, err)
+	}
+	rootType, err := schemaObject(schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootValue, err := tftypes.ValueFromMsgPack(root.GetMsgpack(), rootType)
+	if err != nil || !rootValue.IsNull() || !rootValue.IsKnown() {
+		t.Fatalf("root null=%v known=%v err=%v", rootValue.IsNull(), rootValue.IsKnown(), err)
+	}
+
 	id := attributeValue(t, schema, unknown.GetMsgpack(), "id")
 	if id.IsNull() || id.IsKnown() {
 		t.Fatalf("id null=%v known=%v", id.IsNull(), id.IsKnown())

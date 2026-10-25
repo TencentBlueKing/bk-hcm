@@ -259,6 +259,10 @@ func (c *jsonCodec) Encode(_ *tfplugin5.Schema, value any) (*tfplugin5.DynamicVa
 	return &tfplugin5.DynamicValue{Json: raw}, nil
 }
 
+func nullJSON(value *tfplugin5.DynamicValue) bool {
+	return value != nil && string(value.GetJson()) == "null"
+}
+
 func (c *jsonCodec) Decode(_ *tfplugin5.Schema, value *tfplugin5.DynamicValue) (any, error) {
 	c.calls++
 	if c.err != nil {
