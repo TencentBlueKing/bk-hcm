@@ -89,7 +89,7 @@ func TestPluginExecutor_PlanResourceChange_AfterValidateError(t *testing.T) {
 	loadEchoPrepare(fake)
 	executor := preparedExecutor(t, fake, &jsonCodec{})
 	ctx := context.Background()
-	if _, err := executor.ValidateResourceTypeConfig(ctx, "tcloud_cvm", map[string]any{"id": "bad"}); !errors.Is(err, errDiagnostic) {
+	if _, err := executor.ValidateResourceTypeConfig(ctx, "tcloud_cvm", map[string]any{"id": "bad"}); !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("validate err = %v", err)
 	}
 	if _, err := executor.PlanResourceChange(ctx, "tcloud_cvm", nil, map[string]any{"id": "ins-1"}, nil, nil); err != nil {
@@ -119,7 +119,7 @@ func TestPluginExecutor_UpgradeResourceState(t *testing.T) {
 	loadEchoPrepare(fake)
 	executor := preparedExecutor(t, fake, &jsonCodec{})
 	ctx := context.Background()
-	if _, err := executor.UpgradeResourceState(ctx, "tcloud_cvm", 1, &types.RawState{JSON: []byte(`{"id":"old"}`)}); !errors.Is(err, errDiagnostic) {
+	if _, err := executor.UpgradeResourceState(ctx, "tcloud_cvm", 1, &types.RawState{JSON: []byte(`{"id":"old"}`)}); !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("upgrade err = %v", err)
 	}
 	upgradeErr = false
@@ -241,7 +241,7 @@ func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
 		t.Fatalf("delete apply = %#v private %v", deleted.NewState, deleted.Private)
 	}
 	failed, err := executor.ApplyResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, map[string]any{"id": "new"}, nil, nil)
-	if !errors.Is(err, errDiagnostic) {
+	if !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("apply err = %v", err)
 	}
 	if failed.NewState["id"] != "kept" {
@@ -340,7 +340,7 @@ func TestPluginExecutor_ImportResourceState(t *testing.T) {
 		return &tfplugin5.ImportResourceState_Response{Diagnostics: errorDiagnostic("missing")}, nil
 	}
 	missing, err := executor.ImportResourceState(context.Background(), "tcloud_cvm", "gone")
-	if !errors.Is(err, errDiagnostic) || missing.Diagnostics[0].Summary != "missing" {
+	if !errors.Is(err, ErrDiagnostic) || missing.Diagnostics[0].Summary != "missing" {
 		t.Fatalf("missing import = %+v err %v", missing, err)
 	}
 	if fake.count("ApplyResourceChange") != 0 {
@@ -378,7 +378,7 @@ func TestPluginExecutor_ReadDataSource(t *testing.T) {
 	loadEchoPrepare(fake)
 	executor := preparedExecutor(t, fake, &jsonCodec{})
 	ctx := context.Background()
-	if _, err := executor.ValidateDataSourceConfig(ctx, "tcloud_image", map[string]any{"id": "bad"}); !errors.Is(err, errDiagnostic) {
+	if _, err := executor.ValidateDataSourceConfig(ctx, "tcloud_image", map[string]any{"id": "bad"}); !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("validate err = %v", err)
 	}
 	if _, err := executor.ReadDataSource(ctx, "tcloud_image", map[string]any{"id": "img-1"}); err != nil {

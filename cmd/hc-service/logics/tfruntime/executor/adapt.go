@@ -177,15 +177,6 @@ func schemaHash(provider *types.SchemaDocument, resources, dataSources map[strin
 	return hex.EncodeToString(sum[:]), nil
 }
 
-func diagnosticError(items []*tfplugin5.Diagnostic) bool {
-	for _, item := range items {
-		if item.GetSeverity() == tfplugin5.Diagnostic_ERROR {
-			return true
-		}
-	}
-	return false
-}
-
 func (e *PluginExecutor) logWarnings(items []*tfplugin5.Diagnostic) {
 	for _, item := range items {
 		if item.GetSeverity() != tfplugin5.Diagnostic_WARNING {

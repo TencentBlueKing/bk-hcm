@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"hcm/cmd/hc-service/types"
 	"hcm/pkg/criteria/constant"
@@ -95,6 +96,50 @@ func (e *PluginExecutor) Attach(client *plugin.Client, logs io.Closer, name, ver
 	e.logs = logs
 	e.name = name
 	e.version = version
+}
+
+// Exited reports whether the attached plugin process has exited.
+func (e *PluginExecutor) Exited() bool {
+	if e.client == nil {
+		return false
+	}
+	return e.client.Exited()
+}
+
+// CheckHealth reports whether the plugin gRPC connection is still healthy.
+// It fails when the process is not running or Ping fails within timeout.
+func (e *PluginExecutor) CheckHealth(timeout time.Duration) error {
+	if e.client == nil {
+		return fmt.Errorf("plugin %s process is not running", e.name)
+	}
+	if e.client.Exited() {
+		return fmt.Errorf("plugin %s process has exited", e.name)
+	}
+	protocol, err := e.client.Client()
+	if err != nil {
+		return fmt.Errorf("plugin %s grpc client: %w", e.name, err)
+	}
+	if err = pingPlugin(protocol, timeout); err != nil {
+		return fmt.Errorf("plugin %s grpc health check: %w", e.name, err)
+	}
+	return nil
+}
+
+// pingPlugin calls GRPCClient.Ping. Ping uses its own background context, so the configured timeout
+// is applied here and a wedged plugin cannot block the caller.
+func pingPlugin(protocol plugin.ClientProtocol, timeout time.Duration) error {
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- protocol.Ping()
+	}()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case err := <-errCh:
+		return err
+	case <-timer.C:
+		return fmt.Errorf("timed out after %s", timeout)
+	}
 }
 
 // SetCodec stores the codec used before config and state RPCs.

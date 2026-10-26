@@ -26,7 +26,6 @@ import (
 	"os/exec"
 	"strconv"
 	"sync"
-	"time"
 
 	"hcm/cmd/hc-service/logics/tfruntime/executor"
 	"hcm/pkg/cc"
@@ -220,53 +219,25 @@ func pluginPID(client *plugin.Client) (string, error) {
 // A manager that has not been started returns false. After Close, the process is gone and Exited returns true.
 func (m *ProcessManager) Exited() bool {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
 	started := m.started
 	m.mu.Unlock()
-	if executor == nil || executor.client == nil {
+	if exec == nil {
 		return started
 	}
-	return executor.client.Exited()
+	return exec.Exited()
 }
 
 // CheckHealth reports whether the plugin gRPC connection is still healthy.
 // It fails when the process is not running or Ping fails. The wait is bounded by tfPlugin.healthCheckTimeout.
 func (m *ProcessManager) CheckHealth() error {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
 	m.mu.Unlock()
-	if executor == nil || executor.client == nil {
+	if exec == nil {
 		return fmt.Errorf("plugin %s process is not running", m.name)
 	}
-	if executor.client.Exited() {
-		return fmt.Errorf("plugin %s process has exited", m.name)
-	}
-
-	protocol, err := executor.client.Client()
-	if err != nil {
-		return fmt.Errorf("plugin %s grpc client: %w", m.name, err)
-	}
-	if err = pingPlugin(protocol, cc.HCService().TFPlugin.HealthCheckTimeout); err != nil {
-		return fmt.Errorf("plugin %s grpc health check: %w", m.name, err)
-	}
-	return nil
-}
-
-// pingPlugin calls GRPCClient.Ping. Ping uses its own background context, so the configured timeout
-// is applied here and a wedged plugin cannot block the caller.
-func pingPlugin(protocol plugin.ClientProtocol, timeout time.Duration) error {
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- protocol.Ping()
-	}()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-	select {
-	case err := <-errCh:
-		return err
-	case <-timer.C:
-		return fmt.Errorf("timed out after %s", timeout)
-	}
+	return exec.CheckHealth(cc.HCService().TFPlugin.HealthCheckTimeout)
 }
 
 // Close stops this manager's process. It returns immediately when none is running.

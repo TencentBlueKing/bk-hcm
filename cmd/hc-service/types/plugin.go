@@ -67,7 +67,7 @@ type Attribute struct {
 
 // NestedBlock is a nested block inside a block.
 type NestedBlock struct {
-	Nesting  string `json:"nesting"`
+	Nesting  string `json:"nesting_mode"`
 	MinItems int64  `json:"min_items"`
 	MaxItems int64  `json:"max_items"`
 	Block    *Block `json:"block"`

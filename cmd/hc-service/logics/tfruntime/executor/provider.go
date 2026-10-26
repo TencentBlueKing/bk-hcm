@@ -22,6 +22,8 @@ package executor
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"hcm/cmd/hc-service/types"
 	"hcm/pkg/criteria/constant"
@@ -29,9 +31,12 @@ import (
 	"hcm/pkg/version"
 )
 
-// errDiagnostic is returned when a plugin response contains an Error diagnostic.
+// ErrDiagnostic is returned when a plugin response contains an Error diagnostic.
 // The result value is still returned so the caller can read the diagnostics.
-var errDiagnostic = errors.New("terraform plugin diagnostics contain an error")
+var ErrDiagnostic = errors.New("terraform plugin diagnostics contain an error")
+
+// ErrInvalidConfig is returned when the provider config cannot be encoded against the provider schema.
+var ErrInvalidConfig = errors.New("invalid terraform provider config")
 
 // GetProviderSchema reads the provider schema and adapts it for the caller.
 // The request has no business fields. The protocol schemas stay on the executor for later encoding.
@@ -96,7 +101,7 @@ func (e *PluginExecutor) ConfigureProvider(ctx context.Context, config map[strin
 		schema, _ := e.storedProviderSchema()
 		encoded, err := e.encode(schema, config)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %w", ErrInvalidConfig, err)
 		}
 		prepared, err := e.rpc.PrepareProviderConfig(ctx, &tfplugin5.PrepareProviderConfig_Request{
 			Config: encoded,
@@ -106,8 +111,8 @@ func (e *PluginExecutor) ConfigureProvider(ctx context.Context, config map[strin
 		}
 		diags := prepared.GetDiagnostics()
 		e.logWarnings(diags)
-		if diagnosticError(diags) {
-			return &types.ConfigureResult{Diagnostics: diags}, errDiagnostic
+		if err = diagnosticFailure(diags); err != nil {
+			return &types.ConfigureResult{Diagnostics: diags}, err
 		}
 		configured, err := e.rpc.Configure(ctx, &tfplugin5.Configure_Request{
 			TerraformVersion: version.VERSION,
@@ -127,10 +132,24 @@ func (e *PluginExecutor) ConfigureProvider(ctx context.Context, config map[strin
 }
 
 func diagnosticFailure(items []*tfplugin5.Diagnostic) error {
-	if diagnosticError(items) {
-		return errDiagnostic
+	var summaries []string
+	hasErr := false
+	for _, item := range items {
+		if item.GetSeverity() != tfplugin5.Diagnostic_ERROR {
+			continue
+		}
+		hasErr = true
+		if s := item.GetSummary(); s != "" {
+			summaries = append(summaries, s)
+		}
 	}
-	return nil
+	if !hasErr {
+		return nil
+	}
+	if len(summaries) == 0 {
+		return ErrDiagnostic
+	}
+	return fmt.Errorf("%w: %s", ErrDiagnostic, strings.Join(summaries, "; "))
 }
 
 func (e *PluginExecutor) storeSchemas(provider *tfplugin5.Schema, resources, dataSources map[string]*tfplugin5.Schema) {

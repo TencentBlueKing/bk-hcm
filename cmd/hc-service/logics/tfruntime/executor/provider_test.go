@@ -205,7 +205,7 @@ func TestPluginExecutor_ConfigureProvider_PrepareError(t *testing.T) {
 		t.Fatal(err)
 	}
 	result, err := executor.ConfigureProvider(context.Background(), map[string]any{"secret_id": "ak-test-value"})
-	if !errors.Is(err, errDiagnostic) {
+	if !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("err = %v", err)
 	}
 	if result == nil || len(result.Diagnostics) != 1 || result.Diagnostics[0].GetSeverity() != tfplugin5.Diagnostic_ERROR {
