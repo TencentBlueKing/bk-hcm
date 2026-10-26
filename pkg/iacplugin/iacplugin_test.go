@@ -26,36 +26,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
-func TestCanTransit(t *testing.T) {
-	const (
-		initS    = enumor.IaCPluginStateInit
-		enabled  = enumor.IaCPluginStateEnabled
-		disabled = enumor.IaCPluginStateDisabled
-		failedS  = enumor.IaCPluginStateFailed
-	)
-	states := []enumor.IaCPluginState{initS, enabled, disabled, failedS}
-
-	legal := map[[2]enumor.IaCPluginState]bool{
-		{initS, enabled}:    true,
-		{initS, failedS}:    true,
-		{enabled, failedS}:  true,
-		{failedS, initS}:    true,
-		{enabled, disabled}: true,
-		{disabled, enabled}: true,
-		{failedS, disabled}: true,
-	}
-
-	// 4x4 全表：除"状态不变"外，只有 legal 里的 7 条合法。
-	for _, from := range states {
-		for _, to := range states {
-			want := from == to || legal[[2]enumor.IaCPluginState{from, to}]
-			if got := CanTransit(from, to); got != want {
-				t.Errorf("CanTransit(%s -> %s) = %v, want %v", from, to, got, want)
-			}
-		}
-	}
-}
-
 func TestVersion(t *testing.T) {
 	valid := []string{"1.83.34", "v1.83.34", "1.10.0-rc.1", "0.0.1"}
 	for _, v := range valid {

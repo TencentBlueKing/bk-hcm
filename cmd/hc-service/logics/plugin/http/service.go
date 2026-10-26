@@ -31,11 +31,13 @@ import (
 	"hcm/cmd/hc-service/logics/plugin/query"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	coreplugin "hcm/pkg/api/core/plugin"
+	dataplugin "hcm/pkg/api/data-service/plugin"
 	proto "hcm/pkg/api/hc-service/plugin"
 	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iacplugin"
 	"hcm/pkg/kit"
 	"hcm/pkg/lock"
@@ -101,7 +103,7 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 	}
 	defer s.unlock(kt, req.PluginName, leaseID)
 
-	records, err := query.List(kt, s.dataCli, req.PluginName)
+	records, err := query.List(kt, s.dataCli, tools.EqualExpression("plugin_name", req.PluginName))
 	if err != nil {
 		return nil, err
 	}
@@ -128,9 +130,18 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 		return nil, err
 	}
 
+	createReq := &dataplugin.IaCPluginCreateReq{
+		PluginName:    req.PluginName,
+		PluginVersion: version,
+		Protocol:      enumor.IaCPluginProtocolHTTP,
+		State:         enumor.IaCPluginStateInit,
+		Extension:     ext,
+		Memo:          req.Memo,
+	}
+
 	var id string
 	if latest == nil {
-		id, err = query.Insert(kt, s.dataCli, req.PluginName, version, enumor.IaCPluginProtocolHTTP, ext, req.Memo)
+		id, err = query.Insert(kt, s.dataCli, createReq)
 	} else {
 		if latest.State == enumor.IaCPluginStateEnabled || latest.State == enumor.IaCPluginStateDisabled {
 			return nil, errf.Newf(errf.Aborted, "iac plugin %s is already registered, current version: %s, "+
@@ -146,8 +157,7 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 			return nil, errf.Newf(errf.Aborted, "iac plugin %s probed version %s is lower than the "+
 				"current version %s, rollback is not supported yet", req.PluginName, version, latest.PluginVersion)
 		case cmp > 0:
-			id, err = query.Insert(kt, s.dataCli, req.PluginName, version, enumor.IaCPluginProtocolHTTP, ext,
-				req.Memo)
+			id, err = query.Insert(kt, s.dataCli, createReq)
 		default:
 			id = latest.ID
 			err = query.Update(kt, s.dataCli, latest.ID, latest.State, enumor.IaCPluginStateInit, ext, req.Memo)
@@ -226,8 +236,14 @@ func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest 
 	}
 	// 探活返回了更高版本
 	if cmp > 0 {
-		id, err := query.Insert(kt, s.dataCli, latest.PluginName, version, enumor.IaCPluginProtocolHTTP,
-			latest.Extension, latest.Memo)
+		id, err := query.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+			PluginName:    latest.PluginName,
+			PluginVersion: version,
+			Protocol:      enumor.IaCPluginProtocolHTTP,
+			State:         enumor.IaCPluginStateInit,
+			Extension:     latest.Extension,
+			Memo:          latest.Memo,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -359,8 +375,14 @@ func (s *Service) updateAPIPath(kt *kit.Kit, records []coreplugin.IaCPlugin, lat
 	if reqMemo != nil {
 		memo = reqMemo
 	}
-	newID, err := query.Insert(kt, s.dataCli, latest.PluginName, version, enumor.IaCPluginProtocolHTTP,
-		extRaw, memo)
+	newID, err := query.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+		PluginName:    latest.PluginName,
+		PluginVersion: version,
+		Protocol:      enumor.IaCPluginProtocolHTTP,
+		State:         enumor.IaCPluginStateInit,
+		Extension:     extRaw,
+		Memo:          memo,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -451,38 +473,8 @@ func (s *Service) schemaGetter(apiPath string) pluginschema.SchemaGetter {
 		if err != nil {
 			return nil, errf.Newf(errf.Aborted, "get http plugin schema failed, err: %v", err)
 		}
-
-		coreSchema, err := toCorePluginSchema(schema)
-		if err != nil {
-			return nil, errf.Newf(errf.Aborted, "convert http plugin schema failed, err: %v", err)
-		}
-		return coreSchema, nil
+		return schema, nil
 	})
-}
-
-func toCorePluginSchema(in *plugin.PluginSchema) (*coreplugin.PluginSchema, error) {
-	capsRaw, err := json.Marshal(in.Capabilities)
-	if err != nil {
-		return nil, err
-	}
-	var caps map[string]bool
-	if err = json.Unmarshal(capsRaw, &caps); err != nil {
-		return nil, err
-	}
-
-	return &coreplugin.PluginSchema{
-		PluginName:    in.Plugin.Name,
-		PluginVersion: in.Plugin.Version,
-		SchemaHash:    in.SchemaHash,
-		RawSchema: coreplugin.RawSchema{
-			ProtocolVersion:         in.ProtocolVersion,
-			Capabilities:            caps,
-			Provider:                in.ConfigSchema,
-			ResourceSchemas:         in.ResourceSchemas,
-			DataSourceSchemas:       in.DataSourceSchemas,
-			ResourceIdentitySchemas: in.ResourceIdentitySchemas,
-		},
-	}, nil
 }
 
 // probe 探活取版本，并校验版本号格式。当网关未配置时打印告警并返回默认版本，便于本地联调。
@@ -519,7 +511,7 @@ func (s *Service) probe(kt *kit.Kit, apiPath string) (string, error) {
 }
 
 func (s *Service) listAndGetLatest(kt *kit.Kit, pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
-	records, err := query.List(kt, s.dataCli, pluginName)
+	records, err := query.List(kt, s.dataCli, tools.EqualExpression("plugin_name", pluginName))
 	if err != nil {
 		return nil, nil, err
 	}

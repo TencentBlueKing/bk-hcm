@@ -32,39 +32,40 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 )
 
-// List 列出插件名下的全部记录。
-func List(kt *kit.Kit, cli *dataservice.Client, pluginName string) ([]coreplugin.IaCPlugin, error) {
-	res, err := cli.Global.IaCPlugin.List(kt, &core.ListReq{
-		Filter: tools.EqualExpression("plugin_name", pluginName),
-		Page:   &core.BasePage{Limit: core.DefaultMaxPageLimit},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("list plugin %s records failed: %w", pluginName, err)
-	}
+// List 按过滤条件翻页读出全部插件记录。
+func List(kt *kit.Kit, cli *dataservice.Client, flt *filter.Expression) ([]coreplugin.IaCPlugin, error) {
+	var records []coreplugin.IaCPlugin
+	page := core.NewDefaultBasePage()
+	for {
+		res, err := cli.Global.IaCPlugin.List(kt, &core.ListReq{Filter: flt, Page: page})
+		if err != nil {
+			return nil, fmt.Errorf("list plugin records failed: %w", err)
+		}
 
-	return res.Details, nil
+		records = append(records, res.Details...)
+		if uint(len(res.Details)) < page.Limit {
+			return records, nil
+		}
+		page.Start += uint32(page.Limit)
+	}
 }
 
 // Insert 插入一条 init 记录，返回记录 ID。
-func Insert(kt *kit.Kit, cli *dataservice.Client, pluginName, pluginVersion string,
-	protocol enumor.IaCPluginProtocol, ext json.RawMessage, memo *string) (string, error) {
+func Insert(kt *kit.Kit, cli *dataservice.Client, req *dataplugin.IaCPluginCreateReq) (string, error) {
+	if req.State == "" {
+		req.State = enumor.IaCPluginStateInit
+	}
 
-	created, err := cli.Global.IaCPlugin.Create(kt, &dataplugin.IaCPluginCreateReq{
-		PluginName:    pluginName,
-		PluginVersion: pluginVersion,
-		Protocol:      protocol,
-		State:         enumor.IaCPluginStateInit,
-		Extension:     ext,
-		Memo:          memo,
-	})
+	created, err := cli.Global.IaCPlugin.Create(kt, req)
 	if err != nil {
-		return "", fmt.Errorf("create plugin %s@%s record failed: %w", pluginName, pluginVersion, err)
+		return "", fmt.Errorf("create plugin %s@%s record failed: %w", req.PluginName, req.PluginVersion, err)
 	}
 	if len(created.IDs) != 1 {
-		return "", fmt.Errorf("create plugin %s@%s got %d ids, expect 1", pluginName, pluginVersion,
+		return "", fmt.Errorf("create plugin %s@%s got %d ids, expect 1", req.PluginName, req.PluginVersion,
 			len(created.IDs))
 	}
 
