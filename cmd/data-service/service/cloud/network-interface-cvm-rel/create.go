@@ -26,7 +26,7 @@ import (
 	nicvmreltable "hcm/pkg/dal/table/cloud/network-interface-cvm-rel"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateNetworkCvmRels ...

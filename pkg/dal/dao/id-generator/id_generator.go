@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // DefaultMaxRetryCount is default Max retry count when the generated unique id conflicts.

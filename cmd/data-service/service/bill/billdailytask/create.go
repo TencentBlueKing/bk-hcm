@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateBillDailyPullTask create account bill daily pull task with options

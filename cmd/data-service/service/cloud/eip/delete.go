@@ -25,7 +25,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchDeleteEip ...
