@@ -184,12 +184,8 @@ iacPlugin:
     maxQueueLength: 1000
     # maxQueueWaitSeconds is the longest time a request waits in the queue, in seconds.
     maxQueueWaitSeconds: 180
-    # startTimeoutSeconds is the timeout of starting one process, in seconds.
-    startTimeoutSeconds: 30
     # configureTimeoutSeconds is the timeout of one ConfigureProvider call, in seconds.
     configureTimeoutSeconds: 30
-    # closeTimeoutSeconds is the time limit of closing one process, in seconds.
-    closeTimeoutSeconds: 30
     # idleReclaimSeconds is how long a process must be idle before it can be reclaimed, in seconds.
     idleReclaimSeconds: 600
     # maxConfigAgeSeconds is how long one configuration can be reused, in seconds.

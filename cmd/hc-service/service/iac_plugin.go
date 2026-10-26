@@ -31,7 +31,6 @@ import (
 	"hcm/cmd/hc-service/logics/plugin/tf/pool"
 	"hcm/cmd/hc-service/logics/plugin/tf/register"
 	"hcm/cmd/hc-service/logics/plugin/tf/watch"
-	"hcm/cmd/hc-service/logics/tfruntime"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
@@ -92,11 +91,9 @@ func (s *Service) initIaCPlugin() error {
 	}
 
 	dataCli := s.clientSet.DataService()
-	// TODO: 对接方交付插件进程管理实现后，在这里补齐启动参数（Args、WorkDir、Env、LogDir）。
-	starter := tfruntime.NewStarter(tfruntime.StarterOptions{})
 
 	// 初始化插件进程池
-	poolRegistry, err := newPluginRegistry(dataCli, entries, starter)
+	poolRegistry, err := newPluginRegistry(dataCli, entries)
 	if err != nil {
 		return err
 	}
@@ -105,7 +102,7 @@ func (s *Service) initIaCPlugin() error {
 	schemaMgr := pluginschema.NewSchemaManager(dataCli, 0)
 
 	// 初始化 tf 插件注册与 http 插件
-	tfRegister := register.New(dataCli, iacMutex, schemaMgr, starter, register.Options{
+	tfRegister := register.New(dataCli, iacMutex, schemaMgr, register.Options{
 		LockLeaseSeconds: cfg.LockLeaseSeconds,
 		LockWaitTimeout:  time.Duration(cfg.LockWaitTimeoutSeconds) * time.Second,
 	})
@@ -181,15 +178,13 @@ func (s *Service) StartHTTPPluginCheck() {
 
 // newPluginRegistry 创建 tf 插件进程池的索引（pool.PluginRegistry），此时不建池。池参数不合法时返回错误，进程不应启动服务。
 // 开关关闭或没有本地 tf 插件时不创建。
-func newPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry,
-	starter tfruntime.Starter) (*pool.PluginRegistry, error) {
-
+func newPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry) (*pool.PluginRegistry, error) {
 	cfg := cc.HCService().IaCPlugin.Pool
 	if !cfg.Enabled || len(entries) == 0 {
 		return nil, nil
 	}
 
-	registry, err := pool.NewPluginRegistry(dataCli, entries, starter, pool.PluginRegistryOptions{
+	registry, err := pool.NewPluginRegistry(dataCli, entries, pool.PluginRegistryOptions{
 		Pool:          toPoolConfig(cfg),
 		CheckInterval: time.Duration(cfg.RegistryCheckIntervalSeconds) * time.Second,
 	})
@@ -210,9 +205,7 @@ func toPoolConfig(cfg cc.IaCPluginPoolConfig) pool.PoolConfig {
 		MaxRetries:          cfg.MaxRetries,
 		MaxQueueLength:      cfg.MaxQueueLength,
 		MaxQueueWait:        seconds(cfg.MaxQueueWaitSeconds),
-		StartTimeout:        seconds(cfg.StartTimeoutSeconds),
 		ConfigureTimeout:    seconds(cfg.ConfigureTimeoutSeconds),
-		CloseTimeout:        seconds(cfg.CloseTimeoutSeconds),
 		IdleReclaimTimeout:  seconds(cfg.IdleReclaimSeconds),
 		MaxConfigAge:        seconds(cfg.MaxConfigAgeSeconds),
 		PoolCheckInterval:   seconds(cfg.CheckIntervalSeconds),

@@ -35,7 +35,6 @@ import (
 	"sync"
 	"time"
 
-	"hcm/cmd/hc-service/logics/tfruntime"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
@@ -47,9 +46,7 @@ type Options struct {
 	PluginVersion string
 	// ExecPath 插件可执行文件路径。
 	ExecPath string
-	// Starter 进程管理工厂，每创建一个进程调用一次。
-	Starter tfruntime.Starter
-	Config  PoolConfig
+	Config   PoolConfig
 }
 
 // PluginPool 一个插件的进程池。
@@ -57,7 +54,6 @@ type PluginPool struct {
 	pluginName    string
 	pluginVersion string
 	execPath      string
-	starter       tfruntime.Starter
 	cfg           PoolConfig
 	// now 时钟
 	now func() time.Time
@@ -87,9 +83,6 @@ func NewPluginPool(opts Options) (*PluginPool, error) {
 	if opts.ExecPath == "" {
 		return nil, errors.New("plugin exec path should not be empty")
 	}
-	if opts.Starter == nil {
-		return nil, errors.New("plugin process starter should not be nil")
-	}
 
 	cfg := opts.Config
 	cfg.trySetDefault()
@@ -102,7 +95,6 @@ func NewPluginPool(opts Options) (*PluginPool, error) {
 		pluginName:    opts.PluginName,
 		pluginVersion: opts.PluginVersion,
 		execPath:      opts.ExecPath,
-		starter:       opts.Starter,
 		cfg:           cfg,
 		now:           time.Now,
 		taskCtx:       taskCtx,
@@ -261,7 +253,7 @@ func (p *PluginPool) release(l *Lease) {
 // 正在创建或配置的进程等协程写回后关闭。ctx 结束时取消仍在进行的创建、配置并返回 ctx 的错误。
 // 重复调用直接返回 nil。
 func (p *PluginPool) Close(ctx context.Context) error {
-	if !p.shutdown(ctx) {
+	if !p.shutdown() {
 		return nil
 	}
 	logs.Infof("plugin %s process pool is closing", p.pluginName)
@@ -283,7 +275,7 @@ func (p *PluginPool) Close(ctx context.Context) error {
 }
 
 // shutdown 标记关闭并开始关闭各进程。已经关闭过时返回 false。
-func (p *PluginPool) shutdown(ctx context.Context) bool {
+func (p *PluginPool) shutdown() bool {
 	p.poolLock.Lock()
 	defer p.poolLock.Unlock()
 
@@ -299,7 +291,7 @@ func (p *PluginPool) shutdown(ctx context.Context) bool {
 	for _, proc := range p.procs {
 		switch proc.state {
 		case stateRunning:
-			p.closeProcessLocked(ctx, proc)
+			p.closeProcessLocked(proc)
 		case stateStarting, stateConfiguring:
 			// 协程写回时看到池已关闭会关掉进程；等它的请求现在就结束。
 			p.failPendingLocked(proc, ErrPoolClosed)

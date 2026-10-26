@@ -1414,12 +1414,8 @@ type IaCPluginPoolConfig struct {
 	MaxQueueLength int `yaml:"maxQueueLength"`
 	// MaxQueueWaitSeconds 单个请求的最长排队时间（秒）。
 	MaxQueueWaitSeconds uint `yaml:"maxQueueWaitSeconds"`
-	// StartTimeoutSeconds 拉起一个进程的超时（秒）。
-	StartTimeoutSeconds uint `yaml:"startTimeoutSeconds"`
 	// ConfigureTimeoutSeconds 一次 ConfigureProvider 的超时（秒）。
 	ConfigureTimeoutSeconds uint `yaml:"configureTimeoutSeconds"`
-	// CloseTimeoutSeconds 关闭一个进程的时限（秒）。
-	CloseTimeoutSeconds uint `yaml:"closeTimeoutSeconds"`
 	// IdleReclaimSeconds 空闲超过该时长且空闲数高于 MinIdleProcesses 的进程会被回收（秒）。
 	IdleReclaimSeconds uint `yaml:"idleReclaimSeconds"`
 	// MaxConfigAgeSeconds 一次配置可被复用的时长（秒），须短于云凭证有效期。

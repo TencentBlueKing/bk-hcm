@@ -60,7 +60,7 @@ func (p *PluginPool) checkOnce() {
 			exited = append(exited, proc)
 			continue
 		}
-		// CheckHealth 不阻塞，对所有存活进程都调；结果只对写回时仍是 running 的进程生效。
+		// CheckHealth 对所有存活进程都调；结果只对写回时仍是 running 的进程生效。
 		if err := safeCall(proc.manager.CheckHealth); err != nil {
 			logs.Warnf("plugin %s process %d health check failed, err: %v", p.pluginName, proc.id, err)
 			unhealthy = append(unhealthy, proc)
@@ -84,7 +84,7 @@ func (p *PluginPool) checkOnce() {
 	}
 	for _, proc := range unhealthy {
 		if p.procs[proc.id] == proc && proc.state == stateRunning {
-			p.closeProcessLocked(p.taskCtx, proc)
+			p.closeProcessLocked(proc)
 		}
 	}
 
@@ -140,6 +140,6 @@ func (p *PluginPool) reconcileIdleLocked(now time.Time) {
 	slices.SortFunc(expired, compareIdle)
 	n := min(idle-p.cfg.MinIdleProcesses, len(expired))
 	for _, proc := range expired[:n] {
-		p.closeProcessLocked(p.taskCtx, proc)
+		p.closeProcessLocked(proc)
 	}
 }

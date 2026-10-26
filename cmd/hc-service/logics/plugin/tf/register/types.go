@@ -25,7 +25,6 @@ import (
 	"time"
 
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
-	"hcm/cmd/hc-service/logics/tfruntime"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/lock"
 )
@@ -51,7 +50,6 @@ type Service struct {
 	dataCli   *dataservice.Client
 	etcdMutex *lock.EtcdMutex
 	schemaMgr *pluginschema.SchemaManager
-	starter   tfruntime.Starter
 	opts      Options
 }
 

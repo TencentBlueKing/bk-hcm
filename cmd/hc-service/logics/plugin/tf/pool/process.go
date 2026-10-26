@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"hcm/cmd/hc-service/logics/tfruntime"
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
 )
 
 // procState 插件进程在池中的状态。
@@ -81,9 +82,9 @@ type pluginProcess struct {
 	idleSince time.Time
 
 	// manager 创建任务拿到后写入，之后不再改变；starting 期间为 nil。
-	manager tfruntime.ProcessManager
+	manager *tfruntime.ProcessManager
 	// exec 进程拉起后写入；starting 期间为 nil。
-	exec tfruntime.Executor
+	exec executor.Executor
 }
 
 // hasLivePending 是否还有未取消的请求在等这次准备。

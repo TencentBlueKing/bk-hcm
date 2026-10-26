@@ -27,6 +27,9 @@ import (
 	"time"
 
 	"hcm/cmd/hc-service/logics/tfruntime"
+	"hcm/cmd/hc-service/logics/tfruntime/codec"
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
+	"hcm/cmd/hc-service/types"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -65,8 +68,8 @@ func (p *PluginPool) startConfigureLocked(proc *pluginProcess, w *request) {
 func (p *PluginPool) runCreate(proc *pluginProcess) {
 	defer p.wg.Done()
 
-	kt, cancel := p.taskKit(p.cfg.StartTimeout)
-	defer cancel()
+	kt := kit.New()
+	kt.Ctx = context.WithValue(p.taskCtx, constant.RidKey, kt.Rid)
 
 	start := p.now()
 	manager, exec, err := p.startProcess(kt)
@@ -79,31 +82,25 @@ func (p *PluginPool) runCreate(proc *pluginProcess) {
 	p.finishCreate(proc, manager, exec, err, kt)
 }
 
-// startProcess 拉起一个进程。插件调用可能不响应 ctx，都经 callWithTimeout 执行。
+// startProcess 拉起一个进程。握手由进程管理侧限制等待时间，池不再另设超时。
 //
-// 只要 manager 构造出来就返回它，即使 Start 失败或超时：调用方要靠它关掉可能已拉起一半的进程，
-// 阻塞中的 Start 也随之返回。
-func (p *PluginPool) startProcess(kt *kit.Kit) (tfruntime.ProcessManager, tfruntime.Executor, error) {
-	manager, err := callWithTimeout(kt.Ctx, func() (tfruntime.ProcessManager, error) {
-		return p.starter.NewProcessManager(kt, p.pluginName, p.pluginVersion, p.execPath)
-	})
-	if err != nil {
-		return nil, nil, fmt.Errorf("new process manager: %w", err)
-	}
-	if manager == nil {
-		return nil, nil, errors.New("new process manager returned nil")
-	}
+// 只要 manager 构造出来就返回它，即使 Start 失败：调用方要靠它关掉可能已拉起一半的进程。
+func (p *PluginPool) startProcess(kt *kit.Kit) (*tfruntime.ProcessManager, executor.Executor, error) {
+	manager := tfruntime.NewProcessManager(p.pluginName, p.execPath, nil, "", "")
+	manager.SetValueCodec(codec.Codec{})
 
-	exec, err := callWithTimeout(kt.Ctx, func() (tfruntime.Executor, error) {
-		return manager.Start(kt)
-	})
+	ctx := kt.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	exec, err := manager.Start(ctx)
 	if err == nil && exec == nil {
 		err = errors.New("start returned nil executor")
 	}
 	return manager, exec, err
 }
 
-func (p *PluginPool) finishCreate(proc *pluginProcess, manager tfruntime.ProcessManager, exec tfruntime.Executor,
+func (p *PluginPool) finishCreate(proc *pluginProcess, manager *tfruntime.ProcessManager, exec executor.Executor,
 	err error, kt *kit.Kit) {
 
 	p.poolLock.Lock()
@@ -117,11 +114,11 @@ func (p *PluginPool) finishCreate(proc *pluginProcess, manager tfruntime.Process
 	case err != nil:
 		logs.Errorf("plugin %s start process %d failed, err: %v, rid: %s", p.pluginName, proc.id, err, kt.Rid)
 		p.requeuePendingLocked(proc, fmt.Errorf("start plugin %s process failed: %w", p.pluginName, err))
-		p.closeProcessLocked(p.taskCtx, proc)
+		delete(p.procs, proc.id)
 
 	case p.closed:
 		p.failPendingLocked(proc, ErrPoolClosed)
-		p.closeProcessLocked(p.taskCtx, proc)
+		p.closeProcessLocked(proc)
 
 	case !proc.hasLivePending():
 		// 预热，或等它的请求都已取消：不配置，避免把凭证写进没人用的进程。
@@ -139,15 +136,15 @@ func (p *PluginPool) finishCreate(proc *pluginProcess, manager tfruntime.Process
 	p.scheduleLocked()
 }
 
-func (p *PluginPool) runConfigure(proc *pluginProcess, exec tfruntime.Executor, config map[string]any) {
+func (p *PluginPool) runConfigure(proc *pluginProcess, exec executor.Executor, config map[string]any) {
 	defer p.wg.Done()
 
 	kt, cancel := p.taskKit(p.cfg.ConfigureTimeout)
 	defer cancel()
 
 	start := p.now()
-	_, err := callWithTimeout(kt.Ctx, func() (*tfruntime.ConfigureProviderResponse, error) {
-		return exec.ConfigureProvider(kt, &tfruntime.ConfigureProviderRequest{Config: config})
+	_, err := callWithTimeout(kt.Ctx, func() (*types.ConfigureResult, error) {
+		return exec.ConfigureProvider(kt.Ctx, config)
 	})
 	metrics.ObservePluginPoolConfigure(p.pluginName, configureResult(err), p.now().Sub(start))
 
@@ -166,7 +163,7 @@ func (p *PluginPool) finishConfigure(proc *pluginProcess, err error, kt *kit.Kit
 	switch {
 	case p.closed:
 		p.failPendingLocked(proc, ErrPoolClosed)
-		p.closeProcessLocked(p.taskCtx, proc)
+		p.closeProcessLocked(proc)
 
 	case err == nil:
 		now := p.now()
@@ -192,7 +189,7 @@ func (p *PluginPool) finishConfigure(proc *pluginProcess, err error, kt *kit.Kit
 		// 超时或传输错误：进程状态不可信，关掉它，请求放回队列重试。
 		logs.Errorf("plugin %s configure process %d failed, err: %v, rid: %s", p.pluginName, proc.id, err, kt.Rid)
 		p.requeuePendingLocked(proc, fmt.Errorf("configure plugin %s process failed: %w", p.pluginName, err))
-		p.closeProcessLocked(p.taskCtx, proc)
+		p.closeProcessLocked(proc)
 	}
 
 	p.scheduleLocked()
@@ -229,8 +226,7 @@ func (p *PluginPool) requeuePendingLocked(proc *pluginProcess, err error) {
 }
 
 // closeProcessLocked 把进程转为 closing，在协程里关闭；确认退出后才删除记录、释放容量。
-// ctx 是关闭的上限：内部关闭传 taskCtx，Close 传调用方的 ctx；另受 CloseTimeout 约束。
-func (p *PluginPool) closeProcessLocked(ctx context.Context, proc *pluginProcess) {
+func (p *PluginPool) closeProcessLocked(proc *pluginProcess) {
 	proc.state = stateClosing
 	proc.binding = nil
 
@@ -241,16 +237,13 @@ func (p *PluginPool) closeProcessLocked(ctx context.Context, proc *pluginProcess
 	}
 
 	p.wg.Add(1)
-	go p.runClose(ctx, proc)
+	go p.runClose(proc)
 }
 
-func (p *PluginPool) runClose(ctx context.Context, proc *pluginProcess) {
+func (p *PluginPool) runClose(proc *pluginProcess) {
 	defer p.wg.Done()
 
-	ctx, cancel := context.WithTimeout(ctx, p.cfg.CloseTimeout)
-	defer cancel()
-
-	err := safeCall(func() error { return proc.manager.Close(ctx) })
+	err := safeCall(func() error { return proc.manager.Close() })
 	exited := err == nil || processExited(proc.manager)
 
 	p.poolLock.Lock()
@@ -275,10 +268,9 @@ func (p *PluginPool) taskKit(timeout time.Duration) (*kit.Kit, context.CancelFun
 	return kt, cancel
 }
 
-// isBusinessError 是否为插件返回的业务错误（Error 级 Diagnostic）。
+// isBusinessError 是否为业务错误（插件返回 Error 级 Diagnostic 或配置无法按 Schema 编码）。
 func isBusinessError(err error) bool {
-	var diagErr *tfruntime.DiagnosticsError
-	return errors.As(err, &diagErr)
+	return errors.Is(err, executor.ErrDiagnostic) || errors.Is(err, executor.ErrInvalidConfig)
 }
 
 // callResult callWithTimeout 中 fn 的返回值。
@@ -323,7 +315,7 @@ func safeCall(fn func() error) (err error) {
 }
 
 // processExited 进程是否已退出；Exited 发生 panic 时按未退出处理。
-func processExited(manager tfruntime.ProcessManager) bool {
+func processExited(manager *tfruntime.ProcessManager) bool {
 	exited := false
 	err := safeCall(func() error {
 		exited = manager.Exited()

@@ -33,9 +33,7 @@ const (
 	defaultMinIdleProcesses    = 2
 	defaultMaxRetries          = 2
 	defaultMaxQueueWait        = time.Minute
-	defaultStartTimeout        = 30 * time.Second
 	defaultConfigureTimeout    = 30 * time.Second
-	defaultCloseTimeout        = 30 * time.Second
 	defaultIdleReclaimTimeout  = 10 * time.Minute
 	defaultMaxConfigAge        = 30 * time.Minute
 	defaultPoolCheckInterval   = 30 * time.Second
@@ -55,12 +53,8 @@ type PoolConfig struct {
 	MaxQueueLength int
 	// MaxQueueWait 单个请求的最长排队时间，默认 1 分钟，同时受调用方 kit.Ctx 约束。
 	MaxQueueWait time.Duration
-	// StartTimeout 拉起一个进程（含握手）的超时，默认 30 秒。
-	StartTimeout time.Duration
 	// ConfigureTimeout 一次 ConfigureProvider 的超时，默认 30 秒。超时的进程状态不可信，会被关闭。
 	ConfigureTimeout time.Duration
-	// CloseTimeout 关闭一个进程的时限，默认 30 秒，到期后进程管理强制结束进程。
-	CloseTimeout time.Duration
 	// IdleReclaimTimeout 空闲超过该时长的进程可被回收（回收后空闲数不低于 MinIdleProcesses），默认 10 分钟。
 	IdleReclaimTimeout time.Duration
 	// MaxConfigAge 一次配置可被复用的时长，默认 30 分钟，须短于云凭证有效期。过期只阻止新的交付，不影响已持有的 lease。
@@ -82,14 +76,8 @@ func (c *PoolConfig) trySetDefault() {
 	if c.MaxQueueWait == 0 {
 		c.MaxQueueWait = defaultMaxQueueWait
 	}
-	if c.StartTimeout == 0 {
-		c.StartTimeout = defaultStartTimeout
-	}
 	if c.ConfigureTimeout == 0 {
 		c.ConfigureTimeout = defaultConfigureTimeout
-	}
-	if c.CloseTimeout == 0 {
-		c.CloseTimeout = defaultCloseTimeout
 	}
 	if c.IdleReclaimTimeout == 0 {
 		c.IdleReclaimTimeout = defaultIdleReclaimTimeout
@@ -119,8 +107,8 @@ func (c PoolConfig) Validate() error {
 	if c.MaxQueueLength <= 0 {
 		return errors.New("maxQueueLength should be greater than 0")
 	}
-	if c.MaxQueueWait <= 0 || c.StartTimeout <= 0 || c.ConfigureTimeout <= 0 || c.CloseTimeout <= 0 ||
-		c.IdleReclaimTimeout <= 0 || c.MaxConfigAge <= 0 || c.PoolCheckInterval <= 0 {
+	if c.MaxQueueWait <= 0 || c.ConfigureTimeout <= 0 || c.IdleReclaimTimeout <= 0 || c.MaxConfigAge <= 0 ||
+		c.PoolCheckInterval <= 0 {
 		return errors.New("timeouts and intervals should be greater than 0")
 	}
 	return nil

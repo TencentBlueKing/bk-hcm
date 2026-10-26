@@ -28,7 +28,6 @@ import (
 
 	"hcm/cmd/hc-service/logics/plugin/query"
 	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
-	"hcm/cmd/hc-service/logics/tfruntime"
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataservice "hcm/pkg/client/data-service"
@@ -59,7 +58,6 @@ type PluginRegistryOptions struct {
 type PluginRegistry struct {
 	dataCli *dataservice.Client
 	entries []discovery.Entry
-	starter tfruntime.Starter
 	opts    PluginRegistryOptions
 
 	// ctx 后台检查的 context，Close 时取消。
@@ -73,14 +71,11 @@ type PluginRegistry struct {
 }
 
 // NewPluginRegistry 创建 PluginRegistry，此时不建池。池参数不合法时返回错误，调用方应让服务不启动。
-func NewPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry, starter tfruntime.Starter,
+func NewPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry,
 	opts PluginRegistryOptions) (*PluginRegistry, error) {
 
 	if dataCli == nil {
 		return nil, errors.New("data service client should not be nil")
-	}
-	if starter == nil {
-		return nil, errors.New("plugin process starter should not be nil")
 	}
 	if opts.CheckInterval <= 0 {
 		return nil, errors.New("registry check interval should be greater than 0")
@@ -95,7 +90,6 @@ func NewPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry, s
 	return &PluginRegistry{
 		dataCli: dataCli,
 		entries: entries,
-		starter: starter,
 		opts:    opts,
 		ctx:     ctx,
 		cancel:  cancel,
@@ -213,7 +207,6 @@ func (r *PluginRegistry) syncPools(kt *kit.Kit, enabled map[string]bool) error {
 			PluginName:    entry.PluginName,
 			PluginVersion: entry.PluginVersion,
 			ExecPath:      entry.ExecPath,
-			Starter:       r.starter,
 			Config:        r.opts.Pool,
 		})
 		if err != nil {

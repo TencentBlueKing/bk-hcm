@@ -453,12 +453,8 @@ hcservice:
       maxQueueLength: 100
       # 单个请求的最长排队时间（秒）
       maxQueueWaitSeconds: 180
-      # 拉起一个进程的超时（秒）
-      startTimeoutSeconds: 30
       # 一次 ConfigureProvider 的超时（秒）
       configureTimeoutSeconds: 30
-      # 关闭一个进程的时限（秒）
-      closeTimeoutSeconds: 30
       # 空闲超过该时长的进程才可能被回收（秒）
       idleReclaimSeconds: 600
       # 一次配置可被复用的时长（秒），须短于云凭证有效期

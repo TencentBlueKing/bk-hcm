@@ -20,31 +20,32 @@
 package pool
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
-	"hcm/cmd/hc-service/logics/tfruntime"
-	"hcm/pkg/kit"
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
+	"hcm/cmd/hc-service/types"
 )
 
 // ProviderIF 进程池交给业务调用方的插件方法：只有资源与数据源的业务方法。
 //
 // 配置（ConfigureProvider）由池在交付前完成，取 Schema 不属于运行期调用，二者都不对调用方开放。
 type ProviderIF interface {
-	ValidateResourceTypeConfig(kt *kit.Kit, req *tfruntime.ValidateResourceTypeConfigRequest) (
-		*tfruntime.ValidateResourceTypeConfigResponse, error)
-	ValidateDataSourceConfig(kt *kit.Kit, req *tfruntime.ValidateDataSourceConfigRequest) (
-		*tfruntime.ValidateDataSourceConfigResponse, error)
-	UpgradeResourceState(kt *kit.Kit, req *tfruntime.UpgradeResourceStateRequest) (
-		*tfruntime.UpgradeResourceStateResponse, error)
-	ReadResource(kt *kit.Kit, req *tfruntime.ReadResourceRequest) (*tfruntime.ReadResourceResponse, error)
-	PlanResourceChange(kt *kit.Kit, req *tfruntime.PlanResourceChangeRequest) (
-		*tfruntime.PlanResourceChangeResponse, error)
-	ApplyResourceChange(kt *kit.Kit, req *tfruntime.ApplyResourceChangeRequest) (
-		*tfruntime.ApplyResourceChangeResponse, error)
-	ImportResourceState(kt *kit.Kit, req *tfruntime.ImportResourceStateRequest) (
-		*tfruntime.ImportResourceStateResponse, error)
-	ReadDataSource(kt *kit.Kit, req *tfruntime.ReadDataSourceRequest) (*tfruntime.ReadDataSourceResponse, error)
+	ValidateResourceTypeConfig(ctx context.Context, typeName string, config map[string]any) (
+		*types.ValidateResult, error)
+	ValidateDataSourceConfig(ctx context.Context, typeName string, config map[string]any) (
+		*types.ValidateResult, error)
+	UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64, raw *types.RawState) (
+		*types.UpgradeResult, error)
+	ReadResource(ctx context.Context, typeName string, current map[string]any, private []byte) (
+		*types.ReadResourceResult, error)
+	PlanResourceChange(ctx context.Context, typeName string, prior, proposed, config map[string]any,
+		priorPrivate []byte) (*types.PlanResult, error)
+	ApplyResourceChange(ctx context.Context, typeName string, prior, planned, config map[string]any,
+		plannedPrivate []byte) (*types.ApplyResult, error)
+	ImportResourceState(ctx context.Context, typeName, id string) (*types.ImportResult, error)
+	ReadDataSource(ctx context.Context, typeName string, config map[string]any) (*types.ReadDataSourceResult, error)
 }
 
 var _ ProviderIF = (*Lease)(nil)
@@ -59,7 +60,7 @@ var _ ProviderIF = (*Lease)(nil)
 type Lease struct {
 	pool   *PluginPool
 	procID uint64
-	exec   tfruntime.Executor
+	exec   executor.Executor
 	// acquiredAt 交付时间，归还时用于记录持有时长。
 	acquiredAt time.Time
 	released   atomic.Bool
@@ -74,81 +75,79 @@ func (l *Lease) Release() {
 }
 
 // ValidateResourceTypeConfig 校验资源声明。
-func (l *Lease) ValidateResourceTypeConfig(kt *kit.Kit, req *tfruntime.ValidateResourceTypeConfigRequest) (
-	*tfruntime.ValidateResourceTypeConfigResponse, error) {
+func (l *Lease) ValidateResourceTypeConfig(ctx context.Context, typeName string, config map[string]any) (
+	*types.ValidateResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ValidateResourceTypeConfig(kt, req)
+	return l.exec.ValidateResourceTypeConfig(ctx, typeName, config)
 }
 
 // ValidateDataSourceConfig 校验数据源查询条件。
-func (l *Lease) ValidateDataSourceConfig(kt *kit.Kit, req *tfruntime.ValidateDataSourceConfigRequest) (
-	*tfruntime.ValidateDataSourceConfigResponse, error) {
+func (l *Lease) ValidateDataSourceConfig(ctx context.Context, typeName string, config map[string]any) (
+	*types.ValidateResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ValidateDataSourceConfig(kt, req)
+	return l.exec.ValidateDataSourceConfig(ctx, typeName, config)
 }
 
 // UpgradeResourceState 把状态升到当前 schema 版本。
-func (l *Lease) UpgradeResourceState(kt *kit.Kit, req *tfruntime.UpgradeResourceStateRequest) (
-	*tfruntime.UpgradeResourceStateResponse, error) {
+func (l *Lease) UpgradeResourceState(ctx context.Context, typeName string, stateVersion int64, raw *types.RawState) (
+	*types.UpgradeResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.UpgradeResourceState(kt, req)
+	return l.exec.UpgradeResourceState(ctx, typeName, stateVersion, raw)
 }
 
 // ReadResource 读取资源现状。
-func (l *Lease) ReadResource(kt *kit.Kit, req *tfruntime.ReadResourceRequest) (
-	*tfruntime.ReadResourceResponse, error) {
+func (l *Lease) ReadResource(ctx context.Context, typeName string, current map[string]any, private []byte) (
+	*types.ReadResourceResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ReadResource(kt, req)
+	return l.exec.ReadResource(ctx, typeName, current, private)
 }
 
 // PlanResourceChange 计算计划。
-func (l *Lease) PlanResourceChange(kt *kit.Kit, req *tfruntime.PlanResourceChangeRequest) (
-	*tfruntime.PlanResourceChangeResponse, error) {
+func (l *Lease) PlanResourceChange(ctx context.Context, typeName string, prior, proposed, config map[string]any,
+	priorPrivate []byte) (*types.PlanResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.PlanResourceChange(kt, req)
+	return l.exec.PlanResourceChange(ctx, typeName, prior, proposed, config, priorPrivate)
 }
 
 // ApplyResourceChange 按计划修改外部系统。
-func (l *Lease) ApplyResourceChange(kt *kit.Kit, req *tfruntime.ApplyResourceChangeRequest) (
-	*tfruntime.ApplyResourceChangeResponse, error) {
+func (l *Lease) ApplyResourceChange(ctx context.Context, typeName string, prior, planned, config map[string]any,
+	plannedPrivate []byte) (*types.ApplyResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ApplyResourceChange(kt, req)
+	return l.exec.ApplyResourceChange(ctx, typeName, prior, planned, config, plannedPrivate)
 }
 
 // ImportResourceState 按外部标识读入已有资源。
-func (l *Lease) ImportResourceState(kt *kit.Kit, req *tfruntime.ImportResourceStateRequest) (
-	*tfruntime.ImportResourceStateResponse, error) {
-
+func (l *Lease) ImportResourceState(ctx context.Context, typeName, id string) (*types.ImportResult, error) {
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ImportResourceState(kt, req)
+	return l.exec.ImportResourceState(ctx, typeName, id)
 }
 
 // ReadDataSource 读取数据源。
-func (l *Lease) ReadDataSource(kt *kit.Kit, req *tfruntime.ReadDataSourceRequest) (
-	*tfruntime.ReadDataSourceResponse, error) {
+func (l *Lease) ReadDataSource(ctx context.Context, typeName string, config map[string]any) (
+	*types.ReadDataSourceResult, error) {
 
 	if l.released.Load() {
 		return nil, ErrLeaseReleased
 	}
-	return l.exec.ReadDataSource(kt, req)
+	return l.exec.ReadDataSource(ctx, typeName, config)
 }
