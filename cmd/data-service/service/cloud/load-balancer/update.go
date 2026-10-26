@@ -22,6 +22,7 @@ package loadbalancer
 
 import (
 	"fmt"
+	"sort"
 
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -71,6 +72,11 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	// 按 id 升序加锁，避免并发更新同批负载均衡行时形成循环等待触发 MySQL 死锁(Error 1213)
+	sort.Slice(req.Lbs, func(i, j int) bool {
+		return req.Lbs[i].ID < req.Lbs[j].ID
+	})
 
 	lbIds := slice.Map(req.Lbs, func(one *dataproto.LoadBalancerExtUpdateReq[T]) string { return one.ID })
 
