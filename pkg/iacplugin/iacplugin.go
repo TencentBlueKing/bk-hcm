@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package iacplugin IaC 插件注册与升级的公共规则：状态转换、版本比较。
+// Package iacplugin IaC 插件注册与升级的公共规则：版本比较，以及升级后继承上一版本的停用状态。
 package iacplugin
 
 import (
@@ -30,35 +30,6 @@ import (
 
 	"golang.org/x/mod/semver"
 )
-
-// allowedTransitions 合法的状态转换表（不含"状态不变"）。
-var allowedTransitions = map[enumor.IaCPluginState]map[enumor.IaCPluginState]struct{}{
-	enumor.IaCPluginStateInit: {
-		enumor.IaCPluginStateEnabled: {},
-		enumor.IaCPluginStateFailed:  {},
-	},
-	enumor.IaCPluginStateEnabled: {
-		enumor.IaCPluginStateFailed:   {},
-		enumor.IaCPluginStateDisabled: {},
-	},
-	enumor.IaCPluginStateFailed: {
-		enumor.IaCPluginStateInit:     {},
-		enumor.IaCPluginStateDisabled: {},
-	},
-	enumor.IaCPluginStateDisabled: {
-		enumor.IaCPluginStateEnabled: {},
-	},
-}
-
-// CanTransit 判断状态转换是否合法。相同状态视为无变化，返回 true。
-func CanTransit(from, to enumor.IaCPluginState) bool {
-	if from == to {
-		return true
-	}
-
-	_, ok := allowedTransitions[from][to]
-	return ok
-}
 
 // ParseVersion 校验并规范化插件版本号：必须是三段式 主.次.修订，可带预发布后缀和 v 前缀。
 // 返回带 v 前缀的规范形式，供 semver 包比较使用。

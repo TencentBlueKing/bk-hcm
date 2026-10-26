@@ -29,8 +29,8 @@ import (
 	"hcm/cmd/hc-service/logics/plugin/query"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
-	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
+	dataplugin "hcm/pkg/api/data-service/plugin"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -63,7 +63,7 @@ func (s *Service) Register(kt *kit.Kit, entry discovery.Entry) error {
 		}
 	}()
 
-	records, err := query.List(kt, s.dataCli, entry.PluginName)
+	records, err := query.List(kt, s.dataCli, tools.EqualExpression("plugin_name", entry.PluginName))
 	if err != nil {
 		return err
 	}
@@ -98,8 +98,13 @@ func (s *Service) Register(kt *kit.Kit, entry discovery.Entry) error {
 // 没有记录则新建；处于 init（上次中断）或 failed（上次失败）的记录则重置为 init 后重入。
 func (s *Service) saveInitRecord(kt *kit.Kit, entry discovery.Entry, rec *coreplugin.IaCPlugin) (string, error) {
 	if rec == nil {
-		return query.Insert(kt, s.dataCli, entry.PluginName, entry.PluginVersion,
-			enumor.IaCPluginProtocolTFProvider, json.RawMessage(`{}`), nil)
+		return query.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+			PluginName:    entry.PluginName,
+			PluginVersion: entry.PluginVersion,
+			Protocol:      enumor.IaCPluginProtocolTFProvider,
+			State:         enumor.IaCPluginStateInit,
+			Extension:     json.RawMessage(`{}`),
+		})
 	}
 
 	err := query.Update(kt, s.dataCli, rec.ID, rec.State, enumor.IaCPluginStateInit, nil, nil)
@@ -221,15 +226,12 @@ func (s *Service) markFailed(kt *kit.Kit, entry discovery.Entry, id string, caus
 //
 // 它只读，不加锁。要在所有插件注册完成之后调用：本副本刚注册的插件此时已经在注册表里，不会被误判。
 func (s *Service) CheckRegistered(kt *kit.Kit, entries []discovery.Entry) error {
-	res, err := s.dataCli.Global.IaCPlugin.List(kt, &core.ListReq{
-		Filter: tools.EqualExpression("protocol", enumor.IaCPluginProtocolTFProvider),
-		Page:   core.NewDefaultBasePage(),
-	})
+	records, err := query.List(kt, s.dataCli, tools.EqualExpression("protocol", enumor.IaCPluginProtocolTFProvider))
 	if err != nil {
 		return fmt.Errorf("list tf_provider plugins failed: %w", err)
 	}
 
-	missing, err := FindMissing(res.Details, entries)
+	missing, err := FindMissing(records, entries)
 	if err != nil {
 		return err
 	}
