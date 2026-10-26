@@ -83,6 +83,9 @@ export const MENU_RESOURCE_LOAD_BALANCER = Symbol('menu_resource_load_balancer')
  * 资源选型
  */
 export const MENU_SCHEME = Symbol('menu_scheme');
+export const MENU_SCHEME_RECOMMENDATION = Symbol('menu_scheme_recommendation');
+export const MENU_SCHEME_LIST = Symbol('menu_scheme_list');
+export const MENU_SCHEME_DETAIL = Symbol('menu_scheme_detail');
 
 /**
  * 单据管理

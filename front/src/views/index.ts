@@ -16,7 +16,7 @@ import { operationLogBiz, operationLogRsc } from '@/views/operation-log/route-co
 import task from '@/views/task/route-config';
 import cloudAccountManage from '@/views/cloud-account-manage/route-config';
 import service from '@/router/module/service';
-import scheme from '@/router/module/scheme';
+import scheme from '@/views/scheme/route-config';
 import resourceManage from '@/views/resource-manage/route-config';
 import { recyclebinBiz, recyclebinRsc } from '@/views/recyclebin/route-config';
 import { accountManageRsc } from '@/views/account-manage/route-config';
@@ -76,7 +76,7 @@ export const businessViews = injectStatusComponents(
   ],
   statusBusiness,
 );
-export const serviceViews = injectStatusComponents(service.flatMap((group) => group.children));
+export const serviceViews = injectStatusComponents([...service.flatMap((group) => group.children), ...scheme]);
 export const resourceViews = injectStatusComponents([
   ...resourceManage,
   ...accountManageRsc,
@@ -85,4 +85,3 @@ export const resourceViews = injectStatusComponents([
   ...billAccountManage,
   ...billManage,
 ]);
-export const schemeViews = injectStatusComponents(scheme);

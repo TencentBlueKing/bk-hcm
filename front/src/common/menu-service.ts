@@ -175,12 +175,19 @@ const serviceMenus: IMenu[] = [
     groupIcon: 'bkhcm-icon-user-8',
     route: getMenuRoute(serviceViews, MENU_SERVICE_TICKET_MANAGEMENT),
   },
+  {
+    id: MENU_SCHEME,
+    i18n: '资源选型',
+    group: '公共事务',
+    groupIcon: 'bkhcm-icon-user-8',
+    visibility: () => ENABLE_CLOUD_SELECTION === 'true',
+    route: getMenuRoute(serviceViews, MENU_SCHEME),
+  },
   // 权限策略库过渡放在这里，四期随服务请求一起迁
   {
     id: MENU_SERVICE_PERMISSION_POLICY,
     i18n: t('权限策略库'),
     group: '公共事务',
-    groupIcon: 'bkhcm-icon-user-8',
     route: getMenuRoute(serviceViews, MENU_SERVICE_PERMISSION_POLICY),
   },
 ];
@@ -250,7 +257,6 @@ const menus: IMenu[] = [
   },
   // 只做跳转，资源接入下线时删除
   { id: MENU_RESOURCE_ACCESS, i18n: '资源接入', route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE) },
-  { id: MENU_SCHEME, i18n: '资源选型', visibility: () => ENABLE_CLOUD_SELECTION === 'true' },
   { id: MENU_RESOURCE, i18n: '资源运营', menu: resourceMenus },
 ];
 

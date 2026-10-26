@@ -11,11 +11,10 @@ import {
   MENU_BUSINESS_HOST_MANAGEMENT,
   MENU_RESOURCE,
   MENU_RESOURCE_MANAGE,
-  MENU_SCHEME,
   MENU_SERVICE,
   MENU_SERVICE_TICKET_MANAGEMENT,
 } from '@/constants/menu-symbol';
-import { businessViews, resourceViews, schemeViews, serviceViews } from '@/views';
+import { businessViews, resourceViews, serviceViews } from '@/views';
 import { resourceManageLegacy, resourceDetailLegacy } from '@/views/resource-manage/route-config';
 import { recyclebinRscLegacy } from '@/views/recyclebin/route-config';
 import { accountManageLegacy } from '@/views/account-manage/route-config';
@@ -61,12 +60,6 @@ const routes: RouteRecordRaw[] = [
     path: '/resource',
     redirect: { name: MENU_RESOURCE_MANAGE },
     children: resourceViews,
-  },
-  {
-    name: MENU_SCHEME,
-    path: '/scheme',
-    redirect: { name: 'scheme-recommendation' },
-    children: schemeViews,
   },
   ...resourceManageLegacy,
   ...resourceDetailLegacy,
@@ -131,10 +124,11 @@ router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormali
   }
 });
 
-// accountStore.bizs 是业务 ID 的镜像（业务页由业务拦截器写入）；资源运营、资源选型与无归属页面清零，旧代码按它为空判断「非业务」
+// accountStore.bizs 是业务 ID 的镜像（业务页由业务拦截器写入）；资源运营与无归属页面清零，旧代码按它为空判断「非业务」
+// 资源选型已并入工作台（MENU_SERVICE），页面归属靠 matched[0] 判定，不再单独判断
 router.afterEach((to) => {
   const topMenuId = to.matched[0]?.name;
-  if (!topMenuId || topMenuId === MENU_RESOURCE || topMenuId === MENU_SCHEME) {
+  if (!topMenuId || topMenuId === MENU_RESOURCE) {
     useAccountStore().updateBizsId(0);
   }
 });

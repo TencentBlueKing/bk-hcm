@@ -10,6 +10,7 @@ import IdcMapDisplay from './components/idc-map-display';
 import NetworkHeatMap from './components/network-heat-map';
 import HcmAuth from '@/components/auth/auth.vue';
 import { AUTH_DELETE_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
+import { MENU_SCHEME_LIST } from '@/constants/menu-symbol';
 
 import './index.scss';
 
@@ -125,7 +126,7 @@ export default defineComponent({
               theme: 'success',
               message: '删除成功',
             });
-            router.push({ name: 'scheme-list' });
+            router.push({ name: MENU_SCHEME_LIST });
           });
         },
       });
