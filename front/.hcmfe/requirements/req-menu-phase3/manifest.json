@@ -2,7 +2,7 @@
   "id": "req-menu-phase3",
   "title": "菜单整合三期：工作台与服务请求迁移",
   "createdAt": "2026-10-26T02:09:29.925Z",
-  "updatedAt": "2026-10-26T02:09:32.209Z",
+  "updatedAt": "2026-10-26T08:21:32.963Z",
   "external": {
     "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
   },
@@ -13,6 +13,13 @@
       "branch": "feat-menu-phase3-workbench",
       "title": "菜单整合三期：工作台一级菜单与 service 视图复用",
       "createdAt": "2026-10-26T02:09:32.159Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-ticket",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：单据管理入工作台个人事务与服务请求跳转",
+      "createdAt": "2026-10-26T08:21:32.906Z"
     }
   ],
   "aggregatedArtifacts": {},

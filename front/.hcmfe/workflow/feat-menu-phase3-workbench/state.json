@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase3-workbench",
   "title": "菜单整合三期：工作台一级菜单与 service 视图复用",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-10-26T02:09:32.159Z",
-  "updatedAt": "2026-10-26T03:55:35.807Z",
+  "updatedAt": "2026-10-26T08:12:29.975Z",
   "artifacts": {
     "coding": [
       {
@@ -25,6 +25,11 @@
       "stage": "coding",
       "approvedAt": "2026-10-26T03:45:43.309Z",
       "note": "用户确认（2026-10-26）：工作台骨架编码完成，eslint/stylelint/tsc 通过，小屏顶栏自适应已修；推进到 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-26T08:11:52.315Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
     }
   },
   "history": [
@@ -39,6 +44,12 @@
       "to": "test",
       "at": "2026-10-26T03:45:43.309Z",
       "note": "用户确认（2026-10-26）：工作台骨架编码完成，eslint/stylelint/tsc 通过，小屏顶栏自适应已修；推进到 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-26T08:11:52.315Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
     }
   ],
   "requirementId": "req-menu-phase3",
@@ -65,6 +76,11 @@
       "status": "completed",
       "at": "2026-10-26T03:55:35.807Z",
       "note": "gaps=base、menu-route（均 hasDrift）。已更新 menu-route（工作台复用 serviceViews、服务请求跳转壳无侧栏、migrationTips、顶栏自适应）与 base（980px 只保主区、顶栏自适应分工）并各自 docs_deepen 刷新基线；无 stub 缺口，promotionQueue 为空。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-26T08:12:29.975Z",
+      "note": "story 按 planner 逐跳 status_12→status_13→status_20→status_14，最终 status_14(done)；owner 未变更。父单 rollup=target todo，父单当前 doing 且 shouldAdvance=false，未写父单。"
     }
   },
   "artifactFreshness": {

@@ -17,7 +17,8 @@
 
 ## 关键流程 / 注意事项
 
-（待补充：由 workflow 在首次改动本模块时深化。）
+- **视图归属**：本视图即三期起的「工作台」（一级菜单 `MENU_SERVICE`，地址前缀 `/service`）；单据、资源选型、账号管理等页面通过 `views/index.ts` 的 `serviceViews` 汇总，**不新建 `workbenchViews`**。
+- **提单成功后的跳转**：云主机 / 硬盘分别由 `hooks/use-vpc-form-data.ts`、`hooks/use-disk-form-data.ts` 处理，统一用 `routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT }, { history: true })`；不要写 `/service/my-apply` 这类旧地址（旧地址只剩兼容转址）。资源侧上下文仍走 `router.back()`。
 
 ## 明细目录
 

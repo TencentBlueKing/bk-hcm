@@ -181,7 +181,7 @@
       "doc": "modules/service.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "66d1054958ae1ec178eecd6b34ec5956053ba985"
+        "rootHash": "266060a7d23bcb6a348ab0a15c03027bb7d1de1c"
       }
     },
     {
@@ -238,7 +238,7 @@
       "doc": "modules/ticket.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "23f4ceb4706ef06d2b17314095fdba3bc88a5e92"
+        "rootHash": "315e4d0fcf64ceb12d8d29c74ecf71409749d820"
       }
     },
     {
