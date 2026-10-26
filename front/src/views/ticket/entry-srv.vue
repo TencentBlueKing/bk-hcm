@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, ref } from 'vue';
+import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ApplicationsType } from './typings';
@@ -135,8 +135,6 @@ const tabList = ref<ApplicationsType[]>([
     Component: CommonTable,
   },
 ]);
-
-provide('isServicePage', true);
 </script>
 
 <style lang="scss" scoped>
