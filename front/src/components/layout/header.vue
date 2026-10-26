@@ -6,7 +6,7 @@ import { jsonp } from '@/http';
 import { LANGUAGE_TYPE } from '@/common/constant';
 import { Message } from 'bkui-vue';
 import { getMenus, type IMenu } from '@/common/menu-service';
-import { MENU_RESOURCE_ACCESS } from '@/constants/menu-symbol';
+import { MENU_RESOURCE_ACCESS, MENU_SERVICE_REQUEST } from '@/constants/menu-symbol';
 import { useUserStore } from '@/store';
 import { gotoLoginPage } from '@/utils/login-helper';
 import ReleaseNote from '@/components/release-note/index.vue';
@@ -29,21 +29,27 @@ const menus = getMenus().filter((menu) => router.hasRoute(getNavTarget(menu)));
 
 const getNavLink = (nav: IMenu): RouteLocationRaw => ({ name: getNavTarget(nav) });
 
-// 资源接入是跳转型过渡入口：点击时（含已在资源纳管的重复导航）都用 Message 提示迁移去向。
-// 原生 click 每次点击都会触发，资源接入下线时连同本入口一并清理。
+// 跳转型过渡入口：点击时（含已在目标页的重复导航）都用 Message 提示迁移去向。
+// 原生 click 每次点击都会触发，入口下线时连同对应提示一并清理。
 // bkui 的 Message 没有 close/closeAll 之类的实例控制 API（内部 id 也由组件自己生成），
 // 所以用 onClose 复位标记，保证连续点击时同屏只保留一条提示
+const migrationTips = new Map<symbol | string, string>([
+  [MENU_RESOURCE_ACCESS, '「资源接入」已迁移至 「资源运营 → 云资源 → 资源纳管」，原入口将于 2026-10-30 下线'],
+  [MENU_SERVICE_REQUEST, '「服务请求」已迁移至 「工作台」，原入口将于上线后 2 周下线'],
+]);
+
 let isMigrationMessageShowing = false;
 
 const handleNavClick = (nav: IMenu) => {
-  if (nav.id !== MENU_RESOURCE_ACCESS || isMigrationMessageShowing) return;
+  const tip = migrationTips.get(nav.id);
+  if (!tip || isMigrationMessageShowing) return;
   isMigrationMessageShowing = true;
   Message({
     theme: 'primary',
     // 默认宽度写死 560px 会折行：auto + min-width: max-content 让文案保持单行
     width: 'auto',
     minWidth: 'max-content',
-    message: '「资源接入」已迁移至 「资源运营 → 云资源 → 资源纳管」，原入口将于 2026-10-30 下线',
+    message: tip,
     onClose: () => {
       isMigrationMessageShowing = false;
     },
@@ -132,17 +138,32 @@ const handleLogout = () => {
 <style lang="scss" scoped>
 .hcm-header {
   width: 100%;
+
+  // 允许在 bk-navigation 的 header 容器里收缩，否则窄屏时整条顶栏被撑开
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
+// 一级菜单按内容自适应：项多了横向滚动，不换行、不挤压右侧工具区，
+// 宽度不再依赖一级菜单数量（原先靠 html/body 的 980px 兜底，加菜单就会被压到换行）
 .header-nav {
   display: flex;
   gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .header-nav-link {
+  flex: 0 0 auto;
+  white-space: nowrap;
   color: #96a2b9;
   font-size: 14px;
   padding: 0 16px;
@@ -155,6 +176,8 @@ const handleLogout = () => {
 }
 
 .header-end {
+  // 右侧工具区固定宽度，永远不参与压缩
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 24px;
@@ -182,5 +205,20 @@ const handleLogout = () => {
 .lang-icon {
   padding-right: 5px;
   font-size: 16px;
+}
+
+// 窄屏紧凑模式：一级菜单收窄内边距，尽量不触发横向滚动（html/body 兜底仍为 980px）
+@media (width <= 1280px) {
+  .header-nav {
+    gap: 4px;
+  }
+
+  .header-nav-link {
+    padding: 0 10px;
+  }
+
+  .header-end {
+    gap: 16px;
+  }
 }
 </style>

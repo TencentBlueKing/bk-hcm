@@ -19,6 +19,7 @@ import {
   MENU_BUSINESS_VPC_MANAGEMENT,
   MENU_SERVICE,
   MENU_SERVICE_PERMISSION_POLICY,
+  MENU_SERVICE_REQUEST,
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_RESOURCE,
   MENU_RESOURCE_ACCESS,
@@ -165,17 +166,21 @@ const businessMenus: IMenu[] = [
   },
 ];
 
+// 工作台复用 service 视图：分组对齐 PR #1897，个人事务放单据，公共事务放机房裁撤 / 资源选型 / 账号管理 / 权限策略库
 const serviceMenus: IMenu[] = [
   {
     id: MENU_SERVICE_TICKET_MANAGEMENT,
     i18n: t('单据管理'),
-    icon: 'bkhcm-icon-my-apply',
+    group: '个人事务',
+    groupIcon: 'bkhcm-icon-user-8',
     route: getMenuRoute(serviceViews, MENU_SERVICE_TICKET_MANAGEMENT),
   },
+  // 权限策略库过渡放在这里，四期随服务请求一起迁
   {
     id: MENU_SERVICE_PERMISSION_POLICY,
     i18n: t('权限策略库'),
-    icon: 'bkhcm-icon-configuration',
+    group: '公共事务',
+    groupIcon: 'bkhcm-icon-user-8',
     route: getMenuRoute(serviceViews, MENU_SERVICE_PERMISSION_POLICY),
   },
 ];
@@ -236,7 +241,13 @@ const resourceMenus: IMenu[] = [
 // 不声明 menu 的一级菜单不显示侧栏
 const menus: IMenu[] = [
   { id: MENU_BUSINESS, i18n: '业务资源', menu: businessMenus },
-  { id: MENU_SERVICE, i18n: '服务请求', menu: serviceMenus },
+  { id: MENU_SERVICE, i18n: '工作台', menu: serviceMenus },
+  // 服务请求只做跳转（跳工作台的单据管理），自身没有侧栏，四期连入口一并删除
+  {
+    id: MENU_SERVICE_REQUEST,
+    i18n: '服务请求',
+    route: getMenuRoute(serviceViews, MENU_SERVICE_TICKET_MANAGEMENT),
+  },
   // 只做跳转，资源接入下线时删除
   { id: MENU_RESOURCE_ACCESS, i18n: '资源接入', route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE) },
   { id: MENU_SCHEME, i18n: '资源选型', visibility: () => ENABLE_CLOUD_SELECTION === 'true' },

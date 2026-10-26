@@ -47,9 +47,11 @@ export const MENU_BUSINESS_APPLY_SUBNET = Symbol('menu_business_apply_subnet');
 export const MENU_BUSINESS_APPLY_CLB = Symbol('menu_business_apply_clb');
 
 /**
- * 运营（服务请求）
+ * 工作台（复用 service 视图）
  */
 export const MENU_SERVICE = Symbol('menu_service');
+// 顶栏「服务请求」过渡入口，四期删除服务请求时一并删除
+export const MENU_SERVICE_REQUEST = Symbol('menu_service_request');
 export const MENU_SERVICE_HOST_APPLICATION = Symbol('menu_service_host_application');
 export const MENU_SERVICE_HOST_RECYCLE_ENTRY = Symbol('menu_service_host_recycle_entry');
 export const MENU_SERVICE_HOST_RECYCLE = Symbol('menu_service_host_recycle');
