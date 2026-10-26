@@ -7,8 +7,10 @@
 
 ## 关键文件与职责
 
-- **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。业务侧已全部是 Symbol（回收站 `MENU_BUSINESS_RECYCLEBIN`、申请页 `MENU_BUSINESS_APPLY_{CVM,VPC,DISK,SUBNET,CLB}`、负载均衡 `MENU_BUSINESS_LOAD_BALANCER_{LB,TG}_VIEW`）；未迁移的服务请求、资源选型仍有字符串 name（如 `'scheme-recommendation'`）。
+- **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。业务侧已全部是 Symbol（回收站 `MENU_BUSINESS_RECYCLEBIN`、申请页 `MENU_BUSINESS_APPLY_{CVM,VPC,DISK,SUBNET,CLB}`、负载均衡 `MENU_BUSINESS_LOAD_BALANCER_{LB,TG}_VIEW`）；工作台复用 `MENU_SERVICE`；服务请求只剩顶栏壳符号 `MENU_SERVICE_REQUEST`（无路由）；资源选型仍用字符串 name（如 `'scheme-recommendation'`），随「资源选型并入」子单改符号。
 - **一级菜单与侧栏** — `common/menu-service.ts` 的 `menus: IMenu[]`。顶层每项的 `id` 必须等于 `router/index.ts` 里对应顶层父路由的 `name`；数组顺序即顶栏从左到右的顺序；声明了 `menu` 的一级菜单才显示侧栏。
+  - 三期的「工作台」不是新视图：一级菜单 id 仍是 `MENU_SERVICE`，显示名改为「工作台」并前移到业务资源之后，页面仍走 `serviceViews`（`/service/*` 地址不变）。侧栏分组为「个人事务」（单据管理）、「公共事务」（权限策略库，后续加资源选型 / 账号管理 / 机房裁撤）。
+  - 「服务请求」改成顶栏跳转壳（`MENU_SERVICE_REQUEST`）：自身不注册路由、声明 `route` 指向工作台默认页，因此 `matched[0].name` 永远命中不到它，**没有侧栏**——想给某个一级入口保留侧栏，就必须让它真正拥有一套路由。
   - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`；资源运营始终显示，`ENABLE_ACCOUNT_BILL` 只控其下「云账单管理」三项）。
   - `getCurrentTopMenu(route)`：侧栏与顶栏激活用。**一级菜单本身不按 `visibility` 过滤**（开关只管顶栏入口，直接访问地址时侧栏照常），子项照常过滤。
   - `getMenuRoute(views, id)`：在路由树里递归按 name 找记录，菜单项只按 name 引用路由。
@@ -16,7 +18,7 @@
 - **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由。状态路由 `404` / `error` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址（含旧书签 `/403/:id`）兜底进 `404`。各父路由的 `children` 来自 `views/index.ts`，导出时已经 `injectStatusComponents` 注入状态页 named view；新增视图集合也必须经它包一层。全局 `beforeEach`：业务拦截器（可能转址）→ `available` → `meta.auth.view`。
 - **业务地址** — 业务资源根是 `/business/:bizId(\d+)?`，子路由全部相对路径，地址形如 `/business/<业务ID>/host`。`router/business-interceptor.ts` 只作用于业务路由，顺序与 #1897 相同：路径已有业务 ID 时以路径为准；路径没有时才把 `?bizs=` 转成路径参数；仍然没有时依次取 localStorage、第一个有权限业务、第一个业务。业务 ID 定下来后再判状态（见 auth 模块），通过后写 localStorage 与 `accountStore.bizs`。转址由拦截器自己 `next({ replace: true })`，不把缺业务 ID 的中间地址留在历史记录里。
 - **业务内跳转** — 跳业务路由一律显式传 `params: { bizId }`（`route.params.bizId`、负载均衡页注入的 `currentGlobalBusinessId`、或 `getBizsId()`），**不要**再带 `?bizs=`；字符串地址写 `/#/business/${bizId}/…`。vue-router 4.1 按名字解析时只沿用**必填**路径参数，`bizId` 是可选参数，不传就会丢；丢了由拦截器按「localStorage → 第一个有权限业务 → 第一个业务」补上并 `replace`，只作兜底。读当前业务用 `route.params.bizId` 或 `useWhereAmI().getBizsId()`（路由 → `accountStore.bizs` → localStorage，组件外也可用）。`accountStore.bizs` 只是镜像，供取不到路由的旧代码读。
-- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。`businessViews` 由各模块 `views/<模块>/route-config.ts` 拼接（主机、硬盘、镜像、VPC、子网、弹性 IP、网络接口、路由表、安全组、负载均衡、证书、单据、操作记录、任务、云账号管理、回收站），每条记录 `meta.owner = MENU_BUSINESS`。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 账号管理 + 回收管理 + 操作记录 + 账单（`/resource/bill/*`）。资源侧各模块的旧地址数组（`*Legacy`）由 `router/index.ts` 在顶层注册；业务侧旧地址（`ip`、`host|drive/recyclebin/:type`）写在各自模块的 `route-config.ts` 里，随 `businessViews` 注册。
+- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。三期起 `serviceViews` 承担「工作台」（单据 + 权限策略库，资源选型 / 账号管理随后续子单并入），**不再新建 `workbenchViews`**；新增工作台页面直接并进 `serviceViews`。`businessViews` 由各模块 `views/<模块>/route-config.ts` 拼接（主机、硬盘、镜像、VPC、子网、弹性 IP、网络接口、路由表、安全组、负载均衡、证书、单据、操作记录、任务、云账号管理、回收站），每条记录 `meta.owner = MENU_BUSINESS`。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 账号管理 + 回收管理 + 操作记录 + 账单（`/resource/bill/*`）。资源侧各模块的旧地址数组（`*Legacy`）由 `router/index.ts` 在顶层注册；业务侧旧地址（`ip`、`host|drive/recyclebin/:type`）写在各自模块的 `route-config.ts` 里，随 `businessViews` 注册。
 
 ## 侧栏与顶栏渲染
 
@@ -24,7 +26,9 @@
   - 收藏 / 折叠：`hooks/use-menu-favorite.ts`、`hooks/use-menu-collapse.ts` 是模块级单例，按「用户名 × 一级菜单 description」存 localStorage。失效收藏按「菜单是否存在」清理，无权限的只是不显示；无收藏时收藏区强制收起且不可展开。从收藏区点击时常规菜单的激活项弱化，反之亦然（`lastClickSource`）。
   - 切换业务：`router.resolve({ name: meta.menu.relative ?? route.name, params: { bizId } })` 后整页刷新，详情页回到所属列表。选择器的业务收藏（`hooks/use-business-favorite.ts`）只在当前业务有权限时查询，否则收藏接口会触发全局申请弹窗。
 - `components/layout/menu-item.vue`：按 `{ name }` 跳转，业务菜单另带 `params.bizId`（`menu.vue` 经 `provide('isBusinessNav' / 'bizId')` 下发，收藏区同理），悬停显示收藏星标。显示名取 `IMenu.i18n` 原文；需要翻译的项（单据管理、权限策略库）在 menu-service 里已用 `t()` 求值，渲染器不再套 `t()`。
-- `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页（业务资源由拦截器补业务 ID）。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。只做跳转的一级入口（资源接入 `MENU_RESOURCE_ACCESS`）不注册路由，菜单项声明 `route`（目标页面）：`header.vue` 对带 `route` 的一级菜单链到 `route.name`、`hasRoute` 按它过滤，并传空的 `active-class` / `exact-active-class`，否则会和目标所属一级菜单同时点亮。顶栏不再清空资源账号选择：离开资源纳管时由 `resource-entry.vue` 卸载清空。
+- `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页（业务资源由拦截器补业务 ID）。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。只做跳转的一级入口不注册路由，菜单项声明 `route`（目标页面）：`header.vue` 对带 `route` 的一级菜单链到 `route.name`、`hasRoute` 按它过滤，并传空的 `active-class` / `exact-active-class`，否则会和目标所属一级菜单同时点亮。现有的跳转壳是资源接入（`MENU_RESOURCE_ACCESS`）与服务请求（`MENU_SERVICE_REQUEST`），迁移提示统一放 `migrationTips`（`Map<菜单 id, 文案>`），新增/下线跳转壳只改这张表；文案只写到目标一级模块，不点具体功能。顶栏不再清空资源账号选择：离开资源纳管时由 `resource-entry.vue` 卸载清空。
+
+  顶栏宽度自适应：`.hcm-header` 与 `.header-nav` 都是 `min-width: 0`，nav 可横向滚动（滚动条隐藏），链接 `white-space: nowrap` + `flex: 0 0 auto`，右侧工具区 `flex: 0 0 auto`；≤1280px 收窄间距与内边距。因此**新增一级菜单不再需要调 `html/body` 的 980px 兜底**（该值现在只保主区可读宽度）。
 
 ## 面包屑
 

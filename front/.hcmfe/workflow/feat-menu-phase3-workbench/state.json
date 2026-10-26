@@ -1,0 +1,90 @@
+{
+  "id": "feat-menu-phase3-workbench",
+  "title": "菜单整合三期：工作台一级菜单与 service 视图复用",
+  "currentStage": "test",
+  "createdAt": "2026-10-26T02:09:32.159Z",
+  "updatedAt": "2026-10-26T03:55:35.807Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-workbench/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T02:21:26.738Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-workbench/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T03:46:09.918Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-26T03:45:43.309Z",
+      "note": "用户确认（2026-10-26）：工作台骨架编码完成，eslint/stylelint/tsc 通过，小屏顶栏自适应已修；推进到 test。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-26T02:09:32.159Z",
+      "gitHead": "74e8d5a3cc9b05eebee4de7155446703302c36ec"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-26T03:45:43.309Z",
+      "note": "用户确认（2026-10-26）：工作台骨架编码完成，eslint/stylelint/tsc 通过，小屏顶栏自适应已修；推进到 test。"
+    }
+  ],
+  "requirementId": "req-menu-phase3",
+  "branch": "feat-menu-phase3-workbench",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139342268",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-26T02:13:31.053Z",
+      "note": "用户选择跳过：该单已按 tapd-story-clarification 产出 docs/reqs/三期工作台骨架.md 并写入 TAPD description（含原需求描述与澄清记录），模板/澄清已完成，幂等重复无收益。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-26T03:55:35.807Z",
+      "note": "gaps=base、menu-route（均 hasDrift）。已更新 menu-route（工作台复用 serviceViews、服务请求跳转壳无侧栏、migrationTips、顶栏自适应）与 base（980px 只保主区、顶栏自适应分工）并各自 docs_deepen 刷新基线；无 stub 缺口，promotionQueue 为空。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/common/menu-service.ts",
+        "src/constants/menu-symbol.ts",
+        "src/components/layout/header.vue",
+        "src/style/common.scss",
+        "entry-wb.vue",
+        "common/menu-service.ts",
+        "views/index.ts",
+        "router/index.ts",
+        "store/auth.ts",
+        "constants/view-auth.ts",
+        "view-auth.ts"
+      ],
+      "contentFingerprint": "c816193565445df850a2e9f1e7aa32e5c80e75a5",
+      "codeBaseline": "0603f6edb0bcd095282c4647b8757710629c95fc",
+      "seatedAt": "2026-10-26T03:36:54.618Z"
+    }
+  }
+}
