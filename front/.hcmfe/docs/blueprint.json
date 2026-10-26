@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "5350d759d4e43f9a740003ed6d87cc8293123a11"
+        "rootHash": "8fcc8408db33bca05c3e126cbfcf06fe63faa398"
       }
     },
     {
@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "fe001ba3f4ef1593394ecd1aba4f3f45142af507"
+        "rootHash": "b72c9bccd118c5406677576147f2217602305282"
       }
     },
     {
@@ -252,7 +252,7 @@
       "doc": "modules/scheme.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "6b60e09f07de24fb0780765f14b434f6d329a08d"
+        "rootHash": "0e73fabf18905e955f52f0e56adc2bb399e6651b"
       }
     },
     {
@@ -283,7 +283,7 @@
       "doc": "modules/app-shell.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "9ea44ec65c41d2727e829dfdf28e60a14b19f7b8"
+        "rootHash": "f9a32d6cfb481c6e92a3495dbba1116578722e59"
       }
     },
     {

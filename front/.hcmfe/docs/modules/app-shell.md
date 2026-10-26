@@ -9,7 +9,7 @@
 
 - **`app.vue`**（无额外 `layout/index.vue`，对齐 PR #1897）：
   - 布局：`bk-navigation`（`top-bottom`，展开宽度用默认 260px）的 `#header` / `#menu` / `#default` / `#footer` 分别放 `HcmHeader` / `HcmMenu` / `HcmMainContent` / `HcmFooter`；`need-menu` = 当前一级菜单声明了 `menu`（见 menu-route）；页脚只在主机列表页（`MENU_BUSINESS_HOST_MANAGEMENT`）渲染。
-  - 全局副作用（原旧壳 `views/home/index.tsx` 的职责，旧壳已删除）：挂 `window.hcmPermissionDialog`、`useChromeNotice()`；预取地域（腾讯云 / 华为云）、业务映射、云区域。`accountStore.bizs` 不在这里维护：业务页由业务拦截器写入，资源运营、资源选型与无归属页面由 `router/index.ts` 的 `afterEach` 清零。页面无权限不再整页替换，由主区的状态页承接（见 auth 模块「视图级」）。
+  - 全局副作用（原旧壳 `views/home/index.tsx` 的职责，旧壳已删除）：挂 `window.hcmPermissionDialog`、`useChromeNotice()`；预取地域（腾讯云 / 华为云）、业务映射、云区域。`accountStore.bizs` 不在这里维护：业务页由业务拦截器写入，资源运营与无归属页面由 `router/index.ts` 的 `afterEach` 清零（资源选型三期已并入工作台的 `MENU_SERVICE`，不再单独判断）。页面无权限不再整页替换，由主区的状态页承接（见 auth 模块「视图级」）。
   - 侧栏收起状态 `navigationState.collapse`（照 #1897）：`bk-navigation` 的 `toggle` 回传的是「当前是否展开」（含悬停临时展开），取反存入，只用于 `default-open`（侧栏不接收该状态，业务选择器收起时照常渲染，与 #1897 一致）。`need-menu` 看当前一级菜单是否声明 `menu`，状态页取不到一级菜单即不显示侧栏。
   - 跑马灯：`<Notice>` 排在导航之前，有跑马灯时导航加 `has-notice` 减去 40px。#1897 把 `<Notice>` 放在导航之后且没有减高度，会多出 40px 滚动条，不照搬。
   - 页脚：只在主机列表页渲染。`app-shell.scss` 把 `container-content` 设为纵向 flex、`main-content` 占满剩余高度，页脚自动排在下面，不需要 #1897 的 `has-footer` 减高度；页面也不要为页脚单独调整内边距。
