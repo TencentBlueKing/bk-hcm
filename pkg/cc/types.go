@@ -422,6 +422,8 @@ type TFPluginSetting struct {
 	// MinPort and MaxPort are the single PLUGIN_MIN_PORT / PLUGIN_MAX_PORT range.
 	MinPort uint `yaml:"minPort"`
 	MaxPort uint `yaml:"maxPort"`
+	// HealthCheckTimeout bounds one plugin gRPC health check. Empty means 3s.
+	HealthCheckTimeout time.Duration `yaml:"healthCheckTimeout"`
 }
 
 // trySetDefault fills the port range when the configuration omits both ends.
@@ -429,6 +431,9 @@ func (p *TFPluginSetting) trySetDefault() {
 	if p.MinPort == 0 && p.MaxPort == 0 {
 		p.MinPort = 40000
 		p.MaxPort = 40999
+	}
+	if p.HealthCheckTimeout == 0 {
+		p.HealthCheckTimeout = 3 * time.Second
 	}
 }
 
@@ -439,6 +444,9 @@ func (p TFPluginSetting) validate(listenPort uint) error {
 	}
 	if listenPort >= p.MinPort && listenPort <= p.MaxPort {
 		return fmt.Errorf("tfPlugin port range %d-%d contains hc-service port %d", p.MinPort, p.MaxPort, listenPort)
+	}
+	if p.HealthCheckTimeout <= 0 {
+		return fmt.Errorf("tfPlugin healthCheckTimeout %s is invalid", p.HealthCheckTimeout)
 	}
 	return nil
 }
