@@ -100,8 +100,8 @@
     "terser-webpack-plugin": "5.4.0"
   },
   "engines": {
-    "node": ">= v16.20.2",
-    "npm": "^8.19.4"
+    "node": "v24.22.1",
+    "npm": "11.19.1"
   },
   "files": [
     "dist"
