@@ -64,6 +64,7 @@ import (
 	globalconfig "hcm/pkg/dal/dao/global-config"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
+	daoplugin "hcm/pkg/dal/dao/plugin"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
 	"hcm/pkg/dal/dao/task"
 	"hcm/pkg/dal/dao/tenant"
@@ -154,6 +155,8 @@ type Set interface {
 	Tenant() tenant.Tenant
 	PermissionTemplate() permissiontemplate.PermissionTemplate
 	PermissionPolicyLibrary() permissionpolicylibrary.PermissionPolicyLibrary
+	IaCPlugin() daoplugin.IaCPlugin
+	IacPluginSchema() daoplugin.IacPluginSchema
 
 	Txn() *Txn
 }

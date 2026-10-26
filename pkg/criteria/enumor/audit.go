@@ -58,6 +58,8 @@ const (
 	PermissionPolicyLibraryAuditResType AuditResourceType = "permission_policy_library"
 	// LoadBalancerExclusiveClusterAuditResType is load balancer exclusive cluster audit resource type
 	LoadBalancerExclusiveClusterAuditResType AuditResourceType = "load_balancer_exclusive_cluster"
+	// IaCPluginAuditResType is iac plugin audit resource type
+	IaCPluginAuditResType AuditResourceType = "iac_plugin"
 )
 
 // AuditResourceTypeEnums resource type map.
@@ -88,6 +90,7 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	PermissionTemplateAuditResType:           {},
 	PermissionPolicyLibraryAuditResType:      {},
 	LoadBalancerExclusiveClusterAuditResType: {},
+	IaCPluginAuditResType:                    {},
 }
 
 // Exist judge enum value exist.
