@@ -21,6 +21,7 @@
 package logs
 
 import (
+	"io"
 	"log"
 	"sync"
 	"time"
@@ -59,6 +60,12 @@ var (
 
 	Fatalf = glog.Fatalf
 )
+
+// NewPluginLogger opens a rotating log file for one plugin.
+// Naming, size limit, and file count follow glog. The file is separate from the hc-service log.
+func NewPluginLogger(pluginName string) (io.WriteCloser, error) {
+	return glog.NewPluginLogger(pluginName)
+}
 
 // LogConfig is Log configuration.
 type LogConfig struct {
