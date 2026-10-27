@@ -1,0 +1,108 @@
+{
+  "id": "feat-menu-phase3-closing",
+  "title": "菜单整合三期：收尾（权限、收藏、路由文件退场、文档）",
+  "currentStage": "done",
+  "createdAt": "2026-10-27T04:17:34.961Z",
+  "updatedAt": "2026-10-27T06:37:26.619Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-closing/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-27T04:20:55.090Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-closing/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-27T06:24:08.181Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-27T06:23:41.322Z",
+      "note": "用户确认（2026-10-27）：A6 编码完成（router/module/service.ts 退场、视图级汇总内联到 views/index.ts、删除 my-apply/my-approval 死目录），eslint/tsc/终扫通过，推进 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-27T06:36:47.444Z",
+      "note": "用户确认（2026-10-27）：test 全部 PASS，推进 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-27T04:17:34.961Z",
+      "gitHead": "90f1a72ed6792a883fa54a5bef08152442fe60ee"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-27T06:23:41.322Z",
+      "note": "用户确认（2026-10-27）：A6 编码完成（router/module/service.ts 退场、视图级汇总内联到 views/index.ts、删除 my-apply/my-approval 死目录），eslint/tsc/终扫通过，推进 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-27T06:36:47.444Z",
+      "note": "用户确认（2026-10-27）：test 全部 PASS，推进 done。"
+    }
+  ],
+  "requirementId": "req-menu-phase3",
+  "branch": "feat-menu-phase3-workbench",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139342337",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-27T04:18:56.743Z",
+      "note": "用户选择跳过：该单已按 tapd-story-clarification 产出 docs/reqs/三期收尾体验.md 并写入 TAPD description（含原需求描述与澄清记录）；终扫结果已在编码前核对，澄清已完成，重跑无收益。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-27T06:36:39.019Z",
+      "note": "gaps=menu-route、service、app-shell（均 hasDrift）。已补 menu-route（router/module 清空、视图级聚合内联原则：「views/<x>/route-config.ts 只给真实页面模块」）、service（目录只剩 service-apply、my-apply/my-approval 删除说明与内部版 bpass-apply-detail 注意）、app-shell（serviceViews 内联四组），各自 docs_deepen 刷新基线；promotionQueue 为空。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-27T06:37:26.619Z",
+      "note": "story 按 planner 逐跳 status_12→status_13→status_20→status_14，最终 status_14(done)；owner 未变更。父单 rollup=target doing，父单当前 doing 且 shouldAdvance=false，未写父单。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/index.ts",
+        "src/router/module/service.ts",
+        "src/views/service/my-apply",
+        "src/views/service/my-approval",
+        "router/index.ts",
+        "views/service/route-config.ts",
+        "views/<模块>/route-config.ts",
+        "views/index.ts",
+        "router/module/service.ts",
+        "service.ts",
+        "bcc/bcc/v1.9.x:front/src/router/module/service.ts",
+        "index.tsx",
+        "index.scss"
+      ],
+      "contentFingerprint": "4a65c58943e92bd9e79e7d99d5c84f0ca43035cc",
+      "codeBaseline": "fa9c532d457d08cdcb2bb3e1d63f590deb6623e8",
+      "seatedAt": "2026-10-27T04:33:37.766Z"
+    }
+  }
+}
