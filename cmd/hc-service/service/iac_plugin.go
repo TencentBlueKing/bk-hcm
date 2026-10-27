@@ -73,7 +73,7 @@ func scanPlugins(pluginDir string) ([]discovery.Entry, error) {
 func (s *Service) initIaCPlugin() error {
 	cfg := cc.HCService().IaCPlugin
 
-	entries, err := scanPlugins(cfg.PluginDir)
+	entries, err := scanPlugins(cfg.TF.PluginDir)
 	if err != nil {
 		return err
 	}
@@ -94,11 +94,12 @@ func (s *Service) initIaCPlugin() error {
 		LockLeaseSeconds: cfg.LockLeaseSeconds,
 		LockWaitTimeout:  time.Duration(cfg.LockWaitTimeoutSeconds) * time.Second,
 	})
-	httpPlugin := httpplugin.New(dataCli, iacMutex, cvt.ValToPtr(cc.HCService().IaCGateway), schemaMgr,
+	httpPlugin := httpplugin.New(dataCli, iacMutex, cvt.ValToPtr(cfg.HTTP.Gateway), schemaMgr,
 		httpplugin.Options{
+			Enabled:          cfg.HTTP.Enabled,
 			LockLeaseSeconds: cfg.LockLeaseSeconds,
-			CheckInterval:    time.Duration(cfg.HTTPCheckIntervalSeconds) * time.Second,
-			FailureThreshold: int(cfg.HTTPCheckFailureThreshold),
+			CheckInterval:    time.Duration(cfg.HTTP.CheckIntervalSeconds) * time.Second,
+			FailureThreshold: int(cfg.HTTP.CheckFailureThreshold),
 		})
 
 	s.iacPlugin = &iacPluginManager{
@@ -140,7 +141,7 @@ func (s *Service) StartPluginVersionWatch() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.iacPlugin.stopVersionWatch = cancel
 
-	cfg := cc.HCService().IaCPlugin
+	cfg := cc.HCService().IaCPlugin.TF
 	w := watch.New(s.clientSet.DataService().Global.IaCPlugin, s.iacPlugin.plugins,
 		shutdown.SignalShutdownGracefully,
 		watch.Options{
@@ -150,8 +151,12 @@ func (s *Service) StartPluginVersionWatch() {
 	go w.Run(ctx)
 }
 
-// StartHTTPPluginCheck 启动 http 插件巡检：仅 master 副本执行，随服务退出停止。
+// StartHTTPPluginCheck 启动 http 插件巡检：仅 master 副本执行，随服务退出停止。未启用 http 插件时不启动。
 func (s *Service) StartHTTPPluginCheck() {
+	if !cc.HCService().IaCPlugin.HTTP.Enabled {
+		return
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	s.iacPlugin.stopHTTPCheck = cancel
 

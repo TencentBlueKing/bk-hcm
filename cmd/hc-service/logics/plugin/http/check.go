@@ -100,7 +100,7 @@ func (s *Service) checkPlugin(kt *kit.Kit, pluginName string, failCounts map[str
 		return
 	}
 
-	version, err := s.probe(kt, ext.APIPath)
+	version, err := s.probe(kt, pluginName, ext.APIPath)
 	if err != nil {
 		s.onProbeFailed(kt, latest, failCounts, err)
 		return

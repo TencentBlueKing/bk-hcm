@@ -27,6 +27,4 @@ data:
       {{- toYaml .Values.tenant | nindent 6 }}
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
-    iacGateway:
-      {{- toYaml .Values.iacGateway | nindent 6 }}
     ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}

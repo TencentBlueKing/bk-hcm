@@ -389,23 +389,52 @@ hcservice:
   ## IaC 插件配置
   ##
   iacPlugin:
-    # 插件根目录，目录结构：{pluginDir}/{插件名}/{版本}/{os}_{arch}/{可执行文件}
-    # 变更该目录内容后需要重启 hc-service 才会生效
-    pluginDir: /data/hcm/plugins
     # 注册/升级时持有插件名锁的租约时长（秒），需大于一次注册的最长耗时
     lockLeaseSeconds: 600
     # 等待插件名锁的最长时间（秒）
     lockWaitTimeoutSeconds: 120
-    # 运行期版本检查周期（秒）
-    versionCheckIntervalSeconds: 60
-    # 运行期版本检查连续落后多少个周期后退出
-    versionCheckThreshold: 3
-    # 探活 http 插件的超时时间（秒）
-    httpProbeTimeoutSeconds: 10
-    # http 插件巡检间隔（秒），仅 master 副本巡检
-    httpCheckIntervalSeconds: 60
-    # enabled 的 http 插件连续探活失败多少次后置为 failed
-    httpCheckFailureThreshold: 3
+    # tf_provider 插件配置
+    tf:
+      # 插件根目录，目录结构：{pluginDir}/{插件名}/{版本}/{os}_{arch}/{可执行文件}
+      # 变更该目录内容后需要重启 hc-service 才会生效
+      pluginDir: /data/hcm/plugins
+      # 运行期版本检查周期（秒）
+      versionCheckIntervalSeconds: 60
+      # 运行期版本检查连续落后多少个周期后退出
+      versionCheckThreshold: 3
+    # http 插件配置
+    http:
+      # 是否启用 http 插件，不使用时设为 false 即可，tf_provider 插件不受影响
+      enabled: false
+      # 探活 http 插件的超时时间（秒）
+      probeTimeoutSeconds: 10
+      # http 插件巡检间隔（秒），仅 master 副本巡检
+      checkIntervalSeconds: 60
+      # enabled 的 http 插件连续探活失败多少次后置为 failed
+      checkFailureThreshold: 5
+      # 访问 http IaC 插件的蓝鲸 API 网关配置
+      gateway:
+        # 网关环境地址前缀，只允许一个，{plugin_name} 会替换为插件名称
+        endpoints:
+          - https://{plugin_name}.apigw.example.com/prod
+        # appCode is the BlueKing app code of hcm to request api gateway.
+        appCode: bk-hcm
+        # appSecret is the BlueKing app secret of hcm to request api gateway.
+        appSecret:
+        # user is the BlueKing user of hcm to request api gateway.
+        user: bk-hcm
+        # defines tls related options.
+        tls:
+          # server should be accessed without verifying the TLS certificate.
+          insecureSkipVerify:
+          # server requires TLS client certificate authentication.
+          certFile:
+          # server requires TLS client certificate authentication.
+          keyFile:
+          # trusted root certificates for server.
+          caFile:
+          # the password to decrypt the certificate.
+          password:
   ## 插件目录挂载，为空则使用镜像内的 /data/hcm/plugins。
   ## 例如挂载持久卷或 initContainer 拷贝的 emptyDir：
   ## pluginVolume:
@@ -1008,30 +1037,6 @@ cmdb:
   bkTicket:
   # bkToken is the BlueKing access token of hcm to request cmdb api gateway.
   bkToken:
-  # defines tls related options.
-  tls:
-    # server should be accessed without verifying the TLS certificate.
-    insecureSkipVerify:
-    # server requires TLS client certificate authentication.
-    certFile:
-    # server requires TLS client certificate authentication.
-    keyFile:
-    # trusted root certificates for server.
-    caFile:
-    # the password to decrypt the certificate.
-    password:
-
-# 访问 http IaC 插件的蓝鲸 API 网关配置（hc-service 使用）
-# 不使用 http 插件时 endpoints 留空即可，tf_provider 插件不受影响
-iacGateway:
-  # 网关环境地址前缀，只允许一个，例如 https://bkapi.example.com，所有 http 插件请求只能落在其 scheme + host 下
-  endpoints: [ ]
-  # appCode is the BlueKing app code of hcm to request api gateway.
-  appCode: bk-hcm
-  # appSecret is the BlueKing app secret of hcm to request api gateway.
-  appSecret:
-  # user is the BlueKing user of hcm to request api gateway.
-  user: bk-hcm
   # defines tls related options.
   tls:
     # server should be accessed without verifying the TLS certificate.

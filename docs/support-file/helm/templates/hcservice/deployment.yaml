@@ -80,7 +80,7 @@ spec:
             - mountPath: /data/hcm/etc
               name: config
             {{- if .Values.hcservice.pluginVolume }}
-            - mountPath: {{ .Values.hcservice.iacPlugin.pluginDir }}
+            - mountPath: {{ .Values.hcservice.iacPlugin.tf.pluginDir }}
               name: iac-plugins
             {{- end }}
             {{- if not .Values.etcd.enabled }}

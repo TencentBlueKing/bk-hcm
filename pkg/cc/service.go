@@ -295,8 +295,6 @@ type HCServiceSetting struct {
 	Cmdb          ApiGateway      `yaml:"cmdb"`
 	CCHostPoolBiz int64           `yaml:"ccHostPoolBiz"`
 	IaCPlugin     IaCPluginConfig `yaml:"iacPlugin"`
-	// IaCGateway 访问 http 插件的蓝鲸 API 网关。endpoints 为空表示不使用 http 插件，tf_provider 插件不受影响。
-	IaCGateway ApiGateway `yaml:"iacGateway"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -339,16 +337,6 @@ func (s HCServiceSetting) Validate() error {
 
 	if err := s.IaCPlugin.Validate(); err != nil {
 		return err
-	}
-
-	if len(s.IaCGateway.Endpoints) > 0 {
-		if err := s.IaCGateway.validate(); err != nil {
-			return fmt.Errorf("iacGateway validate error: %w", err)
-		}
-		// endpoints[0] 是 api_path 安全校验的基准，多个地址时基准不唯一。
-		if len(s.IaCGateway.Endpoints) > 1 {
-			return fmt.Errorf("iacGateway.endpoints should have exactly one address")
-		}
 	}
 
 	return nil

@@ -51,12 +51,26 @@ import (
 
 // Options http 插件流程参数。
 type Options struct {
+	// Enabled 是否启用 http 插件。
+	Enabled bool
 	// LockLeaseSeconds 插件名锁租约（秒），需大于一次注册 / 升级的最长耗时。
 	LockLeaseSeconds int64
 	// CheckInterval 巡检间隔。
 	CheckInterval time.Duration
 	// FailureThreshold enabled 插件连续探活失败多少次后置为 failed。
 	FailureThreshold int
+}
+
+const pluginNamePlaceholder = "{plugin_name}"
+
+type pluginClientInfo struct {
+	pluginName string
+	apiPath    string
+}
+
+func (k pluginClientInfo) baseURL(endpoint string) string {
+	prefix := strings.ReplaceAll(endpoint, pluginNamePlaceholder, k.pluginName)
+	return strings.TrimRight(prefix, "/") + k.apiPath
 }
 
 // Service 实现 http 插件的注册、升级、修改与巡检。
@@ -79,18 +93,23 @@ func New(dataCli *dataservice.Client, mutex *lock.EtcdMutex, gateway *cc.ApiGate
 	return &Service{dataCli: dataCli, mutex: mutex, gateway: gateway, schemaMgr: schemaMgr, opts: opts}
 }
 
-func (s *Service) getPluginClient(apiPath string) (plugin.Client, error) {
-	if cli, ok := s.pluginCliMap.Load(apiPath); ok {
+func (s *Service) getPluginClient(pluginName, apiPath string) (plugin.Client, error) {
+	if !s.opts.Enabled || s.gateway == nil || len(s.gateway.Endpoints) == 0 {
+		return nil, errf.New(errf.Aborted, "http iac plugin gateway is not enabled")
+	}
+
+	key := pluginClientInfo{pluginName: pluginName, apiPath: apiPath}
+	if cli, ok := s.pluginCliMap.Load(key); ok {
 		return cli.(plugin.Client), nil
 	}
 
-	baseURL := strings.TrimRight(s.gateway.Endpoints[0], "/") + apiPath
+	baseURL := key.baseURL(s.gateway.Endpoints[0])
 	cli, err := plugin.NewClient(baseURL, s.gateway, metrics.Register())
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	actual, _ := s.pluginCliMap.LoadOrStore(apiPath, cli)
+	actual, _ := s.pluginCliMap.LoadOrStore(key, cli)
 	return actual.(plugin.Client), nil
 }
 
@@ -114,7 +133,7 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 		}
 	}
 
-	version, err := s.probe(kt, req.APIPath)
+	version, err := s.probe(kt, req.PluginName, req.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +216,7 @@ func (s *Service) Upgrade(kt *kit.Kit, pluginName string) (*proto.HTTPPluginResu
 		return nil, err
 	}
 
-	version, err := s.probe(kt, ext.APIPath)
+	version, err := s.probe(kt, latest.PluginName, ext.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +361,7 @@ func (s *Service) Update(kt *kit.Kit, req *proto.HTTPUpdateReq) (*proto.HTTPPlug
 func (s *Service) updateAPIPath(kt *kit.Kit, records []coreplugin.IaCPlugin, latest *coreplugin.IaCPlugin,
 	apiPath string, extRaw json.RawMessage, reqMemo *string) (*proto.HTTPPluginResult, error) {
 
-	version, err := s.probe(kt, apiPath)
+	version, err := s.probe(kt, latest.PluginName, apiPath)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +463,7 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, id, pluginName, version, apiP
 
 // syncSchema 经网关从插件取 Schema 并交给 SchemaManager 校验落库。
 func (s *Service) syncSchema(kt *kit.Kit, pluginName, version, apiPath string) error {
-	result, err := s.schemaMgr.SyncSchema(kt, s.schemaGetter(apiPath))
+	result, err := s.schemaMgr.SyncSchema(kt, s.schemaGetter(pluginName, apiPath))
 	if err != nil {
 		logs.Errorf("sync iac plugin %s@%s schema failed, err: %v, rid: %s", pluginName, version, err, kt.Rid)
 		return errf.Newf(errf.Aborted, "sync iac plugin %s@%s schema failed, err: %v", pluginName, version, err)
@@ -461,10 +480,10 @@ func (s *Service) syncSchema(kt *kit.Kit, pluginName, version, apiPath string) e
 	return nil
 }
 
-// schemaGetter 返回按 apiPath 取 Schema 的方法。
-func (s *Service) schemaGetter(apiPath string) pluginschema.SchemaGetter {
+// schemaGetter 返回按 pluginName 与 apiPath 取 Schema 的方法。
+func (s *Service) schemaGetter(pluginName, apiPath string) pluginschema.SchemaGetter {
 	return pluginschema.SchemaGetterFunc(func(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
-		cli, err := s.getPluginClient(apiPath)
+		cli, err := s.getPluginClient(pluginName, apiPath)
 		if err != nil {
 			return nil, err
 		}
@@ -477,18 +496,18 @@ func (s *Service) schemaGetter(apiPath string) pluginschema.SchemaGetter {
 	})
 }
 
-// probe 探活取版本，并校验版本号格式。当网关未配置时打印告警并返回默认版本，便于本地联调。
-func (s *Service) probe(kt *kit.Kit, apiPath string) (string, error) {
+// probe 探活取版本，并校验版本号格式。当网关未启用时打印告警并返回默认版本，便于本地联调。
+func (s *Service) probe(kt *kit.Kit, pluginName, apiPath string) (string, error) {
 	if err := iacplugin.ValidateAPIPath(apiPath); err != nil {
 		return "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	version := "1.0.0"
-	if s.gateway == nil || len(s.gateway.Endpoints) == 0 {
-		logs.Warnf("iacGateway.endpoints is empty, return stub plugin version for api_path: %s, rid: %s",
-			apiPath, kt.Rid)
+	if !s.opts.Enabled || s.gateway == nil || len(s.gateway.Endpoints) == 0 {
+		logs.Warnf("http iac plugin gateway is not enabled, return stub plugin version for plugin: %s, "+
+			"api_path: %s, rid: %s", pluginName, apiPath, kt.Rid)
 	} else {
-		cli, err := s.getPluginClient(apiPath)
+		cli, err := s.getPluginClient(pluginName, apiPath)
 		if err != nil {
 			return "", err
 		}
