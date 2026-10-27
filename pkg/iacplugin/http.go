@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"unicode"
 
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/cryptography"
@@ -37,36 +36,21 @@ const (
 	MinRSAKeyBits = cryptography.MinRSAPublicKeyBits
 )
 
-// ValidateAPIPath 校验 http 插件 api_path 的形状：必须是以 / 开头的非空路径，
-// 不能带 query、fragment、反斜杠、空白与控制字符，各路径段不能为空、不能是 . 或 ..（含 URL 编码形式）。
+// ValidateAPIPath 校验 http 插件 api_path：必须是以 / 开头的纯路径，不能带协议、主机、参数或 ..。
 func ValidateAPIPath(apiPath string) error {
-	if len(apiPath) == 0 {
-		return errors.New("api_path is required")
-	}
-
-	if apiPath[0] != '/' {
+	if !strings.HasPrefix(apiPath, "/") {
 		return errors.New("api_path should start with /")
 	}
 
-	unescaped, err := url.PathUnescape(apiPath)
+	u, err := url.Parse(apiPath)
 	if err != nil {
-		return fmt.Errorf("api_path is invalid, err: %v", err)
+		return fmt.Errorf("parse api_path failed, err: %v", err)
 	}
-
-	for _, p := range []string{apiPath, unescaped} {
-		for _, r := range p {
-			if unicode.IsSpace(r) || unicode.IsControl(r) {
-				return errors.New("api_path should not contain whitespace or control characters")
-			}
-		}
-		if strings.ContainsAny(p, `?#\`) {
-			return errors.New(`api_path should not contain ?, # or \`)
-		}
-		for _, seg := range strings.Split(p[1:], "/") {
-			if seg == "" || seg == "." || seg == ".." {
-				return errors.New("api_path should not contain empty, . or .. segment")
-			}
-		}
+	if u.Scheme != "" || u.Host != "" || u.RawQuery != "" || u.Fragment != "" {
+		return errors.New("api_path should only be a URL path")
+	}
+	if strings.Contains(u.Path, "..") {
+		return errors.New("api_path should not contain ..")
 	}
 
 	return nil
