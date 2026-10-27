@@ -188,6 +188,10 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 
 	state, err := s.syncSchemaAndUpdate(kt, id, req.PluginName, version, req.APIPath, records)
 	if err != nil {
+		if derr := query.Delete(kt, s.dataCli, tools.EqualExpression("id", id)); derr != nil {
+			logs.Errorf("delete iac plugin %s@%s failed, err: %v, cause: %v, rid: %s", req.PluginName, version,
+				derr, err, kt.Rid)
+		}
 		return nil, err
 	}
 
@@ -437,7 +441,7 @@ func buildExtension(cur *coreplugin.HTTPExtension, req *proto.HTTPUpdateReq) (*c
 }
 
 // syncSchemaAndUpdate 同步 Schema 并把 init 记录收尾：成功按上一版本继承 enabled / disabled，失败置 failed 并返回错误。
-// records 是落 init 之前读到的该插件名下全部记录，用于状态继承。
+// records 是落 init 之前读到的该插件名下全部记录，用于状态继承。注册失败由调用方删除记录，升级和巡检保留 failed。
 func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, id, pluginName, version, apiPath string,
 	records []coreplugin.IaCPlugin) (enumor.IaCPluginState, error) {
 

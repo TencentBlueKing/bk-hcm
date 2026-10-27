@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package query tf_provider 与 http 插件共用的注册表操作：读取、落 init、条件更新、标记失败，以及 Schema 是否已落库。
+// Package query tf_provider 与 http 插件共用的注册表操作：读取、落 init、条件更新、删除、标记失败，以及 Schema 是否已落库。
 // 状态推进统一走 expect_state 条件更新，审计由 data-service 在同一事务内写入。
 package query
 
@@ -82,6 +82,11 @@ func Update(kt *kit.Kit, cli *dataservice.Client, id string, expect, state enumo
 	return cli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
 		ID: id, ExpectState: expect, State: state, Message: cvt.ValToPtr(""), Extension: ext, Memo: memo,
 	})
+}
+
+// Delete 按过滤条件删除插件记录。
+func Delete(kt *kit.Kit, cli *dataservice.Client, flt *filter.Expression) error {
+	return cli.Global.IaCPlugin.BatchDelete(kt, &dataplugin.IaCPluginBatchDeleteReq{Filter: flt})
 }
 
 // MarkFailed 把当前状态为 expectState 的记录置为 failed 并写入按列宽截断的失败原因。
