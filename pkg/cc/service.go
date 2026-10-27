@@ -287,13 +287,15 @@ func (s *DataServiceSetting) TenantEnable() bool {
 
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network       Network      `yaml:"network"`
-	Service       Service      `yaml:"service"`
-	Log           LogOption    `yaml:"log"`
-	SyncConfig    SyncConfig   `yaml:"sync"`
-	Tenant        TenantConfig `yaml:"tenant"`
-	Cmdb          ApiGateway   `yaml:"cmdb"`
-	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
+	Network       Network         `yaml:"network"`
+	Service       Service         `yaml:"service"`
+	Log           LogOption       `yaml:"log"`
+	SyncConfig    SyncConfig      `yaml:"sync"`
+	Tenant        TenantConfig    `yaml:"tenant"`
+	Cmdb          ApiGateway      `yaml:"cmdb"`
+	CCHostPoolBiz int64           `yaml:"ccHostPoolBiz"`
+	IaCPlugin     IaCPluginConfig `yaml:"iacPlugin"`
+	TFPlugin      TFPluginSetting `yaml:"tfPlugin"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -307,6 +309,8 @@ func (s *HCServiceSetting) trySetDefault() {
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
 	s.SyncConfig.trySetDefault()
+	s.IaCPlugin.trySetDefault()
+	s.TFPlugin.trySetDefault()
 
 	return
 }
@@ -329,8 +333,16 @@ func (s HCServiceSetting) Validate() error {
 		return err
 	}
 
+	if err := s.TFPlugin.validate(s.Network.Port); err != nil {
+		return err
+	}
+
 	if s.CCHostPoolBiz == 0 {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
+	}
+
+	if err := s.IaCPlugin.Validate(); err != nil {
+		return err
 	}
 
 	return nil

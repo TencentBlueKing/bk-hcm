@@ -79,6 +79,10 @@ spec:
           volumeMounts:
             - mountPath: /data/hcm/etc
               name: config
+            {{- if .Values.hcservice.pluginVolume }}
+            - mountPath: {{ .Values.hcservice.iacPlugin.tf.pluginDir }}
+              name: iac-plugins
+            {{- end }}
             {{- if not .Values.etcd.enabled }}
             {{- if .Values.externalEtcd.tls.enabled }}
             - mountPath: /data/hcm/etc/certs
@@ -89,6 +93,10 @@ spec:
         - name: config
           configMap:
             name: {{ template "bk-hcm.fullname" . }}-hcservice-config
+      {{- if .Values.hcservice.pluginVolume }}
+        - name: iac-plugins
+          {{- toYaml .Values.hcservice.pluginVolume | nindent 10 }}
+      {{- end }}
       {{- if not .Values.etcd.enabled }}
       {{- if .Values.externalEtcd.tls.enabled }}
         - name: etcd-certs

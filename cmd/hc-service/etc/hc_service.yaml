@@ -103,5 +103,96 @@ cmdb:
     # the password to decrypt the certificate.
     password:
 
+# terraform provider plugin process.
+tfPlugin:
+  # PLUGIN_MIN_PORT. The unix socket data path does not use this range.
+  minPort: 40000
+  # PLUGIN_MAX_PORT. One range only; it must not contain network.port.
+  maxPort: 40999
+  # Timeout for one plugin gRPC health check. Empty means 3s.
+  healthCheckTimeout: 3s
+
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
+
+# defines iac plugin related settings.
+iacPlugin:
+  # lockLeaseSeconds is the lease ttl of the plugin lock held during register/upgrade, in seconds.
+  # it must be greater than the longest time one registration takes.
+  lockLeaseSeconds: 600
+  # lockWaitTimeoutSeconds is the longest time to wait for the plugin lock, in seconds.
+  lockWaitTimeoutSeconds: 120
+  # tf defines tf_provider iac plugin related settings.
+  tf:
+    # pluginDir is the root directory of the tf_provider plugins,
+    # layout: {pluginDir}/{plugin name}/{version}/{os}_{arch}/{executable}.
+    # NOTE: restart hc-service after changing the contents of this directory.
+    pluginDir: /data/hcm/plugins
+    # versionCheckIntervalSeconds is the interval of the runtime version check, in seconds.
+    versionCheckIntervalSeconds: 60
+    # versionCheckThreshold is the consecutive times of version behind before exiting.
+    versionCheckThreshold: 3
+    # pool is the tf_provider plugin process pool. every tf plugin gets its own pool, all pools use these settings
+    # for now, per plugin type settings may be supported later.
+    # a value of 0 (except enabled) means the default of the pool package.
+    pool:
+      # enabled turns the pool on. it is off by default: no pool is created and no plugin process is started.
+      enabled: false
+      # maxProcesses is the max number of processes of one plugin pool.
+      maxProcesses: 4
+      # maxLeasesPerProcess is how many leases one process serves at the same time.
+      maxLeasesPerProcess: 4
+      # minIdleProcesses is the number of idle processes to keep, reclaiming only removes the part above it.
+      minIdleProcesses: 2
+      # maxRetries is how many times a request is retried after a process failure.
+      maxRetries: 2
+      # maxQueueLength is the max number of requests waiting in one plugin pool.
+      maxQueueLength: 1000
+      # maxQueueWaitSeconds is the longest time a request waits in the queue, in seconds.
+      maxQueueWaitSeconds: 180
+      # configureTimeoutSeconds is the timeout of one ConfigureProvider call, in seconds.
+      configureTimeoutSeconds: 30
+      # idleReclaimSeconds is how long a process must be idle before it can be reclaimed, in seconds.
+      idleReclaimSeconds: 600
+      # maxConfigAgeSeconds is how long one configuration can be reused, in seconds.
+      # it must be shorter than the validity of the cloud credentials.
+      maxConfigAgeSeconds: 1800
+      # checkIntervalSeconds is the interval of the pool inspection, in seconds.
+      checkIntervalSeconds: 30
+      # registryCheckIntervalSeconds is how often enabled plugins are checked to create or close pools, in seconds.
+      registryCheckIntervalSeconds: 5
+  # http defines http iac plugin related settings.
+  http:
+    # enabled turns http iac plugin on. set to false if no http plugin is used, tf_provider plugins are not affected.
+    enabled: false
+    # probeTimeoutSeconds is the timeout of probing a http plugin, in seconds.
+    probeTimeoutSeconds: 10
+    # checkIntervalSeconds is the interval of the http plugin inspection, in seconds. only the master inspects.
+    checkIntervalSeconds: 60
+    # checkFailureThreshold is the consecutive probe failures before an enabled http plugin is set to failed.
+    checkFailureThreshold: 5
+    # gateway defines the BlueKing api gateway used to access http iac plugins.
+    gateway:
+      # endpoints is the api gateway environment address prefix, exactly one address is allowed,
+      # {plugin_name} will be replaced with the plugin name.
+      endpoints:
+        - https://{plugin_name}.apigw.example.com/prod
+      # appCode is the BlueKing app code of hcm to request api gateway.
+      appCode:
+      # appSecret is the BlueKing app secret of hcm to request api gateway.
+      appSecret:
+      # user is the BlueKing user of hcm to request api gateway.
+      user: admin
+      # defines tls related options.
+      tls:
+        # server should be accessed without verifying the TLS certificate.
+        insecureSkipVerify:
+        # server requires TLS client certificate authentication.
+        certFile:
+        # server requires TLS client certificate authentication.
+        keyFile:
+        # trusted root certificates for server.
+        caFile:
+        # the password to decrypt the certificate.
+        password:
+

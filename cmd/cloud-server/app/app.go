@@ -27,8 +27,8 @@ import (
 
 	"hcm/cmd/cloud-server/options"
 	"hcm/cmd/cloud-server/service"
-	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/pkg/cc"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/runtime/ctl"

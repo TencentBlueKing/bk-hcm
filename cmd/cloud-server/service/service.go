@@ -57,6 +57,7 @@ import (
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	permissionpolicylibrary "hcm/cmd/cloud-server/service/permission-policy-library"
 	permissiontemplates "hcm/cmd/cloud-server/service/permission-template"
+	"hcm/cmd/cloud-server/service/plugin"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -67,7 +68,6 @@ import (
 	subaccountsecret "hcm/cmd/cloud-server/service/subaccount-secret"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
-	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
@@ -79,6 +79,7 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -120,7 +121,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = lock.InitManger(etcdCfg, int64(cc.CloudServer().CloudResource.Sync.SyncFrequencyLimitingTimeMin)*60)
+	err = lock.InitManager(etcdCfg, int64(cc.CloudServer().CloudResource.Sync.SyncFrequencyLimitingTimeMin)*60)
 	if err != nil {
 		return nil, err
 	}
@@ -353,6 +354,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	admin.InitAdminService(c)
 	permissionpolicylibrary.InitService(c)
 	permissiontemplates.InitService(c)
+	plugin.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
