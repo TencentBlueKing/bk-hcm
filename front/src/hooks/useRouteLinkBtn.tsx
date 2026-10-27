@@ -5,7 +5,7 @@ import {
   MENU_BUSINESS_IMAGE_DETAILS,
   MENU_BUSINESS_SUBNET_DETAILS,
   MENU_BUSINESS_VPC_DETAILS,
-  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_SERVICE_ACCOUNT_DETAIL,
   MENU_RESOURCE_DETAIL,
 } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
@@ -55,7 +55,7 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   const handleClick = () => {
     // 账号详情在资源运营 → 账号管理下，业务、资源两侧同一地址
     if (type === TypeEnum.ACCOUNT) {
-      router.push({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: computedId.value } });
+      router.push({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId: computedId.value } });
       return;
     }
     const routeInfo: any = {};

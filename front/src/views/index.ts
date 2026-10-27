@@ -76,10 +76,13 @@ export const businessViews = injectStatusComponents(
   ],
   statusBusiness,
 );
-export const serviceViews = injectStatusComponents([...service.flatMap((group) => group.children), ...scheme]);
+export const serviceViews = injectStatusComponents([
+  ...service.flatMap((group) => group.children),
+  ...scheme,
+  ...accountManageRsc,
+]);
 export const resourceViews = injectStatusComponents([
   ...resourceManage,
-  ...accountManageRsc,
   ...recyclebinRsc,
   ...operationLogRsc,
   ...billAccountManage,

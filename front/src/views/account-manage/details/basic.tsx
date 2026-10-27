@@ -9,7 +9,7 @@ import RenderDetailEdit from '@/components/RenderDetailEdit';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import routerAction from '@/router/utils/action';
 import { AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
-import { MENU_RESOURCE_ACCOUNT_MANAGEMENT } from '@/constants/menu-symbol';
+import { MENU_SERVICE_ACCOUNT_MANAGEMENT } from '@/constants/menu-symbol';
 import { type IAuthSign } from '@/common/auth-service';
 import './basic.scss';
 import http from '@/http';
@@ -127,7 +127,7 @@ export default defineComponent({
     });
 
     const handleBackToList = () => {
-      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_MANAGEMENT });
+      routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_MANAGEMENT });
     };
 
     // 获取业务列表

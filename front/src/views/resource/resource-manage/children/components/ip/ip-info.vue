@@ -12,7 +12,7 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   MENU_BUSINESS_HOST_DETAILS,
   MENU_BUSINESS_NIF_DETAILS,
-  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_SERVICE_ACCOUNT_DETAIL,
   MENU_RESOURCE_DETAIL,
 } from '@/constants/menu-symbol';
 
@@ -94,7 +94,7 @@ const baseInfo = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     txtBtn(accountId: string) {
-      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
+      routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

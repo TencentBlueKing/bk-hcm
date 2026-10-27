@@ -65,10 +65,6 @@ export const MENU_RESOURCE_RESOURCE_LIST = Symbol('menu_resource_resource_list')
 export const MENU_RESOURCE_DETAIL = Symbol('menu_resource_detail');
 // 顶栏「资源接入」入口，资源接入下线时删除
 export const MENU_RESOURCE_ACCESS = Symbol('menu_resource_access');
-export const MENU_RESOURCE_ACCOUNT_MANAGEMENT = Symbol('menu_resource_account_management');
-export const MENU_RESOURCE_ACCOUNT_CHECK_IN = Symbol('menu_resource_account_check_in');
-export const MENU_RESOURCE_ACCOUNT_DETAIL = Symbol('menu_resource_account_detail');
-export const MENU_RESOURCE_ACCOUNT_DETAIL_BASIC = Symbol('menu_resource_account_detail_basic');
 export const MENU_RESOURCE_RECYCLEBIN = Symbol('menu_resource_recyclebin');
 export const MENU_RESOURCE_OPERATION_LOG = Symbol('menu_resource_operation_log');
 export const MENU_RESOURCE_OPERATION_LOG_DETAILS = Symbol('menu_resource_operation_log_details');
@@ -94,6 +90,14 @@ export const MENU_SERVICE_TICKET_MANAGEMENT = Symbol('menu_service_ticket_manage
 export const MENU_SERVICE_TICKET_DETAILS = Symbol('menu_service_ticket_details');
 export const MENU_BUSINESS_TICKET_MANAGEMENT = Symbol('menu_business_ticket_management');
 export const MENU_BUSINESS_TICKET_DETAILS = Symbol('menu_business_ticket_details');
+
+/**
+ * 账号管理（工作台 → 公共事务）
+ */
+export const MENU_SERVICE_ACCOUNT_MANAGEMENT = Symbol('menu_service_account_management');
+export const MENU_SERVICE_ACCOUNT_CHECK_IN = Symbol('menu_service_account_check_in');
+export const MENU_SERVICE_ACCOUNT_DETAIL = Symbol('menu_service_account_detail');
+export const MENU_SERVICE_ACCOUNT_DETAIL_BASIC = Symbol('menu_service_account_detail_basic');
 
 /**
  * 云账号管理

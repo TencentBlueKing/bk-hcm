@@ -5,11 +5,7 @@ import { useRoute } from 'vue-router';
 import { CloudType, ConstantMapRecord } from '@/typings';
 import routerAction from '@/router/utils/action';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import {
-  MENU_BUSINESS_HOST_DETAILS,
-  MENU_RESOURCE_ACCOUNT_DETAIL,
-  MENU_RESOURCE_DETAIL,
-} from '@/constants/menu-symbol';
+import { MENU_BUSINESS_HOST_DETAILS, MENU_SERVICE_ACCOUNT_DETAIL, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { FieldList } from '../../../common/info-list/types';
@@ -52,7 +48,7 @@ const fields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     txtBtn(accountId: string) {
-      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
+      routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

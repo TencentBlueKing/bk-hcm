@@ -20,7 +20,7 @@ import { timeFormatter } from '@/common/util';
 import {
   MENU_BUSINESS_HOST_DETAILS,
   MENU_BUSINESS_RECYCLEBIN,
-  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_SERVICE_ACCOUNT_DETAIL,
   MENU_RESOURCE_DETAIL,
   MENU_RESOURCE_RECYCLEBIN,
 } from '@/constants/menu-symbol';
@@ -64,7 +64,7 @@ const settingFields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     txtBtn(accountId: string) {
-      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
+      routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

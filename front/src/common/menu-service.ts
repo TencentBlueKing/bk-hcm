@@ -23,7 +23,7 @@ import {
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_RESOURCE,
   MENU_RESOURCE_ACCESS,
-  MENU_RESOURCE_ACCOUNT_MANAGEMENT,
+  MENU_SERVICE_ACCOUNT_MANAGEMENT,
   MENU_RESOURCE_MANAGE,
   MENU_RESOURCE_OPERATION_LOG,
   MENU_RESOURCE_RECYCLEBIN,
@@ -166,7 +166,7 @@ const businessMenus: IMenu[] = [
   },
 ];
 
-// 工作台复用 service 视图：分组对齐 PR #1897，个人事务放单据，公共事务放机房裁撤 / 资源选型 / 账号管理 / 权限策略库
+// 工作台复用 service 视图：个人事务放单据管理、账号管理；公共事务放机房裁撤（B 线）/ 资源选型 / 权限策略库
 const serviceMenus: IMenu[] = [
   {
     id: MENU_SERVICE_TICKET_MANAGEMENT,
@@ -174,6 +174,13 @@ const serviceMenus: IMenu[] = [
     group: '个人事务',
     groupIcon: 'bkhcm-icon-user-8',
     route: getMenuRoute(serviceViews, MENU_SERVICE_TICKET_MANAGEMENT),
+  },
+  // 产品定义：账号管理归「个人事务」，与单据管理同组
+  {
+    id: MENU_SERVICE_ACCOUNT_MANAGEMENT,
+    i18n: '账号管理',
+    group: '个人事务',
+    route: getMenuRoute(serviceViews, MENU_SERVICE_ACCOUNT_MANAGEMENT),
   },
   {
     id: MENU_SCHEME,
@@ -201,13 +208,6 @@ const resourceMenus: IMenu[] = [
     group: '云资源',
     groupIcon: 'bkhcm-icon-vpc',
     route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE),
-  },
-  // 过渡位置：三期迁至工作台
-  {
-    id: MENU_RESOURCE_ACCOUNT_MANAGEMENT,
-    i18n: '账号管理',
-    group: '云资源',
-    route: getMenuRoute(resourceViews, MENU_RESOURCE_ACCOUNT_MANAGEMENT),
   },
   {
     id: MENU_RESOURCE_RECYCLEBIN,
