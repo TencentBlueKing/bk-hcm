@@ -1,0 +1,105 @@
+{
+  "id": "feat-menu-phase3-account",
+  "title": "菜单整合三期：账号管理迁入工作台公共事务",
+  "currentStage": "done",
+  "createdAt": "2026-10-26T09:44:33.954Z",
+  "updatedAt": "2026-10-27T04:03:25.776Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-account/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-27T02:23:10.663Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-account/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-27T02:33:01.393Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-27T02:32:38.005Z",
+      "note": "用户确认（2026-10-27）：A4 编码完成（符号改名、路由迁 serviceViews、菜单移入工作台公共事务、列表去资源账号 + type neq resource、旧地址转址），eslint/tsc/lint 通过；目录不做 PR 重组（二期最终决策），推进 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-27T04:02:56.770Z",
+      "note": "用户确认（2026-10-27）：test 全部通过，推进 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-26T09:44:33.954Z",
+      "gitHead": "f5a9500e2ed0700b85e6b5e0135b619cabc31fa0"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-27T02:32:38.005Z",
+      "note": "用户确认（2026-10-27）：A4 编码完成（符号改名、路由迁 serviceViews、菜单移入工作台公共事务、列表去资源账号 + type neq resource、旧地址转址），eslint/tsc/lint 通过；目录不做 PR 重组（二期最终决策），推进 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-27T04:02:56.770Z",
+      "note": "用户确认（2026-10-27）：test 全部通过，推进 done。"
+    }
+  ],
+  "requirementId": "req-menu-phase3",
+  "branch": "feat-menu-phase3-workbench",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139342308",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-27T02:20:11.004Z",
+      "note": "用户选择跳过：该单已按 tapd-story-clarification 产出 docs/reqs/三期账号管理迁入.md 并写入 TAPD description（含原需求描述与澄清记录）；口径已与 PR 源码逐项核对（列表筛选与 type neq resource），澄清已完成。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-27T04:02:50.944Z",
+      "note": "gaps=base、menu-route、auth、resource、app-shell（均 hasDrift）。已补 resource（账号管理迁出资源运营、新地址与旧地址转址、去资源账号）、menu-route（账号管理归个人事务、符号改名、serviceViews）、auth（view-auth 的 viewId 改名）、app-shell（serviceViews 组成）、base（指向 menu-route/auth 的约定指针），逐个 docs_deepen 刷新基线；promotionQueue 为空。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-27T04:03:25.776Z",
+      "note": "story 按 planner 逐跳 status_12→status_13→status_20→status_14，最终 status_14(done)；owner 未变更。父单 rollup 稍后计算。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/constants/menu-symbol.ts",
+        "src/views/account-manage/route-config.ts",
+        "src/views/index.ts",
+        "src/common/menu-service.ts",
+        "src/views/account-manage/list.vue",
+        "src/constants/view-auth.ts",
+        "src/hooks/useRouteLinkBtn.tsx",
+        "list.vue",
+        "useRouteLinkBtn.tsx",
+        "account-manage/details/basic.tsx"
+      ],
+      "contentFingerprint": "1fa2b0a4c1e477192611c4651c2c38c985d70d13",
+      "codeBaseline": "45b569fb298db21e52d87c0e2f91f8e662e17f66",
+      "seatedAt": "2026-10-27T02:57:43.034Z"
+    }
+  }
+}

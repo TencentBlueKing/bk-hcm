@@ -2,7 +2,7 @@
   "id": "req-menu-phase3",
   "title": "菜单整合三期：工作台与服务请求迁移",
   "createdAt": "2026-10-26T02:09:29.925Z",
-  "updatedAt": "2026-10-26T09:06:43.028Z",
+  "updatedAt": "2026-10-26T09:44:34.005Z",
   "external": {
     "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
   },
@@ -27,6 +27,13 @@
       "branch": "feat-menu-phase3-workbench",
       "title": "菜单整合三期：资源选型并入工作台公共事务",
       "createdAt": "2026-10-26T09:06:42.964Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-account",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：账号管理迁入工作台公共事务",
+      "createdAt": "2026-10-26T09:44:33.954Z"
     }
   ],
   "aggregatedArtifacts": {},

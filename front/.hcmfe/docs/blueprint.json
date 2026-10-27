@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "8fcc8408db33bca05c3e126cbfcf06fe63faa398"
+        "rootHash": "971f1eb941d46980237e7f104c2825c174851c80"
       }
     },
     {
@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "b72c9bccd118c5406677576147f2217602305282"
+        "rootHash": "5c073a9a27033c7bfa5f1c72cb1d9fe11579824c"
       }
     },
     {
@@ -121,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "e9159f5ba3bd7b3101d662b2341f80b86200f02f"
+        "rootHash": "b70585b052a2e3ee15df33f1f9a11fda44219abb"
       }
     },
     {
@@ -152,7 +152,7 @@
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "46e177552bb154e73592db9aaf184ff2f82928ea"
+        "rootHash": "983c44700c274f0ab774fedb5af756a585d66464"
       }
     },
     {
@@ -283,7 +283,7 @@
       "doc": "modules/app-shell.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "f9a32d6cfb481c6e92a3495dbba1116578722e59"
+        "rootHash": "2c1e258854d6b4ca6d26cc3a63dc0b6591ea7fbc"
       }
     },
     {

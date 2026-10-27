@@ -9,7 +9,8 @@
 
 - **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。业务侧已全部是 Symbol（回收站 `MENU_BUSINESS_RECYCLEBIN`、申请页 `MENU_BUSINESS_APPLY_{CVM,VPC,DISK,SUBNET,CLB}`、负载均衡 `MENU_BUSINESS_LOAD_BALANCER_{LB,TG}_VIEW`）；工作台复用 `MENU_SERVICE`；服务请求只剩顶栏壳符号 `MENU_SERVICE_REQUEST`（无路由）；资源选型仍用字符串 name（如 `'scheme-recommendation'`），随「资源选型并入」子单改符号。
 - **一级菜单与侧栏** — `common/menu-service.ts` 的 `menus: IMenu[]`。顶层每项的 `id` 必须等于 `router/index.ts` 里对应顶层父路由的 `name`；数组顺序即顶栏从左到右的顺序；声明了 `menu` 的一级菜单才显示侧栏。
-  - 三期的「工作台」不是新视图：一级菜单 id 仍是 `MENU_SERVICE`，显示名改为「工作台」并前移到业务资源之后，页面仍走 `serviceViews`（`/service/*` 地址不变）。侧栏分组为「个人事务」（单据管理）、「公共事务」（资源选型、权限策略库；后续加账号管理 / 机房裁撤）。
+  - 三期的「工作台」不是新视图：一级菜单 id 仍是 `MENU_SERVICE`，显示名改为「工作台」并前移到业务资源之后，页面仍走 `serviceViews`（`/service/*` 地址不变）。侧栏分组为「个人事务」（单据管理、账号管理）、「公共事务」（资源选型、权限策略库；B 线再加机房裁撤）。
+  - **账号管理**按产品定义归「个人事务」（PR #1897 参考实现放「公共事务」，以产品定义为准），符号由 `MENU_RESOURCE_ACCOUNT_*` 改名为 `MENU_SERVICE_ACCOUNT_*`，路由从 `resourceViews` 移到 `serviceViews`，地址 `/resource/account*` → `/service/account*`；旧地址由 `accountManageLegacy` 转址（含 `/resource/account/details/:accountId/:tab` 这种带页签的历史形态）。
   - 三期起**资源选型也并入工作台**：`views/scheme/route-config.ts` 的父记录 `name: MENU_SCHEME`、`path: 'scheme'` 并入 `serviceViews`（地址变 `/service/scheme/*`），`router/index.ts` 删除 `MENU_SCHEME` 顶层记录、`views/index.ts` 删除 `schemeViews`，`router/module/scheme.ts` 已删；`/scheme/*` 旧地址按 PR #1897 不做兼容。
   - 「服务请求」改成顶栏跳转壳（`MENU_SERVICE_REQUEST`）：自身不注册路由、声明 `route` 指向工作台默认页，因此 `matched[0].name` 永远命中不到它，**没有侧栏**——想给某个一级入口保留侧栏，就必须让它真正拥有一套路由。
   - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`；资源运营始终显示，`ENABLE_ACCOUNT_BILL` 只控其下「云账单管理」三项）。
