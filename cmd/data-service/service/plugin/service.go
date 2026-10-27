@@ -36,9 +36,9 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	// 注册表只增不删：下线通过把 state 置为 disabled 完成，不提供删除接口。
 	h.Add("CreateIaCPlugin", http.MethodPost, "/iac_plugins/create", svc.CreateIaCPlugin)
 	h.Add("UpdateIaCPlugin", http.MethodPatch, "/iac_plugins/update", svc.UpdateIaCPlugin)
+	h.Add("BatchDeleteIaCPlugin", http.MethodDelete, "/iac_plugins/batch", svc.BatchDeleteIaCPlugin)
 	h.Add("BatchUpdateIaCPluginState", http.MethodPatch, "/iac_plugins/batch/update_state",
 		svc.BatchUpdateIaCPluginState)
 	h.Add("ListIaCPlugin", http.MethodPost, "/iac_plugins/list", svc.ListIaCPlugin)

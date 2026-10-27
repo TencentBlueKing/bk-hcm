@@ -27,6 +27,7 @@ import (
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/runtime/filter"
 )
 
 // IaCPluginMessageMaxLen 是 iac_plugin.message 的列宽，对应建表的 varchar(255)。
@@ -88,6 +89,16 @@ func (req *IaCPluginUpdateReq) Validate() error {
 	}
 
 	return nil
+}
+
+// IaCPluginBatchDeleteReq 按过滤条件删除 iac_plugin 记录。
+type IaCPluginBatchDeleteReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate IaCPluginBatchDeleteReq.
+func (req *IaCPluginBatchDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // IaCPluginBatchUpdateStateReq 按插件名批量修改状态：仅当前状态属于 FromStates 的记录会被更新。

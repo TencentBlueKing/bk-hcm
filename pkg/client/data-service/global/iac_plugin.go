@@ -43,6 +43,12 @@ func (c *IaCPluginClient) Create(kt *kit.Kit, req *dataplugin.IaCPluginCreateReq
 		c.client, rest.POST, kt, req, "/iac_plugins/create")
 }
 
+// BatchDelete 按过滤条件删除 iac plugin 记录。
+func (c *IaCPluginClient) BatchDelete(kt *kit.Kit, req *dataplugin.IaCPluginBatchDeleteReq) error {
+	return common.RequestNoResp[dataplugin.IaCPluginBatchDeleteReq](
+		c.client, rest.DELETE, kt, req, "/iac_plugins/batch")
+}
+
 // Update update iac plugin record, set req.ExpectState to make it a conditional update.
 func (c *IaCPluginClient) Update(kt *kit.Kit, req *dataplugin.IaCPluginUpdateReq) error {
 	return common.RequestNoResp[dataplugin.IaCPluginUpdateReq](

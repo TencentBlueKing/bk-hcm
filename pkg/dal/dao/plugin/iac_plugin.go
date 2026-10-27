@@ -56,6 +56,8 @@ type IaCPlugin interface {
 	// BatchUpdateState 按插件名把处于 fromStates 的记录批量改为 toState，每条被改的记录各写一条 update 审计。
 	BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enumor.IaCPluginState,
 		toState enumor.IaCPluginState) error
+	// DeleteWithTx 按过滤条件删除记录，并为每条被删记录写 delete 审计。
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult[tableplugin.IaCPluginTable], error)
 }
 
@@ -219,6 +221,45 @@ func jsonEqual(a, b string) bool {
 	}
 
 	return reflect.DeepEqual(va, vb)
+}
+
+// DeleteWithTx 在事务中按过滤条件删除 iac_plugin 记录，并为每条被删记录写 delete 审计。
+func (d *Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+	if expr == nil {
+		return errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		logs.Errorf("generate delete where expr for %s failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
+		return err
+	}
+
+	rows := make([]tableplugin.IaCPluginTable, 0)
+	selectSQL := fmt.Sprintf(`SELECT %s FROM %s %s`, tableplugin.IaCPluginColumns.ColumnExpr(),
+		table.IaCPluginTable, whereExpr)
+	if err = d.Orm.Txn(tx).Select(kt.Ctx, &rows, selectSQL, whereValue); err != nil {
+		logs.Errorf("select %s before delete failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
+		return err
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	deleteSQL := fmt.Sprintf(`DELETE FROM %s %s`, table.IaCPluginTable, whereExpr)
+	if _, err = d.Orm.Txn(tx).Delete(kt.Ctx, deleteSQL, whereValue); err != nil {
+		logs.Errorf("delete %s failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
+		return err
+	}
+
+	audits := slice.Map(rows, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
+		return d.buildAudit(kt, enumor.Delete, one, nil)
+	})
+	if err = d.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 // listByIDsForUpdate 在事务内按 id 加行锁读取记录。
