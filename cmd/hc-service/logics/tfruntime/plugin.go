@@ -128,126 +128,147 @@ func (e *PluginExecutor) Stop(
 // 前置检查 closing，已关闭则直接返回；通过后 wg.Add(1)，方法返回时 wg.Done()。
 // 调用方直接调用这些方法，不另设 Call 包装。Stop 由 Close 在门闩关闭后调用，不加这道门闩。
 
+// GetMetadata is not implemented in this iteration.
 func (e *PluginExecutor) GetMetadata(
 	context.Context, *tfplugin5.GetMetadata_Request, ...grpc.CallOption,
 ) (*tfplugin5.GetMetadata_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// GetSchema is not implemented in this iteration.
 func (e *PluginExecutor) GetSchema(
 	context.Context, *tfplugin5.GetProviderSchema_Request, ...grpc.CallOption,
 ) (*tfplugin5.GetProviderSchema_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// GetResourceIdentitySchemas is not implemented in this iteration.
 func (e *PluginExecutor) GetResourceIdentitySchemas(
 	context.Context, *tfplugin5.GetResourceIdentitySchemas_Request, ...grpc.CallOption,
 ) (*tfplugin5.GetResourceIdentitySchemas_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// PrepareProviderConfig is not implemented in this iteration.
 func (e *PluginExecutor) PrepareProviderConfig(
 	context.Context, *tfplugin5.PrepareProviderConfig_Request, ...grpc.CallOption,
 ) (*tfplugin5.PrepareProviderConfig_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ValidateResourceTypeConfig is not implemented in this iteration.
 func (e *PluginExecutor) ValidateResourceTypeConfig(
 	context.Context, *tfplugin5.ValidateResourceTypeConfig_Request, ...grpc.CallOption,
 ) (*tfplugin5.ValidateResourceTypeConfig_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ValidateDataSourceConfig is not implemented in this iteration.
 func (e *PluginExecutor) ValidateDataSourceConfig(
 	context.Context, *tfplugin5.ValidateDataSourceConfig_Request, ...grpc.CallOption,
 ) (*tfplugin5.ValidateDataSourceConfig_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// UpgradeResourceState is not implemented in this iteration.
 func (e *PluginExecutor) UpgradeResourceState(
 	context.Context, *tfplugin5.UpgradeResourceState_Request, ...grpc.CallOption,
 ) (*tfplugin5.UpgradeResourceState_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// UpgradeResourceIdentity is not implemented in this iteration.
 func (e *PluginExecutor) UpgradeResourceIdentity(
 	context.Context, *tfplugin5.UpgradeResourceIdentity_Request, ...grpc.CallOption,
 ) (*tfplugin5.UpgradeResourceIdentity_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// Configure is not implemented in this iteration.
 func (e *PluginExecutor) Configure(
 	context.Context, *tfplugin5.Configure_Request, ...grpc.CallOption,
 ) (*tfplugin5.Configure_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ReadResource is not implemented in this iteration.
 func (e *PluginExecutor) ReadResource(
 	context.Context, *tfplugin5.ReadResource_Request, ...grpc.CallOption,
 ) (*tfplugin5.ReadResource_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// PlanResourceChange is not implemented in this iteration.
 func (e *PluginExecutor) PlanResourceChange(
 	context.Context, *tfplugin5.PlanResourceChange_Request, ...grpc.CallOption,
 ) (*tfplugin5.PlanResourceChange_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ApplyResourceChange is not implemented in this iteration.
 func (e *PluginExecutor) ApplyResourceChange(
 	context.Context, *tfplugin5.ApplyResourceChange_Request, ...grpc.CallOption,
 ) (*tfplugin5.ApplyResourceChange_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ImportResourceState is not implemented in this iteration.
 func (e *PluginExecutor) ImportResourceState(
 	context.Context, *tfplugin5.ImportResourceState_Request, ...grpc.CallOption,
 ) (*tfplugin5.ImportResourceState_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// MoveResourceState is not implemented in this iteration.
 func (e *PluginExecutor) MoveResourceState(
 	context.Context, *tfplugin5.MoveResourceState_Request, ...grpc.CallOption,
 ) (*tfplugin5.MoveResourceState_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ReadDataSource is not implemented in this iteration.
 func (e *PluginExecutor) ReadDataSource(
 	context.Context, *tfplugin5.ReadDataSource_Request, ...grpc.CallOption,
 ) (*tfplugin5.ReadDataSource_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// ValidateEphemeralResourceConfig is not implemented in this iteration.
 func (e *PluginExecutor) ValidateEphemeralResourceConfig(
 	context.Context, *tfplugin5.ValidateEphemeralResourceConfig_Request, ...grpc.CallOption,
 ) (*tfplugin5.ValidateEphemeralResourceConfig_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// OpenEphemeralResource is not implemented in this iteration.
 func (e *PluginExecutor) OpenEphemeralResource(
 	context.Context, *tfplugin5.OpenEphemeralResource_Request, ...grpc.CallOption,
 ) (*tfplugin5.OpenEphemeralResource_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// RenewEphemeralResource is not implemented in this iteration.
 func (e *PluginExecutor) RenewEphemeralResource(
 	context.Context, *tfplugin5.RenewEphemeralResource_Request, ...grpc.CallOption,
 ) (*tfplugin5.RenewEphemeralResource_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// CloseEphemeralResource is not implemented in this iteration.
 func (e *PluginExecutor) CloseEphemeralResource(
 	context.Context, *tfplugin5.CloseEphemeralResource_Request, ...grpc.CallOption,
 ) (*tfplugin5.CloseEphemeralResource_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// GetFunctions is not implemented in this iteration.
 func (e *PluginExecutor) GetFunctions(
 	context.Context, *tfplugin5.GetFunctions_Request, ...grpc.CallOption,
 ) (*tfplugin5.GetFunctions_Response, error) {
 	return nil, errRPCNotImplemented
 }
 
+// CallFunction is not implemented in this iteration.
 func (e *PluginExecutor) CallFunction(
 	context.Context, *tfplugin5.CallFunction_Request, ...grpc.CallOption,
 ) (*tfplugin5.CallFunction_Response, error) {

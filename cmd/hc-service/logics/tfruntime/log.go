@@ -121,6 +121,7 @@ func (p *pluginLogs) emitLocked(stream, text string) {
 	}
 }
 
+// Write buffers plugin stdout or stderr and emits each complete line to the plugin log.
 func (s *streamBuf) Write(data []byte) (int, error) {
 	s.parent.mu.Lock()
 	defer s.parent.mu.Unlock()
@@ -147,6 +148,7 @@ type serviceWriter struct {
 	mu     sync.Mutex
 }
 
+// Write buffers framework logs and pre-handshake stderr, then emits each complete line to the hc-service log.
 func (w *serviceWriter) Write(data []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
