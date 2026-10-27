@@ -103,5 +103,14 @@ cmdb:
     # the password to decrypt the certificate.
     password:
 
+# terraform provider plugin process.
+tfPlugin:
+  # PLUGIN_MIN_PORT. The unix socket data path does not use this range.
+  minPort: 40000
+  # PLUGIN_MAX_PORT. One range only; it must not contain network.port.
+  maxPort: 40999
+  # Timeout for one plugin gRPC health check. Empty means 3s.
+  healthCheckTimeout: 3s
+
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
