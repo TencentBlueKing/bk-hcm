@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	"hcm/cmd/hc-service/types"
 	"hcm/pkg/plugin/tfplugin5"
 	"hcm/pkg/version"
 )
@@ -66,25 +67,41 @@ func TestPluginExecutor_GetProviderSchema_Resources(t *testing.T) {
 	if got.Provider.Version != 0 || got.ResourceSchemas["tcloud_cvm"].Version != 2 {
 		t.Fatalf("schema versions = provider %d resource %d", got.Provider.Version, got.ResourceSchemas["tcloud_cvm"].Version)
 	}
-	nested := got.ResourceSchemas["tcloud_cvm"].Block.BlockTypes["net"]
+	assertResourceBlock(t, got.ResourceSchemas["tcloud_cvm"].Block)
+	assertSchemaCapabilities(t, got.Capabilities)
+	if executor.resourceSchemas["tcloud_cvm"] == nil || executor.providerSchema == nil {
+		t.Fatal("protocol schemas were not kept")
+	}
+}
+
+func assertResourceBlock(t *testing.T, block *types.Block) {
+	t.Helper()
+	if block == nil {
+		t.Fatal("resource block is missing")
+	}
+	nested := block.BlockTypes["net"]
+	if nested == nil || nested.Block == nil {
+		t.Fatal("nested block is missing")
+	}
 	if nested.Nesting != "list" || nested.MinItems != 1 || nested.Block.Attributes["zone"].Type != "string" {
 		t.Fatalf("nested block = %+v", nested)
 	}
-	if len(got.ResourceSchemas["tcloud_cvm"].Block.Attributes) == 0 || got.ResourceSchemas["tcloud_cvm"].Block.BlockTypes == nil {
+	if len(block.Attributes) == 0 || block.BlockTypes == nil {
 		t.Fatal("adapted block maps are missing")
 	}
+}
+
+func assertSchemaCapabilities(t *testing.T, capabilities map[string]bool) {
+	t.Helper()
 	for _, key := range []string{"apply", "plan", "validate", "import", "refresh"} {
-		if !got.Capabilities[key] {
-			t.Fatalf("missing capability %s: %v", key, got.Capabilities)
+		if !capabilities[key] {
+			t.Fatalf("missing capability %s: %v", key, capabilities)
 		}
 	}
 	for _, key := range []string{"read_data", "async_apply", "list", "plan_destroy", "move_resource_state"} {
-		if _, ok := got.Capabilities[key]; ok {
-			t.Fatalf("capability %s should be absent: %v", key, got.Capabilities)
+		if _, ok := capabilities[key]; ok {
+			t.Fatalf("capability %s should be absent: %v", key, capabilities)
 		}
-	}
-	if executor.resourceSchemas["tcloud_cvm"] == nil || executor.providerSchema == nil {
-		t.Fatal("protocol schemas were not kept")
 	}
 }
 

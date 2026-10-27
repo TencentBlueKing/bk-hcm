@@ -150,6 +150,19 @@ func TestPluginExecutor_UpgradeResourceState_RawState(t *testing.T) {
 	}
 }
 
+func TestPluginExecutor_PlanResourceChangeEmpty(t *testing.T) {
+	fake := &fakePlugin{getSchema: resourceSchema(t)}
+	loadEchoPrepare(fake)
+	executor := preparedExecutor(t, fake, &jsonCodec{})
+	_, err := executor.PlanResourceChange(context.Background(), "tcloud_cvm", nil, nil, nil, nil)
+	if err == nil || err.Error() != "terraform plugin plan has no prior state and no proposed state" {
+		t.Fatalf("empty plan: %v", err)
+	}
+	if fake.count("PlanResourceChange") != 0 {
+		t.Fatal("empty plan sent an RPC")
+	}
+}
+
 func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	var planned *tfplugin5.PlanResourceChange_Request
 	fake := &fakePlugin{
@@ -169,27 +182,40 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	loadEchoPrepare(fake)
 	executor := preparedExecutor(t, fake, &jsonCodec{})
 	ctx := context.Background()
-	if _, err := executor.PlanResourceChange(ctx, "tcloud_cvm", nil, nil, nil, nil); err == nil || err.Error() != "terraform plugin plan has no prior state and no proposed state" {
-		t.Fatalf("empty plan: %v", err)
-	}
-	if fake.count("PlanResourceChange") != 0 {
-		t.Fatal("empty plan sent an RPC")
-	}
 
 	created, err := executor.PlanResourceChange(ctx, "tcloud_cvm", nil, map[string]any{"id": "new"}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertCreatePlan(t, planned, created)
+
+	if _, err = executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, map[string]any{"id": "new"}, nil, []byte{4}); err != nil {
+		t.Fatal(err)
+	}
+	assertUpdatePlan(t, planned)
+
+	deleted, err := executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDeletePlan(t, planned, deleted)
+	if fake.count("ApplyResourceChange") != 0 {
+		t.Fatal("plan called apply")
+	}
+}
+
+func assertCreatePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Request, created *types.PlanResult) {
+	t.Helper()
 	if !nullJSON(planned.GetPriorState()) || !nullJSON(planned.GetConfig()) || nullJSON(planned.GetProposedNewState()) {
 		t.Fatal("create plan did not send a null prior state and config")
 	}
 	if created.PlannedState["id"] != "planned" {
 		t.Fatalf("created = %#v", created.PlannedState)
 	}
+}
 
-	if _, err = executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, map[string]any{"id": "new"}, nil, []byte{4}); err != nil {
-		t.Fatal(err)
-	}
+func assertUpdatePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Request) {
+	t.Helper()
 	if planned.GetPriorState() == nil || planned.GetProposedNewState() == nil || planned.GetProviderMeta() != nil ||
 		planned.GetClientCapabilities() != nil || planned.GetPriorIdentity() != nil {
 		t.Fatal("update plan lost a state or set an omitted protocol field")
@@ -197,11 +223,10 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	if planned.GetPriorPrivate()[0] != 4 {
 		t.Fatalf("prior private = %v", planned.GetPriorPrivate())
 	}
+}
 
-	deleted, err := executor.PlanResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+func assertDeletePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Request, deleted *types.PlanResult) {
+	t.Helper()
 	if !nullJSON(planned.GetProposedNewState()) || !nullJSON(planned.GetConfig()) {
 		t.Fatal("delete plan did not send a null proposed state and config")
 	}
@@ -210,9 +235,6 @@ func TestPluginExecutor_PlanResourceChange(t *testing.T) {
 	}
 	if len(deleted.RequiresReplace) != 1 || deleted.RequiresReplace[0].GetSteps()[0].GetAttributeName() != "name" {
 		t.Fatalf("requires replace = %+v", deleted.RequiresReplace)
-	}
-	if fake.count("ApplyResourceChange") != 0 {
-		t.Fatal("plan called apply")
 	}
 }
 

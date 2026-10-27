@@ -2,7 +2,7 @@
 
 执行器已经把配置和状态交给 `executor.ValueCodec`，但这个接口还没有按 Schema 做 msgpack 编解码。插件协议里的 config、state、result 都是 `DynamicValue`，字节本身分不出 List 与 Set、Object 与 Map。没有这一层，执行器无法把调用方对象送进官方插件，也无法把插件响应解回对象。
 
-本次变更对应 TAPD 需求 [【DynamicValue 编解码】](https://tapd.woa.com/tapd_fe/69995598/story/detail/1069995598139221653)，依据 iWiki《技术方案》[第 6.4 节](https://iwiki.woa.com/p/4047720169)。执行器变更已经留下调用边界，本变更补上边界后面的实现。
+本次变更对应 TAPD 需求「DynamicValue 编解码」（story 139221653），依据 iWiki《技术方案》第 6.4 节。执行器变更已经留下调用边界，本变更补上边界后面的实现。
 
 ## What Changes
 

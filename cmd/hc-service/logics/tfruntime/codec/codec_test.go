@@ -29,7 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
-func TestEncodeNullAndUnknown(t *testing.T) {
+func TestEncodeAbsentEqualsExplicitNull(t *testing.T) {
 	schema := objectSchema(
 		attr("name", `"string"`, false),
 		attr("note", `"string"`, false),
@@ -54,7 +54,18 @@ func TestEncodeNullAndUnknown(t *testing.T) {
 	if object["note"] != nil || object["id"] != nil {
 		t.Fatalf("missing computed and optional = %#v", object)
 	}
+}
 
+func TestEncodeUnknown(t *testing.T) {
+	schema := objectSchema(
+		attr("name", `"string"`, false),
+		attr("note", `"string"`, false),
+		computedAttr("id", `"string"`),
+	)
+	absent, err := Codec{}.Encode(schema, map[string]any{"name": "vm"})
+	if err != nil {
+		t.Fatal(err)
+	}
 	unknown, err := Codec{}.Encode(schema, map[string]any{"name": "vm", "id": Unknown})
 	if err != nil || unknown == nil {
 		t.Fatal(err)
@@ -69,6 +80,18 @@ func TestEncodeNullAndUnknown(t *testing.T) {
 	if state.(map[string]any)["id"] != Unknown {
 		t.Fatalf("id = %#v", state)
 	}
+	id := attributeValue(t, schema, unknown.GetMsgpack(), "id")
+	if id.IsNull() || id.IsKnown() {
+		t.Fatalf("id null=%v known=%v", id.IsNull(), id.IsKnown())
+	}
+}
+
+func TestEncodeNullRoot(t *testing.T) {
+	schema := objectSchema(
+		attr("name", `"string"`, false),
+		attr("note", `"string"`, false),
+		computedAttr("id", `"string"`),
+	)
 	root, err := Codec{}.Encode(schema, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -89,11 +112,6 @@ func TestEncodeNullAndUnknown(t *testing.T) {
 	rootValue, err := tftypes.ValueFromMsgPack(root.GetMsgpack(), rootType)
 	if err != nil || !rootValue.IsNull() || !rootValue.IsKnown() {
 		t.Fatalf("root null=%v known=%v err=%v", rootValue.IsNull(), rootValue.IsKnown(), err)
-	}
-
-	id := attributeValue(t, schema, unknown.GetMsgpack(), "id")
-	if id.IsNull() || id.IsKnown() {
-		t.Fatalf("id null=%v known=%v", id.IsNull(), id.IsKnown())
 	}
 }
 
@@ -151,7 +169,9 @@ func TestEncodeRejectsInvalidValues(t *testing.T) {
 	if err == nil || element != nil || !strings.Contains(err.Error(), "items[0]") {
 		t.Fatalf("element = %v err=%v", element, err)
 	}
+}
 
+func TestEncodeRejectsInvalidSchema(t *testing.T) {
 	dynamic, err := Codec{}.Encode(objectSchema(attr("payload", `"dynamic"`, false)), map[string]any{})
 	if err == nil || dynamic != nil || !strings.Contains(err.Error(), "payload") {
 		t.Fatalf("dynamic = %v err=%v", dynamic, err)

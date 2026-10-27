@@ -2,7 +2,7 @@
 
 进程管理已经能拉起协议主版本 5 的插件进程，但 `PluginExecutor` 上除 `Stop` 以外的 Provider RPC 仍返回未实现。进程池需要一个执行器来完成 Schema 读取、配置写入、资源操作和数据源读取，否则调度层只能看到连接，无法调用官方插件。
 
-本次变更对应 TAPD 需求 [【执行器实现】](https://tapd.woa.com/tapd_fe/69995598/story/detail/1069995598139221716)，依据 iWiki《技术方案》[第 4 节与第 6.2 节](https://iwiki.woa.com/p/4047720169)。这些方法的差别是调用顺序和 Diagnostics，作为同一个执行器交付。
+本次变更对应 TAPD 需求「执行器实现」（story 139221716），依据 iWiki《技术方案》第 4 节与第 6.2 节。这些方法的差别是调用顺序和 Diagnostics，作为同一个执行器交付。
 
 ## What Changes
 
@@ -29,6 +29,6 @@
 
 - 代码位于 `cmd/hc-service/logics/tfruntime` 和 `cmd/hc-service/types`。具体执行器不再实现 `tfplugin5.ProviderClient` 的公开方法集；`ProcessManager.Start` 返回 `executor.Executor`，仓库内还没有其他调用方。
 - 不引入 `terraform-plugin-go`。执行器内部使用已提交的协议 5.9 `tfplugin5` 结构，不另生成 5.3，也不再把生成结果转成 `tfprotov5`。
-- 编解码由依赖需求 [DynamicValue 编解码](https://tapd.woa.com/tapd_fe/69995598/story/detail/1069995598139221653) 提供。执行器只定义调用边界：编码失败则 RPC 次数为 0。
+- 编解码由依赖需求「DynamicValue 编解码」（story 139221653）提供。执行器只定义调用边界：编码失败则 RPC 次数为 0。
 - 不新增北向 HTTP API、表结构或进程环境变量。凭证只出现在 `ConfigureProvider` 的 Config 中。
 - 不影响现有云资源同步、账单和账号等 adaptor 调用。

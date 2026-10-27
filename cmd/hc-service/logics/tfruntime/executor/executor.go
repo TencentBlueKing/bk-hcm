@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package executor calls provider RPCs on a running Terraform plugin process.
 package executor
 
 import (
