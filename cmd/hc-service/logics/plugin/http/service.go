@@ -94,8 +94,8 @@ func New(dataCli *dataservice.Client, mutex *lock.EtcdMutex, gateway *cc.ApiGate
 }
 
 func (s *Service) getPluginClient(pluginName, apiPath string) (plugin.Client, error) {
-	if !s.opts.Enabled || s.gateway == nil || len(s.gateway.Endpoints) == 0 {
-		return nil, errf.New(errf.Aborted, "http iac plugin gateway is not enabled")
+	if !s.opts.Enabled {
+		return nil, errf.New(errf.Aborted, "http iac plugin is not enabled")
 	}
 
 	key := pluginClientInfo{pluginName: pluginName, apiPath: apiPath}
@@ -496,37 +496,30 @@ func (s *Service) schemaGetter(pluginName, apiPath string) pluginschema.SchemaGe
 	})
 }
 
-// probe 探活取版本，并校验版本号格式。当网关未启用时打印告警并返回默认版本，便于本地联调。
+// probe 探活取版本，并校验版本号格式。
 func (s *Service) probe(kt *kit.Kit, pluginName, apiPath string) (string, error) {
 	if err := iacplugin.ValidateAPIPath(apiPath); err != nil {
 		return "", errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	version := "1.0.0"
-	if !s.opts.Enabled || s.gateway == nil || len(s.gateway.Endpoints) == 0 {
-		logs.Warnf("http iac plugin gateway is not enabled, return stub plugin version for plugin: %s, "+
-			"api_path: %s, rid: %s", pluginName, apiPath, kt.Rid)
-	} else {
-		cli, err := s.getPluginClient(pluginName, apiPath)
-		if err != nil {
-			return "", err
-		}
-
-		health, err := cli.Health(kt)
-		if err != nil {
-			return "", errf.Newf(errf.Aborted, "probe http plugin failed, err: %v", err)
-		}
-		if health == nil || len(health.PluginVersion) == 0 {
-			return "", errf.New(errf.Aborted, "plugin probe response has no plugin_version")
-		}
-		version = health.PluginVersion
+	cli, err := s.getPluginClient(pluginName, apiPath)
+	if err != nil {
+		return "", err
 	}
 
-	if _, err := iacplugin.ParseVersion(version); err != nil {
+	health, err := cli.Health(kt)
+	if err != nil {
+		return "", errf.Newf(errf.Aborted, "probe http plugin failed, err: %v", err)
+	}
+	if health == nil || len(health.PluginVersion) == 0 {
+		return "", errf.New(errf.Aborted, "plugin probe response has no plugin_version")
+	}
+
+	if _, err := iacplugin.ParseVersion(health.PluginVersion); err != nil {
 		return "", errf.Newf(errf.Aborted, "plugin probe returned an invalid version: %v", err)
 	}
 
-	return version, nil
+	return health.PluginVersion, nil
 }
 
 func (s *Service) listAndGetLatest(kt *kit.Kit, pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
