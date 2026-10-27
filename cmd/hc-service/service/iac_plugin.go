@@ -179,7 +179,7 @@ func (s *Service) StartHTTPPluginCheck() {
 // newPluginRegistry 创建 tf 插件进程池的索引（pool.PluginRegistry），此时不建池。池参数不合法时返回错误，进程不应启动服务。
 // 开关关闭或没有本地 tf 插件时不创建。
 func newPluginRegistry(dataCli *dataservice.Client, entries []discovery.Entry) (*pool.PluginRegistry, error) {
-	cfg := cc.HCService().IaCPlugin.Pool
+	cfg := cc.HCService().IaCPlugin.TF.Pool
 	if !cfg.Enabled || len(entries) == 0 {
 		return nil, nil
 	}

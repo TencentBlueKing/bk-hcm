@@ -132,6 +132,35 @@ iacPlugin:
     versionCheckIntervalSeconds: 60
     # versionCheckThreshold is the consecutive times of version behind before exiting.
     versionCheckThreshold: 3
+    # pool is the tf_provider plugin process pool. every tf plugin gets its own pool, all pools use these settings
+    # for now, per plugin type settings may be supported later.
+    # a value of 0 (except enabled) means the default of the pool package.
+    pool:
+      # enabled turns the pool on. it is off by default: no pool is created and no plugin process is started.
+      enabled: false
+      # maxProcesses is the max number of processes of one plugin pool.
+      maxProcesses: 4
+      # maxLeasesPerProcess is how many leases one process serves at the same time.
+      maxLeasesPerProcess: 4
+      # minIdleProcesses is the number of idle processes to keep, reclaiming only removes the part above it.
+      minIdleProcesses: 2
+      # maxRetries is how many times a request is retried after a process failure.
+      maxRetries: 2
+      # maxQueueLength is the max number of requests waiting in one plugin pool.
+      maxQueueLength: 1000
+      # maxQueueWaitSeconds is the longest time a request waits in the queue, in seconds.
+      maxQueueWaitSeconds: 180
+      # configureTimeoutSeconds is the timeout of one ConfigureProvider call, in seconds.
+      configureTimeoutSeconds: 30
+      # idleReclaimSeconds is how long a process must be idle before it can be reclaimed, in seconds.
+      idleReclaimSeconds: 600
+      # maxConfigAgeSeconds is how long one configuration can be reused, in seconds.
+      # it must be shorter than the validity of the cloud credentials.
+      maxConfigAgeSeconds: 1800
+      # checkIntervalSeconds is the interval of the pool inspection, in seconds.
+      checkIntervalSeconds: 30
+      # registryCheckIntervalSeconds is how often enabled plugins are checked to create or close pools, in seconds.
+      registryCheckIntervalSeconds: 5
   # http defines http iac plugin related settings.
   http:
     # enabled turns http iac plugin on. set to false if no http plugin is used, tf_provider plugins are not affected.
@@ -166,33 +195,4 @@ iacPlugin:
         caFile:
         # the password to decrypt the certificate.
         password:
-  # pool is the tf_provider plugin process pool. every tf plugin gets its own pool, all pools use these settings
-  # for now, per plugin type settings may be supported later.
-  # a value of 0 (except enabled) means the default of the pool package.
-  pool:
-    # enabled turns the pool on. it is off by default: no pool is created and no plugin process is started.
-    enabled: false
-    # maxProcesses is the max number of processes of one plugin pool.
-    maxProcesses: 4
-    # maxLeasesPerProcess is how many leases one process serves at the same time.
-    maxLeasesPerProcess: 4
-    # minIdleProcesses is the number of idle processes to keep, reclaiming only removes the part above it.
-    minIdleProcesses: 2
-    # maxRetries is how many times a request is retried after a process failure.
-    maxRetries: 2
-    # maxQueueLength is the max number of requests waiting in one plugin pool.
-    maxQueueLength: 1000
-    # maxQueueWaitSeconds is the longest time a request waits in the queue, in seconds.
-    maxQueueWaitSeconds: 180
-    # configureTimeoutSeconds is the timeout of one ConfigureProvider call, in seconds.
-    configureTimeoutSeconds: 30
-    # idleReclaimSeconds is how long a process must be idle before it can be reclaimed, in seconds.
-    idleReclaimSeconds: 600
-    # maxConfigAgeSeconds is how long one configuration can be reused, in seconds.
-    # it must be shorter than the validity of the cloud credentials.
-    maxConfigAgeSeconds: 1800
-    # checkIntervalSeconds is the interval of the pool inspection, in seconds.
-    checkIntervalSeconds: 30
-    # registryCheckIntervalSeconds is how often enabled plugins are checked to create or close pools, in seconds.
-    registryCheckIntervalSeconds: 5
 

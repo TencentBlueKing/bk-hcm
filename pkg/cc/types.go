@@ -1366,9 +1366,6 @@ type IaCPluginConfig struct {
 	TF IaCPluginTFConfig `yaml:"tf"`
 	// HTTP http 插件配置。
 	HTTP IaCPluginHTTPConfig `yaml:"http"`
-	// Pool tf_provider 插件进程池配置。每个 tf 插件各自一个池，目前所有池使用这一份参数，
-	// 后续可能按插件类型差异化配置。
-	Pool IaCPluginPoolConfig `yaml:"pool"`
 }
 
 // IaCPluginTFConfig defines tf_provider iac plugin config.
@@ -1379,6 +1376,9 @@ type IaCPluginTFConfig struct {
 	VersionCheckIntervalSeconds uint `yaml:"versionCheckIntervalSeconds"`
 	// VersionCheckThreshold 运行期版本检查连续落后多少个周期后退出。
 	VersionCheckThreshold uint `yaml:"versionCheckThreshold"`
+	// Pool tf_provider 插件进程池配置。每个 tf 插件各自一个池，目前所有池使用这一份参数，
+	// 后续可能按插件类型差异化配置。
+	Pool IaCPluginPoolConfig `yaml:"pool"`
 }
 
 // IaCPluginHTTPConfig defines http iac plugin config.
@@ -1450,7 +1450,6 @@ func (c *IaCPluginConfig) trySetDefault() {
 	}
 	c.TF.trySetDefault()
 	c.HTTP.trySetDefault()
-	c.Pool.trySetDefault()
 }
 
 func (c *IaCPluginTFConfig) trySetDefault() {
@@ -1463,6 +1462,7 @@ func (c *IaCPluginTFConfig) trySetDefault() {
 	if c.VersionCheckThreshold == 0 {
 		c.VersionCheckThreshold = defaultIaCPluginVersionCheckThreshold
 	}
+	c.Pool.trySetDefault()
 }
 
 func (c *IaCPluginHTTPConfig) trySetDefault() {
@@ -1494,7 +1494,7 @@ func (c IaCPluginPoolConfig) Validate() error {
 	if c.MaxProcesses < 0 || c.MaxLeasesPerProcess < 0 || c.MinIdleProcesses < 0 || c.MaxRetries < 0 ||
 		c.MaxQueueLength < 0 {
 
-		return errors.New("iacPlugin.pool counts should not be negative")
+		return errors.New("iacPlugin.tf.pool counts should not be negative")
 	}
 	return nil
 }
@@ -1514,9 +1514,6 @@ func (c IaCPluginConfig) Validate() error {
 	if err := c.HTTP.Validate(); err != nil {
 		return err
 	}
-	if err := c.Pool.Validate(); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -1531,6 +1528,9 @@ func (c IaCPluginTFConfig) Validate() error {
 	}
 	if c.VersionCheckThreshold == 0 {
 		return errors.New("iacPlugin.tf.versionCheckThreshold should be greater than 0")
+	}
+	if err := c.Pool.Validate(); err != nil {
+		return err
 	}
 
 	return nil

@@ -96,24 +96,15 @@ func (p *PluginPool) pickLocked(now time.Time, key string) (*pluginProcess, acti
 		case stateRunning:
 			switch {
 			case !proc.binding.valid(now, p.cfg.MaxConfigAge):
-				if proc.inflight == 0 && idleLonger(proc, unbound) {
-					unbound = proc
-				}
+				unbound = pickIdle(proc, unbound)
 			case proc.binding.key == key:
-				if proc.inflight < p.cfg.MaxLeasesPerProcess && lessLoaded(proc, matched) {
-					matched = proc
-				}
-			case proc.inflight == 0:
-				if idleLonger(proc, other) {
-					other = proc
-				}
+				matched = p.pickMatched(proc, matched)
+			default:
+				other = pickIdle(proc, other)
 			}
 
 		case stateStarting, stateConfiguring:
-			if proc.binding.configuring() && proc.binding.key == key &&
-				len(proc.pending) < p.cfg.MaxLeasesPerProcess && fewerPending(proc, reserved) {
-				reserved = proc
-			}
+			reserved = p.pickReserved(proc, key, reserved)
 		}
 	}
 
@@ -141,26 +132,35 @@ func (p *PluginPool) deliverLocked(proc *pluginProcess, w *request) {
 	}
 }
 
-// lessLoaded a 是否比候选 b 更适合直接交付：inflight 少的优先，再取配置更新的（离过期更远）。
-func lessLoaded(a, b *pluginProcess) bool {
-	if b == nil {
-		return true
+// pickMatched 若 proc 未满且比 cur 更适合直接交付（inflight 少的优先，再取配置更新的），返回 proc。
+func (p *PluginPool) pickMatched(proc, cur *pluginProcess) *pluginProcess {
+	if proc.inflight >= p.cfg.MaxLeasesPerProcess {
+		return cur
 	}
-	return cmp.Or(cmp.Compare(a.inflight, b.inflight), b.binding.boundAt.Compare(a.binding.boundAt),
-		cmp.Compare(a.id, b.id)) < 0
+	if cur == nil || cmp.Or(cmp.Compare(proc.inflight, cur.inflight),
+		cur.binding.boundAt.Compare(proc.binding.boundAt), cmp.Compare(proc.id, cur.id)) < 0 {
+		return proc
+	}
+	return cur
 }
 
-// fewerPending a 是否比候选 b 更适合预约：pending 少的优先。
-func fewerPending(a, b *pluginProcess) bool {
-	if b == nil {
-		return true
+// pickReserved 若 proc 正在配置成 key、预约未满且比 cur 的 pending 更少，返回 proc。
+func (p *PluginPool) pickReserved(proc *pluginProcess, key string, cur *pluginProcess) *pluginProcess {
+	if !proc.binding.configuring() || proc.binding.key != key || len(proc.pending) >= p.cfg.MaxLeasesPerProcess {
+		return cur
 	}
-	return cmp.Or(cmp.Compare(len(a.pending), len(b.pending)), cmp.Compare(a.id, b.id)) < 0
+	if cur == nil || cmp.Or(cmp.Compare(len(proc.pending), len(cur.pending)), cmp.Compare(proc.id, cur.id)) < 0 {
+		return proc
+	}
+	return cur
 }
 
-// idleLonger a 是否比候选 b 空闲更久。
-func idleLonger(a, b *pluginProcess) bool {
-	return b == nil || compareIdle(a, b) < 0
+// pickIdle 若 proc 空闲且比 cur 空闲更久，返回 proc。
+func pickIdle(proc, cur *pluginProcess) *pluginProcess {
+	if proc.inflight == 0 && (cur == nil || compareIdle(proc, cur) < 0) {
+		return proc
+	}
+	return cur
 }
 
 // compareIdle 空闲最久的排在前面，平局按进程 ID。
