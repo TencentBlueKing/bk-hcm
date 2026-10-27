@@ -78,6 +78,33 @@ func (svc *service) CreateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	return result, nil
 }
 
+// BatchDeleteIaCPlugin 按过滤条件删除 iac_plugin 记录。
+func (svc *service) BatchDeleteIaCPlugin(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataplugin.IaCPluginBatchDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("batch delete iac plugin decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		logs.Errorf("batch delete iac plugin validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		if err := svc.dao.IaCPlugin().DeleteWithTx(cts.Kit, txn, req.Filter); err != nil {
+			logs.Errorf("delete iac plugin failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 // UpdateIaCPlugin update iac plugin record, expect_state makes it a conditional update.
 func (svc *service) UpdateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataplugin.IaCPluginUpdateReq)
