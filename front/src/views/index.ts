@@ -11,11 +11,11 @@ import routeTable from '@/views/route-table/route-config';
 import securityGroup from '@/views/security-group/route-config';
 import { loadBalancerBiz } from '@/views/load-balancer/route-config';
 import cert from '@/views/cert/route-config';
-import { ticketRoutesBiz } from '@/views/ticket/route-config';
+import { ticketRoutes, ticketRoutesBiz } from '@/views/ticket/route-config';
 import { operationLogBiz, operationLogRsc } from '@/views/operation-log/route-config';
 import task from '@/views/task/route-config';
 import cloudAccountManage from '@/views/cloud-account-manage/route-config';
-import service from '@/router/module/service';
+import { permissionPolicyRoutes } from '@/views/cloud-account-manage/permission-policy/route-config';
 import scheme from '@/views/scheme/route-config';
 import resourceManage from '@/views/resource-manage/route-config';
 import { recyclebinBiz, recyclebinRsc } from '@/views/recyclebin/route-config';
@@ -76,8 +76,11 @@ export const businessViews = injectStatusComponents(
   ],
   statusBusiness,
 );
+// 工作台（MENU_SERVICE）：视图级汇总放在这里，不额外建 views/service/route-config.ts——
+// 该约定只给真实页面模块（ticket / scheme / account-manage 各自有 route-config）
 export const serviceViews = injectStatusComponents([
-  ...service.flatMap((group) => group.children),
+  ...ticketRoutes,
+  ...permissionPolicyRoutes,
   ...scheme,
   ...accountManageRsc,
 ]);
