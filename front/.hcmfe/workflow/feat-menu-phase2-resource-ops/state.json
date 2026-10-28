@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-resource-ops",
   "title": "菜单整合二期：资源运营一级视图重组与资源接入跳转",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-10-08T11:31:22.704Z",
-  "updatedAt": "2026-10-12T07:21:32.833Z",
+  "updatedAt": "2026-10-28T01:54:31.337Z",
   "artifacts": {
     "coding": [
       {
@@ -39,6 +39,12 @@
       "to": "test",
       "at": "2026-10-12T07:21:32.833Z",
       "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-28T01:54:31.337Z",
+      "note": "清理归档（2026-10-28）：二期代码已合入 origin/v1.9.x，工作流不再推进，强制收口到 done。"
     }
   ],
   "requirementId": "req-menu-phase2",

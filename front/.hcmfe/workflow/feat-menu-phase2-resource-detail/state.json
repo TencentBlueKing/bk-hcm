@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-resource-detail",
   "title": "菜单整合二期：资源详情页迁移",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-10-08T12:19:20.574Z",
-  "updatedAt": "2026-10-12T06:27:40.463Z",
+  "updatedAt": "2026-10-28T01:54:34.918Z",
   "artifacts": {
     "coding": [
       {
@@ -39,6 +39,12 @@
       "to": "test",
       "at": "2026-10-12T02:54:22.251Z",
       "note": "用户确认推进到 test（2026-10-12）；自测稍后统一做"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-28T01:54:34.918Z",
+      "note": "清理归档（2026-10-28）：二期代码已合入 origin/v1.9.x，工作流不再推进，强制收口到 done。"
     }
   ],
   "requirementId": "req-menu-phase2",

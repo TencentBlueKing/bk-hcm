@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-layout-menu-service",
   "title": "菜单整合二期：页面布局与菜单服务化",
-  "currentStage": "coding",
+  "currentStage": "done",
   "createdAt": "2026-10-08T08:05:12.432Z",
-  "updatedAt": "2026-10-09T12:02:22.215Z",
+  "updatedAt": "2026-10-28T01:54:13.201Z",
   "artifacts": {
     "coding": [
       {
@@ -39,6 +39,12 @@
       "at": "2026-10-09T10:05:31.139Z",
       "gitHead": "943fd921edd5a367ddec5ec74369c9919510ce20",
       "note": "用户要求：页面标题栏替换应与 PR #1897 意图对齐（ffd4c674b8 等）——去掉页面内 DetailHeader，改用全局面包屑 + setTitle；申请页引入 sticky-bottom-container；作为 ① 的后续提交"
+    },
+    {
+      "from": "coding",
+      "to": "done",
+      "at": "2026-10-28T01:54:13.201Z",
+      "note": "清理归档（2026-10-28）：二期代码已合入 origin/v1.9.x，工作流不再推进，强制收口到 done。"
     }
   ],
   "requirementId": "req-menu-phase2",
