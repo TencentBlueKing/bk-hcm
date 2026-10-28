@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	logicsplugin "hcm/cmd/hc-service/logics/iac-plugin"
 	coreplugin "hcm/pkg/api/core/plugin"
 	proto "hcm/pkg/api/hc-service/iac-plugin"
 	"hcm/pkg/criteria/enumor"
@@ -165,7 +166,7 @@ func (s *Service) prepareStateChange(kt *kit.Kit, pluginRec *coreplugin.IaCPlugi
 		return nil, "", nil, errf.Newf(errf.InvalidParameter, "resource schema block is nil for %s", typeName)
 	}
 
-	if err := ValidateConfigAndRecompute(resSchema.Block, config, recompute); err != nil {
+	if err := logicsplugin.ValidateConfigAndRecompute(resSchema.Block, config, recompute); err != nil {
 		return nil, "", nil, err
 	}
 
@@ -201,7 +202,7 @@ func (s *Service) prepareStateChange(kt *kit.Kit, pluginRec *coreplugin.IaCPlugi
 		}
 	}
 
-	proposedState, err := ComposeProposedState(resSchema.Block, baselinePrior, config, recompute)
+	proposedState, err := logicsplugin.ComposeProposedState(resSchema.Block, baselinePrior, config, recompute)
 	if err != nil {
 		return nil, "", nil, err
 	}

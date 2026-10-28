@@ -35,6 +35,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	iacplugin "hcm/cmd/hc-service/logics/iac-plugin"
 	coreplugin "hcm/pkg/api/core/plugin"
 	proto "hcm/pkg/api/hc-service/iac-plugin"
 	"hcm/pkg/criteria/enumor"
@@ -157,7 +158,7 @@ func TestComposeProposedState_PositiveAndRecompute(t *testing.T) {
 	block := buildCMDBHostBlock()
 
 	// Delete (config == nil) -> proposed_state == nil
-	delState, err := ComposeProposedState(block, map[string]any{"bk_host_id": 10086}, nil, nil)
+	delState, err := iacplugin.ComposeProposedState(block, map[string]any{"bk_host_id": 10086}, nil, nil)
 	assert.NoError(t, err)
 	assert.Nil(t, delState)
 
@@ -170,7 +171,7 @@ func TestComposeProposedState_PositiveAndRecompute(t *testing.T) {
 		"bk_host_id":   10086,
 	}
 	cfg := map[string]any{"bk_biz_id": 213}
-	proposed, err := ComposeProposedState(block, prior, cfg, []string{"bk_module_id"})
+	proposed, err := iacplugin.ComposeProposedState(block, prior, cfg, []string{"bk_module_id"})
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]any{
 		"bk_biz_id":    213,
@@ -217,7 +218,7 @@ func TestComposeProposedState_NegativeValidation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := ComposeProposedState(block, prior, tc.config, tc.recompute)
+			_, err := iacplugin.ComposeProposedState(block, prior, tc.config, tc.recompute)
 			assert.Error(t, err)
 			assert.Equal(t, errf.InvalidParameter, errf.Error(err).Code)
 		})
@@ -339,7 +340,7 @@ func TestComposeProposedState_NestedBlocksAndRecompute(t *testing.T) {
 	}
 
 	recompute := []string{"forward_balancer_ids[0].kms_key_id", "labels_map.env.tag_id"}
-	proposed, err := ComposeProposedState(block, prior, cfg, recompute)
+	proposed, err := iacplugin.ComposeProposedState(block, prior, cfg, recompute)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]any{
 		"id":            "ins-10001",
@@ -441,7 +442,7 @@ func TestComposeProposedState_NestedNegativeValidation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := ComposeProposedState(block, prior, tc.config, tc.recompute)
+			_, err := iacplugin.ComposeProposedState(block, prior, tc.config, tc.recompute)
 			assert.Error(t, err)
 			assert.Equal(t, errf.InvalidParameter, errf.Error(err).Code)
 		})
@@ -549,8 +550,8 @@ func (m *mockSouthbound) List(_ *kit.Kit, req *plugin.ListReq) (*plugin.ListData
 }
 
 func newTestExecutor(sb plugin.Client) *Service {
-	svc := New(nil, nil, nil, nil, Options{})
-	svc.pluginCliMap.Store("/api/bkcmdb", sb)
+	svc := New(nil, nil, nil, nil, Options{Enabled: true})
+	svc.pluginCliMap.Store(pluginClientInfo{pluginName: "bkcmdb", apiPath: "/api/bkcmdb"}, sb)
 	return svc
 }
 
@@ -634,7 +635,11 @@ func TestExecutor_FailedApplyPreservesRefreshedStateAndAllEndpoints(t *testing.T
 	assert.NoError(t, err)
 	assert.Equal(t, "1.2.0", hRes.PluginVersion)
 
-	valRes, err := exec.Validate(kt, routeCtx.Plugin, routeCtx.Properties, &proto.ValidateReq{CommonInstanceReq: commonReq, Config: map[string]any{}})
+	valRes, err := exec.Validate(kt, routeCtx.Plugin, routeCtx.Properties, &proto.ValidateReq{
+		CommonInstanceReq: commonReq,
+		ConfigType:        proto.ConfigTypeResource,
+		Config:            map[string]any{},
+	})
 	assert.NoError(t, err)
 	assert.Len(t, valRes.Diagnostics, 1)
 
@@ -758,7 +763,11 @@ func run50GoroutinesAllEndpoints(t *testing.T, exec *Service, routeCtx *testPlug
 			assert.NoError(t, err)
 			_, err = exec.Stop(kt, routeCtx.Plugin, routeCtx.Properties, &proto.StopReq{CommonInstanceReq: commonRes, ApplyID: "ap-1"})
 			assert.NoError(t, err)
-			_, err = exec.Validate(kt, routeCtx.Plugin, routeCtx.Properties, &proto.ValidateReq{CommonInstanceReq: commonRes, Config: map[string]any{"bk_biz_id": 213}})
+			_, err = exec.Validate(kt, routeCtx.Plugin, routeCtx.Properties, &proto.ValidateReq{
+				CommonInstanceReq: commonRes,
+				ConfigType:        proto.ConfigTypeResource,
+				Config:            map[string]any{"bk_biz_id": 213},
+			})
 			assert.NoError(t, err)
 			_, err = exec.Import(kt, routeCtx.Plugin, routeCtx.Properties, &proto.ImportReq{CommonInstanceReq: commonRes, ImportID: "imp-1"})
 			assert.NoError(t, err)

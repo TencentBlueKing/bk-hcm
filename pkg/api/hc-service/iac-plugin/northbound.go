@@ -262,9 +262,18 @@ type PlanResult struct {
 	Diagnostics []coreplugin.Diagnostic `json:"diagnostics,omitempty"`
 }
 
+const (
+	// ConfigTypeResource 表示校验目标为受管资源（Resource）配置。
+	ConfigTypeResource = "resource"
+	// ConfigTypeDataSource 表示校验目标为数据源（Data Source）查询配置。
+	ConfigTypeDataSource = "data"
+)
+
 // ValidateReq is the request body of POST /iac_plugins/validate.
 type ValidateReq struct {
 	CommonInstanceReq `json:",inline"`
+	// ConfigType 标识待校验配置的目标类型，枚举值为 "resource" 或 "data"。
+	ConfigType string `json:"config_type"`
 	// Config is the user configuration object to validate.
 	Config map[string]any `json:"config"`
 }
@@ -276,6 +285,9 @@ func (req *ValidateReq) Validate() error {
 	}
 	if err := req.CommonInstanceReq.Validate(); err != nil {
 		return err
+	}
+	if req.ConfigType != ConfigTypeResource && req.ConfigType != ConfigTypeDataSource {
+		return fmt.Errorf("config_type must be %q or %q", ConfigTypeResource, ConfigTypeDataSource)
 	}
 	if req.Config == nil {
 		return errors.New("config is required")
@@ -343,6 +355,8 @@ type StateResult struct {
 	Private *string `json:"private"`
 	// Identity is the resource identity object.
 	Identity map[string]any `json:"identity"`
+	// Diagnostics contains optional diagnostic items.
+	Diagnostics []coreplugin.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 // ReadDataReq is the request body of POST /iac_plugins/read_data.
@@ -370,6 +384,8 @@ func (req *ReadDataReq) Validate() error {
 type ReadDataResult struct {
 	// State is the data source query result state.
 	State map[string]any `json:"state"`
+	// Diagnostics contains optional diagnostic items.
+	Diagnostics []coreplugin.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 // ListReq is the request body of POST /iac_plugins/list.

@@ -204,13 +204,50 @@ func TestRemainingRuntimeReqs_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "valid validate",
-			fn:      func() error { return (&ValidateReq{CommonInstanceReq: c, Config: map[string]any{}}).Validate() },
+			name: "valid validate resource",
+			fn: func() error {
+				return (&ValidateReq{
+					CommonInstanceReq: c,
+					ConfigType:        ConfigTypeResource,
+					Config:            map[string]any{},
+				}).Validate()
+			},
 			wantErr: false,
 		},
 		{
-			name:    "nil config in validate",
-			fn:      func() error { return (&ValidateReq{CommonInstanceReq: c}).Validate() },
+			name: "valid validate data source",
+			fn: func() error {
+				return (&ValidateReq{
+					CommonInstanceReq: c,
+					ConfigType:        ConfigTypeDataSource,
+					Config:            map[string]any{},
+				}).Validate()
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing config_type in validate",
+			fn: func() error {
+				return (&ValidateReq{CommonInstanceReq: c, Config: map[string]any{}}).Validate()
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid config_type in validate",
+			fn: func() error {
+				return (&ValidateReq{
+					CommonInstanceReq: c,
+					ConfigType:        "provider",
+					Config:            map[string]any{},
+				}).Validate()
+			},
+			wantErr: true,
+		},
+		{
+			name: "nil config in validate",
+			fn: func() error {
+				return (&ValidateReq{CommonInstanceReq: c, ConfigType: ConfigTypeResource}).Validate()
+			},
 			wantErr: true,
 		},
 		{

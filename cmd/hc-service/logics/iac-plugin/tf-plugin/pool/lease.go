@@ -46,6 +46,7 @@ type ProviderIF interface {
 		plannedPrivate []byte) (*types.ApplyResult, error)
 	ImportResourceState(ctx context.Context, typeName, id string) (*types.ImportResult, error)
 	ReadDataSource(ctx context.Context, typeName string, config map[string]any) (*types.ReadDataSourceResult, error)
+	Release()
 }
 
 var _ ProviderIF = (*Lease)(nil)

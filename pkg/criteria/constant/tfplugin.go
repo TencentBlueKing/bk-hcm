@@ -43,4 +43,13 @@ const (
 
 	// TFPluginStopProviderTimeout 是 StopProvider 的等待时间。超时后仍 Kill 进程，避免卡住服务退出。
 	TFPluginStopProviderTimeout = 5 * time.Second
+
+	// TFPluginDiagNoImportedResource 导入资源时插件返回空 Imported 列表的错误诊断文案。
+	TFPluginDiagNoImportedResource = "provider returned no imported resource"
+	// TFPluginDiagImportNonExistent 导入资源后 ReadResource 返回空状态（远端对象不存在）的错误诊断文案。
+	TFPluginDiagImportNonExistent = "cannot import non-existent remote object"
+	// TFPluginDiagNullDataSourceState 读取数据源时插件返回空状态的错误诊断文案。
+	TFPluginDiagNullDataSourceState = "provider produced a null state for data source"
+	// TFPluginDiagStateNotWhollyKnown 读取数据源返回的状态中仍包含未知值时的错误诊断文案。
+	TFPluginDiagStateNotWhollyKnown = "provider produced a state value that is not wholly known"
 )

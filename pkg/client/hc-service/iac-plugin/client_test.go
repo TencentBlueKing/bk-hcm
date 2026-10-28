@@ -149,6 +149,7 @@ func TestNorthboundClient_PostLifecycleEndpoints(t *testing.T) {
 
 	valRes, err := cli.Validate(kt, &proto.ValidateReq{
 		CommonInstanceReq: commonReq,
+		ConfigType:        proto.ConfigTypeResource,
 		Config:            map[string]any{"bk_biz_id": 213},
 	})
 	assert.NoError(t, err)

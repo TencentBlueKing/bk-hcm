@@ -38,6 +38,7 @@ import (
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
+	proto "hcm/pkg/api/hc-service/iac-plugin"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -142,7 +143,7 @@ func setupBenchRouterAndExecutor(b testing.TB, pubPEM, secretVal string) (*route
 	}, "v1")
 	schemaMgr := pluginschema.NewSchemaManager(dataCli, pluginschema.DefaultSchemaCacheTTL)
 	httpPlugin := httpplugin.New(dataCli, nil, nil, schemaMgr, httpplugin.Options{})
-	return router.New(dataCli, schemaMgr, httpPlugin), httpPlugin
+	return router.New(dataCli, schemaMgr, httpPlugin, nil, nil), httpPlugin
 }
 
 // BenchmarkNorthboundRouteAndEncrypt benchmarks 1,000 iterations of Router.Resolve + RSA-OAEP launch_config encryption
@@ -153,7 +154,10 @@ func BenchmarkNorthboundRouteAndEncrypt(b *testing.B) {
 	kt := kit.New()
 
 	// Warm up SchemaCache and RSA encryptor cache.
-	warmCtx, err := r.Resolve(kt, "bkcmdb", "inst-1", "bkcmdb_host", enumor.IaCPluginOperationExecute)
+	benchCommon := proto.CommonInstanceReq{
+		Plugin: "bkcmdb", PluginInstanceID: "inst-1", TypeName: "bkcmdb_host",
+	}
+	warmCtx, err := r.Resolve(kt, benchCommon, enumor.IaCPluginOperationExecute)
 	if err != nil {
 		b.Fatalf("warm up resolve failed: %v", err)
 	}
@@ -166,7 +170,7 @@ func BenchmarkNorthboundRouteAndEncrypt(b *testing.B) {
 		durations := make([]time.Duration, 0, sampleCount)
 		for i := 0; i < sampleCount; i++ {
 			start := time.Now()
-			ctx, err := r.Resolve(kt, "bkcmdb", "inst-1", "bkcmdb_host", enumor.IaCPluginOperationExecute)
+			ctx, err := r.Resolve(kt, benchCommon, enumor.IaCPluginOperationExecute)
 			if err != nil {
 				b.Fatalf("resolve failed: %v", err)
 			}
@@ -186,7 +190,7 @@ func BenchmarkNorthboundRouteAndEncrypt(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctx, err := r.Resolve(kt, "bkcmdb", "inst-1", "bkcmdb_host", enumor.IaCPluginOperationExecute)
+		ctx, err := r.Resolve(kt, benchCommon, enumor.IaCPluginOperationExecute)
 		if err != nil {
 			b.Fatalf("resolve failed: %v", err)
 		}

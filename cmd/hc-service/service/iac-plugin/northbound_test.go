@@ -39,6 +39,7 @@ import (
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/cc"
+	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -177,8 +178,8 @@ func buildTestRouterService(t *testing.T) *router.Service {
 	schemaMgr := pluginschema.NewSchemaManager(dataCli, pluginschema.DefaultSchemaCacheTTL)
 	sbSrv := newNorthboundStubSouthboundServer(t)
 	gw := &cc.ApiGateway{Endpoints: []string{sbSrv.URL}, AppCode: "hcm", AppSecret: "sec"}
-	httpPlugin := httpplugin.New(dataCli, nil, gw, schemaMgr, httpplugin.Options{})
-	return router.New(dataCli, schemaMgr, httpPlugin)
+	httpPlugin := httpplugin.New(dataCli, nil, gw, schemaMgr, httpplugin.Options{Enabled: true})
+	return router.New(dataCli, schemaMgr, httpPlugin, nil, nil)
 }
 
 func newTestContainer(t *testing.T) *restful.Container {
@@ -189,6 +190,7 @@ func newTestContainer(t *testing.T) *restful.Container {
 	ws.Produces(restful.MIME_JSON)
 	InitService(&capability.Capability{
 		WebService:   ws,
+		ClientSet:    &client.ClientSet{},
 		PluginRouter: buildTestRouterService(t),
 	})
 	return restful.NewContainer().Add(ws)
@@ -235,7 +237,7 @@ func TestNorthboundHandlers_Success(t *testing.T) {
 		{"POST plan", http.MethodPost, "/api/v1/hc/iac_plugins/plan",
 			`{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","config":{"a":1}}`},
 		{"POST validate", http.MethodPost, "/api/v1/hc/iac_plugins/validate",
-			`{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","config":{"a":1}}`},
+			`{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","config_type":"resource","config":{"a":1}}`},
 		{"POST import", http.MethodPost, "/api/v1/hc/iac_plugins/import",
 			`{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","import_id":"imp1"}`},
 		{"POST refresh", http.MethodPost, "/api/v1/hc/iac_plugins/refresh",
@@ -287,6 +289,20 @@ func TestNorthboundHandlers_DecodeAndValidateErrors(t *testing.T) {
 			method:   http.MethodPost,
 			path:     "/api/v1/hc/iac_plugins/execute",
 			body:     `{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host"}`,
+			wantCode: errf.InvalidParameter,
+		},
+		{
+			name:     "validate missing config_type",
+			method:   http.MethodPost,
+			path:     "/api/v1/hc/iac_plugins/validate",
+			body:     `{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","config":{"a":1}}`,
+			wantCode: errf.InvalidParameter,
+		},
+		{
+			name:     "validate invalid config_type",
+			method:   http.MethodPost,
+			path:     "/api/v1/hc/iac_plugins/validate",
+			body:     `{"plugin":"bkcmdb","plugin_instance_id":"i1","type_name":"bkcmdb_host","config_type":"provider","config":{"a":1}}`,
 			wantCode: errf.InvalidParameter,
 		},
 		{

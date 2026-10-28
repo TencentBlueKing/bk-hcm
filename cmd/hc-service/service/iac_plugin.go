@@ -108,7 +108,7 @@ func (s *Service) initIaCPlugin() error {
 		plugins:      entries,
 		tfRegister:   tfRegister,
 		httpPlugin:   httpPlugin,
-		pluginRouter: router.New(dataCli, schemaMgr, httpPlugin),
+		pluginRouter: router.New(dataCli, schemaMgr, httpPlugin, poolRegistry, entries),
 		poolRegistry: poolRegistry,
 	}
 	return nil

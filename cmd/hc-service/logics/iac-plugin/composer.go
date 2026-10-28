@@ -17,7 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package httpplugin
+// Package iacplugin 提供本地 tf_provider 与三方 http 插件共用的 Schema 校验与目标状态合成能力。
+package iacplugin
 
 import (
 	"fmt"
