@@ -34,7 +34,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "9b23a7893351334fe61e74a8ad85b4166f0c6de6"
+        "rootHash": "971f1eb941d46980237e7f104c2825c174851c80"
       }
     },
     {
@@ -92,7 +92,7 @@
         "auth"
       ],
       "fingerprint": {
-        "rootHash": "9a2fff69f39047da8ef9f250e118d722143bfc01"
+        "rootHash": "364bdbb59b87a7f96027e8890b81205936a6d3b1"
       }
     },
     {
@@ -121,7 +121,7 @@
         "menu-route"
       ],
       "fingerprint": {
-        "rootHash": "e9159f5ba3bd7b3101d662b2341f80b86200f02f"
+        "rootHash": "b70585b052a2e3ee15df33f1f9a11fda44219abb"
       }
     },
     {
@@ -152,7 +152,7 @@
       "doc": "modules/resource.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "46e177552bb154e73592db9aaf184ff2f82928ea"
+        "rootHash": "983c44700c274f0ab774fedb5af756a585d66464"
       }
     },
     {
@@ -181,7 +181,7 @@
       "doc": "modules/service.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "66d1054958ae1ec178eecd6b34ec5956053ba985"
+        "rootHash": "2fda2d0b8f3634b6db47bd1a52511853a01242f6"
       }
     },
     {
@@ -238,7 +238,7 @@
       "doc": "modules/ticket.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "23f4ceb4706ef06d2b17314095fdba3bc88a5e92"
+        "rootHash": "315e4d0fcf64ceb12d8d29c74ecf71409749d820"
       }
     },
     {
@@ -252,7 +252,7 @@
       "doc": "modules/scheme.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "6b60e09f07de24fb0780765f14b434f6d329a08d"
+        "rootHash": "0e73fabf18905e955f52f0e56adc2bb399e6651b"
       }
     },
     {
@@ -283,7 +283,7 @@
       "doc": "modules/app-shell.md",
       "status": "drafted",
       "fingerprint": {
-        "rootHash": "9ea44ec65c41d2727e829dfdf28e60a14b19f7b8"
+        "rootHash": "f0dba71e8182d547257bd5c5ac98e90c657dab91"
       }
     },
     {

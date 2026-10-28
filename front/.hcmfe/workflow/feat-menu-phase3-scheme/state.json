@@ -1,0 +1,108 @@
+{
+  "id": "feat-menu-phase3-scheme",
+  "title": "菜单整合三期：资源选型并入工作台公共事务",
+  "currentStage": "done",
+  "createdAt": "2026-10-26T09:06:42.964Z",
+  "updatedAt": "2026-10-26T09:40:25.630Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-scheme/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T09:16:14.815Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-scheme/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T09:29:19.774Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-26T09:28:54.595Z",
+      "note": "用户确认（2026-10-26）：A3 编码完成（资源选型路由迁到 views/scheme/route-config.ts、并入 serviceViews、符号化 name、删除旧路由文件与顶栏入口），eslint/tsc/lint 通过，推进 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-26T09:39:58.441Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-26T09:06:42.964Z",
+      "gitHead": "701ddf483906738ef9d2e7346416567026b080c3"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-26T09:28:54.595Z",
+      "note": "用户确认（2026-10-26）：A3 编码完成（资源选型路由迁到 views/scheme/route-config.ts、并入 serviceViews、符号化 name、删除旧路由文件与顶栏入口），eslint/tsc/lint 通过，推进 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-26T09:39:58.441Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
+    }
+  ],
+  "requirementId": "req-menu-phase3",
+  "branch": "feat-menu-phase3-workbench",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139342301",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-26T09:12:33.866Z",
+      "note": "用户选择跳过：该单已按 tapd-story-clarification 产出 docs/reqs/三期资源选型并入.md 并写入 TAPD description（含原需求描述与澄清记录），澄清已完成，重跑无收益。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-26T09:39:52.338Z",
+      "note": "gaps=base、menu-route、scheme、app-shell（均 hasDrift）。已补 scheme（路由装配/地址/符号跳转/权限）、menu-route（资源选型并入 serviceViews、schemeViews 与 router/module/scheme.ts 删除、/scheme 不兼容）、app-shell（afterEach 不再判断资源选型）、base（菜单约定归 menu-route 的指针），逐个 docs_deepen 刷新基线；promotionQueue 为空。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-26T09:40:25.630Z",
+      "note": "story 按 planner 逐跳 status_12→status_13→status_20→status_14，最终 status_14(done)；owner 未变更。父单 rollup=target doing，父单当前 doing 且 shouldAdvance=false，未写父单。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/constants/menu-symbol.ts",
+        "src/views/scheme/route-config.ts",
+        "src/views/index.ts",
+        "src/router/index.ts",
+        "src/common/menu-service.ts",
+        "src/views/scheme/index.tsx",
+        "src/views/scheme/scheme-list/index.tsx",
+        "src/views/scheme/scheme-detail/index.tsx",
+        "src/views/scheme/components/scheme-selector/index.tsx",
+        "views/scheme/route-config.ts",
+        "src/router/module/scheme.ts",
+        "service.ts",
+        "router/module/service.ts"
+      ],
+      "contentFingerprint": "41e2e2bbe9f5c73d86f9dc236772cc1d316285e7",
+      "codeBaseline": "68626f7b595fb0eb8775d9826a4e4ad66dca01a9",
+      "seatedAt": "2026-10-26T09:16:14.815Z"
+    }
+  }
+}

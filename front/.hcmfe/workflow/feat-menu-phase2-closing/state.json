@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-closing",
   "title": "菜单整合二期：收尾体验（菜单收藏、业务路由、分组折叠）",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-10-12T08:33:46.611Z",
-  "updatedAt": "2026-10-16T03:27:15.617Z",
+  "updatedAt": "2026-10-28T01:54:38.961Z",
   "artifacts": {
     "coding": [
       {
@@ -32,6 +32,12 @@
       "to": "test",
       "at": "2026-10-16T03:27:15.617Z",
       "note": "用户确认将收尾体验单据推进到 test。编码完成并已拆分为 3 条可编译提交，bcc 模式 build:bcc 编译通过(BUILD_EXIT=0)，env 分支已同步推送。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-28T01:54:38.961Z",
+      "note": "清理归档（2026-10-28）：二期代码已合入 origin/v1.9.x，工作流不再推进，强制收口到 done。"
     }
   ],
   "requirementId": "req-menu-phase2",

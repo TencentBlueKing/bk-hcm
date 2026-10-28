@@ -19,7 +19,7 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 import routerAction from '@/router/utils/action';
-import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
+import { MENU_SERVICE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
 
@@ -56,7 +56,7 @@ const VPCFields = ref<FieldList>([
     name: '账号',
     prop: 'account_id',
     txtBtn(accountId: string) {
-      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
+      routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

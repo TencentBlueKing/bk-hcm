@@ -5,6 +5,8 @@ import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
+import routerAction from '@/router/utils/action';
+import { MENU_SERVICE_TICKET_MANAGEMENT } from '@/constants/menu-symbol';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -180,9 +182,7 @@ export default (cond: Cond) => {
 
       if (isResourcePage) router.back();
       else {
-        router.push({
-          path: '/service/my-apply',
-        });
+        routerAction.redirect({ name: MENU_SERVICE_TICKET_MANAGEMENT }, { history: true });
       }
     } catch (err) {
       // console.error(err);

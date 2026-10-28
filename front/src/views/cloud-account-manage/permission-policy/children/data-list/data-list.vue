@@ -151,7 +151,7 @@ const getColumnRender = (column: ModelPropertyColumn) => {
           </template>
         </template>
       </bk-table-column>
-      <bk-table-column label="操作" width="180" fixed="right">
+      <bk-table-column label="操作" width="180" fixed="right" :show-overflow-tooltip="false">
         <template #default="{ row }">
           <div class="actions">
             <hcm-auth

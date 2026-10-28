@@ -14,9 +14,11 @@
 - 弹窗只做通用提交、默认成功提示和关窗。可选 `successHandler` / `errorHandler` 给调用方。
 - **禁止**按 `resourceName` 在弹窗内写死某一业务的成功/失败文案、错误码或跳转（CLB 反馈在 `views/load-balancer/use-clb-sync-feedback.ts`；安全组走默认「已同步成功」+ 已有 `errorHandler`）。
 - `src/hooks` 只放跨模块 hook。
+- `src/constants/menu-symbol.ts` 与 `src/common/menu-service.ts` 虽在本模块 globs 内，但**菜单/路由约定归 menu-route 模块**：新增或改名菜单符号、调整顶栏顺序、分组与显隐都在那里记录，本文件不重复（例：三期账号管理符号改为 `MENU_SERVICE_ACCOUNT_*`，见 menu-route）。`src/constants/view-auth.ts` 的菜单隐藏语义归 auth 模块。
 - `resource-search-select` 自带宽度：`width: 500px` 是上限，配 `max-width: 100%` + `min-width: 240px`。要它在窄屏收缩，**调用方容器必须给 `min-width: 0`**——flex 项的自动最小宽度等于内容宽（500px），不放开根本压不下去；未放开的使用方仍是固定 500px。
 - 轮询统一用 `src/hooks/use-timeout-poll`（`resume`/`pause`/`reset`，`onScopeDispose` 自动停）。`src/utils/interval` 已 `@deprecated`：回调在创建时被闭包固定，取不到后续变化的参数（账号/ID 切换场景会一直打到上一个 id），也没有次数重置与 scope 销毁。
 - 全局组件样式覆盖放 `src/style/override/`（`index.scss` 汇总）。`bkpopover.scss` 的 `.hcm-tooltips-popover` 用来让组件式 `bk-popover` 对齐 `v-bk-tooltips` 指令的紧凑暗色外观（两者默认 placement、arrow、内边距、背景都不同），表格单元格内应用组件而非指令。
+- 宽度分工：`src/style/common.scss` 的 `html/body { min-width: 980px }` 只保主区可读下限（主区在侧栏之后，非 fit 页面整体下限约 1240px），**不再承担"容纳顶栏菜单"的职责**。顶栏一级菜单由 `components/layout/header.vue` 自适应：`.header-nav` 自身 `min-width: 0` + 横向滚动（滚动条隐藏）、链接 `white-space: nowrap` 且 `flex: 0 0 auto`、右侧工具区 `flex: 0 0 auto`，因此增加一级菜单不会把文字压到换行，也不会挤压工具区。
 
 ## 明细目录
 

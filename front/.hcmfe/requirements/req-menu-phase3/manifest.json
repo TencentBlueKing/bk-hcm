@@ -1,0 +1,51 @@
+{
+  "id": "req-menu-phase3",
+  "title": "菜单整合三期：工作台与服务请求迁移",
+  "createdAt": "2026-10-26T02:09:29.925Z",
+  "updatedAt": "2026-10-27T04:17:35.012Z",
+  "external": {
+    "tapd": "https://<TAPD_HOST>/tapd_fe/69995598/story/detail/1069995598138393455"
+  },
+  "iterations": [
+    {
+      "wfId": "feat-menu-phase3-workbench",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：工作台一级菜单与 service 视图复用",
+      "createdAt": "2026-10-26T02:09:32.159Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-ticket",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：单据管理入工作台个人事务与服务请求跳转",
+      "createdAt": "2026-10-26T08:21:32.906Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-scheme",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：资源选型并入工作台公共事务",
+      "createdAt": "2026-10-26T09:06:42.964Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-account",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：账号管理迁入工作台公共事务",
+      "createdAt": "2026-10-26T09:44:33.954Z"
+    },
+    {
+      "wfId": "feat-menu-phase3-closing",
+      "status": "coding",
+      "branch": "feat-menu-phase3-workbench",
+      "title": "菜单整合三期：收尾（权限、收藏、路由文件退场、文档）",
+      "createdAt": "2026-10-27T04:17:34.961Z"
+    }
+  ],
+  "aggregatedArtifacts": {},
+  "codeScope": {
+    "globs": [],
+    "autoLearned": true
+  }
+}

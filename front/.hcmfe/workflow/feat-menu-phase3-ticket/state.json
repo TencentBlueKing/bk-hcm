@@ -1,0 +1,106 @@
+{
+  "id": "feat-menu-phase3-ticket",
+  "title": "菜单整合三期：单据管理入工作台个人事务与服务请求跳转",
+  "currentStage": "done",
+  "createdAt": "2026-10-26T08:21:32.906Z",
+  "updatedAt": "2026-10-26T08:42:51.476Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-ticket/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T08:24:20.855Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase3-ticket/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-26T08:35:35.195Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-26T08:35:06.032Z",
+      "note": "用户确认（2026-10-26）：A2 编码完成（提单后跳转改用 routerAction + name、删除无消费方的 isServicePage provide），eslint/tsc/lint 通过，推进 test。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-26T08:42:28.884Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-26T08:21:32.906Z",
+      "gitHead": "2e2d24fb623e6ef2efc31a8fbc13e40fdc956df9"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-26T08:35:06.032Z",
+      "note": "用户确认（2026-10-26）：A2 编码完成（提单后跳转改用 routerAction + name、删除无消费方的 isServicePage provide），eslint/tsc/lint 通过，推进 test。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-26T08:42:28.884Z",
+      "note": "用户确认（2026-10-26）：test 全部 PASS，推进 done。"
+    }
+  ],
+  "requirementId": "req-menu-phase3",
+  "branch": "feat-menu-phase3-workbench",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139342281",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-26T08:22:09.795Z",
+      "note": "用户选择跳过：该单已按 tapd-story-clarification 产出 docs/reqs/三期单据管理迁移.md 并写入 TAPD description；并已用评论明确「数据权限部分移出、A2 只做菜单结构与上下文」，澄清已完成，重跑无收益。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-26T08:42:21.025Z",
+      "note": "gaps=ticket、service（均 hasDrift）。已补 ticket（工作台归属、服务请求降为跳转壳、provide isServicePage 删除依据、不要私自加 applicant 过滤）与 service（serviceViews 即工作台、提单成功跳转用 name + routerAction），并各自 docs_deepen 刷新基线；promotionQueue 为空。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-26T08:42:51.476Z",
+      "note": "story 按 planner 逐跳 status_12→status_13→status_20→status_14，最终 status_14(done)；owner 未变更。父单 rollup 另行计算。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/service/service-apply/hooks/use-vpc-form-data.ts",
+        "src/views/service/service-apply/hooks/use-disk-form-data.ts",
+        "src/views/ticket/entry-srv.vue",
+        "menu-service.ts",
+        "ticket/route-config.ts",
+        "common-table.vue",
+        "front/src/router/index.ts",
+        "views/ticket/route-config.ts",
+        "front/src/hooks/useWhereAmI.ts",
+        "views/ticket/entry-srv.vue",
+        "list-srv.vue"
+      ],
+      "contentFingerprint": "ecc7500004d85d63730df8b59f2fc07eba86b09f",
+      "codeBaseline": "63d7249106e52dc02d2bc9b4949cfe799dc57acb",
+      "seatedAt": "2026-10-26T08:32:54.518Z"
+    }
+  }
+}

@@ -7,11 +7,15 @@
 
 ## 职责
 
-（待补充：本模块的核心职责、边界、关键文件与对外接口。）
+资源选型（推荐 / 选型方案列表 / 方案详情）与页内方案选择器。三期起本模块是「工作台 → 公共事务」下的一个菜单项，**不再是一级菜单**：路由由 `src/views/scheme/route-config.ts` 导出并并入 `views/index.ts` 的 `serviceViews`，地址前缀 `/service/scheme`，一级菜单 id 复用 `MENU_SCHEME`（`meta.owner = MENU_SERVICE`、`meta.activeKey = MENU_SCHEME`）。
 
 ## 关键流程 / 注意事项
 
-（待补充：由 workflow 在首次改动本模块时深化。）
+- **路由**：父记录 `name: MENU_SCHEME`、`path: 'scheme'`、`redirect: MENU_SCHEME_RECOMMENDATION`；子记录 `recommendation` / `deployment/list` / `deployment/detail`，name 为 `MENU_SCHEME_RECOMMENDATION` / `MENU_SCHEME_LIST` / `MENU_SCHEME_DETAIL`。旧的 `router/module/scheme.ts`、`schemeViews` 已删除，`router/index.ts` 不再有 `MENU_SCHEME` 顶层记录。
+- **地址不再兼容旧前缀**：`/scheme/*` 已失效（与 PR #1897 一致，站内 0 处引用）；如需兼容需另加 redirect。
+- **页内跳转一律按 name**：`scheme/index.tsx` 页签、`scheme-list`、`scheme-detail`、`components/scheme-selector` 都跳菜单符号，不要写 `/scheme/...` 字符串地址。
+- **详情用 query 传参**（`?sid=`），未改路径参数；三页 `breadcrumb.show = false` 沿用现网。
+- **权限**：推荐页 `AUTH_CREATE_CLOUD_SELECTION_SCHEME`、列表页 `AUTH_FIND_CLOUD_SELECTION_SCHEME`，菜单显隐仍由 `ENABLE_CLOUD_SELECTION` 控制（`menu-service.ts` 的 `visibility`）。
 
 ## 明细目录
 

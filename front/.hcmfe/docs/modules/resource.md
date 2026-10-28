@@ -29,7 +29,7 @@
 
 ## 账号管理（`views/account-manage/`）
 
-资源运营 → 云资源 → 账号管理（过渡位置，三期迁工作台）：列表 `/resource/account`（`MENU_RESOURCE_ACCOUNT_MANAGEMENT`，三类账号都展示）、登记 `/resource/account/check-in`（复用 `views/service/service-apply/account-add`）、详情 `/resource/account/details/<ID>` 自动进 `/basic`（只有基本信息页签，账号 ID 在 params）。列表与详情声明 `auth.view: AUTH_FIND_ACCOUNT`，详情子路由要重复 `auth.view` / `owner` / `activeKey`（meta 浅合并，子路由 `Meta` 的空 `auth` 会盖掉父路由）。编辑 / 删除按实例鉴权（`AUTH_UPDATE_ACCOUNT` / `AUTH_DELETE_ACCOUNT` + `relation: [账号 ID]`），`RenderDetailEdit` 传 `authSign` 即用 `hcm-auth` 包编辑按钮。旧地址（原账号页签、资源状态、旧详情、两个旧登记入口）由 `accountManageLegacy` 转址：带账号的「账号信息 / 资源状态」进资源纳管并带 `showAccountStatus=1` 打开账号状态侧滑。站内跳账号详情一律按 `MENU_RESOURCE_ACCOUNT_DETAIL`（资源详情里的 `link` 用字符串 `/#/resource/account/details/<ID>`）。
+**三期起账号管理已迁到工作台**（`/service/account*`，菜单在「个人事务」，符号 `MENU_SERVICE_ACCOUNT_*`），不再属于资源运营，路由也从 `resourceViews` 移到 `serviceViews`。列表 `/service/account`（只展示登记账号与安全审计账号：筛选项过滤 + 请求固定 `type neq resource`）、登记 `/service/account/check-in`（复用 `views/service/service-apply/account-add`）、详情 `/service/account/details/<ID>` 自动进 `/basic`（只有基本信息页签，账号 ID 在 params）。列表与详情声明 `auth.view: AUTH_FIND_ACCOUNT`，详情子路由要重复 `auth.view` / `owner` / `activeKey`（meta 浅合并，子路由 `Meta` 的空 `auth` 会盖掉父路由）；账号登记页目前没有 `auth.view`。编辑 / 删除按实例鉴权（`AUTH_UPDATE_ACCOUNT` / `AUTH_DELETE_ACCOUNT` + `relation: [账号 ID]`）。旧地址（`/resource/account`、`/resource/account/details/<ID>` 及其带页签形态、`/resource/account/check-in`、`/resource/account/add`、原账号页签与资源状态入口）由 `accountManageLegacy` 转址：带账号的「账号信息 / 资源状态」仍进资源纳管并带 `showAccountStatus=1` 打开账号状态侧滑。资源详情里的账号名按 `MENU_SERVICE_ACCOUNT_DETAIL` 跳转（资源账号也走这个详情，与 PR 一致）。
 
 ## 关键流程 / 注意事项
 

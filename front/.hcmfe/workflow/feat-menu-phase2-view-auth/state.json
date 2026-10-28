@@ -1,9 +1,9 @@
 {
   "id": "feat-menu-phase2-view-auth",
   "title": "菜单整合二期：视图权限体系",
-  "currentStage": "test",
+  "currentStage": "done",
   "createdAt": "2026-10-08T11:31:10.337Z",
-  "updatedAt": "2026-10-09T11:25:01.034Z",
+  "updatedAt": "2026-10-28T01:54:17.023Z",
   "artifacts": {
     "coding": [
       {
@@ -39,6 +39,12 @@
       "to": "test",
       "at": "2026-10-09T09:32:50.641Z",
       "note": "用户评审 ② 代码后确认：已看完，可以继续"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-28T01:54:17.023Z",
+      "note": "清理归档（2026-10-28）：二期代码已合入 origin/v1.9.x，工作流不再推进，强制收口到 done。"
     }
   ],
   "requirementId": "req-menu-phase2",

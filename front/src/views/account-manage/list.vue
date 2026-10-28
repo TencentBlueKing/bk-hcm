@@ -6,10 +6,11 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useTableSettings from '@/hooks/use-table-settings';
 import usePage from '@/hooks/use-page';
 import routerAction from '@/router/utils/action';
-import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
+import { MENU_SERVICE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { AUTH_DELETE_ACCOUNT, AUTH_UPDATE_ACCOUNT } from '@/constants/auth-symbols';
 
 import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/common/constant';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
 import type { ModelPropertyColumn } from '@/model/typings';
 import type { FilterType, IAccountItem, IListResData } from '@/typings';
 import { timeFormatter } from '@/common/util';
@@ -27,10 +28,11 @@ const { t } = useI18n();
 const accountStore = useAccountStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
-// TODO(菜单整合三期)：迁至工作台后按 PR 不展示资源账号（账号类型去掉资源账号、请求追加 type neq resource）
+// 账号管理属于工作台：列表不展示资源账号（资源账号在资源纳管的账号状态侧滑查看），
+// 筛选项去掉资源账号、请求固定追加 type neq resource（见下方 watchEffect）
 const searchData = [
   { name: t('名称'), id: 'name' },
-  { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES },
+  { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES.filter((v) => v.id !== ACCOUNT_TYPE_ENUM.RESOURCE) },
   { name: t('云厂商'), id: 'vendor', children: VENDORS },
   { name: t('站点类型'), id: 'site', children: SITE_TYPES },
   { name: t('负责人'), id: 'managers' },
@@ -147,7 +149,7 @@ const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
 
 // 名称与「编辑」都进账号详情（基本信息可编辑）
 const handleJump = (id: string) => {
-  routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: id } }, { history: true });
+  routerAction.redirect({ name: MENU_SERVICE_ACCOUNT_DETAIL, params: { accountId: id } }, { history: true });
 };
 
 // 删除
@@ -187,6 +189,9 @@ watchEffect(() => {
     }
     return p;
   }, []);
+
+  // 工作台账号管理固定只看登记账号与安全审计账号，追加在重建之后，避免被搜索条件覆盖
+  state.filter.rules.push({ field: 'type', op: 'neq', value: ACCOUNT_TYPE_ENUM.RESOURCE });
 
   getAccountList();
 });
