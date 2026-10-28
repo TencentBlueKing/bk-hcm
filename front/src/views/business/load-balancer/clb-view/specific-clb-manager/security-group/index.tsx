@@ -98,11 +98,6 @@ export default defineComponent({
     const securityGroups = ref([]);
     const searchValue = ref('');
     const bindedSecurityGroups = ref([]);
-    const isAllExpand = ref(false);
-    watch(
-      () => expandIdSet.value.size,
-      (size) => (isAllExpand.value = size === securityGroups.value.length),
-    );
 
     const displaySecurityGroupRules = computed(() => {
       const val = searchValue.value;
@@ -111,12 +106,33 @@ export default defineComponent({
       return bindedSecurityGroups.value.filter((v) => reg.test(`${v.name} (${v.cloud_id})`));
     });
 
+    // 是否全部展开只由当前展示的安全组与展开集合决定，不再与子组件的内部状态双向同步
+    const isAllExpand = computed(() => {
+      const list = displaySecurityGroupRules.value;
+      return list.length > 0 && list.every(({ cloud_id }) => expandIdSet.value.has(cloud_id));
+    });
+
+    const handleExpandChange = (cloudId: string, expand: boolean) => {
+      if (expand) expandIdSet.value.add(cloudId);
+      else expandIdSet.value.delete(cloudId);
+    };
+
+    const handleToggleAllExpand = () => {
+      const expand = !isAllExpand.value;
+      displaySecurityGroupRules.value.forEach(({ cloud_id }) => handleExpandChange(cloud_id, expand));
+    };
+
+    let requestSeq = 0;
     const getBindedSecurityList = async () => {
+      if (!props.id) return;
+      requestSeq += 1;
+      const seq = requestSeq;
       const res = await businessStore.listCLBSecurityGroups(props.id);
+      // 快速切换负载均衡时丢弃过期响应，避免旧数据覆盖当前实例
+      if (seq !== requestSeq) return;
       bindedSecurityGroups.value = cloneDeep(res.data);
       securityGroups.value = res.data;
     };
-    watch(() => props.id, getBindedSecurityList, { immediate: true });
 
     // 安全组配置弹框
     const securityGroupConfigModalState = reactive({
@@ -227,6 +243,30 @@ export default defineComponent({
     });
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
+    watch(
+      () => props.id,
+      () => {
+        // 切换负载均衡时重置上一个实例的状态，避免数据、展开状态和弹窗串到当前负载均衡
+        expandIdSet.value.clear();
+        searchValue.value = '';
+        bindedSecurityGroups.value = [];
+        securityGroups.value = [];
+        // 关闭可能正在操作的弹窗，避免把安全组绑定到切换后的负载均衡上
+        securityGroupConfigModalState.sidesliderVisible = false;
+        securityGroupConfigModalState.sidesliderLoading = false;
+        securityGroupConfigModalState.sidesliderSearchValue = '';
+        securityGroupConfigModalState.displaySecurityGroupList = [];
+        securityGroupConfigModalState.dialogVisible = false;
+        securityGroupConfigModalState.dialogLoading = false;
+        selectedSecurityGroupsSet.value = new Set();
+        resetSelections();
+        isPassToTargetConfigDialogState.isShow = false;
+        isPassToTargetConfigDialogState.isLoading = false;
+        getBindedSecurityList();
+      },
+      { immediate: true },
+    );
+
     const handleBind = async () => {
       for (const item of selections.value) {
         if (selectedSecurityGroupsSet.value.has(item.id)) continue;
@@ -271,7 +311,7 @@ export default defineComponent({
                 ),
               }}
             </hcm-auth>
-            <bk-button onClick={() => (isAllExpand.value = !isAllExpand.value)}>
+            <bk-button onClick={handleToggleAllExpand}>
               <i
                 class={[
                   'hcm-icon',
@@ -296,12 +336,12 @@ export default defineComponent({
                   name={name}
                   cloudId={cloud_id}
                   idx={idx}
-                  isAllExpand={isAllExpand.value}
+                  isExpand={expandIdSet.value.has(cloud_id)}
                   vendor={props.detail.vendor}
                   direction={activeRuleType.value}
                   id={id}
-                  onExpand={() => expandIdSet.value.add(cloud_id)}
-                  onCollapse={() => expandIdSet.value.delete(cloud_id)}
+                  onExpand={() => handleExpandChange(cloud_id, true)}
+                  onCollapse={() => handleExpandChange(cloud_id, false)}
                 />
               ))
             ) : (
