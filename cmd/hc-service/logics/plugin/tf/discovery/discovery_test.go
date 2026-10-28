@@ -62,10 +62,10 @@ func TestScanHighestVersionBySemver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 1 || entries[0].PluginVersion != "1.10.0" {
+	if len(entries) != 1 || entries["tc"].PluginVersion != "1.10.0" {
 		t.Fatalf("want 1.10.0, got %+v", entries)
 	}
-	if entries[0].SHA256 != sum("new") {
+	if entries["tc"].SHA256 != sum("new") {
 		t.Fatalf("sha256 should be computed from the chosen version's file")
 	}
 }
@@ -79,7 +79,7 @@ func TestScanOnlyLocalArch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 1 || entries[0].SHA256 != sum("amd64-content") || entries[0].Arch != LocalArch() {
+	if len(entries) != 1 || entries["tc"].SHA256 != sum("amd64-content") || entries["tc"].Arch != LocalArch() {
 		t.Fatalf("must only read the local arch, got %+v", entries)
 	}
 }
@@ -92,8 +92,8 @@ func TestScanArbitraryFileName(t *testing.T) {
 	if err != nil || len(entries) != 1 {
 		t.Fatalf("err=%v entries=%+v", err, entries)
 	}
-	if filepath.Base(entries[0].ExecPath) != "whatever-name_v9" {
-		t.Fatalf("exec path = %s", entries[0].ExecPath)
+	if filepath.Base(entries["tc"].ExecPath) != "whatever-name_v9" {
+		t.Fatalf("exec path = %s", entries["tc"].ExecPath)
 	}
 }
 

@@ -28,7 +28,7 @@ import (
 	"context"
 	"time"
 
-	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
+	tfdiscovery "hcm/cmd/hc-service/logics/plugin/tf/discovery"
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/client/data-service/global"
@@ -57,7 +57,7 @@ type Options struct {
 // Watcher 周期性检查本副本版本是否落后。
 type Watcher struct {
 	cli      *global.IaCPluginClient
-	entries  []discovery.Entry
+	entries  map[string]tfdiscovery.PluginEntry
 	onBehind func()
 	opts     Options
 
@@ -66,7 +66,7 @@ type Watcher struct {
 }
 
 // New 创建 Watcher。entries 是启动时目录检查的结果（只读）；onBehind 用于通知退出。
-func New(cli *global.IaCPluginClient, entries []discovery.Entry,
+func New(cli *global.IaCPluginClient, entries map[string]tfdiscovery.PluginEntry,
 	onBehind func(), opts Options) *Watcher {
 
 	if opts.Interval <= 0 {

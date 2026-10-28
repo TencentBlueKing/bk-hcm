@@ -26,7 +26,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
+	tfdiscovery "hcm/cmd/hc-service/logics/plugin/tf/discovery"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/cc"
@@ -150,7 +150,7 @@ func TestWatcherCheck(t *testing.T) {
 	}, "/"))
 
 	called := 0
-	w := New(cli, []discovery.Entry{{PluginName: "tc", PluginVersion: "1.0.0"}},
+	w := New(cli, map[string]tfdiscovery.PluginEntry{"tc": {PluginName: "tc", PluginVersion: "1.0.0"}},
 		func() { called++ }, Options{})
 
 	for i := 0; i < len(rounds)-1; i++ {

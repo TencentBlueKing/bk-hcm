@@ -27,21 +27,20 @@ import (
 
 	httpplugin "hcm/cmd/hc-service/logics/plugin/http"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
-	"hcm/cmd/hc-service/logics/plugin/tf/discovery"
+	tfdiscovery "hcm/cmd/hc-service/logics/plugin/tf/discovery"
 	"hcm/cmd/hc-service/logics/plugin/tf/register"
 	"hcm/cmd/hc-service/logics/plugin/tf/watch"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	"hcm/pkg/lock"
-	"hcm/pkg/logs"
 	"hcm/pkg/runtime/shutdown"
 	cvt "hcm/pkg/tools/converter"
 )
 
 // iacPluginManager 汇总 IaC 插件在 hc-service 内的组件与运行期生命周期。
 type iacPluginManager struct {
-	// plugins 启动时扫描到的本副本 tf 插件，之后只读。
-	plugins []discovery.Entry
+	// plugins 启动时扫描到的本副本 tf 插件（以插件名为 key），之后只读。
+	plugins map[string]tfdiscovery.PluginEntry
 	// ready 为 true 表示 IaC 插件已注册完成，可以接收流量；在此之前 /healthz 返回 503，/alivez 不受影响。
 	ready atomic.Bool
 
@@ -54,28 +53,14 @@ type iacPluginManager struct {
 	stopHTTPCheck context.CancelFunc
 }
 
-// scanPlugins 扫描本副本的 tf 插件目录。目录不合法时返回错误，进程不应启动服务。
-func scanPlugins(pluginDir string) ([]discovery.Entry, error) {
-	entries, err := discovery.Scan(pluginDir)
-	if err != nil {
-		return nil, fmt.Errorf("scan iac plugin dir %s failed, err: %v", pluginDir, err)
-	}
-
-	for _, entry := range entries {
-		logs.Infof("found tf plugin %s@%s (%s), sha256: %s", entry.PluginName, entry.PluginVersion, entry.Arch,
-			entry.SHA256)
-	}
-	return entries, nil
-}
-
 // initIaCPlugin 扫描本地 tf 插件目录，并初始化插件注册、Schema 同步与 http 插件。
 // 目录不合法、网关 TLS 配置错误或 etcd 配置错误时返回错误，进程不应启动服务。
 func (s *Service) initIaCPlugin() error {
 	cfg := cc.HCService().IaCPlugin
 
-	entries, err := scanPlugins(cfg.TF.PluginDir)
+	entries, err := tfdiscovery.Scan(cfg.TF.PluginDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("scan iac plugin dir %s failed, err: %v", cfg.TF.PluginDir, err)
 	}
 
 	etcdCfg, err := cc.HCService().Service.Etcd.ToConfig()

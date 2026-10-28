@@ -34,10 +34,11 @@ import (
 
 	"hcm/pkg/iacplugin"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 )
 
-// Entry 一个插件在本副本上的目录检查结果，创建后只读。
-type Entry struct {
+// PluginEntry 一个插件在本副本上的目录检查结果，创建后只读。
+type PluginEntry struct {
 	// PluginName 插件名，取自目录名。
 	PluginName string
 	// PluginVersion 插件版本，取自目录名，已通过 semver 三段式校验。
@@ -55,12 +56,12 @@ func LocalArch() string {
 	return runtime.GOOS + "_" + runtime.GOARCH
 }
 
-// Scan 扫描插件根目录，为每个插件产出一条条目（取 semver 最高的版本）。
+// Scan 扫描插件根目录，为每个插件产出一条条目（取 semver 最高的版本），以插件名为 key 返回。
 //
 // 根目录不存在，或其中没有插件目录时返回错误。调用方应当让进程退出，
 // 而不是带着一个缺失或残缺的插件目录继续提供服务。
 // 版本目录名非法、本架构目录缺失、可执行文件缺失或不唯一同样返回错误。
-func Scan(root string) ([]Entry, error) {
+func Scan(root string) (map[string]PluginEntry, error) {
 	pluginNames, err := subDirNames(root)
 	if err != nil {
 		return nil, fmt.Errorf("read plugin root dir %s failed, err: %w", root, err)
@@ -69,7 +70,7 @@ func Scan(root string) ([]Entry, error) {
 		return nil, fmt.Errorf("plugin root dir %s has no plugin directory", root)
 	}
 
-	entries := make([]Entry, 0, len(pluginNames))
+	entries := make(map[string]PluginEntry, len(pluginNames))
 	for _, name := range pluginNames {
 		entry, err := scanPlugin(filepath.Join(root, name), name, LocalArch())
 		if err != nil {
@@ -78,7 +79,7 @@ func Scan(root string) ([]Entry, error) {
 		if entry == nil {
 			continue
 		}
-		entries = append(entries, *entry)
+		entries[name] = cvt.PtrToVal(entry)
 	}
 
 	return entries, nil
@@ -101,7 +102,7 @@ func subDirNames(dir string) ([]string, error) {
 }
 
 // scanPlugin 扫描单个插件目录，返回最高版本的条目。没有任何版本目录时返回 nil。
-func scanPlugin(pluginPath, name, arch string) (*Entry, error) {
+func scanPlugin(pluginPath, name, arch string) (*PluginEntry, error) {
 	versions, err := subDirNames(pluginPath)
 	if err != nil {
 		return nil, fmt.Errorf("read plugin dir %s failed, err: %w", pluginPath, err)
@@ -134,7 +135,7 @@ func scanPlugin(pluginPath, name, arch string) (*Entry, error) {
 		return nil, fmt.Errorf("plugin %s version %s: %w", name, highest, err)
 	}
 
-	return &Entry{
+	return &PluginEntry{
 		PluginName:    name,
 		PluginVersion: highest,
 		Arch:          arch,
