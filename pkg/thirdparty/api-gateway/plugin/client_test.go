@@ -103,47 +103,49 @@ func TestNewLaunchConfigEncryptor(t *testing.T) {
 
 func newValidSampleSchema() *PluginSchema {
 	return &PluginSchema{
-		ProtocolVersion: "1.0",
-		Plugin:          PluginInfo{Name: "bkcmdb", Version: "1.2.0"},
-		SchemaHash:      "sha256:3f9a",
-		Capabilities: Capabilities{
-			Apply:      true,
-			Plan:       true,
-			Refresh:    true,
-			ReadData:   true,
-			AsyncApply: true,
-			Stop:       true,
-			Validate:   true,
-			Import:     true,
-			List:       true,
-		},
-		ProviderSchema: tfjson.ProviderSchema{
-			ConfigSchema: &tfjson.Schema{
-				Version: 0,
-				Block: &tfjson.SchemaBlock{
-					Attributes: map[string]*tfjson.SchemaAttribute{
-						"access_token": {AttributeType: cty.String, Required: true, Sensitive: true},
-					},
-				},
+		Plugin:     PluginInfo{Name: "bkcmdb", Version: "1.2.0"},
+		SchemaHash: "sha256:3f9a",
+		SchemaDetail: SchemaDetail{
+			ProtocolVersion: "1.0",
+			Capabilities: Capabilities{
+				Apply:      true,
+				Plan:       true,
+				Refresh:    true,
+				ReadData:   true,
+				AsyncApply: true,
+				Stop:       true,
+				Validate:   true,
+				Import:     true,
+				List:       true,
 			},
-			ResourceSchemas: map[string]*tfjson.Schema{
-				"bkcmdb_host": {
+			ProviderSchema: tfjson.ProviderSchema{
+				ConfigSchema: &tfjson.Schema{
 					Version: 0,
 					Block: &tfjson.SchemaBlock{
 						Attributes: map[string]*tfjson.SchemaAttribute{
-							"bk_host_innerip": {AttributeType: cty.String, Required: true},
-							"bk_host_id":      {AttributeType: cty.Number, Computed: true},
+							"access_token": {AttributeType: cty.String, Required: true, Sensitive: true},
 						},
 					},
 				},
-			},
-			DataSourceSchemas: map[string]*tfjson.Schema{
-				"bkcmdb_biz": {
-					Version: 0,
-					Block: &tfjson.SchemaBlock{
-						Attributes: map[string]*tfjson.SchemaAttribute{
-							"bk_biz_name": {AttributeType: cty.String, Required: true},
-							"bk_biz_id":   {AttributeType: cty.Number, Computed: true},
+				ResourceSchemas: map[string]*tfjson.Schema{
+					"bkcmdb_host": {
+						Version: 0,
+						Block: &tfjson.SchemaBlock{
+							Attributes: map[string]*tfjson.SchemaAttribute{
+								"bk_host_innerip": {AttributeType: cty.String, Required: true},
+								"bk_host_id":      {AttributeType: cty.Number, Computed: true},
+							},
+						},
+					},
+				},
+				DataSourceSchemas: map[string]*tfjson.Schema{
+					"bkcmdb_biz": {
+						Version: 0,
+						Block: &tfjson.SchemaBlock{
+							Attributes: map[string]*tfjson.SchemaAttribute{
+								"bk_biz_name": {AttributeType: cty.String, Required: true},
+								"bk_biz_id":   {AttributeType: cty.Number, Computed: true},
+							},
 						},
 					},
 				},

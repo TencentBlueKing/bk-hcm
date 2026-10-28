@@ -25,3 +25,6 @@ import (
 
 // ListIacPluginInstanceDetails iac_plugin_instance 列表查询结果。
 type ListIacPluginInstanceDetails = ListResult[tableplugin.IacPluginInstanceTable]
+
+// ListIacPluginSchemaDetails iac_plugin_schema 列表查询结果。
+type ListIacPluginSchemaDetails = ListResult[tableplugin.IacPluginSchemaTable]
