@@ -26,40 +26,26 @@ import (
 	"encoding/hex"
 	"strings"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 )
 
-const (
-	// SchemaHashAlgoSHA256 SHA-256 算法标识。
-	SchemaHashAlgoSHA256 = "sha256"
-	// SchemaHashAlgoSHA384 SHA-384 算法标识。
-	SchemaHashAlgoSHA384 = "sha384"
-	// SchemaHashAlgoSHA512 SHA-512 算法标识。
-	SchemaHashAlgoSHA512 = "sha512"
-	// DefaultSchemaHashAlgo 默认 Schema 哈希算法。
-	DefaultSchemaHashAlgo = SchemaHashAlgoSHA256
-
-	// SchemaHashPrefix 默认 schema_hash 前缀（"sha256:"）。
-	SchemaHashPrefix = DefaultSchemaHashAlgo + ":"
-	// SchemaHashLength 默认 sha256 schema_hash 总长度（"sha256:" + 64 位 hex）。
-	SchemaHashLength = 71
-)
-
 // supportedSchemaHashAlgos 支持的 schema_hash 算法白名单，映射到标准库 crypto.Hash。
-var supportedSchemaHashAlgos = map[string]crypto.Hash{
-	SchemaHashAlgoSHA256: crypto.SHA256,
-	SchemaHashAlgoSHA384: crypto.SHA384,
-	SchemaHashAlgoSHA512: crypto.SHA512,
+var supportedSchemaHashAlgos = map[enumor.SchemaHashAlgo]crypto.Hash{
+	enumor.SchemaHashAlgoSHA256: crypto.SHA256,
+	enumor.SchemaHashAlgoSHA384: crypto.SHA384,
+	enumor.SchemaHashAlgoSHA512: crypto.SHA512,
 }
 
 // ParseSchemaHash 解析 "<algo>:<hex>" 格式的 schema_hash，校验算法是否在支持列表内且摘要为对应长度的小写 hex。
-func ParseSchemaHash(schemaHash string) (string, string, crypto.Hash, error) {
-	algo, hexDigest, ok := strings.Cut(schemaHash, ":")
-	if !ok || len(algo) == 0 || len(hexDigest) == 0 {
+func ParseSchemaHash(schemaHash string) (enumor.SchemaHashAlgo, string, crypto.Hash, error) {
+	algoStr, hexDigest, ok := strings.Cut(schemaHash, ":")
+	if !ok || len(algoStr) == 0 || len(hexDigest) == 0 {
 		return "", "", 0, errf.Newf(errf.InvalidParameter,
 			"invalid schema_hash format: %q, expected <algo>:<lowercase hex>", schemaHash)
 	}
 
+	algo := enumor.SchemaHashAlgo(algoStr)
 	hashFunc, supported := supportedSchemaHashAlgos[algo]
 	if !supported || !hashFunc.Available() {
 		return "", "", 0, errf.Newf(errf.InvalidParameter,

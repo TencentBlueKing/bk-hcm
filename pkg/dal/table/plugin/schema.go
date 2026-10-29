@@ -21,6 +21,7 @@
 package tableplugin
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -103,8 +104,8 @@ func (t IacPluginSchemaTable) InsertValidate() error {
 		return err
 	}
 
-	if len(t.SchemaDetail) == 0 {
-		return errors.New("schema_detail is required")
+	if err := validateJSONObject("schema_detail", t.SchemaDetail); err != nil {
+		return err
 	}
 
 	if len(t.Creator) == 0 {
@@ -148,6 +149,20 @@ func (t IacPluginSchemaTable) UpdateValidate() error {
 
 	if len(t.Reviser) == 0 {
 		return errors.New("reviser is required")
+	}
+
+	return nil
+}
+
+// validateJSONObject 校验 JSON 列必须是合法的 JSON 对象（不接受 null、数组、标量）。
+func validateJSONObject(name string, field types.JsonField) error {
+	if len(field) == 0 {
+		return errors.New(name + " is required")
+	}
+
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(field), &obj); err != nil || obj == nil {
+		return errors.New(name + " must be a json object")
 	}
 
 	return nil
