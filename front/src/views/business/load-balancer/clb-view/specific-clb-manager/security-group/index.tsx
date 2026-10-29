@@ -208,6 +208,10 @@ export default defineComponent({
       { id: 'name', name: '安全组名称' },
       { id: 'cloud_id', name: 'ID' },
     ];
+    const securityGroupFilterRules = computed(() => [
+      { field: 'vendor', op: QueryRuleOPEnum.EQ, value: props.detail.vendor },
+      { field: 'region', op: QueryRuleOPEnum.EQ, value: props.detail.region },
+    ]);
     const isRowSelectEnable = ({ row, isCheckAll }: any) => {
       if (isCheckAll) return true;
       return isCurRowSelectEnable(row);
@@ -217,7 +221,7 @@ export default defineComponent({
         !bindedSecurityGroups.value.map((v) => v.id).includes(row.id) && !selectedSecurityGroupsSet.value.has(row.id)
       );
     };
-    const { CommonTable, getListData } = useTable({
+    const { CommonTable, getListData, filter, pagination } = useTable({
       searchOptions: { searchData, extra: { searchSelectExtStyle: { width: '100%' } } },
       tableOptions: {
         columns: tableColumns,
@@ -232,16 +236,18 @@ export default defineComponent({
       requestOption: {
         type: 'security_groups',
         filterOption: {
-          rules: [
-            { field: 'vendor', op: QueryRuleOPEnum.EQ, value: props.detail.vendor },
-            { field: 'region', op: QueryRuleOPEnum.EQ, value: props.detail.region },
-          ],
+          rules: securityGroupFilterRules.value,
           // 属性里传入一个配置，选择是不是要模糊查询
           fuzzySwitch: true,
         },
       },
     });
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+
+    watch(securityGroupFilterRules, (rules) => {
+      filter.rules = rules;
+      pagination.start = 0;
+    });
 
     watch(
       () => props.id,
