@@ -35,7 +35,7 @@ type TCloudExclusiveClusterListOption struct {
 	Region string           `json:"region" validate:"required"`
 	Page   *core.TCloudPage `json:"page" validate:"omitempty"`
 	// CloudIDs 按集群ID过滤，为空表示不过滤
-	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty"`
 	// Network 按集群网络类型过滤，为空表示不过滤
 	Network enumor.ClusterNetwork `json:"network" validate:"omitempty"`
 	// ClusterTypes 按集群类型过滤，为空表示不过滤

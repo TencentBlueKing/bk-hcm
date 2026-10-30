@@ -731,7 +731,8 @@ create table if not exists `cvm`
     `created_at`             timestamp    not null default current_timestamp,
     `updated_at`             timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),
-    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
+    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`),
+    key `idx_created_at` (`created_at`)
 ) engine = innodb
   default charset = utf8mb4;
 

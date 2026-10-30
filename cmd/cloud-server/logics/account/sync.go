@@ -26,6 +26,7 @@ import (
 
 	"hcm/cmd/cloud-server/service/sync/aws"
 	"hcm/cmd/cloud-server/service/sync/azure"
+	"hcm/cmd/cloud-server/service/sync/detail"
 	"hcm/cmd/cloud-server/service/sync/gcp"
 	"hcm/cmd/cloud-server/service/sync/huawei"
 	"hcm/cmd/cloud-server/service/sync/lock"
@@ -84,6 +85,19 @@ func Sync(kt *kit.Kit, cli *client.ClientSet, vendor enumor.Vendor, accountID st
 		resType, err := syncer.SyncAllResource(kt, cli, accountID, isNeedSyncPublicResFlag)
 		if err != nil {
 			logs.Errorf("[%s] sync account %s failed on %s, err: %v, rid: %s", vendor, accountID, resType, err, kt.Rid)
+			// 与定时同步一致：具体资源失败时把同步记录更新为失败，避免停在同步中。
+			if resType != "" {
+				sd := &detail.SyncDetail{
+					Kt:        kt,
+					DataCli:   cli.DataService(),
+					AccountID: accountID,
+					Vendor:    string(vendor),
+				}
+				if statusErr := sd.ResSyncStatusFailed(resType, err); statusErr != nil {
+					logs.Errorf("update res sync status failed, err: %v, vendor: %s, res: %s, accountID: %s, rid: %s",
+						statusErr, vendor, resType, accountID, kt.Rid)
+				}
+			}
 		}
 
 	}(leaseID)
