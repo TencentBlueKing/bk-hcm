@@ -185,7 +185,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     {
       validator: () => {
         if (formModel.slaType !== '2') return true;
-        // 运营商仅支持三网直连时才能选择独占型，防止克隆配置等入口带入独占态
+        // 仅支持可查询独占集群的运营商，防止克隆配置等入口带入无效独占态
         if (!isExclusiveClusterIsp(formModel.vip_isp)) return false;
         return formModel.enable_l4 || formModel.enable_l7;
       },
