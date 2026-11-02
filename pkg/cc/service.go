@@ -287,13 +287,14 @@ func (s *DataServiceSetting) TenantEnable() bool {
 
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network       Network      `yaml:"network"`
-	Service       Service      `yaml:"service"`
-	Log           LogOption    `yaml:"log"`
-	SyncConfig    SyncConfig   `yaml:"sync"`
-	Tenant        TenantConfig `yaml:"tenant"`
-	Cmdb          ApiGateway   `yaml:"cmdb"`
-	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
+	Network       Network         `yaml:"network"`
+	Service       Service         `yaml:"service"`
+	Log           LogOption       `yaml:"log"`
+	SyncConfig    SyncConfig      `yaml:"sync"`
+	Tenant        TenantConfig    `yaml:"tenant"`
+	Cmdb          ApiGateway      `yaml:"cmdb"`
+	TFPlugin      TFPluginSetting `yaml:"tfPlugin"`
+	CCHostPoolBiz int64           `yaml:"ccHostPoolBiz"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -307,6 +308,7 @@ func (s *HCServiceSetting) trySetDefault() {
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
 	s.SyncConfig.trySetDefault()
+	s.TFPlugin.trySetDefault()
 
 	return
 }
@@ -326,6 +328,10 @@ func (s HCServiceSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.TFPlugin.validate(s.Network.Port); err != nil {
 		return err
 	}
 
