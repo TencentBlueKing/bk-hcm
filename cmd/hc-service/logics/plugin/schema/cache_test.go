@@ -251,20 +251,16 @@ func buildTestPluginSchema(t *testing.T, name, version, desc string) *coreplugin
 	}
 }
 
-// waitSchemaCached 轮询同包可见的缓存，直到异步写入到达期望的 schema_hash 且尚未过期。
-func waitSchemaCached(t *testing.T, cache *SchemaCache, key coreplugin.PluginInfo, hash string) {
+// assertSchemaCached 断言回源返回时缓存已写入期望的 schema_hash，且尚未过期。
+func assertSchemaCached(t *testing.T, cache *SchemaCache, key coreplugin.PluginInfo, hash string) {
 	t.Helper()
 
-	deadline := time.Now().Add(2 * time.Second)
-	for time.Now().Before(deadline) {
-		cache.mu.RLock()
-		cached, ok := cache.schemaCache[key]
-		expireAt, hasExpire := cache.expireMap[key]
-		cache.mu.RUnlock()
-		if ok && cached != nil && cached.SchemaHash == hash && hasExpire && time.Now().Before(expireAt) {
-			return
-		}
-		time.Sleep(time.Millisecond)
+	cache.mu.RLock()
+	cached, ok := cache.schemaCache[key]
+	expireAt, hasExpire := cache.expireMap[key]
+	cache.mu.RUnlock()
+	if ok && cached != nil && cached.SchemaHash == hash && hasExpire && time.Now().Before(expireAt) {
+		return
 	}
 	t.Fatalf("schema cache was not updated for %s@%s hash %s", key.Name, key.Version, hash)
 }
@@ -280,7 +276,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 
 	kt := kit.New()
 
-	// 1. Cold start cache miss -> loads full schema from DB and asynchronously writes to cache
+	// 1. Cold start cache miss -> loads full schema from DB and writes cache before return
 	got, err := cache.Get(kt, key)
 	if err != nil {
 		t.Fatalf("Get on cold start failed: %v", err)
@@ -288,7 +284,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	if got.SchemaHash != s1.SchemaHash {
 		t.Fatalf("expected hash %s, got %s", s1.SchemaHash, got.SchemaHash)
 	}
-	waitSchemaCached(t, cache, key, s1.SchemaHash)
+	assertSchemaCached(t, cache, key, s1.SchemaHash)
 	if atomic.LoadInt32(&data.fullCallCount) != 1 {
 		t.Fatalf("expected 1 full DB query on miss, got %d", data.fullCallCount)
 	}
@@ -319,7 +315,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	if got3.SchemaHash != s2.SchemaHash {
 		t.Fatalf("expected updated schema hash %s, got %s", s2.SchemaHash, got3.SchemaHash)
 	}
-	waitSchemaCached(t, cache, key, s2.SchemaHash)
+	assertSchemaCached(t, cache, key, s2.SchemaHash)
 	if atomic.LoadInt32(&data.fullCallCount) != 2 {
 		t.Fatalf("expected 2 full DB queries after hash mismatch, got %d", data.fullCallCount)
 	}
@@ -336,7 +332,7 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 	if got4.SchemaHash != s2.SchemaHash {
 		t.Fatalf("expected hash %s, got %s", s2.SchemaHash, got4.SchemaHash)
 	}
-	waitSchemaCached(t, cache, key, s2.SchemaHash)
+	assertSchemaCached(t, cache, key, s2.SchemaHash)
 	if atomic.LoadInt32(&data.fullCallCount) != 3 {
 		t.Fatalf("expected 3 full DB queries after expiration, got %d", data.fullCallCount)
 	}
@@ -348,6 +344,13 @@ func TestSchemaCacheHitMissExpireAndMismatch(t *testing.T) {
 
 	if _, err = cache.Get(kt, key); err == nil {
 		t.Fatalf("expected error when schema record is missing in DB")
+	}
+	cache.mu.RLock()
+	_, stillCached := cache.schemaCache[key]
+	_, stillExpires := cache.expireMap[key]
+	cache.mu.RUnlock()
+	if stillCached || stillExpires {
+		t.Fatalf("deleted schema must not remain in cache")
 	}
 }
 
