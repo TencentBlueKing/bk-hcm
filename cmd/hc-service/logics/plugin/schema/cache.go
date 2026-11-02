@@ -117,13 +117,11 @@ func (c *SchemaCache) Get(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugi
 			plugin.Name, plugin.Version, cached.SchemaHash, dbHash, kt.Rid)
 	}
 
-	// 缓存未命中 / 已过期 / schema_hash 与 DB 不一致：经 singleflight 回源查全量 Schema。
-	return c.loadFromDBAndAsyncCache(kt, plugin)
+	// 缓存未命中 / 已过期 / schema_hash 与 DB 不一致：经 singleflight 回源查全量 Schema 并写入缓存。
+	return c.loadFromDB(kt, plugin)
 }
 
-func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, plugin coreplugin.PluginInfo) (
-	*coreplugin.PluginSchema, error) {
-
+func (c *SchemaCache) loadFromDB(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugin.PluginSchema, error) {
 	sfKey := fmt.Sprintf("%s:%s", plugin.Name, plugin.Version)
 
 	val, err, _ := c.sfGroup.Do(sfKey, func() (interface{}, error) {
@@ -142,8 +140,8 @@ func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, plugin coreplugin.Plu
 				plugin.Name, plugin.Version)
 		}
 
-		// 写缓存放在 singleflight 闭包内，同一次回源只更新一次，调用方不必等待写锁。
-		go c.asyncUpdateCache(plugin, fullSchema)
+		// 查库成功后同步写入缓存再返回。同一次回源只写一次，后续 Get 立即可见。
+		c.updateCache(plugin, fullSchema)
 		return fullSchema, nil
 	})
 	if err != nil {
@@ -160,7 +158,7 @@ func (c *SchemaCache) loadFromDBAndAsyncCache(kt *kit.Kit, plugin coreplugin.Plu
 	return dbSchema, nil
 }
 
-func (c *SchemaCache) asyncUpdateCache(plugin coreplugin.PluginInfo, schema *coreplugin.PluginSchema) {
+func (c *SchemaCache) updateCache(plugin coreplugin.PluginInfo, schema *coreplugin.PluginSchema) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
