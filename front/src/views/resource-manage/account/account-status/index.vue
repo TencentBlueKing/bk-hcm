@@ -60,7 +60,7 @@ const handleSync = async () => {
     :is-show="isShow"
     :width="800"
     title="资源账号状态"
-    :quick-close="false"
+    quick-close
     render-directive="if"
     @update:is-show="emit('update:isShow', $event)"
   >

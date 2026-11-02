@@ -43,7 +43,7 @@ const handleNavClick = (nav: IMenu) => {
     // 默认宽度写死 560px 会折行：auto + min-width: max-content 让文案保持单行
     width: 'auto',
     minWidth: 'max-content',
-    message: '「资源接入」已迁移至 「资源运营 → 云资源 → 资源纳管」，原入口将于 2026-10-30 下线',
+    message: '「资源接入」已迁移至 「资源运营 → 云资源 → 资源纳管」，原入口将于 2026-11-27 下线',
     onClose: () => {
       isMigrationMessageShowing = false;
     },
