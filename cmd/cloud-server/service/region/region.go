@@ -119,22 +119,47 @@ func (svc *RegionSvc) BatchUpdateRegionSyncEnable(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 各云厂商共用这一处鉴权。先查出地域所属账号，再按账号鉴权。
+	ids := slice.Unique(req.IDs)
+	basicInfos, err := svc.listRegionAccountBasicInfos(cts, vendor, ids)
+	if err != nil {
+		return nil, err
+	}
+	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Region,
+		Action:     meta.Update,
+		BasicInfos: basicInfos,
+	})
+	if err != nil {
+		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
 	switch vendor {
 	case enumor.Aws:
-		return svc.batchUpdateAwsRegionSyncEnable(cts, req)
+		return svc.batchUpdateAwsRegionSyncEnable(cts, req, ids)
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
 	}
 }
 
-// batchUpdateAwsRegionSyncEnable batch update aws region sync_enable field.
-func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
-	req *protoregion.RegionBatchUpdateSyncEnableReq) (interface{}, error) {
+// listRegionAccountBasicInfos 按厂商查出地域所属账号，供共用鉴权使用。
+func (svc *RegionSvc) listRegionAccountBasicInfos(cts *rest.Contexts, vendor enumor.Vendor, ids []string) (
+	map[string]types.CloudResourceBasicInfo, error) {
+
+	switch vendor {
+	case enumor.Aws:
+		return svc.listAwsRegionAccountBasicInfos(cts, ids)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+	}
+}
+
+func (svc *RegionSvc) listAwsRegionAccountBasicInfos(cts *rest.Contexts, ids []string) (
+	map[string]types.CloudResourceBasicInfo, error) {
 
 	kt := cts.Kit
-	ids := slice.Unique(req.IDs)
-
-	// 检查所有 region 是否存在
 	listReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.NewDefaultBasePage(),
@@ -144,7 +169,6 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 		logs.Errorf("list aws region failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-
 	if len(listResp.Details) != len(ids) {
 		return nil, errf.Newf(errf.InvalidParameter,
 			"some regions don't exist, expected: %d, found: %d", len(ids), len(listResp.Details))
@@ -152,22 +176,24 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 
 	basicInfos := make(map[string]types.CloudResourceBasicInfo, len(listResp.Details))
 	for _, one := range listResp.Details {
+		// 没有所属账号就无法按账号鉴权，直接返回参数错误。
+		if one.AccountID == "" {
+			return nil, errf.Newf(errf.InvalidParameter, "region %s account_id is empty", one.ID)
+		}
 		basicInfos[one.ID] = types.CloudResourceBasicInfo{
 			ID:        one.ID,
 			AccountID: one.AccountID,
 			Vendor:    enumor.Aws,
 		}
 	}
-	err = handler.ResOperateAuth(cts, &handler.ValidWithAuthOption{
-		Authorizer: svc.authorizer,
-		ResType:    meta.Region,
-		Action:     meta.Update,
-		BasicInfos: basicInfos,
-	})
-	if err != nil {
-		logs.Errorf("batch update region sync_enable auth failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
+	return basicInfos, nil
+}
+
+// batchUpdateAwsRegionSyncEnable batch update aws region sync_enable field.
+func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
+	req *protoregion.RegionBatchUpdateSyncEnableReq, ids []string) (interface{}, error) {
+
+	kt := cts.Kit
 
 	// 构建批量更新请求
 	regions := make([]dataprotoregion.AwsRegionBatchUpdate, 0, len(ids))
@@ -182,7 +208,7 @@ func (svc *RegionSvc) batchUpdateAwsRegionSyncEnable(cts *rest.Contexts,
 		Regions: regions,
 	}
 
-	err = svc.client.DataService().Aws.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq)
+	err := svc.client.DataService().Aws.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq)
 	if err != nil {
 		logs.Errorf("batch update aws region sync_enable failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
