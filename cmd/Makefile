@@ -7,6 +7,7 @@ all:
 	@cd web-server && make
 	@cd task-server && make
 	@cd account-server && make
+	@cd iac-server && make
 
 package:
 	@cd data-service && make package
@@ -17,6 +18,7 @@ package:
 	@cd web-server && make package
 	@cd task-server && make package
 	@cd account-server && make package
+	@cd iac-server && make package
 
 docker:
 	@cd data-service && make docker
@@ -27,6 +29,7 @@ docker:
 	@cd web-server && make docker
 	@cd task-server && make docker
 	@cd account-server && make docker
+	@cd iac-server && make docker
 
 clean:
 	@cd data-service && make clean
@@ -37,3 +40,4 @@ clean:
 	@cd web-server && make clean
 	@cd task-server && make clean
 	@cd account-server && make clean
+	@cd iac-server && make clean

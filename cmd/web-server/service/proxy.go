@@ -47,7 +47,7 @@ type proxy struct {
 func newProxy(dis serviced.Discover, cli *http.Client) (*proxy, error) {
 	apiDiscovery := make(map[cc.Name]*discovery.APIDiscovery)
 
-	discoverServices := []cc.Name{cc.CloudServerName, cc.AccountServerName}
+	discoverServices := []cc.Name{cc.CloudServerName, cc.AccountServerName, cc.IacServerName}
 	for _, service := range discoverServices {
 		apiDiscovery[service] = discovery.NewAPIDiscovery(service, dis)
 	}
@@ -126,6 +126,8 @@ func (p *proxy) proxyRequest(req *restful.Request, w http.ResponseWriter) {
 			service = cc.CloudServerName
 		case "account":
 			service = cc.AccountServerName
+		case "iac":
+			service = cc.IacServerName
 		}
 	} else {
 		logs.Errorf("received url path length not conform to the regulations, path: %s", req.Request.URL.Path)
