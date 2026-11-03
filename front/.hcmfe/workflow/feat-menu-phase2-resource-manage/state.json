@@ -1,0 +1,165 @@
+{
+  "id": "feat-menu-phase2-resource-manage",
+  "title": "菜单整合二期：资源纳管主体",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T11:31:12.301Z",
+  "updatedAt": "2026-10-10T09:31:07.372Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-manage/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T11:51:42.962Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-resource-manage/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-10T07:42:14.811Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-10T07:41:16.408Z"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T11:31:12.301Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-10T07:41:16.408Z"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702496",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T11:32:21.616Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6 轮结论修订并回写；本地文档 docs/reqs/二期资源纳管主体.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/constants/menu-symbol.ts",
+        "breadcrumb.vue",
+        "router/utils/history-storage.ts",
+        "constants/view-auth.ts",
+        "permission.vue",
+        "src/views/resource-manage/route-config.ts",
+        "views/index.ts",
+        "router/index.ts",
+        "route-config.ts",
+        "main-content.vue",
+        "views/resource/resource-manage/children/manage/*-manage.vue",
+        "resource-manage.vue",
+        "resource-list.vue",
+        "resource-entry.vue",
+        "src/views/resource-manage/account/use-resource-account.ts",
+        "src/views/resource-manage/account/vendor-group/index.vue",
+        "*-manage.vue",
+        "use-filter.ts",
+        "security-manage.vue",
+        "HostOperations.tsx",
+        "use-selection.ts",
+        "views/resource/resource-manage/account/vendor-group/index.vue",
+        "use-resource-account.ts",
+        "account/accountList/useResourceAccount.tsx",
+        "vendor-group/index.vue",
+        "vendor.plugin.ts",
+        "vendor-property.ts",
+        "index.vue",
+        "src/views/bill/account/create-account/create-first-account/index.tsx",
+        "src/views/bill/account/account-detail/first-level-account-detail/index.tsx",
+        "src/views/resource/accountmanage/account-detail.tsx",
+        "src/views/resource/resource-manage/account/vendor-group/index.vue",
+        "src/views/resource/resource-manage/account/accountList/index.tsx",
+        "createAccount/index.tsx",
+        "index.scss",
+        "account-import/index.tsx",
+        "useSecretExtension.tsx",
+        "use-secret-extension.tsx",
+        "account-detail.tsx",
+        "accountList/index.tsx",
+        "secondary-account.ts",
+        "src/views/resource-manage/account/account-summary.vue",
+        "src/views/resource-manage/account/account-status/index.vue",
+        "resource-status.tsx",
+        "resource-status.scss",
+        "accountInfo/component/resourceStatus/index.scss",
+        "src/views/resource-manage/resource-list.vue",
+        "views/load-balancer/entry-rsc.vue",
+        "src/views/resource-manage/resource-entry.vue",
+        "src/components/account-selector/filter.class.ts",
+        "src/components/account-selector/index.vue",
+        "index-new.vue",
+        "src/views/resource/resource-manage/hooks/use-filter.ts",
+        "src/views/resource/resource-manage/hooks/use-filter-host.ts",
+        "views/service/service-apply/clb/index.tsx",
+        "views/service/service-apply/subnet/index.tsx",
+        "children/manage/security-manage.vue",
+        "children/components/host/host-security.vue",
+        "service-apply/components/common/{vpc,subnet,security-group}-selector.tsx",
+        "useResourceAccount.tsx",
+        "components/layout/header.vue",
+        "menu-symbol.ts",
+        "resource.ts",
+        "src/views/index.ts",
+        "src/router/index.ts",
+        "src/common/menu-service.ts",
+        "src/components/layout/header.vue",
+        "header.vue",
+        "menu-service.ts",
+        "menu-item.vue",
+        "app.vue",
+        "src/views/bill/route-config.ts",
+        "src/router/module/resource.ts",
+        "src/components/layout/main-content.vue",
+        "src/style/app-shell.scss",
+        "app-shell.scss",
+        "src/views/resource-manage/children/migration-notice.vue",
+        "src/views/resource-manage/constants.ts",
+        "constants.ts",
+        "views/resource-manage/route-config.ts",
+        ".plugin.ts",
+        "account/account-summary.vue",
+        "hooks/use-filter-from-route.ts",
+        "hooks/search-properties.ts",
+        "use-filter*.ts",
+        "use-query-list-common.ts",
+        "components/layout/breadcrumb.vue",
+        "views/resource-manage/account/vendor-group/{vendor.plugin,vendor-property}.ts",
+        "hooks/use-filter.ts",
+        "use-filter-host.ts",
+        "accountInfo/index.tsx",
+        "views/resource/route-config.ts",
+        "utils/search.ts"
+      ],
+      "contentFingerprint": "3a15ecb1ade15d39c579848a649481333b812a43",
+      "codeBaseline": "421450785e9e5a0edb182fb4223f8d0821cc78d2",
+      "seatedAt": "2026-10-10T09:31:07.372Z"
+    }
+  }
+}

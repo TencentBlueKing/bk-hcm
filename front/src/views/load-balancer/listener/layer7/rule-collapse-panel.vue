@@ -16,7 +16,6 @@ import { ModelPropertyDisplay } from '@/model/typings';
 import { ConditionKeyType, SearchConditionFactory } from '../../children/search/condition-factory';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { merge } from 'lodash';
 import routerAction from '@/router/utils/action';
 import { IAuthSign } from '@/common/auth-service';
@@ -57,9 +56,8 @@ const isExpand = ref(props.domainInfo.displayConfig?.isExpand ?? false);
 const jumpToTargetGroupDetails = (id: string) => {
   routerAction.open({
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-    params: { id },
+    params: { bizId: currentGlobalBusinessId.value, id },
     query: {
-      [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value,
       type: 'detail',
       vendor: props.listenerRowData.vendor,
     },
@@ -324,7 +322,7 @@ const handleRsPreviewDialogHidden = () => {
               text
               :loading="active && loadBalancerListenerStore.batchDeleteDomainLoading"
               :disabled="noPerm || isDefault"
-              v-bk-tooltips="{ content: '默认域名不可删除', disabled: !isDefault }"
+              v-bk-tooltips="noPerm ? { disabled: true } : { content: '默认域名不可删除', disabled: !isDefault }"
             >
               <i class="hcm-icon bkhcm-icon-delete operation"></i>
             </bk-button>

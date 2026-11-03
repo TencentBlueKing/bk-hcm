@@ -45,6 +45,7 @@ const handleGoToPage = (row: ISecondaryAccountItem, column: ModelPropertyColumn,
   const { searchField, valueField } = column?.meta?.search?.props;
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type, filter: `${searchField}=${get(row, valueField)}` },
   });
 };

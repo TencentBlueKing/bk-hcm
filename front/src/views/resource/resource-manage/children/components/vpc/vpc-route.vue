@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import useQueryList from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
-import { useRoute } from 'vue-router';
+import { useResourceDetailRoute } from '../../../hooks/use-resource-detail-route';
 
-const route = useRoute();
+const { detailId } = useResourceDetailRoute();
 const { columns, settings } = useColumns('route');
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } = useQueryList(
@@ -14,7 +14,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
         {
           field: 'vpc_id',
           op: 'eq',
-          value: route.query.id,
+          value: detailId.value,
         },
       ],
     },

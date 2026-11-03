@@ -15,6 +15,8 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import http from '@/http';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 
 export default defineComponent({
   props: {
@@ -34,7 +36,7 @@ export default defineComponent({
   setup(props, { slots, expose }) {
     const { t } = useI18n();
     const resourceStore = useResourceStore();
-    const { isServicePage, whereAmI, getBusinessApiPath } = useWhereAmI();
+    const { isServicePage, whereAmI, getBusinessApiPath, getBizsId } = useWhereAmI();
     const isDialogShow = ref(false);
     const cache: any = { securityList: [], securityGroupRules: [] }; // 缓存：记录编辑前的状态
     const updateCache = () => {
@@ -244,13 +246,12 @@ export default defineComponent({
                   theme='primary'
                   text
                   onClick={() => {
-                    const url =
+                    routerAction.open(
                       whereAmI.value === Senarios.business
-                        ? '/#/business/security'
-                        : '/#/resource/resource?type=security';
-                    window.open(url, '_blank');
-                  }}
-                >
+                        ? { name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, params: { bizId: getBizsId() } }
+                        : { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'security' } },
+                    );
+                  }}>
                   {t('新建安全组')}
                 </Button>
               </div>
@@ -263,8 +264,7 @@ export default defineComponent({
           onClosed={() => hide(true)}
           onConfirm={handleConfirm}
           title={t('选择安全组')}
-          width={'60vw'}
-        >
+          width={'60vw'}>
           <div class={'security-container'}>
             <div class={'security-list g-scroller'}>
               <Input
@@ -288,8 +288,7 @@ export default defineComponent({
                               currentIndex.value !== index)
                           }
                           label={'data.cloud_id'}
-                          onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}
-                        >
+                          onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
                           <span class={'security-search-name'}>{item.name}</span>
                           {isOtherBusiness(item.usage_biz_ids) ? (
                             <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
@@ -316,14 +315,12 @@ export default defineComponent({
                   <BkButtonGroup>
                     <Button
                       selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.EGRESS}
-                      onClick={() => (selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS)}
-                    >
+                      onClick={() => (selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.EGRESS)}>
                       {t('出站规则')}
                     </Button>
                     <Button
                       selected={selectedSecurityType.value === SECURITY_GROUP_RULE_TYPE.INGRESS}
-                      onClick={() => (selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.INGRESS)}
-                    >
+                      onClick={() => (selectedSecurityType.value = SECURITY_GROUP_RULE_TYPE.INGRESS)}>
                       {t('入站规则')}
                     </Button>
                   </BkButtonGroup>
@@ -355,8 +352,7 @@ export default defineComponent({
                     v-model={securityGroupRules.value}
                     animation={200}
                     handle='.draggable-card-header-draggable-btn'
-                    class={'security-group-rules-list g-scroller'}
-                  >
+                    class={'security-group-rules-list g-scroller'}>
                     {computedSecurityGroupRules.value.length ? (
                       <TransitionGroup type='transition' name='fade'>
                         {computedSecurityGroupRules.value.map(({ name, data, usage_biz_ids }, idx) => (

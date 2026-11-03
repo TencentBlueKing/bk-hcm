@@ -402,7 +402,7 @@ export default defineComponent({
                               extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
                               批量{opData.label}
                             </BkDropdownItem>,
-                            [[bkTooltips, tooltips]],
+                            [[bkTooltips, noPerm ? { disabled: true } : tooltips]],
                           );
                         })}
                     </>

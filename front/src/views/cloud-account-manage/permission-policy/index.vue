@@ -177,10 +177,10 @@ const handleApplySuccess = (data: IApplyResultItem[] | string[], type: ApplyOper
     const ticketIds = data as string[];
     routerAction.redirect({
       name: ticketIds?.length > 1 ? MENU_BUSINESS_TICKET_MANAGEMENT : MENU_BUSINESS_TICKET_DETAILS,
+      params: { bizId: bizId.value },
       query: {
         id: ticketIds?.length > 1 ? undefined : ticketIds[0],
         type: 'account',
-        bizs: bizId.value,
       },
     });
     return;

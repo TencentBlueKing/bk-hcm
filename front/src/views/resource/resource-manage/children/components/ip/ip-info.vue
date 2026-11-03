@@ -1,44 +1,52 @@
 <script lang="ts" setup>
 import { defineProps, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
 import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../../common/info-list/types';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_RESOURCE_DETAIL,
+} from '@/constants/menu-symbol';
 
 const props = defineProps({
   detail: Object,
 });
 
+const BUSINESS_DETAIL_MAP: Record<string, symbol> = {
+  host: MENU_BUSINESS_HOST_DETAILS,
+  'network-interface': MENU_BUSINESS_NIF_DETAILS,
+};
+
 const route = useRoute();
-const router = useRouter();
+const { whereAmI } = useWhereAmI();
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
 const txtBtn = (id: string, type: string) => {
-  const routeInfo: any = {
-    query: {
-      id,
-      type: props.detail.vendor,
-    },
-  };
-  // 业务下
-  if (route.path.includes('business')) {
+  const routeInfo: any = {};
+  if (whereAmI.value === Senarios.business) {
     Object.assign(routeInfo, {
-      name: `${type}BusinessDetail`,
+      name: BUSINESS_DETAIL_MAP[type],
+      params: { bizId: route.params.bizId, id },
+      query: { vendor: props.detail.vendor },
     });
   } else {
     Object.assign(routeInfo, {
-      name: 'resourceDetail',
-      params: {
-        type,
-      },
+      name: MENU_RESOURCE_DETAIL,
+      params: { resourceType: type, id },
+      query: { accountId: route.query.accountId, vendor: props.detail.vendor },
     });
   }
-  router.push(routeInfo);
+  routerAction.redirect(routeInfo, { history: true });
 };
 
 const baseTabs = [
@@ -85,8 +93,8 @@ const baseInfo = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {

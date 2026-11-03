@@ -207,6 +207,148 @@ paths:
           userVerifiedRequired: true
         disabledStages: []
         descriptionEn:
+  /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/images/list:
+    post:
+      operationId: list_biz_image_ext
+      description: 获取业务可使用的镜像列表
+      tags:
+        - Cvm
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: number
+                    description: 状态码
+                  data:
+                    type: object
+                    properties:
+                      count:
+                        type: number
+                        description: 当前规则能匹配到的总记录条数，仅在count查询参数设置为true时返回
+                      details:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: 镜像 HCM ID
+                            name:
+                              type: string
+                              description: 镜像名称
+                            type:
+                              type: string
+                              description: 镜像类型（私有、公共或其他类型）
+                            state:
+                              type: string
+                              description: 镜像状态
+                            region:
+                              type: string
+                              description: 地域
+                            vendor:
+                              type: string
+                              description: 云厂商
+                            creator:
+                              type: string
+                              description: 创建者
+                            os_type:
+                              type: string
+                              description: 操作系统类型
+                            reviser:
+                              type: string
+                              description: 修改者
+                            cloud_id:
+                              type: string
+                              description: 镜像在云厂商上的ID
+                            platform:
+                              type: string
+                              description: 镜像平台
+                            created_at:
+                              type: string
+                              description: 创建时间
+                            updated_at:
+                              type: string
+                              description: 更新时间
+                            architecture:
+                              type: string
+                              description: 镜像架构
+                            bk_biz_id:
+                              type: number
+                              description: 归属业务ID
+                        description: 查询返回的数据
+                    description: 响应数据
+                  message:
+                    type: string
+                    description: 请求信息
+          description: ''
+      parameters:
+        - in: path
+          name: vendor
+          schema:
+            type: string
+          required: true
+          description: 云厂商（枚举值：tcloud、aws、gcp、huawei、azure）
+        - in: path
+          name: bk_biz_id
+          schema:
+            type: number
+          required: true
+          description: 业务ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - page
+              properties:
+                name:
+                  type: string
+                  description: 镜像名称关键字，模糊匹配
+                page:
+                  type: object
+                  required:
+                    - count
+                    - limit
+                  properties:
+                    sort:
+                      type: string
+                    count:
+                      type: boolean
+                    limit:
+                      type: number
+                    order:
+                      type: string
+                    start:
+                      type: number
+                type:
+                  type: string
+                  description: 归一化镜像类型。枚举值：public / private / shared
+                region:
+                  type: string
+                platform:
+                  type: string
+      x-bk-apigateway-resource:
+        isPublic: true
+        allowApplyPermission: true
+        matchSubpath: false
+        enableWebsocket: false
+        backend:
+          name: default
+          method: post
+          path: /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/images/list
+          matchSubpath: false
+          timeout: 0
+        pluginConfigs: [ ]
+        authConfig:
+          userVerifiedRequired: true
+          appVerifiedRequired: true
+          resourcePermissionRequired: true
+        descriptionEn:
   /api/v1/cloud/bizs/{bk_biz_id}/task_managements/list_by_cond:
     post:
       operationId: list_biz_task_management_by_cond

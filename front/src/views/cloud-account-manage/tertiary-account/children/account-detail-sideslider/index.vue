@@ -333,10 +333,9 @@ const formatTime = (time?: string) => {
                   class="create-secret-btn"
                   @click="handleCreateSecret"
                   :disabled="!isProgramAccount || noPerm || rowData?.operable === false"
-                  v-bk-tooltips="{
-                    content: '仅编程账号允许新建密钥',
-                    disabled: isProgramAccount,
-                  }"
+                  v-bk-tooltips="
+                    noPerm ? { disabled: true } : { content: '仅编程账号允许新建密钥', disabled: isProgramAccount }
+                  "
                 >
                   <i class="hcm-icon bkhcm-icon-plus-circle-shape"></i>
                   新建密钥

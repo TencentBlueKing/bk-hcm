@@ -1,13 +1,3 @@
-.subnet-title {
-  font-size: 16px;
-  color: #313238;
-}
-
-.create-form-container.subnet-wrap {
-  padding: 24px;
-  margin: 52px 0;
-}
-
 .cidr-selector-container {
   display: flex;
 
@@ -15,11 +5,5 @@
     width: 80px;
     margin-left: 4px;
     margin-right: 4px;
-  }
-}
-
-.button-group {
-  .button-submit {
-    margin-right: 8px;
   }
 }

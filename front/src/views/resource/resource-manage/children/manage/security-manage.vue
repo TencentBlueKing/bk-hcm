@@ -37,9 +37,17 @@ import {
 } from '@/utils/search';
 import http from '@/http';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
+import { VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { ModelProperty } from '@/model/typings';
+import routerAction from '@/router/utils/action';
+import {
+  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+  MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+  MENU_BUSINESS_GCP_DETAILS,
+  MENU_BUSINESS_TEMPLATE_DETAILS,
+  MENU_RESOURCE_DETAIL,
+} from '@/constants/menu-symbol';
 import {
   AUTH_BIZ_CREATE_IAAS_RESOURCE,
   AUTH_BIZ_DELETE_IAAS_RESOURCE,
@@ -390,15 +398,21 @@ const groupColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = { query: { ...route.query, id: data.id, vendor: data.vendor } };
-            // 业务下
-            if (route.path.includes('business')) {
-              routeInfo.query.bizs = accountStore.bizs;
-              Object.assign(routeInfo, { name: 'securityBusinessDetail' });
+            const routeInfo: any = {};
+            if (whereAmIRef.value === Senarios.business) {
+              Object.assign(routeInfo, {
+                name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+                params: { bizId: route.params.bizId, id: data.id },
+                query: { vendor: data.vendor },
+              });
             } else {
-              Object.assign(routeInfo, { name: 'resourceDetail', params: { type: 'security' } });
+              Object.assign(routeInfo, {
+                name: MENU_RESOURCE_DETAIL,
+                params: { resourceType: 'security', id: data.id },
+                query: { accountId: route.query.accountId, vendor: data.vendor },
+              });
             }
-            router.push(routeInfo);
+            routerAction.redirect(routeInfo, { history: true });
           },
         },
         [data.cloud_id || '--'],
@@ -666,7 +680,7 @@ const groupColumns = [
                       { text: true, theme: 'primary', disabled: noPerm || disabled, onClick: () => handleClick(type) },
                       name,
                     ),
-                    [[bkTooltips, tooltipsOption]],
+                    [[bkTooltips, noPerm ? { disabled: true } : tooltipsOption]],
                   ),
               },
             );
@@ -697,26 +711,20 @@ const gcpColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = {
-              query: {
-                ...route.query,
-                id: data.id,
-              },
-            };
-            // 业务下
-            if (route.path.includes('business')) {
+            const routeInfo: any = {};
+            if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
-                name: 'gcpBusinessDetail',
+                name: MENU_BUSINESS_GCP_DETAILS,
+                params: { bizId: route.params.bizId, id: data.id },
               });
             } else {
               Object.assign(routeInfo, {
-                name: 'resourceDetail',
-                params: {
-                  type: 'gcp',
-                },
+                name: MENU_RESOURCE_DETAIL,
+                params: { resourceType: 'gcp', id: data.id },
+                query: { accountId: route.query.accountId },
               });
             }
-            router.push(routeInfo);
+            routerAction.redirect(routeInfo, { history: true });
           },
         },
         [data.cloud_id || '--'],
@@ -908,25 +916,20 @@ const templateColumns = [
           text: true,
           theme: 'primary',
           onClick() {
-            const routeInfo: any = {
-              query: {
-                ...route.query,
-                id: data.cloud_id,
-              },
-            };
-            if (route.path.includes('business')) {
+            const routeInfo: any = {};
+            if (whereAmIRef.value === Senarios.business) {
               Object.assign(routeInfo, {
-                name: 'templateBusinessDetail',
+                name: MENU_BUSINESS_TEMPLATE_DETAILS,
+                params: { bizId: route.params.bizId, id: data.cloud_id },
               });
             } else {
               Object.assign(routeInfo, {
-                name: 'resourceDetail',
-                params: {
-                  type: 'template',
-                },
+                name: MENU_RESOURCE_DETAIL,
+                params: { resourceType: 'template', id: data.cloud_id },
+                query: { accountId: route.query.accountId },
               });
             }
-            router.push(routeInfo);
+            routerAction.redirect(routeInfo, { history: true });
           },
         },
         [data.cloud_id],
@@ -1092,12 +1095,19 @@ watch(
     // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
     const isResourcePage = whereAmIRef.value === Senarios.resource;
     const isBusinessPage = whereAmIRef.value === Senarios.business;
-    const path = isResourcePage ? '/resource/resource' : '/business/security';
     const bizId = isBusinessPage ? getBizsId() : undefined;
     const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
 
-    // 更新路由
-    router.replace({ path, query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v, accountId } });
+    // 更新路由：资源纳管的资源类型在地址 params 里，只改 query 留在当前列表
+    if (isResourcePage) {
+      router.replace({ query: { scene: v, accountId } });
+    } else {
+      router.replace({
+        name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+        params: { bizId },
+        query: { type: 'security', scene: v },
+      });
+    }
   },
   {
     immediate: true,
@@ -1128,16 +1138,22 @@ const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem
 };
 const handleChangeEffectConfirm = () => {
   isChangeEffectConfirmDialogShow.value = false;
-  const routeInfo: any = {
-    query: { activeTab: 'rule', id: currentSecurityGroup.value.id, vendor: currentSecurityGroup.value.vendor },
-  };
-  // 业务下
-  if (route.path.includes('business')) {
-    Object.assign(routeInfo, { name: 'securityBusinessDetail' });
+  const { id, vendor } = currentSecurityGroup.value;
+  const routeInfo: any = {};
+  if (whereAmIRef.value === Senarios.business) {
+    Object.assign(routeInfo, {
+      name: MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+      params: { bizId: route.params.bizId, id },
+      query: { vendor, activeTab: 'rule' },
+    });
   } else {
-    Object.assign(routeInfo, { name: 'resourceDetail', params: { type: 'security' } });
+    Object.assign(routeInfo, {
+      name: MENU_RESOURCE_DETAIL,
+      params: { resourceType: 'security', id },
+      query: { accountId: route.query.accountId, vendor, activeTab: 'rule' },
+    });
   }
-  router.push(routeInfo);
+  routerAction.redirect(routeInfo, { history: true });
 };
 
 const securityHandleShowClone = (data: IData) => {

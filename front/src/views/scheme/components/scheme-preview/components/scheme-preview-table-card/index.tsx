@@ -74,7 +74,7 @@ export default defineComponent({
         render: ({ cell, data }: any) => {
           return data.service_area_arr?.length ? (
             <p class={'flex-row align-items-center service-areas-paragraph'}>
-              <PopConfirm trigger='click' width={454}>
+              <PopConfirm trigger='click' width={454} extCls='scheme-service-areas-popconfirm'>
                 {{
                   content: () => (
                     <div class={'service-areas-table-container'}>

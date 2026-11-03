@@ -53,6 +53,7 @@ const getSubAccountLoadFn = (row: IPermissionTemplateItem) => async (): Promise<
 const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: bizId.value },
     query: { type: 'tertiary-account', id: item.id as string },
   });
 };
@@ -120,7 +121,11 @@ const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
               text
               :disabled="noPerm || !getTypeData(row).isCloudCustom"
               @click="emit('edit', row)"
-              v-bk-tooltips="{ content: '仅云自定义模板可编辑', disabled: getTypeData(row).isCloudCustom }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : { content: '仅云自定义模板可编辑', disabled: getTypeData(row).isCloudCustom }
+              "
             >
               编辑
             </bk-button>
@@ -131,10 +136,14 @@ const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
               text
               :disabled="noPerm || getTypeData(row).isCloudPreset || row.associated_sub_account_count > 0"
               @click="emit('delete', row)"
-              v-bk-tooltips="{
-                content: getTypeData(row).isCloudPreset ? '云系统预设不可删除' : '有三级账号关联不可删除',
-                disabled: !(getTypeData(row).isCloudPreset || row.associated_sub_account_count > 0),
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : {
+                      content: getTypeData(row).isCloudPreset ? '云系统预设不可删除' : '有三级账号关联不可删除',
+                      disabled: !(getTypeData(row).isCloudPreset || row.associated_sub_account_count > 0),
+                    }
+              "
             >
               删除
             </bk-button>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, provide, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import VendorSelector from './components/vendor-selector.vue';
 
 // Tab面板配置
@@ -33,7 +33,7 @@ const currentComponent = computed(() => tabComponents[tabActive.value as string]
 
 // 用户点击 tab 时，更新 URL query.type（@change 仅在用户点击时触发，不会在代码修改 active 时触发）
 const handleTabChange = (name: string) => {
-  router.replace({ query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY], type: name } });
+  router.replace({ query: { type: name } });
 };
 
 // 云厂商切换

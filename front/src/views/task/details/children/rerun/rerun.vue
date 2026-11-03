@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, toRaw, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import get from 'lodash/get';
 import {
   type ITaskDetailItem,
@@ -12,7 +13,6 @@ import { getModel } from '@/model/manager';
 import { RerunView } from '@/model/task/rerun.view';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import routerAction from '@/router/utils/action';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { Ediatable, HeadColumn, FixedColumn } from '@blueking/ediatable';
 import { MENU_BUSINESS_TASK_MANAGEMENT_DETAILS } from '@/constants/menu-symbol';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
@@ -28,7 +28,7 @@ const fields = ['vendors', 'region_id', 'operations'].map((id) => properties.fin
 const { getRerunColumns } = columnFactory(props.info.vendor as any);
 const columns = getRerunColumns(props.resource, props.info.operations);
 
-const { getBizsId } = useWhereAmI();
+const route = useRoute();
 const taskStore = useTaskStore();
 
 const list = ref<ITaskDetailItem[]>([]);
@@ -156,8 +156,7 @@ const handleSubmit = async () => {
   routerAction.redirect(
     {
       name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
-      params: { id: result.task_management_id },
-      query: { bizs: getBizsId() },
+      params: { bizId: route.params.bizId, id: result.task_management_id },
     },
     { reload: true },
   );
@@ -272,6 +271,10 @@ const handleCancel = () => {
 <style lang="scss" scoped>
 .info-content {
   margin-top: 12px;
+
+  :deep(.item-content) {
+    overflow-wrap: anywhere;
+  }
 }
 
 .params-content {
@@ -305,6 +308,7 @@ const handleCancel = () => {
   }
 
   &.has-error {
+    // stylelint-disable-next-line selector-class-pattern
     &.param\.validate_result {
       color: #ea3636;
     }

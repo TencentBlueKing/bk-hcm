@@ -7,7 +7,7 @@
 
 ## 职责
 
-异步任务列表与详情（cvm / clb 等）。CLB 同步任务类型枚举 `sync_load_balancer`，列表展示「同步」（`src/views/task/constants.ts`）。
+异步任务列表与详情。当前 `index.vue` 与 `details/index.vue` 的动态组件映射只接入 CLB，路由 `resourceType` 参数不代表 cvm 等其它资源已有页面实现。CLB 同步任务类型枚举 `sync_load_balancer`，列表展示「同步」（`src/views/task/constants.ts`）。
 
 ## 关键流程 / 注意事项
 

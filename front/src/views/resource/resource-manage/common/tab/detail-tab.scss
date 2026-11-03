@@ -1,6 +1,4 @@
 .detail-tab-main {
-  height: 100%;
-
   &:nth-of-type(n + 2) {
     margin-top: 16px;
   }
@@ -18,8 +16,10 @@
     
     .bk-tab-panel {
       padding: 16px 24px 20px;
+
       .bk-nested-loading {
           height: 100%;
+
           .bk-table {
             max-height: calc(100% - 48px);
           }

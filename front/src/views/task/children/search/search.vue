@@ -59,20 +59,21 @@ watch(
 
 <template>
   <div class="task-search">
-    <grid-container layout="vertical" :column="4" :gap="[16, 60]">
-      <grid-item-form-element v-for="field in fields" :key="field.id" :label="field.name">
+    <GridContainer class="task-search-grid" layout="vertical" :column="4" :gap="[16, 24]">
+      <GridItemFormElement v-for="field in fields" :key="field.id" :label="field.name">
         <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="formValues[field.id]" />
-      </grid-item-form-element>
-      <grid-item :span="4" class="row-action">
+      </GridItemFormElement>
+      <GridItem :span="4" class="row-action">
         <bk-button theme="primary" @click="handleSearch">查询</bk-button>
         <bk-button @click="handleReset">重置</bk-button>
-      </grid-item>
-    </grid-container>
+      </GridItem>
+    </GridContainer>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .task-search {
+  container-type: inline-size;
   background: #fff;
   box-shadow: 0 2px 4px 0 #1919290d;
   border-radius: 2px;
@@ -91,6 +92,12 @@ watch(
     .bk-button {
       min-width: 86px;
     }
+  }
+}
+
+@container (max-width: 1300px) {
+  .task-search .task-search-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 </style>

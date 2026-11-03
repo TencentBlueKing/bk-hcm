@@ -24,7 +24,7 @@ export default defineComponent({
   },
   emits: ['expand', 'collapse'],
   setup(props, { emit }) {
-    const { getBusinessApiPath } = useWhereAmI();
+    const { getBusinessApiPath, getBizsId } = useWhereAmI();
     const isExpand = ref(false);
     const tableData = ref([]);
 
@@ -66,6 +66,7 @@ export default defineComponent({
       e.stopPropagation();
       routerAction.open({
         name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+        params: { bizId: getBizsId() },
         query: {
           filter: QueryString.stringify(
             { cloud_id: props.cloudId },

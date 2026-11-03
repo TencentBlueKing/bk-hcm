@@ -43,6 +43,7 @@ var ImageColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "os_type", NamedC: "os_type", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -62,6 +63,7 @@ type ImageModel struct {
 	Type         string          `db:"type" json:"type"`
 	Extension    types.JsonField `db:"extension" json:"extension"`
 	OsType       enumor.OsType   `db:"os_type" json:"os_type"`
+	BkBizID      *int64          `db:"bk_biz_id" json:"bk_biz_id"`
 	Creator      string          `db:"creator" json:"creator"`
 	Reviser      string          `db:"reviser" json:"reviser"`
 	CreatedAt    types.Time      `db:"created_at" json:"created_at"`

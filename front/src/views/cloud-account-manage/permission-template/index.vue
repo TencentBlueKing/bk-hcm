@@ -310,10 +310,11 @@ const handleDeleteConfirm = async () => {
               theme="primary"
               :disabled="noPerm || !getTypeData(detailsState.data).isCloudCustom"
               @click="handleEdit(detailsState.data)"
-              v-bk-tooltips="{
-                content: '仅云自定义模板可编辑',
-                disabled: getTypeData(detailsState.data).isCloudCustom,
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : { content: '仅云自定义模板可编辑', disabled: getTypeData(detailsState.data).isCloudCustom }
+              "
             >
               编辑
             </bk-button>
@@ -327,12 +328,19 @@ const handleDeleteConfirm = async () => {
                 detailsState.data.associated_sub_account_count > 0
               "
               @click="handleDelete(detailsState.data)"
-              v-bk-tooltips="{
-                content: getTypeData(detailsState.data).isCloudPreset ? '云系统预设不可删除' : '有三级账号关联不可删除',
-                disabled: !(
-                  getTypeData(detailsState.data).isCloudPreset || detailsState.data.associated_sub_account_count > 0
-                ),
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : {
+                      content: getTypeData(detailsState.data).isCloudPreset
+                        ? '云系统预设不可删除'
+                        : '有三级账号关联不可删除',
+                      disabled: !(
+                        getTypeData(detailsState.data).isCloudPreset ||
+                        detailsState.data.associated_sub_account_count > 0
+                      ),
+                    }
+              "
             >
               删除
             </bk-button>
