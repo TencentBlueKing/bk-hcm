@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/client/discovery"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/client/healthz"
+	iacserver "hcm/pkg/client/iac-server"
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/rest/client"
 	rdisc "hcm/pkg/rest/discovery"
@@ -135,6 +136,15 @@ func (cs *ClientSet) AccountServer() *accountserver.Client {
 		Discover: cs.discovery(cc.AccountServerName),
 	}
 	return accountserver.NewClient(c, cs.version)
+}
+
+// IacServer get iac-server client.
+func (cs *ClientSet) IacServer() *iacserver.Client {
+	c := &client.Capability{
+		Client:   cs.client,
+		Discover: cs.discovery(cc.IacServerName),
+	}
+	return iacserver.NewClient(c, cs.version)
 }
 
 // Healthz get service health check client.

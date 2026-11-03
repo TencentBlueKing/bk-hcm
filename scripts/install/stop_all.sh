@@ -5,3 +5,4 @@ cd ../api-server && sh api-server.sh stop
 cd ../auth-server && sh auth-server.sh stop
 cd ../cloud-server && sh cloud-server.sh stop
 cd ../account-server && sh account-server.sh stop
+cd ../iac-server && sh iac-server.sh stop
