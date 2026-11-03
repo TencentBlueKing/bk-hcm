@@ -108,6 +108,59 @@ func newTestTCloudClb(backupZones ...*tclb.ZoneInfo) typeslb.TCloudClb {
 	}}
 }
 
+func TestGetTCloudZones(t *testing.T) {
+	cases := []struct {
+		name  string
+		cloud typeslb.TCloudClb
+		want  []string
+	}{
+		{
+			name:  "open clb returns master zone",
+			cloud: newTestTCloudClb(),
+			want:  []string{"ap-guangzhou-3"},
+		},
+		{
+			name: "open clb master zone is nil",
+			cloud: typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+				LoadBalancerType: cvt.ValToPtr(string(typeslb.OpenLoadBalancerType)),
+			}},
+			want: nil,
+		},
+		{
+			name: "open clb master zone string is empty",
+			cloud: typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+				LoadBalancerType: cvt.ValToPtr(string(typeslb.OpenLoadBalancerType)),
+				MasterZone:       &tclb.ZoneInfo{Zone: cvt.ValToPtr("")},
+			}},
+			want: nil,
+		},
+		{
+			name: "internal clb filters nil and empty zones and keeps order",
+			cloud: typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+				LoadBalancerType: cvt.ValToPtr(string(typeslb.InternalLoadBalancerType)),
+				Zones: []*string{
+					cvt.ValToPtr("ap-guangzhou-3"), nil, cvt.ValToPtr(""), cvt.ValToPtr("ap-guangzhou-4"),
+				},
+			}},
+			want: []string{"ap-guangzhou-3", "ap-guangzhou-4"},
+		},
+		{
+			name: "internal clb returns nil when all zones empty",
+			cloud: typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+				LoadBalancerType: cvt.ValToPtr(string(typeslb.InternalLoadBalancerType)),
+				Zones:            []*string{nil, cvt.ValToPtr("")},
+			}},
+			want: nil,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, getTCloudZones(c.cloud))
+		})
+	}
+}
+
 func TestGetTCloudBackupZones(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -242,10 +295,46 @@ func TestConvCloudToDBBackupZones(t *testing.T) {
 
 	updated := convCloudToDBUpdate("id-1", cloud, nil, nil, "ap-guangzhou")
 	assert.Equal(t, want, updated.BackupZones)
+	assert.Equal(t, []string{"ap-guangzhou-3"}, updated.Zones)
 
 	// 云上未返回备可用区时更新项为空，data-service 不覆盖本地已有值
 	updated = convCloudToDBUpdate("id-1", newTestTCloudClb(), nil, nil, "ap-guangzhou")
 	assert.Nil(t, updated.BackupZones)
+
+	// 云上未返回可用区时更新项为空，data-service 不覆盖本地已有值
+	emptyZoneCloud := newTestTCloudClb()
+	emptyZoneCloud.MasterZone = nil
+	createdEmpty := convCloudToDBCreate(emptyZoneCloud, "account", "ap-guangzhou", nil, nil)
+	assert.Nil(t, createdEmpty.Zones)
+	updatedEmpty := convCloudToDBUpdate("id-1", emptyZoneCloud, nil, nil, "ap-guangzhou")
+	assert.Nil(t, updatedEmpty.Zones)
+}
+
+func TestIsLBChangeZones(t *testing.T) {
+	cloud := newTestTCloudClb()
+	db := corelb.TCloudLoadBalancer{
+		BaseLoadBalancer: corelb.BaseLoadBalancer{
+			IPVersion: cloud.GetIPVersion(),
+			Status:    "0",
+		},
+		Extension: &corelb.TCloudClbExtension{
+			ClusterTag:    cvt.ValToPtr(""),
+			DeleteProtect: cvt.ValToPtr(false),
+		},
+	}
+
+	assert.True(t, isLBChange(cloud, db), "missing local zones should trigger update")
+
+	db.Zones = []string{"ap-guangzhou-1"}
+	assert.True(t, isLBChange(cloud, db), "different zones should trigger update")
+
+	db.Zones = []string{"ap-guangzhou-3"}
+	assert.False(t, isLBChange(cloud, db), "same zones should not trigger update")
+
+	// 云上未返回可用区时不因本地已有值判为变化
+	emptyZoneCloud := newTestTCloudClb()
+	emptyZoneCloud.MasterZone = nil
+	assert.False(t, isLBChange(emptyZoneCloud, db), "cloud null zones should not trigger update")
 }
 
 func TestIsLBChangeBackupZones(t *testing.T) {
