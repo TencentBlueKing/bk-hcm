@@ -30,9 +30,6 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// IaCPluginMessageMaxLen 是 iac_plugin.message 的列宽，对应建表的 varchar(255)。
-const IaCPluginMessageMaxLen = 255
-
 // IaCPluginCreateReq IaC 插件注册记录创建请求。
 type IaCPluginCreateReq struct {
 	PluginName    string                   `json:"plugin_name" validate:"required,max=64"`
