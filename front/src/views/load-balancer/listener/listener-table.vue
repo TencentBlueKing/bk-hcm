@@ -394,10 +394,11 @@ const handleUpdateListenerSuccess = async (id: string) => {
                 theme="primary"
                 text
                 :disabled="noPerm || row.non_zero_weight_count !== 0"
-                v-bk-tooltips="{
-                  content: t('监听器RS的权重不为0，不可删除'),
-                  disabled: row.non_zero_weight_count === 0,
-                }"
+                v-bk-tooltips="
+                  noPerm
+                    ? { disabled: true }
+                    : { content: t('监听器RS的权重不为0，不可删除'), disabled: row.non_zero_weight_count === 0 }
+                "
                 @click="handleSingleDelete(row)"
               >
                 {{ t('删除') }}

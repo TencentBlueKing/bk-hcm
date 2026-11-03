@@ -1,7 +1,6 @@
 /**
  * 统一管理负载均衡需求下的 utils 函数
  */
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { MENU_BUSINESS_OPERATION_LOG, MENU_BUSINESS_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
 import routerAction from '@/router/utils/action';
 import { Message } from 'bkui-vue';
@@ -65,7 +64,7 @@ const goAsyncTaskDetail = async (
 ) => {
   if (!flowId) {
     // 如果没有提供异步任务id，则新开页面查看操作记录列表
-    routerAction.open({ name: MENU_BUSINESS_OPERATION_LOG, query: { [GLOBAL_BIZS_KEY]: bkBizId } });
+    routerAction.open({ name: MENU_BUSINESS_OPERATION_LOG, params: { bizId: bkBizId } });
     return;
   }
   // 1. 点击后, 先查询到 audit_id
@@ -86,11 +85,11 @@ const goAsyncTaskDetail = async (
     // 2. 新开页面查看异步任务详情
     routerAction.open({
       name: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+      params: { bizId: businessId },
       query: {
         record_id: id,
         name,
         res_id: resId,
-        bizs: businessId,
         flow: flowId,
       },
     });

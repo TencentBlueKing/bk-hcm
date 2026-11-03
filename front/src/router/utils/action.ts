@@ -31,9 +31,10 @@ export default {
 
       HistoryStorage.append(data);
     } else if (back) {
-      // 后退操作会注入back，此时从历史记录中删除当前记录
+      // 后退的目标就是栈顶记录（当前页本身从未入栈），出栈后目标页的栈顶才是它自己的来源页。
+      // 不能按当前页 name 删除：会删掉不该删的同名记录（如 主机→硬盘→主机），并让栈顶残留目标页自身，导致目标页的返回原地跳转无反应
       try {
-        HistoryStorage.remove(currentRoute.value.name);
+        HistoryStorage.removeLast();
       } catch (err) {
         console.error(err);
       }

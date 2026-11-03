@@ -9,8 +9,6 @@ import { useSchemeStore } from '@/store';
 import SchemeRecommendDetail from '../components/scheme-recommend-detail';
 import { onBeforeRouteLeave } from 'vue-router';
 import { InfoBox } from 'bkui-vue';
-import { useVerify } from '@/hooks';
-import ErrorPage from '@/views/error-pages/403';
 
 export default defineComponent({
   name: 'SchemeRecommendationPage',
@@ -48,9 +46,6 @@ export default defineComponent({
       formData.user_distribution = [];
       schemeStore.setUserDistribution([]);
     };
-
-    const { authVerifyData } = useVerify();
-    if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     const handleChangeCountry = async () => {
       clearLastData();
@@ -105,8 +100,7 @@ export default defineComponent({
             filterable
             input-search={false}
             onBlur={handleChangeCountry}
-            onClear={clearLastData}
-          >
+            onClear={clearLastData}>
             {countriesList.value.map((country, index) => (
               <bk-option key={index} value={country} label={country} />
             ))}
@@ -141,8 +135,7 @@ export default defineComponent({
                 type='number'
                 v-model_number={formData.cover_ping}
                 min={1}
-                suffix='ms'
-              ></bk-input>
+                suffix='ms'></bk-input>
             ),
           },
           /* {
@@ -167,8 +160,7 @@ export default defineComponent({
               class={`user-proportion-detail-btn-wrap${formData.user_distribution.length ? '' : ' disabled'}`}
               onClick={() => {
                 formData.user_distribution.length && (isUserProportionDetailDialogShow.value = true);
-              }}
-            >
+              }}>
               <i class='hcm-icon bkhcm-icon-file'></i>
               <span class={'btn-text'}>占比详情</span>
             </div>
@@ -289,8 +281,7 @@ export default defineComponent({
             style={{
               display: scene.value !== 'detail' ? 'block' : 'none',
             }}
-            class={`business-attributes-container${toggleClose.value ? ' close' : ''}`}
-          >
+            class={`business-attributes-container${toggleClose.value ? ' close' : ''}`}>
             <div class='title-wrap'>
               <div class='title-text'>业务属性</div>
               {<i class='hcm-icon bkhcm-icon-shouqi' onClick={() => (toggleClose.value = !toggleClose.value)}></i>}
@@ -303,8 +294,7 @@ export default defineComponent({
                       <i
                         v-bk-tooltips={{ content: tips, placement: 'right' }}
                         class='hcm-icon bkhcm-icon-prompt'
-                        style={{ left }}
-                      ></i>
+                        style={{ left }}></i>
                     )}
                     {Array.isArray(content) ? (
                       <div class='sub-form-item-wrap'>

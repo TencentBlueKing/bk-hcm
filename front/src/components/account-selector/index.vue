@@ -82,7 +82,7 @@ const getAccoutList = async (bizs?: number) => {
   }
   // 负载均衡、目标组、证书托管、参数模板这四个暂时只腾讯云支持
   if (
-    (isResourcePage && route.query.type === 'certs') ||
+    (isResourcePage && (route.query.type === 'certs' || route.params.resourceType === 'certs')) ||
     route.query.scene === 'template' ||
     (route.meta.isFilterAccount as boolean)
   ) {

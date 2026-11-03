@@ -1,7 +1,7 @@
 import { ComputedRef, PropType, computed, defineComponent, inject } from 'vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessStore } from '@/store';
-import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
+import { useCalcTopWithNotice } from '@/hooks/use-calc-top-with-notice';
 import { QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
@@ -59,7 +59,7 @@ export default defineComponent({
             value: (
               <Link
                 theme='primary'
-                href={`/#/resource/detail/vpc?type=tcloud&id=${props.detail.vpc_id}`}
+                href={`/#/resource/manage/vpc/details/${props.detail.vpc_id}?vendor=${props.detail.vendor}`}
                 target='_blank'>
                 <div class='flex-row align-items-center'>
                   {props.detail.cloud_vpc_id}

@@ -36,6 +36,7 @@ defineProps<IGridItemProps>();
 /* stylelint-disable */
 .grid-item {
   display: grid;
+  min-width: 0;
   grid-column: var(--span) span;
 
   // 使用 1/-1 替代 span N，确保无论实际列数如何都能跨满整行
@@ -63,7 +64,13 @@ defineProps<IGridItemProps>();
 
   .item-content {
     position: relative;
+    min-width: 0;
     color: #313238;
+
+    :deep(> *) {
+      min-width: 0;
+      max-width: 100%;
+    }
 
     :deep(.form-element) {
       position: absolute;
@@ -81,6 +88,8 @@ defineProps<IGridItemProps>();
       .bk-date-picker,
       .bk-tag-input {
         flex: 1;
+        min-width: 0;
+        max-width: 100%;
       }
 
       .action-button {

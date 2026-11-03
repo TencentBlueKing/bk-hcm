@@ -1,0 +1,108 @@
+{
+  "id": "feat-menu-phase2-recyclebin-oplog",
+  "title": "菜单整合二期：回收管理与操作记录独立菜单",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T11:31:15.650Z",
+  "updatedAt": "2026-10-10T10:06:03.958Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-recyclebin-oplog/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T11:51:44.634Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-recyclebin-oplog/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-10T09:56:08.701Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-10T09:55:13.508Z"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T11:31:15.650Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-10T09:55:13.508Z"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702618",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T11:32:24.517Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6 轮结论修订并回写；本地文档 docs/reqs/二期回收与操作记录.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/constants/menu-symbol.ts",
+        "views/recyclebin/route-config.ts",
+        "router/module/business.ts",
+        "views/resource/recyclebin-manager/recyclebin-manager.vue",
+        "views/operation-log/route-config.ts",
+        "views/index.ts",
+        "router/index.ts",
+        "router/module/resource.ts",
+        "common/menu-service.ts",
+        "main-content.vue",
+        "constants/auth-symbols.ts",
+        "constants/view-auth.ts",
+        "views/recyclebin/index.vue",
+        "children/detail/drive-detail.vue",
+        "useResourceAccount.tsx",
+        "menu-symbol.ts",
+        "drive-detail.vue",
+        "src/views/recyclebin/route-config.ts",
+        "src/views/operation-log/route-config.ts",
+        "src/router/module/resource.ts",
+        "resource.ts",
+        "hooks/use-search-qs.ts",
+        "entry-rsc.vue",
+        "entry-biz.vue",
+        "src/views/recyclebin/index.vue",
+        "account/vendor-group/index.vue",
+        "index-new.vue",
+        "src/constants/view-auth.ts",
+        "recyclebin/index.vue",
+        "search.vue",
+        "recyclebin-manager.vue",
+        "route-config.ts",
+        "condition*.ts",
+        "constants.ts",
+        "business-manage.vue",
+        "store/common.ts"
+      ],
+      "contentFingerprint": "d1f86054239777592ae80be8c58f32ddce2ab164",
+      "codeBaseline": "3dbcb754fdcee11b2c33a262d2270c3146294d5c",
+      "seatedAt": "2026-10-10T10:06:03.958Z"
+    }
+  }
+}

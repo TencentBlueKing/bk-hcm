@@ -7,7 +7,13 @@
 
 ## 职责
 
-（待补充：本模块的核心职责、边界、关键文件与对外接口。）
+工作台 `/service/` 下的个人事务入口。购买 VPC 在服务申请里。
+
+## VPC 购买提单
+
+入口 `src/views/service/service-apply/vpc/index.tsx`：VPC 网段写入 `formData.ipv4_cidr`，初始子网网段写入 `formData.subnet.ipv4_cidr`。修改 VPC 网段时，子网网段会被重置成同一个值，之后用户仍可把子网改得更细。
+
+提交在 `src/views/service/service-apply/hooks/use-vpc-form-data.ts` 的 `getSaveData`。VPC 网段提交 `formData.ipv4_cidr`。腾讯云、华为云、Azure、GCP 的初始子网网段提交 `subnet.ipv4_cidr`。华为云网关地址取子网网段前三段再加 `.1`。AWS 这条提交不带初始子网。后端两个字段都是 CIDR 字符串，并要求子网落在 VPC 网段内。
 
 ## 关键流程 / 注意事项
 

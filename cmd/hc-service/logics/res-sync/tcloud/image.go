@@ -105,6 +105,7 @@ func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 			ID:     id,
 			State:  one.State,
 			OsType: one.OsType,
+			Type:   one.Type,
 		}
 		items = append(items, image)
 	}

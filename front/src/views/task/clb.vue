@@ -111,8 +111,7 @@ const handleViewDetails = (id: string) => {
   routerAction.redirect(
     {
       name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
-      params: { resourceType: ResourceTypeEnum.CLB, id },
-      query: { bizs: getBizsId() },
+      params: { bizId: getBizsId(), resourceType: ResourceTypeEnum.CLB, id },
     },
     {
       history: true,

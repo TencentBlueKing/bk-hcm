@@ -11,7 +11,7 @@ import isEqual from 'lodash/isEqual';
 import {
   ValidateStatus,
   useSecretExtension,
-} from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+} from '@/views/resource-manage/account/account-import/components/account-form/use-secret-extension';
 import { SecretModel } from '@/typings/account';
 import useFormModel from '@/hooks/useFormModel';
 

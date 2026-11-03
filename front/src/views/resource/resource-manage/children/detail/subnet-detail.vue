@@ -1,28 +1,28 @@
 <script lang="ts" setup>
 import { CloudType } from '@/typings/account';
 
-import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
 import SubnetRoute from '../../children/components/subnet/subnet-route.vue';
-import bus from '@/common/bus';
+import { useResourceDetailAuth, useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 
-import { ref, inject, computed, onBeforeMount } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, inject, computed, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import router from '@/router';
+import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
+const { setTitle } = useBreadcrumb();
 
 const hostTabs = ref<any[]>([
   {
@@ -51,8 +51,8 @@ const settingFields = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {
@@ -98,29 +98,24 @@ const settingFields = ref<FieldList>([
 
 const { t } = useI18n();
 
-const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
-
 const resourceStore = useResourceStore();
-const route = useRoute();
+const { detailId } = useResourceDetailRoute();
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
 
 const isBindBusiness = computed(() => {
   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
 });
 
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
-
 const { getRegionName } = useRegionsStore();
 
-const { loading, detail } = useDetail('subnets', route.query.id as string, (detail: any) => {
+const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) => {
+  if (detail.vendor !== 'gcp') {
+    resourceStore.countSubnetIps(detailId.value).then((res: any) => {
+      detail.ipv4_nums = res?.data?.available_ip_count || 0;
+    });
+  }
   switch (detail.vendor) {
     case 'tcloud':
       settingFields.value.push(
@@ -281,6 +276,12 @@ const { loading, detail } = useDetail('subnets', route.query.id as string, (deta
   }
 });
 
+watchEffect(() => {
+  if (detail.value?.id) {
+    setTitle(`子网：ID（${detail.value.id}）`);
+  }
+});
+
 const handleDeleteSubnet = (data: any) => {
   const subnetIds = [data.id];
   const getRelateNum = (type: string, field = 'subnet_id', op = 'in') => {
@@ -346,60 +347,43 @@ const handleDeleteSubnet = (data: any) => {
     },
   );
 };
-
-onBeforeMount(() => {
-  if (route.query.type === 'gcp') return;
-  resourceStore.countSubnetIps(route.query.id as string).then((res: any) => {
-    detail.value.ipv4_nums = res?.data?.available_ip_count || 0;
-  });
-});
 </script>
 
 <template>
-  <bk-loading :loading="loading">
-    <detail-header>
-      子网：ID（{{ detail.id }}）
-      <template #right>
-        <div
-          v-if="isResourcePage"
-          v-bk-tooltips="{
-            content: '该子网已分配到业务，仅可在业务下操作',
-            disabled: !isBindBusiness || !authVerifyData?.permissionAction[actionName],
-          }"
-          @click="showAuthDialog(actionName)"
-        >
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-            @click="handleDeleteSubnet(detail)"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-        <div
-          v-else
-          @click="showAuthDialog(actionName)"
-          v-bk-tooltips="{
-            content: '该子网正在使用中，不能删除',
-            disabled: !authVerifyData?.permissionAction[actionName],
-          }"
-        >
-          <bk-button
-            class="w100 ml10"
-            theme="primary"
-            :disabled="authVerifyData?.permissionAction[actionName]"
-            @click="handleDeleteSubnet(detail)"
-          >
-            {{ t('删除') }}
-          </bk-button>
-        </div>
-      </template>
-    </detail-header>
+  <Teleport defer to="#breadcrumbExtra">
+    <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+      <bk-button
+        v-if="isResourcePage"
+        v-bk-tooltips="{
+          content: '该子网已分配到业务，仅可在业务下操作',
+          disabled: !isBindBusiness || noPerm,
+        }"
+        theme="primary"
+        :disabled="isBindBusiness || noPerm || authPending"
+        @click="handleDeleteSubnet(detail)"
+      >
+        {{ t('删除') }}
+      </bk-button>
+      <!-- 业务下沿用原判定：有权限时置灰（PR 同） -->
+      <bk-button
+        v-else
+        v-bk-tooltips="{
+          content: '该子网正在使用中，不能删除',
+          disabled: noPerm,
+        }"
+        theme="primary"
+        :disabled="!noPerm"
+        @click="handleDeleteSubnet(detail)"
+      >
+        {{ t('删除') }}
+      </bk-button>
+    </hcm-auth>
+  </Teleport>
 
-    <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
-      <detail-tab :tabs="hostTabs">
-        <template #default="type">
+  <div class="detail-content-wrap">
+    <detail-tab :tabs="hostTabs">
+      <template #default="type">
+        <bk-loading :loading="loading">
           <detail-info
             v-if="type === 'detail'"
             :fields="settingFields"
@@ -408,21 +392,24 @@ onBeforeMount(() => {
             global-copyable
           />
           <subnet-route v-if="type === 'network'" :detail="detail" />
-        </template>
-      </detail-tab>
-    </div>
-  </bk-loading>
+        </bk-loading>
+      </template>
+    </detail-tab>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 :deep(.detail-info-main) {
   max-height: 100%;
+
   .info-list-item .item-field {
     width: 150px !important;
   }

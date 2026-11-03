@@ -10,27 +10,17 @@ import RoutingDetail from './children/detail/routing-detail.vue';
 import ImageDetail from './children/detail/image-detail.vue';
 import NetworkInterfaceDetail from './children/detail/network-interface-detail.vue';
 import TemplateDetail from './children/detail/template-detail';
-import { useVerify } from '@/hooks';
-import bus from '@/common/bus';
 
 import { provide, computed } from 'vue';
 
 import { useRoute } from 'vue-router';
 
 import { useAccountStore } from '@/store';
+import routerAction from '@/router/utils/action';
+import { MENU_RESOURCE_MANAGE } from '@/constants/menu-symbol';
 
 const route = useRoute();
 const accountStore = useAccountStore();
-
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 
 const componentMap = {
   host: HostDetail,
@@ -38,16 +28,24 @@ const componentMap = {
   subnet: SubnetDetail,
   security: SecurityDetail,
   drive: DriveDetail,
-  eips: IpDetail,
-  route: RoutingDetail,
+  eip: IpDetail,
+  routing: RoutingDetail,
   gcp: GcpDetail,
   image: ImageDetail,
   'network-interface': NetworkInterfaceDetail,
   template: TemplateDetail,
 };
 
+// 旧地址的类型名
+const resourceTypeToComponentKey: Record<string, string> = {
+  ip: 'eip',
+  eips: 'eip',
+  route: 'routing',
+};
+const resourceType = computed(() => route.params.resourceType as string);
 const renderComponent = computed(() => {
-  return componentMap[route.params.type as string];
+  const componentKey = resourceTypeToComponentKey[resourceType.value] || resourceType.value;
+  return componentMap[componentKey as keyof typeof componentMap];
 });
 
 const isResourcePage = computed(() => {
@@ -55,25 +53,19 @@ const isResourcePage = computed(() => {
   return !accountStore.bizs;
 });
 
-provide('authVerifyData', authVerifyData); // 将数据传入孙组件
 provide('isResourcePage', isResourcePage);
 
-bus.$on('auth', (authActionName: string) => {
-  // bus监听
-  handleAuth(authActionName);
-});
+const handleBackToManage = () => {
+  routerAction.redirect({ name: MENU_RESOURCE_MANAGE });
+};
 </script>
 
 <template>
-  <div>
-    <component :is="renderComponent"></component>
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
-  </div>
+  <!-- 详情间互跳只换 params，按类型 + ID 重建组件，避免沿用旧 ID 的数据 -->
+  <component v-if="renderComponent" :is="renderComponent" :key="`${resourceType}-${route.params.id}`"></component>
+  <bk-exception v-else type="404" scene="part" description="资源类型不存在">
+    <bk-button theme="primary" @click="handleBackToManage">返回资源纳管</bk-button>
+  </bk-exception>
 </template>
 
 <style lang="scss">

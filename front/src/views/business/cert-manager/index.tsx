@@ -127,10 +127,14 @@ export default defineComponent({
                       theme='primary'
                       onClick={() => handleDeleteCert(data)}
                       disabled={noPerm || (isResourcePage && data.bk_biz_id !== -1)}
-                      v-bk-tooltips={{
-                        content: '该证书已分配业务, 仅可在业务下操作',
-                        disabled: isResourcePage && data.bk_biz_id !== -1,
-                      }}>
+                      v-bk-tooltips={
+                        noPerm
+                          ? { disabled: true }
+                          : {
+                              content: '该证书已分配业务, 仅可在业务下操作',
+                              disabled: !(isResourcePage && data.bk_biz_id !== -1),
+                            }
+                      }>
                       删除
                     </Button>
                   ),

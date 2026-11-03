@@ -1,7 +1,8 @@
-import { Input, Select } from 'bkui-vue';
+import { Button, Input, Select } from 'bkui-vue';
 import { defineComponent, ref, nextTick, watch, PropType } from 'vue';
 import { useI18n } from 'vue-i18n';
 import OrganizationSelect from '@/components/OrganizationSelect';
+import { type IAuthSign } from '@/common/auth-service';
 import cssModule from './index.module.scss';
 
 export default defineComponent({
@@ -41,6 +42,10 @@ export default defineComponent({
     hideEdit: {
       type: Boolean,
       default: false,
+    },
+    authSign: {
+      type: [Object, Array] as PropType<IAuthSign | IAuthSign[]>,
+      default: undefined,
     },
     trim: {
       type: Boolean,
@@ -188,12 +193,30 @@ export default defineComponent({
 
     ctx.expose({ renderEdit, handleEdit });
 
+    const renderEditIcon = () => {
+      if (renderEdit.value || props.hideEdit) return null;
+
+      if (props.authSign) {
+        return (
+          <hcm-auth sign={props.authSign}>
+            {{
+              default: ({ noPerm }: { noPerm: boolean }) => (
+                <Button class='ml10' text disabled={noPerm} onClick={handleEdit}>
+                  <i class={['icon hcm-icon bkhcm-icon-bianji']} />
+                </Button>
+              ),
+            }}
+          </hcm-auth>
+        );
+      }
+
+      return <i onClick={handleEdit} class={['icon hcm-icon bkhcm-icon-bianji', cssModule['edit-icon']]} />;
+    };
+
     return () => (
       <>
         {renderEdit.value ? renderComponentsContent(props.fromType) : renderTextContent(props.fromType)}
-        {!(renderEdit.value || props.hideEdit) && (
-          <i onClick={handleEdit} class={['icon hcm-icon bkhcm-icon-bianji', cssModule['edit-icon']]} />
-        )}
+        {renderEditIcon()}
       </>
     );
   },

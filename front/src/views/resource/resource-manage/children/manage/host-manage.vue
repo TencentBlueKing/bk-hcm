@@ -174,7 +174,7 @@ const tableColumns = [
                       ),
                   },
                 ),
-                [[bkTooltips, getOperateToolTipsOption(data)]],
+                [[bkTooltips, noPerm ? { disabled: true } : getOperateToolTipsOption(data)]],
               ),
           },
         ),

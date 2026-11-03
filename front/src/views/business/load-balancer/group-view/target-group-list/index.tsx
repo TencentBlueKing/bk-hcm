@@ -6,7 +6,7 @@ import { useLoadBalancerStore, useAccountStore, useBusinessStore, ITargetGroupDe
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { QueryRuleOPEnum } from '@/typings';
-import { MENU_BUSINESS_TARGET_GROUP_DETAILS, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS, MENU_BUSINESS_LOAD_BALANCER_TG_VIEW } from '@/constants/menu-symbol';
 import { IAuthSign } from '@/common/auth-service';
 import bus from '@/common/bus';
 
@@ -54,9 +54,9 @@ export default defineComponent({
       loadBalancerStore.setTargetGroupId(id);
       // 导航
       router.push({
-        name: id ? MENU_BUSINESS_TARGET_GROUP_DETAILS : MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+        name: id ? MENU_BUSINESS_TARGET_GROUP_DETAILS : MENU_BUSINESS_LOAD_BALANCER_TG_VIEW,
         query: { ...route.query, type: id ? route.query.type : undefined, vendor },
-        params: { id: id || undefined },
+        params: { bizId: route.params.bizId, id: id || undefined },
       });
     };
 

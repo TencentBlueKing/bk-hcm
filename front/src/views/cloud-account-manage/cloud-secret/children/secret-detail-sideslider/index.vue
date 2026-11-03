@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { Share } from 'bkui-vue/lib/icon';
 import { AUTH_BIZ_UPDATE_SUB_ACCOUNT_SECRET } from '@/constants/auth-symbols';
 import { useAccountStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { SECRET_STATUS_MAP } from '../../constants';
 import Status from '@/components/display-value/appearance/status.vue';
 import type { ICloudSecretItem, SecretActionType } from '../../typings';
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const accountStore = useAccountStore();
+const { getBizsId } = useWhereAmI();
 
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
@@ -38,6 +40,7 @@ const mainAccountId = computed(
 const handleGoToTertiaryAccount = () => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type: 'tertiary-account', id: props.secretData?.sub_account_id },
   });
 };
@@ -45,6 +48,7 @@ const handleGoToTertiaryAccount = () => {
 const handleGoToSecondaryAccount = () => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type: 'secondary-account', id: props.secretData?.account_id },
   });
 };
