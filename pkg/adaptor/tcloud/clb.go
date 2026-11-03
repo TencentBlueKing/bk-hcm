@@ -35,6 +35,7 @@ import (
 
 	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	tchttp "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/http"
 )
 
 // ListLoadBalancer 查询clb列表：如果指定的LoadBalancerIds不存在，该接口不会报错
@@ -867,4 +868,41 @@ func (t *TCloudImpl) DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDe
 	}
 
 	return nil
+}
+
+// DescribeSlaCapacity 查询性能保障规格参数，请求发往公有云 CLB 默认域名。
+func (t *TCloudImpl) DescribeSlaCapacity(kt *kit.Kit, opt *typelb.TCloudDescribeSlaCapacityOption) (
+	*typelb.TCloudDescribeSlaCapacityResponseParams, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "describe sla capacity option can not be nil")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.ClbClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("init tencent cloud clb client failed, region: %s, err: %v", opt.Region, err)
+	}
+	if client.GetCredential() == nil {
+		return nil, errors.New("DescribeSlaCapacity require credential")
+	}
+
+	req := &typelb.TCloudDescribeSlaCapacityRequest{
+		BaseRequest: &tchttp.BaseRequest{},
+		SlaTypes:    opt.SlaTypes,
+	}
+	req.Init().WithApiInfo("clb", clb.APIVersion, "DescribeSlaCapacity")
+	req.SetContext(kt.Ctx)
+
+	resp := &typelb.TCloudDescribeSlaCapacityResponse{
+		BaseResponse: &tchttp.BaseResponse{},
+	}
+	if err := client.Send(req, resp); err != nil {
+		logs.Errorf("describe sla capacity failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return resp.Response, nil
 }

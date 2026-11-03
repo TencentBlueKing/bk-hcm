@@ -779,3 +779,14 @@ type TCloudBatchModifyRsWeightReq struct {
 func (req *TCloudBatchModifyRsWeightReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// TCloudDescribeSlaCapacityOption 查询性能保障规格参数请求
+type TCloudDescribeSlaCapacityOption struct {
+	AccountID                               string `json:"account_id" validate:"required"`
+	*typelb.TCloudDescribeSlaCapacityOption `json:",inline" validate:"required"`
+}
+
+// Validate 校验查询性能保障规格参数请求
+func (opt TCloudDescribeSlaCapacityOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

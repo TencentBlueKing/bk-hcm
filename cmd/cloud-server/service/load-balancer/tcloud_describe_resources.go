@@ -57,3 +57,27 @@ func (svc *lbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	}
 	return svc.client.HCService().TCloud.Clb.DescribeResources(cts.Kit, req)
 }
+
+// DescribeSlaCapacity 查询负载均衡性能保障规格参数
+func (svc *lbSvc) DescribeSlaCapacity(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	req := new(protolb.TCloudDescribeSlaCapacityOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.client.HCService().TCloud.Clb.DescribeSlaCapacity(cts.Kit, req)
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
+	}
+}

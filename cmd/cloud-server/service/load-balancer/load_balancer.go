@@ -53,6 +53,8 @@ func InitService(c *capability.Capability) {
 	h.Add("GetLoadBalancer", http.MethodGet, "/load_balancers/{id}", svc.GetLoadBalancer)
 	h.Add("TCloudDescribeResources", http.MethodPost,
 		"/vendors/tcloud/load_balancers/resources/describe", svc.TCloudDescribeResources)
+	h.Add("DescribeSlaCapacity", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/sla/capacity/describe", svc.DescribeSlaCapacity)
 	h.Add("BatchDeleteLoadBalancer", http.MethodDelete, "/load_balancers/batch", svc.BatchDeleteLoadBalancer)
 	h.Add("ListListenerCountByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.ListListenerCountByLbIDs)
 	h.Add("GetLoadBalancerLockStatus", http.MethodGet,

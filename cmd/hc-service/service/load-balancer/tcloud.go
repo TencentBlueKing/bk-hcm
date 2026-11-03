@@ -65,6 +65,9 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
 	h.Add("ListQuotaTCloudLB", http.MethodPost, "/vendors/tcloud/load_balancers/quota", svc.ListTCloudLBQuota)
+	// 内部测试端点：查询性能保障规格，请求发往公有云 CLB，用于确认该 Action 是否可用
+	h.Add("TCloudDescribeSlaCapacity", http.MethodPost,
+		"/vendors/tcloud/load_balancers/sla/capacity/describe", svc.TCloudDescribeSlaCapacity)
 	h.Add("TCloudCreateSnatIps", http.MethodPost,
 		"/vendors/tcloud/load_balancers/snat_ips/create", svc.TCloudCreateSnatIps)
 	h.Add("TCloudDeleteSnatIps", http.MethodDelete,
@@ -334,6 +337,25 @@ func (svc *clbSvc) TCloudDescribeResources(cts *rest.Contexts) (any, error) {
 	}
 
 	return client.DescribeResources(cts.Kit, req.TCloudDescribeResourcesOption)
+}
+
+// TCloudDescribeSlaCapacity 查询性能保障规格参数，请求发往公有云 CLB。
+func (svc *clbSvc) TCloudDescribeSlaCapacity(cts *rest.Contexts) (any, error) {
+	req := new(protolb.TCloudDescribeSlaCapacityOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.DescribeSlaCapacity(cts.Kit, req.TCloudDescribeSlaCapacityOption)
 }
 
 // TCloudDescribeClusterIdleVipsRaw 查询独占集群内的资源（含VIP闲置状态），仅供内部联调/测试使用，不经

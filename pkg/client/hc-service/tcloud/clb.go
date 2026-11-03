@@ -98,6 +98,14 @@ func (c *ClbClient) DescribeResources(kt *kit.Kit, req *hcproto.TCloudDescribeRe
 		c.client, http.MethodPost, kt, req, "/load_balancers/resources/describe")
 }
 
+// DescribeSlaCapacity 查询性能保障规格参数
+func (c *ClbClient) DescribeSlaCapacity(kt *kit.Kit, req *hcproto.TCloudDescribeSlaCapacityOption) (
+	*typelb.TCloudDescribeSlaCapacityResponseParams, error) {
+
+	return common.Request[hcproto.TCloudDescribeSlaCapacityOption, typelb.TCloudDescribeSlaCapacityResponseParams](
+		c.client, http.MethodPost, kt, req, "/load_balancers/sla/capacity/describe")
+}
+
 // DescribeClusterIdleVips 查询独占集群当前闲置的VIP列表，供cloud-server业务视角闲置VIP查询接口调用。
 func (c *ClbClient) DescribeClusterIdleVips(kt *kit.Kit, req *hcproto.TCloudDescribeClusterIdleVipsReq) (
 	*hcproto.TCloudDescribeClusterIdleVipsResult, error) {

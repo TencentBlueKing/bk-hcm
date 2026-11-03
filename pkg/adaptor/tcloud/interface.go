@@ -190,6 +190,8 @@ type TCloud interface {
 	ListLoadBalancerWithCount(kt *kit.Kit, opt *typelb.TCloudListOption) (*typelb.TCloudListResult, error)
 	DescribeResources(kt *kit.Kit, opt *typelb.TCloudDescribeResourcesOption) (
 		*tclb.DescribeResourcesResponseParams, error)
+	DescribeSlaCapacity(kt *kit.Kit, opt *typelb.TCloudDescribeSlaCapacityOption) (
+		*typelb.TCloudDescribeSlaCapacityResponseParams, error)
 	DescribeClusterResources(kt *kit.Kit, opt *typelb.TCloudDescribeClusterResourcesOption) (
 		*tclb.DescribeClusterResourcesResponseParams, error)
 	DescribeNetworkAccountType(kt *kit.Kit) (*v20170312.DescribeNetworkAccountTypeResponseParams, error)
