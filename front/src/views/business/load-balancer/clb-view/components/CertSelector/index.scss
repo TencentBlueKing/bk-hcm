@@ -56,7 +56,9 @@
 
   .cert-selector-option-domain {
     flex: 1;
-    min-width: 220px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cert-selector-option-expire {

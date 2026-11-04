@@ -1,5 +1,5 @@
 import { PropType, computed, defineComponent, onBeforeUnmount, ref, watch } from 'vue';
-import { Select, Tag } from 'bkui-vue';
+import { OverflowTitle, Select, Tag } from 'bkui-vue';
 import { debounce } from 'lodash';
 import http from '@/http';
 import { timeFormatter } from '@/common/util';
@@ -185,12 +185,12 @@ export default defineComponent({
                       {cert_status === '3' && <Tag theme='danger'>已过期</Tag>}
                     </div>
                     <div class='cert-selector-option-secondary'>
-                      <span class='cert-selector-option-name' title={name || '--'}>
+                      <OverflowTitle class='cert-selector-option-name' type='tips' resizeable>
                         {name || '--'}
-                      </span>
-                      <span class='cert-selector-option-domain'>
+                      </OverflowTitle>
+                      <OverflowTitle class='cert-selector-option-domain' type='tips' resizeable>
                         主域名 {domain?.[0] || '--'}，备用域名 {domain?.[1] || '--'}
-                      </span>
+                      </OverflowTitle>
                       <span class='cert-selector-option-expire'>
                         到期 {timeFormatter(cloud_expired_time, 'YYYY-MM-DD')}
                       </span>
