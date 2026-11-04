@@ -20,7 +20,6 @@
 package loadbalancer
 
 import (
-	rawjson "encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -90,21 +89,11 @@ func (svc *lbSvc) ListExclusiveCluster(cts *rest.Contexts) (any, error) {
 	for _, one := range result.Details {
 		details = append(details, corelb.ExclusiveClusterRaw{
 			BaseExclusiveCluster: *convExclusiveClusterTableToBase(&one),
-			Extension:            convExclusiveClusterExtensionToRaw(one.Extension),
+			Extension:            one.Extension.ToRawMessage(),
 		})
 	}
 
 	return &dataproto.ExclusiveClusterListResult{Details: details}, nil
-}
-
-// convExclusiveClusterExtensionToRaw converts the extension column to raw json.
-// When fields does not include extension, the column is not selected and stays empty.
-// An empty string is not valid json and fails response encoding, so fall back to {}.
-func convExclusiveClusterExtensionToRaw(ext tabletype.JsonField) rawjson.RawMessage {
-	if len(ext) == 0 {
-		return rawjson.RawMessage("{}")
-	}
-	return rawjson.RawMessage(ext)
 }
 
 // convExclusiveClusterTableToBase convert LoadBalancerExclusiveClusterTable to BaseExclusiveCluster.

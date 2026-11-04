@@ -23,6 +23,15 @@ import (
 	daoplugin "hcm/pkg/dal/dao/plugin"
 )
 
+// IaCPlugin return iac plugin dao.
+func (s *set) IaCPlugin() daoplugin.IaCPlugin {
+	return &daoplugin.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
 // IacPluginInstance 返回 IacPluginInstance DAO。
 func (s *set) IacPluginInstance() daoplugin.IacPluginInstance {
 	return &daoplugin.IacPluginInstanceDao{
