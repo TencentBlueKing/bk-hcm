@@ -1,13 +1,13 @@
 ## 1. 数据库变更
 
-- [x] 1.1 新建 SQL 迁移脚本 `scripts/sql/0047_20260525_1000_aws_region_sync_enable.sql`
+- [x] 1.1 新建 SQL 迁移脚本 `scripts/sql/9999_20260525_aws_region_sync_enable.sql`
   - 添加 `sync_enable` 字段（`tinyint(1) NOT NULL DEFAULT 1`）
-  - 添加索引 `idx_sync_enable`
+  - 不创建索引
 
 ## 2. DAL 层改造
 
 - [x] 2.1 `pkg/dal/table/cloud/region/aws.go`：`AwsRegionColumnDescriptor` 新增 `sync_enable` 列描述
-- [x] 2.2 `pkg/dal/table/cloud/region/aws.go`：`AwsRegionTable` 结构体新增 `SyncEnable bool` 字段
+- [x] 2.2 `pkg/dal/table/cloud/region/aws.go`：`AwsRegionTable` 结构体新增 `SyncEnable *bool` 字段
 
 ## 3. Core Model 层改造
 
@@ -45,16 +45,15 @@
 
 ## 9. 同步逻辑改造
 
-- [x] 9.1 `cmd/cloud-server/service/sync/aws/region.go`：`ListRegion` 函数添加 `sync_enable = true` 过滤条件
-- [x] 9.2 `cmd/cloud-server/service/sync/aws/region.go`：添加日志输出启用同步的地域列表
+- [x] 9.1 `cmd/cloud-server/service/sync/aws/region.go`：`ListRegion` 按 `account_id` 查询，`parseSyncEnabledRegions` 在内存中分离启用和禁用地域
+- [x] 9.2 `cmd/cloud-server/service/sync/aws/region.go`：日志输出启用地域数量和禁用地域列表
 
 ## 10. 单元测试
 
 - [x] 10.1 `pkg/api/cloud-server/region/request_test.go`：新建单元测试文件
-- [x] 10.2 `TestRegionBatchUpdateSyncEnableReq_Validate`：验证请求参数校验逻辑
+- [x] 10.2 `TestRegionBatchUpdateSyncEnableReq_Validate_*`：覆盖空 IDs、nil IDs、超过 100 个 IDs、缺少 sync_enable、合法请求和恰好 100 个 IDs
 - [x] 10.3 `cmd/cloud-server/service/sync/aws/region_test.go`：新建同步逻辑单元测试文件
-- [x] 10.4 `TestListRegion_FilterConditionValidation`：验证过滤条件包含 `account_id` 和 `sync_enable` 字段
-- [x] 10.5 `TestListRegion_FilterWithDifferentAccountIDs`：验证不同 account_id 生成不同的过滤条件
-- [x] 10.6 `TestListRegion_SyncEnableFilterValue`：验证 sync_enable 过滤值为 true
-- [x] 10.7 `TestListRegion_FilterExpressionType`：验证过滤表达式类型
-- [x] 10.8 `TestListRegion_FilterOperator`：验证过滤条件的操作符
+- [x] 10.4 `TestListRegion_OnlyEnabledRegions`：混合状态下只返回启用地域
+- [x] 10.5 `TestListRegion_AllDisabled_ReturnsError`：全部禁用时返回带禁用地域列表的错误
+- [x] 10.6 `TestListRegion_Empty_ReturnsError`：地域表为空时返回 `aws region is empty`
+- [x] 10.7 `TestListRegion_AllEnabled`：全部启用时禁用列表为空
