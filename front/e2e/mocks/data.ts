@@ -1,4 +1,28 @@
+export const mockSubnets = [
+  {
+    id: 'subnet-e2e-1',
+    cloud_id: 'subnet-e2e-1',
+    name: 'E2E 子网一',
+    vendor: 'tcloud',
+    account_id: 'account-e2e',
+    region: 'ap-test-1',
+    cloud_vpc_id: 'vpc-e2e',
+    bk_biz_id: 1,
+  },
+  {
+    id: 'subnet-e2e-2',
+    cloud_id: 'subnet-e2e-2',
+    name: 'E2E 子网二',
+    vendor: 'tcloud',
+    account_id: 'account-e2e',
+    region: 'ap-test-1',
+    cloud_vpc_id: 'vpc-e2e',
+    bk_biz_id: 1,
+  },
+];
+
 export const mockData = {
+  subnets: mockSubnets,
   businesses: [{ id: 1, name: '测试业务' }],
   accounts: [
     {

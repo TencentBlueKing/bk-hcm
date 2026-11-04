@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { DoublePlainObject, FilterType } from '@/typings/resource';
-import { PropType, defineExpose, computed } from 'vue';
-// import { Message, InfoBox } from 'bkui-vue';
-// import { useResourceStore } from '@/store/resource';
+import { PropType, defineExpose, computed, reactive } from 'vue';
+import { Message } from 'bkui-vue';
+import { useAccountStore } from '@/store/account';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { ResourceTypeEnum } from '@/common/constant';
 
 import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 
 const props = defineProps({
   filter: {
@@ -23,6 +26,38 @@ const props = defineProps({
 });
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
+const accountStore = useAccountStore();
+const resourceAccountStore = useResourceAccountStore();
+const businessId = computed(() => (props.isResourcePage ? undefined : accountStore.bizs));
+const currentAccount = computed(() => (props.isResourcePage ? resourceAccountStore.resourceAccount : null));
+const isSyncDisabled = computed(
+  () => selections.value.length > 0 || (props.isResourcePage && !currentAccount.value?.id),
+);
+const syncDialogState = reactive<{ isShow: boolean; isHidden: boolean; initialModel: any }>({
+  isShow: false,
+  isHidden: true,
+  initialModel: null,
+});
+const syncDialogDesc = computed(() =>
+  props.isResourcePage
+    ? '从云上同步该账号的子网数据，不会同步 VPC、负载均衡等其他资源'
+    : '从云上同步该业务的子网数据，不会同步 VPC、负载均衡等其他资源',
+);
+const handleSync = () => {
+  syncDialogState.initialModel = currentAccount.value
+    ? { account_id: currentAccount.value.id, vendor: currentAccount.value.vendor }
+    : null;
+  syncDialogState.isHidden = false;
+  syncDialogState.isShow = true;
+};
+const handleSyncHidden = () => {
+  syncDialogState.isShow = false;
+  syncDialogState.isHidden = true;
+  syncDialogState.initialModel = null;
+};
+const handleSyncError = (error: { message?: string }) => {
+  Message({ theme: 'error', message: error?.message || '同步失败' });
+};
 
 // const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('subnet');
@@ -229,6 +264,7 @@ defineExpose({ fetchComponentsData });
           }
         "
       />
+      <bk-button :disabled="isSyncDisabled" @click="handleSync">同步子网</bk-button>
       <bk-search-select
         class="w500 ml10 search-selector-container"
         clearable
@@ -255,24 +291,47 @@ defineExpose({ fetchComponentsData });
       @column-sort="handleSort"
     />
   </bk-loading>
+
+  <template v-if="!syncDialogState.isHidden">
+    <sync-account-resource
+      v-model="syncDialogState.isShow"
+      title="同步子网"
+      :desc="syncDialogDesc"
+      :resource-type="ResourceTypeEnum.SUBNET"
+      :business-id="businessId"
+      resource-name="subnet"
+      :initial-model="syncDialogState.initialModel"
+      :error-handler="handleSyncError"
+      @hidden="handleSyncHidden"
+    />
+  </template>
 </template>
 
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  > *:not(.search-selector-container) {
+    flex-shrink: 0;
+  }
 }
+
 .search-selector-container {
   margin-left: auto;
+  min-width: 0;
 }
 </style>
