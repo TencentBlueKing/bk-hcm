@@ -79,3 +79,12 @@
 - 本次通过：提交钩子的 ESLint、Prettier、Stylelint；子网 mock 列表/计数与同步成功/业务失败分支；两个变更 Vue 组件 script/template 编译；指定厂商过滤与未指定厂商保留默认过滤的检查。
 - 未复跑浏览器 E2E：外部基线缺少 E2E 启动脚本与 Playwright 配置；未执行完整构建、全量类型检查或全量回归。
 - 后端依赖已核实：外部 `cmd/cloud-server/service/sync/tcloud/cond_sync_resource.go` 虽有 `CondSyncSubnet` 实现，但 `condSyncFuncMap` 尚未注册子网，因此真实腾讯云条件同步需要后端补齐注册后再联调。本次仅迁移前端 MR。
+
+### 外部 E2E 复跑（2026-11-04）
+
+- 补装被 gitignore 排除的本地运行层，参考 hcm 的 Playwright 配置并复制 `.env.local`；外部服务使用独立端口 5002，Edge 无操作延迟运行，避免复用内部 hcm 服务。
+- 环境修复：安装 Playwright FFmpeg。首次执行受该依赖缺失及首次加载超时影响，环境就绪后重跑同一组用例。
+- 命令：`node e2e/scripts/run-e2e.cjs .hcmfe/workflow/feat-subnet-sync-entry/e2e.spec.ts --workers=1`。
+- 结果：**6 passed (54.5s)**，exitCode=0；未修改产品代码、mock 或测试断言。
+- 报告：`e2e/.e2e-runs/2026-11-04-subnet/playwright-report/index.html`（本地忽略文件）。
+- 仅覆盖 mock E2E；上文的真实后端注册和落库联调依赖仍有效。
