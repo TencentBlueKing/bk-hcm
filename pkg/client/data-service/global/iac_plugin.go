@@ -49,7 +49,7 @@ func (c *IaCPluginClient) BatchDelete(kt *kit.Kit, req *dataplugin.IaCPluginBatc
 		c.client, rest.DELETE, kt, req, "/iac_plugins/batch")
 }
 
-// Update update iac plugin record, set req.ExpectState to make it a conditional update.
+// Update update iac plugin record. Set req.CurrentState to update only when the stored state equals it.
 func (c *IaCPluginClient) Update(kt *kit.Kit, req *dataplugin.IaCPluginUpdateReq) error {
 	return common.RequestNoResp[dataplugin.IaCPluginUpdateReq](
 		c.client, rest.PATCH, kt, req, "/iac_plugins/update")

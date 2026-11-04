@@ -21,10 +21,9 @@
 package plugin
 
 import (
-	"encoding/json"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/types"
 )
 
 // IaCPlugin IaC 插件注册记录，每个插件的每个版本一条。平台级，不区分租户。
@@ -35,7 +34,7 @@ type IaCPlugin struct {
 	Protocol       enumor.IaCPluginProtocol `json:"protocol"`
 	State          enumor.IaCPluginState    `json:"state"`
 	Message        string                   `json:"message"`
-	Extension      json.RawMessage          `json:"extension"`
+	Extension      types.JsonField          `json:"extension"`
 	Memo           *string                  `json:"memo"`
 	*core.Revision `json:",inline"`
 }

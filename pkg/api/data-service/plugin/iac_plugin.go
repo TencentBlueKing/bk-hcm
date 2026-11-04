@@ -21,12 +21,13 @@
 package dataplugin
 
 import (
-	"encoding/json"
+	"errors"
 
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -37,7 +38,7 @@ type IaCPluginCreateReq struct {
 	Protocol      enumor.IaCPluginProtocol `json:"protocol" validate:"required"`
 	State         enumor.IaCPluginState    `json:"state" validate:"required"`
 	Message       string                   `json:"message" validate:"max=255"`
-	Extension     json.RawMessage          `json:"extension" validate:"required"`
+	Extension     types.JsonField          `json:"extension" validate:"required"`
 	Memo          *string                  `json:"memo" validate:"omitempty,max=255"`
 }
 
@@ -56,14 +57,14 @@ func (req *IaCPluginCreateReq) Validate() error {
 
 // IaCPluginUpdateReq IaC 插件注册记录更新请求。
 // 创建后 plugin_name、plugin_version、protocol 不可修改。
-// ExpectState 不为空时，仅当记录当前状态等于它才会更新，否则返回 errf.Aborted。
+// CurrentState 不为空时，仅当记录当前状态等于它才会更新，否则返回 errf.Aborted。
 type IaCPluginUpdateReq struct {
-	ID          string                `json:"id" validate:"required"`
-	ExpectState enumor.IaCPluginState `json:"expect_state,omitempty" validate:"omitempty"`
-	State       enumor.IaCPluginState `json:"state,omitempty" validate:"omitempty"`
+	ID           string                `json:"id" validate:"required"`
+	CurrentState enumor.IaCPluginState `json:"current_state,omitempty" validate:"omitempty"`
+	State        enumor.IaCPluginState `json:"state,omitempty" validate:"omitempty"`
 	// Message 为 nil 表示不更新；指向空字符串表示清空。
 	Message   *string         `json:"message,omitempty" validate:"omitempty,max=255"`
-	Extension json.RawMessage `json:"extension,omitempty" validate:"omitempty"`
+	Extension types.JsonField `json:"extension,omitempty" validate:"omitempty"`
 	Memo      *string         `json:"memo,omitempty" validate:"omitempty,max=255"`
 }
 
@@ -73,8 +74,8 @@ func (req *IaCPluginUpdateReq) Validate() error {
 		return err
 	}
 
-	if len(req.ExpectState) != 0 {
-		if err := req.ExpectState.Validate(); err != nil {
+	if len(req.CurrentState) != 0 {
+		if err := req.CurrentState.Validate(); err != nil {
 			return err
 		}
 	}
@@ -114,6 +115,9 @@ func (req *IaCPluginBatchUpdateStateReq) Validate() error {
 	for _, one := range req.FromStates {
 		if err := one.Validate(); err != nil {
 			return err
+		}
+		if one == req.ToState {
+			return errors.New("from_states should not contain to_state")
 		}
 	}
 

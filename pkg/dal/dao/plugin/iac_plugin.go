@@ -50,9 +50,9 @@ import (
 // IaCPlugin only used for iac_plugin.
 type IaCPlugin interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableplugin.IaCPluginTable) ([]string, error)
-	// UpdateByID 按 ID 更新，并在同一事务内写 update 审计。expectState 不为空时作为更新条件，状态不符返回
-	// errf.Aborted。记录没有任何字段实际发生变化时（例如重复提交同样的值）不写审计。
-	UpdateByID(kt *kit.Kit, id string, expectState enumor.IaCPluginState, model *tableplugin.IaCPluginTable) error
+	// UpdateByID 按 ID 更新，并在同一事务内写 update 审计。currentState 不为空时，库里的当前状态必须等于它，
+	// 否则返回 errf.Aborted。记录没有任何字段实际发生变化时（例如重复提交同样的值）不写审计。
+	UpdateByID(kt *kit.Kit, id string, currentState enumor.IaCPluginState, model *tableplugin.IaCPluginTable) error
 	// BatchUpdateState 按插件名把处于 fromStates 的记录批量改为 toState，每条被改的记录各写一条 update 审计。
 	BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enumor.IaCPluginState,
 		toState enumor.IaCPluginState) error
@@ -132,8 +132,8 @@ func (d *Dao) buildAudit(kt *kit.Kit, action enumor.AuditAction, data tableplugi
 }
 
 // UpdateByID update iac_plugin by id in one transaction: lock and read the current record, update it, and write an
-// update audit only when something actually changed. If expectState is not empty, the current state must equal it.
-func (d *Dao) UpdateByID(kt *kit.Kit, id string, expectState enumor.IaCPluginState,
+// update audit only when something actually changed. If currentState is not empty, the stored state must equal it.
+func (d *Dao) UpdateByID(kt *kit.Kit, id string, currentState enumor.IaCPluginState,
 	model *tableplugin.IaCPluginTable) error {
 
 	if len(id) == 0 {
@@ -162,9 +162,9 @@ func (d *Dao) UpdateByID(kt *kit.Kit, id string, expectState enumor.IaCPluginSta
 		}
 		old := olds[0]
 
-		if len(expectState) != 0 && old.State != expectState {
-			return nil, errf.Newf(errf.Aborted, "iac plugin %s is in state %s, expect %s, it may have been modified",
-				id, old.State, expectState)
+		if len(currentState) != 0 && old.State != currentState {
+			return nil, errf.Newf(errf.Aborted, "iac plugin %s is in state %s, current state should be %s",
+				id, old.State, currentState)
 		}
 
 		changed := diffIaCPlugin(old, model)
@@ -204,7 +204,7 @@ func diffIaCPlugin(old tableplugin.IaCPluginTable, model *tableplugin.IaCPluginT
 		changed["message"] = cvt.PtrToVal(model.Message)
 	}
 	if len(model.Extension) != 0 && !jsonEqual(string(model.Extension), string(old.Extension)) {
-		changed["extension"] = json.RawMessage(model.Extension)
+		changed["extension"] = model.Extension
 	}
 	if model.Memo != nil && (old.Memo == nil || cvt.PtrToVal(old.Memo) != cvt.PtrToVal(model.Memo)) {
 		changed["memo"] = cvt.PtrToVal(model.Memo)
@@ -287,10 +287,10 @@ func (d *Dao) BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enum
 	_, err := d.Orm.AutoTxn(kt, func(txn *sqlx.Tx, _ *orm.TxnOption) (interface{}, error) {
 		// 先加行锁读出将被修改的记录，同一事务内再更新，保证审计里的"变更前"与实际被改的行一致。
 		sql := fmt.Sprintf(`SELECT %s FROM %s WHERE plugin_name = :plugin_name `+
-			`AND state IN (:from_states) AND state != :to_state FOR UPDATE`,
+			`AND state IN (:from_states) FOR UPDATE`,
 			tableplugin.IaCPluginColumns.ColumnExpr(), table.IaCPluginTable)
 		changes := make([]tableplugin.IaCPluginTable, 0)
-		args := map[string]interface{}{"plugin_name": pluginName, "from_states": fromStates, "to_state": toState}
+		args := map[string]interface{}{"plugin_name": pluginName, "from_states": fromStates}
 		if err := d.Orm.Txn(txn).Select(kt.Ctx, &changes, sql, args); err != nil {
 			logs.Errorf("select %s for update failed, err: %v, plugin_name: %s, rid: %s",
 				table.IaCPluginTable, err, pluginName, kt.Rid)
@@ -301,7 +301,7 @@ func (d *Dao) BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enum
 		}
 
 		ids := slice.Map(changes, func(one tableplugin.IaCPluginTable) string { return one.ID })
-		updateSQL := fmt.Sprintf(`UPDATE %s SET state = :to_state, reviser = :reviser, updated_at = now() WHERE id IN (:ids)`,
+		updateSQL := fmt.Sprintf(`UPDATE %s SET state = :to_state, reviser = :reviser WHERE id IN (:ids)`,
 			table.IaCPluginTable)
 		updateArgs := map[string]interface{}{"to_state": toState, "reviser": kt.User, "ids": ids}
 		if _, err := d.Orm.Txn(txn).Update(kt.Ctx, updateSQL, updateArgs); err != nil {

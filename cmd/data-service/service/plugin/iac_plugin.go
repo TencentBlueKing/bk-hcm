@@ -20,6 +20,8 @@
 package plugin
 
 import (
+	"net/http"
+
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
@@ -27,7 +29,6 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/types"
 	tableplugin "hcm/pkg/dal/table/plugin"
-	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
@@ -35,6 +36,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 )
+
+func (svc *service) initIaCPluginRoutes(h *rest.Handler) {
+	h.Add("CreateIaCPlugin", http.MethodPost, "/iac_plugins/create", svc.CreateIaCPlugin)
+	h.Add("UpdateIaCPlugin", http.MethodPatch, "/iac_plugins/update", svc.UpdateIaCPlugin)
+	h.Add("BatchDeleteIaCPlugin", http.MethodDelete, "/iac_plugins/batch", svc.BatchDeleteIaCPlugin)
+	h.Add("BatchUpdateIaCPluginState", http.MethodPatch, "/iac_plugins/batch/update_state",
+		svc.BatchUpdateIaCPluginState)
+	h.Add("ListIaCPlugin", http.MethodPost, "/iac_plugins/list", svc.ListIaCPlugin)
+}
 
 // CreateIaCPlugin create iac plugin record.
 func (svc *service) CreateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
@@ -56,7 +66,7 @@ func (svc *service) CreateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 			Protocol:      req.Protocol,
 			State:         req.State,
 			Message:       cvt.ValToPtr(req.Message),
-			Extension:     tabletypes.JsonField(req.Extension),
+			Extension:     req.Extension,
 			Memo:          req.Memo,
 			Creator:       cts.Kit.User,
 			Reviser:       cts.Kit.User,
@@ -105,7 +115,7 @@ func (svc *service) BatchDeleteIaCPlugin(cts *rest.Contexts) (interface{}, error
 	return nil, nil
 }
 
-// UpdateIaCPlugin update iac plugin record, expect_state makes it a conditional update.
+// UpdateIaCPlugin update iac plugin record. current_state makes it a conditional update.
 func (svc *service) UpdateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataplugin.IaCPluginUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -121,11 +131,11 @@ func (svc *service) UpdateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	model := &tableplugin.IaCPluginTable{
 		State:     req.State,
 		Message:   req.Message,
-		Extension: tabletypes.JsonField(req.Extension),
+		Extension: req.Extension,
 		Memo:      req.Memo,
 		Reviser:   cts.Kit.User,
 	}
-	if err := svc.dao.IaCPlugin().UpdateByID(cts.Kit, req.ID, req.ExpectState, model); err != nil {
+	if err := svc.dao.IaCPlugin().UpdateByID(cts.Kit, req.ID, req.CurrentState, model); err != nil {
 		return nil, err
 	}
 
@@ -191,7 +201,7 @@ func convTableToIaCPlugin(one tableplugin.IaCPluginTable) coreplugin.IaCPlugin {
 		Protocol:      one.Protocol,
 		State:         one.State,
 		Message:       cvt.PtrToVal(one.Message),
-		Extension:     one.Extension.ToRawMessage(),
+		Extension:     one.Extension,
 		Memo:          one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,

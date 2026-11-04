@@ -24,6 +24,7 @@ import (
 	"errors"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
@@ -107,7 +108,7 @@ func (p IaCPluginTable) InsertValidate() error {
 		return errors.New("message is required")
 	}
 
-	if err := validateJSONObject("extension", p.Extension); err != nil {
+	if err := validator.ValidateJSONObject("extension", string(p.Extension)); err != nil {
 		return err
 	}
 
@@ -160,9 +161,13 @@ func (p IaCPluginTable) UpdateValidate() error {
 	}
 
 	if len(p.Extension) != 0 {
-		if err := validateJSONObject("extension", p.Extension); err != nil {
+		if err := validator.ValidateJSONObject("extension", string(p.Extension)); err != nil {
 			return err
 		}
+	}
+
+	if len(p.Reviser) == 0 {
+		return errors.New("reviser is required")
 	}
 
 	return nil

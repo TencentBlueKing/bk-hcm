@@ -21,8 +21,6 @@
 package plugin
 
 import (
-	"net/http"
-
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
@@ -38,13 +36,7 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateIaCPlugin", http.MethodPost, "/iac_plugins/create", svc.CreateIaCPlugin)
-	h.Add("UpdateIaCPlugin", http.MethodPatch, "/iac_plugins/update", svc.UpdateIaCPlugin)
-	h.Add("BatchDeleteIaCPlugin", http.MethodDelete, "/iac_plugins/batch", svc.BatchDeleteIaCPlugin)
-	h.Add("BatchUpdateIaCPluginState", http.MethodPatch, "/iac_plugins/batch/update_state",
-		svc.BatchUpdateIaCPluginState)
-	h.Add("ListIaCPlugin", http.MethodPost, "/iac_plugins/list", svc.ListIaCPlugin)
-
+	svc.initIaCPluginRoutes(h)
 	svc.initIacPluginInstanceRoutes(h)
 	svc.initIacPluginSchemaRoutes(h)
 

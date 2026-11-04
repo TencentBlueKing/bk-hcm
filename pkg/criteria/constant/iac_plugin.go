@@ -21,5 +21,6 @@ package constant
 
 const (
 	// IaCPluginMessageMaxLen 是 iac_plugin.message 的列宽，对应建表的 varchar(255)。
+	// 后续截断写入 message 的失败原因时使用。
 	IaCPluginMessageMaxLen = 255
 )
