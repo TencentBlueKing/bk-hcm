@@ -65,3 +65,10 @@
     flex: none;
   }
 }
+
+.bk-select-option.is-disabled {
+  .cert-selector-option-main,
+  .cert-selector-option-secondary {
+    color: #c4c6cc;
+  }
+}
