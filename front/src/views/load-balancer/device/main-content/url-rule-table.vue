@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ComputedRef, h, inject, ref, watch } from 'vue';
+import { computed, ComputedRef, h, inject, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { DisplayFieldType, DisplayFieldFactory } from '@/views/load-balancer/children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
+import useTableSelection from '@/hooks/use-table-selection';
 import DataList from '@/views/load-balancer/children/display/data-list.vue';
 import { ILoadBalanceDeviceCondition, DeviceTabEnum, IDeviceListDataLoadedEvent } from '../typing';
 import { Share } from 'bkui-vue/lib/icon';
@@ -11,13 +13,36 @@ import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 import qs from 'qs';
 import { useLoadBalancerDeviceSearchStore, type IUrlRuleItem } from '@/store/load-balancer/device-search';
+import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-copy.vue';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
 const emit = defineEmits<IDeviceListDataLoadedEvent>();
 
 const route = useRoute();
+const { t } = useI18n();
 const loadBalancerDeviceSearchStore = useLoadBalancerDeviceSearchStore();
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
+const dataListRef = useTemplateRef<typeof DataList>('dataList');
+const ruleUrlList = ref<IUrlRuleItem[]>([]);
+
+const { selections, resetSelections, handleSelectAll, handleSelectChange } = useTableSelection({
+  isRowSelectable: () => true,
+});
+
+const getArrayDisplayValue = (value: string[]) => {
+  const values = Array.isArray(value) ? value : [value];
+  return values.join(', ') || '--';
+};
+const urlRuleCopyItems = computed(() => [
+  {
+    text: t('URL'),
+    content: selections.value.map((item: IUrlRuleItem) => item.rule_url || '--').join('\n'),
+  },
+  {
+    text: t('监听器域名'),
+    content: selections.value.map((item: IUrlRuleItem) => getArrayDisplayValue(item.rule_domain)).join('\n'),
+  },
+]);
 
 // data-list
 const displayFieldIds = ['lb_vips', 'lbl_protocol', 'lbl_port', 'rule_url', 'rule_domain', 'target_count'];
@@ -58,11 +83,21 @@ const dataListColumns = displayFieldIds.map((id) => {
 });
 
 const { pagination, getPageParams } = usePage();
+pagination['limit-list'] = [10, 20, 50, 100, 500];
 
-const ruleUrlList = ref<IUrlRuleItem[]>([]);
-
+const handleClearSelection = () => {
+  resetSelections();
+  dataListRef.value?.clearSelection();
+};
+const handleUrlRuleSelectAll = (selection: Parameters<typeof handleSelectAll>[0]) => {
+  handleSelectAll({
+    ...selection,
+    data: dataListRef.value?.getSelection() ?? [],
+  });
+};
 const getList = async (condition: ILoadBalanceDeviceCondition, pageParams = { sort: 'created_at', order: 'DESC' }) => {
   if (!condition.account_id) return;
+  handleClearSelection();
   try {
     const { list, count } = await loadBalancerDeviceSearchStore.getUrlRuleList(
       condition,
@@ -101,22 +136,37 @@ watch(
 
 <template>
   <div class="url-table-container">
-    <data-list
+    <div class="toolbar">
+      <BatchCopy :items="urlRuleCopyItems" :disabled="selections.length === 0" />
+    </div>
+    <DataList
+      ref="dataList"
       class="data-list"
       v-bkloading="{ loading: loadBalancerDeviceSearchStore.urlRuleListLoading }"
       :columns="dataListColumns"
       :list="ruleUrlList"
-      :pagination="{ ...pagination, 'limit-list': [10, 20, 50, 100, 500] }"
-      :max-height="`100%`"
+      :pagination="pagination"
+      :max-height="`calc(100% - 48px)`"
       :enable-query="false"
       :remote-pagination="false"
-    ></data-list>
+      has-selection
+      @page-limit-change="handleClearSelection"
+      @page-value-change="handleClearSelection"
+      @select-all="handleUrlRuleSelectAll"
+      @selection-change="handleSelectChange"
+    />
   </div>
 </template>
 
 <style scoped lang="scss">
 .url-table-container {
   height: 100%;
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+  }
 
   :deep(.port) {
     .share {
