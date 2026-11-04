@@ -9,7 +9,7 @@
 
 ## 模块
 
-- [组件级多云与变体差异化](modules/component-variant.md) — 单组件同时应对多云与构建变体。典范：account-selector。 · `stub`  (relates: model, plugin-handler, page-variant)
+- [组件级多云与变体差异化](modules/component-variant.md) — 单组件同时应对多云与构建变体。典范：account-selector。 · `drafted`  (relates: model, plugin-handler, page-variant)
 - [页面级变体差异化](modules/page-variant.md) — 用 .plugin 替换整块 UI 片段，承载页面级变体差异。 · `stub`  (relates: component-variant, plugin-handler)
 - [菜单与路由](modules/menu-route.md) — 三级一级视图、去中心化路由、菜单与路由解耦、routerAction 统一跳转。 · `drafted`  (relates: base, auth)
 - [权限控制](modules/auth.md) — 视图级权限与操作级权限。旧 useVerify/PermissionDialog 已废弃。 · `drafted`  (relates: base, menu-route)

@@ -8,6 +8,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { mockApis } from '../../../e2e/mocks/api';
+import { mockSubnetSyncAccounts } from '../../../e2e/mocks/data';
 
 const BUSINESS_SUBNET_URL = '/#/business/subnet?bizs=1';
 const RESOURCE_SUBNET_URL = '/#/resource/resource?type=subnet&accountId=account-e2e';
@@ -44,8 +45,7 @@ test.describe('子网同步入口 - 业务视角', () => {
     await page.locator('.bk-select-option').filter({ hasText: '测试地域' }).first().click();
 
     const responsePromise = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'POST' && response.url().includes('/resources/subnet/sync_by_cond'),
+      (response) => response.request().method() === 'POST' && response.url().includes('/resources/subnet/sync_by_cond'),
     );
     await page.getByRole('button', { name: '确定' }).click();
     const response = await responsePromise;
@@ -90,4 +90,28 @@ test.describe('子网同步入口 - 资源账号视角', () => {
     await expect(page.getByText('从云上同步所选账号的子网数据，不会同步 VPC、负载均衡等其他资源')).toBeVisible();
     await expect(page.getByText('云账号', { exact: true })).toBeVisible();
   });
+});
+
+test.describe('外部子网同步 - 云厂商范围', () => {
+  for (const { title, url } of [
+    { title: 'P1-04 业务视角排除内部厂商并保留外部多云账号', url: BUSINESS_SUBNET_URL },
+    { title: 'P1-05 资源全部账号视角排除内部厂商并保留外部多云账号', url: '/#/resource/manage/subnet' },
+  ]) {
+    test(title, async ({ page }) => {
+      await mockApis(page, { accounts: mockSubnetSyncAccounts });
+      await page.goto(url);
+      await syncButton(page).click();
+      const accountItem = page.locator('.bk-form-item').filter({ hasText: '云账号' });
+      await accountItem.locator('.bk-select-trigger').click();
+
+      // AccountSelector 的列表项和厂商分组，确保被隐藏的账号也不参与计数。
+      const options = page.locator('.account-option');
+      await expect(options).toHaveCount(5);
+      await expect(page.locator('.vendor-list .vendor-item')).toHaveCount(6);
+      await expect(options.filter({ hasText: '内部厂商测试账号' })).toHaveCount(0);
+      for (const vendor of ['tcloud', 'aws', 'azure', 'gcp', 'huawei']) {
+        await expect(options.filter({ hasText: `外部-${vendor}-账号` })).toHaveCount(1);
+      }
+    });
+  }
 });

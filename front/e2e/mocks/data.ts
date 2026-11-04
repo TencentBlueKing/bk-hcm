@@ -36,7 +36,8 @@ export const mockData = {
     },
   ],
   region: { region_id: 'ap-test-1', region_name: '测试地域', vendor: 'tcloud' },
-  zone: { name: 'ap-test-1a', name_cn: '测试一区' },  resource: {
+  zone: { name: 'ap-test-1a', name_cn: '测试一区' },
+  resource: {
     ZoneResourceSet: [
       {
         MasterZone: 'ap-test-1a',
@@ -115,3 +116,14 @@ export const mockData = {
     },
   ],
 };
+
+// 包含内部厂商，验证外部账号选择器不会生成空白厂商标签。
+export const mockSubnetSyncAccounts = [
+  { ...mockData.accounts[0], id: 'account-ziyan', vendor: 'tcloud-ziyan', name: '内部厂商测试账号' },
+  ...['tcloud', 'aws', 'azure', 'gcp', 'huawei'].map((vendor) => ({
+    ...mockData.accounts[0],
+    id: `account-${vendor}`,
+    vendor,
+    name: `外部-${vendor}-账号`,
+  })),
+];

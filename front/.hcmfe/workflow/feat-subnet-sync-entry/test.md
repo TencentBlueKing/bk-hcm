@@ -38,6 +38,8 @@
 | P1-01 | 后端未注册 subnet 时提示错误 | mock 返回不支持 subnet | 提交同步 | 弹窗展示后端错误信息，不误报成功 | |
 | P1-02 | 通用同步失败 | mock 返回 500 或空 message | 提交同步 | 提示“同步失败”，弹窗可继续修改重试 | |
 | P1-03 | 未选择账号/地域 | 弹窗空表单 | 直接点击确定 | 表单红字校验，不发起同步请求 | |
+| P1-04 | 业务视角排除内部厂商 | 账号响应混入自研云及五种公有云账号 | 打开子网同步云账号列表 | 仅展示五种公有云账号，厂商标签无空白且计数不含自研云 | e2e |
+| P1-05 | 资源全部账号视角排除内部厂商 | 同上，未指定厂商 | 打开子网同步云账号列表 | 仅展示五种公有云账号，厂商标签无空白且计数不含自研云 | e2e |
 
 ### P2 - UI 细节（按需）
 
@@ -88,3 +90,12 @@
 - 结果：**6 passed (54.5s)**，exitCode=0；未修改产品代码、mock 或测试断言。
 - 报告：`e2e/.e2e-runs/2026-11-04-subnet/playwright-report/index.html`（本地忽略文件）。
 - 仅覆盖 mock E2E；上文的真实后端注册和落库联调依赖仍有效。
+
+### 外部账号厂商范围回归（2026-11-04）
+
+- 修复：`components/account-selector/index-new.vue` 按当前 data factory 的 `vendorProperty` 过滤接口账号，再应用默认/自定义筛选，避免内部厂商生成空白标签并参与账号计数。
+- 新增 P1-04 / P1-05，分别覆盖业务与资源全部账号视角：响应混入 `tcloud-ziyan` 与五种公有云账号，断言只显示五个支持的账号、五个厂商加「全部」分组。
+- 命令：`node e2e/scripts/run-e2e.cjs .hcmfe/workflow/feat-subnet-sync-entry/e2e.spec.ts --workers=1`。
+- 结果：**8 passed (1.9m)**，exitCode=0；原有六条断言未放宽。
+- ESLint（产品组件和 mock）通过；spec 位于隐藏目录，ESLint 默认忽略，已由 Playwright 执行校验。
+- 报告：`e2e/.e2e-runs/2026-11-04-subnet-vendors/playwright-report/index.html`（本地忽略文件）。

@@ -8,6 +8,8 @@ function ok(data: unknown): string {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface MockApisOptions {
+  /** 当前视角可见账号，可包含后端遗留的内部厂商数据。 */
+  accounts?: typeof mockData.accounts;
   clusterTags?: typeof mockData.clusterTags;
   /** tags/list 直接返回 HTTP 500，模拟请求失败 */
   clusterTagsFail?: boolean;
@@ -40,7 +42,10 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
     } else if (pathname === '/api/v1/web/changelogs') {
       data = [{ version: 'e2e', time: '2026-01-01', is_current: true }];
     } else if (/\/api\/v1\/cloud\/accounts\/bizs\/\d+$/.test(pathname)) {
-      data = mockData.accounts;
+      data = options.accounts ?? mockData.accounts;
+    } else if (pathname.endsWith('/accounts/resources/accounts/list')) {
+      const accounts = options.accounts ?? mockData.accounts;
+      data = { details: accounts, count: accounts.length };
     } else if (/\/api\/v1\/cloud\/bizs\/\d+\/collections\/bizs$/.test(pathname)) {
       data = [];
     } else if (pathname.endsWith('/network_type')) {

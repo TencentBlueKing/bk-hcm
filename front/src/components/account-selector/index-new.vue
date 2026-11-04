@@ -132,9 +132,9 @@ const handleSelectVendor = (vendor?: VendorEnum) => {
 watch(
   list,
   (newList) => {
-    filteredList.value = newList;
+    filteredList.value = newList.filter((item) => vendorProperty[item.vendor]);
     if (props.filter) {
-      filteredList.value = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
+      filteredList.value = props.filter?.(filteredList.value, { route, whereAmI, resourceType: props.resourceType });
     }
     vendorAccountMap.value.clear();
     filteredList.value.forEach((item) => {
