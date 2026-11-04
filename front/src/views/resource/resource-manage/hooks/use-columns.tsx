@@ -1628,7 +1628,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'name',
     },
     {
-      label: '资源ID',
+      label: '证书ID',
       field: 'cloud_id',
     },
     {
