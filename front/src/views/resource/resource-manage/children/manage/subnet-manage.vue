@@ -293,7 +293,7 @@ defineExpose({ fetchComponentsData });
   </bk-loading>
 
   <template v-if="!syncDialogState.isHidden">
-    <sync-account-resource
+    <SyncAccountResource
       v-model="syncDialogState.isShow"
       title="同步子网"
       :desc="syncDialogDesc"
