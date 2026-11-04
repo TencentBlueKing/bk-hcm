@@ -52,4 +52,4 @@
 
 ## 子网同步
 
-子网列表 `src/views/resource/resource-manage/children/manage/subnet-manage.vue` 同时服务资源账号与业务两个视角；工具栏的「同步子网」入口内聚在该组件，复用 `components/sync-account-resource`，资源视角预填当前账号，业务视角以当前业务过滤账号并提交 `resources/subnet/sync_by_cond`。
+子网列表 `src/views/resource/resource-manage/children/manage/subnet-manage.vue` 同时服务资源账号与业务两个视角；工具栏的「同步子网」入口内聚在该组件，复用 `components/sync-account-resource`，资源视角未选账号也可打开弹窗，选定厂商/账号时账号下拉只展示该厂商、全量账号时展示全部，业务视角以当前业务过滤账号并提交 `resources/subnet/sync_by_cond`。

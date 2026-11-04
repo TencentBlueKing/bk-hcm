@@ -30,9 +30,8 @@ const accountStore = useAccountStore();
 const resourceAccountStore = useResourceAccountStore();
 const businessId = computed(() => (props.isResourcePage ? undefined : accountStore.bizs));
 const currentAccount = computed(() => (props.isResourcePage ? resourceAccountStore.resourceAccount : null));
-const isSyncDisabled = computed(
-  () => selections.value.length > 0 || (props.isResourcePage && !currentAccount.value?.id),
-);
+const currentVendor = computed(() => (props.isResourcePage ? resourceAccountStore.vendorInResourcePage : undefined));
+const isSyncDisabled = computed(() => selections.value.length > 0);
 const syncDialogState = reactive<{ isShow: boolean; isHidden: boolean; initialModel: any }>({
   isShow: false,
   isHidden: true,
@@ -40,7 +39,7 @@ const syncDialogState = reactive<{ isShow: boolean; isHidden: boolean; initialMo
 });
 const syncDialogDesc = computed(() =>
   props.isResourcePage
-    ? '从云上同步该账号的子网数据，不会同步 VPC、负载均衡等其他资源'
+    ? '从云上同步所选账号的子网数据，不会同步 VPC、负载均衡等其他资源'
     : '从云上同步该业务的子网数据，不会同步 VPC、负载均衡等其他资源',
 );
 const handleSync = () => {
@@ -299,6 +298,7 @@ defineExpose({ fetchComponentsData });
       :desc="syncDialogDesc"
       :resource-type="ResourceTypeEnum.SUBNET"
       :business-id="businessId"
+      :vendor="currentVendor"
       resource-name="subnet"
       :initial-model="syncDialogState.initialModel"
       :error-handler="handleSyncError"

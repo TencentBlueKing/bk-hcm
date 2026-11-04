@@ -79,11 +79,15 @@ test.describe('子网同步入口 - 异常分支', () => {
 });
 
 test.describe('子网同步入口 - 资源账号视角', () => {
-  test('P0-02 资源账号子网列表展示同步入口', async ({ page }) => {
+  test('P0-02 资源视角未选账号时同步入口仍可用', async ({ page }) => {
     await mockApis(page);
     await page.goto(RESOURCE_SUBNET_URL);
 
     await expect(page.getByText('子网', { exact: true }).first()).toBeVisible();
-    await expect(syncButton(page)).toBeVisible();
+    await expect(syncButton(page)).toBeEnabled();
+    await syncButton(page).click();
+
+    await expect(page.getByText('从云上同步所选账号的子网数据，不会同步 VPC、负载均衡等其他资源')).toBeVisible();
+    await expect(page.getByText('云账号', { exact: true })).toBeVisible();
   });
 });
