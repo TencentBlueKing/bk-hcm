@@ -83,3 +83,11 @@
 - 本次通过：提交钩子的 ESLint、Prettier、Stylelint；证书 mock 的分页、计数、ID/名称大小写不敏感检索、已选 ID 补查和空结果检查；变更 TS/TSX 转译及监听器 Vue script/template 编译。
 - 本次未执行浏览器 E2E：外部基线缺少 `e2e/scripts/run-e2e.cjs` 及 Playwright 配置；未执行完整构建、全量类型检查或全量回归。
 - 真实监听器详情、编辑态证书回显与算法互斥仍按上表交 QA 验证。
+
+### 外部 E2E 复跑（2026-11-04）
+
+- 补装被 gitignore 排除的本地运行层，参考 hcm 的 Playwright 配置并复制 `.env.local`；外部服务使用独立端口 5002，Edge 无操作延迟运行，避免复用内部 hcm 服务。
+- 命令：`node e2e/scripts/run-e2e.cjs .hcmfe/workflow/feat-clb-bind-cert-show-id/e2e.spec.ts --workers=1`。
+- 结果：**7 passed (1.1m)**，exitCode=0；未修改产品代码、mock 或测试断言。
+- 报告：`e2e/.e2e-runs/2026-11-04-cert/playwright-report/index.html`（本地忽略文件）。
+- 本次为 mock E2E 定向验证，真实监听器详情及编辑态算法校验仍按上表交 QA 验证。
