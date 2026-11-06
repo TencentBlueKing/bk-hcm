@@ -1,0 +1,109 @@
+{
+  "id": "feat-clb-bind-cert-show-id",
+  "title": "负载均衡-绑定证书-增加证书ID的展示",
+  "currentStage": "done",
+  "createdAt": "2026-11-03T06:33:36.200Z",
+  "updatedAt": "2026-11-03T07:55:05.039Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-bind-cert-show-id/coding.md",
+        "kind": "file",
+        "addedAt": "2026-11-03T07:00:44.584Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-clb-bind-cert-show-id/test.md",
+        "kind": "file",
+        "addedAt": "2026-11-03T07:53:29.531Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-11-03T07:17:28.341Z",
+      "note": "证书选择器、监听器详情及证书管理改造完成；影响面与文档已核对，lint 和 IDE 诊断通过，进入测试阶段。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-11-03T07:54:30.102Z",
+      "note": "E2E 7/7 通过，文档收口无缺口，进入 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-11-03T06:33:36.200Z",
+      "gitHead": "b2c1ccbdcb6044af2e818637b09749871e62eca0"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-11-03T07:17:28.341Z",
+      "note": "证书选择器、监听器详情及证书管理改造完成；影响面与文档已核对，lint 和 IDE 诊断通过，进入测试阶段。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-11-03T07:54:30.102Z",
+      "note": "E2E 7/7 通过，文档收口无缺口，进入 done。"
+    }
+  ],
+  "branch": "feat-clb-bind-cert-show-id",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138972423"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "completed",
+      "at": "2026-11-03T06:40:39.191Z",
+      "note": "已完成需求正文与评论全量澄清，生成本地规范化文档并回写；原文完整保留，未做工时或规模评估。"
+    },
+    "hcm-verify-e2e": {
+      "status": "completed",
+      "at": "2026-11-03T07:53:34.189Z",
+      "note": "已完成 Playwright E2E：7 个用例全部通过，exitCode=0；报告已写入 test.md 验证结论。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-11-03T07:54:16.326Z",
+      "note": "docs_status 核对：touchedModules=resource/business/load-balancer，均为 drafted 且 hasDrift=false，gaps 为空；本轮已在编码后更新对应模块并 deepen，收口无缺口。经验晋升队列保留待人工评审，不阻塞 done。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-11-03T07:55:05.039Z",
+      "note": "story 最终 status_14；owner 未变更；无 parent_id，不需 rollup。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/load-balancer/listener/add.vue",
+        "src/views/load-balancer/listener/layer7/add-domain-dialog.vue",
+        "src/hooks/useSingleList.ts",
+        "src/views/load-balancer/children/display/grid-details.vue",
+        "src/views/load-balancer/children/display/field-listener.ts",
+        "src/views/resource/resource-manage/children/dialog/batch-distribution/index.tsx",
+        "src/views/business/load-balancer/clb-view/components/CertSelector/index.tsx",
+        "src/views/business/load-balancer/clb-view/components/CertSelector/index.scss",
+        "src/views/load-balancer/listener/children/info.vue",
+        "src/views/business/cert-manager/index.tsx",
+        "src/views/resource/resource-manage/hooks/use-columns.tsx"
+      ],
+      "contentFingerprint": "1ca0e521fa1011d2700700aa11ec68e2f3d0afc5",
+      "codeBaseline": "58a0366d361feea13531e8764ccb81dd9a6cfe92",
+      "seatedAt": "2026-11-03T07:16:57.456Z"
+    }
+  }
+}

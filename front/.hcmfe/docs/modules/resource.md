@@ -49,3 +49,7 @@
 ## 明细约定
 
 优先在本文件用章节深化。**本轮只碰模块的一块、且本文件已有实质章节**时，优先拆 `modules/<id>/<topic>.md`（并行改同一模块时能少撞正文）；某块稳定超 80–120 行是兜底阈值。topic 文件首行写 `# 标题`、紧随一行摘要（TOC 据此渲染）。拆出后勿复制正文。
+
+## 证书识别字段
+
+`src/views/resource/resource-manage/hooks/use-columns.tsx` 的 `certColumns` 由证书管理页通过 `useColumns('cert')` 使用；证书 `cloud_id` 列名为「证书ID」，不要误用为删除/分配请求的内部 `id`。
