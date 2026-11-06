@@ -90,6 +90,8 @@ index.dev.js
 .stylelintcache
 
 .hcmfe/know-how
+.hcmfe/requirements
+.hcmfe/workflow
 # Playwright E2E
 test-results/
 playwright-report/
