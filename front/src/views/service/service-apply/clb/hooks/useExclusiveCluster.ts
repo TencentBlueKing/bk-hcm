@@ -1,23 +1,11 @@
 import { computed, type Reactive, ref, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { reqExclusiveClusterIdleVips, reqExclusiveClusterTags } from '@/api/load_balancers/apply-clb';
-import type {
-  ApplyClbModel,
-  ExclusiveClusterIsp,
-  ExclusiveClusterItem,
-  ExclusiveClusterTag,
-} from '@/api/load_balancers/apply-clb/types';
+import type { ApplyClbModel, ExclusiveClusterItem, ExclusiveClusterTag } from '@/api/load_balancers/apply-clb/types';
+import { getExclusiveClusterQueryIsp, isExclusiveClusterIsp } from './exclusive-cluster-isp';
 
 export const RANDOM_ALLOCATION = '__random__';
-
-/**
- * 独占集群标签接口（tags/list）的 isp 入参只支持三网直连：CMCC / CUCC / CTCC。
- * BGP（含自研云按 TypeSet 拆分出的 BGP 系取值）等其它运营商均不支持选择独占型。
- */
-export const EXCLUSIVE_CLUSTER_ISP_TYPES: ExclusiveClusterIsp[] = ['CMCC', 'CUCC', 'CTCC'];
-
-export const isExclusiveClusterIsp = (isp?: string): isp is ExclusiveClusterIsp =>
-  EXCLUSIVE_CLUSTER_ISP_TYPES.includes(isp as ExclusiveClusterIsp);
+export { getExclusiveClusterQueryIsp, isExclusiveClusterIsp } from './exclusive-cluster-isp';
 
 const uniqueEgresses = (clusters: ExclusiveClusterItem[] = []) => [
   ...new Set(clusters.map(({ egress }) => egress).filter(Boolean)),
@@ -100,17 +88,11 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
     tagsRequestId += 1;
     const requestId = tagsRequestId;
     const { bk_biz_id, account_id, region, vip_isp, zones, backup_zones, load_balancer_type } = formModel;
+    const queryIsp = getExclusiveClusterQueryIsp(vip_isp);
     exclusiveClusterTags.value = [];
     formModel.exclusive_cluster_tags = [];
     isTagsLoadFailed.value = false;
-    if (
-      !isBusinessPage ||
-      load_balancer_type !== 'OPEN' ||
-      !bk_biz_id ||
-      !account_id ||
-      !region ||
-      !isExclusiveClusterIsp(vip_isp)
-    ) {
+    if (!isBusinessPage || load_balancer_type !== 'OPEN' || !bk_biz_id || !account_id || !region || !queryIsp) {
       isTagsLoading.value = false;
       return;
     }
@@ -122,7 +104,7 @@ export default (formModel: Reactive<ApplyClbModel>, isBusinessPage: boolean, isR
         bk_biz_id,
         account_id,
         region,
-        isp: vip_isp,
+        isp: queryIsp,
         ...(zones ? { zones: Array.isArray(zones) ? zones : [zones] } : {}),
         // 主备可用区：backup_zones 有值时查主备集群（zones=主、back_zones=备），否则传空数组按单可用区查
         back_zones: backup_zones ? [backup_zones] : [],
