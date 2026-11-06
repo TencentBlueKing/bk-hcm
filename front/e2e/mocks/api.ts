@@ -8,6 +8,8 @@ function ok(data: unknown): string {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface MockApisOptions {
+  /** 当前视角可见账号，可包含后端遗留的内部厂商数据。 */
+  accounts?: typeof mockData.accounts;
   clusterTags?: typeof mockData.clusterTags;
   /** tags/list 直接返回 HTTP 500，模拟请求失败 */
   clusterTagsFail?: boolean;
@@ -19,6 +21,8 @@ export interface MockApisOptions {
   idleVipsFail?: boolean;
   /** idle_vips/list 响应延迟，模拟慢接口 */
   idleVipsDelayMs?: number;
+  /** 子网条件同步返回业务错误 */
+  subnetSyncFail?: boolean;
 }
 
 export async function mockApis(page: Page, options: MockApisOptions = {}): Promise<void> {
@@ -26,6 +30,7 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
   let tagsCallCount = 0;
   await page.route('**/api/**', async (route) => {
     const { pathname } = new URL(route.request().url());
+    const requestBody = route.request().postDataJSON();
     let data: unknown = { details: [], count: 0 };
     if (pathname === '/api/v1/web/auth/verify') {
       const resources = (route.request().postDataJSON() as { resources?: unknown[] })?.resources ?? [];
@@ -37,7 +42,10 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
     } else if (pathname === '/api/v1/web/changelogs') {
       data = [{ version: 'e2e', time: '2026-01-01', is_current: true }];
     } else if (/\/api\/v1\/cloud\/accounts\/bizs\/\d+$/.test(pathname)) {
-      data = mockData.accounts;
+      data = options.accounts ?? mockData.accounts;
+    } else if (pathname.endsWith('/accounts/resources/accounts/list')) {
+      const accounts = options.accounts ?? mockData.accounts;
+      data = { details: accounts, count: accounts.length };
     } else if (/\/api\/v1\/cloud\/bizs\/\d+\/collections\/bizs$/.test(pathname)) {
       data = [];
     } else if (pathname.endsWith('/network_type')) {
@@ -51,7 +59,8 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
     } else if (pathname.endsWith('/load_balancers/quotas')) {
       data = [];
     } else if (pathname.endsWith('/exclusive_clusters/tags/list')) {
-      const callIndex = tagsCallCount++;
+      const callIndex = tagsCallCount;
+      tagsCallCount += 1;
       if (options.clusterTagsFail) {
         return route.fulfill({ status: 500, contentType: 'application/json', body: 'mock tags failure' });
       }
@@ -72,6 +81,20 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
       data = { details: vips, count: vips.length };
     } else if (pathname.endsWith('/bandwidth_packages/query')) {
       data = { packages: [], total_count: 0 };
+    } else if (pathname.endsWith('/subnets/list')) {
+      const page = requestBody?.page ?? {};
+      data =
+        page.count === true
+          ? { details: [], count: mockData.subnets.length }
+          : { details: mockData.subnets, count: mockData.subnets.length };
+    } else if (pathname.includes('/resources/subnet/sync_by_cond')) {
+      if (options.subnetSyncFail) {
+        return route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 2000024, message: 'conditional sync resource does not support subnet' }),
+        });
+      }
+      data = {};
     }
     return route.fulfill({
       contentType: 'application/json',

@@ -47,13 +47,15 @@
         "src/**/*-internal.plugin.ts"
       ],
       "doc": "modules/component-variant.md",
-      "status": "stub",
+      "status": "drafted",
       "relates": [
         "model",
         "plugin-handler",
         "page-variant"
       ],
-      "fingerprint": null
+      "fingerprint": {
+        "rootHash": "3acc673fd0ec56ee8da3632c9b0a94f3854433b2"
+      }
     },
     {
       "id": "page-variant",

@@ -1,4 +1,28 @@
+export const mockSubnets = [
+  {
+    id: 'subnet-e2e-1',
+    cloud_id: 'subnet-e2e-1',
+    name: 'E2E 子网一',
+    vendor: 'tcloud',
+    account_id: 'account-e2e',
+    region: 'ap-test-1',
+    cloud_vpc_id: 'vpc-e2e',
+    bk_biz_id: 1,
+  },
+  {
+    id: 'subnet-e2e-2',
+    cloud_id: 'subnet-e2e-2',
+    name: 'E2E 子网二',
+    vendor: 'tcloud',
+    account_id: 'account-e2e',
+    region: 'ap-test-1',
+    cloud_vpc_id: 'vpc-e2e',
+    bk_biz_id: 1,
+  },
+];
+
 export const mockData = {
+  subnets: mockSubnets,
   businesses: [{ id: 1, name: '测试业务' }],
   accounts: [
     {
@@ -12,7 +36,8 @@ export const mockData = {
     },
   ],
   region: { region_id: 'ap-test-1', region_name: '测试地域', vendor: 'tcloud' },
-  zone: { name: 'ap-test-1a', name_cn: '测试一区' },  resource: {
+  zone: { name: 'ap-test-1a', name_cn: '测试一区' },
+  resource: {
     ZoneResourceSet: [
       {
         MasterZone: 'ap-test-1a',
@@ -91,3 +116,14 @@ export const mockData = {
     },
   ],
 };
+
+// 包含内部厂商，验证外部账号选择器不会生成空白厂商标签。
+export const mockSubnetSyncAccounts = [
+  { ...mockData.accounts[0], id: 'account-ziyan', vendor: 'tcloud-ziyan', name: '内部厂商测试账号' },
+  ...['tcloud', 'aws', 'azure', 'gcp', 'huawei'].map((vendor) => ({
+    ...mockData.accounts[0],
+    id: `account-${vendor}`,
+    vendor,
+    name: `外部-${vendor}-账号`,
+  })),
+];
