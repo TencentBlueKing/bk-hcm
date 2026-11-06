@@ -38,7 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateResFlowLock 创建资源跟Flow的锁定关系

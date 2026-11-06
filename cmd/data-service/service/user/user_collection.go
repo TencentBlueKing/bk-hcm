@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 
 	"hcm/pkg/api/core"
 	coreuser "hcm/pkg/api/core/user"

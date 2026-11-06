@@ -44,7 +44,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // InitCloudService initial the cloud service

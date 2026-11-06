@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchDeleteDisk 删除云盘

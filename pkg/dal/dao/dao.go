@@ -72,7 +72,7 @@ import (
 	"hcm/pkg/metrics"
 
 	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // Set defines all the DAO to be operated.

@@ -22,7 +22,7 @@ package daoselection
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"

@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // TCloudRoute defines tcloud route dao operations.

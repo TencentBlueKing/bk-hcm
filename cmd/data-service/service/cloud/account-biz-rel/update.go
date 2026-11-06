@@ -29,7 +29,7 @@ import (
 	tablecloud "hcm/pkg/dal/table/cloud"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // UpdateAccountBizRel update account biz rel.

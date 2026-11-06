@@ -40,7 +40,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 var _ action.Action = new(FlowSlaveOperateWatchAction)

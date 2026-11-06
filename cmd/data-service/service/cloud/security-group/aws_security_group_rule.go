@@ -38,7 +38,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // initAwsSGRuleService initial the aws security group rule service

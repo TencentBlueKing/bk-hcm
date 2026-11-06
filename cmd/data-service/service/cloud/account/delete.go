@@ -22,7 +22,7 @@ package account
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"

@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchUpdateSubAccount update sub account.

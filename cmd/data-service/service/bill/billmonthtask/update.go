@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/rest"
 
 	"github.com/goccy/go-json"
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // UpdateBillMonthTask update bill puller with options

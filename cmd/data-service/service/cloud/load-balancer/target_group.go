@@ -40,7 +40,7 @@ import (
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateTargetGroupWithRel 批量创建目标组，并绑定监听器/规则

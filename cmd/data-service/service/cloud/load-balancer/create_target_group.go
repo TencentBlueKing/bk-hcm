@@ -38,7 +38,7 @@ import (
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateTargetGroup 批量创建目标组
