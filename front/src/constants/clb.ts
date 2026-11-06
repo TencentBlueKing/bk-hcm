@@ -126,67 +126,6 @@ export const CLB_SPECS_REVERSE_MAP = {
   超强型4规格: 'clb.c4.xlarge',
 };
 
-// 腾讯云CLB规格列表映射
-export const CLB_SPEC_TYPE_COLUMNS_MAP: Record<
-  string,
-  {
-    connectionsPerMinute?: number;
-    newConnectionsPerSecond?: number;
-    queriesPerSecond?: number;
-    bandwidthLimit: number;
-  }
-> = {
-  shared: { bandwidthLimit: 10240 },
-  'clb.c1.small': {
-    connectionsPerMinute: 100000,
-    newConnectionsPerSecond: 10000,
-    queriesPerSecond: 10000,
-    bandwidthLimit: 1024,
-  },
-  'clb.c2.medium': {
-    connectionsPerMinute: 100000,
-    newConnectionsPerSecond: 10000,
-    queriesPerSecond: 10000,
-    bandwidthLimit: 2048,
-  },
-  'clb.c3.small': {
-    connectionsPerMinute: 200000,
-    newConnectionsPerSecond: 20000,
-    queriesPerSecond: 20000,
-    bandwidthLimit: 4096,
-  },
-  'clb.c3.medium': {
-    connectionsPerMinute: 500000,
-    newConnectionsPerSecond: 50000,
-    queriesPerSecond: 30000,
-    bandwidthLimit: 6144,
-  },
-  'clb.c4.small': {
-    connectionsPerMinute: 1000000,
-    newConnectionsPerSecond: 100000,
-    queriesPerSecond: 50000,
-    bandwidthLimit: 10240,
-  },
-  'clb.c4.medium': {
-    connectionsPerMinute: 2000000,
-    newConnectionsPerSecond: 200000,
-    queriesPerSecond: 100000,
-    bandwidthLimit: 20480,
-  },
-  'clb.c4.large': {
-    connectionsPerMinute: 5000000,
-    newConnectionsPerSecond: 500000,
-    queriesPerSecond: 200000,
-    bandwidthLimit: 40960,
-  },
-  'clb.c4.xlarge': {
-    connectionsPerMinute: 10000000,
-    newConnectionsPerSecond: 1000000,
-    queriesPerSecond: 300000,
-    bandwidthLimit: 61440,
-  },
-};
-
 // 监听器同步状态映射 - 反向映射
 export const LISTENER_BINDING_STATUS_REVERSE_MAP: ConstantMapRecord = {
   绑定中: 'binding',

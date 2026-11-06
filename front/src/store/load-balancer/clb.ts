@@ -59,6 +59,23 @@ export interface ILoadBalancerWithDeleteProtectionItem {
   [key: string]: any;
 }
 
+// 性能容量型规格参数：中文名与性能指标由后端从云上查询，前端不再静态维护
+export interface ILoadBalancerSlaCapacity {
+  SlaType: string; // 性能容量型规格编码，如 clb.c2.medium
+  SlaName: string; // 规格中文名称
+  MaxConn: number; // 并发连接数上限
+  MaxCps: number; // 新建连接数上限
+  MaxOutBits: number; // 最大出口流量，单位 Mbps
+  MaxInBits: number; // 最大入口流量，单位 Mbps
+  MaxQps: number; // 最大 QPS
+}
+
+export interface ILoadBalancerSlaCapacityParams {
+  account_id: string;
+  region: string;
+  sla_types?: string[];
+}
+
 export interface ILoadBalancerDetails {
   id: string;
   cloud_id: string;
@@ -280,6 +297,28 @@ export const useLoadBalancerClbStore = defineStore('load-balancer-clb', () => {
     }
   };
 
+  const slaCapacityLoading = ref(false);
+  /**
+   * 查询性能容量型规格参数（腾讯云 DescribeSlaCapacity）
+   * 规格中文名与性能指标统一由该接口返回
+   */
+  const getLoadBalancerSlaCapacities = async (
+    vendor: VendorEnum,
+    params: ILoadBalancerSlaCapacityParams,
+  ): Promise<ILoadBalancerSlaCapacity[]> => {
+    slaCapacityLoading.value = true;
+    const api = `/api/v1/cloud/vendors/${vendor}/load_balancers/sla/capacity/describe`;
+    try {
+      const res = await http.post(api, params);
+      return (res?.data?.SlaSet ?? []) as ILoadBalancerSlaCapacity[];
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      slaCapacityLoading.value = false;
+    }
+  };
+
   return {
     loadBalancerListWithDeleteProtectionLoading,
     getLoadBalancerListWithDeleteProtection,
@@ -294,5 +333,7 @@ export const useLoadBalancerClbStore = defineStore('load-balancer-clb', () => {
     loadBalancerListenerCountLoading,
     getListenerCountByLoadBalancerIds,
     getLoadBalancerLockStatus,
+    slaCapacityLoading,
+    getLoadBalancerSlaCapacities,
   };
 });
