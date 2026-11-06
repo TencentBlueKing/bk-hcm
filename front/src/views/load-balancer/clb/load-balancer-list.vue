@@ -79,6 +79,8 @@ const handleClick = (id: string) => {
     routerAction.redirect({
       name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
       params: { bizId: currentGlobalBusinessId.value, id },
+      // 切换负载均衡时保留当前 query（如 details_active），避免详情页 tab 状态丢失
+      query: { ...route.query },
     });
   } else {
     routerAction.redirect({
