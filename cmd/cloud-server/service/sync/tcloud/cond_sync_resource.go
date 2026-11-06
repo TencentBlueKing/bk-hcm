@@ -62,6 +62,7 @@ var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
 	enumor.ZoneCloudResType:                         CondSyncZone,
 	enumor.LoadBalancerExclusiveClusterCloudResType: CondSyncExclusiveCluster,
 	enumor.SecurityGroupCloudResType:                CondSyncSecurityGroup,
+	enumor.SubnetCloudResType:                       CondSyncSubnet,
 	enumor.SubAccountCloudResType:                   CondSyncSubAccount,
 	enumor.PermissionTemplateCloudResType:           CondSyncPermissionTemplate,
 }
