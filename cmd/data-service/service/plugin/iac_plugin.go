@@ -105,33 +105,44 @@ func (svc *service) BatchDeleteIaCPlugin(cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	listResp, err := svc.dao.IaCPlugin().List(cts.Kit, &types.ListOption{
+	records := make([]tableplugin.IaCPluginTable, 0)
+	listOpt := &types.ListOption{
 		Filter: req.Filter,
 		Page:   core.NewDefaultBasePage(),
-	})
-	if err != nil {
-		logs.Errorf("list iac plugin before delete failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list iac plugin before delete failed, err: %v", err)
 	}
-	if len(listResp.Details) == 0 {
+	for {
+		listResp, err := svc.dao.IaCPlugin().List(cts.Kit, listOpt)
+		if err != nil {
+			logs.Errorf("list iac plugin before delete failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("list iac plugin before delete failed, err: %v", err)
+		}
+		records = append(records, listResp.Details...)
+
+		if uint(len(listResp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		listOpt.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+	if len(records) == 0 {
 		return nil, nil
 	}
 
-	delIDs := slice.Map(listResp.Details, func(one tableplugin.IaCPluginTable) string { return one.ID })
-	audits := slice.Map(listResp.Details, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
-		return buildIaCPluginAudit(cts.Kit, enumor.Delete, one, nil)
-	})
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, batch := range slice.Split(records, constant.BatchOperationMaxLimit) {
+			delIDs := slice.Map(batch, func(one tableplugin.IaCPluginTable) string { return one.ID })
+			delFilter := tools.ContainersExpression("id", delIDs)
+			if err := svc.dao.IaCPlugin().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+				logs.Errorf("delete iac plugin failed, err: %v, delIDs: %v, rid: %s", err, delIDs, cts.Kit.Rid)
+				return nil, err
+			}
 
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err := svc.dao.IaCPlugin().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			logs.Errorf("delete iac plugin failed, err: %v, delIDs: %v, rid: %s", err, delIDs, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
-			logs.Errorf("batch create delete iac plugin audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
+			audits := slice.Map(batch, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
+				return buildIaCPluginAudit(cts.Kit, enumor.Delete, one, nil)
+			})
+			if err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
+				logs.Errorf("batch create delete iac plugin audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+				return nil, err
+			}
 		}
 		return nil, nil
 	})
@@ -185,7 +196,14 @@ func (svc *service) UpdateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 		)
 	}
 
-	changed := buildIaCPluginUpdateFields(req)
+	changed, err := cvt.StructToMap(req)
+	if err != nil {
+		logs.Errorf("convert update iac plugin req to map failed, err: %v, id: %s, rid: %s", err, req.ID, cts.Kit.Rid)
+		return nil, err
+	}
+	delete(changed, "id")
+	delete(changed, "current_state")
+
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effected, err := svc.dao.IaCPlugin().UpdateWithTx(cts.Kit, txn, flt, model)
 		if err != nil {
@@ -240,23 +258,6 @@ func (svc *service) ListIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &dataplugin.IaCPluginListResult{Details: slice.Map(result.Details, convTableToIaCPlugin)}, nil
-}
-
-func buildIaCPluginUpdateFields(req *dataplugin.IaCPluginUpdateReq) map[string]interface{} {
-	changed := make(map[string]interface{})
-	if len(req.State) != 0 {
-		changed["state"] = req.State
-	}
-	if req.Message != nil {
-		changed["message"] = cvt.PtrToVal(req.Message)
-	}
-	if len(req.Extension) != 0 {
-		changed["extension"] = req.Extension
-	}
-	if req.Memo != nil {
-		changed["memo"] = cvt.PtrToVal(req.Memo)
-	}
-	return changed
 }
 
 func buildIaCPluginAudit(kt *kit.Kit, action enumor.AuditAction, data tableplugin.IaCPluginTable,
