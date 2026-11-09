@@ -55,12 +55,6 @@ func (c *IaCPluginClient) Update(kt *kit.Kit, req *dataplugin.IaCPluginUpdateReq
 		c.client, rest.PATCH, kt, req, "/iac_plugins/update")
 }
 
-// BatchUpdateState batch update the state of the iac plugin by plugin name.
-func (c *IaCPluginClient) BatchUpdateState(kt *kit.Kit, req *dataplugin.IaCPluginBatchUpdateStateReq) error {
-	return common.RequestNoResp[dataplugin.IaCPluginBatchUpdateStateReq](
-		c.client, rest.PATCH, kt, req, "/iac_plugins/batch/update_state")
-}
-
 // List list iac plugin records.
 func (c *IaCPluginClient) List(kt *kit.Kit, req *core.ListReq) (*dataplugin.IaCPluginListResult, error) {
 	return common.Request[core.ListReq, dataplugin.IaCPluginListResult](

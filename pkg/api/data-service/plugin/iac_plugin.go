@@ -21,8 +21,6 @@
 package dataplugin
 
 import (
-	"errors"
-
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/criteria/enumor"
@@ -57,7 +55,7 @@ func (req *IaCPluginCreateReq) Validate() error {
 
 // IaCPluginUpdateReq IaC 插件注册记录更新请求。
 // 创建后 plugin_name、plugin_version、protocol 不可修改。
-// CurrentState 不为空时，仅当记录当前状态等于它才会更新，否则返回 errf.Aborted。
+// CurrentState 不为空时，仅当记录当前状态等于它才会更新，否则返回 errf.RecordNotUpdate。
 type IaCPluginUpdateReq struct {
 	ID           string                `json:"id" validate:"required"`
 	CurrentState enumor.IaCPluginState `json:"current_state,omitempty" validate:"omitempty"`
@@ -72,10 +70,6 @@ type IaCPluginUpdateReq struct {
 func (req *IaCPluginUpdateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
-	}
-
-	if len(req.State) == 0 && req.Message == nil && len(req.Extension) == 0 && req.Memo == nil {
-		return errors.New("at least one of state, message, extension, memo must be set")
 	}
 
 	if len(req.CurrentState) != 0 {
@@ -101,21 +95,6 @@ type IaCPluginBatchDeleteReq struct {
 // Validate IaCPluginBatchDeleteReq.
 func (req *IaCPluginBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
-}
-
-// IaCPluginBatchUpdateStateReq 按过滤条件批量修改状态。
-type IaCPluginBatchUpdateStateReq struct {
-	Filter  *filter.Expression    `json:"filter" validate:"required"`
-	ToState enumor.IaCPluginState `json:"to_state" validate:"required"`
-}
-
-// Validate IaCPluginBatchUpdateStateReq.
-func (req *IaCPluginBatchUpdateStateReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	return req.ToState.Validate()
 }
 
 // IaCPluginListResult IaC 插件注册记录列表结果，列表请求复用 core.ListReq。

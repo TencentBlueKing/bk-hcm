@@ -47,8 +47,6 @@ func (svc *service) initIaCPluginRoutes(h *rest.Handler) {
 	h.Add("CreateIaCPlugin", http.MethodPost, "/iac_plugins/create", svc.CreateIaCPlugin)
 	h.Add("UpdateIaCPlugin", http.MethodPatch, "/iac_plugins/update", svc.UpdateIaCPlugin)
 	h.Add("BatchDeleteIaCPlugin", http.MethodDelete, "/iac_plugins/batch", svc.BatchDeleteIaCPlugin)
-	h.Add("BatchUpdateIaCPluginState", http.MethodPatch, "/iac_plugins/batch/update_state",
-		svc.BatchUpdateIaCPluginState)
 	h.Add("ListIaCPlugin", http.MethodPost, "/iac_plugins/list", svc.ListIaCPlugin)
 }
 
@@ -202,61 +200,6 @@ func (svc *service) UpdateIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 		if err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
 			logs.Errorf("batch create update iac plugin audit failed, err: %v, id: %s, rid: %s",
 				err, req.ID, cts.Kit.Rid)
-			return nil, err
-		}
-		return nil, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// BatchUpdateIaCPluginState 按过滤条件查出目标记录，再按 ID 批量修改状态并写入审计。
-func (svc *service) BatchUpdateIaCPluginState(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataplugin.IaCPluginBatchUpdateStateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		logs.Errorf("batch update iac plugin state decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	if err := req.Validate(); err != nil {
-		logs.Errorf("batch update iac plugin state validate failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	listResp, err := svc.dao.IaCPlugin().List(cts.Kit, &types.ListOption{
-		Filter: req.Filter,
-		Page:   core.NewDefaultBasePage(),
-	})
-	if err != nil {
-		logs.Errorf("list iac plugin before batch update state failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if len(listResp.Details) == 0 {
-		return nil, nil
-	}
-
-	ids := slice.Map(listResp.Details, func(one tableplugin.IaCPluginTable) string { return one.ID })
-	model := &tableplugin.IaCPluginTable{
-		State:   req.ToState,
-		Reviser: cts.Kit.User,
-	}
-	changed := map[string]interface{}{"state": req.ToState}
-	audits := slice.Map(listResp.Details, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
-		return buildIaCPluginAudit(cts.Kit, enumor.Update, one, changed)
-	})
-
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		updateFilter := tools.ContainersExpression("id", ids)
-		if _, err := svc.dao.IaCPlugin().UpdateWithTx(cts.Kit, txn, updateFilter, model); err != nil {
-			logs.Errorf("batch update iac plugin state failed, err: %v, ids: %v, rid: %s", err, ids, cts.Kit.Rid)
-			return nil, err
-		}
-
-		if err := svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
-			logs.Errorf("batch create update iac plugin state audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 		return nil, nil
