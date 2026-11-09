@@ -21,9 +21,7 @@
 package daoplugin
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
@@ -41,7 +39,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
@@ -50,13 +47,8 @@ import (
 // IaCPlugin only used for iac_plugin.
 type IaCPlugin interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableplugin.IaCPluginTable) ([]string, error)
-	// UpdateByID 按 ID 更新，并在同一事务内写 update 审计。currentState 不为空时，库里的当前状态必须等于它，
-	// 否则返回 errf.Aborted。记录没有任何字段实际发生变化时（例如重复提交同样的值）不写审计。
-	UpdateByID(kt *kit.Kit, id string, currentState enumor.IaCPluginState, model *tableplugin.IaCPluginTable) error
-	// BatchUpdateState 按插件名把处于 fromStates 的记录批量改为 toState，每条被改的记录各写一条 update 审计。
-	BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enumor.IaCPluginState,
-		toState enumor.IaCPluginState) error
-	// DeleteWithTx 按过滤条件删除记录，并为每条被删记录写 delete 审计。
+	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression,
+		model *tableplugin.IaCPluginTable) (int64, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult[tableplugin.IaCPluginTable], error)
 }
@@ -99,7 +91,20 @@ func (d *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableplugin.I
 	}
 
 	audits := slice.Map(models, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
-		return d.buildAudit(kt, enumor.Create, one, nil)
+		return &tableaudit.AuditTable{
+			ResID:    one.ID,
+			ResName:  one.PluginName,
+			ResType:  enumor.IaCPluginAuditResType,
+			Action:   enumor.Create,
+			BkBizID:  constant.UnassignedBiz,
+			Operator: kt.User,
+			Source:   kt.GetRequestSource(),
+			Rid:      kt.Rid,
+			AppCode:  kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: one,
+			},
+		}
 	})
 	if err = d.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
 		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
@@ -109,121 +114,44 @@ func (d *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tableplugin.I
 	return ids, nil
 }
 
-// buildAudit 构造 iac_plugin 的审计记录。IaC 插件是平台级资源，不属于任何业务，bk_biz_id 固定为 -1。
-// create 时 detail.data 为新记录；update 时 detail.data 为变更前的记录，detail.changed 为本次变更的字段。
-func (d *Dao) buildAudit(kt *kit.Kit, action enumor.AuditAction, data tableplugin.IaCPluginTable,
-	changed map[string]interface{}) *tableaudit.AuditTable {
+// UpdateWithTx 在事务中按过滤条件更新 iac_plugin 记录，返回实际受影响的行数。
+func (d *Dao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression,
+	model *tableplugin.IaCPluginTable) (int64, error) {
 
-	return &tableaudit.AuditTable{
-		ResID:    data.ID,
-		ResName:  data.PluginName,
-		ResType:  enumor.IaCPluginAuditResType,
-		Action:   action,
-		BkBizID:  constant.UnassignedBiz,
-		Operator: kt.User,
-		Source:   kt.GetRequestSource(),
-		Rid:      kt.Rid,
-		AppCode:  kt.AppCode,
-		Detail: &tableaudit.BasicDetail{
-			Data:    data,
-			Changed: changed,
-		},
+	if filterExpr == nil {
+		return 0, errf.New(errf.InvalidParameter, "filter expr is nil")
 	}
-}
-
-// UpdateByID update iac_plugin by id in one transaction: lock and read the current record, update it, and write an
-// update audit only when something actually changed. If currentState is not empty, the stored state must equal it.
-func (d *Dao) UpdateByID(kt *kit.Kit, id string, currentState enumor.IaCPluginState,
-	model *tableplugin.IaCPluginTable) error {
-
-	if len(id) == 0 {
-		return errf.New(errf.InvalidParameter, "id is required")
+	if model == nil {
+		return 0, errf.New(errf.InvalidParameter, "iac plugin update model is nil")
 	}
 
 	if err := model.UpdateValidate(); err != nil {
-		return err
+		return 0, err
 	}
 
-	// message 允许被清空，memo 同理。
-	opts := utils.NewFieldOptions().AddBlankedFields("message", "memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		logs.Errorf("generate update where expr for %s failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
+		return 0, err
+	}
+
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
-		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
+		return 0, fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	_, err = d.Orm.AutoTxn(kt, func(txn *sqlx.Tx, _ *orm.TxnOption) (interface{}, error) {
-		// FOR UPDATE 锁住该行，保证"读旧值 -> 比较状态 -> 更新 -> 写审计"在并发下一致。
-		olds, err := d.listByIDsForUpdate(kt, txn, []string{id})
-		if err != nil {
-			return nil, err
-		}
-		if len(olds) == 0 {
-			return nil, errf.Newf(errf.RecordNotFound, "iac plugin %s not found", id)
-		}
-		old := olds[0]
+	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
+	effected, err := d.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	if err != nil {
+		logs.ErrorJson("update %s failed, err: %v, filter: %v, rid: %s", table.IaCPluginTable, err, filterExpr, kt.Rid)
+		return 0, err
+	}
 
-		if len(currentState) != 0 && old.State != currentState {
-			return nil, errf.Newf(errf.Aborted, "iac plugin %s is in state %s, current state should be %s",
-				id, old.State, currentState)
-		}
-
-		changed := diffIaCPlugin(old, model)
-		if len(changed) == 0 {
-			// 没有字段实际变化：不更新，不写审计。
-			return nil, nil
-		}
-
-		sql := fmt.Sprintf(`UPDATE %s %s WHERE id = :id`, table.IaCPluginTable, setExpr)
-		toUpdate["id"] = id
-		if _, err = d.Orm.Txn(txn).Update(kt.Ctx, sql, toUpdate); err != nil {
-			logs.Errorf("update %s failed, err: %v, id: %s, rid: %s", table.IaCPluginTable, err, id, kt.Rid)
-			return nil, err
-		}
-
-		audits := []*tableaudit.AuditTable{d.buildAudit(kt, enumor.Update, old, changed)}
-		if err = d.Audit.BatchCreateWithTx(kt, txn, audits); err != nil {
-			logs.Errorf("batch create audit failed, err: %v, id: %s, rid: %s", err, id, kt.Rid)
-			return nil, err
-		}
-
-		return nil, nil
-	})
-
-	return err
+	return effected, nil
 }
 
-// diffIaCPlugin 返回 model 中相对 old 实际发生变化的字段，key 为列名。model 里为空值的字段视为"不更新"，
-// message、memo 例外：指针非 nil 即表示要更新（包括清空）。
-func diffIaCPlugin(old tableplugin.IaCPluginTable, model *tableplugin.IaCPluginTable) map[string]interface{} {
-	changed := make(map[string]interface{})
-
-	if len(model.State) != 0 && model.State != old.State {
-		changed["state"] = model.State
-	}
-	if model.Message != nil && (old.Message == nil || cvt.PtrToVal(old.Message) != cvt.PtrToVal(model.Message)) {
-		changed["message"] = cvt.PtrToVal(model.Message)
-	}
-	if len(model.Extension) != 0 && !jsonEqual(string(model.Extension), string(old.Extension)) {
-		changed["extension"] = model.Extension
-	}
-	if model.Memo != nil && (old.Memo == nil || cvt.PtrToVal(old.Memo) != cvt.PtrToVal(model.Memo)) {
-		changed["memo"] = cvt.PtrToVal(model.Memo)
-	}
-
-	return changed
-}
-
-// jsonEqual 比较两段 JSON 的语义是否相同（忽略空白与 key 顺序，MySQL 的 JSON 列会重排 key）。
-func jsonEqual(a, b string) bool {
-	var va, vb interface{}
-	if json.Unmarshal([]byte(a), &va) != nil || json.Unmarshal([]byte(b), &vb) != nil {
-		return a == b
-	}
-
-	return reflect.DeepEqual(va, vb)
-}
-
-// DeleteWithTx 在事务中按过滤条件删除 iac_plugin 记录，并为每条被删记录写 delete 审计。
+// DeleteWithTx 在事务中按过滤条件删除 iac_plugin 记录。
 func (d *Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
@@ -235,92 +163,13 @@ func (d *Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) er
 		return err
 	}
 
-	rows := make([]tableplugin.IaCPluginTable, 0)
-	selectSQL := fmt.Sprintf(`SELECT %s FROM %s %s`, tableplugin.IaCPluginColumns.ColumnExpr(),
-		table.IaCPluginTable, whereExpr)
-	if err = d.Orm.Txn(tx).Select(kt.Ctx, &rows, selectSQL, whereValue); err != nil {
-		logs.Errorf("select %s before delete failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
-		return err
-	}
-	if len(rows) == 0 {
-		return nil
-	}
-
-	deleteSQL := fmt.Sprintf(`DELETE FROM %s %s`, table.IaCPluginTable, whereExpr)
-	if _, err = d.Orm.Txn(tx).Delete(kt.Ctx, deleteSQL, whereValue); err != nil {
-		logs.Errorf("delete %s failed, err: %v, rid: %s", table.IaCPluginTable, err, kt.Rid)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.IaCPluginTable, whereExpr)
+	if _, err = d.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+		logs.ErrorJson("delete %s failed, err: %v, filter: %v, rid: %s", table.IaCPluginTable, err, expr, kt.Rid)
 		return err
 	}
 
-	audits := slice.Map(rows, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
-		return d.buildAudit(kt, enumor.Delete, one, nil)
-	})
-	if err = d.Audit.BatchCreateWithTx(kt, tx, audits); err != nil {
-		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
 	return nil
-}
-
-// listByIDsForUpdate 在事务内按 id 加行锁读取记录。
-func (d *Dao) listByIDsForUpdate(kt *kit.Kit, tx *sqlx.Tx, ids []string) ([]tableplugin.IaCPluginTable, error) {
-	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids) FOR UPDATE`,
-		tableplugin.IaCPluginColumns.ColumnExpr(), table.IaCPluginTable)
-	rows := make([]tableplugin.IaCPluginTable, 0, len(ids))
-	if err := d.Orm.Txn(tx).Select(kt.Ctx, &rows, sql, map[string]interface{}{"ids": ids}); err != nil {
-		logs.Errorf("select %s for update failed, err: %v, ids: %v, rid: %s", table.IaCPluginTable, err, ids, kt.Rid)
-		return nil, err
-	}
-
-	return rows, nil
-}
-
-// BatchUpdateState update the state of iac_plugin by plugin name in one transaction, only records in fromStates are
-// updated, and each updated record gets its own update audit.
-func (d *Dao) BatchUpdateState(kt *kit.Kit, pluginName string, fromStates []enumor.IaCPluginState,
-	toState enumor.IaCPluginState) error {
-
-	if len(pluginName) == 0 || len(fromStates) == 0 {
-		return errf.New(errf.InvalidParameter, "plugin_name and from_states are required")
-	}
-
-	_, err := d.Orm.AutoTxn(kt, func(txn *sqlx.Tx, _ *orm.TxnOption) (interface{}, error) {
-		// 先加行锁读出将被修改的记录，同一事务内再更新，保证审计里的"变更前"与实际被改的行一致。
-		sql := fmt.Sprintf(`SELECT %s FROM %s WHERE plugin_name = :plugin_name `+
-			`AND state IN (:from_states) FOR UPDATE`,
-			tableplugin.IaCPluginColumns.ColumnExpr(), table.IaCPluginTable)
-		changes := make([]tableplugin.IaCPluginTable, 0)
-		args := map[string]interface{}{"plugin_name": pluginName, "from_states": fromStates}
-		if err := d.Orm.Txn(txn).Select(kt.Ctx, &changes, sql, args); err != nil {
-			logs.Errorf("select %s for update failed, err: %v, plugin_name: %s, rid: %s",
-				table.IaCPluginTable, err, pluginName, kt.Rid)
-			return nil, err
-		}
-		if len(changes) == 0 {
-			return nil, nil
-		}
-
-		ids := slice.Map(changes, func(one tableplugin.IaCPluginTable) string { return one.ID })
-		updateSQL := fmt.Sprintf(`UPDATE %s SET state = :to_state, reviser = :reviser WHERE id IN (:ids)`,
-			table.IaCPluginTable)
-		updateArgs := map[string]interface{}{"to_state": toState, "reviser": kt.User, "ids": ids}
-		if _, err := d.Orm.Txn(txn).Update(kt.Ctx, updateSQL, updateArgs); err != nil {
-			logs.Errorf("batch update %s state failed, err: %v, plugin_name: %s, rid: %s",
-				table.IaCPluginTable, err, pluginName, kt.Rid)
-			return nil, err
-		}
-
-		audits := slice.Map(changes, func(one tableplugin.IaCPluginTable) *tableaudit.AuditTable {
-			return d.buildAudit(kt, enumor.Update, one, map[string]interface{}{"state": toState})
-		})
-		if err := d.Audit.BatchCreateWithTx(kt, txn, audits); err != nil {
-			logs.Errorf("batch create audit failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
-			return nil, err
-		}
-
-		return nil, nil
-	})
-	return err
 }
 
 // List list iac_plugin.

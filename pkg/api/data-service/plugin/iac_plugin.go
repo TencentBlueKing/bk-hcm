@@ -74,6 +74,10 @@ func (req *IaCPluginUpdateReq) Validate() error {
 		return err
 	}
 
+	if len(req.State) == 0 && req.Message == nil && len(req.Extension) == 0 && req.Memo == nil {
+		return errors.New("at least one of state, message, extension, memo must be set")
+	}
+
 	if len(req.CurrentState) != 0 {
 		if err := req.CurrentState.Validate(); err != nil {
 			return err
@@ -99,26 +103,16 @@ func (req *IaCPluginBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// IaCPluginBatchUpdateStateReq 按插件名批量修改状态：仅当前状态属于 FromStates 的记录会被更新。
+// IaCPluginBatchUpdateStateReq 按过滤条件批量修改状态。
 type IaCPluginBatchUpdateStateReq struct {
-	PluginName string                  `json:"plugin_name" validate:"required"`
-	FromStates []enumor.IaCPluginState `json:"from_states" validate:"required,min=1"`
-	ToState    enumor.IaCPluginState   `json:"to_state" validate:"required"`
+	Filter  *filter.Expression    `json:"filter" validate:"required"`
+	ToState enumor.IaCPluginState `json:"to_state" validate:"required"`
 }
 
 // Validate IaCPluginBatchUpdateStateReq.
 func (req *IaCPluginBatchUpdateStateReq) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
-	}
-
-	for _, one := range req.FromStates {
-		if err := one.Validate(); err != nil {
-			return err
-		}
-		if one == req.ToState {
-			return errors.New("from_states should not contain to_state")
-		}
 	}
 
 	return req.ToState.Validate()
