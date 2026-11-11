@@ -2,9 +2,9 @@ import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Dialog, SearchSelect, Table } from 'bkui-vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { VendorEnum } from '@/common/constant';
+import { CLB_SPECS } from '@/common/constant';
+import { CLB_SPEC_TYPE_COLUMNS_MAP } from '@/constants/clb';
 import { getSimpleConditionBySearchSelect } from '@/utils/search';
-import { ILoadBalancerSlaCapacity, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import type { SpecAvailability } from '@/api/load_balancers/apply-clb/types';
 import { ModelPropertyColumn } from '@/model/typings';
 
@@ -12,11 +12,24 @@ import Empty from '@/components/empty';
 import ModalFooter from '@/components/modal/modal-footer.vue';
 import './index.scss';
 
+interface IClbSlaSpecRow {
+  SlaType: string;
+  SlaName: string;
+  MaxConn?: number;
+  MaxCps?: number;
+  MaxOutBits?: number;
+  MaxInBits?: number;
+  MaxQps?: number;
+}
+
+const formatCount = (value?: number) => value?.toLocaleString('en-US');
+
 /**
  * 负载均衡实例规格选择对话框
  *
- * 规格中文名与性能指标统一由后端 `load_balancers/sla/capacity/describe`
- * 返回，前端不再静态维护；表格按接口字段展示。
+ * 规格中文名与性能指标由前端静态表维护。
+ * 静态表只有一档带宽上限。DescribeSlaCapacity 的示例里 MaxInBits 与 MaxOutBits 相同，
+ * 产品规格也只公布这一档上限，因此入口流量沿用同一数值。
  */
 export default defineComponent({
   name: 'LbSpecTypeSelectDialog',
@@ -24,21 +37,8 @@ export default defineComponent({
     modelValue: Boolean,
     // 已选规格编码
     slaType: String,
-    // 云厂商标识，作为接口路径中的 vendor
-    vendor: {
-      type: String as PropType<VendorEnum>,
-      default: VendorEnum.TCLOUD,
-    },
-    accountId: {
-      type: String,
-      default: '',
-    },
-    region: {
-      type: String,
-      default: '',
-    },
     // 当前可用区下各规格的可用性（来自 load_balancers/resources/describe）。
-    // 可选：规格参数接口不返回可用性，需要该约束的接入方才传；
+    // 可选：静态表不含可用性，需要该约束的接入方才传；
     // 不传（默认空数组）时不按可用性过滤，不会收窄可选项
     specAvailabilitySet: {
       type: Array as PropType<Array<SpecAvailability>>,
@@ -48,7 +48,6 @@ export default defineComponent({
   emits: ['update:modelValue', 'confirm', 'hidden'],
   setup(props, { emit }) {
     const { t } = useI18n();
-    const loadBalancerClbStore = useLoadBalancerClbStore();
 
     const isShow = computed({
       get() {
@@ -59,27 +58,9 @@ export default defineComponent({
       },
     });
 
-    // 当前选中的规格编码
     const selectedSlaType = ref(props.slaType || '');
-    // 接口返回的原始数据
-    const slaList = ref<Array<ILoadBalancerSlaCapacity>>([]);
-    // 弹窗内独立 loading，覆盖"参数不足不请求"与真实请求两种过程
-    const loading = ref(false);
-    // 首次加载的全量规格编码，作为搜索候选项，不随搜索结果收窄
-    const allSlaTypes = ref<Array<string>>([]);
-
-    // 搜索候选取首次全量结果，避免搜索后候选被自身结果收窄
-    const searchData = computed<Array<ISearchItem>>(() => [
-      {
-        id: 'sla_types',
-        name: t('性能容量型规格'),
-        children: allSlaTypes.value.map((SlaType) => ({ id: SlaType, name: SlaType })),
-        multiple: true,
-      },
-    ]);
     const searchValue = ref<Array<any>>([]);
 
-    // 表格列按接口返回字段定义
     const columns: Array<ModelPropertyColumn> = [
       {
         id: 'SlaType',
@@ -96,41 +77,54 @@ export default defineComponent({
         id: 'MaxConn',
         name: t('并发连接数上限(个/秒)'),
         type: 'number',
-        meta: { display: { format: (value: number) => value?.toLocaleString('en-US') } },
+        meta: { display: { format: formatCount } },
         width: 180,
       },
       {
         id: 'MaxCps',
         name: t('新建连接数上限(个/秒)'),
         type: 'number',
-        meta: { display: { format: (value: number) => value?.toLocaleString('en-US') } },
+        meta: { display: { format: formatCount } },
         width: 180,
       },
       {
         id: 'MaxOutBits',
         name: t('最大出口流量(Mbps)'),
         type: 'number',
-        meta: { display: { format: (value: number) => value?.toLocaleString('en-US') } },
+        meta: { display: { format: formatCount } },
       },
       {
         id: 'MaxInBits',
         name: t('最大入口流量(Mbps)'),
         type: 'number',
-        meta: { display: { format: (value: number) => value?.toLocaleString('en-US') } },
+        meta: { display: { format: formatCount } },
       },
       {
         id: 'MaxQps',
         name: t('最大qps(个/秒)'),
         type: 'number',
-        meta: { display: { format: (value: number) => value?.toLocaleString('en-US') } },
+        meta: { display: { format: formatCount } },
       },
     ];
 
-    // 简约型与静态表无指标的 clb.c5.* 不提供购买
+    // 简约型不提供购买；静态表未收录的 clb.c5.* 同样不展示
     const isVisibleSlaType = (slaType?: string) => slaType !== 'clb.c1.small' && !slaType?.startsWith('clb.c5.');
 
-    // 当前可用区可用的规格编码集合。
-    // 不传 specAvailabilitySet（为空）时视为不按可用性过滤，用于无需该约束的接入方
+    const staticSlaList = computed<Array<IClbSlaSpecRow>>(() =>
+      Object.entries(CLB_SPEC_TYPE_COLUMNS_MAP)
+        .filter(([slaType]) => slaType !== 'shared')
+        .map(([SlaType, spec]) => ({
+          SlaType,
+          SlaName: CLB_SPECS[SlaType] ?? SlaType,
+          MaxConn: spec.connectionsPerMinute,
+          MaxCps: spec.newConnectionsPerSecond,
+          MaxQps: spec.queriesPerSecond,
+          MaxOutBits: spec.bandwidthLimit,
+          MaxInBits: spec.bandwidthLimit,
+        })),
+    );
+
+    // 不传 specAvailabilitySet（为空）时视为不按可用性过滤
     const availableSlaTypes = computed(
       () =>
         new Set(
@@ -140,54 +134,29 @@ export default defineComponent({
         ),
     );
 
-    // 规格参数接口不返回可用性，需要时用 resources/describe 的结果做交集，避免选到当前不可用的规格。
-    // 未传 specAvailabilitySet 的接入方（空集）不做该过滤，行为与不接入前一致
-    const filterUsable = (list: Array<ILoadBalancerSlaCapacity>) =>
-      list.filter(
+    const usableSlaList = computed(() =>
+      staticSlaList.value.filter(
         ({ SlaType }) =>
           isVisibleSlaType(SlaType) && (!availableSlaTypes.value.size || availableSlaTypes.value.has(SlaType)),
-      );
-
-    // 搜索时把规格编码作为 sla_types 传给后端过滤，接口侧完成筛选
-    const getSlaCapacities = async (slaTypes?: string[]) => {
-      const { vendor, accountId, region } = props;
-      slaList.value = [];
-      if (!vendor || !accountId || !region) return;
-      loading.value = true;
-      try {
-        const list = await loadBalancerClbStore.getLoadBalancerSlaCapacities(vendor, {
-          account_id: accountId,
-          region,
-          sla_types: slaTypes,
-        });
-        slaList.value = filterUsable(list);
-        // 无搜索条件的那次拿到的是全量，用它作为搜索候选
-        if (!slaTypes?.length) allSlaTypes.value = slaList.value.map(({ SlaType }) => SlaType);
-      } catch (error) {
-        // 不落静态兜底：接口失败即空列表，避免展示可能过期的参数
-        slaList.value = [];
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    watch(
-      () => [props.modelValue, props.vendor, props.accountId, props.region],
-      () => {
-        if (!props.modelValue) return;
-        getSlaCapacities();
-      },
-      { immediate: true },
+      ),
     );
 
-    // 搜索条件变化 -> 重新请求；清空搜索时取全量
-    watch(searchValue, (val) => {
-      if (!props.modelValue) return;
-      const { sla_types } = getSimpleConditionBySearchSelect(val) ?? {};
-      getSlaCapacities(sla_types);
+    const searchData = computed<Array<ISearchItem>>(() => [
+      {
+        id: 'sla_types',
+        name: t('性能容量型规格'),
+        children: usableSlaList.value.map(({ SlaType }) => ({ id: SlaType, name: SlaType })),
+        multiple: true,
+      },
+    ]);
+
+    const slaList = computed(() => {
+      const { sla_types: slaTypes } = getSimpleConditionBySearchSelect(searchValue.value) ?? {};
+      if (!slaTypes?.length) return usableSlaList.value;
+      const selected = new Set(slaTypes);
+      return usableSlaList.value.filter(({ SlaType }) => selected.has(SlaType));
     });
 
-    // 关闭后清空搜索条件，避免下次打开沿用上一次的过滤
     watch(
       () => props.modelValue,
       (visible) => {
@@ -202,17 +171,16 @@ export default defineComponent({
       },
     );
 
-    const handleRowClick = (row: ILoadBalancerSlaCapacity) => {
+    const handleRowClick = (row: IClbSlaSpecRow) => {
       selectedSlaType.value = row.SlaType;
     };
 
     const handleConfirm = () => {
-      const result = slaList.value.find(({ SlaType }) => SlaType === selectedSlaType.value);
+      const result = usableSlaList.value.find(({ SlaType }) => SlaType === selectedSlaType.value);
       if (!result) return;
       emit('confirm', {
         slaType: result.SlaType,
         slaName: result.SlaName,
-        // 出口流量上限即公网带宽上限
         bandwidthLimit: result.MaxOutBits,
       });
       isShow.value = false;
@@ -233,20 +201,18 @@ export default defineComponent({
                 data={searchData.value}
                 valueBehavior='need-key'
               />
-              {/* height 直接交给 Table：loading 遮罩以 Table 为定位宿主，随其高度撑满 */}
               <Table
-                v-bkloading={{ loading: loading.value }}
                 data={slaList.value}
                 rowKey='SlaType'
                 height={360}
                 show-overflow-tooltip
-                onRowClick={(_: any, row: ILoadBalancerSlaCapacity) => handleRowClick(row)}>
+                onRowClick={(_: any, row: IClbSlaSpecRow) => handleRowClick(row)}>
                 {{
                   default: () => (
                     <>
                       <bk-table-column width='40' min-width='40' show-overflow-tooltip={false}>
                         {{
-                          default: ({ row }: { row: ILoadBalancerSlaCapacity }) => (
+                          default: ({ row }: { row: IClbSlaSpecRow }) => (
                             <bk-radio v-model={selectedSlaType.value} label={row.SlaType}>
                               　
                             </bk-radio>
@@ -265,7 +231,7 @@ export default defineComponent({
                     </>
                   ),
                   empty: () => {
-                    if (loading.value || slaList.value.length) return null;
+                    if (slaList.value.length) return null;
                     return <Empty />;
                   },
                 }}

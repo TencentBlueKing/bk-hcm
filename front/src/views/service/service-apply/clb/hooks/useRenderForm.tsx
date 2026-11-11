@@ -26,6 +26,7 @@ import {
   ZONE_TYPE,
   INTERNET_CHARGE_TYPE,
   LOAD_BALANCER_PASS_TO_TARGET_LIST,
+  CLB_SPEC_TYPE_COLUMNS_MAP,
 } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
@@ -46,7 +47,7 @@ const { Option } = Select;
 const { FormItem } = Form;
 
 // 公网带宽上限的默认最大值（Mbps），共享型与未取到规格出口流量时使用
-const DEFAULT_BANDWIDTH_LIMIT = 10240;
+const DEFAULT_BANDWIDTH_LIMIT = CLB_SPEC_TYPE_COLUMNS_MAP.shared.bandwidthLimit;
 
 interface ClbFormItemOption {
   label: string;
@@ -131,7 +132,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
   const lbSpecTypeDialogState = reactive({ isHidden: true, isShow: false });
   // 各规格的带宽上限与名称，按规格存，避免沿用上一次选过的规格。
-  // 规格参数（中文名、出口流量上限）统一由后端接口返回，前端不再静态维护
+  // 中文名与出口流量上限来自前端静态表，在确认规格时写入
   const slaTypeBandWidthLimits = reactive<Record<string, number>>({});
   const slaTypeNames = reactive<Record<string, string>>({});
   const handleLBSpecTypeChange = ({
@@ -649,7 +650,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             property: 'sla_type',
             hidden: formModel.slaType !== '1',
             content: () => {
-              // 规格参数按云账号 + 地域查询，缺少任一条件就无从取数，直接拦在入口
+              // 可用规格依赖当前账号与地域的资源查询，缺少任一条件时不打开
               const specDisabled = !formModel.account_id || !formModel.region;
               const specDisabledTip = !formModel.account_id ? '请先选择云账号' : '请先选择云地域';
               const handleClick = () => {
@@ -657,7 +658,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 lbSpecTypeDialogState.isShow = true;
               };
               if (formModel.sla_type !== 'shared') {
-                // 规格名称优先用接口返回的 SlaName，规格表仅作兜底
+                // 规格名称优先用本次选择写入的名称，静态规格表作兜底
                 return (
                   <SelectedItemPreviewComp
                     content={slaTypeNames[formModel.sla_type] ?? CLB_SPECS[formModel.sla_type]}
@@ -1042,9 +1043,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             <LbSpecTypeDialog
               v-model={lbSpecTypeDialogState.isShow}
               slaType={formModel.sla_type}
-              vendor={formModel.vendor}
-              accountId={formModel.account_id}
-              region={formModel.region}
               specAvailabilitySet={specAvailabilitySet.value}
               onConfirm={handleLBSpecTypeChange}
               onHidden={() => (lbSpecTypeDialogState.isHidden = true)}
