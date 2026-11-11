@@ -126,7 +126,9 @@ export const CLB_SPECS_REVERSE_MAP = {
   超强型4规格: 'clb.c4.xlarge',
 };
 
-// 腾讯云CLB规格列表映射
+// 性能容量型规格指标。中文名见 CLB_SPECS。
+// bandwidthLimit 同时作为出口、入口流量：接口示例中两者相同，产品侧也只公布一档带宽上限。
+// shared 只提供共享型带宽上限，不作为可选规格。
 export const CLB_SPEC_TYPE_COLUMNS_MAP: Record<
   string,
   {
