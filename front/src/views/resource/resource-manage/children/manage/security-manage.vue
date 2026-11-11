@@ -1290,8 +1290,8 @@ watch(
   },
 );
 watch(
-  () => route.query,
-  async (query) => {
+  [() => route.query, vendorInResourcePage],
+  async ([query]) => {
     const value = searchQs.get(query);
     // 是否有地域，存在的话需要查询一遍接口拿name值
     const hasRegion = Object.hasOwn(value, 'region');
