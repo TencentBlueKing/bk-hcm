@@ -17,8 +17,6 @@ const authStore = useAuthStore();
 const { lastClickSource, isFavorite, getFavoriteMenus } = useMenuFavorite();
 const { setCollapsed, getOpenedKeys } = useMenuCollapse();
 
-const ungrouped = Symbol('ungrouped');
-
 const isBusiness = computed(() => route.matched[0]?.name === MENU_BUSINESS);
 
 const currentTopMenuId = computed(() => route.matched[0]?.name as symbol | undefined);
@@ -44,7 +42,9 @@ const hasFavorites = computed(() => favoriteMenus.value.length > 0);
 const menuGroups = computed(() => {
   const groups = new Map<string | symbol, IMenu[]>();
   authorizedMenus.value.forEach((menu) => {
-    const group = menu.group ?? ungrouped;
+    // 无 group 的菜单各自独立成组：分组顺序由菜单在数组中的位置决定，
+    // 否则所有未分组项会被合并到同一个桶里，挤到侧栏最前面，无法按预期排序
+    const group = menu.group ?? Symbol(`ungrouped_${toMenuKey(menu.id)}`);
     groups.set(group, [...(groups.get(group) ?? []), menu]);
   });
   return groups;
@@ -140,7 +140,7 @@ const handleChangeBusiness = (id: number) => {
       >
         <div :class="{ 'menu-regular-dim': dimRegularMenu }">
           <template v-for="[group, menus] of menuGroups">
-            <template v-if="group === ungrouped">
+            <template v-if="!menus?.[0]?.group">
               <MenuItem v-for="menu in menus" :key="toMenuKey(menu.id)" :menu="menu" :top-menu-id="currentTopMenuId" />
             </template>
             <bk-submenu v-else :title="group" :key="group">
