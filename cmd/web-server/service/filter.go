@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"regexp"
 	"strings"
 
@@ -42,17 +43,35 @@ type loginVerifyRespData struct {
 	UserName string `json:"username"`
 }
 
-func isITSMCallbackRequest(req *restful.Request) bool {
-	if strings.HasSuffix(req.Request.RequestURI, "/api/v1/cloud/applications/approve") &&
-		req.Request.Method == http.MethodPost {
-		return true
+const (
+	itsmApprovePath       = "/api/v1/cloud/applications/approve"
+	systemAdminPathPrefix = "/api/v1/cloud/admin/system"
+)
+
+// requestPath 返回解码并规范化后的 URL 路径，不含查询串
+// 注意，RequestURI 是原始请求串，不能用于鉴权匹配。
+func requestPath(req *restful.Request) string {
+	p := path.Clean(req.Request.URL.Path)
+	if p == "." || p == "" {
+		return "/"
 	}
-	return false
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	return p
 }
 
-// 系统管理操作仅能从后台发起
+func hasPathPrefix(requestPath, prefix string) bool {
+	return requestPath == prefix || strings.HasPrefix(requestPath, prefix+"/")
+}
+
+func isITSMCallbackRequest(req *restful.Request) bool {
+	return req.Request.Method == http.MethodPost && requestPath(req) == itsmApprovePath
+}
+
+// 系统管理操作仅能从后台发起。按路径前缀匹配，避免命中查询串或未对齐的相邻路径。
 func isSystemAdminRequest(req *restful.Request) bool {
-	return strings.Contains(req.Request.RequestURI, "/api/v1/cloud/admin/system")
+	return hasPathPrefix(requestPath(req), systemAdminPathPrefix)
 }
 
 func newCheckLogin(esbClient esb.Client, bkLoginUrl, bkLoginCookieName string) func(
