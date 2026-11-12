@@ -58,7 +58,8 @@ export class TableColumn {
   })
   account_managers: string[];
 
-  @Column('datetime', {
+  // 使用string类型，原样输出
+  @Column('string', {
     name: '创建时间',
     sort: true,
     index: 7,
@@ -66,7 +67,7 @@ export class TableColumn {
   })
   cloud_created_at: string;
 
-  @Column('datetime', {
+  @Column('string', {
     name: '最近访问时间',
     sort: true,
     index: 8,
