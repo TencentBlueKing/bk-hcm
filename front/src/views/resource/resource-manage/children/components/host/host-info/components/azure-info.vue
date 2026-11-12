@@ -6,17 +6,18 @@ import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
-
-const shortCutStr = (str: string) => {
-  if (!str) return str;
-  return str.split('/').reverse()[0];
-};
+import { formatIpList } from '../utils';
 
 const props = defineProps({
   data: {
     type: Object as PropType<any>,
   },
 });
+
+const shortCutStr = (str: string) => {
+  if (!str) return str;
+  return str.split('/').reverse()[0];
+};
 
 const cvmInfo: FieldList = [
   {
@@ -97,22 +98,22 @@ const netInfo: FieldList = [
   {
     name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
 ];
 
