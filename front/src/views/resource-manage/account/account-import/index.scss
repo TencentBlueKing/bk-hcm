@@ -20,7 +20,7 @@
     .bk-dialog-header {
       height: 56px;
       background: #fff;
-      border: 1px solid #4070cb0f!important;
+      border: 1px solid #4070cb0f !important;
       display: flex;
       align-items: center;
       padding-bottom: 15px;
@@ -31,11 +31,18 @@
     }
   }
 
+  .bk-dialog-footer {
+    width: 100%;
+  }
+
   .create-account-dialog-footer {
     display: flex;
     flex-direction: row;
     justify-content: start;
-    padding: 0 300px;
+    min-width: 900px;
+    max-width: 1900px;
+    margin: 0 auto;
+    padding: 0 60px;
 
     .bk-button {
       min-width: 88px;
@@ -47,8 +54,10 @@
   }
 
   .create-account-dialog-content {
-    padding: 0 300px;
+    min-width: 900px;
+    max-width: 1900px;
     margin: 0 auto;
+    padding: 0 60px;
 
     .create-account-dialog-steps {
       position: fixed;
