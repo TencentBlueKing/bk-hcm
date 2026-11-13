@@ -182,6 +182,10 @@ const vendorOption = VENDORS.reduce((acc, cur) => {
 // searchQs / 列表 filter 所需的 type、option、filterRules 留在安全组页面，不放进共用选项工厂
 const enrichGroupSearchItem = (item: ISearchItem) => {
   const businessChildren = businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name }));
+  const businessOption = businessChildren.reduce<Record<number, string>>((acc, cur) => {
+    acc[cur.id] = cur.name;
+    return acc;
+  }, {});
   const fieldMap: Record<string, Partial<ModelProperty>> = {
     cloud_id: {
       type: 'string',
@@ -219,6 +223,7 @@ const enrichGroupSearchItem = (item: ISearchItem) => {
     usage_biz_id: {
       type: 'business',
       children: businessChildren,
+      option: businessOption,
       meta: {
         search: {
           filterRules: (value: number | number[]) => getQueryOperator(value, 'usage_biz_id'),
@@ -237,6 +242,7 @@ const enrichGroupSearchItem = (item: ISearchItem) => {
     mgmt_biz_id: {
       type: 'business',
       children: businessChildren,
+      option: businessOption,
       meta: {
         search: {
           filterRules: (value: number | number[]) => getQueryOperator(value, 'mgmt_biz_id'),
