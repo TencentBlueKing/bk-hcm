@@ -19,3 +19,12 @@ THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRI
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
+
+--------------------------------------------------------------------
+Mozilla Public License exception
+--------------------------------------------------------------------
+
+The MIT License above does not apply to pkg/plugin/tfplugin5/. Every file in
+that directory is covered by the Mozilla Public License, v. 2.0. A copy of
+that license is included at pkg/plugin/tfplugin5/LICENSE and is also available
+at https://www.mozilla.org/MPL/2.0/.
