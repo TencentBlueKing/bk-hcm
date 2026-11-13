@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/client/hc-service/azure"
 	"hcm/pkg/client/hc-service/gcp"
 	"hcm/pkg/client/hc-service/huawei"
+	iacplugin "hcm/pkg/client/hc-service/iac-plugin"
 	"hcm/pkg/client/hc-service/other"
 	"hcm/pkg/client/hc-service/tcloud"
 	"hcm/pkg/criteria/enumor"
@@ -41,12 +42,15 @@ type Client struct {
 	Gcp    *gcp.Client
 	Azure  *azure.Client
 	Other  *other.Client
+	// IaCPlugin 与云厂商无关的 IaC 插件接口。
+	IaCPlugin *iacplugin.Client
 }
 
 // NewClient create a new hc-service api client.
 func NewClient(c *client.Capability, version string) *Client {
 	prefixPath := fmt.Sprintf("/api/%s/hc/vendors", version)
 	return &Client{
+		IaCPlugin: iacplugin.NewClient(rest.NewClient(c, fmt.Sprintf("/api/%s/hc", version))),
 		// Note: 对于Global Client，主要是用于无vendor区分即全局或跨多个云的请求，HC服务应该没有全局的API
 		TCloud: tcloud.NewClient(
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.TCloud)),
