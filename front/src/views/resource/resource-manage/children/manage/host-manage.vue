@@ -21,7 +21,7 @@ import ResourceSearchSelect from '@/components/resource-search-select/index.vue'
 import BatchAssign from './assign-host/dialog/batch-assign.vue';
 import SingleAssign from './assign-host/dialog/single-assign.vue';
 import HcmAuth from '@/components/auth/auth.vue';
-import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import { AUTH_DELETE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import type { ICvmItem } from '@/store';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { parseIP } from '@/utils';
@@ -125,64 +125,75 @@ const tableColumns = [
           ),
           [[bkTooltips, getOperateToolTipsOption(data)]],
         ),
-        h(
-          HcmAuth,
-          { sign: { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [data.account_id] } },
-          {
-            default: ({ noPerm }: { noPerm: boolean }) =>
-              withDirectives(
+        withDirectives(
+          h(
+            Dropdown,
+            {
+              trigger: 'click',
+              popoverOptions: {
+                renderType: 'shown',
+                clickContentAutoHide: true,
+                onAfterShow: () => (currentOperateRowIndex.value = index),
+                onAfterHidden: () => (currentOperateRowIndex.value = -1),
+              },
+              disabled: !getOperateToolTipsOption(data).disabled,
+            },
+            {
+              default: () =>
                 h(
-                  Dropdown,
+                  'div',
                   {
-                    trigger: 'click',
-                    popoverOptions: {
-                      renderType: 'shown',
-                      clickContentAutoHide: true,
-                      onAfterShow: () => (currentOperateRowIndex.value = index),
-                      onAfterHidden: () => (currentOperateRowIndex.value = -1),
-                    },
-                    disabled: !getOperateToolTipsOption(data).disabled,
+                    class: [
+                      'more-action',
+                      {
+                        'current-operate-row': currentOperateRowIndex.value === index,
+                        disabled: !getOperateToolTipsOption(data).disabled,
+                      },
+                    ],
                   },
-                  {
-                    default: () =>
-                      h(
-                        'div',
-                        {
-                          class: [
-                            'more-action',
-                            {
-                              'current-operate-row': currentOperateRowIndex.value === index,
-                              disabled: noPerm || !getOperateToolTipsOption(data).disabled,
-                            },
-                          ],
+                  h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
+                ),
+              content: () =>
+                h(
+                  DropdownMenu,
+                  null,
+                  operationDropdownList.map(({ label, type }) => {
+                    const tooltipsOption = getOperateToolTipsOption(data, type as OperationActions);
+                    return h(
+                      HcmAuth,
+                      {
+                        block: true,
+                        key: type,
+                        sign: {
+                          type:
+                            type === OperationActions.RECYCLE ? AUTH_DELETE_IAAS_RESOURCE : AUTH_UPDATE_IAAS_RESOURCE,
+                          relation: [data.account_id],
                         },
-                        h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
-                      ),
-                    content: () =>
-                      h(
-                        DropdownMenu,
-                        null,
-                        operationDropdownList.map(({ label, type }) => {
-                          const tooltipsOption = getOperateToolTipsOption(data, type as OperationActions);
-                          return withDirectives(
+                      },
+                      {
+                        default: ({ noPerm }: { noPerm: boolean }) =>
+                          withDirectives(
                             h(
                               DropdownItem,
                               {
                                 key: type,
-                                onClick: () => handleCvmOperate(type as OperationActions, data),
-                                extCls: `more-action-item${!tooltipsOption.disabled ? ' disabled' : ''}`,
+                                onClick: () => {
+                                  if (noPerm || !tooltipsOption.disabled) return;
+                                  handleCvmOperate(type as OperationActions, data);
+                                },
+                                extCls: `more-action-item${noPerm || !tooltipsOption.disabled ? ' disabled' : ''}`,
                               },
                               label,
                             ),
-                            [[bkTooltips, tooltipsOption]],
-                          );
-                        }),
-                      ),
-                  },
+                            [[bkTooltips, noPerm ? { disabled: true } : tooltipsOption]],
+                          ),
+                      },
+                    );
+                  }),
                 ),
-                [[bkTooltips, noPerm ? { disabled: true } : getOperateToolTipsOption(data)]],
-              ),
-          },
+            },
+          ),
+          [[bkTooltips, getOperateToolTipsOption(data)]],
         ),
       ]);
     },
