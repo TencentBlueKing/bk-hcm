@@ -8,6 +8,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 import { isNil } from 'lodash';
+import { formatIpList } from '../utils';
 
 const props = defineProps({
   data: {
@@ -106,22 +107,22 @@ const netInfo: FieldList = [
   {
     name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
 ];
 

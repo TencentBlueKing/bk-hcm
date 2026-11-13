@@ -1,6 +1,6 @@
 import { VendorEnum } from '@/common/constant';
 import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import {
   MENU_BUSINESS_IMAGE_DETAILS,
   MENU_BUSINESS_SUBNET_DETAILS,
@@ -37,7 +37,6 @@ const BUSINESS_DETAIL_ROUTE_MAP: Partial<Record<TypeEnum, symbol>> = {
 };
 
 export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
-  const router = useRouter();
   const route = useRoute();
   const { whereAmI } = useWhereAmI();
   const { id, name, type, isExpand } = meta;
@@ -53,9 +52,13 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   });
 
   const handleClick = () => {
-    // 账号详情在资源运营 → 账号管理下，业务、资源两侧同一地址
+    // 账号详情在资源运营 → 账号管理下，业务、资源两侧同一地址。
+    // 必须用 history 模式记录来源页，否则账号详情的面包屑「返回」会落到账号列表而非来源页（如主机详情）
     if (type === TypeEnum.ACCOUNT) {
-      router.push({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: computedId.value } });
+      routerAction.redirect(
+        { name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: computedId.value } },
+        { history: true },
+      );
       return;
     }
     const routeInfo: any = {};

@@ -1,7 +1,9 @@
 import type { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { VENDORS } from '@/common/constant';
 import { ResourceTypeEnum } from '@/common/resource-constant';
+import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
 import { useAccountStore } from '@/store';
+import { useRegionStore } from '@/store/region';
 import type { FilterType } from '@/typings/resource';
 import { QueryRuleOPEnum } from '@/typings';
 import { useCloudAreaStore } from '@/store/useCloudAreaStore';
@@ -10,6 +12,7 @@ import { useBusinessGlobalStore } from '@/store/business-global';
 const accountStore = useAccountStore();
 const cloudAreaStore = useCloudAreaStore();
 const businessGlobalStore = useBusinessGlobalStore();
+const regionStore = useRegionStore();
 
 const optionMap = new Map<ResourceTypeEnum, ISearchItem[]>();
 
@@ -73,6 +76,108 @@ export const cvm: ISearchItem[] = [
 
 optionMap.set(ResourceTypeEnum.CVM, cvm);
 
+export const securityGroup: ISearchItem[] = [
+  {
+    name: '安全组ID',
+    id: 'cloud_id',
+  },
+  {
+    name: '名称',
+    id: 'name',
+  },
+  {
+    name: '云厂商',
+    id: 'vendor',
+    multiple: true,
+    children: VENDORS,
+  },
+  {
+    name: '云账号ID',
+    id: 'account_id',
+    async: true,
+    multiple: true,
+    children: [],
+  },
+  {
+    name: '使用业务',
+    id: 'usage_biz_id',
+    async: businessGlobalStore.businessFullList.length === 0,
+    children: businessGlobalStore.businessFullList as any[],
+  },
+  {
+    name: '管理类型',
+    id: 'mgmt_type',
+    multiple: true,
+    children: [
+      { id: SecurityGroupManageType.BIZ, name: MGMT_TYPE_MAP[SecurityGroupManageType.BIZ] },
+      { id: SecurityGroupManageType.PLATFORM, name: MGMT_TYPE_MAP[SecurityGroupManageType.PLATFORM] },
+      { id: SecurityGroupManageType.UNKNOWN, name: MGMT_TYPE_MAP[SecurityGroupManageType.UNKNOWN] },
+    ],
+  },
+  {
+    name: '管理业务',
+    id: 'mgmt_biz_id',
+    async: businessGlobalStore.businessFullList.length === 0,
+    children: businessGlobalStore.businessFullList as any[],
+  },
+  {
+    name: '地域',
+    id: 'region',
+    async: true,
+    children: [],
+    placeholder: '请输入地域名',
+    onlyRecommendChildren: true,
+  },
+];
+
+optionMap.set(ResourceTypeEnum.SECURITY_GROUP, securityGroup);
+
+export const gcpFirewall: ISearchItem[] = [
+  {
+    name: '防火墙ID',
+    id: 'cloud_id',
+  },
+  {
+    name: '名称',
+    id: 'name',
+  },
+  {
+    name: '云账号ID',
+    id: 'account_id',
+    async: true,
+    multiple: true,
+    children: [],
+  },
+];
+
+optionMap.set(ResourceTypeEnum.GCP_FIREWALL, gcpFirewall);
+
+export const argumentTemplate: ISearchItem[] = [
+  {
+    name: '模板ID',
+    id: 'cloud_id',
+  },
+  {
+    name: '名称',
+    id: 'name',
+  },
+  {
+    name: '云厂商',
+    id: 'vendor',
+    multiple: true,
+    children: VENDORS,
+  },
+  {
+    name: '云账号ID',
+    id: 'account_id',
+    async: true,
+    multiple: true,
+    children: [],
+  },
+];
+
+optionMap.set(ResourceTypeEnum.ARGUMENT_TEMPLATE, argumentTemplate);
+
 export const getAccountList = async (keyword: string) => {
   const query: FilterType = {
     op: 'and',
@@ -112,6 +217,19 @@ const getOptionMenu = async (item: ISearchItem, keyword: string): Promise<any[]>
     }
     const kw = keyword.toLowerCase();
     return options.filter((opt) => opt.name.toLowerCase().includes(kw) || opt.id.includes(keyword));
+  }
+
+  if (id === 'usage_biz_id' || id === 'mgmt_biz_id') {
+    const list = await businessGlobalStore.getBusinessFullList();
+    const options = list.map(({ id: bizId, name }) => ({ id: bizId, name }));
+    if (!keyword) {
+      return options;
+    }
+    return options.filter(({ name }) => name.includes(keyword));
+  }
+
+  if (id === 'region') {
+    return regionStore.getAllVendorRegion(keyword);
   }
 
   return [];

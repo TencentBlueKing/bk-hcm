@@ -37,7 +37,10 @@ import {
 } from '@/utils/search';
 import http from '@/http';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
+import { VendorEnum, VendorMap, VENDORS } from '@/common/constant';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import optionFactory from '@/components/resource-search-select/option-factory';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { ModelProperty } from '@/model/typings';
 import routerAction from '@/router/utils/action';
@@ -89,7 +92,7 @@ const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-do
 let firstTime = true;
 
 // use hooks
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter } = useFilter(props);
 const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
@@ -135,122 +138,140 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 const templateData = ref([]);
 const regionChildren = ref([]);
 
-const selectSearchData = computed(() => {
-  const map: Record<string, { idName: string; searchData: ISearchItem[] & ModelProperty[] }> = {
-    group: {
-      idName: t('安全组ID'),
-      searchData: [
-        {
-          name: t('使用业务'),
-          id: 'usage_biz_id',
-          async: false,
-          type: 'business',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-          meta: {
-            search: {
-              filterRules(value: number | number[]) {
-                return getQueryOperator(value, 'usage_biz_id');
-              },
-            },
-          },
-        },
-        {
-          name: t('管理类型'),
-          id: 'mgmt_type',
-          async: false,
-          type: 'enum',
-          option: {
-            [SecurityGroupManageType.BIZ]: t('业务管理'),
-            [SecurityGroupManageType.PLATFORM]: t('平台管理'),
-            [SecurityGroupManageType.UNKNOWN]: t('未确认'),
-          },
-          children: [
-            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
-            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: SecurityGroupManageType.UNKNOWN, name: t('未确认') },
-          ],
-          multiple: true,
-          meta: {
-            search: {
-              filterRules(value: string | string[]) {
-                return getQueryOperator(value, 'mgmt_type');
-              },
-            },
-          },
-        },
-        {
-          name: t('管理业务'),
-          id: 'mgmt_biz_id',
-          async: false,
-          type: 'business',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-          meta: {
-            search: {
-              filterRules(value: number | number[]) {
-                return getQueryOperator(value, 'mgmt_biz_id');
-              },
-            },
-          },
-        },
-        {
-          name: t('地域'),
-          id: 'region',
-          type: 'string',
-          async: true,
-          children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
-          placeholder: '请输入地域名',
-          option: asyncRegionChildren.value.reduce((acc, cur) => {
-            acc[cur['id']] = cur.name;
-            return acc;
-          }, {}),
-          onlyRecommendChildren: true,
-          meta: {
-            search: {
-              filterRules(value: string | string[]) {
-                return getQueryOperator(value, 'region');
-              },
-            },
-          },
-        },
-      ],
-    },
-    gcp: {
-      idName: t('防火墙ID'),
-      searchData: [],
-    },
-    template: {
-      idName: t('模板ID'),
-      searchData: [],
-    },
-  };
-  let baseSearchData = [
-    {
-      name: map[activeType.value].idName,
-      id: 'cloud_id',
+const { getOptionData } = optionFactory();
+
+const searchResourceType = computed(() => {
+  if (activeType.value === 'gcp') {
+    return ResourceTypeEnum.GCP_FIREWALL;
+  }
+  if (activeType.value === 'template') {
+    return ResourceTypeEnum.ARGUMENT_TEMPLATE;
+  }
+  return ResourceTypeEnum.SECURITY_GROUP;
+});
+
+const applySidebarAccountFilter = <T extends { id: string }>(data: T[]) => {
+  if (isAllVendor.value) {
+    return data;
+  }
+  let next = data.filter((item) => item.id !== 'vendor');
+  if (selectedAccountId.value) {
+    next = next.filter((item) => item.id !== 'account_id');
+  }
+  return next;
+};
+
+// 业务视角下列表已按当前业务收口，不需要使用业务/管理业务条件
+const searchExclude = computed(() =>
+  activeType.value === 'group' && whereAmIRef.value === Senarios.business ? ['usage_biz_id', 'mgmt_biz_id'] : [],
+);
+
+const applySearchExclude = <T extends { id: string }>(data: T[]) => {
+  const omit = new Set(searchExclude.value);
+  if (!omit.size) {
+    return data;
+  }
+  return data.filter((item) => !omit.has(item.id));
+};
+
+const vendorOption = VENDORS.reduce((acc, cur) => {
+  acc[cur.id] = cur.name;
+  return acc;
+}, {} as Record<string, string>);
+
+// searchQs / 列表 filter 所需的 type、option、filterRules 留在安全组页面，不放进共用选项工厂
+const enrichGroupSearchItem = (item: ISearchItem) => {
+  const businessChildren = businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name }));
+  const businessOption = businessChildren.reduce<Record<number, string>>((acc, cur) => {
+    acc[cur.id] = cur.name;
+    return acc;
+  }, {});
+  const fieldMap: Record<string, Partial<ModelProperty>> = {
+    cloud_id: {
+      type: 'string',
       meta: {
         search: {
-          filterRules(value: string) {
-            return buildMultipleValueRulesItem('cloud_id', value);
-          },
+          filterRules: (value: string) => buildMultipleValueRulesItem('cloud_id', value),
         },
       },
     },
-    ...searchData.value.filter(
-      (item) => (item.id !== 'vendor' && activeType.value === 'gcp') || activeType.value !== 'gcp',
-    ),
-  ];
+    name: {
+      type: 'string',
+      meta: {
+        search: {
+          filterRules: (value: string | string[]) => getQueryOperator(value, 'name'),
+        },
+      },
+    },
+    vendor: {
+      type: 'enum',
+      option: vendorOption,
+      meta: {
+        search: {
+          filterRules: (value: string | string[]) => getQueryOperator(value, 'vendor'),
+        },
+      },
+    },
+    account_id: {
+      type: 'string',
+      meta: {
+        search: {
+          filterRules: (value: string | string[]) => getQueryOperator(value, 'account_id'),
+        },
+      },
+    },
+    usage_biz_id: {
+      type: 'business',
+      children: businessChildren,
+      option: businessOption,
+      meta: {
+        search: {
+          filterRules: (value: number | number[]) => getQueryOperator(value, 'usage_biz_id'),
+        },
+      },
+    },
+    mgmt_type: {
+      type: 'enum',
+      option: MGMT_TYPE_MAP,
+      meta: {
+        search: {
+          filterRules: (value: string | string[]) => getQueryOperator(value, 'mgmt_type'),
+        },
+      },
+    },
+    mgmt_biz_id: {
+      type: 'business',
+      children: businessChildren,
+      option: businessOption,
+      meta: {
+        search: {
+          filterRules: (value: number | number[]) => getQueryOperator(value, 'mgmt_biz_id'),
+        },
+      },
+    },
+    region: {
+      type: 'string',
+      children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
+      option: asyncRegionChildren.value.reduce((acc, cur) => {
+        acc[cur.id] = cur.name;
+        return acc;
+      }, {}),
+      meta: {
+        search: {
+          filterRules: (value: string | string[]) => getQueryOperator(value, 'region'),
+        },
+      },
+    },
+  };
 
-  // 如果当前选定了某个云账号筛选条件就剔除云厂商
-  if (!isAllVendor.value) {
-    baseSearchData = baseSearchData.filter((item) => item.id !== 'vendor');
-    if (selectedAccountId.value) {
-      // 如果选中了某个账号ID筛选条件就剔除云账号ID
-      baseSearchData = baseSearchData.filter((item) => item.id !== 'account_id');
-    }
-  }
+  return { ...item, ...fieldMap[item.id] };
+};
 
-  return [...baseSearchData, ...map[activeType.value].searchData];
+const selectSearchData = computed(() => {
+  const data = applySearchExclude((getOptionData(searchResourceType.value) ?? []).map(enrichGroupSearchItem));
+  return applySidebarAccountFilter(data);
 });
+
 const asyncRegionChildren = computed(() => regionChildren.value);
 
 const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
@@ -270,7 +291,7 @@ const getQueryOperator = (value: string | number | string[] | number[], field: s
   const result: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
   if (Array.isArray(value)) {
     op = QueryRuleOPEnum.IN;
-  } else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) {
+  } else if (typeof value === 'number' || ['vendor', 'mgmt_type', 'region'].includes(field)) {
     op = QueryRuleOPEnum.EQ;
   }
   result.rules = [{ op, value, field }];
@@ -1237,11 +1258,6 @@ const securityGroupAssignDialogState = reactive({
   isHidden: true,
 });
 
-const getMenuList = async (item: ISearchItem, keyword: string) => {
-  const { id, async: isAsync, children = [] } = item;
-  if (!isAsync) return children;
-  if (id === 'region') return getAllVendorRegion(keyword);
-};
 const handleSecurityGroupAssign = () => {
   securityGroupAssignDialogState.isShow = true;
   securityGroupAssignDialogState.isHidden = false;
@@ -1329,23 +1345,6 @@ watch(
   },
 );
 watch(
-  () => accountStore.accountList, // 设置云账号筛选所需数据
-  (val) => {
-    if (!val.length) return;
-    FILTER_DATA.forEach((e) => {
-      if (e.id === 'account_id') {
-        e.children = val;
-      }
-      e.meta.search.filterRules = (value: string | string[]) => getQueryOperator(value, e.id);
-    });
-    searchData.value = FILTER_DATA;
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
-watch(
   searchValue,
   () => {
     // 清空刷新行key，避免切换tab时只有一行有loading效果
@@ -1425,15 +1424,12 @@ defineExpose({ fetchComponentsData });
         </bk-button>
       </template>
       <bk-button :disabled="selections.length > 0" @click="handleSync">{{ t('同步安全组') }}</bk-button>
-      <bk-search-select
+      <ResourceSearchSelect
         class="search-filter search-selector-container"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
         :model-value="searchValue"
+        :resource-type="searchResourceType"
+        :exclude="searchExclude"
         @update:model-value="handleUpdate"
-        :get-menu-list="getMenuList"
-        value-behavior="need-key"
       />
     </div>
 

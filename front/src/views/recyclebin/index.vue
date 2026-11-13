@@ -527,5 +527,12 @@ onMounted(() => {
 .header-container {
   display: flex;
   justify-content: space-between;
+
+  // 防御：.header-container 是通用类名，若其它模块的全局 scss（如账单页）也定义了这个类，
+  // 会按加载顺序污染本页。此处显式声明，不依赖样式是否被别的页面带进来。
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  box-shadow: none;
 }
 </style>
