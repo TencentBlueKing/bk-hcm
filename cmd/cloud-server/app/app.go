@@ -85,7 +85,8 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 	// init service discovery.
 	svcOpt := serviced.NewServiceOption(cc.CloudServerName, cc.CloudServer().Network, opt.Sys)
 	discOpt := serviced.DiscoveryOption{
-		Services: []cc.Name{cc.DataServiceName, cc.HCServiceName, cc.AuthServerName, cc.TaskServerName},
+		Services: []cc.Name{cc.DataServiceName, cc.HCServiceName, cc.AuthServerName, cc.TaskServerName,
+			cc.IacServerName},
 	}
 	sd, err := serviced.NewServiceD(cc.CloudServer().Service, svcOpt, discOpt)
 	if err != nil {

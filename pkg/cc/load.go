@@ -79,6 +79,8 @@ func loadFromFile(filename string) (Setting, error) {
 		s = new(TaskServerSetting)
 	case AccountServerName:
 		s = new(AccountServerSetting)
+	case IacServerName:
+		s = new(IacServerSetting)
 	default:
 		return nil, fmt.Errorf("unknown %s service name", ServiceName())
 	}

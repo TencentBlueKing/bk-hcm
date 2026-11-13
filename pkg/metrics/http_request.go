@@ -47,6 +47,7 @@ const (
 	ComponentAuthServer  = string(cc.AuthServerName)
 	ComponentWebServer   = string(cc.WebServerName)
 	ComponentAccount     = string(cc.AccountServerName)
+	ComponentIacServer   = string(cc.IacServerName)
 	ComponentAgent       = string(cc.AgentServerName)
 	ComponentAdaptor     = "adaptor"
 )
