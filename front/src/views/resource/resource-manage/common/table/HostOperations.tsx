@@ -9,11 +9,11 @@ import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import http from '@/http';
 import HcmDropdown from '@/components/hcm-dropdown/index.vue';
 import HcmAuth from '@/components/auth/auth.vue';
-import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import type { IAuthSign } from '@/common/auth-service';
+import { AUTH_DELETE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -80,6 +80,7 @@ export default defineComponent({
           status: string;
           id: string;
           vendor: string;
+          account_id?: string;
         }>
       >,
     },
@@ -105,7 +106,6 @@ export default defineComponent({
 
     const previousOperationType = usePreviousState(operationType);
     const resourceStore = useResourceStore();
-    const resourceAccountStore = useResourceAccountStore();
 
     const isOtherVendor = inject<Ref<boolean>>('isOtherVendor');
 
@@ -121,6 +121,10 @@ export default defineComponent({
     const isMixOtherVendor = computed(() => {
       return vendorSet.value.size > 1 && vendorSet.value.has(VendorEnum.OTHER);
     });
+
+    const accountIds = computed(() => [
+      ...new Set(props.selections.map((item) => item.account_id).filter((id): id is string => Boolean(id))),
+    ]);
 
     const computedTitle = computed(() => {
       if (operationType.value === OperationActions.NONE) {
@@ -306,6 +310,11 @@ export default defineComponent({
       return { disabled: false, tooltips: { disabled: true }, clickHandler };
     };
 
+    const getOperationAuthSign = (type: OperationActions): IAuthSign | IAuthSign[] => {
+      const authType = type === OperationActions.RECYCLE ? AUTH_DELETE_IAAS_RESOURCE : AUTH_UPDATE_IAAS_RESOURCE;
+      return accountIds.value.map((id) => ({ type: authType, relation: [id] }));
+    };
+
     const handleClickMenu = (type: OperationActions) => {
       if (getOperationConfig(type).disabled) {
         return;
@@ -377,41 +386,47 @@ export default defineComponent({
 
     return () => (
       <>
-        <HcmAuth sign={{ type: AUTH_UPDATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }}>
+        <HcmDropdown ref={dropdownOperationRef} disabled={isOtherVendor.value || operationsDisabled.value}>
           {{
-            default: ({ noPerm }: { noPerm: boolean }) => (
-              <HcmDropdown
-                ref={dropdownOperationRef}
-                disabled={noPerm || isOtherVendor.value || operationsDisabled.value}>
-                {{
-                  default: () => (
-                    <>
-                      批量操作
-                      <AngleDown class='icon-angle-down'></AngleDown>
-                    </>
-                  ),
-                  menus: () => (
-                    <>
-                      {Object.entries(operationMap)
-                        .filter(([opType]) => opType !== OperationActions.NONE)
-                        .map(([opType, opData]) => {
-                          const { disabled, tooltips, clickHandler } = getOperationConfig(opType as OperationActions);
-                          return withDirectives(
-                            <BkDropdownItem
-                              onClick={clickHandler}
-                              extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
-                              批量{opData.label}
-                            </BkDropdownItem>,
-                            [[bkTooltips, noPerm ? { disabled: true } : tooltips]],
-                          );
-                        })}
-                    </>
-                  ),
-                }}
-              </HcmDropdown>
+            default: () => (
+              <>
+                批量操作
+                <AngleDown class='icon-angle-down'></AngleDown>
+              </>
+            ),
+            menus: () => (
+              <>
+                {Object.entries(operationMap)
+                  .filter(([opType]) => opType !== OperationActions.NONE)
+                  .map(([opType, opData]) => {
+                    const { disabled, tooltips, clickHandler } = getOperationConfig(opType as OperationActions);
+                    return (
+                      <HcmAuth
+                        key={opType}
+                        block
+                        sign={getOperationAuthSign(opType as OperationActions)}
+                        ignore={!accountIds.value.length}>
+                        {{
+                          default: ({ noPerm }: { noPerm: boolean }) =>
+                            withDirectives(
+                              <BkDropdownItem
+                                onClick={() => {
+                                  if (noPerm || disabled) return;
+                                  clickHandler();
+                                }}
+                                extCls={`more-action-item${disabled || noPerm ? ' disabled' : ''}`}>
+                                批量{opData.label}
+                              </BkDropdownItem>,
+                              [[bkTooltips, noPerm ? { disabled: true } : tooltips]],
+                            ),
+                        }}
+                      </HcmAuth>
+                    );
+                  })}
+              </>
             ),
           }}
-        </HcmAuth>
+        </HcmDropdown>
 
         <HcmDropdown ref={dropdownCopyRef} disabled={operationsDisabled.value}>
           {{

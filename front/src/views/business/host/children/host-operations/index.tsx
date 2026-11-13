@@ -4,7 +4,10 @@ import cssModule from './index.module.scss';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import { VendorEnum } from '@/common/constant';
+import HcmAuth from '@/components/auth/auth.vue';
 import CommonLocalTable from '@/components/LocalTable';
+import { AUTH_BIZ_DELETE_IAAS_RESOURCE, AUTH_BIZ_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import useBatchOperation from './use-batch-operation';
@@ -42,8 +45,6 @@ export type OperationMapItem = {
   label: string;
   disabledStatus?: string[];
   loading?: boolean;
-  authId?: string;
-  actionName?: string;
 };
 
 export const operationMap: Record<OperationActions, OperationMapItem> = {
@@ -56,31 +57,21 @@ export const operationMap: Record<OperationActions, OperationMapItem> = {
     label: '开机',
     disabledStatus: HOST_RUNNING_STATUS,
     loading: false,
-    // 鉴权参数
-    authId: 'biz_iaas_resource_operate',
-    actionName: 'biz_iaas_resource_operate',
   },
   [OperationActions.STOP]: {
     label: '关机',
     disabledStatus: HOST_SHUTDOWN_STATUS,
     loading: false,
-    // 鉴权参数
-    authId: 'biz_iaas_resource_operate',
-    actionName: 'biz_iaas_resource_operate',
   },
   [OperationActions.REBOOT]: {
     label: '重启',
     disabledStatus: HOST_SHUTDOWN_STATUS,
     loading: false,
-    authId: 'biz_iaas_resource_operate',
-    actionName: 'biz_iaas_resource_operate',
   },
   [OperationActions.RECYCLE]: {
     label: '回收',
     disabledStatus: HOST_SHUTDOWN_STATUS,
     loading: false,
-    authId: 'biz_iaas_resource_delete',
-    actionName: 'biz_iaas_resource_delete',
   },
 };
 
@@ -105,6 +96,7 @@ export default defineComponent({
     const dialogRef = ref(null);
     const dropdownOperationRef = ref(null);
     const dropdownCopyRef = ref(null);
+    const { getBizsId } = useWhereAmI();
 
     const { selections } = toRefs(props);
 
@@ -182,6 +174,11 @@ export default defineComponent({
       return { disabled: false, tooltips: { disabled: true }, clickHandler };
     };
 
+    const getOperationAuthSign = (type: OperationActions) => ({
+      type: type === OperationActions.RECYCLE ? AUTH_BIZ_DELETE_IAAS_RESOURCE : AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+      relation: [getBizsId()],
+    });
+
     const handleClickMenu = (type: OperationActions) => {
       if (getOperationConfig(type).disabled) {
         return;
@@ -219,11 +216,27 @@ export default defineComponent({
                   .filter(([opType]) => opType !== OperationActions.NONE)
                   .map(([opType, opData]) => {
                     const { disabled, tooltips, clickHandler } = getOperationConfig(opType as OperationActions);
-                    return withDirectives(
-                      <BkDropdownItem onClick={clickHandler} extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
-                        批量{opData.label}
-                      </BkDropdownItem>,
-                      [[bkTooltips, tooltips]],
+                    return (
+                      <HcmAuth
+                        key={opType}
+                        block
+                        sign={getOperationAuthSign(opType as OperationActions)}
+                        ignore={!getBizsId()}>
+                        {{
+                          default: ({ noPerm }: { noPerm: boolean }) =>
+                            withDirectives(
+                              <BkDropdownItem
+                                onClick={() => {
+                                  if (noPerm || disabled) return;
+                                  clickHandler();
+                                }}
+                                extCls={`more-action-item${disabled || noPerm ? ' disabled' : ''}`}>
+                                批量{opData.label}
+                              </BkDropdownItem>,
+                              [[bkTooltips, noPerm ? { disabled: true } : tooltips]],
+                            ),
+                        }}
+                      </HcmAuth>
                     );
                   })}
               </>
@@ -264,8 +277,7 @@ export default defineComponent({
           title={computedTitle.value}
           ref={dialogRef}
           width={1500}
-          closeIcon={!isLoading.value}
-        >
+          closeIcon={!isLoading.value}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
@@ -275,8 +287,7 @@ export default defineComponent({
                     data={tableData.value}
                     columns={computedColumns.value}
                     changeData={(data) => (tableData.value = data)}
-                    searchData={searchData}
-                  >
+                    searchData={searchData}>
                     <div class={cssModule['host-operations-toolbar']}>
                       <BkButtonGroup>
                         <Button onClick={() => handleSwitch(true)} selected={selected.value === 'target'}>
@@ -298,8 +309,7 @@ export default defineComponent({
                   onClick={handleConfirm}
                   theme='primary'
                   disabled={isConfirmDisabled.value}
-                  loading={isLoading.value}
-                >
+                  loading={isLoading.value}>
                   {operationMap[operationType.value].label}
                 </Button>
                 <Button onClick={handleCancelDialog} class='ml10' disabled={isLoading.value}>

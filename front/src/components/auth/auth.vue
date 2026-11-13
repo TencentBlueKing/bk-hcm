@@ -11,12 +11,15 @@ export interface IAuthProps {
   sign: IAuthSign | IAuthSign[];
   tag?: string;
   ignore?: boolean;
+  /** 下拉菜单项使用。默认 inline-flex 会让菜单项横排 */
+  block?: boolean;
 }
 
 defineOptions({ name: 'hcm-auth' });
 
 const props = withDefaults(defineProps<IAuthProps>(), {
   tag: 'div',
+  block: false,
 });
 
 const emit = defineEmits<(e: 'done') => void>();
@@ -175,7 +178,7 @@ const handleClick = async () => {
 </script>
 
 <template>
-  <component :is="tag" :class="['hcm-auth', { disabled: noPerm, verified }]" @click="handleClick">
+  <component :is="tag" :class="['hcm-auth', { 'is-block': block, disabled: noPerm, verified }]" @click="handleClick">
     <slot v-bind="{ noPerm }" :class="{ locked: noPerm }"></slot>
   </component>
 </template>
@@ -184,6 +187,11 @@ const handleClick = async () => {
 .hcm-auth {
   display: inline-flex;
   pointer-events: none;
+
+  &.is-block {
+    display: block;
+    width: 100%;
+  }
 
   &.verified {
     pointer-events: auto;
