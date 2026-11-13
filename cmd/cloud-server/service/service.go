@@ -50,6 +50,7 @@ import (
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/eip"
 	"hcm/cmd/cloud-server/service/firewall"
+	iacplugin "hcm/cmd/cloud-server/service/iac-plugin"
 	"hcm/cmd/cloud-server/service/image"
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
@@ -67,7 +68,7 @@ import (
 	subaccountsecret "hcm/cmd/cloud-server/service/subaccount-secret"
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
-	"hcm/cmd/cloud-server/service/sync/lock"
+	synclock "hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
@@ -75,10 +76,12 @@ import (
 	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -107,6 +110,7 @@ type Service struct {
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
 	cmdbCli   cmdb.Client
+	iacMutex  *lock.EtcdMutex
 }
 
 // NewService create a service instance.
@@ -120,10 +124,15 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = lock.InitManger(etcdCfg, int64(cc.CloudServer().CloudResource.Sync.SyncFrequencyLimitingTimeMin)*60)
+	err = synclock.InitManger(etcdCfg, int64(cc.CloudServer().CloudResource.Sync.SyncFrequencyLimitingTimeMin)*60)
 	if err != nil {
 		return nil, err
 	}
+	iacMutex, err := lock.New(etcdCfg, constant.IaCPluginSwitchLockLeaseSeconds)
+	if err != nil {
+		return nil, fmt.Errorf("new iac plugin etcd mutex failed, err: %v", err)
+	}
+	svr.iacMutex = iacMutex
 
 	if cc.CloudServer().CloudResource.Sync.Enable {
 		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
@@ -274,6 +283,9 @@ func (s *Service) ListenAndServeRest() error {
 				return
 			}
 
+			if s.iacMutex != nil {
+				s.iacMutex.Close()
+			}
 			logs.Infof("shutdown restful server success...")
 		}
 	}()
@@ -353,6 +365,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	admin.InitAdminService(c)
 	permissionpolicylibrary.InitService(c)
 	permissiontemplates.InitService(c)
+	iacplugin.InitService(c, s.iacMutex)
 
 	return restful.NewContainer().Add(c.WebService)
 }

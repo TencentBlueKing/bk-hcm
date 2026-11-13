@@ -64,3 +64,47 @@ func (p IaCPluginProtocol) Validate() error {
 		return fmt.Errorf("unsupported iac plugin protocol: %s", p)
 	}
 }
+
+// IaCPluginAction 是 tf_provider 启动注册时判定出的动作。
+type IaCPluginAction string
+
+const (
+	// IaCPluginActionExit 版本回退：本副本不应继续服务，不修改任何记录，进程以非 0 退出。
+	IaCPluginActionExit IaCPluginAction = "exit"
+	// IaCPluginActionRegister 需要注册该版本：没有记录则新建，处于 init / failed 的记录则重置后重入。
+	IaCPluginActionRegister IaCPluginAction = "register"
+	// IaCPluginActionVerify 该版本已注册完成（enabled / disabled）：只校验本架构 sha256，不拉起进程。
+	IaCPluginActionVerify IaCPluginAction = "verify"
+)
+
+// Validate 校验动作是否合法。
+func (a IaCPluginAction) Validate() error {
+	switch a {
+	case IaCPluginActionExit, IaCPluginActionRegister, IaCPluginActionVerify:
+		return nil
+	default:
+		return fmt.Errorf("unsupported iac plugin action: %s", a)
+	}
+}
+
+// IaCPluginHashResult 是本架构 sha256 与注册记录比对的结果。
+type IaCPluginHashResult string
+
+const (
+	// IaCPluginHashResultMatch 记录里的本架构 sha256 与本地一致。
+	IaCPluginHashResultMatch IaCPluginHashResult = "match"
+	// IaCPluginHashResultMismatch 记录里的本架构 sha256 与本地不一致。
+	IaCPluginHashResultMismatch IaCPluginHashResult = "mismatch"
+	// IaCPluginHashResultMissing 记录里没有本架构的 sha256。
+	IaCPluginHashResultMissing IaCPluginHashResult = "missing"
+)
+
+// Validate 校验哈希比对结果是否合法。
+func (r IaCPluginHashResult) Validate() error {
+	switch r {
+	case IaCPluginHashResultMatch, IaCPluginHashResultMismatch, IaCPluginHashResultMissing:
+		return nil
+	default:
+		return fmt.Errorf("unsupported iac plugin hash result: %s", r)
+	}
+}
