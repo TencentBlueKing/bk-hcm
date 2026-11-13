@@ -41,4 +41,8 @@ const (
 
 	// TFPluginStopProviderTimeout 是 StopProvider 的等待时间。超时后仍 Kill 进程，避免卡住服务退出。
 	TFPluginStopProviderTimeout = 5 * time.Second
+
+	// TFPluginDefaultMinPort 与 TFPluginDefaultMaxPort 是未配置端口范围时的握手端口。
+	TFPluginDefaultMinPort = 40000
+	TFPluginDefaultMaxPort = 40999
 )

@@ -61,8 +61,8 @@ var (
 	Fatalf = glog.Fatalf
 )
 
-// NewPluginLogger opens a rotating log file for one plugin.
-// Naming, size limit, and file count follow glog. The file is separate from the hc-service log.
+// NewPluginLogger opens the shared log file of one plugin name.
+// Processes of that name append to the same file. The file is separate from the hc-service log.
 func NewPluginLogger(pluginName string) (io.WriteCloser, error) {
 	return glog.NewPluginLogger(pluginName)
 }

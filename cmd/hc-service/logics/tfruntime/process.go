@@ -50,8 +50,11 @@ var errPluginStarted = fmt.Errorf("plugin process has already been started")
 type ProcessManager struct {
 	mu           sync.Mutex
 	shutdownOnce sync.Once
+	stopOnce     sync.Once
+	// stopped is closed after Close finishes, so the shutdown watch can return.
+	stopped chan struct{}
 
-	// name is written into log lines and the log file name.
+	// name is written into log lines and used as the plugin log directory name.
 	name string
 	// path is the plugin executable.
 	path string
@@ -71,11 +74,12 @@ type ProcessManager struct {
 // The provider release version is not part of protocol 5, so log lines record it as unknown.
 func NewProcessManager(name, path string, args []string, dir, tfLog string) *ProcessManager {
 	return &ProcessManager{
-		name:  name,
-		path:  path,
-		args:  args,
-		dir:   dir,
-		tfLog: tfLog,
+		name:    name,
+		path:    path,
+		args:    args,
+		dir:     dir,
+		tfLog:   tfLog,
+		stopped: make(chan struct{}),
 	}
 }
 
@@ -254,6 +258,7 @@ func pingPlugin(protocol plugin.ClientProtocol, timeout time.Duration) error {
 }
 
 // Close stops this manager's process. It returns immediately when none is running.
+// The shutdown watch is woken after the running process has been stopped.
 func (m *ProcessManager) Close() error {
 	m.mu.Lock()
 	executor := m.executor
@@ -261,7 +266,9 @@ func (m *ProcessManager) Close() error {
 	if executor == nil {
 		return nil
 	}
-	return executor.Close()
+	err := executor.Close()
+	m.markStopped()
+	return err
 }
 
 func (m *ProcessManager) detach(executor *PluginExecutor) {
@@ -270,6 +277,10 @@ func (m *ProcessManager) detach(executor *PluginExecutor) {
 		m.executor = nil
 	}
 	m.mu.Unlock()
+}
+
+func (m *ProcessManager) markStopped() {
+	m.stopOnce.Do(func() { close(m.stopped) })
 }
 
 // pluginEnv builds the explicit environment for one plugin process.
@@ -302,18 +313,21 @@ func pluginPorts() (uint, uint) {
 	return cfg.MinPort, cfg.MaxPort
 }
 
-// watchShutdown closes this manager's process when hc-service shuts down.
-// A manager that has not started does not register. After Close, the callback
-// returns immediately and still calls Done.
+// watchShutdown closes this process when hc-service shuts down.
+// Close also wakes the goroutine, so it does not stay blocked on the shutdown signal.
 func (m *ProcessManager) watchShutdown() {
 	m.shutdownOnce.Do(func() {
 		notifier := shutdown.AddNotifier()
 		go func() {
-			<-notifier.Signal
-			if err := m.Close(); err != nil {
-				logs.Errorf("close plugin on shutdown: plugin=%s err=%v", m.name, err)
+			select {
+			case <-notifier.Signal:
+				if err := m.Close(); err != nil {
+					logs.Errorf("close plugin on shutdown: plugin=%s err=%v", m.name, err)
+				}
+				notifier.Done()
+			case <-m.stopped:
+				notifier.Cancel()
 			}
-			notifier.Done()
 		}()
 	})
 }

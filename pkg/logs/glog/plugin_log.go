@@ -34,33 +34,50 @@ import (
 var pluginLogMu sync.Mutex
 
 var (
-	pluginOnce   sync.Once
-	pluginKeeper *logKeeper
-	pluginDirErr error
+	pluginOnce    sync.Once
+	pluginRoot    string
+	pluginRootErr error
+	pluginSinks   map[string]*pluginSink
 )
 
-// PluginLogger writes one plugin to its own log file.
-// File name, size limit, and retention use the existing glog settings.
-type PluginLogger struct {
-	plugin string
+// pluginSink is the current log file of one plugin name.
+// Processes of that name append to this file. Rotation follows glog.
+type pluginSink struct {
+	keeper *logKeeper
 	file   *os.File
 	w      *bufio.Writer
 	nbytes uint32
+	refs   int
+}
+
+// PluginLogger writes to the shared log file of one plugin name.
+type PluginLogger struct {
+	sink   *pluginSink
 	closed bool
 }
 
-// NewPluginLogger opens the plugin log file under {logDir}/plugin.
+// NewPluginLogger opens the shared log file of pluginName under {logDir}/plugin/{name}.
 func NewPluginLogger(pluginName string) (*PluginLogger, error) {
 	pluginLogMu.Lock()
 	defer pluginLogMu.Unlock()
-	if err := ensurePluginDir(); err != nil {
+	if err := ensurePluginRoot(); err != nil {
 		return nil, err
 	}
-	logger := &PluginLogger{plugin: sanitizeLogName(pluginName)}
-	if err := logger.reopen(time.Now()); err != nil {
+	name := sanitizeLogName(pluginName)
+	sink := pluginSinks[name]
+	if sink == nil {
+		dir := filepath.Join(pluginRoot, name)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return nil, err
+		}
+		sink = &pluginSink{keeper: &logKeeper{dir: dir}}
+		pluginSinks[name] = sink
+	}
+	if err := sink.open(time.Now()); err != nil {
 		return nil, err
 	}
-	return logger, nil
+	sink.refs++
+	return &PluginLogger{sink: sink}, nil
 }
 
 // Write appends plugin output and rotates when the file reaches MaxSize.
@@ -70,23 +87,24 @@ func (p *PluginLogger) Write(data []byte) (int, error) {
 	if p.closed {
 		return len(data), nil
 	}
-	if p.nbytes+uint32(len(data)) >= MaxSize() {
-		if err := p.reopen(time.Now()); err != nil {
+	sink := p.sink
+	if sink.nbytes+uint32(len(data)) >= MaxSize() {
+		if err := sink.rotate(time.Now()); err != nil {
 			return 0, err
 		}
 	}
-	n, err := p.w.Write(data)
-	p.nbytes += uint32(n)
+	n, err := sink.w.Write(data)
+	sink.nbytes += uint32(n)
 	if err != nil {
 		return n, err
 	}
-	if err = p.w.Flush(); err != nil {
+	if err = sink.w.Flush(); err != nil {
 		return n, err
 	}
 	return n, nil
 }
 
-// Close flushes and closes this file. The file stays on disk.
+// Close flushes this logger. The file stays open while another logger of the same plugin still uses it.
 func (p *PluginLogger) Close() error {
 	pluginLogMu.Lock()
 	defer pluginLogMu.Unlock()
@@ -94,41 +112,58 @@ func (p *PluginLogger) Close() error {
 		return nil
 	}
 	p.closed = true
-	if p.w != nil {
-		_ = p.w.Flush()
+	sink := p.sink
+	sink.refs--
+	if sink.refs > 0 {
+		return nil
 	}
-	if p.file != nil {
-		err := p.file.Close()
-		p.file = nil
+	if sink.w != nil {
+		_ = sink.w.Flush()
+		sink.w = nil
+	}
+	if sink.file != nil {
+		err := sink.file.Close()
+		sink.file = nil
 		return err
 	}
 	return nil
 }
 
-func (p *PluginLogger) reopen(now time.Time) error {
-	if p.w != nil {
-		_ = p.w.Flush()
-	}
-	if p.file != nil {
-		_ = p.file.Close()
-		p.file = nil
-	}
-	appended := false
-	pluginKeeper.onceLoad.Do(func() {
-		pluginKeeper.load()
-		appended = p.openTail()
-	})
-	if appended {
+func (s *pluginSink) open(now time.Time) error {
+	if s.file != nil {
 		return nil
 	}
-	return p.create(now)
+	first := false
+	s.keeper.onceLoad.Do(func() {
+		s.keeper.load()
+		first = true
+	})
+	if first && !IsRestartLogScrolling() {
+		return s.create(now)
+	}
+	if s.openTail() {
+		return nil
+	}
+	return s.create(now)
 }
 
-func (p *PluginLogger) openTail() bool {
-	if !IsRestartLogScrolling() || pluginKeeper.tail == nil {
+func (s *pluginSink) rotate(now time.Time) error {
+	if s.w != nil {
+		_ = s.w.Flush()
+		s.w = nil
+	}
+	if s.file != nil {
+		_ = s.file.Close()
+		s.file = nil
+	}
+	return s.create(now)
+}
+
+func (s *pluginSink) openTail() bool {
+	if s.keeper.tail == nil {
 		return false
 	}
-	filename := filepath.Join(pluginKeeper.dir, pluginKeeper.tail.name)
+	filename := filepath.Join(s.keeper.dir, s.keeper.tail.name)
 	info, err := os.Stat(filename)
 	if err != nil || uint32(info.Size()) >= MaxSize() {
 		return false
@@ -142,15 +177,15 @@ func (p *PluginLogger) openTail() bool {
 		_ = file.Close()
 		return false
 	}
-	p.file = file
-	p.w = bufio.NewWriterSize(file, bufferSize)
-	p.nbytes = uint32(info.Size()) + n
+	s.file = file
+	s.w = bufio.NewWriterSize(file, bufferSize)
+	s.nbytes = uint32(info.Size()) + n
 	return true
 }
 
-func (p *PluginLogger) create(now time.Time) error {
-	name, link := pluginLogName(p.plugin, now)
-	file, err := os.Create(filepath.Join(pluginKeeper.dir, name))
+func (s *pluginSink) create(now time.Time) error {
+	name, link := logName(logFileTag, now)
+	file, err := os.Create(filepath.Join(s.keeper.dir, name))
 	if err != nil {
 		return err
 	}
@@ -159,30 +194,23 @@ func (p *PluginLogger) create(now time.Time) error {
 		_ = file.Close()
 		return err
 	}
-	p.file = file
-	p.w = bufio.NewWriterSize(file, bufferSize)
-	p.nbytes = n
-	pluginKeeper.add(&fileBlock{fileInfo: fileInfo{name: name, timestamp: ""}, next: nil})
-	symlink := filepath.Join(pluginKeeper.dir, link)
+	s.file = file
+	s.w = bufio.NewWriterSize(file, bufferSize)
+	s.nbytes = n
+	s.keeper.add(&fileBlock{fileInfo: fileInfo{name: name, timestamp: ""}, next: nil})
+	symlink := filepath.Join(s.keeper.dir, link)
 	_ = os.Remove(symlink)
 	_ = os.Symlink(name, symlink)
 	return nil
 }
 
-func ensurePluginDir() error {
+func ensurePluginRoot() error {
 	pluginOnce.Do(func() {
-		dir := filepath.Join(logDir, "plugin")
-		pluginDirErr = os.MkdirAll(dir, 0o755)
-		pluginKeeper = &logKeeper{dir: dir}
+		pluginRoot = filepath.Join(logDir, "plugin")
+		pluginRootErr = os.MkdirAll(pluginRoot, 0o755)
+		pluginSinks = map[string]*pluginSink{}
 	})
-	return pluginDirErr
-}
-
-func pluginLogName(plugin string, t time.Time) (name, link string) {
-	name = fmt.Sprintf("%s.%s.%s.%s.log.%s.%04d%02d%02d-%02d%02d%02d.%d",
-		program, plugin, host, userName, logFileTag,
-		t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), pid)
-	return name, program + "." + logFileTag
+	return pluginRootErr
 }
 
 func writePluginHeader(file *os.File, now time.Time) (uint32, error) {
@@ -209,8 +237,9 @@ func sanitizeLogName(value string) string {
 			b.WriteByte('_')
 		}
 	}
-	if b.Len() == 0 {
+	name := b.String()
+	if name == "." || name == ".." {
 		return "unknown"
 	}
-	return b.String()
+	return name
 }

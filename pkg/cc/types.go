@@ -429,8 +429,8 @@ type TFPluginSetting struct {
 // trySetDefault fills the port range when the configuration omits both ends.
 func (p *TFPluginSetting) trySetDefault() {
 	if p.MinPort == 0 && p.MaxPort == 0 {
-		p.MinPort = 40000
-		p.MaxPort = 40999
+		p.MinPort = constant.TFPluginDefaultMinPort
+		p.MaxPort = constant.TFPluginDefaultMaxPort
 	}
 	if p.HealthCheckTimeout == 0 {
 		p.HealthCheckTimeout = 3 * time.Second

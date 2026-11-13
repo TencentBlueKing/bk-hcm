@@ -115,6 +115,12 @@ func (n *Notifier) Done() {
 	globalWaitGroup.Done()
 }
 
+// Cancel drops this notifier before shutdown. The listener can exit when its own
+// work has already finished, and shutdown will not wait for it.
+func (n *Notifier) Cancel() {
+	globalWaitGroup.Done()
+}
+
 // SignalShutdownGracefully send the signal to shut down the process.
 func SignalShutdownGracefully() {
 	if waitOnceFlag.Load().(bool) {
