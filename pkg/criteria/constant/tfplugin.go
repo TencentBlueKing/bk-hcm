@@ -27,6 +27,8 @@ const (
 	// TFPluginProtocolVersion 是当前接受的 Terraform 插件协议主版本
 	// 协议 6 接入时另加常量
 	TFPluginProtocolVersion = 5
+	// TFPluginSchemaProtocolVersion 是 GetProviderSchema 对外文档的 protocol_version，不是插件握手主版本
+	TFPluginSchemaProtocolVersion = "1.0"
 	// TFPluginProviderName 是插件进程内的 dispense 名称
 	// 协议 5 和协议 6 使用同一个名字，版本由 VersionedPlugins 的键区分
 	// 该值必须与插件二进制注册的名字一致，官方 Provider 固定为 provider
