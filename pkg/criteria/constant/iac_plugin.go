@@ -23,4 +23,6 @@ const (
 	// IaCPluginMessageMaxLen 是 iac_plugin.message 的列宽，对应建表的 varchar(255)。
 	// 后续截断写入 message 的失败原因时使用。
 	IaCPluginMessageMaxLen = 255
+	// IaCPluginSwitchLockLeaseSeconds 是 cloud-server 启停插件时的 etcd 锁租约时长（秒）。
+	IaCPluginSwitchLockLeaseSeconds int64 = 60
 )

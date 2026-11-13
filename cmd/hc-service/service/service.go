@@ -41,6 +41,7 @@ import (
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
+	iacpluginsvc "hcm/cmd/hc-service/service/iac-plugin"
 	"hcm/cmd/hc-service/service/image"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
 	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
@@ -76,6 +77,9 @@ type Service struct {
 	serve        *http.Server
 	clientSet    *client.ClientSet
 	cloudAdaptor *cloudadaptor.CloudAdaptorClient
+	// sd 用于巡检的 master 判定。
+	sd        serviced.ServiceDiscover
+	iacPlugin *iacPluginManager
 }
 
 // NewService create a service instance.
@@ -101,6 +105,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	svr := &Service{
 		clientSet:    cliSet,
 		cloudAdaptor: cloudAdaptor,
+		sd:           sd,
+	}
+
+	if err = svr.initIaCPlugin(); err != nil {
+		return nil, err
 	}
 
 	return svr, nil
@@ -174,6 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 		ClientSet:    s.clientSet,
 		CloudAdaptor: s.cloudAdaptor,
 		ResSyncCli:   ressync.NewClient(s.cloudAdaptor, s.clientSet.DataService()),
+		HTTPPlugin:   s.iacPlugin.httpPlugin,
 	}
 
 	account.InitAccountService(c)
@@ -199,6 +209,7 @@ func (s *Service) apiSet() *restful.Container {
 	cos.InitCosService(c)
 	monitoring.InitMonitoringService(c)
 	permissiontemplate.InitService(c)
+	iacpluginsvc.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
@@ -210,6 +221,12 @@ func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
 		logs.Errorf("service healthz check failed, current service is shutting down")
 		w.WriteHeader(http.StatusServiceUnavailable)
 		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "current service is shutting down"))
+		return
+	}
+
+	if !s.iacPlugin.ready.Load() {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "iac plugins are not registered yet"))
 		return
 	}
 
