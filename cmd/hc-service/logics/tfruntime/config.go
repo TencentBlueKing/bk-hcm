@@ -22,6 +22,7 @@ package tfruntime
 import (
 	"os/exec"
 
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
 	"hcm/pkg/criteria/constant"
 
 	"github.com/hashicorp/go-plugin"
@@ -46,7 +47,7 @@ func newPluginClientConfig(cmd *exec.Cmd, minPort, maxPort uint) *plugin.ClientC
 		},
 		VersionedPlugins: map[int]plugin.PluginSet{
 			constant.TFPluginProtocolVersion: {
-				constant.TFPluginProviderName: &providerPlugin{},
+				constant.TFPluginProviderName: &executor.Plugin{},
 			},
 		},
 		Cmd:              cmd,
