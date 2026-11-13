@@ -21,6 +21,7 @@ package types
 
 import (
 	"hcm/pkg/adaptor/poller"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/retry"
 )
 
@@ -93,6 +94,15 @@ func NewLoadBalancerDefaultPollerOption() *poller.PollUntilDoneOption {
 	return &poller.PollUntilDoneOption{
 		TimeoutTimeSecond: 5 * 60,
 		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+	}
+}
+
+// NewCLBVisibleWaitPollerOption 超时时间30秒，4次之内间隔按500ms线性递增，之后间隔在1-2.5s之间随机
+func NewCLBVisibleWaitPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: constant.TCLBVisibleWaitTimeoutSec,
+		Retry: retry.NewRetryPolicy(constant.TCLBVisibleWaitImmuneCount,
+			[2]uint{constant.TCLBVisibleWaitMinIntervalMS, constant.TCLBVisibleWaitMaxIntervalMS}),
 	}
 }
 

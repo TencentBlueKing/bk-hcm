@@ -98,6 +98,44 @@ func TestIsLBExclusiveChange(t *testing.T) {
 		})
 	}
 }
+func newTestTCloudClb(backupZones ...*tclb.ZoneInfo) typeslb.TCloudClb {
+	return typeslb.TCloudClb{LoadBalancer: &tclb.LoadBalancer{
+		LoadBalancerId:   cvt.ValToPtr("lb-1"),
+		LoadBalancerType: cvt.ValToPtr(string(typeslb.OpenLoadBalancerType)),
+		MasterZone:       &tclb.ZoneInfo{Zone: cvt.ValToPtr("ap-guangzhou-3")},
+		BackupZoneSet:    backupZones,
+		TargetRegionInfo: &tclb.TargetRegionInfo{},
+	}}
+}
+
+func TestGetTCloudBackupZones(t *testing.T) {
+	cases := []struct {
+		name  string
+		zones []*tclb.ZoneInfo
+		want  []string
+	}{
+		{
+			name: "cloud returns null",
+			want: nil,
+		},
+		{
+			name:  "skip nil and empty zone",
+			zones: []*tclb.ZoneInfo{nil, {Zone: nil}, {Zone: cvt.ValToPtr("")}},
+			want:  nil,
+		},
+		{
+			name:  "keep cloud order",
+			zones: []*tclb.ZoneInfo{{Zone: cvt.ValToPtr("ap-guangzhou-4")}, {Zone: cvt.ValToPtr("ap-guangzhou-6")}},
+			want:  []string{"ap-guangzhou-4", "ap-guangzhou-6"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, getTCloudBackupZones(newTestTCloudClb(c.zones...)))
+		})
+	}
+}
 
 func TestIsLBNetworkAttrChange(t *testing.T) {
 	newNetworkPair := func() (typeslb.TCloudClb, corelb.TCloudLoadBalancer) {
@@ -192,4 +230,33 @@ func TestIsLBExtensionChange(t *testing.T) {
 		cloud.NetworkAttributes = &tclb.InternetAccessible{InternetMaxBandwidthOut: cvt.ValToPtr(int64(5))}
 		assert.True(t, isLBExtensionChange(cloud, db))
 	})
+}
+
+func TestConvCloudToDBBackupZones(t *testing.T) {
+	cloud := newTestTCloudClb(&tclb.ZoneInfo{Zone: cvt.ValToPtr("ap-guangzhou-4")})
+	want := []string{"ap-guangzhou-4"}
+
+	created := convCloudToDBCreate(cloud, "account", "ap-guangzhou", nil, nil)
+	assert.Equal(t, want, created.BackupZones)
+	assert.Equal(t, []string{"ap-guangzhou-3"}, created.Zones)
+
+	updated := convCloudToDBUpdate("id-1", cloud, nil, nil, "ap-guangzhou")
+	assert.Equal(t, want, updated.BackupZones)
+
+	// 云上未返回备可用区时更新项为空，data-service 不覆盖本地已有值
+	updated = convCloudToDBUpdate("id-1", newTestTCloudClb(), nil, nil, "ap-guangzhou")
+	assert.Nil(t, updated.BackupZones)
+}
+
+func TestIsLBChangeBackupZones(t *testing.T) {
+	cloud := newTestTCloudClb(&tclb.ZoneInfo{Zone: cvt.ValToPtr("ap-guangzhou-4")})
+	db := corelb.TCloudLoadBalancer{BaseLoadBalancer: corelb.BaseLoadBalancer{
+		IPVersion: cloud.GetIPVersion(),
+		Status:    "0",
+	}}
+
+	assert.True(t, isLBChange(cloud, db), "missing local backup zones should trigger update")
+
+	db.BackupZones = []string{"ap-guangzhou-6"}
+	assert.True(t, isLBChange(cloud, db), "different backup zones should trigger update")
 }
