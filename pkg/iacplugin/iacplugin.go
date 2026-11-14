@@ -51,6 +51,16 @@ func ParseVersion(version string) (string, error) {
 	return v, nil
 }
 
+// NormalizeVersion 校验插件版本号并去掉前导 v 前缀，返回三段式规范字符串（如 "1.0.0"）。
+func NormalizeVersion(version string) (string, error) {
+	v, err := ParseVersion(version)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimPrefix(v, "v"), nil
+}
+
 // hasThreeSegments 判断 v 的主体部分（去掉预发布和构建信息）是否恰好有三段。
 // semver.IsValid 已经通过，这里只数主.次.修订。
 func hasThreeSegments(v string) bool {
