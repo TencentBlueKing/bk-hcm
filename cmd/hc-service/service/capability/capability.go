@@ -22,6 +22,7 @@ package capability
 
 import (
 	cloudclient "hcm/cmd/hc-service/logics/cloud-adaptor"
+	httpplugin "hcm/cmd/hc-service/logics/iac-plugin/http-plugin"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/pkg/client"
 
@@ -34,4 +35,6 @@ type Capability struct {
 	ClientSet    *client.ClientSet
 	CloudAdaptor *cloudclient.CloudAdaptorClient
 	ResSyncCli   ressync.Interface
+	// HTTPPlugin http 插件的注册、升级与修改。
+	HTTPPlugin *httpplugin.Service
 }

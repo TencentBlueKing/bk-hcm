@@ -91,6 +91,7 @@ var genResourceFuncMap = map[meta.ResourceType]genResourceFunc{
 	meta.PermissionTemplate:       genPermissionTemplateResource,
 	meta.GlobalConfig:             genGlobalConfigResource,
 	meta.PermissionPolicyLibrary:  genPermissionPolicyLibraryResource,
+	meta.IaCPlugin:                genIaCPluginResource,
 }
 
 func genApplicationResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {

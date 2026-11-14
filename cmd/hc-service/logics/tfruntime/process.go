@@ -26,8 +26,8 @@ import (
 	"os/exec"
 	"strconv"
 	"sync"
-	"time"
 
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/logs"
@@ -64,7 +64,8 @@ type ProcessManager struct {
 	// tfLog is TF_LOG for the process started by this manager. Empty means ERROR.
 	tfLog string
 
-	executor *PluginExecutor
+	executor *executor.PluginExecutor
+	codec    executor.ValueCodec
 	starting bool
 	// started stays set after a successful Start. Close does not clear it.
 	started bool
@@ -83,10 +84,22 @@ func NewProcessManager(name, path string, args []string, dir, tfLog string) *Pro
 	}
 }
 
+// SetValueCodec installs the codec used to encode config and state.
+// It does not change NewProcessManager's parameters. A codec set before Start
+// is copied onto the executor. A codec set after Start replaces the live one.
+func (m *ProcessManager) SetValueCodec(codec executor.ValueCodec) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.codec = codec
+	if m.executor != nil {
+		m.executor.SetCodec(codec)
+	}
+}
+
 // Start launches this manager's plugin process once. Another call returns an
 // error and does not create a plugin.Client. This manager stops the process
 // in Close.
-func (m *ProcessManager) Start(ctx context.Context) (*PluginExecutor, error) {
+func (m *ProcessManager) Start(ctx context.Context) (executor.Executor, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -106,18 +119,19 @@ func (m *ProcessManager) Start(ctx context.Context) (*PluginExecutor, error) {
 		m.mu.Unlock()
 	}()
 
-	executor, err := m.launch(ctx)
+	exec, err := m.launch(ctx)
 	if err != nil {
 		return nil, err
 	}
 	m.mu.Lock()
-	m.executor = executor
+	m.executor = exec
+	exec.SetCodec(m.codec)
 	m.starting = false
 	m.started = true
 	m.mu.Unlock()
 	succeeded = true
 	m.watchShutdown()
-	return executor, nil
+	return exec, nil
 }
 
 func (m *ProcessManager) beginStart() error {
@@ -130,7 +144,7 @@ func (m *ProcessManager) beginStart() error {
 	return nil
 }
 
-func (m *ProcessManager) launch(ctx context.Context) (*PluginExecutor, error) {
+func (m *ProcessManager) launch(ctx context.Context) (*executor.PluginExecutor, error) {
 	env, err := pluginEnv(m.tfLog)
 	if err != nil {
 		return nil, err
@@ -155,14 +169,15 @@ func (m *ProcessManager) launch(ctx context.Context) (*PluginExecutor, error) {
 	executor, err := connectPlugin(ctx, client, sink)
 	if err != nil {
 		client.Kill()
-		sink.close()
+		_ = sink.Close()
 		return nil, err
 	}
-	executor.attach(m, client, sink, m.name)
+	// TODO version 应该来自 GetSchema
+	executor.Attach(client, sink, m.name, "")
 	return executor, nil
 }
 
-func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs) (*PluginExecutor, error) {
+func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs) (*executor.PluginExecutor, error) {
 	rpcClient, err := client.Client()
 	if err != nil {
 		return nil, err
@@ -182,7 +197,7 @@ func connectPlugin(ctx context.Context, client *plugin.Client, sink *pluginLogs)
 	if err != nil {
 		return nil, err
 	}
-	executor, ok := raw.(*PluginExecutor)
+	executor, ok := raw.(*executor.PluginExecutor)
 	if !ok {
 		return nil, fmt.Errorf("plugin %s returned %T", constant.TFPluginProviderName, raw)
 	}
@@ -208,72 +223,45 @@ func pluginPID(client *plugin.Client) (string, error) {
 // A manager that has not been started returns false. After Close, the process is gone and Exited returns true.
 func (m *ProcessManager) Exited() bool {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
 	started := m.started
 	m.mu.Unlock()
-	if executor == nil || executor.client == nil {
+	if exec == nil {
 		return started
 	}
-	return executor.client.Exited()
+	return exec.Exited()
 }
 
 // CheckHealth reports whether the plugin gRPC connection is still healthy.
 // It fails when the process is not running or Ping fails. The wait is bounded by tfPlugin.healthCheckTimeout.
 func (m *ProcessManager) CheckHealth() error {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
 	m.mu.Unlock()
-	if executor == nil || executor.client == nil {
+	if exec == nil {
 		return fmt.Errorf("plugin %s process is not running", m.name)
 	}
-	if executor.client.Exited() {
-		return fmt.Errorf("plugin %s process has exited", m.name)
-	}
-
-	protocol, err := executor.client.Client()
-	if err != nil {
-		return fmt.Errorf("plugin %s grpc client: %w", m.name, err)
-	}
-	if err = pingPlugin(protocol, cc.HCService().TFPlugin.HealthCheckTimeout); err != nil {
-		return fmt.Errorf("plugin %s grpc health check: %w", m.name, err)
-	}
-	return nil
-}
-
-// pingPlugin calls GRPCClient.Ping. Ping uses its own background context, so the configured timeout
-// is applied here and a wedged plugin cannot block the caller.
-func pingPlugin(protocol plugin.ClientProtocol, timeout time.Duration) error {
-	errCh := make(chan error, 1)
-	go func() {
-		errCh <- protocol.Ping()
-	}()
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
-	select {
-	case err := <-errCh:
-		return err
-	case <-timer.C:
-		return fmt.Errorf("timed out after %s", timeout)
-	}
+	return exec.CheckHealth(cc.HCService().TFPlugin.HealthCheckTimeout)
 }
 
 // Close stops this manager's process. It returns immediately when none is running.
 // The shutdown watch is woken after the running process has been stopped.
 func (m *ProcessManager) Close() error {
 	m.mu.Lock()
-	executor := m.executor
+	exec := m.executor
+	m.executor = nil
 	m.mu.Unlock()
-	if executor == nil {
+	if exec == nil {
 		return nil
 	}
-	err := executor.Close()
+	err := exec.Close()
 	m.markStopped()
 	return err
 }
 
-func (m *ProcessManager) detach(executor *PluginExecutor) {
+func (m *ProcessManager) detach(exec *executor.PluginExecutor) {
 	m.mu.Lock()
-	if m.executor == executor {
+	if m.executor == exec {
 		m.executor = nil
 	}
 	m.mu.Unlock()
