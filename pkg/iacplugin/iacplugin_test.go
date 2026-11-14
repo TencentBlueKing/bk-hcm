@@ -61,6 +61,24 @@ func TestVersion(t *testing.T) {
 	if _, err := CompareVersion("1.0.0", "latest"); err == nil {
 		t.Error("CompareVersion with invalid version want err")
 	}
+
+	normCases := []struct {
+		in   string
+		want string
+	}{
+		{"1.0.0", "1.0.0"},
+		{"v1.0.0", "1.0.0"},
+		{"v1.10.0-rc.1", "1.10.0-rc.1"},
+	}
+	for _, c := range normCases {
+		got, err := NormalizeVersion(c.in)
+		if err != nil || got != c.want {
+			t.Errorf("NormalizeVersion(%q) = %q, %v; want %q", c.in, got, err, c.want)
+		}
+	}
+	if _, err := NormalizeVersion("latest"); err == nil {
+		t.Error("NormalizeVersion with invalid version want err")
+	}
 }
 
 func TestLatest(t *testing.T) {
