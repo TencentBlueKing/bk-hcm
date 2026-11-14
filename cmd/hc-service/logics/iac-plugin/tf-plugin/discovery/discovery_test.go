@@ -70,6 +70,28 @@ func TestScanHighestVersionBySemver(t *testing.T) {
 	}
 }
 
+func TestScanNormalizesVPrefixVersion(t *testing.T) {
+	root := t.TempDir()
+	put(t, root, "tc", "1.9.0", LocalArch(), "bin", "old")
+	put(t, root, "tc", "v1.10.0", LocalArch(), "bin", "new")
+
+	entries, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := entries["tc"]
+	if !ok || got.PluginVersion != "1.10.0" {
+		t.Fatalf("want normalized version 1.10.0, got %+v", entries)
+	}
+	wantExec := filepath.Join(root, "tc", "v1.10.0", LocalArch(), "bin")
+	if got.ExecPath != wantExec {
+		t.Fatalf("want exec path %s, got %s", wantExec, got.ExecPath)
+	}
+	if got.SHA256 != sum("new") {
+		t.Fatalf("sha256 mismatch")
+	}
+}
+
 func TestScanOnlyLocalArch(t *testing.T) {
 	root := t.TempDir()
 	put(t, root, "tc", "1.0.0", LocalArch(), "bin", "amd64-content")

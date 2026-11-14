@@ -41,7 +41,7 @@ import (
 type Entry struct {
 	// PluginName 插件名，取自目录名。
 	PluginName string
-	// PluginVersion 插件版本，取自目录名，已通过 semver 三段式校验。
+	// PluginVersion 插件版本，取自目录名，已通过 semver 三段式校验并去掉前导 v 前缀。
 	PluginVersion string
 	// Arch 本副本架构，格式 {os}_{arch}。
 	Arch string
@@ -134,10 +134,14 @@ func scanPlugin(pluginPath, name, arch string) (*Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s version %s: %w", name, highest, err)
 	}
+	normalized, err := iacplugin.NormalizeVersion(highest)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Entry{
 		PluginName:    name,
-		PluginVersion: highest,
+		PluginVersion: normalized,
 		Arch:          arch,
 		ExecPath:      execPath,
 		SHA256:        sum,
