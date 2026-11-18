@@ -17,8 +17,9 @@ export class SearchConditionAll extends SearchCondition {
     index: 1,
     meta: {
       search: {
-        filterRules(value: OperationLogResourceType) {
-          const val = OPERATION_LOG_RES_TYPES[value as keyof typeof OPERATION_LOG_RES_TYPES] || [value];
+        filterRules(value: OperationLogResourceType | OperationLogResourceType[]) {
+          const key = (Array.isArray(value) ? value[0] : value) as keyof typeof OPERATION_LOG_RES_TYPES;
+          const val = OPERATION_LOG_RES_TYPES[key] || (Array.isArray(value) ? value : [value]);
           return {
             field: 'res_type',
             op: QueryRuleOPEnum.IN,

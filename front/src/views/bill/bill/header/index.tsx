@@ -46,7 +46,7 @@ export default defineComponent({
     );
 
     return () => (
-      <div class='header-container'>
+      <div class='bill-header-container'>
         <div class='title-wrap'>
           <div class='title'>{t('云账单管理')}</div>
           <DatePicker v-model={currentMonth.value} type='month' clearable={false} />

@@ -42,6 +42,9 @@ export class SearchConditionTcloud {
     props: {
       multiple: false,
     },
+    format: (value: string | string[]) => {
+      return Array.isArray(value) ? value[0] : value;
+    },
   })
   permission_template_type: string;
 

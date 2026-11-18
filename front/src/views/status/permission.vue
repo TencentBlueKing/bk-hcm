@@ -11,12 +11,13 @@ import {
   AUTH_FIND_CLOUD_SELECTION_SCHEME,
   AUTH_FIND_IAAS_RESOURCE,
   AUTH_FIND_ACCOUNT,
+  AUTH_FIND_ACCOUNT_BILL,
   AUTH_BIZ_FIND_AUDIT,
   AUTH_FIND_RECYCLE_BIN,
 } from '@/constants/auth-symbols';
 
 // 需由管理员主动授权的权限：只提示联系管理员，不提供自助申请入口
-const NO_SELF_APPLY_SIGNS = [AUTH_FIND_ROOT_ACCOUNT];
+const NO_SELF_APPLY_SIGNS = [AUTH_FIND_ROOT_ACCOUNT, AUTH_FIND_ACCOUNT_BILL];
 
 const route = useRoute();
 const { t } = useI18n();
@@ -94,6 +95,16 @@ const descriptions = new Map<symbol, IDescriptionConfig>([
         '提供资源的生命周期管理，如资源的创建，回收，销毁等',
         '支持资源归属不同业务',
       ],
+    },
+  ],
+  [
+    AUTH_FIND_ACCOUNT_BILL,
+    {
+      permTips: [
+        '当前无"云账单管理"权限',
+        '该功能面向平台管理员，属于管理员的权限，不支持自助申请，如需使用请联系管理员授权',
+      ],
+      featureDesc: [],
     },
   ],
   [
