@@ -21,14 +21,5 @@ package plugin
 
 import coreplugin "hcm/pkg/api/core/plugin"
 
-// PluginInfo 复用核心插件身份与版本标识定义。
-type PluginInfo = coreplugin.PluginInfo
-
-// Capabilities 复用核心插件南向能力位定义。
-type Capabilities = coreplugin.Capabilities
-
-// SchemaDetail 复用核心插件 Schema 详情载荷定义。
-type SchemaDetail = coreplugin.SchemaDetail
-
 // PluginSchema 复用核心插件完整 Schema 定义。
 type PluginSchema = coreplugin.PluginSchema

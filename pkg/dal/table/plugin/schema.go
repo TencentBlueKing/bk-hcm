@@ -53,7 +53,7 @@ type IacPluginSchemaTable struct {
 	ID            string          `db:"id" json:"id" validate:"lte=64"`
 	PluginName    string          `db:"plugin_name" json:"plugin_name" validate:"lte=64"`
 	PluginVersion string          `db:"plugin_version" json:"plugin_version" validate:"lte=64"`
-	SchemaHash    string          `db:"schema_hash" json:"schema_hash" validate:"lte=80"`
+	SchemaHash    string          `db:"schema_hash" json:"schema_hash" validate:"lte=160"`
 	SchemaDetail  types.JsonField `db:"schema_detail" json:"schema_detail"`
 	Creator       string          `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser       string          `db:"reviser" json:"reviser" validate:"lte=64"`

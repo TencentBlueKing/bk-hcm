@@ -31,6 +31,11 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+// computeSchemaHash 使用默认算法（sha256）计算测试用 Schema 规范哈希。
+func computeSchemaHash(plugin PluginInfo, detail *SchemaDetail) (string, error) {
+	return ComputeSchemaHashByAlgo(enumor.DefaultSchemaHashAlgo, plugin, detail)
+}
+
 func newValidTestPluginSchema(t *testing.T) *PluginSchema {
 	t.Helper()
 	detail := SchemaDetail{
@@ -83,7 +88,7 @@ func newValidTestPluginSchema(t *testing.T) *PluginSchema {
 		Name:    "tencentcloud",
 		Version: "1.81.5",
 	}
-	hash, err := ComputeSchemaHash(pluginInfo, &detail)
+	hash, err := computeSchemaHash(pluginInfo, &detail)
 	if err != nil {
 		t.Fatalf("compute schema hash failed: %v", err)
 	}
@@ -156,76 +161,95 @@ func TestPluginSchemaInlineSerialization(t *testing.T) {
 }
 
 func TestValidatePluginSchemaAndCapabilities(t *testing.T) {
-	expectedPlugin := PluginInfo{Name: "tencentcloud", Version: "1.81.5"}
 	validSchema := newValidTestPluginSchema(t)
-	if err := ValidatePluginSchema(validSchema, expectedPlugin, ProtocolHTTP); err != nil {
+	if err := ValidatePluginSchema(validSchema, enumor.IaCPluginProtocolHTTP); err != nil {
 		t.Fatalf("expected valid schema to pass validation, got err: %v", err)
+	}
+	if err := (*SchemaDetail)(nil).ValidateCapabilities(); err == nil {
+		t.Fatalf("expected nil SchemaDetail.ValidateCapabilities to fail")
+	}
+
+	// Unknown keys in capabilities JSON must be ignored gracefully during unmarshaling
+	rawWithUnknownCap := `{"plugin":{"name":"tencentcloud","version":"1.81.5"},` +
+		`"protocol_version":"1.0","capabilities":{"apply":true,"plan":true,"refresh":true,"destroy":true},` +
+		`"provider":{"version":0,"block":{}},"resource_schemas":{"tencentcloud_vpc":{"version":0,"block":{}}}}`
+	var forwardCompatSchema PluginSchema
+	if err := json.Unmarshal([]byte(rawWithUnknownCap), &forwardCompatSchema); err != nil {
+		t.Fatalf("unmarshal schema with unknown capability key failed: %v", err)
+	}
+	forwardHash, err := computeSchemaHash(forwardCompatSchema.Plugin, &forwardCompatSchema.SchemaDetail)
+	if err != nil {
+		t.Fatalf("compute forward-compat schema hash failed: %v", err)
+	}
+	forwardCompatSchema.SchemaHash = forwardHash
+	if err := ValidatePluginSchema(&forwardCompatSchema, enumor.IaCPluginProtocolHTTP); err != nil {
+		t.Fatalf("expected unknown capability key to be ignored and pass validation, got: %v", err)
 	}
 
 	// Changing plugin version without recomputing schema_hash must fail hash check
 	versionChanged := newValidTestPluginSchema(t)
 	versionChanged.Plugin.Version = "1.81.6"
-	if err := ValidatePluginSchema(versionChanged, PluginInfo{Name: "tencentcloud", Version: "1.81.6"},
-		ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(versionChanged, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected version change without hash recomputation to fail")
 	}
 
 	// tf_provider allows empty protocol_version
 	tfSchema := newValidTestPluginSchema(t)
 	tfSchema.ProtocolVersion = ""
-	hash, err := ComputeSchemaHash(tfSchema.Plugin, &tfSchema.SchemaDetail)
+	hash, err := computeSchemaHash(tfSchema.Plugin, &tfSchema.SchemaDetail)
 	if err != nil {
 		t.Fatalf("compute hash failed: %v", err)
 	}
 	tfSchema.SchemaHash = hash
-	if err := ValidatePluginSchema(tfSchema, expectedPlugin, ProtocolTFProvider); err != nil {
+	if err := ValidatePluginSchema(tfSchema, enumor.IaCPluginProtocolTFProvider); err != nil {
 		t.Fatalf("expected tf_provider with empty protocol_version to pass, got: %v", err)
 	}
 
 	// http rejects empty protocol_version
-	if err := ValidatePluginSchema(tfSchema, expectedPlugin, ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(tfSchema, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected http protocol with empty protocol_version to fail")
 	}
 
 	// schema_hash format invalid
 	badFormat := newValidTestPluginSchema(t)
 	badFormat.SchemaHash = "sha256:INVALID"
-	if err := ValidatePluginSchema(badFormat, expectedPlugin, ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(badFormat, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected invalid schema_hash format to fail")
 	}
 
 	// unsupported schema_hash algorithm fails
 	unsupportedAlgo := newValidTestPluginSchema(t)
 	unsupportedAlgo.SchemaHash = "md5:" + strings.Repeat("a", 32)
-	if err := ValidatePluginSchema(unsupportedAlgo, expectedPlugin, ProtocolHTTP); err == nil ||
+	if err := ValidatePluginSchema(unsupportedAlgo, enumor.IaCPluginProtocolHTTP); err == nil ||
 		!strings.Contains(err.Error(), "unsupported schema_hash algorithm") {
 		t.Fatalf("expected unsupported schema_hash algorithm to fail, got: %v", err)
 	}
 
-	// sha512 prefix algorithm is dispatched and validated properly
-	sha512Schema := newValidTestPluginSchema(t)
-	sha512Hash, err := ComputeSchemaHashByAlgo(
-		enumor.SchemaHashAlgoSHA512, sha512Schema.Plugin, &sha512Schema.SchemaDetail)
-	if err != nil {
-		t.Fatalf("compute sha512 schema hash failed: %v", err)
-	}
-	sha512Schema.SchemaHash = sha512Hash
-	if err := ValidatePluginSchema(sha512Schema, expectedPlugin, ProtocolHTTP); err != nil {
-		t.Fatalf("expected valid sha512 schema_hash to pass, got: %v", err)
+	// sha384 & sha512 prefix algorithms are dispatched and validated properly
+	for _, algo := range []enumor.SchemaHashAlgo{enumor.SchemaHashAlgoSHA384, enumor.SchemaHashAlgoSHA512} {
+		algoSchema := newValidTestPluginSchema(t)
+		algoHash, computeErr := ComputeSchemaHashByAlgo(algo, algoSchema.Plugin, &algoSchema.SchemaDetail)
+		if computeErr != nil {
+			t.Fatalf("compute %s schema hash failed: %v", algo, computeErr)
+		}
+		algoSchema.SchemaHash = algoHash
+		if err := ValidatePluginSchema(algoSchema, enumor.IaCPluginProtocolHTTP); err != nil {
+			t.Fatalf("expected valid %s schema_hash to pass, got: %v", algo, err)
+		}
 	}
 
 	// schema_hash does not match SchemaDetail content
 	badDigest := newValidTestPluginSchema(t)
 	badDigest.SchemaHash = "sha256:" + strings.Repeat("a", 64)
-	if err := ValidatePluginSchema(badDigest, expectedPlugin, ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(badDigest, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected mismatched schema_hash digest to fail")
 	}
 
 	// resource_schemas non-empty requires apply, plan, refresh
 	missingPlan := newValidTestPluginSchema(t)
 	missingPlan.Capabilities.Plan = false
-	missingPlan.SchemaHash, _ = ComputeSchemaHash(missingPlan.Plugin, &missingPlan.SchemaDetail)
-	if err := ValidatePluginSchema(missingPlan, expectedPlugin, ProtocolHTTP); err == nil {
+	missingPlan.SchemaHash, _ = computeSchemaHash(missingPlan.Plugin, &missingPlan.SchemaDetail)
+	if err := ValidatePluginSchema(missingPlan, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected missing plan capability with non-empty resource_schemas to fail")
 	}
 
@@ -233,25 +257,25 @@ func TestValidatePluginSchemaAndCapabilities(t *testing.T) {
 	emptyDSWithReadData := newValidTestPluginSchema(t)
 	emptyDSWithReadData.DataSourceSchemas = nil
 	emptyDSWithReadData.Capabilities.ReadData = true
-	emptyDSWithReadData.SchemaHash, _ = ComputeSchemaHash(emptyDSWithReadData.Plugin,
+	emptyDSWithReadData.SchemaHash, _ = computeSchemaHash(emptyDSWithReadData.Plugin,
 		&emptyDSWithReadData.SchemaDetail)
-	if err := ValidatePluginSchema(emptyDSWithReadData, expectedPlugin, ProtocolHTTP); err == nil {
+	if err := ValidatePluginSchema(emptyDSWithReadData, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected read_data=true when data_source_schemas is empty to fail")
 	}
 
 	// stop=true requires async_apply=true
 	stopWithoutAsync := newValidTestPluginSchema(t)
 	stopWithoutAsync.Capabilities.AsyncApply = false
-	stopWithoutAsync.SchemaHash, _ = ComputeSchemaHash(stopWithoutAsync.Plugin, &stopWithoutAsync.SchemaDetail)
-	if err := ValidatePluginSchema(stopWithoutAsync, expectedPlugin, ProtocolHTTP); err == nil {
+	stopWithoutAsync.SchemaHash, _ = computeSchemaHash(stopWithoutAsync.Plugin, &stopWithoutAsync.SchemaDetail)
+	if err := ValidatePluginSchema(stopWithoutAsync, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected stop=true with async_apply=false to fail")
 	}
 
 	// nil provider.block fails
 	nilProviderBlock := newValidTestPluginSchema(t)
 	nilProviderBlock.ConfigSchema = &tfjson.Schema{}
-	nilProviderBlock.SchemaHash, _ = ComputeSchemaHash(nilProviderBlock.Plugin, &nilProviderBlock.SchemaDetail)
-	if err := ValidatePluginSchema(nilProviderBlock, expectedPlugin, ProtocolHTTP); err == nil {
+	nilProviderBlock.SchemaHash, _ = computeSchemaHash(nilProviderBlock.Plugin, &nilProviderBlock.SchemaDetail)
+	if err := ValidatePluginSchema(nilProviderBlock, enumor.IaCPluginProtocolHTTP); err == nil {
 		t.Fatalf("expected nil provider.block to fail")
 	}
 }

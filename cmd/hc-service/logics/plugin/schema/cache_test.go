@@ -33,6 +33,7 @@ import (
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	tableplugin "hcm/pkg/dal/table/plugin"
 	"hcm/pkg/dal/table/types"
@@ -133,10 +134,10 @@ func newMockDataServiceClient(data *mockSchemaData) *dataservice.Client {
 		case strings.HasSuffix(path, "/iac_plugin_schema/batch/create"):
 			req := new(dataplugin.IacPluginSchemaBatchCreateReq)
 			_ = json.NewDecoder(r.Body).Decode(req)
-			if len(req.Items) == 0 {
+			if err := req.Validate(); err != nil {
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{
 					"code":    errf.InvalidParameter,
-					"message": "empty items",
+					"message": err.Error(),
 				})
 				return
 			}
@@ -205,14 +206,14 @@ func newSchemaCacheForTest(data *mockSchemaData, ttl time.Duration) *SchemaCache
 	return NewSchemaCache(newMockDataServiceClient(data), ttl)
 }
 
-func newSchemaManagerForTest(data *mockSchemaData, cache *SchemaCache) *SchemaManager {
-	return &SchemaManager{
-		dataCli: newMockDataServiceClient(data),
-		cache:   cache,
-	}
+func buildTestPluginSchema(t *testing.T, name, version, desc string) *coreplugin.PluginSchema {
+	t.Helper()
+	return buildTestPluginSchemaWithAlgo(t, enumor.DefaultSchemaHashAlgo, name, version, desc)
 }
 
-func buildTestPluginSchema(t *testing.T, name, version, desc string) *coreplugin.PluginSchema {
+func buildTestPluginSchemaWithAlgo(t *testing.T, algo enumor.SchemaHashAlgo, name, version,
+	desc string) *coreplugin.PluginSchema {
+
 	t.Helper()
 	detail := coreplugin.SchemaDetail{
 		ProtocolVersion: "1.0",
@@ -240,7 +241,7 @@ func buildTestPluginSchema(t *testing.T, name, version, desc string) *coreplugin
 		Name:    name,
 		Version: version,
 	}
-	hash, err := coreplugin.ComputeSchemaHash(plugin, &detail)
+	hash, err := coreplugin.ComputeSchemaHashByAlgo(algo, plugin, &detail)
 	if err != nil {
 		t.Fatalf("compute schema hash failed: %v", err)
 	}

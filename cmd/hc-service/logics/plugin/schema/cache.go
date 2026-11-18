@@ -33,6 +33,11 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
+const (
+	// DefaultSchemaCacheTTL 缓存 Schema 的默认滑动 TTL（7 天）。
+	DefaultSchemaCacheTTL = 7 * 24 * time.Hour
+)
+
 // SchemaCache 进程内懒加载 Schema 缓存，支持滑动 TTL 与 DB schema_hash 校验。
 type SchemaCache struct {
 	mu          sync.RWMutex
@@ -73,6 +78,7 @@ func (c *SchemaCache) Close() {
 }
 
 // Get 按 PluginInfo（name, version）获取 Schema，含命中/TTL/哈希校验。
+// 返回的 *coreplugin.PluginSchema 为进程内缓存共享只读实例，调用方严禁原地修改其任何字段或内部 Map。
 func (c *SchemaCache) Get(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugin.PluginSchema, error) {
 	if len(plugin.Name) == 0 || len(plugin.Version) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "plugin.name and plugin.version are required")
@@ -92,7 +98,7 @@ func (c *SchemaCache) Get(kt *kit.Kit, plugin coreplugin.PluginInfo) (*coreplugi
 	}
 
 	if hit && !expired {
-		dbHash, found, err := c.querySchemaHash(kt, plugin)
+		dbHash, found, err := querySchemaHash(kt, c.dataCli, plugin)
 		if err != nil {
 			logs.Errorf("query plugin schema_hash from db failed, plugin: %s@%s, err: %v, rid: %s",
 				plugin.Name, plugin.Version, err, kt.Rid)
@@ -125,7 +131,7 @@ func (c *SchemaCache) loadFromDB(kt *kit.Kit, plugin coreplugin.PluginInfo) (*co
 	sfKey := fmt.Sprintf("%s:%s", plugin.Name, plugin.Version)
 
 	val, err, _ := c.sfGroup.Do(sfKey, func() (interface{}, error) {
-		fullSchema, found, queryErr := c.queryFullSchema(kt, plugin)
+		fullSchema, found, queryErr := queryFullSchema(kt, c.dataCli, plugin)
 		if queryErr != nil {
 			logs.Errorf("load full plugin schema from db failed, plugin: %s@%s, err: %v, rid: %s",
 				plugin.Name, plugin.Version, queryErr, kt.Rid)

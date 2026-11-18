@@ -21,16 +21,7 @@
 package plugin
 
 import (
-	"hcm/pkg/criteria/enumor"
-
 	tfjson "github.com/hashicorp/terraform-json"
-)
-
-const (
-	// ProtocolTFProvider Terraform Provider 插件协议。
-	ProtocolTFProvider = enumor.IaCPluginProtocolTFProvider
-	// ProtocolHTTP HTTP 插件协议。
-	ProtocolHTTP = enumor.IaCPluginProtocolHTTP
 )
 
 // PluginInfo 表示 Schema 中的插件身份与版本标识。

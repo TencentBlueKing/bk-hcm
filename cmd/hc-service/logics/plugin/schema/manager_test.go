@@ -24,7 +24,10 @@ import (
 
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/criteria/enumor"
+	tableplugin "hcm/pkg/dal/table/plugin"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/tools/json"
 )
 
 type stubSchemaGetter struct {
@@ -38,9 +41,8 @@ func (g *stubSchemaGetter) GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, err
 
 func TestSchemaManagerSyncSchemaAndGetSchema(t *testing.T) {
 	data := newMockSchemaData()
-	cache := newSchemaCacheForTest(data, DefaultSchemaCacheTTL)
-	defer cache.Close()
-	mgr := newSchemaManagerForTest(data, cache)
+	mgr := NewSchemaManager(newMockDataServiceClient(data), DefaultSchemaCacheTTL)
+	defer mgr.Close()
 	kt := kit.New()
 
 	validSchema := buildTestPluginSchema(t, "tencentcloud", "1.81.5", "initial-provider")
@@ -73,9 +75,9 @@ func TestSchemaManagerSyncSchemaAndGetSchema(t *testing.T) {
 		res1.Schema.SchemaHash != validSchema.SchemaHash {
 		t.Fatalf("unexpected first SyncSchema result: %+v", res1)
 	}
-	cache.mu.RLock()
-	_, inCacheAfterSync := cache.schemaCache[regKey]
-	cache.mu.RUnlock()
+	mgr.cache.mu.RLock()
+	_, inCacheAfterSync := mgr.cache.schemaCache[regKey]
+	mgr.cache.mu.RUnlock()
 	if inCacheAfterSync {
 		t.Fatalf("SyncSchema must not write to SchemaCache")
 	}
@@ -106,5 +108,96 @@ func TestSchemaManagerSyncSchemaAndGetSchema(t *testing.T) {
 	}
 	if fetched.SchemaHash != validSchema.SchemaHash {
 		t.Fatalf("expected hash %s, got %s", validSchema.SchemaHash, fetched.SchemaHash)
+	}
+}
+
+func TestSchemaManagerSyncSchemaLongHashAlgos(t *testing.T) {
+	data := newMockSchemaData()
+	mgr := NewSchemaManager(newMockDataServiceClient(data), DefaultSchemaCacheTTL)
+	defer mgr.Close()
+	kt := kit.New()
+
+	cases := []struct {
+		version string
+		algo    enumor.SchemaHashAlgo
+	}{
+		{version: "1.82.0", algo: enumor.SchemaHashAlgoSHA384},
+		{version: "1.83.0", algo: enumor.SchemaHashAlgoSHA512},
+	}
+
+	for _, tc := range cases {
+		key := coreplugin.PluginInfo{Name: "tencentcloud", Version: tc.version}
+		data.plugins[key] = &coreplugin.IaCPlugin{
+			ID:            "p-" + tc.version,
+			PluginName:    key.Name,
+			PluginVersion: key.Version,
+			Protocol:      enumor.IaCPluginProtocolHTTP,
+			State:         enumor.IaCPluginStateInit,
+		}
+
+		schema := buildTestPluginSchemaWithAlgo(t, tc.algo, key.Name, key.Version, string(tc.algo))
+		res, err := mgr.SyncSchema(kt, &stubSchemaGetter{schema: schema})
+		if err != nil {
+			t.Fatalf("SyncSchema with %s returned error: %v", tc.algo, err)
+		}
+		if res.SyncResult != enumor.SchemaSyncSuccess {
+			t.Fatalf("expected %s SyncSchema to succeed end-to-end, got: %+v", tc.algo, res)
+		}
+
+		got, err := mgr.GetSchema(kt, key)
+		if err != nil {
+			t.Fatalf("GetSchema with %s failed: %v", tc.algo, err)
+		}
+		if got.SchemaHash != schema.SchemaHash {
+			t.Fatalf("expected %s hash %s, got %s", tc.algo, schema.SchemaHash, got.SchemaHash)
+		}
+	}
+}
+
+func TestToPluginSchema(t *testing.T) {
+	detail := coreplugin.SchemaDetail{
+		ProtocolVersion: "1.0",
+		Capabilities: coreplugin.Capabilities{
+			Apply: true,
+		},
+	}
+	detailBytes, err := json.Marshal(detail)
+	if err != nil {
+		t.Fatalf("marshal schema detail failed: %v", err)
+	}
+
+	record := tableplugin.IacPluginSchemaTable{
+		PluginName:    "tencentcloud",
+		PluginVersion: "1.81.5",
+		SchemaHash:    "sha256:test",
+		SchemaDetail:  types.JsonField(detailBytes),
+	}
+	converted, err := toPluginSchema(record)
+	if err != nil {
+		t.Fatalf("convert plugin schema failed: %v", err)
+	}
+
+	if converted.Plugin.Name != record.PluginName ||
+		converted.Plugin.Version != record.PluginVersion ||
+		converted.SchemaHash != record.SchemaHash ||
+		converted.ProtocolVersion != detail.ProtocolVersion ||
+		!converted.Capabilities.Apply {
+		t.Fatalf("unexpected converted plugin schema: %+v", converted)
+	}
+}
+
+func TestToPluginSchemaNilSchemaDetail(t *testing.T) {
+	record := tableplugin.IacPluginSchemaTable{
+		PluginName:    "tencentcloud",
+		PluginVersion: "1.81.5",
+		SchemaHash:    "sha256:test",
+	}
+
+	converted, err := toPluginSchema(record)
+	if err != nil {
+		t.Fatalf("convert empty schema detail failed: %v", err)
+	}
+	if converted.Plugin.Name != record.PluginName || converted.Capabilities != (coreplugin.Capabilities{}) {
+		t.Fatalf("unexpected converted plugin schema: %+v", converted)
 	}
 }

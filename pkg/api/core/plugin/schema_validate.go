@@ -109,11 +109,6 @@ func ComputeSchemaHashByAlgo(algo enumor.SchemaHashAlgo, plugin PluginInfo, deta
 	return string(algo) + ":" + hex.EncodeToString(sum), nil
 }
 
-// ComputeSchemaHash 使用默认算法（sha256）计算包含插件标识（plugin.name、plugin.version）与 SchemaDetail 的规范哈希。
-func ComputeSchemaHash(plugin PluginInfo, detail *SchemaDetail) (string, error) {
-	return ComputeSchemaHashByAlgo(enumor.DefaultSchemaHashAlgo, plugin, detail)
-}
-
 // ValidateSchemaHashFormat 按前缀算法校验 schemaHash 格式是否合法且算法受支持。
 func ValidateSchemaHashFormat(schemaHash string) error {
 	_, _, _, err := ParseSchemaHash(schemaHash)
@@ -121,7 +116,7 @@ func ValidateSchemaHashFormat(schemaHash string) error {
 }
 
 // ValidateCapabilities 按南向协议能力位正反向约束校验 SchemaDetail.Capabilities。
-func ValidateCapabilities(detail *SchemaDetail) error {
+func (detail *SchemaDetail) ValidateCapabilities() error {
 	if detail == nil {
 		return errf.New(errf.InvalidParameter, "schema detail is nil")
 	}
@@ -130,7 +125,7 @@ func ValidateCapabilities(detail *SchemaDetail) error {
 		return errf.New(errf.InvalidParameter, "capabilities cannot be empty")
 	}
 
-	if err := validateResourceCapabilities(detail); err != nil {
+	if err := detail.validateResourceCapabilities(); err != nil {
 		return err
 	}
 
@@ -151,7 +146,7 @@ func ValidateCapabilities(detail *SchemaDetail) error {
 	return nil
 }
 
-func validateResourceCapabilities(detail *SchemaDetail) error {
+func (detail *SchemaDetail) validateResourceCapabilities() error {
 	if len(detail.ResourceSchemas) > 0 {
 		if !detail.Capabilities.Apply {
 			return errf.New(errf.InvalidParameter,
@@ -177,35 +172,9 @@ func validateResourceCapabilities(detail *SchemaDetail) error {
 	return nil
 }
 
-// Validate 校验南向协议返回的 PluginSchema 结构与能力位规则。
-func (s *PluginSchema) Validate() error {
-	if s == nil {
-		return errf.New(errf.InvalidParameter, "plugin schema is nil")
-	}
-	if strings.TrimSpace(s.ProtocolVersion) == "" {
-		return errf.New(errf.InvalidParameter, "protocol_version is required")
-	}
-	if strings.TrimSpace(s.Plugin.Name) == "" {
-		return errf.New(errf.InvalidParameter, "plugin.name is required")
-	}
-	if strings.TrimSpace(s.Plugin.Version) == "" {
-		return errf.New(errf.InvalidParameter, "plugin.version is required")
-	}
-	if strings.TrimSpace(s.SchemaHash) == "" {
-		return errf.New(errf.InvalidParameter, "schema_hash is required")
-	}
-	if err := validateSchemaBlock(s.ConfigSchema, "provider"); err != nil {
-		return err
-	}
-	if err := s.validateTypeSchemas(); err != nil {
-		return err
-	}
-	return ValidateCapabilities(&s.SchemaDetail)
-}
-
-func (s *PluginSchema) validateTypeSchemas() error {
-	prefix := s.Plugin.Name + "_"
-	for typeName, resSchema := range s.ResourceSchemas {
+func (schema *PluginSchema) validateTypeSchemas() error {
+	prefix := schema.Plugin.Name + "_"
+	for typeName, resSchema := range schema.ResourceSchemas {
 		if !strings.HasPrefix(typeName, prefix) {
 			return errf.Newf(errf.InvalidParameter,
 				"resource type_name %q must start with %q", typeName, prefix)
@@ -214,7 +183,7 @@ func (s *PluginSchema) validateTypeSchemas() error {
 			return err
 		}
 	}
-	for typeName, dsSchema := range s.DataSourceSchemas {
+	for typeName, dsSchema := range schema.DataSourceSchemas {
 		if !strings.HasPrefix(typeName, prefix) {
 			return errf.Newf(errf.InvalidParameter,
 				"data_source type_name %q must start with %q", typeName, prefix)
@@ -233,8 +202,8 @@ func validateSchemaBlock(s *tfjson.Schema, path string) error {
 	return nil
 }
 
-// ValidatePluginSchema 按期望插件身份与协议规则校验 PluginSchema 全部字段。
-func ValidatePluginSchema(schema *PluginSchema, expectedPlugin PluginInfo, protocol enumor.IaCPluginProtocol) error {
+// ValidatePluginSchema 按插件协议规则校验 PluginSchema 全部字段、哈希摘要与能力位约束。
+func ValidatePluginSchema(schema *PluginSchema, protocol enumor.IaCPluginProtocol) error {
 	if schema == nil {
 		return errf.New(errf.InvalidParameter, "plugin schema is nil")
 	}
@@ -244,15 +213,6 @@ func ValidatePluginSchema(schema *PluginSchema, expectedPlugin PluginInfo, proto
 	}
 	if strings.TrimSpace(schema.Plugin.Version) == "" {
 		return errf.New(errf.InvalidParameter, "plugin.version is required")
-	}
-
-	if schema.Plugin.Name != expectedPlugin.Name {
-		return errf.Newf(errf.InvalidParameter,
-			"plugin.name mismatch: schema has %q, expected %q", schema.Plugin.Name, expectedPlugin.Name)
-	}
-	if schema.Plugin.Version != expectedPlugin.Version {
-		return errf.Newf(errf.InvalidParameter,
-			"plugin.version mismatch: schema has %q, expected %q", schema.Plugin.Version, expectedPlugin.Version)
 	}
 
 	switch protocol {
@@ -286,5 +246,5 @@ func ValidatePluginSchema(schema *PluginSchema, expectedPlugin PluginInfo, proto
 	if err := schema.validateTypeSchemas(); err != nil {
 		return err
 	}
-	return ValidateCapabilities(&schema.SchemaDetail)
+	return schema.ValidateCapabilities()
 }
