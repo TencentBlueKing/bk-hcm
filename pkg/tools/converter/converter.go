@@ -253,6 +253,23 @@ func ParseTimeToInt64(value interface{}) (int64, error) {
 	}
 }
 
+// NormalizeNil returns nil when value is a nil map[string]any or a nil []any.
+// A typed nil stored in an interface is not equal to nil. Other values, including
+// other typed nils, are returned unchanged.
+func NormalizeNil(value any) any {
+	switch typed := value.(type) {
+	case map[string]any:
+		if typed == nil {
+			return nil
+		}
+	case []any:
+		if typed == nil {
+			return nil
+		}
+	}
+	return value
+}
+
 // Int64PtrToInt32Ptr converts *int64 to *int32. return nil if source == nil.
 func Int64PtrToInt32Ptr(source *int64) *int32 {
 	if source == nil {
