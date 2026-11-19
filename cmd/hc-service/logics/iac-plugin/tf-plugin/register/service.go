@@ -265,7 +265,8 @@ func toCorePluginSchema(in *types.ProviderSchema, pluginName, pluginVersion stri
 		return nil, err
 	}
 	schema.Plugin = coreplugin.PluginInfo{Name: pluginName, Version: pluginVersion}
-	hash, err := coreplugin.ComputeSchemaHash(schema.Plugin, cvt.ValToPtr(schema.SchemaDetail))
+	hash, err := coreplugin.ComputeSchemaHashByAlgo(enumor.DefaultSchemaHashAlgo, schema.Plugin,
+		cvt.ValToPtr(schema.SchemaDetail))
 	if err != nil {
 		return nil, err
 	}

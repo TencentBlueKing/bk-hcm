@@ -260,8 +260,10 @@ func TestToCorePluginSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("toCorePluginSchema unexpected err: %v", err)
 	}
-	if err := coreplugin.ValidatePluginSchema(got, coreplugin.PluginInfo{
-		Name: "tencentcloud", Version: "1.83.34"}, enumor.IaCPluginProtocolTFProvider); err != nil {
+	if got.Plugin.Name != "tencentcloud" || got.Plugin.Version != "1.83.34" {
+		t.Fatalf("unexpected plugin identity: %+v", got.Plugin)
+	}
+	if err := coreplugin.ValidatePluginSchema(got, enumor.IaCPluginProtocolTFProvider); err != nil {
 		t.Fatalf("ValidatePluginSchema failed: %v", err)
 	}
 	if got.ResourceSchemas["tencentcloud_vpc"].Block.NestedBlocks["timeouts"].NestingMode != "single" {
