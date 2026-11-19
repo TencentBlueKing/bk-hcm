@@ -66,6 +66,8 @@ const (
 	TaskServerName Name = "task-server"
 	// AccountServerName is account server's name
 	AccountServerName Name = "account-server"
+	// IacServerName is iac server's name
+	IacServerName Name = "iac-server"
 	// AgentServerName is agent server's name
 	AgentServerName Name = "agent-server"
 )
@@ -591,6 +593,44 @@ func (s AccountServerSetting) Validate() error {
 
 // TenantEnable get tenant is enabled.
 func (s *AccountServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
+// IacServerSetting defines iac server used setting options.
+type IacServerSetting struct {
+	Network Network      `yaml:"network"`
+	Service Service      `yaml:"service"`
+	Log     LogOption    `yaml:"log"`
+	Tenant  TenantConfig `yaml:"tenant"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *IacServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the IacServerSetting default value if user not configured.
+func (s *IacServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Log.trySetDefault()
+}
+
+// Validate IacServerSetting option.
+func (s IacServerSetting) Validate() error {
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *IacServerSetting) TenantEnable() bool {
 	return s.Tenant.Enabled
 }
 
