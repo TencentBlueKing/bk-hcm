@@ -64,7 +64,7 @@ func (req *IacPluginSchemaBatchCreateReq) Validate() error {
 type IacPluginSchemaCreateField struct {
 	PluginName    string          `json:"plugin_name" validate:"required,lte=64"`
 	PluginVersion string          `json:"plugin_version" validate:"required,lte=64"`
-	SchemaHash    string          `json:"schema_hash" validate:"required,lte=80"`
+	SchemaHash    string          `json:"schema_hash" validate:"required,lte=160"`
 	SchemaDetail  types.JsonField `json:"schema_detail" validate:"required"`
 }
 
@@ -110,7 +110,7 @@ func (req *IacPluginSchemaBatchUpdateReq) Validate() error {
 // IacPluginSchemaUpdateField 单条 iac_plugin_schema 更新字段。
 type IacPluginSchemaUpdateField struct {
 	ID           string          `json:"id" validate:"required,lte=64"`
-	SchemaHash   string          `json:"schema_hash" validate:"omitempty,lte=80"`
+	SchemaHash   string          `json:"schema_hash" validate:"omitempty,lte=160"`
 	SchemaDetail types.JsonField `json:"schema_detail"`
 }
 

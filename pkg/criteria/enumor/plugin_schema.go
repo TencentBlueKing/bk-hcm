@@ -44,3 +44,24 @@ func (a SchemaHashAlgo) Validate() error {
 		return fmt.Errorf("unsupported schema hash algo: %s", a)
 	}
 }
+
+// SchemaSyncResult 插件 Schema 同步结果。
+type SchemaSyncResult string
+
+// Validate 校验插件 Schema 同步结果是否为合法枚举值。
+func (s SchemaSyncResult) Validate() error {
+	switch s {
+	case SchemaSyncSuccess, SchemaSyncFailed:
+	default:
+		return fmt.Errorf("unsupported schema sync result: %s", s)
+	}
+
+	return nil
+}
+
+const (
+	// SchemaSyncSuccess 同步成功，包含首次落库与同版本哈希一致的幂等跳过。
+	SchemaSyncSuccess SchemaSyncResult = "success"
+	// SchemaSyncFailed 同步失败，包含拉取失败、基础校验不通过与同版本 schema_hash 冲突。
+	SchemaSyncFailed SchemaSyncResult = "failed"
+)

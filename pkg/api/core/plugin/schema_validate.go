@@ -28,6 +28,9 @@ import (
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/tools/json"
+
+	tfjson "github.com/hashicorp/terraform-json"
 )
 
 // supportedSchemaHashAlgos 支持的 schema_hash 算法白名单，映射到标准库 crypto.Hash。
@@ -74,8 +77,174 @@ func isLowerHex(s string) bool {
 	return true
 }
 
+// ComputeSchemaHashByAlgo 按指定算法（如 sha256、sha384、sha512）计算包含插件标识（plugin.name、plugin.version）
+// 与 SchemaDetail 的规范哈希（"<algo>:<lowercase hex>"）。
+func ComputeSchemaHashByAlgo(algo enumor.SchemaHashAlgo, plugin PluginInfo, detail *SchemaDetail) (string, error) {
+	if detail == nil {
+		return "", errf.New(errf.InvalidParameter, "schema detail is nil")
+	}
+
+	hashFunc, supported := supportedSchemaHashAlgos[algo]
+	if !supported || !hashFunc.Available() {
+		return "", errf.Newf(errf.InvalidParameter,
+			"unsupported schema_hash algorithm: %q, supported algorithms: [sha256, sha384, sha512]", algo)
+	}
+
+	payload := struct {
+		Plugin       PluginInfo `json:"plugin"`
+		SchemaDetail `json:",inline"`
+	}{
+		Plugin:       plugin,
+		SchemaDetail: *detail,
+	}
+
+	rawBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", errf.Newf(errf.InvalidParameter, "marshal schema detail failed, err: %v", err)
+	}
+
+	hasher := hashFunc.New()
+	_, _ = hasher.Write(rawBytes)
+	sum := hasher.Sum(nil)
+	return string(algo) + ":" + hex.EncodeToString(sum), nil
+}
+
 // ValidateSchemaHashFormat 按前缀算法校验 schemaHash 格式是否合法且算法受支持。
 func ValidateSchemaHashFormat(schemaHash string) error {
 	_, _, _, err := ParseSchemaHash(schemaHash)
 	return err
+}
+
+// ValidateCapabilities 按南向协议能力位正反向约束校验 SchemaDetail.Capabilities。
+func (detail *SchemaDetail) ValidateCapabilities() error {
+	if detail == nil {
+		return errf.New(errf.InvalidParameter, "schema detail is nil")
+	}
+
+	if detail.Capabilities == (Capabilities{}) {
+		return errf.New(errf.InvalidParameter, "capabilities cannot be empty")
+	}
+
+	if err := detail.validateResourceCapabilities(); err != nil {
+		return err
+	}
+
+	if len(detail.DataSourceSchemas) > 0 && !detail.Capabilities.ReadData {
+		return errf.New(errf.InvalidParameter,
+			"capabilities.read_data must be true when data_source_schemas is not empty")
+	}
+	if len(detail.DataSourceSchemas) == 0 && detail.Capabilities.ReadData {
+		return errf.New(errf.InvalidParameter,
+			"capabilities.read_data must not be true when data_source_schemas is empty")
+	}
+
+	if detail.Capabilities.Stop && !detail.Capabilities.AsyncApply {
+		return errf.New(errf.InvalidParameter,
+			"capabilities.async_apply must be true when capabilities.stop is true")
+	}
+
+	return nil
+}
+
+func (detail *SchemaDetail) validateResourceCapabilities() error {
+	if len(detail.ResourceSchemas) > 0 {
+		if !detail.Capabilities.Apply {
+			return errf.New(errf.InvalidParameter,
+				"capabilities.apply must be true when resource_schemas is not empty")
+		}
+		if !detail.Capabilities.Plan {
+			return errf.New(errf.InvalidParameter,
+				"capabilities.plan must be true when resource_schemas is not empty")
+		}
+		if !detail.Capabilities.Refresh {
+			return errf.New(errf.InvalidParameter,
+				"capabilities.refresh must be true when resource_schemas is not empty")
+		}
+		return nil
+	}
+
+	if detail.Capabilities.Apply || detail.Capabilities.Plan || detail.Capabilities.Refresh ||
+		detail.Capabilities.AsyncApply || detail.Capabilities.Stop ||
+		detail.Capabilities.Import || detail.Capabilities.List {
+		return errf.New(errf.InvalidParameter,
+			"resource capabilities must not be true when resource_schemas is empty")
+	}
+	return nil
+}
+
+func (schema *PluginSchema) validateTypeSchemas() error {
+	prefix := schema.Plugin.Name + "_"
+	for typeName, resSchema := range schema.ResourceSchemas {
+		if !strings.HasPrefix(typeName, prefix) {
+			return errf.Newf(errf.InvalidParameter,
+				"resource type_name %q must start with %q", typeName, prefix)
+		}
+		if err := validateSchemaBlock(resSchema, "resource_schemas."+typeName); err != nil {
+			return err
+		}
+	}
+	for typeName, dsSchema := range schema.DataSourceSchemas {
+		if !strings.HasPrefix(typeName, prefix) {
+			return errf.Newf(errf.InvalidParameter,
+				"data_source type_name %q must start with %q", typeName, prefix)
+		}
+		if err := validateSchemaBlock(dsSchema, "data_source_schemas."+typeName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateSchemaBlock(s *tfjson.Schema, path string) error {
+	if s == nil || s.Block == nil {
+		return errf.Newf(errf.InvalidParameter, "%s.block is required", path)
+	}
+	return nil
+}
+
+// ValidatePluginSchema 按插件协议规则校验 PluginSchema 全部字段、哈希摘要与能力位约束。
+func ValidatePluginSchema(schema *PluginSchema, protocol enumor.IaCPluginProtocol) error {
+	if schema == nil {
+		return errf.New(errf.InvalidParameter, "plugin schema is nil")
+	}
+
+	if strings.TrimSpace(schema.Plugin.Name) == "" {
+		return errf.New(errf.InvalidParameter, "plugin.name is required")
+	}
+	if strings.TrimSpace(schema.Plugin.Version) == "" {
+		return errf.New(errf.InvalidParameter, "plugin.version is required")
+	}
+
+	switch protocol {
+	case enumor.IaCPluginProtocolHTTP:
+		if strings.TrimSpace(schema.ProtocolVersion) == "" {
+			return errf.New(errf.InvalidParameter, "protocol_version is required for http protocol plugin")
+		}
+	case enumor.IaCPluginProtocolTFProvider:
+		// protocol_version is optional for tf_provider protocol
+	default:
+		return errf.Newf(errf.InvalidParameter, "unsupported plugin protocol: %s", protocol)
+	}
+
+	algo, _, _, err := ParseSchemaHash(schema.SchemaHash)
+	if err != nil {
+		return err
+	}
+
+	computedHash, err := ComputeSchemaHashByAlgo(algo, schema.Plugin, &schema.SchemaDetail)
+	if err != nil {
+		return err
+	}
+	if schema.SchemaHash != computedHash {
+		return errf.Newf(errf.InvalidParameter,
+			"schema_hash mismatch: declared %s, computed %s", schema.SchemaHash, computedHash)
+	}
+
+	if err := validateSchemaBlock(schema.ConfigSchema, "provider"); err != nil {
+		return err
+	}
+	if err := schema.validateTypeSchemas(); err != nil {
+		return err
+	}
+	return schema.ValidateCapabilities()
 }

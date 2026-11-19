@@ -31,7 +31,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/cc"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	cvt "hcm/pkg/tools/converter"
 
@@ -102,11 +104,9 @@ func TestNewLaunchConfigEncryptor(t *testing.T) {
 }
 
 func newValidSampleSchema() *PluginSchema {
-	return &PluginSchema{
+	detail := coreplugin.SchemaDetail{
 		ProtocolVersion: "1.0",
-		Plugin:          PluginInfo{Name: "bkcmdb", Version: "1.2.0"},
-		SchemaHash:      "sha256:3f9a",
-		Capabilities: Capabilities{
+		Capabilities: coreplugin.Capabilities{
 			Apply:      true,
 			Plan:       true,
 			Refresh:    true,
@@ -150,6 +150,13 @@ func newValidSampleSchema() *PluginSchema {
 			},
 		},
 	}
+	pluginInfo := coreplugin.PluginInfo{Name: "bkcmdb", Version: "1.2.0"}
+	hash, _ := coreplugin.ComputeSchemaHashByAlgo(enumor.DefaultSchemaHashAlgo, pluginInfo, &detail)
+	return &PluginSchema{
+		Plugin:       pluginInfo,
+		SchemaHash:   hash,
+		SchemaDetail: detail,
+	}
 }
 
 func TestPluginSchema_Validate(t *testing.T) {
@@ -187,7 +194,9 @@ func TestPluginSchema_Validate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			schema := newValidSampleSchema()
 			tc.mutate(schema)
-			err := schema.Validate()
+			schema.SchemaHash, _ = coreplugin.ComputeSchemaHashByAlgo(
+				enumor.DefaultSchemaHashAlgo, schema.Plugin, &schema.SchemaDetail)
+			err := coreplugin.ValidatePluginSchema(schema, enumor.IaCPluginProtocolHTTP)
 			if tc.wantErr {
 				assert.Error(t, err)
 				return
@@ -328,7 +337,7 @@ func TestClient_HealthSchemaAndApplyLifecycle(t *testing.T) {
 
 	schema, err := cli.GetSchema(kt)
 	assert.NoError(t, err)
-	assert.NoError(t, schema.Validate())
+	assert.NoError(t, coreplugin.ValidatePluginSchema(schema, enumor.IaCPluginProtocolHTTP))
 
 	// Async apply -> running
 	asyncRes, err := cli.Apply(kt, &ApplyReq{

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS `iac_plugin_schema`
     `id`             varchar(64) NOT NULL COMMENT 'HCM主键ID',
     `plugin_name`    varchar(64) NOT NULL COMMENT '插件名，对应iac_plugin.plugin_name',
     `plugin_version` varchar(64) NOT NULL COMMENT '插件版本，如1.81.5',
-    `schema_hash`    varchar(80) NOT NULL COMMENT 'sha256:+64位hex，随完整Schema返回',
+    `schema_hash`    varchar(160) NOT NULL COMMENT '格式为<algo>:<hex>，支持sha256/sha384/sha512，随完整Schema返回',
     `schema_detail`  json        NOT NULL COMMENT '完整Schema JSON（对应内联SchemaDetail：含protocol_version、capabilities、provider、resource_schemas、data_source_schemas等）',
     `creator`        varchar(64) NOT NULL COMMENT '创建者',
     `reviser`        varchar(64) NOT NULL COMMENT '更新者',

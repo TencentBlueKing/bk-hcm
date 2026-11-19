@@ -41,6 +41,21 @@ func TestIacPluginSchemaTableValidate(t *testing.T) {
 	if err := row.InsertValidate(); err != nil {
 		t.Fatalf("expected valid row to pass InsertValidate, got: %v", err)
 	}
+
+	for _, longHash := range []string{
+		"sha384:" + strings.Repeat("c", 96),
+		"sha512:" + strings.Repeat("d", 128),
+	} {
+		longRow := row
+		longRow.SchemaHash = longHash
+		if err := longRow.InsertValidate(); err != nil {
+			t.Fatalf("expected %s row to pass InsertValidate, got: %v", longHash[:6], err)
+		}
+		longUpdate := IacPluginSchemaTable{SchemaHash: longHash, Reviser: "admin"}
+		if err := longUpdate.UpdateValidate(); err != nil {
+			t.Fatalf("expected %s row to pass UpdateValidate, got: %v", longHash[:6], err)
+		}
+	}
 	if err := row.TableName().Validate(); err != nil {
 		t.Fatalf("expected table name to be registered, got: %v", err)
 	}

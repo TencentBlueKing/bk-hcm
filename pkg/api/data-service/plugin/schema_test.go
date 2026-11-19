@@ -44,6 +44,36 @@ func TestIacPluginSchemaReqValidate(t *testing.T) {
 		t.Fatalf("expected valid IacPluginSchemaBatchCreateReq to pass, got: %v", err)
 	}
 
+	for _, algoHash := range []string{
+		"sha384:" + strings.Repeat("c", 96),
+		"sha512:" + strings.Repeat("d", 128),
+	} {
+		longCreateReq := &IacPluginSchemaBatchCreateReq{
+			Items: []IacPluginSchemaCreateField{
+				{
+					PluginName:    "tencentcloud",
+					PluginVersion: "1.81.5",
+					SchemaHash:    algoHash,
+					SchemaDetail:  types.JsonField(`{"capabilities":{"apply":true}}`),
+				},
+			},
+		}
+		if err := longCreateReq.Validate(); err != nil {
+			t.Fatalf("expected %s createReq to pass, got: %v", algoHash[:6], err)
+		}
+		longUpdateReq := &IacPluginSchemaBatchUpdateReq{
+			Items: []IacPluginSchemaUpdateField{
+				{
+					ID:         "schema-001",
+					SchemaHash: algoHash,
+				},
+			},
+		}
+		if err := longUpdateReq.Validate(); err != nil {
+			t.Fatalf("expected %s updateReq to pass, got: %v", algoHash[:6], err)
+		}
+	}
+
 	emptyCreateReq := &IacPluginSchemaBatchCreateReq{}
 	if err := emptyCreateReq.Validate(); err == nil {
 		t.Fatalf("expected empty items to fail validation")
