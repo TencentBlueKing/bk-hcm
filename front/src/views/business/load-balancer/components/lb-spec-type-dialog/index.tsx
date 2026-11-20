@@ -38,8 +38,7 @@ export default defineComponent({
     // 已选规格编码
     slaType: String,
     // 当前可用区下各规格的可用性（来自 load_balancers/resources/describe）。
-    // 可选：静态表不含可用性，需要该约束的接入方才传；
-    // 不传（默认空数组）时不按可用性过滤，不会收窄可选项
+    // 默认空数组表示没有可用规格，按库存过滤后可选列表为空，不再表示不过滤。
     specAvailabilitySet: {
       type: Array as PropType<Array<SpecAvailability>>,
       default: () => [],
@@ -124,7 +123,7 @@ export default defineComponent({
         })),
     );
 
-    // 不传 specAvailabilitySet（为空）时视为不按可用性过滤
+    // 空集合表示没有可用规格，不再放开整张静态表
     const availableSlaTypes = computed(
       () =>
         new Set(
@@ -135,11 +134,10 @@ export default defineComponent({
     );
 
     const usableSlaList = computed(() =>
-      staticSlaList.value.filter(
-        ({ SlaType }) =>
-          isVisibleSlaType(SlaType) && (!availableSlaTypes.value.size || availableSlaTypes.value.has(SlaType)),
-      ),
+      staticSlaList.value.filter(({ SlaType }) => isVisibleSlaType(SlaType) && availableSlaTypes.value.has(SlaType)),
     );
+
+    const canConfirm = computed(() => usableSlaList.value.some(({ SlaType }) => SlaType === selectedSlaType.value));
 
     const searchData = computed<Array<ISearchItem>>(() => [
       {
@@ -238,9 +236,7 @@ export default defineComponent({
               </Table>
             </>
           ),
-          footer: () => (
-            <ModalFooter disabled={!selectedSlaType.value} onConfirm={handleConfirm} onClosed={handleClosed} />
-          ),
+          footer: () => <ModalFooter disabled={!canConfirm.value} onConfirm={handleConfirm} onClosed={handleClosed} />,
         }}
       </Dialog>
     );
