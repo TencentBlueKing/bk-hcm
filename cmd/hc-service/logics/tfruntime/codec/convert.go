@@ -20,6 +20,8 @@
 package codec
 
 import (
+	"math"
+
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 
@@ -156,7 +158,14 @@ func scalarOK(typ tftypes.Type, value any) bool {
 		_, ok := value.(bool)
 		return ok
 	case typ.Is(tftypes.Number):
-		return assert.IsNumeric(value)
+		switch v := value.(type) {
+		case float64:
+			return !math.IsNaN(v)
+		case float32:
+			return !math.IsNaN(float64(v))
+		default:
+			return assert.IsNumeric(value)
+		}
 	default:
 		return false
 	}

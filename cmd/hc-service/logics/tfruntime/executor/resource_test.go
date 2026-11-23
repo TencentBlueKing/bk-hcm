@@ -22,14 +22,27 @@ package executor
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"hcm/cmd/hc-service/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/plugin/tfplugin5"
 )
 
 func TestPluginExecutor_ReadResource(t *testing.T) {
-	fake := &fakePlugin{getSchema: resourceSchema(t)}
+	var gotReq *tfplugin5.ReadResource_Request
+	fake := &fakePlugin{
+		getSchema: resourceSchema(t),
+		read: func(in *tfplugin5.ReadResource_Request) (*tfplugin5.ReadResource_Response, error) {
+			gotReq = in
+			return &tfplugin5.ReadResource_Response{
+				NewState: &tfplugin5.DynamicValue{Json: []byte(`{"id":"ins-1-fresh"}`)},
+				Private:  []byte{2},
+			}, nil
+		},
+	}
 	executor := newAPIExecutor(fake)
 	executor.SetCodec(&jsonCodec{})
 	if _, err := executor.GetProviderSchema(context.Background()); err != nil {
@@ -44,11 +57,19 @@ func TestPluginExecutor_ReadResource(t *testing.T) {
 	}
 	loadEchoPrepare(fake)
 	configureExecutor(t, executor)
-	if _, err := executor.ReadResource(ctx, "tcloud_cvm", map[string]any{"id": "ins-1"}, []byte{1}); err != nil {
+	got, err := executor.ReadResource(ctx, "tcloud_cvm", map[string]any{"id": "ins-1"}, []byte{1})
+	if err != nil {
 		t.Fatal(err)
 	}
 	if fake.count("ReadResource") != 1 {
 		t.Fatalf("read calls = %d", fake.count("ReadResource"))
+	}
+	if gotReq.GetTypeName() != "tcloud_cvm" || string(gotReq.GetCurrentState().GetJson()) != `{"id":"ins-1"}` ||
+		string(gotReq.GetPrivate()) != string([]byte{1}) {
+		t.Fatalf("read request = type %q state %s private %v", gotReq.GetTypeName(), gotReq.GetCurrentState().GetJson(), gotReq.GetPrivate())
+	}
+	if got.NewState["id"] != "ins-1-fresh" || string(got.Private) != string([]byte{2}) {
+		t.Fatalf("read result = state %#v private %v", got.NewState, got.Private)
 	}
 	if _, err := executor.ReadResource(ctx, "missing", nil, nil); err == nil || err.Error() != `resource type "missing" is not in the schema` {
 		t.Fatalf("unknown type: %v", err)
@@ -216,9 +237,13 @@ func assertCreatePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Reques
 
 func assertUpdatePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Request) {
 	t.Helper()
-	if planned.GetPriorState() == nil || planned.GetProposedNewState() == nil || planned.GetProviderMeta() != nil ||
+	if string(planned.GetPriorState().GetJson()) != `{"id":"old"}` ||
+		string(planned.GetProposedNewState().GetJson()) != `{"id":"new"}` ||
+		!nullJSON(planned.GetConfig()) ||
+		planned.GetProviderMeta() != nil ||
 		planned.GetClientCapabilities() != nil || planned.GetPriorIdentity() != nil {
-		t.Fatal("update plan lost a state or set an omitted protocol field")
+		t.Fatalf("update plan = prior %s proposed %s config %s",
+			planned.GetPriorState().GetJson(), planned.GetProposedNewState().GetJson(), planned.GetConfig().GetJson())
 	}
 	if planned.GetPriorPrivate()[0] != 4 {
 		t.Fatalf("prior private = %v", planned.GetPriorPrivate())
@@ -239,6 +264,7 @@ func assertDeletePlan(t *testing.T, planned *tfplugin5.PlanResourceChange_Reques
 }
 
 func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
+	deleteErr := false
 	fake := &fakePlugin{
 		getSchema: resourceSchema(t),
 		apply: func(in *tfplugin5.ApplyResourceChange_Request) (*tfplugin5.ApplyResourceChange_Response, error) {
@@ -246,7 +272,7 @@ func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
 				NewState: &tfplugin5.DynamicValue{Json: []byte(`{"id":"kept"}`)},
 				Private:  []byte{8},
 			}
-			if !nullJSON(in.GetPlannedState()) {
+			if !nullJSON(in.GetPlannedState()) || deleteErr {
 				resp.Diagnostics = errorDiagnostic("apply failed")
 			}
 			return resp, nil
@@ -262,6 +288,17 @@ func TestPluginExecutor_ApplyResourceChange(t *testing.T) {
 	if deleted.NewState != nil || deleted.Private[0] != 8 {
 		t.Fatalf("delete apply = %#v private %v", deleted.NewState, deleted.Private)
 	}
+
+	deleteErr = true
+	deleteFailed, err := executor.ApplyResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, nil, nil, nil)
+	if !errors.Is(err, ErrDiagnostic) {
+		t.Fatalf("delete failed err = %v", err)
+	}
+	if deleteFailed.NewState["id"] != "kept" {
+		t.Fatalf("delete failed state = %#v", deleteFailed.NewState)
+	}
+	deleteErr = false
+
 	failed, err := executor.ApplyResourceChange(ctx, "tcloud_cvm", map[string]any{"id": "old"}, map[string]any{"id": "new"}, nil, nil)
 	if !errors.Is(err, ErrDiagnostic) {
 		t.Fatalf("apply err = %v", err)
@@ -300,6 +337,13 @@ func TestPluginExecutor_ReadResource_Private(t *testing.T) {
 }
 
 func TestPluginExecutor_ReadResource_Warning(t *testing.T) {
+	origWarnf := logs.Warnf
+	var logged []string
+	logs.Warnf = func(format string, args ...interface{}) {
+		logged = append(logged, fmt.Sprintf(format, args...))
+	}
+	t.Cleanup(func() { logs.Warnf = origWarnf })
+
 	fake := &fakePlugin{
 		getSchema: resourceSchema(t),
 		read: func(*tfplugin5.ReadResource_Request) (*tfplugin5.ReadResource_Response, error) {
@@ -319,6 +363,12 @@ func TestPluginExecutor_ReadResource_Warning(t *testing.T) {
 	if len(read.Diagnostics) != 1 || read.Diagnostics[0].GetSummary() != "disk full" || read.Diagnostics[0].GetDetail() != "secret-state-body" {
 		t.Fatalf("diagnostics = %+v", read.Diagnostics)
 	}
+	if len(logged) != 1 || !strings.Contains(logged[0], "disk full") {
+		t.Fatalf("warning log missing summary: %v", logged)
+	}
+	if strings.Contains(logged[0], "secret-state-body") || strings.Contains(logged[0], "ak-test-value") {
+		t.Fatalf("warning log leaked sensitive detail or value: %v", logged)
+	}
 }
 
 func TestPluginExecutor_PlanResourceChange_CodecError(t *testing.T) {
@@ -334,25 +384,49 @@ func TestPluginExecutor_PlanResourceChange_CodecError(t *testing.T) {
 }
 
 func TestPluginExecutor_ImportResourceState(t *testing.T) {
+	cvmSchema := objectSchema(stringAttr("id", false))
+	diskSchema := objectSchema(stringAttr("disk_id", false))
 	fake := &fakePlugin{
-		getSchema: resourceSchema(t),
+		getSchema: func(*tfplugin5.GetProviderSchema_Request) (*tfplugin5.GetProviderSchema_Response, error) {
+			return &tfplugin5.GetProviderSchema_Response{
+				Provider: objectSchema(stringAttr("secret_id", true)),
+				ResourceSchemas: map[string]*tfplugin5.Schema{
+					"tcloud_cvm":  cvmSchema,
+					"tcloud_disk": diskSchema,
+				},
+			}, nil
+		},
 		importState: func(*tfplugin5.ImportResourceState_Request) (*tfplugin5.ImportResourceState_Response, error) {
 			return &tfplugin5.ImportResourceState_Response{
-				ImportedResources: []*tfplugin5.ImportResourceState_ImportedResource{{
-					TypeName: "tcloud_cvm",
-					State:    &tfplugin5.DynamicValue{Json: []byte(`{"id":"ins-1"}`)},
-				}},
+				ImportedResources: []*tfplugin5.ImportResourceState_ImportedResource{
+					{
+						TypeName: "tcloud_cvm",
+						State:    &tfplugin5.DynamicValue{Json: []byte(`{"id":"ins-1"}`)},
+						Private:  []byte{1},
+					},
+					{
+						TypeName: "tcloud_disk",
+						State:    &tfplugin5.DynamicValue{Json: []byte(`{"disk_id":"disk-1"}`)},
+						Private:  []byte{2},
+					},
+				},
 			}, nil
 		},
 	}
 	loadEchoPrepare(fake)
-	executor := preparedExecutor(t, fake, &jsonCodec{})
+	codec := &jsonCodec{}
+	executor := preparedExecutor(t, fake, codec)
+	codec.decodedSchemas = nil
 	imported, err := executor.ImportResourceState(context.Background(), "tcloud_cvm", "ins-1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if imported.Imported[0].State["id"] != "ins-1" {
+	if len(imported.Imported) != 2 || imported.Imported[0].State["id"] != "ins-1" ||
+		imported.Imported[1].TypeName != "tcloud_disk" || imported.Imported[1].State["disk_id"] != "disk-1" {
 		t.Fatalf("imported = %#v", imported.Imported)
+	}
+	if len(codec.decodedSchemas) != 2 || codec.decodedSchemas[0] != cvmSchema || codec.decodedSchemas[1] != diskSchema {
+		t.Fatalf("import did not decode each item with its own schema: got %v", codec.decodedSchemas)
 	}
 	if fake.count("ReadResource") != 0 || fake.count("ApplyResourceChange") != 0 {
 		t.Fatal("import read or applied the resource")
@@ -369,17 +443,19 @@ func TestPluginExecutor_ImportResourceState(t *testing.T) {
 		t.Fatal("missing import created a resource")
 	}
 
+	codec.decodedSchemas = nil
 	fake.importState = func(*tfplugin5.ImportResourceState_Request) (*tfplugin5.ImportResourceState_Response, error) {
 		return &tfplugin5.ImportResourceState_Response{
 			ImportedResources: []*tfplugin5.ImportResourceState_ImportedResource{{
-				TypeName: "tcloud_disk",
-				State:    &tfplugin5.DynamicValue{Json: []byte(`{"id":"disk-1"}`)},
+				TypeName: "tcloud_unknown",
+				State:    &tfplugin5.DynamicValue{Json: []byte(`{"id":"u-1"}`)},
 			}},
 		}, nil
 	}
 	unknown, err := executor.ImportResourceState(context.Background(), "tcloud_cvm", "ins-1")
-	if err == nil || err.Error() != `resource type "tcloud_disk" is not in the schema` || len(unknown.Imported) != 0 {
-		t.Fatalf("unknown import type = %+v err %v", unknown, err)
+	if err == nil || err.Error() != `resource type "tcloud_unknown" is not in the schema` ||
+		len(unknown.Imported) != 0 || len(codec.decodedSchemas) != 0 {
+		t.Fatalf("unknown import type = %+v err %v decoded=%d", unknown, err, len(codec.decodedSchemas))
 	}
 }
 

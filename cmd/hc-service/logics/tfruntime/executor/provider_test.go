@@ -79,15 +79,16 @@ func assertResourceBlock(t *testing.T, block *types.Block) {
 	if block == nil {
 		t.Fatal("resource block is missing")
 	}
+	nameAttr := block.Attributes["name"]
+	if nameAttr == nil || nameAttr.Type != "string" || !nameAttr.Optional || nameAttr.Required {
+		t.Fatalf("name attribute = %+v", nameAttr)
+	}
 	nested := block.BlockTypes["net"]
 	if nested == nil || nested.Block == nil {
 		t.Fatal("nested block is missing")
 	}
 	if nested.Nesting != "list" || nested.MinItems != 1 || nested.Block.Attributes["zone"].Type != "string" {
 		t.Fatalf("nested block = %+v", nested)
-	}
-	if len(block.Attributes) == 0 || block.BlockTypes == nil {
-		t.Fatal("adapted block maps are missing")
 	}
 }
 
@@ -132,35 +133,37 @@ func TestPluginExecutor_GetProviderSchema_DataSources(t *testing.T) {
 }
 
 func TestPluginExecutor_GetProviderSchema_Hash(t *testing.T) {
-	schemaFor := func(attr string) *fakePlugin {
+	schemaFor := func(attr string, diags []*tfplugin5.Diagnostic) *fakePlugin {
 		return &fakePlugin{getSchema: func(*tfplugin5.GetProviderSchema_Request) (*tfplugin5.GetProviderSchema_Response, error) {
 			return &tfplugin5.GetProviderSchema_Response{
 				Provider: objectSchema(stringAttr("region", false)),
 				ResourceSchemas: map[string]*tfplugin5.Schema{
 					"tcloud_cvm": objectSchema(stringAttr(attr, false)),
 				},
-				Diagnostics: []*tfplugin5.Diagnostic{{
-					Severity: tfplugin5.Diagnostic_WARNING,
-					Summary:  "ignored by hash",
-				}},
+				Diagnostics: diags,
 			}, nil
 		}}
 	}
-	firstExec := newAPIExecutor(schemaFor("name"))
+	diags := []*tfplugin5.Diagnostic{{
+		Severity: tfplugin5.Diagnostic_WARNING,
+		Summary:  "ignored by hash",
+	}}
+	firstExec := newAPIExecutor(schemaFor("name", diags))
 	first, err := firstExec.GetProviderSchema(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	firstExec.version = "v9"
-	firstExec.name = "other"
-	second, err := firstExec.GetProviderSchema(context.Background())
+	secondExec := newAPIExecutor(schemaFor("name", nil))
+	secondExec.version = "v9"
+	secondExec.name = "other"
+	second, err := secondExec.GetProviderSchema(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if first.SchemaHash == "" || first.SchemaHash != second.SchemaHash {
 		t.Fatalf("hash changed without schema change: %s %s", first.SchemaHash, second.SchemaHash)
 	}
-	changed, err := newAPIExecutor(schemaFor("zone")).GetProviderSchema(context.Background())
+	changed, err := newAPIExecutor(schemaFor("zone", nil)).GetProviderSchema(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,8 +263,9 @@ func TestPluginExecutor_ConfigureProvider_Config(t *testing.T) {
 }
 
 type jsonCodec struct {
-	err   error
-	calls int
+	err            error
+	calls          int
+	decodedSchemas []*tfplugin5.Schema
 }
 
 func (c *jsonCodec) Encode(_ *tfplugin5.Schema, value any) (*tfplugin5.DynamicValue, error) {
@@ -280,8 +284,9 @@ func nullJSON(value *tfplugin5.DynamicValue) bool {
 	return value != nil && string(value.GetJson()) == "null"
 }
 
-func (c *jsonCodec) Decode(_ *tfplugin5.Schema, value *tfplugin5.DynamicValue) (any, error) {
+func (c *jsonCodec) Decode(schema *tfplugin5.Schema, value *tfplugin5.DynamicValue) (any, error) {
 	c.calls++
+	c.decodedSchemas = append(c.decodedSchemas, schema)
 	if c.err != nil {
 		return nil, c.err
 	}

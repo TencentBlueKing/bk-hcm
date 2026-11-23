@@ -178,7 +178,7 @@ func (e *PluginExecutor) PlanResourceChange(ctx context.Context, typeName string
 }
 
 // ApplyResourceChange applies one plan.
-// A nil planned state is a delete and the returned state is empty.
+// A nil planned state is a delete and a successful delete returns a nil state.
 // An apply error still returns the plugin's new state.
 func (e *PluginExecutor) ApplyResourceChange(ctx context.Context, typeName string,
 	prior, planned, config map[string]any, plannedPrivate []byte) (*types.ApplyResult, error) {
@@ -213,15 +213,16 @@ func (e *PluginExecutor) ApplyResourceChange(ctx context.Context, typeName strin
 		diags := resp.GetDiagnostics()
 		e.logWarnings(diags)
 		result := &types.ApplyResult{Private: bytes.Clone(resp.GetPrivate()), Diagnostics: diags}
-		if planned == nil {
-			return result, diagnosticFailure(diags)
-		}
 		state, decErr := e.decodeObject(schema, resp.GetNewState())
 		result.NewState = state
 		if decErr != nil {
 			return result, decErr
 		}
-		return result, diagnosticFailure(diags)
+		diagErr := diagnosticFailure(diags)
+		if planned == nil && diagErr == nil {
+			result.NewState = nil
+		}
+		return result, diagErr
 	})
 }
 

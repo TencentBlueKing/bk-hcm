@@ -22,10 +22,14 @@ package executor
 import (
 	"context"
 	"errors"
+	"slices"
+	"sync"
 	"testing"
 	"time"
 
 	"hcm/pkg/plugin/tfplugin5"
+
+	"github.com/hashicorp/go-plugin"
 )
 
 func TestPluginExecutor_SetCodec(t *testing.T) {
@@ -65,73 +69,142 @@ func TestPluginExecutor_Decode(t *testing.T) {
 	}
 }
 
-func TestPluginExecutor_CallRPC(t *testing.T) {
-	t.Run("closing", func(t *testing.T) {
-		executor := &PluginExecutor{}
-		executor.mu.Lock()
-		executor.closing = true
-		executor.mu.Unlock()
-		called := false
-		_, err := callRPC(executor, func() (struct{}, error) {
-			called = true
-			return struct{}{}, nil
-		})
-		if !errors.Is(err, errExecutorClosed) || called {
-			t.Fatalf("err = %v called = %v", err, called)
-		}
-	})
-
-	t.Run("in flight", func(t *testing.T) {
-		entered := make(chan struct{})
-		release := make(chan struct{})
-		executor := &PluginExecutor{}
-		done := make(chan struct{})
-		go func() {
-			_, err := callRPC(executor, func() (struct{}, error) {
-				close(entered)
-				<-release
-				return struct{}{}, nil
-			})
-			if err != nil {
-				t.Errorf("callRPC: %v", err)
-			}
-			close(done)
-		}()
-		<-entered
-
-		executor.mu.Lock()
-		executor.closing = true
-		executor.mu.Unlock()
-		waited := make(chan struct{})
-		go func() {
-			executor.wg.Wait()
-			close(waited)
-		}()
-		select {
-		case <-waited:
-			t.Fatal("wait finished while callRPC was in flight")
-		case <-time.After(50 * time.Millisecond):
-		}
-		close(release)
-		select {
-		case <-waited:
-		case <-time.After(time.Second):
-			t.Fatal("wait did not finish after callRPC returned")
-		}
-		<-done
-	})
+type trackingCloser struct {
+	calls  int
+	onCall func()
 }
 
-func TestPluginExecutor_StopProvider(t *testing.T) {
-	fake := &fakePlugin{}
-	executor := &PluginExecutor{rpc: fake}
-	executor.mu.Lock()
-	executor.closing = true
-	executor.mu.Unlock()
-	if err := executor.stopProvider(context.Background()); err != nil {
-		t.Fatal(err)
+func (c *trackingCloser) Close() error {
+	c.calls++
+	if c.onCall != nil {
+		c.onCall()
 	}
-	if fake.count("Stop") != 1 {
-		t.Fatalf("stop calls = %d", fake.count("Stop"))
+	return nil
+}
+
+func TestPluginExecutor_CloseDrainsInFlightAndRejectsNew(t *testing.T) {
+	entered := make(chan struct{})
+	release := make(chan struct{})
+	var eventsMu sync.Mutex
+	var events []string
+	recordEvent := func(ev string) {
+		eventsMu.Lock()
+		events = append(events, ev)
+		eventsMu.Unlock()
+	}
+	fake := &fakePlugin{
+		getSchema: resourceSchema(t),
+		read: func(*tfplugin5.ReadResource_Request) (*tfplugin5.ReadResource_Response, error) {
+			close(entered)
+			<-release
+			recordEvent("rpc_done")
+			return &tfplugin5.ReadResource_Response{
+				NewState: &tfplugin5.DynamicValue{Json: []byte(`{"id":"ins-1"}`)},
+			}, nil
+		},
+		stop: func(*tfplugin5.Stop_Request) (*tfplugin5.Stop_Response, error) {
+			recordEvent("stop")
+			return &tfplugin5.Stop_Response{}, nil
+		},
+	}
+	loadEchoPrepare(fake)
+	logsCloser := &trackingCloser{onCall: func() {
+		recordEvent("logs_close")
+	}}
+	exec := preparedExecutor(t, fake, &jsonCodec{})
+	exec.Attach(&plugin.Client{}, logsCloser, "tencentcloud", "1.0.0")
+
+	rpcDone := make(chan error, 1)
+	go func() {
+		_, err := exec.ReadResource(context.Background(), "tcloud_cvm", map[string]any{"id": "ins-1"}, nil)
+		rpcDone <- err
+	}()
+	<-entered
+
+	closeDone := make(chan error, 1)
+	go func() {
+		closeDone <- exec.Close()
+	}()
+
+	// Wait until Close enters the closing phase and blocks on wg.Wait().
+	deadline := time.Now().Add(time.Second)
+	for {
+		exec.mu.Lock()
+		closing := exec.closing
+		exec.mu.Unlock()
+		if closing {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("Close did not mark executor closing in time")
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	// New RPCs must be rejected immediately and never reach the plugin while draining.
+	if _, err := exec.ReadResource(context.Background(), "tcloud_cvm", map[string]any{"id": "ins-2"}, nil); !errors.Is(err, errExecutorClosed) {
+		t.Fatalf("new RPC while closing err = %v, want %v", err, errExecutorClosed)
+	}
+	if fake.count("ReadResource") != 1 {
+		t.Fatalf("rejected RPC should not reach plugin, calls=%d", fake.count("ReadResource"))
+	}
+	select {
+	case err := <-closeDone:
+		t.Fatalf("Close returned before in-flight RPC completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+	if fake.count("Stop") != 0 || logsCloser.calls != 0 {
+		t.Fatalf("Close ran Stop/logs.Close before drain: stop=%d logs=%d", fake.count("Stop"), logsCloser.calls)
+	}
+
+	close(release)
+	if err := <-rpcDone; err != nil {
+		t.Fatalf("in-flight ReadResource: %v", err)
+	}
+	select {
+	case err := <-closeDone:
+		if err != nil {
+			t.Fatalf("Close: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Close did not finish after in-flight RPC returned")
+	}
+
+	wantOrder := []string{"rpc_done", "stop", "logs_close"}
+	if !slices.Equal(events, wantOrder) {
+		t.Fatalf("close order = %v, want %v", events, wantOrder)
+	}
+
+	// Repeated Close is idempotent and does not call Stop or logs.Close again.
+	if err := exec.Close(); err != nil {
+		t.Fatalf("second Close: %v", err)
+	}
+	if fake.count("Stop") != 1 || logsCloser.calls != 1 {
+		t.Fatalf("repeated Close ran again: stop=%d logs=%d", fake.count("Stop"), logsCloser.calls)
+	}
+}
+
+func TestPluginExecutor_CloseStopErrorStillClosesLogs(t *testing.T) {
+	stopErr := errors.New("stop rpc failed")
+	fake := &fakePlugin{
+		stop: func(*tfplugin5.Stop_Request) (*tfplugin5.Stop_Response, error) {
+			return nil, stopErr
+		},
+	}
+	logsCloser := &trackingCloser{}
+	exec := &PluginExecutor{rpc: fake}
+	exec.Attach(&plugin.Client{}, logsCloser, "tencentcloud", "1.0.0")
+
+	if err := exec.Close(); !errors.Is(err, stopErr) {
+		t.Fatalf("Close err = %v, want %v", err, stopErr)
+	}
+	if fake.count("Stop") != 1 || logsCloser.calls != 1 {
+		t.Fatalf("stop=%d logs=%d, want 1 and 1", fake.count("Stop"), logsCloser.calls)
+	}
+	if err := exec.Close(); !errors.Is(err, stopErr) {
+		t.Fatalf("second Close err = %v, want %v", err, stopErr)
+	}
+	if fake.count("Stop") != 1 || logsCloser.calls != 1 {
+		t.Fatalf("repeated Close re-executed: stop=%d logs=%d", fake.count("Stop"), logsCloser.calls)
 	}
 }

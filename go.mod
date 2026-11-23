@@ -1,6 +1,8 @@
 module hcm
 
-go 1.25
+go 1.24.0
+
+toolchain go1.24.9
 
 require (
 	cloud.google.com/go/asset v1.19.0
@@ -108,7 +110,7 @@ require (
 	github.com/hashicorp/go-plugin v1.6.3
 	github.com/hashicorp/terraform-json v0.29.0
 	github.com/hashicorp/terraform-plugin-go v0.28.0
-	github.com/zclconf/go-cty v1.20.0
+	github.com/zclconf/go-cty v1.16.4
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.11
@@ -117,7 +119,6 @@ require (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
-	github.com/apparentlymart/go-textseg/v17 v17.0.1 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.23 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.23 // indirect
 	github.com/aws/smithy-go v1.25.1 // indirect

@@ -43,9 +43,9 @@ var errExecutorClosed = errors.New("terraform plugin executor is closing")
 var errValueCodecRequired = errors.New("terraform plugin value codec is not set")
 
 // Executor is the provider API a caller uses after a plugin process is running.
-// Close stops that process. Attach and SetCodec stay on the concrete type.
+// Process lifecycle methods (such as Close, Attach, and SetCodec) stay on the concrete type
+// and are managed by ProcessManager.
 type Executor interface {
-	Close() error
 	GetProviderSchema(ctx context.Context) (*types.ProviderSchema, error)
 	ConfigureProvider(ctx context.Context, config map[string]any) (*types.ConfigureResult, error)
 	ValidateResourceTypeConfig(ctx context.Context, typeName string, config map[string]any) (

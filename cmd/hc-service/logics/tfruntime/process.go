@@ -259,14 +259,6 @@ func (m *ProcessManager) Close() error {
 	return err
 }
 
-func (m *ProcessManager) detach(executor *PluginExecutor) {
-	m.mu.Lock()
-	if m.executor == executor {
-		m.executor = nil
-	}
-	m.mu.Unlock()
-}
-
 func (m *ProcessManager) markStopped() {
 	m.stopOnce.Do(func() { close(m.stopped) })
 }

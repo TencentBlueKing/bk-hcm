@@ -20,6 +20,7 @@
 package codec
 
 import (
+	"math"
 	"math/big"
 	"strings"
 	"testing"
@@ -152,11 +153,58 @@ func TestEncodeNestedBlocks(t *testing.T) {
 	if string(encoded.GetMsgpack()) != string(limited.GetMsgpack()) {
 		t.Fatal("min_items, max_items, or schema version changed the encoding")
 	}
+
+	if _, ok := attributeValue(t, schema, encoded.GetMsgpack(), "network").Type().(tftypes.List); !ok {
+		t.Fatal("network was not encoded as tftypes.List")
+	}
+	if _, ok := attributeValue(t, schema, encoded.GetMsgpack(), "zone").Type().(tftypes.Object); !ok {
+		t.Fatal("zone was not encoded as tftypes.Object")
+	}
+	if _, ok := attributeValue(t, schema, encoded.GetMsgpack(), "group").Type().(tftypes.Object); !ok {
+		t.Fatal("group was not encoded as tftypes.Object")
+	}
+	if _, ok := attributeValue(t, schema, encoded.GetMsgpack(), "labels").Type().(tftypes.Map); !ok {
+		t.Fatal("labels was not encoded as tftypes.Map")
+	}
+	if _, ok := attributeValue(t, schema, encoded.GetMsgpack(), "tags").Type().(tftypes.Set); !ok {
+		t.Fatal("tags was not encoded as tftypes.Set")
+	}
+
+	decoded, err := Codec{}.Decode(schema, encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	obj := decoded.(map[string]any)
+	netItems := obj["network"].([]any)
+	if len(netItems) != 1 || netItems[0].(map[string]any)["id"] != "net-1" {
+		t.Fatalf("network = %#v", netItems)
+	}
+	if obj["zone"].(map[string]any)["id"] != "az-1" {
+		t.Fatalf("zone = %#v", obj["zone"])
+	}
+	if obj["group"].(map[string]any)["id"] != "grp-1" {
+		t.Fatalf("group = %#v", obj["group"])
+	}
+	if obj["labels"].(map[string]any)["env"].(map[string]any)["id"] != "prod" {
+		t.Fatalf("labels = %#v", obj["labels"])
+	}
+	tagItems := obj["tags"].([]any)
+	tagIDs := make([]any, 0, len(tagItems))
+	for _, item := range tagItems {
+		tagIDs = append(tagIDs, item.(map[string]any)["id"])
+	}
+	if !sameStrings(tagIDs, "a", "b") {
+		t.Fatalf("tags = %#v", tagItems)
+	}
 }
 
 func TestEncodeRejectsInvalidValues(t *testing.T) {
 	secret := "secret-value-should-not-leak"
-	schema := objectSchema(attr("name", `"bool"`, false), attr("items", `["list","string"]`, false))
+	schema := objectSchema(
+		attr("name", `"bool"`, false),
+		attr("count", `"number"`, false),
+		attr("items", `["list","string"]`, false),
+	)
 	extra, err := Codec{}.Encode(schema, map[string]any{"extra": secret})
 	if err == nil || extra != nil || !strings.Contains(err.Error(), "extra") || strings.Contains(err.Error(), secret) {
 		t.Fatalf("extra = %v err=%v", extra, err)
@@ -164,6 +212,14 @@ func TestEncodeRejectsInvalidValues(t *testing.T) {
 	mismatched, err := Codec{}.Encode(schema, map[string]any{"name": secret})
 	if err == nil || mismatched != nil || !strings.Contains(err.Error(), "name") || strings.Contains(err.Error(), secret) {
 		t.Fatalf("mismatch = %v err=%v", mismatched, err)
+	}
+	nanVal, err := Codec{}.Encode(schema, map[string]any{"count": math.NaN()})
+	if err == nil || nanVal != nil || !strings.Contains(err.Error(), "count") {
+		t.Fatalf("nan = %v err=%v", nanVal, err)
+	}
+	nanFloat32Val, err := Codec{}.Encode(schema, map[string]any{"count": float32(math.NaN())})
+	if err == nil || nanFloat32Val != nil || !strings.Contains(err.Error(), "count") {
+		t.Fatalf("float32 nan = %v err=%v", nanFloat32Val, err)
 	}
 	element, err := Codec{}.Encode(schema, map[string]any{"items": []any{true}})
 	if err == nil || element != nil || !strings.Contains(err.Error(), "items[0]") {
