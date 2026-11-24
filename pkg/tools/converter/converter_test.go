@@ -142,6 +142,23 @@ func TestPtrToSlice(t *testing.T) {
 	}
 }
 
+func TestNormalizeNil(t *testing.T) {
+	var nilMap map[string]any
+	var nilSlice []any
+	if got := NormalizeNil(nilMap); got != nil {
+		t.Errorf("nil map = %#v", got)
+	}
+	if got := NormalizeNil(nilSlice); got != nil {
+		t.Errorf("nil slice = %#v", got)
+	}
+	if got := NormalizeNil(map[string]any{"name": "vm"}); got == nil {
+		t.Errorf("non-nil map became nil")
+	}
+	if got := NormalizeNil("name"); got != "name" {
+		t.Errorf("string = %#v", got)
+	}
+}
+
 func TestInt64PtrToInt32Ptr(t *testing.T) {
 	if Int64PtrToInt32Ptr(nil) != nil {
 		t.Errorf("test nil int64 pointer to int32 pointer failed")
