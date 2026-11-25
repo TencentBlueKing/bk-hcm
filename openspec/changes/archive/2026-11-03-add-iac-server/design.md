@@ -13,7 +13,7 @@
 **Goals:**
 - 在 `pkg/cc` 与 `pkg/metrics` 中完成 `iac-server` 服务名、最小无状态配置结构体 `IacServerSetting`（`Network`、`Service`、`Log`、`Tenant`）及监控组件常量注册，并提供完备的单测覆盖。
 - 搭建 `cmd/iac-server` 标准目录结构（`iac_server.go`、`options`、`app`、`service`、`capability`、`logics/audit`、`etc/iac_server.yaml`、`Makefile`），支持 Etcd 注册、下游四服务发现（`data-service`、`hc-service`、`task-server`、`auth-server`）、`/api/v1/iac` 根容器及 `/healthz`、`/alivez`、`/metrics` 探针与优雅关停。
-- 新增 `pkg/client/iac-server` 客户端 SDK 骨架并挂载至 `pkg/client.ClientSet`，同时打通 `cloud-server` 服务发现以及 `api-server`、`web-server` 对 `/api/v1/iac/*` 的反向代理路由。
+- 新增 `pkg/client/iac-server` 客户端 SDK 骨架并挂载至 `pkg/client.ClientSet`，同时打通 `cloud-server` 服务发现以及 `api-server` 对 `/api/v1/iac/*` 的反向代理路由。
 - 补齐 `cmd/Makefile`、`scripts/install/start_all.sh`、`scripts/install/stop_all.sh`、`docs/support-file/docker/bk-hcm-iacserver/Dockerfile` 以及 `docs/support-file/helm/` 下的 `values.yaml` 与 `templates/iacserver/*`、`templates/bklogconfig.yaml`。
 
 **Non-Goals:**
@@ -39,8 +39,8 @@
 - **决策**：
   - 下游客户端：新增 `pkg/client/iac-server/client.go`（包名 `iacserver`，基础路径 `/api/%s/iac`），在 `pkg/client/api.go` 的 `ClientSet` 中新增 `IacServer() *iacserver.Client`。
   - 上游调用方：在 `cmd/cloud-server/app/app.go` 的 `DiscoveryOption.Services` 追加 `cc.IacServerName`。
-  - 网关层：在 `cmd/api-server/app/app.go`、`cmd/api-server/service/proxy.go`、`cmd/web-server/app/app.go`、`cmd/web-server/service/proxy.go` 的服务发现列表追加 `cc.IacServerName`，并在 `proxy.go` 的 `switch servicePath` 中新增 `case "iac": service = cc.IacServerName`。
-- **理由**：`api-server` 与 `web-server` 均通过 URL 第 3 段（`/api/v1/<servicePath>/...`）静态映射目标 `cc.Name` 并从本地 `discovery` map 查找实例；必须同时更新 `app.go` 的 `DiscoveryOption.Services` 与 `proxy.go` 的 `discoverServices` + `switch` 分支，否则网关会报 `Service Not Supported` 或 `DeniedServers`。
+  - 网关层：在 `cmd/api-server/app/app.go`、`cmd/api-server/service/proxy.go` 的服务发现列表追加 `cc.IacServerName`，并在 `proxy.go` 的 `switch servicePath` 中新增 `case "iac": service = cc.IacServerName`。
+- **理由**：`api-server` 通过 URL 第 3 段（`/api/v1/<servicePath>/...`）静态映射目标 `cc.Name` 并从本地 `discovery` map 查找实例；必须同时更新 `app.go` 的 `DiscoveryOption.Services` 与 `proxy.go` 的 `discoverServices` + `switch` 分支，否则网关会报 `Service Not Supported` 或 `DeniedServers`。
 
 ### 4. Helm 部署模版对齐 `taskserver` / `accountserver` 标准形态
 - **决策**：
@@ -51,7 +51,7 @@
 ## Risks / Trade-offs
 
 - **[Risk] `pkg/cc` 全局单例 `initOnce` / `runtimeOnce` 在单元测试中多测试函数共享状态** → **Mitigation**：在 `pkg/cc/iac_server_test.go` 中参考 `pkg/cc/async_flow_cleanup_test.go` 的模式，直接针对 `IacServerSetting` 实例测试 `yaml.Unmarshal`、`trySetFlagBindIP`、`trySetDefault`、`Validate`、`TenantEnable`，并在测试 `LoadSettings` / `loadFromFile` / `IacServer()` 时妥善设置 `serviceName = IacServerName`，避免受 `sync.Once` 顺序影响。
-- **[Risk] `api-server` / `web-server` 的 `DiscoveryOption` 与 `proxy.go` 服务列表漏改一处导致运行时代理 404** → **Mitigation**：在 `tasks.md` 中明确列出 `app.go` 与 `proxy.go` 共 4 处修改点并逐一核对。
+- **[Risk] `api-server` 的 `DiscoveryOption` 与 `proxy.go` 服务列表漏改一处导致运行时代理 404** → **Mitigation**：在 `tasks.md` 中明确列出 `app.go` 与 `proxy.go` 修改点并逐一核对。
 
 ## Migration Plan
 

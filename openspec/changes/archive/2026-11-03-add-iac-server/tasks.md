@@ -19,7 +19,6 @@
 - [x] 3.1 新增 `pkg/client/iac-server/client.go`（定义 `Client` 与 `NewClient`，基础路径 `/api/%s/iac`），在 `pkg/client/api.go` 的 `ClientSet` 中新增 `IacServer() *iacserver.Client` 方法，并补充客户端与未授权服务发现拦截单测（覆盖 AC-003、AC-004）
 - [x] 3.2 在 `cmd/cloud-server/app/app.go` 的 `DiscoveryOption.Services` 中追加 `cc.IacServerName`
 - [x] 3.3 在 `cmd/api-server/app/app.go` 的 `DiscoveryOption.Services` 与 `cmd/api-server/service/proxy.go` 的 `discoverServices` 中追加 `cc.IacServerName`，并在 `prepareRequest` 的 `switch servicePath` 中新增 `case "iac": service = cc.IacServerName`
-- [x] 3.4 在 `cmd/web-server/app/app.go` 的 `DiscoveryOption.Services` 与 `cmd/web-server/service/proxy.go` 的 `discoverServices` 中追加 `cc.IacServerName`，并在 `proxyRequest` 的 `switch servicePath` 中新增 `case "iac": service = cc.IacServerName`
 
 ## 4. 构建脚本、启停脚本、Dockerfile 与 Helm 部署模版集成（`iac-server-build-and-deploy`）
 
@@ -30,7 +29,7 @@
 ## 5. 自动化编译、单测与配置交付物自检（代码实现阶段自动化验证）
 
 - [x] 5.1 执行 `go build ./...` 与 `make -C cmd/iac-server`，验证无 MySQL 依赖下全量编译通过、单服务编译耗时 < 30s，且成功生成 `bk-hcm-iacserver` 二进制与启停脚本（AC-007、AC-P02）
-- [x] 5.2 执行 `go test -v ./pkg/cc/... ./cmd/iac-server/... ./pkg/client/... ./cmd/api-server/... ./cmd/web-server/...`，确认新增与存量单元测试 100% 通过（覆盖 AC-001 ~ AC-006、AC-008）
+- [x] 5.2 执行 `go test -v ./pkg/cc/... ./cmd/iac-server/... ./pkg/client/... ./cmd/api-server/...`，确认新增与存量单元测试 100% 通过（覆盖 AC-001 ~ AC-006、AC-008）
 - [x] 5.3 检查 `cmd/iac-server/etc/iac_server.yaml` 与 `docs/support-file/helm/` 配置结构一致性及敏感信息红线（若环境已安装 `helm` CLI 则执行 `helm template docs/support-file/helm` 校验 YAML 渲染语法，覆盖 AC-007、AC-S01）
 
 > **说明（需外部真实环境/人工参与的联调验证项，归属阶段 6「发布到环境」或集成测试环境执行，不阻塞阶段 4 本地编码勾选）**：

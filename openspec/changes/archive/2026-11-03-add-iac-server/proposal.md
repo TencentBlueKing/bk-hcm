@@ -17,7 +17,7 @@
 - **内部客户端 SDK 骨架与上下游服务发现/网关反向代理集成**：
   - 新增 `pkg/client/iac-server/client.go` 客户端骨架（基础路径 `/api/%s/iac`），并在 `pkg/client/api.go` 的 `ClientSet` 中新增 `IacServer() *iacserver.Client` 方法。
   - 在 `cmd/cloud-server/app/app.go` 的 `DiscoveryOption.Services` 中注册 `cc.IacServerName`。
-  - 在 `cmd/api-server`（`app/app.go` 与 `service/proxy.go`）及 `cmd/web-server`（`app/app.go` 与 `service/proxy.go`）中新增 `cc.IacServerName` 服务发现与 `/api/v1/iac`（`case "iac"`）反向代理转发。
+  - 在 `cmd/api-server`（`app/app.go` 与 `service/proxy.go`）中新增 `cc.IacServerName` 服务发现与 `/api/v1/iac`（`case "iac"`）反向代理转发。
 - **构建脚本、启停脚本、容器化与 Helm 部署配置集成**：
   - 新增 `cmd/iac-server/Makefile`（产出 `bk-hcm-iacserver`），并在 `cmd/Makefile` 的 `all`、`package`、`docker`、`clean` 目标中集成 `iac-server`。
   - 在 `scripts/install/start_all.sh` 与 `scripts/install/stop_all.sh` 中追加 `iac-server` 启停命令。
@@ -37,7 +37,7 @@
 
 - `iac-server-config`: 配置中心（`pkg/cc`）与监控组件标识（`pkg/metrics`）扩展支持 `iac-server`，含 `IacServerName`、`IacServerSetting`（无直连 DB 配置）、`cc.IacServer()`、YAML 加载与强校验及本地配置文件 `cmd/iac-server/etc/iac_server.yaml`。
 - `iac-server-bootstrap`: `cmd/iac-server` 服务启动生命周期、Etcd 服务注册与下游服务发现、HTTP Server 根路由容器（`/api/v1/iac`）、运维探针（`/healthz`、`/alivez`、`/metrics`）及优雅关停骨架。
-- `iac-server-client-and-proxy`: 内部客户端 SDK 骨架（`pkg/client/iac-server` 与 `ClientSet.IacServer()`）及上下游服务发现与网关代理集成（`cloud-server` 服务发现、`api-server` 与 `web-server` 的 `/api/v1/iac` 反向代理转发）。
+- `iac-server-client-and-proxy`: 内部客户端 SDK 骨架（`pkg/client/iac-server` 与 `ClientSet.IacServer()`）及上下游服务发现与网关代理集成（`cloud-server` 服务发现、`api-server` 的 `/api/v1/iac` 反向代理转发）。
 - `iac-server-build-and-deploy`: `iac-server` 构建脚本（`Makefile`）、启停脚本（`start_all.sh` / `stop_all.sh`）、容器镜像（`Dockerfile`）与 Helm Chart 部署模版（`values.yaml`、`configmap.yaml`、`deployment.yaml`、`service.yaml`、`bklogconfig.yaml`）集成。
 
 ### Modified Capabilities
@@ -48,6 +48,6 @@
 
 - **配置与基础库**：`pkg/cc/service.go`、`pkg/cc/cc.go`、`pkg/cc/load.go`、`pkg/cc/iac_server_test.go`（新增）、`pkg/metrics/http_request.go`。
 - **新增微服务目录**：`cmd/iac-server/`（`iac_server.go`、`Makefile`、`etc/iac_server.yaml`、`options/options.go`、`app/app.go`、`service/service.go`、`service/capability/capability.go`、`logics/audit/audit.go`）。
-- **客户端 SDK 与存量服务发现/代理**：`pkg/client/iac-server/client.go`（新增）、`pkg/client/api.go`、`cmd/cloud-server/app/app.go`、`cmd/api-server/app/app.go`、`cmd/api-server/service/proxy.go`、`cmd/web-server/app/app.go`、`cmd/web-server/service/proxy.go`。
+- **客户端 SDK 与存量服务发现/代理**：`pkg/client/iac-server/client.go`（新增）、`pkg/client/api.go`、`cmd/cloud-server/app/app.go`、`cmd/api-server/app/app.go`、`cmd/api-server/service/proxy.go`。
 - **构建与部署交付文件**：`cmd/Makefile`、`scripts/install/start_all.sh`、`scripts/install/stop_all.sh`、`docs/support-file/docker/bk-hcm-iacserver/Dockerfile`、`docs/support-file/helm/values.yaml`、`docs/support-file/helm/templates/iacserver/{configmap,deployment,service}.yaml`、`docs/support-file/helm/templates/bklogconfig.yaml`。
 - **外部系统与数据库影响**：仅依赖 Etcd 进行服务注册与发现；遵循架构红线不直连 MySQL，无数据库 DDL 变更，对存量业务接口零破坏性影响。
