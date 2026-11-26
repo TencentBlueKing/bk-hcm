@@ -26,6 +26,7 @@ import {
   ZONE_TYPE,
   INTERNET_CHARGE_TYPE,
   LOAD_BALANCER_PASS_TO_TARGET_LIST,
+  CLB_SPEC_TYPE_COLUMNS_MAP,
 } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
@@ -44,6 +45,9 @@ import useExclusiveCluster, { RANDOM_ALLOCATION, isExclusiveClusterIsp } from '.
 
 const { Option } = Select;
 const { FormItem } = Form;
+
+// 公网带宽上限的默认最大值（Mbps），共享型与未取到规格出口流量时使用
+const DEFAULT_BANDWIDTH_LIMIT = CLB_SPEC_TYPE_COLUMNS_MAP.shared.bandwidthLimit;
 
 interface ClbFormItemOption {
   label: string;
@@ -127,10 +131,22 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   };
 
   const lbSpecTypeDialogState = reactive({ isHidden: true, isShow: false });
-  const selectedSlaTypeBandWidthLimit = ref<number>();
-  const handleLBSpecTypeChange = ({ slaType, bandwidthLimit }: { slaType: string; bandwidthLimit: number }) => {
+  // 各规格的带宽上限与名称，按规格存，避免沿用上一次选过的规格。
+  // 中文名与出口流量上限来自前端静态表，在确认规格时写入
+  const slaTypeBandWidthLimits = reactive<Record<string, number>>({});
+  const slaTypeNames = reactive<Record<string, string>>({});
+  const handleLBSpecTypeChange = ({
+    slaType,
+    slaName,
+    bandwidthLimit,
+  }: {
+    slaType: string;
+    slaName?: string;
+    bandwidthLimit?: number;
+  }) => {
     formModel.sla_type = slaType;
-    selectedSlaTypeBandWidthLimit.value = bandwidthLimit;
+    if (bandwidthLimit) slaTypeBandWidthLimits[slaType] = bandwidthLimit;
+    if (slaName) slaTypeNames[slaType] = slaName;
   };
 
   const getInternetMaxBandwidthOutContent = (min: number, max: number) => {
@@ -142,11 +158,24 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     };
   };
   const internetMaxBandwidthOutConfig = computed(() => {
-    const max = selectedSlaTypeBandWidthLimit.value ? selectedSlaTypeBandWidthLimit.value : 10240;
+    // 共享型带宽上限固定；性能容量型按「当前规格」取上限，不沿用上一次选过的规格
+    const isCapacitySpec = Boolean(formModel.sla_type) && formModel.sla_type !== 'shared';
+    const max = isCapacitySpec
+      ? slaTypeBandWidthLimits[formModel.sla_type] ?? DEFAULT_BANDWIDTH_LIMIT
+      : DEFAULT_BANDWIDTH_LIMIT;
     const content = getInternetMaxBandwidthOutContent(1, max);
 
     return { min: 1, max, content };
   });
+  // 带宽上限下调后，已填值超出新范围时自动收敛到新上限；上限增大不主动放大
+  watch(
+    () => internetMaxBandwidthOutConfig.value.max,
+    (max) => {
+      if (formModel.internet_max_bandwidth_out > max) {
+        formModel.internet_max_bandwidth_out = max;
+      }
+    },
+  );
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -621,15 +650,27 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             property: 'sla_type',
             hidden: formModel.slaType !== '1',
             content: () => {
+              // 可用规格依赖当前账号与地域的资源查询，缺少任一条件时不打开
+              const specDisabled = !formModel.account_id || !formModel.region;
+              const specDisabledTip = !formModel.account_id ? '请先选择云账号' : '请先选择云地域';
               const handleClick = () => {
                 lbSpecTypeDialogState.isHidden = false;
                 lbSpecTypeDialogState.isShow = true;
               };
               if (formModel.sla_type !== 'shared') {
-                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
+                // 规格名称优先用本次选择写入的名称，静态规格表作兜底
+                return (
+                  <SelectedItemPreviewComp
+                    content={slaTypeNames[formModel.sla_type] ?? CLB_SPECS[formModel.sla_type]}
+                    onClick={handleClick}
+                  />
+                );
               }
               return (
-                <Button onClick={handleClick}>
+                <Button
+                  disabled={specDisabled}
+                  v-bk-tooltips={{ content: specDisabledTip, disabled: !specDisabled }}
+                  onClick={handleClick}>
                   <Plus class='f24' />
                   {t('选择实例规格')}
                 </Button>
