@@ -292,18 +292,18 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_BIZ_FIND_AUDIT]: {
-    id: 'resource_audit_find',
+    id: 'operation_record_find',
     action: 'find',
     resourceType: 'biz_audit',
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_FIND_RECYCLE_BIN]: {
-    id: 'recycle_bin_find',
+    id: 'recycle_bin_access',
     action: 'find',
     resourceType: 'recycle_bin',
   },
   [authSymbol.AUTH_MANAGE_RECYCLE_BIN]: {
-    id: 'recycle_bin_manage',
+    id: 'recycle_bin_operate',
     action: 'recycle',
     resourceType: 'recycle_bin',
   },
@@ -330,7 +330,7 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_FIND_ROOT_ACCOUNT]: {
-    id: 'root_account_find',
+    id: 'root_account_manage',
     action: 'find',
     resourceType: 'root_account',
   },
@@ -345,7 +345,7 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'main_account',
   },
   [authSymbol.AUTH_FIND_ACCOUNT_BILL]: {
-    id: 'account_bill_find',
+    id: 'account_bill_manage',
     action: 'find',
     resourceType: 'account_bill',
   },

@@ -34,11 +34,6 @@ const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const { settings } = useTableSettings(props.columns);
 
-const formatDateTime = (dateStr?: string) => {
-  if (!dateStr) return '--';
-  return dateStr.replace('T', ' ').replace('Z', '');
-};
-
 const maskSecretId = (id: string) => {
   if (!id) return '--';
   if (id.length <= 8) return id;
@@ -95,10 +90,6 @@ const getColumnRender = (column: ModelPropertyColumn) => {
   if (column.id === 'cloud_main_account_id') {
     return ({ row }: { row: ICloudSecretItem }) =>
       row.cloud_main_account_id || row.extension?.cloud_main_account_id || '--';
-  }
-
-  if (['cloud_created_at', 'last_used_time', 'disabled_time'].includes(column.id)) {
-    return ({ row }: { row: ICloudSecretItem }) => formatDateTime(row[column.id as keyof ICloudSecretItem] as string);
   }
 
   return null;

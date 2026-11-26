@@ -55,15 +55,17 @@ export default {
     }
   },
   back() {
+    // history 模式（query 带 _f）：弹出自定义栈并跳回；原先只 pop 不跳转，取消按钮会无反应
     if (Object.hasOwn(router.currentRoute.value.query, '_f')) {
       try {
-        HistoryStorage.pop();
+        const to = HistoryStorage.pop();
+        this.redirect(to, { back: true });
+        return;
       } catch (error) {
-        router.go(-1);
+        // 栈异常时回退浏览器历史
       }
-    } else {
-      router.go(-1);
     }
+    router.go(-1);
   },
   open(to: RouteLocationRaw) {
     const { href } = router.resolve(to);

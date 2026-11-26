@@ -7,14 +7,15 @@ import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
-
-const { getRegionName } = useRegionsStore();
+import { formatIpList } from '../utils';
 
 const props = defineProps({
   data: {
     type: Object as PropType<any>,
   },
 });
+
+const { getRegionName } = useRegionsStore();
 
 const cvmInfo: FieldList = [
   {
@@ -86,22 +87,22 @@ const netInfo: FieldList = [
   {
     name: '私有IPv4地址',
     prop: 'private_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv4地址',
     prop: 'public_ipv4_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '私有IPv6地址',
     prop: 'private_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '公有IPv6地址',
     prop: 'public_ipv6_addresses',
-    render: (val: string[]) => (val.length ? [...val].join(',') : '--'),
+    render: (val: string[]) => formatIpList(val),
   },
   {
     name: '所属网络',

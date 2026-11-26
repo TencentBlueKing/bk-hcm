@@ -56,8 +56,9 @@ export default defineComponent({
     const { accountBizList } = useAccountBusiness(accountId);
 
     const handleSingleDistribution = (cert: any) => {
-      isDialogShow.value = true;
+      selectedBizId.value = 0;
       currentOperateItem.value = cert;
+      isDialogShow.value = true;
     };
     const handleSingleDistributionConfirm = async () => {
       isDialogBtnLoading.value = true;
@@ -388,10 +389,12 @@ export default defineComponent({
       });
     };
 
+    const accountScopeFields = ['account_id', 'vendor'];
     watch(
       rules,
       (val) => {
-        getListData(val);
+        const removedRuleFields = accountScopeFields.filter((field) => !val.some((rule) => rule.field === field));
+        getListData(val, undefined, false, removedRuleFields);
       },
       { deep: true, immediate: true },
     );
@@ -448,7 +451,8 @@ export default defineComponent({
           width='640'
           onHandleSubmit={handleCreateCert}
           isSubmitLoading={isLoading.value}
-          class='cert-upload-sideslider'>
+          class='cert-upload-sideslider'
+          renderType='if'>
           <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;

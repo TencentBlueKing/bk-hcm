@@ -4,26 +4,30 @@ import qs from 'qs';
 import { ModelPropertyGeneric } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import routeQuery from '@/router/utils/query';
-import { convertValue } from '@/utils/search';
+import { convertValue, getDefaultRule } from '@/utils/search';
 
 type useSearchQsParamsType = {
-  properties: ModelPropertyGeneric[] | ComputedRef<ModelPropertyGeneric[]>;
+  properties?: ModelPropertyGeneric[] | ComputedRef<ModelPropertyGeneric[]>;
   key?: string;
   forceUpdate?: boolean;
   resetPage?: boolean;
 };
 
 export default function useSearchQs({
-  properties,
+  properties = [],
   key = 'filter',
   forceUpdate = true,
   resetPage = true,
-}: useSearchQsParamsType) {
-  const set = (value: Record<string, string | number | string[] | number[]>) => {
-    const queryVal = qs.stringify(value, {
+}: useSearchQsParamsType = {}) {
+  const build = (value: Record<string, string | number | string[] | number[]>) => {
+    return qs.stringify(value, {
       arrayFormat: 'comma',
       encode: false,
     });
+  };
+
+  const set = (value: Record<string, string | number | string[] | number[]>) => {
+    const queryVal = build(value);
 
     const updateQuery = { [key]: queryVal };
     if (resetPage) {
@@ -43,7 +47,8 @@ export default function useSearchQs({
       if (!property) {
         continue;
       }
-      condition[id] = convertValue(val, property);
+      const { op } = getDefaultRule(property);
+      condition[id] = convertValue(val, property, op);
     }
     return condition;
   };
@@ -53,6 +58,7 @@ export default function useSearchQs({
   };
 
   return {
+    build,
     get,
     set,
     clear,

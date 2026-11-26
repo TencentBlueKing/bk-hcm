@@ -250,11 +250,12 @@ const bktoolTipsOptions = computed(() => {
       </bk-button>
     </hcm-auth>
     <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
-      <bk-dropdown
-        trigger="click"
-        :disabled="noPerm || disabledOption || cvmInfo.stop.status.includes(detail.status)"
-        :popover-options="{ clickContentAutoHide: true }"
-      >
+      <!--
+        不把禁用条件放到 bk-dropdown 上。noPerm、authPending、资源侧详情未返回时的 bk_biz_id
+        会先 true 再 false，Popover 只在挂载且未禁用时注册关闭监听，之后启用会打开后关不掉。
+        禁用和 tooltip 留在按钮上，无权限仍由外层 HcmAuth 拦截。
+      -->
+      <bk-dropdown trigger="click" :popover-options="{ clickContentAutoHide: true }">
         <bk-button
           v-bk-tooltips="(!noPerm && bktoolTipsOptions) || { disabled: true }"
           :disabled="noPerm || disabledOption || cvmInfo.stop.status.includes(detail.status)"
