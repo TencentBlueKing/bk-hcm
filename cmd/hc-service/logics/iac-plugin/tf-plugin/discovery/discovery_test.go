@@ -27,7 +27,6 @@ import (
 	"testing"
 )
 
-// put 在 root 下按约定创建 {name}/{version}/{arch}/{file}。
 func put(t *testing.T, root, name, version, arch, file, content string) {
 	t.Helper()
 	dir := filepath.Join(root, name, version, arch)
@@ -44,7 +43,6 @@ func sum(s string) string {
 	return hex.EncodeToString(h[:])
 }
 
-// otherArch 返回一个与本机不同的架构目录名，用来放不应被读取的文件。
 func otherArch() string {
 	if LocalArch() == "linux_arm64" {
 		return "linux_amd64"
@@ -52,81 +50,32 @@ func otherArch() string {
 	return "linux_arm64"
 }
 
-func TestScanHighestVersionBySemver(t *testing.T) {
+func TestScan(t *testing.T) {
 	root := t.TempDir()
-	// 字符串比较会选 1.9.0，semver 必须选 1.10.0。
+	// semver 选 v1.10.0（去 v 前缀入库）、忽略其它架构、支持任意可执行文件名、多插件并存、跳过无版本目录。
 	put(t, root, "tc", "1.9.0", LocalArch(), "bin", "old")
-	put(t, root, "tc", "1.10.0", LocalArch(), "bin", "new")
+	put(t, root, "tc", "v1.10.0", LocalArch(), "whatever-name_v9", "new")
+	put(t, root, "tc", "v1.10.0", otherArch(), "bin", "other-arch")
+	put(t, root, "aws", "2.3.4", LocalArch(), "bin", "aws-bin")
+	if err := os.MkdirAll(filepath.Join(root, "empty-plugin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 
 	entries, err := Scan(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 1 || entries["tc"].PluginVersion != "1.10.0" {
-		t.Fatalf("want 1.10.0, got %+v", entries)
+	if len(entries) != 2 {
+		t.Fatalf("want 2 plugins, got %+v", entries)
 	}
-	if entries["tc"].SHA256 != sum("new") {
-		t.Fatalf("sha256 should be computed from the chosen version's file")
-	}
-}
 
-func TestScanNormalizesVPrefixVersion(t *testing.T) {
-	root := t.TempDir()
-	put(t, root, "tc", "1.9.0", LocalArch(), "bin", "old")
-	put(t, root, "tc", "v1.10.0", LocalArch(), "bin", "new")
-
-	entries, err := Scan(root)
-	if err != nil {
-		t.Fatal(err)
+	tc := entries["tc"]
+	wantExec := filepath.Join(root, "tc", "v1.10.0", LocalArch(), "whatever-name_v9")
+	if tc.PluginVersion != "1.10.0" || tc.Arch != LocalArch() || tc.ExecPath != wantExec || tc.SHA256 != sum("new") {
+		t.Fatalf("unexpected tc entry: %+v", tc)
 	}
-	got, ok := entries["tc"]
-	if !ok || got.PluginVersion != "1.10.0" {
-		t.Fatalf("want normalized version 1.10.0, got %+v", entries)
-	}
-	wantExec := filepath.Join(root, "tc", "v1.10.0", LocalArch(), "bin")
-	if got.ExecPath != wantExec {
-		t.Fatalf("want exec path %s, got %s", wantExec, got.ExecPath)
-	}
-	if got.SHA256 != sum("new") {
-		t.Fatalf("sha256 mismatch")
-	}
-}
-
-func TestScanOnlyLocalArch(t *testing.T) {
-	root := t.TempDir()
-	put(t, root, "tc", "1.0.0", LocalArch(), "bin", "amd64-content")
-	put(t, root, "tc", "1.0.0", otherArch(), "bin", "arm64-content")
-
-	entries, err := Scan(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 1 || entries["tc"].SHA256 != sum("amd64-content") || entries["tc"].Arch != LocalArch() {
-		t.Fatalf("must only read the local arch, got %+v", entries)
-	}
-}
-
-func TestScanArbitraryFileName(t *testing.T) {
-	root := t.TempDir()
-	put(t, root, "tc", "1.0.0", LocalArch(), "whatever-name_v9", "x")
-
-	entries, err := Scan(root)
-	if err != nil || len(entries) != 1 {
-		t.Fatalf("err=%v entries=%+v", err, entries)
-	}
-	if filepath.Base(entries["tc"].ExecPath) != "whatever-name_v9" {
-		t.Fatalf("exec path = %s", entries["tc"].ExecPath)
-	}
-}
-
-func TestScanMultiplePlugins(t *testing.T) {
-	root := t.TempDir()
-	put(t, root, "tc", "1.0.0", LocalArch(), "bin", "a")
-	put(t, root, "aws", "2.3.4", LocalArch(), "bin", "b")
-
-	entries, err := Scan(root)
-	if err != nil || len(entries) != 2 {
-		t.Fatalf("err=%v entries=%+v", err, entries)
+	if entries["aws"].PluginVersion != "2.3.4" || entries["aws"].SHA256 != sum("aws-bin") {
+		t.Fatalf("unexpected aws entry: %+v", entries["aws"])
 	}
 }
 
@@ -152,6 +101,12 @@ func TestScanInvalid(t *testing.T) {
 				t.Fatal(err)
 			}
 		}},
+		{"empty root", func(r string) {}},
+		{"root with only a file", func(r string) {
+			if err := os.WriteFile(filepath.Join(r, "README"), []byte("x"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}},
 	}
 
 	for _, c := range cases {
@@ -161,33 +116,8 @@ func TestScanInvalid(t *testing.T) {
 			t.Errorf("%s: want error, got nil", c.name)
 		}
 	}
-}
 
-func TestScanEmptyOrMissingRoot(t *testing.T) {
 	if _, err := Scan(filepath.Join(t.TempDir(), "not-exist")); err == nil {
-		t.Fatal("missing root: want error, got nil")
-	}
-
-	if _, err := Scan(t.TempDir()); err == nil {
-		t.Fatal("empty root: want error, got nil")
-	}
-
-	withFile := t.TempDir()
-	if err := os.WriteFile(filepath.Join(withFile, "README"), []byte("x"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Scan(withFile); err == nil {
-		t.Fatal("root with only a file: want error, got nil")
-	}
-}
-
-func TestScanPluginDirWithoutVersions(t *testing.T) {
-	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "tc"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	entries, err := Scan(root)
-	if err != nil || len(entries) != 0 {
-		t.Fatalf("plugin dir without versions should be skipped, err=%v entries=%v", err, entries)
+		t.Error("missing root: want error, got nil")
 	}
 }

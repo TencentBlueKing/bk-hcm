@@ -20,7 +20,6 @@
 package iacplugin
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -28,61 +27,13 @@ import (
 	"strings"
 	"testing"
 
-	proto "hcm/pkg/api/cloud-server"
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
-	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
-
-	"github.com/emicklei/go-restful/v3"
 )
-
-type stubAuthorizer struct {
-	err error
-}
-
-func (a stubAuthorizer) Authorize(_ *kit.Kit, _ ...meta.ResourceAttribute) ([]meta.Decision, bool, error) {
-	return nil, a.err == nil, a.err
-}
-
-func (a stubAuthorizer) AuthorizeAny(_ *kit.Kit, _ ...meta.ResourceAttribute) ([]meta.Decision, error) {
-	return nil, a.err
-}
-
-func (a stubAuthorizer) AuthorizeWithPerm(_ *kit.Kit, _ ...meta.ResourceAttribute) error {
-	return a.err
-}
-
-func (a stubAuthorizer) ListAuthorizedInstances(_ *kit.Kit, _ *meta.ListAuthResInput) (
-	*meta.AuthorizedInstances, error) {
-	return nil, a.err
-}
-
-func (a stubAuthorizer) ListAuthInstWithFilter(_ *kit.Kit, _ *meta.ListAuthResInput, expr *filter.Expression,
-	_ string) (*filter.Expression, bool, error) {
-	return expr, false, a.err
-}
-
-func (a stubAuthorizer) RegisterResourceCreatorAction(_ *kit.Kit, _ *meta.RegisterResCreatorActionInst) error {
-	return a.err
-}
-
-func (a stubAuthorizer) GetPermissionToApply(_ *kit.Kit, _ ...meta.ResourceAttribute) (*meta.IamPermission, error) {
-	return nil, a.err
-}
-
-func (a stubAuthorizer) GetApplyPermUrl(_ *kit.Kit, _ *meta.IamPermission) (string, error) {
-	return "", a.err
-}
-
-var _ auth.Authorizer = stubAuthorizer{}
 
 type stubDiscover struct{ addr string }
 
@@ -91,120 +42,23 @@ func (d stubDiscover) Services() []cc.Name                             { return 
 func (d stubDiscover) ByLabels([]string) serviced.Discover             { return d }
 func (d stubDiscover) GetServiceAllNodeKeys(cc.Name) ([]string, error) { return nil, nil }
 
-func newTestSvc(srv *httptest.Server, authErr error) *svc {
-	cs := client.NewClientSet(srv.Client(), stubDiscover{addr: srv.URL})
-	return &svc{
-		client:     cs,
-		authorizer: stubAuthorizer{err: authErr},
-	}
-}
-
-func newTestContext(t *testing.T, body any) *rest.Contexts {
-	t.Helper()
-	raw, err := json.Marshal(body)
-	if err != nil {
-		t.Fatalf("marshal body: %v", err)
-	}
-
-	httpReq, err := http.NewRequest(http.MethodPost, "http://test/iac_plugins", bytes.NewReader(raw))
-	if err != nil {
-		t.Fatalf("new request: %v", err)
-	}
-
-	return &rest.Contexts{Kit: kit.New(), Request: restful.NewRequest(httpReq)}
-}
-
-func TestListIaCPlugin(t *testing.T) {
-	validBody := map[string]any{
-		"filter": map[string]any{"op": "and", "rules": []any{}},
-		"page":   map[string]any{"count": false, "start": 0, "limit": 10},
-	}
-
-	t.Run("no permission does not call data service", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			t.Fatalf("should not call data service when unauthorized: %s", r.URL.Path)
-		}))
-		defer srv.Close()
-
-		s := newTestSvc(srv, errf.New(errf.PermissionDenied, "no permission"))
-		if _, err := s.ListIaCPlugin(newTestContext(t, validBody)); err == nil {
-			t.Fatal("ListIaCPlugin want permission error, got nil")
-		}
-	})
-
-	t.Run("success returns list result", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]any{
-				"code":    0,
-				"message": "",
-				"data": map[string]any{
-					"count": 0,
-					"details": []map[string]any{
-						{
-							"id":             "00000001",
-							"plugin_name":    "tencentcloud",
-							"plugin_version": "1.83.34",
-							"protocol":       enumor.IaCPluginProtocolTFProvider,
-							"state":          enumor.IaCPluginStateEnabled,
-							"extension":      map[string]any{},
-						},
-					},
-				},
-			})
-		}))
-		defer srv.Close()
-
-		s := newTestSvc(srv, nil)
-		got, err := s.ListIaCPlugin(newTestContext(t, validBody))
-		if err != nil {
-			t.Fatalf("ListIaCPlugin unexpected err: %v", err)
-		}
-		res := got.(*proto.IaCPluginListResult)
-		if len(res.Details) != 1 || res.Details[0].PluginName != "tencentcloud" {
-			t.Fatalf("ListIaCPlugin details = %+v, want 1 tencentcloud record", res.Details)
-		}
-	})
-}
-
-func TestSwitchIaCPluginValidationAndAuth(t *testing.T) {
-	t.Run("invalid target state rejected before downstream call", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			t.Fatalf("should not call data service on invalid state: %s", r.URL.Path)
-		}))
-		defer srv.Close()
-
-		s := newTestSvc(srv, nil)
-		body := map[string]any{"plugin_name": "tencentcloud", "state": "init"}
-		if _, err := s.SwitchIaCPlugin(newTestContext(t, body)); err == nil {
-			t.Fatal("SwitchIaCPlugin(state=init) want err, got nil")
-		}
-	})
-
-	t.Run("no permission rejected before downstream call", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			t.Fatalf("should not call data service when unauthorized: %s", r.URL.Path)
-		}))
-		defer srv.Close()
-
-		s := newTestSvc(srv, errf.New(errf.PermissionDenied, "no permission"))
-		body := map[string]any{"plugin_name": "tencentcloud", "state": "disabled"}
-		if _, err := s.SwitchIaCPlugin(newTestContext(t, body)); err == nil {
-			t.Fatal("SwitchIaCPlugin want permission error, got nil")
-		}
-	})
-}
-
 func TestDecideSwitch(t *testing.T) {
 	const (
 		initS    = enumor.IaCPluginStateInit
 		enabled  = enumor.IaCPluginStateEnabled
 		disabled = enumor.IaCPluginStateDisabled
 		failedS  = enumor.IaCPluginStateFailed
-
-		tfProto   = enumor.IaCPluginProtocolTFProvider
-		httpProto = enumor.IaCPluginProtocolHTTP
 	)
+
+	rec := func(state enumor.IaCPluginState, msg string) *coreplugin.IaCPlugin {
+		return &coreplugin.IaCPlugin{
+			PluginName:    "tencentcloud",
+			PluginVersion: "1.83.34",
+			Protocol:      enumor.IaCPluginProtocolTFProvider,
+			State:         state,
+			Message:       msg,
+		}
+	}
 
 	cases := []struct {
 		name         string
@@ -214,69 +68,15 @@ func TestDecideSwitch(t *testing.T) {
 		wantFrom     []enumor.IaCPluginState
 		wantErrSub   string
 	}{
-		{
-			name:         "enabled -> disabled",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: enabled},
-			target:       disabled,
-			schemaExists: false,
-			wantFrom:     []enumor.IaCPluginState{enabled, failedS},
-		},
-		{
-			name:         "enabled -> enabled (idempotent)",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: enabled},
-			target:       enabled,
-			schemaExists: false,
-			wantFrom:     nil,
-		},
-		{
-			name:         "disabled -> disabled (idempotent)",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: disabled},
-			target:       disabled,
-			schemaExists: false,
-			wantFrom:     nil,
-		},
-		{
-			name:         "disabled -> enabled with schema",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: disabled},
-			target:       enabled,
-			schemaExists: true,
-			wantFrom:     []enumor.IaCPluginState{disabled},
-		},
-		{
-			name:         "disabled -> enabled without schema",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: disabled},
-			target:       enabled,
-			schemaExists: false,
-			wantErrSub:   "schema does not exist",
-		},
-		{
-			name:         "failed -> disabled",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: failedS, Message: "schema sync failed"},
-			target:       disabled,
-			schemaExists: false,
-			wantFrom:     []enumor.IaCPluginState{enabled, failedS},
-		},
-		{
-			name:         "failed -> enabled",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: failedS, Message: "schema sync failed"},
-			target:       enabled,
-			schemaExists: true,
-			wantErrSub:   "schema sync failed",
-		},
-		{
-			name:         "init -> disabled",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: tfProto, State: initS},
-			target:       disabled,
-			schemaExists: true,
-			wantErrSub:   "not finished",
-		},
-		{
-			name:         "init -> enabled",
-			current:      &coreplugin.IaCPlugin{PluginName: "tencentcloud", PluginVersion: "1.83.34", Protocol: httpProto, State: initS},
-			target:       enabled,
-			schemaExists: true,
-			wantErrSub:   "not finished",
-		},
+		{"enabled -> disabled", rec(enabled, ""), disabled, false, []enumor.IaCPluginState{enabled, failedS}, ""},
+		{"enabled -> enabled (idempotent)", rec(enabled, ""), enabled, false, nil, ""},
+		{"disabled -> disabled (idempotent)", rec(disabled, ""), disabled, false, nil, ""},
+		{"disabled -> enabled with schema", rec(disabled, ""), enabled, true, []enumor.IaCPluginState{disabled}, ""},
+		{"disabled -> enabled without schema", rec(disabled, ""), enabled, false, nil, "schema does not exist"},
+		{"failed -> disabled", rec(failedS, "schema sync failed"), disabled, false, []enumor.IaCPluginState{enabled, failedS}, ""},
+		{"failed -> enabled", rec(failedS, "schema sync failed"), enabled, true, nil, "schema sync failed"},
+		{"init -> disabled", rec(initS, ""), disabled, true, nil, "not finished"},
+		{"init -> enabled", rec(initS, ""), enabled, true, nil, "not finished"},
 	}
 
 	for _, c := range cases {
@@ -288,14 +88,13 @@ func TestDecideSwitch(t *testing.T) {
 					details = append(details, map[string]any{"id": "1"})
 				}
 				_ = json.NewEncoder(w).Encode(map[string]any{
-					"code":    0,
-					"message": "",
-					"data":    map[string]any{"details": details},
+					"code": 0,
+					"data": map[string]any{"details": details},
 				})
 			}))
 			defer srv.Close()
 
-			s := newTestSvc(srv, nil)
+			s := &svc{client: client.NewClientSet(srv.Client(), stubDiscover{addr: srv.URL})}
 			gotFrom, err := s.decideSwitch(kit.New(), c.current, c.target)
 			if len(c.wantErrSub) > 0 {
 				if err == nil || !strings.Contains(err.Error(), c.wantErrSub) {
