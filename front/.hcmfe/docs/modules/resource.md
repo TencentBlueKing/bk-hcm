@@ -49,3 +49,7 @@
 ## 明细约定
 
 优先在本文件用章节深化。**本轮只碰模块的一块、且本文件已有实质章节**时，优先拆 `modules/<id>/<topic>.md`（并行改同一模块时能少撞正文）；某块稳定超 80–120 行是兜底阈值。topic 文件首行写 `# 标题`、紧随一行摘要（TOC 据此渲染）。拆出后勿复制正文。
+
+## 子网同步
+
+子网列表 `src/views/resource/resource-manage/children/manage/subnet-manage.vue` 同时服务资源账号与业务两个视角；工具栏的「同步子网」入口内聚在该组件，复用 `components/sync-account-resource`，资源视角未选账号也可打开弹窗，选定厂商/账号时账号下拉只展示该厂商、全量账号时展示全部，业务视角以当前业务过滤账号并提交 `resources/subnet/sync_by_cond`。
