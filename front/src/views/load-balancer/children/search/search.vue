@@ -16,7 +16,14 @@ const emit = defineEmits<{
 }>();
 const attrs: any = useAttrs();
 
-const searchValue = ref<ISearchSelectValue>(buildSearchSelectValueBySearchQsCondition(props.condition, props.fields));
+const buildSearchValue = (condition?: ISearchCondition) => {
+  if (!condition) return [];
+  const fieldIdSet = new Set(props.fields.map((field) => field.id));
+  const filteredCondition = Object.fromEntries(Object.entries(condition).filter(([id]) => fieldIdSet.has(id)));
+  return buildSearchSelectValueBySearchQsCondition(filteredCondition, props.fields);
+};
+
+const searchValue = ref<ISearchSelectValue>(buildSearchValue(props.condition));
 
 const searchData = computed(() =>
   props.fields.map(({ id, name, option }) => ({
@@ -27,27 +34,36 @@ const searchData = computed(() =>
   })),
 );
 
-const triggerQuery = ref(true); // 是否触发emit（查询），主要用于视觉交互层面上的searchValue，数据交互层面还是取决于watch query中的condition
-const clear = (trigger = true) => {
-  searchValue.value = [];
-  triggerQuery.value = trigger;
+watch(
+  () => props.condition,
+  (condition) => {
+    if (condition === undefined) return;
+    searchValue.value = buildSearchValue(condition);
+  },
+);
+
+const handleUpdateModelValue = (val: ISearchSelectValue) => {
+  searchValue.value = val;
+  emit('search', val);
 };
 
-watch(searchValue, (val) => {
-  if (!triggerQuery.value) return;
-
-  emit('search', val);
-});
+const clear = (trigger = true) => {
+  searchValue.value = [];
+  if (trigger) {
+    emit('search', []);
+  }
+};
 
 defineExpose({ clear });
 </script>
 
 <template>
   <bk-search-select
-    v-model="searchValue"
+    :model-value="searchValue"
     :data="searchData"
     :validate-values="validateValues"
     v-bind="attrs"
     value-behavior="need-key"
+    @update:model-value="handleUpdateModelValue"
   />
 </template>

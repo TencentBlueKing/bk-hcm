@@ -173,6 +173,7 @@ const validateValues: ValidateValuesFunc = async (item, values) => {
 };
 
 const { pagination, getPageParams } = usePage();
+const defaultPageLimit = usePage(false).getDefaultPagination().limit;
 const searchQs = useSearchQs({ key: 'filter', properties: conditionProperties });
 
 const condition = ref<Record<string, any>>({});
@@ -210,21 +211,34 @@ const hasBindingStatus = (list: IListenerItem[]) => {
   return list.some((item) => item.binding_status === 'binding');
 };
 
-const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
+let requestSeq = 0;
+
+const asyncSetRsWeightStat = async (list: IListenerItem[], seq: number) => {
   const ids = list.map((item) => item.id);
   const map = await loadBalancerListenerStore.getListenersRsWeightStat(ids, currentGlobalBusinessId.value);
+  if (seq !== requestSeq) return;
   listenerList.value.forEach((item) => {
+    if (!map[item.id]) return;
     const { non_zero_weight_count, zero_weight_count, total_count: totalCount } = map[item.id];
     Object.assign(item, { non_zero_weight_count, zero_weight_count, rs_num: totalCount });
   });
 };
 
 const injectLoadBalancerFields = (list: IListenerItem[]) => {
-  if (!props.details) return;
+  if (!props.details || props.details.id !== props.lbId) return;
   list.forEach((item) => {
     Object.assign(item, { lb_cloud_id: props.details.cloud_id, lb_vip: getInstVip(props.details) });
   });
 };
+
+watch(
+  () => props.details,
+  () => {
+    if (listenerList.value.length > 0) {
+      injectLoadBalancerFields(listenerList.value);
+    }
+  },
+);
 
 const getDeleteBtnTooltip = (row: IListenerItem, noPerm: boolean) => {
   if (noPerm) return { disabled: true };
@@ -262,14 +276,6 @@ const handleSingleDelete = (row: any) => {
   });
 };
 
-const searchRef = useTemplateRef<typeof Search>('search');
-watch(
-  () => props.lbId,
-  () => {
-    deletingListenerIds.value = new Set();
-    searchRef.value?.clear(false);
-  },
-);
 const handleSearch = (val: ISearchSelectValue) => {
   searchQs.set(
     getSimpleConditionBySearchSelect(val, [
@@ -285,28 +291,32 @@ const handleSearch = (val: ISearchSelectValue) => {
 
 const loading = ref(false);
 watch(
-  () => route.query,
-  async (query) => {
+  () => [props.lbId, route.query] as const,
+  async ([lbId, query]) => {
+    if (!lbId) return;
     // 避免多次路由导致多次请求
     if (query[ActiveQueryKey.DETAILS] && ClbDetailsTabKey.LISTENER !== query[ActiveQueryKey.DETAILS]) return;
     const { detailShow } = query;
     condition.value = searchQs.get(query, {});
     pagination.current = Number(query.page) || 1;
-    pagination.limit = Number(query.limit) || pagination.limit;
+    pagination.limit = Number(query.limit) || defaultPageLimit;
 
     const sort = (query.sort || 'created_at') as string;
     const order = (query.order || 'DESC') as string;
 
+    requestSeq += 1;
+    const seq = requestSeq;
     loading.value = true;
     try {
       const { list, count } = await loadBalancerListenerStore.getListenerList(
-        props.lbId,
+        lbId,
         {
           filter: transformSimpleCondition(condition.value, conditionProperties),
           page: getPageParams(pagination, { sort, order }),
         },
         currentGlobalBusinessId.value,
       );
+      if (seq !== requestSeq) return;
 
       listenerList.value = list;
       pagination.count = count;
@@ -315,7 +325,7 @@ watch(
       selections.value = [];
 
       if (list.length > 0) {
-        asyncSetRsWeightStat(list);
+        asyncSetRsWeightStat(list, seq);
         injectLoadBalancerFields(list);
         if (firstIn && detailShow) {
           showListenerDetail(list[0]);
@@ -329,7 +339,9 @@ watch(
         taskPoll.pause();
       }
     } finally {
-      loading.value = false;
+      if (seq === requestSeq) {
+        loading.value = false;
+      }
     }
   },
   { immediate: true },
@@ -366,6 +378,22 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
 
 // 详情
 const detailsSidesliderState = reactive({ isShow: false, isHidden: true, rowData: null });
+
+// 仅在切换 CLB 实例（lbId 变化）时重置轮询与弹层状态；同实例内 query 变化（翻页/筛选/轮询刷新 _t）不应触发清理
+watch(
+  () => props.lbId,
+  () => {
+    deletingListenerIds.value = new Set();
+    taskPoll.pause();
+    taskPoll.reset();
+    selections.value = [];
+    Object.assign(addSidesliderState, { isShow: false, isHidden: true, isEdit: false, initialModel: null });
+    Object.assign(batchDeleteDialogState, { isShow: false, isHidden: true });
+    Object.assign(syncDialogState, { isShow: false, isHidden: true });
+    Object.assign(detailsSidesliderState, { isShow: false, isHidden: true, rowData: null });
+  },
+);
+
 const handleUpdateListenerSuccess = async (id: string) => {
   const { query } = route;
   const sort = (query.sort || 'created_at') as string;
@@ -402,7 +430,6 @@ const handleUpdateListenerSuccess = async (id: string) => {
       </div>
       <search
         class="search"
-        ref="search"
         :fields="searchFields"
         :condition="condition"
         :validate-values="validateValues"
@@ -410,6 +437,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
       />
     </div>
     <data-list
+      :key="props.lbId"
       ref="dataList"
       class="data-list"
       v-bkloading="{ loading }"
