@@ -19,13 +19,35 @@ export interface MockApisOptions {
   idleVipsFail?: boolean;
   /** idle_vips/list 响应延迟，模拟慢接口 */
   idleVipsDelayMs?: number;
+  /** 证书列表数据，默认使用共享 mock */
+  certificates?: typeof mockData.certificates;
 }
+
+const matchCertificateRule = (cert: (typeof mockData.certificates)[number], rule: any): boolean => {
+  if (rule?.op === 'or') return (rule.rules ?? []).some((item: any) => matchCertificateRule(cert, item));
+  const value = cert[rule.field as keyof typeof cert];
+  if (rule.op === 'eq') return value === rule.value;
+  if (rule.op === 'in') return Array.isArray(rule.value) && rule.value.includes(value);
+  if (rule.op === 'cs' || rule.op === 'cis') {
+    const source = String(value ?? '');
+    const keyword = String(rule.value ?? '');
+    return rule.op === 'cis' ? source.toLowerCase().includes(keyword.toLowerCase()) : source.includes(keyword);
+  }
+  return true;
+};
+
+const filterCertificates = (certificates: typeof mockData.certificates, filter: any) =>
+  (filter?.rules ?? []).reduce(
+    (result: typeof mockData.certificates, rule: any) => result.filter((cert) => matchCertificateRule(cert, rule)),
+    certificates,
+  );
 
 export async function mockApis(page: Page, options: MockApisOptions = {}): Promise<void> {
   await page.addInitScript(() => localStorage.setItem('bk-hcm-release-note-version', 'e2e'));
   let tagsCallCount = 0;
   await page.route('**/api/**', async (route) => {
     const { pathname } = new URL(route.request().url());
+    const requestBody = route.request().postDataJSON();
     let data: unknown = { details: [], count: 0 };
     if (pathname === '/api/v1/web/auth/verify') {
       const resources = (route.request().postDataJSON() as { resources?: unknown[] })?.resources ?? [];
@@ -51,7 +73,8 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
     } else if (pathname.endsWith('/load_balancers/quotas')) {
       data = [];
     } else if (pathname.endsWith('/exclusive_clusters/tags/list')) {
-      const callIndex = tagsCallCount++;
+      const callIndex = tagsCallCount;
+      tagsCallCount += 1;
       if (options.clusterTagsFail) {
         return route.fulfill({ status: 500, contentType: 'application/json', body: 'mock tags failure' });
       }
@@ -72,6 +95,18 @@ export async function mockApis(page: Page, options: MockApisOptions = {}): Promi
       data = { details: vips, count: vips.length };
     } else if (pathname.endsWith('/bandwidth_packages/query')) {
       data = { packages: [], total_count: 0 };
+    } else if (pathname.endsWith('/certs/list')) {
+      const certificates = filterCertificates(options.certificates ?? mockData.certificates, requestBody?.filter);
+      const page = requestBody?.page ?? {};
+      if (page.count === true) {
+        data = { details: [], count: certificates.length };
+      } else {
+        const start = Number(page.start) || 0;
+        const limit = Number(page.limit) || certificates.length;
+        data = { details: certificates.slice(start, start + limit), count: certificates.length };
+      }
+    } else if (/\/load_balancers\/clb-e2e$/.test(pathname)) {
+      data = mockData.clbDetails;
     }
     return route.fulfill({
       contentType: 'application/json',

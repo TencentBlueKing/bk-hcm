@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import { computed, h, inject, reactive, Ref } from 'vue';
+import { computed, h, inject, reactive, ref, Ref, watch } from 'vue';
+import { Tag } from 'bkui-vue';
 import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerDetails, IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { BindingStatusType, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol, SESSION_TYPE_NAME } from '../../constants';
 import { DisplayFieldType, DisplayFieldFactory } from '../../children/display/field-factory';
 import { cloneDeep } from 'lodash';
+import http from '@/http';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
 import { IAuthSign } from '@/common/auth-service';
+import { timeFormatter } from '@/common/util';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { QueryRuleOPEnum } from '@/typings';
 
 import Panel from '@/components/panel';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import GridDetails from '../../children/display/grid-details.vue';
 import EditListenerSideslider from '../add.vue';
 
@@ -50,11 +56,92 @@ const baseInfoFields = computed(() => {
   });
 });
 
-const certInfoIds = ['certificate.ssl_mode', 'certificate.ca_cloud_id', 'certificate.cert_cloud_ids'];
-const certInfoFields = certInfoIds.map((id) => {
-  const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
-  return property;
+interface ICertDetail {
+  cloud_id: string;
+  name?: string;
+  cert_status?: string;
+  encrypt_algorithm?: string;
+  cloud_expired_time?: string;
+}
+
+const { getBusinessApiPath } = useWhereAmI();
+const certDetails = ref<Record<string, ICertDetail>>({});
+const certDetailLoading = ref(false);
+const certificateIds = computed(() => {
+  const certificate = props.listenerDetails?.certificate;
+  return [...new Set([certificate?.ca_cloud_id, ...(certificate?.cert_cloud_ids ?? [])].filter(Boolean))] as string[];
 });
+let certRequestId = 0;
+const loadCertificateDetails = async (ids: string[]) => {
+  certRequestId += 1;
+  const requestId = certRequestId;
+  if (!ids.length) {
+    certDetails.value = {};
+    return;
+  }
+  certDetailLoading.value = true;
+  try {
+    const res = await http.post(`/api/v1/cloud/${getBusinessApiPath()}certs/list`, {
+      filter: {
+        op: QueryRuleOPEnum.AND,
+        rules: [
+          { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.listenerDetails.account_id },
+          { field: 'cloud_id', op: QueryRuleOPEnum.IN, value: ids },
+        ],
+      },
+      page: { count: false, start: 0, limit: ids.length, sort: 'created_at', order: 'DESC' },
+    });
+    if (requestId !== certRequestId) return;
+    certDetails.value = Object.fromEntries((res.data?.details ?? []).map((item: ICertDetail) => [item.cloud_id, item]));
+  } catch (error) {
+    console.error(error);
+  } finally {
+    if (requestId === certRequestId) certDetailLoading.value = false;
+  }
+};
+watch(certificateIds, loadCertificateDetails, { immediate: true });
+
+const renderCertificates = (ids: string[]) => {
+  if (!ids.length) return '--';
+  return h(
+    'div',
+    { class: 'cert-detail-list' },
+    ids.map((id) => {
+      const cert = certDetails.value[id];
+      const fullLabel = `${id}（${cert?.name || '--'}）`;
+      return h('div', { class: 'cert-detail-item', key: id }, [
+        h('div', { class: 'cert-detail-main' }, [
+          h('span', { class: 'cert-detail-label', title: fullLabel }, [
+            h('span', id),
+            h('span', '（'),
+            h('span', { class: 'cert-detail-name' }, cert?.name || '--'),
+            h('span', '）'),
+          ]),
+          h(CopyToClipboard, { content: id }),
+          cert?.encrypt_algorithm ? h(Tag, { theme: 'info' }, () => cert.encrypt_algorithm) : null,
+          cert?.cert_status === '3' ? h(Tag, { theme: 'danger' }, () => '已过期') : null,
+        ]),
+        h('div', { class: 'cert-detail-expire' }, `到期 ${timeFormatter(cert?.cloud_expired_time, 'YYYY-MM-DD')}`),
+      ]);
+    }),
+  );
+};
+const certInfoIds = ['certificate.ssl_mode', 'certificate.ca_cloud_id', 'certificate.cert_cloud_ids'];
+const certInfoFieldsConfig: Record<string, Partial<ModelPropertyDisplay>> = {
+  'certificate.ca_cloud_id': {
+    render: (data: IListenerDetails) =>
+      renderCertificates(data?.certificate?.ca_cloud_id ? [data.certificate.ca_cloud_id] : []),
+  },
+  'certificate.cert_cloud_ids': {
+    render: (data: IListenerDetails) => renderCertificates(data?.certificate?.cert_cloud_ids ?? []),
+  },
+};
+const certInfoFields = computed(() =>
+  certInfoIds.map((id) => {
+    const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
+    return { ...property, ...certInfoFieldsConfig[id] };
+  }),
+);
 
 const sessionIds = ['session_expire_time'];
 const sessionFieldsConfig: Record<string, Partial<ModelPropertyDisplay>> = {
@@ -149,7 +236,7 @@ const openTargetGroupHealthCheckPage = () => {
       <grid-details
         :fields="certInfoFields"
         :details="listenerDetails"
-        :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
+        :is-loading="loadBalancerListenerStore.listenerDetailsLoading || certDetailLoading"
       />
     </panel>
     <!-- 七层无会话保持和健康检查 -->
@@ -229,6 +316,37 @@ const openTargetGroupHealthCheckPage = () => {
       color: #313238;
       font-weight: 700;
     }
+  }
+}
+
+.cert-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .cert-detail-main {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .cert-detail-label {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .cert-detail-name {
+    display: inline-block;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cert-detail-expire {
+    color: #979ba5;
+    font-size: 12px;
   }
 }
 

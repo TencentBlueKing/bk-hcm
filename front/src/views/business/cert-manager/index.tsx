@@ -158,7 +158,7 @@ export default defineComponent({
             id: 'name',
           },
           {
-            name: '资源ID',
+            name: '证书ID',
             id: 'cloud_id',
           },
           {
@@ -380,7 +380,7 @@ export default defineComponent({
     };
     // 删除指定证书
     const handleDeleteCert = async (cert: any) => {
-      Confirm('请确定删除证书', `将删除证书【${cert.name}】`, () => {
+      Confirm('请确定删除证书', `将删除证书【${cert.cloud_id}（${cert.name || '--'}）】`, () => {
         resourceStore.delete('certs', cert.id).then(() => {
           Message({ theme: 'success', message: '证书删除成功' });
           getListData();
@@ -438,7 +438,9 @@ export default defineComponent({
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={handleSingleDistributionConfirm}
           isLoading={isDialogBtnLoading.value}>
-          <p class='mb16'>当前操作证书为：{currentOperateItem.value?.name}</p>
+          <p class='mb16'>
+            当前操作证书为：{currentOperateItem.value?.cloud_id}（{currentOperateItem.value?.name || '--'}）
+          </p>
           <p class='mb6'>请选择所需分配的目标业务</p>
           <hcm-form-business data={accountBizList.value} v-model={selectedBizId.value} />
         </bk-dialog>

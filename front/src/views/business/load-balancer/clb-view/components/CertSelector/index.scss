@@ -1,0 +1,74 @@
+.cert-selector {
+  .bk-select-tag .bk-tag {
+    max-width: none;
+  }
+
+  .cert-selector-selected-label {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    white-space: nowrap;
+  }
+
+  .cert-selector-selected-name {
+    display: inline-block;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.cert-selector-option {
+  width: 100%;
+  padding: 6px 0;
+  line-height: 20px;
+  white-space: normal;
+
+  .cert-selector-option-main {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #313238;
+  }
+
+  .cert-selector-option-id {
+    flex: none;
+  }
+
+  .cert-selector-option-secondary {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    margin-top: 2px;
+    color: #979ba5;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .cert-selector-option-name {
+    flex: none;
+    width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cert-selector-option-domain {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cert-selector-option-expire {
+    flex: none;
+  }
+}
+
+.bk-select-option.is-disabled {
+  .cert-selector-option-main,
+  .cert-selector-option-secondary {
+    color: #c4c6cc;
+  }
+}

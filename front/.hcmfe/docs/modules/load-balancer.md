@@ -31,6 +31,7 @@ CLB 成功/失败反馈在模块内 `src/views/load-balancer/use-clb-sync-feedba
 ## 明细目录
 
 <!-- bkdevbuddy:toc:start -->
+- [证书选择与详情展示](load-balancer/cert-selector.md) — 证书选择器以证书 ID 为主识别字段，并统一监听器编辑、域名编辑和监听器详情的展示口径。
 <!-- bkdevbuddy:toc:end -->
 
 （上方标记块由 `bkdevbuddy docs deepen` 按 `modules/<id>/` 目录自动生成，**请勿手工编辑**；拆出 topic 后 deepen 一次即出现链接。）
