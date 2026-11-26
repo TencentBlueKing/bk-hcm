@@ -22,6 +22,7 @@ spec:
     - {{ .Values.cloudserver.log.logDir }}/*
     - {{ .Values.taskserver.log.logDir }}/*
     - {{ .Values.accountserver.log.logDir }}/*
+    - {{ .Values.iacserver.log.logDir }}/*
   {{- end }}
 {{- if .Values.bkLogConfig.std.enabled }}
 ---

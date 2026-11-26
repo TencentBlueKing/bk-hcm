@@ -641,6 +641,47 @@ accountserver:
         nodePort:
   port: 80
 
+iacserver:
+  ## 镜像
+  ##
+  image:
+    repository: blueking/bk-hcm-iacserver
+    tag:
+  ## 日志配置
+  ##
+  log:
+    alsoToStdErr: true
+    logDir: /data/hcm/logs
+    maxPerFileSizeMB: 1024
+    maxPerLineSizeKB: 2
+    maxFileNum: 5
+    logAppend: false
+    toStdErr: false
+    verbosity: 0
+  ## pod配置
+  ##
+  replicas: 1
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+  service:
+    type: "ClusterIP"
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+  port: 80
+
 ## appCode
 appCode: bk-hcm
 ## appSecret

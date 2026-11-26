@@ -249,3 +249,22 @@ func AccountServer() AccountServerSetting {
 
 	return *s
 }
+
+// IacServer return iac server Setting.
+func IacServer() IacServerSetting {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "runtime not ready, return empty iac server setting")
+		return IacServerSetting{}
+	}
+
+	s, ok := rt.settings.(*IacServerSetting)
+	if !ok {
+		logs.ErrorDepthf(1, "current %s service can not get iac server setting", ServiceName())
+		return IacServerSetting{}
+	}
+
+	return *s
+}
