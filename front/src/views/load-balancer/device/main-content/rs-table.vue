@@ -12,6 +12,7 @@ import RsIpGroup from './children/rs-ip-group.vue';
 import ActionItem from '@/views/load-balancer/children/action-item.vue';
 import BatchRsOperationDialog from '@/views/load-balancer/device/main-content/children/batch-rs-operation-dialog.vue';
 import RsBatchExportButton from '@/views/load-balancer/children/export/rs-batch-button.vue';
+import BatchCopy from '@/views/load-balancer/device/main-content/children/batch-copy.vue';
 import { localPaginate } from '@/utils/search';
 
 const props = defineProps<{ condition: ILoadBalanceDeviceCondition }>();
@@ -34,6 +35,12 @@ const rsIpGroupRef = ref(null);
 
 const selections = computed(() => rsIpGroupRef.value?.selections ?? []);
 const isExceeded = computed(() => rsIpGroupRef.value?.isExceeded);
+const rsCopyItems = computed(() => [
+  {
+    text: t('RS IP'),
+    content: selections.value.map((item: IRsItem) => item.ip).join('\n'),
+  },
+]);
 
 const batchOperationDialog = reactive({ isShow: false, isHidden: true, type: RsDeviceType.INFO });
 const actionConfig: Partial<Record<RsDeviceType, ActionItemType>> = {
@@ -70,9 +77,22 @@ const actionConfig: Partial<Record<RsDeviceType, ActionItemType>> = {
         bizId: currentGlobalBusinessId.value,
       }),
   },
+  [RsDeviceType.COPY]: {
+    value: RsDeviceType.COPY,
+    render: () =>
+      h(BatchCopy, {
+        items: rsCopyItems.value,
+        disabled: selections.value.length === 0,
+      }),
+  },
 };
 const listenerActionList = computed<ActionItemType[]>(() => {
-  return [{ value: RsDeviceType.ADJUST }, { value: RsDeviceType.UNBIND }, { value: RsDeviceType.BATCH_EXPORT }];
+  return [
+    { value: RsDeviceType.ADJUST },
+    { value: RsDeviceType.UNBIND },
+    { value: RsDeviceType.BATCH_EXPORT },
+    { value: RsDeviceType.COPY },
+  ];
 });
 const actionList = computed<ActionItemType[]>(() => {
   return listenerActionList.value.reduce((prev, curr) => {

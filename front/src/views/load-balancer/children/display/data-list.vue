@@ -58,8 +58,11 @@ const clearSelection = () => {
 const getSelection = () => {
   return tableRef.value?.getSelection();
 };
+const toggleRowSelection = (row: any, selected?: boolean) => {
+  tableRef.value?.toggleRowSelection?.(row, selected);
+};
 
-defineExpose({ clearSelection, getSelection });
+defineExpose({ clearSelection, getSelection, toggleRowSelection });
 </script>
 
 <template>

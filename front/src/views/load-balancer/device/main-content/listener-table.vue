@@ -87,6 +87,24 @@ const selections = computed(() => {
   });
   return values;
 });
+const listenerCopyItems = computed(() => [
+  {
+    text: t('监听器端口'),
+    content: selections.value.map((item) => item.port).join('\n'),
+  },
+  {
+    text: t('监听器协议'),
+    content: selections.value.map((item) => item.protocol).join('\n'),
+  },
+  {
+    text: t('负载均衡VIP'),
+    content: selections.value.map((item) => item.lb_vip).join('\n'),
+  },
+  {
+    text: t('负载均衡ID'),
+    content: selections.value.map((item) => item.lb_cloud_id).join('\n'),
+  },
+]);
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
@@ -110,7 +128,11 @@ const actionConfig: Record<ListenerDeviceType, ActionItemType> = {
   [ListenerDeviceType.COPY]: {
     label: t('复制'),
     value: ListenerDeviceType.COPY,
-    render: () => h(BatchCopy, { selections: moreData.value ? [] : selections.value }),
+    render: () =>
+      h(BatchCopy, {
+        items: listenerCopyItems.value,
+        disabled: moreData.value || selections.value.length === 0,
+      }),
   },
 };
 const listenerActionList = computed<ActionItemType[]>(() => {

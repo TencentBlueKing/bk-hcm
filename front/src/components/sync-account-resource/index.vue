@@ -16,6 +16,7 @@
           :biz-id="businessId"
           :resource-type="resourceType"
           :disabled="globalDisabled"
+          v-bind="vendor ? { vendor, filter: accountFilter } : {}"
           @change="handleAccountChange"
         />
       </bk-form-item>
@@ -71,6 +72,7 @@ interface IProps {
   desc: string;
   resourceType?: ResourceTypeEnum; // 用于账号过滤
   businessId?: number; // 用于账号过滤
+  vendor?: VendorEnum; // 指定云厂商时，账号列表只展示该厂商
   resourceName: string; // load_balancer | security_group
   multipleRegion?: boolean;
   multipleResourceGroup?: boolean;
@@ -97,6 +99,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
+
+const accountFilter = computed(() =>
+  props.vendor ? (list: IAccountItem[]) => list.filter((item) => item.vendor === props.vendor) : undefined,
+);
 
 const globalDisabled = computed(() => Boolean(props.initialModel?.cloud_ids?.length));
 

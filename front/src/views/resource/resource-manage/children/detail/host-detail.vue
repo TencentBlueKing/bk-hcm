@@ -56,7 +56,7 @@ const cvmInfo = ref({
 });
 
 const { loading, detail, getDetail } = useDetail('cvms', hostId.value);
-const { authPending, updateSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
+const { authPending, updateSign, deleteSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
 
 watchEffect(() => {
   if (hostId.value) {
@@ -249,30 +249,32 @@ const bktoolTipsOptions = computed(() => {
         {{ t('关机') }}
       </bk-button>
     </hcm-auth>
-    <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
-      <bk-dropdown
-        trigger="click"
-        :disabled="noPerm || disabledOption || cvmInfo.stop.status.includes(detail.status)"
-        :popover-options="{ clickContentAutoHide: true }"
+    <bk-dropdown
+      trigger="click"
+      :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
+      :popover-options="{ clickContentAutoHide: true }"
+    >
+      <bk-button
+        v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
+        :disabled="disabledOption || cvmInfo.stop.status.includes(detail.status)"
       >
-        <bk-button
-          v-bk-tooltips="(!noPerm && bktoolTipsOptions) || { disabled: true }"
-          :disabled="noPerm || disabledOption || cvmInfo.stop.status.includes(detail.status)"
-        >
-          ⋮
-        </bk-button>
-        <template #content>
-          <bk-dropdown-menu>
-            <bk-dropdown-item @click="handleCvmOperate('destroy')">
+        ⋮
+      </bk-button>
+      <template #content>
+        <bk-dropdown-menu>
+          <hcm-auth block :sign="deleteSign" :ignore="authPending" v-slot="{ noPerm }">
+            <bk-dropdown-item @click="() => !noPerm && handleCvmOperate('destroy')">
               {{ t('回收') }}
             </bk-dropdown-item>
-            <bk-dropdown-item @click="handleCvmOperate('reboot')">
+          </hcm-auth>
+          <hcm-auth block :sign="updateSign" :ignore="authPending" v-slot="{ noPerm }">
+            <bk-dropdown-item @click="() => !noPerm && handleCvmOperate('reboot')">
               {{ t('重启') }}
             </bk-dropdown-item>
-          </bk-dropdown-menu>
-        </template>
-      </bk-dropdown>
-    </hcm-auth>
+          </hcm-auth>
+        </bk-dropdown-menu>
+      </template>
+    </bk-dropdown>
   </Teleport>
 
   <div class="detail-content-wrap">
