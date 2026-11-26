@@ -33,7 +33,7 @@ func TestBuildTCloudLBBizUpdates(t *testing.T) {
 	cases := []struct {
 		name         string
 		lbs          []corelb.BaseLoadBalancer
-		wantUpdates  []*tcloudLBUpdate
+		wantIDs      []string
 		wantOtherBiz map[string]int64
 	}{
 		{
@@ -42,7 +42,7 @@ func TestBuildTCloudLBBizUpdates(t *testing.T) {
 				{ID: "id-1", CloudID: "lb-1", BkBizID: constant.UnassignedBiz},
 				{ID: "id-2", CloudID: "lb-2", BkBizID: constant.UnassignedBiz},
 			},
-			wantUpdates:  []*tcloudLBUpdate{{ID: "id-1", BkBizID: reqBiz}, {ID: "id-2", BkBizID: reqBiz}},
+			wantIDs:      []string{"id-1", "id-2"},
 			wantOtherBiz: map[string]int64{},
 		},
 		{
@@ -51,7 +51,7 @@ func TestBuildTCloudLBBizUpdates(t *testing.T) {
 				{ID: "id-1", CloudID: "lb-1", BkBizID: constant.UnassignedBiz},
 				{ID: "id-2", CloudID: "lb-2", BkBizID: 200},
 			},
-			wantUpdates:  []*tcloudLBUpdate{{ID: "id-1", BkBizID: reqBiz}},
+			wantIDs:      []string{"id-1"},
 			wantOtherBiz: map[string]int64{"lb-2": 200},
 		},
 		{
@@ -60,20 +60,20 @@ func TestBuildTCloudLBBizUpdates(t *testing.T) {
 				{ID: "id-1", CloudID: "lb-1", BkBizID: reqBiz},
 				{ID: "id-2", CloudID: "lb-2", BkBizID: reqBiz},
 			},
-			wantUpdates:  []*tcloudLBUpdate{},
+			wantIDs:      []string{},
 			wantOtherBiz: map[string]int64{},
 		},
 		{
 			name:         "no records",
-			wantUpdates:  []*tcloudLBUpdate{},
+			wantIDs:      []string{},
 			wantOtherBiz: map[string]int64{},
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			updates, otherBiz := buildTCloudLBBizUpdates(c.lbs, reqBiz)
-			assert.Equal(t, c.wantUpdates, updates)
+			ids, otherBiz := buildTCloudLBBizUpdates(c.lbs, reqBiz)
+			assert.Equal(t, c.wantIDs, ids)
 			assert.Equal(t, c.wantOtherBiz, otherBiz)
 		})
 	}

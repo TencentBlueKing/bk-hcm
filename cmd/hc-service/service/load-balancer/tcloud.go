@@ -209,9 +209,15 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
-	// 本地记录只由同步按云上数据新建，云上查不到的不会被建出，也不会被删除
-	invisibleIDs := tcloud.WaitLoadBalancerVisible(cts.Kit, tcloudAdpt, req.Region, result.SuccessCloudIDs, nil)
-	if err = svc.lbSync(cts.Kit, tcloudAdpt, req.AccountID, req.Region, result.SuccessCloudIDs); err != nil {
+	// 本地记录只由同步按云上数据新建，云上查不到的不会被建出，也不会被删除。
+	// 最后一轮已经齐套时，把查到的 CLB 交给同步，避免再查一次云。
+	invisibleIDs, prefetched := tcloud.WaitLoadBalancerVisible(cts.Kit, tcloudAdpt, req.Region,
+		result.SuccessCloudIDs, nil)
+	if err = svc.syncTCloudLB(cts.Kit, tcloudAdpt, &synctcloud.SyncBaseParams{
+		AccountID: req.AccountID,
+		Region:    req.Region,
+		CloudIDs:  result.SuccessCloudIDs,
+	}, &synctcloud.SyncLBOption{PrefetchedLB: prefetched}); err != nil {
 		return nil, fmt.Errorf("lb instances have been created on cloud, but sync failed, cloud_ids: %v, err: %v",
 			result.SuccessCloudIDs, err)
 	}
@@ -395,16 +401,24 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 
 }
 
-// 同步云上资源
-func (svc *clbSvc) lbSync(kt *kit.Kit, tcloud tcloud.TCloud, accountID string, region string, lbIDs []string) error {
-
-	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
-	params := &synctcloud.SyncBaseParams{
+// lbSync 同步指定云 ID 的负载均衡自身属性。
+func (svc *clbSvc) lbSync(kt *kit.Kit, client tcloud.TCloud, accountID, region string, cloudIDs []string) error {
+	return svc.syncTCloudLB(kt, client, &synctcloud.SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
-		CloudIDs:  lbIDs,
+		CloudIDs:  cloudIDs,
+	}, nil)
+}
+
+// syncTCloudLB 同步指定负载均衡自身属性。PrefetchedLB 与云 ID 齐套时不再查询云上 CLB。
+func (svc *clbSvc) syncTCloudLB(kt *kit.Kit, client tcloud.TCloud, params *synctcloud.SyncBaseParams,
+	opt *synctcloud.SyncLBOption) error {
+
+	if opt == nil || len(opt.PrefetchedLB) != len(params.CloudIDs) {
+		opt = &synctcloud.SyncLBOption{}
 	}
-	_, err := syncClient.LoadBalancer(kt, params, &synctcloud.SyncLBOption{})
+	syncClient := synctcloud.NewClient(svc.dataCli, client)
+	_, err := syncClient.LoadBalancer(kt, params, opt)
 	if err != nil {
 		logs.Errorf("sync load  balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return err

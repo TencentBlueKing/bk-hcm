@@ -32,89 +32,107 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// LoadBalancerLister 只包含查询 CLB 列表能力的适配器
-type LoadBalancerLister interface {
-	ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error)
+// clbVisiblePollResult 是一轮查询的结果：每个目标云 ID 是否可见，以及本轮查到的 CLB。
+type clbVisiblePollResult struct {
+	visible map[string]bool
+	lbs     []typelb.TCloudClb
 }
 
-var _ LoadBalancerLister = TCloud(nil)
+// clbVisibleDoneResult 是等待结束时的结果。lbs 仅在目标云 ID 全部可见时有值。
+type clbVisibleDoneResult struct {
+	base poller.BaseDoneResult
+	lbs  []typelb.TCloudClb
+}
 
-// WaitLoadBalancerVisible 等待 CLB 在云上可查询，返回到达等待上限时仍查不到的云 ID，不返回错误。
-// opt 为空时使用 types.NewCLBVisibleWaitPollerOption()。
-func WaitLoadBalancerVisible(kt *kit.Kit, lister LoadBalancerLister, region string, cloudIDs []string,
-	opt *poller.PollUntilDoneOption) []string {
+// WaitLoadBalancerVisible 等待 CLB 在云上可查询，不返回错误。
+// 返回仍查不到的云 ID；目标全部可见时，同时返回最后一轮查到的 CLB，供同步直接使用。
+// 未齐套或查询失败时，查到的 CLB 为 nil。opt 为空时使用 types.NewCLBVisibleWaitPollerOption()。
+func WaitLoadBalancerVisible(kt *kit.Kit, client TCloud, region string, cloudIDs []string,
+	opt *poller.PollUntilDoneOption,
+) ([]string, []typelb.TCloudClb) {
 
 	if len(cloudIDs) == 0 {
-		return nil
+		return nil, nil
 	}
 	if opt == nil {
 		opt = types.NewCLBVisibleWaitPollerOption()
 	}
 
-	waitPoller := poller.Poller[LoadBalancerLister, map[string]bool, poller.BaseDoneResult]{
+	waitPoller := poller.Poller[TCloud, clbVisiblePollResult, clbVisibleDoneResult]{
 		Handler: &clbVisibleWaitHandler{region: region},
 	}
-	result, err := waitPoller.PollUntilDone(lister, kt, cvt.SliceToPtr(cloudIDs), opt)
+	result, err := waitPoller.PollUntilDone(client, kt, cvt.SliceToPtr(cloudIDs), opt)
 	if err != nil || result == nil {
 		logs.Warnf("wait lb visible on cloud failed, treat all as invisible, region: %s, cloud_ids: %v, err: %v, "+
 			"rid: %s", region, cloudIDs, err, kt.Rid)
-		return slices.Clone(cloudIDs)
+		return slices.Clone(cloudIDs), nil
 	}
 
-	if len(result.UnknownCloudIDs) > 0 {
+	if len(result.base.UnknownCloudIDs) > 0 {
 		logs.Warnf("lb still invisible on cloud after waiting, region: %s, invisible: %v, cloud_ids: %v, rid: %s",
-			region, result.UnknownCloudIDs, cloudIDs, kt.Rid)
+			region, result.base.UnknownCloudIDs, cloudIDs, kt.Rid)
+		return result.base.UnknownCloudIDs, nil
 	}
-	return result.UnknownCloudIDs
+	return nil, result.lbs
 }
 
-var _ poller.PollingHandler[LoadBalancerLister, map[string]bool, poller.BaseDoneResult] = new(clbVisibleWaitHandler)
+var _ poller.PollingHandler[TCloud, clbVisiblePollResult, clbVisibleDoneResult] = new(clbVisibleWaitHandler)
 
 type clbVisibleWaitHandler struct {
 	region string
 }
 
-// Done 全部云 ID 可查询时返回 true；结果始终非空，仍查不到的云 ID 放入 UnknownCloudIDs
-func (h *clbVisibleWaitHandler) Done(visibleMap map[string]bool) (bool, *poller.BaseDoneResult) {
-	result := &poller.BaseDoneResult{
-		SuccessCloudIDs: make([]string, 0, len(visibleMap)),
-		UnknownCloudIDs: make([]string, 0),
+// Done 全部云 ID 可查询时返回 true；结果始终非空，仍查不到的云 ID 放入 UnknownCloudIDs。
+// 全部可见时带上本轮查到的 CLB。
+func (h *clbVisibleWaitHandler) Done(polled clbVisiblePollResult) (bool, *clbVisibleDoneResult) {
+	result := &clbVisibleDoneResult{
+		base: poller.BaseDoneResult{
+			SuccessCloudIDs: make([]string, 0, len(polled.visible)),
+			UnknownCloudIDs: make([]string, 0),
+		},
 	}
-	for cloudID, visible := range visibleMap {
+	for cloudID, visible := range polled.visible {
 		if visible {
-			result.SuccessCloudIDs = append(result.SuccessCloudIDs, cloudID)
+			result.base.SuccessCloudIDs = append(result.base.SuccessCloudIDs, cloudID)
 			continue
 		}
-		result.UnknownCloudIDs = append(result.UnknownCloudIDs, cloudID)
+		result.base.UnknownCloudIDs = append(result.base.UnknownCloudIDs, cloudID)
 	}
-	slices.Sort(result.SuccessCloudIDs)
-	slices.Sort(result.UnknownCloudIDs)
+	slices.Sort(result.base.SuccessCloudIDs)
+	slices.Sort(result.base.UnknownCloudIDs)
 
-	return len(result.UnknownCloudIDs) == 0, result
+	allVisible := len(result.base.UnknownCloudIDs) == 0
+	if allVisible {
+		result.lbs = polled.lbs
+	}
+	return allVisible, result
 }
 
-// Poll 按批查询云上 CLB，返回每个目标云 ID 是否可查询
-func (h *clbVisibleWaitHandler) Poll(lister LoadBalancerLister, kt *kit.Kit, cloudIDs []*string) (
-	map[string]bool, error) {
-
+// Poll 按批查询云上 CLB，返回每个目标云 ID 是否可查询，以及本轮查到的目标 CLB。
+func (h *clbVisibleWaitHandler) Poll(client TCloud, kt *kit.Kit, cloudIDs []*string) (clbVisiblePollResult, error) {
 	visibleMap := make(map[string]bool, len(cloudIDs))
 	for _, cloudID := range cloudIDs {
 		visibleMap[cvt.PtrToVal(cloudID)] = false
 	}
+	collected := make([]typelb.TCloudClb, 0, len(cloudIDs))
 
 	for _, batch := range slice.Split(cvt.PtrToSlice(cloudIDs), constant.TCLBDescribeMax) {
 		opt := &typelb.TCloudListOption{Region: h.region, CloudIDs: batch}
-		lbs, err := lister.ListLoadBalancer(kt, opt)
+		lbs, err := client.ListLoadBalancer(kt, opt)
 		if err != nil {
 			logs.Warnf("list lb for visible wait failed, region: %s, cloud_ids: %v, err: %v, rid: %s",
 				h.region, batch, err, kt.Rid)
-			return nil, err
+			return clbVisiblePollResult{}, err
 		}
 		for _, lb := range lbs {
-			if _, ok := visibleMap[lb.GetCloudID()]; ok {
-				visibleMap[lb.GetCloudID()] = true
+			cloudID := lb.GetCloudID()
+			visible, ok := visibleMap[cloudID]
+			if !ok || visible {
+				continue
 			}
+			visibleMap[cloudID] = true
+			collected = append(collected, lb)
 		}
 	}
-	return visibleMap, nil
+	return clbVisiblePollResult{visible: visibleMap, lbs: collected}, nil
 }

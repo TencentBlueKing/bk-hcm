@@ -31,8 +31,6 @@ import (
 	"hcm/pkg/logs"
 )
 
-type tcloudLBUpdate = dataproto.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]
-
 // fillTCloudLBBiz 同步建好本地记录后按请求补齐业务：只把"未分配"的记录改为请求中的业务，
 // 业务已是其它值的记录不覆盖。失败直接返回错误，不重试。
 func (svc *clbSvc) fillTCloudLBBiz(kt *kit.Kit, req *protolb.TCloudLoadBalancerCreateReq, cloudIDs []string) error {
@@ -56,17 +54,17 @@ func (svc *clbSvc) fillTCloudLBBiz(kt *kit.Kit, req *protolb.TCloudLoadBalancerC
 		return err
 	}
 
-	updates, otherBizLBs := buildTCloudLBBizUpdates(lbResp.Details, req.BkBizID)
+	updateIDs, otherBizLBs := buildTCloudLBBizUpdates(lbResp.Details, req.BkBizID)
 	if len(otherBizLBs) > 0 {
 		logs.Warnf("lb already assigned to other biz, skip biz fill, req_biz: %d, cloud_id_to_biz: %v, rid: %s",
 			req.BkBizID, otherBizLBs, kt.Rid)
 	}
-	if len(updates) == 0 {
+	if len(updateIDs) == 0 {
 		return nil
 	}
 
-	updateReq := &dataproto.TCloudClbBatchUpdateReq{Lbs: updates}
-	if err = svc.dataCli.TCloud.LoadBalancer.BatchUpdate(kt, updateReq); err != nil {
+	updateReq := &dataproto.BizBatchUpdateReq{IDs: updateIDs, BkBizID: req.BkBizID}
+	if err = svc.dataCli.Global.LoadBalancer.BatchUpdateLbBizInfo(kt, updateReq); err != nil {
 		logs.Errorf("update lb biz failed, biz: %d, cloud_ids: %v, err: %v, rid: %s", req.BkBizID, cloudIDs, err,
 			kt.Rid)
 		return err
@@ -74,20 +72,18 @@ func (svc *clbSvc) fillTCloudLBBiz(kt *kit.Kit, req *protolb.TCloudLoadBalancerC
 	return nil
 }
 
-// buildTCloudLBBizUpdates 为未分配业务的记录生成补业务的更新项，并返回业务已是其它值的记录（云 ID -> 业务）。
-func buildTCloudLBBizUpdates(lbs []corelb.BaseLoadBalancer, bizID int64) (
-	updates []*tcloudLBUpdate, otherBizLBs map[string]int64) {
-
-	updates = make([]*tcloudLBUpdate, 0, len(lbs))
+// buildTCloudLBBizUpdates 选出业务未分配的负载均衡 ID，并返回业务已是其它值的记录（云 ID -> 业务）。
+func buildTCloudLBBizUpdates(lbs []corelb.BaseLoadBalancer, bizID int64) (ids []string, otherBizLBs map[string]int64) {
+	ids = make([]string, 0, len(lbs))
 	otherBizLBs = make(map[string]int64)
 	for _, lb := range lbs {
 		switch lb.BkBizID {
 		case constant.UnassignedBiz:
-			updates = append(updates, &tcloudLBUpdate{ID: lb.ID, BkBizID: bizID})
+			ids = append(ids, lb.ID)
 		case bizID:
 		default:
 			otherBizLBs[lb.CloudID] = lb.BkBizID
 		}
 	}
-	return updates, otherBizLBs
+	return ids, otherBizLBs
 }

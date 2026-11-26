@@ -38,13 +38,15 @@ import (
 
 const testWaitTimeoutSec = 1
 
-type mockLBLister struct {
+// fakeTCloud 只覆盖 ListLoadBalancer。其余方法由嵌入的空 TCloud 提升，测试不会调用。
+type fakeTCloud struct {
+	TCloud
 	calls [][]string
 	// list 入参为第几次调用（从 1 开始）和本次查询的云 ID，返回云上可查询到的云 ID
 	list func(call int, cloudIDs []string) ([]string, error)
 }
 
-func (m *mockLBLister) ListLoadBalancer(_ *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error) {
+func (m *fakeTCloud) ListLoadBalancer(_ *kit.Kit, opt *typelb.TCloudListOption) ([]typelb.TCloudClb, error) {
 	m.calls = append(m.calls, opt.CloudIDs)
 	visibleIDs, err := m.list(len(m.calls), opt.CloudIDs)
 	if err != nil {
@@ -74,33 +76,35 @@ func genCloudIDs(n int) []string {
 
 func TestWaitLoadBalancerVisible_FirstRoundVisible(t *testing.T) {
 	cloudIDs := genCloudIDs(3)
-	lister := &mockLBLister{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
+	lister := &fakeTCloud{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
 
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
 
 	assert.Empty(t, missing)
+	assert.ElementsMatch(t, cloudIDs, clbCloudIDs(lbs))
 	assert.Len(t, lister.calls, 1)
 }
 
 func TestWaitLoadBalancerVisible_VisibleAtSecondRound(t *testing.T) {
 	cloudIDs := genCloudIDs(3)
-	lister := &mockLBLister{list: func(call int, ids []string) ([]string, error) {
+	lister := &fakeTCloud{list: func(call int, ids []string) ([]string, error) {
 		if call == 1 {
 			return nil, nil
 		}
 		return ids, nil
 	}}
 
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
 
 	assert.Empty(t, missing)
+	assert.ElementsMatch(t, cloudIDs, clbCloudIDs(lbs))
 	assert.Len(t, lister.calls, 2)
 }
 
 func TestWaitLoadBalancerVisible_TimeoutWithInvisible(t *testing.T) {
 	cloudIDs := genCloudIDs(3)
 	invisibleID := cloudIDs[1]
-	lister := &mockLBLister{list: func(_ int, ids []string) ([]string, error) {
+	lister := &fakeTCloud{list: func(_ int, ids []string) ([]string, error) {
 		visible := make([]string, 0, len(ids))
 		for _, id := range ids {
 			if id != invisibleID {
@@ -111,21 +115,23 @@ func TestWaitLoadBalancerVisible_TimeoutWithInvisible(t *testing.T) {
 	}}
 
 	start := time.Now()
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
 	elapsed := time.Since(start)
 
 	assert.Equal(t, []string{invisibleID}, missing)
+	assert.Nil(t, lbs)
 	assert.Greater(t, len(lister.calls), 1)
 	assert.LessOrEqual(t, elapsed, (testWaitTimeoutSec+3)*time.Second)
 }
 
 func TestWaitLoadBalancerVisible_SplitBatch(t *testing.T) {
 	cloudIDs := genCloudIDs(25)
-	lister := &mockLBLister{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
+	lister := &fakeTCloud{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
 
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
 
 	assert.Empty(t, missing)
+	assert.ElementsMatch(t, cloudIDs, clbCloudIDs(lbs))
 	assert.Len(t, lister.calls, 2)
 	for _, ids := range lister.calls {
 		assert.LessOrEqual(t, len(ids), constant.TCLBDescribeMax)
@@ -136,21 +142,31 @@ func TestWaitLoadBalancerVisible_SplitBatch(t *testing.T) {
 
 func TestWaitLoadBalancerVisible_AlwaysError(t *testing.T) {
 	cloudIDs := genCloudIDs(3)
-	lister := &mockLBLister{list: func(_ int, _ []string) ([]string, error) {
+	lister := &fakeTCloud{list: func(_ int, _ []string) ([]string, error) {
 		return nil, errors.New("RequestLimitExceeded")
 	}}
 
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", cloudIDs, testWaitOption())
 
 	assert.ElementsMatch(t, cloudIDs, missing)
+	assert.Nil(t, lbs)
 	assert.Greater(t, len(lister.calls), 1)
 }
 
 func TestWaitLoadBalancerVisible_EmptyCloudIDs(t *testing.T) {
-	lister := &mockLBLister{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
+	lister := &fakeTCloud{list: func(_ int, ids []string) ([]string, error) { return ids, nil }}
 
-	missing := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", nil, testWaitOption())
+	missing, lbs := WaitLoadBalancerVisible(kit.New(), lister, "ap-guangzhou", nil, testWaitOption())
 
 	assert.Empty(t, missing)
+	assert.Nil(t, lbs)
 	assert.Empty(t, lister.calls)
+}
+
+func clbCloudIDs(lbs []typelb.TCloudClb) []string {
+	ids := make([]string, 0, len(lbs))
+	for _, lb := range lbs {
+		ids = append(ids, lb.GetCloudID())
+	}
+	return ids
 }
