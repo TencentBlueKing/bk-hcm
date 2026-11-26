@@ -11,6 +11,37 @@ const { Row, Col } = Container;
 const { FormItem } = Form;
 const { Option } = Select;
 
+const HTTP_CODE_OPTIONS = [
+  { name: '1xx', id: 1 },
+  { name: '2xx', id: 2 },
+  { name: '3xx', id: 4 },
+  { name: '4xx', id: 8 },
+  { name: '5xx', id: 16 },
+] as const;
+
+const VALID_HTTP_CODES = HTTP_CODE_OPTIONS.map(({ id }) => id);
+
+const decodeHttpCode = (code?: number | number[] | null): number[] => {
+  if (Array.isArray(code)) {
+    return VALID_HTTP_CODES.filter((bit) => code.includes(bit));
+  }
+  if (typeof code === 'number' && Number.isInteger(code) && code > 0) {
+    return VALID_HTTP_CODES.filter((bit) => (code & bit) === bit);
+  }
+  return [];
+};
+
+const encodeHttpCode = (codes?: number[] | number | null): number | undefined => {
+  if (typeof codes === 'number' && Number.isInteger(codes) && codes > 0) {
+    return codes;
+  }
+  if (!Array.isArray(codes) || codes.length === 0) {
+    return undefined;
+  }
+  const mask = VALID_HTTP_CODES.reduce((acc, bit) => (codes.includes(bit) ? acc | bit : acc), 0);
+  return mask > 0 ? mask : undefined;
+};
+
 export default defineComponent({
   name: 'HealthCheckupPage',
   props: {
@@ -82,10 +113,7 @@ export default defineComponent({
     const formRef = useTemplateRef<typeof Form>('form');
     const formData = reactive(getDefaultFormData());
     function resetFormData() {
-      const defaultData = getDefaultFormData();
-      for (const key in formData) {
-        formData[key] = defaultData[key];
-      }
+      Object.assign(formData, getDefaultFormData());
     }
     const formItemOptions = computed(() => [
       {
@@ -184,28 +212,7 @@ export default defineComponent({
           span: 12,
           content: () => (
             <Select v-model={formData.http_code} clearable={false} multiple multiple-mode='tag'>
-              {[
-                {
-                  name: '1xx',
-                  id: 1,
-                },
-                {
-                  name: '2xx',
-                  id: 2,
-                },
-                {
-                  name: '3xx',
-                  id: 4,
-                },
-                {
-                  name: '4xx',
-                  id: 8,
-                },
-                {
-                  name: '5xx',
-                  id: 16,
-                },
-              ].map(({ name, id }) => (
+              {HTTP_CODE_OPTIONS.map(({ name, id }) => (
                 <Option name={name} id={id} key={id} />
               ))}
             </Select>
@@ -311,40 +318,62 @@ export default defineComponent({
       ],
     ]);
 
+    const syncFormDataFromDetail = (detail?: Record<string, any>) => {
+      const healthCheck = detail?.health_check;
+      isOpen.value = !!healthCheck?.health_switch;
+
+      const keys = [
+        'health_switch',
+        'check_type',
+        'check_port',
+        'http_check_domain',
+        'http_check_path',
+        'http_check_method',
+        'http_version',
+        'context_type',
+        'send_context',
+        'recv_context',
+        'time_out',
+        'interval_time',
+        'un_health_num',
+        'health_num',
+        'source_ip_type',
+      ] as const;
+
+      resetFormData();
+
+      for (const key of keys) {
+        formData[key] = healthCheck?.[key] ?? formData[key];
+      }
+
+      if (healthCheck?.http_code !== undefined && healthCheck?.http_code !== null) {
+        const decoded = decodeHttpCode(healthCheck.http_code);
+        if (decoded.length > 0) {
+          formData.http_code = decoded;
+        }
+      }
+
+      formData.health_switch = isOpen.value;
+    };
+
     watch(
       () => props.detail,
       (detail) => {
-        isOpen.value = !!detail.health_check?.health_switch;
-        const keys = [
-          'health_switch',
-          'check_type',
-          'check_port',
-          'http_check_domain',
-          'http_check_path',
-          'http_check_method',
-          'http_code',
-          'http_version',
-          'context_type',
-          'send_context',
-          'recv_context',
-          'time_out',
-          'interval_time',
-          'un_health_num',
-          'health_num',
-          'source_ip_type',
-        ];
-
-        resetFormData();
-
-        for (const key of keys) {
-          formData[key] = detail.health_check?.[key] ?? formData[key];
-        }
-
-        formData.health_switch = isOpen.value;
-
+        syncFormDataFromDetail(detail);
         isSubmitLoading.value = false;
       },
+      { immediate: true },
     );
+
+    const handleOpenConfig = () => {
+      syncFormDataFromDetail(props.detail);
+      isHealthCheckupConfigShow.value = true;
+    };
+
+    const handleCloseConfig = () => {
+      formRef.value?.clearValidate?.();
+      syncFormDataFromDetail(props.detail);
+    };
 
     const handleSubmit = async () => {
       await formRef.value.validate();
@@ -362,13 +391,10 @@ export default defineComponent({
                 interval_time: +formData.interval_time,
                 un_health_num: +formData.un_health_num,
                 health_num: +formData.health_num,
-                http_code: formData.http_code?.length
-                  ? formData.http_code.reduce((acc, cur) => acc + cur, 0)
-                  : undefined,
+                http_code: encodeHttpCode(formData.http_code),
               },
         });
         isHealthCheckupConfigShow.value = false;
-        resetFormData();
         props.getTargetGroupDetail?.(loadbalancerStore.targetGroupId);
         Message({ theme: 'success', message: '编辑成功' });
       } finally {
@@ -381,11 +407,7 @@ export default defineComponent({
         <hcm-auth class='fixed-operate-btn' sign={clbOperationAuthSign.value}>
           {{
             default: ({ noPerm }: { noPerm: boolean }) => (
-              <Button
-                outline
-                theme='primary'
-                disabled={noPerm}
-                onClick={() => (isHealthCheckupConfigShow.value = true)}>
+              <Button outline theme='primary' disabled={noPerm} onClick={handleOpenConfig}>
                 配置
               </Button>
             ),
@@ -428,9 +450,7 @@ export default defineComponent({
           title='健康检查配置'
           onHandleSubmit={handleSubmit}
           isSubmitLoading={isSubmitLoading.value}
-          onUpdate:isShow={(isShow) => {
-            if (!isShow) resetFormData();
-          }}
+          handleClose={handleCloseConfig}
           width='640'>
           <Form ref='form' formType='vertical' model={formData}>
             <Container margin={0}>
