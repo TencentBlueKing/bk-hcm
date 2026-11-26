@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0056,HCMVER=v1.9.6
 
     Notes:
     1. aws_region 表添加 sync_enable 字段，用于控制地域是否参与资源同步
@@ -31,6 +31,6 @@ ALTER TABLE `aws_region`
     ADD COLUMN `sync_enable` tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否启用同步(0:禁用 1:启用)' AFTER `endpoint`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.9.6' as `hcm_ver`, '0056' as `sql_ver`;
 
 COMMIT;

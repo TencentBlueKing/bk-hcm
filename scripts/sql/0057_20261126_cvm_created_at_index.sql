@@ -18,7 +18,7 @@
  */
 
 /*
- SQLVER=9999,HCMVER=v9.9.9
+ SQLVER=0057,HCMVER=v1.9.6
 
  Notes:
  cvm 表 created_at 增加索引
@@ -30,6 +30,6 @@ ALTER TABLE `cvm`
     ADD INDEX `idx_created_at` (`created_at`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.9.6' as `hcm_ver`, '0057' as `sql_ver`;
 
 COMMIT;
