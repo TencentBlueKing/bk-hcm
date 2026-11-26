@@ -130,10 +130,11 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
     },
   );
 
-  // 搜索数据
+  // 搜索数据。同时监听云厂商：刷新后账号详情异步返回才有 vendor，
+  // 镜像等列表只在这里套上厂商条件，否则会停在全厂商结果。
   watch(
-    searchValue,
-    (val) => {
+    [searchValue, vendorInResourcePage],
+    ([val]) => {
       // 工具函数 - 获取条件值
       const getConditionValue = (field: string, values: any[]): string | number => {
         const tmpValue = values.length > 1 ? values : values[0];
