@@ -30,6 +30,7 @@ type AwsRegion struct {
 	RegionName string        `json:"region_name"`
 	Status     string        `json:"status"`
 	Endpoint   string        `json:"endpoint"`
+	SyncEnable bool          `json:"sync_enable"`
 	Creator    string        `json:"creator"`
 	Reviser    string        `json:"reviser"`
 	CreatedAt  string        `json:"created_at"`
