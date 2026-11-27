@@ -53,12 +53,14 @@ export class SearchCondition {
     index: 1,
     meta: {
       search: {
-        filterRules(value: OperationLogResourceType) {
-          const val = OPERATION_LOG_RES_TYPES[value as keyof typeof OPERATION_LOG_RES_TYPES] || [value];
+        filterRules(value: OperationLogResourceType | OperationLogResourceType[]) {
+          // use-search-qs.get 会按 IN 操作符把标量包成数组，这里需要兼容两种入参，避免 [["cvm"]] 二次包裹
+          const toResTypes = (val: OperationLogResourceType) =>
+            OPERATION_LOG_RES_TYPES[val as keyof typeof OPERATION_LOG_RES_TYPES] || [val];
           return {
             field: 'res_type',
             op: QueryRuleOPEnum.IN,
-            value: val,
+            value: Array.isArray(value) ? value.flatMap(toResTypes) : toResTypes(value),
           };
         },
       },
