@@ -30,12 +30,8 @@ const { getBizsId } = useWhereAmI();
 const showActionDialog = ref(false);
 const currentActionType = ref<SecretActionType>('disable');
 
-const subAccountId = computed(
-  () => props.secretData?.cloud_sub_account_id || props.secretData?.extension?.cloud_sub_account_id,
-);
-const mainAccountId = computed(
-  () => props.secretData?.cloud_main_account_id || props.secretData?.extension?.cloud_main_account_id,
-);
+const subAccountId = computed(() => props.secretData?.extension?.cloud_sub_account_id);
+const mainAccountId = computed(() => props.secretData?.extension?.cloud_main_account_id);
 
 const handleGoToTertiaryAccount = () => {
   routeAction.open({
@@ -116,7 +112,7 @@ const handleActionSuccess = () => {
       <div class="detail-content">
         <div class="detail-item">
           <span class="label">云密钥ID：</span>
-          <span class="value">{{ secretData?.cloud_secret_id || secretData?.extension?.cloud_secret_id || '--' }}</span>
+          <span class="value">{{ secretData?.extension?.cloud_secret_id || '--' }}</span>
         </div>
 
         <div class="detail-item">

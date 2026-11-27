@@ -64,13 +64,7 @@ export const useCloudSecretStore = defineStore('cloudSecret', () => {
       const list = listRes?.data?.details || [];
       const count = countRes?.data?.count || 0;
 
-      // 处理数据，将 extension 中的字段提取到顶层便于展示
-      const processedList = list.map((item: ICloudSecretItem) => ({
-        ...item,
-        ...item.extension,
-      }));
-
-      return { list: processedList, count };
+      return { list, count };
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -95,9 +89,7 @@ export const useCloudSecretStore = defineStore('cloudSecret', () => {
       });
       const list = (res?.data as { details: ICloudSecretItem[] })?.details ?? [];
       if (list.length === 0) return null;
-      const item = list[0];
-      // 将 extension 中的字段提取到顶层，与列表数据处理保持一致
-      return { ...item, ...item.extension };
+      return list[0];
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
