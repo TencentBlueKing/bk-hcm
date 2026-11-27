@@ -33,6 +33,7 @@ import SyncAccountResourceDialog from '@/components/sync-account-resource/index.
 import Confirm from '@/components/confirm';
 import DetailsSideslider from './details.vue';
 import { useClbSyncFeedback } from '@/views/load-balancer/use-clb-sync-feedback';
+import { useClbTaskFeedback } from '@/views/load-balancer/use-clb-task-feedback';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 //* 接口请求使用lbId，避免details暂无数据，导致接口报错
@@ -46,6 +47,7 @@ const loadBalancerListenerStore = useLoadBalancerListenerStore();
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 const { handleClbSyncSuccess, handleClbSyncError } = useClbSyncFeedback(() => currentGlobalBusinessId.value);
+const { getTaskId, notifyClbTaskCreated } = useClbTaskFeedback(() => currentGlobalBusinessId.value);
 
 const actionConfig: Record<ListenerActionType, ActionItemType> = {
   [ListenerActionType.ADD]: {
@@ -125,14 +127,20 @@ const displayFieldIds = [
   'url_num',
   'binding_status',
 ];
+const deletingListenerIds = ref<Set<string>>(new Set());
+const isListenerDeleting = (id?: string) => Boolean(id && deletingListenerIds.value.has(id));
+const getRowClass = (row: IListenerItem) => (isListenerDeleting(row?.id) ? 'is-deleting-row' : '');
+
 const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
 const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   name: {
     render: ({ data, row }) => {
+      const deleting = isListenerDeleting(row.id);
       const handleClick = () => {
+        if (deleting) return;
         showListenerDetail(data);
       };
-      return h(Button, { theme: 'primary', text: true, onClick: handleClick }, row.name);
+      return h(Button, { theme: 'primary', text: true, disabled: deleting, onClick: handleClick }, row.name);
     },
   },
   port: {
@@ -165,6 +173,7 @@ const validateValues: ValidateValuesFunc = async (item, values) => {
 };
 
 const { pagination, getPageParams } = usePage();
+const defaultPageLimit = usePage(false).getDefaultPagination().limit;
 const searchQs = useSearchQs({ key: 'filter', properties: conditionProperties });
 
 const condition = ref<Record<string, any>>({});
@@ -176,16 +185,19 @@ const showListenerDetail = (data: any) => {
   detailsSidesliderState.rowData = data;
 };
 const isCurRowSelectEnable = (row: any) => {
+  if (isListenerDeleting(row?.id)) return false;
   if (currentGlobalBusinessId.value) return true;
-  if (row.id) return row.bk_biz_id === -1;
+  if (row?.id) return row.bk_biz_id === -1;
+  return false;
 };
 const isRowSelectEnable = ({ row, isCheckAll }: any) => {
-  if (isCheckAll) return true;
+  if (isCheckAll) return listenerList.value.some((item) => isCurRowSelectEnable(item));
   return isCurRowSelectEnable(row);
 };
 const { selections, handleSelectAll, handleSelectChange } = useTableSelection({
   isRowSelectable: isRowSelectEnable,
 });
+const dataListRef = useTemplateRef<InstanceType<typeof DataList>>('dataList');
 
 const taskPoll = useTimeoutPoll(
   () => {
@@ -199,38 +211,71 @@ const hasBindingStatus = (list: IListenerItem[]) => {
   return list.some((item) => item.binding_status === 'binding');
 };
 
-const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
+let requestSeq = 0;
+
+const asyncSetRsWeightStat = async (list: IListenerItem[], seq: number) => {
   const ids = list.map((item) => item.id);
   const map = await loadBalancerListenerStore.getListenersRsWeightStat(ids, currentGlobalBusinessId.value);
+  if (seq !== requestSeq) return;
   listenerList.value.forEach((item) => {
+    if (!map[item.id]) return;
     const { non_zero_weight_count, zero_weight_count, total_count: totalCount } = map[item.id];
     Object.assign(item, { non_zero_weight_count, zero_weight_count, rs_num: totalCount });
   });
 };
 
 const injectLoadBalancerFields = (list: IListenerItem[]) => {
-  if (!props.details) return;
+  if (!props.details || props.details.id !== props.lbId) return;
   list.forEach((item) => {
     Object.assign(item, { lb_cloud_id: props.details.cloud_id, lb_vip: getInstVip(props.details) });
   });
 };
 
+watch(
+  () => props.details,
+  () => {
+    if (listenerList.value.length > 0) {
+      injectLoadBalancerFields(listenerList.value);
+    }
+  },
+);
+
+const getDeleteBtnTooltip = (row: IListenerItem, noPerm: boolean) => {
+  if (noPerm) return { disabled: true };
+  if (isListenerDeleting(row.id)) return { content: t('删除任务进行中'), disabled: false };
+  return { content: t('监听器RS的权重不为0，不可删除'), disabled: row.non_zero_weight_count === 0 };
+};
+
 const handleSingleDelete = (row: any) => {
+  if (isListenerDeleting(row.id)) return;
   Confirm('请确定删除监听器', `将删除监听器【${row.name}】`, async () => {
-    await loadBalancerListenerStore.batchDeleteListener(
+    const res = await loadBalancerListenerStore.batchDeleteListener(
       { ids: [row.id], account_id: props.details.account_id },
       currentGlobalBusinessId.value,
     );
-    Message({ theme: 'success', message: '删除成功' });
+    const taskId = getTaskId(res);
+    if (taskId) {
+      const nextDeletingIds = new Set(deletingListenerIds.value);
+      nextDeletingIds.add(row.id);
+      deletingListenerIds.value = nextDeletingIds;
+
+      const selectedIndex = selections.value.findIndex((item) => item.id === row.id);
+      if (selectedIndex > -1) {
+        selections.value.splice(selectedIndex, 1);
+        dataListRef.value?.toggleRowSelection(row, false);
+        if (selections.value.length === 0) {
+          dataListRef.value?.clearSelection();
+        }
+      }
+
+      notifyClbTaskCreated(taskId, t('删除任务已创建，可在'));
+      return;
+    }
+    Message({ theme: 'success', message: t('删除成功') });
     routerAction.redirect({ query: { ...route.query, _t: Date.now() } });
   });
 };
 
-const searchRef = useTemplateRef<typeof Search>('search');
-watch(
-  () => props.lbId,
-  () => searchRef.value?.clear(false),
-);
 const handleSearch = (val: ISearchSelectValue) => {
   searchQs.set(
     getSimpleConditionBySearchSelect(val, [
@@ -246,28 +291,32 @@ const handleSearch = (val: ISearchSelectValue) => {
 
 const loading = ref(false);
 watch(
-  () => route.query,
-  async (query) => {
+  () => [props.lbId, route.query] as const,
+  async ([lbId, query]) => {
+    if (!lbId) return;
     // 避免多次路由导致多次请求
     if (query[ActiveQueryKey.DETAILS] && ClbDetailsTabKey.LISTENER !== query[ActiveQueryKey.DETAILS]) return;
     const { detailShow } = query;
     condition.value = searchQs.get(query, {});
     pagination.current = Number(query.page) || 1;
-    pagination.limit = Number(query.limit) || pagination.limit;
+    pagination.limit = Number(query.limit) || defaultPageLimit;
 
     const sort = (query.sort || 'created_at') as string;
     const order = (query.order || 'DESC') as string;
 
+    requestSeq += 1;
+    const seq = requestSeq;
     loading.value = true;
     try {
       const { list, count } = await loadBalancerListenerStore.getListenerList(
-        props.lbId,
+        lbId,
         {
           filter: transformSimpleCondition(condition.value, conditionProperties),
           page: getPageParams(pagination, { sort, order }),
         },
         currentGlobalBusinessId.value,
       );
+      if (seq !== requestSeq) return;
 
       listenerList.value = list;
       pagination.count = count;
@@ -276,7 +325,7 @@ watch(
       selections.value = [];
 
       if (list.length > 0) {
-        asyncSetRsWeightStat(list);
+        asyncSetRsWeightStat(list, seq);
         injectLoadBalancerFields(list);
         if (firstIn && detailShow) {
           showListenerDetail(list[0]);
@@ -290,7 +339,9 @@ watch(
         taskPoll.pause();
       }
     } finally {
-      loading.value = false;
+      if (seq === requestSeq) {
+        loading.value = false;
+      }
     }
   },
   { immediate: true },
@@ -299,6 +350,7 @@ watch(
 // 新增/编辑监听器
 const addSidesliderState = reactive({ isShow: false, isHidden: true, isEdit: false, initialModel: null });
 const handleEditListener = async (row: IListenerItem) => {
+  if (isListenerDeleting(row.id)) return;
   Object.assign(addSidesliderState, { isShow: true, isHidden: false, isEdit: true });
   addSidesliderState.initialModel = await loadBalancerListenerStore.getListenerDetails(
     row.id,
@@ -326,6 +378,22 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
 
 // 详情
 const detailsSidesliderState = reactive({ isShow: false, isHidden: true, rowData: null });
+
+// 仅在切换 CLB 实例（lbId 变化）时重置轮询与弹层状态；同实例内 query 变化（翻页/筛选/轮询刷新 _t）不应触发清理
+watch(
+  () => props.lbId,
+  () => {
+    deletingListenerIds.value = new Set();
+    taskPoll.pause();
+    taskPoll.reset();
+    selections.value = [];
+    Object.assign(addSidesliderState, { isShow: false, isHidden: true, isEdit: false, initialModel: null });
+    Object.assign(batchDeleteDialogState, { isShow: false, isHidden: true });
+    Object.assign(syncDialogState, { isShow: false, isHidden: true });
+    Object.assign(detailsSidesliderState, { isShow: false, isHidden: true, rowData: null });
+  },
+);
+
 const handleUpdateListenerSuccess = async (id: string) => {
   const { query } = route;
   const sort = (query.sort || 'created_at') as string;
@@ -362,7 +430,6 @@ const handleUpdateListenerSuccess = async (id: string) => {
       </div>
       <search
         class="search"
-        ref="search"
         :fields="searchFields"
         :condition="condition"
         :validate-values="validateValues"
@@ -370,11 +437,15 @@ const handleUpdateListenerSuccess = async (id: string) => {
       />
     </div>
     <data-list
+      :key="props.lbId"
+      ref="dataList"
       class="data-list"
       v-bkloading="{ loading }"
       :columns="dataListColumns"
       :list="listenerList"
       :pagination="pagination"
+      :row-class="getRowClass"
+      :is-row-select-enable="isRowSelectEnable"
       has-selection
       :max-height="`calc(100% - 48px)`"
       @select-all="handleSelectAll"
@@ -384,7 +455,15 @@ const handleUpdateListenerSuccess = async (id: string) => {
         <bk-table-column :label="t('操作')" width="120" fixed="right">
           <template #default="{ row }">
             <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
-              <bk-button theme="primary" text :disabled="noPerm" @click="handleEditListener(row)">
+              <bk-button
+                theme="primary"
+                text
+                :disabled="noPerm || isListenerDeleting(row.id)"
+                v-bk-tooltips="
+                  noPerm ? { disabled: true } : { content: t('删除任务进行中'), disabled: !isListenerDeleting(row.id) }
+                "
+                @click="handleEditListener(row)"
+              >
                 {{ t('编辑') }}
               </bk-button>
             </hcm-auth>
@@ -393,12 +472,8 @@ const handleUpdateListenerSuccess = async (id: string) => {
                 class="ml8"
                 theme="primary"
                 text
-                :disabled="noPerm || row.non_zero_weight_count !== 0"
-                v-bk-tooltips="
-                  noPerm
-                    ? { disabled: true }
-                    : { content: t('监听器RS的权重不为0，不可删除'), disabled: row.non_zero_weight_count === 0 }
-                "
+                :disabled="noPerm || isListenerDeleting(row.id) || row.non_zero_weight_count !== 0"
+                v-bk-tooltips="getDeleteBtnTooltip(row, noPerm)"
                 @click="handleSingleDelete(row)"
               >
                 {{ t('删除') }}
@@ -481,6 +556,16 @@ const handleUpdateListenerSuccess = async (id: string) => {
     .search {
       margin-left: auto;
       width: 500px;
+    }
+  }
+
+  :deep(.is-deleting-row) {
+    background-color: #fafbfd;
+    color: #c4c6cc;
+
+    td {
+      background-color: #fafbfd;
+      color: #c4c6cc;
     }
   }
 }

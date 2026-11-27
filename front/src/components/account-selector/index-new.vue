@@ -72,13 +72,11 @@ const filteredList = ref<IAccountItem[]>([]);
 const selected = computed({
   get() {
     const val = model.value || undefined;
-    // 默认填充
+    // 默认填充。禁用账号不计入数量，没有可选项时不进入自动选中。
     if (!val && !props.disabled) {
-      if (
-        (filteredList.value.length === 1 && props.autoSelectSingle) ||
-        (filteredList.value.length > 1 && props.autoSelect)
-      ) {
-        return filteredList.value[0].id;
+      const selectableList = filteredList.value.filter((item) => !props.optionDisabled(item));
+      if ((selectableList.length === 1 && props.autoSelectSingle) || (selectableList.length > 1 && props.autoSelect)) {
+        return selectableList[0].id;
       }
     }
     return val;
@@ -132,9 +130,9 @@ const handleSelectVendor = (vendor?: VendorEnum) => {
 watch(
   list,
   (newList) => {
-    filteredList.value = newList;
+    filteredList.value = newList.filter((item) => vendorProperty[item.vendor]);
     if (props.filter) {
-      filteredList.value = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
+      filteredList.value = props.filter?.(filteredList.value, { route, whereAmI, resourceType: props.resourceType });
     }
     vendorAccountMap.value.clear();
     filteredList.value.forEach((item) => {

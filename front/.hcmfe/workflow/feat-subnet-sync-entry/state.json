@@ -1,0 +1,103 @@
+{
+  "id": "feat-subnet-sync-entry",
+  "title": "子网-增加独立的子网同步入口",
+  "currentStage": "done",
+  "createdAt": "2026-11-03T08:11:15.188Z",
+  "updatedAt": "2026-11-03T08:40:18.864Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-subnet-sync-entry/coding.md",
+        "kind": "file",
+        "addedAt": "2026-11-03T08:17:32.218Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-subnet-sync-entry/test.md",
+        "kind": "file",
+        "addedAt": "2026-11-03T08:39:01.965Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-11-03T08:22:59.427Z",
+      "note": "子网同步入口与弹窗接线完成，lint/IDE 诊断通过，影响面已核对，进入测试。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-11-03T08:39:11.475Z",
+      "note": "E2E 6/6 通过，手测清单已回写；文档收口无缺口，进入 done。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-11-03T08:11:15.188Z",
+      "gitHead": "b2c1ccbdcb6044af2e818637b09749871e62eca0"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-11-03T08:22:59.427Z",
+      "note": "子网同步入口与弹窗接线完成，lint/IDE 诊断通过，影响面已核对，进入测试。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-11-03T08:39:11.475Z",
+      "note": "E2E 6/6 通过，手测清单已回写；文档收口无缺口，进入 done。"
+    }
+  ],
+  "branch": "feat-subnet-sync-entry",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598137973350",
+    "parentId": "1069995598136403858"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "completed",
+      "at": "2026-11-03T08:16:00.550Z",
+      "note": "已读取子单正文、父需求、最新评论与两处入口截图，完成范围澄清并回写；原描述完整保留，未做工时或规模评估。"
+    },
+    "hcm-verify-e2e": {
+      "status": "completed",
+      "at": "2026-11-03T08:39:03.006Z",
+      "note": "已完成 Playwright E2E：6 个用例全部通过，覆盖两处入口、弹窗、勾选禁用、提交请求和后端错误提示；exitCode=0，报告已写入 test.md。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-11-03T08:39:07.439Z",
+      "note": "docs_status({changedFiles}) 显示 touchedModules=resource；已在编码后更新 resource 模块的子网同步入口说明并 docs_deepen，当前无 gap。promotionQueue 保留待人工评审，不阻塞 done。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-11-03T08:40:18.864Z",
+      "note": "story 最终 status_14；owner 未变更；父需求按 rollup 结果前进到 status_10。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/resource/resource-manage/resource-manage.vue",
+        "src/views/business/business-manage.vue",
+        "src/components/sync-account-resource/index.vue",
+        "src/views/resource/resource-manage/children/manage/subnet-manage.vue"
+      ],
+      "contentFingerprint": "e6c7d4860b353493b87f38d5e6c0aaaa079fdd38",
+      "codeBaseline": "418835e2f44a31e67f1661b3187db456a5893f9b",
+      "seatedAt": "2026-11-03T08:22:49.561Z"
+    }
+  }
+}

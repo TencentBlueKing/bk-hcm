@@ -1,4 +1,4 @@
-import { PropType, defineComponent, onMounted, ref, watch, watchEffect } from 'vue';
+import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { SecurityRuleDirection } from '..';
@@ -18,14 +18,13 @@ export default defineComponent({
     name: { type: String, required: true },
     cloudId: { type: String, required: true },
     id: { type: String, required: true },
-    isAllExpand: { type: Boolean, required: true },
+    isExpand: { type: Boolean, required: true },
     direction: { type: String as PropType<SecurityRuleDirection>, required: true },
     vendor: { type: String as PropType<VendorEnum>, required: true },
   },
   emits: ['expand', 'collapse'],
   setup(props, { emit }) {
     const { getBusinessApiPath, getBizsId } = useWhereAmI();
-    const isExpand = ref(false);
     const tableData = ref([]);
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
@@ -42,7 +41,8 @@ export default defineComponent({
         },
       );
       tableData.value = res.data?.details ?? [];
-      isExpand.value = tableData.value.length > 0;
+      // 展开状态由父级集合统一维护，子组件只上报结果，避免父子互相回写
+      emit(tableData.value.length > 0 ? 'expand' : 'collapse');
     };
 
     onMounted(() => {
@@ -51,16 +51,9 @@ export default defineComponent({
 
     watch(() => props.direction, getSecurityRules);
 
-    watch(
-      () => props.isAllExpand,
-      (isAllExpand) => {
-        isExpand.value = isAllExpand;
-      },
-    );
-
-    watchEffect(() => {
-      emit(isExpand.value ? 'expand' : 'collapse');
-    });
+    const handleToggleExpand = () => {
+      emit(props.isExpand ? 'collapse' : 'expand');
+    };
 
     const openSecurityGroupManagementPage = (e: Event) => {
       e.stopPropagation();
@@ -78,8 +71,8 @@ export default defineComponent({
 
     return () => (
       <div class={'security-rule-table-container'}>
-        <div class={'security-rule-table-header'} onClick={() => (isExpand.value = !isExpand.value)}>
-          {isExpand.value ? <AngleUp width={22} height={22} /> : <AngleDown width={22} height={22} />}
+        <div class={'security-rule-table-header'} onClick={handleToggleExpand}>
+          {props.isExpand ? <AngleUp width={22} height={22} /> : <AngleDown width={22} height={22} />}
           <div class={'config-security-item-idx'}>{props.idx + 1}</div>
           <span class={'config-security-item-name'}>{props.name}</span>
           <span class={'config-security-item-id'}>({props.cloudId})</span>
@@ -88,7 +81,7 @@ export default defineComponent({
             <i class='hcm-icon bkhcm-icon-jump-fill ml4'></i>
           </bk-button>
         </div>
-        {isExpand.value && (
+        {props.isExpand && (
           <Table stripe data={tableData.value} columns={securityRulesColumns}>
             {{
               empty: () => (
