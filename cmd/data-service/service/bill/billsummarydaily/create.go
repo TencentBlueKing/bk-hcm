@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateBillSummaryDaily create bill summary daily with options

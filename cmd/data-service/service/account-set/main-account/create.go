@@ -35,7 +35,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateMainAccount create main account with options

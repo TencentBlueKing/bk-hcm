@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateBillSummaryVersion create bill summary version with options

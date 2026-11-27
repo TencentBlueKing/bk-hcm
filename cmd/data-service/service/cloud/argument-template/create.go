@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/dal/table/cloud/argument-template"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // CreateArgsTpl create argument template.

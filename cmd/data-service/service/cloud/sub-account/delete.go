@@ -22,7 +22,7 @@ package subaccount
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"

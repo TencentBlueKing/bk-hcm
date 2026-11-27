@@ -34,7 +34,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // upsertCmdbHosts upsert cmdb hosts. operators 由调用方按"创建/修改"语义构建（修改场景传 nil）。

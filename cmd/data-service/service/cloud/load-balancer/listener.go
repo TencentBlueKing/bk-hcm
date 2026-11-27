@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateListener 批量创建监听器

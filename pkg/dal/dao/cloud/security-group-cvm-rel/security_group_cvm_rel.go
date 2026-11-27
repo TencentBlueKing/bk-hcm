@@ -36,7 +36,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // Interface only used for security group and cvm relation.
@@ -62,9 +62,9 @@ func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, cvmIDs []string) (*types.ListS
 
 	sql := fmt.Sprintf(`SELECT %s, %s FROM %s as rel left join %s as sg on rel.security_group_id = sg.id 
 	where cvm_id in (:cvm_ids)`,
-	cloud.SecurityGroupColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
-	tools.BaseRelJoinSqlBuild("rel", "sg", "id", "cvm_id"),
-	table.SecurityGroupCvmTable, table.SecurityGroupTable)
+		cloud.SecurityGroupColumns.FieldsNamedExprWithout(types.DefaultRelJoinWithoutField),
+		tools.BaseRelJoinSqlBuild("rel", "sg", "id", "cvm_id"),
+		table.SecurityGroupCvmTable, table.SecurityGroupTable)
 
 	details := make([]types.SecurityGroupWithCvmID, 0)
 	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"cvm_ids": cvmIDs}); err != nil {

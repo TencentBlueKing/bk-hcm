@@ -33,7 +33,7 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateAccountBillConfig batch create account bill config.

@@ -37,7 +37,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // AccountBillMonthPullTask interface for operating account bill month task

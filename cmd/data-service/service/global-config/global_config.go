@@ -36,7 +36,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateGlobalConfigs creates the global config.

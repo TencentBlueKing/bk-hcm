@@ -36,7 +36,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateSgCommonRels rels.

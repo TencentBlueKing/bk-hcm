@@ -26,11 +26,11 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/golang/protobuf v1.5.4
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.1.40
-	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/microsoftgraph/msgraph-sdk-go v1.26.0
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.14.0
+	github.com/secondwindoss/sqlx v1.4.2
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/pflag v1.0.5
@@ -175,6 +175,3 @@ require (
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
-
-// add unicode character namedquery support
-replace github.com/jmoiron/sqlx v1.3.5 => github.com/chenjr15/sqlx v0.0.0-20241121072647-0e820a7ed576

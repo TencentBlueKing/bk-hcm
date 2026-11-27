@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/kit"
 
 	_ "github.com/go-sql-driver/mysql" // import mysql drive, used to create conn.
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 func TestIDGeneratorOne(t *testing.T) {

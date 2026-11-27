@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // TargetGroupListenerRuleRelInterface only used for target group listener rule rel.

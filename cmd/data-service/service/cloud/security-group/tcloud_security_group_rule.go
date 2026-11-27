@@ -40,7 +40,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // initTCloudSGRuleService initial the tcloud security group rule service

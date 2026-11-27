@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // InitNetInterfaceService initial the network interface service

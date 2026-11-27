@@ -39,7 +39,7 @@ import (
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchUpdateCvm cvm.

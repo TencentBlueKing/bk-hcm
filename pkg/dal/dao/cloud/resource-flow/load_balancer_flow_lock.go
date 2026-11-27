@@ -38,7 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // ResourceFlowLockInterface only used for resource flow lock.

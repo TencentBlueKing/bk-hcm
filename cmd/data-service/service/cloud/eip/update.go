@@ -35,7 +35,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchUpdateEipExt ...

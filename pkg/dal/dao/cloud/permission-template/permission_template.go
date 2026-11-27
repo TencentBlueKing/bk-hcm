@@ -45,7 +45,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // PermissionTemplate only used for permission_template.

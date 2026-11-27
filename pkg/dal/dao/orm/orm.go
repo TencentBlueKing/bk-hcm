@@ -35,8 +35,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
-	"github.com/jmoiron/sqlx"
 	prm "github.com/prometheus/client_golang/prometheus"
+	"github.com/secondwindoss/sqlx"
 	"golang.org/x/time/rate"
 )
 

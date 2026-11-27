@@ -25,8 +25,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	prm "github.com/prometheus/client_golang/prometheus"
+	"github.com/secondwindoss/sqlx"
 )
 
 var (

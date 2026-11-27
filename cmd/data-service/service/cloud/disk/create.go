@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/secondwindoss/sqlx"
 )
 
 // BatchCreateDiskExt 批量创建云盘(支持 extension 字段)
