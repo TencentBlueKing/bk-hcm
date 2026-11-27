@@ -1,7 +1,9 @@
 <script lang="ts" setup>
+import type { Image, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { PropType, ref } from 'vue';
-import useDetail from '../../../hooks/use-detail';
+import { useResourceDetail } from '../../../hooks/use-detail';
 import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
@@ -13,6 +15,8 @@ const props = defineProps({
   },
 });
 
+const tcloudField = extensionPath<VendorResource<Image, 'tcloud'>>();
+
 const fields = ref<FieldList>([
   {
     name: '实例ID',
@@ -20,7 +24,7 @@ const fields = ref<FieldList>([
   },
   {
     name: '名称',
-    prop: 'cloud_id',
+    prop: 'name',
   },
   {
     name: '云厂商',
@@ -44,25 +48,25 @@ const fields = ref<FieldList>([
   },
 ]);
 
-const { loading, detail } = useDetail(
+const { loading, detail } = useResourceDetail<'images'>(
   'images',
   props.id,
-  (detail: any) => {
+  (detail) => {
     switch (detail.vendor) {
       case 'tcloud':
         fields.value.push(
           ...[
             {
               name: '地域',
-              prop: 'region',
+              value: detail.extension?.region ?? detail.region,
             },
             {
               name: '镜像来源',
-              prop: 'image_source',
+              prop: tcloudField('extension.image_source'),
             },
             {
               name: '镜像大小',
-              prop: 'image_size',
+              prop: tcloudField('extension.image_size'),
             },
           ],
         );

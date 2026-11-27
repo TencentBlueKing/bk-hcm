@@ -64,7 +64,7 @@ const handleDelete = (row: ICloudSecretItem) => {
 const getColumnRender = (column: ModelPropertyColumn) => {
   if (column.id === 'cloud_secret_id') {
     return ({ row }: { row: ICloudSecretItem }) => {
-      const secretId = row.cloud_secret_id || row.extension?.cloud_secret_id || '';
+      const secretId = row.extension?.cloud_secret_id || '';
       return h('span', { class: 'secret-id-cell' }, [
         h(
           Button,
@@ -82,19 +82,17 @@ const getColumnRender = (column: ModelPropertyColumn) => {
 
   if (column.id === 'console_login') {
     return ({ row }: { row: ICloudSecretItem }) => {
-      const consoleLogin = row.console_login ?? row.extension?.console_login;
+      const consoleLogin = row.extension?.console_login;
       return CONSOLE_LOGIN_MAP[consoleLogin as number] || '--';
     };
   }
 
   if (column.id === 'cloud_sub_account_id') {
-    return ({ row }: { row: ICloudSecretItem }) =>
-      row.cloud_sub_account_id || row.extension?.cloud_sub_account_id || '--';
+    return ({ row }: { row: ICloudSecretItem }) => row.extension?.cloud_sub_account_id || '--';
   }
 
   if (column.id === 'cloud_main_account_id') {
-    return ({ row }: { row: ICloudSecretItem }) =>
-      row.cloud_main_account_id || row.extension?.cloud_main_account_id || '--';
+    return ({ row }: { row: ICloudSecretItem }) => row.extension?.cloud_main_account_id || '--';
   }
 
   if (['cloud_created_at', 'last_used_time', 'disabled_time'].includes(column.id)) {

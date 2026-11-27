@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { NetworkInterface, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { ref } from 'vue';
 import { CloudType } from '@/typings';
@@ -7,11 +9,9 @@ import { FieldList } from '../../../common/info-list/types';
 import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail?: VendorResource<NetworkInterface, 'azure'> }>();
+
+const fieldPath = extensionPath<VendorResource<NetworkInterface, 'azure'>>();
 
 const { getRegionName } = useRegionsStore();
 
@@ -44,7 +44,7 @@ const fields = ref<FieldList>([
   },
   {
     name: '资源组',
-    prop: 'resource_group_name',
+    prop: fieldPath('extension.resource_group_name'),
   },
   {
     name: '位置',
@@ -60,33 +60,33 @@ switch (props?.detail.vendor) {
           name: '内网IPv4地址',
           prop: 'private_ipv4',
           render(cell: string[]) {
-            return cell.length ? cell.join(',') : '--';
+            return cell?.join(',') || '--';
           },
         },
         {
           name: '公网IPv4地址',
           prop: 'public_ipv4',
           render(cell: string[]) {
-            return cell.length ? cell.join(',') : '--';
+            return cell?.join(',') || '--';
           },
         },
         {
           name: '专用IP地址(IPv6)',
           prop: 'private_ipv6',
           render(cell: string[]) {
-            return cell.length ? cell.join(',') : '--';
+            return cell?.join(',') || '--';
           },
         },
         {
           name: '公用IP地址(IPv6)',
           prop: 'public_ipv6',
           render(cell: string[]) {
-            return cell.length ? cell.join(',') : '--';
+            return cell?.join(',') || '--';
           },
         },
         {
           name: '更快的网络连接',
-          prop: 'enable_accelerated_networking',
+          prop: fieldPath('extension.enable_accelerated_networking'),
           render(val: boolean) {
             return val ? '是' : '否';
           },
@@ -100,7 +100,7 @@ switch (props?.detail.vendor) {
         },
         {
           name: '已关联到安全组ID',
-          prop: 'cloud_security_group_id',
+          prop: fieldPath('extension.cloud_security_group_id'),
           render(cell: string) {
             return cell || '--';
           },
@@ -111,7 +111,7 @@ switch (props?.detail.vendor) {
         },
         {
           name: 'MAC地址',
-          prop: 'mac_address',
+          prop: fieldPath('extension.mac_address'),
         },
       ],
     );

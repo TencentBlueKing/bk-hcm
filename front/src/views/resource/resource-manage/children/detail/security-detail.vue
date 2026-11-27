@@ -12,7 +12,7 @@ import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { SecurityGroupManageType } from '@/constants/security-group';
 import routerAction from '@/router/utils/action';
@@ -35,7 +35,7 @@ const templateData = reactive({
   portList: [],
   portGroupList: [],
 });
-const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
+const { loading, detail, getDetail } = useResourceDetail('security_groups', securityId.value as string);
 
 watchEffect(() => {
   if (securityId.value) {
@@ -177,13 +177,13 @@ const getTemplateData = async (detail: { account_id: string }) => {
 };
 
 const handleSync = async () => {
-  const { account_id, vendor, cloud_id, region, resource_group_name: resourceGroupName } = detail.value;
+  const { account_id, vendor, cloud_id, region, extension } = detail.value;
   const isAzureVendor = vendor === 'azure';
   Confirm(t('同步单个安全组'), t('从云上同步该安全组、安全组规则、关联的实例信息等'), async () => {
     await resourceStore.syncResource(vendor, account_id, 'security_group', {
       cloud_ids: [cloud_id],
       regions: isAzureVendor ? undefined : [region],
-      resource_group_names: isAzureVendor ? [resourceGroupName] : undefined,
+      resource_group_names: vendor === 'azure' ? [extension?.resource_group_name] : undefined,
     });
     Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
   });

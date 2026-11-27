@@ -348,7 +348,7 @@ const formatTime = (time?: string) => {
               <bk-table :data="secretList" row-key="id" :border="['row', 'outer']" show-overflow-tooltip>
                 <bk-table-column label="密钥ID" min-width="130">
                   <template #default="{ row }">
-                    {{ maskSecretId(row.extension?.cloud_secret_id || row.cloud_secret_id) }}
+                    {{ maskSecretId(row.extension?.cloud_secret_id) }}
                   </template>
                 </bk-table-column>
                 <bk-table-column label="密钥Key" width="80">

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Subnet, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import { CloudType } from '@/typings/account';
 
 import DetailTab from '../../common/tab/detail-tab';
@@ -9,7 +11,7 @@ import { useResourceDetailAuth, useResourceDetailRoute } from '../../hooks/use-r
 import { ref, inject, computed, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -20,6 +22,12 @@ import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { FieldList } from '../../common/info-list/types';
+
+const tcloudField = extensionPath<VendorResource<Subnet, 'tcloud'>>();
+const awsField = extensionPath<VendorResource<Subnet, 'aws'>>();
+const azureField = extensionPath<VendorResource<Subnet, 'azure'>>();
+const gcpField = extensionPath<VendorResource<Subnet, 'gcp'>>();
+const huaweiField = extensionPath<VendorResource<Subnet, 'huawei'>>();
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { setTitle } = useBreadcrumb();
@@ -110,7 +118,7 @@ const isBindBusiness = computed(() => {
 
 const { getRegionName } = useRegionsStore();
 
-const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) => {
+const { loading, detail } = useResourceDetail<'subnets'>('subnets', detailId.value, (detail) => {
   if (detail.vendor !== 'gcp') {
     resourceStore.countSubnetIps(detailId.value).then((res: any) => {
       detail.ipv4_nums = res?.data?.available_ip_count || 0;
@@ -122,7 +130,7 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
         ...[
           {
             name: '是否默认子网',
-            prop: 'is_default',
+            prop: tcloudField('extension.is_default'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
@@ -138,7 +146,7 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
           },
           {
             name: '关联ACL',
-            prop: 'network_acl_id',
+            prop: tcloudField('extension.cloud_network_acl_id'),
           },
         ],
       );
@@ -148,7 +156,7 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
         ...[
           {
             name: '状态',
-            prop: 'state',
+            prop: awsField('extension.state'),
           },
           {
             name: '地域',
@@ -161,28 +169,28 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
           },
           {
             name: '自动分配公有IPv4地址',
-            prop: 'map_public_ip_on_launch',
+            prop: awsField('extension.map_public_ip_on_launch'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
           },
           {
             name: '是否默认子网',
-            prop: 'is_default',
+            prop: awsField('extension.is_default'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
           },
           {
             name: '自动分配IPv6地址',
-            prop: 'assign_ipv6_address_on_creation',
+            prop: awsField('extension.assign_ipv6_address_on_creation'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
           },
           {
             name: '主机名称类型',
-            prop: 'hostname_type',
+            prop: awsField('extension.hostname_type'),
           },
         ],
       );
@@ -192,11 +200,11 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
         ...[
           {
             name: 'NAT网关',
-            prop: 'nat_gateway',
+            prop: azureField('extension.nat_gateway'),
           },
           {
             name: '网络安全组',
-            prop: 'network_security_group',
+            prop: azureField('extension.cloud_security_group_id'),
           },
         ],
       );
@@ -211,26 +219,26 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
           },
           {
             name: 'IP栈类型',
-            prop: 'stack_type',
+            prop: gcpField('extension.stack_type'),
           },
           {
             name: 'IPv6权限类型',
-            prop: 'ipv6_access_type',
+            prop: gcpField('extension.ipv6_access_type'),
           },
           {
             name: '网关',
-            prop: 'gateway_address',
+            prop: gcpField('extension.gateway_address'),
           },
           {
             name: '专用Google访问通道',
-            prop: 'private_ip_google_access',
+            prop: gcpField('extension.private_ip_google_access'),
             render(val: boolean) {
               return val ? '启用' : '关闭';
             },
           },
           {
             name: '流日志',
-            prop: 'enable_flow_logs',
+            prop: gcpField('extension.enable_flow_logs'),
             render(val: boolean) {
               return val ? '启用' : '关闭';
             },
@@ -244,7 +252,7 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
         ...[
           {
             name: '状态',
-            prop: 'status',
+            prop: huaweiField('extension.status'),
           },
           {
             name: '地域',
@@ -253,22 +261,22 @@ const { loading, detail } = useDetail('subnets', detailId.value, (detail: any) =
           },
           {
             name: 'DHCP',
-            prop: 'dhcp_enable',
+            prop: huaweiField('extension.dhcp_enable'),
             render(val: boolean) {
               return val ? '启用' : '关闭';
             },
           },
           {
             name: '网关',
-            prop: 'gateway_ip',
+            prop: huaweiField('extension.gateway_ip'),
           },
           {
             name: 'DNS服务器地址',
-            prop: 'dns_list',
+            prop: huaweiField('extension.dns_list'),
           },
           {
             name: 'NTP服务器地址',
-            prop: 'ntp_addresses',
+            prop: huaweiField('extension.ntp_addresses'),
           },
         ],
       );

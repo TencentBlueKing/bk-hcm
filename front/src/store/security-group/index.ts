@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import rollRequest from '@blueking/roll-request';
 import http from '@/http';
 import { VendorEnum } from '@/common/constant';
+import type { SecurityGroup } from '@/typings/resource-detail';
 import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -44,34 +45,7 @@ export interface ISecurityGroupRuleItem {
   type: string;
 }
 
-export interface ISecurityGroupDetail extends ISecurityGroupItem {
-  cvm_count?: number; // tcloud、aws、huawei专属
-  network_interface_count?: number; // azure专属
-  subnet_count?: number; // azure专属
-  extension?:
-    | { cloud_project_id: string } // tcloud
-    | {
-        // aws
-        vpc_id: string;
-        cloud_vpc_id: string;
-        cloud_owner_id: string;
-      }
-    | {
-        // azure
-        etag: string;
-        flush_connection: string;
-        resource_guid: string;
-        provisioning_state: string;
-        cloud_network_interface_ids: string[];
-        cloud_subnet_ids: string[];
-      }
-    | {
-        // huawei
-        cloud_project_id: string;
-        cloud_enterprise_project_id: string;
-      };
-  // ;
-}
+export type ISecurityGroupDetail = SecurityGroup;
 
 interface ISecurityGroupAssignPreviewItem {
   id: string;

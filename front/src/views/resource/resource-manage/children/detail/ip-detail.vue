@@ -5,7 +5,7 @@ import AssignEip from '../dialog/assign-eip/assign-eip';
 
 import { InfoBox, Message } from 'bkui-vue';
 import { useRouter } from 'vue-router';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
 import { useI18n } from 'vue-i18n';
 import { IEip, EipStatus } from '@/typings';
@@ -25,7 +25,7 @@ const { whereAmI } = useWhereAmI();
 const { setTitle } = useBreadcrumb();
 
 const { detailId } = useResourceDetailRoute();
-const { loading, detail, getDetail } = useDetail('eips', detailId.value);
+const { loading, detail, getDetail } = useResourceDetail('eips', detailId.value);
 
 watchEffect(() => {
   if (detail.value?.id) {

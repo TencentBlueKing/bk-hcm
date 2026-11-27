@@ -9,7 +9,7 @@ import NetworkInterfaceDnssvr from '../components/network-interface/network-inte
 import NetworkInterfaceNetsecgroup from '../components/network-interface/network-interface-netsecgroup.vue';
 
 import { useI18n } from 'vue-i18n';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 import { computed, inject, watchEffect } from 'vue';
 
@@ -21,28 +21,8 @@ const { setTitle } = useBreadcrumb();
 
 const isResourcePage: any = inject('isResourcePage');
 
-const { loading, detail } = useDetail('network_interfaces', detailId.value, (data: any) => {
+const { loading, detail } = useResourceDetail<'network_interfaces'>('network_interfaces', detailId.value, (data) => {
   data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
-  switch (data.vendor) {
-    case 'azure':
-      data.gatewayLoadBalancerId = data.gateway_load_balancer?.id;
-      data.associated = [];
-      if (data.network_security_group?.id) {
-        data.associated.push({
-          id: data.network_security_group.id,
-          name: data.network_security_group.id.split('/')?.pop(),
-          label: '网络安全组',
-        });
-      }
-      if (data.virtual_machine?.id) {
-        data.associated.push({
-          id: data.virtual_machine.id,
-          name: data.virtual_machine.id.split('/')?.pop(),
-          label: '虚拟机',
-        });
-      }
-      break;
-  }
 });
 
 watchEffect(() => {

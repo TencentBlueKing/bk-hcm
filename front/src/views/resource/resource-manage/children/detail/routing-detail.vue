@@ -4,7 +4,7 @@ import RouteInfo from '../components/route/route-info.vue';
 import RouteSubnet from '../components/route/route-subnet.vue';
 
 import { watchEffect } from 'vue';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { useResourceDetailRoute } from '../../hooks/use-resource-detail-route';
 import useBreadcrumb from '@/hooks/use-breadcrumb';
 
@@ -22,7 +22,7 @@ const routeTabs = [
   },
 ];
 
-const { loading, detail } = useDetail('route_tables', detailId.value);
+const { loading, detail } = useResourceDetail('route_tables', detailId.value);
 
 watchEffect(() => {
   if (detail.value?.id) {

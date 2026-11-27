@@ -1,5 +1,6 @@
 import { defineComponent, PropType } from 'vue';
 
+import get from 'lodash/get';
 import InfoList from '../info-list/info-list';
 
 import './detail-info.scss';
@@ -35,7 +36,7 @@ export default defineComponent({
       return this.fields.map((field) => {
         return {
           ...field,
-          value: field.value || this.detail?.[field?.prop],
+          value: field.value || get(this.detail, field.prop ?? ''),
         };
       });
     },

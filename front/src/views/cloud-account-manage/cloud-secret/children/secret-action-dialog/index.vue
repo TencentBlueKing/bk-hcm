@@ -113,7 +113,7 @@ const handleConfirm = async () => {
       <div class="secret-info">
         <div class="info-item">
           <span class="label">密钥ID：</span>
-          <span class="value">{{ secretData?.cloud_secret_id || secretData?.extension?.cloud_secret_id || '--' }}</span>
+          <span class="value">{{ secretData?.extension?.cloud_secret_id || '--' }}</span>
         </div>
         <div class="info-item">
           <span class="label">创建时间：</span>

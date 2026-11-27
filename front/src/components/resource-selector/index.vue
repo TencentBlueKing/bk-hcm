@@ -59,7 +59,6 @@ const getData = () => {
           ...item.spec,
           ...item.attachment,
           ...item.revision,
-          ...item.extension,
         };
       });
       pageIndex.value += 1;

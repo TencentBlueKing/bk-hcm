@@ -2,6 +2,8 @@
  * 分页相关状态和事件
  */
 import type { FilterType } from '@/typings/resource';
+import type { ResourceListItem, ResourceResponse } from '@/typings/resource-detail';
+import type { Ref } from 'vue';
 
 import { useResourceStore } from '@/store/resource';
 import { ref, onMounted, watch } from 'vue';
@@ -20,9 +22,9 @@ type PropsType = {
   filter?: FilterType;
 };
 
-export default (
+export default <T extends string>(
   props: PropsType,
-  type: string,
+  type: T,
   apiMethod?: Function,
   apiName = 'list',
   args: any = {},
@@ -33,7 +35,8 @@ export default (
 
   // 查询列表相关状态
   const isLoading = ref(false);
-  const datas = ref([]);
+  type Row = ResourceResponse<T>;
+  const datas = ref([]) as Ref<Row[]>;
   const pagination = ref({
     current: 1,
     limit: 20,
@@ -118,18 +121,18 @@ export default (
     // 执行获取数据的逻辑
     method()
       .then(([listResult, countResult]: [any, any]) => {
-        datas.value = Array.isArray(listResult?.data?.details || listResult?.data || [])
-          ? (listResult?.data?.details || listResult?.data || []).map((item: any) => {
+        const items: ResourceListItem[] = listResult?.data?.details || listResult?.data || [];
+        const rows = Array.isArray(items)
+          ? items.map((item) => {
               return {
                 ...item,
                 ...item.spec,
                 ...item.attachment,
                 ...item.revision,
-                ...item.extension,
-                ...item?.extension?.attachment,
               };
-            }) || []
+            })
           : [];
+        datas.value = rows as Row[];
         // 如果传入了 extraResolveData 方法，则执行该方法, 对 datas 做额外的处理
         typeof extraResolveData === 'function' && extraResolveData(datas.value).then((res) => (datas.value = res));
         pagination.value.count = countResult?.data?.count || 0;

@@ -1,11 +1,8 @@
 <script lang="ts" setup>
 import { watch, ref } from 'vue';
+import type { Vpc } from '@/typings/resource-detail';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail: Vpc }>();
 
 const columns = ref([]);
 
@@ -72,5 +69,5 @@ watch(
 </script>
 
 <template>
-  <bk-table row-hover="auto" :columns="columns" :data="props.detail.cidr" show-overflow-tooltip />
+  <bk-table row-hover="auto" :columns="columns" :data="props.detail.extension?.cidr" show-overflow-tooltip />
 </template>

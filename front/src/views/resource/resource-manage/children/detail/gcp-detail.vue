@@ -4,7 +4,7 @@
 import DetailInfo from '../../common/info/detail-info';
 import DetailTab from '../../common/tab/detail-tab';
 // import GcpRelate from '../components/gcp/gcp-relate.vue';
-import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
+import { useResourceDetail } from '@/views/resource/resource-manage/hooks/use-detail';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 import { GcpTypeEnum, CloudType } from '@/typings';
@@ -55,7 +55,7 @@ const gcpLoading = ref(true);
 //   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 // });
 
-const { loading, detail } = useDetail('vendors/gcp/firewalls/rules', id);
+const { loading, detail } = useResourceDetail('vendors/gcp/firewalls/rules', id);
 
 const fetchDetail = async () => {
   gcpLoading.value = true;

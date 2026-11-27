@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Eip, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import { defineProps, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import DetailList from '../../../common/info/detail-info';
@@ -16,9 +18,13 @@ import {
   MENU_RESOURCE_DETAIL,
 } from '@/constants/menu-symbol';
 
-const props = defineProps({
-  detail: Object,
-});
+const props = defineProps<{ detail: Eip }>();
+const fieldPath = extensionPath<Eip>();
+const tcloudField = extensionPath<VendorResource<Eip, 'tcloud'>>();
+const awsField = extensionPath<VendorResource<Eip, 'aws'>>();
+const gcpField = extensionPath<VendorResource<Eip, 'gcp'>>();
+const azureField = extensionPath<VendorResource<Eip, 'azure'>>();
+const huaweiField = extensionPath<VendorResource<Eip, 'huawei'>>();
 
 const BUSINESS_DETAIL_MAP: Record<string, symbol> = {
   host: MENU_BUSINESS_HOST_DETAILS,
@@ -139,11 +145,11 @@ const otherInfo = ref([]);
 const bandInfo: FieldList = [
   {
     name: '带宽名称',
-    prop: 'bandwidth_name',
+    prop: fieldPath('extension.bandwidth_name'),
   },
   {
     name: '带宽ID',
-    prop: 'bandwidth_id',
+    prop: fieldPath('extension.bandwidth_id'),
   },
   // {
   //   name: '计费模式',
@@ -155,11 +161,11 @@ const bandInfo: FieldList = [
   // },
   {
     name: '带宽大小(Mbit/s)',
-    prop: 'bandwidth_size',
+    prop: fieldPath('extension.bandwidth_size'),
   },
   {
     name: '带宽类型',
-    prop: 'bandwidth_share_type',
+    prop: fieldPath('extension.bandwidth_share_type'),
   },
 ];
 
@@ -171,11 +177,11 @@ watch(
         otherInfo.value = [
           {
             name: '线路类型',
-            prop: 'internet_service_provider',
+            prop: tcloudField('extension.internet_service_provider'),
           },
           {
             name: '带宽上限',
-            prop: 'bandwidth',
+            prop: tcloudField('extension.bandwidth'),
           },
           {
             name: '加速地区',
@@ -183,7 +189,7 @@ watch(
           },
           {
             name: '计费模式',
-            prop: 'internet_charge_type',
+            prop: tcloudField('extension.internet_charge_type'),
           },
         ];
         baseInfo.value.splice(7, 1);
@@ -192,19 +198,19 @@ watch(
         otherInfo.value = [
           {
             name: '范围',
-            prop: 'domain',
+            prop: awsField('extension.domain'),
           },
           {
             name: '地址池',
-            prop: 'public_ipv4_pool',
+            prop: awsField('extension.public_ipv4_pool'),
           },
           {
             name: '内网IP',
-            prop: 'private_ip_address',
+            prop: awsField('extension.private_ip_address'),
           },
           {
             name: '网络接口',
-            prop: 'network_interface_id',
+            prop: awsField('extension.network_interface_id'),
           },
         ];
         baseInfo.value.splice(7, 1);
@@ -214,7 +220,7 @@ watch(
         otherInfo.value = [
           {
             name: '权限类型',
-            prop: 'address_type',
+            prop: gcpField('extension.address_type'),
           },
           {
             name: '类型',
@@ -222,7 +228,7 @@ watch(
           },
           {
             name: '网络层',
-            prop: 'network_tier',
+            prop: gcpField('extension.network_tier'),
           },
         ];
         break;
@@ -230,23 +236,23 @@ watch(
         otherInfo.value = [
           {
             name: '资源组',
-            prop: 'resource_group_name',
+            prop: azureField('extension.resource_group_name'),
           },
           {
             name: '位置',
-            prop: 'location',
+            prop: azureField('extension.location'),
           },
           {
             name: 'SKU',
-            prop: 'sku',
+            prop: azureField('extension.sku'),
           },
           {
             name: '层',
-            prop: 'sku_tier',
+            prop: azureField('extension.sku_tier'),
           },
           {
             name: 'DNS名称',
-            prop: '',
+            prop: azureField('extension.fqdn'),
           },
         ];
         break;
@@ -254,11 +260,11 @@ watch(
         otherInfo.value = [
           {
             name: '企业项目',
-            prop: 'enterprise_project_id',
+            prop: huaweiField('extension.enterprise_project_id'),
           },
           {
             name: '类型',
-            prop: 'type',
+            prop: huaweiField('extension.type'),
           },
         ];
         bindInfo.value.splice(

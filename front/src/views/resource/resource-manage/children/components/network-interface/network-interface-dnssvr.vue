@@ -1,11 +1,8 @@
 <script lang="ts" setup>
+import type { NetworkInterface, VendorResource } from '@/typings/resource-detail';
 import { h, ref, watchEffect } from 'vue';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail?: VendorResource<NetworkInterface, 'azure'> }>();
 
 const columns = ref([
   {
@@ -17,7 +14,7 @@ const columns = ref([
 const data = ref([]);
 
 watchEffect(() => {
-  data.value = props.detail.dns_settings?.applied_dns_servers?.map((item: any) => ({ name: item }));
+  data.value = props.detail.extension?.dns_settings?.applied_dns_servers?.map((item) => ({ name: item }));
 });
 </script>
 

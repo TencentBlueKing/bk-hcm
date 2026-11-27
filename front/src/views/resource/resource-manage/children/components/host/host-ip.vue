@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import { ref, h, watch, inject, computed, withDirectives, resolveComponent } from 'vue';
+import type { PropType } from 'vue';
+import type { Cvm, Eip, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '../../../common/info/extension-path';
 import { bkTooltips, Button, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useQueryList from '../../../hooks/use-query-list';
@@ -7,12 +10,14 @@ import { useResourceDetailAuth } from '../../../hooks/use-resource-detail-route'
 
 const props = defineProps({
   data: {
-    type: Object,
+    type: Object as PropType<Cvm>,
   },
   isBindBusiness: {
     type: [Boolean, String],
   },
 });
+
+const azureCvmField = extensionPath<VendorResource<Cvm, 'azure'>>();
 
 const resourceStore = useResourceStore();
 const isResourcePage: any = inject('isResourcePage');
@@ -46,6 +51,8 @@ const columns = ref([
   {
     label: 'IP类型',
     field: 'address_type',
+    render: ({ data }: { data: Eip }) =>
+      (data.vendor === 'gcp' ? data.extension?.address_type : undefined) ?? data.address_type,
   },
   {
     label: '备注',
@@ -115,7 +122,7 @@ const {
   datas,
   isLoading,
   triggerApi: triggerCvmEipApi,
-} = useQueryList({}, 'eip', () => {
+} = useQueryList({}, 'eips', () => {
   return Promise.all([resourceStore.getEipListByCvmId(props.data.vendor, props.data.id)]);
 });
 
@@ -139,9 +146,9 @@ const rules = [
 
 if (props.data.vendor === 'azure') {
   rules.push({
-    field: 'extension.resource_group_name',
+    field: azureCvmField('extension.resource_group_name'),
     op: 'json_eq',
-    value: props.data.resource_group_name,
+    value: props.data.extension?.resource_group_name,
   });
 }
 
@@ -276,10 +283,12 @@ watch(
           {
             label: '计费模式',
             field: 'internet_charge_type',
+            render: ({ data }: { data: VendorResource<Eip, 'tcloud'> }) => data.extension?.internet_charge_type,
           },
           {
             label: '带宽上限',
             field: 'bandwidth',
+            render: ({ data }: { data: VendorResource<Eip, 'tcloud'> }) => data.extension?.bandwidth,
           },
         ],
       );

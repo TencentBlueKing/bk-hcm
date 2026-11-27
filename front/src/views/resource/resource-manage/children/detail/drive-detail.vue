@@ -3,14 +3,15 @@ import { CloudType } from '@/typings/account';
 
 import DetailTab from '../../common/tab/detail-tab';
 import DetailInfo from '../../common/info/detail-info';
+import { formatDiskBoolean, formatDiskExpiry } from '../../common/disk-format';
 // import { useAccountStore } from '@/store';
 
-import { ref, computed, h, withDirectives, inject, watchEffect } from 'vue';
+import { computed, h, withDirectives, inject, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, bkTooltips } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useResourceStore } from '@/store/resource';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import useMountedDrive from '../../hooks/use-choose-host-drive';
 import useUninstallDrive from '../../hooks/use-uninstall-drive';
 import { useRegionsStore } from '@/store/useRegionsStore';
@@ -41,7 +42,39 @@ const hostTabs = [
   },
 ];
 
-const settingFields = ref<FieldList>([
+const { detailId } = useResourceDetailRoute();
+const { loading, detail, getDetail } = useResourceDetail('disks', detailId.value);
+const isAttached = computed(() => {
+  const { vendor, instance_id, extension, status } = detail.value;
+  return Boolean(
+    instance_id || (vendor === 'tcloud' && (extension?.attached || extension?.instance_id || status === 'ATTACHED')),
+  );
+});
+
+const vendorFields = computed<FieldList>(() => {
+  const { vendor, extension, is_system_disk } = detail.value;
+  if (vendor !== 'tcloud' && vendor !== 'huawei') return [];
+
+  const fields: FieldList = [{ name: '硬盘用途', value: is_system_disk ? '系统盘' : '数据盘' }];
+  const isTCloud = vendor === 'tcloud';
+  if (isTCloud) {
+    fields.unshift({ name: '是否随实例销毁', value: formatDiskBoolean(extension?.delete_with_instance) });
+    fields.push({ name: '到期欠费保护', value: formatDiskBoolean(extension?.backup_disk) });
+  }
+
+  const chargeType = isTCloud ? extension?.disk_charge_type : extension?.charge_type;
+  const expireTime = isTCloud ? extension?.deadline_time : extension?.expire_time;
+  const chargeLabels: Record<string, string> = isTCloud
+    ? { PREPAID: '包年/包月', POSTPAID_BY_HOUR: '按量计费' }
+    : { prePaid: '包年/包月', postPaid: '按量计费' };
+  fields.push(
+    { name: '计费模式', value: chargeLabels[chargeType] },
+    { name: '到期时间', value: formatDiskExpiry(expireTime) },
+  );
+  return fields;
+});
+
+const settingFields = computed<FieldList>(() => [
   {
     name: 'ID',
     prop: 'id',
@@ -92,7 +125,8 @@ const settingFields = ref<FieldList>([
   },
   {
     name: '可用区',
-    prop: 'zone',
+    value:
+      detail.value.vendor === 'azure' ? detail.value.extension?.zones?.filter(Boolean).join('、') : detail.value.zone,
   },
   {
     name: '硬盘分类',
@@ -101,17 +135,19 @@ const settingFields = ref<FieldList>([
       return cell ? '系统盘' : '数据盘';
     },
   },
-  {
-    name: '硬盘类型',
-    prop: 'disk_type',
-  },
+  ...(detail.value.vendor === 'azure'
+    ? [
+        { name: '资源组', value: detail.value.extension?.resource_group_name },
+        { name: '硬盘类型', value: detail.value.extension?.sku_name },
+      ]
+    : [{ name: '硬盘类型', prop: 'disk_type' }]),
   {
     name: '硬盘容量(GB)',
     prop: 'disk_size',
   },
   {
     name: '是否加密',
-    prop: 'exencrypted',
+    value: formatDiskBoolean(detail.value.extension?.encrypted),
   },
   {
     name: '挂载主机',
@@ -137,10 +173,7 @@ const settingFields = ref<FieldList>([
   },
   {
     name: '是否挂载',
-    prop: 'instance_id',
-    render(cell: string) {
-      return cell ? '是' : '否';
-    },
+    value: formatDiskBoolean(isAttached.value),
   },
   {
     name: '创建时间',
@@ -153,6 +186,7 @@ const settingFields = ref<FieldList>([
     prop: 'memo',
     // edit: true,
   },
+  ...vendorFields.value,
 ]);
 const resourceStore = useResourceStore();
 const route = useRoute();
@@ -169,96 +203,6 @@ const { t } = useI18n();
 const { isShowMountedDrive, handleMountedDrive, MountedDrive } = useMountedDrive();
 
 const { isShowUninstallDrive, handleUninstallDrive, UninstallDrive } = useUninstallDrive();
-
-const { detailId } = useResourceDetailRoute();
-const { loading, detail, getDetail } = useDetail('disks', detailId.value, (detail: any) => {
-  switch (detail.vendor) {
-    case 'tcloud':
-      settingFields.value.push(
-        ...[
-          {
-            name: '是否随实例销毁',
-            prop: 'delete_with_instance',
-            render(delete_with_instance: string) {
-              return delete_with_instance ? '是' : '否';
-            },
-          },
-          {
-            name: '硬盘用途',
-            prop: '',
-            render() {
-              return detail.is_system_disk ? '系统盘' : '数据盘';
-            },
-          },
-          {
-            name: '到期欠费保护',
-            prop: 'backup_disk',
-            render(backup_disk: boolean) {
-              return backup_disk ? '是' : '否';
-            },
-          },
-          {
-            name: '计费模式',
-            prop: 'extension.charge_type',
-            render() {
-              return detail.extension.charge_type === 'PREPAID' ? '包年/包月' : '按量计费' || '--';
-            },
-          },
-          {
-            name: '到期时间',
-            prop: 'extension.expire_time',
-            render() {
-              return timeFormatter(detail.extension.expire_time) || '--';
-            },
-          },
-        ],
-      );
-      break;
-    case 'azure':
-      settingFields.value.splice(
-        9,
-        1,
-        ...[
-          {
-            name: '资源组',
-            prop: 'resource_group_name',
-          },
-          {
-            name: '硬盘类型',
-            prop: 'sku_name',
-          },
-        ],
-      );
-      break;
-    case 'huawei':
-      settingFields.value.push(
-        ...[
-          {
-            name: '硬盘用途',
-            prop: '',
-            render() {
-              return detail.is_system_disk ? '系统盘' : '数据盘';
-            },
-          },
-          {
-            name: '计费模式',
-            prop: 'extension.charge_type',
-            render() {
-              return detail.extension.charge_type === 'prePaid' ? '包年/包月' : '按量计费' || '--';
-            },
-          },
-          {
-            name: '到期时间',
-            prop: 'extension.expire_time',
-            render() {
-              return timeFormatter(detail.extension.expire_time) || '--';
-            },
-          },
-        ],
-      );
-      break;
-  }
-});
 
 watchEffect(() => {
   if (detail.value?.id) {
@@ -291,12 +235,6 @@ const handleShowDelete = () => {
   });
 };
 
-const disabledOption = computed(() => {
-  // 业务下，判断是否已被回收
-  if (!isResourcePage.value) return detail.value?.recycle_status === 'recycling';
-  // 资源下，判断是否分配业务，是否已被回收
-  return detail.value?.bk_biz_id !== -1 || detail.value?.recycle_status === 'recycling';
-});
 const bkTooltipsOptions = computed(() => {
   // 资源下，是否分配业务
   if (isResourcePage.value && detail.value?.bk_biz_id !== -1)
@@ -311,8 +249,12 @@ const bkTooltipsOptions = computed(() => {
       disabled: detail.value.recycle_status !== 'recycling',
     };
 
+  if (isAttached.value && !detail.value.instance_id) {
+    return { content: '云侧已挂载，主机关联待同步，请稍后刷新', disabled: false };
+  }
   return null;
 });
+const disabledOption = computed(() => loading.value || !detail.value.id || Boolean(bkTooltipsOptions.value));
 
 // const disableOperation = computed(() => {
 //   return !location.href.includes('business') && detail.value.bk_biz_id !== -1;
