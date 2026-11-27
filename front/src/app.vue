@@ -40,7 +40,7 @@ const navigationState = reactive({
   collapse: false,
 });
 
-// 侧栏只看当前一级菜单是否声明了 menu：资源接入、资源选型不声明；404、error 等状态页不属于任何一级菜单，取不到即不显示
+// 侧栏只看当前一级菜单是否声明了 menu：资源选型不声明；404、error 等状态页不属于任何一级菜单，取不到即不显示
 const needMenu = computed(() => !!getCurrentTopMenu(route)?.menu?.length);
 const hasFooter = computed(() => route.name === MENU_BUSINESS_HOST_MANAGEMENT);
 

@@ -11,6 +11,7 @@ import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/ut
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import { getInstVip, parseIP } from '@/utils';
+import { pickClbDetailsBaseQuery } from '../utils';
 
 import { VirtualRender } from 'bkui-vue';
 import Search from '../children/search/search.vue';
@@ -73,12 +74,17 @@ watch(
 
 const activeLoadBalancerId = ref<string>();
 const handleClick = (id: string) => {
+  if (id && id === route.params.id && route.name === MENU_BUSINESS_LOAD_BALANCER_DETAILS) {
+    return;
+  }
   activeLoadBalancerId.value = id;
 
   if (id) {
     routerAction.redirect({
       name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
       params: { bizId: currentGlobalBusinessId.value, id },
+      // 切换负载均衡时仅保留必要公共参数（如 details_active、_f），隔离单 tab 分页/筛选/排序参数
+      query: pickClbDetailsBaseQuery(route.query),
     });
   } else {
     routerAction.redirect({

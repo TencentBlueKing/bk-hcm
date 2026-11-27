@@ -22,6 +22,7 @@ package tcloud
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"time"
 
@@ -574,14 +575,47 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		lb.PublicIPv6Addresses = []string{ipv6}
 	}
 
-	//  可用区判断
-	if typeslb.TCloudLoadBalancerType(lb.LoadBalancerType) == typeslb.OpenLoadBalancerType && cloud.MasterZone != nil {
-		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
-	}
+	// 可用区判断
+	lb.Zones = getTCloudZones(cloud)
+	lb.BackupZones = getTCloudBackupZones(cloud)
 
 	lb.Extension = convertTCloudExtension(cloud, region)
 
 	return lb
+}
+
+// getTCloudZones 返回云上实例的主可用区或可用区列表，云上未返回有效值时为 nil
+func getTCloudZones(cloud typeslb.TCloudClb) []string {
+	switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
+	case typeslb.OpenLoadBalancerType:
+		if cloud.MasterZone == nil || cvt.PtrToVal(cloud.MasterZone.Zone) == "" {
+			return nil
+		}
+		return []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
+	case typeslb.InternalLoadBalancerType:
+		var zones []string
+		for _, zone := range cloud.Zones {
+			if cvt.PtrToVal(zone) == "" {
+				continue
+			}
+			zones = append(zones, cvt.PtrToVal(zone))
+		}
+		return zones
+	default:
+		return nil
+	}
+}
+
+// getTCloudBackupZones 返回云上实例的备可用区，云上未返回时为 nil
+func getTCloudBackupZones(cloud typeslb.TCloudClb) []string {
+	var zones []string
+	for _, zone := range cloud.BackupZoneSet {
+		if zone == nil || cvt.PtrToVal(zone.Zone) == "" {
+			continue
+		}
+		zones = append(zones, cvt.PtrToVal(zone.Zone))
+	}
+	return zones
 }
 
 func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TCloudClbExtension {
@@ -669,6 +703,9 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		Tags:             cloud.GetTagMap(),
 		Extension:        convertTCloudExtension(cloud, region),
 		Isp:              cvt.PtrToVal(cloud.VipIsp),
+		// 云上未返回可用区或备可用区时为空，不覆盖本地已有值
+		Zones:       getTCloudZones(cloud),
+		BackupZones: getTCloudBackupZones(cloud),
 	}
 	if cloud.NetworkAttributes != nil {
 		lb.BandWidth = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
@@ -721,6 +758,12 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 		return true
 	}
 	if db.Isp != cvt.PtrToVal(cloud.VipIsp) {
+		return true
+	}
+	if zones := getTCloudZones(cloud); len(zones) > 0 && !slices.Equal(db.Zones, zones) {
+		return true
+	}
+	if backupZones := getTCloudBackupZones(cloud); len(backupZones) > 0 && !slices.Equal(db.BackupZones, backupZones) {
 		return true
 	}
 

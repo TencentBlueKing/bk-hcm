@@ -21,7 +21,6 @@ import {
   MENU_SERVICE_PERMISSION_POLICY,
   MENU_SERVICE_TICKET_MANAGEMENT,
   MENU_RESOURCE,
-  MENU_RESOURCE_ACCESS,
   MENU_RESOURCE_ACCOUNT_MANAGEMENT,
   MENU_RESOURCE_MANAGE,
   MENU_RESOURCE_OPERATION_LOG,
@@ -237,8 +236,6 @@ const resourceMenus: IMenu[] = [
 const menus: IMenu[] = [
   { id: MENU_BUSINESS, i18n: '业务资源', menu: businessMenus },
   { id: MENU_SERVICE, i18n: '服务请求', menu: serviceMenus },
-  // 只做跳转，资源接入下线时删除
-  { id: MENU_RESOURCE_ACCESS, i18n: '资源接入', route: getMenuRoute(resourceViews, MENU_RESOURCE_MANAGE) },
   { id: MENU_SCHEME, i18n: '资源选型', visibility: () => ENABLE_CLOUD_SELECTION === 'true' },
   { id: MENU_RESOURCE, i18n: '资源运营', menu: resourceMenus },
 ];

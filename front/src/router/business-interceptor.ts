@@ -81,13 +81,13 @@ export const before = async (
   const allBizIds = businessGlobalStore.businessFullList.map((biz) => biz.id);
   const authorizedBizIds = businessGlobalStore.businessAuthorizedList.map((biz) => biz.id);
 
-  if (allBizIds.length > 0 && !allBizIds.includes(bizId)) {
+  if (!allBizIds.includes(bizId)) {
     showBusinessStatus(to, 'bizNotFound');
     next();
     return false;
   }
 
-  if (authorizedBizIds.length > 0 && !authorizedBizIds.includes(bizId)) {
+  if (!authorizedBizIds.includes(bizId)) {
     const authSign = { type: AUTH_ACCESS_BIZ, relation: [bizId] };
     const { permissionData } = await useAuthStore().checkViewPermission(Symbol.for(`biz_${bizId}`), authSign);
     to.meta.permissionData = permissionData;
