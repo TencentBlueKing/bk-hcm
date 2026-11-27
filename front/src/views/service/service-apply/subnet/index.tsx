@@ -1,8 +1,9 @@
 import RouteTableSelector from '@/components/route-table-selector/index.vue';
+import { hasEmptyResourceCondition } from '../hooks/use-condtion';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import { defineComponent, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Button, Form, Input, Select, Message } from 'bkui-vue';
 import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
@@ -35,6 +36,11 @@ export default defineComponent({
       cloud_route_table_id: '', // 关联的路由表,
       gateway_ip: '' as string, // 网关地址
     });
+    const submitDisabled = computed(
+      () =>
+        whereAmI.value === Senarios.resource &&
+        hasEmptyResourceCondition(formModel.account_id, formModel.vendor, formModel.region, formModel.resource_group),
+    );
     const formRef = ref(null);
     const formRules = {
       cloud_vpc_id: [
@@ -99,12 +105,14 @@ export default defineComponent({
     };
 
     const handleSubmit = async () => {
-      await formRef.value.validate();
-      if (formModel.vendor === VendorEnum.AZURE) {
-        formModel.ipv4_cidr = [formModel.ipv4_cidr] as string[];
-      }
+      if (submitDisabled.value || submitLoading.value) return;
       submitLoading.value = true;
       try {
+        await formRef.value.validate();
+        if (submitDisabled.value) return;
+        if (formModel.vendor === VendorEnum.AZURE) {
+          formModel.ipv4_cidr = [formModel.ipv4_cidr] as string[];
+        }
         await businessStore.createSubnet(accountStore.bizs, formModel, whereAmI.value === Senarios.resource);
         Message({
           theme: 'success',
@@ -252,7 +260,11 @@ export default defineComponent({
           ),
           footer: () => (
             <>
-              <Button theme={'primary'} onClick={handleSubmit} loading={submitLoading.value}>
+              <Button
+                theme={'primary'}
+                onClick={handleSubmit}
+                disabled={submitDisabled.value}
+                loading={submitLoading.value}>
                 提交
               </Button>
               <Button loading={submitLoading.value} onClick={handleCancel}>

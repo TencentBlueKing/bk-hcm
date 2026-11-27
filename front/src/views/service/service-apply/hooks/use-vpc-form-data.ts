@@ -1,5 +1,5 @@
 import http from '@/http';
-import { reactive, watch, ref, nextTick } from 'vue';
+import { reactive, watch, ref, nextTick, type ComputedRef } from 'vue';
 import { VendorEnum } from '@/common/constant';
 import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
@@ -43,7 +43,7 @@ export interface IVpcSaveData extends IVpcBaseData {
   resource_group_name?: string;
 }
 
-export default (cond: Cond) => {
+export default (cond: Cond, submitDisabled: ComputedRef<boolean>) => {
   const { t } = useI18n();
   const router = useRouter();
   const { isResourcePage, whereAmI } = useWhereAmI();
@@ -212,10 +212,12 @@ export default (cond: Cond) => {
 
   const submitting = ref(false);
   const handleFormSubmit = async () => {
-    await formRef.value.validate();
-    const saveData = getSaveData();
+    if (submitDisabled.value || submitting.value) return;
+    submitting.value = true;
     try {
-      submitting.value = true;
+      await formRef.value.validate();
+      if (submitDisabled.value) return;
+      const saveData = getSaveData();
       const url = isResourcePage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vpcs/create`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${cond.vendor}/applications/types/create_vpc`;

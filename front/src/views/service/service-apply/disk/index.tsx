@@ -23,13 +23,11 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion();
-    const { formData, formRef, handleFormSubmit, submitting } = useDiskFormData(cond);
+    const { formData, formRef, handleFormSubmit, submitting } = useDiskFormData(cond, isEmptyCond);
     const { diskTypes, billingModes, purchaseDurationUnits } = useDiskOptions(cond, formData);
     const { t } = useI18n();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
-
-    const submitDisabled = computed(() => isEmptyCond.value);
 
     const nameRules = computed(() => {
       const rules = {
@@ -291,7 +289,7 @@ export default defineComponent({
               <Button
                 theme='primary'
                 loading={submitting.value}
-                disabled={submitDisabled.value}
+                disabled={isEmptyCond.value}
                 onClick={handleFormSubmit}>
                 {isResourcePage ? t('提交') : t('提交审批')}
               </Button>

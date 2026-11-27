@@ -7,6 +7,7 @@ import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useSelectedResourceAccount } from '@/views/resource-manage/account/use-resource-account';
 import AccountSelector from '@/components/account-selector/index-new.vue';
 
 const props = defineProps({
@@ -25,10 +26,10 @@ const props = defineProps({
   show: Boolean,
 });
 
+const emit = defineEmits(['change']);
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
-const emit = defineEmits(['change']);
 const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
@@ -38,6 +39,8 @@ const { isResourcePage } = useWhereAmI();
 
 const securityType: any = inject('securityType');
 const resourceAccountStore = useResourceAccountStore();
+const selectedResourceAccount = useSelectedResourceAccount();
+const usesLeftAccount = computed(() => props.type === 'eip' && isResourcePage);
 
 const state = reactive<{ filter: BusinessFormFilter }>({
   filter: {
@@ -46,6 +49,14 @@ const state = reactive<{ filter: BusinessFormFilter }>({
     region: '',
   },
 });
+
+watch(
+  () => state.filter.account_id,
+  () => {
+    if (props.type === 'eip') state.filter.region = '';
+  },
+  { flush: 'sync' },
+);
 
 const filter = ref<QueryFilterType>({
   op: 'and',
@@ -157,24 +168,33 @@ const setOptionDisabled = () => {
   }
 };
 
+let regionRequest = 0;
 const getCloudRegionList = () => {
-  if (cloudRegionsLoading.value || !state.filter.vendor) return;
+  regionRequest += 1;
+  const request = regionRequest;
+  const { vendor } = state.filter;
+  if (!vendor && props.type === 'eip') cloudRegionsLoading.value = false;
+  if (!vendor || (cloudRegionsLoading.value && props.type !== 'eip')) return;
   cloudRegionsLoading.value = true;
   resourceStore
-    .getCloudRegion(state.filter.vendor, {
-      filter: filter.value,
+    .getCloudRegion(vendor, {
+      filter: { ...filter.value },
       page: {
         count: false,
-        start: cloudAreaPage.value,
+        start: props.type === 'eip' ? 0 : cloudAreaPage.value,
         limit: 100,
       },
     })
     .then((res: any) => {
+      if (props.type === 'eip') {
+        if (request === regionRequest) cloudRegionsList.value = res?.data?.details ?? [];
+        return;
+      }
       cloudAreaPage.value += 1;
       cloudRegionsList.value.push(...(res?.data?.details || []));
     })
     .finally(() => {
-      cloudRegionsLoading.value = false;
+      if (props.type !== 'eip' || request === regionRequest) cloudRegionsLoading.value = false;
     });
 };
 
@@ -185,13 +205,21 @@ const validate = () => {
 const resetForm = () => {
   state.filter.account_id = '';
   state.filter.vendor = '';
-  nextTick(() => formRef.value.clearValidate());
+  nextTick(() => formRef.value?.clearValidate());
 };
 
 watch(
-  () => props.show,
-  (val) => {
+  [
+    () => props.show,
+    () => (usesLeftAccount.value ? selectedResourceAccount.value?.id : undefined),
+    () => (usesLeftAccount.value ? selectedResourceAccount.value?.vendor : undefined),
+  ],
+  ([val, id, vendor]) => {
     if (val) {
+      if (props.type === 'eip') {
+        if (usesLeftAccount.value) getAccountList({ id, vendor });
+        return;
+      }
       // 业务下或资源未选择指定账号情况下为空
       return getAccountList({
         vendor: resourceAccountStore.resourceAccount?.vendor,
@@ -205,7 +233,7 @@ watch(
   },
 );
 
-const isSecurityGroup = computed(() => securityType.value === 'group' && props.type === 'security');
+const isSecurityGroup = computed(() => props.type === 'security' && securityType?.value === 'group');
 
 defineExpose([validate]);
 </script>
@@ -226,7 +254,7 @@ defineExpose([validate]);
         :disabled="isResourcePage"
         :option-disabled="optionDisabled"
         :placeholder="isResourcePage ? t('请在左侧选择账号') : undefined"
-        @change="handleChange"
+        @change="(account) => !usesLeftAccount && handleChange(account)"
       />
     </bk-form-item>
     <bk-form-item
