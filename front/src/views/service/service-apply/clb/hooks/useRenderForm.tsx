@@ -161,7 +161,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     // 共享型带宽上限固定；性能容量型按「当前规格」取上限，不沿用上一次选过的规格
     const isCapacitySpec = Boolean(formModel.sla_type) && formModel.sla_type !== 'shared';
     const max = isCapacitySpec
-      ? slaTypeBandWidthLimits[formModel.sla_type] ?? DEFAULT_BANDWIDTH_LIMIT
+      ? slaTypeBandWidthLimits[formModel.sla_type] ??
+        CLB_SPEC_TYPE_COLUMNS_MAP[formModel.sla_type]?.bandwidthLimit ??
+        DEFAULT_BANDWIDTH_LIMIT
       : DEFAULT_BANDWIDTH_LIMIT;
     const content = getInternetMaxBandwidthOutContent(1, max);
 
@@ -661,7 +663,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 // 规格名称优先用本次选择写入的名称，静态规格表作兜底
                 return (
                   <SelectedItemPreviewComp
-                    content={slaTypeNames[formModel.sla_type] ?? CLB_SPECS[formModel.sla_type]}
+                    content={
+                      slaTypeNames[formModel.sla_type] ?? CLB_SPECS[formModel.sla_type] ?? formModel.sla_type ?? '--'
+                    }
                     onClick={handleClick}
                   />
                 );

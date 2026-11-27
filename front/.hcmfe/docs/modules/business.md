@@ -1,11 +1,13 @@
 # 业务一级视图（容器·待拆解）
 
-> status: stub · kind: module
+> status: drafted · kind: module
 > globs: `src/views/business/**`
 
 一级视图 /business/:bizId 容器，待拆解。
 
 ## 职责
+
+`src/views/business/load-balancer/components/lb-spec-type-dialog/index.tsx` 为购买表单提供规格选择弹框，按库存筛选规格并补充本地性能参数。规格确认和参数缺失见 [购买带宽](load-balancer/purchase-bandwidth.md)。
 
 （待补充：本模块的核心职责、边界、关键文件与对外接口。）
 

@@ -166,11 +166,13 @@
         "src/views/business/**"
       ],
       "doc": "modules/business.md",
-      "status": "stub",
+      "status": "drafted",
       "relates": [
         "load-balancer"
       ],
-      "fingerprint": null
+      "fingerprint": {
+        "rootHash": "d70e99ba211e994abe2046728ae0137eb50c7dfe"
+      }
     },
     {
       "id": "service",

@@ -1,0 +1,79 @@
+{
+  "id": "fix-clb-bandwidth-limit",
+  "title": "同步 MR3454 修复 CLB 规格带宽联动",
+  "currentStage": "test",
+  "createdAt": "2026-10-19T09:36:25.069Z",
+  "updatedAt": "2026-10-20T03:44:42.731Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/fix-clb-bandwidth-limit/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-19T09:39:43.688Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/fix-clb-bandwidth-limit/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-19T09:39:45.080Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-20T01:22:23.596Z",
+      "note": "用户确认继续；已核对当前 diff，仅新增 max:number 类型标注，逻辑未变；coding 记录已同步且基线已对齐。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-19T09:36:25.069Z",
+      "gitHead": "27cedc81c2ab80c0a9ee0aba96927b4c6aa68735"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-20T01:22:23.596Z",
+      "note": "用户确认继续；已核对当前 diff，仅新增 max:number 类型标注，逻辑未变；coding 记录已同步且基线已对齐。"
+    }
+  ],
+  "branch": "fix-clb-bandwidth-limit",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-19T09:37:25.650Z",
+      "note": "用户确认仅本地修复与文档，跳过 TAPD 澄清和新建单据；依据 MR3454 同步适用的修复。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-20T01:22:54.993Z",
+      "note": "已核对本次涉及 service 与 load-balancer；补充 service 的数字上限监听边界并刷新基线，load-balancer 已有带宽联动文档且无漂移。经验队列为空。"
+    },
+    "hcm-verify-e2e": {
+      "status": "skipped",
+      "at": "2026-10-20T01:23:49.342Z",
+      "note": "2026-10-20 用户选择手动自测，明确跳过本次 E2E；配置与安装清单缺失，不安装工具层。浏览器用例等待用户自测反馈，尚未验收通过。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/service/service-apply/clb/hooks/useRenderForm.tsx",
+        "src/views/business/load-balancer/components/lb-spec-type-dialog/index.tsx"
+      ],
+      "contentFingerprint": "0da160ec08dcf5a0682eeb232e7b05cde6cbac03",
+      "codeBaseline": "eae50f0badac38b2ce8557a135d4ac640086ddeb",
+      "seatedAt": "2026-10-20T03:44:42.729Z"
+    }
+  }
+}

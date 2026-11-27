@@ -106,36 +106,31 @@ export default defineComponent({
       },
     ];
 
-    // 简约型不提供购买；静态表未收录的 clb.c5.* 同样不展示
-    const isVisibleSlaType = (slaType?: string) => slaType !== 'clb.c1.small' && !slaType?.startsWith('clb.c5.');
+    const usableSlaList = computed<Array<IClbSlaSpecRow>>(() => {
+      // 保留上游的库存过滤和购买限制，其他未收录规格仍可按接口编码展示。
+      const availableSlaTypes = new Set(
+        props.specAvailabilitySet
+          .filter(({ Availability }) => Availability !== 'Unavailable')
+          .map(({ SpecType }) => SpecType)
+          .filter(
+            (slaType): slaType is string =>
+              !!slaType && slaType !== 'shared' && slaType !== 'clb.c1.small' && !slaType.startsWith('clb.c5.'),
+          ),
+      );
 
-    const staticSlaList = computed<Array<IClbSlaSpecRow>>(() =>
-      Object.entries(CLB_SPEC_TYPE_COLUMNS_MAP)
-        .filter(([slaType]) => slaType !== 'shared')
-        .map(([SlaType, spec]) => ({
+      return Array.from(availableSlaTypes, (SlaType) => {
+        const spec = CLB_SPEC_TYPE_COLUMNS_MAP[SlaType];
+        return {
           SlaType,
           SlaName: CLB_SPECS[SlaType] ?? SlaType,
-          MaxConn: spec.connectionsPerMinute,
-          MaxCps: spec.newConnectionsPerSecond,
-          MaxQps: spec.queriesPerSecond,
-          MaxOutBits: spec.bandwidthLimit,
-          MaxInBits: spec.bandwidthLimit,
-        })),
-    );
-
-    // 空集合表示没有可用规格，不再放开整张静态表
-    const availableSlaTypes = computed(
-      () =>
-        new Set(
-          props.specAvailabilitySet
-            .filter(({ Availability }) => Availability !== 'Unavailable')
-            .map(({ SpecType }) => SpecType),
-        ),
-    );
-
-    const usableSlaList = computed(() =>
-      staticSlaList.value.filter(({ SlaType }) => isVisibleSlaType(SlaType) && availableSlaTypes.value.has(SlaType)),
-    );
+          MaxConn: spec?.connectionsPerMinute,
+          MaxCps: spec?.newConnectionsPerSecond,
+          MaxQps: spec?.queriesPerSecond,
+          MaxOutBits: spec?.bandwidthLimit,
+          MaxInBits: spec?.bandwidthLimit,
+        };
+      }).sort((a, b) => (a.MaxOutBits ?? Number.MAX_VALUE) - (b.MaxOutBits ?? Number.MAX_VALUE));
+    });
 
     const canConfirm = computed(() => usableSlaList.value.some(({ SlaType }) => SlaType === selectedSlaType.value));
 

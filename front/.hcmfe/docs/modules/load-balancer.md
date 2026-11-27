@@ -31,6 +31,7 @@ CLB 成功/失败反馈在模块内 `src/views/load-balancer/use-clb-sync-feedba
 ## 明细目录
 
 <!-- bkdevbuddy:toc:start -->
+- [购买表单的规格与带宽联动](load-balancer/purchase-bandwidth.md) — 购买 CLB 表单由 `src/views/service/service-apply/clb/hooks/useRenderForm.tsx` 编排，规格弹框为 `src/views/business/load-balancer/comp…
 <!-- bkdevbuddy:toc:end -->
 
 （上方标记块由 `bkdevbuddy docs deepen` 按 `modules/<id>/` 目录自动生成，**请勿手工编辑**；拆出 topic 后 deepen 一次即出现链接。）

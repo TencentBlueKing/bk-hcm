@@ -1,6 +1,6 @@
 # 工作台一级视图（容器·待拆解）
 
-> status: stub · kind: module
+> status: drafted · kind: module
 > globs: `src/views/service/**`
 
 一级视图 /service/ 容器，待拆解。
@@ -15,9 +15,9 @@
 
 提交在 `src/views/service/service-apply/hooks/use-vpc-form-data.ts` 的 `getSaveData`。VPC 网段提交 `formData.ipv4_cidr`。腾讯云、华为云、Azure、GCP 的初始子网网段提交 `subnet.ipv4_cidr`。华为云网关地址取子网网段前三段再加 `.1`。AWS 这条提交不带初始子网。后端两个字段都是 CIDR 字符串，并要求子网落在 VPC 网段内。
 
-## 关键流程 / 注意事项
+## CLB 购买
 
-（待补充：由 workflow 在首次改动本模块时深化。）
+`src/views/service/service-apply/clb/hooks/useRenderForm.tsx` 编排规格选择与带宽输入。编辑配置清单时，按当前条目的规格计算带宽上限。规格确认、带宽回退和超限收敛见 [购买表单的规格与带宽联动](load-balancer/purchase-bandwidth.md)。
 
 ## 明细目录
 
